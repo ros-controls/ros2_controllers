@@ -84,7 +84,7 @@ private:
 
   // TODO(karsten1987): eventually activate and deactive subscriber directly when its supported
   bool subscriber_is_active_ = false;
-  rclcpp::subscription::Subscription<trajectory_msgs::msg::JointTrajectory>::SharedPtr
+  rclcpp::Subscription<trajectory_msgs::msg::JointTrajectory>::SharedPtr
     joint_command_subscriber_ = nullptr;
 
   TrajectoryPointConstIter prev_traj_point_ptr_;

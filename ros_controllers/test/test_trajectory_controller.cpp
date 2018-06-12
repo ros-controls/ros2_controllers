@@ -59,7 +59,7 @@ protected:
     joint_names = {{test_robot->joint_name1, test_robot->joint_name2, test_robot->joint_name3}};
     op_mode = {{test_robot->write_op_handle_name1}};
 
-    pub_node = std::make_shared<rclcpp::node::Node>("trajectory_publisher");
+    pub_node = std::make_shared<rclcpp::Node>("trajectory_publisher");
     trajectory_publisher = pub_node->create_publisher<trajectory_msgs::msg::JointTrajectory>(
       controller_name + "/joint_trajectory");
   }
@@ -127,7 +127,7 @@ protected:
   std::vector<std::string> joint_names;
   std::vector<std::string> op_mode;
 
-  rclcpp::node::Node::SharedPtr pub_node;
+  rclcpp::Node::SharedPtr pub_node;
   rclcpp::Publisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr trajectory_publisher;
 };
 

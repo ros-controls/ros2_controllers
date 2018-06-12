@@ -40,7 +40,7 @@ namespace
 
 rcl_lifecycle_transition_key_t
 fetch_parameters_from_parameter_server(
-  std::shared_ptr<rclcpp::parameter_client::AsyncParametersClient> parameters_client,
+  std::shared_ptr<rclcpp::AsyncParametersClient> parameters_client,
   const std::string parameter_key,
   std::vector<std::string> & parameters)
 {
