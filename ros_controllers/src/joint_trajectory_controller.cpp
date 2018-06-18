@@ -199,7 +199,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
   // subscriber call back
   // non realtime
   // TODO(karsten): check if traj msg and point time are valid
-  auto callback = [this](const typename trajectory_msgs::msg::JointTrajectory::SharedPtr msg)
+  auto callback = [this](const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg)
     -> void
     {
       if (registered_joint_cmd_handles_.size() != msg->joint_names.size()) {
@@ -330,7 +330,7 @@ JointTrajectoryController::update()
   }
 
   // find next new point for current timestamp
-  auto traj_point_ptr = (*traj_point_active_ptr_)->sample(rclcpp::Time::now());
+  auto traj_point_ptr = (*traj_point_active_ptr_)->sample(rclcpp::Clock().now());
   // find next new point for current timestamp
   // set cmd only if a point is found
   if (traj_point_ptr == (*traj_point_active_ptr_)->end()) {

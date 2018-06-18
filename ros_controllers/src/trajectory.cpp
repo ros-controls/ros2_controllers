@@ -19,6 +19,8 @@
 #include "hardware_interface/macros.hpp"
 #include "hardware_interface/utils/time_utils.hpp"
 
+#include "rclcpp/clock.hpp"
+
 namespace ros_controllers
 {
 
@@ -35,7 +37,7 @@ Trajectory::Trajectory()
 Trajectory::Trajectory(std::shared_ptr<trajectory_msgs::msg::JointTrajectory> joint_trajectory)
 : trajectory_msg_(joint_trajectory),
   trajectory_start_time_(time_is_zero(joint_trajectory->header.stamp) ?
-    rclcpp::Time::now() :
+    rclcpp::Clock().now() :
     static_cast<rclcpp::Time>(joint_trajectory->header.stamp))
 {}
 
@@ -44,7 +46,7 @@ Trajectory::update(std::shared_ptr<trajectory_msgs::msg::JointTrajectory> joint_
 {
   trajectory_msg_ = joint_trajectory;
   trajectory_start_time_ = (time_is_zero(joint_trajectory->header.stamp) ?
-    rclcpp::Time::now() :
+    rclcpp::Clock().now() :
     static_cast<rclcpp::Time>(joint_trajectory->header.stamp));
 }
 

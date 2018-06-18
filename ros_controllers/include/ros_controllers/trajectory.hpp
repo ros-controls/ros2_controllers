@@ -28,9 +28,9 @@ namespace ros_controllers
 {
 
 using TrajectoryPointIter =
-    std::vector<trajectory_msgs::msg::JointTrajectoryPoint>::iterator;
+  std::vector<trajectory_msgs::msg::JointTrajectoryPoint>::iterator;
 using TrajectoryPointConstIter =
-    std::vector<trajectory_msgs::msg::JointTrajectoryPoint>::const_iterator;
+  std::vector<trajectory_msgs::msg::JointTrajectoryPoint>::const_iterator;
 
 class Trajectory
 {
