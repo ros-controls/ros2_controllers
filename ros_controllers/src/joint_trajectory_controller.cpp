@@ -374,7 +374,7 @@ JointTrajectoryController::halt()
 
 }  // namespace ros_controllers
 
-#include "class_loader/class_loader_register_macro.h"
+#include "class_loader/register_macro.hpp"
 
 CLASS_LOADER_REGISTER_CLASS(
   ros_controllers::JointTrajectoryController, controller_interface::ControllerInterface)
