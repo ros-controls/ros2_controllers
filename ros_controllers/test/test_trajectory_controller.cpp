@@ -368,7 +368,6 @@ TEST_F(TestTrajectoryController, correct_initialization_with_config_file) {
   // must be related to STL containers and windows
   std::string file_path = config_file;
   auto ps = std::make_shared<controller_parameter_server::ParameterServer>();
-  ps->init();
   ps->load_parameters(file_path);
 
   auto traj_controller = std::make_shared<ros_controllers::JointTrajectoryController>();
