@@ -39,7 +39,7 @@
 using lifecycle_msgs::msg::State;
 
 void
-spin(rclcpp::executors::multi_threaded_executor::MultiThreadedExecutor * exe)
+spin(rclcpp::executors::MultiThreadedExecutor * exe)
 {
   exe->spin();
 }
@@ -99,18 +99,18 @@ protected:
     traj_msg_ptr->header.stamp.nanosec = 0;
     traj_msg_ptr->points.resize(points.size());
 
-    builtin_interfaces::msg::Time duration_msg;
+    builtin_interfaces::msg::Duration duration_msg;
     duration_msg.sec = time_from_start.sec;
     duration_msg.nanosec = time_from_start.nanosec;
-    rclcpp::Time duration(duration_msg);
-    rclcpp::Time duration_total(duration_msg);
+    rclcpp::Duration duration(duration_msg);
+    rclcpp::Duration duration_total(duration_msg);
 
     size_t index = 0;
     for (; index < points.size(); ++index) {
       traj_msg_ptr->points[index].time_from_start.sec =
-        static_cast<builtin_interfaces::msg::Time>(duration_total).sec;
+        duration_total.nanoseconds() / 1e9;
       traj_msg_ptr->points[index].time_from_start.nanosec =
-        static_cast<builtin_interfaces::msg::Time>(duration_total).nanosec;
+        duration_total.nanoseconds();
       traj_msg_ptr->points[index].positions.resize(3);
       traj_msg_ptr->points[index].positions[0] = points[index][0];
       traj_msg_ptr->points[index].positions[1] = points[index][1];
@@ -169,7 +169,7 @@ TEST_F(TestTrajectoryController, configuration) {
     FAIL();
   }
 
-  rclcpp::executors::multi_threaded_executor::MultiThreadedExecutor executor;
+  rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(traj_controller->get_lifecycle_node()->get_node_base_interface());
   auto future_handle_ = std::async(std::launch::async, spin, &executor);
 
@@ -204,7 +204,7 @@ TEST_F(TestTrajectoryController, activation) {
   }
 
   auto traj_lifecycle_node = traj_controller->get_lifecycle_node();
-  rclcpp::executors::multi_threaded_executor::MultiThreadedExecutor executor;
+  rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(traj_lifecycle_node->get_node_base_interface());
 
   auto state = traj_lifecycle_node->configure();
@@ -246,7 +246,7 @@ TEST_F(TestTrajectoryController, reactivation) {
   }
 
   auto traj_lifecycle_node = traj_controller->get_lifecycle_node();
-  rclcpp::executors::multi_threaded_executor::MultiThreadedExecutor executor;
+  rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(traj_lifecycle_node->get_node_base_interface());
 
   auto state = traj_lifecycle_node->configure();
@@ -315,7 +315,7 @@ TEST_F(TestTrajectoryController, cleanup) {
   }
 
   auto traj_lifecycle_node = traj_controller->get_lifecycle_node();
-  rclcpp::executors::multi_threaded_executor::MultiThreadedExecutor executor;
+  rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(traj_lifecycle_node->get_node_base_interface());
 
   auto state = traj_lifecycle_node->configure();
@@ -368,7 +368,6 @@ TEST_F(TestTrajectoryController, correct_initialization_with_config_file) {
   // must be related to STL containers and windows
   std::string file_path = config_file;
   auto ps = std::make_shared<controller_parameter_server::ParameterServer>();
-  ps->init();
   ps->load_parameters(file_path);
 
   auto traj_controller = std::make_shared<ros_controllers::JointTrajectoryController>();
@@ -377,15 +376,15 @@ TEST_F(TestTrajectoryController, correct_initialization_with_config_file) {
     FAIL();
   }
 
-  rclcpp::executors::multi_threaded_executor::MultiThreadedExecutor executor;
+  rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(ps);
   auto traj_lifecycle_node = traj_controller->get_lifecycle_node();
   executor.add_node(traj_lifecycle_node->get_node_base_interface());
 
   auto future_handle = std::async(
     std::launch::async, [&executor]() -> void {
-    executor.spin();
-  });
+      executor.spin();
+    });
 
   auto state = traj_lifecycle_node->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());

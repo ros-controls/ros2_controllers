@@ -72,7 +72,7 @@ JointStateController::update()
     return hardware_interface::HW_RET_ERROR;
   }
 
-  joint_state_msg_->header.stamp = rclcpp::Time::now();
+  joint_state_msg_->header.stamp = rclcpp::Clock().now();
   size_t i = 0;
   for (auto joint_state_handle : registered_joint_handles_) {
     joint_state_msg_->position[i] = joint_state_handle->get_position();
@@ -88,7 +88,7 @@ JointStateController::update()
 
 }  // namespace ros_controllers
 
-#include "class_loader/class_loader_register_macro.h"
+#include "class_loader/register_macro.hpp"
 
 CLASS_LOADER_REGISTER_CLASS(
   ros_controllers::JointStateController, controller_interface::ControllerInterface)
