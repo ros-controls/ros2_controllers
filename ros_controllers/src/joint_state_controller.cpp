@@ -30,7 +30,7 @@ JointStateController::JointStateController()
 : controller_interface::ControllerInterface()
 {}
 
-rcl_lifecycle_transition_key_t
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 JointStateController::on_configure(const rclcpp_lifecycle::State & previous_state)
 {
   (void) previous_state;
@@ -38,11 +38,11 @@ JointStateController::on_configure(const rclcpp_lifecycle::State & previous_stat
   if (auto sptr = robot_hardware_.lock()) {
     registered_joint_handles_ = sptr->get_registered_joint_state_handles();
   } else {
-    return hardware_interface::HW_RET_ERROR;
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
   }
 
   if (registered_joint_handles_.empty()) {
-    return hardware_interface::HW_RET_ERROR;
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
   }
 
   joint_state_msg_ = std::make_shared<sensor_msgs::msg::JointState>();
@@ -61,7 +61,7 @@ JointStateController::on_configure(const rclcpp_lifecycle::State & previous_stat
     lifecycle_node_->create_publisher<sensor_msgs::msg::JointState>("joint_states");
   joint_state_publisher_->on_activate();
 
-  return lifecycle_msgs::msg::Transition::TRANSITION_CALLBACK_SUCCESS;
+  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
 controller_interface::controller_interface_ret_t

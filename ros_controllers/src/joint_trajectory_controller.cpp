@@ -38,7 +38,7 @@ using namespace std::chrono_literals;
 namespace
 {
 
-rcl_lifecycle_transition_key_t
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 fetch_parameters_from_parameter_server(
   std::shared_ptr<rclcpp::AsyncParametersClient> parameters_client,
   const std::string parameter_key,
@@ -50,16 +50,16 @@ fetch_parameters_from_parameter_server(
     status = list_future.wait_for(std::chrono::seconds(1));
     if (status == std::future_status::timeout) {
       auto error_msg = std::string("couldn't fetch parameters for key: ") + parameter_key;
-      RCUTILS_LOG_ERROR(error_msg.c_str())
-      return lifecycle_msgs::msg::Transition::TRANSITION_CALLBACK_FAILURE;
+      RCUTILS_LOG_ERROR(error_msg.c_str());
+      return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
     }
   } while (status != std::future_status::ready);
   auto parameter_names = list_future.get();
 
   if (parameter_names.names.size() == 0) {
     auto error_msg = std::string("no results found for key: ") + parameter_key;
-    RCUTILS_LOG_ERROR(error_msg.c_str())
-    return lifecycle_msgs::msg::Transition::TRANSITION_CALLBACK_FAILURE;
+    RCUTILS_LOG_ERROR(error_msg.c_str());
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
   }
 
   auto get_future = parameters_client->get_parameters({parameter_names.names});
@@ -70,8 +70,8 @@ fetch_parameters_from_parameter_server(
       for (auto & name : parameter_names.names) {
         error_msg += " " + name;
       }
-      RCUTILS_LOG_ERROR(error_msg.c_str())
-      return lifecycle_msgs::msg::Transition::TRANSITION_CALLBACK_FAILURE;
+      RCUTILS_LOG_ERROR(error_msg.c_str());
+      return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
     }
   } while (status != std::future_status::ready);
   auto parameter_values = get_future.get();
@@ -81,14 +81,14 @@ fetch_parameters_from_parameter_server(
     for (auto & name : parameter_names.names) {
       error_msg += " " + name;
     }
-    RCUTILS_LOG_ERROR(error_msg.c_str())
-    return lifecycle_msgs::msg::Transition::TRANSITION_CALLBACK_FAILURE;
+    RCUTILS_LOG_ERROR(error_msg.c_str());
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
   }
   for (auto pv : parameter_values) {
     parameters.push_back(pv.as_string());
   }
 
-  return lifecycle_msgs::msg::Transition::TRANSITION_CALLBACK_SUCCESS;
+  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
 }  // namespace
@@ -105,7 +105,7 @@ JointTrajectoryController::JointTrajectoryController(
   write_op_names_(write_op_names)
 {}
 
-rcl_lifecycle_transition_key_t
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous_state)
 {
   (void) previous_state;
@@ -114,8 +114,8 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
   auto wait = 0u;
   while (!parameters_client_->wait_for_service(1s) && (wait++) < max_wait) {
     if (!rclcpp::ok()) {
-      RCUTILS_LOG_ERROR("waiting for parameter server got interrupted")
-      return lifecycle_msgs::msg::Transition::TRANSITION_CALLBACK_ERROR;
+      RCUTILS_LOG_ERROR("waiting for parameter server got interrupted");
+      return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
     }
   }
   if (wait <= max_wait) {
@@ -123,7 +123,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
       std::string(".") + lifecycle_node_->get_name() + ".joints";
     auto ret = fetch_parameters_from_parameter_server(
       parameters_client_, joint_parameter_key, joint_names_);
-    if (ret != lifecycle_msgs::msg::Transition::TRANSITION_CALLBACK_SUCCESS) {
+    if (ret != rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS) {
       return ret;
     }
 
@@ -131,15 +131,15 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
       std::string(".") + lifecycle_node_->get_name() + ".write_op_modes";
     ret = fetch_parameters_from_parameter_server(
       parameters_client_, write_op_mode_key, write_op_names_);
-    if (ret != lifecycle_msgs::msg::Transition::TRANSITION_CALLBACK_SUCCESS) {
+    if (ret != rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS) {
       return ret;
     }
   } else {
-    RCUTILS_LOG_INFO("parameter server not available")
+    RCUTILS_LOG_INFO("parameter server not available");
   }
 
   if (!reset()) {
-    return lifecycle_msgs::msg::Transition::TRANSITION_CALLBACK_ERROR;
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
   }
 
   if (auto robot_hardware = robot_hardware_.lock()) {
@@ -149,7 +149,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
       auto ret = robot_hardware->get_joint_state_handle(
         joint_names_[index].c_str(), &registered_joint_state_handles_[index]);
       if (ret != hardware_interface::HW_RET_OK) {
-        return lifecycle_msgs::msg::Transition::TRANSITION_CALLBACK_FAILURE;
+        return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
       }
     }
     registered_joint_cmd_handles_.resize(joint_names_.size());
@@ -157,7 +157,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
       auto ret = robot_hardware->get_joint_command_handle(
         joint_names_[index].c_str(), &registered_joint_cmd_handles_[index]);
       if (ret != hardware_interface::HW_RET_OK) {
-        return lifecycle_msgs::msg::Transition::TRANSITION_CALLBACK_FAILURE;
+        return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
       }
     }
     registered_operation_mode_handles_.resize(write_op_names_.size());
@@ -165,11 +165,11 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
       auto ret = robot_hardware->get_operation_mode_handle(
         write_op_names_[index].c_str(), &registered_operation_mode_handles_[index]);
       if (ret != hardware_interface::HW_RET_OK) {
-        return lifecycle_msgs::msg::Transition::TRANSITION_CALLBACK_FAILURE;
+        return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
       }
     }
   } else {
-    return lifecycle_msgs::msg::Transition::TRANSITION_CALLBACK_ERROR;
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
   }
 
   if (
@@ -177,7 +177,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
     registered_joint_state_handles_.empty() ||
     registered_operation_mode_handles_.empty())
   {
-    return lifecycle_msgs::msg::Transition::TRANSITION_CALLBACK_FAILURE;
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
   }
 
   // Store 'home' pose
@@ -227,10 +227,10 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
 
   set_op_mode(hardware_interface::OperationMode::INACTIVE);
 
-  return lifecycle_msgs::msg::Transition::TRANSITION_CALLBACK_SUCCESS;
+  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
-rcl_lifecycle_transition_key_t
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 JointTrajectoryController::on_activate(const rclcpp_lifecycle::State & previous_state)
 {
   (void) previous_state;
@@ -240,20 +240,20 @@ JointTrajectoryController::on_activate(const rclcpp_lifecycle::State & previous_
   traj_point_active_ptr_ = &traj_external_point_ptr_;
 
   // TODO(karsten1987): activate subscriptions of subscriber
-  return lifecycle_msgs::msg::Transition::TRANSITION_CALLBACK_SUCCESS;
+  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
-rcl_lifecycle_transition_key_t
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 JointTrajectoryController::on_deactivate(const rclcpp_lifecycle::State & previous_state)
 {
   (void) previous_state;
 
   subscriber_is_active_ = false;
 
-  return lifecycle_msgs::msg::Transition::TRANSITION_CALLBACK_SUCCESS;
+  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
-rcl_lifecycle_transition_key_t
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 JointTrajectoryController::on_cleanup(const rclcpp_lifecycle::State & previous_state)
 {
   (void) previous_state;
@@ -262,17 +262,17 @@ JointTrajectoryController::on_cleanup(const rclcpp_lifecycle::State & previous_s
   traj_home_point_ptr_->update(traj_msg_home_ptr_);
   traj_point_active_ptr_ = &traj_home_point_ptr_;
 
-  return lifecycle_msgs::msg::Transition::TRANSITION_CALLBACK_SUCCESS;
+  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
-rcl_lifecycle_transition_key_t
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 JointTrajectoryController::on_error(const rclcpp_lifecycle::State & previous_state)
 {
   (void) previous_state;
   if (!reset()) {
-    return lifecycle_msgs::msg::Transition::TRANSITION_CALLBACK_ERROR;
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
   }
-  return lifecycle_msgs::msg::Transition::TRANSITION_CALLBACK_SUCCESS;
+  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
 bool
@@ -301,13 +301,13 @@ JointTrajectoryController::reset()
   return true;
 }
 
-rcl_lifecycle_transition_key_t
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 JointTrajectoryController::on_shutdown(const rclcpp_lifecycle::State & previous_state)
 {
   (void) previous_state;
   // TODO(karsten1987): what to do?
 
-  return lifecycle_msgs::msg::Transition::TRANSITION_CALLBACK_SUCCESS;
+  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
 controller_interface::controller_interface_ret_t

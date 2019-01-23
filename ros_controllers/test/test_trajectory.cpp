@@ -52,7 +52,7 @@ TEST_F(TestTrajectory, initialize_trajectory) {
     auto traj_starttime = traj.time_from_start();
     EXPECT_EQ(traj.end(), traj.sample(rclcpp::Clock().now()));
     auto allowed_delta = 10000ll;
-    EXPECT_TRUE(traj.time_from_start().nanoseconds() - now.nanoseconds() < allowed_delta);
+    EXPECT_LT(traj.time_from_start().nanoseconds() - now.nanoseconds(), allowed_delta);
   }
 }
 
