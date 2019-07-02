@@ -1,17 +1,14 @@
+language: generic
 services:
   - docker
 
-install:
-  - git clone --quiet --depth 1 https://github.com/mikaelarguedas/ros2ci.git .ros2ci
-  - cp travis/workspace.repos .ros2ci/additional_repos.repos
+env:
+  global:
+    - UPSTREAM_WORKSPACE=github:ros-controls/ros2_control#dashing_update
+  matrix:
+    - ROS_DISTRO="dashing"
 
-matrix:
-  include:
-    - env: JOB_TYPE=crystal
-      script: .ros2ci/travis.bash $JOB_TYPE
-    # Uncomment the following to test against ROS 2 Dashing
-    # - env: JOB_TYPE=dashing
-    #   script: .ros2ci/travis.bash $JOB_TYPE
-    # Uncomment the following to test against ROS 2 nightly build
-    # - env: JOB_TYPE=nightly
-    #   script: .ros2ci/travis.bash $JOB_TYPE
+install:
+  - git clone --quiet --depth 1 https://github.com/ros-industrial/industrial_ci.git .industrial_ci
+script:
+  - .industrial_ci/travis.sh
