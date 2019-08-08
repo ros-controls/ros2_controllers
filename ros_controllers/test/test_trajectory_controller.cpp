@@ -61,7 +61,7 @@ protected:
 
     pub_node = std::make_shared<rclcpp::Node>("trajectory_publisher");
     trajectory_publisher = pub_node->create_publisher<trajectory_msgs::msg::JointTrajectory>(
-      controller_name + "/joint_trajectory");
+      controller_name + "/joint_trajectory", rclcpp::SystemDefaultsQoS());
   }
 
   static void TearDownTestCase()
@@ -90,14 +90,14 @@ protected:
       ++wait_count;
     }
 
-    auto traj_msg_ptr = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
+    trajectory_msgs::msg::JointTrajectory traj_msg;
     std::vector<std::string> joint_names {
       test_robot->joint_name1, test_robot->joint_name2, test_robot->joint_name3
     };
-    traj_msg_ptr->joint_names = joint_names;
-    traj_msg_ptr->header.stamp.sec = 0;
-    traj_msg_ptr->header.stamp.nanosec = 0;
-    traj_msg_ptr->points.resize(points.size());
+    traj_msg.joint_names = joint_names;
+    traj_msg.header.stamp.sec = 0;
+    traj_msg.header.stamp.nanosec = 0;
+    traj_msg.points.resize(points.size());
 
     builtin_interfaces::msg::Duration duration_msg;
     duration_msg.sec = time_from_start.sec;
@@ -107,18 +107,18 @@ protected:
 
     size_t index = 0;
     for (; index < points.size(); ++index) {
-      traj_msg_ptr->points[index].time_from_start.sec =
+      traj_msg.points[index].time_from_start.sec =
         duration_total.nanoseconds() / 1e9;
-      traj_msg_ptr->points[index].time_from_start.nanosec =
+      traj_msg.points[index].time_from_start.nanosec =
         duration_total.nanoseconds();
-      traj_msg_ptr->points[index].positions.resize(3);
-      traj_msg_ptr->points[index].positions[0] = points[index][0];
-      traj_msg_ptr->points[index].positions[1] = points[index][1];
-      traj_msg_ptr->points[index].positions[2] = points[index][2];
+      traj_msg.points[index].positions.resize(3);
+      traj_msg.points[index].positions[0] = points[index][0];
+      traj_msg.points[index].positions[1] = points[index][1];
+      traj_msg.points[index].positions[2] = points[index][2];
       duration_total = duration_total + duration;
     }
 
-    trajectory_publisher->publish(traj_msg_ptr);
+    trajectory_publisher->publish(traj_msg);
   }
 
   std::string controller_name = "test_joint_trajectory_controller";
