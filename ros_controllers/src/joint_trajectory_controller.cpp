@@ -22,11 +22,16 @@
 #include <vector>
 
 #include "builtin_interfaces/msg/time.hpp"
+
 #include "lifecycle_msgs/msg/transition.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
+
 #include "rclcpp/time.hpp"
+
 #include "rclcpp_lifecycle/state.hpp"
+
 #include "rcutils/logging_macros.h"
+
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
@@ -42,23 +47,22 @@ rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 fetch_parameters_from_parameter_server(
   std::shared_ptr<rclcpp::AsyncParametersClient> parameters_client,
   const std::string parameter_key,
-  std::vector<std::string> & parameters)
+  std::vector<std::string> & parameters,
+  rclcpp::Logger & logger)
 {
   auto list_future = parameters_client->list_parameters({parameter_key}, 0);
   std::future_status status;
   do {
     status = list_future.wait_for(std::chrono::seconds(1));
     if (status == std::future_status::timeout) {
-      auto error_msg = std::string("couldn't fetch parameters for key: ") + parameter_key;
-      RCUTILS_LOG_ERROR(error_msg.c_str());
+      RCLCPP_ERROR(logger, "couldn't fetch parameters for key: %s", parameter_key.c_str());
       return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
     }
   } while (status != std::future_status::ready);
   auto parameter_names = list_future.get();
 
   if (parameter_names.names.size() == 0) {
-    auto error_msg = std::string("no results found for key: ") + parameter_key;
-    RCUTILS_LOG_ERROR(error_msg.c_str());
+    RCLCPP_ERROR(logger, "no results found for key: %s", parameter_key.c_str());
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
   }
 
@@ -70,7 +74,7 @@ fetch_parameters_from_parameter_server(
       for (auto & name : parameter_names.names) {
         error_msg += " " + name;
       }
-      RCUTILS_LOG_ERROR(error_msg.c_str());
+      RCLCPP_ERROR(logger, error_msg);
       return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
     }
   } while (status != std::future_status::ready);
@@ -81,7 +85,7 @@ fetch_parameters_from_parameter_server(
     for (auto & name : parameter_names.names) {
       error_msg += " " + name;
     }
-    RCUTILS_LOG_ERROR(error_msg.c_str());
+    RCLCPP_ERROR(logger, error_msg);
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
   }
   for (auto pv : parameter_values) {
@@ -108,13 +112,15 @@ JointTrajectoryController::JointTrajectoryController(
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous_state)
 {
+  auto logger = this->get_lifecycle_node()->get_logger();
+
   (void) previous_state;
 
   auto max_wait = 2u;
   auto wait = 0u;
   while (!parameters_client_->wait_for_service(1s) && (wait++) < max_wait) {
     if (!rclcpp::ok()) {
-      RCUTILS_LOG_ERROR("waiting for parameter server got interrupted");
+      RCLCPP_ERROR(logger, "waiting for parameter server got interrupted");
       return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
     }
   }
@@ -122,7 +128,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
     std::string joint_parameter_key =
       std::string(".") + lifecycle_node_->get_name() + ".joints";
     auto ret = fetch_parameters_from_parameter_server(
-      parameters_client_, joint_parameter_key, joint_names_);
+      parameters_client_, joint_parameter_key, joint_names_, logger);
     if (ret != rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS) {
       return ret;
     }
@@ -130,12 +136,12 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
     std::string write_op_mode_key =
       std::string(".") + lifecycle_node_->get_name() + ".write_op_modes";
     ret = fetch_parameters_from_parameter_server(
-      parameters_client_, write_op_mode_key, write_op_names_);
+      parameters_client_, write_op_mode_key, write_op_names_, logger);
     if (ret != rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS) {
       return ret;
     }
   } else {
-    RCUTILS_LOG_INFO("parameter server not available");
+    RCLCPP_INFO(logger, "parameter server not available");
   }
 
   if (!reset()) {
@@ -199,12 +205,12 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
   // subscriber call back
   // non realtime
   // TODO(karsten): check if traj msg and point time are valid
-  auto callback = [this](const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg)
+  auto callback = [this, &logger](const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg)
     -> void
     {
       if (registered_joint_cmd_handles_.size() != msg->joint_names.size()) {
-        RCUTILS_LOG_FATAL_NAMED(
-          "joint command subscriber",
+        RCLCPP_ERROR(
+          logger,
           "number of joints in joint trajectory msg (%d) "
           "does not match number of joint command handles (%d)\n",
           msg->joint_names.size(), registered_joint_cmd_handles_.size());

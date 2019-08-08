@@ -50,7 +50,7 @@ private:
   std::vector<const hardware_interface::JointStateHandle *> registered_joint_handles_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::JointState>>
   joint_state_publisher_;
-  std::shared_ptr<sensor_msgs::msg::JointState> joint_state_msg_;
+  sensor_msgs::msg::JointState joint_state_msg_;
 };
 
 }  // namespace ros_controllers
