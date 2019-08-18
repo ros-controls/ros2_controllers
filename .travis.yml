@@ -4,7 +4,7 @@ services:
 
 env:
   global:
-    - UPSTREAM_WORKSPACE=github:ros-controls/ros2_control#crystal
+    - UPSTREAM_WORKSPACE=travis/workspace.repos
   matrix:
     - ROS_DISTRO="crystal"
 
