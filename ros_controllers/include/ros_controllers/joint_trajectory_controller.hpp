@@ -47,6 +47,16 @@ public:
     const std::vector<std::string> & write_op_names);
 
   ROS_CONTROLLERS_PUBLIC
+  controller_interface::controller_interface_ret_t
+  init(
+    std::weak_ptr<hardware_interface::RobotHardware> robot_hardware,
+    const std::string & controller_name) override;
+
+  ROS_CONTROLLERS_PUBLIC
+  controller_interface::controller_interface_ret_t
+  update() override;
+
+  ROS_CONTROLLERS_PUBLIC
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
   on_configure(const rclcpp_lifecycle::State & previous_state) override;
 
@@ -69,10 +79,6 @@ public:
   ROS_CONTROLLERS_PUBLIC
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
   on_shutdown(const rclcpp_lifecycle::State & previous_state) override;
-
-  ROS_CONTROLLERS_PUBLIC
-  controller_interface::controller_interface_ret_t
-  update() override;
 
 private:
   std::vector<std::string> joint_names_;

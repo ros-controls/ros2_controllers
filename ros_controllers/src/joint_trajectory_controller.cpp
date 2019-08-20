@@ -39,66 +39,13 @@ namespace ros_controllers
 {
 
 using namespace std::chrono_literals;
-
-namespace
-{
-
-rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-fetch_parameters_from_parameter_server(
-  std::shared_ptr<rclcpp::AsyncParametersClient> parameters_client,
-  const std::string parameter_key,
-  std::vector<std::string> & parameters,
-  rclcpp::Logger & logger)
-{
-  auto list_future = parameters_client->list_parameters({parameter_key}, 0);
-  std::future_status status;
-  do {
-    status = list_future.wait_for(std::chrono::seconds(1));
-    if (status == std::future_status::timeout) {
-      RCLCPP_ERROR(logger, "couldn't fetch parameters for key: %s", parameter_key.c_str());
-      return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
-    }
-  } while (status != std::future_status::ready);
-  auto parameter_names = list_future.get();
-
-  if (parameter_names.names.size() == 0) {
-    RCLCPP_ERROR(logger, "no results found for key: %s", parameter_key.c_str());
-    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
-  }
-
-  auto get_future = parameters_client->get_parameters({parameter_names.names});
-  do {
-    status = get_future.wait_for(std::chrono::seconds(1));
-    if (status == std::future_status::timeout) {
-      auto error_msg = std::string("couldn't get parameters for :");
-      for (auto & name : parameter_names.names) {
-        error_msg += " " + name;
-      }
-      RCLCPP_ERROR(logger, error_msg);
-      return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
-    }
-  } while (status != std::future_status::ready);
-  auto parameter_values = get_future.get();
-
-  if (parameter_values.size() == 0) {
-    auto error_msg = std::string("couldn't get parameters for :");
-    for (auto & name : parameter_names.names) {
-      error_msg += " " + name;
-    }
-    RCLCPP_ERROR(logger, error_msg);
-    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
-  }
-  for (auto pv : parameter_values) {
-    parameters.push_back(pv.as_string());
-  }
-
-  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
-}
-
-}  // namespace
+using controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS;
+using lifecycle_msgs::msg::State;
 
 JointTrajectoryController::JointTrajectoryController()
-: controller_interface::ControllerInterface()
+: controller_interface::ControllerInterface(),
+  joint_names_({}),
+  write_op_names_({})
 {}
 
 JointTrajectoryController::JointTrajectoryController(
@@ -109,52 +56,92 @@ JointTrajectoryController::JointTrajectoryController(
   write_op_names_(write_op_names)
 {}
 
+controller_interface::controller_interface_ret_t
+JointTrajectoryController::init(
+  std::weak_ptr<hardware_interface::RobotHardware> robot_hardware,
+  const std::string & controller_name)
+{
+  // initialize lifecycle node
+  auto ret = ControllerInterface::init(robot_hardware, controller_name);
+  if (ret != CONTROLLER_INTERFACE_RET_SUCCESS) {
+    return ret;
+  }
+
+  // with the lifecycle node being initialized, we can declare parameters
+  lifecycle_node_->declare_parameter<std::vector<std::string>>("joints", joint_names_);
+  lifecycle_node_->declare_parameter<std::vector<std::string>>("write_op_modes", write_op_names_);
+
+  return CONTROLLER_INTERFACE_RET_SUCCESS;
+}
+
+controller_interface::controller_interface_ret_t
+JointTrajectoryController::update()
+{
+  if (lifecycle_node_->get_current_state().id() == State::PRIMARY_STATE_INACTIVE) {
+    if (!is_halted) {
+      halt();
+      is_halted = true;
+    }
+    return CONTROLLER_INTERFACE_RET_SUCCESS;
+  }
+
+  // when no traj msg has been received yet
+  if (!traj_point_active_ptr_ || (*traj_point_active_ptr_)->is_empty()) {
+    return CONTROLLER_INTERFACE_RET_SUCCESS;
+  }
+
+  // find next new point for current timestamp
+  auto traj_point_ptr = (*traj_point_active_ptr_)->sample(rclcpp::Clock().now());
+  // find next new point for current timestamp
+  // set cmd only if a point is found
+  if (traj_point_ptr == (*traj_point_active_ptr_)->end()) {
+    return CONTROLLER_INTERFACE_RET_SUCCESS;
+  }
+
+  // check if new point ptr points to the same as previous point
+  if (prev_traj_point_ptr_ == traj_point_ptr) {
+    return CONTROLLER_INTERFACE_RET_SUCCESS;
+  }
+
+  size_t joint_num = registered_joint_cmd_handles_.size();
+  for (size_t index = 0; index < joint_num; ++index) {
+    registered_joint_cmd_handles_[index]->set_cmd(traj_point_ptr->positions[index]);
+  }
+
+  prev_traj_point_ptr_ = traj_point_ptr;
+  set_op_mode(hardware_interface::OperationMode::ACTIVE);
+
+  return CONTROLLER_INTERFACE_RET_SUCCESS;
+}
+
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous_state)
 {
-  auto logger = this->get_lifecycle_node()->get_logger();
-
   (void) previous_state;
 
-  auto max_wait = 2u;
-  auto wait = 0u;
-  while (!parameters_client_->wait_for_service(1s) && (wait++) < max_wait) {
-    if (!rclcpp::ok()) {
-      RCLCPP_ERROR(logger, "waiting for parameter server got interrupted");
-      return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
-    }
-  }
-  if (wait <= max_wait) {
-    std::string joint_parameter_key =
-      std::string(".") + lifecycle_node_->get_name() + ".joints";
-    auto ret = fetch_parameters_from_parameter_server(
-      parameters_client_, joint_parameter_key, joint_names_, logger);
-    if (ret != rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS) {
-      return ret;
-    }
+  auto logger = lifecycle_node_->get_logger();
 
-    std::string write_op_mode_key =
-      std::string(".") + lifecycle_node_->get_name() + ".write_op_modes";
-    ret = fetch_parameters_from_parameter_server(
-      parameters_client_, write_op_mode_key, write_op_names_, logger);
-    if (ret != rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS) {
-      return ret;
-    }
-  } else {
-    RCLCPP_INFO(logger, "parameter server not available");
-  }
+  // update parameters
+  joint_names_ = lifecycle_node_->get_parameter("joints").as_string_array();
+  write_op_names_ = lifecycle_node_->get_parameter("write_op_modes").as_string_array();
 
   if (!reset()) {
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
   }
 
   if (auto robot_hardware = robot_hardware_.lock()) {
+    if (joint_names_.empty()) {
+      RCLCPP_WARN(logger, "no joint names specified");
+    }
+
     // register handles
     registered_joint_state_handles_.resize(joint_names_.size());
     for (size_t index = 0; index < joint_names_.size(); ++index) {
       auto ret = robot_hardware->get_joint_state_handle(
         joint_names_[index].c_str(), &registered_joint_state_handles_[index]);
       if (ret != hardware_interface::HW_RET_OK) {
+        RCLCPP_WARN(
+          logger, "unable to obtain joint state handle for %s", joint_names_[index].c_str());
         return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
       }
     }
@@ -163,6 +150,8 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
       auto ret = robot_hardware->get_joint_command_handle(
         joint_names_[index].c_str(), &registered_joint_cmd_handles_[index]);
       if (ret != hardware_interface::HW_RET_OK) {
+        RCLCPP_WARN(
+          logger, "unable to obtain joint command handle for %s", joint_names_[index].c_str());
         return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
       }
     }
@@ -171,6 +160,8 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
       auto ret = robot_hardware->get_operation_mode_handle(
         write_op_names_[index].c_str(), &registered_operation_mode_handles_[index]);
       if (ret != hardware_interface::HW_RET_OK) {
+        RCLCPP_WARN(
+          logger, "unable to obtain operation mode handle for %s", write_op_names_[index].c_str());
         return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
       }
     }
@@ -314,49 +305,6 @@ JointTrajectoryController::on_shutdown(const rclcpp_lifecycle::State & previous_
   // TODO(karsten1987): what to do?
 
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
-}
-
-controller_interface::controller_interface_ret_t
-JointTrajectoryController::update()
-{
-  using controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS;
-  using lifecycle_msgs::msg::State;
-
-  if (lifecycle_node_->get_current_state().id() == State::PRIMARY_STATE_INACTIVE) {
-    if (!is_halted) {
-      halt();
-      is_halted = true;
-    }
-    return CONTROLLER_INTERFACE_RET_SUCCESS;
-  }
-
-  // when no traj msg has been received yet
-  if (!traj_point_active_ptr_ || (*traj_point_active_ptr_)->is_empty()) {
-    return CONTROLLER_INTERFACE_RET_SUCCESS;
-  }
-
-  // find next new point for current timestamp
-  auto traj_point_ptr = (*traj_point_active_ptr_)->sample(rclcpp::Clock().now());
-  // find next new point for current timestamp
-  // set cmd only if a point is found
-  if (traj_point_ptr == (*traj_point_active_ptr_)->end()) {
-    return CONTROLLER_INTERFACE_RET_SUCCESS;
-  }
-
-  // check if new point ptr points to the same as previous point
-  if (prev_traj_point_ptr_ == traj_point_ptr) {
-    return CONTROLLER_INTERFACE_RET_SUCCESS;
-  }
-
-  size_t joint_num = registered_joint_cmd_handles_.size();
-  for (size_t index = 0; index < joint_num; ++index) {
-    registered_joint_cmd_handles_[index]->set_cmd(traj_point_ptr->positions[index]);
-  }
-
-  prev_traj_point_ptr_ = traj_point_ptr;
-  set_op_mode(hardware_interface::OperationMode::ACTIVE);
-
-  return CONTROLLER_INTERFACE_RET_SUCCESS;
 }
 
 void
