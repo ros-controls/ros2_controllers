@@ -45,20 +45,19 @@ JointStateController::on_configure(const rclcpp_lifecycle::State & previous_stat
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
   }
 
-  joint_state_msg_ = std::make_shared<sensor_msgs::msg::JointState>();
   size_t num_joints = registered_joint_handles_.size();
   // default initialize joint state message
-  joint_state_msg_->position.resize(num_joints);
-  joint_state_msg_->velocity.resize(num_joints);
-  joint_state_msg_->effort.resize(num_joints);
+  joint_state_msg_.position.resize(num_joints);
+  joint_state_msg_.velocity.resize(num_joints);
+  joint_state_msg_.effort.resize(num_joints);
   // set known joint names
-  joint_state_msg_->name.reserve(num_joints);
+  joint_state_msg_.name.reserve(num_joints);
   for (auto joint_handle : registered_joint_handles_) {
-    joint_state_msg_->name.push_back(joint_handle->get_name());
+    joint_state_msg_.name.push_back(joint_handle->get_name());
   }
 
-  joint_state_publisher_ =
-    lifecycle_node_->create_publisher<sensor_msgs::msg::JointState>("joint_states");
+  joint_state_publisher_ = lifecycle_node_->create_publisher<sensor_msgs::msg::JointState>(
+    "joint_states", rclcpp::SystemDefaultsQoS());
   joint_state_publisher_->on_activate();
 
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
@@ -72,12 +71,12 @@ JointStateController::update()
     return hardware_interface::HW_RET_ERROR;
   }
 
-  joint_state_msg_->header.stamp = rclcpp::Clock().now();
+  joint_state_msg_.header.stamp = rclcpp::Clock().now();
   size_t i = 0;
   for (auto joint_state_handle : registered_joint_handles_) {
-    joint_state_msg_->position[i] = joint_state_handle->get_position();
-    joint_state_msg_->velocity[i] = joint_state_handle->get_velocity();
-    joint_state_msg_->effort[i] = joint_state_handle->get_effort();
+    joint_state_msg_.position[i] = joint_state_handle->get_position();
+    joint_state_msg_.velocity[i] = joint_state_handle->get_velocity();
+    joint_state_msg_.effort[i] = joint_state_handle->get_effort();
     ++i;
   }
 
