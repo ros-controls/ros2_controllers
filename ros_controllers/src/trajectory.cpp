@@ -53,8 +53,7 @@ Trajectory::update(std::shared_ptr<trajectory_msgs::msg::JointTrajectory> joint_
 TrajectoryPointConstIter
 Trajectory::sample(const rclcpp::Time & sample_time)
 {
-  // TODO(karsten1987): Enable this for eloquent when `rclcpp::is_pointer` is used
-  // THROW_ON_NULLPTR(trajectory_msg_)
+  THROW_ON_NULLPTR(trajectory_msg_)
 
   // skip if current time hasn't reached traj time of the first msg yet
   if (time_less_than(sample_time, trajectory_start_time_)) {
@@ -75,7 +74,7 @@ Trajectory::sample(const rclcpp::Time & sample_time)
 TrajectoryPointConstIter
 Trajectory::begin() const
 {
-  // THROW_ON_NULLPTR(trajectory_msg_)
+  THROW_ON_NULLPTR(trajectory_msg_)
 
   return trajectory_msg_->points.begin();
 }
@@ -83,7 +82,7 @@ Trajectory::begin() const
 TrajectoryPointConstIter
 Trajectory::end() const
 {
-  // THROW_ON_NULLPTR(trajectory_msg_)
+  THROW_ON_NULLPTR(trajectory_msg_)
 
   return trajectory_msg_->points.end();
 }
