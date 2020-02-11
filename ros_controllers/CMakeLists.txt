@@ -41,11 +41,6 @@ ament_target_dependencies(
   "sensor_msgs"
   "trajectory_msgs"
 )
-controller_manager_register_controller(
-  default_controllers
-  "ros_controllers::JointStateController"
-  "ros_controllers::JointTrajectoryController"
-)
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
 target_compile_definitions(default_controllers PRIVATE "ROS_CONTROLLERS_BUILDING_DLL")

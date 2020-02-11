@@ -107,10 +107,12 @@ protected:
 
     size_t index = 0;
     for (; index < points.size(); ++index) {
+      using SecT = decltype(traj_msg.points[index].time_from_start.sec);
+      using NSecT = decltype(traj_msg.points[index].time_from_start.nanosec);
       traj_msg.points[index].time_from_start.sec =
-        duration_total.nanoseconds() / 1e9;
+        static_cast<SecT>(duration_total.nanoseconds() / 1e9);
       traj_msg.points[index].time_from_start.nanosec =
-        duration_total.nanoseconds();
+        static_cast<NSecT>(duration_total.nanoseconds());
       traj_msg.points[index].positions.resize(3);
       traj_msg.points[index].positions[0] = points[index][0];
       traj_msg.points[index].positions[1] = points[index][1];
