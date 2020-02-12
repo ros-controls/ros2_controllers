@@ -18,6 +18,11 @@ find_package(hardware_interface REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(trajectory_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(realtime_tools REQUIRED)
 
 add_library(
   default_controllers
@@ -25,6 +30,9 @@ add_library(
   src/joint_trajectory_controller.cpp
   src/joint_state_controller.cpp
   src/trajectory.cpp
+  src/diff_drive_controller.cpp
+  src/odometry.cpp
+  src/speed_limiter.cpp
 )
 target_include_directories(default_controllers PRIVATE include)
 ament_target_dependencies(
@@ -40,6 +48,17 @@ ament_target_dependencies(
   "rcutils"
   "sensor_msgs"
   "trajectory_msgs"
+  "geometry_msgs"
+  "nav_msgs"
+  "tf2"
+  "tf2_ros"
+  "realtime_tools"
+)
+controller_manager_register_controller(
+  default_controllers
+  "ros_controllers::JointStateController"
+  "ros_controllers::JointTrajectoryController"
+  "ros_controllers::DiffDriveController"
 )
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
