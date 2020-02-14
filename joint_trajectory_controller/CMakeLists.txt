@@ -11,9 +11,9 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 find_package(ament_cmake REQUIRED)
-find_package(class_loader REQUIRED)
 find_package(controller_interface REQUIRED)
 find_package(hardware_interface REQUIRED)
+find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(rcutils REQUIRED)
@@ -26,9 +26,9 @@ add_library(joint_trajectory_controller SHARED
 target_include_directories(joint_trajectory_controller PRIVATE include)
 ament_target_dependencies(joint_trajectory_controller
   "builtin_interfaces"
-  "class_loader"
   "controller_interface"
   "hardware_interface"
+  "pluginlib"
   "rclcpp"
   "rclcpp_lifecycle"
   "rcutils"

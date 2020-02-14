@@ -85,7 +85,7 @@ JointStateController::update()
 
 }  // namespace ros_controllers
 
-#include "class_loader/register_macro.hpp"
+#include "pluginlib/class_list_macros.hpp"
 
-CLASS_LOADER_REGISTER_CLASS(
+PLUGINLIB_EXPORT_CLASS(
   ros_controllers::JointStateController, controller_interface::ControllerInterface)
