@@ -41,45 +41,45 @@ namespace ros_controllers
 class JointTrajectoryController : public controller_interface::ControllerInterface
 {
 public:
-  ROS_CONTROLLERS_PUBLIC
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   JointTrajectoryController();
 
-  ROS_CONTROLLERS_PUBLIC
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   JointTrajectoryController(
     const std::vector<std::string> & joint_names,
     const std::vector<std::string> & write_op_names);
 
-  ROS_CONTROLLERS_PUBLIC
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   controller_interface::controller_interface_ret_t
   init(
     std::weak_ptr<hardware_interface::RobotHardware> robot_hardware,
     const std::string & controller_name) override;
 
-  ROS_CONTROLLERS_PUBLIC
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   controller_interface::controller_interface_ret_t
   update() override;
 
-  ROS_CONTROLLERS_PUBLIC
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
   on_configure(const rclcpp_lifecycle::State & previous_state) override;
 
-  ROS_CONTROLLERS_PUBLIC
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
   on_activate(const rclcpp_lifecycle::State & previous_state) override;
 
-  ROS_CONTROLLERS_PUBLIC
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
   on_deactivate(const rclcpp_lifecycle::State & previous_state) override;
 
-  ROS_CONTROLLERS_PUBLIC
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
   on_cleanup(const rclcpp_lifecycle::State & previous_state) override;
 
-  ROS_CONTROLLERS_PUBLIC
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
   on_error(const rclcpp_lifecycle::State & previous_state) override;
 
-  ROS_CONTROLLERS_PUBLIC
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
   on_shutdown(const rclcpp_lifecycle::State & previous_state) override;
 

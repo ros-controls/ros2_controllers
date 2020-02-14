@@ -33,14 +33,14 @@ namespace ros_controllers
 class JointStateController : public controller_interface::ControllerInterface
 {
 public:
-  ROS_CONTROLLERS_PUBLIC
+  JOINT_STATE_CONTROLLER_PUBLIC
   JointStateController();
 
-  ROS_CONTROLLERS_PUBLIC
+  JOINT_STATE_CONTROLLER_PUBLIC
   controller_interface::controller_interface_ret_t
   update() override;
 
-  ROS_CONTROLLERS_PUBLIC
+  JOINT_STATE_CONTROLLER_PUBLIC
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
   on_configure(const rclcpp_lifecycle::State & previous_state) override;
 

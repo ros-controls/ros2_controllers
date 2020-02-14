@@ -27,30 +27,30 @@
 
 #if defined _WIN32 || defined __CYGWIN__
   #ifdef __GNUC__
-    #define ROS_CONTROLLERS_EXPORT __attribute__ ((dllexport))
-    #define ROS_CONTROLLERS_IMPORT __attribute__ ((dllimport))
+    #define JOINT_STATE_CONTROLLER_EXPORT __attribute__ ((dllexport))
+    #define JOINT_STATE_CONTROLLER_IMPORT __attribute__ ((dllimport))
   #else
-    #define ROS_CONTROLLERS_EXPORT __declspec(dllexport)
-    #define ROS_CONTROLLERS_IMPORT __declspec(dllimport)
+    #define JOINT_STATE_CONTROLLER_EXPORT __declspec(dllexport)
+    #define JOINT_STATE_CONTROLLER_IMPORT __declspec(dllimport)
   #endif
-  #ifdef ROS_CONTROLLERS_BUILDING_DLL
-    #define ROS_CONTROLLERS_PUBLIC ROS_CONTROLLERS_EXPORT
+  #ifdef JOINT_STATE_CONTROLLER_BUILDING_DLL
+    #define JOINT_STATE_CONTROLLER_PUBLIC JOINT_STATE_CONTROLLER_EXPORT
   #else
-    #define ROS_CONTROLLERS_PUBLIC ROS_CONTROLLERS_IMPORT
+    #define JOINT_STATE_CONTROLLER_PUBLIC JOINT_STATE_CONTROLLER_IMPORT
   #endif
-  #define ROS_CONTROLLERS_PUBLIC_TYPE ROS_CONTROLLERS_PUBLIC
-  #define ROS_CONTROLLERS_LOCAL
+  #define JOINT_STATE_CONTROLLER_PUBLIC_TYPE JOINT_STATE_CONTROLLER_PUBLIC
+  #define JOINT_STATE_CONTROLLER_LOCAL
 #else
-  #define ROS_CONTROLLERS_EXPORT __attribute__ ((visibility("default")))
-  #define ROS_CONTROLLERS_IMPORT
+  #define JOINT_STATE_CONTROLLER_EXPORT __attribute__ ((visibility("default")))
+  #define JOINT_STATE_CONTROLLER_IMPORT
   #if __GNUC__ >= 4
-    #define ROS_CONTROLLERS_PUBLIC __attribute__ ((visibility("default")))
-    #define ROS_CONTROLLERS_LOCAL  __attribute__ ((visibility("hidden")))
+    #define JOINT_STATE_CONTROLLER_PUBLIC __attribute__ ((visibility("default")))
+    #define JOINT_STATE_CONTROLLER_LOCAL  __attribute__ ((visibility("hidden")))
   #else
-    #define ROS_CONTROLLERS_PUBLIC
-    #define ROS_CONTROLLERS_LOCAL
+    #define JOINT_STATE_CONTROLLER_PUBLIC
+    #define JOINT_STATE_CONTROLLER_LOCAL
   #endif
-  #define ROS_CONTROLLERS_PUBLIC_TYPE
+  #define JOINT_STATE_CONTROLLER_PUBLIC_TYPE
 #endif
 
 #endif  // JOINT_STATE_CONTROLLER__VISIBILITY_CONTROL_H_
