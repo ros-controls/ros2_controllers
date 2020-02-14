@@ -20,6 +20,12 @@
   <build_depend>rcutils</build_depend>
   <build_depend>trajectory_msgs</build_depend>
 
+  <build_export_depend>controller_interface</build_export_depend>
+  <build_export_depend>hardware_interface</build_export_depend>
+  <build_export_depend>rclcpp</build_export_depend>
+  <build_export_depend>rclcpp_lifecycle</build_export_depend>
+  <build_export_depend>trajectory_msgs</build_export_depend>
+
   <exec_depend>class_loader</exec_depend>
   <exec_depend>controller_interface</exec_depend>
   <exec_depend>hardware_interface</exec_depend>

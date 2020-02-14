@@ -18,6 +18,10 @@
   <build_depend>rcutils</build_depend>
   <build_depend>sensor_msgs</build_depend>
 
+  <build_export_depend>controller_interface</build_export_depend>
+  <build_export_depend>rclcpp_lifecycle</build_export_depend>
+  <build_export_depend>sensor_msgs</build_export_depend>
+
   <exec_depend>class_loader</exec_depend>
   <exec_depend>controller_interface</exec_depend>
   <exec_depend>rclcpp_lifecycle</exec_depend>
