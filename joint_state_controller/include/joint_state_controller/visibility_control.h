@@ -19,8 +19,8 @@
  * library cannot have, but the consuming code must have inorder to link.
  */
 
-#ifndef ROS_CONTROLLERS__VISIBILITY_CONTROL_H_
-#define ROS_CONTROLLERS__VISIBILITY_CONTROL_H_
+#ifndef JOINT_STATE_CONTROLLER__VISIBILITY_CONTROL_H_
+#define JOINT_STATE_CONTROLLER__VISIBILITY_CONTROL_H_
 
 // This logic was borrowed (then namespaced) from the examples on the gcc wiki:
 //     https://gcc.gnu.org/wiki/Visibility
@@ -53,4 +53,4 @@
   #define ROS_CONTROLLERS_PUBLIC_TYPE
 #endif
 
-#endif  // ROS_CONTROLLERS__VISIBILITY_CONTROL_H_
+#endif  // JOINT_STATE_CONTROLLER__VISIBILITY_CONTROL_H_

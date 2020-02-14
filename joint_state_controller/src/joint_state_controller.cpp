@@ -12,12 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "ros_controllers/joint_state_controller.hpp"
+#include "joint_state_controller/joint_state_controller.hpp"
 
 #include <string>
 #include <memory>
-
-#include "lifecycle_msgs/msg/transition.hpp"
 
 #include "rclcpp_lifecycle/state.hpp"
 
