@@ -19,9 +19,9 @@
 
 #include "gtest/gtest.h"
 
-#include "rclcpp/clock.hpp"
+#include "joint_trajectory_controller/trajectory.hpp"
 
-#include "ros_controllers/trajectory.hpp"
+#include "rclcpp/clock.hpp"
 
 using namespace std::chrono_literals;
 

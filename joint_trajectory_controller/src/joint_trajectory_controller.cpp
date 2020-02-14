@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "ros_controllers/joint_trajectory_controller.hpp"
+#include "joint_trajectory_controller/joint_trajectory_controller.hpp"
 
 #include <cassert>
 #include <chrono>
@@ -23,7 +23,6 @@
 
 #include "builtin_interfaces/msg/time.hpp"
 
-#include "lifecycle_msgs/msg/transition.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 
 #include "rclcpp/time.hpp"

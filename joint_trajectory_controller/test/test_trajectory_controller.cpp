@@ -24,15 +24,13 @@
 
 #include "hardware_interface/robot_hardware.hpp"
 
+#include "joint_trajectory_controller/joint_trajectory_controller.hpp"
+
 #include "lifecycle_msgs/msg/state.hpp"
 
 #include "rclcpp/rclcpp.hpp"
 
 #include "rcutils/get_env.h"
-
-#include "ros_controllers/joint_trajectory_controller.hpp"
-
-#include "std_msgs/msg/string.hpp"
 
 #include "test_robot_hardware/test_robot_hardware.hpp"
 

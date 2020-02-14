@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(ros_controllers)
+project(joint_trajectory_controller)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -11,48 +11,38 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 find_package(ament_cmake REQUIRED)
+find_package(class_loader REQUIRED)
 find_package(controller_interface REQUIRED)
-find_package(controller_manager REQUIRED)
-find_package(controller_parameter_server REQUIRED)
 find_package(hardware_interface REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(sensor_msgs REQUIRED)
+find_package(rclcpp_lifecycle REQUIRED)
+find_package(rcutils REQUIRED)
 find_package(trajectory_msgs REQUIRED)
 
-add_library(
-  default_controllers
-  SHARED
+add_library(joint_trajectory_controller SHARED
   src/joint_trajectory_controller.cpp
-  src/joint_state_controller.cpp
   src/trajectory.cpp
 )
-target_include_directories(default_controllers PRIVATE include)
-ament_target_dependencies(
-  default_controllers
+target_include_directories(joint_trajectory_controller PRIVATE include)
+ament_target_dependencies(joint_trajectory_controller
   "builtin_interfaces"
   "class_loader"
   "controller_interface"
-  "controller_manager"
-  "controller_parameter_server"
   "hardware_interface"
   "rclcpp"
   "rclcpp_lifecycle"
   "rcutils"
-  "sensor_msgs"
   "trajectory_msgs"
 )
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
-target_compile_definitions(default_controllers PRIVATE "ROS_CONTROLLERS_BUILDING_DLL")
+target_compile_definitions(joint_trajectory_controller PRIVATE "ROS_CONTROLLERS_BUILDING_DLL")
 
-install(
-  DIRECTORY include/
+install(DIRECTORY include/
   DESTINATION include
 )
 
-install(
-  TARGETS
-  default_controllers
+install(TARGETS joint_trajectory_controller
   RUNTIME DESTINATION bin
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -66,23 +56,20 @@ if(BUILD_TESTING)
 
   ament_add_gtest(test_trajectory test/test_trajectory.cpp)
   target_include_directories(test_trajectory PRIVATE include)
-  target_link_libraries(test_trajectory default_controllers)
+  target_link_libraries(test_trajectory joint_trajectory_controller)
 
-  ament_add_gtest(
-    test_trajectory_controller test/test_trajectory_controller.cpp
+  ament_add_gtest(test_trajectory_controller
+    test/test_trajectory_controller.cpp
     ENV config_file=${CMAKE_CURRENT_SOURCE_DIR}/test/config/test_joint_trajectory_controller.yaml)
   target_include_directories(test_trajectory_controller PRIVATE include)
-  target_link_libraries(
-    test_trajectory_controller
-    default_controllers
+  target_link_libraries(test_trajectory_controller
+    joint_trajectory_controller
   )
-  ament_target_dependencies(
-    test_trajectory_controller
-    "controller_interface"
+  ament_target_dependencies(test_trajectory_controller
     "controller_parameter_server"
     "hardware_interface"
-    "lifecycle_msgs"
     "rclcpp"
+    "rclcpp_lifecycle"
     "rcutils"
     "test_robot_hardware"
     "trajectory_msgs"
@@ -91,14 +78,15 @@ endif()
 
 ament_export_dependencies(
   controller_interface
+  hardware_interface
+  rclcpp
   rclcpp_lifecycle
-  sensor_msgs
   trajectory_msgs
 )
 ament_export_include_directories(
   include
 )
 ament_export_libraries(
-  default_controllers
+  joint_trajectory_controller
 )
 ament_package()

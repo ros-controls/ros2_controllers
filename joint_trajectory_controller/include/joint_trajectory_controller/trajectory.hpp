@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef ROS_CONTROLLERS__TRAJECTORY_HPP_
-#define ROS_CONTROLLERS__TRAJECTORY_HPP_
+#ifndef JOINT_TRAJECTORY_CONTROLLER__TRAJECTORY_HPP_
+#define JOINT_TRAJECTORY_CONTROLLER__TRAJECTORY_HPP_
 
 #include <memory>
 #include <vector>
 
-#include "rclcpp/time.hpp"
+#include "joint_trajectory_controller/visibility_control.h"
 
-#include "ros_controllers/visibility_control.h"
+#include "rclcpp/time.hpp"
 
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 
@@ -84,4 +84,4 @@ private:
 
 }  // namespace ros_controllers
 
-#endif  // ROS_CONTROLLERS__TRAJECTORY_HPP_
+#endif  // JOINT_TRAJECTORY_CONTROLLER__TRAJECTORY_HPP_
