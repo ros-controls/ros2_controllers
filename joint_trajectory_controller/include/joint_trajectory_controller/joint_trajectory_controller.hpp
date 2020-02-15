@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef ROS_CONTROLLERS__JOINT_TRAJECTORY_CONTROLLER_HPP_
-#define ROS_CONTROLLERS__JOINT_TRAJECTORY_CONTROLLER_HPP_
+#ifndef JOINT_TRAJECTORY_CONTROLLER__JOINT_TRAJECTORY_CONTROLLER_HPP_
+#define JOINT_TRAJECTORY_CONTROLLER__JOINT_TRAJECTORY_CONTROLLER_HPP_
 
 #include <memory>
 #include <string>
@@ -21,13 +21,16 @@
 
 #include "controller_interface/controller_interface.hpp"
 
+#include "hardware_interface/joint_command_handle.hpp"
+#include "hardware_interface/joint_state_handle.hpp"
 #include "hardware_interface/operation_mode_handle.hpp"
 #include "hardware_interface/robot_hardware.hpp"
 
-#include "rclcpp_lifecycle/state.hpp"
+#include "joint_trajectory_controller/trajectory.hpp"
+#include "joint_trajectory_controller/visibility_control.h"
 
-#include "ros_controllers/trajectory.hpp"
-#include "ros_controllers/visibility_control.h"
+#include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
+#include "rclcpp_lifecycle/state.hpp"
 
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
@@ -38,45 +41,45 @@ namespace ros_controllers
 class JointTrajectoryController : public controller_interface::ControllerInterface
 {
 public:
-  ROS_CONTROLLERS_PUBLIC
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   JointTrajectoryController();
 
-  ROS_CONTROLLERS_PUBLIC
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   JointTrajectoryController(
     const std::vector<std::string> & joint_names,
     const std::vector<std::string> & write_op_names);
 
-  ROS_CONTROLLERS_PUBLIC
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   controller_interface::controller_interface_ret_t
   init(
     std::weak_ptr<hardware_interface::RobotHardware> robot_hardware,
     const std::string & controller_name) override;
 
-  ROS_CONTROLLERS_PUBLIC
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   controller_interface::controller_interface_ret_t
   update() override;
 
-  ROS_CONTROLLERS_PUBLIC
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
   on_configure(const rclcpp_lifecycle::State & previous_state) override;
 
-  ROS_CONTROLLERS_PUBLIC
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
   on_activate(const rclcpp_lifecycle::State & previous_state) override;
 
-  ROS_CONTROLLERS_PUBLIC
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
   on_deactivate(const rclcpp_lifecycle::State & previous_state) override;
 
-  ROS_CONTROLLERS_PUBLIC
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
   on_cleanup(const rclcpp_lifecycle::State & previous_state) override;
 
-  ROS_CONTROLLERS_PUBLIC
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
   on_error(const rclcpp_lifecycle::State & previous_state) override;
 
-  ROS_CONTROLLERS_PUBLIC
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
   on_shutdown(const rclcpp_lifecycle::State & previous_state) override;
 
@@ -108,4 +111,4 @@ private:
 
 }  // namespace ros_controllers
 
-#endif  // ROS_CONTROLLERS__JOINT_TRAJECTORY_CONTROLLER_HPP_
+#endif  // JOINT_TRAJECTORY_CONTROLLER__JOINT_TRAJECTORY_CONTROLLER_HPP_

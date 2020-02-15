@@ -1,35 +1,19 @@
 <?xml version="1.0"?>
-<?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
-<package format="2">
-  <name>ros_controllers</name>
+<package format="3">
+  <name>ros2_controllers</name>
   <version>0.0.0</version>
-  <description>Description of ros_controllers</description>
-  <maintainer email="karsten@osrfoundation.org">Karsten Knese</maintainer>
+  <description>Metapackage for ROS2 controllers related packages</description>
+  <maintainer email="allabana@amazon.com">Anas Abou Allaban</maintainer>
+  <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
+  <maintainer email="jordan.palacios@pal-robotics.com">Jordan Palacios</maintainer>
+  <maintainer email="karsten@openrobotics.org">Karsten Knese</maintainer>
+
   <license>Apache License 2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <build_depend>controller_interface</build_depend>
-  <build_depend>controller_manager</build_depend>
-  <build_depend>controller_parameter_server</build_depend>
-  <build_depend>hardware_interface</build_depend>
-  <build_depend>rclcpp_lifecycle</build_depend>
-  <build_depend>sensor_msgs</build_depend>
-  <build_depend>trajectory_msgs</build_depend>
-
-  <exec_depend>controller_interface</exec_depend>
-  <exec_depend>controller_manager</exec_depend>
-  <exec_depend>controller_parameter_server</exec_depend>
-  <exec_depend>hardware_interface</exec_depend>
-  <exec_depend>rclcpp_lifecycle</exec_depend>
-  <exec_depend>sensor_msgs</exec_depend>
-  <exec_depend>trajectory_msgs</exec_depend>
-
-  <test_depend>ament_cmake_gtest</test_depend>
-  <test_depend>ament_lint_auto</test_depend>
-  <test_depend>ament_lint_common</test_depend>
-  <test_depend>controller_parameter_server</test_depend>
-  <test_depend>test_robot_hardware</test_depend>
+  <exec_depend>joint_state_controller</exec_depend>
+  <exec_depend>joint_trajectory_controller</exec_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef ROS_CONTROLLERS__JOINT_STATE_CONTROLLER_HPP_
-#define ROS_CONTROLLERS__JOINT_STATE_CONTROLLER_HPP_
+#ifndef JOINT_STATE_CONTROLLER__JOINT_STATE_CONTROLLER_HPP_
+#define JOINT_STATE_CONTROLLER__JOINT_STATE_CONTROLLER_HPP_
 
 #include <memory>
 #include <string>
@@ -21,11 +21,9 @@
 
 #include "controller_interface/controller_interface.hpp"
 
-#include "hardware_interface/robot_hardware.hpp"
+#include "joint_state_controller/visibility_control.h"
 
 #include "rclcpp_lifecycle/state.hpp"
-
-#include "ros_controllers/visibility_control.h"
 
 #include "sensor_msgs/msg/joint_state.hpp"
 
@@ -35,14 +33,14 @@ namespace ros_controllers
 class JointStateController : public controller_interface::ControllerInterface
 {
 public:
-  ROS_CONTROLLERS_PUBLIC
+  JOINT_STATE_CONTROLLER_PUBLIC
   JointStateController();
 
-  ROS_CONTROLLERS_PUBLIC
+  JOINT_STATE_CONTROLLER_PUBLIC
   controller_interface::controller_interface_ret_t
   update() override;
 
-  ROS_CONTROLLERS_PUBLIC
+  JOINT_STATE_CONTROLLER_PUBLIC
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
   on_configure(const rclcpp_lifecycle::State & previous_state) override;
 
@@ -55,4 +53,4 @@ private:
 
 }  // namespace ros_controllers
 
-#endif  // ROS_CONTROLLERS__JOINT_STATE_CONTROLLER_HPP_
+#endif  // JOINT_STATE_CONTROLLER__JOINT_STATE_CONTROLLER_HPP_

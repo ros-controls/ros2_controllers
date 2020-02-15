@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "ros_controllers/trajectory.hpp"
+#include "joint_trajectory_controller/trajectory.hpp"
 
 #include <memory>
 

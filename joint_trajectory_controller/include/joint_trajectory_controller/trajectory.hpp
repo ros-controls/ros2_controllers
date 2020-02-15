@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef ROS_CONTROLLERS__TRAJECTORY_HPP_
-#define ROS_CONTROLLERS__TRAJECTORY_HPP_
+#ifndef JOINT_TRAJECTORY_CONTROLLER__TRAJECTORY_HPP_
+#define JOINT_TRAJECTORY_CONTROLLER__TRAJECTORY_HPP_
 
 #include <memory>
 #include <vector>
 
-#include "rclcpp/time.hpp"
+#include "joint_trajectory_controller/visibility_control.h"
 
-#include "ros_controllers/visibility_control.h"
+#include "rclcpp/time.hpp"
 
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 
@@ -35,13 +35,13 @@ using TrajectoryPointConstIter =
 class Trajectory
 {
 public:
-  ROS_CONTROLLERS_PUBLIC
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   Trajectory();
 
-  ROS_CONTROLLERS_PUBLIC
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   explicit Trajectory(std::shared_ptr<trajectory_msgs::msg::JointTrajectory> joint_trajectory);
 
-  ROS_CONTROLLERS_PUBLIC
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   void
   update(std::shared_ptr<trajectory_msgs::msg::JointTrajectory> joint_trajectory);
 
@@ -56,23 +56,23 @@ public:
   * If an empty trajectory message is given, sample will return Trajectory::end()
   * If no valid point is found for the specified sample time, Trajectory::end() will be returned.
   */
-  ROS_CONTROLLERS_PUBLIC
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   TrajectoryPointConstIter
   sample(const rclcpp::Time & sample_time);
 
-  ROS_CONTROLLERS_PUBLIC
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   TrajectoryPointConstIter
   begin() const;
 
-  ROS_CONTROLLERS_PUBLIC
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   TrajectoryPointConstIter
   end() const;
 
-  ROS_CONTROLLERS_PUBLIC
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   rclcpp::Time
   time_from_start() const;
 
-  ROS_CONTROLLERS_PUBLIC
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   bool
   is_empty() const;
 
@@ -84,4 +84,4 @@ private:
 
 }  // namespace ros_controllers
 
-#endif  // ROS_CONTROLLERS__TRAJECTORY_HPP_
+#endif  // JOINT_TRAJECTORY_CONTROLLER__TRAJECTORY_HPP_
