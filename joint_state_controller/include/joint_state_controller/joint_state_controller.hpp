@@ -27,7 +27,7 @@
 
 #include "sensor_msgs/msg/joint_state.hpp"
 
-namespace ros_controllers
+namespace joint_state_controller
 {
 
 class JointStateController : public controller_interface::ControllerInterface
@@ -51,6 +51,6 @@ private:
   sensor_msgs::msg::JointState joint_state_msg_;
 };
 
-}  // namespace ros_controllers
+}  // namespace joint_state_controller
 
 #endif  // JOINT_STATE_CONTROLLER__JOINT_STATE_CONTROLLER_HPP_

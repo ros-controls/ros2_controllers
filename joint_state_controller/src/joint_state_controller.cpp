@@ -21,7 +21,7 @@
 
 #include "rcutils/logging_macros.h"
 
-namespace ros_controllers
+namespace joint_state_controller
 {
 
 JointStateController::JointStateController()
@@ -83,9 +83,9 @@ JointStateController::update()
   return hardware_interface::HW_RET_OK;
 }
 
-}  // namespace ros_controllers
+}  // namespace joint_state_controller
 
 #include "pluginlib/class_list_macros.hpp"
 
 PLUGINLIB_EXPORT_CLASS(
-  ros_controllers::JointStateController, controller_interface::ControllerInterface)
+  joint_state_controller::JointStateController, controller_interface::ControllerInterface)

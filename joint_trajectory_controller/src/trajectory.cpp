@@ -21,7 +21,7 @@
 
 #include "rclcpp/clock.hpp"
 
-namespace ros_controllers
+namespace joint_trajectory_controller
 {
 
 // TODO(karsten1987): Fix to rclcpp time when API stable.
@@ -99,4 +99,4 @@ Trajectory::is_empty() const
   return !trajectory_msg_;
 }
 
-}  // namespace ros_controllers
+}  // namespace joint_trajectory_controller

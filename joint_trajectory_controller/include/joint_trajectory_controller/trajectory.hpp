@@ -24,7 +24,7 @@
 
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 
-namespace ros_controllers
+namespace joint_trajectory_controller
 {
 
 using TrajectoryPointIter =
@@ -82,6 +82,6 @@ private:
   rclcpp::Time trajectory_start_time_;
 };
 
-}  // namespace ros_controllers
+}  // namespace joint_trajectory_controller
 
 #endif  // JOINT_TRAJECTORY_CONTROLLER__TRAJECTORY_HPP_
