@@ -34,7 +34,7 @@
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
-namespace ros_controllers
+namespace joint_trajectory_controller
 {
 
 using namespace std::chrono_literals;
@@ -325,9 +325,9 @@ JointTrajectoryController::halt()
   set_op_mode(hardware_interface::OperationMode::ACTIVE);
 }
 
-}  // namespace ros_controllers
+}  // namespace joint_trajectory_controller
 
 #include "pluginlib/class_list_macros.hpp"
 
 PLUGINLIB_EXPORT_CLASS(
-  ros_controllers::JointTrajectoryController, controller_interface::ControllerInterface)
+  joint_trajectory_controller::JointTrajectoryController, controller_interface::ControllerInterface)

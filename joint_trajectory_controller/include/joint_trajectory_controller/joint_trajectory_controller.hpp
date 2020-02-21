@@ -35,7 +35,7 @@
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
-namespace ros_controllers
+namespace joint_trajectory_controller
 {
 
 class JointTrajectoryController : public controller_interface::ControllerInterface
@@ -109,6 +109,6 @@ private:
   void halt();
 };
 
-}  // namespace ros_controllers
+}  // namespace joint_trajectory_controller
 
 #endif  // JOINT_TRAJECTORY_CONTROLLER__JOINT_TRAJECTORY_CONTROLLER_HPP_

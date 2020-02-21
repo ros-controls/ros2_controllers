@@ -133,7 +133,7 @@ protected:
 
 TEST_F(TestTrajectoryController, wrong_initialization) {
   auto uninitialized_robot = std::make_shared<test_robot_hardware::TestRobotHardware>();
-  auto traj_controller = std::make_shared<ros_controllers::JointTrajectoryController>(
+  auto traj_controller = std::make_shared<joint_trajectory_controller::JointTrajectoryController>(
     joint_names, op_mode);
   auto ret = traj_controller->init(uninitialized_robot, controller_name);
   if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
@@ -147,7 +147,7 @@ TEST_F(TestTrajectoryController, wrong_initialization) {
 TEST_F(TestTrajectoryController, correct_initialization) {
   auto initialized_robot = std::make_shared<test_robot_hardware::TestRobotHardware>();
   initialized_robot->init();
-  auto traj_controller = std::make_shared<ros_controllers::JointTrajectoryController>(
+  auto traj_controller = std::make_shared<joint_trajectory_controller::JointTrajectoryController>(
     joint_names, op_mode);
   auto ret = traj_controller->init(initialized_robot, controller_name);
   if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
@@ -162,7 +162,7 @@ TEST_F(TestTrajectoryController, correct_initialization) {
 }
 
 TEST_F(TestTrajectoryController, configuration) {
-  auto traj_controller = std::make_shared<ros_controllers::JointTrajectoryController>(
+  auto traj_controller = std::make_shared<joint_trajectory_controller::JointTrajectoryController>(
     joint_names, op_mode);
   auto ret = traj_controller->init(test_robot, controller_name);
   if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
@@ -309,7 +309,7 @@ TEST_F(TestTrajectoryController, configuration) {
 // }
 
 TEST_F(TestTrajectoryController, cleanup) {
-  auto traj_controller = std::make_shared<ros_controllers::JointTrajectoryController>(
+  auto traj_controller = std::make_shared<joint_trajectory_controller::JointTrajectoryController>(
     joint_names, op_mode);
   auto ret = traj_controller->init(test_robot, controller_name);
   if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
@@ -361,7 +361,7 @@ TEST_F(TestTrajectoryController, cleanup) {
 }
 
 TEST_F(TestTrajectoryController, correct_initialization_using_parameters) {
-  auto traj_controller = std::make_shared<ros_controllers::JointTrajectoryController>();
+  auto traj_controller = std::make_shared<joint_trajectory_controller::JointTrajectoryController>();
   auto ret = traj_controller->init(test_robot, controller_name);
   if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
     FAIL();
