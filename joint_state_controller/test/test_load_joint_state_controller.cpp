@@ -35,6 +35,8 @@ TEST(TestLoadJointStateController, load_controller)
 
   controller_manager::ControllerManager cm(robot, executor, "test_controller_manager");
 
-  ASSERT_NO_THROW(cm.load_controller("test_joint_state_controller",
-    "joint_state_controller/JointStateController"));
+  ASSERT_NO_THROW(
+    cm.load_controller(
+      "test_joint_state_controller",
+      "joint_state_controller/JointStateController"));
 }
