@@ -38,6 +38,8 @@ ament_target_dependencies(joint_trajectory_controller
 # which is appropriate when building the dll but not consuming it.
 target_compile_definitions(joint_trajectory_controller PRIVATE "JOINT_TRAJECTORY_CONTROLLER_BUILDING_DLL")
 
+pluginlib_export_plugin_description_file(controller_interface joint_trajectory_plugin.xml)
+
 install(DIRECTORY include/
   DESTINATION include
 )
@@ -49,10 +51,13 @@ install(TARGETS joint_trajectory_controller
 )
 
 if(BUILD_TESTING)
+  find_package(ament_cmake_gtest REQUIRED)
   find_package(ament_lint_auto REQUIRED)
-  ament_lint_auto_find_test_dependencies()
-
+  find_package(controller_manager REQUIRED)
   find_package(controller_parameter_server)
+  find_package(test_robot_hardware REQUIRED)
+
+  ament_lint_auto_find_test_dependencies()
 
   ament_add_gtest(test_trajectory test/test_trajectory.cpp)
   target_include_directories(test_trajectory PRIVATE include)
@@ -73,6 +78,16 @@ if(BUILD_TESTING)
     "rcutils"
     "test_robot_hardware"
     "trajectory_msgs"
+  )
+
+  ament_add_gtest(
+    test_load_joint_trajectory_controller
+    test/test_load_joint_trajectory_controller.cpp
+  )
+  target_include_directories(test_load_joint_trajectory_controller PRIVATE include)
+  ament_target_dependencies(test_load_joint_trajectory_controller
+    controller_manager
+    test_robot_hardware
   )
 endif()
 
