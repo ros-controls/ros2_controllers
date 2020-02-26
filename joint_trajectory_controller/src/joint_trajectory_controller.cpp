@@ -69,6 +69,7 @@ JointTrajectoryController::init(
   // with the lifecycle node being initialized, we can declare parameters
   lifecycle_node_->declare_parameter<std::vector<std::string>>("joints", joint_names_);
   lifecycle_node_->declare_parameter<std::vector<std::string>>("write_op_modes", write_op_names_);
+  lifecycle_node_->declare_parameter<int>("state_publish_rate", 50);
 
   return CONTROLLER_INTERFACE_RET_SUCCESS;
 }
@@ -84,31 +85,56 @@ JointTrajectoryController::update()
     return CONTROLLER_INTERFACE_RET_SUCCESS;
   }
 
-  // when no traj msg has been received yet
-  if (!traj_point_active_ptr_ || (*traj_point_active_ptr_)->is_empty()) {
-    return CONTROLLER_INTERFACE_RET_SUCCESS;
+  //when we receive a traj msg
+  if (traj_point_active_ptr_ && (*traj_point_active_ptr_)->is_empty() == false) {
+    // find next new point for current timestamp
+    auto traj_point_ptr = (*traj_point_active_ptr_)->sample(lifecycle_node_->now());
+    // find next new point for current timestamp
+    // set cmd only if a point is found
+    if (traj_point_ptr == (*traj_point_active_ptr_)->end()) {
+      return CONTROLLER_INTERFACE_RET_SUCCESS;
+    }
+
+    // check if new point ptr points to the same as previous point
+    if (prev_traj_point_ptr_ == traj_point_ptr) {
+      return CONTROLLER_INTERFACE_RET_SUCCESS;
+    }
+
+    size_t joint_num = registered_joint_cmd_handles_.size();
+    for (size_t index = 0; index < joint_num; ++index) {
+      registered_joint_cmd_handles_[index]->set_cmd(traj_point_ptr->positions[index]);
+    }
+
+    prev_traj_point_ptr_ = traj_point_ptr;
+    set_op_mode(hardware_interface::OperationMode::ACTIVE);
   }
 
-  // find next new point for current timestamp
-  auto traj_point_ptr = (*traj_point_active_ptr_)->sample(rclcpp::Clock().now());
-  // find next new point for current timestamp
-  // set cmd only if a point is found
-  if (traj_point_ptr == (*traj_point_active_ptr_)->end()) {
-    return CONTROLLER_INTERFACE_RET_SUCCESS;
-  }
+  // publish state
+  {
+    if (state_publisher_period_.seconds() == 0.0 &&
+        (last_state_publish_time_ + state_publisher_period_) < lifecycle_node_->now())
+    {
+      if (state_publisher_ && state_publisher_->trylock())
+      {
+        last_state_publish_time_ = lifecycle_node_->now();
 
-  // check if new point ptr points to the same as previous point
-  if (prev_traj_point_ptr_ == traj_point_ptr) {
-    return CONTROLLER_INTERFACE_RET_SUCCESS;
-  }
+        state_publisher_->msg_.header.stamp = last_state_publish_time_;
+        // TODO(ddengster): The following code is ported from ros_controllers. 
+        // Port it when we're ready to put in the other trajectory code.
 
-  size_t joint_num = registered_joint_cmd_handles_.size();
-  for (size_t index = 0; index < joint_num; ++index) {
-    registered_joint_cmd_handles_[index]->set_cmd(traj_point_ptr->positions[index]);
-  }
+        // state_publisher_->msg_.header.stamp          = time_data_.readFromRT()->time;
+        // state_publisher_->msg_.desired.positions     = desired_state_.position;
+        // state_publisher_->msg_.desired.velocities    = desired_state_.velocity;
+        // state_publisher_->msg_.desired.accelerations = desired_state_.acceleration;
+        // state_publisher_->msg_.actual.positions      = current_state_.position;
+        // state_publisher_->msg_.actual.velocities     = current_state_.velocity;
+        // state_publisher_->msg_.error.positions       = state_error_.position;
+        // state_publisher_->msg_.error.velocities      = state_error_.velocity;
 
-  prev_traj_point_ptr_ = traj_point_ptr;
-  set_op_mode(hardware_interface::OperationMode::ACTIVE);
+        state_publisher_->unlockAndPublish();
+      }
+    }
+  }
 
   return CONTROLLER_INTERFACE_RET_SUCCESS;
 }
@@ -221,6 +247,35 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
   // TODO(karsten1987): no lifecyle for subscriber yet
   // joint_command_subscriber_->on_activate();
 
+  // State publisher
+  {
+    int state_publish_rate = 50;
+    if (lifecycle_node_->has_parameter("state_publish_rate")) {
+      state_publish_rate = lifecycle_node_->get_parameter("state_publish_rate").get_value<int>();
+      RCLCPP_INFO_STREAM(logger, "Controller state will be published at "
+                            << state_publish_rate << "Hz.");
+    }
+    state_publisher_period_ = rclcpp::Duration(1.0 / (double)state_publish_rate);
+
+    publisher_ = lifecycle_node_->create_publisher<JTrajControllerStateMsg>("state", rclcpp::SystemDefaultsQoS());
+    state_publisher_.reset(new StatePublisher(publisher_));
+
+    int n_joints = joint_names_.size();
+
+    state_publisher_->lock();
+    state_publisher_->msg_.joint_names = joint_names_;
+    state_publisher_->msg_.desired.positions.resize(n_joints);
+    state_publisher_->msg_.desired.velocities.resize(n_joints);
+    state_publisher_->msg_.desired.accelerations.resize(n_joints);
+    state_publisher_->msg_.actual.positions.resize(n_joints);
+    state_publisher_->msg_.actual.velocities.resize(n_joints);
+    state_publisher_->msg_.error.positions.resize(n_joints);
+    state_publisher_->msg_.error.velocities.resize(n_joints);
+    state_publisher_->unlock();
+
+    last_state_publish_time_ = lifecycle_node_->now();
+  }
+
   set_op_mode(hardware_interface::OperationMode::INACTIVE);
 
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
@@ -234,6 +289,8 @@ JointTrajectoryController::on_activate(const rclcpp_lifecycle::State & previous_
   is_halted = false;
   subscriber_is_active_ = true;
   traj_point_active_ptr_ = &traj_external_point_ptr_;
+  last_state_publish_time_ = lifecycle_node_->now();
+  publisher_->on_activate();
 
   // TODO(karsten1987): activate subscriptions of subscriber
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
@@ -245,6 +302,7 @@ JointTrajectoryController::on_deactivate(const rclcpp_lifecycle::State & previou
   (void) previous_state;
 
   subscriber_is_active_ = false;
+  publisher_->on_deactivate();
 
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }

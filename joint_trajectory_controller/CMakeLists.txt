@@ -18,6 +18,8 @@ find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(rcutils REQUIRED)
 find_package(trajectory_msgs REQUIRED)
+find_package(realtime_tools REQUIRED)
+find_package(control_msgs REQUIRED)
 
 add_library(joint_trajectory_controller SHARED
   src/joint_trajectory_controller.cpp
@@ -33,6 +35,8 @@ ament_target_dependencies(joint_trajectory_controller
   "rclcpp_lifecycle"
   "rcutils"
   "trajectory_msgs"
+  "realtime_tools"
+  "control_msgs"
 )
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.

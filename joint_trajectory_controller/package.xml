@@ -19,6 +19,8 @@
   <build_depend>rclcpp_lifecycle</build_depend>
   <build_depend>rcutils</build_depend>
   <build_depend>trajectory_msgs</build_depend>
+  <build_depend>realtime_tools</build_depend>
+  <build_depend>control_msgs</build_depend>
 
   <build_export_depend>controller_interface</build_export_depend>
   <build_export_depend>hardware_interface</build_export_depend>
