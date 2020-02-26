@@ -12,14 +12,14 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(controller_interface REQUIRED)
+find_package(control_msgs REQUIRED)
 find_package(hardware_interface REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(rcutils REQUIRED)
-find_package(trajectory_msgs REQUIRED)
 find_package(realtime_tools REQUIRED)
-find_package(control_msgs REQUIRED)
+find_package(trajectory_msgs REQUIRED)
 
 add_library(joint_trajectory_controller SHARED
   src/joint_trajectory_controller.cpp
@@ -29,14 +29,14 @@ target_include_directories(joint_trajectory_controller PRIVATE include)
 ament_target_dependencies(joint_trajectory_controller
   "builtin_interfaces"
   "controller_interface"
+  "control_msgs"
   "hardware_interface"
   "pluginlib"
   "rclcpp"
   "rclcpp_lifecycle"
   "rcutils"
-  "trajectory_msgs"
   "realtime_tools"
-  "control_msgs"
+  "trajectory_msgs"
 )
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
@@ -76,10 +76,12 @@ if(BUILD_TESTING)
   )
   ament_target_dependencies(test_trajectory_controller
     "controller_parameter_server"
+    "control_msgs"
     "hardware_interface"
     "rclcpp"
     "rclcpp_lifecycle"
     "rcutils"
+    "realtime_tools"
     "test_robot_hardware"
     "trajectory_msgs"
   )
@@ -97,6 +99,7 @@ endif()
 
 ament_export_dependencies(
   controller_interface
+  control_msgs
   hardware_interface
   rclcpp
   rclcpp_lifecycle

@@ -69,7 +69,7 @@ JointTrajectoryController::init(
   // with the lifecycle node being initialized, we can declare parameters
   lifecycle_node_->declare_parameter<std::vector<std::string>>("joints", joint_names_);
   lifecycle_node_->declare_parameter<std::vector<std::string>>("write_op_modes", write_op_names_);
-  lifecycle_node_->declare_parameter<int>("state_publish_rate", 50);
+  lifecycle_node_->declare_parameter<double>("state_publish_rate", 50.0);
 
   return CONTROLLER_INTERFACE_RET_SUCCESS;
 }
@@ -85,7 +85,7 @@ JointTrajectoryController::update()
     return CONTROLLER_INTERFACE_RET_SUCCESS;
   }
 
-  //when we receive a traj msg
+  // when we receive a traj msg
   if (traj_point_active_ptr_ && (*traj_point_active_ptr_)->is_empty() == false) {
     // find next new point for current timestamp
     auto traj_point_ptr = (*traj_point_active_ptr_)->sample(lifecycle_node_->now());
@@ -109,33 +109,7 @@ JointTrajectoryController::update()
     set_op_mode(hardware_interface::OperationMode::ACTIVE);
   }
 
-  // publish state
-  {
-    if (state_publisher_period_.seconds() == 0.0 &&
-        (last_state_publish_time_ + state_publisher_period_) < lifecycle_node_->now())
-    {
-      if (state_publisher_ && state_publisher_->trylock())
-      {
-        last_state_publish_time_ = lifecycle_node_->now();
-
-        state_publisher_->msg_.header.stamp = last_state_publish_time_;
-        // TODO(ddengster): The following code is ported from ros_controllers. 
-        // Port it when we're ready to put in the other trajectory code.
-
-        // state_publisher_->msg_.header.stamp          = time_data_.readFromRT()->time;
-        // state_publisher_->msg_.desired.positions     = desired_state_.position;
-        // state_publisher_->msg_.desired.velocities    = desired_state_.velocity;
-        // state_publisher_->msg_.desired.accelerations = desired_state_.acceleration;
-        // state_publisher_->msg_.actual.positions      = current_state_.position;
-        // state_publisher_->msg_.actual.velocities     = current_state_.velocity;
-        // state_publisher_->msg_.error.positions       = state_error_.position;
-        // state_publisher_->msg_.error.velocities      = state_error_.velocity;
-
-        state_publisher_->unlockAndPublish();
-      }
-    }
-  }
-
+  publish_state();
   return CONTROLLER_INTERFACE_RET_SUCCESS;
 }
 
@@ -248,33 +222,36 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
   // joint_command_subscriber_->on_activate();
 
   // State publisher
-  {
-    int state_publish_rate = 50;
-    if (lifecycle_node_->has_parameter("state_publish_rate")) {
-      state_publish_rate = lifecycle_node_->get_parameter("state_publish_rate").get_value<int>();
-      RCLCPP_INFO_STREAM(logger, "Controller state will be published at "
-                            << state_publish_rate << "Hz.");
-    }
-    state_publisher_period_ = rclcpp::Duration(1.0 / (double)state_publish_rate);
-
-    publisher_ = lifecycle_node_->create_publisher<JTrajControllerStateMsg>("state", rclcpp::SystemDefaultsQoS());
-    state_publisher_.reset(new StatePublisher(publisher_));
-
-    int n_joints = joint_names_.size();
-
-    state_publisher_->lock();
-    state_publisher_->msg_.joint_names = joint_names_;
-    state_publisher_->msg_.desired.positions.resize(n_joints);
-    state_publisher_->msg_.desired.velocities.resize(n_joints);
-    state_publisher_->msg_.desired.accelerations.resize(n_joints);
-    state_publisher_->msg_.actual.positions.resize(n_joints);
-    state_publisher_->msg_.actual.velocities.resize(n_joints);
-    state_publisher_->msg_.error.positions.resize(n_joints);
-    state_publisher_->msg_.error.velocities.resize(n_joints);
-    state_publisher_->unlock();
-
-    last_state_publish_time_ = lifecycle_node_->now();
+  double state_publish_rate =
+    lifecycle_node_->get_parameter("state_publish_rate").get_value<double>();
+  RCLCPP_INFO_STREAM(
+    logger, "Controller state will be published at " <<
+      state_publish_rate << "Hz.");
+  if (state_publish_rate > 0.0) {
+    state_publisher_period_ =
+      rclcpp::Duration::from_seconds(1.0 / state_publish_rate);
+  } else {
+    state_publisher_period_ = rclcpp::Duration(0.0);
   }
+
+  publisher_ = lifecycle_node_->create_publisher<ControllerStateMsg>(
+    "state", rclcpp::SystemDefaultsQoS());
+  state_publisher_.reset(new StatePublisher(publisher_));
+
+  int n_joints = joint_names_.size();
+
+  state_publisher_->lock();
+  state_publisher_->msg_.joint_names = joint_names_;
+  state_publisher_->msg_.desired.positions.resize(n_joints);
+  state_publisher_->msg_.desired.velocities.resize(n_joints);
+  state_publisher_->msg_.desired.accelerations.resize(n_joints);
+  state_publisher_->msg_.actual.positions.resize(n_joints);
+  state_publisher_->msg_.actual.velocities.resize(n_joints);
+  state_publisher_->msg_.error.positions.resize(n_joints);
+  state_publisher_->msg_.error.velocities.resize(n_joints);
+  state_publisher_->unlock();
+
+  last_state_publish_time_ = lifecycle_node_->now();
 
   set_op_mode(hardware_interface::OperationMode::INACTIVE);
 
@@ -382,6 +359,28 @@ JointTrajectoryController::halt()
   }
   set_op_mode(hardware_interface::OperationMode::ACTIVE);
 }
+
+void JointTrajectoryController::publish_state()
+{
+  if (state_publisher_period_.seconds() <= 0.0) {
+    return;
+  }
+
+  if (lifecycle_node_->now() < (last_state_publish_time_ + state_publisher_period_)) {
+    return;
+  }
+
+  if (state_publisher_ && state_publisher_->trylock()) {
+    last_state_publish_time_ = lifecycle_node_->now();
+
+    state_publisher_->msg_.header.stamp = last_state_publish_time_;
+    // TODO(ddengster): Fill in the rest of the state data.
+    // Port it when we're ready to put in the other trajectory code (ros2_controllers PR #26).
+
+    state_publisher_->unlockAndPublish();
+  }
+}
+
 
 }  // namespace joint_trajectory_controller
 

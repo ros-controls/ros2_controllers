@@ -21,7 +21,7 @@
 
 #include "controller_interface/controller_interface.hpp"
 
-#include <control_msgs/msg/joint_trajectory_controller_state.hpp>
+#include "control_msgs/msg/joint_trajectory_controller_state.hpp"
 
 #include "hardware_interface/joint_command_handle.hpp"
 #include "hardware_interface/joint_state_handle.hpp"
@@ -34,8 +34,8 @@
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 
-#include <realtime_tools/realtime_buffer.h>
-#include <realtime_tools/realtime_publisher.h>
+#include "realtime_tools/realtime_buffer.h"
+#include "realtime_tools/realtime_publisher.h"
 
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
@@ -109,10 +109,10 @@ private:
 
   bool is_halted = false;
 
-  typedef control_msgs::msg::JointTrajectoryControllerState JTrajControllerStateMsg;
-  typedef realtime_tools::RealtimePublisher<JTrajControllerStateMsg> StatePublisher;
-  typedef std::unique_ptr<StatePublisher>                            StatePublisherPtr;
-  rclcpp_lifecycle::LifecyclePublisher<JTrajControllerStateMsg>::SharedPtr publisher_;
+  using ControllerStateMsg = control_msgs::msg::JointTrajectoryControllerState;
+  using StatePublisher = realtime_tools::RealtimePublisher<ControllerStateMsg>;
+  using StatePublisherPtr = std::unique_ptr<StatePublisher>;
+  rclcpp_lifecycle::LifecyclePublisher<ControllerStateMsg>::SharedPtr publisher_;
   StatePublisherPtr state_publisher_;
 
   rclcpp::Duration state_publisher_period_ = rclcpp::Duration(1.0 / 50.0);
@@ -121,6 +121,8 @@ private:
   bool reset();
   void set_op_mode(const hardware_interface::OperationMode & mode);
   void halt();
+
+  void publish_state();
 };
 
 }  // namespace joint_trajectory_controller
