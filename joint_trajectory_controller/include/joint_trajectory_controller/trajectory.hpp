@@ -76,6 +76,9 @@ public:
   bool
   is_empty() const;
 
+  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> get_trajectory_msg() const {
+    return trajectory_msg_;
+  }
 private:
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg_;
 

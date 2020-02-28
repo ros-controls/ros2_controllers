@@ -70,6 +70,8 @@ JointTrajectoryController::init(
   lifecycle_node_->declare_parameter<std::vector<std::string>>("joints", joint_names_);
   lifecycle_node_->declare_parameter<std::vector<std::string>>("write_op_modes", write_op_names_);
   lifecycle_node_->declare_parameter<double>("state_publish_rate", 50.0);
+  lifecycle_node_->declare_parameter<int>("action_monitor_rate", 20);
+  lifecycle_node_->declare_parameter<bool>("allow_partial_joints_goal", allow_partial_joints_goal_);
 
   return CONTROLLER_INTERFACE_RET_SUCCESS;
 }
@@ -89,6 +91,29 @@ JointTrajectoryController::update()
   if (traj_point_active_ptr_ && (*traj_point_active_ptr_)->is_empty() == false) {
     // find next new point for current timestamp
     auto traj_point_ptr = (*traj_point_active_ptr_)->sample(lifecycle_node_->now());
+
+    // send feedback
+    if (rt_active_goal_)
+    {
+      auto feedback = std::make_shared<FollowJTrajAction::Feedback>();
+      feedback->header.stamp = lifecycle_node_->now();
+      feedback->joint_names = joint_names_;
+
+      auto cur_goal_msg = (*traj_point_active_ptr_)->get_trajectory_msg();
+      if (traj_point_ptr != (*traj_point_active_ptr_)->end())
+        feedback->actual = *traj_point_ptr;
+      else if (cur_goal_msg->points.size())
+        feedback->actual = cur_goal_msg->points[0];
+
+      if (cur_goal_msg->points.size())
+        feedback->desired = cur_goal_msg->points[0];
+
+      // TODO(ddengster): feedback errors
+      //feedback->error
+      rt_active_goal_->setFeedback(feedback);
+      RCLCPP_INFO(lifecycle_node_->get_logger(), "Sending feedback..");
+    }
+
     // find next new point for current timestamp
     // set cmd only if a point is found
     if (traj_point_ptr == (*traj_point_active_ptr_)->end()) {
