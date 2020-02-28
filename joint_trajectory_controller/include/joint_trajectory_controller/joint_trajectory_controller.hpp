@@ -24,6 +24,8 @@
 #include "control_msgs/msg/joint_trajectory_controller_state.hpp"
 #include "control_msgs/action/follow_joint_trajectory.hpp"
 
+#include "control_toolbox/pid.hpp"
+
 #include "hardware_interface/joint_command_handle.hpp"
 #include "hardware_interface/joint_state_handle.hpp"
 #include "hardware_interface/operation_mode_handle.hpp"
@@ -95,11 +97,14 @@ public:
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
   on_shutdown(const rclcpp_lifecycle::State & previous_state) override;
 
+  rclcpp::Duration get_action_monitor_period() {return action_monitor_period_;}
+
 private:
   std::vector<std::string> joint_names_;
   std::vector<std::string> write_op_names_;
 
   std::vector<hardware_interface::JointCommandHandle *> registered_joint_cmd_handles_;
+  std::vector<hardware_interface::JointCommandHandle *> registered_joint_eff_cmd_handles_;
   std::vector<const hardware_interface::JointStateHandle *> registered_joint_state_handles_;
   std::vector<hardware_interface::OperationModeHandle *> registered_operation_mode_handles_;
 
@@ -108,6 +113,7 @@ private:
   rclcpp::Subscription<trajectory_msgs::msg::JointTrajectory>::SharedPtr
     joint_command_subscriber_ = nullptr;
 
+  TrajectoryPointConstIter prev_traj_point_ptr_;
   std::shared_ptr<Trajectory> * traj_point_active_ptr_ = nullptr;
   std::shared_ptr<Trajectory> traj_external_point_ptr_ = nullptr;
   std::shared_ptr<Trajectory> traj_home_point_ptr_ = nullptr;
@@ -158,6 +164,10 @@ private:
     const JointTrajectoryPoint & desired_state,
     const JointTrajectoryPoint & current_state,
     const JointTrajectoryPoint & state_error);
+
+  typedef std::shared_ptr<control_toolbox::Pid> PidPtr;
+  std::vector<PidPtr> pids_;
+  std::vector<double> velocity_ff_;
 };
 
 }  // namespace joint_trajectory_controller

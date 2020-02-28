@@ -14,6 +14,7 @@
 
 #include "joint_trajectory_controller/trajectory.hpp"
 
+#include <angles/angles.h>
 #include <memory>
 
 #include "hardware_interface/macros.hpp"
@@ -100,8 +101,11 @@ Trajectory::sample(
 
       output.positions.resize(state_a.positions.size());
       for (auto i = 0ul; i < state_a.positions.size(); ++i) {
-        output.positions[i] =
-          state_a.positions[i] + percent * (state_b.positions[i] - state_a.positions[i]);
+        // output.positions[i] =
+        //   state_a.positions[i] + percent * (state_b.positions[i] - state_a.positions[i]);
+        float angular_dist = angles::shortest_angular_distance(state_a.positions[i], state_b.positions[i]);
+        output.positions[i] = state_a.positions[i] + (percent * angular_dist);
+        output.positions[i] = std::fmod(output.positions[i], 2.0 * M_PI);
       }
 
       if (!state_a.velocities.empty() && !state_b.velocities.empty()) {
