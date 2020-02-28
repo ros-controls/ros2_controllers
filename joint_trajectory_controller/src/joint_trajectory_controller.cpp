@@ -297,7 +297,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
     }
     RCLCPP_INFO_STREAM(
       logger, "Action status changes will be monitored at " <<
-      action_monitor_rate << "Hz.");
+        action_monitor_rate << "Hz.");
     action_monitor_period_ = rclcpp::Duration(1.0 / static_cast<double>(action_monitor_rate));
 
     using namespace std::placeholders;
@@ -459,7 +459,8 @@ rclcpp_action::GoalResponse JointTrajectoryController::goalCB(
   // If partial joints goals are not allowed, goal should specify all controller joints
   if (!allow_partial_joints_goal_) {
     if (goal->trajectory.joint_names.size() != joint_names_.size()) {
-      RCLCPP_ERROR(lifecycle_node_->get_logger(),
+      RCLCPP_ERROR(
+        lifecycle_node_->get_logger(),
         "Joints on incoming goal don't match the controller joints.");
       return rclcpp_action::GoalResponse::REJECT;
     }
