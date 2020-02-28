@@ -295,7 +295,8 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
       action_monitor_rate = lifecycle_node_->get_parameter("action_monitor_rate")
         .get_value<int>();
     }
-    RCLCPP_INFO_STREAM(logger, "Action status changes will be monitored at " <<
+    RCLCPP_INFO_STREAM(
+      logger, "Action status changes will be monitored at " <<
       action_monitor_rate << "Hz.");
     action_monitor_period_ = rclcpp::Duration(1.0 / static_cast<double>(action_monitor_rate));
 
@@ -449,7 +450,8 @@ rclcpp_action::GoalResponse JointTrajectoryController::goalCB(
 
   // Precondition: Running controller
   if (is_halted) {
-    RCLCPP_ERROR(lifecycle_node_->get_logger(),
+    RCLCPP_ERROR(
+      lifecycle_node_->get_logger(),
       "Can't accept new action goals. Controller is not running.");
     return rclcpp_action::GoalResponse::REJECT;
   }
@@ -489,7 +491,8 @@ rclcpp_action::CancelResponse JointTrajectoryController::cancelCB(
     // Enter hold current position mode
     // setHoldPosition(uptime);
 
-    RCLCPP_DEBUG(lifecycle_node_->get_logger(),
+    RCLCPP_DEBUG(
+      lifecycle_node_->get_logger(),
       "Canceling active action goal because cancel callback recieved.");
 
     // Mark the current goal as canceled
