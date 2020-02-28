@@ -22,6 +22,7 @@
 #include "controller_interface/controller_interface.hpp"
 
 #include "control_msgs/msg/joint_trajectory_controller_state.hpp"
+#include "control_msgs/action/follow_joint_trajectory.hpp"
 
 #include "hardware_interface/joint_command_handle.hpp"
 #include "hardware_interface/joint_state_handle.hpp"
@@ -31,6 +32,8 @@
 #include "joint_trajectory_controller/trajectory.hpp"
 #include "joint_trajectory_controller/visibility_control.h"
 
+#include "rclcpp_action/rclcpp_action.hpp"
+
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 
@@ -38,6 +41,7 @@
 
 #include "realtime_tools/realtime_buffer.h"
 #include "realtime_tools/realtime_publisher.h"
+#include "realtime_tools/realtime_server_goal_handle.h"
 
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
@@ -90,6 +94,8 @@ public:
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
   on_shutdown(const rclcpp_lifecycle::State & previous_state) override;
 
+  rclcpp::Duration get_action_monitor_period() {return action_monitor_period_;}
+
 private:
   std::vector<std::string> joint_names_;
   std::vector<std::string> write_op_names_;
@@ -119,6 +125,26 @@ private:
 
   rclcpp::Duration state_publisher_period_ = rclcpp::Duration(RCUTILS_MS_TO_NS(20));
   rclcpp::Time last_state_publish_time_;
+
+  typedef control_msgs::action::FollowJointTrajectory FollowJTrajAction;
+  typedef realtime_tools::RealtimeServerGoalHandle<FollowJTrajAction> RealtimeGoalHandle;
+  typedef std::shared_ptr<RealtimeGoalHandle> RealtimeGoalHandlePtr;
+
+  rclcpp_action::Server<FollowJTrajAction>::SharedPtr action_server_;
+  bool allow_partial_joints_goal_ = false;
+  RealtimeGoalHandlePtr     rt_active_goal_;     ///< Currently active action goal, if any.
+  rclcpp::TimerBase::SharedPtr goal_handle_timer_;
+  rclcpp::Duration action_monitor_period_ = rclcpp::Duration(1.0 / 20.0);
+
+  // callbacks for action_server_
+  rclcpp_action::GoalResponse goalCB(const rclcpp_action::GoalUUID& uuid,
+    std::shared_ptr<const FollowJTrajAction::Goal> goal);
+  rclcpp_action::CancelResponse cancelCB(
+    const std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle);
+  void feedbackSetupCB(
+    std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle);
+
+  void preemptActiveGoal();
 
   bool reset();
   void set_op_mode(const hardware_interface::OperationMode & mode);

@@ -93,23 +93,24 @@ JointTrajectoryController::update()
     auto traj_point_ptr = (*traj_point_active_ptr_)->sample(lifecycle_node_->now());
 
     // send feedback
-    if (rt_active_goal_)
-    {
+    if (rt_active_goal_) {
       auto feedback = std::make_shared<FollowJTrajAction::Feedback>();
       feedback->header.stamp = lifecycle_node_->now();
       feedback->joint_names = joint_names_;
 
       auto cur_goal_msg = (*traj_point_active_ptr_)->get_trajectory_msg();
-      if (traj_point_ptr != (*traj_point_active_ptr_)->end())
+      if (traj_point_ptr != (*traj_point_active_ptr_)->end()) {
         feedback->actual = *traj_point_ptr;
-      else if (cur_goal_msg->points.size())
+      } else if (cur_goal_msg->points.size()) {
         feedback->actual = cur_goal_msg->points[0];
+      }
 
-      if (cur_goal_msg->points.size())
+      if (cur_goal_msg->points.size()) {
         feedback->desired = cur_goal_msg->points[0];
+      }
 
       // TODO(ddengster): feedback errors
-      //feedback->error
+      // feedback->error;
       rt_active_goal_->setFeedback(feedback);
       RCLCPP_INFO(lifecycle_node_->get_logger(), "Sending feedback..");
     }
@@ -276,7 +277,40 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
   state_publisher_->msg_.error.velocities.resize(n_joints);
   state_publisher_->unlock();
 
-  last_state_publish_time_ = lifecycle_node_->now();
+    last_state_publish_time_ = lifecycle_node_->now();
+  }
+
+  // action server configuration
+  {
+    if (lifecycle_node_->has_parameter("allow_partial_joints_goal")) {
+      allow_partial_joints_goal_ = lifecycle_node_->get_parameter("allow_partial_joints_goal")
+        .get_value<bool>();
+    }
+    if (allow_partial_joints_goal_) {
+      RCLCPP_DEBUG(logger, "Goals with partial set of joints are allowed");
+    }
+
+    int action_monitor_rate = 20;
+    if (lifecycle_node_->has_parameter("action_monitor_rate")) {
+      action_monitor_rate = lifecycle_node_->get_parameter("action_monitor_rate")
+        .get_value<int>();
+    }
+    RCLCPP_INFO_STREAM(logger, "Action status changes will be monitored at " <<
+      action_monitor_rate << "Hz.");
+    action_monitor_period_ = rclcpp::Duration(1.0 / static_cast<double>(action_monitor_rate));
+
+    using namespace std::placeholders;
+    action_server_ = rclcpp_action::create_server<FollowJTrajAction>(
+      lifecycle_node_->get_node_base_interface(),
+      lifecycle_node_->get_node_clock_interface(),
+      lifecycle_node_->get_node_logging_interface(),
+      lifecycle_node_->get_node_waitables_interface(),
+      "follow_joint_trajectory",
+      std::bind(&JointTrajectoryController::goalCB, this, _1, _2),
+      std::bind(&JointTrajectoryController::cancelCB, this, _1),
+      std::bind(&JointTrajectoryController::feedbackSetupCB, this, _1)
+    );
+  }
 
   set_op_mode(hardware_interface::OperationMode::INACTIVE);
 
@@ -406,6 +440,93 @@ void JointTrajectoryController::publish_state()
   }
 }
 
+rclcpp_action::GoalResponse JointTrajectoryController::goalCB(
+  const rclcpp_action::GoalUUID& uuid,
+  std::shared_ptr<const FollowJTrajAction::Goal> goal)
+{
+  RCLCPP_INFO(lifecycle_node_->get_logger(), "Received new action goal");
+  (void)uuid;
+
+  // Precondition: Running controller
+  if (is_halted) {
+    RCLCPP_ERROR(lifecycle_node_->get_logger(),
+      "Can't accept new action goals. Controller is not running.");
+    return rclcpp_action::GoalResponse::REJECT;
+  }
+
+  // If partial joints goals are not allowed, goal should specify all controller joints
+  if (!allow_partial_joints_goal_) {
+    if (goal->trajectory.joint_names.size() != joint_names_.size()) {
+      RCLCPP_ERROR(lifecycle_node_->get_logger(),
+        "Joints on incoming goal don't match the controller joints.");
+      return rclcpp_action::GoalResponse::REJECT;
+    }
+  }
+
+  auto action_res = std::make_shared<FollowJTrajAction::Result>();
+
+  // Update new trajectory
+  preemptActiveGoal();
+  auto traj_msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>(
+    goal->trajectory);
+  traj_external_point_ptr_->update(traj_msg);
+
+  return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
+}
+
+rclcpp_action::CancelResponse JointTrajectoryController::cancelCB(
+  const std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle)
+{
+  RCLCPP_INFO(lifecycle_node_->get_logger(), "Got request to cancel goal");
+  (void)goal_handle;
+
+  // Check that cancel request refers to currently active goal (if any)
+  if (rt_active_goal_ && rt_active_goal_->gh_ == goal_handle)
+  {
+    // Controller uptime
+    // TODO (ddengster): Hold position
+    // const rclcpp::Time uptime = time_data_.readFromRT()->uptime;
+    // Enter hold current position mode
+    // setHoldPosition(uptime);
+
+    RCLCPP_DEBUG(lifecycle_node_->get_logger(),
+      "Canceling active action goal because cancel callback recieved.");
+
+    // Mark the current goal as canceled
+    auto action_res = std::make_shared<FollowJTrajAction::Result>();
+    rt_active_goal_->setCanceled(action_res);
+
+    // Reset current goal
+    rt_active_goal_.reset();
+  }
+  return rclcpp_action::CancelResponse::ACCEPT;
+}
+
+void JointTrajectoryController::feedbackSetupCB(
+  std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle)
+{
+  RCLCPP_INFO(lifecycle_node_->get_logger(), "Doing action handling");
+
+  RealtimeGoalHandlePtr rt_goal(new RealtimeGoalHandle(goal_handle));
+  rt_goal->preallocated_feedback_->joint_names = joint_names_;
+  rt_active_goal_ = rt_goal;
+
+  // Setup goal status checking timer
+  goal_handle_timer_ = lifecycle_node_->create_wall_timer(
+    action_monitor_period_.to_chrono<std::chrono::seconds>(),
+    std::bind(&RealtimeGoalHandle::runNonRealtime, rt_goal));
+}
+
+void JointTrajectoryController::preemptActiveGoal()
+{
+  if (rt_active_goal_) {
+    auto action_res = std::make_shared<FollowJTrajAction::Result>();
+    action_res->set__error_code(FollowJTrajAction::Result::INVALID_GOAL);
+    action_res->set__error_string("Current goal cancelled due to new incoming action.");
+    rt_active_goal_->setCanceled(action_res);
+    rt_active_goal_.reset();
+  }
+}
 
 }  // namespace joint_trajectory_controller
 
