@@ -132,12 +132,13 @@ private:
 
   rclcpp_action::Server<FollowJTrajAction>::SharedPtr action_server_;
   bool allow_partial_joints_goal_ = false;
-  RealtimeGoalHandlePtr     rt_active_goal_;     ///< Currently active action goal, if any.
+  RealtimeGoalHandlePtr rt_active_goal_;     ///< Currently active action goal, if any.
   rclcpp::TimerBase::SharedPtr goal_handle_timer_;
   rclcpp::Duration action_monitor_period_ = rclcpp::Duration(1.0 / 20.0);
 
   // callbacks for action_server_
-  rclcpp_action::GoalResponse goalCB(const rclcpp_action::GoalUUID& uuid,
+  rclcpp_action::GoalResponse goalCB(
+    const rclcpp_action::GoalUUID& uuid,
     std::shared_ptr<const FollowJTrajAction::Goal> goal);
   rclcpp_action::CancelResponse cancelCB(
     const std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle);
