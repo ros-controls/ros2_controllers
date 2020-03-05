@@ -56,14 +56,17 @@ Trajectory::sample(const rclcpp::Time & sample_time)
   THROW_ON_NULLPTR(trajectory_msg_)
 
   // skip if current time hasn't reached traj time of the first msg yet
-  if (time_less_than(sample_time, trajectory_start_time_)) {
+  if (sample_time < trajectory_start_time_) {
     return end();
   }
 
   // time_from_start + trajectory time is the expected arrival time of trajectory
   for (auto point = begin(); point != end(); ++point) {
-    auto start_time = time_add(trajectory_start_time_, point->time_from_start);
-    if (time_less_than(sample_time, start_time)) {
+    rclcpp::Duration duration_from_start(point->time_from_start.sec, point->time_from_start.nanosec);
+    rclcpp::Time start_time = trajectory_start_time_ + duration_from_start;
+    if (sample_time < start_time) {
+
+      // TODO(ddengster) : replace with interpolated point
       return point;
     }
   }

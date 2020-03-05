@@ -92,29 +92,6 @@ JointTrajectoryController::update()
     // find next new point for current timestamp
     auto traj_point_ptr = (*traj_point_active_ptr_)->sample(lifecycle_node_->now());
 
-    // send feedback
-    if (rt_active_goal_) {
-      auto feedback = std::make_shared<FollowJTrajAction::Feedback>();
-      feedback->header.stamp = lifecycle_node_->now();
-      feedback->joint_names = joint_names_;
-
-      auto cur_goal_msg = (*traj_point_active_ptr_)->get_trajectory_msg();
-      if (traj_point_ptr != (*traj_point_active_ptr_)->end()) {
-        feedback->actual = *traj_point_ptr;
-      } else if (cur_goal_msg->points.size()) {
-        feedback->actual = cur_goal_msg->points[0];
-      }
-
-      if (cur_goal_msg->points.size()) {
-        feedback->desired = cur_goal_msg->points[0];
-      }
-
-      // TODO(ddengster): feedback errors
-      // feedback->error;
-      rt_active_goal_->setFeedback(feedback);
-      RCLCPP_INFO(lifecycle_node_->get_logger(), "Sending feedback..");
-    }
-
     // find next new point for current timestamp
     // set cmd only if a point is found
     if (traj_point_ptr == (*traj_point_active_ptr_)->end()) {
@@ -130,6 +107,42 @@ JointTrajectoryController::update()
     for (size_t index = 0; index < joint_num; ++index) {
       registered_joint_cmd_handles_[index]->set_cmd(traj_point_ptr->positions[index]);
     }
+
+    // send feedback
+    if (rt_active_goal_) {
+      auto feedback = std::make_shared<FollowJTrajAction::Feedback>();
+      feedback->header.stamp = lifecycle_node_->now();
+      feedback->joint_names = joint_names_;
+      feedback->actual.time_from_start = rclcpp::Duration(0.0);
+
+      // our current target 
+      auto cur_goal_msg = (*traj_point_active_ptr_)->get_trajectory_msg();
+      if (cur_goal_msg->points.size())
+        feedback->desired = cur_goal_msg->points[0];
+
+      int joint_idx = 0;
+      for (auto& joint_state : registered_joint_state_handles_)
+      {
+        // current frame (only set 1 frame worth of data)
+        feedback->actual.positions.push_back(joint_state->get_position());
+        feedback->actual.velocities.push_back(joint_state->get_velocity());
+        feedback->actual.effort.push_back(joint_state->get_effort());
+
+        // error defined as the difference between current and desired
+        // TODO (ddeng: add angles utility)
+        // feedback->error.positions.push_back(angles::shortest_angular_distance(
+        //   joint_state->get_position(), feedback->desired.positions[joint_idx]));
+        feedback->error.positions.push_back(0.0);
+        feedback->error.velocities.push_back(
+          joint_state->get_velocity() - feedback->desired.velocities[joint_idx]);
+
+        ++joint_idx;
+      }
+
+      rt_active_goal_->setFeedback(feedback);
+    }
+
+    // send goal success if within goal successful
 
     prev_traj_point_ptr_ = traj_point_ptr;
     set_op_mode(hardware_interface::OperationMode::ACTIVE);
@@ -201,6 +214,9 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
   {
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
   }
+
+  default_tolerances_ = getSegmentTolerances(lifecycle_node_, joint_names_);
+  RCLCPP_INFO(lifecycle_node_->get_logger(), "tol: %f", default_tolerances_.goal_time_tolerance);
 
   // Store 'home' pose
   traj_msg_home_ptr_ = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
@@ -306,7 +322,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
       lifecycle_node_->get_node_clock_interface(),
       lifecycle_node_->get_node_logging_interface(),
       lifecycle_node_->get_node_waitables_interface(),
-      "follow_joint_trajectory",
+      std::string(lifecycle_node_->get_name()) + "/follow_joint_trajectory",
       std::bind(&JointTrajectoryController::goalCB, this, _1, _2),
       std::bind(&JointTrajectoryController::cancelCB, this, _1),
       std::bind(&JointTrajectoryController::feedbackSetupCB, this, _1)
@@ -474,6 +490,7 @@ rclcpp_action::GoalResponse JointTrajectoryController::goalCB(
     goal->trajectory);
   traj_external_point_ptr_->update(traj_msg);
 
+  RCLCPP_INFO(lifecycle_node_->get_logger(), "accepted new action goal");
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
 

@@ -30,6 +30,7 @@
 #include "hardware_interface/robot_hardware.hpp"
 
 #include "joint_trajectory_controller/trajectory.hpp"
+#include "joint_trajectory_controller/tolerances.hpp"
 #include "joint_trajectory_controller/visibility_control.h"
 
 #include "rclcpp_action/rclcpp_action.hpp"
@@ -144,6 +145,8 @@ private:
     const std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle);
   void feedbackSetupCB(
     std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle);
+
+  SegmentTolerances default_tolerances_;
 
   void preemptActiveGoal();
 
