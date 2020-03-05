@@ -359,38 +359,36 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
   // joint_command_subscriber_->on_activate();
 
   // State publisher
-  {
-    double state_publish_rate =
-      lifecycle_node_->get_parameter("state_publish_rate").get_value<double>();
-    RCLCPP_INFO_STREAM(
-      logger, "Controller state will be published at " <<
-        state_publish_rate << "Hz.");
-    if (state_publish_rate > 0.0) {
-      state_publisher_period_ =
-        rclcpp::Duration::from_seconds(1.0 / state_publish_rate);
-    } else {
-      state_publisher_period_ = rclcpp::Duration(0.0);
-    }
-
-    publisher_ = lifecycle_node_->create_publisher<ControllerStateMsg>(
-      "state", rclcpp::SystemDefaultsQoS());
-    state_publisher_.reset(new StatePublisher(publisher_));
-
-    int n_joints = joint_names_.size();
-
-    state_publisher_->lock();
-    state_publisher_->msg_.joint_names = joint_names_;
-    state_publisher_->msg_.desired.positions.resize(n_joints);
-    state_publisher_->msg_.desired.velocities.resize(n_joints);
-    state_publisher_->msg_.desired.accelerations.resize(n_joints);
-    state_publisher_->msg_.actual.positions.resize(n_joints);
-    state_publisher_->msg_.actual.velocities.resize(n_joints);
-    state_publisher_->msg_.error.positions.resize(n_joints);
-    state_publisher_->msg_.error.velocities.resize(n_joints);
-    state_publisher_->unlock();
-
-    last_state_publish_time_ = lifecycle_node_->now();
+  double state_publish_rate =
+    lifecycle_node_->get_parameter("state_publish_rate").get_value<double>();
+  RCLCPP_INFO_STREAM(
+    logger, "Controller state will be published at " <<
+      state_publish_rate << "Hz.");
+  if (state_publish_rate > 0.0) {
+    state_publisher_period_ =
+      rclcpp::Duration::from_seconds(1.0 / state_publish_rate);
+  } else {
+    state_publisher_period_ = rclcpp::Duration(0.0);
   }
+
+  publisher_ = lifecycle_node_->create_publisher<ControllerStateMsg>(
+    "state", rclcpp::SystemDefaultsQoS());
+  state_publisher_.reset(new StatePublisher(publisher_));
+
+  int n_joints = joint_names_.size();
+
+  state_publisher_->lock();
+  state_publisher_->msg_.joint_names = joint_names_;
+  state_publisher_->msg_.desired.positions.resize(n_joints);
+  state_publisher_->msg_.desired.velocities.resize(n_joints);
+  state_publisher_->msg_.desired.accelerations.resize(n_joints);
+  state_publisher_->msg_.actual.positions.resize(n_joints);
+  state_publisher_->msg_.actual.velocities.resize(n_joints);
+  state_publisher_->msg_.error.positions.resize(n_joints);
+  state_publisher_->msg_.error.velocities.resize(n_joints);
+  state_publisher_->unlock();
+
+  last_state_publish_time_ = lifecycle_node_->now();
 
   // action server configuration
   {
