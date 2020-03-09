@@ -310,8 +310,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
   }
 
   default_tolerances_ = getSegmentTolerances(lifecycle_node_, joint_names_);
-  RCLCPP_INFO(lifecycle_node_->get_logger(), "tol: %f", default_tolerances_.goal_time_tolerance);
-
+  
   // Store 'home' pose
   traj_msg_home_ptr_ = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
   traj_msg_home_ptr_->header.stamp.sec = 0;
