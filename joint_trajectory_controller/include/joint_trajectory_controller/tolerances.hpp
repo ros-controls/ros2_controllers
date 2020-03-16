@@ -52,17 +52,9 @@ namespace joint_trajectory_controller
  */
 struct StateTolerances
 {
-  StateTolerances(double position_tolerance     = 0.0,
-                  double velocity_tolerance     = 0.0,
-                  double acceleration_tolerance = 0.0)
-    : position(position_tolerance),
-      velocity(velocity_tolerance),
-      acceleration(acceleration_tolerance)
-  {}
-
-  double position;
-  double velocity;
-  double acceleration;
+  double position = 0.0;
+  double velocity = 0.0;
+  double acceleration = 0.0;
 };
 
 /**
@@ -70,9 +62,9 @@ struct StateTolerances
  */
 struct SegmentTolerances
 {
-  SegmentTolerances(const typename std::vector<StateTolerances>::size_type& size = 0)
-    : state_tolerance(size, 0.0),
-      goal_state_tolerance(size, 0.0),
+  SegmentTolerances(size_t size = 0)
+    : state_tolerance(size),
+      goal_state_tolerance(size),
       goal_time_tolerance(0.0)
   {}
 
@@ -84,28 +76,68 @@ struct SegmentTolerances
 
   /** Extra time after the segment end time allowed to reach the goal state tolerances. */
   double goal_time_tolerance;
+
 };
+
+void declareSegmentTolerances(const rclcpp_lifecycle::LifecycleNode::SharedPtr& node)
+{
+  node->declare_parameter<double>("constraints.stopped_velocity_tolerance", 0.01);
+  node->declare_parameter<double>("constraints.goal_time", 0.0);
+}
 
 /**
- * \brief Trajectory segment tolerances per Joint
+ * \brief Populate trajectory segment tolerances from data in the ROS parameter server.
+ *
+ * It is assumed that the following parameter structure is followed on the provided NodeHandle. Unspecified parameters
+ * will take the defaults shown in the comments:
+ *
+ * \code
+ * constraints:
+ *  goal_time: 1.0                   # Defaults to zero
+ *  stopped_velocity_tolerance: 0.02 # Defaults to 0.01
+ *  foo_joint:
+ *    trajectory: 0.05               # Defaults to zero (ie. the tolerance is not enforced)
+ *    goal:       0.03               # Defaults to zero (ie. the tolerance is not enforced)
+ *  bar_joint:
+ *    goal: 0.01
+ * \endcode
+ *
+ * \param nh NodeHandle where the tolerances are specified.
+ * \param joint_names Names of joints to look for in the parameter server for a tolerance specification.
+ * \return Trajectory segment tolerances.
  */
-struct SegmentTolerancesPerJoint
+SegmentTolerances getSegmentTolerances(const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,
+                                       const std::vector<std::string>& joint_names)
 {
-  SegmentTolerancesPerJoint()
-    : state_tolerance(0.0),
-      goal_state_tolerance(0.0),
-      goal_time_tolerance(0.0)
-  {}
+  const unsigned int n_joints = joint_names.size();
+  SegmentTolerances tolerances;
 
-  /** State tolerances that appply during segment execution. */
-  StateTolerances state_tolerance;
+  // State and goal state tolerances
+  double stopped_velocity_tolerance;
+  node->get_parameter_or<double>("constraints.stopped_velocity_tolerance", stopped_velocity_tolerance, 0.01);
+  
+  tolerances.state_tolerance.resize(n_joints);
+  tolerances.goal_state_tolerance.resize(n_joints);
+  for (unsigned int i = 0; i < n_joints; ++i)
+  {
+    std::string prefix = "constraints." + joint_names[i];
+    // not possible to declare in init function since we need joint_names to be set first
+    //node->declare_parameter<double>(prefix + ".trajectory", 0.0);
+    //node->declare_parameter<double>(prefix + ".goal", 0.0);
 
-  /** State tolerances that apply for the goal state only.*/
-  StateTolerances goal_state_tolerance;
+    node->get_parameter_or<double>(prefix + ".trajectory", tolerances.state_tolerance[i].position, 0.0);
+    node->get_parameter_or<double>(prefix + ".goal", tolerances.goal_state_tolerance[i].position, 0.0);
+    RCLCPP_INFO(rclcpp::get_logger("tolerance"), "%s %f", (prefix + ".trajectory").c_str(), tolerances.state_tolerance[i].position);
+    RCLCPP_INFO(rclcpp::get_logger("tolerance"), "%s %f", (prefix + ".goal").c_str(), tolerances.goal_state_tolerance[i].position);
+    
+    tolerances.goal_state_tolerance[i].velocity = stopped_velocity_tolerance;
+  }
 
-  /** Extra time after the segment end time allowed to reach the goal state tolerances. */
-  double goal_time_tolerance;
-};
+  // Goal time tolerance
+  node->get_parameter_or<double>("constraints.goal_time", tolerances.goal_time_tolerance, 0.0);
+
+  return tolerances;
+}
 
 /**
  * \param state_error State error to check.
@@ -162,17 +194,20 @@ inline bool checkStateTolerance(const State&                     state_error,
  * \param show_errors If the joint that violate its tolerance should be output to console. NOT REALTIME if true
  * \return True if \p state_error fulfills \p state_tolerance.
  */
-template <class State>
-inline bool checkStateTolerancePerJoint(const State&                                   state_error,
+inline bool checkStateTolerancePerJoint(const trajectory_msgs::msg::JointTrajectoryPoint& state_error,
+                                        int joint_idx,
                                         const StateTolerances& state_tolerance,
                                         bool show_errors = false)
 {
 
   using std::abs;
+  double error_position = state_error.positions[joint_idx];
+  double error_velocity = state_error.velocities[joint_idx];
+  double error_acceleration = state_error.accelerations[joint_idx];
 
-  const bool is_valid = !(state_tolerance.position     > 0.0 && abs(state_error.position[0])     > state_tolerance.position) &&
-                        !(state_tolerance.velocity     > 0.0 && abs(state_error.velocity[0])     > state_tolerance.velocity) &&
-                        !(state_tolerance.acceleration > 0.0 && abs(state_error.acceleration[0]) > state_tolerance.acceleration);
+  const bool is_valid = !(state_tolerance.position     > 0.0 && abs(error_position)     > state_tolerance.position) &&
+                        !(state_tolerance.velocity     > 0.0 && abs(error_velocity)     > state_tolerance.velocity) &&
+                        !(state_tolerance.acceleration > 0.0 && abs(error_acceleration) > state_tolerance.acceleration);
 
   if (!is_valid)
   {
@@ -181,14 +216,14 @@ inline bool checkStateTolerancePerJoint(const State&                            
       auto logger = rclcpp::get_logger("tolerances");
       RCLCPP_ERROR_STREAM(logger, "Path state tolerances failed:");
 
-      if (state_tolerance.position     > 0.0 && abs(state_error.position[0])     > state_tolerance.position)
-        RCLCPP_ERROR_STREAM(logger, "Position Error: " << state_error.position[0] <<
+      if (state_tolerance.position     > 0.0 && abs(error_position)     > state_tolerance.position)
+        RCLCPP_ERROR_STREAM(logger, "Position Error: " << error_position <<
           " Position Tolerance: " << state_tolerance.position);
-      if (state_tolerance.velocity     > 0.0 && abs(state_error.velocity[0])     > state_tolerance.velocity)
-        RCLCPP_ERROR_STREAM(logger, "Velocity Error: " << state_error.velocity[0] <<
+      if (state_tolerance.velocity     > 0.0 && abs(error_velocity)     > state_tolerance.velocity)
+        RCLCPP_ERROR_STREAM(logger, "Velocity Error: " << error_velocity <<
           " Velocity Tolerance: " << state_tolerance.velocity);
-      if (state_tolerance.acceleration > 0.0 && abs(state_error.acceleration[0]) > state_tolerance.acceleration)
-        RCLCPP_ERROR_STREAM(logger, "Acceleration Error: " << state_error.acceleration[0] <<
+      if (state_tolerance.acceleration > 0.0 && abs(error_acceleration) > state_tolerance.acceleration)
+        RCLCPP_ERROR_STREAM(logger, "Acceleration Error: " << error_acceleration <<
           " Acceleration Tolerance: " << state_tolerance.acceleration);
     }
     return false;
@@ -261,58 +296,6 @@ void updateSegmentTolerances(const control_msgs::action::FollowJointTrajectory::
   const rclcpp::Duration& goal_time_tolerance = goal.goal_time_tolerance;
   if      (goal_time_tolerance < rclcpp::Duration(0.0)) {tols.goal_time_tolerance = 0.0;}
   else if (goal_time_tolerance > rclcpp::Duration(0.0)) {tols.goal_time_tolerance = goal_time_tolerance.seconds();}
-}
-
-/**
- * \brief Populate trajectory segment tolerances from data in the ROS parameter server.
- *
- * It is assumed that the following parameter structure is followed on the provided NodeHandle. Unspecified parameters
- * will take the defaults shown in the comments:
- *
- * \code
- * constraints:
- *  goal_time: 1.0                   # Defaults to zero
- *  stopped_velocity_tolerance: 0.02 # Defaults to 0.01
- *  foo_joint:
- *    trajectory: 0.05               # Defaults to zero (ie. the tolerance is not enforced)
- *    goal:       0.03               # Defaults to zero (ie. the tolerance is not enforced)
- *  bar_joint:
- *    goal: 0.01
- * \endcode
- *
- * \param nh NodeHandle where the tolerances are specified.
- * \param joint_names Names of joints to look for in the parameter server for a tolerance specification.
- * \return Trajectory segment tolerances.
- */
-SegmentTolerances getSegmentTolerances(const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,
-                                       const std::vector<std::string>& joint_names)
-{
-  const unsigned int n_joints = joint_names.size();
-  SegmentTolerances tolerances;
-  std::string tolerance_ns = "constraints";
-
-  // State and goal state tolerances
-  double stopped_velocity_tolerance;
-  node->declare_parameter(tolerance_ns + ".stopped_velocity_tolerance");
-  node->get_parameter_or<double>(tolerance_ns + ".stopped_velocity_tolerance", stopped_velocity_tolerance, 0.01);
-  
-  tolerances.state_tolerance.resize(n_joints);
-  tolerances.goal_state_tolerance.resize(n_joints);
-  for (unsigned int i = 0; i < n_joints; ++i)
-  {
-    std::string prefix = tolerance_ns + joint_names[i];
-    node->declare_parameter(prefix + ".trajectory");
-    node->declare_parameter(prefix + ".goal");
-    node->get_parameter_or<double>(prefix + ".trajectory", tolerances.state_tolerance[i].position, 0.0);
-    node->get_parameter_or<double>(prefix + ".goal", tolerances.goal_state_tolerance[i].position, 0.0);
-    tolerances.goal_state_tolerance[i].velocity = stopped_velocity_tolerance;
-  }
-
-  // Goal time tolerance
-  node->declare_parameter(tolerance_ns + ".goal_time");
-  node->get_parameter_or<double>(tolerance_ns + ".goal_time", tolerances.goal_time_tolerance, 0.0);
-
-  return tolerances;
 }
 
 } // namespace

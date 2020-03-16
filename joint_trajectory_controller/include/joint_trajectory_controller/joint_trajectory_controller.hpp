@@ -110,7 +110,6 @@ private:
   rclcpp::Subscription<trajectory_msgs::msg::JointTrajectory>::SharedPtr
     joint_command_subscriber_ = nullptr;
 
-  TrajectoryPointConstIter prev_traj_point_ptr_;
   std::shared_ptr<Trajectory> * traj_point_active_ptr_ = nullptr;
   std::shared_ptr<Trajectory> traj_external_point_ptr_ = nullptr;
   std::shared_ptr<Trajectory> traj_home_point_ptr_ = nullptr;
@@ -132,23 +131,24 @@ private:
   typedef std::shared_ptr<RealtimeGoalHandle> RealtimeGoalHandlePtr;
 
   rclcpp_action::Server<FollowJTrajAction>::SharedPtr action_server_;
-  bool allow_partial_joints_goal_ = false;
+  bool allow_partial_joints_goal_;
   RealtimeGoalHandlePtr rt_active_goal_;     ///< Currently active action goal, if any.
   rclcpp::TimerBase::SharedPtr goal_handle_timer_;
-  rclcpp::Duration action_monitor_period_ = rclcpp::Duration(1.0 / 20.0);
+  rclcpp::Duration action_monitor_period_ = rclcpp::Duration(1.0 / 50.0);
+  std::mutex trajectory_mtx_;
 
   // callbacks for action_server_
-  rclcpp_action::GoalResponse goalCB(
+  rclcpp_action::GoalResponse goal_callback(
     const rclcpp_action::GoalUUID& uuid,
     std::shared_ptr<const FollowJTrajAction::Goal> goal);
-  rclcpp_action::CancelResponse cancelCB(
+  rclcpp_action::CancelResponse cancel_callback(
     const std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle);
-  void feedbackSetupCB(
+  void feedback_setup_callback(
     std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle);
 
   SegmentTolerances default_tolerances_;
 
-  void preemptActiveGoal();
+  void preempt_active_goal();
 
   bool reset();
   void set_op_mode(const hardware_interface::OperationMode & mode);
