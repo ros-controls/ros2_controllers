@@ -95,6 +95,26 @@ if(BUILD_TESTING)
     controller_manager
     test_robot_hardware
   )
+
+  ament_add_gtest(
+    test_trajectory_actions
+    test/test_trajectory_actions.cpp
+  )
+  target_include_directories(test_trajectory_actions PRIVATE include)
+  target_link_libraries(test_trajectory_actions
+    joint_trajectory_controller
+  )
+  ament_target_dependencies(test_trajectory_actions
+    "controller_parameter_server"
+    "control_msgs"
+    "hardware_interface"
+    "rclcpp"
+    "rclcpp_lifecycle"
+    "rcutils"
+    "test_robot_hardware"
+    "trajectory_msgs"
+    "realtime_tools"
+  )
 endif()
 
 ament_export_dependencies(
