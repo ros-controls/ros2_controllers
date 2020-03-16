@@ -309,6 +309,9 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
   }
 
+  default_tolerances_ = getSegmentTolerances(lifecycle_node_, joint_names_);
+  RCLCPP_INFO(lifecycle_node_->get_logger(), "tol: %f", default_tolerances_.goal_time_tolerance);
+
   // Store 'home' pose
   traj_msg_home_ptr_ = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
   traj_msg_home_ptr_->header.stamp.sec = 0;
@@ -342,7 +345,6 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
       // http://wiki.ros.org/joint_trajectory_controller/UnderstandingTrajectoryReplacement
       // always replace old msg with new one for now
       if (subscriber_is_active_) {
-        std::lock_guard<std::mutex> guard(trajectory_mtx_);
         traj_external_point_ptr_->update(msg);
       }
     };
