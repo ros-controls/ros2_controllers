@@ -441,3 +441,82 @@ TEST_F(TestTrajectoryController, correct_initialization_using_parameters) {
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   executor.cancel();
 }
+
+void test_state_publish_rate_target(
+  std::shared_ptr<joint_trajectory_controller::JointTrajectoryController> traj_controller,
+  int target_msg_count)
+{
+  // fill in some data so we wont fail
+  auto traj_lifecycle_node = traj_controller->get_lifecycle_node();
+  std::vector<std::string> joint_names = {"joint1", "joint2", "joint3"};
+  rclcpp::Parameter joint_parameters("joints", joint_names);
+  traj_lifecycle_node->set_parameter(joint_parameters);
+
+  std::vector<std::string> operation_mode_names = {"write1", "write2"};
+  rclcpp::Parameter operation_mode_parameters("write_op_modes", operation_mode_names);
+  traj_lifecycle_node->set_parameter(operation_mode_parameters);
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(traj_lifecycle_node->get_node_base_interface());
+
+  traj_lifecycle_node->set_parameter(
+    rclcpp::Parameter(
+      "state_publish_rate",
+      static_cast<double>(target_msg_count)));
+
+  traj_controller->on_configure(traj_lifecycle_node->get_current_state());
+  traj_controller->on_activate(traj_lifecycle_node->get_current_state());
+
+  auto future_handle = std::async(
+    std::launch::async, [&executor]() -> void {
+      executor.spin();
+    });
+
+  using control_msgs::msg::JointTrajectoryControllerState;
+
+  const int qos_level = 10;
+  int echo_received_counter = 0;
+  rclcpp::Subscription<JointTrajectoryControllerState>::SharedPtr subs =
+    traj_lifecycle_node->create_subscription<JointTrajectoryControllerState>(
+    "/state",
+    qos_level,
+    [&](JointTrajectoryControllerState::UniquePtr msg) {
+      (void)msg;
+      ++echo_received_counter;
+    }
+    );
+
+  // wait for things to setup
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+  // update for 1second
+  auto start_time = rclcpp::Clock().now();
+  rclcpp::Duration wait = rclcpp::Duration::from_seconds(1.0);
+  auto end_time = start_time + wait;
+  while (rclcpp::Clock().now() < end_time) {
+    traj_controller->update();
+  }
+
+  EXPECT_EQ(target_msg_count, echo_received_counter);
+
+  executor.cancel();
+}
+
+TEST_F(TestTrajectoryController, test_state_publish_rate) {
+  auto traj_controller = std::make_shared<joint_trajectory_controller::JointTrajectoryController>();
+  auto ret = traj_controller->init(test_robot, controller_name);
+  if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
+    FAIL();
+  }
+  test_state_publish_rate_target(traj_controller, 10);
+}
+
+TEST_F(TestTrajectoryController, zero_state_publish_rate) {
+  auto traj_controller = std::make_shared<joint_trajectory_controller::JointTrajectoryController>();
+  auto ret = traj_controller->init(test_robot, controller_name);
+  if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
+    FAIL();
+  }
+
+  test_state_publish_rate_target(traj_controller, 0);
+}
