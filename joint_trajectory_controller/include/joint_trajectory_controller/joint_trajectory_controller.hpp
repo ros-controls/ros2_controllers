@@ -154,7 +154,9 @@ private:
   void set_op_mode(const hardware_interface::OperationMode & mode);
   void halt();
 
-  void publish_state();
+  using JointTrajectoryPoint = trajectory_msgs::msg::JointTrajectoryPoint;
+  void publish_state(const JointTrajectoryPoint& desired_state,
+    const JointTrajectoryPoint& current_state, const JointTrajectoryPoint& state_error);
 };
 
 }  // namespace joint_trajectory_controller

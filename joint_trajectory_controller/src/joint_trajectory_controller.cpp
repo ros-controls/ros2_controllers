@@ -74,7 +74,7 @@ JointTrajectoryController::init(
   lifecycle_node_->declare_parameter<std::vector<std::string>>("joints", joint_names_);
   lifecycle_node_->declare_parameter<std::vector<std::string>>("write_op_modes", write_op_names_);
   lifecycle_node_->declare_parameter<double>("state_publish_rate", 50.0);
-  lifecycle_node_->declare_parameter<double>("action_monitor_rate", 90.0);
+  lifecycle_node_->declare_parameter<double>("action_monitor_rate", 20.0);
   lifecycle_node_->declare_parameter<bool>("allow_partial_joints_goal", allow_partial_joints_goal_);
   declareSegmentTolerances(lifecycle_node_);
 
@@ -99,10 +99,12 @@ JointTrajectoryController::update()
     point.accelerations.resize(size);  
   };
 
-  // current state
-  trajectory_msgs::msg::JointTrajectoryPoint state_current;
+  
+  JointTrajectoryPoint state_current, state_desired, state_error;
   size_t joint_num = registered_joint_state_handles_.size();
   resize_joint_trajectory_point(state_current, joint_num);
+
+  // current state update
   for (uint index=0; index<joint_num; ++index)
   {
     auto& joint_state = registered_joint_state_handles_[index];
@@ -116,19 +118,16 @@ JointTrajectoryController::update()
 
   // currently carrying out a trajectory
   if (traj_point_active_ptr_ && (*traj_point_active_ptr_)->is_empty() == false) {
-    if (!(*traj_point_active_ptr_)->is_sampled_already())
-    {
+    // if sampling the first time, set the point before you sample
+    if (!(*traj_point_active_ptr_)->is_sampled_already()) {
       (*traj_point_active_ptr_)->set_point_before_traj(lifecycle_node_->now(), state_current);
     }
+    resize_joint_trajectory_point(state_error, joint_num);
 
     // find segment for current timestamp
     TrajectoryPointConstIter start_segment_itr, end_segment_itr;
-    trajectory_msgs::msg::JointTrajectoryPoint state_desired;
     (*traj_point_active_ptr_)->sample(lifecycle_node_->now(), state_desired,
       start_segment_itr, end_segment_itr);
-
-    trajectory_msgs::msg::JointTrajectoryPoint state_error;
-    resize_joint_trajectory_point(state_error, joint_num);
 
     static bool o = false;
     if (!o)
@@ -242,7 +241,7 @@ JointTrajectoryController::update()
     set_op_mode(hardware_interface::OperationMode::ACTIVE);
   }
 
-  publish_state();
+  publish_state(state_desired, state_current, state_error);
   return CONTROLLER_INTERFACE_RET_SUCCESS;
 }
 
@@ -528,7 +527,8 @@ JointTrajectoryController::halt()
   set_op_mode(hardware_interface::OperationMode::ACTIVE);
 }
 
-void JointTrajectoryController::publish_state()
+void JointTrajectoryController::publish_state(const JointTrajectoryPoint& desired_state,
+  const JointTrajectoryPoint& current_state, const JointTrajectoryPoint& state_error)
 {
   if (state_publisher_period_.seconds() <= 0.0) {
     return;
@@ -542,8 +542,13 @@ void JointTrajectoryController::publish_state()
     last_state_publish_time_ = lifecycle_node_->now();
 
     state_publisher_->msg_.header.stamp = last_state_publish_time_;
-    // TODO(ddengster): Fill in the rest of the state data.
-    // Port it when we're ready to put in the other trajectory code (ros2_controllers PR #26).
+    state_publisher_->msg_.desired.positions     = desired_state.positions;
+    state_publisher_->msg_.desired.velocities    = desired_state.velocities;
+    state_publisher_->msg_.desired.accelerations = desired_state.accelerations;
+    state_publisher_->msg_.actual.positions      = current_state.positions;
+    state_publisher_->msg_.actual.velocities     = current_state.velocities;
+    state_publisher_->msg_.error.positions       = state_error.positions;
+    state_publisher_->msg_.error.velocities      = state_error.velocities;
 
     state_publisher_->unlockAndPublish();
   }
