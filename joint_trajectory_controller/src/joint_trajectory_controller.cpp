@@ -236,7 +236,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
 
   publisher_ = lifecycle_node_->create_publisher<ControllerStateMsg>(
     "state", rclcpp::SystemDefaultsQoS());
-  state_publisher_.reset(new StatePublisher(publisher_));
+  state_publisher_ = std::make_unique<StatePublisher>(publisher_);
 
   int n_joints = joint_names_.size();
 
