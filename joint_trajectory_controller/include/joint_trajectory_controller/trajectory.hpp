@@ -72,10 +72,10 @@ public:
   * - Sampling after entire trajectory:
   *    start_segment_itr = --end(), end_segment_itr = end()
   * - Sampling empty msg:
-  *    start_segment_itr = end(), end_segment_itr = end()
+  *    return false
   */
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  void
+  bool
   sample(const rclcpp::Time & sample_time,
     trajectory_msgs::msg::JointTrajectoryPoint& expected_state,
     TrajectoryPointConstIter& start_segment_itr,
@@ -95,7 +95,7 @@ public:
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   bool
-  is_empty() const;
+  has_traj_msg() const;
 
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> get_trajectory_msg() const
   {

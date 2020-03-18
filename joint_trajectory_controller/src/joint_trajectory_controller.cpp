@@ -98,7 +98,6 @@ JointTrajectoryController::update()
     point.velocities.resize(size);
     point.accelerations.resize(size);  
   };
-
   
   JointTrajectoryPoint state_current, state_desired, state_error;
   size_t joint_num = registered_joint_state_handles_.size();
@@ -117,7 +116,7 @@ JointTrajectoryController::update()
   std::lock_guard<std::mutex> guard(trajectory_mtx_);
 
   // currently carrying out a trajectory
-  if (traj_point_active_ptr_ && (*traj_point_active_ptr_)->is_empty() == false) {
+  if (traj_point_active_ptr_ && (*traj_point_active_ptr_)->has_traj_msg() == false) {
     // if sampling the first time, set the point before you sample
     if (!(*traj_point_active_ptr_)->is_sampled_already()) {
       (*traj_point_active_ptr_)->set_point_before_traj(lifecycle_node_->now(), state_current);
@@ -126,7 +125,7 @@ JointTrajectoryController::update()
 
     // find segment for current timestamp
     TrajectoryPointConstIter start_segment_itr, end_segment_itr;
-    (*traj_point_active_ptr_)->sample(lifecycle_node_->now(), state_desired,
+    bool valid_point = (*traj_point_active_ptr_)->sample(lifecycle_node_->now(), state_desired,
       start_segment_itr, end_segment_itr);
 
     static bool o = false;
@@ -154,7 +153,7 @@ JointTrajectoryController::update()
       o = true;
     }
 
-    if (end_segment_itr != (*traj_point_active_ptr_)->end())
+    if (valid_point && end_segment_itr != (*traj_point_active_ptr_)->end())
     {
       bool abort = false;
       for (size_t index = 0; index < joint_num; ++index) {
@@ -205,7 +204,7 @@ JointTrajectoryController::update()
         }
       }
     }
-    else
+    else if (valid_point)
     {
       // past the final point, check that we end up inside goal tolerance
       bool outside_goal_tolerance = false;
@@ -592,10 +591,8 @@ rclcpp_action::CancelResponse JointTrajectoryController::cancel_callback(
   // Check that cancel request refers to currently active goal (if any)
   if (rt_active_goal_ && rt_active_goal_->gh_ == goal_handle) {
     // Controller uptime
-    // TODO(ddengster): Hold position
-    // const rclcpp::Time uptime = time_data_.readFromRT()->uptime;
     // Enter hold current position mode
-    // setHoldPosition(uptime);
+    set_hold_position();
 
     RCLCPP_DEBUG(
       lifecycle_node_->get_logger(),
@@ -645,6 +642,17 @@ void JointTrajectoryController::preempt_active_goal()
     rt_active_goal_->setCanceled(action_res);
     rt_active_goal_.reset();
   }
+}
+
+void JointTrajectoryController::set_hold_position()
+{
+  std::lock_guard<std::mutex> guard(trajectory_mtx_);
+  trajectory_msgs::msg::JointTrajectory empty_msg;
+  empty_msg.header.stamp = rclcpp::Time(0);
+
+  auto traj_msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>(
+      empty_msg);
+  traj_external_point_ptr_->update(traj_msg);
 }
 
 }  // namespace joint_trajectory_controller

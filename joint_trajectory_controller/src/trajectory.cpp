@@ -62,7 +62,7 @@ Trajectory::update(std::shared_ptr<trajectory_msgs::msg::JointTrajectory> joint_
   sampled_already_ = false;
 }
 
-void
+bool
 Trajectory::sample(const rclcpp::Time & sample_time,
   trajectory_msgs::msg::JointTrajectoryPoint& expected_state,
   TrajectoryPointConstIter& start_segment_itr, 
@@ -74,7 +74,7 @@ Trajectory::sample(const rclcpp::Time & sample_time,
   {
     start_segment_itr = end();
     end_segment_itr = end();
-    return;
+    return false;
   }
 
   // first sampling of this trajectory
@@ -134,7 +134,7 @@ Trajectory::sample(const rclcpp::Time & sample_time,
     linear_interpolation(t0, state_before_traj_msg_, first_point_timestamp, first_point_in_msg, sample_time, expected_state);
     start_segment_itr = begin(); //no segments before the first
     end_segment_itr = begin();
-    return;
+    return true;
   }
   
   // time_from_start + trajectory time is the expected arrival time of trajectory
@@ -156,7 +156,7 @@ Trajectory::sample(const rclcpp::Time & sample_time,
       linear_interpolation(t0, point, t1, next_point, sample_time, expected_state);
       start_segment_itr = begin() + i;
       end_segment_itr = begin() + (i + 1);
-      return;
+      return true;
     }
   }
 
@@ -164,6 +164,7 @@ Trajectory::sample(const rclcpp::Time & sample_time,
   start_segment_itr = --end();
   end_segment_itr = end();
   expected_state = (*start_segment_itr);
+  return true;
 }
 
 TrajectoryPointConstIter
@@ -189,7 +190,7 @@ Trajectory::time_from_start() const
 }
 
 bool
-Trajectory::is_empty() const
+Trajectory::has_traj_msg() const
 {
   return !trajectory_msg_;
 }

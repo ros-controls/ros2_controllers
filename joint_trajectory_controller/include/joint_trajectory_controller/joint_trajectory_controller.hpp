@@ -149,6 +149,7 @@ private:
   SegmentTolerances default_tolerances_;
 
   void preempt_active_goal();
+  void set_hold_position();
 
   bool reset();
   void set_op_mode(const hardware_interface::OperationMode & mode);
