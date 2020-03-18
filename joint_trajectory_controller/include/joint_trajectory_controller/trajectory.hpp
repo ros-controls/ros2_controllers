@@ -97,10 +97,12 @@ public:
   bool
   has_traj_msg() const;
 
-  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> get_trajectory_msg() const
-  {
-    return trajectory_msg_;
-  }
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
+  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> 
+  get_trajectory_msg() const { return trajectory_msg_; }
+
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
+  rclcpp::Time get_trajectory_start_time() const { return trajectory_start_time_; }
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   bool is_sampled_already() const { return sampled_already_; }

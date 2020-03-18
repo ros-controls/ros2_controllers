@@ -232,8 +232,24 @@ JointTrajectoryController::update()
           rt_active_goal_->setSucceeded(res);
           rt_active_goal_.reset();
         }
-        else
+        else if (default_tolerances_.goal_time_tolerance != 0.0)
+        {
           RCLCPP_INFO(lifecycle_node_->get_logger(), "All joints not within range");
+          // if we exceed goal_time_toleralance set it to aborted
+          rclcpp::Time traj_start = (*traj_point_active_ptr_)->get_trajectory_start_time();
+          rclcpp::Time traj_end = traj_start + start_segment_itr->time_from_start;
+          
+          double difference = lifecycle_node_->now().seconds() - traj_end.seconds();
+          if (difference > default_tolerances_.goal_time_tolerance)
+          {
+            auto result = std::make_shared<FollowJTrajAction::Result>();
+            result->set__error_code(FollowJTrajAction::Result::GOAL_TOLERANCE_VIOLATED);
+            rt_active_goal_->setAborted(result);
+            rt_active_goal_.reset();
+            RCLCPP_WARN(lifecycle_node_->get_logger(), "Abort: Exceeded goal_time_tolerance by %f seconds",
+              difference);
+          }
+        }
       }
     }
 

@@ -192,7 +192,6 @@ TEST_F(TestTrajectoryActions, test_success_multi_point_sendgoal) {
   };
   std::thread controller_hw_thread(thread_func, nullptr);
 
-  // TODO (ddengster): find a way to wait for action server proper?
   // common_goal_response and common_result_response 
   // sometimes doesnt receive calls when we dont sleep
   std::this_thread::sleep_for(std::chrono::milliseconds(200));
@@ -536,10 +535,6 @@ TEST_F(TestTrajectoryActions, test_state_tolerances_fail) {
   EXPECT_EQ(rclcpp_action::ResultCode::ABORTED, common_resultcode);
   EXPECT_EQ(control_msgs::action::FollowJointTrajectory_Result::PATH_TOLERANCE_VIOLATED, 
     common_action_result_code);
-
-  // EXPECT_EQ(1.0, test_robot->pos1);
-  // EXPECT_EQ(2.0, test_robot->pos2);
-  // EXPECT_EQ(3.0, test_robot->pos3);
 
   executor.cancel();
 }
