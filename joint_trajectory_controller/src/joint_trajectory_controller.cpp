@@ -231,14 +231,14 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
     state_publisher_period_ =
       rclcpp::Duration::from_seconds(1.0 / state_publish_rate);
   } else {
-    state_publisher_period_ = rclcpp::Duration(0.0);
+    state_publisher_period_ = rclcpp::Duration(0);
   }
 
   publisher_ = lifecycle_node_->create_publisher<ControllerStateMsg>(
     "state", rclcpp::SystemDefaultsQoS());
   state_publisher_ = std::make_unique<StatePublisher>(publisher_);
 
-  int n_joints = joint_names_.size();
+  auto n_joints = joint_names_.size();
 
   state_publisher_->lock();
   state_publisher_->msg_.joint_names = joint_names_;

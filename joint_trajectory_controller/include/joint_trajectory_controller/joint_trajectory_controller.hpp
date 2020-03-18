@@ -34,6 +34,8 @@
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 
+#include "rcutils/time.h"
+
 #include "realtime_tools/realtime_buffer.h"
 #include "realtime_tools/realtime_publisher.h"
 
@@ -115,7 +117,7 @@ private:
   rclcpp_lifecycle::LifecyclePublisher<ControllerStateMsg>::SharedPtr publisher_;
   StatePublisherPtr state_publisher_;
 
-  rclcpp::Duration state_publisher_period_ = rclcpp::Duration(1.0 / 50.0);
+  rclcpp::Duration state_publisher_period_ = rclcpp::Duration(RCUTILS_MS_TO_NS(20));
   rclcpp::Time last_state_publish_time_;
 
   bool reset();
