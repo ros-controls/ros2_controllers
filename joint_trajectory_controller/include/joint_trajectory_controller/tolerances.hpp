@@ -27,8 +27,8 @@
 
 /// \author Adolfo Rodriguez Tsouroukdissian
 
-#ifndef JOINT_TRAJECTORY_CONTROLLER_TOLERANCES_H
-#define JOINT_TRAJECTORY_CONTROLLER_TOLERANCES_H
+#ifndef JOINT_TRAJECTORY_CONTROLLER__TOLERANCES_HPP_
+#define JOINT_TRAJECTORY_CONTROLLER__TOLERANCES_HPP_
 
 // C++ standard
 #include <cassert>
@@ -62,9 +62,9 @@ struct StateTolerances
  */
 struct SegmentTolerances
 {
-  SegmentTolerances(size_t size = 0)
-    : state_tolerance(size),
-      goal_state_tolerance(size)
+  explicit SegmentTolerances(size_t size = 0)
+  : state_tolerance(size),
+    goal_state_tolerance(size)
   {}
 
   /** State tolerances that apply during segment execution. */
@@ -75,13 +75,13 @@ struct SegmentTolerances
 
   /** Extra time after the segment end time allowed to reach the goal state tolerances. */
   double goal_time_tolerance = 0.0;
-
 };
 
-void declareSegmentTolerances(const rclcpp_lifecycle::LifecycleNode::SharedPtr& node)
+void declareSegmentTolerances(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node)
 {
   node->declare_parameter<double>("constraints.stopped_velocity_tolerance", 0.01);
   node->declare_parameter<double>("constraints.goal_time", 0.0);
+  // not possible to declare per-joint tolerances since we need to obtain joint_names
 }
 
 /**
@@ -105,36 +105,38 @@ void declareSegmentTolerances(const rclcpp_lifecycle::LifecycleNode::SharedPtr& 
  * \param joint_names Names of joints to look for in the parameter server for a tolerance specification.
  * \return Trajectory segment tolerances.
  */
-SegmentTolerances getSegmentTolerances(const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,
-                                       const std::vector<std::string>& joint_names)
+SegmentTolerances getSegmentTolerances(
+  const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
+  const std::vector<std::string> & joint_names)
 {
   const unsigned int n_joints = joint_names.size();
   SegmentTolerances tolerances;
 
   // State and goal state tolerances
   double stopped_velocity_tolerance;
-  node->get_parameter_or<double>("constraints.stopped_velocity_tolerance", stopped_velocity_tolerance, 0.01);
-  
+  node->get_parameter_or<double>("constraints.stopped_velocity_tolerance",
+    stopped_velocity_tolerance, 0.01);
+
   tolerances.state_tolerance.resize(n_joints);
   tolerances.goal_state_tolerance.resize(n_joints);
-  for (unsigned int i = 0; i < n_joints; ++i)
-  {
+  for (auto i = 0u; i < n_joints; ++i) {
     std::string prefix = "constraints." + joint_names[i];
-    // not possible to declare in init function since we need joint_names to be set first
-    //node->declare_parameter<double>(prefix + ".trajectory", 0.0);
-    //node->declare_parameter<double>(prefix + ".goal", 0.0);
 
-    node->get_parameter_or<double>(prefix + ".trajectory", tolerances.state_tolerance[i].position, 0.0);
-    node->get_parameter_or<double>(prefix + ".goal", tolerances.goal_state_tolerance[i].position, 0.0);
-    RCLCPP_DEBUG(rclcpp::get_logger("tolerance"), "%s %f", (prefix + ".trajectory").c_str(), tolerances.state_tolerance[i].position);
-    RCLCPP_DEBUG(rclcpp::get_logger("tolerance"), "%s %f", (prefix + ".goal").c_str(), tolerances.goal_state_tolerance[i].position);
+    node->get_parameter_or<double>(prefix + ".trajectory", tolerances.state_tolerance[i].position,
+      0.0);
+    node->get_parameter_or<double>(prefix + ".goal", tolerances.goal_state_tolerance[i].position,
+      0.0);
+    RCLCPP_DEBUG(rclcpp::get_logger("tolerance"), "%s %f",
+      (prefix + ".trajectory").c_str(), tolerances.state_tolerance[i].position);
+    RCLCPP_DEBUG(rclcpp::get_logger("tolerance"), "%s %f",
+      (prefix + ".goal").c_str(), tolerances.goal_state_tolerance[i].position);
 
     tolerances.goal_state_tolerance[i].velocity = stopped_velocity_tolerance;
   }
 
   // Goal time tolerance
   node->get_parameter_or<double>("constraints.goal_time", tolerances.goal_time_tolerance, 0.0);
-  
+
   return tolerances;
 }
 
@@ -145,43 +147,47 @@ SegmentTolerances getSegmentTolerances(const rclcpp_lifecycle::LifecycleNode::Sh
  * \param show_errors If the joint that violate its tolerance should be output to console. NOT REALTIME if true
  * \return True if \p state_error fulfills \p state_tolerance.
  */
-inline bool checkStateTolerancePerJoint(const trajectory_msgs::msg::JointTrajectoryPoint& state_error,
-                                        int joint_idx,
-                                        const StateTolerances& state_tolerance,
-                                        bool show_errors = false)
+inline bool checkStateTolerancePerJoint(
+  const trajectory_msgs::msg::JointTrajectoryPoint & state_error,
+  int joint_idx,
+  const StateTolerances & state_tolerance,
+  bool show_errors = false)
 {
-
   using std::abs;
   double error_position = state_error.positions[joint_idx];
   double error_velocity = state_error.velocities[joint_idx];
   double error_acceleration = state_error.accelerations[joint_idx];
 
-  const bool is_valid = !(state_tolerance.position     > 0.0 && abs(error_position)     > state_tolerance.position) &&
-                        !(state_tolerance.velocity     > 0.0 && abs(error_velocity)     > state_tolerance.velocity) &&
-                        !(state_tolerance.acceleration > 0.0 && abs(error_acceleration) > state_tolerance.acceleration);
+  const bool is_valid =
+    !(state_tolerance.position > 0.0 && abs(error_position) > state_tolerance.position) &&
+    !(state_tolerance.velocity > 0.0 && abs(error_velocity) > state_tolerance.velocity) &&
+    !(state_tolerance.acceleration > 0.0 && abs(error_acceleration) > state_tolerance.acceleration);
 
-  if (!is_valid)
-  {
-    if (show_errors)
-    {
+  if (!is_valid) {
+    if (show_errors) {
       auto logger = rclcpp::get_logger("tolerances");
       RCLCPP_ERROR_STREAM(logger, "Path state tolerances failed:");
 
-      if (state_tolerance.position     > 0.0 && abs(error_position)     > state_tolerance.position)
+      if (state_tolerance.position > 0.0 && abs(error_position) > state_tolerance.position) {
         RCLCPP_ERROR_STREAM(logger, "Position Error: " << error_position <<
           " Position Tolerance: " << state_tolerance.position);
-      if (state_tolerance.velocity     > 0.0 && abs(error_velocity)     > state_tolerance.velocity)
+      }
+      if (state_tolerance.velocity > 0.0 && abs(error_velocity) > state_tolerance.velocity) {
         RCLCPP_ERROR_STREAM(logger, "Velocity Error: " << error_velocity <<
           " Velocity Tolerance: " << state_tolerance.velocity);
-      if (state_tolerance.acceleration > 0.0 && abs(error_acceleration) > state_tolerance.acceleration)
+      }
+      if (state_tolerance.acceleration > 0.0 &&
+        abs(error_acceleration) > state_tolerance.acceleration)
+      {
         RCLCPP_ERROR_STREAM(logger, "Acceleration Error: " << error_acceleration <<
           " Acceleration Tolerance: " << state_tolerance.acceleration);
+      }
     }
     return false;
   }
   return true;
 }
 
-} // namespace
+}  // namespace joint_trajectory_controller
 
-#endif // header guard
+#endif  // JOINT_TRAJECTORY_CONTROLLER__TOLERANCES_HPP_

@@ -139,7 +139,7 @@ private:
 
   // callbacks for action_server_
   rclcpp_action::GoalResponse goal_callback(
-    const rclcpp_action::GoalUUID& uuid,
+    const rclcpp_action::GoalUUID & uuid,
     std::shared_ptr<const FollowJTrajAction::Goal> goal);
   rclcpp_action::CancelResponse cancel_callback(
     const std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle);
@@ -156,8 +156,9 @@ private:
   void halt();
 
   using JointTrajectoryPoint = trajectory_msgs::msg::JointTrajectoryPoint;
-  void publish_state(const JointTrajectoryPoint& desired_state,
-    const JointTrajectoryPoint& current_state, const JointTrajectoryPoint& state_error);
+  void publish_state(
+    const JointTrajectoryPoint & desired_state,
+    const JointTrajectoryPoint & current_state, const JointTrajectoryPoint & state_error);
 };
 
 }  // namespace joint_trajectory_controller

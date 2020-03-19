@@ -14,6 +14,8 @@
 
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
 
+#include <angles/angles.h>
+
 #include <cassert>
 #include <chrono>
 #include <iterator>
@@ -26,15 +28,12 @@
 #include "lifecycle_msgs/msg/state.hpp"
 
 #include "rclcpp/time.hpp"
-
 #include "rclcpp_lifecycle/state.hpp"
 
 #include "rcutils/logging_macros.h"
 
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
-
-#include "angles/angles.h"
 
 namespace joint_trajectory_controller
 {
@@ -90,21 +89,21 @@ JointTrajectoryController::update()
     return CONTROLLER_INTERFACE_RET_SUCCESS;
   }
 
-  auto resize_joint_trajectory_point = [](trajectory_msgs::msg::JointTrajectoryPoint& point, int size)
-  {
-    point.positions.resize(size);
-    point.velocities.resize(size);
-    point.accelerations.resize(size);  
-  };
-  
+  auto resize_joint_trajectory_point =
+    [](trajectory_msgs::msg::JointTrajectoryPoint & point, int size)
+    {
+      point.positions.resize(size);
+      point.velocities.resize(size);
+      point.accelerations.resize(size);
+    };
+
   JointTrajectoryPoint state_current, state_desired, state_error;
   size_t joint_num = registered_joint_state_handles_.size();
   resize_joint_trajectory_point(state_current, joint_num);
 
   // current state update
-  for (uint index=0; index<joint_num; ++index)
-  {
-    auto& joint_state = registered_joint_state_handles_[index];
+  for (uint index = 0; index < joint_num; ++index) {
+    auto & joint_state = registered_joint_state_handles_[index];
     state_current.positions[index] = joint_state->get_position();
     state_current.velocities[index] = joint_state->get_velocity();
     state_current.accelerations[index] = 0.0;
@@ -124,40 +123,41 @@ JointTrajectoryController::update()
     // find segment for current timestamp
     TrajectoryPointConstIter start_segment_itr, end_segment_itr;
     bool valid_point = (*traj_point_active_ptr_)->sample(lifecycle_node_->now(), state_desired,
-      start_segment_itr, end_segment_itr);
+        start_segment_itr, end_segment_itr);
 
-    auto compute_error_for_joint = [](JointTrajectoryPoint& error, int index,
-      const JointTrajectoryPoint& current, const JointTrajectoryPoint& desired)
-    {
-      // error defined as the difference between current and desired
-      error.positions[index] = angles::shortest_angular_distance(
-        current.positions[index], desired.positions[index]);
-        
-      if (!desired.velocities.empty())
-        error.velocities[index] = current.velocities[index] - desired.velocities[index];
-      else
-        error.velocities[index] = 0.0;
-      error.accelerations[index] = 0.0;
-    };
-    
-    if (valid_point && end_segment_itr != (*traj_point_active_ptr_)->end())
-    {
+    auto compute_error_for_joint = [](JointTrajectoryPoint & error, int index,
+        const JointTrajectoryPoint & current, const JointTrajectoryPoint & desired)
+      {
+        // error defined as the difference between current and desired
+        error.positions[index] = angles::shortest_angular_distance(
+          current.positions[index], desired.positions[index]);
+
+        if (!desired.velocities.empty()) {
+          error.velocities[index] = current.velocities[index] - desired.velocities[index];
+        } else {
+          error.velocities[index] = 0.0;
+        }
+        error.accelerations[index] = 0.0;
+      };
+
+    if (valid_point && end_segment_itr != (*traj_point_active_ptr_)->end()) {
       bool abort = false;
       for (size_t index = 0; index < joint_num; ++index) {
         // set values for next hardware write()
         registered_joint_cmd_handles_[index]->set_cmd(state_desired.positions[index]);
-        
+
         compute_error_for_joint(state_error, index, state_current, state_desired);
 
         // check tolerances
         bool state_tolerance_ok =
-          checkStateTolerancePerJoint(state_error, index, 
+          checkStateTolerancePerJoint(state_error, index,
             default_tolerances_.state_tolerance[index], false);
 
-        if (!state_tolerance_ok)
+        if (!state_tolerance_ok) {
           abort = true;
+        }
       }
-      
+
       // send feedback
       if (rt_active_goal_) {
         auto feedback = std::make_shared<FollowJTrajAction::Feedback>();
@@ -170,8 +170,7 @@ JointTrajectoryController::update()
 
         rt_active_goal_->setFeedback(feedback);
 
-        if (abort)
-        {
+        if (abort) {
           RCLCPP_WARN(lifecycle_node_->get_logger(), "Aborted due to state tolerance violation");
           auto result = std::make_shared<FollowJTrajAction::Result>();
           result->set__error_code(FollowJTrajAction::Result::PATH_TOLERANCE_VIOLATED);
@@ -179,9 +178,7 @@ JointTrajectoryController::update()
           rt_active_goal_.reset();
         }
       }
-    }
-    else if (valid_point)
-    {
+    } else if (valid_point) {
       // past the final point, check that we end up inside goal tolerance
       bool outside_goal_tolerance = false;
       for (size_t index = 0; index < joint_num; ++index) {
@@ -196,33 +193,29 @@ JointTrajectoryController::update()
           break;
         }
       }
-      
 
-      if (rt_active_goal_)
-      {
-        if (!outside_goal_tolerance)
-        {
+
+      if (rt_active_goal_) {
+        if (!outside_goal_tolerance) {
           auto res = std::make_shared<FollowJTrajAction::Result>();
           res->set__error_code(FollowJTrajAction::Result::SUCCESSFUL);
           rt_active_goal_->setSucceeded(res);
           rt_active_goal_.reset();
 
           RCLCPP_INFO(lifecycle_node_->get_logger(), "Goal reached, success!");
-        }
-        else if (default_tolerances_.goal_time_tolerance != 0.0)
-        {
+        } else if (default_tolerances_.goal_time_tolerance != 0.0) {
           // if we exceed goal_time_toleralance set it to aborted
           rclcpp::Time traj_start = (*traj_point_active_ptr_)->get_trajectory_start_time();
           rclcpp::Time traj_end = traj_start + start_segment_itr->time_from_start;
-          
+
           double difference = lifecycle_node_->now().seconds() - traj_end.seconds();
-          if (difference > default_tolerances_.goal_time_tolerance)
-          {
+          if (difference > default_tolerances_.goal_time_tolerance) {
             auto result = std::make_shared<FollowJTrajAction::Result>();
             result->set__error_code(FollowJTrajAction::Result::GOAL_TOLERANCE_VIOLATED);
             rt_active_goal_->setAborted(result);
             rt_active_goal_.reset();
-            RCLCPP_WARN(lifecycle_node_->get_logger(), "Aborted due goal_time_tolerance exceeding by %f seconds",
+            RCLCPP_WARN(lifecycle_node_->get_logger(),
+              "Aborted due goal_time_tolerance exceeding by %f seconds",
               difference);
           }
         }
@@ -300,7 +293,6 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
   }
 
   default_tolerances_ = getSegmentTolerances(lifecycle_node_, joint_names_);
-  RCLCPP_INFO(lifecycle_node_->get_logger(), "tol: %f", default_tolerances_.goal_time_tolerance);
 
   // Store 'home' pose
   traj_msg_home_ptr_ = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
@@ -386,7 +378,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
         .get_value<bool>();
     }
     if (allow_partial_joints_goal_) {
-      // TODO (ddengster): implement partial joints, log an enabled partial joints goal message
+      // TODO(ddengster): implement partial joints, log an enabled partial joints goal message
       RCLCPP_WARN(logger, "Warning: Goals with partial set of joints not implemented yet.");
     }
 
@@ -518,8 +510,9 @@ JointTrajectoryController::halt()
   set_op_mode(hardware_interface::OperationMode::ACTIVE);
 }
 
-void JointTrajectoryController::publish_state(const JointTrajectoryPoint& desired_state,
-  const JointTrajectoryPoint& current_state, const JointTrajectoryPoint& state_error)
+void JointTrajectoryController::publish_state(
+  const JointTrajectoryPoint & desired_state,
+  const JointTrajectoryPoint & current_state, const JointTrajectoryPoint & state_error)
 {
   if (state_publisher_period_.seconds() <= 0.0) {
     return;
@@ -533,13 +526,13 @@ void JointTrajectoryController::publish_state(const JointTrajectoryPoint& desire
     last_state_publish_time_ = lifecycle_node_->now();
 
     state_publisher_->msg_.header.stamp = last_state_publish_time_;
-    state_publisher_->msg_.desired.positions     = desired_state.positions;
-    state_publisher_->msg_.desired.velocities    = desired_state.velocities;
+    state_publisher_->msg_.desired.positions = desired_state.positions;
+    state_publisher_->msg_.desired.velocities = desired_state.velocities;
     state_publisher_->msg_.desired.accelerations = desired_state.accelerations;
-    state_publisher_->msg_.actual.positions      = current_state.positions;
-    state_publisher_->msg_.actual.velocities     = current_state.velocities;
-    state_publisher_->msg_.error.positions       = state_error.positions;
-    state_publisher_->msg_.error.velocities      = state_error.velocities;
+    state_publisher_->msg_.actual.positions = current_state.positions;
+    state_publisher_->msg_.actual.velocities = current_state.velocities;
+    state_publisher_->msg_.error.positions = state_error.positions;
+    state_publisher_->msg_.error.velocities = state_error.velocities;
 
     state_publisher_->unlockAndPublish();
   }
@@ -641,7 +634,7 @@ void JointTrajectoryController::set_hold_position()
   empty_msg.header.stamp = rclcpp::Time(0);
 
   auto traj_msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>(
-      empty_msg);
+    empty_msg);
   traj_external_point_ptr_->update(traj_msg);
 }
 

@@ -44,7 +44,7 @@ TEST_F(TestTrajectory, initialize_trajectory) {
     trajectory_msgs::msg::JointTrajectoryPoint expected_point;
     joint_trajectory_controller::TrajectoryPointConstIter start, end;
     traj.sample(rclcpp::Clock().now(), expected_point, start, end);
-    
+
     EXPECT_EQ(traj.end(), start);
     EXPECT_EQ(traj.end(), end);
     EXPECT_EQ(empty_time, traj.time_from_start());
@@ -119,7 +119,7 @@ TEST_F(TestTrajectory, sample_trajectory) {
   ASSERT_EQ(traj.begin(), end);
   EXPECT_EQ(0.0f, expected_state.positions[0]);
 
-  //sample before trajectory starts
+  // sample before trajectory starts
   traj.sample(time_now - rclcpp::Duration::from_seconds(0.5), expected_state, start, end);
   ASSERT_EQ(traj.begin(), start);
   ASSERT_EQ(traj.begin(), end);

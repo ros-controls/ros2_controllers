@@ -45,7 +45,7 @@ public:
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   explicit Trajectory(
     const rclcpp::Time & current_time,
-    const trajectory_msgs::msg::JointTrajectoryPoint& current_point,
+    const trajectory_msgs::msg::JointTrajectoryPoint & current_point,
     std::shared_ptr<trajectory_msgs::msg::JointTrajectory> joint_trajectory);
 
 
@@ -53,13 +53,13 @@ public:
   void
   set_point_before_traj(
     const rclcpp::Time & current_time,
-    const trajectory_msgs::msg::JointTrajectoryPoint& current_point);
+    const trajectory_msgs::msg::JointTrajectoryPoint & current_point);
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   void
   update(std::shared_ptr<trajectory_msgs::msg::JointTrajectory> joint_trajectory);
 
-  /// Find the segment (made up of 2 points) and its expected state from the 
+  /// Find the segment (made up of 2 points) and its expected state from the
   /// containing trajectory.
   /**
   * Specific case returns for start_segment_itr and end_segment_itr:
@@ -76,10 +76,11 @@ public:
   */
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   bool
-  sample(const rclcpp::Time & sample_time,
-    trajectory_msgs::msg::JointTrajectoryPoint& expected_state,
-    TrajectoryPointConstIter& start_segment_itr,
-    TrajectoryPointConstIter& end_segment_itr);
+  sample(
+    const rclcpp::Time & sample_time,
+    trajectory_msgs::msg::JointTrajectoryPoint & expected_state,
+    TrajectoryPointConstIter & start_segment_itr,
+    TrajectoryPointConstIter & end_segment_itr);
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   TrajectoryPointConstIter
@@ -98,14 +99,15 @@ public:
   has_traj_msg() const;
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> 
-  get_trajectory_msg() const { return trajectory_msg_; }
+  std::shared_ptr<trajectory_msgs::msg::JointTrajectory>
+  get_trajectory_msg() const {return trajectory_msg_;}
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  rclcpp::Time get_trajectory_start_time() const { return trajectory_start_time_; }
+  rclcpp::Time get_trajectory_start_time() const {return trajectory_start_time_;}
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  bool is_sampled_already() const { return sampled_already_; }
+  bool is_sampled_already() const {return sampled_already_;}
+
 private:
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg_;
   rclcpp::Time trajectory_start_time_;
