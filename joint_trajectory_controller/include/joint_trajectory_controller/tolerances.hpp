@@ -37,7 +37,7 @@
 #include <vector>
 
 // ROS
-#include <rclcpp/rclcpp.hpp>
+#include "rclcpp/node.hpp"
 
 // ROS messages
 #include "control_msgs/action/follow_joint_trajectory.hpp"
@@ -64,18 +64,17 @@ struct SegmentTolerances
 {
   SegmentTolerances(size_t size = 0)
     : state_tolerance(size),
-      goal_state_tolerance(size),
-      goal_time_tolerance(0.0)
+      goal_state_tolerance(size)
   {}
 
-  /** State tolerances that appply during segment execution. */
+  /** State tolerances that apply during segment execution. */
   std::vector<StateTolerances> state_tolerance;
 
   /** State tolerances that apply for the goal state only.*/
   std::vector<StateTolerances> goal_state_tolerance;
 
   /** Extra time after the segment end time allowed to reach the goal state tolerances. */
-  double goal_time_tolerance;
+  double goal_time_tolerance = 0.0;
 
 };
 
@@ -127,70 +126,22 @@ SegmentTolerances getSegmentTolerances(const rclcpp_lifecycle::LifecycleNode::Sh
 
     node->get_parameter_or<double>(prefix + ".trajectory", tolerances.state_tolerance[i].position, 0.0);
     node->get_parameter_or<double>(prefix + ".goal", tolerances.goal_state_tolerance[i].position, 0.0);
-    RCLCPP_INFO(rclcpp::get_logger("tolerance"), "%s %f", (prefix + ".trajectory").c_str(), tolerances.state_tolerance[i].position);
-    RCLCPP_INFO(rclcpp::get_logger("tolerance"), "%s %f", (prefix + ".goal").c_str(), tolerances.goal_state_tolerance[i].position);
-    
+    RCLCPP_DEBUG(rclcpp::get_logger("tolerance"), "%s %f", (prefix + ".trajectory").c_str(), tolerances.state_tolerance[i].position);
+    RCLCPP_DEBUG(rclcpp::get_logger("tolerance"), "%s %f", (prefix + ".goal").c_str(), tolerances.goal_state_tolerance[i].position);
+
     tolerances.goal_state_tolerance[i].velocity = stopped_velocity_tolerance;
   }
 
   // Goal time tolerance
   node->get_parameter_or<double>("constraints.goal_time", tolerances.goal_time_tolerance, 0.0);
-
+  
   return tolerances;
 }
 
 /**
  * \param state_error State error to check.
- * \param state_tolerance State tolerances to check \p state_error against.
- * \param show_errors If the joints that violate their tolerances should be output to console. NOT REALTIME if true
- * \return True if \p state_error fulfills \p state_tolerance.
- */
-template <class State>
-inline bool checkStateTolerance(const State&                     state_error,
-                                const std::vector<StateTolerances>& state_tolerance,
-                                bool show_errors = false)
-{
-  const unsigned int n_joints = state_tolerance.size();
-
-  // Preconditions
-  assert(n_joints == state_error.position.size());
-  assert(n_joints == state_error.velocity.size());
-  assert(n_joints == state_error.acceleration.size());
-
-  for (unsigned int i = 0; i < n_joints; ++i)
-  {
-    using std::abs;
-    const StateTolerances& tol = state_tolerance[i]; // Alias for brevity
-    const bool is_valid = !(tol.position     > 0.0 && abs(state_error.position[i])     > tol.position) &&
-                          !(tol.velocity     > 0.0 && abs(state_error.velocity[i])     > tol.velocity) &&
-                          !(tol.acceleration > 0.0 && abs(state_error.acceleration[i]) > tol.acceleration);
-
-    if (!is_valid)
-    {
-      if( show_errors )
-      {
-        auto logger = rclcpp::get_logger("tolerances");
-        RCLCPP_ERROR_STREAM(logger, "Path state tolerances failed on joint " << i);
-
-        if (tol.position     > 0.0 && abs(state_error.position[i])     > tol.position)
-          RCLCPP_ERROR_STREAM(logger, "Position Error: " << state_error.position[i] <<
-            " Position Tolerance: " << tol.position);
-        if (tol.velocity     > 0.0 && abs(state_error.velocity[i])     > tol.velocity)
-          RCLCPP_ERROR_STREAM(logger, "Velocity Error: " << state_error.velocity[i] <<
-            " Velocity Tolerance: " << tol.velocity);
-        if (tol.acceleration > 0.0 && abs(state_error.acceleration[i]) > tol.acceleration)
-          RCLCPP_ERROR_STREAM(logger, "Acceleration Error: " << state_error.acceleration[i] <<
-            " Acceleration Tolerance: " << tol.acceleration);
-      }
-      return false;
-    }
-  }
-  return true;
-}
-
-/**
- * \param state_error State error to check.
- * \param state_tolerance State tolerances to check \p state_error against.
+ * \param joint_idx Joint index for the state error
+ * \param state_tolerance State tolerance of joint to check \p state_error against.
  * \param show_errors If the joint that violate its tolerance should be output to console. NOT REALTIME if true
  * \return True if \p state_error fulfills \p state_tolerance.
  */
@@ -211,7 +162,7 @@ inline bool checkStateTolerancePerJoint(const trajectory_msgs::msg::JointTraject
 
   if (!is_valid)
   {
-    if( show_errors )
+    if (show_errors)
     {
       auto logger = rclcpp::get_logger("tolerances");
       RCLCPP_ERROR_STREAM(logger, "Path state tolerances failed:");
@@ -229,73 +180,6 @@ inline bool checkStateTolerancePerJoint(const trajectory_msgs::msg::JointTraject
     return false;
   }
   return true;
-}
-
-/**
- * \brief Update data in \p tols from data in \p msg_tol.
- *
- * - If a value in \p tol_msg is positive, the corresponding values in \p tols will be overritten.
- * - If a value in \p tol_msg is negative, the corresponding values in \p tols will be reset.
- * - If a value in \p tol_msg is zero, the corresponding values in \p tols is unchanged.
- *
- * \param[in] tol_msg Message containing tolerance values \p tols will be updated with.
- * \param[out] tols Tolerances values to update.
- *
- **/
-void updateStateTolerances(const control_msgs::msg::JointTolerance& tol_msg, StateTolerances& tols)
-{
-  if      (tol_msg.position     > 0.0) {tols.position     = static_cast<double>(tol_msg.position);}
-  else if (tol_msg.position     < 0.0) {tols.position     = 0.0;}
-
-  if      (tol_msg.velocity     > 0.0) {tols.velocity     = static_cast<double>(tol_msg.velocity);}
-  else if (tol_msg.velocity     < 0.0) {tols.velocity     = 0.0;}
-
-  if      (tol_msg.acceleration > 0.0) {tols.acceleration = static_cast<double>(tol_msg.acceleration);}
-  else if (tol_msg.acceleration < 0.0) {tols.acceleration = 0.0;}
-}
-
-/**
- * \brief Update data in \p tols from data in \p goal.
- *
- * \param[in] goal Action goal data containing tolerance values \p tols will be updated with.
- * \param[in] joint_names Names of joints in \p tols, with the same ordering.
- * \param[out] tols Tolerances values to update.
- */
-void updateSegmentTolerances(const control_msgs::action::FollowJointTrajectory::Goal& goal,
-                             const std::vector<std::string>& joint_names,
-                             SegmentTolerances& tols
-)
-{
-  // Preconditions
-  assert(joint_names.size() == tols.state_tolerance.size());
-  assert(joint_names.size() == tols.goal_state_tolerance.size());
-
-  typedef typename std::vector<std::string>::const_iterator                  StringConstIterator;
-  typedef typename std::vector<control_msgs::msg::JointTolerance>::const_iterator TolMsgConstIterator;
-
-  for (StringConstIterator names_it = joint_names.begin(); names_it != joint_names.end(); ++names_it)
-  {
-    const typename std::vector<std::string>::size_type id = std::distance(joint_names.begin(), names_it);
-
-    // Update path tolerances
-    const std::vector<control_msgs::msg::JointTolerance>& state_tol = goal.path_tolerance;
-    for(TolMsgConstIterator state_tol_it = state_tol.begin(); state_tol_it != state_tol.end(); ++state_tol_it)
-    {
-      if (*names_it == state_tol_it->name) {updateStateTolerances(*state_tol_it, tols.state_tolerance[id]);}
-    }
-
-    // Update goal state tolerances
-    const std::vector<control_msgs::msg::JointTolerance>& g_state_tol = goal.goal_tolerance;
-    for(TolMsgConstIterator g_state_tol_it = g_state_tol.begin(); g_state_tol_it != g_state_tol.end(); ++g_state_tol_it)
-    {
-      if (*names_it == g_state_tol_it->name) {updateStateTolerances(*g_state_tol_it, tols.goal_state_tolerance[id]);}
-    }
-  }
-
-  // Update goal time tolerance
-  const rclcpp::Duration& goal_time_tolerance = goal.goal_time_tolerance;
-  if      (goal_time_tolerance < rclcpp::Duration(0.0)) {tols.goal_time_tolerance = 0.0;}
-  else if (goal_time_tolerance > rclcpp::Duration(0.0)) {tols.goal_time_tolerance = goal_time_tolerance.seconds();}
 }
 
 } // namespace

@@ -34,9 +34,7 @@
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
-#include <angles/angles.h>
-
-#include "hardware_interface/utils/time_utils.hpp"
+#include "angles/angles.h"
 
 namespace joint_trajectory_controller
 {
@@ -128,31 +126,20 @@ JointTrajectoryController::update()
     bool valid_point = (*traj_point_active_ptr_)->sample(lifecycle_node_->now(), state_desired,
       start_segment_itr, end_segment_itr);
 
-    static bool o = false;
-    if (!o)
+    auto compute_error_for_joint = [](JointTrajectoryPoint& error, int index,
+      const JointTrajectoryPoint& current, const JointTrajectoryPoint& desired)
     {
-      RCLCPP_INFO(lifecycle_node_->get_logger(), "NOW sec: %f nsec: %f", lifecycle_node_->now().seconds(), lifecycle_node_->now().nanoseconds());
-      auto points = (*traj_point_active_ptr_)->get_trajectory_msg()->points;
-      RCLCPP_INFO(lifecycle_node_->get_logger(), "count: %d", points.size());
-      auto traj_time = (*traj_point_active_ptr_)->time_from_start();
-      RCLCPP_INFO(lifecycle_node_->get_logger(), "TrajStartTime sec: %f nsec %f", traj_time.seconds(), traj_time.nanoseconds());
-
-      for (auto p : points)
-      {
-        auto timeoffset = static_cast<rclcpp::Duration>(p.time_from_start);
-        RCLCPP_INFO(lifecycle_node_->get_logger(), "duration sec: %f nsec %f", timeoffset.seconds(), timeoffset.nanoseconds());
-        auto s = hardware_interface::utils::time_add(traj_time, p.time_from_start);
-        auto s2 = static_cast<rclcpp::Time>(s);
-        RCLCPP_INFO(lifecycle_node_->get_logger(), "POINT sec: %f nsec %f", s2.seconds(), s2.nanoseconds());
-        /*RCLCPP_INFO(lifecycle_node_->get_logger(), "%d!", p.positions.size());
-        for (auto d : p.positions)
-        {
-          RCLCPP_INFO(lifecycle_node_->get_logger(), "%f!", d);
-        }*/
-      }
-      o = true;
-    }
-
+      // error defined as the difference between current and desired
+      error.positions[index] = angles::shortest_angular_distance(
+        current.positions[index], desired.positions[index]);
+        
+      if (!desired.velocities.empty())
+        error.velocities[index] = current.velocities[index] - desired.velocities[index];
+      else
+        error.velocities[index] = 0.0;
+      error.accelerations[index] = 0.0;
+    };
+    
     if (valid_point && end_segment_itr != (*traj_point_active_ptr_)->end())
     {
       bool abort = false;
@@ -160,15 +147,7 @@ JointTrajectoryController::update()
         // set values for next hardware write()
         registered_joint_cmd_handles_[index]->set_cmd(state_desired.positions[index]);
         
-        // error defined as the difference between current and desired
-        state_error.positions[index] = angles::shortest_angular_distance(
-            state_current.positions[index], state_desired.positions[index]);
-            
-        if (!state_desired.velocities.empty())
-          state_error.velocities[index] = state_current.velocities[index] - state_desired.velocities[index];
-        else
-          state_error.velocities[index] = 0.0;
-        state_error.accelerations[index] = 0.0;
+        compute_error_for_joint(state_error, index, state_current, state_desired);
 
         // check tolerances
         bool state_tolerance_ok =
@@ -176,10 +155,7 @@ JointTrajectoryController::update()
             default_tolerances_.state_tolerance[index], false);
 
         if (!state_tolerance_ok)
-        {
-          RCLCPP_INFO_ONCE(lifecycle_node_->get_logger(), "abort: %d %.8f", index, state_error.positions[index]);
           abort = true;
-        }
       }
       
       // send feedback
@@ -196,7 +172,7 @@ JointTrajectoryController::update()
 
         if (abort)
         {
-          RCLCPP_INFO(lifecycle_node_->get_logger(), "aborted");
+          RCLCPP_WARN(lifecycle_node_->get_logger(), "Aborted due to state tolerance violation");
           auto result = std::make_shared<FollowJTrajAction::Result>();
           result->set__error_code(FollowJTrajAction::Result::PATH_TOLERANCE_VIOLATED);
           rt_active_goal_->setAborted(result);
@@ -211,16 +187,16 @@ JointTrajectoryController::update()
       for (size_t index = 0; index < joint_num; ++index) {
         registered_joint_cmd_handles_[index]->set_cmd(state_desired.positions[index]);
 
-        /*RCLCPP_INFO(lifecycle_node_->get_logger(), "index %d: %f %f", index, state_error.positions[index],
-            default_tolerances_.goal_state_tolerance[index].position);*/
+        compute_error_for_joint(state_error, index, state_current, state_desired);
 
         if (!checkStateTolerancePerJoint(state_error, index,
-          default_tolerances_.goal_state_tolerance[index], true))
+          default_tolerances_.goal_state_tolerance[index], false))
         {
           outside_goal_tolerance = true;
           break;
         }
       }
+      
 
       if (rt_active_goal_)
       {
@@ -228,13 +204,13 @@ JointTrajectoryController::update()
         {
           auto res = std::make_shared<FollowJTrajAction::Result>();
           res->set__error_code(FollowJTrajAction::Result::SUCCESSFUL);
-          RCLCPP_INFO(lifecycle_node_->get_logger(), "All joints within range, success!");
           rt_active_goal_->setSucceeded(res);
           rt_active_goal_.reset();
+
+          RCLCPP_INFO(lifecycle_node_->get_logger(), "Goal reached, success!");
         }
         else if (default_tolerances_.goal_time_tolerance != 0.0)
         {
-          RCLCPP_INFO(lifecycle_node_->get_logger(), "All joints not within range");
           // if we exceed goal_time_toleralance set it to aborted
           rclcpp::Time traj_start = (*traj_point_active_ptr_)->get_trajectory_start_time();
           rclcpp::Time traj_end = traj_start + start_segment_itr->time_from_start;
@@ -246,7 +222,7 @@ JointTrajectoryController::update()
             result->set__error_code(FollowJTrajAction::Result::GOAL_TOLERANCE_VIOLATED);
             rt_active_goal_->setAborted(result);
             rt_active_goal_.reset();
-            RCLCPP_WARN(lifecycle_node_->get_logger(), "Abort: Exceeded goal_time_tolerance by %f seconds",
+            RCLCPP_WARN(lifecycle_node_->get_logger(), "Aborted due goal_time_tolerance exceeding by %f seconds",
               difference);
           }
         }
@@ -594,7 +570,7 @@ rclcpp_action::GoalResponse JointTrajectoryController::goal_callback(
     }
   }
 
-  RCLCPP_INFO(lifecycle_node_->get_logger(), "accepted new action goal");
+  RCLCPP_INFO(lifecycle_node_->get_logger(), "Accepted new action goal");
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
 
@@ -627,8 +603,6 @@ rclcpp_action::CancelResponse JointTrajectoryController::cancel_callback(
 void JointTrajectoryController::feedback_setup_callback(
   std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle)
 {
-  RCLCPP_INFO(lifecycle_node_->get_logger(), "Doing action handling");
-
   // Update new trajectory
   {
     std::lock_guard<std::mutex> guard(trajectory_mtx_);

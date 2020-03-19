@@ -214,8 +214,6 @@ TEST_F(TestTrajectoryActions, test_success_multi_point_sendgoal) {
     point.positions[1] = 2.0;
     point.positions[2] = 3.0;
 
-    point.velocities = std::vector<double>(joint_names.size(), 0.0);
-    point.accelerations = std::vector<double>(joint_names.size(), 0.0);
     points.push_back(point);
     
     sendActionGoal(points, 1, opt);
@@ -242,18 +240,6 @@ TEST_F(TestTrajectoryActions, test_success_multi_point_sendgoal) {
     {
       (void)feedback;
       feedback_recv = true;
-      /*feedback->actual;
-      RCLCPP_INFO(node->get_logger(), "feedback recv time: %f", rclcpp::Clock().now().seconds());
-      RCLCPP_INFO(node->get_logger(), "actual time offset: %d %d", 
-        feedback->actual.time_from_start.sec, feedback->actual.time_from_start.nanosec);
-
-      RCLCPP_INFO(node->get_logger(), "desired offset: %d %d", 
-        feedback->desired.time_from_start.sec, feedback->desired.time_from_start.nanosec);
-      
-      for (uint i=0; i<feedback->joint_names.size(); ++i)
-        RCLCPP_INFO(node->get_logger(), "%d: actualposition: %f", i, feedback->actual.positions[i]);
-      for (uint i=0; i<feedback->joint_names.size(); ++i)
-        RCLCPP_INFO(node->get_logger(), "%d: desiredposition: %f", i, feedback->desired.positions[i]);*/
     };
 
   // send goal with multiple points
@@ -267,9 +253,6 @@ TEST_F(TestTrajectoryActions, test_success_multi_point_sendgoal) {
     point1.positions[0] = 4.0;
     point1.positions[1] = 5.0;
     point1.positions[2] = 6.0;
-
-    point1.velocities = std::vector<double>(joint_names.size(), 0.0);
-    point1.accelerations = std::vector<double>(joint_names.size(), 0.0);
     points.push_back(point1);
 
     JointTrajectoryPoint point2;
@@ -280,9 +263,6 @@ TEST_F(TestTrajectoryActions, test_success_multi_point_sendgoal) {
     point2.positions[0] = 7.0;
     point2.positions[1] = 8.0;
     point2.positions[2] = 9.0;
-
-    point2.velocities = std::vector<double>(joint_names.size(), 0.0);
-    point2.accelerations = std::vector<double>(joint_names.size(), 0.0);
     points.push_back(point2);
 
     sendActionGoal(points, 1, opt);
@@ -371,9 +351,6 @@ TEST_F(TestTrajectoryActions, test_goal_tolerances_success) {
     point.positions[0] = 1.0;
     point.positions[1] = 2.0;
     point.positions[2] = 3.0;
-
-    point.velocities = std::vector<double>(joint_names.size(), 0.0);
-    point.accelerations = std::vector<double>(joint_names.size(), 0.0);
     points.push_back(point);
     
     sendActionGoal(points, 1, opt);
@@ -415,9 +392,6 @@ TEST_F(TestTrajectoryActions, test_goal_tolerances_success) {
     point1.positions[0] = 4.0;
     point1.positions[1] = 5.0;
     point1.positions[2] = 6.0;
-
-    point1.velocities = std::vector<double>(joint_names.size(), 0.0);
-    point1.accelerations = std::vector<double>(joint_names.size(), 0.0);
     points.push_back(point1);
 
     JointTrajectoryPoint point2;
@@ -428,9 +402,6 @@ TEST_F(TestTrajectoryActions, test_goal_tolerances_success) {
     point2.positions[0] = 7.0;
     point2.positions[1] = 8.0;
     point2.positions[2] = 9.0;
-
-    point2.velocities = std::vector<double>(joint_names.size(), 0.0);
-    point2.accelerations = std::vector<double>(joint_names.size(), 0.0);
     points.push_back(point2);
 
     sendActionGoal(points, 1, opt);
@@ -522,9 +493,6 @@ TEST_F(TestTrajectoryActions, test_state_tolerances_fail) {
     point.positions[0] = 4.0;
     point.positions[1] = 5.0;
     point.positions[2] = 6.0;
-
-    point.velocities = std::vector<double>(joint_names.size(), 0.0);
-    point.accelerations = std::vector<double>(joint_names.size(), 0.0);
     points.push_back(point);
     
     sendActionGoal(points, 1, opt);
@@ -599,9 +567,6 @@ TEST_F(TestTrajectoryActions, test_cancel_hold_position) {
     point.positions[0] = 4.0;
     point.positions[1] = 5.0;
     point.positions[2] = 6.0;
-
-    point.velocities = std::vector<double>(joint_names.size(), 0.0);
-    point.accelerations = std::vector<double>(joint_names.size(), 0.0);
     points.push_back(point);
     
     control_msgs::action::FollowJointTrajectory_Goal goal_msg;
