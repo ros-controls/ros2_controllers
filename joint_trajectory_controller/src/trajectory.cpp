@@ -144,8 +144,8 @@ Trajectory::sample(
     auto & point = trajectory_msg_->points[i];
     auto & next_point = trajectory_msg_->points[i + 1];
 
-    rclcpp::Duration t0_offset(point.time_from_start.sec, point.time_from_start.nanosec);
-    rclcpp::Duration t1_offset(next_point.time_from_start.sec, next_point.time_from_start.nanosec);
+    rclcpp::Duration t0_offset = point.time_from_start;
+    rclcpp::Duration t1_offset = next_point.time_from_start;
     rclcpp::Time t0 = trajectory_start_time_ + t0_offset;
     rclcpp::Time t1 = trajectory_start_time_ + t1_offset;
 
