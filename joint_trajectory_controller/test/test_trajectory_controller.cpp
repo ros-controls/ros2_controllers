@@ -411,7 +411,7 @@ TEST_F(TestTrajectoryController, correct_initialization_using_parameters) {
   // first update
   traj_controller->update();
   test_robot->write();
-  
+
   // wait so controller process the second point when deactivated
   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
   traj_controller->update();
@@ -439,7 +439,7 @@ TEST_F(TestTrajectoryController, correct_initialization_using_parameters) {
   traj_controller->update();
   test_robot->write();
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
-  
+
   EXPECT_NEAR(1.1, test_robot->pos1, allowed_delta);
   EXPECT_NEAR(2.2, test_robot->pos2, allowed_delta);
   EXPECT_NEAR(3.3, test_robot->pos3, allowed_delta);
