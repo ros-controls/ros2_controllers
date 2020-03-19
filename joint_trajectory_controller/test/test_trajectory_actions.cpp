@@ -107,7 +107,8 @@ protected:
 public:
   void common_goal_response(std::shared_future<GoalHandle::SharedPtr> future)
   {
-    RCLCPP_DEBUG(node->get_logger(), "common_goal_response time: %f",
+    RCLCPP_DEBUG(
+      node->get_logger(), "common_goal_response time: %f",
       rclcpp::Clock().now().seconds());
     auto goal_handle = future.get();
     if (!goal_handle) {
@@ -121,7 +122,8 @@ public:
 
   void common_result_response(const GoalHandle::WrappedResult & result)
   {
-    RCLCPP_DEBUG(node->get_logger(), "common_result_response time: %f",
+    RCLCPP_DEBUG(
+      node->get_logger(), "common_result_response time: %f",
       rclcpp::Clock().now().seconds());
     common_resultcode = result.code;
     common_action_result_code = result.result->error_code;
@@ -347,7 +349,8 @@ TEST_F(TestTrajectoryActions, test_goal_tolerances_success) {
 
   EXPECT_EQ(true, common_goal_accepted);
   EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode);
-  EXPECT_EQ(control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL,
+  EXPECT_EQ(
+    control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL,
     common_action_result_code);
 
   EXPECT_EQ(1.0, test_robot->pos1);
@@ -399,7 +402,8 @@ TEST_F(TestTrajectoryActions, test_goal_tolerances_success) {
   EXPECT_EQ(true, feedback_recv);
   EXPECT_EQ(true, common_goal_accepted);
   EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode);
-  EXPECT_EQ(control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL,
+  EXPECT_EQ(
+    control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL,
     common_action_result_code);
 
   double threshold = 0.001;
@@ -488,7 +492,8 @@ TEST_F(TestTrajectoryActions, test_state_tolerances_fail) {
 
   EXPECT_EQ(true, common_goal_accepted);
   EXPECT_EQ(rclcpp_action::ResultCode::ABORTED, common_resultcode);
-  EXPECT_EQ(control_msgs::action::FollowJointTrajectory_Result::PATH_TOLERANCE_VIOLATED,
+  EXPECT_EQ(
+    control_msgs::action::FollowJointTrajectory_Result::PATH_TOLERANCE_VIOLATED,
     common_action_result_code);
 
   executor.cancel();
@@ -571,7 +576,8 @@ TEST_F(TestTrajectoryActions, test_cancel_hold_position) {
 
   EXPECT_EQ(true, common_goal_accepted);
   EXPECT_EQ(rclcpp_action::ResultCode::CANCELED, common_resultcode);
-  EXPECT_EQ(control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL,
+  EXPECT_EQ(
+    control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL,
     common_action_result_code);
 
   double prev_pos1 = test_robot->pos1;

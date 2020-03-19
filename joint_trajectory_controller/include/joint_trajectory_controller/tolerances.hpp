@@ -114,7 +114,8 @@ SegmentTolerances getSegmentTolerances(
 
   // State and goal state tolerances
   double stopped_velocity_tolerance;
-  node->get_parameter_or<double>("constraints.stopped_velocity_tolerance",
+  node->get_parameter_or<double>(
+    "constraints.stopped_velocity_tolerance",
     stopped_velocity_tolerance, 0.01);
 
   tolerances.state_tolerance.resize(n_joints);
@@ -122,13 +123,17 @@ SegmentTolerances getSegmentTolerances(
   for (auto i = 0u; i < n_joints; ++i) {
     std::string prefix = "constraints." + joint_names[i];
 
-    node->get_parameter_or<double>(prefix + ".trajectory", tolerances.state_tolerance[i].position,
+    node->get_parameter_or<double>(
+      prefix + ".trajectory", tolerances.state_tolerance[i].position,
       0.0);
-    node->get_parameter_or<double>(prefix + ".goal", tolerances.goal_state_tolerance[i].position,
+    node->get_parameter_or<double>(
+      prefix + ".goal", tolerances.goal_state_tolerance[i].position,
       0.0);
-    RCLCPP_DEBUG(rclcpp::get_logger("tolerance"), "%s %f",
+    RCLCPP_DEBUG(
+      rclcpp::get_logger("tolerance"), "%s %f",
       (prefix + ".trajectory").c_str(), tolerances.state_tolerance[i].position);
-    RCLCPP_DEBUG(rclcpp::get_logger("tolerance"), "%s %f",
+    RCLCPP_DEBUG(
+      rclcpp::get_logger("tolerance"), "%s %f",
       (prefix + ".goal").c_str(), tolerances.goal_state_tolerance[i].position);
 
     tolerances.goal_state_tolerance[i].velocity = stopped_velocity_tolerance;
@@ -169,18 +174,21 @@ inline bool checkStateTolerancePerJoint(
       RCLCPP_ERROR_STREAM(logger, "Path state tolerances failed:");
 
       if (state_tolerance.position > 0.0 && abs(error_position) > state_tolerance.position) {
-        RCLCPP_ERROR_STREAM(logger, "Position Error: " << error_position <<
-          " Position Tolerance: " << state_tolerance.position);
+        RCLCPP_ERROR_STREAM(
+          logger, "Position Error: " << error_position <<
+            " Position Tolerance: " << state_tolerance.position);
       }
       if (state_tolerance.velocity > 0.0 && abs(error_velocity) > state_tolerance.velocity) {
-        RCLCPP_ERROR_STREAM(logger, "Velocity Error: " << error_velocity <<
-          " Velocity Tolerance: " << state_tolerance.velocity);
+        RCLCPP_ERROR_STREAM(
+          logger, "Velocity Error: " << error_velocity <<
+            " Velocity Tolerance: " << state_tolerance.velocity);
       }
       if (state_tolerance.acceleration > 0.0 &&
         abs(error_acceleration) > state_tolerance.acceleration)
       {
-        RCLCPP_ERROR_STREAM(logger, "Acceleration Error: " << error_acceleration <<
-          " Acceleration Tolerance: " << state_tolerance.acceleration);
+        RCLCPP_ERROR_STREAM(
+          logger, "Acceleration Error: " << error_acceleration <<
+            " Acceleration Tolerance: " << state_tolerance.acceleration);
       }
     }
     return false;

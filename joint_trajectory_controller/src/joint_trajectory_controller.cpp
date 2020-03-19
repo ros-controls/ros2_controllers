@@ -122,8 +122,9 @@ JointTrajectoryController::update()
 
     // find segment for current timestamp
     TrajectoryPointConstIter start_segment_itr, end_segment_itr;
-    bool valid_point = (*traj_point_active_ptr_)->sample(lifecycle_node_->now(), state_desired,
-        start_segment_itr, end_segment_itr);
+    bool valid_point = (*traj_point_active_ptr_)->sample(
+      lifecycle_node_->now(), state_desired,
+      start_segment_itr, end_segment_itr);
 
     auto compute_error_for_joint = [](JointTrajectoryPoint & error, int index,
         const JointTrajectoryPoint & current, const JointTrajectoryPoint & desired)
@@ -150,8 +151,9 @@ JointTrajectoryController::update()
 
         // check tolerances
         bool state_tolerance_ok =
-          checkStateTolerancePerJoint(state_error, index,
-            default_tolerances_.state_tolerance[index], false);
+          checkStateTolerancePerJoint(
+          state_error, index,
+          default_tolerances_.state_tolerance[index], false);
 
         if (!state_tolerance_ok) {
           abort = true;
@@ -186,8 +188,9 @@ JointTrajectoryController::update()
 
         compute_error_for_joint(state_error, index, state_current, state_desired);
 
-        if (!checkStateTolerancePerJoint(state_error, index,
-          default_tolerances_.goal_state_tolerance[index], false))
+        if (!checkStateTolerancePerJoint(
+            state_error, index,
+            default_tolerances_.goal_state_tolerance[index], false))
         {
           outside_goal_tolerance = true;
           break;
@@ -214,7 +217,8 @@ JointTrajectoryController::update()
             result->set__error_code(FollowJTrajAction::Result::GOAL_TOLERANCE_VIOLATED);
             rt_active_goal_->setAborted(result);
             rt_active_goal_.reset();
-            RCLCPP_WARN(lifecycle_node_->get_logger(),
+            RCLCPP_WARN(
+              lifecycle_node_->get_logger(),
               "Aborted due goal_time_tolerance exceeding by %f seconds",
               difference);
           }

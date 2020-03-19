@@ -130,7 +130,8 @@ Trajectory::sample(
   if (sample_time < first_point_timestamp) {
     rclcpp::Time t0 = time_before_traj_msg_;
 
-    linear_interpolation(t0, state_before_traj_msg_, first_point_timestamp, first_point_in_msg,
+    linear_interpolation(
+      t0, state_before_traj_msg_, first_point_timestamp, first_point_in_msg,
       sample_time, expected_state);
     start_segment_itr = begin();  // no segments before the first
     end_segment_itr = begin();
