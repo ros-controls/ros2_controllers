@@ -124,8 +124,7 @@ Trajectory::sample(
 
   // current time hasn't reached traj time of the first msg yet
   const auto & first_point_in_msg = trajectory_msg_->points[0];
-  rclcpp::Duration offset(first_point_in_msg.time_from_start.sec,
-    first_point_in_msg.time_from_start.nanosec);
+  rclcpp::Duration offset = first_point_in_msg.time_from_start;
   rclcpp::Time first_point_timestamp = trajectory_start_time_ + offset;
   if (sample_time < first_point_timestamp) {
     rclcpp::Time t0 = time_before_traj_msg_;
