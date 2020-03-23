@@ -96,13 +96,27 @@ JointTrajectoryController::update()
       point.velocities.resize(size);
       point.accelerations.resize(size);
     };
+  auto compute_error_for_joint = [](JointTrajectoryPoint & error, int index,
+      const JointTrajectoryPoint & current, const JointTrajectoryPoint & desired)
+    {
+      // error defined as the difference between current and desired
+      error.positions[index] = angles::shortest_angular_distance(
+        current.positions[index], desired.positions[index]);
+
+      if (!desired.velocities.empty()) {
+        error.velocities[index] = current.velocities[index] - desired.velocities[index];
+      } else {
+        error.velocities[index] = 0.0;
+      }
+      error.accelerations[index] = 0.0;
+    };
 
   JointTrajectoryPoint state_current, state_desired, state_error;
   size_t joint_num = registered_joint_state_handles_.size();
   resize_joint_trajectory_point(state_current, joint_num);
 
   // current state update
-  for (uint index = 0; index < joint_num; ++index) {
+  for (auto index = 0ul; index < joint_num; ++index) {
     auto & joint_state = registered_joint_state_handles_[index];
     state_current.positions[index] = joint_state->get_position();
     state_current.velocities[index] = joint_state->get_velocity();
@@ -126,24 +140,9 @@ JointTrajectoryController::update()
       lifecycle_node_->now(), state_desired,
       start_segment_itr, end_segment_itr);
 
-    auto compute_error_for_joint = [](JointTrajectoryPoint & error, int index,
-        const JointTrajectoryPoint & current, const JointTrajectoryPoint & desired)
-      {
-        // error defined as the difference between current and desired
-        error.positions[index] = angles::shortest_angular_distance(
-          current.positions[index], desired.positions[index]);
-
-        if (!desired.velocities.empty()) {
-          error.velocities[index] = current.velocities[index] - desired.velocities[index];
-        } else {
-          error.velocities[index] = 0.0;
-        }
-        error.accelerations[index] = 0.0;
-      };
-
     if (valid_point && end_segment_itr != (*traj_point_active_ptr_)->end()) {
       bool abort = false;
-      for (size_t index = 0; index < joint_num; ++index) {
+      for (auto index = 0ul; index < joint_num; ++index) {
         // set values for next hardware write()
         registered_joint_cmd_handles_[index]->set_cmd(state_desired.positions[index]);
 
@@ -151,7 +150,7 @@ JointTrajectoryController::update()
 
         // check tolerances
         bool state_tolerance_ok =
-          checkStateTolerancePerJoint(
+          check_state_tolerance_per_joint(
           state_error, index,
           default_tolerances_.state_tolerance[index], false);
 
@@ -188,7 +187,7 @@ JointTrajectoryController::update()
 
         compute_error_for_joint(state_error, index, state_current, state_desired);
 
-        if (!checkStateTolerancePerJoint(
+        if (!check_state_tolerance_per_joint(
             state_error, index,
             default_tolerances_.goal_state_tolerance[index], false))
         {
@@ -296,7 +295,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
   }
 
-  default_tolerances_ = getSegmentTolerances(lifecycle_node_, joint_names_);
+  default_tolerances_ = get_segment_tolerances(lifecycle_node_, joint_names_);
 
   // Store 'home' pose
   traj_msg_home_ptr_ = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
@@ -360,7 +359,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
     "state", rclcpp::SystemDefaultsQoS());
   state_publisher_.reset(new StatePublisher(publisher_));
 
-  int n_joints = joint_names_.size();
+  auto n_joints = joint_names_.size();
 
   state_publisher_->lock();
   state_publisher_->msg_.joint_names = joint_names_;
@@ -376,36 +375,32 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
   last_state_publish_time_ = lifecycle_node_->now();
 
   // action server configuration
-  {
-    if (lifecycle_node_->has_parameter("allow_partial_joints_goal")) {
-      allow_partial_joints_goal_ = lifecycle_node_->get_parameter("allow_partial_joints_goal")
-        .get_value<bool>();
-    }
-    if (allow_partial_joints_goal_) {
-      // TODO(ddengster): implement partial joints, log an enabled partial joints goal message
-      RCLCPP_WARN(logger, "Warning: Goals with partial set of joints not implemented yet.");
-    }
-
-    double action_monitor_rate = lifecycle_node_->get_parameter("action_monitor_rate")
-      .get_value<double>();
-
-    RCLCPP_INFO_STREAM(
-      logger, "Action status changes will be monitored at " <<
-        action_monitor_rate << "Hz.");
-    action_monitor_period_ = rclcpp::Duration(1.0 / action_monitor_rate);
-
-    using namespace std::placeholders;
-    action_server_ = rclcpp_action::create_server<FollowJTrajAction>(
-      lifecycle_node_->get_node_base_interface(),
-      lifecycle_node_->get_node_clock_interface(),
-      lifecycle_node_->get_node_logging_interface(),
-      lifecycle_node_->get_node_waitables_interface(),
-      std::string(lifecycle_node_->get_name()) + "/follow_joint_trajectory",
-      std::bind(&JointTrajectoryController::goal_callback, this, _1, _2),
-      std::bind(&JointTrajectoryController::cancel_callback, this, _1),
-      std::bind(&JointTrajectoryController::feedback_setup_callback, this, _1)
-    );
+  allow_partial_joints_goal_ = lifecycle_node_->get_parameter("allow_partial_joints_goal")
+    .get_value<bool>();
+  if (allow_partial_joints_goal_) {
+    // TODO(ddengster): implement partial joints, log an enabled partial joints goal message
+    RCLCPP_WARN(logger, "Warning: Goals with partial set of joints not implemented yet.");
   }
+
+  double action_monitor_rate = lifecycle_node_->get_parameter("action_monitor_rate")
+    .get_value<double>();
+
+  RCLCPP_INFO_STREAM(
+    logger, "Action status changes will be monitored at " <<
+      action_monitor_rate << "Hz.");
+  action_monitor_period_ = rclcpp::Duration(1.0 / action_monitor_rate);
+
+  using namespace std::placeholders;
+  action_server_ = rclcpp_action::create_server<FollowJTrajAction>(
+    lifecycle_node_->get_node_base_interface(),
+    lifecycle_node_->get_node_clock_interface(),
+    lifecycle_node_->get_node_logging_interface(),
+    lifecycle_node_->get_node_waitables_interface(),
+    std::string(lifecycle_node_->get_name()) + "/follow_joint_trajectory",
+    std::bind(&JointTrajectoryController::goal_callback, this, _1, _2),
+    std::bind(&JointTrajectoryController::cancel_callback, this, _1),
+    std::bind(&JointTrajectoryController::feedback_setup_callback, this, _1)
+  );
 
   set_op_mode(hardware_interface::OperationMode::INACTIVE);
 
@@ -608,7 +603,7 @@ void JointTrajectoryController::feedback_setup_callback(
       goal_handle->get_goal()->trajectory);
     traj_external_point_ptr_->update(traj_msg);
 
-    RealtimeGoalHandlePtr rt_goal(new RealtimeGoalHandle(goal_handle));
+    RealtimeGoalHandlePtr rt_goal = std::make_shared<RealtimeGoalHandle>(goal_handle);
     rt_goal->preallocated_feedback_->joint_names = joint_names_;
     rt_active_goal_ = rt_goal;
     rt_active_goal_->execute();

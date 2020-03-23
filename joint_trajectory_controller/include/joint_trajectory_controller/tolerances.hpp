@@ -17,16 +17,13 @@
 #ifndef JOINT_TRAJECTORY_CONTROLLER__TOLERANCES_HPP_
 #define JOINT_TRAJECTORY_CONTROLLER__TOLERANCES_HPP_
 
-// C++ standard
 #include <cassert>
 #include <cmath>
 #include <string>
 #include <vector>
 
-// ROS
 #include "rclcpp/node.hpp"
 
-// ROS messages
 #include "control_msgs/action/follow_joint_trajectory.hpp"
 
 namespace joint_trajectory_controller
@@ -72,9 +69,9 @@ void declareSegmentTolerances(const rclcpp_lifecycle::LifecycleNode::SharedPtr &
 }
 
 /**
- * \brief Populate trajectory segment tolerances from data in the ROS parameter server.
+ * \brief Populate trajectory segment tolerances using data from the ROS node.
  *
- * It is assumed that the following parameter structure is followed on the provided NodeHandle. Unspecified parameters
+ * It is assumed that the following parameter structure is followed on the provided LifecycleNode. Unspecified parameters
  * will take the defaults shown in the comments:
  *
  * \code
@@ -88,11 +85,11 @@ void declareSegmentTolerances(const rclcpp_lifecycle::LifecycleNode::SharedPtr &
  *    goal: 0.01
  * \endcode
  *
- * \param nh NodeHandle where the tolerances are specified.
+ * \param node LifecycleNode where the tolerances are specified.
  * \param joint_names Names of joints to look for in the parameter server for a tolerance specification.
  * \return Trajectory segment tolerances.
  */
-SegmentTolerances getSegmentTolerances(
+SegmentTolerances get_segment_tolerances(
   const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
   const std::vector<std::string> & joint_names)
 {
@@ -139,7 +136,7 @@ SegmentTolerances getSegmentTolerances(
  * \param show_errors If the joint that violate its tolerance should be output to console. NOT REALTIME if true
  * \return True if \p state_error fulfills \p state_tolerance.
  */
-inline bool checkStateTolerancePerJoint(
+inline bool check_state_tolerance_per_joint(
   const trajectory_msgs::msg::JointTrajectoryPoint & state_error,
   int joint_idx,
   const StateTolerances & state_tolerance,
@@ -155,32 +152,33 @@ inline bool checkStateTolerancePerJoint(
     !(state_tolerance.velocity > 0.0 && abs(error_velocity) > state_tolerance.velocity) &&
     !(state_tolerance.acceleration > 0.0 && abs(error_acceleration) > state_tolerance.acceleration);
 
-  if (!is_valid) {
-    if (show_errors) {
-      auto logger = rclcpp::get_logger("tolerances");
-      RCLCPP_ERROR_STREAM(logger, "Path state tolerances failed:");
-
-      if (state_tolerance.position > 0.0 && abs(error_position) > state_tolerance.position) {
-        RCLCPP_ERROR_STREAM(
-          logger, "Position Error: " << error_position <<
-            " Position Tolerance: " << state_tolerance.position);
-      }
-      if (state_tolerance.velocity > 0.0 && abs(error_velocity) > state_tolerance.velocity) {
-        RCLCPP_ERROR_STREAM(
-          logger, "Velocity Error: " << error_velocity <<
-            " Velocity Tolerance: " << state_tolerance.velocity);
-      }
-      if (state_tolerance.acceleration > 0.0 &&
-        abs(error_acceleration) > state_tolerance.acceleration)
-      {
-        RCLCPP_ERROR_STREAM(
-          logger, "Acceleration Error: " << error_acceleration <<
-            " Acceleration Tolerance: " << state_tolerance.acceleration);
-      }
-    }
-    return false;
+  if (is_valid) {
+    return true;
   }
-  return true;
+
+  if (show_errors) {
+    auto logger = rclcpp::get_logger("tolerances");
+    RCLCPP_ERROR_STREAM(logger, "Path state tolerances failed:");
+
+    if (state_tolerance.position > 0.0 && abs(error_position) > state_tolerance.position) {
+      RCLCPP_ERROR_STREAM(
+        logger, "Position Error: " << error_position <<
+          " Position Tolerance: " << state_tolerance.position);
+    }
+    if (state_tolerance.velocity > 0.0 && abs(error_velocity) > state_tolerance.velocity) {
+      RCLCPP_ERROR_STREAM(
+        logger, "Velocity Error: " << error_velocity <<
+          " Velocity Tolerance: " << state_tolerance.velocity);
+    }
+    if (state_tolerance.acceleration > 0.0 &&
+      abs(error_acceleration) > state_tolerance.acceleration)
+    {
+      RCLCPP_ERROR_STREAM(
+        logger, "Acceleration Error: " << error_acceleration <<
+          " Acceleration Tolerance: " << state_tolerance.acceleration);
+    }
+  }
+  return false;
 }
 
 }  // namespace joint_trajectory_controller

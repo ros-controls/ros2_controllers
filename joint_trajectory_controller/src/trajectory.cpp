@@ -99,14 +99,14 @@ Trajectory::sample(
       percent = percent < 0.0 ? 0.0 : percent;
 
       output.positions.resize(state_a.positions.size());
-      for (uint i = 0; i < state_a.positions.size(); ++i) {
+      for (auto i = 0ul; i < state_a.positions.size(); ++i) {
         output.positions[i] =
           state_a.positions[i] + percent * (state_b.positions[i] - state_a.positions[i]);
       }
 
       if (!state_a.velocities.empty() && !state_b.velocities.empty()) {
         output.velocities.resize(state_b.velocities.size());
-        for (uint i = 0; i < state_b.velocities.size(); ++i) {
+        for (auto i = 0ul; i < state_b.velocities.size(); ++i) {
           output.velocities[i] =
             state_a.velocities[i] + percent * (state_b.velocities[i] - state_a.velocities[i]);
         }
@@ -114,7 +114,7 @@ Trajectory::sample(
 
       if (!state_a.accelerations.empty() && !state_b.accelerations.empty()) {
         output.accelerations.resize(state_b.accelerations.size());
-        for (uint i = 0; i < state_b.accelerations.size(); ++i) {
+        for (auto i = 0ul; i < state_b.accelerations.size(); ++i) {
           output.accelerations[i] =
             state_a.accelerations[i] + percent *
             (state_b.accelerations[i] - state_a.accelerations[i]);
@@ -139,8 +139,8 @@ Trajectory::sample(
   }
 
   // time_from_start + trajectory time is the expected arrival time of trajectory
-  uint last_idx = trajectory_msg_->points.size() - 1;
-  for (uint i = 0; i < last_idx; ++i) {
+  auto last_idx = trajectory_msg_->points.size() - 1;
+  for (auto i = 0ul; i < last_idx; ++i) {
     auto & point = trajectory_msg_->points[i];
     auto & next_point = trajectory_msg_->points[i + 1];
 
