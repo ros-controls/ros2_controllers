@@ -27,16 +27,16 @@ add_library(joint_trajectory_controller SHARED
 )
 target_include_directories(joint_trajectory_controller PRIVATE include)
 ament_target_dependencies(joint_trajectory_controller
-  "builtin_interfaces"
-  "controller_interface"
-  "control_msgs"
-  "hardware_interface"
-  "pluginlib"
-  "rclcpp"
-  "rclcpp_lifecycle"
-  "rcutils"
-  "realtime_tools"
-  "trajectory_msgs"
+  builtin_interfaces
+  controller_interface
+  control_msgs
+  hardware_interface
+  pluginlib
+  rclcpp
+  rclcpp_lifecycle
+  rcutils
+  realtime_tools
+  trajectory_msgs
 )
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
@@ -75,15 +75,15 @@ if(BUILD_TESTING)
     joint_trajectory_controller
   )
   ament_target_dependencies(test_trajectory_controller
-    "controller_parameter_server"
-    "control_msgs"
-    "hardware_interface"
-    "rclcpp"
-    "rclcpp_lifecycle"
-    "rcutils"
-    "realtime_tools"
-    "test_robot_hardware"
-    "trajectory_msgs"
+    controller_parameter_server
+    control_msgs
+    hardware_interface
+    rclcpp
+    rclcpp_lifecycle
+    rcutils
+    realtime_tools
+    test_robot_hardware
+    trajectory_msgs
   )
 
   ament_add_gtest(
