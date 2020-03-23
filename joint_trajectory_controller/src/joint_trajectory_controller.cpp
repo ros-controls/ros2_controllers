@@ -141,54 +141,22 @@ JointTrajectoryController::update()
       lifecycle_node_->now(), state_desired,
       start_segment_itr, end_segment_itr);
 
-    if (valid_point && end_segment_itr != (*traj_point_active_ptr_)->end()) {
-      bool abort = false;
+    if (valid_point) {
+      bool abort = false, outside_goal_tolerance = false;
+      bool before_last_point = end_segment_itr != (*traj_point_active_ptr_)->end();
       for (auto index = 0ul; index < joint_num; ++index) {
         // set values for next hardware write()
         registered_joint_cmd_handles_[index]->set_cmd(state_desired.positions[index]);
-
         compute_error_for_joint(state_error, index, state_current, state_desired);
 
-        // check tolerances
-        bool state_tolerance_ok =
-          check_state_tolerance_per_joint(
-          state_error, index,
-          default_tolerances_.state_tolerance[index], false);
-
-        if (!state_tolerance_ok) {
+        if (before_last_point && !check_state_tolerance_per_joint(
+            state_error, index,
+            default_tolerances_.state_tolerance[index], false))
+        {
           abort = true;
         }
-      }
-
-      // send feedback
-      if (rt_active_goal_) {
-        auto feedback = std::make_shared<FollowJTrajAction::Feedback>();
-        feedback->header.stamp = lifecycle_node_->now();
-        feedback->joint_names = joint_names_;
-
-        feedback->actual = state_current;
-        feedback->desired = state_desired;
-        feedback->error = state_error;
-
-        rt_active_goal_->setFeedback(feedback);
-
-        if (abort) {
-          RCLCPP_WARN(lifecycle_node_->get_logger(), "Aborted due to state tolerance violation");
-          auto result = std::make_shared<FollowJTrajAction::Result>();
-          result->set__error_code(FollowJTrajAction::Result::PATH_TOLERANCE_VIOLATED);
-          rt_active_goal_->setAborted(result);
-          rt_active_goal_.reset();
-        }
-      }
-    } else if (valid_point) {
-      // past the final point, check that we end up inside goal tolerance
-      bool outside_goal_tolerance = false;
-      for (size_t index = 0; index < joint_num; ++index) {
-        registered_joint_cmd_handles_[index]->set_cmd(state_desired.positions[index]);
-
-        compute_error_for_joint(state_error, index, state_current, state_desired);
-
-        if (!check_state_tolerance_per_joint(
+        // past the final point, check that we end up inside goal tolerance
+        if (!before_last_point && !check_state_tolerance_per_joint(
             state_error, index,
             default_tolerances_.goal_state_tolerance[index], false))
         {
@@ -197,30 +165,51 @@ JointTrajectoryController::update()
         }
       }
 
-
       if (rt_active_goal_) {
-        if (!outside_goal_tolerance) {
-          auto res = std::make_shared<FollowJTrajAction::Result>();
-          res->set__error_code(FollowJTrajAction::Result::SUCCESSFUL);
-          rt_active_goal_->setSucceeded(res);
+        // send feedback
+        auto feedback = std::make_shared<FollowJTrajAction::Feedback>();
+        feedback->header.stamp = lifecycle_node_->now();
+        feedback->joint_names = joint_names_;
+
+        feedback->actual = state_current;
+        feedback->desired = state_desired;
+        feedback->error = state_error;
+        rt_active_goal_->setFeedback(feedback);
+
+        // check abort
+        if (abort) {
+          RCLCPP_WARN(lifecycle_node_->get_logger(), "Aborted due to state tolerance violation");
+          auto result = std::make_shared<FollowJTrajAction::Result>();
+          result->set__error_code(FollowJTrajAction::Result::PATH_TOLERANCE_VIOLATED);
+          rt_active_goal_->setAborted(result);
           rt_active_goal_.reset();
+        }
 
-          RCLCPP_INFO(lifecycle_node_->get_logger(), "Goal reached, success!");
-        } else if (default_tolerances_.goal_time_tolerance != 0.0) {
-          // if we exceed goal_time_toleralance set it to aborted
-          rclcpp::Time traj_start = (*traj_point_active_ptr_)->get_trajectory_start_time();
-          rclcpp::Time traj_end = traj_start + start_segment_itr->time_from_start;
-
-          double difference = lifecycle_node_->now().seconds() - traj_end.seconds();
-          if (difference > default_tolerances_.goal_time_tolerance) {
-            auto result = std::make_shared<FollowJTrajAction::Result>();
-            result->set__error_code(FollowJTrajAction::Result::GOAL_TOLERANCE_VIOLATED);
-            rt_active_goal_->setAborted(result);
+        // check goal tolerance
+        if (!before_last_point) {
+          if (!outside_goal_tolerance) {
+            auto res = std::make_shared<FollowJTrajAction::Result>();
+            res->set__error_code(FollowJTrajAction::Result::SUCCESSFUL);
+            rt_active_goal_->setSucceeded(res);
             rt_active_goal_.reset();
-            RCLCPP_WARN(
-              lifecycle_node_->get_logger(),
-              "Aborted due goal_time_tolerance exceeding by %f seconds",
-              difference);
+
+            RCLCPP_INFO(lifecycle_node_->get_logger(), "Goal reached, success!");
+          } else if (default_tolerances_.goal_time_tolerance != 0.0) {
+            // if we exceed goal_time_toleralance set it to aborted
+            rclcpp::Time traj_start = (*traj_point_active_ptr_)->get_trajectory_start_time();
+            rclcpp::Time traj_end = traj_start + start_segment_itr->time_from_start;
+
+            double difference = lifecycle_node_->now().seconds() - traj_end.seconds();
+            if (difference > default_tolerances_.goal_time_tolerance) {
+              auto result = std::make_shared<FollowJTrajAction::Result>();
+              result->set__error_code(FollowJTrajAction::Result::GOAL_TOLERANCE_VIOLATED);
+              rt_active_goal_->setAborted(result);
+              rt_active_goal_.reset();
+              RCLCPP_WARN(
+                lifecycle_node_->get_logger(),
+                "Aborted due goal_time_tolerance exceeding by %f seconds",
+                difference);
+            }
           }
         }
       }
