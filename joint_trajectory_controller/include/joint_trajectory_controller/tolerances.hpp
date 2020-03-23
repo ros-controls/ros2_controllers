@@ -61,13 +61,6 @@ struct SegmentTolerances
   double goal_time_tolerance = 0.0;
 };
 
-void declareSegmentTolerances(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node)
-{
-  node->declare_parameter<double>("constraints.stopped_velocity_tolerance", 0.01);
-  node->declare_parameter<double>("constraints.goal_time", 0.0);
-  // not possible to declare per-joint tolerances since we need to obtain joint_names
-}
-
 /**
  * \brief Populate trajectory segment tolerances using data from the ROS node.
  *
