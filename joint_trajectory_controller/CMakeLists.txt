@@ -105,15 +105,15 @@ if(BUILD_TESTING)
     joint_trajectory_controller
   )
   ament_target_dependencies(test_trajectory_actions
-    "controller_parameter_server"
-    "control_msgs"
-    "hardware_interface"
-    "rclcpp"
-    "rclcpp_lifecycle"
-    "rcutils"
-    "test_robot_hardware"
-    "trajectory_msgs"
-    "realtime_tools"
+    controller_parameter_server
+    control_msgs
+    hardware_interface
+    rclcpp
+    rclcpp_lifecycle
+    rcutils
+    test_robot_hardware
+    trajectory_msgs
+    realtime_tools
   )
 endif()
 
