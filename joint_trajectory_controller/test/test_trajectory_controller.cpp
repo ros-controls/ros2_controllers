@@ -69,7 +69,7 @@ protected:
 
   /// Publish trajectory msgs with multiple points
   /**
-   *  delay - delay between each points
+   *  delay_btwn_points - delay between each points
    *  points - vector of trajectories. Each trajectory consists of 3 joints
    */
   void publish(
@@ -406,7 +406,7 @@ TEST_F(TestTrajectoryController, correct_initialization_using_parameters) {
   // *INDENT-ON*
   publish(time_from_start, points);
   // wait for msg is be published to the system
-  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
   // first update
   traj_controller->update();

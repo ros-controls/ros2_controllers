@@ -109,7 +109,7 @@ TEST_F(TestTrajectory, sample_trajectory) {
   current_point.accelerations.push_back(0.0);
 
   rclcpp::Time time_now = rclcpp::Clock().now();
-  traj.set_point_before_traj(time_now, current_point);
+  traj.set_point_before_trajectory_msg(time_now, current_point);
 
   trajectory_msgs::msg::JointTrajectoryPoint expected_state;
   joint_trajectory_controller::TrajectoryPointConstIter start, end;

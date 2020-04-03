@@ -128,10 +128,11 @@ JointTrajectoryController::update()
   std::lock_guard<std::mutex> guard(trajectory_mtx_);
 
   // currently carrying out a trajectory
-  if (traj_point_active_ptr_ && (*traj_point_active_ptr_)->has_traj_msg() == false) {
+  if (traj_point_active_ptr_ && (*traj_point_active_ptr_)->has_trajectory_msg() == false) {
     // if sampling the first time, set the point before you sample
     if (!(*traj_point_active_ptr_)->is_sampled_already()) {
-      (*traj_point_active_ptr_)->set_point_before_traj(lifecycle_node_->now(), state_current);
+      (*traj_point_active_ptr_)->set_point_before_trajectory_msg(
+        lifecycle_node_->now(), state_current);
     }
     resize_joint_trajectory_point(state_error, joint_num);
 

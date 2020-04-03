@@ -35,9 +35,9 @@
 #include <string>
 #include <vector>
 
-#include "rclcpp/node.hpp"
-
 #include "control_msgs/action/follow_joint_trajectory.hpp"
+
+#include "rclcpp/node.hpp"
 
 namespace joint_trajectory_controller
 {
@@ -103,10 +103,10 @@ SegmentTolerances get_segment_tolerances(
   SegmentTolerances tolerances;
 
   // State and goal state tolerances
-  double stopped_velocity_tolerance;
+  double stopped_velocity_tolerance = 0.01;
   node->get_parameter_or<double>(
     "constraints.stopped_velocity_tolerance",
-    stopped_velocity_tolerance, 0.01);
+    stopped_velocity_tolerance, stopped_velocity_tolerance);
 
   tolerances.state_tolerance.resize(n_joints);
   tolerances.goal_state_tolerance.resize(n_joints);
@@ -119,11 +119,13 @@ SegmentTolerances get_segment_tolerances(
     node->get_parameter_or<double>(
       prefix + ".goal", tolerances.goal_state_tolerance[i].position,
       0.0);
+
+    auto logger = rclcpp::get_logger("tolerance");
     RCLCPP_DEBUG(
-      rclcpp::get_logger("tolerance"), "%s %f",
+      logger, "%s %f",
       (prefix + ".trajectory").c_str(), tolerances.state_tolerance[i].position);
     RCLCPP_DEBUG(
-      rclcpp::get_logger("tolerance"), "%s %f",
+      logger, "%s %f",
       (prefix + ".goal").c_str(), tolerances.goal_state_tolerance[i].position);
 
     tolerances.goal_state_tolerance[i].velocity = stopped_velocity_tolerance;

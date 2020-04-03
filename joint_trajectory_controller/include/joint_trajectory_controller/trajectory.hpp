@@ -48,10 +48,13 @@ public:
     const trajectory_msgs::msg::JointTrajectoryPoint & current_point,
     std::shared_ptr<trajectory_msgs::msg::JointTrajectory> joint_trajectory);
 
-
+  /// Set the point before the trajectory message is replaced/appended
+  /// Example: if we receive a new trajectory message and it's first point is 0.5 seconds
+  /// from the current one, we call this function to log the current state, then
+  /// append/replace the current trajectory
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   void
-  set_point_before_traj(
+  set_point_before_trajectory_msg(
     const rclcpp::Time & current_time,
     const trajectory_msgs::msg::JointTrajectoryPoint & current_point);
 
@@ -96,7 +99,7 @@ public:
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   bool
-  has_traj_msg() const;
+  has_trajectory_msg() const;
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory>

@@ -42,11 +42,11 @@ Trajectory::Trajectory(
 : trajectory_msg_(joint_trajectory),
   trajectory_start_time_(static_cast<rclcpp::Time>(joint_trajectory->header.stamp))
 {
-  set_point_before_traj(current_time, current_point);
+  set_point_before_trajectory_msg(current_time, current_point);
 }
 
 void
-Trajectory::set_point_before_traj(
+Trajectory::set_point_before_trajectory_msg(
   const rclcpp::Time & current_time,
   const trajectory_msgs::msg::JointTrajectoryPoint & current_point)
 {
@@ -190,7 +190,7 @@ Trajectory::time_from_start() const
 }
 
 bool
-Trajectory::has_traj_msg() const
+Trajectory::has_trajectory_msg() const
 {
   return !trajectory_msg_;
 }
