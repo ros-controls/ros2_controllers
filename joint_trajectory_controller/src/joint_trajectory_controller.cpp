@@ -105,7 +105,7 @@ JointTrajectoryController::update()
         current.positions[index], desired.positions[index]);
 
       if (!desired.velocities.empty()) {
-        error.velocities[index] = current.velocities[index] - desired.velocities[index];
+        error.velocities[index] = desired.velocities[index] - current.velocities[index];
       } else {
         error.velocities[index] = 0.0;
       }
