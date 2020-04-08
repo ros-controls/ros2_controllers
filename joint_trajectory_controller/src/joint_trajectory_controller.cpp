@@ -14,14 +14,14 @@
 
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
 
-#include <angles/angles.h>
-
 #include <cassert>
 #include <chrono>
 #include <iterator>
 #include <string>
 #include <memory>
 #include <vector>
+
+#include "angles/angles.h"
 
 #include "builtin_interfaces/msg/time.hpp"
 
