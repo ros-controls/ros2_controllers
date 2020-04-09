@@ -11,6 +11,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 find_package(ament_cmake REQUIRED)
+find_package(angles REQUIRED)
 find_package(controller_interface REQUIRED)
 find_package(control_msgs REQUIRED)
 find_package(hardware_interface REQUIRED)
@@ -27,6 +28,7 @@ add_library(joint_trajectory_controller SHARED
 )
 target_include_directories(joint_trajectory_controller PRIVATE include)
 ament_target_dependencies(joint_trajectory_controller
+  angles
   builtin_interfaces
   controller_interface
   control_msgs
