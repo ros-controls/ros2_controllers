@@ -14,12 +14,284 @@
 
 #include "ros_controllers/diff_drive_controller.hpp"
 
-namespace
-{
-  constexpr const char kDefaultCmdVelTopic[] = "cmd_vel";
+#include <lifecycle_msgs/msg/state.hpp>
+#include <utility>
+
+namespace {
+constexpr auto DEFAULT_COMMAND_TOPIC = "cmd_vel";
 }
 
-namespace ros_controllers
-{
+namespace ros_controllers {
+using namespace std::chrono_literals;
+using controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS;
+using lifecycle_msgs::msg::State;
 
+DiffDriveController::DiffDriveController(std::vector<std::string> left_wheel_names,
+                                         std::vector<std::string> right_wheel_names,
+                                         std::vector<std::string> write_op_names) :
+   left_wheel_names_(std::move(left_wheel_names)),
+   right_wheel_names_(std::move(right_wheel_names)),
+   write_op_names_(std::move(write_op_names))
+{}
+
+controller_interface::controller_interface_ret_t
+DiffDriveController::init(std::weak_ptr<hardware_interface::RobotHardware> robot_hardware,
+                          const std::string& controller_name)
+{
+   // initialize lifecycle node
+   auto ret = ControllerInterface::init(robot_hardware, controller_name);
+   if (ret != CONTROLLER_INTERFACE_RET_SUCCESS) {
+      return ret;
+   }
+
+   // with the lifecycle node being initialized, we can declare parameters
+   lifecycle_node_->declare_parameter<std::vector<std::string>>("left_wheel_names",
+                                                                left_wheel_names_);
+   lifecycle_node_->declare_parameter<std::vector<std::string>>("right_wheel_names",
+                                                                right_wheel_names_);
+   lifecycle_node_->declare_parameter<std::vector<std::string>>("write_op_modes", write_op_names_);
+
+   return CONTROLLER_INTERFACE_RET_SUCCESS;
+}
+
+controller_interface::controller_interface_ret_t DiffDriveController::update()
+{
+   if (lifecycle_node_->get_current_state().id() == State::PRIMARY_STATE_INACTIVE) {
+      if (!is_halted) {
+         halt();
+         is_halted = true;
+      }
+      return CONTROLLER_INTERFACE_RET_SUCCESS;
+   }
+
+   // when no traj msg has been received yet
+   // write inverse kinematics here
+   //   if (!traj_point_active_ptr_ or (*traj_point_active_ptr_)->is_empty()) {
+   //      return CONTROLLER_INTERFACE_RET_SUCCESS;
+   //   }
+   //
+   //   // find next new point for current timestamp
+   //   auto traj_point_ptr = (*traj_point_active_ptr_)->sample(rclcpp::Clock().now());
+   //   // find next new point for current timestamp
+   //   // set cmd only if a point is found
+   //   if (traj_point_ptr == (*traj_point_active_ptr_)->end()) {
+   //      return CONTROLLER_INTERFACE_RET_SUCCESS;
+   //   }
+   //
+   //   // check if new point ptr points to the same as previous point
+   //   if (prev_traj_point_ptr_ == traj_point_ptr) {
+   //      return CONTROLLER_INTERFACE_RET_SUCCESS;
+   //   }
+   //
+   //   size_t joint_num = registered_joint_cmd_handles_.size();
+   //   for (size_t index = 0; index < joint_num; ++index) {
+   //      registered_joint_cmd_handles_[index]->set_cmd(traj_point_ptr->positions[index]);
+   //   }
+   //
+   //   prev_traj_point_ptr_ = traj_point_ptr;
+   //   set_op_mode(hardware_interface::OperationMode::ACTIVE);
+
+   return CONTROLLER_INTERFACE_RET_SUCCESS;
+}
+
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+DiffDriveController::on_configure(const rclcpp_lifecycle::State& previous_state)
+{
+   (void)previous_state;
+
+   auto logger = lifecycle_node_->get_logger();
+
+   // update parameters
+   left_wheel_names_ = lifecycle_node_->get_parameter("left_wheel_names").as_string_array();
+   right_wheel_names_ = lifecycle_node_->get_parameter("right_wheel_names").as_string_array();
+
+   using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
+
+   if (!reset()) {
+      return CallbackReturn::ERROR;
+   }
+
+   const auto configure_side = [&logger](const std::string& side,
+                                         const std::vector<std::string>& wheel_names,
+                                         std::vector<WheelHandle>& registered_handles,
+                                         const auto& robot_hardware) {
+      if (wheel_names.empty()) {
+         std::stringstream ss;
+         ss << "No " << side << " wheel names specified.";
+         RCLCPP_WARN(logger, ss.str().c_str());
+      }
+
+      // register handles
+      registered_handles.resize(wheel_names.size());
+      for (size_t index = 0; index < wheel_names.size(); ++index) {
+         const auto wheel_name = wheel_names[index].c_str();
+         auto& wheel_handle = registered_handles[index];
+
+         auto result = robot_hardware->get_joint_state_handle(wheel_name, &wheel_handle.state);
+         if (result != hardware_interface::HW_RET_OK) {
+            RCLCPP_WARN(logger, "unable to obtain joint state handle for %s", wheel_name);
+            return CallbackReturn::FAILURE;
+         }
+
+         auto ret = robot_hardware->get_joint_command_handle(wheel_name, &wheel_handle.command);
+         if (ret != hardware_interface::HW_RET_OK) {
+            RCLCPP_WARN(logger, "unable to obtain joint command handle for %s", wheel_name);
+            return CallbackReturn::FAILURE;
+         }
+      }
+
+      return CallbackReturn::SUCCESS;
+   };
+
+   if (auto robot_hardware = robot_hardware_.lock()) {
+      const auto left_result =
+         configure_side("left", left_wheel_names_, registered_left_wheel_handles_, robot_hardware);
+      const auto right_result = configure_side(
+         "right", right_wheel_names_, registered_right_wheel_handles_, robot_hardware);
+
+      if (left_result == CallbackReturn ::FAILURE or right_result == CallbackReturn::FAILURE) {
+         return CallbackReturn::FAILURE;
+      }
+
+      registered_operation_mode_handles_.resize(write_op_names_.size());
+      for (size_t index = 0; index < write_op_names_.size(); ++index) {
+         const auto op_name = write_op_names_[index].c_str();
+         auto& op_handle = registered_operation_mode_handles_[index];
+
+         auto result = robot_hardware->get_operation_mode_handle(op_name, &op_handle);
+         if (result != hardware_interface::HW_RET_OK) {
+            RCLCPP_WARN(logger, "unable to obtain operation mode handle for %s", op_name);
+            return CallbackReturn::FAILURE;
+         }
+      }
+
+   } else {
+      return CallbackReturn::ERROR;
+   }
+
+   if (registered_left_wheel_handles_.empty() or registered_right_wheel_handles_.empty() or
+       registered_operation_mode_handles_.empty()) {
+      return CallbackReturn::ERROR;
+   }
+
+   left_previous_commands_ = std::vector<double>(0, left_wheel_names_.size());
+   right_previous_commands_ = std::vector<double>(0, right_wheel_names_.size());
+
+   velocity_msg_ptr_ = std::make_shared<Twist>();
+
+   auto callback = [this](const std::shared_ptr<Twist> msg) -> void {
+      if (subscriber_is_active_) {
+         velocity_msg_ptr_ = msg;
+      }
+   };
+
+   joint_command_subscriber_ = lifecycle_node_->create_subscription<Twist>(
+      "~/cmd_vel", rclcpp::SystemDefaultsQoS(), callback);
+
+   set_op_mode(hardware_interface::OperationMode::INACTIVE);
+
+   return CallbackReturn::SUCCESS;
+}
+
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+DiffDriveController::on_activate(const rclcpp_lifecycle::State& previous_state)
+{
+   (void)previous_state;
+
+   is_halted = false;
+   subscriber_is_active_ = true;
+   traj_point_active_ptr_ = &traj_external_point_ptr_;
+
+   // TODO(karsten1987): activate subscriptions of subscriber
+   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+}
+//
+// rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+// DiffDriveController::on_deactivate(const rclcpp_lifecycle::State& previous_state)
+//{
+//   (void)previous_state;
+//
+//   subscriber_is_active_ = false;
+//
+//   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+//}
+//
+// rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+// DiffDriveController::on_cleanup(const rclcpp_lifecycle::State& previous_state)
+//{
+//   (void)previous_state;
+//
+//   // go home
+//   traj_home_point_ptr_->update(traj_msg_home_ptr_);
+//   traj_point_active_ptr_ = &traj_home_point_ptr_;
+//
+//   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+//}
+//
+// rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+// DiffDriveController::on_error(const rclcpp_lifecycle::State& previous_state)
+//{
+//   (void)previous_state;
+//   if (!reset()) {
+//      return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
+//   }
+//   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+//}
+//
+// bool DiffDriveController::reset()
+//{
+//   // TODO(karsten1987): need a way to re-fetch names after reset. Uncomment this in the future
+//   // joint_names_.clear();
+//   // write_op_names_.clear();
+//
+//   registered_joint_cmd_handles_.clear();
+//   registered_joint_state_handles_.clear();
+//   registered_operation_mode_handles_.clear();
+//
+//   subscriber_is_active_ = false;
+//   joint_command_subscriber_.reset();
+//
+//   // iterator has no default value
+//   // prev_traj_point_ptr_;
+//   traj_point_active_ptr_ = nullptr;
+//   traj_external_point_ptr_.reset();
+//   traj_home_point_ptr_.reset();
+//   traj_msg_home_ptr_.reset();
+//
+//   is_halted = false;
+//
+//   return true;
+//}
+//
+// rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+// DiffDriveController::on_shutdown(const rclcpp_lifecycle::State& previous_state)
+//{
+//   (void)previous_state;
+//   // TODO(karsten1987): what to do?
+//
+//   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+//}
+//
+// void DiffDriveController::set_op_mode(const hardware_interface::OperationMode& mode)
+//{
+//   for (auto& op_mode_handle : registered_operation_mode_handles_) {
+//      op_mode_handle->set_mode(mode);
+//   }
+//}
+//
+// void DiffDriveController::halt()
+//{
+//   size_t joint_num = registered_joint_cmd_handles_.size();
+//   for (size_t index = 0; index < joint_num; ++index) {
+//      registered_joint_cmd_handles_[index]->set_cmd(
+//         registered_joint_state_handles_[index]->get_position());
+//   }
+//   set_op_mode(hardware_interface::OperationMode::ACTIVE);
+//}
+} // namespace ros_controllers
+
+#include "class_loader/register_macro.hpp"
+
+CLASS_LOADER_REGISTER_CLASS(ros_controllers::DiffDriveController,
+                            controller_interface::ControllerInterface)
 }

@@ -35,13 +35,16 @@ namespace ros_controllers {
 
 class DiffDriveController : public controller_interface::ControllerInterface
 {
+   using Twist = geometry_msgs::msg::Twist;
+
  public:
    ROS_CONTROLLERS_PUBLIC
-   DiffDriveController();
+   DiffDriveController() = default;
 
    ROS_CONTROLLERS_PUBLIC
-   DiffDriveController(const std::vector<std::string>& joint_names,
-                       const std::vector<std::string>& write_op_names);
+   DiffDriveController(std::vector<std::string> left_wheel_names,
+                       std::vector<std::string> right_wheel_names,
+                       std::vector<std::string> operation_mode_names);
 
    ROS_CONTROLLERS_PUBLIC
    controller_interface::controller_interface_ret_t
@@ -78,36 +81,42 @@ class DiffDriveController : public controller_interface::ControllerInterface
  private:
    struct WheelHandle
    {
-      std::string name_;
-      const hardware_interface::JointStateHandle* state__;
-      hardware_interface::JointCommandHandle* command_;
+      const hardware_interface::JointStateHandle* state{nullptr};
+      hardware_interface::JointCommandHandle* command{nullptr};
    };
-   std::vector<WheelHandle> left_wheel_joints_;
+
+   std::vector<std::string> left_wheel_names_{};
+   std::vector<std::string> right_wheel_names_{};
+
+   std::vector<WheelHandle> registered_left_wheel_handles_{};
+   std::vector<WheelHandle> registered_right_wheel_handles_{};
 
    struct WheelParams
    {
-      size_t joints_size_;
-      double separation_; // w.r.t. the midpoint of the wheel width
-      double radius_;     // Assumed to be the same for both wheels
-      double separation_multiplier_;
-      double left_radius_multiplier_;
-      double right_radius_multiplier_;
-   } wheel_params_;
+      size_t joints_size_{};
+      double separation_{}; // w.r.t. the midpoint of the wheel width
+      double radius_{};     // Assumed to be the same for both wheels
+      double separation_multiplier_{};
+      double left_radius_multiplier_{};
+      double right_radius_multiplier_{};
+   } wheel_params_{};
 
    // Timeout to consider cmd_vel commands old:
-   std::chrono::milliseconds cmd_vel_timeout_;
-   std::vector<double> left_previous_velocities_{};
-   std::vector<double> right_previous_velocities_{};
+   std::chrono::milliseconds cmd_vel_timeout_{};
+   std::vector<double> left_previous_commands_{};
+   std::vector<double> right_previous_commands_{};
 
-   std::vector<std::string> write_op_names_;
-   std::vector<hardware_interface::OperationModeHandle*> registered_operation_mode_handles_;
+   std::vector<std::string> write_op_names_{};
+   std::vector<hardware_interface::OperationModeHandle*> registered_operation_mode_handles_{};
 
-   std::string base_frame_id_;
-   std::string odom_frame_id_;
+   std::string base_frame_id_{};
+   std::string odom_frame_id_{};
 
    // TODO(karsten1987): eventually activate and deactive subscriber directly when its supported
    bool subscriber_is_active_{false};
    rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr joint_command_subscriber_{nullptr};
+
+   std::shared_ptr<Twist> velocity_msg_ptr_{nullptr};
 
    bool is_halted{false};
 
