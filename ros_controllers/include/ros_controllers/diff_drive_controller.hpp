@@ -24,15 +24,6 @@
 #include <vector>
 
 namespace ros_controllers {
-
-// TODO(piraka9011):
-//   - Configure parameters from server
-//   - Register wheel joints + params
-//   - Cleanup/Reset gracefully
-//   - Pluginlib
-//   - Operation mode
-//   - Mutexes
-
 class DiffDriveController : public controller_interface::ControllerInterface
 {
    using Twist = geometry_msgs::msg::Twist;
@@ -93,24 +84,24 @@ class DiffDriveController : public controller_interface::ControllerInterface
 
    struct WheelParams
    {
-      size_t joints_size_{};
-      double separation_{}; // w.r.t. the midpoint of the wheel width
-      double radius_{};     // Assumed to be the same for both wheels
-      double separation_multiplier_{};
-      double left_radius_multiplier_{};
-      double right_radius_multiplier_{};
+      size_t wheels_per_side{1};
+      double separation{0.105}; // w.r.t. the midpoint of the wheel width
+      double radius{0.05};      // Assumed to be the same for both wheels
+      double separation_multiplier{1.0};
+      double left_radius_multiplier{1.0};
+      double right_radius_multiplier{1.0};
    } wheel_params_{};
 
-   // Timeout to consider cmd_vel commands old:
-   std::chrono::milliseconds cmd_vel_timeout_{};
+   // Timeout to consider cmd_vel commands old
+   std::chrono::milliseconds cmd_vel_timeout_{500};
    std::vector<double> left_previous_commands_{};
    std::vector<double> right_previous_commands_{};
 
    std::vector<std::string> write_op_names_{};
    std::vector<hardware_interface::OperationModeHandle*> registered_operation_mode_handles_{};
 
-   std::string base_frame_id_{};
-   std::string odom_frame_id_{};
+   std::string base_frame_id_{"base_link"};
+   std::string odom_frame_id_{"odom"};
 
    // TODO(karsten1987): eventually activate and deactive subscriber directly when its supported
    bool subscriber_is_active_{false};

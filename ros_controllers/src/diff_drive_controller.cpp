@@ -46,10 +46,16 @@ DiffDriveController::init(std::weak_ptr<hardware_interface::RobotHardware> robot
    }
 
    // with the lifecycle node being initialized, we can declare parameters
-   lifecycle_node_->declare_parameter<std::vector<std::string>>("left_wheel_names",
-                                                                left_wheel_names_);
-   lifecycle_node_->declare_parameter<std::vector<std::string>>("right_wheel_names",
-                                                                right_wheel_names_);
+   lifecycle_node_->declare_parameter<std::vector<std::string>>("left_wheel_names", left_wheel_names_);
+   lifecycle_node_->declare_parameter<std::vector<std::string>>("right_wheel_names", right_wheel_names_);
+   lifecycle_node_->declare_parameter<double>("wheel_separation", wheel_params_.separation);
+   lifecycle_node_->declare_parameter<double>("wheels_per_side", wheel_params_.wheels_per_side);
+   lifecycle_node_->declare_parameter<double>("wheel_radius", wheel_params_.radius);
+   lifecycle_node_->declare_parameter<double>("wheel_separation_multiplier", wheel_params_.separation_multiplier);
+   lifecycle_node_->declare_parameter<double>("left_wheel_radius_multiplier", wheel_params_.left_radius_multiplier);
+   lifecycle_node_->declare_parameter<double>("right_wheel_radius_multiplier", wheel_params_.right_radius_multiplier);
+   lifecycle_node_->declare_parameter<std::string>("odom_frame_id", odom_frame_id_);
+   lifecycle_node_->declare_parameter<std::string>("base_frame_id", base_frame_id_);
    lifecycle_node_->declare_parameter<std::vector<std::string>>("write_op_modes", write_op_names_);
 
    return CONTROLLER_INTERFACE_RET_SUCCESS;
@@ -57,41 +63,44 @@ DiffDriveController::init(std::weak_ptr<hardware_interface::RobotHardware> robot
 
 controller_interface::controller_interface_ret_t DiffDriveController::update()
 {
+   auto logger = lifecycle_node_->get_logger();
+   RCLCPP_INFO(logger, "updating diff drive controller...");
    if (lifecycle_node_->get_current_state().id() == State::PRIMARY_STATE_INACTIVE) {
+      RCLCPP_INFO(logger, "diff drive node inactive. activating!");
       if (!is_halted) {
+         RCLCPP_INFO(logger, "Halting!");
          halt();
          is_halted = true;
       }
+      RCLCPP_INFO(logger, "Halted, returning...");
       return CONTROLLER_INTERFACE_RET_SUCCESS;
    }
 
-   // when no traj msg has been received yet
-   // write inverse kinematics here
-   //   if (!traj_point_active_ptr_ or (*traj_point_active_ptr_)->is_empty()) {
-   //      return CONTROLLER_INTERFACE_RET_SUCCESS;
-   //   }
-   //
-   //   // find next new point for current timestamp
-   //   auto traj_point_ptr = (*traj_point_active_ptr_)->sample(rclcpp::Clock().now());
-   //   // find next new point for current timestamp
-   //   // set cmd only if a point is found
-   //   if (traj_point_ptr == (*traj_point_active_ptr_)->end()) {
-   //      return CONTROLLER_INTERFACE_RET_SUCCESS;
-   //   }
-   //
-   //   // check if new point ptr points to the same as previous point
-   //   if (prev_traj_point_ptr_ == traj_point_ptr) {
-   //      return CONTROLLER_INTERFACE_RET_SUCCESS;
-   //   }
-   //
-   //   size_t joint_num = registered_joint_cmd_handles_.size();
-   //   for (size_t index = 0; index < joint_num; ++index) {
-   //      registered_joint_cmd_handles_[index]->set_cmd(traj_point_ptr->positions[index]);
-   //   }
-   //
-   //   prev_traj_point_ptr_ = traj_point_ptr;
-   //   set_op_mode(hardware_interface::OperationMode::ACTIVE);
+   RCLCPP_INFO(logger, "Performing updates...");
+   // Apply (possibly new) multipliers:
+   const auto wheels = wheel_params_;
 
+   const double wheel_separation = wheels.separation_multiplier * wheels.separation;
+   const double left_wheel_radius = wheels.left_radius_multiplier * wheels.radius;
+   const double right_wheel_radius = wheels.right_radius_multiplier * wheels.radius;
+
+   // Compute wheels velocities:
+   const auto& current_command = *velocity_msg_ptr_;
+   const auto& linear = current_command.linear.x;
+   const auto& angular = current_command.angular.z;
+
+   const double velocity_left = (linear - angular * wheel_separation / 2.0) / left_wheel_radius;
+   const double velocity_right = (linear + angular * wheel_separation / 2.0) / right_wheel_radius;
+
+   // Set wheels velocities:
+   for (size_t index = 0; index < wheels.wheels_per_side; ++index) {
+      RCLCPP_INFO(logger, "Setting left command to: %f", velocity_left);
+      registered_left_wheel_handles_[index].command->set_cmd(velocity_left);
+      RCLCPP_INFO(logger, "Setting right command to: %f", velocity_right);
+      registered_right_wheel_handles_[index].command->set_cmd(velocity_right);
+   }
+
+   set_op_mode(hardware_interface::OperationMode::ACTIVE);
    return CONTROLLER_INTERFACE_RET_SUCCESS;
 }
 
@@ -103,6 +112,14 @@ DiffDriveController::on_configure(const rclcpp_lifecycle::State&)
    // update parameters
    left_wheel_names_ = lifecycle_node_->get_parameter("left_wheel_names").as_string_array();
    right_wheel_names_ = lifecycle_node_->get_parameter("right_wheel_names").as_string_array();
+   wheel_params_.separation = lifecycle_node_->get_parameter("wheel_separation").as_double();
+   wheel_params_.wheels_per_side = static_cast<size_t>(lifecycle_node_->get_parameter("wheels_per_side").as_int());
+   wheel_params_.radius = lifecycle_node_->get_parameter("wheel_radius").as_double();
+   wheel_params_.separation_multiplier = lifecycle_node_->get_parameter("wheel_separation_multiplier").as_double();
+   wheel_params_.left_radius_multiplier = lifecycle_node_->get_parameter("left_wheel_radius_multiplier").as_double();
+   wheel_params_.right_radius_multiplier = lifecycle_node_->get_parameter("right_wheel_radius_multiplier").as_double();
+   odom_frame_id_ = lifecycle_node_->get_parameter("odom_frame_id").as_string();
+   base_frame_id_ = lifecycle_node_->get_parameter("base_frame_id").as_string();
 
    if (!reset()) {
       return CallbackReturn::ERROR;
@@ -143,8 +160,8 @@ DiffDriveController::on_configure(const rclcpp_lifecycle::State&)
    if (auto robot_hardware = robot_hardware_.lock()) {
       const auto left_result =
          configure_side("left", left_wheel_names_, registered_left_wheel_handles_, robot_hardware);
-      const auto right_result = configure_side(
-         "right", right_wheel_names_, registered_right_wheel_handles_, robot_hardware);
+      const auto right_result =
+         configure_side("right", right_wheel_names_, registered_right_wheel_handles_, robot_hardware);
 
       if (left_result == CallbackReturn ::FAILURE or right_result == CallbackReturn::FAILURE) {
          return CallbackReturn::FAILURE;
@@ -171,6 +188,8 @@ DiffDriveController::on_configure(const rclcpp_lifecycle::State&)
       return CallbackReturn::ERROR;
    }
 
+   wheel_params_.wheels_per_side = registered_left_wheel_handles_.size();
+
    left_previous_commands_ = std::vector<double>(0, left_wheel_names_.size());
    right_previous_commands_ = std::vector<double>(0, right_wheel_names_.size());
 
@@ -178,12 +197,12 @@ DiffDriveController::on_configure(const rclcpp_lifecycle::State&)
 
    auto callback = [this](const std::shared_ptr<Twist> msg) -> void {
       if (subscriber_is_active_) {
-         velocity_msg_ptr_ = msg;
+         *velocity_msg_ptr_ = *msg;
       }
    };
 
-   velocity_command_subscriber_ = lifecycle_node_->create_subscription<Twist>(
-      DEFAULT_COMMAND_TOPIC, rclcpp::SystemDefaultsQoS(), callback);
+   velocity_command_subscriber_ =
+      lifecycle_node_->create_subscription<Twist>(DEFAULT_COMMAND_TOPIC, rclcpp::SystemDefaultsQoS(), callback);
 
    set_op_mode(hardware_interface::OperationMode::INACTIVE);
 
@@ -267,5 +286,4 @@ void DiffDriveController::halt()
 
 #include "class_loader/register_macro.hpp"
 
-CLASS_LOADER_REGISTER_CLASS(ros_controllers::DiffDriveController,
-                            controller_interface::ControllerInterface)
+CLASS_LOADER_REGISTER_CLASS(ros_controllers::DiffDriveController, controller_interface::ControllerInterface)
