@@ -15,20 +15,15 @@
 #ifndef ROS_CONTROLLERS__DIFF_DRIVE_CONTROLLER_HPP_
 #define ROS_CONTROLLERS__DIFF_DRIVE_CONTROLLER_HPP_
 
-#include <memory>
-#include <vector>
-
 #include "controller_interface/controller_interface.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "ros_controllers/visibility_control.h"
 #include "sensor_msgs/msg/joint_state.hpp"
 
-using JointHandle = std::unique_ptr<hardware_interface::JointCommandHandle>;
-using Twist = geometry_msgs::msg::Twist;
-using JointState = sensor_msgs::msg::JointState;
+#include <memory>
+#include <vector>
 
-namespace ros_controllers
-{
+namespace ros_controllers {
 
 // TODO(piraka9011):
 //   - Configure parameters from server
@@ -37,47 +32,88 @@ namespace ros_controllers
 //   - Pluginlib
 //   - Operation mode
 //   - Mutexes
-class ROS_CONTROLLERS_PUBLIC DiffDriveController : public controller_interface::ControllerInterface
+
+class DiffDriveController : public controller_interface::ControllerInterface
 {
-public:
-  DiffDriveController() = default;
+ public:
+   ROS_CONTROLLERS_PUBLIC
+   DiffDriveController();
 
-  ~DiffDriveController() = default;
+   ROS_CONTROLLERS_PUBLIC
+   DiffDriveController(const std::vector<std::string>& joint_names,
+                       const std::vector<std::string>& write_op_names);
 
-  controller_interface::controller_interface_ret_t init(
-    std::weak_ptr<hardware_interface::RobotHardware> robot_hardware,
-    const std::string & controller_name) override;
+   ROS_CONTROLLERS_PUBLIC
+   controller_interface::controller_interface_ret_t
+   init(std::weak_ptr<hardware_interface::RobotHardware> robot_hardware,
+        const std::string& controller_name) override;
 
-  controller_interface::controller_interface_ret_t update() override;
+   ROS_CONTROLLERS_PUBLIC
+   controller_interface::controller_interface_ret_t update() override;
 
-private:
-  std::string name_{};
+   ROS_CONTROLLERS_PUBLIC
+   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+   on_configure(const rclcpp_lifecycle::State& previous_state) override;
 
-  rclcpp::Subscription<Twist>::SharedPtr command_subscriber_{nullptr};
-  rclcpp::Publisher<JointState> joint_state_publisher_;
+   ROS_CONTROLLERS_PUBLIC
+   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+   on_activate(const rclcpp_lifecycle::State& previous_state) override;
 
-  /// Wheel parameters
-  std::vector<JointHandle> left_wheel_joints_{};
-  std::vector<JointHandle> right_wheel_joints_{};
-  size_t wheel_joints_size_;
-  double wheel_separation_;   // w.r.t. the midpoint of the wheel width
-  double wheel_radius_;       // Assumed to be the same for both wheels
-  double wheel_separation_multiplier_;
-  double left_wheel_radius_multiplier_;
-  double right_wheel_radius_multiplier_;
+   ROS_CONTROLLERS_PUBLIC
+   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+   on_deactivate(const rclcpp_lifecycle::State& previous_state) override;
 
-  /// Commands
-  // Timeout to consider cmd_vel commands old:
-  double cmd_vel_timeout_;
-  std::vector<double> vel_left_previous_{};
-  std::vector<double> vel_right_previous_{};
+   ROS_CONTROLLERS_PUBLIC
+   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+   on_cleanup(const rclcpp_lifecycle::State& previous_state) override;
 
-  /// Odom
-  // Frame to use for the robot base:
-  std::string base_frame_id_;
-  // Frame to use for odometry and odom tf:
-  std::string odom_frame_id_;
+   ROS_CONTROLLERS_PUBLIC
+   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+   on_error(const rclcpp_lifecycle::State& previous_state) override;
 
+   ROS_CONTROLLERS_PUBLIC
+   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+   on_shutdown(const rclcpp_lifecycle::State& previous_state) override;
+
+ private:
+   struct WheelHandle
+   {
+      std::string name_;
+      const hardware_interface::JointStateHandle* state__;
+      hardware_interface::JointCommandHandle* command_;
+   };
+   std::vector<WheelHandle> left_wheel_joints_;
+
+   struct WheelParams
+   {
+      size_t joints_size_;
+      double separation_; // w.r.t. the midpoint of the wheel width
+      double radius_;     // Assumed to be the same for both wheels
+      double separation_multiplier_;
+      double left_radius_multiplier_;
+      double right_radius_multiplier_;
+   } wheel_params_;
+
+   // Timeout to consider cmd_vel commands old:
+   std::chrono::milliseconds cmd_vel_timeout_;
+   std::vector<double> left_previous_velocities_{};
+   std::vector<double> right_previous_velocities_{};
+
+   std::vector<std::string> write_op_names_;
+   std::vector<hardware_interface::OperationModeHandle*> registered_operation_mode_handles_;
+
+   std::string base_frame_id_;
+   std::string odom_frame_id_;
+
+   // TODO(karsten1987): eventually activate and deactive subscriber directly when its supported
+   bool subscriber_is_active_{false};
+   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr joint_command_subscriber_{nullptr};
+
+   bool is_halted{false};
+
+   bool reset();
+   void set_op_mode(const hardware_interface::OperationMode& mode);
+   void halt();
 };
-}
-#endif  // ROS_CONTROLLERS__DIFF_DRIVE_CONTROLLER_HPP_
+} // namespace ros_controllers
+#endif // ROS_CONTROLLERS__DIFF_DRIVE_CONTROLLER_HPP_
