@@ -114,7 +114,7 @@ class DiffDriveController : public controller_interface::ControllerInterface
 
    // TODO(karsten1987): eventually activate and deactive subscriber directly when its supported
    bool subscriber_is_active_{false};
-   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr joint_command_subscriber_{nullptr};
+   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr velocity_command_subscriber_{nullptr};
 
    std::shared_ptr<Twist> velocity_msg_ptr_{nullptr};
 

@@ -18,11 +18,12 @@
 #include <utility>
 
 namespace {
-constexpr auto DEFAULT_COMMAND_TOPIC = "cmd_vel";
+constexpr auto DEFAULT_COMMAND_TOPIC = "~/cmd_vel";
 }
 
 namespace ros_controllers {
 using namespace std::chrono_literals;
+using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 using controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS;
 using lifecycle_msgs::msg::State;
 
@@ -95,17 +96,13 @@ controller_interface::controller_interface_ret_t DiffDriveController::update()
 }
 
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-DiffDriveController::on_configure(const rclcpp_lifecycle::State& previous_state)
+DiffDriveController::on_configure(const rclcpp_lifecycle::State&)
 {
-   (void)previous_state;
-
    auto logger = lifecycle_node_->get_logger();
 
    // update parameters
    left_wheel_names_ = lifecycle_node_->get_parameter("left_wheel_names").as_string_array();
    right_wheel_names_ = lifecycle_node_->get_parameter("right_wheel_names").as_string_array();
-
-   using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
    if (!reset()) {
       return CallbackReturn::ERROR;
@@ -185,8 +182,8 @@ DiffDriveController::on_configure(const rclcpp_lifecycle::State& previous_state)
       }
    };
 
-   joint_command_subscriber_ = lifecycle_node_->create_subscription<Twist>(
-      "~/cmd_vel", rclcpp::SystemDefaultsQoS(), callback);
+   velocity_command_subscriber_ = lifecycle_node_->create_subscription<Twist>(
+      DEFAULT_COMMAND_TOPIC, rclcpp::SystemDefaultsQoS(), callback);
 
    set_op_mode(hardware_interface::OperationMode::INACTIVE);
 
@@ -194,104 +191,81 @@ DiffDriveController::on_configure(const rclcpp_lifecycle::State& previous_state)
 }
 
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-DiffDriveController::on_activate(const rclcpp_lifecycle::State& previous_state)
+DiffDriveController::on_activate(const rclcpp_lifecycle::State&)
 {
-   (void)previous_state;
-
    is_halted = false;
    subscriber_is_active_ = true;
-   traj_point_active_ptr_ = &traj_external_point_ptr_;
+   //   traj_point_active_ptr_ = &traj_external_point_ptr_;
+   return CallbackReturn::SUCCESS;
+}
 
-   // TODO(karsten1987): activate subscriptions of subscriber
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+DiffDriveController::on_deactivate(const rclcpp_lifecycle::State&)
+{
+   subscriber_is_active_ = false;
+   return CallbackReturn::SUCCESS;
+}
+
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+DiffDriveController::on_cleanup(const rclcpp_lifecycle::State&)
+{
+   velocity_msg_ptr_ = std::make_shared<Twist>();
+   return CallbackReturn::SUCCESS;
+}
+
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+DiffDriveController::on_error(const rclcpp_lifecycle::State&)
+{
+   if (!reset()) {
+      return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
+   }
    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
-//
-// rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-// DiffDriveController::on_deactivate(const rclcpp_lifecycle::State& previous_state)
-//{
-//   (void)previous_state;
-//
-//   subscriber_is_active_ = false;
-//
-//   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
-//}
-//
-// rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-// DiffDriveController::on_cleanup(const rclcpp_lifecycle::State& previous_state)
-//{
-//   (void)previous_state;
-//
-//   // go home
-//   traj_home_point_ptr_->update(traj_msg_home_ptr_);
-//   traj_point_active_ptr_ = &traj_home_point_ptr_;
-//
-//   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
-//}
-//
-// rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-// DiffDriveController::on_error(const rclcpp_lifecycle::State& previous_state)
-//{
-//   (void)previous_state;
-//   if (!reset()) {
-//      return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
-//   }
-//   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
-//}
-//
-// bool DiffDriveController::reset()
-//{
-//   // TODO(karsten1987): need a way to re-fetch names after reset. Uncomment this in the future
-//   // joint_names_.clear();
-//   // write_op_names_.clear();
-//
-//   registered_joint_cmd_handles_.clear();
-//   registered_joint_state_handles_.clear();
-//   registered_operation_mode_handles_.clear();
-//
-//   subscriber_is_active_ = false;
-//   joint_command_subscriber_.reset();
-//
-//   // iterator has no default value
-//   // prev_traj_point_ptr_;
-//   traj_point_active_ptr_ = nullptr;
-//   traj_external_point_ptr_.reset();
-//   traj_home_point_ptr_.reset();
-//   traj_msg_home_ptr_.reset();
-//
-//   is_halted = false;
-//
-//   return true;
-//}
-//
-// rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-// DiffDriveController::on_shutdown(const rclcpp_lifecycle::State& previous_state)
-//{
-//   (void)previous_state;
-//   // TODO(karsten1987): what to do?
-//
-//   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
-//}
-//
-// void DiffDriveController::set_op_mode(const hardware_interface::OperationMode& mode)
-//{
-//   for (auto& op_mode_handle : registered_operation_mode_handles_) {
-//      op_mode_handle->set_mode(mode);
-//   }
-//}
-//
-// void DiffDriveController::halt()
-//{
-//   size_t joint_num = registered_joint_cmd_handles_.size();
-//   for (size_t index = 0; index < joint_num; ++index) {
-//      registered_joint_cmd_handles_[index]->set_cmd(
-//         registered_joint_state_handles_[index]->get_position());
-//   }
-//   set_op_mode(hardware_interface::OperationMode::ACTIVE);
-//}
+
+bool DiffDriveController::reset()
+{
+   registered_left_wheel_handles_.clear();
+   registered_right_wheel_handles_.clear();
+   registered_operation_mode_handles_.clear();
+
+   subscriber_is_active_ = false;
+   velocity_command_subscriber_.reset();
+
+   velocity_msg_ptr_.reset();
+   is_halted = false;
+   return true;
+}
+
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+DiffDriveController::on_shutdown(const rclcpp_lifecycle::State&)
+{
+   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+}
+
+void DiffDriveController::set_op_mode(const hardware_interface::OperationMode& mode)
+{
+   for (auto& op_mode_handle : registered_operation_mode_handles_) {
+      op_mode_handle->set_mode(mode);
+   }
+}
+
+void DiffDriveController::halt()
+{
+   const auto halt_wheels = [](auto& wheel_handles) {
+      for (size_t index = 0; index < wheel_handles.size(); ++index) {
+         const auto current_velocity = wheel_handles[index].state->get_velocity();
+         const auto left_wheel_handle = wheel_handles[index];
+         left_wheel_handle.command->set_cmd(current_velocity);
+      }
+   };
+
+   halt_wheels(registered_left_wheel_handles_);
+   halt_wheels(registered_right_wheel_handles_);
+   set_op_mode(hardware_interface::OperationMode::ACTIVE);
+}
 } // namespace ros_controllers
 
 #include "class_loader/register_macro.hpp"
 
 CLASS_LOADER_REGISTER_CLASS(ros_controllers::DiffDriveController,
                             controller_interface::ControllerInterface)
-}
