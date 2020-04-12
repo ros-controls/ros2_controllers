@@ -27,9 +27,12 @@ using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface
 using controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS;
 using lifecycle_msgs::msg::State;
 
+DiffDriveController::DiffDriveController() : controller_interface::ControllerInterface() {}
+
 DiffDriveController::DiffDriveController(std::vector<std::string> left_wheel_names,
                                          std::vector<std::string> right_wheel_names,
                                          std::vector<std::string> write_op_names) :
+   controller_interface::ControllerInterface(),
    left_wheel_names_(std::move(left_wheel_names)),
    right_wheel_names_(std::move(right_wheel_names)),
    write_op_names_(std::move(write_op_names))
@@ -49,7 +52,7 @@ DiffDriveController::init(std::weak_ptr<hardware_interface::RobotHardware> robot
    lifecycle_node_->declare_parameter<std::vector<std::string>>("left_wheel_names", left_wheel_names_);
    lifecycle_node_->declare_parameter<std::vector<std::string>>("right_wheel_names", right_wheel_names_);
    lifecycle_node_->declare_parameter<double>("wheel_separation", wheel_params_.separation);
-   lifecycle_node_->declare_parameter<double>("wheels_per_side", wheel_params_.wheels_per_side);
+   lifecycle_node_->declare_parameter<int>("wheels_per_side", wheel_params_.wheels_per_side);
    lifecycle_node_->declare_parameter<double>("wheel_radius", wheel_params_.radius);
    lifecycle_node_->declare_parameter<double>("wheel_separation_multiplier", wheel_params_.separation_multiplier);
    lifecycle_node_->declare_parameter<double>("left_wheel_radius_multiplier", wheel_params_.left_radius_multiplier);
@@ -64,19 +67,14 @@ DiffDriveController::init(std::weak_ptr<hardware_interface::RobotHardware> robot
 controller_interface::controller_interface_ret_t DiffDriveController::update()
 {
    auto logger = lifecycle_node_->get_logger();
-   RCLCPP_INFO(logger, "updating diff drive controller...");
    if (lifecycle_node_->get_current_state().id() == State::PRIMARY_STATE_INACTIVE) {
-      RCLCPP_INFO(logger, "diff drive node inactive. activating!");
       if (!is_halted) {
-         RCLCPP_INFO(logger, "Halting!");
          halt();
          is_halted = true;
       }
-      RCLCPP_INFO(logger, "Halted, returning...");
       return CONTROLLER_INTERFACE_RET_SUCCESS;
    }
 
-   RCLCPP_INFO(logger, "Performing updates...");
    // Apply (possibly new) multipliers:
    const auto wheels = wheel_params_;
 
@@ -94,9 +92,7 @@ controller_interface::controller_interface_ret_t DiffDriveController::update()
 
    // Set wheels velocities:
    for (size_t index = 0; index < wheels.wheels_per_side; ++index) {
-      RCLCPP_INFO(logger, "Setting left command to: %f", velocity_left);
       registered_left_wheel_handles_[index].command->set_cmd(velocity_left);
-      RCLCPP_INFO(logger, "Setting right command to: %f", velocity_right);
       registered_right_wheel_handles_[index].command->set_cmd(velocity_right);
    }
 

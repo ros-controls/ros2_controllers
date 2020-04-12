@@ -84,15 +84,36 @@ if(BUILD_TESTING)
     default_controllers
   )
   ament_target_dependencies(
-    test_trajectory_controller
-    "controller_interface"
-    "controller_parameter_server"
-    "hardware_interface"
-    "lifecycle_msgs"
-    "rclcpp"
-    "rcutils"
-    "test_robot_hardware"
-    "trajectory_msgs"
+          test_trajectory_controller
+          "controller_interface"
+          "controller_parameter_server"
+          "hardware_interface"
+          "lifecycle_msgs"
+          "rclcpp"
+          "rcutils"
+          "test_robot_hardware"
+          "trajectory_msgs"
+  )
+
+  ament_add_gtest(
+          test_diff_drive_controller test/test_diff_drive_controller.cpp
+          ENV config_file=${CMAKE_CURRENT_SOURCE_DIR}/test/config/test_diff_drive_controller.yaml)
+  target_include_directories(test_diff_drive_controller PRIVATE include)
+  target_link_libraries(
+          test_diff_drive_controller
+          default_controllers
+  )
+
+  ament_target_dependencies(
+          test_diff_drive_controller
+          "controller_interface"
+          "controller_parameter_server"
+          "hardware_interface"
+          "lifecycle_msgs"
+          "rclcpp"
+          "rcutils"
+          "test_robot_hardware"
+          "geometry_msgs"
   )
 endif()
 

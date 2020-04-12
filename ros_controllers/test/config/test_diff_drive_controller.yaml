@@ -1,0 +1,7 @@
+test_diff_drive_controller:
+  left_wheel_names: ["left_wheels_1", "left_wheels_2"]
+  right_wheel_names: ["right_wheels_1", "right_wheels_2"]
+  wheel_separation: 0.25
+  wheels_per_side: 2
+  wheel_radius: 0.15
+  write_op_modes: ["motor_controls"]

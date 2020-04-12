@@ -30,7 +30,7 @@ class DiffDriveController : public controller_interface::ControllerInterface
 
  public:
    ROS_CONTROLLERS_PUBLIC
-   DiffDriveController() = default;
+   DiffDriveController();
 
    ROS_CONTROLLERS_PUBLIC
    DiffDriveController(std::vector<std::string> left_wheel_names,
@@ -39,8 +39,7 @@ class DiffDriveController : public controller_interface::ControllerInterface
 
    ROS_CONTROLLERS_PUBLIC
    controller_interface::controller_interface_ret_t
-   init(std::weak_ptr<hardware_interface::RobotHardware> robot_hardware,
-        const std::string& controller_name) override;
+   init(std::weak_ptr<hardware_interface::RobotHardware> robot_hardware, const std::string& controller_name) override;
 
    ROS_CONTROLLERS_PUBLIC
    controller_interface::controller_interface_ret_t update() override;
@@ -85,8 +84,8 @@ class DiffDriveController : public controller_interface::ControllerInterface
    struct WheelParams
    {
       size_t wheels_per_side{1};
-      double separation{0.105}; // w.r.t. the midpoint of the wheel width
-      double radius{0.05};      // Assumed to be the same for both wheels
+      double separation{0.21}; // w.r.t. the midpoint of the wheel width
+      double radius{0.05};     // Assumed to be the same for both wheels
       double separation_multiplier{1.0};
       double left_radius_multiplier{1.0};
       double right_radius_multiplier{1.0};
