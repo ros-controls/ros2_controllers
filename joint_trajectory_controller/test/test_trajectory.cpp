@@ -19,9 +19,9 @@
 
 #include "gtest/gtest.h"
 
-#include "rclcpp/clock.hpp"
+#include "joint_trajectory_controller/trajectory.hpp"
 
-#include "ros_controllers/trajectory.hpp"
+#include "rclcpp/clock.hpp"
 
 using namespace std::chrono_literals;
 
@@ -39,7 +39,7 @@ TEST_F(TestTrajectory, initialize_trajectory) {
     empty_msg->header.stamp.sec = 2;
     empty_msg->header.stamp.nanosec = 2;
     rclcpp::Time empty_time = empty_msg->header.stamp;
-    auto traj = ros_controllers::Trajectory(empty_msg);
+    auto traj = joint_trajectory_controller::Trajectory(empty_msg);
     EXPECT_EQ(traj.end(), traj.sample(rclcpp::Clock().now()));
     EXPECT_EQ(empty_time, traj.time_from_start());
   }
@@ -48,7 +48,7 @@ TEST_F(TestTrajectory, initialize_trajectory) {
     empty_msg->header.stamp.sec = 0;
     empty_msg->header.stamp.nanosec = 0;
     auto now = rclcpp::Clock().now();
-    auto traj = ros_controllers::Trajectory(empty_msg);
+    auto traj = joint_trajectory_controller::Trajectory(empty_msg);
     auto traj_starttime = traj.time_from_start();
     EXPECT_EQ(traj.end(), traj.sample(rclcpp::Clock().now()));
     auto allowed_delta = 10000ll;
@@ -86,7 +86,7 @@ TEST_F(TestTrajectory, sample_trajectory) {
   full_msg->points.push_back(p2);
   full_msg->points.push_back(p3);
 
-  auto traj = ros_controllers::Trajectory(full_msg);
+  auto traj = joint_trajectory_controller::Trajectory(full_msg);
 
   auto sample_p1 = traj.sample(rclcpp::Clock().now());
   ASSERT_NE(traj.end(), sample_p1);
@@ -155,7 +155,7 @@ TEST_F(TestTrajectory, future_sample_trajectory) {
   full_msg->points.push_back(p2);
   full_msg->points.push_back(p3);
 
-  auto traj = ros_controllers::Trajectory(full_msg);
+  auto traj = joint_trajectory_controller::Trajectory(full_msg);
 
   // sample for future point
   auto sample_p0 = traj.sample(rclcpp::Clock().now());

@@ -12,18 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "ros_controllers/joint_state_controller.hpp"
+#include "joint_state_controller/joint_state_controller.hpp"
 
 #include <string>
 #include <memory>
-
-#include "lifecycle_msgs/msg/transition.hpp"
 
 #include "rclcpp_lifecycle/state.hpp"
 
 #include "rcutils/logging_macros.h"
 
-namespace ros_controllers
+namespace joint_state_controller
 {
 
 JointStateController::JointStateController()
@@ -85,9 +83,9 @@ JointStateController::update()
   return hardware_interface::HW_RET_OK;
 }
 
-}  // namespace ros_controllers
+}  // namespace joint_state_controller
 
-#include "class_loader/register_macro.hpp"
+#include "pluginlib/class_list_macros.hpp"
 
-CLASS_LOADER_REGISTER_CLASS(
-  ros_controllers::JointStateController, controller_interface::ControllerInterface)
+PLUGINLIB_EXPORT_CLASS(
+  joint_state_controller::JointStateController, controller_interface::ControllerInterface)

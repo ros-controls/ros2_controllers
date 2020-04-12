@@ -17,7 +17,7 @@
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rcutils/get_env.h"
-#include "ros_controllers/diff_drive_controller.hpp"
+#include "diff_drive_controller/diff_drive_controller.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "test_robot_hardware/test_robot_hardware.hpp"
 
@@ -100,7 +100,7 @@ TEST_F(TestDiffDriveController, wrong_initialization)
 {
    auto uninitialized_robot = std::make_shared<test_robot_hardware::TestRobotHardware>();
    auto diff_drive_controller =
-      std::make_shared<ros_controllers::DiffDriveController>(left_wheel_names, right_wheel_names, op_mode);
+      std::make_shared<diff_drive_controller::DiffDriveController>(left_wheel_names, right_wheel_names, op_mode);
    auto ret = diff_drive_controller->init(uninitialized_robot, controller_name);
    if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
       FAIL();
@@ -115,7 +115,7 @@ TEST_F(TestDiffDriveController, correct_initialization)
    auto initialized_robot = std::make_shared<test_robot_hardware::TestRobotHardware>();
    initialized_robot->init();
    auto diff_drive_controller =
-      std::make_shared<ros_controllers::DiffDriveController>(left_wheel_names, right_wheel_names, op_mode);
+      std::make_shared<diff_drive_controller::DiffDriveController>(left_wheel_names, right_wheel_names, op_mode);
    auto ret = diff_drive_controller->init(initialized_robot, controller_name);
    if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
       FAIL();
@@ -131,7 +131,7 @@ TEST_F(TestDiffDriveController, correct_initialization)
 TEST_F(TestDiffDriveController, configuration)
 {
    auto diff_drive_controller =
-      std::make_shared<ros_controllers::DiffDriveController>(left_wheel_names, right_wheel_names, op_mode);
+      std::make_shared<diff_drive_controller::DiffDriveController>(left_wheel_names, right_wheel_names, op_mode);
    auto ret = diff_drive_controller->init(test_robot, controller_name);
    if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
       FAIL();
@@ -152,7 +152,7 @@ TEST_F(TestDiffDriveController, configuration)
 TEST_F(TestDiffDriveController, cleanup)
 {
    auto diff_drive_controller =
-      std::make_shared<ros_controllers::DiffDriveController>(left_wheel_names, right_wheel_names, op_mode);
+      std::make_shared<diff_drive_controller::DiffDriveController>(left_wheel_names, right_wheel_names, op_mode);
    auto ret = diff_drive_controller->init(test_robot, controller_name);
    if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
       FAIL();
@@ -203,7 +203,7 @@ TEST_F(TestDiffDriveController, cleanup)
 TEST_F(TestDiffDriveController, correct_initialization_using_parameters)
 {
    auto diff_drive_controller =
-      std::make_shared<ros_controllers::DiffDriveController>(left_wheel_names, right_wheel_names, op_mode);
+      std::make_shared<diff_drive_controller::DiffDriveController>(left_wheel_names, right_wheel_names, op_mode);
    auto ret = diff_drive_controller->init(test_robot, controller_name);
    if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
       FAIL();

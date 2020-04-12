@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "ros_controllers/joint_trajectory_controller.hpp"
+#include "joint_trajectory_controller/joint_trajectory_controller.hpp"
 
 #include <cassert>
 #include <chrono>
@@ -23,7 +23,6 @@
 
 #include "builtin_interfaces/msg/time.hpp"
 
-#include "lifecycle_msgs/msg/transition.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 
 #include "rclcpp/time.hpp"
@@ -35,7 +34,7 @@
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
-namespace ros_controllers
+namespace joint_trajectory_controller
 {
 
 using namespace std::chrono_literals;
@@ -70,6 +69,7 @@ JointTrajectoryController::init(
   // with the lifecycle node being initialized, we can declare parameters
   lifecycle_node_->declare_parameter<std::vector<std::string>>("joints", joint_names_);
   lifecycle_node_->declare_parameter<std::vector<std::string>>("write_op_modes", write_op_names_);
+  lifecycle_node_->declare_parameter<double>("state_publish_rate", 50.0);
 
   return CONTROLLER_INTERFACE_RET_SUCCESS;
 }
@@ -85,32 +85,31 @@ JointTrajectoryController::update()
     return CONTROLLER_INTERFACE_RET_SUCCESS;
   }
 
-  // when no traj msg has been received yet
-  if (!traj_point_active_ptr_ || (*traj_point_active_ptr_)->is_empty()) {
-    return CONTROLLER_INTERFACE_RET_SUCCESS;
+  // when we receive a traj msg
+  if (traj_point_active_ptr_ && (*traj_point_active_ptr_)->is_empty() == false) {
+    // find next new point for current timestamp
+    auto traj_point_ptr = (*traj_point_active_ptr_)->sample(lifecycle_node_->now());
+    // find next new point for current timestamp
+    // set cmd only if a point is found
+    if (traj_point_ptr == (*traj_point_active_ptr_)->end()) {
+      return CONTROLLER_INTERFACE_RET_SUCCESS;
+    }
+
+    // check if new point ptr points to the same as previous point
+    if (prev_traj_point_ptr_ == traj_point_ptr) {
+      return CONTROLLER_INTERFACE_RET_SUCCESS;
+    }
+
+    size_t joint_num = registered_joint_cmd_handles_.size();
+    for (size_t index = 0; index < joint_num; ++index) {
+      registered_joint_cmd_handles_[index]->set_cmd(traj_point_ptr->positions[index]);
+    }
+
+    prev_traj_point_ptr_ = traj_point_ptr;
+    set_op_mode(hardware_interface::OperationMode::ACTIVE);
   }
 
-  // find next new point for current timestamp
-  auto traj_point_ptr = (*traj_point_active_ptr_)->sample(rclcpp::Clock().now());
-  // find next new point for current timestamp
-  // set cmd only if a point is found
-  if (traj_point_ptr == (*traj_point_active_ptr_)->end()) {
-    return CONTROLLER_INTERFACE_RET_SUCCESS;
-  }
-
-  // check if new point ptr points to the same as previous point
-  if (prev_traj_point_ptr_ == traj_point_ptr) {
-    return CONTROLLER_INTERFACE_RET_SUCCESS;
-  }
-
-  size_t joint_num = registered_joint_cmd_handles_.size();
-  for (size_t index = 0; index < joint_num; ++index) {
-    registered_joint_cmd_handles_[index]->set_cmd(traj_point_ptr->positions[index]);
-  }
-
-  prev_traj_point_ptr_ = traj_point_ptr;
-  set_op_mode(hardware_interface::OperationMode::ACTIVE);
-
+  publish_state();
   return CONTROLLER_INTERFACE_RET_SUCCESS;
 }
 
@@ -222,6 +221,38 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
   // TODO(karsten1987): no lifecyle for subscriber yet
   // joint_command_subscriber_->on_activate();
 
+  // State publisher
+  double state_publish_rate =
+    lifecycle_node_->get_parameter("state_publish_rate").get_value<double>();
+  RCLCPP_INFO_STREAM(
+    logger, "Controller state will be published at " <<
+      state_publish_rate << "Hz.");
+  if (state_publish_rate > 0.0) {
+    state_publisher_period_ =
+      rclcpp::Duration::from_seconds(1.0 / state_publish_rate);
+  } else {
+    state_publisher_period_ = rclcpp::Duration(0);
+  }
+
+  publisher_ = lifecycle_node_->create_publisher<ControllerStateMsg>(
+    "state", rclcpp::SystemDefaultsQoS());
+  state_publisher_ = std::make_unique<StatePublisher>(publisher_);
+
+  auto n_joints = joint_names_.size();
+
+  state_publisher_->lock();
+  state_publisher_->msg_.joint_names = joint_names_;
+  state_publisher_->msg_.desired.positions.resize(n_joints);
+  state_publisher_->msg_.desired.velocities.resize(n_joints);
+  state_publisher_->msg_.desired.accelerations.resize(n_joints);
+  state_publisher_->msg_.actual.positions.resize(n_joints);
+  state_publisher_->msg_.actual.velocities.resize(n_joints);
+  state_publisher_->msg_.error.positions.resize(n_joints);
+  state_publisher_->msg_.error.velocities.resize(n_joints);
+  state_publisher_->unlock();
+
+  last_state_publish_time_ = lifecycle_node_->now();
+
   set_op_mode(hardware_interface::OperationMode::INACTIVE);
 
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
@@ -235,6 +266,8 @@ JointTrajectoryController::on_activate(const rclcpp_lifecycle::State & previous_
   is_halted = false;
   subscriber_is_active_ = true;
   traj_point_active_ptr_ = &traj_external_point_ptr_;
+  last_state_publish_time_ = lifecycle_node_->now();
+  publisher_->on_activate();
 
   // TODO(karsten1987): activate subscriptions of subscriber
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
@@ -246,6 +279,7 @@ JointTrajectoryController::on_deactivate(const rclcpp_lifecycle::State & previou
   (void) previous_state;
 
   subscriber_is_active_ = false;
+  publisher_->on_deactivate();
 
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
@@ -326,9 +360,31 @@ JointTrajectoryController::halt()
   set_op_mode(hardware_interface::OperationMode::ACTIVE);
 }
 
-}  // namespace ros_controllers
+void JointTrajectoryController::publish_state()
+{
+  if (state_publisher_period_.seconds() <= 0.0) {
+    return;
+  }
 
-#include "class_loader/register_macro.hpp"
+  if (lifecycle_node_->now() < (last_state_publish_time_ + state_publisher_period_)) {
+    return;
+  }
 
-CLASS_LOADER_REGISTER_CLASS(
-  ros_controllers::JointTrajectoryController, controller_interface::ControllerInterface)
+  if (state_publisher_ && state_publisher_->trylock()) {
+    last_state_publish_time_ = lifecycle_node_->now();
+
+    state_publisher_->msg_.header.stamp = last_state_publish_time_;
+    // TODO(ddengster): Fill in the rest of the state data.
+    // Port it when we're ready to put in the other trajectory code (ros2_controllers PR #26).
+
+    state_publisher_->unlockAndPublish();
+  }
+}
+
+
+}  // namespace joint_trajectory_controller
+
+#include "pluginlib/class_list_macros.hpp"
+
+PLUGINLIB_EXPORT_CLASS(
+  joint_trajectory_controller::JointTrajectoryController, controller_interface::ControllerInterface)

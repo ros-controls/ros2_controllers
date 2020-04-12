@@ -12,59 +12,59 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef ROS_CONTROLLERS__DIFF_DRIVE_CONTROLLER_HPP_
-#define ROS_CONTROLLERS__DIFF_DRIVE_CONTROLLER_HPP_
+#ifndef DIFF_DRIVE_CONTROLLER__DIFF_DRIVE_CONTROLLER_HPP_
+#define DIFF_DRIVE_CONTROLLER__DIFF_DRIVE_CONTROLLER_HPP_
 
 #include "controller_interface/controller_interface.hpp"
 #include "geometry_msgs/msg/twist.hpp"
-#include "ros_controllers/visibility_control.h"
+#include "diff_drive_controller/visibility_control.h"
 #include "sensor_msgs/msg/joint_state.hpp"
 
 #include <memory>
 #include <vector>
 
-namespace ros_controllers {
+namespace diff_drive_controller {
 class DiffDriveController : public controller_interface::ControllerInterface
 {
    using Twist = geometry_msgs::msg::Twist;
 
  public:
-   ROS_CONTROLLERS_PUBLIC
+   DIFF_DRIVE_CONTROLLER_PUBLIC
    DiffDriveController();
 
-   ROS_CONTROLLERS_PUBLIC
+   DIFF_DRIVE_CONTROLLER_PUBLIC
    DiffDriveController(std::vector<std::string> left_wheel_names,
                        std::vector<std::string> right_wheel_names,
                        std::vector<std::string> operation_mode_names);
 
-   ROS_CONTROLLERS_PUBLIC
+   DIFF_DRIVE_CONTROLLER_PUBLIC
    controller_interface::controller_interface_ret_t
    init(std::weak_ptr<hardware_interface::RobotHardware> robot_hardware, const std::string& controller_name) override;
 
-   ROS_CONTROLLERS_PUBLIC
+   DIFF_DRIVE_CONTROLLER_PUBLIC
    controller_interface::controller_interface_ret_t update() override;
 
-   ROS_CONTROLLERS_PUBLIC
+   DIFF_DRIVE_CONTROLLER_PUBLIC
    rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
    on_configure(const rclcpp_lifecycle::State& previous_state) override;
 
-   ROS_CONTROLLERS_PUBLIC
+   DIFF_DRIVE_CONTROLLER_PUBLIC
    rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
    on_activate(const rclcpp_lifecycle::State& previous_state) override;
 
-   ROS_CONTROLLERS_PUBLIC
+   DIFF_DRIVE_CONTROLLER_PUBLIC
    rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
    on_deactivate(const rclcpp_lifecycle::State& previous_state) override;
 
-   ROS_CONTROLLERS_PUBLIC
+   DIFF_DRIVE_CONTROLLER_PUBLIC
    rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
    on_cleanup(const rclcpp_lifecycle::State& previous_state) override;
 
-   ROS_CONTROLLERS_PUBLIC
+   DIFF_DRIVE_CONTROLLER_PUBLIC
    rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
    on_error(const rclcpp_lifecycle::State& previous_state) override;
 
-   ROS_CONTROLLERS_PUBLIC
+   DIFF_DRIVE_CONTROLLER_PUBLIC
    rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
    on_shutdown(const rclcpp_lifecycle::State& previous_state) override;
 
@@ -114,5 +114,5 @@ class DiffDriveController : public controller_interface::ControllerInterface
    void set_op_mode(const hardware_interface::OperationMode& mode);
    void halt();
 };
-} // namespace ros_controllers
-#endif // ROS_CONTROLLERS__DIFF_DRIVE_CONTROLLER_HPP_
+} // namespace diff_drive_controller
+#endif // DIFF_DRIVE_CONTROLLER__DIFF_DRIVE_CONTROLLER_HPP_

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "ros_controllers/diff_drive_controller.hpp"
+#include "diff_drive_controller/diff_drive_controller.hpp"
 
 #include <lifecycle_msgs/msg/state.hpp>
 #include <utility>
@@ -21,7 +21,7 @@ namespace {
 constexpr auto DEFAULT_COMMAND_TOPIC = "~/cmd_vel";
 }
 
-namespace ros_controllers {
+namespace diff_drive_controller {
 using namespace std::chrono_literals;
 using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 using controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS;
@@ -278,8 +278,8 @@ void DiffDriveController::halt()
    halt_wheels(registered_right_wheel_handles_);
    set_op_mode(hardware_interface::OperationMode::ACTIVE);
 }
-} // namespace ros_controllers
+} // namespace diff_drive_controller
 
 #include "class_loader/register_macro.hpp"
 
-CLASS_LOADER_REGISTER_CLASS(ros_controllers::DiffDriveController, controller_interface::ControllerInterface)
+CLASS_LOADER_REGISTER_CLASS(diff_drive_controller::DiffDriveController, controller_interface::ControllerInterface)
