@@ -30,23 +30,23 @@ add_library(
 
 target_include_directories(default_controllers PRIVATE include)
 ament_target_dependencies(
-  default_controllers
-  "builtin_interfaces"
-  "class_loader"
-  "controller_interface"
-  "controller_manager"
-  "controller_parameter_server"
-  "hardware_interface"
-  "rclcpp"
-  "rclcpp_lifecycle"
-  "rcutils"
-  "sensor_msgs"
-  "trajectory_msgs"
+        default_controllers
+        builtin_interfaces
+        class_loader
+        controller_interface
+        controller_manager
+        controller_parameter_server
+        hardware_interface
+        rclcpp
+        rclcpp_lifecycle
+        rcutils
+        sensor_msgs
+        trajectory_msgs
 )
 controller_manager_register_controller(
-  default_controllers
-  "ros_controllers::JointStateController"
-  "ros_controllers::JointTrajectoryController"
+        default_controllers
+        ros_controllers::JointStateController
+        ros_controllers::JointTrajectoryController
 )
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
@@ -85,14 +85,14 @@ if(BUILD_TESTING)
   )
   ament_target_dependencies(
           test_trajectory_controller
-          "controller_interface"
-          "controller_parameter_server"
-          "hardware_interface"
-          "lifecycle_msgs"
-          "rclcpp"
-          "rcutils"
-          "test_robot_hardware"
-          "trajectory_msgs"
+          controller_interface
+          controller_parameter_server
+          hardware_interface
+          lifecycle_msgs
+          rclcpp
+          rcutils
+          test_robot_hardware
+          trajectory_msgs
   )
 
   ament_add_gtest(
@@ -106,14 +106,14 @@ if(BUILD_TESTING)
 
   ament_target_dependencies(
           test_diff_drive_controller
-          "controller_interface"
-          "controller_parameter_server"
-          "hardware_interface"
-          "lifecycle_msgs"
-          "rclcpp"
-          "rcutils"
-          "test_robot_hardware"
-          "geometry_msgs"
+          controller_interface
+          controller_parameter_server
+          hardware_interface
+          lifecycle_msgs
+          rclcpp
+          rcutils
+          test_robot_hardware
+          geometry_msgs
   )
 endif()
 
