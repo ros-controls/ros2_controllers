@@ -25,6 +25,7 @@
 
   <build_export_depend>controller_interface</build_export_depend>
   <build_export_depend>control_msgs</build_export_depend>
+  <build_export_depend>control_toolbox</build_export_depend>
   <build_export_depend>hardware_interface</build_export_depend>
   <build_export_depend>rclcpp</build_export_depend>
   <build_export_depend>rclcpp_lifecycle</build_export_depend>
