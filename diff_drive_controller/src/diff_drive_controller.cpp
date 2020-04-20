@@ -27,6 +27,7 @@ namespace diff_drive_controller
 using namespace std::chrono_literals;
 using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 using controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS;
+using controller_interface::CONTROLLER_INTERFACE_RET_ERROR;
 using lifecycle_msgs::msg::State;
 
 DiffDriveController::DiffDriveController()
@@ -96,6 +97,10 @@ controller_interface::controller_interface_ret_t DiffDriveController::update()
   const double wheel_separation = wheels.separation_multiplier * wheels.separation;
   const double left_wheel_radius = wheels.left_radius_multiplier * wheels.radius;
   const double right_wheel_radius = wheels.right_radius_multiplier * wheels.radius;
+  if(velocity_msg_ptr_ == nullptr) {
+     RCLCPP_WARN(logger, "Velocity message received was a nullptr.");
+     return CONTROLLER_INTERFACE_RET_ERROR;
+  }
 
   // Compute wheels velocities:
   const auto & current_command = *velocity_msg_ptr_;
@@ -232,7 +237,6 @@ DiffDriveController::on_activate(const rclcpp_lifecycle::State &)
 {
   is_halted = false;
   subscriber_is_active_ = true;
-  //   traj_point_active_ptr_ = &traj_external_point_ptr_;
   return CallbackReturn::SUCCESS;
 }
 
