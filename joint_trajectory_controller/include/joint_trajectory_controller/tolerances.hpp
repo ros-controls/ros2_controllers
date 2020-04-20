@@ -99,7 +99,7 @@ SegmentTolerances get_segment_tolerances(
   const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
   const std::vector<std::string> & joint_names)
 {
-  const unsigned int n_joints = joint_names.size();
+  auto n_joints = joint_names.size();
   SegmentTolerances tolerances;
 
   // State and goal state tolerances
@@ -110,7 +110,7 @@ SegmentTolerances get_segment_tolerances(
 
   tolerances.state_tolerance.resize(n_joints);
   tolerances.goal_state_tolerance.resize(n_joints);
-  for (auto i = 0u; i < n_joints; ++i) {
+  for (auto i = 0ul; i < n_joints; ++i) {
     std::string prefix = "constraints." + joint_names[i];
 
     node->get_parameter_or<double>(

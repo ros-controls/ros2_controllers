@@ -91,7 +91,7 @@ JointTrajectoryController::update()
   }
 
   auto resize_joint_trajectory_point =
-    [](trajectory_msgs::msg::JointTrajectoryPoint & point, int size)
+    [](trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size)
     {
       point.positions.resize(size);
       point.velocities.resize(size);
@@ -113,7 +113,7 @@ JointTrajectoryController::update()
     };
 
   JointTrajectoryPoint state_current, state_desired, state_error;
-  size_t joint_num = registered_joint_state_handles_.size();
+  auto joint_num = registered_joint_state_handles_.size();
   resize_joint_trajectory_point(state_current, joint_num);
 
   // current state update
@@ -343,7 +343,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
     state_publisher_period_ =
       rclcpp::Duration::from_seconds(1.0 / state_publish_rate);
   } else {
-    state_publisher_period_ = rclcpp::Duration(0.0);
+    state_publisher_period_ = rclcpp::Duration::from_seconds(0.0);
   }
 
   publisher_ = lifecycle_node_->create_publisher<ControllerStateMsg>(
