@@ -23,96 +23,100 @@
 #include <memory>
 #include <vector>
 
-namespace diff_drive_controller {
+namespace diff_drive_controller
+{
 class DiffDriveController : public controller_interface::ControllerInterface
 {
-   using Twist = geometry_msgs::msg::Twist;
+  using Twist = geometry_msgs::msg::Twist;
 
- public:
-   DIFF_DRIVE_CONTROLLER_PUBLIC
-   DiffDriveController();
+public:
+  DIFF_DRIVE_CONTROLLER_PUBLIC
+  DiffDriveController();
 
-   DIFF_DRIVE_CONTROLLER_PUBLIC
-   DiffDriveController(std::vector<std::string> left_wheel_names,
-                       std::vector<std::string> right_wheel_names,
-                       std::vector<std::string> operation_mode_names);
+  DIFF_DRIVE_CONTROLLER_PUBLIC
+  DiffDriveController(
+    std::vector<std::string> left_wheel_names,
+    std::vector<std::string> right_wheel_names,
+    std::vector<std::string> operation_mode_names);
 
-   DIFF_DRIVE_CONTROLLER_PUBLIC
-   controller_interface::controller_interface_ret_t
-   init(std::weak_ptr<hardware_interface::RobotHardware> robot_hardware, const std::string& controller_name) override;
+  DIFF_DRIVE_CONTROLLER_PUBLIC
+  controller_interface::controller_interface_ret_t
+  init(
+    std::weak_ptr<hardware_interface::RobotHardware> robot_hardware,
+    const std::string & controller_name) override;
 
-   DIFF_DRIVE_CONTROLLER_PUBLIC
-   controller_interface::controller_interface_ret_t update() override;
+  DIFF_DRIVE_CONTROLLER_PUBLIC
+  controller_interface::controller_interface_ret_t update() override;
 
-   DIFF_DRIVE_CONTROLLER_PUBLIC
-   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-   on_configure(const rclcpp_lifecycle::State& previous_state) override;
+  DIFF_DRIVE_CONTROLLER_PUBLIC
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+  on_configure(const rclcpp_lifecycle::State & previous_state) override;
 
-   DIFF_DRIVE_CONTROLLER_PUBLIC
-   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-   on_activate(const rclcpp_lifecycle::State& previous_state) override;
+  DIFF_DRIVE_CONTROLLER_PUBLIC
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+  on_activate(const rclcpp_lifecycle::State & previous_state) override;
 
-   DIFF_DRIVE_CONTROLLER_PUBLIC
-   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-   on_deactivate(const rclcpp_lifecycle::State& previous_state) override;
+  DIFF_DRIVE_CONTROLLER_PUBLIC
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+  on_deactivate(const rclcpp_lifecycle::State & previous_state) override;
 
-   DIFF_DRIVE_CONTROLLER_PUBLIC
-   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-   on_cleanup(const rclcpp_lifecycle::State& previous_state) override;
+  DIFF_DRIVE_CONTROLLER_PUBLIC
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+  on_cleanup(const rclcpp_lifecycle::State & previous_state) override;
 
-   DIFF_DRIVE_CONTROLLER_PUBLIC
-   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-   on_error(const rclcpp_lifecycle::State& previous_state) override;
+  DIFF_DRIVE_CONTROLLER_PUBLIC
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+  on_error(const rclcpp_lifecycle::State & previous_state) override;
 
-   DIFF_DRIVE_CONTROLLER_PUBLIC
-   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-   on_shutdown(const rclcpp_lifecycle::State& previous_state) override;
+  DIFF_DRIVE_CONTROLLER_PUBLIC
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+  on_shutdown(const rclcpp_lifecycle::State & previous_state) override;
 
- private:
-   struct WheelHandle
-   {
-      const hardware_interface::JointStateHandle* state{nullptr};
-      hardware_interface::JointCommandHandle* command{nullptr};
-   };
+private:
+  struct WheelHandle
+  {
+    const hardware_interface::JointStateHandle * state{nullptr};
+    hardware_interface::JointCommandHandle * command{nullptr};
+  };
 
-   std::vector<std::string> left_wheel_names_{};
-   std::vector<std::string> right_wheel_names_{};
+  std::vector<std::string> left_wheel_names_{};
+  std::vector<std::string> right_wheel_names_{};
 
-   std::vector<WheelHandle> registered_left_wheel_handles_{};
-   std::vector<WheelHandle> registered_right_wheel_handles_{};
+  std::vector<WheelHandle> registered_left_wheel_handles_{};
+  std::vector<WheelHandle> registered_right_wheel_handles_{};
 
-   struct WheelParams
-   {
-      size_t wheels_per_side{1};
-      double separation{0.21}; // w.r.t. the midpoint of the wheel width
-      double radius{0.05};     // Assumed to be the same for both wheels
-      double separation_multiplier{1.0};
-      double left_radius_multiplier{1.0};
-      double right_radius_multiplier{1.0};
-   } wheel_params_{};
+  struct WheelParams
+  {
+    size_t wheels_per_side{1};
+    double separation{0.21};   // w.r.t. the midpoint of the wheel width
+    double radius{0.05};       // Assumed to be the same for both wheels
+    double separation_multiplier{1.0};
+    double left_radius_multiplier{1.0};
+    double right_radius_multiplier{1.0};
+  } wheel_params_{};
 
-   // Timeout to consider cmd_vel commands old
-   std::chrono::milliseconds cmd_vel_timeout_{500};
-   std::vector<double> left_previous_commands_{};
-   std::vector<double> right_previous_commands_{};
+  // Timeout to consider cmd_vel commands old
+  std::chrono::milliseconds cmd_vel_timeout_{500};
+  std::vector<double> left_previous_commands_{};
+  std::vector<double> right_previous_commands_{};
 
-   std::vector<std::string> write_op_names_{};
-   std::vector<hardware_interface::OperationModeHandle*> registered_operation_mode_handles_{};
+  std::vector<std::string> write_op_names_{};
+  std::vector<hardware_interface::OperationModeHandle *> registered_operation_mode_handles_{};
 
-   std::string base_frame_id_{"base_link"};
-   std::string odom_frame_id_{"odom"};
+  std::string base_frame_id_{"base_link"};
+  std::string odom_frame_id_{"odom"};
 
-   // TODO(karsten1987): eventually activate and deactive subscriber directly when its supported
-   bool subscriber_is_active_{false};
-   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr velocity_command_subscriber_{nullptr};
+  // TODO(karsten1987): eventually activate and deactive subscriber directly when its supported
+  bool subscriber_is_active_{false};
+  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr velocity_command_subscriber_{nullptr};
 
-   std::shared_ptr<Twist> velocity_msg_ptr_{nullptr};
+  std::shared_ptr<Twist> velocity_msg_ptr_{nullptr};
 
-   bool is_halted{false};
+  bool is_halted{false};
 
-   bool reset();
-   void set_op_mode(const hardware_interface::OperationMode& mode);
-   void halt();
+  bool reset();
+  void set_op_mode(const hardware_interface::OperationMode & mode);
+  void halt();
 };
 } // namespace diff_drive_controller
 #endif // DIFF_DRIVE_CONTROLLER__DIFF_DRIVE_CONTROLLER_HPP_

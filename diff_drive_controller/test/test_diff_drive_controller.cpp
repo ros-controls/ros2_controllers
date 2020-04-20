@@ -13,11 +13,11 @@
 // limitations under the License.
 
 #include "controller_parameter_server/parameter_server.hpp"
+#include "diff_drive_controller/diff_drive_controller.hpp"
 #include "hardware_interface/robot_hardware.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rcutils/get_env.h"
-#include "diff_drive_controller/diff_drive_controller.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "test_robot_hardware/test_robot_hardware.hpp"
 
@@ -30,241 +30,254 @@
 
 using lifecycle_msgs::msg::State;
 
-void spin(rclcpp::executors::MultiThreadedExecutor* exe)
+void spin(rclcpp::executors::MultiThreadedExecutor * exe)
 {
-   exe->spin();
+  exe->spin();
 }
 
 class TestDiffDriveController : public ::testing::Test
 {
- protected:
-   static void SetUpTestCase()
-   {
-      rclcpp::init(0, nullptr);
-   }
+protected:
+  static void SetUpTestCase()
+  {
+    rclcpp::init(0, nullptr);
+  }
 
-   void SetUp()
-   {
-      test_robot = std::make_shared<test_robot_hardware::TestRobotHardware>();
-      test_robot->init();
-      left_wheel_names = {{test_robot->joint_name1, test_robot->joint_name2, test_robot->joint_name3}};
-      right_wheel_names = {{test_robot->joint_name1, test_robot->joint_name2, test_robot->joint_name3}};
-      op_mode = {{test_robot->write_op_handle_name1}};
+  void SetUp()
+  {
+    test_robot = std::make_shared<test_robot_hardware::TestRobotHardware>();
+    test_robot->init();
+    left_wheel_names =
+    {{test_robot->joint_name1, test_robot->joint_name2, test_robot->joint_name3}};
+    right_wheel_names =
+    {{test_robot->joint_name1, test_robot->joint_name2, test_robot->joint_name3}};
+    op_mode = {{test_robot->write_op_handle_name1}};
 
-      pub_node = std::make_shared<rclcpp::Node>("velocity_publisher");
-      velocity_publisher = pub_node->create_publisher<geometry_msgs::msg::Twist>(controller_name + "/cmd_vel",
-                                                                                 rclcpp::SystemDefaultsQoS());
-   }
+    pub_node = std::make_shared<rclcpp::Node>("velocity_publisher");
+    velocity_publisher = pub_node->create_publisher<geometry_msgs::msg::Twist>(
+      controller_name + "/cmd_vel",
+      rclcpp::SystemDefaultsQoS());
+  }
 
-   static void TearDownTestCase()
-   {
-      rclcpp::shutdown();
-   }
+  static void TearDownTestCase()
+  {
+    rclcpp::shutdown();
+  }
 
-   /// Publish velocity msgs
-   /**
-    *  time_from_start - delay between each points
-    *  points - vector of trajectories. Each velocity consists of 3 joints
-    */
-   void publish(double linear, double angular)
-   {
-      int wait_count = 0;
-      auto topic = velocity_publisher->get_topic_name();
-      while (pub_node->count_subscribers(topic) == 0) {
-         if (wait_count >= 5) {
-            auto error_msg = std::string("publishing to ") + topic + " but no node subscribes to it";
-            throw std::runtime_error(error_msg);
-         }
-         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-         ++wait_count;
+  /// Publish velocity msgs
+  /**
+   *  time_from_start - delay between each points
+   *  points - vector of trajectories. Each velocity consists of 3 joints
+   */
+  void publish(double linear, double angular)
+  {
+    int wait_count = 0;
+    auto topic = velocity_publisher->get_topic_name();
+    while (pub_node->count_subscribers(topic) == 0) {
+      if (wait_count >= 5) {
+        auto error_msg = std::string("publishing to ") + topic + " but no node subscribes to it";
+        throw std::runtime_error(error_msg);
       }
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      ++wait_count;
+    }
 
-      geometry_msgs::msg::Twist velocity_message;
-      velocity_message.linear.x = linear;
-      velocity_message.angular.z = angular;
-      velocity_publisher->publish(velocity_message);
-   }
+    geometry_msgs::msg::Twist velocity_message;
+    velocity_message.linear.x = linear;
+    velocity_message.angular.z = angular;
+    velocity_publisher->publish(velocity_message);
+  }
 
-   std::string controller_name = "test_diff_drive_controller";
+  std::string controller_name = "test_diff_drive_controller";
 
-   std::shared_ptr<test_robot_hardware::TestRobotHardware> test_robot;
-   std::vector<std::string> left_wheel_names;
-   std::vector<std::string> right_wheel_names;
-   std::vector<std::string> op_mode;
+  std::shared_ptr<test_robot_hardware::TestRobotHardware> test_robot;
+  std::vector<std::string> left_wheel_names;
+  std::vector<std::string> right_wheel_names;
+  std::vector<std::string> op_mode;
 
-   rclcpp::Node::SharedPtr pub_node;
-   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr velocity_publisher;
+  rclcpp::Node::SharedPtr pub_node;
+  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr velocity_publisher;
 };
 
 TEST_F(TestDiffDriveController, wrong_initialization)
 {
-   auto uninitialized_robot = std::make_shared<test_robot_hardware::TestRobotHardware>();
-   auto diff_drive_controller =
-      std::make_shared<diff_drive_controller::DiffDriveController>(left_wheel_names, right_wheel_names, op_mode);
-   auto ret = diff_drive_controller->init(uninitialized_robot, controller_name);
-   if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
-      FAIL();
-   }
+  auto uninitialized_robot = std::make_shared<test_robot_hardware::TestRobotHardware>();
+  auto diff_drive_controller =
+    std::make_shared<diff_drive_controller::DiffDriveController>(
+    left_wheel_names,
+    right_wheel_names, op_mode);
+  auto ret = diff_drive_controller->init(uninitialized_robot, controller_name);
+  if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
+    FAIL();
+  }
 
-   auto unconfigured_state = diff_drive_controller->get_lifecycle_node()->configure();
-   EXPECT_EQ(State::PRIMARY_STATE_UNCONFIGURED, unconfigured_state.id());
+  auto unconfigured_state = diff_drive_controller->get_lifecycle_node()->configure();
+  EXPECT_EQ(State::PRIMARY_STATE_UNCONFIGURED, unconfigured_state.id());
 }
 
 TEST_F(TestDiffDriveController, correct_initialization)
 {
-   auto initialized_robot = std::make_shared<test_robot_hardware::TestRobotHardware>();
-   initialized_robot->init();
-   auto diff_drive_controller =
-      std::make_shared<diff_drive_controller::DiffDriveController>(left_wheel_names, right_wheel_names, op_mode);
-   auto ret = diff_drive_controller->init(initialized_robot, controller_name);
-   if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
-      FAIL();
-   }
+  auto initialized_robot = std::make_shared<test_robot_hardware::TestRobotHardware>();
+  initialized_robot->init();
+  auto diff_drive_controller =
+    std::make_shared<diff_drive_controller::DiffDriveController>(
+    left_wheel_names,
+    right_wheel_names, op_mode);
+  auto ret = diff_drive_controller->init(initialized_robot, controller_name);
+  if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
+    FAIL();
+  }
 
-   auto inactive_state = diff_drive_controller->get_lifecycle_node()->configure();
-   EXPECT_EQ(State::PRIMARY_STATE_INACTIVE, inactive_state.id());
-   EXPECT_EQ(1.1, initialized_robot->pos1);
-   EXPECT_EQ(2.2, initialized_robot->pos2);
-   EXPECT_EQ(3.3, initialized_robot->pos3);
+  auto inactive_state = diff_drive_controller->get_lifecycle_node()->configure();
+  EXPECT_EQ(State::PRIMARY_STATE_INACTIVE, inactive_state.id());
+  EXPECT_EQ(1.1, initialized_robot->pos1);
+  EXPECT_EQ(2.2, initialized_robot->pos2);
+  EXPECT_EQ(3.3, initialized_robot->pos3);
 }
 
 TEST_F(TestDiffDriveController, configuration)
 {
-   auto diff_drive_controller =
-      std::make_shared<diff_drive_controller::DiffDriveController>(left_wheel_names, right_wheel_names, op_mode);
-   auto ret = diff_drive_controller->init(test_robot, controller_name);
-   if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
-      FAIL();
-   }
+  auto diff_drive_controller =
+    std::make_shared<diff_drive_controller::DiffDriveController>(
+    left_wheel_names,
+    right_wheel_names, op_mode);
+  auto ret = diff_drive_controller->init(test_robot, controller_name);
+  if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
+    FAIL();
+  }
 
-   rclcpp::executors::MultiThreadedExecutor executor;
-   executor.add_node(diff_drive_controller->get_lifecycle_node()->get_node_base_interface());
-   auto future_handle_ = std::async(std::launch::async, spin, &executor);
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(diff_drive_controller->get_lifecycle_node()->get_node_base_interface());
+  auto future_handle_ = std::async(std::launch::async, spin, &executor);
 
-   auto state = diff_drive_controller->get_lifecycle_node()->configure();
-   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+  auto state = diff_drive_controller->get_lifecycle_node()->configure();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
 
-   // add in check for linear vel command values
+  // add in check for linear vel command values
 
-   executor.cancel();
+  executor.cancel();
 }
 
 TEST_F(TestDiffDriveController, cleanup)
 {
-   auto diff_drive_controller =
-      std::make_shared<diff_drive_controller::DiffDriveController>(left_wheel_names, right_wheel_names, op_mode);
-   auto ret = diff_drive_controller->init(test_robot, controller_name);
-   if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
-      FAIL();
-   }
+  auto diff_drive_controller =
+    std::make_shared<diff_drive_controller::DiffDriveController>(
+    left_wheel_names,
+    right_wheel_names, op_mode);
+  auto ret = diff_drive_controller->init(test_robot, controller_name);
+  if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
+    FAIL();
+  }
 
-   auto diff_drive_lifecycle_node = diff_drive_controller->get_lifecycle_node();
-   rclcpp::executors::MultiThreadedExecutor executor;
-   executor.add_node(diff_drive_lifecycle_node->get_node_base_interface());
+  auto diff_drive_lifecycle_node = diff_drive_controller->get_lifecycle_node();
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(diff_drive_lifecycle_node->get_node_base_interface());
 
-   auto state = diff_drive_lifecycle_node->configure();
-   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  auto state = diff_drive_lifecycle_node->configure();
+  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
 
-   state = diff_drive_lifecycle_node->activate();
-   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+  state = diff_drive_lifecycle_node->activate();
+  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
 
-   // wait for the subscriber and publisher to completely setup
-   std::this_thread::sleep_for(std::chrono::seconds(2));
+  // wait for the subscriber and publisher to completely setup
+  std::this_thread::sleep_for(std::chrono::seconds(2));
 
-   // send msg
-   const double linear = 1.0;
-   const double angular = 1.0;
-   publish(linear, angular);
+  // send msg
+  const double linear = 1.0;
+  const double angular = 1.0;
+  publish(linear, angular);
 
-   // wait for msg is be published to the system
-   std::this_thread::sleep_for(std::chrono::milliseconds(500));
-   executor.spin_once();
+  // wait for msg is be published to the system
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
+  executor.spin_once();
 
-   diff_drive_controller->update();
-   test_robot->write();
+  diff_drive_controller->update();
+  test_robot->write();
 
-   state = diff_drive_lifecycle_node->deactivate();
-   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
-   diff_drive_controller->update();
-   test_robot->write();
+  state = diff_drive_lifecycle_node->deactivate();
+  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  diff_drive_controller->update();
+  test_robot->write();
 
-   state = diff_drive_lifecycle_node->cleanup();
-   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
-   diff_drive_controller->update();
-   test_robot->write();
+  state = diff_drive_lifecycle_node->cleanup();
+  ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
+  diff_drive_controller->update();
+  test_robot->write();
 
-   // shouild be home pose again
-   EXPECT_EQ(1.1, test_robot->cmd1);
-   EXPECT_EQ(2.2, test_robot->cmd2);
+  // shouild be home pose again
+  EXPECT_EQ(1.1, test_robot->cmd1);
+  EXPECT_EQ(2.2, test_robot->cmd2);
 
-   executor.cancel();
+  executor.cancel();
 }
 
 TEST_F(TestDiffDriveController, correct_initialization_using_parameters)
 {
-   auto diff_drive_controller =
-      std::make_shared<diff_drive_controller::DiffDriveController>(left_wheel_names, right_wheel_names, op_mode);
-   auto ret = diff_drive_controller->init(test_robot, controller_name);
-   if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
-      FAIL();
-   }
+  auto diff_drive_controller =
+    std::make_shared<diff_drive_controller::DiffDriveController>(
+    left_wheel_names,
+    right_wheel_names, op_mode);
+  auto ret = diff_drive_controller->init(test_robot, controller_name);
+  if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
+    FAIL();
+  }
 
-   // This block is replacing the way parameters are set via launch
-   auto diff_drive_lifecycle_node = diff_drive_controller->get_lifecycle_node();
-   rclcpp::Parameter joint_parameters("left_wheel_names", left_wheel_names);
-   diff_drive_lifecycle_node->set_parameter(joint_parameters);
+  // This block is replacing the way parameters are set via launch
+  auto diff_drive_lifecycle_node = diff_drive_controller->get_lifecycle_node();
+  rclcpp::Parameter joint_parameters("left_wheel_names", left_wheel_names);
+  diff_drive_lifecycle_node->set_parameter(joint_parameters);
 
-   std::vector<std::string> operation_mode_names = {"motor_controls"};
-   rclcpp::Parameter operation_mode_parameters("write_op_modes", operation_mode_names);
-   diff_drive_lifecycle_node->set_parameter(operation_mode_parameters);
+  std::vector<std::string> operation_mode_names = {"motor_controls"};
+  rclcpp::Parameter operation_mode_parameters("write_op_modes", operation_mode_names);
+  diff_drive_lifecycle_node->set_parameter(operation_mode_parameters);
 
-   rclcpp::executors::MultiThreadedExecutor executor;
-   executor.add_node(diff_drive_lifecycle_node->get_node_base_interface());
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(diff_drive_lifecycle_node->get_node_base_interface());
 
-   auto future_handle = std::async(std::launch::async, [&executor]() -> void { executor.spin(); });
+  auto future_handle = std::async(std::launch::async, [&executor]() -> void {executor.spin();});
 
-   auto state = diff_drive_lifecycle_node->configure();
-   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
-   EXPECT_EQ(1.1, test_robot->cmd1);
-   EXPECT_EQ(2.2, test_robot->cmd2);
+  auto state = diff_drive_lifecycle_node->configure();
+  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  EXPECT_EQ(1.1, test_robot->cmd1);
+  EXPECT_EQ(2.2, test_robot->cmd2);
 
-   state = diff_drive_lifecycle_node->activate();
-   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+  state = diff_drive_lifecycle_node->activate();
+  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
 
-   // wait for the subscriber and publisher to completely setup
-   std::this_thread::sleep_for(std::chrono::seconds(2));
+  // wait for the subscriber and publisher to completely setup
+  std::this_thread::sleep_for(std::chrono::seconds(2));
 
-   // send msg
-   const double linear = 1.0;
-   const double angular = 1.0;
-   publish(linear, angular);
-   // wait for msg is be published to the system
-   std::this_thread::sleep_for(std::chrono::milliseconds(500));
+  // send msg
+  const double linear = 1.0;
+  const double angular = 1.0;
+  publish(linear, angular);
+  // wait for msg is be published to the system
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-   diff_drive_controller->update();
-   test_robot->write();
+  diff_drive_controller->update();
+  test_robot->write();
 
-   // deactivated
-   // wait so controller process the second point when deactivated
-   std::this_thread::sleep_for(std::chrono::milliseconds(500));
-   state = diff_drive_lifecycle_node->deactivate();
-   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
-   diff_drive_controller->update();
-   test_robot->write();
+  // deactivated
+  // wait so controller process the second point when deactivated
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
+  state = diff_drive_lifecycle_node->deactivate();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+  diff_drive_controller->update();
+  test_robot->write();
 
-   // no change in hw position
-   EXPECT_EQ(1.1, test_robot->cmd1);
-   EXPECT_EQ(2.2, test_robot->cmd2);
+  // no change in hw position
+  EXPECT_EQ(1.1, test_robot->cmd1);
+  EXPECT_EQ(2.2, test_robot->cmd2);
 
-   // cleanup
-   state = diff_drive_lifecycle_node->cleanup();
-   diff_drive_controller->update();
-   test_robot->write();
-   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
-   EXPECT_EQ(1.1, test_robot->cmd1);
-   EXPECT_EQ(2.2, test_robot->cmd2);
+  // cleanup
+  state = diff_drive_lifecycle_node->cleanup();
+  diff_drive_controller->update();
+  test_robot->write();
+  ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
+  EXPECT_EQ(1.1, test_robot->cmd1);
+  EXPECT_EQ(2.2, test_robot->cmd2);
 
-   state = diff_drive_lifecycle_node->configure();
-   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
-   executor.cancel();
+  state = diff_drive_lifecycle_node->configure();
+  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  executor.cancel();
 }
