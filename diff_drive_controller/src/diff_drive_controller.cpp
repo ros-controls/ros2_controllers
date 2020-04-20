@@ -97,9 +97,9 @@ controller_interface::controller_interface_ret_t DiffDriveController::update()
   const double wheel_separation = wheels.separation_multiplier * wheels.separation;
   const double left_wheel_radius = wheels.left_radius_multiplier * wheels.radius;
   const double right_wheel_radius = wheels.right_radius_multiplier * wheels.radius;
-  if(velocity_msg_ptr_ == nullptr) {
-     RCLCPP_WARN(logger, "Velocity message received was a nullptr.");
-     return CONTROLLER_INTERFACE_RET_ERROR;
+  if (velocity_msg_ptr_ == nullptr) {
+    RCLCPP_WARN(logger, "Velocity message received was a nullptr.");
+    return CONTROLLER_INTERFACE_RET_ERROR;
   }
 
   // Compute wheels velocities:
@@ -211,14 +211,14 @@ DiffDriveController::on_configure(const rclcpp_lifecycle::State &)
 
   wheel_params_.wheels_per_side = registered_left_wheel_handles_.size();
 
-  left_previous_commands_ = std::vector<double>(0, left_wheel_names_.size());
-  right_previous_commands_ = std::vector<double>(0, right_wheel_names_.size());
+  left_previous_commands_ = std::vector<double>(left_wheel_names_.size(), 0);
+  right_previous_commands_ = std::vector<double>(right_wheel_names_.size(), 0);
 
   velocity_msg_ptr_ = std::make_shared<Twist>();
 
   auto callback = [this](const std::shared_ptr<Twist> msg) -> void {
       if (subscriber_is_active_) {
-        *velocity_msg_ptr_ = *msg;
+        velocity_msg_ptr_ = std::move(msg);
       }
     };
 

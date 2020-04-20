@@ -66,8 +66,8 @@ protected:
 
   /// Publish velocity msgs
   /**
-   *  time_from_start - delay between each points
-   *  points - vector of trajectories. Each velocity consists of 3 joints
+   *  linear - magnitude of the linear command in the geometry_msgs::twist message
+   *  angular - the magnitude of the angular command in geometry_msgs::twist message
    */
   void publish(double linear, double angular)
   {
@@ -107,9 +107,7 @@ TEST_F(TestDiffDriveController, wrong_initialization)
     left_wheel_names,
     right_wheel_names, op_mode);
   auto ret = diff_drive_controller->init(uninitialized_robot, controller_name);
-  if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
-    FAIL();
-  }
+  ASSERT_EQ(ret, controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS);
 
   auto unconfigured_state = diff_drive_controller->get_lifecycle_node()->configure();
   EXPECT_EQ(State::PRIMARY_STATE_UNCONFIGURED, unconfigured_state.id());
@@ -124,9 +122,7 @@ TEST_F(TestDiffDriveController, correct_initialization)
     left_wheel_names,
     right_wheel_names, op_mode);
   auto ret = diff_drive_controller->init(initialized_robot, controller_name);
-  if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
-    FAIL();
-  }
+  ASSERT_EQ(ret, controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS);
 
   auto inactive_state = diff_drive_controller->get_lifecycle_node()->configure();
   EXPECT_EQ(State::PRIMARY_STATE_INACTIVE, inactive_state.id());
@@ -180,7 +176,17 @@ TEST_F(TestDiffDriveController, cleanup)
   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
 
   // wait for the subscriber and publisher to completely setup
-  std::this_thread::sleep_for(std::chrono::seconds(2));
+  constexpr std::chrono::seconds TIMEOUT{2};
+  auto clock = pub_node->get_clock();
+  auto start = clock->now();
+  auto timedout = true;
+  while (velocity_publisher->get_subscription_count() <= 0) {
+    if ((clock->now() - start) > TIMEOUT) {
+      timedout = false;
+    }
+    rclcpp::spin_some(pub_node);
+  }
+  ASSERT_TRUE(timedout);
 
   // send msg
   const double linear = 1.0;
