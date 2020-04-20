@@ -83,16 +83,16 @@ if(BUILD_TESTING)
     geometry_msgs
   )
 
-  #ament_add_gtest(
-    #test_load_diff_drive_controller
-    #test/test_load_diff_drive_controller.cpp
-  #)
+  ament_add_gtest(
+    test_load_diff_drive_controller
+    test/test_load_diff_drive_controller.cpp
+  )
 
-  #target_include_directories(test_load_diff_drive_controller PRIVATE include)
-  #ament_target_dependencies(test_load_diff_drive_controller
-    #controller_manager
-    #test_robot_hardware
-  #)
+  target_include_directories(test_load_diff_drive_controller PRIVATE include)
+  ament_target_dependencies(test_load_diff_drive_controller
+    controller_manager
+    test_robot_hardware
+  )
 
 endif()
 

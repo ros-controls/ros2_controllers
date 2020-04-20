@@ -12,13 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "controller_parameter_server/parameter_server.hpp"
 #include "diff_drive_controller/diff_drive_controller.hpp"
-#include "hardware_interface/robot_hardware.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/rclcpp.hpp"
-#include "rcutils/get_env.h"
-#include "std_msgs/msg/string.hpp"
 #include "test_robot_hardware/test_robot_hardware.hpp"
 
 #include "gtest/gtest.h"
@@ -210,9 +206,9 @@ TEST_F(TestDiffDriveController, cleanup)
   diff_drive_controller->update();
   test_robot->write();
 
-  // shouild be home pose again
-  EXPECT_EQ(1.1, test_robot->cmd1);
-  EXPECT_EQ(2.2, test_robot->cmd2);
+  // shouild be stopped
+  EXPECT_EQ(0, test_robot->cmd1);
+  EXPECT_EQ(0, test_robot->cmd2);
 
   executor.cancel();
 }
@@ -280,8 +276,8 @@ TEST_F(TestDiffDriveController, correct_initialization_using_parameters)
   diff_drive_controller->update();
   test_robot->write();
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
-  EXPECT_EQ(1.1, test_robot->cmd1);
-  EXPECT_EQ(2.2, test_robot->cmd2);
+  EXPECT_EQ(0, test_robot->cmd1);
+  EXPECT_EQ(0, test_robot->cmd2);
 
   state = diff_drive_lifecycle_node->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
