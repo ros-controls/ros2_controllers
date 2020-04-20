@@ -421,8 +421,7 @@ TEST_F(TestTrajectoryController, correct_initialization_using_parameters) {
   state = traj_lifecycle_node->deactivate();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
 
-  // no change in hw position
-  auto allowed_delta = 0.001;
+  auto allowed_delta = 0.01;
   EXPECT_NEAR(3.3, test_robot->pos1, allowed_delta);
   EXPECT_NEAR(4.4, test_robot->pos2, allowed_delta);
   EXPECT_NEAR(5.5, test_robot->pos3, allowed_delta);
