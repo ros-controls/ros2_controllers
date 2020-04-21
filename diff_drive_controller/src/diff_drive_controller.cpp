@@ -63,7 +63,7 @@ DiffDriveController::init(std::weak_ptr<hardware_interface::RobotHardware> robot
 
    lifecycle_node_->declare_parameter<std::string>("odom_frame_id", odom_params_.odom_frame_id);
    lifecycle_node_->declare_parameter<std::string>("base_frame_id", odom_params_.base_frame_id);
-   lifecycle_node_->declare_parameter<std::vector<double>>("pose_covariance_diagonal", {}); // std::array<double, 9>
+   lifecycle_node_->declare_parameter<std::vector<double>>("pose_covariance_diagonal", {});  // std::array<double, 9>
    lifecycle_node_->declare_parameter<std::vector<double>>("twist_covariance_diagonal", {}); // std::array<double, 9>
    lifecycle_node_->declare_parameter<bool>("open_loop", odom_params_.open_loop);
    lifecycle_node_->declare_parameter<bool>("enable_odom_tf", odom_params_.enable_odom_tf);
@@ -144,16 +144,61 @@ DiffDriveController::on_configure(const rclcpp_lifecycle::State&)
    // update parameters
    left_wheel_names_ = lifecycle_node_->get_parameter("left_wheel_names").as_string_array();
    right_wheel_names_ = lifecycle_node_->get_parameter("right_wheel_names").as_string_array();
+   write_op_names_ = lifecycle_node_->get_parameter("write_op_modes").as_string_array();
+
    wheel_params_.separation = lifecycle_node_->get_parameter("wheel_separation").as_double();
    wheel_params_.wheels_per_side = static_cast<size_t>(lifecycle_node_->get_parameter("wheels_per_side").as_int());
    wheel_params_.radius = lifecycle_node_->get_parameter("wheel_radius").as_double();
    wheel_params_.separation_multiplier = lifecycle_node_->get_parameter("wheel_separation_multiplier").as_double();
    wheel_params_.left_radius_multiplier = lifecycle_node_->get_parameter("left_wheel_radius_multiplier").as_double();
    wheel_params_.right_radius_multiplier = lifecycle_node_->get_parameter("right_wheel_radius_multiplier").as_double();
+
+   const auto wheels = wheel_params_;
+
+   const double wheel_separation = wheels.separation_multiplier * wheels.separation;
+   const double left_wheel_radius = wheels.left_radius_multiplier * wheels.radius;
+   const double right_wheel_radius = wheels.right_radius_multiplier * wheels.radius;
+
+   odometry_.setWheelParams(wheel_separation, left_wheel_radius, right_wheel_radius);
+   odometry_.setVelocityRollingWindowSize(lifecycle_node_->get_parameter("velocity_rolling_window_size").as_int());
+
    odom_params_.odom_frame_id = lifecycle_node_->get_parameter("odom_frame_id").as_string();
    odom_params_.base_frame_id = lifecycle_node_->get_parameter("base_frame_id").as_string();
 
-   if (!reset()) {
+   auto pose_diagonal = lifecycle_node_->get_parameter("pose_covariance_diagonal").as_double_array();
+   std::copy(pose_diagonal.begin(), pose_diagonal.end(), odom_params_.pose_covariance_diagonal.begin());
+
+   auto twist_diagonal = lifecycle_node_->get_parameter("twist_covariance_diagonal").as_double_array();
+   std::copy(twist_diagonal.begin(), twist_diagonal.end(), odom_params_.twist_covariance_diagonal.begin());
+
+   odom_params_.open_loop = lifecycle_node_->get_parameter("open_loop").as_bool();
+   odom_params_.enable_odom_tf = lifecycle_node_->get_parameter("enable_odom_tf").as_bool();
+
+   cmd_vel_timeout_ = std::chrono::milliseconds{lifecycle_node_->get_parameter("cmd_vel_timeout").as_int()};
+   allow_multiple_cmd_vel_publishers_ = lifecycle_node_->get_parameter("allow_multiple_cmd_vel_publishers").as_bool();
+   publish_limited_velocity_ = lifecycle_node_->get_parameter("publish_limited_velocity").as_bool();
+
+   limiter_linear_ = SpeedLimiter(lifecycle_node_->get_parameter("linear.x.has_velocity_limits").as_bool(),
+                                  lifecycle_node_->get_parameter("linear.x.has_acceleration_limits").as_bool(),
+                                  lifecycle_node_->get_parameter("linear.x.has_jerk_limits").as_bool(),
+                                  lifecycle_node_->get_parameter("linear.x.min_velocity").as_double(),
+                                  lifecycle_node_->get_parameter("linear.x.max_velocity").as_double(),
+                                  lifecycle_node_->get_parameter("linear.x.min_acceleration").as_double(),
+                                  lifecycle_node_->get_parameter("linear.x.max_acceleration").as_double(),
+                                  lifecycle_node_->get_parameter("linear.x.min_jerk").as_double(),
+                                  lifecycle_node_->get_parameter("linear.x.max_jerk").as_double());
+
+   limiter_angular_ = SpeedLimiter(lifecycle_node_->get_parameter("angular.z.has_velocity_limits").as_bool(),
+                                  lifecycle_node_->get_parameter("angular.z.has_acceleration_limits").as_bool(),
+                                  lifecycle_node_->get_parameter("angular.z.has_jerk_limits").as_bool(),
+                                  lifecycle_node_->get_parameter("angular.z.min_velocity").as_double(),
+                                  lifecycle_node_->get_parameter("angular.z.max_velocity").as_double(),
+                                  lifecycle_node_->get_parameter("angular.z.min_acceleration").as_double(),
+                                  lifecycle_node_->get_parameter("angular.z.max_acceleration").as_double(),
+                                  lifecycle_node_->get_parameter("angular.z.min_jerk").as_double(),
+                                  lifecycle_node_->get_parameter("angular.z.max_jerk").as_double());
+      if (!reset())
+   {
       return CallbackReturn::ERROR;
    }
 

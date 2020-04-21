@@ -117,11 +117,11 @@ private:
     bool enable_odom_tf{true};
     std::string base_frame_id{"base_link"};
     std::string odom_frame_id{"odom"};
-    std::array<double, 9> pose_covariance_matrix{};
-    std::array<double, 9> twist_covariance_matrix{};
+    std::array<double, 9> pose_covariance_diagonal{};
+    std::array<double, 9> twist_covariance_diagonal{};
   } odom_params_{};
 
-  Odometry odometry{};
+  Odometry odometry_{};
 
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Odometry>> pub_odom_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<tf2_msgs::msg::TFMessage>> pub_tf_odom_;
@@ -145,7 +145,6 @@ private:
    std::shared_ptr<SpeedLimiter> limiter_ang_ = nullptr;
 
   std::shared_ptr<Twist> velocity_msg_ptr_{nullptr};
-  size_t velocity_rolling_window_size_{10};
 
   // speed limiters
   geometry_msgs::msg::Twist last1_cmd_{};
