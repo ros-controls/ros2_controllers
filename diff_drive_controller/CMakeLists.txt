@@ -20,9 +20,12 @@ find_package(rcutils REQUIRED)
 find_package(realtime_tools REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
 
 add_library(diff_drive_controller SHARED
   src/diff_drive_controller.cpp
+  src/odometry.cpp
+  src/speed_limiter.cpp
 )
 
 target_include_directories(diff_drive_controller PRIVATE include)
@@ -37,6 +40,7 @@ ament_target_dependencies(diff_drive_controller
   realtime_tools
   sensor_msgs
   geometry_msgs
+  nav_msgs
 )
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
@@ -81,6 +85,7 @@ if(BUILD_TESTING)
     test_robot_hardware
     sensor_msgs
     geometry_msgs
+    nav_msgs
   )
 
   ament_add_gtest(

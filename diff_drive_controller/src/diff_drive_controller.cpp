@@ -73,8 +73,8 @@ DiffDriveController::init(
   lifecycle_node_->declare_parameter<double>(
     "right_wheel_radius_multiplier",
     wheel_params_.right_radius_multiplier);
-  lifecycle_node_->declare_parameter<std::string>("odom_frame_id", odom_frame_id_);
-  lifecycle_node_->declare_parameter<std::string>("base_frame_id", base_frame_id_);
+  lifecycle_node_->declare_parameter<std::string>("odom_frame_id", odom_params_.odom_frame_id);
+  lifecycle_node_->declare_parameter<std::string>("base_frame_id", odom_params_.base_frame_id);
   lifecycle_node_->declare_parameter<std::vector<std::string>>("write_op_modes", write_op_names_);
 
   return CONTROLLER_INTERFACE_RET_SUCCESS;
@@ -138,8 +138,8 @@ DiffDriveController::on_configure(const rclcpp_lifecycle::State &)
     "left_wheel_radius_multiplier").as_double();
   wheel_params_.right_radius_multiplier = lifecycle_node_->get_parameter(
     "right_wheel_radius_multiplier").as_double();
-  odom_frame_id_ = lifecycle_node_->get_parameter("odom_frame_id").as_string();
-  base_frame_id_ = lifecycle_node_->get_parameter("base_frame_id").as_string();
+  odom_params_.odom_frame_id = lifecycle_node_->get_parameter("odom_frame_id").as_string();
+  odom_params_.base_frame_id = lifecycle_node_->get_parameter("base_frame_id").as_string();
 
   if (!reset()) {
     return CallbackReturn::ERROR;

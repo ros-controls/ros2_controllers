@@ -16,11 +16,27 @@
 #define DIFF_DRIVE_CONTROLLER__DIFF_DRIVE_CONTROLLER_HPP_
 
 #include "controller_interface/controller_interface.hpp"
-#include "geometry_msgs/msg/twist.hpp"
+#include "diff_drive_controller/odometry.hpp"
+#include "diff_drive_controller/speed_limiter.hpp"
 #include "diff_drive_controller/visibility_control.h"
+#include "geometry_msgs/msg/twist.hpp"
+#include "geometry_msgs/msg/twist_stamped.hpp"
+#include "hardware_interface/joint_command_handle.hpp"
+#include "hardware_interface/operation_mode_handle.hpp"
+#include "hardware_interface/robot_hardware.hpp"
+#include "nav_msgs/msg/odometry.hpp"
+#include "odometry.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "rclcpp_lifecycle/state.hpp"
+#include "realtime_tools/realtime_buffer.h"
+#include "realtime_tools/realtime_publisher.h"
 #include "sensor_msgs/msg/joint_state.hpp"
+#include "tf2_msgs/msg/tf_message.hpp"
 
+#include <chrono>
+#include <cmath>
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace diff_drive_controller
@@ -87,13 +103,30 @@ private:
 
   struct WheelParams
   {
-    size_t wheels_per_side{1};
-    double separation{0.21};   // w.r.t. the midpoint of the wheel width
-    double radius{0.05};       // Assumed to be the same for both wheels
+    size_t wheels_per_side{0};
+    double separation{0.0};   // w.r.t. the midpoint of the wheel width
+    double radius{0.0};       // Assumed to be the same for both wheels
     double separation_multiplier{1.0};
     double left_radius_multiplier{1.0};
     double right_radius_multiplier{1.0};
   } wheel_params_{};
+
+  struct OdometryParams
+  {
+    bool open_loop{false};
+    bool enable_odom_tf{true};
+    std::string base_frame_id{"base_link"};
+    std::string odom_frame_id{"odom"};
+    std::array<double, 9> pose_covariance_matrix{};
+    std::array<double, 9> twist_covariance_matrix{};
+  } odom_params_{};
+
+  Odometry odometry{};
+
+  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Odometry>> pub_odom_;
+  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<tf2_msgs::msg::TFMessage>> pub_tf_odom_;
+  std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>> rp_odom_;
+  std::shared_ptr<realtime_tools::RealtimePublisher<tf2_msgs::msg::TFMessage>> rp_tf_odom_;
 
   // Timeout to consider cmd_vel commands old
   std::chrono::milliseconds cmd_vel_timeout_{500};
@@ -103,14 +136,25 @@ private:
   std::vector<std::string> write_op_names_{};
   std::vector<hardware_interface::OperationModeHandle *> registered_operation_mode_handles_{};
 
-  std::string base_frame_id_{"base_link"};
-  std::string odom_frame_id_{"odom"};
-
-  // TODO(karsten1987): eventually activate and deactive subscriber directly when its supported
   bool subscriber_is_active_{false};
+  bool allow_multiple_cmd_vel_publishers_{true};
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr velocity_command_subscriber_{nullptr};
+  realtime_tools::RealtimeBuffer<geometry_msgs::msg::Twist> command_buffer_;
+
+   std::shared_ptr<SpeedLimiter> limiter_lin_ = nullptr;
+   std::shared_ptr<SpeedLimiter> limiter_ang_ = nullptr;
 
   std::shared_ptr<Twist> velocity_msg_ptr_{nullptr};
+  size_t velocity_rolling_window_size_{10};
+
+  // speed limiters
+  geometry_msgs::msg::Twist last1_cmd_{};
+  geometry_msgs::msg::Twist last2_cmd_{};
+  SpeedLimiter limiter_linear_{};
+  SpeedLimiter limiter_angular_{};
+
+  bool publish_limited_velocity_{false};
+  rclcpp::Time previous_time_{0};
 
   bool is_halted{false};
 
