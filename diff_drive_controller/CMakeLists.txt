@@ -21,6 +21,7 @@ find_package(realtime_tools REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(tf2_msgs REQUIRED)
 
 add_library(diff_drive_controller SHARED
   src/diff_drive_controller.cpp
@@ -41,6 +42,7 @@ ament_target_dependencies(diff_drive_controller
   sensor_msgs
   geometry_msgs
   nav_msgs
+  tf2_msgs
 )
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
@@ -86,6 +88,7 @@ if(BUILD_TESTING)
     sensor_msgs
     geometry_msgs
     nav_msgs
+    tf2_msgs
   )
 
   ament_add_gtest(

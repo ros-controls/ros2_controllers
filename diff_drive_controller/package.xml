@@ -17,12 +17,16 @@
   <build_depend>rcutils</build_depend>
   <build_depend>realtime_tools</build_depend>
   <build_depend>geomtry_msgs</build_depend>
+  <build_depend>nav_msgs</build_depend>
+  <build_depend>tf2_msgs</build_depend>
 
   <build_export_depend>controller_interface</build_export_depend>
   <build_export_depend>hardware_interface</build_export_depend>
   <build_export_depend>rclcpp</build_export_depend>
   <build_export_depend>rclcpp_lifecycle</build_export_depend>
   <build_export_depend>geometry_msgs</build_export_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>tf2_msgs</exec_depend>
 
   <exec_depend>controller_interface</exec_depend>
   <exec_depend>hardware_interface</exec_depend>

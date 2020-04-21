@@ -99,7 +99,7 @@ public:
    */
   double limit_jerk(double & v, double v0, double v1, double dt);
 
-public:
+private:
   // Enable/Disable velocity/acceleration/jerk limits:
   bool has_velocity_limits;
   bool has_acceleration_limits;
