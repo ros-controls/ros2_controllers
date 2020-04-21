@@ -349,9 +349,10 @@ TEST_F(TestTrajectoryController, cleanup) {
   test_robot->write();
 
   // shouild be home pose again
-  EXPECT_EQ(1.1, test_robot->pos1);
-  EXPECT_EQ(2.2, test_robot->pos2);
-  EXPECT_EQ(3.3, test_robot->pos3);
+  double threshold = 0.001;
+  EXPECT_NEAR(1.1, test_robot->pos1, threshold);
+  EXPECT_NEAR(2.2, test_robot->pos2, threshold);
+  EXPECT_NEAR(3.3, test_robot->pos3, threshold);
 
   executor.cancel();
 }

@@ -103,6 +103,7 @@ protected:
   rclcpp_action::ResultCode common_resultcode = rclcpp_action::ResultCode::UNKNOWN;
   bool common_goal_accepted = false;
   int common_action_result_code = control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL;
+  double common_threshold = 0.001;
 
 public:
   void common_goal_response(std::shared_future<GoalHandle::SharedPtr> future)
@@ -264,10 +265,9 @@ TEST_F(TestTrajectoryActions, test_success_multi_point_sendgoal) {
   EXPECT_EQ(true, common_goal_accepted);
   EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode);
 
-  double threshold = 0.001;
-  EXPECT_NEAR(7.0, test_robot->pos1, threshold);
-  EXPECT_NEAR(8.0, test_robot->pos2, threshold);
-  EXPECT_NEAR(9.0, test_robot->pos3, threshold);
+  EXPECT_NEAR(7.0, test_robot->pos1, common_threshold);
+  EXPECT_NEAR(8.0, test_robot->pos2, common_threshold);
+  EXPECT_NEAR(9.0, test_robot->pos3, common_threshold);
 
   executor.cancel();
 }
@@ -353,9 +353,9 @@ TEST_F(TestTrajectoryActions, test_goal_tolerances_success) {
     control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL,
     common_action_result_code);
 
-  EXPECT_EQ(1.0, test_robot->pos1);
-  EXPECT_EQ(2.0, test_robot->pos2);
-  EXPECT_EQ(3.0, test_robot->pos3);
+  EXPECT_NEAR(1.0, test_robot->pos1, common_threshold);
+  EXPECT_NEAR(2.0, test_robot->pos2, common_threshold);
+  EXPECT_NEAR(3.0, test_robot->pos3, common_threshold);
 
   // start again
   common_goal_accepted = false;
@@ -406,10 +406,9 @@ TEST_F(TestTrajectoryActions, test_goal_tolerances_success) {
     control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL,
     common_action_result_code);
 
-  double threshold = 0.001;
-  EXPECT_NEAR(7.0, test_robot->pos1, threshold);
-  EXPECT_NEAR(8.0, test_robot->pos2, threshold);
-  EXPECT_NEAR(9.0, test_robot->pos3, threshold);
+  EXPECT_NEAR(7.0, test_robot->pos1, common_threshold);
+  EXPECT_NEAR(8.0, test_robot->pos2, common_threshold);
+  EXPECT_NEAR(9.0, test_robot->pos3, common_threshold);
 
   executor.cancel();
 }
