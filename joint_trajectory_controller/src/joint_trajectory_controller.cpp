@@ -379,7 +379,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
   RCLCPP_INFO_STREAM(
     logger, "Action status changes will be monitored at " <<
       action_monitor_rate << "Hz.");
-  action_monitor_period_ = rclcpp::Duration(1.0 / action_monitor_rate);
+  action_monitor_period_ = rclcpp::Duration::from_seconds(1.0 / action_monitor_rate);
 
   using namespace std::placeholders;
   action_server_ = rclcpp_action::create_server<FollowJTrajAction>(
