@@ -36,13 +36,14 @@
 #include <chrono>
 #include <cmath>
 #include <memory>
+#include <queue>
 #include <string>
 #include <vector>
 
 namespace diff_drive_controller {
 class DiffDriveController : public controller_interface::ControllerInterface
 {
-   using Twist = geometry_msgs::msg::Twist;
+   using Twist = geometry_msgs::msg::TwistStamped;
 
  public:
    DIFF_DRIVE_CONTROLLER_PUBLIC
@@ -137,23 +138,23 @@ class DiffDriveController : public controller_interface::ControllerInterface
    std::vector<hardware_interface::OperationModeHandle*> registered_operation_mode_handles_{};
 
    bool subscriber_is_active_{false};
-   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr velocity_command_subscriber_{nullptr};
-   realtime_tools::RealtimeBuffer<geometry_msgs::msg::Twist> command_buffer_;
+   rclcpp::Subscription<Twist>::SharedPtr velocity_command_subscriber_{nullptr};
+   realtime_tools::RealtimeBuffer<Twist> command_buffer_;
 
    std::shared_ptr<SpeedLimiter> limiter_lin_ = nullptr;
    std::shared_ptr<SpeedLimiter> limiter_ang_ = nullptr;
 
    std::shared_ptr<Twist> received_velocity_msg_ptr_{nullptr};
 
+   std::queue<Twist> previous_commands_; // last two commands
+
    // speed limiters
-   geometry_msgs::msg::Twist last1_cmd_{};
-   geometry_msgs::msg::Twist last2_cmd_{};
    SpeedLimiter limiter_linear_{};
    SpeedLimiter limiter_angular_{};
 
    bool publish_limited_velocity_{false};
-   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::TwistStamped>> limited_velocity_publisher_{nullptr};
-   std::shared_ptr<realtime_tools::RealtimePublisher<geometry_msgs::msg::TwistStamped>>
+   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<Twist>> limited_velocity_publisher_{nullptr};
+   std::shared_ptr<realtime_tools::RealtimePublisher<Twist>>
       realtime_limited_velocity_publisher_{nullptr};
 
    rclcpp::Time previous_update_timestamp_{0};
