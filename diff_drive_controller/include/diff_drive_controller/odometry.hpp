@@ -39,13 +39,14 @@
 #ifndef DIFF_DRIVE_CONTROLLER__ODOMETRY_HPP_
 #define DIFF_DRIVE_CONTROLLER__ODOMETRY_HPP_
 
+#include "rclcpp/rclcpp.hpp"
+
 #include <cmath>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/stats.hpp>
 #include <boost/accumulators/statistics/rolling_mean.hpp>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
-#include "rclcpp/rclcpp.hpp"
 
 namespace diff_drive_controller
 {
@@ -54,8 +55,6 @@ namespace bacc = boost::accumulators;
 class Odometry
 {
 public:
-  typedef boost::function<void (double, double)> IntegrationFunction;
-
   Odometry(size_t velocity_rolling_window_size = 10);
 
   void init(const rclcpp::Time & time);
@@ -88,8 +87,8 @@ public:
   void setVelocityRollingWindowSize(size_t velocity_rolling_window_size);
 
 private:
-  typedef bacc::accumulator_set<double, bacc::stats<bacc::tag::rolling_mean>> RollingMeanAcc;
-  typedef bacc::tag::rolling_window RollingWindow;
+  using RollingMeanAccumulator =  bacc::accumulator_set<double, bacc::stats<bacc::tag::rolling_mean>>;
+  using RollingWindow = bacc::tag::rolling_window;
 
   void integrateRungeKutta2(double linear, double angular);
   void integrateExact(double linear, double angular);
@@ -118,11 +117,8 @@ private:
 
   // Rolling mean accumulators for the linar and angular velocities:
   size_t velocity_rolling_window_size_;
-  RollingMeanAcc linear_acc_;
-  RollingMeanAcc angular_acc_;
-
-  // Integration funcion, used to integrate the odometry:
-  IntegrationFunction integrate_fun_;
+  RollingMeanAccumulator linear_accumulator_;
+  RollingMeanAccumulator angular_accumulator_;
 };
 
 }  // namespace diff_drive_controller
