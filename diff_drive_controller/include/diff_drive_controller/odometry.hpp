@@ -33,7 +33,10 @@
  *********************************************************************/
 
 /*
+ * Author: Luca Marchionni
+ * Author: Bence Magyar
  * Author: Enrique Fernández
+ * Author: Paul Mathieu
  */
 
 #ifndef DIFF_DRIVE_CONTROLLER__ODOMETRY_HPP_
