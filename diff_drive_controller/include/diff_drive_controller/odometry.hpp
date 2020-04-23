@@ -33,7 +33,10 @@
  *********************************************************************/
 
 /*
+ * Author: Luca Marchionni
+ * Author: Bence Magyar
  * Author: Enrique Fernández
+ * Author: Paul Mathieu
  */
 
 #ifndef DIFF_DRIVE_CONTROLLER__ODOMETRY_HPP_
@@ -87,7 +90,8 @@ public:
   void setVelocityRollingWindowSize(size_t velocity_rolling_window_size);
 
 private:
-  using RollingMeanAccumulator =  bacc::accumulator_set<double, bacc::stats<bacc::tag::rolling_mean>>;
+  using RollingMeanAccumulator =
+    bacc::accumulator_set<double, bacc::stats<bacc::tag::rolling_mean>>;
   using RollingWindow = bacc::tag::rolling_window;
 
   void integrateRungeKutta2(double linear, double angular);

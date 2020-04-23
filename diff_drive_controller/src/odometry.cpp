@@ -67,13 +67,13 @@ void Odometry::init(const rclcpp::Time & time)
 
 bool Odometry::update(double left_pos, double right_pos, const rclcpp::Time & time)
 {
-   // We cannot estimate the speed with very small time intervals:
-   const double dt = time.seconds() - timestamp_.seconds();
-   if (dt < 0.0001) {
-      return false;  // Interval too small to integrate with
-   }
+  // We cannot estimate the speed with very small time intervals:
+  const double dt = time.seconds() - timestamp_.seconds();
+  if (dt < 0.0001) {
+    return false;    // Interval too small to integrate with
+  }
 
-   // Get current wheel joint positions:
+  // Get current wheel joint positions:
   const double left_wheel_cur_pos = left_pos * left_wheel_radius_;
   const double right_wheel_cur_pos = right_pos * right_wheel_radius_;
 
@@ -166,8 +166,10 @@ void Odometry::integrateExact(double linear, double angular)
 
 void Odometry::resetAccumulators()
 {
-  linear_accumulator_ = RollingMeanAccumulator(RollingWindow::window_size = velocity_rolling_window_size_);
-  angular_accumulator_ = RollingMeanAccumulator(RollingWindow::window_size = velocity_rolling_window_size_);
+  linear_accumulator_ = RollingMeanAccumulator(
+    RollingWindow::window_size = velocity_rolling_window_size_);
+  angular_accumulator_ = RollingMeanAccumulator(
+    RollingWindow::window_size = velocity_rolling_window_size_);
 }
 
 }  // namespace diff_drive_controller
