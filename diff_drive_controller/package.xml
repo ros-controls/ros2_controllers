@@ -16,7 +16,7 @@
   <build_depend>rclcpp_lifecycle</build_depend>
   <build_depend>rcutils</build_depend>
   <build_depend>realtime_tools</build_depend>
-  <build_depend>geomtry_msgs</build_depend>
+  <build_depend>geometry_msgs</build_depend>
   <build_depend>nav_msgs</build_depend>
   <build_depend>tf2_msgs</build_depend>
 
