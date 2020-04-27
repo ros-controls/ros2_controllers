@@ -143,7 +143,8 @@ JointTrajectoryController::update()
       start_segment_itr, end_segment_itr);
 
     if (valid_point) {
-      bool abort = false, outside_goal_tolerance = false;
+      bool abort = false;
+      bool outside_goal_tolerance = false;
       bool before_last_point = end_segment_itr != (*traj_point_active_ptr_)->end();
       for (auto index = 0ul; index < joint_num; ++index) {
         // set values for next hardware write()
@@ -348,7 +349,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
 
   publisher_ = lifecycle_node_->create_publisher<ControllerStateMsg>(
     "state", rclcpp::SystemDefaultsQoS());
-  state_publisher_.reset(new StatePublisher(publisher_));
+  state_publisher_ = std::make_unique<StatePublisher>(publisher_);
 
   auto n_joints = joint_names_.size();
 
