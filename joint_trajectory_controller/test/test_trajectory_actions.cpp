@@ -51,6 +51,19 @@ protected:
     op_mode = {{test_robot->write_op_handle_name1}};
 
     node = std::make_shared<rclcpp::Node>("trajectory_test_node");
+
+    traj_controller = std::make_shared<joint_trajectory_controller::JointTrajectoryController>();
+    auto ret = traj_controller->init(test_robot, controller_name);
+    if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
+      FAIL();
+    }
+
+    traj_lifecycle_node = traj_controller->get_lifecycle_node();
+    rclcpp::Parameter joint_parameters("joints", joint_names);
+    traj_lifecycle_node->set_parameter(joint_parameters);
+
+    rclcpp::Parameter operation_mode_parameters("write_op_modes", op_mode);
+    traj_lifecycle_node->set_parameter(operation_mode_parameters);
   }
 
   void SetUpActionClient()
@@ -98,6 +111,8 @@ protected:
   std::vector<std::string> op_mode;
 
   rclcpp::Node::SharedPtr node;
+  std::shared_ptr<joint_trajectory_controller::JointTrajectoryController> traj_controller;
+  rclcpp_lifecycle::LifecycleNode::SharedPtr traj_lifecycle_node;
 
   rclcpp_action::Client<FollowJointTrajectoryMsg>::SharedPtr action_client;
   rclcpp_action::ResultCode common_resultcode = rclcpp_action::ResultCode::UNKNOWN;
@@ -145,19 +160,6 @@ public:
 };
 
 TEST_F(TestTrajectoryActions, test_success_multi_point_sendgoal) {
-  auto traj_controller = std::make_shared<joint_trajectory_controller::JointTrajectoryController>();
-  auto ret = traj_controller->init(test_robot, controller_name);
-  if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
-    FAIL();
-  }
-
-  auto traj_lifecycle_node = traj_controller->get_lifecycle_node();
-  rclcpp::Parameter joint_parameters("joints", joint_names);
-  traj_lifecycle_node->set_parameter(joint_parameters);
-
-  rclcpp::Parameter operation_mode_parameters("write_op_modes", op_mode);
-  traj_lifecycle_node->set_parameter(operation_mode_parameters);
-
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(traj_lifecycle_node->get_node_base_interface());
 
@@ -271,19 +273,6 @@ TEST_F(TestTrajectoryActions, test_success_multi_point_sendgoal) {
 }
 
 TEST_F(TestTrajectoryActions, test_goal_tolerances_success) {
-  auto traj_controller = std::make_shared<joint_trajectory_controller::JointTrajectoryController>();
-  auto ret = traj_controller->init(test_robot, controller_name);
-  if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
-    FAIL();
-  }
-
-  auto traj_lifecycle_node = traj_controller->get_lifecycle_node();
-  rclcpp::Parameter joint_parameters("joints", joint_names);
-  traj_lifecycle_node->set_parameter(joint_parameters);
-
-  rclcpp::Parameter operation_mode_parameters("write_op_modes", op_mode);
-  traj_lifecycle_node->set_parameter(operation_mode_parameters);
-
   // set tolerance parameters
   traj_lifecycle_node->declare_parameter("constraints.joint1.goal", 0.0);
   traj_lifecycle_node->declare_parameter("constraints.joint2.goal", 0.0);
@@ -410,19 +399,6 @@ TEST_F(TestTrajectoryActions, test_goal_tolerances_success) {
 }
 
 TEST_F(TestTrajectoryActions, test_state_tolerances_fail) {
-  auto traj_controller = std::make_shared<joint_trajectory_controller::JointTrajectoryController>();
-  auto ret = traj_controller->init(test_robot, controller_name);
-  if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
-    FAIL();
-  }
-
-  auto traj_lifecycle_node = traj_controller->get_lifecycle_node();
-  rclcpp::Parameter joint_parameters("joints", joint_names);
-  traj_lifecycle_node->set_parameter(joint_parameters);
-
-  rclcpp::Parameter operation_mode_parameters("write_op_modes", op_mode);
-  traj_lifecycle_node->set_parameter(operation_mode_parameters);
-
   // set joint tolerance parameters
   double state_tol = 0.0001;
   traj_lifecycle_node->declare_parameter("constraints.joint1.trajectory", 0.0);
@@ -495,19 +471,6 @@ TEST_F(TestTrajectoryActions, test_state_tolerances_fail) {
 }
 
 TEST_F(TestTrajectoryActions, test_cancel_hold_position) {
-  auto traj_controller = std::make_shared<joint_trajectory_controller::JointTrajectoryController>();
-  auto ret = traj_controller->init(test_robot, controller_name);
-  if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
-    FAIL();
-  }
-
-  auto traj_lifecycle_node = traj_controller->get_lifecycle_node();
-  rclcpp::Parameter joint_parameters("joints", joint_names);
-  traj_lifecycle_node->set_parameter(joint_parameters);
-
-  rclcpp::Parameter operation_mode_parameters("write_op_modes", op_mode);
-  traj_lifecycle_node->set_parameter(operation_mode_parameters);
-
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(traj_lifecycle_node->get_node_base_interface());
 
