@@ -370,7 +370,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
   allow_partial_joints_goal_ = lifecycle_node_->get_parameter("allow_partial_joints_goal")
     .get_value<bool>();
   if (allow_partial_joints_goal_) {
-    // TODO(ddengster): implement partial joints, log an enabled partial joints goal message
+    // TODO(ddengster): implement partial joints, log an enabled partial joints goal message https://github.com/ros-controls/ros2_controllers/issues/37
     RCLCPP_WARN(logger, "Warning: Goals with partial set of joints not implemented yet.");
   }
 
