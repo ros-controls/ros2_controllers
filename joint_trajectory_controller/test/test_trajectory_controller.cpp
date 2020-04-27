@@ -103,8 +103,7 @@ protected:
     rclcpp::Duration duration(duration_msg);
     rclcpp::Duration duration_total(duration_msg);
 
-    size_t index = 0;
-    for (; index < points.size(); ++index) {
+    for (size_t index = 0; index < points.size(); ++index) {
       traj_msg.points[index].time_from_start = duration_total;
 
       traj_msg.points[index].positions.resize(3);
