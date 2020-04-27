@@ -79,11 +79,11 @@ protected:
 
   bool sendActionGoal(
     const std::vector<JointTrajectoryPoint> & points,
-    int timeout,
+    double timeout,
     const GoalOptions & opt)
   {
     control_msgs::action::FollowJointTrajectory_Goal goal_msg;
-    goal_msg.goal_time_tolerance = rclcpp::Duration(timeout);
+    goal_msg.goal_time_tolerance = rclcpp::Duration::from_seconds(timeout);
     goal_msg.trajectory.joint_names = joint_names;
     goal_msg.trajectory.points = points;
 
@@ -199,7 +199,7 @@ TEST_F(TestTrajectoryActions, test_success_multi_point_sendgoal) {
   {
     std::vector<JointTrajectoryPoint> points;
     JointTrajectoryPoint point;
-    point.time_from_start.set__sec(0);  // start asap
+    point.time_from_start = rclcpp::Duration::from_seconds(0.0);  // start asap
     point.positions.resize(joint_names.size());
 
     point.positions[0] = 1.0;
@@ -208,7 +208,7 @@ TEST_F(TestTrajectoryActions, test_success_multi_point_sendgoal) {
 
     points.push_back(point);
 
-    sendActionGoal(points, 1, opt);
+    sendActionGoal(points, 1.0, opt);
   }
   controller_hw_thread.join();
 
@@ -238,8 +238,7 @@ TEST_F(TestTrajectoryActions, test_success_multi_point_sendgoal) {
   {
     std::vector<JointTrajectoryPoint> points;
     JointTrajectoryPoint point1;
-    point1.time_from_start.set__sec(0);
-    point1.time_from_start.set__nanosec(200000000);  // 0.2 seconds
+    point1.time_from_start = rclcpp::Duration::from_seconds(0.2);
     point1.positions.resize(joint_names.size());
 
     point1.positions[0] = 4.0;
@@ -248,8 +247,7 @@ TEST_F(TestTrajectoryActions, test_success_multi_point_sendgoal) {
     points.push_back(point1);
 
     JointTrajectoryPoint point2;
-    point2.time_from_start.set__sec(0);
-    point2.time_from_start.set__nanosec(300000000);  // 0.3 seconds
+    point2.time_from_start = rclcpp::Duration::from_seconds(0.3);
     point2.positions.resize(joint_names.size());
 
     point2.positions[0] = 7.0;
@@ -257,7 +255,7 @@ TEST_F(TestTrajectoryActions, test_success_multi_point_sendgoal) {
     point2.positions[2] = 9.0;
     points.push_back(point2);
 
-    sendActionGoal(points, 1, opt);
+    sendActionGoal(points, 1.0, opt);
   }
   controller_hw_thread.join();
 
@@ -335,7 +333,7 @@ TEST_F(TestTrajectoryActions, test_goal_tolerances_success) {
   {
     std::vector<JointTrajectoryPoint> points;
     JointTrajectoryPoint point;
-    point.time_from_start.set__sec(0);  // start asap
+    point.time_from_start = rclcpp::Duration::from_seconds(0.0);  // start asap
     point.positions.resize(joint_names.size());
 
     point.positions[0] = 1.0;
@@ -343,7 +341,7 @@ TEST_F(TestTrajectoryActions, test_goal_tolerances_success) {
     point.positions[2] = 3.0;
     points.push_back(point);
 
-    sendActionGoal(points, 1, opt);
+    sendActionGoal(points, 1.0, opt);
   }
   controller_hw_thread.join();
 
@@ -376,8 +374,7 @@ TEST_F(TestTrajectoryActions, test_goal_tolerances_success) {
   {
     std::vector<JointTrajectoryPoint> points;
     JointTrajectoryPoint point1;
-    point1.time_from_start.set__sec(0);
-    point1.time_from_start.set__nanosec(200000000);  // 0.2 seconds
+    point1.time_from_start = rclcpp::Duration::from_seconds(0.2);
     point1.positions.resize(joint_names.size());
 
     point1.positions[0] = 4.0;
@@ -386,8 +383,7 @@ TEST_F(TestTrajectoryActions, test_goal_tolerances_success) {
     points.push_back(point1);
 
     JointTrajectoryPoint point2;
-    point2.time_from_start.set__sec(0);
-    point2.time_from_start.set__nanosec(300000000);  // 0.3 seconds
+    point2.time_from_start = rclcpp::Duration::from_seconds(0.3);
     point2.positions.resize(joint_names.size());
 
     point2.positions[0] = 7.0;
@@ -395,7 +391,7 @@ TEST_F(TestTrajectoryActions, test_goal_tolerances_success) {
     point2.positions[2] = 9.0;
     points.push_back(point2);
 
-    sendActionGoal(points, 1, opt);
+    sendActionGoal(points, 1.0, opt);
   }
   controller_hw_thread.join();
 
@@ -477,7 +473,7 @@ TEST_F(TestTrajectoryActions, test_state_tolerances_fail) {
   {
     std::vector<JointTrajectoryPoint> points;
     JointTrajectoryPoint point;
-    point.time_from_start.set__sec(1);
+    point.time_from_start = rclcpp::Duration::from_seconds(1.0);
     point.positions.resize(joint_names.size());
 
     point.positions[0] = 4.0;
@@ -485,7 +481,7 @@ TEST_F(TestTrajectoryActions, test_state_tolerances_fail) {
     point.positions[2] = 6.0;
     points.push_back(point);
 
-    sendActionGoal(points, 1, opt);
+    sendActionGoal(points, 1.0, opt);
   }
   controller_hw_thread.join();
 
@@ -527,7 +523,7 @@ TEST_F(TestTrajectoryActions, test_cancel_hold_position) {
 
   auto thread_func = [&]() {
       auto start_time = rclcpp::Clock().now();
-      rclcpp::Duration wait = rclcpp::Duration::from_seconds(2);
+      rclcpp::Duration wait = rclcpp::Duration::from_seconds(2.0);
       auto end_time = start_time + wait;
       while (rclcpp::Clock().now() < end_time) {
         test_robot->read();
@@ -551,7 +547,7 @@ TEST_F(TestTrajectoryActions, test_cancel_hold_position) {
   {
     std::vector<JointTrajectoryPoint> points;
     JointTrajectoryPoint point;
-    point.time_from_start.set__sec(1);
+    point.time_from_start = rclcpp::Duration::from_seconds(1.0);
     point.positions.resize(joint_names.size());
 
     point.positions[0] = 4.0;
@@ -560,7 +556,7 @@ TEST_F(TestTrajectoryActions, test_cancel_hold_position) {
     points.push_back(point);
 
     control_msgs::action::FollowJointTrajectory_Goal goal_msg;
-    goal_msg.goal_time_tolerance = rclcpp::Duration(2);
+    goal_msg.goal_time_tolerance = rclcpp::Duration::from_seconds(2.0);
     goal_msg.trajectory.joint_names = joint_names;
     goal_msg.trajectory.points = points;
 
