@@ -19,15 +19,16 @@
   <build_depend>geometry_msgs</build_depend>
   <build_depend>nav_msgs</build_depend>
   <build_depend>tf2_msgs</build_depend>
+  <build_depend>Boost</build_depend>
 
   <build_export_depend>controller_interface</build_export_depend>
   <build_export_depend>hardware_interface</build_export_depend>
   <build_export_depend>rclcpp</build_export_depend>
   <build_export_depend>rclcpp_lifecycle</build_export_depend>
   <build_export_depend>geometry_msgs</build_export_depend>
+
   <exec_depend>nav_msgs</exec_depend>
   <exec_depend>tf2_msgs</exec_depend>
-
   <exec_depend>controller_interface</exec_depend>
   <exec_depend>hardware_interface</exec_depend>
   <exec_depend>pluginlib</exec_depend>
@@ -35,6 +36,7 @@
   <exec_depend>rclcpp_lifecycle</exec_depend>
   <exec_depend>rcutils</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>Boost</exec_depend>
 
   <test_depend>ament_cmake_gtest</test_depend>
   <test_depend>ament_lint_auto</test_depend>

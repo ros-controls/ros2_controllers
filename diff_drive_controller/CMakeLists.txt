@@ -23,6 +23,11 @@ find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(tf2_msgs REQUIRED)
 
+set(Boost_USE_STATIC_LIBS OFF)
+set(Boost_USE_MULTITHREADED ON)
+set(Boost_USE_STATIC_RUNTIME OFF)
+find_package(Boost REQUIRED)
+
 add_library(diff_drive_controller SHARED
   src/diff_drive_controller.cpp
   src/odometry.cpp
@@ -43,6 +48,7 @@ ament_target_dependencies(diff_drive_controller
   geometry_msgs
   nav_msgs
   tf2_msgs
+  Boost
 )
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
