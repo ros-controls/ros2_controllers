@@ -69,11 +69,11 @@ protected:
 
   /// Publish trajectory msgs with multiple points
   /**
-   *  time_from_start - delay between each points
+   *  delay_btwn_points - delay between each points
    *  points - vector of trajectories. Each trajectory consists of 3 joints
    */
   void publish(
-    const builtin_interfaces::msg::Duration & time_from_start,
+    const builtin_interfaces::msg::Duration & delay_btwn_points,
     const std::vector<std::array<double, 3>> & points)
   {
     int wait_count = 0;
@@ -98,19 +98,14 @@ protected:
     traj_msg.points.resize(points.size());
 
     builtin_interfaces::msg::Duration duration_msg;
-    duration_msg.sec = time_from_start.sec;
-    duration_msg.nanosec = time_from_start.nanosec;
+    duration_msg.sec = delay_btwn_points.sec;
+    duration_msg.nanosec = delay_btwn_points.nanosec;
     rclcpp::Duration duration(duration_msg);
     rclcpp::Duration duration_total(duration_msg);
 
-    size_t index = 0;
-    for (; index < points.size(); ++index) {
-      using SecT = decltype(traj_msg.points[index].time_from_start.sec);
-      using NSecT = decltype(traj_msg.points[index].time_from_start.nanosec);
-      traj_msg.points[index].time_from_start.sec =
-        static_cast<SecT>(duration_total.nanoseconds() / 1e9);
-      traj_msg.points[index].time_from_start.nanosec =
-        static_cast<NSecT>(duration_total.nanoseconds());
+    for (size_t index = 0; index < points.size(); ++index) {
+      traj_msg.points[index].time_from_start = duration_total;
+
       traj_msg.points[index].positions.resize(3);
       traj_msg.points[index].positions[0] = points[index][0];
       traj_msg.points[index].positions[1] = points[index][1];
@@ -353,9 +348,10 @@ TEST_F(TestTrajectoryController, cleanup) {
   test_robot->write();
 
   // shouild be home pose again
-  EXPECT_EQ(1.1, test_robot->pos1);
-  EXPECT_EQ(2.2, test_robot->pos2);
-  EXPECT_EQ(3.3, test_robot->pos3);
+  double threshold = 0.001;
+  EXPECT_NEAR(1.1, test_robot->pos1, threshold);
+  EXPECT_NEAR(2.2, test_robot->pos2, threshold);
+  EXPECT_NEAR(3.3, test_robot->pos3, threshold);
 
   executor.cancel();
 }
@@ -412,30 +408,40 @@ TEST_F(TestTrajectoryController, correct_initialization_using_parameters) {
   // wait for msg is be published to the system
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
+  // first update
+  traj_controller->update();
+  test_robot->write();
+
+  // wait so controller process the second point when deactivated
+  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
   traj_controller->update();
   test_robot->write();
 
   // deactivated
-  // wait so controller process the second point when deactivated
-  std::this_thread::sleep_for(std::chrono::milliseconds(500));
   state = traj_lifecycle_node->deactivate();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
-  traj_controller->update();
-  test_robot->write();
 
-  // no change in hw position
-  EXPECT_EQ(3.3, test_robot->pos1);
-  EXPECT_EQ(4.4, test_robot->pos2);
-  EXPECT_EQ(5.5, test_robot->pos3);
+  auto allowed_delta = 0.05;
+  EXPECT_NEAR(3.3, test_robot->pos1, allowed_delta);
+  EXPECT_NEAR(4.4, test_robot->pos2, allowed_delta);
+  EXPECT_NEAR(5.5, test_robot->pos3, allowed_delta);
 
   // cleanup
   state = traj_lifecycle_node->cleanup();
+
+  // update loop receives a new msg and updates accordingly
+  traj_controller->update();
+  test_robot->write();
+
+  // check the traj_msg_home_ptr_ initialization code for the standard wait timing
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
   traj_controller->update();
   test_robot->write();
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
-  EXPECT_EQ(1.1, test_robot->pos1);
-  EXPECT_EQ(2.2, test_robot->pos2);
-  EXPECT_EQ(3.3, test_robot->pos3);
+
+  EXPECT_NEAR(1.1, test_robot->pos1, allowed_delta);
+  EXPECT_NEAR(2.2, test_robot->pos2, allowed_delta);
+  EXPECT_NEAR(3.3, test_robot->pos3, allowed_delta);
 
   state = traj_lifecycle_node->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());

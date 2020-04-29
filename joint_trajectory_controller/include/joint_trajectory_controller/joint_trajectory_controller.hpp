@@ -22,6 +22,7 @@
 #include "controller_interface/controller_interface.hpp"
 
 #include "control_msgs/msg/joint_trajectory_controller_state.hpp"
+#include "control_msgs/action/follow_joint_trajectory.hpp"
 
 #include "hardware_interface/joint_command_handle.hpp"
 #include "hardware_interface/joint_state_handle.hpp"
@@ -29,7 +30,10 @@
 #include "hardware_interface/robot_hardware.hpp"
 
 #include "joint_trajectory_controller/trajectory.hpp"
+#include "joint_trajectory_controller/tolerances.hpp"
 #include "joint_trajectory_controller/visibility_control.h"
+
+#include "rclcpp_action/rclcpp_action.hpp"
 
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
@@ -38,6 +42,7 @@
 
 #include "realtime_tools/realtime_buffer.h"
 #include "realtime_tools/realtime_publisher.h"
+#include "realtime_tools/realtime_server_goal_handle.h"
 
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
@@ -103,7 +108,6 @@ private:
   rclcpp::Subscription<trajectory_msgs::msg::JointTrajectory>::SharedPtr
     joint_command_subscriber_ = nullptr;
 
-  TrajectoryPointConstIter prev_traj_point_ptr_;
   std::shared_ptr<Trajectory> * traj_point_active_ptr_ = nullptr;
   std::shared_ptr<Trajectory> traj_external_point_ptr_ = nullptr;
   std::shared_ptr<Trajectory> traj_home_point_ptr_ = nullptr;
@@ -120,11 +124,40 @@ private:
   rclcpp::Duration state_publisher_period_ = rclcpp::Duration(RCUTILS_MS_TO_NS(20));
   rclcpp::Time last_state_publish_time_;
 
+  using FollowJTrajAction = control_msgs::action::FollowJointTrajectory;
+  using RealtimeGoalHandle = realtime_tools::RealtimeServerGoalHandle<FollowJTrajAction>;
+  using RealtimeGoalHandlePtr = std::shared_ptr<RealtimeGoalHandle>;
+
+  rclcpp_action::Server<FollowJTrajAction>::SharedPtr action_server_;
+  bool allow_partial_joints_goal_;
+  RealtimeGoalHandlePtr rt_active_goal_;     ///< Currently active action goal, if any.
+  rclcpp::TimerBase::SharedPtr goal_handle_timer_;
+  rclcpp::Duration action_monitor_period_ = rclcpp::Duration(RCUTILS_MS_TO_NS(50));
+  std::mutex trajectory_mtx_;
+
+  // callbacks for action_server_
+  rclcpp_action::GoalResponse goal_callback(
+    const rclcpp_action::GoalUUID & uuid,
+    std::shared_ptr<const FollowJTrajAction::Goal> goal);
+  rclcpp_action::CancelResponse cancel_callback(
+    const std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle);
+  void feedback_setup_callback(
+    std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle);
+
+  SegmentTolerances default_tolerances_;
+
+  void preempt_active_goal();
+  void set_hold_position();
+
   bool reset();
   void set_op_mode(const hardware_interface::OperationMode & mode);
   void halt();
 
-  void publish_state();
+  using JointTrajectoryPoint = trajectory_msgs::msg::JointTrajectoryPoint;
+  void publish_state(
+    const JointTrajectoryPoint & desired_state,
+    const JointTrajectoryPoint & current_state,
+    const JointTrajectoryPoint & state_error);
 };
 
 }  // namespace joint_trajectory_controller

@@ -11,6 +11,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 find_package(ament_cmake REQUIRED)
+find_package(angles REQUIRED)
 find_package(controller_interface REQUIRED)
 find_package(control_msgs REQUIRED)
 find_package(hardware_interface REQUIRED)
@@ -27,6 +28,7 @@ add_library(joint_trajectory_controller SHARED
 )
 target_include_directories(joint_trajectory_controller PRIVATE include)
 ament_target_dependencies(joint_trajectory_controller
+  angles
   builtin_interfaces
   controller_interface
   control_msgs
@@ -40,7 +42,8 @@ ament_target_dependencies(joint_trajectory_controller
 )
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
-target_compile_definitions(joint_trajectory_controller PRIVATE "JOINT_TRAJECTORY_CONTROLLER_BUILDING_DLL")
+target_compile_definitions(joint_trajectory_controller PRIVATE
+  "JOINT_TRAJECTORY_CONTROLLER_BUILDING_DLL" "_USE_MATH_DEFINES")
 
 pluginlib_export_plugin_description_file(controller_interface joint_trajectory_plugin.xml)
 
@@ -94,6 +97,26 @@ if(BUILD_TESTING)
   ament_target_dependencies(test_load_joint_trajectory_controller
     controller_manager
     test_robot_hardware
+  )
+
+  ament_add_gtest(
+    test_trajectory_actions
+    test/test_trajectory_actions.cpp
+  )
+  target_include_directories(test_trajectory_actions PRIVATE include)
+  target_link_libraries(test_trajectory_actions
+    joint_trajectory_controller
+  )
+  ament_target_dependencies(test_trajectory_actions
+    controller_parameter_server
+    control_msgs
+    hardware_interface
+    rclcpp
+    rclcpp_lifecycle
+    rcutils
+    test_robot_hardware
+    trajectory_msgs
+    realtime_tools
   )
 endif()
 

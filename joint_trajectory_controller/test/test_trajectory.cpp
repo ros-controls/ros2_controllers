@@ -40,7 +40,13 @@ TEST_F(TestTrajectory, initialize_trajectory) {
     empty_msg->header.stamp.nanosec = 2;
     rclcpp::Time empty_time = empty_msg->header.stamp;
     auto traj = joint_trajectory_controller::Trajectory(empty_msg);
-    EXPECT_EQ(traj.end(), traj.sample(rclcpp::Clock().now()));
+
+    trajectory_msgs::msg::JointTrajectoryPoint expected_point;
+    joint_trajectory_controller::TrajectoryPointConstIter start, end;
+    traj.sample(rclcpp::Clock().now(), expected_point, start, end);
+
+    EXPECT_EQ(traj.end(), start);
+    EXPECT_EQ(traj.end(), end);
     EXPECT_EQ(empty_time, traj.time_from_start());
   }
   {
@@ -50,7 +56,13 @@ TEST_F(TestTrajectory, initialize_trajectory) {
     auto now = rclcpp::Clock().now();
     auto traj = joint_trajectory_controller::Trajectory(empty_msg);
     auto traj_starttime = traj.time_from_start();
-    EXPECT_EQ(traj.end(), traj.sample(rclcpp::Clock().now()));
+
+    trajectory_msgs::msg::JointTrajectoryPoint expected_point;
+    joint_trajectory_controller::TrajectoryPointConstIter start, end;
+    traj.sample(rclcpp::Clock().now(), expected_point, start, end);
+
+    EXPECT_EQ(traj.end(), start);
+    EXPECT_EQ(traj.end(), end);
     auto allowed_delta = 10000ll;
     EXPECT_LT(traj.time_from_start().nanoseconds() - now.nanoseconds(), allowed_delta);
   }
@@ -62,102 +74,81 @@ TEST_F(TestTrajectory, sample_trajectory) {
   full_msg->header.stamp.nanosec = 0;
 
   trajectory_msgs::msg::JointTrajectoryPoint p1;
-  p1.positions.push_back(1.0f);
-  builtin_interfaces::msg::Duration d1;
-  d1.sec = 1;
-  d1.nanosec = 0;
-  p1.time_from_start = d1;
+  p1.positions.push_back(1.0);
+  p1.velocities.push_back(0.0);
+  p1.accelerations.push_back(0.0);
+  p1.time_from_start.sec = 1;
+  p1.time_from_start.nanosec = 0;
 
   trajectory_msgs::msg::JointTrajectoryPoint p2;
-  p2.positions.push_back(2.0f);
-  builtin_interfaces::msg::Duration d2;
-  d2.sec = 2;
-  d2.nanosec = 0;
-  p2.time_from_start = d2;
+  p2.positions.push_back(2.0);
+  p2.velocities.push_back(0.0);
+  p2.accelerations.push_back(0.0);
+  p2.time_from_start.sec = 2;
+  p2.time_from_start.nanosec = 0;
 
   trajectory_msgs::msg::JointTrajectoryPoint p3;
-  p3.positions.push_back(3.0f);
-  builtin_interfaces::msg::Duration d3;
-  d3.sec = 3;
-  d3.nanosec = 0;
-  p3.time_from_start = d3;
+  p3.positions.push_back(3.0);
+  p3.velocities.push_back(0.0);
+  p3.accelerations.push_back(0.0);
+  p3.time_from_start.sec = 3;
+  p3.time_from_start.nanosec = 0;
 
   full_msg->points.push_back(p1);
   full_msg->points.push_back(p2);
   full_msg->points.push_back(p3);
 
+  // set current state before trajectory msg was sent
   auto traj = joint_trajectory_controller::Trajectory(full_msg);
 
-  auto sample_p1 = traj.sample(rclcpp::Clock().now());
-  ASSERT_NE(traj.end(), sample_p1);
-  EXPECT_EQ(1.0f, sample_p1->positions[0]);
+  trajectory_msgs::msg::JointTrajectoryPoint current_point;
+  current_point.time_from_start.sec = 0;
+  current_point.time_from_start.nanosec = 0;
+  current_point.positions.push_back(0.0);
+  current_point.velocities.push_back(0.0);
+  current_point.accelerations.push_back(0.0);
 
-  auto sample_p11 = traj.sample(rclcpp::Clock().now());
-  ASSERT_NE(traj.end(), sample_p11);
-  EXPECT_EQ(1.0f, sample_p11->positions[0]);
+  rclcpp::Time time_now = rclcpp::Clock().now();
+  traj.set_point_before_trajectory_msg(time_now, current_point);
 
-  std::this_thread::sleep_for(1s);
+  trajectory_msgs::msg::JointTrajectoryPoint expected_state;
+  joint_trajectory_controller::TrajectoryPointConstIter start, end;
+  traj.sample(time_now, expected_state, start, end);
 
-  auto sample_p2 = traj.sample(rclcpp::Clock().now());
-  ASSERT_NE(traj.end(), sample_p1);
-  EXPECT_EQ(2.0f, sample_p2->positions[0]);
+  ASSERT_EQ(traj.begin(), start);
+  ASSERT_EQ(traj.begin(), end);
+  EXPECT_EQ(0.0, expected_state.positions[0]);
 
-  auto sample_p22 = traj.sample(rclcpp::Clock().now());
-  ASSERT_NE(traj.end(), sample_p22);
-  EXPECT_EQ(2.0f, sample_p22->positions[0]);
+  // sample before trajectory starts
+  traj.sample(time_now - rclcpp::Duration::from_seconds(0.5), expected_state, start, end);
+  ASSERT_EQ(traj.begin(), start);
+  ASSERT_EQ(traj.begin(), end);
+  EXPECT_EQ(0.0, expected_state.positions[0]);
 
-  std::this_thread::sleep_for(1s);
+  traj.sample(time_now + rclcpp::Duration::from_seconds(0.5), expected_state, start, end);
+  ASSERT_EQ(traj.begin(), start);
+  ASSERT_EQ(traj.begin(), end);
+  EXPECT_EQ(0.5, expected_state.positions[0]);
 
-  auto sample_p3 = traj.sample(rclcpp::Clock().now());
-  ASSERT_NE(traj.end(), sample_p1);
-  EXPECT_EQ(3.0f, sample_p3->positions[0]);
+  traj.sample(time_now + rclcpp::Duration::from_seconds(1.0), expected_state, start, end);
+  ASSERT_EQ(traj.begin(), start);
+  ASSERT_EQ((++traj.begin()), end);
+  EXPECT_EQ(1.0, expected_state.positions[0]);
 
-  auto sample_p33 = traj.sample(rclcpp::Clock().now());
-  ASSERT_NE(traj.end(), sample_p33);
-  EXPECT_EQ(3.0f, sample_p33->positions[0]);
+  traj.sample(time_now + rclcpp::Duration::from_seconds(1.5), expected_state, start, end);
+  ASSERT_EQ(traj.begin(), start);
+  ASSERT_EQ((++traj.begin()), end);
+  EXPECT_EQ(1.5, expected_state.positions[0]);
 
-  std::this_thread::sleep_for(1s);
+  traj.sample(time_now + rclcpp::Duration::from_seconds(2.5), expected_state, start, end);
+  EXPECT_EQ(2.5, expected_state.positions[0]);
 
-  auto sample_end = traj.sample(rclcpp::Clock().now());
-  EXPECT_EQ(traj.end(), sample_end);
+  traj.sample(time_now + rclcpp::Duration::from_seconds(3.0), expected_state, start, end);
+  EXPECT_EQ(3.0, expected_state.positions[0]);
 
-  auto sample_end_end = traj.sample(rclcpp::Clock().now());
-  EXPECT_EQ(traj.end(), sample_end_end);
-}
-
-TEST_F(TestTrajectory, future_sample_trajectory) {
-  auto full_msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
-  full_msg->header.stamp = rclcpp::Clock().now();
-  full_msg->header.stamp.sec += 2;  // extra padding
-
-  trajectory_msgs::msg::JointTrajectoryPoint p1;
-  p1.positions.push_back(1.0f);
-  builtin_interfaces::msg::Duration d1;
-  d1.sec = 1;
-  d1.nanosec = 0;
-  p1.time_from_start = d1;
-
-  trajectory_msgs::msg::JointTrajectoryPoint p2;
-  p2.positions.push_back(2.0f);
-  builtin_interfaces::msg::Duration d2;
-  d2.sec = 2;
-  d2.nanosec = 0;
-  p2.time_from_start = d2;
-
-  trajectory_msgs::msg::JointTrajectoryPoint p3;
-  p3.positions.push_back(3.0f);
-  builtin_interfaces::msg::Duration d3;
-  d3.sec = 3;
-  d3.nanosec = 0;
-  p3.time_from_start = d3;
-
-  full_msg->points.push_back(p1);
-  full_msg->points.push_back(p2);
-  full_msg->points.push_back(p3);
-
-  auto traj = joint_trajectory_controller::Trajectory(full_msg);
-
-  // sample for future point
-  auto sample_p0 = traj.sample(rclcpp::Clock().now());
-  ASSERT_EQ(traj.end(), sample_p0);
+  // sample past given points
+  traj.sample(time_now + rclcpp::Duration::from_seconds(3.125), expected_state, start, end);
+  ASSERT_EQ((--traj.end()), start);
+  ASSERT_EQ(traj.end(), end);
+  EXPECT_EQ(3.0, expected_state.positions[0]);
 }

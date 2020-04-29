@@ -17,58 +17,154 @@
 #include <memory>
 
 #include "hardware_interface/macros.hpp"
-#include "hardware_interface/utils/time_utils.hpp"
 
 #include "rclcpp/clock.hpp"
+#include "rclcpp/logging.hpp"
 
 namespace joint_trajectory_controller
 {
 
-// TODO(karsten1987): Fix to rclcpp time when API stable.
-using hardware_interface::utils::time_is_zero;
-using hardware_interface::utils::time_less_than_equal;
-using hardware_interface::utils::time_add;
-using hardware_interface::utils::time_less_than;
-
 Trajectory::Trajectory()
-: trajectory_start_time_(0)
+: trajectory_start_time_(0), time_before_traj_msg_(0)
 {}
 
-Trajectory::Trajectory(std::shared_ptr<trajectory_msgs::msg::JointTrajectory> joint_trajectory)
+Trajectory::Trajectory(
+  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> joint_trajectory)
 : trajectory_msg_(joint_trajectory),
-  trajectory_start_time_(time_is_zero(joint_trajectory->header.stamp) ?
-    rclcpp::Clock().now() :
-    static_cast<rclcpp::Time>(joint_trajectory->header.stamp))
-{}
+  trajectory_start_time_(static_cast<rclcpp::Time>(joint_trajectory->header.stamp))
+{
+}
+
+Trajectory::Trajectory(
+  const rclcpp::Time & current_time,
+  const trajectory_msgs::msg::JointTrajectoryPoint & current_point,
+  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> joint_trajectory)
+: trajectory_msg_(joint_trajectory),
+  trajectory_start_time_(static_cast<rclcpp::Time>(joint_trajectory->header.stamp))
+{
+  set_point_before_trajectory_msg(current_time, current_point);
+}
+
+void
+Trajectory::set_point_before_trajectory_msg(
+  const rclcpp::Time & current_time,
+  const trajectory_msgs::msg::JointTrajectoryPoint & current_point)
+{
+  time_before_traj_msg_ = current_time;
+  state_before_traj_msg_ = current_point;
+}
 
 void
 Trajectory::update(std::shared_ptr<trajectory_msgs::msg::JointTrajectory> joint_trajectory)
 {
   trajectory_msg_ = joint_trajectory;
-  trajectory_start_time_ = (time_is_zero(joint_trajectory->header.stamp) ?
-    rclcpp::Clock().now() :
-    static_cast<rclcpp::Time>(joint_trajectory->header.stamp));
+  trajectory_start_time_ = static_cast<rclcpp::Time>(joint_trajectory->header.stamp);
+  sampled_already_ = false;
 }
 
-TrajectoryPointConstIter
-Trajectory::sample(const rclcpp::Time & sample_time)
+bool
+Trajectory::sample(
+  const rclcpp::Time & sample_time,
+  trajectory_msgs::msg::JointTrajectoryPoint & expected_state,
+  TrajectoryPointConstIter & start_segment_itr,
+  TrajectoryPointConstIter & end_segment_itr)
 {
   THROW_ON_NULLPTR(trajectory_msg_)
 
-  // skip if current time hasn't reached traj time of the first msg yet
-  if (time_less_than(sample_time, trajectory_start_time_)) {
-    return end();
+  if (trajectory_msg_->points.empty()) {
+    start_segment_itr = end();
+    end_segment_itr = end();
+    return false;
+  }
+
+  // first sampling of this trajectory
+  if (!sampled_already_) {
+    if (trajectory_start_time_.seconds() == 0.0) {
+      trajectory_start_time_ = sample_time;
+    }
+
+    sampled_already_ = true;
+  }
+
+  auto linear_interpolation = [&](
+    const rclcpp::Time & time_a, const trajectory_msgs::msg::JointTrajectoryPoint & state_a,
+    const rclcpp::Time & time_b, const trajectory_msgs::msg::JointTrajectoryPoint & state_b,
+    const rclcpp::Time & sample_time,
+    trajectory_msgs::msg::JointTrajectoryPoint & output)
+    {
+      rclcpp::Duration duration_so_far = sample_time - time_a;
+      rclcpp::Duration duration_btwn_points = time_b - time_a;
+      double percent = duration_so_far.seconds() / duration_btwn_points.seconds();
+      percent = percent > 1.0 ? 1.0 : percent;
+      percent = percent < 0.0 ? 0.0 : percent;
+
+      output.positions.resize(state_a.positions.size());
+      for (auto i = 0ul; i < state_a.positions.size(); ++i) {
+        output.positions[i] =
+          state_a.positions[i] + percent * (state_b.positions[i] - state_a.positions[i]);
+      }
+
+      if (!state_a.velocities.empty() && !state_b.velocities.empty()) {
+        output.velocities.resize(state_b.velocities.size());
+        for (auto i = 0ul; i < state_b.velocities.size(); ++i) {
+          output.velocities[i] =
+            state_a.velocities[i] + percent * (state_b.velocities[i] - state_a.velocities[i]);
+        }
+      }
+
+      if (!state_a.accelerations.empty() && !state_b.accelerations.empty()) {
+        output.accelerations.resize(state_b.accelerations.size());
+        for (auto i = 0ul; i < state_b.accelerations.size(); ++i) {
+          output.accelerations[i] =
+            state_a.accelerations[i] + percent *
+            (state_b.accelerations[i] - state_a.accelerations[i]);
+        }
+      }
+    };
+
+  // current time hasn't reached traj time of the first msg yet
+  const auto & first_point_in_msg = trajectory_msg_->points[0];
+  rclcpp::Duration offset = first_point_in_msg.time_from_start;
+  rclcpp::Time first_point_timestamp = trajectory_start_time_ + offset;
+  if (sample_time < first_point_timestamp) {
+    rclcpp::Time t0 = time_before_traj_msg_;
+
+    linear_interpolation(
+      t0, state_before_traj_msg_, first_point_timestamp, first_point_in_msg,
+      sample_time, expected_state);
+    start_segment_itr = begin();  // no segments before the first
+    end_segment_itr = begin();
+    return true;
   }
 
   // time_from_start + trajectory time is the expected arrival time of trajectory
-  for (auto point = begin(); point != end(); ++point) {
-    auto start_time = time_add(trajectory_start_time_, point->time_from_start);
-    if (time_less_than(sample_time, start_time)) {
-      return point;
+  auto last_idx = trajectory_msg_->points.size() - 1;
+  for (auto i = 0ul; i < last_idx; ++i) {
+    auto & point = trajectory_msg_->points[i];
+    auto & next_point = trajectory_msg_->points[i + 1];
+
+    rclcpp::Duration t0_offset = point.time_from_start;
+    rclcpp::Duration t1_offset = next_point.time_from_start;
+    rclcpp::Time t0 = trajectory_start_time_ + t0_offset;
+    rclcpp::Time t1 = trajectory_start_time_ + t1_offset;
+
+    if (sample_time >= t0 && sample_time < t1) {
+      // TODO(ddengster): Find a way to add custom interpolation implementations.
+      // Likely a lambda + parameters supplied from the controller would do
+      // do simple linear interpolation for now
+      // reference: https://github.com/ros-controls/ros_controllers/blob/melodic-devel/joint_trajectory_controller/include/trajectory_interface/quintic_spline_segment.h#L84
+      linear_interpolation(t0, point, t1, next_point, sample_time, expected_state);
+      start_segment_itr = begin() + i;
+      end_segment_itr = begin() + (i + 1);
+      return true;
     }
   }
 
-  return end();
+  // whole animation has played out
+  start_segment_itr = --end();
+  end_segment_itr = end();
+  expected_state = (*start_segment_itr);
+  return true;
 }
 
 TrajectoryPointConstIter
@@ -94,7 +190,7 @@ Trajectory::time_from_start() const
 }
 
 bool
-Trajectory::is_empty() const
+Trajectory::has_trajectory_msg() const
 {
   return !trajectory_msg_;
 }
