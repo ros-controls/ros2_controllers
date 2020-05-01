@@ -17,12 +17,16 @@
 #include <string>
 #include <memory>
 
+#include "controller_interface/controller_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 
 #include "rcutils/logging_macros.h"
 
 namespace joint_state_controller
 {
+
+using controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS;
+using controller_interface::CONTROLLER_INTERFACE_RET_ERROR;
 
 JointStateController::JointStateController()
 : controller_interface::ControllerInterface()
@@ -62,11 +66,25 @@ JointStateController::on_configure(const rclcpp_lifecycle::State & previous_stat
 }
 
 controller_interface::controller_interface_ret_t
+JointStateController::init(
+  std::weak_ptr<hardware_interface::RobotHardware> robot_hardware,
+  const std::string & controller_name)
+{
+  // initialize lifecycle node
+  auto ret = ControllerInterface::init(robot_hardware, controller_name);
+  if (ret != CONTROLLER_INTERFACE_RET_SUCCESS) {
+    return ret;
+  }
+
+  return CONTROLLER_INTERFACE_RET_SUCCESS;
+}
+
+controller_interface::controller_interface_ret_t
 JointStateController::update()
 {
   if (!joint_state_publisher_->is_activated()) {
     RCUTILS_LOG_WARN_ONCE_NAMED("publisher", "joint state publisher is not activated");
-    return hardware_interface::HW_RET_ERROR;
+    return CONTROLLER_INTERFACE_RET_ERROR;
   }
 
   joint_state_msg_.header.stamp = rclcpp::Clock().now();
@@ -80,7 +98,7 @@ JointStateController::update()
 
   // publish
   joint_state_publisher_->publish(joint_state_msg_);
-  return hardware_interface::HW_RET_OK;
+  return CONTROLLER_INTERFACE_RET_SUCCESS;
 }
 
 }  // namespace joint_state_controller

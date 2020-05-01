@@ -38,6 +38,12 @@ public:
 
   JOINT_STATE_CONTROLLER_PUBLIC
   controller_interface::controller_interface_ret_t
+  init(
+    std::weak_ptr<hardware_interface::RobotHardware> robot_hardware,
+    const std::string & controller_name) override;
+
+  JOINT_STATE_CONTROLLER_PUBLIC
+  controller_interface::controller_interface_ret_t
   update() override;
 
   JOINT_STATE_CONTROLLER_PUBLIC
