@@ -552,6 +552,17 @@ rclcpp_action::GoalResponse JointTrajectoryController::goal_callback(
         "Joints on incoming goal don't match the controller joints.");
       return rclcpp_action::GoalResponse::REJECT;
     }
+    
+    std::vector<unsigned int> mapping_vector = mapping(goal->trajectory.joint_names, joint_names_);
+    if (mapping_vector.empty())
+    {
+      RCLCPP_ERROR(
+        lifecycle_node_->get_logger(),
+        "Joints on incoming goal don't match the controller joints.");
+      return rclcpp_action::GoalResponse::REJECT;
+    }
+    
+    goal->trajectory.joint_names.size() != joint_names_.size();
   }
 
   RCLCPP_INFO(lifecycle_node_->get_logger(), "Accepted new action goal");
@@ -593,6 +604,38 @@ void JointTrajectoryController::feedback_setup_callback(
     preempt_active_goal();
     auto traj_msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>(
       goal_handle->get_goal()->trajectory);
+    
+    // rearrange all points in the trajectory message based on mapping
+    std::vector<unsigned int> mapping_vector = mapping(traj_msg->joint_names, joint_names_);
+    auto remap = [](const std::vector<double>& to_remap, const std::vector<unsigned int>& mapping)
+      -> std::vector<double>
+    {
+      if (to_remap.size() != mapping.size())
+        return to_remap;
+      std::vector<double> output;
+      output.resize(mapping.size(), 0.0);
+      for (auto index = 0ul; index<mapping.size(); ++index)
+      {
+        unsigned int map_index = mapping[index];
+        output[map_index] = to_remap[index];
+      }
+      return output;
+    };
+    for (auto index = 0ul; index < traj_msg->points.size(); ++index)
+    {
+      traj_msg->points[index].positions =
+        remap(traj_msg->points[index].positions, mapping_vector);
+
+      traj_msg->points[index].velocities =
+        remap(traj_msg->points[index].velocities, mapping_vector);
+
+      traj_msg->points[index].accelerations =
+        remap(traj_msg->points[index].accelerations, mapping_vector);
+
+      traj_msg->points[index].effort =
+        remap(traj_msg->points[index].effort, mapping_vector);
+    }
+
     traj_external_point_ptr_->update(traj_msg);
 
     RealtimeGoalHandlePtr rt_goal = std::make_shared<RealtimeGoalHandle>(goal_handle);
