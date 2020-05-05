@@ -70,6 +70,16 @@ JointStateController::on_activate(const rclcpp_lifecycle::State & previous_state
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+JointStateController::on_deactivate(const rclcpp_lifecycle::State & previous_state)
+{
+  (void) previous_state;
+
+  joint_state_publisher_->on_deactivate();
+
+  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+}
+
 controller_interface::controller_interface_ret_t
 JointStateController::update()
 {
