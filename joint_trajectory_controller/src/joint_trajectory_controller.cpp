@@ -220,7 +220,6 @@ JointTrajectoryController::update()
       }
     }
 
-    prev_traj_point_ptr_ = traj_point_ptr;
     set_op_mode(hardware_interface::OperationMode::ACTIVE);
   }
   else
@@ -629,8 +628,6 @@ rclcpp_action::GoalResponse JointTrajectoryController::goal_callback(
         "Joints on incoming goal don't match the controller joints.");
       return rclcpp_action::GoalResponse::REJECT;
     }
-    
-    goal->trajectory.joint_names.size() != joint_names_.size();
   }
 
   RCLCPP_INFO(lifecycle_node_->get_logger(), "Accepted new action goal");
