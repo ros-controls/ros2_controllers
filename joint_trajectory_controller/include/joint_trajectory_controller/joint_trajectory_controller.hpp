@@ -143,6 +143,7 @@ private:
     const std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle);
   void feedback_setup_callback(
     std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle);
+  void remap_msg_trajectories(std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg);
 
   SegmentTolerances default_tolerances_;
 

@@ -322,6 +322,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
       // http://wiki.ros.org/joint_trajectory_controller/UnderstandingTrajectoryReplacement
       // always replace old msg with new one for now
       if (subscriber_is_active_) {
+        remap_msg_trajectories(msg);
         traj_external_point_ptr_->update(msg);
       }
     };
@@ -561,8 +562,6 @@ rclcpp_action::GoalResponse JointTrajectoryController::goal_callback(
         "Joints on incoming goal don't match the controller joints.");
       return rclcpp_action::GoalResponse::REJECT;
     }
-    
-    goal->trajectory.joint_names.size() != joint_names_.size();
   }
 
   RCLCPP_INFO(lifecycle_node_->get_logger(), "Accepted new action goal");
@@ -604,38 +603,7 @@ void JointTrajectoryController::feedback_setup_callback(
     preempt_active_goal();
     auto traj_msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>(
       goal_handle->get_goal()->trajectory);
-    
-    // rearrange all points in the trajectory message based on mapping
-    std::vector<unsigned int> mapping_vector = mapping(traj_msg->joint_names, joint_names_);
-    auto remap = [](const std::vector<double>& to_remap, const std::vector<unsigned int>& mapping)
-      -> std::vector<double>
-    {
-      if (to_remap.size() != mapping.size())
-        return to_remap;
-      std::vector<double> output;
-      output.resize(mapping.size(), 0.0);
-      for (auto index = 0ul; index<mapping.size(); ++index)
-      {
-        unsigned int map_index = mapping[index];
-        output[map_index] = to_remap[index];
-      }
-      return output;
-    };
-    for (auto index = 0ul; index < traj_msg->points.size(); ++index)
-    {
-      traj_msg->points[index].positions =
-        remap(traj_msg->points[index].positions, mapping_vector);
-
-      traj_msg->points[index].velocities =
-        remap(traj_msg->points[index].velocities, mapping_vector);
-
-      traj_msg->points[index].accelerations =
-        remap(traj_msg->points[index].accelerations, mapping_vector);
-
-      traj_msg->points[index].effort =
-        remap(traj_msg->points[index].effort, mapping_vector);
-    }
-
+    remap_msg_trajectories(traj_msg);
     traj_external_point_ptr_->update(traj_msg);
 
     RealtimeGoalHandlePtr rt_goal = std::make_shared<RealtimeGoalHandle>(goal_handle);
@@ -648,6 +616,41 @@ void JointTrajectoryController::feedback_setup_callback(
   goal_handle_timer_ = lifecycle_node_->create_wall_timer(
     action_monitor_period_.to_chrono<std::chrono::seconds>(),
     std::bind(&RealtimeGoalHandle::runNonRealtime, rt_active_goal_));
+}
+
+void JointTrajectoryController::remap_msg_trajectories(std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg)
+{
+  // rearrange all points in the trajectory message based on mapping
+  std::vector<unsigned int> mapping_vector = mapping(trajectory_msg->joint_names, joint_names_);
+  auto remap = [](const std::vector<double>& to_remap, const std::vector<unsigned int>& mapping)
+    -> std::vector<double>
+  {
+    if (to_remap.size() != mapping.size())
+      return to_remap;
+    std::vector<double> output;
+    output.resize(mapping.size(), 0.0);
+    for (auto index = 0ul; index<mapping.size(); ++index)
+    {
+      unsigned int map_index = mapping[index];
+      output[map_index] = to_remap[index];
+    }
+    return output;
+  };
+
+  for (auto index = 0ul; index < trajectory_msg->points.size(); ++index)
+  {
+    trajectory_msg->points[index].positions =
+      remap(trajectory_msg->points[index].positions, mapping_vector);
+
+    trajectory_msg->points[index].velocities =
+      remap(trajectory_msg->points[index].velocities, mapping_vector);
+
+    trajectory_msg->points[index].accelerations =
+      remap(trajectory_msg->points[index].accelerations, mapping_vector);
+
+    trajectory_msg->points[index].effort =
+      remap(trajectory_msg->points[index].effort, mapping_vector);
+  }
 }
 
 void JointTrajectoryController::preempt_active_goal()
