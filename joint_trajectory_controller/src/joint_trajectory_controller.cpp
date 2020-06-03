@@ -553,10 +553,9 @@ rclcpp_action::GoalResponse JointTrajectoryController::goal_callback(
         "Joints on incoming goal don't match the controller joints.");
       return rclcpp_action::GoalResponse::REJECT;
     }
-    
+
     std::vector<unsigned int> mapping_vector = mapping(goal->trajectory.joint_names, joint_names_);
-    if (mapping_vector.empty())
-    {
+    if (mapping_vector.empty()) {
       RCLCPP_ERROR(
         lifecycle_node_->get_logger(),
         "Joints on incoming goal don't match the controller joints.");
@@ -618,27 +617,27 @@ void JointTrajectoryController::feedback_setup_callback(
     std::bind(&RealtimeGoalHandle::runNonRealtime, rt_active_goal_));
 }
 
-void JointTrajectoryController::remap_msg_trajectories(std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg)
+void JointTrajectoryController::remap_msg_trajectories(
+  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg)
 {
   // rearrange all points in the trajectory message based on mapping
   std::vector<unsigned int> mapping_vector = mapping(trajectory_msg->joint_names, joint_names_);
-  auto remap = [](const std::vector<double>& to_remap, const std::vector<unsigned int>& mapping)
+  auto remap = [](const std::vector<double> & to_remap, const std::vector<unsigned int> & mapping)
     -> std::vector<double>
-  {
-    if (to_remap.size() != mapping.size())
-      return to_remap;
-    std::vector<double> output;
-    output.resize(mapping.size(), 0.0);
-    for (auto index = 0ul; index<mapping.size(); ++index)
     {
-      unsigned int map_index = mapping[index];
-      output[map_index] = to_remap[index];
-    }
-    return output;
-  };
+      if (to_remap.size() != mapping.size()) {
+        return to_remap;
+      }
+      std::vector<double> output;
+      output.resize(mapping.size(), 0.0);
+      for (auto index = 0ul; index < mapping.size(); ++index) {
+        unsigned int map_index = mapping[index];
+        output[map_index] = to_remap[index];
+      }
+      return output;
+    };
 
-  for (auto index = 0ul; index < trajectory_msg->points.size(); ++index)
-  {
+  for (auto index = 0ul; index < trajectory_msg->points.size(); ++index) {
     trajectory_msg->points[index].positions =
       remap(trajectory_msg->points[index].positions, mapping_vector);
 

@@ -126,21 +126,18 @@ private:
  * If \p t1 is <tt>"{C, B}"</tt> and \p t2 is <tt>"{A, B, C, D}"</tt>, the associated mapping vector is
  * <tt>"{2, 1}"</tt>.
  */
-template <class T>
-inline std::vector<unsigned int> mapping(const T& t1, const T& t2)
+template<class T>
+inline std::vector<unsigned int> mapping(const T & t1, const T & t2)
 {
   typedef unsigned int SizeType;
 
   // t1 must be a subset of t2
   if (t1.size() > t2.size()) {return std::vector<SizeType>();}
 
-  std::vector<SizeType> mapping_vector(t1.size()); // Return value
-  for (typename T::const_iterator t1_it = t1.begin(); t1_it != t1.end(); ++t1_it)
-  {
+  std::vector<SizeType> mapping_vector(t1.size());  // Return value
+  for (typename T::const_iterator t1_it = t1.begin(); t1_it != t1.end(); ++t1_it) {
     typename T::const_iterator t2_it = std::find(t2.begin(), t2.end(), *t1_it);
-    if (t2.end() == t2_it) {return std::vector<SizeType>();}
-    else
-    {
+    if (t2.end() == t2_it) {return std::vector<SizeType>();} else {
       const SizeType t1_dist = std::distance(t1.begin(), t1_it);
       const SizeType t2_dist = std::distance(t2.begin(), t2_it);
       mapping_vector[t1_dist] = t2_dist;
