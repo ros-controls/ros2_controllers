@@ -12,21 +12,15 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <build_depend>controller_interface</build_depend>
   <build_depend>pluginlib</build_depend>
-  <build_depend>rclcpp_lifecycle</build_depend>
   <build_depend>rcutils</build_depend>
-  <build_depend>sensor_msgs</build_depend>
 
-  <build_export_depend>controller_interface</build_export_depend>
-  <build_export_depend>rclcpp_lifecycle</build_export_depend>
-  <build_export_depend>sensor_msgs</build_export_depend>
-
-  <exec_depend>controller_interface</exec_depend>
   <exec_depend>pluginlib</exec_depend>
-  <exec_depend>rclcpp_lifecycle</exec_depend>
   <exec_depend>rcutils</exec_depend>
-  <exec_depend>sensor_msgs</exec_depend>
+
+  <depend>controller_interface</depend>
+  <depend>rclcpp_lifecycle</depend>
+  <depend>sensor_msgs</depend>
 
   <test_depend>ament_cmake_gtest</test_depend>
   <test_depend>ament_lint_auto</test_depend>
