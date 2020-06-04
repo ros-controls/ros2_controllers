@@ -15,7 +15,7 @@ jobs:
       fail-fast: false
     steps:
       - uses: ros-tooling/setup-ros@0.0.15
-      - uses: ros-tooling/action-ros-ci@master
+      - uses: ros-tooling/action-ros-ci@0.0.16
         with:
           package-name: |
             joint_state_controller
