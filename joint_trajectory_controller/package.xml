@@ -13,31 +13,21 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <build_depend>angles</build_depend>
-  <build_depend>controller_interface</build_depend>
-  <build_depend>control_msgs</build_depend>
-  <build_depend>hardware_interface</build_depend>
   <build_depend>pluginlib</build_depend>
-  <build_depend>rclcpp</build_depend>
-  <build_depend>rclcpp_lifecycle</build_depend>
   <build_depend>rcutils</build_depend>
   <build_depend>realtime_tools</build_depend>
-  <build_depend>trajectory_msgs</build_depend>
 
-  <build_export_depend>controller_interface</build_export_depend>
-  <build_export_depend>control_msgs</build_export_depend>
-  <build_export_depend>hardware_interface</build_export_depend>
-  <build_export_depend>rclcpp</build_export_depend>
-  <build_export_depend>rclcpp_lifecycle</build_export_depend>
-  <build_export_depend>trajectory_msgs</build_export_depend>
-
-  <exec_depend>controller_interface</exec_depend>
-  <exec_depend>control_msgs</exec_depend>
-  <exec_depend>hardware_interface</exec_depend>
+  <exec_depend>angles</exec_depend>
   <exec_depend>pluginlib</exec_depend>
-  <exec_depend>rclcpp</exec_depend>
-  <exec_depend>rclcpp_lifecycle</exec_depend>
   <exec_depend>rcutils</exec_depend>
-  <exec_depend>trajectory_msgs</exec_depend>
+  <exec_depend>realtime_tools</exec_depend>
+
+  <depend>controller_interface</depend>
+  <depend>control_msgs</depend>
+  <depend>hardware_interface</depend>
+  <depend>rclcpp</depend>
+  <depend>rclcpp_lifecycle</depend>
+  <depend>trajectory_msgs</depend>
 
   <test_depend>ament_cmake_gtest</test_depend>
   <test_depend>ament_lint_auto</test_depend>
