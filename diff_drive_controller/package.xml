@@ -11,6 +11,7 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>controller_interface</depend>
+  <depend>control_msgs</depend>
   <depend>geometry_msgs</depend>
   <depend>hardware_interface</depend>
   <depend>nav_msgs</depend>
@@ -19,6 +20,7 @@
   <depend>realtime_tools</depend>
   <depend>tf2</depend>
   <depend>tf2_msgs</depend>
+  <depend>urdf</depend>
 
   <build_depend>pluginlib</build_depend>
 
@@ -27,6 +29,7 @@
   <test_depend>ament_lint_common</test_depend>
   <test_depend>controller_manager</test_depend>
   <test_depend>test_robot_hardware</test_depend>
+  <test_depend>xacro</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

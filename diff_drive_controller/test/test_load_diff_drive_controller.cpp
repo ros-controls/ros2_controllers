@@ -1,4 +1,4 @@
-// Copyright 2020 PAL Robotics SL.
+// Copyright 2020 PAL Robotics S.L.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ TEST(TestLoadDiffDriveController, load_controller)
 
   robot->init();
 
-  std::shared_ptr<rclcpp::Executor> executor =
+  std::shared_ptr<rclcpp::executors::SingleThreadedExecutor> executor =
     std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
 
   controller_manager::ControllerManager cm(robot, executor, "test_controller_manager");

@@ -27,6 +27,7 @@
 #include <vector>
 
 #include "controller_interface/controller_interface.hpp"
+#include "control_msgs/msg/joint_trajectory_controller_state.hpp"
 #include "diff_drive_controller/odometry.hpp"
 #include "diff_drive_controller/speed_limiter.hpp"
 #include "diff_drive_controller/visibility_control.h"
@@ -106,6 +107,18 @@ protected:
     std::vector<WheelHandle> & registered_handles,
     hardware_interface::RobotHardware & robot_hardware);
 
+  /**
+   * \brief Set wheel configuration using urdf passed via ROS parameter
+   * \param left_wheel_name Name of left wheel joint
+   * \param right_wheel_name Name of right wheel joint
+   * \param lookup_wheel_separation Flag for looking up wheel separation
+   * \param lookup_wheel_radius Flag for looking up wheel radius
+   * \return true if lookup was successful
+   */
+  bool set_odom_params_from_urdf(
+    const std::string & left_wheel_name, const std::string & right_wheel_name,
+    bool lookup_wheel_separation, bool lookup_wheel_radius);
+
   std::vector<std::string> left_wheel_names_;
   std::vector<std::string> right_wheel_names_;
 
@@ -153,23 +166,52 @@ protected:
   bool subscriber_is_active_ = false;
   rclcpp::Subscription<Twist>::SharedPtr velocity_command_subscriber_ = nullptr;
 
-  std::shared_ptr<Twist> received_velocity_msg_ptr_ = nullptr;
+  /// Velocity command related:
+  struct Commands
+  {
+    double lin;
+    double ang;
+    rclcpp::Time stamp;
 
-  std::queue<Twist> previous_commands_;  // last two commands
+    Commands() : lin(0.0), ang(0.0), stamp{0L, rcl_clock_type_t::RCL_ROS_TIME} {}
+  };
+  realtime_tools::RealtimeBuffer<Commands> command_;
+  Commands command_struct_;
+  Commands last0_cmd_; // Previous command
+  Commands last1_cmd_; // Previous previous command
 
   // speed limiters
   SpeedLimiter limiter_linear_;
   SpeedLimiter limiter_angular_;
 
+  /// Previous velocities from the encoders:
+  std::vector<double> vel_left_previous_;
+  std::vector<double> vel_right_previous_;
+
+  /// Previous velocities from the encoders:
+  double vel_left_desired_previous_;
+  double vel_right_desired_previous_;
+
+  bool allow_multiple_cmd_vel_publishers_ = true;
   bool publish_limited_velocity_ = false;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<Twist>> limited_velocity_publisher_ =
     nullptr;
   std::shared_ptr<realtime_tools::RealtimePublisher<Twist>>
   realtime_limited_velocity_publisher_ = nullptr;
 
+  bool publish_wheel_joint_controller_state_ = false;
+  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<control_msgs::msg::JointTrajectoryControllerState>>
+  wheel_joint_controller_state_publisher_ = nullptr;
+  std::shared_ptr<realtime_tools::RealtimePublisher<control_msgs::msg::JointTrajectoryControllerState>>
+  realtime_wheel_joint_controller_state_publisher_ = nullptr;
+
   rclcpp::Time previous_update_timestamp_{0};
 
   bool is_halted = false;
+
+  void publish_wheel_data(
+    const rclcpp::Time & time, const rclcpp::Duration & period, const Commands & curr_cmd,
+    double wheel_separation, double left_wheel_radius, double right_wheel_radius);
 
   bool reset();
   void set_op_mode(const hardware_interface::OperationMode & mode);

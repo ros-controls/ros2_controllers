@@ -32,11 +32,6 @@ class TestableDiffDriveController : public diff_drive_controller::DiffDriveContr
 {
 public:
   using DiffDriveController::DiffDriveController;
-  std::shared_ptr<geometry_msgs::msg::TwistStamped> getLastReceivedTwist() const
-  {
-    return received_velocity_msg_ptr_;
-  }
-
   /**
   * @brief wait_for_twist block until a new twist is received.
   * Requires that the executor is not spinned elsewhere between the
@@ -178,6 +173,12 @@ TEST_F(TestDiffDriveController, correct_initialization)
   auto ret = diff_drive_controller->init(initialized_robot, controller_name);
   ASSERT_EQ(ret, controller_interface::return_type::SUCCESS);
 
+  auto diff_drive_lifecycle_node = diff_drive_controller->get_lifecycle_node();
+  rclcpp::Parameter wheel_radius("wheel_radius", 1.0);
+  diff_drive_lifecycle_node->set_parameter(wheel_radius);
+  rclcpp::Parameter wheel_separation("wheel_separation", 1.0);
+  diff_drive_lifecycle_node->set_parameter(wheel_separation);
+
   auto inactive_state = diff_drive_controller->get_lifecycle_node()->configure();
   EXPECT_EQ(State::PRIMARY_STATE_INACTIVE, inactive_state.id());
   EXPECT_EQ(1.1, initialized_robot->pos1);
@@ -196,6 +197,12 @@ TEST_F(TestDiffDriveController, configuration)
       test_robot,
       controller_name),
     controller_interface::return_type::SUCCESS);
+
+  auto diff_drive_lifecycle_node = diff_drive_controller->get_lifecycle_node();
+  rclcpp::Parameter wheel_radius("wheel_radius", 1.0);
+  diff_drive_lifecycle_node->set_parameter(wheel_radius);
+  rclcpp::Parameter wheel_separation("wheel_separation", 1.0);
+  diff_drive_lifecycle_node->set_parameter(wheel_separation);
 
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(diff_drive_controller->get_lifecycle_node()->get_node_base_interface());

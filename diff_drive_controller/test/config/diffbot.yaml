@@ -1,0 +1,9 @@
+diffbot_controller:  # Name of DiffDriveController node
+  ros__parameters:
+    left_wheel_names: ["wheel_0_joint"]
+    right_wheel_names: ["wheel_1_joint"]
+    write_op_modes: ["op_status"]
+
+    pose_covariance_diagonal: [0.001, 0.001, 1000000.0, 1000000.0, 1000000.0, 1000.0]
+    twist_covariance_diagonal: [0.001, 0.001, 1000000.0, 1000000.0, 1000000.0, 1000.0]
+    cmd_vel_timeout: 20000   # in ms
