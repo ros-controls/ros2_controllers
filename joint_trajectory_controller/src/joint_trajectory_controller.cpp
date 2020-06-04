@@ -322,7 +322,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
       // http://wiki.ros.org/joint_trajectory_controller/UnderstandingTrajectoryReplacement
       // always replace old msg with new one for now
       if (subscriber_is_active_) {
-        remap_msg_trajectories(msg);
+        sort_to_local_joint_order(msg);
         traj_external_point_ptr_->update(msg);
       }
     };
@@ -554,7 +554,7 @@ rclcpp_action::GoalResponse JointTrajectoryController::goal_callback(
       return rclcpp_action::GoalResponse::REJECT;
     }
 
-    std::vector<unsigned int> mapping_vector = mapping(goal->trajectory.joint_names, joint_names_);
+    std::vector<size_t> mapping_vector = mapping(goal->trajectory.joint_names, joint_names_);
     if (mapping_vector.empty()) {
       RCLCPP_ERROR(
         lifecycle_node_->get_logger(),
@@ -602,7 +602,7 @@ void JointTrajectoryController::feedback_setup_callback(
     preempt_active_goal();
     auto traj_msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>(
       goal_handle->get_goal()->trajectory);
-    remap_msg_trajectories(traj_msg);
+    sort_to_local_joint_order(traj_msg);
     traj_external_point_ptr_->update(traj_msg);
 
     RealtimeGoalHandlePtr rt_goal = std::make_shared<RealtimeGoalHandle>(goal_handle);
@@ -617,12 +617,12 @@ void JointTrajectoryController::feedback_setup_callback(
     std::bind(&RealtimeGoalHandle::runNonRealtime, rt_active_goal_));
 }
 
-void JointTrajectoryController::remap_msg_trajectories(
+void JointTrajectoryController::sort_to_local_joint_order(
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg)
 {
   // rearrange all points in the trajectory message based on mapping
-  std::vector<unsigned int> mapping_vector = mapping(trajectory_msg->joint_names, joint_names_);
-  auto remap = [](const std::vector<double> & to_remap, const std::vector<unsigned int> & mapping)
+  std::vector<size_t> mapping_vector = mapping(trajectory_msg->joint_names, joint_names_);
+  auto remap = [](const std::vector<double> & to_remap, const std::vector<size_t> & mapping)
     -> std::vector<double>
     {
       if (to_remap.size() != mapping.size()) {
