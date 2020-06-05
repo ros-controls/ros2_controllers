@@ -124,10 +124,10 @@ Trajectory::sample(
 
   // current time hasn't reached traj time of the first msg yet
   const auto & first_point_in_msg = trajectory_msg_->points[0];
-  rclcpp::Duration offset = first_point_in_msg.time_from_start;
-  rclcpp::Time first_point_timestamp = trajectory_start_time_ + offset;
+  const rclcpp::Duration offset = first_point_in_msg.time_from_start;
+  const rclcpp::Time first_point_timestamp = trajectory_start_time_ + offset;
   if (sample_time < first_point_timestamp) {
-    rclcpp::Time t0 = time_before_traj_msg_;
+    const rclcpp::Time t0 = time_before_traj_msg_;
 
     linear_interpolation(
       t0, state_before_traj_msg_, first_point_timestamp, first_point_in_msg,
@@ -138,15 +138,15 @@ Trajectory::sample(
   }
 
   // time_from_start + trajectory time is the expected arrival time of trajectory
-  auto last_idx = trajectory_msg_->points.size() - 1;
+  const auto last_idx = trajectory_msg_->points.size() - 1;
   for (auto i = 0ul; i < last_idx; ++i) {
-    auto & point = trajectory_msg_->points[i];
-    auto & next_point = trajectory_msg_->points[i + 1];
+    const auto & point = trajectory_msg_->points[i];
+    const auto & next_point = trajectory_msg_->points[i + 1];
 
-    rclcpp::Duration t0_offset = point.time_from_start;
-    rclcpp::Duration t1_offset = next_point.time_from_start;
-    rclcpp::Time t0 = trajectory_start_time_ + t0_offset;
-    rclcpp::Time t1 = trajectory_start_time_ + t1_offset;
+    const rclcpp::Duration t0_offset = point.time_from_start;
+    const rclcpp::Duration t1_offset = next_point.time_from_start;
+    const rclcpp::Time t0 = trajectory_start_time_ + t0_offset;
+    const rclcpp::Time t1 = trajectory_start_time_ + t1_offset;
 
     if (sample_time >= t0 && sample_time < t1) {
       // TODO(ddengster): Find a way to add custom interpolation implementations.
