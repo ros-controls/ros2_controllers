@@ -11,20 +11,45 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include <stddef.h>
 
 #include <array>
+#include <chrono>
+#include <future>
 #include <memory>
+#include <stdexcept>
 #include <string>
+#include <system_error>
 #include <thread>
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "hardware_interface/robot_hardware.hpp"
+
+#include "builtin_interfaces/msg/duration.hpp"
+#include "builtin_interfaces/msg/time.hpp"
+#include "control_msgs/msg/detail/joint_trajectory_controller_state__struct.hpp"
+#include "controller_interface/controller_interface.hpp"
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
-#include "rclcpp/rclcpp.hpp"
-#include "rcutils/get_env.h"
+#include "rclcpp/clock.hpp"
+#include "rclcpp/duration.hpp"
+#include "rclcpp/executors/multi_threaded_executor.hpp"
+#include "rclcpp/executors/single_threaded_executor.hpp"
+#include "rclcpp/node.hpp"
+#include "rclcpp/parameter.hpp"
+#include "rclcpp/publisher.hpp"
+#include "rclcpp/qos.hpp"
+#include "rclcpp/qos_event.hpp"
+#include "rclcpp/subscription.hpp"
+#include "rclcpp/time.hpp"
+#include "rclcpp/utilities.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "rclcpp_lifecycle/state.hpp"
+#include "std_msgs/msg/header.hpp"
 #include "test_robot_hardware/test_robot_hardware.hpp"
+#include "trajectory_msgs/msg/joint_trajectory.hpp"
+#include "trajectory_msgs/msg/joint_trajectory_point.hpp"
+
 
 using lifecycle_msgs::msg::State;
 

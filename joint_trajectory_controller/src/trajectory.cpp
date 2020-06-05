@@ -14,13 +14,13 @@
 
 #include "joint_trajectory_controller/trajectory.hpp"
 
+
 #include <memory>
 
 #include "hardware_interface/macros.hpp"
-
-#include "rclcpp/clock.hpp"
-#include "rclcpp/logging.hpp"
-
+#include "rclcpp/duration.hpp"
+#include "rclcpp/time.hpp"
+#include "std_msgs/msg/header.hpp"
 namespace joint_trajectory_controller
 {
 

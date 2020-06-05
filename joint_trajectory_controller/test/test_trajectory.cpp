@@ -14,12 +14,19 @@
 
 #include <chrono>
 #include <memory>
-#include <thread>
-#include <utility>
+#include <vector>
 
 #include "gtest/gtest.h"
+
+#include "builtin_interfaces/msg/duration.hpp"
+#include "builtin_interfaces/msg/time.hpp"
 #include "joint_trajectory_controller/trajectory.hpp"
 #include "rclcpp/clock.hpp"
+#include "rclcpp/duration.hpp"
+#include "rclcpp/time.hpp"
+#include "std_msgs/msg/header.hpp"
+#include "trajectory_msgs/msg/joint_trajectory.hpp"
+#include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
 using namespace std::chrono_literals;
 

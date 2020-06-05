@@ -14,26 +14,36 @@
 
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
 
-#include <cassert>
+
+#include <stddef.h>
 #include <chrono>
-#include <iterator>
-#include <string>
+#include <functional>
 #include <memory>
+#include <ostream>
+#include <ratio>
+#include <string>
 #include <vector>
 
 #include "angles/angles.h"
-
+#include "builtin_interfaces/msg/duration.hpp"
 #include "builtin_interfaces/msg/time.hpp"
-
+#include "hardware_interface/joint_command_handle.hpp"
+#include "hardware_interface/joint_state_handle.hpp"
+#include "hardware_interface/robot_hardware.hpp"
+#include "hardware_interface/types/hardware_interface_return_values.hpp"
+#include "joint_trajectory_controller/trajectory.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
-
+#include "rclcpp/logging.hpp"
+#include "rclcpp/parameter.hpp"
+#include "rclcpp/qos.hpp"
+#include "rclcpp/qos_event.hpp"
 #include "rclcpp/time.hpp"
+#include "rclcpp_action/create_server.hpp"
+#include "rclcpp_action/server_goal_handle.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
-
-#include "rcutils/logging_macros.h"
-
-#include "trajectory_msgs/msg/joint_trajectory.hpp"
-#include "trajectory_msgs/msg/joint_trajectory_point.hpp"
+#include "std_msgs/msg/header.hpp"
 
 namespace joint_trajectory_controller
 {

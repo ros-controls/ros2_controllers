@@ -15,40 +15,52 @@
 #ifndef JOINT_TRAJECTORY_CONTROLLER__JOINT_TRAJECTORY_CONTROLLER_HPP_
 #define JOINT_TRAJECTORY_CONTROLLER__JOINT_TRAJECTORY_CONTROLLER_HPP_
 
-#include <memory>
-#include <string>
-#include <vector>
 
-#include "controller_interface/controller_interface.hpp"
+#include <memory>
+#include <mutex>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "control_msgs/msg/joint_trajectory_controller_state.hpp"
 #include "control_msgs/action/follow_joint_trajectory.hpp"
-
-#include "hardware_interface/joint_command_handle.hpp"
-#include "hardware_interface/joint_state_handle.hpp"
+#include "controller_interface/controller_interface.hpp"
 #include "hardware_interface/operation_mode_handle.hpp"
-#include "hardware_interface/robot_hardware.hpp"
-
-#include "joint_trajectory_controller/trajectory.hpp"
 #include "joint_trajectory_controller/tolerances.hpp"
 #include "joint_trajectory_controller/visibility_control.h"
-
-#include "rclcpp_action/rclcpp_action.hpp"
-
+#include "rclcpp/duration.hpp"
+#include "rclcpp/subscription.hpp"
+#include "rclcpp/time.hpp"
+#include "rclcpp/timer.hpp"
+#include "rclcpp_action/server.hpp"
+#include "rclcpp_action/types.hpp"
+#include "rclcpp_lifecycle/lifecycle_publisher.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
-#include "rclcpp_lifecycle/state.hpp"
-
 #include "rcutils/time.h"
-
-#include "realtime_tools/realtime_buffer.h"
 #include "realtime_tools/realtime_publisher.h"
 #include "realtime_tools/realtime_server_goal_handle.h"
-
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
+namespace hardware_interface
+{
+class JointCommandHandle;
+class JointStateHandle;
+class RobotHardware;
+}  // namespace hardware_interface
+namespace rclcpp_action
+{
+template<typename ActionT>
+class ServerGoalHandle;
+}  // namespace rclcpp_action
+namespace rclcpp_lifecycle
+{
+class State;
+}  // namespace rclcpp_lifecycle
+
 namespace joint_trajectory_controller
 {
+class Trajectory;
 
 class JointTrajectoryController : public controller_interface::ControllerInterface
 {

@@ -16,10 +16,10 @@
 #include <memory>
 
 #include "controller_manager/controller_manager.hpp"
-
-#include "test_robot_hardware/test_robot_hardware.hpp"
-
+#include "rclcpp/executor.hpp"
+#include "rclcpp/executors/single_threaded_executor.hpp"
 #include "rclcpp/utilities.hpp"
+#include "test_robot_hardware/test_robot_hardware.hpp"
 
 TEST(TestLoadJointStateController, load_controller)
 {
