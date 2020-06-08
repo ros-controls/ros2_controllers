@@ -626,16 +626,22 @@ void JointTrajectoryController::sort_to_local_joint_order(
 {
   // rearrange all points in the trajectory message based on mapping
   std::vector<size_t> mapping_vector = mapping(trajectory_msg->joint_names, joint_names_);
-  auto remap = [](const std::vector<double> & to_remap, const std::vector<size_t> & mapping)
+  auto remap = [this](const std::vector<double> & to_remap, const std::vector<size_t> & mapping)
     -> std::vector<double>
     {
+      if (to_remap.empty()) {
+        return to_remap;
+      }
       if (to_remap.size() != mapping.size()) {
+        RCLCPP_WARN(
+          lifecycle_node_->get_logger(),
+          "Invalid input size (%d) for sorting", to_remap.size());
         return to_remap;
       }
       std::vector<double> output;
       output.resize(mapping.size(), 0.0);
       for (auto index = 0ul; index < mapping.size(); ++index) {
-        unsigned int map_index = mapping[index];
+        auto map_index = mapping[index];
         output[map_index] = to_remap[index];
       }
       return output;
