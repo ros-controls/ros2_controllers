@@ -556,16 +556,10 @@ rclcpp_action::GoalResponse JointTrajectoryController::goal_callback(
   }
 
   for (auto i = 0ul; i < goal->trajectory.joint_names.size(); ++i) {
-    bool found_matching = false;
     std::string incoming_joint_name = goal->trajectory.joint_names[i];
-    for (auto j = 0ul; j < joint_names_.size(); ++j) {
-      if (incoming_joint_name == joint_names_[j]) {
-        found_matching = true;
-        break;
-      }
-    }
 
-    if (found_matching == false) {
+    auto it = std::find(joint_names_.begin(), joint_names_.end(), incoming_joint_name);
+    if (it == joint_names_.end()) {
       RCLCPP_ERROR(
         lifecycle_node_->get_logger(),
         "Incoming joint %s doesn't match the controller's joints.",
