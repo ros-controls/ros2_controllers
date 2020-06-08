@@ -1,0 +1,40 @@
+name: Test ros2_controllers
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+  schedule:
+    # Run every morning to detect flakiness and broken dependencies
+    - cron: '17 8 * * *'
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-18.04
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: ros-tooling/setup-ros@0.0.15
+      - uses: ros-tooling/action-ros-ci@0.0.16
+        with:
+          package-name: |
+            joint_state_controller
+            joint_trajectory_controller
+          vcs-repo-file-url: |
+            https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/travis/workspace.repos
+            https://raw.githubusercontent.com/ros2/ros2/master/ros2.repos
+
+          colcon-mixin-name: coverage-gcc
+          colcon-mixin-repository: https://raw.githubusercontent.com/colcon/colcon-mixin-repository/master/index.yaml
+      - uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ros_ws/lcov/total_coverage.info
+          flags: unittests
+          name: codecov-umbrella
+          yml: ./codecov.yml
+          fail_ci_if_error: true
+      - uses: actions/upload-artifact@v1
+        with:
+          name: colcon-logs-${{ matrix.os }}
+          path: ros_ws/log
