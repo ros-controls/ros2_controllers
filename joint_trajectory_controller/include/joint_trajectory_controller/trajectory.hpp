@@ -133,7 +133,7 @@ inline std::vector<size_t> mapping(const T & t1, const T & t2)
   if (t1.size() > t2.size()) {return std::vector<size_t>();}
 
   std::vector<size_t> mapping_vector(t1.size());  // Return value
-  for (typename T::const_iterator t1_it = t1.begin(); t1_it != t1.end(); ++t1_it) {
+  for (auto t1_it = t1.begin(); t1_it != t1.end(); ++t1_it) {
     typename T::const_iterator t2_it = std::find(t2.begin(), t2.end(), *t1_it);
     if (t2.end() == t2_it) {return std::vector<size_t>();} else {
       const size_t t1_dist = std::distance(t1.begin(), t1_it);
