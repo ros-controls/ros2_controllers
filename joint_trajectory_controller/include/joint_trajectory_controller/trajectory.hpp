@@ -86,6 +86,13 @@ public:
     TrajectoryPointConstIter & end_segment_itr);
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
+  void interpolate_between_points(
+    const rclcpp::Time & time_a, const trajectory_msgs::msg::JointTrajectoryPoint & state_a,
+    const rclcpp::Time & time_b, const trajectory_msgs::msg::JointTrajectoryPoint & state_b,
+    const rclcpp::Time & sample_time,
+    trajectory_msgs::msg::JointTrajectoryPoint & output);
+
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   TrajectoryPointConstIter
   begin() const;
 
