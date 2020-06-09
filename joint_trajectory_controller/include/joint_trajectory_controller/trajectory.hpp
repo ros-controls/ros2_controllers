@@ -135,7 +135,9 @@ inline std::vector<size_t> mapping(const T & t1, const T & t2)
   std::vector<size_t> mapping_vector(t1.size());  // Return value
   for (auto t1_it = t1.begin(); t1_it != t1.end(); ++t1_it) {
     auto t2_it = std::find(t2.begin(), t2.end(), *t1_it);
-    if (t2.end() == t2_it) {return std::vector<size_t>();} else {
+    if (t2.end() == t2_it) {
+      return std::vector<size_t>();
+    } else {
       const size_t t1_dist = std::distance(t1.begin(), t1_it);
       const size_t t2_dist = std::distance(t2.begin(), t2_it);
       mapping_vector[t1_dist] = t2_dist;
