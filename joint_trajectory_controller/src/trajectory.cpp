@@ -70,6 +70,7 @@ Trajectory::sample(
   TrajectoryPointConstIter & end_segment_itr)
 {
   THROW_ON_NULLPTR(trajectory_msg_)
+  expected_state = trajectory_msgs::msg::JointTrajectoryPoint();
 
   if (trajectory_msg_->points.empty()) {
     start_segment_itr = end();
@@ -177,11 +178,14 @@ void Trajectory::interpolate_between_points(
       double end_pos = state_b.positions[i];
       double end_vel = state_b.velocities[i];
 
-      double coefficients[4];
+      double coefficients[4] = { 0.0, 0.0, 0.0, 0.0 };
       coefficients[0] = start_pos;
       coefficients[1] = start_vel;
-      coefficients[2] = (-3.0 * start_pos + 3.0 * end_pos - 2.0 * start_vel * T[1] - end_vel * T[1]) / T[2];
-      coefficients[3] = (2.0 * start_pos - 2.0 * end_pos + start_vel * T[1] - end_vel * T[1]) / T[3];
+      if (duration_btwn_points.seconds() != 0.0)
+      {
+        coefficients[2] = (-3.0 * start_pos + 3.0 * end_pos - 2.0 * start_vel * T[1] - end_vel * T[1]) / T[2];
+        coefficients[3] = (2.0 * start_pos - 2.0 * end_pos + start_vel * T[1] - end_vel * T[1]) / T[3];
+      }
 
       output.positions[i] = t[0] * coefficients[0] +
                             t[1] * coefficients[1] + 
@@ -210,16 +214,19 @@ void Trajectory::interpolate_between_points(
       double end_vel = state_b.velocities[i];
       double end_acc = state_b.accelerations[i];
 
-      double coefficients[6];
+      double coefficients[6] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
       coefficients[0] = start_pos;
       coefficients[1] = start_vel;
       coefficients[2] = 0.5 * start_acc;
-      coefficients[3] = (-20.0 * start_pos + 20.0 * end_pos - 3.0 * start_acc * T[2] + end_acc * T[2] -
-                         12.0 * start_vel * T[1] - 8.0 * end_vel * T[1]) / (2.0 * T[3]);
-      coefficients[4] = (30.0 * start_pos - 30.0 * end_pos + 3.0 * start_acc * T[2] - 2.0 * end_acc*T[2] +
-                         16.0 * start_vel * T[1] + 14.0 * end_vel *T[1]) / (2.0 * T[4]);
-      coefficients[5] = (-12.0 * start_pos + 12.0 * end_pos - start_acc * T[2] + end_acc * T[2] -
-                         6.0 * start_vel * T[1] - 6.0 * end_vel * T[1]) / (2.0 * T[5]);
+      if (duration_btwn_points.seconds() != 0.0)
+      {
+        coefficients[3] = (-20.0 * start_pos + 20.0 * end_pos - 3.0 * start_acc * T[2] + end_acc * T[2] -
+                          12.0 * start_vel * T[1] - 8.0 * end_vel * T[1]) / (2.0 * T[3]);
+        coefficients[4] = (30.0 * start_pos - 30.0 * end_pos + 3.0 * start_acc * T[2] - 2.0 * end_acc * T[2] +
+                          16.0 * start_vel * T[1] + 14.0 * end_vel *T[1]) / (2.0 * T[4]);
+        coefficients[5] = (-12.0 * start_pos + 12.0 * end_pos - start_acc * T[2] + end_acc * T[2] -
+                          6.0 * start_vel * T[1] - 6.0 * end_vel * T[1]) / (2.0 * T[5]);
+      }
 
       output.positions[i] = t[0] * coefficients[0] +
                             t[1] * coefficients[1] +

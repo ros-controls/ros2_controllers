@@ -65,87 +65,98 @@ TEST(TestTrajectory, initialize_trajectory) {
   }
 }
 
-TEST(TestTrajectory, sample_trajectory) {
+TEST(TestTrajectory, sample_trajectory_positions) {
   auto full_msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
   full_msg->header.stamp.sec = 0;
   full_msg->header.stamp.nanosec = 0;
 
   trajectory_msgs::msg::JointTrajectoryPoint p1;
   p1.positions.push_back(1.0);
-  p1.velocities.push_back(0.0);
-  p1.accelerations.push_back(0.0);
-  p1.time_from_start.sec = 1;
-  p1.time_from_start.nanosec = 0;
+  p1.time_from_start = rclcpp::Duration::from_seconds(1.0);
+  full_msg->points.push_back(p1);
 
   trajectory_msgs::msg::JointTrajectoryPoint p2;
   p2.positions.push_back(2.0);
-  p2.velocities.push_back(0.0);
-  p2.accelerations.push_back(0.0);
-  p2.time_from_start.sec = 2;
-  p2.time_from_start.nanosec = 0;
+  p2.time_from_start = rclcpp::Duration::from_seconds(2.0);
+  full_msg->points.push_back(p2);
 
   trajectory_msgs::msg::JointTrajectoryPoint p3;
   p3.positions.push_back(3.0);
-  p3.velocities.push_back(0.0);
-  p3.accelerations.push_back(0.0);
-  p3.time_from_start.sec = 3;
-  p3.time_from_start.nanosec = 0;
-
-  full_msg->points.push_back(p1);
-  full_msg->points.push_back(p2);
+  p3.time_from_start = rclcpp::Duration::from_seconds(3.0);
   full_msg->points.push_back(p3);
 
   // set current state before trajectory msg was sent
   auto traj = joint_trajectory_controller::Trajectory(full_msg);
 
   trajectory_msgs::msg::JointTrajectoryPoint current_point;
-  current_point.time_from_start.sec = 0;
-  current_point.time_from_start.nanosec = 0;
-  current_point.positions.push_back(0.0);
-  current_point.velocities.push_back(0.0);
-  current_point.accelerations.push_back(0.0);
+  current_point.time_from_start = rclcpp::Duration::from_seconds(0.0);
 
   const rclcpp::Time time_now = rclcpp::Clock().now();
   traj.set_point_before_trajectory_msg(time_now, current_point);
 
   trajectory_msgs::msg::JointTrajectoryPoint expected_state;
   joint_trajectory_controller::TrajectoryPointConstIter start, end;
-  traj.sample(time_now, expected_state, start, end);
 
-  ASSERT_EQ(traj.begin(), start);
-  ASSERT_EQ(traj.begin(), end);
-  EXPECT_EQ(0.0, expected_state.positions[0]);
+  // sample at trajectory starting time
+  {
+    traj.sample(time_now, expected_state, start, end);
+    ASSERT_EQ(traj.begin(), start);
+    ASSERT_EQ(traj.begin(), end);
+    EXPECT_EQ(current_point.positions[0], expected_state.positions[0]);
+  }
 
   // sample before trajectory starts
-  traj.sample(time_now - rclcpp::Duration::from_seconds(0.5), expected_state, start, end);
-  ASSERT_EQ(traj.begin(), start);
-  ASSERT_EQ(traj.begin(), end);
-  EXPECT_EQ(0.0, expected_state.positions[0]);
+  {
+    traj.sample(time_now - rclcpp::Duration::from_seconds(0.5), expected_state, start, end);
+    ASSERT_EQ(traj.begin(), start);
+    ASSERT_EQ(traj.begin(), end);
+    EXPECT_EQ(current_point.positions[0], expected_state.positions[0]);
+  }
 
-  traj.sample(time_now + rclcpp::Duration::from_seconds(0.5), expected_state, start, end);
-  ASSERT_EQ(traj.begin(), start);
-  ASSERT_EQ(traj.begin(), end);
-  EXPECT_EQ(0.5, expected_state.positions[0]);
+  // sample 0.5s after msg
+  {
+    traj.sample(time_now + rclcpp::Duration::from_seconds(0.5), expected_state, start, end);
+    ASSERT_EQ(traj.begin(), start);
+    ASSERT_EQ(traj.begin(), end);
+    double half_current_to_p1 = (current_point.positions[0] + p1.positions[0]) * 0.5;
+    EXPECT_EQ(half_current_to_p1, expected_state.positions[0]);
+  }
 
-  traj.sample(time_now + rclcpp::Duration::from_seconds(1.0), expected_state, start, end);
-  ASSERT_EQ(traj.begin(), start);
-  ASSERT_EQ((++traj.begin()), end);
-  EXPECT_EQ(1.0, expected_state.positions[0]);
+  // sample 1s after msg
+  {
+    traj.sample(time_now + rclcpp::Duration::from_seconds(1.0), expected_state, start, end);
+    ASSERT_EQ(traj.begin(), start);
+    ASSERT_EQ((++traj.begin()), end);
+    EXPECT_EQ(p2.positions[0], expected_state.positions[0]);
+  }
 
-  traj.sample(time_now + rclcpp::Duration::from_seconds(1.5), expected_state, start, end);
-  ASSERT_EQ(traj.begin(), start);
-  ASSERT_EQ((++traj.begin()), end);
-  EXPECT_EQ(1.5, expected_state.positions[0]);
+  // sample 1.5s after msg
+  {
+    traj.sample(time_now + rclcpp::Duration::from_seconds(1.5), expected_state, start, end);
+    ASSERT_EQ(traj.begin(), start);
+    ASSERT_EQ((++traj.begin()), end);
+    double half_p1_to_p2 = (p1.positions[0] + p2.positions[0]) * 0.5;
+    EXPECT_EQ(half_p1_to_p2, expected_state.positions[0]);
+  }
 
-  traj.sample(time_now + rclcpp::Duration::from_seconds(2.5), expected_state, start, end);
-  EXPECT_EQ(2.5, expected_state.positions[0]);
+  // sample 2.5s after msg
+  {
+    traj.sample(time_now + rclcpp::Duration::from_seconds(2.5), expected_state, start, end);
+    double half_p2_to_p3 = (p2.positions[0] + p3.positions[0]) * 0.5;
+    EXPECT_EQ(half_p2_to_p3, expected_state.positions[0]);
+  }
 
-  traj.sample(time_now + rclcpp::Duration::from_seconds(3.0), expected_state, start, end);
-  EXPECT_EQ(3.0, expected_state.positions[0]);
+  // sample 3s after msg
+  {
+    traj.sample(time_now + rclcpp::Duration::from_seconds(3.0), expected_state, start, end);
+    EXPECT_EQ(p3.positions[0], expected_state.positions[0]);
+  }
 
   // sample past given points
-  traj.sample(time_now + rclcpp::Duration::from_seconds(3.125), expected_state, start, end);
-  ASSERT_EQ((--traj.end()), start);
-  ASSERT_EQ(traj.end(), end);
-  EXPECT_EQ(3.0, expected_state.positions[0]);
+  {
+    traj.sample(time_now + rclcpp::Duration::from_seconds(3.125), expected_state, start, end);
+    ASSERT_EQ((--traj.end()), start);
+    ASSERT_EQ(traj.end(), end);
+    EXPECT_EQ(p3.positions[0], expected_state.positions[0]);
+  }
 }
