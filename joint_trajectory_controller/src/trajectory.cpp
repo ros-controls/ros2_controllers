@@ -113,10 +113,6 @@ Trajectory::sample(
     const rclcpp::Time t1 = trajectory_start_time_ + t1_offset;
 
     if (sample_time >= t0 && sample_time < t1) {
-      // TODO(ddengster): Find a way to add custom interpolation implementations.
-      // Likely a lambda + parameters supplied from the controller would do
-      // do simple linear interpolation for now
-      // reference: https://github.com/ros-controls/ros_controllers/blob/melodic-devel/joint_trajectory_controller/include/trajectory_interface/quintic_spline_segment.h#L84
       interpolate_between_points(t0, point, t1, next_point, sample_time, expected_state);
       start_segment_itr = begin() + i;
       end_segment_itr = begin() + (i + 1);
