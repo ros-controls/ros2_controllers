@@ -36,6 +36,11 @@
 
 using lifecycle_msgs::msg::State;
 
+namespace
+{
+const double COMMON_THRESHOLD = 0.001;
+}
+
 void
 spin(rclcpp::executors::MultiThreadedExecutor * exe)
 {
@@ -348,10 +353,9 @@ TEST_F(TestTrajectoryController, cleanup) {
   test_robot_->write();
 
   // shouild be home pose again
-  double threshold = 0.001;
-  EXPECT_NEAR(1.1, test_robot_->pos1, threshold);
-  EXPECT_NEAR(2.2, test_robot_->pos2, threshold);
-  EXPECT_NEAR(3.3, test_robot_->pos3, threshold);
+  EXPECT_NEAR(1.1, test_robot_->pos1, COMMON_THRESHOLD);
+  EXPECT_NEAR(2.2, test_robot_->pos2, COMMON_THRESHOLD);
+  EXPECT_NEAR(3.3, test_robot_->pos3, COMMON_THRESHOLD);
 
   executor.cancel();
 }
@@ -584,10 +588,9 @@ TEST_F(TestTrajectoryController, test_jumbled_joint_order) {
     test_robot->write();
   }
 
-  double threshold = 0.001;
-  EXPECT_NEAR(1.0, test_robot->pos1, threshold);
-  EXPECT_NEAR(2.0, test_robot->pos2, threshold);
-  EXPECT_NEAR(3.0, test_robot->pos3, threshold);
+  EXPECT_NEAR(1.0, test_robot_->pos1, COMMON_THRESHOLD);
+  EXPECT_NEAR(2.0, test_robot_->pos2, COMMON_THRESHOLD);
+  EXPECT_NEAR(3.0, test_robot_->pos3, COMMON_THRESHOLD);
 
   executor.cancel();
 }

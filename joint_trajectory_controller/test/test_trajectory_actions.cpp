@@ -35,6 +35,11 @@ using trajectory_msgs::msg::JointTrajectoryPoint;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
+namespace
+{
+const double COMMON_THRESHOLD = 0.001;
+}
+
 class TestTrajectoryActions : public ::testing::Test
 {
 protected:
@@ -119,7 +124,6 @@ protected:
   rclcpp_action::ResultCode common_resultcode_ = rclcpp_action::ResultCode::UNKNOWN;
   bool common_goal_accepted_ = false;
   int common_action_result_code_ = control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL;
-  double common_threshold_ = 0.001;
 
 public:
   void common_goal_response(std::shared_future<GoalHandle::SharedPtr> future)
@@ -266,9 +270,9 @@ TEST_F(TestTrajectoryActions, test_success_multi_point_sendgoal) {
   EXPECT_EQ(true, common_goal_accepted_);
   EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
 
-  EXPECT_NEAR(7.0, test_robot_->pos1, common_threshold_);
-  EXPECT_NEAR(8.0, test_robot_->pos2, common_threshold_);
-  EXPECT_NEAR(9.0, test_robot_->pos3, common_threshold_);
+  EXPECT_NEAR(7.0, test_robot_->pos1, COMMON_THRESHOLD);
+  EXPECT_NEAR(8.0, test_robot_->pos2, COMMON_THRESHOLD);
+  EXPECT_NEAR(9.0, test_robot_->pos3, COMMON_THRESHOLD);
 
   executor.cancel();
 }
@@ -341,9 +345,9 @@ TEST_F(TestTrajectoryActions, test_goal_tolerances_success) {
     control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL,
     common_action_result_code_);
 
-  EXPECT_NEAR(1.0, test_robot_->pos1, common_threshold_);
-  EXPECT_NEAR(2.0, test_robot_->pos2, common_threshold_);
-  EXPECT_NEAR(3.0, test_robot_->pos3, common_threshold_);
+  EXPECT_NEAR(1.0, test_robot_->pos1, COMMON_THRESHOLD);
+  EXPECT_NEAR(2.0, test_robot_->pos2, COMMON_THRESHOLD);
+  EXPECT_NEAR(3.0, test_robot_->pos3, COMMON_THRESHOLD);
 
   // start again
   common_goal_accepted_ = false;
@@ -392,9 +396,9 @@ TEST_F(TestTrajectoryActions, test_goal_tolerances_success) {
     control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL,
     common_action_result_code_);
 
-  EXPECT_NEAR(7.0, test_robot_->pos1, common_threshold_);
-  EXPECT_NEAR(8.0, test_robot_->pos2, common_threshold_);
-  EXPECT_NEAR(9.0, test_robot_->pos3, common_threshold_);
+  EXPECT_NEAR(7.0, test_robot_->pos1, COMMON_THRESHOLD);
+  EXPECT_NEAR(8.0, test_robot_->pos2, COMMON_THRESHOLD);
+  EXPECT_NEAR(9.0, test_robot_->pos3, COMMON_THRESHOLD);
 
   executor.cancel();
 }
