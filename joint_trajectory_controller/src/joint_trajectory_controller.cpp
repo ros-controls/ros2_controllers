@@ -14,7 +14,6 @@
 
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
 
-
 #include <stddef.h>
 #include <chrono>
 #include <functional>

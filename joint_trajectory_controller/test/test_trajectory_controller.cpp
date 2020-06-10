@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #include <stddef.h>
 
 #include <array>
@@ -49,7 +50,6 @@
 #include "test_robot_hardware/test_robot_hardware.hpp"
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
-
 
 using lifecycle_msgs::msg::State;
 

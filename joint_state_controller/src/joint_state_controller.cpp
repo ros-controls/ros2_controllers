@@ -14,7 +14,6 @@
 
 #include "joint_state_controller/joint_state_controller.hpp"
 
-
 #include <stddef.h>
 #include <limits>
 #include <memory>

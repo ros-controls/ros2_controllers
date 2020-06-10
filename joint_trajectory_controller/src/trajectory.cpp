@@ -14,7 +14,6 @@
 
 #include "joint_trajectory_controller/trajectory.hpp"
 
-
 #include <memory>
 
 #include "hardware_interface/macros.hpp"
