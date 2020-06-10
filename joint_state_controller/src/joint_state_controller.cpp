@@ -56,7 +56,26 @@ JointStateController::on_configure(const rclcpp_lifecycle::State & previous_stat
 
   joint_state_publisher_ = lifecycle_node_->create_publisher<sensor_msgs::msg::JointState>(
     "joint_states", rclcpp::SystemDefaultsQoS());
+
+  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+}
+
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+JointStateController::on_activate(const rclcpp_lifecycle::State & previous_state)
+{
+  (void) previous_state;
+
   joint_state_publisher_->on_activate();
+
+  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+}
+
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+JointStateController::on_deactivate(const rclcpp_lifecycle::State & previous_state)
+{
+  (void) previous_state;
+
+  joint_state_publisher_->on_deactivate();
 
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }

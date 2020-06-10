@@ -44,6 +44,14 @@ public:
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
   on_configure(const rclcpp_lifecycle::State & previous_state) override;
 
+  JOINT_STATE_CONTROLLER_PUBLIC
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+  on_activate(const rclcpp_lifecycle::State & previous_state) override;
+
+  JOINT_STATE_CONTROLLER_PUBLIC
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+  on_deactivate(const rclcpp_lifecycle::State & previous_state) override;
+
 private:
   std::vector<const hardware_interface::JointStateHandle *> registered_joint_handles_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::JointState>>
