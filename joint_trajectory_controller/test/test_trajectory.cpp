@@ -25,15 +25,7 @@
 
 using namespace std::chrono_literals;
 
-class TestTrajectory : public ::testing::Test
-{
-protected:
-  static void SetUpTestCase()
-  {
-  }
-};
-
-TEST_F(TestTrajectory, initialize_trajectory) {
+TEST(TestTrajectory, initialize_trajectory) {
   {
     auto empty_msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
     empty_msg->header.stamp.sec = 2;
@@ -68,7 +60,7 @@ TEST_F(TestTrajectory, initialize_trajectory) {
   }
 }
 
-TEST_F(TestTrajectory, sample_trajectory) {
+TEST(TestTrajectory, sample_trajectory) {
   auto full_msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
   full_msg->header.stamp.sec = 0;
   full_msg->header.stamp.nanosec = 0;
