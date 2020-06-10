@@ -30,7 +30,7 @@ TEST(TestLoadJointStateController, load_controller)
 
   robot->init();
 
-  std::shared_ptr<rclcpp::executor::Executor> executor =
+  std::shared_ptr<rclcpp::Executor> executor =
     std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
 
   controller_manager::ControllerManager cm(robot, executor, "test_controller_manager");
