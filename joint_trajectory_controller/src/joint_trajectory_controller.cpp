@@ -62,7 +62,7 @@ JointTrajectoryController::init(
   const std::string & controller_name)
 {
   // initialize lifecycle node
-  auto ret = ControllerInterface::init(robot_hardware, controller_name);
+  const auto ret = ControllerInterface::init(robot_hardware, controller_name);
   if (ret != CONTROLLER_INTERFACE_RET_SUCCESS) {
     return ret;
   }
@@ -113,7 +113,7 @@ JointTrajectoryController::update()
     };
 
   JointTrajectoryPoint state_current, state_desired, state_error;
-  auto joint_num = registered_joint_state_handles_.size();
+  const auto joint_num = registered_joint_state_handles_.size();
   resize_joint_trajectory_point(state_current, joint_num);
 
   // current state update
@@ -138,14 +138,14 @@ JointTrajectoryController::update()
 
     // find segment for current timestamp
     TrajectoryPointConstIter start_segment_itr, end_segment_itr;
-    bool valid_point = (*traj_point_active_ptr_)->sample(
+    const bool valid_point = (*traj_point_active_ptr_)->sample(
       lifecycle_node_->now(), state_desired,
       start_segment_itr, end_segment_itr);
 
     if (valid_point) {
       bool abort = false;
       bool outside_goal_tolerance = false;
-      bool before_last_point = end_segment_itr != (*traj_point_active_ptr_)->end();
+      const bool before_last_point = end_segment_itr != (*traj_point_active_ptr_)->end();
       for (auto index = 0ul; index < joint_num; ++index) {
         // set values for next hardware write()
         registered_joint_cmd_handles_[index]->set_cmd(state_desired.positions[index]);
@@ -198,10 +198,10 @@ JointTrajectoryController::update()
             RCLCPP_INFO(lifecycle_node_->get_logger(), "Goal reached, success!");
           } else if (default_tolerances_.goal_time_tolerance != 0.0) {
             // if we exceed goal_time_toleralance set it to aborted
-            rclcpp::Time traj_start = (*traj_point_active_ptr_)->get_trajectory_start_time();
-            rclcpp::Time traj_end = traj_start + start_segment_itr->time_from_start;
+            const rclcpp::Time traj_start = (*traj_point_active_ptr_)->get_trajectory_start_time();
+            const rclcpp::Time traj_end = traj_start + start_segment_itr->time_from_start;
 
-            double difference = lifecycle_node_->now().seconds() - traj_end.seconds();
+            const double difference = lifecycle_node_->now().seconds() - traj_end.seconds();
             if (difference > default_tolerances_.goal_time_tolerance) {
               auto result = std::make_shared<FollowJTrajAction::Result>();
               result->set__error_code(FollowJTrajAction::Result::GOAL_TOLERANCE_VIOLATED);
@@ -229,7 +229,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
 {
   (void) previous_state;
 
-  auto logger = lifecycle_node_->get_logger();
+  const auto logger = lifecycle_node_->get_logger();
 
   // update parameters
   joint_names_ = lifecycle_node_->get_parameter("joints").as_string_array();
@@ -247,7 +247,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
     // register handles
     registered_joint_state_handles_.resize(joint_names_.size());
     for (size_t index = 0; index < joint_names_.size(); ++index) {
-      auto ret = robot_hardware->get_joint_state_handle(
+      const auto ret = robot_hardware->get_joint_state_handle(
         joint_names_[index].c_str(), &registered_joint_state_handles_[index]);
       if (ret != hardware_interface::HW_RET_OK) {
         RCLCPP_WARN(
@@ -257,7 +257,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
     }
     registered_joint_cmd_handles_.resize(joint_names_.size());
     for (size_t index = 0; index < joint_names_.size(); ++index) {
-      auto ret = robot_hardware->get_joint_command_handle(
+      const auto ret = robot_hardware->get_joint_command_handle(
         joint_names_[index].c_str(), &registered_joint_cmd_handles_[index]);
       if (ret != hardware_interface::HW_RET_OK) {
         RCLCPP_WARN(
@@ -267,7 +267,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
     }
     registered_operation_mode_handles_.resize(write_op_names_.size());
     for (size_t index = 0; index < write_op_names_.size(); ++index) {
-      auto ret = robot_hardware->get_operation_mode_handle(
+      const auto ret = robot_hardware->get_operation_mode_handle(
         write_op_names_[index].c_str(), &registered_operation_mode_handles_[index]);
       if (ret != hardware_interface::HW_RET_OK) {
         RCLCPP_WARN(
@@ -335,7 +335,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
   // joint_command_subscriber_->on_activate();
 
   // State publisher
-  double state_publish_rate =
+  const double state_publish_rate =
     lifecycle_node_->get_parameter("state_publish_rate").get_value<double>();
   RCLCPP_INFO_STREAM(
     logger, "Controller state will be published at " <<
@@ -351,7 +351,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
     "state", rclcpp::SystemDefaultsQoS());
   state_publisher_ = std::make_unique<StatePublisher>(publisher_);
 
-  auto n_joints = joint_names_.size();
+  const auto n_joints = joint_names_.size();
 
   state_publisher_->lock();
   state_publisher_->msg_.joint_names = joint_names_;
@@ -374,7 +374,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
     RCLCPP_WARN(logger, "Warning: Goals with partial set of joints not implemented yet.");
   }
 
-  double action_monitor_rate = lifecycle_node_->get_parameter("action_monitor_rate")
+  const double action_monitor_rate = lifecycle_node_->get_parameter("action_monitor_rate")
     .get_value<double>();
 
   RCLCPP_INFO_STREAM(
@@ -493,7 +493,7 @@ JointTrajectoryController::set_op_mode(const hardware_interface::OperationMode &
 void
 JointTrajectoryController::halt()
 {
-  size_t joint_num = registered_joint_cmd_handles_.size();
+  const size_t joint_num = registered_joint_cmd_handles_.size();
   for (size_t index = 0; index < joint_num; ++index) {
     registered_joint_cmd_handles_[index]->set_cmd(
       registered_joint_state_handles_[index]->get_position());

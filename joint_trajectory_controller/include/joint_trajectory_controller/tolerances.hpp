@@ -99,7 +99,7 @@ SegmentTolerances get_segment_tolerances(
   const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
   const std::vector<std::string> & joint_names)
 {
-  auto n_joints = joint_names.size();
+  const auto n_joints = joint_names.size();
   SegmentTolerances tolerances;
 
   // State and goal state tolerances
@@ -111,7 +111,7 @@ SegmentTolerances get_segment_tolerances(
   tolerances.state_tolerance.resize(n_joints);
   tolerances.goal_state_tolerance.resize(n_joints);
   for (auto i = 0ul; i < n_joints; ++i) {
-    std::string prefix = "constraints." + joint_names[i];
+    const std::string prefix = "constraints." + joint_names[i];
 
     node->get_parameter_or<double>(
       prefix + ".trajectory", tolerances.state_tolerance[i].position,
@@ -151,9 +151,9 @@ inline bool check_state_tolerance_per_joint(
   bool show_errors = false)
 {
   using std::abs;
-  double error_position = state_error.positions[joint_idx];
-  double error_velocity = state_error.velocities[joint_idx];
-  double error_acceleration = state_error.accelerations[joint_idx];
+  const double error_position = state_error.positions[joint_idx];
+  const double error_velocity = state_error.velocities[joint_idx];
+  const double error_acceleration = state_error.accelerations[joint_idx];
 
   const bool is_valid =
     !(state_tolerance.position > 0.0 && abs(error_position) > state_tolerance.position) &&
@@ -165,7 +165,7 @@ inline bool check_state_tolerance_per_joint(
   }
 
   if (show_errors) {
-    auto logger = rclcpp::get_logger("tolerances");
+    const auto logger = rclcpp::get_logger("tolerances");
     RCLCPP_ERROR_STREAM(logger, "Path state tolerances failed:");
 
     if (state_tolerance.position > 0.0 && abs(error_position) > state_tolerance.position) {
