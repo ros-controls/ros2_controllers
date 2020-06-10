@@ -52,14 +52,14 @@ protected:
 
   void SetUp()
   {
-    test_robot = std::make_shared<test_robot_hardware::TestRobotHardware>();
-    test_robot->init();
-    joint_names = {{test_robot->joint_name1, test_robot->joint_name2, test_robot->joint_name3}};
-    op_mode = {{test_robot->write_op_handle_name1}};
+    test_robot_ = std::make_shared<test_robot_hardware::TestRobotHardware>();
+    test_robot_->init();
+    joint_names_ = {{test_robot_->joint_name1, test_robot_->joint_name2, test_robot_->joint_name3}};
+    op_mode_ = {{test_robot_->write_op_handle_name1}};
 
-    pub_node = std::make_shared<rclcpp::Node>("trajectory_publisher");
-    trajectory_publisher = pub_node->create_publisher<trajectory_msgs::msg::JointTrajectory>(
-      controller_name + "/joint_trajectory", rclcpp::SystemDefaultsQoS());
+    pub_node_ = std::make_shared<rclcpp::Node>("trajectory_publisher_");
+    trajectory_publisher_ = pub_node_->create_publisher<trajectory_msgs::msg::JointTrajectory>(
+      controller_name_ + "/joint_trajectory", rclcpp::SystemDefaultsQoS());
   }
 
   static void TearDownTestCase()
@@ -77,8 +77,8 @@ protected:
     const std::vector<std::array<double, 3>> & points)
   {
     int wait_count = 0;
-    auto topic = trajectory_publisher->get_topic_name();
-    while (pub_node->count_subscribers(topic) == 0) {
+    auto topic = trajectory_publisher_->get_topic_name();
+    while (pub_node_->count_subscribers(topic) == 0) {
       if (wait_count >= 5) {
         auto error_msg =
           std::string("publishing to ") + topic + " but no node subscribes to it";
@@ -89,10 +89,10 @@ protected:
     }
 
     trajectory_msgs::msg::JointTrajectory traj_msg;
-    std::vector<std::string> joint_names {
-      test_robot->joint_name1, test_robot->joint_name2, test_robot->joint_name3
+    std::vector<std::string> joint_names_ {
+      test_robot_->joint_name1, test_robot_->joint_name2, test_robot_->joint_name3
     };
-    traj_msg.joint_names = joint_names;
+    traj_msg.joint_names = joint_names_;
     traj_msg.header.stamp.sec = 0;
     traj_msg.header.stamp.nanosec = 0;
     traj_msg.points.resize(points.size());
@@ -113,24 +113,24 @@ protected:
       duration_total = duration_total + duration;
     }
 
-    trajectory_publisher->publish(traj_msg);
+    trajectory_publisher_->publish(traj_msg);
   }
 
-  std::string controller_name = "test_joint_trajectory_controller";
+  std::string controller_name_ = "test_joint_trajectory_controller";
 
-  std::shared_ptr<test_robot_hardware::TestRobotHardware> test_robot;
-  std::vector<std::string> joint_names;
-  std::vector<std::string> op_mode;
+  std::shared_ptr<test_robot_hardware::TestRobotHardware> test_robot_;
+  std::vector<std::string> joint_names_;
+  std::vector<std::string> op_mode_;
 
-  rclcpp::Node::SharedPtr pub_node;
-  rclcpp::Publisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr trajectory_publisher;
+  rclcpp::Node::SharedPtr pub_node_;
+  rclcpp::Publisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr trajectory_publisher_;
 };
 
 TEST_F(TestTrajectoryController, wrong_initialization) {
   auto uninitialized_robot = std::make_shared<test_robot_hardware::TestRobotHardware>();
   auto traj_controller = std::make_shared<joint_trajectory_controller::JointTrajectoryController>(
-    joint_names, op_mode);
-  auto ret = traj_controller->init(uninitialized_robot, controller_name);
+    joint_names_, op_mode_);
+  auto ret = traj_controller->init(uninitialized_robot, controller_name_);
   if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
     FAIL();
   }
@@ -143,8 +143,8 @@ TEST_F(TestTrajectoryController, correct_initialization) {
   auto initialized_robot = std::make_shared<test_robot_hardware::TestRobotHardware>();
   initialized_robot->init();
   auto traj_controller = std::make_shared<joint_trajectory_controller::JointTrajectoryController>(
-    joint_names, op_mode);
-  auto ret = traj_controller->init(initialized_robot, controller_name);
+    joint_names_, op_mode_);
+  auto ret = traj_controller->init(initialized_robot, controller_name_);
   if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
     FAIL();
   }
@@ -158,8 +158,8 @@ TEST_F(TestTrajectoryController, correct_initialization) {
 
 TEST_F(TestTrajectoryController, configuration) {
   auto traj_controller = std::make_shared<joint_trajectory_controller::JointTrajectoryController>(
-    joint_names, op_mode);
-  auto ret = traj_controller->init(test_robot, controller_name);
+    joint_names_, op_mode_);
+  auto ret = traj_controller->init(test_robot_, controller_name_);
   if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
     FAIL();
   }
@@ -180,20 +180,20 @@ TEST_F(TestTrajectoryController, configuration) {
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
   traj_controller->update();
-  test_robot->write();
+  test_robot_->write();
 
   // no change in hw position
-  EXPECT_NE(3.3, test_robot->pos1);
-  EXPECT_NE(4.4, test_robot->pos2);
-  EXPECT_NE(5.5, test_robot->pos3);
+  EXPECT_NE(3.3, test_robot_->pos1);
+  EXPECT_NE(4.4, test_robot_->pos2);
+  EXPECT_NE(5.5, test_robot_->pos3);
 
   executor.cancel();
 }
 
 // TEST_F(TestTrajectoryController, activation) {
 //   auto traj_controller = std::make_shared<ros_controllers::JointTrajectoryController>(
-//     joint_names, op_mode);
-//   auto ret = traj_controller->init(test_robot, controller_name);
+//     joint_names_, op_mode_);
+//   auto ret = traj_controller->init(test_robot_, controller_name_);
 //   if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
 //     FAIL();
 //   }
@@ -222,20 +222,20 @@ TEST_F(TestTrajectoryController, configuration) {
 //   executor.spin_once();
 //
 //   traj_controller->update();
-//   test_robot->write();
+//   test_robot_->write();
 //
 //   // change in hw position
-//   EXPECT_EQ(3.3, test_robot->pos1);
-//   EXPECT_EQ(4.4, test_robot->pos2);
-//   EXPECT_EQ(5.5, test_robot->pos3);
+//   EXPECT_EQ(3.3, test_robot_->pos1);
+//   EXPECT_EQ(4.4, test_robot_->pos2);
+//   EXPECT_EQ(5.5, test_robot_->pos3);
 //
 //   executor.cancel();
 // }
 
 // TEST_F(TestTrajectoryController, reactivation) {
 //   auto traj_controller = std::make_shared<ros_controllers::JointTrajectoryController>(
-//     joint_names, op_mode);
-//   auto ret = traj_controller->init(test_robot, controller_name);
+//     joint_names_, op_mode_);
+//   auto ret = traj_controller->init(test_robot_, controller_name_);
 //   if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
 //     FAIL();
 //   }
@@ -270,43 +270,43 @@ TEST_F(TestTrajectoryController, configuration) {
 //   executor.spin_once();
 //
 //   traj_controller->update();
-//   test_robot->write();
+//   test_robot_->write();
 //
 //   // deactivated
 //   // wait so controller process the second point when deactivated
 //   std::this_thread::sleep_for(std::chrono::milliseconds(500));
 //   state = traj_lifecycle_node->deactivate();
 //   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
-//   test_robot->read();
+//   test_robot_->read();
 //   traj_controller->update();
-//   test_robot->write();
+//   test_robot_->write();
 //
 //   // no change in hw position
-//   EXPECT_EQ(3.3, test_robot->pos1);
-//   EXPECT_EQ(4.4, test_robot->pos2);
-//   EXPECT_EQ(5.5, test_robot->pos3);
+//   EXPECT_EQ(3.3, test_robot_->pos1);
+//   EXPECT_EQ(4.4, test_robot_->pos2);
+//   EXPECT_EQ(5.5, test_robot_->pos3);
 //
 //   // reactivated
 //   // wait so controller process the third point when reactivated
 //   std::this_thread::sleep_for(std::chrono::milliseconds(3000));
 //   state = traj_lifecycle_node->activate();
 //   ASSERT_EQ(state.id(), State::PRIMARY_STATE_ACTIVE);
-//   test_robot->read();
+//   test_robot_->read();
 //   traj_controller->update();
-//   test_robot->write();
+//   test_robot_->write();
 //
 //   // change in hw position to 3rd point
-//   EXPECT_EQ(10.10, test_robot->pos1);
-//   EXPECT_EQ(11.11, test_robot->pos2);
-//   EXPECT_EQ(12.12, test_robot->pos3);
+//   EXPECT_EQ(10.10, test_robot_->pos1);
+//   EXPECT_EQ(11.11, test_robot_->pos2);
+//   EXPECT_EQ(12.12, test_robot_->pos3);
 //
 //   executor.cancel();
 // }
 
 TEST_F(TestTrajectoryController, cleanup) {
   auto traj_controller = std::make_shared<joint_trajectory_controller::JointTrajectoryController>(
-    joint_names, op_mode);
-  auto ret = traj_controller->init(test_robot, controller_name);
+    joint_names_, op_mode_);
+  auto ret = traj_controller->init(test_robot_, controller_name_);
   if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
     FAIL();
   }
@@ -335,38 +335,38 @@ TEST_F(TestTrajectoryController, cleanup) {
   executor.spin_once();
 
   traj_controller->update();
-  test_robot->write();
+  test_robot_->write();
 
   state = traj_lifecycle_node->deactivate();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   traj_controller->update();
-  test_robot->write();
+  test_robot_->write();
 
   state = traj_lifecycle_node->cleanup();
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
   traj_controller->update();
-  test_robot->write();
+  test_robot_->write();
 
   // shouild be home pose again
   double threshold = 0.001;
-  EXPECT_NEAR(1.1, test_robot->pos1, threshold);
-  EXPECT_NEAR(2.2, test_robot->pos2, threshold);
-  EXPECT_NEAR(3.3, test_robot->pos3, threshold);
+  EXPECT_NEAR(1.1, test_robot_->pos1, threshold);
+  EXPECT_NEAR(2.2, test_robot_->pos2, threshold);
+  EXPECT_NEAR(3.3, test_robot_->pos3, threshold);
 
   executor.cancel();
 }
 
 TEST_F(TestTrajectoryController, correct_initialization_using_parameters) {
   auto traj_controller = std::make_shared<joint_trajectory_controller::JointTrajectoryController>();
-  auto ret = traj_controller->init(test_robot, controller_name);
+  auto ret = traj_controller->init(test_robot_, controller_name_);
   if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
     FAIL();
   }
 
   // This block is replacing the way parameters are set via launch
   auto traj_lifecycle_node = traj_controller->get_lifecycle_node();
-  std::vector<std::string> joint_names = {"joint1", "joint2", "joint3"};
-  rclcpp::Parameter joint_parameters("joints", joint_names);
+  std::vector<std::string> joint_names_ = {"joint1", "joint2", "joint3"};
+  rclcpp::Parameter joint_parameters("joints", joint_names_);
   traj_lifecycle_node->set_parameter(joint_parameters);
 
   std::vector<std::string> operation_mode_names = {"write1", "write2"};
@@ -383,9 +383,9 @@ TEST_F(TestTrajectoryController, correct_initialization_using_parameters) {
 
   auto state = traj_lifecycle_node->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
-  EXPECT_EQ(1.1, test_robot->pos1);
-  EXPECT_EQ(2.2, test_robot->pos2);
-  EXPECT_EQ(3.3, test_robot->pos3);
+  EXPECT_EQ(1.1, test_robot_->pos1);
+  EXPECT_EQ(2.2, test_robot_->pos2);
+  EXPECT_EQ(3.3, test_robot_->pos3);
 
   state = traj_lifecycle_node->activate();
   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
@@ -410,38 +410,38 @@ TEST_F(TestTrajectoryController, correct_initialization_using_parameters) {
 
   // first update
   traj_controller->update();
-  test_robot->write();
+  test_robot_->write();
 
   // wait so controller process the second point when deactivated
   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
   traj_controller->update();
-  test_robot->write();
+  test_robot_->write();
 
   // deactivated
   state = traj_lifecycle_node->deactivate();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
 
   auto allowed_delta = 0.05;
-  EXPECT_NEAR(3.3, test_robot->pos1, allowed_delta);
-  EXPECT_NEAR(4.4, test_robot->pos2, allowed_delta);
-  EXPECT_NEAR(5.5, test_robot->pos3, allowed_delta);
+  EXPECT_NEAR(3.3, test_robot_->pos1, allowed_delta);
+  EXPECT_NEAR(4.4, test_robot_->pos2, allowed_delta);
+  EXPECT_NEAR(5.5, test_robot_->pos3, allowed_delta);
 
   // cleanup
   state = traj_lifecycle_node->cleanup();
 
   // update loop receives a new msg and updates accordingly
   traj_controller->update();
-  test_robot->write();
+  test_robot_->write();
 
   // check the traj_msg_home_ptr_ initialization code for the standard wait timing
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
   traj_controller->update();
-  test_robot->write();
+  test_robot_->write();
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
 
-  EXPECT_NEAR(1.1, test_robot->pos1, allowed_delta);
-  EXPECT_NEAR(2.2, test_robot->pos2, allowed_delta);
-  EXPECT_NEAR(3.3, test_robot->pos3, allowed_delta);
+  EXPECT_NEAR(1.1, test_robot_->pos1, allowed_delta);
+  EXPECT_NEAR(2.2, test_robot_->pos2, allowed_delta);
+  EXPECT_NEAR(3.3, test_robot_->pos3, allowed_delta);
 
   state = traj_lifecycle_node->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
@@ -454,8 +454,8 @@ void test_state_publish_rate_target(
 {
   // fill in some data so we wont fail
   auto traj_lifecycle_node = traj_controller->get_lifecycle_node();
-  std::vector<std::string> joint_names = {"joint1", "joint2", "joint3"};
-  rclcpp::Parameter joint_parameters("joints", joint_names);
+  std::vector<std::string> joint_names_ = {"joint1", "joint2", "joint3"};
+  rclcpp::Parameter joint_parameters("joints", joint_names_);
   traj_lifecycle_node->set_parameter(joint_parameters);
 
   std::vector<std::string> operation_mode_names = {"write1", "write2"};
@@ -510,7 +510,7 @@ void test_state_publish_rate_target(
 
 TEST_F(TestTrajectoryController, test_state_publish_rate) {
   auto traj_controller = std::make_shared<joint_trajectory_controller::JointTrajectoryController>();
-  auto ret = traj_controller->init(test_robot, controller_name);
+  auto ret = traj_controller->init(test_robot_, controller_name_);
   if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
     FAIL();
   }
@@ -519,7 +519,7 @@ TEST_F(TestTrajectoryController, test_state_publish_rate) {
 
 TEST_F(TestTrajectoryController, zero_state_publish_rate) {
   auto traj_controller = std::make_shared<joint_trajectory_controller::JointTrajectoryController>();
-  auto ret = traj_controller->init(test_robot, controller_name);
+  auto ret = traj_controller->init(test_robot_, controller_name_);
   if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
     FAIL();
   }
