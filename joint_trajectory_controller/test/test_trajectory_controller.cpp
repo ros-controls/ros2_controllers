@@ -67,6 +67,20 @@ protected:
       controller_name_ + "/joint_trajectory", rclcpp::SystemDefaultsQoS());
   }
 
+  void SetUpTrajectoryController(bool use_local_parameters = true)
+  {
+    if (use_local_parameters) {
+      traj_controller_ = std::make_shared<joint_trajectory_controller::JointTrajectoryController>(
+        joint_names_, op_mode_);
+    } else {
+      traj_controller_ = std::make_shared<joint_trajectory_controller::JointTrajectoryController>();
+    }
+    auto ret = traj_controller_->init(test_robot_, controller_name_);
+    if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
+      FAIL();
+    }
+  }
+
   static void TearDownTestCase()
   {
     rclcpp::shutdown();
@@ -129,6 +143,8 @@ protected:
 
   rclcpp::Node::SharedPtr pub_node_;
   rclcpp::Publisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr trajectory_publisher_;
+
+  std::shared_ptr<joint_trajectory_controller::JointTrajectoryController> traj_controller_;
 };
 
 TEST_F(TestTrajectoryController, wrong_initialization) {
@@ -162,18 +178,13 @@ TEST_F(TestTrajectoryController, correct_initialization) {
 }
 
 TEST_F(TestTrajectoryController, configuration) {
-  auto traj_controller = std::make_shared<joint_trajectory_controller::JointTrajectoryController>(
-    joint_names_, op_mode_);
-  auto ret = traj_controller->init(test_robot_, controller_name_);
-  if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
-    FAIL();
-  }
+  SetUpTrajectoryController();
 
   rclcpp::executors::MultiThreadedExecutor executor;
-  executor.add_node(traj_controller->get_lifecycle_node()->get_node_base_interface());
+  executor.add_node(traj_controller_->get_lifecycle_node()->get_node_base_interface());
   auto future_handle_ = std::async(std::launch::async, spin, &executor);
 
-  auto state = traj_controller->get_lifecycle_node()->configure();
+  auto state = traj_controller_->get_lifecycle_node()->configure();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
 
   // send msg
@@ -184,7 +195,7 @@ TEST_F(TestTrajectoryController, configuration) {
   publish(time_from_start, points);
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
-  traj_controller->update();
+  traj_controller_->update();
   test_robot_->write();
 
   // no change in hw position
@@ -309,14 +320,9 @@ TEST_F(TestTrajectoryController, configuration) {
 // }
 
 TEST_F(TestTrajectoryController, cleanup) {
-  auto traj_controller = std::make_shared<joint_trajectory_controller::JointTrajectoryController>(
-    joint_names_, op_mode_);
-  auto ret = traj_controller->init(test_robot_, controller_name_);
-  if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
-    FAIL();
-  }
+  SetUpTrajectoryController();
 
-  auto traj_lifecycle_node = traj_controller->get_lifecycle_node();
+  auto traj_lifecycle_node = traj_controller_->get_lifecycle_node();
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(traj_lifecycle_node->get_node_base_interface());
 
@@ -339,17 +345,17 @@ TEST_F(TestTrajectoryController, cleanup) {
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
   executor.spin_once();
 
-  traj_controller->update();
+  traj_controller_->update();
   test_robot_->write();
 
   state = traj_lifecycle_node->deactivate();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
-  traj_controller->update();
+  traj_controller_->update();
   test_robot_->write();
 
   state = traj_lifecycle_node->cleanup();
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
-  traj_controller->update();
+  traj_controller_->update();
   test_robot_->write();
 
   // shouild be home pose again
@@ -361,14 +367,10 @@ TEST_F(TestTrajectoryController, cleanup) {
 }
 
 TEST_F(TestTrajectoryController, correct_initialization_using_parameters) {
-  auto traj_controller = std::make_shared<joint_trajectory_controller::JointTrajectoryController>();
-  auto ret = traj_controller->init(test_robot_, controller_name_);
-  if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
-    FAIL();
-  }
+  SetUpTrajectoryController(false);
 
   // This block is replacing the way parameters are set via launch
-  auto traj_lifecycle_node = traj_controller->get_lifecycle_node();
+  auto traj_lifecycle_node = traj_controller_->get_lifecycle_node();
   std::vector<std::string> joint_names_ = {"joint1", "joint2", "joint3"};
   rclcpp::Parameter joint_parameters("joints", joint_names_);
   traj_lifecycle_node->set_parameter(joint_parameters);
@@ -413,12 +415,12 @@ TEST_F(TestTrajectoryController, correct_initialization_using_parameters) {
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
   // first update
-  traj_controller->update();
+  traj_controller_->update();
   test_robot_->write();
 
   // wait so controller process the second point when deactivated
   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-  traj_controller->update();
+  traj_controller_->update();
   test_robot_->write();
 
   // deactivated
@@ -434,12 +436,12 @@ TEST_F(TestTrajectoryController, correct_initialization_using_parameters) {
   state = traj_lifecycle_node->cleanup();
 
   // update loop receives a new msg and updates accordingly
-  traj_controller->update();
+  traj_controller_->update();
   test_robot_->write();
 
   // check the traj_msg_home_ptr_ initialization code for the standard wait timing
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
-  traj_controller->update();
+  traj_controller_->update();
   test_robot_->write();
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
 
@@ -513,22 +515,13 @@ void test_state_publish_rate_target(
 }
 
 TEST_F(TestTrajectoryController, test_state_publish_rate) {
-  auto traj_controller = std::make_shared<joint_trajectory_controller::JointTrajectoryController>();
-  auto ret = traj_controller->init(test_robot_, controller_name_);
-  if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
-    FAIL();
-  }
-  test_state_publish_rate_target(traj_controller, 10);
+  SetUpTrajectoryController();
+  test_state_publish_rate_target(traj_controller_, 10);
 }
 
 TEST_F(TestTrajectoryController, zero_state_publish_rate) {
-  auto traj_controller = std::make_shared<joint_trajectory_controller::JointTrajectoryController>();
-  auto ret = traj_controller->init(test_robot_, controller_name_);
-  if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
-    FAIL();
-  }
-
-  test_state_publish_rate_target(traj_controller, 0);
+  SetUpTrajectoryController();
+  test_state_publish_rate_target(traj_controller_, 0);
 }
 
 TEST_F(TestTrajectoryController, test_jumbled_joint_order) {
