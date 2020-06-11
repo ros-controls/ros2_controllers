@@ -190,13 +190,11 @@ JointTrajectoryController::update()
         // check abort
         if (abort || outside_goal_tolerance) {
           auto result = std::make_shared<FollowJTrajAction::Result>();
-          if (abort)
-          {
+
+          if (abort) {
             RCLCPP_WARN(lifecycle_node_->get_logger(), "Aborted due to state tolerance violation");
             result->set__error_code(FollowJTrajAction::Result::PATH_TOLERANCE_VIOLATED);
-          }
-          else if (outside_goal_tolerance)
-          {
+          } else if (outside_goal_tolerance) {
             RCLCPP_WARN(lifecycle_node_->get_logger(), "Aborted due to goal tolerance violation");
             result->set__error_code(FollowJTrajAction::Result::GOAL_TOLERANCE_VIOLATED);
           }

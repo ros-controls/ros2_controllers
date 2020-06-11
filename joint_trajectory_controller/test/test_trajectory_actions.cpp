@@ -86,7 +86,8 @@ protected:
     traj_lifecycle_node_->set_parameter(operation_mode_parameters);
 
     // ignore velocity tolerances for this test since they arent commited in test_robot->write()
-    traj_lifecycle_node_->set_parameter(rclcpp::Parameter("constraints.stopped_velocity_tolerance", 0.0));
+    rclcpp::Parameter stopped_velocity_parameters("constraints.stopped_velocity_tolerance", 0.0);
+    traj_lifecycle_node_->set_parameter(stopped_velocity_parameters);
 
     goal_options_.goal_response_callback =
       std::bind(&TestTrajectoryActions::common_goal_response, this, _1);

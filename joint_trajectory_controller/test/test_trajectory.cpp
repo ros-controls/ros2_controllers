@@ -115,7 +115,7 @@ TEST(TestTrajectory, sample_trajectory_positions) {
 
   // sample before time_now
   {
-    bool result = 
+    bool result =
       traj.sample(time_now - rclcpp::Duration::from_seconds(0.5), expected_state, start, end);
     ASSERT_EQ(result, false);
   }
@@ -186,11 +186,11 @@ TEST_F(TestTrajectory, interpolation_pos_vel) {
   end_state.time_from_start = rclcpp::Duration::from_seconds(3.0);
   end_state.positions.push_back(4.0);
   end_state.velocities.push_back(10.0);
-  end_state.accelerations.push_back(0.0); // Should be ignored, as start state does not specify it
+  end_state.accelerations.push_back(0.0);  // Should be ignored, start state does not specify it
 
   auto traj = joint_trajectory_controller::Trajectory();
   rclcpp::Time time_now(0);
-  
+
   trajectory_msgs::msg::JointTrajectoryPoint expected_state;
   joint_trajectory_controller::TrajectoryPointConstIter start, end;
 
@@ -198,7 +198,7 @@ TEST_F(TestTrajectory, interpolation_pos_vel) {
   {
     traj.interpolate_between_points(
       time_now + start_state.time_from_start, start_state,
-      time_now + end_state.time_from_start, end_state, 
+      time_now + end_state.time_from_start, end_state,
       time_now + start_state.time_from_start, expected_state);
     EXPECT_NEAR(start_state.positions[0], expected_state.positions[0], EPS);
     EXPECT_NEAR(start_state.velocities[0], expected_state.velocities[0], EPS);
@@ -221,7 +221,7 @@ TEST_F(TestTrajectory, interpolation_pos_vel) {
   {
     traj.interpolate_between_points(
       time_now + start_state.time_from_start, start_state,
-      time_now + end_state.time_from_start, end_state, 
+      time_now + end_state.time_from_start, end_state,
       time_now + end_state.time_from_start, expected_state);
     EXPECT_NEAR(end_state.positions[0], expected_state.positions[0], EPS);
     EXPECT_NEAR(end_state.velocities[0], expected_state.velocities[0], EPS);
@@ -247,7 +247,7 @@ TEST_F(TestTrajectory, interpolation_pos_vel_accel) {
 
   auto traj = joint_trajectory_controller::Trajectory();
   rclcpp::Time time_now(0);
-  
+
   trajectory_msgs::msg::JointTrajectoryPoint expected_state;
   joint_trajectory_controller::TrajectoryPointConstIter start, end;
 
@@ -255,7 +255,7 @@ TEST_F(TestTrajectory, interpolation_pos_vel_accel) {
   {
     traj.interpolate_between_points(
       time_now + start_state.time_from_start, start_state,
-      time_now + end_state.time_from_start, end_state, 
+      time_now + end_state.time_from_start, end_state,
       time_now + start_state.time_from_start, expected_state);
     EXPECT_NEAR(start_state.positions[0], expected_state.positions[0], EPS);
     EXPECT_NEAR(start_state.velocities[0], expected_state.velocities[0], EPS);
@@ -278,7 +278,7 @@ TEST_F(TestTrajectory, interpolation_pos_vel_accel) {
   {
     traj.interpolate_between_points(
       time_now + start_state.time_from_start, start_state,
-      time_now + end_state.time_from_start, end_state, 
+      time_now + end_state.time_from_start, end_state,
       time_now + end_state.time_from_start, expected_state);
     EXPECT_NEAR(end_state.positions[0], expected_state.positions[0], EPS);
     EXPECT_NEAR(end_state.velocities[0], expected_state.velocities[0], EPS);
