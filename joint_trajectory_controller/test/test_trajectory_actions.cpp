@@ -247,7 +247,7 @@ public:
   }
 };
 
-TEST_F(TestTrajectoryActions, test_success_multi_point_sendgoal) {
+TEST_F(TestTrajectoryActions, test_success_single_point_sendgoal) {
   SetUpExecutor();
   SetUpControllerHardware();
 
@@ -274,10 +274,10 @@ TEST_F(TestTrajectoryActions, test_success_multi_point_sendgoal) {
   EXPECT_EQ(1.0, test_robot_->pos1);
   EXPECT_EQ(2.0, test_robot_->pos2);
   EXPECT_EQ(3.0, test_robot_->pos3);
+}
 
-  // start again
-  common_goal_accepted_ = false;
-  common_resultcode_ = rclcpp_action::ResultCode::UNKNOWN;
+TEST_F(TestTrajectoryActions, test_success_multi_point_sendgoal) {
+  SetUpExecutor();
   SetUpControllerHardware();
 
   // add feedback
@@ -324,7 +324,7 @@ TEST_F(TestTrajectoryActions, test_success_multi_point_sendgoal) {
   EXPECT_NEAR(9.0, test_robot_->pos3, COMMON_THRESHOLD);
 }
 
-TEST_F(TestTrajectoryActions, test_goal_tolerances_success) {
+TEST_F(TestTrajectoryActions, test_goal_tolerances_single_point_success) {
   // set tolerance parameters
   traj_lifecycle_node_->declare_parameter("constraints.joint1.goal", 0.0);
   traj_lifecycle_node_->declare_parameter("constraints.joint2.goal", 0.0);
@@ -361,10 +361,18 @@ TEST_F(TestTrajectoryActions, test_goal_tolerances_success) {
   EXPECT_NEAR(1.0, test_robot_->pos1, COMMON_THRESHOLD);
   EXPECT_NEAR(2.0, test_robot_->pos2, COMMON_THRESHOLD);
   EXPECT_NEAR(3.0, test_robot_->pos3, COMMON_THRESHOLD);
+}
 
-  // start again
-  common_goal_accepted_ = false;
-  common_resultcode_ = rclcpp_action::ResultCode::UNKNOWN;
+TEST_F(TestTrajectoryActions, test_goal_tolerances_multi_point_success) {
+  // set tolerance parameters
+  traj_lifecycle_node_->declare_parameter("constraints.joint1.goal", 0.0);
+  traj_lifecycle_node_->declare_parameter("constraints.joint2.goal", 0.0);
+  traj_lifecycle_node_->declare_parameter("constraints.joint3.goal", 0.0);
+  traj_lifecycle_node_->set_parameter(rclcpp::Parameter("constraints.joint1.goal", 0.1));
+  traj_lifecycle_node_->set_parameter(rclcpp::Parameter("constraints.joint2.goal", 0.1));
+  traj_lifecycle_node_->set_parameter(rclcpp::Parameter("constraints.joint3.goal", 0.1));
+
+  SetUpExecutor();
   SetUpControllerHardware();
 
   // add feedback
