@@ -72,7 +72,7 @@ public:
   *    start_segment_itr = iterator before the sampled point, end_segment_itr = iterator after start_segment_itr
   * - Sampling after entire trajectory:
   *    start_segment_itr = --end(), end_segment_itr = end()
-  * - Sampling empty msg:
+  * - Sampling empty msg or before the time given in set_point_before_trajectory_msg()
   *    return false
   */
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
