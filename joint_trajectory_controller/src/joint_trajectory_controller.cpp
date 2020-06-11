@@ -111,12 +111,7 @@ JointTrajectoryController::update()
       // error defined as the difference between current and desired
       error.positions[index] = angles::shortest_angular_distance(
         current.positions[index], desired.positions[index]);
-
-      if (!desired.velocities.empty()) {
-        error.velocities[index] = desired.velocities[index] - current.velocities[index];
-      } else {
-        error.velocities[index] = 0.0;
-      }
+      error.velocities[index] = desired.velocities[index] - current.velocities[index];
       error.accelerations[index] = 0.0;
     };
 
