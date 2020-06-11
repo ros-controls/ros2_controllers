@@ -173,7 +173,6 @@ JointTrajectoryController::update()
             default_tolerances_.goal_state_tolerance[index], false))
         {
           outside_goal_tolerance = true;
-          break;
         }
       }
 
