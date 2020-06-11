@@ -562,7 +562,7 @@ TEST_F(TestTrajectoryController, test_jumbled_joint_order) {
       test_robot->joint_name2, test_robot->joint_name3, test_robot->joint_name1
     };
     traj_msg.joint_names = jumbled_joint_names;
-    traj_msg.header.stamp = rclcpp::Time(0.0);
+    traj_msg.header.stamp = rclcpp::Time(0);
     traj_msg.points.resize(1);
 
     traj_msg.points[0].time_from_start = rclcpp::Duration::from_seconds(0.25);
