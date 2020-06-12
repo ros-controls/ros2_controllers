@@ -32,10 +32,8 @@ JointStateController::JointStateController()
 {}
 
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-JointStateController::on_configure(const rclcpp_lifecycle::State & previous_state)
+JointStateController::on_configure(const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  (void) previous_state;
-
   if (auto sptr = robot_hardware_.lock()) {
     registered_joint_handles_ = sptr->get_registered_joint_state_handles();
   } else {
@@ -80,10 +78,8 @@ JointStateController::on_configure(const rclcpp_lifecycle::State & previous_stat
 }
 
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-JointStateController::on_activate(const rclcpp_lifecycle::State & previous_state)
+JointStateController::on_activate(const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  (void) previous_state;
-
   joint_state_publisher_->on_activate();
   dynamic_joint_state_publisher_->on_activate();
 
@@ -91,10 +87,8 @@ JointStateController::on_activate(const rclcpp_lifecycle::State & previous_state
 }
 
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-JointStateController::on_deactivate(const rclcpp_lifecycle::State & previous_state)
+JointStateController::on_deactivate(const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  (void) previous_state;
-
   joint_state_publisher_->on_deactivate();
   dynamic_joint_state_publisher_->on_deactivate();
 
