@@ -6,7 +6,7 @@ repositories:
   control_msgs:
     type: git
     url: https://github.com/ros-controls/control_msgs.git
-    version: crystal-devel
+    version: foxy-devel
   realtime_tools:
     type: git
     url: https://github.com/ros-controls/realtime_tools.git
