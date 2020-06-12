@@ -27,6 +27,7 @@
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
   <test_depend>controller_manager</test_depend>
+  <test_depend>rclcpp</test_depend>
   <test_depend>test_robot_hardware</test_depend>
 
   <export>

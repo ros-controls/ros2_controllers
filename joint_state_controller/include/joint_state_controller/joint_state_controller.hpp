@@ -29,11 +29,16 @@
 
 #include "sensor_msgs/msg/joint_state.hpp"
 
+class JointStateControllerTest;
+
 namespace joint_state_controller
 {
 
 class JointStateController : public controller_interface::ControllerInterface
 {
+private:
+  friend class ::JointStateControllerTest;
+
 public:
   JOINT_STATE_CONTROLLER_PUBLIC
   JointStateController();
