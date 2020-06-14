@@ -322,6 +322,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
       // http://wiki.ros.org/joint_trajectory_controller/UnderstandingTrajectoryReplacement
       // always replace old msg with new one for now
       if (subscriber_is_active_) {
+        sort_to_local_joint_order(msg);
         traj_external_point_ptr_->update(msg);
       }
     };
@@ -554,6 +555,18 @@ rclcpp_action::GoalResponse JointTrajectoryController::goal_callback(
     }
   }
 
+  for (auto i = 0ul; i < goal->trajectory.joint_names.size(); ++i) {
+    const std::string & incoming_joint_name = goal->trajectory.joint_names[i];
+
+    auto it = std::find(joint_names_.begin(), joint_names_.end(), incoming_joint_name);
+    if (it == joint_names_.end()) {
+      RCLCPP_ERROR(
+        lifecycle_node_->get_logger(),
+        "Incoming joint %s doesn't match the controller's joints.",
+        incoming_joint_name.c_str());
+      return rclcpp_action::GoalResponse::REJECT;
+    }
+  }
   RCLCPP_INFO(lifecycle_node_->get_logger(), "Accepted new action goal");
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
@@ -593,6 +606,7 @@ void JointTrajectoryController::feedback_setup_callback(
     preempt_active_goal();
     auto traj_msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>(
       goal_handle->get_goal()->trajectory);
+    sort_to_local_joint_order(traj_msg);
     traj_external_point_ptr_->update(traj_msg);
 
     RealtimeGoalHandlePtr rt_goal = std::make_shared<RealtimeGoalHandle>(goal_handle);
@@ -605,6 +619,47 @@ void JointTrajectoryController::feedback_setup_callback(
   goal_handle_timer_ = lifecycle_node_->create_wall_timer(
     action_monitor_period_.to_chrono<std::chrono::seconds>(),
     std::bind(&RealtimeGoalHandle::runNonRealtime, rt_active_goal_));
+}
+
+void JointTrajectoryController::sort_to_local_joint_order(
+  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg)
+{
+  // rearrange all points in the trajectory message based on mapping
+  std::vector<size_t> mapping_vector = mapping(trajectory_msg->joint_names, joint_names_);
+  auto remap = [this](const std::vector<double> & to_remap, const std::vector<size_t> & mapping)
+    -> std::vector<double>
+    {
+      if (to_remap.empty()) {
+        return to_remap;
+      }
+      if (to_remap.size() != mapping.size()) {
+        RCLCPP_WARN(
+          lifecycle_node_->get_logger(),
+          "Invalid input size (%d) for sorting", to_remap.size());
+        return to_remap;
+      }
+      std::vector<double> output;
+      output.resize(mapping.size(), 0.0);
+      for (auto index = 0ul; index < mapping.size(); ++index) {
+        auto map_index = mapping[index];
+        output[map_index] = to_remap[index];
+      }
+      return output;
+    };
+
+  for (auto index = 0ul; index < trajectory_msg->points.size(); ++index) {
+    trajectory_msg->points[index].positions =
+      remap(trajectory_msg->points[index].positions, mapping_vector);
+
+    trajectory_msg->points[index].velocities =
+      remap(trajectory_msg->points[index].velocities, mapping_vector);
+
+    trajectory_msg->points[index].accelerations =
+      remap(trajectory_msg->points[index].accelerations, mapping_vector);
+
+    trajectory_msg->points[index].effort =
+      remap(trajectory_msg->points[index].effort, mapping_vector);
+  }
 }
 
 void JointTrajectoryController::preempt_active_goal()

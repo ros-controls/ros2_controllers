@@ -526,3 +526,68 @@ TEST_F(TestTrajectoryController, zero_state_publish_rate) {
 
   test_state_publish_rate_target(traj_controller, 0);
 }
+
+TEST_F(TestTrajectoryController, test_jumbled_joint_order) {
+  auto traj_controller = std::make_shared<joint_trajectory_controller::JointTrajectoryController>();
+  auto ret = traj_controller->init(test_robot, controller_name);
+  if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
+    FAIL();
+  }
+
+  auto traj_lifecycle_node = traj_controller->get_lifecycle_node();
+  std::vector<std::string> joint_names = {"joint1", "joint2", "joint3"};
+  rclcpp::Parameter joint_parameters("joints", joint_names);
+  traj_lifecycle_node->set_parameter(joint_parameters);
+
+  std::vector<std::string> operation_mode_names = {"write1", "write2"};
+  rclcpp::Parameter operation_mode_parameters("write_op_modes", operation_mode_names);
+  traj_lifecycle_node->set_parameter(operation_mode_parameters);
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(traj_lifecycle_node->get_node_base_interface());
+
+  traj_controller->on_configure(traj_lifecycle_node->get_current_state());
+  traj_controller->on_activate(traj_lifecycle_node->get_current_state());
+
+  auto future_handle = std::async(
+    std::launch::async, [&executor]() -> void {
+      executor.spin();
+    });
+  // wait for things to setup
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+  {
+    trajectory_msgs::msg::JointTrajectory traj_msg;
+    std::vector<std::string> jumbled_joint_names {
+      test_robot->joint_name2, test_robot->joint_name3, test_robot->joint_name1
+    };
+    traj_msg.joint_names = jumbled_joint_names;
+    traj_msg.header.stamp = rclcpp::Time(0);
+    traj_msg.points.resize(1);
+
+    traj_msg.points[0].time_from_start = rclcpp::Duration::from_seconds(0.25);
+    traj_msg.points[0].positions.resize(3);
+    traj_msg.points[0].positions[0] = 2.0;
+    traj_msg.points[0].positions[1] = 3.0;
+    traj_msg.points[0].positions[2] = 1.0;
+
+    trajectory_publisher->publish(traj_msg);
+  }
+
+  // update for 0.5 seconds
+  auto start_time = rclcpp::Clock().now();
+  rclcpp::Duration wait = rclcpp::Duration::from_seconds(0.5);
+  auto end_time = start_time + wait;
+  while (rclcpp::Clock().now() < end_time) {
+    test_robot->read();
+    traj_controller->update();
+    test_robot->write();
+  }
+
+  double threshold = 0.001;
+  EXPECT_NEAR(1.0, test_robot->pos1, threshold);
+  EXPECT_NEAR(2.0, test_robot->pos2, threshold);
+  EXPECT_NEAR(3.0, test_robot->pos3, threshold);
+
+  executor.cancel();
+}

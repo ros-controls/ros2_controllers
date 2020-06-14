@@ -144,6 +144,10 @@ private:
   void feedback_setup_callback(
     std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle);
 
+  // sorts the joints of the incoming message to our local order
+  void sort_to_local_joint_order(
+    std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg);
+
   SegmentTolerances default_tolerances_;
 
   void preempt_active_goal();
