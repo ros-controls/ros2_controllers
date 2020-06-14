@@ -122,7 +122,7 @@ private:
 };
 
 /**
- * \return The map between \p t1 indices (implicitly encoded in return vector indices) to \t2 indices.
+ * \return The map between \p t1 indices (implicitly encoded in return vector indices) to \p t2 indices.
  * If \p t1 is <tt>"{C, B}"</tt> and \p t2 is <tt>"{A, B, C, D}"</tt>, the associated mapping vector is
  * <tt>"{2, 1}"</tt>.
  */
