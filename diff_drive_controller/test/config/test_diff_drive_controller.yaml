@@ -1,0 +1,44 @@
+diff_drive_controller:
+  ros__parameters:
+    left_wheel_names: ["left_wheels"]
+    right_wheel_names: ["right_wheels"]
+    write_op_modes: ["motor_controller"]
+
+    wheel_separation: 0.40
+    wheels_per_side: 1  # actually 2, but both are controlled by 1 signal
+    wheel_radius: 0.02
+
+    wheel_separation_multiplier: 1.0
+    left_wheel_radius_multiplier: 1.0
+    right_wheel_radius_multiplier: 1.0
+
+    odom_frame_id: odom
+    base_frame_id: base_link
+    pose_covariance_diagonal: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    twist_covariance_diagonal: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+    open_loop: true
+    enable_odom_tf: true
+
+    cmd_vel_timeout: 500 # milliseconds
+    publish_limited_velocity: true
+    velocity_rolling_window_size: 10
+
+    linear.x.has_velocity_limits: false
+    linear.x.has_acceleration_limits: false
+    linear.x.has_jerk_limits: false
+    linear.x.max_velocity: 0.0
+    linear.x.min_velocity: 0.0
+    linear.x.max_acceleration: 0.0
+    linear.x.max_jerk: 0.0
+    linear.x.min_jerk: 0.0
+
+    angular.z.has_velocity_limits: false
+    angular.z.has_acceleration_limits: false
+    angular.z.has_jerk_limits: false
+    angular.z.max_velocity: 0.0
+    angular.z.min_velocity: 0.0
+    angular.z.max_acceleration: 0.0
+    angular.z.min_acceleration: 0.0
+    angular.z.max_jerk: 0.0
+    angular.z.min_jerk: 0.0
