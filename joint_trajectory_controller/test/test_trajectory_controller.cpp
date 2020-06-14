@@ -18,20 +18,13 @@
 #include <thread>
 #include <vector>
 
-#include "gtest/gtest.h"
-
 #include "controller_parameter_server/parameter_server.hpp"
-
+#include "gtest/gtest.h"
 #include "hardware_interface/robot_hardware.hpp"
-
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
-
 #include "lifecycle_msgs/msg/state.hpp"
-
 #include "rclcpp/rclcpp.hpp"
-
 #include "rcutils/get_env.h"
-
 #include "test_robot_hardware/test_robot_hardware.hpp"
 
 using lifecycle_msgs::msg::State;
@@ -526,7 +519,7 @@ TEST_F(TestTrajectoryController, zero_state_publish_rate) {
 
 TEST_F(TestTrajectoryController, test_jumbled_joint_order) {
   auto traj_controller = std::make_shared<joint_trajectory_controller::JointTrajectoryController>();
-  auto ret = traj_controller->init(test_robot, controller_name);
+  auto ret = traj_controller->init(test_robot_, controller_name_);
   if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
     FAIL();
   }
@@ -556,7 +549,7 @@ TEST_F(TestTrajectoryController, test_jumbled_joint_order) {
   {
     trajectory_msgs::msg::JointTrajectory traj_msg;
     std::vector<std::string> jumbled_joint_names {
-      test_robot->joint_name2, test_robot->joint_name3, test_robot->joint_name1
+      test_robot_->joint_name2, test_robot_->joint_name3, test_robot_->joint_name1
     };
     traj_msg.joint_names = jumbled_joint_names;
     traj_msg.header.stamp = rclcpp::Time(0);
@@ -568,17 +561,17 @@ TEST_F(TestTrajectoryController, test_jumbled_joint_order) {
     traj_msg.points[0].positions[1] = 3.0;
     traj_msg.points[0].positions[2] = 1.0;
 
-    trajectory_publisher->publish(traj_msg);
+    trajectory_publisher_->publish(traj_msg);
   }
 
   // update for 0.5 seconds
-  auto start_time = rclcpp::Clock().now();
-  rclcpp::Duration wait = rclcpp::Duration::from_seconds(0.5);
-  auto end_time = start_time + wait;
+  const auto start_time = rclcpp::Clock().now();
+  const rclcpp::Duration wait = rclcpp::Duration::from_seconds(0.5);
+  const auto end_time = start_time + wait;
   while (rclcpp::Clock().now() < end_time) {
-    test_robot->read();
+    test_robot_->read();
     traj_controller->update();
-    test_robot->write();
+    test_robot_->write();
   }
 
   EXPECT_NEAR(1.0, test_robot_->pos1, COMMON_THRESHOLD);
