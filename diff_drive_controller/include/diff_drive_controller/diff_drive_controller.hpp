@@ -135,8 +135,7 @@ protected:
   Odometry odometry_;
 
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Odometry>> odometry_publisher_
-    =
-    nullptr;
+    = nullptr;
   std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>>
   realtime_odometry_publisher_ = nullptr;
 
