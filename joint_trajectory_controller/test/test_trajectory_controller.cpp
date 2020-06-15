@@ -518,13 +518,9 @@ TEST_F(TestTrajectoryController, zero_state_publish_rate) {
 }
 
 TEST_F(TestTrajectoryController, test_jumbled_joint_order) {
-  auto traj_controller = std::make_shared<joint_trajectory_controller::JointTrajectoryController>();
-  auto ret = traj_controller->init(test_robot_, controller_name_);
-  if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
-    FAIL();
-  }
+  SetUpTrajectoryController(false);
 
-  auto traj_lifecycle_node = traj_controller->get_lifecycle_node();
+  auto traj_lifecycle_node = traj_controller_->get_lifecycle_node();
   std::vector<std::string> joint_names = {"joint1", "joint2", "joint3"};
   rclcpp::Parameter joint_parameters("joints", joint_names);
   traj_lifecycle_node->set_parameter(joint_parameters);
@@ -536,8 +532,8 @@ TEST_F(TestTrajectoryController, test_jumbled_joint_order) {
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(traj_lifecycle_node->get_node_base_interface());
 
-  traj_controller->on_configure(traj_lifecycle_node->get_current_state());
-  traj_controller->on_activate(traj_lifecycle_node->get_current_state());
+  traj_controller_->on_configure(traj_lifecycle_node->get_current_state());
+  traj_controller_->on_activate(traj_lifecycle_node->get_current_state());
 
   auto future_handle = std::async(
     std::launch::async, [&executor]() -> void {
@@ -570,7 +566,7 @@ TEST_F(TestTrajectoryController, test_jumbled_joint_order) {
   const auto end_time = start_time + wait;
   while (rclcpp::Clock().now() < end_time) {
     test_robot_->read();
-    traj_controller->update();
+    traj_controller_->update();
     test_robot_->write();
   }
 
