@@ -101,9 +101,6 @@ protected:
     }
 
     trajectory_msgs::msg::JointTrajectory traj_msg;
-    const std::vector<std::string> joint_names_ {
-      test_robot_->joint_name1, test_robot_->joint_name2, test_robot_->joint_name3
-    };
     traj_msg.joint_names = joint_names_;
     traj_msg.header.stamp.sec = 0;
     traj_msg.header.stamp.nanosec = 0;
