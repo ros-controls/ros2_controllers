@@ -30,7 +30,7 @@ TEST(TestTrajectory, initialize_trajectory) {
     auto empty_msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
     empty_msg->header.stamp.sec = 2;
     empty_msg->header.stamp.nanosec = 2;
-    rclcpp::Time empty_time = empty_msg->header.stamp;
+    const rclcpp::Time empty_time = empty_msg->header.stamp;
     auto traj = joint_trajectory_controller::Trajectory(empty_msg);
 
     trajectory_msgs::msg::JointTrajectoryPoint expected_point;
@@ -45,9 +45,9 @@ TEST(TestTrajectory, initialize_trajectory) {
     auto empty_msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
     empty_msg->header.stamp.sec = 0;
     empty_msg->header.stamp.nanosec = 0;
-    auto now = rclcpp::Clock().now();
+    const auto now = rclcpp::Clock().now();
     auto traj = joint_trajectory_controller::Trajectory(empty_msg);
-    auto traj_starttime = traj.time_from_start();
+    const auto traj_starttime = traj.time_from_start();
 
     trajectory_msgs::msg::JointTrajectoryPoint expected_point;
     joint_trajectory_controller::TrajectoryPointConstIter start, end;
@@ -55,7 +55,7 @@ TEST(TestTrajectory, initialize_trajectory) {
 
     EXPECT_EQ(traj.end(), start);
     EXPECT_EQ(traj.end(), end);
-    auto allowed_delta = 10000ll;
+    const auto allowed_delta = 10000ll;
     EXPECT_LT(traj.time_from_start().nanoseconds() - now.nanoseconds(), allowed_delta);
   }
 }
@@ -100,7 +100,7 @@ TEST(TestTrajectory, sample_trajectory) {
   current_point.velocities.push_back(0.0);
   current_point.accelerations.push_back(0.0);
 
-  rclcpp::Time time_now = rclcpp::Clock().now();
+  const rclcpp::Time time_now = rclcpp::Clock().now();
   traj.set_point_before_trajectory_msg(time_now, current_point);
 
   trajectory_msgs::msg::JointTrajectoryPoint expected_state;

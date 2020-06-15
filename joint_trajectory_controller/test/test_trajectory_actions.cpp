@@ -214,7 +214,7 @@ public:
     RCLCPP_DEBUG(
       node_->get_logger(), "common_goal_response time: %f",
       rclcpp::Clock().now().seconds());
-    auto goal_handle = future.get();
+    const auto goal_handle = future.get();
     if (!goal_handle) {
       common_goal_accepted_ = false;
       RCLCPP_DEBUG(node_->get_logger(), "Goal rejected");
@@ -471,10 +471,10 @@ TEST_F(TestTrajectoryActions, test_cancel_hold_position) {
     goal_msg.trajectory.points = points;
 
     // send and wait for half a second before cancel
-    auto goal_handle_future = action_client_->async_send_goal(goal_msg, goal_options_);
+    const auto goal_handle_future = action_client_->async_send_goal(goal_msg, goal_options_);
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-    auto goal_handle = goal_handle_future.get();
+    const auto goal_handle = goal_handle_future.get();
     action_client_->async_cancel_goal(goal_handle);
   }
   controller_hw_thread_.join();
@@ -485,9 +485,9 @@ TEST_F(TestTrajectoryActions, test_cancel_hold_position) {
     control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL,
     common_action_result_code_);
 
-  double prev_pos1 = test_robot_->pos1;
-  double prev_pos2 = test_robot_->pos2;
-  double prev_pos3 = test_robot_->pos3;
+  const double prev_pos1 = test_robot_->pos1;
+  const double prev_pos2 = test_robot_->pos2;
+  const double prev_pos3 = test_robot_->pos3;
 
   // run an update, it should be holding
   traj_controller_->update();

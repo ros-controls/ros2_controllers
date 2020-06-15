@@ -89,7 +89,7 @@ protected:
     const std::vector<std::array<double, 3>> & points)
   {
     int wait_count = 0;
-    auto topic = trajectory_publisher_->get_topic_name();
+    const auto topic = trajectory_publisher_->get_topic_name();
     while (pub_node_->count_subscribers(topic) == 0) {
       if (wait_count >= 5) {
         auto error_msg =
@@ -101,7 +101,7 @@ protected:
     }
 
     trajectory_msgs::msg::JointTrajectory traj_msg;
-    std::vector<std::string> joint_names_ {
+    const std::vector<std::string> joint_names_ {
       test_robot_->joint_name1, test_robot_->joint_name2, test_robot_->joint_name3
     };
     traj_msg.joint_names = joint_names_;
@@ -141,29 +141,29 @@ protected:
 };
 
 TEST_F(TestTrajectoryController, wrong_initialization) {
-  auto uninitialized_robot = std::make_shared<test_robot_hardware::TestRobotHardware>();
+  const auto uninitialized_robot = std::make_shared<test_robot_hardware::TestRobotHardware>();
   auto traj_controller = std::make_shared<joint_trajectory_controller::JointTrajectoryController>(
     joint_names_, op_mode_);
-  auto ret = traj_controller->init(uninitialized_robot, controller_name_);
+  const auto ret = traj_controller->init(uninitialized_robot, controller_name_);
   if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
     FAIL();
   }
 
-  auto unconfigured_state = traj_controller->get_lifecycle_node()->configure();
+  const auto unconfigured_state = traj_controller->get_lifecycle_node()->configure();
   EXPECT_EQ(State::PRIMARY_STATE_UNCONFIGURED, unconfigured_state.id());
 }
 
 TEST_F(TestTrajectoryController, correct_initialization) {
-  auto initialized_robot = std::make_shared<test_robot_hardware::TestRobotHardware>();
+  const auto initialized_robot = std::make_shared<test_robot_hardware::TestRobotHardware>();
   initialized_robot->init();
   auto traj_controller = std::make_shared<joint_trajectory_controller::JointTrajectoryController>(
     joint_names_, op_mode_);
-  auto ret = traj_controller->init(initialized_robot, controller_name_);
+  const auto ret = traj_controller->init(initialized_robot, controller_name_);
   if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
     FAIL();
   }
 
-  auto inactive_state = traj_controller->get_lifecycle_node()->configure();
+  const auto inactive_state = traj_controller->get_lifecycle_node()->configure();
   EXPECT_EQ(State::PRIMARY_STATE_INACTIVE, inactive_state.id());
   EXPECT_EQ(1.1, initialized_robot->pos1);
   EXPECT_EQ(2.2, initialized_robot->pos2);
@@ -175,9 +175,9 @@ TEST_F(TestTrajectoryController, configuration) {
 
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(traj_controller_->get_lifecycle_node()->get_node_base_interface());
-  auto future_handle_ = std::async(std::launch::async, spin, &executor);
+  const auto future_handle_ = std::async(std::launch::async, spin, &executor);
 
-  auto state = traj_controller_->get_lifecycle_node()->configure();
+  const auto state = traj_controller_->get_lifecycle_node()->configure();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
 
   // send msg
@@ -364,11 +364,11 @@ TEST_F(TestTrajectoryController, correct_initialization_using_parameters) {
 
   // This block is replacing the way parameters are set via launch
   auto traj_lifecycle_node = traj_controller_->get_lifecycle_node();
-  std::vector<std::string> joint_names_ = {"joint1", "joint2", "joint3"};
-  rclcpp::Parameter joint_parameters("joints", joint_names_);
+  const std::vector<std::string> joint_names_ = {"joint1", "joint2", "joint3"};
+  const rclcpp::Parameter joint_parameters("joints", joint_names_);
   traj_lifecycle_node->set_parameter(joint_parameters);
 
-  std::vector<std::string> operation_mode_names = {"write1", "write2"};
+  const std::vector<std::string> operation_mode_names = {"write1", "write2"};
   rclcpp::Parameter operation_mode_parameters("write_op_modes", operation_mode_names);
   traj_lifecycle_node->set_parameter(operation_mode_parameters);
 
@@ -420,7 +420,7 @@ TEST_F(TestTrajectoryController, correct_initialization_using_parameters) {
   state = traj_lifecycle_node->deactivate();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
 
-  auto allowed_delta = 0.05;
+  const auto allowed_delta = 0.05;
   EXPECT_NEAR(3.3, test_robot_->pos1, allowed_delta);
   EXPECT_NEAR(4.4, test_robot_->pos2, allowed_delta);
   EXPECT_NEAR(5.5, test_robot_->pos3, allowed_delta);
@@ -453,12 +453,12 @@ void test_state_publish_rate_target(
 {
   // fill in some data so we wont fail
   auto traj_lifecycle_node = traj_controller->get_lifecycle_node();
-  std::vector<std::string> joint_names_ = {"joint1", "joint2", "joint3"};
-  rclcpp::Parameter joint_parameters("joints", joint_names_);
+  const std::vector<std::string> joint_names_ = {"joint1", "joint2", "joint3"};
+  const rclcpp::Parameter joint_parameters("joints", joint_names_);
   traj_lifecycle_node->set_parameter(joint_parameters);
 
-  std::vector<std::string> operation_mode_names = {"write1", "write2"};
-  rclcpp::Parameter operation_mode_parameters("write_op_modes", operation_mode_names);
+  const std::vector<std::string> operation_mode_names = {"write1", "write2"};
+  const rclcpp::Parameter operation_mode_parameters("write_op_modes", operation_mode_names);
   traj_lifecycle_node->set_parameter(operation_mode_parameters);
 
   rclcpp::executors::SingleThreadedExecutor executor;
@@ -495,9 +495,9 @@ void test_state_publish_rate_target(
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
   // update for 1second
-  auto start_time = rclcpp::Clock().now();
-  rclcpp::Duration wait = rclcpp::Duration::from_seconds(1.0);
-  auto end_time = start_time + wait;
+  const auto start_time = rclcpp::Clock().now();
+  const rclcpp::Duration wait = rclcpp::Duration::from_seconds(1.0);
+  const auto end_time = start_time + wait;
   while (rclcpp::Clock().now() < end_time) {
     traj_controller->update();
   }
@@ -521,12 +521,12 @@ TEST_F(TestTrajectoryController, test_jumbled_joint_order) {
   SetUpTrajectoryController(false);
 
   auto traj_lifecycle_node = traj_controller_->get_lifecycle_node();
-  std::vector<std::string> joint_names = {"joint1", "joint2", "joint3"};
-  rclcpp::Parameter joint_parameters("joints", joint_names);
+  const std::vector<std::string> joint_names = {"joint1", "joint2", "joint3"};
+  const rclcpp::Parameter joint_parameters("joints", joint_names);
   traj_lifecycle_node->set_parameter(joint_parameters);
 
-  std::vector<std::string> operation_mode_names = {"write1", "write2"};
-  rclcpp::Parameter operation_mode_parameters("write_op_modes", operation_mode_names);
+  const std::vector<std::string> operation_mode_names = {"write1", "write2"};
+  const rclcpp::Parameter operation_mode_parameters("write_op_modes", operation_mode_names);
   traj_lifecycle_node->set_parameter(operation_mode_parameters);
 
   rclcpp::executors::SingleThreadedExecutor executor;
@@ -544,7 +544,7 @@ TEST_F(TestTrajectoryController, test_jumbled_joint_order) {
 
   {
     trajectory_msgs::msg::JointTrajectory traj_msg;
-    std::vector<std::string> jumbled_joint_names {
+    const std::vector<std::string> jumbled_joint_names {
       test_robot_->joint_name2, test_robot_->joint_name3, test_robot_->joint_name1
     };
     traj_msg.joint_names = jumbled_joint_names;
