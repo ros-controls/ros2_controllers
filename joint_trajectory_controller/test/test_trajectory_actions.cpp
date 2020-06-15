@@ -326,12 +326,9 @@ TEST_F(TestTrajectoryActions, test_success_multi_point_sendgoal) {
 
 TEST_F(TestTrajectoryActions, test_goal_tolerances_single_point_success) {
   // set tolerance parameters
-  traj_lifecycle_node_->declare_parameter("constraints.joint1.goal", 0.0);
-  traj_lifecycle_node_->declare_parameter("constraints.joint2.goal", 0.0);
-  traj_lifecycle_node_->declare_parameter("constraints.joint3.goal", 0.0);
-  traj_lifecycle_node_->set_parameter(rclcpp::Parameter("constraints.joint1.goal", 0.1));
-  traj_lifecycle_node_->set_parameter(rclcpp::Parameter("constraints.joint2.goal", 0.1));
-  traj_lifecycle_node_->set_parameter(rclcpp::Parameter("constraints.joint3.goal", 0.1));
+  traj_lifecycle_node_->declare_parameter("constraints.joint1.goal", 0.1);
+  traj_lifecycle_node_->declare_parameter("constraints.joint2.goal", 0.1);
+  traj_lifecycle_node_->declare_parameter("constraints.joint3.goal", 0.1);
 
   SetUpExecutor();
   SetUpControllerHardware();
@@ -365,12 +362,9 @@ TEST_F(TestTrajectoryActions, test_goal_tolerances_single_point_success) {
 
 TEST_F(TestTrajectoryActions, test_goal_tolerances_multi_point_success) {
   // set tolerance parameters
-  traj_lifecycle_node_->declare_parameter("constraints.joint1.goal", 0.0);
-  traj_lifecycle_node_->declare_parameter("constraints.joint2.goal", 0.0);
-  traj_lifecycle_node_->declare_parameter("constraints.joint3.goal", 0.0);
-  traj_lifecycle_node_->set_parameter(rclcpp::Parameter("constraints.joint1.goal", 0.1));
-  traj_lifecycle_node_->set_parameter(rclcpp::Parameter("constraints.joint2.goal", 0.1));
-  traj_lifecycle_node_->set_parameter(rclcpp::Parameter("constraints.joint3.goal", 0.1));
+  traj_lifecycle_node_->declare_parameter("constraints.joint1.goal", 0.1);
+  traj_lifecycle_node_->declare_parameter("constraints.joint2.goal", 0.1);
+  traj_lifecycle_node_->declare_parameter("constraints.joint3.goal", 0.1);
 
   SetUpExecutor();
   SetUpControllerHardware();
@@ -424,22 +418,10 @@ TEST_F(TestTrajectoryActions, test_goal_tolerances_multi_point_success) {
 
 TEST_F(TestTrajectoryActions, test_state_tolerances_fail) {
   // set joint tolerance parameters
-  double state_tol = 0.0001;
-  traj_lifecycle_node_->declare_parameter("constraints.joint1.trajectory", 0.0);
-  traj_lifecycle_node_->declare_parameter("constraints.joint2.trajectory", 0.0);
-  traj_lifecycle_node_->declare_parameter("constraints.joint3.trajectory", 0.0);
-  traj_lifecycle_node_->set_parameter(
-    rclcpp::Parameter(
-      "constraints.joint1.trajectory",
-      state_tol));
-  traj_lifecycle_node_->set_parameter(
-    rclcpp::Parameter(
-      "constraints.joint2.trajectory",
-      state_tol));
-  traj_lifecycle_node_->set_parameter(
-    rclcpp::Parameter(
-      "constraints.joint3.trajectory",
-      state_tol));
+  const double state_tol = 0.0001;
+  traj_lifecycle_node_->declare_parameter("constraints.joint1.trajectory", state_tol);
+  traj_lifecycle_node_->declare_parameter("constraints.joint2.trajectory", state_tol);
+  traj_lifecycle_node_->declare_parameter("constraints.joint3.trajectory", state_tol);
 
   SetUpExecutor();
   SetUpControllerHardware();
