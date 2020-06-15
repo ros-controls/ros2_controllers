@@ -11,6 +11,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 find_package(ament_cmake REQUIRED)
+find_package(control_msgs REQUIRED)
 find_package(controller_interface REQUIRED)
 find_package(pluginlib)
 find_package(rclcpp_lifecycle REQUIRED)
@@ -24,6 +25,7 @@ add_library(joint_state_controller
 target_include_directories(joint_state_controller PRIVATE include)
 ament_target_dependencies(joint_state_controller
   builtin_interfaces
+  control_msgs
   controller_interface
   pluginlib
   rclcpp_lifecycle
@@ -69,6 +71,7 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_dependencies(
+  control_msgs
   controller_interface
   rclcpp_lifecycle
   sensor_msgs
