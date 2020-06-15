@@ -268,7 +268,7 @@ TEST_F(TestTrajectoryActions, test_success_single_point_sendgoal) {
   }
   controller_hw_thread_.join();
 
-  EXPECT_EQ(true, common_goal_accepted_);
+  EXPECT_TRUE(common_goal_accepted_);
   EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
 
   EXPECT_EQ(1.0, test_robot_->pos1);
@@ -315,8 +315,8 @@ TEST_F(TestTrajectoryActions, test_success_multi_point_sendgoal) {
   }
   controller_hw_thread_.join();
 
-  EXPECT_EQ(true, feedback_recv);
-  EXPECT_EQ(true, common_goal_accepted_);
+  EXPECT_TRUE(feedback_recv);
+  EXPECT_TRUE(common_goal_accepted_);
   EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
 
   EXPECT_NEAR(7.0, test_robot_->pos1, COMMON_THRESHOLD);
@@ -349,7 +349,7 @@ TEST_F(TestTrajectoryActions, test_goal_tolerances_single_point_success) {
   }
   controller_hw_thread_.join();
 
-  EXPECT_EQ(true, common_goal_accepted_);
+  EXPECT_TRUE(common_goal_accepted_);
   EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
   EXPECT_EQ(
     control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL,
@@ -404,8 +404,8 @@ TEST_F(TestTrajectoryActions, test_goal_tolerances_multi_point_success) {
   }
   controller_hw_thread_.join();
 
-  EXPECT_EQ(true, feedback_recv);
-  EXPECT_EQ(true, common_goal_accepted_);
+  EXPECT_TRUE(feedback_recv);
+  EXPECT_TRUE(common_goal_accepted_);
   EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
   EXPECT_EQ(
     control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL,
@@ -442,7 +442,7 @@ TEST_F(TestTrajectoryActions, test_state_tolerances_fail) {
   }
   controller_hw_thread_.join();
 
-  EXPECT_EQ(true, common_goal_accepted_);
+  EXPECT_TRUE(common_goal_accepted_);
   EXPECT_EQ(rclcpp_action::ResultCode::ABORTED, common_resultcode_);
   EXPECT_EQ(
     control_msgs::action::FollowJointTrajectory_Result::PATH_TOLERANCE_VIOLATED,
@@ -479,7 +479,7 @@ TEST_F(TestTrajectoryActions, test_cancel_hold_position) {
   }
   controller_hw_thread_.join();
 
-  EXPECT_EQ(true, common_goal_accepted_);
+  EXPECT_TRUE(common_goal_accepted_);
   EXPECT_EQ(rclcpp_action::ResultCode::CANCELED, common_resultcode_);
   EXPECT_EQ(
     control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL,
