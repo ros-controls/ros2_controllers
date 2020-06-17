@@ -158,6 +158,7 @@ private:
   // sorts the joints of the incoming message to our local order
   void sort_to_local_joint_order(
     std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg);
+  bool validate_trajectory_msg(const trajectory_msgs::msg::JointTrajectory & trajectory) const;
 
   SegmentTolerances default_tolerances_;
 

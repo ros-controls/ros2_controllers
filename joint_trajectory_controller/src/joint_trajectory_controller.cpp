@@ -320,12 +320,8 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
   auto callback = [this, &logger](const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg)
     -> void
     {
-      if (registered_joint_cmd_handles_.size() != msg->joint_names.size()) {
-        RCLCPP_ERROR(
-          logger,
-          "number of joints in joint trajectory msg (%d) "
-          "does not match number of joint command handles (%d)\n",
-          msg->joint_names.size(), registered_joint_cmd_handles_.size());
+      if (!validate_trajectory_msg(*msg)) {
+        return;
       }
 
       // http://wiki.ros.org/joint_trajectory_controller/UnderstandingTrajectoryReplacement
@@ -554,28 +550,10 @@ rclcpp_action::GoalResponse JointTrajectoryController::goal_callback(
     return rclcpp_action::GoalResponse::REJECT;
   }
 
-  // If partial joints goals are not allowed, goal should specify all controller joints
-  if (!allow_partial_joints_goal_) {
-    if (goal->trajectory.joint_names.size() != joint_names_.size()) {
-      RCLCPP_ERROR(
-        lifecycle_node_->get_logger(),
-        "Joints on incoming goal don't match the controller joints.");
-      return rclcpp_action::GoalResponse::REJECT;
-    }
+  if (!validate_trajectory_msg(goal->trajectory)) {
+    return rclcpp_action::GoalResponse::REJECT;
   }
 
-  for (auto i = 0ul; i < goal->trajectory.joint_names.size(); ++i) {
-    const std::string & incoming_joint_name = goal->trajectory.joint_names[i];
-
-    auto it = std::find(joint_names_.begin(), joint_names_.end(), incoming_joint_name);
-    if (it == joint_names_.end()) {
-      RCLCPP_ERROR(
-        lifecycle_node_->get_logger(),
-        "Incoming joint %s doesn't match the controller's joints.",
-        incoming_joint_name.c_str());
-      return rclcpp_action::GoalResponse::REJECT;
-    }
-  }
   RCLCPP_INFO(lifecycle_node_->get_logger(), "Accepted new action goal");
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
@@ -669,6 +647,41 @@ void JointTrajectoryController::sort_to_local_joint_order(
     trajectory_msg->points[index].effort =
       remap(trajectory_msg->points[index].effort, mapping_vector);
   }
+}
+
+bool JointTrajectoryController::validate_trajectory_msg(
+  const trajectory_msgs::msg::JointTrajectory & trajectory) const
+{
+  // If partial joints goals are not allowed, goal should specify all controller joints
+  if (!allow_partial_joints_goal_) {
+    if (trajectory.joint_names.size() != joint_names_.size()) {
+      RCLCPP_ERROR(
+        lifecycle_node_->get_logger(),
+        "Joints on incoming trajectory don't match the controller joints.");
+      return false;
+    }
+  }
+
+  if (trajectory.joint_names.empty()) {
+    RCLCPP_ERROR(
+      lifecycle_node_->get_logger(),
+      "Empty joint names on incoming trajectory.");
+    return false;
+  }
+
+  for (auto i = 0ul; i < trajectory.joint_names.size(); ++i) {
+    const std::string & incoming_joint_name = trajectory.joint_names[i];
+
+    auto it = std::find(joint_names_.begin(), joint_names_.end(), incoming_joint_name);
+    if (it == joint_names_.end()) {
+      RCLCPP_ERROR(
+        lifecycle_node_->get_logger(),
+        "Incoming joint %s doesn't match the controller's joints.",
+        incoming_joint_name.c_str());
+      return false;
+    }
+  }
+  return true;
 }
 
 void JointTrajectoryController::preempt_active_goal()
