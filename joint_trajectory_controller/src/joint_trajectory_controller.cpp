@@ -327,6 +327,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
       // http://wiki.ros.org/joint_trajectory_controller/UnderstandingTrajectoryReplacement
       // always replace old msg with new one for now
       if (subscriber_is_active_) {
+        fill_partial_goal(msg);
         sort_to_local_joint_order(msg);
         traj_external_point_ptr_->update(msg);
       }
@@ -376,8 +377,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
   allow_partial_joints_goal_ = lifecycle_node_->get_parameter("allow_partial_joints_goal")
     .get_value<bool>();
   if (allow_partial_joints_goal_) {
-    // TODO(ddengster): implement partial joints, log an enabled partial joints goal message https://github.com/ros-controls/ros2_controllers/issues/37
-    RCLCPP_WARN(logger, "Warning: Goals with partial set of joints not implemented yet.");
+    RCLCPP_INFO(logger, "Goals with partial set of joints are allowed");
   }
 
   const double action_monitor_rate = lifecycle_node_->get_parameter("action_monitor_rate")
@@ -593,6 +593,7 @@ void JointTrajectoryController::feedback_setup_callback(
     preempt_active_goal();
     auto traj_msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>(
       goal_handle->get_goal()->trajectory);
+    fill_partial_goal(traj_msg);
     sort_to_local_joint_order(traj_msg);
     traj_external_point_ptr_->update(traj_msg);
 
@@ -606,6 +607,47 @@ void JointTrajectoryController::feedback_setup_callback(
   goal_handle_timer_ = lifecycle_node_->create_wall_timer(
     action_monitor_period_.to_chrono<std::chrono::seconds>(),
     std::bind(&RealtimeGoalHandle::runNonRealtime, rt_active_goal_));
+}
+
+void JointTrajectoryController::fill_partial_goal(
+  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg) const
+{
+  // joint names in the goal are a subset of existing joints, as checked in goal_callback
+  // so if the size matches, the goal contains all controller joints
+  if (joint_names_.size() == trajectory_msg->joint_names.size()) {
+    return;
+  }
+
+  trajectory_msg->joint_names.reserve(joint_names_.size());
+
+  for (auto index = 0ul; index < joint_names_.size(); ++index) {
+    {
+      if (std::find(
+          trajectory_msg->joint_names.begin(), trajectory_msg->joint_names.end(),
+          joint_names_[index]) != trajectory_msg->joint_names.end())
+      {
+        // joint found on msg
+        continue;
+      }
+      trajectory_msg->joint_names.push_back(joint_names_[index]);
+
+      const auto & joint_state = registered_joint_state_handles_[index];
+      for (auto & it : trajectory_msg->points) {
+        // Assume hold position with 0 velocity and acceleration for missing joints
+        it.positions.push_back(joint_state->get_position());
+        if (!it.velocities.empty()) {
+          it.velocities.push_back(0.0);
+        }
+        if (!it.accelerations.empty()) {
+          it.accelerations.push_back(0.0);
+        }
+        // TODO(v-lopez) is effort 0.0 valid here? Is it worse than joint_state->get_effort()?
+        if (!it.effort.empty()) {
+          it.effort.push_back(0.0);
+        }
+      }
+    }
+  }
 }
 
 void JointTrajectoryController::sort_to_local_joint_order(

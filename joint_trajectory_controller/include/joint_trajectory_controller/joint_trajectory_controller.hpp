@@ -155,6 +155,10 @@ private:
   void feedback_setup_callback(
     std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle);
 
+  // fill trajectory_msg so it matches joints controlled by this controller
+  // positions set to current position, velocities, accelerations and efforts to 0.0
+  void fill_partial_goal(
+    std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg) const;
   // sorts the joints of the incoming message to our local order
   void sort_to_local_joint_order(
     std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg);
