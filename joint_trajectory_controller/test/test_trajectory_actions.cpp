@@ -35,6 +35,11 @@ using trajectory_msgs::msg::JointTrajectoryPoint;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
+namespace
+{
+const double COMMON_THRESHOLD = 0.001;
+}
+
 class TestTrajectoryActions : public ::testing::Test
 {
 protected:
@@ -45,38 +50,87 @@ protected:
 
   void SetUp()
   {
-    test_robot = std::make_shared<test_robot_hardware::TestRobotHardware>();
-    test_robot->init();
-    joint_names = {{test_robot->joint_name1, test_robot->joint_name2, test_robot->joint_name3}};
-    op_mode = {{test_robot->write_op_handle_name1}};
+    test_robot_ = std::make_shared<test_robot_hardware::TestRobotHardware>();
+    test_robot_->init();
+    joint_names_ = {{test_robot_->joint_name1, test_robot_->joint_name2, test_robot_->joint_name3}};
+    op_mode_ = {{test_robot_->write_op_handle_name1}};
 
-    node = std::make_shared<rclcpp::Node>("trajectory_test_node");
+    node_ = std::make_shared<rclcpp::Node>("trajectory_test_node");
 
-    traj_controller = std::make_shared<joint_trajectory_controller::JointTrajectoryController>();
-    auto ret = traj_controller->init(test_robot, controller_name);
+    traj_controller_ = std::make_shared<joint_trajectory_controller::JointTrajectoryController>();
+    auto ret = traj_controller_->init(test_robot_, controller_name_);
     if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
       FAIL();
     }
 
-    traj_lifecycle_node = traj_controller->get_lifecycle_node();
-    rclcpp::Parameter joint_parameters("joints", joint_names);
-    traj_lifecycle_node->set_parameter(joint_parameters);
+    traj_lifecycle_node_ = traj_controller_->get_lifecycle_node();
+    rclcpp::Parameter joint_parameters("joints", joint_names_);
+    traj_lifecycle_node_->set_parameter(joint_parameters);
 
-    rclcpp::Parameter operation_mode_parameters("write_op_modes", op_mode);
-    traj_lifecycle_node->set_parameter(operation_mode_parameters);
+    rclcpp::Parameter operation_mode_parameters("write_op_modes", op_mode_);
+    traj_lifecycle_node_->set_parameter(operation_mode_parameters);
+
+    goal_options_.goal_response_callback =
+      std::bind(&TestTrajectoryActions::common_goal_response, this, _1);
+    goal_options_.result_callback =
+      std::bind(&TestTrajectoryActions::common_result_response, this, _1);
+    goal_options_.feedback_callback = nullptr;
+  }
+
+  void SetUpExecutor()
+  {
+    setup_executor_ = true;
+
+    executor_ = std::make_unique<rclcpp::executors::MultiThreadedExecutor>();
+
+    executor_->add_node(traj_lifecycle_node_->get_node_base_interface());
+
+    traj_controller_->on_configure(traj_lifecycle_node_->get_current_state());
+    traj_controller_->on_activate(traj_lifecycle_node_->get_current_state());
+
+    SetUpActionClient();
+
+    executor_->add_node(node_->get_node_base_interface());
+
+    executor_future_handle_ = std::async(
+      std::launch::async, [&]() -> void {
+        executor_->spin();
+      });
+  }
+
+  void SetUpControllerHardware()
+  {
+    setup_controller_hw_ = true;
+
+    controller_hw_thread_ = std::thread(
+      [&]() {
+        // controller hardware cycle update loop
+        auto start_time = rclcpp::Clock().now();
+        rclcpp::Duration wait = rclcpp::Duration::from_seconds(2.0);
+        auto end_time = start_time + wait;
+        while (rclcpp::Clock().now() < end_time) {
+          test_robot_->read();
+          traj_controller_->update();
+          test_robot_->write();
+        }
+      });
+
+    // common_goal_response and common_result_response
+    // sometimes doesnt receive calls when we dont sleep
+    std::this_thread::sleep_for(std::chrono::milliseconds(300));
   }
 
   void SetUpActionClient()
   {
-    action_client = rclcpp_action::create_client<control_msgs::action::FollowJointTrajectory>(
-      node->get_node_base_interface(),
-      node->get_node_graph_interface(),
-      node->get_node_logging_interface(),
-      node->get_node_waitables_interface(),
-      controller_name + "/follow_joint_trajectory");
+    action_client_ = rclcpp_action::create_client<control_msgs::action::FollowJointTrajectory>(
+      node_->get_node_base_interface(),
+      node_->get_node_graph_interface(),
+      node_->get_node_logging_interface(),
+      node_->get_node_waitables_interface(),
+      controller_name_ + "/follow_joint_trajectory");
 
     bool response =
-      action_client->wait_for_action_server(std::chrono::seconds(1));
+      action_client_->wait_for_action_server(std::chrono::seconds(1));
     if (!response) {
       throw std::runtime_error("could not get action server");
     }
@@ -86,6 +140,32 @@ protected:
   {
     rclcpp::shutdown();
   }
+
+  void TearDown()
+  {
+    TearDownControllerHardware();
+    TearDownExecutor();
+  }
+
+  void TearDownExecutor()
+  {
+    if (setup_executor_) {
+      setup_executor_ = false;
+      executor_->cancel();
+      executor_future_handle_.wait();
+    }
+  }
+
+  void TearDownControllerHardware()
+  {
+    if (setup_controller_hw_) {
+      setup_controller_hw_ = false;
+      if (controller_hw_thread_.joinable()) {
+        controller_hw_thread_.join();
+      }
+    }
+  }
+
   using FollowJointTrajectoryMsg = control_msgs::action::FollowJointTrajectory;
   using GoalHandle = rclcpp_action::ClientGoalHandle<FollowJointTrajectoryMsg>;
   using GoalOptions = rclcpp_action::Client<FollowJointTrajectoryMsg>::SendGoalOptions;
@@ -97,112 +177,86 @@ protected:
   {
     control_msgs::action::FollowJointTrajectory_Goal goal_msg;
     goal_msg.goal_time_tolerance = rclcpp::Duration::from_seconds(timeout);
-    goal_msg.trajectory.joint_names = joint_names;
+    goal_msg.trajectory.joint_names = joint_names_;
     goal_msg.trajectory.points = points;
 
-    auto goal_handle_future = action_client->async_send_goal(goal_msg, opt);
+    auto goal_handle_future = action_client_->async_send_goal(goal_msg, opt);
     return true;
   }
 
-  std::string controller_name = "test_joint_trajectory_actions";
+  std::string controller_name_ = "test_joint_trajectory_actions";
 
-  std::shared_ptr<test_robot_hardware::TestRobotHardware> test_robot;
-  std::vector<std::string> joint_names;
-  std::vector<std::string> op_mode;
+  std::shared_ptr<test_robot_hardware::TestRobotHardware> test_robot_;
+  std::vector<std::string> joint_names_;
+  std::vector<std::string> op_mode_;
 
-  rclcpp::Node::SharedPtr node;
-  std::shared_ptr<joint_trajectory_controller::JointTrajectoryController> traj_controller;
-  rclcpp_lifecycle::LifecycleNode::SharedPtr traj_lifecycle_node;
+  rclcpp::Node::SharedPtr node_;
+  std::shared_ptr<joint_trajectory_controller::JointTrajectoryController> traj_controller_;
+  rclcpp_lifecycle::LifecycleNode::SharedPtr traj_lifecycle_node_;
 
-  rclcpp_action::Client<FollowJointTrajectoryMsg>::SharedPtr action_client;
-  rclcpp_action::ResultCode common_resultcode = rclcpp_action::ResultCode::UNKNOWN;
-  bool common_goal_accepted = false;
-  int common_action_result_code = control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL;
-  double common_threshold = 0.001;
+  rclcpp_action::Client<FollowJointTrajectoryMsg>::SharedPtr action_client_;
+  rclcpp_action::ResultCode common_resultcode_ = rclcpp_action::ResultCode::UNKNOWN;
+  bool common_goal_accepted_ = false;
+  int common_action_result_code_ = control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL;
+
+  bool setup_executor_ = false;
+  rclcpp::executors::MultiThreadedExecutor::UniquePtr executor_;
+  std::future<void> executor_future_handle_;
+
+  bool setup_controller_hw_ = false;
+  std::thread controller_hw_thread_;
+
+  GoalOptions goal_options_;
 
 public:
   void common_goal_response(std::shared_future<GoalHandle::SharedPtr> future)
   {
     RCLCPP_DEBUG(
-      node->get_logger(), "common_goal_response time: %f",
+      node_->get_logger(), "common_goal_response time: %f",
       rclcpp::Clock().now().seconds());
-    auto goal_handle = future.get();
+    const auto goal_handle = future.get();
     if (!goal_handle) {
-      common_goal_accepted = false;
-      RCLCPP_DEBUG(node->get_logger(), "Goal rejected");
+      common_goal_accepted_ = false;
+      RCLCPP_DEBUG(node_->get_logger(), "Goal rejected");
     } else {
-      common_goal_accepted = true;
-      RCLCPP_DEBUG(node->get_logger(), "Goal accepted");
+      common_goal_accepted_ = true;
+      RCLCPP_DEBUG(node_->get_logger(), "Goal accepted");
     }
   }
 
   void common_result_response(const GoalHandle::WrappedResult & result)
   {
     RCLCPP_DEBUG(
-      node->get_logger(), "common_result_response time: %f",
+      node_->get_logger(), "common_result_response time: %f",
       rclcpp::Clock().now().seconds());
-    common_resultcode = result.code;
-    common_action_result_code = result.result->error_code;
+    common_resultcode_ = result.code;
+    common_action_result_code_ = result.result->error_code;
     switch (result.code) {
       case rclcpp_action::ResultCode::SUCCEEDED:
         break;
       case rclcpp_action::ResultCode::ABORTED:
-        RCLCPP_DEBUG(node->get_logger(), "Goal was aborted");
+        RCLCPP_DEBUG(node_->get_logger(), "Goal was aborted");
         return;
       case rclcpp_action::ResultCode::CANCELED:
-        RCLCPP_DEBUG(node->get_logger(), "Goal was canceled");
+        RCLCPP_DEBUG(node_->get_logger(), "Goal was canceled");
         return;
       default:
-        RCLCPP_DEBUG(node->get_logger(), "Unknown result code");
+        RCLCPP_DEBUG(node_->get_logger(), "Unknown result code");
         return;
     }
   }
 };
 
-TEST_F(TestTrajectoryActions, test_success_multi_point_sendgoal) {
-  rclcpp::executors::MultiThreadedExecutor executor;
-  executor.add_node(traj_lifecycle_node->get_node_base_interface());
-
-  traj_controller->on_configure(traj_lifecycle_node->get_current_state());
-  traj_controller->on_activate(traj_lifecycle_node->get_current_state());
-  SetUpActionClient();
-  executor.add_node(node->get_node_base_interface());
-
-  auto future_handle = std::async(
-    std::launch::async, [&executor]() -> void {
-      executor.spin();
-    });
-
-  auto thread_func = [&]() {
-      // controller hardware cycle update loop
-      auto start_time = rclcpp::Clock().now();
-      rclcpp::Duration wait = rclcpp::Duration::from_seconds(2.0);
-      auto end_time = start_time + wait;
-      while (rclcpp::Clock().now() < end_time) {
-        test_robot->read();
-        traj_controller->update();
-        test_robot->write();
-      }
-    };
-  std::thread controller_hw_thread(thread_func);
-
-  // common_goal_response and common_result_response
-  // sometimes doesnt receive calls when we dont sleep
-  std::this_thread::sleep_for(std::chrono::milliseconds(200));
-
-  GoalOptions opt;
-  opt.goal_response_callback =
-    std::bind(&TestTrajectoryActions::common_goal_response, this, _1);
-  opt.result_callback =
-    std::bind(&TestTrajectoryActions::common_result_response, this, _1);
-  opt.feedback_callback = nullptr;
+TEST_F(TestTrajectoryActions, test_success_single_point_sendgoal) {
+  SetUpExecutor();
+  SetUpControllerHardware();
 
   // send goal
   {
     std::vector<JointTrajectoryPoint> points;
     JointTrajectoryPoint point;
     point.time_from_start = rclcpp::Duration::from_seconds(0.0);  // start asap
-    point.positions.resize(joint_names.size());
+    point.positions.resize(joint_names_.size());
 
     point.positions[0] = 1.0;
     point.positions[1] = 2.0;
@@ -210,148 +264,25 @@ TEST_F(TestTrajectoryActions, test_success_multi_point_sendgoal) {
 
     points.push_back(point);
 
-    sendActionGoal(points, 1.0, opt);
+    sendActionGoal(points, 1.0, goal_options_);
   }
-  controller_hw_thread.join();
+  controller_hw_thread_.join();
 
-  EXPECT_EQ(true, common_goal_accepted);
-  EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode);
+  EXPECT_TRUE(common_goal_accepted_);
+  EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
 
-  EXPECT_EQ(1.0, test_robot->pos1);
-  EXPECT_EQ(2.0, test_robot->pos2);
-  EXPECT_EQ(3.0, test_robot->pos3);
-
-  // start again
-  common_goal_accepted = false;
-  common_resultcode = rclcpp_action::ResultCode::UNKNOWN;
-  controller_hw_thread = std::thread(thread_func);
-
-  // add feedback
-  bool feedback_recv = false;
-  opt.feedback_callback = [&](
-    rclcpp_action::ClientGoalHandle<FollowJointTrajectoryMsg>::SharedPtr,
-    const std::shared_ptr<const FollowJointTrajectoryMsg::Feedback> feedback)
-    {
-      (void)feedback;
-      feedback_recv = true;
-    };
-
-  // send goal with multiple points
-  {
-    std::vector<JointTrajectoryPoint> points;
-    JointTrajectoryPoint point1;
-    point1.time_from_start = rclcpp::Duration::from_seconds(0.2);
-    point1.positions.resize(joint_names.size());
-
-    point1.positions[0] = 4.0;
-    point1.positions[1] = 5.0;
-    point1.positions[2] = 6.0;
-    points.push_back(point1);
-
-    JointTrajectoryPoint point2;
-    point2.time_from_start = rclcpp::Duration::from_seconds(0.3);
-    point2.positions.resize(joint_names.size());
-
-    point2.positions[0] = 7.0;
-    point2.positions[1] = 8.0;
-    point2.positions[2] = 9.0;
-    points.push_back(point2);
-
-    sendActionGoal(points, 1.0, opt);
-  }
-  controller_hw_thread.join();
-
-  EXPECT_EQ(true, feedback_recv);
-  EXPECT_EQ(true, common_goal_accepted);
-  EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode);
-
-  EXPECT_NEAR(7.0, test_robot->pos1, common_threshold);
-  EXPECT_NEAR(8.0, test_robot->pos2, common_threshold);
-  EXPECT_NEAR(9.0, test_robot->pos3, common_threshold);
-
-  executor.cancel();
+  EXPECT_EQ(1.0, test_robot_->pos1);
+  EXPECT_EQ(2.0, test_robot_->pos2);
+  EXPECT_EQ(3.0, test_robot_->pos3);
 }
 
-TEST_F(TestTrajectoryActions, test_goal_tolerances_success) {
-  // set tolerance parameters
-  traj_lifecycle_node->declare_parameter("constraints.joint1.goal", 0.0);
-  traj_lifecycle_node->declare_parameter("constraints.joint2.goal", 0.0);
-  traj_lifecycle_node->declare_parameter("constraints.joint3.goal", 0.0);
-  traj_lifecycle_node->set_parameter(rclcpp::Parameter("constraints.joint1.goal", 0.1));
-  traj_lifecycle_node->set_parameter(rclcpp::Parameter("constraints.joint2.goal", 0.1));
-  traj_lifecycle_node->set_parameter(rclcpp::Parameter("constraints.joint3.goal", 0.1));
-
-  rclcpp::executors::MultiThreadedExecutor executor;
-  executor.add_node(traj_lifecycle_node->get_node_base_interface());
-
-  traj_controller->on_configure(traj_lifecycle_node->get_current_state());
-  traj_controller->on_activate(traj_lifecycle_node->get_current_state());
-  SetUpActionClient();
-  executor.add_node(node->get_node_base_interface());
-
-  auto future_handle = std::async(
-    std::launch::async, [&executor]() -> void {
-      executor.spin();
-    });
-
-  auto thread_func = [&]() {
-      // controller hardware cycle update loop
-      auto start_time = rclcpp::Clock().now();
-      rclcpp::Duration wait = rclcpp::Duration::from_seconds(3.0);
-      auto end_time = start_time + wait;
-      while (rclcpp::Clock().now() < end_time) {
-        test_robot->read();
-        traj_controller->update();
-        test_robot->write();
-      }
-    };
-  std::thread controller_hw_thread(thread_func);
-
-  // common_goal_response and common_result_response
-  // sometimes doesnt receive calls when we dont sleep
-  std::this_thread::sleep_for(std::chrono::milliseconds(300));
-
-  GoalOptions opt;
-  opt.goal_response_callback =
-    std::bind(&TestTrajectoryActions::common_goal_response, this, _1);
-  opt.result_callback =
-    std::bind(&TestTrajectoryActions::common_result_response, this, _1);
-  opt.feedback_callback = nullptr;
-
-  // send goal
-  {
-    std::vector<JointTrajectoryPoint> points;
-    JointTrajectoryPoint point;
-    point.time_from_start = rclcpp::Duration::from_seconds(0.0);  // start asap
-    point.positions.resize(joint_names.size());
-
-    point.positions[0] = 1.0;
-    point.positions[1] = 2.0;
-    point.positions[2] = 3.0;
-    points.push_back(point);
-
-    sendActionGoal(points, 1.0, opt);
-  }
-  controller_hw_thread.join();
-
-  EXPECT_EQ(true, common_goal_accepted);
-  EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode);
-  EXPECT_EQ(
-    control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL,
-    common_action_result_code);
-
-  EXPECT_NEAR(1.0, test_robot->pos1, common_threshold);
-  EXPECT_NEAR(2.0, test_robot->pos2, common_threshold);
-  EXPECT_NEAR(3.0, test_robot->pos3, common_threshold);
-
-  // start again
-  common_goal_accepted = false;
-  common_resultcode = rclcpp_action::ResultCode::UNKNOWN;
-  controller_hw_thread = std::thread(thread_func);
+TEST_F(TestTrajectoryActions, test_success_multi_point_sendgoal) {
+  SetUpExecutor();
+  SetUpControllerHardware();
 
   // add feedback
   bool feedback_recv = false;
-  opt.feedback_callback = [&](
+  goal_options_.feedback_callback = [&](
     rclcpp_action::ClientGoalHandle<FollowJointTrajectoryMsg>::SharedPtr,
     const std::shared_ptr<const FollowJointTrajectoryMsg::Feedback> feedback)
     {
@@ -364,7 +295,7 @@ TEST_F(TestTrajectoryActions, test_goal_tolerances_success) {
     std::vector<JointTrajectoryPoint> points;
     JointTrajectoryPoint point1;
     point1.time_from_start = rclcpp::Duration::from_seconds(0.2);
-    point1.positions.resize(joint_names.size());
+    point1.positions.resize(joint_names_.size());
 
     point1.positions[0] = 4.0;
     point1.positions[1] = 5.0;
@@ -373,145 +304,161 @@ TEST_F(TestTrajectoryActions, test_goal_tolerances_success) {
 
     JointTrajectoryPoint point2;
     point2.time_from_start = rclcpp::Duration::from_seconds(0.3);
-    point2.positions.resize(joint_names.size());
+    point2.positions.resize(joint_names_.size());
 
     point2.positions[0] = 7.0;
     point2.positions[1] = 8.0;
     point2.positions[2] = 9.0;
     points.push_back(point2);
 
-    sendActionGoal(points, 1.0, opt);
+    sendActionGoal(points, 1.0, goal_options_);
   }
-  controller_hw_thread.join();
+  controller_hw_thread_.join();
 
-  EXPECT_EQ(true, feedback_recv);
-  EXPECT_EQ(true, common_goal_accepted);
-  EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode);
+  EXPECT_TRUE(feedback_recv);
+  EXPECT_TRUE(common_goal_accepted_);
+  EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
+
+  EXPECT_NEAR(7.0, test_robot_->pos1, COMMON_THRESHOLD);
+  EXPECT_NEAR(8.0, test_robot_->pos2, COMMON_THRESHOLD);
+  EXPECT_NEAR(9.0, test_robot_->pos3, COMMON_THRESHOLD);
+}
+
+TEST_F(TestTrajectoryActions, test_goal_tolerances_single_point_success) {
+  // set tolerance parameters
+  traj_lifecycle_node_->declare_parameter("constraints.joint1.goal", 0.1);
+  traj_lifecycle_node_->declare_parameter("constraints.joint2.goal", 0.1);
+  traj_lifecycle_node_->declare_parameter("constraints.joint3.goal", 0.1);
+
+  SetUpExecutor();
+  SetUpControllerHardware();
+
+  // send goal
+  {
+    std::vector<JointTrajectoryPoint> points;
+    JointTrajectoryPoint point;
+    point.time_from_start = rclcpp::Duration::from_seconds(0.0);  // start asap
+    point.positions.resize(joint_names_.size());
+
+    point.positions[0] = 1.0;
+    point.positions[1] = 2.0;
+    point.positions[2] = 3.0;
+    points.push_back(point);
+
+    sendActionGoal(points, 1.0, goal_options_);
+  }
+  controller_hw_thread_.join();
+
+  EXPECT_TRUE(common_goal_accepted_);
+  EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
   EXPECT_EQ(
     control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL,
-    common_action_result_code);
+    common_action_result_code_);
 
-  EXPECT_NEAR(7.0, test_robot->pos1, common_threshold);
-  EXPECT_NEAR(8.0, test_robot->pos2, common_threshold);
-  EXPECT_NEAR(9.0, test_robot->pos3, common_threshold);
+  EXPECT_NEAR(1.0, test_robot_->pos1, COMMON_THRESHOLD);
+  EXPECT_NEAR(2.0, test_robot_->pos2, COMMON_THRESHOLD);
+  EXPECT_NEAR(3.0, test_robot_->pos3, COMMON_THRESHOLD);
+}
 
-  executor.cancel();
+TEST_F(TestTrajectoryActions, test_goal_tolerances_multi_point_success) {
+  // set tolerance parameters
+  traj_lifecycle_node_->declare_parameter("constraints.joint1.goal", 0.1);
+  traj_lifecycle_node_->declare_parameter("constraints.joint2.goal", 0.1);
+  traj_lifecycle_node_->declare_parameter("constraints.joint3.goal", 0.1);
+
+  SetUpExecutor();
+  SetUpControllerHardware();
+
+  // add feedback
+  bool feedback_recv = false;
+  goal_options_.feedback_callback = [&](
+    rclcpp_action::ClientGoalHandle<FollowJointTrajectoryMsg>::SharedPtr,
+    const std::shared_ptr<const FollowJointTrajectoryMsg::Feedback> feedback)
+    {
+      (void)feedback;
+      feedback_recv = true;
+    };
+
+  // send goal with multiple points
+  {
+    std::vector<JointTrajectoryPoint> points;
+    JointTrajectoryPoint point1;
+    point1.time_from_start = rclcpp::Duration::from_seconds(0.2);
+    point1.positions.resize(joint_names_.size());
+
+    point1.positions[0] = 4.0;
+    point1.positions[1] = 5.0;
+    point1.positions[2] = 6.0;
+    points.push_back(point1);
+
+    JointTrajectoryPoint point2;
+    point2.time_from_start = rclcpp::Duration::from_seconds(0.3);
+    point2.positions.resize(joint_names_.size());
+
+    point2.positions[0] = 7.0;
+    point2.positions[1] = 8.0;
+    point2.positions[2] = 9.0;
+    points.push_back(point2);
+
+    sendActionGoal(points, 1.0, goal_options_);
+  }
+  controller_hw_thread_.join();
+
+  EXPECT_TRUE(feedback_recv);
+  EXPECT_TRUE(common_goal_accepted_);
+  EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
+  EXPECT_EQ(
+    control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL,
+    common_action_result_code_);
+
+  EXPECT_NEAR(7.0, test_robot_->pos1, COMMON_THRESHOLD);
+  EXPECT_NEAR(8.0, test_robot_->pos2, COMMON_THRESHOLD);
+  EXPECT_NEAR(9.0, test_robot_->pos3, COMMON_THRESHOLD);
 }
 
 TEST_F(TestTrajectoryActions, test_state_tolerances_fail) {
   // set joint tolerance parameters
-  double state_tol = 0.0001;
-  traj_lifecycle_node->declare_parameter("constraints.joint1.trajectory", 0.0);
-  traj_lifecycle_node->declare_parameter("constraints.joint2.trajectory", 0.0);
-  traj_lifecycle_node->declare_parameter("constraints.joint3.trajectory", 0.0);
-  traj_lifecycle_node->set_parameter(rclcpp::Parameter("constraints.joint1.trajectory", state_tol));
-  traj_lifecycle_node->set_parameter(rclcpp::Parameter("constraints.joint2.trajectory", state_tol));
-  traj_lifecycle_node->set_parameter(rclcpp::Parameter("constraints.joint3.trajectory", state_tol));
+  const double state_tol = 0.0001;
+  traj_lifecycle_node_->declare_parameter("constraints.joint1.trajectory", state_tol);
+  traj_lifecycle_node_->declare_parameter("constraints.joint2.trajectory", state_tol);
+  traj_lifecycle_node_->declare_parameter("constraints.joint3.trajectory", state_tol);
 
-  rclcpp::executors::MultiThreadedExecutor executor;
-  executor.add_node(traj_lifecycle_node->get_node_base_interface());
-
-  traj_controller->on_configure(traj_lifecycle_node->get_current_state());
-  traj_controller->on_activate(traj_lifecycle_node->get_current_state());
-  SetUpActionClient();
-  executor.add_node(node->get_node_base_interface());
-
-  auto future_handle = std::async(
-    std::launch::async, [&executor]() -> void {
-      executor.spin();
-    });
-
-  auto thread_func = [&]() {
-      // controller hardware cycle update loop
-      auto start_time = rclcpp::Clock().now();
-      rclcpp::Duration wait = rclcpp::Duration::from_seconds(2.0);
-      auto end_time = start_time + wait;
-      while (rclcpp::Clock().now() < end_time) {
-        test_robot->read();
-        traj_controller->update();
-        test_robot->write();
-      }
-    };
-  std::thread controller_hw_thread(thread_func);
-
-  // common_goal_response and common_result_response
-  // sometimes doesnt receive calls when we dont sleep
-  std::this_thread::sleep_for(std::chrono::milliseconds(200));
-
-  GoalOptions opt;
-  opt.goal_response_callback =
-    std::bind(&TestTrajectoryActions::common_goal_response, this, _1);
-  opt.result_callback =
-    std::bind(&TestTrajectoryActions::common_result_response, this, _1);
-  opt.feedback_callback = nullptr;
+  SetUpExecutor();
+  SetUpControllerHardware();
 
   // send goal
   {
     std::vector<JointTrajectoryPoint> points;
     JointTrajectoryPoint point;
     point.time_from_start = rclcpp::Duration::from_seconds(1.0);
-    point.positions.resize(joint_names.size());
+    point.positions.resize(joint_names_.size());
 
     point.positions[0] = 4.0;
     point.positions[1] = 5.0;
     point.positions[2] = 6.0;
     points.push_back(point);
 
-    sendActionGoal(points, 1.0, opt);
+    sendActionGoal(points, 1.0, goal_options_);
   }
-  controller_hw_thread.join();
+  controller_hw_thread_.join();
 
-  EXPECT_EQ(true, common_goal_accepted);
-  EXPECT_EQ(rclcpp_action::ResultCode::ABORTED, common_resultcode);
+  EXPECT_TRUE(common_goal_accepted_);
+  EXPECT_EQ(rclcpp_action::ResultCode::ABORTED, common_resultcode_);
   EXPECT_EQ(
     control_msgs::action::FollowJointTrajectory_Result::PATH_TOLERANCE_VIOLATED,
-    common_action_result_code);
-
-  executor.cancel();
+    common_action_result_code_);
 }
 
 TEST_F(TestTrajectoryActions, test_cancel_hold_position) {
-  rclcpp::executors::MultiThreadedExecutor executor;
-  executor.add_node(traj_lifecycle_node->get_node_base_interface());
-
-  traj_controller->on_configure(traj_lifecycle_node->get_current_state());
-  traj_controller->on_activate(traj_lifecycle_node->get_current_state());
-  SetUpActionClient();
-  executor.add_node(node->get_node_base_interface());
-
-  auto future_handle = std::async(
-    std::launch::async, [&executor]() -> void {
-      executor.spin();
-    });
-
-  auto thread_func = [&]() {
-      auto start_time = rclcpp::Clock().now();
-      rclcpp::Duration wait = rclcpp::Duration::from_seconds(2.0);
-      auto end_time = start_time + wait;
-      while (rclcpp::Clock().now() < end_time) {
-        test_robot->read();
-        traj_controller->update();
-        test_robot->write();
-      }
-    };
-  std::thread controller_hw_thread(thread_func);
-
-  // common_goal_response and common_result_response
-  // sometimes doesnt receive calls when we dont sleep
-  std::this_thread::sleep_for(std::chrono::milliseconds(200));
-
-  GoalOptions opt;
-  opt.goal_response_callback =
-    std::bind(&TestTrajectoryActions::common_goal_response, this, _1);
-  opt.result_callback =
-    std::bind(&TestTrajectoryActions::common_result_response, this, _1);
+  SetUpExecutor();
+  SetUpControllerHardware();
 
   // send goal
   {
     std::vector<JointTrajectoryPoint> points;
     JointTrajectoryPoint point;
     point.time_from_start = rclcpp::Duration::from_seconds(1.0);
-    point.positions.resize(joint_names.size());
+    point.positions.resize(joint_names_.size());
 
     point.positions[0] = 4.0;
     point.positions[1] = 5.0;
@@ -520,35 +467,33 @@ TEST_F(TestTrajectoryActions, test_cancel_hold_position) {
 
     control_msgs::action::FollowJointTrajectory_Goal goal_msg;
     goal_msg.goal_time_tolerance = rclcpp::Duration::from_seconds(2.0);
-    goal_msg.trajectory.joint_names = joint_names;
+    goal_msg.trajectory.joint_names = joint_names_;
     goal_msg.trajectory.points = points;
 
     // send and wait for half a second before cancel
-    auto goal_handle_future = action_client->async_send_goal(goal_msg, opt);
+    const auto goal_handle_future = action_client_->async_send_goal(goal_msg, goal_options_);
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-    auto goal_handle = goal_handle_future.get();
-    action_client->async_cancel_goal(goal_handle);
+    const auto goal_handle = goal_handle_future.get();
+    action_client_->async_cancel_goal(goal_handle);
   }
-  controller_hw_thread.join();
+  controller_hw_thread_.join();
 
-  EXPECT_EQ(true, common_goal_accepted);
-  EXPECT_EQ(rclcpp_action::ResultCode::CANCELED, common_resultcode);
+  EXPECT_TRUE(common_goal_accepted_);
+  EXPECT_EQ(rclcpp_action::ResultCode::CANCELED, common_resultcode_);
   EXPECT_EQ(
     control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL,
-    common_action_result_code);
+    common_action_result_code_);
 
-  double prev_pos1 = test_robot->pos1;
-  double prev_pos2 = test_robot->pos2;
-  double prev_pos3 = test_robot->pos3;
+  const double prev_pos1 = test_robot_->pos1;
+  const double prev_pos2 = test_robot_->pos2;
+  const double prev_pos3 = test_robot_->pos3;
 
   // run an update, it should be holding
-  traj_controller->update();
-  test_robot->write();
+  traj_controller_->update();
+  test_robot_->write();
 
-  EXPECT_EQ(prev_pos1, test_robot->pos1);
-  EXPECT_EQ(prev_pos2, test_robot->pos2);
-  EXPECT_EQ(prev_pos3, test_robot->pos3);
-
-  executor.cancel();
+  EXPECT_EQ(prev_pos1, test_robot_->pos1);
+  EXPECT_EQ(prev_pos2, test_robot_->pos2);
+  EXPECT_EQ(prev_pos3, test_robot_->pos3);
 }
