@@ -93,11 +93,11 @@ private:
   double left_wheel_radius_;
   double right_wheel_radius_;
 
-  // Previou wheel position/state [rad]:
+  // Previous wheel position/state [rad]:
   double left_wheel_old_pos_;
   double right_wheel_old_pos_;
 
-  // Rolling mean accumulators for the linar and angular velocities:
+  // Rolling mean accumulators for the linear and angular velocities:
   size_t velocity_rolling_window_size_;
   RollingMeanAccumulator linear_accumulator_;
   RollingMeanAccumulator angular_accumulator_;
