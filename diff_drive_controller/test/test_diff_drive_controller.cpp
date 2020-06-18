@@ -52,7 +52,7 @@ protected:
     op_mode = {{test_robot->write_op_handle_name1}};
 
     pub_node = std::make_shared<rclcpp::Node>("velocity_publisher");
-    velocity_publisher = pub_node->create_publisher<geometry_msgs::msg::Twist>(
+    velocity_publisher = pub_node->create_publisher<geometry_msgs::msg::TwistStamped>(
       controller_name + "/cmd_vel",
       rclcpp::SystemDefaultsQoS());
   }
@@ -80,9 +80,10 @@ protected:
       ++wait_count;
     }
 
-    geometry_msgs::msg::Twist velocity_message;
-    velocity_message.linear.x = linear;
-    velocity_message.angular.z = angular;
+    geometry_msgs::msg::TwistStamped velocity_message;
+    velocity_message.header.stamp = pub_node->get_clock()->now();
+    velocity_message.twist.linear.x = linear;
+    velocity_message.twist.angular.z = angular;
     velocity_publisher->publish(velocity_message);
   }
 
@@ -94,7 +95,7 @@ protected:
   std::vector<std::string> op_mode;
 
   rclcpp::Node::SharedPtr pub_node;
-  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr velocity_publisher;
+  rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr velocity_publisher;
 };
 
 TEST_F(TestDiffDriveController, wrong_initialization)
