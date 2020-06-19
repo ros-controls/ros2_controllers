@@ -33,8 +33,8 @@ Odometry::Odometry(size_t velocity_rolling_window_size)
   left_wheel_old_pos_(0.0),
   right_wheel_old_pos_(0.0),
   velocity_rolling_window_size_(velocity_rolling_window_size),
-  linear_accumulator_(RollingMeanAccumulator(velocity_rolling_window_size)),
-  angular_accumulator_(RollingMeanAccumulator(velocity_rolling_window_size))
+  linear_accumulator_(velocity_rolling_window_size),
+  angular_accumulator_(velocity_rolling_window_size)
 {
 }
 
