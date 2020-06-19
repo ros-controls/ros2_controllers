@@ -203,11 +203,14 @@ void JointStateControllerTest::JointStatePublishTest()
   ASSERT_EQ(state_controller_->update(), hardware_interface::HW_RET_OK);
 
   // wait for message to be passed
-  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  rclcpp::WaitSet wait_set;
+  wait_set.add_subscription(subscription);
+  const auto timeout = std::chrono::seconds(10);
+  ASSERT_EQ(wait_set.wait(timeout).kind(), rclcpp::WaitResultKind::Ready);
 
+  // take message from subscription
   sensor_msgs::msg::JointState joint_state_msg;
   rclcpp::MessageInfo msg_info;
-
   ASSERT_TRUE(subscription->take(joint_state_msg, msg_info));
 
   // checking positions is enough
@@ -242,11 +245,14 @@ void JointStateControllerTest::DynamicJointStatePublishTest()
   ASSERT_EQ(state_controller_->update(), hardware_interface::HW_RET_OK);
 
   // wait for message to be passed
-  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  rclcpp::WaitSet wait_set;
+  wait_set.add_subscription(subscription);
+  const auto timeout = std::chrono::seconds(10);
+  ASSERT_EQ(wait_set.wait(timeout).kind(), rclcpp::WaitResultKind::Ready);
 
+  // take message from subscription
   control_msgs::msg::DynamicJointState dynamic_joint_state_msg;
   rclcpp::MessageInfo msg_info;
-
   ASSERT_TRUE(subscription->take(dynamic_joint_state_msg, msg_info));
 
   // checking positions is enough
