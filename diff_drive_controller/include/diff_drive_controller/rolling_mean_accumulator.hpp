@@ -36,40 +36,33 @@ class RollingMeanAccumulator
 {
 public:
   explicit RollingMeanAccumulator(size_t rolling_window_size)
-  : rolling_window_size_(rolling_window_size)
+  : buffer_(rolling_window_size, 0.0), next_insert_(0),
+    sum_(0.0), buffer_filled_(false)
   {
-    buffer_.reserve(rolling_window_size);
-    next_insert_ = buffer_.begin();
-    sum_ = 0.0;
   }
 
   void accumulate(T val)
   {
-    if (buffer_.size() == rolling_window_size_) {
-      sum_ -= *next_insert_;
-      *next_insert_ = val;
-    } else {
-      next_insert_ = buffer_.insert(next_insert_, val);
-    }
-
-    next_insert_++;
-    if (next_insert_ == buffer_.end()) {
-      next_insert_ = buffer_.begin();
-    }
+    sum_ -= buffer_[next_insert_];
     sum_ += val;
+    buffer_[next_insert_] = val;
+    next_insert_++;
+    buffer_filled_ |= next_insert_ >= buffer_.size();
+    next_insert_ = next_insert_ % buffer_.size();
   }
 
   T getRollingMean() const
   {
-    assert(!buffer_.empty());
-    return sum_ / buffer_.size();
+    size_t valid_data_count = buffer_filled_ * buffer_.size() + !buffer_filled_ * next_insert_;
+    assert(valid_data_count > 0);
+    return sum_ / valid_data_count;
   }
 
 private:
-  size_t rolling_window_size_;
   std::vector<T> buffer_;
-  typename std::vector<T>::iterator next_insert_;
+  size_t next_insert_;
   T sum_;
+  bool buffer_filled_;
 };
 }
 #endif // ROLLING_MEAN_ACCUMLATOR_HPP
