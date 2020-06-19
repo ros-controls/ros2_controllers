@@ -27,7 +27,6 @@
 
 #include "lifecycle_msgs/msg/state.hpp"
 
-#include "rclcpp/executors.hpp"
 #include "rclcpp/utilities.hpp"
 
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
@@ -193,25 +192,23 @@ void JointStateControllerTest::JointStatePublishTest()
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
 
   rclcpp::Node test_node("test_node");
-  sensor_msgs::msg::JointState joint_state_msg;
-  auto subs_callback = [&](const sensor_msgs::msg::JointState::SharedPtr msg)
+  auto subs_callback = [&](const sensor_msgs::msg::JointState::SharedPtr)
     {
-      joint_state_msg = *msg;
     };
   auto subscription = test_node.create_subscription<sensor_msgs::msg::JointState>(
     "joint_states",
     10,
     subs_callback);
 
-  rclcpp::executors::MultiThreadedExecutor executor;
-  executor.add_node(state_controller_->get_lifecycle_node()->get_node_base_interface());
-  executor.add_node(test_node.get_node_base_interface());
-
   ASSERT_EQ(state_controller_->update(), hardware_interface::HW_RET_OK);
 
-  // wait for things to setup
+  // wait for message to be passed
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  executor.spin_some();
+
+  sensor_msgs::msg::JointState joint_state_msg;
+  rclcpp::MessageInfo msg_info;
+
+  ASSERT_TRUE(subscription->take(joint_state_msg, msg_info));
 
   // checking positions is enough
   const size_t NUM_JOINTS = 3;
@@ -219,8 +216,6 @@ void JointStateControllerTest::JointStatePublishTest()
   ASSERT_EQ(joint_state_msg.position[0], 1.1);
   ASSERT_EQ(joint_state_msg.position[1], 2.2);
   ASSERT_EQ(joint_state_msg.position[2], 3.3);
-
-  executor.cancel();
 }
 
 void JointStateControllerTest::DynamicJointStatePublishTest()
@@ -236,25 +231,23 @@ void JointStateControllerTest::DynamicJointStatePublishTest()
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
 
   rclcpp::Node test_node("test_node");
-  control_msgs::msg::DynamicJointState dynamic_joint_state_msg;
-  auto subs_callback = [&](const control_msgs::msg::DynamicJointState::SharedPtr msg)
+  auto subs_callback = [&](const control_msgs::msg::DynamicJointState::SharedPtr)
     {
-      dynamic_joint_state_msg = *msg;
     };
   auto subscription = test_node.create_subscription<control_msgs::msg::DynamicJointState>(
     "dynamic_joint_states",
     10,
     subs_callback);
 
-  rclcpp::executors::MultiThreadedExecutor executor;
-  executor.add_node(state_controller_->get_lifecycle_node()->get_node_base_interface());
-  executor.add_node(test_node.get_node_base_interface());
-
   ASSERT_EQ(state_controller_->update(), hardware_interface::HW_RET_OK);
 
-  // wait for things to setup
+  // wait for message to be passed
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  executor.spin_some();
+
+  control_msgs::msg::DynamicJointState dynamic_joint_state_msg;
+  rclcpp::MessageInfo msg_info;
+
+  ASSERT_TRUE(subscription->take(dynamic_joint_state_msg, msg_info));
 
   // checking positions is enough
   const size_t NUM_JOINTS = 3;
@@ -262,8 +255,6 @@ void JointStateControllerTest::DynamicJointStatePublishTest()
   ASSERT_EQ(dynamic_joint_state_msg.interface_values[0].values[0], 1.1);
   ASSERT_EQ(dynamic_joint_state_msg.interface_values[1].values[0], 2.2);
   ASSERT_EQ(dynamic_joint_state_msg.interface_values[2].values[0], 3.3);
-
-  executor.cancel();
 }
 
 TEST_F(JointStateControllerTest, ConfigureErrorTest)
