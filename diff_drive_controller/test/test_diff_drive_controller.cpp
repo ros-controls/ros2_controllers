@@ -33,6 +33,16 @@ void spin(rclcpp::executors::MultiThreadedExecutor * exe)
   exe->spin();
 }
 
+class TestableDiffDriveController : public diff_drive_controller::DiffDriveController
+{
+public:
+  using DiffDriveController::DiffDriveController;
+  std::shared_ptr<geometry_msgs::msg::TwistStamped> getLastReceivedTwist() const
+  {
+    return received_velocity_msg_ptr_;
+  }
+};
+
 class TestDiffDriveController : public ::testing::Test
 {
 protected:
@@ -41,7 +51,7 @@ protected:
     rclcpp::init(0, nullptr);
   }
 
-  void SetUp()
+  void SetUp() override
   {
     test_robot = std::make_shared<test_robot_hardware::TestRobotHardware>();
     test_robot->init();
@@ -87,6 +97,59 @@ protected:
     velocity_publisher->publish(velocity_message);
   }
 
+  /// \brief wait for the subscriber and publisher to completely setup
+  void waitForSetup()
+  {
+    constexpr std::chrono::seconds TIMEOUT{2};
+    auto clock = pub_node->get_clock();
+    auto start = clock->now();
+    while (velocity_publisher->get_subscription_count() <= 0) {
+      if ((clock->now() - start) > TIMEOUT) {
+        FAIL();
+      }
+      rclcpp::spin_some(pub_node);
+    }
+  }
+
+/**
+ * @brief wait_for_new_twist block until a new twist is received.
+ * Requires that the executor is not spinned elsewhere between the
+ *  message publication and the call to this function
+ *
+ * @return true if new twist msg was received, false if timeout
+ */
+  bool wait_for_new_twist(
+    const TestableDiffDriveController & controller,
+    rclcpp::Executor & executor,
+    const std::chrono::milliseconds & timeout = std::chrono::milliseconds{500})
+  {
+    const auto current_twist = controller.getLastReceivedTwist();
+    auto end = pub_node->get_clock()->now() + timeout;
+
+    while ((pub_node->get_clock()->now() < end) &&
+      (controller.getLastReceivedTwist() == current_twist))
+    {
+      executor.spin_some();
+      std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    }
+    return true;
+  }
+
+  void setup_controller(
+    TestableDiffDriveController & controller,
+    rclcpp::Executor & executor)
+  {
+    auto diff_drive_lifecycle_node = controller.get_lifecycle_node();
+    executor.add_node(diff_drive_lifecycle_node->get_node_base_interface());
+    auto state = diff_drive_lifecycle_node->configure();
+    ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+
+    state = diff_drive_lifecycle_node->activate();
+    ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+
+    waitForSetup();
+  }
+
   std::string controller_name = "test_diff_drive_controller";
 
   std::shared_ptr<test_robot_hardware::TestRobotHardware> test_robot;
@@ -102,7 +165,7 @@ TEST_F(TestDiffDriveController, wrong_initialization)
 {
   auto uninitialized_robot = std::make_shared<test_robot_hardware::TestRobotHardware>();
   auto diff_drive_controller =
-    std::make_shared<diff_drive_controller::DiffDriveController>(
+    std::make_shared<TestableDiffDriveController>(
     left_wheel_names,
     right_wheel_names, op_mode);
   auto ret = diff_drive_controller->init(uninitialized_robot, controller_name);
@@ -117,7 +180,7 @@ TEST_F(TestDiffDriveController, correct_initialization)
   auto initialized_robot = std::make_shared<test_robot_hardware::TestRobotHardware>();
   initialized_robot->init();
   auto diff_drive_controller =
-    std::make_shared<diff_drive_controller::DiffDriveController>(
+    std::make_shared<TestableDiffDriveController>(
     left_wheel_names,
     right_wheel_names, op_mode);
   auto ret = diff_drive_controller->init(initialized_robot, controller_name);
@@ -133,7 +196,7 @@ TEST_F(TestDiffDriveController, correct_initialization)
 TEST_F(TestDiffDriveController, configuration)
 {
   auto diff_drive_controller =
-    std::make_shared<diff_drive_controller::DiffDriveController>(
+    std::make_shared<TestableDiffDriveController>(
     left_wheel_names,
     right_wheel_names, op_mode);
   auto ret = diff_drive_controller->init(test_robot, controller_name);
@@ -156,7 +219,7 @@ TEST_F(TestDiffDriveController, configuration)
 TEST_F(TestDiffDriveController, cleanup)
 {
   auto diff_drive_controller =
-    std::make_shared<diff_drive_controller::DiffDriveController>(
+    std::make_shared<TestableDiffDriveController>(
     left_wheel_names,
     right_wheel_names, op_mode);
   auto ret = diff_drive_controller->init(test_robot, controller_name);
@@ -165,36 +228,23 @@ TEST_F(TestDiffDriveController, cleanup)
   }
 
   auto diff_drive_lifecycle_node = diff_drive_controller->get_lifecycle_node();
-  rclcpp::executors::MultiThreadedExecutor executor;
-  executor.add_node(diff_drive_lifecycle_node->get_node_base_interface());
+  diff_drive_lifecycle_node->set_parameter(rclcpp::Parameter("wheel_separation", 0.4));
+  diff_drive_lifecycle_node->set_parameter(rclcpp::Parameter("wheel_radius", 0.1));
 
   auto state = diff_drive_lifecycle_node->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  rclcpp::executors::MultiThreadedExecutor executor;
+  setup_controller(*diff_drive_controller, executor);
 
-  state = diff_drive_lifecycle_node->activate();
-  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
 
-  // wait for the subscriber and publisher to completely setup
-  constexpr std::chrono::seconds TIMEOUT{2};
-  auto clock = pub_node->get_clock();
-  auto start = clock->now();
-  auto timedout = true;
-  while (velocity_publisher->get_subscription_count() <= 0) {
-    if ((clock->now() - start) > TIMEOUT) {
-      timedout = false;
-    }
-    rclcpp::spin_some(pub_node);
-  }
-  ASSERT_TRUE(timedout);
+  waitForSetup();
 
   // send msg
   const double linear = 1.0;
   const double angular = 1.0;
   publish(linear, angular);
 
-  // wait for msg is be published to the system
-  std::this_thread::sleep_for(std::chrono::milliseconds(500));
-  executor.spin_once();
+  wait_for_new_twist(*diff_drive_controller, executor);
 
   diff_drive_controller->update();
   test_robot->write();
@@ -219,7 +269,7 @@ TEST_F(TestDiffDriveController, cleanup)
 TEST_F(TestDiffDriveController, correct_initialization_using_parameters)
 {
   auto diff_drive_controller =
-    std::make_shared<diff_drive_controller::DiffDriveController>(
+    std::make_shared<TestableDiffDriveController>(
     left_wheel_names,
     right_wheel_names, op_mode);
   auto ret = diff_drive_controller->init(test_robot, controller_name);
@@ -232,14 +282,16 @@ TEST_F(TestDiffDriveController, correct_initialization_using_parameters)
   rclcpp::Parameter joint_parameters("left_wheel_names", left_wheel_names);
   diff_drive_lifecycle_node->set_parameter(joint_parameters);
 
-  std::vector<std::string> operation_mode_names = {"motor_controls"};
+  std::vector<std::string> operation_mode_names =
+  {test_robot->write_op_handle_name1, test_robot->write_op_handle_name2};
   rclcpp::Parameter operation_mode_parameters("write_op_modes", operation_mode_names);
   diff_drive_lifecycle_node->set_parameter(operation_mode_parameters);
 
+  diff_drive_lifecycle_node->set_parameter(rclcpp::Parameter("wheel_separation", 0.4));
+  diff_drive_lifecycle_node->set_parameter(rclcpp::Parameter("wheel_radius", 1.0));
+
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(diff_drive_lifecycle_node->get_node_base_interface());
-
-  auto future_handle = std::async(std::launch::async, [&executor]() -> void {executor.spin();});
 
   auto state = diff_drive_lifecycle_node->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
@@ -249,18 +301,17 @@ TEST_F(TestDiffDriveController, correct_initialization_using_parameters)
   state = diff_drive_lifecycle_node->activate();
   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
 
-  // wait for the subscriber and publisher to completely setup
-  std::this_thread::sleep_for(std::chrono::seconds(2));
-
   // send msg
   const double linear = 1.0;
-  const double angular = 1.0;
+  const double angular = 0.0;
   publish(linear, angular);
   // wait for msg is be published to the system
-  std::this_thread::sleep_for(std::chrono::milliseconds(500));
+  ASSERT_TRUE(wait_for_new_twist(*diff_drive_controller, executor));
 
   diff_drive_controller->update();
   test_robot->write();
+  EXPECT_EQ(1.0, test_robot->cmd1);
+  EXPECT_EQ(1.0, test_robot->cmd2);
 
   // deactivated
   // wait so controller process the second point when deactivated
@@ -270,9 +321,8 @@ TEST_F(TestDiffDriveController, correct_initialization_using_parameters)
   diff_drive_controller->update();
   test_robot->write();
 
-  // no change in hw position
-  EXPECT_EQ(1.1, test_robot->cmd1);
-  EXPECT_EQ(2.2, test_robot->cmd2);
+  EXPECT_EQ(0., test_robot->cmd1) << "Wheels are halted on deactivate()";
+  EXPECT_EQ(0., test_robot->cmd2) << "Wheels are halted on deactivate()";
 
   // cleanup
   state = diff_drive_lifecycle_node->cleanup();
