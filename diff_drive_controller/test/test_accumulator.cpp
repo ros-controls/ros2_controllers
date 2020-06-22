@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <memory>
+#include <cmath>
 #include <gtest/gtest.h>
 
 #include <diff_drive_controller/rolling_mean_accumulator.hpp>
@@ -40,4 +41,15 @@ TEST(TestAccumulator, test_accumulator)
 
   accum.accumulate(5.);
   EXPECT_NEAR(20. / 4., accum.getRollingMean(), THRESHOLD);
+}
+
+TEST(TestAccumulator, spam_accumulator)
+{
+  constexpr double THRESHOLD = 1e-12;
+  diff_drive_controller::RollingMeanAccumulator<double> accum(10);
+  for(int i=0; i<10000; ++i)
+  {
+    accum.accumulate(M_PI);
+    EXPECT_NEAR(M_PI, accum.getRollingMean(), THRESHOLD);
+  }
 }
