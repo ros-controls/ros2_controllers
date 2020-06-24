@@ -33,8 +33,8 @@ Odometry::Odometry(size_t velocity_rolling_window_size)
   left_wheel_old_pos_(0.0),
   right_wheel_old_pos_(0.0),
   velocity_rolling_window_size_(velocity_rolling_window_size),
-  linear_accumulator_(RollingWindow::window_size = velocity_rolling_window_size),
-  angular_accumulator_(RollingWindow::window_size = velocity_rolling_window_size)
+  linear_accumulator_(velocity_rolling_window_size),
+  angular_accumulator_(velocity_rolling_window_size)
 {
 }
 
@@ -76,11 +76,11 @@ bool Odometry::update(double left_pos, double right_pos, const rclcpp::Time & ti
   timestamp_ = time;
 
   // Estimate speeds using a rolling mean to filter them out:
-  linear_accumulator_(linear / dt);
-  angular_accumulator_(angular / dt);
+  linear_accumulator_.accumulate(linear / dt);
+  angular_accumulator_.accumulate(angular / dt);
 
-  linear_ = bacc::rolling_mean(linear_accumulator_);
-  angular_ = bacc::rolling_mean(angular_accumulator_);
+  linear_ = linear_accumulator_.getRollingMean();
+  angular_ = angular_accumulator_.getRollingMean();
 
   return true;
 }
@@ -146,10 +146,8 @@ void Odometry::integrateExact(double linear, double angular)
 
 void Odometry::resetAccumulators()
 {
-  linear_accumulator_ = RollingMeanAccumulator(
-    RollingWindow::window_size = velocity_rolling_window_size_);
-  angular_accumulator_ = RollingMeanAccumulator(
-    RollingWindow::window_size = velocity_rolling_window_size_);
+  linear_accumulator_ = RollingMeanAccumulator(velocity_rolling_window_size_);
+  angular_accumulator_ = RollingMeanAccumulator(velocity_rolling_window_size_);
 }
 
 }  // namespace diff_drive_controller
