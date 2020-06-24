@@ -23,15 +23,12 @@
 #define DIFF_DRIVE_CONTROLLER__ODOMETRY_HPP_
 
 #include <cmath>
-#include <boost/accumulators/accumulators.hpp>
-#include <boost/accumulators/statistics/stats.hpp>
-#include <boost/accumulators/statistics/rolling_mean.hpp>
 
+#include "diff_drive_controller/rolling_mean_accumulator.hpp"
 #include "rclcpp/time.hpp"
 
 namespace diff_drive_controller
 {
-namespace bacc = boost::accumulators;
 
 class Odometry
 {
@@ -69,8 +66,7 @@ public:
 
 private:
   using RollingMeanAccumulator =
-    bacc::accumulator_set<double, bacc::stats<bacc::tag::rolling_mean>>;
-  using RollingWindow = bacc::tag::rolling_window;
+    diff_drive_controller::RollingMeanAccumulator<double>;
 
   void integrateRungeKutta2(double linear, double angular);
   void integrateExact(double linear, double angular);
