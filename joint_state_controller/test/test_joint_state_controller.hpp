@@ -24,6 +24,13 @@
 
 #include "test_robot_hardware/test_robot_hardware.hpp"
 
+// subclassing and friending so we can access member varibles
+class FriendJointStateController : public joint_state_controller::JointStateController
+{
+  FRIEND_TEST(JointStateControllerTest, ConfigureErrorTest);
+  FRIEND_TEST(JointStateControllerTest, ConfigureSuccessTest);
+};
+
 class JointStateControllerTest : public ::testing::Test
 {
 public:
@@ -35,16 +42,9 @@ public:
 
   void SetUpStateController();
 
-public:
-  void ConfigureErrorTest();
-  void ConfigureSuccessTest();
-  void UpdateTest();
-  void JointStatePublishTest();
-  void DynamicJointStatePublishTest();
-
 protected:
   std::shared_ptr<test_robot_hardware::TestRobotHardware> test_robot_;
-  std::unique_ptr<joint_state_controller::JointStateController> state_controller_;
+  std::unique_ptr<FriendJointStateController> state_controller_;
 };
 
 #endif  // TEST_JOINT_STATE_CONTROLLER_HPP_

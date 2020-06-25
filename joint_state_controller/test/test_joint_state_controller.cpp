@@ -62,7 +62,7 @@ void JointStateControllerTest::SetUp()
   test_robot_->init();
 
   // initialize controller
-  state_controller_ = std::make_unique<joint_state_controller::JointStateController>();
+  state_controller_ = std::make_unique<FriendJointStateController>();
 }
 
 void JointStateControllerTest::TearDown()
@@ -76,7 +76,7 @@ void JointStateControllerTest::SetUpStateController()
   ASSERT_EQ(result, controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS);
 }
 
-void JointStateControllerTest::ConfigureErrorTest()
+TEST_F(JointStateControllerTest, ConfigureErrorTest)
 {
   // joint state not initialized yet
   ASSERT_TRUE(state_controller_->joint_state_msg_.name.empty());
@@ -112,7 +112,7 @@ void JointStateControllerTest::ConfigureErrorTest()
   ASSERT_FALSE(state_controller_->dynamic_joint_state_publisher_);
 }
 
-void JointStateControllerTest::ConfigureSuccessTest()
+TEST_F(JointStateControllerTest, ConfigureSuccessTest)
 {
   // joint state not initialized yet
   ASSERT_TRUE(state_controller_->joint_state_msg_.name.empty());
@@ -163,7 +163,7 @@ void JointStateControllerTest::ConfigureSuccessTest()
   ASSERT_TRUE(state_controller_->dynamic_joint_state_publisher_);
 }
 
-void JointStateControllerTest::UpdateTest()
+TEST_F(JointStateControllerTest, UpdateTest)
 {
   SetUpStateController();
 
@@ -179,7 +179,7 @@ void JointStateControllerTest::UpdateTest()
   ASSERT_EQ(state_controller_->update(), hardware_interface::HW_RET_OK);
 }
 
-void JointStateControllerTest::JointStatePublishTest()
+TEST_F(JointStateControllerTest, JointStatePublishTest)
 {
   SetUpStateController();
 
@@ -221,7 +221,7 @@ void JointStateControllerTest::JointStatePublishTest()
   ASSERT_EQ(joint_state_msg.position[2], 3.3);
 }
 
-void JointStateControllerTest::DynamicJointStatePublishTest()
+TEST_F(JointStateControllerTest, DynamicJointStatePublishTest)
 {
   SetUpStateController();
 
@@ -261,29 +261,4 @@ void JointStateControllerTest::DynamicJointStatePublishTest()
   ASSERT_EQ(dynamic_joint_state_msg.interface_values[0].values[0], 1.1);
   ASSERT_EQ(dynamic_joint_state_msg.interface_values[1].values[0], 2.2);
   ASSERT_EQ(dynamic_joint_state_msg.interface_values[2].values[0], 3.3);
-}
-
-TEST_F(JointStateControllerTest, ConfigureErrorTest)
-{
-  ConfigureErrorTest();
-}
-
-TEST_F(JointStateControllerTest, ConfigureSuccessTest)
-{
-  ConfigureSuccessTest();
-}
-
-TEST_F(JointStateControllerTest, UpdateTest)
-{
-  UpdateTest();
-}
-
-TEST_F(JointStateControllerTest, JointStatePublishTest)
-{
-  JointStatePublishTest();
-}
-
-TEST_F(JointStateControllerTest, DynamicJointStatePublishTest)
-{
-  DynamicJointStatePublishTest();
 }

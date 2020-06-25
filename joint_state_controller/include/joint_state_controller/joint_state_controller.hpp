@@ -29,16 +29,11 @@
 
 #include "sensor_msgs/msg/joint_state.hpp"
 
-class JointStateControllerTest;
-
 namespace joint_state_controller
 {
 
 class JointStateController : public controller_interface::ControllerInterface
 {
-private:
-  friend class ::JointStateControllerTest;
-
 public:
   JOINT_STATE_CONTROLLER_PUBLIC
   JointStateController();
@@ -59,7 +54,7 @@ public:
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
   on_deactivate(const rclcpp_lifecycle::State & previous_state) override;
 
-private:
+protected:
   std::vector<const hardware_interface::JointStateHandle *> registered_joint_handles_;
 
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::JointState>>
