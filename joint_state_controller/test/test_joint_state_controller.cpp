@@ -39,9 +39,9 @@ using std::placeholders::_1;
 
 namespace
 {
-constexpr rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn NODE_SUCCESS =
+constexpr auto NODE_SUCCESS =
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
-constexpr rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn NODE_ERROR =
+constexpr auto NODE_ERROR =
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
 }
 
