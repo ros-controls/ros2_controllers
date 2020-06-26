@@ -61,7 +61,6 @@ if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
   find_package(ament_lint_auto REQUIRED)
   find_package(controller_manager REQUIRED)
-  find_package(controller_parameter_server)
   find_package(test_robot_hardware REQUIRED)
 
   ament_lint_auto_find_test_dependencies()
@@ -78,7 +77,6 @@ if(BUILD_TESTING)
     joint_trajectory_controller
   )
   ament_target_dependencies(test_trajectory_controller
-    controller_parameter_server
     control_msgs
     hardware_interface
     rclcpp
@@ -108,7 +106,6 @@ if(BUILD_TESTING)
     joint_trajectory_controller
   )
   ament_target_dependencies(test_trajectory_actions
-    controller_parameter_server
     control_msgs
     hardware_interface
     rclcpp

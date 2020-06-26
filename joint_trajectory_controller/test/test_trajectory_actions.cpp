@@ -19,16 +19,10 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-
-#include "controller_parameter_server/parameter_server.hpp"
-
 #include "hardware_interface/robot_hardware.hpp"
-
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
-
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
-
 #include "test_robot_hardware/test_robot_hardware.hpp"
 
 using trajectory_msgs::msg::JointTrajectoryPoint;

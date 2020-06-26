@@ -3,7 +3,6 @@
   <name>joint_trajectory_controller</name>
   <version>0.0.0</version>
   <description>Controller for executing joint-space trajectories on a group of joints</description>
-  <maintainer email="allabana@amazon.com">Anas Abou Allaban</maintainer>
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
   <maintainer email="jordan.palacios@pal-robotics.com">Jordan Palacios</maintainer>
   <maintainer email="karsten@openrobotics.org">Karsten Knese</maintainer>
@@ -33,7 +32,6 @@
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
   <test_depend>controller_manager</test_depend>
-  <test_depend>controller_parameter_server</test_depend>
   <test_depend>test_robot_hardware</test_depend>
 
   <export>
