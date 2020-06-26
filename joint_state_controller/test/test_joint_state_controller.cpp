@@ -43,7 +43,15 @@ constexpr auto NODE_SUCCESS =
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 constexpr auto NODE_ERROR =
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
+
+rclcpp::WaitResultKind wait_for(rclcpp::SubscriptionBase::SharedPtr subscription)
+{
+  rclcpp::WaitSet wait_set;
+  wait_set.add_subscription(subscription);
+  const auto timeout = std::chrono::seconds(10);
+  return wait_set.wait(timeout).kind();
 }
+}  // namespace
 
 void JointStateControllerTest::SetUpTestCase()
 {
@@ -203,10 +211,7 @@ TEST_F(JointStateControllerTest, JointStatePublishTest)
   ASSERT_EQ(state_controller_->update(), hardware_interface::HW_RET_OK);
 
   // wait for message to be passed
-  rclcpp::WaitSet wait_set;
-  wait_set.add_subscription(subscription);
-  const auto timeout = std::chrono::seconds(10);
-  ASSERT_EQ(wait_set.wait(timeout).kind(), rclcpp::WaitResultKind::Ready);
+  ASSERT_EQ(wait_for(subscription), rclcpp::WaitResultKind::Ready);
 
   // take message from subscription
   sensor_msgs::msg::JointState joint_state_msg;
@@ -245,10 +250,7 @@ TEST_F(JointStateControllerTest, DynamicJointStatePublishTest)
   ASSERT_EQ(state_controller_->update(), hardware_interface::HW_RET_OK);
 
   // wait for message to be passed
-  rclcpp::WaitSet wait_set;
-  wait_set.add_subscription(subscription);
-  const auto timeout = std::chrono::seconds(10);
-  ASSERT_EQ(wait_set.wait(timeout).kind(), rclcpp::WaitResultKind::Ready);
+  ASSERT_EQ(wait_for(subscription), rclcpp::WaitResultKind::Ready);
 
   // take message from subscription
   control_msgs::msg::DynamicJointState dynamic_joint_state_msg;
