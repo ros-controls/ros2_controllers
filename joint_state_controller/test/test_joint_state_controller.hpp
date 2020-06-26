@@ -21,7 +21,6 @@
 #include "gtest/gtest.h"
 
 #include "joint_state_controller/joint_state_controller.hpp"
-
 #include "test_robot_hardware/test_robot_hardware.hpp"
 
 // subclassing and friending so we can access member varibles

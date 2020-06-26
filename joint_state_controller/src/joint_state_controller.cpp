@@ -19,9 +19,7 @@
 #include <memory>
 
 #include "control_msgs/msg/interface_value.hpp"
-
 #include "rclcpp_lifecycle/state.hpp"
-
 #include "rcutils/logging_macros.h"
 
 namespace joint_state_controller

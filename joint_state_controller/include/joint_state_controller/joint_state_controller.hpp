@@ -20,13 +20,9 @@
 #include <vector>
 
 #include "control_msgs/msg/dynamic_joint_state.hpp"
-
 #include "controller_interface/controller_interface.hpp"
-
 #include "joint_state_controller/visibility_control.h"
-
 #include "rclcpp_lifecycle/state.hpp"
-
 #include "sensor_msgs/msg/joint_state.hpp"
 
 namespace joint_state_controller

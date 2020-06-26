@@ -22,17 +22,11 @@
 #include "gtest/gtest.h"
 
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
-
 #include "joint_state_controller/joint_state_controller.hpp"
-
 #include "lifecycle_msgs/msg/state.hpp"
-
 #include "rclcpp/utilities.hpp"
-
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
-
 #include "test_joint_state_controller.hpp"
-
 #include "test_robot_hardware/test_robot_hardware.hpp"
 
 using std::placeholders::_1;
