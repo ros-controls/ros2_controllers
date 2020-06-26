@@ -18,7 +18,6 @@
 #include <thread>
 #include <vector>
 
-#include "controller_parameter_server/parameter_server.hpp"
 #include "gtest/gtest.h"
 #include "hardware_interface/robot_hardware.hpp"
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
