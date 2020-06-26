@@ -16,9 +16,7 @@
 #include <memory>
 
 #include "controller_manager/controller_manager.hpp"
-
 #include "test_robot_hardware/test_robot_hardware.hpp"
-
 #include "rclcpp/utilities.hpp"
 
 TEST(TestLoadJointStateController, load_controller)

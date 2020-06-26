@@ -11,6 +11,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 find_package(ament_cmake REQUIRED)
+find_package(control_msgs REQUIRED)
 find_package(controller_interface REQUIRED)
 find_package(pluginlib)
 find_package(rclcpp_lifecycle REQUIRED)
@@ -24,6 +25,7 @@ add_library(joint_state_controller
 target_include_directories(joint_state_controller PRIVATE include)
 ament_target_dependencies(joint_state_controller
   builtin_interfaces
+  control_msgs
   controller_interface
   pluginlib
   rclcpp_lifecycle
@@ -53,6 +55,7 @@ if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
   find_package(ament_lint_auto REQUIRED)
   find_package(controller_manager REQUIRED)
+  find_package(rclcpp REQUIRED)
   find_package(test_robot_hardware REQUIRED)
 
   ament_lint_auto_find_test_dependencies()
@@ -66,9 +69,22 @@ if(BUILD_TESTING)
     controller_manager
     test_robot_hardware
   )
+
+  ament_add_gtest(
+    test_joint_state_controller
+    test/test_joint_state_controller.cpp
+  )
+  target_include_directories(test_joint_state_controller PRIVATE include)
+  target_link_libraries(test_joint_state_controller
+    joint_state_controller
+  )
+  ament_target_dependencies(test_joint_state_controller
+    test_robot_hardware
+  )
 endif()
 
 ament_export_dependencies(
+  control_msgs
   controller_interface
   rclcpp_lifecycle
   sensor_msgs

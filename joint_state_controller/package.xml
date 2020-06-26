@@ -18,6 +18,7 @@
   <exec_depend>pluginlib</exec_depend>
   <exec_depend>rcutils</exec_depend>
 
+  <depend>control_msgs</depend>
   <depend>controller_interface</depend>
   <depend>rclcpp_lifecycle</depend>
   <depend>sensor_msgs</depend>
@@ -26,6 +27,7 @@
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
   <test_depend>controller_manager</test_depend>
+  <test_depend>rclcpp</test_depend>
   <test_depend>test_robot_hardware</test_depend>
 
   <export>

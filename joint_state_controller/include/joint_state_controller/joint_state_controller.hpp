@@ -19,12 +19,10 @@
 #include <string>
 #include <vector>
 
+#include "control_msgs/msg/dynamic_joint_state.hpp"
 #include "controller_interface/controller_interface.hpp"
-
 #include "joint_state_controller/visibility_control.h"
-
 #include "rclcpp_lifecycle/state.hpp"
-
 #include "sensor_msgs/msg/joint_state.hpp"
 
 namespace joint_state_controller
@@ -52,11 +50,16 @@ public:
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
   on_deactivate(const rclcpp_lifecycle::State & previous_state) override;
 
-private:
+protected:
   std::vector<const hardware_interface::JointStateHandle *> registered_joint_handles_;
+
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::JointState>>
   joint_state_publisher_;
   sensor_msgs::msg::JointState joint_state_msg_;
+
+  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<control_msgs::msg::DynamicJointState>>
+  dynamic_joint_state_publisher_;
+  control_msgs::msg::DynamicJointState dynamic_joint_state_msg_;
 };
 
 }  // namespace joint_state_controller
