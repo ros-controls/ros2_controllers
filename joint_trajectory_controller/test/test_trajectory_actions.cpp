@@ -12,17 +12,38 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <array>
+#include <cxxabi.h>
+#include <algorithm>
+#include <chrono>
+#include <functional>
+#include <future>
 #include <memory>
+#include <ratio>
+#include <stdexcept>
 #include <string>
+#include <system_error>
 #include <thread>
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "hardware_interface/robot_hardware.hpp"
+#include "action_msgs/msg/goal_status_array.hpp"
+#include "control_msgs/action/detail/follow_joint_trajectory__struct.hpp"
+#include "controller_interface/controller_interface.hpp"
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
-#include "rclcpp/rclcpp.hpp"
-#include "rclcpp_action/rclcpp_action.hpp"
+#include "rclcpp/clock.hpp"
+#include "rclcpp/duration.hpp"
+#include "rclcpp/executors/multi_threaded_executor.hpp"
+#include "rclcpp/logging.hpp"
+#include "rclcpp/node.hpp"
+#include "rclcpp/parameter.hpp"
+#include "rclcpp/time.hpp"
+#include "rclcpp/utilities.hpp"
+#include "rclcpp_action/client.hpp"
+#include "rclcpp_action/client_goal_handle.hpp"
+#include "rclcpp_action/create_client.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "trajectory_msgs/msg/joint_trajectory.hpp"
+#include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 #include "test_robot_hardware/test_robot_hardware.hpp"
 
 using trajectory_msgs::msg::JointTrajectoryPoint;

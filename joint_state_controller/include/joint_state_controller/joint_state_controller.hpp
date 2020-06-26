@@ -16,14 +16,23 @@
 #define JOINT_STATE_CONTROLLER__JOINT_STATE_CONTROLLER_HPP_
 
 #include <memory>
-#include <string>
 #include <vector>
 
 #include "control_msgs/msg/dynamic_joint_state.hpp"
 #include "controller_interface/controller_interface.hpp"
 #include "joint_state_controller/visibility_control.h"
-#include "rclcpp_lifecycle/state.hpp"
+#include "rclcpp_lifecycle/lifecycle_publisher.hpp"
+#include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
+
+namespace hardware_interface
+{
+class JointStateHandle;
+}  // namespace hardware_interface
+namespace rclcpp_lifecycle
+{
+class State;
+}  // namespace rclcpp_lifecycle
 
 namespace joint_state_controller
 {

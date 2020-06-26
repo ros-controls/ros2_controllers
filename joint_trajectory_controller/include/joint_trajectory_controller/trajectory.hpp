@@ -19,11 +19,9 @@
 #include <vector>
 
 #include "joint_trajectory_controller/visibility_control.h"
-
 #include "rclcpp/time.hpp"
-
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
-
+#include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 namespace joint_trajectory_controller
 {
 
