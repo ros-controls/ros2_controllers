@@ -135,7 +135,8 @@ private:
   Odometry odometry_;
 
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Odometry>> odometry_publisher_
-   = nullptr;
+    =
+    nullptr;
   std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>>
   realtime_odometry_publisher_ = nullptr;
 
@@ -162,7 +163,8 @@ private:
   SpeedLimiter limiter_angular_;
 
   bool publish_limited_velocity_ = false;
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<Twist>> limited_velocity_publisher_ = nullptr;
+  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<Twist>> limited_velocity_publisher_ =
+    nullptr;
   std::shared_ptr<realtime_tools::RealtimePublisher<Twist>>
   realtime_limited_velocity_publisher_ = nullptr;
 

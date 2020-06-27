@@ -47,8 +47,7 @@ TEST(TestAccumulator, spam_accumulator)
 {
   constexpr double THRESHOLD = 1e-12;
   diff_drive_controller::RollingMeanAccumulator<double> accum(10);
-  for(int i=0; i<10000; ++i)
-  {
+  for (int i = 0; i < 10000; ++i) {
     accum.accumulate(M_PI);
     EXPECT_NEAR(M_PI, accum.getRollingMean(), THRESHOLD);
   }
