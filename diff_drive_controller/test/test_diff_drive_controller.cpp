@@ -12,17 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "diff_drive_controller/diff_drive_controller.hpp"
-#include "lifecycle_msgs/msg/state.hpp"
-#include "rclcpp/rclcpp.hpp"
-#include "test_robot_hardware/test_robot_hardware.hpp"
+#include <gtest/gtest.h>
 
-#include "gtest/gtest.h"
 #include <array>
 #include <memory>
 #include <string>
 #include <thread>
 #include <vector>
+
+#include "diff_drive_controller/diff_drive_controller.hpp"
+#include "lifecycle_msgs/msg/state.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "test_robot_hardware/test_robot_hardware.hpp"
+
 
 using lifecycle_msgs::msg::State;
 

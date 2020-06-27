@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <memory>
-#include <cmath>
-#include <gtest/gtest.h>
-
 #include <diff_drive_controller/rolling_mean_accumulator.hpp>
+
+#include <gtest/gtest.h>
+#include <cmath>
+#include <memory>
+
 
 TEST(TestAccumulator, test_accumulator)
 {

@@ -176,5 +176,5 @@ private:
   void set_op_mode(const hardware_interface::OperationMode & mode);
   void halt();
 };
-} // namespace diff_drive_controller
-#endif // DIFF_DRIVE_CONTROLLER__DIFF_DRIVE_CONTROLLER_HPP_
+}  // namespace diff_drive_controller
+#endif  // DIFF_DRIVE_CONTROLLER__DIFF_DRIVE_CONTROLLER_HPP_

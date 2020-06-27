@@ -16,11 +16,11 @@
  * Author: Víctor López
  */
 
-#ifndef ROLLING_MEAN_ACCUMLATOR_HPP
-#define ROLLING_MEAN_ACCUMLATOR_HPP
+#ifndef DIFF_DRIVE_CONTROLLER__ROLLING_MEAN_ACCUMULATOR_HPP_
+#define DIFF_DRIVE_CONTROLLER__ROLLING_MEAN_ACCUMULATOR_HPP_
 
-#include <vector>
 #include <cassert>
+#include <vector>
 
 namespace diff_drive_controller
 {
@@ -64,5 +64,5 @@ private:
   T sum_;
   bool buffer_filled_;
 };
-}
-#endif // ROLLING_MEAN_ACCUMLATOR_HPP
+}  // namespace diff_drive_controller
+#endif  // DIFF_DRIVE_CONTROLLER__ROLLING_MEAN_ACCUMULATOR_HPP_

@@ -33,7 +33,7 @@ namespace diff_drive_controller
 class Odometry
 {
 public:
-  Odometry(size_t velocity_rolling_window_size = 10);
+  explicit Odometry(size_t velocity_rolling_window_size = 10);
 
   void init(const rclcpp::Time & time);
   bool update(double left_pos, double right_pos, const rclcpp::Time & time);
