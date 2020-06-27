@@ -16,6 +16,7 @@ jobs:
         package-name: |
             joint_state_controller
             joint_trajectory_controller
+            diff_drive_controller
   ament_xmllint:
     name: ament_xmllint
     runs-on: ubuntu-18.04
@@ -26,9 +27,10 @@ jobs:
       with:
         linter: xmllint
         package-name: |
+            ros2_controllers
             joint_state_controller
             joint_trajectory_controller
-            ros2_controllers
+            diff_drive_controller
   ament_lint_cpp: # Linters applicable to C++ packages
     name: ament_${{ matrix.linter }}
     runs-on: ubuntu-18.04
@@ -45,3 +47,4 @@ jobs:
         package-name: |
             joint_state_controller
             joint_trajectory_controller
+            diff_drive_controller
