@@ -16,8 +16,8 @@
  * Author: Enrique Fernández
  */
 
-#ifndef DIFF_DRIVE_CONTROLLER__OSPEED_LIMITER_HPP_
-#define DIFF_DRIVE_CONTROLLER__OSPEED_LIMITER_HPP_
+#ifndef DIFF_DRIVE_CONTROLLER__SPEED_LIMITER_HPP_
+#define DIFF_DRIVE_CONTROLLER__SPEED_LIMITER_HPP_
 
 namespace diff_drive_controller
 {
@@ -100,4 +100,4 @@ private:
 
 }  // namespace diff_drive_controller
 
-#endif  // DIFF_DRIVE_CONTROLLER__OSPEED_LIMITER_HPP_
+#endif  // DIFF_DRIVE_CONTROLLER__SPEED_LIMITER_HPP_

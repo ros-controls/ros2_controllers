@@ -16,11 +16,14 @@
  * Author: Bence Magyar, Enrique Fernández, Manuel Meraz
  */
 
-#include "diff_drive_controller/diff_drive_controller.hpp"
-
-#include <lifecycle_msgs/msg/state.hpp>
-#include <tf2/LinearMath/Quaternion.h>
+#include <memory>
+#include <string>
 #include <utility>
+#include <vector>
+
+#include "diff_drive_controller/diff_drive_controller.hpp"
+#include "lifecycle_msgs/msg/state.hpp"
+#include "tf2/LinearMath/Quaternion.h"
 
 namespace
 {
@@ -28,7 +31,7 @@ constexpr auto DEFAULT_COMMAND_TOPIC = "~/cmd_vel";
 constexpr auto DEFAULT_COMMAND_OUT_TOPIC = "~/cmd_vel_out";
 constexpr auto DEFAULT_ODOMETRY_TOPIC = "/odom";
 constexpr auto DEFAULT_TRANSFORM_TOPIC = "/tf";
-} // namespace
+}  // namespace
 
 namespace diff_drive_controller
 {
@@ -86,8 +89,8 @@ DiffDriveController::init(
 
   lifecycle_node_->declare_parameter<std::string>("odom_frame_id", odom_params_.odom_frame_id);
   lifecycle_node_->declare_parameter<std::string>("base_frame_id", odom_params_.base_frame_id);
-  lifecycle_node_->declare_parameter<std::vector<double>>("pose_covariance_diagonal", {});   // std::array<double, 9>
-  lifecycle_node_->declare_parameter<std::vector<double>>("twist_covariance_diagonal", {});  // std::array<double, 9>
+  lifecycle_node_->declare_parameter<std::vector<double>>("pose_covariance_diagonal", {});
+  lifecycle_node_->declare_parameter<std::vector<double>>("twist_covariance_diagonal", {});
   lifecycle_node_->declare_parameter<bool>("open_loop", odom_params_.open_loop);
   lifecycle_node_->declare_parameter<bool>("enable_odom_tf", odom_params_.enable_odom_tf);
 
@@ -148,7 +151,7 @@ controller_interface::controller_interface_ret_t DiffDriveController::update()
       const double left_position = registered_left_wheel_handles_[index].state->get_position();
       const double right_position = registered_right_wheel_handles_[index].state->get_position();
 
-      if (std::isnan(left_position) or std::isnan(right_position)) {
+      if (std::isnan(left_position) || std::isnan(right_position)) {
         RCLCPP_ERROR(
           logger, "Either the left or right wheel position is invalid for index [%d]",
           index);
@@ -167,7 +170,7 @@ controller_interface::controller_interface_ret_t DiffDriveController::update()
   tf2::Quaternion orientation;
   orientation.setRPY(0.0, 0.0, odometry_.getHeading());
 
-  if (odometry_publisher_->is_activated() and realtime_odometry_publisher_->trylock()) {
+  if (odometry_publisher_->is_activated() && realtime_odometry_publisher_->trylock()) {
     auto & odometry_message = realtime_odometry_publisher_->msg_;
     odometry_message.header.stamp = current_time;
     odometry_message.pose.pose.position.x = odometry_.getX();
@@ -181,7 +184,7 @@ controller_interface::controller_interface_ret_t DiffDriveController::update()
     realtime_odometry_publisher_->unlockAndPublish();
   }
 
-  if (odom_params_.enable_odom_tf and odometry_transform_publisher_->is_activated() and
+  if (odom_params_.enable_odom_tf && odometry_transform_publisher_->is_activated() &&
     realtime_odometry_transform_publisher_->trylock())
   {
     auto & transform = realtime_odometry_transform_publisher_->msg_.transforms.front();
@@ -218,7 +221,7 @@ controller_interface::controller_interface_ret_t DiffDriveController::update()
   previous_commands_.emplace(*received_velocity_msg_ptr_);
 
   //    Publish limited velocity
-  if (publish_limited_velocity_ and limited_velocity_publisher_->is_activated() and
+  if (publish_limited_velocity_ && limited_velocity_publisher_->is_activated() &&
     realtime_limited_velocity_publisher_->trylock())
   {
     auto & limited_velocity_command = realtime_limited_velocity_publisher_->msg_;
@@ -342,7 +345,7 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
     const auto right_result =
       configure_side("right", right_wheel_names_, registered_right_wheel_handles_, *robot_hardware);
 
-    if (left_result == CallbackReturn::FAILURE or right_result == CallbackReturn::FAILURE) {
+    if (left_result == CallbackReturn::FAILURE || right_result == CallbackReturn::FAILURE) {
       return CallbackReturn::FAILURE;
     }
 
@@ -362,7 +365,7 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
     return CallbackReturn::ERROR;
   }
 
-  if (registered_left_wheel_handles_.empty() or registered_right_wheel_handles_.empty() or
+  if (registered_left_wheel_handles_.empty() || registered_right_wheel_handles_.empty() ||
     registered_operation_mode_handles_.empty())
   {
     RCLCPP_ERROR(
@@ -409,7 +412,8 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
     DEFAULT_ODOMETRY_TOPIC,
     rclcpp::SystemDefaultsQoS());
   realtime_odometry_publisher_ =
-    std::make_shared<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>>(odometry_publisher_);
+    std::make_shared<
+    realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>>(odometry_publisher_);
 
   auto & odometry_message = realtime_odometry_publisher_->msg_;
   odometry_message.header.frame_id = odom_params_.odom_frame_id;
@@ -437,8 +441,9 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
     std::make_shared<realtime_tools::RealtimePublisher<tf2_msgs::msg::TFMessage>>(
     odometry_transform_publisher_);
 
+  // keeping track of odom and base_link transforms only
   auto & odometry_transform_message = realtime_odometry_transform_publisher_->msg_;
-  odometry_transform_message.transforms.resize(1);  // keeping track of odom and base_link transforms only
+  odometry_transform_message.transforms.resize(1);
   odometry_transform_message.transforms.front().header.frame_id = odom_params_.odom_frame_id;
   odometry_transform_message.transforms.front().child_frame_id = odom_params_.base_frame_id;
 
@@ -574,7 +579,7 @@ CallbackReturn DiffDriveController::configure_side(
 
   return CallbackReturn::SUCCESS;
 }
-} // namespace diff_drive_controller
+}  // namespace diff_drive_controller
 
 #include "class_loader/register_macro.hpp"
 
