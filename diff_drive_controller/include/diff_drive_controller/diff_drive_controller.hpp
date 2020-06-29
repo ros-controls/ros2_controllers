@@ -93,7 +93,7 @@ public:
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
   on_shutdown(const rclcpp_lifecycle::State & previous_state) override;
 
-private:
+protected:
   struct WheelHandle
   {
     const hardware_interface::JointStateHandle * state = nullptr;
