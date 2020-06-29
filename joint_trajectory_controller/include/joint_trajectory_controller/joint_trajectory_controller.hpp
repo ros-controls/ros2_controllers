@@ -107,7 +107,7 @@ public:
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
   on_shutdown(const rclcpp_lifecycle::State & previous_state) override;
 
-private:
+protected:
   std::vector<std::string> joint_names_;
   std::vector<std::string> write_op_names_;
 
@@ -143,7 +143,7 @@ private:
   using RealtimeGoalHandlePtr = std::shared_ptr<RealtimeGoalHandle>;
 
   rclcpp_action::Server<FollowJTrajAction>::SharedPtr action_server_;
-  bool allow_partial_joints_goal_;
+  bool allow_partial_joints_goal_ = false;
   RealtimeGoalHandlePtr rt_active_goal_;     ///< Currently active action goal, if any.
   rclcpp::TimerBase::SharedPtr goal_handle_timer_;
   rclcpp::Duration action_monitor_period_ = rclcpp::Duration(RCUTILS_MS_TO_NS(50));

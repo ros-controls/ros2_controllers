@@ -64,6 +64,41 @@ spin(rclcpp::executors::MultiThreadedExecutor * exe)
   exe->spin();
 }
 
+class TestableJointTrajectoryController : public joint_trajectory_controller::
+  JointTrajectoryController
+{
+public:
+  using joint_trajectory_controller::JointTrajectoryController::validate_trajectory_msg;
+  using joint_trajectory_controller::JointTrajectoryController::JointTrajectoryController;
+
+  CallbackReturn on_configure(const rclcpp_lifecycle::State & previous_state) override
+  {
+    auto ret = joint_trajectory_controller::JointTrajectoryController::on_configure(previous_state);
+    joint_cmd_sub_wait_set_.add_subscription(joint_command_subscriber_);
+    return ret;
+  }
+
+  /**
+  * @brief wait_for_trajectory block until a new JointTrajectory is received.
+  * Requires that the executor is not spinned elsewhere between the
+  *  message publication and the call to this function
+  *
+  * @return true if new JointTrajectory msg was received, false if timeout
+  */
+  bool wait_for_trajectory(
+    rclcpp::Executor & executor,
+    const std::chrono::milliseconds & timeout = std::chrono::milliseconds{500})
+  {
+    bool success = joint_cmd_sub_wait_set_.wait(timeout).kind() == rclcpp::WaitResultKind::Ready;
+    if (success) {
+      executor.spin_some();
+    }
+    return success;
+  }
+
+  rclcpp::WaitSet joint_cmd_sub_wait_set_;
+};
+
 class TestTrajectoryController : public ::testing::Test
 {
 protected:
@@ -87,10 +122,10 @@ protected:
   void SetUpTrajectoryController(bool use_local_parameters = true)
   {
     if (use_local_parameters) {
-      traj_controller_ = std::make_shared<joint_trajectory_controller::JointTrajectoryController>(
+      traj_controller_ = std::make_shared<TestableJointTrajectoryController>(
         joint_names_, op_mode_);
     } else {
-      traj_controller_ = std::make_shared<joint_trajectory_controller::JointTrajectoryController>();
+      traj_controller_ = std::make_shared<TestableJointTrajectoryController>();
     }
     auto ret = traj_controller_->init(test_robot_, controller_name_);
     if (ret != controller_interface::return_type::SUCCESS) {
@@ -98,9 +133,42 @@ protected:
     }
   }
 
+  void SetUpAndActivateTrajectoryController(bool use_local_parameters = true)
+  {
+    SetUpTrajectoryController(use_local_parameters);
+
+    auto traj_lifecycle_node = traj_controller_->get_lifecycle_node();
+    traj_controller_->on_configure(traj_lifecycle_node->get_current_state());
+    traj_controller_->on_activate(traj_lifecycle_node->get_current_state());
+  }
+
   static void TearDownTestCase()
   {
     rclcpp::shutdown();
+  }
+
+  void subscribeToState()
+  {
+    auto traj_lifecycle_node = traj_controller_->get_lifecycle_node();
+    traj_lifecycle_node->set_parameter(
+      rclcpp::Parameter(
+        "state_publish_rate",
+        static_cast<double>(100)));
+
+    using control_msgs::msg::JointTrajectoryControllerState;
+
+    auto qos = rclcpp::SensorDataQoS();
+    // Needed, otherwise spin_some() returns only the oldest message in the queue
+    // I do not understand why spin_some provides only one message
+    qos.keep_last(1);
+    state_subscriber_ =
+      traj_lifecycle_node->create_subscription<JointTrajectoryControllerState>(
+      "/state",
+      qos,
+      [&](std::shared_ptr<JointTrajectoryControllerState> msg) {
+        state_msg_ = msg;
+      }
+      );
   }
 
   /// Publish trajectory msgs with multiple points
@@ -110,7 +178,8 @@ protected:
    */
   void publish(
     const builtin_interfaces::msg::Duration & delay_btwn_points,
-    const std::vector<std::array<double, 3>> & points)
+    const std::vector<std::vector<double>> & points,
+    rclcpp::Time start_time = rclcpp::Time())
   {
     int wait_count = 0;
     const auto topic = trajectory_publisher_->get_topic_name();
@@ -125,9 +194,8 @@ protected:
     }
 
     trajectory_msgs::msg::JointTrajectory traj_msg;
-    traj_msg.joint_names = joint_names_;
-    traj_msg.header.stamp.sec = 0;
-    traj_msg.header.stamp.nanosec = 0;
+    traj_msg.joint_names = {joint_names_.begin(), joint_names_.begin() + points[0].size()};
+    traj_msg.header.stamp = start_time;
     traj_msg.points.resize(points.size());
 
     builtin_interfaces::msg::Duration duration_msg;
@@ -139,14 +207,47 @@ protected:
     for (size_t index = 0; index < points.size(); ++index) {
       traj_msg.points[index].time_from_start = duration_total;
 
-      traj_msg.points[index].positions.resize(3);
-      traj_msg.points[index].positions[0] = points[index][0];
-      traj_msg.points[index].positions[1] = points[index][1];
-      traj_msg.points[index].positions[2] = points[index][2];
+      traj_msg.points[index].positions.resize(points[index].size());
+      for (size_t j = 0; j < points[index].size(); ++j) {
+        traj_msg.points[index].positions[j] = points[index][j];
+      }
       duration_total = duration_total + duration;
     }
 
     trajectory_publisher_->publish(traj_msg);
+  }
+
+  void updateController(rclcpp::Duration wait_time = rclcpp::Duration::from_seconds(0.2))
+  {
+    auto start_time = rclcpp::Clock().now();
+    auto end_time = start_time + wait_time;
+    while (rclcpp::Clock().now() < end_time) {
+      test_robot_->read();
+      traj_controller_->update();
+      test_robot_->write();
+    }
+  }
+
+  void waitAndCompareState(
+    trajectory_msgs::msg::JointTrajectoryPoint expected_actual,
+    trajectory_msgs::msg::JointTrajectoryPoint expected_desired,
+    rclcpp::Executor & executor, rclcpp::Duration controller_wait_time, double allowed_delta)
+  {
+    state_msg_.reset();
+    traj_controller_->wait_for_trajectory(executor);
+    updateController(controller_wait_time);
+    // Spin to receive latest state
+    executor.spin_some();
+    ASSERT_TRUE(state_msg_);
+    for (size_t i = 0; i < expected_actual.positions.size(); ++i) {
+      SCOPED_TRACE("Joint " + std::to_string(i));
+      EXPECT_NEAR(expected_actual.positions[i], state_msg_->actual.positions[i], allowed_delta);
+    }
+
+    for (size_t i = 0; i < expected_desired.positions.size(); ++i) {
+      SCOPED_TRACE("Joint " + std::to_string(i));
+      EXPECT_NEAR(expected_desired.positions[i], state_msg_->desired.positions[i], allowed_delta);
+    }
   }
 
   std::string controller_name_ = "test_joint_trajectory_controller";
@@ -158,12 +259,15 @@ protected:
   rclcpp::Node::SharedPtr pub_node_;
   rclcpp::Publisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr trajectory_publisher_;
 
-  std::shared_ptr<joint_trajectory_controller::JointTrajectoryController> traj_controller_;
+  std::shared_ptr<TestableJointTrajectoryController> traj_controller_;
+  rclcpp::Subscription<control_msgs::msg::JointTrajectoryControllerState>::SharedPtr
+    state_subscriber_;
+  std::shared_ptr<control_msgs::msg::JointTrajectoryControllerState> state_msg_;
 };
 
 TEST_F(TestTrajectoryController, wrong_initialization) {
   const auto uninitialized_robot = std::make_shared<test_robot_hardware::TestRobotHardware>();
-  auto traj_controller = std::make_shared<joint_trajectory_controller::JointTrajectoryController>(
+  auto traj_controller = std::make_shared<TestableJointTrajectoryController>(
     joint_names_, op_mode_);
   const auto ret = traj_controller->init(uninitialized_robot, controller_name_);
   if (ret != controller_interface::return_type::SUCCESS) {
@@ -177,7 +281,7 @@ TEST_F(TestTrajectoryController, wrong_initialization) {
 TEST_F(TestTrajectoryController, correct_initialization) {
   const auto initialized_robot = std::make_shared<test_robot_hardware::TestRobotHardware>();
   initialized_robot->init();
-  auto traj_controller = std::make_shared<joint_trajectory_controller::JointTrajectoryController>(
+  auto traj_controller = std::make_shared<TestableJointTrajectoryController>(
     joint_names_, op_mode_);
   const auto ret = traj_controller->init(initialized_robot, controller_name_);
   if (ret != controller_interface::return_type::SUCCESS) {
@@ -205,7 +309,7 @@ TEST_F(TestTrajectoryController, configuration) {
   builtin_interfaces::msg::Duration time_from_start;
   time_from_start.sec = 1;
   time_from_start.nanosec = 0;
-  std::vector<std::array<double, 3>> points {{{3.3, 4.4, 5.5}}};
+  std::vector<std::vector<double>> points {{{3.3, 4.4, 5.5}}};
   publish(time_from_start, points);
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
@@ -245,7 +349,7 @@ TEST_F(TestTrajectoryController, configuration) {
 //   builtin_interfaces::msg::Duration time_from_start;
 //   time_from_start.sec = 1;
 //   time_from_start.nanosec = 0;
-//   std::vector<std::array<double, 3>> points {{{3.3, 4.4, 5.5}}};
+//   std::vector<std::vector<double>> points {{{3.3, 4.4, 5.5}}};
 //   publish(time_from_start, points);
 //   // wait for msg is be published to the system
 //   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
@@ -288,7 +392,7 @@ TEST_F(TestTrajectoryController, configuration) {
 //   time_from_start.sec = 1;
 //   time_from_start.nanosec = 0;
 //   // *INDENT-OFF*
-//   std::vector<std::array<double, 3>> points {
+//   std::vector<std::vector<double>> points {
 //     {{3.3, 4.4, 5.5}},
 //     {{7.7, 8.8, 9.9}},
 //     {{10.10, 11.11, 12.12}}
@@ -346,19 +450,13 @@ TEST_F(TestTrajectoryController, cleanup) {
   state = traj_lifecycle_node->activate();
   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
 
-  // wait for the subscriber and publisher to completely setup
-  std::this_thread::sleep_for(std::chrono::seconds(2));
-
   // send msg
   builtin_interfaces::msg::Duration time_from_start;
   time_from_start.sec = 1;
   time_from_start.nanosec = 0;
-  std::vector<std::array<double, 3>> points {{{3.3, 4.4, 5.5}}};
+  std::vector<std::vector<double>> points {{{3.3, 4.4, 5.5}}};
   publish(time_from_start, points);
-  // wait for msg is be published to the system
-  std::this_thread::sleep_for(std::chrono::milliseconds(500));
-  executor.spin_once();
-
+  traj_controller_->wait_for_trajectory(executor);
   traj_controller_->update();
   test_robot_->write();
 
@@ -369,15 +467,20 @@ TEST_F(TestTrajectoryController, cleanup) {
 
   state = traj_lifecycle_node->cleanup();
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
-  traj_controller_->update();
-  test_robot_->write();
+  // update for 0.25 seconds
+  const auto start_time = rclcpp::Clock().now();
+  const rclcpp::Duration wait = rclcpp::Duration::from_seconds(0.25);
+  const auto end_time = start_time + wait;
+  while (rclcpp::Clock().now() < end_time) {
+    test_robot_->read();
+    traj_controller_->update();
+    test_robot_->write();
+  }
 
   // should be home pose again
   EXPECT_NEAR(1.1, test_robot_->pos1, COMMON_THRESHOLD);
   EXPECT_NEAR(2.2, test_robot_->pos2, COMMON_THRESHOLD);
   EXPECT_NEAR(3.3, test_robot_->pos3, COMMON_THRESHOLD);
-
-  executor.cancel();
 }
 
 TEST_F(TestTrajectoryController, correct_initialization_using_parameters) {
@@ -396,11 +499,6 @@ TEST_F(TestTrajectoryController, correct_initialization_using_parameters) {
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(traj_lifecycle_node->get_node_base_interface());
 
-  auto future_handle = std::async(
-    std::launch::async, [&executor]() -> void {
-      executor.spin();
-    });
-
   auto state = traj_lifecycle_node->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   EXPECT_EQ(1.1, test_robot_->pos1);
@@ -410,30 +508,25 @@ TEST_F(TestTrajectoryController, correct_initialization_using_parameters) {
   state = traj_lifecycle_node->activate();
   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
 
-  // wait for the subscriber and publisher to completely setup
-  std::this_thread::sleep_for(std::chrono::seconds(2));
-
   // send msg
-  builtin_interfaces::msg::Duration time_from_start;
-  time_from_start.sec = 1;
-  time_from_start.nanosec = 0;
+  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
+  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
   // *INDENT-OFF*
-  std::vector<std::array<double, 3>> points {
+  std::vector<std::vector<double>> points {
     {{3.3, 4.4, 5.5}},
     {{7.7, 8.8, 9.9}},
     {{10.10, 11.11, 12.12}}
   };
   // *INDENT-ON*
   publish(time_from_start, points);
-  // wait for msg is be published to the system
-  std::this_thread::sleep_for(std::chrono::milliseconds(500));
+  traj_controller_->wait_for_trajectory(executor);
 
   // first update
   traj_controller_->update();
   test_robot_->write();
 
   // wait so controller process the second point when deactivated
-  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+  std::this_thread::sleep_for(FIRST_POINT_TIME);
   traj_controller_->update();
   test_robot_->write();
 
@@ -469,19 +562,11 @@ TEST_F(TestTrajectoryController, correct_initialization_using_parameters) {
 }
 
 void test_state_publish_rate_target(
-  std::shared_ptr<joint_trajectory_controller::JointTrajectoryController> traj_controller,
+  std::shared_ptr<TestableJointTrajectoryController> traj_controller,
   int target_msg_count)
 {
   // fill in some data so we wont fail
   auto traj_lifecycle_node = traj_controller->get_lifecycle_node();
-  const std::vector<std::string> joint_names_ = {"joint1", "joint2", "joint3"};
-  const rclcpp::Parameter joint_parameters("joints", joint_names_);
-  traj_lifecycle_node->set_parameter(joint_parameters);
-
-  const std::vector<std::string> operation_mode_names = {"write1", "write2"};
-  const rclcpp::Parameter operation_mode_parameters("write_op_modes", operation_mode_names);
-  traj_lifecycle_node->set_parameter(operation_mode_parameters);
-
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(traj_lifecycle_node->get_node_base_interface());
 
@@ -512,9 +597,6 @@ void test_state_publish_rate_target(
     }
     );
 
-  // wait for things to setup
-  std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
   // update for 1second
   const auto start_time = rclcpp::Clock().now();
   const rclcpp::Duration wait = rclcpp::Duration::from_seconds(1.0);
@@ -523,11 +605,15 @@ void test_state_publish_rate_target(
     traj_controller->update();
   }
 
-  EXPECT_EQ(target_msg_count, echo_received_counter);
+  // We may miss the last message since time allowed is exactly the time needed
+  EXPECT_NEAR(target_msg_count, echo_received_counter, 1);
 
   executor.cancel();
 }
 
+/**
+ * @brief test_state_publish_rate Test that state publish rate matches configure rate
+ */
 TEST_F(TestTrajectoryController, test_state_publish_rate) {
   SetUpTrajectoryController();
   test_state_publish_rate_target(traj_controller_, 10);
@@ -538,30 +624,19 @@ TEST_F(TestTrajectoryController, zero_state_publish_rate) {
   test_state_publish_rate_target(traj_controller_, 0);
 }
 
+/**
+ * @brief test_jumbled_joint_order Test sending trajectories with a joint order different from internal controller order
+ */
 TEST_F(TestTrajectoryController, test_jumbled_joint_order) {
-  SetUpTrajectoryController(false);
+  SetUpTrajectoryController();
 
   auto traj_lifecycle_node = traj_controller_->get_lifecycle_node();
-  const std::vector<std::string> joint_names = {"joint1", "joint2", "joint3"};
-  const rclcpp::Parameter joint_parameters("joints", joint_names);
-  traj_lifecycle_node->set_parameter(joint_parameters);
-
-  const std::vector<std::string> operation_mode_names = {"write1", "write2"};
-  const rclcpp::Parameter operation_mode_parameters("write_op_modes", operation_mode_names);
-  traj_lifecycle_node->set_parameter(operation_mode_parameters);
 
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(traj_lifecycle_node->get_node_base_interface());
 
   traj_controller_->on_configure(traj_lifecycle_node->get_current_state());
   traj_controller_->on_activate(traj_lifecycle_node->get_current_state());
-
-  auto future_handle = std::async(
-    std::launch::async, [&executor]() -> void {
-      executor.spin();
-    });
-  // wait for things to setup
-  std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
   {
     trajectory_msgs::msg::JointTrajectory traj_msg;
@@ -581,38 +656,22 @@ TEST_F(TestTrajectoryController, test_jumbled_joint_order) {
     trajectory_publisher_->publish(traj_msg);
   }
 
-  // update for 0.5 seconds
-  const auto start_time = rclcpp::Clock().now();
-  const rclcpp::Duration wait = rclcpp::Duration::from_seconds(0.5);
-  const auto end_time = start_time + wait;
-  while (rclcpp::Clock().now() < end_time) {
-    test_robot_->read();
-    traj_controller_->update();
-    test_robot_->write();
-  }
+  traj_controller_->wait_for_trajectory(executor);
+  // update for 0.25 seconds
+  updateController(rclcpp::Duration::from_seconds(0.25));
 
   EXPECT_NEAR(1.0, test_robot_->pos1, COMMON_THRESHOLD);
   EXPECT_NEAR(2.0, test_robot_->pos2, COMMON_THRESHOLD);
   EXPECT_NEAR(3.0, test_robot_->pos3, COMMON_THRESHOLD);
-
-  executor.cancel();
 }
 
+/**
+ * @brief test_partial_joint_list Test sending trajectories with a subset of the controlled joints
+ */
 TEST_F(TestTrajectoryController, test_partial_joint_list) {
-  auto traj_controller = std::make_shared<joint_trajectory_controller::JointTrajectoryController>();
-  auto ret = traj_controller->init(test_robot_, controller_name_);
-  if (ret != controller_interface::return_type::SUCCESS) {
-    FAIL();
-  }
+  SetUpTrajectoryController();
 
-  auto traj_lifecycle_node = traj_controller->get_lifecycle_node();
-  std::vector<std::string> joint_names = {"joint1", "joint2", "joint3"};
-  rclcpp::Parameter joint_parameters("joints", joint_names);
-  traj_lifecycle_node->set_parameter(joint_parameters);
-
-  std::vector<std::string> operation_mode_names = {"write1", "write2"};
-  rclcpp::Parameter operation_mode_parameters("write_op_modes", operation_mode_names);
-  traj_lifecycle_node->set_parameter(operation_mode_parameters);
+  auto traj_lifecycle_node = traj_controller_->get_lifecycle_node();
 
   rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", true);
   traj_lifecycle_node->set_parameter(partial_joints_parameters);
@@ -620,15 +679,8 @@ TEST_F(TestTrajectoryController, test_partial_joint_list) {
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(traj_lifecycle_node->get_node_base_interface());
 
-  traj_controller->on_configure(traj_lifecycle_node->get_current_state());
-  traj_controller->on_activate(traj_lifecycle_node->get_current_state());
-
-  auto future_handle = std::async(
-    std::launch::async, [&executor]() -> void {
-      executor.spin();
-    });
-  // wait for things to setup
-  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  traj_controller_->on_configure(traj_lifecycle_node->get_current_state());
+  traj_controller_->on_activate(traj_lifecycle_node->get_current_state());
 
   const double initial_joint3_cmd = test_robot_->cmd3;
   trajectory_msgs::msg::JointTrajectory traj_msg;
@@ -652,15 +704,9 @@ TEST_F(TestTrajectoryController, test_partial_joint_list) {
     trajectory_publisher_->publish(traj_msg);
   }
 
+  traj_controller_->wait_for_trajectory(executor);
   // update for 0.5 seconds
-  auto start_time = rclcpp::Clock().now();
-  rclcpp::Duration wait = rclcpp::Duration::from_seconds(0.5);
-  auto end_time = start_time + wait;
-  while (rclcpp::Clock().now() < end_time) {
-    test_robot_->read();
-    traj_controller->update();
-    test_robot_->write();
-  }
+  updateController(rclcpp::Duration::from_seconds(0.25));
 
   double threshold = 0.001;
   EXPECT_NEAR(traj_msg.points[0].positions[1], test_robot_->pos1, threshold);
@@ -677,4 +723,170 @@ TEST_F(TestTrajectoryController, test_partial_joint_list) {
 //    threshold) << "Joint 3 velocity should be 0.0 since it's not in the goal";
 
   executor.cancel();
+}
+
+/**
+ * @brief invalid_message Test missmatched joint and reference vector sizes
+ */
+TEST_F(TestTrajectoryController, invalid_message) {
+  SetUpAndActivateTrajectoryController();
+  trajectory_msgs::msg::JointTrajectory traj_msg, good_traj_msg;
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(traj_controller_->get_lifecycle_node()->get_node_base_interface());
+
+  rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", true);
+  traj_controller_->get_lifecycle_node()->set_parameter(partial_joints_parameters);
+
+
+  good_traj_msg.joint_names = joint_names_;
+  good_traj_msg.header.stamp = rclcpp::Time(0);
+  good_traj_msg.points.resize(1);
+  good_traj_msg.points[0].time_from_start = rclcpp::Duration::from_seconds(0.25);
+  good_traj_msg.points[0].positions.resize(1);
+  good_traj_msg.points[0].positions = {1.0, 2.0, 3.0};
+  good_traj_msg.points[0].velocities.resize(1);
+  good_traj_msg.points[0].velocities = {-1.0, -2.0, -3.0};
+  EXPECT_TRUE(traj_controller_->validate_trajectory_msg(good_traj_msg));
+
+  // Incompatible joint names
+  traj_msg = good_traj_msg;
+  traj_msg.joint_names = {"bad_name"};
+  EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
+
+  // No position data
+  traj_msg = good_traj_msg;
+  traj_msg.points[0].positions.clear();
+  EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
+
+  // Incompatible data sizes, too few positions
+  traj_msg = good_traj_msg;
+  traj_msg.points[0].positions = {1.0, 2.0};
+  EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
+
+  // Incompatible data sizes, too many positions
+  traj_msg = good_traj_msg;
+  traj_msg.points[0].positions = {1.0, 2.0, 3.0, 4.0};
+  EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
+
+  // Incompatible data sizes, too few velocities
+  traj_msg = good_traj_msg;
+  traj_msg.points[0].velocities = {1.0, 2.0};
+  EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
+
+  // Incompatible data sizes, too few accelerations
+  traj_msg = good_traj_msg;
+  traj_msg.points[0].accelerations = {1.0, 2.0};
+  EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
+
+  // Incompatible data sizes, too few efforts
+  traj_msg = good_traj_msg;
+  traj_msg.points[0].positions.clear();
+  traj_msg.points[0].effort = {1.0, 2.0};
+  EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
+
+  // Non-strictly increasing waypoint times
+  traj_msg = good_traj_msg;
+  traj_msg.points.push_back(traj_msg.points.front());
+  EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
+}
+
+/**
+ * @brief test_trajectory_replace Test replacing an existing trajectory
+ */
+TEST_F(TestTrajectoryController, test_trajectory_replace) {
+  SetUpTrajectoryController();
+  auto traj_lifecycle_node = traj_controller_->get_lifecycle_node();
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(traj_lifecycle_node->get_node_base_interface());
+  subscribeToState();
+
+  rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", true);
+  traj_lifecycle_node->set_parameter(partial_joints_parameters);
+  traj_lifecycle_node->configure();
+  traj_lifecycle_node->activate();
+
+
+  std::vector<std::vector<double>> points_old {{{2., 3., 4.}}};
+  std::vector<std::vector<double>> points_partial_new {{{1.5}}};
+
+  const auto delay = std::chrono::milliseconds(500);
+  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(delay)};
+  publish(time_from_start, points_old);
+  trajectory_msgs::msg::JointTrajectoryPoint expected_actual, expected_desired;
+  expected_actual.positions = {points_old[0].begin(), points_old[0].end()};
+  expected_desired.positions = {points_old[0].begin(), points_old[0].end()};
+  //  Check that we reached end of points_old trajectory
+  waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
+
+  RCLCPP_INFO(traj_lifecycle_node->get_logger(), "Sending new trajectory");
+  publish(time_from_start, points_partial_new);
+  // Replaced trajectory is a mix of previous and current goal
+  expected_desired.positions[0] = points_partial_new[0][0];
+  expected_desired.positions[1] = points_old[0][1];
+  expected_desired.positions[2] = points_old[0][2];
+  expected_actual = expected_desired;
+  waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
+}
+
+/**
+ * @brief test_ignore_old_trajectory Sending an old trajectory replacing an existing trajectory
+ */
+TEST_F(TestTrajectoryController, test_ignore_old_trajectory) {
+  SetUpTrajectoryController();
+  auto traj_lifecycle_node = traj_controller_->get_lifecycle_node();
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(traj_lifecycle_node->get_node_base_interface());
+  subscribeToState();
+  traj_lifecycle_node->configure();
+  traj_lifecycle_node->activate();
+
+  std::vector<std::vector<double>> points_old {{{2., 3., 4.}, {4., 6., 8.}}};
+  std::vector<std::vector<double>> points_new {{{-1., -2., -3.}}};
+
+  const auto delay = std::chrono::milliseconds(500);
+  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(delay)};
+  publish(time_from_start, points_old);
+  trajectory_msgs::msg::JointTrajectoryPoint expected_actual, expected_desired;
+  expected_actual.positions = {points_old[0].begin(), points_old[0].end()};
+  expected_desired = expected_actual;
+  //  Check that we reached end of points_old[0] trajectory
+  waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
+
+  RCLCPP_INFO(traj_lifecycle_node->get_logger(), "Sending new trajectory in the past");
+  //  New trajectory will end before current time
+  rclcpp::Time new_traj_start = rclcpp::Clock().now() - delay - std::chrono::milliseconds(50);
+  expected_actual.positions = {points_old[1].begin(), points_old[1].end()};
+  expected_desired = expected_actual;
+  publish(time_from_start, points_new, new_traj_start);
+  waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
+}
+
+TEST_F(TestTrajectoryController, test_ignore_partial_old_trajectory) {
+  SetUpTrajectoryController();
+  auto traj_lifecycle_node = traj_controller_->get_lifecycle_node();
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(traj_lifecycle_node->get_node_base_interface());
+  subscribeToState();
+  traj_lifecycle_node->configure();
+  traj_lifecycle_node->activate();
+
+  std::vector<std::vector<double>> points_old {{{2., 3., 4.}, {4., 6., 8.}}};
+  std::vector<std::vector<double>> points_new {{{-1., -2., -3.}, {-2., -4., -6.}}};
+
+  const auto delay = std::chrono::milliseconds(500);
+  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(delay)};
+  publish(time_from_start, points_old);
+  trajectory_msgs::msg::JointTrajectoryPoint expected_actual, expected_desired;
+  expected_actual.positions = {points_old[0].begin(), points_old[0].end()};
+  expected_desired = expected_actual;
+  //  Check that we reached end of points_old[0]trajectory
+  waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
+
+  RCLCPP_INFO(traj_lifecycle_node->get_logger(), "Sending new trajectory partially in the past");
+  //  New trajectory first point is in the past, second is in the future
+  rclcpp::Time new_traj_start = rclcpp::Clock().now() - delay - std::chrono::milliseconds(50);
+  expected_actual.positions = {points_new[1].begin(), points_new[1].end()};
+  expected_desired = expected_actual;
+  publish(time_from_start, points_new, new_traj_start);
+  waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
 }

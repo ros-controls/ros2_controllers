@@ -525,7 +525,6 @@ void JointTrajectoryController::publish_state(
 
   if (state_publisher_ && state_publisher_->trylock()) {
     last_state_publish_time_ = lifecycle_node_->now();
-
     state_publisher_->msg_.header.stamp = last_state_publish_time_;
     state_publisher_->msg_.desired.positions = desired_state.positions;
     state_publisher_->msg_.desired.velocities = desired_state.velocities;
@@ -712,6 +711,21 @@ bool JointTrajectoryController::validate_trajectory_msg(
     return false;
   }
 
+  const auto trajectory_start_time = static_cast<rclcpp::Time>(trajectory.header.stamp);
+  if (trajectory_start_time.seconds() != 0.0) {
+    auto trajectory_end_time = trajectory_start_time;
+    for (const auto & p : trajectory.points) {
+      trajectory_end_time += p.time_from_start;
+    }
+    if (trajectory_end_time < lifecycle_node_->now()) {
+      RCLCPP_ERROR(
+        lifecycle_node_->get_logger(),
+        "Received trajectory with non zero time start time (%f) that ends on the past (%f)",
+        trajectory_start_time.seconds(), trajectory_end_time.seconds());
+      return false;
+    }
+  }
+
   for (auto i = 0ul; i < trajectory.joint_names.size(); ++i) {
     const std::string & incoming_joint_name = trajectory.joint_names[i];
 
@@ -721,6 +735,57 @@ bool JointTrajectoryController::validate_trajectory_msg(
         lifecycle_node_->get_logger(),
         "Incoming joint %s doesn't match the controller's joints.",
         incoming_joint_name.c_str());
+      return false;
+    }
+  }
+
+  rclcpp::Duration previous_traj_time(0);
+  for (auto i = 0ul; i < trajectory.points.size(); ++i) {
+    if ((i > 0) && (rclcpp::Duration(trajectory.points[i].time_from_start) <= previous_traj_time)) {
+      RCLCPP_ERROR(
+        lifecycle_node_->get_logger(),
+        "Time between points %u and %u is not strictly increasing, it is %f and %f respectively",
+        i - 1, i, previous_traj_time.seconds(),
+        rclcpp::Duration(trajectory.points[i].time_from_start).seconds());
+      return false;
+    }
+    previous_traj_time = trajectory.points[i].time_from_start;
+
+    if (trajectory.joint_names.size() != trajectory.points[i].positions.size()) {
+      RCLCPP_ERROR(
+        lifecycle_node_->get_logger(),
+        "Mismatch between joint_names (%u) and positions (%u) at point #%u.",
+        trajectory.joint_names.size(), trajectory.points[i].positions.size(), i);
+      return false;
+    }
+
+    if (!trajectory.points[i].velocities.empty() &&
+      trajectory.joint_names.size() != trajectory.points[i].velocities.size())
+    {
+      RCLCPP_ERROR(
+        lifecycle_node_->get_logger(),
+        "Mismatch between joint_names (%u) and velocities (%u) at point #%u.",
+        trajectory.joint_names.size(), trajectory.points[i].velocities.size(), i);
+      return false;
+    }
+
+    if (!trajectory.points[i].accelerations.empty() &&
+      trajectory.joint_names.size() != trajectory.points[i].accelerations.size())
+    {
+      RCLCPP_ERROR(
+        lifecycle_node_->get_logger(),
+        "Mismatch between joint_names (%u) and accelerations (%u) at point #%u.",
+        trajectory.joint_names.size(), trajectory.points[i].accelerations.size(), i);
+      return false;
+    }
+
+    if (!trajectory.points[i].effort.empty() &&
+      trajectory.joint_names.size() != trajectory.points[i].effort.size())
+    {
+      RCLCPP_ERROR(
+        lifecycle_node_->get_logger(),
+        "Mismatch between joint_names (%u) and effort (%u) at point #%u.",
+        trajectory.joint_names.size(), trajectory.points[i].effort.size(), i);
       return false;
     }
   }
