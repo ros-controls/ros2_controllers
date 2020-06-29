@@ -28,11 +28,6 @@
 
 using lifecycle_msgs::msg::State;
 
-void spin(rclcpp::executors::SingleThreadedExecutor * exe)
-{
-  exe->spin();
-}
-
 class TestableDiffDriveController : public diff_drive_controller::DiffDriveController
 {
 public:
@@ -40,6 +35,27 @@ public:
   std::shared_ptr<geometry_msgs::msg::TwistStamped> getLastReceivedTwist() const
   {
     return received_velocity_msg_ptr_;
+  }
+
+  /**
+  * @brief wait_for_twist block until a new twist is received.
+  * Requires that the executor is not spinned elsewhere between the
+  *  message publication and the call to this function
+  *
+  * @return true if new twist msg was received, false if timeout
+  */
+  bool wait_for_twist(
+    rclcpp::Executor & executor,
+    const std::chrono::milliseconds & timeout = std::chrono::milliseconds{500})
+  {
+    rclcpp::WaitSet wait_set;
+    wait_set.add_subscription(velocity_command_subscriber_);
+
+    if (wait_set.wait(timeout).kind() == rclcpp::WaitResultKind::Ready) {
+      executor.spin_some();
+      return true;
+    }
+    return false;
   }
 };
 
@@ -109,30 +125,6 @@ protected:
       }
       rclcpp::spin_some(pub_node);
     }
-  }
-
-/**
- * @brief wait_for_new_twist block until a new twist is received.
- * Requires that the executor is not spinned elsewhere between the
- *  message publication and the call to this function
- *
- * @return true if new twist msg was received, false if timeout
- */
-  bool wait_for_new_twist(
-    const TestableDiffDriveController & controller,
-    rclcpp::Executor & executor,
-    const std::chrono::milliseconds & timeout = std::chrono::milliseconds{500})
-  {
-    const auto current_twist = controller.getLastReceivedTwist();
-    auto end = pub_node->get_clock()->now() + timeout;
-
-    while ((pub_node->get_clock()->now() < end) &&
-      (controller.getLastReceivedTwist() == current_twist))
-    {
-      executor.spin_some();
-      std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    }
-    return true;
   }
 
   void setup_controller(
@@ -240,8 +232,7 @@ TEST_F(TestDiffDriveController, cleanup)
   const double linear = 1.0;
   const double angular = 1.0;
   publish(linear, angular);
-
-  wait_for_new_twist(*diff_drive_controller, executor);
+  diff_drive_controller->wait_for_twist(executor);
 
   diff_drive_controller->update();
   test_robot->write();
@@ -303,7 +294,7 @@ TEST_F(TestDiffDriveController, correct_initialization_using_parameters)
   const double angular = 0.0;
   publish(linear, angular);
   // wait for msg is be published to the system
-  ASSERT_TRUE(wait_for_new_twist(*diff_drive_controller, executor));
+  ASSERT_TRUE(diff_drive_controller->wait_for_twist(executor));
 
   diff_drive_controller->update();
   test_robot->write();
