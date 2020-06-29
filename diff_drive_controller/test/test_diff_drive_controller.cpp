@@ -28,7 +28,7 @@
 
 using lifecycle_msgs::msg::State;
 
-void spin(rclcpp::executors::MultiThreadedExecutor * exe)
+void spin(rclcpp::executors::SingleThreadedExecutor * exe)
 {
   exe->spin();
 }
@@ -204,16 +204,13 @@ TEST_F(TestDiffDriveController, configuration)
     FAIL();
   }
 
-  rclcpp::executors::MultiThreadedExecutor executor;
+  rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(diff_drive_controller->get_lifecycle_node()->get_node_base_interface());
-  auto future_handle_ = std::async(std::launch::async, spin, &executor);
 
   auto state = diff_drive_controller->get_lifecycle_node()->configure();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
 
   // add in check for linear vel command values
-
-  executor.cancel();
 }
 
 TEST_F(TestDiffDriveController, cleanup)
@@ -233,7 +230,7 @@ TEST_F(TestDiffDriveController, cleanup)
 
   auto state = diff_drive_lifecycle_node->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
-  rclcpp::executors::MultiThreadedExecutor executor;
+  rclcpp::executors::SingleThreadedExecutor executor;
   setup_controller(*diff_drive_controller, executor);
 
 
@@ -290,7 +287,7 @@ TEST_F(TestDiffDriveController, correct_initialization_using_parameters)
   diff_drive_lifecycle_node->set_parameter(rclcpp::Parameter("wheel_separation", 0.4));
   diff_drive_lifecycle_node->set_parameter(rclcpp::Parameter("wheel_radius", 1.0));
 
-  rclcpp::executors::MultiThreadedExecutor executor;
+  rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(diff_drive_lifecycle_node->get_node_base_interface());
 
   auto state = diff_drive_lifecycle_node->configure();
