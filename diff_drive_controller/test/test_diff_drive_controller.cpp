@@ -256,7 +256,7 @@ TEST_F(TestDiffDriveController, cleanup)
 
   state = diff_drive_lifecycle_node->cleanup();
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
-  diff_drive_controller->update();
+
   test_robot->write();
 
   // shouild be stopped
@@ -326,7 +326,6 @@ TEST_F(TestDiffDriveController, correct_initialization_using_parameters)
 
   // cleanup
   state = diff_drive_lifecycle_node->cleanup();
-  diff_drive_controller->update();
   test_robot->write();
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
   EXPECT_EQ(0, test_robot->cmd1);
