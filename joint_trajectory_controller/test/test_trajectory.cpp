@@ -172,7 +172,7 @@ TEST(TestTrajectory, sample_trajectory_positions) {
   }
 }
 
-TEST_F(TestTrajectory, interpolation_pos_vel) {
+TEST(TestTrajectory, interpolation_pos_vel) {
   // taken from ros1_controllers QuinticSplineSegmentTest::PosVelEnpointsSampler
 
   // Start and end state taken from x^3 - 2x
@@ -229,7 +229,7 @@ TEST_F(TestTrajectory, interpolation_pos_vel) {
   }
 }
 
-TEST_F(TestTrajectory, interpolation_pos_vel_accel) {
+TEST(TestTrajectory, interpolation_pos_vel_accel) {
   // taken from ros1_controllers QuinticSplineSegmentTest::PosVeAcclEnpointsSampler
 
   // Start and end state taken from x(x-1)(x-2)(x-3)(x-4) = x^5 -10x^4 + 35x^3 -50x^2 + 24x
