@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "test_common.h"
+#include "test_common.hpp"
 
 #include <gtest/gtest.h>
 
@@ -36,17 +36,18 @@ TEST_F(DiffDriveControllerTest, test_break_with_multiple_publishers)
   // Create a timer where both nodes publish cmd_vel
   auto & node = get_node();
   auto & clk = *node->get_clock();
-  auto timer = node->create_wall_timer(100ms, [this, &another_cmd_pub, &clk]() {
-    geometry_msgs::msg::Twist cmd_vel_1;
-    cmd_vel_1.linear.x = 1.0;
-    publish(cmd_vel_1);
-    std::this_thread::sleep_for(30ms);
+  auto timer = node->create_wall_timer(
+    100ms, [this, &another_cmd_pub, &clk]() {
+      geometry_msgs::msg::Twist cmd_vel_1;
+      cmd_vel_1.linear.x = 1.0;
+      publish(cmd_vel_1);
+      std::this_thread::sleep_for(30ms);
 
-    geometry_msgs::msg::TwistStamped cmd_vel_2;
-    cmd_vel_2.twist.linear.x = 2.0;
-    cmd_vel_2.header.stamp = clk.now();
-    another_cmd_pub->publish(cmd_vel_2);
-  });
+      geometry_msgs::msg::TwistStamped cmd_vel_2;
+      cmd_vel_2.twist.linear.x = 2.0;
+      cmd_vel_2.header.stamp = clk.now();
+      another_cmd_pub->publish(cmd_vel_2);
+    });
 
   // Wait for a while
   sim_sleep_for(5s);
@@ -62,9 +63,9 @@ TEST_F(DiffDriveControllerTest, test_break_with_multiple_publishers)
   double roll_old, pitch_old, yaw_old;
   double roll_new, pitch_new, yaw_new;
   tf2::Matrix3x3(tf_quat_from_geom_quat(old_odom->pose.pose.orientation))
-    .getRPY(roll_old, pitch_old, yaw_old);
+  .getRPY(roll_old, pitch_old, yaw_old);
   tf2::Matrix3x3(tf_quat_from_geom_quat(new_odom->pose.pose.orientation))
-    .getRPY(roll_new, pitch_new, yaw_new);
+  .getRPY(roll_new, pitch_new, yaw_new);
   EXPECT_LT(fabs(roll_new - roll_old), EPS);
   EXPECT_LT(fabs(pitch_new - pitch_old), EPS);
   EXPECT_LT(fabs(yaw_new - yaw_old), EPS);

@@ -74,7 +74,7 @@ protected:
 
     pub_node = std::make_shared<rclcpp::Node>("velocity_publisher");
     velocity_publisher = pub_node->create_publisher<geometry_msgs::msg::TwistStamped>(
-      controller_name + "/cmd_vel",
+      "/cmd_vel",
       rclcpp::SystemDefaultsQoS());
   }
 
@@ -174,10 +174,8 @@ TEST_F(TestDiffDriveController, correct_initialization)
   ASSERT_EQ(ret, controller_interface::return_type::SUCCESS);
 
   auto diff_drive_lifecycle_node = diff_drive_controller->get_lifecycle_node();
-  rclcpp::Parameter wheel_radius("wheel_radius", 1.0);
-  diff_drive_lifecycle_node->set_parameter(wheel_radius);
-  rclcpp::Parameter wheel_separation("wheel_separation", 1.0);
-  diff_drive_lifecycle_node->set_parameter(wheel_separation);
+  diff_drive_lifecycle_node->set_parameter(rclcpp::Parameter("wheel_separation", 1.0));
+  diff_drive_lifecycle_node->set_parameter(rclcpp::Parameter("wheel_radius", 1.0));
 
   auto inactive_state = diff_drive_controller->get_lifecycle_node()->configure();
   EXPECT_EQ(State::PRIMARY_STATE_INACTIVE, inactive_state.id());
@@ -199,10 +197,8 @@ TEST_F(TestDiffDriveController, configuration)
     controller_interface::return_type::SUCCESS);
 
   auto diff_drive_lifecycle_node = diff_drive_controller->get_lifecycle_node();
-  rclcpp::Parameter wheel_radius("wheel_radius", 1.0);
-  diff_drive_lifecycle_node->set_parameter(wheel_radius);
-  rclcpp::Parameter wheel_separation("wheel_separation", 1.0);
-  diff_drive_lifecycle_node->set_parameter(wheel_separation);
+  diff_drive_lifecycle_node->set_parameter(rclcpp::Parameter("wheel_separation", 1.0));
+  diff_drive_lifecycle_node->set_parameter(rclcpp::Parameter("wheel_radius", 1.0));
 
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(diff_drive_controller->get_lifecycle_node()->get_node_base_interface());

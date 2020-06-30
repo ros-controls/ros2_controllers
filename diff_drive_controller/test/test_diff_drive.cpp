@@ -15,7 +15,7 @@
 #include <gtest/gtest.h>
 #include <tf2_ros/transform_listener.h>
 
-#include "test_common.h"
+#include "test_common.hpp"
 
 namespace
 {
@@ -57,9 +57,9 @@ TEST_F(DiffDriveControllerTest, test_forward)
   double roll_old, pitch_old, yaw_old;
   double roll_new, pitch_new, yaw_new;
   tf2::Matrix3x3(tf_quat_from_geom_quat(old_odom->pose.pose.orientation))
-    .getRPY(roll_old, pitch_old, yaw_old);
+  .getRPY(roll_old, pitch_old, yaw_old);
   tf2::Matrix3x3(tf_quat_from_geom_quat(new_odom->pose.pose.orientation))
-    .getRPY(roll_new, pitch_new, yaw_new);
+  .getRPY(roll_new, pitch_new, yaw_new);
   EXPECT_LT(fabs(roll_new - roll_old), EPS);
   EXPECT_LT(fabs(pitch_new - pitch_old), EPS);
   EXPECT_LT(fabs(yaw_new - yaw_old), EPS);
@@ -107,9 +107,9 @@ TEST_F(DiffDriveControllerTest, test_turn)
   double roll_old, pitch_old, yaw_old;
   double roll_new, pitch_new, yaw_new;
   tf2::Matrix3x3(tf_quat_from_geom_quat(old_odom->pose.pose.orientation))
-    .getRPY(roll_old, pitch_old, yaw_old);
+  .getRPY(roll_old, pitch_old, yaw_old);
   tf2::Matrix3x3(tf_quat_from_geom_quat(new_odom->pose.pose.orientation))
-    .getRPY(roll_new, pitch_new, yaw_new);
+  .getRPY(roll_new, pitch_new, yaw_new);
   EXPECT_LT(fabs(roll_new - roll_old), EPS);
   EXPECT_LT(fabs(pitch_new - pitch_old), EPS);
   EXPECT_NEAR(fabs(yaw_new - yaw_old), expected_rotation, ORIENTATION_TOLERANCE);

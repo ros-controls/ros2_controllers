@@ -14,11 +14,12 @@
 import os
 import sys
 import unittest
+
 import launch_testing.asserts
 
 # Import test description for diffbot located in same directory.
 sys.path.append(os.path.dirname(__file__))
-from diffbot_launch_test_common import generate_diffbot_test_description
+from diffbot_launch_test_common import generate_diffbot_test_description # noqa: EI
 
 
 def generate_test_description():
@@ -26,17 +27,19 @@ def generate_test_description():
         gtest_name='test_diff_drive',
         robot_urdf='diffbot_square_wheels.xacro',
         additional_params={
-            'wheel_radius': 0.11   # Provide the radius, since the bot's wheels are boxes, not cylinders or spheres
+            'wheel_radius': 0.11   # Provide the radius
         },
         timeout=40.0)
 
 
 class TestGTestProcessActive(unittest.TestCase):
+
     def test_gtest_run_complete(self, proc_info, diffbot_gtest, diffbot_node):
         proc_info.assertWaitForShutdown(diffbot_gtest, timeout=40.0)
 
 
 @launch_testing.post_shutdown_test()
 class TestGTestProcessPostShutdown(unittest.TestCase):
+
     def test_gtest_pass(self, proc_info, diffbot_gtest, diffbot_node):
         launch_testing.asserts.assertExitCodes(proc_info, process=diffbot_gtest)

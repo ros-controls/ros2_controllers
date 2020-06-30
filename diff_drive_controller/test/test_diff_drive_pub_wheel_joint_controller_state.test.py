@@ -14,11 +14,12 @@
 import os
 import sys
 import unittest
+
 import launch_testing.asserts
 
 # Import test description for diffbot located in same directory.
 sys.path.append(os.path.dirname(__file__))
-from diffbot_launch_test_common import generate_diffbot_test_description
+from diffbot_launch_test_common import generate_diffbot_test_description # noqa: EI
 
 
 def generate_test_description():
@@ -31,11 +32,13 @@ def generate_test_description():
 
 
 class TestGTestProcessActive(unittest.TestCase):
+
     def test_gtest_run_complete(self, proc_info, diffbot_gtest, diffbot_node):
         proc_info.assertWaitForShutdown(diffbot_gtest, timeout=30.0)
 
 
 @launch_testing.post_shutdown_test()
 class TestGTestProcessPostShutdown(unittest.TestCase):
+
     def test_gtest_pass(self, proc_info, diffbot_gtest, diffbot_node):
         launch_testing.asserts.assertExitCodes(proc_info, process=diffbot_gtest)

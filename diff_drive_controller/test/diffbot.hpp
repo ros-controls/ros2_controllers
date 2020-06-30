@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef DIFFBOT_H_
-#define DIFFBOT_H_
+#ifndef DIFFBOT_HPP_
+#define DIFFBOT_HPP_
 
 #include <controller_manager/controller_manager.hpp>
 #include <hardware_interface/robot_hardware.hpp>
@@ -25,7 +25,7 @@
 #include <memory>
 #include <sstream>
 
-template <unsigned int NUM_JOINTS = 2>
+template<unsigned int NUM_JOINTS = 2>
 class Diffbot : public hardware_interface::RobotHardware
 {
 public:
@@ -81,7 +81,7 @@ public:
     return hardware_interface::HW_RET_OK;
   }
 
-  [[nodiscard]] rclcpp::Duration get_period() const { return period_; }
+  [[nodiscard]] rclcpp::Duration get_period() const {return period_;}
 
   // Diffbot assumes read is called with frequency of 1/period_.
   hardware_interface::hardware_interface_ret_t read() override
@@ -113,7 +113,7 @@ public:
     return hardware_interface::HW_RET_OK;
   }
 
-  rclcpp::Node::SharedPtr & get_node() { return node_; }
+  rclcpp::Node::SharedPtr & get_node() {return node_;}
 
   void start_callback(
     std_srvs::srv::Empty::Request::SharedPtr /*req*/,
@@ -189,13 +189,12 @@ constexpr auto CONTROLLER_MANAGER_NAME = "diffbot_controller_manager";
  * \param argv main's argv
  * \return exit code
  */
-template <unsigned int NUM_JOINTS = 2>
-int diffbot_main_runner(
-  int argc, char * const * argv)
+template<unsigned int NUM_JOINTS = 2>
+int diffbot_main_runner(int argc, char * const * argv)
 {
   rclcpp::init(argc, argv);
   auto exec = std::make_shared<rclcpp::executors::MultiThreadedExecutor>();
-  auto fut = std::async(std::launch::async, [&exec]() { exec->spin(); });
+  auto fut = std::async(std::launch::async, [&exec]() {exec->spin();});
   auto logger = rclcpp::get_logger("diffbot_control_loop");
 
   // Initialize Diffbot RobotHardware
@@ -277,4 +276,4 @@ int diffbot_main_runner(
   return EXIT_SUCCESS;
 }
 
-#endif  // DIFFBOT_H_
+#endif  // DIFFBOT_HPP_

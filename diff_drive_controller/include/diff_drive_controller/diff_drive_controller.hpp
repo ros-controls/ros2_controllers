@@ -19,6 +19,7 @@
 #ifndef DIFF_DRIVE_CONTROLLER__DIFF_DRIVE_CONTROLLER_HPP_
 #define DIFF_DRIVE_CONTROLLER__DIFF_DRIVE_CONTROLLER_HPP_
 
+#include <tf2/LinearMath/Quaternion.h>
 #include <chrono>
 #include <cmath>
 #include <memory>
@@ -26,8 +27,8 @@
 #include <string>
 #include <vector>
 
-#include "controller_interface/controller_interface.hpp"
 #include "control_msgs/msg/joint_trajectory_controller_state.hpp"
+#include "controller_interface/controller_interface.hpp"
 #include "diff_drive_controller/odometry.hpp"
 #include "diff_drive_controller/speed_limiter.hpp"
 #include "diff_drive_controller/visibility_control.h"
@@ -57,8 +58,7 @@ public:
 
   DIFF_DRIVE_CONTROLLER_PUBLIC
   DiffDriveController(
-    std::vector<std::string> left_wheel_names,
-    std::vector<std::string> right_wheel_names,
+    std::vector<std::string> left_wheel_names, std::vector<std::string> right_wheel_names,
     std::vector<std::string> operation_mode_names);
 
   DIFF_DRIVE_CONTROLLER_PUBLIC
@@ -71,28 +71,28 @@ public:
   controller_interface::return_type update() override;
 
   DIFF_DRIVE_CONTROLLER_PUBLIC
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-  on_configure(const rclcpp_lifecycle::State & previous_state) override;
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn on_configure(
+    const rclcpp_lifecycle::State & previous_state) override;
 
   DIFF_DRIVE_CONTROLLER_PUBLIC
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-  on_activate(const rclcpp_lifecycle::State & previous_state) override;
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn on_activate(
+    const rclcpp_lifecycle::State & previous_state) override;
 
   DIFF_DRIVE_CONTROLLER_PUBLIC
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-  on_deactivate(const rclcpp_lifecycle::State & previous_state) override;
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn on_deactivate(
+    const rclcpp_lifecycle::State & previous_state) override;
 
   DIFF_DRIVE_CONTROLLER_PUBLIC
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-  on_cleanup(const rclcpp_lifecycle::State & previous_state) override;
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn on_cleanup(
+    const rclcpp_lifecycle::State & previous_state) override;
 
   DIFF_DRIVE_CONTROLLER_PUBLIC
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-  on_error(const rclcpp_lifecycle::State & previous_state) override;
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn on_error(
+    const rclcpp_lifecycle::State & previous_state) override;
 
   DIFF_DRIVE_CONTROLLER_PUBLIC
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-  on_shutdown(const rclcpp_lifecycle::State & previous_state) override;
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn on_shutdown(
+    const rclcpp_lifecycle::State & previous_state) override;
 
 protected:
   struct WheelHandle
@@ -101,9 +101,35 @@ protected:
     hardware_interface::JointCommandHandle * command = nullptr;
   };
 
+  struct Commands
+  {
+    double lin;
+    double ang;
+    rclcpp::Time stamp;
+
+    Commands()
+    : lin(0.0), ang(0.0), stamp{0L, rcl_clock_type_t::RCL_ROS_TIME} {}
+  };
+
+  /**
+   * \brief Resets all Node resources.
+   * \return True if successful.
+   */
+  bool reset();
+
+  /**
+   * \brief Sends a break command to robot
+   */
+  void halt();
+
+  /**
+   * \brief Sets Op mode of the robot hardware
+   * \param mode
+   */
+  void set_op_mode(const hardware_interface::OperationMode & mode);
+
   CallbackReturn configure_side(
-    const std::string & side,
-    const std::vector<std::string> & wheel_names,
+    const std::string & side, const std::vector<std::string> & wheel_names,
     std::vector<WheelHandle> & registered_handles,
     hardware_interface::RobotHardware & robot_hardware);
 
@@ -111,111 +137,139 @@ protected:
    * \brief Set wheel configuration using urdf passed via ROS parameter
    * \param left_wheel_name Name of left wheel joint
    * \param right_wheel_name Name of right wheel joint
-   * \param lookup_wheel_separation Flag for looking up wheel separation
-   * \param lookup_wheel_radius Flag for looking up wheel radius
+   * \param separation Wheel separation ref
+   * \param radius Wheel radius ref
    * \return true if lookup was successful
    */
-  bool set_odom_params_from_urdf(
-    const std::string & left_wheel_name, const std::string & right_wheel_name,
-    bool lookup_wheel_separation, bool lookup_wheel_radius);
+  bool set_wheel_params_from_urdf(
+    const std::string & left_wheel_name, const std::string & right_wheel_name, double & separation,
+    double & radius);
 
+  /**
+   * \brief Velocity command subscription callback
+   * \param msg
+   */
+  void on_cmd_vel(Twist::ConstSharedPtr msg);
+  /**
+   * \brief Publish odom message
+   * \param current_time Update cycle time
+   * \param orientation
+   */
+  void publish_odom(const rclcpp::Time & current_time, const tf2::Quaternion & orientation) const;
+  /**
+   * \brief Publish odom tf message
+   * \param current_time Update cycle time
+   * \param orientation
+   */
+  void publish_odom_tf(
+    const rclcpp::Time & current_time, const tf2::Quaternion & orientation) const;
+  /**
+   * \brief Publish limit-applied command velocity message
+   * \param current_time Update cycle time
+   * \param curr_cmd Command of current update cycle
+   */
+  void publish_cmd_vel_out(const rclcpp::Time & current_time, const Commands & curr_cmd) const;
+
+  /**
+   * \brief Publish wheels' JointTrajectoryControllerState message
+   * \param time Update cycle time
+   * \param period Time elapse since last update
+   * \param curr_cmd Reference to current command
+   */
+  void publish_wheel_joint_controller_state(
+    const rclcpp::Time & time, const rclcpp::Duration & period, const Commands & curr_cmd);
   std::vector<std::string> left_wheel_names_;
   std::vector<std::string> right_wheel_names_;
 
   std::vector<WheelHandle> registered_left_wheel_handles_;
   std::vector<WheelHandle> registered_right_wheel_handles_;
 
-  struct WheelParams
-  {
-    size_t wheels_per_side = 0;
-    double separation = 0.0;   // w.r.t. the midpoint of the wheel width
-    double radius = 0.0;       // Assumed to be the same for both wheels
-    double separation_multiplier = 1.0;
-    double left_radius_multiplier = 1.0;
-    double right_radius_multiplier = 1.0;
-  } wheel_params_;
+  // Adjusted wheel separation (raw_separation * separation_multiplier)
+  double wheel_separation_ = 0.0;
+  // Number of wheels on each side
+  size_t wheels_per_side_ = 0;
+  // Adjusted left wheel radius (raw_radius * left_multiplier)
+  double left_wheel_radius_ = 0.0;
+  // Adjusted right wheel radius (raw_radius * right_multiplier)
+  double right_wheel_radius_ = 0.0;
 
-  struct OdometryParams
-  {
-    bool open_loop = false;
-    bool enable_odom_tf = true;
-    std::string base_frame_id = "base_link";
-    std::string odom_frame_id = "odom";
-    std::array<double, 6> pose_covariance_diagonal;
-    std::array<double, 6> twist_covariance_diagonal;
-  } odom_params_;
+  std::string base_frame_id_ = "base_link";
+  std::string odom_frame_id_ = "odom";
 
-  Odometry odometry_;
-
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Odometry>> odometry_publisher_
-    = nullptr;
-  std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>>
-  realtime_odometry_publisher_ = nullptr;
-
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<tf2_msgs::msg::TFMessage>>
-  odometry_transform_publisher_ = nullptr;
-  std::shared_ptr<realtime_tools::RealtimePublisher<tf2_msgs::msg::TFMessage>>
-  realtime_odometry_transform_publisher_ = nullptr;
-
-  // Timeout to consider cmd_vel commands old
-  std::chrono::milliseconds cmd_vel_timeout_{500};
+  // Odometry pose covariance
+  std::array<double, 6> pose_covariance_diagonal_;
+  // Odometry twist covariance
+  std::array<double, 6> twist_covariance_diagonal_;
 
   std::vector<std::string> write_op_names_;
   std::vector<hardware_interface::OperationModeHandle *> registered_operation_mode_handles_;
 
-  bool subscriber_is_active_ = false;
-  rclcpp::Subscription<Twist>::SharedPtr velocity_command_subscriber_ = nullptr;
+  Odometry odometry_;
 
-  /// Velocity command related:
-  struct Commands
-  {
-    double lin;
-    double ang;
-    rclcpp::Time stamp;
+  // Timestamp of the last update() call processed
+  rclcpp::Time previous_update_timestamp_{0};
 
-    Commands() : lin(0.0), ang(0.0), stamp{0L, rcl_clock_type_t::RCL_ROS_TIME} {}
-  };
+  // Flag indicating halt command has been called
+  bool is_halted = false;
+
+  // Synchronized velocity command data
   realtime_tools::RealtimeBuffer<Commands> command_;
   Commands command_struct_;
-  Commands last0_cmd_; // Previous command
-  Commands last1_cmd_; // Previous previous command
+  Commands last0_cmd_;  // Previous command
+  Commands last1_cmd_;  // Previous previous command
 
-  // speed limiters
+  // Speed limiters
   SpeedLimiter limiter_linear_;
   SpeedLimiter limiter_angular_;
 
-  /// Previous velocities from the encoders:
-  std::vector<double> vel_left_previous_;
-  std::vector<double> vel_right_previous_;
-
-  /// Previous velocities from the encoders:
+  /// Previous actual velocities from the encoders:
+  std::vector<double> vel_left_actual_previous_;
+  std::vector<double> vel_right_actual_previous_;
+  /// Previous desired velocities
   double vel_left_desired_previous_;
   double vel_right_desired_previous_;
 
+  // Flag for using open loop calculation for odometry
+  bool open_loop_ = false;
+  // Flag for publishing odom tf message
+  bool enable_odom_tf_ = true;
+  // Timeout to consider cmd_vel commands old
+  std::chrono::milliseconds cmd_vel_timeout_{500};
+  // Flag for allowing multiple velocity command publishers
   bool allow_multiple_cmd_vel_publishers_ = true;
+  // Flag for publishing limited velocity command
   bool publish_limited_velocity_ = false;
+  // Flag for publishing wheels' JointTrajectoryControllerState
+  bool publish_wheel_joint_controller_state_ = false;
+  // Flag to disable subscriber when lifecycle node is not active
+  bool subscriber_is_active_ = false;
+
+  // Velocity command subscriber
+  rclcpp::Subscription<Twist>::SharedPtr velocity_command_subscriber_ = nullptr;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<Twist>> limited_velocity_publisher_ =
     nullptr;
-  std::shared_ptr<realtime_tools::RealtimePublisher<Twist>>
-  realtime_limited_velocity_publisher_ = nullptr;
+  std::shared_ptr<realtime_tools::RealtimePublisher<Twist>> realtime_limited_velocity_publisher_ =
+    nullptr;
 
-  bool publish_wheel_joint_controller_state_ = false;
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<control_msgs::msg::JointTrajectoryControllerState>>
+  // Wheel joint controller state publisher
+  std::shared_ptr<
+    rclcpp_lifecycle::LifecyclePublisher<control_msgs::msg::JointTrajectoryControllerState>>
   wheel_joint_controller_state_publisher_ = nullptr;
-  std::shared_ptr<realtime_tools::RealtimePublisher<control_msgs::msg::JointTrajectoryControllerState>>
+  std::shared_ptr<
+    realtime_tools::RealtimePublisher<control_msgs::msg::JointTrajectoryControllerState>>
   realtime_wheel_joint_controller_state_publisher_ = nullptr;
 
-  rclcpp::Time previous_update_timestamp_{0};
+  // Odom publisher
+  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Odometry>>
+  odometry_publisher_ = nullptr;
+  std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>>
+  realtime_odometry_publisher_ = nullptr;
 
-  bool is_halted = false;
-
-  void publish_wheel_data(
-    const rclcpp::Time & time, const rclcpp::Duration & period, const Commands & curr_cmd,
-    double wheel_separation, double left_wheel_radius, double right_wheel_radius);
-
-  bool reset();
-  void set_op_mode(const hardware_interface::OperationMode & mode);
-  void halt();
+  // Odom tf publisher
+  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<tf2_msgs::msg::TFMessage>>
+  odometry_transform_publisher_ = nullptr;
+  std::shared_ptr<realtime_tools::RealtimePublisher<tf2_msgs::msg::TFMessage>>
+  realtime_odometry_transform_publisher_ = nullptr;
 };
 }  // namespace diff_drive_controller
 #endif  // DIFF_DRIVE_CONTROLLER__DIFF_DRIVE_CONTROLLER_HPP_

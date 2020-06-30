@@ -28,7 +28,10 @@
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
   <test_depend>controller_manager</test_depend>
+  <test_depend>ros_testing</test_depend>
+  <test_depend>std_srvs</test_depend>
   <test_depend>test_robot_hardware</test_depend>
+  <test_depend>tf2_ros</test_depend>
   <test_depend>xacro</test_depend>
 
   <export>

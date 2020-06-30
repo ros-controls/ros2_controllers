@@ -11,13 +11,13 @@
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
           <!-- use boxes for wheels, scale radius to account for "circumference" difference -->
-          <box size="${wheel_radius*1.11} ${wheel_radius*1.11} ${wheel_radius*1.11} "/>
+          <box size="${radius*1.11} ${radius*1.11} ${radius*1.11} "/>
         </geometry>
       </visual>
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
-          <box size="${wheel_radius*1.11} ${wheel_radius*1.11} ${wheel_radius*1.11} "/>
+          <box size="${radius*1.11} ${radius*1.11} ${radius*1.11} "/>
         </geometry>
       </collision>
     </link>

@@ -1,4 +1,4 @@
-diffbot_controller:  # Name of DiffDriveController node
+/**: # Note: Wildcard necessary to permit parameter override via launch file
   ros__parameters:
     left_wheel_names: ["wheel_0_joint", "wheel_1_joint", "wheel_2_joint"]
     right_wheel_names: ["wheel_3_joint", "wheel_4_joint", "wheel_5_joint"]
