@@ -12,6 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "diffbot.h"
+#include "diffbot.hpp"
 
-int main(int argc, char ** argv) { diffbot_main_runner<2>(argc, argv); }
+int main(int argc, char ** argv) {diffbot_main_runner<2>(argc, argv);}

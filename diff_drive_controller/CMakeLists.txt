@@ -29,6 +29,7 @@ add_library(diff_drive_controller SHARED
   src/diff_drive_controller.cpp
   src/odometry.cpp
   src/speed_limiter.cpp
+  src/urdf_util.cpp
 )
 
 target_include_directories(diff_drive_controller PRIVATE include)
@@ -112,7 +113,7 @@ if(BUILD_TESTING)
 
   # Diffbot
   # Robot with a DiffDriveController used for integration testing
-  add_executable(diffbot test/diffbot.h test/diffbot.cpp)
+  add_executable(diffbot test/diffbot.hpp test/diffbot.cpp)
   ament_target_dependencies(diffbot hardware_interface controller_manager rclcpp rosgraph_msgs lifecycle_msgs std_srvs)
   # End Diffbot
 
@@ -130,12 +131,11 @@ if(BUILD_TESTING)
     test_diff_drive_pub_wheel_joint_controller_state
     test_diff_drive_default_odom_frame
     test_diff_drive_odom_frame
-    test_diff_drive_multiple_cmd_vel_publishers
-    )
+    test_diff_drive_multiple_cmd_vel_publishers)
 
   foreach(launch_gtest IN LISTS launch_gtests)
     ament_add_gtest_executable(${launch_gtest}
-      test/test_common.h
+      test/test_common.hpp
       test/${launch_gtest}.cpp)
     ament_target_dependencies(${launch_gtest} tf2_ros std_srvs)
     target_link_libraries(${launch_gtest} diff_drive_controller)
@@ -153,13 +153,13 @@ if(BUILD_TESTING)
 
   # Skidsteerbot
   # Robot with a DiffDriveController used for integration testing
-  add_executable(skidsteerbot test/diffbot.h test/skidsteerbot.cpp)
+  add_executable(skidsteerbot test/diffbot.hpp test/skidsteerbot.cpp)
   ament_target_dependencies(skidsteerbot hardware_interface controller_manager rclcpp rosgraph_msgs lifecycle_msgs std_srvs)
   # End Skidsteerbot
 
   add_ros_test(test/test_skid_steer.test.py ARGS "test_binary_dir:=${CMAKE_CURRENT_BINARY_DIR}")
   add_ros_test(test/test_skid_steer_no_wheels.test.py ARGS "test_binary_dir:=${CMAKE_CURRENT_BINARY_DIR}")
-endif ()
+endif()
 
 ament_export_dependencies(
   controller_interface

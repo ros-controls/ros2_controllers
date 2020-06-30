@@ -30,8 +30,8 @@
 #include <memory>
 #include <string>
 
-#ifndef TEST_COMMON_H_
-#define TEST_COMMON_H_
+#ifndef TEST_COMMON_HPP_
+#define TEST_COMMON_HPP_
 
 // Floating-point value comparison threshold
 constexpr double EPS = 0.01;
@@ -39,13 +39,13 @@ constexpr double POSITION_TOLERANCE = 0.01;               // 1 cm-s precision
 constexpr double VELOCITY_TOLERANCE = 0.02;               // 2 cm-s-1 precision
 constexpr double JERK_LINEAR_VELOCITY_TOLERANCE = 0.10;   // 10 cm-s-1 precision
 constexpr double JERK_ANGULAR_VELOCITY_TOLERANCE = 0.05;  // 3 deg-s-1 precision
-constexpr double ORIENTATION_TOLERANCE = 0.03;            // 0.57 degree precision
+constexpr double ORIENTATION_TOLERANCE = 0.03;            // 1.72 degree precision
 
 constexpr auto DIFF_DRIVE_CONTROLLER_NAME = "diffbot_controller";
 constexpr auto DEFAULT_ODOM_FRAME_ID = "odom";
 constexpr auto DEFAULT_BASE_FRAME_ID = "base_link";
 
-using namespace std::chrono_literals;
+using namespace std::chrono_literals;   // NOLINT(build/namespaces)
 
 /*
  * DiffDriveControllerTest fixture makes the following assumptions:
@@ -60,27 +60,28 @@ protected:
   void SetUp() override
   {
     // Use simulated time
-    nh->set_parameter({"use_sim_time", true});
-    executor->add_node(nh);
-    executor_task_fut = std::async(std::launch::async, [this]() { this->executor->spin(); });
+    node_->set_parameter({"use_sim_time", true});
+    executor_->add_node(node_);
+    executor_task_fut_ = std::async(std::launch::async, [this]() {this->executor_->spin();});
   }
-  void TearDown() override { executor->cancel(); }
+
+  void TearDown() override {executor_->cancel();}
 
   DiffDriveControllerTest()
-  : received_first_odom(false),
-    executor(std::make_shared<rclcpp::executors::SingleThreadedExecutor>()),
-    nh(std::make_shared<rclcpp::Node>("diffbot_controller_test")),
-    logger(nh->get_logger()),
-    cmd_pub(nh->create_publisher<geometry_msgs::msg::TwistStamped>(
-      std::string(DIFF_DRIVE_CONTROLLER_NAME) + "/cmd_vel", 100)),
-    odom_sub(nh->create_subscription<nav_msgs::msg::Odometry>(
-      std::string(DIFF_DRIVE_CONTROLLER_NAME) + "/odom", 100,
-      std::bind(&DiffDriveControllerTest::odom_callback, this, std::placeholders::_1))),
-    vel_out_sub(nh->create_subscription<geometry_msgs::msg::TwistStamped>(
-      std::string(DIFF_DRIVE_CONTROLLER_NAME) + "/cmd_vel_out", 100,
-      std::bind(&DiffDriveControllerTest::cmd_vel_out_callback, this, std::placeholders::_1))),
-    joint_traj_controller_state_sub(
-      nh->create_subscription<control_msgs::msg::JointTrajectoryControllerState>(
+  : received_first_odom_(false),
+    executor_(std::make_shared<rclcpp::executors::SingleThreadedExecutor>()),
+    node_(std::make_shared<rclcpp::Node>("diffbot_controller_test")),
+    logger_(node_->get_logger()),
+    cmd_pub_(node_->create_publisher<geometry_msgs::msg::TwistStamped>(
+        std::string(DIFF_DRIVE_CONTROLLER_NAME) + "/cmd_vel", 100)),
+    odom_sub_(node_->create_subscription<nav_msgs::msg::Odometry>(
+        std::string(DIFF_DRIVE_CONTROLLER_NAME) + "/odom", 100,
+        std::bind(&DiffDriveControllerTest::odom_callback, this, std::placeholders::_1))),
+    vel_out_sub_(node_->create_subscription<geometry_msgs::msg::TwistStamped>(
+        std::string(DIFF_DRIVE_CONTROLLER_NAME) + "/cmd_vel_out", 100,
+        std::bind(&DiffDriveControllerTest::cmd_vel_out_callback, this, std::placeholders::_1))),
+    joint_traj_controller_state_sub_(
+      node_->create_subscription<control_msgs::msg::JointTrajectoryControllerState>(
         std::string(DIFF_DRIVE_CONTROLLER_NAME) + "/wheel_joint_controller_state", 100,
         std::bind(
           &DiffDriveControllerTest::joint_trajectory_controller_state_callback, this,
@@ -88,28 +89,28 @@ protected:
   {
   }
 
-  nav_msgs::msg::Odometry::ConstSharedPtr get_last_odom() { return last_odom; }
+  nav_msgs::msg::Odometry::ConstSharedPtr get_last_odom() {return last_odom_;}
   geometry_msgs::msg::TwistStamped::ConstSharedPtr get_last_cmd_vel_out()
   {
-    return last_cmd_vel_out;
+    return last_cmd_vel_out_;
   }
   control_msgs::msg::JointTrajectoryControllerState::ConstSharedPtr
   get_last_wheel_joint_controller_state()
   {
-    return last_joint_traj_controller_state;
+    return last_joint_traj_controller_state_;
   }
 
   void publish(geometry_msgs::msg::Twist cmd_vel)
   {
     auto cmd_vel_stamped = geometry_msgs::msg::TwistStamped();
-    cmd_vel_stamped.header.stamp = nh->now();
+    cmd_vel_stamped.header.stamp = node_->now();
     cmd_vel_stamped.twist = cmd_vel;
-    cmd_pub->publish(cmd_vel_stamped);
+    cmd_pub_->publish(cmd_vel_stamped);
   }
 
   [[nodiscard]] bool is_controller_alive() const
   {
-    return (odom_sub->get_publisher_count() > 0) && (cmd_pub->get_subscription_count() > 0);
+    return (odom_sub_->get_publisher_count() > 0) && (cmd_pub_->get_subscription_count() > 0);
   }
 
   /**
@@ -120,16 +121,16 @@ protected:
   {
     static constexpr auto max_wait_time = 10'000ms;
 
-    RCLCPP_DEBUG(logger, "Waiting for controller started");
+    RCLCPP_DEBUG(logger_, "Waiting for controller started");
     auto system_clk = rclcpp::Clock(rcl_clock_type_t::RCL_SYSTEM_TIME);
-    auto start_time = system_clk.now();
-    auto time_limit = start_time + max_wait_time;
-    auto get_lifecycle_state_client = nh->create_client<lifecycle_msgs::srv::GetState>(
+    const auto start_time = system_clk.now();
+    const auto time_limit = start_time + max_wait_time;
+    auto get_lifecycle_state_client = node_->create_client<lifecycle_msgs::srv::GetState>(
       std::string(DIFF_DRIVE_CONTROLLER_NAME) + "/get_state");
 
     if (!get_lifecycle_state_client->wait_for_service(max_wait_time)) {
       RCLCPP_ERROR(
-        logger,
+        logger_,
         "Timed out waiting for /get_state service. Please make sure DiffDriveController node "
         "process is running.");
       return false;
@@ -140,13 +141,13 @@ protected:
     while (diff_drive_controller_current_state != State::PRIMARY_STATE_ACTIVE) {
       if (!rclcpp::ok()) {
         RCLCPP_ERROR(
-          logger, "rclcpp::ok() returned false while waiting for controller to activate");
+          logger_, "rclcpp::ok() returned false while waiting for controller to activate");
         return false;
       }
 
       auto dur_left = time_limit - system_clk.now();
       if (dur_left.seconds() <= 0) {
-        RCLCPP_ERROR(logger, "Timed out waiting for DiffDriveController node to activate.");
+        RCLCPP_ERROR(logger_, "Timed out waiting for DiffDriveController node to activate.");
         return false;
       }
 
@@ -162,34 +163,35 @@ protected:
       diff_drive_controller_current_state = res->current_state.id;
       std::this_thread::sleep_for(100ms);
       RCLCPP_DEBUG_STREAM_THROTTLE(
-        logger, system_clk, 500,
-        "DiffDriveController state at time " << system_clk.now().seconds() << ": "
-                                             << res->current_state.label);
+        logger_, system_clk, 500,
+        "DiffDriveController state at time " << system_clk.now().seconds() << ": " <<
+          res->current_state.label);
     }
 
     // Another sanity check to make sure subscriptions/publishers are alive.
     while (!is_controller_alive()) {
       if (!rclcpp::ok()) {
         RCLCPP_ERROR(
-          logger, "rclcpp::ok() returned false while waiting for controller to activate.");
+          logger_, "rclcpp::ok() returned false while waiting for controller to activate.");
         return false;
       }
 
       auto dur_left = time_limit - system_clk.now();
       if (dur_left.seconds() <= 0) {
-        RCLCPP_ERROR(logger, "Timed out waiting for DiffDriveController node to activate.");
+        RCLCPP_ERROR(logger_, "Timed out waiting for DiffDriveController node to activate.");
         return false;
       }
 
-      RCLCPP_DEBUG_THROTTLE(logger, system_clk, 500, "Waiting for DiffDriveController node");
+      RCLCPP_DEBUG_THROTTLE(logger_, system_clk, 500, "Waiting for DiffDriveController node");
       std::this_thread::sleep_for(100ms);
     }
 
     // Make sure ROS TIME is active
-    auto sim_clk = nh->get_clock();
+    auto sim_clk = node_->get_clock();
     if (!sim_clk->ros_time_is_active()) {
       RCLCPP_ERROR(
-        logger, "ROS TIME is not active for this node. Make sure 'use_sim_time' parameter is set.");
+        logger_,
+        "ROS TIME is not active for this node. Make sure 'use_sim_time' parameter is set.");
       return false;
     }
     // Make sure ROS TIME is ticking
@@ -200,7 +202,7 @@ protected:
       auto dur_left = time_limit - system_clk.now();
       if (dur_left.seconds() <= 0) {
         RCLCPP_ERROR(
-          logger,
+          logger_,
           "Timed out waiting for simulated clock to move. Sim start time: %f, Sim current time: %f",
           sim_start.seconds(), sim_clk->now().seconds());
         return false;
@@ -208,12 +210,13 @@ protected:
     }
 
     RCLCPP_DEBUG_STREAM(
-      logger, "Waiting for controller completed successfully,  Simulated time(sec): "
-                << nh->get_clock()->now().seconds() << " Actual: " << system_clk.now().seconds());
+      logger_, "Waiting for controller completed successfully,  Simulated time(sec): " <<
+        node_->get_clock()->now().seconds() <<
+        " Actual: " << system_clk.now().seconds());
     return true;
   }
 
-  [[nodiscard]] bool has_received_first_odom() const { return received_first_odom; }
+  [[nodiscard]] bool has_received_first_odom() const {return received_first_odom_;}
 
   /**
    * \brief Sleep using simulated clock. Implementation is loosely based off of how
@@ -228,45 +231,47 @@ protected:
   {
     static constexpr auto SLEEP_STEP = 1ms;  // Step used in ROS1
 
-    auto sim_clk = nh->get_clock();
+    auto sim_clk = node_->get_clock();
     // Make sure ROS TIME is active before attempting to sleep.
     if (!sim_clk->ros_time_is_active()) {
       RCLCPP_ERROR(
-        logger, "sim_sleep_for() method requires ROS TIME to be active. Aborting sleep.");
+        logger_, "sim_sleep_for() method requires ROS TIME to be active. Aborting sleep.");
       return false;
     }
 
-    auto sim_start = sim_clk->now();
-    auto sim_end = sim_start + dur;
+    const auto sim_start = sim_clk->now();
+    const auto sim_end = sim_start + dur;
 
     auto sys_clk = rclcpp::Clock(rcl_clock_type_t::RCL_SYSTEM_TIME);
-    auto sys_start = sys_clk.now();
-    auto time_limit = sys_start + max_dur_multiplier * dur.to_chrono<std::chrono::nanoseconds>();
+    const auto sys_start = sys_clk.now();
+    const auto time_limit =
+      sys_start + max_dur_multiplier * dur.to_chrono<std::chrono::nanoseconds>();
 
     RCLCPP_DEBUG_STREAM(
-      logger, "Sleeping for " << dur.seconds() << " seconds using simulated clock. Start time Sim: "
-                              << sim_start.seconds() << ", System: " << sys_start.seconds());
+      logger_, "Sleeping for " << dur.seconds() <<
+        " seconds using simulated clock. Start time Sim: " <<
+        sim_start.seconds() << ", System: " << sys_start.seconds());
     while (sim_clk->now() < sim_end) {
       std::this_thread::sleep_for(SLEEP_STEP);
 
       // If time jumps backwards from when we started sleeping, return immediately
       if (sim_clk->now() < sim_start) {
         RCLCPP_ERROR_STREAM(
-          logger,
-          "Simulated time jumped backward from start time. Stopping sleep. Sim started time: "
-            << sim_start.seconds() << ", Sim current time: " << sim_clk->now().seconds());
+          logger_,
+          "Simulated time jumped backward from start time. Stopping sleep. Sim started time: " <<
+            sim_start.seconds() << ", Sim current time: " << sim_clk->now().seconds());
         return false;
       }
       // if time limit is exceeded, return immediately
       if (sys_clk.now() > time_limit) {
-        RCLCPP_WARN(logger, "Simulation sleep exceeded wait threshold. Stopping sleep");
+        RCLCPP_WARN(logger_, "Simulation sleep exceeded wait threshold. Stopping sleep");
         return false;
       }
     }
     RCLCPP_DEBUG_STREAM(
-      logger, "Simulation sleep finished. Duration (sec) Simulated: "
-                << (sim_clk->now() - sim_start).seconds()
-                << ", System: " << rclcpp::Duration(sys_clk.now() - sys_start).seconds());
+      logger_, "Simulation sleep finished. Duration (sec) Simulated: " <<
+      (sim_clk->now() - sim_start).seconds() <<
+        ", System: " << rclcpp::Duration(sys_clk.now() - sys_start).seconds());
     return true;
   }
 
@@ -274,14 +279,14 @@ protected:
   {
     static const rclcpp::Duration timeout = 2s;
 
-    auto time_limit = nh->now() + timeout;
+    auto time_limit = node_->now() + timeout;
     while (!has_received_first_odom()) {
       if (!rclcpp::ok()) {
-        RCLCPP_ERROR(logger, "rclcpp::ok() returned false while waiting for first odom message.");
+        RCLCPP_ERROR(logger_, "rclcpp::ok() returned false while waiting for first odom message.");
         return false;
       }
-      if (nh->now() > time_limit) {
-        RCLCPP_ERROR(logger, "wait_for_odom_msgs() waiting time expired.");
+      if (node_->now() > time_limit) {
+        RCLCPP_ERROR(logger_, "wait_for_odom_msgs() waiting time expired.");
         return false;
       }
 
@@ -291,91 +296,91 @@ protected:
     return has_received_first_odom();
   }
 
-  [[nodiscard]] bool is_publishing_cmd_vel_out(const rclcpp::Duration & timeout = 1000ms) const
+  [[nodiscard]] bool check_subscription_is_alive(
+    rclcpp::SubscriptionBase::SharedPtr sub, const rclcpp::Duration & timeout = 1000ms) const
   {
-    auto num_publishers = vel_out_sub->get_publisher_count();
-    auto time_limit = nh->now() + timeout;
-    while ((num_publishers == 0) && (nh->now() < time_limit)) {
+    auto num_publishers = sub->get_publisher_count();
+    const auto time_limit = node_->now() + timeout;
+    while ((num_publishers == 0) && (node_->now() < time_limit)) {
       sim_sleep_for(100ms);
-      num_publishers = vel_out_sub->get_publisher_count();
+      num_publishers = sub->get_publisher_count();
     }
     return num_publishers > 0;
+  }
+
+  [[nodiscard]] bool is_publishing_cmd_vel_out(const rclcpp::Duration & timeout = 1000ms) const
+  {
+    return check_subscription_is_alive(vel_out_sub_, timeout);
   }
 
   [[nodiscard]] bool is_publishing_joint_trajectory_controller_state(
     const rclcpp::Duration & timeout = 1000ms) const
   {
-    auto num_publishers = joint_traj_controller_state_sub->get_publisher_count();
-    auto time_limit = nh->now() + timeout;
-    while ((num_publishers == 0) && (nh->now() < time_limit)) {
-      sim_sleep_for(100ms);
-      num_publishers = joint_traj_controller_state_sub->get_publisher_count();
-    }
-    return num_publishers > 0;
+    return check_subscription_is_alive(joint_traj_controller_state_sub_, timeout);
   }
 
   std::shared_ptr<tf2_ros::Buffer> & get_tf_buffer()
   {
-    std::lock_guard<std::mutex> lg(tf_mutex);
-    if (tf_buffer == nullptr) {
-      tf_buffer = std::make_shared<tf2_ros::Buffer>(nh->get_clock());
-      tf_buffer->setUsingDedicatedThread(true);
-      tf_listener = std::make_shared<tf2_ros::TransformListener>(*tf_buffer, nh, false);
+    std::lock_guard<std::mutex> lg(tf_mutex_);
+    if (tf_buffer_ == nullptr) {
+      tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
+      tf_buffer_->setUsingDedicatedThread(true);
+      tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_, node_, false);
     }
 
-    return tf_buffer;
+    return tf_buffer_;
   }
 
-  rclcpp::Node::SharedPtr & get_node() { return nh; }
+  rclcpp::Node::SharedPtr & get_node() {return node_;}
 
 private:
-  bool received_first_odom;
-  rclcpp::executor::Executor::SharedPtr executor;
-  rclcpp::Node::SharedPtr nh;
-  rclcpp::Logger logger;
-  rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr cmd_pub;
-  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub;
-  rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr vel_out_sub;
+  bool received_first_odom_;
+  rclcpp::Executor::SharedPtr executor_;
+  rclcpp::Node::SharedPtr node_;
+  rclcpp::Logger logger_;
+  rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr cmd_pub_;
+  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
+  rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr vel_out_sub_;
   rclcpp::Subscription<control_msgs::msg::JointTrajectoryControllerState>::SharedPtr
-    joint_traj_controller_state_sub;
-  nav_msgs::msg::Odometry::ConstSharedPtr last_odom;
-  geometry_msgs::msg::TwistStamped::ConstSharedPtr last_cmd_vel_out;
+    joint_traj_controller_state_sub_;
+  nav_msgs::msg::Odometry::ConstSharedPtr last_odom_;
+  geometry_msgs::msg::TwistStamped::ConstSharedPtr last_cmd_vel_out_;
   control_msgs::msg::JointTrajectoryControllerState::ConstSharedPtr
-    last_joint_traj_controller_state;
-  std::future<void> executor_task_fut;
+    last_joint_traj_controller_state_;
+  std::future<void> executor_task_fut_;
 
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener;
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer;
-  std::mutex tf_mutex;
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  std::mutex tf_mutex_;
 
   void odom_callback(nav_msgs::msg::Odometry::ConstSharedPtr odom)
   {
     RCLCPP_DEBUG_STREAM(
-      logger, "Callback received at "
-                << odom->header.stamp.sec << ": pos.x: " << odom->pose.pose.position.x
-                << ", orient.z: " << odom->pose.pose.orientation.z << ", lin_est: "
-                << odom->twist.twist.linear.x << ", ang_est: " << odom->twist.twist.angular.z);
-    last_odom = odom;
-    received_first_odom = true;
+      logger_, "Callback received at " <<
+        odom->header.stamp.sec << ": pos.x: " << odom->pose.pose.position.x <<
+        ", orient.z: " << odom->pose.pose.orientation.z << ", lin_est: " <<
+        odom->twist.twist.linear.x << ", ang_est: " << odom->twist.twist.angular.z);
+    last_odom_ = odom;
+    received_first_odom_ = true;
   }
 
   void cmd_vel_out_callback(geometry_msgs::msg::TwistStamped::ConstSharedPtr cmd_vel_out)
   {
     RCLCPP_DEBUG_STREAM(
-      logger, "Callback received at " << cmd_vel_out->header.stamp.sec
-                                      << ": lin: " << cmd_vel_out->twist.linear.x
-                                      << ", ang: " << cmd_vel_out->twist.angular.z);
-    last_cmd_vel_out = cmd_vel_out;
+      logger_, "Callback received at " << cmd_vel_out->header.stamp.sec <<
+        ": lin: " << cmd_vel_out->twist.linear.x <<
+        ", ang: " << cmd_vel_out->twist.angular.z);
+    last_cmd_vel_out_ = cmd_vel_out;
   }
 
   void joint_trajectory_controller_state_callback(
     control_msgs::msg::JointTrajectoryControllerState::ConstSharedPtr joint_traj_controller_state)
   {
     RCLCPP_DEBUG_STREAM(
-      logger, "Joint trajectory controller state callback received:\n"
-                << joint_traj_controller_state);
+      logger_, "Joint trajectory controller state callback received:\n" <<
+        joint_traj_controller_state);
 
-    last_joint_traj_controller_state = joint_traj_controller_state;
+    last_joint_traj_controller_state_ = joint_traj_controller_state;
   }
 };
 
@@ -384,4 +389,4 @@ inline tf2::Quaternion tf_quat_from_geom_quat(const geometry_msgs::msg::Quaterni
   return tf2::Quaternion(quat.x, quat.y, quat.z, quat.w);
 }
 
-#endif  // TEST_COMMON_H_
+#endif  // TEST_COMMON_HPP_

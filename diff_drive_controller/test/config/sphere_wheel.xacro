@@ -10,13 +10,13 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
-          <sphere radius="${wheel_radius}"/>
+          <sphere radius="${radius}"/>
         </geometry>
       </visual>
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
-          <sphere radius="${wheel_radius}"/>
+          <sphere radius="${radius}"/>
         </geometry>
       </collision>
     </link>

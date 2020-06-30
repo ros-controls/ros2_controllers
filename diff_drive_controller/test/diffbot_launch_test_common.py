@@ -12,13 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
+
+from typing import Optional, SupportsFloat
+
 import launch
-from launch.substitutions import PathJoinSubstitution, LaunchConfiguration
 from launch.some_substitutions_type import SomeSubstitutionsType
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 import launch_ros
 from launch_ros.parameters_type import SomeParametersDict
 import launch_testing.actions
-from typing import Optional, SupportsFloat
 import xacro
 
 
@@ -39,14 +41,15 @@ def generate_diffbot_test_description(*args,
     diffbot_node = launch_ros.actions.Node(
         node_executable=PathJoinSubstitution([LaunchConfiguration('test_binary_dir'), exec_name]),
         parameters=[
-            additional_params,
+            PathJoinSubstitution([os.path.dirname(__file__), 'config/', param_yaml]),
             {'robot_description': robot_description},
-            PathJoinSubstitution([os.path.dirname(__file__), 'config/', param_yaml])
+            additional_params
         ],
         remappings=[('cmd_vel', 'diffbot_controller/cmd_vel'),
                     ('odom', 'diffbot_controller/odom'),
                     ('cmd_vel_out', 'diffbot_controller/cmd_vel_out'),
-                    ('wheel_joint_controller_state', 'diffbot_controller/wheel_joint_controller_state')]
+                    ('wheel_joint_controller_state',
+                     'diffbot_controller/wheel_joint_controller_state')]
     )
 
     diffbot_gtest = launch_testing.actions.GTest(
@@ -55,7 +58,8 @@ def generate_diffbot_test_description(*args,
 
     return launch.LaunchDescription([
         launch.actions.DeclareLaunchArgument(name='test_binary_dir',
-                                             description='Binary directory of package containing test executables'),
+                                             description='Binary directory of package '
+                                                         'containing test executables'),
         diffbot_node,
         diffbot_gtest,
         launch_testing.actions.ReadyToTest()

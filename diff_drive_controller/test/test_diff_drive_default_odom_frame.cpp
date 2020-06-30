@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "test_common.h"
+#include "test_common.hpp"
 
 #include <gtest/gtest.h>
 
@@ -22,8 +22,9 @@ TEST_F(DiffDriveControllerTest, test_odom_frame)
   ASSERT_TRUE(wait_for_controller());
 
   // check the odom frame exist
-  EXPECT_TRUE(get_tf_buffer()->canTransform(
-    DEFAULT_BASE_FRAME_ID, DEFAULT_ODOM_FRAME_ID, rclcpp::Time(0), 2'000ms));
+  EXPECT_TRUE(
+    get_tf_buffer()->canTransform(
+      DEFAULT_BASE_FRAME_ID, DEFAULT_ODOM_FRAME_ID, rclcpp::Time(0), 2'000ms));
 }
 
 TEST_F(DiffDriveControllerTest, test_odom_topic)
