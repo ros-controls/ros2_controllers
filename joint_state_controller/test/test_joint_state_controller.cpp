@@ -75,7 +75,7 @@ void JointStateControllerTest::TearDown()
 void JointStateControllerTest::SetUpStateController()
 {
   const auto result = state_controller_->init(test_robot_, "joint_state_controller");
-  ASSERT_EQ(result, controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS);
+  ASSERT_EQ(result, controller_interface::return_type::SUCCESS);
 }
 
 TEST_F(JointStateControllerTest, ConfigureErrorTest)
@@ -173,19 +173,19 @@ TEST_F(JointStateControllerTest, UpdateTest)
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
 
   // publishers not activated yet
-  ASSERT_EQ(state_controller_->update(), hardware_interface::HW_RET_ERROR);
+  ASSERT_EQ(state_controller_->update(), controller_interface::return_type::ERROR);
 
   node_state = state_controller_->get_lifecycle_node()->activate();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
 
-  ASSERT_EQ(state_controller_->update(), hardware_interface::HW_RET_OK);
+  ASSERT_EQ(state_controller_->update(), controller_interface::return_type::SUCCESS);
 }
 
 TEST_F(JointStateControllerTest, JointStatePublishTest)
 {
   SetUpStateController();
 
-  ASSERT_EQ(test_robot_->write(), hardware_interface::HW_RET_OK);
+  ASSERT_EQ(test_robot_->write(), hardware_interface::return_type::OK);
 
   auto node_state = state_controller_->get_lifecycle_node()->configure();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
@@ -202,7 +202,7 @@ TEST_F(JointStateControllerTest, JointStatePublishTest)
     10,
     subs_callback);
 
-  ASSERT_EQ(state_controller_->update(), hardware_interface::HW_RET_OK);
+  ASSERT_EQ(state_controller_->update(), controller_interface::return_type::SUCCESS);
 
   // wait for message to be passed
   ASSERT_EQ(wait_for(subscription), rclcpp::WaitResultKind::Ready);
@@ -224,7 +224,7 @@ TEST_F(JointStateControllerTest, DynamicJointStatePublishTest)
 {
   SetUpStateController();
 
-  ASSERT_EQ(test_robot_->write(), hardware_interface::HW_RET_OK);
+  ASSERT_EQ(test_robot_->write(), hardware_interface::return_type::OK);
 
   auto node_state = state_controller_->get_lifecycle_node()->configure();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
@@ -241,7 +241,7 @@ TEST_F(JointStateControllerTest, DynamicJointStatePublishTest)
     10,
     subs_callback);
 
-  ASSERT_EQ(state_controller_->update(), hardware_interface::HW_RET_OK);
+  ASSERT_EQ(state_controller_->update(), controller_interface::return_type::SUCCESS);
 
   // wait for message to be passed
   ASSERT_EQ(wait_for(subscription), rclcpp::WaitResultKind::Ready);

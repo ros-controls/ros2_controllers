@@ -73,13 +73,13 @@ public:
     const std::vector<std::string> & write_op_names);
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  controller_interface::controller_interface_ret_t
+  controller_interface::return_type
   init(
     std::weak_ptr<hardware_interface::RobotHardware> robot_hardware,
     const std::string & controller_name) override;
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  controller_interface::controller_interface_ret_t
+  controller_interface::return_type
   update() override;
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC

@@ -93,7 +93,7 @@ protected:
       traj_controller_ = std::make_shared<joint_trajectory_controller::JointTrajectoryController>();
     }
     auto ret = traj_controller_->init(test_robot_, controller_name_);
-    if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
+    if (ret != controller_interface::return_type::SUCCESS) {
       FAIL();
     }
   }
@@ -166,7 +166,7 @@ TEST_F(TestTrajectoryController, wrong_initialization) {
   auto traj_controller = std::make_shared<joint_trajectory_controller::JointTrajectoryController>(
     joint_names_, op_mode_);
   const auto ret = traj_controller->init(uninitialized_robot, controller_name_);
-  if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
+  if (ret != controller_interface::return_type::SUCCESS) {
     FAIL();
   }
 
@@ -180,7 +180,7 @@ TEST_F(TestTrajectoryController, correct_initialization) {
   auto traj_controller = std::make_shared<joint_trajectory_controller::JointTrajectoryController>(
     joint_names_, op_mode_);
   const auto ret = traj_controller->init(initialized_robot, controller_name_);
-  if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
+  if (ret != controller_interface::return_type::SUCCESS) {
     FAIL();
   }
 
@@ -224,7 +224,7 @@ TEST_F(TestTrajectoryController, configuration) {
 //   auto traj_controller = std::make_shared<ros_controllers::JointTrajectoryController>(
 //     joint_names_, op_mode_);
 //   auto ret = traj_controller->init(test_robot_, controller_name_);
-//   if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
+//   if (ret != controller_interface::return_type::SUCCESS) {
 //     FAIL();
 //   }
 //
@@ -266,7 +266,7 @@ TEST_F(TestTrajectoryController, configuration) {
 //   auto traj_controller = std::make_shared<ros_controllers::JointTrajectoryController>(
 //     joint_names_, op_mode_);
 //   auto ret = traj_controller->init(test_robot_, controller_name_);
-//   if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
+//   if (ret != controller_interface::return_type::SUCCESS) {
 //     FAIL();
 //   }
 //

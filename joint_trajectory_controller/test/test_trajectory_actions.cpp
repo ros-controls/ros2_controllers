@@ -74,7 +74,7 @@ protected:
 
     traj_controller_ = std::make_shared<joint_trajectory_controller::JointTrajectoryController>();
     auto ret = traj_controller_->init(test_robot_, controller_name_);
-    if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
+    if (ret != controller_interface::return_type::SUCCESS) {
       FAIL();
     }
 
