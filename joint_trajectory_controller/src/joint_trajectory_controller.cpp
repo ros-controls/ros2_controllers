@@ -121,6 +121,15 @@ JointTrajectoryController::update()
       error.accelerations[index] = 0.0;
     };
 
+  // Check if a new external message has been received from nonRT threads
+  auto current_external_msg = traj_external_point_ptr_->get_trajectory_msg();
+  auto new_external_msg = traj_msg_external_point_ptr_.readFromRT();
+  if (current_external_msg != *new_external_msg) {
+    fill_partial_goal(*new_external_msg);
+    sort_to_local_joint_order(*new_external_msg);
+    traj_external_point_ptr_->update(*new_external_msg);
+  }
+
   JointTrajectoryPoint state_current, state_desired, state_error;
   const auto joint_num = registered_joint_state_handles_.size();
   resize_joint_trajectory_point(state_current, joint_num);
@@ -133,8 +142,6 @@ JointTrajectoryController::update()
     state_current.accelerations[index] = 0.0;
   }
   state_current.time_from_start.set__sec(0);
-
-  std::lock_guard<std::mutex> guard(trajectory_mtx_);
 
   // currently carrying out a trajectory
   if (traj_point_active_ptr_ && (*traj_point_active_ptr_)->has_trajectory_msg() == false) {
@@ -327,9 +334,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
       // http://wiki.ros.org/joint_trajectory_controller/UnderstandingTrajectoryReplacement
       // always replace old msg with new one for now
       if (subscriber_is_active_) {
-        fill_partial_goal(msg);
-        sort_to_local_joint_order(msg);
-        traj_external_point_ptr_->update(msg);
+        add_new_trajectory_msg(msg);
       }
     };
 
@@ -589,13 +594,11 @@ void JointTrajectoryController::feedback_setup_callback(
 {
   // Update new trajectory
   {
-    std::lock_guard<std::mutex> guard(trajectory_mtx_);
     preempt_active_goal();
     auto traj_msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>(
       goal_handle->get_goal()->trajectory);
-    fill_partial_goal(traj_msg);
-    sort_to_local_joint_order(traj_msg);
-    traj_external_point_ptr_->update(traj_msg);
+
+    add_new_trajectory_msg(traj_msg);
 
     RealtimeGoalHandlePtr rt_goal = std::make_shared<RealtimeGoalHandle>(goal_handle);
     rt_goal->preallocated_feedback_->joint_names = joint_names_;
@@ -641,7 +644,6 @@ void JointTrajectoryController::fill_partial_goal(
         if (!it.accelerations.empty()) {
           it.accelerations.push_back(0.0);
         }
-        // TODO(v-lopez) is effort 0.0 valid here? Is it worse than joint_state->get_effort()?
         if (!it.effort.empty()) {
           it.effort.push_back(0.0);
         }
@@ -726,6 +728,12 @@ bool JointTrajectoryController::validate_trajectory_msg(
   return true;
 }
 
+void JointTrajectoryController::add_new_trajectory_msg(
+  const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & traj_msg)
+{
+  traj_msg_external_point_ptr_.writeFromNonRT(traj_msg);
+}
+
 void JointTrajectoryController::preempt_active_goal()
 {
   if (rt_active_goal_) {
@@ -739,13 +747,12 @@ void JointTrajectoryController::preempt_active_goal()
 
 void JointTrajectoryController::set_hold_position()
 {
-  std::lock_guard<std::mutex> guard(trajectory_mtx_);
   trajectory_msgs::msg::JointTrajectory empty_msg;
   empty_msg.header.stamp = rclcpp::Time(0);
 
   auto traj_msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>(
     empty_msg);
-  traj_external_point_ptr_->update(traj_msg);
+  add_new_trajectory_msg(traj_msg);
 }
 
 }  // namespace joint_trajectory_controller
