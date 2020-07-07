@@ -302,7 +302,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
   }
 
-  default_tolerances_ = get_segment_tolerances(lifecycle_node_, joint_names_);
+  default_tolerances_ = get_segment_tolerances(*lifecycle_node_, joint_names_);
 
   // Store 'home' pose
   traj_msg_home_ptr_ = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
