@@ -37,8 +37,6 @@ namespace diff_drive_controller
 {
 using namespace std::chrono_literals;
 using CallbackReturn = DiffDriveController::CallbackReturn;
-using controller_interface::CONTROLLER_INTERFACE_RET_ERROR;
-using controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS;
 using lifecycle_msgs::msg::State;
 
 DiffDriveController::DiffDriveController()
@@ -54,14 +52,14 @@ DiffDriveController::DiffDriveController(
   write_op_names_(std::move(write_op_names))
 {}
 
-controller_interface::controller_interface_ret_t
+controller_interface::return_type
 DiffDriveController::init(
   std::weak_ptr<hardware_interface::RobotHardware> robot_hardware,
   const std::string & controller_name)
 {
   // initialize lifecycle node
   auto ret = ControllerInterface::init(robot_hardware, controller_name);
-  if (ret != CONTROLLER_INTERFACE_RET_SUCCESS) {
+  if (ret != controller_interface::return_type::SUCCESS) {
     return ret;
   }
 
@@ -118,10 +116,10 @@ DiffDriveController::init(
   lifecycle_node_->declare_parameter<double>("angular.z.max_jerk", 0.0);
   lifecycle_node_->declare_parameter<double>("angular.z.min_jerk", 0.0);
 
-  return CONTROLLER_INTERFACE_RET_SUCCESS;
+  return controller_interface::return_type::SUCCESS;
 }
 
-controller_interface::controller_interface_ret_t DiffDriveController::update()
+controller_interface::return_type DiffDriveController::update()
 {
   auto logger = lifecycle_node_->get_logger();
   if (lifecycle_node_->get_current_state().id() == State::PRIMARY_STATE_INACTIVE) {
@@ -129,7 +127,7 @@ controller_interface::controller_interface_ret_t DiffDriveController::update()
       halt();
       is_halted = true;
     }
-    return CONTROLLER_INTERFACE_RET_SUCCESS;
+    return controller_interface::return_type::SUCCESS;
   }
 
   const auto current_time = lifecycle_node_->get_clock()->now();
@@ -155,7 +153,7 @@ controller_interface::controller_interface_ret_t DiffDriveController::update()
         RCLCPP_ERROR(
           logger, "Either the left or right wheel position is invalid for index [%d]",
           index);
-        return controller_interface::CONTROLLER_INTERFACE_RET_ERROR;
+        return controller_interface::return_type::ERROR;
       }
 
       left_position_mean += left_position;
@@ -233,7 +231,7 @@ controller_interface::controller_interface_ret_t DiffDriveController::update()
 
   if (received_velocity_msg_ptr_ == nullptr) {
     RCLCPP_WARN(logger, "Velocity message received was a nullptr.");
-    return CONTROLLER_INTERFACE_RET_ERROR;
+    return controller_interface::return_type::ERROR;
   }
 
   // Compute wheels velocities:
@@ -249,7 +247,7 @@ controller_interface::controller_interface_ret_t DiffDriveController::update()
   }
 
   set_op_mode(hardware_interface::OperationMode::ACTIVE);
-  return CONTROLLER_INTERFACE_RET_SUCCESS;
+  return controller_interface::return_type::SUCCESS;
 }
 
 CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &)
@@ -355,7 +353,7 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
       auto & op_handle = registered_operation_mode_handles_[index];
 
       auto result = robot_hardware->get_operation_mode_handle(op_name, &op_handle);
-      if (result != hardware_interface::HW_RET_OK) {
+      if (result != hardware_interface::return_type::OK) {
         RCLCPP_WARN(logger, "unable to obtain operation mode handle for %s", op_name);
         return CallbackReturn::FAILURE;
       }
@@ -565,13 +563,13 @@ CallbackReturn DiffDriveController::configure_side(
     auto & wheel_handle = registered_handles[index];
 
     auto result = robot_hardware.get_joint_state_handle(wheel_name, &wheel_handle.state);
-    if (result != hardware_interface::HW_RET_OK) {
+    if (result != hardware_interface::return_type::OK) {
       RCLCPP_WARN(logger, "unable to obtain joint state handle for %s", wheel_name);
       return CallbackReturn::FAILURE;
     }
 
     auto ret = robot_hardware.get_joint_command_handle(wheel_name, &wheel_handle.command);
-    if (ret != hardware_interface::HW_RET_OK) {
+    if (ret != hardware_interface::return_type::OK) {
       RCLCPP_WARN(logger, "unable to obtain joint command handle for %s", wheel_name);
       return CallbackReturn::FAILURE;
     }

@@ -61,13 +61,13 @@ public:
     std::vector<std::string> operation_mode_names);
 
   DIFF_DRIVE_CONTROLLER_PUBLIC
-  controller_interface::controller_interface_ret_t
+  controller_interface::return_type
   init(
     std::weak_ptr<hardware_interface::RobotHardware> robot_hardware,
     const std::string & controller_name) override;
 
   DIFF_DRIVE_CONTROLLER_PUBLIC
-  controller_interface::controller_interface_ret_t update() override;
+  controller_interface::return_type update() override;
 
   DIFF_DRIVE_CONTROLLER_PUBLIC
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn

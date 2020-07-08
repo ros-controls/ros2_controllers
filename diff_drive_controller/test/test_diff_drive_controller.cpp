@@ -161,7 +161,7 @@ TEST_F(TestDiffDriveController, wrong_initialization)
     left_wheel_names,
     right_wheel_names, op_mode);
   auto ret = diff_drive_controller->init(uninitialized_robot, controller_name);
-  ASSERT_EQ(ret, controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS);
+  ASSERT_EQ(ret, controller_interface::return_type::SUCCESS);
 
   auto unconfigured_state = diff_drive_controller->get_lifecycle_node()->configure();
   EXPECT_EQ(State::PRIMARY_STATE_UNCONFIGURED, unconfigured_state.id());
@@ -176,7 +176,7 @@ TEST_F(TestDiffDriveController, correct_initialization)
     left_wheel_names,
     right_wheel_names, op_mode);
   auto ret = diff_drive_controller->init(initialized_robot, controller_name);
-  ASSERT_EQ(ret, controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS);
+  ASSERT_EQ(ret, controller_interface::return_type::SUCCESS);
 
   auto inactive_state = diff_drive_controller->get_lifecycle_node()->configure();
   EXPECT_EQ(State::PRIMARY_STATE_INACTIVE, inactive_state.id());
@@ -192,7 +192,7 @@ TEST_F(TestDiffDriveController, configuration)
     left_wheel_names,
     right_wheel_names, op_mode);
   auto ret = diff_drive_controller->init(test_robot, controller_name);
-  if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
+  if (ret != controller_interface::return_type::SUCCESS) {
     FAIL();
   }
 
@@ -212,7 +212,7 @@ TEST_F(TestDiffDriveController, cleanup)
     left_wheel_names,
     right_wheel_names, op_mode);
   auto ret = diff_drive_controller->init(test_robot, controller_name);
-  if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
+  if (ret != controller_interface::return_type::SUCCESS) {
     FAIL();
   }
 
@@ -261,7 +261,7 @@ TEST_F(TestDiffDriveController, correct_initialization_using_parameters)
     left_wheel_names,
     right_wheel_names, op_mode);
   auto ret = diff_drive_controller->init(test_robot, controller_name);
-  if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
+  if (ret != controller_interface::return_type::SUCCESS) {
     FAIL();
   }
 
