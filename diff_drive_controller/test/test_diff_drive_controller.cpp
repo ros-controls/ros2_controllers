@@ -191,10 +191,11 @@ TEST_F(TestDiffDriveController, configuration)
     std::make_shared<TestableDiffDriveController>(
     left_wheel_names,
     right_wheel_names, op_mode);
-  auto ret = diff_drive_controller->init(test_robot, controller_name);
-  if (ret != controller_interface::return_type::SUCCESS) {
-    FAIL();
-  }
+  ASSERT_EQ(
+    diff_drive_controller->init(
+      test_robot,
+      controller_name),
+    controller_interface::return_type::SUCCESS);
 
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(diff_drive_controller->get_lifecycle_node()->get_node_base_interface());
@@ -211,10 +212,11 @@ TEST_F(TestDiffDriveController, cleanup)
     std::make_shared<TestableDiffDriveController>(
     left_wheel_names,
     right_wheel_names, op_mode);
-  auto ret = diff_drive_controller->init(test_robot, controller_name);
-  if (ret != controller_interface::return_type::SUCCESS) {
-    FAIL();
-  }
+  ASSERT_EQ(
+    diff_drive_controller->init(
+      test_robot,
+      controller_name),
+    controller_interface::return_type::SUCCESS);
 
   auto diff_drive_lifecycle_node = diff_drive_controller->get_lifecycle_node();
   diff_drive_lifecycle_node->set_parameter(rclcpp::Parameter("wheel_separation", 0.4));
@@ -260,10 +262,11 @@ TEST_F(TestDiffDriveController, correct_initialization_using_parameters)
     std::make_shared<TestableDiffDriveController>(
     left_wheel_names,
     right_wheel_names, op_mode);
-  auto ret = diff_drive_controller->init(test_robot, controller_name);
-  if (ret != controller_interface::return_type::SUCCESS) {
-    FAIL();
-  }
+  ASSERT_EQ(
+    diff_drive_controller->init(
+      test_robot,
+      controller_name),
+    controller_interface::return_type::SUCCESS);
 
   // This block is replacing the way parameters are set via launch
   auto diff_drive_lifecycle_node = diff_drive_controller->get_lifecycle_node();
