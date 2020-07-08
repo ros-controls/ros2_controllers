@@ -21,7 +21,7 @@ jobs:
             joint_state_controller
             joint_trajectory_controller
           vcs-repo-file-url: |
-            https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/travis/workspace.repos
+            https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/.github/workspace.repos
             https://raw.githubusercontent.com/ros2/ros2/master/ros2.repos
 
           colcon-mixin-name: coverage-gcc

@@ -48,7 +48,6 @@ namespace joint_trajectory_controller
 {
 
 using namespace std::chrono_literals;
-using controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS;
 using lifecycle_msgs::msg::State;
 
 JointTrajectoryController::JointTrajectoryController()
@@ -65,14 +64,14 @@ JointTrajectoryController::JointTrajectoryController(
   write_op_names_(write_op_names)
 {}
 
-controller_interface::controller_interface_ret_t
+controller_interface::return_type
 JointTrajectoryController::init(
   std::weak_ptr<hardware_interface::RobotHardware> robot_hardware,
   const std::string & controller_name)
 {
   // initialize lifecycle node
   const auto ret = ControllerInterface::init(robot_hardware, controller_name);
-  if (ret != CONTROLLER_INTERFACE_RET_SUCCESS) {
+  if (ret != controller_interface::return_type::SUCCESS) {
     return ret;
   }
 
@@ -85,10 +84,10 @@ JointTrajectoryController::init(
   lifecycle_node_->declare_parameter<double>("constraints.stopped_velocity_tolerance", 0.01);
   lifecycle_node_->declare_parameter<double>("constraints.goal_time", 0.0);
 
-  return CONTROLLER_INTERFACE_RET_SUCCESS;
+  return controller_interface::return_type::SUCCESS;
 }
 
-controller_interface::controller_interface_ret_t
+controller_interface::return_type
 JointTrajectoryController::update()
 {
   if (lifecycle_node_->get_current_state().id() == State::PRIMARY_STATE_INACTIVE) {
@@ -96,7 +95,7 @@ JointTrajectoryController::update()
       halt();
       is_halted = true;
     }
-    return CONTROLLER_INTERFACE_RET_SUCCESS;
+    return controller_interface::return_type::SUCCESS;
   }
 
   auto resize_joint_trajectory_point =
@@ -230,7 +229,7 @@ JointTrajectoryController::update()
   }
 
   publish_state(state_desired, state_current, state_error);
-  return CONTROLLER_INTERFACE_RET_SUCCESS;
+  return controller_interface::return_type::SUCCESS;
 }
 
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
@@ -258,7 +257,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
     for (size_t index = 0; index < joint_names_.size(); ++index) {
       const auto ret = robot_hardware->get_joint_state_handle(
         joint_names_[index].c_str(), &registered_joint_state_handles_[index]);
-      if (ret != hardware_interface::HW_RET_OK) {
+      if (ret != hardware_interface::return_type::OK) {
         RCLCPP_WARN(
           logger, "unable to obtain joint state handle for %s", joint_names_[index].c_str());
         return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
@@ -268,7 +267,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
     for (size_t index = 0; index < joint_names_.size(); ++index) {
       const auto ret = robot_hardware->get_joint_command_handle(
         joint_names_[index].c_str(), &registered_joint_cmd_handles_[index]);
-      if (ret != hardware_interface::HW_RET_OK) {
+      if (ret != hardware_interface::return_type::OK) {
         RCLCPP_WARN(
           logger, "unable to obtain joint command handle for %s", joint_names_[index].c_str());
         return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
@@ -278,7 +277,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
     for (size_t index = 0; index < write_op_names_.size(); ++index) {
       const auto ret = robot_hardware->get_operation_mode_handle(
         write_op_names_[index].c_str(), &registered_operation_mode_handles_[index]);
-      if (ret != hardware_interface::HW_RET_OK) {
+      if (ret != hardware_interface::return_type::OK) {
         RCLCPP_WARN(
           logger, "unable to obtain operation mode handle for %s", write_op_names_[index].c_str());
         return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;

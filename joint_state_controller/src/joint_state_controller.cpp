@@ -107,17 +107,17 @@ JointStateController::on_deactivate(const rclcpp_lifecycle::State & /*previous_s
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::controller_interface_ret_t
+controller_interface::return_type
 JointStateController::update()
 {
   if (!joint_state_publisher_->is_activated()) {
     RCUTILS_LOG_WARN_ONCE_NAMED("publisher", "joint state publisher is not activated");
-    return hardware_interface::HW_RET_ERROR;
+    return controller_interface::return_type::ERROR;
   }
 
   if (!dynamic_joint_state_publisher_->is_activated()) {
     RCUTILS_LOG_WARN_ONCE_NAMED("publisher", "dynamic joint state publisher is not activated");
-    return hardware_interface::HW_RET_ERROR;
+    return controller_interface::return_type::ERROR;
   }
 
   joint_state_msg_.header.stamp = rclcpp::Clock().now();
@@ -138,7 +138,7 @@ JointStateController::update()
   joint_state_publisher_->publish(joint_state_msg_);
   dynamic_joint_state_publisher_->publish(dynamic_joint_state_msg_);
 
-  return hardware_interface::HW_RET_OK;
+  return controller_interface::return_type::SUCCESS;
 }
 
 }  // namespace joint_state_controller
