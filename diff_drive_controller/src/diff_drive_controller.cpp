@@ -17,6 +17,7 @@
  */
 
 #include <memory>
+#include <queue>
 #include <string>
 #include <utility>
 #include <vector>
@@ -499,9 +500,9 @@ bool DiffDriveController::reset()
 {
   odometry_.resetOdometry();
 
-  while (!previous_commands_.empty()) {
-    previous_commands_.pop();
-  }
+  // release the old queue
+  std::queue<Twist> empty;
+  std::swap(previous_commands_, empty);
 
   registered_left_wheel_handles_.clear();
   registered_right_wheel_handles_.clear();
@@ -530,9 +531,8 @@ void DiffDriveController::set_op_mode(const hardware_interface::OperationMode & 
 void DiffDriveController::halt()
 {
   const auto halt_wheels = [](auto & wheel_handles) {
-      for (size_t index = 0; index < wheel_handles.size(); ++index) {
-        const auto wheel_handle = wheel_handles[index];
-        wheel_handle.command->set_cmd(0);
+      for (const auto & wheel_handle : wheel_handles) {
+        wheel_handle.command->set_cmd(0.0);
       }
     };
 
