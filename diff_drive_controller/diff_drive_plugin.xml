@@ -1,0 +1,7 @@
+<library path="diff_drive_controller">
+  <class name="diff_drive_controller/DiffDriveController" type="diff_drive_controller::DiffDriveController" base_class_type="controller_interface::ControllerInterface">
+  <description>
+    The differential drive controller transforms linear and angular velocity messages into signals for each wheel(s) for a differential drive robot.
+  </description>
+  </class>
+</library>
