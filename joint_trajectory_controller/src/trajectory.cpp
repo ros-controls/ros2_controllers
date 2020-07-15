@@ -19,6 +19,7 @@
 #include "hardware_interface/macros.hpp"
 #include "rclcpp/duration.hpp"
 #include "rclcpp/time.hpp"
+#include "rcppmath/clamp.hpp"
 #include "std_msgs/msg/header.hpp"
 namespace joint_trajectory_controller
 {
@@ -94,8 +95,7 @@ Trajectory::sample(
       rclcpp::Duration duration_so_far = sample_time - time_a;
       rclcpp::Duration duration_btwn_points = time_b - time_a;
       double percent = duration_so_far.seconds() / duration_btwn_points.seconds();
-      percent = percent > 1.0 ? 1.0 : percent;
-      percent = percent < 0.0 ? 0.0 : percent;
+      percent = rcppmath::clamp(percent, 0.0, 1.0);
 
       output.positions.resize(state_a.positions.size());
       for (auto i = 0ul; i < state_a.positions.size(); ++i) {
