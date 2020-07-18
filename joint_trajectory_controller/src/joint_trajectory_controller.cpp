@@ -120,6 +120,15 @@ JointTrajectoryController::update()
       error.accelerations[index] = 0.0;
     };
 
+  // Check if a new external message has been received from nonRT threads
+  auto current_external_msg = traj_external_point_ptr_->get_trajectory_msg();
+  auto new_external_msg = traj_msg_external_point_ptr_.readFromRT();
+  if (current_external_msg != *new_external_msg) {
+    fill_partial_goal(*new_external_msg);
+    sort_to_local_joint_order(*new_external_msg);
+    traj_external_point_ptr_->update(*new_external_msg);
+  }
+
   JointTrajectoryPoint state_current, state_desired, state_error;
   const auto joint_num = registered_joint_state_handles_.size();
   resize_joint_trajectory_point(state_current, joint_num);
@@ -132,8 +141,6 @@ JointTrajectoryController::update()
     state_current.accelerations[index] = 0.0;
   }
   state_current.time_from_start.set__sec(0);
-
-  std::lock_guard<std::mutex> guard(trajectory_mtx_);
 
   // currently carrying out a trajectory
   if (traj_point_active_ptr_ && (*traj_point_active_ptr_)->has_trajectory_msg() == false) {
@@ -319,19 +326,14 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
   auto callback = [this, &logger](const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg)
     -> void
     {
-      if (registered_joint_cmd_handles_.size() != msg->joint_names.size()) {
-        RCLCPP_ERROR(
-          logger,
-          "number of joints in joint trajectory msg (%d) "
-          "does not match number of joint command handles (%d)\n",
-          msg->joint_names.size(), registered_joint_cmd_handles_.size());
+      if (!validate_trajectory_msg(*msg)) {
+        return;
       }
 
       // http://wiki.ros.org/joint_trajectory_controller/UnderstandingTrajectoryReplacement
       // always replace old msg with new one for now
       if (subscriber_is_active_) {
-        sort_to_local_joint_order(msg);
-        traj_external_point_ptr_->update(msg);
+        add_new_trajectory_msg(msg);
       }
     };
 
@@ -379,8 +381,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
   allow_partial_joints_goal_ = lifecycle_node_->get_parameter("allow_partial_joints_goal")
     .get_value<bool>();
   if (allow_partial_joints_goal_) {
-    // TODO(ddengster): implement partial joints, log an enabled partial joints goal message https://github.com/ros-controls/ros2_controllers/issues/37
-    RCLCPP_WARN(logger, "Warning: Goals with partial set of joints not implemented yet.");
+    RCLCPP_INFO(logger, "Goals with partial set of joints are allowed");
   }
 
   const double action_monitor_rate = lifecycle_node_->get_parameter("action_monitor_rate")
@@ -553,28 +554,10 @@ rclcpp_action::GoalResponse JointTrajectoryController::goal_callback(
     return rclcpp_action::GoalResponse::REJECT;
   }
 
-  // If partial joints goals are not allowed, goal should specify all controller joints
-  if (!allow_partial_joints_goal_) {
-    if (goal->trajectory.joint_names.size() != joint_names_.size()) {
-      RCLCPP_ERROR(
-        lifecycle_node_->get_logger(),
-        "Joints on incoming goal don't match the controller joints.");
-      return rclcpp_action::GoalResponse::REJECT;
-    }
+  if (!validate_trajectory_msg(goal->trajectory)) {
+    return rclcpp_action::GoalResponse::REJECT;
   }
 
-  for (auto i = 0ul; i < goal->trajectory.joint_names.size(); ++i) {
-    const std::string & incoming_joint_name = goal->trajectory.joint_names[i];
-
-    auto it = std::find(joint_names_.begin(), joint_names_.end(), incoming_joint_name);
-    if (it == joint_names_.end()) {
-      RCLCPP_ERROR(
-        lifecycle_node_->get_logger(),
-        "Incoming joint %s doesn't match the controller's joints.",
-        incoming_joint_name.c_str());
-      return rclcpp_action::GoalResponse::REJECT;
-    }
-  }
   RCLCPP_INFO(lifecycle_node_->get_logger(), "Accepted new action goal");
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
@@ -610,12 +593,11 @@ void JointTrajectoryController::feedback_setup_callback(
 {
   // Update new trajectory
   {
-    std::lock_guard<std::mutex> guard(trajectory_mtx_);
     preempt_active_goal();
     auto traj_msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>(
       goal_handle->get_goal()->trajectory);
-    sort_to_local_joint_order(traj_msg);
-    traj_external_point_ptr_->update(traj_msg);
+
+    add_new_trajectory_msg(traj_msg);
 
     RealtimeGoalHandlePtr rt_goal = std::make_shared<RealtimeGoalHandle>(goal_handle);
     rt_goal->preallocated_feedback_->joint_names = joint_names_;
@@ -627,6 +609,46 @@ void JointTrajectoryController::feedback_setup_callback(
   goal_handle_timer_ = lifecycle_node_->create_wall_timer(
     action_monitor_period_.to_chrono<std::chrono::seconds>(),
     std::bind(&RealtimeGoalHandle::runNonRealtime, rt_active_goal_));
+}
+
+void JointTrajectoryController::fill_partial_goal(
+  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg) const
+{
+  // joint names in the goal are a subset of existing joints, as checked in goal_callback
+  // so if the size matches, the goal contains all controller joints
+  if (joint_names_.size() == trajectory_msg->joint_names.size()) {
+    return;
+  }
+
+  trajectory_msg->joint_names.reserve(joint_names_.size());
+
+  for (auto index = 0ul; index < joint_names_.size(); ++index) {
+    {
+      if (std::find(
+          trajectory_msg->joint_names.begin(), trajectory_msg->joint_names.end(),
+          joint_names_[index]) != trajectory_msg->joint_names.end())
+      {
+        // joint found on msg
+        continue;
+      }
+      trajectory_msg->joint_names.push_back(joint_names_[index]);
+
+      const auto & joint_state = registered_joint_state_handles_[index];
+      for (auto & it : trajectory_msg->points) {
+        // Assume hold position with 0 velocity and acceleration for missing joints
+        it.positions.push_back(joint_state->get_position());
+        if (!it.velocities.empty()) {
+          it.velocities.push_back(0.0);
+        }
+        if (!it.accelerations.empty()) {
+          it.accelerations.push_back(0.0);
+        }
+        if (!it.effort.empty()) {
+          it.effort.push_back(0.0);
+        }
+      }
+    }
+  }
 }
 
 void JointTrajectoryController::sort_to_local_joint_order(
@@ -670,6 +692,47 @@ void JointTrajectoryController::sort_to_local_joint_order(
   }
 }
 
+bool JointTrajectoryController::validate_trajectory_msg(
+  const trajectory_msgs::msg::JointTrajectory & trajectory) const
+{
+  // If partial joints goals are not allowed, goal should specify all controller joints
+  if (!allow_partial_joints_goal_) {
+    if (trajectory.joint_names.size() != joint_names_.size()) {
+      RCLCPP_ERROR(
+        lifecycle_node_->get_logger(),
+        "Joints on incoming trajectory don't match the controller joints.");
+      return false;
+    }
+  }
+
+  if (trajectory.joint_names.empty()) {
+    RCLCPP_ERROR(
+      lifecycle_node_->get_logger(),
+      "Empty joint names on incoming trajectory.");
+    return false;
+  }
+
+  for (auto i = 0ul; i < trajectory.joint_names.size(); ++i) {
+    const std::string & incoming_joint_name = trajectory.joint_names[i];
+
+    auto it = std::find(joint_names_.begin(), joint_names_.end(), incoming_joint_name);
+    if (it == joint_names_.end()) {
+      RCLCPP_ERROR(
+        lifecycle_node_->get_logger(),
+        "Incoming joint %s doesn't match the controller's joints.",
+        incoming_joint_name.c_str());
+      return false;
+    }
+  }
+  return true;
+}
+
+void JointTrajectoryController::add_new_trajectory_msg(
+  const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & traj_msg)
+{
+  traj_msg_external_point_ptr_.writeFromNonRT(traj_msg);
+}
+
 void JointTrajectoryController::preempt_active_goal()
 {
   if (rt_active_goal_) {
@@ -683,13 +746,12 @@ void JointTrajectoryController::preempt_active_goal()
 
 void JointTrajectoryController::set_hold_position()
 {
-  std::lock_guard<std::mutex> guard(trajectory_mtx_);
   trajectory_msgs::msg::JointTrajectory empty_msg;
   empty_msg.header.stamp = rclcpp::Time(0);
 
   auto traj_msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>(
     empty_msg);
-  traj_external_point_ptr_->update(traj_msg);
+  add_new_trajectory_msg(traj_msg);
 }
 
 }  // namespace joint_trajectory_controller

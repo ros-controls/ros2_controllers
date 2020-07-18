@@ -597,3 +597,84 @@ TEST_F(TestTrajectoryController, test_jumbled_joint_order) {
 
   executor.cancel();
 }
+
+TEST_F(TestTrajectoryController, test_partial_joint_list) {
+  auto traj_controller = std::make_shared<joint_trajectory_controller::JointTrajectoryController>();
+  auto ret = traj_controller->init(test_robot_, controller_name_);
+  if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
+    FAIL();
+  }
+
+  auto traj_lifecycle_node = traj_controller->get_lifecycle_node();
+  std::vector<std::string> joint_names = {"joint1", "joint2", "joint3"};
+  rclcpp::Parameter joint_parameters("joints", joint_names);
+  traj_lifecycle_node->set_parameter(joint_parameters);
+
+  std::vector<std::string> operation_mode_names = {"write1", "write2"};
+  rclcpp::Parameter operation_mode_parameters("write_op_modes", operation_mode_names);
+  traj_lifecycle_node->set_parameter(operation_mode_parameters);
+
+  rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", true);
+  traj_lifecycle_node->set_parameter(partial_joints_parameters);
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(traj_lifecycle_node->get_node_base_interface());
+
+  traj_controller->on_configure(traj_lifecycle_node->get_current_state());
+  traj_controller->on_activate(traj_lifecycle_node->get_current_state());
+
+  auto future_handle = std::async(
+    std::launch::async, [&executor]() -> void {
+      executor.spin();
+    });
+  // wait for things to setup
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+  const double initial_joint3_cmd = test_robot_->cmd3;
+  trajectory_msgs::msg::JointTrajectory traj_msg;
+
+  {
+    std::vector<std::string> partial_joint_names {
+      test_robot_->joint_name2, test_robot_->joint_name1
+    };
+    traj_msg.joint_names = partial_joint_names;
+    traj_msg.header.stamp = rclcpp::Time(0);
+    traj_msg.points.resize(1);
+
+    traj_msg.points[0].time_from_start = rclcpp::Duration::from_seconds(0.25);
+    traj_msg.points[0].positions.resize(2);
+    traj_msg.points[0].positions[0] = 2.0;
+    traj_msg.points[0].positions[1] = 1.0;
+    traj_msg.points[0].velocities.resize(2);
+    traj_msg.points[0].velocities[0] = 2.0;
+    traj_msg.points[0].velocities[1] = 1.0;
+
+    trajectory_publisher_->publish(traj_msg);
+  }
+
+  // update for 0.5 seconds
+  auto start_time = rclcpp::Clock().now();
+  rclcpp::Duration wait = rclcpp::Duration::from_seconds(0.5);
+  auto end_time = start_time + wait;
+  while (rclcpp::Clock().now() < end_time) {
+    test_robot_->read();
+    traj_controller->update();
+    test_robot_->write();
+  }
+
+  double threshold = 0.001;
+  EXPECT_NEAR(traj_msg.points[0].positions[1], test_robot_->pos1, threshold);
+  EXPECT_NEAR(traj_msg.points[0].positions[0], test_robot_->pos2, threshold);
+  EXPECT_NEAR(
+    initial_joint3_cmd, test_robot_->pos3,
+    threshold) << "Joint 3 command should be current position";
+
+//  Velocity commands are not sent yet
+//  EXPECT_NEAR(traj_msg.points[0].velocities[1], test_robot_->vel1, threshold);
+//  EXPECT_NEAR(traj_msg.points[0].velocities[0], test_robot_->vel2, threshold);
+//  EXPECT_NEAR(
+//    0.0, test_robot_->vel3,
+//    threshold) << "Joint 3 velocity should be 0.0 since it's not in the goal";
+
+  executor.cancel();
+}
