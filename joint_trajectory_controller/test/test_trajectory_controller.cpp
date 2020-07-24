@@ -601,7 +601,7 @@ TEST_F(TestTrajectoryController, test_jumbled_joint_order) {
 TEST_F(TestTrajectoryController, test_partial_joint_list) {
   auto traj_controller = std::make_shared<joint_trajectory_controller::JointTrajectoryController>();
   auto ret = traj_controller->init(test_robot_, controller_name_);
-  if (ret != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
+  if (ret != controller_interface::return_type::SUCCESS) {
     FAIL();
   }
 
