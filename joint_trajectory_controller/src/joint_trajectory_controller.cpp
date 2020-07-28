@@ -712,6 +712,8 @@ bool JointTrajectoryController::validate_trajectory_msg(
   }
 
   const auto trajectory_start_time = static_cast<rclcpp::Time>(trajectory.header.stamp);
+  // If the starting time it set to 0.0, it means the controller should start it now. 
+  // Otherwise we check if the trajectory ends before the current time, in which case it can be ignored.
   if (trajectory_start_time.seconds() != 0.0) {
     auto trajectory_end_time = trajectory_start_time;
     for (const auto & p : trajectory.points) {
