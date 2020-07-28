@@ -219,8 +219,8 @@ protected:
 
   void updateController(rclcpp::Duration wait_time = rclcpp::Duration::from_seconds(0.2))
   {
-    auto start_time = rclcpp::Clock().now();
-    auto end_time = start_time + wait_time;
+    const auto start_time = rclcpp::Clock().now();
+    const auto end_time = start_time + wait_time;
     while (rclcpp::Clock().now() < end_time) {
       test_robot_->read();
       traj_controller_->update();
@@ -469,13 +469,7 @@ TEST_F(TestTrajectoryController, cleanup) {
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
   // update for 0.25 seconds
   const auto start_time = rclcpp::Clock().now();
-  const rclcpp::Duration wait = rclcpp::Duration::from_seconds(0.25);
-  const auto end_time = start_time + wait;
-  while (rclcpp::Clock().now() < end_time) {
-    test_robot_->read();
-    traj_controller_->update();
-    test_robot_->write();
-  }
+  updateController(rclcpp::Duration::from_seconds(0.25));
 
   // should be home pose again
   EXPECT_NEAR(1.1, test_robot_->pos1, COMMON_THRESHOLD);
@@ -726,7 +720,7 @@ TEST_F(TestTrajectoryController, test_partial_joint_list) {
 }
 
 /**
- * @brief invalid_message Test missmatched joint and reference vector sizes
+ * @brief invalid_message Test mismatched joint and reference vector sizes
  */
 TEST_F(TestTrajectoryController, invalid_message) {
   SetUpAndActivateTrajectoryController();

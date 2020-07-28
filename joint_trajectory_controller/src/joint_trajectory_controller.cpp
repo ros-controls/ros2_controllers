@@ -691,6 +691,25 @@ void JointTrajectoryController::sort_to_local_joint_order(
   }
 }
 
+bool JointTrajectoryController::validate_trajectory_point_field(
+  size_t joint_names_size,
+  const std::vector<double> & vector_field,
+  const std::string & string_for_vector_field, size_t i, bool allow_empty) const
+{
+  if (allow_empty && vector_field.empty()) {
+    return true;
+  }
+  if (joint_names_size != vector_field.size()) {
+    RCLCPP_ERROR(
+      lifecycle_node_->get_logger(),
+      "Mismatch between joint_names (%u) and %s (%u) at point #%u.",
+      joint_names_size, string_for_vector_field.c_str(), vector_field.size(), i);
+    return false;
+  }
+  return true;
+}
+
+
 bool JointTrajectoryController::validate_trajectory_msg(
   const trajectory_msgs::msg::JointTrajectory & trajectory) const
 {
@@ -712,8 +731,9 @@ bool JointTrajectoryController::validate_trajectory_msg(
   }
 
   const auto trajectory_start_time = static_cast<rclcpp::Time>(trajectory.header.stamp);
-  // If the starting time it set to 0.0, it means the controller should start it now. 
-  // Otherwise we check if the trajectory ends before the current time, in which case it can be ignored.
+  // If the starting time it set to 0.0, it means the controller should start it now.
+  // Otherwise we check if the trajectory ends before the current time,
+  // in which case it can be ignored.
   if (trajectory_start_time.seconds() != 0.0) {
     auto trajectory_end_time = trajectory_start_time;
     for (const auto & p : trajectory.points) {
@@ -753,41 +773,15 @@ bool JointTrajectoryController::validate_trajectory_msg(
     }
     previous_traj_time = trajectory.points[i].time_from_start;
 
-    if (trajectory.joint_names.size() != trajectory.points[i].positions.size()) {
-      RCLCPP_ERROR(
-        lifecycle_node_->get_logger(),
-        "Mismatch between joint_names (%u) and positions (%u) at point #%u.",
-        trajectory.joint_names.size(), trajectory.points[i].positions.size(), i);
-      return false;
-    }
-
-    if (!trajectory.points[i].velocities.empty() &&
-      trajectory.joint_names.size() != trajectory.points[i].velocities.size())
+    const size_t joint_count = trajectory.joint_names.size();
+    const auto & points = trajectory.points;
+    if (!validate_trajectory_point_field(joint_count, points[i].positions, "positions", i, false) ||
+      !validate_trajectory_point_field(joint_count, points[i].velocities, "velocities", i, true) ||
+      !validate_trajectory_point_field(
+        joint_count, points[i].accelerations, "accelerations", i,
+        true) ||
+      !validate_trajectory_point_field(joint_count, points[i].effort, "effort", i, true))
     {
-      RCLCPP_ERROR(
-        lifecycle_node_->get_logger(),
-        "Mismatch between joint_names (%u) and velocities (%u) at point #%u.",
-        trajectory.joint_names.size(), trajectory.points[i].velocities.size(), i);
-      return false;
-    }
-
-    if (!trajectory.points[i].accelerations.empty() &&
-      trajectory.joint_names.size() != trajectory.points[i].accelerations.size())
-    {
-      RCLCPP_ERROR(
-        lifecycle_node_->get_logger(),
-        "Mismatch between joint_names (%u) and accelerations (%u) at point #%u.",
-        trajectory.joint_names.size(), trajectory.points[i].accelerations.size(), i);
-      return false;
-    }
-
-    if (!trajectory.points[i].effort.empty() &&
-      trajectory.joint_names.size() != trajectory.points[i].effort.size())
-    {
-      RCLCPP_ERROR(
-        lifecycle_node_->get_logger(),
-        "Mismatch between joint_names (%u) and effort (%u) at point #%u.",
-        trajectory.joint_names.size(), trajectory.points[i].effort.size(), i);
       return false;
     }
   }

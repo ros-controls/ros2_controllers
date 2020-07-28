@@ -167,6 +167,11 @@ protected:
   bool validate_trajectory_msg(const trajectory_msgs::msg::JointTrajectory & trajectory) const;
   void add_new_trajectory_msg(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & traj_msg);
+  bool validate_trajectory_point_field(
+    size_t joint_names_size,
+    const std::vector<double> & vector_field,
+    const std::string & string_for_vector_field, size_t i,
+    bool allow_empty) const;
 
   SegmentTolerances default_tolerances_;
 
