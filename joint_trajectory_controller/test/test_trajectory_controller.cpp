@@ -720,6 +720,73 @@ TEST_F(TestTrajectoryController, test_partial_joint_list) {
 }
 
 /**
+ * @brief test_partial_joint_list Test sending trajectories with a subset of the controlled joints without allow_partial_joints_goal
+ */
+TEST_F(TestTrajectoryController, test_partial_joint_list_not_allowed) {
+  SetUpTrajectoryController();
+
+  auto traj_lifecycle_node = traj_controller_->get_lifecycle_node();
+
+  rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", false);
+  traj_lifecycle_node->set_parameter(partial_joints_parameters);
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(traj_lifecycle_node->get_node_base_interface());
+
+  traj_controller_->on_configure(traj_lifecycle_node->get_current_state());
+  traj_controller_->on_activate(traj_lifecycle_node->get_current_state());
+
+  const double initial_joint1_cmd = test_robot_->cmd1;
+  const double initial_joint2_cmd = test_robot_->cmd2;
+  const double initial_joint3_cmd = test_robot_->cmd3;
+  trajectory_msgs::msg::JointTrajectory traj_msg;
+
+  {
+    std::vector<std::string> partial_joint_names {
+      test_robot_->joint_name2, test_robot_->joint_name1
+    };
+    traj_msg.joint_names = partial_joint_names;
+    traj_msg.header.stamp = rclcpp::Time(0);
+    traj_msg.points.resize(1);
+
+    traj_msg.points[0].time_from_start = rclcpp::Duration::from_seconds(0.25);
+    traj_msg.points[0].positions.resize(2);
+    traj_msg.points[0].positions[0] = 2.0;
+    traj_msg.points[0].positions[1] = 1.0;
+    traj_msg.points[0].velocities.resize(2);
+    traj_msg.points[0].velocities[0] = 2.0;
+    traj_msg.points[0].velocities[1] = 1.0;
+
+    trajectory_publisher_->publish(traj_msg);
+  }
+
+  traj_controller_->wait_for_trajectory(executor);
+  // update for 0.5 seconds
+  updateController(rclcpp::Duration::from_seconds(0.25));
+
+  double threshold = 0.001;
+  EXPECT_NEAR(
+    initial_joint1_cmd, test_robot_->pos1,
+    threshold) << "All joints command should be current position because goal was rejected";
+  EXPECT_NEAR(
+    initial_joint2_cmd, test_robot_->pos2,
+    threshold) << "All joints command should be current position because goal was rejected";
+  EXPECT_NEAR(
+    initial_joint3_cmd, test_robot_->pos3,
+    threshold) << "All joints command should be current position because goal was rejected";
+
+  //  Velocity commands are not sent yet
+  //  EXPECT_NEAR(traj_msg.points[0].velocities[1], test_robot_->vel1, threshold);
+  //  EXPECT_NEAR(traj_msg.points[0].velocities[0], test_robot_->vel2, threshold);
+  //  EXPECT_NEAR(
+  //    0.0, test_robot_->vel3,
+  //    threshold) << "Joint 3 velocity should be 0.0 since it's not in the goal";
+
+  executor.cancel();
+}
+
+
+/**
  * @brief invalid_message Test mismatched joint and reference vector sizes
  */
 TEST_F(TestTrajectoryController, invalid_message) {
