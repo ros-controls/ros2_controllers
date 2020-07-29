@@ -96,7 +96,7 @@ struct SegmentTolerances
  * \return Trajectory segment tolerances.
  */
 SegmentTolerances get_segment_tolerances(
-  const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
+  const rclcpp_lifecycle::LifecycleNode & node,
   const std::vector<std::string> & joint_names)
 {
   const auto n_joints = joint_names.size();
@@ -104,7 +104,7 @@ SegmentTolerances get_segment_tolerances(
 
   // State and goal state tolerances
   double stopped_velocity_tolerance = 0.01;
-  node->get_parameter_or<double>(
+  node.get_parameter_or<double>(
     "constraints.stopped_velocity_tolerance",
     stopped_velocity_tolerance, stopped_velocity_tolerance);
 
@@ -113,10 +113,10 @@ SegmentTolerances get_segment_tolerances(
   for (auto i = 0ul; i < n_joints; ++i) {
     const std::string prefix = "constraints." + joint_names[i];
 
-    node->get_parameter_or<double>(
+    node.get_parameter_or<double>(
       prefix + ".trajectory", tolerances.state_tolerance[i].position,
       0.0);
-    node->get_parameter_or<double>(
+    node.get_parameter_or<double>(
       prefix + ".goal", tolerances.goal_state_tolerance[i].position,
       0.0);
 
@@ -132,7 +132,7 @@ SegmentTolerances get_segment_tolerances(
   }
 
   // Goal time tolerance
-  node->get_parameter_or<double>("constraints.goal_time", tolerances.goal_time_tolerance, 0.0);
+  node.get_parameter_or<double>("constraints.goal_time", tolerances.goal_time_tolerance, 0.0);
 
   return tolerances;
 }
