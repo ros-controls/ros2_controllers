@@ -174,12 +174,14 @@ protected:
   /// Publish trajectory msgs with multiple points
   /**
    *  delay_btwn_points - delay between each points
-   *  points - vector of trajectories. Each trajectory consists of 3 joints
+   *  points - vector of trajectories. One point per controlled joint
+   *  joint_names - names of joints, if empty, will use joint_names_ up to the number of provided points
    */
   void publish(
     const builtin_interfaces::msg::Duration & delay_btwn_points,
     const std::vector<std::vector<double>> & points,
-    rclcpp::Time start_time = rclcpp::Time())
+    rclcpp::Time start_time = rclcpp::Time(),
+    const std::vector<std::string> & joint_names = {})
   {
     int wait_count = 0;
     const auto topic = trajectory_publisher_->get_topic_name();
@@ -194,7 +196,11 @@ protected:
     }
 
     trajectory_msgs::msg::JointTrajectory traj_msg;
-    traj_msg.joint_names = {joint_names_.begin(), joint_names_.begin() + points[0].size()};
+    if (joint_names.empty()) {
+      traj_msg.joint_names = {joint_names_.begin(), joint_names_.begin() + points[0].size()};
+    } else {
+      traj_msg.joint_names = joint_names;
+    }
     traj_msg.header.stamp = start_time;
     traj_msg.points.resize(points.size());
 
