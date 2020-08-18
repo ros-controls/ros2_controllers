@@ -15,23 +15,27 @@
 #ifndef FORWARD_COMMAND_CONTROLLER__FORWARD_COMMAND_CONTROLLER_HPP_
 #define FORWARD_COMMAND_CONTROLLER__FORWARD_COMMAND_CONTROLLER_HPP_
 
+#include <memory>
+#include <vector>
+
 #include "controller_interface/controller_interface.hpp"
 #include "forward_command_controller/visibility_control.h"
+#include "hardware_interface/joint_handle.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
+#include "rclcpp/subscription.hpp"
+#include "realtime_tools/realtime_buffer.h"
+#include "std_msgs/msg/float64_multi_array.hpp"
 
 namespace forward_command_controller
 {
-
 class ForwardCommandController : public controller_interface::ControllerInterface
 {
+  using CmdType = std_msgs::msg::Float64MultiArray;
+
 public:
   FORWARD_COMMAND_CONTROLLER_PUBLIC
   ForwardCommandController();
-
-  FORWARD_COMMAND_CONTROLLER_PUBLIC
-  controller_interface::return_type
-  update() override;
 
   FORWARD_COMMAND_CONTROLLER_PUBLIC
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
@@ -45,7 +49,14 @@ public:
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
   on_deactivate(const rclcpp_lifecycle::State & previous_state) override;
 
+  FORWARD_COMMAND_CONTROLLER_PUBLIC
+  controller_interface::return_type
+  update() override;
+
 protected:
+  std::vector<hardware_interface::JointHandle> joint_handles_;
+  realtime_tools::RealtimeBuffer<std::shared_ptr<CmdType>> rt_command_ptr_;
+  rclcpp::Subscription<CmdType>::SharedPtr joints_command_subscriber_;
 };
 
 }  // namespace forward_command_controller

@@ -18,6 +18,7 @@ find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(realtime_tools REQUIRED)
+find_package(std_msgs REQUIRED)
 
 add_library(forward_command_controller
   SHARED
@@ -30,6 +31,8 @@ ament_target_dependencies(forward_command_controller
   pluginlib
   rclcpp_lifecycle
   rcutils
+  realtime_tools
+  std_msgs
 )
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
@@ -59,6 +62,8 @@ ament_export_dependencies(
   hardware_interface
   rclcpp
   rclcpp_lifecycle
+  realtime_tools
+  std_msgs
 )
 ament_export_include_directories(
   include
