@@ -16,6 +16,7 @@
 #include <utility>
 
 #include "forward_command_controller/forward_command_controller.hpp"
+#include "rclcpp/qos.hpp"
 
 namespace forward_command_controller
 {
