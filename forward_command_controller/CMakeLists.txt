@@ -38,6 +38,8 @@ ament_target_dependencies(forward_command_controller
 # which is appropriate when building the dll but not consuming it.
 target_compile_definitions(forward_command_controller PRIVATE "FORWARD_COMMAND_CONTROLLER_BUILDING_DLL")
 
+pluginlib_export_plugin_description_file(controller_interface forward_command_plugin.xml)
+
 install(
   DIRECTORY include/
   DESTINATION include
@@ -52,7 +54,20 @@ install(
 )
 
 if(BUILD_TESTING)
+  find_package(ament_cmake_gtest REQUIRED)
   find_package(ament_lint_auto REQUIRED)
+  find_package(controller_manager REQUIRED)
+  find_package(test_robot_hardware REQUIRED)
+
+  ament_add_gtest(
+    test_load_forward_command_controller
+    test/test_load_forward_command_controller.cpp
+  )
+  target_include_directories(test_load_forward_command_controller PRIVATE include)
+  ament_target_dependencies(test_load_forward_command_controller
+    controller_manager
+    test_robot_hardware
+  )
 
   ament_lint_auto_find_test_dependencies()
 endif()
