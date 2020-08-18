@@ -801,7 +801,7 @@ TEST_F(TestTrajectoryController, invalid_message) {
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(traj_controller_->get_lifecycle_node()->get_node_base_interface());
 
-  rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", true);
+  rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", false);
   traj_controller_->get_lifecycle_node()->set_parameter(partial_joints_parameters);
 
 
