@@ -176,6 +176,7 @@ protected:
       "/state",
       qos,
       [&](std::shared_ptr<JointTrajectoryControllerState> msg) {
+        std::lock_guard<std::mutex> guard(state_mutex_);
         state_msg_ = msg;
       }
       );
@@ -249,21 +250,31 @@ protected:
     trajectory_msgs::msg::JointTrajectoryPoint expected_desired,
     rclcpp::Executor & executor, rclcpp::Duration controller_wait_time, double allowed_delta)
   {
-    state_msg_.reset();
+    {
+      std::lock_guard<std::mutex> guard(state_mutex_);
+      state_msg_.reset();
+    }
     traj_controller_->wait_for_trajectory(executor);
     updateController(controller_wait_time);
     // Spin to receive latest state
     executor.spin_some();
-    ASSERT_TRUE(state_msg_);
+    auto state_msg = getState();
+    ASSERT_TRUE(state_msg);
     for (size_t i = 0; i < expected_actual.positions.size(); ++i) {
       SCOPED_TRACE("Joint " + std::to_string(i));
-      EXPECT_NEAR(expected_actual.positions[i], state_msg_->actual.positions[i], allowed_delta);
+      EXPECT_NEAR(expected_actual.positions[i], state_msg->actual.positions[i], allowed_delta);
     }
 
     for (size_t i = 0; i < expected_desired.positions.size(); ++i) {
       SCOPED_TRACE("Joint " + std::to_string(i));
-      EXPECT_NEAR(expected_desired.positions[i], state_msg_->desired.positions[i], allowed_delta);
+      EXPECT_NEAR(expected_desired.positions[i], state_msg->desired.positions[i], allowed_delta);
     }
+  }
+
+  std::shared_ptr<control_msgs::msg::JointTrajectoryControllerState> getState() const
+  {
+    std::lock_guard<std::mutex> guard(state_mutex_);
+    return state_msg_;
   }
   void test_state_publish_rate_target(int target_msg_count);
 
@@ -280,6 +291,7 @@ protected:
   std::shared_ptr<rclcpp_lifecycle::LifecycleNode> traj_lifecycle_node_;
   rclcpp::Subscription<control_msgs::msg::JointTrajectoryControllerState>::SharedPtr
     state_subscriber_;
+  mutable std::mutex state_mutex_;
   std::shared_ptr<control_msgs::msg::JointTrajectoryControllerState> state_msg_;
 };
 
@@ -571,6 +583,36 @@ TEST_F(TestTrajectoryController, correct_initialization_using_parameters) {
   state = traj_lifecycle_node->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   executor.cancel();
+}
+
+TEST_F(TestTrajectoryController, state_topic_consistency) {
+  rclcpp::executors::SingleThreadedExecutor executor;
+  SetUpAndActivateTrajectoryController(true, {}, &executor);
+  subscribeToState();
+  updateController();
+
+  // Spin to receive latest state
+  executor.spin_some();
+  auto state = getState();
+
+  size_t n_joints = joint_names_.size();
+
+  for (unsigned int i = 0; i < n_joints; ++i) {
+    EXPECT_EQ(joint_names_[i], state->joint_names[i]);
+  }
+
+  // No trajectory by default, no desired state or error
+  EXPECT_TRUE(state->desired.positions.empty());
+  EXPECT_TRUE(state->desired.velocities.empty());
+  EXPECT_TRUE(state->desired.accelerations.empty());
+
+  EXPECT_EQ(n_joints, state->actual.positions.size());
+  EXPECT_EQ(n_joints, state->actual.velocities.size());
+  EXPECT_TRUE(state->actual.accelerations.empty());
+
+  EXPECT_TRUE(state->error.positions.empty());
+  EXPECT_TRUE(state->error.velocities.empty());
+  EXPECT_TRUE(state->error.accelerations.empty());
 }
 
 void TestTrajectoryController::test_state_publish_rate_target(int target_msg_count)
