@@ -913,7 +913,7 @@ TEST_F(TestTrajectoryController, test_ignore_old_trajectory) {
   SetUpAndActivateTrajectoryController(true, {}, &executor);
   subscribeToState();
 
-  std::vector<std::vector<double>> points_old {{{2., 3., 4.}, {4., 6., 8.}}};
+  std::vector<std::vector<double>> points_old {{{2., 3., 4.}, {4., 5., 6.}}};
   std::vector<std::vector<double>> points_new {{{-1., -2., -3.}}};
 
   const auto delay = std::chrono::milliseconds(500);
@@ -939,7 +939,7 @@ TEST_F(TestTrajectoryController, test_ignore_partial_old_trajectory) {
   SetUpAndActivateTrajectoryController(true, {}, &executor);
   subscribeToState();
 
-  std::vector<std::vector<double>> points_old {{{2., 3., 4.}, {4., 6., 8.}}};
+  std::vector<std::vector<double>> points_old {{{2., 3., 4.}, {4., 5., 6.}}};
   std::vector<std::vector<double>> points_new {{{-1., -2., -3.}, {-2., -4., -6.}}};
 
   const auto delay = std::chrono::milliseconds(500);
