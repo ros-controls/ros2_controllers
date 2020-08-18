@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "control_msgs/msg/joint_trajectory_controller_state.hpp"
+#include "control_msgs/srv/query_trajectory_state.hpp"
 #include "control_msgs/action/follow_joint_trajectory.hpp"
 #include "controller_interface/controller_interface.hpp"
 #include "hardware_interface/joint_handle.hpp"
@@ -138,6 +139,8 @@ protected:
   rclcpp::Duration state_publisher_period_ = rclcpp::Duration(RCUTILS_MS_TO_NS(20));
   rclcpp::Time last_state_publish_time_;
 
+  rclcpp::Service<control_msgs::srv::QueryTrajectoryState>::SharedPtr state_service_;
+
   using FollowJTrajAction = control_msgs::action::FollowJointTrajectory;
   using RealtimeGoalHandle = realtime_tools::RealtimeServerGoalHandle<FollowJTrajAction>;
   using RealtimeGoalHandlePtr = std::shared_ptr<RealtimeGoalHandle>;
@@ -187,6 +190,10 @@ protected:
     const JointTrajectoryPoint & desired_state,
     const JointTrajectoryPoint & current_state,
     const JointTrajectoryPoint & state_error);
+
+  void state_srv_cb(
+    const std::shared_ptr<control_msgs::srv::QueryTrajectoryState::Request> request,
+    std::shared_ptr<control_msgs::srv::QueryTrajectoryState::Response> response);
 };
 
 }  // namespace joint_trajectory_controller

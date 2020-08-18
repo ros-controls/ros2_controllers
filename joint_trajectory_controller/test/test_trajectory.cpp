@@ -41,7 +41,7 @@ TEST(TestTrajectory, initialize_trajectory) {
     empty_msg->header.stamp.sec = 2;
     empty_msg->header.stamp.nanosec = 2;
     const rclcpp::Time empty_time = empty_msg->header.stamp;
-    auto traj = joint_trajectory_controller::Trajectory(empty_msg);
+    joint_trajectory_controller::Trajectory traj(empty_msg);
 
     trajectory_msgs::msg::JointTrajectoryPoint expected_point;
     joint_trajectory_controller::TrajectoryPointConstIter start, end;
@@ -56,7 +56,7 @@ TEST(TestTrajectory, initialize_trajectory) {
     empty_msg->header.stamp.sec = 0;
     empty_msg->header.stamp.nanosec = 0;
     const auto now = rclcpp::Clock().now();
-    auto traj = joint_trajectory_controller::Trajectory(empty_msg);
+    joint_trajectory_controller::Trajectory traj(empty_msg);
     const auto traj_starttime = traj.time_from_start();
 
     trajectory_msgs::msg::JointTrajectoryPoint expected_point;
@@ -95,7 +95,7 @@ TEST(TestTrajectory, sample_trajectory_positions) {
 
   // set current state before trajectory msg was sent
   const rclcpp::Time time_now = rclcpp::Clock().now();
-  auto traj = joint_trajectory_controller::Trajectory(time_now, point_before_msg, full_msg);
+  joint_trajectory_controller::Trajectory traj(time_now, point_before_msg, full_msg);
 
   trajectory_msgs::msg::JointTrajectoryPoint expected_state;
   joint_trajectory_controller::TrajectoryPointConstIter start, end;
@@ -188,14 +188,14 @@ TEST(TestTrajectory, interpolation_pos_vel) {
   end_state.velocities.push_back(10.0);
   end_state.accelerations.push_back(0.0);  // Should be ignored, start state does not specify it
 
-  auto traj = joint_trajectory_controller::Trajectory();
+  joint_trajectory_controller::Trajectory traj;
   rclcpp::Time time_now(0);
 
   trajectory_msgs::msg::JointTrajectoryPoint expected_state;
 
   // sample at start_time
   {
-    traj.interpolate_between_points(
+    joint_trajectory_controller::Trajectory::interpolate_between_points(
       time_now + start_state.time_from_start, start_state,
       time_now + end_state.time_from_start, end_state,
       time_now + start_state.time_from_start, expected_state);
@@ -207,7 +207,7 @@ TEST(TestTrajectory, interpolation_pos_vel) {
   // Sample at mid-segment: Zero-crossing
   {
     auto t = rclcpp::Duration::from_seconds(std::sqrt(2.0));
-    traj.interpolate_between_points(
+    joint_trajectory_controller::Trajectory::interpolate_between_points(
       time_now + start_state.time_from_start, start_state,
       time_now + end_state.time_from_start, end_state,
       time_now + start_state.time_from_start + t, expected_state);
@@ -218,7 +218,7 @@ TEST(TestTrajectory, interpolation_pos_vel) {
 
   // sample at end_time
   {
-    traj.interpolate_between_points(
+    joint_trajectory_controller::Trajectory::interpolate_between_points(
       time_now + start_state.time_from_start, start_state,
       time_now + end_state.time_from_start, end_state,
       time_now + end_state.time_from_start, expected_state);
@@ -244,14 +244,14 @@ TEST(TestTrajectory, interpolation_pos_vel_accel) {
   end_state.velocities.push_back(4.0);
   end_state.accelerations.push_back(0.0);
 
-  auto traj = joint_trajectory_controller::Trajectory();
+  joint_trajectory_controller::Trajectory traj();
   rclcpp::Time time_now(0);
 
   trajectory_msgs::msg::JointTrajectoryPoint expected_state;
 
   // sample at start_time
   {
-    traj.interpolate_between_points(
+    joint_trajectory_controller::Trajectory::interpolate_between_points(
       time_now + start_state.time_from_start, start_state,
       time_now + end_state.time_from_start, end_state,
       time_now + start_state.time_from_start, expected_state);
@@ -263,7 +263,7 @@ TEST(TestTrajectory, interpolation_pos_vel_accel) {
   // Sample at mid-segment: Zero-crossing
   {
     auto t = rclcpp::Duration::from_seconds(1.0);
-    traj.interpolate_between_points(
+    joint_trajectory_controller::Trajectory::interpolate_between_points(
       time_now + start_state.time_from_start, start_state,
       time_now + end_state.time_from_start, end_state,
       time_now + start_state.time_from_start + t, expected_state);
@@ -274,7 +274,7 @@ TEST(TestTrajectory, interpolation_pos_vel_accel) {
 
   // sample at end_time
   {
-    traj.interpolate_between_points(
+    joint_trajectory_controller::Trajectory::interpolate_between_points(
       time_now + start_state.time_from_start, start_state,
       time_now + end_state.time_from_start, end_state,
       time_now + end_state.time_from_start, expected_state);
