@@ -120,7 +120,7 @@ JointStateController::update()
     return controller_interface::return_type::ERROR;
   }
 
-  joint_state_msg_.header.stamp = rclcpp::Clock().now();
+  joint_state_msg_.header.stamp = lifecycle_node_->get_clock()->now(); 
   size_t i = 0;
   for (auto joint_state_handle : registered_joint_handles_) {
     joint_state_msg_.position[i] = joint_state_handle->get_position();
