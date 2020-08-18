@@ -72,7 +72,7 @@ public:
   *    start_segment_itr = iterator before the sampled point, end_segment_itr = iterator after start_segment_itr
   * - Sampling after entire trajectory:
   *    start_segment_itr = --end(), end_segment_itr = end()
-  * - Sampling empty msg:
+  * - Sampling empty msg or before the time given in set_point_before_trajectory_msg()
   *    return false
   */
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
@@ -82,6 +82,32 @@ public:
     trajectory_msgs::msg::JointTrajectoryPoint & expected_state,
     TrajectoryPointConstIter & start_segment_itr,
     TrajectoryPointConstIter & end_segment_itr);
+
+  /**
+   * Do interpolation between 2 states given a time in between their respective timestamps
+   *
+   * The start and end states need not necessarily be specified all the way to the acceleration level:
+   * - If only \b positions are specified, linear interpolation will be used.
+   * - If \b positions and \b velocities are specified, a cubic spline will be used.
+   * - If \b positions, \b velocities and \b accelerations are specified, a quintic spline will be used.
+   *
+   * If start and end states have different specifications
+   * (eg. start is position-only, end is position-velocity), the lowest common specification will be used
+   * (position-only in the example).
+   *
+   * \param[in] time_a Time at which the segment state equals \p state_a.
+   * \param[in] state_a State at \p time_a.
+   * \param[in] time_b Time at which the segment state equals \p state_b.
+   * \param[in] state_b State at time \p time_b.
+   * \param[in] sample_time The time to sample, between time_a and time_b.
+   * \param[out] output The state at \p sample_time.
+   */
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
+  void interpolate_between_points(
+    const rclcpp::Time & time_a, const trajectory_msgs::msg::JointTrajectoryPoint & state_a,
+    const rclcpp::Time & time_b, const trajectory_msgs::msg::JointTrajectoryPoint & state_b,
+    const rclcpp::Time & sample_time,
+    trajectory_msgs::msg::JointTrajectoryPoint & output);
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   TrajectoryPointConstIter

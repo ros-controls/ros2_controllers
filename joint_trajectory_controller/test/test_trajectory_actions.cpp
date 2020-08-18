@@ -85,6 +85,10 @@ protected:
     rclcpp::Parameter operation_mode_parameters("write_op_modes", op_mode_);
     traj_lifecycle_node_->set_parameter(operation_mode_parameters);
 
+    // ignore velocity tolerances for this test since they arent commited in test_robot->write()
+    rclcpp::Parameter stopped_velocity_parameters("constraints.stopped_velocity_tolerance", 0.0);
+    traj_lifecycle_node_->set_parameter(stopped_velocity_parameters);
+
     goal_options_.goal_response_callback =
       std::bind(&TestTrajectoryActions::common_goal_response, this, _1);
     goal_options_.result_callback =
@@ -270,7 +274,7 @@ TEST_F(TestTrajectoryActions, test_success_single_point_sendgoal) {
   {
     std::vector<JointTrajectoryPoint> points;
     JointTrajectoryPoint point;
-    point.time_from_start = rclcpp::Duration::from_seconds(0.0);  // start asap
+    point.time_from_start = rclcpp::Duration::from_seconds(0.5);
     point.positions.resize(joint_names_.size());
 
     point.positions[0] = 1.0;
@@ -352,7 +356,7 @@ TEST_F(TestTrajectoryActions, test_goal_tolerances_single_point_success) {
   {
     std::vector<JointTrajectoryPoint> points;
     JointTrajectoryPoint point;
-    point.time_from_start = rclcpp::Duration::from_seconds(0.0);  // start asap
+    point.time_from_start = rclcpp::Duration::from_seconds(0.5);
     point.positions.resize(joint_names_.size());
 
     point.positions[0] = 1.0;
