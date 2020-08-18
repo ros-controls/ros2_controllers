@@ -102,7 +102,24 @@ CallbackReturn ForwardCommandController::on_deactivate(
 
 controller_interface::return_type ForwardCommandController::update()
 {
-  return controller_interface::return_type::ERROR;
+  /// @todo add logging messages with reported error cause
+
+  auto joint_commands = rt_command_ptr_.readFromRT();
+
+  if (!joint_commands) {
+    return controller_interface::return_type::ERROR;
+  }
+
+  const auto joint_num = (*joint_commands)->data.size();
+  if (joint_num != joint_handles_.size()) {
+    return controller_interface::return_type::ERROR;
+  }
+
+  for (auto index = 0ul; index < joint_num; ++index) {
+    joint_handles_[index].set_value((*joint_commands)->data[index]);
+  }
+
+  return controller_interface::return_type::SUCCESS;
 }
 
 }  // namespace forward_command_controller
