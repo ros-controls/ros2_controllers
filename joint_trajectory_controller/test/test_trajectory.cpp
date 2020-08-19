@@ -192,7 +192,6 @@ TEST(TestTrajectory, interpolation_pos_vel) {
   rclcpp::Time time_now(0);
 
   trajectory_msgs::msg::JointTrajectoryPoint expected_state;
-  joint_trajectory_controller::TrajectoryPointConstIter start, end;
 
   // sample at start_time
   {
@@ -249,7 +248,6 @@ TEST(TestTrajectory, interpolation_pos_vel_accel) {
   rclcpp::Time time_now(0);
 
   trajectory_msgs::msg::JointTrajectoryPoint expected_state;
-  joint_trajectory_controller::TrajectoryPointConstIter start, end;
 
   // sample at start_time
   {

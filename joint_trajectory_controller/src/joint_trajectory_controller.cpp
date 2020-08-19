@@ -323,7 +323,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
   // subscriber call back
   // non realtime
   // TODO(karsten): check if traj msg and point time are valid
-  auto callback = [this, &logger](const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg)
+  auto callback = [this](const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg)
     -> void
     {
       if (!validate_trajectory_msg(*msg)) {
