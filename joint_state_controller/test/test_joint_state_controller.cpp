@@ -216,8 +216,8 @@ TEST_F(JointStateControllerTest, JointStatePublishTest)
   const size_t NUM_JOINTS = 3;
   ASSERT_EQ(joint_state_msg.position.size(), NUM_JOINTS);
   ASSERT_EQ(joint_state_msg.position[0], 1.1);
-  ASSERT_EQ(joint_state_msg.position[1], 2.2);
-  ASSERT_EQ(joint_state_msg.position[2], 3.3);
+  ASSERT_EQ(joint_state_msg.position[1], 2.1);
+  ASSERT_EQ(joint_state_msg.position[2], 3.1);
 }
 
 TEST_F(JointStateControllerTest, DynamicJointStatePublishTest)
@@ -255,6 +255,6 @@ TEST_F(JointStateControllerTest, DynamicJointStatePublishTest)
   const size_t NUM_JOINTS = 3;
   ASSERT_EQ(dynamic_joint_state_msg.joint_names.size(), NUM_JOINTS);
   ASSERT_EQ(dynamic_joint_state_msg.interface_values[0].values[0], 1.1);
-  ASSERT_EQ(dynamic_joint_state_msg.interface_values[1].values[0], 2.2);
-  ASSERT_EQ(dynamic_joint_state_msg.interface_values[2].values[0], 3.3);
+  ASSERT_EQ(dynamic_joint_state_msg.interface_values[1].values[0], 2.1);
+  ASSERT_EQ(dynamic_joint_state_msg.interface_values[2].values[0], 3.1);
 }
