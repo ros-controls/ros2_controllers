@@ -492,10 +492,6 @@ bool DiffDriveController::reset()
 {
   odometry_.resetOdometry();
 
-  // release the old queue
-  std::queue<Twist> empty;
-  std::swap(previous_commands_, empty);
-
   registered_left_wheel_handles_.clear();
   registered_right_wheel_handles_.clear();
   registered_operation_mode_handles_.clear();

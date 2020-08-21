@@ -53,7 +53,7 @@ public:
 
     op_handle_ = hardware_interface::OperationModeHandle("op_status", &op_status_);
     ret = register_operation_mode_handle(&op_handle_);
-    if (ret != hardware_interface::HW_RET_OK) {
+    if (ret != hardware_interface::return_type::OK) {
       RCLCPP_WARN(node_->get_logger(), "Cannot register operation handle: op_status");
       return ret;
     }
@@ -65,20 +65,20 @@ public:
       js_handle_[i] =
         hardware_interface::JointStateHandle(joint_name_os.str(), &pos_[i], &vel_[i], &eff_[i]);
       ret = register_joint_state_handle(&js_handle_[i]);
-      if (ret != hardware_interface::HW_RET_OK) {
+      if (ret != hardware_interface::return_type::OK) {
         RCLCPP_WARN(node_->get_logger(), "Cannot register joint state handle: %s", js_handle_[i]);
         return ret;
       }
 
       jcmd_handle_[i] = hardware_interface::JointCommandHandle(joint_name_os.str(), &cmd_[i]);
       ret = register_joint_command_handle(&jcmd_handle_[i]);
-      if (ret != hardware_interface::HW_RET_OK) {
+      if (ret != hardware_interface::return_type::OK) {
         RCLCPP_WARN(
           node_->get_logger(), "Cannot register joint command handle: %s", jcmd_handle_[i]);
         return ret;
       }
     }
-    return hardware_interface::HW_RET_OK;
+    return hardware_interface::return_type::OK;
   }
 
   [[nodiscard]] rclcpp::Duration get_period() const {return period_;}
@@ -97,7 +97,7 @@ public:
       std::fill_n(vel_, NUM_JOINTS, std::numeric_limits<double>::quiet_NaN());
     }
 
-    return hardware_interface::HW_RET_OK;
+    return hardware_interface::return_type::OK;
   }
 
   hardware_interface::hardware_interface_ret_t write() override
@@ -110,7 +110,7 @@ public:
     os << cmd_[NUM_JOINTS - 1];
 
     RCLCPP_DEBUG_STREAM(node_->get_logger(), "Commands for joints: " << os.str());
-    return hardware_interface::HW_RET_OK;
+    return hardware_interface::return_type::OK;
   }
 
   rclcpp::Node::SharedPtr & get_node() {return node_;}
@@ -199,7 +199,7 @@ int diffbot_main_runner(int argc, char * const * argv)
 
   // Initialize Diffbot RobotHardware
   auto robot = std::make_shared<Diffbot<NUM_JOINTS>>();
-  if (robot->init() != hardware_interface::HW_RET_OK) {
+  if (robot->init() != hardware_interface::return_type::OK) {
     RCLCPP_ERROR(logger, "Failed to initialize Diffbot");
     return EXIT_FAILURE;
   }
@@ -222,11 +222,11 @@ int diffbot_main_runner(int argc, char * const * argv)
   ensure_sim_clock_is_active(ddc_node->get_clock(), ddc_node->get_logger());
 
   // Configure and activate controllers in ControllerManager
-  if (cm->configure() != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
+  if (cm->configure() != controller_interface::return_type::SUCCESS) {
     RCLCPP_ERROR(logger, "Failed to configure controllers.");
     return EXIT_FAILURE;
   }
-  if (cm->activate() != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
+  if (cm->activate() != controller_interface::return_type::SUCCESS) {
     RCLCPP_ERROR(logger, "Failed to activate controllers.");
     return EXIT_FAILURE;
   }
@@ -242,13 +242,13 @@ int diffbot_main_runner(int argc, char * const * argv)
   // Loop approximated to iterate once every single_loop_period.
   while (rclcpp::ok()) {
     auto begin = sys_clk.now();
-    if (robot->read() != hardware_interface::HW_RET_OK) {
+    if (robot->read() != hardware_interface::return_type::OK) {
       RCLCPP_WARN(logger, "Diffbot failed to read.");
     }
-    if (cm->update() != controller_interface::CONTROLLER_INTERFACE_RET_SUCCESS) {
+    if (cm->update() != controller_interface::return_type::SUCCESS) {
       RCLCPP_WARN(logger, "Controller manager failed to update.");
     }
-    if (robot->write() != hardware_interface::HW_RET_OK) {
+    if (robot->write() != hardware_interface::return_type::OK) {
       RCLCPP_WARN(logger, "Diffbot failed to read.");
     }
     auto end = sys_clk.now();
