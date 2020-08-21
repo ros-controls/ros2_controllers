@@ -24,6 +24,7 @@
 #include "control_msgs/msg/joint_trajectory_controller_state.hpp"
 #include "control_msgs/action/follow_joint_trajectory.hpp"
 #include "controller_interface/controller_interface.hpp"
+#include "hardware_interface/joint_handle.hpp"
 #include "hardware_interface/operation_mode_handle.hpp"
 #include "joint_trajectory_controller/tolerances.hpp"
 #include "joint_trajectory_controller/visibility_control.h"
@@ -44,8 +45,6 @@
 
 namespace hardware_interface
 {
-class JointCommandHandle;
-class JointStateHandle;
 class RobotHardware;
 }  // namespace hardware_interface
 namespace rclcpp_action
@@ -111,8 +110,9 @@ protected:
   std::vector<std::string> joint_names_;
   std::vector<std::string> write_op_names_;
 
-  std::vector<hardware_interface::JointCommandHandle *> registered_joint_cmd_handles_;
-  std::vector<const hardware_interface::JointStateHandle *> registered_joint_state_handles_;
+  std::vector<hardware_interface::JointHandle> joint_position_command_handles_;
+  std::vector<hardware_interface::JointHandle> joint_position_state_handles_;
+  std::vector<hardware_interface::JointHandle> joint_velocity_state_handles_;
   std::vector<hardware_interface::OperationModeHandle *> registered_operation_mode_handles_;
 
   // TODO(karsten1987): eventually activate and deactive subscriber directly when its supported
