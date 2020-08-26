@@ -1,0 +1,75 @@
+<?xml version="1.0"?>
+<robot name="robot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <!--
+  Robot model taken from http://wiki.ros.org/pr2_mechanism/Tutorials/SImple%20URDF-Controller%20Example
+  -->
+  <xacro:include filename="sphere_wheel.xacro"/>
+  <xacro:property name="deg_to_rad" value="0.01745329251994329577"/>
+
+  <!-- Constants for robot dimensions -->
+  <xacro:property name="width" value="0.5" /> <!-- Square dimensions (widthxwidth) of beams -->
+  <xacro:property name="wheel_radius" value="0.11" /> <!-- Link 1 -->
+  <xacro:property name="axel_offset" value="0.05" /> <!-- Space btw top of beam and the each joint -->
+
+  <!-- Links: inertial,visual,collision -->
+  <link name="base_link">
+    <inertial>
+      <!-- origin is relative -->
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="5"/>
+      <inertia ixx="5" ixy="0" ixz="0" iyy="5" iyz="0" izz="5"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <box size="${width} 0.1 0.1"/>
+      </geometry>
+    </visual>
+    <collision>
+      <!-- origin is relative -->
+      <origin xyz="0 0 0"/>
+      <geometry>
+        <box size="${width} 0.1 0.1"/>
+      </geometry>
+    </collision>
+  </link>
+
+
+  <link name="base_footprint">
+    <visual>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0"/>
+      <geometry>
+        <sphere radius="0.00000001"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="base_footprint_joint" type="fixed">
+    <origin xyz="0 0 ${wheel_radius}" rpy="0 0 0"/>
+    <child link="base_link"/>
+    <parent link="base_footprint"/>
+  </joint>
+
+
+  <!-- Wheels -->
+  <xacro:sphere_wheel name="wheel_0" parent="base" radius="${wheel_radius}">
+    <origin xyz="${width/2+axel_offset} 0 0" rpy="${-90 * deg_to_rad} 0 0"/>
+  </xacro:sphere_wheel>
+  <xacro:sphere_wheel name="wheel_1" parent="base" radius="${wheel_radius}">
+    <origin xyz="${-width/2+axel_offset} 0 0" rpy="${-90 * deg_to_rad} 0 0"/>
+  </xacro:sphere_wheel>
+
+
+  <!-- Colour -->
+  <gazebo reference="base_link">
+    <material>Gazebo/Green</material>
+  </gazebo>
+
+  <gazebo reference="base_footprint">
+    <material>Gazebo/Purple</material>
+  </gazebo>
+
+</robot>
