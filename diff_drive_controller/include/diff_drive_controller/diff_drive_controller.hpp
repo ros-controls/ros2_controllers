@@ -19,7 +19,6 @@
 #ifndef DIFF_DRIVE_CONTROLLER__DIFF_DRIVE_CONTROLLER_HPP_
 #define DIFF_DRIVE_CONTROLLER__DIFF_DRIVE_CONTROLLER_HPP_
 
-#include <tf2/LinearMath/Quaternion.h>
 #include <chrono>
 #include <cmath>
 #include <memory>
@@ -44,6 +43,7 @@
 #include "realtime_tools/realtime_buffer.h"
 #include "realtime_tools/realtime_publisher.h"
 #include "sensor_msgs/msg/joint_state.hpp"
+#include "tf2/LinearMath/Quaternion.h"
 #include "tf2_msgs/msg/tf_message.hpp"
 
 namespace diff_drive_controller
@@ -226,8 +226,8 @@ protected:
   std::vector<double> vel_left_actual_previous_;
   std::vector<double> vel_right_actual_previous_;
   /// Previous desired velocities
-  double vel_left_desired_previous_;
-  double vel_right_desired_previous_;
+  double vel_left_desired_previous_ = 0.0;
+  double vel_right_desired_previous_ = 0.0;
 
   // Flag for using open loop calculation for odometry
   bool open_loop_ = false;

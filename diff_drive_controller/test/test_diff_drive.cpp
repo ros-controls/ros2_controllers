@@ -12,14 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <gtest/gtest.h>
-#include <tf2_ros/transform_listener.h>
+#include "tf2_ros/transform_listener.h"
 
 #include "test_common.hpp"
-
-namespace
-{
-}  // namespace
 
 TEST_F(DiffDriveControllerTest, test_forward)
 {

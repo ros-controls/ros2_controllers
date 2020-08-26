@@ -11,13 +11,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "test_common.hpp"
-
-#include <gtest/gtest.h>
-#include <std_srvs/srv/empty.hpp>
 
 #include <limits>
 #include <memory>
+
+#include "std_srvs/srv/empty.hpp"
+
+#include "test_common.hpp"
 
 TEST_F(DiffDriveControllerTest, test_nan)
 {

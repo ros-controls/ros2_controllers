@@ -11,9 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "test_common.hpp"
 
-#include <gtest/gtest.h>
+#include "test_common.hpp"
 
 // TEST CASES
 TEST_F(DiffDriveControllerTest, test_pub_cmd_vel_out_topic)

@@ -27,11 +27,8 @@
 #include <limits>
 
 #include "diff_drive_controller/urdf_util.hpp"
-#include "tf2/LinearMath/Quaternion.h"
 #include "lifecycle_msgs/msg/state.hpp"
-
-
-// namespace urdf_util
+#include "tf2/LinearMath/Quaternion.h"
 
 namespace
 {

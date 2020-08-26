@@ -11,10 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "test_common.hpp"
 
-#include <gtest/gtest.h>
-#include <tf2_ros/transform_listener.h>
+#include "tf2_ros/transform_listener.h"
+
+#include "test_common.hpp"
 
 // TEST CASES
 TEST_F(DiffDriveControllerTest, test_no_odom_frame)
