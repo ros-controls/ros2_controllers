@@ -1,0 +1,7 @@
+<library path="position_controllers">
+  <class name="position_controllers/JointPositionController" type="position_controllers::JointPositionController" base_class_type="controller_interface::ControllerInterface">
+    <description>
+      The joint position controller commands a group of joints through the position interface
+    </description>
+  </class>
+</library>
