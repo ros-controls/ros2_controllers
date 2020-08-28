@@ -25,6 +25,10 @@ class JointPositionController : public forward_command_controller::ForwardComman
 public:
   POSITION_CONTROLLERS_PUBLIC
   JointPositionController();
+
+  POSITION_CONTROLLERS_PUBLIC
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+  on_configure(const rclcpp_lifecycle::State & previous_state) override;
 };
 
 }  // namespace position_controllers

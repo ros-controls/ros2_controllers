@@ -27,6 +27,13 @@ JointPositionController::JointPositionController()
   logger_name_ = kJPCLoggerName;
 }
 
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn JointPositionController::
+on_configure(const rclcpp_lifecycle::State & previous_state)
+{
+  lifecycle_node_->declare_parameter("interface_name", "position_command");
+  return ForwardCommandController::on_configure(previous_state);
+}
+
 }  // namespace position_controllers
 
 #include "pluginlib/class_list_macros.hpp"
