@@ -11,6 +11,7 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>forward_command_controller</depend>
+  <depend>rclcpp</depend>
 
   <build_depend>pluginlib</build_depend>
 

@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #include "position_controllers/joint_position_controller.hpp"
+#include "rclcpp/logging.hpp"
+#include "rclcpp/parameter.hpp"
 
 namespace
 {
@@ -21,16 +23,27 @@ constexpr auto kJPCLoggerName = "joint position controller";
 
 namespace position_controllers
 {
+using CallbackReturn = JointPositionController::CallbackReturn;
+
 JointPositionController::JointPositionController()
 : forward_command_controller::ForwardCommandController()
 {
   logger_name_ = kJPCLoggerName;
 }
 
-rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn JointPositionController::
-on_configure(const rclcpp_lifecycle::State & previous_state)
+CallbackReturn JointPositionController::on_configure(const rclcpp_lifecycle::State & previous_state)
 {
-  lifecycle_node_->declare_parameter("interface_name", "position_command");
+  rclcpp::Parameter interface_param;
+  if (!lifecycle_node_->get_parameter("interface_name", interface_param)) {
+    lifecycle_node_->declare_parameter("interface_name", "position_command");
+  } else {
+    if (interface_param.as_string() != "position_command") {
+      RCLCPP_ERROR_STREAM(
+        rclcpp::get_logger(
+          kJPCLoggerName), "'interface_name' already set with an invalid value");
+      return CallbackReturn::ERROR;
+    }
+  }
   return ForwardCommandController::on_configure(previous_state);
 }
 

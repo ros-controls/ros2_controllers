@@ -14,6 +14,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(forward_command_controller REQUIRED)
 find_package(pluginlib REQUIRED)
+find_package(rclcpp REQUIRED)
 
 add_library(position_controllers
   SHARED
@@ -23,6 +24,7 @@ target_include_directories(position_controllers PRIVATE include)
 ament_target_dependencies(position_controllers
   forward_command_controller
   pluginlib
+  rclcpp
 )
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
@@ -61,17 +63,17 @@ if(BUILD_TESTING)
     test_robot_hardware
   )
 
-#  ament_add_gtest(
-#    test_position_controllers
-#    test/test_position_controllers.cpp
-#  )
-#  target_include_directories(test_position_controllers PRIVATE include)
-#  target_link_libraries(test_position_controllers
-#    forward_command_controller
-#  )
-#  ament_target_dependencies(test_position_controllers
-#    test_robot_hardware
-#  )
+  ament_add_gtest(
+    test_joint_position_controller
+    test/test_joint_position_controller.cpp
+  )
+  target_include_directories(test_joint_position_controller PRIVATE include)
+  target_link_libraries(test_joint_position_controller
+    position_controllers
+  )
+  ament_target_dependencies(test_joint_position_controller
+    test_robot_hardware
+  )
 endif()
 
 ament_export_dependencies(
