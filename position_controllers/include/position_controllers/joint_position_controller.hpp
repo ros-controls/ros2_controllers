@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef POSITION_CONTROLLERS__POSITION_CONTROLLERS_HPP_
-#define POSITION_CONTROLLERS__POSITION_CONTROLLERS_HPP_
+#ifndef POSITION_CONTROLLERS__JOINT_POSITION_CONTROLLER_HPP_
+#define POSITION_CONTROLLERS__JOINT_POSITION_CONTROLLER_HPP_
 
 #include "forward_command_controller/forward_command_controller.hpp"
 #include "position_controllers/visibility_control.h"
@@ -33,4 +33,4 @@ public:
 
 }  // namespace position_controllers
 
-#endif  // POSITION_CONTROLLERS__POSITION_CONTROLLERS_HPP_
+#endif  // POSITION_CONTROLLERS__JOINT_POSITION_CONTROLLER_HPP_

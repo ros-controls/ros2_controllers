@@ -16,7 +16,7 @@
 
 namespace
 {
-const std::string kJPCLoggerName = "joint position controller";
+constexpr auto kJPCLoggerName = "joint position controller";
 }
 
 namespace position_controllers

@@ -43,36 +43,36 @@ install(
   LIBRARY DESTINATION lib
 )
 
-# if(BUILD_TESTING)
-#   find_package(ament_cmake_gtest REQUIRED)
-#   find_package(ament_lint_auto REQUIRED)
-#   find_package(controller_manager REQUIRED)
-#   find_package(test_robot_hardware REQUIRED)
-# 
-#   ament_lint_auto_find_test_dependencies()
-# 
-#   ament_add_gtest(
-#     test_load_position_controllers
-#     test/test_load_position_controllers.cpp
-#   )
-#   target_include_directories(test_load_position_controllers PRIVATE include)
-#   ament_target_dependencies(test_load_position_controllers
-#     controller_manager
-#     test_robot_hardware
-#   )
-# 
-#   ament_add_gtest(
-#     test_position_controllers
-#     test/test_position_controllers.cpp
-#   )
-#   target_include_directories(test_position_controllers PRIVATE include)
-#   target_link_libraries(test_position_controllers
-#     forward_command_controller
-#   )
-#   ament_target_dependencies(test_position_controllers
-#     test_robot_hardware
-#   )
-# endif()
+if(BUILD_TESTING)
+  find_package(ament_cmake_gtest REQUIRED)
+  find_package(ament_lint_auto REQUIRED)
+  find_package(controller_manager REQUIRED)
+  find_package(test_robot_hardware REQUIRED)
+
+  ament_lint_auto_find_test_dependencies()
+
+  ament_add_gtest(
+    test_load_joint_position_controller
+    test/test_load_joint_position_controller.cpp
+  )
+  target_include_directories(test_load_joint_position_controller PRIVATE include)
+  ament_target_dependencies(test_load_joint_position_controller
+    controller_manager
+    test_robot_hardware
+  )
+
+#  ament_add_gtest(
+#    test_position_controllers
+#    test/test_position_controllers.cpp
+#  )
+#  target_include_directories(test_position_controllers PRIVATE include)
+#  target_link_libraries(test_position_controllers
+#    forward_command_controller
+#  )
+#  ament_target_dependencies(test_position_controllers
+#    test_robot_hardware
+#  )
+endif()
 
 ament_export_dependencies(
   forward_command_controller
