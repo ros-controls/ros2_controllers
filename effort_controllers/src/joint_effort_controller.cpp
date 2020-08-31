@@ -47,6 +47,19 @@ CallbackReturn JointEffortController::on_configure(const rclcpp_lifecycle::State
   return ForwardCommandController::on_configure(previous_state);
 }
 
+CallbackReturn JointEffortController::on_deactivate(
+  const rclcpp_lifecycle::State & previous_state)
+{
+  auto ret = ForwardCommandController::on_deactivate(previous_state);
+
+  // stop all joints
+  for (auto & joint_handle : joint_cmd_handles_) {
+    joint_handle.set_value(0.0);
+  }
+
+  return ret;
+}
+
 }  // namespace effort_controllers
 
 #include "pluginlib/class_list_macros.hpp"

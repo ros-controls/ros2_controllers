@@ -29,6 +29,7 @@ class FriendJointEffortController : public effort_controllers::JointEffortContro
 {
   FRIEND_TEST(JointEffortControllerTest, ConfigureParamsTest);
   FRIEND_TEST(JointEffortControllerTest, CheckParamsTest);
+  FRIEND_TEST(JointEffortControllerTest, StopJointsOnDeactivateTest);
 };
 
 class JointEffortControllerTest : public ::testing::Test

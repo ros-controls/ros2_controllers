@@ -40,6 +40,10 @@ public:
   EFFORT_CONTROLLERS_PUBLIC
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
   on_configure(const rclcpp_lifecycle::State & previous_state) override;
+
+  EFFORT_CONTROLLERS_PUBLIC
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+  on_deactivate(const rclcpp_lifecycle::State & previous_state) override;
 };
 
 }  // namespace effort_controllers

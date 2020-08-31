@@ -145,3 +145,29 @@ TEST_F(JointEffortControllerTest, CheckParamsTest)
   ASSERT_EQ(controller_->joint_cmd_handles_[0].get_interface_name(), "effort_command");
   ASSERT_EQ(controller_->joint_cmd_handles_[1].get_interface_name(), "effort_command");
 }
+
+TEST_F(JointEffortControllerTest, StopJointsOnDeactivateTest)
+{
+  SetUpController();
+  SetUpHandles();
+
+  controller_->lifecycle_node_->declare_parameter(
+    "joints",
+    rclcpp::ParameterValue(test_robot_->joint_names));
+
+  // configure successful
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+
+  // check joint commands are still the default ones
+  ASSERT_EQ(joint1_eff_cmd_handle_->get_value(), 1.3);
+  ASSERT_EQ(joint2_eff_cmd_handle_->get_value(), 2.3);
+  ASSERT_EQ(joint3_eff_cmd_handle_->get_value(), 3.3);
+
+  // stop the controller
+  ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+
+  // check joint commands are now zero
+  ASSERT_EQ(joint1_eff_cmd_handle_->get_value(), 0.0);
+  ASSERT_EQ(joint2_eff_cmd_handle_->get_value(), 0.0);
+  ASSERT_EQ(joint3_eff_cmd_handle_->get_value(), 0.0);
+}
