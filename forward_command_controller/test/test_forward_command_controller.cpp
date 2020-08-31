@@ -90,7 +90,7 @@ void ForwardCommandControllerTest::SetUpHandles()
 TEST_F(ForwardCommandControllerTest, ConfigureParamsTest)
 {
   // joint handles not initialized yet
-  ASSERT_TRUE(controller_->joint_handles_.empty());
+  ASSERT_TRUE(controller_->joint_cmd_handles_.empty());
 
   SetUpController();
 
@@ -124,13 +124,13 @@ TEST_F(ForwardCommandControllerTest, ConfigureParamsTest)
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
   // joint handles initialized
-  ASSERT_EQ(controller_->joint_handles_.size(), 2ul);
+  ASSERT_EQ(controller_->joint_cmd_handles_.size(), 2ul);
 }
 
 TEST_F(ForwardCommandControllerTest, ConfigureJointsChecksTest)
 {
   // joint handles not initialized yet
-  ASSERT_TRUE(controller_->joint_handles_.empty());
+  ASSERT_TRUE(controller_->joint_cmd_handles_.empty());
 
   SetUpController();
 
@@ -160,7 +160,7 @@ TEST_F(ForwardCommandControllerTest, ConfigureJointsChecksTest)
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
   // joint handles initialized
-  ASSERT_EQ(controller_->joint_handles_.size(), 2ul);
+  ASSERT_EQ(controller_->joint_cmd_handles_.size(), 2ul);
 }
 
 TEST_F(ForwardCommandControllerTest, CommandSuccessTest)

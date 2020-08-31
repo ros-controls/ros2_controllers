@@ -30,7 +30,7 @@ using CallbackReturn = ForwardCommandController::CallbackReturn;
 
 ForwardCommandController::ForwardCommandController()
 : controller_interface::ControllerInterface(),
-  joint_handles_(),
+  joint_cmd_handles_(),
   rt_command_ptr_(nullptr),
   joints_command_subscriber_(nullptr)
 {}
@@ -83,14 +83,14 @@ CallbackReturn ForwardCommandController::on_configure(
         hardware_interface::hardware_interface_ret_t::ERROR)
       {
         // uppon error, clear any previously requested handles
-        joint_handles_.clear();
+        joint_cmd_handles_.clear();
 
         RCLCPP_ERROR_STREAM(
           rclcpp::get_logger(
             kFCCLoggerName), "could not get handle for joint '" << joint_name << "'");
         return CallbackReturn::ERROR;
       }
-      joint_handles_.push_back(std::move(joint_handle));
+      joint_cmd_handles_.emplace_back(std::move(joint_handle));
     }
   } else {
     RCLCPP_ERROR_STREAM(
@@ -134,7 +134,7 @@ controller_interface::return_type ForwardCommandController::update()
   }
 
   const auto joint_num = (*joint_commands)->data.size();
-  if (joint_num != joint_handles_.size()) {
+  if (joint_num != joint_cmd_handles_.size()) {
     RCLCPP_ERROR_STREAM(
       rclcpp::get_logger(
         kFCCLoggerName), "command size does not match number of joints");
@@ -142,7 +142,7 @@ controller_interface::return_type ForwardCommandController::update()
   }
 
   for (auto index = 0ul; index < joint_num; ++index) {
-    joint_handles_[index].set_value((*joint_commands)->data[index]);
+    joint_cmd_handles_[index].set_value((*joint_commands)->data[index]);
   }
 
   return controller_interface::return_type::SUCCESS;
