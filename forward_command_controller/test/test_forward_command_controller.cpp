@@ -224,3 +224,24 @@ TEST_F(ForwardCommandControllerTest, WrongCommandCheckTest)
   ASSERT_EQ(joint2_pos_cmd_handle_->get_value(), 2.1);
   ASSERT_EQ(joint3_pos_cmd_handle_->get_value(), 3.1);
 }
+
+TEST_F(ForwardCommandControllerTest, NoCommandCheckTest)
+{
+  SetUpController();
+  SetUpHandles();
+
+  // configure controller
+  controller_->lifecycle_node_->declare_parameter(
+    "joints",
+    rclcpp::ParameterValue(std::vector<std::string>{"joint1", "joint2", "joint3"}));
+  controller_->lifecycle_node_->declare_parameter("interface_name", "position_command");
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+
+  // update successful, no command received yet
+  ASSERT_EQ(controller_->update(), controller_interface::return_type::SUCCESS);
+
+  // check joint commands are still the default ones
+  ASSERT_EQ(joint1_pos_cmd_handle_->get_value(), 1.1);
+  ASSERT_EQ(joint2_pos_cmd_handle_->get_value(), 2.1);
+  ASSERT_EQ(joint3_pos_cmd_handle_->get_value(), 3.1);
+}

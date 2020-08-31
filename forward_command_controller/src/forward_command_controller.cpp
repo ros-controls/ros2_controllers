@@ -137,9 +137,10 @@ controller_interface::return_type ForwardCommandController::update()
 
   const auto joint_num = (*joint_commands)->data.size();
   if (joint_num != joint_cmd_handles_.size()) {
-    RCLCPP_ERROR_STREAM(
+    RCLCPP_ERROR_STREAM_THROTTLE(
       rclcpp::get_logger(
-        logger_name_), "command size does not match number of joints");
+        logger_name_),
+      *lifecycle_node_->get_clock(), 1000, "command size does not match number of joints");
     return controller_interface::return_type::ERROR;
   }
 
