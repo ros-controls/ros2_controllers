@@ -29,6 +29,7 @@ class FriendJointVelocityController : public velocity_controllers::JointVelocity
 {
   FRIEND_TEST(JointVelocityControllerTest, ConfigureParamsTest);
   FRIEND_TEST(JointVelocityControllerTest, CheckParamsTest);
+  FRIEND_TEST(JointVelocityControllerTest, StopJointsOnDeactivateTest);
 };
 
 class JointVelocityControllerTest : public ::testing::Test

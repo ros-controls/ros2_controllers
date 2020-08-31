@@ -145,3 +145,29 @@ TEST_F(JointVelocityControllerTest, CheckParamsTest)
   ASSERT_EQ(controller_->joint_cmd_handles_[0].get_interface_name(), "velocity_command");
   ASSERT_EQ(controller_->joint_cmd_handles_[1].get_interface_name(), "velocity_command");
 }
+
+TEST_F(JointVelocityControllerTest, StopJointsOnDeactivateTest)
+{
+  SetUpController();
+  SetUpHandles();
+
+  controller_->lifecycle_node_->declare_parameter(
+    "joints",
+    rclcpp::ParameterValue(test_robot_->joint_names));
+
+  // configure successful
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+
+  // check joint commands are still the default ones
+  ASSERT_EQ(joint1_vel_cmd_handle_->get_value(), 1.2);
+  ASSERT_EQ(joint2_vel_cmd_handle_->get_value(), 2.2);
+  ASSERT_EQ(joint3_vel_cmd_handle_->get_value(), 3.2);
+
+  // stop the controller
+  ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+
+  // check joint commands are now zero
+  ASSERT_EQ(joint1_vel_cmd_handle_->get_value(), 0.0);
+  ASSERT_EQ(joint2_vel_cmd_handle_->get_value(), 0.0);
+  ASSERT_EQ(joint3_vel_cmd_handle_->get_value(), 0.0);
+}
