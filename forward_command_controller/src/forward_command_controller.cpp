@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <algorithm>
+#include <string>
 #include <utility>
 
 #include "forward_command_controller/forward_command_controller.hpp"
@@ -32,7 +33,8 @@ ForwardCommandController::ForwardCommandController()
 : controller_interface::ControllerInterface(),
   joint_cmd_handles_(),
   rt_command_ptr_(nullptr),
-  joints_command_subscriber_(nullptr)
+  joints_command_subscriber_(nullptr),
+  logger_name_(kFCCLoggerName)
 {}
 
 CallbackReturn ForwardCommandController::on_configure(
@@ -40,23 +42,23 @@ CallbackReturn ForwardCommandController::on_configure(
 {
   rclcpp::Parameter joints_param, interface_param;
   if (!lifecycle_node_->get_parameter("joints", joints_param)) {
-    RCLCPP_ERROR_STREAM(rclcpp::get_logger(kFCCLoggerName), "'joints' parameter not set");
+    RCLCPP_ERROR_STREAM(rclcpp::get_logger(logger_name_), "'joints' parameter not set");
     return CallbackReturn::ERROR;
   }
   if (!lifecycle_node_->get_parameter("interface_name", interface_param)) {
-    RCLCPP_ERROR_STREAM(rclcpp::get_logger(kFCCLoggerName), "'interface_name' parameter not set");
+    RCLCPP_ERROR_STREAM(rclcpp::get_logger(logger_name_), "'interface_name' parameter not set");
     return CallbackReturn::ERROR;
   }
 
   auto joint_names = joints_param.as_string_array();
   if (joint_names.empty()) {
-    RCLCPP_ERROR_STREAM(rclcpp::get_logger(kFCCLoggerName), "'joints' is empty");
+    RCLCPP_ERROR_STREAM(rclcpp::get_logger(logger_name_), "'joints' is empty");
     return CallbackReturn::ERROR;
   }
 
   auto interface_name = interface_param.as_string();
   if (interface_name.empty()) {
-    RCLCPP_ERROR_STREAM(rclcpp::get_logger(kFCCLoggerName), "'interface_name' is empty");
+    RCLCPP_ERROR_STREAM(rclcpp::get_logger(logger_name_), "'interface_name' is empty");
     return CallbackReturn::ERROR;
   }
 
@@ -71,7 +73,7 @@ CallbackReturn ForwardCommandController::on_configure(
       {
         RCLCPP_ERROR_STREAM(
           rclcpp::get_logger(
-            kFCCLoggerName), "joint '" << joint_name << "' not registered");
+            logger_name_), "joint '" << joint_name << "' not registered");
         return CallbackReturn::ERROR;
       }
     }
@@ -87,7 +89,7 @@ CallbackReturn ForwardCommandController::on_configure(
 
         RCLCPP_ERROR_STREAM(
           rclcpp::get_logger(
-            kFCCLoggerName), "could not get handle for joint '" << joint_name << "'");
+            logger_name_), "could not get handle for joint '" << joint_name << "'");
         return CallbackReturn::ERROR;
       }
       joint_cmd_handles_.emplace_back(std::move(joint_handle));
@@ -95,7 +97,7 @@ CallbackReturn ForwardCommandController::on_configure(
   } else {
     RCLCPP_ERROR_STREAM(
       rclcpp::get_logger(
-        kFCCLoggerName), "could not lock pointer to robot_hardware");
+        logger_name_), "could not lock pointer to robot_hardware");
     return CallbackReturn::ERROR;
   }
 
@@ -108,7 +110,7 @@ CallbackReturn ForwardCommandController::on_configure(
 
   RCLCPP_INFO_STREAM(
     rclcpp::get_logger(
-      kFCCLoggerName), "configure successful");
+      logger_name_), "configure successful");
   return CallbackReturn::SUCCESS;
 }
 
@@ -137,7 +139,7 @@ controller_interface::return_type ForwardCommandController::update()
   if (joint_num != joint_cmd_handles_.size()) {
     RCLCPP_ERROR_STREAM(
       rclcpp::get_logger(
-        kFCCLoggerName), "command size does not match number of joints");
+        logger_name_), "command size does not match number of joints");
     return controller_interface::return_type::ERROR;
   }
 

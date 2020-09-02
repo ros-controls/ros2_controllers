@@ -16,6 +16,7 @@
 #define FORWARD_COMMAND_CONTROLLER__FORWARD_COMMAND_CONTROLLER_HPP_
 
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "controller_interface/controller_interface.hpp"
@@ -57,6 +58,8 @@ protected:
   std::vector<hardware_interface::JointHandle> joint_cmd_handles_;
   realtime_tools::RealtimeBuffer<std::shared_ptr<CmdType>> rt_command_ptr_;
   rclcpp::Subscription<CmdType>::SharedPtr joints_command_subscriber_;
+
+  std::string logger_name_;
 };
 
 }  // namespace forward_command_controller
