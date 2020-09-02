@@ -30,6 +30,19 @@
 
 namespace forward_command_controller
 {
+
+/**
+ * \brief Forward command controller for a set of joints.
+ *
+ * This class forwards the command signal down to a set of joints
+ * on the specified interface.
+ *
+ * \param joints Names of the joints to control.
+ * \param interface_name Name of the interface to command.
+ *
+ * Subscribes to:
+ * - \b commands (std_msgs::msg::Float64MultiArray) : The commands to apply.
+ */
 class ForwardCommandController : public controller_interface::ControllerInterface
 {
 public:
