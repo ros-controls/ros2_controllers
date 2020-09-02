@@ -20,6 +20,17 @@
 
 namespace position_controllers
 {
+
+/**
+ * \brief Forward command controller for a set of position controlled joints (linear or angular).
+ *
+ * This class forwards the commanded positions down to a set of joints.
+ *
+ * \param joints Names of the joints to control.
+ *
+ * Subscribes to:
+ * - \b commands (std_msgs::msg::Float64MultiArray) : The position commands to apply.
+ */
 class JointPositionController : public forward_command_controller::ForwardCommandController
 {
 public:
