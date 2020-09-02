@@ -14,11 +14,18 @@
 
 #include "position_controllers/joint_position_controller.hpp"
 
+namespace
+{
+const std::string kJPCLoggerName = "joint position controller";
+}
+
 namespace position_controllers
 {
 JointPositionController::JointPositionController()
 : forward_command_controller::ForwardCommandController()
-{}
+{
+  logger_name_ = kJPCLoggerName;
+}
 
 }  // namespace position_controllers
 
