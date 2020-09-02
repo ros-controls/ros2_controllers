@@ -25,12 +25,27 @@
 #include "forward_command_controller/forward_command_controller.hpp"
 #include "hardware_interface/joint_handle.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
+#include "rclcpp/qos.hpp"
+#include "rclcpp/node.hpp"
+#include "rclcpp/subscription.hpp"
 #include "rclcpp/utilities.hpp"
+#include "rclcpp/wait_set.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "test_forward_command_controller.hpp"
 #include "test_robot_hardware/test_robot_hardware.hpp"
 
 using CallbackReturn = forward_command_controller::ForwardCommandController::CallbackReturn;
+
+namespace
+{
+rclcpp::WaitResultKind wait_for(rclcpp::SubscriptionBase::SharedPtr subscription)
+{
+  rclcpp::WaitSet wait_set;
+  wait_set.add_subscription(subscription);
+  const auto timeout = std::chrono::seconds(10);
+  return wait_set.wait(timeout).kind();
+}
+}
 
 void ForwardCommandControllerTest::SetUpTestCase()
 {
@@ -244,4 +259,48 @@ TEST_F(ForwardCommandControllerTest, NoCommandCheckTest)
   ASSERT_EQ(joint1_pos_cmd_handle_->get_value(), 1.1);
   ASSERT_EQ(joint2_pos_cmd_handle_->get_value(), 2.1);
   ASSERT_EQ(joint3_pos_cmd_handle_->get_value(), 3.1);
+}
+
+TEST_F(ForwardCommandControllerTest, CommandCallbackTest)
+{
+  SetUpController();
+  SetUpHandles();
+
+  controller_->lifecycle_node_->declare_parameter(
+    "joints",
+    rclcpp::ParameterValue(std::vector<std::string>{"joint1", "joint2", "joint3"}));
+  controller_->lifecycle_node_->declare_parameter("interface_name", "position_command");
+
+  // default values
+  ASSERT_EQ(joint1_pos_cmd_handle_->get_value(), 1.1);
+  ASSERT_EQ(joint2_pos_cmd_handle_->get_value(), 2.1);
+  ASSERT_EQ(joint3_pos_cmd_handle_->get_value(), 3.1);
+
+  auto node_state = controller_->get_lifecycle_node()->configure();
+  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
+
+  node_state = controller_->get_lifecycle_node()->activate();
+  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
+
+  // send a new command
+  rclcpp::Node test_node("test_node");
+  auto command_pub = test_node.create_publisher<std_msgs::msg::Float64MultiArray>(
+    "commands", rclcpp::SystemDefaultsQoS());
+  std_msgs::msg::Float64MultiArray command_msg;
+  command_msg.data = {10.0, 20.0, 30.0};
+  command_pub->publish(command_msg);
+
+  // wait for command message to be passed
+  ASSERT_EQ(wait_for(controller_->joints_command_subscriber_), rclcpp::WaitResultKind::Ready);
+
+  // process callbacks
+  rclcpp::spin_some(controller_->get_lifecycle_node()->get_node_base_interface());
+
+  // update successful
+  ASSERT_EQ(controller_->update(), controller_interface::return_type::SUCCESS);
+
+  // check command in handle was set
+  ASSERT_EQ(joint1_pos_cmd_handle_->get_value(), 10.0);
+  ASSERT_EQ(joint2_pos_cmd_handle_->get_value(), 20.0);
+  ASSERT_EQ(joint3_pos_cmd_handle_->get_value(), 30.0);
 }
