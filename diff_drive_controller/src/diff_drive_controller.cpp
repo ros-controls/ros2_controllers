@@ -29,6 +29,7 @@
 namespace
 {
 constexpr auto DEFAULT_COMMAND_TOPIC = "~/cmd_vel";
+constexpr auto DEFUALT_COMMAND_UNSTAMPED_TOPIC = "~/cmd_vel_unstamped";
 constexpr auto DEFAULT_COMMAND_OUT_TOPIC = "~/cmd_vel_out";
 constexpr auto DEFAULT_ODOMETRY_TOPIC = "/odom";
 constexpr auto DEFAULT_TRANSFORM_TOPIC = "/tf";
@@ -96,6 +97,7 @@ DiffDriveController::init(
   lifecycle_node_->declare_parameter<int>("cmd_vel_timeout", cmd_vel_timeout_.count());
   lifecycle_node_->declare_parameter<bool>("publish_limited_velocity", publish_limited_velocity_);
   lifecycle_node_->declare_parameter<int>("velocity_rolling_window_size", 10);
+  lifecycle_node_->declare_parameter<bool>("use_stamped_vel", use_stamped_vel_);
 
   lifecycle_node_->declare_parameter<bool>("linear.x.has_velocity_limits", false);
   lifecycle_node_->declare_parameter<bool>("linear.x.has_acceleration_limits", false);
@@ -302,6 +304,7 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
   cmd_vel_timeout_ =
     std::chrono::milliseconds{lifecycle_node_->get_parameter("cmd_vel_timeout").as_int()};
   publish_limited_velocity_ = lifecycle_node_->get_parameter("publish_limited_velocity").as_bool();
+  use_stamped_vel_ = lifecycle_node_->get_parameter("use_stamped_vel").as_bool();
 
   limiter_linear_ = SpeedLimiter(
     lifecycle_node_->get_parameter("linear.x.has_velocity_limits").as_bool(),
@@ -392,18 +395,36 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
   previous_commands_.emplace(*received_velocity_msg_ptr_);
 
   // initialize command subscriber
-  velocity_command_subscriber_ = lifecycle_node_->create_subscription<Twist>(
-    DEFAULT_COMMAND_TOPIC, rclcpp::SystemDefaultsQoS(), [this](
-      const std::shared_ptr<Twist> msg) -> void {
-      if (!subscriber_is_active_) {
-        RCLCPP_WARN(
-          lifecycle_node_->get_logger(),
-          "Can't accept new commands. subscriber is inactive");
-        return;
-      }
+  if (use_stamped_vel_) {
+    velocity_command_subscriber_ = lifecycle_node_->create_subscription<Twist>(
+      DEFAULT_COMMAND_TOPIC, rclcpp::SystemDefaultsQoS(), [this](
+        const std::shared_ptr<Twist> msg) -> void {
+        if (!subscriber_is_active_) {
+          RCLCPP_WARN(
+            lifecycle_node_->get_logger(),
+            "Can't accept new commands. subscriber is inactive");
+          return;
+        }
 
-      received_velocity_msg_ptr_ = std::move(msg);
-    });
+        received_velocity_msg_ptr_ = std::move(msg);
+      });
+  } else {
+    velocity_command_unstamped_subscriber_ =
+      lifecycle_node_->create_subscription<geometry_msgs::msg::Twist>(
+      DEFAULT_COMMAND_TOPIC, rclcpp::SystemDefaultsQoS(), [this](
+        const std::shared_ptr<geometry_msgs::msg::Twist> msg) -> void {
+        if (!subscriber_is_active_) {
+          RCLCPP_WARN(
+            lifecycle_node_->get_logger(),
+            "Can't accept new commands. subscriber is inactive");
+          return;
+        }
+        received_velocity_msg_ptr_->twist = *msg;
+        // Fake header
+        received_velocity_msg_ptr_->header.stamp = lifecycle_node_->get_clock()->now();
+      });
+  }
+
 
   // initialize odometry publisher and messasge
   odometry_publisher_ =
@@ -510,6 +531,7 @@ bool DiffDriveController::reset()
 
   subscriber_is_active_ = false;
   velocity_command_subscriber_.reset();
+  velocity_command_unstamped_subscriber_.reset();
 
   received_velocity_msg_ptr_.reset();
   is_halted = false;
