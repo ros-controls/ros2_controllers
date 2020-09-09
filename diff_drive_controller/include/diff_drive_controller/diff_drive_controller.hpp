@@ -141,6 +141,9 @@ protected:
 
   bool subscriber_is_active_ = false;
   rclcpp::Subscription<Twist>::SharedPtr velocity_command_subscriber_ = nullptr;
+  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr velocity_command_unstamped_subscriber_
+    =
+    nullptr;
 
   std::shared_ptr<Twist> received_velocity_msg_ptr_ = nullptr;
 
@@ -159,6 +162,7 @@ protected:
   rclcpp::Time previous_update_timestamp_{0};
 
   bool is_halted = false;
+  bool use_stamped_vel_ = true;
 
   bool reset();
   void halt();
