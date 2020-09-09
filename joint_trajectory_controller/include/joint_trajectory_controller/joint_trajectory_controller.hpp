@@ -107,7 +107,7 @@ public:
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
   on_shutdown(const rclcpp_lifecycle::State & previous_state) override;
 
-private:
+protected:
   std::vector<std::string> joint_names_;
   std::vector<std::string> write_op_names_;
 
@@ -125,7 +125,7 @@ private:
   std::shared_ptr<Trajectory> traj_home_point_ptr_ = nullptr;
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> traj_msg_home_ptr_ = nullptr;
   realtime_tools::RealtimeBuffer<std::shared_ptr<trajectory_msgs::msg::JointTrajectory>>
-  traj_msg_external_point_ptr_{nullptr};
+  traj_msg_external_point_ptr_;
 
   bool is_halted = false;
 
@@ -143,7 +143,7 @@ private:
   using RealtimeGoalHandlePtr = std::shared_ptr<RealtimeGoalHandle>;
 
   rclcpp_action::Server<FollowJTrajAction>::SharedPtr action_server_;
-  bool allow_partial_joints_goal_;
+  bool allow_partial_joints_goal_ = false;
   RealtimeGoalHandlePtr rt_active_goal_;     ///< Currently active action goal, if any.
   rclcpp::TimerBase::SharedPtr goal_handle_timer_;
   rclcpp::Duration action_monitor_period_ = rclcpp::Duration(RCUTILS_MS_TO_NS(50));
@@ -167,6 +167,11 @@ private:
   bool validate_trajectory_msg(const trajectory_msgs::msg::JointTrajectory & trajectory) const;
   void add_new_trajectory_msg(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & traj_msg);
+  bool validate_trajectory_point_field(
+    size_t joint_names_size,
+    const std::vector<double> & vector_field,
+    const std::string & string_for_vector_field, size_t i,
+    bool allow_empty) const;
 
   SegmentTolerances default_tolerances_;
 
