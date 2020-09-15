@@ -16,6 +16,7 @@
 #define JOINT_STATE_CONTROLLER__JOINT_STATE_CONTROLLER_HPP_
 
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "control_msgs/msg/dynamic_joint_state.hpp"
@@ -27,8 +28,9 @@
 
 namespace hardware_interface
 {
-class JointStateHandle;
+class JointHandle;
 }  // namespace hardware_interface
+
 namespace rclcpp_lifecycle
 {
 class State;
@@ -60,7 +62,12 @@ public:
   on_deactivate(const rclcpp_lifecycle::State & previous_state) override;
 
 protected:
-  std::vector<const hardware_interface::JointStateHandle *> registered_joint_handles_;
+  bool init_joint_data();
+  void init_joint_state_msg();
+  void init_dynamic_joint_state_msg();
+
+protected:
+  std::vector<std::string> joint_names_;
 
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::JointState>>
   joint_state_publisher_;
@@ -69,6 +76,8 @@ protected:
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<control_msgs::msg::DynamicJointState>>
   dynamic_joint_state_publisher_;
   control_msgs::msg::DynamicJointState dynamic_joint_state_msg_;
+
+  std::vector<std::vector<std::shared_ptr<hardware_interface::JointHandle>>> joint_handles_;
 };
 
 }  // namespace joint_state_controller

@@ -71,11 +71,26 @@ protected:
   {
     test_robot = std::make_shared<test_robot_hardware::TestRobotHardware>();
     test_robot->init();
-    left_wheel_names =
-    {{test_robot->joint_name1, test_robot->joint_name2, test_robot->joint_name3}};
-    right_wheel_names =
-    {{test_robot->joint_name1, test_robot->joint_name2, test_robot->joint_name3}};
+    left_wheel_names = test_robot->joint_names;
+    right_wheel_names = test_robot->joint_names;
     op_mode = {{test_robot->write_op_handle_name1}};
+
+    // create joint handles
+    auto get_handle = [&](const std::string & joint_name, const std::string & interface_name)
+      {
+        auto joint_handle = std::make_shared<hardware_interface::JointHandle>(
+          joint_name,
+          interface_name);
+        test_robot->get_joint_handle(*joint_handle);
+        return joint_handle;
+      };
+
+    joint1_pos_handle_ = get_handle("joint1", "position");
+    joint2_pos_handle_ = get_handle("joint2", "position");
+    joint3_pos_handle_ = get_handle("joint3", "position");
+    joint1_vel_cmd_handle_ = get_handle("joint1", "velocity_command");
+    joint2_vel_cmd_handle_ = get_handle("joint2", "velocity_command");
+    joint3_vel_cmd_handle_ = get_handle("joint3", "velocity_command");
 
     pub_node = std::make_shared<rclcpp::Node>("velocity_publisher");
     velocity_publisher = pub_node->create_publisher<geometry_msgs::msg::TwistStamped>(
@@ -145,9 +160,17 @@ protected:
   std::string controller_name = "test_diff_drive_controller";
 
   std::shared_ptr<test_robot_hardware::TestRobotHardware> test_robot;
+
   std::vector<std::string> left_wheel_names;
   std::vector<std::string> right_wheel_names;
   std::vector<std::string> op_mode;
+
+  std::shared_ptr<hardware_interface::JointHandle> joint1_pos_handle_;
+  std::shared_ptr<hardware_interface::JointHandle> joint2_pos_handle_;
+  std::shared_ptr<hardware_interface::JointHandle> joint3_pos_handle_;
+  std::shared_ptr<hardware_interface::JointHandle> joint1_vel_cmd_handle_;
+  std::shared_ptr<hardware_interface::JointHandle> joint2_vel_cmd_handle_;
+  std::shared_ptr<hardware_interface::JointHandle> joint3_vel_cmd_handle_;
 
   rclcpp::Node::SharedPtr pub_node;
   rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr velocity_publisher;
@@ -180,9 +203,9 @@ TEST_F(TestDiffDriveController, correct_initialization)
 
   auto inactive_state = diff_drive_controller->get_lifecycle_node()->configure();
   EXPECT_EQ(State::PRIMARY_STATE_INACTIVE, inactive_state.id());
-  EXPECT_EQ(1.1, initialized_robot->pos1);
-  EXPECT_EQ(2.2, initialized_robot->pos2);
-  EXPECT_EQ(3.3, initialized_robot->pos3);
+  EXPECT_EQ(1.1, joint1_pos_handle_->get_value());
+  EXPECT_EQ(2.1, joint2_pos_handle_->get_value());
+  EXPECT_EQ(3.1, joint3_pos_handle_->get_value());
 }
 
 TEST_F(TestDiffDriveController, configuration)
@@ -250,8 +273,8 @@ TEST_F(TestDiffDriveController, cleanup)
   test_robot->write();
 
   // shouild be stopped
-  EXPECT_EQ(0, test_robot->cmd1);
-  EXPECT_EQ(0, test_robot->cmd2);
+  EXPECT_EQ(0.0, joint1_vel_cmd_handle_->get_value());
+  EXPECT_EQ(0.0, joint2_vel_cmd_handle_->get_value());
 
   executor.cancel();
 }
@@ -286,8 +309,8 @@ TEST_F(TestDiffDriveController, correct_initialization_using_parameters)
 
   auto state = diff_drive_lifecycle_node->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
-  EXPECT_EQ(1.1, test_robot->cmd1);
-  EXPECT_EQ(2.2, test_robot->cmd2);
+  EXPECT_EQ(1.2, joint1_vel_cmd_handle_->get_value());
+  EXPECT_EQ(2.2, joint2_vel_cmd_handle_->get_value());
 
   state = diff_drive_lifecycle_node->activate();
   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
@@ -301,8 +324,8 @@ TEST_F(TestDiffDriveController, correct_initialization_using_parameters)
 
   diff_drive_controller->update();
   test_robot->write();
-  EXPECT_EQ(1.0, test_robot->cmd1);
-  EXPECT_EQ(1.0, test_robot->cmd2);
+  EXPECT_EQ(1.0, joint1_vel_cmd_handle_->get_value());
+  EXPECT_EQ(1.0, joint2_vel_cmd_handle_->get_value());
 
   // deactivated
   // wait so controller process the second point when deactivated
@@ -312,15 +335,15 @@ TEST_F(TestDiffDriveController, correct_initialization_using_parameters)
   diff_drive_controller->update();
   test_robot->write();
 
-  EXPECT_EQ(0., test_robot->cmd1) << "Wheels are halted on deactivate()";
-  EXPECT_EQ(0., test_robot->cmd2) << "Wheels are halted on deactivate()";
+  EXPECT_EQ(0.0, joint1_vel_cmd_handle_->get_value()) << "Wheels are halted on deactivate()";
+  EXPECT_EQ(0.0, joint2_vel_cmd_handle_->get_value()) << "Wheels are halted on deactivate()";
 
   // cleanup
   state = diff_drive_lifecycle_node->cleanup();
   test_robot->write();
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
-  EXPECT_EQ(0, test_robot->cmd1);
-  EXPECT_EQ(0, test_robot->cmd2);
+  EXPECT_EQ(0.0, joint1_vel_cmd_handle_->get_value());
+  EXPECT_EQ(0.0, joint2_vel_cmd_handle_->get_value());
 
   state = diff_drive_lifecycle_node->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());

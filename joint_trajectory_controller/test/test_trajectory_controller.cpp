@@ -111,8 +111,25 @@ protected:
   {
     test_robot_ = std::make_shared<test_robot_hardware::TestRobotHardware>();
     test_robot_->init();
-    joint_names_ = {{test_robot_->joint_name1, test_robot_->joint_name2, test_robot_->joint_name3}};
+    joint_names_ = test_robot_->joint_names;
     op_mode_ = {{test_robot_->write_op_handle_name1}};
+
+    // create joint handles
+    auto get_handle = [&](const std::string & joint_name, const std::string & interface_name)
+      {
+        auto joint_handle = std::make_shared<hardware_interface::JointHandle>(
+          joint_name,
+          interface_name);
+        test_robot_->get_joint_handle(*joint_handle);
+        return joint_handle;
+      };
+
+    joint1_pos_handle_ = get_handle("joint1", "position");
+    joint2_pos_handle_ = get_handle("joint2", "position");
+    joint3_pos_handle_ = get_handle("joint3", "position");
+    joint1_pos_cmd_handle_ = get_handle("joint1", "position_command");
+    joint2_pos_cmd_handle_ = get_handle("joint2", "position_command");
+    joint3_pos_cmd_handle_ = get_handle("joint3", "position_command");
 
     pub_node_ = std::make_shared<rclcpp::Node>("trajectory_publisher_");
     trajectory_publisher_ = pub_node_->create_publisher<trajectory_msgs::msg::JointTrajectory>(
@@ -284,6 +301,13 @@ protected:
   std::vector<std::string> joint_names_;
   std::vector<std::string> op_mode_;
 
+  std::shared_ptr<hardware_interface::JointHandle> joint1_pos_handle_;
+  std::shared_ptr<hardware_interface::JointHandle> joint2_pos_handle_;
+  std::shared_ptr<hardware_interface::JointHandle> joint3_pos_handle_;
+  std::shared_ptr<hardware_interface::JointHandle> joint1_pos_cmd_handle_;
+  std::shared_ptr<hardware_interface::JointHandle> joint2_pos_cmd_handle_;
+  std::shared_ptr<hardware_interface::JointHandle> joint3_pos_cmd_handle_;
+
   rclcpp::Node::SharedPtr pub_node_;
   rclcpp::Publisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr trajectory_publisher_;
 
@@ -318,11 +342,18 @@ TEST_F(TestTrajectoryController, correct_initialization) {
     FAIL();
   }
 
+  auto get_handle = [&](const std::string & joint_name, const std::string & interface_name)
+    {
+      hardware_interface::JointHandle joint_handle(joint_name, interface_name);
+      initialized_robot->get_joint_handle(joint_handle);
+      return joint_handle;
+    };
+
   const auto inactive_state = traj_controller->get_lifecycle_node()->configure();
   EXPECT_EQ(State::PRIMARY_STATE_INACTIVE, inactive_state.id());
-  EXPECT_EQ(1.1, initialized_robot->pos1);
-  EXPECT_EQ(2.2, initialized_robot->pos2);
-  EXPECT_EQ(3.3, initialized_robot->pos3);
+  EXPECT_EQ(1.1, get_handle("joint1", "position").get_value());
+  EXPECT_EQ(2.1, get_handle("joint2", "position").get_value());
+  EXPECT_EQ(3.1, get_handle("joint3", "position").get_value());
 }
 
 TEST_F(TestTrajectoryController, configuration) {
@@ -347,9 +378,9 @@ TEST_F(TestTrajectoryController, configuration) {
   test_robot_->write();
 
   // no change in hw position
-  EXPECT_NE(3.3, test_robot_->pos1);
-  EXPECT_NE(4.4, test_robot_->pos2);
-  EXPECT_NE(5.5, test_robot_->pos3);
+  EXPECT_NE(3.3, joint1_pos_handle_->get_value());
+  EXPECT_NE(4.4, joint2_pos_handle_->get_value());
+  EXPECT_NE(5.5, joint3_pos_handle_->get_value());
 
   executor.cancel();
 }
@@ -389,9 +420,9 @@ TEST_F(TestTrajectoryController, configuration) {
 //   test_robot_->write();
 //
 //   // change in hw position
-//   EXPECT_EQ(3.3, test_robot_->pos1);
-//   EXPECT_EQ(4.4, test_robot_->pos2);
-//   EXPECT_EQ(5.5, test_robot_->pos3);
+//   EXPECT_EQ(3.3, joint1_pos_handle_->get_value());
+//   EXPECT_EQ(4.4, joint2_pos_handle_->get_value());
+//   EXPECT_EQ(5.5, joint3_pos_handle_->get_value());
 //
 //   executor.cancel();
 // }
@@ -446,9 +477,9 @@ TEST_F(TestTrajectoryController, configuration) {
 //   test_robot_->write();
 //
 //   // no change in hw position
-//   EXPECT_EQ(3.3, test_robot_->pos1);
-//   EXPECT_EQ(4.4, test_robot_->pos2);
-//   EXPECT_EQ(5.5, test_robot_->pos3);
+//   EXPECT_EQ(3.3, joint1_pos_handle_->get_value());
+//   EXPECT_EQ(4.4, joint2_pos_handle_->get_value());
+//   EXPECT_EQ(5.5, joint3_pos_handle_->get_value());
 //
 //   // reactivated
 //   // wait so controller process the third point when reactivated
@@ -460,9 +491,9 @@ TEST_F(TestTrajectoryController, configuration) {
 //   test_robot_->write();
 //
 //   // change in hw position to 3rd point
-//   EXPECT_EQ(10.10, test_robot_->pos1);
-//   EXPECT_EQ(11.11, test_robot_->pos2);
-//   EXPECT_EQ(12.12, test_robot_->pos3);
+//   EXPECT_EQ(10.10, joint1_pos_handle_->get_value());
+//   EXPECT_EQ(11.11, joint2_pos_handle_->get_value());
+//   EXPECT_EQ(12.12, joint3_pos_handle_->get_value());
 //
 //   executor.cancel();
 // }
@@ -502,9 +533,9 @@ TEST_F(TestTrajectoryController, cleanup) {
   updateController(rclcpp::Duration::from_seconds(0.25));
 
   // should be home pose again
-  EXPECT_NEAR(1.1, test_robot_->pos1, COMMON_THRESHOLD);
-  EXPECT_NEAR(2.2, test_robot_->pos2, COMMON_THRESHOLD);
-  EXPECT_NEAR(3.3, test_robot_->pos3, COMMON_THRESHOLD);
+  EXPECT_NEAR(1.1, joint1_pos_handle_->get_value(), COMMON_THRESHOLD);
+  EXPECT_NEAR(2.1, joint2_pos_handle_->get_value(), COMMON_THRESHOLD);
+  EXPECT_NEAR(3.1, joint3_pos_handle_->get_value(), COMMON_THRESHOLD);
 }
 
 TEST_F(TestTrajectoryController, correct_initialization_using_parameters) {
@@ -525,9 +556,9 @@ TEST_F(TestTrajectoryController, correct_initialization_using_parameters) {
 
   auto state = traj_lifecycle_node->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
-  EXPECT_EQ(1.1, test_robot_->pos1);
-  EXPECT_EQ(2.2, test_robot_->pos2);
-  EXPECT_EQ(3.3, test_robot_->pos3);
+  EXPECT_EQ(1.1, joint1_pos_handle_->get_value());
+  EXPECT_EQ(2.1, joint2_pos_handle_->get_value());
+  EXPECT_EQ(3.1, joint3_pos_handle_->get_value());
 
   state = traj_lifecycle_node->activate();
   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
@@ -559,9 +590,10 @@ TEST_F(TestTrajectoryController, correct_initialization_using_parameters) {
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
 
   const auto allowed_delta = 0.05;
-  EXPECT_NEAR(3.3, test_robot_->pos1, allowed_delta);
-  EXPECT_NEAR(4.4, test_robot_->pos2, allowed_delta);
-  EXPECT_NEAR(5.5, test_robot_->pos3, allowed_delta);
+
+  EXPECT_NEAR(3.3, joint1_pos_handle_->get_value(), allowed_delta);
+  EXPECT_NEAR(4.4, joint2_pos_handle_->get_value(), allowed_delta);
+  EXPECT_NEAR(5.5, joint3_pos_handle_->get_value(), allowed_delta);
 
   // cleanup
   state = traj_lifecycle_node->cleanup();
@@ -576,9 +608,9 @@ TEST_F(TestTrajectoryController, correct_initialization_using_parameters) {
   test_robot_->write();
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
 
-  EXPECT_NEAR(1.1, test_robot_->pos1, allowed_delta);
-  EXPECT_NEAR(2.2, test_robot_->pos2, allowed_delta);
-  EXPECT_NEAR(3.3, test_robot_->pos3, allowed_delta);
+  EXPECT_NEAR(1.1, joint1_pos_handle_->get_value(), allowed_delta);
+  EXPECT_NEAR(2.1, joint2_pos_handle_->get_value(), allowed_delta);
+  EXPECT_NEAR(3.1, joint3_pos_handle_->get_value(), allowed_delta);
 
   state = traj_lifecycle_node->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
@@ -676,7 +708,7 @@ TEST_F(TestTrajectoryController, test_jumbled_joint_order) {
   {
     trajectory_msgs::msg::JointTrajectory traj_msg;
     const std::vector<std::string> jumbled_joint_names {
-      test_robot_->joint_name2, test_robot_->joint_name3, test_robot_->joint_name1
+      test_robot_->joint_names[1], test_robot_->joint_names[2], test_robot_->joint_names[0]
     };
     traj_msg.joint_names = jumbled_joint_names;
     traj_msg.header.stamp = rclcpp::Time(0);
@@ -695,9 +727,9 @@ TEST_F(TestTrajectoryController, test_jumbled_joint_order) {
   // update for 0.25 seconds
   updateController(rclcpp::Duration::from_seconds(0.25));
 
-  EXPECT_NEAR(1.0, test_robot_->pos1, COMMON_THRESHOLD);
-  EXPECT_NEAR(2.0, test_robot_->pos2, COMMON_THRESHOLD);
-  EXPECT_NEAR(3.0, test_robot_->pos3, COMMON_THRESHOLD);
+  EXPECT_NEAR(1.0, joint1_pos_handle_->get_value(), COMMON_THRESHOLD);
+  EXPECT_NEAR(2.0, joint2_pos_handle_->get_value(), COMMON_THRESHOLD);
+  EXPECT_NEAR(3.0, joint3_pos_handle_->get_value(), COMMON_THRESHOLD);
 }
 
 /**
@@ -709,12 +741,12 @@ TEST_F(TestTrajectoryController, test_partial_joint_list) {
   rclcpp::executors::SingleThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(true, {partial_joints_parameters}, &executor);
 
-  const double initial_joint3_cmd = test_robot_->cmd3;
+  const double initial_joint3_cmd = joint3_pos_cmd_handle_->get_value();
   trajectory_msgs::msg::JointTrajectory traj_msg;
 
   {
     std::vector<std::string> partial_joint_names {
-      test_robot_->joint_name2, test_robot_->joint_name1
+      test_robot_->joint_names[1], test_robot_->joint_names[0]
     };
     traj_msg.joint_names = partial_joint_names;
     traj_msg.header.stamp = rclcpp::Time(0);
@@ -736,10 +768,10 @@ TEST_F(TestTrajectoryController, test_partial_joint_list) {
   updateController(rclcpp::Duration::from_seconds(0.25));
 
   double threshold = 0.001;
-  EXPECT_NEAR(traj_msg.points[0].positions[1], test_robot_->pos1, threshold);
-  EXPECT_NEAR(traj_msg.points[0].positions[0], test_robot_->pos2, threshold);
+  EXPECT_NEAR(traj_msg.points[0].positions[1], joint1_pos_handle_->get_value(), threshold);
+  EXPECT_NEAR(traj_msg.points[0].positions[0], joint2_pos_handle_->get_value(), threshold);
   EXPECT_NEAR(
-    initial_joint3_cmd, test_robot_->pos3,
+    initial_joint3_cmd, joint3_pos_handle_->get_value(),
     threshold) << "Joint 3 command should be current position";
 
 //  Velocity commands are not sent yet
@@ -761,14 +793,14 @@ TEST_F(TestTrajectoryController, test_partial_joint_list_not_allowed) {
   rclcpp::executors::SingleThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(true, {partial_joints_parameters}, &executor);
 
-  const double initial_joint1_cmd = test_robot_->cmd1;
-  const double initial_joint2_cmd = test_robot_->cmd2;
-  const double initial_joint3_cmd = test_robot_->cmd3;
+  const double initial_joint1_cmd = joint1_pos_cmd_handle_->get_value();
+  const double initial_joint2_cmd = joint2_pos_cmd_handle_->get_value();
+  const double initial_joint3_cmd = joint3_pos_cmd_handle_->get_value();
   trajectory_msgs::msg::JointTrajectory traj_msg;
 
   {
     std::vector<std::string> partial_joint_names {
-      test_robot_->joint_name2, test_robot_->joint_name1
+      test_robot_->joint_names[1], test_robot_->joint_names[0]
     };
     traj_msg.joint_names = partial_joint_names;
     traj_msg.header.stamp = rclcpp::Time(0);
@@ -791,13 +823,13 @@ TEST_F(TestTrajectoryController, test_partial_joint_list_not_allowed) {
 
   double threshold = 0.001;
   EXPECT_NEAR(
-    initial_joint1_cmd, test_robot_->pos1,
+    initial_joint1_cmd, joint1_pos_cmd_handle_->get_value(),
     threshold) << "All joints command should be current position because goal was rejected";
   EXPECT_NEAR(
-    initial_joint2_cmd, test_robot_->pos2,
+    initial_joint2_cmd, joint2_pos_cmd_handle_->get_value(),
     threshold) << "All joints command should be current position because goal was rejected";
   EXPECT_NEAR(
-    initial_joint3_cmd, test_robot_->pos3,
+    initial_joint3_cmd, joint3_pos_cmd_handle_->get_value(),
     threshold) << "All joints command should be current position because goal was rejected";
 
   //  Velocity commands are not sent yet

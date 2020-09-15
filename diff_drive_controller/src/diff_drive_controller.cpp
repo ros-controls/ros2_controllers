@@ -23,6 +23,8 @@
 #include <vector>
 
 #include "diff_drive_controller/diff_drive_controller.hpp"
+#include "hardware_interface/joint_handle.hpp"
+#include "hardware_interface/robot_hardware.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "tf2/LinearMath/Quaternion.h"
 
@@ -147,8 +149,8 @@ controller_interface::return_type DiffDriveController::update()
     double left_position_mean = 0.0;
     double right_position_mean = 0.0;
     for (size_t index = 0; index < wheels.wheels_per_side; ++index) {
-      const double left_position = registered_left_wheel_handles_[index].state->get_position();
-      const double right_position = registered_right_wheel_handles_[index].state->get_position();
+      const double left_position = registered_left_wheel_handles_[index].state->get_value();
+      const double right_position = registered_right_wheel_handles_[index].state->get_value();
 
       if (std::isnan(left_position) || std::isnan(right_position)) {
         RCLCPP_ERROR(
@@ -243,8 +245,8 @@ controller_interface::return_type DiffDriveController::update()
 
   // Set wheels velocities:
   for (size_t index = 0; index < wheels.wheels_per_side; ++index) {
-    registered_left_wheel_handles_[index].command->set_cmd(velocity_left);
-    registered_right_wheel_handles_[index].command->set_cmd(velocity_right);
+    registered_left_wheel_handles_[index].command->set_value(velocity_left);
+    registered_right_wheel_handles_[index].command->set_value(velocity_right);
   }
 
   set_op_mode(hardware_interface::OperationMode::ACTIVE);
@@ -532,7 +534,7 @@ void DiffDriveController::halt()
 {
   const auto halt_wheels = [](auto & wheel_handles) {
       for (const auto & wheel_handle : wheel_handles) {
-        wheel_handle.command->set_cmd(0.0);
+        wheel_handle.command->set_value(0.0);
       }
     };
 
@@ -562,17 +564,27 @@ CallbackReturn DiffDriveController::configure_side(
     const auto wheel_name = wheel_names[index].c_str();
     auto & wheel_handle = registered_handles[index];
 
-    auto result = robot_hardware.get_joint_state_handle(wheel_name, &wheel_handle.state);
+    auto joint_state_handle = std::make_shared<hardware_interface::JointHandle>(
+      wheel_name,
+      "position");
+    auto joint_command_handle = std::make_shared<hardware_interface::JointHandle>(
+      wheel_name,
+      "velocity_command");
+
+    auto result = robot_hardware.get_joint_handle(*joint_state_handle);
     if (result != hardware_interface::return_type::OK) {
       RCLCPP_WARN(logger, "unable to obtain joint state handle for %s", wheel_name);
       return CallbackReturn::FAILURE;
     }
 
-    auto ret = robot_hardware.get_joint_command_handle(wheel_name, &wheel_handle.command);
-    if (ret != hardware_interface::return_type::OK) {
+    result = robot_hardware.get_joint_handle(*joint_command_handle);
+    if (result != hardware_interface::return_type::OK) {
       RCLCPP_WARN(logger, "unable to obtain joint command handle for %s", wheel_name);
       return CallbackReturn::FAILURE;
     }
+
+    wheel_handle.state = joint_state_handle;
+    wheel_handle.command = joint_command_handle;
   }
 
   return CallbackReturn::SUCCESS;
