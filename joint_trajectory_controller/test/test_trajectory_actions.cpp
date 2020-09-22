@@ -246,12 +246,17 @@ protected:
   GoalOptions goal_options_;
 
 public:
+#ifdef SHARED_FUTURE_CALLBACK
   void common_goal_response(std::shared_future<GoalHandle::SharedPtr> future)
   {
+    const auto goal_handle = future.get();
+#else
+  void common_goal_response(GoalHandle::SharedPtr goal_handle)
+  {
+#endif
     RCLCPP_DEBUG(
       node_->get_logger(), "common_goal_response time: %f",
       rclcpp::Clock().now().seconds());
-    const auto goal_handle = future.get();
     if (!goal_handle) {
       common_goal_accepted_ = false;
       RCLCPP_DEBUG(node_->get_logger(), "Goal rejected");
