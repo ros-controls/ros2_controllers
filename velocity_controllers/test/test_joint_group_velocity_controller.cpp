@@ -26,43 +26,43 @@
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/utilities.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
-#include "test_joint_velocity_controller.hpp"
+#include "test_joint_group_velocity_controller.hpp"
 #include "test_robot_hardware/test_robot_hardware.hpp"
 
 using CallbackReturn = forward_command_controller::ForwardCommandController::CallbackReturn;
 
-void JointVelocityControllerTest::SetUpTestCase()
+void JointGroupVelocityControllerTest::SetUpTestCase()
 {
   rclcpp::init(0, nullptr);
 }
 
-void JointVelocityControllerTest::TearDownTestCase()
+void JointGroupVelocityControllerTest::TearDownTestCase()
 {
   rclcpp::shutdown();
 }
 
-void JointVelocityControllerTest::SetUp()
+void JointGroupVelocityControllerTest::SetUp()
 {
   // initialize robot
   test_robot_ = std::make_shared<test_robot_hardware::TestRobotHardware>();
   test_robot_->init();
 
   // initialize controller
-  controller_ = std::make_unique<FriendJointVelocityController>();
+  controller_ = std::make_unique<FriendJointGroupVelocityController>();
 }
 
-void JointVelocityControllerTest::TearDown()
+void JointGroupVelocityControllerTest::TearDown()
 {
   controller_.reset(nullptr);
 }
 
-void JointVelocityControllerTest::SetUpController()
+void JointGroupVelocityControllerTest::SetUpController()
 {
   const auto result = controller_->init(test_robot_, "forward_command_controller");
   ASSERT_EQ(result, controller_interface::return_type::SUCCESS);
 }
 
-void JointVelocityControllerTest::SetUpHandles()
+void JointGroupVelocityControllerTest::SetUpHandles()
 {
   // get handles from test_robot_hardware
   joint1_vel_cmd_handle_ = std::make_shared<hardware_interface::JointHandle>(
@@ -86,7 +86,7 @@ void JointVelocityControllerTest::SetUpHandles()
       *joint3_vel_cmd_handle_), hardware_interface::hardware_interface_ret_t::OK);
 }
 
-TEST_F(JointVelocityControllerTest, ConfigureParamsTest)
+TEST_F(JointGroupVelocityControllerTest, ConfigureParamsTest)
 {
   // joint handles not initialized yet
   ASSERT_TRUE(controller_->joint_cmd_handles_.empty());
@@ -116,7 +116,7 @@ TEST_F(JointVelocityControllerTest, ConfigureParamsTest)
   ASSERT_EQ(controller_->joint_cmd_handles_[1].get_interface_name(), "velocity_command");
 }
 
-TEST_F(JointVelocityControllerTest, CheckParamsTest)
+TEST_F(JointGroupVelocityControllerTest, CheckParamsTest)
 {
   // joint handles not initialized yet
   ASSERT_TRUE(controller_->joint_cmd_handles_.empty());
@@ -146,7 +146,7 @@ TEST_F(JointVelocityControllerTest, CheckParamsTest)
   ASSERT_EQ(controller_->joint_cmd_handles_[1].get_interface_name(), "velocity_command");
 }
 
-TEST_F(JointVelocityControllerTest, StopJointsOnDeactivateTest)
+TEST_F(JointGroupVelocityControllerTest, StopJointsOnDeactivateTest)
 {
   SetUpController();
   SetUpHandles();

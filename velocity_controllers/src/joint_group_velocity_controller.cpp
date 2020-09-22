@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "velocity_controllers/joint_velocity_controller.hpp"
+#include "velocity_controllers/joint_group_velocity_controller.hpp"
 #include "rclcpp/logging.hpp"
 #include "rclcpp/parameter.hpp"
 
@@ -23,15 +23,16 @@ constexpr auto kJVCLoggerName = "joint velocity controller";
 
 namespace velocity_controllers
 {
-using CallbackReturn = JointVelocityController::CallbackReturn;
+using CallbackReturn = JointGroupVelocityController::CallbackReturn;
 
-JointVelocityController::JointVelocityController()
+JointGroupVelocityController::JointGroupVelocityController()
 : forward_command_controller::ForwardCommandController()
 {
   logger_name_ = kJVCLoggerName;
 }
 
-CallbackReturn JointVelocityController::on_configure(const rclcpp_lifecycle::State & previous_state)
+CallbackReturn JointGroupVelocityController::on_configure(
+  const rclcpp_lifecycle::State & previous_state)
 {
   rclcpp::Parameter interface_param;
   if (!lifecycle_node_->get_parameter("interface_name", interface_param)) {
@@ -47,7 +48,7 @@ CallbackReturn JointVelocityController::on_configure(const rclcpp_lifecycle::Sta
   return ForwardCommandController::on_configure(previous_state);
 }
 
-CallbackReturn JointVelocityController::on_deactivate(
+CallbackReturn JointGroupVelocityController::on_deactivate(
   const rclcpp_lifecycle::State & previous_state)
 {
   auto ret = ForwardCommandController::on_deactivate(previous_state);
@@ -65,4 +66,4 @@ CallbackReturn JointVelocityController::on_deactivate(
 #include "pluginlib/class_list_macros.hpp"
 
 PLUGINLIB_EXPORT_CLASS(
-  velocity_controllers::JointVelocityController, controller_interface::ControllerInterface)
+  velocity_controllers::JointGroupVelocityController, controller_interface::ControllerInterface)

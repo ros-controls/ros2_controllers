@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef VELOCITY_CONTROLLERS__JOINT_VELOCITY_CONTROLLER_HPP_
-#define VELOCITY_CONTROLLERS__JOINT_VELOCITY_CONTROLLER_HPP_
+#ifndef VELOCITY_CONTROLLERS__JOINT_GROUP_VELOCITY_CONTROLLER_HPP_
+#define VELOCITY_CONTROLLERS__JOINT_GROUP_VELOCITY_CONTROLLER_HPP_
 
 #include "forward_command_controller/forward_command_controller.hpp"
 #include "velocity_controllers/visibility_control.h"
@@ -31,11 +31,11 @@ namespace velocity_controllers
  * Subscribes to:
  * - \b command (std_msgs::msg::Float64MultiArray) : The velocity commands to apply.
  */
-class JointVelocityController : public forward_command_controller::ForwardCommandController
+class JointGroupVelocityController : public forward_command_controller::ForwardCommandController
 {
 public:
   VELOCITY_CONTROLLERS_PUBLIC
-  JointVelocityController();
+  JointGroupVelocityController();
 
   VELOCITY_CONTROLLERS_PUBLIC
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
@@ -48,4 +48,4 @@ public:
 
 }  // namespace velocity_controllers
 
-#endif  // VELOCITY_CONTROLLERS__JOINT_VELOCITY_CONTROLLER_HPP_
+#endif  // VELOCITY_CONTROLLERS__JOINT_GROUP_VELOCITY_CONTROLLER_HPP_

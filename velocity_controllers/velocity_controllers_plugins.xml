@@ -1,5 +1,5 @@
 <library path="velocity_controllers">
-  <class name="velocity_controllers/JointVelocityController" type="velocity_controllers::JointVelocityController" base_class_type="controller_interface::ControllerInterface">
+  <class name="velocity_controllers/JointGroupVelocityController" type="velocity_controllers::JointGroupVelocityController" base_class_type="controller_interface::ControllerInterface">
     <description>
       The joint velocity controller commands a group of joints through the velocity interface
     </description>
