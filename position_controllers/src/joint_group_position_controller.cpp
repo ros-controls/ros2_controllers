@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "position_controllers/joint_position_controller.hpp"
+#include "position_controllers/joint_group_position_controller.hpp"
 #include "rclcpp/logging.hpp"
 #include "rclcpp/parameter.hpp"
 
@@ -23,15 +23,16 @@ constexpr auto kJPCLoggerName = "joint position controller";
 
 namespace position_controllers
 {
-using CallbackReturn = JointPositionController::CallbackReturn;
+using CallbackReturn = JointGroupPositionController::CallbackReturn;
 
-JointPositionController::JointPositionController()
+JointGroupPositionController::JointGroupPositionController()
 : forward_command_controller::ForwardCommandController()
 {
   logger_name_ = kJPCLoggerName;
 }
 
-CallbackReturn JointPositionController::on_configure(const rclcpp_lifecycle::State & previous_state)
+CallbackReturn JointGroupPositionController::on_configure(
+  const rclcpp_lifecycle::State & previous_state)
 {
   rclcpp::Parameter interface_param;
   if (!lifecycle_node_->get_parameter("interface_name", interface_param)) {
@@ -52,4 +53,4 @@ CallbackReturn JointPositionController::on_configure(const rclcpp_lifecycle::Sta
 #include "pluginlib/class_list_macros.hpp"
 
 PLUGINLIB_EXPORT_CLASS(
-  position_controllers::JointPositionController, controller_interface::ControllerInterface)
+  position_controllers::JointGroupPositionController, controller_interface::ControllerInterface)

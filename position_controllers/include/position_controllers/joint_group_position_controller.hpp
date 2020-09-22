@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef POSITION_CONTROLLERS__JOINT_POSITION_CONTROLLER_HPP_
-#define POSITION_CONTROLLERS__JOINT_POSITION_CONTROLLER_HPP_
+#ifndef POSITION_CONTROLLERS__JOINT_GROUP_POSITION_CONTROLLER_HPP_
+#define POSITION_CONTROLLERS__JOINT_GROUP_POSITION_CONTROLLER_HPP_
 
 #include "forward_command_controller/forward_command_controller.hpp"
 #include "position_controllers/visibility_control.h"
@@ -31,11 +31,11 @@ namespace position_controllers
  * Subscribes to:
  * - \b commands (std_msgs::msg::Float64MultiArray) : The position commands to apply.
  */
-class JointPositionController : public forward_command_controller::ForwardCommandController
+class JointGroupPositionController : public forward_command_controller::ForwardCommandController
 {
 public:
   POSITION_CONTROLLERS_PUBLIC
-  JointPositionController();
+  JointGroupPositionController();
 
   POSITION_CONTROLLERS_PUBLIC
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
@@ -44,4 +44,4 @@ public:
 
 }  // namespace position_controllers
 
-#endif  // POSITION_CONTROLLERS__JOINT_POSITION_CONTROLLER_HPP_
+#endif  // POSITION_CONTROLLERS__JOINT_GROUP_POSITION_CONTROLLER_HPP_

@@ -18,7 +18,7 @@ find_package(rclcpp REQUIRED)
 
 add_library(position_controllers
   SHARED
-  src/joint_position_controller.cpp
+  src/joint_group_position_controller.cpp
 )
 target_include_directories(position_controllers PRIVATE include)
 ament_target_dependencies(position_controllers
@@ -54,24 +54,24 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 
   ament_add_gtest(
-    test_load_joint_position_controller
-    test/test_load_joint_position_controller.cpp
+    test_load_joint_group_position_controller
+    test/test_load_joint_group_position_controller.cpp
   )
-  target_include_directories(test_load_joint_position_controller PRIVATE include)
-  ament_target_dependencies(test_load_joint_position_controller
+  target_include_directories(test_load_joint_group_position_controller PRIVATE include)
+  ament_target_dependencies(test_load_joint_group_position_controller
     controller_manager
     test_robot_hardware
   )
 
   ament_add_gtest(
-    test_joint_position_controller
-    test/test_joint_position_controller.cpp
+    test_joint_group_position_controller
+    test/test_joint_group_position_controller.cpp
   )
-  target_include_directories(test_joint_position_controller PRIVATE include)
-  target_link_libraries(test_joint_position_controller
+  target_include_directories(test_joint_group_position_controller PRIVATE include)
+  target_link_libraries(test_joint_group_position_controller
     position_controllers
   )
-  ament_target_dependencies(test_joint_position_controller
+  ament_target_dependencies(test_joint_group_position_controller
     test_robot_hardware
   )
 endif()

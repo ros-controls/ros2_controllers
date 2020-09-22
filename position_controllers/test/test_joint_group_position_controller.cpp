@@ -26,43 +26,43 @@
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/utilities.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
-#include "test_joint_position_controller.hpp"
+#include "test_joint_group_position_controller.hpp"
 #include "test_robot_hardware/test_robot_hardware.hpp"
 
 using CallbackReturn = forward_command_controller::ForwardCommandController::CallbackReturn;
 
-void JointPositionControllerTest::SetUpTestCase()
+void JointGroupPositionControllerTest::SetUpTestCase()
 {
   rclcpp::init(0, nullptr);
 }
 
-void JointPositionControllerTest::TearDownTestCase()
+void JointGroupPositionControllerTest::TearDownTestCase()
 {
   rclcpp::shutdown();
 }
 
-void JointPositionControllerTest::SetUp()
+void JointGroupPositionControllerTest::SetUp()
 {
   // initialize robot
   test_robot_ = std::make_shared<test_robot_hardware::TestRobotHardware>();
   test_robot_->init();
 
   // initialize controller
-  controller_ = std::make_unique<FriendJointPositionController>();
+  controller_ = std::make_unique<FriendJointGroupPositionController>();
 }
 
-void JointPositionControllerTest::TearDown()
+void JointGroupPositionControllerTest::TearDown()
 {
   controller_.reset(nullptr);
 }
 
-void JointPositionControllerTest::SetUpController()
+void JointGroupPositionControllerTest::SetUpController()
 {
-  const auto result = controller_->init(test_robot_, "test_joint_position_controller");
+  const auto result = controller_->init(test_robot_, "test_joint_group_position_controller");
   ASSERT_EQ(result, controller_interface::return_type::SUCCESS);
 }
 
-void JointPositionControllerTest::SetUpHandles()
+void JointGroupPositionControllerTest::SetUpHandles()
 {
   // get handles from test_robot_hardware
   joint1_pos_cmd_handle_ = std::make_shared<hardware_interface::JointHandle>(
@@ -86,7 +86,7 @@ void JointPositionControllerTest::SetUpHandles()
       *joint3_pos_cmd_handle_), hardware_interface::hardware_interface_ret_t::OK);
 }
 
-TEST_F(JointPositionControllerTest, ConfigureParamsTest)
+TEST_F(JointGroupPositionControllerTest, ConfigureParamsTest)
 {
   // joint handles not initialized yet
   ASSERT_TRUE(controller_->joint_cmd_handles_.empty());
@@ -116,7 +116,7 @@ TEST_F(JointPositionControllerTest, ConfigureParamsTest)
   ASSERT_EQ(controller_->joint_cmd_handles_[1].get_interface_name(), "position_command");
 }
 
-TEST_F(JointPositionControllerTest, CheckParamsTest)
+TEST_F(JointGroupPositionControllerTest, CheckParamsTest)
 {
   // joint handles not initialized yet
   ASSERT_TRUE(controller_->joint_cmd_handles_.empty());

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TEST_JOINT_POSITION_CONTROLLER_HPP_
-#define TEST_JOINT_POSITION_CONTROLLER_HPP_
+#ifndef TEST_JOINT_GROUP_POSITION_CONTROLLER_HPP_
+#define TEST_JOINT_GROUP_POSITION_CONTROLLER_HPP_
 
 #include <memory>
 #include <string>
@@ -21,17 +21,17 @@
 #include "gtest/gtest.h"
 
 #include "hardware_interface/joint_handle.hpp"
-#include "position_controllers/joint_position_controller.hpp"
+#include "position_controllers/joint_group_position_controller.hpp"
 #include "test_robot_hardware/test_robot_hardware.hpp"
 
 // subclassing and friending so we can access member varibles
-class FriendJointPositionController : public position_controllers::JointPositionController
+class FriendJointGroupPositionController : public position_controllers::JointGroupPositionController
 {
-  FRIEND_TEST(JointPositionControllerTest, ConfigureParamsTest);
-  FRIEND_TEST(JointPositionControllerTest, CheckParamsTest);
+  FRIEND_TEST(JointGroupPositionControllerTest, ConfigureParamsTest);
+  FRIEND_TEST(JointGroupPositionControllerTest, CheckParamsTest);
 };
 
-class JointPositionControllerTest : public ::testing::Test
+class JointGroupPositionControllerTest : public ::testing::Test
 {
 public:
   static void SetUpTestCase();
@@ -45,11 +45,11 @@ public:
 
 protected:
   std::shared_ptr<test_robot_hardware::TestRobotHardware> test_robot_;
-  std::unique_ptr<FriendJointPositionController> controller_;
+  std::unique_ptr<FriendJointGroupPositionController> controller_;
 
   std::shared_ptr<hardware_interface::JointHandle> joint1_pos_cmd_handle_;
   std::shared_ptr<hardware_interface::JointHandle> joint2_pos_cmd_handle_;
   std::shared_ptr<hardware_interface::JointHandle> joint3_pos_cmd_handle_;
 };
 
-#endif  // TEST_JOINT_POSITION_CONTROLLER_HPP_
+#endif  // TEST_JOINT_GROUP_POSITION_CONTROLLER_HPP_
