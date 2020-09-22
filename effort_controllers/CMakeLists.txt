@@ -18,7 +18,7 @@ find_package(rclcpp REQUIRED)
 
 add_library(effort_controllers
   SHARED
-  src/joint_effort_controller.cpp
+  src/joint_group_effort_controller.cpp
 )
 target_include_directories(effort_controllers PRIVATE include)
 ament_target_dependencies(effort_controllers
@@ -54,24 +54,24 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 
   ament_add_gtest(
-    test_load_joint_effort_controller
-    test/test_load_joint_effort_controller.cpp
+    test_load_joint_group_effort_controller
+    test/test_load_joint_group_effort_controller.cpp
   )
-  target_include_directories(test_load_joint_effort_controller PRIVATE include)
-  ament_target_dependencies(test_load_joint_effort_controller
+  target_include_directories(test_load_joint_group_effort_controller PRIVATE include)
+  ament_target_dependencies(test_load_joint_group_effort_controller
     controller_manager
     test_robot_hardware
   )
 
   ament_add_gtest(
-    test_joint_effort_controller
-    test/test_joint_effort_controller.cpp
+    test_joint_group_effort_controller
+    test/test_joint_group_effort_controller.cpp
   )
-  target_include_directories(test_joint_effort_controller PRIVATE include)
-  target_link_libraries(test_joint_effort_controller
+  target_include_directories(test_joint_group_effort_controller PRIVATE include)
+  target_link_libraries(test_joint_group_effort_controller
     effort_controllers
   )
-  ament_target_dependencies(test_joint_effort_controller
+  ament_target_dependencies(test_joint_group_effort_controller
     test_robot_hardware
   )
 endif()

@@ -26,43 +26,43 @@
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/utilities.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
-#include "test_joint_effort_controller.hpp"
+#include "test_joint_group_effort_controller.hpp"
 #include "test_robot_hardware/test_robot_hardware.hpp"
 
 using CallbackReturn = forward_command_controller::ForwardCommandController::CallbackReturn;
 
-void JointEffortControllerTest::SetUpTestCase()
+void JointGroupEffortControllerTest::SetUpTestCase()
 {
   rclcpp::init(0, nullptr);
 }
 
-void JointEffortControllerTest::TearDownTestCase()
+void JointGroupEffortControllerTest::TearDownTestCase()
 {
   rclcpp::shutdown();
 }
 
-void JointEffortControllerTest::SetUp()
+void JointGroupEffortControllerTest::SetUp()
 {
   // initialize robot
   test_robot_ = std::make_shared<test_robot_hardware::TestRobotHardware>();
   test_robot_->init();
 
   // initialize controller
-  controller_ = std::make_unique<FriendJointEffortController>();
+  controller_ = std::make_unique<FriendJointGroupEffortController>();
 }
 
-void JointEffortControllerTest::TearDown()
+void JointGroupEffortControllerTest::TearDown()
 {
   controller_.reset(nullptr);
 }
 
-void JointEffortControllerTest::SetUpController()
+void JointGroupEffortControllerTest::SetUpController()
 {
   const auto result = controller_->init(test_robot_, "forward_command_controller");
   ASSERT_EQ(result, controller_interface::return_type::SUCCESS);
 }
 
-void JointEffortControllerTest::SetUpHandles()
+void JointGroupEffortControllerTest::SetUpHandles()
 {
   // get handles from test_robot_hardware
   joint1_eff_cmd_handle_ = std::make_shared<hardware_interface::JointHandle>(
@@ -86,7 +86,7 @@ void JointEffortControllerTest::SetUpHandles()
       *joint3_eff_cmd_handle_), hardware_interface::hardware_interface_ret_t::OK);
 }
 
-TEST_F(JointEffortControllerTest, ConfigureParamsTest)
+TEST_F(JointGroupEffortControllerTest, ConfigureParamsTest)
 {
   // joint handles not initialized yet
   ASSERT_TRUE(controller_->joint_cmd_handles_.empty());
@@ -116,7 +116,7 @@ TEST_F(JointEffortControllerTest, ConfigureParamsTest)
   ASSERT_EQ(controller_->joint_cmd_handles_[1].get_interface_name(), "effort_command");
 }
 
-TEST_F(JointEffortControllerTest, CheckParamsTest)
+TEST_F(JointGroupEffortControllerTest, CheckParamsTest)
 {
   // joint handles not initialized yet
   ASSERT_TRUE(controller_->joint_cmd_handles_.empty());
@@ -146,7 +146,7 @@ TEST_F(JointEffortControllerTest, CheckParamsTest)
   ASSERT_EQ(controller_->joint_cmd_handles_[1].get_interface_name(), "effort_command");
 }
 
-TEST_F(JointEffortControllerTest, StopJointsOnDeactivateTest)
+TEST_F(JointGroupEffortControllerTest, StopJointsOnDeactivateTest)
 {
   SetUpController();
   SetUpHandles();

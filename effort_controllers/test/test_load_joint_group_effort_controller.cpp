@@ -18,7 +18,7 @@
 #include "controller_manager/controller_manager.hpp"
 #include "test_robot_hardware/test_robot_hardware.hpp"
 
-TEST(TestLoadJointEffortController, load_controller)
+TEST(TestLoadJointGroupEffortController, load_controller)
 {
   rclcpp::init(0, nullptr);
 
@@ -34,6 +34,6 @@ TEST(TestLoadJointEffortController, load_controller)
 
   ASSERT_NO_THROW(
     cm.load_controller(
-      "test_joint_effort_controller",
-      "effort_controllers/JointEffortController"));
+      "test_joint_group_effort_controller",
+      "effort_controllers/JointGroupEffortController"));
 }

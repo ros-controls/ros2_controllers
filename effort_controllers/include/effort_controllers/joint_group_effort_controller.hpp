@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef EFFORT_CONTROLLERS__JOINT_EFFORT_CONTROLLER_HPP_
-#define EFFORT_CONTROLLERS__JOINT_EFFORT_CONTROLLER_HPP_
+#ifndef EFFORT_CONTROLLERS__JOINT_GROUP_EFFORT_CONTROLLER_HPP_
+#define EFFORT_CONTROLLERS__JOINT_GROUP_EFFORT_CONTROLLER_HPP_
 
 #include "forward_command_controller/forward_command_controller.hpp"
 #include "effort_controllers/visibility_control.h"
@@ -31,11 +31,11 @@ namespace effort_controllers
  * Subscribes to:
  * - \b command (std_msgs::msg::Float64MultiArray) : The effort commands to apply.
  */
-class JointEffortController : public forward_command_controller::ForwardCommandController
+class JointGroupEffortController : public forward_command_controller::ForwardCommandController
 {
 public:
   EFFORT_CONTROLLERS_PUBLIC
-  JointEffortController();
+  JointGroupEffortController();
 
   EFFORT_CONTROLLERS_PUBLIC
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
@@ -48,4 +48,4 @@ public:
 
 }  // namespace effort_controllers
 
-#endif  // EFFORT_CONTROLLERS__JOINT_EFFORT_CONTROLLER_HPP_
+#endif  // EFFORT_CONTROLLERS__JOINT_GROUP_EFFORT_CONTROLLER_HPP_

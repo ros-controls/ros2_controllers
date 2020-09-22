@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "effort_controllers/joint_effort_controller.hpp"
+#include "effort_controllers/joint_group_effort_controller.hpp"
 #include "rclcpp/logging.hpp"
 #include "rclcpp/parameter.hpp"
 
@@ -23,15 +23,16 @@ constexpr auto kJECLoggerName = "joint effort controller";
 
 namespace effort_controllers
 {
-using CallbackReturn = JointEffortController::CallbackReturn;
+using CallbackReturn = JointGroupEffortController::CallbackReturn;
 
-JointEffortController::JointEffortController()
+JointGroupEffortController::JointGroupEffortController()
 : forward_command_controller::ForwardCommandController()
 {
   logger_name_ = kJECLoggerName;
 }
 
-CallbackReturn JointEffortController::on_configure(const rclcpp_lifecycle::State & previous_state)
+CallbackReturn JointGroupEffortController::on_configure(
+  const rclcpp_lifecycle::State & previous_state)
 {
   rclcpp::Parameter interface_param;
   if (!lifecycle_node_->get_parameter("interface_name", interface_param)) {
@@ -47,7 +48,7 @@ CallbackReturn JointEffortController::on_configure(const rclcpp_lifecycle::State
   return ForwardCommandController::on_configure(previous_state);
 }
 
-CallbackReturn JointEffortController::on_deactivate(
+CallbackReturn JointGroupEffortController::on_deactivate(
   const rclcpp_lifecycle::State & previous_state)
 {
   auto ret = ForwardCommandController::on_deactivate(previous_state);
@@ -65,4 +66,4 @@ CallbackReturn JointEffortController::on_deactivate(
 #include "pluginlib/class_list_macros.hpp"
 
 PLUGINLIB_EXPORT_CLASS(
-  effort_controllers::JointEffortController, controller_interface::ControllerInterface)
+  effort_controllers::JointGroupEffortController, controller_interface::ControllerInterface)

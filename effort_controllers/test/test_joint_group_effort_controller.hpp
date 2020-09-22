@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TEST_JOINT_EFFORT_CONTROLLER_HPP_
-#define TEST_JOINT_EFFORT_CONTROLLER_HPP_
+#ifndef TEST_JOINT_GROUP_EFFORT_CONTROLLER_HPP_
+#define TEST_JOINT_GROUP_EFFORT_CONTROLLER_HPP_
 
 #include <memory>
 #include <string>
@@ -21,18 +21,18 @@
 #include "gtest/gtest.h"
 
 #include "hardware_interface/joint_handle.hpp"
-#include "effort_controllers/joint_effort_controller.hpp"
+#include "effort_controllers/joint_group_effort_controller.hpp"
 #include "test_robot_hardware/test_robot_hardware.hpp"
 
 // subclassing and friending so we can access member varibles
-class FriendJointEffortController : public effort_controllers::JointEffortController
+class FriendJointGroupEffortController : public effort_controllers::JointGroupEffortController
 {
-  FRIEND_TEST(JointEffortControllerTest, ConfigureParamsTest);
-  FRIEND_TEST(JointEffortControllerTest, CheckParamsTest);
-  FRIEND_TEST(JointEffortControllerTest, StopJointsOnDeactivateTest);
+  FRIEND_TEST(JointGroupEffortControllerTest, ConfigureParamsTest);
+  FRIEND_TEST(JointGroupEffortControllerTest, CheckParamsTest);
+  FRIEND_TEST(JointGroupEffortControllerTest, StopJointsOnDeactivateTest);
 };
 
-class JointEffortControllerTest : public ::testing::Test
+class JointGroupEffortControllerTest : public ::testing::Test
 {
 public:
   static void SetUpTestCase();
@@ -46,11 +46,11 @@ public:
 
 protected:
   std::shared_ptr<test_robot_hardware::TestRobotHardware> test_robot_;
-  std::unique_ptr<FriendJointEffortController> controller_;
+  std::unique_ptr<FriendJointGroupEffortController> controller_;
 
   std::shared_ptr<hardware_interface::JointHandle> joint1_eff_cmd_handle_;
   std::shared_ptr<hardware_interface::JointHandle> joint2_eff_cmd_handle_;
   std::shared_ptr<hardware_interface::JointHandle> joint3_eff_cmd_handle_;
 };
 
-#endif  // TEST_JOINT_EFFORT_CONTROLLER_HPP_
+#endif  // TEST_JOINT_GROUP_EFFORT_CONTROLLER_HPP_
