@@ -9,7 +9,20 @@ on:
     - cron: '17 8 * * *'
 
 jobs:
-  build_and_test:
+  ci_binary:
+    name: Industrial CI against testing repository
+    strategy:
+      matrix:
+        env:
+          - {ROS_DISTRO: foxy, ROS_REPO: testing}
+    runs-on: ubuntu-latest
+    steps:
+      - run: sudo apt-get update -qq && sudo apt-get upgrade
+      - uses: actions/checkout@v1
+      - uses: 'ros-industrial/industrial_ci@master'
+        env: ${{matrix.env}}
+
+  ci_source:
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
@@ -31,7 +44,6 @@ jobs:
           file: ros_ws/lcov/total_coverage.info
           flags: unittests
           name: codecov-umbrella
-          yml: ./codecov.yml
           fail_ci_if_error: true
       - uses: actions/upload-artifact@v1
         with:
