@@ -37,6 +37,9 @@ jobs:
           source-ros-binary-installation: foxy
           # build all packages listed in the meta package
           package-name: |
+            diff_drive_controller
+            joint_state_controller
+            joint_trajectory_controller
             ros2_controllers
           vcs-repo-file-url: |
             https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/.github/workspace.repos
