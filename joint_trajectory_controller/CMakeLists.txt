@@ -101,14 +101,6 @@ if(BUILD_TESTING)
     test_trajectory_actions
     test/test_trajectory_actions.cpp
   )
-  # There's an API break between master and foxy in terms of action goalhandles
-  # more details: https://github.com/ros2/rclcpp/pull/1311
-  # Adding a conditional here helps fixing the test wo/ branching off
-  if(${rclcpp_VERSION} LESS "5.0.0")
-    message("RCLCPP_VERSION = ${rclcpp_VERSION}")
-    target_compile_definitions(
-      test_trajectory_actions PRIVATE SHARED_FUTURE_CALLBACK)
-  endif()
   target_include_directories(test_trajectory_actions PRIVATE include)
   target_link_libraries(test_trajectory_actions
     joint_trajectory_controller
