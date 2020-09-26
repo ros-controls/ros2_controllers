@@ -9,32 +9,43 @@ on:
     - cron: '17 8 * * *'
 
 jobs:
-  build_and_test:
-    runs-on: ubuntu-18.04
+  # Re-enable once ros2_controls is released completely
+  #  ci_binary:
+  #    name: Foxy binary job
+  #    runs-on: ubuntu-latest
+  #    strategy:
+  #      matrix:
+  #        env:
+  #          - {ROS_DISTRO: foxy, ROS_REPO: main}
+  #          - {ROS_DISTRO: foxy, ROS_REPO: testing}
+  #    steps:
+  #      - run: sudo apt-get update -qq && sudo apt-get upgrade
+  #      - uses: actions/checkout@v1
+  #      - uses: 'ros-industrial/industrial_ci@master'
+  #        env: ${{matrix.env}}
+
+  ci_source:
+    name: Foxy source job
+    runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
     steps:
       - uses: ros-tooling/setup-ros@0.0.23
+        with:
+          required-ros-distributions: foxy
       - uses: ros-tooling/action-ros-ci@0.0.17
         with:
+          source-ros-binary-installation: foxy
+          # build all packages listed in the meta package
           package-name: |
+            diff_drive_controller
             joint_state_controller
             joint_trajectory_controller
-            diff_drive_controller
+            ros2_controllers
           vcs-repo-file-url: |
             https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/.github/workspace.repos
-            https://raw.githubusercontent.com/ros2/ros2/master/ros2.repos
-
           colcon-mixin-name: coverage-gcc
           colcon-mixin-repository: https://raw.githubusercontent.com/colcon/colcon-mixin-repository/master/index.yaml
-      - uses: codecov/codecov-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          file: ros_ws/lcov/total_coverage.info
-          flags: unittests
-          name: codecov-umbrella
-          yml: ./codecov.yml
-          fail_ci_if_error: true
       - uses: actions/upload-artifact@v1
         with:
           name: colcon-logs-${{ matrix.os }}
