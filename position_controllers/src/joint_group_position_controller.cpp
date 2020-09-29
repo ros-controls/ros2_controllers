@@ -16,11 +16,6 @@
 #include "rclcpp/logging.hpp"
 #include "rclcpp/parameter.hpp"
 
-namespace
-{
-constexpr auto kJPCLoggerName = "joint position controller";
-}
-
 namespace position_controllers
 {
 using CallbackReturn = JointGroupPositionController::CallbackReturn;
@@ -28,7 +23,7 @@ using CallbackReturn = JointGroupPositionController::CallbackReturn;
 JointGroupPositionController::JointGroupPositionController()
 : forward_command_controller::ForwardCommandController()
 {
-  logger_name_ = kJPCLoggerName;
+  logger_name_ = "joint position controller";
 }
 
 CallbackReturn JointGroupPositionController::on_configure(
@@ -41,7 +36,7 @@ CallbackReturn JointGroupPositionController::on_configure(
     if (interface_param.as_string() != "position_command") {
       RCLCPP_ERROR_STREAM(
         rclcpp::get_logger(
-          kJPCLoggerName), "'interface_name' already set with an invalid value");
+          logger_name_), "'interface_name' already set with an invalid value");
       return CallbackReturn::ERROR;
     }
   }
