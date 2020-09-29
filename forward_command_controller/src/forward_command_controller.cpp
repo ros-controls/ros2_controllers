@@ -20,11 +20,6 @@
 #include "rclcpp/qos.hpp"
 #include "rclcpp/logging.hpp"
 
-namespace
-{
-constexpr auto kFCCLoggerName = "forward command controller";
-}
-
 namespace forward_command_controller
 {
 using CallbackReturn = ForwardCommandController::CallbackReturn;
@@ -34,7 +29,7 @@ ForwardCommandController::ForwardCommandController()
   joint_cmd_handles_(),
   rt_command_ptr_(nullptr),
   joints_command_subscriber_(nullptr),
-  logger_name_(kFCCLoggerName)
+  logger_name_("forward command controller")
 {}
 
 CallbackReturn ForwardCommandController::on_configure(
