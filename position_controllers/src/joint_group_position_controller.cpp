@@ -35,8 +35,9 @@ CallbackReturn JointGroupPositionController::on_configure(
   } else {
     if (interface_param.as_string() != "position_command") {
       RCLCPP_ERROR_STREAM(
-        rclcpp::get_logger(
-          logger_name_), "'interface_name' already set with an invalid value");
+        rclcpp::get_logger(logger_name_),
+        "'interface_name' already set with invalid value '" <<
+          interface_param.as_string() << "'");
       return CallbackReturn::ERROR;
     }
   }
