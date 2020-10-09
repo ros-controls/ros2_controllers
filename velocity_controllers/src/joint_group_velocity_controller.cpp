@@ -16,11 +16,6 @@
 #include "rclcpp/logging.hpp"
 #include "rclcpp/parameter.hpp"
 
-namespace
-{
-constexpr auto kJVCLoggerName = "joint velocity controller";
-}
-
 namespace velocity_controllers
 {
 using CallbackReturn = JointGroupVelocityController::CallbackReturn;
@@ -28,7 +23,7 @@ using CallbackReturn = JointGroupVelocityController::CallbackReturn;
 JointGroupVelocityController::JointGroupVelocityController()
 : forward_command_controller::ForwardCommandController()
 {
-  logger_name_ = kJVCLoggerName;
+  logger_name_ = "joint velocity controller";
 }
 
 CallbackReturn JointGroupVelocityController::on_configure(
@@ -41,7 +36,7 @@ CallbackReturn JointGroupVelocityController::on_configure(
     if (interface_param.as_string() != "velocity_command") {
       RCLCPP_ERROR_STREAM(
         rclcpp::get_logger(
-          kJVCLoggerName), "'interface_name' already set with an invalid value");
+          logger_name_), "'interface_name' already set with an invalid value");
       return CallbackReturn::ERROR;
     }
   }
