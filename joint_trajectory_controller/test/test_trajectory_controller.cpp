@@ -916,7 +916,7 @@ TEST_F(TestTrajectoryController, test_trajectory_replace) {
   subscribeToState();
 
   std::vector<std::vector<double>> points_old {{{2., 3., 4.}}};
-  std::vector<std::vector<double>> points_partial_new {{{1.5}}};
+  std::vector<std::vector<double>> points_partial_new {{1.5}};
 
   const auto delay = std::chrono::milliseconds(500);
   builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(delay)};
