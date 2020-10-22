@@ -9,7 +9,6 @@ on:
     - cron: '17 8 * * *'
 
 jobs:
-  # Re-enable once ros2_controls is released completely
   ci_binary:
     name: Foxy binary job
     runs-on: ubuntu-latest
