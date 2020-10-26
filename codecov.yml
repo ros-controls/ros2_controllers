@@ -1,0 +1,14 @@
+coverage:
+  precision: 2
+  round: down
+  range: "35...100"
+  status:
+    project:
+      default:
+        informational: true
+    patch: off
+fixes:
+  - "ros_ws/src/ros2_controllers/::"
+comment:
+  layout: "diff, flags, files"
+  behavior: default
