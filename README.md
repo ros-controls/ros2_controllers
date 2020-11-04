@@ -6,7 +6,8 @@ linux: [![Build Status](https://travis-ci.org/ros-controls/ros2_controllers.svg?
 ## Getting Started:
 Have a look at here: https://github.com/ros-controls/ros2_control
 
-***
+## Acknowledgements
+
 <!-- 
     ROSIN acknowledgement from the ROSIN press kit
     @ https://github.com/rosin-project/press_kit
@@ -24,4 +25,4 @@ More information: <a href="http://rosin-project.eu">rosin-project.eu</a>
      alt="eu_flag" height="45" align="left" >  
 
 This project has received funding from the European Union’s Horizon 2020  
-research and innovation programme under grant agreement no. 732287. 
+research and innovation programme under grant agreement no. 732287.
