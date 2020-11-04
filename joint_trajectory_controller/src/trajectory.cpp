@@ -51,6 +51,7 @@ Trajectory::set_point_before_trajectory_msg(
   const rclcpp::Time & current_time,
   const trajectory_msgs::msg::JointTrajectoryPoint & current_point)
 {
+  std::unique_lock<std::shared_timed_mutex> guard(mutex_);
   time_before_traj_msg_ = current_time;
   state_before_traj_msg_ = current_point;
 }
@@ -58,6 +59,7 @@ Trajectory::set_point_before_trajectory_msg(
 void
 Trajectory::update(std::shared_ptr<trajectory_msgs::msg::JointTrajectory> joint_trajectory)
 {
+  std::unique_lock<std::shared_timed_mutex> guard(mutex_);
   trajectory_msg_ = joint_trajectory;
   trajectory_start_time_ = static_cast<rclcpp::Time>(joint_trajectory->header.stamp);
   sampled_already_ = false;
@@ -70,27 +72,36 @@ Trajectory::sample(
   TrajectoryPointConstIter & start_segment_itr,
   TrajectoryPointConstIter & end_segment_itr)
 {
-  THROW_ON_NULLPTR(trajectory_msg_)
-  expected_state = trajectory_msgs::msg::JointTrajectoryPoint();
+  std::shared_lock<std::shared_timed_mutex> shared_lock(mutex_);
+  {
+    THROW_ON_NULLPTR(trajectory_msg_)
+    expected_state = trajectory_msgs::msg::JointTrajectoryPoint();
 
-  if (trajectory_msg_->points.empty()) {
-    start_segment_itr = end();
-    end_segment_itr = end();
-    return false;
-  }
-
-  // first sampling of this trajectory
-  if (!sampled_already_) {
-    if (trajectory_start_time_.seconds() == 0.0) {
-      trajectory_start_time_ = sample_time;
+    if (trajectory_msg_->points.empty()) {
+      start_segment_itr = end();
+      end_segment_itr = end();
+      return false;
     }
 
-    sampled_already_ = true;
-  }
+    // first sampling of this trajectory
+    if (!sampled_already_) {
+      //  Need to upgrade for modifying state, boost::upgrade_mutex like
+      shared_lock.unlock();
+      std::unique_lock<std::shared_timed_mutex> unique_lock(mutex_);
 
-  // sampling before the current point
-  if (sample_time < time_before_traj_msg_) {
-    return false;
+      if (trajectory_start_time_.seconds() == 0.0) {
+        trajectory_start_time_ = sample_time;
+      }
+
+      sampled_already_ = true;
+      unique_lock.unlock();
+      shared_lock.lock();
+    }
+
+    // sampling before the current point
+    if (sample_time < time_before_traj_msg_) {
+      return false;
+    }
   }
 
   // current time hasn't reached traj time of the first point in the msg yet

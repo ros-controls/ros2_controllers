@@ -381,6 +381,12 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
 
   last_state_publish_time_ = lifecycle_node_->now();
 
+  using namespace std::placeholders;
+  state_service_ = lifecycle_node_->create_service<control_msgs::srv::QueryTrajectoryState>(
+    "query_state", std::bind(
+      &JointTrajectoryController::state_srv_cb, this, _1,
+      _2));
+
   // action server configuration
   allow_partial_joints_goal_ = lifecycle_node_->get_parameter("allow_partial_joints_goal")
     .get_value<bool>();
@@ -396,7 +402,6 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
       action_monitor_rate << "Hz.");
   action_monitor_period_ = rclcpp::Duration::from_seconds(1.0 / action_monitor_rate);
 
-  using namespace std::placeholders;
   action_server_ = rclcpp_action::create_server<FollowJTrajAction>(
     lifecycle_node_->get_node_base_interface(),
     lifecycle_node_->get_node_clock_interface(),
@@ -541,6 +546,63 @@ void JointTrajectoryController::publish_state(
 
     state_publisher_->unlockAndPublish();
   }
+}
+
+void JointTrajectoryController::state_srv_cb(
+  const std::shared_ptr<control_msgs::srv::QueryTrajectoryState::Request> request,
+  std::shared_ptr<control_msgs::srv::QueryTrajectoryState::Response> response)
+{
+  // Precondition: Running controller
+  if (is_halted) {
+    const std::string msg = "Can't sample trajectory. Controller is not running.";
+    RCLCPP_ERROR(
+      lifecycle_node_->get_logger(),
+      msg);
+    response->success = false;
+    response->message = msg;
+    return;
+  }
+
+  /// Using the contents of traj_point_active_ptr_ is not thread safe,
+  ///  it may be modified in update()
+  auto trajectory = (*traj_point_active_ptr_);
+
+  // Can't sample an unstarted trajectory with no fixed start time
+  if (!trajectory->is_sampled_already() &&
+    trajectory->get_trajectory_start_time().seconds() == 0.0)
+  {
+    const std::string msg = "Trajectory start time is 0.0 and it hasn't started. Cannot sample.";
+    RCLCPP_ERROR(
+      lifecycle_node_->get_logger(),
+      msg);
+    response->success = false;
+    response->message = msg;
+    return;
+  }
+
+  JointTrajectoryPoint state_desired;
+  TrajectoryPointConstIter start_segment_itr, end_segment_itr;
+  const bool valid_point = trajectory->sample(
+    request->time, state_desired,
+    start_segment_itr, end_segment_itr);
+
+  if (!valid_point) {
+    const std::string msg = "Sample time requested " + std::to_string(
+      rclcpp::Time(
+        request->time).seconds()) + " is not valid";
+    RCLCPP_ERROR(
+      lifecycle_node_->get_logger(),
+      msg);
+    response->success = false;
+    response->message = msg;
+    return;
+  }
+
+  response->success = true;
+  response->name = joint_names_;
+  response->position = state_desired.positions;
+  response->velocity = state_desired.velocities;
+  response->acceleration = state_desired.accelerations;
 }
 
 rclcpp_action::GoalResponse JointTrajectoryController::goal_callback(

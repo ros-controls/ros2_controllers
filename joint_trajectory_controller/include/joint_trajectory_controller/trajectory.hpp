@@ -15,6 +15,7 @@
 #ifndef JOINT_TRAJECTORY_CONTROLLER__TRAJECTORY_HPP_
 #define JOINT_TRAJECTORY_CONTROLLER__TRAJECTORY_HPP_
 
+#include <shared_mutex>
 #include <memory>
 #include <vector>
 
@@ -103,7 +104,7 @@ public:
    * \param[out] output The state at \p sample_time.
    */
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  void interpolate_between_points(
+  static void interpolate_between_points(
     const rclcpp::Time & time_a, const trajectory_msgs::msg::JointTrajectoryPoint & state_a,
     const rclcpp::Time & time_b, const trajectory_msgs::msg::JointTrajectoryPoint & state_b,
     const rclcpp::Time & sample_time,
@@ -127,7 +128,11 @@ public:
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory>
-  get_trajectory_msg() const {return trajectory_msg_;}
+  get_trajectory_msg() const
+  {
+    std::shared_lock<std::shared_timed_mutex> shared_lock(mutex_);
+    return trajectory_msg_;
+  }
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   rclcpp::Time get_trajectory_start_time() const {return trajectory_start_time_;}
@@ -143,6 +148,9 @@ private:
   trajectory_msgs::msg::JointTrajectoryPoint state_before_traj_msg_;
 
   bool sampled_already_ = false;
+  //  a shared_mutex should be enough, but it's only c++17
+  //  Needed to prevent concurrent sampling and trajectory update
+  mutable std::shared_timed_mutex mutex_;
 };
 
 /**

@@ -29,6 +29,7 @@
 #include "builtin_interfaces/msg/duration.hpp"
 #include "builtin_interfaces/msg/time.hpp"
 #include "control_msgs/msg/detail/joint_trajectory_controller_state__struct.hpp"
+#include "control_msgs/srv/query_trajectory_state.hpp"
 #include "controller_interface/controller_interface.hpp"
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
@@ -59,7 +60,7 @@ const double COMMON_THRESHOLD = 0.001;
 }
 
 void
-spin(rclcpp::executors::MultiThreadedExecutor * exe)
+spin(rclcpp::Executor * exe)
 {
   exe->spin();
 }
@@ -294,6 +295,7 @@ protected:
     return state_msg_;
   }
   void test_state_publish_rate_target(int target_msg_count);
+  trajectory_msgs::msg::JointTrajectory getTrajExample();
 
   std::string controller_name_ = "test_joint_trajectory_controller";
 
@@ -318,6 +320,21 @@ protected:
   mutable std::mutex state_mutex_;
   std::shared_ptr<control_msgs::msg::JointTrajectoryControllerState> state_msg_;
 };
+
+trajectory_msgs::msg::JointTrajectory TestTrajectoryController::getTrajExample()
+{
+  trajectory_msgs::msg::JointTrajectory trajectory;
+  trajectory.joint_names = joint_names_;
+  trajectory.header.stamp = rclcpp::Time(0);
+  trajectory.points.resize(1);
+  trajectory.points[0].time_from_start = rclcpp::Duration::from_seconds(0.25);
+  trajectory.points[0].positions.resize(1);
+  trajectory.points[0].positions = {1.0, 2.0, 3.0};
+  trajectory.points[0].velocities.resize(1);
+  trajectory.points[0].velocities = {-1.0, -2.0, -3.0};
+  return trajectory;
+}
+
 
 TEST_F(TestTrajectoryController, wrong_initialization) {
   const auto uninitialized_robot = std::make_shared<test_robot_hardware::TestRobotHardware>();
@@ -628,7 +645,6 @@ TEST_F(TestTrajectoryController, state_topic_consistency) {
   auto state = getState();
 
   size_t n_joints = joint_names_.size();
-
   for (unsigned int i = 0; i < n_joints; ++i) {
     EXPECT_EQ(joint_names_[i], state->joint_names[i]);
   }
@@ -645,6 +661,54 @@ TEST_F(TestTrajectoryController, state_topic_consistency) {
   EXPECT_TRUE(state->error.positions.empty());
   EXPECT_TRUE(state->error.velocities.empty());
   EXPECT_TRUE(state->error.accelerations.empty());
+}
+
+TEST_F(TestTrajectoryController, state_service_consistency) {
+  rclcpp::executors::SingleThreadedExecutor executor;
+  SetUpAndActivateTrajectoryController(true, {}, &executor);
+  subscribeToState();
+  updateController();
+//  const auto executor_spin_future = std::async(std::launch::async, spin, &executor);
+
+
+  rclcpp::Node::SharedPtr srv_node = std::make_shared<rclcpp::Node>("state_srv");
+  executor.add_node(srv_node);
+  rclcpp::Client<control_msgs::srv::QueryTrajectoryState>::SharedPtr client =
+    srv_node->create_client<control_msgs::srv::QueryTrajectoryState>("query_state");
+  auto request = std::make_shared<control_msgs::srv::QueryTrajectoryState::Request>();
+  request->time = rclcpp::Clock().now();
+
+  ASSERT_TRUE(client->wait_for_service(std::chrono::milliseconds(500)));
+
+  auto result = client->async_send_request(request);
+  // Wait for the result.
+  ASSERT_EQ(
+    executor.spin_until_future_complete(result),
+    rclcpp::FutureReturnCode::SUCCESS);
+  ASSERT_FALSE(result.get()->success) << "No trajectory running";
+
+  auto trajectory = getTrajExample();
+  trajectory.points[0].time_from_start = rclcpp::Duration(5.0);
+  trajectory_publisher_->publish(trajectory);
+  traj_controller_->wait_for_trajectory(executor);
+  updateController();
+  request->time = rclcpp::Clock().now() + trajectory.points[0].time_from_start;  // query at end
+  result = client->async_send_request(request);
+  // Wait for the result.
+  ASSERT_EQ(
+    executor.spin_until_future_complete(result),
+    rclcpp::FutureReturnCode::SUCCESS);
+  ASSERT_TRUE(result.get()->success);
+
+  // Sleep until first waypoint of full trajectory
+  RCLCPP_INFO(traj_lifecycle_node_->get_logger(), "Service ended");
+  ASSERT_EQ(result.get()->name.size(), joint_names_.size());
+  constexpr double allowed_delta = .1;
+  for (size_t i = 0; i < joint_names_.size(); ++i) {
+    SCOPED_TRACE("Joint " + std::to_string(i));
+    EXPECT_NEAR(trajectory.points[0].positions[i], result.get()->position[i], allowed_delta);
+    EXPECT_NEAR(trajectory.points[0].velocities[i], result.get()->velocity[i], allowed_delta);
+  }
 }
 
 void TestTrajectoryController::test_state_publish_rate_target(int target_msg_count)
@@ -842,7 +906,6 @@ TEST_F(TestTrajectoryController, test_partial_joint_list_not_allowed) {
   executor.cancel();
 }
 
-
 /**
  * @brief invalid_message Test mismatched joint and reference vector sizes
  */
@@ -852,15 +915,7 @@ TEST_F(TestTrajectoryController, invalid_message) {
   SetUpAndActivateTrajectoryController(true, {partial_joints_parameters}, &executor);
 
   trajectory_msgs::msg::JointTrajectory traj_msg, good_traj_msg;
-
-  good_traj_msg.joint_names = joint_names_;
-  good_traj_msg.header.stamp = rclcpp::Time(0);
-  good_traj_msg.points.resize(1);
-  good_traj_msg.points[0].time_from_start = rclcpp::Duration::from_seconds(0.25);
-  good_traj_msg.points[0].positions.resize(1);
-  good_traj_msg.points[0].positions = {1.0, 2.0, 3.0};
-  good_traj_msg.points[0].velocities.resize(1);
-  good_traj_msg.points[0].velocities = {-1.0, -2.0, -3.0};
+  good_traj_msg = getTrajExample();
   EXPECT_TRUE(traj_controller_->validate_trajectory_msg(good_traj_msg));
 
   // Incompatible joint names
