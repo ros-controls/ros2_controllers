@@ -20,6 +20,7 @@
 #include <sstream>
 
 #include "controller_manager/controller_manager.hpp"
+#include "controller_manager_msgs/srv/switch_controller.hpp"
 #include "hardware_interface/robot_hardware.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rosgraph_msgs/msg/clock.hpp"
@@ -217,6 +218,8 @@ int diffbot_main_runner(int argc, char * const * argv)
   auto sim_time = rclcpp::Time(0L, RCL_ROS_TIME);
   const auto single_loop_period = robot->get_period();
   auto sys_clk = rclcpp::Clock(RCL_SYSTEM_TIME);
+  cm->switch_controller({"diffbot_controller"}, {}, controller_manager_msgs::srv::SwitchController::Request::STRICT);
+  ddc_node->activate();
 
   // Loop approximated to iterate once every single_loop_period.
   while (rclcpp::ok()) {
