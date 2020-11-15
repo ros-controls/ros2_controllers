@@ -218,6 +218,7 @@ int diffbot_main_runner(int argc, char * const * argv)
   auto sim_time = rclcpp::Time(0L, RCL_ROS_TIME);
   const auto single_loop_period = robot->get_period();
   auto sys_clk = rclcpp::Clock(RCL_SYSTEM_TIME);
+
   cm->switch_controller({"diffbot_controller"}, {}, controller_manager_msgs::srv::SwitchController::Request::STRICT);
   ddc_node->activate();
 
