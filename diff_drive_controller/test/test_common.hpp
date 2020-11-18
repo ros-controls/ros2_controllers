@@ -69,7 +69,7 @@ protected:
 
   DiffDriveControllerTest()
   : received_first_odom_(false),
-    executor_(std::make_shared<rclcpp::executors::SingleThreadedExecutor>()),
+    executor_(std::make_shared<rclcpp::executors::MultiThreadedExecutor>(rclcpp::ExecutorOptions(), 2)),
     node_(std::make_shared<rclcpp::Node>("diffbot_controller_test")),
     logger_(node_->get_logger()),
     cmd_pub_(node_->create_publisher<geometry_msgs::msg::TwistStamped>(
