@@ -66,24 +66,26 @@ public:
   JointTrajectoryController();
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  JointTrajectoryController(const std::vector<std::string> & joint_names);
+  explicit JointTrajectoryController(const std::vector<std::string> & joint_names);
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   controller_interface::return_type
   init(const std::string & controller_name) override;
 
   /**
-   * @brief command_interface_configuration This controller requires the position command interfaces for the controlled joints
+   * @brief command_interface_configuration This controller requires the position command
+   * interfaces for the controlled joints
    */
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  virtual controller_interface::InterfaceConfiguration command_interface_configuration() const override;
+  controller_interface::InterfaceConfiguration command_interface_configuration() const override;
 
 
   /**
-   * @brief command_interface_configuration This controller requires the position and velocity state interfaces for the controlled joints
+   * @brief command_interface_configuration This controller requires the position and velocity
+   * state interfaces for the controlled joints
    */
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  virtual controller_interface::InterfaceConfiguration state_interface_configuration() const override;
+  controller_interface::InterfaceConfiguration state_interface_configuration() const override;
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   controller_interface::return_type
@@ -116,10 +118,14 @@ public:
 protected:
   std::vector<std::string> joint_names_;
 
-  // For convenience, we have ordered the interfaces so i-th position matches i-th index in joint_names_
-  std::vector<std::reference_wrapper<hardware_interface::LoanedCommandInterface>> joint_position_command_interface_;
-  std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>> joint_position_state_interface_;
-  std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>> joint_velocity_state_interface_;
+  // For convenience, we have ordered the interfaces so i-th position matches i-th index
+  // in joint_names_
+  std::vector<std::reference_wrapper<hardware_interface::LoanedCommandInterface>>
+  joint_position_command_interface_;
+  std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>>
+  joint_position_state_interface_;
+  std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>>
+  joint_velocity_state_interface_;
 
   // TODO(karsten1987): eventually activate and deactive subscriber directly when its supported
   bool subscriber_is_active_ = false;

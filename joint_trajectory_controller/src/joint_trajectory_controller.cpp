@@ -27,6 +27,7 @@
 #include "builtin_interfaces/msg/duration.hpp"
 #include "builtin_interfaces/msg/time.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
+#include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "joint_trajectory_controller/trajectory.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/logging.hpp"
@@ -85,7 +86,7 @@ command_interface_configuration() const
   conf.type = controller_interface::interface_configuration_type::INDIVIDUAL;
   conf.names.reserve(joint_names_.size());
   for (const auto & joint_name  : joint_names_) {
-    conf.names.push_back(joint_name + "/position");
+    conf.names.push_back(joint_name + "/" + hardware_interface::HW_IF_POSITION);
   }
   return conf;
 }
@@ -97,8 +98,8 @@ state_interface_configuration() const
   conf.type = controller_interface::interface_configuration_type::INDIVIDUAL;
   conf.names.reserve(joint_names_.size());
   for (const auto & joint_name  : joint_names_) {
-    conf.names.push_back(joint_name + "/position");
-    conf.names.push_back(joint_name + "/velocity");
+    conf.names.push_back(joint_name + "/" + hardware_interface::HW_IF_POSITION);
+    conf.names.push_back(joint_name + "/" + hardware_interface::HW_IF_VELOCITY);
   }
   return conf;
 }
@@ -359,7 +360,8 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
-// Fill ordered_interfaces with references to the matching interfaces in the same order as in joint_names
+// Fill ordered_interfaces with references to the matching interfaces
+// in the same order as in joint_names
 template<typename T>
 bool get_ordered_interfaces(
   std::vector<T> & unordered_interfaces, const std::vector<std::string> & joint_names,
@@ -375,7 +377,7 @@ bool get_ordered_interfaces(
     }
   }
 
-  return joint_names.size() != ordered_interfaces.size();
+  return joint_names.size() == ordered_interfaces.size();
 }
 
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
@@ -384,29 +386,34 @@ JointTrajectoryController::on_activate(const rclcpp_lifecycle::State & previous_
   (void) previous_state;
 
   if (!get_ordered_interfaces(
-      command_interfaces_, joint_names_, "position", joint_position_command_interface_))
+      command_interfaces_, joint_names_, hardware_interface::HW_IF_POSITION,
+      joint_position_command_interface_))
   {
     RCLCPP_ERROR(
       lifecycle_node_->get_logger(),
       "Expected %u position command interfaces, got %u",
       joint_names_.size(), joint_position_command_interface_.size());
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
   }
   if (!get_ordered_interfaces(
-      state_interfaces_, joint_names_, "position", joint_position_state_interface_))
+      state_interfaces_, joint_names_, hardware_interface::HW_IF_POSITION,
+      joint_position_state_interface_))
   {
     RCLCPP_ERROR(
       lifecycle_node_->get_logger(),
       "Expected %u position state interfaces, got %u",
       joint_names_.size(), joint_position_state_interface_.size());
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
   }
   if (!get_ordered_interfaces(
-      state_interfaces_, joint_names_, "velocity", joint_velocity_state_interface_))
-
+      state_interfaces_, joint_names_, hardware_interface::HW_IF_VELOCITY,
+      joint_velocity_state_interface_))
   {
     RCLCPP_ERROR(
       lifecycle_node_->get_logger(),
       "Expected %u velocity state interfaces, got %u",
       joint_names_.size(), joint_velocity_state_interface_.size());
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
   }
 
   // Store 'home' pose
