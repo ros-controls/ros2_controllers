@@ -24,8 +24,6 @@
 #include "control_msgs/msg/joint_trajectory_controller_state.hpp"
 #include "control_msgs/action/follow_joint_trajectory.hpp"
 #include "controller_interface/controller_interface.hpp"
-#include "hardware_interface/joint_handle.hpp"
-#include "hardware_interface/operation_mode_handle.hpp"
 #include "joint_trajectory_controller/tolerances.hpp"
 #include "joint_trajectory_controller/visibility_control.h"
 #include "rclcpp/duration.hpp"
@@ -68,15 +66,24 @@ public:
   JointTrajectoryController();
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  JointTrajectoryController(
-    const std::vector<std::string> & joint_names,
-    const std::vector<std::string> & write_op_names);
+  JointTrajectoryController(const std::vector<std::string> & joint_names);
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   controller_interface::return_type
-  init(
-    std::weak_ptr<hardware_interface::RobotHardware> robot_hardware,
-    const std::string & controller_name) override;
+  init(const std::string & controller_name) override;
+
+  /**
+   * @brief command_interface_configuration This controller requires the position command interfaces for the controlled joints
+   */
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
+  virtual controller_interface::InterfaceConfiguration command_interface_configuration() const override;
+
+
+  /**
+   * @brief command_interface_configuration This controller requires the position and velocity state interfaces for the controlled joints
+   */
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
+  virtual controller_interface::InterfaceConfiguration state_interface_configuration() const override;
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   controller_interface::return_type
@@ -108,12 +115,11 @@ public:
 
 protected:
   std::vector<std::string> joint_names_;
-  std::vector<std::string> write_op_names_;
 
-  std::vector<hardware_interface::JointHandle> joint_position_command_handles_;
-  std::vector<hardware_interface::JointHandle> joint_position_state_handles_;
-  std::vector<hardware_interface::JointHandle> joint_velocity_state_handles_;
-  std::vector<hardware_interface::OperationModeHandle *> registered_operation_mode_handles_;
+  // For convenience, we have ordered the interfaces so i-th position matches i-th index in joint_names_
+  std::vector<std::reference_wrapper<hardware_interface::LoanedCommandInterface>> joint_position_command_interface_;
+  std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>> joint_position_state_interface_;
+  std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>> joint_velocity_state_interface_;
 
   // TODO(karsten1987): eventually activate and deactive subscriber directly when its supported
   bool subscriber_is_active_ = false;
@@ -179,7 +185,6 @@ protected:
   void set_hold_position();
 
   bool reset();
-  void set_op_mode(const hardware_interface::OperationMode & mode);
   void halt();
 
   using JointTrajectoryPoint = trajectory_msgs::msg::JointTrajectoryPoint;
