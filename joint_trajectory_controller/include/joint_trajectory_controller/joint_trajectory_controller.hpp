@@ -79,7 +79,6 @@ public:
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   controller_interface::InterfaceConfiguration command_interface_configuration() const override;
 
-
   /**
    * @brief command_interface_configuration This controller requires the position and velocity
    * state interfaces for the controlled joints

@@ -82,16 +82,11 @@ TEST_F(TestTrajectoryController, configuration) {
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
   traj_controller_->update();
-  resource_manager_->write();
-
-  auto joint1_pos = resource_manager_->claim_state_interface("joint1/position");
-  auto joint2_pos = resource_manager_->claim_state_interface("joint2/position");
-  auto joint3_pos = resource_manager_->claim_state_interface("joint3/position");
 
   // no change in hw position
-  EXPECT_NE(3.3, joint1_pos.get_value());
-  EXPECT_NE(4.4, joint2_pos.get_value());
-  EXPECT_NE(5.5, joint3_pos.get_value());
+  EXPECT_NE(3.3, joint_pos_[0]);
+  EXPECT_NE(4.4, joint_pos_[1]);
+  EXPECT_NE(5.5, joint_pos_[2]);
 
   executor.cancel();
 }
@@ -131,9 +126,9 @@ TEST_F(TestTrajectoryController, configuration) {
 //   resource_manager_->write();
 //
 //   // change in hw position
-//   EXPECT_EQ(3.3, traj_controller_.get_joint_pos(0));
-//   EXPECT_EQ(4.4, traj_controller_->get_joint_pos(1));
-//   EXPECT_EQ(5.5, traj_controller_->get_joint_pos(2));
+//   EXPECT_EQ(3.3, joint_pos_[0]);
+//   EXPECT_EQ(4.4, joint_pos_[1]);
+//   EXPECT_EQ(5.5, joint_pos_[2]);
 //
 //   executor.cancel();
 // }
@@ -188,9 +183,9 @@ TEST_F(TestTrajectoryController, configuration) {
 //   resource_manager_->write();
 //
 //   // no change in hw position
-//   EXPECT_EQ(3.3, traj_controller_.get_joint_pos(0));
-//   EXPECT_EQ(4.4, traj_controller_->get_joint_pos(1));
-//   EXPECT_EQ(5.5, traj_controller_->get_joint_pos(2));
+//   EXPECT_EQ(3.3, joint_pos_[0]);
+//   EXPECT_EQ(4.4, joint_pos_[1]);
+//   EXPECT_EQ(5.5, joint_pos_[2]);
 //
 //   // reactivated
 //   // wait so controller process the third point when reactivated
@@ -202,9 +197,9 @@ TEST_F(TestTrajectoryController, configuration) {
 //   resource_manager_->write();
 //
 //   // change in hw position to 3rd point
-//   EXPECT_EQ(10.10, traj_controller_.get_joint_pos(0));
-//   EXPECT_EQ(11.11, traj_controller_->get_joint_pos(1));
-//   EXPECT_EQ(12.12, traj_controller_->get_joint_pos(2));
+//   EXPECT_EQ(10.10, joint_pos_[0]);
+//   EXPECT_EQ(11.11, joint_pos_[1]);
+//   EXPECT_EQ(12.12, joint_pos_[2]);
 //
 //   executor.cancel();
 // }
@@ -224,12 +219,10 @@ TEST_F(TestTrajectoryController, cleanup) {
   publish(time_from_start, points);
   traj_controller_->wait_for_trajectory(executor);
   traj_controller_->update();
-  resource_manager_->write();
 
   auto state = traj_lifecycle_node->deactivate();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   traj_controller_->update();
-  resource_manager_->write();
 
   state = traj_lifecycle_node->cleanup();
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
@@ -238,9 +231,9 @@ TEST_F(TestTrajectoryController, cleanup) {
   updateController(rclcpp::Duration::from_seconds(0.25));
 
   // should be home pose again
-  EXPECT_NEAR(INITIAL_POS_JOINT1, traj_controller_->get_joint_pos(0), COMMON_THRESHOLD);
-  EXPECT_NEAR(INITIAL_POS_JOINT2, traj_controller_->get_joint_pos(1), COMMON_THRESHOLD);
-  EXPECT_NEAR(INITIAL_POS_JOINT3, traj_controller_->get_joint_pos(2), COMMON_THRESHOLD);
+  EXPECT_NEAR(INITIAL_POS_JOINT1, joint_pos_[0], COMMON_THRESHOLD);
+  EXPECT_NEAR(INITIAL_POS_JOINT2, joint_pos_[1], COMMON_THRESHOLD);
+  EXPECT_NEAR(INITIAL_POS_JOINT3, joint_pos_[2], COMMON_THRESHOLD);
 }
 
 TEST_F(TestTrajectoryController, correct_initialization_using_parameters) {
@@ -261,9 +254,9 @@ TEST_F(TestTrajectoryController, correct_initialization_using_parameters) {
 
   state = traj_lifecycle_node->get_current_state();
   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
-  EXPECT_EQ(INITIAL_POS_JOINT1, traj_controller_->get_joint_pos(0));
-  EXPECT_EQ(INITIAL_POS_JOINT2, traj_controller_->get_joint_pos(1));
-  EXPECT_EQ(INITIAL_POS_JOINT3, traj_controller_->get_joint_pos(2));
+  EXPECT_EQ(INITIAL_POS_JOINT1, joint_pos_[0]);
+  EXPECT_EQ(INITIAL_POS_JOINT2, joint_pos_[1]);
+  EXPECT_EQ(INITIAL_POS_JOINT3, joint_pos_[2]);
 
   // send msg
   constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
@@ -280,39 +273,34 @@ TEST_F(TestTrajectoryController, correct_initialization_using_parameters) {
 
   // first update
   traj_controller_->update();
-  resource_manager_->write();
 
   // wait so controller process the second point when deactivated
   std::this_thread::sleep_for(FIRST_POINT_TIME);
   traj_controller_->update();
-  resource_manager_->write();
-
   // deactivated
   state = traj_lifecycle_node->deactivate();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
 
   const auto allowed_delta = 0.05;
 
-  EXPECT_NEAR(3.3, traj_controller_->get_joint_pos(0), allowed_delta);
-  EXPECT_NEAR(4.4, traj_controller_->get_joint_pos(1), allowed_delta);
-  EXPECT_NEAR(5.5, traj_controller_->get_joint_pos(2), allowed_delta);
+  EXPECT_NEAR(3.3, joint_pos_[0], allowed_delta);
+  EXPECT_NEAR(4.4, joint_pos_[1], allowed_delta);
+  EXPECT_NEAR(5.5, joint_pos_[2], allowed_delta);
 
   // cleanup
   state = traj_lifecycle_node->cleanup();
 
   // update loop receives a new msg and updates accordingly
   traj_controller_->update();
-  resource_manager_->write();
 
   // check the traj_msg_home_ptr_ initialization code for the standard wait timing
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
   traj_controller_->update();
-  resource_manager_->write();
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
 
-  EXPECT_NEAR(INITIAL_POS_JOINT1, traj_controller_->get_joint_pos(0), allowed_delta);
-  EXPECT_NEAR(INITIAL_POS_JOINT2, traj_controller_->get_joint_pos(1), allowed_delta);
-  EXPECT_NEAR(INITIAL_POS_JOINT3, traj_controller_->get_joint_pos(2), allowed_delta);
+  EXPECT_NEAR(INITIAL_POS_JOINT1, joint_pos_[0], allowed_delta);
+  EXPECT_NEAR(INITIAL_POS_JOINT2, joint_pos_[1], allowed_delta);
+  EXPECT_NEAR(INITIAL_POS_JOINT3, joint_pos_[2], allowed_delta);
 
   state = traj_lifecycle_node->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
@@ -429,9 +417,9 @@ TEST_F(TestTrajectoryController, test_jumbled_joint_order) {
   // update for 0.25 seconds
   updateController(rclcpp::Duration::from_seconds(0.25));
 
-  EXPECT_NEAR(1.0, traj_controller_->get_joint_pos(0), COMMON_THRESHOLD);
-  EXPECT_NEAR(2.0, traj_controller_->get_joint_pos(1), COMMON_THRESHOLD);
-  EXPECT_NEAR(3.0, traj_controller_->get_joint_pos(2), COMMON_THRESHOLD);
+  EXPECT_NEAR(1.0, joint_pos_[0], COMMON_THRESHOLD);
+  EXPECT_NEAR(2.0, joint_pos_[1], COMMON_THRESHOLD);
+  EXPECT_NEAR(3.0, joint_pos_[2], COMMON_THRESHOLD);
 }
 
 /**
@@ -443,7 +431,7 @@ TEST_F(TestTrajectoryController, test_partial_joint_list) {
   rclcpp::executors::SingleThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(true, {partial_joints_parameters}, &executor);
 
-  const double initial_joint3_cmd = traj_controller_->get_joint_cmd(2);
+  const double initial_joint3_cmd = joint_pos_[2];
   trajectory_msgs::msg::JointTrajectory traj_msg;
 
   {
@@ -470,10 +458,10 @@ TEST_F(TestTrajectoryController, test_partial_joint_list) {
   updateController(rclcpp::Duration::from_seconds(0.25));
 
   double threshold = 0.001;
-  EXPECT_NEAR(traj_msg.points[0].positions[1], traj_controller_->get_joint_pos(0), threshold);
-  EXPECT_NEAR(traj_msg.points[0].positions[0], traj_controller_->get_joint_pos(1), threshold);
+  EXPECT_NEAR(traj_msg.points[0].positions[1], joint_pos_[0], threshold);
+  EXPECT_NEAR(traj_msg.points[0].positions[0], joint_pos_[1], threshold);
   EXPECT_NEAR(
-    initial_joint3_cmd, traj_controller_->get_joint_pos(2),
+    initial_joint3_cmd, joint_pos_[2],
     threshold) << "Joint 3 command should be current position";
 
 //  Velocity commands are not sent yet
@@ -495,9 +483,9 @@ TEST_F(TestTrajectoryController, test_partial_joint_list_not_allowed) {
   rclcpp::executors::SingleThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(true, {partial_joints_parameters}, &executor);
 
-  const double initial_joint1_cmd = traj_controller_->get_joint_cmd(0);
-  const double initial_joint2_cmd = traj_controller_->get_joint_cmd(1);
-  const double initial_joint3_cmd = traj_controller_->get_joint_cmd(2);
+  const double initial_joint1_cmd = joint_pos_[0];
+  const double initial_joint2_cmd = joint_pos_[1];
+  const double initial_joint3_cmd = joint_pos_[2];
   trajectory_msgs::msg::JointTrajectory traj_msg;
 
   {
@@ -525,13 +513,13 @@ TEST_F(TestTrajectoryController, test_partial_joint_list_not_allowed) {
 
   double threshold = 0.001;
   EXPECT_NEAR(
-    initial_joint1_cmd, traj_controller_->get_joint_cmd(0),
+    initial_joint1_cmd, joint_pos_[0],
     threshold) << "All joints command should be current position because goal was rejected";
   EXPECT_NEAR(
-    initial_joint2_cmd, traj_controller_->get_joint_cmd(1),
+    initial_joint2_cmd, joint_pos_[1],
     threshold) << "All joints command should be current position because goal was rejected";
   EXPECT_NEAR(
-    initial_joint3_cmd, traj_controller_->get_joint_cmd(2),
+    initial_joint3_cmd, joint_pos_[2],
     threshold) << "All joints command should be current position because goal was rejected";
 
   //  Velocity commands are not sent yet

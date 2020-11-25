@@ -22,7 +22,7 @@
 
 #include "gtest/gtest.h"
 
-#include "hardware_interface/resource_manager.hpp"
+#include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
 
 namespace
@@ -35,82 +35,6 @@ const double INITIAL_POS_JOINT3 = 3.1;
 
 namespace test_trajectory_controllers
 {
-constexpr auto urdf =
-  R"(
-<?xml version="1.0" encoding="utf-8"?>
-<robot name="MinimalRobot">
-  <joint name="base_joint" type="fixed">
-    <origin rpy="0 0 0" xyz="0 0 0"/>
-    <parent link="world"/>
-    <child link="base_link"/>
-  </joint>
-  <link name="base_link">
-    <collision>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-    </collision>
-  </link>
-  <joint name="joint1" type="revolute">
-    <origin rpy="-1.57079632679 0 0" xyz="0 0 0.2"/>
-    <parent link="base_link"/>
-    <child link="link1"/>
-  </joint>
-  <link name="link1">
-    <collision>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-    </collision>
-  </link>
-  <joint name="joint2" type="revolute">
-    <origin rpy="1.57079632679 0 0" xyz="0 0 0.9"/>
-    <parent link="link1"/>
-    <child link="link2"/>
-  </joint>
-  <link name="link2">
-    <collision>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-    </collision>
-  </link>
-  <joint name="joint3" type="revolute">
-    <origin rpy="1.57079632679 0 0" xyz="0 0 0.9"/>
-    <parent link="link2"/>
-    <child link="link3"/>
-  </joint>
-  <link name="link3">
-    <collision>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-    </collision>
-  </link>
-  <ros2_control name="TestActuatorComponent1" type="actuator">
-    <hardware>
-      <plugin>test_robot_hardware/TestSingleJointActuator</plugin>
-    </hardware>
-    <joint name="joint1">
-      <command_interface name="position"/>
-      <state_interface name="position"/>
-      <state_interface name="velocity"/>
-    </joint>
-  </ros2_control>
-  <ros2_control name="TestActuatorComponent2" type="actuator">
-    <hardware>
-      <plugin>test_robot_hardware/TestSingleJointActuator</plugin>
-    </hardware>
-    <joint name="joint2">
-      <command_interface name="position"/>
-      <state_interface name="position"/>
-      <state_interface name="velocity"/>
-    </joint>
-  </ros2_control>
-  <ros2_control name="TestActuatorComponent3" type="actuator">
-    <hardware>
-      <plugin>test_robot_hardware/TestSingleJointActuator</plugin>
-    </hardware>
-    <joint name="joint3">
-      <command_interface name="position"/>
-      <state_interface name="position"/>
-      <state_interface name="velocity"/>
-    </joint>
-  </ros2_control>
-</robot>
-)";
 
 class TestableJointTrajectoryController : public joint_trajectory_controller::
   JointTrajectoryController
@@ -127,14 +51,6 @@ public:
     return ret;
   }
 
-  double get_joint_pos(size_t index) const
-  {
-    return joint_position_state_interface_[index].get().get_value();
-  }
-  double get_joint_cmd(size_t index) const
-  {
-    return joint_position_command_interface_[index].get().get_value();
-  }
   /**
   * @brief wait_for_trajectory block until a new JointTrajectory is received.
   * Requires that the executor is not spinned elsewhere between the
@@ -166,10 +82,9 @@ protected:
 
   virtual void SetUp()
   {
-    resource_manager_ = std::make_unique<hardware_interface::ResourceManager>(
-      test_trajectory_controllers::urdf);
-
     joint_names_ = {"joint1", "joint2", "joint3"};
+    joint_pos_.resize(joint_names_.size(), 0.0);
+    joint_vel_.resize(joint_names_.size(), 0.0);
 
     node_ = std::make_shared<rclcpp::Node>("trajectory_publisher_");
     trajectory_publisher_ = node_->create_publisher<trajectory_msgs::msg::JointTrajectory>(
@@ -204,7 +119,6 @@ protected:
       executor->add_node(traj_lifecycle_node_->get_node_base_interface());
     }
 
-
     // ignore velocity tolerances for this test since they arent commited in test_robot->write()
     rclcpp::Parameter stopped_velocity_parameters("constraints.stopped_velocity_tolerance", 0.0);
     traj_lifecycle_node_->set_parameter(stopped_velocity_parameters);
@@ -217,27 +131,34 @@ protected:
   {
     std::vector<hardware_interface::LoanedCommandInterface> cmd_interfaces;
     std::vector<hardware_interface::LoanedStateInterface> state_interfaces;
-    for (const auto & joint_name : joint_names_) {
-      cmd_interfaces.emplace_back(
-        resource_manager_->claim_command_interface(
-          joint_name +
-          "/position"));
-      state_interfaces.emplace_back(
-        resource_manager_->claim_state_interface(
-          joint_name +
-          "/position"));
-      state_interfaces.emplace_back(
-        resource_manager_->claim_state_interface(
-          joint_name +
-          "/velocity"));
+    pos_cmd_interfaces_.reserve(joint_names_.size());
+    pos_state_interfaces_.reserve(joint_names_.size());
+    vel_state_interfaces_.reserve(joint_names_.size());
+    for (size_t i = 0; i < joint_names_.size(); ++i) {
+      pos_cmd_interfaces_.emplace_back(
+        hardware_interface::CommandInterface(
+          joint_names_[i],
+          hardware_interface::HW_IF_POSITION, &joint_pos_[i]));
+
+      pos_state_interfaces_.emplace_back(
+        hardware_interface::StateInterface(
+          joint_names_[i],
+          hardware_interface::HW_IF_POSITION, &joint_pos_[i]));
+
+      vel_state_interfaces_.emplace_back(
+        hardware_interface::StateInterface(
+          joint_names_[i],
+          hardware_interface::HW_IF_VELOCITY, &joint_vel_[i]));
+
+      cmd_interfaces.emplace_back(pos_cmd_interfaces_.back());
+      state_interfaces.emplace_back(pos_state_interfaces_.back());
+      state_interfaces.emplace_back(vel_state_interfaces_.back());
     }
 
     // Set initial position
     cmd_interfaces[0].set_value(INITIAL_POS_JOINT1);
     cmd_interfaces[1].set_value(INITIAL_POS_JOINT2);
     cmd_interfaces[2].set_value(INITIAL_POS_JOINT3);
-    resource_manager_->write();
-    resource_manager_->read();
 
     traj_controller_->assign_interfaces(std::move(cmd_interfaces), std::move(state_interfaces));
     traj_controller_->get_lifecycle_node()->activate();
@@ -330,9 +251,7 @@ protected:
     const auto start_time = rclcpp::Clock().now();
     const auto end_time = start_time + wait_time;
     while (rclcpp::Clock().now() < end_time) {
-      resource_manager_->read();
       traj_controller_->update();
-      resource_manager_->write();
     }
   }
 
@@ -371,7 +290,6 @@ protected:
 
   std::string controller_name_ = "test_joint_trajectory_controller";
 
-  std::unique_ptr<hardware_interface::ResourceManager> resource_manager_;
   std::vector<std::string> joint_names_;
 
   rclcpp::Node::SharedPtr node_;
@@ -383,6 +301,12 @@ protected:
     state_subscriber_;
   mutable std::mutex state_mutex_;
   std::shared_ptr<control_msgs::msg::JointTrajectoryControllerState> state_msg_;
+
+  std::vector<double> joint_pos_;
+  std::vector<double> joint_vel_;
+  std::vector<hardware_interface::CommandInterface> pos_cmd_interfaces_;
+  std::vector<hardware_interface::StateInterface> pos_state_interfaces_;
+  std::vector<hardware_interface::StateInterface> vel_state_interfaces_;
 };
 }  // namespace test_trajectory_controllers
 

@@ -97,9 +97,7 @@ protected:
         rclcpp::Duration wait = rclcpp::Duration::from_seconds(2.0);
         auto end_time = start_time + wait;
         while (rclcpp::Clock().now() < end_time) {
-          resource_manager_->read();
           traj_controller_->update();
-          resource_manager_->write();
         }
       });
 
@@ -249,9 +247,9 @@ TEST_F(TestTrajectoryActions, test_success_single_point_sendgoal) {
   EXPECT_TRUE(common_goal_accepted_);
   EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
 
-  EXPECT_EQ(1.0, traj_controller_->get_joint_pos(0));
-  EXPECT_EQ(2.0, traj_controller_->get_joint_pos(1));
-  EXPECT_EQ(3.0, traj_controller_->get_joint_pos(2));
+  EXPECT_EQ(1.0, joint_pos_[0]);
+  EXPECT_EQ(2.0, joint_pos_[1]);
+  EXPECT_EQ(3.0, joint_pos_[2]);
 }
 
 TEST_F(TestTrajectoryActions, test_success_multi_point_sendgoal) {
@@ -297,9 +295,9 @@ TEST_F(TestTrajectoryActions, test_success_multi_point_sendgoal) {
   EXPECT_TRUE(common_goal_accepted_);
   EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
 
-  EXPECT_NEAR(7.0, traj_controller_->get_joint_pos(0), COMMON_THRESHOLD);
-  EXPECT_NEAR(8.0, traj_controller_->get_joint_pos(1), COMMON_THRESHOLD);
-  EXPECT_NEAR(9.0, traj_controller_->get_joint_pos(2), COMMON_THRESHOLD);
+  EXPECT_NEAR(7.0, joint_pos_[0], COMMON_THRESHOLD);
+  EXPECT_NEAR(8.0, joint_pos_[1], COMMON_THRESHOLD);
+  EXPECT_NEAR(9.0, joint_pos_[2], COMMON_THRESHOLD);
 }
 
 TEST_F(TestTrajectoryActions, test_goal_tolerances_single_point_success) {
@@ -335,9 +333,9 @@ TEST_F(TestTrajectoryActions, test_goal_tolerances_single_point_success) {
     control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL,
     common_action_result_code_);
 
-  EXPECT_NEAR(1.0, traj_controller_->get_joint_pos(0), COMMON_THRESHOLD);
-  EXPECT_NEAR(2.0, traj_controller_->get_joint_pos(1), COMMON_THRESHOLD);
-  EXPECT_NEAR(3.0, traj_controller_->get_joint_pos(2), COMMON_THRESHOLD);
+  EXPECT_NEAR(1.0, joint_pos_[0], COMMON_THRESHOLD);
+  EXPECT_NEAR(2.0, joint_pos_[1], COMMON_THRESHOLD);
+  EXPECT_NEAR(3.0, joint_pos_[2], COMMON_THRESHOLD);
 }
 
 TEST_F(TestTrajectoryActions, test_goal_tolerances_multi_point_success) {
@@ -393,9 +391,9 @@ TEST_F(TestTrajectoryActions, test_goal_tolerances_multi_point_success) {
     control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL,
     common_action_result_code_);
 
-  EXPECT_NEAR(7.0, traj_controller_->get_joint_pos(0), COMMON_THRESHOLD);
-  EXPECT_NEAR(8.0, traj_controller_->get_joint_pos(1), COMMON_THRESHOLD);
-  EXPECT_NEAR(9.0, traj_controller_->get_joint_pos(2), COMMON_THRESHOLD);
+  EXPECT_NEAR(7.0, joint_pos_[0], COMMON_THRESHOLD);
+  EXPECT_NEAR(8.0, joint_pos_[1], COMMON_THRESHOLD);
+  EXPECT_NEAR(9.0, joint_pos_[2], COMMON_THRESHOLD);
 }
 
 TEST_F(TestTrajectoryActions, test_state_tolerances_fail) {
@@ -470,15 +468,14 @@ TEST_F(TestTrajectoryActions, test_cancel_hold_position) {
     control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL,
     common_action_result_code_);
 
-  const double prev_pos1 = traj_controller_->get_joint_pos(0);
-  const double prev_pos2 = traj_controller_->get_joint_pos(1);
-  const double prev_pos3 = traj_controller_->get_joint_pos(2);
+  const double prev_pos1 = joint_pos_[0];
+  const double prev_pos2 = joint_pos_[1];
+  const double prev_pos3 = joint_pos_[2];
 
   // run an update, it should be holding
   traj_controller_->update();
-  resource_manager_->write();
 
-  EXPECT_EQ(prev_pos1, traj_controller_->get_joint_pos(0));
-  EXPECT_EQ(prev_pos2, traj_controller_->get_joint_pos(1));
-  EXPECT_EQ(prev_pos3, traj_controller_->get_joint_pos(2));
+  EXPECT_EQ(prev_pos1, joint_pos_[0]);
+  EXPECT_EQ(prev_pos2, joint_pos_[1]);
+  EXPECT_EQ(prev_pos3, joint_pos_[2]);
 }
