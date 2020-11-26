@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 #include <memory>
 
 #include "controller_manager/controller_manager.hpp"
@@ -20,7 +20,7 @@
 #include "rclcpp/executor.hpp"
 #include "rclcpp/executors/single_threaded_executor.hpp"
 #include "rclcpp/utilities.hpp"
-#include "ros2_control_test/descriptions.hpp"
+#include "descriptions.hpp"
 
 TEST(TestLoadForwardCommandController, load_controller)
 {

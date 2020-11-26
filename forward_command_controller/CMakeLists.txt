@@ -56,15 +56,14 @@ install(
 )
 
 if(BUILD_TESTING)
-  find_package(ament_cmake_gtest REQUIRED)
+  find_package(ament_cmake_gmock REQUIRED)
   find_package(ament_lint_auto REQUIRED)
   find_package(controller_manager REQUIRED)
   find_package(hardware_interface REQUIRED)
-  find_package(ros2_control_test REQUIRED)
 
   ament_lint_auto_find_test_dependencies()
 
-  ament_add_gtest(
+  ament_add_gmock(
     test_load_forward_command_controller
     test/test_load_forward_command_controller.cpp
   )
@@ -72,22 +71,18 @@ if(BUILD_TESTING)
   ament_target_dependencies(test_load_forward_command_controller
     controller_manager
     hardware_interface
-    ros2_control_test
   )
   # prevent pluginlib from using boost
   target_compile_definitions(test_load_forward_command_controller PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
-#   ament_add_gtest(
-#     test_forward_command_controller
-#     test/test_forward_command_controller.cpp
-#   )
-#   target_include_directories(test_forward_command_controller PRIVATE include)
-#   target_link_libraries(test_forward_command_controller
-#     forward_command_controller
-#   )
-#   ament_target_dependencies(test_forward_command_controller
-#     test_robot_hardware
-#   )
+  ament_add_gmock(
+    test_forward_command_controller
+    test/test_forward_command_controller.cpp
+  )
+  target_include_directories(test_forward_command_controller PRIVATE include)
+  target_link_libraries(test_forward_command_controller
+    forward_command_controller
+  )
 endif()
 
 ament_export_dependencies(
