@@ -74,7 +74,7 @@ public:
 
 protected:
   std::vector<std::string> joint_names_;
-  std::vector<std::string> interfaces_;
+  std::string interface_name_;
 
   realtime_tools::RealtimeBuffer<std::shared_ptr<CmdType>> rt_command_ptr_;
   rclcpp::Subscription<CmdType>::SharedPtr joints_command_subscriber_;

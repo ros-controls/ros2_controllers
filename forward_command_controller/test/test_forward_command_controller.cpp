@@ -300,7 +300,7 @@ TEST_F(ForwardCommandControllerTest, CommandCallbackTest)
   // send a new command
   rclcpp::Node test_node("test_node");
   auto command_pub = test_node.create_publisher<std_msgs::msg::Float64MultiArray>(
-    "commands", rclcpp::SystemDefaultsQoS());
+    std::string(controller_->get_lifecycle_node()->get_name()) + "/commands", rclcpp::SystemDefaultsQoS());
   std_msgs::msg::Float64MultiArray command_msg;
   command_msg.data = {10.0, 20.0, 30.0};
   command_pub->publish(command_msg);

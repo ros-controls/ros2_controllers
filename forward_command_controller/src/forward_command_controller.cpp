@@ -47,23 +47,18 @@ CallbackReturn ForwardCommandController::on_configure(
     return CallbackReturn::ERROR;
   }
 
-  // TODO(anyone): here should be list of interface_names and they should be defined for every joint
-  std::string interface_name;
-  if (!lifecycle_node_->get_parameter("interface_name", interface_name)) {
+  if (!lifecycle_node_->get_parameter("interface_name", interface_name_)) {
     RCLCPP_ERROR_STREAM(get_lifecycle_node()->get_logger(), "'interface_name' parameter not set");
     return CallbackReturn::ERROR;
   }
 
-  if (interface_name.empty()) {
+  if (interface_name_.empty()) {
     RCLCPP_ERROR_STREAM(get_lifecycle_node()->get_logger(), "'interface_name' parameter was empty");
     return CallbackReturn::ERROR;
   }
 
-  // TODO(anyone): a vector should be received directly from the parameter server.
-  interfaces_.push_back(interface_name);
-
   joints_command_subscriber_ = lifecycle_node_->create_subscription<CmdType>(
-    "commands", rclcpp::SystemDefaultsQoS(),
+    "~/commands", rclcpp::SystemDefaultsQoS(),
     [this](const CmdType::SharedPtr msg)
     {
       rt_command_ptr_.writeFromNonRT(msg);
@@ -80,9 +75,7 @@ ForwardCommandController::command_interface_configuration() const
   command_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
 
   for (const auto & joint : joint_names_) {
-    for (const auto & interface : interfaces_) {
-      command_interfaces_config.names.push_back(joint + "/" + interface);
-    }
+    command_interfaces_config.names.push_back(joint + "/" + interface_name_);
   }
 
   return command_interfaces_config;
@@ -129,7 +122,7 @@ CallbackReturn ForwardCommandController::on_activate(
   //  also verify that we *only* have the resources defined in the "points" parameter
   std::vector<std::reference_wrapper<LoanedCommandInterface>> ordered_interfaces;
   if (!get_ordered_interfaces(
-      command_interfaces_, joint_names_, interfaces_[0],
+      command_interfaces_, joint_names_, interface_name_,
       ordered_interfaces) || command_interfaces_.size() != ordered_interfaces.size())
   {
     RCLCPP_ERROR(
