@@ -21,7 +21,6 @@
 
 #include "controller_interface/controller_interface.hpp"
 #include "forward_command_controller/visibility_control.h"
-#include "hardware_interface/loaned_command_interface.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 #include "rclcpp/subscription.hpp"

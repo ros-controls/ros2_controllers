@@ -22,8 +22,8 @@
 
 #include "gmock/gmock.h"
 
-#include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "hardware_interface/loaned_command_interface.hpp"
+#include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "forward_command_controller/forward_command_controller.hpp"
 #include "hardware_interface/joint_handle.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
@@ -89,7 +89,7 @@ TEST_F(ForwardCommandControllerTest, JointsParameterNotSet)
   SetUpController();
   controller_->lifecycle_node_->declare_parameter("interface_name", "dummy");
 
-  // configure failed, 'joints' paremeter not set
+  // configure failed, 'joints' parameter not set
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
 }
 
@@ -97,7 +97,7 @@ TEST_F(ForwardCommandControllerTest, InterfaceParameterNotSet)
 {
   SetUpController();
 
-  // configure failed, 'interface_name' paremeter not set
+  // configure failed, 'interface_name' parameter not set
   controller_->lifecycle_node_->declare_parameter(
     "joints",
     rclcpp::ParameterValue(std::vector<std::string>()));
@@ -154,7 +154,7 @@ TEST_F(ForwardCommandControllerTest, ActivateWithWrongJointsNamesFails)
     rclcpp::ParameterValue(std::vector<std::string>{"joint1", "joint2", "joint4"}));
   controller_->lifecycle_node_->declare_parameter("interface_name", "position");
 
-  // configure failed, 'joint4' not in interfaces
+  // activate failed, 'joint4' is not a valid joint name for the hardware
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
 
@@ -164,7 +164,7 @@ TEST_F(ForwardCommandControllerTest, ActivateWithWrongJointsNamesFails)
       rclcpp::ParameterValue(std::vector<std::string>{"joint1", "joint2"})));
   ASSERT_TRUE(result.successful);
 
-  // configure failed, 'joint1' does not support 'acceleration_command' interface
+  // activate failed, 'acceleration' is not a registered interface for `joint1`
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
 }
@@ -178,7 +178,7 @@ TEST_F(ForwardCommandControllerTest, ActivateWithWrongInterfaceNameFails)
     rclcpp::ParameterValue(std::vector<std::string>{"joint1", "joint2", "joint3"}));
   controller_->lifecycle_node_->declare_parameter("interface_name", "acceleration");
 
-  // configure failed, 'joint4' not in interfaces
+  // activate failed, 'joint4' not in interfaces
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
 }
@@ -192,7 +192,6 @@ TEST_F(ForwardCommandControllerTest, ActivateSuccess)
     rclcpp::ParameterValue(std::vector<std::string>{"joint1", "joint2", "joint3"}));
   controller_->lifecycle_node_->declare_parameter("interface_name", "position");
 
-  // configure failed, 'joint4' not in interfaces
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 }
@@ -300,7 +299,8 @@ TEST_F(ForwardCommandControllerTest, CommandCallbackTest)
   // send a new command
   rclcpp::Node test_node("test_node");
   auto command_pub = test_node.create_publisher<std_msgs::msg::Float64MultiArray>(
-    std::string(controller_->get_lifecycle_node()->get_name()) + "/commands", rclcpp::SystemDefaultsQoS());
+    std::string(
+      controller_->get_lifecycle_node()->get_name()) + "/commands", rclcpp::SystemDefaultsQoS());
   std_msgs::msg::Float64MultiArray command_msg;
   command_msg.data = {10.0, 20.0, 30.0};
   command_pub->publish(command_msg);
