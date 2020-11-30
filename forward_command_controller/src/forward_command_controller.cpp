@@ -22,9 +22,10 @@
 #include "rclcpp/qos.hpp"
 #include "rclcpp/logging.hpp"
 
+#include "hardware_interface/loaned_command_interface.hpp"
+
 namespace forward_command_controller
 {
-using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 using hardware_interface::LoanedCommandInterface;
 
 ForwardCommandController::ForwardCommandController()
@@ -111,13 +112,6 @@ bool get_ordered_interfaces(
 CallbackReturn ForwardCommandController::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  if (!state_interfaces_.empty()) {
-    RCLCPP_ERROR_STREAM(
-      get_lifecycle_node()->get_logger(),
-      "State interface was not requested by this controller but was provided some.");
-    return CallbackReturn::ERROR;
-  }
-
   //  check if we have all resources defined in the "points" parameter
   //  also verify that we *only* have the resources defined in the "points" parameter
   std::vector<std::reference_wrapper<LoanedCommandInterface>> ordered_interfaces;

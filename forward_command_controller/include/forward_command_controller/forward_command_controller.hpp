@@ -30,6 +30,7 @@
 namespace forward_command_controller
 {
 using CmdType = std_msgs::msg::Float64MultiArray;
+using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
 /**
  * \brief Forward command controller for a set of joints.
@@ -56,20 +57,16 @@ public:
   controller_interface::InterfaceConfiguration state_interface_configuration() const override;
 
   FORWARD_COMMAND_CONTROLLER_PUBLIC
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-  on_configure(const rclcpp_lifecycle::State & previous_state) override;
+  CallbackReturn on_configure(const rclcpp_lifecycle::State & previous_state) override;
 
   FORWARD_COMMAND_CONTROLLER_PUBLIC
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-  on_activate(const rclcpp_lifecycle::State & previous_state) override;
+  CallbackReturn on_activate(const rclcpp_lifecycle::State & previous_state) override;
 
   FORWARD_COMMAND_CONTROLLER_PUBLIC
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-  on_deactivate(const rclcpp_lifecycle::State & previous_state) override;
+  CallbackReturn on_deactivate(const rclcpp_lifecycle::State & previous_state) override;
 
   FORWARD_COMMAND_CONTROLLER_PUBLIC
-  controller_interface::return_type
-  update() override;
+  controller_interface::return_type update() override;
 
 protected:
   std::vector<std::string> joint_names_;
