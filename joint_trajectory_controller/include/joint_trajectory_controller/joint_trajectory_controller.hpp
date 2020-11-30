@@ -66,9 +66,6 @@ public:
   JointTrajectoryController();
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  explicit JointTrajectoryController(const std::vector<std::string> & joint_names);
-
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   controller_interface::return_type
   init(const std::string & controller_name) override;
 

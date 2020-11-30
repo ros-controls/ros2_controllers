@@ -69,6 +69,11 @@ public:
     return success;
   }
 
+  void set_joint_names(const std::vector<std::string> & joint_names)
+  {
+    joint_names_ = joint_names;
+  }
+
   rclcpp::WaitSet joint_cmd_sub_wait_set_;
 };
 
@@ -93,10 +98,9 @@ protected:
 
   void SetUpTrajectoryController(bool use_local_parameters = true)
   {
+    traj_controller_ = std::make_shared<TestableJointTrajectoryController>();
     if (use_local_parameters) {
-      traj_controller_ = std::make_shared<TestableJointTrajectoryController>(joint_names_);
-    } else {
-      traj_controller_ = std::make_shared<TestableJointTrajectoryController>();
+      traj_controller_->set_joint_names(joint_names_);
     }
     auto ret = traj_controller_->init(controller_name_);
     if (ret != controller_interface::return_type::SUCCESS) {

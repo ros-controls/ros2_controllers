@@ -53,12 +53,6 @@ JointTrajectoryController::JointTrajectoryController()
   joint_names_({})
 {}
 
-JointTrajectoryController::JointTrajectoryController(
-  const std::vector<std::string> & joint_names)
-: controller_interface::ControllerInterface(),
-  joint_names_(joint_names)
-{}
-
 controller_interface::return_type
 JointTrajectoryController::init(const std::string & controller_name)
 {
@@ -96,7 +90,7 @@ state_interface_configuration() const
 {
   controller_interface::InterfaceConfiguration conf;
   conf.type = controller_interface::interface_configuration_type::INDIVIDUAL;
-  conf.names.reserve(2*joint_names_.size());
+  conf.names.reserve(2 * joint_names_.size());
   for (const auto & joint_name  : joint_names_) {
     conf.names.push_back(joint_name + "/" + hardware_interface::HW_IF_POSITION);
     conf.names.push_back(joint_name + "/" + hardware_interface::HW_IF_VELOCITY);
