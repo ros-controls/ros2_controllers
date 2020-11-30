@@ -96,7 +96,7 @@ state_interface_configuration() const
 {
   controller_interface::InterfaceConfiguration conf;
   conf.type = controller_interface::interface_configuration_type::INDIVIDUAL;
-  conf.names.reserve(joint_names_.size());
+  conf.names.reserve(2*joint_names_.size());
   for (const auto & joint_name  : joint_names_) {
     conf.names.push_back(joint_name + "/" + hardware_interface::HW_IF_POSITION);
     conf.names.push_back(joint_name + "/" + hardware_interface::HW_IF_VELOCITY);
