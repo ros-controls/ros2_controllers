@@ -449,6 +449,7 @@ JointTrajectoryController::on_deactivate(const rclcpp_lifecycle::State & previou
   joint_position_command_interface_.clear();
   joint_position_state_interface_.clear();
   joint_velocity_state_interface_.clear();
+  release_interfaces();
 
   subscriber_is_active_ = false;
   publisher_->on_deactivate();
