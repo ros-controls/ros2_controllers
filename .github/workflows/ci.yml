@@ -39,14 +39,7 @@ jobs:
           target-ros2-distro: foxy
           # build all packages listed in the meta package
           package-name: |
-            diff_drive_controller
-            effort_controllers
-            forward_command_controller
             joint_state_controller
-            joint_trajectory_controller
-            position_controllers
-            ros2_controllers
-            velocity_controllers
           vcs-repo-file-url: |
             https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/.github/workspace.repos
           colcon-mixin-name: coverage-gcc
