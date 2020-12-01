@@ -39,7 +39,9 @@ jobs:
           target-ros2-distro: foxy
           # build all packages listed in the meta package
           package-name: |
+            forward_command_controller
             joint_state_controller
+            joint_trajectory_controller
           vcs-repo-file-url: |
             https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/.github/workspace.repos
           colcon-mixin-name: coverage-gcc
