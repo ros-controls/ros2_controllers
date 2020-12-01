@@ -21,7 +21,6 @@
 
 #include "controller_interface/controller_interface.hpp"
 #include "forward_command_controller/visibility_control.h"
-#include "hardware_interface/joint_handle.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 #include "rclcpp/subscription.hpp"
@@ -30,6 +29,8 @@
 
 namespace forward_command_controller
 {
+using CmdType = std_msgs::msg::Float64MultiArray;
+using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
 /**
  * \brief Forward command controller for a set of joints.
@@ -50,25 +51,27 @@ public:
   ForwardCommandController();
 
   FORWARD_COMMAND_CONTROLLER_PUBLIC
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-  on_configure(const rclcpp_lifecycle::State & previous_state) override;
+  controller_interface::InterfaceConfiguration command_interface_configuration() const override;
 
   FORWARD_COMMAND_CONTROLLER_PUBLIC
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-  on_activate(const rclcpp_lifecycle::State & previous_state) override;
+  controller_interface::InterfaceConfiguration state_interface_configuration() const override;
 
   FORWARD_COMMAND_CONTROLLER_PUBLIC
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-  on_deactivate(const rclcpp_lifecycle::State & previous_state) override;
+  CallbackReturn on_configure(const rclcpp_lifecycle::State & previous_state) override;
 
   FORWARD_COMMAND_CONTROLLER_PUBLIC
-  controller_interface::return_type
-  update() override;
+  CallbackReturn on_activate(const rclcpp_lifecycle::State & previous_state) override;
+
+  FORWARD_COMMAND_CONTROLLER_PUBLIC
+  CallbackReturn on_deactivate(const rclcpp_lifecycle::State & previous_state) override;
+
+  FORWARD_COMMAND_CONTROLLER_PUBLIC
+  controller_interface::return_type update() override;
 
 protected:
-  using CmdType = std_msgs::msg::Float64MultiArray;
+  std::vector<std::string> joint_names_;
+  std::string interface_name_;
 
-  std::vector<hardware_interface::JointHandle> joint_cmd_handles_;
   realtime_tools::RealtimeBuffer<std::shared_ptr<CmdType>> rt_command_ptr_;
   rclcpp::Subscription<CmdType>::SharedPtr joints_command_subscriber_;
 

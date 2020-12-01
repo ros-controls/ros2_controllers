@@ -17,13 +17,14 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
-#include "gtest/gtest.h"
+#include "gmock/gmock.h"
 
+#include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "forward_command_controller/forward_command_controller.hpp"
-#include "hardware_interface/joint_handle.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/qos.hpp"
 #include "rclcpp/node.hpp"
@@ -32,9 +33,11 @@
 #include "rclcpp/wait_set.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "test_forward_command_controller.hpp"
-#include "test_robot_hardware/test_robot_hardware.hpp"
 
 using CallbackReturn = forward_command_controller::ForwardCommandController::CallbackReturn;
+using hardware_interface::LoanedCommandInterface;
+using testing::SizeIs;
+using testing::IsEmpty;
 
 namespace
 {
@@ -59,10 +62,6 @@ void ForwardCommandControllerTest::TearDownTestCase()
 
 void ForwardCommandControllerTest::SetUp()
 {
-  // initialize robot
-  test_robot_ = std::make_shared<test_robot_hardware::TestRobotHardware>();
-  test_robot_->init();
-
   // initialize controller
   controller_ = std::make_unique<FriendForwardCommandController>();
 }
@@ -74,133 +73,150 @@ void ForwardCommandControllerTest::TearDown()
 
 void ForwardCommandControllerTest::SetUpController()
 {
-  const auto result = controller_->init(test_robot_, "forward_command_controller");
+  const auto result = controller_->init("forward_command_controller");
   ASSERT_EQ(result, controller_interface::return_type::SUCCESS);
+
+  std::vector<LoanedCommandInterface> command_ifs;
+  command_ifs.emplace_back(joint_1_pos_cmd_);
+  command_ifs.emplace_back(joint_2_pos_cmd_);
+  command_ifs.emplace_back(joint_3_pos_cmd_);
+  controller_->assign_interfaces(std::move(command_ifs), {});
 }
 
-void ForwardCommandControllerTest::SetUpHandles()
+TEST_F(ForwardCommandControllerTest, JointsParameterNotSet)
 {
-  // get handles from test_robot_hardware
-  joint1_pos_cmd_handle_ = std::make_shared<hardware_interface::JointHandle>(
-    "joint1",
-    "position_command");
-  joint2_pos_cmd_handle_ = std::make_shared<hardware_interface::JointHandle>(
-    "joint2",
-    "position_command");
-  joint3_pos_cmd_handle_ = std::make_shared<hardware_interface::JointHandle>(
-    "joint3",
-    "position_command");
+  SetUpController();
+  controller_->lifecycle_node_->declare_parameter("interface_name", "dummy");
 
-  ASSERT_EQ(
-    test_robot_->get_joint_handle(
-      *joint1_pos_cmd_handle_), hardware_interface::hardware_interface_ret_t::OK);
-  ASSERT_EQ(
-    test_robot_->get_joint_handle(
-      *joint2_pos_cmd_handle_), hardware_interface::hardware_interface_ret_t::OK);
-  ASSERT_EQ(
-    test_robot_->get_joint_handle(
-      *joint3_pos_cmd_handle_), hardware_interface::hardware_interface_ret_t::OK);
+  // configure failed, 'joints' parameter not set
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
 }
 
-TEST_F(ForwardCommandControllerTest, ConfigureParamsTest)
+TEST_F(ForwardCommandControllerTest, InterfaceParameterNotSet)
 {
-  // joint handles not initialized yet
-  ASSERT_TRUE(controller_->joint_cmd_handles_.empty());
-
   SetUpController();
 
-  // configure failed, 'joints' paremeter not set
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
+  // configure failed, 'interface_name' parameter not set
   controller_->lifecycle_node_->declare_parameter(
     "joints",
     rclcpp::ParameterValue(std::vector<std::string>()));
-
-  // configure failed, 'interface_name' paremeter not set
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
+  controller_->lifecycle_node_->declare_parameter("interface_name", "");
+}
+
+TEST_F(ForwardCommandControllerTest, JointsParameterIsEmpty)
+{
+  SetUpController();
+
+  controller_->lifecycle_node_->declare_parameter(
+    "joints",
+    rclcpp::ParameterValue(std::vector<std::string>()));
   controller_->lifecycle_node_->declare_parameter("interface_name", "");
 
   // configure failed, 'joints' is empty
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
-  auto result = controller_->lifecycle_node_->set_parameter(
-    rclcpp::Parameter(
-      "joints",
-      rclcpp::ParameterValue(std::vector<std::string>{"joint1", "joint2"})));
-  ASSERT_TRUE(result.successful);
+}
+
+TEST_F(ForwardCommandControllerTest, InterfaceParameterEmpty)
+{
+  SetUpController();
+
+  // configure failed, 'interface_name' paremeter not set
+  controller_->lifecycle_node_->declare_parameter(
+    "joints",
+    rclcpp::ParameterValue(std::vector<std::string>{"joint1", "joint2"}));
+  controller_->lifecycle_node_->declare_parameter("interface_name", "");
 
   // configure failed, 'interface_name' is empty
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
-  result = controller_->lifecycle_node_->set_parameter(
-    rclcpp::Parameter(
-      "interface_name",
-      rclcpp::ParameterValue("position_command")));
-  ASSERT_TRUE(result.successful);
+}
+
+TEST_F(ForwardCommandControllerTest, ConfigureParamsSuccess)
+{
+  SetUpController();
+
+  controller_->lifecycle_node_->declare_parameter(
+    "joints",
+    rclcpp::ParameterValue(std::vector<std::string>{"joint1", "joint2"}));
+  controller_->lifecycle_node_->declare_parameter("interface_name", "position");
 
   // configure successful
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-
-  // joint handles initialized
-  ASSERT_EQ(controller_->joint_cmd_handles_.size(), 2ul);
 }
 
-TEST_F(ForwardCommandControllerTest, ConfigureJointsChecksTest)
+TEST_F(ForwardCommandControllerTest, ActivateWithWrongJointsNamesFails)
 {
-  // joint handles not initialized yet
-  ASSERT_TRUE(controller_->joint_cmd_handles_.empty());
-
   SetUpController();
 
   controller_->lifecycle_node_->declare_parameter(
     "joints",
     rclcpp::ParameterValue(std::vector<std::string>{"joint1", "joint2", "joint4"}));
+  controller_->lifecycle_node_->declare_parameter("interface_name", "position");
 
-  controller_->lifecycle_node_->declare_parameter("interface_name", "acceleration_command");
+  // activate failed, 'joint4' is not a valid joint name for the hardware
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
 
-  // configure failed, 'joint4' not in robot_hardware
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
   auto result = controller_->lifecycle_node_->set_parameter(
     rclcpp::Parameter(
       "joints",
       rclcpp::ParameterValue(std::vector<std::string>{"joint1", "joint2"})));
   ASSERT_TRUE(result.successful);
 
-  // configure failed, 'joint1' does not support 'acceleration_command' interface
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
-  result = controller_->lifecycle_node_->set_parameter(
-    rclcpp::Parameter(
-      "interface_name",
-      rclcpp::ParameterValue("position_command")));
-  ASSERT_TRUE(result.successful);
-
-  // configure successful
+  // activate failed, 'acceleration' is not a registered interface for `joint1`
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
+}
 
-  // joint handles initialized
-  ASSERT_EQ(controller_->joint_cmd_handles_.size(), 2ul);
+TEST_F(ForwardCommandControllerTest, ActivateWithWrongInterfaceNameFails)
+{
+  SetUpController();
+
+  controller_->lifecycle_node_->declare_parameter(
+    "joints",
+    rclcpp::ParameterValue(std::vector<std::string>{"joint1", "joint2", "joint3"}));
+  controller_->lifecycle_node_->declare_parameter("interface_name", "acceleration");
+
+  // activate failed, 'joint4' not in interfaces
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
+}
+
+TEST_F(ForwardCommandControllerTest, ActivateSuccess)
+{
+  SetUpController();
+
+  controller_->lifecycle_node_->declare_parameter(
+    "joints",
+    rclcpp::ParameterValue(std::vector<std::string>{"joint1", "joint2", "joint3"}));
+  controller_->lifecycle_node_->declare_parameter("interface_name", "position");
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 }
 
 TEST_F(ForwardCommandControllerTest, CommandSuccessTest)
 {
   SetUpController();
-  SetUpHandles();
 
   // configure controller
   controller_->lifecycle_node_->declare_parameter(
     "joints",
     rclcpp::ParameterValue(std::vector<std::string>{"joint1", "joint2", "joint3"}));
-  controller_->lifecycle_node_->declare_parameter("interface_name", "position_command");
+  controller_->lifecycle_node_->declare_parameter("interface_name", "position");
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
   // update successful though no command has been send yet
   ASSERT_EQ(controller_->update(), controller_interface::return_type::SUCCESS);
 
   // check joint commands are still the default ones
-  ASSERT_EQ(joint1_pos_cmd_handle_->get_value(), 1.1);
-  ASSERT_EQ(joint2_pos_cmd_handle_->get_value(), 2.1);
-  ASSERT_EQ(joint3_pos_cmd_handle_->get_value(), 3.1);
+  ASSERT_EQ(joint_1_pos_cmd_.get_value(), 1.1);
+  ASSERT_EQ(joint_2_pos_cmd_.get_value(), 2.1);
+  ASSERT_EQ(joint_3_pos_cmd_.get_value(), 3.1);
 
   // send command
-  FriendForwardCommandController::CmdType::SharedPtr command_ptr =
-    std::make_shared<FriendForwardCommandController::CmdType>();
+  auto command_ptr =
+    std::make_shared<forward_command_controller::CmdType>();
   command_ptr->data = {10.0, 20.0, 30.0};
   controller_->rt_command_ptr_.writeFromNonRT(command_ptr);
 
@@ -208,26 +224,25 @@ TEST_F(ForwardCommandControllerTest, CommandSuccessTest)
   ASSERT_EQ(controller_->update(), controller_interface::return_type::SUCCESS);
 
   // check joint commands have been modified
-  ASSERT_EQ(joint1_pos_cmd_handle_->get_value(), 10.0);
-  ASSERT_EQ(joint2_pos_cmd_handle_->get_value(), 20.0);
-  ASSERT_EQ(joint3_pos_cmd_handle_->get_value(), 30.0);
+  ASSERT_EQ(joint_1_pos_cmd_.get_value(), 10.0);
+  ASSERT_EQ(joint_2_pos_cmd_.get_value(), 20.0);
+  ASSERT_EQ(joint_3_pos_cmd_.get_value(), 30.0);
 }
 
 TEST_F(ForwardCommandControllerTest, WrongCommandCheckTest)
 {
   SetUpController();
-  SetUpHandles();
 
   // configure controller
   controller_->lifecycle_node_->declare_parameter(
     "joints",
     rclcpp::ParameterValue(std::vector<std::string>{"joint1", "joint2", "joint3"}));
-  controller_->lifecycle_node_->declare_parameter("interface_name", "position_command");
+  controller_->lifecycle_node_->declare_parameter("interface_name", "position");
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
   // send command with wrong numnber of joints
-  FriendForwardCommandController::CmdType::SharedPtr command_ptr =
-    std::make_shared<FriendForwardCommandController::CmdType>();
+  auto command_ptr =
+    std::make_shared<forward_command_controller::CmdType>();
   command_ptr->data = {10.0, 20.0};
   controller_->rt_command_ptr_.writeFromNonRT(command_ptr);
 
@@ -235,46 +250,44 @@ TEST_F(ForwardCommandControllerTest, WrongCommandCheckTest)
   ASSERT_EQ(controller_->update(), controller_interface::return_type::ERROR);
 
   // check joint commands are still the default ones
-  ASSERT_EQ(joint1_pos_cmd_handle_->get_value(), 1.1);
-  ASSERT_EQ(joint2_pos_cmd_handle_->get_value(), 2.1);
-  ASSERT_EQ(joint3_pos_cmd_handle_->get_value(), 3.1);
+  ASSERT_EQ(joint_1_pos_cmd_.get_value(), 1.1);
+  ASSERT_EQ(joint_2_pos_cmd_.get_value(), 2.1);
+  ASSERT_EQ(joint_3_pos_cmd_.get_value(), 3.1);
 }
 
 TEST_F(ForwardCommandControllerTest, NoCommandCheckTest)
 {
   SetUpController();
-  SetUpHandles();
 
   // configure controller
   controller_->lifecycle_node_->declare_parameter(
     "joints",
     rclcpp::ParameterValue(std::vector<std::string>{"joint1", "joint2", "joint3"}));
-  controller_->lifecycle_node_->declare_parameter("interface_name", "position_command");
+  controller_->lifecycle_node_->declare_parameter("interface_name", "position");
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
   // update successful, no command received yet
   ASSERT_EQ(controller_->update(), controller_interface::return_type::SUCCESS);
 
   // check joint commands are still the default ones
-  ASSERT_EQ(joint1_pos_cmd_handle_->get_value(), 1.1);
-  ASSERT_EQ(joint2_pos_cmd_handle_->get_value(), 2.1);
-  ASSERT_EQ(joint3_pos_cmd_handle_->get_value(), 3.1);
+  ASSERT_EQ(joint_1_pos_cmd_.get_value(), 1.1);
+  ASSERT_EQ(joint_2_pos_cmd_.get_value(), 2.1);
+  ASSERT_EQ(joint_3_pos_cmd_.get_value(), 3.1);
 }
 
 TEST_F(ForwardCommandControllerTest, CommandCallbackTest)
 {
   SetUpController();
-  SetUpHandles();
 
   controller_->lifecycle_node_->declare_parameter(
     "joints",
     rclcpp::ParameterValue(std::vector<std::string>{"joint1", "joint2", "joint3"}));
-  controller_->lifecycle_node_->declare_parameter("interface_name", "position_command");
+  controller_->lifecycle_node_->declare_parameter("interface_name", "position");
 
   // default values
-  ASSERT_EQ(joint1_pos_cmd_handle_->get_value(), 1.1);
-  ASSERT_EQ(joint2_pos_cmd_handle_->get_value(), 2.1);
-  ASSERT_EQ(joint3_pos_cmd_handle_->get_value(), 3.1);
+  ASSERT_EQ(joint_1_pos_cmd_.get_value(), 1.1);
+  ASSERT_EQ(joint_2_pos_cmd_.get_value(), 2.1);
+  ASSERT_EQ(joint_3_pos_cmd_.get_value(), 3.1);
 
   auto node_state = controller_->get_lifecycle_node()->configure();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
@@ -285,7 +298,8 @@ TEST_F(ForwardCommandControllerTest, CommandCallbackTest)
   // send a new command
   rclcpp::Node test_node("test_node");
   auto command_pub = test_node.create_publisher<std_msgs::msg::Float64MultiArray>(
-    "commands", rclcpp::SystemDefaultsQoS());
+    std::string(
+      controller_->get_lifecycle_node()->get_name()) + "/commands", rclcpp::SystemDefaultsQoS());
   std_msgs::msg::Float64MultiArray command_msg;
   command_msg.data = {10.0, 20.0, 30.0};
   command_pub->publish(command_msg);
@@ -300,7 +314,7 @@ TEST_F(ForwardCommandControllerTest, CommandCallbackTest)
   ASSERT_EQ(controller_->update(), controller_interface::return_type::SUCCESS);
 
   // check command in handle was set
-  ASSERT_EQ(joint1_pos_cmd_handle_->get_value(), 10.0);
-  ASSERT_EQ(joint2_pos_cmd_handle_->get_value(), 20.0);
-  ASSERT_EQ(joint3_pos_cmd_handle_->get_value(), 30.0);
+  ASSERT_EQ(joint_1_pos_cmd_.get_value(), 10.0);
+  ASSERT_EQ(joint_2_pos_cmd_.get_value(), 20.0);
+  ASSERT_EQ(joint_3_pos_cmd_.get_value(), 30.0);
 }

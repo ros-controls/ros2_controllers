@@ -17,6 +17,7 @@
 
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "control_msgs/msg/dynamic_joint_state.hpp"
@@ -26,16 +27,6 @@
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
 
-namespace hardware_interface
-{
-class JointHandle;
-}  // namespace hardware_interface
-
-namespace rclcpp_lifecycle
-{
-class State;
-}  // namespace rclcpp_lifecycle
-
 namespace joint_state_controller
 {
 
@@ -44,6 +35,12 @@ class JointStateController : public controller_interface::ControllerInterface
 public:
   JOINT_STATE_CONTROLLER_PUBLIC
   JointStateController();
+
+  JOINT_STATE_CONTROLLER_PUBLIC
+  controller_interface::InterfaceConfiguration command_interface_configuration() const override;
+
+  JOINT_STATE_CONTROLLER_PUBLIC
+  controller_interface::InterfaceConfiguration state_interface_configuration() const override;
 
   JOINT_STATE_CONTROLLER_PUBLIC
   controller_interface::return_type
@@ -67,17 +64,19 @@ protected:
   void init_dynamic_joint_state_msg();
 
 protected:
+  //  For the JointState message,
+  //  we store the name of joints with compatible interfaces
   std::vector<std::string> joint_names_;
-
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::JointState>>
   joint_state_publisher_;
   sensor_msgs::msg::JointState joint_state_msg_;
 
+  //  For the DynamicJointState format, we use a map to buffer values in for easier lookup
+  //  This allows to preserve whatever order or names/interfaces were initialized.
+  std::unordered_map<std::string, std::unordered_map<std::string, double>> name_if_value_mapping_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<control_msgs::msg::DynamicJointState>>
   dynamic_joint_state_publisher_;
   control_msgs::msg::DynamicJointState dynamic_joint_state_msg_;
-
-  std::vector<std::vector<std::shared_ptr<hardware_interface::JointHandle>>> joint_handles_;
 };
 
 }  // namespace joint_state_controller

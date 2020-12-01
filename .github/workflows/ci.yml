@@ -34,19 +34,12 @@ jobs:
       - uses: ros-tooling/setup-ros@0.0.26
         with:
           required-ros-distributions: foxy
-      - uses: ros-tooling/action-ros-ci@0.0.19
+      - uses: ros-tooling/action-ros-ci@0.1.0
         with:
           target-ros2-distro: foxy
           # build all packages listed in the meta package
           package-name: |
-            diff_drive_controller
-            effort_controllers
-            forward_command_controller
             joint_state_controller
-            joint_trajectory_controller
-            position_controllers
-            ros2_controllers
-            velocity_controllers
           vcs-repo-file-url: |
             https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/.github/workspace.repos
           colcon-mixin-name: coverage-gcc

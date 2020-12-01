@@ -17,18 +17,26 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "gtest/gtest.h"
 
 #include "forward_command_controller/forward_command_controller.hpp"
-#include "hardware_interface/joint_handle.hpp"
-#include "test_robot_hardware/test_robot_hardware.hpp"
+#include "hardware_interface/handle.hpp"
+#include "hardware_interface/types/hardware_interface_type_values.hpp"
 
 // subclassing and friending so we can access member varibles
 class FriendForwardCommandController : public forward_command_controller::ForwardCommandController
 {
-  FRIEND_TEST(ForwardCommandControllerTest, ConfigureParamsTest);
-  FRIEND_TEST(ForwardCommandControllerTest, ConfigureJointsChecksTest);
+  FRIEND_TEST(ForwardCommandControllerTest, JointsParameterNotSet);
+  FRIEND_TEST(ForwardCommandControllerTest, InterfaceParameterNotSet);
+  FRIEND_TEST(ForwardCommandControllerTest, JointsParameterIsEmpty);
+  FRIEND_TEST(ForwardCommandControllerTest, InterfaceParameterEmpty);
+  FRIEND_TEST(ForwardCommandControllerTest, ConfigureParamsSuccess);
+
+  FRIEND_TEST(ForwardCommandControllerTest, ActivateWithWrongJointsNamesFails);
+  FRIEND_TEST(ForwardCommandControllerTest, ActivateWithWrongInterfaceNameFails);
+  FRIEND_TEST(ForwardCommandControllerTest, ActivateSuccess);
   FRIEND_TEST(ForwardCommandControllerTest, CommandSuccessTest);
   FRIEND_TEST(ForwardCommandControllerTest, WrongCommandCheckTest);
   FRIEND_TEST(ForwardCommandControllerTest, NoCommandCheckTest);
@@ -48,12 +56,21 @@ public:
   void SetUpHandles();
 
 protected:
-  std::shared_ptr<test_robot_hardware::TestRobotHardware> test_robot_;
   std::unique_ptr<FriendForwardCommandController> controller_;
 
-  std::shared_ptr<hardware_interface::JointHandle> joint1_pos_cmd_handle_;
-  std::shared_ptr<hardware_interface::JointHandle> joint2_pos_cmd_handle_;
-  std::shared_ptr<hardware_interface::JointHandle> joint3_pos_cmd_handle_;
+  // dummy joint state values used for tests
+  const std::vector<std::string> joint_names_ = {"joint1", "joint2", "joint3"};
+  std::vector<double> joint_commands_ = {1.1, 2.1, 3.1};
+
+  hardware_interface::CommandInterface joint_1_pos_cmd_{joint_names_[0],
+    hardware_interface::HW_IF_POSITION,
+    &joint_commands_[0]};
+  hardware_interface::CommandInterface joint_2_pos_cmd_{joint_names_[1],
+    hardware_interface::HW_IF_POSITION,
+    &joint_commands_[1]};
+  hardware_interface::CommandInterface joint_3_pos_cmd_{joint_names_[2],
+    hardware_interface::HW_IF_POSITION,
+    &joint_commands_[2]};
 };
 
 #endif  // TEST_FORWARD_COMMAND_CONTROLLER_HPP_

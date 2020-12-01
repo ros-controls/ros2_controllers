@@ -18,16 +18,17 @@
 #include <limits>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
-#include "hardware_interface/joint_handle.hpp"
-#include "hardware_interface/robot_hardware.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
+#include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "rclcpp/clock.hpp"
 #include "rclcpp/qos.hpp"
 #include "rclcpp/qos_event.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "rcpputils/split.hpp"
 #include "rcutils/logging_macros.h"
 #include "std_msgs/msg/header.hpp"
 
@@ -38,16 +39,48 @@ class State;
 
 namespace joint_state_controller
 {
-static const auto kPositionIndex = 0ul;
-static const auto kVelocityIndex = 1ul;
-static const auto kEffortIndex = 2ul;
+const auto kUninitializedValue = std::numeric_limits<double>::quiet_NaN();
+using hardware_interface::HW_IF_POSITION;
+using hardware_interface::HW_IF_VELOCITY;
+using hardware_interface::HW_IF_EFFORT;
+
 
 JointStateController::JointStateController()
 : controller_interface::ControllerInterface()
 {}
 
+controller_interface::InterfaceConfiguration JointStateController::command_interface_configuration()
+const
+{
+  return controller_interface::InterfaceConfiguration{controller_interface::
+    interface_configuration_type::NONE};
+}
+
+controller_interface::InterfaceConfiguration JointStateController::state_interface_configuration()
+const
+{
+  return controller_interface::InterfaceConfiguration{controller_interface::
+    interface_configuration_type::ALL};
+}
+
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 JointStateController::on_configure(const rclcpp_lifecycle::State & /*previous_state*/)
+{
+  try {
+    joint_state_publisher_ = lifecycle_node_->create_publisher<sensor_msgs::msg::JointState>(
+      "joint_states", rclcpp::SystemDefaultsQoS());
+
+    dynamic_joint_state_publisher_ =
+      lifecycle_node_->create_publisher<control_msgs::msg::DynamicJointState>(
+      "dynamic_joint_states", rclcpp::SystemDefaultsQoS());
+  } catch (...) {
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
+  }
+  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+}
+
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+JointStateController::on_activate(const rclcpp_lifecycle::State & /*previous_state*/)
 {
   if (!init_joint_data()) {
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
@@ -56,19 +89,6 @@ JointStateController::on_configure(const rclcpp_lifecycle::State & /*previous_st
   init_joint_state_msg();
   init_dynamic_joint_state_msg();
 
-  joint_state_publisher_ = lifecycle_node_->create_publisher<sensor_msgs::msg::JointState>(
-    "joint_states", rclcpp::SystemDefaultsQoS());
-
-  dynamic_joint_state_publisher_ =
-    lifecycle_node_->create_publisher<control_msgs::msg::DynamicJointState>(
-    "dynamic_joint_states", rclcpp::SystemDefaultsQoS());
-
-  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
-}
-
-rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-JointStateController::on_activate(const rclcpp_lifecycle::State & /*previous_state*/)
-{
   joint_state_publisher_->on_activate();
   dynamic_joint_state_publisher_->on_activate();
 
@@ -84,93 +104,102 @@ JointStateController::on_deactivate(const rclcpp_lifecycle::State & /*previous_s
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
+template<typename T>
+bool has_any_key(
+  const std::unordered_map<std::string, T> & map,
+  const std::vector<std::string> & keys)
+{
+  bool found_key = false;
+  for (const auto & key_item : map) {
+    const auto & key = key_item.first;
+    if (std::find(keys.cbegin(), keys.cend(), key) != keys.cend()) {
+      found_key = true;
+      break;
+    }
+  }
+  return found_key;
+}
+
 bool JointStateController::init_joint_data()
 {
-  if (auto rh_ptr = robot_hardware_.lock()) {
-    joint_names_ = rh_ptr->get_registered_joint_names();
-
-    if (joint_names_.empty()) {
-      return false;
+  // loop in reverse order, this maintains the order of values at retrieval time
+  for (auto si = state_interfaces_.crbegin(); si != state_interfaces_.crend(); si++) {
+    // initialize map if name is new
+    if (name_if_value_mapping_.count(si->get_name()) == 0) {
+      name_if_value_mapping_[si->get_name()] = {};
     }
-
-    // reset any previous joint data
-    joint_handles_.clear();
-
-    for (const auto & joint_name : joint_names_) {
-      // always check for these interfaces, even if they are not supported by the joint
-      std::vector<std::string> interface_names = {"position", "velocity", "effort"};
-      const std::vector<std::string> joint_interface_names =
-        rh_ptr->get_registered_joint_interface_names(joint_name);
-
-      // add the rest of the interfaces
-      // ideally this could be done with std::sort + std::unique, but we rather have
-      // position, velocity and effort in known indexes
-      std::copy_if(
-        joint_interface_names.begin(), joint_interface_names.end(),
-        std::back_inserter(interface_names), [&](const auto & value) {
-          return std::find(
-            interface_names.begin(),
-            interface_names.end(), value) == interface_names.end();
-        });
-
-      std::vector<std::shared_ptr<hardware_interface::JointHandle>> joint_interface_handles;
-      for (const auto & interface_name : interface_names) {
-        /// @todo is there a better way of skipping command interfaces?
-        if (interface_name.find("command") != std::string::npos) {
-          continue;
-        }
-
-        auto joint_handle = std::make_shared<hardware_interface::JointHandle>(
-          joint_name,
-          interface_name);
-        if (rh_ptr->get_joint_handle(*joint_handle) == hardware_interface::return_type::OK) {
-          joint_interface_handles.emplace_back(joint_handle);
-        } else {
-          // leave a nullptr for not supported interfaces
-          joint_interface_handles.emplace_back(nullptr);
-        }
-      }
-      joint_handles_.emplace_back(joint_interface_handles);
-    }
-    return true;
-  } else {
-    return false;
+    // add interface name
+    name_if_value_mapping_[si->get_name()][si->get_interface_name()] =
+      kUninitializedValue;
   }
+
+  // filter state interfaces that have at least one of the joint_states fields,
+  // the rest will be ignored for this message
+  for (const auto name_ifv : name_if_value_mapping_) {
+    const auto & interfaces_and_values = name_ifv.second;
+    if (has_any_key(interfaces_and_values, {HW_IF_POSITION, HW_IF_VELOCITY, HW_IF_EFFORT})) {
+      joint_names_.push_back(name_ifv.first);
+    }
+  }
+
+  return true;
 }
 
 void JointStateController::init_joint_state_msg()
 {
-  const size_t num_joints = joint_handles_.size();
+  const size_t num_joints = joint_names_.size();
 
   /// @note joint_state_msg publishes position, velocity and effort for all joints,
-  /// regardless of the joints actually supporting these interfaces
+  /// with at least one of these interfaces, the rest are omitted from this message
 
   // default initialization for joint state message
   joint_state_msg_.name = joint_names_;
-  joint_state_msg_.position.resize(num_joints, std::numeric_limits<double>::quiet_NaN());
-  joint_state_msg_.velocity.resize(num_joints, std::numeric_limits<double>::quiet_NaN());
-  joint_state_msg_.effort.resize(num_joints, std::numeric_limits<double>::quiet_NaN());
+  joint_state_msg_.position.resize(num_joints, kUninitializedValue);
+  joint_state_msg_.velocity.resize(num_joints, kUninitializedValue);
+  joint_state_msg_.effort.resize(num_joints, kUninitializedValue);
 }
 
 void JointStateController::init_dynamic_joint_state_msg()
 {
-  dynamic_joint_state_msg_.joint_names = joint_names_;
-  for (const auto & joint_handle : joint_handles_) {
+  for (const auto & name_ifv : name_if_value_mapping_) {
+    const auto & name = name_ifv.first;
+    const auto & interfaces_and_values = name_ifv.second;
+    dynamic_joint_state_msg_.joint_names.push_back(name);
     control_msgs::msg::InterfaceValue if_value;
-    for (const auto & joint_interface_handle : joint_handle) {
-      // check joint handle is valid
-      if (joint_interface_handle) {
-        if_value.interface_names.emplace_back(joint_interface_handle->get_interface_name());
-        if_value.values.emplace_back(std::numeric_limits<double>::quiet_NaN());
-      }
+    for (const auto & interface_and_value : interfaces_and_values) {
+      if_value.interface_names.emplace_back(interface_and_value.first);
+      if_value.values.emplace_back(kUninitializedValue);
     }
     dynamic_joint_state_msg_.interface_values.emplace_back(if_value);
+  }
+}
+
+double get_value(
+  const std::unordered_map<std::string, std::unordered_map<std::string, double>> & map,
+  const std::string & name, const std::string & interface_name)
+{
+  const auto & interfaces_and_values = map.at(name);
+  const auto interface_and_value = interfaces_and_values.find(interface_name);
+  if (interface_and_value != interfaces_and_values.cend()) {
+    return interface_and_value->second;
+  } else {
+    return kUninitializedValue;
   }
 }
 
 controller_interface::return_type
 JointStateController::update()
 {
+  for (const auto & state_interface : state_interfaces_) {
+    name_if_value_mapping_[state_interface.get_name()][state_interface.get_interface_name()] =
+      state_interface.get_value();
+    RCLCPP_DEBUG(
+      get_lifecycle_node()->get_logger(), "%s/%s: %f\n",
+      state_interface.get_name().c_str(),
+      state_interface.get_interface_name().c_str(),
+      state_interface.get_value());
+  }
+
   if (!joint_state_publisher_->is_activated()) {
     RCUTILS_LOG_WARN_ONCE_NAMED("publisher", "joint state publisher is not activated");
     return controller_interface::return_type::ERROR;
@@ -182,38 +211,32 @@ JointStateController::update()
   }
 
   joint_state_msg_.header.stamp = lifecycle_node_->get_clock()->now();
+  dynamic_joint_state_msg_.header.stamp = lifecycle_node_->get_clock()->now();
 
   // update joint state message and dynamic joint state message
-  for (auto joint_index = 0ul; joint_index < joint_names_.size(); ++joint_index) {
-    auto update_value =
-      [](double & msg_data, const std::shared_ptr<hardware_interface::JointHandle> & joint_handle)
-      {
-        if (joint_handle) {
-          msg_data = joint_handle->get_value();
-        }
-      };
-
-    // the interface indexes used here are hardcoded, check init_joint_data()
-    update_value(
-      joint_state_msg_.position[joint_index],
-      joint_handles_[joint_index][kPositionIndex]);
-    update_value(
-      joint_state_msg_.velocity[joint_index],
-      joint_handles_[joint_index][kVelocityIndex]);
-    update_value(
-      joint_state_msg_.effort[joint_index],
-      joint_handles_[joint_index][kEffortIndex]);
-
-    auto interface_index = 0ul;
-    for (const auto & joint_interface_handle : joint_handles_[joint_index]) {
-      if (joint_interface_handle) {
-        dynamic_joint_state_msg_.interface_values[joint_index].values[interface_index] =
-          joint_interface_handle->get_value();
-        ++interface_index;
-      }
-    }
+  for (auto i = 0ul; i < joint_names_.size(); ++i) {
+    joint_state_msg_.position[i] =
+      get_value(name_if_value_mapping_, joint_names_[i], HW_IF_POSITION);
+    joint_state_msg_.velocity[i] =
+      get_value(name_if_value_mapping_, joint_names_[i], HW_IF_VELOCITY);
+    joint_state_msg_.effort[i] = get_value(name_if_value_mapping_, joint_names_[i], HW_IF_EFFORT);
   }
 
+  for (auto joint_index = 0ul; joint_index < dynamic_joint_state_msg_.joint_names.size();
+    ++joint_index)
+  {
+    const auto & name = dynamic_joint_state_msg_.joint_names[joint_index];
+    for (auto interface_index = 0ul;
+      interface_index <
+      dynamic_joint_state_msg_.interface_values[joint_index].interface_names.size();
+      ++interface_index)
+    {
+      const auto & interface_name =
+        dynamic_joint_state_msg_.interface_values[joint_index].interface_names[interface_index];
+      dynamic_joint_state_msg_.interface_values[joint_index].values[interface_index] =
+        name_if_value_mapping_[name][interface_name];
+    }
+  }
   // publish
   joint_state_publisher_->publish(joint_state_msg_);
   dynamic_joint_state_publisher_->publish(dynamic_joint_state_msg_);
