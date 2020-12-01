@@ -9,20 +9,21 @@ on:
     - cron: '17 8 * * *'
 
 jobs:
-  # Re-enable once ros2_controls is released completely
-  #  ci_binary:
-  #    name: Foxy binary job
-  #    runs-on: ubuntu-latest
-  #    strategy:
-  #      matrix:
-  #        env:
-  #          - {ROS_DISTRO: foxy, ROS_REPO: main}
-  #          - {ROS_DISTRO: foxy, ROS_REPO: testing}
-  #    steps:
-  #      - run: sudo apt-get update -qq && sudo apt-get upgrade
-  #      - uses: actions/checkout@v1
-  #      - uses: 'ros-industrial/industrial_ci@master'
-  #        env: ${{matrix.env}}
+  ci_binary:
+    name: Foxy binary job
+    runs-on: ubuntu-latest
+    strategy:
+     matrix:
+       env:
+         - {ROS_DISTRO: foxy, ROS_REPO: main}
+         - {ROS_DISTRO: foxy, ROS_REPO: testing}
+    env:
+     UPSTREAM_WORKSPACE: .github/workspace.repos
+    steps:
+     - run: sudo apt-get update -qq && sudo apt-get upgrade
+     - uses: actions/checkout@v1
+     - uses: 'ros-industrial/industrial_ci@master'
+       env: ${{matrix.env}}
 
   ci_source:
     name: Foxy source job
@@ -30,18 +31,22 @@ jobs:
     strategy:
       fail-fast: false
     steps:
-      - uses: ros-tooling/setup-ros@0.0.23
+      - uses: ros-tooling/setup-ros@0.0.26
         with:
           required-ros-distributions: foxy
-      - uses: ros-tooling/action-ros-ci@0.0.17
+      - uses: ros-tooling/action-ros-ci@0.0.19
         with:
-          source-ros-binary-installation: foxy
+          target-ros2-distro: foxy
           # build all packages listed in the meta package
           package-name: |
             diff_drive_controller
+            effort_controllers
+            forward_command_controller
             joint_state_controller
             joint_trajectory_controller
+            position_controllers
             ros2_controllers
+            velocity_controllers
           vcs-repo-file-url: |
             https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/.github/workspace.repos
           colcon-mixin-name: coverage-gcc

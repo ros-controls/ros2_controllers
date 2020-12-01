@@ -35,7 +35,8 @@ ament_target_dependencies(joint_state_controller
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
 target_compile_definitions(joint_state_controller PRIVATE "JOINT_STATE_CONTROLLER_BUILDING_DLL")
-
+# prevent pluginlib from using boost
+target_compile_definitions(joint_state_controller PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 pluginlib_export_plugin_description_file(controller_interface joint_state_plugin.xml)
 
 install(

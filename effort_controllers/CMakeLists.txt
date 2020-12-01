@@ -29,7 +29,8 @@ ament_target_dependencies(effort_controllers
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
 target_compile_definitions(effort_controllers PRIVATE "EFFORT_CONTROLLERS_BUILDING_DLL")
-
+# prevent pluginlib from using boost
+target_compile_definitions(effort_controllers PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 pluginlib_export_plugin_description_file(controller_interface effort_controllers_plugins.xml)
 
 install(

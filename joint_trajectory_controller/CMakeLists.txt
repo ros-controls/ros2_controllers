@@ -42,9 +42,9 @@ ament_target_dependencies(joint_trajectory_controller
 )
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
-target_compile_definitions(joint_trajectory_controller PRIVATE
-  "JOINT_TRAJECTORY_CONTROLLER_BUILDING_DLL" "_USE_MATH_DEFINES")
-
+target_compile_definitions(joint_trajectory_controller PRIVATE "JOINT_TRAJECTORY_CONTROLLER_BUILDING_DLL" "_USE_MATH_DEFINES")
+# prevent pluginlib from using boost
+target_compile_definitions(joint_trajectory_controller PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 pluginlib_export_plugin_description_file(controller_interface joint_trajectory_plugin.xml)
 
 install(DIRECTORY include/
