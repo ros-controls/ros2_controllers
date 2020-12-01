@@ -12,106 +12,120 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "forward_command_controller/forward_command_controller.hpp"
+
 #include <algorithm>
 #include <string>
 #include <utility>
+#include <vector>
 
-#include "forward_command_controller/forward_command_controller.hpp"
 #include "rclcpp/qos.hpp"
 #include "rclcpp/logging.hpp"
 
+#include "hardware_interface/loaned_command_interface.hpp"
+
 namespace forward_command_controller
 {
-using CallbackReturn = ForwardCommandController::CallbackReturn;
+using hardware_interface::LoanedCommandInterface;
 
 ForwardCommandController::ForwardCommandController()
 : controller_interface::ControllerInterface(),
-  joint_cmd_handles_(),
   rt_command_ptr_(nullptr),
-  joints_command_subscriber_(nullptr),
-  logger_name_("forward command controller")
+  joints_command_subscriber_(nullptr)
 {}
 
 CallbackReturn ForwardCommandController::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   rclcpp::Parameter joints_param, interface_param;
-  if (!lifecycle_node_->get_parameter("joints", joints_param)) {
-    RCLCPP_ERROR_STREAM(rclcpp::get_logger(logger_name_), "'joints' parameter not set");
-    return CallbackReturn::ERROR;
-  }
-  if (!lifecycle_node_->get_parameter("interface_name", interface_param)) {
-    RCLCPP_ERROR_STREAM(rclcpp::get_logger(logger_name_), "'interface_name' parameter not set");
+  if (!lifecycle_node_->get_parameter("joints", joint_names_)) {
+    RCLCPP_ERROR_STREAM(get_lifecycle_node()->get_logger(), "'joints' parameter not set");
     return CallbackReturn::ERROR;
   }
 
-  auto joint_names = joints_param.as_string_array();
-  if (joint_names.empty()) {
-    RCLCPP_ERROR_STREAM(rclcpp::get_logger(logger_name_), "'joints' is empty");
+  if (joint_names_.empty()) {
+    RCLCPP_ERROR_STREAM(get_lifecycle_node()->get_logger(), "'joints' parameter was empty");
     return CallbackReturn::ERROR;
   }
 
-  auto interface_name = interface_param.as_string();
-  if (interface_name.empty()) {
-    RCLCPP_ERROR_STREAM(rclcpp::get_logger(logger_name_), "'interface_name' is empty");
+  if (!lifecycle_node_->get_parameter("interface_name", interface_name_)) {
+    RCLCPP_ERROR_STREAM(get_lifecycle_node()->get_logger(), "'interface_name' parameter not set");
     return CallbackReturn::ERROR;
   }
 
-  if (auto rh_ptr = robot_hardware_.lock()) {
-    const auto registered_joints = rh_ptr->get_registered_joint_names();
-
-    // check all requested joints are present
-    for (const auto & joint_name : joint_names) {
-      if (std::find(
-          registered_joints.cbegin(), registered_joints.cend(),
-          joint_name) == registered_joints.cend())
-      {
-        RCLCPP_ERROR_STREAM(
-          rclcpp::get_logger(
-            logger_name_), "joint '" << joint_name << "' not registered");
-        return CallbackReturn::ERROR;
-      }
-    }
-
-    // get joint handles
-    for (const auto & joint_name : joint_names) {
-      hardware_interface::JointHandle joint_handle(joint_name, interface_name);
-      if (rh_ptr->get_joint_handle(joint_handle) ==
-        hardware_interface::hardware_interface_ret_t::ERROR)
-      {
-        // uppon error, clear any previously requested handles
-        joint_cmd_handles_.clear();
-
-        RCLCPP_ERROR_STREAM(
-          rclcpp::get_logger(
-            logger_name_), "could not get handle for joint '" << joint_name << "'");
-        return CallbackReturn::ERROR;
-      }
-      joint_cmd_handles_.emplace_back(std::move(joint_handle));
-    }
-  } else {
-    RCLCPP_ERROR_STREAM(
-      rclcpp::get_logger(
-        logger_name_), "could not lock pointer to robot_hardware");
+  if (interface_name_.empty()) {
+    RCLCPP_ERROR_STREAM(get_lifecycle_node()->get_logger(), "'interface_name' parameter was empty");
     return CallbackReturn::ERROR;
   }
 
   joints_command_subscriber_ = lifecycle_node_->create_subscription<CmdType>(
-    "commands", rclcpp::SystemDefaultsQoS(),
+    "~/commands", rclcpp::SystemDefaultsQoS(),
     [this](const CmdType::SharedPtr msg)
     {
       rt_command_ptr_.writeFromNonRT(msg);
     });
 
-  RCLCPP_INFO_STREAM(
-    rclcpp::get_logger(
-      logger_name_), "configure successful");
+  RCLCPP_INFO_STREAM(get_lifecycle_node()->get_logger(), "configure successful");
   return CallbackReturn::SUCCESS;
+}
+
+controller_interface::InterfaceConfiguration
+ForwardCommandController::command_interface_configuration() const
+{
+  controller_interface::InterfaceConfiguration command_interfaces_config;
+  command_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
+
+  for (const auto & joint : joint_names_) {
+    command_interfaces_config.names.push_back(joint + "/" + interface_name_);
+  }
+
+  return command_interfaces_config;
+}
+
+controller_interface::InterfaceConfiguration
+ForwardCommandController::state_interface_configuration() const
+{
+  return controller_interface::InterfaceConfiguration{
+    controller_interface::interface_configuration_type::NONE};
+}
+
+// Fill ordered_interfaces with references to the matching interfaces
+// in the same order as in joint_names
+template<typename T>
+bool get_ordered_interfaces(
+  std::vector<T> & unordered_interfaces, const std::vector<std::string> & joint_names,
+  const std::string & interface_type, std::vector<std::reference_wrapper<T>> & ordered_interfaces)
+{
+  for (const auto & joint_name : joint_names) {
+    for (auto & command_interface : unordered_interfaces) {
+      if ((command_interface.get_name() == joint_name) &&
+        (command_interface.get_interface_name() == interface_type))
+      {
+        ordered_interfaces.push_back(std::ref(command_interface));
+      }
+    }
+  }
+
+  return joint_names.size() == ordered_interfaces.size();
 }
 
 CallbackReturn ForwardCommandController::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
+  //  check if we have all resources defined in the "points" parameter
+  //  also verify that we *only* have the resources defined in the "points" parameter
+  std::vector<std::reference_wrapper<LoanedCommandInterface>> ordered_interfaces;
+  if (!get_ordered_interfaces(
+      command_interfaces_, joint_names_, interface_name_,
+      ordered_interfaces) || command_interfaces_.size() != ordered_interfaces.size())
+  {
+    RCLCPP_ERROR(
+      lifecycle_node_->get_logger(),
+      "Expected %u position command interfaces, got %u",
+      joint_names_.size(), ordered_interfaces.size());
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
+  }
+
   return CallbackReturn::SUCCESS;
 }
 
@@ -130,17 +144,18 @@ controller_interface::return_type ForwardCommandController::update()
     return controller_interface::return_type::SUCCESS;
   }
 
-  const auto joint_num = (*joint_commands)->data.size();
-  if (joint_num != joint_cmd_handles_.size()) {
+  if ((*joint_commands)->data.size() != command_interfaces_.size()) {
     RCLCPP_ERROR_STREAM_THROTTLE(
-      rclcpp::get_logger(
-        logger_name_),
-      *lifecycle_node_->get_clock(), 1000, "command size does not match number of joints");
+      get_lifecycle_node()->get_logger(),
+      *lifecycle_node_->get_clock(), 1000,
+      "command size (" << (*joint_commands)->data.size() <<
+        ") does not match number of interfaces (" <<
+        command_interfaces_.size() << ")");
     return controller_interface::return_type::ERROR;
   }
 
-  for (auto index = 0ul; index < joint_num; ++index) {
-    joint_cmd_handles_[index].set_value((*joint_commands)->data[index]);
+  for (auto index = 0ul; index < command_interfaces_.size(); ++index) {
+    command_interfaces_[index].set_value((*joint_commands)->data[index]);
   }
 
   return controller_interface::return_type::SUCCESS;
