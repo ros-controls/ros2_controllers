@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+
 #include <stddef.h>
 
 #include <array>
@@ -30,6 +31,7 @@
 #include "builtin_interfaces/msg/time.hpp"
 #include "control_msgs/msg/detail/joint_trajectory_controller_state__struct.hpp"
 #include "controller_interface/controller_interface.hpp"
+#include "hardware_interface/resource_manager.hpp"
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/clock.hpp"
@@ -47,313 +49,18 @@
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 #include "std_msgs/msg/header.hpp"
-#include "test_robot_hardware/test_robot_hardware.hpp"
+#include "test_trajectory_controller_utils.hpp"
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
 using lifecycle_msgs::msg::State;
-
-namespace
-{
-const double COMMON_THRESHOLD = 0.001;
-}
+using test_trajectory_controllers::TestableJointTrajectoryController;
+using test_trajectory_controllers::TestTrajectoryController;
 
 void
 spin(rclcpp::executors::MultiThreadedExecutor * exe)
 {
   exe->spin();
-}
-
-class TestableJointTrajectoryController : public joint_trajectory_controller::
-  JointTrajectoryController
-{
-public:
-  using joint_trajectory_controller::JointTrajectoryController::validate_trajectory_msg;
-  using joint_trajectory_controller::JointTrajectoryController::JointTrajectoryController;
-
-  CallbackReturn on_configure(const rclcpp_lifecycle::State & previous_state) override
-  {
-    auto ret = joint_trajectory_controller::JointTrajectoryController::on_configure(previous_state);
-    joint_cmd_sub_wait_set_.add_subscription(joint_command_subscriber_);
-    return ret;
-  }
-
-  /**
-  * @brief wait_for_trajectory block until a new JointTrajectory is received.
-  * Requires that the executor is not spinned elsewhere between the
-  *  message publication and the call to this function
-  *
-  * @return true if new JointTrajectory msg was received, false if timeout
-  */
-  bool wait_for_trajectory(
-    rclcpp::Executor & executor,
-    const std::chrono::milliseconds & timeout = std::chrono::milliseconds{500})
-  {
-    bool success = joint_cmd_sub_wait_set_.wait(timeout).kind() == rclcpp::WaitResultKind::Ready;
-    if (success) {
-      executor.spin_some();
-    }
-    return success;
-  }
-
-  rclcpp::WaitSet joint_cmd_sub_wait_set_;
-};
-
-class TestTrajectoryController : public ::testing::Test
-{
-protected:
-  static void SetUpTestCase()
-  {
-    rclcpp::init(0, nullptr);
-  }
-
-  void SetUp()
-  {
-    test_robot_ = std::make_shared<test_robot_hardware::TestRobotHardware>();
-    test_robot_->init();
-    joint_names_ = test_robot_->joint_names;
-    op_mode_ = {{test_robot_->write_op_handle_name1}};
-
-    // create joint handles
-    auto get_handle = [&](const std::string & joint_name, const std::string & interface_name)
-      {
-        auto joint_handle = std::make_shared<hardware_interface::JointHandle>(
-          joint_name,
-          interface_name);
-        test_robot_->get_joint_handle(*joint_handle);
-        return joint_handle;
-      };
-
-    joint1_pos_handle_ = get_handle("joint1", "position");
-    joint2_pos_handle_ = get_handle("joint2", "position");
-    joint3_pos_handle_ = get_handle("joint3", "position");
-    joint1_pos_cmd_handle_ = get_handle("joint1", "position_command");
-    joint2_pos_cmd_handle_ = get_handle("joint2", "position_command");
-    joint3_pos_cmd_handle_ = get_handle("joint3", "position_command");
-
-    pub_node_ = std::make_shared<rclcpp::Node>("trajectory_publisher_");
-    trajectory_publisher_ = pub_node_->create_publisher<trajectory_msgs::msg::JointTrajectory>(
-      controller_name_ + "/joint_trajectory", rclcpp::SystemDefaultsQoS());
-  }
-
-  void SetUpTrajectoryController(bool use_local_parameters = true)
-  {
-    if (use_local_parameters) {
-      traj_controller_ = std::make_shared<TestableJointTrajectoryController>(
-        joint_names_, op_mode_);
-    } else {
-      traj_controller_ = std::make_shared<TestableJointTrajectoryController>();
-    }
-    auto ret = traj_controller_->init(test_robot_, controller_name_);
-    if (ret != controller_interface::return_type::SUCCESS) {
-      FAIL();
-    }
-  }
-
-  void SetUpAndActivateTrajectoryController(
-    bool use_local_parameters = true,
-    const std::vector<rclcpp::Parameter> & parameters = {},
-    rclcpp::Executor * executor = nullptr)
-  {
-    SetUpTrajectoryController(use_local_parameters);
-
-    traj_lifecycle_node_ = traj_controller_->get_lifecycle_node();
-    for (const auto & param : parameters) {
-      traj_lifecycle_node_->set_parameter(param);
-    }
-    if (executor) {
-      executor->add_node(traj_lifecycle_node_->get_node_base_interface());
-    }
-
-    traj_controller_->on_configure(traj_lifecycle_node_->get_current_state());
-    traj_controller_->on_activate(traj_lifecycle_node_->get_current_state());
-  }
-
-  static void TearDownTestCase()
-  {
-    rclcpp::shutdown();
-  }
-
-  void subscribeToState()
-  {
-    auto traj_lifecycle_node = traj_controller_->get_lifecycle_node();
-    traj_lifecycle_node->set_parameter(
-      rclcpp::Parameter(
-        "state_publish_rate",
-        static_cast<double>(100)));
-
-    using control_msgs::msg::JointTrajectoryControllerState;
-
-    auto qos = rclcpp::SensorDataQoS();
-    // Needed, otherwise spin_some() returns only the oldest message in the queue
-    // I do not understand why spin_some provides only one message
-    qos.keep_last(1);
-    state_subscriber_ =
-      traj_lifecycle_node->create_subscription<JointTrajectoryControllerState>(
-      "/state",
-      qos,
-      [&](std::shared_ptr<JointTrajectoryControllerState> msg) {
-        std::lock_guard<std::mutex> guard(state_mutex_);
-        state_msg_ = msg;
-      }
-      );
-  }
-
-  /// Publish trajectory msgs with multiple points
-  /**
-   *  delay_btwn_points - delay between each points
-   *  points - vector of trajectories. One point per controlled joint
-   *  joint_names - names of joints, if empty, will use joint_names_ up to the number of provided points
-   */
-  void publish(
-    const builtin_interfaces::msg::Duration & delay_btwn_points,
-    const std::vector<std::vector<double>> & points,
-    rclcpp::Time start_time = rclcpp::Time(),
-    const std::vector<std::string> & joint_names = {})
-  {
-    int wait_count = 0;
-    const auto topic = trajectory_publisher_->get_topic_name();
-    while (pub_node_->count_subscribers(topic) == 0) {
-      if (wait_count >= 5) {
-        auto error_msg =
-          std::string("publishing to ") + topic + " but no node subscribes to it";
-        throw std::runtime_error(error_msg);
-      }
-      std::this_thread::sleep_for(std::chrono::milliseconds(100));
-      ++wait_count;
-    }
-
-    trajectory_msgs::msg::JointTrajectory traj_msg;
-    if (joint_names.empty()) {
-      traj_msg.joint_names = {joint_names_.begin(), joint_names_.begin() + points[0].size()};
-    } else {
-      traj_msg.joint_names = joint_names;
-    }
-    traj_msg.header.stamp = start_time;
-    traj_msg.points.resize(points.size());
-
-    builtin_interfaces::msg::Duration duration_msg;
-    duration_msg.sec = delay_btwn_points.sec;
-    duration_msg.nanosec = delay_btwn_points.nanosec;
-    rclcpp::Duration duration(duration_msg);
-    rclcpp::Duration duration_total(duration_msg);
-
-    for (size_t index = 0; index < points.size(); ++index) {
-      traj_msg.points[index].time_from_start = duration_total;
-
-      traj_msg.points[index].positions.resize(points[index].size());
-      for (size_t j = 0; j < points[index].size(); ++j) {
-        traj_msg.points[index].positions[j] = points[index][j];
-      }
-      duration_total = duration_total + duration;
-    }
-
-    trajectory_publisher_->publish(traj_msg);
-  }
-
-  void updateController(rclcpp::Duration wait_time = rclcpp::Duration::from_seconds(0.2))
-  {
-    const auto start_time = rclcpp::Clock().now();
-    const auto end_time = start_time + wait_time;
-    while (rclcpp::Clock().now() < end_time) {
-      test_robot_->read();
-      traj_controller_->update();
-      test_robot_->write();
-    }
-  }
-
-  void waitAndCompareState(
-    trajectory_msgs::msg::JointTrajectoryPoint expected_actual,
-    trajectory_msgs::msg::JointTrajectoryPoint expected_desired,
-    rclcpp::Executor & executor, rclcpp::Duration controller_wait_time, double allowed_delta)
-  {
-    {
-      std::lock_guard<std::mutex> guard(state_mutex_);
-      state_msg_.reset();
-    }
-    traj_controller_->wait_for_trajectory(executor);
-    updateController(controller_wait_time);
-    // Spin to receive latest state
-    executor.spin_some();
-    auto state_msg = getState();
-    ASSERT_TRUE(state_msg);
-    for (size_t i = 0; i < expected_actual.positions.size(); ++i) {
-      SCOPED_TRACE("Joint " + std::to_string(i));
-      EXPECT_NEAR(expected_actual.positions[i], state_msg->actual.positions[i], allowed_delta);
-    }
-
-    for (size_t i = 0; i < expected_desired.positions.size(); ++i) {
-      SCOPED_TRACE("Joint " + std::to_string(i));
-      EXPECT_NEAR(expected_desired.positions[i], state_msg->desired.positions[i], allowed_delta);
-    }
-  }
-
-  std::shared_ptr<control_msgs::msg::JointTrajectoryControllerState> getState() const
-  {
-    std::lock_guard<std::mutex> guard(state_mutex_);
-    return state_msg_;
-  }
-  void test_state_publish_rate_target(int target_msg_count);
-
-  std::string controller_name_ = "test_joint_trajectory_controller";
-
-  std::shared_ptr<test_robot_hardware::TestRobotHardware> test_robot_;
-  std::vector<std::string> joint_names_;
-  std::vector<std::string> op_mode_;
-
-  std::shared_ptr<hardware_interface::JointHandle> joint1_pos_handle_;
-  std::shared_ptr<hardware_interface::JointHandle> joint2_pos_handle_;
-  std::shared_ptr<hardware_interface::JointHandle> joint3_pos_handle_;
-  std::shared_ptr<hardware_interface::JointHandle> joint1_pos_cmd_handle_;
-  std::shared_ptr<hardware_interface::JointHandle> joint2_pos_cmd_handle_;
-  std::shared_ptr<hardware_interface::JointHandle> joint3_pos_cmd_handle_;
-
-  rclcpp::Node::SharedPtr pub_node_;
-  rclcpp::Publisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr trajectory_publisher_;
-
-  std::shared_ptr<TestableJointTrajectoryController> traj_controller_;
-  std::shared_ptr<rclcpp_lifecycle::LifecycleNode> traj_lifecycle_node_;
-  rclcpp::Subscription<control_msgs::msg::JointTrajectoryControllerState>::SharedPtr
-    state_subscriber_;
-  mutable std::mutex state_mutex_;
-  std::shared_ptr<control_msgs::msg::JointTrajectoryControllerState> state_msg_;
-};
-
-TEST_F(TestTrajectoryController, wrong_initialization) {
-  const auto uninitialized_robot = std::make_shared<test_robot_hardware::TestRobotHardware>();
-  auto traj_controller = std::make_shared<TestableJointTrajectoryController>(
-    joint_names_, op_mode_);
-  const auto ret = traj_controller->init(uninitialized_robot, controller_name_);
-  if (ret != controller_interface::return_type::SUCCESS) {
-    FAIL();
-  }
-
-  const auto unconfigured_state = traj_controller->get_lifecycle_node()->configure();
-  EXPECT_EQ(State::PRIMARY_STATE_UNCONFIGURED, unconfigured_state.id());
-}
-
-TEST_F(TestTrajectoryController, correct_initialization) {
-  const auto initialized_robot = std::make_shared<test_robot_hardware::TestRobotHardware>();
-  initialized_robot->init();
-  auto traj_controller = std::make_shared<TestableJointTrajectoryController>(
-    joint_names_, op_mode_);
-  const auto ret = traj_controller->init(initialized_robot, controller_name_);
-  if (ret != controller_interface::return_type::SUCCESS) {
-    FAIL();
-  }
-
-  auto get_handle = [&](const std::string & joint_name, const std::string & interface_name)
-    {
-      hardware_interface::JointHandle joint_handle(joint_name, interface_name);
-      initialized_robot->get_joint_handle(joint_handle);
-      return joint_handle;
-    };
-
-  const auto inactive_state = traj_controller->get_lifecycle_node()->configure();
-  EXPECT_EQ(State::PRIMARY_STATE_INACTIVE, inactive_state.id());
-  EXPECT_EQ(1.1, get_handle("joint1", "position").get_value());
-  EXPECT_EQ(2.1, get_handle("joint2", "position").get_value());
-  EXPECT_EQ(3.1, get_handle("joint3", "position").get_value());
 }
 
 TEST_F(TestTrajectoryController, configuration) {
@@ -375,12 +82,11 @@ TEST_F(TestTrajectoryController, configuration) {
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
   traj_controller_->update();
-  test_robot_->write();
 
   // no change in hw position
-  EXPECT_NE(3.3, joint1_pos_handle_->get_value());
-  EXPECT_NE(4.4, joint2_pos_handle_->get_value());
-  EXPECT_NE(5.5, joint3_pos_handle_->get_value());
+  EXPECT_NE(3.3, joint_pos_[0]);
+  EXPECT_NE(4.4, joint_pos_[1]);
+  EXPECT_NE(5.5, joint_pos_[2]);
 
   executor.cancel();
 }
@@ -417,12 +123,12 @@ TEST_F(TestTrajectoryController, configuration) {
 //   executor.spin_once();
 //
 //   traj_controller->update();
-//   test_robot_->write();
+//   resource_manager_->write();
 //
 //   // change in hw position
-//   EXPECT_EQ(3.3, joint1_pos_handle_->get_value());
-//   EXPECT_EQ(4.4, joint2_pos_handle_->get_value());
-//   EXPECT_EQ(5.5, joint3_pos_handle_->get_value());
+//   EXPECT_EQ(3.3, joint_pos_[0]);
+//   EXPECT_EQ(4.4, joint_pos_[1]);
+//   EXPECT_EQ(5.5, joint_pos_[2]);
 //
 //   executor.cancel();
 // }
@@ -465,51 +171,45 @@ TEST_F(TestTrajectoryController, configuration) {
 //   executor.spin_once();
 //
 //   traj_controller->update();
-//   test_robot_->write();
+//   resource_manager_->write();
 //
 //   // deactivated
 //   // wait so controller process the second point when deactivated
 //   std::this_thread::sleep_for(std::chrono::milliseconds(500));
 //   state = traj_lifecycle_node->deactivate();
 //   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
-//   test_robot_->read();
+//   resource_manager_->read();
 //   traj_controller->update();
-//   test_robot_->write();
+//   resource_manager_->write();
 //
 //   // no change in hw position
-//   EXPECT_EQ(3.3, joint1_pos_handle_->get_value());
-//   EXPECT_EQ(4.4, joint2_pos_handle_->get_value());
-//   EXPECT_EQ(5.5, joint3_pos_handle_->get_value());
+//   EXPECT_EQ(3.3, joint_pos_[0]);
+//   EXPECT_EQ(4.4, joint_pos_[1]);
+//   EXPECT_EQ(5.5, joint_pos_[2]);
 //
 //   // reactivated
 //   // wait so controller process the third point when reactivated
 //   std::this_thread::sleep_for(std::chrono::milliseconds(3000));
 //   state = traj_lifecycle_node->activate();
 //   ASSERT_EQ(state.id(), State::PRIMARY_STATE_ACTIVE);
-//   test_robot_->read();
+//   resource_manager_->read();
 //   traj_controller->update();
-//   test_robot_->write();
+//   resource_manager_->write();
 //
 //   // change in hw position to 3rd point
-//   EXPECT_EQ(10.10, joint1_pos_handle_->get_value());
-//   EXPECT_EQ(11.11, joint2_pos_handle_->get_value());
-//   EXPECT_EQ(12.12, joint3_pos_handle_->get_value());
+//   EXPECT_EQ(10.10, joint_pos_[0]);
+//   EXPECT_EQ(11.11, joint_pos_[1]);
+//   EXPECT_EQ(12.12, joint_pos_[2]);
 //
 //   executor.cancel();
 // }
 
 TEST_F(TestTrajectoryController, cleanup) {
-  SetUpTrajectoryController();
+  SetUpAndActivateTrajectoryController();
 
   auto traj_lifecycle_node = traj_controller_->get_lifecycle_node();
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(traj_lifecycle_node->get_node_base_interface());
-
-  auto state = traj_lifecycle_node->configure();
-  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
-
-  state = traj_lifecycle_node->activate();
-  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
 
   // send msg
   builtin_interfaces::msg::Duration time_from_start;
@@ -519,12 +219,10 @@ TEST_F(TestTrajectoryController, cleanup) {
   publish(time_from_start, points);
   traj_controller_->wait_for_trajectory(executor);
   traj_controller_->update();
-  test_robot_->write();
 
-  state = traj_lifecycle_node->deactivate();
+  auto state = traj_lifecycle_node->deactivate();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   traj_controller_->update();
-  test_robot_->write();
 
   state = traj_lifecycle_node->cleanup();
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
@@ -533,9 +231,9 @@ TEST_F(TestTrajectoryController, cleanup) {
   updateController(rclcpp::Duration::from_seconds(0.25));
 
   // should be home pose again
-  EXPECT_NEAR(1.1, joint1_pos_handle_->get_value(), COMMON_THRESHOLD);
-  EXPECT_NEAR(2.1, joint2_pos_handle_->get_value(), COMMON_THRESHOLD);
-  EXPECT_NEAR(3.1, joint3_pos_handle_->get_value(), COMMON_THRESHOLD);
+  EXPECT_NEAR(INITIAL_POS_JOINT1, joint_pos_[0], COMMON_THRESHOLD);
+  EXPECT_NEAR(INITIAL_POS_JOINT2, joint_pos_[1], COMMON_THRESHOLD);
+  EXPECT_NEAR(INITIAL_POS_JOINT3, joint_pos_[2], COMMON_THRESHOLD);
 }
 
 TEST_F(TestTrajectoryController, correct_initialization_using_parameters) {
@@ -546,22 +244,19 @@ TEST_F(TestTrajectoryController, correct_initialization_using_parameters) {
   const std::vector<std::string> joint_names_ = {"joint1", "joint2", "joint3"};
   const rclcpp::Parameter joint_parameters("joints", joint_names_);
   traj_lifecycle_node->set_parameter(joint_parameters);
+  traj_lifecycle_node->configure();
+  auto state = traj_lifecycle_node->get_current_state();
+  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
 
-  const std::vector<std::string> operation_mode_names = {"write1", "write2"};
-  rclcpp::Parameter operation_mode_parameters("write_op_modes", operation_mode_names);
-  traj_lifecycle_node->set_parameter(operation_mode_parameters);
-
+  ActivateTrajectoryController();
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(traj_lifecycle_node->get_node_base_interface());
 
-  auto state = traj_lifecycle_node->configure();
-  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
-  EXPECT_EQ(1.1, joint1_pos_handle_->get_value());
-  EXPECT_EQ(2.1, joint2_pos_handle_->get_value());
-  EXPECT_EQ(3.1, joint3_pos_handle_->get_value());
-
-  state = traj_lifecycle_node->activate();
+  state = traj_lifecycle_node->get_current_state();
   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+  EXPECT_EQ(INITIAL_POS_JOINT1, joint_pos_[0]);
+  EXPECT_EQ(INITIAL_POS_JOINT2, joint_pos_[1]);
+  EXPECT_EQ(INITIAL_POS_JOINT3, joint_pos_[2]);
 
   // send msg
   constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
@@ -578,39 +273,34 @@ TEST_F(TestTrajectoryController, correct_initialization_using_parameters) {
 
   // first update
   traj_controller_->update();
-  test_robot_->write();
 
   // wait so controller process the second point when deactivated
   std::this_thread::sleep_for(FIRST_POINT_TIME);
   traj_controller_->update();
-  test_robot_->write();
-
   // deactivated
   state = traj_lifecycle_node->deactivate();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
 
   const auto allowed_delta = 0.05;
 
-  EXPECT_NEAR(3.3, joint1_pos_handle_->get_value(), allowed_delta);
-  EXPECT_NEAR(4.4, joint2_pos_handle_->get_value(), allowed_delta);
-  EXPECT_NEAR(5.5, joint3_pos_handle_->get_value(), allowed_delta);
+  EXPECT_NEAR(3.3, joint_pos_[0], allowed_delta);
+  EXPECT_NEAR(4.4, joint_pos_[1], allowed_delta);
+  EXPECT_NEAR(5.5, joint_pos_[2], allowed_delta);
 
   // cleanup
   state = traj_lifecycle_node->cleanup();
 
   // update loop receives a new msg and updates accordingly
   traj_controller_->update();
-  test_robot_->write();
 
   // check the traj_msg_home_ptr_ initialization code for the standard wait timing
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
   traj_controller_->update();
-  test_robot_->write();
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
 
-  EXPECT_NEAR(1.1, joint1_pos_handle_->get_value(), allowed_delta);
-  EXPECT_NEAR(2.1, joint2_pos_handle_->get_value(), allowed_delta);
-  EXPECT_NEAR(3.1, joint3_pos_handle_->get_value(), allowed_delta);
+  EXPECT_NEAR(INITIAL_POS_JOINT1, joint_pos_[0], allowed_delta);
+  EXPECT_NEAR(INITIAL_POS_JOINT2, joint_pos_[1], allowed_delta);
+  EXPECT_NEAR(INITIAL_POS_JOINT3, joint_pos_[2], allowed_delta);
 
   state = traj_lifecycle_node->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
@@ -708,7 +398,7 @@ TEST_F(TestTrajectoryController, test_jumbled_joint_order) {
   {
     trajectory_msgs::msg::JointTrajectory traj_msg;
     const std::vector<std::string> jumbled_joint_names {
-      test_robot_->joint_names[1], test_robot_->joint_names[2], test_robot_->joint_names[0]
+      joint_names_[1], joint_names_[2], joint_names_[0]
     };
     traj_msg.joint_names = jumbled_joint_names;
     traj_msg.header.stamp = rclcpp::Time(0);
@@ -727,9 +417,9 @@ TEST_F(TestTrajectoryController, test_jumbled_joint_order) {
   // update for 0.25 seconds
   updateController(rclcpp::Duration::from_seconds(0.25));
 
-  EXPECT_NEAR(1.0, joint1_pos_handle_->get_value(), COMMON_THRESHOLD);
-  EXPECT_NEAR(2.0, joint2_pos_handle_->get_value(), COMMON_THRESHOLD);
-  EXPECT_NEAR(3.0, joint3_pos_handle_->get_value(), COMMON_THRESHOLD);
+  EXPECT_NEAR(1.0, joint_pos_[0], COMMON_THRESHOLD);
+  EXPECT_NEAR(2.0, joint_pos_[1], COMMON_THRESHOLD);
+  EXPECT_NEAR(3.0, joint_pos_[2], COMMON_THRESHOLD);
 }
 
 /**
@@ -741,12 +431,12 @@ TEST_F(TestTrajectoryController, test_partial_joint_list) {
   rclcpp::executors::SingleThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(true, {partial_joints_parameters}, &executor);
 
-  const double initial_joint3_cmd = joint3_pos_cmd_handle_->get_value();
+  const double initial_joint3_cmd = joint_pos_[2];
   trajectory_msgs::msg::JointTrajectory traj_msg;
 
   {
     std::vector<std::string> partial_joint_names {
-      test_robot_->joint_names[1], test_robot_->joint_names[0]
+      joint_names_[1], joint_names_[0]
     };
     traj_msg.joint_names = partial_joint_names;
     traj_msg.header.stamp = rclcpp::Time(0);
@@ -768,10 +458,10 @@ TEST_F(TestTrajectoryController, test_partial_joint_list) {
   updateController(rclcpp::Duration::from_seconds(0.25));
 
   double threshold = 0.001;
-  EXPECT_NEAR(traj_msg.points[0].positions[1], joint1_pos_handle_->get_value(), threshold);
-  EXPECT_NEAR(traj_msg.points[0].positions[0], joint2_pos_handle_->get_value(), threshold);
+  EXPECT_NEAR(traj_msg.points[0].positions[1], joint_pos_[0], threshold);
+  EXPECT_NEAR(traj_msg.points[0].positions[0], joint_pos_[1], threshold);
   EXPECT_NEAR(
-    initial_joint3_cmd, joint3_pos_handle_->get_value(),
+    initial_joint3_cmd, joint_pos_[2],
     threshold) << "Joint 3 command should be current position";
 
 //  Velocity commands are not sent yet
@@ -793,14 +483,14 @@ TEST_F(TestTrajectoryController, test_partial_joint_list_not_allowed) {
   rclcpp::executors::SingleThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(true, {partial_joints_parameters}, &executor);
 
-  const double initial_joint1_cmd = joint1_pos_cmd_handle_->get_value();
-  const double initial_joint2_cmd = joint2_pos_cmd_handle_->get_value();
-  const double initial_joint3_cmd = joint3_pos_cmd_handle_->get_value();
+  const double initial_joint1_cmd = joint_pos_[0];
+  const double initial_joint2_cmd = joint_pos_[1];
+  const double initial_joint3_cmd = joint_pos_[2];
   trajectory_msgs::msg::JointTrajectory traj_msg;
 
   {
     std::vector<std::string> partial_joint_names {
-      test_robot_->joint_names[1], test_robot_->joint_names[0]
+      joint_names_[1], joint_names_[0]
     };
     traj_msg.joint_names = partial_joint_names;
     traj_msg.header.stamp = rclcpp::Time(0);
@@ -823,13 +513,13 @@ TEST_F(TestTrajectoryController, test_partial_joint_list_not_allowed) {
 
   double threshold = 0.001;
   EXPECT_NEAR(
-    initial_joint1_cmd, joint1_pos_cmd_handle_->get_value(),
+    initial_joint1_cmd, joint_pos_[0],
     threshold) << "All joints command should be current position because goal was rejected";
   EXPECT_NEAR(
-    initial_joint2_cmd, joint2_pos_cmd_handle_->get_value(),
+    initial_joint2_cmd, joint_pos_[1],
     threshold) << "All joints command should be current position because goal was rejected";
   EXPECT_NEAR(
-    initial_joint3_cmd, joint3_pos_cmd_handle_->get_value(),
+    initial_joint3_cmd, joint_pos_[2],
     threshold) << "All joints command should be current position because goal was rejected";
 
   //  Velocity commands are not sent yet

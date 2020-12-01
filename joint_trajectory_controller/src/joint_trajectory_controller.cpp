@@ -26,8 +26,8 @@
 #include "angles/angles.h"
 #include "builtin_interfaces/msg/duration.hpp"
 #include "builtin_interfaces/msg/time.hpp"
-#include "hardware_interface/robot_hardware.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
+#include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "joint_trajectory_controller/trajectory.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/logging.hpp"
@@ -50,32 +50,20 @@ using lifecycle_msgs::msg::State;
 
 JointTrajectoryController::JointTrajectoryController()
 : controller_interface::ControllerInterface(),
-  joint_names_({}),
-  write_op_names_({})
-{}
-
-JointTrajectoryController::JointTrajectoryController(
-  const std::vector<std::string> & joint_names,
-  const std::vector<std::string> & write_op_names)
-: controller_interface::ControllerInterface(),
-  joint_names_(joint_names),
-  write_op_names_(write_op_names)
+  joint_names_({})
 {}
 
 controller_interface::return_type
-JointTrajectoryController::init(
-  std::weak_ptr<hardware_interface::RobotHardware> robot_hardware,
-  const std::string & controller_name)
+JointTrajectoryController::init(const std::string & controller_name)
 {
   // initialize lifecycle node
-  const auto ret = ControllerInterface::init(robot_hardware, controller_name);
+  const auto ret = ControllerInterface::init(controller_name);
   if (ret != controller_interface::return_type::SUCCESS) {
     return ret;
   }
 
   // with the lifecycle node being initialized, we can declare parameters
   lifecycle_node_->declare_parameter<std::vector<std::string>>("joints", joint_names_);
-  lifecycle_node_->declare_parameter<std::vector<std::string>>("write_op_modes", write_op_names_);
   lifecycle_node_->declare_parameter<double>("state_publish_rate", 50.0);
   lifecycle_node_->declare_parameter<double>("action_monitor_rate", 20.0);
   lifecycle_node_->declare_parameter<bool>("allow_partial_joints_goal", allow_partial_joints_goal_);
@@ -83,6 +71,31 @@ JointTrajectoryController::init(
   lifecycle_node_->declare_parameter<double>("constraints.goal_time", 0.0);
 
   return controller_interface::return_type::SUCCESS;
+}
+
+controller_interface::InterfaceConfiguration JointTrajectoryController::
+command_interface_configuration() const
+{
+  controller_interface::InterfaceConfiguration conf;
+  conf.type = controller_interface::interface_configuration_type::INDIVIDUAL;
+  conf.names.reserve(joint_names_.size());
+  for (const auto & joint_name  : joint_names_) {
+    conf.names.push_back(joint_name + "/" + hardware_interface::HW_IF_POSITION);
+  }
+  return conf;
+}
+
+controller_interface::InterfaceConfiguration JointTrajectoryController::
+state_interface_configuration() const
+{
+  controller_interface::InterfaceConfiguration conf;
+  conf.type = controller_interface::interface_configuration_type::INDIVIDUAL;
+  conf.names.reserve(2 * joint_names_.size());
+  for (const auto & joint_name  : joint_names_) {
+    conf.names.push_back(joint_name + "/" + hardware_interface::HW_IF_POSITION);
+    conf.names.push_back(joint_name + "/" + hardware_interface::HW_IF_VELOCITY);
+  }
+  return conf;
 }
 
 controller_interface::return_type
@@ -123,13 +136,13 @@ JointTrajectoryController::update()
   }
 
   JointTrajectoryPoint state_current, state_desired, state_error;
-  const auto joint_num = joint_position_state_handles_.size();
+  const auto joint_num = joint_names_.size();
   resize_joint_trajectory_point(state_current, joint_num);
 
   // current state update
   for (auto index = 0ul; index < joint_num; ++index) {
-    state_current.positions[index] = joint_position_state_handles_[index].get_value();
-    state_current.velocities[index] = joint_velocity_state_handles_[index].get_value();
+    state_current.positions[index] = joint_position_state_interface_[index].get().get_value();
+    state_current.velocities[index] = joint_velocity_state_interface_[index].get().get_value();
     state_current.accelerations[index] = 0.0;
   }
   state_current.time_from_start.set__sec(0);
@@ -155,7 +168,7 @@ JointTrajectoryController::update()
       const bool before_last_point = end_segment_itr != (*traj_point_active_ptr_)->end();
       for (auto index = 0ul; index < joint_num; ++index) {
         // set values for next hardware write()
-        joint_position_command_handles_[index].set_value(state_desired.positions[index]);
+        joint_position_command_interface_[index].get().set_value(state_desired.positions[index]);
         compute_error_for_joint(state_error, index, state_current, state_desired);
 
         if (before_last_point && !check_state_tolerance_per_joint(
@@ -228,8 +241,6 @@ JointTrajectoryController::update()
         }
       }
     }
-
-    set_op_mode(hardware_interface::OperationMode::ACTIVE);
   }
 
   publish_state(state_desired, state_current, state_error);
@@ -245,84 +256,16 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
 
   // update parameters
   joint_names_ = lifecycle_node_->get_parameter("joints").as_string_array();
-  write_op_names_ = lifecycle_node_->get_parameter("write_op_modes").as_string_array();
 
   if (!reset()) {
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
   }
 
-  if (auto robot_hardware = robot_hardware_.lock()) {
-    if (joint_names_.empty()) {
-      RCLCPP_WARN(logger, "no joint names specified");
-    }
-
-    auto get_handles = [&](const std::string & interface_name,
-        std::vector<hardware_interface::JointHandle> & dst)
-      {
-        for (size_t index = 0; index < joint_names_.size(); ++index) {
-          hardware_interface::JointHandle joint_handle(joint_names_[index], interface_name);
-          const auto ret = robot_hardware->get_joint_handle(joint_handle);
-          if (ret == hardware_interface::return_type::OK) {
-            dst.emplace_back(joint_handle);
-          } else {
-            RCLCPP_WARN(
-              logger, "unable to obtain joint '%s' with interface '%s'",
-              joint_names_[index].c_str(), interface_name.c_str());
-            return false;
-          }
-        }
-        return true;
-      };
-
-    // get joint state and command handles
-    if (!get_handles("position", joint_position_state_handles_) ||
-      !get_handles("velocity", joint_velocity_state_handles_) ||
-      !get_handles("position_command", joint_position_command_handles_))
-    {
-      return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
-    }
-
-    // get operation mode handles
-    registered_operation_mode_handles_.resize(write_op_names_.size());
-    for (size_t index = 0; index < write_op_names_.size(); ++index) {
-      const auto ret = robot_hardware->get_operation_mode_handle(
-        write_op_names_[index].c_str(), &registered_operation_mode_handles_[index]);
-      if (ret != hardware_interface::return_type::OK) {
-        RCLCPP_WARN(
-          logger, "unable to obtain operation mode handle for %s", write_op_names_[index].c_str());
-        return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
-      }
-    }
-  } else {
-    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
-  }
-
-  if (
-    joint_position_command_handles_.empty() ||
-    joint_position_state_handles_.empty() ||
-    joint_velocity_state_handles_.empty() ||
-    registered_operation_mode_handles_.empty())
-  {
-    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
+  if (joint_names_.empty()) {
+    RCLCPP_WARN(logger, "no joint names specified");
   }
 
   default_tolerances_ = get_segment_tolerances(*lifecycle_node_, joint_names_);
-
-  // Store 'home' pose
-  traj_msg_home_ptr_ = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
-  traj_msg_home_ptr_->header.stamp.sec = 0;
-  traj_msg_home_ptr_->header.stamp.nanosec = 0;
-  traj_msg_home_ptr_->points.resize(1);
-  traj_msg_home_ptr_->points[0].time_from_start.sec = 0;
-  traj_msg_home_ptr_->points[0].time_from_start.nanosec = 50000000;
-  traj_msg_home_ptr_->points[0].positions.resize(joint_position_state_handles_.size());
-  for (size_t index = 0; index < joint_position_state_handles_.size(); ++index) {
-    traj_msg_home_ptr_->points[0].positions[index] =
-      joint_position_state_handles_[index].get_value();
-  }
-
-  traj_external_point_ptr_ = std::make_shared<Trajectory>();
-  traj_home_point_ptr_ = std::make_shared<Trajectory>();
 
   // subscriber call back
   // non realtime
@@ -408,15 +351,80 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous
     std::bind(&JointTrajectoryController::feedback_setup_callback, this, _1)
   );
 
-  set_op_mode(hardware_interface::OperationMode::INACTIVE);
-
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+}
+
+// Fill ordered_interfaces with references to the matching interfaces
+// in the same order as in joint_names
+template<typename T>
+bool get_ordered_interfaces(
+  std::vector<T> & unordered_interfaces, const std::vector<std::string> & joint_names,
+  const std::string & interface_type, std::vector<std::reference_wrapper<T>> & ordered_interfaces)
+{
+  for (const auto & joint_name : joint_names) {
+    for (auto & command_interface : unordered_interfaces) {
+      if ((command_interface.get_name() == joint_name) &&
+        (command_interface.get_interface_name() == interface_type))
+      {
+        ordered_interfaces.push_back(std::ref(command_interface));
+      }
+    }
+  }
+
+  return joint_names.size() == ordered_interfaces.size();
 }
 
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 JointTrajectoryController::on_activate(const rclcpp_lifecycle::State & previous_state)
 {
   (void) previous_state;
+
+  if (!get_ordered_interfaces(
+      command_interfaces_, joint_names_, hardware_interface::HW_IF_POSITION,
+      joint_position_command_interface_))
+  {
+    RCLCPP_ERROR(
+      lifecycle_node_->get_logger(),
+      "Expected %u position command interfaces, got %u",
+      joint_names_.size(), joint_position_command_interface_.size());
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
+  }
+  if (!get_ordered_interfaces(
+      state_interfaces_, joint_names_, hardware_interface::HW_IF_POSITION,
+      joint_position_state_interface_))
+  {
+    RCLCPP_ERROR(
+      lifecycle_node_->get_logger(),
+      "Expected %u position state interfaces, got %u",
+      joint_names_.size(), joint_position_state_interface_.size());
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
+  }
+  if (!get_ordered_interfaces(
+      state_interfaces_, joint_names_, hardware_interface::HW_IF_VELOCITY,
+      joint_velocity_state_interface_))
+  {
+    RCLCPP_ERROR(
+      lifecycle_node_->get_logger(),
+      "Expected %u velocity state interfaces, got %u",
+      joint_names_.size(), joint_velocity_state_interface_.size());
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
+  }
+
+  // Store 'home' pose
+  traj_msg_home_ptr_ = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
+  traj_msg_home_ptr_->header.stamp.sec = 0;
+  traj_msg_home_ptr_->header.stamp.nanosec = 0;
+  traj_msg_home_ptr_->points.resize(1);
+  traj_msg_home_ptr_->points[0].time_from_start.sec = 0;
+  traj_msg_home_ptr_->points[0].time_from_start.nanosec = 50000000;
+  traj_msg_home_ptr_->points[0].positions.resize(joint_position_state_interface_.size());
+  for (size_t index = 0; index < joint_position_state_interface_.size(); ++index) {
+    traj_msg_home_ptr_->points[0].positions[index] =
+      joint_position_state_interface_[index].get().get_value();
+  }
+
+  traj_external_point_ptr_ = std::make_shared<Trajectory>();
+  traj_home_point_ptr_ = std::make_shared<Trajectory>();
 
   is_halted = false;
   subscriber_is_active_ = true;
@@ -432,6 +440,10 @@ rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 JointTrajectoryController::on_deactivate(const rclcpp_lifecycle::State & previous_state)
 {
   (void) previous_state;
+  joint_position_command_interface_.clear();
+  joint_position_state_interface_.clear();
+  joint_velocity_state_interface_.clear();
+  release_interfaces();
 
   subscriber_is_active_ = false;
   publisher_->on_deactivate();
@@ -468,11 +480,6 @@ JointTrajectoryController::reset()
   // joint_names_.clear();
   // write_op_names_.clear();
 
-  joint_position_command_handles_.clear();
-  joint_position_state_handles_.clear();
-  joint_velocity_state_handles_.clear();
-  registered_operation_mode_handles_.clear();
-
   subscriber_is_active_ = false;
   joint_command_subscriber_.reset();
 
@@ -498,22 +505,13 @@ JointTrajectoryController::on_shutdown(const rclcpp_lifecycle::State & previous_
 }
 
 void
-JointTrajectoryController::set_op_mode(const hardware_interface::OperationMode & mode)
-{
-  for (auto & op_mode_handle : registered_operation_mode_handles_) {
-    op_mode_handle->set_mode(mode);
-  }
-}
-
-void
 JointTrajectoryController::halt()
 {
-  const size_t joint_num = joint_position_command_handles_.size();
+  const size_t joint_num = joint_position_command_interface_.size();
   for (size_t index = 0; index < joint_num; ++index) {
-    joint_position_command_handles_[index].set_value(
-      joint_position_state_handles_[index].get_value());
+    joint_position_command_interface_[index].get().set_value(
+      joint_position_command_interface_[index].get().get_value());
   }
-  set_op_mode(hardware_interface::OperationMode::ACTIVE);
 }
 
 void JointTrajectoryController::publish_state(
@@ -637,10 +635,10 @@ void JointTrajectoryController::fill_partial_goal(
       }
       trajectory_msg->joint_names.push_back(joint_names_[index]);
 
-      const auto & joint_state = joint_position_state_handles_[index];
+      const auto & joint_state = joint_position_command_interface_[index];
       for (auto & it : trajectory_msg->points) {
         // Assume hold position with 0 velocity and acceleration for missing joints
-        it.positions.push_back(joint_state.get_value());
+        it.positions.push_back(joint_state.get().get_value());
         if (!it.velocities.empty()) {
           it.velocities.push_back(0.0);
         }

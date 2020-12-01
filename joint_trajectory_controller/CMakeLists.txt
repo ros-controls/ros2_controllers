@@ -94,6 +94,7 @@ if(BUILD_TESTING)
   target_include_directories(test_load_joint_trajectory_controller PRIVATE include)
   ament_target_dependencies(test_load_joint_trajectory_controller
     controller_manager
+    realtime_tools
     test_robot_hardware
   )
 

@@ -29,6 +29,7 @@
 #include "action_msgs/msg/goal_status_array.hpp"
 #include "control_msgs/action/detail/follow_joint_trajectory__struct.hpp"
 #include "controller_interface/controller_interface.hpp"
+#include "hardware_interface/resource_manager.hpp"
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
 #include "rclcpp/clock.hpp"
 #include "rclcpp/duration.hpp"
@@ -42,67 +43,22 @@
 #include "rclcpp_action/client_goal_handle.hpp"
 #include "rclcpp_action/create_client.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "test_trajectory_controller_utils.hpp"
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
-#include "test_robot_hardware/test_robot_hardware.hpp"
 
 using trajectory_msgs::msg::JointTrajectoryPoint;
+using test_trajectory_controllers::TestableJointTrajectoryController;
+using test_trajectory_controllers::TestTrajectoryController;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
-namespace
-{
-const double COMMON_THRESHOLD = 0.001;
-}
-
-class TestTrajectoryActions : public ::testing::Test
+class TestTrajectoryActions : public TestTrajectoryController
 {
 protected:
-  static void SetUpTestCase()
-  {
-    rclcpp::init(0, nullptr);
-  }
-
   void SetUp()
   {
-    test_robot_ = std::make_shared<test_robot_hardware::TestRobotHardware>();
-    test_robot_->init();
-    joint_names_ = test_robot_->joint_names;
-    op_mode_ = {{test_robot_->write_op_handle_name1}};
-
-    // create joint handles
-    auto get_handle = [&](const std::string & joint_name, const std::string & interface_name)
-      {
-        auto joint_handle = std::make_shared<hardware_interface::JointHandle>(
-          joint_name,
-          interface_name);
-        test_robot_->get_joint_handle(*joint_handle);
-        return joint_handle;
-      };
-
-    joint1_pos_handle_ = get_handle("joint1", "position");
-    joint2_pos_handle_ = get_handle("joint2", "position");
-    joint3_pos_handle_ = get_handle("joint3", "position");
-
-    node_ = std::make_shared<rclcpp::Node>("trajectory_test_node");
-
-    traj_controller_ = std::make_shared<joint_trajectory_controller::JointTrajectoryController>();
-    auto ret = traj_controller_->init(test_robot_, controller_name_);
-    if (ret != controller_interface::return_type::SUCCESS) {
-      FAIL();
-    }
-
-    traj_lifecycle_node_ = traj_controller_->get_lifecycle_node();
-    rclcpp::Parameter joint_parameters("joints", joint_names_);
-    traj_lifecycle_node_->set_parameter(joint_parameters);
-
-    rclcpp::Parameter operation_mode_parameters("write_op_modes", op_mode_);
-    traj_lifecycle_node_->set_parameter(operation_mode_parameters);
-
-    // ignore velocity tolerances for this test since they arent commited in test_robot->write()
-    rclcpp::Parameter stopped_velocity_parameters("constraints.stopped_velocity_tolerance", 0.0);
-    traj_lifecycle_node_->set_parameter(stopped_velocity_parameters);
-
+    TestTrajectoryController::SetUp();
     goal_options_.goal_response_callback =
       std::bind(&TestTrajectoryActions::common_goal_response, this, _1);
     goal_options_.result_callback =
@@ -110,16 +66,15 @@ protected:
     goal_options_.feedback_callback = nullptr;
   }
 
-  void SetUpExecutor()
+  void SetUpExecutor(const std::vector<rclcpp::Parameter> & parameters = {})
   {
     setup_executor_ = true;
 
     executor_ = std::make_unique<rclcpp::executors::MultiThreadedExecutor>();
 
-    executor_->add_node(traj_lifecycle_node_->get_node_base_interface());
+    SetUpAndActivateTrajectoryController(true, parameters);
 
-    traj_controller_->on_configure(traj_lifecycle_node_->get_current_state());
-    traj_controller_->on_activate(traj_lifecycle_node_->get_current_state());
+    executor_->add_node(traj_lifecycle_node_->get_node_base_interface());
 
     SetUpActionClient();
 
@@ -142,9 +97,7 @@ protected:
         rclcpp::Duration wait = rclcpp::Duration::from_seconds(2.0);
         auto end_time = start_time + wait;
         while (rclcpp::Clock().now() < end_time) {
-          test_robot_->read();
           traj_controller_->update();
-          test_robot_->write();
         }
       });
 
@@ -216,20 +169,6 @@ protected:
     auto goal_handle_future = action_client_->async_send_goal(goal_msg, opt);
     return true;
   }
-
-  std::string controller_name_ = "test_joint_trajectory_actions";
-
-  std::shared_ptr<test_robot_hardware::TestRobotHardware> test_robot_;
-  std::vector<std::string> joint_names_;
-  std::vector<std::string> op_mode_;
-
-  std::shared_ptr<hardware_interface::JointHandle> joint1_pos_handle_;
-  std::shared_ptr<hardware_interface::JointHandle> joint2_pos_handle_;
-  std::shared_ptr<hardware_interface::JointHandle> joint3_pos_handle_;
-
-  rclcpp::Node::SharedPtr node_;
-  std::shared_ptr<joint_trajectory_controller::JointTrajectoryController> traj_controller_;
-  rclcpp_lifecycle::LifecycleNode::SharedPtr traj_lifecycle_node_;
 
   rclcpp_action::Client<FollowJointTrajectoryMsg>::SharedPtr action_client_;
   rclcpp_action::ResultCode common_resultcode_ = rclcpp_action::ResultCode::UNKNOWN;
@@ -308,9 +247,9 @@ TEST_F(TestTrajectoryActions, test_success_single_point_sendgoal) {
   EXPECT_TRUE(common_goal_accepted_);
   EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
 
-  EXPECT_EQ(1.0, joint1_pos_handle_->get_value());
-  EXPECT_EQ(2.0, joint2_pos_handle_->get_value());
-  EXPECT_EQ(3.0, joint3_pos_handle_->get_value());
+  EXPECT_EQ(1.0, joint_pos_[0]);
+  EXPECT_EQ(2.0, joint_pos_[1]);
+  EXPECT_EQ(3.0, joint_pos_[2]);
 }
 
 TEST_F(TestTrajectoryActions, test_success_multi_point_sendgoal) {
@@ -356,18 +295,20 @@ TEST_F(TestTrajectoryActions, test_success_multi_point_sendgoal) {
   EXPECT_TRUE(common_goal_accepted_);
   EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
 
-  EXPECT_NEAR(7.0, joint1_pos_handle_->get_value(), COMMON_THRESHOLD);
-  EXPECT_NEAR(8.0, joint2_pos_handle_->get_value(), COMMON_THRESHOLD);
-  EXPECT_NEAR(9.0, joint3_pos_handle_->get_value(), COMMON_THRESHOLD);
+  EXPECT_NEAR(7.0, joint_pos_[0], COMMON_THRESHOLD);
+  EXPECT_NEAR(8.0, joint_pos_[1], COMMON_THRESHOLD);
+  EXPECT_NEAR(9.0, joint_pos_[2], COMMON_THRESHOLD);
 }
 
 TEST_F(TestTrajectoryActions, test_goal_tolerances_single_point_success) {
   // set tolerance parameters
-  traj_lifecycle_node_->declare_parameter("constraints.joint1.goal", 0.1);
-  traj_lifecycle_node_->declare_parameter("constraints.joint2.goal", 0.1);
-  traj_lifecycle_node_->declare_parameter("constraints.joint3.goal", 0.1);
+  std::vector<rclcpp::Parameter> params =
+  {rclcpp::Parameter("constraints.joint1.goal", 0.1), rclcpp::Parameter(
+      "constraints.joint2.goal",
+      0.1), rclcpp::Parameter(
+      "constraints.joint3.goal", 0.1)};
 
-  SetUpExecutor();
+  SetUpExecutor(params);
   SetUpControllerHardware();
 
   // send goal
@@ -392,18 +333,20 @@ TEST_F(TestTrajectoryActions, test_goal_tolerances_single_point_success) {
     control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL,
     common_action_result_code_);
 
-  EXPECT_NEAR(1.0, joint1_pos_handle_->get_value(), COMMON_THRESHOLD);
-  EXPECT_NEAR(2.0, joint2_pos_handle_->get_value(), COMMON_THRESHOLD);
-  EXPECT_NEAR(3.0, joint3_pos_handle_->get_value(), COMMON_THRESHOLD);
+  EXPECT_NEAR(1.0, joint_pos_[0], COMMON_THRESHOLD);
+  EXPECT_NEAR(2.0, joint_pos_[1], COMMON_THRESHOLD);
+  EXPECT_NEAR(3.0, joint_pos_[2], COMMON_THRESHOLD);
 }
 
 TEST_F(TestTrajectoryActions, test_goal_tolerances_multi_point_success) {
   // set tolerance parameters
-  traj_lifecycle_node_->declare_parameter("constraints.joint1.goal", 0.1);
-  traj_lifecycle_node_->declare_parameter("constraints.joint2.goal", 0.1);
-  traj_lifecycle_node_->declare_parameter("constraints.joint3.goal", 0.1);
+  std::vector<rclcpp::Parameter> params =
+  {rclcpp::Parameter("constraints.joint1.goal", 0.1), rclcpp::Parameter(
+      "constraints.joint2.goal",
+      0.1), rclcpp::Parameter(
+      "constraints.joint3.goal", 0.1)};
 
-  SetUpExecutor();
+  SetUpExecutor(params);
   SetUpControllerHardware();
 
   // add feedback
@@ -448,19 +391,22 @@ TEST_F(TestTrajectoryActions, test_goal_tolerances_multi_point_success) {
     control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL,
     common_action_result_code_);
 
-  EXPECT_NEAR(7.0, joint1_pos_handle_->get_value(), COMMON_THRESHOLD);
-  EXPECT_NEAR(8.0, joint2_pos_handle_->get_value(), COMMON_THRESHOLD);
-  EXPECT_NEAR(9.0, joint3_pos_handle_->get_value(), COMMON_THRESHOLD);
+  EXPECT_NEAR(7.0, joint_pos_[0], COMMON_THRESHOLD);
+  EXPECT_NEAR(8.0, joint_pos_[1], COMMON_THRESHOLD);
+  EXPECT_NEAR(9.0, joint_pos_[2], COMMON_THRESHOLD);
 }
 
 TEST_F(TestTrajectoryActions, test_state_tolerances_fail) {
   // set joint tolerance parameters
   const double state_tol = 0.0001;
-  traj_lifecycle_node_->declare_parameter("constraints.joint1.trajectory", state_tol);
-  traj_lifecycle_node_->declare_parameter("constraints.joint2.trajectory", state_tol);
-  traj_lifecycle_node_->declare_parameter("constraints.joint3.trajectory", state_tol);
+  std::vector<rclcpp::Parameter> params = {rclcpp::Parameter(
+      "constraints.joint1.trajectory",
+      state_tol), rclcpp::Parameter(
+      "constraints.joint2.trajectory", state_tol), rclcpp::Parameter(
+      "constraints.joint3.trajectory", state_tol)};
 
-  SetUpExecutor();
+
+  SetUpExecutor(params);
   SetUpControllerHardware();
 
   // send goal
@@ -522,15 +468,14 @@ TEST_F(TestTrajectoryActions, test_cancel_hold_position) {
     control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL,
     common_action_result_code_);
 
-  const double prev_pos1 = joint1_pos_handle_->get_value();
-  const double prev_pos2 = joint2_pos_handle_->get_value();
-  const double prev_pos3 = joint3_pos_handle_->get_value();
+  const double prev_pos1 = joint_pos_[0];
+  const double prev_pos2 = joint_pos_[1];
+  const double prev_pos3 = joint_pos_[2];
 
   // run an update, it should be holding
   traj_controller_->update();
-  test_robot_->write();
 
-  EXPECT_EQ(prev_pos1, joint1_pos_handle_->get_value());
-  EXPECT_EQ(prev_pos2, joint2_pos_handle_->get_value());
-  EXPECT_EQ(prev_pos3, joint3_pos_handle_->get_value());
+  EXPECT_EQ(prev_pos1, joint_pos_[0]);
+  EXPECT_EQ(prev_pos2, joint_pos_[1]);
+  EXPECT_EQ(prev_pos3, joint_pos_[2]);
 }
