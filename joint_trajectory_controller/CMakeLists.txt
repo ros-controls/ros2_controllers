@@ -97,6 +97,7 @@ if(BUILD_TESTING)
     realtime_tools
     test_robot_hardware
   )
+  target_compile_definitions(test_load_joint_trajectory_controller PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
   ament_add_gtest(
     test_trajectory_actions
