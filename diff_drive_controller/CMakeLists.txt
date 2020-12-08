@@ -12,6 +12,7 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(controller_interface REQUIRED)
+find_package(control_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(hardware_interface REQUIRED)
 find_package(nav_msgs REQUIRED)
@@ -22,6 +23,7 @@ find_package(realtime_tools REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_msgs REQUIRED)
+find_package(urdf REQUIRED)
 
 add_library(diff_drive_controller SHARED
   src/diff_drive_controller.cpp
@@ -43,6 +45,8 @@ ament_target_dependencies(diff_drive_controller
   sensor_msgs
   tf2
   tf2_msgs
+  control_msgs
+  urdf
 )
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
@@ -62,6 +66,7 @@ install(TARGETS diff_drive_controller
 )
 
 if(BUILD_TESTING)
+  find_package(ros_testing REQUIRED)
   find_package(ament_cmake_gtest REQUIRED)
   find_package(ament_lint_auto REQUIRED)
   find_package(controller_manager REQUIRED)
@@ -69,27 +74,7 @@ if(BUILD_TESTING)
 
   ament_lint_auto_find_test_dependencies()
 
-  ament_add_gtest(test_diff_drive_controller
-    test/test_diff_drive_controller.cpp
-    ENV config_file=${CMAKE_CURRENT_SOURCE_DIR}/test/config/test_diff_drive_controller.yaml)
-  target_include_directories(test_diff_drive_controller PRIVATE include)
-  target_link_libraries(test_diff_drive_controller
-    diff_drive_controller
-  )
-
-  ament_target_dependencies(test_diff_drive_controller
-    geometry_msgs
-    hardware_interface
-    nav_msgs
-    rclcpp
-    rclcpp_lifecycle
-    realtime_tools
-    sensor_msgs
-    test_robot_hardware
-    tf2
-    tf2_msgs
-  )
-
+  # Unit test: test_load_diff_drive_controller
   ament_add_gtest(
     test_load_diff_drive_controller
     test/test_load_diff_drive_controller.cpp
@@ -100,6 +85,7 @@ if(BUILD_TESTING)
     controller_manager
     test_robot_hardware
   )
+  # End Unit test: test_load_diff_drive_controller
 
   ament_add_gtest(
     test_accumulator
@@ -108,6 +94,42 @@ if(BUILD_TESTING)
 
   target_include_directories(test_accumulator PRIVATE include)
   ament_target_dependencies(test_accumulator)
+
+
+  # Unit test: test_diff_drive_controller
+  ament_add_gtest(test_diff_drive_controller
+    test/test_diff_drive_controller.cpp
+    ENV config_file=${CMAKE_CURRENT_SOURCE_DIR}/test/config/test_diff_drive_controller.yaml)
+  target_include_directories(test_diff_drive_controller PRIVATE include)
+  target_link_libraries(test_diff_drive_controller
+    diff_drive_controller
+  )
+  ament_target_dependencies(test_diff_drive_controller test_robot_hardware)
+  # End Unit test: test_diff_drive_controller
+
+  find_package(rosgraph_msgs REQUIRED)
+  find_package(std_srvs REQUIRED)
+  find_package(tf2_ros REQUIRED)
+
+  # Diffbot
+  # Robot with a DiffDriveController used for integration testing
+  add_executable(diffbot test/diffbot.hpp test/diffbot.cpp)
+  ament_target_dependencies(diffbot hardware_interface controller_manager rclcpp rosgraph_msgs lifecycle_msgs std_srvs)
+  # End Diffbot
+
+  # Gtest executables used in launch tests
+  set(launch_gtests
+    test_diff_drive
+  )
+
+  foreach(launch_gtest IN LISTS launch_gtests)
+    ament_add_gtest_executable(${launch_gtest}
+      test/test_common.hpp
+      test/${launch_gtest}.cpp)
+    ament_target_dependencies(${launch_gtest} tf2_ros std_srvs)
+    target_link_libraries(${launch_gtest} diff_drive_controller)
+    add_ros_test(test/${launch_gtest}.test.py ARGS "test_binary_dir:=${CMAKE_CURRENT_BINARY_DIR}")
+  endforeach()
 
 endif()
 
