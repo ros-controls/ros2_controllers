@@ -115,19 +115,19 @@ protected:
   {
     SetUpTrajectoryController(use_local_parameters);
 
-    traj_lifecycle_node_ = traj_controller_->get_lifecycle_node();
+    traj_node_ = traj_controller_->get_node();
     for (const auto & param : parameters) {
-      traj_lifecycle_node_->set_parameter(param);
+      traj_node_->set_parameter(param);
     }
     if (executor) {
-      executor->add_node(traj_lifecycle_node_->get_node_base_interface());
+      executor->add_node(traj_node_->get_node_base_interface());
     }
 
     // ignore velocity tolerances for this test since they arent commited in test_robot->write()
     rclcpp::Parameter stopped_velocity_parameters("constraints.stopped_velocity_tolerance", 0.0);
-    traj_lifecycle_node_->set_parameter(stopped_velocity_parameters);
+    traj_node_->set_parameter(stopped_velocity_parameters);
 
-    traj_controller_->get_lifecycle_node()->configure();
+    traj_controller_->configure();
     ActivateTrajectoryController();
   }
 
@@ -165,7 +165,7 @@ protected:
     cmd_interfaces[2].set_value(INITIAL_POS_JOINT3);
 
     traj_controller_->assign_interfaces(std::move(cmd_interfaces), std::move(state_interfaces));
-    traj_controller_->get_lifecycle_node()->activate();
+    traj_controller_->activate();
   }
 
   static void TearDownTestCase()
@@ -175,7 +175,7 @@ protected:
 
   void subscribeToState()
   {
-    auto traj_lifecycle_node = traj_controller_->get_lifecycle_node();
+    auto traj_lifecycle_node = traj_controller_->get_node();
     traj_lifecycle_node->set_parameter(
       rclcpp::Parameter(
         "state_publish_rate",
@@ -300,7 +300,7 @@ protected:
   rclcpp::Publisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr trajectory_publisher_;
 
   std::shared_ptr<TestableJointTrajectoryController> traj_controller_;
-  std::shared_ptr<rclcpp_lifecycle::LifecycleNode> traj_lifecycle_node_;
+  std::shared_ptr<rclcpp::Node> traj_node_;
   rclcpp::Subscription<control_msgs::msg::JointTrajectoryControllerState>::SharedPtr
     state_subscriber_;
   mutable std::mutex state_mutex_;

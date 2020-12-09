@@ -124,7 +124,7 @@ DiffDriveController::init(
 
 controller_interface::return_type DiffDriveController::update()
 {
-  auto logger = lifecycle_node_->get_logger();
+  auto logger = node_->get_logger();
   if (lifecycle_node_->get_current_state().id() == State::PRIMARY_STATE_INACTIVE) {
     if (!is_halted) {
       halt();
@@ -133,7 +133,7 @@ controller_interface::return_type DiffDriveController::update()
     return controller_interface::return_type::SUCCESS;
   }
 
-  const auto current_time = lifecycle_node_->get_clock()->now();
+  const auto current_time = node_->get_clock()->now();
   double & linear_command = received_velocity_msg_ptr_->twist.linear.x;
   double & angular_command = received_velocity_msg_ptr_->twist.angular.z;
 
@@ -255,7 +255,7 @@ controller_interface::return_type DiffDriveController::update()
 
 CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &)
 {
-  auto logger = lifecycle_node_->get_logger();
+  auto logger = node_->get_logger();
 
   // update parameters
   left_wheel_names_ = lifecycle_node_->get_parameter("left_wheel_names").as_string_array();
@@ -399,7 +399,7 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
       const std::shared_ptr<Twist> msg) -> void {
       if (!subscriber_is_active_) {
         RCLCPP_WARN(
-          lifecycle_node_->get_logger(),
+          node_->get_logger(),
           "Can't accept new commands. subscriber is inactive");
         return;
       }
@@ -448,7 +448,7 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
   odometry_transform_message.transforms.front().header.frame_id = odom_params_.odom_frame_id;
   odometry_transform_message.transforms.front().child_frame_id = odom_params_.base_frame_id;
 
-  previous_update_timestamp_ = lifecycle_node_->get_clock()->now();
+  previous_update_timestamp_ = node_->get_clock()->now();
   set_op_mode(hardware_interface::OperationMode::INACTIVE);
   return CallbackReturn::SUCCESS;
 }
@@ -465,7 +465,7 @@ CallbackReturn DiffDriveController::on_activate(const rclcpp_lifecycle::State &)
   }
 
   RCLCPP_INFO(
-    lifecycle_node_->get_logger(), "Lifecycle subscriber and publisher are currently active.");
+    node_->get_logger(), "Lifecycle subscriber and publisher are currently active.");
   return CallbackReturn::SUCCESS;
 }
 
@@ -549,7 +549,7 @@ CallbackReturn DiffDriveController::configure_side(
   std::vector<WheelHandle> & registered_handles,
   hardware_interface::RobotHardware & robot_hardware)
 {
-  auto logger = lifecycle_node_->get_logger();
+  auto logger = node_->get_logger();
 
   if (wheel_names.empty()) {
     std::stringstream ss;
