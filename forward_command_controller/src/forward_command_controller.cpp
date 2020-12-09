@@ -38,7 +38,7 @@ CallbackReturn ForwardCommandController::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   rclcpp::Parameter joints_param, interface_param;
-  if (!lifecycle_node_->get_parameter("joints", joint_names_)) {
+  if (!node_->get_parameter("joints", joint_names_)) {
     RCLCPP_ERROR_STREAM(get_node()->get_logger(), "'joints' parameter not set");
     return CallbackReturn::ERROR;
   }
@@ -48,7 +48,7 @@ CallbackReturn ForwardCommandController::on_configure(
     return CallbackReturn::ERROR;
   }
 
-  if (!lifecycle_node_->get_parameter("interface_name", interface_name_)) {
+  if (!node_->get_parameter("interface_name", interface_name_)) {
     RCLCPP_ERROR_STREAM(get_node()->get_logger(), "'interface_name' parameter not set");
     return CallbackReturn::ERROR;
   }
@@ -58,7 +58,7 @@ CallbackReturn ForwardCommandController::on_configure(
     return CallbackReturn::ERROR;
   }
 
-  joints_command_subscriber_ = lifecycle_node_->create_subscription<CmdType>(
+  joints_command_subscriber_ = node_->create_subscription<CmdType>(
     "~/commands", rclcpp::SystemDefaultsQoS(),
     [this](const CmdType::SharedPtr msg)
     {
