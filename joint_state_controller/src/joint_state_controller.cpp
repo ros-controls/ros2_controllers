@@ -23,6 +23,7 @@
 
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
+#include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/clock.hpp"
 #include "rclcpp/qos.hpp"
 #include "rclcpp/qos_event.hpp"
@@ -66,12 +67,15 @@ const
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 JointStateController::on_configure(const rclcpp_lifecycle::State & /*previous_state*/)
 {
+  if (!node_.get()) {
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
+  }
   try {
-    joint_state_publisher_ = lifecycle_node_->create_publisher<sensor_msgs::msg::JointState>(
+    joint_state_publisher_ = node_->create_publisher<sensor_msgs::msg::JointState>(
       "joint_states", rclcpp::SystemDefaultsQoS());
 
     dynamic_joint_state_publisher_ =
-      lifecycle_node_->create_publisher<control_msgs::msg::DynamicJointState>(
+      node_->create_publisher<control_msgs::msg::DynamicJointState>(
       "dynamic_joint_states", rclcpp::SystemDefaultsQoS());
   } catch (...) {
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
@@ -89,18 +93,12 @@ JointStateController::on_activate(const rclcpp_lifecycle::State & /*previous_sta
   init_joint_state_msg();
   init_dynamic_joint_state_msg();
 
-  joint_state_publisher_->on_activate();
-  dynamic_joint_state_publisher_->on_activate();
-
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 JointStateController::on_deactivate(const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  joint_state_publisher_->on_deactivate();
-  dynamic_joint_state_publisher_->on_deactivate();
-
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
@@ -190,28 +188,24 @@ double get_value(
 controller_interface::return_type
 JointStateController::update()
 {
+  if (lifecycle_state_.id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
+    RCLCPP_WARN_ONCE(
+      get_node()->get_logger(), "JointStateController is not activated");
+    return controller_interface::return_type::ERROR;
+  }
+
   for (const auto & state_interface : state_interfaces_) {
     name_if_value_mapping_[state_interface.get_name()][state_interface.get_interface_name()] =
       state_interface.get_value();
     RCLCPP_DEBUG(
-      get_lifecycle_node()->get_logger(), "%s/%s: %f\n",
+      get_node()->get_logger(), "%s/%s: %f\n",
       state_interface.get_name().c_str(),
       state_interface.get_interface_name().c_str(),
       state_interface.get_value());
   }
 
-  if (!joint_state_publisher_->is_activated()) {
-    RCUTILS_LOG_WARN_ONCE_NAMED("publisher", "joint state publisher is not activated");
-    return controller_interface::return_type::ERROR;
-  }
-
-  if (!dynamic_joint_state_publisher_->is_activated()) {
-    RCUTILS_LOG_WARN_ONCE_NAMED("publisher", "dynamic joint state publisher is not activated");
-    return controller_interface::return_type::ERROR;
-  }
-
-  joint_state_msg_.header.stamp = lifecycle_node_->get_clock()->now();
-  dynamic_joint_state_msg_.header.stamp = lifecycle_node_->get_clock()->now();
+  joint_state_msg_.header.stamp = node_->get_clock()->now();
+  dynamic_joint_state_msg_.header.stamp = node_->get_clock()->now();
 
   // update joint state message and dynamic joint state message
   for (auto i = 0ul; i < joint_names_.size(); ++i) {

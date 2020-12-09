@@ -191,13 +191,13 @@ TEST_F(JointStateControllerTest, UpdateTest)
 {
   SetUpStateController();
 
-  auto node_state = state_controller_->get_lifecycle_node()->configure();
+  auto node_state = state_controller_->configure();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
 
   // publishers not activated yet
   ASSERT_EQ(state_controller_->update(), controller_interface::return_type::ERROR);
 
-  node_state = state_controller_->get_lifecycle_node()->activate();
+  node_state = state_controller_->activate();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
 
   ASSERT_EQ(state_controller_->update(), controller_interface::return_type::SUCCESS);
@@ -207,10 +207,10 @@ TEST_F(JointStateControllerTest, JointStatePublishTest)
 {
   SetUpStateController();
 
-  auto node_state = state_controller_->get_lifecycle_node()->configure();
+  auto node_state = state_controller_->configure();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
 
-  node_state = state_controller_->get_lifecycle_node()->activate();
+  node_state = state_controller_->activate();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
 
   rclcpp::Node test_node("test_node");
@@ -247,10 +247,10 @@ TEST_F(JointStateControllerTest, DynamicJointStatePublishTest)
 {
   SetUpStateController();
 
-  auto node_state = state_controller_->get_lifecycle_node()->configure();
+  auto node_state = state_controller_->configure();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
 
-  node_state = state_controller_->get_lifecycle_node()->activate();
+  node_state = state_controller_->activate();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
 
   rclcpp::Node test_node("test_node");
