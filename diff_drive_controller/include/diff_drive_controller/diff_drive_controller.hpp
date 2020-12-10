@@ -30,9 +30,9 @@
 #include "diff_drive_controller/odometry.hpp"
 #include "diff_drive_controller/speed_limiter.hpp"
 #include "diff_drive_controller/visibility_control.h"
+#include "hardware_interface/handle.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
-#include "hardware_interface/operation_mode_handle.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "odometry.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -42,11 +42,6 @@
 #include "sensor_msgs/msg/joint_state.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"
 
-namespace hardware_interface
-{
-class JointHandle;
-class RobotHardware;
-}  // namespace hardware_interface
 
 namespace diff_drive_controller
 {
@@ -58,17 +53,22 @@ public:
   DIFF_DRIVE_CONTROLLER_PUBLIC
   DiffDriveController();
 
-  DIFF_DRIVE_CONTROLLER_PUBLIC
-  DiffDriveController(
-    std::vector<std::string> left_wheel_names,
-    std::vector<std::string> right_wheel_names,
-    std::vector<std::string> operation_mode_names);
+  // DIFF_DRIVE_CONTROLLER_PUBLIC
+  // DiffDriveController(
+  //   const std::vector<std::string>& left_wheel_names,
+  //   const std::vector<std::string>& right_wheel_names);
 
   DIFF_DRIVE_CONTROLLER_PUBLIC
   controller_interface::return_type
-  init(
-    std::weak_ptr<hardware_interface::RobotHardware> robot_hardware,
-    const std::string & controller_name) override;
+  init(const std::string & controller_name) override;
+
+  DIFF_DRIVE_CONTROLLER_PUBLIC
+  controller_interface::InterfaceConfiguration
+  command_interface_configuration() const;
+
+  DIFF_DRIVE_CONTROLLER_PUBLIC
+  controller_interface::InterfaceConfiguration
+  state_interface_configuration() const;
 
   DIFF_DRIVE_CONTROLLER_PUBLIC
   controller_interface::return_type update() override;
@@ -100,15 +100,14 @@ public:
 protected:
   struct WheelHandle
   {
-    std::shared_ptr<const hardware_interface::JointHandle> state = nullptr;
-    std::shared_ptr<hardware_interface::JointHandle> command = nullptr;
+    std::reference_wrapper<const hardware_interface::StateInterface> position;
+    std::reference_wrapper<hardware_interface::CommandInterface> velocity;
   };
 
   CallbackReturn configure_side(
     const std::string & side,
     const std::vector<std::string> & wheel_names,
-    std::vector<WheelHandle> & registered_handles,
-    hardware_interface::RobotHardware & robot_hardware);
+    std::vector<WheelHandle> & registered_handles);
 
   std::vector<std::string> left_wheel_names_;
   std::vector<std::string> right_wheel_names_;
@@ -152,9 +151,6 @@ protected:
   // Timeout to consider cmd_vel commands old
   std::chrono::milliseconds cmd_vel_timeout_{500};
 
-  std::vector<std::string> write_op_names_;
-  std::vector<hardware_interface::OperationModeHandle *> registered_operation_mode_handles_;
-
   bool subscriber_is_active_ = false;
   rclcpp::Subscription<Twist>::SharedPtr velocity_command_subscriber_ = nullptr;
 
@@ -177,7 +173,6 @@ protected:
   bool is_halted = false;
 
   bool reset();
-  void set_op_mode(const hardware_interface::OperationMode & mode);
   void halt();
 };
 }  // namespace diff_drive_controller

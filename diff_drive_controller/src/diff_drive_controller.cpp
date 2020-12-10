@@ -23,8 +23,6 @@
 #include <vector>
 
 #include "diff_drive_controller/diff_drive_controller.hpp"
-#include "hardware_interface/joint_handle.hpp"
-#include "hardware_interface/robot_hardware.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "tf2/LinearMath/Quaternion.h"
 
@@ -41,27 +39,25 @@ namespace diff_drive_controller
 using namespace std::chrono_literals;
 using CallbackReturn = DiffDriveController::CallbackReturn;
 using lifecycle_msgs::msg::State;
+using controller_interface::InterfaceConfiguration;
 
 DiffDriveController::DiffDriveController()
 : controller_interface::ControllerInterface() {}
 
-DiffDriveController::DiffDriveController(
-  std::vector<std::string> left_wheel_names,
-  std::vector<std::string> right_wheel_names,
-  std::vector<std::string> write_op_names)
-: controller_interface::ControllerInterface(),
-  left_wheel_names_(std::move(left_wheel_names)),
-  right_wheel_names_(std::move(right_wheel_names)),
-  write_op_names_(std::move(write_op_names))
-{}
+// DiffDriveController::DiffDriveController(
+//   const std::vector<std::string>& left_wheel_names,
+//   const std::vector<std::string>& right_wheel_names
+// : controller_interface::ControllerInterface(),
+//   left_wheel_names_(left_wheel_names),
+//   right_wheel_names_(right_wheel_names),
+// {}
 
 controller_interface::return_type
 DiffDriveController::init(
-  std::weak_ptr<hardware_interface::RobotHardware> robot_hardware,
   const std::string & controller_name)
 {
   // initialize lifecycle node
-  auto ret = ControllerInterface::init(robot_hardware, controller_name);
+  auto ret = ControllerInterface::init(controller_name);
   if (ret != controller_interface::return_type::SUCCESS) {
     return ret;
   }
@@ -73,7 +69,6 @@ DiffDriveController::init(
   lifecycle_node_->declare_parameter<std::vector<std::string>>(
     "right_wheel_names",
     right_wheel_names_);
-  lifecycle_node_->declare_parameter<std::vector<std::string>>("write_op_modes", write_op_names_);
 
   lifecycle_node_->declare_parameter<double>("wheel_separation", wheel_params_.separation);
   lifecycle_node_->declare_parameter<int>("wheels_per_side", wheel_params_.wheels_per_side);
@@ -122,6 +117,17 @@ DiffDriveController::init(
   return controller_interface::return_type::SUCCESS;
 }
 
+InterfaceConfiguration DiffDriveController::command_interface_configuration() const
+{
+  return InterfaceConfiguration();
+}
+
+InterfaceConfiguration DiffDriveController::state_interface_configuration() const
+{
+  return InterfaceConfiguration();
+}
+
+
 controller_interface::return_type DiffDriveController::update()
 {
   auto logger = node_->get_logger();
@@ -149,8 +155,9 @@ controller_interface::return_type DiffDriveController::update()
     double left_position_mean = 0.0;
     double right_position_mean = 0.0;
     for (size_t index = 0; index < wheels.wheels_per_side; ++index) {
-      const double left_position = registered_left_wheel_handles_[index].state->get_value();
-      const double right_position = registered_right_wheel_handles_[index].state->get_value();
+      const double left_position = registered_left_wheel_handles_[index].position.get().get_value();
+      const double right_position =
+        registered_right_wheel_handles_[index].position.get().get_value();
 
       if (std::isnan(left_position) || std::isnan(right_position)) {
         RCLCPP_ERROR(
@@ -245,11 +252,10 @@ controller_interface::return_type DiffDriveController::update()
 
   // Set wheels velocities:
   for (size_t index = 0; index < wheels.wheels_per_side; ++index) {
-    registered_left_wheel_handles_[index].command->set_value(velocity_left);
-    registered_right_wheel_handles_[index].command->set_value(velocity_right);
+    registered_left_wheel_handles_[index].velocity.get().set_value(velocity_left);
+    registered_right_wheel_handles_[index].velocity.get().set_value(velocity_right);
   }
 
-  set_op_mode(hardware_interface::OperationMode::ACTIVE);
   return controller_interface::return_type::SUCCESS;
 }
 
@@ -260,7 +266,6 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
   // update parameters
   left_wheel_names_ = lifecycle_node_->get_parameter("left_wheel_names").as_string_array();
   right_wheel_names_ = lifecycle_node_->get_parameter("right_wheel_names").as_string_array();
-  write_op_names_ = lifecycle_node_->get_parameter("write_op_modes").as_string_array();
 
   wheel_params_.separation = lifecycle_node_->get_parameter("wheel_separation").as_double();
   wheel_params_.wheels_per_side =
@@ -340,38 +345,19 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
     return CallbackReturn::ERROR;
   }
 
-  if (auto robot_hardware = robot_hardware_.lock()) {
-    const auto left_result =
-      configure_side("left", left_wheel_names_, registered_left_wheel_handles_, *robot_hardware);
-    const auto right_result =
-      configure_side("right", right_wheel_names_, registered_right_wheel_handles_, *robot_hardware);
+  const auto left_result =
+    configure_side("left", left_wheel_names_, registered_left_wheel_handles_);
+  const auto right_result =
+    configure_side("right", right_wheel_names_, registered_right_wheel_handles_);
 
-    if (left_result == CallbackReturn::FAILURE || right_result == CallbackReturn::FAILURE) {
-      return CallbackReturn::FAILURE;
-    }
-
-    registered_operation_mode_handles_.resize(write_op_names_.size());
-    for (size_t index = 0; index < write_op_names_.size(); ++index) {
-      const auto op_name = write_op_names_[index].c_str();
-      auto & op_handle = registered_operation_mode_handles_[index];
-
-      auto result = robot_hardware->get_operation_mode_handle(op_name, &op_handle);
-      if (result != hardware_interface::return_type::OK) {
-        RCLCPP_WARN(logger, "unable to obtain operation mode handle for %s", op_name);
-        return CallbackReturn::FAILURE;
-      }
-    }
-
-  } else {
-    return CallbackReturn::ERROR;
+  if (left_result == CallbackReturn::FAILURE || right_result == CallbackReturn::FAILURE) {
+    return CallbackReturn::FAILURE;
   }
 
-  if (registered_left_wheel_handles_.empty() || registered_right_wheel_handles_.empty() ||
-    registered_operation_mode_handles_.empty())
-  {
+  if (registered_left_wheel_handles_.empty() || registered_right_wheel_handles_.empty()) {
     RCLCPP_ERROR(
       logger,
-      "Either left wheel handles, right wheel handles, or operation modes are non existant");
+      "Either left wheel interfaces, right wheel interfaces are non existant");
     return CallbackReturn::ERROR;
   }
 
@@ -449,7 +435,6 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
   odometry_transform_message.transforms.front().child_frame_id = odom_params_.base_frame_id;
 
   previous_update_timestamp_ = node_->get_clock()->now();
-  set_op_mode(hardware_interface::OperationMode::INACTIVE);
   return CallbackReturn::SUCCESS;
 }
 
@@ -508,7 +493,6 @@ bool DiffDriveController::reset()
 
   registered_left_wheel_handles_.clear();
   registered_right_wheel_handles_.clear();
-  registered_operation_mode_handles_.clear();
 
   subscriber_is_active_ = false;
   velocity_command_subscriber_.reset();
@@ -523,31 +507,22 @@ CallbackReturn DiffDriveController::on_shutdown(const rclcpp_lifecycle::State &)
   return CallbackReturn::SUCCESS;
 }
 
-void DiffDriveController::set_op_mode(const hardware_interface::OperationMode & mode)
-{
-  for (auto & op_mode_handle : registered_operation_mode_handles_) {
-    op_mode_handle->set_mode(mode);
-  }
-}
-
 void DiffDriveController::halt()
 {
   const auto halt_wheels = [](auto & wheel_handles) {
       for (const auto & wheel_handle : wheel_handles) {
-        wheel_handle.command->set_value(0.0);
+        wheel_handle.velocity.get().set_value(0.0);
       }
     };
 
   halt_wheels(registered_left_wheel_handles_);
   halt_wheels(registered_right_wheel_handles_);
-  set_op_mode(hardware_interface::OperationMode::ACTIVE);
 }
 
 CallbackReturn DiffDriveController::configure_side(
   const std::string & side,
   const std::vector<std::string> & wheel_names,
-  std::vector<WheelHandle> & registered_handles,
-  hardware_interface::RobotHardware & robot_hardware)
+  std::vector<WheelHandle> & registered_handles)
 {
   auto logger = node_->get_logger();
 
@@ -558,34 +533,34 @@ CallbackReturn DiffDriveController::configure_side(
     return CallbackReturn::ERROR;
   }
 
-  // register handles
-  registered_handles.resize(wheel_names.size());
-  for (size_t index = 0; index < wheel_names.size(); ++index) {
-    const auto wheel_name = wheel_names[index].c_str();
-    auto & wheel_handle = registered_handles[index];
+  // // register handles
+  // registered_handles.resize(wheel_names.size());
+  // for (size_t index = 0; index < wheel_names.size(); ++index) {
+  //   const auto wheel_name = wheel_names[index].c_str();
+  //   auto & wheel_handle = registered_handles[index];
 
-    auto joint_state_handle = std::make_shared<hardware_interface::JointHandle>(
-      wheel_name,
-      "position");
-    auto joint_command_handle = std::make_shared<hardware_interface::JointHandle>(
-      wheel_name,
-      "velocity_command");
+  //   auto joint_state_handle = std::make_shared<hardware_interface::JointHandle>(
+  //     wheel_name,
+  //     "position");
+  //   auto joint_command_handle = std::make_shared<hardware_interface::JointHandle>(
+  //     wheel_name,
+  //     "velocity_command");
 
-    auto result = robot_hardware.get_joint_handle(*joint_state_handle);
-    if (result != hardware_interface::return_type::OK) {
-      RCLCPP_WARN(logger, "unable to obtain joint state handle for %s", wheel_name);
-      return CallbackReturn::FAILURE;
-    }
+  //   auto result = robot_hardware.get_joint_handle(*joint_state_handle);
+  //   if (result != hardware_interface::return_type::OK) {
+  //     RCLCPP_WARN(logger, "unable to obtain joint state handle for %s", wheel_name);
+  //     return CallbackReturn::FAILURE;
+  //   }
 
-    result = robot_hardware.get_joint_handle(*joint_command_handle);
-    if (result != hardware_interface::return_type::OK) {
-      RCLCPP_WARN(logger, "unable to obtain joint command handle for %s", wheel_name);
-      return CallbackReturn::FAILURE;
-    }
+  //   result = robot_hardware.get_joint_handle(*joint_command_handle);
+  //   if (result != hardware_interface::return_type::OK) {
+  //     RCLCPP_WARN(logger, "unable to obtain joint command handle for %s", wheel_name);
+  //     return CallbackReturn::FAILURE;
+  //   }
 
-    wheel_handle.state = joint_state_handle;
-    wheel_handle.command = joint_command_handle;
-  }
+  //   wheel_handle.state = joint_state_handle;
+  //   wheel_handle.command = joint_command_handle;
+  // }
 
   return CallbackReturn::SUCCESS;
 }
