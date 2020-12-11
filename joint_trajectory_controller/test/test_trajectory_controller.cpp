@@ -358,8 +358,7 @@ void TestTrajectoryController::test_state_publish_rate_target(int target_msg_cou
     traj_lifecycle_node_->create_subscription<JointTrajectoryControllerState>(
     "/state",
     qos_level,
-    [&](JointTrajectoryControllerState::UniquePtr msg) {
-      (void)msg;
+    [&](JointTrajectoryControllerState::UniquePtr) {
       ++echo_received_counter;
     }
     );
