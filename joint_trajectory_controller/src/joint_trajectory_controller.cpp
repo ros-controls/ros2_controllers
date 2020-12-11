@@ -248,10 +248,8 @@ JointTrajectoryController::update()
 }
 
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-JointTrajectoryController::on_configure(const rclcpp_lifecycle::State & previous_state)
+JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
 {
-  (void) previous_state;
-
   const auto logger = lifecycle_node_->get_logger();
 
   // update parameters
@@ -375,10 +373,8 @@ bool get_ordered_interfaces(
 }
 
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-JointTrajectoryController::on_activate(const rclcpp_lifecycle::State & previous_state)
+JointTrajectoryController::on_activate(const rclcpp_lifecycle::State &)
 {
-  (void) previous_state;
-
   if (!get_ordered_interfaces(
       command_interfaces_, joint_names_, hardware_interface::HW_IF_POSITION,
       joint_position_command_interface_))
@@ -437,9 +433,8 @@ JointTrajectoryController::on_activate(const rclcpp_lifecycle::State & previous_
 }
 
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-JointTrajectoryController::on_deactivate(const rclcpp_lifecycle::State & previous_state)
+JointTrajectoryController::on_deactivate(const rclcpp_lifecycle::State &)
 {
-  (void) previous_state;
   joint_position_command_interface_.clear();
   joint_position_state_interface_.clear();
   joint_velocity_state_interface_.clear();
@@ -452,10 +447,8 @@ JointTrajectoryController::on_deactivate(const rclcpp_lifecycle::State & previou
 }
 
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-JointTrajectoryController::on_cleanup(const rclcpp_lifecycle::State & previous_state)
+JointTrajectoryController::on_cleanup(const rclcpp_lifecycle::State &)
 {
-  (void) previous_state;
-
   // go home
   traj_home_point_ptr_->update(traj_msg_home_ptr_);
   traj_point_active_ptr_ = &traj_home_point_ptr_;
@@ -464,9 +457,8 @@ JointTrajectoryController::on_cleanup(const rclcpp_lifecycle::State & previous_s
 }
 
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-JointTrajectoryController::on_error(const rclcpp_lifecycle::State & previous_state)
+JointTrajectoryController::on_error(const rclcpp_lifecycle::State &)
 {
-  (void) previous_state;
   if (!reset()) {
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
   }
@@ -476,10 +468,6 @@ JointTrajectoryController::on_error(const rclcpp_lifecycle::State & previous_sta
 bool
 JointTrajectoryController::reset()
 {
-  // TODO(karsten1987): need a way to re-fetch names after reset. Uncomment this in the future
-  // joint_names_.clear();
-  // write_op_names_.clear();
-
   subscriber_is_active_ = false;
   joint_command_subscriber_.reset();
 
@@ -496,9 +484,8 @@ JointTrajectoryController::reset()
 }
 
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-JointTrajectoryController::on_shutdown(const rclcpp_lifecycle::State & previous_state)
+JointTrajectoryController::on_shutdown(const rclcpp_lifecycle::State &)
 {
-  (void) previous_state;
   // TODO(karsten1987): what to do?
 
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
@@ -542,11 +529,10 @@ void JointTrajectoryController::publish_state(
 }
 
 rclcpp_action::GoalResponse JointTrajectoryController::goal_callback(
-  const rclcpp_action::GoalUUID & uuid,
+  const rclcpp_action::GoalUUID &,
   std::shared_ptr<const FollowJTrajAction::Goal> goal)
 {
   RCLCPP_INFO(lifecycle_node_->get_logger(), "Received new action goal");
-  (void)uuid;
 
   // Precondition: Running controller
   if (is_halted) {
@@ -568,7 +554,6 @@ rclcpp_action::CancelResponse JointTrajectoryController::cancel_callback(
   const std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle)
 {
   RCLCPP_INFO(lifecycle_node_->get_logger(), "Got request to cancel goal");
-  (void)goal_handle;
 
   // Check that cancel request refers to currently active goal (if any)
   if (rt_active_goal_ && rt_active_goal_->gh_ == goal_handle) {
