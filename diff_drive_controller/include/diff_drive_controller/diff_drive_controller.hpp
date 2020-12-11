@@ -45,6 +45,8 @@
 
 namespace diff_drive_controller
 {
+using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
+
 class DiffDriveController : public controller_interface::ControllerInterface
 {
   using Twist = geometry_msgs::msg::TwistStamped;
@@ -74,28 +76,22 @@ public:
   controller_interface::return_type update() override;
 
   DIFF_DRIVE_CONTROLLER_PUBLIC
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-  on_configure(const rclcpp_lifecycle::State & previous_state) override;
+  CallbackReturn on_configure(const rclcpp_lifecycle::State & previous_state) override;
 
   DIFF_DRIVE_CONTROLLER_PUBLIC
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-  on_activate(const rclcpp_lifecycle::State & previous_state) override;
+  CallbackReturn on_activate(const rclcpp_lifecycle::State & previous_state) override;
 
   DIFF_DRIVE_CONTROLLER_PUBLIC
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-  on_deactivate(const rclcpp_lifecycle::State & previous_state) override;
+  CallbackReturn on_deactivate(const rclcpp_lifecycle::State & previous_state) override;
 
   DIFF_DRIVE_CONTROLLER_PUBLIC
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-  on_cleanup(const rclcpp_lifecycle::State & previous_state) override;
+  CallbackReturn on_cleanup(const rclcpp_lifecycle::State & previous_state) override;
 
   DIFF_DRIVE_CONTROLLER_PUBLIC
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-  on_error(const rclcpp_lifecycle::State & previous_state) override;
+  CallbackReturn on_error(const rclcpp_lifecycle::State & previous_state) override;
 
   DIFF_DRIVE_CONTROLLER_PUBLIC
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-  on_shutdown(const rclcpp_lifecycle::State & previous_state) override;
+  CallbackReturn on_shutdown(const rclcpp_lifecycle::State & previous_state) override;
 
 protected:
   struct WheelHandle
@@ -137,13 +133,11 @@ protected:
 
   Odometry odometry_;
 
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Odometry>> odometry_publisher_
-    =
-    nullptr;
+  std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::Odometry>> odometry_publisher_ = nullptr;
   std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>>
   realtime_odometry_publisher_ = nullptr;
 
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<tf2_msgs::msg::TFMessage>>
+  std::shared_ptr<rclcpp::Publisher<tf2_msgs::msg::TFMessage>>
   odometry_transform_publisher_ = nullptr;
   std::shared_ptr<realtime_tools::RealtimePublisher<tf2_msgs::msg::TFMessage>>
   realtime_odometry_transform_publisher_ = nullptr;
@@ -163,7 +157,7 @@ protected:
   SpeedLimiter limiter_angular_;
 
   bool publish_limited_velocity_ = false;
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<Twist>> limited_velocity_publisher_ =
+  std::shared_ptr<rclcpp::Publisher<Twist>> limited_velocity_publisher_ =
     nullptr;
   std::shared_ptr<realtime_tools::RealtimePublisher<Twist>>
   realtime_limited_velocity_publisher_ = nullptr;

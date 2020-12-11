@@ -37,7 +37,6 @@ constexpr auto DEFAULT_TRANSFORM_TOPIC = "/tf";
 namespace diff_drive_controller
 {
 using namespace std::chrono_literals;
-using CallbackReturn = DiffDriveController::CallbackReturn;
 using lifecycle_msgs::msg::State;
 using controller_interface::InterfaceConfiguration;
 
@@ -63,56 +62,52 @@ DiffDriveController::init(
   }
 
   // with the lifecycle node being initialized, we can declare parameters
-  lifecycle_node_->declare_parameter<std::vector<std::string>>(
-    "left_wheel_names",
-    left_wheel_names_);
-  lifecycle_node_->declare_parameter<std::vector<std::string>>(
-    "right_wheel_names",
-    right_wheel_names_);
+  node_->declare_parameter<std::vector<std::string>>("left_wheel_names", left_wheel_names_);
+  node_->declare_parameter<std::vector<std::string>>("right_wheel_names", right_wheel_names_);
 
-  lifecycle_node_->declare_parameter<double>("wheel_separation", wheel_params_.separation);
-  lifecycle_node_->declare_parameter<int>("wheels_per_side", wheel_params_.wheels_per_side);
-  lifecycle_node_->declare_parameter<double>("wheel_radius", wheel_params_.radius);
-  lifecycle_node_->declare_parameter<double>(
+  node_->declare_parameter<double>("wheel_separation", wheel_params_.separation);
+  node_->declare_parameter<int>("wheels_per_side", wheel_params_.wheels_per_side);
+  node_->declare_parameter<double>("wheel_radius", wheel_params_.radius);
+  node_->declare_parameter<double>(
     "wheel_separation_multiplier",
     wheel_params_.separation_multiplier);
-  lifecycle_node_->declare_parameter<double>(
+  node_->declare_parameter<double>(
     "left_wheel_radius_multiplier",
     wheel_params_.left_radius_multiplier);
-  lifecycle_node_->declare_parameter<double>(
+  node_->declare_parameter<double>(
     "right_wheel_radius_multiplier",
     wheel_params_.right_radius_multiplier);
 
-  lifecycle_node_->declare_parameter<std::string>("odom_frame_id", odom_params_.odom_frame_id);
-  lifecycle_node_->declare_parameter<std::string>("base_frame_id", odom_params_.base_frame_id);
-  lifecycle_node_->declare_parameter<std::vector<double>>("pose_covariance_diagonal", {});
-  lifecycle_node_->declare_parameter<std::vector<double>>("twist_covariance_diagonal", {});
-  lifecycle_node_->declare_parameter<bool>("open_loop", odom_params_.open_loop);
-  lifecycle_node_->declare_parameter<bool>("enable_odom_tf", odom_params_.enable_odom_tf);
+  node_->declare_parameter<std::string>("odom_frame_id", odom_params_.odom_frame_id);
+  node_->declare_parameter<std::string>("base_frame_id", odom_params_.base_frame_id);
+  node_->declare_parameter<std::vector<double>>("pose_covariance_diagonal", {});
+  node_->declare_parameter<std::vector<double>>("twist_covariance_diagonal", {});
+  node_->declare_parameter<bool>("open_loop", odom_params_.open_loop);
+  node_->declare_parameter<bool>("enable_odom_tf", odom_params_.enable_odom_tf);
 
-  lifecycle_node_->declare_parameter<int>("cmd_vel_timeout", cmd_vel_timeout_.count());
-  lifecycle_node_->declare_parameter<bool>("publish_limited_velocity", publish_limited_velocity_);
-  lifecycle_node_->declare_parameter<int>("velocity_rolling_window_size", 10);
+  node_->declare_parameter<int>("cmd_vel_timeout", cmd_vel_timeout_.count());
+  node_->declare_parameter<bool>("publish_limited_velocity", publish_limited_velocity_);
+  node_->declare_parameter<int>("velocity_rolling_window_size", 10);
 
-  lifecycle_node_->declare_parameter<bool>("linear.x.has_velocity_limits", false);
-  lifecycle_node_->declare_parameter<bool>("linear.x.has_acceleration_limits", false);
-  lifecycle_node_->declare_parameter<bool>("linear.x.has_jerk_limits", false);
-  lifecycle_node_->declare_parameter<double>("linear.x.max_velocity", 0.0);
-  lifecycle_node_->declare_parameter<double>("linear.x.min_velocity", 0.0);
-  lifecycle_node_->declare_parameter<double>("linear.x.max_acceleration", 0.0);
-  lifecycle_node_->declare_parameter<double>("linear.x.min_acceleration", 0.0);
-  lifecycle_node_->declare_parameter<double>("linear.x.max_jerk", 0.0);
-  lifecycle_node_->declare_parameter<double>("linear.x.min_jerk", 0.0);
+  node_->declare_parameter<bool>("linear.x.has_velocity_limits", false);
+  node_->declare_parameter<bool>("linear.x.has_acceleration_limits", false);
+  node_->declare_parameter<bool>("linear.x.has_jerk_limits", false);
+  node_->declare_parameter<double>("linear.x.max_velocity", 0.0);
+  node_->declare_parameter<double>("linear.x.min_velocity", 0.0);
+  node_->declare_parameter<double>("linear.x.max_acceleration", 0.0);
+  node_->declare_parameter<double>("linear.x.min_acceleration", 0.0);
+  node_->declare_parameter<double>("linear.x.max_jerk", 0.0);
+  node_->declare_parameter<double>("linear.x.min_jerk", 0.0);
 
-  lifecycle_node_->declare_parameter<bool>("angular.z.has_velocity_limits", false);
-  lifecycle_node_->declare_parameter<bool>("angular.z.has_acceleration_limits", false);
-  lifecycle_node_->declare_parameter<bool>("angular.z.has_jerk_limits", false);
-  lifecycle_node_->declare_parameter<double>("angular.z.max_velocity", 0.0);
-  lifecycle_node_->declare_parameter<double>("angular.z.min_velocity", 0.0);
-  lifecycle_node_->declare_parameter<double>("angular.z.max_acceleration", 0.0);
-  lifecycle_node_->declare_parameter<double>("angular.z.min_acceleration", 0.0);
-  lifecycle_node_->declare_parameter<double>("angular.z.max_jerk", 0.0);
-  lifecycle_node_->declare_parameter<double>("angular.z.min_jerk", 0.0);
+  node_->declare_parameter<bool>("angular.z.has_velocity_limits", false);
+  node_->declare_parameter<bool>("angular.z.has_acceleration_limits", false);
+  node_->declare_parameter<bool>("angular.z.has_jerk_limits", false);
+  node_->declare_parameter<double>("angular.z.max_velocity", 0.0);
+  node_->declare_parameter<double>("angular.z.min_velocity", 0.0);
+  node_->declare_parameter<double>("angular.z.max_acceleration", 0.0);
+  node_->declare_parameter<double>("angular.z.min_acceleration", 0.0);
+  node_->declare_parameter<double>("angular.z.max_jerk", 0.0);
+  node_->declare_parameter<double>("angular.z.min_jerk", 0.0);
 
   return controller_interface::return_type::SUCCESS;
 }
@@ -131,7 +126,7 @@ InterfaceConfiguration DiffDriveController::state_interface_configuration() cons
 controller_interface::return_type DiffDriveController::update()
 {
   auto logger = node_->get_logger();
-  if (lifecycle_node_->get_current_state().id() == State::PRIMARY_STATE_INACTIVE) {
+  if (get_current_state().id() == State::PRIMARY_STATE_INACTIVE) {
     if (!is_halted) {
       halt();
       is_halted = true;
@@ -178,7 +173,7 @@ controller_interface::return_type DiffDriveController::update()
   tf2::Quaternion orientation;
   orientation.setRPY(0.0, 0.0, odometry_.getHeading());
 
-  if (odometry_publisher_->is_activated() && realtime_odometry_publisher_->trylock()) {
+  if (realtime_odometry_publisher_->trylock()) {
     auto & odometry_message = realtime_odometry_publisher_->msg_;
     odometry_message.header.stamp = current_time;
     odometry_message.pose.pose.position.x = odometry_.getX();
@@ -192,8 +187,7 @@ controller_interface::return_type DiffDriveController::update()
     realtime_odometry_publisher_->unlockAndPublish();
   }
 
-  if (odom_params_.enable_odom_tf && odometry_transform_publisher_->is_activated() &&
-    realtime_odometry_transform_publisher_->trylock())
+  if (odom_params_.enable_odom_tf && realtime_odometry_transform_publisher_->trylock())
   {
     auto & transform = realtime_odometry_transform_publisher_->msg_.transforms.front();
     transform.header.stamp = current_time;
@@ -229,8 +223,7 @@ controller_interface::return_type DiffDriveController::update()
   previous_commands_.emplace(*received_velocity_msg_ptr_);
 
   //    Publish limited velocity
-  if (publish_limited_velocity_ && limited_velocity_publisher_->is_activated() &&
-    realtime_limited_velocity_publisher_->trylock())
+  if (publish_limited_velocity_ && realtime_limited_velocity_publisher_->trylock())
   {
     auto & limited_velocity_command = realtime_limited_velocity_publisher_->msg_;
     limited_velocity_command.header.stamp = current_time;
@@ -264,18 +257,18 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
   auto logger = node_->get_logger();
 
   // update parameters
-  left_wheel_names_ = lifecycle_node_->get_parameter("left_wheel_names").as_string_array();
-  right_wheel_names_ = lifecycle_node_->get_parameter("right_wheel_names").as_string_array();
+  left_wheel_names_ = node_->get_parameter("left_wheel_names").as_string_array();
+  right_wheel_names_ = node_->get_parameter("right_wheel_names").as_string_array();
 
-  wheel_params_.separation = lifecycle_node_->get_parameter("wheel_separation").as_double();
+  wheel_params_.separation = node_->get_parameter("wheel_separation").as_double();
   wheel_params_.wheels_per_side =
-    static_cast<size_t>(lifecycle_node_->get_parameter("wheels_per_side").as_int());
-  wheel_params_.radius = lifecycle_node_->get_parameter("wheel_radius").as_double();
+    static_cast<size_t>(node_->get_parameter("wheels_per_side").as_int());
+  wheel_params_.radius = node_->get_parameter("wheel_radius").as_double();
   wheel_params_.separation_multiplier =
-    lifecycle_node_->get_parameter("wheel_separation_multiplier").as_double();
-  wheel_params_.left_radius_multiplier = lifecycle_node_->get_parameter(
+    node_->get_parameter("wheel_separation_multiplier").as_double();
+  wheel_params_.left_radius_multiplier = node_->get_parameter(
     "left_wheel_radius_multiplier").as_double();
-  wheel_params_.right_radius_multiplier = lifecycle_node_->get_parameter(
+  wheel_params_.right_radius_multiplier = node_->get_parameter(
     "right_wheel_radius_multiplier").as_double();
 
   const auto wheels = wheel_params_;
@@ -286,51 +279,51 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
 
   odometry_.setWheelParams(wheel_separation, left_wheel_radius, right_wheel_radius);
   odometry_.setVelocityRollingWindowSize(
-    lifecycle_node_->get_parameter(
+    node_->get_parameter(
       "velocity_rolling_window_size").as_int());
 
-  odom_params_.odom_frame_id = lifecycle_node_->get_parameter("odom_frame_id").as_string();
-  odom_params_.base_frame_id = lifecycle_node_->get_parameter("base_frame_id").as_string();
+  odom_params_.odom_frame_id = node_->get_parameter("odom_frame_id").as_string();
+  odom_params_.base_frame_id = node_->get_parameter("base_frame_id").as_string();
 
-  auto pose_diagonal = lifecycle_node_->get_parameter("pose_covariance_diagonal").as_double_array();
+  auto pose_diagonal = node_->get_parameter("pose_covariance_diagonal").as_double_array();
   std::copy(
     pose_diagonal.begin(), pose_diagonal.end(),
     odom_params_.pose_covariance_diagonal.begin());
 
   auto twist_diagonal =
-    lifecycle_node_->get_parameter("twist_covariance_diagonal").as_double_array();
+    node_->get_parameter("twist_covariance_diagonal").as_double_array();
   std::copy(
     twist_diagonal.begin(),
     twist_diagonal.end(), odom_params_.twist_covariance_diagonal.begin());
 
-  odom_params_.open_loop = lifecycle_node_->get_parameter("open_loop").as_bool();
-  odom_params_.enable_odom_tf = lifecycle_node_->get_parameter("enable_odom_tf").as_bool();
+  odom_params_.open_loop = node_->get_parameter("open_loop").as_bool();
+  odom_params_.enable_odom_tf = node_->get_parameter("enable_odom_tf").as_bool();
 
   cmd_vel_timeout_ =
-    std::chrono::milliseconds{lifecycle_node_->get_parameter("cmd_vel_timeout").as_int()};
-  publish_limited_velocity_ = lifecycle_node_->get_parameter("publish_limited_velocity").as_bool();
+    std::chrono::milliseconds{node_->get_parameter("cmd_vel_timeout").as_int()};
+  publish_limited_velocity_ = node_->get_parameter("publish_limited_velocity").as_bool();
 
   limiter_linear_ = SpeedLimiter(
-    lifecycle_node_->get_parameter("linear.x.has_velocity_limits").as_bool(),
-    lifecycle_node_->get_parameter("linear.x.has_acceleration_limits").as_bool(),
-    lifecycle_node_->get_parameter("linear.x.has_jerk_limits").as_bool(),
-    lifecycle_node_->get_parameter("linear.x.min_velocity").as_double(),
-    lifecycle_node_->get_parameter("linear.x.max_velocity").as_double(),
-    lifecycle_node_->get_parameter("linear.x.min_acceleration").as_double(),
-    lifecycle_node_->get_parameter("linear.x.max_acceleration").as_double(),
-    lifecycle_node_->get_parameter("linear.x.min_jerk").as_double(),
-    lifecycle_node_->get_parameter("linear.x.max_jerk").as_double());
+    node_->get_parameter("linear.x.has_velocity_limits").as_bool(),
+    node_->get_parameter("linear.x.has_acceleration_limits").as_bool(),
+    node_->get_parameter("linear.x.has_jerk_limits").as_bool(),
+    node_->get_parameter("linear.x.min_velocity").as_double(),
+    node_->get_parameter("linear.x.max_velocity").as_double(),
+    node_->get_parameter("linear.x.min_acceleration").as_double(),
+    node_->get_parameter("linear.x.max_acceleration").as_double(),
+    node_->get_parameter("linear.x.min_jerk").as_double(),
+    node_->get_parameter("linear.x.max_jerk").as_double());
 
   limiter_angular_ = SpeedLimiter(
-    lifecycle_node_->get_parameter("angular.z.has_velocity_limits").as_bool(),
-    lifecycle_node_->get_parameter("angular.z.has_acceleration_limits").as_bool(),
-    lifecycle_node_->get_parameter("angular.z.has_jerk_limits").as_bool(),
-    lifecycle_node_->get_parameter("angular.z.min_velocity").as_double(),
-    lifecycle_node_->get_parameter("angular.z.max_velocity").as_double(),
-    lifecycle_node_->get_parameter("angular.z.min_acceleration").as_double(),
-    lifecycle_node_->get_parameter("angular.z.max_acceleration").as_double(),
-    lifecycle_node_->get_parameter("angular.z.min_jerk").as_double(),
-    lifecycle_node_->get_parameter("angular.z.max_jerk").as_double());
+    node_->get_parameter("angular.z.has_velocity_limits").as_bool(),
+    node_->get_parameter("angular.z.has_acceleration_limits").as_bool(),
+    node_->get_parameter("angular.z.has_jerk_limits").as_bool(),
+    node_->get_parameter("angular.z.min_velocity").as_double(),
+    node_->get_parameter("angular.z.max_velocity").as_double(),
+    node_->get_parameter("angular.z.min_acceleration").as_double(),
+    node_->get_parameter("angular.z.max_acceleration").as_double(),
+    node_->get_parameter("angular.z.min_jerk").as_double(),
+    node_->get_parameter("angular.z.max_jerk").as_double());
 
   if (left_wheel_names_.size() != right_wheel_names_.size()) {
     RCLCPP_ERROR(
@@ -366,7 +359,7 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
 
   if (publish_limited_velocity_) {
     limited_velocity_publisher_ =
-      lifecycle_node_->create_publisher<Twist>(
+      node_->create_publisher<Twist>(
       DEFAULT_COMMAND_OUT_TOPIC,
       rclcpp::SystemDefaultsQoS());
     realtime_limited_velocity_publisher_ =
@@ -380,7 +373,7 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
   previous_commands_.emplace(*received_velocity_msg_ptr_);
 
   // initialize command subscriber
-  velocity_command_subscriber_ = lifecycle_node_->create_subscription<Twist>(
+  velocity_command_subscriber_ = node_->create_subscription<Twist>(
     DEFAULT_COMMAND_TOPIC, rclcpp::SystemDefaultsQoS(), [this](
       const std::shared_ptr<Twist> msg) -> void {
       if (!subscriber_is_active_) {
@@ -395,7 +388,7 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
 
   // initialize odometry publisher and messasge
   odometry_publisher_ =
-    lifecycle_node_->create_publisher<nav_msgs::msg::Odometry>(
+    node_->create_publisher<nav_msgs::msg::Odometry>(
     DEFAULT_ODOMETRY_TOPIC,
     rclcpp::SystemDefaultsQoS());
   realtime_odometry_publisher_ =
@@ -421,7 +414,7 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
 
   // initialize transform publisher and message
   odometry_transform_publisher_ =
-    lifecycle_node_->create_publisher<tf2_msgs::msg::TFMessage>(
+    node_->create_publisher<tf2_msgs::msg::TFMessage>(
     DEFAULT_TRANSFORM_TOPIC,
     rclcpp::SystemDefaultsQoS());
   realtime_odometry_transform_publisher_ =
@@ -443,12 +436,6 @@ CallbackReturn DiffDriveController::on_activate(const rclcpp_lifecycle::State &)
   is_halted = false;
   subscriber_is_active_ = true;
 
-  odometry_transform_publisher_->on_activate();
-  odometry_publisher_->on_activate();
-  if (publish_limited_velocity_) {
-    limited_velocity_publisher_->on_activate();
-  }
-
   RCLCPP_INFO(
     node_->get_logger(), "Lifecycle subscriber and publisher are currently active.");
   return CallbackReturn::SUCCESS;
@@ -457,11 +444,6 @@ CallbackReturn DiffDriveController::on_activate(const rclcpp_lifecycle::State &)
 CallbackReturn DiffDriveController::on_deactivate(const rclcpp_lifecycle::State &)
 {
   subscriber_is_active_ = false;
-  odometry_transform_publisher_->on_deactivate();
-  odometry_publisher_->on_deactivate();
-  if (publish_limited_velocity_) {
-    limited_velocity_publisher_->on_deactivate();
-  }
   return CallbackReturn::SUCCESS;
 }
 
