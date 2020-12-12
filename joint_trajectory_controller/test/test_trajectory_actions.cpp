@@ -260,9 +260,8 @@ TEST_F(TestTrajectoryActions, test_success_multi_point_sendgoal) {
   bool feedback_recv = false;
   goal_options_.feedback_callback = [&](
     rclcpp_action::ClientGoalHandle<FollowJointTrajectoryMsg>::SharedPtr,
-    const std::shared_ptr<const FollowJointTrajectoryMsg::Feedback> feedback)
+    const std::shared_ptr<const FollowJointTrajectoryMsg::Feedback>)
     {
-      (void)feedback;
       feedback_recv = true;
     };
 
@@ -353,9 +352,8 @@ TEST_F(TestTrajectoryActions, test_goal_tolerances_multi_point_success) {
   bool feedback_recv = false;
   goal_options_.feedback_callback = [&](
     rclcpp_action::ClientGoalHandle<FollowJointTrajectoryMsg>::SharedPtr,
-    const std::shared_ptr<const FollowJointTrajectoryMsg::Feedback> feedback)
+    const std::shared_ptr<const FollowJointTrajectoryMsg::Feedback>)
     {
-      (void)feedback;
       feedback_recv = true;
     };
 
