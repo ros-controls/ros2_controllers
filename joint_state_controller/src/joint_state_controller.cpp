@@ -67,6 +67,9 @@ const
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 JointStateController::on_configure(const rclcpp_lifecycle::State & /*previous_state*/)
 {
+  if (!node_.get()) {
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
+  }
   try {
     joint_state_publisher_ = node_->create_publisher<sensor_msgs::msg::JointState>(
       "joint_states", rclcpp::SystemDefaultsQoS());
@@ -185,6 +188,12 @@ double get_value(
 controller_interface::return_type
 JointStateController::update()
 {
+  if (lifecycle_state_.id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
+    RCLCPP_WARN_ONCE(
+      get_node()->get_logger(), "JointStateController is not activated");
+    return controller_interface::return_type::ERROR;
+  }
+
   for (const auto & state_interface : state_interfaces_) {
     name_if_value_mapping_[state_interface.get_name()][state_interface.get_interface_name()] =
       state_interface.get_value();
