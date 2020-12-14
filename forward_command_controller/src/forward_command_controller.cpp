@@ -38,34 +38,34 @@ CallbackReturn ForwardCommandController::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   rclcpp::Parameter joints_param, interface_param;
-  if (!lifecycle_node_->get_parameter("joints", joint_names_)) {
-    RCLCPP_ERROR_STREAM(get_lifecycle_node()->get_logger(), "'joints' parameter not set");
+  if (!node_->get_parameter("joints", joint_names_)) {
+    RCLCPP_ERROR_STREAM(get_node()->get_logger(), "'joints' parameter not set");
     return CallbackReturn::ERROR;
   }
 
   if (joint_names_.empty()) {
-    RCLCPP_ERROR_STREAM(get_lifecycle_node()->get_logger(), "'joints' parameter was empty");
+    RCLCPP_ERROR_STREAM(get_node()->get_logger(), "'joints' parameter was empty");
     return CallbackReturn::ERROR;
   }
 
-  if (!lifecycle_node_->get_parameter("interface_name", interface_name_)) {
-    RCLCPP_ERROR_STREAM(get_lifecycle_node()->get_logger(), "'interface_name' parameter not set");
+  if (!node_->get_parameter("interface_name", interface_name_)) {
+    RCLCPP_ERROR_STREAM(get_node()->get_logger(), "'interface_name' parameter not set");
     return CallbackReturn::ERROR;
   }
 
   if (interface_name_.empty()) {
-    RCLCPP_ERROR_STREAM(get_lifecycle_node()->get_logger(), "'interface_name' parameter was empty");
+    RCLCPP_ERROR_STREAM(get_node()->get_logger(), "'interface_name' parameter was empty");
     return CallbackReturn::ERROR;
   }
 
-  joints_command_subscriber_ = lifecycle_node_->create_subscription<CmdType>(
+  joints_command_subscriber_ = node_->create_subscription<CmdType>(
     "~/commands", rclcpp::SystemDefaultsQoS(),
     [this](const CmdType::SharedPtr msg)
     {
       rt_command_ptr_.writeFromNonRT(msg);
     });
 
-  RCLCPP_INFO_STREAM(get_lifecycle_node()->get_logger(), "configure successful");
+  RCLCPP_INFO_STREAM(get_node()->get_logger(), "configure successful");
   return CallbackReturn::SUCCESS;
 }
 
@@ -120,7 +120,7 @@ CallbackReturn ForwardCommandController::on_activate(
       ordered_interfaces) || command_interfaces_.size() != ordered_interfaces.size())
   {
     RCLCPP_ERROR(
-      lifecycle_node_->get_logger(),
+      node_->get_logger(),
       "Expected %u position command interfaces, got %u",
       joint_names_.size(), ordered_interfaces.size());
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
@@ -146,8 +146,8 @@ controller_interface::return_type ForwardCommandController::update()
 
   if ((*joint_commands)->data.size() != command_interfaces_.size()) {
     RCLCPP_ERROR_STREAM_THROTTLE(
-      get_lifecycle_node()->get_logger(),
-      *lifecycle_node_->get_clock(), 1000,
+      get_node()->get_logger(),
+      *node_->get_clock(), 1000,
       "command size (" << (*joint_commands)->data.size() <<
         ") does not match number of interfaces (" <<
         command_interfaces_.size() << ")");

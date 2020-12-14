@@ -140,7 +140,7 @@ protected:
   using ControllerStateMsg = control_msgs::msg::JointTrajectoryControllerState;
   using StatePublisher = realtime_tools::RealtimePublisher<ControllerStateMsg>;
   using StatePublisherPtr = std::unique_ptr<StatePublisher>;
-  rclcpp_lifecycle::LifecyclePublisher<ControllerStateMsg>::SharedPtr publisher_;
+  rclcpp::Publisher<ControllerStateMsg>::SharedPtr publisher_;
   StatePublisherPtr state_publisher_;
 
   rclcpp::Duration state_publisher_period_ = rclcpp::Duration(RCUTILS_MS_TO_NS(20));
