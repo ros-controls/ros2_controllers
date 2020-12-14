@@ -66,6 +66,9 @@ const
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 JointStateController::on_configure(const rclcpp_lifecycle::State & /*previous_state*/)
 {
+  if (!node_.get()) {
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
+  }
   try {
     joint_state_publisher_ = node_->create_publisher<sensor_msgs::msg::JointState>(
       "joint_states", rclcpp::SystemDefaultsQoS());

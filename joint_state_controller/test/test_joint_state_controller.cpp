@@ -117,6 +117,7 @@ TEST_F(JointStateControllerTest, ConfigureErrorTest)
   // configure failed
   ASSERT_EQ(state_controller_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
 
+  SetUpStateController();
   // check state remains unchanged
 
   // joint state still not initialized
@@ -192,14 +193,8 @@ TEST_F(JointStateControllerTest, UpdateTest)
   SetUpStateController();
 
   auto node_state = state_controller_->configure();
-  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
-
-  // publishers not activated yet
-  ASSERT_EQ(state_controller_->update(), controller_interface::return_type::ERROR);
-
   node_state = state_controller_->activate();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
-
   ASSERT_EQ(state_controller_->update(), controller_interface::return_type::SUCCESS);
 }
 
