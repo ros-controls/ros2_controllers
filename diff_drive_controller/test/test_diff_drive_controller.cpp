@@ -12,24 +12,48 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 #include <array>
 #include <memory>
 #include <string>
 #include <thread>
 #include <vector>
+#include <utility>
 
 #include "diff_drive_controller/diff_drive_controller.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/rclcpp.hpp"
-#include "test_robot_hardware/test_robot_hardware.hpp"
+#include "hardware_interface/loaned_state_interface.hpp"
+#include "hardware_interface/loaned_command_interface.hpp"
+#include "hardware_interface/types/hardware_interface_type_values.hpp"
 
 
+using CallbackReturn = diff_drive_controller::CallbackReturn;
 using lifecycle_msgs::msg::State;
+using hardware_interface::LoanedStateInterface;
+using hardware_interface::LoanedCommandInterface;
+using hardware_interface::HW_IF_POSITION;
+using hardware_interface::HW_IF_VELOCITY;
+using testing::SizeIs;
+
 
 class TestableDiffDriveController : public diff_drive_controller::DiffDriveController
 {
+  FRIEND_TEST(TestDiffDriveController, configure_fails_with_only_left_or_only_right_side_defined);
+  FRIEND_TEST(TestDiffDriveController, configure_fails_with_mismatching_wheel_side_size);
+  FRIEND_TEST(TestDiffDriveController, configure_succeeds_with_correct_parameters);
+  // FRIEND_TEST(TestDiffDriveController, InterfaceParameterEmpty);
+  // FRIEND_TEST(TestDiffDriveController, ConfigureParamsSuccess);
+
+  // FRIEND_TEST(TestDiffDriveController, ActivateWithWrongJointsNamesFails);
+  // FRIEND_TEST(TestDiffDriveController, ActivateWithWrongInterfaceNameFails);
+  // FRIEND_TEST(TestDiffDriveController, ActivateSuccess);
+  // FRIEND_TEST(TestDiffDriveController, CommandSuccessTest);
+  // FRIEND_TEST(TestDiffDriveController, WrongCommandCheckTest);
+  // FRIEND_TEST(TestDiffDriveController, NoCommandCheckTest);
+  // FRIEND_TEST(TestDiffDriveController, CommandCallbackTest);
+
 public:
   using DiffDriveController::DiffDriveController;
   std::shared_ptr<geometry_msgs::msg::TwistStamped> getLastReceivedTwist() const
@@ -46,7 +70,7 @@ public:
   */
   bool wait_for_twist(
     rclcpp::Executor & executor,
-    const std::chrono::milliseconds & timeout = std::chrono::milliseconds{500})
+    const std::chrono::milliseconds & timeout = std::chrono::milliseconds(500))
   {
     rclcpp::WaitSet wait_set;
     wait_set.add_subscription(velocity_command_subscriber_);
@@ -69,28 +93,7 @@ protected:
 
   void SetUp() override
   {
-    test_robot = std::make_shared<test_robot_hardware::TestRobotHardware>();
-    test_robot->init();
-    left_wheel_names = test_robot->joint_names;
-    right_wheel_names = test_robot->joint_names;
-    op_mode = {{test_robot->write_op_handle_name1}};
-
-    // create joint handles
-    auto get_handle = [&](const std::string & joint_name, const std::string & interface_name)
-      {
-        auto joint_handle = std::make_shared<hardware_interface::JointHandle>(
-          joint_name,
-          interface_name);
-        test_robot->get_joint_handle(*joint_handle);
-        return joint_handle;
-      };
-
-    joint1_pos_handle_ = get_handle("joint1", "position");
-    joint2_pos_handle_ = get_handle("joint2", "position");
-    joint3_pos_handle_ = get_handle("joint3", "position");
-    joint1_vel_cmd_handle_ = get_handle("joint1", "velocity_command");
-    joint2_vel_cmd_handle_ = get_handle("joint2", "velocity_command");
-    joint3_vel_cmd_handle_ = get_handle("joint3", "velocity_command");
+    controller_ = std::make_unique<TestableDiffDriveController>();
 
     pub_node = std::make_shared<rclcpp::Node>("velocity_publisher");
     velocity_publisher = pub_node->create_publisher<geometry_msgs::msg::TwistStamped>(
@@ -142,114 +145,184 @@ protected:
     }
   }
 
-  void setup_controller(
-    TestableDiffDriveController & controller,
-    rclcpp::Executor & executor)
+  void assignResources()
   {
-    auto diff_drive_lifecycle_node = controller.get_lifecycle_node();
-    executor.add_node(diff_drive_lifecycle_node->get_node_base_interface());
-    auto state = diff_drive_lifecycle_node->configure();
-    ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+    std::vector<LoanedStateInterface> state_ifs;
+    state_ifs.emplace_back(left_wheel_pos_state_);
+    state_ifs.emplace_back(right_wheel_pos_state_);
 
-    state = diff_drive_lifecycle_node->activate();
-    ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+    std::vector<LoanedCommandInterface> command_ifs;
+    command_ifs.emplace_back(left_wheel_vel_cmd_);
+    command_ifs.emplace_back(right_wheel_vel_cmd_);
 
-    waitForSetup();
+    controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
   }
 
-  std::string controller_name = "test_diff_drive_controller";
 
-  std::shared_ptr<test_robot_hardware::TestRobotHardware> test_robot;
+  const std::string controller_name = "test_diff_drive_controller";
+  std::unique_ptr<TestableDiffDriveController> controller_;
 
-  std::vector<std::string> left_wheel_names;
-  std::vector<std::string> right_wheel_names;
-  std::vector<std::string> op_mode;
+  const std::vector<std::string> left_wheel_names = {"left_wheel_joint"};
+  const std::vector<std::string> right_wheel_names = {"right_wheel_joint"};
+  std::vector<double> position_values_ = {0.1, 0.2};
+  std::vector<double> velocity_values_ = {0.01, 0.02};
 
-  std::shared_ptr<hardware_interface::JointHandle> joint1_pos_handle_;
-  std::shared_ptr<hardware_interface::JointHandle> joint2_pos_handle_;
-  std::shared_ptr<hardware_interface::JointHandle> joint3_pos_handle_;
-  std::shared_ptr<hardware_interface::JointHandle> joint1_vel_cmd_handle_;
-  std::shared_ptr<hardware_interface::JointHandle> joint2_vel_cmd_handle_;
-  std::shared_ptr<hardware_interface::JointHandle> joint3_vel_cmd_handle_;
+  hardware_interface::StateInterface left_wheel_pos_state_{left_wheel_names[0], HW_IF_POSITION,
+    &position_values_[0]};
+  hardware_interface::StateInterface right_wheel_pos_state_{right_wheel_names[0], HW_IF_POSITION,
+    &position_values_[1]};
+  hardware_interface::CommandInterface left_wheel_vel_cmd_{left_wheel_names[0], HW_IF_VELOCITY,
+    &velocity_values_[0]};
+  hardware_interface::CommandInterface right_wheel_vel_cmd_{right_wheel_names[0], HW_IF_VELOCITY,
+    &velocity_values_[1]};
 
   rclcpp::Node::SharedPtr pub_node;
   rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr velocity_publisher;
 };
 
-TEST_F(TestDiffDriveController, wrong_initialization)
+TEST_F(TestDiffDriveController, configure_fails_without_parameters)
 {
-  auto uninitialized_robot = std::make_shared<test_robot_hardware::TestRobotHardware>();
-  auto diff_drive_controller =
-    std::make_shared<TestableDiffDriveController>(
-    left_wheel_names,
-    right_wheel_names, op_mode);
-  auto ret = diff_drive_controller->init(uninitialized_robot, controller_name);
+  const auto ret = controller_->init(controller_name);
   ASSERT_EQ(ret, controller_interface::return_type::SUCCESS);
 
-  auto unconfigured_state = diff_drive_controller->get_lifecycle_node()->configure();
-  EXPECT_EQ(State::PRIMARY_STATE_UNCONFIGURED, unconfigured_state.id());
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
 }
 
-TEST_F(TestDiffDriveController, correct_initialization)
+TEST_F(TestDiffDriveController, configure_fails_with_only_left_or_only_right_side_defined)
 {
-  auto initialized_robot = std::make_shared<test_robot_hardware::TestRobotHardware>();
-  initialized_robot->init();
-  auto diff_drive_controller =
-    std::make_shared<TestableDiffDriveController>(
-    left_wheel_names,
-    right_wheel_names, op_mode);
-  auto ret = diff_drive_controller->init(initialized_robot, controller_name);
+  const auto ret = controller_->init(controller_name);
   ASSERT_EQ(ret, controller_interface::return_type::SUCCESS);
 
-  auto inactive_state = diff_drive_controller->get_lifecycle_node()->configure();
-  EXPECT_EQ(State::PRIMARY_STATE_INACTIVE, inactive_state.id());
-  EXPECT_EQ(1.1, joint1_pos_handle_->get_value());
-  EXPECT_EQ(2.1, joint2_pos_handle_->get_value());
-  EXPECT_EQ(3.1, joint3_pos_handle_->get_value());
+  controller_->get_node()->set_parameter(
+    rclcpp::Parameter(
+      "left_wheel_names",
+      rclcpp::ParameterValue(left_wheel_names)));
+  controller_->get_node()->set_parameter(
+    rclcpp::Parameter(
+      "right_wheel_names",
+      rclcpp::ParameterValue(std::vector<std::string>())));
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
+
+  controller_->get_node()->set_parameter(
+    rclcpp::Parameter(
+      "left_wheel_names",
+      rclcpp::ParameterValue(std::vector<std::string>())));
+  controller_->get_node()->set_parameter(
+    rclcpp::Parameter(
+      "right_wheel_names",
+      rclcpp::ParameterValue(right_wheel_names)));
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
 }
 
-TEST_F(TestDiffDriveController, configuration)
+TEST_F(TestDiffDriveController, configure_fails_with_mismatching_wheel_side_size)
 {
-  auto diff_drive_controller =
-    std::make_shared<TestableDiffDriveController>(
-    left_wheel_names,
-    right_wheel_names, op_mode);
-  ASSERT_EQ(
-    diff_drive_controller->init(
-      test_robot,
-      controller_name),
-    controller_interface::return_type::SUCCESS);
+  const auto ret = controller_->init(controller_name);
+  ASSERT_EQ(ret, controller_interface::return_type::SUCCESS);
 
-  rclcpp::executors::SingleThreadedExecutor executor;
-  executor.add_node(diff_drive_controller->get_lifecycle_node()->get_node_base_interface());
+  controller_->get_node()->set_parameter(
+    rclcpp::Parameter(
+      "left_wheel_names",
+      rclcpp::ParameterValue(left_wheel_names)));
 
-  auto state = diff_drive_controller->get_lifecycle_node()->configure();
-  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+  auto extended_right_wheel_names = right_wheel_names;
+  extended_right_wheel_names.push_back("extra_wheel");
+  controller_->get_node()->set_parameter(
+    rclcpp::Parameter(
+      "right_wheel_names",
+      rclcpp::ParameterValue(extended_right_wheel_names)));
 
-  // add in check for linear vel command values
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
 }
+
+TEST_F(TestDiffDriveController, configure_succeeds_when_wheels_are_specified)
+{
+  const auto ret = controller_->init(controller_name);
+  ASSERT_EQ(ret, controller_interface::return_type::SUCCESS);
+
+  controller_->get_node()->set_parameter(
+    rclcpp::Parameter(
+      "left_wheel_names",
+      rclcpp::ParameterValue(left_wheel_names)));
+  controller_->get_node()->set_parameter(
+    rclcpp::Parameter(
+      "right_wheel_names",
+      rclcpp::ParameterValue(right_wheel_names)));
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+
+  ASSERT_THAT(
+    controller_->state_interface_configuration().names,
+    SizeIs(left_wheel_names.size() + right_wheel_names.size()));
+  ASSERT_THAT(
+    controller_->command_interface_configuration().names,
+    SizeIs(left_wheel_names.size() + right_wheel_names.size()));
+}
+
+TEST_F(TestDiffDriveController, activate_fails_without_resources_assigned)
+{
+  const auto ret = controller_->init(controller_name);
+  ASSERT_EQ(ret, controller_interface::return_type::SUCCESS);
+
+  controller_->get_node()->set_parameter(
+    rclcpp::Parameter(
+      "left_wheel_names",
+      rclcpp::ParameterValue(left_wheel_names)));
+  controller_->get_node()->set_parameter(
+    rclcpp::Parameter(
+      "right_wheel_names",
+      rclcpp::ParameterValue(right_wheel_names)));
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
+}
+
+
+TEST_F(TestDiffDriveController, activate_succeeds_with_resources_assigned)
+{
+  const auto ret = controller_->init(controller_name);
+  ASSERT_EQ(ret, controller_interface::return_type::SUCCESS);
+
+  controller_->get_node()->set_parameter(
+    rclcpp::Parameter(
+      "left_wheel_names",
+      rclcpp::ParameterValue(left_wheel_names)));
+  controller_->get_node()->set_parameter(
+    rclcpp::Parameter(
+      "right_wheel_names",
+      rclcpp::ParameterValue(right_wheel_names)));
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  assignResources();
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+}
+
 
 TEST_F(TestDiffDriveController, cleanup)
 {
-  auto diff_drive_controller =
-    std::make_shared<TestableDiffDriveController>(
-    left_wheel_names,
-    right_wheel_names, op_mode);
-  ASSERT_EQ(
-    diff_drive_controller->init(
-      test_robot,
-      controller_name),
-    controller_interface::return_type::SUCCESS);
+  const auto ret = controller_->init(controller_name);
+  ASSERT_EQ(ret, controller_interface::return_type::SUCCESS);
 
-  auto diff_drive_lifecycle_node = diff_drive_controller->get_lifecycle_node();
-  diff_drive_lifecycle_node->set_parameter(rclcpp::Parameter("wheel_separation", 0.4));
-  diff_drive_lifecycle_node->set_parameter(rclcpp::Parameter("wheel_radius", 0.1));
+  controller_->get_node()->set_parameter(
+    rclcpp::Parameter(
+      "left_wheel_names",
+      rclcpp::ParameterValue(left_wheel_names)));
+  controller_->get_node()->set_parameter(
+    rclcpp::Parameter(
+      "right_wheel_names",
+      rclcpp::ParameterValue(right_wheel_names)));
+  controller_->get_node()->set_parameter(rclcpp::Parameter("wheel_separation", 0.4));
+  controller_->get_node()->set_parameter(rclcpp::Parameter("wheel_radius", 0.1));
 
-  auto state = diff_drive_lifecycle_node->configure();
-  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   rclcpp::executors::SingleThreadedExecutor executor;
-  setup_controller(*diff_drive_controller, executor);
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+  auto state = controller_->configure();
+  // ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  assignResources();
 
+  state = controller_->activate();
+  // ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
 
   waitForSetup();
 
@@ -257,95 +330,81 @@ TEST_F(TestDiffDriveController, cleanup)
   const double linear = 1.0;
   const double angular = 1.0;
   publish(linear, angular);
-  diff_drive_controller->wait_for_twist(executor);
+  controller_->wait_for_twist(executor);
 
-  diff_drive_controller->update();
-  test_robot->write();
+  ASSERT_EQ(controller_->update(), controller_interface::return_type::SUCCESS);
 
-  state = diff_drive_lifecycle_node->deactivate();
-  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
-  diff_drive_controller->update();
-  test_robot->write();
+  state = controller_->deactivate();
+  // ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  ASSERT_EQ(controller_->update(), controller_interface::return_type::SUCCESS);
 
-  state = diff_drive_lifecycle_node->cleanup();
-  ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
+  state = controller_->cleanup();
+  // ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
 
-  test_robot->write();
-
-  // shouild be stopped
-  EXPECT_EQ(0.0, joint1_vel_cmd_handle_->get_value());
-  EXPECT_EQ(0.0, joint2_vel_cmd_handle_->get_value());
+  // should be stopped
+  EXPECT_EQ(0.0, left_wheel_vel_cmd_.get_value());
+  EXPECT_EQ(0.0, right_wheel_vel_cmd_.get_value());
 
   executor.cancel();
 }
 
 TEST_F(TestDiffDriveController, correct_initialization_using_parameters)
 {
-  auto diff_drive_controller =
-    std::make_shared<TestableDiffDriveController>(
-    left_wheel_names,
-    right_wheel_names, op_mode);
-  ASSERT_EQ(
-    diff_drive_controller->init(
-      test_robot,
-      controller_name),
-    controller_interface::return_type::SUCCESS);
+  const auto ret = controller_->init(controller_name);
+  ASSERT_EQ(ret, controller_interface::return_type::SUCCESS);
 
-  // This block is replacing the way parameters are set via launch
-  auto diff_drive_lifecycle_node = diff_drive_controller->get_lifecycle_node();
-  rclcpp::Parameter joint_parameters("left_wheel_names", left_wheel_names);
-  diff_drive_lifecycle_node->set_parameter(joint_parameters);
-
-  std::vector<std::string> operation_mode_names =
-  {test_robot->write_op_handle_name1, test_robot->write_op_handle_name2};
-  rclcpp::Parameter operation_mode_parameters("write_op_modes", operation_mode_names);
-  diff_drive_lifecycle_node->set_parameter(operation_mode_parameters);
-
-  diff_drive_lifecycle_node->set_parameter(rclcpp::Parameter("wheel_separation", 0.4));
-  diff_drive_lifecycle_node->set_parameter(rclcpp::Parameter("wheel_radius", 1.0));
+  controller_->get_node()->set_parameter(
+    rclcpp::Parameter(
+      "left_wheel_names",
+      rclcpp::ParameterValue(left_wheel_names)));
+  controller_->get_node()->set_parameter(
+    rclcpp::Parameter(
+      "right_wheel_names",
+      rclcpp::ParameterValue(right_wheel_names)));
+  controller_->get_node()->set_parameter(rclcpp::Parameter("wheel_separation", 0.4));
+  controller_->get_node()->set_parameter(rclcpp::Parameter("wheel_radius", 1.0));
 
   rclcpp::executors::SingleThreadedExecutor executor;
-  executor.add_node(diff_drive_lifecycle_node->get_node_base_interface());
+  executor.add_node(controller_->get_node()->get_node_base_interface());
 
-  auto state = diff_drive_lifecycle_node->configure();
-  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
-  EXPECT_EQ(1.2, joint1_vel_cmd_handle_->get_value());
-  EXPECT_EQ(2.2, joint2_vel_cmd_handle_->get_value());
+  auto state = controller_->configure();
+  assignResources();
 
-  state = diff_drive_lifecycle_node->activate();
-  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+  // ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  EXPECT_EQ(0.01, left_wheel_vel_cmd_.get_value());
+  EXPECT_EQ(0.02, right_wheel_vel_cmd_.get_value());
+
+  state = controller_->activate();
+  // ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
 
   // send msg
   const double linear = 1.0;
   const double angular = 0.0;
   publish(linear, angular);
   // wait for msg is be published to the system
-  ASSERT_TRUE(diff_drive_controller->wait_for_twist(executor));
+  ASSERT_TRUE(controller_->wait_for_twist(executor));
 
-  diff_drive_controller->update();
-  test_robot->write();
-  EXPECT_EQ(1.0, joint1_vel_cmd_handle_->get_value());
-  EXPECT_EQ(1.0, joint2_vel_cmd_handle_->get_value());
+  ASSERT_EQ(controller_->update(), controller_interface::return_type::SUCCESS);
+  EXPECT_EQ(1.0, left_wheel_vel_cmd_.get_value());
+  EXPECT_EQ(1.0, right_wheel_vel_cmd_.get_value());
 
   // deactivated
   // wait so controller process the second point when deactivated
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
-  state = diff_drive_lifecycle_node->deactivate();
-  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
-  diff_drive_controller->update();
-  test_robot->write();
+  state = controller_->deactivate();
+  // ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+  ASSERT_EQ(controller_->update(), controller_interface::return_type::SUCCESS);
 
-  EXPECT_EQ(0.0, joint1_vel_cmd_handle_->get_value()) << "Wheels are halted on deactivate()";
-  EXPECT_EQ(0.0, joint2_vel_cmd_handle_->get_value()) << "Wheels are halted on deactivate()";
+  EXPECT_EQ(0.0, left_wheel_vel_cmd_.get_value()) << "Wheels are halted on deactivate()";
+  EXPECT_EQ(0.0, right_wheel_vel_cmd_.get_value()) << "Wheels are halted on deactivate()";
 
   // cleanup
-  state = diff_drive_lifecycle_node->cleanup();
-  test_robot->write();
-  ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
-  EXPECT_EQ(0.0, joint1_vel_cmd_handle_->get_value());
-  EXPECT_EQ(0.0, joint2_vel_cmd_handle_->get_value());
+  state = controller_->cleanup();
+  // ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
+  EXPECT_EQ(0.0, left_wheel_vel_cmd_.get_value());
+  EXPECT_EQ(0.0, right_wheel_vel_cmd_.get_value());
 
-  state = diff_drive_lifecycle_node->configure();
-  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  state = controller_->configure();
+  // ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   executor.cancel();
 }

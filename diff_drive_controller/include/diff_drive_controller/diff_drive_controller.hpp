@@ -55,11 +55,6 @@ public:
   DIFF_DRIVE_CONTROLLER_PUBLIC
   DiffDriveController();
 
-  // DIFF_DRIVE_CONTROLLER_PUBLIC
-  // DiffDriveController(
-  //   const std::vector<std::string>& left_wheel_names,
-  //   const std::vector<std::string>& right_wheel_names);
-
   DIFF_DRIVE_CONTROLLER_PUBLIC
   controller_interface::return_type
   init(const std::string & controller_name) override;
@@ -96,8 +91,8 @@ public:
 protected:
   struct WheelHandle
   {
-    std::reference_wrapper<const hardware_interface::StateInterface> position;
-    std::reference_wrapper<hardware_interface::CommandInterface> velocity;
+    std::reference_wrapper<const hardware_interface::LoanedStateInterface> position;
+    std::reference_wrapper<hardware_interface::LoanedCommandInterface> velocity;
   };
 
   CallbackReturn configure_side(

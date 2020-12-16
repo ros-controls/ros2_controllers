@@ -14,7 +14,7 @@
 
 #include <diff_drive_controller/rolling_mean_accumulator.hpp>
 
-#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 #include <cmath>
 #include <memory>
 

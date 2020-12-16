@@ -62,35 +62,35 @@ install(TARGETS diff_drive_controller
 )
 
 if(BUILD_TESTING)
-  find_package(ament_cmake_gtest REQUIRED)
+  find_package(ament_cmake_gmock REQUIRED)
   find_package(ament_lint_auto REQUIRED)
   find_package(controller_manager REQUIRED)
   find_package(test_robot_hardware REQUIRED)
 
 #   ament_lint_auto_find_test_dependencies()
 
-#   ament_add_gtest(test_diff_drive_controller
-#     test/test_diff_drive_controller.cpp
-#     ENV config_file=${CMAKE_CURRENT_SOURCE_DIR}/test/config/test_diff_drive_controller.yaml)
-#   target_include_directories(test_diff_drive_controller PRIVATE include)
-#   target_link_libraries(test_diff_drive_controller
-#     diff_drive_controller
-#   )
+  ament_add_gmock(test_diff_drive_controller
+    test/test_diff_drive_controller.cpp
+    ENV config_file=${CMAKE_CURRENT_SOURCE_DIR}/test/config/test_diff_drive_controller.yaml)
+  target_include_directories(test_diff_drive_controller PRIVATE include)
+  target_link_libraries(test_diff_drive_controller
+    diff_drive_controller
+  )
 
-#   ament_target_dependencies(test_diff_drive_controller
-#     geometry_msgs
-#     hardware_interface
-#     nav_msgs
-#     rclcpp
-#     rclcpp_lifecycle
-#     realtime_tools
-#     sensor_msgs
-#     test_robot_hardware
-#     tf2
-#     tf2_msgs
-#   )
+  ament_target_dependencies(test_diff_drive_controller
+    geometry_msgs
+    hardware_interface
+    nav_msgs
+    rclcpp
+    rclcpp_lifecycle
+    realtime_tools
+    sensor_msgs
+    test_robot_hardware
+    tf2
+    tf2_msgs
+  )
 
-  ament_add_gtest(
+  ament_add_gmock(
     test_load_diff_drive_controller
     test/test_load_diff_drive_controller.cpp
   )
@@ -100,7 +100,7 @@ if(BUILD_TESTING)
     test_robot_hardware
   )
 
-  ament_add_gtest(
+  ament_add_gmock(
     test_accumulator
     test/test_accumulator.cpp
   )
