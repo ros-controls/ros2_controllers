@@ -40,20 +40,6 @@ using testing::SizeIs;
 
 class TestableDiffDriveController : public diff_drive_controller::DiffDriveController
 {
-  FRIEND_TEST(TestDiffDriveController, configure_fails_with_only_left_or_only_right_side_defined);
-  FRIEND_TEST(TestDiffDriveController, configure_fails_with_mismatching_wheel_side_size);
-  FRIEND_TEST(TestDiffDriveController, configure_succeeds_with_correct_parameters);
-  // FRIEND_TEST(TestDiffDriveController, InterfaceParameterEmpty);
-  // FRIEND_TEST(TestDiffDriveController, ConfigureParamsSuccess);
-
-  // FRIEND_TEST(TestDiffDriveController, ActivateWithWrongJointsNamesFails);
-  // FRIEND_TEST(TestDiffDriveController, ActivateWithWrongInterfaceNameFails);
-  // FRIEND_TEST(TestDiffDriveController, ActivateSuccess);
-  // FRIEND_TEST(TestDiffDriveController, CommandSuccessTest);
-  // FRIEND_TEST(TestDiffDriveController, WrongCommandCheckTest);
-  // FRIEND_TEST(TestDiffDriveController, NoCommandCheckTest);
-  // FRIEND_TEST(TestDiffDriveController, CommandCallbackTest);
-
 public:
   using DiffDriveController::DiffDriveController;
   std::shared_ptr<geometry_msgs::msg::TwistStamped> getLastReceivedTwist() const

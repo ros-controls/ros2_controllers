@@ -26,6 +26,7 @@
 #include "lifecycle_msgs/msg/state.hpp"
 #include "tf2/LinearMath/Quaternion.h"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
+#include "rclcpp/logging.hpp"
 
 namespace
 {
@@ -106,7 +107,10 @@ DiffDriveController::init(
     node->declare_parameter<double>("angular.z.min_acceleration", 0.0);
     node->declare_parameter<double>("angular.z.max_jerk", 0.0);
     node->declare_parameter<double>("angular.z.min_jerk", 0.0);
-  } catch (...) {
+  } catch (const std::exception & e) {
+    RCLCPP_ERROR(
+      get_node()->get_logger(), "Exception thrown during init stage with message: %s",
+      e.what());
     return controller_interface::return_type::ERROR;
   }
 
