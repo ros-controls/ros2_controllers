@@ -67,7 +67,7 @@ if(BUILD_TESTING)
   find_package(controller_manager REQUIRED)
   find_package(test_robot_hardware REQUIRED)
 
-#   ament_lint_auto_find_test_dependencies()
+  ament_lint_auto_find_test_dependencies()
 
   ament_add_gmock(test_diff_drive_controller
     test/test_diff_drive_controller.cpp
@@ -99,6 +99,7 @@ if(BUILD_TESTING)
     controller_manager
     test_robot_hardware
   )
+  target_compile_definitions(test_load_diff_drive_controller PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
   ament_add_gmock(
     test_accumulator
