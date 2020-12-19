@@ -61,8 +61,8 @@ DiffDriveController::init(
   try {
     auto node = get_node();
     // with the lifecycle node being initialized, we can declare parameters
-    node->declare_parameter<std::vector<std::string>>("left_wheel_names", left_wheel_names_);
-    node->declare_parameter<std::vector<std::string>>("right_wheel_names", right_wheel_names_);
+    node->declare_parameter<std::vector<std::string>>("left_wheel_names", {});
+    node->declare_parameter<std::vector<std::string>>("right_wheel_names", {});
 
     node->declare_parameter<double>("wheel_separation", wheel_params_.separation);
     node->declare_parameter<int>("wheels_per_side", wheel_params_.wheels_per_side);
