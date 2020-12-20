@@ -108,9 +108,7 @@ DiffDriveController::init(
     node->declare_parameter<double>("angular.z.max_jerk", 0.0);
     node->declare_parameter<double>("angular.z.min_jerk", 0.0);
   } catch (const std::exception & e) {
-    RCLCPP_ERROR(
-      get_node()->get_logger(), "Exception thrown during init stage with message: %s",
-      e.what());
+    fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
     return controller_interface::return_type::ERROR;
   }
 
