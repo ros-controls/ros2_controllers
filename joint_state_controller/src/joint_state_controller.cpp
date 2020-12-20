@@ -46,7 +46,6 @@ using hardware_interface::HW_IF_EFFORT;
 
 
 JointStateController::JointStateController()
-: controller_interface::ControllerInterface()
 {}
 
 controller_interface::InterfaceConfiguration JointStateController::command_interface_configuration()
@@ -74,9 +73,8 @@ JointStateController::on_configure(const rclcpp_lifecycle::State & /*previous_st
       get_node()->create_publisher<control_msgs::msg::DynamicJointState>(
       "dynamic_joint_states", rclcpp::SystemDefaultsQoS());
   } catch (const std::exception & e) {
-    RCLCPP_ERROR(
-      get_node()->get_logger(), "Exception thrown during init stage with message: %s",
-      e.what());
+    // get_node() may throw, logging raw here
+    fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
   }
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
