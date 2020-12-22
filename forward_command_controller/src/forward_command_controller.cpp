@@ -34,31 +34,46 @@ ForwardCommandController::ForwardCommandController()
   joints_command_subscriber_(nullptr)
 {}
 
+controller_interface::return_type
+ForwardCommandController::init(
+  const std::string & controller_name)
+{
+  auto ret = ControllerInterface::init(controller_name);
+  if (ret != controller_interface::return_type::SUCCESS) {
+    return ret;
+  }
+
+  try {
+    auto node = get_node();
+    node->declare_parameter<std::vector<std::string>>("joints", {});
+
+    node->declare_parameter<std::string>("interface_name", "");
+  } catch (const std::exception & e) {
+    fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
+    return controller_interface::return_type::ERROR;
+  }
+
+  return controller_interface::return_type::SUCCESS;
+}
+
 CallbackReturn ForwardCommandController::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  rclcpp::Parameter joints_param, interface_param;
-  if (!node_->get_parameter("joints", joint_names_)) {
-    RCLCPP_ERROR_STREAM(get_node()->get_logger(), "'joints' parameter not set");
-    return CallbackReturn::ERROR;
-  }
+  joint_names_ = node_->get_parameter("joints").as_string_array();
 
   if (joint_names_.empty()) {
-    RCLCPP_ERROR_STREAM(get_node()->get_logger(), "'joints' parameter was empty");
+    RCLCPP_ERROR(get_node()->get_logger(), "'joints' parameter was empty");
     return CallbackReturn::ERROR;
   }
 
-  if (!node_->get_parameter("interface_name", interface_name_)) {
-    RCLCPP_ERROR_STREAM(get_node()->get_logger(), "'interface_name' parameter not set");
-    return CallbackReturn::ERROR;
-  }
+  interface_name_ = node_->get_parameter("interface_name").as_string();
 
   if (interface_name_.empty()) {
-    RCLCPP_ERROR_STREAM(get_node()->get_logger(), "'interface_name' parameter was empty");
+    RCLCPP_ERROR(get_node()->get_logger(), "'interface_name' parameter was empty");
     return CallbackReturn::ERROR;
   }
 
-  joints_command_subscriber_ = node_->create_subscription<CmdType>(
+  joints_command_subscriber_ = get_node()->create_subscription<CmdType>(
     "~/commands", rclcpp::SystemDefaultsQoS(),
     [this](const CmdType::SharedPtr msg)
     {
