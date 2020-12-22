@@ -35,8 +35,7 @@ ForwardCommandController::ForwardCommandController()
 {}
 
 controller_interface::return_type
-ForwardCommandController::init(
-  const std::string & controller_name)
+ForwardCommandController::init(const std::string & controller_name)
 {
   auto ret = ControllerInterface::init(controller_name);
   if (ret != controller_interface::return_type::SUCCESS) {
