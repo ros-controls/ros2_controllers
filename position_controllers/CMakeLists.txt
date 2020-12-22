@@ -47,33 +47,28 @@ install(
 )
 
 if(BUILD_TESTING)
-  find_package(ament_cmake_gtest REQUIRED)
+  find_package(ament_cmake_gmock REQUIRED)
   find_package(ament_lint_auto REQUIRED)
   find_package(controller_manager REQUIRED)
-  find_package(test_robot_hardware REQUIRED)
 
   ament_lint_auto_find_test_dependencies()
 
-  ament_add_gtest(
+  ament_add_gmock(
     test_load_joint_group_position_controller
     test/test_load_joint_group_position_controller.cpp
   )
   target_include_directories(test_load_joint_group_position_controller PRIVATE include)
   ament_target_dependencies(test_load_joint_group_position_controller
     controller_manager
-    test_robot_hardware
   )
 
-  ament_add_gtest(
+  ament_add_gmock(
     test_joint_group_position_controller
     test/test_joint_group_position_controller.cpp
   )
   target_include_directories(test_joint_group_position_controller PRIVATE include)
   target_link_libraries(test_joint_group_position_controller
     position_controllers
-  )
-  ament_target_dependencies(test_joint_group_position_controller
-    test_robot_hardware
   )
 endif()
 
