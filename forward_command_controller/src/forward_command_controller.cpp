@@ -65,7 +65,9 @@ CallbackReturn ForwardCommandController::on_configure(
     return CallbackReturn::ERROR;
   }
 
-  interface_name_ = node_->get_parameter("interface_name").as_string();
+  if (interface_name_.empty()) {
+    interface_name_ = node_->get_parameter("interface_name").as_string();
+  }
 
   if (interface_name_.empty()) {
     RCLCPP_ERROR(get_node()->get_logger(), "'interface_name' parameter was empty");
