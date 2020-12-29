@@ -65,7 +65,6 @@ if(BUILD_TESTING)
   find_package(ament_cmake_gmock REQUIRED)
   find_package(ament_lint_auto REQUIRED)
   find_package(controller_manager REQUIRED)
-  find_package(test_robot_hardware REQUIRED)
 
   ament_lint_auto_find_test_dependencies()
 
@@ -85,7 +84,6 @@ if(BUILD_TESTING)
     rclcpp_lifecycle
     realtime_tools
     sensor_msgs
-    test_robot_hardware
     tf2
     tf2_msgs
   )
@@ -97,7 +95,6 @@ if(BUILD_TESTING)
   target_include_directories(test_load_diff_drive_controller PRIVATE include)
   ament_target_dependencies(test_load_diff_drive_controller
     controller_manager
-    test_robot_hardware
   )
   target_compile_definitions(test_load_diff_drive_controller PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
