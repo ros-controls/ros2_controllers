@@ -304,11 +304,11 @@ TEST_F(TestDiffDriveController, cleanup)
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
   auto state = controller_->configure();
-  // ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   assignResources();
 
   state = controller_->activate();
-  // ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
 
   waitForSetup();
 
@@ -321,11 +321,11 @@ TEST_F(TestDiffDriveController, cleanup)
   ASSERT_EQ(controller_->update(), controller_interface::return_type::SUCCESS);
 
   state = controller_->deactivate();
-  // ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   ASSERT_EQ(controller_->update(), controller_interface::return_type::SUCCESS);
 
   state = controller_->cleanup();
-  // ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
+  ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
 
   // should be stopped
   EXPECT_EQ(0.0, left_wheel_vel_cmd_.get_value());
@@ -356,12 +356,12 @@ TEST_F(TestDiffDriveController, correct_initialization_using_parameters)
   auto state = controller_->configure();
   assignResources();
 
-  // ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   EXPECT_EQ(0.01, left_wheel_vel_cmd_.get_value());
   EXPECT_EQ(0.02, right_wheel_vel_cmd_.get_value());
 
   state = controller_->activate();
-  // ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
 
   // send msg
   const double linear = 1.0;
@@ -378,7 +378,7 @@ TEST_F(TestDiffDriveController, correct_initialization_using_parameters)
   // wait so controller process the second point when deactivated
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
   state = controller_->deactivate();
-  // ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
   ASSERT_EQ(controller_->update(), controller_interface::return_type::SUCCESS);
 
   EXPECT_EQ(0.0, left_wheel_vel_cmd_.get_value()) << "Wheels are halted on deactivate()";
@@ -386,11 +386,11 @@ TEST_F(TestDiffDriveController, correct_initialization_using_parameters)
 
   // cleanup
   state = controller_->cleanup();
-  // ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
+  ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
   EXPECT_EQ(0.0, left_wheel_vel_cmd_.get_value());
   EXPECT_EQ(0.0, right_wheel_vel_cmd_.get_value());
 
   state = controller_->configure();
-  // ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   executor.cancel();
 }

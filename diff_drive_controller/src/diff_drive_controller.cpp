@@ -49,8 +49,7 @@ DiffDriveController::DiffDriveController()
 : controller_interface::ControllerInterface() {}
 
 controller_interface::return_type
-DiffDriveController::init(
-  const std::string & controller_name)
+DiffDriveController::init(const std::string & controller_name)
 {
   // initialize lifecycle node
   auto ret = ControllerInterface::init(controller_name);
@@ -457,8 +456,7 @@ CallbackReturn DiffDriveController::on_activate(const rclcpp_lifecycle::State &)
   is_halted = false;
   subscriber_is_active_ = true;
 
-  RCLCPP_INFO(
-    node_->get_logger(), "Subscriber and publisher are now active.");
+  RCLCPP_DEBUG(node_->get_logger(), "Subscriber and publisher are now active.");
   return CallbackReturn::SUCCESS;
 }
 
