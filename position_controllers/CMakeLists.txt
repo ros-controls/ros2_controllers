@@ -61,6 +61,7 @@ if(BUILD_TESTING)
   ament_target_dependencies(test_load_joint_group_position_controller
     controller_manager
   )
+  target_compile_definitions(test_load_joint_group_position_controller PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
   ament_add_gmock(
     test_joint_group_position_controller
