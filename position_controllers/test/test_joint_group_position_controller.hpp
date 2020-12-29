@@ -28,7 +28,6 @@
 using hardware_interface::HW_IF_POSITION;
 using hardware_interface::CommandInterface;
 
-
 // subclassing and friending so we can access member varibles
 class FriendJointGroupPositionController : public position_controllers::JointGroupPositionController
 {
