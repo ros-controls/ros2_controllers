@@ -31,8 +31,7 @@ JointGroupPositionController::JointGroupPositionController()
 }
 
 controller_interface::return_type
-JointGroupPositionController::init(
-  const std::string & controller_name)
+JointGroupPositionController::init(const std::string & controller_name)
 {
   auto ret = ForwardCommandController::init(controller_name);
   if (ret != controller_interface::return_type::SUCCESS) {
