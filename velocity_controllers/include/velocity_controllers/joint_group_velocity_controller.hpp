@@ -15,6 +15,8 @@
 #ifndef VELOCITY_CONTROLLERS__JOINT_GROUP_VELOCITY_CONTROLLER_HPP_
 #define VELOCITY_CONTROLLERS__JOINT_GROUP_VELOCITY_CONTROLLER_HPP_
 
+#include <string>
+
 #include "forward_command_controller/forward_command_controller.hpp"
 #include "velocity_controllers/visibility_control.h"
 
@@ -38,11 +40,11 @@ public:
   JointGroupVelocityController();
 
   VELOCITY_CONTROLLERS_PUBLIC
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-  on_configure(const rclcpp_lifecycle::State & previous_state) override;
+  controller_interface::return_type
+  init(const std::string & controller_name) override;
 
   VELOCITY_CONTROLLERS_PUBLIC
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+  CallbackReturn
   on_deactivate(const rclcpp_lifecycle::State & previous_state) override;
 };
 

@@ -16,21 +16,20 @@
 #include <memory>
 
 #include "controller_manager/controller_manager.hpp"
-#include "test_robot_hardware/test_robot_hardware.hpp"
+#include "descriptions.hpp"
+#include "hardware_interface/resource_manager.hpp"
+#include "rclcpp/executors/single_threaded_executor.hpp"
 
 TEST(TestLoadJointGroupPositionController, load_controller)
 {
   rclcpp::init(0, nullptr);
 
-  std::shared_ptr<test_robot_hardware::TestRobotHardware> robot =
-    std::make_shared<test_robot_hardware::TestRobotHardware>();
-
-  robot->init();
-
   std::shared_ptr<rclcpp::Executor> executor =
     std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
 
-  controller_manager::ControllerManager cm(robot, executor, "test_controller_manager");
+  controller_manager::ControllerManager cm(
+    std::make_unique<hardware_interface::ResourceManager>(ros2_control_test::minimal_robot_urdf),
+    executor, "test_controller_manager");
 
   ASSERT_NO_THROW(
     cm.load_controller(

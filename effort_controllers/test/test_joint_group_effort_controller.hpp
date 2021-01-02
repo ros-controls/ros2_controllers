@@ -17,18 +17,22 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
-#include "gtest/gtest.h"
+#include "gmock/gmock.h"
 
-#include "hardware_interface/joint_handle.hpp"
+#include "hardware_interface/handle.hpp"
+#include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "effort_controllers/joint_group_effort_controller.hpp"
-#include "test_robot_hardware/test_robot_hardware.hpp"
 
+using hardware_interface::HW_IF_EFFORT;
+using hardware_interface::CommandInterface;
 // subclassing and friending so we can access member varibles
 class FriendJointGroupEffortController : public effort_controllers::JointGroupEffortController
 {
-  FRIEND_TEST(JointGroupEffortControllerTest, ConfigureParamsTest);
-  FRIEND_TEST(JointGroupEffortControllerTest, CheckParamsTest);
+  FRIEND_TEST(JointGroupEffortControllerTest, CommandSuccessTest);
+  FRIEND_TEST(JointGroupEffortControllerTest, WrongCommandCheckTest);
+  FRIEND_TEST(JointGroupEffortControllerTest, CommandCallbackTest);
   FRIEND_TEST(JointGroupEffortControllerTest, StopJointsOnDeactivateTest);
 };
 
@@ -42,15 +46,17 @@ public:
   void TearDown();
 
   void SetUpController();
-  void SetUpHandles();
 
 protected:
-  std::shared_ptr<test_robot_hardware::TestRobotHardware> test_robot_;
   std::unique_ptr<FriendJointGroupEffortController> controller_;
 
-  std::shared_ptr<hardware_interface::JointHandle> joint1_eff_cmd_handle_;
-  std::shared_ptr<hardware_interface::JointHandle> joint2_eff_cmd_handle_;
-  std::shared_ptr<hardware_interface::JointHandle> joint3_eff_cmd_handle_;
+  // dummy joint state values used for tests
+  const std::vector<std::string> joint_names_ = {"joint1", "joint2", "joint3"};
+  std::vector<double> joint_commands_ = {1.1, 2.1, 3.1};
+
+  CommandInterface joint_1_cmd_{joint_names_[0], HW_IF_EFFORT, &joint_commands_[0]};
+  CommandInterface joint_2_cmd_{joint_names_[1], HW_IF_EFFORT, &joint_commands_[1]};
+  CommandInterface joint_3_cmd_{joint_names_[2], HW_IF_EFFORT, &joint_commands_[2]};
 };
 
 #endif  // TEST_JOINT_GROUP_EFFORT_CONTROLLER_HPP_

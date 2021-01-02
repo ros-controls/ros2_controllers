@@ -17,18 +17,24 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
-#include "gtest/gtest.h"
+#include "gmock/gmock.h"
 
-#include "hardware_interface/joint_handle.hpp"
+#include "hardware_interface/handle.hpp"
+#include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "velocity_controllers/joint_group_velocity_controller.hpp"
-#include "test_robot_hardware/test_robot_hardware.hpp"
+
+using hardware_interface::HW_IF_VELOCITY;
+using hardware_interface::CommandInterface;
+
 
 // subclassing and friending so we can access member varibles
 class FriendJointGroupVelocityController : public velocity_controllers::JointGroupVelocityController
 {
-  FRIEND_TEST(JointGroupVelocityControllerTest, ConfigureParamsTest);
-  FRIEND_TEST(JointGroupVelocityControllerTest, CheckParamsTest);
+  FRIEND_TEST(JointGroupVelocityControllerTest, CommandSuccessTest);
+  FRIEND_TEST(JointGroupVelocityControllerTest, WrongCommandCheckTest);
+  FRIEND_TEST(JointGroupVelocityControllerTest, CommandCallbackTest);
   FRIEND_TEST(JointGroupVelocityControllerTest, StopJointsOnDeactivateTest);
 };
 
@@ -42,15 +48,17 @@ public:
   void TearDown();
 
   void SetUpController();
-  void SetUpHandles();
 
 protected:
-  std::shared_ptr<test_robot_hardware::TestRobotHardware> test_robot_;
   std::unique_ptr<FriendJointGroupVelocityController> controller_;
 
-  std::shared_ptr<hardware_interface::JointHandle> joint1_vel_cmd_handle_;
-  std::shared_ptr<hardware_interface::JointHandle> joint2_vel_cmd_handle_;
-  std::shared_ptr<hardware_interface::JointHandle> joint3_vel_cmd_handle_;
+  // dummy joint state values used for tests
+  const std::vector<std::string> joint_names_ = {"joint1", "joint2", "joint3"};
+  std::vector<double> joint_commands_ = {1.1, 2.1, 3.1};
+
+  CommandInterface joint_1_cmd_{joint_names_[0], HW_IF_VELOCITY, &joint_commands_[0]};
+  CommandInterface joint_2_cmd_{joint_names_[1], HW_IF_VELOCITY, &joint_commands_[1]};
+  CommandInterface joint_3_cmd_{joint_names_[2], HW_IF_VELOCITY, &joint_commands_[2]};
 };
 
 #endif  // TEST_JOINT_GROUP_VELOCITY_CONTROLLER_HPP_

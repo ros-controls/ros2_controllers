@@ -36,8 +36,6 @@
 
 using CallbackReturn = forward_command_controller::ForwardCommandController::CallbackReturn;
 using hardware_interface::LoanedCommandInterface;
-using testing::SizeIs;
-using testing::IsEmpty;
 
 namespace
 {

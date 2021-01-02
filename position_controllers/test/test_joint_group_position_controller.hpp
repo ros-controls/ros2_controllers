@@ -17,18 +17,23 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
-#include "gtest/gtest.h"
+#include "gmock/gmock.h"
 
-#include "hardware_interface/joint_handle.hpp"
+#include "hardware_interface/handle.hpp"
+#include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "position_controllers/joint_group_position_controller.hpp"
-#include "test_robot_hardware/test_robot_hardware.hpp"
+
+using hardware_interface::HW_IF_POSITION;
+using hardware_interface::CommandInterface;
 
 // subclassing and friending so we can access member varibles
 class FriendJointGroupPositionController : public position_controllers::JointGroupPositionController
 {
-  FRIEND_TEST(JointGroupPositionControllerTest, ConfigureParamsTest);
-  FRIEND_TEST(JointGroupPositionControllerTest, CheckParamsTest);
+  FRIEND_TEST(JointGroupPositionControllerTest, CommandSuccessTest);
+  FRIEND_TEST(JointGroupPositionControllerTest, WrongCommandCheckTest);
+  FRIEND_TEST(JointGroupPositionControllerTest, CommandCallbackTest);
 };
 
 class JointGroupPositionControllerTest : public ::testing::Test
@@ -44,12 +49,15 @@ public:
   void SetUpHandles();
 
 protected:
-  std::shared_ptr<test_robot_hardware::TestRobotHardware> test_robot_;
   std::unique_ptr<FriendJointGroupPositionController> controller_;
 
-  std::shared_ptr<hardware_interface::JointHandle> joint1_pos_cmd_handle_;
-  std::shared_ptr<hardware_interface::JointHandle> joint2_pos_cmd_handle_;
-  std::shared_ptr<hardware_interface::JointHandle> joint3_pos_cmd_handle_;
+  // dummy joint state values used for tests
+  const std::vector<std::string> joint_names_ = {"joint1", "joint2", "joint3"};
+  std::vector<double> joint_commands_ = {1.1, 2.1, 3.1};
+
+  CommandInterface joint_1_pos_cmd_{joint_names_[0], HW_IF_POSITION, &joint_commands_[0]};
+  CommandInterface joint_2_pos_cmd_{joint_names_[1], HW_IF_POSITION, &joint_commands_[1]};
+  CommandInterface joint_3_pos_cmd_{joint_names_[2], HW_IF_POSITION, &joint_commands_[2]};
 };
 
 #endif  // TEST_JOINT_GROUP_POSITION_CONTROLLER_HPP_
