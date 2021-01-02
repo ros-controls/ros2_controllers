@@ -62,14 +62,13 @@ install(TARGETS diff_drive_controller
 )
 
 if(BUILD_TESTING)
-  find_package(ament_cmake_gtest REQUIRED)
+  find_package(ament_cmake_gmock REQUIRED)
   find_package(ament_lint_auto REQUIRED)
   find_package(controller_manager REQUIRED)
-  find_package(test_robot_hardware REQUIRED)
 
   ament_lint_auto_find_test_dependencies()
 
-  ament_add_gtest(test_diff_drive_controller
+  ament_add_gmock(test_diff_drive_controller
     test/test_diff_drive_controller.cpp
     ENV config_file=${CMAKE_CURRENT_SOURCE_DIR}/test/config/test_diff_drive_controller.yaml)
   target_include_directories(test_diff_drive_controller PRIVATE include)
@@ -85,23 +84,21 @@ if(BUILD_TESTING)
     rclcpp_lifecycle
     realtime_tools
     sensor_msgs
-    test_robot_hardware
     tf2
     tf2_msgs
   )
 
-  ament_add_gtest(
+  ament_add_gmock(
     test_load_diff_drive_controller
     test/test_load_diff_drive_controller.cpp
   )
-
   target_include_directories(test_load_diff_drive_controller PRIVATE include)
   ament_target_dependencies(test_load_diff_drive_controller
     controller_manager
-    test_robot_hardware
   )
+  target_compile_definitions(test_load_diff_drive_controller PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
-  ament_add_gtest(
+  ament_add_gmock(
     test_accumulator
     test/test_accumulator.cpp
   )
