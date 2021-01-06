@@ -130,7 +130,7 @@ bool JointStateController::init_joint_data()
 
   // filter state interfaces that have at least one of the joint_states fields,
   // the rest will be ignored for this message
-  for (const auto name_ifv : name_if_value_mapping_) {
+  for (const auto & name_ifv : name_if_value_mapping_) {
     const auto & interfaces_and_values = name_ifv.second;
     if (has_any_key(interfaces_and_values, {HW_IF_POSITION, HW_IF_VELOCITY, HW_IF_EFFORT})) {
       joint_names_.push_back(name_ifv.first);

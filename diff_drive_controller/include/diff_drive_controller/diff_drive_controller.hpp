@@ -61,11 +61,11 @@ public:
 
   DIFF_DRIVE_CONTROLLER_PUBLIC
   controller_interface::InterfaceConfiguration
-  command_interface_configuration() const;
+  command_interface_configuration() const override;
 
   DIFF_DRIVE_CONTROLLER_PUBLIC
   controller_interface::InterfaceConfiguration
-  state_interface_configuration() const;
+  state_interface_configuration() const override;
 
   DIFF_DRIVE_CONTROLLER_PUBLIC
   controller_interface::return_type update() override;
