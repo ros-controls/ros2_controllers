@@ -2,6 +2,11 @@
 Changelog for package joint_state_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* avoid warnings (`#137 <https://github.com/ros-controls/ros2_controllers/issues/137>`_)
+* Contributors: Karsten Knese
+
 0.1.0 (2020-12-23)
 ------------------
 * Print exception msg (`#130 <https://github.com/ros-controls/ros2_controllers/issues/130>`_)
