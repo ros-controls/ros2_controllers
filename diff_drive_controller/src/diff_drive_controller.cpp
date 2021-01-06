@@ -536,7 +536,7 @@ CallbackReturn DiffDriveController::configure_side(
 
   // register handles
   registered_handles.reserve(wheel_names.size());
-  for (const auto wheel_name : wheel_names) {
+  for (const auto & wheel_name : wheel_names) {
     const auto state_handle = std::find_if(
       state_interfaces_.cbegin(), state_interfaces_.cend(), [&wheel_name](const auto & interface) {
         return interface.get_name() == wheel_name &&
