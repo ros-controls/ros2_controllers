@@ -60,6 +60,7 @@ if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   find_package(controller_manager REQUIRED)
   find_package(hardware_interface REQUIRED)
+  find_package(ros2_control_test_assets REQUIRED)
 
   ament_lint_auto_find_test_dependencies()
 
@@ -71,6 +72,7 @@ if(BUILD_TESTING)
   ament_target_dependencies(test_load_forward_command_controller
     controller_manager
     hardware_interface
+    ros2_control_test_assets
   )
   # prevent pluginlib from using boost
   target_compile_definitions(test_load_forward_command_controller PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")

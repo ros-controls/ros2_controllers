@@ -20,7 +20,7 @@
 #include "rclcpp/executor.hpp"
 #include "rclcpp/executors/single_threaded_executor.hpp"
 #include "rclcpp/utilities.hpp"
-#include "test_common.hpp"
+#include "ros2_control_test_assets/descriptions.hpp"
 
 TEST(TestLoadJointStateController, load_controller)
 {
@@ -30,7 +30,7 @@ TEST(TestLoadJointStateController, load_controller)
     std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
 
   controller_manager::ControllerManager cm(std::make_unique<hardware_interface::ResourceManager>(
-      joint_state_controller_testing::urdf), executor, "test_controller_manager");
+      ros2_control_test_assets::minimal_robot_urdf), executor, "test_controller_manager");
 
   ASSERT_NO_THROW(
     cm.load_controller(
