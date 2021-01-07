@@ -19,7 +19,6 @@ find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(realtime_tools REQUIRED)
-find_package(sensor_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_msgs REQUIRED)
 
@@ -40,7 +39,6 @@ ament_target_dependencies(diff_drive_controller
   rclcpp
   rclcpp_lifecycle
   realtime_tools
-  sensor_msgs
   tf2
   tf2_msgs
 )
@@ -83,7 +81,6 @@ if(BUILD_TESTING)
     rclcpp
     rclcpp_lifecycle
     realtime_tools
-    sensor_msgs
     tf2
     tf2_msgs
   )
@@ -114,7 +111,6 @@ ament_export_dependencies(
   hardware_interface
   rclcpp
   rclcpp_lifecycle
-  sensor_msgs
   tf2
   tf2_msgs
 )
