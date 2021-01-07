@@ -2,6 +2,9 @@
 Changelog for package forward_command_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.1.1 (2021-01-06)
 ------------------
 * Restore forward command derivatives (`#133 <https://github.com/ros-controls/ros2_controllers/issues/133>`_)
