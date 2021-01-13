@@ -93,7 +93,7 @@ state_interface_configuration() const
   conf.names.reserve(2 * joint_names_.size());
   for (const auto & joint_name  : joint_names_) {
     conf.names.push_back(joint_name + "/" + hardware_interface::HW_IF_POSITION);
-    conf.names.push_back(joint_name + "/" + hardware_interface::HW_IF_VELOCITY);
+//     conf.names.push_back(joint_name + "/" + hardware_interface::HW_IF_VELOCITY);
   }
   return conf;
 }
@@ -142,10 +142,14 @@ JointTrajectoryController::update()
   // current state update
   for (auto index = 0ul; index < joint_num; ++index) {
     state_current.positions[index] = joint_position_state_interface_[index].get().get_value();
-    state_current.velocities[index] = joint_velocity_state_interface_[index].get().get_value();
+//     state_current.velocities[index] = joint_velocity_state_interface_[index].get().get_value();
+    state_current.velocities[index] = 0.0;
     state_current.accelerations[index] = 0.0;
   }
   state_current.time_from_start.set__sec(0);
+  // Make velocity and accel empty -- those will not be considered during interpolation
+  state_current.velocities.clear();
+  state_current.accelerations.clear();
 
   // currently carrying out a trajectory
   if (traj_point_active_ptr_ && (*traj_point_active_ptr_)->has_trajectory_msg() == false) {
@@ -401,16 +405,16 @@ JointTrajectoryController::on_activate(const rclcpp_lifecycle::State &)
       joint_names_.size(), joint_position_state_interface_.size());
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
   }
-  if (!get_ordered_interfaces(
-      state_interfaces_, joint_names_, hardware_interface::HW_IF_VELOCITY,
-      joint_velocity_state_interface_))
-  {
-    RCLCPP_ERROR(
-      node_->get_logger(),
-      "Expected %u velocity state interfaces, got %u",
-      joint_names_.size(), joint_velocity_state_interface_.size());
-    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
-  }
+//   if (!get_ordered_interfaces(
+//       state_interfaces_, joint_names_, hardware_interface::HW_IF_VELOCITY,
+//       joint_velocity_state_interface_))
+//   {
+//     RCLCPP_ERROR(
+//       node_->get_logger(),
+//       "Expected %u velocity state interfaces, got %u",
+//       joint_names_.size(), joint_velocity_state_interface_.size());
+//     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
+//   }
 
   // Store 'home' pose
   traj_msg_home_ptr_ = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
@@ -442,7 +446,7 @@ JointTrajectoryController::on_deactivate(const rclcpp_lifecycle::State &)
 {
   joint_position_command_interface_.clear();
   joint_position_state_interface_.clear();
-  joint_velocity_state_interface_.clear();
+//   joint_velocity_state_interface_.clear();
   release_interfaces();
 
   subscriber_is_active_ = false;
