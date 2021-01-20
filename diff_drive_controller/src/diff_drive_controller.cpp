@@ -31,7 +31,7 @@
 namespace
 {
 constexpr auto DEFAULT_COMMAND_TOPIC = "~/cmd_vel";
-constexpr auto DEFUALT_COMMAND_UNSTAMPED_TOPIC = "~/cmd_vel_unstamped";
+constexpr auto DEFAULT_COMMAND_UNSTAMPED_TOPIC = "~/cmd_vel_unstamped";
 constexpr auto DEFAULT_COMMAND_OUT_TOPIC = "~/cmd_vel_out";
 constexpr auto DEFAULT_ODOMETRY_TOPIC = "/odom";
 constexpr auto DEFAULT_TRANSFORM_TOPIC = "/tf";
@@ -396,7 +396,7 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
   } else {
     velocity_command_unstamped_subscriber_ =
       node_->create_subscription<geometry_msgs::msg::Twist>(
-      DEFAULT_COMMAND_TOPIC, rclcpp::SystemDefaultsQoS(), [this](
+      DEFAULT_COMMAND_UNSTAMPED_TOPIC, rclcpp::SystemDefaultsQoS(), [this](
         const std::shared_ptr<geometry_msgs::msg::Twist> msg) -> void {
         if (!subscriber_is_active_) {
           RCLCPP_WARN(
