@@ -153,8 +153,11 @@ controller_interface::return_type DiffDriveController::update()
   }
 
   const auto current_time = node_->get_clock()->now();
-  double & linear_command = received_velocity_msg_ptr_->twist.linear.x;
-  double & angular_command = received_velocity_msg_ptr_->twist.angular.z;
+
+  std::shared_ptr<Twist> last_msg;
+  received_velocity_msg_ptr_.get(last_msg);
+  double & linear_command = last_msg->twist.linear.x;
+  double & angular_command = last_msg->twist.angular.z;
 
   // Apply (possibly new) multipliers:
   const auto wheels = wheel_params_;
@@ -217,7 +220,7 @@ controller_interface::return_type DiffDriveController::update()
     realtime_odometry_transform_publisher_->unlockAndPublish();
   }
 
-  const auto dt = current_time - received_velocity_msg_ptr_->header.stamp;
+  const auto dt = current_time - last_msg->header.stamp;
 
   // Brake if cmd_vel has timeout
   if (dt > cmd_vel_timeout_) {
@@ -237,7 +240,7 @@ controller_interface::return_type DiffDriveController::update()
     angular_command, last_command.angular.z, second_to_last_command.angular.z, update_dt.seconds());
 
   previous_commands_.pop();
-  previous_commands_.emplace(*received_velocity_msg_ptr_);
+  previous_commands_.emplace(*last_msg);
 
   //    Publish limited velocity
   if (publish_limited_velocity_ && realtime_limited_velocity_publisher_->trylock()) {
@@ -248,7 +251,7 @@ controller_interface::return_type DiffDriveController::update()
     realtime_limited_velocity_publisher_->unlockAndPublish();
   }
 
-  if (received_velocity_msg_ptr_ == nullptr) {
+  if (last_msg == nullptr) {
     RCLCPP_WARN(logger, "Velocity message received was a nullptr.");
     return controller_interface::return_type::ERROR;
   }
@@ -373,11 +376,12 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
       std::make_shared<realtime_tools::RealtimePublisher<Twist>>(limited_velocity_publisher_);
   }
 
-  received_velocity_msg_ptr_ = std::make_shared<Twist>();
+  const Twist empty_twist;
+  received_velocity_msg_ptr_.set(std::make_shared<Twist>(empty_twist));
 
   // Fill last two commands with default constructed commands
-  previous_commands_.emplace(*received_velocity_msg_ptr_);
-  previous_commands_.emplace(*received_velocity_msg_ptr_);
+  previous_commands_.emplace(empty_twist);
+  previous_commands_.emplace(empty_twist);
 
   // initialize command subscriber
   if (use_stamped_vel_) {
@@ -390,8 +394,14 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
             "Can't accept new commands. subscriber is inactive");
           return;
         }
-
-        received_velocity_msg_ptr_ = std::move(msg);
+        if ((msg->header.stamp.sec == 0) && (msg->header.stamp.nanosec == 0)) {
+          RCLCPP_WARN_ONCE(
+            node_->get_logger(),
+            "Received TwistStamped with zero timestamp, setting it to current "
+            "time, this message will only be shown once");
+          msg->header.stamp = node_->get_clock()->now();
+        }
+        received_velocity_msg_ptr_.set(std::move(msg));
       });
   } else {
     velocity_command_unstamped_subscriber_ =
@@ -404,9 +414,12 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
             "Can't accept new commands. subscriber is inactive");
           return;
         }
-        received_velocity_msg_ptr_->twist = *msg;
-        // Fake header
-        received_velocity_msg_ptr_->header.stamp = node_->get_clock()->now();
+
+        // Write fake header in the stored stamped command
+        std::shared_ptr<Twist> twist_stamped;
+        received_velocity_msg_ptr_.get(twist_stamped);
+        twist_stamped->twist = *msg;
+        twist_stamped->header.stamp = node_->get_clock()->now();
       });
   }
 
@@ -493,7 +506,7 @@ CallbackReturn DiffDriveController::on_cleanup(const rclcpp_lifecycle::State &)
     return CallbackReturn::ERROR;
   }
 
-  received_velocity_msg_ptr_ = std::make_shared<Twist>();
+  received_velocity_msg_ptr_.set(std::make_shared<Twist>());
   return CallbackReturn::SUCCESS;
 }
 
@@ -520,7 +533,7 @@ bool DiffDriveController::reset()
   velocity_command_subscriber_.reset();
   velocity_command_unstamped_subscriber_.reset();
 
-  received_velocity_msg_ptr_.reset();
+  received_velocity_msg_ptr_.set(nullptr);
   is_halted = false;
   return true;
 }
