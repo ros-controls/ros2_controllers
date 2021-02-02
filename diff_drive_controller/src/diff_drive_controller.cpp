@@ -92,22 +92,22 @@ DiffDriveController::init(const std::string & controller_name)
     node->declare_parameter<bool>("linear.x.has_velocity_limits", false);
     node->declare_parameter<bool>("linear.x.has_acceleration_limits", false);
     node->declare_parameter<bool>("linear.x.has_jerk_limits", false);
-    node->declare_parameter<double>("linear.x.max_velocity", 0.0);
-    node->declare_parameter<double>("linear.x.min_velocity", 0.0);
-    node->declare_parameter<double>("linear.x.max_acceleration", 0.0);
-    node->declare_parameter<double>("linear.x.min_acceleration", 0.0);
-    node->declare_parameter<double>("linear.x.max_jerk", 0.0);
-    node->declare_parameter<double>("linear.x.min_jerk", 0.0);
+    node->declare_parameter<double>("linear.x.max_velocity", NAN);
+    node->declare_parameter<double>("linear.x.min_velocity", NAN);
+    node->declare_parameter<double>("linear.x.max_acceleration", NAN);
+    node->declare_parameter<double>("linear.x.min_acceleration", NAN);
+    node->declare_parameter<double>("linear.x.max_jerk", NAN);
+    node->declare_parameter<double>("linear.x.min_jerk", NAN);
 
     node->declare_parameter<bool>("angular.z.has_velocity_limits", false);
     node->declare_parameter<bool>("angular.z.has_acceleration_limits", false);
     node->declare_parameter<bool>("angular.z.has_jerk_limits", false);
-    node->declare_parameter<double>("angular.z.max_velocity", 0.0);
-    node->declare_parameter<double>("angular.z.min_velocity", 0.0);
-    node->declare_parameter<double>("angular.z.max_acceleration", 0.0);
-    node->declare_parameter<double>("angular.z.min_acceleration", 0.0);
-    node->declare_parameter<double>("angular.z.max_jerk", 0.0);
-    node->declare_parameter<double>("angular.z.min_jerk", 0.0);
+    node->declare_parameter<double>("angular.z.max_velocity", NAN);
+    node->declare_parameter<double>("angular.z.min_velocity", NAN);
+    node->declare_parameter<double>("angular.z.max_acceleration", NAN);
+    node->declare_parameter<double>("angular.z.min_acceleration", NAN);
+    node->declare_parameter<double>("angular.z.max_jerk", NAN);
+    node->declare_parameter<double>("angular.z.min_jerk", NAN);
   } catch (const std::exception & e) {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
     return controller_interface::return_type::ERROR;
@@ -334,27 +334,35 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
   publish_limited_velocity_ = node_->get_parameter("publish_limited_velocity").as_bool();
   use_stamped_vel_ = node_->get_parameter("use_stamped_vel").as_bool();
 
-  limiter_linear_ = SpeedLimiter(
-    node_->get_parameter("linear.x.has_velocity_limits").as_bool(),
-    node_->get_parameter("linear.x.has_acceleration_limits").as_bool(),
-    node_->get_parameter("linear.x.has_jerk_limits").as_bool(),
-    node_->get_parameter("linear.x.min_velocity").as_double(),
-    node_->get_parameter("linear.x.max_velocity").as_double(),
-    node_->get_parameter("linear.x.min_acceleration").as_double(),
-    node_->get_parameter("linear.x.max_acceleration").as_double(),
-    node_->get_parameter("linear.x.min_jerk").as_double(),
-    node_->get_parameter("linear.x.max_jerk").as_double());
+  try {
+    limiter_linear_ = SpeedLimiter(
+      node_->get_parameter("linear.x.has_velocity_limits").as_bool(),
+      node_->get_parameter("linear.x.has_acceleration_limits").as_bool(),
+      node_->get_parameter("linear.x.has_jerk_limits").as_bool(),
+      node_->get_parameter("linear.x.min_velocity").as_double(),
+      node_->get_parameter("linear.x.max_velocity").as_double(),
+      node_->get_parameter("linear.x.min_acceleration").as_double(),
+      node_->get_parameter("linear.x.max_acceleration").as_double(),
+      node_->get_parameter("linear.x.min_jerk").as_double(),
+      node_->get_parameter("linear.x.max_jerk").as_double());
+  } catch (const std::runtime_error & e) {
+    RCLCPP_ERROR(node_->get_logger(), "Error configuring linear speed limiter: %s", e.what());
+  }
 
-  limiter_angular_ = SpeedLimiter(
-    node_->get_parameter("angular.z.has_velocity_limits").as_bool(),
-    node_->get_parameter("angular.z.has_acceleration_limits").as_bool(),
-    node_->get_parameter("angular.z.has_jerk_limits").as_bool(),
-    node_->get_parameter("angular.z.min_velocity").as_double(),
-    node_->get_parameter("angular.z.max_velocity").as_double(),
-    node_->get_parameter("angular.z.min_acceleration").as_double(),
-    node_->get_parameter("angular.z.max_acceleration").as_double(),
-    node_->get_parameter("angular.z.min_jerk").as_double(),
-    node_->get_parameter("angular.z.max_jerk").as_double());
+  try {
+    limiter_angular_ = SpeedLimiter(
+      node_->get_parameter("angular.z.has_velocity_limits").as_bool(),
+      node_->get_parameter("angular.z.has_acceleration_limits").as_bool(),
+      node_->get_parameter("angular.z.has_jerk_limits").as_bool(),
+      node_->get_parameter("angular.z.min_velocity").as_double(),
+      node_->get_parameter("angular.z.max_velocity").as_double(),
+      node_->get_parameter("angular.z.min_acceleration").as_double(),
+      node_->get_parameter("angular.z.max_acceleration").as_double(),
+      node_->get_parameter("angular.z.min_jerk").as_double(),
+      node_->get_parameter("angular.z.max_jerk").as_double());
+  } catch (const std::runtime_error & e) {
+    RCLCPP_ERROR(node_->get_logger(), "Error configuring angular speed limiter: %s", e.what());
+  }
 
 
   if (!reset()) {

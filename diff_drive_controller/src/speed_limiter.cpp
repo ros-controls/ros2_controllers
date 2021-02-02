@@ -17,6 +17,7 @@
  */
 
 #include <algorithm>
+#include <stdexcept>
 
 #include "diff_drive_controller/speed_limiter.hpp"
 #include "rcppmath/clamp.hpp"
@@ -37,6 +38,32 @@ SpeedLimiter::SpeedLimiter(
   min_jerk_(min_jerk),
   max_jerk_(max_jerk)
 {
+  // Check if limits are valid, max must be specified, min defaults to -max if unspecified
+  if (has_velocity_limits_) {
+    if (std::isnan(max_velocity_)) {
+      throw std::runtime_error("Cannot apply velocity limits if max_velocity is not specified");
+    }
+    if (std::isnan(min_velocity_)) {
+      min_velocity_ = -max_velocity_;
+    }
+  }
+  if (has_acceleration_limits_) {
+    if (std::isnan(max_acceleration_)) {
+      throw std::runtime_error(
+              "Cannot apply acceleration limits if max_acceleration is not specified");
+    }
+    if (std::isnan(min_acceleration_)) {
+      min_acceleration_ = -max_acceleration_;
+    }
+  }
+  if (has_jerk_limits_) {
+    if (std::isnan(max_jerk_)) {
+      throw std::runtime_error("Cannot apply jerk limits if max_jerk is not specified");
+    }
+    if (std::isnan(min_jerk_)) {
+      min_jerk_ = -max_jerk_;
+    }
+  }
 }
 
 double SpeedLimiter::limit(double & v, double v0, double v1, double dt)
