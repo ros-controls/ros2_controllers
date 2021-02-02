@@ -156,8 +156,23 @@ controller_interface::return_type DiffDriveController::update()
 
   std::shared_ptr<Twist> last_msg;
   received_velocity_msg_ptr_.get(last_msg);
-  double & linear_command = last_msg->twist.linear.x;
-  double & angular_command = last_msg->twist.angular.z;
+
+  if (last_msg == nullptr) {
+    RCLCPP_WARN(logger, "Velocity message received was a nullptr.");
+    return controller_interface::return_type::ERROR;
+  }
+
+  const auto dt = current_time - last_msg->header.stamp;
+  // Brake if cmd_vel has timeout, override the stored command
+  if (dt > cmd_vel_timeout_) {
+    last_msg->twist.linear.x = 0.0;
+    last_msg->twist.angular.z = 0.0;
+  }
+
+  // linear_command and angular_command may be limited further by SpeedLimit,
+  // without affecting the stored twist command
+  double linear_command = last_msg->twist.linear.x;
+  double angular_command = last_msg->twist.angular.z;
 
   // Apply (possibly new) multipliers:
   const auto wheels = wheel_params_;
@@ -220,13 +235,6 @@ controller_interface::return_type DiffDriveController::update()
     realtime_odometry_transform_publisher_->unlockAndPublish();
   }
 
-  const auto dt = current_time - last_msg->header.stamp;
-
-  // Brake if cmd_vel has timeout
-  if (dt > cmd_vel_timeout_) {
-    linear_command = 0.0;
-    angular_command = 0.0;
-  }
 
   const auto update_dt = current_time - previous_update_timestamp_;
   previous_update_timestamp_ = current_time;
@@ -249,11 +257,6 @@ controller_interface::return_type DiffDriveController::update()
     limited_velocity_command.twist.linear.x = linear_command;
     limited_velocity_command.twist.angular.z = angular_command;
     realtime_limited_velocity_publisher_->unlockAndPublish();
-  }
-
-  if (last_msg == nullptr) {
-    RCLCPP_WARN(logger, "Velocity message received was a nullptr.");
-    return controller_interface::return_type::ERROR;
   }
 
   // Compute wheels velocities:
