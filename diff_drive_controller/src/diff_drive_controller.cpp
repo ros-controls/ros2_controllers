@@ -84,7 +84,7 @@ DiffDriveController::init(const std::string & controller_name)
     node->declare_parameter<bool>("open_loop", odom_params_.open_loop);
     node->declare_parameter<bool>("enable_odom_tf", odom_params_.enable_odom_tf);
 
-    node->declare_parameter<int>("cmd_vel_timeout", cmd_vel_timeout_.count());
+    node->declare_parameter<double>("cmd_vel_timeout", cmd_vel_timeout_.count() / 1000.0);
     node->declare_parameter<bool>("publish_limited_velocity", publish_limited_velocity_);
     node->declare_parameter<int>("velocity_rolling_window_size", 10);
     node->declare_parameter<bool>("use_stamped_vel", use_stamped_vel_);
@@ -330,7 +330,8 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
   odom_params_.enable_odom_tf = node_->get_parameter("enable_odom_tf").as_bool();
 
   cmd_vel_timeout_ =
-    std::chrono::milliseconds{node_->get_parameter("cmd_vel_timeout").as_int()};
+    std::chrono::milliseconds{static_cast<int>(node_->get_parameter("cmd_vel_timeout").as_double() *
+    1000.0)};
   publish_limited_velocity_ = node_->get_parameter("publish_limited_velocity").as_bool();
   use_stamped_vel_ = node_->get_parameter("use_stamped_vel").as_bool();
 
