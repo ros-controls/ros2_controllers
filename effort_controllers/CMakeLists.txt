@@ -50,6 +50,7 @@ if(BUILD_TESTING)
   find_package(ament_cmake_gmock REQUIRED)
   find_package(ament_lint_auto REQUIRED)
   find_package(controller_manager REQUIRED)
+  find_package(ros2_control_test_assets REQUIRED)
 
   ament_lint_auto_find_test_dependencies()
 
@@ -60,6 +61,7 @@ if(BUILD_TESTING)
   target_include_directories(test_load_joint_group_effort_controller PRIVATE include)
   ament_target_dependencies(test_load_joint_group_effort_controller
     controller_manager
+    ros2_control_test_assets
   )
   target_compile_definitions(test_load_joint_group_effort_controller PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 

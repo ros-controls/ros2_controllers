@@ -61,7 +61,7 @@ if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
   find_package(ament_lint_auto REQUIRED)
   find_package(controller_manager REQUIRED)
-  find_package(test_robot_hardware REQUIRED)
+  find_package(ros2_control_test_assets REQUIRED)
 
   ament_lint_auto_find_test_dependencies()
 
@@ -83,7 +83,7 @@ if(BUILD_TESTING)
     rclcpp_lifecycle
     rcutils
     realtime_tools
-    test_robot_hardware
+    ros2_control_test_assets
     trajectory_msgs
   )
 
@@ -95,7 +95,7 @@ if(BUILD_TESTING)
   ament_target_dependencies(test_load_joint_trajectory_controller
     controller_manager
     realtime_tools
-    test_robot_hardware
+    ros2_control_test_assets
   )
   target_compile_definitions(test_load_joint_trajectory_controller PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
@@ -113,7 +113,7 @@ if(BUILD_TESTING)
     rclcpp
     rclcpp_lifecycle
     rcutils
-    test_robot_hardware
+    ros2_control_test_assets
     trajectory_msgs
     realtime_tools
   )
