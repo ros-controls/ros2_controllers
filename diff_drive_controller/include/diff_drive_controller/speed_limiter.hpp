@@ -19,6 +19,8 @@
 #ifndef DIFF_DRIVE_CONTROLLER__SPEED_LIMITER_HPP_
 #define DIFF_DRIVE_CONTROLLER__SPEED_LIMITER_HPP_
 
+#include <math.h>
+
 namespace diff_drive_controller
 {
 class SpeedLimiter
@@ -39,8 +41,8 @@ public:
   SpeedLimiter(
     bool has_velocity_limits = false, bool has_acceleration_limits = false,
     bool has_jerk_limits = false,
-    double min_velocity = 0.0, double max_velocity = 0.0, double min_acceleration = 0.0,
-    double max_acceleration = 0.0, double min_jerk = 0.0, double max_jerk = 0.0);
+    double min_velocity = NAN, double max_velocity = NAN, double min_acceleration = NAN,
+    double max_acceleration = NAN, double min_jerk = NAN, double max_jerk = NAN);
 
   /**
    * \brief Limit the velocity and acceleration
