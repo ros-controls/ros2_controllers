@@ -37,6 +37,7 @@
 #include "odometry.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/state.hpp"
+#include "realtime_tools/realtime_box.h"
 #include "realtime_tools/realtime_buffer.h"
 #include "realtime_tools/realtime_publisher.h"
 #include "tf2_msgs/msg/tf_message.hpp"
@@ -145,7 +146,7 @@ protected:
     =
     nullptr;
 
-  std::shared_ptr<Twist> received_velocity_msg_ptr_ = nullptr;
+  realtime_tools::RealtimeBox<std::shared_ptr<Twist>> received_velocity_msg_ptr_{nullptr};
 
   std::queue<Twist> previous_commands_;  // last two commands
 

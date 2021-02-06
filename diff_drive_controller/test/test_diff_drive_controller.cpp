@@ -42,9 +42,11 @@ class TestableDiffDriveController : public diff_drive_controller::DiffDriveContr
 {
 public:
   using DiffDriveController::DiffDriveController;
-  std::shared_ptr<geometry_msgs::msg::TwistStamped> getLastReceivedTwist() const
+  std::shared_ptr<geometry_msgs::msg::TwistStamped> getLastReceivedTwist()
   {
-    return received_velocity_msg_ptr_;
+    std::shared_ptr<geometry_msgs::msg::TwistStamped> ret;
+    received_velocity_msg_ptr_.get(ret);
+    return ret;
   }
 
   /**
