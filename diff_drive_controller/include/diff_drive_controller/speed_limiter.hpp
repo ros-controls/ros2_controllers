@@ -19,7 +19,7 @@
 #ifndef DIFF_DRIVE_CONTROLLER__SPEED_LIMITER_HPP_
 #define DIFF_DRIVE_CONTROLLER__SPEED_LIMITER_HPP_
 
-#include <math.h>
+#include <cmath>
 
 namespace diff_drive_controller
 {
