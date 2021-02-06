@@ -2,6 +2,14 @@
 Changelog for package velocity_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Use ros2 contol test assets (`#138 <https://github.com/ros-controls/ros2_controllers/issues/138>`_)
+  * Add description to test trajecotry_controller
+  * Use ros2_control_test_assets package
+  * Delete obsolete components plugin export
+* Contributors: Denis Štogl
+
 0.1.2 (2021-01-07)
 ------------------
 
