@@ -24,6 +24,7 @@
 #include "control_msgs/msg/joint_trajectory_controller_state.hpp"
 #include "control_msgs/action/follow_joint_trajectory.hpp"
 #include "controller_interface/controller_interface.hpp"
+#include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "joint_trajectory_controller/tolerances.hpp"
 #include "joint_trajectory_controller/visibility_control.h"
 #include "rclcpp/duration.hpp"
@@ -113,15 +114,35 @@ public:
 
 protected:
   std::vector<std::string> joint_names_;
+  std::vector<std::string> command_interface_types_;
+  std::vector<std::string> state_interface_types_;
 
-  // For convenience, we have ordered the interfaces so i-th position matches i-th index
-  // in joint_names_
-  std::vector<std::reference_wrapper<hardware_interface::LoanedCommandInterface>>
-  joint_position_command_interface_;
-  std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>>
-  joint_position_state_interface_;
-  std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>>
-  joint_velocity_state_interface_;
+  // To reduce number of variables and to make the code shorter the interfaces are ordered in types
+  // as the following constants
+  constexpr static auto allowed_state_interface_types_ = {
+    hardware_interface::HW_IF_POSITION,
+    hardware_interface::HW_IF_VELOCITY,
+    hardware_interface::HW_IF_ACCELERATION,
+  };
+  // TODO(denis): rename to allowed_command_interface_tpes
+  constexpr static auto allowed_interface_types_ = {
+    hardware_interface::HW_IF_POSITION,
+    hardware_interface::HW_IF_VELOCITY,
+    hardware_interface::HW_IF_ACCELERATION,
+    hardware_interface::HW_IF_EFFORT,
+  };
+
+  // The interfaces are defined as the types in 'allowed_interface_types_' member.
+  // For convenience, for each type the interfaces are ordered so that i-th position
+  // matches i-th index in joint_names_
+  std::vector<std::vector<std::reference_wrapper<hardware_interface::LoanedCommandInterface>>>
+  joint_command_interface_;
+  std::vector<std::vector<std::reference_wrapper<hardware_interface::LoanedCommandInterface>>>
+  joint_state_interface_;
+
+  /* If used a command given the desired state and state error using velocity feedforward term plus a corrective PID term is used
+   */
+  bool use_closed_loop_pid_adapter = false;
 
   // TODO(karsten1987): eventually activate and deactive subscriber directly when its supported
   bool subscriber_is_active_ = false;
@@ -195,6 +216,11 @@ protected:
     const JointTrajectoryPoint & desired_state,
     const JointTrajectoryPoint & current_state,
     const JointTrajectoryPoint & state_error);
+
+private:
+  void assign_point_value(
+    const std::vector<std::string> & interface_types,
+    std::vector<double> & point_values);
 };
 
 }  // namespace joint_trajectory_controller
