@@ -3,3 +3,12 @@ test_joint_trajectory_controller:
     - joint1
     - joint2
     - joint3
+
+  command_interfaces:
+    - position
+
+  state_interfaces:
+    - position
+    - velocity
+
+

@@ -49,16 +49,16 @@
 
 using trajectory_msgs::msg::JointTrajectoryPoint;
 using test_trajectory_controllers::TestableJointTrajectoryController;
-using test_trajectory_controllers::TestTrajectoryController;
+using test_trajectory_controllers::TrajectoryControllerTest;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
-class TestTrajectoryActions : public TestTrajectoryController
+class TestTrajectoryActions : public TrajectoryControllerTest
 {
 protected:
   void SetUp()
   {
-    TestTrajectoryController::SetUp();
+    TrajectoryControllerTest::SetUp();
     goal_options_.goal_response_callback =
       std::bind(&TestTrajectoryActions::common_goal_response, this, _1);
     goal_options_.result_callback =

@@ -65,7 +65,7 @@ CallbackReturn ForwardCommandController::on_configure(
     return CallbackReturn::ERROR;
   }
 
-  // Specialized, child controllers set interfaces before calling init function.
+  // Specialized, child controllers set interfaces before calling configure function.
   if (interface_name_.empty()) {
     interface_name_ = node_->get_parameter("interface_name").as_string();
   }
