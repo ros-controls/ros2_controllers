@@ -318,6 +318,8 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
   if (!reset()) {
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
   }
+  // The controller should be in halted state after creation otherwise memory corruption
+  is_halted_ = true;
 
   if (joint_names_.empty()) {
     RCLCPP_WARN(logger, "'joints' parameter is empty.");

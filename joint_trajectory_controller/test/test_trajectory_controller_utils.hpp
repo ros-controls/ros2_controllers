@@ -109,6 +109,7 @@ public:
     joint_vel_.resize(joint_names_.size(), 0.0);
     joint_acc_.resize(joint_names_.size(), 0.0);
     // Default interface values - they will be overwritten by parameterized tests
+
     command_interface_types_ = {"position"};
     state_interface_types_ = {"position", "velocity"};
 

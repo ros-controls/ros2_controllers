@@ -63,7 +63,6 @@ void spin(rclcpp::executors::MultiThreadedExecutor * exe)
   exe->spin();
 }
 
-
 TEST_P(TrajectoryControllerTestParameterized, configure)
 {
   SetUpTrajectoryController();
