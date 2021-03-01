@@ -137,7 +137,7 @@ protected:
   // matches i-th index in joint_names_
   std::vector<std::vector<std::reference_wrapper<hardware_interface::LoanedCommandInterface>>>
   joint_command_interface_;
-  std::vector<std::vector<std::reference_wrapper<hardware_interface::LoanedCommandInterface>>>
+  std::vector<std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>>>
   joint_state_interface_;
 
   /* If used a command given the desired state and state error using velocity feedforward term plus a corrective PID term is used
@@ -156,7 +156,9 @@ protected:
   realtime_tools::RealtimeBuffer<std::shared_ptr<trajectory_msgs::msg::JointTrajectory>>
   traj_msg_external_point_ptr_;
 
-  bool is_halted = false;
+  // The controller should be in halted state after creation otherwise memory corruption
+  // TODO(anyone): Is the variable relevant, since we are using lifecycle?
+  bool is_halted_ = true;
 
   using ControllerStateMsg = control_msgs::msg::JointTrajectoryControllerState;
   using StatePublisher = realtime_tools::RealtimePublisher<ControllerStateMsg>;

@@ -74,10 +74,20 @@ public:
     joint_names_ = joint_names;
   }
 
+  void set_command_interfaces(const std::vector<std::string> & command_interfaces)
+  {
+    command_interface_types_ = command_interfaces;
+  }
+
+  void set_state_interfaces(const std::vector<std::string> & state_interfaces)
+  {
+    state_interface_types_ = state_interfaces;
+  }
+
   rclcpp::WaitSet joint_cmd_sub_wait_set_;
 };
 
-class TestTrajectoryController : public ::testing::Test
+class TrajectoryControllerTest : public ::testing::Test
 {
 protected:
   static void SetUpTestCase()
@@ -87,9 +97,13 @@ protected:
 
   virtual void SetUp()
   {
+    controller_name_ = "test_joint_trajectory_controller";
+
     joint_names_ = {"joint1", "joint2", "joint3"};
     joint_pos_.resize(joint_names_.size(), 0.0);
     joint_vel_.resize(joint_names_.size(), 0.0);
+    command_interface_types_ = {"position"};
+    state_interface_types_ = {"position", "velocity"};
 
     node_ = std::make_shared<rclcpp::Node>("trajectory_publisher_");
     trajectory_publisher_ = node_->create_publisher<trajectory_msgs::msg::JointTrajectory>(
@@ -101,11 +115,22 @@ protected:
     traj_controller_ = std::make_shared<TestableJointTrajectoryController>();
     if (use_local_parameters) {
       traj_controller_->set_joint_names(joint_names_);
+      traj_controller_->set_command_interfaces(command_interface_types_);
+      traj_controller_->set_state_interfaces(state_interface_types_);
     }
     auto ret = traj_controller_->init(controller_name_);
     if (ret != controller_interface::return_type::OK) {
       FAIL();
     }
+  }
+
+  void SetParameters()
+  {
+    auto node = traj_controller_->get_node();
+    const rclcpp::Parameter joint_names_param("joints", joint_names_);
+    const rclcpp::Parameter cmd_interfaces_params("command_interfaces", command_interface_types_);
+    const rclcpp::Parameter state_interfaces_params("state_interfaces", state_interface_types_);
+    node->set_parameters({joint_names_param, cmd_interfaces_params, state_interfaces_params});
   }
 
   void SetUpAndActivateTrajectoryController(
@@ -292,9 +317,11 @@ protected:
   }
   void test_state_publish_rate_target(int target_msg_count);
 
-  std::string controller_name_ = "test_joint_trajectory_controller";
+  std::string controller_name_;
 
   std::vector<std::string> joint_names_;
+  std::vector<std::string> command_interface_types_;
+  std::vector<std::string> state_interface_types_;
 
   rclcpp::Node::SharedPtr node_;
   rclcpp::Publisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr trajectory_publisher_;
@@ -312,6 +339,7 @@ protected:
   std::vector<hardware_interface::StateInterface> pos_state_interfaces_;
   std::vector<hardware_interface::StateInterface> vel_state_interfaces_;
 };
+
 }  // namespace test_trajectory_controllers
 
 #endif  // TEST_TRAJECTORY_CONTROLLER_UTILS_HPP_
