@@ -369,19 +369,21 @@ public:
 };
 
 // From the tutorial: https://www.sandordargo.com/blog/2019/04/24/parameterized-testing-with-gtest
-class TrajectoryControllerTestParameterized :
-  public TrajectoryControllerTest,
+class TrajectoryControllerTestParameterized
+  : public TrajectoryControllerTest,
   public ::testing::WithParamInterface<std::tuple<
-    std::vector<std::string>, std::vector<std::string>>>
+      std::vector<std::string>, std::vector<std::string>>>
 {
 public:
-  virtual void SetUp() {
+  virtual void SetUp()
+  {
     TrajectoryControllerTest::SetUp();
     command_interface_types_ = std::get<0>(GetParam());
     state_interface_types_ = std::get<1>(GetParam());
   }
 
-  static void TearDownTestCase() {
+  static void TearDownTestCase()
+  {
     TrajectoryControllerTest::TearDownTestCase();
   }
 };

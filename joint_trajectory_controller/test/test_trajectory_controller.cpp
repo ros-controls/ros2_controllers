@@ -528,12 +528,13 @@ TEST_P(TrajectoryControllerTestParameterized, test_partial_joint_list) {
     threshold) << "Joint 3 command should be current position";
 
   if (std::find(command_interface_types_.begin(), command_interface_types_.end(), "velocity") !=
-    command_interface_types_.end()) {
+    command_interface_types_.end())
+  {
     // TODO(anyone): need help here - we should at least estimate the sign of the velocity
 //     EXPECT_NEAR(traj_msg.points[0].velocities[1], joint_vel_[0], threshold);
 //     EXPECT_NEAR(traj_msg.points[0].velocities[0], joint_vel_[1], threshold);
-    EXPECT_NEAR(0.0, joint_vel_[2], threshold)
-      << "Joint 3 velocity should be 0.0 since it's not in the goal";
+    EXPECT_NEAR(0.0, joint_vel_[2], threshold) <<
+      "Joint 3 velocity should be 0.0 since it's not in the goal";
   }
   // TODO(anyone): add here ckecks for acceleration commands
 
@@ -591,23 +592,25 @@ TEST_P(TrajectoryControllerTestParameterized, test_partial_joint_list_not_allowe
     threshold) << "All joints command should be current position because goal was rejected";
 
   if (std::find(command_interface_types_.begin(), command_interface_types_.end(), "velocity") !=
-      command_interface_types_.end()) {
-    EXPECT_NEAR(initial_joint_vel, joint_vel_[0], threshold)
-      << "All joints velocities should be 0.0 because goal was rejected";
-    EXPECT_NEAR(initial_joint_vel, joint_vel_[1], threshold)
-      << "All joints velocities should be 0.0 because goal was rejected";
-    EXPECT_NEAR(initial_joint_vel, joint_vel_[2], threshold)
-      << "All joints velocities should be 0.0 because goal was rejected";
+    command_interface_types_.end())
+  {
+    EXPECT_NEAR(initial_joint_vel, joint_vel_[0], threshold) <<
+      "All joints velocities should be 0.0 because goal was rejected";
+    EXPECT_NEAR(initial_joint_vel, joint_vel_[1], threshold) <<
+      "All joints velocities should be 0.0 because goal was rejected";
+    EXPECT_NEAR(initial_joint_vel, joint_vel_[2], threshold) <<
+      "All joints velocities should be 0.0 because goal was rejected";
   }
 
   if (std::find(command_interface_types_.begin(), command_interface_types_.end(), "acceleration") !=
-    command_interface_types_.end()) {
-    EXPECT_NEAR(initial_joint_acc, joint_acc_[0], threshold)
-      << "All joints accelerations should be 0.0 because goal was rejected";
-    EXPECT_NEAR(initial_joint_acc, joint_acc_[1], threshold)
-      << "All joints accelerations should be 0.0 because goal was rejected";
-    EXPECT_NEAR(initial_joint_acc, joint_acc_[2], threshold)
-      << "All joints accelerations should be 0.0 because goal was rejected";
+    command_interface_types_.end())
+  {
+    EXPECT_NEAR(initial_joint_acc, joint_acc_[0], threshold) <<
+      "All joints accelerations should be 0.0 because goal was rejected";
+    EXPECT_NEAR(initial_joint_acc, joint_acc_[1], threshold) <<
+      "All joints accelerations should be 0.0 because goal was rejected";
+    EXPECT_NEAR(initial_joint_acc, joint_acc_[2], threshold) <<
+      "All joints accelerations should be 0.0 because goal was rejected";
   }
 
   executor.cancel();
@@ -821,12 +824,15 @@ INSTANTIATE_TEST_CASE_P(
   PositionTrajectoryControllers,
   TrajectoryControllerTestParameterized,
   ::testing::Values(
-    std::make_tuple(std::vector<std::string>({"position"}),
-                    std::vector<std::string>({"position"})),
-    std::make_tuple(std::vector<std::string>({"position"}),
-                    std::vector<std::string>({"position", "velocity"})),
-    std::make_tuple(std::vector<std::string>({"position"}),
-                    std::vector<std::string>({"position", "velocity", "acceleration"}))
+    std::make_tuple(
+      std::vector<std::string>({"position"}),
+      std::vector<std::string>({"position"})),
+    std::make_tuple(
+      std::vector<std::string>({"position"}),
+      std::vector<std::string>({"position", "velocity"})),
+    std::make_tuple(
+      std::vector<std::string>({"position"}),
+      std::vector<std::string>({"position", "velocity", "acceleration"}))
   )
 );
 
@@ -835,12 +841,15 @@ INSTANTIATE_TEST_CASE_P(
   PositionVelocityTrajectoryControllers,
   TrajectoryControllerTestParameterized,
   ::testing::Values(
-    std::make_tuple(std::vector<std::string>({"position", "velocity"}),
-                    std::vector<std::string>({"position"})),
-    std::make_tuple(std::vector<std::string>({"position", "velocity"}),
-                    std::vector<std::string>({"position", "velocity"})),
-    std::make_tuple(std::vector<std::string>({"position", "velocity"}),
-                    std::vector<std::string>({"position", "velocity", "acceleration"}))
+    std::make_tuple(
+      std::vector<std::string>({"position", "velocity"}),
+      std::vector<std::string>({"position"})),
+    std::make_tuple(
+      std::vector<std::string>({"position", "velocity"}),
+      std::vector<std::string>({"position", "velocity"})),
+    std::make_tuple(
+      std::vector<std::string>({"position", "velocity"}),
+      std::vector<std::string>({"position", "velocity", "acceleration"}))
   )
 );
 
@@ -849,10 +858,12 @@ INSTANTIATE_TEST_CASE_P(
   PositionVelocityAccelerationTrajectoryControllers,
   TrajectoryControllerTestParameterized,
   ::testing::Values(
-    std::make_tuple(std::vector<std::string>({"position", "velocity", "acceleration"}),
-                    std::vector<std::string>({"position"})),
-    std::make_tuple(std::vector<std::string>({"position", "velocity", "acceleration"}),
-                    std::vector<std::string>({"position", "velocity"}))  // ,
+    std::make_tuple(
+      std::vector<std::string>({"position", "velocity", "acceleration"}),
+      std::vector<std::string>({"position"})),
+    std::make_tuple(
+      std::vector<std::string>({"position", "velocity", "acceleration"}),
+      std::vector<std::string>({"position", "velocity"}))                // ,
 //     std::make_tuple(std::vector<std::string>({"position", "velocity", "acceleration"}),
 //                     std::vector<std::string>({"position", "velocity", "acceleration"}))
   )
