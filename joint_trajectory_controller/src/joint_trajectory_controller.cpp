@@ -1,4 +1,4 @@
-// Copyright 2017 Open Source Robotics Foundation, Inc.
+// Copyright (c) 2021 ros2_control Development Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -117,20 +117,34 @@ JointTrajectoryController::update()
   }
 
   auto resize_joint_trajectory_point =
-    [](trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size)
+    [&](trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size)
     {
       point.positions.resize(size);
       point.velocities.resize(size);
       point.accelerations.resize(size);
+      if (check_if_interface_type_exist(
+          state_interface_types_, hardware_interface::HW_IF_VELOCITY)) {
+        point.velocities.resize(size);
+      }
+      if (check_if_interface_type_exist(
+          state_interface_types_, hardware_interface::HW_IF_ACCELERATION)) {
+        point.accelerations.resize(size);
+      }
     };
-  auto compute_error_for_joint = [](JointTrajectoryPoint & error, int index,
+  auto compute_error_for_joint = [&](JointTrajectoryPoint & error, int index,
       const JointTrajectoryPoint & current, const JointTrajectoryPoint & desired)
     {
       // error defined as the difference between current and desired
       error.positions[index] = angles::shortest_angular_distance(
         current.positions[index], desired.positions[index]);
-      error.velocities[index] = desired.velocities[index] - current.velocities[index];
-      error.accelerations[index] = 0.0;
+      if (check_if_interface_type_exist(
+          state_interface_types_, hardware_interface::HW_IF_VELOCITY)) {
+        error.velocities[index] = desired.velocities[index] - current.velocities[index];
+      }
+      if (check_if_interface_type_exist(
+          state_interface_types_, hardware_interface::HW_IF_ACCELERATION)) {
+        error.accelerations[index] = desired.accelerations[index] - current.accelerations[index];
+      }
     };
 
   // Check if a new external message has been received from nonRT threads
@@ -146,12 +160,6 @@ JointTrajectoryController::update()
   const auto joint_num = joint_names_.size();
   resize_joint_trajectory_point(state_current, joint_num);
 
-  auto check_if_interface_type_exist =
-    [](const std::vector<std::string> & interface_type_list, const std::string & interface_type)
-    {
-      return std::find(interface_type_list.begin(), interface_type_list.end(), interface_type) !=
-             interface_type_list.end();
-    };
   auto assign_point_from_interface = [&, joint_num](
     std::vector<double> & trajectory_point_interface, const auto & joint_inteface)
     {
@@ -179,10 +187,8 @@ JointTrajectoryController::update()
   if (check_if_interface_type_exist(state_interface_types_, hardware_interface::HW_IF_VELOCITY)) {
     assign_point_from_interface(state_current.velocities, joint_state_interface_[1]);
     // Acceleration is used only in combination with velocity
-    if (check_if_interface_type_exist(
-        state_interface_types_,
-        hardware_interface::HW_IF_ACCELERATION))
-    {
+    if (check_if_interface_type_exist(state_interface_types_,
+                                      hardware_interface::HW_IF_ACCELERATION)) {
       assign_point_from_interface(state_current.accelerations, joint_state_interface_[2]);
     } else {
       // Make empty so the property is ignored during interpolation
@@ -366,12 +372,6 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
   // 1. effort
   // 2. velocity
   // 2. position [velocity, [acceleration]]
-  auto check_if_interface_type_exist =
-    [](const std::vector<std::string> & interface_type_list, const std::string & interface_type)
-    {
-      return std::find(interface_type_list.begin(), interface_type_list.end(), interface_type) !=
-             interface_type_list.end();
-    };
 
   // effort can't be combined with other interfaces
   if (check_if_interface_type_exist(command_interface_types_, hardware_interface::HW_IF_EFFORT)) {
@@ -495,7 +495,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
   const double state_publish_rate =
     node_->get_parameter("state_publish_rate").get_value<double>();
   RCLCPP_INFO(
-    logger, "Controller state will be published at %f.2 Hz.", state_publish_rate);
+    logger, "Controller state will be published at %.2f Hz.", state_publish_rate);
   if (state_publish_rate > 0.0) {
     state_publisher_period_ =
       rclcpp::Duration::from_seconds(1.0 / state_publish_rate);
@@ -515,9 +515,16 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
   state_publisher_->msg_.desired.velocities.resize(n_joints);
   state_publisher_->msg_.desired.accelerations.resize(n_joints);
   state_publisher_->msg_.actual.positions.resize(n_joints);
-  state_publisher_->msg_.actual.velocities.resize(n_joints);
   state_publisher_->msg_.error.positions.resize(n_joints);
-  state_publisher_->msg_.error.velocities.resize(n_joints);
+  if (check_if_interface_type_exist(state_interface_types_, hardware_interface::HW_IF_VELOCITY)) {
+    state_publisher_->msg_.actual.velocities.resize(n_joints);
+    state_publisher_->msg_.error.velocities.resize(n_joints);
+  }
+  if (check_if_interface_type_exist(state_interface_types_, hardware_interface::HW_IF_ACCELERATION))
+  {
+    state_publisher_->msg_.actual.accelerations.resize(n_joints);
+    state_publisher_->msg_.error.accelerations.resize(n_joints);
+  }
   state_publisher_->unlock();
 
   last_state_publish_time_ = node_->now();
@@ -533,7 +540,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
     .get_value<double>();
 
   RCLCPP_INFO(
-    logger, "Action status changes will be monitored at %f.2 Hz.", action_monitor_rate);
+    logger, "Action status changes will be monitored at %.2f Hz.", action_monitor_rate);
   action_monitor_period_ = rclcpp::Duration::from_seconds(1.0 / action_monitor_rate);
 
   using namespace std::placeholders;
@@ -583,7 +590,7 @@ JointTrajectoryController::on_activate(const rclcpp_lifecycle::State &)
         command_interfaces_, joint_names_, interface, joint_command_interface_[index]))
     {
       RCLCPP_ERROR(
-        node_->get_logger(), "Expected %u %s command interfaces, got %u",
+        node_->get_logger(), "Expected %u '%s' command interfaces, got %u.",
         joint_names_.size(), interface.c_str(), joint_command_interface_[index].size());
         return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
     }
@@ -596,7 +603,7 @@ JointTrajectoryController::on_activate(const rclcpp_lifecycle::State &)
         state_interfaces_, joint_names_, interface, joint_state_interface_[index]))
     {
       RCLCPP_ERROR(
-        node_->get_logger(), "Expected %u %s state interfaces, got %u",
+        node_->get_logger(), "Expected %u '%s' state interfaces, got %u.",
         joint_names_.size(), interface.c_str(), joint_state_interface_[index].size());
       return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
     }
@@ -717,9 +724,16 @@ void JointTrajectoryController::publish_state(
     state_publisher_->msg_.desired.velocities = desired_state.velocities;
     state_publisher_->msg_.desired.accelerations = desired_state.accelerations;
     state_publisher_->msg_.actual.positions = current_state.positions;
-    state_publisher_->msg_.actual.velocities = current_state.velocities;
     state_publisher_->msg_.error.positions = state_error.positions;
-    state_publisher_->msg_.error.velocities = state_error.velocities;
+    if (check_if_interface_type_exist(state_interface_types_, hardware_interface::HW_IF_VELOCITY)) {
+      state_publisher_->msg_.actual.velocities = current_state.velocities;
+      state_publisher_->msg_.error.velocities = state_error.velocities;
+    }
+    if (check_if_interface_type_exist(
+      state_interface_types_, hardware_interface::HW_IF_ACCELERATION)) {
+      state_publisher_->msg_.actual.accelerations = current_state.accelerations;
+      state_publisher_->msg_.error.accelerations = state_error.accelerations;
+    }
 
     state_publisher_->unlockAndPublish();
   }

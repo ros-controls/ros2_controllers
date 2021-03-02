@@ -31,6 +31,10 @@ const double COMMON_THRESHOLD = 0.001;
 const double INITIAL_POS_JOINT1 = 1.1;
 const double INITIAL_POS_JOINT2 = 2.1;
 const double INITIAL_POS_JOINT3 = 3.1;
+const std::vector<double> INITIAL_POS_JOINTS = {
+  INITIAL_POS_JOINT1, INITIAL_POS_JOINT2, INITIAL_POS_JOINT3};
+const std::vector<double> INITIAL_VEL_JOINTS = {0.0, 0.0, 0.0};
+const std::vector<double> INITIAL_ACC_JOINTS = {0.0, 0.0, 0.0};
 }
 
 namespace test_trajectory_controllers
@@ -89,7 +93,7 @@ public:
 
 class TrajectoryControllerTest : public ::testing::Test
 {
-protected:
+public:
   static void SetUpTestCase()
   {
     rclcpp::init(0, nullptr);
@@ -102,6 +106,8 @@ protected:
     joint_names_ = {"joint1", "joint2", "joint3"};
     joint_pos_.resize(joint_names_.size(), 0.0);
     joint_vel_.resize(joint_names_.size(), 0.0);
+    joint_acc_.resize(joint_names_.size(), 0.0);
+    // Default interface values - they will be overwritten by parameterized tests
     command_interface_types_ = {"position"};
     state_interface_types_ = {"position", "velocity"};
 
@@ -161,33 +167,49 @@ protected:
     std::vector<hardware_interface::LoanedCommandInterface> cmd_interfaces;
     std::vector<hardware_interface::LoanedStateInterface> state_interfaces;
     pos_cmd_interfaces_.reserve(joint_names_.size());
+    vel_cmd_interfaces_.reserve(joint_names_.size());
+    acc_cmd_interfaces_.reserve(joint_names_.size());
     pos_state_interfaces_.reserve(joint_names_.size());
     vel_state_interfaces_.reserve(joint_names_.size());
+    acc_state_interfaces_.reserve(joint_names_.size());
     for (size_t i = 0; i < joint_names_.size(); ++i) {
       pos_cmd_interfaces_.emplace_back(
         hardware_interface::CommandInterface(
           joint_names_[i],
           hardware_interface::HW_IF_POSITION, &joint_pos_[i]));
+      vel_cmd_interfaces_.emplace_back(
+        hardware_interface::CommandInterface(
+          joint_names_[i],
+          hardware_interface::HW_IF_VELOCITY, &joint_vel_[i]));
+      acc_cmd_interfaces_.emplace_back(
+        hardware_interface::CommandInterface(
+          joint_names_[i],
+          hardware_interface::HW_IF_ACCELERATION, &joint_acc_[i]));
 
       pos_state_interfaces_.emplace_back(
         hardware_interface::StateInterface(
           joint_names_[i],
           hardware_interface::HW_IF_POSITION, &joint_pos_[i]));
-
       vel_state_interfaces_.emplace_back(
         hardware_interface::StateInterface(
           joint_names_[i],
           hardware_interface::HW_IF_VELOCITY, &joint_vel_[i]));
+      acc_state_interfaces_.emplace_back(
+        hardware_interface::StateInterface(
+          joint_names_[i],
+          hardware_interface::HW_IF_ACCELERATION, &joint_acc_[i]));
 
+      // Add to export lists and set initial values
       cmd_interfaces.emplace_back(pos_cmd_interfaces_.back());
+      cmd_interfaces.back().set_value(INITIAL_POS_JOINTS[i]);
+      cmd_interfaces.emplace_back(vel_cmd_interfaces_.back());
+      cmd_interfaces.back().set_value(INITIAL_VEL_JOINTS[i]);
+      cmd_interfaces.emplace_back(acc_cmd_interfaces_.back());
+      cmd_interfaces.back().set_value(INITIAL_ACC_JOINTS[i]);
       state_interfaces.emplace_back(pos_state_interfaces_.back());
       state_interfaces.emplace_back(vel_state_interfaces_.back());
+      state_interfaces.emplace_back(acc_state_interfaces_.back());
     }
-
-    // Set initial position
-    cmd_interfaces[0].set_value(INITIAL_POS_JOINT1);
-    cmd_interfaces[1].set_value(INITIAL_POS_JOINT2);
-    cmd_interfaces[2].set_value(INITIAL_POS_JOINT3);
 
     traj_controller_->assign_interfaces(std::move(cmd_interfaces), std::move(state_interfaces));
     traj_controller_->activate();
@@ -301,11 +323,13 @@ protected:
     ASSERT_TRUE(state_msg);
     for (size_t i = 0; i < expected_actual.positions.size(); ++i) {
       SCOPED_TRACE("Joint " + std::to_string(i));
+      // TODO: add checking for velocties and accelerations
       EXPECT_NEAR(expected_actual.positions[i], state_msg->actual.positions[i], allowed_delta);
     }
 
     for (size_t i = 0; i < expected_desired.positions.size(); ++i) {
       SCOPED_TRACE("Joint " + std::to_string(i));
+      // TODO: add checking for velocties and accelerations
       EXPECT_NEAR(expected_desired.positions[i], state_msg->desired.positions[i], allowed_delta);
     }
   }
@@ -335,9 +359,31 @@ protected:
 
   std::vector<double> joint_pos_;
   std::vector<double> joint_vel_;
+  std::vector<double> joint_acc_;
   std::vector<hardware_interface::CommandInterface> pos_cmd_interfaces_;
+  std::vector<hardware_interface::CommandInterface> vel_cmd_interfaces_;
+  std::vector<hardware_interface::CommandInterface> acc_cmd_interfaces_;
   std::vector<hardware_interface::StateInterface> pos_state_interfaces_;
   std::vector<hardware_interface::StateInterface> vel_state_interfaces_;
+  std::vector<hardware_interface::StateInterface> acc_state_interfaces_;
+};
+
+// From the tutorial: https://www.sandordargo.com/blog/2019/04/24/parameterized-testing-with-gtest
+class TrajectoryControllerTestParameterized :
+  public TrajectoryControllerTest,
+  public ::testing::WithParamInterface<std::tuple<
+    std::vector<std::string>, std::vector<std::string>>>
+{
+public:
+  virtual void SetUp() {
+    TrajectoryControllerTest::SetUp();
+    command_interface_types_ = std::get<0>(GetParam());
+    state_interface_types_ = std::get<1>(GetParam());
+  }
+
+  static void TearDownTestCase() {
+    TrajectoryControllerTest::TearDownTestCase();
+  }
 };
 
 }  // namespace test_trajectory_controllers

@@ -1,4 +1,4 @@
-// Copyright 2017 Open Source Robotics Foundation, Inc.
+// Copyright (c) 2021 ros2_control Development Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -42,10 +42,6 @@
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
-namespace hardware_interface
-{
-class RobotHardware;
-}  // namespace hardware_interface
 namespace rclcpp_action
 {
 template<typename ActionT>
@@ -220,9 +216,12 @@ protected:
     const JointTrajectoryPoint & state_error);
 
 private:
-  void assign_point_value(
-    const std::vector<std::string> & interface_types,
-    std::vector<double> & point_values);
+  bool check_if_interface_type_exist(
+    const std::vector<std::string> & interface_type_list, const std::string & interface_type)
+  {
+    return std::find(interface_type_list.begin(), interface_type_list.end(), interface_type) !=
+           interface_type_list.end();
+  }
 };
 
 }  // namespace joint_trajectory_controller
