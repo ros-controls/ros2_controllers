@@ -25,6 +25,7 @@
 
 
 #include "force_torque_sensor_controller/visibility_control.h"
+#include <geometry_msgs/msg/wrench_stamped.hpp>
 
 namespace force_torque_sensor_controller
 {
@@ -58,8 +59,13 @@ public:
   controller_interface::return_type update() override;
 
 protected:
-  std::vector<std::string> joint_names_;
-  std::vector<std::string> interface_names_;
+  std::string sensor_name_;
+  std::vector<std::string> state_interface_names_;
+  std::string frame_id_;
+  int fx_range_;
+  int tz_range_;
+  std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::WrenchStamped>> sensor_state_publisher_;
+  geometry_msgs::msg::WrenchStamped wrench_state_msg_;
 };
 
 }  // namespace force_torque_sensor_controller
