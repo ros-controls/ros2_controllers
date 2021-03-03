@@ -36,7 +36,7 @@ ForceTorqueSensorController::init(const std::string & controller_name)
   try {
     auto node = get_node();
     node->declare_parameter<std::string>("sensor_name", "");
-    node->declare_parameter<std::vector<std::string>>("state_interface_names", {});
+    node->declare_parameter<std::vector<std::string>>("interface_names", {});
     node->declare_parameter<std::string>("frame_id", "");
   } catch (const std::exception & e) {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
