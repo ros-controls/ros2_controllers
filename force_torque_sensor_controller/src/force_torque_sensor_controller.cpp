@@ -77,6 +77,9 @@ CallbackReturn ForceTorqueSensorController::on_configure(
     return CallbackReturn::ERROR;
   }
 
+  wrench_state_msg_.header.stamp = node_->now();
+  wrench_state_msg_.header.frame_id = frame_id_;
+
   return CallbackReturn::SUCCESS;
 }
 
@@ -134,9 +137,6 @@ controller_interface::return_type ForceTorqueSensorController::update()
         break;
     }
   }
-
-  wrench_state_msg_.header.stamp = get_node()->get_clock()->now();
-  wrench_state_msg_.header.frame_id = frame_id_;
 
   // update wrench state message
   wrench_state_msg_.wrench.set__force(f_vec);
