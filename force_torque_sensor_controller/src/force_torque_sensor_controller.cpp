@@ -67,18 +67,6 @@ CallbackReturn ForceTorqueSensorController::on_configure(
     return CallbackReturn::ERROR;
   }
 
-  fx_range_ = node_->get_parameter("fx_range").as_int();
-  if (fx_range_ == -1) {
-    RCLCPP_ERROR(get_node()->get_logger(), "'fx_range' parameter was empty");
-    return CallbackReturn::ERROR;
-  }
-
-  tz_range_ = node_->get_parameter("tz_range").as_int();
-  if (tz_range_ == -1) {
-    RCLCPP_ERROR(get_node()->get_logger(), "'tz_range' parameter was empty");
-    return CallbackReturn::ERROR;
-  }
-
   RCLCPP_INFO_STREAM(get_node()->get_logger(), "configure successful");
 
   try {
@@ -107,7 +95,7 @@ ForceTorqueSensorController::state_interface_configuration() const
   controller_interface::InterfaceConfiguration state_interfaces_config;
   state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
 
-  for (const auto & interface : state_interface_names_) {
+  for (const auto & interface : interface_names_) {
     state_interfaces_config.names.push_back(sensor_name_ + "/" + interface);
   }
 
@@ -131,7 +119,7 @@ controller_interface::return_type ForceTorqueSensorController::update()
   geometry_msgs::msg::Vector3 f_vec;
   geometry_msgs::msg::Vector3 t_vec;
 
-  if (state_interfaces_.size() != state_interface_names_.size())
+  if (state_interfaces_.size() != interface_names_.size())
     return controller_interface::return_type::ERROR;
 
   for (auto index = 0ul; index < state_interfaces_.size(); ++index) {
