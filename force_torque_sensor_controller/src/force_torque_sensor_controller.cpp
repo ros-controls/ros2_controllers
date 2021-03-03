@@ -49,9 +49,9 @@ ForceTorqueSensorController::init(const std::string & controller_name)
 CallbackReturn ForceTorqueSensorController::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  state_interface_names_ = node_->get_parameter("state_interface_names").as_string_array();
-  if (state_interface_names_.empty()) {
-    RCLCPP_ERROR(get_node()->get_logger(), "'state_interface_names' parameter was empty");
+  interface_names_ = node_->get_parameter("interface_names").as_string_array();
+  if (interface_names_.empty()) {
+    RCLCPP_ERROR(get_node()->get_logger(), "'interface_names' parameter was empty");
     return CallbackReturn::ERROR;
   }
 
