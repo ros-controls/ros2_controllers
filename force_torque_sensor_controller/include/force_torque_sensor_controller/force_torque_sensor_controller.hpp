@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #ifndef FORCE_TORQUE_SENSOR_CONTROLLER__FORCE_TORQUE_SENSOR_CONTROLLER_HPP_
 #define FORCE_TORQUE_SENSOR_CONTROLLER__FORCE_TORQUE_SENSOR_CONTROLLER_HPP_
 
