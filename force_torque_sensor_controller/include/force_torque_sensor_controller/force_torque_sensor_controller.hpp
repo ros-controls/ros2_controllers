@@ -61,8 +61,6 @@ protected:
   std::string sensor_name_;
   std::vector<std::string> state_interface_names_;
   std::string frame_id_;
-  int fx_range_;
-  int tz_range_;
   std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::WrenchStamped>> sensor_state_publisher_;
   geometry_msgs::msg::WrenchStamped wrench_state_msg_;
 };
