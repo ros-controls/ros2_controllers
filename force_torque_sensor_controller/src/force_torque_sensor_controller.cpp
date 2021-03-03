@@ -72,7 +72,7 @@ CallbackReturn ForceTorqueSensorController::on_configure(
   try {
     // register ft sensor data publisher
     sensor_state_publisher_ = get_node()->create_publisher<geometry_msgs::msg::WrenchStamped>(
-        "force_torque_sensor", rclcpp::SystemDefaultsQoS());
+      "force_torque_sensor", rclcpp::SystemDefaultsQoS());
   } catch (...) {
     return CallbackReturn::ERROR;
   }
@@ -119,8 +119,9 @@ CallbackReturn ForceTorqueSensorController::on_deactivate(
 
 controller_interface::return_type ForceTorqueSensorController::update()
 {
-  if (state_interfaces_.size() != interface_names_.size())
+  if (state_interfaces_.size() != interface_names_.size()) {
     return controller_interface::return_type::ERROR;
+  }
 
   for (auto index = 0ul; index < state_interfaces_.size(); ++index) {
     switch (index) {
