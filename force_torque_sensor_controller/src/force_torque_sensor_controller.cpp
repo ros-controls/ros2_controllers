@@ -119,28 +119,21 @@ CallbackReturn ForceTorqueSensorController::on_deactivate(
 
 controller_interface::return_type ForceTorqueSensorController::update()
 {
-  geometry_msgs::msg::Vector3 f_vec;
-  geometry_msgs::msg::Vector3 t_vec;
-
   if (state_interfaces_.size() != interface_names_.size())
     return controller_interface::return_type::ERROR;
 
   for (auto index = 0ul; index < state_interfaces_.size(); ++index) {
     switch (index) {
       case 0:
-        f_vec.set__x(state_interfaces_[index].get_value());
+        wrench_state_msg_.wrench.force.x = state_interfaces_[index].get_value();
         break;
       case 1:
-        t_vec.set__z(state_interfaces_[index].get_value());
+        wrench_state_msg_.wrench.torque.z = state_interfaces_[index].get_value();
         break;
       default:
         break;
     }
   }
-
-  // update wrench state message
-  wrench_state_msg_.wrench.set__force(f_vec);
-  wrench_state_msg_.wrench.set__torque(t_vec);
 
   // publish
   sensor_state_publisher_->publish(wrench_state_msg_);
