@@ -15,6 +15,7 @@
 #ifndef FORCE_TORQUE_SENSOR_CONTROLLER__FORCE_TORQUE_SENSOR_CONTROLLER_HPP_
 #define FORCE_TORQUE_SENSOR_CONTROLLER__FORCE_TORQUE_SENSOR_CONTROLLER_HPP_
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -23,6 +24,7 @@
 #include "geometry_msgs/msg/wrench_stamped.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
+#include "realtime_tools/realtime_publisher.h"
 
 namespace force_torque_sensor_controller
 {
@@ -61,6 +63,12 @@ protected:
   std::string frame_id_;
   std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::WrenchStamped>> sensor_state_publisher_;
   geometry_msgs::msg::WrenchStamped wrench_state_msg_;
+
+  using ControllerStateMsg = geometry_msgs::msg::WrenchStamped;
+  using StatePublisher = realtime_tools::RealtimePublisher<ControllerStateMsg>;
+  using StatePublisherPtr = std::unique_ptr<StatePublisher>;
+  rclcpp::Publisher<ControllerStateMsg>::SharedPtr publisher_;
+  StatePublisherPtr state_publisher_;
 };
 
 }  // namespace force_torque_sensor_controller

@@ -71,14 +71,16 @@ CallbackReturn ForceTorqueSensorController::on_configure(
 
   try {
     // register ft sensor data publisher
-    sensor_state_publisher_ = get_node()->create_publisher<geometry_msgs::msg::WrenchStamped>(
+    publisher_ = node_->create_publisher<ControllerStateMsg>(
       "force_torque_sensor", rclcpp::SystemDefaultsQoS());
+    state_publisher_ = std::make_unique<StatePublisher>(publisher_);
   } catch (...) {
     return CallbackReturn::ERROR;
   }
 
-  wrench_state_msg_.header.stamp = node_->now();
-  wrench_state_msg_.header.frame_id = frame_id_;
+  state_publisher_->lock();
+  state_publisher_->msg_.header.frame_id = frame_id_;
+  state_publisher_->unlock();
 
   return CallbackReturn::SUCCESS;
 }
@@ -138,6 +140,13 @@ controller_interface::return_type ForceTorqueSensorController::update()
 
   // publish
   sensor_state_publisher_->publish(wrench_state_msg_);
+  if (state_publisher_ && state_publisher_->trylock()) {
+    state_publisher_->msg_.header.stamp = node_->now();
+    state_publisher_->msg_.wrench.force = wrench_state_msg_.wrench.force;
+    state_publisher_->msg_.wrench.torque = wrench_state_msg_.wrench.torque;
+
+    state_publisher_->unlockAndPublish();
+  }
 
   return controller_interface::return_type::SUCCESS;
 }
