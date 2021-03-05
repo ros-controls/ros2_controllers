@@ -14,6 +14,7 @@
 
 #include "force_torque_sensor_controller/force_torque_sensor_controller.hpp"
 
+#include <memory>
 #include <string>
 #include <vector>
 
