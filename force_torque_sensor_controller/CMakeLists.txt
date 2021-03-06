@@ -13,11 +13,12 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(controller_interface REQUIRED)
+find_package(geometry_msgs REQUIRED)
 find_package(hardware_interface REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
-find_package(geometry_msgs REQUIRED)
+find_package(realtime_tools REQUIRED)
 
 add_library(
   force_torque_sensor_controller
@@ -31,12 +32,13 @@ target_include_directories(
 )
 ament_target_dependencies(
   force_torque_sensor_controller
+  geometry_msgs
   controller_interface
   hardware_interface
   pluginlib
   rclcpp
   rclcpp_lifecycle
-  geometry_msgs
+  realtime_tools
 )
 # prevent pluginlib from using boost
 target_compile_definitions(force_torque_sensor_controller PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
@@ -77,6 +79,7 @@ if(BUILD_TESTING)
     test_force_torque_sensor_controller
     controller_manager
     hardware_interface
+    realtime_tools
     ros2_control_test_assets
   )
 endif()
