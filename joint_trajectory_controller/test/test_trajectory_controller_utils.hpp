@@ -17,6 +17,7 @@
 
 #include <memory>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -323,13 +324,13 @@ public:
     ASSERT_TRUE(state_msg);
     for (size_t i = 0; i < expected_actual.positions.size(); ++i) {
       SCOPED_TRACE("Joint " + std::to_string(i));
-      // TODO: add checking for velocties and accelerations
+      // TODO(anyone): add checking for velocties and accelerations
       EXPECT_NEAR(expected_actual.positions[i], state_msg->actual.positions[i], allowed_delta);
     }
 
     for (size_t i = 0; i < expected_desired.positions.size(); ++i) {
       SCOPED_TRACE("Joint " + std::to_string(i));
-      // TODO: add checking for velocties and accelerations
+      // TODO(anyone): add checking for velocties and accelerations
       EXPECT_NEAR(expected_desired.positions[i], state_msg->desired.positions[i], allowed_delta);
     }
   }

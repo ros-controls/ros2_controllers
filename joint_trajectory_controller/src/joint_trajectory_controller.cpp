@@ -138,12 +138,16 @@ JointTrajectoryController::update()
       error.positions[index] = angles::shortest_angular_distance(
         current.positions[index], desired.positions[index]);
       if (check_if_interface_type_exists(
-          state_interface_types_, hardware_interface::HW_IF_VELOCITY))
+          state_interface_types_, hardware_interface::HW_IF_VELOCITY) &&
+        check_if_interface_type_exists(
+          command_interface_types_, hardware_interface::HW_IF_VELOCITY))
       {
         error.velocities[index] = desired.velocities[index] - current.velocities[index];
       }
       if (check_if_interface_type_exists(
-          state_interface_types_, hardware_interface::HW_IF_ACCELERATION))
+          state_interface_types_, hardware_interface::HW_IF_ACCELERATION) &&
+        check_if_interface_type_exists(
+          command_interface_types_, hardware_interface::HW_IF_ACCELERATION))
       {
         error.accelerations[index] = desired.accelerations[index] - current.accelerations[index];
       }
@@ -241,7 +245,7 @@ JointTrajectoryController::update()
       {
         assign_interface_from_point(joint_command_interface_[2], state_desired.accelerations);
       }
-      // TODO(anyone): Add here "if using_closed_loop_hw_interface_adapter (see ROS')
+      // TODO(anyone): Add here "if using_closed_loop_hw_interface_adapter (see ROS1)
 //       if (check_if_interface_type_exist(
 //           command_interface_types_, hardware_interface::HW_IF_EFFORT)) {
 //         assign_interface_from_point(joint_command_interface_[3], state_desired.effort);
@@ -750,7 +754,9 @@ void JointTrajectoryController::publish_state(
     state_publisher_->msg_.desired.accelerations = desired_state.accelerations;
     state_publisher_->msg_.actual.positions = current_state.positions;
     state_publisher_->msg_.error.positions = state_error.positions;
-    if (check_if_interface_type_exists(state_interface_types_, hardware_interface::HW_IF_VELOCITY)) {
+    if (check_if_interface_type_exists(
+        state_interface_types_, hardware_interface::HW_IF_VELOCITY))
+    {
       state_publisher_->msg_.actual.velocities = current_state.velocities;
       state_publisher_->msg_.error.velocities = state_error.velocities;
     }

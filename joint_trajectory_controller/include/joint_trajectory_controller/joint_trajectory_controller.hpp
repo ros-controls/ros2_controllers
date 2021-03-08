@@ -115,7 +115,7 @@ protected:
 
   // To reduce number of variables and to make the code shorter the interfaces are ordered in types
   // as the following constants
-  constexpr static auto allowed_interface_types_ = {
+  const std::vector<std::string> allowed_interface_types_ = {
     hardware_interface::HW_IF_POSITION,
     hardware_interface::HW_IF_VELOCITY,
     hardware_interface::HW_IF_ACCELERATION,

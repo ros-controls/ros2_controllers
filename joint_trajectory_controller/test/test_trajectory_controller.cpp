@@ -120,28 +120,30 @@ TEST_P(TrajectoryControllerTestParameterized, configure) {
   executor.cancel();
 }
 
-// TEST_P(TrajectoryControllerTestParameterized, activate) {
-//   SetUpTrajectoryController();
-//
-//   rclcpp::executors::MultiThreadedExecutor executor;
-//   executor.add_node(traj_controller_->get_node()->get_node_base_interface());
-//   const auto future_handle_ = std::async(std::launch::async, spin, &executor);
-//
-//   traj_controller_->configure();
-//   ASSERT_EQ(traj_controller_->get_current_state().id(), State::PRIMARY_STATE_INACTIVE);
-//
-//   auto cmd_interface_config = traj_controller_->command_interface_configuration();
-//   ASSERT_EQ(cmd_interface_config.names.size(), joint_names_.size()*command_interface_types_.size());
-//
-//   auto state_interface_config = traj_controller_->state_interface_configuration();
-//   ASSERT_EQ(state_interface_config.names.size(), joint_names_.size()*state_interface_types_.size());
-//
-//   ActivateTrajectoryController();
-//   ASSERT_EQ(traj_controller_->get_current_state().id(), State::PRIMARY_STATE_ACTIVE);
-//
-//   executor.cancel();
-//   std::cout << "Test end " << std::endl;
-// }
+TEST_P(TrajectoryControllerTestParameterized, activate) {
+  SetUpTrajectoryController();
+
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(traj_controller_->get_node()->get_node_base_interface());
+
+  traj_controller_->configure();
+  ASSERT_EQ(traj_controller_->get_current_state().id(), State::PRIMARY_STATE_INACTIVE);
+
+  auto cmd_interface_config = traj_controller_->command_interface_configuration();
+  ASSERT_EQ(
+    cmd_interface_config.names.size(),
+    joint_names_.size() * command_interface_types_.size());
+
+  auto state_interface_config = traj_controller_->state_interface_configuration();
+  ASSERT_EQ(
+    state_interface_config.names.size(),
+    joint_names_.size() * state_interface_types_.size());
+
+  ActivateTrajectoryController();
+  ASSERT_EQ(traj_controller_->get_current_state().id(), State::PRIMARY_STATE_ACTIVE);
+
+  executor.cancel();
+}
 
 // TODO(bmagyar): This seems to be implemented. Can we delete this?
 // TEST_F(TestTrajectoryController, activation) {
@@ -287,6 +289,8 @@ TEST_P(TrajectoryControllerTestParameterized, cleanup) {
   EXPECT_NEAR(INITIAL_POS_JOINT1, joint_pos_[0], COMMON_THRESHOLD);
   EXPECT_NEAR(INITIAL_POS_JOINT2, joint_pos_[1], COMMON_THRESHOLD);
   EXPECT_NEAR(INITIAL_POS_JOINT3, joint_pos_[2], COMMON_THRESHOLD);
+
+  executor.cancel();
 }
 
 TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_parameters) {
@@ -356,6 +360,7 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
 
   state = traj_controller_->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+
   executor.cancel();
 }
 
