@@ -36,7 +36,7 @@ const std::vector<double> INITIAL_POS_JOINTS = {
   INITIAL_POS_JOINT1, INITIAL_POS_JOINT2, INITIAL_POS_JOINT3};
 const std::vector<double> INITIAL_VEL_JOINTS = {0.0, 0.0, 0.0};
 const std::vector<double> INITIAL_ACC_JOINTS = {0.0, 0.0, 0.0};
-}
+}  // namespace
 
 namespace test_trajectory_controllers
 {

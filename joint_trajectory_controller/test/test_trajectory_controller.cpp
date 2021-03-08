@@ -727,7 +727,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_old_trajectory) {
   SetUpAndActivateTrajectoryController(true, {}, &executor);
   subscribeToState();
 
-  // TODO: add expectations for velocties and accelerations
+  // TODO(anyone): add expectations for velocities and accelerations
   std::vector<std::vector<double>> points_old {{{2., 3., 4.}, {4., 5., 6.}}};
   std::vector<std::vector<double>> points_new {{{-1., -2., -3.}}};
 
@@ -868,13 +868,14 @@ INSTANTIATE_TEST_CASE_P(
       std::vector<std::string>({"position"})),
     std::make_tuple(
       std::vector<std::string>({"position", "velocity", "acceleration"}),
-      std::vector<std::string>({"position", "velocity"}))                // ,
-//     std::make_tuple(std::vector<std::string>({"position", "velocity", "acceleration"}),
-//                     std::vector<std::string>({"position", "velocity", "acceleration"}))
+      std::vector<std::string>({"position", "velocity"}))  // ,
+//     std::make_tuple(
+//       std::vector<std::string>({"position", "velocity", "acceleration"}),
+//       std::vector<std::string>({"position", "velocity", "acceleration"}))
   )
 );
 
-// TODO: Add incorrect interface parameters
+// TODO(denis): Add incorrect interface parameters
 TEST_F(TrajectoryControllerTest, incorrect_initialization_using_wrong_parameters) {
   SetUpTrajectoryController(false);
 
