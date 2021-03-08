@@ -4,8 +4,8 @@ Joint Trajectory Controller(s)
 
 The controller expects at least position feedback from the hardware.
 Joint velocities and accelerations are optional.
-Currently the controller does not internal integrate velocity from acceleration and position from velocity.
-Therefore if the hardware provides only acceleration or velocity states they have to be integrated in the hardware-interface implementation ot velocitiy and position to use this controllers.
+Currently the controller does not internally integrate velocity from acceleration and position from velocity.
+Therefore if the hardware provides only acceleration or velocity states they have to be integrated in the hardware-interface implementation ot velocitiy and position to use these controllers.
 
 The controller types are placed into namespaces according to their command types for the hardware (see `general introduction into controllers <../../index.rst>`_).
 
@@ -31,7 +31,7 @@ The following version of the Joint Trajectory Controller are available mapping t
 
 The controller uses `common hardware interface definitions`_.
 
-(*Not implemented yet*) When using a pure ``velocity`` or ``effort`` controllers a command is generated using the desired state and state error using a velocity feedforward term puls a corrective PID term.
+(*Not implemented yet*) When using a pure ``velocity`` or ``effort`` controllers a command is generated using the desired state and state error using a velocity feedforward term plus a corrective PID term.
 
 A yaml file for joint trajectory controllers looks something like:
 

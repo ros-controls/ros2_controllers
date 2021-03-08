@@ -115,12 +115,6 @@ protected:
 
   // To reduce number of variables and to make the code shorter the interfaces are ordered in types
   // as the following constants
-  constexpr static auto allowed_state_interface_types_ = {
-    hardware_interface::HW_IF_POSITION,
-    hardware_interface::HW_IF_VELOCITY,
-    hardware_interface::HW_IF_ACCELERATION,
-  };
-  // TODO(denis): rename to allowed_command_interface_tpes
   constexpr static auto allowed_interface_types_ = {
     hardware_interface::HW_IF_POSITION,
     hardware_interface::HW_IF_VELOCITY,
@@ -136,8 +130,7 @@ protected:
   std::vector<std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>>>
   joint_state_interface_;
 
-  /* If used a command given the desired state and state error using velocity feedforward term plus a corrective PID term is used
-   */
+  /// If true, a velocity feedforward term plus corrective PID term is used
   bool use_closed_loop_pid_adapter = false;
 
   // TODO(karsten1987): eventually activate and deactive subscriber directly when its supported
@@ -216,7 +209,7 @@ protected:
     const JointTrajectoryPoint & state_error);
 
 private:
-  bool check_if_interface_type_exist(
+  bool check_if_interface_type_exists(
     const std::vector<std::string> & interface_type_list, const std::string & interface_type)
   {
     return std::find(interface_type_list.begin(), interface_type_list.end(), interface_type) !=

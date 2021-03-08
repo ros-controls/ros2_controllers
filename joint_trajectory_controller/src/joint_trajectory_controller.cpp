@@ -120,14 +120,12 @@ JointTrajectoryController::update()
     [&](trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size)
     {
       point.positions.resize(size);
-      point.velocities.resize(size);
-      point.accelerations.resize(size);
-      if (check_if_interface_type_exist(
+      if (check_if_interface_type_exists(
           state_interface_types_, hardware_interface::HW_IF_VELOCITY))
       {
         point.velocities.resize(size);
       }
-      if (check_if_interface_type_exist(
+      if (check_if_interface_type_exists(
           state_interface_types_, hardware_interface::HW_IF_ACCELERATION))
       {
         point.accelerations.resize(size);
@@ -139,12 +137,12 @@ JointTrajectoryController::update()
       // error defined as the difference between current and desired
       error.positions[index] = angles::shortest_angular_distance(
         current.positions[index], desired.positions[index]);
-      if (check_if_interface_type_exist(
+      if (check_if_interface_type_exists(
           state_interface_types_, hardware_interface::HW_IF_VELOCITY))
       {
         error.velocities[index] = desired.velocities[index] - current.velocities[index];
       }
-      if (check_if_interface_type_exist(
+      if (check_if_interface_type_exists(
           state_interface_types_, hardware_interface::HW_IF_ACCELERATION))
       {
         error.accelerations[index] = desired.accelerations[index] - current.accelerations[index];
@@ -188,10 +186,10 @@ JointTrajectoryController::update()
   // Position states always exist
   assign_point_from_interface(state_current.positions, joint_state_interface_[0]);
   // velocity and acceleration states are optional
-  if (check_if_interface_type_exist(state_interface_types_, hardware_interface::HW_IF_VELOCITY)) {
+  if (check_if_interface_type_exists(state_interface_types_, hardware_interface::HW_IF_VELOCITY)) {
     assign_point_from_interface(state_current.velocities, joint_state_interface_[1]);
     // Acceleration is used only in combination with velocity
-    if (check_if_interface_type_exist(
+    if (check_if_interface_type_exists(
         state_interface_types_,
         hardware_interface::HW_IF_ACCELERATION))
     {
@@ -228,17 +226,17 @@ JointTrajectoryController::update()
       const bool before_last_point = end_segment_itr != (*traj_point_active_ptr_)->end();
 
       // set values for next hardware write()
-      if (check_if_interface_type_exist(
+      if (check_if_interface_type_exists(
           command_interface_types_, hardware_interface::HW_IF_POSITION))
       {
         assign_interface_from_point(joint_command_interface_[0], state_desired.positions);
       }
-      if (check_if_interface_type_exist(
+      if (check_if_interface_type_exists(
           command_interface_types_, hardware_interface::HW_IF_VELOCITY))
       {
         assign_interface_from_point(joint_command_interface_[1], state_desired.velocities);
       }
-      if (check_if_interface_type_exist(
+      if (check_if_interface_type_exists(
           command_interface_types_, hardware_interface::HW_IF_ACCELERATION))
       {
         assign_interface_from_point(joint_command_interface_[2], state_desired.accelerations);
@@ -380,7 +378,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
   // 2. position [velocity, [acceleration]]
 
   // effort can't be combined with other interfaces
-  if (check_if_interface_type_exist(command_interface_types_, hardware_interface::HW_IF_EFFORT)) {
+  if (check_if_interface_type_exists(command_interface_types_, hardware_interface::HW_IF_EFFORT)) {
     if (command_interface_types_.size() == 1) {
       // TODO(anyone): This flag is not used for now
       // There should be PID-approach used as in ROS1:
@@ -395,7 +393,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
     }
   }
 
-  if (check_if_interface_type_exist(
+  if (check_if_interface_type_exists(
       command_interface_types_, hardware_interface::HW_IF_VELOCITY))
   {
     // if there is only velocity then use also PID adapter
@@ -405,7 +403,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
       RCLCPP_ERROR(logger, "using 'velocity' command interface alone is not yet implemented yet.");
       return CallbackReturn::ERROR;
       // if velocity interface can be used without position if multiple defined
-    } else if (!check_if_interface_type_exist(
+    } else if (!check_if_interface_type_exists(
         command_interface_types_, hardware_interface::HW_IF_POSITION))
     {
       RCLCPP_ERROR(
@@ -414,7 +412,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
       return CallbackReturn::ERROR;
     }
     // invalid: acceleration is defined and no velocity
-  } else if (check_if_interface_type_exist(
+  } else if (check_if_interface_type_exists(
       command_interface_types_, hardware_interface::HW_IF_ACCELERATION))
   {
     RCLCPP_ERROR(
@@ -433,7 +431,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
     return CallbackReturn::ERROR;
   }
 
-  if (check_if_interface_type_exist(state_interface_types_, hardware_interface::HW_IF_EFFORT)) {
+  if (check_if_interface_type_exists(state_interface_types_, hardware_interface::HW_IF_EFFORT)) {
     RCLCPP_ERROR(logger, "State interface type 'effort' not allowed!");
     return CallbackReturn::ERROR;
   }
@@ -451,8 +449,8 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
     }
   }
 
-  if (check_if_interface_type_exist(state_interface_types_, hardware_interface::HW_IF_VELOCITY)) {
-    if (!check_if_interface_type_exist(
+  if (check_if_interface_type_exists(state_interface_types_, hardware_interface::HW_IF_VELOCITY)) {
+    if (!check_if_interface_type_exists(
         state_interface_types_,
         hardware_interface::HW_IF_POSITION))
     {
@@ -461,7 +459,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
         "is present.");
       return CallbackReturn::ERROR;
     }
-  } else if (check_if_interface_type_exist(
+  } else if (check_if_interface_type_exists(
       state_interface_types_, hardware_interface::HW_IF_ACCELERATION))
   {
     RCLCPP_ERROR(
@@ -469,6 +467,25 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
       "interfaces are present.");
     return CallbackReturn::ERROR;
   }
+
+  // Print output so users can be sure the interface setup is correct
+  std::stringstream ss_command_interfaces;
+  for (auto index = 0ul; index < command_interface_types_.size(); ++index) {
+    if (index != 0) {
+      ss_command_interfaces << " ";
+    }
+    ss_command_interfaces << command_interface_types_[index];
+  }
+  std::stringstream ss_state_interfaces;
+  for (auto index = 0ul; index < state_interface_types_.size(); ++index) {
+    if (index != 0) {
+      ss_state_interfaces << " ";
+    }
+    ss_state_interfaces << state_interface_types_[index];
+  }
+  RCLCPP_INFO(
+    logger, "Command interfaces are [%s] and and state interfaces are [%s].",
+    ss_command_interfaces.str().c_str(), ss_state_interfaces.str().c_str());
 
   default_tolerances_ = get_segment_tolerances(*node_, joint_names_);
 
@@ -522,11 +539,11 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
   state_publisher_->msg_.desired.accelerations.resize(n_joints);
   state_publisher_->msg_.actual.positions.resize(n_joints);
   state_publisher_->msg_.error.positions.resize(n_joints);
-  if (check_if_interface_type_exist(state_interface_types_, hardware_interface::HW_IF_VELOCITY)) {
+  if (check_if_interface_type_exists(state_interface_types_, hardware_interface::HW_IF_VELOCITY)) {
     state_publisher_->msg_.actual.velocities.resize(n_joints);
     state_publisher_->msg_.error.velocities.resize(n_joints);
   }
-  if (check_if_interface_type_exist(
+  if (check_if_interface_type_exists(
       state_interface_types_,
       hardware_interface::HW_IF_ACCELERATION))
   {
@@ -733,11 +750,11 @@ void JointTrajectoryController::publish_state(
     state_publisher_->msg_.desired.accelerations = desired_state.accelerations;
     state_publisher_->msg_.actual.positions = current_state.positions;
     state_publisher_->msg_.error.positions = state_error.positions;
-    if (check_if_interface_type_exist(state_interface_types_, hardware_interface::HW_IF_VELOCITY)) {
+    if (check_if_interface_type_exists(state_interface_types_, hardware_interface::HW_IF_VELOCITY)) {
       state_publisher_->msg_.actual.velocities = current_state.velocities;
       state_publisher_->msg_.error.velocities = state_error.velocities;
     }
-    if (check_if_interface_type_exist(
+    if (check_if_interface_type_exists(
         state_interface_types_, hardware_interface::HW_IF_ACCELERATION))
     {
       state_publisher_->msg_.actual.accelerations = current_state.accelerations;
