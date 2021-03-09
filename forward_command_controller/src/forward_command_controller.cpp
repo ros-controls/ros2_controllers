@@ -75,6 +75,10 @@ CallbackReturn ForwardCommandController::on_configure(
     return CallbackReturn::ERROR;
   }
 
+  for (const auto & joint : joint_names_) {
+    command_interface_types_.push_back(joint + "/" + interface_name_);
+  }
+
   joints_command_subscriber_ = get_node()->create_subscription<CmdType>(
     "~/commands", rclcpp::SystemDefaultsQoS(),
     [this](const CmdType::SharedPtr msg)
@@ -92,8 +96,8 @@ ForwardCommandController::command_interface_configuration() const
   controller_interface::InterfaceConfiguration command_interfaces_config;
   command_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
 
-  for (const auto & joint : joint_names_) {
-    command_interfaces_config.names.push_back(joint + "/" + interface_name_);
+  for (const auto & command_interface : command_interface_types_) {
+    command_interfaces_config.names.push_back(command_interface);
   }
 
   return command_interfaces_config;
