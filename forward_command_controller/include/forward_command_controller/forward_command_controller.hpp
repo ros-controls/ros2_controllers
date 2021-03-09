@@ -72,6 +72,8 @@ public:
   controller_interface::return_type update() override;
 
 protected:
+  virtual CallbackReturn read_parameters();
+
   std::vector<std::string> joint_names_;
   std::string interface_name_;
 

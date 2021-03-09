@@ -25,7 +25,6 @@
 
 namespace forward_command_controller
 {
-using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
 class MultiInterfaceForwardController : public forward_command_controller::ForwardCommandController
 {
@@ -36,10 +35,9 @@ public:
   FORWARD_COMMAND_CONTROLLER_PUBLIC
   controller_interface::return_type init(const std::string & controller_name) override;
 
-  FORWARD_COMMAND_CONTROLLER_PUBLIC
-  CallbackReturn on_configure(const rclcpp_lifecycle::State & previous_state) override;
-
 protected:
+  CallbackReturn read_parameters() override;
+
   std::vector<std::string> joints_interfaces_;
 };
 
