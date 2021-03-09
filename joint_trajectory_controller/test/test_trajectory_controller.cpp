@@ -145,7 +145,6 @@ TEST_P(TrajectoryControllerTestParameterized, activate) {
   executor.cancel();
 }
 
-// TODO(bmagyar): This seems to be implemented. Can we delete this?
 // TEST_F(TestTrajectoryController, activation) {
 //   auto traj_controller = std::make_shared<ros_controllers::JointTrajectoryController>(
 //     joint_names_, op_mode_);
