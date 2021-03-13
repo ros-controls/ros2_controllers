@@ -22,8 +22,7 @@ namespace force_torque_sensor_controller
 {
 
 ForceTorqueSensorController::ForceTorqueSensorController()
-: controller_interface::ControllerInterface(),
-  sensor_state_publisher_(nullptr)
+: controller_interface::ControllerInterface()
 {}
 
 controller_interface::return_type
@@ -72,9 +71,9 @@ CallbackReturn ForceTorqueSensorController::on_configure(
 
   try {
     // register ft sensor data publisher
-    publisher_ = node_->create_publisher<ControllerStateMsg>(
+    sensor_state_publisher_ = node_->create_publisher<geometry_msgs::msg::WrenchStamped>(
       "force_torque_sensor", rclcpp::SystemDefaultsQoS());
-    state_publisher_ = std::make_unique<StatePublisher>(publisher_);
+    state_publisher_ = std::make_unique<StatePublisher>(sensor_state_publisher_);
   } catch (...) {
     return CallbackReturn::ERROR;
   }
@@ -140,7 +139,6 @@ controller_interface::return_type ForceTorqueSensorController::update()
   }
 
   // publish
-  sensor_state_publisher_->publish(wrench_state_msg_);
   if (state_publisher_ && state_publisher_->trylock()) {
     state_publisher_->msg_.header.stamp = node_->now();
     state_publisher_->msg_.wrench.force = wrench_state_msg_.wrench.force;
