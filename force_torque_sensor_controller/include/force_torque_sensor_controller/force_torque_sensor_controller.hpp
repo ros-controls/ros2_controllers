@@ -61,13 +61,11 @@ protected:
   std::string sensor_name_;
   std::vector<std::string> interface_names_;
   std::string frame_id_;
-  std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::WrenchStamped>> sensor_state_publisher_;
   geometry_msgs::msg::WrenchStamped wrench_state_msg_;
 
-  using ControllerStateMsg = geometry_msgs::msg::WrenchStamped;
-  using StatePublisher = realtime_tools::RealtimePublisher<ControllerStateMsg>;
+  using StatePublisher = realtime_tools::RealtimePublisher<geometry_msgs::msg::WrenchStamped>;
   using StatePublisherPtr = std::unique_ptr<StatePublisher>;
-  rclcpp::Publisher<ControllerStateMsg>::SharedPtr publisher_;
+  rclcpp::Publisher<geometry_msgs::msg::WrenchStamped>::SharedPtr sensor_state_publisher_;
   StatePublisherPtr state_publisher_;
 };
 
