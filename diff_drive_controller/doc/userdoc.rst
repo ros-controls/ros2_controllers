@@ -3,7 +3,9 @@
 diff_drive_controller
 ---------------------
 
-Controller for differential drive wheel systems. Control is in the form of a velocity command, that is split then sent on the two wheels of a differential drive wheel base. Odometry is computed from the feedback from the hardware, and published.
+Controller for mobile robots with differential drive.
+Input for control are robot body velocity commands which are translated to wheel commands for the differential drive base.
+Odometry is computed from hardware feedback and published.
 
 Velocity commands
 ^^^^^^^^^^^^^^^^^
