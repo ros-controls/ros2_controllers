@@ -61,29 +61,40 @@ install(
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
-  # the following line skips the linter which checks for copyrights
-  # uncomment the line when a copyright and license is not present in all source files
-  #set(ament_cmake_copyright_FOUND TRUE)
-  # the following line skips cpplint (only works in a git repo)
-  # uncomment the line when this package is not in a git repo
-  #set(ament_cmake_cpplint_FOUND TRUE)
-  ament_lint_auto_find_test_dependencies()
   find_package(ament_cmake_gmock REQUIRED)
   find_package(controller_manager REQUIRED)
   find_package(hardware_interface REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
 
-  ament_add_gmock(test_force_torque_sensor_controller test/test_load_force_torque_sensor_controller.cpp)
-  target_include_directories(test_force_torque_sensor_controller PRIVATE include)
-  ament_target_dependencies(
-    test_force_torque_sensor_controller
+  ament_lint_auto_find_test_dependencies()
+
+  ament_add_gmock(
+    test_load_force_torque_sensor_controller 
+    test/test_load_force_torque_sensor_controller.cpp
+  )
+  target_include_directories(test_load_force_torque_sensor_controller PRIVATE include)
+  ament_target_dependencies(test_load_force_torque_sensor_controller
     controller_manager
     hardware_interface
-    realtime_tools
     ros2_control_test_assets
+  )
+  target_compile_definitions(test_load_force_torque_sensor_controller PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+
+  ament_add_gmock(
+    test_force_torque_sensor_controller 
+    test/test_force_torque_sensor_controller.cpp
+  )
+  target_include_directories(test_force_torque_sensor_controller PRIVATE include)
+  target_link_libraries(test_force_torque_sensor_controller
+    force_torque_controller
   )
 endif()
 
+ament_target_dependencies(test_load_force_torque_sensor_controller
+  controller_manager
+  hardware_interface
+  ros2_control_test_assets
+)
 ament_export_include_directories(
   include
 )
@@ -92,10 +103,11 @@ ament_export_libraries(
 )
 ament_export_dependencies(
   controller_interface
-  hardware_interface
   pluginlib
   rclcpp
   rclcpp_lifecycle
+  geometry_msgs
+  hardware_interface
 )
 
 ament_package()
