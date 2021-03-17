@@ -86,7 +86,10 @@ if(BUILD_TESTING)
   )
   target_include_directories(test_force_torque_sensor_controller PRIVATE include)
   target_link_libraries(test_force_torque_sensor_controller
-    force_torque_controller
+    force_torque_sensor_controller
+  )
+  ament_target_dependencies(test_force_torque_sensor_controller
+    hardware_interface
   )
 endif()
 
