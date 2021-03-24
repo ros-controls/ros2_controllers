@@ -24,10 +24,14 @@
 #include "force_torque_sensor_controller/force_torque_sensor_controller.hpp"
 
 // subclassing and friending so we can access member varibles
-class FriendForceTorqueSensorController : public force_torque_sensor_controller::ForceTorqueSensorController
+class FriendForceTorqueSensorController : public force_torque_sensor_controller::
+  ForceTorqueSensorController
 {
-  FRIEND_TEST(ForceTorqueSensorControllerTest, ConfigureErrorTest);
-  FRIEND_TEST(ForceTorqueSensorControllerTest, ConfigureSuccessTest);
+  FRIEND_TEST(ForceTorqueSensorControllerTest, SensorNameParameterNotSet);
+  FRIEND_TEST(ForceTorqueSensorControllerTest, InterfaceNamesParameterNotSet);
+  FRIEND_TEST(ForceTorqueSensorControllerTest, FrameIdParameterNotSet);
+  FRIEND_TEST(ForceTorqueSensorControllerTest, SensorNameParameterIsEmpty);
+  FRIEND_TEST(ForceTorqueSensorControllerTest, InterfaceNameParameterIsEmpty);
 };
 
 class ForceTorqueSensorControllerTest : public ::testing::Test

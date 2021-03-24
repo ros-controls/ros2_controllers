@@ -15,6 +15,7 @@
 #include <stddef.h>
 
 #include <functional>
+#include <iostream>
 #include <memory>
 #include <string>
 #include <utility>
@@ -46,13 +47,6 @@ constexpr auto NODE_SUCCESS =
 constexpr auto NODE_ERROR =
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
 
-rclcpp::WaitResultKind wait_for(rclcpp::SubscriptionBase::SharedPtr subscription)
-{
-  rclcpp::WaitSet wait_set;
-  wait_set.add_subscription(subscription);
-  const auto timeout = std::chrono::seconds(10);
-  return wait_set.wait(timeout).kind();
-}
 }  // namespace
 
 void ForceTorqueSensorControllerTest::SetUpTestCase()
@@ -92,100 +86,107 @@ void ForceTorqueSensorControllerTest::SetUpStateController()
   state_controller_->assign_interfaces({}, std::move(state_ifs));
 }
 
-TEST_F(ForceTorqueSensorControllerTest, ConfigureErrorTest)
+TEST_F(ForceTorqueSensorControllerTest, SensorNameParameterNotSet)
 {
-  // sensor state not initialized yet
-  ASSERT_TRUE(state_controller_->wrench_state_msg_.header.empty());
-  ASSERT_TRUE(state_controller_->wrench_state_msg_.wrench.empty());
+  SetUpStateController();
 
-  // publishers not initialized yet
-  ASSERT_FALSE(state_controller_->sensor_state_publisher_);
-
-  // configure failed
+  // configure failed, 'sensor_name' parameter not set
   ASSERT_EQ(state_controller_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
-
-  SetUpStateController();
-  // check state remains unchanged
-
-  // sensor state still not initialized
-  ASSERT_TRUE(state_controller_->wrench_state_msg_.header.empty());
-  ASSERT_TRUE(state_controller_->wrench_state_msg_.wrench.empty());
-
-  // publishers still not initialized
-  ASSERT_FALSE(state_controller_->sensor_state_publisher_);
 }
 
-TEST_F(ForceTorqueSensorControllerTest, ConfigureSuccessTest)
+TEST_F(ForceTorqueSensorControllerTest, InterfaceNamesParameterNotSet)
 {
-  // sensor state not initialized yet
-  ASSERT_THAT(state_controller_->wrench_state_msg_.header, IsEmpty());
-  ASSERT_THAT(state_controller_->wrench_state_msg_.wrench, IsEmpty());
-
-  // publishers not initialized yet
-  ASSERT_FALSE(state_controller_->sensor_state_publisher_);
-
   SetUpStateController();
-  // configure ok
+
+  // set the 'sensor_name'
+  state_controller_->get_node()->set_parameter({"sensor_name", "dummy"});
+
+  // configure failed, 'interface_names' parameter not set
+  ASSERT_EQ(state_controller_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
+}
+
+TEST_F(ForceTorqueSensorControllerTest, FrameIdParameterNotSet)
+{
+  SetUpStateController();
+
+  // set the 'sensor_name'
+  state_controller_->get_node()->set_parameter({"sensor_name", "dummy"});
+
+  // set the 'interface_names'
+  state_controller_->get_node()->set_parameter(
+    {"interface_names",
+      std::vector<std::string>{"fx", "tz"}});
+
+  // configure failed, 'frame_id' parameter not set
+  ASSERT_EQ(state_controller_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
+}
+
+TEST_F(ForceTorqueSensorControllerTest, SensorNameParameterIsEmpty)
+{
+  SetUpStateController();
+
+  // set the 'sensor_name' empty
+  state_controller_->get_node()->set_parameter({"sensor_name", ""});
+
+  // set the 'interface_names'
+  state_controller_->get_node()->set_parameter(
+    {"interface_names",
+      std::vector<std::string>{"fx", "tz"}});
+
+  // set the 'frame_id'
+  state_controller_->get_node()->set_parameter({"frame_id", "dummy_frame"});
+
+  // configure failed, 'sensor_name' parameter empty
+  ASSERT_EQ(state_controller_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
+}
+
+TEST_F(ForceTorqueSensorControllerTest, InterfaceNameParameterIsEmpty)
+{
+  SetUpStateController();
+
+  // set the 'sensor_name'
+  state_controller_->get_node()->set_parameter({"sensor_name", "dummy"});
+
+  // set the 'interface_names' empty
+  state_controller_->get_node()->set_parameter({"interface_names", std::vector<std::string>()});
+
+  // set the 'frame_id'
+  state_controller_->get_node()->set_parameter({"frame_id", "dummy_frame"});
+
+  // configure failed, 'interface_name' parameter empty
+  ASSERT_EQ(state_controller_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
+}
+
+TEST_F(ForceTorqueSensorControllerTest, FrameIdParameterIsEmpty)
+{
+  SetUpStateController();
+
+  // set the 'sensor_name'
+  state_controller_->get_node()->set_parameter({"sensor_name", "dummy"});
+
+  // set the 'interface_names'
+  state_controller_->get_node()->set_parameter(
+    {"interface_names",
+      std::vector<std::string>{"fx", "tz"}});
+
+  // set the 'frame_id' empty
+  state_controller_->get_node()->set_parameter({"frame_id", ""});
+
+  // configure failed, 'frame_id' parameter empty
+  ASSERT_EQ(state_controller_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
+}
+
+TEST_F(ForceTorqueSensorControllerTest, ConfigureParamsSuccess)
+{
+  SetUpStateController();
+
+  // set the params 'sensor_name', 'interface_names' and 'frame_id'
+  state_controller_->get_node()->set_parameter({"sensor_name", "dummy"});
+  state_controller_->get_node()->set_parameter(
+    {"interface_names",
+      std::vector<std::string>{"fx", "tz"}});
+  state_controller_->get_node()->set_parameter({"frame_id", "dummy_frame"});
+
+  // configure success
   ASSERT_EQ(state_controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-
-  ASSERT_EQ(state_controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-
-  const size_t NUM_SENSORS = sensor_names_.size();
-  const std::vector<std::string> IF_NAMES = {"fx", "tz"};
-  const size_t NUM_IFS = IF_NAMES.size();
-
-  // sensor state initialized
-  ASSERT_THAT(state_controller_->wrench_state_msg_.wrench, SizeIs(NUM_SENSORS));
-
-  // publishers initialized
-  ASSERT_TRUE(state_controller_->sensor_state_publisher_);
-}
-
-TEST_F(ForceTorqueSensorControllerTest, UpdateTest)
-{
-  SetUpStateController();
-
-  auto node_state = state_controller_->configure();
-  node_state = state_controller_->activate();
-  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
-  ASSERT_EQ(state_controller_->update(), controller_interface::return_type::SUCCESS);
-}
-
-TEST_F(ForceTorqueSensorControllerTest, SensorStatePublishTest)
-{
-  SetUpStateController();
-
-  auto node_state = state_controller_->configure();
-  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
-
-  node_state = state_controller_->activate();
-  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
-
-  rclcpp::Node test_node("test_node");
-
-  auto subs_callback = [&](const geometry_msgs::msg::WrenchStamped::SharedPtr)
-    {
-    };
-  auto subscription = test_node.create_subscription<geometry_msgs::msg::WrenchStamped>(
-    "sensor_states",
-    10,
-    subs_callback);
-
-  ASSERT_EQ(state_controller_->update(), controller_interface::return_type::SUCCESS);
-
-  // wait for message to be passed
-  ASSERT_EQ(wait_for(subscription), rclcpp::WaitResultKind::Ready);
-
-  // take message from subscription
-  geometry_msgs::msg::WrenchStamped sensor_state_msg;
-  rclcpp::MessageInfo msg_info;
-  ASSERT_TRUE(subscription->take(sensor_state_msg, msg_info));
-
-  const size_t NUM_SENSORS = sensor_names_.size();
-  ASSERT_THAT(sensor_state_msg.header, SizeIs(NUM_SENSORS));
-  // the order in the message may be different
-  // we only check that all values in this test are present in the message
-  // and that it is the same across the interfaces
-  // for test purposes they are mapped to the same doubles
-  ASSERT_THAT(sensor_state_msg.wrench, ElementsAreArray(sensor_values_));
 }
