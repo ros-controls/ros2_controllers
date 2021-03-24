@@ -69,7 +69,7 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 
   ament_add_gmock(
-    test_load_force_torque_sensor_controller 
+    test_load_force_torque_sensor_controller
     test/test_load_force_torque_sensor_controller.cpp
   )
   target_include_directories(test_load_force_torque_sensor_controller PRIVATE include)
@@ -81,7 +81,7 @@ if(BUILD_TESTING)
   target_compile_definitions(test_load_force_torque_sensor_controller PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
   ament_add_gmock(
-    test_force_torque_sensor_controller 
+    test_force_torque_sensor_controller
     test/test_force_torque_sensor_controller.cpp
   )
   target_include_directories(test_force_torque_sensor_controller PRIVATE include)
