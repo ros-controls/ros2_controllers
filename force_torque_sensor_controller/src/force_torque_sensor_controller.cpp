@@ -121,10 +121,6 @@ CallbackReturn ForceTorqueSensorController::on_deactivate(
 
 controller_interface::return_type ForceTorqueSensorController::update()
 {
-  if (state_interfaces_.size() != interface_names_.size()) {
-    return controller_interface::return_type::ERROR;
-  }
-
   for (auto index = 0ul; index < state_interfaces_.size(); ++index) {
     switch (index) {
       case 0:
