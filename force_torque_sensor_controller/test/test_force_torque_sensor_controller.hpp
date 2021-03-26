@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/*
+ * Author: Subhas Das, Denis Stogl
+ */
+
 #ifndef TEST_FORCE_TORQUE_SENSOR_CONTROLLER_HPP_
 #define TEST_FORCE_TORQUE_SENSOR_CONTROLLER_HPP_
 
@@ -32,6 +36,10 @@ class FriendForceTorqueSensorController : public force_torque_sensor_controller:
   FRIEND_TEST(ForceTorqueSensorControllerTest, FrameIdParameterNotSet);
   FRIEND_TEST(ForceTorqueSensorControllerTest, SensorNameParameterIsEmpty);
   FRIEND_TEST(ForceTorqueSensorControllerTest, InterfaceNameParameterIsEmpty);
+
+  FRIEND_TEST(ForceTorqueSensorControllerTest, ActivateSuccess);
+  FRIEND_TEST(ForceTorqueSensorControllerTest, UpdateTest);
+  FRIEND_TEST(ForceTorqueSensorControllerTest, SensorStatePublishTest);
 };
 
 class ForceTorqueSensorControllerTest : public ::testing::Test
@@ -46,23 +54,6 @@ public:
   void SetUpStateController();
 
 protected:
-  // dummy joint state values used for tests
-  const std::vector<std::string> sensor_names_ = {"sensor1", "sensor2", "sensor3"};
-  std::vector<double> sensor_values_ = {1.1, 2.1, 3.1};
-
-  hardware_interface::StateInterface sensor_1_fx_state_{sensor_names_[0], "fx",
-    &sensor_values_[0]};
-  hardware_interface::StateInterface sensor_2_fx_state_{sensor_names_[1], "fx",
-    &sensor_values_[1]};
-  hardware_interface::StateInterface sensor_3_fx_state_{sensor_names_[2], "fx",
-    &sensor_values_[2]};
-  hardware_interface::StateInterface sensor_1_tz_state_{sensor_names_[0], "tz",
-    &sensor_values_[0]};
-  hardware_interface::StateInterface sensor_2_tz_state_{sensor_names_[1], "tz",
-    &sensor_values_[1]};
-  hardware_interface::StateInterface sensor_3_tz_state_{sensor_names_[2], "tz",
-    &sensor_values_[2]};
-
   std::unique_ptr<FriendForceTorqueSensorController> state_controller_;
 };
 
