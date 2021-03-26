@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/*
+ * Author: Subhas Das, Denis Stogl
+ */
+
 #include <stddef.h>
 
 #include <functional>
@@ -47,6 +51,13 @@ constexpr auto NODE_SUCCESS =
 constexpr auto NODE_ERROR =
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
 
+rclcpp::WaitResultKind wait_for(rclcpp::SubscriptionBase::SharedPtr subscription)
+{
+  rclcpp::WaitSet wait_set;
+  wait_set.add_subscription(subscription);
+  const auto timeout = std::chrono::seconds(10);
+  return wait_set.wait(timeout).kind();
+}
 }  // namespace
 
 void ForceTorqueSensorControllerTest::SetUpTestCase()
@@ -74,16 +85,6 @@ void ForceTorqueSensorControllerTest::SetUpStateController()
 {
   const auto result = state_controller_->init("force_torque_sensor_controller");
   ASSERT_EQ(result, controller_interface::return_type::SUCCESS);
-
-  std::vector<LoanedStateInterface> state_ifs;
-  state_ifs.emplace_back(sensor_1_fx_state_);
-  state_ifs.emplace_back(sensor_2_fx_state_);
-  state_ifs.emplace_back(sensor_3_fx_state_);
-  state_ifs.emplace_back(sensor_1_tz_state_);
-  state_ifs.emplace_back(sensor_2_tz_state_);
-  state_ifs.emplace_back(sensor_3_tz_state_);
-
-  state_controller_->assign_interfaces({}, std::move(state_ifs));
 }
 
 TEST_F(ForceTorqueSensorControllerTest, SensorNameParameterNotSet)
@@ -189,4 +190,72 @@ TEST_F(ForceTorqueSensorControllerTest, ConfigureParamsSuccess)
 
   // configure success
   ASSERT_EQ(state_controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+}
+
+TEST_F(ForceTorqueSensorControllerTest, ActivateSuccess)
+{
+  SetUpStateController();
+
+  // set the params 'sensor_name', 'interface_names' and 'frame_id'
+  state_controller_->get_node()->set_parameter({"sensor_name", "dummy"});
+  state_controller_->get_node()->set_parameter(
+    {"interface_names",
+      std::vector<std::string>{"fx", "tz"}});
+  state_controller_->get_node()->set_parameter({"frame_id", "dummy_frame"});
+
+  // configure and activate success
+  ASSERT_EQ(state_controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(state_controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+}
+
+TEST_F(ForceTorqueSensorControllerTest, UpdateTest)
+{
+  SetUpStateController();
+
+  // set the params 'sensor_name', 'interface_names' and 'frame_id'
+  state_controller_->get_node()->set_parameter({"sensor_name", "dummy"});
+  state_controller_->get_node()->set_parameter(
+    {"interface_names",
+      std::vector<std::string>{"fx", "tz"}});
+  state_controller_->get_node()->set_parameter({"frame_id", "dummy_frame"});
+
+  ASSERT_EQ(state_controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(state_controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(state_controller_->update(), controller_interface::return_type::SUCCESS);
+}
+
+TEST_F(ForceTorqueSensorControllerTest, SensorStatePublishTest)
+{
+  SetUpStateController();
+
+  // set the params 'sensor_name', 'interface_names' and 'frame_id'
+  state_controller_->get_node()->set_parameter({"sensor_name", "dummy"});
+  state_controller_->get_node()->set_parameter(
+    {"interface_names",
+      std::vector<std::string>{"fx", "tz"}});
+  state_controller_->get_node()->set_parameter({"frame_id", "dummy_frame"});
+
+  ASSERT_EQ(state_controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(state_controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  // create a new subscriber
+  rclcpp::Node test_node("test_node");
+  auto subs_callback = [&](const geometry_msgs::msg::WrenchStamped::SharedPtr)
+    {
+    };
+  auto subscription = test_node.create_subscription<geometry_msgs::msg::WrenchStamped>(
+    "sensor_state",
+    10,
+    subs_callback);
+
+  // call update to publish the test value
+  ASSERT_EQ(state_controller_->update(), controller_interface::return_type::SUCCESS);
+
+  // wait for message to be passed
+  ASSERT_EQ(wait_for(subscription), rclcpp::WaitResultKind::Ready);
+
+  // take message from subscription
+  geometry_msgs::msg::WrenchStamped sensor_state_msg;
+  rclcpp::MessageInfo msg_info;
+  ASSERT_TRUE(subscription->take(sensor_state_msg, msg_info));
 }
