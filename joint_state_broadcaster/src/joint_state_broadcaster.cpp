@@ -48,8 +48,8 @@ using hardware_interface::HW_IF_EFFORT;
 JointStateBroadcaster::JointStateBroadcaster()
 {}
 
-controller_interface::InterfaceConfiguration JointStateBroadcaster::command_interface_configuration()
-const
+controller_interface::InterfaceConfiguration
+JointStateBroadcaster::command_interface_configuration() const
 {
   return controller_interface::InterfaceConfiguration{controller_interface::
     interface_configuration_type::NONE};
