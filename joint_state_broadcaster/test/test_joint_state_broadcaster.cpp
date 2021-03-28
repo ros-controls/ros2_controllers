@@ -25,11 +25,11 @@
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
-#include "joint_state_controller/joint_state_controller.hpp"
+#include "joint_state_broadcaster/joint_state_broadcaster.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/utilities.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
-#include "test_joint_state_controller.hpp"
+#include "test_joint_state_broadcaster.hpp"
 
 using hardware_interface::LoanedStateInterface;
 using std::placeholders::_1;
@@ -58,30 +58,30 @@ rclcpp::WaitResultKind wait_for(rclcpp::SubscriptionBase::SharedPtr subscription
 }
 }  // namespace
 
-void JointStateControllerTest::SetUpTestCase()
+void JointStateBroadcasterTest::SetUpTestCase()
 {
   rclcpp::init(0, nullptr);
 }
 
-void JointStateControllerTest::TearDownTestCase()
+void JointStateBroadcasterTest::TearDownTestCase()
 {
   rclcpp::shutdown();
 }
 
-void JointStateControllerTest::SetUp()
+void JointStateBroadcasterTest::SetUp()
 {
-  // initialize controller
-  state_controller_ = std::make_unique<FriendJointStateController>();
+  // initialize broadcaster
+  state_broadcaster_ = std::make_unique<FriendJointStateBroadcaster>();
 }
 
-void JointStateControllerTest::TearDown()
+void JointStateBroadcasterTest::TearDown()
 {
-  state_controller_.reset(nullptr);
+  state_broadcaster_.reset(nullptr);
 }
 
-void JointStateControllerTest::SetUpStateController()
+void JointStateBroadcasterTest::SetUpStateBroadcaster()
 {
-  const auto result = state_controller_->init("joint_state_controller");
+  const auto result = state_broadcaster_->init("joint_state_broadcaster");
   ASSERT_EQ(result, controller_interface::return_type::SUCCESS);
 
   std::vector<LoanedStateInterface> state_ifs;
@@ -95,117 +95,117 @@ void JointStateControllerTest::SetUpStateController()
   state_ifs.emplace_back(joint_2_eff_state_);
   state_ifs.emplace_back(joint_3_eff_state_);
 
-  state_controller_->assign_interfaces({}, std::move(state_ifs));
+  state_broadcaster_->assign_interfaces({}, std::move(state_ifs));
 }
 
-TEST_F(JointStateControllerTest, ConfigureErrorTest)
+TEST_F(JointStateBroadcasterTest, ConfigureErrorTest)
 {
   // joint state not initialized yet
-  ASSERT_TRUE(state_controller_->joint_state_msg_.name.empty());
-  ASSERT_TRUE(state_controller_->joint_state_msg_.position.empty());
-  ASSERT_TRUE(state_controller_->joint_state_msg_.velocity.empty());
-  ASSERT_TRUE(state_controller_->joint_state_msg_.effort.empty());
+  ASSERT_TRUE(state_broadcaster_->joint_state_msg_.name.empty());
+  ASSERT_TRUE(state_broadcaster_->joint_state_msg_.position.empty());
+  ASSERT_TRUE(state_broadcaster_->joint_state_msg_.velocity.empty());
+  ASSERT_TRUE(state_broadcaster_->joint_state_msg_.effort.empty());
 
   // dynamic joint state not initialized yet
-  ASSERT_TRUE(state_controller_->dynamic_joint_state_msg_.joint_names.empty());
-  ASSERT_TRUE(state_controller_->dynamic_joint_state_msg_.interface_values.empty());
+  ASSERT_TRUE(state_broadcaster_->dynamic_joint_state_msg_.joint_names.empty());
+  ASSERT_TRUE(state_broadcaster_->dynamic_joint_state_msg_.interface_values.empty());
 
   // publishers not initialized yet
-  ASSERT_FALSE(state_controller_->joint_state_publisher_);
-  ASSERT_FALSE(state_controller_->dynamic_joint_state_publisher_);
+  ASSERT_FALSE(state_broadcaster_->joint_state_publisher_);
+  ASSERT_FALSE(state_broadcaster_->dynamic_joint_state_publisher_);
 
   // configure failed
-  ASSERT_EQ(state_controller_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
+  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
 
-  SetUpStateController();
+  SetUpStateBroadcaster();
   // check state remains unchanged
 
   // joint state still not initialized
-  ASSERT_TRUE(state_controller_->joint_state_msg_.name.empty());
-  ASSERT_TRUE(state_controller_->joint_state_msg_.position.empty());
-  ASSERT_TRUE(state_controller_->joint_state_msg_.velocity.empty());
-  ASSERT_TRUE(state_controller_->joint_state_msg_.effort.empty());
+  ASSERT_TRUE(state_broadcaster_->joint_state_msg_.name.empty());
+  ASSERT_TRUE(state_broadcaster_->joint_state_msg_.position.empty());
+  ASSERT_TRUE(state_broadcaster_->joint_state_msg_.velocity.empty());
+  ASSERT_TRUE(state_broadcaster_->joint_state_msg_.effort.empty());
 
   // dynamic joint state still not initialized
-  ASSERT_TRUE(state_controller_->dynamic_joint_state_msg_.joint_names.empty());
-  ASSERT_TRUE(state_controller_->dynamic_joint_state_msg_.interface_values.empty());
+  ASSERT_TRUE(state_broadcaster_->dynamic_joint_state_msg_.joint_names.empty());
+  ASSERT_TRUE(state_broadcaster_->dynamic_joint_state_msg_.interface_values.empty());
 
   // publishers still not initialized
-  ASSERT_FALSE(state_controller_->joint_state_publisher_);
-  ASSERT_FALSE(state_controller_->dynamic_joint_state_publisher_);
+  ASSERT_FALSE(state_broadcaster_->joint_state_publisher_);
+  ASSERT_FALSE(state_broadcaster_->dynamic_joint_state_publisher_);
 }
 
-TEST_F(JointStateControllerTest, ConfigureSuccessTest)
+TEST_F(JointStateBroadcasterTest, ConfigureSuccessTest)
 {
   // joint state not initialized yet
-  ASSERT_THAT(state_controller_->joint_state_msg_.name, IsEmpty());
-  ASSERT_THAT(state_controller_->joint_state_msg_.position, IsEmpty());
-  ASSERT_THAT(state_controller_->joint_state_msg_.velocity, IsEmpty());
-  ASSERT_THAT(state_controller_->joint_state_msg_.effort, IsEmpty());
+  ASSERT_THAT(state_broadcaster_->joint_state_msg_.name, IsEmpty());
+  ASSERT_THAT(state_broadcaster_->joint_state_msg_.position, IsEmpty());
+  ASSERT_THAT(state_broadcaster_->joint_state_msg_.velocity, IsEmpty());
+  ASSERT_THAT(state_broadcaster_->joint_state_msg_.effort, IsEmpty());
 
   // dynamic joint state not initialized yet
-  ASSERT_THAT(state_controller_->dynamic_joint_state_msg_.joint_names, IsEmpty());
-  ASSERT_THAT(state_controller_->dynamic_joint_state_msg_.interface_values, IsEmpty());
+  ASSERT_THAT(state_broadcaster_->dynamic_joint_state_msg_.joint_names, IsEmpty());
+  ASSERT_THAT(state_broadcaster_->dynamic_joint_state_msg_.interface_values, IsEmpty());
 
   // publishers not initialized yet
-  ASSERT_FALSE(state_controller_->joint_state_publisher_);
-  ASSERT_FALSE(state_controller_->dynamic_joint_state_publisher_);
+  ASSERT_FALSE(state_broadcaster_->joint_state_publisher_);
+  ASSERT_FALSE(state_broadcaster_->dynamic_joint_state_publisher_);
 
-  SetUpStateController();
+  SetUpStateBroadcaster();
   // configure ok
-  ASSERT_EQ(state_controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  ASSERT_EQ(state_controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   const size_t NUM_JOINTS = joint_names_.size();
   const std::vector<std::string> IF_NAMES = {HW_IF_POSITION, HW_IF_VELOCITY, HW_IF_EFFORT};
   const size_t NUM_IFS = IF_NAMES.size();
 
   // joint state initialized
-  ASSERT_THAT(state_controller_->joint_state_msg_.name, ElementsAreArray(joint_names_));
-  ASSERT_THAT(state_controller_->joint_state_msg_.position, SizeIs(NUM_JOINTS));
-  ASSERT_THAT(state_controller_->joint_state_msg_.velocity, SizeIs(NUM_JOINTS));
-  ASSERT_THAT(state_controller_->joint_state_msg_.effort, SizeIs(NUM_JOINTS));
+  ASSERT_THAT(state_broadcaster_->joint_state_msg_.name, ElementsAreArray(joint_names_));
+  ASSERT_THAT(state_broadcaster_->joint_state_msg_.position, SizeIs(NUM_JOINTS));
+  ASSERT_THAT(state_broadcaster_->joint_state_msg_.velocity, SizeIs(NUM_JOINTS));
+  ASSERT_THAT(state_broadcaster_->joint_state_msg_.effort, SizeIs(NUM_JOINTS));
 
   // dynamic joint state initialized
-  ASSERT_THAT(state_controller_->dynamic_joint_state_msg_.joint_names, SizeIs(NUM_JOINTS));
-  ASSERT_THAT(state_controller_->dynamic_joint_state_msg_.interface_values, SizeIs(NUM_IFS));
+  ASSERT_THAT(state_broadcaster_->dynamic_joint_state_msg_.joint_names, SizeIs(NUM_JOINTS));
+  ASSERT_THAT(state_broadcaster_->dynamic_joint_state_msg_.interface_values, SizeIs(NUM_IFS));
   ASSERT_THAT(
-    state_controller_->dynamic_joint_state_msg_.joint_names,
+    state_broadcaster_->dynamic_joint_state_msg_.joint_names,
     ElementsAreArray(joint_names_));
   ASSERT_THAT(
-    state_controller_->dynamic_joint_state_msg_.interface_values[0].interface_names,
+    state_broadcaster_->dynamic_joint_state_msg_.interface_values[0].interface_names,
     ElementsAreArray(IF_NAMES));
   ASSERT_THAT(
-    state_controller_->dynamic_joint_state_msg_.interface_values[1].interface_names,
+    state_broadcaster_->dynamic_joint_state_msg_.interface_values[1].interface_names,
     ElementsAreArray(IF_NAMES));
   ASSERT_THAT(
-    state_controller_->dynamic_joint_state_msg_.interface_values[2].interface_names,
+    state_broadcaster_->dynamic_joint_state_msg_.interface_values[2].interface_names,
     ElementsAreArray(IF_NAMES));
 
   // publishers initialized
-  ASSERT_TRUE(state_controller_->joint_state_publisher_);
-  ASSERT_TRUE(state_controller_->dynamic_joint_state_publisher_);
+  ASSERT_TRUE(state_broadcaster_->joint_state_publisher_);
+  ASSERT_TRUE(state_broadcaster_->dynamic_joint_state_publisher_);
 }
 
-TEST_F(JointStateControllerTest, UpdateTest)
+TEST_F(JointStateBroadcasterTest, UpdateTest)
 {
-  SetUpStateController();
+  SetUpStateBroadcaster();
 
-  auto node_state = state_controller_->configure();
-  node_state = state_controller_->activate();
+  auto node_state = state_broadcaster_->configure();
+  node_state = state_broadcaster_->activate();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
-  ASSERT_EQ(state_controller_->update(), controller_interface::return_type::SUCCESS);
+  ASSERT_EQ(state_broadcaster_->update(), controller_interface::return_type::SUCCESS);
 }
 
-TEST_F(JointStateControllerTest, JointStatePublishTest)
+TEST_F(JointStateBroadcasterTest, JointStatePublishTest)
 {
-  SetUpStateController();
+  SetUpStateBroadcaster();
 
-  auto node_state = state_controller_->configure();
+  auto node_state = state_broadcaster_->configure();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
 
-  node_state = state_controller_->activate();
+  node_state = state_broadcaster_->activate();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
 
   rclcpp::Node test_node("test_node");
@@ -217,7 +217,7 @@ TEST_F(JointStateControllerTest, JointStatePublishTest)
     10,
     subs_callback);
 
-  ASSERT_EQ(state_controller_->update(), controller_interface::return_type::SUCCESS);
+  ASSERT_EQ(state_broadcaster_->update(), controller_interface::return_type::SUCCESS);
 
   // wait for message to be passed
   ASSERT_EQ(wait_for(subscription), rclcpp::WaitResultKind::Ready);
@@ -238,14 +238,14 @@ TEST_F(JointStateControllerTest, JointStatePublishTest)
   ASSERT_THAT(joint_state_msg.effort, ElementsAreArray(joint_state_msg.position));
 }
 
-TEST_F(JointStateControllerTest, DynamicJointStatePublishTest)
+TEST_F(JointStateBroadcasterTest, DynamicJointStatePublishTest)
 {
-  SetUpStateController();
+  SetUpStateBroadcaster();
 
-  auto node_state = state_controller_->configure();
+  auto node_state = state_broadcaster_->configure();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
 
-  node_state = state_controller_->activate();
+  node_state = state_broadcaster_->activate();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
 
   rclcpp::Node test_node("test_node");
@@ -257,7 +257,7 @@ TEST_F(JointStateControllerTest, DynamicJointStatePublishTest)
     10,
     subs_callback);
 
-  ASSERT_EQ(state_controller_->update(), controller_interface::return_type::SUCCESS);
+  ASSERT_EQ(state_broadcaster_->update(), controller_interface::return_type::SUCCESS);
 
   // wait for message to be passed
   ASSERT_EQ(wait_for(subscription), rclcpp::WaitResultKind::Ready);

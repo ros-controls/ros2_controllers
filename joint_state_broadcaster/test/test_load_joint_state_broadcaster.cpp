@@ -22,7 +22,7 @@
 #include "rclcpp/utilities.hpp"
 #include "ros2_control_test_assets/descriptions.hpp"
 
-TEST(TestLoadJointStateController, load_controller)
+TEST(TestLoadJointStateBroadcaster, load_controller)
 {
   rclcpp::init(0, nullptr);
 
@@ -34,6 +34,6 @@ TEST(TestLoadJointStateController, load_controller)
 
   ASSERT_NO_THROW(
     cm.load_controller(
-      "test_joint_state_controller",
-      "joint_state_controller/JointStateController"));
+      "test_joint_state_broadcaster",
+      "joint_state_broadcaster/JointStateBroadcaster"));
 }

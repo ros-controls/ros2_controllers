@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "joint_state_controller/joint_state_controller.hpp"
+#include "joint_state_broadcaster/joint_state_broadcaster.hpp"
 
 #include <stddef.h>
 #include <limits>
@@ -37,7 +37,7 @@ namespace rclcpp_lifecycle
 class State;
 }  // namespace rclcpp_lifecycle
 
-namespace joint_state_controller
+namespace joint_state_broadcaster
 {
 const auto kUninitializedValue = std::numeric_limits<double>::quiet_NaN();
 using hardware_interface::HW_IF_POSITION;
@@ -45,17 +45,17 @@ using hardware_interface::HW_IF_VELOCITY;
 using hardware_interface::HW_IF_EFFORT;
 
 
-JointStateController::JointStateController()
+JointStateBroadcaster::JointStateBroadcaster()
 {}
 
-controller_interface::InterfaceConfiguration JointStateController::command_interface_configuration()
+controller_interface::InterfaceConfiguration JointStateBroadcaster::command_interface_configuration()
 const
 {
   return controller_interface::InterfaceConfiguration{controller_interface::
     interface_configuration_type::NONE};
 }
 
-controller_interface::InterfaceConfiguration JointStateController::state_interface_configuration()
+controller_interface::InterfaceConfiguration JointStateBroadcaster::state_interface_configuration()
 const
 {
   return controller_interface::InterfaceConfiguration{controller_interface::
@@ -63,7 +63,7 @@ const
 }
 
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-JointStateController::on_configure(const rclcpp_lifecycle::State & /*previous_state*/)
+JointStateBroadcaster::on_configure(const rclcpp_lifecycle::State & /*previous_state*/)
 {
   try {
     joint_state_publisher_ = get_node()->create_publisher<sensor_msgs::msg::JointState>(
@@ -81,7 +81,7 @@ JointStateController::on_configure(const rclcpp_lifecycle::State & /*previous_st
 }
 
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-JointStateController::on_activate(const rclcpp_lifecycle::State & /*previous_state*/)
+JointStateBroadcaster::on_activate(const rclcpp_lifecycle::State & /*previous_state*/)
 {
   if (!init_joint_data()) {
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
@@ -94,7 +94,7 @@ JointStateController::on_activate(const rclcpp_lifecycle::State & /*previous_sta
 }
 
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-JointStateController::on_deactivate(const rclcpp_lifecycle::State & /*previous_state*/)
+JointStateBroadcaster::on_deactivate(const rclcpp_lifecycle::State & /*previous_state*/)
 {
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
@@ -115,7 +115,7 @@ bool has_any_key(
   return found_key;
 }
 
-bool JointStateController::init_joint_data()
+bool JointStateBroadcaster::init_joint_data()
 {
   // loop in reverse order, this maintains the order of values at retrieval time
   for (auto si = state_interfaces_.crbegin(); si != state_interfaces_.crend(); si++) {
@@ -140,7 +140,7 @@ bool JointStateController::init_joint_data()
   return true;
 }
 
-void JointStateController::init_joint_state_msg()
+void JointStateBroadcaster::init_joint_state_msg()
 {
   const size_t num_joints = joint_names_.size();
 
@@ -154,7 +154,7 @@ void JointStateController::init_joint_state_msg()
   joint_state_msg_.effort.resize(num_joints, kUninitializedValue);
 }
 
-void JointStateController::init_dynamic_joint_state_msg()
+void JointStateBroadcaster::init_dynamic_joint_state_msg()
 {
   for (const auto & name_ifv : name_if_value_mapping_) {
     const auto & name = name_ifv.first;
@@ -183,7 +183,7 @@ double get_value(
 }
 
 controller_interface::return_type
-JointStateController::update()
+JointStateBroadcaster::update()
 {
   for (const auto & state_interface : state_interfaces_) {
     name_if_value_mapping_[state_interface.get_name()][state_interface.get_interface_name()] =
@@ -229,9 +229,9 @@ JointStateController::update()
   return controller_interface::return_type::SUCCESS;
 }
 
-}  // namespace joint_state_controller
+}  // namespace joint_state_broadcaster
 
 #include "pluginlib/class_list_macros.hpp"
 
 PLUGINLIB_EXPORT_CLASS(
-  joint_state_controller::JointStateController, controller_interface::ControllerInterface)
+  joint_state_broadcaster::JointStateBroadcaster, controller_interface::ControllerInterface)
