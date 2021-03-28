@@ -27,6 +27,28 @@ install(
   LIBRARY DESTINATION lib
 )
 
+if(BUILD_TESTING)
+  find_package(ament_cmake_gmock REQUIRED)
+  find_package(ament_lint_auto REQUIRED)
+  find_package(controller_manager REQUIRED)
+  find_package(hardware_interface REQUIRED)
+  find_package(rclcpp REQUIRED)
+  find_package(ros2_control_test_assets REQUIRED)
+
+  ament_lint_auto_find_test_dependencies()
+
+  ament_add_gmock(
+    test_load_joint_state_controller
+    test/test_load_joint_state_controller.cpp
+  )
+  target_include_directories(test_load_joint_state_controller PRIVATE include)
+  ament_target_dependencies(test_load_joint_state_controller
+    controller_manager
+    ros2_control_test_assets
+  )
+  target_compile_definitions(test_load_joint_state_controller PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+endif()
+
 ament_export_dependencies(
   joint_state_broadcaster
 )
