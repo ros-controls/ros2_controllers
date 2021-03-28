@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/*
+ * Author: Subhas Das, Denis Stogl
+ */
+
 #include <gmock/gmock.h>
 #include <memory>
 
@@ -22,7 +26,7 @@
 #include "rclcpp/utilities.hpp"
 #include "ros2_control_test_assets/descriptions.hpp"
 
-TEST(TestLoadForceTorqueSensorController, load_controller)
+TEST(TestLoadForceTorqueSensorBroadcaster, load_controller)
 {
   rclcpp::init(0, nullptr);
 
@@ -34,11 +38,11 @@ TEST(TestLoadForceTorqueSensorController, load_controller)
       ros2_control_test_assets::minimal_robot_urdf), executor, "test_controller_manager");
 
   cm.load_controller(
-    "test_force_torque_sensor_controller",
-    "force_torque_sensor_controller/ForceTorqueSensorController");
+    "test_force_torque_sensor_broadcaster",
+    "force_torque_sensor_broadcaster/ForceTorqueSensorBroadcaster");
 
   ASSERT_NO_THROW(
     cm.load_controller(
-      "test_force_torque_sensor_controller",
-      "force_torque_sensor_controller/ForceTorqueSensorController"));
+      "test_force_torque_sensor_broadcaster",
+      "force_torque_sensor_broadcaster/ForceTorqueSensorBroadcaster"));
 }

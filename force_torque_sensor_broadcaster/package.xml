@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>force_torque_sensor_controller</name>
+  <name>force_torque_sensor_broadcaster</name>
   <version>0.0.0</version>
   <description>Controller to publish state of force-torque sensors.</description>
   <maintainer email="denis@stogl.de">Denis Štogl</maintainer>

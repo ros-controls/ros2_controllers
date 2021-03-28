@@ -30,11 +30,11 @@
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
-#include "force_torque_sensor_controller/force_torque_sensor_controller.hpp"
+#include "force_torque_sensor_broadcaster/force_torque_sensor_broadcaster.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/utilities.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
-#include "test_force_torque_sensor_controller.hpp"
+#include "test_force_torque_sensor_broadcaster.hpp"
 
 using hardware_interface::LoanedStateInterface;
 using std::placeholders::_1;
@@ -60,34 +60,34 @@ rclcpp::WaitResultKind wait_for(rclcpp::SubscriptionBase::SharedPtr subscription
 }
 }  // namespace
 
-void ForceTorqueSensorControllerTest::SetUpTestCase()
+void ForceTorqueSensorBroadcasterTest::SetUpTestCase()
 {
   rclcpp::init(0, nullptr);
 }
 
-void ForceTorqueSensorControllerTest::TearDownTestCase()
+void ForceTorqueSensorBroadcasterTest::TearDownTestCase()
 {
   rclcpp::shutdown();
 }
 
-void ForceTorqueSensorControllerTest::SetUp()
+void ForceTorqueSensorBroadcasterTest::SetUp()
 {
   // initialize controller
-  state_controller_ = std::make_unique<FriendForceTorqueSensorController>();
+  state_controller_ = std::make_unique<FriendForceTorqueSensorBroadcaster>();
 }
 
-void ForceTorqueSensorControllerTest::TearDown()
+void ForceTorqueSensorBroadcasterTest::TearDown()
 {
   state_controller_.reset(nullptr);
 }
 
-void ForceTorqueSensorControllerTest::SetUpStateController()
+void ForceTorqueSensorBroadcasterTest::SetUpStateController()
 {
-  const auto result = state_controller_->init("force_torque_sensor_controller");
+  const auto result = state_controller_->init("force_torque_sensor_broadcaster");
   ASSERT_EQ(result, controller_interface::return_type::SUCCESS);
 }
 
-TEST_F(ForceTorqueSensorControllerTest, SensorNameParameterNotSet)
+TEST_F(ForceTorqueSensorBroadcasterTest, SensorNameParameterNotSet)
 {
   SetUpStateController();
 
@@ -95,7 +95,7 @@ TEST_F(ForceTorqueSensorControllerTest, SensorNameParameterNotSet)
   ASSERT_EQ(state_controller_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
 }
 
-TEST_F(ForceTorqueSensorControllerTest, InterfaceNamesParameterNotSet)
+TEST_F(ForceTorqueSensorBroadcasterTest, InterfaceNamesParameterNotSet)
 {
   SetUpStateController();
 
@@ -106,7 +106,7 @@ TEST_F(ForceTorqueSensorControllerTest, InterfaceNamesParameterNotSet)
   ASSERT_EQ(state_controller_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
 }
 
-TEST_F(ForceTorqueSensorControllerTest, FrameIdParameterNotSet)
+TEST_F(ForceTorqueSensorBroadcasterTest, FrameIdParameterNotSet)
 {
   SetUpStateController();
 
@@ -122,7 +122,7 @@ TEST_F(ForceTorqueSensorControllerTest, FrameIdParameterNotSet)
   ASSERT_EQ(state_controller_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
 }
 
-TEST_F(ForceTorqueSensorControllerTest, SensorNameParameterIsEmpty)
+TEST_F(ForceTorqueSensorBroadcasterTest, SensorNameParameterIsEmpty)
 {
   SetUpStateController();
 
@@ -141,7 +141,7 @@ TEST_F(ForceTorqueSensorControllerTest, SensorNameParameterIsEmpty)
   ASSERT_EQ(state_controller_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
 }
 
-TEST_F(ForceTorqueSensorControllerTest, InterfaceNameParameterIsEmpty)
+TEST_F(ForceTorqueSensorBroadcasterTest, InterfaceNameParameterIsEmpty)
 {
   SetUpStateController();
 
@@ -158,7 +158,7 @@ TEST_F(ForceTorqueSensorControllerTest, InterfaceNameParameterIsEmpty)
   ASSERT_EQ(state_controller_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
 }
 
-TEST_F(ForceTorqueSensorControllerTest, FrameIdParameterIsEmpty)
+TEST_F(ForceTorqueSensorBroadcasterTest, FrameIdParameterIsEmpty)
 {
   SetUpStateController();
 
@@ -177,7 +177,7 @@ TEST_F(ForceTorqueSensorControllerTest, FrameIdParameterIsEmpty)
   ASSERT_EQ(state_controller_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
 }
 
-TEST_F(ForceTorqueSensorControllerTest, ConfigureParamsSuccess)
+TEST_F(ForceTorqueSensorBroadcasterTest, ConfigureParamsSuccess)
 {
   SetUpStateController();
 
@@ -192,7 +192,7 @@ TEST_F(ForceTorqueSensorControllerTest, ConfigureParamsSuccess)
   ASSERT_EQ(state_controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 }
 
-TEST_F(ForceTorqueSensorControllerTest, ActivateSuccess)
+TEST_F(ForceTorqueSensorBroadcasterTest, ActivateSuccess)
 {
   SetUpStateController();
 
@@ -208,7 +208,7 @@ TEST_F(ForceTorqueSensorControllerTest, ActivateSuccess)
   ASSERT_EQ(state_controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 }
 
-TEST_F(ForceTorqueSensorControllerTest, UpdateTest)
+TEST_F(ForceTorqueSensorBroadcasterTest, UpdateTest)
 {
   SetUpStateController();
 
@@ -224,7 +224,7 @@ TEST_F(ForceTorqueSensorControllerTest, UpdateTest)
   ASSERT_EQ(state_controller_->update(), controller_interface::return_type::SUCCESS);
 }
 
-TEST_F(ForceTorqueSensorControllerTest, SensorStatePublishTest)
+TEST_F(ForceTorqueSensorBroadcasterTest, SensorStatePublishTest)
 {
   SetUpStateController();
 
