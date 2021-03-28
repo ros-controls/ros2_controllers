@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(force_torque_sensor_controller)
+project(force_torque_sensor_broadcaster)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -21,17 +21,17 @@ find_package(rclcpp_lifecycle REQUIRED)
 find_package(realtime_tools REQUIRED)
 
 add_library(
-  force_torque_sensor_controller
+  force_torque_sensor_broadcaster
   SHARED
-  src/force_torque_sensor_controller.cpp
+  src/force_torque_sensor_broadcaster.cpp
 )
 target_include_directories(
-  force_torque_sensor_controller
+  force_torque_sensor_broadcaster
   PUBLIC
   include
 )
 ament_target_dependencies(
-  force_torque_sensor_controller
+  force_torque_sensor_broadcaster
   geometry_msgs
   controller_interface
   hardware_interface
@@ -41,14 +41,14 @@ ament_target_dependencies(
   realtime_tools
 )
 # prevent pluginlib from using boost
-target_compile_definitions(force_torque_sensor_controller PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+target_compile_definitions(force_torque_sensor_broadcaster PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
 pluginlib_export_plugin_description_file(
-  controller_interface force_torque_sensor_controller.xml)
+  controller_interface force_torque_sensor_broadcaster.xml)
 
 install(
   TARGETS
-  force_torque_sensor_controller
+  force_torque_sensor_broadcaster
   RUNTIME DESTINATION bin
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -69,31 +69,31 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 
   ament_add_gmock(
-    test_load_force_torque_sensor_controller
-    test/test_load_force_torque_sensor_controller.cpp
+    test_load_force_torque_sensor_broadcaster
+    test/test_load_force_torque_sensor_broadcaster.cpp
   )
-  target_include_directories(test_load_force_torque_sensor_controller PRIVATE include)
-  ament_target_dependencies(test_load_force_torque_sensor_controller
+  target_include_directories(test_load_force_torque_sensor_broadcaster PRIVATE include)
+  ament_target_dependencies(test_load_force_torque_sensor_broadcaster
     controller_manager
     hardware_interface
     ros2_control_test_assets
   )
-  target_compile_definitions(test_load_force_torque_sensor_controller PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+  target_compile_definitions(test_load_force_torque_sensor_broadcaster PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
   ament_add_gmock(
-    test_force_torque_sensor_controller
-    test/test_force_torque_sensor_controller.cpp
+    test_force_torque_sensor_broadcaster
+    test/test_force_torque_sensor_broadcaster.cpp
   )
-  target_include_directories(test_force_torque_sensor_controller PRIVATE include)
-  target_link_libraries(test_force_torque_sensor_controller
-    force_torque_sensor_controller
+  target_include_directories(test_force_torque_sensor_broadcaster PRIVATE include)
+  target_link_libraries(test_force_torque_sensor_broadcaster
+    force_torque_sensor_broadcaster
   )
-  ament_target_dependencies(test_force_torque_sensor_controller
+  ament_target_dependencies(test_force_torque_sensor_broadcaster
     hardware_interface
   )
 endif()
 
-ament_target_dependencies(test_load_force_torque_sensor_controller
+ament_target_dependencies(test_load_force_torque_sensor_broadcaster
   controller_manager
   hardware_interface
   ros2_control_test_assets
@@ -102,7 +102,7 @@ ament_export_include_directories(
   include
 )
 ament_export_libraries(
-  force_torque_sensor_controller
+  force_torque_sensor_broadcaster
 )
 ament_export_dependencies(
   controller_interface

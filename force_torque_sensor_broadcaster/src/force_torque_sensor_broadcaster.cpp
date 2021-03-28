@@ -12,21 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "force_torque_sensor_controller/force_torque_sensor_controller.hpp"
+/*
+ * Author: Subhas Das, Denis Stogl
+ */
+
+#include "force_torque_sensor_broadcaster/force_torque_sensor_broadcaster.hpp"
 
 #include <memory>
 #include <string>
 #include <vector>
 
-namespace force_torque_sensor_controller
+namespace force_torque_sensor_broadcaster
 {
 
-ForceTorqueSensorController::ForceTorqueSensorController()
+ForceTorqueSensorBroadcaster::ForceTorqueSensorBroadcaster()
 : controller_interface::ControllerInterface()
 {}
 
 controller_interface::return_type
-ForceTorqueSensorController::init(const std::string & controller_name)
+ForceTorqueSensorBroadcaster::init(const std::string & controller_name)
 {
   auto ret = ControllerInterface::init(controller_name);
   if (ret != controller_interface::return_type::SUCCESS) {
@@ -46,7 +50,7 @@ ForceTorqueSensorController::init(const std::string & controller_name)
   return controller_interface::return_type::SUCCESS;
 }
 
-CallbackReturn ForceTorqueSensorController::on_configure(
+CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   sensor_name_ = node_->get_parameter("sensor_name").as_string();
@@ -86,7 +90,7 @@ CallbackReturn ForceTorqueSensorController::on_configure(
 }
 
 controller_interface::InterfaceConfiguration
-ForceTorqueSensorController::command_interface_configuration() const
+ForceTorqueSensorBroadcaster::command_interface_configuration() const
 {
   controller_interface::InterfaceConfiguration command_interfaces_config;
   command_interfaces_config.type = controller_interface::interface_configuration_type::NONE;
@@ -95,7 +99,7 @@ ForceTorqueSensorController::command_interface_configuration() const
 }
 
 controller_interface::InterfaceConfiguration
-ForceTorqueSensorController::state_interface_configuration() const
+ForceTorqueSensorBroadcaster::state_interface_configuration() const
 {
   controller_interface::InterfaceConfiguration state_interfaces_config;
   state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
@@ -107,19 +111,19 @@ ForceTorqueSensorController::state_interface_configuration() const
   return state_interfaces_config;
 }
 
-CallbackReturn ForceTorqueSensorController::on_activate(
+CallbackReturn ForceTorqueSensorBroadcaster::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   return CallbackReturn::SUCCESS;
 }
 
-CallbackReturn ForceTorqueSensorController::on_deactivate(
+CallbackReturn ForceTorqueSensorBroadcaster::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   return CallbackReturn::SUCCESS;
 }
 
-controller_interface::return_type ForceTorqueSensorController::update()
+controller_interface::return_type ForceTorqueSensorBroadcaster::update()
 {
   for (auto index = 0ul; index < state_interfaces_.size(); ++index) {
     switch (index) {
@@ -146,10 +150,10 @@ controller_interface::return_type ForceTorqueSensorController::update()
   return controller_interface::return_type::SUCCESS;
 }
 
-}  // namespace force_torque_sensor_controller
+}  // namespace force_torque_sensor_broadcaster
 
 #include "pluginlib/class_list_macros.hpp"
 
 PLUGINLIB_EXPORT_CLASS(
-  force_torque_sensor_controller::ForceTorqueSensorController,
+  force_torque_sensor_broadcaster::ForceTorqueSensorBroadcaster,
   controller_interface::ControllerInterface)

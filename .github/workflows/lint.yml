@@ -21,7 +21,7 @@ jobs:
         package-name:
             diff_drive_controller
             effort_controllers
-            force_torque_sensor_controller
+            force_torque_sensor_broadcaster
             forward_command_controller
             joint_state_broadcaster
             joint_state_controller
