@@ -1,17 +1,16 @@
-.. _joint_state_controller_userdoc:
+.. _joint_state_broadcaster_userdoc:
 
-joint_state_controller
+joint_state_broadcaster
 ----------------------
 
-The controller reads all state interfaces and reports them on ``/joint_states`` and ``/dynamic_joint_states``.
+The broadcaster reads all state interfaces and reports them on ``/joint_states`` and ``/dynamic_joint_states``.
 
 Commands
 ^^^^^^^^
 
-This is not a real controller, therefore is takes no commands.
+Broadcasters are not real controllers, and therefore take no commands.
 
 Hardware interface type
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-All available *joint state interfaces* are used by this controller.
-
+All available *joint state interfaces* are used by this broadcaster.

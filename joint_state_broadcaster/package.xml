@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="3">
-  <name>joint_state_controller</name>
+  <name>joint_state_broadcaster</name>
   <version>0.2.0</version>
-  <description>Controller to publish joint state</description>
+  <description>Broadcaster to publish joint state</description>
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
   <maintainer email="jordan.palacios@pal-robotics.com">Jordan Palacios</maintainer>
   <maintainer email="karsten@openrobotics.org">Karsten Knese</maintainer>

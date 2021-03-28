@@ -1,7 +1,7 @@
-<library path="joint_state_controller">
-  <class name="joint_state_controller/JointStateController" type="joint_state_controller::JointStateController" base_class_type="controller_interface::ControllerInterface">
+<library path="joint_state_broadcaster">
+  <class name="joint_state_broadcaster/JointStateBroadcaster" type="joint_state_broadcaster::JointStateBroadcaster" base_class_type="controller_interface::ControllerInterface">
   <description>
-    The joint state controller publishes the current joint state
+    The joint state broadcaster publishes the current joint state
   </description>
   </class>
 </library>

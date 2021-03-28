@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(joint_state_controller)
+project(joint_state_broadcaster)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -18,12 +18,12 @@ find_package(rclcpp_lifecycle REQUIRED)
 find_package(rcutils REQUIRED)
 find_package(sensor_msgs REQUIRED)
 
-add_library(joint_state_controller
+add_library(joint_state_broadcaster
   SHARED
-  src/joint_state_controller.cpp
+  src/joint_state_broadcaster.cpp
 )
-target_include_directories(joint_state_controller PRIVATE include)
-ament_target_dependencies(joint_state_controller
+target_include_directories(joint_state_broadcaster PRIVATE include)
+ament_target_dependencies(joint_state_broadcaster
   builtin_interfaces
   control_msgs
   controller_interface
@@ -34,9 +34,9 @@ ament_target_dependencies(joint_state_controller
 )
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
-target_compile_definitions(joint_state_controller PRIVATE "JOINT_STATE_CONTROLLER_BUILDING_DLL")
+target_compile_definitions(joint_state_broadcaster PRIVATE "JOINT_STATE_BROADCASTER_BUILDING_DLL")
 # prevent pluginlib from using boost
-target_compile_definitions(joint_state_controller PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+target_compile_definitions(joint_state_broadcaster PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 pluginlib_export_plugin_description_file(controller_interface joint_state_plugin.xml)
 
 install(
@@ -46,7 +46,7 @@ install(
 
 install(
   TARGETS
-  joint_state_controller
+  joint_state_broadcaster
   RUNTIME DESTINATION bin
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -62,23 +62,23 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 
   ament_add_gmock(
-    test_load_joint_state_controller
-    test/test_load_joint_state_controller.cpp
+    test_load_joint_state_broadcaster
+    test/test_load_joint_state_broadcaster.cpp
   )
-  target_include_directories(test_load_joint_state_controller PRIVATE include)
-  ament_target_dependencies(test_load_joint_state_controller
+  target_include_directories(test_load_joint_state_broadcaster PRIVATE include)
+  ament_target_dependencies(test_load_joint_state_broadcaster
     controller_manager
     ros2_control_test_assets
   )
-  target_compile_definitions(test_load_joint_state_controller PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+  target_compile_definitions(test_load_joint_state_broadcaster PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
   ament_add_gmock(
-    test_joint_state_controller
-    test/test_joint_state_controller.cpp
+    test_joint_state_broadcaster
+    test/test_joint_state_broadcaster.cpp
   )
-  target_include_directories(test_joint_state_controller PRIVATE include)
-  target_link_libraries(test_joint_state_controller
-    joint_state_controller
+  target_include_directories(test_joint_state_broadcaster PRIVATE include)
+  target_link_libraries(test_joint_state_broadcaster
+    joint_state_broadcaster
   )
 endif()
 
@@ -92,6 +92,6 @@ ament_export_include_directories(
   include
 )
 ament_export_libraries(
-  joint_state_controller
+  joint_state_broadcaster
 )
 ament_package()
