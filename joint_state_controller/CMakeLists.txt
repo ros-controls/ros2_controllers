@@ -44,6 +44,7 @@ if(BUILD_TESTING)
   target_include_directories(test_load_joint_state_controller PRIVATE include)
   ament_target_dependencies(test_load_joint_state_controller
     controller_manager
+    hardware_interface
     ros2_control_test_assets
   )
   target_compile_definitions(test_load_joint_state_controller PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")

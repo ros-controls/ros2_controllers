@@ -19,6 +19,7 @@
 
   <depend>control_msgs</depend>
   <depend>controller_interface</depend>
+  <depend>hardware_interface</depend>
   <depend>rclcpp_lifecycle</depend>
   <depend>sensor_msgs</depend>
 
