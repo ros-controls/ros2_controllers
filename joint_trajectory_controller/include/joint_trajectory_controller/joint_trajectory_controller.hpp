@@ -124,6 +124,14 @@ protected:
     hardware_interface::HW_IF_EFFORT,
   };
 
+  // Parameters for some special cases, e.g. hydraulics powered robots
+  /// Read hardware states only when starting controller. This is useful when robot is not exactly
+  /// following the commanded trajectory.
+  bool hardware_state_has_offset_ = false;
+  trajectory_msgs::msg::JointTrajectoryPoint current_state_when_offset_;
+  /// Allow integration in goal trajectories to accept goals without position or velocity specified
+  bool allow_integration_in_goal_trajectories_ = false;
+
   // The interfaces are defined as the types in 'allowed_interface_types_' member.
   // For convenience, for each type the interfaces are ordered so that i-th position
   // matches i-th index in joint_names_
@@ -140,6 +148,9 @@ protected:
   bool has_acceleration_command_interface_ = false;
 
   /// If true, a velocity feedforward term plus corrective PID term is used
+  // TODO(anyone): This flag is not used for now
+  // There should be PID-approach used as in ROS1:
+  // https://github.com/ros-controls/ros_controllers/blob/noetic-devel/joint_trajectory_controller/include/joint_trajectory_controller/hardware_interface_adapter.h#L283
   bool use_closed_loop_pid_adapter = false;
 
   // TODO(karsten1987): eventually activate and deactive subscriber directly when its supported
@@ -216,12 +227,26 @@ protected:
     const JointTrajectoryPoint & current_state,
     const JointTrajectoryPoint & state_error);
 
+  void read_state_from_hardware(JointTrajectoryPoint & state);
+
 private:
   bool contains_interface_type(
     const std::vector<std::string> & interface_type_list, const std::string & interface_type)
   {
     return std::find(interface_type_list.begin(), interface_type_list.end(), interface_type) !=
            interface_type_list.end();
+  }
+
+  void resize_joint_trajectory_point(
+    trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size)
+  {
+    point.positions.resize(size);
+    if (has_velocity_state_interface_) {
+      point.velocities.resize(size);
+    }
+    if (has_acceleration_state_interface_) {
+      point.accelerations.resize(size);
+    }
   }
 };
 
