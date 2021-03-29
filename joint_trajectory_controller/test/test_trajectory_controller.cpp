@@ -977,56 +977,56 @@ TEST_P(
 
 // TODO(anyone): the new gtest version afer 1.8.0 uses INSTANTIATE_TEST_SUITE_P
 
-// position controllers
-INSTANTIATE_TEST_CASE_P(
-  PositionTrajectoryControllers,
-  TrajectoryControllerTestParameterized,
-  ::testing::Values(
-    std::make_tuple(
-      std::vector<std::string>({"position"}),
-      std::vector<std::string>({"position"})),
-    std::make_tuple(
-      std::vector<std::string>({"position"}),
-      std::vector<std::string>({"position", "velocity"})),
-    std::make_tuple(
-      std::vector<std::string>({"position"}),
-      std::vector<std::string>({"position", "velocity", "acceleration"}))
-  )
-);
-
-// position_velocity controllers
-INSTANTIATE_TEST_CASE_P(
-  PositionVelocityTrajectoryControllers,
-  TrajectoryControllerTestParameterized,
-  ::testing::Values(
-    std::make_tuple(
-      std::vector<std::string>({"position", "velocity"}),
-      std::vector<std::string>({"position"})),
-    std::make_tuple(
-      std::vector<std::string>({"position", "velocity"}),
-      std::vector<std::string>({"position", "velocity"})),
-    std::make_tuple(
-      std::vector<std::string>({"position", "velocity"}),
-      std::vector<std::string>({"position", "velocity", "acceleration"}))
-  )
-);
-
-// position_velocity_acceleration controllers
-INSTANTIATE_TEST_CASE_P(
-  PositionVelocityAccelerationTrajectoryControllers,
-  TrajectoryControllerTestParameterized,
-  ::testing::Values(
-    std::make_tuple(
-      std::vector<std::string>({"position", "velocity", "acceleration"}),
-      std::vector<std::string>({"position"})),
-    std::make_tuple(
-      std::vector<std::string>({"position", "velocity", "acceleration"}),
-      std::vector<std::string>({"position", "velocity"})),
-    std::make_tuple(
-      std::vector<std::string>({"position", "velocity", "acceleration"}),
-      std::vector<std::string>({"position", "velocity", "acceleration"}))
-  )
-);
+// // position controllers
+// INSTANTIATE_TEST_CASE_P(
+//   PositionTrajectoryControllers,
+//   TrajectoryControllerTestParameterized,
+//   ::testing::Values(
+//     std::make_tuple(
+//       std::vector<std::string>({"position"}),
+//       std::vector<std::string>({"position"})),
+//     std::make_tuple(
+//       std::vector<std::string>({"position"}),
+//       std::vector<std::string>({"position", "velocity"})),
+//     std::make_tuple(
+//       std::vector<std::string>({"position"}),
+//       std::vector<std::string>({"position", "velocity", "acceleration"}))
+//   )
+// );
+//
+// // position_velocity controllers
+// INSTANTIATE_TEST_CASE_P(
+//   PositionVelocityTrajectoryControllers,
+//   TrajectoryControllerTestParameterized,
+//   ::testing::Values(
+//     std::make_tuple(
+//       std::vector<std::string>({"position", "velocity"}),
+//       std::vector<std::string>({"position"})),
+//     std::make_tuple(
+//       std::vector<std::string>({"position", "velocity"}),
+//       std::vector<std::string>({"position", "velocity"})),
+//     std::make_tuple(
+//       std::vector<std::string>({"position", "velocity"}),
+//       std::vector<std::string>({"position", "velocity", "acceleration"}))
+//   )
+// );
+//
+// // position_velocity_acceleration controllers
+// INSTANTIATE_TEST_CASE_P(
+//   PositionVelocityAccelerationTrajectoryControllers,
+//   TrajectoryControllerTestParameterized,
+//   ::testing::Values(
+//     std::make_tuple(
+//       std::vector<std::string>({"position", "velocity", "acceleration"}),
+//       std::vector<std::string>({"position"})),
+//     std::make_tuple(
+//       std::vector<std::string>({"position", "velocity", "acceleration"}),
+//       std::vector<std::string>({"position", "velocity"})),
+//     std::make_tuple(
+//       std::vector<std::string>({"position", "velocity", "acceleration"}),
+//       std::vector<std::string>({"position", "velocity", "acceleration"}))
+//   )
+// );
 
 TEST_F(TrajectoryControllerTest, incorrect_initialization_using_interface_parameters) {
   auto set_parameter_and_check_result = [&]() {

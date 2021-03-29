@@ -81,7 +81,8 @@ public:
     const rclcpp::Time & sample_time,
     trajectory_msgs::msg::JointTrajectoryPoint & expected_state,
     TrajectoryPointConstIter & start_segment_itr,
-    TrajectoryPointConstIter & end_segment_itr);
+    TrajectoryPointConstIter & end_segment_itr,
+    bool integrate_missing_states = false);
 
   /**
    * Do interpolation between 2 states given a time in between their respective timestamps

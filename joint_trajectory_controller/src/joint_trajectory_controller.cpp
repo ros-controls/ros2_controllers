@@ -170,7 +170,6 @@ JointTrajectoryController::update()
 
     // find segment for current timestamp
     TrajectoryPointConstIter start_segment_itr, end_segment_itr;
-    // TODO(anyone): this is kind-of open-loop concept? I am right?
     const bool valid_point = (*traj_point_active_ptr_)->sample(
       node_->now(), state_desired,
       start_segment_itr, end_segment_itr);
