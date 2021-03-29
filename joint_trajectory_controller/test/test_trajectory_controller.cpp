@@ -847,13 +847,63 @@ INSTANTIATE_TEST_CASE_P(
   )
 );
 
-// TODO(denis): Add incorrect interface parameters
-TEST_F(TrajectoryControllerTest, incorrect_initialization_using_wrong_parameters) {
+TEST_F(TrajectoryControllerTest, incorrect_initialization_using_interface_parameters) {
+  auto set_parameter_and_check_result = [&] () {
+    SetParameters(); // This call is replacing the way parameters are set via launch
+    traj_controller_->configure();
+    auto state = traj_controller_->get_current_state();
+    EXPECT_EQ(state.id(), State::PRIMARY_STATE_FINALIZED);
+  };
+
   SetUpTrajectoryController(false);
 
-  // This call is replacing the way parameters are set via launch
-  SetParameters();
-  traj_controller_->configure();
-  auto state = traj_controller_->get_current_state();
-  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  // command interfaces: empty
+  command_interface_types_ = {};
+  set_parameter_and_check_result();
+
+  // command interfaces: bad_name
+  command_interface_types_ = {"bad_name"};
+  set_parameter_and_check_result();
+
+  // command interfaces: effort not yet implemented
+  command_interface_types_ = {"effort"};
+  set_parameter_and_check_result();
+
+  // command interfaces: effort has to be only
+  command_interface_types_ = {"effort", "position"};
+  set_parameter_and_check_result();
+
+  // command interfaces: velocity alone not yet implemented
+  command_interface_types_ = {"velocity"};
+  set_parameter_and_check_result();
+
+  // command interfaces: velocity - position not present
+  command_interface_types_ = {"velocity", "acceleration"};
+  set_parameter_and_check_result();
+
+  // command interfaces: acceleration without position and velocity
+  command_interface_types_ = {"acceleration"};
+  set_parameter_and_check_result();
+
+  // state interfaces: empty
+  state_interface_types_ = {};
+  set_parameter_and_check_result();
+
+  // state interfaces: cannot not be effort
+  state_interface_types_ = {"effort"};
+  set_parameter_and_check_result();
+
+  // state interfaces: bad name
+  state_interface_types_ = {"bad_name"};
+  set_parameter_and_check_result();
+
+  // state interfaces: velocity - position not present
+  state_interface_types_ = {"velocity"};
+  set_parameter_and_check_result();
+  state_interface_types_ = {"velocity", "acceleration"};
+  set_parameter_and_check_result();
+
+  // state interfaces: acceleration without position and velocity
+  state_interface_types_ = {"acceleration"};
+  set_parameter_and_check_result();
 }
