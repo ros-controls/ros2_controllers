@@ -29,124 +29,171 @@
 
 #pragma once
 
-
 // C++ standard
 #include <cassert>
+#include <memory>
 #include <stdexcept>
 #include <string>
-#include <memory>
 
 // ROS
-#include <ros/node_handle.h>
+#include <rclcpp/rclcpp.hpp>
 
 // ROS messages
-#include <control_msgs/GripperCommandAction.h>
+#include <control_msgs/action/gripper_command.hpp>
 
-// actionlib
-#include <actionlib/server/action_server.h>
+// rclcpp_action
+#include <rclcpp_action/create_server.hpp>
 
 // ros_controls
-#include <realtime_tools/realtime_server_goal_handle.h>
-#include <controller_interface/controller.h>
-#include <hardware_interface/joint_command_interface.h>
-#include <hardware_interface/internal/demangle_symbol.h>
+#include <controller_interface/controller_interface.hpp>
+#include <gripper_action_controller/visibility_control.h>
+#include <hardware_interface/loaned_command_interface.hpp>
+#include <hardware_interface/loaned_state_interface.hpp>
 #include <realtime_tools/realtime_buffer.h>
+#include <realtime_tools/realtime_server_goal_handle.h>
 
 // Project
 #include <gripper_action_controller/hardware_interface_adapter.h>
 
-namespace gripper_action_controller
-{
+namespace gripper_action_controller {
 
 /**
- * \brief Controller for executing a gripper command action for simple single-dof grippers.
+ * \brief Controller for executing a gripper command action for simple
+ * single-dof grippers.
  *
- * \tparam HardwareInterface Controller hardware interface. Currently \p hardware_interface::PositionJointInterface and
- * \p hardware_interface::EffortJointInterface are supported out-of-the-box.
+ * \tparam HardwareInterface Controller hardware interface. Currently \p
+ * hardware_interface::PositionJointInterface and \p
+ * hardware_interface::EffortJointInterface are supported out-of-the-box.
  */
-template <class HardwareInterface>
-class GripperActionController : public controller_interface::Controller<HardwareInterface>
-{
+template <const char *HardwareInterface>
+class GripperActionController
+    : public controller_interface::ControllerInterface {
 public:
-
   /**
-   * \brief Store position and max effort in struct to allow easier realtime buffer usage
+   * \brief Store position and max effort in struct to allow easier realtime
+   * buffer usage
    */
-  struct Commands
-  {
-    double position_; // Last commanded position
+  struct Commands {
+    double position_;   // Last commanded position
     double max_effort_; // Max allowed effort
   };
 
-  GripperActionController();
+  GRIPPER_ACTION_CONTROLLER_PUBLIC GripperActionController();
 
-  /** \name Non Real-Time Safe Functions
-   *\{*/
-  bool init(HardwareInterface* hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh);
-  /*\}*/
+  GRIPPER_ACTION_CONTROLLER_PUBLIC
+  controller_interface::return_type
+  init(const std::string &controller_name) override;
 
-  /** \name Real-Time Safe Functions
-   *\{*/
-  /** \brief Holds the current position. */
-  void starting(const ros::Time& time);
+  /**
+   * @brief command_interface_configuration This controller requires the
+   * position command interfaces for the controlled joints
+   */
+  GRIPPER_ACTION_CONTROLLER_PUBLIC
+  controller_interface::InterfaceConfiguration
+  command_interface_configuration() const override;
 
-  /** \brief Cancels the active action goal, if any. */
-  void stopping(const ros::Time& time);
+  /**
+   * @brief command_interface_configuration This controller requires the
+   * position and velocity state interfaces for the controlled joints
+   */
+  GRIPPER_ACTION_CONTROLLER_PUBLIC
+  controller_interface::InterfaceConfiguration
+  state_interface_configuration() const override;
 
-  void update(const ros::Time& time, const ros::Duration& period);
-  /*\}*/
+  GRIPPER_ACTION_CONTROLLER_PUBLIC
+  controller_interface::return_type update() override;
+
+  GRIPPER_ACTION_CONTROLLER_PUBLIC
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+  on_configure(const rclcpp_lifecycle::State &previous_state) override;
+
+  GRIPPER_ACTION_CONTROLLER_PUBLIC
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+  on_activate(const rclcpp_lifecycle::State &previous_state) override;
+
+  GRIPPER_ACTION_CONTROLLER_PUBLIC
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+  on_deactivate(const rclcpp_lifecycle::State &previous_state) override;
+
+  GRIPPER_ACTION_CONTROLLER_PUBLIC
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+  on_cleanup(const rclcpp_lifecycle::State &previous_state) override;
+
+  GRIPPER_ACTION_CONTROLLER_PUBLIC
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+  on_error(const rclcpp_lifecycle::State &previous_state) override;
+
+  GRIPPER_ACTION_CONTROLLER_PUBLIC
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+  on_shutdown(const rclcpp_lifecycle::State &previous_state) override;
 
   realtime_tools::RealtimeBuffer<Commands> command_;
-  Commands command_struct_, command_struct_rt_; // pre-allocated memory that is re-used to set the realtime buffer
+  // pre-allocated memory that is re-used to set the realtime buffer
+  Commands command_struct_, command_struct_rt_;
 
 private:
+  using GripperCommandAction = control_msgs::action::GripperCommand;
+  using ActionServer = rclcpp_action::Server<GripperCommandAction>;
+  using ActionServerPtr = ActionServer::SharedPtr;
+  using GoalHandle = rclcpp_action::ServerGoalHandle<GripperCommandAction>;
+  using RealtimeGoalHandle = realtime_tools::RealtimeServerGoalHandle<
+      control_msgs::action::GripperCommand>;
+  using RealtimeGoalHandlePtr = std::shared_ptr<RealtimeGoalHandle>;
 
-  typedef actionlib::ActionServer<control_msgs::GripperCommandAction>                         ActionServer;
-  typedef std::shared_ptr<ActionServer>                                                       ActionServerPtr;
-  typedef ActionServer::GoalHandle                                                            GoalHandle;
-  typedef realtime_tools::RealtimeServerGoalHandle<control_msgs::GripperCommandAction>        RealtimeGoalHandle;
-  typedef boost::shared_ptr<RealtimeGoalHandle>                                               RealtimeGoalHandlePtr;
+  using HwIfaceAdapter = HardwareInterfaceAdapter<HardwareInterface>;
 
-  typedef HardwareInterfaceAdapter<HardwareInterface> HwIfaceAdapter;
+  bool update_hold_position_;
 
-  bool                                          update_hold_position_;
+  bool verbose_ = false; ///< Hard coded verbose flag to help in debugging
+  std::string name_;     ///< Controller name.
+  hardware_interface::LoanedCommandInterface *joint_position_command_interface_;
+  hardware_interface::LoanedStateInterface *joint_position_state_interface_;
+  hardware_interface::LoanedStateInterface *joint_velocity_state_interface_;
 
-  bool                                         verbose_;            ///< Hard coded verbose flag to help in debugging
-  std::string                                  name_;               ///< Controller name.
-  hardware_interface::JointHandle joint_;                          ///< Handles to controlled joints.
-  std::string                     joint_name_;                      ///< Controlled joint names.
+  std::string joint_name_; ///< Controlled joint names.
 
-  HwIfaceAdapter                               hw_iface_adapter_;   ///< Adapts desired goal state to HW interface.
+  HwIfaceAdapter
+      hw_iface_adapter_; ///< Adapts desired goal state to HW interface.
 
-  RealtimeGoalHandlePtr                        rt_active_goal_;     ///< Currently active action goal, if any.
-  control_msgs::GripperCommandResultPtr        pre_alloc_result_;
+  RealtimeGoalHandlePtr
+      rt_active_goal_; ///< Currently active action goal, if any.
+  control_msgs::action::GripperCommand::Result::SharedPtr pre_alloc_result_;
 
-  ros::Duration action_monitor_period_;
+  rclcpp::Duration action_monitor_period_;
 
   // ROS API
-  ros::NodeHandle    controller_nh_;
-  ActionServerPtr    action_server_;
+  ActionServerPtr action_server_;
 
-  ros::Timer         goal_handle_timer_;
+  rclcpp::TimerBase::SharedPtr goal_handle_timer_;
 
-  void goalCB(GoalHandle gh);
-  void cancelCB(GoalHandle gh);
-  void preemptActiveGoal();
-  void setHoldPosition(const ros::Time& time);
+  rclcpp_action::GoalResponse
+  goal_callback(const rclcpp_action::GoalUUID &uuid,
+                std::shared_ptr<const GripperCommandAction::Goal> goal);
 
-  ros::Time last_movement_time_;                                    ///< Store stall time
-  double computed_command_;                                         ///< Computed command
+  rclcpp_action::CancelResponse
+  cancel_callback(const std::shared_ptr<GoalHandle> goal_handle);
 
-  double stall_timeout_, stall_velocity_threshold_;                 ///< Stall related parameters
-  double default_max_effort_;                                       ///< Max allowed effort
+  void accepted_callback(std::shared_ptr<GoalHandle> goal_handle);
+
+  void preempt_active_goal();
+
+  void set_hold_position();
+
+  rclcpp::Time last_movement_time_ =
+      rclcpp::Time(0, 0, RCL_ROS_TIME); ///< Store stall time
+  double computed_command_;             ///< Computed command
+
+  double stall_timeout_,
+      stall_velocity_threshold_; ///< Stall related parameters
+  double default_max_effort_;    ///< Max allowed effort
   double goal_tolerance_;
+
   /**
    * \brief Check for success and publish appropriate result and feedback.
    **/
-  void checkForSuccess(const ros::Time& time, double error_position, double current_position, double current_velocity);
-
+  void check_for_success(const rclcpp::Time &time, double error_position,
+                         double current_position, double current_velocity);
 };
 
-} // namespace
-
+} // namespace gripper_action_controller
 #include <gripper_action_controller/gripper_action_controller_impl.h>

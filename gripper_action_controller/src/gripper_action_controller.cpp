@@ -27,31 +27,32 @@
 
 /// \author Sachin Chitta
 
-// Pluginlib
-#include <pluginlib/class_list_macros.hpp>
-
 // Project
 #include <gripper_action_controller/gripper_action_controller.h>
+#include <hardware_interface/types/hardware_interface_type_values.hpp>
+namespace position_controllers {
+/**
+ * \brief Gripper action controller that sends
+ * commands to a \b position interface.
+ */
+using GripperActionController =
+    gripper_action_controller::GripperActionController<
+        hardware_interface::HW_IF_POSITION>;
+} // namespace position_controllers
 
-namespace position_controllers
-{
-  /**
-   * \brief Gripper action controller that sends
-   * commands to a \b position interface.
-   */
-  typedef gripper_action_controller::GripperActionController<hardware_interface::PositionJointInterface>
-          GripperActionController;
-}
+namespace effort_controllers {
+/**
+ * \brief Gripper action controller that sends
+ * commands to a \b effort interface.
+ */
+using GripperActionController =
+    gripper_action_controller::GripperActionController<
+        hardware_interface::HW_IF_EFFORT>;
+} // namespace effort_controllers
 
-namespace effort_controllers
-{
-  /**
-   * \brief Gripper action controller that sends
-   * commands to a \b effort interface.
-   */
-  typedef gripper_action_controller::GripperActionController<hardware_interface::EffortJointInterface>
-          GripperActionController;
-}
+#include "pluginlib/class_list_macros.hpp"
 
-PLUGINLIB_EXPORT_CLASS(position_controllers::GripperActionController, controller_interface::ControllerBase)
-PLUGINLIB_EXPORT_CLASS(effort_controllers::GripperActionController,   controller_interface::ControllerBase)
+PLUGINLIB_EXPORT_CLASS(position_controllers::GripperActionController,
+                       controller_interface::ControllerInterface)
+PLUGINLIB_EXPORT_CLASS(effort_controllers::GripperActionController,
+                       controller_interface::ControllerInterface)

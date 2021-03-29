@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.5)
 project(gripper_action_controller)
 
 # Default to C++14
@@ -6,64 +6,58 @@ if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 14)
 endif()
 
-find_package(catkin
-  REQUIRED COMPONENTS
-      actionlib
-      control_msgs
-      control_toolbox
-      controller_interface
-      hardware_interface
-      pluginlib
-      realtime_tools
-      roscpp
-      urdf
-)
+#if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+#  add_compile_options(-Wall -Wextra)
+#endif()
 
-catkin_package(
-INCLUDE_DIRS include
-LIBRARIES gripper_action_controller
-CATKIN_DEPENDS
-  actionlib
-  control_msgs
-  control_toolbox
-  controller_interface
-  hardware_interface
-  realtime_tools
-  roscpp
-  urdf
-)
-
-
-###########
-## Build ##
-###########
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp_action REQUIRED)
+find_package(control_msgs REQUIRED)
+find_package(control_toolbox REQUIRED)
+find_package(controller_interface REQUIRED)
+find_package(hardware_interface REQUIRED)
+find_package(pluginlib REQUIRED)
+find_package(realtime_tools REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(urdf REQUIRED)
 
 # Specify header include paths
 include_directories(include ${catkin_INCLUDE_DIRS})
 
-add_library(gripper_action_controller
+add_library(gripper_action_controller SHARED
    src/gripper_action_controller.cpp
 )
-target_link_libraries(gripper_action_controller ${catkin_LIBRARIES})
+ament_target_dependencies(gripper_action_controller
+  controller_interface
+  control_msgs
+  hardware_interface
+  pluginlib
+  rclcpp
+  rclcpp_lifecycle
+  rcutils
+  realtime_tools
+)
 
-
+pluginlib_export_plugin_description_file(controller_interface ros_control_plugins.xml)
 #############
 ## Install ##
 #############
 
 # Install headers
 install(DIRECTORY include/${PROJECT_NAME}/
-   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+   DESTINATION include
 )
 
 # Install targets
 install(TARGETS gripper_action_controller
-   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-   RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
+   LIBRARY DESTINATION lib
 )
 
-# Install plugins
-install(FILES ros_control_plugins.xml
-   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-)
+
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+
+  ament_lint_auto_find_test_dependencies()
+endif()
+
+ament_package()
