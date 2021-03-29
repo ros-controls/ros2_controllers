@@ -63,26 +63,34 @@ public:
   /// Find the segment (made up of 2 points) and its expected state from the
   /// containing trajectory.
   /**
-  * Specific case returns for start_segment_itr and end_segment_itr:
-  * - Sampling before the trajectory start:
-  *   start_segment_itr = begin(), end_segment_itr = begin()
-  * - Sampling exactly on a point of the trajectory:
-  *    start_segment_itr = iterator where point is, end_segment_itr = iterator after start_segment_itr
-  * - Sampling between points:
-  *    start_segment_itr = iterator before the sampled point, end_segment_itr = iterator after start_segment_itr
-  * - Sampling after entire trajectory:
-  *    start_segment_itr = --end(), end_segment_itr = end()
-  * - Sampling empty msg or before the time given in set_point_before_trajectory_msg()
-  *    return false
-  */
+   * Samping trajector at given \p sample_time.
+   * If position in the \p end_segment_itr is missing it will be deduced from provided velocity, or acceleration respectively.
+   * Deduction assumes that the provided velocity or acceleration have to be reached at the time defined in the segment.
+   *
+   * Specific case returns for start_segment_itr and end_segment_itr:
+   * - Sampling before the trajectory start:
+   *   start_segment_itr = begin(), end_segment_itr = begin()
+   * - Sampling exactly on a point of the trajectory:
+   *    start_segment_itr = iterator where point is, end_segment_itr = iterator after start_segment_itr
+   * - Sampling between points:
+   *    start_segment_itr = iterator before the sampled point, end_segment_itr = iterator after start_segment_itr
+   * - Sampling after entire trajectory:
+   *    start_segment_itr = --end(), end_segment_itr = end()
+   * - Sampling empty msg or before the time given in set_point_before_trajectory_msg()
+   *    return false
+   *
+   * \param[in] sample_time Time at which trajectory will be sampled.
+   * \param[out] expected_state Calculated new at \p sample_time.
+   * \param[out] start_segment_itr Iterator to the start segment for given \p sample_time. See description above.
+   * \param[out] end_segment_itr Iterator to the end segment for given \p sample_time. See description above.
+   */
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   bool
   sample(
     const rclcpp::Time & sample_time,
     trajectory_msgs::msg::JointTrajectoryPoint & expected_state,
     TrajectoryPointConstIter & start_segment_itr,
-    TrajectoryPointConstIter & end_segment_itr,
-    bool integrate_missing_states = false);
+    TrajectoryPointConstIter & end_segment_itr);
 
   /**
    * Do interpolation between 2 states given a time in between their respective timestamps

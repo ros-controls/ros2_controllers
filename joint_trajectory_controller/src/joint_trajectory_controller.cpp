@@ -70,7 +70,7 @@ JointTrajectoryController::init(const std::string & controller_name)
   node_->declare_parameter<bool>(
     "hardware_state_has_offset", hardware_state_has_offset_);
   node_->declare_parameter<bool>(
-    "allow_integration_in_goal_trajectories", allow_integration_in_goal_trajectories_);
+    "deduce_states_from_derivatives", deduce_states_from_derivatives_);
   node_->declare_parameter<double>("constraints.stopped_velocity_tolerance", 0.01);
   node_->declare_parameter<double>("constraints.goal_time", 0.0);
 
@@ -478,8 +478,8 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
   // Read parameters customizing controller for special cases
   hardware_state_has_offset_ =
     node_->get_parameter("hardware_state_has_offset").get_value<bool>();
-  allow_integration_in_goal_trajectories_ =
-    node_->get_parameter("allow_integration_in_goal_trajectories").get_value<bool>();
+  deduce_states_from_derivatives_ =
+    node_->get_parameter("deduce_states_from_derivatives").get_value<bool>();
 
   // subscriber callback
   // non realtime
@@ -765,6 +765,9 @@ rclcpp_action::GoalResponse JointTrajectoryController::goal_callback(
     return rclcpp_action::GoalResponse::REJECT;
   }
 
+  // TODO(denis): is here the following line missing?
+//   add_new_trajectory_msg(std::make_shared(goal->trajectory));
+
   RCLCPP_INFO(node_->get_logger(), "Accepted new action goal");
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
@@ -981,11 +984,26 @@ bool JointTrajectoryController::validate_trajectory_msg(
 
     const size_t joint_count = trajectory.joint_names.size();
     const auto & points = trajectory.points;
-    if (!validate_trajectory_point_field(joint_count, points[i].positions, "positions", i, false) ||
+    // TODO(anyone): This currently supports only position, velocity and acceleration inputs
+    if (deduce_states_from_derivatives_) {
+      const bool all_empty = points[i].positions.empty() && points[i].velocities.empty() &&
+        points[i].accelerations.empty();
+      const bool position_error = !points[i].positions.empty() &&
+        !validate_trajectory_point_field(joint_count, points[i].positions, "positions", i, false);
+      const bool velocity_error = !points[i].velocities.empty() &&
+        !validate_trajectory_point_field(joint_count, points[i].velocities, "velocities", i, false);
+      const bool acceleration_error = !points[i].accelerations.empty() &&
+        !validate_trajectory_point_field(
+        joint_count, points[i].accelerations, "accelerations", i, false);
+      if (all_empty || position_error || velocity_error || acceleration_error) {
+        return false;
+      }
+    } else if (
+      !validate_trajectory_point_field(joint_count, points[i].positions, "positions", i, false) ||
       !validate_trajectory_point_field(joint_count, points[i].velocities, "velocities", i, true) ||
       !validate_trajectory_point_field(
-        joint_count, points[i].accelerations, "accelerations", i,
-        true) ||
+        joint_count, points[i].accelerations, "accelerations", i, true) ||
+      // TODO(denis): should this be deleted, since effort goals are not supported?
       !validate_trajectory_point_field(joint_count, points[i].effort, "effort", i, true))
     {
       return false;
