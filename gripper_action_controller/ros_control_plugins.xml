@@ -1,0 +1,17 @@
+<library path="lib/libgripper_action_controller">
+
+  <class name="position_controllers/GripperActionController"
+         type="position_controllers::GripperActionController"
+         base_class_type="controller_interface::ControllerBase">
+    <description>
+    </description>
+  </class>
+
+  <class name="effort_controllers/GripperActionController"
+         type="effort_controllers::GripperActionController"
+         base_class_type="controller_interface::ControllerBase">
+    <description>
+    </description>
+  </class>
+
+</library>
