@@ -68,8 +68,7 @@ Trajectory::sample(
   const rclcpp::Time & sample_time,
   trajectory_msgs::msg::JointTrajectoryPoint & expected_state,
   TrajectoryPointConstIter & start_segment_itr,
-  TrajectoryPointConstIter & end_segment_itr,
-  bool integrate_missing_states)
+  TrajectoryPointConstIter & end_segment_itr)
 {
   THROW_ON_NULLPTR(trajectory_msg_)
   expected_state = trajectory_msgs::msg::JointTrajectoryPoint();
@@ -94,20 +93,20 @@ Trajectory::sample(
     return false;
   }
 
-  auto add_missing_states = [&](trajectory_msgs::msg::JointTrajectoryPoint & first_state,
+  auto deduce_from_derivaties = [&](trajectory_msgs::msg::JointTrajectoryPoint & first_state,
       trajectory_msgs::msg::JointTrajectoryPoint & second_state,
       const size_t dim, const double delta_t)
     {
-      if (first_state.velocities.empty()) {
-        first_state.velocities.resize(dim, 0.0);
-      }
-      if (first_state.accelerations.empty()) {
-        first_state.accelerations.resize(dim, 0.0);
-      }
       if (second_state.positions.empty()) {
         second_state.positions.resize(dim);
+        if (first_state.velocities.empty()) {
+          first_state.velocities.resize(dim, 0.0);
+        }
         if (second_state.velocities.empty()) {
           second_state.velocities.resize(dim);
+          if (first_state.accelerations.empty()) {
+            first_state.accelerations.resize(dim, 0.0);
+          }
           for (size_t i = 0; i < dim; ++i) {
             second_state.velocities[i] = first_state.velocities[i] +
               (first_state.accelerations[i] + second_state.accelerations[i]) * 0.5 * delta_t;
@@ -125,18 +124,17 @@ Trajectory::sample(
   auto & first_point_in_msg = trajectory_msg_->points[0];
   const rclcpp::Time first_point_timestamp =
     trajectory_start_time_ + first_point_in_msg.time_from_start;
+
   if (sample_time < first_point_timestamp) {
-    trajectory_msgs::msg::JointTrajectoryPoint state_before = state_before_traj_msg_;
-    if (integrate_missing_states) {
-      add_missing_states(
-        state_before, first_point_in_msg,
-        state_before_traj_msg_.positions.size(),
-        (first_point_timestamp - time_before_traj_msg_).seconds());
-    }
+    deduce_from_derivaties(
+      state_before_traj_msg_, first_point_in_msg,
+      state_before_traj_msg_.positions.size(),
+      (first_point_timestamp - time_before_traj_msg_).seconds());
 
     interpolate_between_points(
-      time_before_traj_msg_, state_before, first_point_timestamp, first_point_in_msg,
+      time_before_traj_msg_, state_before_traj_msg_, first_point_timestamp, first_point_in_msg,
       sample_time, expected_state);
+
     start_segment_itr = begin();  // no segments before the first
     end_segment_itr = begin();
     return true;
@@ -151,15 +149,14 @@ Trajectory::sample(
     const rclcpp::Time t0 = trajectory_start_time_ + point.time_from_start;
     const rclcpp::Time t1 = trajectory_start_time_ + next_point.time_from_start;
 
-    if (integrate_missing_states) {
-      add_missing_states(
+    if (sample_time >= t0 && sample_time < t1) {
+      deduce_from_derivaties(
         point, next_point,
         state_before_traj_msg_.positions.size(),
         (t1 - t0).seconds());
-    }
 
-    if (sample_time >= t0 && sample_time < t1) {
       interpolate_between_points(t0, point, t1, next_point, sample_time, expected_state);
+
       start_segment_itr = begin() + i;
       end_segment_itr = begin() + (i + 1);
       return true;
@@ -170,7 +167,7 @@ Trajectory::sample(
   start_segment_itr = --end();
   end_segment_itr = end();
   expected_state = (*start_segment_itr);
-  // the trajectories in msg may have empty velocities/accel, so resize them
+  // the trajectories in msg may have empty velocities/accelerations, so resize them
   if (expected_state.velocities.empty()) {
     expected_state.velocities.resize(expected_state.positions.size(), 0.0);
   }
