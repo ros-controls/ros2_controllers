@@ -245,7 +245,7 @@ JointTrajectoryController::update()
       {
         assign_interface_from_point(joint_command_interface_[2], state_desired.accelerations);
       }
-      // TODO(anyone): Add here "if using_closed_loop_hw_interface_adapter (see ROS1)
+      // TODO(anyone): Add here "if using_closed_loop_hw_interface_adapter" (see ROS1)
 //       if (check_if_interface_type_exist(
 //           command_interface_types_, hardware_interface::HW_IF_EFFORT)) {
 //         assign_interface_from_point(joint_command_interface_[3], state_desired.effort);
@@ -459,16 +459,16 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
         hardware_interface::HW_IF_POSITION))
     {
       RCLCPP_ERROR(
-        logger, "'velocity' state interface can be used if 'position' interface "
-        "is present.");
+        logger, "'velocity' state interface cannot be used if 'position' interface "
+        "is missing.");
       return CallbackReturn::ERROR;
     }
   } else if (check_if_interface_type_exists(
       state_interface_types_, hardware_interface::HW_IF_ACCELERATION))
   {
     RCLCPP_ERROR(
-      logger, "'acceleration' state interface can be used if 'position' and 'velocity' "
-      "interfaces are present.");
+      logger, "'acceleration' state interface cannot be used if 'position' and 'velocity' "
+      "interfaces are not present.");
     return CallbackReturn::ERROR;
   }
 
@@ -610,7 +610,7 @@ bool get_ordered_interfaces(
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 JointTrajectoryController::on_activate(const rclcpp_lifecycle::State &)
 {
-  // order all joint in the storage
+  // order all joints in the storage
   for (const auto & interface : command_interface_types_) {
     auto it = std::find(
       allowed_interface_types_.begin(), allowed_interface_types_.end(), interface);

@@ -64,35 +64,8 @@ void spin(rclcpp::executors::MultiThreadedExecutor * exe)
 }
 
 
-TEST_P(TrajectoryControllerTestParameterized, configure_param) {
-  SetUpTrajectoryController();
-
-  rclcpp::executors::MultiThreadedExecutor executor;
-  executor.add_node(traj_controller_->get_node()->get_node_base_interface());
-  const auto future_handle_ = std::async(std::launch::async, spin, &executor);
-
-  const auto state = traj_controller_->configure();
-  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
-
-  // send msg
-  builtin_interfaces::msg::Duration time_from_start;
-  time_from_start.sec = 1;
-  time_from_start.nanosec = 0;
-  std::vector<std::vector<double>> points {{{3.3, 4.4, 5.5}}};
-  publish(time_from_start, points);
-  std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-  traj_controller_->update();
-
-  // no change in hw position
-  EXPECT_NE(3.3, joint_pos_[0]);
-  EXPECT_NE(4.4, joint_pos_[1]);
-  EXPECT_NE(5.5, joint_pos_[2]);
-
-  executor.cancel();
-}
-
-TEST_P(TrajectoryControllerTestParameterized, configure) {
+TEST_P(TrajectoryControllerTestParameterized, configure)
+{
   SetUpTrajectoryController();
 
   rclcpp::executors::MultiThreadedExecutor executor;
@@ -867,10 +840,10 @@ INSTANTIATE_TEST_CASE_P(
       std::vector<std::string>({"position"})),
     std::make_tuple(
       std::vector<std::string>({"position", "velocity", "acceleration"}),
-      std::vector<std::string>({"position", "velocity"}))  // ,
-//     std::make_tuple(
-//       std::vector<std::string>({"position", "velocity", "acceleration"}),
-//       std::vector<std::string>({"position", "velocity", "acceleration"}))
+      std::vector<std::string>({"position", "velocity"})),
+    std::make_tuple(
+      std::vector<std::string>({"position", "velocity", "acceleration"}),
+      std::vector<std::string>({"position", "velocity", "acceleration"}))
   )
 );
 
