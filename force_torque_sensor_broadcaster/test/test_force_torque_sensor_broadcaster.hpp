@@ -54,7 +54,7 @@ public:
   void SetUpStateController();
 
 protected:
-  std::unique_ptr<FriendForceTorqueSensorBroadcaster> state_controller_;
+  std::unique_ptr<FriendForceTorqueSensorBroadcaster> fts_broadcaster_;
 };
 
 #endif  // TEST_FORCE_TORQUE_SENSOR_BROADCASTER_HPP_
