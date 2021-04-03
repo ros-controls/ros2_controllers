@@ -13,7 +13,7 @@
 // limitations under the License.
 
 /*
- * Author: Subhas Das, Denis Stogl
+ * Authors: Subhas Das, Denis Stogl
  */
 
 #include <stddef.h>
@@ -73,17 +73,17 @@ void ForceTorqueSensorBroadcasterTest::TearDownTestCase()
 void ForceTorqueSensorBroadcasterTest::SetUp()
 {
   // initialize controller
-  state_controller_ = std::make_unique<FriendForceTorqueSensorBroadcaster>();
+  fts_broadcaster_ = std::make_unique<FriendForceTorqueSensorBroadcaster>();
 }
 
 void ForceTorqueSensorBroadcasterTest::TearDown()
 {
-  state_controller_.reset(nullptr);
+  fts_broadcaster_.reset(nullptr);
 }
 
 void ForceTorqueSensorBroadcasterTest::SetUpStateController()
 {
-  const auto result = state_controller_->init("force_torque_sensor_broadcaster");
+  const auto result = fts_broadcaster_->init("test_force_torque_sensor_broadcaster");
   ASSERT_EQ(result, controller_interface::return_type::SUCCESS);
 }
 
@@ -92,7 +92,7 @@ TEST_F(ForceTorqueSensorBroadcasterTest, SensorNameParameterNotSet)
   SetUpStateController();
 
   // configure failed, 'sensor_name' parameter not set
-  ASSERT_EQ(state_controller_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
+  ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
 }
 
 TEST_F(ForceTorqueSensorBroadcasterTest, InterfaceNamesParameterNotSet)
@@ -100,10 +100,10 @@ TEST_F(ForceTorqueSensorBroadcasterTest, InterfaceNamesParameterNotSet)
   SetUpStateController();
 
   // set the 'sensor_name'
-  state_controller_->get_node()->set_parameter({"sensor_name", "dummy"});
+  fts_broadcaster_->get_node()->set_parameter({"sensor_name", "dummy"});
 
   // configure failed, 'interface_names' parameter not set
-  ASSERT_EQ(state_controller_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
+  ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
 }
 
 TEST_F(ForceTorqueSensorBroadcasterTest, FrameIdParameterNotSet)
@@ -111,15 +111,15 @@ TEST_F(ForceTorqueSensorBroadcasterTest, FrameIdParameterNotSet)
   SetUpStateController();
 
   // set the 'sensor_name'
-  state_controller_->get_node()->set_parameter({"sensor_name", "dummy"});
+  fts_broadcaster_->get_node()->set_parameter({"sensor_name", "dummy"});
 
   // set the 'interface_names'
-  state_controller_->get_node()->set_parameter(
+  fts_broadcaster_->get_node()->set_parameter(
     {"interface_names",
       std::vector<std::string>{"fx", "tz"}});
 
   // configure failed, 'frame_id' parameter not set
-  ASSERT_EQ(state_controller_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
+  ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
 }
 
 TEST_F(ForceTorqueSensorBroadcasterTest, SensorNameParameterIsEmpty)
@@ -127,18 +127,18 @@ TEST_F(ForceTorqueSensorBroadcasterTest, SensorNameParameterIsEmpty)
   SetUpStateController();
 
   // set the 'sensor_name' empty
-  state_controller_->get_node()->set_parameter({"sensor_name", ""});
+  fts_broadcaster_->get_node()->set_parameter({"sensor_name", ""});
 
   // set the 'interface_names'
-  state_controller_->get_node()->set_parameter(
+  fts_broadcaster_->get_node()->set_parameter(
     {"interface_names",
       std::vector<std::string>{"fx", "tz"}});
 
   // set the 'frame_id'
-  state_controller_->get_node()->set_parameter({"frame_id", "dummy_frame"});
+  fts_broadcaster_->get_node()->set_parameter({"frame_id", "dummy_frame"});
 
   // configure failed, 'sensor_name' parameter empty
-  ASSERT_EQ(state_controller_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
+  ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
 }
 
 TEST_F(ForceTorqueSensorBroadcasterTest, InterfaceNameParameterIsEmpty)
@@ -146,16 +146,16 @@ TEST_F(ForceTorqueSensorBroadcasterTest, InterfaceNameParameterIsEmpty)
   SetUpStateController();
 
   // set the 'sensor_name'
-  state_controller_->get_node()->set_parameter({"sensor_name", "dummy"});
+  fts_broadcaster_->get_node()->set_parameter({"sensor_name", "dummy"});
 
   // set the 'interface_names' empty
-  state_controller_->get_node()->set_parameter({"interface_names", std::vector<std::string>()});
+  fts_broadcaster_->get_node()->set_parameter({"interface_names", std::vector<std::string>()});
 
   // set the 'frame_id'
-  state_controller_->get_node()->set_parameter({"frame_id", "dummy_frame"});
+  fts_broadcaster_->get_node()->set_parameter({"frame_id", "dummy_frame"});
 
   // configure failed, 'interface_name' parameter empty
-  ASSERT_EQ(state_controller_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
+  ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
 }
 
 TEST_F(ForceTorqueSensorBroadcasterTest, FrameIdParameterIsEmpty)
@@ -163,18 +163,18 @@ TEST_F(ForceTorqueSensorBroadcasterTest, FrameIdParameterIsEmpty)
   SetUpStateController();
 
   // set the 'sensor_name'
-  state_controller_->get_node()->set_parameter({"sensor_name", "dummy"});
+  fts_broadcaster_->get_node()->set_parameter({"sensor_name", "dummy"});
 
   // set the 'interface_names'
-  state_controller_->get_node()->set_parameter(
+  fts_broadcaster_->get_node()->set_parameter(
     {"interface_names",
       std::vector<std::string>{"fx", "tz"}});
 
   // set the 'frame_id' empty
-  state_controller_->get_node()->set_parameter({"frame_id", ""});
+  fts_broadcaster_->get_node()->set_parameter({"frame_id", ""});
 
   // configure failed, 'frame_id' parameter empty
-  ASSERT_EQ(state_controller_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
+  ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
 }
 
 TEST_F(ForceTorqueSensorBroadcasterTest, ConfigureParamsSuccess)
@@ -182,14 +182,14 @@ TEST_F(ForceTorqueSensorBroadcasterTest, ConfigureParamsSuccess)
   SetUpStateController();
 
   // set the params 'sensor_name', 'interface_names' and 'frame_id'
-  state_controller_->get_node()->set_parameter({"sensor_name", "dummy"});
-  state_controller_->get_node()->set_parameter(
+  fts_broadcaster_->get_node()->set_parameter({"sensor_name", "dummy"});
+  fts_broadcaster_->get_node()->set_parameter(
     {"interface_names",
       std::vector<std::string>{"fx", "tz"}});
-  state_controller_->get_node()->set_parameter({"frame_id", "dummy_frame"});
+  fts_broadcaster_->get_node()->set_parameter({"frame_id", "dummy_frame"});
 
   // configure success
-  ASSERT_EQ(state_controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 }
 
 TEST_F(ForceTorqueSensorBroadcasterTest, ActivateSuccess)
@@ -197,15 +197,15 @@ TEST_F(ForceTorqueSensorBroadcasterTest, ActivateSuccess)
   SetUpStateController();
 
   // set the params 'sensor_name', 'interface_names' and 'frame_id'
-  state_controller_->get_node()->set_parameter({"sensor_name", "dummy"});
-  state_controller_->get_node()->set_parameter(
+  fts_broadcaster_->get_node()->set_parameter({"sensor_name", "dummy"});
+  fts_broadcaster_->get_node()->set_parameter(
     {"interface_names",
       std::vector<std::string>{"fx", "tz"}});
-  state_controller_->get_node()->set_parameter({"frame_id", "dummy_frame"});
+  fts_broadcaster_->get_node()->set_parameter({"frame_id", "dummy_frame"});
 
   // configure and activate success
-  ASSERT_EQ(state_controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(state_controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(fts_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 }
 
 TEST_F(ForceTorqueSensorBroadcasterTest, UpdateTest)
@@ -213,15 +213,15 @@ TEST_F(ForceTorqueSensorBroadcasterTest, UpdateTest)
   SetUpStateController();
 
   // set the params 'sensor_name', 'interface_names' and 'frame_id'
-  state_controller_->get_node()->set_parameter({"sensor_name", "dummy"});
-  state_controller_->get_node()->set_parameter(
+  fts_broadcaster_->get_node()->set_parameter({"sensor_name", "dummy"});
+  fts_broadcaster_->get_node()->set_parameter(
     {"interface_names",
       std::vector<std::string>{"fx", "tz"}});
-  state_controller_->get_node()->set_parameter({"frame_id", "dummy_frame"});
+  fts_broadcaster_->get_node()->set_parameter({"frame_id", "dummy_frame"});
 
-  ASSERT_EQ(state_controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(state_controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(state_controller_->update(), controller_interface::return_type::SUCCESS);
+  ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(fts_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(fts_broadcaster_->update(), controller_interface::return_type::SUCCESS);
 }
 
 TEST_F(ForceTorqueSensorBroadcasterTest, SensorStatePublishTest)
@@ -229,14 +229,14 @@ TEST_F(ForceTorqueSensorBroadcasterTest, SensorStatePublishTest)
   SetUpStateController();
 
   // set the params 'sensor_name', 'interface_names' and 'frame_id'
-  state_controller_->get_node()->set_parameter({"sensor_name", "dummy"});
-  state_controller_->get_node()->set_parameter(
+  fts_broadcaster_->get_node()->set_parameter({"sensor_name", "dummy"});
+  fts_broadcaster_->get_node()->set_parameter(
     {"interface_names",
       std::vector<std::string>{"fx", "tz"}});
-  state_controller_->get_node()->set_parameter({"frame_id", "dummy_frame"});
+  fts_broadcaster_->get_node()->set_parameter({"frame_id", "dummy_frame"});
 
-  ASSERT_EQ(state_controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(state_controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(fts_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   // create a new subscriber
   rclcpp::Node test_node("test_node");
@@ -244,12 +244,12 @@ TEST_F(ForceTorqueSensorBroadcasterTest, SensorStatePublishTest)
     {
     };
   auto subscription = test_node.create_subscription<geometry_msgs::msg::WrenchStamped>(
-    "sensor_state",
+    "/test_force_torque_sensor_broadcaster/sensor_states",
     10,
     subs_callback);
 
   // call update to publish the test value
-  ASSERT_EQ(state_controller_->update(), controller_interface::return_type::SUCCESS);
+  ASSERT_EQ(fts_broadcaster_->update(), controller_interface::return_type::SUCCESS);
 
   // wait for message to be passed
   ASSERT_EQ(wait_for(subscription), rclcpp::WaitResultKind::Ready);

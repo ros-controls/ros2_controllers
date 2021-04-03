@@ -40,7 +40,12 @@ ForceTorqueSensorBroadcaster::init(const std::string & controller_name)
   try {
     auto node = get_node();
     node->declare_parameter<std::string>("sensor_name", "");
-    node->declare_parameter<std::vector<std::string>>("interface_names", {});
+    node->declare_parameter<std::string>("interface_names.force.x", "");
+    node->declare_parameter<std::string>("interface_names.force.y", "");
+    node->declare_parameter<std::string>("interface_names.force.z", "");
+    node->declare_parameter<std::string>("interface_names.torque.x", "");
+    node->declare_parameter<std::string>("interface_names.torque.y", "");
+    node->declare_parameter<std::string>("interface_names.torque.z", "");
     node->declare_parameter<std::string>("frame_id", "");
   } catch (const std::exception & e) {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
@@ -54,38 +59,53 @@ CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   sensor_name_ = node_->get_parameter("sensor_name").as_string();
-  if (sensor_name_.empty()) {
-    RCLCPP_ERROR(get_node()->get_logger(), "'sensor_name' parameter was empty");
-    return CallbackReturn::ERROR;
-  }
+  interface_names_.resize(6, "");
+  interface_names_[0] = node_->get_parameter("interface_names.force.x").as_string();
+  interface_names_[1] = node_->get_parameter("interface_names.force.y").as_string();
+  interface_names_[2] = node_->get_parameter("interface_names.force.z").as_string();
+  interface_names_[3] = node_->get_parameter("interface_names.torque.x").as_string();
+  interface_names_[4] = node_->get_parameter("interface_names.torque.y").as_string();
+  interface_names_[5] = node_->get_parameter("interface_names.torque.z").as_string();
 
-  interface_names_ = node_->get_parameter("interface_names").as_string_array();
-  if (interface_names_.empty()) {
-    RCLCPP_ERROR(get_node()->get_logger(), "'interface_names' parameter was empty");
+  if (sensor_name_.empty() &&
+    std::count(interface_names_.begin(), interface_names_.end(), "") == 6)
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(), "'sensor_name' or at least one "
+      "'interface_names.[force|torque].[x|y|z]' parameter hast to be specified.");
     return CallbackReturn::ERROR;
   }
 
   frame_id_ = node_->get_parameter("frame_id").as_string();
   if (frame_id_.empty()) {
-    RCLCPP_ERROR(get_node()->get_logger(), "'frame_id' parameter was empty");
+    RCLCPP_ERROR(get_node()->get_logger(), "'frame_id' parameter has to be provided.");
     return CallbackReturn::ERROR;
   }
 
-  RCLCPP_INFO_STREAM(get_node()->get_logger(), "configure successful");
+  if (!sensor_name_.empty()) {
+    force_torque_sensor_ = std::make_unique<semantic_components::ForceTorqueSensor>(
+      semantic_components::ForceTorqueSensor(sensor_name_));
+  } else {
+    force_torque_sensor_ = std::make_unique<semantic_components::ForceTorqueSensor>(
+      semantic_components::ForceTorqueSensor(
+        interface_names_[0], interface_names_[1],
+        interface_names_[2], interface_names_[3], interface_names_[4], interface_names_[5]));
+  }
 
   try {
     // register ft sensor data publisher
     sensor_state_publisher_ = node_->create_publisher<geometry_msgs::msg::WrenchStamped>(
-      "force_torque_sensor", rclcpp::SystemDefaultsQoS());
-    state_publisher_ = std::make_unique<StatePublisher>(sensor_state_publisher_);
+      "~/sensor_states", rclcpp::SystemDefaultsQoS());
+    realtime_publisher_ = std::make_unique<StatePublisher>(sensor_state_publisher_);
   } catch (...) {
     return CallbackReturn::ERROR;
   }
 
-  state_publisher_->lock();
-  state_publisher_->msg_.header.frame_id = frame_id_;
-  state_publisher_->unlock();
+  realtime_publisher_->lock();
+  realtime_publisher_->msg_.header.frame_id = frame_id_;
+  realtime_publisher_->unlock();
 
+  RCLCPP_INFO_STREAM(get_node()->get_logger(), "configure successful");
   return CallbackReturn::SUCCESS;
 }
 
@@ -104,9 +124,7 @@ ForceTorqueSensorBroadcaster::state_interface_configuration() const
   controller_interface::InterfaceConfiguration state_interfaces_config;
   state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
 
-  for (const auto & interface : interface_names_) {
-    state_interfaces_config.names.push_back(sensor_name_ + "/" + interface);
-  }
+  state_interfaces_config.names = force_torque_sensor_->get_state_interface_types();
 
   return state_interfaces_config;
 }
@@ -114,37 +132,23 @@ ForceTorqueSensorBroadcaster::state_interface_configuration() const
 CallbackReturn ForceTorqueSensorBroadcaster::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
+  force_torque_sensor_->assign_loaned_state_interfaces(state_interfaces_);
   return CallbackReturn::SUCCESS;
 }
 
 CallbackReturn ForceTorqueSensorBroadcaster::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
+  force_torque_sensor_->release_interfaces();
   return CallbackReturn::SUCCESS;
 }
 
 controller_interface::return_type ForceTorqueSensorBroadcaster::update()
 {
-  for (auto index = 0ul; index < state_interfaces_.size(); ++index) {
-    switch (index) {
-      case 0:
-        wrench_state_msg_.wrench.force.x = state_interfaces_[index].get_value();
-        break;
-      case 1:
-        wrench_state_msg_.wrench.torque.z = state_interfaces_[index].get_value();
-        break;
-      default:
-        break;
-    }
-  }
-
-  // publish
-  if (state_publisher_ && state_publisher_->trylock()) {
-    state_publisher_->msg_.header.stamp = node_->now();
-    state_publisher_->msg_.wrench.force = wrench_state_msg_.wrench.force;
-    state_publisher_->msg_.wrench.torque = wrench_state_msg_.wrench.torque;
-
-    state_publisher_->unlockAndPublish();
+  if (realtime_publisher_ && realtime_publisher_->trylock()) {
+    realtime_publisher_->msg_.header.stamp = node_->now();
+    realtime_publisher_->msg_.wrench = force_torque_sensor_->get_values_as_message();
+    realtime_publisher_->unlockAndPublish();
   }
 
   return controller_interface::return_type::SUCCESS;
