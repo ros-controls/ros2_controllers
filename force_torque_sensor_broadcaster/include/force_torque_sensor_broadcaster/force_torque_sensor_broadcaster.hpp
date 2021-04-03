@@ -70,7 +70,6 @@ protected:
   std::string sensor_name_;
   std::vector<std::string> interface_names_;
   std::string frame_id_;
-  geometry_msgs::msg::WrenchStamped wrench_state_msg_;
 
   std::unique_ptr<semantic_components::ForceTorqueSensor> force_torque_sensor_;
 
