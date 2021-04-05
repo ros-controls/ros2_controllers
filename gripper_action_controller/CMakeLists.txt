@@ -21,9 +21,6 @@ find_package(realtime_tools REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(urdf REQUIRED)
 
-# Specify header include paths
-include_directories(include ${catkin_INCLUDE_DIRS})
-
 add_library(gripper_action_controller SHARED
    src/gripper_action_controller.cpp
 )
