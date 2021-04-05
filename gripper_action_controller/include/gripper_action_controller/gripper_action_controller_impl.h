@@ -254,7 +254,7 @@ GripperActionController<HardwareInterface>::on_activate(
                hardware_interface::HW_IF_POSITION;
       });
   if (position_state_interface_it == state_interfaces_.end()) {
-    RCLCPP_ERROR(node_->get_logger(), "Expected 1 position state interfaces");
+    RCLCPP_ERROR(node_->get_logger(), "Expected 1 position state interface");
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::
     CallbackReturn::ERROR;
   }
@@ -274,7 +274,7 @@ GripperActionController<HardwareInterface>::on_activate(
                hardware_interface::HW_IF_VELOCITY;
       });
   if (velocity_state_interface_it == state_interfaces_.end()) {
-    RCLCPP_ERROR(node_->get_logger(), "Expected 1 velocity state interfaces");
+    RCLCPP_ERROR(node_->get_logger(), "Expected 1 velocity state interface");
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::
     CallbackReturn::ERROR;
   }
