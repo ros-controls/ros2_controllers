@@ -17,29 +17,33 @@
 // Project
 #include <gripper_action_controller/gripper_action_controller.hpp>
 #include <hardware_interface/types/hardware_interface_type_values.hpp>
-namespace position_controllers {
+namespace position_controllers
+{
 /**
  * \brief Gripper action controller that sends
  * commands to a \b position interface.
  */
 using GripperActionController =
-    gripper_action_controller::GripperActionController<
-        hardware_interface::HW_IF_POSITION>;
+  gripper_action_controller::GripperActionController<
+  hardware_interface::HW_IF_POSITION>;
 } // namespace position_controllers
 
-namespace effort_controllers {
+namespace effort_controllers
+{
 /**
  * \brief Gripper action controller that sends
  * commands to a \b effort interface.
  */
 using GripperActionController =
-    gripper_action_controller::GripperActionController<
-        hardware_interface::HW_IF_EFFORT>;
+  gripper_action_controller::GripperActionController<
+  hardware_interface::HW_IF_EFFORT>;
 } // namespace effort_controllers
 
 #include "pluginlib/class_list_macros.hpp"
 
-PLUGINLIB_EXPORT_CLASS(position_controllers::GripperActionController,
-                       controller_interface::ControllerInterface)
-PLUGINLIB_EXPORT_CLASS(effort_controllers::GripperActionController,
-                       controller_interface::ControllerInterface)
+PLUGINLIB_EXPORT_CLASS(
+  position_controllers::GripperActionController,
+  controller_interface::ControllerInterface)
+PLUGINLIB_EXPORT_CLASS(
+  effort_controllers::GripperActionController,
+  controller_interface::ControllerInterface)

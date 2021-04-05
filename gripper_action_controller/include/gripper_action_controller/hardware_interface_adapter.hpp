@@ -35,19 +35,25 @@
  * it is supposed to work with either position or effort commands.
  *
  */
-template <const char *HardwareInterface> class HardwareInterfaceAdapter {
+template<const char * HardwareInterface>
+class HardwareInterfaceAdapter
+{
 public:
-  bool init(hardware_interface::LoanedCommandInterface *joint_handle,
-            const rclcpp::Node::SharedPtr &node) {
+  bool init(
+    hardware_interface::LoanedCommandInterface * joint_handle,
+    const rclcpp::Node::SharedPtr & node)
+  {
     return false;
   }
 
-  void starting(const rclcpp::Time &time) {}
-  void stopping(const rclcpp::Time &time) {}
+  void starting(const rclcpp::Time & time) {}
+  void stopping(const rclcpp::Time & time) {}
 
-  double updateCommand(double desired_position, double desired_velocity,
-                       double error_position, double error_velocity,
-                       double max_allowed_effort) {
+  double updateCommand(
+    double desired_position, double desired_velocity,
+    double error_position, double error_velocity,
+    double max_allowed_effort)
+  {
     return 0.0;
   }
 };
@@ -56,10 +62,14 @@ public:
  * \brief Adapter for a position-controlled hardware interface. Forwards desired
  * positions as commands.
  */
-template <> class HardwareInterfaceAdapter<hardware_interface::HW_IF_POSITION> {
+template<>
+class HardwareInterfaceAdapter<hardware_interface::HW_IF_POSITION>
+{
 public:
-  bool init(hardware_interface::LoanedCommandInterface *joint_handle,
-            const rclcpp::Node::SharedPtr & /* node */) {
+  bool init(
+    hardware_interface::LoanedCommandInterface * joint_handle,
+    const rclcpp::Node::SharedPtr & /* node */)
+  {
     joint_handle_ = joint_handle;
     return true;
   }
@@ -67,16 +77,18 @@ public:
   void starting(const rclcpp::Time & /* time */) {}
   void stopping(const rclcpp::Time & /* time */) {}
 
-  double updateCommand(double desired_position, double /* desired_velocity */,
-                       double /* error_position */, double /* error_velocity */,
-                       double max_allowed_effort) {
+  double updateCommand(
+    double desired_position, double /* desired_velocity */,
+    double /* error_position */, double /* error_velocity */,
+    double max_allowed_effort)
+  {
     // Forward desired position to command
     joint_handle_->set_value(desired_position);
     return max_allowed_effort;
   }
 
 private:
-  hardware_interface::LoanedCommandInterface *joint_handle_;
+  hardware_interface::LoanedCommandInterface * joint_handle_;
 };
 
 /**
@@ -93,10 +105,14 @@ private:
  *     gripper_joint: {p: 200, d: 1, i: 5, i_clamp: 1}
  * \endcode
  */
-template <> class HardwareInterfaceAdapter<hardware_interface::HW_IF_EFFORT> {
+template<>
+class HardwareInterfaceAdapter<hardware_interface::HW_IF_EFFORT>
+{
 public:
-  bool init(hardware_interface::LoanedCommandInterface *joint_handle,
-            const rclcpp::Node::SharedPtr &node) {
+  bool init(
+    hardware_interface::LoanedCommandInterface * joint_handle,
+    const rclcpp::Node::SharedPtr & node)
+  {
     joint_handle_ = joint_handle;
     // Init PID gains from ROS parameter server
     const std::string prefix = "gains." + joint_handle_->get_name();
@@ -104,14 +120,16 @@ public:
     const auto k_i = node->declare_parameter<double>(prefix + ".i", 0.0);
     const auto k_d = node->declare_parameter<double>(prefix + ".d", 0.0);
     const auto i_clamp =
-        node->declare_parameter<double>(prefix + ".i_clamp", 0.0);
+      node->declare_parameter<double>(prefix + ".i_clamp", 0.0);
     // Initialize PID
-    pid_ = std::make_shared<control_toolbox::Pid>(k_p, k_i, k_d, i_clamp,
-                                                  -i_clamp);
+    pid_ = std::make_shared<control_toolbox::Pid>(
+      k_p, k_i, k_d, i_clamp,
+      -i_clamp);
     return true;
   }
 
-  void starting(const rclcpp::Time &time) {
+  void starting(const rclcpp::Time & time)
+  {
     if (!joint_handle_) {
       return;
     }
@@ -120,11 +138,13 @@ public:
     joint_handle_->set_value(0.0);
   }
 
-  void stopping(const rclcpp::Time &time) {}
+  void stopping(const rclcpp::Time & time) {}
 
-  double updateCommand(double desired_position, double desired_velocity,
-                       double error_position, double error_velocity,
-                       double max_allowed_effort) {
+  double updateCommand(
+    double desired_position, double desired_velocity,
+    double error_position, double error_velocity,
+    double max_allowed_effort)
+  {
     // Preconditions
     if (!joint_handle_) {
       return 0.0;
@@ -133,10 +153,11 @@ public:
     const auto period = std::chrono::steady_clock::now() - last_update_time_;
     // Update PIDs
     double command =
-        pid_->computeCommand(error_position, error_velocity, period.count());
+      pid_->computeCommand(error_position, error_velocity, period.count());
     command =
-        std::min<double>(fabs(max_allowed_effort),
-                         std::max<double>(-fabs(max_allowed_effort), command));
+      std::min<double>(
+      fabs(max_allowed_effort),
+      std::max<double>(-fabs(max_allowed_effort), command));
     joint_handle_->set_value(command);
     last_update_time_ = std::chrono::steady_clock::now();
     return command;
@@ -145,6 +166,6 @@ public:
 private:
   using PidPtr = std::shared_ptr<control_toolbox::Pid>;
   PidPtr pid_;
-  hardware_interface::LoanedCommandInterface *joint_handle_;
+  hardware_interface::LoanedCommandInterface * joint_handle_;
   std::chrono::steady_clock::time_point last_update_time_;
 };
