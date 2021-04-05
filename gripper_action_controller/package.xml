@@ -6,10 +6,9 @@
   <name>gripper_action_controller</name>
   <version>0.2.0</version>
   <description>The gripper_action_controller package</description>
+  <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
 
   <license>Apache License 2.0</license>
-
-  <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
 
   <author email="robot.moveit@gmail.com">Sachin Chitta</author>
 
