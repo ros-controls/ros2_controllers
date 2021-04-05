@@ -15,7 +15,7 @@
 /// \author Sachin Chitta
 
 // Project
-#include <gripper_action_controller/gripper_action_controller.h>
+#include <gripper_action_controller/gripper_action_controller.hpp>
 #include <hardware_interface/types/hardware_interface_type_values.hpp>
 namespace position_controllers {
 /**

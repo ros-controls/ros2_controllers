@@ -33,14 +33,14 @@
 
 // ros_controls
 #include <controller_interface/controller_interface.hpp>
-#include <gripper_action_controller/visibility_control.h>
+#include <gripper_action_controller/visibility_control.hpp>
 #include <hardware_interface/loaned_command_interface.hpp>
 #include <hardware_interface/loaned_state_interface.hpp>
 #include <realtime_tools/realtime_buffer.h>
 #include <realtime_tools/realtime_server_goal_handle.h>
 
 // Project
-#include <gripper_action_controller/hardware_interface_adapter.h>
+#include <gripper_action_controller/hardware_interface_adapter.hpp>
 
 namespace gripper_action_controller {
 
@@ -183,4 +183,4 @@ private:
 };
 
 } // namespace gripper_action_controller
-#include <gripper_action_controller/gripper_action_controller_impl.h>
+#include <gripper_action_controller/gripper_action_controller_impl.hpp>

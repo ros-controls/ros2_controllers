@@ -34,7 +34,10 @@ ament_target_dependencies(gripper_action_controller
   rcutils
   realtime_tools
 )
-
+target_include_directories(gripper_action_controller
+  PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PRIVATE $<INSTALL_INTERFACE:include>
+)
 pluginlib_export_plugin_description_file(controller_interface ros_control_plugins.xml)
 #############
 ## Install ##
