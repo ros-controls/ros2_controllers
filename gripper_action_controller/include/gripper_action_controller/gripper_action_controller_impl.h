@@ -332,30 +332,6 @@ GripperActionController<HardwareInterface>::on_deactivate(
 }
 
 template <const char *HardwareInterface>
-rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-GripperActionController<HardwareInterface>::on_cleanup(
-    const rclcpp_lifecycle::State &previous_state) {
-  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::
-  CallbackReturn::SUCCESS;
-}
-
-template <const char *HardwareInterface>
-rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-GripperActionController<HardwareInterface>::on_error(
-    const rclcpp_lifecycle::State &previous_state) {
-  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::
-  CallbackReturn::SUCCESS;
-}
-
-template <const char *HardwareInterface>
-rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-GripperActionController<HardwareInterface>::on_shutdown(
-    const rclcpp_lifecycle::State &previous_state) {
-  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::
-  CallbackReturn::SUCCESS;
-}
-
-template <const char *HardwareInterface>
 controller_interface::InterfaceConfiguration
 GripperActionController<HardwareInterface>::command_interface_configuration()
     const {
