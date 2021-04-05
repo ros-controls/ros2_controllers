@@ -186,6 +186,11 @@ protected:
   void preempt_active_goal();
   void set_hold_position();
 
+  // TODO(matthew-reynolds): Race condition if making a copy while another thread is setting
+  RealtimeGoalHandlePtr get_active_goal() const {return rt_active_goal_;}
+  void set_active_goal(const RealtimeGoalHandlePtr & goal) {rt_active_goal_ = goal;}
+  void clear_active_goal() {rt_active_goal_.reset();}
+
   bool reset();
   void halt();
 
