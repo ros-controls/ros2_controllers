@@ -43,6 +43,7 @@ jobs:
             joint_state_broadcaster
             joint_state_controller
             joint_trajectory_controller
+            gripper_action_controller
             position_controllers
             velocity_controllers
           vcs-repo-file-url: |
