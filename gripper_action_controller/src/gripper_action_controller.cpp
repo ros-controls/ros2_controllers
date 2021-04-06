@@ -26,7 +26,7 @@ namespace position_controllers
 using GripperActionController =
   gripper_action_controller::GripperActionController<
   hardware_interface::HW_IF_POSITION>;
-} // namespace position_controllers
+}  // namespace position_controllers
 
 namespace effort_controllers
 {
@@ -37,7 +37,7 @@ namespace effort_controllers
 using GripperActionController =
   gripper_action_controller::GripperActionController<
   hardware_interface::HW_IF_EFFORT>;
-} // namespace effort_controllers
+}  // namespace effort_controllers
 
 #include "pluginlib/class_list_macros.hpp"
 

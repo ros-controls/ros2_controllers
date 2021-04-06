@@ -14,7 +14,8 @@
 
 /// \author Sachin Chitta, Adolfo Rodriguez Tsouroukdissian
 
-#pragma once
+#ifndef GRIPPER_ACTION_CONTROLLER__GRIPPER_ACTION_CONTROLLER_HPP_
+#define GRIPPER_ACTION_CONTROLLER__GRIPPER_ACTION_CONTROLLER_HPP_
 
 // C++ standard
 #include <cassert>
@@ -23,24 +24,24 @@
 #include <string>
 
 // ROS
-#include <rclcpp/rclcpp.hpp>
+#include "rclcpp/rclcpp.hpp"
 
 // ROS messages
-#include <control_msgs/action/gripper_command.hpp>
+#include "control_msgs/action/gripper_command.hpp"
 
 // rclcpp_action
-#include <rclcpp_action/create_server.hpp>
+#include "rclcpp_action/create_server.hpp"
 
 // ros_controls
-#include <controller_interface/controller_interface.hpp>
-#include <gripper_action_controller/visibility_control.hpp>
-#include <hardware_interface/loaned_command_interface.hpp>
-#include <hardware_interface/loaned_state_interface.hpp>
-#include <realtime_tools/realtime_buffer.h>
-#include <realtime_tools/realtime_server_goal_handle.h>
+#include "controller_interface/controller_interface.hpp"
+#include "gripper_action_controller/visibility_control.hpp"
+#include "hardware_interface/loaned_command_interface.hpp"
+#include "hardware_interface/loaned_state_interface.hpp"
+#include "realtime_tools/realtime_buffer.h"
+#include "realtime_tools/realtime_server_goal_handle.h"
 
 // Project
-#include <gripper_action_controller/hardware_interface_adapter.hpp>
+#include "gripper_action_controller/hardware_interface_adapter.hpp"
 
 namespace gripper_action_controller
 {
@@ -64,8 +65,8 @@ public:
    */
   struct Commands
   {
-    double position_;   // Last commanded position
-    double max_effort_; // Max allowed effort
+    double position_;    // Last commanded position
+    double max_effort_;  // Max allowed effort
   };
 
   GRIPPER_ACTION_CONTROLLER_PUBLIC GripperActionController();
@@ -134,13 +135,13 @@ private:
 
   bool update_hold_position_;
 
-  bool verbose_ = false; ///< Hard coded verbose flag to help in debugging
-  std::string name_;     ///< Controller name.
+  bool verbose_ = false;  ///< Hard coded verbose flag to help in debugging
+  std::string name_;      ///< Controller name.
   hardware_interface::LoanedCommandInterface * joint_position_command_interface_;
   hardware_interface::LoanedStateInterface * joint_position_state_interface_;
   hardware_interface::LoanedStateInterface * joint_velocity_state_interface_;
 
-  std::string joint_name_; ///< Controlled joint names.
+  std::string joint_name_;  ///< Controlled joint names.
 
   HwIfaceAdapter
     hw_iface_adapter_;   ///< Adapts desired goal state to HW interface.
@@ -187,5 +188,8 @@ private:
     double current_position, double current_velocity);
 };
 
-} // namespace gripper_action_controller
-#include <gripper_action_controller/gripper_action_controller_impl.hpp>
+}  // namespace gripper_action_controller
+
+#include "gripper_action_controller/gripper_action_controller_impl.hpp"
+
+#endif  // GRIPPER_ACTION_CONTROLLER__GRIPPER_ACTION_CONTROLLER_HPP_

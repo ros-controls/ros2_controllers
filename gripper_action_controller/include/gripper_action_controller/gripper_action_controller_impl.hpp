@@ -14,7 +14,11 @@
 
 /// \author Sachin Chitta, Adolfo Rodriguez Tsouroukdissian, Stu Glaser
 
-#pragma once
+#ifndef GRIPPER_ACTION_CONTROLLER__GRIPPER_ACTION_CONTROLLER_IMPL_HPP_
+#define GRIPPER_ACTION_CONTROLLER__GRIPPER_ACTION_CONTROLLER_IMPL_HPP_
+
+#include <memory>
+#include <string>
 
 namespace gripper_action_controller
 {
@@ -59,13 +63,10 @@ GripperActionController<HardwareInterface>::update()
 {
   command_struct_rt_ = *(command_.readFromRT());
 
-  const double current_position =
-    joint_position_state_interface_->get_value();
-  const double current_velocity =
-    joint_velocity_state_interface_->get_value();
+  const double current_position = joint_position_state_interface_->get_value();
+  const double current_velocity = joint_velocity_state_interface_->get_value();
 
-  const double error_position =
-    command_struct_rt_.position_ - current_position;
+  const double error_position = command_struct_rt_.position_ - current_position;
   const double error_velocity = -current_velocity;
 
   check_for_success(
@@ -91,7 +92,7 @@ GripperActionController<HardwareInterface>::goal_callback(
 
 template<const char * HardwareInterface>
 void GripperActionController<HardwareInterface>::accepted_callback(
-  std::shared_ptr<GoalHandle> goal_handle)     // Try to update goal
+  std::shared_ptr<GoalHandle> goal_handle)   // Try to update goal
 {
   {
     auto rt_goal = std::make_shared<RealtimeGoalHandle>(goal_handle);
@@ -127,7 +128,6 @@ GripperActionController<HardwareInterface>::cancel_callback(
 
   // Check that cancel request refers to currently active goal (if any)
   if (rt_active_goal_ && rt_active_goal_->gh_ == goal_handle) {
-
     // Enter hold current position mode
     set_hold_position();
 
@@ -157,7 +157,6 @@ void GripperActionController<HardwareInterface>::check_for_success(
   const rclcpp::Time & time, double error_position, double current_position,
   double current_velocity)
 {
-
   if (!rt_active_goal_) {
     return;
   }
@@ -226,18 +225,14 @@ rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 GripperActionController<HardwareInterface>::on_activate(
   const rclcpp_lifecycle::State & previous_state)
 {
-  auto position_command_interface_it =
-    std::find_if(
+  auto position_command_interface_it = std::find_if(
     command_interfaces_.begin(), command_interfaces_.end(),
-    [](const hardware_interface::LoanedCommandInterface
-    & command_interface) {
+    [](const hardware_interface::LoanedCommandInterface & command_interface) {
       return command_interface.get_interface_name() ==
       hardware_interface::HW_IF_POSITION;
     });
   if (position_command_interface_it == command_interfaces_.end()) {
-    RCLCPP_ERROR(
-      node_->get_logger(),
-      "Expected 1 position command interface");
+    RCLCPP_ERROR(node_->get_logger(), "Expected 1 position command interface");
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::
            CallbackReturn::ERROR;
   }
@@ -310,13 +305,14 @@ GripperActionController<HardwareInterface>::on_activate(
   pre_alloc_result_->stalled = false;
 
   // Action interface
-  using namespace std::placeholders;
   action_server_ =
     rclcpp_action::create_server<control_msgs::action::GripperCommand>(
     node_, "~/gripper_cmd",
-    std::bind(&GripperActionController::goal_callback, this, _1, _2),
-    std::bind(&GripperActionController::cancel_callback, this, _1),
-    std::bind(&GripperActionController::accepted_callback, this, _1));
+    std::bind(
+      &GripperActionController::goal_callback, this, std::placeholders::_1,
+      std::placeholders::_2),
+    std::bind(&GripperActionController::cancel_callback, this, std::placeholders::_1),
+    std::bind(&GripperActionController::accepted_callback, this, std::placeholders::_1));
 
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::
          CallbackReturn::SUCCESS;
@@ -356,7 +352,8 @@ const
 
 template<const char * HardwareInterface>
 GripperActionController<HardwareInterface>::GripperActionController()
-: controller_interface::ControllerInterface(),
-    action_monitor_period_(0) {}
+: controller_interface::ControllerInterface(), action_monitor_period_(0) {}
 
-} // namespace gripper_action_controller
+}  // namespace gripper_action_controller
+
+#endif  // GRIPPER_ACTION_CONTROLLER__GRIPPER_ACTION_CONTROLLER_IMPL_HPP_

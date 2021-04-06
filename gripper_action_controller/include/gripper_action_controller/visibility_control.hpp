@@ -19,8 +19,8 @@
  * library cannot have, but the consuming code must have inorder to link.
  */
 
-#ifndef GRIPPER_ACTION_CONTROLLER__VISIBILITY_CONTROL_H_
-#define GRIPPER_ACTION_CONTROLLER__VISIBILITY_CONTROL_H_
+#ifndef GRIPPER_ACTION_CONTROLLER__VISIBILITY_CONTROL_HPP_
+#define GRIPPER_ACTION_CONTROLLER__VISIBILITY_CONTROL_HPP_
 
 // This logic was borrowed (then namespaced) from the examples on the gcc wiki:
 //     https://gcc.gnu.org/wiki/Visibility
@@ -53,4 +53,4 @@
 #define GRIPPER_ACTION_CONTROLLER_PUBLIC_TYPE
 #endif
 
-#endif  // GRIPPER_ACTION_CONTROLLER__VISIBILITY_CONTROL_H_
+#endif  // GRIPPER_ACTION_CONTROLLER__VISIBILITY_CONTROL_HPP_

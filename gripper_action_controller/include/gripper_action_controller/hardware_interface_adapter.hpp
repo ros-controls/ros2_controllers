@@ -15,17 +15,19 @@
 
 /// \author Sachin Chitta, Adolfo Rodriguez Tsouroukdissian
 
-#pragma once
+#ifndef GRIPPER_ACTION_CONTROLLER__HARDWARE_INTERFACE_ADAPTER_HPP_
+#define GRIPPER_ACTION_CONTROLLER__HARDWARE_INTERFACE_ADAPTER_HPP_
 
+#include <algorithm>
 #include <cassert>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include <rclcpp/time.hpp>
+#include "rclcpp/time.hpp"
 
-#include <control_toolbox/pid.hpp>
-#include <hardware_interface/types/hardware_interface_type_values.hpp>
+#include "control_toolbox/pid.hpp"
+#include "hardware_interface/types/hardware_interface_type_values.hpp"
 
 /**
  * \brief Helper class to simplify integrating the GripperActionController with
@@ -169,3 +171,5 @@ private:
   hardware_interface::LoanedCommandInterface * joint_handle_;
   std::chrono::steady_clock::time_point last_update_time_;
 };
+
+#endif  // GRIPPER_ACTION_CONTROLLER__HARDWARE_INTERFACE_ADAPTER_HPP_
