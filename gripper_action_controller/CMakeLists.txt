@@ -19,7 +19,6 @@ find_package(hardware_interface REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(realtime_tools REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(urdf REQUIRED)
 
 add_library(gripper_action_controller SHARED
    src/gripper_action_controller.cpp
@@ -27,6 +26,7 @@ add_library(gripper_action_controller SHARED
 ament_target_dependencies(gripper_action_controller
   controller_interface
   control_msgs
+  control_toolbox
   hardware_interface
   pluginlib
   rclcpp
