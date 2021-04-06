@@ -1,7 +1,7 @@
 repositories:
   ros-controls/ros2_control:
     type: git
-    url: https://github.com/ros-controls/ros2_control.git
+    url: https://github.com/JafarAbdi/ros2_control.git
     version: pr-gripper_action_controller
   control_msgs:
     type: git
