@@ -42,19 +42,19 @@ class HardwareInterfaceAdapter
 {
 public:
   bool init(
-    hardware_interface::LoanedCommandInterface * joint_handle,
-    const rclcpp::Node::SharedPtr & node)
+    hardware_interface::LoanedCommandInterface * /* joint_handle */,
+    const rclcpp::Node::SharedPtr & /* node */)
   {
     return false;
   }
 
-  void starting(const rclcpp::Time & time) {}
-  void stopping(const rclcpp::Time & time) {}
+  void starting(const rclcpp::Time & /* time */) {}
+  void stopping(const rclcpp::Time & /* time */) {}
 
   double updateCommand(
-    double desired_position, double desired_velocity,
-    double error_position, double error_velocity,
-    double max_allowed_effort)
+    double /* desired_position */, double /* desired_velocity */,
+    double /* error_position */, double /* error_velocity */,
+    double /* max_allowed_effort */)
   {
     return 0.0;
   }
@@ -130,7 +130,7 @@ public:
     return true;
   }
 
-  void starting(const rclcpp::Time & time)
+  void starting(const rclcpp::Time & /* time */)
   {
     if (!joint_handle_) {
       return;
@@ -140,10 +140,10 @@ public:
     joint_handle_->set_value(0.0);
   }
 
-  void stopping(const rclcpp::Time & time) {}
+  void stopping(const rclcpp::Time & /* time */) {}
 
   double updateCommand(
-    double desired_position, double desired_velocity,
+    double /* desired_position */, double /* desired_velocity */,
     double error_position, double error_velocity,
     double max_allowed_effort)
   {

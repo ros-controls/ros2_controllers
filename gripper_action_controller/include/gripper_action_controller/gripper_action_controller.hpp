@@ -106,18 +106,6 @@ public:
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
   on_deactivate(const rclcpp_lifecycle::State & previous_state) override;
 
-  GRIPPER_ACTION_CONTROLLER_PUBLIC
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-  on_cleanup(const rclcpp_lifecycle::State & previous_state) override;
-
-  GRIPPER_ACTION_CONTROLLER_PUBLIC
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-  on_error(const rclcpp_lifecycle::State & previous_state) override;
-
-  GRIPPER_ACTION_CONTROLLER_PUBLIC
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-  on_shutdown(const rclcpp_lifecycle::State & previous_state) override;
-
   realtime_tools::RealtimeBuffer<Commands> command_;
   // pre-allocated memory that is re-used to set the realtime buffer
   Commands command_struct_, command_struct_rt_;

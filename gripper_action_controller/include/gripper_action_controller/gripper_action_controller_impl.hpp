@@ -83,8 +83,8 @@ GripperActionController<HardwareInterface>::update()
 template<const char * HardwareInterface>
 rclcpp_action::GoalResponse
 GripperActionController<HardwareInterface>::goal_callback(
-  const rclcpp_action::GoalUUID & uuid,
-  std::shared_ptr<const GripperCommandAction::Goal> goal)
+  const rclcpp_action::GoalUUID &,
+  std::shared_ptr<const GripperCommandAction::Goal>)
 {
   RCLCPP_INFO(node_->get_logger(), "Received & accepted new action goal");
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
@@ -185,7 +185,7 @@ void GripperActionController<HardwareInterface>::check_for_success(
 template<const char * HardwareInterface>
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 GripperActionController<HardwareInterface>::on_configure(
-  const rclcpp_lifecycle::State & previous_state)
+  const rclcpp_lifecycle::State &)
 {
   const auto logger = node_->get_logger();
 
@@ -223,7 +223,7 @@ GripperActionController<HardwareInterface>::on_configure(
 template<const char * HardwareInterface>
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 GripperActionController<HardwareInterface>::on_activate(
-  const rclcpp_lifecycle::State & previous_state)
+  const rclcpp_lifecycle::State &)
 {
   auto position_command_interface_it = std::find_if(
     command_interfaces_.begin(), command_interfaces_.end(),
@@ -321,7 +321,7 @@ GripperActionController<HardwareInterface>::on_activate(
 template<const char * HardwareInterface>
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 GripperActionController<HardwareInterface>::on_deactivate(
-  const rclcpp_lifecycle::State & previous_state)
+  const rclcpp_lifecycle::State &)
 {
   joint_position_command_interface_ = nullptr;
   joint_position_state_interface_ = nullptr;
