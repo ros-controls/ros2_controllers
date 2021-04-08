@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TEST_JOINT_STATE_CONTROLLER_HPP_
-#define TEST_JOINT_STATE_CONTROLLER_HPP_
+#ifndef TEST_JOINT_STATE_BROADCASTER_HPP_
+#define TEST_JOINT_STATE_BROADCASTER_HPP_
 
 #include <memory>
 #include <string>
@@ -21,16 +21,16 @@
 
 #include "gmock/gmock.h"
 
-#include "joint_state_controller/joint_state_controller.hpp"
+#include "joint_state_broadcaster/joint_state_broadcaster.hpp"
 
 // subclassing and friending so we can access member varibles
-class FriendJointStateController : public joint_state_controller::JointStateController
+class FriendJointStateBroadcaster : public joint_state_broadcaster::JointStateBroadcaster
 {
-  FRIEND_TEST(JointStateControllerTest, ConfigureErrorTest);
-  FRIEND_TEST(JointStateControllerTest, ConfigureSuccessTest);
+  FRIEND_TEST(JointStateBroadcasterTest, ConfigureErrorTest);
+  FRIEND_TEST(JointStateBroadcasterTest, ConfigureSuccessTest);
 };
 
-class JointStateControllerTest : public ::testing::Test
+class JointStateBroadcasterTest : public ::testing::Test
 {
 public:
   static void SetUpTestCase();
@@ -39,7 +39,7 @@ public:
   void SetUp();
   void TearDown();
 
-  void SetUpStateController();
+  void SetUpStateBroadcaster();
 
 protected:
   // dummy joint state values used for tests
@@ -65,7 +65,7 @@ protected:
   hardware_interface::StateInterface joint_3_eff_state_{joint_names_[2], "effort",
     &joint_values_[2]};
 
-  std::unique_ptr<FriendJointStateController> state_controller_;
+  std::unique_ptr<FriendJointStateBroadcaster> state_broadcaster_;
 };
 
-#endif  // TEST_JOINT_STATE_CONTROLLER_HPP_
+#endif  // TEST_JOINT_STATE_BROADCASTER_HPP_

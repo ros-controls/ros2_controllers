@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef JOINT_STATE_CONTROLLER__JOINT_STATE_CONTROLLER_HPP_
-#define JOINT_STATE_CONTROLLER__JOINT_STATE_CONTROLLER_HPP_
+#ifndef JOINT_STATE_BROADCASTER__JOINT_STATE_BROADCASTER_HPP_
+#define JOINT_STATE_BROADCASTER__JOINT_STATE_BROADCASTER_HPP_
 
 #include <memory>
 #include <string>
@@ -22,39 +22,39 @@
 
 #include "control_msgs/msg/dynamic_joint_state.hpp"
 #include "controller_interface/controller_interface.hpp"
-#include "joint_state_controller/visibility_control.h"
+#include "joint_state_broadcaster/visibility_control.h"
 #include "rclcpp_lifecycle/lifecycle_publisher.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
 
-namespace joint_state_controller
+namespace joint_state_broadcaster
 {
 
-class JointStateController : public controller_interface::ControllerInterface
+class JointStateBroadcaster : public controller_interface::ControllerInterface
 {
 public:
-  JOINT_STATE_CONTROLLER_PUBLIC
-  JointStateController();
+  JOINT_STATE_BROADCASTER_PUBLIC
+  JointStateBroadcaster();
 
-  JOINT_STATE_CONTROLLER_PUBLIC
+  JOINT_STATE_BROADCASTER_PUBLIC
   controller_interface::InterfaceConfiguration command_interface_configuration() const override;
 
-  JOINT_STATE_CONTROLLER_PUBLIC
+  JOINT_STATE_BROADCASTER_PUBLIC
   controller_interface::InterfaceConfiguration state_interface_configuration() const override;
 
-  JOINT_STATE_CONTROLLER_PUBLIC
+  JOINT_STATE_BROADCASTER_PUBLIC
   controller_interface::return_type
   update() override;
 
-  JOINT_STATE_CONTROLLER_PUBLIC
+  JOINT_STATE_BROADCASTER_PUBLIC
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
   on_configure(const rclcpp_lifecycle::State & previous_state) override;
 
-  JOINT_STATE_CONTROLLER_PUBLIC
+  JOINT_STATE_BROADCASTER_PUBLIC
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
   on_activate(const rclcpp_lifecycle::State & previous_state) override;
 
-  JOINT_STATE_CONTROLLER_PUBLIC
+  JOINT_STATE_BROADCASTER_PUBLIC
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
   on_deactivate(const rclcpp_lifecycle::State & previous_state) override;
 
@@ -79,6 +79,6 @@ protected:
   control_msgs::msg::DynamicJointState dynamic_joint_state_msg_;
 };
 
-}  // namespace joint_state_controller
+}  // namespace joint_state_broadcaster
 
-#endif  // JOINT_STATE_CONTROLLER__JOINT_STATE_CONTROLLER_HPP_
+#endif  // JOINT_STATE_BROADCASTER__JOINT_STATE_BROADCASTER_HPP_

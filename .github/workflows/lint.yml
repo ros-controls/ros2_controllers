@@ -22,6 +22,7 @@ jobs:
             diff_drive_controller
             effort_controllers
             forward_command_controller
+            joint_state_broadcaster
             joint_state_controller
             joint_trajectory_controller
             position_controllers
