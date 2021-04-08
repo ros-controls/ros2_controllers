@@ -149,10 +149,11 @@ protected:
   using FollowJTrajAction = control_msgs::action::FollowJointTrajectory;
   using RealtimeGoalHandle = realtime_tools::RealtimeServerGoalHandle<FollowJTrajAction>;
   using RealtimeGoalHandlePtr = std::shared_ptr<RealtimeGoalHandle>;
+  using RealtimeGoalHandleBuffer = realtime_tools::RealtimeBuffer<RealtimeGoalHandlePtr>;
 
   rclcpp_action::Server<FollowJTrajAction>::SharedPtr action_server_;
   bool allow_partial_joints_goal_ = false;
-  RealtimeGoalHandlePtr rt_active_goal_;     ///< Currently active action goal, if any.
+  RealtimeGoalHandleBuffer rt_active_goal_;     ///< Currently active action goal, if any.
   rclcpp::TimerBase::SharedPtr goal_handle_timer_;
   rclcpp::Duration action_monitor_period_ = rclcpp::Duration(RCUTILS_MS_TO_NS(50));
 
