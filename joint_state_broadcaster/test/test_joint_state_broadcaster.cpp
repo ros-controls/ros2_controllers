@@ -82,7 +82,7 @@ void JointStateBroadcasterTest::TearDown()
 void JointStateBroadcasterTest::SetUpStateBroadcaster()
 {
   const auto result = state_broadcaster_->init("joint_state_broadcaster");
-  ASSERT_EQ(result, controller_interface::return_type::SUCCESS);
+  ASSERT_EQ(result, controller_interface::return_type::OK);
 
   std::vector<LoanedStateInterface> state_ifs;
   state_ifs.emplace_back(joint_1_pos_state_);
@@ -195,7 +195,7 @@ TEST_F(JointStateBroadcasterTest, UpdateTest)
   auto node_state = state_broadcaster_->configure();
   node_state = state_broadcaster_->activate();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
-  ASSERT_EQ(state_broadcaster_->update(), controller_interface::return_type::SUCCESS);
+  ASSERT_EQ(state_broadcaster_->update(), controller_interface::return_type::OK);
 }
 
 TEST_F(JointStateBroadcasterTest, JointStatePublishTest)
@@ -217,7 +217,7 @@ TEST_F(JointStateBroadcasterTest, JointStatePublishTest)
     10,
     subs_callback);
 
-  ASSERT_EQ(state_broadcaster_->update(), controller_interface::return_type::SUCCESS);
+  ASSERT_EQ(state_broadcaster_->update(), controller_interface::return_type::OK);
 
   // wait for message to be passed
   ASSERT_EQ(wait_for(subscription), rclcpp::WaitResultKind::Ready);
@@ -257,7 +257,7 @@ TEST_F(JointStateBroadcasterTest, DynamicJointStatePublishTest)
     10,
     subs_callback);
 
-  ASSERT_EQ(state_broadcaster_->update(), controller_interface::return_type::SUCCESS);
+  ASSERT_EQ(state_broadcaster_->update(), controller_interface::return_type::OK);
 
   // wait for message to be passed
   ASSERT_EQ(wait_for(subscription), rclcpp::WaitResultKind::Ready);

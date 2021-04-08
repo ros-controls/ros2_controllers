@@ -64,7 +64,7 @@ void JointGroupEffortControllerTest::TearDown()
 void JointGroupEffortControllerTest::SetUpController()
 {
   const auto result = controller_->init("group_effort_controller");
-  ASSERT_EQ(result, controller_interface::return_type::SUCCESS);
+  ASSERT_EQ(result, controller_interface::return_type::OK);
 
   std::vector<LoanedCommandInterface> command_ifs;
   command_ifs.emplace_back(joint_1_cmd_);
@@ -123,7 +123,7 @@ TEST_F(JointGroupEffortControllerTest, CommandSuccessTest)
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
   // update successful though no command has been send yet
-  ASSERT_EQ(controller_->update(), controller_interface::return_type::SUCCESS);
+  ASSERT_EQ(controller_->update(), controller_interface::return_type::OK);
 
   // check joint commands are still the default ones
   ASSERT_EQ(joint_1_cmd_.get_value(), 1.1);
@@ -137,7 +137,7 @@ TEST_F(JointGroupEffortControllerTest, CommandSuccessTest)
   controller_->rt_command_ptr_.writeFromNonRT(command_ptr);
 
   // update successful, command received
-  ASSERT_EQ(controller_->update(), controller_interface::return_type::SUCCESS);
+  ASSERT_EQ(controller_->update(), controller_interface::return_type::OK);
 
   // check joint commands have been modified
   ASSERT_EQ(joint_1_cmd_.get_value(), 10.0);
@@ -173,7 +173,7 @@ TEST_F(JointGroupEffortControllerTest, NoCommandCheckTest)
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
   // update successful, no command received yet
-  ASSERT_EQ(controller_->update(), controller_interface::return_type::SUCCESS);
+  ASSERT_EQ(controller_->update(), controller_interface::return_type::OK);
 
   // check joint commands are still the default ones
   ASSERT_EQ(joint_1_cmd_.get_value(), 1.1);
@@ -213,7 +213,7 @@ TEST_F(JointGroupEffortControllerTest, CommandCallbackTest)
   rclcpp::spin_some(controller_->get_node()->get_node_base_interface());
 
   // update successful
-  ASSERT_EQ(controller_->update(), controller_interface::return_type::SUCCESS);
+  ASSERT_EQ(controller_->update(), controller_interface::return_type::OK);
 
   // check command in handle was set
   ASSERT_EQ(joint_1_cmd_.get_value(), 10.0);

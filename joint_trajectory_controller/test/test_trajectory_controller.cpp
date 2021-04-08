@@ -95,7 +95,7 @@ TEST_F(TestTrajectoryController, configuration) {
 //   auto traj_controller = std::make_shared<ros_controllers::JointTrajectoryController>(
 //     joint_names_, op_mode_);
 //   auto ret = traj_controller->init(test_robot_, controller_name_);
-//   if (ret != controller_interface::return_type::SUCCESS) {
+//   if (ret != controller_interface::return_type::OK) {
 //     FAIL();
 //   }
 //
@@ -137,7 +137,7 @@ TEST_F(TestTrajectoryController, configuration) {
 //   auto traj_controller = std::make_shared<ros_controllers::JointTrajectoryController>(
 //     joint_names_, op_mode_);
 //   auto ret = traj_controller->init(test_robot_, controller_name_);
-//   if (ret != controller_interface::return_type::SUCCESS) {
+//   if (ret != controller_interface::return_type::OK) {
 //     FAIL();
 //   }
 //

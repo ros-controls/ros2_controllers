@@ -103,7 +103,7 @@ protected:
       traj_controller_->set_joint_names(joint_names_);
     }
     auto ret = traj_controller_->init(controller_name_);
-    if (ret != controller_interface::return_type::SUCCESS) {
+    if (ret != controller_interface::return_type::OK) {
       FAIL();
     }
   }

@@ -226,7 +226,7 @@ JointStateBroadcaster::update()
   joint_state_publisher_->publish(joint_state_msg_);
   dynamic_joint_state_publisher_->publish(dynamic_joint_state_msg_);
 
-  return controller_interface::return_type::SUCCESS;
+  return controller_interface::return_type::OK;
 }
 
 }  // namespace joint_state_broadcaster
