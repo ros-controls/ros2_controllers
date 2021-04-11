@@ -72,7 +72,16 @@ CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
   {
     RCLCPP_ERROR(
       get_node()->get_logger(), "'sensor_name' or at least one "
-      "'interface_names.[force|torque].[x|y|z]' parameter hast to be specified.");
+      "'interface_names.[force|torque].[x|y|z]' parameter has to be specified.");
+    return CallbackReturn::ERROR;
+  }
+
+  if (!sensor_name_.empty() &&
+    std::count(interface_names_.begin(), interface_names_.end(), "") != 6)
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(), "both 'sensor_name' and "
+      "'interface_names.[force|torque].[x|y|z]' parameter can not be specified together.");
     return CallbackReturn::ERROR;
   }
 
