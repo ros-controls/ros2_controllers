@@ -73,7 +73,7 @@ JointTrajectoryController::init(const std::string & controller_name)
   return controller_interface::return_type::OK;
 }
 
-controller_interface::InterfaceConfiguration 
+controller_interface::InterfaceConfiguration
 JointTrajectoryController::command_interface_configuration() const
 {
   controller_interface::InterfaceConfiguration conf;
@@ -87,7 +87,7 @@ JointTrajectoryController::command_interface_configuration() const
   return conf;
 }
 
-controller_interface::InterfaceConfiguration 
+controller_interface::InterfaceConfiguration
 JointTrajectoryController::state_interface_configuration() const
 {
   controller_interface::InterfaceConfiguration conf;
