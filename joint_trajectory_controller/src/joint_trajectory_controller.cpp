@@ -58,7 +58,7 @@ JointTrajectoryController::init(const std::string & controller_name)
 {
   // initialize lifecycle node
   const auto ret = ControllerInterface::init(controller_name);
-  if (ret != controller_interface::return_type::SUCCESS) {
+  if (ret != controller_interface::return_type::OK) {
     return ret;
   }
 
@@ -70,7 +70,7 @@ JointTrajectoryController::init(const std::string & controller_name)
   node_->declare_parameter<double>("constraints.stopped_velocity_tolerance", 0.01);
   node_->declare_parameter<double>("constraints.goal_time", 0.0);
 
-  return controller_interface::return_type::SUCCESS;
+  return controller_interface::return_type::OK;
 }
 
 controller_interface::InterfaceConfiguration JointTrajectoryController::
@@ -106,7 +106,7 @@ JointTrajectoryController::update()
       halt();
       is_halted = true;
     }
-    return controller_interface::return_type::SUCCESS;
+    return controller_interface::return_type::OK;
   }
 
   auto resize_joint_trajectory_point =
@@ -250,7 +250,7 @@ JointTrajectoryController::update()
   }
 
   publish_state(state_desired, state_current, state_error);
-  return controller_interface::return_type::SUCCESS;
+  return controller_interface::return_type::OK;
 }
 
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn

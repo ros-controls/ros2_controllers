@@ -54,7 +54,7 @@ DiffDriveController::init(const std::string & controller_name)
 {
   // initialize lifecycle node
   auto ret = ControllerInterface::init(controller_name);
-  if (ret != controller_interface::return_type::SUCCESS) {
+  if (ret != controller_interface::return_type::OK) {
     return ret;
   }
 
@@ -113,7 +113,7 @@ DiffDriveController::init(const std::string & controller_name)
     return controller_interface::return_type::ERROR;
   }
 
-  return controller_interface::return_type::SUCCESS;
+  return controller_interface::return_type::OK;
 }
 
 InterfaceConfiguration DiffDriveController::command_interface_configuration() const
@@ -149,7 +149,7 @@ controller_interface::return_type DiffDriveController::update()
       halt();
       is_halted = true;
     }
-    return controller_interface::return_type::SUCCESS;
+    return controller_interface::return_type::OK;
   }
 
   const auto current_time = node_->get_clock()->now();
@@ -271,7 +271,7 @@ controller_interface::return_type DiffDriveController::update()
     registered_right_wheel_handles_[index].velocity.get().set_value(velocity_right);
   }
 
-  return controller_interface::return_type::SUCCESS;
+  return controller_interface::return_type::OK;
 }
 
 CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &)
