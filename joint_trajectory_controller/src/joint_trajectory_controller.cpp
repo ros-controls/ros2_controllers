@@ -211,6 +211,7 @@ JointTrajectoryController::update()
           }
           active_goal->setAborted(result);
           // TODO(matthew-reynolds): Need a lock-free write here
+          // See https://github.com/ros-controls/ros2_controllers/issues/168
           rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
 
           // check goal tolerance
@@ -220,6 +221,7 @@ JointTrajectoryController::update()
             res->set__error_code(FollowJTrajAction::Result::SUCCESSFUL);
             active_goal->setSucceeded(res);
             // TODO(matthew-reynolds): Need a lock-free write here
+            // See https://github.com/ros-controls/ros2_controllers/issues/168
             rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
 
             RCLCPP_INFO(node_->get_logger(), "Goal reached, success!");
@@ -234,6 +236,7 @@ JointTrajectoryController::update()
               result->set__error_code(FollowJTrajAction::Result::GOAL_TOLERANCE_VIOLATED);
               active_goal->setAborted(result);
               // TODO(matthew-reynolds): Need a lock-free write here
+              // See https://github.com/ros-controls/ros2_controllers/issues/168
               rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
               RCLCPP_WARN(
                 node_->get_logger(),
