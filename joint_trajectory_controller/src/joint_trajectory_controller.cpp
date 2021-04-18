@@ -105,10 +105,6 @@ controller_interface::return_type
 JointTrajectoryController::update()
 {
   if (get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE) {
-    if (!is_halted_) {
-      halt();
-      is_halted_ = true;
-    }
     return controller_interface::return_type::OK;
   }
 
@@ -322,8 +318,6 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
   if (!reset()) {
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
   }
-  // The controller should be in halted state after creation otherwise memory corruption
-  is_halted_ = true;
 
   if (joint_names_.empty()) {
     RCLCPP_WARN(logger, "'joints' parameter is empty.");
@@ -453,24 +447,22 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
     return CallbackReturn::ERROR;
   }
 
+  auto get_interface_list = [](const std::vector<std::string> & interface_types) {
+      std::stringstream ss_command_interfaces;
+      for (size_t index = 0; index < interface_types.size(); ++index) {
+        if (index != 0) {
+          ss_command_interfaces << " ";
+        }
+        ss_command_interfaces << interface_types[index];
+      }
+      return ss_command_interfaces.str();
+    };
+
   // Print output so users can be sure the interface setup is correct
-  std::stringstream ss_command_interfaces;
-  for (auto index = 0ul; index < command_interface_types_.size(); ++index) {
-    if (index != 0) {
-      ss_command_interfaces << " ";
-    }
-    ss_command_interfaces << command_interface_types_[index];
-  }
-  std::stringstream ss_state_interfaces;
-  for (auto index = 0ul; index < state_interface_types_.size(); ++index) {
-    if (index != 0) {
-      ss_state_interfaces << " ";
-    }
-    ss_state_interfaces << state_interface_types_[index];
-  }
   RCLCPP_INFO(
     logger, "Command interfaces are [%s] and and state interfaces are [%s].",
-    ss_command_interfaces.str().c_str(), ss_state_interfaces.str().c_str());
+    get_interface_list(command_interface_types_).c_str(),
+    get_interface_list(state_interface_types_).c_str());
 
   default_tolerances_ = get_segment_tolerances(*node_, joint_names_);
 
@@ -632,7 +624,6 @@ JointTrajectoryController::on_activate(const rclcpp_lifecycle::State &)
   traj_external_point_ptr_ = std::make_shared<Trajectory>();
   traj_home_point_ptr_ = std::make_shared<Trajectory>();
 
-  is_halted_ = false;
   subscriber_is_active_ = true;
   traj_point_active_ptr_ = &traj_external_point_ptr_;
   last_state_publish_time_ = node_->now();
@@ -644,6 +635,12 @@ JointTrajectoryController::on_activate(const rclcpp_lifecycle::State &)
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 JointTrajectoryController::on_deactivate(const rclcpp_lifecycle::State &)
 {
+  // TODO(anyone): How to halt when using effort commands?
+  for (auto index = 0ul; index < joint_names_.size(); ++index) {
+    joint_command_interface_[0][index].get().set_value(
+      joint_command_interface_[0][index].get().get_value());
+  }
+
   for (auto index = 0ul; index < allowed_interface_types_.size(); ++index) {
     joint_command_interface_[index].clear();
     joint_state_interface_[index].clear();
@@ -687,8 +684,6 @@ JointTrajectoryController::reset()
   traj_home_point_ptr_.reset();
   traj_msg_home_ptr_.reset();
 
-  is_halted_ = false;
-
   return true;
 }
 
@@ -698,18 +693,6 @@ JointTrajectoryController::on_shutdown(const rclcpp_lifecycle::State &)
   // TODO(karsten1987): what to do?
 
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
-}
-
-void
-JointTrajectoryController::halt()
-{
-  // TODO(anyone): How to halt when using effort commands?
-  // TODO(anyone): Does this make sense at all? When we stop controller an call deactivate
-  // the controller does not have access to the interfaces anymore...
-  for (auto index = 0ul; index < joint_names_.size(); ++index) {
-    joint_command_interface_[0][index].get().set_value(
-      joint_command_interface_[0][index].get().get_value());
-  }
 }
 
 void JointTrajectoryController::publish_state(
@@ -752,7 +735,7 @@ rclcpp_action::GoalResponse JointTrajectoryController::goal_callback(
   RCLCPP_INFO(node_->get_logger(), "Received new action goal");
 
   // Precondition: Running controller
-  if (is_halted_) {
+  if (get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE) {
     RCLCPP_ERROR(
       node_->get_logger(),
       "Can't accept new action goals. Controller is not running.");

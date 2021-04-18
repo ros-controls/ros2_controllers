@@ -208,7 +208,6 @@ protected:
   void set_hold_position();
 
   bool reset();
-  void halt();
 
   using JointTrajectoryPoint = trajectory_msgs::msg::JointTrajectoryPoint;
   void publish_state(
