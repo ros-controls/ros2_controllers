@@ -132,6 +132,12 @@ protected:
   std::vector<std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>>>
   joint_state_interface_;
 
+  bool has_velocity_state_interface_ = false;
+  bool has_acceleration_state_interface_ = false;
+  bool has_position_command_interface_ = false;
+  bool has_velocity_command_interface_ = false;
+  bool has_acceleration_command_interface_ = false;
+
   /// If true, a velocity feedforward term plus corrective PID term is used
   bool use_closed_loop_pid_adapter = false;
 
@@ -211,7 +217,7 @@ protected:
     const JointTrajectoryPoint & state_error);
 
 private:
-  bool check_if_interface_type_exists(
+  bool contains_interface_type(
     const std::vector<std::string> & interface_type_list, const std::string & interface_type)
   {
     return std::find(interface_type_list.begin(), interface_type_list.end(), interface_type) !=

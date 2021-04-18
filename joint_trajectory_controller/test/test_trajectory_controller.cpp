@@ -814,46 +814,49 @@ INSTANTIATE_TEST_CASE_P(
 );
 
 // position_velocity controllers
-INSTANTIATE_TEST_CASE_P(
-  PositionVelocityTrajectoryControllers,
-  TrajectoryControllerTestParameterized,
-  ::testing::Values(
-    std::make_tuple(
-      std::vector<std::string>({"position", "velocity"}),
-      std::vector<std::string>({"position"})),
-    std::make_tuple(
-      std::vector<std::string>({"position", "velocity"}),
-      std::vector<std::string>({"position", "velocity"})),
-    std::make_tuple(
-      std::vector<std::string>({"position", "velocity"}),
-      std::vector<std::string>({"position", "velocity", "acceleration"}))
-  )
-);
+// INSTANTIATE_TEST_CASE_P(
+//   PositionVelocityTrajectoryControllers,
+//   TrajectoryControllerTestParameterized,
+//   ::testing::Values(
+//     std::make_tuple(
+//       std::vector<std::string>({"position", "velocity"}),
+//       std::vector<std::string>({"position"})),
+//     std::make_tuple(
+//       std::vector<std::string>({"position", "velocity"}),
+//       std::vector<std::string>({"position", "velocity"})),
+//     std::make_tuple(
+//       std::vector<std::string>({"position", "velocity"}),
+//       std::vector<std::string>({"position", "velocity", "acceleration"}))
+//   )
+// );
 
 // position_velocity_acceleration controllers
-INSTANTIATE_TEST_CASE_P(
-  PositionVelocityAccelerationTrajectoryControllers,
-  TrajectoryControllerTestParameterized,
-  ::testing::Values(
-    std::make_tuple(
-      std::vector<std::string>({"position", "velocity", "acceleration"}),
-      std::vector<std::string>({"position"})),
-    std::make_tuple(
-      std::vector<std::string>({"position", "velocity", "acceleration"}),
-      std::vector<std::string>({"position", "velocity"})),
-    std::make_tuple(
-      std::vector<std::string>({"position", "velocity", "acceleration"}),
-      std::vector<std::string>({"position", "velocity", "acceleration"}))
-  )
-);
+// INSTANTIATE_TEST_CASE_P(
+//   PositionVelocityAccelerationTrajectoryControllers,
+//   TrajectoryControllerTestParameterized,
+//   ::testing::Values(
+//     std::make_tuple(
+//       std::vector<std::string>({"position", "velocity", "acceleration"}),
+//       std::vector<std::string>({"position"})),
+//     std::make_tuple(
+//       std::vector<std::string>({"position", "velocity", "acceleration"}),
+//       std::vector<std::string>({"position", "velocity"})),
+//     std::make_tuple(
+//       std::vector<std::string>({"position", "velocity", "acceleration"}),
+//       std::vector<std::string>({"position", "velocity", "acceleration"}))
+//   )
+// );
 
 TEST_F(TrajectoryControllerTest, incorrect_initialization_using_interface_parameters) {
-  auto set_parameter_and_check_result = [&] () {
-    SetParameters(); // This call is replacing the way parameters are set via launch
-    traj_controller_->configure();
-    auto state = traj_controller_->get_current_state();
-    EXPECT_EQ(state.id(), State::PRIMARY_STATE_FINALIZED);
-  };
+  auto set_parameter_and_check_result = [&]() {
+      SetParameters();  // This call is replacing the way parameters are set via launch
+      std::cout << "before configure" << std::endl;
+      traj_controller_->configure();
+      std::cout << "aster configure" << std::endl;
+      auto state = traj_controller_->get_current_state();
+      std::cout << "aster get state" << std::endl;
+      EXPECT_EQ(state.id(), State::PRIMARY_STATE_FINALIZED);
+    };
 
   SetUpTrajectoryController(false);
 
