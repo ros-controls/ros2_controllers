@@ -33,7 +33,7 @@ controller_interface::return_type
 ForceTorqueSensorBroadcaster::init(const std::string & controller_name)
 {
   auto ret = ControllerInterface::init(controller_name);
-  if (ret != controller_interface::return_type::SUCCESS) {
+  if (ret != controller_interface::return_type::OK) {
     return ret;
   }
 
@@ -52,7 +52,7 @@ ForceTorqueSensorBroadcaster::init(const std::string & controller_name)
     return controller_interface::return_type::ERROR;
   }
 
-  return controller_interface::return_type::SUCCESS;
+  return controller_interface::return_type::OK;
 }
 
 CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
@@ -141,6 +141,7 @@ ForceTorqueSensorBroadcaster::state_interface_configuration() const
 CallbackReturn ForceTorqueSensorBroadcaster::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
+  RCLCPP_INFO(node_->get_logger(), "Number of state interface is: %d.", state_interfaces_.size());
   force_torque_sensor_->assign_loaned_state_interfaces(state_interfaces_);
   return CallbackReturn::SUCCESS;
 }
@@ -156,11 +157,13 @@ controller_interface::return_type ForceTorqueSensorBroadcaster::update()
 {
   if (realtime_publisher_ && realtime_publisher_->trylock()) {
     realtime_publisher_->msg_.header.stamp = node_->now();
+    RCLCPP_INFO(node_->get_logger(), "Trying to get values");
     realtime_publisher_->msg_.wrench = force_torque_sensor_->get_values_as_message();
+    RCLCPP_INFO(node_->get_logger(), "Aftert getting values");
     realtime_publisher_->unlockAndPublish();
   }
 
-  return controller_interface::return_type::SUCCESS;
+  return controller_interface::return_type::OK;
 }
 
 }  // namespace force_torque_sensor_broadcaster
