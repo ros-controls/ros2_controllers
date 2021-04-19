@@ -30,7 +30,7 @@ controller_interface::return_type
 MultiInterfaceForwardController::init(const std::string & controller_name)
 {
   auto ret = ForwardCommandController::init(controller_name);
-  if (ret != controller_interface::return_type::SUCCESS) {
+  if (ret != controller_interface::return_type::OK) {
     return ret;
   }
 
@@ -44,7 +44,7 @@ MultiInterfaceForwardController::init(const std::string & controller_name)
     return controller_interface::return_type::ERROR;
   }
 
-  return controller_interface::return_type::SUCCESS;
+  return controller_interface::return_type::OK;
 }
 
 CallbackReturn MultiInterfaceForwardController::read_parameters()
