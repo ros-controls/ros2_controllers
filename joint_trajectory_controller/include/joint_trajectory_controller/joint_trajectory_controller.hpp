@@ -127,10 +127,11 @@ protected:
   // The interfaces are defined as the types in 'allowed_interface_types_' member.
   // For convenience, for each type the interfaces are ordered so that i-th position
   // matches i-th index in joint_names_
-  std::vector<std::vector<std::reference_wrapper<hardware_interface::LoanedCommandInterface>>>
-  joint_command_interface_;
-  std::vector<std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>>>
-  joint_state_interface_;
+  template<typename T>
+  using InterfaceReferences = std::vector<std::vector<std::reference_wrapper<T>>>;
+
+  InterfaceReferences<hardware_interface::LoanedCommandInterface> joint_command_interface_;
+  InterfaceReferences<hardware_interface::LoanedStateInterface> joint_state_interface_;
 
   bool has_velocity_state_interface_ = false;
   bool has_acceleration_state_interface_ = false;
