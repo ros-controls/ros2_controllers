@@ -18,6 +18,9 @@
 
 #include "force_torque_sensor_broadcaster/force_torque_sensor_broadcaster.hpp"
 
+#include <memory>
+#include <string>
+
 namespace force_torque_sensor_broadcaster
 {
 
@@ -63,18 +66,18 @@ CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
   interface_names_[4] = node_->get_parameter("interface_names.torque.y").as_string();
   interface_names_[5] = node_->get_parameter("interface_names.torque.z").as_string();
 
-  const bool no_interface_names_defined = std::count(interface_names_.begin(), interface_names_.end(), "") == 6;
+  const bool no_interface_names_defined = std::count(
+    interface_names_.begin(),
+    interface_names_.end(), "") == 6;
 
-  if (sensor_name_.empty() && no_interface_names_defined)
-  {
+  if (sensor_name_.empty() && no_interface_names_defined) {
     RCLCPP_ERROR(
       get_node()->get_logger(), "'sensor_name' or at least one "
       "'interface_names.[force|torque].[x|y|z]' parameter has to be specified.");
     return CallbackReturn::ERROR;
   }
 
-  if (!sensor_name_.empty() && !no_interface_names_defined)
-  {
+  if (!sensor_name_.empty() && !no_interface_names_defined) {
     RCLCPP_ERROR(
       get_node()->get_logger(), "both 'sensor_name' and "
       "'interface_names.[force|torque].[x|y|z]' parameter can not be specified together.");
@@ -103,8 +106,9 @@ CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
       "~/sensor_states", rclcpp::SystemDefaultsQoS());
     realtime_publisher_ = std::make_unique<StatePublisher>(sensor_state_publisher_);
   } catch (const std::exception & e) {
-    fprintf(stderr, "Exception thrown during publisher creation at configure stage with message \
-      : %s \n", e.what());
+    fprintf(
+      stderr, "Exception thrown during publisher creation at configure stage with message " +
+      ": %s \n", e.what());
     return CallbackReturn::ERROR;
   }
 

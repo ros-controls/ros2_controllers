@@ -19,6 +19,9 @@
 #ifndef TEST_FORCE_TORQUE_SENSOR_BROADCASTER_HPP_
 #define TEST_FORCE_TORQUE_SENSOR_BROADCASTER_HPP_
 
+#include <memory>
+#include <string>
+
 #include "gmock/gmock.h"
 
 #include "force_torque_sensor_broadcaster/force_torque_sensor_broadcaster.hpp"
