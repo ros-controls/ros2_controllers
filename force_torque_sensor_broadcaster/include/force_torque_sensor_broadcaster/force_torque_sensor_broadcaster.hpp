@@ -19,6 +19,10 @@
 #ifndef FORCE_TORQUE_SENSOR_BROADCASTER__FORCE_TORQUE_SENSOR_BROADCASTER_HPP_
 #define FORCE_TORQUE_SENSOR_BROADCASTER__FORCE_TORQUE_SENSOR_BROADCASTER_HPP_
 
+#include <memory>
+#include <string>
+#include <vector>
+
 #include "controller_interface/controller_interface.hpp"
 #include "force_torque_sensor_broadcaster/visibility_control.h"
 #include "geometry_msgs/msg/wrench_stamped.hpp"

@@ -16,6 +16,10 @@
  * Authors: Subhas Das, Denis Stogl
  */
 
+#include <memory>
+#include <utility>
+#include <vector>
+
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
