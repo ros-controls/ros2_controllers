@@ -123,7 +123,6 @@ ForceTorqueSensorBroadcaster::command_interface_configuration() const
 {
   controller_interface::InterfaceConfiguration command_interfaces_config;
   command_interfaces_config.type = controller_interface::interface_configuration_type::NONE;
-
   return command_interfaces_config;
 }
 
