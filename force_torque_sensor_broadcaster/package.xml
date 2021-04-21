@@ -4,6 +4,7 @@
   <name>force_torque_sensor_broadcaster</name>
   <version>0.0.0</version>
   <description>Controller to publish state of force-torque sensors.</description>
+  <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
   <maintainer email="denis@stogl.de">Denis Štogl</maintainer>
   <license>Apache License 2.0</license>
 
