@@ -157,7 +157,7 @@ controller_interface::return_type ForceTorqueSensorBroadcaster::update()
 {
   if (realtime_publisher_ && realtime_publisher_->trylock()) {
     realtime_publisher_->msg_.header.stamp = node_->now();
-    RCLCPP_INFO(node_->get_logger(), "Trying to get values");
+    RCLCPP_DEBUG(node_->get_logger(), "Trying to get values");
     realtime_publisher_->msg_.wrench = force_torque_sensor_->get_values_as_message();
     RCLCPP_INFO(node_->get_logger(), "Aftert getting values");
     realtime_publisher_->unlockAndPublish();
