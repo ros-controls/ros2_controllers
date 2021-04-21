@@ -67,8 +67,9 @@ CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
   interface_names_[4] = node_->get_parameter("interface_names.torque.y").as_string();
   interface_names_[5] = node_->get_parameter("interface_names.torque.z").as_string();
 
-  if (sensor_name_.empty() &&
-    std::count(interface_names_.begin(), interface_names_.end(), "") == 6)
+  const bool no_interface_names_defined = std::count(interface_names_.begin(), interface_names_.end(), "") == 6;
+
+  if (sensor_name_.empty() && no_interface_names_defined)
   {
     RCLCPP_ERROR(
       get_node()->get_logger(), "'sensor_name' or at least one "
@@ -76,8 +77,7 @@ CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
     return CallbackReturn::ERROR;
   }
 
-  if (!sensor_name_.empty() &&
-    std::count(interface_names_.begin(), interface_names_.end(), "") != 6)
+  if (!sensor_name_.empty() && !no_interface_names_defined)
   {
     RCLCPP_ERROR(
       get_node()->get_logger(), "both 'sensor_name' and "
