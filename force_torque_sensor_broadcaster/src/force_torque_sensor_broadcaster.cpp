@@ -141,7 +141,7 @@ ForceTorqueSensorBroadcaster::state_interface_configuration() const
 CallbackReturn ForceTorqueSensorBroadcaster::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  RCLCPP_INFO(node_->get_logger(), "Number of state interface is: %d.", state_interfaces_.size());
+  RCLCPP_DEBUG(node_->get_logger(), "Number of state interface is: %d.", state_interfaces_.size());
   force_torque_sensor_->assign_loaned_state_interfaces(state_interfaces_);
   return CallbackReturn::SUCCESS;
 }
