@@ -107,8 +107,8 @@ CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
     realtime_publisher_ = std::make_unique<StatePublisher>(sensor_state_publisher_);
   } catch (const std::exception & e) {
     fprintf(
-      stderr, "Exception thrown during publisher creation at configure stage with message " +
-      ": %s \n", e.what());
+      stderr, "Exception thrown during publisher creation at configure stage with message : %s \n",
+      e.what());
     return CallbackReturn::ERROR;
   }
 

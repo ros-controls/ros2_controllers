@@ -302,3 +302,41 @@ TEST_F(ForceTorqueSensorBroadcasterTest, InterfaceNames_Publish_Success)
   rclcpp::MessageInfo msg_info;
   ASSERT_TRUE(subscription->take(sensor_state_msg, msg_info));
 }
+
+TEST_F(ForceTorqueSensorBroadcasterTest, All_InterfaceNames_Publish_Success)
+{
+  SetUpFTSBroadcaster();
+
+  // set all the params 'interface_names' and 'frame_id'
+  fts_broadcaster_->get_node()->set_parameter({"interface_names.force.x", "fts_sensor/force.x"});
+  fts_broadcaster_->get_node()->set_parameter({"interface_names.force.y", "fts_sensor/force.y"});
+  fts_broadcaster_->get_node()->set_parameter({"interface_names.force.z", "fts_sensor/force.z"});
+  fts_broadcaster_->get_node()->set_parameter({"interface_names.torque.x", "fts_sensor/torque.x"});
+  fts_broadcaster_->get_node()->set_parameter({"interface_names.torque.y", "fts_sensor/torque.y"});
+  fts_broadcaster_->get_node()->set_parameter({"interface_names.torque.z", "fts_sensor/torque.z"});
+  fts_broadcaster_->get_node()->set_parameter({"frame_id", "fts_sensor_frame"});
+
+  ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(fts_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  // create a new subscriber
+  rclcpp::Node test_node("test_node");
+  auto subs_callback = [&](const geometry_msgs::msg::WrenchStamped::SharedPtr)
+    {
+    };
+  auto subscription = test_node.create_subscription<geometry_msgs::msg::WrenchStamped>(
+    "/test_force_torque_sensor_broadcaster/sensor_states",
+    10,
+    subs_callback);
+
+  // call update to publish the test value
+  ASSERT_EQ(fts_broadcaster_->update(), controller_interface::return_type::SUCCESS);
+
+  // wait for message to be passed
+  ASSERT_EQ(wait_for(subscription), rclcpp::WaitResultKind::Ready);
+
+  // take message from subscription
+  geometry_msgs::msg::WrenchStamped sensor_state_msg;
+  rclcpp::MessageInfo msg_info;
+  ASSERT_TRUE(subscription->take(sensor_state_msg, msg_info));
+}
