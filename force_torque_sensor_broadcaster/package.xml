@@ -6,6 +6,7 @@
   <description>Controller to publish state of force-torque sensors.</description>
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
   <maintainer email="denis@stogl.de">Denis Štogl</maintainer>
+  <maintainer email="subhas.robotics@gmail.com">Subhas Das</maintainer>
   <license>Apache License 2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
@@ -16,10 +17,7 @@
   <depend>pluginlib</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_lifecycle</depend>
-  <depend>realtime_tools</depend>
 
-  <test_depend>ament_lint_auto</test_depend>
-  <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_cmake_gmock</test_depend>
   <test_depend>controller_manager</test_depend>
   <test_depend>hardware_interface</test_depend>

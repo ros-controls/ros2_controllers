@@ -13,14 +13,10 @@
 // limitations under the License.
 
 /*
- * Author: Subhas Das, Denis Stogl
+ * Authors: Subhas Das, Denis Stogl
  */
 
 #include "force_torque_sensor_broadcaster/force_torque_sensor_broadcaster.hpp"
-
-#include <memory>
-#include <string>
-#include <vector>
 
 namespace force_torque_sensor_broadcaster
 {
@@ -33,7 +29,7 @@ controller_interface::return_type
 ForceTorqueSensorBroadcaster::init(const std::string & controller_name)
 {
   auto ret = ControllerInterface::init(controller_name);
-  if (ret != controller_interface::return_type::OK) {
+  if (ret != controller_interface::return_type::SUCCESS) {
     return ret;
   }
 
@@ -52,7 +48,7 @@ ForceTorqueSensorBroadcaster::init(const std::string & controller_name)
     return controller_interface::return_type::ERROR;
   }
 
-  return controller_interface::return_type::OK;
+  return controller_interface::return_type::SUCCESS;
 }
 
 CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
@@ -106,7 +102,9 @@ CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
     sensor_state_publisher_ = node_->create_publisher<geometry_msgs::msg::WrenchStamped>(
       "~/sensor_states", rclcpp::SystemDefaultsQoS());
     realtime_publisher_ = std::make_unique<StatePublisher>(sensor_state_publisher_);
-  } catch (...) {
+  } catch (const std::exception & e) {
+    fprintf(stderr, "Exception thrown during publisher creation at configure stage with message \
+      : %s \n", e.what());
     return CallbackReturn::ERROR;
   }
 
@@ -132,7 +130,6 @@ ForceTorqueSensorBroadcaster::state_interface_configuration() const
   controller_interface::InterfaceConfiguration state_interfaces_config;
   state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
   state_interfaces_config.names = force_torque_sensor_->get_state_interface_types();
-
   return state_interfaces_config;
 }
 
@@ -157,11 +154,11 @@ controller_interface::return_type ForceTorqueSensorBroadcaster::update()
     realtime_publisher_->msg_.header.stamp = node_->now();
     RCLCPP_DEBUG(node_->get_logger(), "Trying to get values");
     realtime_publisher_->msg_.wrench = force_torque_sensor_->get_values_as_message();
-    RCLCPP_INFO(node_->get_logger(), "Aftert getting values");
+    RCLCPP_DEBUG(node_->get_logger(), "After getting values");
     realtime_publisher_->unlockAndPublish();
   }
 
-  return controller_interface::return_type::OK;
+  return controller_interface::return_type::SUCCESS;
 }
 
 }  // namespace force_torque_sensor_broadcaster

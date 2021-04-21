@@ -95,13 +95,13 @@ if(BUILD_TESTING)
   ament_target_dependencies(test_force_torque_sensor_broadcaster
     hardware_interface
   )
+  ament_target_dependencies(test_load_force_torque_sensor_broadcaster
+    controller_manager
+    hardware_interface
+    ros2_control_test_assets
+  )
 endif()
 
-ament_target_dependencies(test_load_force_torque_sensor_broadcaster
-  controller_manager
-  hardware_interface
-  ros2_control_test_assets
-)
 ament_export_include_directories(
   include
 )
