@@ -13,15 +13,11 @@
 // limitations under the License.
 
 /*
- * Author: Subhas Das, Denis Stogl
+ * Authors: Subhas Das, Denis Stogl
  */
 
 #ifndef TEST_FORCE_TORQUE_SENSOR_BROADCASTER_HPP_
 #define TEST_FORCE_TORQUE_SENSOR_BROADCASTER_HPP_
-
-#include <memory>
-#include <string>
-#include <vector>
 
 #include "gmock/gmock.h"
 

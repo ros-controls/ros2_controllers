@@ -16,17 +16,6 @@
  * Authors: Subhas Das, Denis Stogl
  */
 
-#include <stddef.h>
-
-#include <functional>
-#include <iostream>
-#include <memory>
-#include <string>
-#include <utility>
-#include <vector>
-
-#include "gmock/gmock.h"
-
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
@@ -84,7 +73,7 @@ void ForceTorqueSensorBroadcasterTest::TearDown()
 void ForceTorqueSensorBroadcasterTest::SetUpFTSBroadcaster()
 {
   const auto result = fts_broadcaster_->init("test_force_torque_sensor_broadcaster");
-  ASSERT_EQ(result, controller_interface::return_type::OK);
+  ASSERT_EQ(result, controller_interface::return_type::SUCCESS);
 
   std::vector<LoanedStateInterface> state_ifs;
   state_ifs.emplace_back(fts_force_x_);
@@ -226,7 +215,7 @@ TEST_F(ForceTorqueSensorBroadcasterTest, SensorName_Update_Success)
   // TODO(bailaC): check if all torques are returned (size 3) by calling get_torques()
   // TODO(bailaC): check if correct message is returned by calling get_values_as_message()
 
-  ASSERT_EQ(fts_broadcaster_->update(), controller_interface::return_type::OK);
+  ASSERT_EQ(fts_broadcaster_->update(), controller_interface::return_type::SUCCESS);
 }
 
 TEST_F(ForceTorqueSensorBroadcasterTest, InterfaceNames_Success)
@@ -240,7 +229,7 @@ TEST_F(ForceTorqueSensorBroadcasterTest, InterfaceNames_Success)
 
   ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(fts_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(fts_broadcaster_->update(), controller_interface::return_type::OK);
+  ASSERT_EQ(fts_broadcaster_->update(), controller_interface::return_type::SUCCESS);
 }
 
 TEST_F(ForceTorqueSensorBroadcasterTest, SensorName_Publish_Success)
@@ -265,7 +254,7 @@ TEST_F(ForceTorqueSensorBroadcasterTest, SensorName_Publish_Success)
     subs_callback);
 
   // call update to publish the test value
-  ASSERT_EQ(fts_broadcaster_->update(), controller_interface::return_type::OK);
+  ASSERT_EQ(fts_broadcaster_->update(), controller_interface::return_type::SUCCESS);
 
   // wait for message to be passed
   ASSERT_EQ(wait_for(subscription), rclcpp::WaitResultKind::Ready);
@@ -299,7 +288,7 @@ TEST_F(ForceTorqueSensorBroadcasterTest, InterfaceNames_Publish_Success)
     subs_callback);
 
   // call update to publish the test value
-  ASSERT_EQ(fts_broadcaster_->update(), controller_interface::return_type::OK);
+  ASSERT_EQ(fts_broadcaster_->update(), controller_interface::return_type::SUCCESS);
 
   // wait for message to be passed
   ASSERT_EQ(wait_for(subscription), rclcpp::WaitResultKind::Ready);
