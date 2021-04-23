@@ -1,5 +1,15 @@
 .. _controllers:
 
+==========================
+ros2_control - Controllers
+==========================
+
+.. toctree::
+   :maxdepth: 1
+   :glob:
+
+   *
+
 Controllers user documentation
 ==============================
 
