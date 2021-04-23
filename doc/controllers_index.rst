@@ -1,26 +1,27 @@
 .. _controllers:
 
 ==========================
-ros2_control - Controllers
+Controllers
 ==========================
 
+Guidelines and Best Practices
+=============================
+
 .. toctree::
-   :maxdepth: 1
+   :titlesonly: 1
    :glob:
 
    *
 
-Controllers user documentation
+Available Controllers
 ==============================
 
-.. include:: ../diff_drive_controller/doc/userdoc.rst
+.. toctree::
+   :titlesonly:
 
-.. include:: ../joint_trajectory_controller/doc/userdoc.rst
-
-.. include:: ../forward_command_controller/doc/userdoc.rst
-
-.. include:: ../position_controllers/doc/userdoc.rst
-
-.. include:: ../velocity_controllers/doc/userdoc.rst
-
-.. include:: ../effort_controllers/doc/userdoc.rst
+   Differential Drive <../diff_drive_controller/doc/userdoc.rst>
+   Forward Command <../forward_command_controller/doc/userdoc.rst>
+   Joint Trajectory <../joint_trajectory_controller/doc/userdoc.rst>
+   Position Controllers <../position_controllers/doc/userdoc.rst>
+   Velocity Controllers <../velocity_controllers/doc/userdoc.rst>
+   Effort Controllers <../effort_controllers/doc/userdoc.rst>
