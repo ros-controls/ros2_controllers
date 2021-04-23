@@ -299,9 +299,10 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
   // State publisher
   const double state_publish_rate =
     node_->get_parameter("state_publish_rate").get_value<double>();
-  RCLCPP_INFO_STREAM(
-    logger, "Controller state will be published at " <<
-      state_publish_rate << "Hz.");
+  RCLCPP_INFO(
+    logger,
+    "Controller state will be published at %fHz.",
+    state_publish_rate);
   if (state_publish_rate > 0.0) {
     state_publisher_period_ =
       rclcpp::Duration::from_seconds(1.0 / state_publish_rate);
@@ -338,9 +339,10 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
   const double action_monitor_rate = node_->get_parameter("action_monitor_rate")
     .get_value<double>();
 
-  RCLCPP_INFO_STREAM(
-    logger, "Action status changes will be monitored at " <<
-      action_monitor_rate << "Hz.");
+  RCLCPP_INFO(
+    logger,
+    "Action status changes will be monitored at %fHz.",
+    action_monitor_rate);
   action_monitor_period_ = rclcpp::Duration::from_seconds(1.0 / action_monitor_rate);
 
   using namespace std::placeholders;
@@ -387,7 +389,7 @@ JointTrajectoryController::on_activate(const rclcpp_lifecycle::State &)
   {
     RCLCPP_ERROR(
       node_->get_logger(),
-      "Expected %u position command interfaces, got %u",
+      "Expected %zu position command interfaces, got %zu",
       joint_names_.size(), joint_position_command_interface_.size());
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
   }
@@ -397,7 +399,7 @@ JointTrajectoryController::on_activate(const rclcpp_lifecycle::State &)
   {
     RCLCPP_ERROR(
       node_->get_logger(),
-      "Expected %u position state interfaces, got %u",
+      "Expected %zu position state interfaces, got %zu",
       joint_names_.size(), joint_position_state_interface_.size());
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
   }
@@ -407,7 +409,7 @@ JointTrajectoryController::on_activate(const rclcpp_lifecycle::State &)
   {
     RCLCPP_ERROR(
       node_->get_logger(),
-      "Expected %u velocity state interfaces, got %u",
+      "Expected %zu velocity state interfaces, got %zu",
       joint_names_.size(), joint_velocity_state_interface_.size());
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
   }
@@ -656,7 +658,8 @@ void JointTrajectoryController::sort_to_local_joint_order(
       if (to_remap.size() != mapping.size()) {
         RCLCPP_WARN(
           node_->get_logger(),
-          "Invalid input size (%d) for sorting", to_remap.size());
+          "Invalid input size (%zu) for sorting",
+          to_remap.size());
         return to_remap;
       }
       std::vector<double> output;
@@ -694,7 +697,7 @@ bool JointTrajectoryController::validate_trajectory_point_field(
   if (joint_names_size != vector_field.size()) {
     RCLCPP_ERROR(
       node_->get_logger(),
-      "Mismatch between joint_names (%u) and %s (%u) at point #%u.",
+      "Mismatch between joint_names (%zu) and %s (%zu) at point #%zu.",
       joint_names_size, string_for_vector_field.c_str(), vector_field.size(), i);
     return false;
   }
@@ -758,7 +761,7 @@ bool JointTrajectoryController::validate_trajectory_msg(
     if ((i > 0) && (rclcpp::Duration(trajectory.points[i].time_from_start) <= previous_traj_time)) {
       RCLCPP_ERROR(
         node_->get_logger(),
-        "Time between points %u and %u is not strictly increasing, it is %f and %f respectively",
+        "Time between points %zu and %zu is not strictly increasing, it is %f and %f respectively",
         i - 1, i, previous_traj_time.seconds(),
         rclcpp::Duration(trajectory.points[i].time_from_start).seconds());
       return false;
