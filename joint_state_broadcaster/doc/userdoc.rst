@@ -1,7 +1,7 @@
 .. _joint_state_broadcaster_userdoc:
 
 joint_state_broadcaster
-----------------------
+-----------------------
 
 The broadcaster reads all state interfaces and reports them on ``/joint_states`` and ``/dynamic_joint_states``.
 

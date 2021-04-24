@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #include <stddef.h>
 
 #include <array>
@@ -57,13 +56,10 @@ using lifecycle_msgs::msg::State;
 using test_trajectory_controllers::TestableJointTrajectoryController;
 using test_trajectory_controllers::TestTrajectoryController;
 
-void
-spin(rclcpp::executors::MultiThreadedExecutor * exe)
-{
-  exe->spin();
-}
+void spin(rclcpp::executors::MultiThreadedExecutor * exe) { exe->spin(); }
 
-TEST_F(TestTrajectoryController, configuration) {
+TEST_F(TestTrajectoryController, configuration)
+{
   SetUpTrajectoryController();
 
   rclcpp::executors::MultiThreadedExecutor executor;
@@ -77,7 +73,7 @@ TEST_F(TestTrajectoryController, configuration) {
   builtin_interfaces::msg::Duration time_from_start;
   time_from_start.sec = 1;
   time_from_start.nanosec = 0;
-  std::vector<std::vector<double>> points {{{3.3, 4.4, 5.5}}};
+  std::vector<std::vector<double>> points{{{3.3, 4.4, 5.5}}};
   publish(time_from_start, points);
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
@@ -204,7 +200,8 @@ TEST_F(TestTrajectoryController, configuration) {
 //   executor.cancel();
 // }
 
-TEST_F(TestTrajectoryController, cleanup) {
+TEST_F(TestTrajectoryController, cleanup)
+{
   SetUpAndActivateTrajectoryController();
 
   auto traj_node = traj_controller_->get_node();
@@ -215,7 +212,7 @@ TEST_F(TestTrajectoryController, cleanup) {
   builtin_interfaces::msg::Duration time_from_start;
   time_from_start.sec = 1;
   time_from_start.nanosec = 0;
-  std::vector<std::vector<double>> points {{{3.3, 4.4, 5.5}}};
+  std::vector<std::vector<double>> points{{{3.3, 4.4, 5.5}}};
   publish(time_from_start, points);
   traj_controller_->wait_for_trajectory(executor);
   traj_controller_->update();
@@ -236,7 +233,8 @@ TEST_F(TestTrajectoryController, cleanup) {
   EXPECT_NEAR(INITIAL_POS_JOINT3, joint_pos_[2], COMMON_THRESHOLD);
 }
 
-TEST_F(TestTrajectoryController, correct_initialization_using_parameters) {
+TEST_F(TestTrajectoryController, correct_initialization_using_parameters)
+{
   SetUpTrajectoryController(false);
 
   // This block is replacing the way parameters are set via launch
@@ -262,11 +260,8 @@ TEST_F(TestTrajectoryController, correct_initialization_using_parameters) {
   constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
   builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
   // *INDENT-OFF*
-  std::vector<std::vector<double>> points {
-    {{3.3, 4.4, 5.5}},
-    {{7.7, 8.8, 9.9}},
-    {{10.10, 11.11, 12.12}}
-  };
+  std::vector<std::vector<double>> points{
+    {{3.3, 4.4, 5.5}}, {{7.7, 8.8, 9.9}}, {{10.10, 11.11, 12.12}}};
   // *INDENT-ON*
   publish(time_from_start, points);
   traj_controller_->wait_for_trajectory(executor);
@@ -307,7 +302,8 @@ TEST_F(TestTrajectoryController, correct_initialization_using_parameters) {
   executor.cancel();
 }
 
-TEST_F(TestTrajectoryController, state_topic_consistency) {
+TEST_F(TestTrajectoryController, state_topic_consistency)
+{
   rclcpp::executors::SingleThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(true, {}, &executor);
   subscribeToState();
@@ -319,7 +315,8 @@ TEST_F(TestTrajectoryController, state_topic_consistency) {
 
   size_t n_joints = joint_names_.size();
 
-  for (unsigned int i = 0; i < n_joints; ++i) {
+  for (unsigned int i = 0; i < n_joints; ++i)
+  {
     EXPECT_EQ(joint_names_[i], state->joint_names[i]);
   }
 
@@ -340,15 +337,11 @@ TEST_F(TestTrajectoryController, state_topic_consistency) {
 void TestTrajectoryController::test_state_publish_rate_target(int target_msg_count)
 {
   rclcpp::Parameter state_publish_rate_param(
-    "state_publish_rate",
-    static_cast<double>(target_msg_count));
+    "state_publish_rate", static_cast<double>(target_msg_count));
   rclcpp::executors::SingleThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(true, {state_publish_rate_param}, &executor);
 
-  auto future_handle = std::async(
-    std::launch::async, [&executor]() -> void {
-      executor.spin();
-    });
+  auto future_handle = std::async(std::launch::async, [&executor]() -> void { executor.spin(); });
 
   using control_msgs::msg::JointTrajectoryControllerState;
 
@@ -356,18 +349,15 @@ void TestTrajectoryController::test_state_publish_rate_target(int target_msg_cou
   int echo_received_counter = 0;
   rclcpp::Subscription<JointTrajectoryControllerState>::SharedPtr subs =
     traj_node_->create_subscription<JointTrajectoryControllerState>(
-    "/state",
-    qos_level,
-    [&](JointTrajectoryControllerState::UniquePtr) {
-      ++echo_received_counter;
-    }
-    );
+      "/state", qos_level,
+      [&](JointTrajectoryControllerState::UniquePtr) { ++echo_received_counter; });
 
   // update for 1second
   const auto start_time = rclcpp::Clock().now();
   const rclcpp::Duration wait = rclcpp::Duration::from_seconds(1.0);
   const auto end_time = start_time + wait;
-  while (rclcpp::Clock().now() < end_time) {
+  while (rclcpp::Clock().now() < end_time)
+  {
     traj_controller_->update();
   }
 
@@ -380,25 +370,21 @@ void TestTrajectoryController::test_state_publish_rate_target(int target_msg_cou
 /**
  * @brief test_state_publish_rate Test that state publish rate matches configure rate
  */
-TEST_F(TestTrajectoryController, test_state_publish_rate) {
-  test_state_publish_rate_target(10);
-}
+TEST_F(TestTrajectoryController, test_state_publish_rate) { test_state_publish_rate_target(10); }
 
-TEST_F(TestTrajectoryController, zero_state_publish_rate) {
-  test_state_publish_rate_target(0);
-}
+TEST_F(TestTrajectoryController, zero_state_publish_rate) { test_state_publish_rate_target(0); }
 
 /**
  * @brief test_jumbled_joint_order Test sending trajectories with a joint order different from internal controller order
  */
-TEST_F(TestTrajectoryController, test_jumbled_joint_order) {
+TEST_F(TestTrajectoryController, test_jumbled_joint_order)
+{
   rclcpp::executors::SingleThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(true, {}, &executor);
   {
     trajectory_msgs::msg::JointTrajectory traj_msg;
-    const std::vector<std::string> jumbled_joint_names {
-      joint_names_[1], joint_names_[2], joint_names_[0]
-    };
+    const std::vector<std::string> jumbled_joint_names{
+      joint_names_[1], joint_names_[2], joint_names_[0]};
     traj_msg.joint_names = jumbled_joint_names;
     traj_msg.header.stamp = rclcpp::Time(0);
     traj_msg.points.resize(1);
@@ -424,7 +410,8 @@ TEST_F(TestTrajectoryController, test_jumbled_joint_order) {
 /**
  * @brief test_partial_joint_list Test sending trajectories with a subset of the controlled joints
  */
-TEST_F(TestTrajectoryController, test_partial_joint_list) {
+TEST_F(TestTrajectoryController, test_partial_joint_list)
+{
   rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", true);
 
   rclcpp::executors::SingleThreadedExecutor executor;
@@ -434,9 +421,7 @@ TEST_F(TestTrajectoryController, test_partial_joint_list) {
   trajectory_msgs::msg::JointTrajectory traj_msg;
 
   {
-    std::vector<std::string> partial_joint_names {
-      joint_names_[1], joint_names_[0]
-    };
+    std::vector<std::string> partial_joint_names{joint_names_[1], joint_names_[0]};
     traj_msg.joint_names = partial_joint_names;
     traj_msg.header.stamp = rclcpp::Time(0);
     traj_msg.points.resize(1);
@@ -459,16 +444,15 @@ TEST_F(TestTrajectoryController, test_partial_joint_list) {
   double threshold = 0.001;
   EXPECT_NEAR(traj_msg.points[0].positions[1], joint_pos_[0], threshold);
   EXPECT_NEAR(traj_msg.points[0].positions[0], joint_pos_[1], threshold);
-  EXPECT_NEAR(
-    initial_joint3_cmd, joint_pos_[2],
-    threshold) << "Joint 3 command should be current position";
+  EXPECT_NEAR(initial_joint3_cmd, joint_pos_[2], threshold)
+    << "Joint 3 command should be current position";
 
-//  Velocity commands are not sent yet
-//  EXPECT_NEAR(traj_msg.points[0].velocities[1], test_robot_->vel1, threshold);
-//  EXPECT_NEAR(traj_msg.points[0].velocities[0], test_robot_->vel2, threshold);
-//  EXPECT_NEAR(
-//    0.0, test_robot_->vel3,
-//    threshold) << "Joint 3 velocity should be 0.0 since it's not in the goal";
+  //  Velocity commands are not sent yet
+  //  EXPECT_NEAR(traj_msg.points[0].velocities[1], test_robot_->vel1, threshold);
+  //  EXPECT_NEAR(traj_msg.points[0].velocities[0], test_robot_->vel2, threshold);
+  //  EXPECT_NEAR(
+  //    0.0, test_robot_->vel3,
+  //    threshold) << "Joint 3 velocity should be 0.0 since it's not in the goal";
 
   executor.cancel();
 }
@@ -476,7 +460,8 @@ TEST_F(TestTrajectoryController, test_partial_joint_list) {
 /**
  * @brief test_partial_joint_list Test sending trajectories with a subset of the controlled joints without allow_partial_joints_goal
  */
-TEST_F(TestTrajectoryController, test_partial_joint_list_not_allowed) {
+TEST_F(TestTrajectoryController, test_partial_joint_list_not_allowed)
+{
   rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", false);
 
   rclcpp::executors::SingleThreadedExecutor executor;
@@ -488,9 +473,7 @@ TEST_F(TestTrajectoryController, test_partial_joint_list_not_allowed) {
   trajectory_msgs::msg::JointTrajectory traj_msg;
 
   {
-    std::vector<std::string> partial_joint_names {
-      joint_names_[1], joint_names_[0]
-    };
+    std::vector<std::string> partial_joint_names{joint_names_[1], joint_names_[0]};
     traj_msg.joint_names = partial_joint_names;
     traj_msg.header.stamp = rclcpp::Time(0);
     traj_msg.points.resize(1);
@@ -511,15 +494,12 @@ TEST_F(TestTrajectoryController, test_partial_joint_list_not_allowed) {
   updateController(rclcpp::Duration::from_seconds(0.25));
 
   double threshold = 0.001;
-  EXPECT_NEAR(
-    initial_joint1_cmd, joint_pos_[0],
-    threshold) << "All joints command should be current position because goal was rejected";
-  EXPECT_NEAR(
-    initial_joint2_cmd, joint_pos_[1],
-    threshold) << "All joints command should be current position because goal was rejected";
-  EXPECT_NEAR(
-    initial_joint3_cmd, joint_pos_[2],
-    threshold) << "All joints command should be current position because goal was rejected";
+  EXPECT_NEAR(initial_joint1_cmd, joint_pos_[0], threshold)
+    << "All joints command should be current position because goal was rejected";
+  EXPECT_NEAR(initial_joint2_cmd, joint_pos_[1], threshold)
+    << "All joints command should be current position because goal was rejected";
+  EXPECT_NEAR(initial_joint3_cmd, joint_pos_[2], threshold)
+    << "All joints command should be current position because goal was rejected";
 
   //  Velocity commands are not sent yet
   //  EXPECT_NEAR(traj_msg.points[0].velocities[1], test_robot_->vel1, threshold);
@@ -531,11 +511,11 @@ TEST_F(TestTrajectoryController, test_partial_joint_list_not_allowed) {
   executor.cancel();
 }
 
-
 /**
  * @brief invalid_message Test mismatched joint and reference vector sizes
  */
-TEST_F(TestTrajectoryController, invalid_message) {
+TEST_F(TestTrajectoryController, invalid_message)
+{
   rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", false);
   rclcpp::executors::SingleThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(true, {partial_joints_parameters}, &executor);
@@ -597,15 +577,16 @@ TEST_F(TestTrajectoryController, invalid_message) {
 /**
  * @brief test_trajectory_replace Test replacing an existing trajectory
  */
-TEST_F(TestTrajectoryController, test_trajectory_replace) {
+TEST_F(TestTrajectoryController, test_trajectory_replace)
+{
   rclcpp::executors::SingleThreadedExecutor executor;
   rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", true);
   SetUpAndActivateTrajectoryController(true, {partial_joints_parameters}, &executor);
 
   subscribeToState();
 
-  std::vector<std::vector<double>> points_old {{{2., 3., 4.}}};
-  std::vector<std::vector<double>> points_partial_new {{1.5}};
+  std::vector<std::vector<double>> points_old{{{2., 3., 4.}}};
+  std::vector<std::vector<double>> points_partial_new{{1.5}};
 
   const auto delay = std::chrono::milliseconds(500);
   builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(delay)};
@@ -629,13 +610,14 @@ TEST_F(TestTrajectoryController, test_trajectory_replace) {
 /**
  * @brief test_ignore_old_trajectory Sending an old trajectory replacing an existing trajectory
  */
-TEST_F(TestTrajectoryController, test_ignore_old_trajectory) {
+TEST_F(TestTrajectoryController, test_ignore_old_trajectory)
+{
   rclcpp::executors::SingleThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(true, {}, &executor);
   subscribeToState();
 
-  std::vector<std::vector<double>> points_old {{{2., 3., 4.}, {4., 5., 6.}}};
-  std::vector<std::vector<double>> points_new {{{-1., -2., -3.}}};
+  std::vector<std::vector<double>> points_old{{{2., 3., 4.}, {4., 5., 6.}}};
+  std::vector<std::vector<double>> points_new{{{-1., -2., -3.}}};
 
   const auto delay = std::chrono::milliseconds(500);
   builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(delay)};
@@ -655,13 +637,14 @@ TEST_F(TestTrajectoryController, test_ignore_old_trajectory) {
   waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
 }
 
-TEST_F(TestTrajectoryController, test_ignore_partial_old_trajectory) {
+TEST_F(TestTrajectoryController, test_ignore_partial_old_trajectory)
+{
   rclcpp::executors::SingleThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(true, {}, &executor);
   subscribeToState();
 
-  std::vector<std::vector<double>> points_old {{{2., 3., 4.}, {4., 5., 6.}}};
-  std::vector<std::vector<double>> points_new {{{-1., -2., -3.}, {-2., -4., -6.}}};
+  std::vector<std::vector<double>> points_old{{{2., 3., 4.}, {4., 5., 6.}}};
+  std::vector<std::vector<double>> points_new{{{-1., -2., -3.}, {-2., -4., -6.}}};
 
   const auto delay = std::chrono::milliseconds(500);
   builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(delay)};
@@ -681,8 +664,8 @@ TEST_F(TestTrajectoryController, test_ignore_partial_old_trajectory) {
   waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
 }
 
-
-TEST_F(TestTrajectoryController, test_execute_partial_traj_in_future) {
+TEST_F(TestTrajectoryController, test_execute_partial_traj_in_future)
+{
   SetUpTrajectoryController();
   auto traj_node = traj_controller_->get_node();
   RCLCPP_WARN(
@@ -699,8 +682,13 @@ TEST_F(TestTrajectoryController, test_execute_partial_traj_in_future) {
   traj_controller_->configure();
   traj_controller_->activate();
 
-  std::vector<std::vector<double>> full_traj {{{2., 3., 4.}, {4., 6., 8.}}};
-  std::vector<std::vector<double>> partial_traj {{{-1., -2.}, {-2., -4, }}};
+  std::vector<std::vector<double>> full_traj{{{2., 3., 4.}, {4., 6., 8.}}};
+  std::vector<std::vector<double>> partial_traj{
+    {{-1., -2.},
+     {
+       -2.,
+       -4,
+     }}};
   const auto delay = std::chrono::milliseconds(500);
   builtin_interfaces::msg::Duration points_delay{rclcpp::Duration(delay)};
   // Send full trajectory
@@ -713,7 +701,6 @@ TEST_F(TestTrajectoryController, test_execute_partial_traj_in_future) {
   //  Check that we reached end of points_old[0]trajectory and are starting points_old[1]
   waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
 
-
   // Send partial trajectory starting after full trajecotry is complete
   RCLCPP_INFO(traj_node->get_logger(), "Sending new trajectory in the future");
   publish(points_delay, partial_traj, rclcpp::Clock().now() + delay * 2);
@@ -723,6 +710,5 @@ TEST_F(TestTrajectoryController, test_execute_partial_traj_in_future) {
   expected_desired = expected_actual;
 
   waitAndCompareState(
-    expected_actual, expected_desired, executor, rclcpp::Duration(
-      delay * (2 + 2)), 0.1);
+    expected_actual, expected_desired, executor, rclcpp::Duration(delay * (2 + 2)), 0.1);
 }

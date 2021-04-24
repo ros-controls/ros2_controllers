@@ -21,13 +21,13 @@
 
 #include "gmock/gmock.h"
 
+#include "effort_controllers/joint_group_effort_controller.hpp"
 #include "hardware_interface/handle.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
-#include "effort_controllers/joint_group_effort_controller.hpp"
 
-using hardware_interface::HW_IF_EFFORT;
 using hardware_interface::CommandInterface;
-// subclassing and friending so we can access member varibles
+using hardware_interface::HW_IF_EFFORT;
+// subclassing and friending so we can access member variables
 class FriendJointGroupEffortController : public effort_controllers::JointGroupEffortController
 {
   FRIEND_TEST(JointGroupEffortControllerTest, CommandSuccessTest);

@@ -34,8 +34,8 @@ using namespace std::chrono_literals;
 // Floating-point value comparison threshold
 const double EPS = 1e-8;
 
-
-TEST(TestTrajectory, initialize_trajectory) {
+TEST(TestTrajectory, initialize_trajectory)
+{
   {
     auto empty_msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
     empty_msg->header.stamp.sec = 2;
@@ -70,7 +70,8 @@ TEST(TestTrajectory, initialize_trajectory) {
   }
 }
 
-TEST(TestTrajectory, sample_trajectory_positions) {
+TEST(TestTrajectory, sample_trajectory_positions)
+{
   auto full_msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
   full_msg->header.stamp = rclcpp::Time(0);
 
@@ -172,7 +173,8 @@ TEST(TestTrajectory, sample_trajectory_positions) {
   }
 }
 
-TEST(TestTrajectory, interpolation_pos_vel) {
+TEST(TestTrajectory, interpolation_pos_vel)
+{
   // taken from ros1_controllers QuinticSplineSegmentTest::PosVelEnpointsSampler
 
   // Start and end state taken from x^3 - 2x
@@ -196,9 +198,8 @@ TEST(TestTrajectory, interpolation_pos_vel) {
   // sample at start_time
   {
     traj.interpolate_between_points(
-      time_now + start_state.time_from_start, start_state,
-      time_now + end_state.time_from_start, end_state,
-      time_now + start_state.time_from_start, expected_state);
+      time_now + start_state.time_from_start, start_state, time_now + end_state.time_from_start,
+      end_state, time_now + start_state.time_from_start, expected_state);
     EXPECT_NEAR(start_state.positions[0], expected_state.positions[0], EPS);
     EXPECT_NEAR(start_state.velocities[0], expected_state.velocities[0], EPS);
     EXPECT_NEAR(0.0, expected_state.accelerations[0], EPS);
@@ -208,9 +209,8 @@ TEST(TestTrajectory, interpolation_pos_vel) {
   {
     auto t = rclcpp::Duration::from_seconds(std::sqrt(2.0));
     traj.interpolate_between_points(
-      time_now + start_state.time_from_start, start_state,
-      time_now + end_state.time_from_start, end_state,
-      time_now + start_state.time_from_start + t, expected_state);
+      time_now + start_state.time_from_start, start_state, time_now + end_state.time_from_start,
+      end_state, time_now + start_state.time_from_start + t, expected_state);
     EXPECT_NEAR(0.0, expected_state.positions[0], EPS);
     EXPECT_NEAR(4.0, expected_state.velocities[0], EPS);
     EXPECT_NEAR(6.0 * std::sqrt(2.0), expected_state.accelerations[0], EPS);
@@ -219,16 +219,16 @@ TEST(TestTrajectory, interpolation_pos_vel) {
   // sample at end_time
   {
     traj.interpolate_between_points(
-      time_now + start_state.time_from_start, start_state,
-      time_now + end_state.time_from_start, end_state,
-      time_now + end_state.time_from_start, expected_state);
+      time_now + start_state.time_from_start, start_state, time_now + end_state.time_from_start,
+      end_state, time_now + end_state.time_from_start, expected_state);
     EXPECT_NEAR(end_state.positions[0], expected_state.positions[0], EPS);
     EXPECT_NEAR(end_state.velocities[0], expected_state.velocities[0], EPS);
     EXPECT_NEAR(12.0, expected_state.accelerations[0], EPS);
   }
 }
 
-TEST(TestTrajectory, interpolation_pos_vel_accel) {
+TEST(TestTrajectory, interpolation_pos_vel_accel)
+{
   // taken from ros1_controllers QuinticSplineSegmentTest::PosVeAcclEnpointsSampler
 
   // Start and end state taken from x(x-1)(x-2)(x-3)(x-4) = x^5 -10x^4 + 35x^3 -50x^2 + 24x
@@ -252,9 +252,8 @@ TEST(TestTrajectory, interpolation_pos_vel_accel) {
   // sample at start_time
   {
     traj.interpolate_between_points(
-      time_now + start_state.time_from_start, start_state,
-      time_now + end_state.time_from_start, end_state,
-      time_now + start_state.time_from_start, expected_state);
+      time_now + start_state.time_from_start, start_state, time_now + end_state.time_from_start,
+      end_state, time_now + start_state.time_from_start, expected_state);
     EXPECT_NEAR(start_state.positions[0], expected_state.positions[0], EPS);
     EXPECT_NEAR(start_state.velocities[0], expected_state.velocities[0], EPS);
     EXPECT_NEAR(start_state.accelerations[0], expected_state.accelerations[0], EPS);
@@ -264,9 +263,8 @@ TEST(TestTrajectory, interpolation_pos_vel_accel) {
   {
     auto t = rclcpp::Duration::from_seconds(1.0);
     traj.interpolate_between_points(
-      time_now + start_state.time_from_start, start_state,
-      time_now + end_state.time_from_start, end_state,
-      time_now + start_state.time_from_start + t, expected_state);
+      time_now + start_state.time_from_start, start_state, time_now + end_state.time_from_start,
+      end_state, time_now + start_state.time_from_start + t, expected_state);
     EXPECT_NEAR(0.0, expected_state.positions[0], EPS);
     EXPECT_NEAR(-6.0, expected_state.velocities[0], EPS);
     EXPECT_NEAR(10.0, expected_state.accelerations[0], EPS);
@@ -275,9 +273,8 @@ TEST(TestTrajectory, interpolation_pos_vel_accel) {
   // sample at end_time
   {
     traj.interpolate_between_points(
-      time_now + start_state.time_from_start, start_state,
-      time_now + end_state.time_from_start, end_state,
-      time_now + end_state.time_from_start, expected_state);
+      time_now + start_state.time_from_start, start_state, time_now + end_state.time_from_start,
+      end_state, time_now + end_state.time_from_start, expected_state);
     EXPECT_NEAR(end_state.positions[0], expected_state.positions[0], EPS);
     EXPECT_NEAR(end_state.velocities[0], expected_state.velocities[0], EPS);
     EXPECT_NEAR(end_state.accelerations[0], expected_state.accelerations[0], EPS);

@@ -29,7 +29,6 @@
 
 namespace diff_drive_controller
 {
-
 class Odometry
 {
 public:
@@ -40,33 +39,17 @@ public:
   void updateOpenLoop(double linear, double angular, const rclcpp::Time & time);
   void resetOdometry();
 
-  double getX() const
-  {
-    return x_;
-  }
-  double getY() const
-  {
-    return y_;
-  }
-  double getHeading() const
-  {
-    return heading_;
-  }
-  double getLinear() const
-  {
-    return linear_;
-  }
-  double getAngular() const
-  {
-    return angular_;
-  }
+  double getX() const { return x_; }
+  double getY() const { return y_; }
+  double getHeading() const { return heading_; }
+  double getLinear() const { return linear_; }
+  double getAngular() const { return angular_; }
 
   void setWheelParams(double wheel_separation, double left_wheel_radius, double right_wheel_radius);
   void setVelocityRollingWindowSize(size_t velocity_rolling_window_size);
 
 private:
-  using RollingMeanAccumulator =
-    diff_drive_controller::RollingMeanAccumulator<double>;
+  using RollingMeanAccumulator = diff_drive_controller::RollingMeanAccumulator<double>;
 
   void integrateRungeKutta2(double linear, double angular);
   void integrateExact(double linear, double angular);

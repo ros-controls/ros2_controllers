@@ -22,12 +22,12 @@
 
 #include "gmock/gmock.h"
 
+#include "forward_command_controller/forward_command_controller.hpp"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
-#include "forward_command_controller/forward_command_controller.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
-#include "rclcpp/qos.hpp"
 #include "rclcpp/node.hpp"
+#include "rclcpp/qos.hpp"
 #include "rclcpp/subscription.hpp"
 #include "rclcpp/utilities.hpp"
 #include "rclcpp/wait_set.hpp"
@@ -46,17 +46,11 @@ rclcpp::WaitResultKind wait_for(rclcpp::SubscriptionBase::SharedPtr subscription
   const auto timeout = std::chrono::seconds(10);
   return wait_set.wait(timeout).kind();
 }
-}
+}  // namespace
 
-void ForwardCommandControllerTest::SetUpTestCase()
-{
-  rclcpp::init(0, nullptr);
-}
+void ForwardCommandControllerTest::SetUpTestCase() { rclcpp::init(0, nullptr); }
 
-void ForwardCommandControllerTest::TearDownTestCase()
-{
-  rclcpp::shutdown();
-}
+void ForwardCommandControllerTest::TearDownTestCase() { rclcpp::shutdown(); }
 
 void ForwardCommandControllerTest::SetUp()
 {
@@ -64,10 +58,7 @@ void ForwardCommandControllerTest::SetUp()
   controller_ = std::make_unique<FriendForwardCommandController>();
 }
 
-void ForwardCommandControllerTest::TearDown()
-{
-  controller_.reset(nullptr);
-}
+void ForwardCommandControllerTest::TearDown() { controller_.reset(nullptr); }
 
 void ForwardCommandControllerTest::SetUpController()
 {
@@ -115,7 +106,7 @@ TEST_F(ForwardCommandControllerTest, InterfaceParameterEmpty)
 {
   SetUpController();
 
-  // configure failed, 'interface_name' paremeter not set
+  // configure failed, 'interface_name' parameter not set
   controller_->get_node()->set_parameter({"joints", std::vector<std::string>{"joint1", "joint2"}});
   controller_->get_node()->set_parameter({"interface_name", ""});
 
@@ -195,8 +186,7 @@ TEST_F(ForwardCommandControllerTest, CommandSuccessTest)
   ASSERT_EQ(joint_3_pos_cmd_.get_value(), 3.1);
 
   // send command
-  auto command_ptr =
-    std::make_shared<forward_command_controller::CmdType>();
+  auto command_ptr = std::make_shared<forward_command_controller::CmdType>();
   command_ptr->data = {10.0, 20.0, 30.0};
   controller_->rt_command_ptr_.writeFromNonRT(command_ptr);
 
@@ -219,9 +209,8 @@ TEST_F(ForwardCommandControllerTest, WrongCommandCheckTest)
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
-  // send command with wrong numnber of joints
-  auto command_ptr =
-    std::make_shared<forward_command_controller::CmdType>();
+  // send command with wrong number of joints
+  auto command_ptr = std::make_shared<forward_command_controller::CmdType>();
   command_ptr->data = {10.0, 20.0};
   controller_->rt_command_ptr_.writeFromNonRT(command_ptr);
 
@@ -273,8 +262,7 @@ TEST_F(ForwardCommandControllerTest, CommandCallbackTest)
   // send a new command
   rclcpp::Node test_node("test_node");
   auto command_pub = test_node.create_publisher<std_msgs::msg::Float64MultiArray>(
-    std::string(
-      controller_->get_node()->get_name()) + "/commands", rclcpp::SystemDefaultsQoS());
+    std::string(controller_->get_node()->get_name()) + "/commands", rclcpp::SystemDefaultsQoS());
   std_msgs::msg::Float64MultiArray command_msg;
   command_msg.data = {10.0, 20.0, 30.0};
   command_pub->publish(command_msg);
