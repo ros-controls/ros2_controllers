@@ -25,11 +25,10 @@
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "velocity_controllers/joint_group_velocity_controller.hpp"
 
-using hardware_interface::HW_IF_VELOCITY;
 using hardware_interface::CommandInterface;
+using hardware_interface::HW_IF_VELOCITY;
 
-
-// subclassing and friending so we can access member varibles
+// subclassing and friending so we can access member variables
 class FriendJointGroupVelocityController : public velocity_controllers::JointGroupVelocityController
 {
   FRIEND_TEST(JointGroupVelocityControllerTest, CommandSuccessTest);

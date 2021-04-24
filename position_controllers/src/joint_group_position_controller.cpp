@@ -30,18 +30,22 @@ JointGroupPositionController::JointGroupPositionController()
   interface_name_ = hardware_interface::HW_IF_POSITION;
 }
 
-controller_interface::return_type
-JointGroupPositionController::init(const std::string & controller_name)
+controller_interface::return_type JointGroupPositionController::init(
+  const std::string & controller_name)
 {
   auto ret = ForwardCommandController::init(controller_name);
-  if (ret != controller_interface::return_type::OK) {
+  if (ret != controller_interface::return_type::OK)
+  {
     return ret;
   }
 
-  try {
+  try
+  {
     // undeclare interface parameter used in the general forward_command_controller
     get_node()->undeclare_parameter("interface_name");
-  } catch (const std::exception & e) {
+  }
+  catch (const std::exception & e)
+  {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
     return controller_interface::return_type::ERROR;
   }

@@ -23,13 +23,9 @@
 #include "std_msgs/msg/header.hpp"
 namespace joint_trajectory_controller
 {
+Trajectory::Trajectory() : trajectory_start_time_(0), time_before_traj_msg_(0) {}
 
-Trajectory::Trajectory()
-: trajectory_start_time_(0), time_before_traj_msg_(0)
-{}
-
-Trajectory::Trajectory(
-  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> joint_trajectory)
+Trajectory::Trajectory(std::shared_ptr<trajectory_msgs::msg::JointTrajectory> joint_trajectory)
 : trajectory_msg_(joint_trajectory),
   trajectory_start_time_(static_cast<rclcpp::Time>(joint_trajectory->header.stamp))
 {
@@ -46,8 +42,7 @@ Trajectory::Trajectory(
   update(joint_trajectory);
 }
 
-void
-Trajectory::set_point_before_trajectory_msg(
+void Trajectory::set_point_before_trajectory_msg(
   const rclcpp::Time & current_time,
   const trajectory_msgs::msg::JointTrajectoryPoint & current_point)
 {
@@ -55,33 +50,32 @@ Trajectory::set_point_before_trajectory_msg(
   state_before_traj_msg_ = current_point;
 }
 
-void
-Trajectory::update(std::shared_ptr<trajectory_msgs::msg::JointTrajectory> joint_trajectory)
+void Trajectory::update(std::shared_ptr<trajectory_msgs::msg::JointTrajectory> joint_trajectory)
 {
   trajectory_msg_ = joint_trajectory;
   trajectory_start_time_ = static_cast<rclcpp::Time>(joint_trajectory->header.stamp);
   sampled_already_ = false;
 }
 
-bool
-Trajectory::sample(
-  const rclcpp::Time & sample_time,
-  trajectory_msgs::msg::JointTrajectoryPoint & expected_state,
-  TrajectoryPointConstIter & start_segment_itr,
-  TrajectoryPointConstIter & end_segment_itr)
+bool Trajectory::sample(
+  const rclcpp::Time & sample_time, trajectory_msgs::msg::JointTrajectoryPoint & expected_state,
+  TrajectoryPointConstIter & start_segment_itr, TrajectoryPointConstIter & end_segment_itr)
 {
   THROW_ON_NULLPTR(trajectory_msg_)
   expected_state = trajectory_msgs::msg::JointTrajectoryPoint();
 
-  if (trajectory_msg_->points.empty()) {
+  if (trajectory_msg_->points.empty())
+  {
     start_segment_itr = end();
     end_segment_itr = end();
     return false;
   }
 
   // first sampling of this trajectory
-  if (!sampled_already_) {
-    if (trajectory_start_time_.seconds() == 0.0) {
+  if (!sampled_already_)
+  {
+    if (trajectory_start_time_.seconds() == 0.0)
+    {
       trajectory_start_time_ = sample_time;
     }
 
@@ -89,7 +83,8 @@ Trajectory::sample(
   }
 
   // sampling before the current point
-  if (sample_time < time_before_traj_msg_) {
+  if (sample_time < time_before_traj_msg_)
+  {
     return false;
   }
 
@@ -97,12 +92,13 @@ Trajectory::sample(
   const auto & first_point_in_msg = trajectory_msg_->points[0];
   const rclcpp::Duration offset = first_point_in_msg.time_from_start;
   const rclcpp::Time first_point_timestamp = trajectory_start_time_ + offset;
-  if (sample_time < first_point_timestamp) {
+  if (sample_time < first_point_timestamp)
+  {
     const rclcpp::Time t0 = time_before_traj_msg_;
 
     interpolate_between_points(
-      t0, state_before_traj_msg_, first_point_timestamp, first_point_in_msg,
-      sample_time, expected_state);
+      t0, state_before_traj_msg_, first_point_timestamp, first_point_in_msg, sample_time,
+      expected_state);
     start_segment_itr = begin();  // no segments before the first
     end_segment_itr = begin();
     return true;
@@ -110,7 +106,8 @@ Trajectory::sample(
 
   // time_from_start + trajectory time is the expected arrival time of trajectory
   const auto last_idx = trajectory_msg_->points.size() - 1;
-  for (auto i = 0ul; i < last_idx; ++i) {
+  for (auto i = 0ul; i < last_idx; ++i)
+  {
     const auto & point = trajectory_msg_->points[i];
     const auto & next_point = trajectory_msg_->points[i + 1];
 
@@ -119,7 +116,8 @@ Trajectory::sample(
     const rclcpp::Time t0 = trajectory_start_time_ + t0_offset;
     const rclcpp::Time t1 = trajectory_start_time_ + t1_offset;
 
-    if (sample_time >= t0 && sample_time < t1) {
+    if (sample_time >= t0 && sample_time < t1)
+    {
       interpolate_between_points(t0, point, t1, next_point, sample_time, expected_state);
       start_segment_itr = begin() + i;
       end_segment_itr = begin() + (i + 1);
@@ -132,10 +130,12 @@ Trajectory::sample(
   end_segment_itr = end();
   expected_state = (*start_segment_itr);
   // the trajectories in msg may have empty velocities/accel, so resize them
-  if (expected_state.velocities.empty()) {
+  if (expected_state.velocities.empty())
+  {
     expected_state.velocities.resize(expected_state.positions.size(), 0.0);
   }
-  if (expected_state.accelerations.empty()) {
+  if (expected_state.accelerations.empty())
+  {
     expected_state.accelerations.resize(expected_state.positions.size(), 0.0);
   }
   return true;
@@ -144,8 +144,7 @@ Trajectory::sample(
 void Trajectory::interpolate_between_points(
   const rclcpp::Time & time_a, const trajectory_msgs::msg::JointTrajectoryPoint & state_a,
   const rclcpp::Time & time_b, const trajectory_msgs::msg::JointTrajectoryPoint & state_b,
-  const rclcpp::Time & sample_time,
-  trajectory_msgs::msg::JointTrajectoryPoint & output)
+  const rclcpp::Time & sample_time, trajectory_msgs::msg::JointTrajectoryPoint & output)
 {
   rclcpp::Duration duration_so_far = sample_time - time_a;
   rclcpp::Duration duration_btwn_points = time_b - time_a;
@@ -155,21 +154,23 @@ void Trajectory::interpolate_between_points(
   output.velocities.resize(dim, 0.0);
   output.accelerations.resize(dim, 0.0);
 
-  auto generate_powers = [](int n, double x, double * powers)
+  auto generate_powers = [](int n, double x, double * powers) {
+    powers[0] = 1.0;
+    for (int i = 1; i <= n; ++i)
     {
-      powers[0] = 1.0;
-      for (int i = 1; i <= n; ++i) {
-        powers[i] = powers[i - 1] * x;
-      }
-    };
+      powers[i] = powers[i - 1] * x;
+    }
+  };
 
   bool has_velocity = !state_a.velocities.empty() && !state_b.velocities.empty();
   bool has_accel = !state_a.accelerations.empty() && !state_b.accelerations.empty();
-  if (duration_so_far.seconds() < 0.0) {
+  if (duration_so_far.seconds() < 0.0)
+  {
     duration_so_far = rclcpp::Duration::from_seconds(0.0);
     has_velocity = has_accel = false;
   }
-  if (duration_so_far.seconds() > duration_btwn_points.seconds()) {
+  if (duration_so_far.seconds() > duration_btwn_points.seconds())
+  {
     duration_so_far = duration_btwn_points;
     has_velocity = has_accel = false;
   }
@@ -177,28 +178,33 @@ void Trajectory::interpolate_between_points(
   double t[6];
   generate_powers(5, duration_so_far.seconds(), t);
 
-  if (!has_velocity && !has_accel) {
+  if (!has_velocity && !has_accel)
+  {
     // do linear interpolation
-    for (size_t i = 0; i < dim; ++i) {
+    for (size_t i = 0; i < dim; ++i)
+    {
       double start_pos = state_a.positions[i];
       double end_pos = state_b.positions[i];
 
       double coefficients[2] = {0.0, 0.0};
       coefficients[0] = start_pos;
-      if (duration_btwn_points.seconds() != 0.0) {
+      if (duration_btwn_points.seconds() != 0.0)
+      {
         coefficients[1] = (end_pos - start_pos) / duration_btwn_points.seconds();
       }
 
-      output.positions[i] = t[0] * coefficients[0] +
-        t[1] * coefficients[1];
+      output.positions[i] = t[0] * coefficients[0] + t[1] * coefficients[1];
       output.velocities[i] = t[0] * coefficients[1];
     }
-  } else if (has_velocity && !has_accel) {
+  }
+  else if (has_velocity && !has_accel)
+  {
     // do cubic interpolation
     double T[4];
     generate_powers(3, duration_btwn_points.seconds(), T);
 
-    for (size_t i = 0; i < dim; ++i) {
+    for (size_t i = 0; i < dim; ++i)
+    {
       double start_pos = state_a.positions[i];
       double start_vel = state_a.velocities[i];
       double end_pos = state_b.positions[i];
@@ -207,29 +213,29 @@ void Trajectory::interpolate_between_points(
       double coefficients[4] = {0.0, 0.0, 0.0, 0.0};
       coefficients[0] = start_pos;
       coefficients[1] = start_vel;
-      if (duration_btwn_points.seconds() != 0.0) {
+      if (duration_btwn_points.seconds() != 0.0)
+      {
         coefficients[2] =
           (-3.0 * start_pos + 3.0 * end_pos - 2.0 * start_vel * T[1] - end_vel * T[1]) / T[2];
         coefficients[3] =
-          ( 2.0 * start_pos - 2.0 * end_pos + start_vel * T[1] + end_vel * T[1]) / T[3];
+          (2.0 * start_pos - 2.0 * end_pos + start_vel * T[1] + end_vel * T[1]) / T[3];
       }
 
-      output.positions[i] = t[0] * coefficients[0] +
-        t[1] * coefficients[1] +
-        t[2] * coefficients[2] +
-        t[3] * coefficients[3];
-      output.velocities[i] = t[0] * coefficients[1] +
-        t[1] * 2.0 * coefficients[2] +
-        t[2] * 3.0 * coefficients[3];
-      output.accelerations[i] = t[0] * 2.0 * coefficients[2] +
-        t[1] * 6.0 * coefficients[3];
+      output.positions[i] = t[0] * coefficients[0] + t[1] * coefficients[1] +
+                            t[2] * coefficients[2] + t[3] * coefficients[3];
+      output.velocities[i] =
+        t[0] * coefficients[1] + t[1] * 2.0 * coefficients[2] + t[2] * 3.0 * coefficients[3];
+      output.accelerations[i] = t[0] * 2.0 * coefficients[2] + t[1] * 6.0 * coefficients[3];
     }
-  } else if (has_velocity && has_accel) {
+  }
+  else if (has_velocity && has_accel)
+  {
     // do quintic interpolation
     double T[6];
     generate_powers(5, duration_btwn_points.seconds(), T);
 
-    for (size_t i = 0; i < dim; ++i) {
+    for (size_t i = 0; i < dim; ++i)
+    {
       double start_pos = state_a.positions[i];
       double start_vel = state_a.velocities[i];
       double start_acc = state_a.accelerations[i];
@@ -241,62 +247,47 @@ void Trajectory::interpolate_between_points(
       coefficients[0] = start_pos;
       coefficients[1] = start_vel;
       coefficients[2] = 0.5 * start_acc;
-      if (duration_btwn_points.seconds() != 0.0) {
-        coefficients[3] =
-          (-20.0 * start_pos + 20.0 * end_pos - 3.0 * start_acc * T[2] + end_acc * T[2] -
-          12.0 * start_vel * T[1] - 8.0 * end_vel * T[1]) / (2.0 * T[3]);
-        coefficients[4] =
-          (30.0 * start_pos - 30.0 * end_pos + 3.0 * start_acc * T[2] - 2.0 * end_acc * T[2] +
-          16.0 * start_vel * T[1] + 14.0 * end_vel * T[1]) / (2.0 * T[4]);
+      if (duration_btwn_points.seconds() != 0.0)
+      {
+        coefficients[3] = (-20.0 * start_pos + 20.0 * end_pos - 3.0 * start_acc * T[2] +
+                           end_acc * T[2] - 12.0 * start_vel * T[1] - 8.0 * end_vel * T[1]) /
+                          (2.0 * T[3]);
+        coefficients[4] = (30.0 * start_pos - 30.0 * end_pos + 3.0 * start_acc * T[2] -
+                           2.0 * end_acc * T[2] + 16.0 * start_vel * T[1] + 14.0 * end_vel * T[1]) /
+                          (2.0 * T[4]);
         coefficients[5] = (-12.0 * start_pos + 12.0 * end_pos - start_acc * T[2] + end_acc * T[2] -
-          6.0 * start_vel * T[1] - 6.0 * end_vel * T[1]) / (2.0 * T[5]);
+                           6.0 * start_vel * T[1] - 6.0 * end_vel * T[1]) /
+                          (2.0 * T[5]);
       }
 
-      output.positions[i] = t[0] * coefficients[0] +
-        t[1] * coefficients[1] +
-        t[2] * coefficients[2] +
-        t[3] * coefficients[3] +
-        t[4] * coefficients[4] +
-        t[5] * coefficients[5];
-      output.velocities[i] = t[0] * coefficients[1] +
-        t[1] * 2.0 * coefficients[2] +
-        t[2] * 3.0 * coefficients[3] +
-        t[3] * 4.0 * coefficients[4] +
-        t[4] * 5.0 * coefficients[5];
-      output.accelerations[i] = t[0] * 2.0 * coefficients[2] +
-        t[1] * 6.0 * coefficients[3] +
-        t[2] * 12.0 * coefficients[4] +
-        t[3] * 20.0 * coefficients[5];
+      output.positions[i] = t[0] * coefficients[0] + t[1] * coefficients[1] +
+                            t[2] * coefficients[2] + t[3] * coefficients[3] +
+                            t[4] * coefficients[4] + t[5] * coefficients[5];
+      output.velocities[i] = t[0] * coefficients[1] + t[1] * 2.0 * coefficients[2] +
+                             t[2] * 3.0 * coefficients[3] + t[3] * 4.0 * coefficients[4] +
+                             t[4] * 5.0 * coefficients[5];
+      output.accelerations[i] = t[0] * 2.0 * coefficients[2] + t[1] * 6.0 * coefficients[3] +
+                                t[2] * 12.0 * coefficients[4] + t[3] * 20.0 * coefficients[5];
     }
   }
 }
 
-TrajectoryPointConstIter
-Trajectory::begin() const
+TrajectoryPointConstIter Trajectory::begin() const
 {
   THROW_ON_NULLPTR(trajectory_msg_)
 
   return trajectory_msg_->points.begin();
 }
 
-TrajectoryPointConstIter
-Trajectory::end() const
+TrajectoryPointConstIter Trajectory::end() const
 {
   THROW_ON_NULLPTR(trajectory_msg_)
 
   return trajectory_msg_->points.end();
 }
 
-rclcpp::Time
-Trajectory::time_from_start() const
-{
-  return trajectory_start_time_;
-}
+rclcpp::Time Trajectory::time_from_start() const { return trajectory_start_time_; }
 
-bool
-Trajectory::has_trajectory_msg() const
-{
-  return !trajectory_msg_;
-}
+bool Trajectory::has_trajectory_msg() const { return !trajectory_msg_; }
 
 }  // namespace joint_trajectory_controller

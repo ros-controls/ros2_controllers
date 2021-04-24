@@ -24,20 +24,18 @@
 
 namespace diff_drive_controller
 {
-
 /**
  * \brief Simplification of boost::accumulators::accumulator_set<double,
  *  bacc::stats<bacc::tag::rolling_mean>> to avoid dragging boost dependencies
  *
  * Computes the mean of the last accumulated elements
  */
-template<typename T>
+template <typename T>
 class RollingMeanAccumulator
 {
 public:
   explicit RollingMeanAccumulator(size_t rolling_window_size)
-  : buffer_(rolling_window_size, 0.0), next_insert_(0),
-    sum_(0.0), buffer_filled_(false)
+  : buffer_(rolling_window_size, 0.0), next_insert_(0), sum_(0.0), buffer_filled_(false)
   {
   }
 

@@ -18,25 +18,23 @@
 #include <memory>
 #include <string>
 #include <thread>
-#include <vector>
 #include <utility>
+#include <vector>
 
 #include "diff_drive_controller/diff_drive_controller.hpp"
+#include "hardware_interface/loaned_command_interface.hpp"
+#include "hardware_interface/loaned_state_interface.hpp"
+#include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/rclcpp.hpp"
-#include "hardware_interface/loaned_state_interface.hpp"
-#include "hardware_interface/loaned_command_interface.hpp"
-#include "hardware_interface/types/hardware_interface_type_values.hpp"
-
 
 using CallbackReturn = diff_drive_controller::CallbackReturn;
-using lifecycle_msgs::msg::State;
-using hardware_interface::LoanedStateInterface;
-using hardware_interface::LoanedCommandInterface;
 using hardware_interface::HW_IF_POSITION;
 using hardware_interface::HW_IF_VELOCITY;
+using hardware_interface::LoanedCommandInterface;
+using hardware_interface::LoanedStateInterface;
+using lifecycle_msgs::msg::State;
 using testing::SizeIs;
-
 
 class TestableDiffDriveController : public diff_drive_controller::DiffDriveController
 {
@@ -63,7 +61,8 @@ public:
     rclcpp::WaitSet wait_set;
     wait_set.add_subscription(velocity_command_subscriber_);
 
-    if (wait_set.wait(timeout).kind() == rclcpp::WaitResultKind::Ready) {
+    if (wait_set.wait(timeout).kind() == rclcpp::WaitResultKind::Ready)
+    {
       executor.spin_some();
       return true;
     }
@@ -74,10 +73,7 @@ public:
 class TestDiffDriveController : public ::testing::Test
 {
 protected:
-  static void SetUpTestCase()
-  {
-    rclcpp::init(0, nullptr);
-  }
+  static void SetUpTestCase() { rclcpp::init(0, nullptr); }
 
   void SetUp() override
   {
@@ -85,14 +81,10 @@ protected:
 
     pub_node = std::make_shared<rclcpp::Node>("velocity_publisher");
     velocity_publisher = pub_node->create_publisher<geometry_msgs::msg::TwistStamped>(
-      controller_name + "/cmd_vel",
-      rclcpp::SystemDefaultsQoS());
+      controller_name + "/cmd_vel", rclcpp::SystemDefaultsQoS());
   }
 
-  static void TearDownTestCase()
-  {
-    rclcpp::shutdown();
-  }
+  static void TearDownTestCase() { rclcpp::shutdown(); }
 
   /// Publish velocity msgs
   /**
@@ -103,8 +95,10 @@ protected:
   {
     int wait_count = 0;
     auto topic = velocity_publisher->get_topic_name();
-    while (pub_node->count_subscribers(topic) == 0) {
-      if (wait_count >= 5) {
+    while (pub_node->count_subscribers(topic) == 0)
+    {
+      if (wait_count >= 5)
+      {
         auto error_msg = std::string("publishing to ") + topic + " but no node subscribes to it";
         throw std::runtime_error(error_msg);
       }
@@ -125,8 +119,10 @@ protected:
     constexpr std::chrono::seconds TIMEOUT{2};
     auto clock = pub_node->get_clock();
     auto start = clock->now();
-    while (velocity_publisher->get_subscription_count() <= 0) {
-      if ((clock->now() - start) > TIMEOUT) {
+    while (velocity_publisher->get_subscription_count() <= 0)
+    {
+      if ((clock->now() - start) > TIMEOUT)
+      {
         FAIL();
       }
       rclcpp::spin_some(pub_node);
@@ -146,7 +142,6 @@ protected:
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
   }
 
-
   const std::string controller_name = "test_diff_drive_controller";
   std::unique_ptr<TestableDiffDriveController> controller_;
 
@@ -155,14 +150,14 @@ protected:
   std::vector<double> position_values_ = {0.1, 0.2};
   std::vector<double> velocity_values_ = {0.01, 0.02};
 
-  hardware_interface::StateInterface left_wheel_pos_state_{left_wheel_names[0], HW_IF_POSITION,
-    &position_values_[0]};
-  hardware_interface::StateInterface right_wheel_pos_state_{right_wheel_names[0], HW_IF_POSITION,
-    &position_values_[1]};
-  hardware_interface::CommandInterface left_wheel_vel_cmd_{left_wheel_names[0], HW_IF_VELOCITY,
-    &velocity_values_[0]};
-  hardware_interface::CommandInterface right_wheel_vel_cmd_{right_wheel_names[0], HW_IF_VELOCITY,
-    &velocity_values_[1]};
+  hardware_interface::StateInterface left_wheel_pos_state_{
+    left_wheel_names[0], HW_IF_POSITION, &position_values_[0]};
+  hardware_interface::StateInterface right_wheel_pos_state_{
+    right_wheel_names[0], HW_IF_POSITION, &position_values_[1]};
+  hardware_interface::CommandInterface left_wheel_vel_cmd_{
+    left_wheel_names[0], HW_IF_VELOCITY, &velocity_values_[0]};
+  hardware_interface::CommandInterface right_wheel_vel_cmd_{
+    right_wheel_names[0], HW_IF_VELOCITY, &velocity_values_[1]};
 
   rclcpp::Node::SharedPtr pub_node;
   rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr velocity_publisher;
@@ -182,24 +177,16 @@ TEST_F(TestDiffDriveController, configure_fails_with_only_left_or_only_right_sid
   ASSERT_EQ(ret, controller_interface::return_type::OK);
 
   controller_->get_node()->set_parameter(
-    rclcpp::Parameter(
-      "left_wheel_names",
-      rclcpp::ParameterValue(left_wheel_names)));
+    rclcpp::Parameter("left_wheel_names", rclcpp::ParameterValue(left_wheel_names)));
   controller_->get_node()->set_parameter(
-    rclcpp::Parameter(
-      "right_wheel_names",
-      rclcpp::ParameterValue(std::vector<std::string>())));
+    rclcpp::Parameter("right_wheel_names", rclcpp::ParameterValue(std::vector<std::string>())));
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
 
   controller_->get_node()->set_parameter(
-    rclcpp::Parameter(
-      "left_wheel_names",
-      rclcpp::ParameterValue(std::vector<std::string>())));
+    rclcpp::Parameter("left_wheel_names", rclcpp::ParameterValue(std::vector<std::string>())));
   controller_->get_node()->set_parameter(
-    rclcpp::Parameter(
-      "right_wheel_names",
-      rclcpp::ParameterValue(right_wheel_names)));
+    rclcpp::Parameter("right_wheel_names", rclcpp::ParameterValue(right_wheel_names)));
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
 }
@@ -210,16 +197,12 @@ TEST_F(TestDiffDriveController, configure_fails_with_mismatching_wheel_side_size
   ASSERT_EQ(ret, controller_interface::return_type::OK);
 
   controller_->get_node()->set_parameter(
-    rclcpp::Parameter(
-      "left_wheel_names",
-      rclcpp::ParameterValue(left_wheel_names)));
+    rclcpp::Parameter("left_wheel_names", rclcpp::ParameterValue(left_wheel_names)));
 
   auto extended_right_wheel_names = right_wheel_names;
   extended_right_wheel_names.push_back("extra_wheel");
   controller_->get_node()->set_parameter(
-    rclcpp::Parameter(
-      "right_wheel_names",
-      rclcpp::ParameterValue(extended_right_wheel_names)));
+    rclcpp::Parameter("right_wheel_names", rclcpp::ParameterValue(extended_right_wheel_names)));
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
 }
@@ -230,13 +213,9 @@ TEST_F(TestDiffDriveController, configure_succeeds_when_wheels_are_specified)
   ASSERT_EQ(ret, controller_interface::return_type::OK);
 
   controller_->get_node()->set_parameter(
-    rclcpp::Parameter(
-      "left_wheel_names",
-      rclcpp::ParameterValue(left_wheel_names)));
+    rclcpp::Parameter("left_wheel_names", rclcpp::ParameterValue(left_wheel_names)));
   controller_->get_node()->set_parameter(
-    rclcpp::Parameter(
-      "right_wheel_names",
-      rclcpp::ParameterValue(right_wheel_names)));
+    rclcpp::Parameter("right_wheel_names", rclcpp::ParameterValue(right_wheel_names)));
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
@@ -254,18 +233,13 @@ TEST_F(TestDiffDriveController, activate_fails_without_resources_assigned)
   ASSERT_EQ(ret, controller_interface::return_type::OK);
 
   controller_->get_node()->set_parameter(
-    rclcpp::Parameter(
-      "left_wheel_names",
-      rclcpp::ParameterValue(left_wheel_names)));
+    rclcpp::Parameter("left_wheel_names", rclcpp::ParameterValue(left_wheel_names)));
   controller_->get_node()->set_parameter(
-    rclcpp::Parameter(
-      "right_wheel_names",
-      rclcpp::ParameterValue(right_wheel_names)));
+    rclcpp::Parameter("right_wheel_names", rclcpp::ParameterValue(right_wheel_names)));
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
 }
-
 
 TEST_F(TestDiffDriveController, activate_succeeds_with_resources_assigned)
 {
@@ -273,19 +247,14 @@ TEST_F(TestDiffDriveController, activate_succeeds_with_resources_assigned)
   ASSERT_EQ(ret, controller_interface::return_type::OK);
 
   controller_->get_node()->set_parameter(
-    rclcpp::Parameter(
-      "left_wheel_names",
-      rclcpp::ParameterValue(left_wheel_names)));
+    rclcpp::Parameter("left_wheel_names", rclcpp::ParameterValue(left_wheel_names)));
   controller_->get_node()->set_parameter(
-    rclcpp::Parameter(
-      "right_wheel_names",
-      rclcpp::ParameterValue(right_wheel_names)));
+    rclcpp::Parameter("right_wheel_names", rclcpp::ParameterValue(right_wheel_names)));
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
   assignResources();
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 }
-
 
 TEST_F(TestDiffDriveController, cleanup)
 {
@@ -293,13 +262,9 @@ TEST_F(TestDiffDriveController, cleanup)
   ASSERT_EQ(ret, controller_interface::return_type::OK);
 
   controller_->get_node()->set_parameter(
-    rclcpp::Parameter(
-      "left_wheel_names",
-      rclcpp::ParameterValue(left_wheel_names)));
+    rclcpp::Parameter("left_wheel_names", rclcpp::ParameterValue(left_wheel_names)));
   controller_->get_node()->set_parameter(
-    rclcpp::Parameter(
-      "right_wheel_names",
-      rclcpp::ParameterValue(right_wheel_names)));
+    rclcpp::Parameter("right_wheel_names", rclcpp::ParameterValue(right_wheel_names)));
   controller_->get_node()->set_parameter(rclcpp::Parameter("wheel_separation", 0.4));
   controller_->get_node()->set_parameter(rclcpp::Parameter("wheel_radius", 0.1));
 
@@ -342,13 +307,9 @@ TEST_F(TestDiffDriveController, correct_initialization_using_parameters)
   ASSERT_EQ(ret, controller_interface::return_type::OK);
 
   controller_->get_node()->set_parameter(
-    rclcpp::Parameter(
-      "left_wheel_names",
-      rclcpp::ParameterValue(left_wheel_names)));
+    rclcpp::Parameter("left_wheel_names", rclcpp::ParameterValue(left_wheel_names)));
   controller_->get_node()->set_parameter(
-    rclcpp::Parameter(
-      "right_wheel_names",
-      rclcpp::ParameterValue(right_wheel_names)));
+    rclcpp::Parameter("right_wheel_names", rclcpp::ParameterValue(right_wheel_names)));
   controller_->get_node()->set_parameter(rclcpp::Parameter("wheel_separation", 0.4));
   controller_->get_node()->set_parameter(rclcpp::Parameter("wheel_radius", 1.0));
 
