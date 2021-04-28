@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <Eigen/Core>
 #include <moveit/robot_model_loader/robot_model_loader.h>
 #include <moveit/robot_state/robot_state.h>
 
@@ -31,10 +32,8 @@ public:
    */
   IncrementalIKCalculator(std::shared_ptr<rclcpp::Node>& node);
 
-  bool convertCartesianDeltasToJointDeltas()
-  {
-    return true;
-  }
+
+  bool convertCartesianDeltasToJointDeltas(const Eigen::VectorXd delta_x, Eigen::VectorXd& delta_theta);
 
 private:
   // MoveIt setup, required to retrieve the Jacobian
