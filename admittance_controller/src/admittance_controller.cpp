@@ -37,6 +37,7 @@ controller_interface::return_type AdmittanceController::init(const std::string &
     auto node = get_node();
     node->declare_parameter<std::vector<std::string>>("joints", {});
     node->declare_parameter<std::string>("interface_name", "");
+    ik_ = std::make_shared<IncrementalIKCalculator>(node);
   } catch (const std::exception & e) {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
     return controller_interface::return_type::ERROR;
@@ -152,7 +153,7 @@ controller_interface::return_type AdmittanceController::update()
   // Get current robot joint angles
 
   // Convert Cartesian deltas to joint angle deltas via Jacobian
-  if (!ik_.convertCartesianDeltasToJointDeltas())
+  if (!ik_->convertCartesianDeltasToJointDeltas())
   {
     RCLCPP_ERROR(get_node()->get_logger(), "Conversion of Cartesian deltas to joint deltas failed.");
     return controller_interface::return_type::ERROR;
