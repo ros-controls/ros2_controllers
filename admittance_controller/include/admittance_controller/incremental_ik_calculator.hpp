@@ -19,6 +19,7 @@
 #include <Eigen/Core>
 #include <moveit/robot_model_loader/robot_model_loader.h>
 #include <moveit/robot_state/robot_state.h>
+#include <tf2_eigen/tf2_eigen.h>
 #include <tf2_ros/transform_listener.h>
 
 namespace admittance_controller
@@ -35,9 +36,12 @@ public:
 
   /**
    * \brief Convert Cartesian delta-x to joint delta-theta, using the Jacobian.
+   * \param delta_x input Cartesian deltas
+   * \param delta_x_frame input name of the delta_x tf frame
+   * \param delta_theta output
    * \return true if successful
    */
-  bool convertCartesianDeltasToJointDeltas(const Eigen::VectorXd delta_x, std::string& delta_x_frame, Eigen::VectorXd& delta_theta);
+  bool convertCartesianDeltasToJointDeltas(Eigen::VectorXd delta_x, std::string& delta_x_frame, Eigen::VectorXd& delta_theta);
 
 private:
   // MoveIt setup, required to retrieve the Jacobian
