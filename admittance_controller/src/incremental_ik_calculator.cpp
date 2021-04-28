@@ -35,12 +35,24 @@ IncrementalIKCalculator::IncrementalIKCalculator(std::shared_ptr<rclcpp::Node>& 
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 }
 
-bool IncrementalIKCalculator::convertCartesianDeltasToJointDeltas(const Eigen::VectorXd delta_x, std::string& delta_x_frame, Eigen::VectorXd& delta_theta)
+bool IncrementalIKCalculator::convertCartesianDeltasToJointDeltas(Eigen::VectorXd delta_x, std::string& delta_x_frame, Eigen::VectorXd& delta_theta)
 {
   // Transform delta_x to the moveit_jacobian_frame
+  Eigen::Vector3d translation = delta_x.head(3);
+  Eigen::Vector3d rotation = delta_x.tail(3);
   try
   {
     wrench_to_jacobian_transform_ = tf_buffer_->lookupTransform(delta_x_frame, moveit_jacobian_frame_, tf2::TimePointZero);
+
+    tf2::doTransform(translation, translation, wrench_to_jacobian_transform_);
+    tf2::doTransform(rotation, rotation, wrench_to_jacobian_transform_);
+    // Back to 6x1 vector
+    delta_x[0] = translation[0];
+    delta_x[1] = translation[1];
+    delta_x[2] = translation[2];
+    delta_x[0] = translation[0];
+    delta_x[1] = translation[1];
+    delta_x[2] = translation[2];
   }
   catch (tf2::TransformException & ex)
   {
