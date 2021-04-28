@@ -58,7 +58,7 @@ protected:
   std::vector<std::string> joint_names_;
   std::vector<std::string> interface_names_;
 
-  IncrementalIKCalculator ik_;
+  std::shared_ptr<IncrementalIKCalculator> ik_;
 };
 
 }  // namespace admittance_controller
