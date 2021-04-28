@@ -12,6 +12,7 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(controller_interface REQUIRED)
+find_package(Eigen3 REQUIRED)
 find_package(hardware_interface REQUIRED)
 find_package(moveit_ros_move_group REQUIRED)
 find_package(moveit_ros_planning_interface REQUIRED)
@@ -28,11 +29,13 @@ add_library(
 target_include_directories(
   admittance_controller
   PUBLIC
+  ${EIGEN3_INCLUDE_DIR}
   include
 )
 ament_target_dependencies(
   admittance_controller
   controller_interface
+  ${Eigen_LIBRARIES}
   hardware_interface
   moveit_ros_move_group
   moveit_ros_planning_interface

@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "admittance_controller/admittance_controller.hpp"
+#include "Eigen/Core"
 
 namespace admittance_controller
 {
@@ -149,17 +150,20 @@ controller_interface::return_type AdmittanceController::update()
   // Get wrench measurement
 
   // Calculate desired Cartesian displacement of the robot
+  Eigen::VectorXd delta_x(6);
 
   // Get current robot joint angles
 
   // Convert Cartesian deltas to joint angle deltas via Jacobian
-  if (!ik_->convertCartesianDeltasToJointDeltas())
+  Eigen::VectorXd delta_theta;
+  if (!ik_->convertCartesianDeltasToJointDeltas(delta_x, delta_theta))
   {
     RCLCPP_ERROR(get_node()->get_logger(), "Conversion of Cartesian deltas to joint deltas failed.");
     return controller_interface::return_type::ERROR;
   }
 
   // Write new joint angles to the robot
+
 
 
   // TODO: below is just a skeleton

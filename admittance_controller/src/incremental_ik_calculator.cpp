@@ -28,4 +28,9 @@ IncrementalIKCalculator::IncrementalIKCalculator(std::shared_ptr<rclcpp::Node>& 
   joint_model_group_ = kinematic_model->getJointModelGroup("gemini");
   kinematic_state_ = std::make_shared<moveit::core::RobotState>(kinematic_model);
 }
+
+bool IncrementalIKCalculator::convertCartesianDeltasToJointDeltas(const Eigen::VectorXd delta_x, Eigen::VectorXd& delta_theta)
+{
+  return true;
+}
 }  // namespace admittance_controller
