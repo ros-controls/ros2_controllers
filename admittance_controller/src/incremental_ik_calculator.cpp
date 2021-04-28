@@ -29,13 +29,24 @@ IncrementalIKCalculator::IncrementalIKCalculator(std::shared_ptr<rclcpp::Node>& 
   kinematic_state_ = std::make_shared<moveit::core::RobotState>(kinematic_model);
 
   // By default, the MoveIt Jacobian frame is the last link
-  // TODO(andyz): parameterize this
+  // TODO(andyz): parameterize this or retrieve it via API
   moveit_jacobian_frame_ = "end_effector";
+  tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
+  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 }
 
 bool IncrementalIKCalculator::convertCartesianDeltasToJointDeltas(const Eigen::VectorXd delta_x, std::string& delta_x_frame, Eigen::VectorXd& delta_theta)
 {
   // Transform delta_x to the moveit_jacobian_frame
+  try
+  {
+    wrench_to_jacobian_transform_ = tf_buffer_->lookupTransform(delta_x_frame, moveit_jacobian_frame_, tf2::TimePointZero);
+  }
+  catch (tf2::TransformException & ex)
+  {
+    RCLCPP_ERROR(node_->get_logger(), "Transformation of wrench failed.");
+    return false;
+  }
 
   // Multiply with the pseudoinverse to get delta_theta
   jacobian_ = kinematic_state_->getJacobian(joint_model_group_);
