@@ -59,7 +59,7 @@ private:
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
   std::string moveit_jacobian_frame_;
-  geometry_msgs::msg::TransformStamped wrench_to_jacobian_transform_;
+  geometry_msgs::msg::TransformStamped delta_x_to_jacobian_transform_;
 };
 
 }  // namespace admittance_controller
