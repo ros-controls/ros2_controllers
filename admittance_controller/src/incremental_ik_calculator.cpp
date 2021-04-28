@@ -27,10 +27,23 @@ IncrementalIKCalculator::IncrementalIKCalculator(std::shared_ptr<rclcpp::Node>& 
   // TODO(andyz): joint_model_group_ is a raw pointer. Is it thread safe?
   joint_model_group_ = kinematic_model->getJointModelGroup("gemini");
   kinematic_state_ = std::make_shared<moveit::core::RobotState>(kinematic_model);
+
+  // By default, the MoveIt Jacobian frame is the last link
+  // TODO(andyz): parameterize this
+  moveit_jacobian_frame_ = "end_effector";
 }
 
-bool IncrementalIKCalculator::convertCartesianDeltasToJointDeltas(const Eigen::VectorXd delta_x, Eigen::VectorXd& delta_theta)
+bool IncrementalIKCalculator::convertCartesianDeltasToJointDeltas(const Eigen::VectorXd delta_x, std::string& delta_x_frame, Eigen::VectorXd& delta_theta)
 {
+  // Transform delta_x to the moveit_jacobian_frame
+
+  // Multiply with the pseudoinverse to get delta_theta
+  jacobian_ = kinematic_state_->getJacobian(joint_model_group_);
+  svd_ = Eigen::JacobiSVD<Eigen::MatrixXd>(jacobian_, Eigen::ComputeThinU | Eigen::ComputeThinV);
+  matrix_s_ = svd_.singularValues().asDiagonal();
+  pseudo_inverse_ = svd_.matrixV() * matrix_s_.inverse() * svd_.matrixU().transpose();
+  delta_theta = pseudo_inverse_ * delta_x;
+
   return true;
 }
 }  // namespace admittance_controller
