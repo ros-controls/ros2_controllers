@@ -27,19 +27,31 @@ class IncrementalIKCalculator
 {
 public:
   /**
-   * Create an object which takes Cartesian delta-x and converts to joint delta-theta.
+   * \brief Create an object which takes Cartesian delta-x and converts to joint delta-theta.
    * It uses the Jacobian from MoveIt.
    */
   IncrementalIKCalculator(std::shared_ptr<rclcpp::Node>& node);
 
-
-  bool convertCartesianDeltasToJointDeltas(const Eigen::VectorXd delta_x, Eigen::VectorXd& delta_theta);
+  /**
+   * \brief Convert Cartesian delta-x to joint delta-theta, using the Jacobian.
+   * \return true if successful
+   */
+  bool convertCartesianDeltasToJointDeltas(const Eigen::VectorXd delta_x, std::string& delta_x_frame, Eigen::VectorXd& delta_theta);
 
 private:
   // MoveIt setup, required to retrieve the Jacobian
   const moveit::core::JointModelGroup* joint_model_group_;
   moveit::core::RobotStatePtr kinematic_state_;
   std::shared_ptr<rclcpp::Node> node_;
+
+  // Pre-allocate for speed
+  Eigen::MatrixXd jacobian_;
+  Eigen::JacobiSVD<Eigen::MatrixXd> svd_;
+  Eigen::MatrixXd matrix_s_;
+  Eigen::MatrixXd pseudo_inverse_;
+
+  // TF frames
+  std::string moveit_jacobian_frame_;
 };
 
 }  // namespace admittance_controller

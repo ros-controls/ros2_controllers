@@ -39,6 +39,8 @@ controller_interface::return_type AdmittanceController::init(const std::string &
     node->declare_parameter<std::vector<std::string>>("joints", {});
     node->declare_parameter<std::string>("interface_name", "");
     ik_ = std::make_shared<IncrementalIKCalculator>(node);
+    delta_x_ = Eigen::VectorXd(6);
+    force_torque_sensor_frame_ = "force_sensor";
   } catch (const std::exception & e) {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
     return controller_interface::return_type::ERROR;
@@ -150,13 +152,12 @@ controller_interface::return_type AdmittanceController::update()
   // Get wrench measurement
 
   // Calculate desired Cartesian displacement of the robot
-  Eigen::VectorXd delta_x(6);
+  //delta_x_ = ...
 
   // Get current robot joint angles
 
   // Convert Cartesian deltas to joint angle deltas via Jacobian
-  Eigen::VectorXd delta_theta;
-  if (!ik_->convertCartesianDeltasToJointDeltas(delta_x, delta_theta))
+  if (!ik_->convertCartesianDeltasToJointDeltas(delta_x_, force_torque_sensor_frame_, delta_theta_))
   {
     RCLCPP_ERROR(get_node()->get_logger(), "Conversion of Cartesian deltas to joint deltas failed.");
     return controller_interface::return_type::ERROR;

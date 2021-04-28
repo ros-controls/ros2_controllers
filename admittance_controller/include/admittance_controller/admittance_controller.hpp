@@ -59,6 +59,11 @@ protected:
   std::vector<std::string> interface_names_;
 
   std::shared_ptr<IncrementalIKCalculator> ik_;
+
+  Eigen::VectorXd delta_x_;
+  Eigen::VectorXd delta_theta_;
+  // TODO(andyz): parameterize this
+  std::string force_torque_sensor_frame_;
 };
 
 }  // namespace admittance_controller
