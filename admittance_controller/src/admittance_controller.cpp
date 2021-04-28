@@ -134,6 +134,34 @@ CallbackReturn AdmittanceController::on_deactivate(
 
 controller_interface::return_type AdmittanceController::update()
 {
+  // Task space admittance pipeline:
+  // Get wrench measurement
+  // Calculate the desired Cartesian displacement of the robot with the admittance equation.
+  // The basic form is:  F = K * (x_d - x)
+  // (wrench) = (stiffness matrix) * (desired_Cartesian_position minus current_Cartesian_position)
+  // Damping terms can be added too.
+  // Get current robot joint angles
+  // Convert Cartesian deltas to joint angle deltas via Jacobian
+  // Write new joint angles to robot
+
+
+  // Get wrench measurement
+
+  // Calculate desired Cartesian displacement of the robot
+
+  // Get current robot joint angles
+
+  // Convert Cartesian deltas to joint angle deltas via Jacobian
+  if (!ik_.convertCartesianDeltasToJointDeltas())
+  {
+    RCLCPP_ERROR(get_node()->get_logger(), "Conversion of Cartesian deltas to joint deltas failed.");
+    return controller_interface::return_type::ERROR;
+  }
+
+  // Write new joint angles to the robot
+
+
+  // TODO: below is just a skeleton
   for (auto index = 0ul; index < command_interfaces_.size(); ++index) {
     command_interfaces_[index].set_value(state_interfaces_[index].get_value());
   }

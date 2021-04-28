@@ -11,6 +11,8 @@
 
   <depend>controller_interface</depend>
   <depend>hardware_interface</depend>
+  <depend>moveit_ros_move_group</depend>
+  <depend>moveit_ros_planning_interface</depend>
   <depend>pluginlib</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_lifecycle</depend>
@@ -18,6 +20,8 @@
   <test_depend>ament_cmake_gmock</test_depend>
   <test_depend>controller_manager</test_depend>
   <test_depend>hardware_interface</test_depend>
+  <test_depend>moveit_ros_move_group</test_depend>
+  <test_depend>moveit_ros_planning_interface</test_depend>
   <test_depend>ros2_control_test_assets</test_depend>
 
   <export>
