@@ -575,7 +575,7 @@ CallbackReturn DiffDriveController::configure_side(
   auto logger = node_->get_logger();
 
   if (wheel_names.empty()) {
-    RCLCPP_ERROR(logger, "No %s wheel names specified", side.c_str());
+    RCLCPP_ERROR(logger, "No '%s' wheel names specified", side.c_str());
     return CallbackReturn::ERROR;
   }
 
