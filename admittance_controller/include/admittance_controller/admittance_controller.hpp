@@ -11,13 +11,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
+/// \author: Denis Stogl
 
 #ifndef ADMITTANCE_CONTROLLER__ADMITTANCE_CONTROLLER_HPP_
 #define ADMITTANCE_CONTROLLER__ADMITTANCE_CONTROLLER_HPP_
 
-#include <string>
-#include <vector>
-
+#include "admittance_controller/incremental_ik_calculator.hpp"
 #include "admittance_controller/visibility_control.h"
 #include "controller_interface/controller_interface.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
@@ -57,6 +57,13 @@ public:
 protected:
   std::vector<std::string> joint_names_;
   std::vector<std::string> interface_names_;
+
+  std::shared_ptr<IncrementalIKCalculator> ik_;
+
+  Eigen::VectorXd delta_x_;
+  Eigen::VectorXd delta_theta_;
+  // TODO(andyz): parameterize this
+  std::string force_torque_sensor_frame_;
 };
 
 }  // namespace admittance_controller

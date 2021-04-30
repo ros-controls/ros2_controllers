@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "admittance_controller/admittance_controller.hpp"
+#include "Eigen/Core"
 
 namespace admittance_controller
 {
@@ -37,6 +38,9 @@ controller_interface::return_type AdmittanceController::init(const std::string &
     auto node = get_node();
     node->declare_parameter<std::vector<std::string>>("joints", {});
     node->declare_parameter<std::string>("interface_name", "");
+    ik_ = std::make_shared<IncrementalIKCalculator>(node);
+    delta_x_ = Eigen::VectorXd(6);
+    force_torque_sensor_frame_ = "force_sensor";
   } catch (const std::exception & e) {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
     return controller_interface::return_type::ERROR;
@@ -134,6 +138,36 @@ CallbackReturn AdmittanceController::on_deactivate(
 
 controller_interface::return_type AdmittanceController::update()
 {
+  // Task space admittance pipeline:
+  // Get wrench measurement
+  // Calculate the desired Cartesian displacement of the robot with the admittance equation.
+  // The basic form is:  F = K * (x_d - x)
+  // (wrench) = (stiffness matrix) * (desired_Cartesian_position minus current_Cartesian_position)
+  // Damping terms can be added too.
+  // Get current robot joint angles
+  // Convert Cartesian deltas to joint angle deltas via Jacobian
+  // Write new joint angles to robot
+
+
+  // Get wrench measurement
+
+  // Calculate desired Cartesian displacement of the robot
+  //delta_x_ = ...
+
+  // Get current robot joint angles
+
+  // Convert Cartesian deltas to joint angle deltas via Jacobian
+  if (!ik_->convertCartesianDeltasToJointDeltas(delta_x_, force_torque_sensor_frame_, delta_theta_))
+  {
+    RCLCPP_ERROR(get_node()->get_logger(), "Conversion of Cartesian deltas to joint deltas failed.");
+    return controller_interface::return_type::ERROR;
+  }
+
+  // Write new joint angles to the robot
+
+
+
+  // TODO: below is just a skeleton
   for (auto index = 0ul; index < command_interfaces_.size(); ++index) {
     command_interfaces_[index].set_value(state_interfaces_[index].get_value());
   }
