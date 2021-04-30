@@ -166,24 +166,27 @@ inline bool check_state_tolerance_per_joint(
 
   if (show_errors) {
     const auto logger = rclcpp::get_logger("tolerances");
-    RCLCPP_ERROR_STREAM(logger, "Path state tolerances failed:");
+    RCLCPP_ERROR(logger, "Path state tolerances failed:");
 
     if (state_tolerance.position > 0.0 && abs(error_position) > state_tolerance.position) {
-      RCLCPP_ERROR_STREAM(
-        logger, "Position Error: " << error_position <<
-          " Position Tolerance: " << state_tolerance.position);
+      RCLCPP_ERROR(
+        logger,
+        "Position Error: %f, Position Tolerance: %f",
+        error_position, state_tolerance.position);
     }
     if (state_tolerance.velocity > 0.0 && abs(error_velocity) > state_tolerance.velocity) {
-      RCLCPP_ERROR_STREAM(
-        logger, "Velocity Error: " << error_velocity <<
-          " Velocity Tolerance: " << state_tolerance.velocity);
+      RCLCPP_ERROR(
+        logger,
+        "Velocity Error: %f, Velocity Tolerance: %f",
+        error_velocity, state_tolerance.velocity);
     }
     if (state_tolerance.acceleration > 0.0 &&
       abs(error_acceleration) > state_tolerance.acceleration)
     {
-      RCLCPP_ERROR_STREAM(
-        logger, "Acceleration Error: " << error_acceleration <<
-          " Acceleration Tolerance: " << state_tolerance.acceleration);
+      RCLCPP_ERROR(
+        logger,
+        "Acceleration Error: %f, Acceleration Tolerance: %f",
+        error_acceleration, state_tolerance.acceleration);
     }
   }
   return false;

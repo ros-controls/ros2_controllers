@@ -192,7 +192,7 @@ controller_interface::return_type DiffDriveController::update()
 
       if (std::isnan(left_position) || std::isnan(right_position)) {
         RCLCPP_ERROR(
-          logger, "Either the left or right wheel position is invalid for index [%d]",
+          logger, "Either the left or right wheel position is invalid for index [%zu]",
           index);
         return controller_interface::return_type::ERROR;
       }
@@ -285,7 +285,7 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
   if (left_wheel_names_.size() != right_wheel_names_.size()) {
     RCLCPP_ERROR(
       logger,
-      "The number of left wheels [%d] and the number of right wheels [%d] are different",
+      "The number of left wheels [%zu] and the number of right wheels [%zu] are different",
       left_wheel_names_.size(),
       right_wheel_names_.size());
     return CallbackReturn::ERROR;
@@ -575,9 +575,7 @@ CallbackReturn DiffDriveController::configure_side(
   auto logger = node_->get_logger();
 
   if (wheel_names.empty()) {
-    std::stringstream ss;
-    ss << "No " << side << " wheel names specified.";
-    RCLCPP_ERROR(logger, ss.str().c_str());
+    RCLCPP_ERROR(logger, "No '%s' wheel names specified", side.c_str());
     return CallbackReturn::ERROR;
   }
 
