@@ -2,6 +2,11 @@
 Changelog for package ros2_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Rename joint_state_controller -> joint_state_broadcaster (`#160 <https://github.com/ros-controls/ros2_controllers/issues/160>`_)
+* Contributors: Matt Reynolds
+
 0.2.0 (2021-02-06)
 ------------------
 
