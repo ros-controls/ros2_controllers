@@ -63,8 +63,8 @@ GripperActionController<HardwareInterface>::update()
 {
   command_struct_rt_ = *(command_.readFromRT());
 
-  const double current_position = joint_position_state_interface_->get_value();
-  const double current_velocity = joint_velocity_state_interface_->get_value();
+  const double current_position = joint_position_state_interface_->get().get_value();
+  const double current_velocity = joint_velocity_state_interface_->get().get_value();
 
   const double error_position = command_struct_rt_.position_ - current_position;
   const double error_velocity = -current_velocity;
@@ -147,7 +147,7 @@ GripperActionController<HardwareInterface>::cancel_callback(
 template<const char * HardwareInterface>
 void GripperActionController<HardwareInterface>::set_hold_position()
 {
-  command_struct_.position_ = joint_position_state_interface_->get_value();
+  command_struct_.position_ = joint_position_state_interface_->get().get_value();
   command_struct_.max_effort_ = default_max_effort_;
   command_.writeFromNonRT(command_struct_);
 }
@@ -286,15 +286,15 @@ GripperActionController<HardwareInterface>::on_activate(
            CallbackReturn::ERROR;
   }
 
-  joint_position_command_interface_ = &(*position_command_interface_it);
-  joint_position_state_interface_ = &(*position_state_interface_it);
-  joint_velocity_state_interface_ = &(*velocity_state_interface_it);
+  joint_position_command_interface_ = *position_command_interface_it;
+  joint_position_state_interface_ = *position_state_interface_it;
+  joint_velocity_state_interface_ = *velocity_state_interface_it;
 
   // Hardware interface adapter
   hw_iface_adapter_.init(joint_position_command_interface_, node_);
 
   // Command - non RT version
-  command_struct_.position_ = joint_position_state_interface_->get_value();
+  command_struct_.position_ = joint_position_state_interface_->get().get_value();
   command_struct_.max_effort_ = default_max_effort_;
 
   // Result
@@ -323,9 +323,9 @@ rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 GripperActionController<HardwareInterface>::on_deactivate(
   const rclcpp_lifecycle::State &)
 {
-  joint_position_command_interface_ = nullptr;
-  joint_position_state_interface_ = nullptr;
-  joint_velocity_state_interface_ = nullptr;
+  joint_position_command_interface_ = std::experimental::nullopt;
+  joint_position_state_interface_ = std::experimental::nullopt;
+  joint_velocity_state_interface_ = std::experimental::nullopt;
   release_interfaces();
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::
          CallbackReturn::SUCCESS;
