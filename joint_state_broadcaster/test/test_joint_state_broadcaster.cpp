@@ -289,3 +289,48 @@ TEST_F(JointStateBroadcasterTest, DynamicJointStatePublishTest)
       Each(joint_values_[index_in_original_order]));
   }
 }
+
+TEST_F(JointStateBroadcasterTest, ExtraJointStatePublishTest)
+{
+  // joint state not initialized yet
+  ASSERT_TRUE(state_broadcaster_->joint_state_msg_.name.empty());
+  ASSERT_TRUE(state_broadcaster_->joint_state_msg_.position.empty());
+  ASSERT_TRUE(state_broadcaster_->joint_state_msg_.velocity.empty());
+  ASSERT_TRUE(state_broadcaster_->joint_state_msg_.effort.empty());
+
+  // dynamic joint state not initialized yet
+  ASSERT_TRUE(state_broadcaster_->dynamic_joint_state_msg_.joint_names.empty());
+  ASSERT_TRUE(state_broadcaster_->dynamic_joint_state_msg_.interface_values.empty());
+
+  // publishers not initialized yet
+  ASSERT_FALSE(state_broadcaster_->joint_state_publisher_);
+  ASSERT_FALSE(state_broadcaster_->dynamic_joint_state_publisher_);
+
+  SetUpStateBroadcaster();
+
+  // Add extra joints as parameters
+  auto broadcaster_node = state_broadcaster_->get_node();
+  const std::vector<std::string> extra_joint_names = {"extra1", "extra2", "extra3"};
+  const rclcpp::Parameter extra_joints_parameters("extra_joints", extra_joint_names);
+  broadcaster_node->set_parameter(extra_joints_parameters);
+
+  // configure ok
+  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  std::vector<std::string> all_joint_names = joint_names_;
+  all_joint_names.insert(all_joint_names.end(), extra_joint_names.begin(), extra_joint_names.end());
+  const size_t NUM_JOINTS = all_joint_names.size();
+  const std::vector<std::string> IF_NAMES = {HW_IF_POSITION, HW_IF_VELOCITY, HW_IF_EFFORT};
+  const size_t NUM_IFS = IF_NAMES.size();
+
+  // joint state initialized
+  ASSERT_THAT(state_broadcaster_->joint_state_msg_.name, ElementsAreArray(all_joint_names));
+  ASSERT_THAT(state_broadcaster_->joint_state_msg_.position, SizeIs(NUM_JOINTS));
+  ASSERT_THAT(state_broadcaster_->joint_state_msg_.velocity, SizeIs(NUM_JOINTS));
+  ASSERT_THAT(state_broadcaster_->joint_state_msg_.effort, SizeIs(NUM_JOINTS));
+
+  // dynamic joint state initialized
+  ASSERT_THAT(state_broadcaster_->dynamic_joint_state_msg_.joint_names, SizeIs(NUM_JOINTS));
+}
