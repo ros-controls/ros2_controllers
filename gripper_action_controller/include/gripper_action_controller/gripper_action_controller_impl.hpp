@@ -42,7 +42,7 @@ GripperActionController<HardwareInterface>::init(
 {
   // initialize lifecycle node
   const auto ret = ControllerInterface::init(controller_name);
-  if (ret != controller_interface::return_type::SUCCESS) {
+  if (ret != controller_interface::return_type::OK) {
     return ret;
   }
 
@@ -54,7 +54,7 @@ GripperActionController<HardwareInterface>::init(
   node_->declare_parameter<double>("stall_velocity_threshold", 0.001);
   node_->declare_parameter<double>("stall_timeout", 1.0);
 
-  return controller_interface::return_type::SUCCESS;
+  return controller_interface::return_type::OK;
 }
 
 template<const char * HardwareInterface>
@@ -77,7 +77,7 @@ GripperActionController<HardwareInterface>::update()
   computed_command_ = hw_iface_adapter_.updateCommand(
     command_struct_rt_.position_, 0.0, error_position, error_velocity,
     command_struct_rt_.max_effort_);
-  return controller_interface::return_type::SUCCESS;
+  return controller_interface::return_type::OK;
 }
 
 template<const char * HardwareInterface>
