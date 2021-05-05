@@ -21,7 +21,7 @@ find_package(realtime_tools REQUIRED)
 find_package(rclcpp REQUIRED)
 
 add_library(gripper_action_controller SHARED
-   src/gripper_action_controller.cpp
+  src/gripper_action_controller.cpp
 )
 ament_target_dependencies(gripper_action_controller
   controller_interface
@@ -45,12 +45,12 @@ pluginlib_export_plugin_description_file(controller_interface ros_control_plugin
 
 # Install headers
 install(DIRECTORY include/${PROJECT_NAME}/
-   DESTINATION include
+  DESTINATION include
 )
 
 # Install targets
 install(TARGETS gripper_action_controller
-   LIBRARY DESTINATION lib
+  LIBRARY DESTINATION lib
 )
 
 
@@ -70,6 +70,7 @@ if(BUILD_TESTING)
     controller_manager
     ros2_control_test_assets
   )
+  target_compile_definitions(test_load_gripper_action_controllers PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 endif()
 
 ament_package()
