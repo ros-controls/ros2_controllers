@@ -28,6 +28,7 @@
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
+#include "ros2_control_test_assets/6d_robot_description.hpp"
 #include "semantic_components/force_torque_sensor.hpp"
 #include "rclcpp/parameter_value.hpp"
 #include "rclcpp/utilities.hpp"
@@ -155,7 +156,8 @@ protected:
       controller_->get_node()->set_parameter({"IK.tip", ik_tip_frame_});
       // TODO(destogl): enable when IK support is added
 //       controller_->get_node()->set_parameter({"IK.plugin", ik_group_name_});
-//       controller_->get_node()->set_parameter({"IK.group_name", ik_group_name_});
+      controller_->get_node()->set_parameter({"IK.group_name", ik_group_name_});
+      controller_->get_node()->set_parameter({"robot_description", robot_description_});
 
       controller_->get_node()->set_parameter({"control_frame", control_frame_});
       controller_->get_node()->set_parameter({"endeffector_frame", endeffector_frame_});
@@ -330,9 +332,12 @@ protected:
   const std::vector<std::string> command_interface_types_ = {"position"};
   const std::vector<std::string> state_interface_types_ = {"position"};
   const std::string ft_sensor_name_ = "ft_sensor_name";
+
   const std::string ik_base_frame_ = "IK_base";
   const std::string ik_tip_frame_ = "IK.tip";
   const std::string ik_group_name_ = "IK.group_name";
+  const std::string robot_description_ = ros2_control_test_assets::6d_robot_urdf;
+
   const std::string control_frame_ = "control_frame";
   const std::string endeffector_frame_ = "endeffector_frame";
   const std::string fixed_world_frame_ = "fixed_world_frame";

@@ -16,35 +16,34 @@
 
 #include "admittance_controller/incremental_ik_calculator.hpp"
 
+#include "Eigen/VectorXf"
 #include "tf2_eigen/tf2_eigen.h"
 
 namespace admittance_controller
 {
-IncrementalIKCalculator::IncrementalIKCalculator(std::shared_ptr<rclcpp::Node>& node) : node_(node)
+IncrementalIKCalculator::IncrementalIKCalculator(const std::shared_ptr<rclcpp::Node> & node, const std::string & group_name) : node_(node)
 {
   // TODO(andyz): Parameterize robot description and joint group
   std::unique_ptr<robot_model_loader::RobotModelLoader> model_loader_ptr =
       std::unique_ptr<robot_model_loader::RobotModelLoader>(new robot_model_loader::RobotModelLoader(node_, "/robot_description", false /* do not load kinematics plugins */));
   const moveit::core::RobotModelPtr& kinematic_model = model_loader_ptr->getModel();
   // TODO(andyz): joint_model_group_ is a raw pointer. Is it thread safe?
-  joint_model_group_ = kinematic_model->getJointModelGroup("gemini");
+  joint_model_group_ = kinematic_model->getJointModelGroup(group_name);
   kinematic_state_ = std::make_shared<moveit::core::RobotState>(kinematic_model);
 
   // By default, the MoveIt Jacobian frame is the last link
-  // TODO(andyz): parameterize this or retrieve it via API
-  moveit_jacobian_frame_ = "end_effector";
-  tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
-  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 }
 
-bool IncrementalIKCalculator::convertCartesianDeltasToJointDeltas(Eigen::VectorXd delta_x, std::string& delta_x_frame, Eigen::VectorXd& delta_theta)
+bool IncrementalIKCalculator::convertCartesianDeltasToJointDeltas(const std::vector<double> & delta_x_vec, const geometry_msgs::msg::TransformStamped & ik_base_to_tip_trafo, std::vector<double> & delta_theta_vec)
 {
+  // see here for this conversion: https://stackoverflow.com/questions/26094379/typecasting-eigenvectorxd-to-stdvector
+  Eigen::VectorXf delta_x = Eigen::Map<Eigen::VectorXf, Eigen::Unaligned>(&delta_x_vec[0], delta_x_vec.size());
+
   // Transform delta_x to the moveit_jacobian_frame
   try
   {
     // 4x4 transformation matrix
-    delta_x_to_jacobian_transform_ = tf_buffer_->lookupTransform(delta_x_frame, moveit_jacobian_frame_, tf2::TimePointZero);
-    Eigen::Isometry3d affine_transform = tf2::transformToEigen(delta_x_to_jacobian_transform_);
+    const Eigen::Isometry3d affine_transform = tf2::transformToEigen(ik_base_to_tip_trafo);
 
     // Build the 6x6 transformation matrix
     Eigen::MatrixXd twist_transform(6,6);
@@ -74,8 +73,17 @@ bool IncrementalIKCalculator::convertCartesianDeltasToJointDeltas(Eigen::VectorX
   svd_ = Eigen::JacobiSVD<Eigen::MatrixXd>(jacobian_, Eigen::ComputeThinU | Eigen::ComputeThinV);
   matrix_s_ = svd_.singularValues().asDiagonal();
   pseudo_inverse_ = svd_.matrixV() * matrix_s_.inverse() * svd_.matrixU().transpose();
-  delta_theta = pseudo_inverse_ * delta_x;
+  Eigen::VectorXf  delta_theta = pseudo_inverse_ * delta_x;
+
+  std::vector<double> delta_theta_v(&delta_theta[0], delta_theta.data() + delta_theta.cols() * delta_theta.rows());
+  delta_theta_vec = delta_theta_v;
 
   return true;
 }
+
+bool IncrementalIKCalculator::convertJointDeltasToCartesianDeltas(const std::vector<double> &  delta_theta_vec, const geometry_msgs::msg::TransformStamped & ik_base_to_tip_trafo, std::vector<double> & delta_x_vec)
+{
+  // TODO(andyz): Please add here FK implementation
+}
+
 }  // namespace admittance_controller
