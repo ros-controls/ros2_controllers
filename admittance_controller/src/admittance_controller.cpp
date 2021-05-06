@@ -22,6 +22,7 @@
 // #include "Eigen/Core"
 
 #include "admittance_controller/admittance_controller.hpp"
+#include "admittance_controller/incremental_ik_calculator.hpp"
 #include "controller_interface/helpers.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 
@@ -47,9 +48,9 @@ controller_interface::return_type AdmittanceController::init(const std::string &
 
     get_node()->declare_parameter<std::string>("IK.base", "");
     get_node()->declare_parameter<std::string>("IK.tip", "");
-    // TODO(destogl): enable when IK support is added
+    // TODO(destogl): enable when IK-plugin support is added
 //     get_node()->declare_parameter<std::string>("IK.plugin", "");
-//     get_node()->declare_parameter<std::string>("IK.group_name", "");
+    get_node()->declare_parameter<std::string>("IK.group_name", "");
 
     get_node()->declare_parameter<std::string>("control_frame", "");
     get_node()->declare_parameter<std::string>("endeffector_frame", "");
@@ -96,10 +97,6 @@ controller_interface::return_type AdmittanceController::init(const std::string &
   }
 
   admittance_ = std::make_unique<admittance_controller::AdmittanceRule>();
-
-  auto node = get_node();
-//   ik_ = std::make_shared<IncrementalIKCalculator>(node);
-//   delta_x_ = Eigen::VectorXd(6);
 
   return controller_interface::return_type::OK;
 }
@@ -151,8 +148,7 @@ CallbackReturn AdmittanceController::on_configure(
     get_string_param_and_error_if_empty(ft_sensor_name_, "ft_sensor_name") ||
     get_string_param_and_error_if_empty(admittance_->ik_base_frame_, "IK.base") ||
     get_string_param_and_error_if_empty(admittance_->ik_tip_frame_, "IK.tip") ||
-    // TODO: Enable this when IK plugin use is implemented
-    //     get_string_param_and_error_if_empty(admittance_->ik_group_name_, "IK.group_name") ||
+    get_string_param_and_error_if_empty(admittance_->ik_group_name_, "IK.group_name") ||
     get_string_param_and_error_if_empty(admittance_->control_frame_, "control_frame") ||
     get_string_param_and_error_if_empty(admittance_->endeffector_frame_, "endeffector_frame") ||
     get_string_param_and_error_if_empty(admittance_->fixed_world_frame_, "fixed_world_frame") ||
@@ -281,7 +277,7 @@ CallbackReturn AdmittanceController::on_configure(
   state_publisher_ = std::make_unique<ControllerStatePublisher>(s_publisher_);
 
   // Configure AdmittanceRule
-  admittance_->configure(get_node()->get_clock());
+  admittance_->configure(get_node());
 
   RCLCPP_INFO_STREAM(get_node()->get_logger(), "configure successful");
   return CallbackReturn::SUCCESS;

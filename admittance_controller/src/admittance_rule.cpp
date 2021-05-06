@@ -26,6 +26,7 @@
 #include "rclcpp/duration.hpp"
 #include "rclcpp/utilities.hpp"
 #include "tf2/utils.h"
+#include <tf2_eigen/tf2_eigen.h>
 
 namespace {  // Utility namespace
 
@@ -138,9 +139,9 @@ void convert_array_to_message(const std::array<double, 6> & vector, geometry_msg
 namespace admittance_controller
 {
 
-controller_interface::return_type AdmittanceRule::configure(rclcpp::Clock::SharedPtr clock)
+controller_interface::return_type AdmittanceRule::configure(rclcpp::Node::SharedPtr node)
 {
-  tf_buffer_ = std::make_shared<tf2_ros::Buffer>(clock);
+  tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
   // Initialize variables used in the update loop
@@ -151,6 +152,11 @@ controller_interface::return_type AdmittanceRule::configure(rclcpp::Clock::Share
   current_pose_.header.frame_id = endeffector_frame_;
 
   relative_desired_pose_.header.frame_id = control_frame_;
+
+  relative_desired_joint_state_vec_.reserve(6);
+
+  // Initialize IK
+  ik_ = std::make_shared<IncrementalIKCalculator>(node, ik_group_name_);
 
   return controller_interface::return_type::OK;
 }
@@ -175,25 +181,28 @@ controller_interface::return_type AdmittanceRule::reset()
 }
 
 controller_interface::return_type AdmittanceRule::update(
-  const std::vector<double> & /*current_joint_state*/,
+  const std::array<double, 6> & /*current_joint_states*/,
   const geometry_msgs::msg::Wrench & /*measured_force*/,
   const geometry_msgs::msg::PoseStamped & /*target_pose*/,
   const geometry_msgs::msg::WrenchStamped & /*target_force*/,
-  const rclcpp::Duration & /*period*/
+  const rclcpp::Duration & /*period*/,
+  std::array<double, 6> /*desired_joint_states*/
 )
 {
   // TODO(destogl): Implement this update
   //  transform_message_to_control_frame(**input_force_cmd, force_cmd_ctrl_frame_);
-  // TODO(destogl) reuse ting from other update
+  // TODO(destogl) reuse things from other update
 
   return controller_interface::return_type::OK;
 }
 
 controller_interface::return_type AdmittanceRule::update(
-  const std::vector<double> & /*current_joint_state*/,
+  const std::array<double, 6> & current_joint_states,
   const geometry_msgs::msg::Wrench & measured_force,
   const geometry_msgs::msg::PoseStamped & target_pose,
-  const rclcpp::Duration & period)
+  const rclcpp::Duration & period,
+  std::array<double, 6> desired_joint_states
+)
 {
   // Convert inputs to control frame
   transform_message_to_control_frame(target_pose, target_pose_control_frame_);
@@ -240,22 +249,25 @@ controller_interface::return_type AdmittanceRule::update(
     }
   }
 
+  // TODO: Add here desired vector at the IK tip and not tool!!!!
+
   // Do clean conversion to the goal pose using transform and not messing with Euler angles
   convert_array_to_message(relative_desired_pose_vec_, relative_desired_pose_);
   tf2::doTransform(current_pose_control_frame_, desired_pose_, relative_desired_pose_);
 
   // Use Jacobian-based IK
   // Calculate desired Cartesian displacement of the robot
-  //delta_x_ = relative_desired_pose_;
-
-  // Get current robot joint angles
-
-  // Convert Cartesian deltas to joint angle deltas via Jacobian
-  //   if (!ik_->convertCartesianDeltasToJointDeltas(delta_x_, sensor_frame_, delta_theta_))
-  //   {
-  //     RCLCPP_ERROR(get_node()->get_logger(), "Conversion of Cartesian deltas to joint deltas failed.");
-  //     return controller_interface::return_type::ERROR;
-  //   }
+  transform = tf_buffer_->lookupTransform(ik_base_frame_, ik_tip_frame_, tf2::TimePointZero);
+  std::vector<double> relative_desired_pose_v_(relative_desired_pose_vec_.begin(), relative_desired_pose_vec_.end());
+  if (ik_->convertCartesianDeltasToJointDeltas(
+    relative_desired_pose_v_, transform, relative_desired_joint_state_vec_)){
+      for (auto i = 0u; i < desired_joint_states.size(); ++i) {
+        desired_joint_states[i] = current_joint_states[i] + relative_desired_joint_state_vec_[i];
+      }
+    } else {
+      RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "Conversion of Cartesian deltas to joint deltas failed. Sending current joint values to the robot.");
+      desired_joint_states = current_joint_states;
+    }
 
   // TODO(anyone: enable this when enabling use of IK directly
   // transform = tf_buffer_->lookupTransform(endeffector_frame_, ik_base_frame_, tf2::TimePointZero);
@@ -276,8 +288,8 @@ controller_interface::return_type AdmittanceRule::get_controller_state(
   state_message.measured_force_endeffector_frame = measured_force_control_frame_;
   state_message.desired_pose = desired_pose_;
   state_message.relative_desired_pose = relative_desired_pose_;
-  //   state_message.desired_joint_states = desired_pose_;
-  //   state_message.actual_joint_states = desired_pose_;
+//   state_message.desired_joint_states = desired_pose_;
+//   state_message.actual_joint_states.positi = desired_pose_;
   //   state_message.error_joint_state = desired_pose_;
 
   return controller_interface::return_type::OK;

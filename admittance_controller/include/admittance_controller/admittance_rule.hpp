@@ -34,21 +34,22 @@ class AdmittanceRule
 public:
   AdmittanceRule() = default;
 
-  controller_interface::return_type configure(rclcpp::Clock::SharedPtr clock);
+  controller_interface::return_type configure(rclcpp::Node::SharedPtr node);
 
   controller_interface::return_type update(
     const std::vector<double> & current_joint_state,
     const geometry_msgs::msg::Wrench & measured_force,
     const geometry_msgs::msg::PoseStamped & target_pose,
     const geometry_msgs::msg::WrenchStamped & target_force,
-    const rclcpp::Duration & period
-  );
+    const rclcpp::Duration & period,
+    std::array<double, 6> desired_joint_states);
 
   controller_interface::return_type update(
-    const std::vector<double> & current_joint_state,
+    const std::array<double, 6> & /*current_joint_state*/,
     const geometry_msgs::msg::Wrench & measured_force,
     const geometry_msgs::msg::PoseStamped & target_pose,
-    const rclcpp::Duration & period);
+    const rclcpp::Duration & period,
+    std::array<double, 6> desired_joint_states);
 
 //   controller_interface::return_type update(
 //     const geometry_msgs::msg::WrenchStamped & measured_force,
@@ -117,6 +118,8 @@ protected:
   std::array<double, 6> desired_velocity_vec_;
   std::array<double, 6> desired_velocity_previous_vec_;
   std::array<double, 6> desired_acceleration_previous_vec_;
+
+  std::vector<double> relative_desired_joint_state_vec_;
 
 private:
   // TODO: implement doTransform for WrenchStamped

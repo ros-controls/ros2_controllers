@@ -16,10 +16,11 @@
 
 #pragma once
 
-#include <Eigen/Core>
-#include <moveit/robot_model_loader/robot_model_loader.h>
-#include <moveit/robot_state/robot_state.h>
-#include <tf2_ros/transform_listener.h>
+#include "Eigen/Core"
+#include "geometry_msgs/msg/transform_stamped.hpp"
+#include "moveit/robot_model_loader/robot_model_loader.h"
+#include "moveit/robot_state/robot_state.h"
+#include "rclcpp/utilities.hpp"
 
 namespace admittance_controller
 {
@@ -31,16 +32,27 @@ public:
    * \brief Create an object which takes Cartesian delta-x and converts to joint delta-theta.
    * It uses the Jacobian from MoveIt.
    */
-  IncrementalIKCalculator(std::shared_ptr<rclcpp::Node> & node);
+  IncrementalIKCalculator(const std::shared_ptr<rclcpp::Node> & node, const std::string & group_name);
 
   /**
    * \brief Convert Cartesian delta-x to joint delta-theta, using the Jacobian.
-   * \param delta_x input Cartesian deltas
-   * \param delta_x_frame input name of the delta_x tf frame
-   * \param delta_theta output
+   * \param delta_x_vec input Cartesian deltas (x, y, z, rx, ry, rz)
+   * \param ik_base_to_tip_trafo transformation between ik base and ik tip
+   * \param delta_theta_vec output vector with joint states
    * \return true if successful
    */
-  bool convertCartesianDeltasToJointDeltas(Eigen::VectorXd delta_x, std::string& delta_x_frame, Eigen::VectorXd& delta_theta);
+  bool
+  convertCartesianDeltasToJointDeltas(const std::vector<double> & delta_x_vec, const geometry_msgs::msg::TransformStamped & ik_base_to_tip_trafo, std::vector<double> & delta_theta_vec);
+
+  /**
+   * \brief Convert joint delta-theta to Cartesian delta-x, using the Jacobian.
+   * \param[in] delta_theta_vec vector with joint states
+   * \param[in] ik_base_to_tip_trafo transformation between ik base to ik tip
+   * \param[out] delta_x_vec  Cartesian deltas (x, y, z, rx, ry, rz)
+   * \return true if successful
+   */
+  bool
+  convertJointDeltasToCartesianDeltas(const std::vector<double> &  delta_theta_vec, const geometry_msgs::msg::TransformStamped & ik_base_to_tip_trafo, std::vector<double> & delta_x_vec);
 
 private:
   // MoveIt setup, required to retrieve the Jacobian
@@ -53,12 +65,6 @@ private:
   Eigen::JacobiSVD<Eigen::MatrixXd> svd_;
   Eigen::MatrixXd matrix_s_;
   Eigen::MatrixXd pseudo_inverse_;
-
-  // TF frames
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
-  std::string moveit_jacobian_frame_;
-  geometry_msgs::msg::TransformStamped delta_x_to_jacobian_transform_;
 };
 
 }  // namespace admittance_controller
