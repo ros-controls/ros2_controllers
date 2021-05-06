@@ -19,7 +19,6 @@
 #include <Eigen/Core>
 #include <moveit/robot_model_loader/robot_model_loader.h>
 #include <moveit/robot_state/robot_state.h>
-#include <tf2_eigen/tf2_eigen.h>
 #include <tf2_ros/transform_listener.h>
 
 namespace admittance_controller
@@ -32,7 +31,7 @@ public:
    * \brief Create an object which takes Cartesian delta-x and converts to joint delta-theta.
    * It uses the Jacobian from MoveIt.
    */
-  IncrementalIKCalculator(std::shared_ptr<rclcpp::Node>& node);
+  IncrementalIKCalculator(std::shared_ptr<rclcpp::Node> & node);
 
   /**
    * \brief Convert Cartesian delta-x to joint delta-theta, using the Jacobian.
