@@ -11,37 +11,55 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(control_msgs REQUIRED)
 find_package(controller_interface REQUIRED)
 find_package(Eigen3 REQUIRED)
+find_package(geometry_msgs REQUIRED)
 find_package(hardware_interface REQUIRED)
+find_package(iirob_filters REQUIRED)
 find_package(moveit_ros_move_group REQUIRED)
 find_package(moveit_ros_planning_interface REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
+find_package(realtime_tools REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_eigen REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(tf2_ros REQUIRED)
 
 add_library(
   admittance_controller
   SHARED
   src/admittance_controller.cpp
+  src/admittance_rule.cpp
   src/incremental_ik_calculator.cpp
 )
 target_include_directories(
   admittance_controller
   PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
   ${EIGEN3_INCLUDE_DIR}
-  include
 )
 ament_target_dependencies(
   admittance_controller
+  control_msgs
   controller_interface
   ${Eigen_LIBRARIES}
+  geometry_msgs
   hardware_interface
+  iirob_filters
   moveit_ros_move_group
   moveit_ros_planning_interface
   pluginlib
   rclcpp
   rclcpp_lifecycle
+  realtime_tools
+  tf2
+  tf2_eigen
+  tf2_geometry_msgs
+  tf2_ros
 )
 # prevent pluginlib from using boost
 target_compile_definitions(admittance_controller PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
@@ -65,14 +83,46 @@ if(BUILD_TESTING)
   find_package(hardware_interface REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
 
-  ament_add_gmock(test_admittance_controller test/test_load_admittance_controller.cpp)
-  target_include_directories(test_admittance_controller PRIVATE include)
+  ament_add_gmock(test_load_admittance_controller test/test_load_admittance_controller.cpp)
+  target_include_directories(test_load_admittance_controller PRIVATE include)
   ament_target_dependencies(
-    test_admittance_controller
+    test_load_admittance_controller
     controller_manager
     hardware_interface
     ros2_control_test_assets
   )
+
+  ament_add_gmock(test_admittance_controller test/test_admittance_controller.cpp)
+  target_include_directories(test_admittance_controller PRIVATE include)
+  target_link_libraries(test_admittance_controller admittance_controller)
+  ament_target_dependencies(
+    test_admittance_controller
+    control_msgs
+    controller_interface
+    hardware_interface
+  )
 endif()
+
+ament_export_include_directories(
+  include
+)
+ament_export_libraries(
+  admittance_controller
+)
+ament_export_dependencies(
+  control_msgs
+  controller_interface
+  geometry_msgs
+  hardware_interface
+  iirob_filters
+  pluginlib
+  rclcpp
+  rclcpp_lifecycle
+  realtime_tools
+  tf2
+  tf2_eigen
+  tf2_geometry_msgs
+  tf2_ros
+)
 
 ament_package()
