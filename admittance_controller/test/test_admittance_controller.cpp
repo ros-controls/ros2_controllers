@@ -58,10 +58,10 @@ INSTANTIATE_TEST_CASE_P(
       std::string("IK.tip"),
       rclcpp::ParameterValue("")
     ),
-//     std::make_tuple(
-//       std::string("IK.group_name"),
-//       rclcpp::ParameterValue("")
-//     ),
+    std::make_tuple(
+      std::string("IK.group_name"),
+      rclcpp::ParameterValue("")
+    ),
     std::make_tuple(
       std::string("control_frame"),
       rclcpp::ParameterValue("")
