@@ -17,11 +17,25 @@
 #ifndef ADMITTANCE_CONTROLLER__ADMITTANCE_CONTROLLER_HPP_
 #define ADMITTANCE_CONTROLLER__ADMITTANCE_CONTROLLER_HPP_
 
-#include "admittance_controller/incremental_ik_calculator.hpp"
+#include <memory>
+#include <string>
+#include <vector>
+
+#include "admittance_controller/admittance_rule.hpp"
 #include "admittance_controller/visibility_control.h"
+#include "control_msgs/msg/admittance_controller_state.hpp"
 #include "controller_interface/controller_interface.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "geometry_msgs/msg/transform_stamped.hpp"
+#include "geometry_msgs/msg/wrench_stamped.hpp"
+#include "hardware_interface/types/hardware_interface_type_values.hpp"
+#include "iirob_filters/low_pass_filter.h"
+#include "iirob_filters/gravity_compensation.h"
+#include "semantic_components/force_torque_sensor.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
+#include "realtime_tools/realtime_buffer.h"
+#include "realtime_tools/realtime_publisher.h"
 
 namespace admittance_controller
 {
@@ -56,14 +70,59 @@ public:
 
 protected:
   std::vector<std::string> joint_names_;
-  std::vector<std::string> interface_names_;
+  std::vector<std::string> command_interface_types_;
+  std::vector<std::string> state_interface_types_;
+  std::string ft_sensor_name_;
 
-  std::shared_ptr<IncrementalIKCalculator> ik_;
+  // Internal variables
+  std::unique_ptr<semantic_components::ForceTorqueSensor> force_torque_sensor_;
 
-  Eigen::VectorXd delta_x_;
-  Eigen::VectorXd delta_theta_;
-  // TODO(andyz): parameterize this
-  std::string force_torque_sensor_frame_;
+  // Admittance rule and dependent variables;
+  std::unique_ptr<admittance_controller::AdmittanceRule> admittance_;
+  rclcpp::Time previous_time_;
+
+  // Command subscribers and Controller State publisher
+  using ControllerCommandForceMsg = geometry_msgs::msg::WrenchStamped;
+  using ControllerCommandPoseMsg = geometry_msgs::msg::PoseStamped;
+
+  rclcpp::Subscription<ControllerCommandForceMsg>::SharedPtr
+  input_force_command_subscriber_ = nullptr;
+  rclcpp::Subscription<ControllerCommandPoseMsg>::SharedPtr
+  input_pose_command_subscriber_ = nullptr;
+
+  realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerCommandForceMsg>>
+  input_force_command_;
+  realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerCommandPoseMsg>>
+  input_pose_command_;
+
+  using ControllerStateMsg = control_msgs::msg::AdmittanceControllerState;
+  using ControllerStatePublisher = realtime_tools::RealtimePublisher<ControllerStateMsg>;
+
+  rclcpp::Publisher<ControllerStateMsg>::SharedPtr s_publisher_;
+  std::unique_ptr<ControllerStatePublisher> state_publisher_;
+
+  // Internal access to sorted interfaces
+
+  // To reduce number of variables and to make the code shorter the interfaces are ordered in types
+  // as the following constants
+  const std::vector<std::string> allowed_interface_types_ = {
+    hardware_interface::HW_IF_POSITION,
+    hardware_interface::HW_IF_VELOCITY,
+  };
+
+  // The interfaces are defined as the types in 'allowed_interface_types_' member.
+  // For convenience, for each type the interfaces are ordered so that i-th position
+  // matches i-th index in joint_names_
+  template<typename T>
+  using InterfaceReferences = std::vector<std::vector<std::reference_wrapper<T>>>;
+
+  InterfaceReferences<hardware_interface::LoanedCommandInterface> joint_command_interface_;
+  InterfaceReferences<hardware_interface::LoanedStateInterface> joint_state_interface_;
+
+  bool has_velocity_state_interface_ = false;
+  bool has_position_command_interface_ = false;
+  bool has_velocity_command_interface_ = false;
+
 };
 
 }  // namespace admittance_controller

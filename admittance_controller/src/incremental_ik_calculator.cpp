@@ -16,6 +16,8 @@
 
 #include "admittance_controller/incremental_ik_calculator.hpp"
 
+#include "tf2_eigen/tf2_eigen.h"
+
 namespace admittance_controller
 {
 IncrementalIKCalculator::IncrementalIKCalculator(std::shared_ptr<rclcpp::Node>& node) : node_(node)
