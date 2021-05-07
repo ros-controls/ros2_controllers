@@ -16,7 +16,6 @@
 
 #include "admittance_controller/incremental_kinematics.hpp"
 
-#include "Eigen/VectorXd"
 #include "tf2_eigen/tf2_eigen.h"
 
 namespace admittance_controller
@@ -25,7 +24,7 @@ IncrementalKinematics::IncrementalKinematics(const std::shared_ptr<rclcpp::Node>
 {
   // TODO(andyz): Parameterize robot description and joint group
   std::unique_ptr<robot_model_loader::RobotModelLoader> model_loader_ptr =
-      std::unique_ptr<robot_model_loader::RobotModelLoader>(new robot_model_loader::RobotModelLoader(node_, "/robot_description", false /* do not load kinematics plugins */));
+      std::unique_ptr<robot_model_loader::RobotModelLoader>(new robot_model_loader::RobotModelLoader(node_, "robot_description", false /* do not load kinematics plugins */));
   const moveit::core::RobotModelPtr& kinematic_model = model_loader_ptr->getModel();
   // TODO(andyz): joint_model_group_ is a raw pointer. Is it thread safe?
   joint_model_group_ = kinematic_model->getJointModelGroup(group_name);
@@ -34,7 +33,7 @@ IncrementalKinematics::IncrementalKinematics(const std::shared_ptr<rclcpp::Node>
   // By default, the MoveIt Jacobian frame is the last link
 }
 
-bool IncrementalKinematics::convertCartesianDeltasToJointDeltas(const std::vector<double> & delta_x_vec, const geometry_msgs::msg::TransformStamped & ik_base_to_tip_tf, std::vector<double> & delta_theta_vec)
+bool IncrementalKinematics::convertCartesianDeltasToJointDeltas(std::vector<double> & delta_x_vec, const geometry_msgs::msg::TransformStamped & ik_base_to_tip_tf, std::vector<double> & delta_theta_vec)
 {
   // see here for this conversion: https://stackoverflow.com/questions/26094379/typecasting-eigenvectorxd-to-stdvector
   Eigen::VectorXd delta_x = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(&delta_x_vec[0], delta_x_vec.size());
@@ -83,7 +82,7 @@ bool IncrementalKinematics::convertCartesianDeltasToJointDeltas(const std::vecto
   return true;
 }
 
-bool IncrementalKinematics::convertJointDeltasToCartesianDeltas(const std::vector<double> &  delta_theta_vec, const geometry_msgs::msg::TransformStamped & ik_base_to_tip_tf, std::vector<double> & delta_x_vec)
+bool IncrementalKinematics::convertJointDeltasToCartesianDeltas(std::vector<double> &  delta_theta_vec, const geometry_msgs::msg::TransformStamped & ik_base_to_tip_tf, std::vector<double> & delta_x_vec)
 {
   // see here for this conversion: https://stackoverflow.com/questions/26094379/typecasting-eigenvectorxd-to-stdvector
   Eigen::VectorXd delta_theta = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(&delta_theta_vec[0], delta_theta_vec.size());

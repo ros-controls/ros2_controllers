@@ -50,6 +50,10 @@ INSTANTIATE_TEST_CASE_P(
       std::string("ft_sensor_name"),
       rclcpp::ParameterValue("")
     ),
+//     std::make_tuple(
+//       std::string("use_joint_commands_as_input"),
+//       rclcpp::ParameterValue(false)
+//     ),
     std::make_tuple(
       std::string("IK.base"),
       rclcpp::ParameterValue("")
