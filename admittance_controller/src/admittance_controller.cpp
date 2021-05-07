@@ -265,23 +265,21 @@ CallbackReturn AdmittanceController::on_configure(
       "~/force_commands", rclcpp::SystemDefaultsQoS(), callback_input_force);
   }
 
-  if (use_joint_commands_as_input_) {
-    auto callback_input_joint = [&](const std::shared_ptr<ControllerCommandJointMsg> msg)
-    -> void
-    {
-      input_joint_command_.writeFromNonRT(msg);
-    };
-    input_joint_command_subscriber_ = get_node()->create_subscription<ControllerCommandPoseMsg>(
-      "~/joint_commands", rclcpp::SystemDefaultsQoS(), callback_input_joint);
-  } else {
-    auto callback_input_pose = [&](const std::shared_ptr<ControllerCommandPoseMsg> msg)
-    -> void
-    {
-      input_pose_command_.writeFromNonRT(msg);
-    };
-    input_pose_command_subscriber_ = get_node()->create_subscription<ControllerCommandPoseMsg>(
-      "~/pose_commands", rclcpp::SystemDefaultsQoS(), callback_input_pose);
-  }
+  auto callback_input_joint = [&](const std::shared_ptr<ControllerCommandJointMsg> msg)
+  -> void
+  {
+    input_joint_command_.writeFromNonRT(msg);
+  };
+  input_joint_command_subscriber_ = get_node()->create_subscription<ControllerCommandJointMsg>(
+    "~/joint_commands", rclcpp::SystemDefaultsQoS(), callback_input_joint);
+
+  auto callback_input_pose = [&](const std::shared_ptr<ControllerCommandPoseMsg> msg)
+  -> void
+  {
+    input_pose_command_.writeFromNonRT(msg);
+  };
+  input_pose_command_subscriber_ = get_node()->create_subscription<ControllerCommandPoseMsg>(
+    "~/pose_commands", rclcpp::SystemDefaultsQoS(), callback_input_pose);
 
   // TODO(destogl): Add subscriber for velocity scaling
 
@@ -482,6 +480,7 @@ controller_interface::return_type AdmittanceController::update()
   state_publisher_->lock();
   state_publisher_->msg_.input_force_command = **input_force_cmd;
   state_publisher_->msg_.input_pose_command = **input_pose_cmd;
+  state_publisher_->msg_.input_joint_command = **input_joint_cmd;
 
   state_publisher_->msg_.actual_joint_states.positions.assign(current_joint_states.begin(), current_joint_states.end());
   state_publisher_->msg_.desired_joint_states.positions.assign(desired_joint_states.begin(), desired_joint_states.end());

@@ -176,11 +176,16 @@ controller_interface::return_type AdmittanceRule::reset()
 
   // Initialize ik_tip and tool_frame transformations - those are fixed transformations
   tf2::Stamped<tf2::Transform> tf2_transform;
-  auto transform = tf_buffer_->lookupTransform(ik_tip_frame_, endeffector_frame_, tf2::TimePointZero);
-
-  tf2::fromMsg(transform, tf2_transform);
-  ik_tip_to_endeffector_frame_tf_ = tf2_transform;
-  endeffector_frame_to_ik_tip_tf_ = tf2_transform.inverse();
+  try {
+    auto transform = tf_buffer_->lookupTransform(ik_tip_frame_, endeffector_frame_, tf2::TimePointZero);
+    tf2::fromMsg(transform, tf2_transform);
+    ik_tip_to_endeffector_frame_tf_ = tf2_transform;
+    endeffector_frame_to_ik_tip_tf_ = tf2_transform.inverse();
+  } catch (tf2::TransformException & e) {
+    // TODO(destogl): Use RCLCPP_ERROR_THROTTLE
+    RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed between '" + ik_tip_frame_ + "' and '" + endeffector_frame_ + "'.");
+    return controller_interface::return_type::ERROR;
+  }
 
   return controller_interface::return_type::OK;
 }
@@ -247,7 +252,15 @@ controller_interface::return_type AdmittanceRule::update(
   // Use Jacobian-based IK
   // Calculate desired Cartesian displacement of the robot
   // TODO: replace this with FK in the long term
-  auto transform = tf_buffer_->lookupTransform(ik_base_frame_, ik_tip_frame_, tf2::TimePointZero);
+  geometry_msgs::msg::TransformStamped transform;
+  try {
+    transform = tf_buffer_->lookupTransform(ik_base_frame_, ik_tip_frame_, tf2::TimePointZero);
+  } catch (tf2::TransformException & e) {
+    // TODO(destogl): Use RCLCPP_ERROR_THROTTLE
+    RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed between '" + ik_base_frame_ + "' and '" + ik_tip_frame_ + "'.");
+    return controller_interface::return_type::ERROR;
+  }
+
   std::vector<double> relative_desired_pose_vec(relative_desired_pose_arr_.begin(), relative_desired_pose_arr_.end());
   if (ik_->convertCartesianDeltasToJointDeltas(
     relative_desired_pose_vec, transform, relative_desired_joint_state_vec_)){
@@ -280,7 +293,14 @@ controller_interface::return_type AdmittanceRule::update(
   std::vector<double> target_joint_deltas_vec(target_joint_deltas.begin(), target_joint_deltas.end());
   std::vector<double> target_ik_tip_deltas_vec(6);
   // TODO: replace this with FK in the long term
-  auto transform_ik_base_tip = tf_buffer_->lookupTransform(ik_base_frame_, ik_tip_frame_, tf2::TimePointZero);
+  geometry_msgs::msg::TransformStamped transform_ik_base_tip;
+  try {
+    transform_ik_base_tip = tf_buffer_->lookupTransform(ik_base_frame_, ik_tip_frame_, tf2::TimePointZero);
+  } catch (tf2::TransformException & e) {
+    // TODO(destogl): Use RCLCPP_ERROR_THROTTLE
+    RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed between '" + ik_base_frame_ + "' and '" + ik_tip_frame_ + "'.");
+    return controller_interface::return_type::ERROR;
+  }
 
   if (ik_->convertJointDeltasToCartesianDeltas(target_joint_deltas_vec, transform_ik_base_tip, target_ik_tip_deltas_vec)) {
   } else {
@@ -350,8 +370,15 @@ controller_interface::return_type AdmittanceRule::get_current_pose_of_endeffecto
   origin.header.frame_id = endeffector_frame_;
   origin.pose.orientation.w = 1;
 
-  auto transform = tf_buffer_->lookupTransform(ik_base_frame_, endeffector_frame_, tf2::TimePointZero);
-  tf2::doTransform(origin, pose, transform);
+  try {
+    auto transform = tf_buffer_->lookupTransform(ik_base_frame_, endeffector_frame_, tf2::TimePointZero);
+    tf2::doTransform(origin, pose, transform);
+  } catch (tf2::TransformException & e) {
+    // TODO(destogl): Use RCLCPP_ERROR_THROTTLE
+    RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed between '" + ik_base_frame_ + "' and '" + endeffector_frame_ + "'.");
+    return controller_interface::return_type::ERROR;
+  }
+  return controller_interface::return_type::OK;
 }
 
 }  // namespace admittance_controller
