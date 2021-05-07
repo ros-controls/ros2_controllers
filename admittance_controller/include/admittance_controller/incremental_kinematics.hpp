@@ -20,7 +20,7 @@
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "moveit/robot_model_loader/robot_model_loader.h"
 #include "moveit/robot_state/robot_state.h"
-#include "rclcpp/utilities.hpp"
+#include "rclcpp/rclcpp.hpp"
 
 namespace admittance_controller
 {
@@ -42,7 +42,7 @@ public:
    * \return true if successful
    */
   bool
-  convertCartesianDeltasToJointDeltas(const std::vector<double> & delta_x_vec, const geometry_msgs::msg::TransformStamped & ik_base_to_tip_tf, std::vector<double> & delta_theta_vec);
+  convertCartesianDeltasToJointDeltas(std::vector<double> & delta_x_vec, const geometry_msgs::msg::TransformStamped & ik_base_to_tip_tf, std::vector<double> & delta_theta_vec);
 
   /**
    * \brief Convert joint delta-theta to Cartesian delta-x, using the Jacobian.
@@ -52,7 +52,7 @@ public:
    * \return true if successful
    */
   bool
-  convertJointDeltasToCartesianDeltas(const std::vector<double> &  delta_theta_vec, const geometry_msgs::msg::TransformStamped & ik_base_to_tip_tf, std::vector<double> & delta_x_vec);
+  convertJointDeltasToCartesianDeltas(std::vector<double> &  delta_theta_vec, const geometry_msgs::msg::TransformStamped & ik_base_to_tip_tf, std::vector<double> & delta_x_vec);
 
 private:
   // MoveIt setup, required to retrieve the Jacobian

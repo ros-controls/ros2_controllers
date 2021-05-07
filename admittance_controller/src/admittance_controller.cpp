@@ -19,12 +19,12 @@
 #include <string>
 #include <vector>
 
-// #include "Eigen/Core"
-
+#include "angles/angles.h"
 #include "admittance_controller/admittance_controller.hpp"
 #include "admittance_controller/incremental_kinematics.hpp"
 #include "controller_interface/helpers.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
+#include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
 namespace admittance_controller
 {
@@ -45,6 +45,7 @@ controller_interface::return_type AdmittanceController::init(const std::string &
     get_node()->declare_parameter<std::vector<std::string>>("command_interfaces", {});
     get_node()->declare_parameter<std::vector<std::string>>("state_interfaces", {});
     get_node()->declare_parameter<std::string>("ft_sensor_name", "");
+    get_node()->declare_parameter<bool>("use_joint_commands_as_input", false);
 
     get_node()->declare_parameter<std::string>("IK.base", "");
     get_node()->declare_parameter<std::string>("IK.tip", "");
@@ -146,6 +147,7 @@ CallbackReturn AdmittanceController::on_configure(
     get_string_array_param_and_error_if_empty(command_interface_types_, "command_interfaces") ||
     get_string_array_param_and_error_if_empty(state_interface_types_, "state_interfaces") ||
     get_string_param_and_error_if_empty(ft_sensor_name_, "ft_sensor_name") ||
+    get_bool_param_and_error_if_empty(use_joint_commands_as_input_, "use_joint_commands_as_input") ||
     get_string_param_and_error_if_empty(admittance_->ik_base_frame_, "IK.base") ||
     get_string_param_and_error_if_empty(admittance_->ik_tip_frame_, "IK.tip") ||
     get_string_param_and_error_if_empty(admittance_->ik_group_name_, "IK.group_name") ||
@@ -253,21 +255,33 @@ CallbackReturn AdmittanceController::on_configure(
     semantic_components::ForceTorqueSensor(ft_sensor_name_));
 
   // Subscribers and callbacks
-  auto callback_input_force = [&](const std::shared_ptr<ControllerCommandForceMsg> msg)
+  if (admittance_->unified_mode_) {
+    auto callback_input_force = [&](const std::shared_ptr<ControllerCommandForceMsg> msg)
+      -> void
+      {
+        input_force_command_.writeFromNonRT(msg);
+      };
+    input_force_command_subscriber_ = get_node()->create_subscription<ControllerCommandForceMsg>(
+      "~/force_commands", rclcpp::SystemDefaultsQoS(), callback_input_force);
+  }
+
+  if (use_joint_commands_as_input_) {
+    auto callback_input_joint = [&](const std::shared_ptr<ControllerCommandJointMsg> msg)
     -> void
     {
-      input_force_command_.writeFromNonRT(msg);
+      input_joint_command_.writeFromNonRT(msg);
     };
-  input_force_command_subscriber_ = get_node()->create_subscription<ControllerCommandForceMsg>(
-    "~/force_commands", rclcpp::SystemDefaultsQoS(), callback_input_force);
-
-  auto callback_input_pose = [&](const std::shared_ptr<ControllerCommandPoseMsg> msg)
-  -> void
-  {
-    input_pose_command_.writeFromNonRT(msg);
-  };
-  input_pose_command_subscriber_ = get_node()->create_subscription<ControllerCommandPoseMsg>(
-    "~/pose_commands", rclcpp::SystemDefaultsQoS(), callback_input_pose);
+    input_joint_command_subscriber_ = get_node()->create_subscription<ControllerCommandPoseMsg>(
+      "~/joint_commands", rclcpp::SystemDefaultsQoS(), callback_input_joint);
+  } else {
+    auto callback_input_pose = [&](const std::shared_ptr<ControllerCommandPoseMsg> msg)
+    -> void
+    {
+      input_pose_command_.writeFromNonRT(msg);
+    };
+    input_pose_command_subscriber_ = get_node()->create_subscription<ControllerCommandPoseMsg>(
+      "~/pose_commands", rclcpp::SystemDefaultsQoS(), callback_input_pose);
+  }
 
   // TODO(destogl): Add subscriber for velocity scaling
 
@@ -275,6 +289,14 @@ CallbackReturn AdmittanceController::on_configure(
   s_publisher_ = get_node()->create_publisher<ControllerStateMsg>(
     "~/state", rclcpp::SystemDefaultsQoS());
   state_publisher_ = std::make_unique<ControllerStatePublisher>(s_publisher_);
+
+  // Initialize state message
+  state_publisher_->lock();
+  state_publisher_->msg_.joint_names = joint_names_;
+  state_publisher_->msg_.actual_joint_states.positions.resize(6, 0.0);
+  state_publisher_->msg_.desired_joint_states.positions.resize(6, 0.0);
+  state_publisher_->msg_.error_joint_state.positions.resize(6, 0.0);
+  state_publisher_->unlock();
 
   // Configure AdmittanceRule
   admittance_->configure(get_node());
@@ -355,13 +377,27 @@ CallbackReturn AdmittanceController::on_activate(const rclcpp_lifecycle::State &
   admittance_->reset();
   previous_time_ = get_node()->now();
 
-  // Set initial command values
+  // Set initial command values - initialize all to simplify update
   std::shared_ptr<ControllerCommandForceMsg> msg_force = std::make_shared<ControllerCommandForceMsg>();
   msg_force->header.frame_id = admittance_->control_frame_;
   input_force_command_.writeFromNonRT(msg_force);
+  std::shared_ptr<ControllerCommandJointMsg> msg_joint = std::make_shared<ControllerCommandJointMsg>();
+  msg_joint->joint_names = joint_names_;
+  msg_joint->points.reserve(1);
+
+  const auto num_joints = joint_names_.size();
+  trajectory_msgs::msg::JointTrajectoryPoint trajectory_point;
+  trajectory_point.positions.reserve(num_joints);
+  trajectory_point.velocities.resize(num_joints, 0.0);
+  for (auto index = 0u; index < num_joints; ++index) {
+    trajectory_point.positions.emplace_back(joint_state_interface_[0][index].get().get_value());
+  }
+  msg_joint->points.emplace_back(trajectory_point);
+  input_joint_command_.writeFromNonRT(msg_joint);
 
   std::shared_ptr<ControllerCommandPoseMsg> msg_pose = std::make_shared<ControllerCommandPoseMsg>();
   msg_pose->header.frame_id = admittance_->control_frame_;
+  admittance_->get_current_pose_of_endeffector_frame(*msg_pose);
   input_pose_command_.writeFromNonRT(msg_pose);
 
   return CallbackReturn::SUCCESS;
@@ -390,32 +426,69 @@ CallbackReturn AdmittanceController::on_deactivate(
 controller_interface::return_type AdmittanceController::update()
 {
   // get input commands
-  // TODO(destogl): Enable this when unified mode is used
   auto input_force_cmd = input_force_command_.readFromRT();
+  auto input_joint_cmd = input_joint_command_.readFromRT();
   auto input_pose_cmd = input_pose_command_.readFromRT();
 
   // Position has to always there
   auto num_joints = joint_state_interface_[0].size();
-  std::vector<double> current_joint_states(num_joints);
+  std::array<double, 6> current_joint_states;
+  std::array<double, 6> desired_joint_states;
 
-  for (auto i = 0u; i < num_joints; ++i) {
-    current_joint_states.emplace_back(joint_state_interface_[0][i].get().get_value());
+  for (auto index = 0u; index < num_joints; ++index) {
+    current_joint_states[index] = joint_state_interface_[0][index].get().get_value();
   }
 
+  auto ft_values = force_torque_sensor_->get_values_as_message();
+  auto duration_since_last_call = get_node()->now() - previous_time_;
+
   // TODO(destogl): Enable this when unified mode is used
-//   if (admittance_.unified_mode_) {
-//     admittance_->update(current_joint_states, force_torque_sensor_->get_values_as_message(), **input_pose_cmd, **input_force_cmd, get_node()->now() - previous_time_);
+//   if (admittance_->unified_mode_) {
+  //     admittance_->update(current_joint_states, ft_values, **input_pose_cmd, **input_force_cmd, duration_since_last_call, desired_joint_states);
 //   } else {
-  admittance_->update(current_joint_states, force_torque_sensor_->get_values_as_message(), **input_pose_cmd, get_node()->now() - previous_time_);
+  if (use_joint_commands_as_input_) {
+    std::array<double, 6> joint_deltas;
+    // If there are no positions, expect velocities
+    // TODO(destogl): add error handling
+    if ((*input_joint_cmd)->points[0].positions.empty()) {
+      for (auto index = 0u; index < num_joints; ++index) {
+        joint_deltas[index] = (*input_joint_cmd)->points[0].velocities[index] * duration_since_last_call.seconds();
+      }
+    } else {
+      for (auto index = 0u; index < num_joints; ++index) {
+        // TODO(anyone): Is here OK to use shortest_angular_distance?
+        joint_deltas[index] = angles::shortest_angular_distance(current_joint_states[index], (*input_joint_cmd)->points[0].positions[index]);
+      }
+    }
+    admittance_->update(current_joint_states, ft_values, joint_deltas, duration_since_last_call, desired_joint_states);
+  } else {
+    admittance_->update(current_joint_states, ft_values, **input_pose_cmd, duration_since_last_call, desired_joint_states);
+  }
 //   }
   previous_time_ = get_node()->now();
 
   // Write new joint angles to the robot
+  for (auto index = 0u; index < num_joints; ++index) {
+    if (has_position_command_interface_) {
+      joint_command_interface_[0][index].get().set_value(desired_joint_states[index]);
+    }
+    if (has_velocity_command_interface_) {
+      joint_command_interface_[1][index].get().set_value(angles::shortest_angular_distance(
+        current_joint_states[index], desired_joint_states[index]) / duration_since_last_call.seconds());
+    }
+  }
 
   // Publish controller state
   state_publisher_->lock();
   state_publisher_->msg_.input_force_command = **input_force_cmd;
   state_publisher_->msg_.input_pose_command = **input_pose_cmd;
+
+  state_publisher_->msg_.actual_joint_states.positions.assign(current_joint_states.begin(), current_joint_states.end());
+  state_publisher_->msg_.desired_joint_states.positions.assign(desired_joint_states.begin(), desired_joint_states.end());
+  for (auto index = 0u; index < num_joints; ++index) {
+    state_publisher_->msg_.error_joint_state.positions[index] = angles::shortest_angular_distance(
+      current_joint_states[index], desired_joint_states[index]);
+  }
   admittance_->get_controller_state(state_publisher_->msg_);
   state_publisher_->unlockAndPublish();
 
@@ -425,6 +498,8 @@ controller_interface::return_type AdmittanceController::update()
 }  // namespace admittance_controller
 
 #include "pluginlib/class_list_macros.hpp"
+#include <angles/angles.h>
+#include <angles/angles.h>
 
 PLUGINLIB_EXPORT_CLASS(
   admittance_controller::AdmittanceController,

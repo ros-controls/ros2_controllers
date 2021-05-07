@@ -36,18 +36,27 @@ public:
 
   controller_interface::return_type configure(rclcpp::Node::SharedPtr node);
 
-  controller_interface::return_type update(
-    const std::vector<double> & current_joint_state,
-    const geometry_msgs::msg::Wrench & measured_force,
-    const geometry_msgs::msg::PoseStamped & target_pose,
-    const geometry_msgs::msg::WrenchStamped & target_force,
-    const rclcpp::Duration & period,
-    std::array<double, 6> desired_joint_states);
+  controller_interface::return_type reset();
 
   controller_interface::return_type update(
     const std::array<double, 6> & /*current_joint_state*/,
     const geometry_msgs::msg::Wrench & measured_force,
     const geometry_msgs::msg::PoseStamped & target_pose,
+    const rclcpp::Duration & period,
+    std::array<double, 6> desired_joint_states);
+
+  controller_interface::return_type update(
+    const std::array<double, 6> & current_joint_state,
+    const geometry_msgs::msg::Wrench & measured_force,
+    const std::array<double, 6> & target_joint_deltas,
+    const rclcpp::Duration & period,
+    std::array<double, 6> desired_joint_states);
+
+  controller_interface::return_type update(
+    const std::array<double, 6> & current_joint_state,
+    const geometry_msgs::msg::Wrench & measured_force,
+    const geometry_msgs::msg::PoseStamped & target_pose,
+    const geometry_msgs::msg::WrenchStamped & target_force,
     const rclcpp::Duration & period,
     std::array<double, 6> desired_joint_states);
 
@@ -63,7 +72,7 @@ public:
     control_msgs::msg::AdmittanceControllerState & state_message
   );
 
-  controller_interface::return_type reset();
+  controller_interface::return_type get_current_pose_of_endeffector_frame(geometry_msgs::msg::PoseStamped & pose);
 
 public:
   // IK related parameters
@@ -78,7 +87,8 @@ public:
   std::string sensor_frame_;
 
   // Admittance parameters
-  //   bool unified_mode_ = false;
+  // TODO(destogl): unified mode does not have to be here
+  bool unified_mode_ = false;  // Unified mode enables simultaneous force and position goals
   std::array<bool, 6> selected_axes_;
   std::array<double, 6> mass_;
   std::array<double, 6> damping_;
@@ -87,17 +97,19 @@ public:
 protected:
   // IK variables
   std::shared_ptr<IncrementalKinematics> ik_;
-  Eigen::VectorXd delta_x_;
-  Eigen::VectorXd delta_theta_;
 
   // Transformation variables
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
+  tf2::Transform ik_tip_to_endeffector_frame_tf_;
+  tf2::Transform endeffector_frame_to_ik_tip_tf_;
+
   geometry_msgs::msg::WrenchStamped measured_force_;
   geometry_msgs::msg::WrenchStamped measured_force_control_frame_;
 
-  geometry_msgs::msg::PoseStamped current_origin_;
+  geometry_msgs::msg::PoseStamped origin_ik_tip_;
+  geometry_msgs::msg::PoseStamped origin_endeffector_;
   geometry_msgs::msg::PoseStamped current_pose_;
   geometry_msgs::msg::PoseStamped current_pose_control_frame_;
 
@@ -108,56 +120,63 @@ protected:
   geometry_msgs::msg::TransformStamped relative_desired_pose_;
 
   // Pre-reserved update-loop variables
-  std::array<double, 6> measured_force_control_frame_vec_;
-  std::array<double, 6> target_pose_control_frame_vec_;
-  std::array<double, 6> current_pose_control_frame_vec_;
+  std::array<double, 6> measured_force_control_frame_arr_;
+  std::array<double, 6> target_pose_control_frame_arr_;
+  std::array<double, 6> current_pose_control_frame_arr_;
 
   std::array<double, 3> angles_error_;
 
-  std::array<double, 6> relative_desired_pose_vec_;
-  std::array<double, 6> desired_velocity_vec_;
-  std::array<double, 6> desired_velocity_previous_vec_;
-  std::array<double, 6> desired_acceleration_previous_vec_;
+  std::array<double, 6> relative_desired_pose_arr_;
+  std::array<double, 6> desired_velocity_arr_;
+  std::array<double, 6> desired_velocity_previous_arr_;
+  std::array<double, 6> desired_acceleration_previous_arr_;
 
   std::vector<double> relative_desired_joint_state_vec_;
 
 private:
-  // TODO: implement doTransform for WrenchStamped
   template<typename MsgType>
-//   using MsgType = geometry_msgs::msg::PoseStamped;
-  void transform_message_to_control_frame(const MsgType & message_in, MsgType & message_out)
+  controller_interface::return_type
+  transform_message_to_control_frame(const MsgType & message_in, MsgType & message_out)
   {
     if (control_frame_ != message_in.header.frame_id) {
-      geometry_msgs::msg::TransformStamped transform = tf_buffer_->lookupTransform(
-        control_frame_, message_in.header.frame_id, tf2::TimePointZero);
-      tf2::doTransform(message_in, message_out, transform);
+      try {
+        geometry_msgs::msg::TransformStamped transform = tf_buffer_->lookupTransform(
+          control_frame_, message_in.header.frame_id, tf2::TimePointZero);
+        tf2::doTransform(message_in, message_out, transform);
+      } catch (tf2::TransformException e) {
+        // TODO(destogl): Use RCLCPP_ERROR_THROTTLE
+        RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed between '" + control_frame_ + "' and '" + message_in.header.frame_id + "'.");
+        return controller_interface::return_type::ERROR;
+      }
     } else {
       message_out = message_in;
     }
+    return controller_interface::return_type::OK;
   }
 
-//   using MsgType2 = geometry_msgs::msg::WrenchStamped;
-//   void transform_message_to_control_frame(const MsgType2 & message_in, MsgType2 & message_out)
-//   {
-//     if (control_frame_ != message_in.header.frame_id) {
-//       geometry_msgs::msg::TransformStamped transform = tf_buffer_->lookupTransform(
-//         control_frame_, message_in.header.frame_id, tf2::TimePointZero);
-//
-//       geometry_msgs::msg::Vector3Stamped vec_in;
-//       geometry_msgs::msg::Vector3Stamped vec_out;
-//
-//       vec_in.vector = message_in.wrench.force;
-//       vec_in.header = message_in.header;
-//       tf2::doTransform(vec_in, vec_out, transform);
-//       message_out.wrench.force = vec_out.vector;
-//
-//       vec_in.vector = message_in.wrench.torque;
-//       tf2::doTransform(vec_in, vec_out, transform);
-//       message_out.wrench.torque = vec_out.vector;
-//     } else {
-//       message_out = message_in;
-//     }
-//   }
+  void
+  direct_transform(const geometry_msgs::msg::Pose & input_pose, const tf2::Transform & transform, geometry_msgs::msg::Pose & output_pose)
+  {
+    // use TF2 data types for easy math
+    tf2::Transform input_pose_tf, output_pose_tf;
+
+    tf2::fromMsg(input_pose, input_pose_tf);
+    output_pose_tf = input_pose_tf * transform;
+    tf2::toMsg(output_pose_tf, output_pose);
+  }
+
+  void
+  ik_tip_to_endeffector_frame(const geometry_msgs::msg::Pose & base_to_ik_tip, geometry_msgs::msg::Pose & base_to_toollink)
+  {
+    direct_transform(base_to_ik_tip, ik_tip_to_endeffector_frame_tf_, base_to_toollink);
+  }
+
+  void
+  endeffector_to_ik_tip_frame(const geometry_msgs::msg::Pose & base_to_toollink, geometry_msgs::msg::Pose & base_to_ik_tip)
+  {
+    direct_transform(base_to_toollink, endeffector_frame_to_ik_tip_tf_, base_to_ik_tip);
+  }
+
 };
 
 }  // namespace admittance_controller
