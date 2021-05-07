@@ -151,6 +151,7 @@ protected:
       controller_->get_node()->set_parameter({"command_interfaces", command_interface_types_});
       controller_->get_node()->set_parameter({"state_interfaces", state_interface_types_});
       controller_->get_node()->set_parameter({"ft_sensor_name", ft_sensor_name_});
+      controller_->get_node()->set_parameter({"use_joint_commands_as_input", use_joint_commands_as_input_});
 
       controller_->get_node()->set_parameter({"IK.base", ik_base_frame_});
       controller_->get_node()->set_parameter({"IK.tip", ik_tip_frame_});
@@ -237,27 +238,40 @@ protected:
     static tf2_ros::TransformBroadcaster br(test_broadcaster_node_);
     geometry_msgs::msg::TransformStamped transform_stamped;
 
-    transform_stamped.header.stamp = test_broadcaster_node_.now();
-    transform_stamped.header.frame_id = control_frame_;
-    transform_stamped.transform.translation.x = 0;
-    transform_stamped.transform.translation.y = 0;
-    transform_stamped.transform.translation.z = 1;
+    transform_stamped.header.stamp = test_broadcaster_node_->now();
+    transform_stamped.header.frame_id = fixed_world_frame_;
+    transform_stamped.transform.translation.x = 1.3;
+    transform_stamped.transform.translation.y = 0.5;
+    transform_stamped.transform.translation.z = 0.5;
     transform_stamped.transform.rotation.x = 0;
     transform_stamped.transform.rotation.y = 0;
     transform_stamped.transform.rotation.z = 0;
     transform_stamped.transform.rotation.w = 1;
 
-    transform_stamped.child_frame_id = sensor_frame_;
-    br.sendTransform(transform_stamped);
-
-    transform_stamped.child_frame_id = endeffector_frame_;
-    br.sendTransform(transform_stamped);
-
     transform_stamped.child_frame_id = ik_base_frame_;
     br.sendTransform(transform_stamped);
 
+    transform_stamped.child_frame_id = ik_tip_frame_;
+    br.sendTransform(transform_stamped);
+
+    transform_stamped.header.frame_id = ik_tip_frame_;
+    transform_stamped.transform.translation.x = 0;
+    transform_stamped.transform.translation.y = 0;
     transform_stamped.transform.translation.z = 0;
-    transform_stamped.child_frame_id = fixed_world_frame_;
+    transform_stamped.transform.rotation.x = 0;
+    transform_stamped.transform.rotation.y = 0;
+    transform_stamped.transform.rotation.z = 0;
+    transform_stamped.transform.rotation.w = 1;
+
+    transform_stamped.child_frame_id = control_frame_;
+    br.sendTransform(transform_stamped);
+
+    transform_stamped.transform.translation.z = 0.05;
+    transform_stamped.child_frame_id = sensor_frame_;
+    br.sendTransform(transform_stamped);
+
+    transform_stamped.transform.translation.z = 0.2;
+    transform_stamped.child_frame_id = endeffector_frame_;
     br.sendTransform(transform_stamped);
   }
 
@@ -268,7 +282,7 @@ protected:
     {
     };
     auto subscription =
-    test_subscription_node_.create_subscription<ControllerStateMsg>(
+    test_subscription_node_->create_subscription<ControllerStateMsg>(
       "/test_admittance_controller/state", 10, subs_callback);
 
     // call update to publish the test value
@@ -332,11 +346,13 @@ protected:
   const std::vector<std::string> command_interface_types_ = {"position"};
   const std::vector<std::string> state_interface_types_ = {"position"};
   const std::string ft_sensor_name_ = "ft_sensor_name";
+  // TODO: We also need tests with false - there are many combinations here. It will be fun!
+  const bool use_joint_commands_as_input_ = true;
 
-  const std::string ik_base_frame_ = "IK_base";
-  const std::string ik_tip_frame_ = "IK.tip";
-  const std::string ik_group_name_ = "IK.group_name";
-  const std::string robot_description_ = ros2_control_test_assets::6d_robot_urdf;
+  const std::string ik_base_frame_ = "base_link";
+  const std::string ik_tip_frame_ = "tool0";
+  const std::string ik_group_name_ = "kuka_kr6";
+  const std::string robot_description_ = ros2_control_test_assets::valid_6d_robot_urdf;
 
   const std::string control_frame_ = "control_frame";
   const std::string endeffector_frame_ = "endeffector_frame";

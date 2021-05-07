@@ -100,6 +100,7 @@ if(BUILD_TESTING)
     control_msgs
     controller_interface
     hardware_interface
+    ros2_control_test_assets
   )
 endif()
 

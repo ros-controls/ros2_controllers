@@ -36,6 +36,8 @@
 #include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_buffer.h"
 #include "realtime_tools/realtime_publisher.h"
+// TODO(destogl): this is only temporary to work with servo. It should be either trajectory_msgs/msg/JointTrajectoryPoint or std_msgs/msg/Float64MultiArray
+#include "trajectory_msgs/msg/joint_trajectory.hpp"
 
 namespace admittance_controller
 {
@@ -73,6 +75,7 @@ protected:
   std::vector<std::string> command_interface_types_;
   std::vector<std::string> state_interface_types_;
   std::string ft_sensor_name_;
+  bool use_joint_commands_as_input_;
 
   // Internal variables
   std::unique_ptr<semantic_components::ForceTorqueSensor> force_torque_sensor_;
@@ -84,16 +87,20 @@ protected:
   // Command subscribers and Controller State publisher
   using ControllerCommandForceMsg = geometry_msgs::msg::WrenchStamped;
   using ControllerCommandPoseMsg = geometry_msgs::msg::PoseStamped;
+  using ControllerCommandJointMsg = trajectory_msgs::msg::JointTrajectory;
 
   rclcpp::Subscription<ControllerCommandForceMsg>::SharedPtr
   input_force_command_subscriber_ = nullptr;
   rclcpp::Subscription<ControllerCommandPoseMsg>::SharedPtr
   input_pose_command_subscriber_ = nullptr;
+  rclcpp::Subscription<ControllerCommandJointMsg>::SharedPtr input_joint_command_subscriber_ = nullptr;
 
   realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerCommandForceMsg>>
   input_force_command_;
   realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerCommandPoseMsg>>
   input_pose_command_;
+  realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerCommandJointMsg>>
+  input_joint_command_;
 
   using ControllerStateMsg = control_msgs::msg::AdmittanceControllerState;
   using ControllerStatePublisher = realtime_tools::RealtimePublisher<ControllerStateMsg>;
