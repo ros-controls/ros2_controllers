@@ -156,7 +156,7 @@ controller_interface::return_type AdmittanceRule::configure(rclcpp::Node::Shared
   relative_desired_joint_state_vec_.reserve(6);
 
   // Initialize IK
-  ik_ = std::make_shared<IncrementalIKCalculator>(node, ik_group_name_);
+  ik_ = std::make_shared<IncrementalKinematics>(node, ik_group_name_);
 
   return controller_interface::return_type::OK;
 }
