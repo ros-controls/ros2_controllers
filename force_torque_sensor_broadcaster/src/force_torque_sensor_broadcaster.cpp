@@ -133,7 +133,7 @@ ForceTorqueSensorBroadcaster::state_interface_configuration() const
   controller_interface::InterfaceConfiguration state_interfaces_config;
   state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
 
-  state_interfaces_config.names = force_torque_sensor_->get_state_interface_types();
+  state_interfaces_config.names = force_torque_sensor_->get_state_interface_names();
 
   return state_interfaces_config;
 }
