@@ -323,7 +323,6 @@ TEST_F(JointStateBroadcasterTest, ExtraJointStatePublishTest)
   all_joint_names.insert(all_joint_names.end(), extra_joint_names.begin(), extra_joint_names.end());
   const size_t NUM_JOINTS = all_joint_names.size();
   const std::vector<std::string> IF_NAMES = {HW_IF_POSITION, HW_IF_VELOCITY, HW_IF_EFFORT};
-  const size_t NUM_IFS = IF_NAMES.size();
 
   // joint state initialized
   ASSERT_THAT(state_broadcaster_->joint_state_msg_.name, ElementsAreArray(all_joint_names));
