@@ -181,7 +181,7 @@ controller_interface::return_type AdmittanceRule::reset()
     tf2::fromMsg(transform, tf2_transform);
     ik_tip_to_endeffector_frame_tf_ = tf2_transform;
     endeffector_frame_to_ik_tip_tf_ = tf2_transform.inverse();
-  } catch (tf2::TransformException & e) {
+  } catch (const tf2::TransformException & e) {
     // TODO(destogl): Use RCLCPP_ERROR_THROTTLE
     RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed between '" + ik_tip_frame_ + "' and '" + endeffector_frame_ + "'.");
     return controller_interface::return_type::ERROR;
@@ -255,7 +255,7 @@ controller_interface::return_type AdmittanceRule::update(
   geometry_msgs::msg::TransformStamped transform;
   try {
     transform = tf_buffer_->lookupTransform(ik_base_frame_, ik_tip_frame_, tf2::TimePointZero);
-  } catch (tf2::TransformException & e) {
+  } catch (const tf2::TransformException & e) {
     // TODO(destogl): Use RCLCPP_ERROR_THROTTLE
     RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed between '" + ik_base_frame_ + "' and '" + ik_tip_frame_ + "'.");
     return controller_interface::return_type::ERROR;
@@ -296,7 +296,7 @@ controller_interface::return_type AdmittanceRule::update(
   geometry_msgs::msg::TransformStamped transform_ik_base_tip;
   try {
     transform_ik_base_tip = tf_buffer_->lookupTransform(ik_base_frame_, ik_tip_frame_, tf2::TimePointZero);
-  } catch (tf2::TransformException & e) {
+  } catch (const tf2::TransformException & e) {
     // TODO(destogl): Use RCLCPP_ERROR_THROTTLE
     RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed between '" + ik_base_frame_ + "' and '" + ik_tip_frame_ + "'.");
     return controller_interface::return_type::ERROR;
@@ -356,9 +356,6 @@ controller_interface::return_type AdmittanceRule::get_controller_state(
   state_message.measured_force_endeffector_frame = measured_force_control_frame_;
   state_message.desired_pose = desired_pose_;
   state_message.relative_desired_pose = relative_desired_pose_;
-//   state_message.desired_joint_states = desired_pose_;
-//   state_message.actual_joint_states.positi = desired_pose_;
-  //   state_message.error_joint_state = desired_pose_;
 
   return controller_interface::return_type::OK;
 }
@@ -373,7 +370,7 @@ controller_interface::return_type AdmittanceRule::get_current_pose_of_endeffecto
   try {
     auto transform = tf_buffer_->lookupTransform(ik_base_frame_, endeffector_frame_, tf2::TimePointZero);
     tf2::doTransform(origin, pose, transform);
-  } catch (tf2::TransformException & e) {
+  } catch (const tf2::TransformException & e) {
     // TODO(destogl): Use RCLCPP_ERROR_THROTTLE
     RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed between '" + ik_base_frame_ + "' and '" + endeffector_frame_ + "'.");
     return controller_interface::return_type::ERROR;
