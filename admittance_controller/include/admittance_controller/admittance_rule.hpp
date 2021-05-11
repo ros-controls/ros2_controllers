@@ -106,6 +106,7 @@ protected:
   tf2::Transform endeffector_frame_to_ik_tip_tf_;
 
   geometry_msgs::msg::WrenchStamped measured_force_;
+  geometry_msgs::msg::WrenchStamped measured_force_filtered_;
   geometry_msgs::msg::WrenchStamped measured_force_control_frame_;
 
   geometry_msgs::msg::PoseStamped origin_ik_tip_;

@@ -14,6 +14,7 @@
 //
 /// \author: Denis Stogl
 
+#include <chrono>
 #include <functional>
 #include <limits>
 #include <string>
@@ -299,6 +300,21 @@ CallbackReturn AdmittanceController::on_configure(
   // Configure AdmittanceRule
   admittance_->configure(get_node());
 
+  // wait for TF to become available. Important to do there because it is blocking, i.e. non real-time safe code
+  std::shared_ptr<ControllerCommandPoseMsg> msg_pose = std::make_shared<ControllerCommandPoseMsg>();
+  // TODO(destogl): This will break tests because there is no TF inside them
+  auto iterations = 0u;
+  const auto max_iterations = 20u;
+  while (admittance_->get_current_pose_of_endeffector_frame(*msg_pose) != controller_interface::return_type::OK)
+  {
+    RCLCPP_INFO_THROTTLE(get_node()->get_logger(), *(get_node()->get_clock()), 5000, "Waiting for base to endeffector transform becomes available.");
+    rclcpp::sleep_for(std::chrono::seconds(1));
+    if (++iterations > max_iterations) {
+      RCLCPP_ERROR(get_node()->get_logger(), "After waiting for TF for %zu seconds, still no transformation available. Admittance Controller can not be configured.", max_iterations);
+      return CallbackReturn::ERROR;
+    }
+  }
+
   RCLCPP_INFO_STREAM(get_node()->get_logger(), "configure successful");
   return CallbackReturn::SUCCESS;
 }
@@ -483,8 +499,8 @@ controller_interface::return_type AdmittanceController::update()
   state_publisher_->msg_.input_pose_command = **input_pose_cmd;
   state_publisher_->msg_.input_joint_command = **input_joint_cmd;
 
-  state_publisher_->msg_.actual_joint_states.positions.assign(current_joint_states.begin(), current_joint_states.end());
   state_publisher_->msg_.desired_joint_states.positions.assign(desired_joint_states.begin(), desired_joint_states.end());
+  state_publisher_->msg_.actual_joint_states.positions.assign(current_joint_states.begin(), current_joint_states.end());
   for (auto index = 0u; index < num_joints; ++index) {
     state_publisher_->msg_.error_joint_state.positions[index] = angles::shortest_angular_distance(
       current_joint_states[index], desired_joint_states[index]);
