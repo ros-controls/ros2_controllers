@@ -34,11 +34,13 @@
 #include "rclcpp/parameter_value.hpp"
 #include "rclcpp/utilities.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
+#include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "tf2_ros/transform_broadcaster.h"
 
 // TODO(anyone): replace the state and command message types
 using ControllerCommandForceMsg = geometry_msgs::msg::WrenchStamped;
 using ControllerCommandPoseMsg = geometry_msgs::msg::PoseStamped;
+using ControllerCommandJointMsg = trajectory_msgs::msg::JointTrajectory;
 using ControllerStateMsg = control_msgs::msg::AdmittanceControllerState;
 
 namespace
@@ -131,6 +133,8 @@ public:
       "/test_admittance_controller/force_commands", rclcpp::SystemDefaultsQoS());
     pose_command_publisher_ = command_publisher_node_->create_publisher<ControllerCommandPoseMsg>(
       "/test_admittance_controller/pose_commands", rclcpp::SystemDefaultsQoS());
+    joint_command_publisher_ = command_publisher_node_->create_publisher<ControllerCommandJointMsg>(
+      "/test_admittance_controller/joint_commands", rclcpp::SystemDefaultsQoS());
 
     test_subscription_node_ = std::make_shared<rclcpp::Node>("test_subscription_node");
     test_broadcaster_node_ = std::make_shared<rclcpp::Node>("test_broadcaster_node");
@@ -326,6 +330,7 @@ protected:
 //     if (controller_->admittance_->unified_mode_) {
 //       wait_for_topic(force_command_publisher_->get_topic_name());
 //     }
+
     wait_for_topic(pose_command_publisher_->get_topic_name());
 
     ControllerCommandForceMsg force_msg;
@@ -352,6 +357,21 @@ protected:
 //       force_command_publisher_->publish(force_msg);
 //     }
     pose_command_publisher_->publish(pose_msg);
+
+    wait_for_topic(joint_command_publisher_->get_topic_name());
+
+    ControllerCommandJointMsg joint_msg;
+    joint_msg.joint_names = joint_names_;
+    trajectory_msgs::msg::JointTrajectoryPoint trajectory_point;
+    auto num_joints = joint_names_.size();
+    trajectory_point.positions.reserve(num_joints);
+    trajectory_point.velocities.resize(num_joints, 0.0);
+    for (auto index = 0u; index < num_joints; ++index) {
+      trajectory_point.positions.emplace_back(joint_state_values_[index]);
+    }
+    joint_msg.points.emplace_back(trajectory_point);
+
+    joint_command_publisher_->publish(joint_msg);
   }
 
 protected:
@@ -392,6 +412,7 @@ protected:
   rclcpp::Node::SharedPtr command_publisher_node_;
   rclcpp::Publisher<ControllerCommandForceMsg>::SharedPtr force_command_publisher_;
   rclcpp::Publisher<ControllerCommandPoseMsg>::SharedPtr pose_command_publisher_;
+  rclcpp::Publisher<ControllerCommandJointMsg>::SharedPtr joint_command_publisher_;
   rclcpp::Node::SharedPtr test_subscription_node_;
   rclcpp::Node::SharedPtr test_broadcaster_node_;
 };

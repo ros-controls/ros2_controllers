@@ -205,7 +205,7 @@ controller_interface::return_type AdmittanceRule::update(
   // get current states, and transform those into controller frame
   measured_force_.wrench = measured_force;
   // TODO(destogl): Add gravity compensation of measured forces
-  measured_force_control_frame_ = measured_force_;
+  measured_force_filtered_ = measured_force_;
   transform_message_to_control_frame(measured_force_, measured_force_control_frame_);
 
   get_current_pose_of_endeffector_frame(current_pose_);
@@ -352,6 +352,7 @@ controller_interface::return_type AdmittanceRule::get_controller_state(
   //   state_message.input_force_control_frame = target_force_control_frame_;
   state_message.input_pose_control_frame = target_pose_control_frame_;
   state_message.measured_force = measured_force_;
+  state_message.measured_force = measured_force_filtered_;
   state_message.measured_force_control_frame = measured_force_control_frame_;
   state_message.measured_force_endeffector_frame = measured_force_control_frame_;
   state_message.desired_pose = desired_pose_;
