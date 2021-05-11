@@ -1,5 +1,4 @@
-// Copyright (c) 2021, salfkjsadf
-// Copyright (c) 2021, Stogl Robotics Consulting UG (haftungsbeschränkt) (template)
+// Copyright (c) 2021, Stogl Robotics Consulting UG (haftungsbeschränkt)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,6 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
+/// \author: Denis Stogl
 
 #ifndef TEST_ADMITTANCE_CONTROLLER_HPP_
 #define TEST_ADMITTANCE_CONTROLLER_HPP_
@@ -42,18 +43,20 @@ using ControllerStateMsg = control_msgs::msg::AdmittanceControllerState;
 
 namespace
 {
-  constexpr auto NODE_SUCCESS =
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
-  constexpr auto NODE_ERROR =
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
+const double COMMON_THRESHOLD = 0.001;
 
-  rclcpp::WaitResultKind wait_for(rclcpp::SubscriptionBase::SharedPtr subscription)
-  {
-    rclcpp::WaitSet wait_set;
-    wait_set.add_subscription(subscription);
-    const auto timeout = std::chrono::seconds(10);
-    return wait_set.wait(timeout).kind();
-  }
+constexpr auto NODE_SUCCESS =
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+constexpr auto NODE_ERROR =
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
+
+rclcpp::WaitResultKind wait_for(rclcpp::SubscriptionBase::SharedPtr subscription)
+{
+  rclcpp::WaitSet wait_set;
+  wait_set.add_subscription(subscription);
+  const auto timeout = std::chrono::seconds(10);
+  return wait_set.wait(timeout).kind();
+}
 
 }  // namespace
 
@@ -66,6 +69,7 @@ class TestableAdmittanceController
   FRIEND_TEST(AdmittanceControllerTest, all_parameters_set_configure_success);
   FRIEND_TEST(AdmittanceControllerTest, check_interfaces);
   FRIEND_TEST(AdmittanceControllerTest, activate_success);
+  FRIEND_TEST(AdmittanceControllerTest, receive_message_and_publish_updated_status);
 
 public:
   CallbackReturn on_configure(const rclcpp_lifecycle::State & previous_state) override
@@ -74,7 +78,9 @@ public:
     admittance_controller::AdmittanceController::on_configure(previous_state);
     // Only if on_configure is successful create subscription
     if (ret == CallbackReturn::SUCCESS) {
-      input_force_command_subscriber_wait_set_.add_subscription(input_force_command_subscriber_);
+      if (admittance_->unified_mode_) {
+        input_force_command_subscriber_wait_set_.add_subscription(input_force_command_subscriber_);
+      }
       input_pose_command_subscriber_wait_set_.add_subscription(input_pose_command_subscriber_);
     }
     return ret;
@@ -91,9 +97,11 @@ public:
     rclcpp::Executor & executor,
     const std::chrono::milliseconds & timeout = std::chrono::milliseconds {500})
   {
-    bool success =
-    input_force_command_subscriber_wait_set_.wait(timeout).kind() == rclcpp::WaitResultKind::Ready &&
-    input_pose_command_subscriber_wait_set_.wait(timeout).kind() == rclcpp::WaitResultKind::Ready;
+    bool success = input_pose_command_subscriber_wait_set_.wait(timeout).kind() == rclcpp::WaitResultKind::Ready;
+
+    if (admittance_->unified_mode_) {
+      success = success && input_force_command_subscriber_wait_set_.wait(timeout).kind() == rclcpp::WaitResultKind::Ready;
+    }
     if (success) {
       executor.spin_some();
     }
@@ -139,7 +147,7 @@ public:
   }
 
 protected:
-  void SetUpController(bool set_parameters = true)
+  void SetUpController(bool set_parameters = true, bool use_joint_commands_as_input = false)
   {
     const auto result = controller_->init("test_admittance_controller");
     ASSERT_EQ(result, controller_interface::return_type::OK);
@@ -147,11 +155,12 @@ protected:
     assign_interfaces();
 
     if (set_parameters) {
+      controller_->get_node()->set_parameter({"use_joint_commands_as_input", use_joint_commands_as_input});
+
       controller_->get_node()->set_parameter({"joints", joint_names_});
       controller_->get_node()->set_parameter({"command_interfaces", command_interface_types_});
       controller_->get_node()->set_parameter({"state_interfaces", state_interface_types_});
       controller_->get_node()->set_parameter({"ft_sensor_name", ft_sensor_name_});
-      controller_->get_node()->set_parameter({"use_joint_commands_as_input", use_joint_commands_as_input_});
 
       controller_->get_node()->set_parameter({"IK.base", ik_base_frame_});
       controller_->get_node()->set_parameter({"IK.tip", ik_tip_frame_});
@@ -159,6 +168,7 @@ protected:
 //       controller_->get_node()->set_parameter({"IK.plugin", ik_group_name_});
       controller_->get_node()->set_parameter({"IK.group_name", ik_group_name_});
       controller_->get_node()->set_parameter({"robot_description", robot_description_});
+      controller_->get_node()->set_parameter({"robot_description_semantic", robot_description_semantic_});
 
       controller_->get_node()->set_parameter({"control_frame", control_frame_});
       controller_->get_node()->set_parameter({"endeffector_frame", endeffector_frame_});
@@ -312,7 +322,10 @@ protected:
       }
     };
 
-    wait_for_topic(force_command_publisher_->get_topic_name());
+    // TODO(destogl): comment in when using unified mode
+//     if (controller_->admittance_->unified_mode_) {
+//       wait_for_topic(force_command_publisher_->get_topic_name());
+//     }
     wait_for_topic(pose_command_publisher_->get_topic_name());
 
     ControllerCommandForceMsg force_msg;
@@ -334,7 +347,10 @@ protected:
     pose_msg.pose.orientation.z = 0;
     pose_msg.pose.orientation.w = 1;
 
-    force_command_publisher_->publish(force_msg);
+    // TODO(destogl): comment in when using unified mode
+//     if (controller_->admittance_->unified_mode_) {
+//       force_command_publisher_->publish(force_msg);
+//     }
     pose_command_publisher_->publish(pose_msg);
   }
 
@@ -346,13 +362,12 @@ protected:
   const std::vector<std::string> command_interface_types_ = {"position"};
   const std::vector<std::string> state_interface_types_ = {"position"};
   const std::string ft_sensor_name_ = "ft_sensor_name";
-  // TODO: We also need tests with false - there are many combinations here. It will be fun!
-  const bool use_joint_commands_as_input_ = true;
 
   const std::string ik_base_frame_ = "base_link";
   const std::string ik_tip_frame_ = "tool0";
-  const std::string ik_group_name_ = "kuka_kr6";
+  const std::string ik_group_name_ = "arm";
   const std::string robot_description_ = ros2_control_test_assets::valid_6d_robot_urdf;
+  const std::string robot_description_semantic_ = ros2_control_test_assets::valid_6d_robot_srdf;
 
   const std::string control_frame_ = "control_frame";
   const std::string endeffector_frame_ = "endeffector_frame";
