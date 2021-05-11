@@ -379,6 +379,7 @@ CallbackReturn AdmittanceController::on_activate(const rclcpp_lifecycle::State &
   std::shared_ptr<ControllerCommandForceMsg> msg_force = std::make_shared<ControllerCommandForceMsg>();
   msg_force->header.frame_id = admittance_->control_frame_;
   input_force_command_.writeFromNonRT(msg_force);
+
   std::shared_ptr<ControllerCommandJointMsg> msg_joint = std::make_shared<ControllerCommandJointMsg>();
   msg_joint->joint_names = joint_names_;
   msg_joint->points.reserve(1);

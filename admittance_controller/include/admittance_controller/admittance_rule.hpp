@@ -143,7 +143,7 @@ private:
         geometry_msgs::msg::TransformStamped transform = tf_buffer_->lookupTransform(
           control_frame_, message_in.header.frame_id, tf2::TimePointZero);
         tf2::doTransform(message_in, message_out, transform);
-      } catch (tf2::TransformException e) {
+      } catch (const tf2::TransformException & e) {
         // TODO(destogl): Use RCLCPP_ERROR_THROTTLE
         RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed between '" + control_frame_ + "' and '" + message_in.header.frame_id + "'.");
         return controller_interface::return_type::ERROR;
