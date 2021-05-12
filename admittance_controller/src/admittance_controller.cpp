@@ -453,21 +453,9 @@ controller_interface::return_type AdmittanceController::update()
 
   for (auto index = 0u; index < num_joints; ++index) {
     current_joint_states[index] = joint_state_interface_[0][index].get().get_value();
-    // TODO(andyz): the values here are not correct
-    std::cout << current_joint_states[index] << std::endl;
   }
 
   auto ft_values = force_torque_sensor_->get_values_as_message();
-  // Wait for valid data
-  if (isnan(ft_values.force.x) || isnan(ft_values.torque.x))
-  {
-    ft_values.force.x = 0;
-    ft_values.force.y = 0;
-    ft_values.force.z = 0;
-    ft_values.torque.x = 0;
-    ft_values.torque.y = 0;
-    ft_values.torque.z = 0;
-  }
 
   auto duration_since_last_call = get_node()->now() - previous_time_;
 
@@ -497,15 +485,15 @@ controller_interface::return_type AdmittanceController::update()
   previous_time_ = get_node()->now();
 
   // Write new joint angles to the robot
-  for (auto index = 0u; index < num_joints; ++index) {
-    if (has_position_command_interface_) {
-      joint_command_interface_[0][index].get().set_value(desired_joint_states[index]);
-    }
-    if (has_velocity_command_interface_) {
-      joint_command_interface_[1][index].get().set_value(angles::shortest_angular_distance(
-        current_joint_states[index], desired_joint_states[index]) / duration_since_last_call.seconds());
-    }
-  }
+//   for (auto index = 0u; index < num_joints; ++index) {
+//     if (has_position_command_interface_) {
+//       joint_command_interface_[0][index].get().set_value(desired_joint_states[index]);
+//     }
+//     if (has_velocity_command_interface_) {
+//       joint_command_interface_[1][index].get().set_value(angles::shortest_angular_distance(
+//         current_joint_states[index], desired_joint_states[index]) / duration_since_last_call.seconds());
+//     }
+//   }
 
   // Publish controller state
   state_publisher_->lock();

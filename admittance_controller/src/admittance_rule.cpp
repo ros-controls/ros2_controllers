@@ -196,7 +196,7 @@ controller_interface::return_type AdmittanceRule::update(
   const geometry_msgs::msg::Wrench & measured_force,
   const geometry_msgs::msg::PoseStamped & target_pose,
   const rclcpp::Duration & period,
-  std::array<double, 6> desired_joint_states
+  std::array<double, 6> & desired_joint_states
 )
 {
   // Convert inputs to control frame
@@ -220,10 +220,15 @@ controller_interface::return_type AdmittanceRule::update(
   get_rpy_difference_between_two_quaternions(target_pose_control_frame_.pose.orientation,
                                              current_pose_control_frame_.pose.orientation, angles_error_);
 
+  // If at least one measured force is nan set all to 0
+  if (std::find_if(measured_force_control_frame_arr_.begin(), measured_force_control_frame_arr_.end(), [](const auto value){ return std::isnan(value); }) != measured_force_control_frame_arr_.end()) {
+    measured_force_control_frame_arr_.fill(0.0);
+  }
+
   // Compute admittance control law: F = M*a + D*v + K*(x_d - x)
   for (auto i = 0u; i < 6; ++i) {
     if (selected_axes_[i]) {
-      double pose_error = target_pose_control_frame_arr_[i] - measured_force_control_frame_arr_[i];
+      double pose_error = target_pose_control_frame_arr_[i] - current_pose_control_frame_arr_[i];
       if (i >= 3) {
         pose_error = angles_error_[i-3];
       }
@@ -266,6 +271,7 @@ controller_interface::return_type AdmittanceRule::update(
     relative_desired_pose_vec, transform, relative_desired_joint_state_vec_)){
       for (auto i = 0u; i < desired_joint_states.size(); ++i) {
         desired_joint_states[i] = current_joint_states[i] + relative_desired_joint_state_vec_[i];
+        RCLCPP_INFO(rclcpp::get_logger("AR"), "joint states [%zu]: %f + %f = %f", i, current_joint_states[i], relative_desired_joint_state_vec_[i], desired_joint_states[i]);
       }
     } else {
       RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "Conversion of Cartesian deltas to joint deltas failed. Sending current joint values to the robot.");
@@ -288,7 +294,7 @@ controller_interface::return_type AdmittanceRule::update(
   const geometry_msgs::msg::Wrench & measured_force,
   const std::array<double, 6> & target_joint_deltas,
   const rclcpp::Duration & period,
-  std::array<double, 6> desired_joint_states)
+  std::array<double, 6> & desired_joint_states)
 {
   std::vector<double> target_joint_deltas_vec(target_joint_deltas.begin(), target_joint_deltas.end());
   std::vector<double> target_ik_tip_deltas_vec(6);
@@ -336,7 +342,7 @@ controller_interface::return_type AdmittanceRule::update(
   const geometry_msgs::msg::PoseStamped & /*target_pose*/,
   const geometry_msgs::msg::WrenchStamped & /*target_force*/,
   const rclcpp::Duration & /*period*/,
-  std::array<double, 6> /*desired_joint_states*/
+  std::array<double, 6> & /*desired_joint_states*/
 )
 {
   // TODO(destogl): Implement this update
@@ -354,7 +360,17 @@ controller_interface::return_type AdmittanceRule::get_controller_state(
   state_message.measured_force = measured_force_;
   state_message.measured_force = measured_force_filtered_;
   state_message.measured_force_control_frame = measured_force_control_frame_;
-  state_message.measured_force_endeffector_frame = measured_force_control_frame_;
+
+  try {
+    auto transform = tf_buffer_->lookupTransform(control_frame_, endeffector_frame_, tf2::TimePointZero);
+    tf2::doTransform(measured_force_control_frame_, measured_force_endeffector_frame_, transform);
+  } catch (const tf2::TransformException & e) {
+    // TODO(destogl): Use RCLCPP_ERROR_THROTTLE
+    RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed between '" + control_frame_ + "' and '" + endeffector_frame_ + "'.");
+  }
+
+  state_message.measured_force_endeffector_frame = measured_force_endeffector_frame_;
+
   state_message.desired_pose = desired_pose_;
   state_message.relative_desired_pose = relative_desired_pose_;
 
