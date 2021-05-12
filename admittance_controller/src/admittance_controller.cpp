@@ -453,6 +453,8 @@ controller_interface::return_type AdmittanceController::update()
 
   for (auto index = 0u; index < num_joints; ++index) {
     current_joint_states[index] = joint_state_interface_[0][index].get().get_value();
+    // TODO(andyz): the values here are not correct
+    std::cout << current_joint_states[index] << std::endl;
   }
 
   auto ft_values = force_torque_sensor_->get_values_as_message();
