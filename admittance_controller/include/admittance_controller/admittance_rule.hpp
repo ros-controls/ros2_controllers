@@ -168,13 +168,13 @@ private:
   }
 
   void
-  ik_tip_to_endeffector_frame(const geometry_msgs::msg::Pose & base_to_ik_tip, geometry_msgs::msg::Pose & base_to_toollink)
+  transform_ik_tip_to_endeffector_frame(const geometry_msgs::msg::Pose & base_to_ik_tip, geometry_msgs::msg::Pose & base_to_toollink)
   {
     direct_transform(base_to_ik_tip, ik_tip_to_endeffector_frame_tf_, base_to_toollink);
   }
 
   void
-  endeffector_to_ik_tip_frame(const geometry_msgs::msg::Pose & base_to_toollink, geometry_msgs::msg::Pose & base_to_ik_tip)
+  transform_endeffector_to_ik_tip_frame(const geometry_msgs::msg::Pose & base_to_toollink, geometry_msgs::msg::Pose & base_to_ik_tip)
   {
     direct_transform(base_to_toollink, endeffector_frame_to_ik_tip_tf_, base_to_ik_tip);
   }

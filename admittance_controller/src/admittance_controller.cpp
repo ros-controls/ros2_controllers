@@ -485,15 +485,15 @@ controller_interface::return_type AdmittanceController::update()
   previous_time_ = get_node()->now();
 
   // Write new joint angles to the robot
-//   for (auto index = 0u; index < num_joints; ++index) {
-//     if (has_position_command_interface_) {
-//       joint_command_interface_[0][index].get().set_value(desired_joint_states[index]);
-//     }
-//     if (has_velocity_command_interface_) {
-//       joint_command_interface_[1][index].get().set_value(angles::shortest_angular_distance(
-//         current_joint_states[index], desired_joint_states[index]) / duration_since_last_call.seconds());
-//     }
-//   }
+  for (auto index = 0u; index < num_joints; ++index) {
+    if (has_position_command_interface_) {
+      joint_command_interface_[0][index].get().set_value(desired_joint_states[index]);
+    }
+    if (has_velocity_command_interface_) {
+      joint_command_interface_[1][index].get().set_value(angles::shortest_angular_distance(
+        current_joint_states[index], desired_joint_states[index]) / duration_since_last_call.seconds());
+    }
+  }
 
   // Publish controller state
   state_publisher_->lock();
