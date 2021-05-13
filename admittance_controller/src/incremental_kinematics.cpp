@@ -62,6 +62,7 @@ bool IncrementalKinematics::convertCartesianDeltasToJointDeltas(std::vector<doub
     twist_transform.block(3,3,3,3) = affine_transform.rotation();
 
     delta_x = twist_transform * delta_x;
+    RCLCPP_ERROR_STREAM(node_->get_logger(), delta_x[0] << "  " << delta_x[1] << "  " << delta_x[2] << "  " << delta_x[3]);
   }
   catch (tf2::TransformException & ex)
   {
@@ -71,10 +72,14 @@ bool IncrementalKinematics::convertCartesianDeltasToJointDeltas(std::vector<doub
 
   // Multiply with the pseudoinverse to get delta_theta
   jacobian_ = kinematic_state_->getJacobian(joint_model_group_);
-  svd_ = Eigen::JacobiSVD<Eigen::MatrixXd>(jacobian_, Eigen::ComputeThinU | Eigen::ComputeThinV);
-  matrix_s_ = svd_.singularValues().asDiagonal();
-  pseudo_inverse_ = svd_.matrixV() * matrix_s_.inverse() * svd_.matrixU().transpose();
+  // TODO(andyz): the SVD method here is buggy. It should be more stable near singularities.
+  // svd_ = Eigen::JacobiSVD<Eigen::MatrixXd>(jacobian_, Eigen::ComputeThinU | Eigen::ComputeThinV);
+  // matrix_s_ = svd_.singularValues().asDiagonal();
+  // pseudo_inverse_ = svd_.matrixV() * matrix_s_.inverse() * svd_.matrixU().transpose();
+  pseudo_inverse_ = jacobian_.transpose() * (jacobian_ * jacobian_.transpose()).inverse();
   Eigen::VectorXd  delta_theta = pseudo_inverse_ * delta_x;
+
+  RCLCPP_ERROR_STREAM(node_->get_logger(), pseudo_inverse_.matrix());
 
   std::vector<double> delta_theta_v(&delta_theta[0], delta_theta.data() + delta_theta.cols() * delta_theta.rows());
   delta_theta_vec = delta_theta_v;
