@@ -30,17 +30,6 @@
 
 namespace {  // Utility namespace
 
-void get_rpy_difference_between_two_quaternions(const geometry_msgs::msg::Quaternion quat1,
-                                                const geometry_msgs::msg::Quaternion quat2, std::array<double, 3> vector_out)
-{
-  tf2::Quaternion q1(quat1.x, quat1.y, quat1.z, quat1.w);
-  tf2::Quaternion q2(quat2.x, quat2.y, quat2.z, quat2.w);
-
-  // q1 - q2
-  const tf2::Quaternion q_diff = q1 * q2.inverse();
-  tf2::Matrix3x3(q_diff).getRPY(vector_out[0], vector_out[1], vector_out[2]);
-}
-
 void convert_message_to_array(const geometry_msgs::msg::Pose & msg, std::array<double, 6> & vector_out)
 {
   vector_out[0] = msg.position.x;
@@ -215,23 +204,18 @@ controller_interface::return_type AdmittanceRule::update(
   convert_message_to_array(target_pose_control_frame_, target_pose_control_frame_arr_);
   convert_message_to_array(current_pose_control_frame_, current_pose_control_frame_arr_);
 
-  // Use angle difference calculated with quaternions to avoid confusion with angles
-  // TODO(destogl): Is this really needed? This introduces tracking error, so not working as expected
-  get_rpy_difference_between_two_quaternions(                                        current_pose_control_frame_.pose.orientation, target_pose_control_frame_.pose.orientation, angles_error_);
-
   // If at least one measured force is nan set all to 0
   if (std::find_if(measured_force_control_frame_arr_.begin(), measured_force_control_frame_arr_.end(), [](const auto value){ return std::isnan(value); }) != measured_force_control_frame_arr_.end()) {
     measured_force_control_frame_arr_.fill(0.0);
   }
 
-  // Compute admittance control law: F = M*a + D*v + K*(x_d - x)
+  // Compute admittance control law: F = M*a + D*v + K*(x - x_d)
   for (auto i = 0u; i < 6; ++i) {
     if (selected_axes_[i]) {
       double pose_error = current_pose_control_frame_arr_[i] - target_pose_control_frame_arr_[i];
       if (i >= 3) {
         pose_error = angles::normalize_angle(current_pose_control_frame_arr_[i]) -
                      angles::normalize_angle(target_pose_control_frame_arr_[i]);
-//         pose_error = angles_error_[i-3];
       }
 
       // TODO(destogl): check if velocity is measured from hardware
