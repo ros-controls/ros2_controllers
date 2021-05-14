@@ -209,7 +209,7 @@ controller_interface::return_type AdmittanceRule::update(
     measured_force_control_frame_arr_.fill(0.0);
   }
 
-  // Compute admittance control law: F = M*a + D*v + K*(x - x_d)
+  // Compute admittance control law: F = M*a + D*v + S*(x - x_d)
   for (auto i = 0u; i < 6; ++i) {
     if (selected_axes_[i]) {
       double pose_error = current_pose_control_frame_arr_[i] - target_pose_control_frame_arr_[i];
