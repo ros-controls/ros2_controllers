@@ -77,6 +77,9 @@ protected:
   std::string ft_sensor_name_;
   bool use_joint_commands_as_input_;
 
+  bool hardware_state_has_offset_;
+  trajectory_msgs::msg::JointTrajectoryPoint current_state_when_offset_;
+
   // Internal variables
   std::unique_ptr<semantic_components::ForceTorqueSensor> force_torque_sensor_;
 
