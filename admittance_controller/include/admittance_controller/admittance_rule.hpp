@@ -43,14 +43,14 @@ public:
     const geometry_msgs::msg::Wrench & measured_force,
     const geometry_msgs::msg::PoseStamped & target_pose,
     const rclcpp::Duration & period,
-    std::array<double, 6> & desired_joint_states);
+    trajectory_msgs::msg::JointTrajectoryPoint & desired_joint_states);
 
   controller_interface::return_type update(
     const std::array<double, 6> & current_joint_state,
     const geometry_msgs::msg::Wrench & measured_force,
     const std::array<double, 6> & target_joint_deltas,
     const rclcpp::Duration & period,
-    std::array<double, 6> & desired_joint_states);
+    trajectory_msgs::msg::JointTrajectoryPoint & desired_joint_states);
 
   controller_interface::return_type update(
     const std::array<double, 6> & current_joint_state,
@@ -58,7 +58,7 @@ public:
     const geometry_msgs::msg::PoseStamped & target_pose,
     const geometry_msgs::msg::WrenchStamped & target_force,
     const rclcpp::Duration & period,
-    std::array<double, 6> & desired_joint_states);
+    trajectory_msgs::msg::JointTrajectoryPoint & desired_joint_states);
 
 //   controller_interface::return_type update(
 //     const geometry_msgs::msg::WrenchStamped & measured_force,
