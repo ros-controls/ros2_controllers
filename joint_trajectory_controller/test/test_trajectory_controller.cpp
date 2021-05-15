@@ -849,13 +849,10 @@ INSTANTIATE_TEST_CASE_P(
 
 TEST_F(TrajectoryControllerTest, incorrect_initialization_using_interface_parameters) {
   auto set_parameter_and_check_result = [&]() {
+      EXPECT_EQ(traj_controller_->get_current_state().id(), State::PRIMARY_STATE_UNCONFIGURED);
       SetParameters();  // This call is replacing the way parameters are set via launch
-      std::cout << "before configure" << std::endl;
       traj_controller_->configure();
-      std::cout << "aster configure" << std::endl;
-      auto state = traj_controller_->get_current_state();
-      std::cout << "aster get state" << std::endl;
-      EXPECT_EQ(state.id(), State::PRIMARY_STATE_FINALIZED);
+      EXPECT_EQ(traj_controller_->get_current_state().id(), State::PRIMARY_STATE_UNCONFIGURED);
     };
 
   SetUpTrajectoryController(false);
