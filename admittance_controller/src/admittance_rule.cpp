@@ -137,8 +137,6 @@ controller_interface::return_type AdmittanceRule::configure(rclcpp::Node::Shared
   // Initialize variables used in the update loop
   measured_force_.header.frame_id = sensor_frame_;
 
-  current_pose_.header.frame_id = endeffector_frame_;
-
   relative_desired_pose_.header.frame_id = control_frame_;
 
   relative_desired_joint_state_vec_.reserve(6);
@@ -161,6 +159,8 @@ controller_interface::return_type AdmittanceRule::reset()
   desired_velocity_arr_.fill(0.0);
   desired_velocity_previous_arr_.fill(0.0);
   desired_acceleration_previous_arr_.fill(0.0);
+
+  get_current_pose_of_endeffector_frame(current_pose_);
 
   // Initialize ik_tip and tool_frame transformations - those are fixed transformations
   tf2::Stamped<tf2::Transform> tf2_transform;
@@ -196,8 +196,14 @@ controller_interface::return_type AdmittanceRule::update(
   measured_force_filtered_ = measured_force_;
   transform_message_to_control_frame(measured_force_filtered_, measured_force_control_frame_);
 
-  get_current_pose_of_endeffector_frame(current_pose_);
-  transform_message_to_control_frame(current_pose_, current_pose_control_frame_);
+  if (!hardware_state_has_offset_) {
+    get_current_pose_of_endeffector_frame(current_pose_);
+    transform_message_to_control_frame(current_pose_, current_pose_control_frame_);
+  }
+  // TODO(destogl): This can actually work properly if we consider the offset...
+//   else {
+//     current_pose_control_frame_ = desired_pose_;
+//   }
 
   // Convert all data to arrays for simpler calculation
   convert_message_to_array(measured_force_control_frame_, measured_force_control_frame_arr_);

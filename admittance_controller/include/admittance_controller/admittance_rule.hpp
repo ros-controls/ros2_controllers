@@ -75,6 +75,8 @@ public:
   controller_interface::return_type get_current_pose_of_endeffector_frame(geometry_msgs::msg::PoseStamped & pose);
 
 public:
+  bool hardware_state_has_offset_ = false;
+
   // IK related parameters
   std::string ik_base_frame_;
   std::string ik_tip_frame_;

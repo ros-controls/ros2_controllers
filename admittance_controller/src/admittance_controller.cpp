@@ -48,6 +48,7 @@ controller_interface::return_type AdmittanceController::init(const std::string &
     get_node()->declare_parameter<std::vector<std::string>>("state_interfaces", {});
     get_node()->declare_parameter<std::string>("ft_sensor_name", "");
     get_node()->declare_parameter<bool>("use_joint_commands_as_input", false);
+    get_node()->declare_parameter<bool>("hardware_state_has_offset", false);
 
     get_node()->declare_parameter<std::string>("IK.base", "");
     get_node()->declare_parameter<std::string>("IK.tip", "");
@@ -150,6 +151,7 @@ CallbackReturn AdmittanceController::on_configure(
     get_string_array_param_and_error_if_empty(state_interface_types_, "state_interfaces") ||
     get_string_param_and_error_if_empty(ft_sensor_name_, "ft_sensor_name") ||
     get_bool_param_and_error_if_empty(use_joint_commands_as_input_, "use_joint_commands_as_input") ||
+    get_bool_param_and_error_if_empty(admittance_->hardware_state_has_offset_, "hardware_state_has_offset") ||
     get_string_param_and_error_if_empty(admittance_->ik_base_frame_, "IK.base") ||
     get_string_param_and_error_if_empty(admittance_->ik_tip_frame_, "IK.tip") ||
     get_string_param_and_error_if_empty(admittance_->ik_group_name_, "IK.group_name") ||
@@ -316,6 +318,9 @@ CallbackReturn AdmittanceController::on_configure(
     }
   }
 
+  current_state_when_offset_.positions.reserve(joint_names_.size());
+  current_state_when_offset_.velocities.reserve(joint_names_.size());
+
   RCLCPP_INFO_STREAM(get_node()->get_logger(), "configure successful");
   return CallbackReturn::SUCCESS;
 }
@@ -392,6 +397,10 @@ CallbackReturn AdmittanceController::on_activate(const rclcpp_lifecycle::State &
   admittance_->reset();
   previous_time_ = get_node()->now();
 
+  for (auto index = 0u; index < joint_names_.size(); ++index) {
+      current_state_when_offset_.positions[index] = joint_state_interface_[0][index].get().get_value();
+  }
+
   // Set initial command values - initialize all to simplify update
   std::shared_ptr<ControllerCommandForceMsg> msg_force = std::make_shared<ControllerCommandForceMsg>();
   msg_force->header.frame_id = admittance_->control_frame_;
@@ -451,8 +460,13 @@ controller_interface::return_type AdmittanceController::update()
   std::array<double, 6> current_joint_states;
   std::array<double, 6> desired_joint_states;
 
+
   for (auto index = 0u; index < num_joints; ++index) {
-    current_joint_states[index] = joint_state_interface_[0][index].get().get_value();
+    if (!admittance_->hardware_state_has_offset_) {
+      current_joint_states[index] = joint_state_interface_[0][index].get().get_value();
+    } else {
+      current_joint_states[index] = current_state_when_offset_.positions[index];
+    }
   }
 
   auto ft_values = force_torque_sensor_->get_values_as_message();
@@ -488,10 +502,12 @@ controller_interface::return_type AdmittanceController::update()
   for (auto index = 0u; index < num_joints; ++index) {
     if (has_position_command_interface_) {
       joint_command_interface_[0][index].get().set_value(desired_joint_states[index]);
+      current_state_when_offset_.positions[index] = desired_joint_states[index];
     }
     if (has_velocity_command_interface_) {
       joint_command_interface_[1][index].get().set_value(angles::shortest_angular_distance(
         current_joint_states[index], desired_joint_states[index]) / duration_since_last_call.seconds());
+      current_state_when_offset_.velocities[index] = joint_command_interface_[1][index].get().get_value();
     }
   }
 
