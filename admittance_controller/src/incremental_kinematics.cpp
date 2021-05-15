@@ -26,7 +26,7 @@ IncrementalKinematics::IncrementalKinematics(const std::shared_ptr<rclcpp::Node>
   std::unique_ptr<robot_model_loader::RobotModelLoader> model_loader_ptr =
       std::unique_ptr<robot_model_loader::RobotModelLoader>(new robot_model_loader::RobotModelLoader(node_, "robot_description", false /* do not load kinematics plugins */));
   const moveit::core::RobotModelPtr& kinematic_model = model_loader_ptr->getModel();
-  // TODO(andyz): joint_model_group_ is a raw pointer. Is it thread safe?
+  // TODO(andyz): joint_model_group_ is a raw pointer. Is it thread safe? (Denis: there should not be multi-threading here)
   joint_model_group_ = kinematic_model->getJointModelGroup(group_name);
   kinematic_state_ = std::make_shared<moveit::core::RobotState>(kinematic_model);
 
@@ -65,7 +65,7 @@ bool IncrementalKinematics::convertCartesianDeltasToJointDeltas(std::vector<doub
   }
   catch (const tf2::TransformException & ex)
   {
-    RCLCPP_ERROR(node_->get_logger(), "Transformation of wrench failed.");
+    RCLCPP_ERROR(node_->get_logger(), "Transformation of twist failed.");
     return false;
   }
 
@@ -119,7 +119,7 @@ bool IncrementalKinematics::convertJointDeltasToCartesianDeltas(std::vector<doub
   }
   catch (const tf2::TransformException & ex)
   {
-    RCLCPP_ERROR(node_->get_logger(), "Transformation of wrench failed.");
+    RCLCPP_ERROR(node_->get_logger(), "Transformation of twist failed.");
     return false;
   }
 
