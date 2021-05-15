@@ -61,22 +61,22 @@ A yaml file for using it could be:
             - joint4
             - joint5
 
-        command_interfaces:
-          - position
+          command_interfaces:
+            - position
 
-        state_interfaces:
-          - position
-          - velocity
+          state_interfaces:
+            - position
+            - velocity
 
-        state_publish_rate: 50.0 # Defaults to 50
-        action_monitor_rate: 20.0 # Defaults to 20
+          state_publish_rate: 50.0 # Defaults to 50
+          action_monitor_rate: 20.0 # Defaults to 20
 
-        allow_partial_joints_goal: false # Defaults to false
-        hardware_state_has_offset: true
-        deduce_states_from_derivatives: true
-        constraints:
-          stopped_velocity_tolerance: 0.01 # Defaults to 0.01
-          goal_time: 0.0 # Defaults to 0.0 (start immediately)
+          allow_partial_joints_goal: false # Defaults to false
+          hardware_state_has_offset: true
+          deduce_states_from_derivatives: true
+          constraints:
+            stopped_velocity_tolerance: 0.01 # Defaults to 0.01
+            goal_time: 0.0 # Defaults to 0.0 (start immediately)
 
 
 Specialized versions of JointTrajectoryController (TBD in ...)
