@@ -458,7 +458,9 @@ controller_interface::return_type AdmittanceController::update()
   // Position has to always there
   auto num_joints = joint_state_interface_[0].size();
   std::array<double, 6> current_joint_states;
-  std::array<double, 6> desired_joint_deltas;
+  trajectory_msgs::msg::JointTrajectoryPoint desired_joint_states;
+  desired_joint_states.positions.resize(num_joints);
+  desired_joint_states.velocities.resize(num_joints);
 
 
   for (auto index = 0u; index < num_joints; ++index) {
@@ -475,7 +477,7 @@ controller_interface::return_type AdmittanceController::update()
 
   // TODO(destogl): Enable this when unified mode is used
 //   if (admittance_->unified_mode_) {
-  //     admittance_->update(current_joint_states, ft_values, **input_pose_cmd, **input_force_cmd, duration_since_last_call, desired_joint_deltas);
+  //     admittance_->update(current_joint_states, ft_values, **input_pose_cmd, **input_force_cmd, duration_since_last_call, desired_joint_states);
 //   } else {
 
   // TODO(destogl): refactor this into different admittance controllers: 1. Pose input, Joint State input and Unified mode (is there need for switching between unified and non-unified mode?)
@@ -493,9 +495,9 @@ controller_interface::return_type AdmittanceController::update()
         joint_deltas[index] = angles::shortest_angular_distance(current_joint_states[index], (*input_joint_cmd)->points[0].positions[index]);
       }
     }
-    admittance_->update(current_joint_states, ft_values, joint_deltas, duration_since_last_call, desired_joint_deltas);
+    admittance_->update(current_joint_states, ft_values, joint_deltas, duration_since_last_call, desired_joint_states);
   } else {
-    admittance_->update(current_joint_states, ft_values, **input_pose_cmd, duration_since_last_call, desired_joint_deltas);
+    admittance_->update(current_joint_states, ft_values, **input_pose_cmd, duration_since_last_call, desired_joint_states);
   }
 //   }
   previous_time_ = get_node()->now();
@@ -503,15 +505,13 @@ controller_interface::return_type AdmittanceController::update()
   // Write new joint angles to the robot
   for (auto index = 0u; index < num_joints; ++index) {
     if (has_position_command_interface_) {
-      joint_command_interface_[0][index].get().set_value(desired_joint_deltas[index]);
-      current_state_when_offset_.positions[index] = desired_joint_deltas[index];
+      joint_command_interface_[0][index].get().set_value(desired_joint_states.positions[index]);
     }
     if (has_velocity_command_interface_) {
-      joint_command_interface_[1][index].get().set_value(angles::shortest_angular_distance(
-        current_joint_states[index], desired_joint_deltas[index]) / duration_since_last_call.seconds());
-      current_state_when_offset_.velocities[index] = joint_command_interface_[1][index].get().get_value();
+      joint_command_interface_[1][index].get().set_value(desired_joint_states.velocities[index]);
     }
   }
+  current_state_when_offset_ = desired_joint_states;
 
   // Publish controller state
   state_publisher_->lock();
@@ -519,11 +519,11 @@ controller_interface::return_type AdmittanceController::update()
   state_publisher_->msg_.input_pose_command = **input_pose_cmd;
   state_publisher_->msg_.input_joint_command = **input_joint_cmd;
 
-  state_publisher_->msg_.desired_joint_states.positions.assign(desired_joint_deltas.begin(), desired_joint_deltas.end());
+  state_publisher_->msg_.desired_joint_states = desired_joint_states;
   state_publisher_->msg_.actual_joint_states.positions.assign(current_joint_states.begin(), current_joint_states.end());
   for (auto index = 0u; index < num_joints; ++index) {
     state_publisher_->msg_.error_joint_state.positions[index] = angles::shortest_angular_distance(
-      current_joint_states[index], desired_joint_deltas[index]);
+      current_joint_states[index], desired_joint_states.positions[index]);
   }
   admittance_->get_controller_state(state_publisher_->msg_);
   state_publisher_->unlockAndPublish();
