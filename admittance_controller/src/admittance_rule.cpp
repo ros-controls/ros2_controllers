@@ -187,14 +187,10 @@ controller_interface::return_type AdmittanceRule::update(
   std::array<double, 6> & desired_joint_states
 )
 {
+  process_force_measurements(measured_force);
+
   // Convert inputs to control frame
   transform_message_to_control_frame(target_pose, target_pose_control_frame_);
-
-  // get current states, and transform those into controller frame
-  measured_force_.wrench = measured_force;
-  // TODO(destogl): Add gravity compensation of measured forces
-  measured_force_filtered_ = measured_force_;
-  transform_message_to_control_frame(measured_force_filtered_, measured_force_control_frame_);
 
   if (!hardware_state_has_offset_) {
     get_current_pose_of_endeffector_frame(current_pose_);
@@ -206,14 +202,8 @@ controller_interface::return_type AdmittanceRule::update(
 //   }
 
   // Convert all data to arrays for simpler calculation
-  convert_message_to_array(measured_force_control_frame_, measured_force_control_frame_arr_);
   convert_message_to_array(target_pose_control_frame_, target_pose_control_frame_arr_);
   convert_message_to_array(current_pose_control_frame_, current_pose_control_frame_arr_);
-
-  // If at least one measured force is nan set all to 0
-  if (std::find_if(measured_force_control_frame_arr_.begin(), measured_force_control_frame_arr_.end(), [](const auto value){ return std::isnan(value); }) != measured_force_control_frame_arr_.end()) {
-    measured_force_control_frame_arr_.fill(0.0);
-  }
 
   std::array<double, 6> pose_error_vec;
 
@@ -233,7 +223,6 @@ controller_interface::return_type AdmittanceRule::update(
   tf2::doTransform(current_pose_control_frame_, desired_pose_, relative_desired_pose_);
   transform_ik_tip_to_endeffector_frame(desired_pose_.pose, desired_pose_.pose);
 
-  // Use Jacobian-based IK
   // Calculate desired Cartesian displacement of the robot
   // TODO: replace this with FK in the long term
   geometry_msgs::msg::TransformStamped transform;
@@ -245,6 +234,7 @@ controller_interface::return_type AdmittanceRule::update(
     return controller_interface::return_type::ERROR;
   }
 
+  // Use Jacobian-based IK
   std::vector<double> relative_desired_pose_vec(relative_desired_pose_arr_.begin(), relative_desired_pose_arr_.end());
   if (ik_->convertCartesianDeltasToJointDeltas(
     relative_desired_pose_vec, transform, relative_desired_joint_state_vec_)){
@@ -358,7 +348,43 @@ controller_interface::return_type AdmittanceRule::get_controller_state(
   return controller_interface::return_type::OK;
 }
 
-controller_interface::return_type AdmittanceRule::calculate_admittance_rule(
+controller_interface::return_type AdmittanceRule::get_current_pose_of_endeffector_frame(geometry_msgs::msg::PoseStamped & pose)
+{
+  // Get tool frame position - in the future use: IKSolver->getPositionFK(...)
+  static geometry_msgs::msg::PoseStamped origin;
+  origin.header.frame_id = endeffector_frame_;
+  origin.pose.orientation.w = 1;
+
+  try {
+    auto transform = tf_buffer_->lookupTransform(ik_base_frame_, endeffector_frame_, tf2::TimePointZero);
+    tf2::doTransform(origin, pose, transform);
+  } catch (const tf2::TransformException & e) {
+    // TODO(destogl): Use RCLCPP_ERROR_THROTTLE
+    RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed between '" + ik_base_frame_ + "' and '" + endeffector_frame_ + "'.");
+    return controller_interface::return_type::ERROR;
+  }
+  return controller_interface::return_type::OK;
+}
+
+void AdmittanceRule::process_force_measurements(
+  const geometry_msgs::msg::Wrench & measured_forces
+)
+{
+  // get current states, and transform those into controller frame
+  measured_force_.wrench = measured_forces;
+  // TODO(destogl): Add gravity compensation of measured forces
+  measured_force_filtered_ = measured_force_;
+  transform_message_to_control_frame(measured_force_filtered_, measured_force_control_frame_);
+
+  convert_message_to_array(measured_force_control_frame_, measured_force_control_frame_arr_);
+
+  // If at least one measured force is nan set all to 0
+  if (std::find_if(measured_force_control_frame_arr_.begin(), measured_force_control_frame_arr_.end(), [](const auto value){ return std::isnan(value); }) != measured_force_control_frame_arr_.end()) {
+    measured_force_control_frame_arr_.fill(0.0);
+  }
+}
+
+void AdmittanceRule::calculate_admittance_rule(
   const std::array<double, 6> & measured_force,
   const std::array<double, 6> & pose_error,
   const rclcpp::Duration & period,
@@ -383,26 +409,10 @@ controller_interface::return_type AdmittanceRule::calculate_admittance_rule(
       //       RCLCPP_INFO(rclcpp::get_logger("AR"), "Pose error, acceleration, desired velocity, relative desired pose [%zu]: (%f - D*%f - S*%f = %f), %f, %f", i, measured_force_control_frame_arr_[i], desired_velocity_arr_[i], pose_error , acceleration, desired_velocity_arr_[i], relative_desired_pose_arr_[i]);
     }
   }
-
-  return controller_interface::return_type::OK;
 }
 
-controller_interface::return_type AdmittanceRule::get_current_pose_of_endeffector_frame(geometry_msgs::msg::PoseStamped & pose)
-{
-  // Get tool frame position - in the future use: IKSolver->getPositionFK(...)
-  static geometry_msgs::msg::PoseStamped origin;
-  origin.header.frame_id = endeffector_frame_;
-  origin.pose.orientation.w = 1;
 
-  try {
-    auto transform = tf_buffer_->lookupTransform(ik_base_frame_, endeffector_frame_, tf2::TimePointZero);
-    tf2::doTransform(origin, pose, transform);
-  } catch (const tf2::TransformException & e) {
-    // TODO(destogl): Use RCLCPP_ERROR_THROTTLE
-    RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed between '" + ik_base_frame_ + "' and '" + endeffector_frame_ + "'.");
-    return controller_interface::return_type::ERROR;
-  }
-  return controller_interface::return_type::OK;
-}
+
+
 
 }  // namespace admittance_controller
