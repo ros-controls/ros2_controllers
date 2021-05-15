@@ -55,6 +55,10 @@ INSTANTIATE_TEST_CASE_P(
 //       std::string("use_joint_commands_as_input"),
 //       rclcpp::ParameterValue(false)
 //     ),
+//     std::make_tuple(
+//       std::string("hardware_state_has_offset"),
+//       rclcpp::ParameterValue(false)
+//     ),
     std::make_tuple(
       std::string("IK.base"),
       rclcpp::ParameterValue("")
