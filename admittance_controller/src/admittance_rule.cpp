@@ -200,7 +200,7 @@ controller_interface::return_type AdmittanceRule::update(
     get_current_pose_of_endeffector_frame(current_pose_);
     transform_message_to_control_frame(current_pose_, current_pose_control_frame_);
   }
-  // TODO(destogl): This can actually work properly if we consider the offset...
+  // TODO(destogl): Can this work properly, when considering offset between states and commands?
 //   else {
 //     current_pose_control_frame_ = desired_pose_;
 //   }
@@ -215,30 +215,18 @@ controller_interface::return_type AdmittanceRule::update(
     measured_force_control_frame_arr_.fill(0.0);
   }
 
-  // Compute admittance control law: F = M*a + D*v + S*(x - x_d)
+  std::array<double, 6> pose_error_vec;
+
   for (auto i = 0u; i < 6; ++i) {
-    if (selected_axes_[i]) {
-      double pose_error = current_pose_control_frame_arr_[i] - target_pose_control_frame_arr_[i];
-      if (i >= 3) {
-        pose_error = angles::normalize_angle(current_pose_control_frame_arr_[i]) -
-                     angles::normalize_angle(target_pose_control_frame_arr_[i]);
-      }
-
-      // TODO(destogl): check if velocity is measured from hardware
-      const double acceleration = 1 / mass_[i] *
-      (measured_force_control_frame_arr_[i] - damping_[i] * desired_velocity_arr_[i] -
-      stiffness_[i] * pose_error);
-
-      desired_velocity_arr_[i] += (desired_acceleration_previous_arr_[i] + acceleration) * 0.5 * period.seconds();
-
-      relative_desired_pose_arr_[i] = (desired_velocity_previous_arr_[i] + desired_velocity_arr_[i]) * 0.5 * period.seconds();
-
-      desired_acceleration_previous_arr_[i] = acceleration;
-      desired_velocity_previous_arr_[i] = desired_velocity_arr_[i];
-
-//       RCLCPP_INFO(rclcpp::get_logger("AR"), "Pose error, acceleration, desired velocity, relative desired pose [%zu]: (%f - D*%f - S*%f = %f), %f, %f", i, measured_force_control_frame_arr_[i], desired_velocity_arr_[i], pose_error , acceleration, desired_velocity_arr_[i], relative_desired_pose_arr_[i]);
+    pose_error_vec[i] = current_pose_control_frame_arr_[i] - target_pose_control_frame_arr_[i];
+    if (i >= 3) {
+      pose_error_vec[i] = angles::normalize_angle(current_pose_control_frame_arr_[i]) -
+      angles::normalize_angle(target_pose_control_frame_arr_[i]);
     }
   }
+
+  calculate_admittance_rule(measured_force_control_frame_arr_, pose_error_vec, period,
+                            relative_desired_pose_arr_);
 
   // Do clean conversion to the goal pose using transform and not messing with Euler angles
   convert_array_to_message(relative_desired_pose_arr_, relative_desired_pose_);
@@ -366,6 +354,35 @@ controller_interface::return_type AdmittanceRule::get_controller_state(
 
   state_message.desired_pose = desired_pose_;
   state_message.relative_desired_pose = relative_desired_pose_;
+
+  return controller_interface::return_type::OK;
+}
+
+controller_interface::return_type AdmittanceRule::calculate_admittance_rule(
+  const std::array<double, 6> & measured_force,
+  const std::array<double, 6> & pose_error,
+  const rclcpp::Duration & period,
+  std::array<double, 6> & desired_relative_pose
+)
+{
+  // Compute admittance control law: F = M*a + D*v + S*(x - x_d)
+  for (auto i = 0u; i < 6; ++i) {
+    if (selected_axes_[i]) {
+      // TODO(destogl): check if velocity is measured from hardware
+      const double acceleration = 1 / mass_[i] *
+      (measured_force[i] - damping_[i] * desired_velocity_arr_[i] -
+      stiffness_[i] * pose_error[i]);
+
+      desired_velocity_arr_[i] += (desired_acceleration_previous_arr_[i] + acceleration) * 0.5 * period.seconds();
+
+      desired_relative_pose[i] = (desired_velocity_previous_arr_[i] + desired_velocity_arr_[i]) * 0.5 * period.seconds();
+
+      desired_acceleration_previous_arr_[i] = acceleration;
+      desired_velocity_previous_arr_[i] = desired_velocity_arr_[i];
+
+      //       RCLCPP_INFO(rclcpp::get_logger("AR"), "Pose error, acceleration, desired velocity, relative desired pose [%zu]: (%f - D*%f - S*%f = %f), %f, %f", i, measured_force_control_frame_arr_[i], desired_velocity_arr_[i], pose_error , acceleration, desired_velocity_arr_[i], relative_desired_pose_arr_[i]);
+    }
+  }
 
   return controller_interface::return_type::OK;
 }
