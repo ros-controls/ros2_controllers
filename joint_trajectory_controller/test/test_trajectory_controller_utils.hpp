@@ -53,8 +53,7 @@ public:
     auto ret =
       joint_trajectory_controller::JointTrajectoryController::on_configure(previous_state);
     // this class can still be useful without the wait set
-    if(joint_command_subscriber_)
-    {
+    if (joint_command_subscriber_) {
       joint_cmd_sub_wait_set_.add_subscription(joint_command_subscriber_);
     }
     return ret;
