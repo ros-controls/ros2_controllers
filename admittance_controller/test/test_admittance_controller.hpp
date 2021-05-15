@@ -165,6 +165,7 @@ protected:
       controller_->get_node()->set_parameter({"command_interfaces", command_interface_types_});
       controller_->get_node()->set_parameter({"state_interfaces", state_interface_types_});
       controller_->get_node()->set_parameter({"ft_sensor_name", ft_sensor_name_});
+      controller_->get_node()->set_parameter({"hardware_state_has_offset", hardware_state_has_offset_});
 
       controller_->get_node()->set_parameter({"IK.base", ik_base_frame_});
       controller_->get_node()->set_parameter({"IK.tip", ik_tip_frame_});
@@ -382,6 +383,8 @@ protected:
   const std::vector<std::string> command_interface_types_ = {"position"};
   const std::vector<std::string> state_interface_types_ = {"position"};
   const std::string ft_sensor_name_ = "ft_sensor_name";
+
+  bool hardware_state_has_offset_ = false;
 
   const std::string ik_base_frame_ = "base_link";
   const std::string ik_tip_frame_ = "tool0";
