@@ -180,11 +180,11 @@ controller_interface::return_type AdmittanceRule::reset()
 
 // Update with target Cartesian pose - the main update method!
 controller_interface::return_type AdmittanceRule::update(
-  const std::array<double, 6> & current_joint_states,
+  const std::array<double, 6> & current_joint_state,
   const geometry_msgs::msg::Wrench & measured_force,
   const geometry_msgs::msg::PoseStamped & target_pose,
   const rclcpp::Duration & period,
-  std::array<double, 6> & desired_joint_states
+  trajectory_msgs::msg::JointTrajectoryPoint & desired_joint_state
 )
 {
   process_force_measurements(measured_force);
@@ -238,13 +238,15 @@ controller_interface::return_type AdmittanceRule::update(
   std::vector<double> relative_desired_pose_vec(relative_desired_pose_arr_.begin(), relative_desired_pose_arr_.end());
   if (ik_->convertCartesianDeltasToJointDeltas(
     relative_desired_pose_vec, transform, relative_desired_joint_state_vec_)){
-      for (auto i = 0u; i < desired_joint_states.size(); ++i) {
-        desired_joint_states[i] = current_joint_states[i] + relative_desired_joint_state_vec_[i];
-//         RCLCPP_INFO(rclcpp::get_logger("AR"), "joint states [%zu]: %f + %f = %f", i, current_joint_states[i], relative_desired_joint_state_vec_[i], desired_joint_states[i]);
+    for (auto i = 0u; i < desired_joint_state.positions.size(); ++i) {
+      desired_joint_state.positions[i] = current_joint_state[i] + relative_desired_joint_state_vec_[i];
+      desired_joint_state.velocities[i] = relative_desired_joint_state_vec_[i] / period.seconds();
+//       RCLCPP_INFO(rclcpp::get_logger("AR"), "joint states [%zu]: %f + %f = %f", i, current_joint_state[i], relative_desired_joint_state_vec_[i], desired_joint_state.positions[i]);
       }
     } else {
       RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "Conversion of Cartesian deltas to joint deltas failed. Sending current joint values to the robot.");
-      desired_joint_states = current_joint_states;
+      desired_joint_state.positions.assign(current_joint_state.begin(), current_joint_state.end());
+      std::fill(desired_joint_state.velocities.begin(), desired_joint_state.velocities.end(), 0.0);
       return controller_interface::return_type::ERROR;
     }
 
@@ -263,7 +265,7 @@ controller_interface::return_type AdmittanceRule::update(
   const geometry_msgs::msg::Wrench & measured_force,
   const std::array<double, 6> & target_joint_deltas,
   const rclcpp::Duration & period,
-  std::array<double, 6> & desired_joint_states)
+  trajectory_msgs::msg::JointTrajectoryPoint & desired_joint_state)
 {
   std::vector<double> target_joint_deltas_vec(target_joint_deltas.begin(), target_joint_deltas.end());
   std::vector<double> target_ik_tip_deltas_vec(6);
@@ -280,7 +282,8 @@ controller_interface::return_type AdmittanceRule::update(
   if (ik_->convertJointDeltasToCartesianDeltas(target_joint_deltas_vec, transform_ik_base_tip, target_ik_tip_deltas_vec)) {
   } else {
     RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "Conversion of joint deltas to Cartesian deltas failed. Sending current joint values to the robot.");
-    desired_joint_states = current_joint_state;
+    desired_joint_state.positions.assign(current_joint_state.begin(), current_joint_state.end());
+    std::fill(desired_joint_state.velocities.begin(), desired_joint_state.velocities.end(), 0.0);
     return controller_interface::return_type::ERROR;
   }
 
@@ -304,16 +307,16 @@ controller_interface::return_type AdmittanceRule::update(
   transform_ik_tip_to_endeffector_frame(target_ik_tip_pose.pose, target_pose.pose);
   target_pose.header = target_ik_tip_pose.header;
 
-  return update(current_joint_state, measured_force, target_pose, period, desired_joint_states);
+  return update(current_joint_state, measured_force, target_pose, period, desired_joint_state);
 }
 
 controller_interface::return_type AdmittanceRule::update(
-  const std::array<double, 6> & /*current_joint_states*/,
+  const std::array<double, 6> & /*current_joint_state*/,
   const geometry_msgs::msg::Wrench & /*measured_force*/,
   const geometry_msgs::msg::PoseStamped & /*target_pose*/,
   const geometry_msgs::msg::WrenchStamped & /*target_force*/,
   const rclcpp::Duration & /*period*/,
-  std::array<double, 6> & /*desired_joint_states*/
+  trajectory_msgs::msg::JointTrajectoryPoint & /*desired_joint_state*/
 )
 {
   // TODO(destogl): Implement this update
