@@ -316,7 +316,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
   joint_names_ = node_->get_parameter("joints").as_string_array();
 
   if (!reset()) {
-    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
   }
 
   if (joint_names_.empty()) {
@@ -330,7 +330,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
 
   if (command_interface_types_.empty()) {
     RCLCPP_ERROR(logger, "'command_interfaces' parameter is empty.");
-    return CallbackReturn::ERROR;
+    return CallbackReturn::FAILURE;
   }
 
   // Check if only allowed interface types are used and initialize storage to avoid memory
@@ -341,7 +341,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
       allowed_interface_types_.begin(), allowed_interface_types_.end(), interface);
     if (it == allowed_interface_types_.end()) {
       RCLCPP_ERROR(logger, "Command interface type '" + interface + "' not allowed!");
-      return CallbackReturn::ERROR;
+      return CallbackReturn::FAILURE;
     }
   }
 
@@ -359,10 +359,10 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
       use_closed_loop_pid_adapter = true;
       // TODO(anyone): remove the next two lines when implemented
       RCLCPP_ERROR(logger, "using 'effort' command interface alone is not yet implemented yet.");
-      return CallbackReturn::ERROR;
+      return CallbackReturn::FAILURE;
     } else {
       RCLCPP_ERROR(logger, "'effort' command interface has to be used alone.");
-      return CallbackReturn::ERROR;
+      return CallbackReturn::FAILURE;
     }
   }
 
@@ -382,20 +382,20 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
       use_closed_loop_pid_adapter = true;
       // TODO(anyone): remove this when implemented
       RCLCPP_ERROR(logger, "using 'velocity' command interface alone is not yet implemented yet.");
-      return CallbackReturn::ERROR;
+      return CallbackReturn::FAILURE;
       // if velocity interface can be used without position if multiple defined
     } else if (!has_position_command_interface_) {
       RCLCPP_ERROR(
         logger, "'velocity' command interface can be used either alone or 'position' "
         "interface has to be present.");
-      return CallbackReturn::ERROR;
+      return CallbackReturn::FAILURE;
     }
     // invalid: acceleration is defined and no velocity
   } else if (has_acceleration_command_interface_) {
     RCLCPP_ERROR(
       logger, "'acceleration' command interface can only be used if 'velocity' and "
       "'position' interfaces are present");
-    return CallbackReturn::ERROR;
+    return CallbackReturn::FAILURE;
   }
 
   // Read always state interfaces from the parameter because they can be used
@@ -405,12 +405,12 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
 
   if (state_interface_types_.empty()) {
     RCLCPP_ERROR(logger, "'state_interfaces' parameter is empty.");
-    return CallbackReturn::ERROR;
+    return CallbackReturn::FAILURE;
   }
 
   if (contains_interface_type(state_interface_types_, hardware_interface::HW_IF_EFFORT)) {
     RCLCPP_ERROR(logger, "State interface type 'effort' not allowed!");
-    return CallbackReturn::ERROR;
+    return CallbackReturn::FAILURE;
   }
 
   // Check if only allowed interface types are used and initialize storage to avoid memory
@@ -422,7 +422,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
       allowed_interface_types_.begin(), allowed_interface_types_.end(), interface);
     if (it == allowed_interface_types_.end()) {
       RCLCPP_ERROR(logger, "State interface type '" + interface + "' not allowed!");
-      return CallbackReturn::ERROR;
+      return CallbackReturn::FAILURE;
     }
   }
 
@@ -438,13 +438,13 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
       RCLCPP_ERROR(
         logger, "'velocity' state interface cannot be used if 'position' interface "
         "is missing.");
-      return CallbackReturn::ERROR;
+      return CallbackReturn::FAILURE;
     }
   } else if (has_acceleration_state_interface_) {
     RCLCPP_ERROR(
       logger, "'acceleration' state interface cannot be used if 'position' and 'velocity' "
       "interfaces are not present.");
-    return CallbackReturn::ERROR;
+    return CallbackReturn::FAILURE;
   }
 
   auto get_interface_list = [](const std::vector<std::string> & interface_types) {
