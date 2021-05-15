@@ -72,16 +72,6 @@ public:
     control_msgs::msg::AdmittanceControllerState & state_message
   );
 
-  /**
-   * All values are in he controller frame
-   */
-  controller_interface::return_type calculate_admittance_rule(
-    const std::array<double, 6> & measured_force,
-    const std::array<double, 6> & pose_error,
-    const rclcpp::Duration & period,
-    std::array<double, 6> & desired_relative_pose
-  );
-
   controller_interface::return_type get_current_pose_of_endeffector_frame(geometry_msgs::msg::PoseStamped & pose);
 
 public:
@@ -107,6 +97,20 @@ public:
   std::array<double, 6> stiffness_;
 
 protected:
+  void process_force_measurements(
+    const geometry_msgs::msg::Wrench & measured_forces
+  );
+
+  /**
+   * All values are in he controller frame
+   */
+  void calculate_admittance_rule(
+    const std::array<double, 6> & measured_force,
+    const std::array<double, 6> & pose_error,
+    const rclcpp::Duration & period,
+    std::array<double, 6> & desired_relative_pose
+  );
+
   // IK variables
   std::shared_ptr<IncrementalKinematics> ik_;
 
