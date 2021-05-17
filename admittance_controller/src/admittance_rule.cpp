@@ -260,7 +260,7 @@ controller_interface::return_type AdmittanceRule::update(
 {
   std::vector<double> target_joint_deltas_vec(target_joint_deltas.begin(), target_joint_deltas.end());
   std::vector<double> target_ik_tip_deltas_vec(6);
-  // TODO: replace this with FK in the long term
+
   geometry_msgs::msg::TransformStamped transform_ik_base_tip;
   try {
     transform_ik_base_tip = tf_buffer_->lookupTransform(ik_base_frame_, ik_tip_frame_, tf2::TimePointZero);
@@ -270,6 +270,7 @@ controller_interface::return_type AdmittanceRule::update(
     return controller_interface::return_type::ERROR;
   }
 
+  // Get cartesian deltas in the IK tip frame
   if (ik_->convertJointDeltasToCartesianDeltas(target_joint_deltas_vec, transform_ik_base_tip, target_ik_tip_deltas_vec)) {
   } else {
     RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "Conversion of joint deltas to Cartesian deltas failed. Sending current joint values to the robot.");
@@ -282,9 +283,9 @@ controller_interface::return_type AdmittanceRule::update(
   // TODO(andyz): check that Servo does provide deltas in the tip frame
   // target_pose = current_pose + target_ik_tip_deltas_vec
   geometry_msgs::msg::PoseStamped target_pose;
-  target_pose.pose.position.x = transform_ik_base_tip.transform.translation.x;
-  target_pose.pose.position.y = transform_ik_base_tip.transform.translation.y;
-  target_pose.pose.position.z = transform_ik_base_tip.transform.translation.z;
+  target_pose.pose.position.x = 0; //transform_ik_base_tip.transform.translation.x;
+  target_pose.pose.position.y = 0; //transform_ik_base_tip.transform.translation.y;
+  target_pose.pose.position.z = 0; //transform_ik_base_tip.transform.translation.z;
   target_pose.pose.orientation = transform_ik_base_tip.transform.rotation;
   target_pose.pose.position.x += target_ik_tip_deltas_vec.at(0);
   target_pose.pose.position.y += target_ik_tip_deltas_vec.at(1);
