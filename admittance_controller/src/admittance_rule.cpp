@@ -217,7 +217,8 @@ controller_interface::return_type AdmittanceRule::update(
 )
 {
   // Convert inputs to control frame
-  transform_message_to_control_frame(target_pose, target_pose_control_frame_);
+//  transform_message_to_control_frame(target_pose, target_pose_control_frame_);
+  target_pose_control_frame_ = target_pose;
 
   if (!hardware_state_has_offset_) {
     get_current_pose_of_endeffector_frame(current_pose_);
