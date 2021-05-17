@@ -30,7 +30,8 @@
 
 namespace {  // Utility namespace
 
-void convert_message_to_array(const geometry_msgs::msg::Pose & msg, std::array<double, 6> & vector_out)
+template<typename Type>
+void convert_message_to_array(const geometry_msgs::msg::Pose & msg, Type & vector_out)
 {
   vector_out[0] = msg.position.x;
   vector_out[1] = msg.position.y;
@@ -44,14 +45,37 @@ void convert_message_to_array(const geometry_msgs::msg::Pose & msg, std::array<d
   }
 }
 
+template<typename Type>
 void convert_message_to_array(
-  const geometry_msgs::msg::PoseStamped & msg, std::array<double, 6> & vector_out)
+  const geometry_msgs::msg::PoseStamped & msg, Type & vector_out)
 {
   convert_message_to_array(msg.pose, vector_out);
 }
 
+template<typename Type>
+void convert_message_to_array(const geometry_msgs::msg::Transform & msg, Type & vector_out)
+{
+  vector_out[0] = msg.translation.x;
+  vector_out[1] = msg.translation.y;
+  vector_out[2] = msg.translation.z;
+  tf2::Quaternion q;
+  tf2::fromMsg(msg.rotation, q);
+  q.normalize();
+  tf2::Matrix3x3(q).getRPY(vector_out[3], vector_out[4], vector_out[5]);
+  for (auto i = 3u; i < 6; ++i) {
+    vector_out[i] = angles::normalize_angle(vector_out[i]);
+  }
+}
+
+template<typename Type>
+void convert_message_to_array(const geometry_msgs::msg::TransformStamped & msg, Type & vector_out)
+{
+  convert_message_to_array(msg.transform, vector_out);
+}
+
+template<typename Type>
 void convert_message_to_array(
-  const geometry_msgs::msg::Wrench & msg, std::array<double, 6> & vector_out)
+  const geometry_msgs::msg::Wrench & msg, Type & vector_out)
 {
   vector_out[0] = msg.force.x;
   vector_out[1] = msg.force.y;
@@ -61,33 +85,37 @@ void convert_message_to_array(
   vector_out[5] = msg.torque.z;
 }
 
+template<typename Type>
 void convert_message_to_array(
-  const geometry_msgs::msg::WrenchStamped & msg, std::array<double, 6> & vector_out)
+  const geometry_msgs::msg::WrenchStamped & msg, Type & vector_out)
 {
   convert_message_to_array(msg.wrench, vector_out);
 }
 
-// void convert_array_to_message(const std::array<double, 6> & vector, geometry_msgs::msg::Pose & msg_out)
-// {
-//   msg_out.position.x = vector[0];
-//   msg_out.position.y = vector[1];
-//   msg_out.position.z = vector[2];
-//
-//   tf2::Quaternion q;
-//   q.setRPY(vector[3], vector[4], vector[5]);
-//
-//   msg_out.orientation.x = q.x();
-//   msg_out.orientation.y = q.y();
-//   msg_out.orientation.z = q.z();
-//   msg_out.orientation.w = q.w();
-// }
+template<typename Type>
+void convert_array_to_message(const Type & vector, geometry_msgs::msg::Pose & msg_out)
+{
+  msg_out.position.x = vector[0];
+  msg_out.position.y = vector[1];
+  msg_out.position.z = vector[2];
 
-// void convert_array_to_message(const std::array<double, 6> & vector, geometry_msgs::msg::PoseStamped & msg_out)
-// {
-//   convert_array_to_message(vector, msg_out.pose);
-// }
+  tf2::Quaternion q;
+  q.setRPY(vector[3], vector[4], vector[5]);
 
-// void convert_array_to_message(const std::array<double, 6> & vector, geometry_msgs::msg::Wrench & msg_out)
+  msg_out.orientation.x = q.x();
+  msg_out.orientation.y = q.y();
+  msg_out.orientation.z = q.z();
+  msg_out.orientation.w = q.w();
+}
+
+template<typename Type>
+void convert_array_to_message(const Type & vector, geometry_msgs::msg::PoseStamped & msg_out)
+{
+  convert_array_to_message(vector, msg_out.pose);
+}
+
+// template<typename Type>
+// void convert_array_to_message(const Type & vector, geometry_msgs::msg::Wrench & msg_out)
 // {
 //   msg_out.force.x = vector[0];
 //   msg_out.force.y = vector[1];
@@ -97,7 +125,8 @@ void convert_message_to_array(
 //   msg_out.torque.z = vector[5];
 // }
 
-// void convert_array_to_message(const std::array<double, 6> & vector, geometry_msgs::msg::WrenchStamped & msg_out)
+// template<typename Type>
+// void convert_array_to_message(const Type & vector, geometry_msgs::msg::WrenchStamped & msg_out)
 // {
 //   convert_array_to_message(vector, msg_out.wrench);
 // }
@@ -180,15 +209,13 @@ controller_interface::return_type AdmittanceRule::reset()
 
 // Update with target Cartesian pose - the main update method!
 controller_interface::return_type AdmittanceRule::update(
-  const std::array<double, 6> & current_joint_state,
+  const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state,
   const geometry_msgs::msg::Wrench & measured_force,
   const geometry_msgs::msg::PoseStamped & target_pose,
   const rclcpp::Duration & period,
   trajectory_msgs::msg::JointTrajectoryPoint & desired_joint_state
 )
 {
-  process_force_measurements(measured_force);
-
   // Convert inputs to control frame
   transform_message_to_control_frame(target_pose, target_pose_control_frame_);
 
@@ -215,53 +242,17 @@ controller_interface::return_type AdmittanceRule::update(
     }
   }
 
+  process_force_measurements(measured_force);
+
   calculate_admittance_rule(measured_force_control_frame_arr_, pose_error_vec, period,
                             relative_desired_pose_arr_);
 
-  // Do clean conversion to the goal pose using transform and not messing with Euler angles
-  convert_array_to_message(relative_desired_pose_arr_, relative_desired_pose_);
-  tf2::doTransform(current_pose_control_frame_, desired_pose_, relative_desired_pose_);
-  transform_ik_tip_to_endeffector_frame(desired_pose_.pose, desired_pose_.pose);
-
-  // Calculate desired Cartesian displacement of the robot
-  // TODO: replace this with FK in the long term
-  geometry_msgs::msg::TransformStamped transform;
-  try {
-    transform = tf_buffer_->lookupTransform(ik_base_frame_, ik_tip_frame_, tf2::TimePointZero);
-  } catch (const tf2::TransformException & e) {
-    // TODO(destogl): Use RCLCPP_ERROR_THROTTLE
-    RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed between '" + ik_base_frame_ + "' and '" + ik_tip_frame_ + "'.");
-    return controller_interface::return_type::ERROR;
-  }
-
-  // Use Jacobian-based IK
-  std::vector<double> relative_desired_pose_vec(relative_desired_pose_arr_.begin(), relative_desired_pose_arr_.end());
-  if (ik_->convertCartesianDeltasToJointDeltas(
-    relative_desired_pose_vec, transform, relative_desired_joint_state_vec_)){
-    for (auto i = 0u; i < desired_joint_state.positions.size(); ++i) {
-      desired_joint_state.positions[i] = current_joint_state[i] + relative_desired_joint_state_vec_[i];
-      desired_joint_state.velocities[i] = relative_desired_joint_state_vec_[i] / period.seconds();
-//       RCLCPP_INFO(rclcpp::get_logger("AR"), "joint states [%zu]: %f + %f = %f", i, current_joint_state[i], relative_desired_joint_state_vec_[i], desired_joint_state.positions[i]);
-      }
-    } else {
-      RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "Conversion of Cartesian deltas to joint deltas failed. Sending current joint values to the robot.");
-      desired_joint_state.positions.assign(current_joint_state.begin(), current_joint_state.end());
-      std::fill(desired_joint_state.velocities.begin(), desired_joint_state.velocities.end(), 0.0);
-      return controller_interface::return_type::ERROR;
-    }
-
-  // TODO(anyone: enable this when enabling use of IK directly
-  // transform = tf_buffer_->lookupTransform(endeffector_frame_, ik_base_frame_, tf2::TimePointZero);
-  // tf2::doTransform(desired_pose_, ik_input_pose_, transform);
-  // ik_input_pose_.pose = transform_endeffector_to_ik_tip_frame(ik_input_pose_);
-  // std::vector<double> ik_sol = ik_solver_->getPositionIK (  ); ...
-
-  return controller_interface::return_type::OK;
+  return calculate_desired_joint_state(current_joint_state, period, desired_joint_state);
 }
 
 // Update from target joint deltas
 controller_interface::return_type AdmittanceRule::update(
-  const std::array<double, 6> & current_joint_state,
+  const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state,
   const geometry_msgs::msg::Wrench & measured_force,
   const std::array<double, 6> & target_joint_deltas,
   const rclcpp::Duration & period,
@@ -282,7 +273,7 @@ controller_interface::return_type AdmittanceRule::update(
   if (ik_->convertJointDeltasToCartesianDeltas(target_joint_deltas_vec, transform_ik_base_tip, target_ik_tip_deltas_vec)) {
   } else {
     RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "Conversion of joint deltas to Cartesian deltas failed. Sending current joint values to the robot.");
-    desired_joint_state.positions.assign(current_joint_state.begin(), current_joint_state.end());
+    desired_joint_state = current_joint_state;
     std::fill(desired_joint_state.velocities.begin(), desired_joint_state.velocities.end(), 0.0);
     return controller_interface::return_type::ERROR;
   }
@@ -290,28 +281,28 @@ controller_interface::return_type AdmittanceRule::update(
   // TODO(destogl): Use as class variables to avoid memory allocation
   geometry_msgs::msg::PoseStamped current_ik_tip_pose;
   geometry_msgs::msg::TransformStamped current_to_target_ik_pose;
+  current_to_target_ik_pose.header.frame_id = ik_base_frame_;
+  current_to_target_ik_pose.child_frame_id = ik_base_frame_;
   geometry_msgs::msg::PoseStamped target_ik_tip_pose;
-  geometry_msgs::msg::PoseStamped target_pose;
+  geometry_msgs::msg::PoseStamped target_eff_pose;
   static geometry_msgs::msg::PoseStamped origin;
-  origin.header.frame_id = endeffector_frame_;
+  origin.header.frame_id = ik_tip_frame_;
   origin.pose.orientation.w = 1;
 
   // If FK this is not needed
   // TODO(anyone): Can we just use values from transformation instead calling doTransform?
   tf2::doTransform(origin, current_ik_tip_pose, transform_ik_base_tip);
   convert_array_to_message(target_ik_tip_deltas_vec, current_to_target_ik_pose);
-  current_to_target_ik_pose.header.frame_id = ik_base_frame_;
-  current_to_target_ik_pose.child_frame_id = ik_base_frame_;
   tf2::doTransform(current_ik_tip_pose, target_ik_tip_pose, current_to_target_ik_pose);
 
-  transform_ik_tip_to_endeffector_frame(target_ik_tip_pose.pose, target_pose.pose);
-  target_pose.header = target_ik_tip_pose.header;
+  transform_ik_tip_to_endeffector_frame(target_ik_tip_pose.pose, target_eff_pose.pose);
+  target_eff_pose.header = target_ik_tip_pose.header;
 
-  return update(current_joint_state, measured_force, target_pose, period, desired_joint_state);
+  return update(current_joint_state, measured_force, target_eff_pose, period, desired_joint_state);
 }
 
 controller_interface::return_type AdmittanceRule::update(
-  const std::array<double, 6> & /*current_joint_state*/,
+  const trajectory_msgs::msg::JointTrajectoryPoint & /*current_joint_state*/,
   const geometry_msgs::msg::Wrench & /*measured_force*/,
   const geometry_msgs::msg::PoseStamped & /*target_pose*/,
   const geometry_msgs::msg::WrenchStamped & /*target_force*/,
@@ -409,13 +400,56 @@ void AdmittanceRule::calculate_admittance_rule(
       desired_acceleration_previous_arr_[i] = acceleration;
       desired_velocity_previous_arr_[i] = desired_velocity_arr_[i];
 
-      //       RCLCPP_INFO(rclcpp::get_logger("AR"), "Pose error, acceleration, desired velocity, relative desired pose [%zu]: (%f - D*%f - S*%f = %f), %f, %f", i, measured_force_control_frame_arr_[i], desired_velocity_arr_[i], pose_error , acceleration, desired_velocity_arr_[i], relative_desired_pose_arr_[i]);
+//       RCLCPP_INFO(rclcpp::get_logger("AR"), "Pose error, acceleration, desired velocity, relative desired pose [%zu]: (%f - D*%f - S*%f = %f), %f, %f", i, measured_force_control_frame_arr_[i], desired_velocity_arr_[i], pose_error , acceleration, desired_velocity_arr_[i], relative_desired_pose_arr_[i]);
     }
   }
 }
 
+controller_interface::return_type AdmittanceRule::calculate_desired_joint_state(
+  const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state,
+  const rclcpp::Duration & period,
+  trajectory_msgs::msg::JointTrajectoryPoint & desired_joint_state
+)
+{
+  // Do clean conversion to the goal pose using transform and not messing with Euler angles
+  convert_array_to_message(relative_desired_pose_arr_, relative_desired_pose_);
+  tf2::doTransform(current_pose_control_frame_, desired_pose_, relative_desired_pose_);
+  transform_ik_tip_to_endeffector_frame(desired_pose_.pose, desired_pose_.pose);
 
+  // Calculate desired Cartesian displacement of the robot
+  // TODO: replace this with FK in the long term
+  geometry_msgs::msg::TransformStamped transform;
+  try {
+    transform = tf_buffer_->lookupTransform(ik_base_frame_, ik_tip_frame_, tf2::TimePointZero);
+  } catch (const tf2::TransformException & e) {
+    // TODO(destogl): Use RCLCPP_ERROR_THROTTLE
+    RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed between '" + ik_base_frame_ + "' and '" + ik_tip_frame_ + "'.");
+    return controller_interface::return_type::ERROR;
+  }
 
+  // Use Jacobian-based IK
+  std::vector<double> relative_desired_pose_vec(relative_desired_pose_arr_.begin(), relative_desired_pose_arr_.end());
+  if (ik_->convertCartesianDeltasToJointDeltas(
+    relative_desired_pose_vec, transform, relative_desired_joint_state_vec_)){
+    for (auto i = 0u; i < desired_joint_state.positions.size(); ++i) {
+      desired_joint_state.positions[i] = current_joint_state.positions[i] + relative_desired_joint_state_vec_[i];
+      desired_joint_state.velocities[i] = relative_desired_joint_state_vec_[i] / period.seconds();
+      //       RCLCPP_INFO(rclcpp::get_logger("AR"), "joint states [%zu]: %f + %f = %f", i, current_joint_state.positions[i], relative_desired_joint_state_vec_[i], desired_joint_state.positions[i]);
+    }
+    } else {
+      RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "Conversion of Cartesian deltas to joint deltas failed. Sending current joint values to the robot.");
+      desired_joint_state = current_joint_state;
+      std::fill(desired_joint_state.velocities.begin(), desired_joint_state.velocities.end(), 0.0);
+      return controller_interface::return_type::ERROR;
+    }
 
+    // TODO(anyone: enable this when enabling use of IK directly
+    // transform = tf_buffer_->lookupTransform(endeffector_frame_, ik_base_frame_, tf2::TimePointZero);
+    // tf2::doTransform(desired_pose_, ik_input_pose_, transform);
+    // ik_input_pose_.pose = transform_endeffector_to_ik_tip_frame(ik_input_pose_);
+    // std::vector<double> ik_sol = ik_solver_->getPositionIK (  ); ...
+
+    return controller_interface::return_type::OK;
+}
 
 }  // namespace admittance_controller
