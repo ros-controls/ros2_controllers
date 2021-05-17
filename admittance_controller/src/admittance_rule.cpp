@@ -217,7 +217,9 @@ controller_interface::return_type AdmittanceRule::update(
 )
 {
   // Convert inputs to control frame
-  transform_message_to_control_frame(target_pose, target_pose_control_frame_);
+  // TODO(andyz): this causes unexpected rotation
+  //transform_message_to_control_frame(target_pose, target_pose_control_frame_);
+  target_pose_control_frame_ = target_pose;
 
   if (!hardware_state_has_offset_) {
     get_current_pose_of_endeffector_frame(current_pose_);
@@ -247,7 +249,45 @@ controller_interface::return_type AdmittanceRule::update(
   calculate_admittance_rule(measured_force_control_frame_arr_, pose_error_vec, period,
                             relative_desired_pose_arr_);
 
-  return calculate_desired_joint_state(current_joint_state, period, desired_joint_state);
+  // Do clean conversion to the goal pose using transform and not messing with Euler angles
+  convert_array_to_message(relative_desired_pose_arr_, relative_desired_pose_);
+  tf2::doTransform(current_pose_control_frame_, desired_pose_, relative_desired_pose_);
+  transform_ik_tip_to_endeffector_frame(desired_pose_.pose, desired_pose_.pose);
+
+  // Calculate desired Cartesian displacement of the robot
+  // TODO: replace this with FK in the long term
+  geometry_msgs::msg::TransformStamped transform;
+  try {
+    transform = tf_buffer_->lookupTransform(ik_tip_frame_, ik_base_frame_, tf2::TimePointZero);
+  } catch (const tf2::TransformException & e) {
+    // TODO(destogl): Use RCLCPP_ERROR_THROTTLE
+    RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed between '" + ik_base_frame_ + "' and '" + ik_tip_frame_ + "'.");
+    return controller_interface::return_type::ERROR;
+  }
+
+  // Use Jacobian-based IK
+  std::vector<double> relative_desired_pose_vec(relative_desired_pose_arr_.begin(), relative_desired_pose_arr_.end());
+  if (ik_->convertCartesianDeltasToJointDeltas(
+    relative_desired_pose_vec, transform, relative_desired_joint_state_vec_)){
+    for (auto i = 0u; i < desired_joint_state.positions.size(); ++i) {
+      desired_joint_state.positions[i] = current_joint_state.positions[i] + relative_desired_joint_state_vec_[i];
+      desired_joint_state.velocities[i] = relative_desired_joint_state_vec_[i] / period.seconds();
+//       RCLCPP_INFO(rclcpp::get_logger("AR"), "joint states [%zu]: %f + %f = %f", i, current_joint_state[i], relative_desired_joint_state_vec_[i], desired_joint_state.positions[i]);
+      }
+    } else {
+      RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "Conversion of Cartesian deltas to joint deltas failed. Sending current joint values to the robot.");
+      desired_joint_state = current_joint_state;
+      std::fill(desired_joint_state.velocities.begin(), desired_joint_state.velocities.end(), 0.0);
+      return controller_interface::return_type::ERROR;
+    }
+
+  // TODO(anyone: enable this when enabling use of IK directly
+  // transform = tf_buffer_->lookupTransform(endeffector_frame_, ik_base_frame_, tf2::TimePointZero);
+  // tf2::doTransform(desired_pose_, ik_input_pose_, transform);
+  // ik_input_pose_.pose = transform_endeffector_to_ik_tip_frame(ik_input_pose_);
+  // std::vector<double> ik_sol = ik_solver_->getPositionIK (  ); ...
+
+  return controller_interface::return_type::OK;
 }
 
 // Update from target joint deltas
@@ -260,7 +300,7 @@ controller_interface::return_type AdmittanceRule::update(
 {
   std::vector<double> target_joint_deltas_vec(target_joint_deltas.begin(), target_joint_deltas.end());
   std::vector<double> target_ik_tip_deltas_vec(6);
-  // TODO: replace this with FK in the long term
+
   geometry_msgs::msg::TransformStamped transform_ik_base_tip;
   try {
     transform_ik_base_tip = tf_buffer_->lookupTransform(ik_base_frame_, ik_tip_frame_, tf2::TimePointZero);
@@ -270,6 +310,7 @@ controller_interface::return_type AdmittanceRule::update(
     return controller_interface::return_type::ERROR;
   }
 
+  // Get cartesian deltas in the IK tip frame
   if (ik_->convertJointDeltasToCartesianDeltas(target_joint_deltas_vec, transform_ik_base_tip, target_ik_tip_deltas_vec)) {
   } else {
     RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "Conversion of joint deltas to Cartesian deltas failed. Sending current joint values to the robot.");
@@ -278,27 +319,25 @@ controller_interface::return_type AdmittanceRule::update(
     return controller_interface::return_type::ERROR;
   }
 
-  // TODO(destogl): Use as class variables to avoid memory allocation
-  geometry_msgs::msg::PoseStamped current_ik_tip_pose;
-  geometry_msgs::msg::TransformStamped current_to_target_ik_pose;
-  current_to_target_ik_pose.header.frame_id = ik_base_frame_;
-  current_to_target_ik_pose.child_frame_id = ik_base_frame_;
-  geometry_msgs::msg::PoseStamped target_ik_tip_pose;
-  geometry_msgs::msg::PoseStamped target_eff_pose;
-  static geometry_msgs::msg::PoseStamped origin;
-  origin.header.frame_id = ik_tip_frame_;
-  origin.pose.orientation.w = 1;
+  // Get the target pose
+  geometry_msgs::msg::PoseStamped target_pose;
+  target_pose.pose.position.x = 0;
+  target_pose.pose.position.y = 0;
+  target_pose.pose.position.z = 0;
+  target_pose.pose.orientation = transform_ik_base_tip.transform.rotation;
+  target_pose.pose.position.x += target_ik_tip_deltas_vec.at(0);
+  target_pose.pose.position.y += target_ik_tip_deltas_vec.at(1);
+  target_pose.pose.position.z += target_ik_tip_deltas_vec.at(2);
 
-  // If FK this is not needed
-  // TODO(anyone): Can we just use values from transformation instead calling doTransform?
-  tf2::doTransform(origin, current_ik_tip_pose, transform_ik_base_tip);
-  convert_array_to_message(target_ik_tip_deltas_vec, current_to_target_ik_pose);
-  tf2::doTransform(current_ik_tip_pose, target_ik_tip_pose, current_to_target_ik_pose);
+  // TODO(andyz): add orientation
+  target_pose.pose.orientation.w = 1.0;
+  target_pose.pose.orientation.x = 0;
+  target_pose.pose.orientation.y = 0;
+  target_pose.pose.orientation.z = 0;
 
-  transform_ik_tip_to_endeffector_frame(target_ik_tip_pose.pose, target_eff_pose.pose);
-  target_eff_pose.header = target_ik_tip_pose.header;
+  target_pose.header.frame_id = ik_tip_frame_;
 
-  return update(current_joint_state, measured_force, target_eff_pose, period, desired_joint_state);
+  return update(current_joint_state, measured_force, target_pose, period, desired_joint_state);
 }
 
 controller_interface::return_type AdmittanceRule::update(
