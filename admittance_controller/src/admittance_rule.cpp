@@ -217,7 +217,9 @@ controller_interface::return_type AdmittanceRule::update(
 )
 {
   // Convert inputs to control frame
-  transform_message_to_control_frame(target_pose, target_pose_control_frame_);
+  // TODO(andyz): this causes unexpected rotation
+  //transform_message_to_control_frame(target_pose, target_pose_control_frame_);
+  target_pose_control_frame_ = target_pose;
 
   if (!hardware_state_has_offset_) {
     get_current_pose_of_endeffector_frame(current_pose_);
@@ -268,13 +270,13 @@ controller_interface::return_type AdmittanceRule::update(
   if (ik_->convertCartesianDeltasToJointDeltas(
     relative_desired_pose_vec, transform, relative_desired_joint_state_vec_)){
     for (auto i = 0u; i < desired_joint_state.positions.size(); ++i) {
-      desired_joint_state.positions[i] = current_joint_state[i] + relative_desired_joint_state_vec_[i];
+      desired_joint_state.positions[i] = current_joint_state.positions[i] + relative_desired_joint_state_vec_[i];
       desired_joint_state.velocities[i] = relative_desired_joint_state_vec_[i] / period.seconds();
 //       RCLCPP_INFO(rclcpp::get_logger("AR"), "joint states [%zu]: %f + %f = %f", i, current_joint_state[i], relative_desired_joint_state_vec_[i], desired_joint_state.positions[i]);
       }
     } else {
       RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "Conversion of Cartesian deltas to joint deltas failed. Sending current joint values to the robot.");
-      desired_joint_state.positions.assign(current_joint_state.begin(), current_joint_state.end());
+      desired_joint_state = current_joint_state;
       std::fill(desired_joint_state.velocities.begin(), desired_joint_state.velocities.end(), 0.0);
       return controller_interface::return_type::ERROR;
     }
@@ -327,6 +329,7 @@ controller_interface::return_type AdmittanceRule::update(
   target_pose.pose.position.y += target_ik_tip_deltas_vec.at(1);
   target_pose.pose.position.z += target_ik_tip_deltas_vec.at(2);
 
+  // TODO(andyz): add orientation
   target_pose.pose.orientation.w = 1.0;
   target_pose.pose.orientation.x = 0;
   target_pose.pose.orientation.y = 0;
