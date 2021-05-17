@@ -323,11 +323,11 @@ controller_interface::return_type AdmittanceRule::get_controller_state(
   //   state_message.input_force_control_frame = target_force_control_frame_;
   state_message.input_pose_control_frame = target_pose_control_frame_;
   state_message.measured_force = measured_force_;
-  state_message.measured_force = measured_force_filtered_;
+  state_message.measured_force_filtered = measured_force_filtered_;
   state_message.measured_force_control_frame = measured_force_control_frame_;
 
   try {
-    auto transform = tf_buffer_->lookupTransform(control_frame_, endeffector_frame_, tf2::TimePointZero);
+    auto transform = tf_buffer_->lookupTransform(endeffector_frame_, control_frame_, tf2::TimePointZero);
     tf2::doTransform(measured_force_control_frame_, measured_force_endeffector_frame_, transform);
   } catch (const tf2::TransformException & e) {
     // TODO(destogl): Use RCLCPP_ERROR_THROTTLE
