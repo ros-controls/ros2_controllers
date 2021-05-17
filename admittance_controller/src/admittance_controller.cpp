@@ -457,7 +457,8 @@ controller_interface::return_type AdmittanceController::update()
 
   // Position has to always there
   auto num_joints = joint_state_interface_[0].size();
-  std::array<double, 6> current_joint_states;
+  trajectory_msgs::msg::JointTrajectoryPoint current_joint_states;
+  current_joint_states.positions.resize(num_joints, 0.0);
   trajectory_msgs::msg::JointTrajectoryPoint desired_joint_states;
   desired_joint_states.positions.resize(num_joints);
   desired_joint_states.velocities.resize(num_joints);
@@ -465,9 +466,9 @@ controller_interface::return_type AdmittanceController::update()
 
   for (auto index = 0u; index < num_joints; ++index) {
     if (!admittance_->hardware_state_has_offset_) {
-      current_joint_states[index] = joint_state_interface_[0][index].get().get_value();
+      current_joint_states.positions[index] = joint_state_interface_[0][index].get().get_value();
     } else {
-      current_joint_states[index] = current_state_when_offset_.positions[index];
+      current_joint_states.positions[index] = current_state_when_offset_.positions[index];
     }
   }
 
@@ -492,7 +493,7 @@ controller_interface::return_type AdmittanceController::update()
     } else {
       for (auto index = 0u; index < num_joints; ++index) {
         // TODO(anyone): Is here OK to use shortest_angular_distance?
-        joint_deltas[index] = angles::shortest_angular_distance(current_joint_states[index], (*input_joint_cmd)->points[0].positions[index]);
+        joint_deltas[index] = angles::shortest_angular_distance(current_joint_states.positions[index], (*input_joint_cmd)->points[0].positions[index]);
       }
     }
     admittance_->update(current_joint_states, ft_values, joint_deltas, duration_since_last_call, desired_joint_states);
@@ -520,10 +521,10 @@ controller_interface::return_type AdmittanceController::update()
   state_publisher_->msg_.input_joint_command = **input_joint_cmd;
 
   state_publisher_->msg_.desired_joint_states = desired_joint_states;
-  state_publisher_->msg_.actual_joint_states.positions.assign(current_joint_states.begin(), current_joint_states.end());
+  state_publisher_->msg_.actual_joint_states = current_joint_states;
   for (auto index = 0u; index < num_joints; ++index) {
     state_publisher_->msg_.error_joint_state.positions[index] = angles::shortest_angular_distance(
-      current_joint_states[index], desired_joint_states.positions[index]);
+      current_joint_states.positions[index], desired_joint_states.positions[index]);
   }
   admittance_->get_controller_state(state_publisher_->msg_);
   state_publisher_->unlockAndPublish();
