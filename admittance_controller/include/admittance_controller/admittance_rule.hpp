@@ -24,11 +24,22 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "geometry_msgs/msg/wrench_stamped.hpp"
+// TODO(destogl): Enable use of filters
+// #include "iirob_filters/gravity_compensation.h"
 #include "tf2_ros/transform_listener.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
 namespace admittance_controller
 {
+struct GravityCompensationParameters
+{
+public:
+  std::string world_frame_;
+  std::string sensor_frame_;
+  geometry_msgs::msg::Vector3Stamped cog_;
+  double force_;
+};
+
 class AdmittanceRule
 {
 public:
@@ -91,6 +102,9 @@ public:
   std::array<double, 6> damping_;
   std::array<double, 6> stiffness_;
 
+  // Filters
+  std::vector<GravityCompensationParameters> gravity_compensation_params_;
+
 protected:
   void process_force_measurements(
     const geometry_msgs::msg::Wrench & measured_forces
@@ -114,6 +128,13 @@ protected:
 
   // IK variables
   std::shared_ptr<IncrementalKinematics> ik_;
+
+  // Filters
+//   using GravityCompensatorType =
+//     iirob_filters::GravityCompensator<geometry_msgs::msg::WrenchStamped>;
+//
+//   std::unique_ptr<GravityCompensatorType> wrist_gravity_compensator_;
+//   std::unique_ptr<GravityCompensatorType> tool_gravity_compensator_;
 
   // Transformation variables
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;

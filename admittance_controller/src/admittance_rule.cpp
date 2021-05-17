@@ -366,8 +366,33 @@ void AdmittanceRule::process_force_measurements(
 {
   // get current states, and transform those into controller frame
   measured_force_.wrench = measured_forces;
-  // TODO(destogl): Add gravity compensation of measured forces
-  measured_force_filtered_ = measured_force_;
+  try {
+    auto transform = tf_buffer_->lookupTransform(fixed_world_frame_,  measured_force_.header.frame_id, tf2::TimePointZero);
+    auto transform_back = tf_buffer_->lookupTransform(measured_force_.header.frame_id, fixed_world_frame_, tf2::TimePointZero);
+
+    geometry_msgs::msg::WrenchStamped measured_force_transformed;
+    tf2::doTransform(measured_force_, measured_force_transformed, transform);
+
+    geometry_msgs::msg::Vector3Stamped cog_transformed;
+
+    for (const auto & params : gravity_compensation_params_) {
+      auto transform_cog = tf_buffer_->lookupTransform(fixed_world_frame_,  params.cog_.header.frame_id, tf2::TimePointZero);
+      tf2::doTransform(params.cog_, cog_transformed, transform_cog);
+
+      measured_force_transformed.wrench.force.z += params.force_;
+      measured_force_transformed.wrench.torque.x += (params.force_ * cog_transformed.vector.y);
+      measured_force_transformed.wrench.torque.y -= (params.force_ * cog_transformed.vector.x);
+    }
+
+    tf2::doTransform(measured_force_transformed, measured_force_filtered_, transform_back);
+
+  } catch (const tf2::TransformException & e) {
+    // TODO(destogl): Use RCLCPP_ERROR_THROTTLE
+    RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed between '" + fixed_world_frame_ + "' and '" + measured_force_.header.frame_id + "' or '<a cog frame>'.");
+    // If transform error just use measured force
+    measured_force_filtered_ = measured_force_;
+  }
+
   transform_message_to_control_frame(measured_force_filtered_, measured_force_control_frame_);
 
   convert_message_to_array(measured_force_control_frame_, measured_force_control_frame_arr_);
