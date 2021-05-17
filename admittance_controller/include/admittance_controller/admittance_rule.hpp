@@ -39,34 +39,29 @@ public:
   controller_interface::return_type reset();
 
   controller_interface::return_type update(
-    const std::array<double, 6> & /*current_joint_state*/,
+    const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state,
     const geometry_msgs::msg::Wrench & measured_force,
     const geometry_msgs::msg::PoseStamped & target_pose,
     const rclcpp::Duration & period,
-    trajectory_msgs::msg::JointTrajectoryPoint & desired_joint_states);
+    trajectory_msgs::msg::JointTrajectoryPoint & desired_joint_states
+  );
 
   controller_interface::return_type update(
-    const std::array<double, 6> & current_joint_state,
+    const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state,
     const geometry_msgs::msg::Wrench & measured_force,
     const std::array<double, 6> & target_joint_deltas,
     const rclcpp::Duration & period,
-    trajectory_msgs::msg::JointTrajectoryPoint & desired_joint_states);
+    trajectory_msgs::msg::JointTrajectoryPoint & desired_joint_states
+  );
 
   controller_interface::return_type update(
-    const std::array<double, 6> & current_joint_state,
+    const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state,
     const geometry_msgs::msg::Wrench & measured_force,
     const geometry_msgs::msg::PoseStamped & target_pose,
     const geometry_msgs::msg::WrenchStamped & target_force,
     const rclcpp::Duration & period,
-    trajectory_msgs::msg::JointTrajectoryPoint & desired_joint_states);
-
-//   controller_interface::return_type update(
-//     const geometry_msgs::msg::WrenchStamped & measured_force,
-//     const geometry_msgs::msg::PoseStamped & target_pose,
-//     const geometry_msgs::msg::PoseStamped & current_pose,
-//     const rclcpp::Duration & period,
-//     geometry_msgs::msg::TransformStamped & relative_desired_pose_vec
-//   );
+    trajectory_msgs::msg::JointTrajectoryPoint & desired_joint_states
+  );
 
   controller_interface::return_type get_controller_state(
     control_msgs::msg::AdmittanceControllerState & state_message
@@ -109,6 +104,12 @@ protected:
     const std::array<double, 6> & pose_error,
     const rclcpp::Duration & period,
     std::array<double, 6> & desired_relative_pose
+  );
+
+  controller_interface::return_type calculate_desired_joint_state(
+    const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state,
+    const rclcpp::Duration & period,
+    trajectory_msgs::msg::JointTrajectoryPoint & desired_joint_state
   );
 
   // IK variables
@@ -172,25 +173,28 @@ private:
     return controller_interface::return_type::OK;
   }
 
+  template<typename Type>
   void
-  direct_transform(const geometry_msgs::msg::Pose & input_pose, const tf2::Transform & transform, geometry_msgs::msg::Pose & output_pose)
+  direct_transform(const Type & input, const tf2::Transform & transform, Type & output)
   {
     // use TF2 data types for easy math
-    tf2::Transform input_pose_tf, output_pose_tf;
+    tf2::Transform input_tf, output_tf;
 
-    tf2::fromMsg(input_pose, input_pose_tf);
-    output_pose_tf = input_pose_tf * transform;
-    tf2::toMsg(output_pose_tf, output_pose);
+    tf2::fromMsg(input, input_tf);
+    output_tf = input_tf * transform;
+    tf2::toMsg(output_tf, output);
   }
 
+  template<typename Type>
   void
-  transform_ik_tip_to_endeffector_frame(const geometry_msgs::msg::Pose & base_to_ik_tip, geometry_msgs::msg::Pose & base_to_toollink)
+  transform_ik_tip_to_endeffector_frame(const Type & base_to_ik_tip, Type & base_to_toollink)
   {
     direct_transform(base_to_ik_tip, ik_tip_to_endeffector_frame_tf_, base_to_toollink);
   }
 
+  template<typename Type>
   void
-  transform_endeffector_to_ik_tip_frame(const geometry_msgs::msg::Pose & base_to_toollink, geometry_msgs::msg::Pose & base_to_ik_tip)
+  transform_endeffector_to_ik_tip_frame(const Type & base_to_toollink, Type & base_to_ik_tip)
   {
     direct_transform(base_to_toollink, endeffector_frame_to_ik_tip_tf_, base_to_ik_tip);
   }
