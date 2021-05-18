@@ -242,6 +242,11 @@ controller_interface::return_type AdmittanceRule::update(
       pose_error_vec[i] = angles::normalize_angle(current_pose_control_frame_arr_[i]) -
       angles::normalize_angle(target_pose_control_frame_arr_[i]);
     }
+    if (pose_error_vec[i] < 1e-10) {
+      pose_error_vec[i] = 0;
+    }
+//     RCLCPP_INFO(rclcpp::get_logger("AdmittanceRule"),
+//                 "Pose error [%zu]: %e", pose_error_vec[i]);
   }
 
   process_force_measurements(measured_force);
@@ -321,6 +326,7 @@ controller_interface::return_type AdmittanceRule::update(
 
   // Get the target pose
   geometry_msgs::msg::PoseStamped target_pose;
+  target_pose.header.frame_id = ik_tip_frame_;
   target_pose.pose.position.x = target_ik_tip_deltas_vec.at(0);
   target_pose.pose.position.y = target_ik_tip_deltas_vec.at(1);
   target_pose.pose.position.z = target_ik_tip_deltas_vec.at(2);
@@ -331,7 +337,13 @@ controller_interface::return_type AdmittanceRule::update(
   target_pose.pose.orientation.x = q.x();
   target_pose.pose.orientation.y = q.y();
   target_pose.pose.orientation.z = q.z();
-  target_pose.header.frame_id = ik_tip_frame_;
+
+//   RCLCPP_INFO(rclcpp::get_logger("AdmittanceRule"),
+//               "IK-tip deltas: x: %e, y: %e, z: %e, rx: %e, ry: %e, rz: %e",
+//               target_ik_tip_deltas_vec.at(0), target_ik_tip_deltas_vec.at(1),
+//               target_ik_tip_deltas_vec.at(2), target_ik_tip_deltas_vec.at(3),
+//               target_ik_tip_deltas_vec.at(4), target_ik_tip_deltas_vec.at(5)
+//              );
 
   return update(current_joint_state, measured_force, target_pose, period, desired_joint_state);
 }
@@ -460,7 +472,7 @@ void AdmittanceRule::calculate_admittance_rule(
       desired_acceleration_previous_arr_[i] = acceleration;
       desired_velocity_previous_arr_[i] = desired_velocity_arr_[i];
 
-//       RCLCPP_INFO(rclcpp::get_logger("AR"), "Pose error, acceleration, desired velocity, relative desired pose [%zu]: (%f - D*%f - S*%f = %f), %f, %f", i, measured_force_control_frame_arr_[i], desired_velocity_arr_[i], pose_error , acceleration, desired_velocity_arr_[i], relative_desired_pose_arr_[i]);
+      RCLCPP_INFO(rclcpp::get_logger("AR"), "Pose error, acceleration, desired velocity, relative desired pose [%zu]: (%e - D*%e - S*%e = %e)", i, measured_force[i], desired_velocity_arr_[i], pose_error , acceleration);
     }
   }
 }
