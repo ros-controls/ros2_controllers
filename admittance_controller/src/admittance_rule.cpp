@@ -321,20 +321,16 @@ controller_interface::return_type AdmittanceRule::update(
 
   // Get the target pose
   geometry_msgs::msg::PoseStamped target_pose;
-  target_pose.pose.position.x = 0;
-  target_pose.pose.position.y = 0;
-  target_pose.pose.position.z = 0;
-  target_pose.pose.orientation = transform_ik_base_tip.transform.rotation;
-  target_pose.pose.position.x += target_ik_tip_deltas_vec.at(0);
-  target_pose.pose.position.y += target_ik_tip_deltas_vec.at(1);
-  target_pose.pose.position.z += target_ik_tip_deltas_vec.at(2);
+  target_pose.pose.position.x = target_ik_tip_deltas_vec.at(0);
+  target_pose.pose.position.y = target_ik_tip_deltas_vec.at(1);
+  target_pose.pose.position.z = target_ik_tip_deltas_vec.at(2);
 
-  // TODO(andyz): add orientation
-  target_pose.pose.orientation.w = 1.0;
-  target_pose.pose.orientation.x = 0;
-  target_pose.pose.orientation.y = 0;
-  target_pose.pose.orientation.z = 0;
-
+  tf2::Quaternion q;
+  q.setRPY(target_ik_tip_deltas_vec.at(3), target_ik_tip_deltas_vec.at(4), target_ik_tip_deltas_vec.at(5));
+  target_pose.pose.orientation.w = q.w();
+  target_pose.pose.orientation.x = q.x();
+  target_pose.pose.orientation.y = q.y();
+  target_pose.pose.orientation.z = q.z();
   target_pose.header.frame_id = ik_tip_frame_;
 
   return update(current_joint_state, measured_force, target_pose, period, desired_joint_state);
