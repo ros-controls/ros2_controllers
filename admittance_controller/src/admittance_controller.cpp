@@ -484,7 +484,7 @@ CallbackReturn AdmittanceController::on_deactivate(
 controller_interface::return_type AdmittanceController::update()
 {
   // get input commands
-  auto input_force_cmd = input_force_command_.readFromRT();
+  auto input_wrench_cmd = input_force_command_.readFromRT();
   auto input_joint_cmd = input_joint_command_.readFromRT();
   auto input_pose_cmd = input_pose_command_.readFromRT();
 
@@ -511,7 +511,7 @@ controller_interface::return_type AdmittanceController::update()
 
   // TODO(destogl): Enable this when unified mode is used
 //   if (admittance_->unified_mode_) {
-  //     admittance_->update(current_joint_states, ft_values, **input_pose_cmd, **input_force_cmd, duration_since_last_call, desired_joint_states);
+  //     admittance_->update(current_joint_states, ft_values, **input_pose_cmd, **input_wrench_cmd, duration_since_last_call, desired_joint_states);
 //   } else {
 
   // TODO(destogl): refactor this into different admittance controllers: 1. Pose input, Joint State input and Unified mode (is there need for switching between unified and non-unified mode?)
@@ -549,7 +549,7 @@ controller_interface::return_type AdmittanceController::update()
 
   // Publish controller state
   state_publisher_->lock();
-  state_publisher_->msg_.input_force_command = **input_force_cmd;
+  state_publisher_->msg_.input_wrench_command = **input_wrench_cmd;
   state_publisher_->msg_.input_pose_command = **input_pose_cmd;
   state_publisher_->msg_.input_joint_command = **input_joint_cmd;
 

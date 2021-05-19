@@ -340,14 +340,14 @@ TEST_F(AdmittanceControllerTest, publish_status_success)
   ControllerStateMsg msg;
   subscribe_and_get_messages(msg);
 
-  // Check that force command are all zero since not used
-  ASSERT_EQ(msg.input_force_command.header.frame_id, control_frame_);
-  ASSERT_EQ(msg.input_force_command.wrench.force.x, 0.0);
-  ASSERT_EQ(msg.input_force_command.wrench.force.y, 0.0);
-  ASSERT_EQ(msg.input_force_command.wrench.force.z, 0.0);
-  ASSERT_EQ(msg.input_force_command.wrench.torque.x, 0.0);
-  ASSERT_EQ(msg.input_force_command.wrench.torque.y, 0.0);
-  ASSERT_EQ(msg.input_force_command.wrench.torque.z, 0.0);
+  // Check that wrench command are all zero since not used
+  ASSERT_EQ(msg.input_wrench_command.header.frame_id, control_frame_);
+  ASSERT_EQ(msg.input_wrench_command.wrench.force.x, 0.0);
+  ASSERT_EQ(msg.input_wrench_command.wrench.force.y, 0.0);
+  ASSERT_EQ(msg.input_wrench_command.wrench.force.z, 0.0);
+  ASSERT_EQ(msg.input_wrench_command.wrench.torque.x, 0.0);
+  ASSERT_EQ(msg.input_wrench_command.wrench.torque.y, 0.0);
+  ASSERT_EQ(msg.input_wrench_command.wrench.torque.z, 0.0);
 
   // Check Cartesian command message
   ASSERT_EQ(msg.input_pose_command.header.frame_id, control_frame_);
@@ -370,29 +370,29 @@ TEST_F(AdmittanceControllerTest, publish_status_success)
     [](const auto & value){ return value == 0.0;}) == msg.input_joint_command.points[0].velocities.end());
 
   // Check messages filled from AdmittanceRule.cpp
-  ASSERT_EQ(msg.measured_force.header.frame_id, sensor_frame_);
-  ASSERT_EQ(msg.measured_force.wrench.force.x, fts_state_values_[0]);
-  ASSERT_EQ(msg.measured_force.wrench.force.y, fts_state_values_[1]);
-  ASSERT_EQ(msg.measured_force.wrench.force.z, fts_state_values_[2]);
-  ASSERT_EQ(msg.measured_force.wrench.torque.x, fts_state_values_[3]);
-  ASSERT_EQ(msg.measured_force.wrench.torque.y, fts_state_values_[4]);
-  ASSERT_EQ(msg.measured_force.wrench.torque.z, fts_state_values_[5]);
+  ASSERT_EQ(msg.measured_wrench.header.frame_id, sensor_frame_);
+  ASSERT_EQ(msg.measured_wrench.wrench.force.x, fts_state_values_[0]);
+  ASSERT_EQ(msg.measured_wrench.wrench.force.y, fts_state_values_[1]);
+  ASSERT_EQ(msg.measured_wrench.wrench.force.z, fts_state_values_[2]);
+  ASSERT_EQ(msg.measured_wrench.wrench.torque.x, fts_state_values_[3]);
+  ASSERT_EQ(msg.measured_wrench.wrench.torque.y, fts_state_values_[4]);
+  ASSERT_EQ(msg.measured_wrench.wrench.torque.z, fts_state_values_[5]);
 
-  ASSERT_EQ(msg.measured_force_control_frame.header.frame_id, control_frame_);
-  ASSERT_EQ(msg.measured_force_control_frame.wrench.force.x, 0.0);
-  ASSERT_EQ(msg.measured_force_control_frame.wrench.force.y, 0.0);
-  ASSERT_EQ(msg.measured_force_control_frame.wrench.force.z, 0.0);
-  ASSERT_EQ(msg.measured_force_control_frame.wrench.torque.x, 0.0);
-  ASSERT_EQ(msg.measured_force_control_frame.wrench.torque.y, 0.0);
-  ASSERT_EQ(msg.measured_force_control_frame.wrench.torque.z, 0.0);
+  ASSERT_EQ(msg.measured_wrench_control_frame.header.frame_id, control_frame_);
+  ASSERT_EQ(msg.measured_wrench_control_frame.wrench.force.x, 0.0);
+  ASSERT_EQ(msg.measured_wrench_control_frame.wrench.force.y, 0.0);
+  ASSERT_EQ(msg.measured_wrench_control_frame.wrench.force.z, 0.0);
+  ASSERT_EQ(msg.measured_wrench_control_frame.wrench.torque.x, 0.0);
+  ASSERT_EQ(msg.measured_wrench_control_frame.wrench.torque.y, 0.0);
+  ASSERT_EQ(msg.measured_wrench_control_frame.wrench.torque.z, 0.0);
 
-  ASSERT_EQ(msg.measured_force_endeffector_frame.header.frame_id, endeffector_frame_);
-  ASSERT_EQ(msg.measured_force_endeffector_frame.wrench.force.x, 0.0);
-  ASSERT_EQ(msg.measured_force_endeffector_frame.wrench.force.y, 0.0);
-  ASSERT_EQ(msg.measured_force_endeffector_frame.wrench.force.z, 0.0);
-  ASSERT_EQ(msg.measured_force_endeffector_frame.wrench.torque.x, 0.0);
-  ASSERT_EQ(msg.measured_force_endeffector_frame.wrench.torque.y, 0.0);
-  ASSERT_EQ(msg.measured_force_endeffector_frame.wrench.torque.z, 0.0);
+  ASSERT_EQ(msg.measured_wrench_endeffector_frame.header.frame_id, endeffector_frame_);
+  ASSERT_EQ(msg.measured_wrench_endeffector_frame.wrench.force.x, 0.0);
+  ASSERT_EQ(msg.measured_wrench_endeffector_frame.wrench.force.y, 0.0);
+  ASSERT_EQ(msg.measured_wrench_endeffector_frame.wrench.force.z, 0.0);
+  ASSERT_EQ(msg.measured_wrench_endeffector_frame.wrench.torque.x, 0.0);
+  ASSERT_EQ(msg.measured_wrench_endeffector_frame.wrench.torque.y, 0.0);
+  ASSERT_EQ(msg.measured_wrench_endeffector_frame.wrench.torque.z, 0.0);
 
   ASSERT_EQ(msg.desired_pose.header.frame_id, control_frame_);
   ASSERT_FALSE(std::isnan(msg.desired_pose.pose.position.x));
@@ -448,7 +448,7 @@ TEST_F(AdmittanceControllerTest, receive_message_and_publish_updated_status)
 
   ControllerStateMsg msg;
   subscribe_and_get_messages(msg);
-  ASSERT_EQ(msg.input_force_command.header.frame_id, control_frame_);
+  ASSERT_EQ(msg.input_wrench_command.header.frame_id, control_frame_);
   ASSERT_EQ(msg.input_pose_command.header.frame_id, control_frame_);
 
   publish_commands();
@@ -460,7 +460,7 @@ TEST_F(AdmittanceControllerTest, receive_message_and_publish_updated_status)
   EXPECT_NEAR(joint_command_values_[0], 0.0, COMMON_THRESHOLD);
 
   subscribe_and_get_messages(msg);
-  ASSERT_EQ(msg.input_force_command.header.frame_id, control_frame_);
+  ASSERT_EQ(msg.input_wrench_command.header.frame_id, control_frame_);
   ASSERT_EQ(msg.input_pose_command.header.frame_id, endeffector_frame_);
 }
 
