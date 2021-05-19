@@ -435,6 +435,8 @@ void AdmittanceRule::process_force_measurements(
     return;
   }
 
+  RCLCPP_INFO_STREAM(rclcpp::get_logger("AR"), "incoming force: " << measured_forces.wrench);
+
   // get current states, and transform those into controller frame
   measured_force_.wrench = measured_forces;
   try {
@@ -485,7 +487,7 @@ void AdmittanceRule::calculate_admittance_rule(
   for (auto i = 0u; i < 6; ++i) {
     if (selected_axes_[i]) {
 
-      RCLCPP_INFO_STREAM(rclcpp::get_logger("AR"), measured_force[i]);
+      RCLCPP_INFO_STREAM(rclcpp::get_logger("AR"), "processed force: " << measured_force[i]);
 
       // TODO(destogl): check if velocity is measured from hardware
       const double acceleration = 1 / mass_[i] *
