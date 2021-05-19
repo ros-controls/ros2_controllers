@@ -219,10 +219,10 @@ controller_interface::return_type AdmittanceRule::update(
   // Convert inputs to control frame
   transform_message_to_control_frame(target_pose, target_pose_control_frame_);
 
-  if (!hardware_state_has_offset_) {
+//   if (!hardware_state_has_offset_) {
     get_current_pose_of_endeffector_frame(current_pose_);
     transform_message_to_control_frame(current_pose_, current_pose_control_frame_);
-  }
+//   }
   // TODO(destogl): Can this work properly, when considering offset between states and commands?
 //   else {
 //     current_pose_control_frame_ = desired_pose_;
@@ -284,9 +284,9 @@ controller_interface::return_type AdmittanceRule::update(
 
   // TODO(destogl): Use as class variables to avoid memory allocation
   geometry_msgs::msg::PoseStamped current_ik_tip_pose;
-  geometry_msgs::msg::TransformStamped current_to_target_ik_pose;
-  current_to_target_ik_pose.header.frame_id = ik_base_frame_;
-  current_to_target_ik_pose.child_frame_id = ik_base_frame_;
+  geometry_msgs::msg::TransformStamped target_ik_tip_deltas_pose;
+  target_ik_tip_deltas_pose.header.frame_id = ik_base_frame_;
+  target_ik_tip_deltas_pose.child_frame_id = ik_base_frame_;
   geometry_msgs::msg::PoseStamped target_ik_tip_pose;
   geometry_msgs::msg::PoseStamped target_eff_pose;
   static geometry_msgs::msg::PoseStamped origin;
@@ -296,8 +296,8 @@ controller_interface::return_type AdmittanceRule::update(
   // If FK this is not needed
   // TODO(anyone): Can we just use values from transformation instead calling doTransform?
   tf2::doTransform(origin, current_ik_tip_pose, transform_ik_base_tip);
-  convert_array_to_message(target_ik_tip_deltas_vec, current_to_target_ik_pose);
-  tf2::doTransform(current_ik_tip_pose, target_ik_tip_pose, current_to_target_ik_pose);
+  convert_array_to_message(target_ik_tip_deltas_vec, target_ik_tip_deltas_pose);
+  tf2::doTransform(current_ik_tip_pose, target_ik_tip_pose, target_ik_tip_deltas_pose);
 
   transform_ik_tip_to_endeffector_frame(target_ik_tip_pose.pose, target_eff_pose.pose);
   target_eff_pose.header = target_ik_tip_pose.header;
