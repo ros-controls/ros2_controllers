@@ -234,24 +234,31 @@ controller_interface::return_type AdmittanceRule::update(
   convert_message_to_array(target_pose_control_frame_, target_pose_control_frame_arr_);
   convert_message_to_array(current_pose_control_frame_, current_pose_control_frame_arr_);
 
-  std::array<double, 6> pose_error_vec;
+  std::array<double, 6> pose_error;
 
   for (auto i = 0u; i < 6; ++i) {
-    pose_error_vec[i] = current_pose_control_frame_arr_[i] - target_pose_control_frame_arr_[i];
+    pose_error[i] = current_pose_control_frame_arr_[i] - target_pose_control_frame_arr_[i];
     if (i >= 3) {
-      pose_error_vec[i] = angles::normalize_angle(current_pose_control_frame_arr_[i]) -
+      pose_error[i] = angles::normalize_angle(current_pose_control_frame_arr_[i]) -
       angles::normalize_angle(target_pose_control_frame_arr_[i]);
     }
+<<<<<<< HEAD
     if (pose_error_vec[i] < 1e-10) {
       pose_error_vec[i] = 0;
     }
 //     RCLCPP_INFO(rclcpp::get_logger("AdmittanceRule"),
 //                 "Pose error [%zu]: %e", pose_error_vec[i]);
+=======
+    // remove small noise due transformations
+    if (pose_error[i] < 1e-10) {
+      pose_error[i] = 0;
+    }
+>>>>>>> 50e5553... Remove small number noise from substraction
   }
 
   process_force_measurements(measured_force);
 
-  calculate_admittance_rule(measured_force_control_frame_arr_, pose_error_vec, period,
+  calculate_admittance_rule(measured_force_control_frame_arr_, pose_error, period,
                             relative_desired_pose_arr_);
 
   // Do clean conversion to the goal pose using transform and not messing with Euler angles
