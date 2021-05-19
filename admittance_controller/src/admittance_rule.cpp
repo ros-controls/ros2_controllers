@@ -408,6 +408,33 @@ void AdmittanceRule::process_force_measurements(
   const geometry_msgs::msg::Wrench & measured_forces
 )
 {
+  // Short-circuit if measurement is all zeros or any nan
+  const double WRENCH_THRESH = 1e-10;
+  if (
+    (measured_forces.force.x < WRENCH_THRESH) &&
+    (measured_forces.force.y < WRENCH_THRESH) &&
+    (measured_forces.force.z < WRENCH_THRESH) &&
+    (measured_forces.torque.x < WRENCH_THRESH) &&
+    (measured_forces.torque.y < WRENCH_THRESH) &&
+    (measured_forces.torque.z < WRENCH_THRESH)
+    )
+  {
+    measured_force_control_frame_arr_.fill(0.0);
+    return;
+  }
+  if (
+    std::isnan(measured_forces.force.x) ||
+    std::isnan(measured_forces.force.y) ||
+    std::isnan(measured_forces.force.z) ||
+    std::isnan(measured_forces.torque.x) ||
+    std::isnan(measured_forces.torque.y) ||
+    std::isnan(measured_forces.torque.z)
+    )
+  {
+    measured_force_control_frame_arr_.fill(0.0);
+    return;
+  }
+
   // get current states, and transform those into controller frame
   measured_force_.wrench = measured_forces;
   try {
