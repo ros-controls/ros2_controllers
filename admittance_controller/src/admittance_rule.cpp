@@ -221,10 +221,10 @@ controller_interface::return_type AdmittanceRule::update(
   //transform_message_to_control_frame(target_pose, target_pose_control_frame_);
   target_pose_control_frame_ = target_pose;
 
-  if (!hardware_state_has_offset_) {
+//   if (!hardware_state_has_offset_) {
     get_current_pose_of_endeffector_frame(current_pose_);
     transform_message_to_control_frame(current_pose_, current_pose_control_frame_);
-  }
+//   }
   // TODO(destogl): Can this work properly, when considering offset between states and commands?
 //   else {
 //     current_pose_control_frame_ = desired_pose_;
@@ -242,18 +242,10 @@ controller_interface::return_type AdmittanceRule::update(
       pose_error[i] = angles::normalize_angle(current_pose_control_frame_arr_[i]) -
       angles::normalize_angle(target_pose_control_frame_arr_[i]);
     }
-<<<<<<< HEAD
-    if (pose_error_vec[i] < 1e-10) {
-      pose_error_vec[i] = 0;
-    }
-//     RCLCPP_INFO(rclcpp::get_logger("AdmittanceRule"),
-//                 "Pose error [%zu]: %e", pose_error_vec[i]);
-=======
     // remove small noise due transformations
     if (pose_error[i] < 1e-10) {
       pose_error[i] = 0;
     }
->>>>>>> 50e5553... Remove small number noise from substraction
   }
 
   process_force_measurements(measured_force);
@@ -331,12 +323,22 @@ controller_interface::return_type AdmittanceRule::update(
     return controller_interface::return_type::ERROR;
   }
 
-  // Get the target pose
-  geometry_msgs::msg::PoseStamped target_pose;
-  target_pose.header.frame_id = ik_tip_frame_;
-  target_pose.pose.position.x = target_ik_tip_deltas_vec.at(0);
-  target_pose.pose.position.y = target_ik_tip_deltas_vec.at(1);
-  target_pose.pose.position.z = target_ik_tip_deltas_vec.at(2);
+  // TODO(destogl): Use as class variables to avoid memory allocation
+  geometry_msgs::msg::PoseStamped current_ik_tip_pose;
+  geometry_msgs::msg::TransformStamped target_ik_tip_deltas_pose;
+  target_ik_tip_deltas_pose.header.frame_id = ik_base_frame_;
+  target_ik_tip_deltas_pose.child_frame_id = ik_base_frame_;
+  geometry_msgs::msg::PoseStamped target_ik_tip_pose;
+  geometry_msgs::msg::PoseStamped target_eff_pose;
+  static geometry_msgs::msg::PoseStamped origin;
+  origin.header.frame_id = ik_tip_frame_;
+  origin.pose.orientation.w = 1;
+
+  // If FK this is not needed
+  // TODO(anyone): Can we just use values from transformation instead calling doTransform?
+  tf2::doTransform(origin, current_ik_tip_pose, transform_ik_base_tip);
+  convert_array_to_message(target_ik_tip_deltas_vec, target_ik_tip_deltas_pose);
+  tf2::doTransform(current_ik_tip_pose, target_ik_tip_pose, target_ik_tip_deltas_pose);
 
   tf2::Quaternion q;
   q.setRPY(target_ik_tip_deltas_vec.at(3), target_ik_tip_deltas_vec.at(4), target_ik_tip_deltas_vec.at(5));

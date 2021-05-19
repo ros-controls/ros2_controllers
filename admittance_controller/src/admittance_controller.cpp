@@ -349,6 +349,11 @@ CallbackReturn AdmittanceController::on_configure(
   current_state_when_offset_.positions.reserve(joint_names_.size());
   current_state_when_offset_.velocities.reserve(joint_names_.size());
 
+  if (use_joint_commands_as_input_) {
+    RCLCPP_INFO_STREAM(get_node()->get_logger(), "Using Joint input mode.");
+  } else {
+    RCLCPP_INFO_STREAM(get_node()->get_logger(), "Using Cartesian input mode.");
+  }
   RCLCPP_INFO_STREAM(get_node()->get_logger(), "configure successful");
   return CallbackReturn::SUCCESS;
 }
