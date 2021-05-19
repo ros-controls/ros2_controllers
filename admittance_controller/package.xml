@@ -13,7 +13,6 @@
   <depend>controller_interface</depend>
   <depend>geometry_msgs</depend>
   <depend>hardware_interface</depend>
-  <depend>iirob_filters</depend>
   <depend>moveit_ros_move_group</depend>
   <depend>moveit_ros_planning_interface</depend>
   <depend>pluginlib</depend>
