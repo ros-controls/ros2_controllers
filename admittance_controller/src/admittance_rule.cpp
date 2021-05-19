@@ -242,9 +242,6 @@ controller_interface::return_type AdmittanceRule::update(
       pose_error_vec[i] = angles::normalize_angle(current_pose_control_frame_arr_[i]) -
       angles::normalize_angle(target_pose_control_frame_arr_[i]);
     }
-    if (pose_error_vec[i] < 1e-10) {
-      pose_error_vec[i] = 0;
-    }
 //     RCLCPP_INFO(rclcpp::get_logger("AdmittanceRule"),
 //                 "Pose error [%zu]: %e", pose_error_vec[i]);
   }
