@@ -435,7 +435,9 @@ void AdmittanceRule::process_force_measurements(
     return;
   }
 
-  RCLCPP_INFO_STREAM(rclcpp::get_logger("AR"), "incoming force: " << measured_forces.wrench);
+  RCLCPP_INFO_STREAM(rclcpp::get_logger("AR"), "incoming force: " << measured_forces.force.x);
+  RCLCPP_INFO_STREAM(rclcpp::get_logger("AR"), "incoming force: " << measured_forces.force.y);
+  RCLCPP_INFO_STREAM(rclcpp::get_logger("AR"), "incoming force: " << measured_forces.force.z);
 
   // get current states, and transform those into controller frame
   measured_force_.wrench = measured_forces;
