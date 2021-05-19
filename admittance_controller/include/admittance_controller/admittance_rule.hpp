@@ -51,7 +51,7 @@ public:
 
   controller_interface::return_type update(
     const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state,
-    const geometry_msgs::msg::Wrench & measured_force,
+    const geometry_msgs::msg::Wrench & measured_wrench,
     const geometry_msgs::msg::PoseStamped & target_pose,
     const rclcpp::Duration & period,
     trajectory_msgs::msg::JointTrajectoryPoint & desired_joint_states
@@ -59,7 +59,7 @@ public:
 
   controller_interface::return_type update(
     const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state,
-    const geometry_msgs::msg::Wrench & measured_force,
+    const geometry_msgs::msg::Wrench & measured_wrench,
     const std::array<double, 6> & target_joint_deltas,
     const rclcpp::Duration & period,
     trajectory_msgs::msg::JointTrajectoryPoint & desired_joint_states
@@ -67,7 +67,7 @@ public:
 
   controller_interface::return_type update(
     const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state,
-    const geometry_msgs::msg::Wrench & measured_force,
+    const geometry_msgs::msg::Wrench & measured_wrench,
     const geometry_msgs::msg::PoseStamped & target_pose,
     const geometry_msgs::msg::WrenchStamped & target_force,
     const rclcpp::Duration & period,
@@ -107,14 +107,14 @@ public:
 
 protected:
   void process_force_measurements(
-    const geometry_msgs::msg::Wrench & measured_forces
+    const geometry_msgs::msg::Wrench & measured_wrench
   );
 
   /**
    * All values are in he controller frame
    */
   void calculate_admittance_rule(
-    const std::array<double, 6> & measured_force,
+    const std::array<double, 6> & measured_wrench,
     const std::array<double, 6> & pose_error,
     const rclcpp::Duration & period,
     std::array<double, 6> & desired_relative_pose
@@ -143,10 +143,10 @@ protected:
   tf2::Transform ik_tip_to_endeffector_frame_tf_;
   tf2::Transform endeffector_frame_to_ik_tip_tf_;
 
-  geometry_msgs::msg::WrenchStamped measured_force_;
-  geometry_msgs::msg::WrenchStamped measured_force_filtered_;
-  geometry_msgs::msg::WrenchStamped measured_force_control_frame_;
-  geometry_msgs::msg::WrenchStamped measured_force_endeffector_frame_;
+  geometry_msgs::msg::WrenchStamped measured_wrench_;
+  geometry_msgs::msg::WrenchStamped measured_wrench_filtered_;
+  geometry_msgs::msg::WrenchStamped measured_wrench_control_frame_;
+  geometry_msgs::msg::WrenchStamped measured_wrench_endeffector_frame_;
 
   geometry_msgs::msg::PoseStamped origin_ik_tip_;
   geometry_msgs::msg::PoseStamped origin_endeffector_;
@@ -160,7 +160,7 @@ protected:
   geometry_msgs::msg::TransformStamped relative_desired_pose_;
 
   // Pre-reserved update-loop variables
-  std::array<double, 6> measured_force_control_frame_arr_;
+  std::array<double, 6> measured_wrench_control_frame_arr_;
   std::array<double, 6> target_pose_control_frame_arr_;
   std::array<double, 6> current_pose_control_frame_arr_;
 
