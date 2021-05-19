@@ -469,7 +469,7 @@ void AdmittanceRule::calculate_admittance_rule(
       desired_acceleration_previous_arr_[i] = acceleration;
       desired_velocity_previous_arr_[i] = desired_velocity_arr_[i];
 
-      RCLCPP_INFO(rclcpp::get_logger("AR"), "Pose error, acceleration, desired velocity, relative desired pose [%zu]: (%e - D*%e - S*%e = %e)", i, measured_force[i], desired_velocity_arr_[i], pose_error , acceleration);
+      // RCLCPP_INFO(rclcpp::get_logger("AR"), "Pose error, acceleration, desired velocity, relative desired pose [%zu]: (%e - D*%e - S*%e = %e)", i, measured_force[i], desired_velocity_arr_[i], pose_error , acceleration);
     }
   }
 }
