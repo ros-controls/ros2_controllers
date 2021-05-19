@@ -13,7 +13,7 @@
 // limitations under the License.
 
 /*
- * Author: Subhas Das, Denis Stogl
+ * Authors: Subhas Das, Denis Stogl
  */
 
 #ifndef FORCE_TORQUE_SENSOR_BROADCASTER__FORCE_TORQUE_SENSOR_BROADCASTER_HPP_
@@ -30,10 +30,6 @@
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_publisher.h"
-
-/*
- * Author: Subhas Das, Denis Stogl
- */
 
 namespace force_torque_sensor_broadcaster
 {
@@ -68,7 +64,7 @@ public:
 
 protected:
   std::string sensor_name_;
-  std::vector<std::string> interface_names_;
+  std::array<std::string, 6> interface_names_;
   std::string frame_id_;
 
   std::unique_ptr<semantic_components::ForceTorqueSensor> force_torque_sensor_;
