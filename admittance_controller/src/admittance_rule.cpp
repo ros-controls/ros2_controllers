@@ -411,12 +411,12 @@ void AdmittanceRule::process_force_measurements(
   // Short-circuit if measurement is all zeros or any nan
   const double WRENCH_THRESH = 1e-10;
   if (
-    (measured_forces.force.x < WRENCH_THRESH) &&
-    (measured_forces.force.y < WRENCH_THRESH) &&
-    (measured_forces.force.z < WRENCH_THRESH) &&
-    (measured_forces.torque.x < WRENCH_THRESH) &&
-    (measured_forces.torque.y < WRENCH_THRESH) &&
-    (measured_forces.torque.z < WRENCH_THRESH)
+    (std::fabs(measured_forces.force.x) < WRENCH_THRESH) &&
+    (std::fabs(measured_forces.force.y) < WRENCH_THRESH) &&
+    (std::fabs(measured_forces.force.z) < WRENCH_THRESH) &&
+    (std::fabs(measured_forces.torque.x) < WRENCH_THRESH) &&
+    (std::fabs(measured_forces.torque.y) < WRENCH_THRESH) &&
+    (std::fabs(measured_forces.torque.z) < WRENCH_THRESH)
     )
   {
     measured_force_control_frame_arr_.fill(0.0);
@@ -450,9 +450,9 @@ void AdmittanceRule::process_force_measurements(
       auto transform_cog = tf_buffer_->lookupTransform(fixed_world_frame_,  params.cog_.header.frame_id, tf2::TimePointZero);
       tf2::doTransform(params.cog_, cog_transformed, transform_cog);
 
-      measured_force_transformed.wrench.force.z += params.force_;
-      measured_force_transformed.wrench.torque.x += (params.force_ * cog_transformed.vector.y);
-      measured_force_transformed.wrench.torque.y -= (params.force_ * cog_transformed.vector.x);
+//      measured_force_transformed.wrench.force.z += params.force_;
+//      measured_force_transformed.wrench.torque.x += (params.force_ * cog_transformed.vector.y);
+//      measured_force_transformed.wrench.torque.y -= (params.force_ * cog_transformed.vector.x);
     }
 
     tf2::doTransform(measured_force_transformed, measured_force_filtered_, transform_back);
@@ -484,12 +484,15 @@ void AdmittanceRule::calculate_admittance_rule(
   // Compute admittance control law: F = M*a + D*v + S*(x - x_d)
   for (auto i = 0u; i < 6; ++i) {
     if (selected_axes_[i]) {
+
+      RCLCPP_INFO_STREAM(rclcpp::get_logger("AR"), measured_force[i]);
+
       // TODO(destogl): check if velocity is measured from hardware
       const double acceleration = 1 / mass_[i] *
       (measured_force[i] - damping_[i] * desired_velocity_arr_[i] -
       stiffness_[i] * pose_error[i]);
 
-      desired_velocity_arr_[i] += (desired_acceleration_previous_arr_[i] + acceleration) * 0.5 * period.seconds();
+      desired_velocity_arr_[i] += acceleration * period.seconds();
 
       desired_relative_pose[i] = (desired_velocity_previous_arr_[i] + desired_velocity_arr_[i]) * 0.5 * period.seconds();
 
@@ -499,6 +502,7 @@ void AdmittanceRule::calculate_admittance_rule(
       // RCLCPP_INFO(rclcpp::get_logger("AR"), "Pose error, acceleration, desired velocity, relative desired pose [%zu]: (%e - D*%e - S*%e = %e)", i, measured_force[i], desired_velocity_arr_[i], pose_error , acceleration);
     }
   }
+  RCLCPP_INFO_STREAM(rclcpp::get_logger("AR"), "---");
 }
 
 controller_interface::return_type AdmittanceRule::calculate_desired_joint_state(
