@@ -504,7 +504,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
   }
 
   publisher_ = node_->create_publisher<ControllerStateMsg>(
-    "state", rclcpp::SystemDefaultsQoS());
+    "~/state", rclcpp::SystemDefaultsQoS());
   state_publisher_ = std::make_unique<StatePublisher>(publisher_);
 
   const auto n_joints = joint_names_.size();
