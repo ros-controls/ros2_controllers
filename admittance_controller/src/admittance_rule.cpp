@@ -217,13 +217,13 @@ controller_interface::return_type AdmittanceRule::update(
 )
 {
   // Convert inputs to control frame
-  // TODO(andyz): this causes unexpected rotation
-  //transform_message_to_control_frame(target_pose, target_pose_control_frame_);
+//   transform_message_to_control_frame(target_pose, target_pose_control_frame_);
   target_pose_control_frame_ = target_pose;
 
 //   if (!hardware_state_has_offset_) {
     get_current_pose_of_endeffector_frame(current_pose_);
-    transform_message_to_control_frame(current_pose_, current_pose_control_frame_);
+//     transform_message_to_control_frame(current_pose_, current_pose_control_frame_);
+    current_pose_control_frame_ = current_pose_;
 //   }
   // TODO(destogl): Can this work properly, when considering offset between states and commands?
 //   else {
@@ -239,15 +239,17 @@ controller_interface::return_type AdmittanceRule::update(
   for (auto i = 0u; i < 6; ++i) {
     pose_error[i] = current_pose_control_frame_arr_[i] - target_pose_control_frame_arr_[i];
     if (i >= 3) {
-      pose_error[i] = angles::normalize_angle(current_pose_control_frame_arr_[i]) -
-      angles::normalize_angle(target_pose_control_frame_arr_[i]);
-    }
-    // remove small noise due transformations
-    if (pose_error[i] < 1e-10) {
-      pose_error[i] = 0;
+      pose_error[i] = angles::normalize_angle(current_pose_control_frame_arr_[i] -
+      target_pose_control_frame_arr_[i]);
     }
     RCLCPP_INFO(rclcpp::get_logger("AR"), "Pose error [%zu]: (%e = %e - %e)",
                 i, pose_error[i], current_pose_control_frame_arr_[i], target_pose_control_frame_arr_[i]);
+    // remove small noise due transformations
+//     if (pose_error[i] < 0.00000000001) {
+//       pose_error[i] = 0;
+//     }
+//     RCLCPP_INFO(rclcpp::get_logger("AR"), "Pose error [%zu]: (%e = %e - %e)",
+//                 i, pose_error[i], current_pose_control_frame_arr_[i], target_pose_control_frame_arr_[i]);
   }
 
   process_force_measurements(measured_wrench);
@@ -472,7 +474,9 @@ void AdmittanceRule::calculate_admittance_rule(
       desired_acceleration_previous_arr_[i] = acceleration;
       desired_velocity_previous_arr_[i] = desired_velocity_arr_[i];
 
-//       RCLCPP_INFO(rclcpp::get_logger("AR"), "Pose error, acceleration, desired velocity, relative desired pose [%zu]: (%f - D*%f - S*%f = %f), %f, %f", i, measured_wrench_control_frame_arr_[i], desired_velocity_arr_[i], pose_error , acceleration, desired_velocity_arr_[i], relative_desired_pose_arr_[i]);
+      RCLCPP_INFO(rclcpp::get_logger("AR"), "Rule [%zu]: (%e = %e - D(%.1f)*%e - S(%.1f)*%e)", i,
+                  acceleration, measured_wrench[i], damping_[i], desired_velocity_arr_[i],
+                  stiffness_[i], pose_error);
     }
   }
 }
