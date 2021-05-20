@@ -72,6 +72,7 @@ if(BUILD_TESTING)
   ament_add_gtest(test_trajectory_controller
     test/test_trajectory_controller.cpp
     ENV config_file=${CMAKE_CURRENT_SOURCE_DIR}/test/config/test_joint_trajectory_controller.yaml)
+  set_tests_properties(test_trajectory_controller PROPERTIES TIMEOUT 120)
   target_include_directories(test_trajectory_controller PRIVATE include)
   target_link_libraries(test_trajectory_controller
     joint_trajectory_controller
