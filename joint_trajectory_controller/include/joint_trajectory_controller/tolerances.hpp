@@ -152,8 +152,10 @@ inline bool check_state_tolerance_per_joint(
 {
   using std::abs;
   const double error_position = state_error.positions[joint_idx];
-  const double error_velocity = state_error.velocities[joint_idx];
-  const double error_acceleration = state_error.accelerations[joint_idx];
+  const double error_velocity = state_error.velocities.empty() ?
+    0.0 : state_error.velocities[joint_idx];
+  const double error_acceleration = state_error.accelerations.empty() ?
+    0.0 : state_error.accelerations[joint_idx];
 
   const bool is_valid =
     !(state_tolerance.position > 0.0 && abs(error_position) > state_tolerance.position) &&

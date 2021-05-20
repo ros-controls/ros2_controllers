@@ -31,3 +31,79 @@ Other features
     Proper handling of wrapping (continuous) joints.
 
     Robust to system clock changes: Discontinuous system clock changes do not cause discontinuities in the execution of already queued trajectory segments.
+
+
+Using Joint Trajectory Controller(s)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The controller expects at least position feedback from the hardware.
+Joint velocities and accelerations are optional.
+Currently the controller does not internally integrate velocity from acceleration and position from velocity.
+Therefore if the hardware provides only acceleration or velocity states they have to be integrated in the hardware-interface implementation of velocity and position to use these controllers.
+
+The generic version of Joint Trajectory controller is implemented in this package.
+A yaml file for using it could be:
+
+   .. code-block:: yaml
+
+      controller_manager:
+        ros__parameters:
+          joint_trajectory_controller:
+          type: "joint_trajectory_controller/JointTrajectoryController"
+
+      joint_trajectory_controller:
+        ros__parameters:
+          joints:
+            - joint0
+            - joint1
+            - joint2
+            - joint3
+            - joint4
+            - joint5
+
+          command_interfaces:
+            - position
+
+          state_interfaces:
+            - position
+            - velocity
+
+          state_publish_rate: 50.0 # Defaults to 50
+          action_monitor_rate: 20.0 # Defaults to 20
+
+          allow_partial_joints_goal: false # Defaults to false
+          hardware_state_has_offset: true
+          deduce_states_from_derivatives: true
+          constraints:
+            stopped_velocity_tolerance: 0.01 # Defaults to 0.01
+            goal_time: 0.0 # Defaults to 0.0 (start immediately)
+
+
+Specialized versions of JointTrajectoryController (TBD in ...)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The controller types are placed into namespaces according to their command types for the hardware (see `general introduction into controllers <../../index.rst>`_).
+
+The following version of the Joint Trajectory Controller are available mapping the following interfaces:
+
+  - position_controllers::JointTrajectoryController
+    - Input: position, [velocity, [acceleration]]
+    - Output: position
+  - position_velocity_controllers::JointTrajectoryController
+    - Input: position, [velocity, [acceleration]]
+    - Output: position and velocity
+  - position_velocity_acceleration_controllers::JointTrajectoryController
+    - Input: position, [velocity, [acceleration]]
+    - Output: position, velocity and acceleration
+..   - velocity_controllers::JointTrajectoryController
+..     - Input: position, [velocity, [acceleration]]
+..     - Output: velocity
+.. TODO(anyone): would it be possible to output velocty and acceleration?
+..               (to have an vel_acc_controllers)
+..   - effort_controllers::JointTrajectoryController
+..     - Input: position, [velocity, [acceleration]]
+..     - Output: effort
+
+The controller uses `common hardware interface definitions`_.
+
+(*Not implemented yet*) When using pure ``velocity`` or ``effort`` controllers a command is generated using the desired state and state error using a velocity feedforward term plus a corrective PID term. (#171)
