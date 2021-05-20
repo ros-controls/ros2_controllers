@@ -240,7 +240,7 @@ public:
     qos.keep_last(1);
     state_subscriber_ =
       traj_lifecycle_node->create_subscription<JointTrajectoryControllerState>(
-      controller_name_+"/state",
+      controller_name_ + "/state",
       qos,
       [&](std::shared_ptr<JointTrajectoryControllerState> msg) {
         std::lock_guard<std::mutex> guard(state_mutex_);

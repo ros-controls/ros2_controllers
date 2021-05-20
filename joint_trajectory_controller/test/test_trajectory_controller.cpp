@@ -397,7 +397,7 @@ void TrajectoryControllerTest::test_state_publish_rate_target(int target_msg_cou
   int echo_received_counter = 0;
   rclcpp::Subscription<JointTrajectoryControllerState>::SharedPtr subs =
     traj_node_->create_subscription<JointTrajectoryControllerState>(
-    controller_name_ +"/state",
+    controller_name_ + "/state",
     qos_level,
     [&](JointTrajectoryControllerState::UniquePtr) {
       ++echo_received_counter;
