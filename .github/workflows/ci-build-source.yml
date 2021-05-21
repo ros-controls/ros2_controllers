@@ -1,0 +1,39 @@
+name: Source Build
+on:
+  push:
+    branches:
+      - master
+  schedule:
+    # Run every day to detect flakiness and broken dependencies
+    - cron: '27 7 * * *'
+
+jobs:
+  source:
+    name: source build
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: ros-tooling/setup-ros@0.0.26
+      - uses: ros-tooling/action-ros-ci@v0.2
+        with:
+          target-ros2-distro: foxy
+          # build all packages listed in the meta package
+          package-name:
+            diff_drive_controller
+            effort_controllers
+            forward_command_controller
+            joint_state_broadcaster
+            joint_state_controller
+            joint_trajectory_controller
+            position_controllers
+            ros2_controllers
+            velocity_controllers
+          vcs-repo-file-url: |
+            https://raw.githubusercontent.com/ros2/ros2/foxy/ros2.repos
+            https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/ros2_controllers/ros2_controllers.repos
+          colcon-mixin-repository: https://raw.githubusercontent.com/colcon/colcon-mixin-repository/master/index.yaml
+      - uses: actions/upload-artifact@v1
+        with:
+          name: colcon-logs-${{ matrix.os }}
+          path: ros_ws/log

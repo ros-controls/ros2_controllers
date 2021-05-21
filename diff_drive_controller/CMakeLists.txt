@@ -61,10 +61,7 @@ install(TARGETS diff_drive_controller
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gmock REQUIRED)
-  find_package(ament_lint_auto REQUIRED)
   find_package(controller_manager REQUIRED)
-
-  ament_lint_auto_find_test_dependencies()
 
   ament_add_gmock(test_diff_drive_controller
     test/test_diff_drive_controller.cpp
