@@ -241,17 +241,7 @@ controller_interface::return_type AdmittanceRule::update(
     if (i >= 3) {
       pose_error[i] = angles::normalize_angle(current_pose_control_frame_arr_[i] -
         target_pose_control_frame_arr_[i]);
-      RCLCPP_INFO(rclcpp::get_logger("AR"), "Pose error [%zu]: (%e = %e - %e)",
-                  i, pose_error[i], current_pose_control_frame_arr_[i], target_pose_control_frame_arr_[i]);
     }
-    // RCLCPP_INFO(rclcpp::get_logger("AR"), "Pose error [%zu]: (%e = %e - %e)",
-    //             i, pose_error[i], current_pose_control_frame_arr_[i], target_pose_control_frame_arr_[i]);
-    // remove small noise due transformations
-//     if (pose_error[i] < 0.00000000001) {
-//       pose_error[i] = 0;
-//     }
-//     RCLCPP_INFO(rclcpp::get_logger("AR"), "Pose error [%zu]: (%e = %e - %e)",
-//                 i, pose_error[i], current_pose_control_frame_arr_[i], target_pose_control_frame_arr_[i]);
   }
 
   process_force_measurements(measured_wrench);
@@ -305,7 +295,6 @@ controller_interface::return_type AdmittanceRule::update(
   target_pose_base_frame.pose.position.y += target_ik_tip_deltas_vec.at(1);
   target_pose_base_frame.pose.position.z += target_ik_tip_deltas_vec.at(2);  tf2::Quaternion q(transform_ik_base_tip.transform.rotation.x, transform_ik_base_tip.transform.rotation.y, transform_ik_base_tip.transform.rotation.z, transform_ik_base_tip.transform.rotation.w);
   tf2::Quaternion q_rot;
-  RCLCPP_INFO_STREAM(rclcpp::get_logger("AdmittanceRule"), "Rotation delta: " << target_ik_tip_deltas_vec.at(3) << "  " << target_ik_tip_deltas_vec.at(4) << "  " << target_ik_tip_deltas_vec.at(5));
   q_rot.setRPY(target_ik_tip_deltas_vec.at(3), target_ik_tip_deltas_vec.at(4), target_ik_tip_deltas_vec.at(5));
   q = q_rot * q;
   q.normalize();
