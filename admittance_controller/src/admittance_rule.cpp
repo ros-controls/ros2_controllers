@@ -189,7 +189,7 @@ controller_interface::return_type AdmittanceRule::reset()
   desired_velocity_previous_arr_.fill(0.0);
   desired_acceleration_previous_arr_.fill(0.0);
 
-  get_current_pose_of_endeffector_frame(current_pose_);
+  get_pose_of_endeffector_in_base_frame(current_pose_);
 
   // Initialize ik_tip and tool_frame transformations - those are fixed transformations
   tf2::Stamped<tf2::Transform> tf2_transform;
@@ -221,9 +221,8 @@ controller_interface::return_type AdmittanceRule::update(
   target_pose_control_frame_ = target_pose;
 
 //   if (!hardware_state_has_offset_) {
-    get_current_pose_of_endeffector_frame(current_pose_);
-//     transform_message_to_control_frame(current_pose_, current_pose_control_frame_);
-    current_pose_control_frame_ = current_pose_;
+    get_pose_of_endeffector_in_base_frame(current_pose_);
+    transform_message_to_control_frame(current_pose_, current_pose_control_frame_);
 //   }
   // TODO(destogl): Can this work properly, when considering offset between states and commands?
 //   else {
@@ -236,14 +235,17 @@ controller_interface::return_type AdmittanceRule::update(
 
   std::array<double, 6> pose_error;
 
+  // TODO(andy): these errors should be (target - current)
   for (auto i = 0u; i < 6; ++i) {
     pose_error[i] = current_pose_control_frame_arr_[i] - target_pose_control_frame_arr_[i];
     if (i >= 3) {
       pose_error[i] = angles::normalize_angle(current_pose_control_frame_arr_[i] -
-      target_pose_control_frame_arr_[i]);
+        target_pose_control_frame_arr_[i]);
+      RCLCPP_INFO(rclcpp::get_logger("AR"), "Pose error [%zu]: (%e = %e - %e)",
+                  i, pose_error[i], current_pose_control_frame_arr_[i], target_pose_control_frame_arr_[i]);
     }
-    RCLCPP_INFO(rclcpp::get_logger("AR"), "Pose error [%zu]: (%e = %e - %e)",
-                i, pose_error[i], current_pose_control_frame_arr_[i], target_pose_control_frame_arr_[i]);
+    // RCLCPP_INFO(rclcpp::get_logger("AR"), "Pose error [%zu]: (%e = %e - %e)",
+    //             i, pose_error[i], current_pose_control_frame_arr_[i], target_pose_control_frame_arr_[i]);
     // remove small noise due transformations
 //     if (pose_error[i] < 0.00000000001) {
 //       pose_error[i] = 0;
@@ -393,7 +395,7 @@ controller_interface::return_type AdmittanceRule::get_controller_state(
   return controller_interface::return_type::OK;
 }
 
-controller_interface::return_type AdmittanceRule::get_current_pose_of_endeffector_frame(geometry_msgs::msg::PoseStamped & pose)
+controller_interface::return_type AdmittanceRule::get_pose_of_endeffector_in_base_frame(geometry_msgs::msg::PoseStamped & pose)
 {
   // Get tool frame position - in the future use: IKSolver->getPositionFK(...)
   static geometry_msgs::msg::PoseStamped origin;
@@ -476,9 +478,9 @@ void AdmittanceRule::calculate_admittance_rule(
       desired_acceleration_previous_arr_[i] = acceleration;
       desired_velocity_previous_arr_[i] = desired_velocity_arr_[i];
 
-      RCLCPP_INFO(rclcpp::get_logger("AR"), "Rule [%zu]: (%e = %e - D(%.1f)*%e - S(%.1f)*%e)", i,
-                  acceleration, measured_wrench[i], damping_[i], desired_velocity_arr_[i],
-                  stiffness_[i], pose_error);
+      // RCLCPP_INFO(rclcpp::get_logger("AR"), "Rule [%zu]: (%e = %e - D(%.1f)*%e - S(%.1f)*%e)", i,
+      //             acceleration, measured_wrench[i], damping_[i], desired_velocity_arr_[i],
+      //             stiffness_[i], pose_error);
     }
   }
 }

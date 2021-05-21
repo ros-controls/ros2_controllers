@@ -78,7 +78,7 @@ public:
     control_msgs::msg::AdmittanceControllerState & state_message
   );
 
-  controller_interface::return_type get_current_pose_of_endeffector_frame(geometry_msgs::msg::PoseStamped & pose);
+  controller_interface::return_type get_pose_of_endeffector_in_base_frame(geometry_msgs::msg::PoseStamped & pose);
 
 public:
   bool hardware_state_has_offset_ = false;
