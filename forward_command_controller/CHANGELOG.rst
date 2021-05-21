@@ -2,8 +2,8 @@
 Changelog for package forward_command_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.3.0 (2021-05-21)
+------------------
 * [JointTrajectoryController] Enable position, velocity and acceleration interfaces (`#140 <https://github.com/ros-controls/ros2_controllers/issues/140>`_)
   * joint_trajectory_controller should not go into FINALIZED state when fails to configure, remain in UNCONFIGURED
 * Contributors: Denis Štogl, Bence Magyar

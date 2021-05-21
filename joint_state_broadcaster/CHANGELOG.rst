@@ -2,8 +2,8 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.3.0 (2021-05-21)
+------------------
 * Remove unused variable (`#181 <https://github.com/ros-controls/ros2_controllers/issues/181>`_)
 * Add extra joints parameter at joint state broadcaster (`#179 <https://github.com/ros-controls/ros2_controllers/issues/179>`_)
 * Contributors: Cesc Folch Aldehuelo, Karsten Knese
