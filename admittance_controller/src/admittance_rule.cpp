@@ -292,27 +292,26 @@ controller_interface::return_type AdmittanceRule::update(
 
   ik_->update_robot_state(current_joint_state);
 
-  // TODO(destogl): Use as class variables to avoid memory allocation
-  geometry_msgs::msg::PoseStamped current_ik_tip_pose;
-  geometry_msgs::msg::TransformStamped target_ik_tip_deltas_pose;
-  target_ik_tip_deltas_pose.header.frame_id = ik_base_frame_;
-  target_ik_tip_deltas_pose.child_frame_id = ik_base_frame_;
-  geometry_msgs::msg::PoseStamped target_ik_tip_pose;
-  geometry_msgs::msg::PoseStamped target_eff_pose;
-  static geometry_msgs::msg::PoseStamped origin;
-  origin.header.frame_id = ik_tip_frame_;
-  origin.pose.orientation.w = 1;
+  // Get the target pose in ik_base frame
+  geometry_msgs::msg::PoseStamped target_pose_base_frame;
+  target_pose_base_frame.header.frame_id = ik_base_frame_;
+  target_pose_base_frame.pose.position.x = transform_ik_base_tip.transform.translation.x;
+  target_pose_base_frame.pose.position.y = transform_ik_base_tip.transform.translation.y;
+  target_pose_base_frame.pose.position.z = transform_ik_base_tip.transform.translation.z;
+  target_pose_base_frame.pose.position.x += target_ik_tip_deltas_vec.at(0);
+  target_pose_base_frame.pose.position.y += target_ik_tip_deltas_vec.at(1);
+  target_pose_base_frame.pose.position.z += target_ik_tip_deltas_vec.at(2);  tf2::Quaternion q(transform_ik_base_tip.transform.rotation.x, transform_ik_base_tip.transform.rotation.y, transform_ik_base_tip.transform.rotation.z, transform_ik_base_tip.transform.rotation.w);
+  tf2::Quaternion q_rot;
+  RCLCPP_INFO_STREAM(rclcpp::get_logger("AdmittanceRule"), "Rotation delta: " << target_ik_tip_deltas_vec.at(3) << "  " << target_ik_tip_deltas_vec.at(4) << "  " << target_ik_tip_deltas_vec.at(5));
+  q_rot.setRPY(target_ik_tip_deltas_vec.at(3), target_ik_tip_deltas_vec.at(4), target_ik_tip_deltas_vec.at(5));
+  q = q_rot * q;
+  q.normalize();
+  target_pose_base_frame.pose.orientation.w = q.w();
+  target_pose_base_frame.pose.orientation.x = q.x();
+  target_pose_base_frame.pose.orientation.y = q.y();
+  target_pose_base_frame.pose.orientation.z = q.z();
 
-  // If FK this is not needed
-  // TODO(anyone): Can we just use values from transformation instead calling doTransform?
-  tf2::doTransform(origin, current_ik_tip_pose, transform_ik_base_tip);
-  convert_array_to_message(target_ik_tip_deltas_vec, target_ik_tip_deltas_pose);
-  tf2::doTransform(current_ik_tip_pose, target_ik_tip_pose, target_ik_tip_deltas_pose);
-
-  transform_ik_tip_to_endeffector_frame(target_ik_tip_pose.pose, target_eff_pose.pose);
-  target_eff_pose.header = target_ik_tip_pose.header;
-
-  return update(current_joint_state, measured_wrench, target_eff_pose, period, desired_joint_state);
+  return update(current_joint_state, measured_wrench, target_pose_base_frame, period, desired_joint_state);
 }
 
 controller_interface::return_type AdmittanceRule::update(
