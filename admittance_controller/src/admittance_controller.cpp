@@ -336,7 +336,7 @@ CallbackReturn AdmittanceController::on_configure(
   // TODO(destogl): This will break tests because there is no TF inside them
   auto iterations = 0u;
   const auto max_iterations = 20u;
-  while (admittance_->get_current_pose_of_endeffector_frame(*msg_pose) != controller_interface::return_type::OK)
+  while (admittance_->get_pose_of_endeffector_in_base_frame(*msg_pose) != controller_interface::return_type::OK)
   {
     RCLCPP_INFO_THROTTLE(get_node()->get_logger(), *(get_node()->get_clock()), 5000, "Waiting for base to endeffector transform becomes available.");
     rclcpp::sleep_for(std::chrono::seconds(1));
@@ -455,7 +455,7 @@ CallbackReturn AdmittanceController::on_activate(const rclcpp_lifecycle::State &
 
   std::shared_ptr<ControllerCommandPoseMsg> msg_pose = std::make_shared<ControllerCommandPoseMsg>();
   msg_pose->header.frame_id = admittance_->control_frame_;
-  admittance_->get_current_pose_of_endeffector_frame(*msg_pose);
+  admittance_->get_pose_of_endeffector_in_base_frame(*msg_pose);
   input_pose_command_.writeFromNonRT(msg_pose);
 
   return CallbackReturn::SUCCESS;

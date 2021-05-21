@@ -189,7 +189,7 @@ controller_interface::return_type AdmittanceRule::reset()
   desired_velocity_previous_arr_.fill(0.0);
   desired_acceleration_previous_arr_.fill(0.0);
 
-  get_pose_of_endeffector_in_base_frame(current_pose_);
+  get_pose_of_endeffector_in_base_frame(current_pose_in_base_frame_);
 
   // Initialize ik_tip and tool_frame transformations - those are fixed transformations
   tf2::Stamped<tf2::Transform> tf2_transform;
@@ -221,8 +221,8 @@ controller_interface::return_type AdmittanceRule::update(
   target_pose_control_frame_ = target_pose;
 
 //   if (!hardware_state_has_offset_) {
-    get_pose_of_endeffector_in_base_frame(current_pose_);
-    transform_message_to_control_frame(current_pose_, current_pose_control_frame_);
+    get_pose_of_endeffector_in_base_frame(current_pose_in_base_frame_);
+    transform_message_to_control_frame(current_pose_in_base_frame_, current_pose_control_frame_);
 //   }
   // TODO(destogl): Can this work properly, when considering offset between states and commands?
 //   else {
@@ -397,14 +397,14 @@ controller_interface::return_type AdmittanceRule::get_controller_state(
 
 controller_interface::return_type AdmittanceRule::get_pose_of_endeffector_in_base_frame(geometry_msgs::msg::PoseStamped & pose)
 {
-  // Get tool frame position - in the future use: IKSolver->getPositionFK(...)
-  static geometry_msgs::msg::PoseStamped origin;
-  origin.header.frame_id = endeffector_frame_;
-  origin.pose.orientation.w = 1;
-
   try {
     auto transform = tf_buffer_->lookupTransform(ik_base_frame_, endeffector_frame_, tf2::TimePointZero);
-    tf2::doTransform(origin, pose, transform);
+
+    pose.header = transform.header;
+    pose.pose.position.x = transform.transform.translation.x;
+    pose.pose.position.y = transform.transform.translation.y;
+    pose.pose.position.z = transform.transform.translation.z;
+    pose.pose.orientation= transform.transform.rotation;
   } catch (const tf2::TransformException & e) {
     // TODO(destogl): Use RCLCPP_ERROR_THROTTLE
     RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed between '" + ik_base_frame_ + "' and '" + endeffector_frame_ + "'.");
