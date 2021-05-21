@@ -143,20 +143,22 @@ protected:
   tf2::Transform ik_tip_to_endeffector_frame_tf_;
   tf2::Transform endeffector_frame_to_ik_tip_tf_;
 
+  // measured_wrench_ could arrive in any frame. It will be transformed
   geometry_msgs::msg::WrenchStamped measured_wrench_;
   geometry_msgs::msg::WrenchStamped measured_wrench_filtered_;
+
   geometry_msgs::msg::WrenchStamped measured_wrench_control_frame_;
   geometry_msgs::msg::WrenchStamped measured_wrench_endeffector_frame_;
 
   geometry_msgs::msg::PoseStamped origin_ik_tip_;
   geometry_msgs::msg::PoseStamped origin_endeffector_;
-  geometry_msgs::msg::PoseStamped current_pose_in_base_frame_;
+  geometry_msgs::msg::PoseStamped current_pose_base_frame_;
   geometry_msgs::msg::PoseStamped current_pose_control_frame_;
 
   geometry_msgs::msg::WrenchStamped target_force_control_frame_;
   geometry_msgs::msg::PoseStamped target_pose_control_frame_;
 
-  geometry_msgs::msg::PoseStamped desired_pose_;
+  geometry_msgs::msg::PoseStamped desired_pose_control_frame_;
   geometry_msgs::msg::TransformStamped relative_desired_pose_;
 
   // Pre-reserved update-loop variables

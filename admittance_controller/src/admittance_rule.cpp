@@ -189,7 +189,7 @@ controller_interface::return_type AdmittanceRule::reset()
   desired_velocity_previous_arr_.fill(0.0);
   desired_acceleration_previous_arr_.fill(0.0);
 
-  get_pose_of_endeffector_in_base_frame(current_pose_in_base_frame_);
+  get_pose_of_endeffector_in_base_frame(current_pose_base_frame_);
 
   // Initialize ik_tip and tool_frame transformations - those are fixed transformations
   tf2::Stamped<tf2::Transform> tf2_transform;
@@ -220,13 +220,13 @@ controller_interface::return_type AdmittanceRule::update(
 //   transform_message_to_control_frame(target_pose, target_pose_control_frame_);
   target_pose_control_frame_ = target_pose;
 
-//   if (!hardware_state_has_offset_) {
-    get_pose_of_endeffector_in_base_frame(current_pose_in_base_frame_);
-    transform_message_to_control_frame(current_pose_in_base_frame_, current_pose_control_frame_);
-//   }
+  if (!hardware_state_has_offset_) {
+    get_pose_of_endeffector_in_base_frame(current_pose_base_frame_);
+    transform_message_to_control_frame(current_pose_base_frame_, current_pose_control_frame_);
+  }
   // TODO(destogl): Can this work properly, when considering offset between states and commands?
 //   else {
-//     current_pose_control_frame_ = desired_pose_;
+//     current_pose_control_frame_ = desired_pose_control_frame_;
 //   }
 
   // Convert all data to arrays for simpler calculation
@@ -341,7 +341,7 @@ controller_interface::return_type AdmittanceRule::get_controller_state(
 
   state_message.measured_wrench_endeffector_frame = measured_wrench_endeffector_frame_;
 
-  state_message.desired_pose = desired_pose_;
+  state_message.desired_pose = desired_pose_control_frame_;
   state_message.relative_desired_pose = relative_desired_pose_;
 
   return controller_interface::return_type::OK;
@@ -445,8 +445,8 @@ controller_interface::return_type AdmittanceRule::calculate_desired_joint_state(
 {
   // Do clean conversion to the goal pose using transform and not messing with Euler angles
   convert_array_to_message(relative_desired_pose_arr_, relative_desired_pose_);
-  tf2::doTransform(current_pose_control_frame_, desired_pose_, relative_desired_pose_);
-  transform_ik_tip_to_endeffector_frame(desired_pose_.pose, desired_pose_.pose);
+  tf2::doTransform(current_pose_control_frame_, desired_pose_control_frame_, relative_desired_pose_);
+  transform_ik_tip_to_endeffector_frame(desired_pose_control_frame_.pose, desired_pose_control_frame_.pose);
 
   // Calculate desired Cartesian displacement of the robot
   // TODO: replace this with FK in the long term
@@ -474,12 +474,6 @@ controller_interface::return_type AdmittanceRule::calculate_desired_joint_state(
       std::fill(desired_joint_state.velocities.begin(), desired_joint_state.velocities.end(), 0.0);
       return controller_interface::return_type::ERROR;
     }
-
-    // TODO(anyone: enable this when enabling use of IK directly
-    // transform = tf_buffer_->lookupTransform(endeffector_frame_, ik_base_frame_, tf2::TimePointZero);
-    // tf2::doTransform(desired_pose_, ik_input_pose_, transform);
-    // ik_input_pose_.pose = transform_endeffector_to_ik_tip_frame(ik_input_pose_);
-    // std::vector<double> ik_sol = ik_solver_->getPositionIK (  ); ...
 
     return controller_interface::return_type::OK;
 }
