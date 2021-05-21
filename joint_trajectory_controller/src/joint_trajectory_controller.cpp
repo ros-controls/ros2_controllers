@@ -427,7 +427,8 @@ JointTrajectoryController::on_activate(const rclcpp_lifecycle::State &)
 
   traj_external_point_ptr_ = std::make_shared<Trajectory>();
   traj_home_point_ptr_ = std::make_shared<Trajectory>();
-  traj_msg_external_point_ptr_.writeFromNonRT(std::shared_ptr<trajectory_msgs::msg::JointTrajectory>());
+  traj_msg_external_point_ptr_.writeFromNonRT(
+    std::shared_ptr<trajectory_msgs::msg::JointTrajectory>());
 
   is_halted = false;
   subscriber_is_active_ = true;
