@@ -327,6 +327,8 @@ controller_interface::return_type AdmittanceRule::update(
     return controller_interface::return_type::ERROR;
   }
 
+  ik_->update_robot_state(current_joint_state);
+
   // TODO(destogl): Use as class variables to avoid memory allocation
   geometry_msgs::msg::PoseStamped current_ik_tip_pose;
   geometry_msgs::msg::TransformStamped target_ik_tip_deltas_pose;
