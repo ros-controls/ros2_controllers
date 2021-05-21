@@ -282,7 +282,10 @@ controller_interface::return_type AdmittanceRule::update(
     return controller_interface::return_type::ERROR;
   }
 
-  if (ik_->convertJointDeltasToCartesianDeltas(target_joint_deltas_vec, transform_ik_base_tip, target_ik_tip_deltas_vec)) {
+  geometry_msgs::msg::TransformStamped identity_tf;
+  identity_tf.header.frame_id = ik_base_frame_;
+  identity_tf.transform.rotation.w = 1;
+  if (ik_->convertJointDeltasToCartesianDeltas(target_joint_deltas_vec, identity_tf, target_ik_tip_deltas_vec)) {
   } else {
     RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "Conversion of joint deltas to Cartesian deltas failed. Sending current joint values to the robot.");
     desired_joint_state = current_joint_state;
