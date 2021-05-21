@@ -150,7 +150,7 @@ protected:
 
   geometry_msgs::msg::PoseStamped origin_ik_tip_;
   geometry_msgs::msg::PoseStamped origin_endeffector_;
-  geometry_msgs::msg::PoseStamped current_pose_;
+  geometry_msgs::msg::PoseStamped current_pose_in_base_frame_;
   geometry_msgs::msg::PoseStamped current_pose_control_frame_;
 
   geometry_msgs::msg::WrenchStamped target_force_control_frame_;
