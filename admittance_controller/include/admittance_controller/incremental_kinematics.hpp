@@ -54,6 +54,18 @@ public:
   bool
   convertJointDeltasToCartesianDeltas(std::vector<double> &  delta_theta_vec, const geometry_msgs::msg::TransformStamped & ik_base_to_tip_tf, std::vector<double> & delta_x_vec);
 
+  bool update_robot_state(const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state)
+  {
+    if (current_joint_state.positions.size() != kinematic_state_->getVariableNames().size())
+    {
+      RCLCPP_ERROR(node_->get_logger(), "Vector size mismatch in update_robot_state()");
+      return false;
+    }
+
+    kinematic_state_->setVariablePositions(current_joint_state.positions);
+    return true;
+  }
+
 private:
   // MoveIt setup, required to retrieve the Jacobian
   const moveit::core::JointModelGroup* joint_model_group_;
