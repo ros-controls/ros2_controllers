@@ -47,12 +47,12 @@ public:
   /**
    * \brief Convert joint delta-theta to Cartesian delta-x, using the Jacobian.
    * \param[in] delta_theta_vec vector with joint states
-   * \param[in] ik_base_to_tip_tf transformation between ik base to ik tip
+   * \param[in] tf_ik_base_to_desired_cartesian_frame transformation to the desired Cartesian frame. Use identity matrix to stay in the ik_base frame.
    * \param[out] delta_x_vec  Cartesian deltas (x, y, z, rx, ry, rz)
    * \return true if successful
    */
   bool
-  convertJointDeltasToCartesianDeltas(std::vector<double> &  delta_theta_vec, const geometry_msgs::msg::TransformStamped & ik_base_to_tip_tf, std::vector<double> & delta_x_vec);
+  convertJointDeltasToCartesianDeltas(std::vector<double> &  delta_theta_vec, const geometry_msgs::msg::TransformStamped & tf_ik_base_to_desired_cartesian_frame, std::vector<double> & delta_x_vec);
 
   bool update_robot_state(const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state)
   {
