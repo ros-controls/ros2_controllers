@@ -296,7 +296,7 @@ Trajectory::time_from_start() const
 bool
 Trajectory::has_trajectory_msg() const
 {
-  return !trajectory_msg_;
+  return trajectory_msg_.get() != nullptr;
 }
 
 }  // namespace joint_trajectory_controller
