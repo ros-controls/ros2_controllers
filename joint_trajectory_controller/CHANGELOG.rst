@@ -2,6 +2,23 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.3.0 (2021-05-21)
+------------------
+* joint_trajectory_controller publishes state in node namespace (`#187 <https://github.com/ros-controls/ros2_controllers/issues/187>`_)
+* [JointTrajectoryController] Enable position, velocity and acceleration interfaces (`#140 <https://github.com/ros-controls/ros2_controllers/issues/140>`_)
+  * joint_trajectory_controller should not go into FINALIZED state when fails to configure, remain in UNCONFIGURED
+* Contributors: Bence Magyar, Denis Štogl
+
+0.2.1 (2021-05-03)
+------------------
+* Migrate from deprecated controller_interface::return_type::SUCCESS -> OK (`#167 <https://github.com/ros-controls/ros2_controllers/issues/167>`_)
+* [JTC] Add link to TODOs to provide better trackability (`#169 <https://github.com/ros-controls/ros2_controllers/issues/169>`_)
+* Fix JTC segfault (`#164 <https://github.com/ros-controls/ros2_controllers/issues/164>`_)
+  * Use a copy of the rt_active_goal to avoid segfault
+  * Use RealtimeBuffer for thread-safety
+* Add basic user docs pages for each package (`#156 <https://github.com/ros-controls/ros2_controllers/issues/156>`_)
+* Contributors: Bence Magyar, Matt Reynolds
+
 0.2.0 (2021-02-06)
 ------------------
 * Use ros2 contol test assets (`#138 <https://github.com/ros-controls/ros2_controllers/issues/138>`_)

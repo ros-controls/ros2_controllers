@@ -1,4 +1,4 @@
-// Copyright 2017 Open Source Robotics Foundation, Inc.
+// Copyright (c) 2021 ros2_control Development Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@
 #include "control_msgs/msg/joint_trajectory_controller_state.hpp"
 #include "control_msgs/action/follow_joint_trajectory.hpp"
 #include "controller_interface/controller_interface.hpp"
+#include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "joint_trajectory_controller/tolerances.hpp"
 #include "joint_trajectory_controller/visibility_control.h"
 #include "rclcpp/duration.hpp"
@@ -41,10 +42,6 @@
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
-namespace hardware_interface
-{
-class RobotHardware;
-}  // namespace hardware_interface
 namespace rclcpp_action
 {
 template<typename ActionT>
@@ -74,14 +71,16 @@ public:
    * interfaces for the controlled joints
    */
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  controller_interface::InterfaceConfiguration command_interface_configuration() const override;
+  controller_interface::InterfaceConfiguration
+  command_interface_configuration() const override;
 
   /**
    * @brief command_interface_configuration This controller requires the position and velocity
    * state interfaces for the controlled joints
    */
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  controller_interface::InterfaceConfiguration state_interface_configuration() const override;
+  controller_interface::InterfaceConfiguration
+  state_interface_configuration() const override;
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   controller_interface::return_type
@@ -113,15 +112,35 @@ public:
 
 protected:
   std::vector<std::string> joint_names_;
+  std::vector<std::string> command_interface_types_;
+  std::vector<std::string> state_interface_types_;
 
-  // For convenience, we have ordered the interfaces so i-th position matches i-th index
-  // in joint_names_
-  std::vector<std::reference_wrapper<hardware_interface::LoanedCommandInterface>>
-  joint_position_command_interface_;
-  std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>>
-  joint_position_state_interface_;
-  std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>>
-  joint_velocity_state_interface_;
+  // To reduce number of variables and to make the code shorter the interfaces are ordered in types
+  // as the following constants
+  const std::vector<std::string> allowed_interface_types_ = {
+    hardware_interface::HW_IF_POSITION,
+    hardware_interface::HW_IF_VELOCITY,
+    hardware_interface::HW_IF_ACCELERATION,
+    hardware_interface::HW_IF_EFFORT,
+  };
+
+  // The interfaces are defined as the types in 'allowed_interface_types_' member.
+  // For convenience, for each type the interfaces are ordered so that i-th position
+  // matches i-th index in joint_names_
+  template<typename T>
+  using InterfaceReferences = std::vector<std::vector<std::reference_wrapper<T>>>;
+
+  InterfaceReferences<hardware_interface::LoanedCommandInterface> joint_command_interface_;
+  InterfaceReferences<hardware_interface::LoanedStateInterface> joint_state_interface_;
+
+  bool has_velocity_state_interface_ = false;
+  bool has_acceleration_state_interface_ = false;
+  bool has_position_command_interface_ = false;
+  bool has_velocity_command_interface_ = false;
+  bool has_acceleration_command_interface_ = false;
+
+  /// If true, a velocity feedforward term plus corrective PID term is used
+  bool use_closed_loop_pid_adapter = false;
 
   // TODO(karsten1987): eventually activate and deactive subscriber directly when its supported
   bool subscriber_is_active_ = false;
@@ -135,7 +154,9 @@ protected:
   realtime_tools::RealtimeBuffer<std::shared_ptr<trajectory_msgs::msg::JointTrajectory>>
   traj_msg_external_point_ptr_;
 
-  bool is_halted = false;
+  // The controller should be in halted state after creation otherwise memory corruption
+  // TODO(anyone): Is the variable relevant, since we are using lifecycle?
+  bool is_halted_ = true;
 
   using ControllerStateMsg = control_msgs::msg::JointTrajectoryControllerState;
   using StatePublisher = realtime_tools::RealtimePublisher<ControllerStateMsg>;
@@ -188,13 +209,20 @@ protected:
   void set_hold_position();
 
   bool reset();
-  void halt();
 
   using JointTrajectoryPoint = trajectory_msgs::msg::JointTrajectoryPoint;
   void publish_state(
     const JointTrajectoryPoint & desired_state,
     const JointTrajectoryPoint & current_state,
     const JointTrajectoryPoint & state_error);
+
+private:
+  bool contains_interface_type(
+    const std::vector<std::string> & interface_type_list, const std::string & interface_type)
+  {
+    return std::find(interface_type_list.begin(), interface_type_list.end(), interface_type) !=
+           interface_type_list.end();
+  }
 };
 
 }  // namespace joint_trajectory_controller
