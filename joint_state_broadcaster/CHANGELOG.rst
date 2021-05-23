@@ -2,6 +2,9 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.3.0 (2021-05-21)
 ------------------
 * Remove unused variable (`#181 <https://github.com/ros-controls/ros2_controllers/issues/181>`_)

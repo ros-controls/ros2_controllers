@@ -2,6 +2,13 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Reset external trajectory message upon activation (`#185 <https://github.com/ros-controls/ros2_controllers/issues/185>`_)
+  * Reset external trajectory message to prevent preserving the old goal on systems with hardware offsets
+  * Fix has_trajectory_msg() function: two wrongs were making a right so functionally things were fine
+* Contributors: Nathan Brooks, Matt Reynolds
+
 0.3.0 (2021-05-21)
 ------------------
 * joint_trajectory_controller publishes state in node namespace (`#187 <https://github.com/ros-controls/ros2_controllers/issues/187>`_)
