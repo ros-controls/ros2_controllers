@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.3.1 (2021-05-23)
+------------------
 * Reset external trajectory message upon activation (`#185 <https://github.com/ros-controls/ros2_controllers/issues/185>`_)
   * Reset external trajectory message to prevent preserving the old goal on systems with hardware offsets
   * Fix has_trajectory_msg() function: two wrongs were making a right so functionally things were fine
