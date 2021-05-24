@@ -15,15 +15,15 @@
 
 /// \author Sachin Chitta, Adolfo Rodriguez Tsouroukdissian
 
-#ifndef GRIPPER_ACTION_CONTROLLER__HARDWARE_INTERFACE_ADAPTER_HPP_
-#define GRIPPER_ACTION_CONTROLLER__HARDWARE_INTERFACE_ADAPTER_HPP_
+#ifndef GRIPPER_CONTROLLERS__HARDWARE_INTERFACE_ADAPTER_HPP_
+#define GRIPPER_CONTROLLERS__HARDWARE_INTERFACE_ADAPTER_HPP_
 
+#include <optional>
 #include <algorithm>
 #include <cassert>
 #include <memory>
 #include <string>
 #include <vector>
-#include <optional>
 
 #include "rclcpp/time.hpp"
 
@@ -178,4 +178,4 @@ private:
   std::chrono::steady_clock::time_point last_update_time_;
 };
 
-#endif  // GRIPPER_ACTION_CONTROLLER__HARDWARE_INTERFACE_ADAPTER_HPP_
+#endif  // GRIPPER_CONTROLLERS__HARDWARE_INTERFACE_ADAPTER_HPP_

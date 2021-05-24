@@ -14,15 +14,15 @@
 
 /// \author Sachin Chitta, Adolfo Rodriguez Tsouroukdissian
 
-#ifndef GRIPPER_ACTION_CONTROLLER__GRIPPER_ACTION_CONTROLLER_HPP_
-#define GRIPPER_ACTION_CONTROLLER__GRIPPER_ACTION_CONTROLLER_HPP_
+#ifndef GRIPPER_CONTROLLERS__GRIPPER_ACTION_CONTROLLER_HPP_
+#define GRIPPER_CONTROLLERS__GRIPPER_ACTION_CONTROLLER_HPP_
 
 // C++ standard
+#include <optional>
 #include <cassert>
 #include <memory>
 #include <stdexcept>
 #include <string>
-#include <optional>
 
 // ROS
 #include "rclcpp/rclcpp.hpp"
@@ -35,14 +35,14 @@
 
 // ros_controls
 #include "controller_interface/controller_interface.hpp"
-#include "gripper_action_controller/visibility_control.hpp"
+#include "gripper_controllers/visibility_control.hpp"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "realtime_tools/realtime_buffer.h"
 #include "realtime_tools/realtime_server_goal_handle.h"
 
 // Project
-#include "gripper_action_controller/hardware_interface_adapter.hpp"
+#include "gripper_controllers/hardware_interface_adapter.hpp"
 
 namespace gripper_action_controller
 {
@@ -182,6 +182,6 @@ private:
 
 }  // namespace gripper_action_controller
 
-#include "gripper_action_controller/gripper_action_controller_impl.hpp"
+#include "gripper_controllers/gripper_action_controller_impl.hpp"
 
-#endif  // GRIPPER_ACTION_CONTROLLER__GRIPPER_ACTION_CONTROLLER_HPP_
+#endif  // GRIPPER_CONTROLLERS__GRIPPER_ACTION_CONTROLLER_HPP_

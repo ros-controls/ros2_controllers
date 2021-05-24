@@ -3,9 +3,9 @@
   href="http://download.ros.org/schema/package_format3.xsd"
   schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>gripper_action_controller</name>
+  <name>gripper_controllers</name>
   <version>0.2.0</version>
-  <description>The gripper_action_controller package</description>
+  <description>The gripper_controllers package</description>
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
 
   <license>Apache License 2.0</license>

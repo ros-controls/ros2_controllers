@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(gripper_action_controller)
+project(gripper_controllers)
 
 # Default to C++17
 if(NOT CMAKE_CXX_STANDARD)

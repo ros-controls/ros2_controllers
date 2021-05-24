@@ -14,8 +14,8 @@
 
 /// \author Sachin Chitta, Adolfo Rodriguez Tsouroukdissian, Stu Glaser
 
-#ifndef GRIPPER_ACTION_CONTROLLER__GRIPPER_ACTION_CONTROLLER_IMPL_HPP_
-#define GRIPPER_ACTION_CONTROLLER__GRIPPER_ACTION_CONTROLLER_IMPL_HPP_
+#ifndef GRIPPER_CONTROLLERS__GRIPPER_ACTION_CONTROLLER_IMPL_HPP_
+#define GRIPPER_CONTROLLERS__GRIPPER_ACTION_CONTROLLER_IMPL_HPP_
 
 #include <memory>
 #include <string>
@@ -356,4 +356,4 @@ GripperActionController<HardwareInterface>::GripperActionController()
 
 }  // namespace gripper_action_controller
 
-#endif  // GRIPPER_ACTION_CONTROLLER__GRIPPER_ACTION_CONTROLLER_IMPL_HPP_
+#endif  // GRIPPER_CONTROLLERS__GRIPPER_ACTION_CONTROLLER_IMPL_HPP_
