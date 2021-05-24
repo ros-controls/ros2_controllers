@@ -52,8 +52,8 @@ namespace gripper_action_controller
  * single-dof grippers.
  *
  * \tparam HardwareInterface Controller hardware interface. Currently \p
- * hardware_interface::PositionJointInterface and \p
- * hardware_interface::EffortJointInterface are supported out-of-the-box.
+ * hardware_interface::HW_IF_POSITION and \p
+ * hardware_interface::HW_IF_EFFORT are supported out-of-the-box.
  */
 template<const char * HardwareInterface>
 class GripperActionController
