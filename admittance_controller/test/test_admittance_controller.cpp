@@ -76,10 +76,6 @@ INSTANTIATE_TEST_CASE_P(
       rclcpp::ParameterValue("")
     ),
     std::make_tuple(
-      std::string("endeffector_frame"),
-      rclcpp::ParameterValue("")
-    ),
-    std::make_tuple(
       std::string("fixed_world_frame"),
       rclcpp::ParameterValue("")
     ),
@@ -217,7 +213,6 @@ TEST_F(AdmittanceControllerTest, all_parameters_set_configure_success)
   ASSERT_EQ(controller_->admittance_->ik_base_frame_, ik_base_frame_);
   ASSERT_EQ(controller_->admittance_->ik_tip_frame_, ik_tip_frame_);
   //   ASSERT_EQ(controller_->admittance_->ik_group_name_, ik_group_name_);
-  ASSERT_EQ(controller_->admittance_->endeffector_frame_, endeffector_frame_);
   ASSERT_EQ(controller_->admittance_->fixed_world_frame_, fixed_world_frame_);
   ASSERT_EQ(controller_->admittance_->sensor_frame_, sensor_frame_);
 
@@ -386,14 +381,6 @@ TEST_F(AdmittanceControllerTest, publish_status_success)
   ASSERT_EQ(msg.measured_wrench_control_frame.wrench.torque.y, 0.0);
   ASSERT_EQ(msg.measured_wrench_control_frame.wrench.torque.z, 0.0);
 
-  ASSERT_EQ(msg.measured_wrench_endeffector_frame.header.frame_id, endeffector_frame_);
-  ASSERT_EQ(msg.measured_wrench_endeffector_frame.wrench.force.x, 0.0);
-  ASSERT_EQ(msg.measured_wrench_endeffector_frame.wrench.force.y, 0.0);
-  ASSERT_EQ(msg.measured_wrench_endeffector_frame.wrench.force.z, 0.0);
-  ASSERT_EQ(msg.measured_wrench_endeffector_frame.wrench.torque.x, 0.0);
-  ASSERT_EQ(msg.measured_wrench_endeffector_frame.wrench.torque.y, 0.0);
-  ASSERT_EQ(msg.measured_wrench_endeffector_frame.wrench.torque.z, 0.0);
-
   ASSERT_EQ(msg.desired_pose.header.frame_id, control_frame_);
   ASSERT_FALSE(std::isnan(msg.desired_pose.pose.position.x));
   ASSERT_FALSE(std::isnan(msg.desired_pose.pose.position.y));
@@ -461,7 +448,6 @@ TEST_F(AdmittanceControllerTest, receive_message_and_publish_updated_status)
 
   subscribe_and_get_messages(msg);
   ASSERT_EQ(msg.input_wrench_command.header.frame_id, control_frame_);
-  ASSERT_EQ(msg.input_pose_command.header.frame_id, endeffector_frame_);
 }
 
 

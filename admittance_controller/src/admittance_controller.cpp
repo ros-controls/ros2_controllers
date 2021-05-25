@@ -57,7 +57,6 @@ controller_interface::return_type AdmittanceController::init(const std::string &
     get_node()->declare_parameter<std::string>("IK.group_name", "");
 
     get_node()->declare_parameter<std::string>("control_frame", "");
-    get_node()->declare_parameter<std::string>("endeffector_frame", "");
     get_node()->declare_parameter<std::string>("fixed_world_frame", "");
     get_node()->declare_parameter<std::string>("sensor_frame", "");
 
@@ -167,7 +166,6 @@ CallbackReturn AdmittanceController::on_configure(
     get_string_param_and_error_if_empty(admittance_->ik_tip_frame_, "IK.tip") ||
     get_string_param_and_error_if_empty(admittance_->ik_group_name_, "IK.group_name") ||
     get_string_param_and_error_if_empty(admittance_->control_frame_, "control_frame") ||
-    get_string_param_and_error_if_empty(admittance_->endeffector_frame_, "endeffector_frame") ||
     get_string_param_and_error_if_empty(admittance_->fixed_world_frame_, "fixed_world_frame") ||
     get_string_param_and_error_if_empty(admittance_->sensor_frame_, "sensor_frame") ||
     // TODO(destogl): add unified mode considering target force
@@ -336,9 +334,9 @@ CallbackReturn AdmittanceController::on_configure(
   // TODO(destogl): This will break tests because there is no TF inside them
   auto iterations = 0u;
   const auto max_iterations = 20u;
-  while (admittance_->get_pose_of_endeffector_in_base_frame(*msg_pose) != controller_interface::return_type::OK)
+  while (admittance_->get_pose_of_control_frame_in_base_frame(*msg_pose) != controller_interface::return_type::OK)
   {
-    RCLCPP_INFO_THROTTLE(get_node()->get_logger(), *(get_node()->get_clock()), 5000, "Waiting for base to endeffector transform becomes available.");
+    RCLCPP_INFO_THROTTLE(get_node()->get_logger(), *(get_node()->get_clock()), 5000, "Waiting for base to control frame transform to become available.");
     rclcpp::sleep_for(std::chrono::seconds(1));
     if (++iterations > max_iterations) {
       RCLCPP_ERROR(get_node()->get_logger(), "After waiting for TF for %zu seconds, still no transformation available. Admittance Controller can not be configured.", max_iterations);
@@ -455,7 +453,7 @@ CallbackReturn AdmittanceController::on_activate(const rclcpp_lifecycle::State &
 
   std::shared_ptr<ControllerCommandPoseMsg> msg_pose = std::make_shared<ControllerCommandPoseMsg>();
   msg_pose->header.frame_id = admittance_->control_frame_;
-  admittance_->get_pose_of_endeffector_in_base_frame(*msg_pose);
+  admittance_->get_pose_of_control_frame_in_base_frame(*msg_pose);
   input_pose_command_.writeFromNonRT(msg_pose);
 
   return CallbackReturn::SUCCESS;
