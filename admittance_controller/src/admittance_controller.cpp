@@ -288,12 +288,12 @@ CallbackReturn AdmittanceController::on_configure(
 
   // Subscribers and callbacks
   if (admittance_->unified_mode_) {
-    auto callback_input_force = [&](const std::shared_ptr<ControllerCommandForceMsg> msg)
+    auto callback_input_force = [&](const std::shared_ptr<ControllerCommandWrenchMsg> msg)
       -> void
       {
-        input_force_command_.writeFromNonRT(msg);
+        input_wrench_command_.writeFromNonRT(msg);
       };
-    input_force_command_subscriber_ = get_node()->create_subscription<ControllerCommandForceMsg>(
+    input_wrench_command_subscriber_ = get_node()->create_subscription<ControllerCommandWrenchMsg>(
       "~/force_commands", rclcpp::SystemDefaultsQoS(), callback_input_force);
   }
 
@@ -435,9 +435,9 @@ CallbackReturn AdmittanceController::on_activate(const rclcpp_lifecycle::State &
   }
 
   // Set initial command values - initialize all to simplify update
-  std::shared_ptr<ControllerCommandForceMsg> msg_force = std::make_shared<ControllerCommandForceMsg>();
-  msg_force->header.frame_id = admittance_->control_frame_;
-  input_force_command_.writeFromNonRT(msg_force);
+  std::shared_ptr<ControllerCommandWrenchMsg> msg_wrench = std::make_shared<ControllerCommandWrenchMsg>();
+  msg_wrench->header.frame_id = admittance_->control_frame_;
+  input_wrench_command_.writeFromNonRT(msg_wrench);
 
   std::shared_ptr<ControllerCommandJointMsg> msg_joint = std::make_shared<ControllerCommandJointMsg>();
   msg_joint->joint_names = joint_names_;
@@ -484,7 +484,7 @@ CallbackReturn AdmittanceController::on_deactivate(
 controller_interface::return_type AdmittanceController::update()
 {
   // get input commands
-  auto input_wrench_cmd = input_force_command_.readFromRT();
+  auto input_wrench_cmd = input_wrench_command_.readFromRT();
   auto input_joint_cmd = input_joint_command_.readFromRT();
   auto input_pose_cmd = input_pose_command_.readFromRT();
 
