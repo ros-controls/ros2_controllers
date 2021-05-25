@@ -189,18 +189,18 @@ controller_interface::return_type AdmittanceRule::reset()
   desired_velocity_previous_arr_.fill(0.0);
   desired_acceleration_previous_arr_.fill(0.0);
 
-  get_pose_of_endeffector_in_base_frame(current_pose_base_frame_);
+  get_pose_of_control_frame_in_base_frame(current_pose_base_frame_);
 
   // Initialize ik_tip and tool_frame transformations - those are fixed transformations
   tf2::Stamped<tf2::Transform> tf2_transform;
   try {
-    auto transform = tf_buffer_->lookupTransform(ik_tip_frame_, endeffector_frame_, tf2::TimePointZero);
+    auto transform = tf_buffer_->lookupTransform(ik_tip_frame_, control_frame_, tf2::TimePointZero);
     tf2::fromMsg(transform, tf2_transform);
-    ik_tip_to_endeffector_frame_tf_ = tf2_transform;
-    endeffector_frame_to_ik_tip_tf_ = tf2_transform.inverse();
+    ik_tip_to_control_frame_tf_ = tf2_transform;
+    control_frame_to_ik_tip_tf_ = tf2_transform.inverse();
   } catch (const tf2::TransformException & e) {
     // TODO(destogl): Use RCLCPP_ERROR_THROTTLE
-    RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed between '" + ik_tip_frame_ + "' and '" + endeffector_frame_ + "'.");
+    RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed between '" + ik_tip_frame_ + "' and '" + control_frame_ + "'.");
     return controller_interface::return_type::ERROR;
   }
 
@@ -221,7 +221,7 @@ controller_interface::return_type AdmittanceRule::update(
   target_pose_control_frame_ = target_pose;
 
   if (!hardware_state_has_offset_) {
-    get_pose_of_endeffector_in_base_frame(current_pose_base_frame_);
+    get_pose_of_control_frame_in_base_frame(current_pose_base_frame_);
     transform_message_to_control_frame(current_pose_base_frame_, current_pose_control_frame_);
   }
   // TODO(destogl): Can this work properly, when considering offset between states and commands?
@@ -262,20 +262,20 @@ controller_interface::return_type AdmittanceRule::update(
 {
   std::vector<double> target_joint_deltas_vec(target_joint_deltas.begin(), target_joint_deltas.end());
   std::vector<double> target_ik_tip_deltas_vec(6);
-  // TODO: replace this with FK in the long term
-  geometry_msgs::msg::TransformStamped transform_ik_base_tip;
-  try {
-    transform_ik_base_tip = tf_buffer_->lookupTransform(ik_base_frame_, ik_tip_frame_, tf2::TimePointZero);
-  } catch (const tf2::TransformException & e) {
-    // TODO(destogl): Use RCLCPP_ERROR_THROTTLE
-    RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed between '" + ik_base_frame_ + "' and '" + ik_tip_frame_ + "'.");
-    return controller_interface::return_type::ERROR;
-  }
 
-  geometry_msgs::msg::TransformStamped identity_tf;
-  identity_tf.header.frame_id = ik_base_frame_;
-  identity_tf.transform.rotation.w = 1;
-  if (ik_->convertJointDeltasToCartesianDeltas(target_joint_deltas_vec, identity_tf, target_ik_tip_deltas_vec)) {
+  // geometry_msgs::msg::TransformStamped transform_ik_base_tip;
+  // try {
+  //   transform_ik_base_tip = tf_buffer_->lookupTransform(ik_base_frame_, ik_tip_frame_, tf2::TimePointZero);
+  // } catch (const tf2::TransformException & e) {
+  //   // TODO(destogl): Use RCLCPP_ERROR_THROTTLE
+  //   RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed between '" + ik_base_frame_ + "' and '" + ik_tip_frame_ + "'.");
+  //   return controller_interface::return_type::ERROR;
+  // }
+
+  geometry_msgs::msg::TransformStamped transform_ik_base_tip;
+  transform_ik_base_tip.header.frame_id = ik_base_frame_;
+  transform_ik_base_tip.transform.rotation.w = 1;
+  if (ik_->convertJointDeltasToCartesianDeltas(target_joint_deltas_vec, transform_ik_base_tip, target_ik_tip_deltas_vec)) {
   } else {
     RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "Conversion of joint deltas to Cartesian deltas failed. Sending current joint values to the robot.");
     desired_joint_state = current_joint_state;
@@ -293,7 +293,9 @@ controller_interface::return_type AdmittanceRule::update(
   target_pose_base_frame.pose.position.z = transform_ik_base_tip.transform.translation.z;
   target_pose_base_frame.pose.position.x += target_ik_tip_deltas_vec.at(0);
   target_pose_base_frame.pose.position.y += target_ik_tip_deltas_vec.at(1);
-  target_pose_base_frame.pose.position.z += target_ik_tip_deltas_vec.at(2);  tf2::Quaternion q(transform_ik_base_tip.transform.rotation.x, transform_ik_base_tip.transform.rotation.y, transform_ik_base_tip.transform.rotation.z, transform_ik_base_tip.transform.rotation.w);
+  target_pose_base_frame.pose.position.z += target_ik_tip_deltas_vec.at(2); 
+
+  tf2::Quaternion q(transform_ik_base_tip.transform.rotation.x, transform_ik_base_tip.transform.rotation.y, transform_ik_base_tip.transform.rotation.z, transform_ik_base_tip.transform.rotation.w);
   tf2::Quaternion q_rot;
   q_rot.setRPY(target_ik_tip_deltas_vec.at(3), target_ik_tip_deltas_vec.at(4), target_ik_tip_deltas_vec.at(5));
   q = q_rot * q;
@@ -330,27 +332,16 @@ controller_interface::return_type AdmittanceRule::get_controller_state(
   state_message.measured_wrench = measured_wrench_;
   state_message.measured_wrench_filtered = measured_wrench_filtered_;
   state_message.measured_wrench_control_frame = measured_wrench_control_frame_;
-
-  try {
-    auto transform = tf_buffer_->lookupTransform(endeffector_frame_, control_frame_, tf2::TimePointZero);
-    tf2::doTransform(measured_wrench_control_frame_, measured_wrench_endeffector_frame_, transform);
-  } catch (const tf2::TransformException & e) {
-    // TODO(destogl): Use RCLCPP_ERROR_THROTTLE
-    RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed between '" + control_frame_ + "' and '" + endeffector_frame_ + "'.");
-  }
-
-  state_message.measured_wrench_endeffector_frame = measured_wrench_endeffector_frame_;
-
   state_message.desired_pose = desired_pose_control_frame_;
   state_message.relative_desired_pose = relative_desired_pose_;
 
   return controller_interface::return_type::OK;
 }
 
-controller_interface::return_type AdmittanceRule::get_pose_of_endeffector_in_base_frame(geometry_msgs::msg::PoseStamped & pose)
+controller_interface::return_type AdmittanceRule::get_pose_of_control_frame_in_base_frame(geometry_msgs::msg::PoseStamped & pose)
 {
   try {
-    auto transform = tf_buffer_->lookupTransform(ik_base_frame_, endeffector_frame_, tf2::TimePointZero);
+    auto transform = tf_buffer_->lookupTransform(ik_base_frame_, control_frame_, tf2::TimePointZero);
 
     pose.header = transform.header;
     pose.pose.position.x = transform.transform.translation.x;
@@ -359,7 +350,7 @@ controller_interface::return_type AdmittanceRule::get_pose_of_endeffector_in_bas
     pose.pose.orientation= transform.transform.rotation;
   } catch (const tf2::TransformException & e) {
     // TODO(destogl): Use RCLCPP_ERROR_THROTTLE
-    RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed between '" + ik_base_frame_ + "' and '" + endeffector_frame_ + "'.");
+    RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed between '" + ik_base_frame_ + "' and '" + control_frame_ + "'.");
     return controller_interface::return_type::ERROR;
   }
   return controller_interface::return_type::OK;
@@ -446,7 +437,7 @@ controller_interface::return_type AdmittanceRule::calculate_desired_joint_state(
   // Do clean conversion to the goal pose using transform and not messing with Euler angles
   convert_array_to_message(relative_desired_pose_arr_, relative_desired_pose_);
   tf2::doTransform(current_pose_control_frame_, desired_pose_control_frame_, relative_desired_pose_);
-  transform_ik_tip_to_endeffector_frame(desired_pose_control_frame_.pose, desired_pose_control_frame_.pose);
+  transform_ik_tip_to_control_frame(desired_pose_control_frame_.pose, desired_pose_control_frame_.pose);
 
   // Calculate desired Cartesian displacement of the robot
   // TODO: replace this with FK in the long term
