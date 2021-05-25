@@ -86,18 +86,18 @@ protected:
   rclcpp::Time previous_time_;
 
   // Command subscribers and Controller State publisher
-  using ControllerCommandForceMsg = geometry_msgs::msg::WrenchStamped;
+  using ControllerCommandWrenchMsg = geometry_msgs::msg::WrenchStamped;
   using ControllerCommandPoseMsg = geometry_msgs::msg::PoseStamped;
   using ControllerCommandJointMsg = trajectory_msgs::msg::JointTrajectory;
 
-  rclcpp::Subscription<ControllerCommandForceMsg>::SharedPtr
-  input_force_command_subscriber_ = nullptr;
+  rclcpp::Subscription<ControllerCommandWrenchMsg>::SharedPtr
+  input_wrench_command_subscriber_ = nullptr;
   rclcpp::Subscription<ControllerCommandPoseMsg>::SharedPtr
   input_pose_command_subscriber_ = nullptr;
   rclcpp::Subscription<ControllerCommandJointMsg>::SharedPtr input_joint_command_subscriber_ = nullptr;
 
-  realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerCommandForceMsg>>
-  input_force_command_;
+  realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerCommandWrenchMsg>>
+  input_wrench_command_;
   realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerCommandPoseMsg>>
   input_pose_command_;
   realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerCommandJointMsg>>
