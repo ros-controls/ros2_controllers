@@ -38,7 +38,7 @@
 #include "tf2_ros/transform_broadcaster.h"
 
 // TODO(anyone): replace the state and command message types
-using ControllerCommandForceMsg = geometry_msgs::msg::WrenchStamped;
+using ControllerCommandWrenchMsg = geometry_msgs::msg::WrenchStamped;
 using ControllerCommandPoseMsg = geometry_msgs::msg::PoseStamped;
 using ControllerCommandJointMsg = trajectory_msgs::msg::JointTrajectory;
 using ControllerStateMsg = control_msgs::msg::AdmittanceControllerState;
@@ -81,7 +81,7 @@ public:
     // Only if on_configure is successful create subscription
     if (ret == CallbackReturn::SUCCESS) {
       if (admittance_->unified_mode_) {
-        input_force_command_subscriber_wait_set_.add_subscription(input_force_command_subscriber_);
+        input_wrench_command_subscriber_wait_set_.add_subscription(input_wrench_command_subscriber_);
       }
       input_pose_command_subscriber_wait_set_.add_subscription(input_pose_command_subscriber_);
     }
@@ -102,7 +102,7 @@ public:
     bool success = input_pose_command_subscriber_wait_set_.wait(timeout).kind() == rclcpp::WaitResultKind::Ready;
 
     if (admittance_->unified_mode_) {
-      success = success && input_force_command_subscriber_wait_set_.wait(timeout).kind() == rclcpp::WaitResultKind::Ready;
+      success = success && input_wrench_command_subscriber_wait_set_.wait(timeout).kind() == rclcpp::WaitResultKind::Ready;
     }
     if (success) {
       executor.spin_some();
@@ -111,7 +111,7 @@ public:
   }
 
 private:
-  rclcpp::WaitSet input_force_command_subscriber_wait_set_;
+  rclcpp::WaitSet input_wrench_command_subscriber_wait_set_;
   rclcpp::WaitSet input_pose_command_subscriber_wait_set_;
 };
 
@@ -129,7 +129,7 @@ public:
     controller_ = std::make_unique<TestableAdmittanceController>();
 
     command_publisher_node_ = std::make_shared<rclcpp::Node>("command_publisher");
-    force_command_publisher_ = command_publisher_node_->create_publisher<ControllerCommandForceMsg>(
+    force_command_publisher_ = command_publisher_node_->create_publisher<ControllerCommandWrenchMsg>(
       "/test_admittance_controller/force_commands", rclcpp::SystemDefaultsQoS());
     pose_command_publisher_ = command_publisher_node_->create_publisher<ControllerCommandPoseMsg>(
       "/test_admittance_controller/pose_commands", rclcpp::SystemDefaultsQoS());
@@ -334,7 +334,7 @@ protected:
 
     wait_for_topic(pose_command_publisher_->get_topic_name());
 
-    ControllerCommandForceMsg force_msg;
+    ControllerCommandWrenchMsg force_msg;
     force_msg.header.frame_id = sensor_frame_;
     force_msg.wrench.force.x = 0.1;
     force_msg.wrench.force.y = 0.2;
@@ -413,7 +413,7 @@ protected:
   // Test related parameters
   std::unique_ptr<TestableAdmittanceController> controller_;
   rclcpp::Node::SharedPtr command_publisher_node_;
-  rclcpp::Publisher<ControllerCommandForceMsg>::SharedPtr force_command_publisher_;
+  rclcpp::Publisher<ControllerCommandWrenchMsg>::SharedPtr force_command_publisher_;
   rclcpp::Publisher<ControllerCommandPoseMsg>::SharedPtr pose_command_publisher_;
   rclcpp::Publisher<ControllerCommandJointMsg>::SharedPtr joint_command_publisher_;
   rclcpp::Node::SharedPtr test_subscription_node_;
