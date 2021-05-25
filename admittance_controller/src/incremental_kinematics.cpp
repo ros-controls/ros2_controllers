@@ -33,7 +33,7 @@ IncrementalKinematics::IncrementalKinematics(const std::shared_ptr<rclcpp::Node>
   // By default, the MoveIt Jacobian frame is the last link
 }
 
-bool IncrementalKinematics::convertCartesianDeltasToJointDeltas(std::vector<double> & delta_x_vec, const geometry_msgs::msg::TransformStamped & ik_base_to_tip_tf, std::vector<double> & delta_theta_vec)
+bool IncrementalKinematics::convertCartesianDeltasToJointDeltas(std::vector<double> & delta_x_vec, const geometry_msgs::msg::TransformStamped & control_frame_to_ik_base, std::vector<double> & delta_theta_vec)
 {
   // see here for this conversion: https://stackoverflow.com/questions/26094379/typecasting-eigenvectorxd-to-stdvector
   Eigen::VectorXd delta_x = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(&delta_x_vec[0], delta_x_vec.size());
@@ -44,7 +44,7 @@ bool IncrementalKinematics::convertCartesianDeltasToJointDeltas(std::vector<doub
   try
   {
     // 4x4 transformation matrix
-    const Eigen::Isometry3d affine_transform = tf2::transformToEigen(ik_base_to_tip_tf);
+    const Eigen::Isometry3d affine_transform = tf2::transformToEigen(control_frame_to_ik_base);
 
     // Build the 6x6 transformation matrix
     Eigen::MatrixXd twist_transform(6,6);
@@ -68,6 +68,8 @@ bool IncrementalKinematics::convertCartesianDeltasToJointDeltas(std::vector<doub
     RCLCPP_ERROR(node_->get_logger(), "Transformation of twist failed.");
     return false;
   }
+
+  RCLCPP_ERROR_STREAM(rclcpp::get_logger("AdmittanceRule"), delta_x[0] << "  " << delta_x[1]);
 
   // Multiply with the pseudoinverse to get delta_theta
   jacobian_ = kinematic_state_->getJacobian(joint_model_group_);

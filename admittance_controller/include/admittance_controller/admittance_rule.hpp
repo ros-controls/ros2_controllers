@@ -105,7 +105,7 @@ public:
   std::vector<GravityCompensationParameters> gravity_compensation_params_;
 
 protected:
-  void process_force_measurements(
+  void process_wrench_measurements(
     const geometry_msgs::msg::Wrench & measured_wrench
   );
 
