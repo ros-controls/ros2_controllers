@@ -69,8 +69,6 @@ bool IncrementalKinematics::convertCartesianDeltasToJointDeltas(std::vector<doub
     return false;
   }
 
-  RCLCPP_ERROR_STREAM(rclcpp::get_logger("AdmittanceRule"), delta_x[0] << "  " << delta_x[1]);
-
   // Multiply with the pseudoinverse to get delta_theta
   jacobian_ = kinematic_state_->getJacobian(joint_model_group_);
   // TODO(andyz): the SVD method would be more stable near singularities
