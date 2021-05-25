@@ -37,12 +37,12 @@ public:
   /**
    * \brief Convert Cartesian delta-x to joint delta-theta, using the Jacobian.
    * \param delta_x_vec input Cartesian deltas (x, y, z, rx, ry, rz)
-   * \param ik_base_to_tip_tf transformation between ik base and ik tip
+   * \param control_frame_to_ik_base transform the requested delta_x to MoveIt's ik_base frame
    * \param delta_theta_vec output vector with joint states
    * \return true if successful
    */
   bool
-  convertCartesianDeltasToJointDeltas(std::vector<double> & delta_x_vec, const geometry_msgs::msg::TransformStamped & ik_base_to_tip_tf, std::vector<double> & delta_theta_vec);
+  convertCartesianDeltasToJointDeltas(std::vector<double> & delta_x_vec, const geometry_msgs::msg::TransformStamped & control_frame_to_ik_base, std::vector<double> & delta_theta_vec);
 
   /**
    * \brief Convert joint delta-theta to Cartesian delta-x, using the Jacobian.
