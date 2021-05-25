@@ -78,7 +78,7 @@ public:
     control_msgs::msg::AdmittanceControllerState & state_message
   );
 
-  controller_interface::return_type get_pose_of_endeffector_in_base_frame(geometry_msgs::msg::PoseStamped & pose);
+  controller_interface::return_type get_pose_of_control_frame_in_base_frame(geometry_msgs::msg::PoseStamped & pose);
 
 public:
   bool hardware_state_has_offset_ = false;
@@ -90,7 +90,6 @@ public:
 
   // Controller frames
   std::string control_frame_;
-  std::string endeffector_frame_;
   std::string fixed_world_frame_;
   std::string sensor_frame_;
 
@@ -140,8 +139,8 @@ protected:
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
-  tf2::Transform ik_tip_to_endeffector_frame_tf_;
-  tf2::Transform endeffector_frame_to_ik_tip_tf_;
+  tf2::Transform ik_tip_to_control_frame_tf_;
+  tf2::Transform control_frame_to_ik_tip_tf_;
 
   // measured_wrench_ could arrive in any frame. It will be transformed
   geometry_msgs::msg::WrenchStamped measured_wrench_;
@@ -210,16 +209,16 @@ private:
 
   template<typename Type>
   void
-  transform_ik_tip_to_endeffector_frame(const Type & base_to_ik_tip, Type & base_to_toollink)
+  transform_ik_tip_to_control_frame(const Type & base_to_ik_tip, Type & base_to_toollink)
   {
-    direct_transform(base_to_ik_tip, ik_tip_to_endeffector_frame_tf_, base_to_toollink);
+    direct_transform(base_to_ik_tip, ik_tip_to_control_frame_tf_, base_to_toollink);
   }
 
   template<typename Type>
   void
-  transform_endeffector_to_ik_tip_frame(const Type & base_to_toollink, Type & base_to_ik_tip)
+  transform_control_to_ik_tip_frame(const Type & base_to_toollink, Type & base_to_ik_tip)
   {
-    direct_transform(base_to_toollink, endeffector_frame_to_ik_tip_tf_, base_to_ik_tip);
+    direct_transform(base_to_toollink, control_frame_to_ik_tip_tf_, base_to_ik_tip);
   }
 
 };
