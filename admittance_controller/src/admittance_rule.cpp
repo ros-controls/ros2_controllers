@@ -244,7 +244,7 @@ controller_interface::return_type AdmittanceRule::update(
     }
   }
 
-  process_force_measurements(measured_wrench);
+  process_wrench_measurements(measured_wrench);
 
   calculate_admittance_rule(measured_wrench_control_frame_arr_, pose_error, period,
                             relative_desired_pose_arr_);
@@ -356,41 +356,45 @@ controller_interface::return_type AdmittanceRule::get_pose_of_control_frame_in_b
   return controller_interface::return_type::OK;
 }
 
-void AdmittanceRule::process_force_measurements(
+void AdmittanceRule::process_wrench_measurements(
   const geometry_msgs::msg::Wrench & measured_wrench
 )
 {
-  // get current states, and transform those into controller frame
+  // TODO(andyz): Implement gravity comp. For now, just pass the measured wrench through
   measured_wrench_.wrench = measured_wrench;
-  try {
-    auto transform = tf_buffer_->lookupTransform(fixed_world_frame_,  measured_wrench_.header.frame_id, tf2::TimePointZero);
-    auto transform_back = tf_buffer_->lookupTransform(measured_wrench_.header.frame_id, fixed_world_frame_, tf2::TimePointZero);
+  measured_wrench_filtered_ = measured_wrench_;
 
-    geometry_msgs::msg::WrenchStamped measured_wrench_transformed;
-    tf2::doTransform(measured_wrench_, measured_wrench_transformed, transform);
+  // // get current states, and transform those into controller frame
+  // measured_wrench_.wrench = measured_wrench;
+  // try {
+  //   auto transform = tf_buffer_->lookupTransform(fixed_world_frame_,  measured_wrench_.header.frame_id, tf2::TimePointZero);
+  //   auto transform_back = tf_buffer_->lookupTransform(measured_wrench_.header.frame_id, fixed_world_frame_, tf2::TimePointZero);
 
-    geometry_msgs::msg::Vector3Stamped cog_transformed;
+  //   geometry_msgs::msg::WrenchStamped measured_wrench_transformed;
+  //   tf2::doTransform(measured_wrench_, measured_wrench_transformed, transform);
 
-    for (const auto & params : gravity_compensation_params_) {
-      auto transform_cog = tf_buffer_->lookupTransform(fixed_world_frame_,  params.cog_.header.frame_id, tf2::TimePointZero);
-      tf2::doTransform(params.cog_, cog_transformed, transform_cog);
+  //   geometry_msgs::msg::Vector3Stamped cog_transformed;
+  //   for (const auto & params : gravity_compensation_params_) {
+  //     auto transform_cog = tf_buffer_->lookupTransform(fixed_world_frame_,  params.cog_.header.frame_id, tf2::TimePointZero);
+  //     tf2::doTransform(params.cog_, cog_transformed, transform_cog);
 
-      measured_wrench_transformed.wrench.force.z += params.force_;
-      measured_wrench_transformed.wrench.torque.x += (params.force_ * cog_transformed.vector.y);
-      measured_wrench_transformed.wrench.torque.y -= (params.force_ * cog_transformed.vector.x);
-    }
+  //     measured_wrench_transformed.wrench.force.z += params.force_;
+  //     measured_wrench_transformed.wrench.torque.x += (params.force_ * cog_transformed.vector.y);
+  //     measured_wrench_transformed.wrench.torque.y -= (params.force_ * cog_transformed.vector.x);
+  //   }
 
-    tf2::doTransform(measured_wrench_transformed, measured_wrench_filtered_, transform_back);
+  //   tf2::doTransform(measured_wrench_transformed, measured_wrench_filtered_, transform_back);
 
-  } catch (const tf2::TransformException & e) {
-    // TODO(destogl): Use RCLCPP_ERROR_THROTTLE
-    RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed between '" + fixed_world_frame_ + "' and '" + measured_wrench_.header.frame_id + "' or '<a cog frame>'.");
-    // If transform error just use measured force
-    measured_wrench_filtered_ = measured_wrench_;
-  }
+  //   RCLCPP_ERROR_STREAM(rclcpp::get_logger("AdmittanceRule"), transform.transform.translation.y);
+  //   RCLCPP_ERROR_STREAM(rclcpp::get_logger("AdmittanceRule"), transform.transform.translation.z);
+  // } catch (const tf2::TransformException & e) {
+  //   // TODO(destogl): Use RCLCPP_ERROR_THROTTLE
+  //   RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed between '" + fixed_world_frame_ + "' and '" + measured_wrench_.header.frame_id + "' or '<a cog frame>'.");
+  //   // If transform error just use measured force
+  //   measured_wrench_filtered_ = measured_wrench_;
+  // }
 
   transform_message_to_control_frame(measured_wrench_filtered_, measured_wrench_control_frame_);
-
   convert_message_to_array(measured_wrench_control_frame_, measured_wrench_control_frame_arr_);
 
   // If at least one measured force is nan set all to 0
@@ -420,10 +424,6 @@ void AdmittanceRule::calculate_admittance_rule(
 
       desired_acceleration_previous_arr_[i] = acceleration;
       desired_velocity_previous_arr_[i] = desired_velocity_arr_[i];
-
-      // RCLCPP_INFO(rclcpp::get_logger("AR"), "Rule [%zu]: (%e = %e - D(%.1f)*%e - S(%.1f)*%e)", i,
-      //             acceleration, measured_wrench[i], damping_[i], desired_velocity_arr_[i],
-      //             stiffness_[i], pose_error);
     }
   }
 }
@@ -440,20 +440,19 @@ controller_interface::return_type AdmittanceRule::calculate_desired_joint_state(
   transform_ik_tip_to_control_frame(desired_pose_control_frame_.pose, desired_pose_control_frame_.pose);
 
   // Calculate desired Cartesian displacement of the robot
-  // TODO: replace this with FK in the long term
-  geometry_msgs::msg::TransformStamped transform;
+  geometry_msgs::msg::TransformStamped control_frame_to_ik_base;
   try {
-    transform = tf_buffer_->lookupTransform(ik_base_frame_, ik_tip_frame_, tf2::TimePointZero);
+    control_frame_to_ik_base = tf_buffer_->lookupTransform(control_frame_, ik_base_frame_, tf2::TimePointZero);
   } catch (const tf2::TransformException & e) {
     // TODO(destogl): Use RCLCPP_ERROR_THROTTLE
-    RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed between '" + ik_base_frame_ + "' and '" + ik_tip_frame_ + "'.");
+    RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed between '" + ik_base_frame_ + "' and '" + control_frame_ + "'.");
     return controller_interface::return_type::ERROR;
   }
 
   // Use Jacobian-based IK
   std::vector<double> relative_desired_pose_vec(relative_desired_pose_arr_.begin(), relative_desired_pose_arr_.end());
   if (ik_->convertCartesianDeltasToJointDeltas(
-    relative_desired_pose_vec, transform, relative_desired_joint_state_vec_)){
+    relative_desired_pose_vec, control_frame_to_ik_base, relative_desired_joint_state_vec_)){
     for (auto i = 0u; i < desired_joint_state.positions.size(); ++i) {
       desired_joint_state.positions[i] = current_joint_state.positions[i] + relative_desired_joint_state_vec_[i];
       desired_joint_state.velocities[i] = relative_desired_joint_state_vec_[i] / period.seconds();
