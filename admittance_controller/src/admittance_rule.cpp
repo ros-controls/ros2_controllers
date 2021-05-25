@@ -217,8 +217,7 @@ controller_interface::return_type AdmittanceRule::update(
 )
 {
   // Convert inputs to control frame
-//   transform_message_to_control_frame(target_pose, target_pose_control_frame_);
-  target_pose_control_frame_ = target_pose;
+   transform_message_to_control_frame(target_pose, target_pose_control_frame_);
 
   if (!hardware_state_has_offset_) {
     get_pose_of_control_frame_in_base_frame(current_pose_base_frame_);
@@ -235,12 +234,10 @@ controller_interface::return_type AdmittanceRule::update(
 
   std::array<double, 6> pose_error;
 
-  // TODO(andy): these errors should be (target - current)
   for (auto i = 0u; i < 6; ++i) {
-    pose_error[i] = current_pose_control_frame_arr_[i] - target_pose_control_frame_arr_[i];
+    pose_error[i] = target_pose_control_frame_arr_[i] - current_pose_control_frame_arr_[i];
     if (i >= 3) {
-      pose_error[i] = angles::normalize_angle(current_pose_control_frame_arr_[i] -
-        target_pose_control_frame_arr_[i]);
+      pose_error[i] = angles::normalize_angle(target_pose_control_frame_arr_[i] - current_pose_control_frame_arr_[i]);
     }
   }
 
@@ -248,6 +245,10 @@ controller_interface::return_type AdmittanceRule::update(
 
   calculate_admittance_rule(measured_wrench_control_frame_arr_, pose_error, period,
                             relative_desired_pose_arr_);
+
+  RCLCPP_ERROR_STREAM(rclcpp::get_logger("AdmittanceRule"), "wrench: " << measured_wrench_control_frame_arr_[0] << "  " << measured_wrench_control_frame_arr_[1]);
+  RCLCPP_ERROR_STREAM(rclcpp::get_logger("AdmittanceRule"), "pose_error: " << pose_error[0] << "  " << pose_error[1]);
+  RCLCPP_ERROR_STREAM(rclcpp::get_logger("AdmittanceRule"), "rel. des. pose: " << relative_desired_pose_arr_[0] << "  " << relative_desired_pose_arr_[1]);
 
   return calculate_desired_joint_state(current_joint_state, period, desired_joint_state);
 }
