@@ -219,6 +219,9 @@ controller_interface::return_type AdmittanceRule::update(
   // Convert inputs to control frame
   transform_message_to_control_frame(target_pose, target_pose_control_frame_);
 
+  RCLCPP_ERROR_STREAM(rclcpp::get_logger("AdmittanceRule"), "target_pose frame: " << target_pose.header.frame_id);
+  RCLCPP_ERROR_STREAM(rclcpp::get_logger("AdmittanceRule"), "target_pose: " << target_pose.pose.position.x << "  " << target_pose.pose.position.y);
+
   if (!hardware_state_has_offset_) {
     get_pose_of_control_frame_in_base_frame(current_pose_base_frame_);
     transform_message_to_control_frame(current_pose_base_frame_, current_pose_control_frame_);
@@ -238,7 +241,8 @@ controller_interface::return_type AdmittanceRule::update(
     pose_error[i] = target_pose_control_frame_arr_[i] - current_pose_control_frame_arr_[i];
     RCLCPP_ERROR_STREAM(rclcpp::get_logger("AdmittanceRule"), "target_pose: " << target_pose_control_frame_arr_[i] << "  current_pose: " << current_pose_control_frame_arr_[i]);
     if (i >= 3) {
-      pose_error[i] = angles::normalize_angle(target_pose_control_frame_arr_[i] - current_pose_control_frame_arr_[i]);
+      //pose_error[i] = angles::normalize_angle(target_pose_control_frame_arr_[i] - current_pose_control_frame_arr_[i]);
+      pose_error[i] = 0;
     }
   }
 
@@ -246,8 +250,6 @@ controller_interface::return_type AdmittanceRule::update(
 
   calculate_admittance_rule(measured_wrench_control_frame_arr_, pose_error, period,
                             relative_desired_pose_arr_);
-
-  RCLCPP_ERROR_STREAM(rclcpp::get_logger("AdmittanceRule"), "pose_error: " << pose_error[0] << "  " << pose_error[1]);
 
   return calculate_desired_joint_state(current_joint_state, period, desired_joint_state);
 }
@@ -263,19 +265,22 @@ controller_interface::return_type AdmittanceRule::update(
   std::vector<double> target_joint_deltas_vec(target_joint_deltas.begin(), target_joint_deltas.end());
   std::vector<double> target_ik_tip_deltas_vec(6);
 
-  // geometry_msgs::msg::TransformStamped transform_ik_base_tip;
+  // geometry_msgs::msg::TransformStamped transform_ik_base_control_frame;
   // try {
-  //   transform_ik_base_tip = tf_buffer_->lookupTransform(ik_base_frame_, ik_tip_frame_, tf2::TimePointZero);
+  //   transform_ik_base_control_frame = tf_buffer_->lookupTransform(control_frame_, ik_base_frame_, tf2::TimePointZero);
   // } catch (const tf2::TransformException & e) {
   //   // TODO(destogl): Use RCLCPP_ERROR_THROTTLE
   //   RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed between '" + ik_base_frame_ + "' and '" + ik_tip_frame_ + "'.");
   //   return controller_interface::return_type::ERROR;
   // }
 
-  geometry_msgs::msg::TransformStamped transform_ik_base_tip;
-  transform_ik_base_tip.header.frame_id = ik_base_frame_;
-  transform_ik_base_tip.transform.rotation.w = 1;
-  if (ik_->convertJointDeltasToCartesianDeltas(target_joint_deltas_vec, transform_ik_base_tip, target_ik_tip_deltas_vec)) {
+  // Get feed-forward cartesian deltas in the ik_base frame.
+  // Since this is MoveIt's working frame, the transform is identity.
+  geometry_msgs::msg::TransformStamped transform_ik_base_to_desired_frame;
+  transform_ik_base_to_desired_frame.header.frame_id = ik_base_frame_;
+  transform_ik_base_to_desired_frame.transform.rotation.w = 1;
+  ik_->update_robot_state(current_joint_state);
+  if (ik_->convertJointDeltasToCartesianDeltas(target_joint_deltas_vec, transform_ik_base_to_desired_frame, target_ik_tip_deltas_vec)) {
   } else {
     RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "Conversion of joint deltas to Cartesian deltas failed. Sending current joint values to the robot.");
     desired_joint_state = current_joint_state;
@@ -283,29 +288,33 @@ controller_interface::return_type AdmittanceRule::update(
     return controller_interface::return_type::ERROR;
   }
 
-  ik_->update_robot_state(current_joint_state);
+  // Get current robot pose
+  if (!hardware_state_has_offset_) {
+    get_pose_of_control_frame_in_base_frame(current_pose_base_frame_);
+    transform_message_to_control_frame(current_pose_base_frame_, current_pose_control_frame_);
+  }
+  // TODO(destogl): Can this work properly, when considering offset between states and commands?
+//   else {
+//     current_pose_control_frame_ = desired_pose_control_frame_;
+//   }
 
-  // Get the target pose in ik_base frame
-  geometry_msgs::msg::PoseStamped target_pose_base_frame;
-  target_pose_base_frame.header.frame_id = ik_base_frame_;
-  target_pose_base_frame.pose.position.x = transform_ik_base_tip.transform.translation.x;
-  target_pose_base_frame.pose.position.y = transform_ik_base_tip.transform.translation.y;
-  target_pose_base_frame.pose.position.z = transform_ik_base_tip.transform.translation.z;
-  target_pose_base_frame.pose.position.x += target_ik_tip_deltas_vec.at(0);
-  target_pose_base_frame.pose.position.y += target_ik_tip_deltas_vec.at(1);
-  target_pose_base_frame.pose.position.z += target_ik_tip_deltas_vec.at(2); 
+  // Add deltas to current pose to get the desired pose
+  geometry_msgs::msg::PoseStamped target_pose_ik_base_frame = current_pose_base_frame_;
+  target_pose_ik_base_frame.pose.position.x += target_ik_tip_deltas_vec.at(0);
+  target_pose_ik_base_frame.pose.position.y += target_ik_tip_deltas_vec.at(1);
+  target_pose_ik_base_frame.pose.position.z += target_ik_tip_deltas_vec.at(2); 
 
-  tf2::Quaternion q(transform_ik_base_tip.transform.rotation.x, transform_ik_base_tip.transform.rotation.y, transform_ik_base_tip.transform.rotation.z, transform_ik_base_tip.transform.rotation.w);
+  tf2::Quaternion q(target_pose_ik_base_frame.pose.orientation.x, target_pose_ik_base_frame.pose.orientation.y, target_pose_ik_base_frame.pose.orientation.z, target_pose_ik_base_frame.pose.orientation.z);
   tf2::Quaternion q_rot;
   q_rot.setRPY(target_ik_tip_deltas_vec.at(3), target_ik_tip_deltas_vec.at(4), target_ik_tip_deltas_vec.at(5));
   q = q_rot * q;
   q.normalize();
-  target_pose_base_frame.pose.orientation.w = q.w();
-  target_pose_base_frame.pose.orientation.x = q.x();
-  target_pose_base_frame.pose.orientation.y = q.y();
-  target_pose_base_frame.pose.orientation.z = q.z();
+  target_pose_ik_base_frame.pose.orientation.w = q.w();
+  target_pose_ik_base_frame.pose.orientation.x = q.x();
+  target_pose_ik_base_frame.pose.orientation.y = q.y();
+  target_pose_ik_base_frame.pose.orientation.z = q.z();
 
-  return update(current_joint_state, measured_wrench, target_pose_base_frame, period, desired_joint_state);
+  return update(current_joint_state, measured_wrench, target_pose_ik_base_frame, period, desired_joint_state);
 }
 
 controller_interface::return_type AdmittanceRule::update(
