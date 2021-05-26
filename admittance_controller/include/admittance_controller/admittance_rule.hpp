@@ -182,7 +182,7 @@ private:
     if (control_frame_ != message_in.header.frame_id) {
       try {
         geometry_msgs::msg::TransformStamped transform = tf_buffer_->lookupTransform(
-          message_in.header.frame_id, control_frame_, tf2::TimePointZero);
+          control_frame_, message_in.header.frame_id, tf2::TimePointZero);
         tf2::doTransform(message_in, message_out, transform);
       } catch (const tf2::TransformException & e) {
         // TODO(destogl): Use RCLCPP_ERROR_THROTTLE
