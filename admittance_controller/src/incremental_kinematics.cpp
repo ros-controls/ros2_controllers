@@ -82,14 +82,14 @@ bool IncrementalKinematics::convertCartesianDeltasToJointDeltas(std::vector<doub
   return true;
 }
 
-bool IncrementalKinematics::convertJointDeltasToCartesianDeltas(std::vector<double> &  delta_theta_vec, const geometry_msgs::msg::TransformStamped & ik_base_to_tip_tf, std::vector<double> & delta_x_vec)
+bool IncrementalKinematics::convertJointDeltasToCartesianDeltas(std::vector<double> &  delta_theta_vec, const geometry_msgs::msg::TransformStamped & tf_ik_base_to_desired_cartesian_frame, std::vector<double> & delta_x_vec)
 {
   // see here for this conversion: https://stackoverflow.com/questions/26094379/typecasting-eigenvectorxd-to-stdvector
   Eigen::VectorXd delta_theta = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(&delta_theta_vec[0], delta_theta_vec.size());
 
   // Multiply with the Jacobian to get delta_x
   jacobian_ = kinematic_state_->getJacobian(joint_model_group_);
-  // delta_x will be in the working frame of MoveIt
+  // delta_x will be in the working frame of MoveIt (ik_base frame)
   Eigen::VectorXd delta_x = jacobian_ * delta_theta;
 
   // Transform delta_x to the tip frame
@@ -98,7 +98,7 @@ bool IncrementalKinematics::convertJointDeltasToCartesianDeltas(std::vector<doub
   try
   {
     // 4x4 transformation matrix
-    const Eigen::Isometry3d affine_transform = tf2::transformToEigen(ik_base_to_tip_tf);
+    const Eigen::Isometry3d affine_transform = tf2::transformToEigen(tf_ik_base_to_desired_cartesian_frame);
 
     // Build the 6x6 transformation matrix
     Eigen::MatrixXd twist_transform(6,6);

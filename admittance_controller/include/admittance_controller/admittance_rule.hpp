@@ -88,9 +88,11 @@ public:
   std::string ik_tip_frame_;
   std::string ik_group_name_;
 
-  // Controller frames
+  // Generally most quantities are transformed to and calculations are done in control_frame
   std::string control_frame_;
+  // Gravity points down (neg. Z) in the world frame
   std::string fixed_world_frame_;
+  // Frame where wrench measurements are taken
   std::string sensor_frame_;
 
   // Admittance parameters
