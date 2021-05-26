@@ -219,9 +219,6 @@ controller_interface::return_type AdmittanceRule::update(
   // Convert inputs to control frame
   transform_message_to_control_frame(target_pose, target_pose_control_frame_);
 
-  RCLCPP_ERROR_STREAM(rclcpp::get_logger("AdmittanceRule"), "target_pose frame: " << target_pose.header.frame_id);
-  RCLCPP_ERROR_STREAM(rclcpp::get_logger("AdmittanceRule"), "target_pose: " << target_pose.pose.position.x << "  " << target_pose.pose.position.y);
-
   if (!hardware_state_has_offset_) {
     get_pose_of_control_frame_in_base_frame(current_pose_base_frame_);
     transform_message_to_control_frame(current_pose_base_frame_, current_pose_control_frame_);
@@ -239,10 +236,8 @@ controller_interface::return_type AdmittanceRule::update(
 
   for (auto i = 0u; i < 6; ++i) {
     pose_error[i] = target_pose_control_frame_arr_[i] - current_pose_control_frame_arr_[i];
-    RCLCPP_ERROR_STREAM(rclcpp::get_logger("AdmittanceRule"), "target_pose: " << target_pose_control_frame_arr_[i] << "  current_pose: " << current_pose_control_frame_arr_[i]);
     if (i >= 3) {
-      //pose_error[i] = angles::normalize_angle(target_pose_control_frame_arr_[i] - current_pose_control_frame_arr_[i]);
-      pose_error[i] = 0;
+      pose_error[i] = angles::normalize_angle(pose_error[i]);
     }
   }
 
@@ -282,7 +277,6 @@ controller_interface::return_type AdmittanceRule::update(
   // Get current robot pose
   if (!hardware_state_has_offset_) {
     get_pose_of_control_frame_in_base_frame(current_pose_base_frame_);
-    transform_message_to_control_frame(current_pose_base_frame_, current_pose_control_frame_);
   }
   // TODO(destogl): Can this work properly, when considering offset between states and commands?
 //   else {
@@ -293,9 +287,9 @@ controller_interface::return_type AdmittanceRule::update(
   geometry_msgs::msg::PoseStamped target_pose_ik_base_frame = current_pose_base_frame_;
   target_pose_ik_base_frame.pose.position.x += target_ik_tip_deltas_vec.at(0);
   target_pose_ik_base_frame.pose.position.y += target_ik_tip_deltas_vec.at(1);
-  target_pose_ik_base_frame.pose.position.z += target_ik_tip_deltas_vec.at(2); 
+  target_pose_ik_base_frame.pose.position.z += target_ik_tip_deltas_vec.at(2);
 
-  tf2::Quaternion q(target_pose_ik_base_frame.pose.orientation.x, target_pose_ik_base_frame.pose.orientation.y, target_pose_ik_base_frame.pose.orientation.z, target_pose_ik_base_frame.pose.orientation.z);
+  tf2::Quaternion q(target_pose_ik_base_frame.pose.orientation.x, target_pose_ik_base_frame.pose.orientation.y, target_pose_ik_base_frame.pose.orientation.z, target_pose_ik_base_frame.pose.orientation.w);
   tf2::Quaternion q_rot;
   q_rot.setRPY(target_ik_tip_deltas_vec.at(3), target_ik_tip_deltas_vec.at(4), target_ik_tip_deltas_vec.at(5));
   q = q_rot * q;
