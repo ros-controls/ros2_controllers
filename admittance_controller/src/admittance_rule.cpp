@@ -265,15 +265,6 @@ controller_interface::return_type AdmittanceRule::update(
   std::vector<double> target_joint_deltas_vec(target_joint_deltas.begin(), target_joint_deltas.end());
   std::vector<double> target_ik_tip_deltas_vec(6);
 
-  // geometry_msgs::msg::TransformStamped transform_ik_base_control_frame;
-  // try {
-  //   transform_ik_base_control_frame = tf_buffer_->lookupTransform(control_frame_, ik_base_frame_, tf2::TimePointZero);
-  // } catch (const tf2::TransformException & e) {
-  //   // TODO(destogl): Use RCLCPP_ERROR_THROTTLE
-  //   RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed between '" + ik_base_frame_ + "' and '" + ik_tip_frame_ + "'.");
-  //   return controller_interface::return_type::ERROR;
-  // }
-
   // Get feed-forward cartesian deltas in the ik_base frame.
   // Since this is MoveIt's working frame, the transform is identity.
   geometry_msgs::msg::TransformStamped transform_ik_base_to_desired_frame;
