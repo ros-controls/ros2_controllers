@@ -168,6 +168,8 @@ controller_interface::return_type AdmittanceRule::configure(rclcpp::Node::Shared
 
   relative_desired_pose_.header.frame_id = control_frame_;
 
+  identity_transform_.transform.rotation.w = 1;
+
   relative_desired_joint_state_vec_.reserve(6);
 
   // Initialize IK
@@ -261,11 +263,9 @@ controller_interface::return_type AdmittanceRule::update(
 
   // Get feed-forward cartesian deltas in the ik_base frame.
   // Since ik_base is MoveIt's working frame, the transform is identity.
-  geometry_msgs::msg::TransformStamped transform_ik_base_to_desired_frame;
-  transform_ik_base_to_desired_frame.header.frame_id = ik_base_frame_;
-  transform_ik_base_to_desired_frame.transform.rotation.w = 1;
+  identity_transform_.header.frame_id = ik_base_frame_;
   ik_->update_robot_state(current_joint_state);
-  if (ik_->convertJointDeltasToCartesianDeltas(target_joint_deltas_vec, transform_ik_base_to_desired_frame, target_ik_tip_deltas_vec)) {
+  if (ik_->convertJointDeltasToCartesianDeltas(target_joint_deltas_vec, identity_transform_, target_ik_tip_deltas_vec)) {
   } else {
     RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "Conversion of joint deltas to Cartesian deltas failed. Sending current joint values to the robot.");
     desired_joint_state = current_joint_state;
@@ -421,14 +421,12 @@ controller_interface::return_type AdmittanceRule::calculate_desired_joint_state(
   convert_array_to_message(relative_desired_pose_arr_, relative_desired_pose_);
 
   // Since ik_base is MoveIt's working frame, the transform is identity.
-  geometry_msgs::msg::TransformStamped transform_ik_base_to_desired_frame;
-  transform_ik_base_to_desired_frame.header.frame_id = ik_base_frame_;
-  transform_ik_base_to_desired_frame.transform.rotation.w = 1;
+  identity_transform_.header.frame_id = ik_base_frame_;
 
   // Use Jacobian-based IK
   std::vector<double> relative_desired_pose_vec(relative_desired_pose_arr_.begin(), relative_desired_pose_arr_.end());
   if (ik_->convertCartesianDeltasToJointDeltas(
-    relative_desired_pose_vec, transform_ik_base_to_desired_frame, relative_desired_joint_state_vec_)){
+    relative_desired_pose_vec, identity_transform_, relative_desired_joint_state_vec_)){
     for (auto i = 0u; i < desired_joint_state.positions.size(); ++i) {
       desired_joint_state.positions[i] = current_joint_state.positions[i] + relative_desired_joint_state_vec_[i];
       desired_joint_state.velocities[i] = relative_desired_joint_state_vec_[i] / period.seconds();
