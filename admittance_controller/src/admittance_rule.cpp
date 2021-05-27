@@ -235,7 +235,7 @@ controller_interface::return_type AdmittanceRule::update(
   std::array<double, 6> pose_error;
 
   for (auto i = 0u; i < 6; ++i) {
-    pose_error[i] = target_pose_control_frame_arr_[i] - current_pose_control_frame_arr_[i];
+    pose_error[i] = current_pose_control_frame_arr_[i] - target_pose_control_frame_arr_[i];
     if (i >= 3) {
       pose_error[i] = angles::normalize_angle(pose_error[i]);
     }
