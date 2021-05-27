@@ -96,6 +96,9 @@ public:
   // Frame where wrench measurements are taken
   std::string sensor_frame_;
 
+  // An identity matrix is needed in several places
+  geometry_msgs::msg::TransformStamped identity_transform_;
+
   // Admittance parameters
   // TODO(destogl): unified mode does not have to be here
   bool unified_mode_ = false;  // Unified mode enables simultaneous force and position goals
