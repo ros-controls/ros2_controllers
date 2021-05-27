@@ -84,11 +84,12 @@ public:
   bool hardware_state_has_offset_ = false;
 
   // IK related parameters
+  // ik_base_frame should be stationary so vel/accel calculations are correct
   std::string ik_base_frame_;
   std::string ik_tip_frame_;
   std::string ik_group_name_;
 
-  // Generally most quantities are transformed to and calculations are done in control_frame
+  // Admittance calcs (displacement etc) are done in this frame. Usually the tool or end-effector
   std::string control_frame_;
   // Gravity points down (neg. Z) in the world frame
   std::string fixed_world_frame_;
@@ -151,21 +152,21 @@ protected:
   geometry_msgs::msg::WrenchStamped measured_wrench_control_frame_;
   geometry_msgs::msg::WrenchStamped measured_wrench_endeffector_frame_;
 
-  geometry_msgs::msg::PoseStamped origin_ik_tip_;
-  geometry_msgs::msg::PoseStamped origin_endeffector_;
-  geometry_msgs::msg::PoseStamped current_pose_base_frame_;
-  geometry_msgs::msg::PoseStamped current_pose_control_frame_;
+  geometry_msgs::msg::PoseStamped current_pose_ik_base_frame_;
 
-  geometry_msgs::msg::WrenchStamped target_force_control_frame_;
-  geometry_msgs::msg::PoseStamped target_pose_control_frame_;
+  // This is the feedforward pose. Where should the end effector be with no wrench applied?
+  geometry_msgs::msg::PoseStamped feedforward_pose_ik_base_frame_;
 
-  geometry_msgs::msg::PoseStamped desired_pose_control_frame_;
+  geometry_msgs::msg::WrenchStamped target_force_ik_base_frame_;
+  geometry_msgs::msg::PoseStamped target_pose_ik_base_frame_;
+
+  geometry_msgs::msg::PoseStamped desired_pose_ik_base_frame_;
   geometry_msgs::msg::TransformStamped relative_desired_pose_;
 
   // Pre-reserved update-loop variables
   std::array<double, 6> measured_wrench_control_frame_arr_;
-  std::array<double, 6> target_pose_control_frame_arr_;
-  std::array<double, 6> current_pose_control_frame_arr_;
+  std::array<double, 6> target_pose_ik_base_frame_arr_;
+  std::array<double, 6> current_pose_ik_base_frame_arr_;
 
   std::array<double, 3> angles_error_;
 
@@ -179,16 +180,16 @@ protected:
 private:
   template<typename MsgType>
   controller_interface::return_type
-  transform_message_to_control_frame(const MsgType & message_in, MsgType & message_out)
+  transform_message_to_ik_base_frame(const MsgType & message_in, MsgType & message_out)
   {
-    if (control_frame_ != message_in.header.frame_id) {
+    if (ik_base_frame_ != message_in.header.frame_id) {
       try {
         geometry_msgs::msg::TransformStamped transform = tf_buffer_->lookupTransform(
-          control_frame_, message_in.header.frame_id, tf2::TimePointZero);
+          ik_base_frame_, message_in.header.frame_id, tf2::TimePointZero);
         tf2::doTransform(message_in, message_out, transform);
       } catch (const tf2::TransformException & e) {
         // TODO(destogl): Use RCLCPP_ERROR_THROTTLE
-        RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed between '" + control_frame_ + "' and '" + message_in.header.frame_id + "'.");
+        RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed between '" + ik_base_frame_ + "' and '" + message_in.header.frame_id + "'.");
         return controller_interface::return_type::ERROR;
       }
     } else {
@@ -208,21 +209,6 @@ private:
     output_tf = input_tf * transform;
     tf2::toMsg(output_tf, output);
   }
-
-  template<typename Type>
-  void
-  transform_ik_tip_to_control_frame(const Type & base_to_ik_tip, Type & base_to_toollink)
-  {
-    direct_transform(base_to_ik_tip, ik_tip_to_control_frame_tf_, base_to_toollink);
-  }
-
-  template<typename Type>
-  void
-  transform_control_to_ik_tip_frame(const Type & base_to_toollink, Type & base_to_ik_tip)
-  {
-    direct_transform(base_to_toollink, control_frame_to_ik_tip_tf_, base_to_ik_tip);
-  }
-
 };
 
 }  // namespace admittance_controller
