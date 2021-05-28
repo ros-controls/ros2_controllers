@@ -68,7 +68,7 @@ JointTrajectoryController::init(const std::string & controller_name)
   node_->declare_parameter<double>("action_monitor_rate", 20.0);
   node_->declare_parameter<bool>("allow_partial_joints_goal", allow_partial_joints_goal_);
   node_->declare_parameter<bool>(
-    "is_open_loop_control", is_open_loop_control_);
+    "open_loop_control", open_loop_control_);
   node_->declare_parameter<double>("constraints.stopped_velocity_tolerance", 0.01);
   node_->declare_parameter<double>("constraints.goal_time", 0.0);
 
@@ -155,7 +155,7 @@ JointTrajectoryController::update()
   if (traj_point_active_ptr_ && (*traj_point_active_ptr_)->has_trajectory_msg()) {
     // if sampling the first time, set the point before you sample
     if (!(*traj_point_active_ptr_)->is_sampled_already()) {
-      if (is_open_loop_control_) {
+      if (open_loop_control_) {
         (*traj_point_active_ptr_)->set_point_before_trajectory_msg(
           node_->now(), last_commanded_state_);
       } else {
@@ -527,8 +527,8 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
   default_tolerances_ = get_segment_tolerances(*node_, joint_names_);
 
   // Read parameters customizing controller for special cases
-  is_open_loop_control_ =
-    node_->get_parameter("is_open_loop_control").get_value<bool>();
+  open_loop_control_ =
+    node_->get_parameter("open_loop_control").get_value<bool>();
 
   // subscriber callback
   // non realtime

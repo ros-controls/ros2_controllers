@@ -812,7 +812,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_erro
 {
   rclcpp::executors::SingleThreadedExecutor executor;
   // default if false so it will not be actually set paramter
-  rclcpp::Parameter is_open_loop_parameters("is_open_loop_control", false);
+  rclcpp::Parameter is_open_loop_parameters("open_loop_control", false);
   SetUpAndActivateTrajectoryController(true, {is_open_loop_parameters}, &executor, true);
 
   // goal setup
@@ -897,7 +897,7 @@ TEST_P(
 {
   rclcpp::executors::SingleThreadedExecutor executor;
   // default if false so it will not be actually set paramter
-  rclcpp::Parameter is_open_loop_parameters("is_open_loop_control", true);
+  rclcpp::Parameter is_open_loop_parameters("open_loop_control", true);
   SetUpAndActivateTrajectoryController(true, {is_open_loop_parameters}, &executor, true);
 
   // goal setup
@@ -984,7 +984,7 @@ TEST_P(
 {
   rclcpp::executors::SingleThreadedExecutor executor;
   // default if false so it will not be actually set paramter
-  rclcpp::Parameter is_open_loop_parameters("is_open_loop_control", true);
+  rclcpp::Parameter is_open_loop_parameters("open_loop_control", true);
 
   // set command values to NaN
   for (auto i = 0u; i < 3; ++i) {
@@ -1032,7 +1032,7 @@ TEST_P(
 {
   rclcpp::executors::SingleThreadedExecutor executor;
   // default if false so it will not be actually set paramter
-  rclcpp::Parameter is_open_loop_parameters("is_open_loop_control", true);
+  rclcpp::Parameter is_open_loop_parameters("open_loop_control", true);
 
   // set command values to NaN
   for (auto i = 0u; i < 3; ++i) {
