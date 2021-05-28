@@ -67,6 +67,8 @@ JointTrajectoryController::init(const std::string & controller_name)
   node_->declare_parameter<double>("state_publish_rate", 50.0);
   node_->declare_parameter<double>("action_monitor_rate", 20.0);
   node_->declare_parameter<bool>("allow_partial_joints_goal", allow_partial_joints_goal_);
+  node_->declare_parameter<bool>(
+    "allow_integration_in_goal_trajectories", allow_integration_in_goal_trajectories_);
   node_->declare_parameter<double>("constraints.stopped_velocity_tolerance", 0.01);
   node_->declare_parameter<double>("constraints.goal_time", 0.0);
 
@@ -139,6 +141,7 @@ JointTrajectoryController::update()
   if (current_external_msg != *new_external_msg) {
     fill_partial_goal(*new_external_msg);
     sort_to_local_joint_order(*new_external_msg);
+    // TODO(denis): Add here integration of position and velocity
     traj_external_point_ptr_->update(*new_external_msg);
   }
 
@@ -465,6 +468,9 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
     get_interface_list(state_interface_types_).c_str());
 
   default_tolerances_ = get_segment_tolerances(*node_, joint_names_);
+
+  allow_integration_in_goal_trajectories_ =
+    node_->get_parameter("allow_integration_in_goal_trajectories").get_value<bool>();
 
   // subscriber callback
   // non realtime
