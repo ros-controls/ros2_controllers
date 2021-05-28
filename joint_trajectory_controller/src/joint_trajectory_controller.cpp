@@ -62,6 +62,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
     auto_declare<double>("action_monitor_rate", 20.0);
     auto_declare<bool>("allow_partial_joints_goal", allow_partial_joints_goal_);
     auto_declare<bool>("open_loop_control", open_loop_control_);
+    auto_declare<bool>("allow_integration_in_goal_trajectories", allow_integration_in_goal_trajectories_);
     auto_declare<double>("constraints.stopped_velocity_tolerance", 0.01);
     auto_declare<double>("constraints.goal_time", 0.0);
   }
@@ -138,6 +139,7 @@ controller_interface::return_type JointTrajectoryController::update(
   {
     fill_partial_goal(*new_external_msg);
     sort_to_local_joint_order(*new_external_msg);
+    // TODO(denis): Add here integration of position and velocity
     traj_external_point_ptr_->update(*new_external_msg);
   }
 
@@ -659,6 +661,8 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
 
   // Read parameters customizing controller for special cases
   open_loop_control_ = node_->get_parameter("open_loop_control").get_value<bool>();
+  allow_integration_in_goal_trajectories_ =
+    node_->get_parameter("allow_integration_in_goal_trajectories").get_value<bool>();
 
   // subscriber callback
   // non realtime
