@@ -88,7 +88,7 @@ bool Trajectory::sample(
     return false;
   }
 
-  auto deduce_from_derivaties = [&](trajectory_msgs::msg::JointTrajectoryPoint & first_state,
+  auto deduce_from_derivatives = [&](trajectory_msgs::msg::JointTrajectoryPoint & first_state,
       trajectory_msgs::msg::JointTrajectoryPoint & second_state,
       const size_t dim, const double delta_t)
     {
@@ -121,7 +121,7 @@ bool Trajectory::sample(
     trajectory_start_time_ + first_point_in_msg.time_from_start;
 
   if (sample_time < first_point_timestamp) {
-    deduce_from_derivaties(
+    deduce_from_derivatives(
       state_before_traj_msg_, first_point_in_msg,
       state_before_traj_msg_.positions.size(),
       (first_point_timestamp - time_before_traj_msg_).seconds());
@@ -146,7 +146,7 @@ bool Trajectory::sample(
     const rclcpp::Time t1 = trajectory_start_time_ + next_point.time_from_start;
 
     if (sample_time >= t0 && sample_time < t1) {
-      deduce_from_derivaties(
+      deduce_from_derivatives(
         point, next_point,
         state_before_traj_msg_.positions.size(),
         (t1 - t0).seconds());

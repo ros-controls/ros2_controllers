@@ -58,7 +58,7 @@ public:
   /// Find the segment (made up of 2 points) and its expected state from the
   /// containing trajectory.
   /**
-   * Samping trajector at given \p sample_time.
+   * Sampling trajectory at given \p sample_time.
    * If position in the \p end_segment_itr is missing it will be deduced from provided velocity, or acceleration respectively.
    * Deduction assumes that the provided velocity or acceleration have to be reached at the time defined in the segment.
    *
