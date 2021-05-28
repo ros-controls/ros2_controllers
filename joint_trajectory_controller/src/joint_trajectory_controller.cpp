@@ -312,6 +312,61 @@ void JointTrajectoryController::read_state_from_hardware(JointTrajectoryPoint & 
   }
 }
 
+bool JointTrajectoryController::read_state_from_command_interfaces(JointTrajectoryPoint & state)
+{
+  bool has_values = true;
+
+  const auto joint_num = joint_names_.size();
+  auto assign_point_from_interface = [&, joint_num](
+    std::vector<double> & trajectory_point_interface, const auto & joint_inteface)
+    {
+      for (auto index = 0ul; index < joint_num; ++index) {
+        trajectory_point_interface[index] = joint_inteface[index].get().get_value();
+      }
+    };
+
+  auto interface_has_values = [](const auto & joint_interface)
+    {
+      return std::find_if(
+        joint_interface.begin(), joint_interface.end(),
+        [](const auto & interface) {return std::isnan(interface.get().get_value());}) ==
+             joint_interface.end();
+    };
+
+  // Assign values from the command interfaces as state. Therefore needs check for both.
+  // Position state interface has to exist always
+  if (has_position_command_interface_ && interface_has_values(joint_command_interface_[0])) {
+    assign_point_from_interface(state.positions, joint_command_interface_[0]);
+  } else {
+    state.positions.clear();
+    has_values = false;
+  }
+  // velocity and acceleration states are optional
+  if (has_velocity_state_interface_) {
+    if (has_velocity_command_interface_ && interface_has_values(joint_command_interface_[1])) {
+      assign_point_from_interface(state.velocities, joint_command_interface_[1]);
+    } else {
+      state.velocities.clear();
+      has_values = false;
+    }
+  } else {
+    state.velocities.clear();
+  }
+  // Acceleration is used only in combination with velocity
+  if (has_acceleration_state_interface_) {
+    if (has_acceleration_command_interface_ && interface_has_values(joint_command_interface_[2])) {
+      assign_point_from_interface(state.accelerations, joint_command_interface_[2]);
+    } else {
+      state.accelerations.clear();
+      has_values = false;
+    }
+  } else {
+    state.accelerations.clear();
+  }
+
+  return has_values;
+}
+
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
 {
@@ -642,6 +697,13 @@ JointTrajectoryController::on_activate(const rclcpp_lifecycle::State &)
   // Initialize current state storage if hardware state has tracking offset
   resize_joint_trajectory_point(current_state_when_offset_, joint_names_.size());
   read_state_from_hardware(current_state_when_offset_);
+  // Handle restart of controller by reading current_state_when_offset_ from commands is
+  // those are not nan
+  trajectory_msgs::msg::JointTrajectoryPoint state;
+  resize_joint_trajectory_point(state, joint_names_.size());
+  if (read_state_from_command_interfaces(state)) {
+    current_state_when_offset_ = state;
+  }
 
   // TODO(karsten1987): activate subscriptions of subscriber
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;

@@ -18,6 +18,7 @@
 #include <array>
 #include <chrono>
 #include <future>
+#include <limits>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -975,6 +976,103 @@ TEST_P(
 
   executor.cancel();
 }
+
+// Testing that values are read from state interfaces when hardware is started for the first
+// time and hardware state has offset --> this is indicated by NaN values in state interfaces
+TEST_P(
+  TrajectoryControllerTestParameterized, test_hw_states_has_offset_first_controller_start)
+{
+  rclcpp::executors::SingleThreadedExecutor executor;
+  // default if false so it will not be actually set paramter
+  rclcpp::Parameter partial_joints_parameters("hardware_state_has_offset", true);
+
+  // set command values to NaN
+  for (auto i = 0u; i < 3; ++i) {
+    joint_pos_[i] = std::numeric_limits<double>::quiet_NaN();
+    joint_vel_[i] = std::numeric_limits<double>::quiet_NaN();
+    joint_acc_[i] = std::numeric_limits<double>::quiet_NaN();
+  }
+  SetUpAndActivateTrajectoryController(true, {partial_joints_parameters}, &executor, true);
+
+  auto current_state_when_offset = traj_controller_->get_current_state_when_offset();
+
+  for (auto i = 0u; i < 3; ++i) {
+    EXPECT_EQ(current_state_when_offset.positions[i], joint_state_pos_[i]);
+
+    // check velocity
+    if (std::find(
+        state_interface_types_.begin(), state_interface_types_.end(),
+        hardware_interface::HW_IF_VELOCITY) != state_interface_types_.end() &&
+      std::find(
+        command_interface_types_.begin(), command_interface_types_.end(),
+        hardware_interface::HW_IF_VELOCITY) != command_interface_types_.end())
+    {
+      EXPECT_EQ(current_state_when_offset.positions[i], joint_state_pos_[i]);
+    }
+
+    // check acceleration
+    if (std::find(
+        state_interface_types_.begin(), state_interface_types_.end(),
+        hardware_interface::HW_IF_ACCELERATION) != state_interface_types_.end() &&
+      std::find(
+        command_interface_types_.begin(), command_interface_types_.end(),
+        hardware_interface::HW_IF_ACCELERATION) != command_interface_types_.end())
+    {
+      EXPECT_EQ(current_state_when_offset.positions[i], joint_state_pos_[i]);
+    }
+  }
+
+  executor.cancel();
+}
+
+// Testing that values are read from state interfaces when hardware is started after some values
+// are set on the hardware commands
+TEST_P(
+  TrajectoryControllerTestParameterized, test_hw_states_has_offset_later_controller_start)
+{
+  rclcpp::executors::SingleThreadedExecutor executor;
+  // default if false so it will not be actually set paramter
+  rclcpp::Parameter partial_joints_parameters("hardware_state_has_offset", true);
+
+  // set command values to NaN
+  for (auto i = 0u; i < 3; ++i) {
+    joint_pos_[i] = 3.1 + i;
+    joint_vel_[i] = 0.25 + i;
+    joint_acc_[i] = 0.02 + i / 10.0;
+  }
+  SetUpAndActivateTrajectoryController(true, {partial_joints_parameters}, &executor, true);
+
+  auto current_state_when_offset = traj_controller_->get_current_state_when_offset();
+
+  for (auto i = 0u; i < 3; ++i) {
+    EXPECT_EQ(current_state_when_offset.positions[i], joint_pos_[i]);
+
+    // check velocity
+    if (std::find(
+        state_interface_types_.begin(), state_interface_types_.end(),
+        hardware_interface::HW_IF_VELOCITY) != state_interface_types_.end() &&
+      std::find(
+        command_interface_types_.begin(), command_interface_types_.end(),
+        hardware_interface::HW_IF_VELOCITY) != command_interface_types_.end())
+    {
+      EXPECT_EQ(current_state_when_offset.positions[i], joint_pos_[i]);
+    }
+
+    // check acceleration
+    if (std::find(
+        state_interface_types_.begin(), state_interface_types_.end(),
+        hardware_interface::HW_IF_ACCELERATION) != state_interface_types_.end() &&
+      std::find(
+        command_interface_types_.begin(), command_interface_types_.end(),
+        hardware_interface::HW_IF_ACCELERATION) != command_interface_types_.end())
+    {
+      EXPECT_EQ(current_state_when_offset.positions[i], joint_pos_[i]);
+    }
+  }
+
+  executor.cancel();
+}
+
 
 // TODO(anyone): the new gtest version afer 1.8.0 uses INSTANTIATE_TEST_SUITE_P
 
