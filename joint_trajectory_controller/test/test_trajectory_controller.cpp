@@ -18,6 +18,7 @@
 #include <array>
 #include <chrono>
 #include <future>
+#include <limits>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -62,6 +63,7 @@ void spin(rclcpp::executors::MultiThreadedExecutor * exe)
 {
   exe->spin();
 }
+
 
 TEST_P(TrajectoryControllerTestParameterized, configure)
 {
@@ -270,7 +272,8 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
 {
   SetUpTrajectoryController(false);
 
-  SetParameters();  // This call is replacing the way parameters are set via launch
+  // This call is replacing the way parameters are set via launch
+  SetParameters();
   traj_controller_->configure();
   auto state = traj_controller_->get_current_state();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
@@ -399,7 +402,7 @@ void TrajectoryControllerTest::test_state_publish_rate_target(int target_msg_cou
   int echo_received_counter = 0;
   rclcpp::Subscription<JointTrajectoryControllerState>::SharedPtr subs =
     traj_node_->create_subscription<JointTrajectoryControllerState>(
-    "/state",
+    controller_name_ + "/state",
     qos_level,
     [&](JointTrajectoryControllerState::UniquePtr) {
       ++echo_received_counter;
@@ -604,13 +607,11 @@ TEST_P(TrajectoryControllerTestParameterized, test_partial_joint_list_not_allowe
 /**
  * @brief invalid_message Test mismatched joint and reference vector sizes
  */
-TEST_P(TrajectoryControllerTestParameterized, invalid_messages)
+TEST_P(TrajectoryControllerTestParameterized, invalid_message)
 {
   rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", false);
-  rclcpp::Parameter deduce_states_parameters("deduce_states_from_derivatives", false);
   rclcpp::executors::SingleThreadedExecutor executor;
-  SetUpAndActivateTrajectoryController(
-    true, {partial_joints_parameters, deduce_states_parameters}, &executor);
+  SetUpAndActivateTrajectoryController(true, {partial_joints_parameters}, &executor);
 
   trajectory_msgs::msg::JointTrajectory traj_msg, good_traj_msg;
 
@@ -666,67 +667,6 @@ TEST_P(TrajectoryControllerTestParameterized, invalid_messages)
   EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
 }
 
-/// With deduce_states_from_derivatives parameter trajectory missing position or velocities
-/// are accepted
-TEST_P(TrajectoryControllerTestParameterized, missing_positions_message_accepted)
-{
-  rclcpp::Parameter deduce_states_parameters("deduce_states_from_derivatives", true);
-  rclcpp::executors::SingleThreadedExecutor executor;
-  SetUpAndActivateTrajectoryController(true, {deduce_states_parameters}, &executor);
-
-  trajectory_msgs::msg::JointTrajectory traj_msg, good_traj_msg;
-
-  good_traj_msg.joint_names = joint_names_;
-  good_traj_msg.header.stamp = rclcpp::Time(0);
-  good_traj_msg.points.resize(1);
-  good_traj_msg.points[0].time_from_start = rclcpp::Duration::from_seconds(0.25);
-  good_traj_msg.points[0].positions.resize(1);
-  good_traj_msg.points[0].positions = {1.0, 2.0, 3.0};
-  good_traj_msg.points[0].velocities.resize(1);
-  good_traj_msg.points[0].velocities = {-1.0, -2.0, -3.0};
-  good_traj_msg.points[0].accelerations.resize(1);
-  good_traj_msg.points[0].accelerations = {1.0, 2.0, 3.0};
-  EXPECT_TRUE(traj_controller_->validate_trajectory_msg(good_traj_msg));
-
-  // No position data
-  traj_msg = good_traj_msg;
-  traj_msg.points[0].positions.clear();
-  EXPECT_TRUE(traj_controller_->validate_trajectory_msg(traj_msg));
-
-  // No position and velocity data
-  traj_msg = good_traj_msg;
-  traj_msg.points[0].positions.clear();
-  traj_msg.points[0].velocities.clear();
-  EXPECT_TRUE(traj_controller_->validate_trajectory_msg(traj_msg));
-
-  // All empty
-  traj_msg = good_traj_msg;
-  traj_msg.points[0].positions.clear();
-  traj_msg.points[0].velocities.clear();
-  traj_msg.points[0].accelerations.clear();
-  EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
-
-  // Incompatible data sizes, too few positions
-  traj_msg = good_traj_msg;
-  traj_msg.points[0].positions = {1.0, 2.0};
-  EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
-
-  // Incompatible data sizes, too many positions
-  traj_msg = good_traj_msg;
-  traj_msg.points[0].positions = {1.0, 2.0, 3.0, 4.0};
-  EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
-
-  // Incompatible data sizes, too few velocities
-  traj_msg = good_traj_msg;
-  traj_msg.points[0].velocities = {1.0};
-  EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
-
-  // Incompatible data sizes, too few accelerations
-  traj_msg = good_traj_msg;
-  traj_msg.points[0].accelerations = {2.0};
-  EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
-}
-
 /**
  * @brief test_trajectory_replace Test replacing an existing trajectory
  */
@@ -749,7 +689,9 @@ TEST_P(TrajectoryControllerTestParameterized, test_trajectory_replace)
   expected_desired.positions = {points_old[0].begin(), points_old[0].end()};
   //  Check that we reached end of points_old trajectory
   // Denis: delta was 0.1 with 0.2 works for me
+  std::cout << "Now waiting for state" << std::endl;
   waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.2);
+  std::cout << "After waiting for state" << std::endl;
 
   RCLCPP_INFO(traj_node_->get_logger(), "Sending new trajectory");
   publish(time_from_start, points_partial_new);
@@ -1035,6 +977,103 @@ TEST_P(
   executor.cancel();
 }
 
+// Testing that values are read from state interfaces when hardware is started for the first
+// time and hardware state has offset --> this is indicated by NaN values in state interfaces
+TEST_P(
+  TrajectoryControllerTestParameterized, test_hw_states_has_offset_first_controller_start)
+{
+  rclcpp::executors::SingleThreadedExecutor executor;
+  // default if false so it will not be actually set paramter
+  rclcpp::Parameter partial_joints_parameters("hardware_state_has_offset", true);
+
+  // set command values to NaN
+  for (auto i = 0u; i < 3; ++i) {
+    joint_pos_[i] = std::numeric_limits<double>::quiet_NaN();
+    joint_vel_[i] = std::numeric_limits<double>::quiet_NaN();
+    joint_acc_[i] = std::numeric_limits<double>::quiet_NaN();
+  }
+  SetUpAndActivateTrajectoryController(true, {partial_joints_parameters}, &executor, true);
+
+  auto current_state_when_offset = traj_controller_->get_current_state_when_offset();
+
+  for (auto i = 0u; i < 3; ++i) {
+    EXPECT_EQ(current_state_when_offset.positions[i], joint_state_pos_[i]);
+
+    // check velocity
+    if (std::find(
+        state_interface_types_.begin(), state_interface_types_.end(),
+        hardware_interface::HW_IF_VELOCITY) != state_interface_types_.end() &&
+      std::find(
+        command_interface_types_.begin(), command_interface_types_.end(),
+        hardware_interface::HW_IF_VELOCITY) != command_interface_types_.end())
+    {
+      EXPECT_EQ(current_state_when_offset.positions[i], joint_state_pos_[i]);
+    }
+
+    // check acceleration
+    if (std::find(
+        state_interface_types_.begin(), state_interface_types_.end(),
+        hardware_interface::HW_IF_ACCELERATION) != state_interface_types_.end() &&
+      std::find(
+        command_interface_types_.begin(), command_interface_types_.end(),
+        hardware_interface::HW_IF_ACCELERATION) != command_interface_types_.end())
+    {
+      EXPECT_EQ(current_state_when_offset.positions[i], joint_state_pos_[i]);
+    }
+  }
+
+  executor.cancel();
+}
+
+// Testing that values are read from state interfaces when hardware is started after some values
+// are set on the hardware commands
+TEST_P(
+  TrajectoryControllerTestParameterized, test_hw_states_has_offset_later_controller_start)
+{
+  rclcpp::executors::SingleThreadedExecutor executor;
+  // default if false so it will not be actually set paramter
+  rclcpp::Parameter partial_joints_parameters("hardware_state_has_offset", true);
+
+  // set command values to NaN
+  for (auto i = 0u; i < 3; ++i) {
+    joint_pos_[i] = 3.1 + i;
+    joint_vel_[i] = 0.25 + i;
+    joint_acc_[i] = 0.02 + i / 10.0;
+  }
+  SetUpAndActivateTrajectoryController(true, {partial_joints_parameters}, &executor, true);
+
+  auto current_state_when_offset = traj_controller_->get_current_state_when_offset();
+
+  for (auto i = 0u; i < 3; ++i) {
+    EXPECT_EQ(current_state_when_offset.positions[i], joint_pos_[i]);
+
+    // check velocity
+    if (std::find(
+        state_interface_types_.begin(), state_interface_types_.end(),
+        hardware_interface::HW_IF_VELOCITY) != state_interface_types_.end() &&
+      std::find(
+        command_interface_types_.begin(), command_interface_types_.end(),
+        hardware_interface::HW_IF_VELOCITY) != command_interface_types_.end())
+    {
+      EXPECT_EQ(current_state_when_offset.positions[i], joint_pos_[i]);
+    }
+
+    // check acceleration
+    if (std::find(
+        state_interface_types_.begin(), state_interface_types_.end(),
+        hardware_interface::HW_IF_ACCELERATION) != state_interface_types_.end() &&
+      std::find(
+        command_interface_types_.begin(), command_interface_types_.end(),
+        hardware_interface::HW_IF_ACCELERATION) != command_interface_types_.end())
+    {
+      EXPECT_EQ(current_state_when_offset.positions[i], joint_pos_[i]);
+    }
+  }
+
+  executor.cancel();
+}
+
+
 // TODO(anyone): the new gtest version afer 1.8.0 uses INSTANTIATE_TEST_SUITE_P
 
 // position controllers
@@ -1090,13 +1129,10 @@ INSTANTIATE_TEST_CASE_P(
 
 TEST_F(TrajectoryControllerTest, incorrect_initialization_using_interface_parameters) {
   auto set_parameter_and_check_result = [&]() {
+      EXPECT_EQ(traj_controller_->get_current_state().id(), State::PRIMARY_STATE_UNCONFIGURED);
       SetParameters();  // This call is replacing the way parameters are set via launch
-      std::cout << "before configure" << std::endl;
       traj_controller_->configure();
-      std::cout << "aster configure" << std::endl;
-      auto state = traj_controller_->get_current_state();
-      std::cout << "aster get state" << std::endl;
-      EXPECT_EQ(state.id(), State::PRIMARY_STATE_FINALIZED);
+      EXPECT_EQ(traj_controller_->get_current_state().id(), State::PRIMARY_STATE_UNCONFIGURED);
     };
 
   SetUpTrajectoryController(false);

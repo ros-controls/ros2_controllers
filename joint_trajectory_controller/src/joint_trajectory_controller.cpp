@@ -69,16 +69,14 @@ JointTrajectoryController::init(const std::string & controller_name)
   node_->declare_parameter<bool>("allow_partial_joints_goal", allow_partial_joints_goal_);
   node_->declare_parameter<bool>(
     "hardware_state_has_offset", hardware_state_has_offset_);
-  node_->declare_parameter<bool>(
-    "deduce_states_from_derivatives", deduce_states_from_derivatives_);
   node_->declare_parameter<double>("constraints.stopped_velocity_tolerance", 0.01);
   node_->declare_parameter<double>("constraints.goal_time", 0.0);
 
   return controller_interface::return_type::OK;
 }
 
-controller_interface::InterfaceConfiguration
-JointTrajectoryController::command_interface_configuration() const
+controller_interface::InterfaceConfiguration JointTrajectoryController::
+command_interface_configuration() const
 {
   controller_interface::InterfaceConfiguration conf;
   conf.type = controller_interface::interface_configuration_type::INDIVIDUAL;
@@ -91,8 +89,8 @@ JointTrajectoryController::command_interface_configuration() const
   return conf;
 }
 
-controller_interface::InterfaceConfiguration
-JointTrajectoryController::state_interface_configuration() const
+controller_interface::InterfaceConfiguration JointTrajectoryController::
+state_interface_configuration() const
 {
   controller_interface::InterfaceConfiguration conf;
   conf.type = controller_interface::interface_configuration_type::INDIVIDUAL;
@@ -132,7 +130,6 @@ JointTrajectoryController::update()
   if (current_external_msg != *new_external_msg) {
     fill_partial_goal(*new_external_msg);
     sort_to_local_joint_order(*new_external_msg);
-    // TODO(denis): Add here integration of position and velocity
     traj_external_point_ptr_->update(*new_external_msg);
   }
 
@@ -155,7 +152,7 @@ JointTrajectoryController::update()
   read_state_from_hardware(state_current);
 
   // currently carrying out a trajectory
-  if (traj_point_active_ptr_ && (*traj_point_active_ptr_)->has_trajectory_msg() == false) {
+  if (traj_point_active_ptr_ && (*traj_point_active_ptr_)->has_trajectory_msg()) {
     // if sampling the first time, set the point before you sample
     if (!(*traj_point_active_ptr_)->is_sampled_already()) {
       if (hardware_state_has_offset_) {
@@ -170,6 +167,7 @@ JointTrajectoryController::update()
 
     // find segment for current timestamp
     TrajectoryPointConstIter start_segment_itr, end_segment_itr;
+    // TODO(anyone): this is kind-of open-loop concept? I am right?
     const bool valid_point = (*traj_point_active_ptr_)->sample(
       node_->now(), state_desired,
       start_segment_itr, end_segment_itr);
@@ -314,6 +312,61 @@ void JointTrajectoryController::read_state_from_hardware(JointTrajectoryPoint & 
   }
 }
 
+bool JointTrajectoryController::read_state_from_command_interfaces(JointTrajectoryPoint & state)
+{
+  bool has_values = true;
+
+  const auto joint_num = joint_names_.size();
+  auto assign_point_from_interface = [&, joint_num](
+    std::vector<double> & trajectory_point_interface, const auto & joint_inteface)
+    {
+      for (auto index = 0ul; index < joint_num; ++index) {
+        trajectory_point_interface[index] = joint_inteface[index].get().get_value();
+      }
+    };
+
+  auto interface_has_values = [](const auto & joint_interface)
+    {
+      return std::find_if(
+        joint_interface.begin(), joint_interface.end(),
+        [](const auto & interface) {return std::isnan(interface.get().get_value());}) ==
+             joint_interface.end();
+    };
+
+  // Assign values from the command interfaces as state. Therefore needs check for both.
+  // Position state interface has to exist always
+  if (has_position_command_interface_ && interface_has_values(joint_command_interface_[0])) {
+    assign_point_from_interface(state.positions, joint_command_interface_[0]);
+  } else {
+    state.positions.clear();
+    has_values = false;
+  }
+  // velocity and acceleration states are optional
+  if (has_velocity_state_interface_) {
+    if (has_velocity_command_interface_ && interface_has_values(joint_command_interface_[1])) {
+      assign_point_from_interface(state.velocities, joint_command_interface_[1]);
+    } else {
+      state.velocities.clear();
+      has_values = false;
+    }
+  } else {
+    state.velocities.clear();
+  }
+  // Acceleration is used only in combination with velocity
+  if (has_acceleration_state_interface_) {
+    if (has_acceleration_command_interface_ && interface_has_values(joint_command_interface_[2])) {
+      assign_point_from_interface(state.accelerations, joint_command_interface_[2]);
+    } else {
+      state.accelerations.clear();
+      has_values = false;
+    }
+  } else {
+    state.accelerations.clear();
+  }
+
+  return has_values;
+}
+
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
 {
@@ -323,10 +376,8 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
   joint_names_ = node_->get_parameter("joints").as_string_array();
 
   if (!reset()) {
-    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
   }
-  // The controller should be in halted state after creation otherwise memory corruption
-  is_halted_ = true;
 
   if (joint_names_.empty()) {
     RCLCPP_WARN(logger, "'joints' parameter is empty.");
@@ -339,7 +390,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
 
   if (command_interface_types_.empty()) {
     RCLCPP_ERROR(logger, "'command_interfaces' parameter is empty.");
-    return CallbackReturn::ERROR;
+    return CallbackReturn::FAILURE;
   }
 
   // Check if only allowed interface types are used and initialize storage to avoid memory
@@ -350,7 +401,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
       allowed_interface_types_.begin(), allowed_interface_types_.end(), interface);
     if (it == allowed_interface_types_.end()) {
       RCLCPP_ERROR(logger, "Command interface type '" + interface + "' not allowed!");
-      return CallbackReturn::ERROR;
+      return CallbackReturn::FAILURE;
     }
   }
 
@@ -368,10 +419,10 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
       use_closed_loop_pid_adapter = true;
       // TODO(anyone): remove the next two lines when implemented
       RCLCPP_ERROR(logger, "using 'effort' command interface alone is not yet implemented yet.");
-      return CallbackReturn::ERROR;
+      return CallbackReturn::FAILURE;
     } else {
       RCLCPP_ERROR(logger, "'effort' command interface has to be used alone.");
-      return CallbackReturn::ERROR;
+      return CallbackReturn::FAILURE;
     }
   }
 
@@ -391,20 +442,20 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
       use_closed_loop_pid_adapter = true;
       // TODO(anyone): remove this when implemented
       RCLCPP_ERROR(logger, "using 'velocity' command interface alone is not yet implemented yet.");
-      return CallbackReturn::ERROR;
+      return CallbackReturn::FAILURE;
       // if velocity interface can be used without position if multiple defined
     } else if (!has_position_command_interface_) {
       RCLCPP_ERROR(
         logger, "'velocity' command interface can be used either alone or 'position' "
         "interface has to be present.");
-      return CallbackReturn::ERROR;
+      return CallbackReturn::FAILURE;
     }
     // invalid: acceleration is defined and no velocity
   } else if (has_acceleration_command_interface_) {
     RCLCPP_ERROR(
       logger, "'acceleration' command interface can only be used if 'velocity' and "
       "'position' interfaces are present");
-    return CallbackReturn::ERROR;
+    return CallbackReturn::FAILURE;
   }
 
   // Read always state interfaces from the parameter because they can be used
@@ -414,12 +465,12 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
 
   if (state_interface_types_.empty()) {
     RCLCPP_ERROR(logger, "'state_interfaces' parameter is empty.");
-    return CallbackReturn::ERROR;
+    return CallbackReturn::FAILURE;
   }
 
   if (contains_interface_type(state_interface_types_, hardware_interface::HW_IF_EFFORT)) {
     RCLCPP_ERROR(logger, "State interface type 'effort' not allowed!");
-    return CallbackReturn::ERROR;
+    return CallbackReturn::FAILURE;
   }
 
   // Check if only allowed interface types are used and initialize storage to avoid memory
@@ -431,7 +482,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
       allowed_interface_types_.begin(), allowed_interface_types_.end(), interface);
     if (it == allowed_interface_types_.end()) {
       RCLCPP_ERROR(logger, "State interface type '" + interface + "' not allowed!");
-      return CallbackReturn::ERROR;
+      return CallbackReturn::FAILURE;
     }
   }
 
@@ -447,13 +498,13 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
       RCLCPP_ERROR(
         logger, "'velocity' state interface cannot be used if 'position' interface "
         "is missing.");
-      return CallbackReturn::ERROR;
+      return CallbackReturn::FAILURE;
     }
   } else if (has_acceleration_state_interface_) {
     RCLCPP_ERROR(
       logger, "'acceleration' state interface cannot be used if 'position' and 'velocity' "
       "interfaces are not present.");
-    return CallbackReturn::ERROR;
+    return CallbackReturn::FAILURE;
   }
 
   auto get_interface_list = [](const std::vector<std::string> & interface_types) {
@@ -478,8 +529,6 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
   // Read parameters customizing controller for special cases
   hardware_state_has_offset_ =
     node_->get_parameter("hardware_state_has_offset").get_value<bool>();
-  deduce_states_from_derivatives_ =
-    node_->get_parameter("deduce_states_from_derivatives").get_value<bool>();
 
   // subscriber callback
   // non realtime
@@ -519,7 +568,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
   }
 
   publisher_ = node_->create_publisher<ControllerStateMsg>(
-    "state", rclcpp::SystemDefaultsQoS());
+    "~/state", rclcpp::SystemDefaultsQoS());
   state_publisher_ = std::make_unique<StatePublisher>(publisher_);
 
   const auto n_joints = joint_names_.size();
@@ -638,6 +687,8 @@ JointTrajectoryController::on_activate(const rclcpp_lifecycle::State &)
 
   traj_external_point_ptr_ = std::make_shared<Trajectory>();
   traj_home_point_ptr_ = std::make_shared<Trajectory>();
+  traj_msg_external_point_ptr_.writeFromNonRT(
+    std::shared_ptr<trajectory_msgs::msg::JointTrajectory>());
 
   subscriber_is_active_ = true;
   traj_point_active_ptr_ = &traj_external_point_ptr_;
@@ -646,6 +697,13 @@ JointTrajectoryController::on_activate(const rclcpp_lifecycle::State &)
   // Initialize current state storage if hardware state has tracking offset
   resize_joint_trajectory_point(current_state_when_offset_, joint_names_.size());
   read_state_from_hardware(current_state_when_offset_);
+  // Handle restart of controller by reading current_state_when_offset_ from commands is
+  // those are not nan
+  trajectory_msgs::msg::JointTrajectoryPoint state;
+  resize_joint_trajectory_point(state, joint_names_.size());
+  if (read_state_from_command_interfaces(state)) {
+    current_state_when_offset_ = state;
+  }
 
   // TODO(karsten1987): activate subscriptions of subscriber
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
@@ -765,9 +823,6 @@ rclcpp_action::GoalResponse JointTrajectoryController::goal_callback(
     return rclcpp_action::GoalResponse::REJECT;
   }
 
-  // TODO(denis): is here the following line missing?
-//   add_new_trajectory_msg(std::make_shared(goal->trajectory));
-
   RCLCPP_INFO(node_->get_logger(), "Accepted new action goal");
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
@@ -873,7 +928,8 @@ void JointTrajectoryController::sort_to_local_joint_order(
       if (to_remap.size() != mapping.size()) {
         RCLCPP_WARN(
           node_->get_logger(),
-          "Invalid input size (%d) for sorting", to_remap.size());
+          "Invalid input size (%zu) for sorting",
+          to_remap.size());
         return to_remap;
       }
       std::vector<double> output;
@@ -911,7 +967,7 @@ bool JointTrajectoryController::validate_trajectory_point_field(
   if (joint_names_size != vector_field.size()) {
     RCLCPP_ERROR(
       node_->get_logger(),
-      "Mismatch between joint_names (%u) and %s (%u) at point #%u.",
+      "Mismatch between joint_names (%zu) and %s (%zu) at point #%zu.",
       joint_names_size, string_for_vector_field.c_str(), vector_field.size(), i);
     return false;
   }
@@ -975,7 +1031,7 @@ bool JointTrajectoryController::validate_trajectory_msg(
     if ((i > 0) && (rclcpp::Duration(trajectory.points[i].time_from_start) <= previous_traj_time)) {
       RCLCPP_ERROR(
         node_->get_logger(),
-        "Time between points %u and %u is not strictly increasing, it is %f and %f respectively",
+        "Time between points %zu and %zu is not strictly increasing, it is %f and %f respectively",
         i - 1, i, previous_traj_time.seconds(),
         rclcpp::Duration(trajectory.points[i].time_from_start).seconds());
       return false;
@@ -984,26 +1040,11 @@ bool JointTrajectoryController::validate_trajectory_msg(
 
     const size_t joint_count = trajectory.joint_names.size();
     const auto & points = trajectory.points;
-    // TODO(anyone): This currently supports only position, velocity and acceleration inputs
-    if (deduce_states_from_derivatives_) {
-      const bool all_empty = points[i].positions.empty() && points[i].velocities.empty() &&
-        points[i].accelerations.empty();
-      const bool position_error = !points[i].positions.empty() &&
-        !validate_trajectory_point_field(joint_count, points[i].positions, "positions", i, false);
-      const bool velocity_error = !points[i].velocities.empty() &&
-        !validate_trajectory_point_field(joint_count, points[i].velocities, "velocities", i, false);
-      const bool acceleration_error = !points[i].accelerations.empty() &&
-        !validate_trajectory_point_field(
-        joint_count, points[i].accelerations, "accelerations", i, false);
-      if (all_empty || position_error || velocity_error || acceleration_error) {
-        return false;
-      }
-    } else if (
-      !validate_trajectory_point_field(joint_count, points[i].positions, "positions", i, false) ||
+    if (!validate_trajectory_point_field(joint_count, points[i].positions, "positions", i, false) ||
       !validate_trajectory_point_field(joint_count, points[i].velocities, "velocities", i, true) ||
       !validate_trajectory_point_field(
-        joint_count, points[i].accelerations, "accelerations", i, true) ||
-      // TODO(denis): should this be deleted, since effort goals are not supported?
+        joint_count, points[i].accelerations, "accelerations", i,
+        true) ||
       !validate_trajectory_point_field(joint_count, points[i].effort, "effort", i, true))
     {
       return false;

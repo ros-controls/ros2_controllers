@@ -129,8 +129,6 @@ protected:
   /// following the commanded trajectory.
   bool hardware_state_has_offset_ = false;
   trajectory_msgs::msg::JointTrajectoryPoint current_state_when_offset_;
-  /// Allow integration in goal trajectories to accept goals without position or velocity specified
-  bool deduce_states_from_derivatives_ = false;
 
   // The interfaces are defined as the types in 'allowed_interface_types_' member.
   // For convenience, for each type the interfaces are ordered so that i-th position
@@ -228,6 +226,8 @@ protected:
     const JointTrajectoryPoint & state_error);
 
   void read_state_from_hardware(JointTrajectoryPoint & state);
+
+  bool read_state_from_command_interfaces(JointTrajectoryPoint & state);
 
 private:
   bool contains_interface_type(

@@ -28,6 +28,7 @@ class FriendJointStateBroadcaster : public joint_state_broadcaster::JointStateBr
 {
   FRIEND_TEST(JointStateBroadcasterTest, ConfigureErrorTest);
   FRIEND_TEST(JointStateBroadcasterTest, ConfigureSuccessTest);
+  FRIEND_TEST(JointStateBroadcasterTest, ExtraJointStatePublishTest);
 };
 
 class JointStateBroadcasterTest : public ::testing::Test

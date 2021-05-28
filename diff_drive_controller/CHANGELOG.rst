@@ -2,6 +2,20 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.3.1 (2021-05-23)
+------------------
+
+0.3.0 (2021-05-21)
+------------------
+
+0.2.1 (2021-05-03)
+------------------
+* Migrate from deprecated controller_interface::return_type::SUCCESS -> OK (`#167 <https://github.com/ros-controls/ros2_controllers/issues/167>`_)
+* Add basic user docs pages for each package (`#156 <https://github.com/ros-controls/ros2_controllers/issues/156>`_)
+* [diff_drive_controller] Change header math.h in cmath for better C++ compliance (`#148 <https://github.com/ros-controls/ros2_controllers/issues/148>`_)
+  and isnan inclusion.
+* Contributors: Bence Magyar, Olivier Stasse
+
 0.2.0 (2021-02-06)
 ------------------
 * Fix diff drive twist concurrency issues (`#146 <https://github.com/ros-controls/ros2_controllers/issues/146>`_)

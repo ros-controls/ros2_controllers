@@ -52,7 +52,10 @@ public:
   {
     auto ret =
       joint_trajectory_controller::JointTrajectoryController::on_configure(previous_state);
-    joint_cmd_sub_wait_set_.add_subscription(joint_command_subscriber_);
+    // this class can still be useful without the wait set
+    if (joint_command_subscriber_) {
+      joint_cmd_sub_wait_set_.add_subscription(joint_command_subscriber_);
+    }
     return ret;
   }
 
@@ -89,6 +92,11 @@ public:
     state_interface_types_ = state_interfaces;
   }
 
+  trajectory_msgs::msg::JointTrajectoryPoint get_current_state_when_offset()
+  {
+    return current_state_when_offset_;
+  }
+
   rclcpp::WaitSet joint_cmd_sub_wait_set_;
 };
 
@@ -112,7 +120,6 @@ public:
     joint_acc_.resize(joint_names_.size(), 0.0);
     joint_state_acc_.resize(joint_names_.size(), 0.0);
     // Default interface values - they will be overwritten by parameterized tests
-
     command_interface_types_ = {"position"};
     state_interface_types_ = {"position", "velocity"};
 
@@ -248,7 +255,7 @@ public:
     qos.keep_last(1);
     state_subscriber_ =
       traj_lifecycle_node->create_subscription<JointTrajectoryControllerState>(
-      "/state",
+      controller_name_ + "/state",
       qos,
       [&](std::shared_ptr<JointTrajectoryControllerState> msg) {
         std::lock_guard<std::mutex> guard(state_mutex_);
