@@ -227,6 +227,8 @@ protected:
 
   void read_state_from_hardware(JointTrajectoryPoint & state);
 
+  bool read_state_from_command_interfaces(JointTrajectoryPoint & state);
+
 private:
   bool contains_interface_type(
     const std::vector<std::string> & interface_type_list, const std::string & interface_type)
