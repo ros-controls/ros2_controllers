@@ -129,6 +129,8 @@ protected:
   /// following the commanded trajectory.
   bool hardware_state_has_offset_ = false;
   trajectory_msgs::msg::JointTrajectoryPoint current_state_when_offset_;
+  /// Allow integration in goal trajectories to accept goals without position or velocity specified
+  bool allow_integration_in_goal_trajectories_ = false;
 
   // The interfaces are defined as the types in 'allowed_interface_types_' member.
   // For convenience, for each type the interfaces are ordered so that i-th position
