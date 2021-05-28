@@ -872,8 +872,8 @@ TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_erro
 {
   rclcpp::executors::SingleThreadedExecutor executor;
   // default if false so it will not be actually set paramter
-  rclcpp::Parameter partial_joints_parameters("hardware_state_has_offset", false);
-  SetUpAndActivateTrajectoryController(true, {partial_joints_parameters}, &executor, true);
+  rclcpp::Parameter is_open_loop_parameters("is_open_loop_control", false);
+  SetUpAndActivateTrajectoryController(true, {is_open_loop_parameters}, &executor, true);
 
   // goal setup
   std::vector<double> first_goal = {3.3, 4.4, 5.5};
@@ -957,8 +957,8 @@ TEST_P(
 {
   rclcpp::executors::SingleThreadedExecutor executor;
   // default if false so it will not be actually set paramter
-  rclcpp::Parameter partial_joints_parameters("hardware_state_has_offset", true);
-  SetUpAndActivateTrajectoryController(true, {partial_joints_parameters}, &executor, true);
+  rclcpp::Parameter is_open_loop_parameters("is_open_loop_control", true);
+  SetUpAndActivateTrajectoryController(true, {is_open_loop_parameters}, &executor, true);
 
   // goal setup
   std::vector<double> first_goal = {3.3, 4.4, 5.5};
@@ -1044,7 +1044,7 @@ TEST_P(
 {
   rclcpp::executors::SingleThreadedExecutor executor;
   // default if false so it will not be actually set paramter
-  rclcpp::Parameter partial_joints_parameters("hardware_state_has_offset", true);
+  rclcpp::Parameter is_open_loop_parameters("is_open_loop_control", true);
 
   // set command values to NaN
   for (auto i = 0u; i < 3; ++i) {
@@ -1052,7 +1052,7 @@ TEST_P(
     joint_vel_[i] = std::numeric_limits<double>::quiet_NaN();
     joint_acc_[i] = std::numeric_limits<double>::quiet_NaN();
   }
-  SetUpAndActivateTrajectoryController(true, {partial_joints_parameters}, &executor, true);
+  SetUpAndActivateTrajectoryController(true, {is_open_loop_parameters}, &executor, true);
 
   auto current_state_when_offset = traj_controller_->get_current_state_when_offset();
 
@@ -1092,7 +1092,7 @@ TEST_P(
 {
   rclcpp::executors::SingleThreadedExecutor executor;
   // default if false so it will not be actually set paramter
-  rclcpp::Parameter partial_joints_parameters("hardware_state_has_offset", true);
+  rclcpp::Parameter is_open_loop_parameters("is_open_loop_control", true);
 
   // set command values to NaN
   for (auto i = 0u; i < 3; ++i) {
@@ -1100,7 +1100,7 @@ TEST_P(
     joint_vel_[i] = 0.25 + i;
     joint_acc_[i] = 0.02 + i / 10.0;
   }
-  SetUpAndActivateTrajectoryController(true, {partial_joints_parameters}, &executor, true);
+  SetUpAndActivateTrajectoryController(true, {is_open_loop_parameters}, &executor, true);
 
   auto current_state_when_offset = traj_controller_->get_current_state_when_offset();
 
