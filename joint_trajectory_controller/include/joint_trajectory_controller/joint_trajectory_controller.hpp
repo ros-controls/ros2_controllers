@@ -127,7 +127,7 @@ protected:
   // Parameters for some special cases, e.g. hydraulics powered robots
   /// Run he controller in open-loop, i.e., read hardware states only when starting controller.
   /// This is useful when robot is not exactly following the commanded trajectory.
-  bool is_open_loop_control_ = false;
+  bool open_loop_control_ = false;
   trajectory_msgs::msg::JointTrajectoryPoint last_commanded_state_;
   /// Allow integration in goal trajectories to accept goals without position or velocity specified
   bool allow_integration_in_goal_trajectories_ = false;
