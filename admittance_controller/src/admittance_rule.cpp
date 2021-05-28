@@ -234,17 +234,23 @@ controller_interface::return_type AdmittanceRule::update(
   convert_message_to_array(current_pose_ik_base_frame_, current_pose_ik_base_frame_arr_);
 
   std::array<double, 6> pose_error;
+  // Estimate feedforward acceleration from target_pose_ik_base_frame_arr_ and previous
+  std::array<double, 6> feedforward_acceleration;
 
   for (auto i = 0u; i < 6; ++i) {
     pose_error[i] = current_pose_ik_base_frame_arr_[i] - target_pose_ik_base_frame_arr_[i];
     if (i >= 3) {
       pose_error[i] = angles::normalize_angle(pose_error[i]);
     }
+
+    // Estimate feedforward acceleration
+    feedforward_acceleration[i] = (feedforward_velocity_ik_base_frame_[i] - prev_feedforward_velocity_ik_base_frame_[i]) / period.seconds();
   }
+  prev_feedforward_velocity_ik_base_frame_ = feedforward_velocity_ik_base_frame_;
 
   process_wrench_measurements(measured_wrench);
 
-  calculate_admittance_rule(measured_wrench_control_frame_arr_, pose_error, period,
+  calculate_admittance_rule(measured_wrench_control_frame_arr_, pose_error, feedforward_acceleration, period,
                             relative_desired_pose_arr_);
 
   return calculate_desired_joint_state(current_joint_state, period, desired_joint_state);
@@ -271,6 +277,10 @@ controller_interface::return_type AdmittanceRule::update(
     desired_joint_state = current_joint_state;
     std::fill(desired_joint_state.velocities.begin(), desired_joint_state.velocities.end(), 0.0);
     return controller_interface::return_type::ERROR;
+  }
+
+  for (auto i = 0u; i < 6; ++i) {
+    feedforward_velocity_ik_base_frame_[i] = target_ik_tip_deltas_vec.at(i) / period.seconds();
   }
 
   // Add deltas to previously-desired pose to get the next desired pose
@@ -390,6 +400,7 @@ void AdmittanceRule::process_wrench_measurements(
 void AdmittanceRule::calculate_admittance_rule(
   const std::array<double, 6> & measured_wrench,
   const std::array<double, 6> & pose_error,
+  const std::array<double, 6> & feedforward_acceleration,
   const rclcpp::Duration & period,
   std::array<double, 6> & desired_relative_pose
 )
@@ -398,9 +409,8 @@ void AdmittanceRule::calculate_admittance_rule(
   for (auto i = 0u; i < 6; ++i) {
     if (selected_axes_[i]) {
       // TODO(destogl): check if velocity is measured from hardware
-      const double acceleration = 1 / mass_[i] *
-      (measured_wrench[i] - damping_[i] * desired_velocity_arr_[i] -
-      stiffness_[i] * pose_error[i]);
+      const double acceleration = feedforward_acceleration[i] + (1 / mass_[i]) *
+      (measured_wrench[i] - damping_[i] * desired_velocity_arr_[i] - stiffness_[i] * pose_error[i]);
 
       desired_velocity_arr_[i] += (desired_acceleration_previous_arr_[i] + acceleration) * 0.5 * period.seconds();
 
