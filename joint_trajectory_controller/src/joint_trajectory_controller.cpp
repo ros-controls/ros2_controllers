@@ -69,8 +69,6 @@ JointTrajectoryController::init(const std::string & controller_name)
   node_->declare_parameter<bool>("allow_partial_joints_goal", allow_partial_joints_goal_);
   node_->declare_parameter<bool>(
     "hardware_state_has_offset", hardware_state_has_offset_);
-  node_->declare_parameter<bool>(
-    "allow_integration_in_goal_trajectories", allow_integration_in_goal_trajectories_);
   node_->declare_parameter<double>("constraints.stopped_velocity_tolerance", 0.01);
   node_->declare_parameter<double>("constraints.goal_time", 0.0);
 
@@ -132,7 +130,6 @@ JointTrajectoryController::update()
   if (current_external_msg != *new_external_msg) {
     fill_partial_goal(*new_external_msg);
     sort_to_local_joint_order(*new_external_msg);
-    // TODO(denis): Add here integration of position and velocity
     traj_external_point_ptr_->update(*new_external_msg);
   }
 
@@ -477,8 +474,6 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
   // Read parameters customizing controller for special cases
   hardware_state_has_offset_ =
     node_->get_parameter("hardware_state_has_offset").get_value<bool>();
-  allow_integration_in_goal_trajectories_ =
-    node_->get_parameter("allow_integration_in_goal_trajectories").get_value<bool>();
 
   // subscriber callback
   // non realtime
