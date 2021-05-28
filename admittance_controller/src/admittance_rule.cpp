@@ -175,7 +175,16 @@ controller_interface::return_type AdmittanceRule::configure(rclcpp::Node::Shared
   // Initialize IK
   ik_ = std::make_shared<IncrementalKinematics>(node, ik_group_name_);
 
-  reset();
+  measured_wrench_control_frame_arr_.fill(0.0);
+  target_pose_ik_base_frame_arr_.fill(0.0);
+  current_pose_ik_base_frame_arr_.fill(0.0);
+  angles_error_.fill(0.0);
+  desired_velocity_arr_.fill(0.0);
+  desired_velocity_previous_arr_.fill(0.0);
+  desired_acceleration_previous_arr_.fill(0.0);
+
+  get_pose_of_control_frame_in_base_frame(current_pose_ik_base_frame_);
+  feedforward_pose_ik_base_frame_ = current_pose_ik_base_frame_;
 
   return controller_interface::return_type::OK;
 }
@@ -184,11 +193,8 @@ controller_interface::return_type AdmittanceRule::reset()
 {
   measured_wrench_control_frame_arr_.fill(0.0);
   target_pose_ik_base_frame_arr_.fill(0.0);
-
   current_pose_ik_base_frame_arr_.fill(0.0);
-
   angles_error_.fill(0.0);
-
   desired_velocity_arr_.fill(0.0);
   desired_velocity_previous_arr_.fill(0.0);
   desired_acceleration_previous_arr_.fill(0.0);
