@@ -94,7 +94,7 @@ public:
 
   trajectory_msgs::msg::JointTrajectoryPoint get_current_state_when_offset()
   {
-    return current_state_when_offset_;
+    return last_commanded_state_;
   }
 
   rclcpp::WaitSet joint_cmd_sub_wait_set_;

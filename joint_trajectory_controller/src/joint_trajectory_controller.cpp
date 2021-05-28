@@ -68,7 +68,7 @@ JointTrajectoryController::init(const std::string & controller_name)
   node_->declare_parameter<double>("action_monitor_rate", 20.0);
   node_->declare_parameter<bool>("allow_partial_joints_goal", allow_partial_joints_goal_);
   node_->declare_parameter<bool>(
-    "hardware_state_has_offset", hardware_state_has_offset_);
+    "is_open_loop_control", is_open_loop_control_);
   node_->declare_parameter<double>("constraints.stopped_velocity_tolerance", 0.01);
   node_->declare_parameter<double>("constraints.goal_time", 0.0);
 
@@ -155,9 +155,9 @@ JointTrajectoryController::update()
   if (traj_point_active_ptr_ && (*traj_point_active_ptr_)->has_trajectory_msg()) {
     // if sampling the first time, set the point before you sample
     if (!(*traj_point_active_ptr_)->is_sampled_already()) {
-      if (hardware_state_has_offset_) {
+      if (is_open_loop_control_) {
         (*traj_point_active_ptr_)->set_point_before_trajectory_msg(
-          node_->now(), current_state_when_offset_);
+          node_->now(), last_commanded_state_);
       } else {
         (*traj_point_active_ptr_)->set_point_before_trajectory_msg(
           node_->now(), state_current);
@@ -212,7 +212,7 @@ JointTrajectoryController::update()
       }
 
       // store command as state when hardware state has tracking offset
-      current_state_when_offset_ = state_desired;
+      last_commanded_state_ = state_desired;
 
       const auto active_goal = *rt_active_goal_.readFromRT();
       if (active_goal) {
@@ -527,8 +527,8 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
   default_tolerances_ = get_segment_tolerances(*node_, joint_names_);
 
   // Read parameters customizing controller for special cases
-  hardware_state_has_offset_ =
-    node_->get_parameter("hardware_state_has_offset").get_value<bool>();
+  is_open_loop_control_ =
+    node_->get_parameter("is_open_loop_control").get_value<bool>();
 
   // subscriber callback
   // non realtime
@@ -695,14 +695,14 @@ JointTrajectoryController::on_activate(const rclcpp_lifecycle::State &)
   last_state_publish_time_ = node_->now();
 
   // Initialize current state storage if hardware state has tracking offset
-  resize_joint_trajectory_point(current_state_when_offset_, joint_names_.size());
-  read_state_from_hardware(current_state_when_offset_);
-  // Handle restart of controller by reading current_state_when_offset_ from commands is
+  resize_joint_trajectory_point(last_commanded_state_, joint_names_.size());
+  read_state_from_hardware(last_commanded_state_);
+  // Handle restart of controller by reading last_commanded_state_ from commands is
   // those are not nan
   trajectory_msgs::msg::JointTrajectoryPoint state;
   resize_joint_trajectory_point(state, joint_names_.size());
   if (read_state_from_command_interfaces(state)) {
-    current_state_when_offset_ = state;
+    last_commanded_state_ = state;
   }
 
   // TODO(karsten1987): activate subscriptions of subscriber

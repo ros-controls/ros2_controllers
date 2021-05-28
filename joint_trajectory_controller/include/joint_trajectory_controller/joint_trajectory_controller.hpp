@@ -125,10 +125,10 @@ protected:
   };
 
   // Parameters for some special cases, e.g. hydraulics powered robots
-  /// Read hardware states only when starting controller. This is useful when robot is not exactly
-  /// following the commanded trajectory.
-  bool hardware_state_has_offset_ = false;
-  trajectory_msgs::msg::JointTrajectoryPoint current_state_when_offset_;
+  /// Run he controller in open-loop, i.e., read hardware states only when starting controller.
+  /// This is useful when robot is not exactly following the commanded trajectory.
+  bool is_open_loop_control_ = false;
+  trajectory_msgs::msg::JointTrajectoryPoint last_commanded_state_;
 
   // The interfaces are defined as the types in 'allowed_interface_types_' member.
   // For convenience, for each type the interfaces are ordered so that i-th position
