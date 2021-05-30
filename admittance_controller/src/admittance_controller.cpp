@@ -544,6 +544,11 @@ controller_interface::return_type AdmittanceController::update()
         joint_deltas[index] = angles::shortest_angular_distance(current_joint_states.positions[index], (*input_joint_cmd)->points[0].positions[index]);
       }
     }
+    RCLCPP_INFO(get_node()->get_logger(), "JointDeltas: [%e, %e, %e, %e, %e, %e]",
+                joint_deltas[0], joint_deltas[1], joint_deltas[2], joint_deltas[3],
+                joint_deltas[4], joint_deltas[5]
+    );
+
     admittance_->update(current_joint_states, ft_values, joint_deltas, duration_since_last_call, desired_joint_states);
   } else {
     admittance_->update(current_joint_states, ft_values, **input_pose_cmd, duration_since_last_call, desired_joint_states);
