@@ -57,6 +57,7 @@ controller_interface::return_type AdmittanceController::init(const std::string &
     get_node()->declare_parameter<std::string>("IK.group_name", "");
 
     get_node()->declare_parameter<std::string>("control_frame", "");
+    get_node()->declare_parameter<std::string>("endeffector_frame", "");
     get_node()->declare_parameter<std::string>("fixed_world_frame", "");
     get_node()->declare_parameter<std::string>("sensor_frame", "");
 
@@ -165,6 +166,7 @@ CallbackReturn AdmittanceController::on_configure(
     get_string_param_and_error_if_empty(admittance_->ik_base_frame_, "IK.base") ||
     get_string_param_and_error_if_empty(admittance_->ik_tip_frame_, "IK.tip") ||
     get_string_param_and_error_if_empty(admittance_->ik_group_name_, "IK.group_name") ||
+    get_string_param_and_error_if_empty(admittance_->endeffector_frame_, "endeffector_frame") ||
     get_string_param_and_error_if_empty(admittance_->control_frame_, "control_frame") ||
     get_string_param_and_error_if_empty(admittance_->fixed_world_frame_, "fixed_world_frame") ||
     get_string_param_and_error_if_empty(admittance_->sensor_frame_, "sensor_frame") ||
