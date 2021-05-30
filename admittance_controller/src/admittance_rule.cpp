@@ -175,17 +175,6 @@ controller_interface::return_type AdmittanceRule::configure(rclcpp::Node::Shared
   // Initialize IK
   ik_ = std::make_shared<IncrementalKinematics>(node, ik_group_name_);
 
-  measured_wrench_control_frame_arr_.fill(0.0);
-  target_pose_ik_base_frame_arr_.fill(0.0);
-  current_pose_ik_base_frame_arr_.fill(0.0);
-  angles_error_.fill(0.0);
-  desired_velocity_arr_.fill(0.0);
-  desired_velocity_previous_arr_.fill(0.0);
-  desired_acceleration_previous_arr_.fill(0.0);
-
-  get_pose_of_control_frame_in_base_frame(current_pose_ik_base_frame_);
-  feedforward_pose_ik_base_frame_ = current_pose_ik_base_frame_;
-
   return controller_interface::return_type::OK;
 }
 
@@ -259,6 +248,10 @@ controller_interface::return_type AdmittanceRule::update(
   calculate_admittance_rule(measured_wrench_control_frame_arr_, pose_error, feedforward_acceleration, period,
                             relative_desired_pose_arr_);
 
+  // Do clean conversion to the goal pose using transform and not messing with Euler angles
+  convert_array_to_message(relative_desired_pose_arr_, relative_desired_pose_);
+  tf2::doTransform(current_pose_ik_base_frame_, desired_pose_ik_base_frame_, relative_desired_pose_);
+
   return calculate_desired_joint_state(current_joint_state, period, desired_joint_state);
 }
 
@@ -326,12 +319,22 @@ controller_interface::return_type AdmittanceRule::update(
 controller_interface::return_type AdmittanceRule::get_controller_state(
   control_msgs::msg::AdmittanceControllerState & state_message)
 {
-  //   state_message.input_force_control_frame = target_force_control_frame_;
-  // TODO(andyz): update msg fields
-//  state_message.input_pose_control_frame = target_pose_ik_base_frame_;
+  //   state_message.input_wrench_control_frame = target_wrench_control_frame_;
+  state_message.input_pose_control_frame = target_pose_ik_base_frame_;
   state_message.measured_wrench = measured_wrench_;
   state_message.measured_wrench_filtered = measured_wrench_filtered_;
   state_message.measured_wrench_control_frame = measured_wrench_control_frame_;
+
+  try {
+    auto transform = tf_buffer_->lookupTransform(endeffector_frame_, control_frame_, tf2::TimePointZero);
+    tf2::doTransform(measured_wrench_control_frame_, measured_wrench_endeffector_frame_, transform);
+  } catch (const tf2::TransformException & e) {
+    // TODO(destogl): Use RCLCPP_ERROR_THROTTLE
+    RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed between '" + control_frame_ + "' and '" + endeffector_frame_ + "'.");
+  }
+
+  state_message.measured_wrench_endeffector_frame = measured_wrench_endeffector_frame_;
+
   state_message.desired_pose = desired_pose_ik_base_frame_;
   state_message.relative_desired_pose = relative_desired_pose_;
 
@@ -424,6 +427,9 @@ void AdmittanceRule::calculate_admittance_rule(
 
       desired_acceleration_previous_arr_[i] = acceleration;
       desired_velocity_previous_arr_[i] = desired_velocity_arr_[i];
+
+//       RCLCPP_INFO(rclcpp::get_logger("AR"), "%e = %e - (1/M(%.1f)) (%e - D(%.1f)*%e - S(%.1f)*%e)",
+//                   acceleration, feedforward_acceleration[i], mass_[i], measured_wrench[i], damping_[i], desired_velocity_arr_[i], stiffness_[i], pose_error[i]);
     }
   }
 }
