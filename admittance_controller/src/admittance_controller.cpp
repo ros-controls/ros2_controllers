@@ -461,9 +461,10 @@ CallbackReturn AdmittanceController::on_activate(const rclcpp_lifecycle::State &
   trajectory_msgs::msg::JointTrajectoryPoint trajectory_point;
   trajectory_point.positions.reserve(num_joints);
   trajectory_point.velocities.resize(num_joints, 0.0);
-  for (auto index = 0u; index < num_joints; ++index) {
-    trajectory_point.positions.emplace_back(joint_state_interface_[0][index].get().get_value());
-  }
+  // TODO(destogl): ATTENTION: This does not work properly, so using velocity mode and commenting positions out!
+//   for (auto index = 0u; index < num_joints; ++index) {
+//     trajectory_point.positions.emplace_back(joint_state_interface_[0][index].get().get_value());
+//   }
   msg_joint->points.emplace_back(trajectory_point);
 
   msg_joint->points.emplace_back(last_commanded_state_);
@@ -530,7 +531,7 @@ controller_interface::return_type AdmittanceController::update()
 
   // TODO(destogl): refactor this into different admittance controllers: 1. Pose input, Joint State input and Unified mode (is there need for switching between unified and non-unified mode?)
   // TODO(andyz): this should be optional
-  if (true) {
+  if (use_joint_commands_as_input_) {
     std::array<double, 6> joint_deltas;
     // If there are no positions, expect velocities
     // TODO(destogl): add error handling
@@ -540,14 +541,15 @@ controller_interface::return_type AdmittanceController::update()
       }
     } else {
       for (auto index = 0u; index < num_joints; ++index) {
+        // TODO(destogl): ATTENTION: This does not work properly, deltas are getting neutralized and robot is not moving on external forces
         // TODO(anyone): Is here OK to use shortest_angular_distance?
         joint_deltas[index] = angles::shortest_angular_distance(current_joint_states.positions[index], (*input_joint_cmd)->points[0].positions[index]);
       }
     }
-    RCLCPP_INFO(get_node()->get_logger(), "JointDeltas: [%e, %e, %e, %e, %e, %e]",
-                joint_deltas[0], joint_deltas[1], joint_deltas[2], joint_deltas[3],
-                joint_deltas[4], joint_deltas[5]
-    );
+//     RCLCPP_INFO(get_node()->get_logger(), "JointDeltas: [%e, %e, %e, %e, %e, %e]",
+//                 joint_deltas[0], joint_deltas[1], joint_deltas[2], joint_deltas[3],
+//                 joint_deltas[4], joint_deltas[5]
+//     );
 
     admittance_->update(current_joint_states, ft_values, joint_deltas, duration_since_last_call, desired_joint_states);
   } else {
