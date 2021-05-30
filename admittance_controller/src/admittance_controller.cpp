@@ -43,12 +43,13 @@ controller_interface::return_type AdmittanceController::init(const std::string &
   }
 
   try {
+    // TODO: use variables as parameters
     get_node()->declare_parameter<std::vector<std::string>>("joints", {});
     get_node()->declare_parameter<std::vector<std::string>>("command_interfaces", {});
     get_node()->declare_parameter<std::vector<std::string>>("state_interfaces", {});
     get_node()->declare_parameter<std::string>("ft_sensor_name", "");
     get_node()->declare_parameter<bool>("use_joint_commands_as_input", false);
-    get_node()->declare_parameter<bool>("hardware_state_has_offset", false);
+    get_node()->declare_parameter<bool>("open_loop_control", false);
 
     get_node()->declare_parameter<std::string>("IK.base", "");
     get_node()->declare_parameter<std::string>("IK.tip", "");
@@ -162,7 +163,7 @@ CallbackReturn AdmittanceController::on_configure(
     get_string_array_param_and_error_if_empty(state_interface_types_, "state_interfaces") ||
     get_string_param_and_error_if_empty(ft_sensor_name_, "ft_sensor_name") ||
     get_bool_param_and_error_if_empty(use_joint_commands_as_input_, "use_joint_commands_as_input") ||
-    get_bool_param_and_error_if_empty(admittance_->hardware_state_has_offset_, "hardware_state_has_offset") ||
+    get_bool_param_and_error_if_empty(admittance_->open_loop_control_, "open_loop_control") ||
     get_string_param_and_error_if_empty(admittance_->ik_base_frame_, "IK.base") ||
     get_string_param_and_error_if_empty(admittance_->ik_tip_frame_, "IK.tip") ||
     get_string_param_and_error_if_empty(admittance_->ik_group_name_, "IK.group_name") ||
@@ -320,12 +321,14 @@ CallbackReturn AdmittanceController::on_configure(
     "~/state", rclcpp::SystemDefaultsQoS());
   state_publisher_ = std::make_unique<ControllerStatePublisher>(s_publisher_);
 
+  auto num_joints = joint_names_.size();
+
   // Initialize state message
   state_publisher_->lock();
   state_publisher_->msg_.joint_names = joint_names_;
-  state_publisher_->msg_.actual_joint_states.positions.resize(6, 0.0);
-  state_publisher_->msg_.desired_joint_states.positions.resize(6, 0.0);
-  state_publisher_->msg_.error_joint_state.positions.resize(6, 0.0);
+  state_publisher_->msg_.actual_joint_states.positions.resize(num_joints, 0.0);
+  state_publisher_->msg_.desired_joint_states.positions.resize(num_joints, 0.0);
+  state_publisher_->msg_.error_joint_state.positions.resize(num_joints, 0.0);
   state_publisher_->unlock();
 
   // Configure AdmittanceRule
@@ -346,8 +349,10 @@ CallbackReturn AdmittanceController::on_configure(
     }
   }
 
-  current_state_when_offset_.positions.reserve(joint_names_.size());
-  current_state_when_offset_.velocities.reserve(joint_names_.size());
+  last_commanded_state_.positions.reserve(num_joints);
+  // TODO(destogl): Use reserve instead of resize?
+  last_commanded_state_.velocities.resize(num_joints, 0.0);
+  last_commanded_state_.accelerations.resize(num_joints, 0.0);
 
   if (use_joint_commands_as_input_) {
     RCLCPP_INFO_STREAM(get_node()->get_logger(), "Using Joint input mode.");
@@ -395,6 +400,8 @@ const
 
 CallbackReturn AdmittanceController::on_activate(const rclcpp_lifecycle::State & /*previous_state*/)
 {
+  const auto num_joints = joint_names_.size();
+
   // order all joints in the storage
   for (const auto & interface : command_interface_types_) {
     auto it = std::find(
@@ -405,7 +412,7 @@ CallbackReturn AdmittanceController::on_activate(const rclcpp_lifecycle::State &
     {
       RCLCPP_ERROR(
         node_->get_logger(), "Expected %u '%s' command interfaces, got %u.",
-                   joint_names_.size(), interface.c_str(), joint_command_interface_[index].size());
+                   num_joints, interface.c_str(), joint_command_interface_[index].size());
       return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
     }
   }
@@ -418,7 +425,7 @@ CallbackReturn AdmittanceController::on_activate(const rclcpp_lifecycle::State &
     {
       RCLCPP_ERROR(
         node_->get_logger(), "Expected %u '%s' state interfaces, got %u.",
-                   joint_names_.size(), interface.c_str(), joint_state_interface_[index].size());
+                   num_joints, interface.c_str(), joint_state_interface_[index].size());
       return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
     }
   }
@@ -430,8 +437,16 @@ CallbackReturn AdmittanceController::on_activate(const rclcpp_lifecycle::State &
   admittance_->reset();
   previous_time_ = get_node()->now();
 
-  for (auto index = 0u; index < joint_names_.size(); ++index) {
-      current_state_when_offset_.positions[index] = joint_state_interface_[0][index].get().get_value();
+  read_state_from_hardware(last_commanded_state_);
+  // Handle restart of controller by reading last_commanded_state_ from commands if
+  // those are not nan
+  // TODO(destogl): remove memory allocation because it is not real-time safe
+  trajectory_msgs::msg::JointTrajectoryPoint state;
+  state.positions.reserve(num_joints);
+  state.velocities.resize(num_joints, 0.0);
+  state.accelerations.resize(num_joints, 0.0);
+  if (read_state_from_command_interfaces(state)) {
+    last_commanded_state_ = state;
   }
 
   // Set initial command values - initialize all to simplify update
@@ -443,7 +458,6 @@ CallbackReturn AdmittanceController::on_activate(const rclcpp_lifecycle::State &
   msg_joint->joint_names = joint_names_;
   msg_joint->points.reserve(1);
 
-  const auto num_joints = joint_names_.size();
   trajectory_msgs::msg::JointTrajectoryPoint trajectory_point;
   trajectory_point.positions.reserve(num_joints);
   trajectory_point.velocities.resize(num_joints, 0.0);
@@ -451,6 +465,8 @@ CallbackReturn AdmittanceController::on_activate(const rclcpp_lifecycle::State &
     trajectory_point.positions.emplace_back(joint_state_interface_[0][index].get().get_value());
   }
   msg_joint->points.emplace_back(trajectory_point);
+
+  msg_joint->points.emplace_back(last_commanded_state_);
   input_joint_command_.writeFromNonRT(msg_joint);
 
   std::shared_ptr<ControllerCommandPoseMsg> msg_pose = std::make_shared<ControllerCommandPoseMsg>();
@@ -496,13 +512,11 @@ controller_interface::return_type AdmittanceController::update()
   desired_joint_states.positions.resize(num_joints);
   desired_joint_states.velocities.resize(num_joints);
 
+  read_state_from_hardware(current_joint_states);
 
-  for (auto index = 0u; index < num_joints; ++index) {
-    if (!admittance_->hardware_state_has_offset_) {
-      current_joint_states.positions[index] = joint_state_interface_[0][index].get().get_value();
-    } else {
-      current_joint_states.positions[index] = current_state_when_offset_.positions[index];
-    }
+  if (admittance_->open_loop_control_) {
+    // TODO(destogl): This may not work in every case. Please add checking which states are available and which not!
+    current_joint_states = last_commanded_state_;
   }
 
   auto ft_values = force_torque_sensor_->get_values_as_message();
@@ -546,7 +560,7 @@ controller_interface::return_type AdmittanceController::update()
       joint_command_interface_[1][index].get().set_value(desired_joint_states.velocities[index]);
     }
   }
-  current_state_when_offset_ = desired_joint_states;
+  last_commanded_state_ = desired_joint_states;
 
   // Publish controller state
   state_publisher_->lock();
@@ -564,6 +578,98 @@ controller_interface::return_type AdmittanceController::update()
   state_publisher_->unlockAndPublish();
 
   return controller_interface::return_type::OK;
+}
+
+void AdmittanceController::read_state_from_hardware(trajectory_msgs::msg::JointTrajectoryPoint & state)
+{
+  const auto joint_num = joint_names_.size();
+  auto assign_point_from_interface = [&, joint_num](
+    std::vector<double> & trajectory_point_interface, const auto & joint_inteface)
+  {
+    for (auto index = 0ul; index < joint_num; ++index) {
+      trajectory_point_interface[index] = joint_inteface[index].get().get_value();
+    }
+  };
+
+  // Assign values from the hardware
+  // Position states always exist
+  assign_point_from_interface(state.positions, joint_state_interface_[0]);
+  // velocity and acceleration states are optional
+  if (has_velocity_state_interface_) {
+    assign_point_from_interface(state.velocities, joint_state_interface_[1]);
+    // Acceleration is used only in combination with velocity
+    // TODO(destogl): enable acceleration and remove next line
+    state.accelerations.clear();
+//     if (has_acceleration_state_interface_) {
+//       assign_point_from_interface(state.accelerations, joint_state_interface_[2]);
+//     } else {
+//       // Make empty so the property is ignored during interpolation
+//       state.accelerations.clear();
+//     }
+  } else {
+    // Make empty so the property is ignored during interpolation
+    state.velocities.clear();
+    state.accelerations.clear();
+  }
+}
+
+bool AdmittanceController::read_state_from_command_interfaces(
+  trajectory_msgs::msg::JointTrajectoryPoint & state)
+{
+  bool has_values = true;
+
+  const auto joint_num = joint_names_.size();
+  auto assign_point_from_interface = [&, joint_num](
+    std::vector<double> & trajectory_point_interface, const auto & joint_inteface)
+    {
+      for (auto index = 0ul; index < joint_num; ++index) {
+        trajectory_point_interface[index] = joint_inteface[index].get().get_value();
+      }
+    };
+
+  auto interface_has_values = [](const auto & joint_interface)
+    {
+      return std::find_if(
+        joint_interface.begin(), joint_interface.end(),
+        [](const auto & interface) {return std::isnan(interface.get().get_value());}) ==
+             joint_interface.end();
+    };
+
+  // Assign values from the command interfaces as state. Therefore needs check for both.
+  // Position state interface has to exist always
+  if (has_position_command_interface_ && interface_has_values(joint_command_interface_[0])) {
+    assign_point_from_interface(state.positions, joint_command_interface_[0]);
+  } else {
+    state.positions.clear();
+    has_values = false;
+  }
+  // velocity and acceleration states are optional
+  if (has_velocity_state_interface_) {
+    if (has_velocity_command_interface_ && interface_has_values(joint_command_interface_[1])) {
+      assign_point_from_interface(state.velocities, joint_command_interface_[1]);
+    } else {
+      state.velocities.clear();
+      has_values = false;
+    }
+  }
+  else {
+    state.velocities.clear();
+  }
+
+// TODO(destogl): Enable this
+//   // Acceleration is used only in combination with velocity
+//   if (has_acceleration_state_interface_) {
+//     if (has_acceleration_command_interface_ && interface_has_values(joint_command_interface_[2])) {
+//       assign_point_from_interface(state.accelerations, joint_command_interface_[2]);
+//     } else {
+//       state.accelerations.clear();
+//       has_values = false;
+//     }
+//   } else {
+//     state.accelerations.clear();
+//   }
+
+  return has_values;
 }
 
 }  // namespace admittance_controller

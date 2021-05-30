@@ -220,7 +220,7 @@ controller_interface::return_type AdmittanceRule::update(
   transform_message_to_ik_base_frame(target_pose, target_pose_ik_base_frame_);
 
   // TODO(andyz): what if there is a hardware offset?
-  if (!hardware_state_has_offset_) {
+  if (!open_loop_control_) {
     get_pose_of_control_frame_in_base_frame(current_pose_ik_base_frame_);
   }
 
@@ -283,6 +283,7 @@ controller_interface::return_type AdmittanceRule::update(
   }
 
   // Add deltas to previously-desired pose to get the next desired pose
+  // TODO: Use convert_to_array method
   feedforward_pose_ik_base_frame_.pose.position.x += target_ik_tip_deltas_vec.at(0);
   feedforward_pose_ik_base_frame_.pose.position.y += target_ik_tip_deltas_vec.at(1);
   feedforward_pose_ik_base_frame_.pose.position.z += target_ik_tip_deltas_vec.at(2);
@@ -335,6 +336,7 @@ controller_interface::return_type AdmittanceRule::get_controller_state(
 
   state_message.measured_wrench_endeffector_frame = measured_wrench_endeffector_frame_;
 
+  state_message.current_pose = current_pose_ik_base_frame_;
   state_message.desired_pose = desired_pose_ik_base_frame_;
   state_message.relative_desired_pose = relative_desired_pose_;
 

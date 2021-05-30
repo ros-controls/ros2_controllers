@@ -76,7 +76,7 @@ protected:
   bool use_joint_commands_as_input_;
 
   bool hardware_state_has_offset_;
-  trajectory_msgs::msg::JointTrajectoryPoint current_state_when_offset_;
+  trajectory_msgs::msg::JointTrajectoryPoint last_commanded_state_;
 
   // Internal variables
   std::unique_ptr<semantic_components::ForceTorqueSensor> force_torque_sensor_;
@@ -131,6 +131,9 @@ protected:
   bool has_position_command_interface_ = false;
   bool has_velocity_command_interface_ = false;
 
+  void read_state_from_hardware(trajectory_msgs::msg::JointTrajectoryPoint & state);
+
+  bool read_state_from_command_interfaces(trajectory_msgs::msg::JointTrajectoryPoint & state);
 };
 
 }  // namespace admittance_controller

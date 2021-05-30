@@ -81,7 +81,7 @@ public:
   controller_interface::return_type get_pose_of_control_frame_in_base_frame(geometry_msgs::msg::PoseStamped & pose);
 
 public:
-  bool hardware_state_has_offset_ = false;
+  bool open_loop_control_ = false;
 
   // IK related parameters
   // ik_base_frame should be stationary so vel/accel calculations are correct
