@@ -94,8 +94,8 @@ CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
   } else {
     force_torque_sensor_ = std::make_unique<semantic_components::ForceTorqueSensor>(
       semantic_components::ForceTorqueSensor(
-        interface_names_[0], interface_names_[1],
-        interface_names_[2], interface_names_[3], interface_names_[4], interface_names_[5]));
+        interface_names_[0], interface_names_[1], interface_names_[2],
+        interface_names_[3], interface_names_[4], interface_names_[5]));
   }
 
   try {
