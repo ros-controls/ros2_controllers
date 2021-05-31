@@ -18,11 +18,12 @@
 #define GRIPPER_CONTROLLERS__GRIPPER_ACTION_CONTROLLER_HPP_
 
 // C++ standard
-#include <optional>
 #include <cassert>
 #include <memory>
 #include <stdexcept>
 #include <string>
+// TODO(JafarAbdi): Remove experimental once the default standard is C++17
+#include "experimental/optional"
 
 // ROS
 #include "rclcpp/rclcpp.hpp"
@@ -126,11 +127,11 @@ private:
 
   bool verbose_ = false;  ///< Hard coded verbose flag to help in debugging
   std::string name_;      ///< Controller name.
-  std::optional<std::reference_wrapper<hardware_interface::LoanedCommandInterface>>
+  std::experimental::optional<std::reference_wrapper<hardware_interface::LoanedCommandInterface>>
   joint_position_command_interface_;
-  std::optional<std::reference_wrapper<hardware_interface::LoanedStateInterface>>
+  std::experimental::optional<std::reference_wrapper<hardware_interface::LoanedStateInterface>>
   joint_position_state_interface_;
-  std::optional<std::reference_wrapper<hardware_interface::LoanedStateInterface>>
+  std::experimental::optional<std::reference_wrapper<hardware_interface::LoanedStateInterface>>
   joint_velocity_state_interface_;
 
   std::string joint_name_;  ///< Controlled joint names.
