@@ -26,24 +26,27 @@ The following standard controllers are implemented:
   - `Joint Trajectory Controller <joint_trajectory_controller/docs/index.rst>`_ - provided a list of waypoints or target point defined with position, velocity and acceleration, the controller interpolates joint trajectories through it.
   - ... <the list is not complete> ...
 
-
-
-
 .. _common hardware interface definitions: https://github.com/ros-controls/ros2_control/blob/master/hardware_interface/include/hardware_interface/types/hardware_interface_type_values.hpp
 
 
+Guidelines and Best Practices
+=============================
 
-Controllers user documentation
+.. toctree::
+   :titlesonly: 1
+   :glob:
+
+   *
+
+Available Controllers
 ==============================
 
-.. include:: ../diff_drive_controller/doc/userdoc.rst
+.. toctree::
+   :titlesonly:
 
-.. include:: ../joint_trajectory_controller/doc/userdoc.rst
-
-.. include:: ../forward_command_controller/doc/userdoc.rst
-
-.. include:: ../position_controllers/doc/userdoc.rst
-
-.. include:: ../velocity_controllers/doc/userdoc.rst
-
-.. include:: ../effort_controllers/doc/userdoc.rst
+   Differential Drive <../diff_drive_controller/doc/userdoc.rst>
+   Forward Command <../forward_command_controller/doc/userdoc.rst>
+   Joint Trajectory <../joint_trajectory_controller/doc/userdoc.rst>
+   Position Controllers <../position_controllers/doc/userdoc.rst>
+   Velocity Controllers <../velocity_controllers/doc/userdoc.rst>
+   Effort Controllers <../effort_controllers/doc/userdoc.rst>
