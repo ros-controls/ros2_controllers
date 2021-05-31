@@ -25,6 +25,7 @@ jobs:
             joint_state_broadcaster
             joint_state_controller
             joint_trajectory_controller
+            gripper_controllers
             position_controllers
             ros2_controllers
             velocity_controllers
