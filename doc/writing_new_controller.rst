@@ -4,13 +4,13 @@ Writing a new controller
 ========================
 
 The ros2_control - controllers are libraries dynamically loaded by the controller manager using `pluginlib <ros.org/wiki/pluginlib>`_ interface.
-The following described step-by-step manual to create source files, basic test and compile rules for a new controller.
+The following is a step-by-step guide to create source files, basic tests, and compile rules for a new controller.
 
 1. **Preparing package**
 
    If the package for the controller does not exist, then create it first.
-   The package should have ``ament_cmake`` as a building type.
-   The easiest way is to online search for the most recent manual.
+   The package should have ``ament_cmake`` as a build type.
+   The easiest way is to search online for the most recent manual.
    A helpful command to support this process is `ros2 pkg create`.
    Use the ``--help`` flag for more information on how to use it.
    There is also an option to create library source files and compile rules to help you in the following steps.
@@ -19,7 +19,7 @@ The following described step-by-step manual to create source files, basic test a
 
    After creating the package, you should have at least ``CMakeLists.txt`` and ``package.xml`` files in it.
    Create also ``include/<PACKAGE_NAME>/`` and ``src`` folders if they do not already exist.
-   In ``include/<PACKAGE_NAME>/`` folder add ``<contorller_name>.hpp`` and ``<controller_name>.cpp`` in the ``src`` folder.
+   In ``include/<PACKAGE_NAME>/`` folder add ``<controller_name>.hpp`` and ``<controller_name>.cpp`` in the ``src`` folder.
    Optionally add ``visibility_control.h`` with the definition of export rules for Windows.
    You can copy this file from an existing controller package and change the name prefix to the ``<PACKAGE_NAME>``.
 
@@ -29,48 +29,48 @@ The following described step-by-step manual to create source files, basic test a
 
    2. include ``"controller_interface/controller_interface.hpp"`` and ``visibility_control.h`` if you are using one.
 
-   3. Define namespace for your controller. This is usually a package name written in ``snake_case``.
+   3. Define a unique namespace for your controller. This is usually a package name written in ``snake_case``.
 
    4. Define the class of the controller, extending ``ControllerInterface``, e.g.,
       .. code:: c++
          class ControllerName : public controller_interface::ControllerInterface
 
-   5. Add constructor without parameters and the following public methods overriding ``ControllerInterface`` definition: ``init``, ``command_interface_configuration``, ``state_interface_configuration``, ``on_configure``, ``on_activate``, ``on_deactivate``, ``update``.
-      For exact definitions check the ``controller_interface/controller_interface.hpp`` header or one of the controller from `ros2_controllers <https://github.com/ros-controls/ros2_controllers> `_.
+   5. Add a constructor without parameters and the following public methods overriding the ``ControllerInterface`` definition: ``init``, ``command_interface_configuration``, ``state_interface_configuration``, ``on_configure``, ``on_activate``, ``on_deactivate``, ``update``.
+      For exact definitions check the ``controller_interface/controller_interface.hpp`` header or one of the controllers from `ros2_controllers <https://github.com/ros-controls/ros2_controllers> `_.
 
    6. (optional) Often, controllers accept lists of joint names and interface names as parameters.
-      If so, you can add two protected string vectors where to store those values.
+      If so, you can add two protected string vectors to store those values.
 
 4. **Adding definitions into source file (.cpp)**
 
    1. Include the header file of your controller and add a namespace definition to simplify further development.
 
-   2. (optional) Implement constructor if needed. There, you could initialize member variables.
+   2. (optional) Implement a constructor if needed. There, you could initialize member variables.
       This could also be done in the ``init`` method.
 
-   3. Implement the ``init`` method. The first line usually calls for the parent ``init`` method.
-      Here is the best place to initialize the variables would be best if you initialize all the variables, reserve memory, and most important, declare node parameters used by the controller. If everything works fine return ``controller_interface::return_type::OK`` or ``controller_interface::return_type::ERROR`` otherwise.
+   3. Implement the ``init`` method. The first line usually calls the parent ``init`` method.
+      Here is the best place to initialize the variables, reserve memory, and most importantly, declare node parameters used by the controller. If everything works fine return ``controller_interface::return_type::OK`` or ``controller_interface::return_type::ERROR`` otherwise.
 
-   4. Write the ``on_configure`` method. Parameters are usually read here, and everything is prepared so that controller can be started.
+   4. Write the ``on_configure`` method. Parameters are usually read here, and everything is prepared so that the controller can be started.
 
    5. Implement ``command_interface_configuration`` and ``state_interface_configuration`` where required interfaces are defined.
       There are three options of the interface configuration ``ALL``, ``INDIVIDUAL``, and ``NONE`` defined in ``controller_interface/controller_interface.hpp"``.
-      ``ALL`` and ``NONE`` option will ask for access to all available interfaces or none of it. The ``INDIVIDUAL`` configuration needs a detailed list of required interface names. Those are usually provided as parameters.
+      ``ALL`` and ``NONE`` option will ask for access to all available interfaces or none of them. The ``INDIVIDUAL`` configuration needs a detailed list of required interface names. Those are usually provided as parameters.
       The full interface names have structure ``<joint_name>/<interface_type>``.
 
-   6. Implement the ``on_activate`` method with checking, and potentially sorting, the interface and assigning members initial values.
+   6. Implement the ``on_activate`` method with checking, and potentially sorting, the interfaces and assigning members' initial values.
       This method is part of the real-time loop, therefore avoid any reservation of memory and, in general, keep it as short as possible.
 
 
    7. Implement the ``on_deactivate`` method, which does the opposite of ``on_activate``.
-      In many cases, is this method empty.
+      In many cases, this method is empty.
       This method should also be real-time safe as much as possible.
 
    8. Implement the ``update`` method as the main entry point. The method should be implemented with `real-time <https://en.wikipedia.org/wiki/Real-time_computing>`_ constraints in mind.
       When this method is called, the state interfaces have the most recent values from the hardware, and new commands for the hardware should be written into command interfaces.
 
-   9. IMPORTANT: Add to the end of your file, after the namespace is closed the ``PLUGINLIB_EXPORT_CLASS`` macro.
-      For this you will need to include ``"pluginlib/class_list_macros.hpp"`` header.
+   9. IMPORTANT: At the end of your file after the namespace is closed, add the ``PLUGINLIB_EXPORT_CLASS`` macro.
+      For this you will need to include the ``"pluginlib/class_list_macros.hpp"`` header.
       As first parameters you should provide exact controller class, e.g., ``<controller_name_namespace>::<ControllerName>``, and as second the base class, i.e., ``controller_interface::ControllerInterface``.
 
 5. **Writing export definition for pluginlib**
@@ -85,7 +85,7 @@ The following described step-by-step manual to create source files, basic test a
 
 6. **Writing simple test to check if the controller can be found and loaded**
 
-   1. Create folder ``test`` in your package, if it does not exist already, and add a file named ``test_load_<controller_name>.cpp>.
+   1. Create the folder ``test`` in your package, if it does not exist already, and add a file named ``test_load_<controller_name>.cpp>.
 
    2. You can safely copy the file's content for any controller defined in the `ros2_controllers <https://github.com/ros-controls/ros2_controllers> `_ package.
 
@@ -119,7 +119,7 @@ The following described step-by-step manual to create source files, basic test a
 
    1. Add at least the following packages into ``<depend>`` tag: ``controller_interface``, ``hardware_interface``, ``pluginlib``, ``rclcpp`` and ``rclcpp_lifecycle``.
 
-   2. Add at lest the following package into ``<test_depend>`` tag: ``ament_add_gmock``, ``controller_manager``, ``hardware_interface``, and ``ros2_control_test_assets``.
+   2. Add at least the following package into ``<test_depend>`` tag: ``ament_add_gmock``, ``controller_manager``, ``hardware_interface``, and ``ros2_control_test_assets``.
 
 9. **Compiling and testing the controller**
 
