@@ -326,8 +326,8 @@ CallbackReturn AdmittanceController::on_configure(
   // Initialize state message
   state_publisher_->lock();
   state_publisher_->msg_.joint_names = joint_names_;
-  state_publisher_->msg_.actual_joint_states.positions.resize(num_joints, 0.0);
-  state_publisher_->msg_.desired_joint_states.positions.resize(num_joints, 0.0);
+  state_publisher_->msg_.actual_joint_state.positions.resize(num_joints, 0.0);
+  state_publisher_->msg_.desired_joint_state.positions.resize(num_joints, 0.0);
   state_publisher_->msg_.error_joint_state.positions.resize(num_joints, 0.0);
   state_publisher_->unlock();
 
@@ -349,8 +349,8 @@ CallbackReturn AdmittanceController::on_configure(
     }
   }
 
-  last_commanded_state_.positions.reserve(num_joints);
   // TODO(destogl): Use reserve instead of resize?
+  last_commanded_state_.positions.resize(num_joints);
   last_commanded_state_.velocities.resize(num_joints, 0.0);
   last_commanded_state_.accelerations.resize(num_joints, 0.0);
 
@@ -438,16 +438,8 @@ CallbackReturn AdmittanceController::on_activate(const rclcpp_lifecycle::State &
   previous_time_ = get_node()->now();
 
   read_state_from_hardware(last_commanded_state_);
-  // Handle restart of controller by reading last_commanded_state_ from commands if
-  // those are not nan
-  // TODO(destogl): remove memory allocation because it is not real-time safe
-  trajectory_msgs::msg::JointTrajectoryPoint state;
-  state.positions.reserve(num_joints);
-  state.velocities.resize(num_joints, 0.0);
-  state.accelerations.resize(num_joints, 0.0);
-  if (read_state_from_command_interfaces(state)) {
-    last_commanded_state_ = state;
-  }
+  // Handle restart of controller by reading last_commanded_state_ from commands if not nan
+  read_state_from_command_interfaces(last_commanded_state_);
 
   // Set initial command values - initialize all to simplify update
   std::shared_ptr<ControllerCommandWrenchMsg> msg_wrench = std::make_shared<ControllerCommandWrenchMsg>();
@@ -461,13 +453,12 @@ CallbackReturn AdmittanceController::on_activate(const rclcpp_lifecycle::State &
   trajectory_msgs::msg::JointTrajectoryPoint trajectory_point;
   trajectory_point.positions.reserve(num_joints);
   trajectory_point.velocities.resize(num_joints, 0.0);
-  // TODO(destogl): ATTENTION: This does not work properly, so using velocity mode and commenting positions out!
+  // FIXME(destogl): ATTENTION: This does not work properly, so using velocity mode and commenting positions out!
 //   for (auto index = 0u; index < num_joints; ++index) {
 //     trajectory_point.positions.emplace_back(joint_state_interface_[0][index].get().get_value());
 //   }
   msg_joint->points.emplace_back(trajectory_point);
 
-  msg_joint->points.emplace_back(last_commanded_state_);
   input_joint_command_.writeFromNonRT(msg_joint);
 
   std::shared_ptr<ControllerCommandPoseMsg> msg_pose = std::make_shared<ControllerCommandPoseMsg>();
@@ -516,7 +507,8 @@ controller_interface::return_type AdmittanceController::update()
   read_state_from_hardware(current_joint_states);
 
   if (admittance_->open_loop_control_) {
-    // TODO(destogl): This may not work in every case. Please add checking which states are available and which not!
+    // TODO(destogl): This may not work in every case.
+    // Please add checking which states are available and which not!
     current_joint_states = last_commanded_state_;
   }
 
@@ -530,7 +522,6 @@ controller_interface::return_type AdmittanceController::update()
 //   } else {
 
   // TODO(destogl): refactor this into different admittance controllers: 1. Pose input, Joint State input and Unified mode (is there need for switching between unified and non-unified mode?)
-  // TODO(andyz): this should be optional
   if (use_joint_commands_as_input_) {
     std::array<double, 6> joint_deltas;
     // If there are no positions, expect velocities
@@ -575,8 +566,8 @@ controller_interface::return_type AdmittanceController::update()
   state_publisher_->msg_.input_pose_command = **input_pose_cmd;
   state_publisher_->msg_.input_joint_command = **input_joint_cmd;
 
-  state_publisher_->msg_.desired_joint_states = desired_joint_states;
-  state_publisher_->msg_.actual_joint_states = current_joint_states;
+  state_publisher_->msg_.desired_joint_state = desired_joint_states;
+  state_publisher_->msg_.actual_joint_state = current_joint_states;
   for (auto index = 0u; index < num_joints; ++index) {
     state_publisher_->msg_.error_joint_state.positions[index] = angles::shortest_angular_distance(
       current_joint_states.positions[index], desired_joint_states.positions[index]);
@@ -587,14 +578,15 @@ controller_interface::return_type AdmittanceController::update()
   return controller_interface::return_type::OK;
 }
 
-void AdmittanceController::read_state_from_hardware(trajectory_msgs::msg::JointTrajectoryPoint & state)
+void AdmittanceController::read_state_from_hardware(
+  trajectory_msgs::msg::JointTrajectoryPoint & state)
 {
-  const auto joint_num = joint_names_.size();
-  auto assign_point_from_interface = [&, joint_num](
-    std::vector<double> & trajectory_point_interface, const auto & joint_inteface)
+  const auto num_joints = joint_names_.size();
+  auto assign_point_from_interface = [&, num_joints](
+    std::vector<double> & trajectory_point_interface, const auto & joint_interface)
   {
-    for (auto index = 0ul; index < joint_num; ++index) {
-      trajectory_point_interface[index] = joint_inteface[index].get().get_value();
+    for (auto index = 0ul; index < num_joints; ++index) {
+      trajectory_point_interface[index] = joint_interface[index].get().get_value();
     }
   };
 
@@ -621,16 +613,17 @@ void AdmittanceController::read_state_from_hardware(trajectory_msgs::msg::JointT
 }
 
 bool AdmittanceController::read_state_from_command_interfaces(
-  trajectory_msgs::msg::JointTrajectoryPoint & state)
+  trajectory_msgs::msg::JointTrajectoryPoint & output_state)
 {
   bool has_values = true;
+  const auto num_joints = joint_names_.size();
+  trajectory_msgs::msg::JointTrajectoryPoint state = output_state;
 
-  const auto joint_num = joint_names_.size();
-  auto assign_point_from_interface = [&, joint_num](
-    std::vector<double> & trajectory_point_interface, const auto & joint_inteface)
+  auto assign_point_from_interface = [&, num_joints](
+    std::vector<double> & trajectory_point_interface, const auto & joint_interface)
     {
-      for (auto index = 0ul; index < joint_num; ++index) {
-        trajectory_point_interface[index] = joint_inteface[index].get().get_value();
+      for (auto index = 0ul; index < num_joints; ++index) {
+        trajectory_point_interface[index] = joint_interface[index].get().get_value();
       }
     };
 
@@ -654,6 +647,9 @@ bool AdmittanceController::read_state_from_command_interfaces(
   if (has_velocity_state_interface_) {
     if (has_velocity_command_interface_ && interface_has_values(joint_command_interface_[1])) {
       assign_point_from_interface(state.velocities, joint_command_interface_[1]);
+      //TODO(destogl): enable this line under to be sure if positions are not existing and velocities
+      // are existing to still update the output_state; !commented because not tested!
+//       has_values = true;
     } else {
       state.velocities.clear();
       has_values = false;
@@ -675,6 +671,10 @@ bool AdmittanceController::read_state_from_command_interfaces(
 //   } else {
 //     state.accelerations.clear();
 //   }
+
+  if (has_values) {
+    output_state = state;
+  }
 
   return has_values;
 }

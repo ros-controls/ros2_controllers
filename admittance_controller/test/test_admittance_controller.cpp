@@ -404,15 +404,15 @@ TEST_F(AdmittanceControllerTest, publish_status_success)
     msg.joint_names.begin(), msg.joint_names.end(), joint_names_.begin(), joint_names_.end()));
 
   ASSERT_TRUE(std::equal(
-    msg.actual_joint_states.positions.begin(), msg.actual_joint_states.positions.end(),
+    msg.actual_joint_state.positions.begin(), msg.actual_joint_state.positions.end(),
     joint_state_values_.begin(), joint_state_values_.end()));
 
   ASSERT_TRUE(std::equal(
-    msg.actual_joint_states.positions.begin(), msg.actual_joint_states.positions.end(),
+    msg.actual_joint_state.positions.begin(), msg.actual_joint_state.positions.end(),
     joint_state_values_.begin(), joint_state_values_.end()));
 
   ASSERT_TRUE(std::equal(
-    msg.desired_joint_states.positions.begin(), msg.desired_joint_states.positions.end(),
+    msg.desired_joint_state.positions.begin(), msg.desired_joint_state.positions.end(),
                          joint_state_values_.begin(), joint_state_values_.end()));
 
   ASSERT_TRUE(std::find_if_not(msg.error_joint_state.positions.begin(), msg.error_joint_state.positions.end(),
