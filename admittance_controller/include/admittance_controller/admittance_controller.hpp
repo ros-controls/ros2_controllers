@@ -133,6 +133,12 @@ protected:
 
   void read_state_from_hardware(trajectory_msgs::msg::JointTrajectoryPoint & state);
 
+  /// Use values on command interfaces as states when robot should be controller in open-loop.
+  /**
+   * If velocities and positions are both available from the joint command interface, set
+   * output_state equal to them.
+   * If velocities or positions are unknown, output_state is unchanged and the function returns false.
+   */
   bool read_state_from_command_interfaces(trajectory_msgs::msg::JointTrajectoryPoint & state);
 };
 

@@ -172,6 +172,11 @@ controller_interface::return_type AdmittanceRule::configure(rclcpp::Node::Shared
 
   relative_desired_joint_state_vec_.reserve(6);
 
+  admittance_rule_calculated_values_.positions.resize(6, 0.0);
+  admittance_rule_calculated_values_.velocities.resize(6, 0.0);
+  admittance_rule_calculated_values_.accelerations.resize(6, 0.0);
+  admittance_rule_calculated_values_.effort.resize(6, 0.0);
+
   // Initialize IK
   ik_ = std::make_shared<IncrementalKinematics>(node, ik_group_name_);
 
@@ -191,6 +196,12 @@ controller_interface::return_type AdmittanceRule::reset()
   get_pose_of_control_frame_in_base_frame(current_pose_ik_base_frame_);
   feedforward_pose_ik_base_frame_ = current_pose_ik_base_frame_;
 
+  // "Open-loop" controller uses old desired pose as current pose: current_pose(K) = desired_pose(K-1)
+  // Therefore desired pose has to be set before calling *update*-method
+  if (open_loop_control_) {
+    get_pose_of_control_frame_in_base_frame(desired_pose_ik_base_frame_);
+  }
+
   // Initialize ik_tip and tool_frame transformations - those are fixed transformations
   tf2::Stamped<tf2::Transform> tf2_transform;
   try {
@@ -200,7 +211,8 @@ controller_interface::return_type AdmittanceRule::reset()
     control_frame_to_ik_tip_tf_ = tf2_transform.inverse();
   } catch (const tf2::TransformException & e) {
     // TODO(destogl): Use RCLCPP_ERROR_THROTTLE
-    RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed between '" + ik_tip_frame_ + "' and '" + control_frame_ + "'.");
+    RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed from '" +
+    control_frame_ + "' to '" + ik_tip_frame_ + "'.");
     return controller_interface::return_type::ERROR;
   }
 
@@ -219,9 +231,10 @@ controller_interface::return_type AdmittanceRule::update(
   // Convert inputs to ik_base frame (assumed stationary)
   transform_message_to_ik_base_frame(target_pose, target_pose_ik_base_frame_);
 
-  // TODO(andyz): what if there is a hardware offset?
   if (!open_loop_control_) {
     get_pose_of_control_frame_in_base_frame(current_pose_ik_base_frame_);
+  } else {
+    current_pose_ik_base_frame_ = desired_pose_ik_base_frame_;
   }
 
   // Convert all data to arrays for simpler calculation
@@ -248,6 +261,7 @@ controller_interface::return_type AdmittanceRule::update(
   calculate_admittance_rule(measured_wrench_control_frame_arr_, pose_error, feedforward_acceleration, period,
                             relative_desired_pose_arr_);
 
+  // This works in all cases because not current TF data are used
   // Do clean conversion to the goal pose using transform and not messing with Euler angles
   convert_array_to_message(relative_desired_pose_arr_, relative_desired_pose_);
   tf2::doTransform(current_pose_ik_base_frame_, desired_pose_ik_base_frame_, relative_desired_pose_);
@@ -264,33 +278,37 @@ controller_interface::return_type AdmittanceRule::update(
   trajectory_msgs::msg::JointTrajectoryPoint & desired_joint_state)
 {
   std::vector<double> target_joint_deltas_vec(target_joint_deltas.begin(), target_joint_deltas.end());
-  std::vector<double> target_ik_tip_deltas_vec(6);
+  std::vector<double> target_deltas_vec_ik_base(6);
 
   // Get feed-forward cartesian deltas in the ik_base frame.
   // Since ik_base is MoveIt's working frame, the transform is identity.
   identity_transform_.header.frame_id = ik_base_frame_;
   ik_->update_robot_state(current_joint_state);
-  if (ik_->convertJointDeltasToCartesianDeltas(target_joint_deltas_vec, identity_transform_, target_ik_tip_deltas_vec)) {
+  // FIXME: Do we need if here? Can we simply use if (!ik_->...)?
+  if (ik_->convertJointDeltasToCartesianDeltas(target_joint_deltas_vec, identity_transform_, target_deltas_vec_ik_base)) {
   } else {
-    RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "Conversion of joint deltas to Cartesian deltas failed. Sending current joint values to the robot.");
+    RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"),
+                 "Conversion of joint deltas to Cartesian deltas failed. Sending current joint"
+                 " values to the robot.");
     desired_joint_state = current_joint_state;
     std::fill(desired_joint_state.velocities.begin(), desired_joint_state.velocities.end(), 0.0);
     return controller_interface::return_type::ERROR;
   }
 
   for (auto i = 0u; i < 6; ++i) {
-    feedforward_velocity_ik_base_frame_[i] = target_ik_tip_deltas_vec.at(i) / period.seconds();
+    feedforward_velocity_ik_base_frame_[i] = target_deltas_vec_ik_base.at(i) / period.seconds();
   }
 
   // Add deltas to previously-desired pose to get the next desired pose
-  // TODO: Use convert_to_array method
-  feedforward_pose_ik_base_frame_.pose.position.x += target_ik_tip_deltas_vec.at(0);
-  feedforward_pose_ik_base_frame_.pose.position.y += target_ik_tip_deltas_vec.at(1);
-  feedforward_pose_ik_base_frame_.pose.position.z += target_ik_tip_deltas_vec.at(2);
+  // FIXME: Why not use convert_to_array method?
+  // FIXME: (?) Does this variable have a wrong name? Shouldn't it be target_pose_ik_base_frame?
+  feedforward_pose_ik_base_frame_.pose.position.x += target_deltas_vec_ik_base.at(0);
+  feedforward_pose_ik_base_frame_.pose.position.y += target_deltas_vec_ik_base.at(1);
+  feedforward_pose_ik_base_frame_.pose.position.z += target_deltas_vec_ik_base.at(2);
 
   tf2::Quaternion q(feedforward_pose_ik_base_frame_.pose.orientation.x, feedforward_pose_ik_base_frame_.pose.orientation.y, feedforward_pose_ik_base_frame_.pose.orientation.z, feedforward_pose_ik_base_frame_.pose.orientation.w);
   tf2::Quaternion q_rot;
-  q_rot.setRPY(target_ik_tip_deltas_vec.at(3), target_ik_tip_deltas_vec.at(4), target_ik_tip_deltas_vec.at(5));
+  q_rot.setRPY(target_deltas_vec_ik_base.at(3), target_deltas_vec_ik_base.at(4), target_deltas_vec_ik_base.at(5));
   q = q_rot * q;
   q.normalize();
   feedforward_pose_ik_base_frame_.pose.orientation.w = q.w();
@@ -331,10 +349,12 @@ controller_interface::return_type AdmittanceRule::get_controller_state(
     tf2::doTransform(measured_wrench_control_frame_, measured_wrench_endeffector_frame_, transform);
   } catch (const tf2::TransformException & e) {
     // TODO(destogl): Use RCLCPP_ERROR_THROTTLE
-    RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed between '" + control_frame_ + "' and '" + endeffector_frame_ + "'.");
+    RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed from '" +
+    control_frame_ + "' to '" + endeffector_frame_ + "'.");
   }
-
   state_message.measured_wrench_endeffector_frame = measured_wrench_endeffector_frame_;
+
+  state_message.admittance_rule_calculated_values = admittance_rule_calculated_values_;
 
   state_message.current_pose = current_pose_ik_base_frame_;
   state_message.desired_pose = desired_pose_ik_base_frame_;
@@ -355,7 +375,8 @@ controller_interface::return_type AdmittanceRule::get_pose_of_control_frame_in_b
     pose.pose.orientation= transform.transform.rotation;
   } catch (const tf2::TransformException & e) {
     // TODO(destogl): Use RCLCPP_ERROR_THROTTLE
-    RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed between '" + ik_base_frame_ + "' and '" + control_frame_ + "'.");
+    RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed from '" +
+    control_frame_ + "' to '" + ik_base_frame_ + "'.");
     return controller_interface::return_type::ERROR;
   }
   return controller_interface::return_type::OK;
@@ -372,11 +393,11 @@ void AdmittanceRule::process_wrench_measurements(
   // // get current states, and transform those into controller frame
   // measured_wrench_.wrench = measured_wrench;
   // try {
-  //   auto transform = tf_buffer_->lookupTransform(fixed_world_frame_,  measured_wrench_.header.frame_id, tf2::TimePointZero);
-  //   auto transform_back = tf_buffer_->lookupTransform(measured_wrench_.header.frame_id, fixed_world_frame_, tf2::TimePointZero);
+  //   auto transform_to_world = tf_buffer_->lookupTransform(fixed_world_frame_,  measured_wrench_.header.frame_id, tf2::TimePointZero);
+  //   auto transform_to_sensor = tf_buffer_->lookupTransform(measured_wrench_.header.frame_id, fixed_world_frame_, tf2::TimePointZero);
 
   //   geometry_msgs::msg::WrenchStamped measured_wrench_transformed;
-  //   tf2::doTransform(measured_wrench_, measured_wrench_transformed, transform);
+  //   tf2::doTransform(measured_wrench_, measured_wrench_transformed, transform_to_world);
 
   //   geometry_msgs::msg::Vector3Stamped cog_transformed;
   //   for (const auto & params : gravity_compensation_params_) {
@@ -388,10 +409,8 @@ void AdmittanceRule::process_wrench_measurements(
   //     measured_wrench_transformed.wrench.torque.y -= (params.force_ * cog_transformed.vector.x);
   //   }
 
-  //   tf2::doTransform(measured_wrench_transformed, measured_wrench_filtered_, transform_back);
+  //   tf2::doTransform(measured_wrench_transformed, measured_wrench_filtered_, transform_to_sensor);
 
-  //   RCLCPP_ERROR_STREAM(rclcpp::get_logger("AdmittanceRule"), transform.transform.translation.y);
-  //   RCLCPP_ERROR_STREAM(rclcpp::get_logger("AdmittanceRule"), transform.transform.translation.z);
   // } catch (const tf2::TransformException & e) {
   //   // TODO(destogl): Use RCLCPP_ERROR_THROTTLE
   //   RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed between '" + fixed_world_frame_ + "' and '" + measured_wrench_.header.frame_id + "' or '<a cog frame>'.");
@@ -430,8 +449,10 @@ void AdmittanceRule::calculate_admittance_rule(
       desired_acceleration_previous_arr_[i] = acceleration;
       desired_velocity_previous_arr_[i] = desired_velocity_arr_[i];
 
-//       RCLCPP_INFO(rclcpp::get_logger("AR"), "%e = %e - (1/M(%.1f)) (%e - D(%.1f)*%e - S(%.1f)*%e)",
-//                   acceleration, feedforward_acceleration[i], mass_[i], measured_wrench[i], damping_[i], desired_velocity_arr_[i], stiffness_[i], pose_error[i]);
+      admittance_rule_calculated_values_.positions[i] = pose_error[i];
+      admittance_rule_calculated_values_.velocities[i] = desired_velocity_arr_[i];
+      admittance_rule_calculated_values_.accelerations[i] = acceleration;
+      admittance_rule_calculated_values_.effort[i] = measured_wrench[i];
     }
   }
 }
