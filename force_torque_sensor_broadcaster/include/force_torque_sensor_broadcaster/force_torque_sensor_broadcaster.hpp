@@ -30,6 +30,7 @@
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_publisher.h"
+#include "filters/filter_chain.hpp"
 
 namespace force_torque_sensor_broadcaster
 {
@@ -72,6 +73,10 @@ protected:
   using StatePublisher = realtime_tools::RealtimePublisher<geometry_msgs::msg::WrenchStamped>;
   rclcpp::Publisher<geometry_msgs::msg::WrenchStamped>::SharedPtr sensor_state_publisher_;
   std::unique_ptr<StatePublisher> realtime_publisher_;
+
+  geometry_msgs::msg::WrenchStamped sensor_state_raw_, sensor_state_filtered_;
+  std::unique_ptr<filters::FilterChain<geometry_msgs::msg::WrenchStamped>>
+      filter_chain_;
 };
 
 }  // namespace force_torque_sensor_broadcaster
