@@ -17,7 +17,7 @@
 #ifndef ADMITTANCE_CONTROLLER__ADMITTANCE_RULE_HPP_
 #define ADMITTANCE_CONTROLLER__ADMITTANCE_RULE_HPP_
 
-#include "admittance_controller/incremental_kinematics.hpp"
+#include "admittance_controller/moveit_kinematics.hpp"
 #include "control_msgs/msg/admittance_controller_state.hpp"
 #include "controller_interface/controller_interface.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
