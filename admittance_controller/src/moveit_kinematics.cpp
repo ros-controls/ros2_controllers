@@ -14,7 +14,7 @@
 //
 /// \author: Andy Zelenak
 
-#include "admittance_controller/incremental_kinematics.hpp"
+#include "admittance_controller/moveit_kinematics.hpp"
 
 #include "tf2_eigen/tf2_eigen.h"
 
@@ -129,13 +129,9 @@ bool MoveItKinematics::convert_joint_deltas_to_cartesian_deltas(std::vector<doub
   return true;
 }
 
-bool MoveItKinematics::get_link_transform(const std::string& link_name, const trajectory_msgs::msg::JointTrajectoryPoint & joint_state, Eigen::Isometry3d link_transform)
+Eigen::Isometry3d MoveItKinematics::get_link_transform(const std::string& link_name)
 {
-  if (!update_robot_state(joint_state))
-    return false;
-
-  link_transform = kinematic_state_->getGlobalLinkTransform(link_name);
-  return true;
+  return kinematic_state_->getGlobalLinkTransform(link_name);
 }
 
 }  // namespace admittance_controller

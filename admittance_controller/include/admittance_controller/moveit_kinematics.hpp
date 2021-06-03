@@ -57,7 +57,7 @@ public:
   /**
    *  \brief Get a link transform in MoveIt's reference frame, ik_base
    */
-  bool get_link_transform(const std::string& link_name, const trajectory_msgs::msg::JointTrajectoryPoint & joint_state, Eigen::Isometry3d link_transform);
+  Eigen::Isometry3d get_link_transform(const std::string& link_name);
 
   bool update_robot_state(const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state)
   {
@@ -72,7 +72,7 @@ public:
   }
 
 private:
-  // MoveIt setup, required to retrieve the Jacobian
+  // MoveIt setup
   const moveit::core::JointModelGroup* joint_model_group_;
   moveit::core::RobotStatePtr kinematic_state_;
   std::shared_ptr<rclcpp::Node> node_;
