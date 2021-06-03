@@ -135,7 +135,7 @@ protected:
   );
 
   // IK variables
-  std::shared_ptr<IncrementalKinematics> ik_;
+  std::shared_ptr<MoveItKinematics> ik_;
 
   // Filters
 //   using GravityCompensatorType =

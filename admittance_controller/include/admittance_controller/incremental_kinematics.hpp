@@ -25,14 +25,14 @@
 namespace admittance_controller
 {
 
-class IncrementalKinematics
+class MoveItKinematics
 {
 public:
   /**
    * \brief Create an object which takes Cartesian delta-x and converts to joint delta-theta.
    * It uses the Jacobian from MoveIt.
    */
-  IncrementalKinematics(const std::shared_ptr<rclcpp::Node> & node, const std::string & group_name);
+  MoveItKinematics(const std::shared_ptr<rclcpp::Node> & node, const std::string & group_name);
 
   /**
    * \brief Convert Cartesian delta-x to joint delta-theta, using the Jacobian.
@@ -42,7 +42,7 @@ public:
    * \return true if successful
    */
   bool
-  convertCartesianDeltasToJointDeltas(std::vector<double> & delta_x_vec, const geometry_msgs::msg::TransformStamped & control_frame_to_ik_base, std::vector<double> & delta_theta_vec);
+  convert_cartesian_deltas_to_joint_deltas(std::vector<double> & delta_x_vec, const geometry_msgs::msg::TransformStamped & control_frame_to_ik_base, std::vector<double> & delta_theta_vec);
 
   /**
    * \brief Convert joint delta-theta to Cartesian delta-x, using the Jacobian.
@@ -52,7 +52,12 @@ public:
    * \return true if successful
    */
   bool
-  convertJointDeltasToCartesianDeltas(std::vector<double> &  delta_theta_vec, const geometry_msgs::msg::TransformStamped & tf_ik_base_to_desired_cartesian_frame, std::vector<double> & delta_x_vec);
+  convert_joint_deltas_to_cartesian_deltas(std::vector<double> &  delta_theta_vec, const geometry_msgs::msg::TransformStamped & tf_ik_base_to_desired_cartesian_frame, std::vector<double> & delta_x_vec);
+
+  /**
+   *  \brief Get a link transform in MoveIt's reference frame, ik_base
+   */
+  bool get_link_transform(const std::string& link_name, const trajectory_msgs::msg::JointTrajectoryPoint & joint_state, Eigen::Isometry3d link_transform);
 
   bool update_robot_state(const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state)
   {
