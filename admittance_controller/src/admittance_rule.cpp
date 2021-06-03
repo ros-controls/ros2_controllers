@@ -194,7 +194,7 @@ controller_interface::return_type AdmittanceRule::reset()
   desired_acceleration_previous_arr_.fill(0.0);
 
   get_pose_of_control_frame_in_base_frame(current_pose_ik_base_frame_);
-  feedforward_pose_ik_base_frame_ = current_pose_ik_base_frame_;
+  target_pose_from_joint_deltas_ik_base_frame_ = current_pose_ik_base_frame_;
 
   // "Open-loop" controller uses old desired pose as current pose: current_pose(K) = desired_pose(K-1)
   // Therefore desired pose has to be set before calling *update*-method
@@ -301,22 +301,22 @@ controller_interface::return_type AdmittanceRule::update(
 
   // Add deltas to previously-desired pose to get the next desired pose
   // FIXME: Why not use convert_to_array method?
-  // FIXME: (?) Does this variable have a wrong name? Shouldn't it be target_pose_ik_base_frame?
-  feedforward_pose_ik_base_frame_.pose.position.x += target_deltas_vec_ik_base.at(0);
-  feedforward_pose_ik_base_frame_.pose.position.y += target_deltas_vec_ik_base.at(1);
-  feedforward_pose_ik_base_frame_.pose.position.z += target_deltas_vec_ik_base.at(2);
+  target_pose_from_joint_deltas_ik_base_frame_.pose.position.x += target_deltas_vec_ik_base.at(0);
+  target_pose_from_joint_deltas_ik_base_frame_.pose.position.y += target_deltas_vec_ik_base.at(1);
+  target_pose_from_joint_deltas_ik_base_frame_.pose.position.z += target_deltas_vec_ik_base.at(2);
 
-  tf2::Quaternion q(feedforward_pose_ik_base_frame_.pose.orientation.x, feedforward_pose_ik_base_frame_.pose.orientation.y, feedforward_pose_ik_base_frame_.pose.orientation.z, feedforward_pose_ik_base_frame_.pose.orientation.w);
+  tf2::Quaternion q(target_pose_from_joint_deltas_ik_base_frame_.pose.orientation.x, target_pose_from_joint_deltas_ik_base_frame_.pose.orientation.y, target_pose_from_joint_deltas_ik_base_frame_.pose.orientation.z, target_pose_from_joint_deltas_ik_base_frame_.pose.orientation.w);
   tf2::Quaternion q_rot;
   q_rot.setRPY(target_deltas_vec_ik_base.at(3), target_deltas_vec_ik_base.at(4), target_deltas_vec_ik_base.at(5));
   q = q_rot * q;
   q.normalize();
-  feedforward_pose_ik_base_frame_.pose.orientation.w = q.w();
-  feedforward_pose_ik_base_frame_.pose.orientation.x = q.x();
-  feedforward_pose_ik_base_frame_.pose.orientation.y = q.y();
-  feedforward_pose_ik_base_frame_.pose.orientation.z = q.z();
+  target_pose_from_joint_deltas_ik_base_frame_.pose.orientation.w = q.w();
+  target_pose_from_joint_deltas_ik_base_frame_.pose.orientation.x = q.x();
+  target_pose_from_joint_deltas_ik_base_frame_.pose.orientation.y = q.y();
+  target_pose_from_joint_deltas_ik_base_frame_.pose.orientation.z = q.z();
 
-  return update(current_joint_state, measured_wrench, feedforward_pose_ik_base_frame_, period, desired_joint_state);
+  return update(current_joint_state, measured_wrench, target_pose_from_joint_deltas_ik_base_frame_,
+                period, desired_joint_state);
 }
 
 controller_interface::return_type AdmittanceRule::update(

@@ -161,7 +161,7 @@ protected:
   geometry_msgs::msg::PoseStamped current_pose_ik_base_frame_;
 
   // This is the feedforward pose. Where should the end effector be with no wrench applied?
-  geometry_msgs::msg::PoseStamped feedforward_pose_ik_base_frame_;
+  geometry_msgs::msg::PoseStamped target_pose_from_joint_deltas_ik_base_frame_;
   std::array<double, 6> feedforward_velocity_ik_base_frame_;
   // Need to save the previous velocity to calculate acceleration
   std::array<double, 6> prev_feedforward_velocity_ik_base_frame_;
