@@ -179,7 +179,7 @@ controller_interface::return_type AdmittanceRule::configure(rclcpp::Node::Shared
   admittance_rule_calculated_values_.effort.resize(6, 0.0);
 
   // Initialize IK
-  ik_ = std::make_shared<IncrementalKinematics>(node, ik_group_name_);
+  ik_ = std::make_shared<MoveItKinematics>(node, ik_group_name_);
 
   return controller_interface::return_type::OK;
 }
@@ -288,7 +288,7 @@ controller_interface::return_type AdmittanceRule::update(
   identity_transform_.header.frame_id = ik_base_frame_;
   ik_->update_robot_state(current_joint_state);
   // FIXME: Do we need if here? Can we simply use if (!ik_->...)?
-  if (ik_->convertJointDeltasToCartesianDeltas(target_joint_deltas_vec, identity_transform_, target_deltas_vec_ik_base)) {
+  if (ik_->convert_joint_deltas_to_cartesian_deltas(target_joint_deltas_vec, identity_transform_, target_deltas_vec_ik_base)) {
   } else {
     RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"),
                  "Conversion of joint deltas to Cartesian deltas failed. Sending current joint"
@@ -474,7 +474,7 @@ controller_interface::return_type AdmittanceRule::calculate_desired_joint_state(
 
   // Use Jacobian-based IK
   std::vector<double> relative_desired_pose_vec(relative_desired_pose_arr_.begin(), relative_desired_pose_arr_.end());
-  if (ik_->convertCartesianDeltasToJointDeltas(
+  if (ik_->convert_cartesian_deltas_to_joint_deltas(
     relative_desired_pose_vec, identity_transform_, relative_desired_joint_state_vec_)){
     for (auto i = 0u; i < desired_joint_state.positions.size(); ++i) {
       desired_joint_state.positions[i] = current_joint_state.positions[i] + relative_desired_joint_state_vec_[i];
