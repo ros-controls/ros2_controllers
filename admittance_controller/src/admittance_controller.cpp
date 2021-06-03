@@ -23,7 +23,6 @@
 
 #include "angles/angles.h"
 #include "admittance_controller/admittance_controller.hpp"
-#include "admittance_controller/incremental_kinematics.hpp"
 #include "controller_interface/helpers.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
