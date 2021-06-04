@@ -19,6 +19,7 @@ find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(realtime_tools REQUIRED)
+find_package(filters REQUIRED)
 
 add_library(
   force_torque_sensor_broadcaster
@@ -39,6 +40,7 @@ ament_target_dependencies(
   rclcpp
   rclcpp_lifecycle
   realtime_tools
+  filters
 )
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.

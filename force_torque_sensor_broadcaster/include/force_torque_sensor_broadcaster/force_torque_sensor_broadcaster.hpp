@@ -30,6 +30,7 @@
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_publisher.h"
+#include "filters/filter_chain.hpp"
 
 namespace force_torque_sensor_broadcaster
 {
@@ -69,9 +70,16 @@ protected:
 
   std::unique_ptr<semantic_components::ForceTorqueSensor> force_torque_sensor_;
 
-  using StatePublisher = realtime_tools::RealtimePublisher<geometry_msgs::msg::WrenchStamped>;
-  rclcpp::Publisher<geometry_msgs::msg::WrenchStamped>::SharedPtr sensor_state_publisher_;
-  std::unique_ptr<StatePublisher> realtime_publisher_;
+  geometry_msgs::msg::WrenchStamped wrench_raw_;
+  geometry_msgs::msg::WrenchStamped wrench_filtered_;
+  std::unique_ptr<filters::FilterChain<geometry_msgs::msg::WrenchStamped>> filter_chain_;
+
+  using WrenchPublisher = realtime_tools::RealtimePublisher<geometry_msgs::msg::WrenchStamped>;
+  rclcpp::Publisher<geometry_msgs::msg::WrenchStamped>::SharedPtr wrench_raw_pub_;
+  std::unique_ptr<WrenchPublisher> wrench_raw_publisher_;
+  rclcpp::Publisher<geometry_msgs::msg::WrenchStamped>::SharedPtr wrench_filtered_pub_;
+  std::unique_ptr<WrenchPublisher> wrench_filtered_publisher_;
+
 };
 
 }  // namespace force_torque_sensor_broadcaster
