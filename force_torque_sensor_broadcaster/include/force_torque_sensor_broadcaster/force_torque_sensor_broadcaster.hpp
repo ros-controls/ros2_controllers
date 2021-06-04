@@ -70,13 +70,16 @@ protected:
 
   std::unique_ptr<semantic_components::ForceTorqueSensor> force_torque_sensor_;
 
-  using StatePublisher = realtime_tools::RealtimePublisher<geometry_msgs::msg::WrenchStamped>;
-  rclcpp::Publisher<geometry_msgs::msg::WrenchStamped>::SharedPtr sensor_state_publisher_;
-  std::unique_ptr<StatePublisher> realtime_publisher_;
+  geometry_msgs::msg::WrenchStamped wrench_raw_;
+  geometry_msgs::msg::WrenchStamped wrench_filtered_;
+  std::unique_ptr<filters::FilterChain<geometry_msgs::msg::WrenchStamped>> filter_chain_;
 
-  geometry_msgs::msg::WrenchStamped sensor_state_raw_, sensor_state_filtered_;
-  std::unique_ptr<filters::FilterChain<geometry_msgs::msg::WrenchStamped>>
-      filter_chain_;
+  using WrenchPublisher = realtime_tools::RealtimePublisher<geometry_msgs::msg::WrenchStamped>;
+  rclcpp::Publisher<geometry_msgs::msg::WrenchStamped>::SharedPtr wrench_raw_pub_;
+  std::unique_ptr<WrenchPublisher> wrench_raw_publisher_;
+  rclcpp::Publisher<geometry_msgs::msg::WrenchStamped>::SharedPtr wrench_filtered_pub_;
+  std::unique_ptr<WrenchPublisher> wrench_filtered_publisher_;
+
 };
 
 }  // namespace force_torque_sensor_broadcaster

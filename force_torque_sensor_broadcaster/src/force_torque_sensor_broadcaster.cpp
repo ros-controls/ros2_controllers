@@ -37,14 +37,14 @@ ForceTorqueSensorBroadcaster::init(const std::string & controller_name)
   }
 
   try {
-    node_->declare_parameter<std::string>("sensor_name", "");
-    node_->declare_parameter<std::string>("interface_names.force.x", "");
-    node_->declare_parameter<std::string>("interface_names.force.y", "");
-    node_->declare_parameter<std::string>("interface_names.force.z", "");
-    node_->declare_parameter<std::string>("interface_names.torque.x", "");
-    node_->declare_parameter<std::string>("interface_names.torque.y", "");
-    node_->declare_parameter<std::string>("interface_names.torque.z", "");
-    node_->declare_parameter<std::string>("frame_id", "");
+    get_node()->declare_parameter<std::string>("sensor_name", "");
+    get_node()->declare_parameter<std::string>("interface_names.force.x", "");
+    get_node()->declare_parameter<std::string>("interface_names.force.y", "");
+    get_node()->declare_parameter<std::string>("interface_names.force.z", "");
+    get_node()->declare_parameter<std::string>("interface_names.torque.x", "");
+    get_node()->declare_parameter<std::string>("interface_names.torque.y", "");
+    get_node()->declare_parameter<std::string>("interface_names.torque.z", "");
+    get_node()->declare_parameter<std::string>("frame_id", "");
   } catch (const std::exception & e) {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
     return controller_interface::return_type::ERROR;
@@ -56,13 +56,13 @@ ForceTorqueSensorBroadcaster::init(const std::string & controller_name)
 CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  sensor_name_ = node_->get_parameter("sensor_name").as_string();
-  interface_names_[0] = node_->get_parameter("interface_names.force.x").as_string();
-  interface_names_[1] = node_->get_parameter("interface_names.force.y").as_string();
-  interface_names_[2] = node_->get_parameter("interface_names.force.z").as_string();
-  interface_names_[3] = node_->get_parameter("interface_names.torque.x").as_string();
-  interface_names_[4] = node_->get_parameter("interface_names.torque.y").as_string();
-  interface_names_[5] = node_->get_parameter("interface_names.torque.z").as_string();
+  sensor_name_ = get_node()->get_parameter("sensor_name").as_string();
+  interface_names_[0] = get_node()->get_parameter("interface_names.force.x").as_string();
+  interface_names_[1] = get_node()->get_parameter("interface_names.force.y").as_string();
+  interface_names_[2] = get_node()->get_parameter("interface_names.force.z").as_string();
+  interface_names_[3] = get_node()->get_parameter("interface_names.torque.x").as_string();
+  interface_names_[4] = get_node()->get_parameter("interface_names.torque.y").as_string();
+  interface_names_[5] = get_node()->get_parameter("interface_names.torque.z").as_string();
 
   const bool no_interface_names_defined = std::count(
     interface_names_.begin(),
@@ -70,21 +70,21 @@ CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
 
   if (sensor_name_.empty() && no_interface_names_defined) {
     RCLCPP_ERROR(
-      node_->get_logger(), "'sensor_name' or at least one "
+      get_node()->get_logger(), "'sensor_name' or at least one "
       "'interface_names.[force|torque].[x|y|z]' parameter has to be specified.");
     return CallbackReturn::ERROR;
   }
 
   if (!sensor_name_.empty() && !no_interface_names_defined) {
     RCLCPP_ERROR(
-      node_->get_logger(), "both 'sensor_name' and "
+      get_node()->get_logger(), "both 'sensor_name' and "
       "'interface_names.[force|torque].[x|y|z]' parameters can not be specified together.");
     return CallbackReturn::ERROR;
   }
 
-  frame_id_ = node_->get_parameter("frame_id").as_string();
+  frame_id_ = get_node()->get_parameter("frame_id").as_string();
   if (frame_id_.empty()) {
-    RCLCPP_ERROR(node_->get_logger(), "'frame_id' parameter has to be provided.");
+    RCLCPP_ERROR(get_node()->get_logger(), "'frame_id' parameter has to be provided.");
     return CallbackReturn::ERROR;
   }
 
@@ -99,25 +99,9 @@ CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
   }
 
   try {
-    // register ft sensor data publisher
-    sensor_state_publisher_ = node_->create_publisher<geometry_msgs::msg::WrenchStamped>(
-      "~/wrench", rclcpp::SystemDefaultsQoS());
-    realtime_publisher_ = std::make_unique<StatePublisher>(sensor_state_publisher_);
-  } catch (const std::exception & e) {
-    fprintf(
-      stderr, "Exception thrown during publisher creation at configure stage with message : %s \n",
-      e.what());
-    return CallbackReturn::ERROR;
-  }
-
-  realtime_publisher_->lock();
-  realtime_publisher_->msg_.header.frame_id = frame_id_;
-  realtime_publisher_->unlock();
-
-  try {
-  filter_chain_ =
-      std::make_unique<filters::FilterChain<geometry_msgs::msg::WrenchStamped>>(
-          "geometry_msgs::msg::WrenchStamped");
+    filter_chain_ =
+    std::make_unique<filters::FilterChain<geometry_msgs::msg::WrenchStamped>>(
+      "geometry_msgs::msg::WrenchStamped");
   } catch (const std::exception & e) {
     fprintf(
       stderr, "Exception thrown during filter chain creation at configure stage with message : %s \n",
@@ -126,14 +110,42 @@ CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
   }
 
   if (!filter_chain_->configure("sensor_filter_chain",
-                                node_->get_node_logging_interface(),
-                                node_->get_node_parameters_interface())) {
-    RCLCPP_ERROR(node_->get_logger(),
+                                get_node()->get_node_logging_interface(),
+                                get_node()->get_node_parameters_interface()))
+  {
+    RCLCPP_ERROR(get_node()->get_logger(),
                  "Could not configure sensor filter chain, please check if the "
                  "parameters are provided correctly.");
     return CallbackReturn::ERROR;
   }
-  RCLCPP_DEBUG(node_->get_logger(), "configure successful");
+
+  try {
+    // register ft sensor data publishers
+    wrench_raw_pub_ = get_node()->create_publisher<geometry_msgs::msg::WrenchStamped>(
+      "~/wrench", rclcpp::SystemDefaultsQoS());
+    wrench_raw_publisher_ = std::make_unique<WrenchPublisher>(wrench_raw_pub_);
+    wrench_filtered_pub_ = get_node()->create_publisher<geometry_msgs::msg::WrenchStamped>(
+      "~/wrench_filtered", rclcpp::SystemDefaultsQoS());
+    wrench_filtered_publisher_ = std::make_unique<WrenchPublisher>(wrench_filtered_pub_);
+  } catch (const std::exception & e) {
+    fprintf(
+      stderr, "Exception thrown during publisher creation at configure stage with message : %s \n",
+      e.what());
+    return CallbackReturn::ERROR;
+  }
+
+  // Initialize variables for publishing
+  wrench_raw_.header.frame_id = frame_id_;
+  wrench_filtered_.header.frame_id = frame_id_;
+
+  wrench_raw_publisher_->lock();
+  wrench_raw_publisher_->msg_.header.frame_id = frame_id_;
+  wrench_raw_publisher_->unlock();
+  wrench_filtered_publisher_->lock();
+  wrench_filtered_publisher_->msg_.header.frame_id = frame_id_;
+  wrench_filtered_publisher_->unlock();
+
+  RCLCPP_DEBUG(get_node()->get_logger(), "configure successful");
   return CallbackReturn::SUCCESS;
 }
 
@@ -169,23 +181,27 @@ CallbackReturn ForceTorqueSensorBroadcaster::on_deactivate(
 }
 
 controller_interface::return_type ForceTorqueSensorBroadcaster::update() {
-  sensor_state_raw_.header.stamp = node_->now();
-  sensor_state_raw_.header.frame_id = frame_id_;
-  force_torque_sensor_->get_values_as_message(sensor_state_raw_.wrench);
+  wrench_raw_.header.stamp = get_node()->now();
+  force_torque_sensor_->get_values_as_message(wrench_raw_.wrench);
 
   // Filter sensor data
-  sensor_state_filtered_.header.stamp = sensor_state_raw_.header.stamp;
-  sensor_state_filtered_.header.frame_id = sensor_state_raw_.header.frame_id;
-  filter_chain_->update(sensor_state_raw_, sensor_state_filtered_);
+  wrench_filtered_.header.stamp = wrench_raw_.header.stamp;
+  wrench_filtered_.header.frame_id = wrench_raw_.header.frame_id;
+  filter_chain_->update(wrench_raw_, wrench_filtered_);
 
-  // Publish processed sensor data
-  if (realtime_publisher_ && realtime_publisher_->trylock()) {
-    realtime_publisher_->msg_.header.stamp =
-        sensor_state_filtered_.header.stamp;
-    realtime_publisher_->msg_.header.frame_id =
-    sensor_state_filtered_.header.frame_id;
-    realtime_publisher_->msg_.wrench = sensor_state_filtered_.wrench;
-    realtime_publisher_->unlockAndPublish();
+  // Publish sensor data
+  if (wrench_raw_publisher_ && wrench_raw_publisher_->trylock()) {
+    wrench_raw_publisher_->msg_.header.stamp = wrench_raw_.header.stamp;
+    wrench_raw_publisher_->msg_.header.frame_id = wrench_raw_.header.frame_id;
+    wrench_raw_publisher_->msg_.wrench = wrench_raw_.wrench;
+    wrench_raw_publisher_->unlockAndPublish();
+  }
+
+  if (wrench_filtered_publisher_ && wrench_filtered_publisher_->trylock()) {
+    wrench_filtered_publisher_->msg_.header.stamp = wrench_filtered_.header.stamp;
+    wrench_filtered_publisher_->msg_.header.frame_id = wrench_filtered_.header.frame_id;
+    wrench_filtered_publisher_->msg_.wrench = wrench_filtered_.wrench;
+    wrench_filtered_publisher_->unlockAndPublish();
   }
 
   return controller_interface::return_type::OK;
