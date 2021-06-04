@@ -25,6 +25,7 @@
 #include "admittance_controller/admittance_controller.hpp"
 #include "admittance_controller/incremental_kinematics.hpp"
 #include "controller_interface/helpers.hpp"
+#include "geometry_msgs/msg/wrench.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
@@ -512,7 +513,8 @@ controller_interface::return_type AdmittanceController::update()
     current_joint_states = last_commanded_state_;
   }
 
-  auto ft_values = force_torque_sensor_->get_values_as_message();
+  geometry_msgs::msg::Wrench ft_values;
+  force_torque_sensor_->get_values_as_message(ft_values);
 
   auto duration_since_last_call = get_node()->now() - previous_time_;
 
