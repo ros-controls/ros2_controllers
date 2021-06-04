@@ -114,6 +114,25 @@ CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
   realtime_publisher_->msg_.header.frame_id = frame_id_;
   realtime_publisher_->unlock();
 
+  try {
+  filter_chain_ =
+      std::make_unique<filters::FilterChain<geometry_msgs::msg::WrenchStamped>>(
+          "geometry_msgs::msg::WrenchStamped");
+  } catch (const std::exception & e) {
+    fprintf(
+      stderr, "Exception thrown during filter chain creation at configure stage with message : %s \n",
+      e.what());
+    return CallbackReturn::ERROR;
+  }
+
+  if (!filter_chain_->configure("sensor_filter_chain",
+                                node_->get_node_logging_interface(),
+                                node_->get_node_parameters_interface())) {
+    RCLCPP_ERROR(node_->get_logger(),
+                 "Could not configure sensor filter chain, please check if the "
+                 "parameters are provided correctly.");
+    return CallbackReturn::ERROR;
+  }
   RCLCPP_DEBUG(node_->get_logger(), "configure successful");
   return CallbackReturn::SUCCESS;
 }
@@ -149,11 +168,23 @@ CallbackReturn ForceTorqueSensorBroadcaster::on_deactivate(
   return CallbackReturn::SUCCESS;
 }
 
-controller_interface::return_type ForceTorqueSensorBroadcaster::update()
-{
+controller_interface::return_type ForceTorqueSensorBroadcaster::update() {
+  sensor_state_raw_.header.stamp = node_->now();
+  sensor_state_raw_.header.frame_id = frame_id_;
+  force_torque_sensor_->get_values_as_message(sensor_state_raw_.wrench);
+
+  // Filter sensor data
+  sensor_state_filtered_.header.stamp = sensor_state_raw_.header.stamp;
+  sensor_state_filtered_.header.frame_id = sensor_state_raw_.header.frame_id;
+  filter_chain_->update(sensor_state_raw_, sensor_state_filtered_);
+
+  // Publish processed sensor data
   if (realtime_publisher_ && realtime_publisher_->trylock()) {
-    realtime_publisher_->msg_.header.stamp = node_->now();
-    realtime_publisher_->msg_.wrench = force_torque_sensor_->get_values_as_message();
+    realtime_publisher_->msg_.header.stamp =
+        sensor_state_filtered_.header.stamp;
+    realtime_publisher_->msg_.header.frame_id =
+    sensor_state_filtered_.header.frame_id;
+    realtime_publisher_->msg_.wrench = sensor_state_filtered_.wrench;
     realtime_publisher_->unlockAndPublish();
   }
 
