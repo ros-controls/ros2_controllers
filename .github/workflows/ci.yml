@@ -30,7 +30,7 @@ jobs:
     strategy:
       fail-fast: false
     steps:
-      - uses: ros-tooling/setup-ros@v0.1
+      - uses: ros-tooling/setup-ros@v0.2
         with:
           required-ros-distributions: foxy
       - uses: ros-tooling/action-ros-ci@v0.1
