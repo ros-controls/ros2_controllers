@@ -42,10 +42,11 @@ jobs:
             effort_controllers
             force_torque_sensor_broadcaster
             forward_command_controller
-            gripper_controllers
+            imu_sensor_broadcaster
             joint_state_broadcaster
             joint_state_controller
             joint_trajectory_controller
+            gripper_controllers
             position_controllers
             velocity_controllers
           vcs-repo-file-url: |
