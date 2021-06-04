@@ -129,8 +129,12 @@ TEST_F(IMUSensorBroadcasterTest, SensorName_FrameId_NotSet)
   SetUpIMUBroadcaster();
 
   // set the 'interface_names'
-  imu_broadcaster_->get_node()->set_parameter({"interface_names.angular_velocity.x", "imu_sensor/angular_velocity.x"});
-  imu_broadcaster_->get_node()->set_parameter({"interface_names.linear_acceleration.z", "imu_sensor/linear_acceleration.z"});
+  imu_broadcaster_->get_node()->set_parameter(
+    {"interface_names.angular_velocity.x",
+      "imu_sensor/angular_velocity.x"});
+  imu_broadcaster_->get_node()->set_parameter(
+    {"interface_names.linear_acceleration.z",
+      "imu_sensor/linear_acceleration.z"});
 
   // configure failed, 'frame_id' parameter not set
   ASSERT_EQ(imu_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
@@ -214,4 +218,3 @@ TEST_F(IMUSensorBroadcasterTest, SensorName_Publish_Success)
   ASSERT_EQ(imu_msg.linear_acceleration.y, sensor_values_[8]);
   ASSERT_EQ(imu_msg.linear_acceleration.z, sensor_values_[9]);
 }
-
