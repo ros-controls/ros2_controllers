@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-/// \author: Denis Stogl
+/// \authors: Denis Stogl, Andy Zelenak
 
 #ifndef ADMITTANCE_CONTROLLER__ADMITTANCE_RULE_HPP_
 #define ADMITTANCE_CONTROLLER__ADMITTANCE_RULE_HPP_

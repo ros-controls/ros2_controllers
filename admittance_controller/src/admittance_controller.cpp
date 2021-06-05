@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-/// \author: Denis Stogl
+/// \authors: Denis Stogl, Andy Zelenak
+
+#include "admittance_controller/admittance_controller.hpp"
 
 #include <chrono>
 #include <functional>
@@ -22,7 +24,6 @@
 #include <vector>
 
 #include "angles/angles.h"
-#include "admittance_controller/admittance_controller.hpp"
 #include "controller_interface/helpers.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
