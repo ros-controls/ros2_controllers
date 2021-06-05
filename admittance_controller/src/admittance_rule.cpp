@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-/// \author: Denis Stogl
+/// \authors: Denis Stogl, Andy Zelenak
 
 #include "admittance_controller/admittance_rule.hpp"
 
@@ -26,7 +26,7 @@
 #include "rclcpp/duration.hpp"
 #include "rclcpp/utilities.hpp"
 #include "tf2/utils.h"
-#include <tf2_eigen/tf2_eigen.h>
+#include "tf2_eigen/tf2_eigen.h"
 
 namespace {  // Utility namespace
 

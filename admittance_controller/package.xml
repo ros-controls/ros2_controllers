@@ -5,6 +5,7 @@
   <version>0.0.0</version>
   <description>Implemenation of admittance controllers for different input and output interface.</description>
   <maintainer email="denis@stogl.de">Denis Štogl</maintainer>
+  <maintainer email="zelenak@picknik.ai">Andy Zelenak</maintainer>
   <license>Apache License 2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
