@@ -180,6 +180,7 @@ protected:
   std::array<double, 3> angles_error_;
 
   std::array<double, 6> relative_desired_pose_arr_;
+  std::array<double, 6> desired_pose_ik_base_frame_arr_;
   std::array<double, 6> desired_velocity_arr_;
   std::array<double, 6> desired_velocity_previous_arr_;
   std::array<double, 6> desired_acceleration_previous_arr_;

@@ -167,6 +167,7 @@ controller_interface::return_type AdmittanceRule::configure(rclcpp::Node::Shared
   measured_wrench_.header.frame_id = sensor_frame_;
 
   relative_desired_pose_.header.frame_id = control_frame_;
+  relative_desired_pose_.child_frame_id = control_frame_;
 
   identity_transform_.transform.rotation.w = 1;
 
@@ -200,6 +201,7 @@ controller_interface::return_type AdmittanceRule::reset()
   // Therefore desired pose has to be set before calling *update*-method
   if (open_loop_control_) {
     get_pose_of_control_frame_in_base_frame(desired_pose_ik_base_frame_);
+    convert_message_to_array(desired_pose_ik_base_frame_, desired_pose_ik_base_frame_arr_);
   }
 
   // Initialize ik_tip and tool_frame transformations - those are fixed transformations
@@ -264,7 +266,8 @@ controller_interface::return_type AdmittanceRule::update(
   // This works in all cases because not current TF data are used
   // Do clean conversion to the goal pose using transform and not messing with Euler angles
   convert_array_to_message(relative_desired_pose_arr_, relative_desired_pose_);
-  tf2::doTransform(current_pose_ik_base_frame_, desired_pose_ik_base_frame_, relative_desired_pose_);
+
+//   tf2::doTransform(current_pose_ik_base_frame_, desired_pose_ik_base_frame_, relative_desired_pose_);
 
   return calculate_desired_joint_state(current_joint_state, period, desired_joint_state);
 }
@@ -445,6 +448,7 @@ void AdmittanceRule::calculate_admittance_rule(
       desired_velocity_arr_[i] += (desired_acceleration_previous_arr_[i] + acceleration) * 0.5 * period.seconds();
 
       desired_relative_pose[i] = (desired_velocity_previous_arr_[i] + desired_velocity_arr_[i]) * 0.5 * period.seconds();
+      desired_pose_ik_base_frame_arr_[i] = current_pose_ik_base_frame_arr_[i] + desired_relative_pose[i];
 
       desired_acceleration_previous_arr_[i] = acceleration;
       desired_velocity_previous_arr_[i] = desired_velocity_arr_[i];
