@@ -57,7 +57,7 @@ public:
   /**
    *  \brief Get a link transform in MoveIt's reference frame, ik_base
    */
-  Eigen::Isometry3d get_link_transform(const std::string& link_name);
+  Eigen::Isometry3d get_link_transform(const std::string& link_name, const trajectory_msgs::msg::JointTrajectoryPoint & joint_state);
 
   bool update_robot_state(const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state)
   {

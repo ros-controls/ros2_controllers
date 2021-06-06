@@ -129,8 +129,10 @@ bool MoveItKinematics::convert_joint_deltas_to_cartesian_deltas(std::vector<doub
   return true;
 }
 
-Eigen::Isometry3d MoveItKinematics::get_link_transform(const std::string& link_name)
+Eigen::Isometry3d MoveItKinematics::get_link_transform(const std::string& link_name, const trajectory_msgs::msg::JointTrajectoryPoint & joint_state)
 {
+  update_robot_state(joint_state);
+
   return kinematic_state_->getGlobalLinkTransform(link_name);
 }
 
