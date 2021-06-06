@@ -270,15 +270,18 @@ controller_interface::return_type AdmittanceRule::update(
   convert_array_to_message(relative_desired_pose_arr_, relative_desired_pose_);
 
   // Add deltas to previously-desired pose to get the next desired pose
-  // TODO(destogl): This houdl also work with transform below...
-  desired_pose_ik_base_frame_.pose.position.x += relative_desired_pose_arr_.at(0);
-  desired_pose_ik_base_frame_.pose.position.y += relative_desired_pose_arr_.at(1);
-  desired_pose_ik_base_frame_.pose.position.z += relative_desired_pose_arr_.at(2);
+  // TODO(destogl): This should also work with transform below...
+  desired_pose_ik_base_frame_.pose.position.x = current_pose_ik_base_frame_.pose.position.x +
+                                                relative_desired_pose_arr_.at(0);
+  desired_pose_ik_base_frame_.pose.position.y = current_pose_ik_base_frame_.pose.position.y +
+                                                relative_desired_pose_arr_.at(1);
+  desired_pose_ik_base_frame_.pose.position.z = current_pose_ik_base_frame_.pose.position.z +
+                                                relative_desired_pose_arr_.at(2);
 
-  tf2::Quaternion q(desired_pose_ik_base_frame_.pose.orientation.x,
-                    desired_pose_ik_base_frame_.pose.orientation.y,
-                    desired_pose_ik_base_frame_.pose.orientation.z,
-                    desired_pose_ik_base_frame_.pose.orientation.w);
+  tf2::Quaternion q(current_pose_ik_base_frame_.pose.orientation.x,
+                    current_pose_ik_base_frame_.pose.orientation.y,
+                    current_pose_ik_base_frame_.pose.orientation.z,
+                    current_pose_ik_base_frame_.pose.orientation.w);
   tf2::Quaternion q_rot;
   q_rot.setRPY(relative_desired_pose_arr_.at(3), relative_desired_pose_arr_.at(4), relative_desired_pose_arr_.at(5));
   q = q_rot * q;
@@ -353,7 +356,8 @@ controller_interface::return_type AdmittanceRule::update(
   };
 
   // FIXME(destogl): (?) This logic could cause "joy" (large jerk) on contact
-  // This logic enables
+  // Please do not delete until we find a solution
+  // This logic enables to execute feedforward movements without triggering admittance calculation
   if (feedforward_commanded_input_) {
     if (is_measured_wrench_zero() && !movement_caused_by_wrench_) {
       for (auto i = 0u; i < desired_joint_state.positions.size(); ++i) {
