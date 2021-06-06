@@ -30,6 +30,13 @@
 
 namespace {  // Utility namespace
 
+// Numerical accuracy checks. Used as deadbands.
+static constexpr double WRENCH_EPSILON = 1e-10;
+static constexpr double POSE_ERROR_EPSILON = 1e-12;
+static constexpr double POSE_EPSILON = 1e-15;
+static constexpr double VELOCITITY_EPSILON = 1e-20;
+static constexpr double ACCELERATION_EPSILON = 1e-20;
+
 template<typename Type>
 void convert_message_to_array(const geometry_msgs::msg::Pose & msg, Type & vector_out)
 {
@@ -243,6 +250,7 @@ controller_interface::return_type AdmittanceRule::update(
   convert_message_to_array(current_pose_ik_base_frame_, current_pose_ik_base_frame_arr_);
 
   std::array<double, 6> pose_error;
+  // TODO(destogl): remove this feed-forward term from here
   // Estimate feedforward acceleration from reference_pose_ik_base_frame_arr_ and previous
   std::array<double, 6> feedforward_acceleration;
 
@@ -251,7 +259,10 @@ controller_interface::return_type AdmittanceRule::update(
     if (i >= 3) {
       pose_error[i] = angles::normalize_angle(pose_error[i]);
     }
-
+    if (std::fabs(pose_error[i]) < POSE_ERROR_EPSILON) {
+      pose_error[i] = 0.0;
+    }
+    // TODO(destogl): remove this feed-forward term from here
     // Estimate feedforward acceleration
     feedforward_acceleration[i] = (feedforward_velocity_ik_base_frame_[i] - prev_feedforward_velocity_ik_base_frame_[i]) / period.seconds();
   }
@@ -288,9 +299,9 @@ controller_interface::return_type AdmittanceRule::update(
   // Since ik_base is MoveIt's working frame, the transform is identity.
   identity_transform_.header.frame_id = ik_base_frame_;
   ik_->update_robot_state(current_joint_state);
-  // FIXME: Do we need if here? Can we simply use if (!ik_->...)?
-  if (ik_->convert_joint_deltas_to_cartesian_deltas(reference_joint_deltas_vec, identity_transform_, reference_deltas_vec_ik_base)) {
-  } else {
+  if (!ik_->convert_joint_deltas_to_cartesian_deltas(
+      reference_joint_deltas_vec, identity_transform_, reference_deltas_vec_ik_base))
+  {
     RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"),
                  "Conversion of joint deltas to Cartesian deltas failed. Sending current joint"
                  " values to the robot.");
@@ -299,6 +310,7 @@ controller_interface::return_type AdmittanceRule::update(
     return controller_interface::return_type::ERROR;
   }
 
+  // TODO(destogl): remove this feed-forward term from here
   for (auto i = 0u; i < 6; ++i) {
     feedforward_velocity_ik_base_frame_[i] = reference_deltas_vec_ik_base.at(i) / period.seconds();
   }
@@ -319,8 +331,41 @@ controller_interface::return_type AdmittanceRule::update(
   reference_pose_from_joint_deltas_ik_base_frame_.pose.orientation.y = q.y();
   reference_pose_from_joint_deltas_ik_base_frame_.pose.orientation.z = q.z();
 
-  return update(current_joint_state, measured_wrench, reference_pose_from_joint_deltas_ik_base_frame_,
-                period, desired_joint_state);
+  update(current_joint_state, measured_wrench, reference_pose_from_joint_deltas_ik_base_frame_,
+         period, desired_joint_state);
+
+  auto is_measured_wrench_zero = [&]() {
+    std::array<double, 6> measured_wrench_arr;
+    convert_message_to_array(measured_wrench, measured_wrench_arr);
+    double accumulated = accumulate_absolute(measured_wrench_arr);
+    return (accumulated < WRENCH_EPSILON || std::isnan(accumulated));
+  };
+
+  auto is_relative_admittance_pose_zero = [&]() {
+    return (accumulate_absolute(relative_desired_pose_arr_) < POSE_EPSILON);
+  };
+
+  // FIXME(destogl): (?) This logic could cause "joy" (large jerk) on contact
+  if (feedforward_commanded_input_) {
+    if (is_measured_wrench_zero() && !movement_caused_by_wrench_) {
+      for (auto i = 0u; i < desired_joint_state.positions.size(); ++i) {
+        desired_joint_state.positions[i] = current_joint_state.positions[i] + reference_joint_deltas[i];
+        desired_joint_state.velocities[i] = reference_joint_deltas[i] / period.seconds();
+      }
+    } else {
+      for (auto i = 0u; i < desired_joint_state.positions.size(); ++i) {
+        desired_joint_state.positions[i] += reference_joint_deltas[i];
+        desired_joint_state.velocities[i] += reference_joint_deltas[i] / period.seconds();
+      }
+      if (is_relative_admittance_pose_zero()) {
+        movement_caused_by_wrench_ = false;
+      } else {
+        movement_caused_by_wrench_ = true;
+      }
+    }
+  }
+
+  return controller_interface::return_type::OK;
 }
 
 controller_interface::return_type AdmittanceRule::update(
@@ -348,6 +393,7 @@ controller_interface::return_type AdmittanceRule::get_controller_state(
   state_message.measured_wrench_filtered = measured_wrench_filtered_;
   state_message.measured_wrench_control_frame = measured_wrench_control_frame_;
 
+  // FIXME(destogl): Something is wrong with this transformation - check frames...
   try {
     auto transform = tf_buffer_->lookupTransform(endeffector_frame_, control_frame_, tf2::TimePointZero);
     tf2::doTransform(measured_wrench_control_frame_, measured_wrench_endeffector_frame_, transform);
@@ -425,9 +471,17 @@ void AdmittanceRule::process_wrench_measurements(
   transform_message_to_ik_base_frame(measured_wrench_filtered_, measured_wrench_control_frame_);
   convert_message_to_array(measured_wrench_control_frame_, measured_wrench_control_frame_arr_);
 
+  // TODO(destogl): optimize this checks!
   // If at least one measured force is nan set all to 0
   if (std::find_if(measured_wrench_control_frame_arr_.begin(), measured_wrench_control_frame_arr_.end(), [](const auto value){ return std::isnan(value); }) != measured_wrench_control_frame_arr_.end()) {
     measured_wrench_control_frame_arr_.fill(0.0);
+  }
+
+  // If a force or a torque is very small set it to 0
+  for (auto i = 0u; i < measured_wrench_control_frame_arr_.size(); ++i) {
+    if (std::fabs(measured_wrench_control_frame_arr_[i]) < WRENCH_EPSILON) {
+      measured_wrench_control_frame_arr_[i] = 0.0;
+    }
   }
 }
 
@@ -453,8 +507,11 @@ void AdmittanceRule::calculate_admittance_rule(
       // Calculate position
       desired_relative_pose[i] =
       (admittance_velocity_previous_arr_[i] + admittance_velocity_arr_[i]) * 0.5 * period.seconds();
+      if (std::fabs(desired_relative_pose[i]) < POSE_EPSILON) {
+        desired_relative_pose[i] = 0.0;
+      }
       desired_pose_ik_base_frame_arr_[i] =
-      current_pose_ik_base_frame_arr_[i] + desired_relative_pose[i];
+        current_pose_ik_base_frame_arr_[i] + desired_relative_pose[i];
 
       // Store values for the next run
       admittance_acceleration_previous_arr_[i] = admittance_acceleration;
@@ -486,9 +543,9 @@ controller_interface::return_type AdmittanceRule::calculate_desired_joint_state(
   if (ik_->convert_cartesian_deltas_to_joint_deltas(
     relative_desired_pose_vec, identity_transform_, relative_desired_joint_state_vec_)){
     for (auto i = 0u; i < desired_joint_state.positions.size(); ++i) {
-      desired_joint_state.positions[i] = current_joint_state.positions[i] + relative_desired_joint_state_vec_[i];
+      desired_joint_state.positions[i] =
+        current_joint_state.positions[i] + relative_desired_joint_state_vec_[i];
       desired_joint_state.velocities[i] = relative_desired_joint_state_vec_[i] / period.seconds();
-      //       RCLCPP_INFO(rclcpp::get_logger("AR"), "joint states [%zu]: %f + %f = %f", i, current_joint_state.positions[i], relative_desired_joint_state_vec_[i], desired_joint_state.positions[i]);
     }
     } else {
       RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "Conversion of Cartesian deltas to joint deltas failed. Sending current joint values to the robot.");
