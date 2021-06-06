@@ -189,7 +189,6 @@ controller_interface::return_type AdmittanceRule::reset()
   measured_wrench_control_frame_arr_.fill(0.0);
   target_pose_ik_base_frame_arr_.fill(0.0);
   current_pose_ik_base_frame_arr_.fill(0.0);
-  angles_error_.fill(0.0);
   desired_velocity_arr_.fill(0.0);
   desired_velocity_previous_arr_.fill(0.0);
   desired_acceleration_previous_arr_.fill(0.0);
@@ -474,6 +473,7 @@ controller_interface::return_type AdmittanceRule::calculate_desired_joint_state(
 
   // Use Jacobian-based IK
   std::vector<double> relative_desired_pose_vec(relative_desired_pose_arr_.begin(), relative_desired_pose_arr_.end());
+  ik_->update_robot_state(current_joint_state);
   if (ik_->convert_cartesian_deltas_to_joint_deltas(
     relative_desired_pose_vec, identity_transform_, relative_desired_joint_state_vec_)){
     for (auto i = 0u; i < desired_joint_state.positions.size(); ++i) {
