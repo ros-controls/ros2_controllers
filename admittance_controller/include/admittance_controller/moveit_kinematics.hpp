@@ -42,7 +42,10 @@ public:
    * \return true if successful
    */
   bool
-  convert_cartesian_deltas_to_joint_deltas(std::vector<double> & delta_x_vec, const geometry_msgs::msg::TransformStamped & control_frame_to_ik_base, std::vector<double> & delta_theta_vec);
+  convert_cartesian_deltas_to_joint_deltas(
+    std::vector<double> & delta_x_vec,
+    const geometry_msgs::msg::TransformStamped & control_frame_to_ik_base,
+    std::vector<double> & delta_theta_vec);
 
   /**
    * \brief Convert joint delta-theta to Cartesian delta-x, using the Jacobian.
@@ -52,12 +55,17 @@ public:
    * \return true if successful
    */
   bool
-  convert_joint_deltas_to_cartesian_deltas(std::vector<double> &  delta_theta_vec, const geometry_msgs::msg::TransformStamped & tf_ik_base_to_desired_cartesian_frame, std::vector<double> & delta_x_vec);
+  convert_joint_deltas_to_cartesian_deltas(
+    std::vector<double> &  delta_theta_vec,
+    const geometry_msgs::msg::TransformStamped & tf_ik_base_to_desired_cartesian_frame,
+    std::vector<double> & delta_x_vec);
 
   /**
    *  \brief Get a link transform in MoveIt's reference frame, ik_base
    */
-  Eigen::Isometry3d get_link_transform(const std::string& link_name, const trajectory_msgs::msg::JointTrajectoryPoint & joint_state);
+  Eigen::Isometry3d
+  get_link_transform(
+    const std::string& link_name, const trajectory_msgs::msg::JointTrajectoryPoint & joint_state);
 
   bool update_robot_state(const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state)
   {

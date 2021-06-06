@@ -33,7 +33,10 @@ MoveItKinematics::MoveItKinematics(const std::shared_ptr<rclcpp::Node> & node, c
   // By default, the MoveIt Jacobian frame is the last link
 }
 
-bool MoveItKinematics::convert_cartesian_deltas_to_joint_deltas(std::vector<double> & delta_x_vec, const geometry_msgs::msg::TransformStamped & control_frame_to_ik_base, std::vector<double> & delta_theta_vec)
+bool MoveItKinematics::convert_cartesian_deltas_to_joint_deltas(
+  std::vector<double> & delta_x_vec,
+  const geometry_msgs::msg::TransformStamped & control_frame_to_ik_base,
+  std::vector<double> & delta_theta_vec)
 {
   // see here for this conversion: https://stackoverflow.com/questions/26094379/typecasting-eigenvectorxd-to-stdvector
   Eigen::VectorXd delta_x = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(&delta_x_vec[0], delta_x_vec.size());
@@ -82,7 +85,10 @@ bool MoveItKinematics::convert_cartesian_deltas_to_joint_deltas(std::vector<doub
   return true;
 }
 
-bool MoveItKinematics::convert_joint_deltas_to_cartesian_deltas(std::vector<double> &  delta_theta_vec, const geometry_msgs::msg::TransformStamped & tf_ik_base_to_desired_cartesian_frame, std::vector<double> & delta_x_vec)
+bool MoveItKinematics::convert_joint_deltas_to_cartesian_deltas(
+  std::vector<double> &  delta_theta_vec,
+  const geometry_msgs::msg::TransformStamped & tf_ik_base_to_desired_cartesian_frame,
+  std::vector<double> & delta_x_vec)
 {
   // see here for this conversion: https://stackoverflow.com/questions/26094379/typecasting-eigenvectorxd-to-stdvector
   Eigen::VectorXd delta_theta = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(&delta_theta_vec[0], delta_theta_vec.size());
@@ -129,7 +135,8 @@ bool MoveItKinematics::convert_joint_deltas_to_cartesian_deltas(std::vector<doub
   return true;
 }
 
-Eigen::Isometry3d MoveItKinematics::get_link_transform(const std::string& link_name, const trajectory_msgs::msg::JointTrajectoryPoint & joint_state)
+Eigen::Isometry3d MoveItKinematics::get_link_transform(
+  const std::string& link_name, const trajectory_msgs::msg::JointTrajectoryPoint & joint_state)
 {
   update_robot_state(joint_state);
 
