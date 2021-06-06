@@ -250,9 +250,6 @@ controller_interface::return_type AdmittanceRule::update(
   convert_message_to_array(current_pose_ik_base_frame_, current_pose_ik_base_frame_arr_);
 
   std::array<double, 6> pose_error;
-  // TODO(destogl): remove this feed-forward term from here
-  // Estimate feedforward acceleration from reference_pose_ik_base_frame_arr_ and previous
-  std::array<double, 6> feedforward_acceleration;
 
   for (auto i = 0u; i < 6; ++i) {
     pose_error[i] = current_pose_ik_base_frame_arr_[i] - reference_pose_ik_base_frame_arr_[i];
@@ -262,11 +259,7 @@ controller_interface::return_type AdmittanceRule::update(
     if (std::fabs(pose_error[i]) < POSE_ERROR_EPSILON) {
       pose_error[i] = 0.0;
     }
-    // TODO(destogl): remove this feed-forward term from here
-    // Estimate feedforward acceleration
-    feedforward_acceleration[i] = (feedforward_velocity_ik_base_frame_[i] - prev_feedforward_velocity_ik_base_frame_[i]) / period.seconds();
   }
-  prev_feedforward_velocity_ik_base_frame_ = feedforward_velocity_ik_base_frame_;
 
   process_wrench_measurements(measured_wrench);
 
@@ -310,13 +303,7 @@ controller_interface::return_type AdmittanceRule::update(
     return controller_interface::return_type::ERROR;
   }
 
-  // TODO(destogl): remove this feed-forward term from here
-  for (auto i = 0u; i < 6; ++i) {
-    feedforward_velocity_ik_base_frame_[i] = reference_deltas_vec_ik_base.at(i) / period.seconds();
-  }
-
   // Add deltas to previously-desired pose to get the next desired pose
-  // FIXME: Why not use convert_to_array method?
   reference_pose_from_joint_deltas_ik_base_frame_.pose.position.x += reference_deltas_vec_ik_base.at(0);
   reference_pose_from_joint_deltas_ik_base_frame_.pose.position.y += reference_deltas_vec_ik_base.at(1);
   reference_pose_from_joint_deltas_ik_base_frame_.pose.position.z += reference_deltas_vec_ik_base.at(2);
@@ -346,6 +333,7 @@ controller_interface::return_type AdmittanceRule::update(
   };
 
   // FIXME(destogl): (?) This logic could cause "joy" (large jerk) on contact
+  // This logic enables
   if (feedforward_commanded_input_) {
     if (is_measured_wrench_zero() && !movement_caused_by_wrench_) {
       for (auto i = 0u; i < desired_joint_state.positions.size(); ++i) {
