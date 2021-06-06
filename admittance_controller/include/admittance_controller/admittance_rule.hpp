@@ -82,6 +82,8 @@ public:
 
 public:
   bool open_loop_control_ = false;
+  // TODO(destogl): Add parameter for this
+  bool feedforward_commanded_input_ = true;
 
   // IK related parameters
   // ik_base_frame should be stationary so vel/accel calculations are correct
@@ -171,6 +173,8 @@ protected:
   geometry_msgs::msg::PoseStamped desired_pose_ik_base_frame_;
   geometry_msgs::msg::TransformStamped relative_desired_pose_;
 
+  bool movement_caused_by_wrench_ = false;
+
   // Pre-reserved update-loop variables
   std::array<double, 6> measured_wrench_control_frame_arr_;
   std::array<double, 6> reference_pose_ik_base_frame_arr_;
@@ -222,6 +226,17 @@ private:
     tf2::fromMsg(input, input_tf);
     output_tf = input_tf * transform;
     tf2::toMsg(output_tf, output);
+  }
+
+  // TODO(destogl): As of C++17 use transform_reduce:
+  // https://stackoverflow.com/questions/58266717/accumulate-absolute-values-of-a-vector
+  template<typename Type>
+  double accumulate_absolute(const Type & container) {
+    double accumulator = 0.0;
+    for (auto i = 0ul; i < container.size(); i++) {
+      accumulator += std::fabs(container[i]);
+    }
+    return accumulator;
   }
 };
 
