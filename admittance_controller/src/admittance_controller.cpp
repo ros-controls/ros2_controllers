@@ -496,7 +496,7 @@ controller_interface::return_type AdmittanceController::update()
   auto input_joint_cmd = input_joint_command_.readFromRT();
   auto input_pose_cmd = input_pose_command_.readFromRT();
 
-  // Position has to always there
+  // Position has to always be there
   auto num_joints = joint_state_interface_[0].size();
   trajectory_msgs::msg::JointTrajectoryPoint current_joint_states;
   current_joint_states.positions.resize(num_joints, 0.0);
