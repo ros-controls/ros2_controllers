@@ -207,7 +207,6 @@ controller_interface::return_type AdmittanceRule::reset()
   // Therefore desired pose has to be set before calling *update*-method
   if (open_loop_control_) {
     get_pose_of_control_frame_in_base_frame(desired_pose_ik_base_frame_);
-    convert_message_to_array(desired_pose_ik_base_frame_, desired_pose_ik_base_frame_arr_);
   }
 
   // Initialize ik_tip and tool_frame transformations - those are fixed transformations
@@ -269,7 +268,25 @@ controller_interface::return_type AdmittanceRule::update(
   // This works in all cases because not current TF data are used
   // Do clean conversion to the goal pose using transform and not messing with Euler angles
   convert_array_to_message(relative_desired_pose_arr_, relative_desired_pose_);
-  convert_array_to_message(desired_pose_ik_base_frame_arr_, desired_pose_ik_base_frame_);
+
+  // Add deltas to previously-desired pose to get the next desired pose
+  // TODO(destogl): This houdl also work with transform below...
+  desired_pose_ik_base_frame_.pose.position.x += relative_desired_pose_arr_.at(0);
+  desired_pose_ik_base_frame_.pose.position.y += relative_desired_pose_arr_.at(1);
+  desired_pose_ik_base_frame_.pose.position.z += relative_desired_pose_arr_.at(2);
+
+  tf2::Quaternion q(desired_pose_ik_base_frame_.pose.orientation.x,
+                    desired_pose_ik_base_frame_.pose.orientation.y,
+                    desired_pose_ik_base_frame_.pose.orientation.z,
+                    desired_pose_ik_base_frame_.pose.orientation.w);
+  tf2::Quaternion q_rot;
+  q_rot.setRPY(relative_desired_pose_arr_.at(3), relative_desired_pose_arr_.at(4), relative_desired_pose_arr_.at(5));
+  q = q_rot * q;
+  q.normalize();
+  desired_pose_ik_base_frame_.pose.orientation.w = q.w();
+  desired_pose_ik_base_frame_.pose.orientation.x = q.x();
+  desired_pose_ik_base_frame_.pose.orientation.y = q.y();
+  desired_pose_ik_base_frame_.pose.orientation.z = q.z();
 
 //   tf2::doTransform(current_pose_ik_base_frame_, desired_pose_ik_base_frame_, relative_desired_pose_);
 
@@ -308,7 +325,10 @@ controller_interface::return_type AdmittanceRule::update(
   reference_pose_from_joint_deltas_ik_base_frame_.pose.position.y += reference_deltas_vec_ik_base.at(1);
   reference_pose_from_joint_deltas_ik_base_frame_.pose.position.z += reference_deltas_vec_ik_base.at(2);
 
-  tf2::Quaternion q(reference_pose_from_joint_deltas_ik_base_frame_.pose.orientation.x, reference_pose_from_joint_deltas_ik_base_frame_.pose.orientation.y, reference_pose_from_joint_deltas_ik_base_frame_.pose.orientation.z, reference_pose_from_joint_deltas_ik_base_frame_.pose.orientation.w);
+  tf2::Quaternion q(reference_pose_from_joint_deltas_ik_base_frame_.pose.orientation.x,
+                    reference_pose_from_joint_deltas_ik_base_frame_.pose.orientation.y,
+                    reference_pose_from_joint_deltas_ik_base_frame_.pose.orientation.z,
+                    reference_pose_from_joint_deltas_ik_base_frame_.pose.orientation.w);
   tf2::Quaternion q_rot;
   q_rot.setRPY(reference_deltas_vec_ik_base.at(3), reference_deltas_vec_ik_base.at(4), reference_deltas_vec_ik_base.at(5));
   q = q_rot * q;
@@ -498,8 +518,6 @@ void AdmittanceRule::calculate_admittance_rule(
       if (std::fabs(desired_relative_pose[i]) < POSE_EPSILON) {
         desired_relative_pose[i] = 0.0;
       }
-      desired_pose_ik_base_frame_arr_[i] =
-        current_pose_ik_base_frame_arr_[i] + desired_relative_pose[i];
 
       // Store values for the next run
       admittance_acceleration_previous_arr_[i] = admittance_acceleration;
