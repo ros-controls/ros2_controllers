@@ -170,8 +170,8 @@ protected:
   geometry_msgs::msg::WrenchStamped reference_force_ik_base_frame_;
   geometry_msgs::msg::PoseStamped reference_pose_ik_base_frame_;
 
-  geometry_msgs::msg::PoseStamped desired_pose_ik_base_frame_;
-  geometry_msgs::msg::TransformStamped relative_desired_pose_;
+  geometry_msgs::msg::PoseStamped admittance_pose_ik_base_frame_;
+  geometry_msgs::msg::TransformStamped relative_admittance_pose_;
 
   bool movement_caused_by_wrench_ = false;
 
@@ -180,9 +180,11 @@ protected:
   std::array<double, 6> reference_pose_ik_base_frame_arr_;
   std::array<double, 6> current_pose_ik_base_frame_arr_;
 
-  std::array<double, 6> relative_desired_pose_arr_;
-  std::array<double, 6> desired_pose_ik_base_frame_arr_;
+  std::array<double, 6> relative_admittance_pose_arr_;
+  std::array<double, 6> admittance_pose_ik_base_frame_arr_;
   std::array<double, 6> admittance_velocity_arr_;
+  // Keep a running tally of motion due to admittance, to calculate spring force in open-loop mode
+  std::array<double, 6> sum_of_admittance_displacements_;
 
   std::vector<double> relative_desired_joint_state_vec_;
 
