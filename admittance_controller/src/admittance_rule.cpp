@@ -197,8 +197,6 @@ controller_interface::return_type AdmittanceRule::reset()
   reference_pose_ik_base_frame_arr_.fill(0.0);
   current_pose_ik_base_frame_arr_.fill(0.0);
   admittance_velocity_arr_.fill(0.0);
-  admittance_velocity_previous_arr_.fill(0.0);
-  admittance_acceleration_previous_arr_.fill(0.0);
 
   get_pose_of_control_frame_in_base_frame(current_pose_ik_base_frame_);
   reference_pose_from_joint_deltas_ik_base_frame_ = current_pose_ik_base_frame_;
@@ -363,6 +361,7 @@ controller_interface::return_type AdmittanceRule::update(
       for (auto i = 0u; i < desired_joint_state.positions.size(); ++i) {
         desired_joint_state.positions[i] = current_joint_state.positions[i] + reference_joint_deltas[i];
         desired_joint_state.velocities[i] = reference_joint_deltas[i] / period.seconds();
+        admittance_velocity_arr_[i] = 0;
       }
     } else {
       for (auto i = 0u; i < desired_joint_state.positions.size(); ++i) {
@@ -512,20 +511,13 @@ void AdmittanceRule::calculate_admittance_rule(
                                              damping_[i] * admittance_velocity_arr_[i] -
                                              stiffness_[i] * pose_error[i]);
 
-      // TODO(destogl): Maybe on contact we should not use forward difference
-      admittance_velocity_arr_[i] +=
-      (admittance_acceleration_previous_arr_[i] + admittance_acceleration) * 0.5 * period.seconds();
+      admittance_velocity_arr_[i] += admittance_acceleration * period.seconds();
 
       // Calculate position
-      desired_relative_pose[i] =
-      (admittance_velocity_previous_arr_[i] + admittance_velocity_arr_[i]) * 0.5 * period.seconds();
+      desired_relative_pose[i] = admittance_velocity_arr_[i] * period.seconds();
       if (std::fabs(desired_relative_pose[i]) < POSE_EPSILON) {
         desired_relative_pose[i] = 0.0;
       }
-
-      // Store values for the next run
-      admittance_acceleration_previous_arr_[i] = admittance_acceleration;
-      admittance_velocity_previous_arr_[i] = admittance_velocity_arr_[i];
 
       // Store data for publishing to state variable
       admittance_rule_calculated_values_.positions[i] = pose_error[i];
