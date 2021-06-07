@@ -59,6 +59,7 @@ ament_target_dependencies(
   tf2_geometry_msgs
   tf2_ros
 )
+target_compile_options(admittance_controller PRIVATE -Wall -Wextra)
 # prevent pluginlib from using boost
 target_compile_definitions(admittance_controller PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 pluginlib_export_plugin_description_file(controller_interface admittance_controller.xml)
