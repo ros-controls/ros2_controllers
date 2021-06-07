@@ -20,6 +20,7 @@
 #include "admittance_controller/moveit_kinematics.hpp"
 #include "control_msgs/msg/admittance_controller_state.hpp"
 #include "controller_interface/controller_interface.hpp"
+#include "filters/filter_chain.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
@@ -111,8 +112,8 @@ public:
   std::array<double, 6> damping_;
   std::array<double, 6> stiffness_;
 
-  // Filters
-  std::vector<GravityCompensationParameters> gravity_compensation_params_;
+  // Filter chain for Wrench data
+  std::unique_ptr<filters::FilterChain<geometry_msgs::msg::WrenchStamped>> filter_chain_;
 
 protected:
   void process_wrench_measurements(
