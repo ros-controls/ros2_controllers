@@ -173,8 +173,8 @@ controller_interface::return_type AdmittanceRule::configure(rclcpp::Node::Shared
   // Initialize variables used in the update loop
   measured_wrench_.header.frame_id = sensor_frame_;
 
-  relative_desired_pose_.header.frame_id = control_frame_;
-  relative_desired_pose_.child_frame_id = control_frame_;
+  relative_admittance_pose_.header.frame_id = control_frame_;
+  relative_admittance_pose_.child_frame_id = control_frame_;
 
   identity_transform_.transform.rotation.w = 1;
 
@@ -197,6 +197,7 @@ controller_interface::return_type AdmittanceRule::reset()
   reference_pose_ik_base_frame_arr_.fill(0.0);
   current_pose_ik_base_frame_arr_.fill(0.0);
   admittance_velocity_arr_.fill(0.0);
+  sum_of_admittance_displacements_.fill(0.0);
 
   get_pose_of_control_frame_in_base_frame(current_pose_ik_base_frame_);
   reference_pose_from_joint_deltas_ik_base_frame_ = current_pose_ik_base_frame_;
@@ -204,7 +205,8 @@ controller_interface::return_type AdmittanceRule::reset()
   // "Open-loop" controller uses old desired pose as current pose: current_pose(K) = desired_pose(K-1)
   // Therefore desired pose has to be set before calling *update*-method
   if (open_loop_control_) {
-    get_pose_of_control_frame_in_base_frame(desired_pose_ik_base_frame_);
+    get_pose_of_control_frame_in_base_frame(admittance_pose_ik_base_frame_);
+    convert_message_to_array(admittance_pose_ik_base_frame_, admittance_pose_ik_base_frame_arr_);
   }
 
   // Initialize ik_tip and tool_frame transformations - those are fixed transformations
@@ -239,7 +241,8 @@ controller_interface::return_type AdmittanceRule::update(
   if (!open_loop_control_) {
     get_pose_of_control_frame_in_base_frame(current_pose_ik_base_frame_);
   } else {
-    current_pose_ik_base_frame_ = desired_pose_ik_base_frame_;
+    // In open-loop mode, assume the user's requested pose was exactly achieved
+    current_pose_ik_base_frame_ = reference_pose_ik_base_frame_;
   }
 
   // Convert all data to arrays for simpler calculation
@@ -249,7 +252,14 @@ controller_interface::return_type AdmittanceRule::update(
   std::array<double, 6> pose_error;
 
   for (auto i = 0u; i < 6; ++i) {
-    pose_error[i] = current_pose_ik_base_frame_arr_[i] - reference_pose_ik_base_frame_arr_[i];
+
+    if (!open_loop_control_) {
+      pose_error[i] = current_pose_ik_base_frame_arr_[i] - reference_pose_ik_base_frame_arr_[i];
+    } else {
+      // In open-loop mode, spring force is related to the accumulated "admittance displacement"
+      pose_error[i] = sum_of_admittance_displacements_[i];
+    }
+
     if (i >= 3) {
       pose_error[i] = angles::normalize_angle(pose_error[i]);
     }
@@ -261,35 +271,14 @@ controller_interface::return_type AdmittanceRule::update(
   process_wrench_measurements(measured_wrench);
 
   calculate_admittance_rule(
-    measured_wrench_ik_base_frame_arr_, pose_error, period, relative_desired_pose_arr_);
+    measured_wrench_ik_base_frame_arr_, pose_error, period, relative_admittance_pose_arr_);
 
   // This works in all cases because not current TF data are used
   // Do clean conversion to the goal pose using transform and not messing with Euler angles
-  convert_array_to_message(relative_desired_pose_arr_, relative_desired_pose_);
+  convert_array_to_message(relative_admittance_pose_arr_, relative_admittance_pose_);
 
   // Add deltas to previously-desired pose to get the next desired pose
-  // TODO(destogl): This should also work with transform below...
-  desired_pose_ik_base_frame_.pose.position.x = current_pose_ik_base_frame_.pose.position.x +
-                                                relative_desired_pose_arr_.at(0);
-  desired_pose_ik_base_frame_.pose.position.y = current_pose_ik_base_frame_.pose.position.y +
-                                                relative_desired_pose_arr_.at(1);
-  desired_pose_ik_base_frame_.pose.position.z = current_pose_ik_base_frame_.pose.position.z +
-                                                relative_desired_pose_arr_.at(2);
-
-  tf2::Quaternion q(current_pose_ik_base_frame_.pose.orientation.x,
-                    current_pose_ik_base_frame_.pose.orientation.y,
-                    current_pose_ik_base_frame_.pose.orientation.z,
-                    current_pose_ik_base_frame_.pose.orientation.w);
-  tf2::Quaternion q_rot;
-  q_rot.setRPY(relative_desired_pose_arr_.at(3), relative_desired_pose_arr_.at(4), relative_desired_pose_arr_.at(5));
-  q = q_rot * q;
-  q.normalize();
-  desired_pose_ik_base_frame_.pose.orientation.w = q.w();
-  desired_pose_ik_base_frame_.pose.orientation.x = q.x();
-  desired_pose_ik_base_frame_.pose.orientation.y = q.y();
-  desired_pose_ik_base_frame_.pose.orientation.z = q.z();
-
-//   tf2::doTransform(current_pose_ik_base_frame_, desired_pose_ik_base_frame_, relative_desired_pose_);
+  tf2::doTransform(current_pose_ik_base_frame_, admittance_pose_ik_base_frame_, relative_admittance_pose_);
 
   return calculate_desired_joint_state(current_joint_state, period, desired_joint_state);
 }
@@ -350,7 +339,7 @@ controller_interface::return_type AdmittanceRule::update(
   };
 
   auto is_relative_admittance_pose_zero = [&]() {
-    return (accumulate_absolute(relative_desired_pose_arr_) < POSE_EPSILON);
+    return (accumulate_absolute(relative_admittance_pose_arr_) < POSE_EPSILON);
   };
 
   // FIXME(destogl): (?) This logic could cause "joy" (large jerk) on contact
@@ -418,8 +407,8 @@ controller_interface::return_type AdmittanceRule::get_controller_state(
   state_message.admittance_rule_calculated_values = admittance_rule_calculated_values_;
 
   state_message.current_pose = current_pose_ik_base_frame_;
-  state_message.desired_pose = desired_pose_ik_base_frame_;
-  state_message.relative_desired_pose = relative_desired_pose_;
+  state_message.desired_pose = admittance_pose_ik_base_frame_;
+  state_message.relative_desired_pose = relative_admittance_pose_;
 
   return controller_interface::return_type::OK;
 }
@@ -519,6 +508,8 @@ void AdmittanceRule::calculate_admittance_rule(
         desired_relative_pose[i] = 0.0;
       }
 
+      sum_of_admittance_displacements_[i] += admittance_velocity_arr_[i] * period.seconds();
+
       // Store data for publishing to state variable
       admittance_rule_calculated_values_.positions[i] = pose_error[i];
       admittance_rule_calculated_values_.velocities[i] = admittance_velocity_arr_[i];
@@ -534,16 +525,16 @@ controller_interface::return_type AdmittanceRule::calculate_desired_joint_state(
   trajectory_msgs::msg::JointTrajectoryPoint & desired_joint_state
 )
 {
-  convert_array_to_message(relative_desired_pose_arr_, relative_desired_pose_);
+  convert_array_to_message(relative_admittance_pose_arr_, relative_admittance_pose_);
 
   // Since ik_base is MoveIt's working frame, the transform is identity.
   identity_transform_.header.frame_id = ik_base_frame_;
 
   // Use Jacobian-based IK
-  std::vector<double> relative_desired_pose_vec(relative_desired_pose_arr_.begin(), relative_desired_pose_arr_.end());
+  std::vector<double> relative_admittance_pose_vec(relative_admittance_pose_arr_.begin(), relative_admittance_pose_arr_.end());
   ik_->update_robot_state(current_joint_state);
   if (ik_->convert_cartesian_deltas_to_joint_deltas(
-    relative_desired_pose_vec, identity_transform_, relative_desired_joint_state_vec_)){
+    relative_admittance_pose_vec, identity_transform_, relative_desired_joint_state_vec_)){
     for (auto i = 0u; i < desired_joint_state.positions.size(); ++i) {
       desired_joint_state.positions[i] =
         current_joint_state.positions[i] + relative_desired_joint_state_vec_[i];
