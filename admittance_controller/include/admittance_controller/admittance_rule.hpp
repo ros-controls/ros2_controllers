@@ -156,7 +156,7 @@ protected:
   geometry_msgs::msg::WrenchStamped measured_wrench_;
   geometry_msgs::msg::WrenchStamped measured_wrench_filtered_;
 
-  geometry_msgs::msg::WrenchStamped measured_wrench_control_frame_;
+  geometry_msgs::msg::WrenchStamped measured_wrench_ik_base_frame_;
   geometry_msgs::msg::WrenchStamped measured_wrench_endeffector_frame_;
 
   geometry_msgs::msg::PoseStamped current_pose_ik_base_frame_;
@@ -176,7 +176,7 @@ protected:
   bool movement_caused_by_wrench_ = false;
 
   // Pre-reserved update-loop variables
-  std::array<double, 6> measured_wrench_control_frame_arr_;
+  std::array<double, 6> measured_wrench_ik_base_frame_arr_;
   std::array<double, 6> reference_pose_ik_base_frame_arr_;
   std::array<double, 6> current_pose_ik_base_frame_arr_;
 

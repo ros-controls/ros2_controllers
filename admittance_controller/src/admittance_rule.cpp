@@ -193,7 +193,7 @@ controller_interface::return_type AdmittanceRule::configure(rclcpp::Node::Shared
 
 controller_interface::return_type AdmittanceRule::reset()
 {
-  measured_wrench_control_frame_arr_.fill(0.0);
+  measured_wrench_ik_base_frame_arr_.fill(0.0);
   reference_pose_ik_base_frame_arr_.fill(0.0);
   current_pose_ik_base_frame_arr_.fill(0.0);
   admittance_velocity_arr_.fill(0.0);
@@ -263,7 +263,7 @@ controller_interface::return_type AdmittanceRule::update(
   process_wrench_measurements(measured_wrench);
 
   calculate_admittance_rule(
-    measured_wrench_control_frame_arr_, pose_error, period, relative_desired_pose_arr_);
+    measured_wrench_ik_base_frame_arr_, pose_error, period, relative_desired_pose_arr_);
 
   // This works in all cases because not current TF data are used
   // Do clean conversion to the goal pose using transform and not messing with Euler angles
@@ -403,12 +403,12 @@ controller_interface::return_type AdmittanceRule::get_controller_state(
   state_message.input_pose_control_frame = reference_pose_ik_base_frame_;
   state_message.measured_wrench = measured_wrench_;
   state_message.measured_wrench_filtered = measured_wrench_filtered_;
-  state_message.measured_wrench_control_frame = measured_wrench_control_frame_;
+  state_message.measured_wrench_control_frame = measured_wrench_ik_base_frame_;
 
   // FIXME(destogl): Something is wrong with this transformation - check frames...
   try {
     auto transform = tf_buffer_->lookupTransform(endeffector_frame_, control_frame_, tf2::TimePointZero);
-    tf2::doTransform(measured_wrench_control_frame_, measured_wrench_endeffector_frame_, transform);
+    tf2::doTransform(measured_wrench_ik_base_frame_, measured_wrench_endeffector_frame_, transform);
   } catch (const tf2::TransformException & e) {
     // TODO(destogl): Use RCLCPP_ERROR_THROTTLE
     RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "LookupTransform failed from '" +
@@ -480,19 +480,19 @@ void AdmittanceRule::process_wrench_measurements(
   //   measured_wrench_filtered_ = measured_wrench_;
   // }
 
-  transform_message_to_ik_base_frame(measured_wrench_filtered_, measured_wrench_control_frame_);
-  convert_message_to_array(measured_wrench_control_frame_, measured_wrench_control_frame_arr_);
+  transform_message_to_ik_base_frame(measured_wrench_filtered_, measured_wrench_ik_base_frame_);
+  convert_message_to_array(measured_wrench_ik_base_frame_, measured_wrench_ik_base_frame_arr_);
 
   // TODO(destogl): optimize this checks!
   // If at least one measured force is nan set all to 0
-  if (std::find_if(measured_wrench_control_frame_arr_.begin(), measured_wrench_control_frame_arr_.end(), [](const auto value){ return std::isnan(value); }) != measured_wrench_control_frame_arr_.end()) {
-    measured_wrench_control_frame_arr_.fill(0.0);
+  if (std::find_if(measured_wrench_ik_base_frame_arr_.begin(), measured_wrench_ik_base_frame_arr_.end(), [](const auto value){ return std::isnan(value); }) != measured_wrench_ik_base_frame_arr_.end()) {
+    measured_wrench_ik_base_frame_arr_.fill(0.0);
   }
 
   // If a force or a torque is very small set it to 0
-  for (auto i = 0u; i < measured_wrench_control_frame_arr_.size(); ++i) {
-    if (std::fabs(measured_wrench_control_frame_arr_[i]) < WRENCH_EPSILON) {
-      measured_wrench_control_frame_arr_[i] = 0.0;
+  for (auto i = 0u; i < measured_wrench_ik_base_frame_arr_.size(); ++i) {
+    if (std::fabs(measured_wrench_ik_base_frame_arr_[i]) < WRENCH_EPSILON) {
+      measured_wrench_ik_base_frame_arr_[i] = 0.0;
     }
   }
 }
