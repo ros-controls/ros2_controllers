@@ -242,6 +242,7 @@ controller_interface::return_type AdmittanceRule::update(
     get_pose_of_control_frame_in_base_frame(current_pose_ik_base_frame_);
   } else {
     // In open-loop mode, assume the user's requested pose was exactly achieved
+    // TODO(destogl): This will maybe now work when no feed-forward is used
     current_pose_ik_base_frame_ = reference_pose_ik_base_frame_;
   }
 
@@ -256,6 +257,8 @@ controller_interface::return_type AdmittanceRule::update(
     if (!open_loop_control_) {
       pose_error[i] = current_pose_ik_base_frame_arr_[i] - reference_pose_ik_base_frame_arr_[i];
     } else {
+      // Sum admittance displacement from the previous relative poses
+      sum_of_admittance_displacements_[i] += relative_admittance_pose_arr_[i];
       // In open-loop mode, spring force is related to the accumulated "admittance displacement"
       pose_error[i] = sum_of_admittance_displacements_[i];
     }
@@ -507,8 +510,6 @@ void AdmittanceRule::calculate_admittance_rule(
       if (std::fabs(desired_relative_pose[i]) < POSE_EPSILON) {
         desired_relative_pose[i] = 0.0;
       }
-
-      sum_of_admittance_displacements_[i] += admittance_velocity_arr_[i] * period.seconds();
 
       // Store data for publishing to state variable
       admittance_rule_calculated_values_.positions[i] = pose_error[i];
