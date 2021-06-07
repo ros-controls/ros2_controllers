@@ -183,8 +183,6 @@ protected:
   std::array<double, 6> relative_desired_pose_arr_;
   std::array<double, 6> desired_pose_ik_base_frame_arr_;
   std::array<double, 6> admittance_velocity_arr_;
-  std::array<double, 6> admittance_velocity_previous_arr_;
-  std::array<double, 6> admittance_acceleration_previous_arr_;
 
   std::vector<double> relative_desired_joint_state_vec_;
 
