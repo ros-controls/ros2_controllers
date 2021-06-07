@@ -173,6 +173,11 @@ protected:
   geometry_msgs::msg::PoseStamped admittance_pose_ik_base_frame_;
   geometry_msgs::msg::TransformStamped relative_admittance_pose_;
 
+  // Joint deltas calculation variables
+  std::vector<double> reference_joint_deltas_vec_;
+  std::vector<double> reference_deltas_vec_ik_base_;
+  geometry_msgs::msg::TransformStamped reference_deltas_ik_base_;
+
   bool movement_caused_by_wrench_ = false;
 
   // Pre-reserved update-loop variables
