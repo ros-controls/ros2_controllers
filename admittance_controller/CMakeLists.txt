@@ -14,6 +14,7 @@ find_package(ament_cmake REQUIRED)
 find_package(control_msgs REQUIRED)
 find_package(controller_interface REQUIRED)
 find_package(Eigen3 REQUIRED)
+find_package(filters REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(hardware_interface REQUIRED)
 find_package(moveit_ros_move_group REQUIRED)
@@ -46,6 +47,7 @@ ament_target_dependencies(
   control_msgs
   controller_interface
   ${Eigen_LIBRARIES}
+  filters
   geometry_msgs
   hardware_interface
   moveit_ros_move_group
@@ -59,7 +61,9 @@ ament_target_dependencies(
   tf2_geometry_msgs
   tf2_ros
 )
-target_compile_options(admittance_controller PRIVATE -Wall -Wextra)
+# Causes the visibility macros to use dllexport rather than dllimport,
+# which is appropriate when building the dll but not consuming it.
+target_compile_definitions(admittance_controller PRIVATE "ADMITTANCE_CONTROLLER_BUILDING_DLL")
 # prevent pluginlib from using boost
 target_compile_definitions(admittance_controller PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 pluginlib_export_plugin_description_file(controller_interface admittance_controller.xml)
@@ -112,6 +116,7 @@ ament_export_libraries(
 ament_export_dependencies(
   control_msgs
   controller_interface
+  filters
   geometry_msgs
   hardware_interface
   pluginlib
