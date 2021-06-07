@@ -176,6 +176,11 @@ controller_interface::return_type AdmittanceRule::configure(rclcpp::Node::Shared
   relative_admittance_pose_.header.frame_id = control_frame_;
   relative_admittance_pose_.child_frame_id = control_frame_;
 
+  reference_joint_deltas_vec_.reserve(6);
+  reference_deltas_vec_ik_base_.reserve(6);
+  reference_deltas_ik_base_.header.frame_id = ik_base_frame_;
+  reference_deltas_ik_base_.child_frame_id = ik_base_frame_;
+
   identity_transform_.transform.rotation.w = 1;
 
   relative_desired_joint_state_vec_.reserve(6);
@@ -294,16 +299,14 @@ controller_interface::return_type AdmittanceRule::update(
   const rclcpp::Duration & period,
   trajectory_msgs::msg::JointTrajectoryPoint & desired_joint_state)
 {
-  std::vector<double> reference_joint_deltas_vec(
-    reference_joint_deltas.begin(), reference_joint_deltas.end());
-  std::vector<double> reference_deltas_vec_ik_base(6);
+  reference_joint_deltas_vec_.assign(reference_joint_deltas.begin(), reference_joint_deltas.end());
 
   // Get feed-forward cartesian deltas in the ik_base frame.
   // Since ik_base is MoveIt's working frame, the transform is identity.
   identity_transform_.header.frame_id = ik_base_frame_;
   ik_->update_robot_state(current_joint_state);
   if (!ik_->convert_joint_deltas_to_cartesian_deltas(
-      reference_joint_deltas_vec, identity_transform_, reference_deltas_vec_ik_base))
+      reference_joint_deltas_vec_, identity_transform_, reference_deltas_vec_ik_base_))
   {
     RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"),
                  "Conversion of joint deltas to Cartesian deltas failed. Sending current joint"
@@ -313,23 +316,12 @@ controller_interface::return_type AdmittanceRule::update(
     return controller_interface::return_type::ERROR;
   }
 
-  // Add deltas to previously-desired pose to get the next desired pose
-  reference_pose_from_joint_deltas_ik_base_frame_.pose.position.x += reference_deltas_vec_ik_base.at(0);
-  reference_pose_from_joint_deltas_ik_base_frame_.pose.position.y += reference_deltas_vec_ik_base.at(1);
-  reference_pose_from_joint_deltas_ik_base_frame_.pose.position.z += reference_deltas_vec_ik_base.at(2);
+  convert_array_to_message(reference_deltas_vec_ik_base_, reference_deltas_ik_base_);
 
-  tf2::Quaternion q(reference_pose_from_joint_deltas_ik_base_frame_.pose.orientation.x,
-                    reference_pose_from_joint_deltas_ik_base_frame_.pose.orientation.y,
-                    reference_pose_from_joint_deltas_ik_base_frame_.pose.orientation.z,
-                    reference_pose_from_joint_deltas_ik_base_frame_.pose.orientation.w);
-  tf2::Quaternion q_rot;
-  q_rot.setRPY(reference_deltas_vec_ik_base.at(3), reference_deltas_vec_ik_base.at(4), reference_deltas_vec_ik_base.at(5));
-  q = q_rot * q;
-  q.normalize();
-  reference_pose_from_joint_deltas_ik_base_frame_.pose.orientation.w = q.w();
-  reference_pose_from_joint_deltas_ik_base_frame_.pose.orientation.x = q.x();
-  reference_pose_from_joint_deltas_ik_base_frame_.pose.orientation.y = q.y();
-  reference_pose_from_joint_deltas_ik_base_frame_.pose.orientation.z = q.z();
+  // Add deltas to previously-desired pose to get the next desired pose
+  tf2::doTransform(reference_pose_from_joint_deltas_ik_base_frame_,
+                   reference_pose_from_joint_deltas_ik_base_frame_,
+                   reference_deltas_ik_base_);
 
   update(current_joint_state, measured_wrench, reference_pose_from_joint_deltas_ik_base_frame_,
          period, desired_joint_state);
