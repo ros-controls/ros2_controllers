@@ -429,9 +429,8 @@ void AdmittanceRule::process_wrench_measurements(
   const geometry_msgs::msg::Wrench & measured_wrench
 )
 {
-  // TODO(andyz): Implement gravity comp. For now, just pass the measured wrench through
   measured_wrench_.wrench = measured_wrench;
-  measured_wrench_filtered_ = measured_wrench_;
+  filter_chain_->update(measured_wrench_, measured_wrench_filtered_);
 
   // // get current states, and transform those into controller frame
   // measured_wrench_.wrench = measured_wrench;
@@ -467,7 +466,10 @@ void AdmittanceRule::process_wrench_measurements(
 
   // TODO(destogl): optimize this checks!
   // If at least one measured force is nan set all to 0
-  if (std::find_if(measured_wrench_ik_base_frame_arr_.begin(), measured_wrench_ik_base_frame_arr_.end(), [](const auto value){ return std::isnan(value); }) != measured_wrench_ik_base_frame_arr_.end()) {
+  if (std::find_if(measured_wrench_ik_base_frame_arr_.begin(),
+    measured_wrench_ik_base_frame_arr_.end(),
+    [](const auto value){ return std::isnan(value); }) != measured_wrench_ik_base_frame_arr_.end())
+  {
     measured_wrench_ik_base_frame_arr_.fill(0.0);
   }
 
