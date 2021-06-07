@@ -24,10 +24,6 @@
 namespace imu_sensor_broadcaster
 {
 
-IMUSensorBroadcaster::IMUSensorBroadcaster()
-: controller_interface::ControllerInterface()
-{}
-
 controller_interface::return_type
 IMUSensorBroadcaster::init(const std::string & controller_name)
 {
@@ -40,7 +36,8 @@ IMUSensorBroadcaster::init(const std::string & controller_name)
     node_->declare_parameter<std::string>("sensor_name", "");
     node_->declare_parameter<std::string>("frame_id", "");
   } catch (const std::exception & e) {
-    fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
+    RCLCPP_ERROR(
+      node_->get_logger(), "Exception thrown during init stage with message: %s \n", e.what());
     return controller_interface::return_type::ERROR;
   }
 
@@ -63,10 +60,8 @@ CallbackReturn IMUSensorBroadcaster::on_configure(
     return CallbackReturn::ERROR;
   }
 
-  if (!sensor_name_.empty()) {
-    imu_sensor_ = std::make_unique<semantic_components::IMUSensor>(
-      semantic_components::IMUSensor(sensor_name_));
-  }
+  imu_sensor_ = std::make_unique<semantic_components::IMUSensor>(
+    semantic_components::IMUSensor(sensor_name_));
   try {
     // register ft sensor data publisher
     sensor_state_publisher_ = node_->create_publisher<sensor_msgs::msg::Imu>(

@@ -39,9 +39,6 @@ class IMUSensorBroadcaster : public controller_interface::ControllerInterface
 {
 public:
   IMU_SENSOR_BROADCASTER_PUBLIC
-  IMUSensorBroadcaster();
-
-  IMU_SENSOR_BROADCASTER_PUBLIC
   controller_interface::return_type init(const std::string & controller_name) override;
 
   IMU_SENSOR_BROADCASTER_PUBLIC
