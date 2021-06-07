@@ -25,6 +25,8 @@
 
 #include "angles/angles.h"
 #include "controller_interface/helpers.hpp"
+#include "filters/filter_chain.hpp"
+#include "geometry_msgs/msg/wrench.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
@@ -205,22 +207,25 @@ CallbackReturn AdmittanceController::on_configure(
     return CallbackReturn::ERROR;
   }
 
-  // admittance_->gravity_compensation_params_.reserve(2);
-  // for (const auto & name : std::vector<std::string>{"wrist", "tool"}) {
-  //   GravityCompensationParameters params;
-  //   if (
-  //     get_double_param_and_error_if_empty(params.cog_.vector.x, ("gravity_compensation." + name + ".CoG_x").c_str()) ||
-  //     get_double_param_and_error_if_empty(params.cog_.vector.y, ("gravity_compensation." + name + ".CoG_y").c_str()) ||
-  //     get_double_param_and_error_if_empty(params.cog_.vector.z, ("gravity_compensation." + name + ".CoG_z").c_str()) ||
-  //     get_double_param_and_error_if_empty(params.force_, ("gravity_compensation." + name + ".force").c_str()) ||
-  //     get_string_param_and_error_if_empty(params.cog_.header.frame_id, ("gravity_compensation." + name + ".frame_id").c_str())
-  //     )
-  //   {
-  //     return CallbackReturn::ERROR;
-  //   }
+  try {
+    admittance_->filter_chain_ =
+    std::make_unique<filters::FilterChain<geometry_msgs::msg::WrenchStamped>>(
+      "geometry_msgs::msg::WrenchStamped");
+  } catch (const std::exception & e) {
+    fprintf(
+      stderr, "Exception thrown during filter chain creation at configure stage with message : %s \n",
+      e.what());
+    return CallbackReturn::ERROR;
+  }
 
-  //   admittance_->gravity_compensation_params_.emplace_back(params);
-  // }
+  if (!admittance_->filter_chain_->configure("input_wrench_filter_chain",
+    get_node()->get_node_logging_interface(), get_node()->get_node_parameters_interface()))
+  {
+    RCLCPP_ERROR(get_node()->get_logger(),
+                 "Could not configure sensor filter chain, please check if the "
+                 "parameters are provided correctly.");
+    return CallbackReturn::ERROR;
+  }
 
   // Check if only allowed interface types are used and initialize storage to avoid memory
   // allocation during activation
