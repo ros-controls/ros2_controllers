@@ -205,6 +205,7 @@ controller_interface::return_type AdmittanceRule::reset()
   // Therefore desired pose has to be set before calling *update*-method
   if (open_loop_control_) {
     get_pose_of_control_frame_in_base_frame(admittance_pose_ik_base_frame_);
+    convert_message_to_array(admittance_pose_ik_base_frame_, admittance_pose_ik_base_frame_arr_);
   }
 
   // Initialize ik_tip and tool_frame transformations - those are fixed transformations
@@ -236,7 +237,12 @@ controller_interface::return_type AdmittanceRule::update(
   // Convert inputs to ik_base frame (assumed stationary)
   transform_message_to_ik_base_frame(reference_pose, reference_pose_ik_base_frame_);
 
-  get_pose_of_control_frame_in_base_frame(current_pose_ik_base_frame_);
+  if (!open_loop_control_) {
+    get_pose_of_control_frame_in_base_frame(current_pose_ik_base_frame_);
+  } else {
+    // In open-loop mode, assume the user's requested pose was exactly achieved
+    current_pose_ik_base_frame_ = reference_pose_ik_base_frame_;
+  }
 
   // Convert all data to arrays for simpler calculation
   convert_message_to_array(reference_pose_ik_base_frame_, reference_pose_ik_base_frame_arr_);
@@ -245,7 +251,15 @@ controller_interface::return_type AdmittanceRule::update(
   std::array<double, 6> pose_error;
 
   for (auto i = 0u; i < 6; ++i) {
-    pose_error[i] = current_pose_ik_base_frame_arr_[i] - reference_pose_ik_base_frame_arr_[i];
+
+    if (!open_loop_control_) {
+      pose_error[i] = current_pose_ik_base_frame_arr_[i] - reference_pose_ik_base_frame_arr_[i];
+    } else {
+      // In open-loop mode
+      // TODO(andyz): this does not spring back
+      pose_error[i] = current_pose_ik_base_frame_arr_[i] - reference_pose_ik_base_frame_arr_[i];
+    }
+
     if (i >= 3) {
       pose_error[i] = angles::normalize_angle(pose_error[i]);
     }
@@ -264,28 +278,7 @@ controller_interface::return_type AdmittanceRule::update(
   convert_array_to_message(relative_admittance_pose_arr_, relative_admittance_pose_);
 
   // Add deltas to previously-desired pose to get the next desired pose
-  // TODO(destogl): This should also work with transform below...
-  admittance_pose_ik_base_frame_.pose.position.x = current_pose_ik_base_frame_.pose.position.x +
-                                                relative_admittance_pose_arr_.at(0);
-  admittance_pose_ik_base_frame_.pose.position.y = current_pose_ik_base_frame_.pose.position.y +
-                                                relative_admittance_pose_arr_.at(1);
-  admittance_pose_ik_base_frame_.pose.position.z = current_pose_ik_base_frame_.pose.position.z +
-                                                relative_admittance_pose_arr_.at(2);
-
-  tf2::Quaternion q(current_pose_ik_base_frame_.pose.orientation.x,
-                    current_pose_ik_base_frame_.pose.orientation.y,
-                    current_pose_ik_base_frame_.pose.orientation.z,
-                    current_pose_ik_base_frame_.pose.orientation.w);
-  tf2::Quaternion q_rot;
-  q_rot.setRPY(relative_admittance_pose_arr_.at(3), relative_admittance_pose_arr_.at(4), relative_admittance_pose_arr_.at(5));
-  q = q_rot * q;
-  q.normalize();
-  admittance_pose_ik_base_frame_.pose.orientation.w = q.w();
-  admittance_pose_ik_base_frame_.pose.orientation.x = q.x();
-  admittance_pose_ik_base_frame_.pose.orientation.y = q.y();
-  admittance_pose_ik_base_frame_.pose.orientation.z = q.z();
-
-//   tf2::doTransform(current_pose_ik_base_frame_, admittance_pose_ik_base_frame_, relative_admittance_pose_);
+  tf2::doTransform(current_pose_ik_base_frame_, admittance_pose_ik_base_frame_, relative_admittance_pose_);
 
   return calculate_desired_joint_state(current_joint_state, period, desired_joint_state);
 }
