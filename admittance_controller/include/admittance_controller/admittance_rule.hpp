@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-/// \author: Denis Stogl
+/// \authors: Denis Stogl, Andy Zelenak
 
 #ifndef ADMITTANCE_CONTROLLER__ADMITTANCE_RULE_HPP_
 #define ADMITTANCE_CONTROLLER__ADMITTANCE_RULE_HPP_
 
-#include "admittance_controller/incremental_kinematics.hpp"
+#include "admittance_controller/moveit_kinematics.hpp"
 #include "control_msgs/msg/admittance_controller_state.hpp"
 #include "controller_interface/controller_interface.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
@@ -52,7 +52,7 @@ public:
   controller_interface::return_type update(
     const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state,
     const geometry_msgs::msg::Wrench & measured_wrench,
-    const geometry_msgs::msg::PoseStamped & target_pose,
+    const geometry_msgs::msg::PoseStamped & reference_pose,
     const rclcpp::Duration & period,
     trajectory_msgs::msg::JointTrajectoryPoint & desired_joint_states
   );
@@ -60,7 +60,7 @@ public:
   controller_interface::return_type update(
     const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state,
     const geometry_msgs::msg::Wrench & measured_wrench,
-    const std::array<double, 6> & target_joint_deltas,
+    const std::array<double, 6> & reference_joint_deltas,
     const rclcpp::Duration & period,
     trajectory_msgs::msg::JointTrajectoryPoint & desired_joint_states
   );
@@ -68,8 +68,8 @@ public:
   controller_interface::return_type update(
     const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state,
     const geometry_msgs::msg::Wrench & measured_wrench,
-    const geometry_msgs::msg::PoseStamped & target_pose,
-    const geometry_msgs::msg::WrenchStamped & target_force,
+    const geometry_msgs::msg::PoseStamped & reference_pose,
+    const geometry_msgs::msg::WrenchStamped & reference_force,
     const rclcpp::Duration & period,
     trajectory_msgs::msg::JointTrajectoryPoint & desired_joint_states
   );
@@ -82,6 +82,8 @@ public:
 
 public:
   bool open_loop_control_ = false;
+  // TODO(destogl): Add parameter for this
+  bool feedforward_commanded_input_ = true;
 
   // IK related parameters
   // ik_base_frame should be stationary so vel/accel calculations are correct
@@ -123,7 +125,6 @@ protected:
   void calculate_admittance_rule(
     const std::array<double, 6> & measured_wrench,
     const std::array<double, 6> & pose_error,
-    const std::array<double, 6> & feedforward_acceleration,
     const rclcpp::Duration & period,
     std::array<double, 6> & desired_relative_pose
   );
@@ -135,7 +136,7 @@ protected:
   );
 
   // IK variables
-  std::shared_ptr<IncrementalKinematics> ik_;
+  std::shared_ptr<MoveItKinematics> ik_;
 
   // Filters
 //   using GravityCompensatorType =
@@ -161,28 +162,29 @@ protected:
   geometry_msgs::msg::PoseStamped current_pose_ik_base_frame_;
 
   // This is the feedforward pose. Where should the end effector be with no wrench applied?
-  geometry_msgs::msg::PoseStamped feedforward_pose_ik_base_frame_;
+  geometry_msgs::msg::PoseStamped reference_pose_from_joint_deltas_ik_base_frame_;
   std::array<double, 6> feedforward_velocity_ik_base_frame_;
   // Need to save the previous velocity to calculate acceleration
   std::array<double, 6> prev_feedforward_velocity_ik_base_frame_;
 
-  geometry_msgs::msg::WrenchStamped target_force_ik_base_frame_;
-  geometry_msgs::msg::PoseStamped target_pose_ik_base_frame_;
+  geometry_msgs::msg::WrenchStamped reference_force_ik_base_frame_;
+  geometry_msgs::msg::PoseStamped reference_pose_ik_base_frame_;
 
   geometry_msgs::msg::PoseStamped desired_pose_ik_base_frame_;
   geometry_msgs::msg::TransformStamped relative_desired_pose_;
 
+  bool movement_caused_by_wrench_ = false;
+
   // Pre-reserved update-loop variables
   std::array<double, 6> measured_wrench_control_frame_arr_;
-  std::array<double, 6> target_pose_ik_base_frame_arr_;
+  std::array<double, 6> reference_pose_ik_base_frame_arr_;
   std::array<double, 6> current_pose_ik_base_frame_arr_;
 
-  std::array<double, 3> angles_error_;
-
   std::array<double, 6> relative_desired_pose_arr_;
-  std::array<double, 6> desired_velocity_arr_;
-  std::array<double, 6> desired_velocity_previous_arr_;
-  std::array<double, 6> desired_acceleration_previous_arr_;
+  std::array<double, 6> desired_pose_ik_base_frame_arr_;
+  std::array<double, 6> admittance_velocity_arr_;
+  std::array<double, 6> admittance_velocity_previous_arr_;
+  std::array<double, 6> admittance_acceleration_previous_arr_;
 
   std::vector<double> relative_desired_joint_state_vec_;
 
@@ -224,6 +226,17 @@ private:
     tf2::fromMsg(input, input_tf);
     output_tf = input_tf * transform;
     tf2::toMsg(output_tf, output);
+  }
+
+  // TODO(destogl): As of C++17 use transform_reduce:
+  // https://stackoverflow.com/questions/58266717/accumulate-absolute-values-of-a-vector
+  template<typename Type>
+  double accumulate_absolute(const Type & container) {
+    double accumulator = 0.0;
+    for (auto i = 0ul; i < container.size(); i++) {
+      accumulator += std::fabs(container[i]);
+    }
+    return accumulator;
   }
 };
 

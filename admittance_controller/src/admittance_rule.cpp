@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-/// \author: Denis Stogl
+/// \authors: Denis Stogl, Andy Zelenak
 
 #include "admittance_controller/admittance_rule.hpp"
 
@@ -26,9 +26,16 @@
 #include "rclcpp/duration.hpp"
 #include "rclcpp/utilities.hpp"
 #include "tf2/utils.h"
-#include <tf2_eigen/tf2_eigen.h>
+#include "tf2_eigen/tf2_eigen.h"
 
 namespace {  // Utility namespace
+
+// Numerical accuracy checks. Used as deadbands.
+static constexpr double WRENCH_EPSILON = 1e-10;
+static constexpr double POSE_ERROR_EPSILON = 1e-12;
+static constexpr double POSE_EPSILON = 1e-15;
+static constexpr double VELOCITITY_EPSILON = 1e-20;
+static constexpr double ACCELERATION_EPSILON = 1e-20;
 
 template<typename Type>
 void convert_message_to_array(const geometry_msgs::msg::Pose & msg, Type & vector_out)
@@ -167,6 +174,7 @@ controller_interface::return_type AdmittanceRule::configure(rclcpp::Node::Shared
   measured_wrench_.header.frame_id = sensor_frame_;
 
   relative_desired_pose_.header.frame_id = control_frame_;
+  relative_desired_pose_.child_frame_id = control_frame_;
 
   identity_transform_.transform.rotation.w = 1;
 
@@ -178,7 +186,7 @@ controller_interface::return_type AdmittanceRule::configure(rclcpp::Node::Shared
   admittance_rule_calculated_values_.effort.resize(6, 0.0);
 
   // Initialize IK
-  ik_ = std::make_shared<IncrementalKinematics>(node, ik_group_name_);
+  ik_ = std::make_shared<MoveItKinematics>(node, ik_group_name_);
 
   return controller_interface::return_type::OK;
 }
@@ -186,15 +194,14 @@ controller_interface::return_type AdmittanceRule::configure(rclcpp::Node::Shared
 controller_interface::return_type AdmittanceRule::reset()
 {
   measured_wrench_control_frame_arr_.fill(0.0);
-  target_pose_ik_base_frame_arr_.fill(0.0);
+  reference_pose_ik_base_frame_arr_.fill(0.0);
   current_pose_ik_base_frame_arr_.fill(0.0);
-  angles_error_.fill(0.0);
-  desired_velocity_arr_.fill(0.0);
-  desired_velocity_previous_arr_.fill(0.0);
-  desired_acceleration_previous_arr_.fill(0.0);
+  admittance_velocity_arr_.fill(0.0);
+  admittance_velocity_previous_arr_.fill(0.0);
+  admittance_acceleration_previous_arr_.fill(0.0);
 
   get_pose_of_control_frame_in_base_frame(current_pose_ik_base_frame_);
-  feedforward_pose_ik_base_frame_ = current_pose_ik_base_frame_;
+  reference_pose_from_joint_deltas_ik_base_frame_ = current_pose_ik_base_frame_;
 
   // "Open-loop" controller uses old desired pose as current pose: current_pose(K) = desired_pose(K-1)
   // Therefore desired pose has to be set before calling *update*-method
@@ -223,13 +230,13 @@ controller_interface::return_type AdmittanceRule::reset()
 controller_interface::return_type AdmittanceRule::update(
   const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state,
   const geometry_msgs::msg::Wrench & measured_wrench,
-  const geometry_msgs::msg::PoseStamped & target_pose,
+  const geometry_msgs::msg::PoseStamped & reference_pose,
   const rclcpp::Duration & period,
   trajectory_msgs::msg::JointTrajectoryPoint & desired_joint_state
 )
 {
   // Convert inputs to ik_base frame (assumed stationary)
-  transform_message_to_ik_base_frame(target_pose, target_pose_ik_base_frame_);
+  transform_message_to_ik_base_frame(reference_pose, reference_pose_ik_base_frame_);
 
   if (!open_loop_control_) {
     get_pose_of_control_frame_in_base_frame(current_pose_ik_base_frame_);
@@ -238,33 +245,53 @@ controller_interface::return_type AdmittanceRule::update(
   }
 
   // Convert all data to arrays for simpler calculation
-  convert_message_to_array(target_pose_ik_base_frame_, target_pose_ik_base_frame_arr_);
+  convert_message_to_array(reference_pose_ik_base_frame_, reference_pose_ik_base_frame_arr_);
   convert_message_to_array(current_pose_ik_base_frame_, current_pose_ik_base_frame_arr_);
 
   std::array<double, 6> pose_error;
-  // Estimate feedforward acceleration from target_pose_ik_base_frame_arr_ and previous
-  std::array<double, 6> feedforward_acceleration;
 
   for (auto i = 0u; i < 6; ++i) {
-    pose_error[i] = current_pose_ik_base_frame_arr_[i] - target_pose_ik_base_frame_arr_[i];
+    pose_error[i] = current_pose_ik_base_frame_arr_[i] - reference_pose_ik_base_frame_arr_[i];
     if (i >= 3) {
       pose_error[i] = angles::normalize_angle(pose_error[i]);
     }
-
-    // Estimate feedforward acceleration
-    feedforward_acceleration[i] = (feedforward_velocity_ik_base_frame_[i] - prev_feedforward_velocity_ik_base_frame_[i]) / period.seconds();
+    if (std::fabs(pose_error[i]) < POSE_ERROR_EPSILON) {
+      pose_error[i] = 0.0;
+    }
   }
-  prev_feedforward_velocity_ik_base_frame_ = feedforward_velocity_ik_base_frame_;
 
   process_wrench_measurements(measured_wrench);
 
-  calculate_admittance_rule(measured_wrench_control_frame_arr_, pose_error, feedforward_acceleration, period,
-                            relative_desired_pose_arr_);
+  calculate_admittance_rule(
+    measured_wrench_control_frame_arr_, pose_error, period, relative_desired_pose_arr_);
 
   // This works in all cases because not current TF data are used
   // Do clean conversion to the goal pose using transform and not messing with Euler angles
   convert_array_to_message(relative_desired_pose_arr_, relative_desired_pose_);
-  tf2::doTransform(current_pose_ik_base_frame_, desired_pose_ik_base_frame_, relative_desired_pose_);
+
+  // Add deltas to previously-desired pose to get the next desired pose
+  // TODO(destogl): This should also work with transform below...
+  desired_pose_ik_base_frame_.pose.position.x = current_pose_ik_base_frame_.pose.position.x +
+                                                relative_desired_pose_arr_.at(0);
+  desired_pose_ik_base_frame_.pose.position.y = current_pose_ik_base_frame_.pose.position.y +
+                                                relative_desired_pose_arr_.at(1);
+  desired_pose_ik_base_frame_.pose.position.z = current_pose_ik_base_frame_.pose.position.z +
+                                                relative_desired_pose_arr_.at(2);
+
+  tf2::Quaternion q(current_pose_ik_base_frame_.pose.orientation.x,
+                    current_pose_ik_base_frame_.pose.orientation.y,
+                    current_pose_ik_base_frame_.pose.orientation.z,
+                    current_pose_ik_base_frame_.pose.orientation.w);
+  tf2::Quaternion q_rot;
+  q_rot.setRPY(relative_desired_pose_arr_.at(3), relative_desired_pose_arr_.at(4), relative_desired_pose_arr_.at(5));
+  q = q_rot * q;
+  q.normalize();
+  desired_pose_ik_base_frame_.pose.orientation.w = q.w();
+  desired_pose_ik_base_frame_.pose.orientation.x = q.x();
+  desired_pose_ik_base_frame_.pose.orientation.y = q.y();
+  desired_pose_ik_base_frame_.pose.orientation.z = q.z();
+
+//   tf2::doTransform(current_pose_ik_base_frame_, desired_pose_ik_base_frame_, relative_desired_pose_);
 
   return calculate_desired_joint_state(current_joint_state, period, desired_joint_state);
 }
@@ -273,20 +300,21 @@ controller_interface::return_type AdmittanceRule::update(
 controller_interface::return_type AdmittanceRule::update(
   const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state,
   const geometry_msgs::msg::Wrench & measured_wrench,
-  const std::array<double, 6> & target_joint_deltas,
+  const std::array<double, 6> & reference_joint_deltas,
   const rclcpp::Duration & period,
   trajectory_msgs::msg::JointTrajectoryPoint & desired_joint_state)
 {
-  std::vector<double> target_joint_deltas_vec(target_joint_deltas.begin(), target_joint_deltas.end());
-  std::vector<double> target_deltas_vec_ik_base(6);
+  std::vector<double> reference_joint_deltas_vec(
+    reference_joint_deltas.begin(), reference_joint_deltas.end());
+  std::vector<double> reference_deltas_vec_ik_base(6);
 
   // Get feed-forward cartesian deltas in the ik_base frame.
   // Since ik_base is MoveIt's working frame, the transform is identity.
   identity_transform_.header.frame_id = ik_base_frame_;
   ik_->update_robot_state(current_joint_state);
-  // FIXME: Do we need if here? Can we simply use if (!ik_->...)?
-  if (ik_->convertJointDeltasToCartesianDeltas(target_joint_deltas_vec, identity_transform_, target_deltas_vec_ik_base)) {
-  } else {
+  if (!ik_->convert_joint_deltas_to_cartesian_deltas(
+      reference_joint_deltas_vec, identity_transform_, reference_deltas_vec_ik_base))
+  {
     RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"),
                  "Conversion of joint deltas to Cartesian deltas failed. Sending current joint"
                  " values to the robot.");
@@ -295,35 +323,68 @@ controller_interface::return_type AdmittanceRule::update(
     return controller_interface::return_type::ERROR;
   }
 
-  for (auto i = 0u; i < 6; ++i) {
-    feedforward_velocity_ik_base_frame_[i] = target_deltas_vec_ik_base.at(i) / period.seconds();
-  }
-
   // Add deltas to previously-desired pose to get the next desired pose
-  // FIXME: Why not use convert_to_array method?
-  // FIXME: (?) Does this variable have a wrong name? Shouldn't it be target_pose_ik_base_frame?
-  feedforward_pose_ik_base_frame_.pose.position.x += target_deltas_vec_ik_base.at(0);
-  feedforward_pose_ik_base_frame_.pose.position.y += target_deltas_vec_ik_base.at(1);
-  feedforward_pose_ik_base_frame_.pose.position.z += target_deltas_vec_ik_base.at(2);
+  reference_pose_from_joint_deltas_ik_base_frame_.pose.position.x += reference_deltas_vec_ik_base.at(0);
+  reference_pose_from_joint_deltas_ik_base_frame_.pose.position.y += reference_deltas_vec_ik_base.at(1);
+  reference_pose_from_joint_deltas_ik_base_frame_.pose.position.z += reference_deltas_vec_ik_base.at(2);
 
-  tf2::Quaternion q(feedforward_pose_ik_base_frame_.pose.orientation.x, feedforward_pose_ik_base_frame_.pose.orientation.y, feedforward_pose_ik_base_frame_.pose.orientation.z, feedforward_pose_ik_base_frame_.pose.orientation.w);
+  tf2::Quaternion q(reference_pose_from_joint_deltas_ik_base_frame_.pose.orientation.x,
+                    reference_pose_from_joint_deltas_ik_base_frame_.pose.orientation.y,
+                    reference_pose_from_joint_deltas_ik_base_frame_.pose.orientation.z,
+                    reference_pose_from_joint_deltas_ik_base_frame_.pose.orientation.w);
   tf2::Quaternion q_rot;
-  q_rot.setRPY(target_deltas_vec_ik_base.at(3), target_deltas_vec_ik_base.at(4), target_deltas_vec_ik_base.at(5));
+  q_rot.setRPY(reference_deltas_vec_ik_base.at(3), reference_deltas_vec_ik_base.at(4), reference_deltas_vec_ik_base.at(5));
   q = q_rot * q;
   q.normalize();
-  feedforward_pose_ik_base_frame_.pose.orientation.w = q.w();
-  feedforward_pose_ik_base_frame_.pose.orientation.x = q.x();
-  feedforward_pose_ik_base_frame_.pose.orientation.y = q.y();
-  feedforward_pose_ik_base_frame_.pose.orientation.z = q.z();
+  reference_pose_from_joint_deltas_ik_base_frame_.pose.orientation.w = q.w();
+  reference_pose_from_joint_deltas_ik_base_frame_.pose.orientation.x = q.x();
+  reference_pose_from_joint_deltas_ik_base_frame_.pose.orientation.y = q.y();
+  reference_pose_from_joint_deltas_ik_base_frame_.pose.orientation.z = q.z();
 
-  return update(current_joint_state, measured_wrench, feedforward_pose_ik_base_frame_, period, desired_joint_state);
+  update(current_joint_state, measured_wrench, reference_pose_from_joint_deltas_ik_base_frame_,
+         period, desired_joint_state);
+
+  auto is_measured_wrench_zero = [&]() {
+    std::array<double, 6> measured_wrench_arr;
+    convert_message_to_array(measured_wrench, measured_wrench_arr);
+    double accumulated = accumulate_absolute(measured_wrench_arr);
+    return (accumulated < WRENCH_EPSILON || std::isnan(accumulated));
+  };
+
+  auto is_relative_admittance_pose_zero = [&]() {
+    return (accumulate_absolute(relative_desired_pose_arr_) < POSE_EPSILON);
+  };
+
+  // FIXME(destogl): (?) This logic could cause "joy" (large jerk) on contact
+  // Please do not delete until we find a solution
+  // This logic enables to execute feedforward movements without triggering admittance calculation
+  if (feedforward_commanded_input_) {
+    if (is_measured_wrench_zero() && !movement_caused_by_wrench_) {
+      for (auto i = 0u; i < desired_joint_state.positions.size(); ++i) {
+        desired_joint_state.positions[i] = current_joint_state.positions[i] + reference_joint_deltas[i];
+        desired_joint_state.velocities[i] = reference_joint_deltas[i] / period.seconds();
+      }
+    } else {
+      for (auto i = 0u; i < desired_joint_state.positions.size(); ++i) {
+        desired_joint_state.positions[i] += reference_joint_deltas[i];
+        desired_joint_state.velocities[i] += reference_joint_deltas[i] / period.seconds();
+      }
+      if (is_relative_admittance_pose_zero()) {
+        movement_caused_by_wrench_ = false;
+      } else {
+        movement_caused_by_wrench_ = true;
+      }
+    }
+  }
+
+  return controller_interface::return_type::OK;
 }
 
 controller_interface::return_type AdmittanceRule::update(
   const trajectory_msgs::msg::JointTrajectoryPoint & /*current_joint_state*/,
   const geometry_msgs::msg::Wrench & /*measured_wrench*/,
-  const geometry_msgs::msg::PoseStamped & /*target_pose*/,
-  const geometry_msgs::msg::WrenchStamped & /*target_force*/,
+  const geometry_msgs::msg::PoseStamped & /*reference_pose*/,
+  const geometry_msgs::msg::WrenchStamped & /*reference_force*/,
   const rclcpp::Duration & /*period*/,
   trajectory_msgs::msg::JointTrajectoryPoint & /*desired_joint_state*/
 )
@@ -338,12 +399,13 @@ controller_interface::return_type AdmittanceRule::update(
 controller_interface::return_type AdmittanceRule::get_controller_state(
   control_msgs::msg::AdmittanceControllerState & state_message)
 {
-  //   state_message.input_wrench_control_frame = target_wrench_control_frame_;
-  state_message.input_pose_control_frame = target_pose_ik_base_frame_;
+  //   state_message.input_wrench_control_frame = reference_wrench_control_frame_;
+  state_message.input_pose_control_frame = reference_pose_ik_base_frame_;
   state_message.measured_wrench = measured_wrench_;
   state_message.measured_wrench_filtered = measured_wrench_filtered_;
   state_message.measured_wrench_control_frame = measured_wrench_control_frame_;
 
+  // FIXME(destogl): Something is wrong with this transformation - check frames...
   try {
     auto transform = tf_buffer_->lookupTransform(endeffector_frame_, control_frame_, tf2::TimePointZero);
     tf2::doTransform(measured_wrench_control_frame_, measured_wrench_endeffector_frame_, transform);
@@ -421,16 +483,23 @@ void AdmittanceRule::process_wrench_measurements(
   transform_message_to_ik_base_frame(measured_wrench_filtered_, measured_wrench_control_frame_);
   convert_message_to_array(measured_wrench_control_frame_, measured_wrench_control_frame_arr_);
 
+  // TODO(destogl): optimize this checks!
   // If at least one measured force is nan set all to 0
   if (std::find_if(measured_wrench_control_frame_arr_.begin(), measured_wrench_control_frame_arr_.end(), [](const auto value){ return std::isnan(value); }) != measured_wrench_control_frame_arr_.end()) {
     measured_wrench_control_frame_arr_.fill(0.0);
+  }
+
+  // If a force or a torque is very small set it to 0
+  for (auto i = 0u; i < measured_wrench_control_frame_arr_.size(); ++i) {
+    if (std::fabs(measured_wrench_control_frame_arr_[i]) < WRENCH_EPSILON) {
+      measured_wrench_control_frame_arr_[i] = 0.0;
+    }
   }
 }
 
 void AdmittanceRule::calculate_admittance_rule(
   const std::array<double, 6> & measured_wrench,
   const std::array<double, 6> & pose_error,
-  const std::array<double, 6> & feedforward_acceleration,
   const rclcpp::Duration & period,
   std::array<double, 6> & desired_relative_pose
 )
@@ -439,19 +508,29 @@ void AdmittanceRule::calculate_admittance_rule(
   for (auto i = 0u; i < 6; ++i) {
     if (selected_axes_[i]) {
       // TODO(destogl): check if velocity is measured from hardware
-      const double acceleration = feedforward_acceleration[i] + (1 / mass_[i]) *
-      (measured_wrench[i] - damping_[i] * desired_velocity_arr_[i] - stiffness_[i] * pose_error[i]);
+      const double admittance_acceleration = (1 / mass_[i]) * (measured_wrench[i] -
+                                             damping_[i] * admittance_velocity_arr_[i] -
+                                             stiffness_[i] * pose_error[i]);
 
-      desired_velocity_arr_[i] += (desired_acceleration_previous_arr_[i] + acceleration) * 0.5 * period.seconds();
+      // TODO(destogl): Maybe on contact we should not use forward difference
+      admittance_velocity_arr_[i] +=
+      (admittance_acceleration_previous_arr_[i] + admittance_acceleration) * 0.5 * period.seconds();
 
-      desired_relative_pose[i] = (desired_velocity_previous_arr_[i] + desired_velocity_arr_[i]) * 0.5 * period.seconds();
+      // Calculate position
+      desired_relative_pose[i] =
+      (admittance_velocity_previous_arr_[i] + admittance_velocity_arr_[i]) * 0.5 * period.seconds();
+      if (std::fabs(desired_relative_pose[i]) < POSE_EPSILON) {
+        desired_relative_pose[i] = 0.0;
+      }
 
-      desired_acceleration_previous_arr_[i] = acceleration;
-      desired_velocity_previous_arr_[i] = desired_velocity_arr_[i];
+      // Store values for the next run
+      admittance_acceleration_previous_arr_[i] = admittance_acceleration;
+      admittance_velocity_previous_arr_[i] = admittance_velocity_arr_[i];
 
+      // Store data for publishing to state variable
       admittance_rule_calculated_values_.positions[i] = pose_error[i];
-      admittance_rule_calculated_values_.velocities[i] = desired_velocity_arr_[i];
-      admittance_rule_calculated_values_.accelerations[i] = acceleration;
+      admittance_rule_calculated_values_.velocities[i] = admittance_velocity_arr_[i];
+      admittance_rule_calculated_values_.accelerations[i] = admittance_acceleration;
       admittance_rule_calculated_values_.effort[i] = measured_wrench[i];
     }
   }
@@ -470,12 +549,13 @@ controller_interface::return_type AdmittanceRule::calculate_desired_joint_state(
 
   // Use Jacobian-based IK
   std::vector<double> relative_desired_pose_vec(relative_desired_pose_arr_.begin(), relative_desired_pose_arr_.end());
-  if (ik_->convertCartesianDeltasToJointDeltas(
+  ik_->update_robot_state(current_joint_state);
+  if (ik_->convert_cartesian_deltas_to_joint_deltas(
     relative_desired_pose_vec, identity_transform_, relative_desired_joint_state_vec_)){
     for (auto i = 0u; i < desired_joint_state.positions.size(); ++i) {
-      desired_joint_state.positions[i] = current_joint_state.positions[i] + relative_desired_joint_state_vec_[i];
+      desired_joint_state.positions[i] =
+        current_joint_state.positions[i] + relative_desired_joint_state_vec_[i];
       desired_joint_state.velocities[i] = relative_desired_joint_state_vec_[i] / period.seconds();
-      //       RCLCPP_INFO(rclcpp::get_logger("AR"), "joint states [%zu]: %f + %f = %f", i, current_joint_state.positions[i], relative_desired_joint_state_vec_[i], desired_joint_state.positions[i]);
     }
     } else {
       RCLCPP_ERROR(rclcpp::get_logger("AdmittanceRule"), "Conversion of Cartesian deltas to joint deltas failed. Sending current joint values to the robot.");

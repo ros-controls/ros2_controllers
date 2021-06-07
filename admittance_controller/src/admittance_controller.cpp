@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-/// \author: Denis Stogl
+/// \authors: Denis Stogl, Andy Zelenak
+
+#include "admittance_controller/admittance_controller.hpp"
 
 #include <chrono>
 #include <functional>
@@ -22,8 +24,6 @@
 #include <vector>
 
 #include "angles/angles.h"
-#include "admittance_controller/admittance_controller.hpp"
-#include "admittance_controller/incremental_kinematics.hpp"
 #include "controller_interface/helpers.hpp"
 #include "geometry_msgs/msg/wrench.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
@@ -497,7 +497,7 @@ controller_interface::return_type AdmittanceController::update()
   auto input_joint_cmd = input_joint_command_.readFromRT();
   auto input_pose_cmd = input_pose_command_.readFromRT();
 
-  // Position has to always there
+  // Position has to always be there
   auto num_joints = joint_state_interface_[0].size();
   trajectory_msgs::msg::JointTrajectoryPoint current_joint_states;
   current_joint_states.positions.resize(num_joints, 0.0);
@@ -539,10 +539,6 @@ controller_interface::return_type AdmittanceController::update()
         joint_deltas[index] = angles::shortest_angular_distance(current_joint_states.positions[index], (*input_joint_cmd)->points[0].positions[index]);
       }
     }
-//     RCLCPP_INFO(get_node()->get_logger(), "JointDeltas: [%e, %e, %e, %e, %e, %e]",
-//                 joint_deltas[0], joint_deltas[1], joint_deltas[2], joint_deltas[3],
-//                 joint_deltas[4], joint_deltas[5]
-//     );
 
     admittance_->update(current_joint_states, ft_values, joint_deltas, duration_since_last_call, desired_joint_states);
   } else {

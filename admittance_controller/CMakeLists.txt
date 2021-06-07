@@ -32,7 +32,7 @@ add_library(
   SHARED
   src/admittance_controller.cpp
   src/admittance_rule.cpp
-  src/incremental_kinematics.cpp
+  src/moveit_kinematics.cpp
 )
 target_include_directories(
   admittance_controller

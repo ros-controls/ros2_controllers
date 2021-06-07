@@ -14,13 +14,13 @@
 //
 /// \author: Andy Zelenak
 
-#include "admittance_controller/incremental_kinematics.hpp"
+#include "admittance_controller/moveit_kinematics.hpp"
 
 #include "tf2_eigen/tf2_eigen.h"
 
 namespace admittance_controller
 {
-IncrementalKinematics::IncrementalKinematics(const std::shared_ptr<rclcpp::Node> & node, const std::string & group_name) : node_(node)
+MoveItKinematics::MoveItKinematics(const std::shared_ptr<rclcpp::Node> & node, const std::string & group_name) : node_(node)
 {
   // TODO(andyz): Parameterize robot description and joint group
   std::unique_ptr<robot_model_loader::RobotModelLoader> model_loader_ptr =
@@ -33,7 +33,10 @@ IncrementalKinematics::IncrementalKinematics(const std::shared_ptr<rclcpp::Node>
   // By default, the MoveIt Jacobian frame is the last link
 }
 
-bool IncrementalKinematics::convertCartesianDeltasToJointDeltas(std::vector<double> & delta_x_vec, const geometry_msgs::msg::TransformStamped & control_frame_to_ik_base, std::vector<double> & delta_theta_vec)
+bool MoveItKinematics::convert_cartesian_deltas_to_joint_deltas(
+  std::vector<double> & delta_x_vec,
+  const geometry_msgs::msg::TransformStamped & control_frame_to_ik_base,
+  std::vector<double> & delta_theta_vec)
 {
   // see here for this conversion: https://stackoverflow.com/questions/26094379/typecasting-eigenvectorxd-to-stdvector
   Eigen::VectorXd delta_x = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(&delta_x_vec[0], delta_x_vec.size());
@@ -82,7 +85,10 @@ bool IncrementalKinematics::convertCartesianDeltasToJointDeltas(std::vector<doub
   return true;
 }
 
-bool IncrementalKinematics::convertJointDeltasToCartesianDeltas(std::vector<double> &  delta_theta_vec, const geometry_msgs::msg::TransformStamped & tf_ik_base_to_desired_cartesian_frame, std::vector<double> & delta_x_vec)
+bool MoveItKinematics::convert_joint_deltas_to_cartesian_deltas(
+  std::vector<double> &  delta_theta_vec,
+  const geometry_msgs::msg::TransformStamped & tf_ik_base_to_desired_cartesian_frame,
+  std::vector<double> & delta_x_vec)
 {
   // see here for this conversion: https://stackoverflow.com/questions/26094379/typecasting-eigenvectorxd-to-stdvector
   Eigen::VectorXd delta_theta = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(&delta_theta_vec[0], delta_theta_vec.size());
@@ -127,6 +133,14 @@ bool IncrementalKinematics::convertJointDeltasToCartesianDeltas(std::vector<doub
   delta_x_vec = delta_x_v;
 
   return true;
+}
+
+Eigen::Isometry3d MoveItKinematics::get_link_transform(
+  const std::string& link_name, const trajectory_msgs::msg::JointTrajectoryPoint & joint_state)
+{
+  update_robot_state(joint_state);
+
+  return kinematic_state_->getGlobalLinkTransform(link_name);
 }
 
 }  // namespace admittance_controller
