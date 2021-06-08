@@ -92,19 +92,19 @@ controller_interface::return_type AdmittanceController::init(const std::string &
     get_node()->declare_parameter<double>("admittance.stiffness.ry", std::numeric_limits<double>::quiet_NaN());
     get_node()->declare_parameter<double>("admittance.stiffness.rz", std::numeric_limits<double>::quiet_NaN());
 
-    // TODO(destogl): use filters here to make it more flexible
-    // declare and read Gravity compensation parameters
-    for (const auto & name : std::vector<std::string>{"wrist", "tool"}) {
-      get_node()->declare_parameter<double>("gravity_compensation." + name + ".CoG_x",
-                                      std::numeric_limits<double>::quiet_NaN());
-      get_node()->declare_parameter<double>("gravity_compensation." + name + ".CoG_y",
-                                      std::numeric_limits<double>::quiet_NaN());
-      get_node()->declare_parameter<double>("gravity_compensation." + name + ".CoG_z",
-                                      std::numeric_limits<double>::quiet_NaN());
-      get_node()->declare_parameter<double>("gravity_compensation." + name + ".force",
-                                      std::numeric_limits<double>::quiet_NaN());
-      get_node()->declare_parameter<std::string>("gravity_compensation." + name + ".frame_id", "");
-    }
+    // // TODO(destogl): use filters here to make it more flexible
+    // // declare and read Gravity compensation parameters
+    // for (const auto & name : std::vector<std::string>{"wrist", "tool"}) {
+    //   get_node()->declare_parameter<double>("gravity_compensation." + name + ".CoG_x",
+    //                                   std::numeric_limits<double>::quiet_NaN());
+    //   get_node()->declare_parameter<double>("gravity_compensation." + name + ".CoG_y",
+    //                                   std::numeric_limits<double>::quiet_NaN());
+    //   get_node()->declare_parameter<double>("gravity_compensation." + name + ".CoG_z",
+    //                                   std::numeric_limits<double>::quiet_NaN());
+    //   get_node()->declare_parameter<double>("gravity_compensation." + name + ".force",
+    //                                   std::numeric_limits<double>::quiet_NaN());
+    //   get_node()->declare_parameter<std::string>("gravity_compensation." + name + ".frame_id", "");
+    // }
 
 //     get_node()->declare_parameter<std::vector<double>>("")
   } catch (const std::exception & e) {
@@ -205,22 +205,22 @@ CallbackReturn AdmittanceController::on_configure(
     return CallbackReturn::ERROR;
   }
 
-  admittance_->gravity_compensation_params_.reserve(2);
-  for (const auto & name : std::vector<std::string>{"wrist", "tool"}) {
-    GravityCompensationParameters params;
-    if (
-      get_double_param_and_error_if_empty(params.cog_.vector.x, ("gravity_compensation." + name + ".CoG_x").c_str()) ||
-      get_double_param_and_error_if_empty(params.cog_.vector.y, ("gravity_compensation." + name + ".CoG_y").c_str()) ||
-      get_double_param_and_error_if_empty(params.cog_.vector.z, ("gravity_compensation." + name + ".CoG_z").c_str()) ||
-      get_double_param_and_error_if_empty(params.force_, ("gravity_compensation." + name + ".force").c_str()) ||
-      get_string_param_and_error_if_empty(params.cog_.header.frame_id, ("gravity_compensation." + name + ".frame_id").c_str())
-      )
-    {
-      return CallbackReturn::ERROR;
-    }
+  // admittance_->gravity_compensation_params_.reserve(2);
+  // for (const auto & name : std::vector<std::string>{"wrist", "tool"}) {
+  //   GravityCompensationParameters params;
+  //   if (
+  //     get_double_param_and_error_if_empty(params.cog_.vector.x, ("gravity_compensation." + name + ".CoG_x").c_str()) ||
+  //     get_double_param_and_error_if_empty(params.cog_.vector.y, ("gravity_compensation." + name + ".CoG_y").c_str()) ||
+  //     get_double_param_and_error_if_empty(params.cog_.vector.z, ("gravity_compensation." + name + ".CoG_z").c_str()) ||
+  //     get_double_param_and_error_if_empty(params.force_, ("gravity_compensation." + name + ".force").c_str()) ||
+  //     get_string_param_and_error_if_empty(params.cog_.header.frame_id, ("gravity_compensation." + name + ".frame_id").c_str())
+  //     )
+  //   {
+  //     return CallbackReturn::ERROR;
+  //   }
 
-    admittance_->gravity_compensation_params_.emplace_back(params);
-  }
+  //   admittance_->gravity_compensation_params_.emplace_back(params);
+  // }
 
   // Check if only allowed interface types are used and initialize storage to avoid memory
   // allocation during activation
