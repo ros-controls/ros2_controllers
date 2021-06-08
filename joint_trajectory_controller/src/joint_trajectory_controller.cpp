@@ -589,7 +589,7 @@ JointTrajectoryController::on_activate(const rclcpp_lifecycle::State &)
         command_interfaces_, joint_names_, interface, joint_command_interface_[index]))
     {
       RCLCPP_ERROR(
-        node_->get_logger(), "Expected %u '%s' command interfaces, got %u.",
+        node_->get_logger(), "Expected %zu '%s' command interfaces, got %zu.",
         joint_names_.size(), interface.c_str(), joint_command_interface_[index].size());
       return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
     }
@@ -602,7 +602,7 @@ JointTrajectoryController::on_activate(const rclcpp_lifecycle::State &)
         state_interfaces_, joint_names_, interface, joint_state_interface_[index]))
     {
       RCLCPP_ERROR(
-        node_->get_logger(), "Expected %u '%s' state interfaces, got %u.",
+        node_->get_logger(), "Expected %zu '%s' state interfaces, got %zu.",
         joint_names_.size(), interface.c_str(), joint_state_interface_[index].size());
       return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
     }

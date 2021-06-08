@@ -62,11 +62,9 @@ DiffDriveController::init(const std::string & controller_name)
     auto node = get_node();
     // with the lifecycle node being initialized, we can declare parameters
     node->declare_parameter<std::vector<std::string>>(
-      "left_wheel_names",
-      std::vector<std::string>());
+      "left_wheel_names", std::vector<std::string>());
     node->declare_parameter<std::vector<std::string>>(
-      "right_wheel_names",
-      std::vector<std::string>());
+      "right_wheel_names",std::vector<std::string>());
 
     node->declare_parameter<double>("wheel_separation", wheel_params_.separation);
     node->declare_parameter<int>("wheels_per_side", wheel_params_.wheels_per_side);
@@ -85,8 +83,7 @@ DiffDriveController::init(const std::string & controller_name)
     node->declare_parameter<std::string>("base_frame_id", odom_params_.base_frame_id);
     node->declare_parameter<std::vector<double>>("pose_covariance_diagonal", std::vector<double>());
     node->declare_parameter<std::vector<double>>(
-      "twist_covariance_diagonal",
-      std::vector<double>());
+      "twist_covariance_diagonal", std::vector<double>());
     node->declare_parameter<bool>("open_loop", odom_params_.open_loop);
     node->declare_parameter<bool>("enable_odom_tf", odom_params_.enable_odom_tf);
 
