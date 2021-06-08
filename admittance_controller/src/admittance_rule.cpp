@@ -34,8 +34,6 @@ namespace {  // Utility namespace
 static constexpr double WRENCH_EPSILON = 1e-10;
 static constexpr double POSE_ERROR_EPSILON = 1e-12;
 static constexpr double POSE_EPSILON = 1e-15;
-static constexpr double VELOCITITY_EPSILON = 1e-20;
-static constexpr double ACCELERATION_EPSILON = 1e-20;
 
 template<typename Type>
 void convert_message_to_array(const geometry_msgs::msg::Pose & msg, Type & vector_out)
@@ -463,6 +461,7 @@ void AdmittanceRule::process_wrench_measurements(
   //   measured_wrench_filtered_ = measured_wrench_;
   // }
 
+  // TODO(andyz): This is not flexible to work in other control frames besides ik_base
   transform_message_to_ik_base_frame(measured_wrench_filtered_, measured_wrench_ik_base_frame_);
   convert_message_to_array(measured_wrench_ik_base_frame_, measured_wrench_ik_base_frame_arr_);
 
