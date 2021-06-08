@@ -23,6 +23,7 @@
 #include <string>
 #include <vector>
 
+#include "admittance_controller/admittance_rule_impl.hpp"
 #include "angles/angles.h"
 #include "controller_interface/helpers.hpp"
 #include "filters/filter_chain.hpp"
