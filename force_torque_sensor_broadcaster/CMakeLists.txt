@@ -7,6 +7,8 @@ endif()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   controller_interface
+  control_toolbox
+  filters
   generate_parameter_library
   geometry_msgs
   hardware_interface
@@ -14,6 +16,9 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   rclcpp
   rclcpp_lifecycle
   realtime_tools
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
 )
 
 find_package(ament_cmake REQUIRED)
@@ -71,6 +76,11 @@ if(BUILD_TESTING)
   )
   ament_target_dependencies(test_force_torque_sensor_broadcaster
     hardware_interface
+  )
+  ament_target_dependencies(test_load_force_torque_sensor_broadcaster
+    controller_manager
+    hardware_interface
+    ros2_control_test_assets
   )
 endif()
 

@@ -42,3 +42,9 @@ force_torque_sensor_broadcaster:
         default_value: "",
         description: "Name of the state interface with torque values around 'z' axis.",
       }
+  additional_frames_to_publish: {
+    type: string_array,
+    default_value: [],
+    description: "Array of additional frames to publish filtered Wrench to"
+  }
+
