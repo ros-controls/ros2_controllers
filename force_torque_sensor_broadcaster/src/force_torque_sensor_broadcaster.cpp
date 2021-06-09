@@ -18,8 +18,12 @@
 
 #include "force_torque_sensor_broadcaster/force_torque_sensor_broadcaster.hpp"
 
+#include <limits>
 #include <memory>
 #include <string>
+
+#include "tf2/utils.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 namespace force_torque_sensor_broadcaster
 {
@@ -32,14 +36,16 @@ CallbackReturn ForceTorqueSensorBroadcaster::on_init()
 {
   try
   {
-    auto_declare<std::string>("sensor_name", "");
-    auto_declare<std::string>("interface_names.force.x", "");
-    auto_declare<std::string>("interface_names.force.y", "");
-    auto_declare<std::string>("interface_names.force.z", "");
-    auto_declare<std::string>("interface_names.torque.x", "");
-    auto_declare<std::string>("interface_names.torque.y", "");
-    auto_declare<std::string>("interface_names.torque.z", "");
-    auto_declare<std::string>("frame_id", "");
+    get_node()->declare_parameter<std::string>("sensor_name", "");
+    get_node()->declare_parameter<std::string>("interface_names.force.x", "");
+    get_node()->declare_parameter<std::string>("interface_names.force.y", "");
+    get_node()->declare_parameter<std::string>("interface_names.force.z", "");
+    get_node()->declare_parameter<std::string>("interface_names.torque.x", "");
+    get_node()->declare_parameter<std::string>("interface_names.torque.y", "");
+    get_node()->declare_parameter<std::string>("interface_names.torque.z", "");
+    get_node()->declare_parameter<std::string>("frame_id", "");
+    get_node()->declare_parameter<std::vector<std::string>>(
+      "additional_frames_to_publish", std::vector<std::string>({}));
   }
   catch (const std::exception & e)
   {
@@ -53,13 +59,13 @@ CallbackReturn ForceTorqueSensorBroadcaster::on_init()
 CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  sensor_name_ = node_->get_parameter("sensor_name").as_string();
-  interface_names_[0] = node_->get_parameter("interface_names.force.x").as_string();
-  interface_names_[1] = node_->get_parameter("interface_names.force.y").as_string();
-  interface_names_[2] = node_->get_parameter("interface_names.force.z").as_string();
-  interface_names_[3] = node_->get_parameter("interface_names.torque.x").as_string();
-  interface_names_[4] = node_->get_parameter("interface_names.torque.y").as_string();
-  interface_names_[5] = node_->get_parameter("interface_names.torque.z").as_string();
+  sensor_name_ = get_node()->get_parameter("sensor_name").as_string();
+  interface_names_[0] = get_node()->get_parameter("interface_names.force.x").as_string();
+  interface_names_[1] = get_node()->get_parameter("interface_names.force.y").as_string();
+  interface_names_[2] = get_node()->get_parameter("interface_names.force.z").as_string();
+  interface_names_[3] = get_node()->get_parameter("interface_names.torque.x").as_string();
+  interface_names_[4] = get_node()->get_parameter("interface_names.torque.y").as_string();
+  interface_names_[5] = get_node()->get_parameter("interface_names.torque.z").as_string();
 
   const bool no_interface_names_defined =
     std::count(interface_names_.begin(), interface_names_.end(), "") == 6;
@@ -67,7 +73,7 @@ CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
   if (sensor_name_.empty() && no_interface_names_defined)
   {
     RCLCPP_ERROR(
-      node_->get_logger(),
+      get_node()->get_logger(),
       "'sensor_name' or at least one "
       "'interface_names.[force|torque].[x|y|z]' parameter has to be specified.");
     return CallbackReturn::ERROR;
@@ -76,16 +82,16 @@ CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
   if (!sensor_name_.empty() && !no_interface_names_defined)
   {
     RCLCPP_ERROR(
-      node_->get_logger(),
+      get_node()->get_logger(),
       "both 'sensor_name' and "
       "'interface_names.[force|torque].[x|y|z]' parameters can not be specified together.");
     return CallbackReturn::ERROR;
   }
 
-  frame_id_ = node_->get_parameter("frame_id").as_string();
+  frame_id_ = get_node()->get_parameter("frame_id").as_string();
   if (frame_id_.empty())
   {
-    RCLCPP_ERROR(node_->get_logger(), "'frame_id' parameter has to be provided.");
+    RCLCPP_ERROR(get_node()->get_logger(), "'frame_id' parameter has to be provided.");
     return CallbackReturn::ERROR;
   }
 
@@ -104,10 +110,38 @@ CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
 
   try
   {
-    // register ft sensor data publisher
-    sensor_state_publisher_ = node_->create_publisher<geometry_msgs::msg::WrenchStamped>(
-      "~/wrench", rclcpp::SystemDefaultsQoS());
-    realtime_publisher_ = std::make_unique<StatePublisher>(sensor_state_publisher_);
+    filter_chain_ =
+      std::make_unique<filters::FilterChain<WrenchMsgType>>("geometry_msgs::msg::WrenchStamped");
+  }
+  catch (const std::exception & e)
+  {
+    fprintf(
+      stderr,
+      "Exception thrown during filter chain creation at configure stage with message : %s \n",
+      e.what());
+    return CallbackReturn::ERROR;
+  }
+
+  if (!filter_chain_->configure(
+        "sensor_filter_chain", get_node()->get_node_logging_interface(),
+        get_node()->get_node_parameters_interface()))
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(),
+      "Could not configure sensor filter chain, please check if the "
+      "parameters are provided correctly.");
+    return CallbackReturn::ERROR;
+  }
+
+  try
+  {
+    // register ft sensor data publishers
+    wrench_raw_pub_ =
+      get_node()->create_publisher<WrenchMsgType>("~/wrench", rclcpp::SystemDefaultsQoS());
+    wrench_raw_publisher_ = std::make_unique<WrenchRTPublisher>(wrench_raw_pub_);
+    wrench_filtered_pub_ =
+      get_node()->create_publisher<WrenchMsgType>("~/wrench_filtered", rclcpp::SystemDefaultsQoS());
+    wrench_filtered_publisher_ = std::make_unique<WrenchRTPublisher>(wrench_filtered_pub_);
   }
   catch (const std::exception & e)
   {
@@ -117,11 +151,43 @@ CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
     return CallbackReturn::ERROR;
   }
 
-  realtime_publisher_->lock();
-  realtime_publisher_->msg_.header.frame_id = frame_id_;
-  realtime_publisher_->unlock();
+  wrench_raw_.header.frame_id = frame_id_;
+  wrench_filtered_.header.frame_id = frame_id_;
 
-  RCLCPP_DEBUG(node_->get_logger(), "configure successful");
+  wrench_raw_publisher_->lock();
+  wrench_raw_publisher_->msg_.header.frame_id = frame_id_;
+  wrench_raw_publisher_->unlock();
+  wrench_filtered_publisher_->lock();
+  wrench_filtered_publisher_->msg_.header.frame_id = frame_id_;
+  wrench_filtered_publisher_->unlock();
+
+  // Add additional frames to publish if any exits
+  additional_frames_to_publish_ =
+    get_node()->get_parameter("additional_frames_to_publish").as_string_array();
+
+  if (!additional_frames_to_publish_.empty())
+  {
+    auto nr_frames = additional_frames_to_publish_.size();
+    wrench_aditional_frames_pubs_.reserve(nr_frames);
+    wrench_aditional_frames_publishers_.reserve(nr_frames);
+    for (const auto & frame : additional_frames_to_publish_)
+    {
+      WrenchPublisher pub = get_node()->create_publisher<WrenchMsgType>(
+        "~/wrench_filtered_" + frame, rclcpp::SystemDefaultsQoS());
+      wrench_aditional_frames_pubs_.emplace_back(pub);
+      wrench_aditional_frames_publishers_.emplace_back(std::make_unique<WrenchRTPublisher>(pub));
+
+      wrench_aditional_frames_publishers_.back()->lock();
+      wrench_aditional_frames_publishers_.back()->msg_.header.frame_id = frame;
+      wrench_aditional_frames_publishers_.back()->unlock();
+    }
+
+    // initialize buffer transforms
+    tf_buffer_ = std::make_shared<tf2_ros::Buffer>(get_node()->get_clock());
+    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+  }
+
+  RCLCPP_INFO(get_node()->get_logger(), "configure successful");
   return CallbackReturn::SUCCESS;
 }
 
@@ -159,11 +225,54 @@ CallbackReturn ForceTorqueSensorBroadcaster::on_deactivate(
 controller_interface::return_type ForceTorqueSensorBroadcaster::update(
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
-  if (realtime_publisher_ && realtime_publisher_->trylock())
+  wrench_raw_.header.stamp = time;
+  force_torque_sensor_->get_values_as_message(wrench_raw_.wrench);
+
+  // Filter sensor data
+  filter_chain_->update(wrench_raw_, wrench_filtered_);
+
+  // Publish sensor data
+  if (wrench_raw_publisher_ && wrench_raw_publisher_->trylock())
   {
-    realtime_publisher_->msg_.header.stamp = time;
-    force_torque_sensor_->get_values_as_message(realtime_publisher_->msg_.wrench);
-    realtime_publisher_->unlockAndPublish();
+    wrench_raw_publisher_->msg_.header.stamp = time;
+    wrench_raw_publisher_->msg_.wrench = wrench_raw_.wrench;
+    wrench_raw_publisher_->unlockAndPublish();
+  }
+
+  if (wrench_filtered_publisher_ && wrench_filtered_publisher_->trylock())
+  {
+    wrench_filtered_publisher_->msg_.header.stamp = time;
+    wrench_filtered_publisher_->msg_.wrench = wrench_filtered_.wrench;
+    wrench_filtered_publisher_->unlockAndPublish();
+  }
+
+  for (const auto & publisher : wrench_aditional_frames_publishers_)
+  {
+    try
+    {
+      auto transform =
+        tf_buffer_->lookupTransform(publisher->msg_.header.frame_id, frame_id_, tf2::TimePointZero);
+      tf2::doTransform(wrench_filtered_, publisher->msg_, transform);
+
+      if (publisher && publisher->trylock())
+      {
+        publisher->msg_.header.stamp = time;
+        publisher->unlockAndPublish();
+      }
+    }
+    catch (const tf2::TransformException & e)
+    {
+      RCLCPP_ERROR_SKIPFIRST_THROTTLE(
+        get_node()->get_logger(), *(get_node()->get_clock()), 5000,
+        "LookupTransform failed from '%s' to '%s'.", frame_id_.c_str(),
+        publisher->msg_.header.frame_id.c_str());
+      publisher->msg_.wrench.force.x = std::numeric_limits<double>::quiet_NaN();
+      publisher->msg_.wrench.force.y = std::numeric_limits<double>::quiet_NaN();
+      publisher->msg_.wrench.force.z = std::numeric_limits<double>::quiet_NaN();
+      publisher->msg_.wrench.torque.x = std::numeric_limits<double>::quiet_NaN();
+      publisher->msg_.wrench.torque.y = std::numeric_limits<double>::quiet_NaN();
+      publisher->msg_.wrench.torque.z = std::numeric_limits<double>::quiet_NaN();
+    }
   }
 
   return controller_interface::return_type::OK;

@@ -12,13 +12,18 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(control_toolbox REQUIRED)
 find_package(controller_interface REQUIRED)
+find_package(filters REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(hardware_interface REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(realtime_tools REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(tf2_ros REQUIRED)
 
 add_library(
   force_torque_sensor_broadcaster
@@ -32,13 +37,18 @@ target_include_directories(
 )
 ament_target_dependencies(
   force_torque_sensor_broadcaster
-  geometry_msgs
+  control_toolbox
   controller_interface
+  filters
+  geometry_msgs
   hardware_interface
   pluginlib
   rclcpp
   rclcpp_lifecycle
   realtime_tools
+  tf2
+  tf2_geometry_msgs
+  tf2_ros
 )
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
@@ -102,12 +112,18 @@ ament_export_libraries(
   force_torque_sensor_broadcaster
 )
 ament_export_dependencies(
+  control_toolbox
   controller_interface
+  filters
+  geometry_msgs
+  hardware_interface
   pluginlib
   rclcpp
   rclcpp_lifecycle
-  geometry_msgs
-  hardware_interface
+  realtime_tools
+  tf2
+  tf2_geometry_msgs
+  tf2_ros
 )
 
 ament_package()

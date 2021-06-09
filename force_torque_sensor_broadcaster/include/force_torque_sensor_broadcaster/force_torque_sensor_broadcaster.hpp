@@ -24,16 +24,21 @@
 #include <vector>
 
 #include "controller_interface/controller_interface.hpp"
+#include "filters/filter_chain.hpp"
 #include "force_torque_sensor_broadcaster/visibility_control.h"
 #include "geometry_msgs/msg/wrench_stamped.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_publisher.h"
 #include "semantic_components/force_torque_sensor.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+#include "tf2_ros/buffer.h"
+#include "tf2_ros/transform_listener.h"
 
 namespace force_torque_sensor_broadcaster
 {
 using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
+using WrenchMsgType = geometry_msgs::msg::WrenchStamped;
 
 class ForceTorqueSensorBroadcaster : public controller_interface::ControllerInterface
 {
@@ -66,12 +71,27 @@ protected:
   std::string sensor_name_;
   std::array<std::string, 6> interface_names_;
   std::string frame_id_;
+  std::vector<std::string> additional_frames_to_publish_;
 
   std::unique_ptr<semantic_components::ForceTorqueSensor> force_torque_sensor_;
 
-  using StatePublisher = realtime_tools::RealtimePublisher<geometry_msgs::msg::WrenchStamped>;
-  rclcpp::Publisher<geometry_msgs::msg::WrenchStamped>::SharedPtr sensor_state_publisher_;
-  std::unique_ptr<StatePublisher> realtime_publisher_;
+  WrenchMsgType wrench_raw_;
+  WrenchMsgType wrench_filtered_;
+  std::unique_ptr<filters::FilterChain<WrenchMsgType>> filter_chain_;
+
+  using WrenchPublisher = rclcpp::Publisher<WrenchMsgType>::SharedPtr;
+  using WrenchRTPublisher = realtime_tools::RealtimePublisher<WrenchMsgType>;
+  WrenchPublisher wrench_raw_pub_;
+  std::unique_ptr<WrenchRTPublisher> wrench_raw_publisher_;
+  WrenchPublisher wrench_filtered_pub_;
+  std::unique_ptr<WrenchRTPublisher> wrench_filtered_publisher_;
+
+  // Transformation variables
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+
+  std::vector<WrenchPublisher> wrench_aditional_frames_pubs_;
+  std::vector<std::unique_ptr<WrenchRTPublisher>> wrench_aditional_frames_publishers_;
 };
 
 }  // namespace force_torque_sensor_broadcaster
