@@ -95,21 +95,6 @@ controller_interface::return_type AdmittanceController::init(const std::string &
     get_node()->declare_parameter<double>("admittance.stiffness.ry", std::numeric_limits<double>::quiet_NaN());
     get_node()->declare_parameter<double>("admittance.stiffness.rz", std::numeric_limits<double>::quiet_NaN());
 
-    // // TODO(destogl): use filters here to make it more flexible
-    // // declare and read Gravity compensation parameters
-    // for (const auto & name : std::vector<std::string>{"wrist", "tool"}) {
-    //   get_node()->declare_parameter<double>("gravity_compensation." + name + ".CoG_x",
-    //                                   std::numeric_limits<double>::quiet_NaN());
-    //   get_node()->declare_parameter<double>("gravity_compensation." + name + ".CoG_y",
-    //                                   std::numeric_limits<double>::quiet_NaN());
-    //   get_node()->declare_parameter<double>("gravity_compensation." + name + ".CoG_z",
-    //                                   std::numeric_limits<double>::quiet_NaN());
-    //   get_node()->declare_parameter<double>("gravity_compensation." + name + ".force",
-    //                                   std::numeric_limits<double>::quiet_NaN());
-    //   get_node()->declare_parameter<std::string>("gravity_compensation." + name + ".frame_id", "");
-    // }
-
-//     get_node()->declare_parameter<std::vector<double>>("")
   } catch (const std::exception & e) {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
     return controller_interface::return_type::ERROR;
