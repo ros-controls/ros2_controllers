@@ -324,38 +324,9 @@ controller_interface::return_type AdmittanceRule::update(
   update(current_joint_state, measured_wrench, reference_pose_from_joint_deltas_ik_base_frame_,
          period, desired_joint_state);
 
-  auto is_measured_wrench_zero = [&]() {
-    std::array<double, 6> measured_wrench_arr;
-    convert_message_to_array(measured_wrench, measured_wrench_arr);
-    double accumulated = accumulate_absolute(measured_wrench_arr);
-    return (accumulated < WRENCH_EPSILON || std::isnan(accumulated));
-  };
-
-  auto is_relative_admittance_pose_zero = [&]() {
-    return (accumulate_absolute(relative_admittance_pose_arr_) < POSE_EPSILON);
-  };
-
-  // FIXME(destogl): (?) This logic could cause "joy" (large jerk) on contact
-  // Please do not delete until we find a solution
-  // This logic enables to execute feedforward movements without triggering admittance calculation
-  if (feedforward_commanded_input_) {
-    if (is_measured_wrench_zero() && !movement_caused_by_wrench_) {
-      for (auto i = 0u; i < desired_joint_state.positions.size(); ++i) {
-        desired_joint_state.positions[i] = current_joint_state.positions[i] + reference_joint_deltas[i];
-        desired_joint_state.velocities[i] = reference_joint_deltas[i] / period.seconds();
-        admittance_velocity_arr_[i] = 0;
-      }
-    } else {
-      for (auto i = 0u; i < desired_joint_state.positions.size(); ++i) {
-        desired_joint_state.positions[i] += reference_joint_deltas[i];
-        desired_joint_state.velocities[i] += reference_joint_deltas[i] / period.seconds();
-      }
-      if (is_relative_admittance_pose_zero()) {
-        movement_caused_by_wrench_ = false;
-      } else {
-        movement_caused_by_wrench_ = true;
-      }
-    }
+  for (auto i = 0u; i < desired_joint_state.positions.size(); ++i) {
+    desired_joint_state.positions[i] += reference_joint_deltas[i];
+    desired_joint_state.velocities[i] += reference_joint_deltas[i] / period.seconds();
   }
 
   return controller_interface::return_type::OK;
