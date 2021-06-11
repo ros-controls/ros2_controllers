@@ -340,7 +340,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
     auto it = std::find(
       allowed_interface_types_.begin(), allowed_interface_types_.end(), interface);
     if (it == allowed_interface_types_.end()) {
-      RCLCPP_ERROR(logger, "Command interface type '" + interface + "' not allowed!");
+      RCLCPP_ERROR(logger, "Command interface type '%s' not allowed!", interface.c_str());
       return CallbackReturn::FAILURE;
     }
   }
@@ -421,7 +421,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
     auto it = std::find(
       allowed_interface_types_.begin(), allowed_interface_types_.end(), interface);
     if (it == allowed_interface_types_.end()) {
-      RCLCPP_ERROR(logger, "State interface type '" + interface + "' not allowed!");
+      RCLCPP_ERROR(logger, "State interface type '%s' not allowed!", interface.c_str());
       return CallbackReturn::FAILURE;
     }
   }
