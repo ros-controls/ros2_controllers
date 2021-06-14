@@ -64,7 +64,7 @@ DiffDriveController::init(const std::string & controller_name)
     node->declare_parameter<std::vector<std::string>>(
       "left_wheel_names", std::vector<std::string>());
     node->declare_parameter<std::vector<std::string>>(
-      "right_wheel_names",std::vector<std::string>());
+      "right_wheel_names", std::vector<std::string>());
 
     node->declare_parameter<double>("wheel_separation", wheel_params_.separation);
     node->declare_parameter<int>("wheels_per_side", wheel_params_.wheels_per_side);
