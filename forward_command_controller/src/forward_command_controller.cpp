@@ -44,7 +44,7 @@ ForwardCommandController::init(const std::string & controller_name)
 
   try {
     auto node = get_node();
-    node->declare_parameter<std::vector<std::string>>("joints", {});
+    node->declare_parameter<std::vector<std::string>>("joints", std::vector<std::string>());
 
     node->declare_parameter<std::string>("interface_name", "");
   } catch (const std::exception & e) {
