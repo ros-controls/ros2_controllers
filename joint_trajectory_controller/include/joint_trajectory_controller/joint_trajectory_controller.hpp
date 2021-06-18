@@ -42,7 +42,7 @@
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
-using namespace std::chrono_literals;
+using namespace std::chrono_literals; // NOLINT
 
 namespace rclcpp_action
 {
