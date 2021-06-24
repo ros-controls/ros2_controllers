@@ -194,7 +194,8 @@ protected:
   // sorts the joints of the incoming message to our local order
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC void sort_to_local_joint_order(
     std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg);
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC bool validate_trajectory_msg(const trajectory_msgs::msg::JointTrajectory & trajectory) const;
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC bool validate_trajectory_msg(
+    const trajectory_msgs::msg::JointTrajectory & trajectory) const;
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC void add_new_trajectory_msg(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & traj_msg);
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC bool validate_trajectory_point_field(
