@@ -689,9 +689,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_trajectory_replace)
   expected_desired.positions = {points_old[0].begin(), points_old[0].end()};
   //  Check that we reached end of points_old trajectory
   // Denis: delta was 0.1 with 0.2 works for me
-  std::cout << "Now waiting for state" << std::endl;
   waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.2);
-  std::cout << "After waiting for state" << std::endl;
 
   RCLCPP_INFO(traj_node_->get_logger(), "Sending new trajectory");
   publish(time_from_start, points_partial_new);
