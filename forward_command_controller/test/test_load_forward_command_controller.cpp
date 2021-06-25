@@ -37,4 +37,6 @@ TEST(TestLoadForwardCommandController, load_controller)
     cm.load_controller(
       "test_forward_command_controller",
       "forward_command_controller/ForwardCommandController"));
+
+  rclcpp::shutdown();
 }

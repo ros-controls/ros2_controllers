@@ -38,4 +38,6 @@ TEST(TestLoadJointStateController, load_controller)
     cm.load_controller(
       "test_joint_trajectory_controller",
       "joint_trajectory_controller/JointTrajectoryController"));
+
+  rclcpp::shutdown();
 }

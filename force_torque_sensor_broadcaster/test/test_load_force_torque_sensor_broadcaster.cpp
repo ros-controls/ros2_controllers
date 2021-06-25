@@ -42,5 +42,5 @@ TEST(TestLoadForceTorqueSensorBroadcaster, load_controller)
       "test_force_torque_sensor_broadcaster",
       "force_torque_sensor_broadcaster/ForceTorqueSensorBroadcaster"));
 
-rclcpp::shutdown();
+  rclcpp::shutdown();
 }
