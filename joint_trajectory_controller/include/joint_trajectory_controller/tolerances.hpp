@@ -77,8 +77,8 @@ struct SegmentTolerances
 /**
  * \brief Populate trajectory segment tolerances using data from the ROS node.
  *
- * It is assumed that the following parameter structure is followed on the provided LifecycleNode. Unspecified parameters
- * will take the defaults shown in the comments:
+ * It is assumed that the following parameter structure is followed on the provided LifecycleNode.
+ * Unspecified parameters will take the defaults shown in the comments:
  *
  * \code
  * constraints:
