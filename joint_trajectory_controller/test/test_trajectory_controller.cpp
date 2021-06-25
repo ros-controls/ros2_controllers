@@ -455,7 +455,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_jumbled_joint_order) {
 
   traj_controller_->wait_for_trajectory(executor);
   // update for 0.25 seconds
-  // TODO(destogl): Make this time a bit shorter to increase stability on the CI? 
+  // TODO(destogl): Make this time a bit shorter to increase stability on the CI?
   //                Currently COMMON_THRESHOLD is adjusted.
   updateController(rclcpp::Duration::from_seconds(0.25));
 
