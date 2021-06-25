@@ -951,7 +951,7 @@ bool JointTrajectoryController::validate_trajectory_msg(
     }
   }
 
-  rclcpp::Duration previous_traj_time(0);
+  rclcpp::Duration previous_traj_time(0ms);
   for (auto i = 0ul; i < trajectory.points.size(); ++i) {
     if ((i > 0) && (rclcpp::Duration(trajectory.points[i].time_from_start) <= previous_traj_time)) {
       RCLCPP_ERROR(

@@ -15,6 +15,7 @@
 #ifndef JOINT_TRAJECTORY_CONTROLLER__JOINT_TRAJECTORY_CONTROLLER_HPP_
 #define JOINT_TRAJECTORY_CONTROLLER__JOINT_TRAJECTORY_CONTROLLER_HPP_
 
+#include <chrono>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -35,12 +36,13 @@
 #include "rclcpp_action/types.hpp"
 #include "rclcpp_lifecycle/lifecycle_publisher.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
-#include "rcutils/time.h"
 #include "realtime_tools/realtime_buffer.h"
 #include "realtime_tools/realtime_publisher.h"
 #include "realtime_tools/realtime_server_goal_handle.h"
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
+
+using namespace std::chrono_literals; // NOLINT
 
 namespace rclcpp_action
 {
@@ -164,7 +166,7 @@ protected:
   rclcpp::Publisher<ControllerStateMsg>::SharedPtr publisher_;
   StatePublisherPtr state_publisher_;
 
-  rclcpp::Duration state_publisher_period_ = rclcpp::Duration(RCUTILS_MS_TO_NS(20));
+  rclcpp::Duration state_publisher_period_ = rclcpp::Duration(20ms);
   rclcpp::Time last_state_publish_time_;
 
   using FollowJTrajAction = control_msgs::action::FollowJointTrajectory;
@@ -176,7 +178,7 @@ protected:
   bool allow_partial_joints_goal_ = false;
   RealtimeGoalHandleBuffer rt_active_goal_;     ///< Currently active action goal, if any.
   rclcpp::TimerBase::SharedPtr goal_handle_timer_;
-  rclcpp::Duration action_monitor_period_ = rclcpp::Duration(RCUTILS_MS_TO_NS(50));
+  rclcpp::Duration action_monitor_period_ = rclcpp::Duration(50ms);
 
   // callbacks for action_server_
   rclcpp_action::GoalResponse goal_callback(
