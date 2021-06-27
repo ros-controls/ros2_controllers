@@ -36,4 +36,6 @@ TEST(TestLoadJointStateBroadcaster, load_controller)
     cm.load_controller(
       "test_joint_state_broadcaster",
       "joint_state_broadcaster/JointStateBroadcaster"));
+
+  rclcpp::shutdown();
 }

@@ -39,4 +39,6 @@ TEST(TestLoadGripperActionControllers, load_controller)
     cm.load_controller(
       "test_gripper_action_effort_controller",
       "effort_controllers/GripperActionController"));
+
+  rclcpp::shutdown();
 }
