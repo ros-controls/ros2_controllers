@@ -181,24 +181,33 @@ protected:
   rclcpp::Duration action_monitor_period_ = rclcpp::Duration(50ms);
 
   // callbacks for action_server_
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   rclcpp_action::GoalResponse goal_callback(
     const rclcpp_action::GoalUUID & uuid,
     std::shared_ptr<const FollowJTrajAction::Goal> goal);
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   rclcpp_action::CancelResponse cancel_callback(
     const std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle);
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   void feedback_setup_callback(
     std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle);
 
   // fill trajectory_msg so it matches joints controlled by this controller
   // positions set to current position, velocities, accelerations and efforts to 0.0
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   void fill_partial_goal(
     std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg) const;
   // sorts the joints of the incoming message to our local order
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   void sort_to_local_joint_order(
     std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg);
-  bool validate_trajectory_msg(const trajectory_msgs::msg::JointTrajectory & trajectory) const;
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
+  bool validate_trajectory_msg(
+    const trajectory_msgs::msg::JointTrajectory & trajectory) const;
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   void add_new_trajectory_msg(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & traj_msg);
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   bool validate_trajectory_point_field(
     size_t joint_names_size,
     const std::vector<double> & vector_field,
@@ -207,12 +216,16 @@ protected:
 
   SegmentTolerances default_tolerances_;
 
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   void preempt_active_goal();
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   void set_hold_position();
 
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   bool reset();
 
   using JointTrajectoryPoint = trajectory_msgs::msg::JointTrajectoryPoint;
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   void publish_state(
     const JointTrajectoryPoint & desired_state,
     const JointTrajectoryPoint & current_state,

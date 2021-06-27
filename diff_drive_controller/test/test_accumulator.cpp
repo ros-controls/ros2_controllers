@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifdef _MSC_VER
+#define _USE_MATH_DEFINES
+#endif
 #include <diff_drive_controller/rolling_mean_accumulator.hpp>
 
 #include <gmock/gmock.h>
