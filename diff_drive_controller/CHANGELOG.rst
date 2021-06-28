@@ -2,6 +2,15 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Force torque sensor broadcaster (`#152 <https://github.com/ros-controls/ros2_controllers/issues/152>`_)
+  * Add  rclcpp::shutdown(); to all standalone test functions
+* Fixes for Windows (`#205 <https://github.com/ros-controls/ros2_controllers/issues/205>`_)
+  * Fix MSVC build for diff_drive_controller test
+* Fix parameter initialisation for galactic (`#199 <https://github.com/ros-controls/ros2_controllers/issues/199>`_)
+* Contributors: Akash, Denis Štogl, Tim Clephas
+
 0.3.1 (2021-05-23)
 ------------------
 

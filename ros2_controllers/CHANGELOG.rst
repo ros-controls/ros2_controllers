@@ -2,6 +2,16 @@
 Changelog for package ros2_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add imu sensor broadcaster (`#195 <https://github.com/ros-controls/ros2_controllers/issues/195>`_)
+  * Add imu_sensor_broadcaster
+  * Link IMU Sensor broadcaster in controllers docs
+  Co-authored-by: Bence Magyar <bence.magyar.robotics@gmail.com>
+* Force torque sensor broadcaster (`#152 <https://github.com/ros-controls/ros2_controllers/issues/152>`_)
+  * Add  rclcpp::shutdown(); to all standalone test functions
+* Contributors: Bence Magyar, Denis Štogl, Victor Lopez, Subhas Das
+
 0.3.1 (2021-05-23)
 ------------------
 
