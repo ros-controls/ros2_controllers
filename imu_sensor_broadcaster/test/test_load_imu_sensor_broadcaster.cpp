@@ -41,4 +41,6 @@ TEST(TestLoadIMUSensorBroadcaster, load_controller)
     cm.load_controller(
       "test_imu_sensor_broadcaster",
       "imu_sensor_broadcaster/IMUSensorBroadcaster"));
+
+  rclcpp::shutdown();
 }
