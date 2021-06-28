@@ -2,8 +2,8 @@
 Changelog for package effort_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.4.0 (2021-06-28)
+------------------
 * Force torque sensor broadcaster (`#152 <https://github.com/ros-controls/ros2_controllers/issues/152>`_)
   * Add  rclcpp::shutdown(); to all standalone test functions
 * Contributors: Denis Štogl

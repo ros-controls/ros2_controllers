@@ -2,8 +2,8 @@
 Changelog for package ros2_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.4.0 (2021-06-28)
+------------------
 * Add imu sensor broadcaster (`#195 <https://github.com/ros-controls/ros2_controllers/issues/195>`_)
   * Add imu_sensor_broadcaster
   * Link IMU Sensor broadcaster in controllers docs
