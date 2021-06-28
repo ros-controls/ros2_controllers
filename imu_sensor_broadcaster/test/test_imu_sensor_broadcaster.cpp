@@ -44,8 +44,7 @@ rclcpp::WaitResultKind wait_for(rclcpp::SubscriptionBase::SharedPtr subscription
 {
   rclcpp::WaitSet wait_set;
   wait_set.add_subscription(subscription);
-  const auto timeout = std::chrono::seconds(20);
-  return wait_set.wait(timeout).kind();
+  return wait_set.wait().kind();
 }
 
 }  // namespace
