@@ -2,6 +2,11 @@
 Changelog for package effort_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix test dependencies (`#213 <https://github.com/ros-controls/ros2_controllers/issues/213>`_)
+* Contributors: Bence Magyar
+
 0.4.0 (2021-06-28)
 ------------------
 * Force torque sensor broadcaster (`#152 <https://github.com/ros-controls/ros2_controllers/issues/152>`_)

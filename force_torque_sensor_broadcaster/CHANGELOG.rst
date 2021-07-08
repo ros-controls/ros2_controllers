@@ -2,6 +2,9 @@
 Changelog for package force_torque_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.4.0 (2021-06-28)
 ------------------
 * Fix dependency (`#208 <https://github.com/ros-controls/ros2_controllers/issues/208>`_)
