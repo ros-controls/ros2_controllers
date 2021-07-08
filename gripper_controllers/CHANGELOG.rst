@@ -2,8 +2,8 @@
 Changelog for package gripper_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.4.1 (2021-07-08)
+------------------
 * Fix test dependencies (`#213 <https://github.com/ros-controls/ros2_controllers/issues/213>`_)
 * Contributors: Bence Magyar
 
