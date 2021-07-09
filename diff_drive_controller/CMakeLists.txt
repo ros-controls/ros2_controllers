@@ -99,10 +99,6 @@ if(BUILD_TESTING)
     test_accumulator
     test/test_accumulator.cpp
   )
-
-  target_include_directories(test_accumulator PRIVATE include)
-  ament_target_dependencies(test_accumulator)
-
 endif()
 
 ament_export_dependencies(

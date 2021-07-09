@@ -24,8 +24,8 @@
 
 #include <cmath>
 
-#include "diff_drive_controller/rolling_mean_accumulator.hpp"
 #include "rclcpp/time.hpp"
+#include "rcppmath/rolling_mean_accumulator.hpp"
 
 namespace diff_drive_controller
 {
@@ -66,7 +66,7 @@ public:
 
 private:
   using RollingMeanAccumulator =
-    diff_drive_controller::RollingMeanAccumulator<double>;
+    rcppmath::RollingMeanAccumulator<double>;
 
   void integrateRungeKutta2(double linear, double angular);
   void integrateExact(double linear, double angular);
