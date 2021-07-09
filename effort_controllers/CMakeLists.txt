@@ -12,6 +12,8 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(angles REQUIRED)
+find_package(control_toolbox REQUIRED)
 find_package(forward_command_controller REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -19,9 +21,12 @@ find_package(rclcpp REQUIRED)
 add_library(effort_controllers
   SHARED
   src/joint_group_effort_controller.cpp
+  src/joint_group_position_controller.cpp
 )
 target_include_directories(effort_controllers PRIVATE include)
 ament_target_dependencies(effort_controllers
+  angles
+  control_toolbox
   forward_command_controller
   pluginlib
   rclcpp
