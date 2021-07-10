@@ -35,4 +35,6 @@ TEST(TestLoadJointGroupPositionController, load_controller)
     cm.load_controller(
       "test_joint_group_position_controller",
       "position_controllers/JointGroupPositionController"));
+
+  rclcpp::shutdown();
 }

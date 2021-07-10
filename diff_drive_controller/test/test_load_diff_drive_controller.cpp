@@ -33,4 +33,6 @@ TEST(TestLoadDiffDriveController, load_controller)
     cm.load_controller(
       "test_diff_drive_controller",
       "diff_drive_controller/DiffDriveController"));
+
+  rclcpp::shutdown();
 }

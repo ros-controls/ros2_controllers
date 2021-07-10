@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.5)
 project(gripper_controllers)
 
+if(APPLE OR WIN32)
+  message(WARNING "gripper controllers are not available on OSX or Windows")
+  return()
+endif()
+
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 14)

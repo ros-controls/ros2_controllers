@@ -1,0 +1,8 @@
+<library path="force_torque_sensor_broadcaster">
+  <class name="force_torque_sensor_broadcaster/ForceTorqueSensorBroadcaster"
+         type="force_torque_sensor_broadcaster::ForceTorqueSensorBroadcaster" base_class_type="controller_interface::ControllerInterface">
+  <description>
+    This controller publishes the readings of force-torque interfaces as geometry_msgs/WrenchStamped message.
+  </description>
+  </class>
+</library>

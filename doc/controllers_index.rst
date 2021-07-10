@@ -41,7 +41,7 @@ Guidelines and Best Practices
    *
 
 Available Controllers
-*********************
+=====================
 
 .. toctree::
    :titlesonly:
@@ -52,3 +52,12 @@ Available Controllers
    Position Controllers <../position_controllers/doc/userdoc.rst>
    Velocity Controllers <../velocity_controllers/doc/userdoc.rst>
    Effort Controllers <../effort_controllers/doc/userdoc.rst>
+
+Available Broadcasters
+======================
+
+.. toctree::
+   :titlesonly:
+
+   Joint State Broadcaster <../joint_state_broadcaster/doc/userdoc.rst>
+   Imu Sensor Broadcaster <../imu_sensor_broadcaster/doc/userdoc.rst>

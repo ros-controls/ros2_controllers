@@ -18,7 +18,6 @@ find_package(hardware_interface REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
-find_package(rcutils REQUIRED)
 find_package(realtime_tools REQUIRED)
 find_package(trajectory_msgs REQUIRED)
 
@@ -36,7 +35,6 @@ ament_target_dependencies(joint_trajectory_controller
   pluginlib
   rclcpp
   rclcpp_lifecycle
-  rcutils
   realtime_tools
   trajectory_msgs
 )
@@ -82,7 +80,6 @@ if(BUILD_TESTING)
     hardware_interface
     rclcpp
     rclcpp_lifecycle
-    rcutils
     realtime_tools
     ros2_control_test_assets
     trajectory_msgs
@@ -113,7 +110,6 @@ if(BUILD_TESTING)
     hardware_interface
     rclcpp
     rclcpp_lifecycle
-    rcutils
     ros2_control_test_assets
     trajectory_msgs
     realtime_tools

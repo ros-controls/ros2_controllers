@@ -38,8 +38,11 @@ jobs:
           target-ros2-distro: foxy
           # build all packages listed in the meta package
           package-name: |
+            diff_drive_controller
             effort_controllers
+            force_torque_sensor_broadcaster
             forward_command_controller
+            imu_sensor_broadcaster
             joint_state_broadcaster
             joint_state_controller
             joint_trajectory_controller

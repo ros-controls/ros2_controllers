@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="3">
   <name>joint_trajectory_controller</name>
-  <version>0.3.1</version>
+  <version>0.4.1</version>
   <description>Controller for executing joint-space trajectories on a group of joints</description>
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
   <maintainer email="jordan.palacios@pal-robotics.com">Jordan Palacios</maintainer>
@@ -13,12 +13,10 @@
 
   <build_depend>angles</build_depend>
   <build_depend>pluginlib</build_depend>
-  <build_depend>rcutils</build_depend>
   <build_depend>realtime_tools</build_depend>
 
   <exec_depend>angles</exec_depend>
   <exec_depend>pluginlib</exec_depend>
-  <exec_depend>rcutils</exec_depend>
   <exec_depend>realtime_tools</exec_depend>
 
   <depend>controller_interface</depend>

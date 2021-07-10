@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef _MSC_VER
 #include <cxxabi.h>
+#endif
 #include <algorithm>
 #include <chrono>
 #include <functional>
