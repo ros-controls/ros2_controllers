@@ -87,7 +87,7 @@ Details about parameters
 joint (list(string)):
   Joint names to control.
 
-command_interface (list(strong)):
+command_interface (list(string)):
   Command interfaces provided by the hardware interface for all joints.
 
   Values: [position | velocity | acceleration] (multiple allowed)

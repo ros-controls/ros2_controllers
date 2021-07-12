@@ -67,8 +67,7 @@ JointTrajectoryController::init(const std::string & controller_name)
   node_->declare_parameter<double>("state_publish_rate", 50.0);
   node_->declare_parameter<double>("action_monitor_rate", 20.0);
   node_->declare_parameter<bool>("allow_partial_joints_goal", allow_partial_joints_goal_);
-  node_->declare_parameter<bool>(
-    "open_loop_control", open_loop_control_);
+  node_->declare_parameter<bool>("open_loop_control", open_loop_control_);
   node_->declare_parameter<double>("constraints.stopped_velocity_tolerance", 0.01);
   node_->declare_parameter<double>("constraints.goal_time", 0.0);
 
