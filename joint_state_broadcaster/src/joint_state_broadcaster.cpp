@@ -48,6 +48,25 @@ using hardware_interface::HW_IF_EFFORT;
 JointStateBroadcaster::JointStateBroadcaster()
 {}
 
+controller_interface::return_type
+JointStateBroadcaster::init(const std::string & controller_name)
+{
+  auto ret = ControllerInterface::init(controller_name);
+  if (ret != controller_interface::return_type::OK) {
+    return ret;
+  }
+
+  try {
+    node_->declare_parameter<std::vector<std::string>>("joints", {});
+    node_->declare_parameter<std::vector<std::string>>("interfaces", {});
+  } catch (const std::exception & e) {
+    fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
+    return controller_interface::return_type::ERROR;
+  }
+
+  return controller_interface::return_type::OK;
+}
+
 controller_interface::InterfaceConfiguration
 JointStateBroadcaster::command_interface_configuration() const
 {
@@ -58,13 +77,38 @@ JointStateBroadcaster::command_interface_configuration() const
 controller_interface::InterfaceConfiguration JointStateBroadcaster::state_interface_configuration()
 const
 {
-  return controller_interface::InterfaceConfiguration{controller_interface::
-    interface_configuration_type::ALL};
+  controller_interface::InterfaceConfiguration state_interfaces_config;
+
+  if (joints_.empty() || interfaces_.empty()) {
+    state_interfaces_config.type = controller_interface::interface_configuration_type::ALL;
+  } else {
+    state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
+    for (const auto & joint : joints_) {
+      for (const auto & interface : interfaces_) {
+        state_interfaces_config.names.push_back(joint + "/" + interface);
+      }
+    }
+  }
+
+  return state_interfaces_config;
 }
 
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 JointStateBroadcaster::on_configure(const rclcpp_lifecycle::State & /*previous_state*/)
 {
+  joints_ = get_node()->get_parameter("joints").as_string_array();
+  interfaces_ = get_node()->get_parameter("interfaces").as_string_array();
+
+  if (joints_.empty() || interfaces_.empty()) {
+    RCLCPP_INFO(
+      node_->get_logger(), "'joints' or 'interfaces' parameter is empty. "
+      "All available state interfaces will be published");
+  } else {
+    RCLCPP_INFO(
+      node_->get_logger(),
+      "Publishing state interfaces defined in 'joints' and 'interfaces' parameters.");
+  }
+
   try {
     joint_state_publisher_ = get_node()->create_publisher<sensor_msgs::msg::JointState>(
       "joint_states", rclcpp::SystemDefaultsQoS());

@@ -23,11 +23,21 @@
 
 #include "joint_state_broadcaster/joint_state_broadcaster.hpp"
 
+#include "hardware_interface/types/hardware_interface_type_values.hpp"
+
+using hardware_interface::HW_IF_POSITION;
+using hardware_interface::HW_IF_VELOCITY;
+using hardware_interface::HW_IF_EFFORT;
+
 // subclassing and friending so we can access member varibles
 class FriendJointStateBroadcaster : public joint_state_broadcaster::JointStateBroadcaster
 {
   FRIEND_TEST(JointStateBroadcasterTest, ConfigureErrorTest);
-  FRIEND_TEST(JointStateBroadcasterTest, ConfigureSuccessTest);
+  FRIEND_TEST(JointStateBroadcasterTest, ActivateTest);
+  FRIEND_TEST(JointStateBroadcasterTest, ActivateTestWithoutJointsParameter);
+  FRIEND_TEST(JointStateBroadcasterTest, ActivateTestWithoutInterfacesParameter);
+  FRIEND_TEST(JointStateBroadcasterTest, ActivateTestTwoJointsOneInterface);
+  FRIEND_TEST(JointStateBroadcasterTest, ActivateTestOneJointTwoInterfaces);
   FRIEND_TEST(JointStateBroadcasterTest, ExtraJointStatePublishTest);
 };
 
@@ -40,30 +50,34 @@ public:
   void SetUp();
   void TearDown();
 
-  void SetUpStateBroadcaster();
+  void SetUpStateBroadcaster(
+    const std::vector<std::string> & joint_names = {},
+    const std::vector<std::string> & interfaces = {}
+  );
 
 protected:
   // dummy joint state values used for tests
   const std::vector<std::string> joint_names_ = {"joint1", "joint2", "joint3"};
+  const std::vector<std::string> interface_names_ = {HW_IF_POSITION, HW_IF_VELOCITY, HW_IF_EFFORT};
   std::vector<double> joint_values_ = {1.1, 2.1, 3.1};
 
-  hardware_interface::StateInterface joint_1_pos_state_{joint_names_[0], "position",
+  hardware_interface::StateInterface joint_1_pos_state_{joint_names_[0], interface_names_[0],
     &joint_values_[0]};
-  hardware_interface::StateInterface joint_2_pos_state_{joint_names_[1], "position",
+  hardware_interface::StateInterface joint_2_pos_state_{joint_names_[1], interface_names_[0],
     &joint_values_[1]};
-  hardware_interface::StateInterface joint_3_pos_state_{joint_names_[2], "position",
+  hardware_interface::StateInterface joint_3_pos_state_{joint_names_[2], interface_names_[0],
     &joint_values_[2]};
-  hardware_interface::StateInterface joint_1_vel_state_{joint_names_[0], "velocity",
+  hardware_interface::StateInterface joint_1_vel_state_{joint_names_[0], interface_names_[1],
     &joint_values_[0]};
-  hardware_interface::StateInterface joint_2_vel_state_{joint_names_[1], "velocity",
+  hardware_interface::StateInterface joint_2_vel_state_{joint_names_[1], interface_names_[1],
     &joint_values_[1]};
-  hardware_interface::StateInterface joint_3_vel_state_{joint_names_[2], "velocity",
+  hardware_interface::StateInterface joint_3_vel_state_{joint_names_[2], interface_names_[1],
     &joint_values_[2]};
-  hardware_interface::StateInterface joint_1_eff_state_{joint_names_[0], "effort",
+  hardware_interface::StateInterface joint_1_eff_state_{joint_names_[0], interface_names_[2],
     &joint_values_[0]};
-  hardware_interface::StateInterface joint_2_eff_state_{joint_names_[1], "effort",
+  hardware_interface::StateInterface joint_2_eff_state_{joint_names_[1], interface_names_[2],
     &joint_values_[1]};
-  hardware_interface::StateInterface joint_3_eff_state_{joint_names_[2], "effort",
+  hardware_interface::StateInterface joint_3_eff_state_{joint_names_[2], interface_names_[2],
     &joint_values_[2]};
 
   std::unique_ptr<FriendJointStateBroadcaster> state_broadcaster_;
