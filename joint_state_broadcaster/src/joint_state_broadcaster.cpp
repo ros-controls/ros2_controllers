@@ -53,6 +53,12 @@ CallbackReturn JointStateBroadcaster::on_init()
     auto_declare<bool>("use_local_topics", false);
     auto_declare<std::vector<std::string>>("joints", std::vector<std::string>({}));
     auto_declare<std::vector<std::string>>("interfaces", std::vector<std::string>({}));
+    auto_declare<std::string>(
+      std::string("map_interface_to_joint_state.") + HW_IF_POSITION, HW_IF_POSITION);
+    auto_declare<std::string>(
+      std::string("map_interface_to_joint_state.") + HW_IF_VELOCITY, HW_IF_VELOCITY);
+    auto_declare<std::string>(
+      std::string("map_interface_to_joint_state.") + HW_IF_EFFORT, HW_IF_EFFORT);
   }
   catch (const std::exception & e)
   {
@@ -104,16 +110,44 @@ CallbackReturn JointStateBroadcaster::on_configure(
   if (use_all_available_interfaces())
   {
     RCLCPP_INFO(
-      node_->get_logger(),
+      get_node()->get_logger(),
       "'joints' or 'interfaces' parameter is empty. "
       "All available state interfaces will be published");
+    joints_.clear();
+    interfaces_.clear();
   }
   else
   {
     RCLCPP_INFO(
-      node_->get_logger(),
+      get_node()->get_logger(),
       "Publishing state interfaces defined in 'joints' and 'interfaces' parameters.");
   }
+
+  auto get_map_interface_parameter = [&](const std::string & interface) {
+    std::string interface_to_map =
+      get_node()
+        ->get_parameter(std::string("map_interface_to_joint_state.") + interface)
+        .as_string();
+
+    if (std::find(interfaces_.begin(), interfaces_.end(), interface) != interfaces_.end())
+    {
+      map_interface_to_joint_state_[interface] = interface;
+      RCLCPP_WARN(
+        get_node()->get_logger(),
+        "Mapping from '%s' to interface '%s' will not be done, because '%s' is defined "
+        "in 'interface' parameter.",
+        interface_to_map.c_str(), interface.c_str(), interface.c_str());
+    }
+    else
+    {
+      map_interface_to_joint_state_[interface_to_map] = interface;
+    }
+  };
+
+  map_interface_to_joint_state_ = {};
+  get_map_interface_parameter(HW_IF_POSITION);
+  get_map_interface_parameter(HW_IF_VELOCITY);
+  get_map_interface_parameter(HW_IF_EFFORT);
 
   try
   {
@@ -200,6 +234,11 @@ bool JointStateBroadcaster::init_joint_data()
       name_if_value_mapping_[si->get_name()] = {};
     }
     // add interface name
+    std::string interface_name = si->get_interface_name();
+    if (map_interface_to_joint_state_.count(interface_name) > 0)
+    {
+      interface_name = map_interface_to_joint_state_[interface_name];
+    }
     name_if_value_mapping_[si->get_name()][si->get_interface_name()] = kUninitializedValue;
   }
 
@@ -291,11 +330,16 @@ controller_interface::return_type JointStateBroadcaster::update(
 {
   for (const auto & state_interface : state_interfaces_)
   {
+    std::string interface_name = state_interface.get_interface_name();
+    if (map_interface_to_joint_state_.count(interface_name) > 0)
+    {
+      interface_name = map_interface_to_joint_state_[interface_name];
+    }
     name_if_value_mapping_[state_interface.get_name()][state_interface.get_interface_name()] =
       state_interface.get_value();
     RCLCPP_DEBUG(
-      get_node()->get_logger(), "%s/%s: %f\n", state_interface.get_name().c_str(),
-      state_interface.get_interface_name().c_str(), state_interface.get_value());
+      get_node()->get_logger(), "%s: %f\n", state_interface.get_full_name().c_str(),
+      state_interface.get_value());
   }
 
   joint_state_msg_.header.stamp = time;
