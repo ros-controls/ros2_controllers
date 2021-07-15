@@ -336,9 +336,6 @@ TEST_F(JointStateBroadcasterTest, ActivateTestTwoJointsOneInterface)
   ASSERT_THAT(
     state_broadcaster_->dynamic_joint_state_msg_.interface_values[1].interface_names,
     ElementsAreArray(IF_NAMES));
-//   ASSERT_THAT(
-//     state_broadcaster_->dynamic_joint_state_msg_.interface_values[2].interface_names,
-//     ElementsAreArray(IF_NAMES));
 
   // publishers initialized
   ASSERT_TRUE(state_broadcaster_->joint_state_publisher_);
@@ -376,12 +373,6 @@ TEST_F(JointStateBroadcasterTest, ActivateTestOneJointTwoInterfaces)
   ASSERT_THAT(
     state_broadcaster_->dynamic_joint_state_msg_.interface_values[0].interface_names,
     ElementsAreArray(IF_NAMES));
-//   ASSERT_THAT(
-//     state_broadcaster_->dynamic_joint_state_msg_.interface_values[1].interface_names,
-//     ElementsAreArray(IF_NAMES));
-//   ASSERT_THAT(
-//     state_broadcaster_->dynamic_joint_state_msg_.interface_values[2].interface_names,
-//     ElementsAreArray(IF_NAMES));
 
   // publishers initialized
   ASSERT_TRUE(state_broadcaster_->joint_state_publisher_);
