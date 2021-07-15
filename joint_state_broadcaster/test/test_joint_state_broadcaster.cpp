@@ -213,7 +213,7 @@ TEST_F(JointStateBroadcasterTest, JointStatePublishTest)
     {
     };
   auto subscription = test_node.create_subscription<sensor_msgs::msg::JointState>(
-    "joint_states",
+    "joint_state_broadcaster/joint_states",
     10,
     subs_callback);
 
@@ -253,7 +253,7 @@ TEST_F(JointStateBroadcasterTest, DynamicJointStatePublishTest)
     {
     };
   auto subscription = test_node.create_subscription<control_msgs::msg::DynamicJointState>(
-    "dynamic_joint_states",
+    "joint_state_broadcaster/dynamic_joint_states",
     10,
     subs_callback);
 
