@@ -83,7 +83,7 @@ protected:
   // Optional parameters
   std::vector<std::string> joints_;
   std::vector<std::string> interfaces_;
-
+  std::unordered_map<std::string, std::string> map_interface_to_joint_state_;
 
   //  For the JointState message,
   //  we store the name of joints with compatible interfaces
