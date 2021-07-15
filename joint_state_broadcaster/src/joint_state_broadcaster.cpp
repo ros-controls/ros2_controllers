@@ -67,11 +67,11 @@ JointStateBroadcaster::on_configure(const rclcpp_lifecycle::State & /*previous_s
 {
   try {
     joint_state_publisher_ = get_node()->create_publisher<sensor_msgs::msg::JointState>(
-      "joint_states", rclcpp::SystemDefaultsQoS());
+      "~/joint_states", rclcpp::SystemDefaultsQoS());
 
     dynamic_joint_state_publisher_ =
       get_node()->create_publisher<control_msgs::msg::DynamicJointState>(
-      "dynamic_joint_states", rclcpp::SystemDefaultsQoS());
+      "~/dynamic_joint_states", rclcpp::SystemDefaultsQoS());
   } catch (const std::exception & e) {
     // get_node() may throw, logging raw here
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
