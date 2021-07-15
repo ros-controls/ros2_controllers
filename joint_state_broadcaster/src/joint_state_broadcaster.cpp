@@ -51,6 +51,8 @@ CallbackReturn JointStateBroadcaster::on_init()
   try
   {
     auto_declare<bool>("use_local_topics", false);
+    auto_declare<std::vector<std::string>>("joints", std::vector<std::string>({}));
+    auto_declare<std::vector<std::string>>("interfaces", std::vector<std::string>({}));
   }
   catch (const std::exception & e)
   {
@@ -71,17 +73,40 @@ JointStateBroadcaster::command_interface_configuration() const
 controller_interface::InterfaceConfiguration JointStateBroadcaster::state_interface_configuration()
   const
 {
-  return controller_interface::InterfaceConfiguration{
-    controller_interface::interface_configuration_type::ALL};
+  controller_interface::InterfaceConfiguration state_interfaces_config;
+
+  if (joints_.empty() || interfaces_.empty()) {
+    state_interfaces_config.type = controller_interface::interface_configuration_type::ALL;
+  } else {
+    state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
+    for (const auto & joint : joints_) {
+      for (const auto & interface : interfaces_) {
+        state_interfaces_config.names.push_back(joint + "/" + interface);
+      }
+    }
+  }
+
+  return state_interfaces_config;
 }
 
 CallbackReturn JointStateBroadcaster::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   use_local_topics_ = get_node()->get_parameter("use_local_topics").as_bool();
+  joints_ = get_node()->get_parameter("joints").as_string_array();
+  interfaces_ = get_node()->get_parameter("interfaces").as_string_array();
 
-  try
-  {
+  if (joints_.empty() || interfaces_.empty()) {
+    RCLCPP_INFO(
+      node_->get_logger(), "'joints' or 'interfaces' parameter is empty. "
+      "All available state interfaces will be published");
+  } else {
+    RCLCPP_INFO(
+      node_->get_logger(),
+      "Publishing state interfaces defined in 'joints' and 'interfaces' parameters.");
+  }
+
+  try {
     const std::string topic_name_prefix = use_local_topics_ ? "~/" : "";
 
     joint_state_publisher_ = get_node()->create_publisher<sensor_msgs::msg::JointState>(

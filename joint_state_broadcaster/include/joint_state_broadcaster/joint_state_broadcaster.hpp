@@ -31,11 +31,27 @@ namespace joint_state_broadcaster
 {
 using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
+/**
+ * \brief Joint State Broadcaster for all or some state in ros2_control system.
+ *
+ * This class forwards the command signal down to a set of joints
+ * on the specified interface.
+ *
+ * \param joints Names of the joints to control.
+ * \param interface_name Name of the interface to command.
+ *
+ * Subscribes to:
+ * - \b commands (std_msgs::msg::Float64MultiArray) : The commands to apply.
+ */
 class JointStateBroadcaster : public controller_interface::ControllerInterface
 {
 public:
   JOINT_STATE_BROADCASTER_PUBLIC
   JointStateBroadcaster();
+
+  JOINT_STATE_BROADCASTER_PUBLIC
+  controller_interface::return_type
+  init(const std::string & controller_name) override;
 
   JOINT_STATE_BROADCASTER_PUBLIC
   controller_interface::InterfaceConfiguration command_interface_configuration() const override;
@@ -65,7 +81,10 @@ protected:
   void init_dynamic_joint_state_msg();
 
 protected:
+  // Optional parameters
   bool use_local_topics_;
+  std::vector<std::string> joints_;
+  std::vector<std::string> interfaces_;
 
   //  For the JointState message,
   //  we store the name of joints with compatible interfaces
