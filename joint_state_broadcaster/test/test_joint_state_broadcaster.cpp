@@ -473,6 +473,7 @@ TEST_F(JointStateBroadcasterTest, ActivateTestTwoJointTwoInterfacesOneMissing)
   ASSERT_TRUE(state_broadcaster_->dynamic_joint_state_publisher_);
 }
 
+
 TEST_F(JointStateBroadcasterTest, UpdateTest)
 {
   SetUpStateBroadcaster();

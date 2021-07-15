@@ -115,8 +115,7 @@ CallbackReturn JointStateBroadcaster::on_configure(
       "Publishing state interfaces defined in 'joints' and 'interfaces' parameters.");
   }
 
-  try
-  {
+  try {
     const std::string topic_name_prefix = use_local_topics_ ? "~/" : "";
 
     joint_state_publisher_ = get_node()->create_publisher<sensor_msgs::msg::JointState>(
