@@ -48,6 +48,22 @@ using hardware_interface::HW_IF_EFFORT;
 JointStateBroadcaster::JointStateBroadcaster()
 {}
 
+controller_interface::return_type
+JointStateBroadcaster::init(const std::string & controller_name)
+{
+  auto ret = ControllerInterface::init(controller_name);
+  if (ret != controller_interface::return_type::OK) {
+    return ret;
+  }
+
+  try {
+    get_node()->declare_parameter<bool>("use_local_topics", false);
+  } catch (const std::exception & e) {
+    fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
+    return controller_interface::return_type::ERROR;
+  }
+}
+
 controller_interface::InterfaceConfiguration
 JointStateBroadcaster::command_interface_configuration() const
 {
@@ -65,13 +81,17 @@ const
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 JointStateBroadcaster::on_configure(const rclcpp_lifecycle::State & /*previous_state*/)
 {
+  use_local_topics_ = get_node()->get_parameter("use_local_topics").as_bool();
+
   try {
+    const std::string topic_name_prefix = use_local_topics_ ? "~/" : "";
+
     joint_state_publisher_ = get_node()->create_publisher<sensor_msgs::msg::JointState>(
-      "~/joint_states", rclcpp::SystemDefaultsQoS());
+      topic_name_prefix + "joint_states", rclcpp::SystemDefaultsQoS());
 
     dynamic_joint_state_publisher_ =
       get_node()->create_publisher<control_msgs::msg::DynamicJointState>(
-      "~/dynamic_joint_states", rclcpp::SystemDefaultsQoS());
+      topic_name_prefix + "dynamic_joint_states", rclcpp::SystemDefaultsQoS());
   } catch (const std::exception & e) {
     // get_node() may throw, logging raw here
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
