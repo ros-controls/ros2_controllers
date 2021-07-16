@@ -40,3 +40,26 @@ Parameters
 ``extra_joints``
 
   Optional parameter (string array) with names of extra joints to be added to ``joint_states`` and ``dynamic_joint_states`` with state set to 0.
+
+
+``map_interface_to_joint_state``
+
+  Optional parameter (map) providing mapping between custom interface names to standard fields in ``joints_states`` message.
+  Usecases:
+
+    1. Hydraulics robots where feedback and commanded values have offset.
+       Typically one would map both values in separate interfaces in the framework.
+       To visualize those data multiple JSB's and robot_state_publishers would be used to visualize both values in RViz.
+
+    1. A robot provides different measuring tequniques for its joint values which results in slightly different values.
+       Typically one would use separate interface for providing those values in the framework.
+       Using multiple JSB's we could publish and show both in RViz.
+
+  Format (each line is optional):
+
+  .. code-block:: yaml
+
+     map_interface_to_joint_state
+       position: <custom_interfce>
+       velocity: <custom_interface>
+       effort: <custom_interface>
