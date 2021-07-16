@@ -62,6 +62,8 @@ JointStateBroadcaster::init(const std::string & controller_name)
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
     return controller_interface::return_type::ERROR;
   }
+
+  return controller_interface::return_type::OK;
 }
 
 controller_interface::InterfaceConfiguration
