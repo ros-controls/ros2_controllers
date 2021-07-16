@@ -22,28 +22,21 @@ Parameters
 ----------
 
 ``use_local_topics``
-
   Optional parameter (boolean; default: ``False``) defining if ``joint_states`` and ``dynamic_joint_states`` messages should be published into local namespace, e.g., ``/my_state_broadcaster/joint_states``.
-
 
 ``joints``
   Optional parameter (string array) to support broadcasting of only specific joints and interfaces.
   It has to be used in combination with the ``interfaces`` parameter.
   Joint state broadcaster asks for access to all defined interfaces on all defined joints.
 
-
 ``interfaces``
   Optional parameter (string array) to support broadcasting of only specific joints and interfaces.
   It has to be used in combination with the ``joints`` parameter.
 
-
 ``extra_joints``
-
   Optional parameter (string array) with names of extra joints to be added to ``joint_states`` and ``dynamic_joint_states`` with state set to 0.
 
-
 ``map_interface_to_joint_state``
-
   Optional parameter (map) providing mapping between custom interface names to standard fields in ``joints_states`` message.
   Usecases:
 
@@ -51,7 +44,7 @@ Parameters
        Typically one would map both values in separate interfaces in the framework.
        To visualize those data multiple JSB's and robot_state_publishers would be used to visualize both values in RViz.
 
-    1. A robot provides different measuring tequniques for its joint values which results in slightly different values.
+    1. A robot provides different measuring techniques for its joint values which results in slightly different values.
        Typically one would use separate interface for providing those values in the framework.
        Using multiple JSB's we could publish and show both in RViz.
 
@@ -59,7 +52,7 @@ Parameters
 
   .. code-block:: yaml
 
-     map_interface_to_joint_state
-       position: <custom_interfce>
-       velocity: <custom_interface>
-       effort: <custom_interface>
+      map_interface_to_joint_state
+        position: <custom_interfce>
+        velocity: <custom_interface>
+        effort: <custom_interface>
