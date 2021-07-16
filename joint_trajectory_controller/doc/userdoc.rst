@@ -95,6 +95,7 @@ The following version of the Joint Trajectory Controller are available mapping t
   - position_velocity_acceleration_controllers::JointTrajectoryController
     - Input: position, [velocity, [acceleration]]
     - Output: position, velocity and acceleration
+
 ..   - velocity_controllers::JointTrajectoryController
 ..     - Input: position, [velocity, [acceleration]]
 ..     - Output: velocity
