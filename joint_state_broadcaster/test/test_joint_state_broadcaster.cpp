@@ -336,10 +336,8 @@ TEST_F(JointStateBroadcasterTest, ExtraJointStatePublishTest)
   SetUpStateBroadcaster();
 
   // Add extra joints as parameters
-  auto broadcaster_node = state_broadcaster_->get_node();
   const std::vector<std::string> extra_joint_names = {"extra1", "extra2", "extra3"};
-  const rclcpp::Parameter extra_joints_parameters("extra_joints", extra_joint_names);
-  broadcaster_node->set_parameter(extra_joints_parameters);
+  state_broadcaster_->get_node()->set_parameter({"extra_joints", extra_joint_names});
 
   // configure ok
   ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
