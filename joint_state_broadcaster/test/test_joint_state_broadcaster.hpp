@@ -42,6 +42,10 @@ public:
 
   void SetUpStateBroadcaster();
 
+  void test_published_joint_state_message(const std::string & topic);
+
+  void test_published_dynamic_joint_state_message(const std::string & topic);
+
 protected:
   // dummy joint state values used for tests
   const std::vector<std::string> joint_names_ = {"joint1", "joint2", "joint3"};

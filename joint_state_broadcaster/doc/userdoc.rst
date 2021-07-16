@@ -18,4 +18,11 @@ All available *joint state interfaces* are used by this broadcaster.
 Parameters
 ^^^^^^^^^^
 
-The parameter ``extra_joints`` is optional and is an array of strings consisting of the names of the extra joints that will be added to ``/joint_states`` and ``/dynamic_joint_states`` with state set to 0.
+``use_local_topics``
+
+  Optional parameter (boolean; default: ``False``) defining if ``joint_states`` and ``dynamic_joint_states`` messages should be published into local namespace, e.g., ``/my_state_broadcaster/joint_states``.
+
+
+``extra_joints``
+
+  Optional parameter (string array) with names of extra joints to be added to ``joint_states`` and ``dynamic_joint_states`` with state set to 0.
