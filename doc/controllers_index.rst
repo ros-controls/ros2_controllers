@@ -33,10 +33,11 @@ Guidelines and Best Practices
 =============================
 
 .. toctree::
-   :titlesonly: 1
+   :titlesonly:
    :glob:
 
    *
+
 
 Available Controllers
 =====================
@@ -50,6 +51,7 @@ Available Controllers
    Position Controllers <../position_controllers/doc/userdoc.rst>
    Velocity Controllers <../velocity_controllers/doc/userdoc.rst>
    Effort Controllers <../effort_controllers/doc/userdoc.rst>
+
 
 Available Broadcasters
 ======================

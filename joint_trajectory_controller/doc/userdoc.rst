@@ -1,7 +1,7 @@
 .. _joint_trajectory_controller_userdoc:
 
 joint_trajectory_controller
----------------------------
+===========================
 
 Controller for executing joint-space trajectories on a group of joints. Trajectories are specified as a set of waypoints to be reached at specific time instants, which the controller attempts to execute as well as the mechanism allows. Waypoints consist of positions, and optionally velocities and accelerations.
 
