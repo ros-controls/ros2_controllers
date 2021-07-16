@@ -19,25 +19,21 @@ Parameters
 ^^^^^^^^^^
 
 ``joints``
-
   Optional parameter (string array) to support broadcasting of only specific joints and interfaces.
   It has to be used in combination with ``interfaces`` parameters.
   Joint state broadcaster asks for access to all defined interfaces on all defined joints.
 
 
 ``interfaces``
-
   Optional parameter (string array) to support broadcasting of only specific joints and interfaces.
   It has to be used in combination with ``joints`` parameters.
 
 
 ``extra_joints``
-
   Optional parameter (string array) with names of extra joints to be added to ``joint_states`` and ``dynamic_joint_states`` with state set to 0.
 
 
 ``map_interface_to_joint_state``
-
   Optional parameter (map) providing mapping between custom inteface names to standard fields in ``joints_states` message.
   Usecases:
 
@@ -53,7 +49,7 @@ Parameters
 
   .. code-block:: yaml
 
-     map_interface_to_joint_state
-       position: <custom_interfce>
-       velocity: <custom_interface>
-       effort: <custom_interface>
+      map_interface_to_joint_state
+        position: <custom_interfce>
+        velocity: <custom_interface>
+        effort: <custom_interface>
