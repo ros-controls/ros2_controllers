@@ -16,7 +16,7 @@ jobs:
     - uses: ros-tooling/setup-ros@v0.2
     - uses: ros-tooling/action-ros-lint@v0.1
       with:
-        distribution: foxy
+        distribution: rolling
         linter: ${{ matrix.linter }}
         package-name:
             diff_drive_controller
