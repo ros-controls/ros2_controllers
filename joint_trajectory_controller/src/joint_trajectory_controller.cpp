@@ -1080,6 +1080,25 @@ void JointTrajectoryController::set_hold_position()
   add_new_trajectory_msg(traj_msg);
 }
 
+bool JointTrajectoryController::contains_interface_type(
+  const std::vector<std::string> & interface_type_list, const std::string & interface_type)
+{
+  return std::find(interface_type_list.begin(), interface_type_list.end(), interface_type) !=
+         interface_type_list.end();
+}
+
+void JointTrajectoryController::resize_joint_trajectory_point(
+  trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size)
+{
+  point.positions.resize(size);
+  if (has_velocity_state_interface_) {
+    point.velocities.resize(size);
+  }
+  if (has_acceleration_state_interface_) {
+    point.accelerations.resize(size);
+  }
+}
+
 }  // namespace joint_trajectory_controller
 
 #include "pluginlib/class_list_macros.hpp"

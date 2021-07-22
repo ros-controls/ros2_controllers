@@ -246,23 +246,10 @@ protected:
 
 private:
   bool contains_interface_type(
-    const std::vector<std::string> & interface_type_list, const std::string & interface_type)
-  {
-    return std::find(interface_type_list.begin(), interface_type_list.end(), interface_type) !=
-           interface_type_list.end();
-  }
+    const std::vector<std::string> & interface_type_list, const std::string & interface_type);
 
   void resize_joint_trajectory_point(
-    trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size)
-  {
-    point.positions.resize(size);
-    if (has_velocity_state_interface_) {
-      point.velocities.resize(size);
-    }
-    if (has_acceleration_state_interface_) {
-      point.accelerations.resize(size);
-    }
-  }
+    trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size);
 };
 
 }  // namespace joint_trajectory_controller
