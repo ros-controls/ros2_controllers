@@ -67,6 +67,7 @@ JointTrajectoryController::init(const std::string & controller_name)
   node_->declare_parameter<double>("state_publish_rate", 50.0);
   node_->declare_parameter<double>("action_monitor_rate", 20.0);
   node_->declare_parameter<bool>("allow_partial_joints_goal", allow_partial_joints_goal_);
+  node_->declare_parameter<bool>("open_loop_control", open_loop_control_);
   node_->declare_parameter<double>("constraints.stopped_velocity_tolerance", 0.01);
   node_->declare_parameter<double>("constraints.goal_time", 0.0);
 
@@ -108,17 +109,6 @@ JointTrajectoryController::update()
     return controller_interface::return_type::OK;
   }
 
-  auto resize_joint_trajectory_point =
-    [&](trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size)
-    {
-      point.positions.resize(size);
-      if (has_velocity_state_interface_) {
-        point.velocities.resize(size);
-      }
-      if (has_acceleration_state_interface_) {
-        point.accelerations.resize(size);
-      }
-    };
   auto compute_error_for_joint = [&](JointTrajectoryPoint & error, int index,
       const JointTrajectoryPoint & current, const JointTrajectoryPoint & desired)
     {
@@ -146,13 +136,6 @@ JointTrajectoryController::update()
   const auto joint_num = joint_names_.size();
   resize_joint_trajectory_point(state_current, joint_num);
 
-  auto assign_point_from_interface = [&, joint_num](
-    std::vector<double> & trajectory_point_interface, const auto & joint_inteface)
-    {
-      for (auto index = 0ul; index < joint_num; ++index) {
-        trajectory_point_interface[index] = joint_inteface[index].get().get_value();
-      }
-    };
   // TODO(anyone): can I here also use const on joint_interface since the reference_wrapper is not
   // changed, but its value only?
   auto assign_interface_from_point = [&, joint_num](
@@ -165,32 +148,19 @@ JointTrajectoryController::update()
 
   // current state update
   state_current.time_from_start.set__sec(0);
-
-  // Assign values from the hardware
-  // Position states always exist
-  assign_point_from_interface(state_current.positions, joint_state_interface_[0]);
-  // velocity and acceleration states are optional
-  if (has_velocity_state_interface_) {
-    assign_point_from_interface(state_current.velocities, joint_state_interface_[1]);
-    // Acceleration is used only in combination with velocity
-    if (has_acceleration_state_interface_) {
-      assign_point_from_interface(state_current.accelerations, joint_state_interface_[2]);
-    } else {
-      // Make empty so the property is ignored during interpolation
-      state_current.accelerations.clear();
-    }
-  } else {
-    // Make empty so the property is ignored during interpolation
-    state_current.velocities.clear();
-    state_current.accelerations.clear();
-  }
+  read_state_from_hardware(state_current);
 
   // currently carrying out a trajectory
   if (traj_point_active_ptr_ && (*traj_point_active_ptr_)->has_trajectory_msg()) {
     // if sampling the first time, set the point before you sample
     if (!(*traj_point_active_ptr_)->is_sampled_already()) {
-      (*traj_point_active_ptr_)->set_point_before_trajectory_msg(
-        node_->now(), state_current);
+      if (open_loop_control_) {
+        (*traj_point_active_ptr_)->set_point_before_trajectory_msg(
+          node_->now(), last_commanded_state_);
+      } else {
+        (*traj_point_active_ptr_)->set_point_before_trajectory_msg(
+          node_->now(), state_current);
+      }
     }
     resize_joint_trajectory_point(state_error, joint_num);
 
@@ -239,6 +209,9 @@ JointTrajectoryController::update()
           outside_goal_tolerance = true;
         }
       }
+
+      // store command as state when hardware state has tracking offset
+      last_commanded_state_ = state_desired;
 
       const auto active_goal = *rt_active_goal_.readFromRT();
       if (active_goal) {
@@ -305,6 +278,92 @@ JointTrajectoryController::update()
 
   publish_state(state_desired, state_current, state_error);
   return controller_interface::return_type::OK;
+}
+
+void JointTrajectoryController::read_state_from_hardware(JointTrajectoryPoint & state)
+{
+  const auto joint_num = joint_names_.size();
+  auto assign_point_from_interface = [&, joint_num](
+    std::vector<double> & trajectory_point_interface, const auto & joint_inteface)
+    {
+      for (auto index = 0ul; index < joint_num; ++index) {
+        trajectory_point_interface[index] = joint_inteface[index].get().get_value();
+      }
+    };
+
+  // Assign values from the hardware
+  // Position states always exist
+  assign_point_from_interface(state.positions, joint_state_interface_[0]);
+  // velocity and acceleration states are optional
+  if (has_velocity_state_interface_) {
+    assign_point_from_interface(state.velocities, joint_state_interface_[1]);
+    // Acceleration is used only in combination with velocity
+    if (has_acceleration_state_interface_) {
+      assign_point_from_interface(state.accelerations, joint_state_interface_[2]);
+    } else {
+      // Make empty so the property is ignored during interpolation
+      state.accelerations.clear();
+    }
+  } else {
+    // Make empty so the property is ignored during interpolation
+    state.velocities.clear();
+    state.accelerations.clear();
+  }
+}
+
+bool JointTrajectoryController::read_state_from_command_interfaces(JointTrajectoryPoint & state)
+{
+  bool has_values = true;
+
+  const auto joint_num = joint_names_.size();
+  auto assign_point_from_interface = [&, joint_num](
+    std::vector<double> & trajectory_point_interface, const auto & joint_inteface)
+    {
+      for (auto index = 0ul; index < joint_num; ++index) {
+        trajectory_point_interface[index] = joint_inteface[index].get().get_value();
+      }
+    };
+
+  auto interface_has_values = [](const auto & joint_interface)
+    {
+      return std::find_if(
+        joint_interface.begin(), joint_interface.end(),
+        [](const auto & interface) {return std::isnan(interface.get().get_value());}) ==
+             joint_interface.end();
+    };
+
+  // Assign values from the command interfaces as state. Therefore needs check for both.
+  // Position state interface has to exist always
+  if (has_position_command_interface_ && interface_has_values(joint_command_interface_[0])) {
+    assign_point_from_interface(state.positions, joint_command_interface_[0]);
+  } else {
+    state.positions.clear();
+    has_values = false;
+  }
+  // velocity and acceleration states are optional
+  if (has_velocity_state_interface_) {
+    if (has_velocity_command_interface_ && interface_has_values(joint_command_interface_[1])) {
+      assign_point_from_interface(state.velocities, joint_command_interface_[1]);
+    } else {
+      state.velocities.clear();
+      has_values = false;
+    }
+  } else {
+    state.velocities.clear();
+  }
+  // Acceleration is used only in combination with velocity
+  if (has_acceleration_state_interface_) {
+    if (has_acceleration_command_interface_ && interface_has_values(joint_command_interface_[2])) {
+      assign_point_from_interface(state.accelerations, joint_command_interface_[2]);
+    } else {
+      state.accelerations.clear();
+      has_values = false;
+    }
+  } else {
+    state.accelerations.clear();
+  }
+
+  return has_values;
 }
 
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
@@ -465,6 +524,10 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
     get_interface_list(state_interface_types_).c_str());
 
   default_tolerances_ = get_segment_tolerances(*node_, joint_names_);
+
+  // Read parameters customizing controller for special cases
+  open_loop_control_ =
+    node_->get_parameter("open_loop_control").get_value<bool>();
 
   // subscriber callback
   // non realtime
@@ -629,6 +692,17 @@ JointTrajectoryController::on_activate(const rclcpp_lifecycle::State &)
   subscriber_is_active_ = true;
   traj_point_active_ptr_ = &traj_external_point_ptr_;
   last_state_publish_time_ = node_->now();
+
+  // Initialize current state storage if hardware state has tracking offset
+  resize_joint_trajectory_point(last_commanded_state_, joint_names_.size());
+  read_state_from_hardware(last_commanded_state_);
+  // Handle restart of controller by reading last_commanded_state_ from commands is
+  // those are not nan
+  trajectory_msgs::msg::JointTrajectoryPoint state;
+  resize_joint_trajectory_point(state, joint_names_.size());
+  if (read_state_from_command_interfaces(state)) {
+    last_commanded_state_ = state;
+  }
 
   // TODO(karsten1987): activate subscriptions of subscriber
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
@@ -1004,6 +1078,25 @@ void JointTrajectoryController::set_hold_position()
   auto traj_msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>(
     empty_msg);
   add_new_trajectory_msg(traj_msg);
+}
+
+bool JointTrajectoryController::contains_interface_type(
+  const std::vector<std::string> & interface_type_list, const std::string & interface_type)
+{
+  return std::find(interface_type_list.begin(), interface_type_list.end(), interface_type) !=
+         interface_type_list.end();
+}
+
+void JointTrajectoryController::resize_joint_trajectory_point(
+  trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size)
+{
+  point.positions.resize(size);
+  if (has_velocity_state_interface_) {
+    point.velocities.resize(size);
+  }
+  if (has_acceleration_state_interface_) {
+    point.accelerations.resize(size);
+  }
 }
 
 }  // namespace joint_trajectory_controller

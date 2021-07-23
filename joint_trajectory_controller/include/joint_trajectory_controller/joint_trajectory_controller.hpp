@@ -126,6 +126,12 @@ protected:
     hardware_interface::HW_IF_EFFORT,
   };
 
+  // Parameters for some special cases, e.g. hydraulics powered robots
+  /// Run he controller in open-loop, i.e., read hardware states only when starting controller.
+  /// This is useful when robot is not exactly following the commanded trajectory.
+  bool open_loop_control_ = false;
+  trajectory_msgs::msg::JointTrajectoryPoint last_commanded_state_;
+
   // The interfaces are defined as the types in 'allowed_interface_types_' member.
   // For convenience, for each type the interfaces are ordered so that i-th position
   // matches i-th index in joint_names_
@@ -142,6 +148,9 @@ protected:
   bool has_acceleration_command_interface_ = false;
 
   /// If true, a velocity feedforward term plus corrective PID term is used
+  // TODO(anyone): This flag is not used for now
+  // There should be PID-approach used as in ROS1:
+  // https://github.com/ros-controls/ros_controllers/blob/noetic-devel/joint_trajectory_controller/include/joint_trajectory_controller/hardware_interface_adapter.h#L283
   bool use_closed_loop_pid_adapter = false;
 
   // TODO(karsten1987): eventually activate and deactive subscriber directly when its supported
@@ -231,13 +240,16 @@ protected:
     const JointTrajectoryPoint & current_state,
     const JointTrajectoryPoint & state_error);
 
+  void read_state_from_hardware(JointTrajectoryPoint & state);
+
+  bool read_state_from_command_interfaces(JointTrajectoryPoint & state);
+
 private:
   bool contains_interface_type(
-    const std::vector<std::string> & interface_type_list, const std::string & interface_type)
-  {
-    return std::find(interface_type_list.begin(), interface_type_list.end(), interface_type) !=
-           interface_type_list.end();
-  }
+    const std::vector<std::string> & interface_type_list, const std::string & interface_type);
+
+  void resize_joint_trajectory_point(
+    trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size);
 };
 
 }  // namespace joint_trajectory_controller

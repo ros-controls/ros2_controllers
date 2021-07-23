@@ -92,6 +92,11 @@ public:
     state_interface_types_ = state_interfaces;
   }
 
+  trajectory_msgs::msg::JointTrajectoryPoint get_current_state_when_offset()
+  {
+    return last_commanded_state_;
+  }
+
   rclcpp::WaitSet joint_cmd_sub_wait_set_;
 };
 
@@ -109,8 +114,11 @@ public:
 
     joint_names_ = {"joint1", "joint2", "joint3"};
     joint_pos_.resize(joint_names_.size(), 0.0);
+    joint_state_pos_.resize(joint_names_.size(), 0.0);
     joint_vel_.resize(joint_names_.size(), 0.0);
+    joint_state_vel_.resize(joint_names_.size(), 0.0);
     joint_acc_.resize(joint_names_.size(), 0.0);
+    joint_state_acc_.resize(joint_names_.size(), 0.0);
     // Default interface values - they will be overwritten by parameterized tests
     command_interface_types_ = {"position"};
     state_interface_types_ = {"position", "velocity"};
@@ -146,7 +154,8 @@ public:
   void SetUpAndActivateTrajectoryController(
     bool use_local_parameters = true,
     const std::vector<rclcpp::Parameter> & parameters = {},
-    rclcpp::Executor * executor = nullptr)
+    rclcpp::Executor * executor = nullptr,
+    bool separate_cmd_and_state_values = false)
   {
     SetUpTrajectoryController(use_local_parameters);
 
@@ -163,10 +172,10 @@ public:
     traj_node_->set_parameter(stopped_velocity_parameters);
 
     traj_controller_->configure();
-    ActivateTrajectoryController();
+    ActivateTrajectoryController(separate_cmd_and_state_values);
   }
 
-  void ActivateTrajectoryController()
+  void ActivateTrajectoryController(bool separate_cmd_and_state_values = false)
   {
     std::vector<hardware_interface::LoanedCommandInterface> cmd_interfaces;
     std::vector<hardware_interface::LoanedStateInterface> state_interfaces;
@@ -193,15 +202,18 @@ public:
       pos_state_interfaces_.emplace_back(
         hardware_interface::StateInterface(
           joint_names_[i],
-          hardware_interface::HW_IF_POSITION, &joint_pos_[i]));
+          hardware_interface::HW_IF_POSITION,
+          separate_cmd_and_state_values ? &joint_state_pos_[i] : &joint_pos_[i]));
       vel_state_interfaces_.emplace_back(
         hardware_interface::StateInterface(
           joint_names_[i],
-          hardware_interface::HW_IF_VELOCITY, &joint_vel_[i]));
+          hardware_interface::HW_IF_VELOCITY,
+          separate_cmd_and_state_values ? &joint_state_vel_[i] : &joint_vel_[i]));
       acc_state_interfaces_.emplace_back(
         hardware_interface::StateInterface(
           joint_names_[i],
-          hardware_interface::HW_IF_ACCELERATION, &joint_acc_[i]));
+          hardware_interface::HW_IF_ACCELERATION,
+          separate_cmd_and_state_values ? &joint_state_acc_[i] : &joint_acc_[i]));
 
       // Add to export lists and set initial values
       cmd_interfaces.emplace_back(pos_cmd_interfaces_.back());
@@ -210,6 +222,9 @@ public:
       cmd_interfaces.back().set_value(INITIAL_VEL_JOINTS[i]);
       cmd_interfaces.emplace_back(acc_cmd_interfaces_.back());
       cmd_interfaces.back().set_value(INITIAL_ACC_JOINTS[i]);
+      joint_state_pos_[i] = INITIAL_POS_JOINTS[i];
+      joint_state_vel_[i] = INITIAL_VEL_JOINTS[i];
+      joint_state_acc_[i] = INITIAL_ACC_JOINTS[i];
       state_interfaces.emplace_back(pos_state_interfaces_.back());
       state_interfaces.emplace_back(vel_state_interfaces_.back());
       state_interfaces.emplace_back(acc_state_interfaces_.back());
@@ -364,6 +379,9 @@ public:
   std::vector<double> joint_pos_;
   std::vector<double> joint_vel_;
   std::vector<double> joint_acc_;
+  std::vector<double> joint_state_pos_;
+  std::vector<double> joint_state_vel_;
+  std::vector<double> joint_state_acc_;
   std::vector<hardware_interface::CommandInterface> pos_cmd_interfaces_;
   std::vector<hardware_interface::CommandInterface> vel_cmd_interfaces_;
   std::vector<hardware_interface::CommandInterface> acc_cmd_interfaces_;
