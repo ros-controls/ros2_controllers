@@ -11,7 +11,7 @@ The following is a step-by-step guide to create source files, basic tests, and c
    If the package for the controller does not exist, then create it first.
    The package should have ``ament_cmake`` as a build type.
    The easiest way is to search online for the most recent manual.
-   A helpful command to support this process is `ros2 pkg create`.
+   A helpful command to support this process is ``ros2 pkg create``.
    Use the ``--help`` flag for more information on how to use it.
    There is also an option to create library source files and compile rules to help you in the following steps.
 
