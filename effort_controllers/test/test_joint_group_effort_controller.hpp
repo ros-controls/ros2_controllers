@@ -27,7 +27,7 @@
 
 using hardware_interface::HW_IF_EFFORT;
 using hardware_interface::CommandInterface;
-// subclassing and friending so we can access member varibles
+// subclassing and friending so we can access member variables
 class FriendJointGroupEffortController : public effort_controllers::JointGroupEffortController
 {
   FRIEND_TEST(JointGroupEffortControllerTest, CommandSuccessTest);

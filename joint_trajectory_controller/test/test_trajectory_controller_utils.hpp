@@ -167,7 +167,7 @@ public:
       executor->add_node(traj_node_->get_node_base_interface());
     }
 
-    // ignore velocity tolerances for this test since they arent commited in test_robot->write()
+    // ignore velocity tolerances for this test since they aren't committed in test_robot->write()
     rclcpp::Parameter stopped_velocity_parameters("constraints.stopped_velocity_tolerance", 0.0);
     traj_node_->set_parameter(stopped_velocity_parameters);
 

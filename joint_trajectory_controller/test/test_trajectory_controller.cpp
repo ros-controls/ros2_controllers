@@ -1074,7 +1074,7 @@ TEST_P(
 }
 
 
-// TODO(anyone): the new gtest version afer 1.8.0 uses INSTANTIATE_TEST_SUITE_P
+// TODO(anyone): the new gtest version after 1.8.0 uses INSTANTIATE_TEST_SUITE_P
 
 // position controllers
 INSTANTIATE_TEST_CASE_P(

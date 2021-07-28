@@ -151,7 +151,7 @@ TEST_F(JointGroupPositionControllerTest, WrongCommandCheckTest)
   controller_->get_node()->set_parameter({"joints", joint_names_});
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
-  // send command with wrong numnber of joints
+  // send command with wrong number of joints
   auto command_ptr =
     std::make_shared<forward_command_controller::CmdType>();
   command_ptr->data = {10.0, 20.0};

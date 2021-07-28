@@ -498,7 +498,7 @@ CallbackReturn DiffDriveController::on_activate(const rclcpp_lifecycle::State &)
   if (registered_left_wheel_handles_.empty() || registered_right_wheel_handles_.empty()) {
     RCLCPP_ERROR(
       node_->get_logger(),
-      "Either left wheel interfaces, right wheel interfaces are non existant");
+      "Either left wheel interfaces, right wheel interfaces are non existent");
     return CallbackReturn::ERROR;
   }
 

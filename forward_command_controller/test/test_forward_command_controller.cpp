@@ -115,7 +115,7 @@ TEST_F(ForwardCommandControllerTest, InterfaceParameterEmpty)
 {
   SetUpController();
 
-  // configure failed, 'interface_name' paremeter not set
+  // configure failed, 'interface_name' parameter not set
   controller_->get_node()->set_parameter({"joints", std::vector<std::string>{"joint1", "joint2"}});
   controller_->get_node()->set_parameter({"interface_name", ""});
 
@@ -219,7 +219,7 @@ TEST_F(ForwardCommandControllerTest, WrongCommandCheckTest)
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
-  // send command with wrong numnber of joints
+  // send command with wrong number of joints
   auto command_ptr =
     std::make_shared<forward_command_controller::CmdType>();
   command_ptr->data = {10.0, 20.0};

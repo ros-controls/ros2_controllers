@@ -43,4 +43,3 @@ Changelog for package effort_controllers
 
 0.1.0 (2020-12-23)
 ------------------
-
