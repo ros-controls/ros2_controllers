@@ -179,6 +179,4 @@ The following version of the Joint Trajectory Controller are available mapping t
 ..     - Input: position, [velocity, [acceleration]]
 ..     - Output: effort
 
-The controller uses `common hardware interface definitions`_.
-
 (*Not implemented yet*) When using pure ``velocity`` or ``effort`` controllers a command is generated using the desired state and state error using a velocity feedforward term plus a corrective PID term. (#171)
