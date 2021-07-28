@@ -811,7 +811,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_execute_partial_traj_in_futur
 TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_error_updated)
 {
   rclcpp::executors::SingleThreadedExecutor executor;
-  // default if false so it will not be actually set paramter
+  // default if false so it will not be actually set parameter
   rclcpp::Parameter is_open_loop_parameters("open_loop_control", false);
   SetUpAndActivateTrajectoryController(true, {is_open_loop_parameters}, &executor, true);
 
@@ -896,7 +896,7 @@ TEST_P(
   TrajectoryControllerTestParameterized, test_no_jump_when_state_tracking_error_not_updated)
 {
   rclcpp::executors::SingleThreadedExecutor executor;
-  // default if false so it will not be actually set paramter
+  // default if false so it will not be actually set parameter
   rclcpp::Parameter is_open_loop_parameters("open_loop_control", true);
   SetUpAndActivateTrajectoryController(true, {is_open_loop_parameters}, &executor, true);
 
@@ -983,7 +983,7 @@ TEST_P(
   TrajectoryControllerTestParameterized, test_hw_states_has_offset_first_controller_start)
 {
   rclcpp::executors::SingleThreadedExecutor executor;
-  // default if false so it will not be actually set paramter
+  // default if false so it will not be actually set parameter
   rclcpp::Parameter is_open_loop_parameters("open_loop_control", true);
 
   // set command values to NaN
@@ -1031,7 +1031,7 @@ TEST_P(
   TrajectoryControllerTestParameterized, test_hw_states_has_offset_later_controller_start)
 {
   rclcpp::executors::SingleThreadedExecutor executor;
-  // default if false so it will not be actually set paramter
+  // default if false so it will not be actually set parameter
   rclcpp::Parameter is_open_loop_parameters("open_loop_control", true);
 
   // set command values to NaN
@@ -1074,7 +1074,7 @@ TEST_P(
 }
 
 
-// TODO(anyone): the new gtest version afer 1.8.0 uses INSTANTIATE_TEST_SUITE_P
+// TODO(anyone): the new gtest version after 1.8.0 uses INSTANTIATE_TEST_SUITE_P
 
 // position controllers
 INSTANTIATE_TEST_CASE_P(

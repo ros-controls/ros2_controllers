@@ -153,7 +153,7 @@ protected:
   // https://github.com/ros-controls/ros_controllers/blob/noetic-devel/joint_trajectory_controller/include/joint_trajectory_controller/hardware_interface_adapter.h#L283
   bool use_closed_loop_pid_adapter = false;
 
-  // TODO(karsten1987): eventually activate and deactive subscriber directly when its supported
+  // TODO(karsten1987): eventually activate and deactivate subscriber directly when its supported
   bool subscriber_is_active_ = false;
   rclcpp::Subscription<trajectory_msgs::msg::JointTrajectory>::SharedPtr
     joint_command_subscriber_ = nullptr;

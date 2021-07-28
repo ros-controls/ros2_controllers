@@ -23,7 +23,7 @@
 
 #include "joint_state_broadcaster/joint_state_broadcaster.hpp"
 
-// subclassing and friending so we can access member varibles
+// subclassing and friending so we can access member variables
 class FriendJointStateBroadcaster : public joint_state_broadcaster::JointStateBroadcaster
 {
   FRIEND_TEST(JointStateBroadcasterTest, ConfigureErrorTest);

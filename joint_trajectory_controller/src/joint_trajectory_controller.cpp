@@ -551,7 +551,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
     node_->create_subscription<trajectory_msgs::msg::JointTrajectory>(
     "~/joint_trajectory", rclcpp::SystemDefaultsQoS(), callback);
 
-  // TODO(karsten1987): no lifecyle for subscriber yet
+  // TODO(karsten1987): no lifecycle for subscriber yet
   // joint_command_subscriber_->on_activate();
 
   // State publisher

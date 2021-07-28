@@ -26,7 +26,7 @@
 
 #include "imu_sensor_broadcaster/imu_sensor_broadcaster.hpp"
 
-// subclassing and friending so we can access member varibles
+// subclassing and friending so we can access member variables
 class FriendIMUSensorBroadcaster : public imu_sensor_broadcaster::
   IMUSensorBroadcaster
 {

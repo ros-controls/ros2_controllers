@@ -11,7 +11,7 @@ The following is a step-by-step guide to create source files, basic tests, and c
    If the package for the controller does not exist, then create it first.
    The package should have ``ament_cmake`` as a build type.
    The easiest way is to search online for the most recent manual.
-   A helpful command to support this process is `ros2 pkg create`.
+   A helpful command to support this process is ``ros2 pkg create``.
    Use the ``--help`` flag for more information on how to use it.
    There is also an option to create library source files and compile rules to help you in the following steps.
 
@@ -33,10 +33,10 @@ The following is a step-by-step guide to create source files, basic tests, and c
 
    4. Define the class of the controller, extending ``ControllerInterface``, e.g.,
       .. code:: c++
-         class ControllerName : public controller_interface::ControllerInterface
+      class ControllerName : public controller_interface::ControllerInterface
 
    5. Add a constructor without parameters and the following public methods overriding the ``ControllerInterface`` definition: ``init``, ``command_interface_configuration``, ``state_interface_configuration``, ``on_configure``, ``on_activate``, ``on_deactivate``, ``update``.
-      For exact definitions check the ``controller_interface/controller_interface.hpp`` header or one of the controllers from `ros2_controllers <https://github.com/ros-controls/ros2_controllers> `_.
+      For exact definitions check the ``controller_interface/controller_interface.hpp`` header or one of the controllers from `ros2_controllers <https://github.com/ros-controls/ros2_controllers>`_.
 
    6. (optional) Often, controllers accept lists of joint names and interface names as parameters.
       If so, you can add two protected string vectors to store those values.
@@ -76,7 +76,7 @@ The following is a step-by-step guide to create source files, basic tests, and c
 5. **Writing export definition for pluginlib**
 
    1. Create the ``<controller_name>.xml`` file in the package and add a definition of the library and controller's class which has to be visible for the pluginlib.
-      The easiest way to do that is to check other controllers in the `ros2_controllers <https://github.com/ros-controls/ros2_controllers> `_ package.
+      The easiest way to do that is to check other controllers in the `ros2_controllers <https://github.com/ros-controls/ros2_controllers>`_ package.
 
    2. Usually, the plugin name is defined by the package (namespace) and the class name, e.g.,
       ``<controller_name_package>/<ControllerName>``.
@@ -85,9 +85,9 @@ The following is a step-by-step guide to create source files, basic tests, and c
 
 6. **Writing simple test to check if the controller can be found and loaded**
 
-   1. Create the folder ``test`` in your package, if it does not exist already, and add a file named ``test_load_<controller_name>.cpp>.
+   1. Create the folder ``test`` in your package, if it does not exist already, and add a file named ``test_load_<controller_name>.cpp``.
 
-   2. You can safely copy the file's content for any controller defined in the `ros2_controllers <https://github.com/ros-controls/ros2_controllers> `_ package.
+   2. You can safely copy the file's content for any controller defined in the `ros2_controllers <https://github.com/ros-controls/ros2_controllers>`_ package.
 
    3. Change the name of the copied test and in the last line, where controller type is specified put the name defined in ``<controller_name>.xml`` file, e.g., ``<controller_name_package>/<ControllerName>``.
 
@@ -112,7 +112,7 @@ The following is a step-by-step guide to create source files, basic tests, and c
    7. In the test section add the following dependencies: ``ament_cmake_gmock``, ``controller_manager``, ``hardware_interface``, ``ros2_control_test_assets``.
 
    8. Add compile definitions for the tests using the ``ament_add_gmock`` directive.
-      For details, see how it is done for controllers in the `ros2_controllers <https://github.com/ros-controls/ros2_controllers> `_ package.
+      For details, see how it is done for controllers in the `ros2_controllers <https://github.com/ros-controls/ros2_controllers>`_ package.
 
    9. (optional) Add your controller`s library into ``ament_export_libraries`` before ``ament_package()``.
 

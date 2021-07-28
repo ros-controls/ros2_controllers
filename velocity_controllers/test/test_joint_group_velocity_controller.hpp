@@ -29,7 +29,7 @@ using hardware_interface::HW_IF_VELOCITY;
 using hardware_interface::CommandInterface;
 
 
-// subclassing and friending so we can access member varibles
+// subclassing and friending so we can access member variables
 class FriendJointGroupVelocityController : public velocity_controllers::JointGroupVelocityController
 {
   FRIEND_TEST(JointGroupVelocityControllerTest, CommandSuccessTest);
