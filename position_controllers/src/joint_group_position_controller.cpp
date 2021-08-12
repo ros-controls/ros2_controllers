@@ -38,14 +38,6 @@ JointGroupPositionController::init(const std::string & controller_name)
     return ret;
   }
 
-  try {
-    // undeclare interface parameter used in the general forward_command_controller
-    get_node()->undeclare_parameter("interface_name");
-  } catch (const std::exception & e) {
-    fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
-    return controller_interface::return_type::ERROR;
-  }
-
   return controller_interface::return_type::OK;
 }
 }  // namespace position_controllers
