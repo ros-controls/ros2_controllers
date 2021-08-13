@@ -40,8 +40,10 @@ JointGroupVelocityController::init(
   }
 
   try {
-    // undeclare interface parameter used in the general forward_command_controller
-    get_node()->undeclare_parameter("interface_name");
+    // Explicitly set the interface parameter declared by the forward_command_controller
+    // to match the value set in the JointGroupVelocityController constructor.
+    get_node()->set_parameter(rclcpp::Parameter("interface_name", hardware_interface::HW_IF_VELOCITY));
+
   } catch (const std::exception & e) {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
     return controller_interface::return_type::ERROR;
