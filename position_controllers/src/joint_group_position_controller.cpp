@@ -41,8 +41,8 @@ JointGroupPositionController::init(const std::string & controller_name)
   try {
     // Explicitly set the interface parameter declared by the forward_command_controller
     // to match the value set in the JointGroupPositionController constructor.
-    get_node()->set_parameter(rclcpp::Parameter("interface_name", hardware_interface::HW_IF_POSITION));
-
+    get_node()->set_parameter(
+          rclcpp::Parameter("interface_name", hardware_interface::HW_IF_POSITION));
   } catch (const std::exception & e) {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
     return controller_interface::return_type::ERROR;
