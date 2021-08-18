@@ -71,6 +71,23 @@ JointTrajectoryController::on_init()
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
   }
 
+  // with the lifecycle node being initialized, we can declare parameters
+  auto_declare<std::vector<std::string>>("joints", joint_names_);
+  auto_declare<std::vector<std::string>>("command_interfaces", command_interface_types_);
+  auto_declare<std::vector<std::string>>("state_interfaces", state_interface_types_);
+  auto_declare<double>("state_publish_rate", 50.0);
+  auto_declare<double>("action_monitor_rate", 20.0);
+  auto_declare<bool>("allow_partial_joints_goal", allow_partial_joints_goal_);
+  auto_declare<bool>("open_loop_control", open_loop_control_);
+  auto_declare<double>("constraints.stopped_velocity_tolerance", 0.01);
+  auto_declare<double>("constraints.goal_time", 0.0);
+  for (const auto & joint_name : joint_names_)
+  {
+    const std::string prefix = "constraints." + joint_name;
+    auto_declare<double>(prefix + ".trajectory", 0.0);
+    auto_declare<double>(prefix + ".goal", 0.0);
+  }
+
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
