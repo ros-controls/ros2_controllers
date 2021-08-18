@@ -43,7 +43,7 @@ JointGroupEffortController::init(
     // Explicitly set the interface parameter declared by the forward_command_controller
     // to match the value set in the JointGroupEffortController constructor.
     get_node()->set_parameter(
-          rclcpp::Parameter("interface_name", hardware_interface::HW_IF_EFFORT));
+      rclcpp::Parameter("interface_name", hardware_interface::HW_IF_EFFORT));
   } catch (const std::exception & e) {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
     return controller_interface::return_type::ERROR;
