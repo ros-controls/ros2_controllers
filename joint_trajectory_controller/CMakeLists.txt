@@ -14,6 +14,7 @@ find_package(ament_cmake REQUIRED)
 find_package(angles REQUIRED)
 find_package(controller_interface REQUIRED)
 find_package(control_msgs REQUIRED)
+find_package(control_toolbox REQUIRED)
 find_package(hardware_interface REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -31,6 +32,7 @@ ament_target_dependencies(joint_trajectory_controller
   builtin_interfaces
   controller_interface
   control_msgs
+  control_toolbox
   hardware_interface
   pluginlib
   rclcpp

@@ -207,23 +207,35 @@ controller_interface::return_type JointTrajectoryController::update()
       const bool before_last_point = end_segment_itr != (*traj_point_active_ptr_)->end();
 
       // set values for next hardware write()
-      if (has_position_command_interface_)
+      if (use_closed_loop_pid_adapter && has_effort_command_interface_)
       {
-        assign_interface_from_point(joint_command_interface_[0], state_desired.positions);
+        const auto period = std::chrono::steady_clock::now() - last_update_time_;
+        for (auto index = 0ul; index < joint_num; ++index)
+        {
+          const double command =
+            (state_desired.velocities[index] * velocity_ff_[index]) +
+            pids_[index]->computeCommand(
+              state_desired.positions[index] - state_current.positions[index],
+              state_desired.velocities[index] - state_current.velocities[index], period.count());
+          joint_command_interface_[3][index].get().set_value(command);
+        }
+        last_update_time_ = std::chrono::steady_clock::now();
       }
-      if (has_velocity_command_interface_)
+      else
       {
-        assign_interface_from_point(joint_command_interface_[1], state_desired.velocities);
+        if (has_position_command_interface_)
+        {
+          assign_interface_from_point(joint_command_interface_[0], state_desired.positions);
+        }
+        if (has_velocity_command_interface_)
+        {
+          assign_interface_from_point(joint_command_interface_[1], state_desired.velocities);
+        }
+        if (has_acceleration_command_interface_)
+        {
+          assign_interface_from_point(joint_command_interface_[2], state_desired.accelerations);
+        }
       }
-      if (has_acceleration_command_interface_)
-      {
-        assign_interface_from_point(joint_command_interface_[2], state_desired.accelerations);
-      }
-      // TODO(anyone): Add here "if using_closed_loop_hw_interface_adapter" (see ROS1) - #171
-      //       if (check_if_interface_type_exist(
-      //           command_interface_types_, hardware_interface::HW_IF_EFFORT)) {
-      //         assign_interface_from_point(joint_command_interface_[3], state_desired.effort);
-      //       }
 
       for (auto index = 0ul; index < joint_num; ++index)
       {
@@ -485,13 +497,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
   {
     if (command_interface_types_.size() == 1)
     {
-      // TODO(anyone): This flag is not used for now
-      // There should be PID-approach used as in ROS1:
-      // https://github.com/ros-controls/ros_controllers/blob/noetic-devel/joint_trajectory_controller/include/joint_trajectory_controller/hardware_interface_adapter.h#L283
       use_closed_loop_pid_adapter = true;
-      // TODO(anyone): remove the next two lines when implemented
-      RCLCPP_ERROR(logger, "using 'effort' command interface alone is not yet implemented yet.");
-      return CallbackReturn::FAILURE;
     }
     else
     {
@@ -511,6 +517,10 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
   if (contains_interface_type(command_interface_types_, hardware_interface::HW_IF_ACCELERATION))
   {
     has_acceleration_command_interface_ = true;
+  }
+  if (contains_interface_type(command_interface_types_, hardware_interface::HW_IF_EFFORT))
+  {
+    has_effort_command_interface_ = true;
   }
 
   if (has_velocity_command_interface_)
@@ -541,6 +551,23 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
       "'acceleration' command interface can only be used if 'velocity' and "
       "'position' interfaces are present");
     return CallbackReturn::FAILURE;
+  }
+
+  if (use_closed_loop_pid_adapter)
+  {
+    for (const auto & joint_name : joint_names_)
+    {
+      // Init PID gains from ROS parameter server
+      const std::string prefix = "gains." + joint_name;
+      const auto k_p = node_->declare_parameter<double>(prefix + ".p", 0.0);
+      const auto k_i = node_->declare_parameter<double>(prefix + ".i", 0.0);
+      const auto k_d = node_->declare_parameter<double>(prefix + ".d", 0.0);
+      const auto i_clamp = node_->declare_parameter<double>(prefix + ".i_clamp", 0.0);
+      const auto velocity_ff = node_->declare_parameter<double>("velocity_ff." + joint_name, 0.0);
+      // Initialize PID
+      pids_.push_back(std::make_unique<control_toolbox::Pid>(k_p, k_i, k_d, i_clamp, -i_clamp));
+      velocity_ff_.push_back(velocity_ff);
+    }
   }
 
   // Read always state interfaces from the parameter because they can be used
@@ -855,6 +882,11 @@ bool JointTrajectoryController::reset()
 {
   subscriber_is_active_ = false;
   joint_command_subscriber_.reset();
+
+  for (const auto & pid : pids_)
+  {
+    pid->reset();
+  }
 
   // iterator has no default value
   // prev_traj_point_ptr_;
