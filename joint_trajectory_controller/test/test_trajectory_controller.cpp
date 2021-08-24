@@ -1187,3 +1187,38 @@ TEST_F(TrajectoryControllerTest, incorrect_initialization_using_interface_parame
   state_interface_types_ = {"acceleration"};
   set_parameter_and_check_result();
 }
+
+TEST_P(TrajectoryControllerTestParameterized, test_param_propagation)
+{
+
+  SetUpTrajectoryController(false);
+
+  auto parameters_client = std::make_shared<rclcpp::AsyncParametersClient>(traj_controller_->get_node());
+  while (!parameters_client->wait_for_service(1s)) {
+    if (!rclcpp::ok()) {
+      rclcpp::shutdown();
+    }
+  }
+
+  auto set_parameter_and_check_result = [&](rclcpp::Parameter& p) {
+
+      // This call is replacing the way parameters are set via launch
+      parameters_client->set_parameters({p});
+      EXPECT_EQ(traj_controller_->get_node()->has_parameter(p.get_name()), true);
+  };
+
+  rclcpp::Parameter j1_goal_constraint("constraints.joint1.goal", 0.01);
+  set_parameter_and_check_result(j1_goal_constraint);
+
+  rclcpp::Parameter j2_trajectory_constraint("constraints.joint1.trajectory", 0.01);
+  set_parameter_and_check_result(j2_trajectory_constraint);
+
+  rclcpp::Parameter joint_names_param("joints", joint_names_);
+  set_parameter_and_check_result(joint_names_param);
+
+  rclcpp::Parameter cmd_interfaces_params("command_interfaces", command_interface_types_);
+  set_parameter_and_check_result(cmd_interfaces_params);
+
+  rclcpp::Parameter state_interfaces_params("state_interfaces", state_interface_types_);
+  set_parameter_and_check_result(state_interfaces_params);
+}
