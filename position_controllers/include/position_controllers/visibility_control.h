@@ -26,31 +26,31 @@
 //     https://gcc.gnu.org/wiki/Visibility
 
 #if defined _WIN32 || defined __CYGWIN__
-  #ifdef __GNUC__
-    #define POSITION_CONTROLLERS_EXPORT __attribute__ ((dllexport))
-    #define POSITION_CONTROLLERS_IMPORT __attribute__ ((dllimport))
-  #else
-    #define POSITION_CONTROLLERS_EXPORT __declspec(dllexport)
-    #define POSITION_CONTROLLERS_IMPORT __declspec(dllimport)
-  #endif
-  #ifdef POSITION_CONTROLLERS_BUILDING_DLL
-    #define POSITION_CONTROLLERS_PUBLIC POSITION_CONTROLLERS_EXPORT
-  #else
-    #define POSITION_CONTROLLERS_PUBLIC POSITION_CONTROLLERS_IMPORT
-  #endif
-  #define POSITION_CONTROLLERS_PUBLIC_TYPE POSITION_CONTROLLERS_PUBLIC
-  #define POSITION_CONTROLLERS_LOCAL
+#ifdef __GNUC__
+#define POSITION_CONTROLLERS_EXPORT __attribute__((dllexport))
+#define POSITION_CONTROLLERS_IMPORT __attribute__((dllimport))
 #else
-  #define POSITION_CONTROLLERS_EXPORT __attribute__ ((visibility("default")))
-  #define POSITION_CONTROLLERS_IMPORT
-  #if __GNUC__ >= 4
-    #define POSITION_CONTROLLERS_PUBLIC __attribute__ ((visibility("default")))
-    #define POSITION_CONTROLLERS_LOCAL  __attribute__ ((visibility("hidden")))
-  #else
-    #define POSITION_CONTROLLERS_PUBLIC
-    #define POSITION_CONTROLLERS_LOCAL
-  #endif
-  #define POSITION_CONTROLLERS_PUBLIC_TYPE
+#define POSITION_CONTROLLERS_EXPORT __declspec(dllexport)
+#define POSITION_CONTROLLERS_IMPORT __declspec(dllimport)
+#endif
+#ifdef POSITION_CONTROLLERS_BUILDING_DLL
+#define POSITION_CONTROLLERS_PUBLIC POSITION_CONTROLLERS_EXPORT
+#else
+#define POSITION_CONTROLLERS_PUBLIC POSITION_CONTROLLERS_IMPORT
+#endif
+#define POSITION_CONTROLLERS_PUBLIC_TYPE POSITION_CONTROLLERS_PUBLIC
+#define POSITION_CONTROLLERS_LOCAL
+#else
+#define POSITION_CONTROLLERS_EXPORT __attribute__((visibility("default")))
+#define POSITION_CONTROLLERS_IMPORT
+#if __GNUC__ >= 4
+#define POSITION_CONTROLLERS_PUBLIC __attribute__((visibility("default")))
+#define POSITION_CONTROLLERS_LOCAL __attribute__((visibility("hidden")))
+#else
+#define POSITION_CONTROLLERS_PUBLIC
+#define POSITION_CONTROLLERS_LOCAL
+#endif
+#define POSITION_CONTROLLERS_PUBLIC_TYPE
 #endif
 
 #endif  // POSITION_CONTROLLERS__VISIBILITY_CONTROL_H_

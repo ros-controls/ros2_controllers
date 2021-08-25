@@ -22,10 +22,10 @@
 #include <utility>
 #include <vector>
 
-#include "imu_sensor_broadcaster/imu_sensor_broadcaster.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
+#include "imu_sensor_broadcaster/imu_sensor_broadcaster.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/utilities.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
@@ -49,15 +49,9 @@ rclcpp::WaitResultKind wait_for(rclcpp::SubscriptionBase::SharedPtr subscription
 
 }  // namespace
 
-void IMUSensorBroadcasterTest::SetUpTestCase()
-{
-  rclcpp::init(0, nullptr);
-}
+void IMUSensorBroadcasterTest::SetUpTestCase() { rclcpp::init(0, nullptr); }
 
-void IMUSensorBroadcasterTest::TearDownTestCase()
-{
-  rclcpp::shutdown();
-}
+void IMUSensorBroadcasterTest::TearDownTestCase() { rclcpp::shutdown(); }
 
 void IMUSensorBroadcasterTest::SetUp()
 {
@@ -65,10 +59,7 @@ void IMUSensorBroadcasterTest::SetUp()
   imu_broadcaster_ = std::make_unique<FriendIMUSensorBroadcaster>();
 }
 
-void IMUSensorBroadcasterTest::TearDown()
-{
-  imu_broadcaster_.reset(nullptr);
-}
+void IMUSensorBroadcasterTest::TearDown() { imu_broadcaster_.reset(nullptr); }
 
 void IMUSensorBroadcasterTest::SetUpIMUBroadcaster()
 {
@@ -90,18 +81,13 @@ void IMUSensorBroadcasterTest::SetUpIMUBroadcaster()
   imu_broadcaster_->assign_interfaces({}, std::move(state_ifs));
 }
 
-void IMUSensorBroadcasterTest::subscribe_and_get_message(
-  sensor_msgs::msg::Imu & imu_msg)
+void IMUSensorBroadcasterTest::subscribe_and_get_message(sensor_msgs::msg::Imu & imu_msg)
 {
   // create a new subscriber
   rclcpp::Node test_subscription_node("test_subscription_node");
-  auto subs_callback = [&](const sensor_msgs::msg::Imu::SharedPtr)
-    {
-    };
+  auto subs_callback = [&](const sensor_msgs::msg::Imu::SharedPtr) {};
   auto subscription = test_subscription_node.create_subscription<sensor_msgs::msg::Imu>(
-    "/test_imu_sensor_broadcaster/imu",
-    10,
-    subs_callback);
+    "/test_imu_sensor_broadcaster/imu", 10, subs_callback);
 
   // call update to publish the test value
   ASSERT_EQ(imu_broadcaster_->update(), controller_interface::return_type::OK);
@@ -113,7 +99,6 @@ void IMUSensorBroadcasterTest::subscribe_and_get_message(
   rclcpp::MessageInfo msg_info;
   ASSERT_TRUE(subscription->take(imu_msg, msg_info));
 }
-
 
 TEST_F(IMUSensorBroadcasterTest, SensorName_InterfaceNames_NotSet)
 {
@@ -129,11 +114,9 @@ TEST_F(IMUSensorBroadcasterTest, SensorName_FrameId_NotSet)
 
   // set the 'interface_names'
   imu_broadcaster_->get_node()->set_parameter(
-    {"interface_names.angular_velocity.x",
-      "imu_sensor/angular_velocity.x"});
+    {"interface_names.angular_velocity.x", "imu_sensor/angular_velocity.x"});
   imu_broadcaster_->get_node()->set_parameter(
-    {"interface_names.linear_acceleration.z",
-      "imu_sensor/linear_acceleration.z"});
+    {"interface_names.linear_acceleration.z", "imu_sensor/linear_acceleration.z"});
 
   // configure failed, 'frame_id' parameter not set
   ASSERT_EQ(imu_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);

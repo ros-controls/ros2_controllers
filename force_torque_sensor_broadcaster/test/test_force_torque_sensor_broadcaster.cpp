@@ -23,10 +23,10 @@
 #include <vector>
 
 #include "force_torque_sensor_broadcaster/force_torque_sensor_broadcaster.hpp"
+#include "geometry_msgs/msg/wrench_stamped.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
-#include "geometry_msgs/msg/wrench_stamped.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/utilities.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
@@ -50,15 +50,9 @@ rclcpp::WaitResultKind wait_for(rclcpp::SubscriptionBase::SharedPtr subscription
 
 }  // namespace
 
-void ForceTorqueSensorBroadcasterTest::SetUpTestCase()
-{
-  rclcpp::init(0, nullptr);
-}
+void ForceTorqueSensorBroadcasterTest::SetUpTestCase() { rclcpp::init(0, nullptr); }
 
-void ForceTorqueSensorBroadcasterTest::TearDownTestCase()
-{
-  rclcpp::shutdown();
-}
+void ForceTorqueSensorBroadcasterTest::TearDownTestCase() { rclcpp::shutdown(); }
 
 void ForceTorqueSensorBroadcasterTest::SetUp()
 {
@@ -66,10 +60,7 @@ void ForceTorqueSensorBroadcasterTest::SetUp()
   fts_broadcaster_ = std::make_unique<FriendForceTorqueSensorBroadcaster>();
 }
 
-void ForceTorqueSensorBroadcasterTest::TearDown()
-{
-  fts_broadcaster_.reset(nullptr);
-}
+void ForceTorqueSensorBroadcasterTest::TearDown() { fts_broadcaster_.reset(nullptr); }
 
 void ForceTorqueSensorBroadcasterTest::SetUpFTSBroadcaster()
 {
@@ -92,13 +83,9 @@ void ForceTorqueSensorBroadcasterTest::subscribe_and_get_message(
 {
   // create a new subscriber
   rclcpp::Node test_subscription_node("test_subscription_node");
-  auto subs_callback = [&](const geometry_msgs::msg::WrenchStamped::SharedPtr)
-    {
-    };
+  auto subs_callback = [&](const geometry_msgs::msg::WrenchStamped::SharedPtr) {};
   auto subscription = test_subscription_node.create_subscription<geometry_msgs::msg::WrenchStamped>(
-    "/test_force_torque_sensor_broadcaster/wrench",
-    10,
-    subs_callback);
+    "/test_force_torque_sensor_broadcaster/wrench", 10, subs_callback);
 
   // call update to publish the test value
   ASSERT_EQ(fts_broadcaster_->update(), controller_interface::return_type::OK);
@@ -110,7 +97,6 @@ void ForceTorqueSensorBroadcasterTest::subscribe_and_get_message(
   rclcpp::MessageInfo msg_info;
   ASSERT_TRUE(subscription->take(wrench_msg, msg_info));
 }
-
 
 TEST_F(ForceTorqueSensorBroadcasterTest, SensorName_InterfaceNames_NotSet)
 {

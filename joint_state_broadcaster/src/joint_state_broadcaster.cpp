@@ -40,25 +40,26 @@ class State;
 namespace joint_state_broadcaster
 {
 const auto kUninitializedValue = std::numeric_limits<double>::quiet_NaN();
+using hardware_interface::HW_IF_EFFORT;
 using hardware_interface::HW_IF_POSITION;
 using hardware_interface::HW_IF_VELOCITY;
-using hardware_interface::HW_IF_EFFORT;
 
+JointStateBroadcaster::JointStateBroadcaster() {}
 
-JointStateBroadcaster::JointStateBroadcaster()
-{}
-
-controller_interface::return_type
-JointStateBroadcaster::init(const std::string & controller_name)
+controller_interface::return_type JointStateBroadcaster::init(const std::string & controller_name)
 {
   auto ret = ControllerInterface::init(controller_name);
-  if (ret != controller_interface::return_type::OK) {
+  if (ret != controller_interface::return_type::OK)
+  {
     return ret;
   }
 
-  try {
+  try
+  {
     get_node()->declare_parameter<bool>("use_local_topics", false);
-  } catch (const std::exception & e) {
+  }
+  catch (const std::exception & e)
+  {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
     return controller_interface::return_type::ERROR;
   }
@@ -69,15 +70,15 @@ JointStateBroadcaster::init(const std::string & controller_name)
 controller_interface::InterfaceConfiguration
 JointStateBroadcaster::command_interface_configuration() const
 {
-  return controller_interface::InterfaceConfiguration{controller_interface::
-    interface_configuration_type::NONE};
+  return controller_interface::InterfaceConfiguration{
+    controller_interface::interface_configuration_type::NONE};
 }
 
 controller_interface::InterfaceConfiguration JointStateBroadcaster::state_interface_configuration()
-const
+  const
 {
-  return controller_interface::InterfaceConfiguration{controller_interface::
-    interface_configuration_type::ALL};
+  return controller_interface::InterfaceConfiguration{
+    controller_interface::interface_configuration_type::ALL};
 }
 
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
@@ -85,7 +86,8 @@ JointStateBroadcaster::on_configure(const rclcpp_lifecycle::State & /*previous_s
 {
   use_local_topics_ = get_node()->get_parameter("use_local_topics").as_bool();
 
-  try {
+  try
+  {
     const std::string topic_name_prefix = use_local_topics_ ? "~/" : "";
 
     joint_state_publisher_ = get_node()->create_publisher<sensor_msgs::msg::JointState>(
@@ -93,8 +95,10 @@ JointStateBroadcaster::on_configure(const rclcpp_lifecycle::State & /*previous_s
 
     dynamic_joint_state_publisher_ =
       get_node()->create_publisher<control_msgs::msg::DynamicJointState>(
-      topic_name_prefix + "dynamic_joint_states", rclcpp::SystemDefaultsQoS());
-  } catch (const std::exception & e) {
+        topic_name_prefix + "dynamic_joint_states", rclcpp::SystemDefaultsQoS());
+  }
+  catch (const std::exception & e)
+  {
     // get_node() may throw, logging raw here
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
@@ -105,7 +109,8 @@ JointStateBroadcaster::on_configure(const rclcpp_lifecycle::State & /*previous_s
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 JointStateBroadcaster::on_activate(const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  if (!init_joint_data()) {
+  if (!init_joint_data())
+  {
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
   }
 
@@ -121,15 +126,16 @@ JointStateBroadcaster::on_deactivate(const rclcpp_lifecycle::State & /*previous_
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
-template<typename T>
+template <typename T>
 bool has_any_key(
-  const std::unordered_map<std::string, T> & map,
-  const std::vector<std::string> & keys)
+  const std::unordered_map<std::string, T> & map, const std::vector<std::string> & keys)
 {
   bool found_key = false;
-  for (const auto & key_item : map) {
+  for (const auto & key_item : map)
+  {
     const auto & key = key_item.first;
-    if (std::find(keys.cbegin(), keys.cend(), key) != keys.cend()) {
+    if (std::find(keys.cbegin(), keys.cend(), key) != keys.cend())
+    {
       found_key = true;
       break;
     }
@@ -140,21 +146,24 @@ bool has_any_key(
 bool JointStateBroadcaster::init_joint_data()
 {
   // loop in reverse order, this maintains the order of values at retrieval time
-  for (auto si = state_interfaces_.crbegin(); si != state_interfaces_.crend(); si++) {
+  for (auto si = state_interfaces_.crbegin(); si != state_interfaces_.crend(); si++)
+  {
     // initialize map if name is new
-    if (name_if_value_mapping_.count(si->get_name()) == 0) {
+    if (name_if_value_mapping_.count(si->get_name()) == 0)
+    {
       name_if_value_mapping_[si->get_name()] = {};
     }
     // add interface name
-    name_if_value_mapping_[si->get_name()][si->get_interface_name()] =
-      kUninitializedValue;
+    name_if_value_mapping_[si->get_name()][si->get_interface_name()] = kUninitializedValue;
   }
 
   // filter state interfaces that have at least one of the joint_states fields,
   // the rest will be ignored for this message
-  for (const auto & name_ifv : name_if_value_mapping_) {
+  for (const auto & name_ifv : name_if_value_mapping_)
+  {
     const auto & interfaces_and_values = name_ifv.second;
-    if (has_any_key(interfaces_and_values, {HW_IF_POSITION, HW_IF_VELOCITY, HW_IF_EFFORT})) {
+    if (has_any_key(interfaces_and_values, {HW_IF_POSITION, HW_IF_VELOCITY, HW_IF_EFFORT}))
+    {
       joint_names_.push_back(name_ifv.first);
     }
   }
@@ -162,12 +171,15 @@ bool JointStateBroadcaster::init_joint_data()
   // Add extra joints from parameters, each joint will be added to joint_names_ and
   // name_if_value_mapping_ if it is not already there
   rclcpp::Parameter extra_joints;
-  if (get_node()->get_parameter("extra_joints", extra_joints)) {
+  if (get_node()->get_parameter("extra_joints", extra_joints))
+  {
     const std::vector<std::string> & extra_joints_names = extra_joints.as_string_array();
-    for (const auto & extra_joint_name : extra_joints_names) {
-      if (name_if_value_mapping_.count(extra_joint_name) == 0) {
-        name_if_value_mapping_[extra_joint_name] =
-        {{HW_IF_POSITION, 0.0}, {HW_IF_VELOCITY, 0.0}, {HW_IF_EFFORT, 0.0}};
+    for (const auto & extra_joint_name : extra_joints_names)
+    {
+      if (name_if_value_mapping_.count(extra_joint_name) == 0)
+      {
+        name_if_value_mapping_[extra_joint_name] = {
+          {HW_IF_POSITION, 0.0}, {HW_IF_VELOCITY, 0.0}, {HW_IF_EFFORT, 0.0}};
         joint_names_.push_back(extra_joint_name);
       }
     }
@@ -192,12 +204,14 @@ void JointStateBroadcaster::init_joint_state_msg()
 
 void JointStateBroadcaster::init_dynamic_joint_state_msg()
 {
-  for (const auto & name_ifv : name_if_value_mapping_) {
+  for (const auto & name_ifv : name_if_value_mapping_)
+  {
     const auto & name = name_ifv.first;
     const auto & interfaces_and_values = name_ifv.second;
     dynamic_joint_state_msg_.joint_names.push_back(name);
     control_msgs::msg::InterfaceValue if_value;
-    for (const auto & interface_and_value : interfaces_and_values) {
+    for (const auto & interface_and_value : interfaces_and_values)
+    {
       if_value.interface_names.emplace_back(interface_and_value.first);
       if_value.values.emplace_back(kUninitializedValue);
     }
@@ -211,31 +225,33 @@ double get_value(
 {
   const auto & interfaces_and_values = map.at(name);
   const auto interface_and_value = interfaces_and_values.find(interface_name);
-  if (interface_and_value != interfaces_and_values.cend()) {
+  if (interface_and_value != interfaces_and_values.cend())
+  {
     return interface_and_value->second;
-  } else {
+  }
+  else
+  {
     return kUninitializedValue;
   }
 }
 
-controller_interface::return_type
-JointStateBroadcaster::update()
+controller_interface::return_type JointStateBroadcaster::update()
 {
-  for (const auto & state_interface : state_interfaces_) {
+  for (const auto & state_interface : state_interfaces_)
+  {
     name_if_value_mapping_[state_interface.get_name()][state_interface.get_interface_name()] =
       state_interface.get_value();
     RCLCPP_DEBUG(
-      get_node()->get_logger(), "%s/%s: %f\n",
-      state_interface.get_name().c_str(),
-      state_interface.get_interface_name().c_str(),
-      state_interface.get_value());
+      get_node()->get_logger(), "%s/%s: %f\n", state_interface.get_name().c_str(),
+      state_interface.get_interface_name().c_str(), state_interface.get_value());
   }
 
   joint_state_msg_.header.stamp = get_node()->get_clock()->now();
   dynamic_joint_state_msg_.header.stamp = get_node()->get_clock()->now();
 
   // update joint state message and dynamic joint state message
-  for (auto i = 0ul; i < joint_names_.size(); ++i) {
+  for (auto i = 0ul; i < joint_names_.size(); ++i)
+  {
     joint_state_msg_.position[i] =
       get_value(name_if_value_mapping_, joint_names_[i], HW_IF_POSITION);
     joint_state_msg_.velocity[i] =
@@ -244,13 +260,13 @@ JointStateBroadcaster::update()
   }
 
   for (auto joint_index = 0ul; joint_index < dynamic_joint_state_msg_.joint_names.size();
-    ++joint_index)
+       ++joint_index)
   {
     const auto & name = dynamic_joint_state_msg_.joint_names[joint_index];
     for (auto interface_index = 0ul;
-      interface_index <
-      dynamic_joint_state_msg_.interface_values[joint_index].interface_names.size();
-      ++interface_index)
+         interface_index <
+         dynamic_joint_state_msg_.interface_values[joint_index].interface_names.size();
+         ++interface_index)
     {
       const auto & interface_name =
         dynamic_joint_state_msg_.interface_values[joint_index].interface_names[interface_index];

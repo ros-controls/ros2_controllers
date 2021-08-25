@@ -25,8 +25,8 @@
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "position_controllers/joint_group_position_controller.hpp"
 
-using hardware_interface::HW_IF_POSITION;
 using hardware_interface::CommandInterface;
+using hardware_interface::HW_IF_POSITION;
 
 // subclassing and friending so we can access member variables
 class FriendJointGroupPositionController : public position_controllers::JointGroupPositionController
