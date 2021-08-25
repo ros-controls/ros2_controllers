@@ -115,7 +115,7 @@ TEST_F(JointStateBroadcasterTest, ConfigureErrorTest)
   ASSERT_FALSE(state_broadcaster_->dynamic_joint_state_publisher_);
 
   // configure failed
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
+  ASSERT_THROW(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), std::exception);
 
   SetUpStateBroadcaster();
   // check state remains unchanged
@@ -198,10 +198,8 @@ TEST_F(JointStateBroadcasterTest, UpdateTest)
   ASSERT_EQ(state_broadcaster_->update(), controller_interface::return_type::OK);
 }
 
-TEST_F(JointStateBroadcasterTest, JointStatePublishTest)
+void JointStateBroadcasterTest::test_published_joint_state_message(const std::string & topic)
 {
-  SetUpStateBroadcaster();
-
   auto node_state = state_broadcaster_->configure();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
 
@@ -213,7 +211,7 @@ TEST_F(JointStateBroadcasterTest, JointStatePublishTest)
     {
     };
   auto subscription = test_node.create_subscription<sensor_msgs::msg::JointState>(
-    "joint_states",
+    topic,
     10,
     subs_callback);
 
@@ -238,10 +236,24 @@ TEST_F(JointStateBroadcasterTest, JointStatePublishTest)
   ASSERT_THAT(joint_state_msg.effort, ElementsAreArray(joint_state_msg.position));
 }
 
-TEST_F(JointStateBroadcasterTest, DynamicJointStatePublishTest)
+TEST_F(JointStateBroadcasterTest, JointStatePublishTest)
 {
   SetUpStateBroadcaster();
 
+  test_published_joint_state_message("joint_states");
+}
+
+TEST_F(JointStateBroadcasterTest, JointStatePublishTestLocalTopic)
+{
+  SetUpStateBroadcaster();
+  state_broadcaster_->get_node()->set_parameter({"use_local_topics", true});
+
+  test_published_joint_state_message("joint_state_broadcaster/joint_states");
+}
+
+void
+JointStateBroadcasterTest::test_published_dynamic_joint_state_message(const std::string & topic)
+{
   auto node_state = state_broadcaster_->configure();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
 
@@ -253,7 +265,7 @@ TEST_F(JointStateBroadcasterTest, DynamicJointStatePublishTest)
     {
     };
   auto subscription = test_node.create_subscription<control_msgs::msg::DynamicJointState>(
-    "dynamic_joint_states",
+    topic,
     10,
     subs_callback);
 
@@ -290,6 +302,21 @@ TEST_F(JointStateBroadcasterTest, DynamicJointStatePublishTest)
   }
 }
 
+TEST_F(JointStateBroadcasterTest, DynamicJointStatePublishTest)
+{
+  SetUpStateBroadcaster();
+
+  test_published_dynamic_joint_state_message("dynamic_joint_states");
+}
+
+TEST_F(JointStateBroadcasterTest, DynamicJointStatePublishTestLocalTopic)
+{
+  SetUpStateBroadcaster();
+  state_broadcaster_->get_node()->set_parameter({"use_local_topics", true});
+
+  test_published_dynamic_joint_state_message("joint_state_broadcaster/dynamic_joint_states");
+}
+
 TEST_F(JointStateBroadcasterTest, ExtraJointStatePublishTest)
 {
   // joint state not initialized yet
@@ -309,10 +336,8 @@ TEST_F(JointStateBroadcasterTest, ExtraJointStatePublishTest)
   SetUpStateBroadcaster();
 
   // Add extra joints as parameters
-  auto broadcaster_node = state_broadcaster_->get_node();
   const std::vector<std::string> extra_joint_names = {"extra1", "extra2", "extra3"};
-  const rclcpp::Parameter extra_joints_parameters("extra_joints", extra_joint_names);
-  broadcaster_node->set_parameter(extra_joints_parameters);
+  state_broadcaster_->get_node()->set_parameter({"extra_joints", extra_joint_names});
 
   // configure ok
   ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
