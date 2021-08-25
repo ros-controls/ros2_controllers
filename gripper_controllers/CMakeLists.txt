@@ -61,11 +61,8 @@ install(TARGETS gripper_action_controller
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gmock REQUIRED)
-  find_package(ament_lint_auto REQUIRED)
   find_package(controller_manager REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
-
-  ament_lint_auto_find_test_dependencies()
 
   ament_add_gmock(
     test_load_gripper_action_controllers
