@@ -18,7 +18,7 @@ We're interested in helping you take the first step, and can answer questions an
 
 We know that creating a pull request is the biggest barrier for new contributors. This issue is for you 💝
 
-If you have contributed before, **consider leaving this PR for someone new**, and looking through our general [bug](https://github.com/ros-controls/ros2_control/labels/bug) issues. Thanks!
+If you have contributed before, **consider leaving this PR for someone new**, and looking through our general [bug](https://github.com/ros-controls/ros2_controllers/labels/bug) issues. Thanks!
 
 ### 🤔 What you will need to know.
 
@@ -30,15 +30,9 @@ Nothing. This issue is meant to welcome you to Open Source :) We are happy to wa
 
 - [ ] 🗄️ **Create a local workspace** for making your changes and testing [following these instructions](https://docs.ros.org/en/foxy/Tutorials/Workspace/Creating-A-Workspace.html), for Step3 use "Download Source Code" section with [these instructions](https://ros-controls.github.io/control.ros.org/getting_started.html#compiling).
 
-- [ ] 🍴 **Fork the repository** using the handy button at the top of the repository page and **clone** it into `~/ws_ros2_control/src/ros-controls/ros2_control`, [here is a guide that you can follow](https://guides.github.com/activities/forking/) (You will have to remove or empty the existing `ros2_control` folder before cloning your own fork)
+- [ ] 🍴 **Fork the repository** using the handy button at the top of the repository page and **clone** it into `~/ws_ros2_control/src/ros-controls/ros2_controllers`, [here is a guide that you can follow](https://guides.github.com/activities/forking/) (You will have to remove or empty the existing `ros2_controllers` folder before cloning your own fork)
 
 - [ ] **Checkout a new branch** using `git checkout -b <branch_name>`
-
-- [ ] 📝 **Update** the file(s) `$FILENAME`by applying the change shown in the diff below.
-
-```diff
-$DIFF
-```
 
 - [ ] 🤖 **Apply `pre-commit`** auto formatting, by running `pip3 install pre-commit` and running `pre-commit install` in the ros2_control repo.
 
