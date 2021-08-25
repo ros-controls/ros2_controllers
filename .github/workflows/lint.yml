@@ -1,5 +1,4 @@
-# Run linters automatically on pull requests.
-name: Lint ros2_controllers
+name: ROS Lint
 on:
   pull_request:
 
@@ -10,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-          linter: [copyright, cppcheck, cpplint, flake8, pep257, uncrustify, xmllint]
+          linter: [copyright, cppcheck, lint_cmake]
     steps:
     - uses: actions/checkout@v1
     - uses: ros-tooling/setup-ros@v0.2
@@ -18,6 +17,32 @@ jobs:
       with:
         distribution: foxy
         linter: ${{ matrix.linter }}
+        package-name:
+            diff_drive_controller
+            effort_controllers
+            force_torque_sensor_broadcaster
+            forward_command_controller
+            joint_state_broadcaster
+            joint_state_controller
+            joint_trajectory_controller
+            gripper_controllers
+            position_controllers
+            ros2_controllers
+            velocity_controllers
+
+  ament_lint_cpplint:
+    name: ament_lint_cpplint
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v1
+    - uses: ros-tooling/setup-ros@v0.2
+    - uses: ros-tooling/action-ros-lint@v0.1
+      with:
+        distribution: foxy
+        linter: cpplint
+        arguments: "--filter=-whitespace/newline"
         package-name:
             diff_drive_controller
             effort_controllers
