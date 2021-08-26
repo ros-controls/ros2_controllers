@@ -23,19 +23,21 @@
 
 namespace imu_sensor_broadcaster
 {
-
-controller_interface::return_type
-IMUSensorBroadcaster::init(const std::string & controller_name)
+controller_interface::return_type IMUSensorBroadcaster::init(const std::string & controller_name)
 {
   auto ret = ControllerInterface::init(controller_name);
-  if (ret != controller_interface::return_type::OK) {
+  if (ret != controller_interface::return_type::OK)
+  {
     return ret;
   }
 
-  try {
+  try
+  {
     node_->declare_parameter<std::string>("sensor_name", "");
     node_->declare_parameter<std::string>("frame_id", "");
-  } catch (const std::exception & e) {
+  }
+  catch (const std::exception & e)
+  {
     RCLCPP_ERROR(
       node_->get_logger(), "Exception thrown during init stage with message: %s \n", e.what());
     return controller_interface::return_type::ERROR;
@@ -48,26 +50,30 @@ CallbackReturn IMUSensorBroadcaster::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   sensor_name_ = node_->get_parameter("sensor_name").as_string();
-  if (sensor_name_.empty()) {
-    RCLCPP_ERROR(
-      node_->get_logger(), "'sensor_name' parameter has to be specified.");
+  if (sensor_name_.empty())
+  {
+    RCLCPP_ERROR(node_->get_logger(), "'sensor_name' parameter has to be specified.");
     return CallbackReturn::ERROR;
   }
 
   frame_id_ = node_->get_parameter("frame_id").as_string();
-  if (frame_id_.empty()) {
+  if (frame_id_.empty())
+  {
     RCLCPP_ERROR(node_->get_logger(), "'frame_id' parameter has to be provided.");
     return CallbackReturn::ERROR;
   }
 
-  imu_sensor_ = std::make_unique<semantic_components::IMUSensor>(
-    semantic_components::IMUSensor(sensor_name_));
-  try {
+  imu_sensor_ =
+    std::make_unique<semantic_components::IMUSensor>(semantic_components::IMUSensor(sensor_name_));
+  try
+  {
     // register ft sensor data publisher
-    sensor_state_publisher_ = node_->create_publisher<sensor_msgs::msg::Imu>(
-      "~/imu", rclcpp::SystemDefaultsQoS());
+    sensor_state_publisher_ =
+      node_->create_publisher<sensor_msgs::msg::Imu>("~/imu", rclcpp::SystemDefaultsQoS());
     realtime_publisher_ = std::make_unique<StatePublisher>(sensor_state_publisher_);
-  } catch (const std::exception & e) {
+  }
+  catch (const std::exception & e)
+  {
     fprintf(
       stderr, "Exception thrown during publisher creation at configure stage with message : %s \n",
       e.what());
@@ -82,16 +88,16 @@ CallbackReturn IMUSensorBroadcaster::on_configure(
   return CallbackReturn::SUCCESS;
 }
 
-controller_interface::InterfaceConfiguration
-IMUSensorBroadcaster::command_interface_configuration() const
+controller_interface::InterfaceConfiguration IMUSensorBroadcaster::command_interface_configuration()
+  const
 {
   controller_interface::InterfaceConfiguration command_interfaces_config;
   command_interfaces_config.type = controller_interface::interface_configuration_type::NONE;
   return command_interfaces_config;
 }
 
-controller_interface::InterfaceConfiguration
-IMUSensorBroadcaster::state_interface_configuration() const
+controller_interface::InterfaceConfiguration IMUSensorBroadcaster::state_interface_configuration()
+  const
 {
   controller_interface::InterfaceConfiguration state_interfaces_config;
   state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
@@ -99,8 +105,7 @@ IMUSensorBroadcaster::state_interface_configuration() const
   return state_interfaces_config;
 }
 
-CallbackReturn IMUSensorBroadcaster::on_activate(
-  const rclcpp_lifecycle::State & /*previous_state*/)
+CallbackReturn IMUSensorBroadcaster::on_activate(const rclcpp_lifecycle::State & /*previous_state*/)
 {
   imu_sensor_->assign_loaned_state_interfaces(state_interfaces_);
   return CallbackReturn::SUCCESS;
@@ -115,7 +120,8 @@ CallbackReturn IMUSensorBroadcaster::on_deactivate(
 
 controller_interface::return_type IMUSensorBroadcaster::update()
 {
-  if (realtime_publisher_ && realtime_publisher_->trylock()) {
+  if (realtime_publisher_ && realtime_publisher_->trylock())
+  {
     realtime_publisher_->msg_.header.stamp = node_->now();
     imu_sensor_->get_values_as_message(realtime_publisher_->msg_);
     realtime_publisher_->unlockAndPublish();
@@ -129,5 +135,4 @@ controller_interface::return_type IMUSensorBroadcaster::update()
 #include "pluginlib/class_list_macros.hpp"
 
 PLUGINLIB_EXPORT_CLASS(
-  imu_sensor_broadcaster::IMUSensorBroadcaster,
-  controller_interface::ControllerInterface)
+  imu_sensor_broadcaster::IMUSensorBroadcaster, controller_interface::ControllerInterface)

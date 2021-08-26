@@ -39,13 +39,13 @@
  * it is supposed to work with either position or effort commands.
  *
  */
-template<const char * HardwareInterface>
+template <const char * HardwareInterface>
 class HardwareInterfaceAdapter
 {
 public:
   bool init(
     std::experimental::optional<
-      std::reference_wrapper<hardware_interface::LoanedCommandInterface>>/* joint_handle */,
+      std::reference_wrapper<hardware_interface::LoanedCommandInterface>> /* joint_handle */,
     const rclcpp::Node::SharedPtr & /* node */)
   {
     return false;
@@ -55,9 +55,8 @@ public:
   void stopping(const rclcpp::Time & /* time */) {}
 
   double updateCommand(
-    double /* desired_position */, double /* desired_velocity */,
-    double /* error_position */, double /* error_velocity */,
-    double /* max_allowed_effort */)
+    double /* desired_position */, double /* desired_velocity */, double /* error_position */,
+    double /* error_velocity */, double /* max_allowed_effort */)
   {
     return 0.0;
   }
@@ -67,13 +66,13 @@ public:
  * \brief Adapter for a position-controlled hardware interface. Forwards desired
  * positions as commands.
  */
-template<>
+template <>
 class HardwareInterfaceAdapter<hardware_interface::HW_IF_POSITION>
 {
 public:
   bool init(
-    std::experimental::optional<
-      std::reference_wrapper<hardware_interface::LoanedCommandInterface>> joint_handle,
+    std::experimental::optional<std::reference_wrapper<hardware_interface::LoanedCommandInterface>>
+      joint_handle,
     const rclcpp::Node::SharedPtr & /* node */)
   {
     joint_handle_ = joint_handle;
@@ -84,9 +83,8 @@ public:
   void stopping(const rclcpp::Time & /* time */) {}
 
   double updateCommand(
-    double desired_position, double /* desired_velocity */,
-    double /* error_position */, double /* error_velocity */,
-    double max_allowed_effort)
+    double desired_position, double /* desired_velocity */, double /* error_position */,
+    double /* error_velocity */, double max_allowed_effort)
   {
     // Forward desired position to command
     joint_handle_->get().set_value(desired_position);
@@ -95,7 +93,7 @@ public:
 
 private:
   std::experimental::optional<std::reference_wrapper<hardware_interface::LoanedCommandInterface>>
-  joint_handle_;
+    joint_handle_;
 };
 
 /**
@@ -112,13 +110,13 @@ private:
  *     gripper_joint: {p: 200, d: 1, i: 5, i_clamp: 1}
  * \endcode
  */
-template<>
+template <>
 class HardwareInterfaceAdapter<hardware_interface::HW_IF_EFFORT>
 {
 public:
   bool init(
-    std::experimental::optional<
-      std::reference_wrapper<hardware_interface::LoanedCommandInterface>> joint_handle,
+    std::experimental::optional<std::reference_wrapper<hardware_interface::LoanedCommandInterface>>
+      joint_handle,
     const rclcpp::Node::SharedPtr & node)
   {
     joint_handle_ = joint_handle;
@@ -127,18 +125,16 @@ public:
     const auto k_p = node->declare_parameter<double>(prefix + ".p", 0.0);
     const auto k_i = node->declare_parameter<double>(prefix + ".i", 0.0);
     const auto k_d = node->declare_parameter<double>(prefix + ".d", 0.0);
-    const auto i_clamp =
-      node->declare_parameter<double>(prefix + ".i_clamp", 0.0);
+    const auto i_clamp = node->declare_parameter<double>(prefix + ".i_clamp", 0.0);
     // Initialize PID
-    pid_ = std::make_shared<control_toolbox::Pid>(
-      k_p, k_i, k_d, i_clamp,
-      -i_clamp);
+    pid_ = std::make_shared<control_toolbox::Pid>(k_p, k_i, k_d, i_clamp, -i_clamp);
     return true;
   }
 
   void starting(const rclcpp::Time & /* time */)
   {
-    if (!joint_handle_) {
+    if (!joint_handle_)
+    {
       return;
     }
     // Reset PIDs, zero effort commands
@@ -149,23 +145,20 @@ public:
   void stopping(const rclcpp::Time & /* time */) {}
 
   double updateCommand(
-    double /* desired_position */, double /* desired_velocity */,
-    double error_position, double error_velocity,
-    double max_allowed_effort)
+    double /* desired_position */, double /* desired_velocity */, double error_position,
+    double error_velocity, double max_allowed_effort)
   {
     // Preconditions
-    if (!joint_handle_) {
+    if (!joint_handle_)
+    {
       return 0.0;
     }
     // Time since the last call to update
     const auto period = std::chrono::steady_clock::now() - last_update_time_;
     // Update PIDs
-    double command =
-      pid_->computeCommand(error_position, error_velocity, period.count());
-    command =
-      std::min<double>(
-      fabs(max_allowed_effort),
-      std::max<double>(-fabs(max_allowed_effort), command));
+    double command = pid_->computeCommand(error_position, error_velocity, period.count());
+    command = std::min<double>(
+      fabs(max_allowed_effort), std::max<double>(-fabs(max_allowed_effort), command));
     joint_handle_->get().set_value(command);
     last_update_time_ = std::chrono::steady_clock::now();
     return command;
@@ -175,7 +168,7 @@ private:
   using PidPtr = std::shared_ptr<control_toolbox::Pid>;
   PidPtr pid_;
   std::experimental::optional<std::reference_wrapper<hardware_interface::LoanedCommandInterface>>
-  joint_handle_;
+    joint_handle_;
   std::chrono::steady_clock::time_point last_update_time_;
 };
 

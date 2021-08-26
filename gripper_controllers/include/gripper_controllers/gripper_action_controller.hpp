@@ -47,7 +47,6 @@
 
 namespace gripper_action_controller
 {
-
 /**
  * \brief Controller for executing a gripper command action for simple
  * single-dof grippers.
@@ -56,9 +55,8 @@ namespace gripper_action_controller
  * hardware_interface::HW_IF_POSITION and \p
  * hardware_interface::HW_IF_EFFORT are supported out-of-the-box.
  */
-template<const char * HardwareInterface>
-class GripperActionController
-  : public controller_interface::ControllerInterface
+template <const char * HardwareInterface>
+class GripperActionController : public controller_interface::ControllerInterface
 {
 public:
   /**
@@ -74,39 +72,36 @@ public:
   GRIPPER_ACTION_CONTROLLER_PUBLIC GripperActionController();
 
   GRIPPER_ACTION_CONTROLLER_PUBLIC
-  controller_interface::return_type
-  init(const std::string & controller_name) override;
+  controller_interface::return_type init(const std::string & controller_name) override;
 
   /**
    * @brief command_interface_configuration This controller requires the
    * position command interfaces for the controlled joints
    */
   GRIPPER_ACTION_CONTROLLER_PUBLIC
-  controller_interface::InterfaceConfiguration
-  command_interface_configuration() const override;
+  controller_interface::InterfaceConfiguration command_interface_configuration() const override;
 
   /**
    * @brief command_interface_configuration This controller requires the
    * position and velocity state interfaces for the controlled joints
    */
   GRIPPER_ACTION_CONTROLLER_PUBLIC
-  controller_interface::InterfaceConfiguration
-  state_interface_configuration() const override;
+  controller_interface::InterfaceConfiguration state_interface_configuration() const override;
 
   GRIPPER_ACTION_CONTROLLER_PUBLIC
   controller_interface::return_type update() override;
 
   GRIPPER_ACTION_CONTROLLER_PUBLIC
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-  on_configure(const rclcpp_lifecycle::State & previous_state) override;
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn on_configure(
+    const rclcpp_lifecycle::State & previous_state) override;
 
   GRIPPER_ACTION_CONTROLLER_PUBLIC
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-  on_activate(const rclcpp_lifecycle::State & previous_state) override;
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn on_activate(
+    const rclcpp_lifecycle::State & previous_state) override;
 
   GRIPPER_ACTION_CONTROLLER_PUBLIC
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-  on_deactivate(const rclcpp_lifecycle::State & previous_state) override;
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn on_deactivate(
+    const rclcpp_lifecycle::State & previous_state) override;
 
   realtime_tools::RealtimeBuffer<Commands> command_;
   // pre-allocated memory that is re-used to set the realtime buffer
@@ -117,8 +112,8 @@ private:
   using ActionServer = rclcpp_action::Server<GripperCommandAction>;
   using ActionServerPtr = ActionServer::SharedPtr;
   using GoalHandle = rclcpp_action::ServerGoalHandle<GripperCommandAction>;
-  using RealtimeGoalHandle = realtime_tools::RealtimeServerGoalHandle<
-    control_msgs::action::GripperCommand>;
+  using RealtimeGoalHandle =
+    realtime_tools::RealtimeServerGoalHandle<control_msgs::action::GripperCommand>;
   using RealtimeGoalHandlePtr = std::shared_ptr<RealtimeGoalHandle>;
 
   using HwIfaceAdapter = HardwareInterfaceAdapter<HardwareInterface>;
@@ -128,19 +123,17 @@ private:
   bool verbose_ = false;  ///< Hard coded verbose flag to help in debugging
   std::string name_;      ///< Controller name.
   std::experimental::optional<std::reference_wrapper<hardware_interface::LoanedCommandInterface>>
-  joint_position_command_interface_;
+    joint_position_command_interface_;
   std::experimental::optional<std::reference_wrapper<hardware_interface::LoanedStateInterface>>
-  joint_position_state_interface_;
+    joint_position_state_interface_;
   std::experimental::optional<std::reference_wrapper<hardware_interface::LoanedStateInterface>>
-  joint_velocity_state_interface_;
+    joint_velocity_state_interface_;
 
   std::string joint_name_;  ///< Controlled joint names.
 
-  HwIfaceAdapter
-    hw_iface_adapter_;   ///< Adapts desired goal state to HW interface.
+  HwIfaceAdapter hw_iface_adapter_;  ///< Adapts desired goal state to HW interface.
 
-  RealtimeGoalHandlePtr
-    rt_active_goal_;   ///< Currently active action goal, if any.
+  RealtimeGoalHandlePtr rt_active_goal_;  ///< Currently active action goal, if any.
   control_msgs::action::GripperCommand::Result::SharedPtr pre_alloc_result_;
 
   rclcpp::Duration action_monitor_period_;
@@ -150,13 +143,10 @@ private:
 
   rclcpp::TimerBase::SharedPtr goal_handle_timer_;
 
-  rclcpp_action::GoalResponse
-  goal_callback(
-    const rclcpp_action::GoalUUID & uuid,
-    std::shared_ptr<const GripperCommandAction::Goal> goal);
+  rclcpp_action::GoalResponse goal_callback(
+    const rclcpp_action::GoalUUID & uuid, std::shared_ptr<const GripperCommandAction::Goal> goal);
 
-  rclcpp_action::CancelResponse
-  cancel_callback(const std::shared_ptr<GoalHandle> goal_handle);
+  rclcpp_action::CancelResponse cancel_callback(const std::shared_ptr<GoalHandle> goal_handle);
 
   void accepted_callback(std::shared_ptr<GoalHandle> goal_handle);
 
@@ -164,21 +154,20 @@ private:
 
   void set_hold_position();
 
-  rclcpp::Time last_movement_time_ =
-    rclcpp::Time(0, 0, RCL_ROS_TIME);   ///< Store stall time
-  double computed_command_;             ///< Computed command
+  rclcpp::Time last_movement_time_ = rclcpp::Time(0, 0, RCL_ROS_TIME);  ///< Store stall time
+  double computed_command_;                                             ///< Computed command
 
   double stall_timeout_,
-    stall_velocity_threshold_;   ///< Stall related parameters
-  double default_max_effort_;    ///< Max allowed effort
+    stall_velocity_threshold_;  ///< Stall related parameters
+  double default_max_effort_;   ///< Max allowed effort
   double goal_tolerance_;
 
   /**
    * \brief Check for success and publish appropriate result and feedback.
    **/
   void check_for_success(
-    const rclcpp::Time & time, double error_position,
-    double current_position, double current_velocity);
+    const rclcpp::Time & time, double error_position, double current_position,
+    double current_velocity);
 };
 
 }  // namespace gripper_action_controller

@@ -40,9 +40,9 @@ public:
    */
   SpeedLimiter(
     bool has_velocity_limits = false, bool has_acceleration_limits = false,
-    bool has_jerk_limits = false,
-    double min_velocity = NAN, double max_velocity = NAN, double min_acceleration = NAN,
-    double max_acceleration = NAN, double min_jerk = NAN, double max_jerk = NAN);
+    bool has_jerk_limits = false, double min_velocity = NAN, double max_velocity = NAN,
+    double min_acceleration = NAN, double max_acceleration = NAN, double min_jerk = NAN,
+    double max_jerk = NAN);
 
   /**
    * \brief Limit the velocity and acceleration

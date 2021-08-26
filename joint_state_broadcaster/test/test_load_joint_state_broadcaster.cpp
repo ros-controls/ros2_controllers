@@ -29,13 +29,13 @@ TEST(TestLoadJointStateBroadcaster, load_controller)
   std::shared_ptr<rclcpp::Executor> executor =
     std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
 
-  controller_manager::ControllerManager cm(std::make_unique<hardware_interface::ResourceManager>(
-      ros2_control_test_assets::minimal_robot_urdf), executor, "test_controller_manager");
+  controller_manager::ControllerManager cm(
+    std::make_unique<hardware_interface::ResourceManager>(
+      ros2_control_test_assets::minimal_robot_urdf),
+    executor, "test_controller_manager");
 
-  ASSERT_NO_THROW(
-    cm.load_controller(
-      "test_joint_state_broadcaster",
-      "joint_state_broadcaster/JointStateBroadcaster"));
+  ASSERT_NO_THROW(cm.load_controller(
+    "test_joint_state_broadcaster", "joint_state_broadcaster/JointStateBroadcaster"));
 
   rclcpp::shutdown();
 }
