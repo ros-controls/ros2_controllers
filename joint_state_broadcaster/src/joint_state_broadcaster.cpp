@@ -56,7 +56,7 @@ controller_interface::return_type JointStateBroadcaster::init(const std::string 
 
   try
   {
-    get_node()->declare_parameter<bool>("use_local_topics", false);
+    auto_declare<bool>("use_local_topics", false);
   }
   catch (const std::exception & e)
   {

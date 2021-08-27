@@ -39,14 +39,14 @@ controller_interface::return_type ForceTorqueSensorBroadcaster::init(
 
   try
   {
-    node_->declare_parameter<std::string>("sensor_name", "");
-    node_->declare_parameter<std::string>("interface_names.force.x", "");
-    node_->declare_parameter<std::string>("interface_names.force.y", "");
-    node_->declare_parameter<std::string>("interface_names.force.z", "");
-    node_->declare_parameter<std::string>("interface_names.torque.x", "");
-    node_->declare_parameter<std::string>("interface_names.torque.y", "");
-    node_->declare_parameter<std::string>("interface_names.torque.z", "");
-    node_->declare_parameter<std::string>("frame_id", "");
+    auto_declare<std::string>("sensor_name", "");
+    auto_declare<std::string>("interface_names.force.x", "");
+    auto_declare<std::string>("interface_names.force.y", "");
+    auto_declare<std::string>("interface_names.force.z", "");
+    auto_declare<std::string>("interface_names.torque.x", "");
+    auto_declare<std::string>("interface_names.torque.y", "");
+    auto_declare<std::string>("interface_names.torque.z", "");
+    auto_declare<std::string>("frame_id", "");
   }
   catch (const std::exception & e)
   {

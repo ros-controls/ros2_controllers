@@ -33,8 +33,8 @@ controller_interface::return_type IMUSensorBroadcaster::init(const std::string &
 
   try
   {
-    node_->declare_parameter<std::string>("sensor_name", "");
-    node_->declare_parameter<std::string>("frame_id", "");
+    auto_declare<std::string>("sensor_name", "");
+    auto_declare<std::string>("frame_id", "");
   }
   catch (const std::exception & e)
   {
