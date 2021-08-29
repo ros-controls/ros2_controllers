@@ -107,7 +107,7 @@ JointTrajectoryController::state_interface_configuration() const
 
 controller_interface::return_type JointTrajectoryController::update()
 {
-  if (get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
+  if (get_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
   {
     return controller_interface::return_type::OK;
   }
@@ -900,7 +900,7 @@ rclcpp_action::GoalResponse JointTrajectoryController::goal_callback(
   RCLCPP_INFO(node_->get_logger(), "Received new action goal");
 
   // Precondition: Running controller
-  if (get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
+  if (get_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
   {
     RCLCPP_ERROR(node_->get_logger(), "Can't accept new action goals. Controller is not running.");
     return rclcpp_action::GoalResponse::REJECT;

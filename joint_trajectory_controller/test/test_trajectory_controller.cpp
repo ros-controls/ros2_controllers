@@ -97,7 +97,7 @@ TEST_P(TrajectoryControllerTestParameterized, activate)
   executor.add_node(traj_controller_->get_node()->get_node_base_interface());
 
   traj_controller_->configure();
-  ASSERT_EQ(traj_controller_->get_current_state().id(), State::PRIMARY_STATE_INACTIVE);
+  ASSERT_EQ(traj_controller_->get_state().id(), State::PRIMARY_STATE_INACTIVE);
 
   auto cmd_interface_config = traj_controller_->command_interface_configuration();
   ASSERT_EQ(
@@ -108,7 +108,7 @@ TEST_P(TrajectoryControllerTestParameterized, activate)
     state_interface_config.names.size(), joint_names_.size() * state_interface_types_.size());
 
   ActivateTrajectoryController();
-  ASSERT_EQ(traj_controller_->get_current_state().id(), State::PRIMARY_STATE_ACTIVE);
+  ASSERT_EQ(traj_controller_->get_state().id(), State::PRIMARY_STATE_ACTIVE);
 
   executor.cancel();
 }
@@ -268,14 +268,14 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
   // This call is replacing the way parameters are set via launch
   SetParameters();
   traj_controller_->configure();
-  auto state = traj_controller_->get_current_state();
+  auto state = traj_controller_->get_state();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
 
   ActivateTrajectoryController();
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(traj_controller_->get_node()->get_node_base_interface());
 
-  state = traj_controller_->get_current_state();
+  state = traj_controller_->get_state();
   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
   EXPECT_EQ(INITIAL_POS_JOINT1, joint_pos_[0]);
   EXPECT_EQ(INITIAL_POS_JOINT2, joint_pos_[1]);
@@ -1107,10 +1107,10 @@ INSTANTIATE_TEST_CASE_P(
 TEST_F(TrajectoryControllerTest, incorrect_initialization_using_interface_parameters)
 {
   auto set_parameter_and_check_result = [&]() {
-    EXPECT_EQ(traj_controller_->get_current_state().id(), State::PRIMARY_STATE_UNCONFIGURED);
+    EXPECT_EQ(traj_controller_->get_state().id(), State::PRIMARY_STATE_UNCONFIGURED);
     SetParameters();  // This call is replacing the way parameters are set via launch
     traj_controller_->configure();
-    EXPECT_EQ(traj_controller_->get_current_state().id(), State::PRIMARY_STATE_UNCONFIGURED);
+    EXPECT_EQ(traj_controller_->get_state().id(), State::PRIMARY_STATE_UNCONFIGURED);
   };
 
   SetUpTrajectoryController(false);
