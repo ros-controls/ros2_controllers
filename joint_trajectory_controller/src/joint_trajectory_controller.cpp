@@ -60,16 +60,15 @@ controller_interface::return_type JointTrajectoryController::init(
   }
 
   // with the lifecycle node being initialized, we can declare parameters
-  node_->declare_parameter<std::vector<std::string>>("joints", joint_names_);
-  node_->declare_parameter<std::vector<std::string>>(
-    "command_interfaces", command_interface_types_);
-  node_->declare_parameter<std::vector<std::string>>("state_interfaces", state_interface_types_);
-  node_->declare_parameter<double>("state_publish_rate", 50.0);
-  node_->declare_parameter<double>("action_monitor_rate", 20.0);
-  node_->declare_parameter<bool>("allow_partial_joints_goal", allow_partial_joints_goal_);
-  node_->declare_parameter<bool>("open_loop_control", open_loop_control_);
-  node_->declare_parameter<double>("constraints.stopped_velocity_tolerance", 0.01);
-  node_->declare_parameter<double>("constraints.goal_time", 0.0);
+  auto_declare<std::vector<std::string>>("joints", joint_names_);
+  auto_declare<std::vector<std::string>>("command_interfaces", command_interface_types_);
+  auto_declare<std::vector<std::string>>("state_interfaces", state_interface_types_);
+  auto_declare<double>("state_publish_rate", 50.0);
+  auto_declare<double>("action_monitor_rate", 20.0);
+  auto_declare<bool>("allow_partial_joints_goal", allow_partial_joints_goal_);
+  auto_declare<bool>("open_loop_control", open_loop_control_);
+  auto_declare<double>("constraints.stopped_velocity_tolerance", 0.01);
+  auto_declare<double>("constraints.goal_time", 0.0);
 
   return controller_interface::return_type::OK;
 }

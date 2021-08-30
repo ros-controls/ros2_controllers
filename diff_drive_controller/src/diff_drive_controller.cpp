@@ -59,55 +59,48 @@ controller_interface::return_type DiffDriveController::init(const std::string & 
 
   try
   {
-    auto node = get_node();
     // with the lifecycle node being initialized, we can declare parameters
-    node->declare_parameter<std::vector<std::string>>(
-      "left_wheel_names", std::vector<std::string>());
-    node->declare_parameter<std::vector<std::string>>(
-      "right_wheel_names", std::vector<std::string>());
+    auto_declare<std::vector<std::string>>("left_wheel_names", std::vector<std::string>());
+    auto_declare<std::vector<std::string>>("right_wheel_names", std::vector<std::string>());
 
-    node->declare_parameter<double>("wheel_separation", wheel_params_.separation);
-    node->declare_parameter<int>("wheels_per_side", wheel_params_.wheels_per_side);
-    node->declare_parameter<double>("wheel_radius", wheel_params_.radius);
-    node->declare_parameter<double>(
-      "wheel_separation_multiplier", wheel_params_.separation_multiplier);
-    node->declare_parameter<double>(
-      "left_wheel_radius_multiplier", wheel_params_.left_radius_multiplier);
-    node->declare_parameter<double>(
-      "right_wheel_radius_multiplier", wheel_params_.right_radius_multiplier);
+    auto_declare<double>("wheel_separation", wheel_params_.separation);
+    auto_declare<int>("wheels_per_side", wheel_params_.wheels_per_side);
+    auto_declare<double>("wheel_radius", wheel_params_.radius);
+    auto_declare<double>("wheel_separation_multiplier", wheel_params_.separation_multiplier);
+    auto_declare<double>("left_wheel_radius_multiplier", wheel_params_.left_radius_multiplier);
+    auto_declare<double>("right_wheel_radius_multiplier", wheel_params_.right_radius_multiplier);
 
-    node->declare_parameter<std::string>("odom_frame_id", odom_params_.odom_frame_id);
-    node->declare_parameter<std::string>("base_frame_id", odom_params_.base_frame_id);
-    node->declare_parameter<std::vector<double>>("pose_covariance_diagonal", std::vector<double>());
-    node->declare_parameter<std::vector<double>>(
-      "twist_covariance_diagonal", std::vector<double>());
-    node->declare_parameter<bool>("open_loop", odom_params_.open_loop);
-    node->declare_parameter<bool>("enable_odom_tf", odom_params_.enable_odom_tf);
+    auto_declare<std::string>("odom_frame_id", odom_params_.odom_frame_id);
+    auto_declare<std::string>("base_frame_id", odom_params_.base_frame_id);
+    auto_declare<std::vector<double>>("pose_covariance_diagonal", std::vector<double>());
+    auto_declare<std::vector<double>>("twist_covariance_diagonal", std::vector<double>());
+    auto_declare<bool>("open_loop", odom_params_.open_loop);
+    auto_declare<bool>("enable_odom_tf", odom_params_.enable_odom_tf);
 
-    node->declare_parameter<double>("cmd_vel_timeout", cmd_vel_timeout_.count() / 1000.0);
-    node->declare_parameter<bool>("publish_limited_velocity", publish_limited_velocity_);
-    node->declare_parameter<int>("velocity_rolling_window_size", 10);
-    node->declare_parameter<bool>("use_stamped_vel", use_stamped_vel_);
+    auto_declare<double>("cmd_vel_timeout", cmd_vel_timeout_.count() / 1000.0);
+    auto_declare<bool>("publish_limited_velocity", publish_limited_velocity_);
+    auto_declare<int>("velocity_rolling_window_size", 10);
+    auto_declare<bool>("use_stamped_vel", use_stamped_vel_);
 
-    node->declare_parameter<bool>("linear.x.has_velocity_limits", false);
-    node->declare_parameter<bool>("linear.x.has_acceleration_limits", false);
-    node->declare_parameter<bool>("linear.x.has_jerk_limits", false);
-    node->declare_parameter<double>("linear.x.max_velocity", NAN);
-    node->declare_parameter<double>("linear.x.min_velocity", NAN);
-    node->declare_parameter<double>("linear.x.max_acceleration", NAN);
-    node->declare_parameter<double>("linear.x.min_acceleration", NAN);
-    node->declare_parameter<double>("linear.x.max_jerk", NAN);
-    node->declare_parameter<double>("linear.x.min_jerk", NAN);
+    auto_declare<bool>("linear.x.has_velocity_limits", false);
+    auto_declare<bool>("linear.x.has_acceleration_limits", false);
+    auto_declare<bool>("linear.x.has_jerk_limits", false);
+    auto_declare<double>("linear.x.max_velocity", NAN);
+    auto_declare<double>("linear.x.min_velocity", NAN);
+    auto_declare<double>("linear.x.max_acceleration", NAN);
+    auto_declare<double>("linear.x.min_acceleration", NAN);
+    auto_declare<double>("linear.x.max_jerk", NAN);
+    auto_declare<double>("linear.x.min_jerk", NAN);
 
-    node->declare_parameter<bool>("angular.z.has_velocity_limits", false);
-    node->declare_parameter<bool>("angular.z.has_acceleration_limits", false);
-    node->declare_parameter<bool>("angular.z.has_jerk_limits", false);
-    node->declare_parameter<double>("angular.z.max_velocity", NAN);
-    node->declare_parameter<double>("angular.z.min_velocity", NAN);
-    node->declare_parameter<double>("angular.z.max_acceleration", NAN);
-    node->declare_parameter<double>("angular.z.min_acceleration", NAN);
-    node->declare_parameter<double>("angular.z.max_jerk", NAN);
-    node->declare_parameter<double>("angular.z.min_jerk", NAN);
+    auto_declare<bool>("angular.z.has_velocity_limits", false);
+    auto_declare<bool>("angular.z.has_acceleration_limits", false);
+    auto_declare<bool>("angular.z.has_jerk_limits", false);
+    auto_declare<double>("angular.z.max_velocity", NAN);
+    auto_declare<double>("angular.z.min_velocity", NAN);
+    auto_declare<double>("angular.z.max_acceleration", NAN);
+    auto_declare<double>("angular.z.min_acceleration", NAN);
+    auto_declare<double>("angular.z.max_jerk", NAN);
+    auto_declare<double>("angular.z.min_jerk", NAN);
   }
   catch (const std::exception & e)
   {

@@ -114,6 +114,21 @@ template <>
 class HardwareInterfaceAdapter<hardware_interface::HW_IF_EFFORT>
 {
 public:
+  template <typename ParameterT>
+  auto auto_declare(
+    const rclcpp::Node::SharedPtr & node, const std::string & name,
+    const ParameterT & default_value)
+  {
+    if (!node->has_parameter(name))
+    {
+      return node->declare_parameter<ParameterT>(name, default_value);
+    }
+    else
+    {
+      return node->get_parameter(name).get_value<ParameterT>();
+    }
+  }
+
   bool init(
     std::experimental::optional<std::reference_wrapper<hardware_interface::LoanedCommandInterface>>
       joint_handle,
@@ -122,10 +137,10 @@ public:
     joint_handle_ = joint_handle;
     // Init PID gains from ROS parameter server
     const std::string prefix = "gains." + joint_handle_->get().get_name();
-    const auto k_p = node->declare_parameter<double>(prefix + ".p", 0.0);
-    const auto k_i = node->declare_parameter<double>(prefix + ".i", 0.0);
-    const auto k_d = node->declare_parameter<double>(prefix + ".d", 0.0);
-    const auto i_clamp = node->declare_parameter<double>(prefix + ".i_clamp", 0.0);
+    const auto k_p = auto_declare<double>(node, prefix + ".p", 0.0);
+    const auto k_i = auto_declare<double>(node, prefix + ".i", 0.0);
+    const auto k_d = auto_declare<double>(node, prefix + ".d", 0.0);
+    const auto i_clamp = auto_declare<double>(node, prefix + ".i_clamp", 0.0);
     // Initialize PID
     pid_ = std::make_shared<control_toolbox::Pid>(k_p, k_i, k_d, i_clamp, -i_clamp);
     return true;

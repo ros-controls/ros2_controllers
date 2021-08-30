@@ -46,12 +46,12 @@ controller_interface::return_type GripperActionController<HardwareInterface>::in
   }
 
   // with the lifecycle node being initialized, we can declare parameters
-  node_->declare_parameter<double>("action_monitor_rate", 20.0);
-  node_->declare_parameter<std::string>("joint", joint_name_);
-  node_->declare_parameter<double>("goal_tolerance", 0.01);
-  node_->declare_parameter<double>("max_effort", 0.0);
-  node_->declare_parameter<double>("stall_velocity_threshold", 0.001);
-  node_->declare_parameter<double>("stall_timeout", 1.0);
+  auto_declare<double>("action_monitor_rate", 20.0);
+  auto_declare<std::string>("joint", joint_name_);
+  auto_declare<double>("goal_tolerance", 0.01);
+  auto_declare<double>("max_effort", 0.0);
+  auto_declare<double>("stall_velocity_threshold", 0.001);
+  auto_declare<double>("stall_timeout", 1.0);
 
   return controller_interface::return_type::OK;
 }
