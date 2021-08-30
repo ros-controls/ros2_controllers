@@ -15,8 +15,8 @@ jobs:
     strategy:
      matrix:
        env:
-         - {ROS_DISTRO: foxy, ROS_REPO: main}
-         - {ROS_DISTRO: foxy, ROS_REPO: testing}
+         - {ROS_DISTRO: galactic, ROS_REPO: main}
+         - {ROS_DISTRO: galactic, ROS_REPO: testing}
     env:
      UPSTREAM_WORKSPACE: .github/workspace.repos
     steps:
@@ -35,7 +35,7 @@ jobs:
           required-ros-distributions: foxy
       - uses: ros-tooling/action-ros-ci@v0.2
         with:
-          target-ros2-distro: foxy
+          target-ros2-distro: galactic
           # build all packages listed in the meta package
           package-name: |
             diff_drive_controller
