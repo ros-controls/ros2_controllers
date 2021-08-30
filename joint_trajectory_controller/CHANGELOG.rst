@@ -2,6 +2,18 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add auto declaration of parameters. (`#224 <https://github.com/ros-controls/ros2_controllers/issues/224>`_)
+* Bring precommit config up to speed with ros2_control (`#227 <https://github.com/ros-controls/ros2_controllers/issues/227>`_)
+* Add initial pre-commit setup. (`#220 <https://github.com/ros-controls/ros2_controllers/issues/220>`_)
+* Enable JTC for hardware having offset from state measurements (`#189 <https://github.com/ros-controls/ros2_controllers/issues/189>`_)
+  * Avoid "jumps" with states that have tracking error. All test are passing but separatelly. Is there some kind of timeout?
+  * Remove allow_integration_flag
+  * Add reading from command interfaces when restarting controller
+* Reduce docs warnings and correct adding guidelines (`#219 <https://github.com/ros-controls/ros2_controllers/issues/219>`_)
+* Contributors: Bence Magyar, Denis Štogl, Lovro Ivanov
+
 0.4.1 (2021-07-08)
 ------------------
 

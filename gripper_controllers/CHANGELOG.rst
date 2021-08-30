@@ -2,6 +2,12 @@
 Changelog for package gripper_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add auto declaration of parameters. (`#224 <https://github.com/ros-controls/ros2_controllers/issues/224>`_)
+* Bring precommit config up to speed with ros2_control (`#227 <https://github.com/ros-controls/ros2_controllers/issues/227>`_)
+* Contributors: Bence Magyar, Lovro Ivanov
+
 0.4.1 (2021-07-08)
 ------------------
 * Fix test dependencies (`#213 <https://github.com/ros-controls/ros2_controllers/issues/213>`_)

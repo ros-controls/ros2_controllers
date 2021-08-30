@@ -2,6 +2,11 @@
 Changelog for package joint_state_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Bring precommit config up to speed with ros2_control (`#227 <https://github.com/ros-controls/ros2_controllers/issues/227>`_)
+* Contributors: Bence Magyar
+
 0.4.1 (2021-07-08)
 ------------------
 
