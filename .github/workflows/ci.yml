@@ -32,7 +32,7 @@ jobs:
     steps:
       - uses: ros-tooling/setup-ros@v0.2
         with:
-          required-ros-distributions: foxy
+          required-ros-distributions: galactic
       - uses: ros-tooling/action-ros-ci@v0.2
         with:
           target-ros2-distro: galactic
