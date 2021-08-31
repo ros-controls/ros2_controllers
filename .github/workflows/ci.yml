@@ -10,13 +10,13 @@ on:
 
 jobs:
   ci_binary:
-    name: Foxy binary job
+    name: Galactic binary job
     runs-on: ubuntu-latest
     strategy:
      matrix:
        env:
-         - {ROS_DISTRO: foxy, ROS_REPO: main}
-         - {ROS_DISTRO: foxy, ROS_REPO: testing}
+         - {ROS_DISTRO: galactic, ROS_REPO: main}
+         - {ROS_DISTRO: galactic, ROS_REPO: testing}
     env:
      UPSTREAM_WORKSPACE: .github/workspace.repos
     steps:
@@ -25,17 +25,17 @@ jobs:
        env: ${{matrix.env}}
 
   ci_source:
-    name: Foxy source job
+    name: Galactic source job
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
     steps:
       - uses: ros-tooling/setup-ros@v0.2
         with:
-          required-ros-distributions: foxy
+          required-ros-distributions: galactic
       - uses: ros-tooling/action-ros-ci@v0.2
         with:
-          target-ros2-distro: foxy
+          target-ros2-distro: galactic
           # build all packages listed in the meta package
           package-name: |
             diff_drive_controller
