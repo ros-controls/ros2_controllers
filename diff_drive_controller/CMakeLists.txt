@@ -91,10 +91,6 @@ if(BUILD_TESTING)
     ros2_control_test_assets
   )
 
-  ament_add_gmock(
-    test_accumulator
-    test/test_accumulator.cpp
-  )
 endif()
 
 ament_export_dependencies(
