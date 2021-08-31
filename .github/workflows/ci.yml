@@ -10,7 +10,7 @@ on:
 
 jobs:
   ci_binary:
-    name: Foxy binary job
+    name: Galactic binary job
     runs-on: ubuntu-latest
     strategy:
      matrix:
@@ -25,7 +25,7 @@ jobs:
        env: ${{matrix.env}}
 
   ci_source:
-    name: Foxy source job
+    name: Galactic source job
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
