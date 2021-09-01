@@ -35,25 +35,26 @@ void GripperActionController<HardwareInterface>::preempt_active_goal()
 }
 
 template <const char * HardwareInterface>
-controller_interface::return_type GripperActionController<HardwareInterface>::init(
-  const std::string & controller_name)
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+GripperActionController<HardwareInterface>::on_init()
 {
-  // initialize lifecycle node
-  const auto ret = ControllerInterface::init(controller_name);
-  if (ret != controller_interface::return_type::OK)
+  try
   {
-    return ret;
+    // with the lifecycle node being initialized, we can declare parameters
+    auto_declare<double>("action_monitor_rate", 20.0);
+    auto_declare<std::string>("joint", joint_name_);
+    auto_declare<double>("goal_tolerance", 0.01);
+    auto_declare<double>("max_effort", 0.0);
+    auto_declare<double>("stall_velocity_threshold", 0.001);
+    auto_declare<double>("stall_timeout", 1.0);
+  }
+  catch (const std::exception & e)
+  {
+    fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
   }
 
-  // with the lifecycle node being initialized, we can declare parameters
-  auto_declare<double>("action_monitor_rate", 20.0);
-  auto_declare<std::string>("joint", joint_name_);
-  auto_declare<double>("goal_tolerance", 0.01);
-  auto_declare<double>("max_effort", 0.0);
-  auto_declare<double>("stall_velocity_threshold", 0.001);
-  auto_declare<double>("stall_timeout", 1.0);
-
-  return controller_interface::return_type::OK;
+  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
 template <const char * HardwareInterface>

@@ -35,15 +35,8 @@ ForwardCommandController::ForwardCommandController()
 {
 }
 
-controller_interface::return_type ForwardCommandController::init(
-  const std::string & controller_name)
+CallbackReturn ForwardCommandController::on_init()
 {
-  auto ret = ControllerInterface::init(controller_name);
-  if (ret != controller_interface::return_type::OK)
-  {
-    return ret;
-  }
-
   try
   {
     auto_declare<std::vector<std::string>>("joints", std::vector<std::string>());
@@ -53,10 +46,10 @@ controller_interface::return_type ForwardCommandController::init(
   catch (const std::exception & e)
   {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
-    return controller_interface::return_type::ERROR;
+    return CallbackReturn::ERROR;
   }
 
-  return controller_interface::return_type::OK;
+  return CallbackReturn::SUCCESS;
 }
 
 CallbackReturn ForwardCommandController::on_configure(

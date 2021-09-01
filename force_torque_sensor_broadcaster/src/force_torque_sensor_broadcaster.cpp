@@ -28,15 +28,8 @@ ForceTorqueSensorBroadcaster::ForceTorqueSensorBroadcaster()
 {
 }
 
-controller_interface::return_type ForceTorqueSensorBroadcaster::init(
-  const std::string & controller_name)
+CallbackReturn ForceTorqueSensorBroadcaster::on_init()
 {
-  auto ret = ControllerInterface::init(controller_name);
-  if (ret != controller_interface::return_type::OK)
-  {
-    return ret;
-  }
-
   try
   {
     auto_declare<std::string>("sensor_name", "");
@@ -51,10 +44,10 @@ controller_interface::return_type ForceTorqueSensorBroadcaster::init(
   catch (const std::exception & e)
   {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
-    return controller_interface::return_type::ERROR;
+    return CallbackReturn::ERROR;
   }
 
-  return controller_interface::return_type::OK;
+  return CallbackReturn::SUCCESS;
 }
 
 CallbackReturn ForceTorqueSensorBroadcaster::on_configure(

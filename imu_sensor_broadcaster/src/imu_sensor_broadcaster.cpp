@@ -23,14 +23,8 @@
 
 namespace imu_sensor_broadcaster
 {
-controller_interface::return_type IMUSensorBroadcaster::init(const std::string & controller_name)
+CallbackReturn IMUSensorBroadcaster::on_init()
 {
-  auto ret = ControllerInterface::init(controller_name);
-  if (ret != controller_interface::return_type::OK)
-  {
-    return ret;
-  }
-
   try
   {
     auto_declare<std::string>("sensor_name", "");
@@ -40,10 +34,10 @@ controller_interface::return_type IMUSensorBroadcaster::init(const std::string &
   {
     RCLCPP_ERROR(
       node_->get_logger(), "Exception thrown during init stage with message: %s \n", e.what());
-    return controller_interface::return_type::ERROR;
+    return CallbackReturn::ERROR;
   }
 
-  return controller_interface::return_type::OK;
+  return CallbackReturn::SUCCESS;
 }
 
 CallbackReturn IMUSensorBroadcaster::on_configure(

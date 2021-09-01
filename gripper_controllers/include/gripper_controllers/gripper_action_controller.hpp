@@ -71,9 +71,6 @@ public:
 
   GRIPPER_ACTION_CONTROLLER_PUBLIC GripperActionController();
 
-  GRIPPER_ACTION_CONTROLLER_PUBLIC
-  controller_interface::return_type init(const std::string & controller_name) override;
-
   /**
    * @brief command_interface_configuration This controller requires the
    * position command interfaces for the controlled joints
@@ -90,6 +87,9 @@ public:
 
   GRIPPER_ACTION_CONTROLLER_PUBLIC
   controller_interface::return_type update() override;
+
+  GRIPPER_ACTION_CONTROLLER_PUBLIC
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn on_init() override;
 
   GRIPPER_ACTION_CONTROLLER_PUBLIC
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn on_configure(

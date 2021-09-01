@@ -51,13 +51,13 @@ public:
   ForwardCommandController();
 
   FORWARD_COMMAND_CONTROLLER_PUBLIC
-  controller_interface::return_type init(const std::string & controller_name) override;
-
-  FORWARD_COMMAND_CONTROLLER_PUBLIC
   controller_interface::InterfaceConfiguration command_interface_configuration() const override;
 
   FORWARD_COMMAND_CONTROLLER_PUBLIC
   controller_interface::InterfaceConfiguration state_interface_configuration() const override;
+
+  FORWARD_COMMAND_CONTROLLER_PUBLIC
+  CallbackReturn on_init() override;
 
   FORWARD_COMMAND_CONTROLLER_PUBLIC
   CallbackReturn on_configure(const rclcpp_lifecycle::State & previous_state) override;

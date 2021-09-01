@@ -49,28 +49,29 @@ JointTrajectoryController::JointTrajectoryController()
 {
 }
 
-controller_interface::return_type JointTrajectoryController::init(
-  const std::string & controller_name)
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+JointTrajectoryController::on_init()
 {
-  // initialize lifecycle node
-  const auto ret = ControllerInterface::init(controller_name);
-  if (ret != controller_interface::return_type::OK)
+  try
   {
-    return ret;
+    // with the lifecycle node being initialized, we can declare parameters
+    auto_declare<std::vector<std::string>>("joints", joint_names_);
+    auto_declare<std::vector<std::string>>("command_interfaces", command_interface_types_);
+    auto_declare<std::vector<std::string>>("state_interfaces", state_interface_types_);
+    auto_declare<double>("state_publish_rate", 50.0);
+    auto_declare<double>("action_monitor_rate", 20.0);
+    auto_declare<bool>("allow_partial_joints_goal", allow_partial_joints_goal_);
+    auto_declare<bool>("open_loop_control", open_loop_control_);
+    auto_declare<double>("constraints.stopped_velocity_tolerance", 0.01);
+    auto_declare<double>("constraints.goal_time", 0.0);
+  }
+  catch (const std::exception & e)
+  {
+    fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
   }
 
-  // with the lifecycle node being initialized, we can declare parameters
-  auto_declare<std::vector<std::string>>("joints", joint_names_);
-  auto_declare<std::vector<std::string>>("command_interfaces", command_interface_types_);
-  auto_declare<std::vector<std::string>>("state_interfaces", state_interface_types_);
-  auto_declare<double>("state_publish_rate", 50.0);
-  auto_declare<double>("action_monitor_rate", 20.0);
-  auto_declare<bool>("allow_partial_joints_goal", allow_partial_joints_goal_);
-  auto_declare<bool>("open_loop_control", open_loop_control_);
-  auto_declare<double>("constraints.stopped_velocity_tolerance", 0.01);
-  auto_declare<double>("constraints.goal_time", 0.0);
-
-  return controller_interface::return_type::OK;
+  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
 controller_interface::InterfaceConfiguration
