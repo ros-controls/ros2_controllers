@@ -16,6 +16,7 @@
   <depend>nav_msgs</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_lifecycle</depend>
+  <depend>rcpputils</depend>
   <depend>realtime_tools</depend>
   <depend>tf2</depend>
   <depend>tf2_msgs</depend>
