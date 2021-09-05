@@ -142,7 +142,7 @@ InterfaceConfiguration DiffDriveController::state_interface_configuration() cons
 controller_interface::return_type DiffDriveController::update()
 {
   auto logger = node_->get_logger();
-  if (get_current_state().id() == State::PRIMARY_STATE_INACTIVE)
+  if (get_state().id() == State::PRIMARY_STATE_INACTIVE)
   {
     if (!is_halted)
     {
