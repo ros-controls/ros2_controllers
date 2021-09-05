@@ -23,7 +23,6 @@ jobs:
             force_torque_sensor_broadcaster
             forward_command_controller
             joint_state_broadcaster
-            joint_state_controller
             joint_trajectory_controller
             gripper_controllers
             position_controllers
@@ -49,7 +48,6 @@ jobs:
             force_torque_sensor_broadcaster
             forward_command_controller
             joint_state_broadcaster
-            joint_state_controller
             joint_trajectory_controller
             gripper_controllers
             position_controllers
