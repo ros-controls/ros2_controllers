@@ -62,7 +62,8 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
     auto_declare<double>("action_monitor_rate", 20.0);
     auto_declare<bool>("allow_partial_joints_goal", allow_partial_joints_goal_);
     auto_declare<bool>("open_loop_control", open_loop_control_);
-    auto_declare<bool>("allow_integration_in_goal_trajectories", allow_integration_in_goal_trajectories_);
+    auto_declare<bool>(
+      "allow_integration_in_goal_trajectories", allow_integration_in_goal_trajectories_);
     auto_declare<double>("constraints.stopped_velocity_tolerance", 0.01);
     auto_declare<double>("constraints.goal_time", 0.0);
   }
@@ -967,7 +968,7 @@ rclcpp_action::GoalResponse JointTrajectoryController::goal_callback(
   }
 
   // TODO(denis): is here the following line missing?
-//   add_new_trajectory_msg(std::make_shared(goal->trajectory));
+  //   add_new_trajectory_msg(std::make_shared(goal->trajectory));
 
   RCLCPP_INFO(node_->get_logger(), "Accepted new action goal");
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
@@ -1212,20 +1213,26 @@ bool JointTrajectoryController::validate_trajectory_msg(
     const size_t joint_count = trajectory.joint_names.size();
     const auto & points = trajectory.points;
     // TODO(anyone): This currently supports only position, velocity and acceleration inputs
-    if (allow_integration_in_goal_trajectories_) {
+    if (allow_integration_in_goal_trajectories_)
+    {
       const bool all_empty = points[i].positions.empty() && points[i].velocities.empty() &&
-        points[i].accelerations.empty();
-      const bool position_error = !points[i].positions.empty() &&
+                             points[i].accelerations.empty();
+      const bool position_error =
+        !points[i].positions.empty() &&
         !validate_trajectory_point_field(joint_count, points[i].positions, "positions", i, false);
-      const bool velocity_error = !points[i].velocities.empty() &&
+      const bool velocity_error =
+        !points[i].velocities.empty() &&
         !validate_trajectory_point_field(joint_count, points[i].velocities, "velocities", i, false);
-      const bool acceleration_error = !points[i].accelerations.empty() &&
+      const bool acceleration_error =
+        !points[i].accelerations.empty() &&
         !validate_trajectory_point_field(
-        joint_count, points[i].accelerations, "accelerations", i, false);
-      if (all_empty || position_error || velocity_error || acceleration_error) {
+          joint_count, points[i].accelerations, "accelerations", i, false);
+      if (all_empty || position_error || velocity_error || acceleration_error)
+      {
         return false;
       }
-    } else if (
+    }
+    else if (
       !validate_trajectory_point_field(joint_count, points[i].positions, "positions", i, false) ||
       !validate_trajectory_point_field(joint_count, points[i].velocities, "velocities", i, true) ||
       !validate_trajectory_point_field(
