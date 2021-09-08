@@ -559,11 +559,11 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
     {
       // Init PID gains from ROS parameter server
       const std::string prefix = "gains." + joint_name;
-      const auto k_p = node_->declare_parameter<double>(prefix + ".p", 0.0);
-      const auto k_i = node_->declare_parameter<double>(prefix + ".i", 0.0);
-      const auto k_d = node_->declare_parameter<double>(prefix + ".d", 0.0);
-      const auto i_clamp = node_->declare_parameter<double>(prefix + ".i_clamp", 0.0);
-      const auto velocity_ff = node_->declare_parameter<double>("velocity_ff." + joint_name, 0.0);
+      const auto k_p = auto_declare<double>(prefix + ".p", 0.0);
+      const auto k_i = auto_declare<double>(prefix + ".i", 0.0);
+      const auto k_d = auto_declare<double>(prefix + ".d", 0.0);
+      const auto i_clamp = auto_declare<double>(prefix + ".i_clamp", 0.0);
+      const auto velocity_ff = auto_declare<double>("velocity_ff." + joint_name, 0.0);
       // Initialize PID
       pids_.push_back(std::make_unique<control_toolbox::Pid>(k_p, k_i, k_d, i_clamp, -i_clamp));
       velocity_ff_.push_back(velocity_ff);
