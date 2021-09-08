@@ -29,8 +29,6 @@ ament_target_dependencies(position_controllers
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
 target_compile_definitions(position_controllers PRIVATE "POSITION_CONTROLLERS_BUILDING_DLL")
-# prevent pluginlib from using boost
-target_compile_definitions(position_controllers PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 pluginlib_export_plugin_description_file(controller_interface position_controllers_plugins.xml)
 
 install(
@@ -60,7 +58,6 @@ if(BUILD_TESTING)
     controller_manager
     ros2_control_test_assets
   )
-  target_compile_definitions(test_load_joint_group_position_controller PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
   ament_add_gmock(
     test_joint_group_position_controller

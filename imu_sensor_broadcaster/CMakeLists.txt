@@ -43,8 +43,6 @@ ament_target_dependencies(
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
 target_compile_definitions(imu_sensor_broadcaster PRIVATE "IMU_SENSOR_BROADCASTER_BUILDING_DLL")
-# prevent pluginlib from using boost
-target_compile_definitions(imu_sensor_broadcaster PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
 pluginlib_export_plugin_description_file(
   controller_interface imu_sensor_broadcaster.xml)
@@ -78,8 +76,6 @@ if(BUILD_TESTING)
     hardware_interface
     ros2_control_test_assets
   )
-  # prevent pluginlib from using boost
-  target_compile_definitions(test_load_imu_sensor_broadcaster PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
   ament_add_gmock(
     test_imu_sensor_broadcaster
