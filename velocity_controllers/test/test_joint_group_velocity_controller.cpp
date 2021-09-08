@@ -54,8 +54,8 @@ void JointGroupVelocityControllerTest::TearDown() { controller_.reset(nullptr); 
 
 void JointGroupVelocityControllerTest::SetUpController()
 {
-  const auto result = controller_->on_init();
-  ASSERT_EQ(result, CallbackReturn::SUCCESS);
+  const auto result = controller_->init("test_joint_group_velocity_controller");
+  ASSERT_EQ(result, controller_interface::return_type::OK);
 
   std::vector<LoanedCommandInterface> command_ifs;
   command_ifs.emplace_back(joint_1_cmd_);
