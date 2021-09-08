@@ -56,6 +56,8 @@ class State;
 
 namespace joint_trajectory_controller
 {
+using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
+
 class Trajectory;
 
 class JointTrajectoryController : public controller_interface::ControllerInterface
@@ -82,31 +84,25 @@ public:
   controller_interface::return_type update() override;
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn on_init() override;
+  CallbackReturn on_init() override;
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn on_configure(
-    const rclcpp_lifecycle::State & previous_state) override;
+  CallbackReturn on_configure(const rclcpp_lifecycle::State & previous_state) override;
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn on_activate(
-    const rclcpp_lifecycle::State & previous_state) override;
+  CallbackReturn on_activate(const rclcpp_lifecycle::State & previous_state) override;
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn on_deactivate(
-    const rclcpp_lifecycle::State & previous_state) override;
+  CallbackReturn on_deactivate(const rclcpp_lifecycle::State & previous_state) override;
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn on_cleanup(
-    const rclcpp_lifecycle::State & previous_state) override;
+  CallbackReturn on_cleanup(const rclcpp_lifecycle::State & previous_state) override;
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn on_error(
-    const rclcpp_lifecycle::State & previous_state) override;
+  CallbackReturn on_error(const rclcpp_lifecycle::State & previous_state) override;
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn on_shutdown(
-    const rclcpp_lifecycle::State & previous_state) override;
+  CallbackReturn on_shutdown(const rclcpp_lifecycle::State & previous_state) override;
 
 protected:
   std::vector<std::string> joint_names_;

@@ -14,6 +14,7 @@
 
 #include <string>
 
+#include "controller_interface/controller_interface.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "rclcpp/logging.hpp"
 #include "rclcpp/parameter.hpp"
@@ -21,8 +22,6 @@
 
 namespace velocity_controllers
 {
-using CallbackReturn = JointGroupVelocityController::CallbackReturn;
-
 JointGroupVelocityController::JointGroupVelocityController()
 : forward_command_controller::ForwardCommandController()
 {

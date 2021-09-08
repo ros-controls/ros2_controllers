@@ -19,9 +19,12 @@
 
 #include "effort_controllers/visibility_control.h"
 #include "forward_command_controller/forward_command_controller.hpp"
+#include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 
 namespace effort_controllers
 {
+using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
+
 /**
  * \brief Forward command controller for a set of effort controlled joints (linear or angular).
  *

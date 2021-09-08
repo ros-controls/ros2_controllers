@@ -47,6 +47,8 @@
 
 namespace gripper_action_controller
 {
+using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
+
 /**
  * \brief Controller for executing a gripper command action for simple
  * single-dof grippers.
@@ -89,19 +91,16 @@ public:
   controller_interface::return_type update() override;
 
   GRIPPER_ACTION_CONTROLLER_PUBLIC
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn on_init() override;
+  CallbackReturn on_init() override;
 
   GRIPPER_ACTION_CONTROLLER_PUBLIC
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn on_configure(
-    const rclcpp_lifecycle::State & previous_state) override;
+  CallbackReturn on_configure(const rclcpp_lifecycle::State & previous_state) override;
 
   GRIPPER_ACTION_CONTROLLER_PUBLIC
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn on_activate(
-    const rclcpp_lifecycle::State & previous_state) override;
+  CallbackReturn on_activate(const rclcpp_lifecycle::State & previous_state) override;
 
   GRIPPER_ACTION_CONTROLLER_PUBLIC
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn on_deactivate(
-    const rclcpp_lifecycle::State & previous_state) override;
+  CallbackReturn on_deactivate(const rclcpp_lifecycle::State & previous_state) override;
 
   realtime_tools::RealtimeBuffer<Commands> command_;
   // pre-allocated memory that is re-used to set the realtime buffer

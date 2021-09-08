@@ -19,9 +19,12 @@
 
 #include "forward_command_controller/forward_command_controller.hpp"
 #include "position_controllers/visibility_control.h"
+#include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 
 namespace position_controllers
 {
+using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
+
 /**
  * \brief Forward command controller for a set of position controlled joints (linear or angular).
  *
@@ -38,7 +41,7 @@ public:
   POSITION_CONTROLLERS_PUBLIC
   JointGroupPositionController();
 
-  POSITION_CONTROLLERS_PUBLIC JointGroupPositionController::CallbackReturn on_init() override;
+  POSITION_CONTROLLERS_PUBLIC CallbackReturn on_init() override;
 };
 
 }  // namespace position_controllers
