@@ -30,11 +30,10 @@ JointGroupPositionController::JointGroupPositionController()
   interface_name_ = hardware_interface::HW_IF_POSITION;
 }
 
-controller_interface::return_type JointGroupPositionController::init(
-  const std::string & controller_name)
+CallbackReturn JointGroupPositionController::on_init()
 {
-  auto ret = ForwardCommandController::init(controller_name);
-  if (ret != controller_interface::return_type::OK)
+  auto ret = ForwardCommandController::on_init();
+  if (ret != CallbackReturn::SUCCESS)
   {
     return ret;
   }
@@ -49,10 +48,10 @@ controller_interface::return_type JointGroupPositionController::init(
   catch (const std::exception & e)
   {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
-    return controller_interface::return_type::ERROR;
+    return CallbackReturn::ERROR;
   }
 
-  return controller_interface::return_type::OK;
+  return CallbackReturn::SUCCESS;
 }
 }  // namespace position_controllers
 

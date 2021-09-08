@@ -39,13 +39,12 @@ class IMUSensorBroadcaster : public controller_interface::ControllerInterface
 {
 public:
   IMU_SENSOR_BROADCASTER_PUBLIC
-  controller_interface::return_type init(const std::string & controller_name) override;
-
-  IMU_SENSOR_BROADCASTER_PUBLIC
   controller_interface::InterfaceConfiguration command_interface_configuration() const override;
 
   IMU_SENSOR_BROADCASTER_PUBLIC
   controller_interface::InterfaceConfiguration state_interface_configuration() const override;
+
+  IMU_SENSOR_BROADCASTER_PUBLIC CallbackReturn on_init() override;
 
   IMU_SENSOR_BROADCASTER_PUBLIC
   CallbackReturn on_configure(const rclcpp_lifecycle::State & previous_state) override;

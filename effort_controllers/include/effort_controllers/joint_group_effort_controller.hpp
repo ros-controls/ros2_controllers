@@ -39,7 +39,7 @@ public:
   JointGroupEffortController();
 
   EFFORT_CONTROLLERS_PUBLIC
-  controller_interface::return_type init(const std::string & controller_name) override;
+  CallbackReturn on_init() override;
 
   EFFORT_CONTROLLERS_PUBLIC
   CallbackReturn on_deactivate(const rclcpp_lifecycle::State & previous_state) override;

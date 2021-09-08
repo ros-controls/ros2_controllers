@@ -46,14 +46,9 @@ using hardware_interface::HW_IF_VELOCITY;
 
 JointStateBroadcaster::JointStateBroadcaster() {}
 
-controller_interface::return_type JointStateBroadcaster::init(const std::string & controller_name)
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+JointStateBroadcaster::on_init()
 {
-  auto ret = ControllerInterface::init(controller_name);
-  if (ret != controller_interface::return_type::OK)
-  {
-    return ret;
-  }
-
   try
   {
     auto_declare<bool>("use_local_topics", false);
@@ -61,10 +56,10 @@ controller_interface::return_type JointStateBroadcaster::init(const std::string 
   catch (const std::exception & e)
   {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
-    return controller_interface::return_type::ERROR;
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
   }
 
-  return controller_interface::return_type::OK;
+  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
 controller_interface::InterfaceConfiguration

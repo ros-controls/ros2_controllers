@@ -48,15 +48,8 @@ using lifecycle_msgs::msg::State;
 
 DiffDriveController::DiffDriveController() : controller_interface::ControllerInterface() {}
 
-controller_interface::return_type DiffDriveController::init(const std::string & controller_name)
+CallbackReturn DiffDriveController::on_init()
 {
-  // initialize lifecycle node
-  auto ret = ControllerInterface::init(controller_name);
-  if (ret != controller_interface::return_type::OK)
-  {
-    return ret;
-  }
-
   try
   {
     // with the lifecycle node being initialized, we can declare parameters
@@ -105,10 +98,10 @@ controller_interface::return_type DiffDriveController::init(const std::string & 
   catch (const std::exception & e)
   {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
-    return controller_interface::return_type::ERROR;
+    return CallbackReturn::ERROR;
   }
 
-  return controller_interface::return_type::OK;
+  return CallbackReturn::SUCCESS;
 }
 
 InterfaceConfiguration DiffDriveController::command_interface_configuration() const
