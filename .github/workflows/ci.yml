@@ -3,7 +3,7 @@ on:
   pull_request:
   push:
     branches:
-      - master
+      - foxy
   schedule:
     # Run every morning to detect flakiness and broken dependencies
     - cron: '17 8 * * *'
