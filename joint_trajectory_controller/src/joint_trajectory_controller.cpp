@@ -558,7 +558,7 @@ CallbackReturn JointTrajectoryController::on_configure(const rclcpp_lifecycle::S
       // Initialize PID
       pids_[i] = std::make_shared<control_toolbox::Pid>(k_p, k_i, k_d, i_clamp, -i_clamp);
     }
-    //TODO(livanov93) add other option when implemented
+    // TODO(livanov93): add other option when implemented
   }
 
   // Read always state interfaces from the parameter because they can be used
