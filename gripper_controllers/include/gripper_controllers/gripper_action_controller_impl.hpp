@@ -17,11 +17,15 @@
 #ifndef GRIPPER_CONTROLLERS__GRIPPER_ACTION_CONTROLLER_IMPL_HPP_
 #define GRIPPER_CONTROLLERS__GRIPPER_ACTION_CONTROLLER_IMPL_HPP_
 
+#include "gripper_controllers/gripper_action_controller.hpp"
+
 #include <memory>
 #include <string>
 
 namespace gripper_action_controller
 {
+using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
+
 template <const char * HardwareInterface>
 void GripperActionController<HardwareInterface>::preempt_active_goal()
 {
@@ -35,8 +39,7 @@ void GripperActionController<HardwareInterface>::preempt_active_goal()
 }
 
 template <const char * HardwareInterface>
-rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-GripperActionController<HardwareInterface>::on_init()
+CallbackReturn GripperActionController<HardwareInterface>::on_init()
 {
   try
   {
@@ -51,10 +54,10 @@ GripperActionController<HardwareInterface>::on_init()
   catch (const std::exception & e)
   {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
-    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
+    return CallbackReturn::ERROR;
   }
 
-  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+  return CallbackReturn::SUCCESS;
 }
 
 template <const char * HardwareInterface>
@@ -184,8 +187,8 @@ void GripperActionController<HardwareInterface>::check_for_success(
 }
 
 template <const char * HardwareInterface>
-rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-GripperActionController<HardwareInterface>::on_configure(const rclcpp_lifecycle::State &)
+CallbackReturn GripperActionController<HardwareInterface>::on_configure(
+  const rclcpp_lifecycle::State &)
 {
   const auto logger = node_->get_logger();
 
@@ -201,7 +204,7 @@ GripperActionController<HardwareInterface>::on_configure(const rclcpp_lifecycle:
   if (joint_name_.empty())
   {
     RCLCPP_ERROR(logger, "Could not find joint name on param server");
-    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
+    return CallbackReturn::ERROR;
   }
 
   // Default tolerances
@@ -214,11 +217,11 @@ GripperActionController<HardwareInterface>::on_configure(const rclcpp_lifecycle:
   stall_velocity_threshold_ = node_->get_parameter("stall_velocity_threshold").as_double();
   stall_timeout_ = node_->get_parameter("stall_timeout").as_double();
 
-  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+  return CallbackReturn::SUCCESS;
 }
 template <const char * HardwareInterface>
-rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-GripperActionController<HardwareInterface>::on_activate(const rclcpp_lifecycle::State &)
+CallbackReturn GripperActionController<HardwareInterface>::on_activate(
+  const rclcpp_lifecycle::State &)
 {
   auto position_command_interface_it = std::find_if(
     command_interfaces_.begin(), command_interfaces_.end(),
@@ -228,7 +231,7 @@ GripperActionController<HardwareInterface>::on_activate(const rclcpp_lifecycle::
   if (position_command_interface_it == command_interfaces_.end())
   {
     RCLCPP_ERROR(node_->get_logger(), "Expected 1 position command interface");
-    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
+    return CallbackReturn::ERROR;
   }
   if (position_command_interface_it->get_name() != joint_name_)
   {
@@ -236,7 +239,7 @@ GripperActionController<HardwareInterface>::on_activate(const rclcpp_lifecycle::
       node_->get_logger(), "Position command interface is different than joint name `"
                              << position_command_interface_it->get_name() << "` != `" << joint_name_
                              << "`");
-    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
+    return CallbackReturn::ERROR;
   }
   const auto position_state_interface_it = std::find_if(
     state_interfaces_.begin(), state_interfaces_.end(),
@@ -246,7 +249,7 @@ GripperActionController<HardwareInterface>::on_activate(const rclcpp_lifecycle::
   if (position_state_interface_it == state_interfaces_.end())
   {
     RCLCPP_ERROR(node_->get_logger(), "Expected 1 position state interface");
-    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
+    return CallbackReturn::ERROR;
   }
   if (position_state_interface_it->get_name() != joint_name_)
   {
@@ -254,7 +257,7 @@ GripperActionController<HardwareInterface>::on_activate(const rclcpp_lifecycle::
       node_->get_logger(), "Position state interface is different than joint name `"
                              << position_state_interface_it->get_name() << "` != `" << joint_name_
                              << "`");
-    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
+    return CallbackReturn::ERROR;
   }
   const auto velocity_state_interface_it = std::find_if(
     state_interfaces_.begin(), state_interfaces_.end(),
@@ -264,7 +267,7 @@ GripperActionController<HardwareInterface>::on_activate(const rclcpp_lifecycle::
   if (velocity_state_interface_it == state_interfaces_.end())
   {
     RCLCPP_ERROR(node_->get_logger(), "Expected 1 velocity state interface");
-    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
+    return CallbackReturn::ERROR;
   }
   if (velocity_state_interface_it->get_name() != joint_name_)
   {
@@ -272,7 +275,7 @@ GripperActionController<HardwareInterface>::on_activate(const rclcpp_lifecycle::
       node_->get_logger(), "Velocity command interface is different than joint name `"
                              << velocity_state_interface_it->get_name() << "` != `" << joint_name_
                              << "`");
-    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
+    return CallbackReturn::ERROR;
   }
 
   joint_position_command_interface_ = *position_command_interface_it;
@@ -300,18 +303,18 @@ GripperActionController<HardwareInterface>::on_activate(const rclcpp_lifecycle::
     std::bind(&GripperActionController::cancel_callback, this, std::placeholders::_1),
     std::bind(&GripperActionController::accepted_callback, this, std::placeholders::_1));
 
-  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+  return CallbackReturn::SUCCESS;
 }
 
 template <const char * HardwareInterface>
-rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-GripperActionController<HardwareInterface>::on_deactivate(const rclcpp_lifecycle::State &)
+CallbackReturn GripperActionController<HardwareInterface>::on_deactivate(
+  const rclcpp_lifecycle::State &)
 {
   joint_position_command_interface_ = std::experimental::nullopt;
   joint_position_state_interface_ = std::experimental::nullopt;
   joint_velocity_state_interface_ = std::experimental::nullopt;
   release_interfaces();
-  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+  return CallbackReturn::SUCCESS;
 }
 
 template <const char * HardwareInterface>

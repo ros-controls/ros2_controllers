@@ -27,7 +27,7 @@
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "test_joint_group_position_controller.hpp"
 
-using CallbackReturn = forward_command_controller::ForwardCommandController::CallbackReturn;
+using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 using hardware_interface::LoanedCommandInterface;
 
 namespace

@@ -14,6 +14,7 @@
 
 #include <string>
 
+#include "controller_interface/controller_interface.hpp"
 #include "effort_controllers/joint_group_effort_controller.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "rclcpp/logging.hpp"
@@ -21,8 +22,6 @@
 
 namespace effort_controllers
 {
-using CallbackReturn = JointGroupEffortController::CallbackReturn;
-
 JointGroupEffortController::JointGroupEffortController()
 : forward_command_controller::ForwardCommandController()
 {
@@ -32,7 +31,7 @@ JointGroupEffortController::JointGroupEffortController()
 
 CallbackReturn JointGroupEffortController::on_init()
 {
-  auto ret = ForwardCommandController::on_init();
+  auto ret = forward_command_controller::ForwardCommandController::on_init();
   if (ret != CallbackReturn::SUCCESS)
   {
     return ret;
