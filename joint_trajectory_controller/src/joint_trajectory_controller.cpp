@@ -196,7 +196,27 @@ controller_interface::return_type JointTrajectoryController::update(
       }
       if (has_velocity_command_interface_)
       {
-        assign_interface_from_point(joint_command_interface_[1], state_desired.velocities);
+        if (!use_closed_loop_pid_adapter)
+        {
+          assign_interface_from_point(joint_command_interface_[1], state_desired.velocities);
+        }
+        else
+        {
+          std::vector<double> command(pids_.size());
+          const auto period = std::chrono::steady_clock::now() - last_update_time_;
+
+          // Update PIDs
+          for (auto i = 0ul; i < joint_num; ++i)
+          {
+            command[i] =
+              (state_desired.velocities[i] * velocity_ff_[i]) +
+              pids_[i]->computeCommand(
+                state_desired.positions[i] - state_current.positions[i],
+                state_desired.velocities[i] - state_current.velocities[i], period.count());
+          }
+
+          assign_interface_from_point(joint_command_interface_[1], command);
+        }
       }
       if (has_acceleration_command_interface_)
       {
@@ -501,10 +521,6 @@ CallbackReturn JointTrajectoryController::on_configure(const rclcpp_lifecycle::S
     if (command_interface_types_.size() == 1)
     {
       use_closed_loop_pid_adapter = true;
-      // TODO(anyone): remove this when implemented
-      RCLCPP_ERROR(logger, "using 'velocity' command interface alone is not yet implemented yet.");
-      return CallbackReturn::FAILURE;
-      // if velocity interface can be used without position if multiple defined
     }
     else if (!has_position_command_interface_)
     {
@@ -523,6 +539,26 @@ CallbackReturn JointTrajectoryController::on_configure(const rclcpp_lifecycle::S
       "'acceleration' command interface can only be used if 'velocity' and "
       "'position' interfaces are present");
     return CallbackReturn::FAILURE;
+  }
+
+  if (has_velocity_command_interface_ && use_closed_loop_pid_adapter)
+  {
+    pids_.resize(joint_names_.size());
+    velocity_ff_.resize(joint_names_.size());
+
+    // Init PID gains from ROS parameter server
+    for (size_t i = 0; i < pids_.size(); ++i)
+    {
+      const std::string prefix = "gains." + joint_names_[i];
+      const auto k_p = auto_declare<double>(prefix + ".p", 0.0);
+      const auto k_i = auto_declare<double>(prefix + ".i", 0.0);
+      const auto k_d = auto_declare<double>(prefix + ".d", 0.0);
+      const auto i_clamp = auto_declare<double>(prefix + ".i_clamp", 0.0);
+      velocity_ff_[i] = auto_declare<double>("velocity_ff/" + joint_names_[i], 0.0);
+      // Initialize PID
+      pids_[i] = std::make_shared<control_toolbox::Pid>(k_p, k_i, k_d, i_clamp, -i_clamp);
+    }
+    //TODO add other option when implemented
   }
 
   // Read always state interfaces from the parameter because they can be used
@@ -840,6 +876,12 @@ bool JointTrajectoryController::reset()
   traj_external_point_ptr_.reset();
   traj_home_point_ptr_.reset();
   traj_msg_home_ptr_.reset();
+
+  // reset pids
+  for (const auto & pid : pids_)
+  {
+    pid->reset();
+  }
 
   return true;
 }
