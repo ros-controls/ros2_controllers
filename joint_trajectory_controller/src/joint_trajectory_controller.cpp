@@ -202,20 +202,19 @@ controller_interface::return_type JointTrajectoryController::update(
         }
         else
         {
-          std::vector<double> command(pids_.size());
           const auto period = std::chrono::steady_clock::now() - last_update_time_;
 
           // Update PIDs
           for (auto i = 0ul; i < joint_num; ++i)
           {
-            command[i] =
+            command_[i] =
               (state_desired.velocities[i] * velocity_ff_[i]) +
               pids_[i]->computeCommand(
                 state_desired.positions[i] - state_current.positions[i],
                 state_desired.velocities[i] - state_current.velocities[i], period.count());
           }
 
-          assign_interface_from_point(joint_command_interface_[1], command);
+          assign_interface_from_point(joint_command_interface_[1], command_);
         }
       }
       if (has_acceleration_command_interface_)
@@ -541,10 +540,13 @@ CallbackReturn JointTrajectoryController::on_configure(const rclcpp_lifecycle::S
     return CallbackReturn::FAILURE;
   }
 
+  // TODO(livanov93): change when other option is implemented
   if (has_velocity_command_interface_ && use_closed_loop_pid_adapter)
   {
-    pids_.resize(joint_names_.size());
-    velocity_ff_.resize(joint_names_.size());
+    size_t num_joints = joint_names_.size();
+    pids_.resize(num_joints);
+    velocity_ff_.resize(num_joints);
+    command_.resize(num_joints, 0.0);
 
     // Init PID gains from ROS parameter server
     for (size_t i = 0; i < pids_.size(); ++i)
@@ -558,7 +560,6 @@ CallbackReturn JointTrajectoryController::on_configure(const rclcpp_lifecycle::S
       // Initialize PID
       pids_[i] = std::make_shared<control_toolbox::Pid>(k_p, k_i, k_d, i_clamp, -i_clamp);
     }
-    // TODO(livanov93): add other option when implemented
   }
 
   // Read always state interfaces from the parameter because they can be used

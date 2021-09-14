@@ -150,6 +150,7 @@ protected:
   std::vector<PidPtr> pids_;
   std::chrono::steady_clock::time_point last_update_time_;
   std::vector<double> velocity_ff_;
+  std::vector<double> command_;
 
   // TODO(karsten1987): eventually activate and deactivate subscriber directly when its supported
   bool subscriber_is_active_ = false;
