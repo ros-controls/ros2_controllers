@@ -14,6 +14,7 @@
 
 #include <string>
 
+#include "controller_interface/controller_interface.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "position_controllers/joint_group_position_controller.hpp"
 #include "rclcpp/logging.hpp"
@@ -21,8 +22,6 @@
 
 namespace position_controllers
 {
-using CallbackReturn = JointGroupPositionController::CallbackReturn;
-
 JointGroupPositionController::JointGroupPositionController()
 : forward_command_controller::ForwardCommandController()
 {
@@ -32,7 +31,7 @@ JointGroupPositionController::JointGroupPositionController()
 
 CallbackReturn JointGroupPositionController::on_init()
 {
-  auto ret = ForwardCommandController::on_init();
+  auto ret = forward_command_controller::ForwardCommandController::on_init();
   if (ret != CallbackReturn::SUCCESS)
   {
     return ret;

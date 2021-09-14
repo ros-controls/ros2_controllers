@@ -18,10 +18,12 @@
 #include <string>
 
 #include "forward_command_controller/forward_command_controller.hpp"
+#include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "velocity_controllers/visibility_control.h"
 
 namespace velocity_controllers
 {
+using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 /**
  * \brief Forward command controller for a set of velocity controlled joints (linear or angular).
  *
