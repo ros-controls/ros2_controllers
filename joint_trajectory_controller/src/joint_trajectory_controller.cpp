@@ -586,16 +586,16 @@ CallbackReturn JointTrajectoryController::on_configure(const rclcpp_lifecycle::S
   }
 
   auto get_interface_list = [](const std::vector<std::string> & interface_types) {
-    std::stringstream ss_command_interfaces;
+    std::stringstream ss_interfaces;
     for (size_t index = 0; index < interface_types.size(); ++index)
     {
       if (index != 0)
       {
-        ss_command_interfaces << " ";
+        ss_interfaces << " ";
       }
-      ss_command_interfaces << interface_types[index];
+      ss_interfaces << interface_types[index];
     }
-    return ss_command_interfaces.str();
+    return ss_interfaces.str();
   };
 
   // Print output so users can be sure the interface setup is correct
