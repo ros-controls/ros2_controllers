@@ -132,7 +132,8 @@ InterfaceConfiguration DiffDriveController::state_interface_configuration() cons
   return {interface_configuration_type::INDIVIDUAL, conf_names};
 }
 
-controller_interface::return_type DiffDriveController::update()
+controller_interface::return_type DiffDriveController::update(
+  const rclcpp::Time & time, const rclcpp::Duration & period)
 {
   auto logger = node_->get_logger();
   if (get_state().id() == State::PRIMARY_STATE_INACTIVE)
@@ -145,7 +146,7 @@ controller_interface::return_type DiffDriveController::update()
     return controller_interface::return_type::OK;
   }
 
-  const auto current_time = node_->get_clock()->now();
+  const auto current_time = time;
 
   std::shared_ptr<Twist> last_msg;
   received_velocity_msg_ptr_.get(last_msg);

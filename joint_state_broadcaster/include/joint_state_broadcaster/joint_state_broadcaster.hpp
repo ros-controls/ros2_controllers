@@ -44,7 +44,8 @@ public:
   controller_interface::InterfaceConfiguration state_interface_configuration() const override;
 
   JOINT_STATE_BROADCASTER_PUBLIC
-  controller_interface::return_type update() override;
+  controller_interface::return_type update(
+    const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
   JOINT_STATE_BROADCASTER_PUBLIC
   CallbackReturn on_init() override;

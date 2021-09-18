@@ -112,11 +112,12 @@ CallbackReturn IMUSensorBroadcaster::on_deactivate(
   return CallbackReturn::SUCCESS;
 }
 
-controller_interface::return_type IMUSensorBroadcaster::update()
+controller_interface::return_type IMUSensorBroadcaster::update(
+  const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
   if (realtime_publisher_ && realtime_publisher_->trylock())
   {
-    realtime_publisher_->msg_.header.stamp = node_->now();
+    realtime_publisher_->msg_.header.stamp = time;
     imu_sensor_->get_values_as_message(realtime_publisher_->msg_);
     realtime_publisher_->unlockAndPublish();
   }
