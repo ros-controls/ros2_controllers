@@ -1104,6 +1104,17 @@ INSTANTIATE_TEST_SUITE_P(
       std::vector<std::string>({"position", "velocity", "acceleration"}),
       std::vector<std::string>({"position", "velocity", "acceleration"}))));
 
+// only velocity controller
+INSTANTIATE_TEST_CASE_P(
+  OnlyVelocityTrajectoryControllers, TrajectoryControllerTestParameterized,
+  ::testing::Values(
+    std::make_tuple(std::vector<std::string>({"velocity"}), std::vector<std::string>({"position"})),
+    std::make_tuple(
+      std::vector<std::string>({"velocity"}), std::vector<std::string>({"position", "velocity"})),
+    std::make_tuple(
+      std::vector<std::string>({"velocity"}),
+      std::vector<std::string>({"position", "velocity", "acceleration"}))));
+
 TEST_F(TrajectoryControllerTest, incorrect_initialization_using_interface_parameters)
 {
   auto set_parameter_and_check_result = [&]() {
