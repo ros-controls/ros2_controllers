@@ -176,16 +176,16 @@ TEST_F(TestDiffDriveController, configure_fails_with_only_left_or_only_right_sid
   const auto ret = controller_->init(controller_name);
   ASSERT_EQ(ret, controller_interface::return_type::OK);
 
-  controller_->get_node()->set_parameter(
+  controller_->get_lifecycle_node()->set_parameter(
     rclcpp::Parameter("left_wheel_names", rclcpp::ParameterValue(left_wheel_names)));
-  controller_->get_node()->set_parameter(
+  controller_->get_lifecycle_node()->set_parameter(
     rclcpp::Parameter("right_wheel_names", rclcpp::ParameterValue(std::vector<std::string>())));
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
 
-  controller_->get_node()->set_parameter(
+  controller_->get_lifecycle_node()->set_parameter(
     rclcpp::Parameter("left_wheel_names", rclcpp::ParameterValue(std::vector<std::string>())));
-  controller_->get_node()->set_parameter(
+  controller_->get_lifecycle_node()->set_parameter(
     rclcpp::Parameter("right_wheel_names", rclcpp::ParameterValue(right_wheel_names)));
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
@@ -196,12 +196,12 @@ TEST_F(TestDiffDriveController, configure_fails_with_mismatching_wheel_side_size
   const auto ret = controller_->init(controller_name);
   ASSERT_EQ(ret, controller_interface::return_type::OK);
 
-  controller_->get_node()->set_parameter(
+  controller_->get_lifecycle_node()->set_parameter(
     rclcpp::Parameter("left_wheel_names", rclcpp::ParameterValue(left_wheel_names)));
 
   auto extended_right_wheel_names = right_wheel_names;
   extended_right_wheel_names.push_back("extra_wheel");
-  controller_->get_node()->set_parameter(
+  controller_->get_lifecycle_node()->set_parameter(
     rclcpp::Parameter("right_wheel_names", rclcpp::ParameterValue(extended_right_wheel_names)));
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
@@ -212,9 +212,9 @@ TEST_F(TestDiffDriveController, configure_succeeds_when_wheels_are_specified)
   const auto ret = controller_->init(controller_name);
   ASSERT_EQ(ret, controller_interface::return_type::OK);
 
-  controller_->get_node()->set_parameter(
+  controller_->get_lifecycle_node()->set_parameter(
     rclcpp::Parameter("left_wheel_names", rclcpp::ParameterValue(left_wheel_names)));
-  controller_->get_node()->set_parameter(
+  controller_->get_lifecycle_node()->set_parameter(
     rclcpp::Parameter("right_wheel_names", rclcpp::ParameterValue(right_wheel_names)));
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
@@ -232,9 +232,9 @@ TEST_F(TestDiffDriveController, activate_fails_without_resources_assigned)
   const auto ret = controller_->init(controller_name);
   ASSERT_EQ(ret, controller_interface::return_type::OK);
 
-  controller_->get_node()->set_parameter(
+  controller_->get_lifecycle_node()->set_parameter(
     rclcpp::Parameter("left_wheel_names", rclcpp::ParameterValue(left_wheel_names)));
-  controller_->get_node()->set_parameter(
+  controller_->get_lifecycle_node()->set_parameter(
     rclcpp::Parameter("right_wheel_names", rclcpp::ParameterValue(right_wheel_names)));
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
@@ -246,9 +246,9 @@ TEST_F(TestDiffDriveController, activate_succeeds_with_resources_assigned)
   const auto ret = controller_->init(controller_name);
   ASSERT_EQ(ret, controller_interface::return_type::OK);
 
-  controller_->get_node()->set_parameter(
+  controller_->get_lifecycle_node()->set_parameter(
     rclcpp::Parameter("left_wheel_names", rclcpp::ParameterValue(left_wheel_names)));
-  controller_->get_node()->set_parameter(
+  controller_->get_lifecycle_node()->set_parameter(
     rclcpp::Parameter("right_wheel_names", rclcpp::ParameterValue(right_wheel_names)));
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
@@ -261,20 +261,20 @@ TEST_F(TestDiffDriveController, cleanup)
   const auto ret = controller_->init(controller_name);
   ASSERT_EQ(ret, controller_interface::return_type::OK);
 
-  controller_->get_node()->set_parameter(
+  controller_->get_lifecycle_node()->set_parameter(
     rclcpp::Parameter("left_wheel_names", rclcpp::ParameterValue(left_wheel_names)));
-  controller_->get_node()->set_parameter(
+  controller_->get_lifecycle_node()->set_parameter(
     rclcpp::Parameter("right_wheel_names", rclcpp::ParameterValue(right_wheel_names)));
-  controller_->get_node()->set_parameter(rclcpp::Parameter("wheel_separation", 0.4));
-  controller_->get_node()->set_parameter(rclcpp::Parameter("wheel_radius", 0.1));
+  controller_->get_lifecycle_node()->set_parameter(rclcpp::Parameter("wheel_separation", 0.4));
+  controller_->get_lifecycle_node()->set_parameter(rclcpp::Parameter("wheel_radius", 0.1));
 
   rclcpp::executors::SingleThreadedExecutor executor;
-  executor.add_node(controller_->get_node()->get_node_base_interface());
-  auto state = controller_->configure();
+  executor.add_node(controller_->get_lifecycle_node()->get_node_base_interface());
+  auto state = controller_->get_lifecycle_node()->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   assignResources();
 
-  state = controller_->activate();
+  state = controller_->get_lifecycle_node()->activate();
   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
 
   waitForSetup();
@@ -289,13 +289,13 @@ TEST_F(TestDiffDriveController, cleanup)
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  state = controller_->deactivate();
+  state = controller_->get_lifecycle_node()->deactivate();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  state = controller_->cleanup();
+  state = controller_->get_lifecycle_node()->cleanup();
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
 
   // should be stopped
@@ -310,24 +310,24 @@ TEST_F(TestDiffDriveController, correct_initialization_using_parameters)
   const auto ret = controller_->init(controller_name);
   ASSERT_EQ(ret, controller_interface::return_type::OK);
 
-  controller_->get_node()->set_parameter(
+  controller_->get_lifecycle_node()->set_parameter(
     rclcpp::Parameter("left_wheel_names", rclcpp::ParameterValue(left_wheel_names)));
-  controller_->get_node()->set_parameter(
+  controller_->get_lifecycle_node()->set_parameter(
     rclcpp::Parameter("right_wheel_names", rclcpp::ParameterValue(right_wheel_names)));
-  controller_->get_node()->set_parameter(rclcpp::Parameter("wheel_separation", 0.4));
-  controller_->get_node()->set_parameter(rclcpp::Parameter("wheel_radius", 1.0));
+  controller_->get_lifecycle_node()->set_parameter(rclcpp::Parameter("wheel_separation", 0.4));
+  controller_->get_lifecycle_node()->set_parameter(rclcpp::Parameter("wheel_radius", 1.0));
 
   rclcpp::executors::SingleThreadedExecutor executor;
-  executor.add_node(controller_->get_node()->get_node_base_interface());
+  executor.add_node(controller_->get_lifecycle_node()->get_node_base_interface());
 
-  auto state = controller_->configure();
+  auto state = controller_->get_lifecycle_node()->configure();
   assignResources();
 
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   EXPECT_EQ(0.01, left_wheel_vel_cmd_.get_value());
   EXPECT_EQ(0.02, right_wheel_vel_cmd_.get_value());
 
-  state = controller_->activate();
+  state = controller_->get_lifecycle_node()->activate();
   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
 
   // send msg
@@ -346,7 +346,7 @@ TEST_F(TestDiffDriveController, correct_initialization_using_parameters)
   // deactivated
   // wait so controller process the second point when deactivated
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
-  state = controller_->deactivate();
+  state = controller_->get_lifecycle_node()->deactivate();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
@@ -356,12 +356,12 @@ TEST_F(TestDiffDriveController, correct_initialization_using_parameters)
   EXPECT_EQ(0.0, right_wheel_vel_cmd_.get_value()) << "Wheels are halted on deactivate()";
 
   // cleanup
-  state = controller_->cleanup();
+  state = controller_->get_lifecycle_node()->cleanup();
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
   EXPECT_EQ(0.0, left_wheel_vel_cmd_.get_value());
   EXPECT_EQ(0.0, right_wheel_vel_cmd_.get_value());
 
-  state = controller_->configure();
+  state = controller_->get_lifecycle_node()->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   executor.cancel();
 }

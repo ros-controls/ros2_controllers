@@ -59,7 +59,7 @@ CallbackReturn ForwardCommandController::on_configure(
 
   if (joint_names_.empty())
   {
-    RCLCPP_ERROR(get_node()->get_logger(), "'joints' parameter was empty");
+    RCLCPP_ERROR(get_lifecycle_node()->get_logger(), "'joints' parameter was empty");
     return CallbackReturn::ERROR;
   }
 
@@ -71,15 +71,15 @@ CallbackReturn ForwardCommandController::on_configure(
 
   if (interface_name_.empty())
   {
-    RCLCPP_ERROR(get_node()->get_logger(), "'interface_name' parameter was empty");
+    RCLCPP_ERROR(get_lifecycle_node()->get_logger(), "'interface_name' parameter was empty");
     return CallbackReturn::ERROR;
   }
 
-  joints_command_subscriber_ = get_node()->create_subscription<CmdType>(
+  joints_command_subscriber_ = get_lifecycle_node()->create_subscription<CmdType>(
     "~/commands", rclcpp::SystemDefaultsQoS(),
     [this](const CmdType::SharedPtr msg) { rt_command_ptr_.writeFromNonRT(msg); });
 
-  RCLCPP_INFO(get_node()->get_logger(), "configure successful");
+  RCLCPP_INFO(get_lifecycle_node()->get_logger(), "configure successful");
   return CallbackReturn::SUCCESS;
 }
 
@@ -167,7 +167,7 @@ controller_interface::return_type ForwardCommandController::update(
   if ((*joint_commands)->data.size() != command_interfaces_.size())
   {
     RCLCPP_ERROR_THROTTLE(
-      get_node()->get_logger(), *node_->get_clock(), 1000,
+      get_lifecycle_node()->get_logger(), *node_->get_clock(), 1000,
       "command size (%zu) does not match number of interfaces (%zu)",
       (*joint_commands)->data.size(), command_interfaces_.size());
     return controller_interface::return_type::ERROR;

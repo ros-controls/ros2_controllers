@@ -235,7 +235,7 @@ TEST_F(JointStateBroadcasterTest, JointStatePublishTest)
 TEST_F(JointStateBroadcasterTest, JointStatePublishTestLocalTopic)
 {
   SetUpStateBroadcaster();
-  state_broadcaster_->get_node()->set_parameter({"use_local_topics", true});
+  state_broadcaster_->get_lifecycle_node()->set_parameter({"use_local_topics", true});
 
   test_published_joint_state_message("joint_state_broadcaster/joint_states");
 }
@@ -298,7 +298,7 @@ TEST_F(JointStateBroadcasterTest, DynamicJointStatePublishTest)
 TEST_F(JointStateBroadcasterTest, DynamicJointStatePublishTestLocalTopic)
 {
   SetUpStateBroadcaster();
-  state_broadcaster_->get_node()->set_parameter({"use_local_topics", true});
+  state_broadcaster_->get_lifecycle_node()->set_parameter({"use_local_topics", true});
 
   test_published_dynamic_joint_state_message("joint_state_broadcaster/dynamic_joint_states");
 }
@@ -323,7 +323,7 @@ TEST_F(JointStateBroadcasterTest, ExtraJointStatePublishTest)
 
   // Add extra joints as parameters
   const std::vector<std::string> extra_joint_names = {"extra1", "extra2", "extra3"};
-  state_broadcaster_->get_node()->set_parameter({"extra_joints", extra_joint_names});
+  state_broadcaster_->get_lifecycle_node()->set_parameter({"extra_joints", extra_joint_names});
 
   // configure ok
   ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);

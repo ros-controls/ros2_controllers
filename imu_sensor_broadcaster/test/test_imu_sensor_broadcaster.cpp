@@ -115,9 +115,9 @@ TEST_F(IMUSensorBroadcasterTest, SensorName_FrameId_NotSet)
   SetUpIMUBroadcaster();
 
   // set the 'interface_names'
-  imu_broadcaster_->get_node()->set_parameter(
+  imu_broadcaster_->get_lifecycle_node()->set_parameter(
     {"interface_names.angular_velocity.x", "imu_sensor/angular_velocity.x"});
-  imu_broadcaster_->get_node()->set_parameter(
+  imu_broadcaster_->get_lifecycle_node()->set_parameter(
     {"interface_names.linear_acceleration.z", "imu_sensor/linear_acceleration.z"});
 
   // configure failed, 'frame_id' parameter not set
@@ -129,7 +129,7 @@ TEST_F(IMUSensorBroadcasterTest, InterfaceNames_FrameId_NotSet)
   SetUpIMUBroadcaster();
 
   // set the 'sensor_name'
-  imu_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
+  imu_broadcaster_->get_lifecycle_node()->set_parameter({"sensor_name", sensor_name_});
 
   // configure failed, 'frame_id' parameter not set
   ASSERT_EQ(imu_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
@@ -140,10 +140,10 @@ TEST_F(IMUSensorBroadcasterTest, SensorName_Configure_Success)
   SetUpIMUBroadcaster();
 
   // set the 'sensor_name'
-  imu_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
+  imu_broadcaster_->get_lifecycle_node()->set_parameter({"sensor_name", sensor_name_});
 
   // set the 'frame_id'
-  imu_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
+  imu_broadcaster_->get_lifecycle_node()->set_parameter({"frame_id", frame_id_});
 
   // configure passed
   ASSERT_EQ(imu_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
@@ -154,8 +154,8 @@ TEST_F(IMUSensorBroadcasterTest, SensorName_Activate_Success)
   SetUpIMUBroadcaster();
 
   // set the params 'sensor_name' and 'frame_id'
-  imu_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
-  imu_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
+  imu_broadcaster_->get_lifecycle_node()->set_parameter({"sensor_name", sensor_name_});
+  imu_broadcaster_->get_lifecycle_node()->set_parameter({"frame_id", frame_id_});
 
   // configure and activate success
   ASSERT_EQ(imu_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
@@ -167,8 +167,8 @@ TEST_F(IMUSensorBroadcasterTest, SensorName_Update_Success)
   SetUpIMUBroadcaster();
 
   // set the params 'sensor_name' and 'frame_id'
-  imu_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
-  imu_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
+  imu_broadcaster_->get_lifecycle_node()->set_parameter({"sensor_name", sensor_name_});
+  imu_broadcaster_->get_lifecycle_node()->set_parameter({"frame_id", frame_id_});
 
   ASSERT_EQ(imu_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(imu_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
@@ -183,8 +183,8 @@ TEST_F(IMUSensorBroadcasterTest, SensorName_Publish_Success)
   SetUpIMUBroadcaster();
 
   // set the params 'sensor_name' and 'frame_id'
-  imu_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
-  imu_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
+  imu_broadcaster_->get_lifecycle_node()->set_parameter({"sensor_name", sensor_name_});
+  imu_broadcaster_->get_lifecycle_node()->set_parameter({"frame_id", frame_id_});
 
   ASSERT_EQ(imu_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(imu_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
