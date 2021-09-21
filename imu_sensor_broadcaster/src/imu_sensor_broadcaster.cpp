@@ -33,8 +33,7 @@ CallbackReturn IMUSensorBroadcaster::on_init()
   catch (const std::exception & e)
   {
     RCLCPP_ERROR(
-      lifecycle_node_->get_logger(), "Exception thrown during init stage with message: %s \n",
-      e.what());
+      node_->get_logger(), "Exception thrown during init stage with message: %s \n", e.what());
     return CallbackReturn::ERROR;
   }
 
@@ -44,17 +43,17 @@ CallbackReturn IMUSensorBroadcaster::on_init()
 CallbackReturn IMUSensorBroadcaster::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  sensor_name_ = lifecycle_node_->get_parameter("sensor_name").as_string();
+  sensor_name_ = node_->get_parameter("sensor_name").as_string();
   if (sensor_name_.empty())
   {
-    RCLCPP_ERROR(lifecycle_node_->get_logger(), "'sensor_name' parameter has to be specified.");
+    RCLCPP_ERROR(node_->get_logger(), "'sensor_name' parameter has to be specified.");
     return CallbackReturn::ERROR;
   }
 
-  frame_id_ = lifecycle_node_->get_parameter("frame_id").as_string();
+  frame_id_ = node_->get_parameter("frame_id").as_string();
   if (frame_id_.empty())
   {
-    RCLCPP_ERROR(lifecycle_node_->get_logger(), "'frame_id' parameter has to be provided.");
+    RCLCPP_ERROR(node_->get_logger(), "'frame_id' parameter has to be provided.");
     return CallbackReturn::ERROR;
   }
 
@@ -63,8 +62,8 @@ CallbackReturn IMUSensorBroadcaster::on_configure(
   try
   {
     // register ft sensor data publisher
-    sensor_state_publisher_ = lifecycle_node_->create_publisher<sensor_msgs::msg::Imu>(
-      "~/imu", rclcpp::SystemDefaultsQoS());
+    sensor_state_publisher_ =
+      node_->create_publisher<sensor_msgs::msg::Imu>("~/imu", rclcpp::SystemDefaultsQoS());
     realtime_publisher_ = std::make_unique<StatePublisher>(sensor_state_publisher_);
   }
   catch (const std::exception & e)
@@ -79,7 +78,7 @@ CallbackReturn IMUSensorBroadcaster::on_configure(
   realtime_publisher_->msg_.header.frame_id = frame_id_;
   realtime_publisher_->unlock();
 
-  RCLCPP_DEBUG(lifecycle_node_->get_logger(), "configure successful");
+  RCLCPP_DEBUG(node_->get_logger(), "configure successful");
   return CallbackReturn::SUCCESS;
 }
 

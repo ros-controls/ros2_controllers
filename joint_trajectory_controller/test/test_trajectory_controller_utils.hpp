@@ -140,7 +140,7 @@ public:
 
   void SetParameters()
   {
-    auto node = traj_controller_->get_lifecycle_node();
+    auto node = traj_controller_->get_node();
     const rclcpp::Parameter joint_names_param("joints", joint_names_);
     const rclcpp::Parameter cmd_interfaces_params("command_interfaces", command_interface_types_);
     const rclcpp::Parameter state_interfaces_params("state_interfaces", state_interface_types_);
@@ -155,18 +155,18 @@ public:
 
     for (const auto & param : parameters)
     {
-      traj_controller_->get_lifecycle_node()->set_parameter(param);
+      traj_controller_->get_node()->set_parameter(param);
     }
     if (executor)
     {
-      executor->add_node(traj_controller_->get_lifecycle_node()->get_node_base_interface());
+      executor->add_node(traj_controller_->get_node()->get_node_base_interface());
     }
 
     // ignore velocity tolerances for this test since they aren't committed in test_robot->write()
     rclcpp::Parameter stopped_velocity_parameters("constraints.stopped_velocity_tolerance", 0.0);
-    traj_controller_->get_lifecycle_node()->set_parameter(stopped_velocity_parameters);
+    traj_controller_->get_node()->set_parameter(stopped_velocity_parameters);
 
-    traj_controller_->get_lifecycle_node()->configure();
+    traj_controller_->get_node()->configure();
     ActivateTrajectoryController(separate_cmd_and_state_values);
   }
 
@@ -215,14 +215,14 @@ public:
     }
 
     traj_controller_->assign_interfaces(std::move(cmd_interfaces), std::move(state_interfaces));
-    traj_controller_->get_lifecycle_node()->activate();
+    traj_controller_->get_node()->activate();
   }
 
   static void TearDownTestCase() { rclcpp::shutdown(); }
 
   void subscribeToState()
   {
-    auto traj_lifecycle_node = traj_controller_->get_lifecycle_node();
+    auto traj_lifecycle_node = traj_controller_->get_node();
     traj_lifecycle_node->set_parameter(
       rclcpp::Parameter("state_publish_rate", static_cast<double>(100)));
 

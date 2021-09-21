@@ -78,22 +78,22 @@ controller_interface::InterfaceConfiguration JointStateBroadcaster::state_interf
 CallbackReturn JointStateBroadcaster::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  use_local_topics_ = get_lifecycle_node()->get_parameter("use_local_topics").as_bool();
+  use_local_topics_ = get_node()->get_parameter("use_local_topics").as_bool();
 
   try
   {
     const std::string topic_name_prefix = use_local_topics_ ? "~/" : "";
 
-    joint_state_publisher_ = get_lifecycle_node()->create_publisher<sensor_msgs::msg::JointState>(
+    joint_state_publisher_ = get_node()->create_publisher<sensor_msgs::msg::JointState>(
       topic_name_prefix + "joint_states", rclcpp::SystemDefaultsQoS());
 
     dynamic_joint_state_publisher_ =
-      get_lifecycle_node()->create_publisher<control_msgs::msg::DynamicJointState>(
+      get_node()->create_publisher<control_msgs::msg::DynamicJointState>(
         topic_name_prefix + "dynamic_joint_states", rclcpp::SystemDefaultsQoS());
   }
   catch (const std::exception & e)
   {
-    // get_lifecycle_node() may throw, logging raw here
+    // get_node() may throw, logging raw here
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
     return CallbackReturn::ERROR;
   }
@@ -165,7 +165,7 @@ bool JointStateBroadcaster::init_joint_data()
   // Add extra joints from parameters, each joint will be added to joint_names_ and
   // name_if_value_mapping_ if it is not already there
   rclcpp::Parameter extra_joints;
-  if (get_lifecycle_node()->get_parameter("extra_joints", extra_joints))
+  if (get_node()->get_parameter("extra_joints", extra_joints))
   {
     const std::vector<std::string> & extra_joints_names = extra_joints.as_string_array();
     for (const auto & extra_joint_name : extra_joints_names)
@@ -237,12 +237,12 @@ controller_interface::return_type JointStateBroadcaster::update(
     name_if_value_mapping_[state_interface.get_name()][state_interface.get_interface_name()] =
       state_interface.get_value();
     RCLCPP_DEBUG(
-      get_lifecycle_node()->get_logger(), "%s/%s: %f\n", state_interface.get_name().c_str(),
+      get_node()->get_logger(), "%s/%s: %f\n", state_interface.get_name().c_str(),
       state_interface.get_interface_name().c_str(), state_interface.get_value());
   }
 
-  joint_state_msg_.header.stamp = get_lifecycle_node()->get_clock()->now();
-  dynamic_joint_state_msg_.header.stamp = get_lifecycle_node()->get_clock()->now();
+  joint_state_msg_.header.stamp = get_node()->get_clock()->now();
+  dynamic_joint_state_msg_.header.stamp = get_node()->get_clock()->now();
 
   // update joint state message and dynamic joint state message
   for (auto i = 0ul; i < joint_names_.size(); ++i)

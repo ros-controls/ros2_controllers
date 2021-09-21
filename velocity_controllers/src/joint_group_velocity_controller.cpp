@@ -41,7 +41,7 @@ CallbackReturn JointGroupVelocityController::on_init()
   {
     // Explicitly set the interface parameter declared by the forward_command_controller
     // to match the value set in the JointGroupVelocityController constructor.
-    get_lifecycle_node()->set_parameter(
+    get_node()->set_parameter(
       rclcpp::Parameter("interface_name", hardware_interface::HW_IF_VELOCITY));
   }
   catch (const std::exception & e)

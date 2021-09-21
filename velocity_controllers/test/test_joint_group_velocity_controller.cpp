@@ -75,7 +75,7 @@ TEST_F(JointGroupVelocityControllerTest, JointsParameterNotSet)
 TEST_F(JointGroupVelocityControllerTest, JointsParameterIsEmpty)
 {
   SetUpController();
-  controller_->get_lifecycle_node()->set_parameter({"joints", std::vector<std::string>()});
+  controller_->get_node()->set_parameter({"joints", std::vector<std::string>()});
 
   // configure failed, 'joints' is empty
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
@@ -84,7 +84,7 @@ TEST_F(JointGroupVelocityControllerTest, JointsParameterIsEmpty)
 TEST_F(JointGroupVelocityControllerTest, ConfigureAndActivateParamsSuccess)
 {
   SetUpController();
-  controller_->get_lifecycle_node()->set_parameter({"joints", joint_names_});
+  controller_->get_node()->set_parameter({"joints", joint_names_});
 
   // configure successful
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
@@ -94,15 +94,13 @@ TEST_F(JointGroupVelocityControllerTest, ConfigureAndActivateParamsSuccess)
 TEST_F(JointGroupVelocityControllerTest, ActivateWithWrongJointsNamesFails)
 {
   SetUpController();
-  controller_->get_lifecycle_node()->set_parameter(
-    {"joints", std::vector<std::string>{"joint1", "joint4"}});
+  controller_->get_node()->set_parameter({"joints", std::vector<std::string>{"joint1", "joint4"}});
 
   // activate failed, 'joint4' is not a valid joint name for the hardware
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
 
-  controller_->get_lifecycle_node()->set_parameter(
-    {"joints", std::vector<std::string>{"joint1", "joint2"}});
+  controller_->get_node()->set_parameter({"joints", std::vector<std::string>{"joint1", "joint2"}});
 
   // activate failed, 'acceleration' is not a registered interface for `joint1`
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
@@ -112,7 +110,7 @@ TEST_F(JointGroupVelocityControllerTest, ActivateWithWrongJointsNamesFails)
 TEST_F(JointGroupVelocityControllerTest, CommandSuccessTest)
 {
   SetUpController();
-  controller_->get_lifecycle_node()->set_parameter({"joints", joint_names_});
+  controller_->get_node()->set_parameter({"joints", joint_names_});
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
   // update successful though no command has been send yet
@@ -144,7 +142,7 @@ TEST_F(JointGroupVelocityControllerTest, CommandSuccessTest)
 TEST_F(JointGroupVelocityControllerTest, WrongCommandCheckTest)
 {
   SetUpController();
-  controller_->get_lifecycle_node()->set_parameter({"joints", joint_names_});
+  controller_->get_node()->set_parameter({"joints", joint_names_});
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
   // send command with wrong number of joints
@@ -166,7 +164,7 @@ TEST_F(JointGroupVelocityControllerTest, WrongCommandCheckTest)
 TEST_F(JointGroupVelocityControllerTest, NoCommandCheckTest)
 {
   SetUpController();
-  controller_->get_lifecycle_node()->set_parameter({"joints", joint_names_});
+  controller_->get_node()->set_parameter({"joints", joint_names_});
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
   // update successful, no command received yet
@@ -183,24 +181,23 @@ TEST_F(JointGroupVelocityControllerTest, NoCommandCheckTest)
 TEST_F(JointGroupVelocityControllerTest, CommandCallbackTest)
 {
   SetUpController();
-  controller_->get_lifecycle_node()->set_parameter({"joints", joint_names_});
+  controller_->get_node()->set_parameter({"joints", joint_names_});
 
   // default values
   ASSERT_EQ(joint_1_cmd_.get_value(), 1.1);
   ASSERT_EQ(joint_2_cmd_.get_value(), 2.1);
   ASSERT_EQ(joint_3_cmd_.get_value(), 3.1);
 
-  auto node_state = controller_->get_lifecycle_node()->configure();
+  auto node_state = controller_->get_node()->configure();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
 
-  node_state = controller_->get_lifecycle_node()->activate();
+  node_state = controller_->get_node()->activate();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
 
   // send a new command
   rclcpp::Node test_node("test_node");
   auto command_pub = test_node.create_publisher<std_msgs::msg::Float64MultiArray>(
-    std::string(controller_->get_lifecycle_node()->get_name()) + "/commands",
-    rclcpp::SystemDefaultsQoS());
+    std::string(controller_->get_node()->get_name()) + "/commands", rclcpp::SystemDefaultsQoS());
   std_msgs::msg::Float64MultiArray command_msg;
   command_msg.data = {10.0, 20.0, 30.0};
   command_pub->publish(command_msg);
@@ -209,7 +206,7 @@ TEST_F(JointGroupVelocityControllerTest, CommandCallbackTest)
   ASSERT_EQ(wait_for(controller_->joints_command_subscriber_), rclcpp::WaitResultKind::Ready);
 
   // process callbacks
-  rclcpp::spin_some(controller_->get_lifecycle_node()->get_node_base_interface());
+  rclcpp::spin_some(controller_->get_node()->get_node_base_interface());
 
   // update successful
   ASSERT_EQ(
@@ -225,7 +222,7 @@ TEST_F(JointGroupVelocityControllerTest, CommandCallbackTest)
 TEST_F(JointGroupVelocityControllerTest, StopJointsOnDeactivateTest)
 {
   SetUpController();
-  controller_->get_lifecycle_node()->set_parameter({"joints", joint_names_});
+  controller_->get_node()->set_parameter({"joints", joint_names_});
 
   // configure successful
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);

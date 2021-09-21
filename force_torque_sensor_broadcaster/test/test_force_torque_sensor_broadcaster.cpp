@@ -113,10 +113,8 @@ TEST_F(ForceTorqueSensorBroadcasterTest, SensorName_FrameId_NotSet)
   SetUpFTSBroadcaster();
 
   // set the 'interface_names'
-  fts_broadcaster_->get_lifecycle_node()->set_parameter(
-    {"interface_names.force.x", "fts_sensor/force.x"});
-  fts_broadcaster_->get_lifecycle_node()->set_parameter(
-    {"interface_names.torque.z", "fts_sensor/torque.z"});
+  fts_broadcaster_->get_node()->set_parameter({"interface_names.force.x", "fts_sensor/force.x"});
+  fts_broadcaster_->get_node()->set_parameter({"interface_names.torque.z", "fts_sensor/torque.z"});
 
   // configure failed, 'frame_id' parameter not set
   ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
@@ -127,7 +125,7 @@ TEST_F(ForceTorqueSensorBroadcasterTest, InterfaceNames_FrameId_NotSet)
   SetUpFTSBroadcaster();
 
   // set the 'sensor_name'
-  fts_broadcaster_->get_lifecycle_node()->set_parameter({"sensor_name", sensor_name_});
+  fts_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
 
   // configure failed, 'frame_id' parameter not set
   ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
@@ -138,13 +136,11 @@ TEST_F(ForceTorqueSensorBroadcasterTest, SensorName_InterfaceNames_Set)
   SetUpFTSBroadcaster();
 
   // set the 'sensor_name'
-  fts_broadcaster_->get_lifecycle_node()->set_parameter({"sensor_name", sensor_name_});
+  fts_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
 
   // set the 'interface_names'
-  fts_broadcaster_->get_lifecycle_node()->set_parameter(
-    {"interface_names.force.x", "fts_sensor/force.x"});
-  fts_broadcaster_->get_lifecycle_node()->set_parameter(
-    {"interface_names.torque.z", "fts_sensor/torque.z"});
+  fts_broadcaster_->get_node()->set_parameter({"interface_names.force.x", "fts_sensor/force.x"});
+  fts_broadcaster_->get_node()->set_parameter({"interface_names.torque.z", "fts_sensor/torque.z"});
 
   // configure failed, both 'sensor_name' and 'interface_names' supplied
   ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
@@ -155,7 +151,7 @@ TEST_F(ForceTorqueSensorBroadcasterTest, SensorName_IsEmpty_InterfaceNames_NotSe
   SetUpFTSBroadcaster();
 
   // set the 'sensor_name' empty
-  fts_broadcaster_->get_lifecycle_node()->set_parameter({"sensor_name", ""});
+  fts_broadcaster_->get_node()->set_parameter({"sensor_name", ""});
 
   // configure failed, 'sensor_name' parameter empty
   ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
@@ -166,8 +162,8 @@ TEST_F(ForceTorqueSensorBroadcasterTest, InterfaceNames_IsEmpty_SensorName_NotSe
   SetUpFTSBroadcaster();
 
   // set the 'interface_names' empty
-  fts_broadcaster_->get_lifecycle_node()->set_parameter({"interface_names.force.x", ""});
-  fts_broadcaster_->get_lifecycle_node()->set_parameter({"interface_names.torque.z", ""});
+  fts_broadcaster_->get_node()->set_parameter({"interface_names.force.x", ""});
+  fts_broadcaster_->get_node()->set_parameter({"interface_names.torque.z", ""});
 
   // configure failed, 'interface_name' parameter empty
   ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
@@ -178,10 +174,10 @@ TEST_F(ForceTorqueSensorBroadcasterTest, SensorName_Configure_Success)
   SetUpFTSBroadcaster();
 
   // set the 'sensor_name'
-  fts_broadcaster_->get_lifecycle_node()->set_parameter({"sensor_name", sensor_name_});
+  fts_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
 
   // set the 'frame_id'
-  fts_broadcaster_->get_lifecycle_node()->set_parameter({"frame_id", frame_id_});
+  fts_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
 
   // configure passed
   ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
@@ -192,13 +188,11 @@ TEST_F(ForceTorqueSensorBroadcasterTest, InterfaceNames_Configure_Success)
   SetUpFTSBroadcaster();
 
   // set the 'interface_names'
-  fts_broadcaster_->get_lifecycle_node()->set_parameter(
-    {"interface_names.force.x", "fts_sensor/force.x"});
-  fts_broadcaster_->get_lifecycle_node()->set_parameter(
-    {"interface_names.torque.z", "fts_sensor/torque.z"});
+  fts_broadcaster_->get_node()->set_parameter({"interface_names.force.x", "fts_sensor/force.x"});
+  fts_broadcaster_->get_node()->set_parameter({"interface_names.torque.z", "fts_sensor/torque.z"});
 
   // set the 'frame_id'
-  fts_broadcaster_->get_lifecycle_node()->set_parameter({"frame_id", frame_id_});
+  fts_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
 
   // configure passed
   ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
@@ -209,8 +203,8 @@ TEST_F(ForceTorqueSensorBroadcasterTest, SensorName_Activate_Success)
   SetUpFTSBroadcaster();
 
   // set the params 'sensor_name' and 'frame_id'
-  fts_broadcaster_->get_lifecycle_node()->set_parameter({"sensor_name", sensor_name_});
-  fts_broadcaster_->get_lifecycle_node()->set_parameter({"frame_id", frame_id_});
+  fts_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
+  fts_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
 
   // configure and activate success
   ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
@@ -222,8 +216,8 @@ TEST_F(ForceTorqueSensorBroadcasterTest, SensorName_Update_Success)
   SetUpFTSBroadcaster();
 
   // set the params 'sensor_name' and 'frame_id'
-  fts_broadcaster_->get_lifecycle_node()->set_parameter({"sensor_name", sensor_name_});
-  fts_broadcaster_->get_lifecycle_node()->set_parameter({"frame_id", frame_id_});
+  fts_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
+  fts_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
 
   ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(fts_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
@@ -238,11 +232,9 @@ TEST_F(ForceTorqueSensorBroadcasterTest, InterfaceNames_Success)
   SetUpFTSBroadcaster();
 
   // set the params 'interface_names' and 'frame_id'
-  fts_broadcaster_->get_lifecycle_node()->set_parameter(
-    {"interface_names.force.x", "fts_sensor/force.x"});
-  fts_broadcaster_->get_lifecycle_node()->set_parameter(
-    {"interface_names.torque.z", "fts_sensor/torque.z"});
-  fts_broadcaster_->get_lifecycle_node()->set_parameter({"frame_id", frame_id_});
+  fts_broadcaster_->get_node()->set_parameter({"interface_names.force.x", "fts_sensor/force.x"});
+  fts_broadcaster_->get_node()->set_parameter({"interface_names.torque.z", "fts_sensor/torque.z"});
+  fts_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
 
   ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(fts_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
@@ -256,8 +248,8 @@ TEST_F(ForceTorqueSensorBroadcasterTest, SensorName_Publish_Success)
   SetUpFTSBroadcaster();
 
   // set the params 'sensor_name' and 'frame_id'
-  fts_broadcaster_->get_lifecycle_node()->set_parameter({"sensor_name", sensor_name_});
-  fts_broadcaster_->get_lifecycle_node()->set_parameter({"frame_id", frame_id_});
+  fts_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
+  fts_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
 
   ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(fts_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
@@ -279,11 +271,9 @@ TEST_F(ForceTorqueSensorBroadcasterTest, InterfaceNames_Publish_Success)
   SetUpFTSBroadcaster();
 
   // set the params 'interface_names' and 'frame_id'
-  fts_broadcaster_->get_lifecycle_node()->set_parameter(
-    {"interface_names.force.x", "fts_sensor/force.x"});
-  fts_broadcaster_->get_lifecycle_node()->set_parameter(
-    {"interface_names.torque.z", "fts_sensor/torque.z"});
-  fts_broadcaster_->get_lifecycle_node()->set_parameter({"frame_id", frame_id_});
+  fts_broadcaster_->get_node()->set_parameter({"interface_names.force.x", "fts_sensor/force.x"});
+  fts_broadcaster_->get_node()->set_parameter({"interface_names.torque.z", "fts_sensor/torque.z"});
+  fts_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
 
   ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(fts_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
@@ -305,19 +295,13 @@ TEST_F(ForceTorqueSensorBroadcasterTest, All_InterfaceNames_Publish_Success)
   SetUpFTSBroadcaster();
 
   // set all the params 'interface_names' and 'frame_id'
-  fts_broadcaster_->get_lifecycle_node()->set_parameter(
-    {"interface_names.force.x", "fts_sensor/force.x"});
-  fts_broadcaster_->get_lifecycle_node()->set_parameter(
-    {"interface_names.force.y", "fts_sensor/force.y"});
-  fts_broadcaster_->get_lifecycle_node()->set_parameter(
-    {"interface_names.force.z", "fts_sensor/force.z"});
-  fts_broadcaster_->get_lifecycle_node()->set_parameter(
-    {"interface_names.torque.x", "fts_sensor/torque.x"});
-  fts_broadcaster_->get_lifecycle_node()->set_parameter(
-    {"interface_names.torque.y", "fts_sensor/torque.y"});
-  fts_broadcaster_->get_lifecycle_node()->set_parameter(
-    {"interface_names.torque.z", "fts_sensor/torque.z"});
-  fts_broadcaster_->get_lifecycle_node()->set_parameter({"frame_id", frame_id_});
+  fts_broadcaster_->get_node()->set_parameter({"interface_names.force.x", "fts_sensor/force.x"});
+  fts_broadcaster_->get_node()->set_parameter({"interface_names.force.y", "fts_sensor/force.y"});
+  fts_broadcaster_->get_node()->set_parameter({"interface_names.force.z", "fts_sensor/force.z"});
+  fts_broadcaster_->get_node()->set_parameter({"interface_names.torque.x", "fts_sensor/torque.x"});
+  fts_broadcaster_->get_node()->set_parameter({"interface_names.torque.y", "fts_sensor/torque.y"});
+  fts_broadcaster_->get_node()->set_parameter({"interface_names.torque.z", "fts_sensor/torque.z"});
+  fts_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
 
   ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(fts_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);

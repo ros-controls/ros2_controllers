@@ -65,10 +65,10 @@ TEST_P(TrajectoryControllerTestParameterized, configure)
   SetUpTrajectoryController();
 
   rclcpp::executors::MultiThreadedExecutor executor;
-  executor.add_node(traj_controller_->get_lifecycle_node()->get_node_base_interface());
+  executor.add_node(traj_controller_->get_node()->get_node_base_interface());
   const auto future_handle_ = std::async(std::launch::async, spin, &executor);
 
-  const auto state = traj_controller_->get_lifecycle_node()->configure();
+  const auto state = traj_controller_->get_node()->configure();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
 
   // send msg
@@ -94,12 +94,10 @@ TEST_P(TrajectoryControllerTestParameterized, activate)
   SetUpTrajectoryController();
 
   rclcpp::executors::MultiThreadedExecutor executor;
-  executor.add_node(traj_controller_->get_lifecycle_node()->get_node_base_interface());
+  executor.add_node(traj_controller_->get_node()->get_node_base_interface());
 
-  traj_controller_->get_lifecycle_node()->configure();
-  ASSERT_EQ(
-    traj_controller_->get_lifecycle_node()->get_current_state().id(),
-    State::PRIMARY_STATE_INACTIVE);
+  traj_controller_->get_node()->configure();
+  ASSERT_EQ(traj_controller_->get_state().id(), State::PRIMARY_STATE_INACTIVE);
 
   auto cmd_interface_config = traj_controller_->command_interface_configuration();
   ASSERT_EQ(
@@ -110,8 +108,7 @@ TEST_P(TrajectoryControllerTestParameterized, activate)
     state_interface_config.names.size(), joint_names_.size() * state_interface_types_.size());
 
   ActivateTrajectoryController();
-  ASSERT_EQ(
-    traj_controller_->get_lifecycle_node()->get_current_state().id(), State::PRIMARY_STATE_ACTIVE);
+  ASSERT_EQ(traj_controller_->get_state().id(), State::PRIMARY_STATE_ACTIVE);
 
   executor.cancel();
 }
@@ -124,7 +121,7 @@ TEST_P(TrajectoryControllerTestParameterized, activate)
 //     FAIL();
 //   }
 //
-//   auto traj_node = traj_controller->get_lifecycle_node();
+//   auto traj_node = traj_controller->get_node();
 //   rclcpp::executors::MultiThreadedExecutor executor;
 //   executor.add_node(traj_node->get_node_base_interface());
 //
@@ -166,7 +163,7 @@ TEST_P(TrajectoryControllerTestParameterized, activate)
 //     FAIL();
 //   }
 //
-//   auto traj_node = traj_controller->get_lifecycle_node();
+//   auto traj_node = traj_controller->get_node();
 //   rclcpp::executors::MultiThreadedExecutor executor;
 //   executor.add_node(traj_node->get_node_base_interface());
 //
@@ -233,7 +230,7 @@ TEST_P(TrajectoryControllerTestParameterized, cleanup)
 {
   SetUpAndActivateTrajectoryController();
 
-  auto traj_node = traj_controller_->get_lifecycle_node();
+  auto traj_node = traj_controller_->get_node();
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(traj_node->get_node_base_interface());
 
@@ -246,11 +243,11 @@ TEST_P(TrajectoryControllerTestParameterized, cleanup)
   traj_controller_->wait_for_trajectory(executor);
   traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
 
-  auto state = traj_controller_->get_lifecycle_node()->deactivate();
+  auto state = traj_controller_->get_node()->deactivate();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
 
-  state = traj_controller_->get_lifecycle_node()->cleanup();
+  state = traj_controller_->get_node()->cleanup();
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
   // update for 0.25 seconds
   const auto start_time = rclcpp::Clock().now();
@@ -270,15 +267,15 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
 
   // This call is replacing the way parameters are set via launch
   SetParameters();
-  traj_controller_->get_lifecycle_node()->configure();
-  auto state = traj_controller_->get_lifecycle_node()->get_current_state();
+  traj_controller_->get_node()->configure();
+  auto state = traj_controller_->get_state();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
 
   ActivateTrajectoryController();
   rclcpp::executors::MultiThreadedExecutor executor;
-  executor.add_node(traj_controller_->get_lifecycle_node()->get_node_base_interface());
+  executor.add_node(traj_controller_->get_node()->get_node_base_interface());
 
-  state = traj_controller_->get_lifecycle_node()->get_current_state();
+  state = traj_controller_->get_state();
   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
   EXPECT_EQ(INITIAL_POS_JOINT1, joint_pos_[0]);
   EXPECT_EQ(INITIAL_POS_JOINT2, joint_pos_[1]);
@@ -301,7 +298,7 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
   std::this_thread::sleep_for(FIRST_POINT_TIME);
   traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
   // deactivated
-  state = traj_controller_->get_lifecycle_node()->deactivate();
+  state = traj_controller_->get_node()->deactivate();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
 
   // TODO(denis): on my laptop I get delta of approx 0.1083. Is this me or is it something wrong?
@@ -313,7 +310,7 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
   EXPECT_NEAR(5.5, joint_pos_[2], allowed_delta);
 
   // cleanup
-  state = traj_controller_->get_lifecycle_node()->cleanup();
+  state = traj_controller_->get_node()->cleanup();
 
   // update loop receives a new msg and updates accordingly
   traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
@@ -327,7 +324,7 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
   EXPECT_NEAR(INITIAL_POS_JOINT2, joint_pos_[1], allowed_delta);
   EXPECT_NEAR(INITIAL_POS_JOINT3, joint_pos_[2], allowed_delta);
 
-  state = traj_controller_->get_lifecycle_node()->configure();
+  state = traj_controller_->get_node()->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
 
   executor.cancel();
@@ -397,7 +394,7 @@ void TrajectoryControllerTest::test_state_publish_rate_target(int target_msg_cou
   const int qos_level = 10;
   int echo_received_counter = 0;
   rclcpp::Subscription<JointTrajectoryControllerState>::SharedPtr subs =
-    traj_controller_->get_lifecycle_node()->create_subscription<JointTrajectoryControllerState>(
+    traj_controller_->get_node()->create_subscription<JointTrajectoryControllerState>(
       controller_name_ + "/state", qos_level,
       [&](JointTrajectoryControllerState::UniquePtr) { ++echo_received_counter; });
 
@@ -679,7 +676,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_trajectory_replace)
   // Denis: delta was 0.1 with 0.2 works for me
   waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.2);
 
-  RCLCPP_INFO(traj_controller_->get_lifecycle_node()->get_logger(), "Sending new trajectory");
+  RCLCPP_INFO(traj_controller_->get_node()->get_logger(), "Sending new trajectory");
   publish(time_from_start, points_partial_new);
   // Replaced trajectory is a mix of previous and current goal
   expected_desired.positions[0] = points_partial_new[0][0];
@@ -711,8 +708,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_old_trajectory)
   //  Check that we reached end of points_old[0] trajectory
   waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
 
-  RCLCPP_INFO(
-    traj_controller_->get_lifecycle_node()->get_logger(), "Sending new trajectory in the past");
+  RCLCPP_INFO(traj_controller_->get_node()->get_logger(), "Sending new trajectory in the past");
   //  New trajectory will end before current time
   rclcpp::Time new_traj_start = rclcpp::Clock().now() - delay - std::chrono::milliseconds(100);
   expected_actual.positions = {points_old[1].begin(), points_old[1].end()};
@@ -740,8 +736,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_partial_old_trajectory
   waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
 
   RCLCPP_INFO(
-    traj_controller_->get_lifecycle_node()->get_logger(),
-    "Sending new trajectory partially in the past");
+    traj_controller_->get_node()->get_logger(), "Sending new trajectory partially in the past");
   //  New trajectory first point is in the past, second is in the future
   rclcpp::Time new_traj_start = rclcpp::Clock().now() - delay - std::chrono::milliseconds(100);
   expected_actual.positions = {points_new[1].begin(), points_new[1].end()};
@@ -753,7 +748,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_partial_old_trajectory
 TEST_P(TrajectoryControllerTestParameterized, test_execute_partial_traj_in_future)
 {
   SetUpTrajectoryController();
-  auto traj_node = traj_controller_->get_lifecycle_node();
+  auto traj_node = traj_controller_->get_node();
   RCLCPP_WARN(
     traj_node->get_logger(),
     "Test disabled until current_trajectory is taken into account when adding a new trajectory.");
@@ -766,8 +761,8 @@ TEST_P(TrajectoryControllerTestParameterized, test_execute_partial_traj_in_futur
   subscribeToState();
   rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", true);
   traj_node->set_parameter(partial_joints_parameters);
-  traj_controller_->get_lifecycle_node()->configure();
-  traj_controller_->get_lifecycle_node()->activate();
+  traj_controller_->get_node()->configure();
+  traj_controller_->get_node()->activate();
 
   std::vector<std::vector<double>> full_traj{{{2., 3., 4.}, {4., 6., 8.}}};
   std::vector<std::vector<double>> partial_traj{
@@ -1113,14 +1108,10 @@ INSTANTIATE_TEST_CASE_P(
 TEST_F(TrajectoryControllerTest, incorrect_initialization_using_interface_parameters)
 {
   auto set_parameter_and_check_result = [&]() {
-    EXPECT_EQ(
-      traj_controller_->get_lifecycle_node()->get_current_state().id(),
-      State::PRIMARY_STATE_UNCONFIGURED);
+    EXPECT_EQ(traj_controller_->get_state().id(), State::PRIMARY_STATE_UNCONFIGURED);
     SetParameters();  // This call is replacing the way parameters are set via launch
-    traj_controller_->get_lifecycle_node()->configure();
-    EXPECT_EQ(
-      traj_controller_->get_lifecycle_node()->get_current_state().id(),
-      State::PRIMARY_STATE_UNCONFIGURED);
+    traj_controller_->get_node()->configure();
+    EXPECT_EQ(traj_controller_->get_state().id(), State::PRIMARY_STATE_UNCONFIGURED);
   };
 
   SetUpTrajectoryController(false);
