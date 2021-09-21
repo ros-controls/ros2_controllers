@@ -394,7 +394,7 @@ void TrajectoryControllerTest::test_state_publish_rate_target(int target_msg_cou
   const int qos_level = 10;
   int echo_received_counter = 0;
   rclcpp::Subscription<JointTrajectoryControllerState>::SharedPtr subs =
-    traj_node_->create_subscription<JointTrajectoryControllerState>(
+    traj_controller_->get_lifecycle_node()->create_subscription<JointTrajectoryControllerState>(
       controller_name_ + "/state", qos_level,
       [&](JointTrajectoryControllerState::UniquePtr) { ++echo_received_counter; });
 
@@ -676,7 +676,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_trajectory_replace)
   // Denis: delta was 0.1 with 0.2 works for me
   waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.2);
 
-  RCLCPP_INFO(traj_node_->get_logger(), "Sending new trajectory");
+  RCLCPP_INFO(traj_controller_->get_lifecycle_node()->get_logger(), "Sending new trajectory");
   publish(time_from_start, points_partial_new);
   // Replaced trajectory is a mix of previous and current goal
   expected_desired.positions[0] = points_partial_new[0][0];
@@ -708,7 +708,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_old_trajectory)
   //  Check that we reached end of points_old[0] trajectory
   waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
 
-  RCLCPP_INFO(traj_node_->get_logger(), "Sending new trajectory in the past");
+  RCLCPP_INFO(traj_controller_->get_lifecycle_node()->get_logger(), "Sending new trajectory in the past");
   //  New trajectory will end before current time
   rclcpp::Time new_traj_start = rclcpp::Clock().now() - delay - std::chrono::milliseconds(100);
   expected_actual.positions = {points_old[1].begin(), points_old[1].end()};
@@ -735,7 +735,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_partial_old_trajectory
   //  Check that we reached end of points_old[0]trajectory
   waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
 
-  RCLCPP_INFO(traj_node_->get_logger(), "Sending new trajectory partially in the past");
+  RCLCPP_INFO(traj_controller_->get_lifecycle_node()->get_logger(), "Sending new trajectory partially in the past");
   //  New trajectory first point is in the past, second is in the future
   rclcpp::Time new_traj_start = rclcpp::Clock().now() - delay - std::chrono::milliseconds(100);
   expected_actual.positions = {points_new[1].begin(), points_new[1].end()};

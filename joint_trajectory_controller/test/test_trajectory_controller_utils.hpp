@@ -153,19 +153,18 @@ public:
   {
     SetUpTrajectoryController(use_local_parameters);
 
-    traj_node_ = traj_controller_->get_lifecycle_node();
     for (const auto & param : parameters)
     {
-      traj_node_->set_parameter(param);
+      traj_controller_->get_lifecycle_node()->set_parameter(param);
     }
     if (executor)
     {
-      executor->add_node(traj_node_->get_node_base_interface());
+      executor->add_node(traj_controller_->get_lifecycle_node()->get_node_base_interface());
     }
 
     // ignore velocity tolerances for this test since they aren't committed in test_robot->write()
     rclcpp::Parameter stopped_velocity_parameters("constraints.stopped_velocity_tolerance", 0.0);
-    traj_node_->set_parameter(stopped_velocity_parameters);
+    traj_controller_->get_lifecycle_node()->set_parameter(stopped_velocity_parameters);
 
     traj_controller_->get_lifecycle_node()->configure();
     ActivateTrajectoryController(separate_cmd_and_state_values);
@@ -354,7 +353,6 @@ public:
   rclcpp::Publisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr trajectory_publisher_;
 
   std::shared_ptr<TestableJointTrajectoryController> traj_controller_;
-  std::shared_ptr<rclcpp::Node> traj_node_;
   rclcpp::Subscription<control_msgs::msg::JointTrajectoryControllerState>::SharedPtr
     state_subscriber_;
   mutable std::mutex state_mutex_;
