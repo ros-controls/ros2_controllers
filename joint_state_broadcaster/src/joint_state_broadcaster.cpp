@@ -241,8 +241,8 @@ controller_interface::return_type JointStateBroadcaster::update(
       state_interface.get_interface_name().c_str(), state_interface.get_value());
   }
 
-  joint_state_msg_.header.stamp = get_node()->get_clock()->now();
-  dynamic_joint_state_msg_.header.stamp = get_node()->get_clock()->now();
+  joint_state_msg_.header.stamp = get_lifecycle_node()->get_clock()->now();
+  dynamic_joint_state_msg_.header.stamp = get_lifecycle_node()->get_clock()->now();
 
   // update joint state message and dynamic joint state message
   for (auto i = 0ul; i < joint_names_.size(); ++i)
