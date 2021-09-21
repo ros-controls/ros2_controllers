@@ -88,7 +88,9 @@ void ForceTorqueSensorBroadcasterTest::subscribe_and_get_message(
     "/test_force_torque_sensor_broadcaster/wrench", 10, subs_callback);
 
   // call update to publish the test value
-  ASSERT_EQ(fts_broadcaster_->update(), controller_interface::return_type::OK);
+  ASSERT_EQ(
+    fts_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
 
   // wait for message to be passed
   ASSERT_EQ(wait_for(subscription), rclcpp::WaitResultKind::Ready);
@@ -220,7 +222,9 @@ TEST_F(ForceTorqueSensorBroadcasterTest, SensorName_Update_Success)
   ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(fts_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  ASSERT_EQ(fts_broadcaster_->update(), controller_interface::return_type::OK);
+  ASSERT_EQ(
+    fts_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
 }
 
 TEST_F(ForceTorqueSensorBroadcasterTest, InterfaceNames_Success)
@@ -234,7 +238,9 @@ TEST_F(ForceTorqueSensorBroadcasterTest, InterfaceNames_Success)
 
   ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(fts_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(fts_broadcaster_->update(), controller_interface::return_type::OK);
+  ASSERT_EQ(
+    fts_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
 }
 
 TEST_F(ForceTorqueSensorBroadcasterTest, SensorName_Publish_Success)

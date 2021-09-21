@@ -79,7 +79,7 @@ TEST_P(TrajectoryControllerTestParameterized, configure)
   publish(time_from_start, points);
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
-  traj_controller_->update();
+  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
 
   // hw position == 0 because controller is not activated
   EXPECT_EQ(0.0, joint_pos_[0]);
@@ -144,7 +144,7 @@ TEST_P(TrajectoryControllerTestParameterized, activate)
 //   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 //   executor.spin_once();
 //
-//   traj_controller->update();
+//   traj_controller->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
 //   resource_manager_->write();
 //
 //   // change in hw position
@@ -192,7 +192,7 @@ TEST_P(TrajectoryControllerTestParameterized, activate)
 //   std::this_thread::sleep_for(std::chrono::milliseconds(500));
 //   executor.spin_once();
 //
-//   traj_controller->update();
+//   traj_controller->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
 //   resource_manager_->write();
 //
 //   // deactivated
@@ -201,7 +201,7 @@ TEST_P(TrajectoryControllerTestParameterized, activate)
 //   state = traj_controller_->deactivate();
 //   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
 //   resource_manager_->read();
-//   traj_controller->update();
+//   traj_controller->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
 //   resource_manager_->write();
 //
 //   // no change in hw position
@@ -215,7 +215,7 @@ TEST_P(TrajectoryControllerTestParameterized, activate)
 //   state = traj_node->activate();
 //   ASSERT_EQ(state.id(), State::PRIMARY_STATE_ACTIVE);
 //   resource_manager_->read();
-//   traj_controller->update();
+//   traj_controller->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
 //   resource_manager_->write();
 //
 //   // change in hw position to 3rd point
@@ -241,11 +241,11 @@ TEST_P(TrajectoryControllerTestParameterized, cleanup)
   std::vector<std::vector<double>> points{{{3.3, 4.4, 5.5}}};
   publish(time_from_start, points);
   traj_controller_->wait_for_trajectory(executor);
-  traj_controller_->update();
+  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
 
   auto state = traj_controller_->deactivate();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
-  traj_controller_->update();
+  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
 
   state = traj_controller_->cleanup();
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
@@ -292,11 +292,11 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
   traj_controller_->wait_for_trajectory(executor);
 
   // first update
-  traj_controller_->update();
+  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
 
   // wait so controller process the second point when deactivated
   std::this_thread::sleep_for(FIRST_POINT_TIME);
-  traj_controller_->update();
+  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
   // deactivated
   state = traj_controller_->deactivate();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
@@ -313,11 +313,11 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
   state = traj_controller_->cleanup();
 
   // update loop receives a new msg and updates accordingly
-  traj_controller_->update();
+  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
 
   // check the traj_msg_home_ptr_ initialization code for the standard wait timing
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
-  traj_controller_->update();
+  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
 
   EXPECT_NEAR(INITIAL_POS_JOINT1, joint_pos_[0], allowed_delta);
@@ -404,7 +404,7 @@ void TrajectoryControllerTest::test_state_publish_rate_target(int target_msg_cou
   const auto end_time = start_time + wait;
   while (rclcpp::Clock().now() < end_time)
   {
-    traj_controller_->update();
+    traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
   }
 
   // We may miss the last message since time allowed is exactly the time needed
@@ -832,15 +832,15 @@ TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_erro
   // One the first update(s) there should be a "jump" in opposite direction from command
   // (towards the state value)
   EXPECT_NEAR(first_goal[0], joint_pos_[0], COMMON_THRESHOLD);
-  traj_controller_->update();
+  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
   // Expect backward commands at first
   EXPECT_NEAR(joint_state_pos_[0], joint_pos_[0], COMMON_THRESHOLD);
   EXPECT_GT(joint_pos_[0], joint_state_pos_[0]);
   EXPECT_LT(joint_pos_[0], first_goal[0]);
-  traj_controller_->update();
+  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
   EXPECT_GT(joint_pos_[0], joint_state_pos_[0]);
   EXPECT_LT(joint_pos_[0], first_goal[0]);
-  traj_controller_->update();
+  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
   EXPECT_GT(joint_pos_[0], joint_state_pos_[0]);
   EXPECT_LT(joint_pos_[0], first_goal[0]);
 
@@ -859,15 +859,15 @@ TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_erro
   // One the first update(s) there should be a "jump" in the goal direction from command
   // (towards the state value)
   EXPECT_NEAR(second_goal[0], joint_pos_[0], COMMON_THRESHOLD);
-  traj_controller_->update();
+  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
   // Expect backward commands at first
   EXPECT_NEAR(joint_state_pos_[0], joint_pos_[0], COMMON_THRESHOLD);
   EXPECT_LT(joint_pos_[0], joint_state_pos_[0]);
   EXPECT_GT(joint_pos_[0], first_goal[0]);
-  traj_controller_->update();
+  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
   EXPECT_LT(joint_pos_[0], joint_state_pos_[0]);
   EXPECT_GT(joint_pos_[0], first_goal[0]);
-  traj_controller_->update();
+  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
   EXPECT_LT(joint_pos_[0], joint_state_pos_[0]);
   EXPECT_GT(joint_pos_[0], first_goal[0]);
 
@@ -916,15 +916,15 @@ TEST_P(TrajectoryControllerTestParameterized, test_no_jump_when_state_tracking_e
   // One the first update(s) there **should not** be a "jump" in opposite direction from command
   // (towards the state value)
   EXPECT_NEAR(first_goal[0], joint_pos_[0], COMMON_THRESHOLD);
-  traj_controller_->update();
+  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
   // There should not be backward commands
   EXPECT_NEAR(first_goal[0], joint_pos_[0], COMMON_THRESHOLD);
   EXPECT_GT(joint_pos_[0], first_goal[0]);
   EXPECT_LT(joint_pos_[0], second_goal[0]);
-  traj_controller_->update();
+  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
   EXPECT_GT(joint_pos_[0], first_goal[0]);
   EXPECT_LT(joint_pos_[0], second_goal[0]);
-  traj_controller_->update();
+  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
   EXPECT_GT(joint_pos_[0], first_goal[0]);
   EXPECT_LT(joint_pos_[0], second_goal[0]);
 
@@ -943,15 +943,15 @@ TEST_P(TrajectoryControllerTestParameterized, test_no_jump_when_state_tracking_e
   // One the first update(s) there **should not** be a "jump" in the goal direction from command
   // (towards the state value)
   EXPECT_NEAR(second_goal[0], joint_pos_[0], COMMON_THRESHOLD);
-  traj_controller_->update();
+  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
   // There should not be a jump toward commands
   EXPECT_NEAR(second_goal[0], joint_pos_[0], COMMON_THRESHOLD);
   EXPECT_LT(joint_pos_[0], second_goal[0]);
   EXPECT_GT(joint_pos_[0], first_goal[0]);
-  traj_controller_->update();
+  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
   EXPECT_GT(joint_pos_[0], first_goal[0]);
   EXPECT_LT(joint_pos_[0], second_goal[0]);
-  traj_controller_->update();
+  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
   EXPECT_GT(joint_pos_[0], first_goal[0]);
   EXPECT_LT(joint_pos_[0], second_goal[0]);
 

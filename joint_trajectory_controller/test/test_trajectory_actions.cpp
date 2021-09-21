@@ -94,7 +94,7 @@ protected:
       auto end_time = start_time + wait;
       while (rclcpp::Clock().now() < end_time)
       {
-        traj_controller_->update();
+        traj_controller_->update(rclcpp::Clock().now(), rclcpp::Clock().now() - start_time);
       }
     });
 
@@ -448,7 +448,7 @@ TEST_F(TestTrajectoryActions, test_cancel_hold_position)
   const double prev_pos3 = joint_pos_[2];
 
   // run an update, it should be holding
-  traj_controller_->update();
+  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
 
   EXPECT_EQ(prev_pos1, joint_pos_[0]);
   EXPECT_EQ(prev_pos2, joint_pos_[1]);

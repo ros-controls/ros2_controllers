@@ -153,7 +153,8 @@ CallbackReturn ForwardCommandController::on_deactivate(
   return CallbackReturn::SUCCESS;
 }
 
-controller_interface::return_type ForwardCommandController::update()
+controller_interface::return_type ForwardCommandController::update(
+  const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
   auto joint_commands = rt_command_ptr_.readFromRT();
 

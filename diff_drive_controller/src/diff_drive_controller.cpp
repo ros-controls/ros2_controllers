@@ -132,7 +132,8 @@ InterfaceConfiguration DiffDriveController::state_interface_configuration() cons
   return {interface_configuration_type::INDIVIDUAL, conf_names};
 }
 
-controller_interface::return_type DiffDriveController::update()
+controller_interface::return_type DiffDriveController::update(
+  const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
   auto logger = node_->get_logger();
   if (get_state().id() == State::PRIMARY_STATE_INACTIVE)
@@ -145,29 +146,29 @@ controller_interface::return_type DiffDriveController::update()
     return controller_interface::return_type::OK;
   }
 
-  const auto current_time = node_->get_clock()->now();
+  const auto current_time = time;
 
-  std::shared_ptr<Twist> last_msg;
-  received_velocity_msg_ptr_.get(last_msg);
+  std::shared_ptr<Twist> last_command_msg;
+  received_velocity_msg_ptr_.get(last_command_msg);
 
-  if (last_msg == nullptr)
+  if (last_command_msg == nullptr)
   {
     RCLCPP_WARN(logger, "Velocity message received was a nullptr.");
     return controller_interface::return_type::ERROR;
   }
 
-  const auto dt = current_time - last_msg->header.stamp;
+  const auto age_of_last_command = current_time - last_command_msg->header.stamp;
   // Brake if cmd_vel has timeout, override the stored command
-  if (dt > cmd_vel_timeout_)
+  if (age_of_last_command > cmd_vel_timeout_)
   {
-    last_msg->twist.linear.x = 0.0;
-    last_msg->twist.angular.z = 0.0;
+    last_command_msg->twist.linear.x = 0.0;
+    last_command_msg->twist.angular.z = 0.0;
   }
 
   // linear_command and angular_command may be limited further by SpeedLimit,
   // without affecting the stored twist command
-  double linear_command = last_msg->twist.linear.x;
-  double angular_command = last_msg->twist.angular.z;
+  double linear_command = last_command_msg->twist.linear.x;
+  double angular_command = last_command_msg->twist.angular.z;
 
   // Apply (possibly new) multipliers:
   const auto wheels = wheel_params_;
@@ -247,7 +248,7 @@ controller_interface::return_type DiffDriveController::update()
     angular_command, last_command.angular.z, second_to_last_command.angular.z, update_dt.seconds());
 
   previous_commands_.pop();
-  previous_commands_.emplace(*last_msg);
+  previous_commands_.emplace(*last_command_msg);
 
   //    Publish limited velocity
   if (publish_limited_velocity_ && realtime_limited_velocity_publisher_->trylock())

@@ -303,7 +303,7 @@ public:
     const auto end_time = start_time + wait_time;
     while (rclcpp::Clock().now() < end_time)
     {
-      traj_controller_->update();
+      traj_controller_->update(rclcpp::Clock().now(), rclcpp::Clock().now() - start_time);
     }
   }
 
