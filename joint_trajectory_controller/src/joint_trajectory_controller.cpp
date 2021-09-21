@@ -205,11 +205,11 @@ controller_interface::return_type JointTrajectoryController::update(
           // Update PIDs
           for (auto i = 0ul; i < joint_num; ++i)
           {
-            tmp_command_[i] =
-              (state_desired.velocities[i] * ff_velocity_scale_[i]) +
-              pids_[i]->computeCommand(
-                state_desired.positions[i] - state_current.positions[i],
-                state_desired.velocities[i] - state_current.velocities[i], period.seconds());
+            tmp_command_[i] = (state_desired.velocities[i] * ff_velocity_scale_[i]) +
+                              pids_[i]->computeCommand(
+                                state_desired.positions[i] - state_current.positions[i],
+                                state_desired.velocities[i] - state_current.velocities[i],
+                                (uint64_t)period.nanoseconds());
           }
 
           assign_interface_from_point(joint_command_interface_[1], tmp_command_);
