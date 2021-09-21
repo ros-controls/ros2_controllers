@@ -97,7 +97,9 @@ TEST_P(TrajectoryControllerTestParameterized, activate)
   executor.add_node(traj_controller_->get_lifecycle_node()->get_node_base_interface());
 
   traj_controller_->get_lifecycle_node()->configure();
-  ASSERT_EQ(traj_controller_->get_lifecycle_node()->get_current_state().id(), State::PRIMARY_STATE_INACTIVE);
+  ASSERT_EQ(
+    traj_controller_->get_lifecycle_node()->get_current_state().id(),
+    State::PRIMARY_STATE_INACTIVE);
 
   auto cmd_interface_config = traj_controller_->command_interface_configuration();
   ASSERT_EQ(
@@ -108,7 +110,8 @@ TEST_P(TrajectoryControllerTestParameterized, activate)
     state_interface_config.names.size(), joint_names_.size() * state_interface_types_.size());
 
   ActivateTrajectoryController();
-  ASSERT_EQ(traj_controller_->get_lifecycle_node()->get_current_state().id(), State::PRIMARY_STATE_ACTIVE);
+  ASSERT_EQ(
+    traj_controller_->get_lifecycle_node()->get_current_state().id(), State::PRIMARY_STATE_ACTIVE);
 
   executor.cancel();
 }
@@ -708,7 +711,8 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_old_trajectory)
   //  Check that we reached end of points_old[0] trajectory
   waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
 
-  RCLCPP_INFO(traj_controller_->get_lifecycle_node()->get_logger(), "Sending new trajectory in the past");
+  RCLCPP_INFO(
+    traj_controller_->get_lifecycle_node()->get_logger(), "Sending new trajectory in the past");
   //  New trajectory will end before current time
   rclcpp::Time new_traj_start = rclcpp::Clock().now() - delay - std::chrono::milliseconds(100);
   expected_actual.positions = {points_old[1].begin(), points_old[1].end()};
@@ -735,7 +739,9 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_partial_old_trajectory
   //  Check that we reached end of points_old[0]trajectory
   waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
 
-  RCLCPP_INFO(traj_controller_->get_lifecycle_node()->get_logger(), "Sending new trajectory partially in the past");
+  RCLCPP_INFO(
+    traj_controller_->get_lifecycle_node()->get_logger(),
+    "Sending new trajectory partially in the past");
   //  New trajectory first point is in the past, second is in the future
   rclcpp::Time new_traj_start = rclcpp::Clock().now() - delay - std::chrono::milliseconds(100);
   expected_actual.positions = {points_new[1].begin(), points_new[1].end()};
@@ -1107,10 +1113,14 @@ INSTANTIATE_TEST_CASE_P(
 TEST_F(TrajectoryControllerTest, incorrect_initialization_using_interface_parameters)
 {
   auto set_parameter_and_check_result = [&]() {
-    EXPECT_EQ(traj_controller_->get_lifecycle_node()->get_current_state().id(), State::PRIMARY_STATE_UNCONFIGURED);
+    EXPECT_EQ(
+      traj_controller_->get_lifecycle_node()->get_current_state().id(),
+      State::PRIMARY_STATE_UNCONFIGURED);
     SetParameters();  // This call is replacing the way parameters are set via launch
     traj_controller_->get_lifecycle_node()->configure();
-    EXPECT_EQ(traj_controller_->get_lifecycle_node()->get_current_state().id(), State::PRIMARY_STATE_UNCONFIGURED);
+    EXPECT_EQ(
+      traj_controller_->get_lifecycle_node()->get_current_state().id(),
+      State::PRIMARY_STATE_UNCONFIGURED);
   };
 
   SetUpTrajectoryController(false);

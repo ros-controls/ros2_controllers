@@ -94,13 +94,15 @@ TEST_F(JointGroupEffortControllerTest, ConfigureAndActivateParamsSuccess)
 TEST_F(JointGroupEffortControllerTest, ActivateWithWrongJointsNamesFails)
 {
   SetUpController();
-  controller_->get_lifecycle_node()->set_parameter({"joints", std::vector<std::string>{"joint1", "joint4"}});
+  controller_->get_lifecycle_node()->set_parameter(
+    {"joints", std::vector<std::string>{"joint1", "joint4"}});
 
   // activate failed, 'joint4' is not a valid joint name for the hardware
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
 
-  controller_->get_lifecycle_node()->set_parameter({"joints", std::vector<std::string>{"joint1", "joint2"}});
+  controller_->get_lifecycle_node()->set_parameter(
+    {"joints", std::vector<std::string>{"joint1", "joint2"}});
 
   // activate failed, 'acceleration' is not a registered interface for `joint1`
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
@@ -197,7 +199,8 @@ TEST_F(JointGroupEffortControllerTest, CommandCallbackTest)
   // send a new command
   rclcpp::Node test_node("test_node");
   auto command_pub = test_node.create_publisher<std_msgs::msg::Float64MultiArray>(
-    std::string(controller_->get_lifecycle_node()->get_name()) + "/commands", rclcpp::SystemDefaultsQoS());
+    std::string(controller_->get_lifecycle_node()->get_name()) + "/commands",
+    rclcpp::SystemDefaultsQoS());
   std_msgs::msg::Float64MultiArray command_msg;
   command_msg.data = {10.0, 20.0, 30.0};
   command_pub->publish(command_msg);

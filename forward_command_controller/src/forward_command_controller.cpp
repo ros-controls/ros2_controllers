@@ -139,8 +139,8 @@ CallbackReturn ForwardCommandController::on_activate(
     command_interfaces_.size() != ordered_interfaces.size())
   {
     RCLCPP_ERROR(
-      lifecycle_node_->get_logger(), "Expected %zu position command interfaces, got %zu", joint_names_.size(),
-      ordered_interfaces.size());
+      lifecycle_node_->get_logger(), "Expected %zu position command interfaces, got %zu",
+      joint_names_.size(), ordered_interfaces.size());
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
   }
 

@@ -326,7 +326,8 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
   std::copy(
     pose_diagonal.begin(), pose_diagonal.end(), odom_params_.pose_covariance_diagonal.begin());
 
-  auto twist_diagonal = lifecycle_node_->get_parameter("twist_covariance_diagonal").as_double_array();
+  auto twist_diagonal =
+    lifecycle_node_->get_parameter("twist_covariance_diagonal").as_double_array();
   std::copy(
     twist_diagonal.begin(), twist_diagonal.end(), odom_params_.twist_covariance_diagonal.begin());
 
@@ -353,7 +354,8 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
   }
   catch (const std::runtime_error & e)
   {
-    RCLCPP_ERROR(lifecycle_node_->get_logger(), "Error configuring linear speed limiter: %s", e.what());
+    RCLCPP_ERROR(
+      lifecycle_node_->get_logger(), "Error configuring linear speed limiter: %s", e.what());
   }
 
   try
@@ -371,7 +373,8 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
   }
   catch (const std::runtime_error & e)
   {
-    RCLCPP_ERROR(lifecycle_node_->get_logger(), "Error configuring angular speed limiter: %s", e.what());
+    RCLCPP_ERROR(
+      lifecycle_node_->get_logger(), "Error configuring angular speed limiter: %s", e.what());
   }
 
   if (!reset())
@@ -384,8 +387,8 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
 
   if (publish_limited_velocity_)
   {
-    limited_velocity_publisher_ =
-      lifecycle_node_->create_publisher<Twist>(DEFAULT_COMMAND_OUT_TOPIC, rclcpp::SystemDefaultsQoS());
+    limited_velocity_publisher_ = lifecycle_node_->create_publisher<Twist>(
+      DEFAULT_COMMAND_OUT_TOPIC, rclcpp::SystemDefaultsQoS());
     realtime_limited_velocity_publisher_ =
       std::make_shared<realtime_tools::RealtimePublisher<Twist>>(limited_velocity_publisher_);
   }
@@ -405,7 +408,8 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
       [this](const std::shared_ptr<Twist> msg) -> void {
         if (!subscriber_is_active_)
         {
-          RCLCPP_WARN(lifecycle_node_->get_logger(), "Can't accept new commands. subscriber is inactive");
+          RCLCPP_WARN(
+            lifecycle_node_->get_logger(), "Can't accept new commands. subscriber is inactive");
           return;
         }
         if ((msg->header.stamp.sec == 0) && (msg->header.stamp.nanosec == 0))
@@ -421,21 +425,23 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
   }
   else
   {
-    velocity_command_unstamped_subscriber_ = lifecycle_node_->create_subscription<geometry_msgs::msg::Twist>(
-      DEFAULT_COMMAND_UNSTAMPED_TOPIC, rclcpp::SystemDefaultsQoS(),
-      [this](const std::shared_ptr<geometry_msgs::msg::Twist> msg) -> void {
-        if (!subscriber_is_active_)
-        {
-          RCLCPP_WARN(lifecycle_node_->get_logger(), "Can't accept new commands. subscriber is inactive");
-          return;
-        }
+    velocity_command_unstamped_subscriber_ =
+      lifecycle_node_->create_subscription<geometry_msgs::msg::Twist>(
+        DEFAULT_COMMAND_UNSTAMPED_TOPIC, rclcpp::SystemDefaultsQoS(),
+        [this](const std::shared_ptr<geometry_msgs::msg::Twist> msg) -> void {
+          if (!subscriber_is_active_)
+          {
+            RCLCPP_WARN(
+              lifecycle_node_->get_logger(), "Can't accept new commands. subscriber is inactive");
+            return;
+          }
 
-        // Write fake header in the stored stamped command
-        std::shared_ptr<Twist> twist_stamped;
-        received_velocity_msg_ptr_.get(twist_stamped);
-        twist_stamped->twist = *msg;
-        twist_stamped->header.stamp = lifecycle_node_->get_clock()->now();
-      });
+          // Write fake header in the stored stamped command
+          std::shared_ptr<Twist> twist_stamped;
+          received_velocity_msg_ptr_.get(twist_stamped);
+          twist_stamped->twist = *msg;
+          twist_stamped->header.stamp = lifecycle_node_->get_clock()->now();
+        });
   }
 
   // initialize odometry publisher and messasge
@@ -495,7 +501,8 @@ CallbackReturn DiffDriveController::on_activate(const rclcpp_lifecycle::State &)
   if (registered_left_wheel_handles_.empty() || registered_right_wheel_handles_.empty())
   {
     RCLCPP_ERROR(
-      lifecycle_node_->get_logger(), "Either left wheel interfaces, right wheel interfaces are non existent");
+      lifecycle_node_->get_logger(),
+      "Either left wheel interfaces, right wheel interfaces are non existent");
     return CallbackReturn::ERROR;
   }
 

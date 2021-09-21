@@ -108,7 +108,9 @@ JointTrajectoryController::state_interface_configuration() const
 controller_interface::return_type JointTrajectoryController::update(
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
-  if (get_lifecycle_node()->get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
+  if (
+    get_lifecycle_node()->get_current_state().id() ==
+    lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
   {
     return controller_interface::return_type::OK;
   }
@@ -171,7 +173,8 @@ controller_interface::return_type JointTrajectoryController::update(
       }
       else
       {
-        (*traj_point_active_ptr_)->set_point_before_trajectory_msg(lifecycle_node_->now(), state_current);
+        (*traj_point_active_ptr_)
+          ->set_point_before_trajectory_msg(lifecycle_node_->now(), state_current);
       }
     }
     resize_joint_trajectory_point(state_error, joint_num);
@@ -296,8 +299,8 @@ controller_interface::return_type JointTrajectoryController::update(
               // See https://github.com/ros-controls/ros2_controllers/issues/168
               rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
               RCLCPP_WARN(
-                lifecycle_node_->get_logger(), "Aborted due goal_time_tolerance exceeding by %f seconds",
-                difference);
+                lifecycle_node_->get_logger(),
+                "Aborted due goal_time_tolerance exceeding by %f seconds", difference);
             }
           }
         }
@@ -434,7 +437,8 @@ CallbackReturn JointTrajectoryController::on_configure(const rclcpp_lifecycle::S
   // Specialized, child controllers set interfaces before calling configure function.
   if (command_interface_types_.empty())
   {
-    command_interface_types_ = lifecycle_node_->get_parameter("command_interfaces").as_string_array();
+    command_interface_types_ =
+      lifecycle_node_->get_parameter("command_interfaces").as_string_array();
   }
 
   if (command_interface_types_.empty())
@@ -628,14 +632,16 @@ CallbackReturn JointTrajectoryController::on_configure(const rclcpp_lifecycle::S
   };
 
   // TODO(karsten1987): create subscriber with subscription deactivated
-  joint_command_subscriber_ = lifecycle_node_->create_subscription<trajectory_msgs::msg::JointTrajectory>(
-    "~/joint_trajectory", rclcpp::SystemDefaultsQoS(), callback);
+  joint_command_subscriber_ =
+    lifecycle_node_->create_subscription<trajectory_msgs::msg::JointTrajectory>(
+      "~/joint_trajectory", rclcpp::SystemDefaultsQoS(), callback);
 
   // TODO(karsten1987): no lifecycle for subscriber yet
   // joint_command_subscriber_->on_activate();
 
   // State publisher
-  const double state_publish_rate = lifecycle_node_->get_parameter("state_publish_rate").get_value<double>();
+  const double state_publish_rate =
+    lifecycle_node_->get_parameter("state_publish_rate").get_value<double>();
   RCLCPP_INFO(logger, "Controller state will be published at %.2f Hz.", state_publish_rate);
   if (state_publish_rate > 0.0)
   {
@@ -646,7 +652,8 @@ CallbackReturn JointTrajectoryController::on_configure(const rclcpp_lifecycle::S
     state_publisher_period_ = rclcpp::Duration::from_seconds(0.0);
   }
 
-  publisher_ = lifecycle_node_->create_publisher<ControllerStateMsg>("~/state", rclcpp::SystemDefaultsQoS());
+  publisher_ =
+    lifecycle_node_->create_publisher<ControllerStateMsg>("~/state", rclcpp::SystemDefaultsQoS());
   state_publisher_ = std::make_unique<StatePublisher>(publisher_);
 
   const auto n_joints = joint_names_.size();
@@ -673,7 +680,8 @@ CallbackReturn JointTrajectoryController::on_configure(const rclcpp_lifecycle::S
   last_state_publish_time_ = lifecycle_node_->now();
 
   // action server configuration
-  allow_partial_joints_goal_ = lifecycle_node_->get_parameter("allow_partial_joints_goal").get_value<bool>();
+  allow_partial_joints_goal_ =
+    lifecycle_node_->get_parameter("allow_partial_joints_goal").get_value<bool>();
   if (allow_partial_joints_goal_)
   {
     RCLCPP_INFO(logger, "Goals with partial set of joints are allowed");
@@ -731,8 +739,8 @@ CallbackReturn JointTrajectoryController::on_activate(const rclcpp_lifecycle::St
           command_interfaces_, joint_names_, interface, joint_command_interface_[index]))
     {
       RCLCPP_ERROR(
-        lifecycle_node_->get_logger(), "Expected %zu '%s' command interfaces, got %zu.", joint_names_.size(),
-        interface.c_str(), joint_command_interface_[index].size());
+        lifecycle_node_->get_logger(), "Expected %zu '%s' command interfaces, got %zu.",
+        joint_names_.size(), interface.c_str(), joint_command_interface_[index].size());
       return CallbackReturn::ERROR;
     }
   }
@@ -745,8 +753,8 @@ CallbackReturn JointTrajectoryController::on_activate(const rclcpp_lifecycle::St
           state_interfaces_, joint_names_, interface, joint_state_interface_[index]))
     {
       RCLCPP_ERROR(
-        lifecycle_node_->get_logger(), "Expected %zu '%s' state interfaces, got %zu.", joint_names_.size(),
-        interface.c_str(), joint_state_interface_[index].size());
+        lifecycle_node_->get_logger(), "Expected %zu '%s' state interfaces, got %zu.",
+        joint_names_.size(), interface.c_str(), joint_state_interface_[index].size());
       return CallbackReturn::ERROR;
     }
   }
@@ -895,9 +903,12 @@ rclcpp_action::GoalResponse JointTrajectoryController::goal_callback(
   RCLCPP_INFO(lifecycle_node_->get_logger(), "Received new action goal");
 
   // Precondition: Running controller
-  if (get_lifecycle_node()->get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
+  if (
+    get_lifecycle_node()->get_current_state().id() ==
+    lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
   {
-    RCLCPP_ERROR(lifecycle_node_->get_logger(), "Can't accept new action goals. Controller is not running.");
+    RCLCPP_ERROR(
+      lifecycle_node_->get_logger(), "Can't accept new action goals. Controller is not running.");
     return rclcpp_action::GoalResponse::REJECT;
   }
 
@@ -924,7 +935,8 @@ rclcpp_action::CancelResponse JointTrajectoryController::cancel_callback(
     set_hold_position();
 
     RCLCPP_DEBUG(
-      lifecycle_node_->get_logger(), "Canceling active action goal because cancel callback received.");
+      lifecycle_node_->get_logger(),
+      "Canceling active action goal because cancel callback received.");
 
     // Mark the current goal as canceled
     auto action_res = std::make_shared<FollowJTrajAction::Result>();
@@ -1018,7 +1030,8 @@ void JointTrajectoryController::sort_to_local_joint_order(
     }
     if (to_remap.size() != mapping.size())
     {
-      RCLCPP_WARN(lifecycle_node_->get_logger(), "Invalid input size (%zu) for sorting", to_remap.size());
+      RCLCPP_WARN(
+        lifecycle_node_->get_logger(), "Invalid input size (%zu) for sorting", to_remap.size());
       return to_remap;
     }
     std::vector<double> output;
@@ -1058,8 +1071,9 @@ bool JointTrajectoryController::validate_trajectory_point_field(
   if (joint_names_size != vector_field.size())
   {
     RCLCPP_ERROR(
-      lifecycle_node_->get_logger(), "Mismatch between joint_names (%zu) and %s (%zu) at point #%zu.",
-      joint_names_size, string_for_vector_field.c_str(), vector_field.size(), i);
+      lifecycle_node_->get_logger(),
+      "Mismatch between joint_names (%zu) and %s (%zu) at point #%zu.", joint_names_size,
+      string_for_vector_field.c_str(), vector_field.size(), i);
     return false;
   }
   return true;
@@ -1074,7 +1088,8 @@ bool JointTrajectoryController::validate_trajectory_msg(
     if (trajectory.joint_names.size() != joint_names_.size())
     {
       RCLCPP_ERROR(
-        lifecycle_node_->get_logger(), "Joints on incoming trajectory don't match the controller joints.");
+        lifecycle_node_->get_logger(),
+        "Joints on incoming trajectory don't match the controller joints.");
       return false;
     }
   }

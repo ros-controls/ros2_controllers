@@ -33,7 +33,8 @@ CallbackReturn IMUSensorBroadcaster::on_init()
   catch (const std::exception & e)
   {
     RCLCPP_ERROR(
-      lifecycle_node_->get_logger(), "Exception thrown during init stage with message: %s \n", e.what());
+      lifecycle_node_->get_logger(), "Exception thrown during init stage with message: %s \n",
+      e.what());
     return CallbackReturn::ERROR;
   }
 
@@ -62,8 +63,8 @@ CallbackReturn IMUSensorBroadcaster::on_configure(
   try
   {
     // register ft sensor data publisher
-    sensor_state_publisher_ =
-      lifecycle_node_->create_publisher<sensor_msgs::msg::Imu>("~/imu", rclcpp::SystemDefaultsQoS());
+    sensor_state_publisher_ = lifecycle_node_->create_publisher<sensor_msgs::msg::Imu>(
+      "~/imu", rclcpp::SystemDefaultsQoS());
     realtime_publisher_ = std::make_unique<StatePublisher>(sensor_state_publisher_);
   }
   catch (const std::exception & e)
