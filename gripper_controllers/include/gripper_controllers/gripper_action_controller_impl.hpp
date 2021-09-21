@@ -347,4 +347,3 @@ GripperActionController<HardwareInterface>::GripperActionController()
 }  // namespace gripper_action_controller
 
 #endif  // GRIPPER_CONTROLLERS__GRIPPER_ACTION_CONTROLLER_IMPL_HPP_
-
