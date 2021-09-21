@@ -106,7 +106,7 @@ JointTrajectoryController::state_interface_configuration() const
 }
 
 controller_interface::return_type JointTrajectoryController::update(
-  const rclcpp::Time & time, const rclcpp::Duration & period)
+  const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
   if (get_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
   {

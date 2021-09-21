@@ -230,7 +230,7 @@ double get_value(
 }
 
 controller_interface::return_type JointStateBroadcaster::update(
-  const rclcpp::Time & time, const rclcpp::Duration & period)
+  const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
   for (const auto & state_interface : state_interfaces_)
   {
