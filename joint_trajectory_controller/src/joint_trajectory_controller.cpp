@@ -106,7 +106,7 @@ JointTrajectoryController::state_interface_configuration() const
 }
 
 controller_interface::return_type JointTrajectoryController::update(
-  const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
+  const rclcpp::Time & /*time*/, const rclcpp::Duration & period)
 {
   if (get_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
   {
@@ -202,19 +202,17 @@ controller_interface::return_type JointTrajectoryController::update(
         }
         else
         {
-          const auto period = std::chrono::steady_clock::now() - last_update_time_;
-
           // Update PIDs
           for (auto i = 0ul; i < joint_num; ++i)
           {
-            command_[i] =
-              (state_desired.velocities[i] * velocity_ff_[i]) +
+            tmp_command_[i] =
+              (state_desired.velocities[i] * ff_velocity_scale_[i]) +
               pids_[i]->computeCommand(
                 state_desired.positions[i] - state_current.positions[i],
-                state_desired.velocities[i] - state_current.velocities[i], period.count());
+                state_desired.velocities[i] - state_current.velocities[i], period.seconds());
           }
 
-          assign_interface_from_point(joint_command_interface_[1], command_);
+          assign_interface_from_point(joint_command_interface_[1], tmp_command_);
         }
       }
       if (has_acceleration_command_interface_)
@@ -545,8 +543,8 @@ CallbackReturn JointTrajectoryController::on_configure(const rclcpp_lifecycle::S
   {
     size_t num_joints = joint_names_.size();
     pids_.resize(num_joints);
-    velocity_ff_.resize(num_joints);
-    command_.resize(num_joints, 0.0);
+    ff_velocity_scale_.resize(num_joints);
+    tmp_command_.resize(num_joints, 0.0);
 
     // Init PID gains from ROS parameter server
     for (size_t i = 0; i < pids_.size(); ++i)
@@ -556,7 +554,7 @@ CallbackReturn JointTrajectoryController::on_configure(const rclcpp_lifecycle::S
       const auto k_i = auto_declare<double>(prefix + ".i", 0.0);
       const auto k_d = auto_declare<double>(prefix + ".d", 0.0);
       const auto i_clamp = auto_declare<double>(prefix + ".i_clamp", 0.0);
-      velocity_ff_[i] = auto_declare<double>("velocity_ff/" + joint_names_[i], 0.0);
+      ff_velocity_scale_[i] = auto_declare<double>("ff_velocity_scale/" + joint_names_[i], 0.0);
       // Initialize PID
       pids_[i] = std::make_shared<control_toolbox::Pid>(k_p, k_i, k_d, i_clamp, -i_clamp);
     }

@@ -148,9 +148,10 @@ protected:
   bool use_closed_loop_pid_adapter = false;
   using PidPtr = std::shared_ptr<control_toolbox::Pid>;
   std::vector<PidPtr> pids_;
-  std::chrono::steady_clock::time_point last_update_time_;
-  std::vector<double> velocity_ff_;
-  std::vector<double> command_;
+    /// Feed-forward velocity weight factor when calculating closed loop pid adapter's command
+  std::vector<double> ff_velocity_scale_;
+    /// reserved storage for result of the command when closed loop pid adapter is used
+  std::vector<double> tmp_command_;
 
   // TODO(karsten1987): eventually activate and deactivate subscriber directly when its supported
   bool subscriber_is_active_ = false;
