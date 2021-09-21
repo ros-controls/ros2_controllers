@@ -62,7 +62,7 @@ CallbackReturn GripperActionController<HardwareInterface>::on_init()
 
 template <const char * HardwareInterface>
 controller_interface::return_type GripperActionController<HardwareInterface>::update(
-  const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
+  const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
   command_struct_rt_ = *(command_.readFromRT());
 
@@ -339,10 +339,12 @@ GripperActionController<HardwareInterface>::state_interface_configuration() cons
 
 template <const char * HardwareInterface>
 GripperActionController<HardwareInterface>::GripperActionController()
-: controller_interface::ControllerInterface(), action_monitor_period_(0)
+: controller_interface::ControllerInterface(),
+  action_monitor_period_(rclcpp::Duration::from_seconds(0))
 {
 }
 
 }  // namespace gripper_action_controller
 
 #endif  // GRIPPER_CONTROLLERS__GRIPPER_ACTION_CONTROLLER_IMPL_HPP_
+
