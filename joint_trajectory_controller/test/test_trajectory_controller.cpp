@@ -1142,10 +1142,6 @@ TEST_F(TrajectoryControllerTest, incorrect_initialization_using_interface_parame
   command_interface_types_ = {"effort", "position"};
   set_parameter_and_check_result();
 
-  // command interfaces: velocity alone not yet implemented
-  command_interface_types_ = {"velocity"};
-  set_parameter_and_check_result();
-
   // command interfaces: velocity - position not present
   command_interface_types_ = {"velocity", "acceleration"};
   set_parameter_and_check_result();
