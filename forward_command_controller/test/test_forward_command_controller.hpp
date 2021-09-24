@@ -44,6 +44,7 @@ class FriendForwardCommandController : public forward_command_controller::Forwar
   FRIEND_TEST(ForwardCommandControllerTest, WrongCommandCheckTest);
   FRIEND_TEST(ForwardCommandControllerTest, NoCommandCheckTest);
   FRIEND_TEST(ForwardCommandControllerTest, CommandCallbackTest);
+  FRIEND_TEST(ForwardCommandControllerTest, ActivateDeactivateCommandsResetSuccess);
 };
 
 class ForwardCommandControllerTest : public ::testing::Test
