@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.0 (2021-09-29)
+------------------
 * Remove compile warnings. (`#245 <https://github.com/ros-controls/ros2_controllers/issues/245>`_)
 * Add time and period to update function (`#241 <https://github.com/ros-controls/ros2_controllers/issues/241>`_)
 * Quickfix 🛠: Correct confusing variable name (`#240 <https://github.com/ros-controls/ros2_controllers/issues/240>`_)

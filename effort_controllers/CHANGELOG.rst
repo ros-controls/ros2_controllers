@@ -2,8 +2,8 @@
 Changelog for package effort_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.0 (2021-09-29)
+------------------
 * Add time and period to update function (`#241 <https://github.com/ros-controls/ros2_controllers/issues/241>`_)
 * Unify style of controllers. (`#236 <https://github.com/ros-controls/ros2_controllers/issues/236>`_)
 * ros2_controllers code changes to support ros2_controls issue `#489 <https://github.com/ros-controls/ros2_controllers/issues/489>`_ (`#233 <https://github.com/ros-controls/ros2_controllers/issues/233>`_)
