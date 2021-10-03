@@ -75,12 +75,17 @@ controller_interface::InterfaceConfiguration JointStateBroadcaster::state_interf
 {
   controller_interface::InterfaceConfiguration state_interfaces_config;
 
-  if (use_all_available_interfaces()) {
+  if (use_all_available_interfaces())
+  {
     state_interfaces_config.type = controller_interface::interface_configuration_type::ALL;
-  } else {
+  }
+  else
+  {
     state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
-    for (const auto & joint : joints_) {
-      for (const auto & interface : interfaces_) {
+    for (const auto & joint : joints_)
+    {
+      for (const auto & interface : interfaces_)
+      {
         state_interfaces_config.names.push_back(joint + "/" + interface);
       }
     }
@@ -96,17 +101,22 @@ CallbackReturn JointStateBroadcaster::on_configure(
   joints_ = get_node()->get_parameter("joints").as_string_array();
   interfaces_ = get_node()->get_parameter("interfaces").as_string_array();
 
-  if (use_all_available_interfaces()) {
+  if (use_all_available_interfaces())
+  {
     RCLCPP_INFO(
-      node_->get_logger(), "'joints' or 'interfaces' parameter is empty. "
+      node_->get_logger(),
+      "'joints' or 'interfaces' parameter is empty. "
       "All available state interfaces will be published");
-  } else {
+  }
+  else
+  {
     RCLCPP_INFO(
       node_->get_logger(),
       "Publishing state interfaces defined in 'joints' and 'interfaces' parameters.");
   }
 
-  try {
+  try
+  {
     const std::string topic_name_prefix = use_local_topics_ ? "~/" : "";
 
     joint_state_publisher_ = get_node()->create_publisher<sensor_msgs::msg::JointState>(

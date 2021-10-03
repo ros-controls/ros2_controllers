@@ -70,9 +70,7 @@ void JointStateBroadcasterTest::SetUp()
 void JointStateBroadcasterTest::TearDown() { state_broadcaster_.reset(nullptr); }
 
 void JointStateBroadcasterTest::SetUpStateBroadcaster(
-  const std::vector<std::string> & joint_names,
-  const std::vector<std::string> & interfaces
-)
+  const std::vector<std::string> & joint_names, const std::vector<std::string> & interfaces)
 {
   const auto result = state_broadcaster_->init("joint_state_broadcaster");
   ASSERT_EQ(result, controller_interface::return_type::OK);
@@ -82,7 +80,8 @@ void JointStateBroadcasterTest::SetUpStateBroadcaster(
 
   std::vector<LoanedStateInterface> state_ifs;
 
-  if (joint_names.empty() || interfaces.empty()) {
+  if (joint_names.empty() || interfaces.empty())
+  {
     state_ifs.emplace_back(joint_1_pos_state_);
     state_ifs.emplace_back(joint_2_pos_state_);
     state_ifs.emplace_back(joint_3_pos_state_);
@@ -92,34 +91,47 @@ void JointStateBroadcasterTest::SetUpStateBroadcaster(
     state_ifs.emplace_back(joint_1_eff_state_);
     state_ifs.emplace_back(joint_2_eff_state_);
     state_ifs.emplace_back(joint_3_eff_state_);
-  } else {
-    for (const auto & joint : joint_names) {
-      for (const auto & interface : interfaces) {
-        if (joint == joint_names_[0] && interface == interface_names_[0]) {
+  }
+  else
+  {
+    for (const auto & joint : joint_names)
+    {
+      for (const auto & interface : interfaces)
+      {
+        if (joint == joint_names_[0] && interface == interface_names_[0])
+        {
           state_ifs.emplace_back(joint_1_pos_state_);
         }
-        if (joint == joint_names_[1] && interface == interface_names_[0]) {
+        if (joint == joint_names_[1] && interface == interface_names_[0])
+        {
           state_ifs.emplace_back(joint_2_pos_state_);
         }
-        if (joint == joint_names_[2] && interface == interface_names_[0]) {
+        if (joint == joint_names_[2] && interface == interface_names_[0])
+        {
           state_ifs.emplace_back(joint_3_pos_state_);
         }
-        if (joint == joint_names_[0] && interface == interface_names_[1]) {
+        if (joint == joint_names_[0] && interface == interface_names_[1])
+        {
           state_ifs.emplace_back(joint_1_vel_state_);
         }
-        if (joint == joint_names_[1] && interface == interface_names_[1]) {
+        if (joint == joint_names_[1] && interface == interface_names_[1])
+        {
           state_ifs.emplace_back(joint_2_vel_state_);
         }
-        if (joint == joint_names_[2] && interface == interface_names_[1]) {
+        if (joint == joint_names_[2] && interface == interface_names_[1])
+        {
           state_ifs.emplace_back(joint_3_vel_state_);
         }
-        if (joint == joint_names_[0] && interface == interface_names_[2]) {
+        if (joint == joint_names_[0] && interface == interface_names_[2])
+        {
           state_ifs.emplace_back(joint_1_eff_state_);
         }
-        if (joint == joint_names_[1] && interface == interface_names_[2]) {
+        if (joint == joint_names_[1] && interface == interface_names_[2])
+        {
           state_ifs.emplace_back(joint_2_eff_state_);
         }
-        if (joint == joint_names_[2] && interface == interface_names_[2]) {
+        if (joint == joint_names_[2] && interface == interface_names_[2])
+        {
           state_ifs.emplace_back(joint_3_eff_state_);
         }
       }
@@ -239,8 +251,7 @@ TEST_F(JointStateBroadcasterTest, ActivateTestWithoutJointsParameter)
   ASSERT_THAT(state_broadcaster_->dynamic_joint_state_msg_.joint_names, SizeIs(NUM_JOINTS));
   ASSERT_THAT(state_broadcaster_->dynamic_joint_state_msg_.interface_values, SizeIs(NUM_JOINTS));
   ASSERT_THAT(
-    state_broadcaster_->dynamic_joint_state_msg_.joint_names,
-    ElementsAreArray(joint_names_));
+    state_broadcaster_->dynamic_joint_state_msg_.joint_names, ElementsAreArray(joint_names_));
   ASSERT_THAT(
     state_broadcaster_->dynamic_joint_state_msg_.interface_values[0].interface_names,
     ElementsAreArray(interface_names_));
@@ -279,8 +290,7 @@ TEST_F(JointStateBroadcasterTest, ActivateTestWithoutInterfacesParameter)
   ASSERT_THAT(state_broadcaster_->dynamic_joint_state_msg_.joint_names, SizeIs(NUM_JOINTS));
   ASSERT_THAT(state_broadcaster_->dynamic_joint_state_msg_.interface_values, SizeIs(NUM_JOINTS));
   ASSERT_THAT(
-    state_broadcaster_->dynamic_joint_state_msg_.joint_names,
-    ElementsAreArray(joint_names_));
+    state_broadcaster_->dynamic_joint_state_msg_.joint_names, ElementsAreArray(joint_names_));
   ASSERT_THAT(
     state_broadcaster_->dynamic_joint_state_msg_.interface_values[0].interface_names,
     ElementsAreArray(interface_names_));
@@ -316,11 +326,13 @@ TEST_F(JointStateBroadcasterTest, ActivateTestTwoJointsOneInterface)
   ASSERT_THAT(state_broadcaster_->joint_state_msg_.name, ElementsAreArray(JOINT_NAMES));
   ASSERT_THAT(state_broadcaster_->joint_state_msg_.position, SizeIs(NUM_JOINTS));
   ASSERT_THAT(state_broadcaster_->joint_state_msg_.velocity, SizeIs(NUM_JOINTS));
-  for (auto i = 0ul; i < NUM_JOINTS; ++i) {
+  for (auto i = 0ul; i < NUM_JOINTS; ++i)
+  {
     ASSERT_TRUE(std::isnan(state_broadcaster_->joint_state_msg_.velocity[i]));
   }
   ASSERT_THAT(state_broadcaster_->joint_state_msg_.effort, SizeIs(NUM_JOINTS));
-  for (auto i = 0ul; i < NUM_JOINTS; ++i) {
+  for (auto i = 0ul; i < NUM_JOINTS; ++i)
+  {
     ASSERT_TRUE(std::isnan(state_broadcaster_->joint_state_msg_.effort[i]));
   }
 
@@ -328,8 +340,7 @@ TEST_F(JointStateBroadcasterTest, ActivateTestTwoJointsOneInterface)
   ASSERT_THAT(state_broadcaster_->dynamic_joint_state_msg_.joint_names, SizeIs(NUM_JOINTS));
   ASSERT_THAT(state_broadcaster_->dynamic_joint_state_msg_.interface_values, SizeIs(NUM_JOINTS));
   ASSERT_THAT(
-    state_broadcaster_->dynamic_joint_state_msg_.joint_names,
-    ElementsAreArray(JOINT_NAMES));
+    state_broadcaster_->dynamic_joint_state_msg_.joint_names, ElementsAreArray(JOINT_NAMES));
   ASSERT_THAT(
     state_broadcaster_->dynamic_joint_state_msg_.interface_values[0].interface_names,
     ElementsAreArray(IF_NAMES));
@@ -360,7 +371,8 @@ TEST_F(JointStateBroadcasterTest, ActivateTestOneJointTwoInterfaces)
   ASSERT_THAT(state_broadcaster_->joint_state_msg_.position, SizeIs(NUM_JOINTS));
   ASSERT_THAT(state_broadcaster_->joint_state_msg_.velocity, SizeIs(NUM_JOINTS));
   ASSERT_THAT(state_broadcaster_->joint_state_msg_.effort, SizeIs(NUM_JOINTS));
-  for (auto i = 0ul; i < NUM_JOINTS; ++i) {
+  for (auto i = 0ul; i < NUM_JOINTS; ++i)
+  {
     ASSERT_TRUE(std::isnan(state_broadcaster_->joint_state_msg_.effort[i]));
   }
 
@@ -368,8 +380,7 @@ TEST_F(JointStateBroadcasterTest, ActivateTestOneJointTwoInterfaces)
   ASSERT_THAT(state_broadcaster_->dynamic_joint_state_msg_.joint_names, SizeIs(NUM_JOINTS));
   ASSERT_THAT(state_broadcaster_->dynamic_joint_state_msg_.interface_values, SizeIs(NUM_JOINTS));
   ASSERT_THAT(
-    state_broadcaster_->dynamic_joint_state_msg_.joint_names,
-    ElementsAreArray(JOINT_NAMES));
+    state_broadcaster_->dynamic_joint_state_msg_.joint_names, ElementsAreArray(JOINT_NAMES));
   ASSERT_THAT(
     state_broadcaster_->dynamic_joint_state_msg_.interface_values[0].interface_names,
     ElementsAreArray(IF_NAMES));
@@ -378,7 +389,6 @@ TEST_F(JointStateBroadcasterTest, ActivateTestOneJointTwoInterfaces)
   ASSERT_TRUE(state_broadcaster_->joint_state_publisher_);
   ASSERT_TRUE(state_broadcaster_->dynamic_joint_state_publisher_);
 }
-
 
 TEST_F(JointStateBroadcasterTest, UpdateTest)
 {
