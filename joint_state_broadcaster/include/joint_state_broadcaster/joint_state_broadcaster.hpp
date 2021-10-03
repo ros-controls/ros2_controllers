@@ -40,6 +40,7 @@ using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface
  * of its states, e.g., position.
  * If "joints" or "interfaces" parameter is empty, all available states are published.
  *
+ * \param use_local_topics Flag to publish topics in local namespace.
  * \param joints Names of the joints to control.
  * \param interfaces Name of the interface to command.
  *
@@ -54,10 +55,6 @@ class JointStateBroadcaster : public controller_interface::ControllerInterface
 public:
   JOINT_STATE_BROADCASTER_PUBLIC
   JointStateBroadcaster();
-
-  JOINT_STATE_BROADCASTER_PUBLIC
-  controller_interface::return_type
-  init(const std::string & controller_name) override;
 
   JOINT_STATE_BROADCASTER_PUBLIC
   controller_interface::InterfaceConfiguration command_interface_configuration() const override;
@@ -85,7 +82,7 @@ protected:
   bool init_joint_data();
   void init_joint_state_msg();
   void init_dynamic_joint_state_msg();
-  bool use_all_available_interfaces();
+  bool use_all_available_interfaces() const;
 
 protected:
   // Optional parameters

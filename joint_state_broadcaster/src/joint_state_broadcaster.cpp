@@ -238,7 +238,7 @@ void JointStateBroadcaster::init_dynamic_joint_state_msg()
   }
 }
 
-bool JointStateBroadcaster::use_all_available_interfaces()
+bool JointStateBroadcaster::use_all_available_interfaces() const
 {
   return joints_.empty() || interfaces_.empty();
 }
