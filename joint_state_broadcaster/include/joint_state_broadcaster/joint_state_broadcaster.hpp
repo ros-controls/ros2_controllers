@@ -34,14 +34,20 @@ using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface
 /**
  * \brief Joint State Broadcaster for all or some state in ros2_control system.
  *
- * This class forwards the command signal down to a set of joints
- * on the specified interface.
+ * Joint State Broadcasters publishes state interfaces from ros2_control as ROS messages.
+ * There is a possibility to publish all available states (typical use), or only specific ones.
+ * The latter is, for example, used when hardware provides multiple measurement source for some
+ * of its states, e.g., position.
+ * If "joints" or "interfaces" parameter is empty, all available states are published.
  *
  * \param joints Names of the joints to control.
- * \param interface_name Name of the interface to command.
+ * \param interfaces Name of the interface to command.
  *
- * Subscribes to:
- * - \b commands (std_msgs::msg::Float64MultiArray) : The commands to apply.
+ * Publishes to:
+ * - \b joint_states (sensor_msgs::msg::JointState): Joint states related to movement
+ * (position, velocity, effort).
+ * - \b dynamic_joint_states (control_msgs::msg::DynamicJointState): Joint states unlrelated to
+ * its interface type.
  */
 class JointStateBroadcaster : public controller_interface::ControllerInterface
 {
@@ -79,6 +85,7 @@ protected:
   bool init_joint_data();
   void init_joint_state_msg();
   void init_dynamic_joint_state_msg();
+  bool use_all_available_interfaces();
 
 protected:
   // Optional parameters

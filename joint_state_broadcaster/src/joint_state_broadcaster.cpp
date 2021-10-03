@@ -75,7 +75,7 @@ controller_interface::InterfaceConfiguration JointStateBroadcaster::state_interf
 {
   controller_interface::InterfaceConfiguration state_interfaces_config;
 
-  if (joints_.empty() || interfaces_.empty()) {
+  if (use_all_available_interfaces()) {
     state_interfaces_config.type = controller_interface::interface_configuration_type::ALL;
   } else {
     state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
@@ -96,7 +96,7 @@ CallbackReturn JointStateBroadcaster::on_configure(
   joints_ = get_node()->get_parameter("joints").as_string_array();
   interfaces_ = get_node()->get_parameter("interfaces").as_string_array();
 
-  if (joints_.empty() || interfaces_.empty()) {
+  if (use_all_available_interfaces()) {
     RCLCPP_INFO(
       node_->get_logger(), "'joints' or 'interfaces' parameter is empty. "
       "All available state interfaces will be published");
@@ -236,6 +236,11 @@ void JointStateBroadcaster::init_dynamic_joint_state_msg()
     }
     dynamic_joint_state_msg_.interface_values.emplace_back(if_value);
   }
+}
+
+bool JointStateBroadcaster::use_all_available_interfaces()
+{
+  return joints_.empty() || interfaces_.empty();
 }
 
 double get_value(
