@@ -273,7 +273,7 @@ void JointStateBroadcasterTest::test_published_dynamic_joint_state_message(
   // we only check that all values in this test are present in the message
   // and that it is the same across the interfaces
   // for test purposes they are mapped to the same doubles
-  for (auto i = 0ul; i < dynamic_joint_state_msg.joint_names.size(); ++i)
+  for (size_t i = 0; i < dynamic_joint_state_msg.joint_names.size(); ++i)
   {
     ASSERT_THAT(
       dynamic_joint_state_msg.interface_values[i].interface_names,

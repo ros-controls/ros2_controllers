@@ -179,7 +179,7 @@ controller_interface::return_type ForwardCommandController::update(
     return controller_interface::return_type::ERROR;
   }
 
-  for (auto index = 0ul; index < command_interfaces_.size(); ++index)
+  for (size_t index = 0; index < command_interfaces_.size(); ++index)
   {
     command_interfaces_[index].set_value((*joint_commands)->data[index]);
   }

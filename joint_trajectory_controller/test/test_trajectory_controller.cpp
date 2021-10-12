@@ -971,7 +971,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_first_co
   rclcpp::Parameter is_open_loop_parameters("open_loop_control", true);
 
   // set command values to NaN
-  for (auto i = 0u; i < 3; ++i)
+  for (size_t i = 0; i < 3; ++i)
   {
     joint_pos_[i] = std::numeric_limits<double>::quiet_NaN();
     joint_vel_[i] = std::numeric_limits<double>::quiet_NaN();
@@ -981,7 +981,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_first_co
 
   auto current_state_when_offset = traj_controller_->get_current_state_when_offset();
 
-  for (auto i = 0u; i < 3; ++i)
+  for (size_t i = 0; i < 3; ++i)
   {
     EXPECT_EQ(current_state_when_offset.positions[i], joint_state_pos_[i]);
 
@@ -1022,7 +1022,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_later_co
   rclcpp::Parameter is_open_loop_parameters("open_loop_control", true);
 
   // set command values to NaN
-  for (auto i = 0u; i < 3; ++i)
+  for (size_t i = 0; i < 3; ++i)
   {
     joint_pos_[i] = 3.1 + i;
     joint_vel_[i] = 0.25 + i;
@@ -1032,7 +1032,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_later_co
 
   auto current_state_when_offset = traj_controller_->get_current_state_when_offset();
 
-  for (auto i = 0u; i < 3; ++i)
+  for (size_t i = 0; i < 3; ++i)
   {
     EXPECT_EQ(current_state_when_offset.positions[i], joint_pos_[i]);
 
