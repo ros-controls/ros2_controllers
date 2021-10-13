@@ -168,8 +168,8 @@ controller_interface::return_type DiffDriveController::update(
   // command may be limited further by SpeedLimit,
   // without affecting the stored twist command
   Twist command = *last_command_msg;
-  double &linear_command = command.twist.linear.x;
-  double &angular_command = command.twist.angular.z;
+  double & linear_command = command.twist.linear.x;
+  double & angular_command = command.twist.angular.z;
 
   // Apply (possibly new) multipliers:
   const auto wheels = wheel_params_;
