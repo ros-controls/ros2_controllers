@@ -105,7 +105,7 @@ SegmentTolerances get_segment_tolerances(
 
   tolerances.state_tolerance.resize(n_joints);
   tolerances.goal_state_tolerance.resize(n_joints);
-  for (auto i = 0ul; i < n_joints; ++i)
+  for (size_t i = 0; i < n_joints; ++i)
   {
     const std::string prefix = "constraints." + joint_names[i];
 

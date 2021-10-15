@@ -245,7 +245,7 @@ controller_interface::return_type JointStateBroadcaster::update(
   dynamic_joint_state_msg_.header.stamp = time;
 
   // update joint state message and dynamic joint state message
-  for (auto i = 0ul; i < joint_names_.size(); ++i)
+  for (size_t i = 0; i < joint_names_.size(); ++i)
   {
     joint_state_msg_.position[i] =
       get_value(name_if_value_mapping_, joint_names_[i], HW_IF_POSITION);
@@ -254,11 +254,11 @@ controller_interface::return_type JointStateBroadcaster::update(
     joint_state_msg_.effort[i] = get_value(name_if_value_mapping_, joint_names_[i], HW_IF_EFFORT);
   }
 
-  for (auto joint_index = 0ul; joint_index < dynamic_joint_state_msg_.joint_names.size();
+  for (size_t joint_index = 0; joint_index < dynamic_joint_state_msg_.joint_names.size();
        ++joint_index)
   {
     const auto & name = dynamic_joint_state_msg_.joint_names[joint_index];
-    for (auto interface_index = 0ul;
+    for (size_t interface_index = 0;
          interface_index <
          dynamic_joint_state_msg_.interface_values[joint_index].interface_names.size();
          ++interface_index)
