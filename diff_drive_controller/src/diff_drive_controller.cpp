@@ -171,10 +171,16 @@ controller_interface::return_type DiffDriveController::update()
     last_msg->twist.angular.z = 0.0;
   }
 
-  // linear_command and angular_command may be limited further by SpeedLimit,
+  // command may be limited further by SpeedLimit,
   // without affecting the stored twist command
+<<<<<<< HEAD
   double linear_command = last_msg->twist.linear.x;
   double angular_command = last_msg->twist.angular.z;
+=======
+  Twist command = *last_command_msg;
+  double & linear_command = command.twist.linear.x;
+  double & angular_command = command.twist.angular.z;
+>>>>>>> 0469455 (Fix diff_drive accel limit (#242) (#252))
 
   // Apply (possibly new) multipliers:
   const auto wheels = wheel_params_;
@@ -254,15 +260,18 @@ controller_interface::return_type DiffDriveController::update()
     angular_command, last_command.angular.z, second_to_last_command.angular.z, update_dt.seconds());
 
   previous_commands_.pop();
+<<<<<<< HEAD
   previous_commands_.emplace(*last_msg);
+=======
+  previous_commands_.emplace(command);
+>>>>>>> 0469455 (Fix diff_drive accel limit (#242) (#252))
 
   //    Publish limited velocity
   if (publish_limited_velocity_ && realtime_limited_velocity_publisher_->trylock())
   {
     auto & limited_velocity_command = realtime_limited_velocity_publisher_->msg_;
     limited_velocity_command.header.stamp = current_time;
-    limited_velocity_command.twist.linear.x = linear_command;
-    limited_velocity_command.twist.angular.z = angular_command;
+    limited_velocity_command.twist = command.twist;
     realtime_limited_velocity_publisher_->unlockAndPublish();
   }
 
