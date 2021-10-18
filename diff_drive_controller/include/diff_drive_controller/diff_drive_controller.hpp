@@ -25,7 +25,6 @@
 #include <queue>
 #include <string>
 #include <vector>
-#include <stdio.h>
 
 #include "controller_interface/controller_interface.hpp"
 #include "diff_drive_controller/odometry.hpp"

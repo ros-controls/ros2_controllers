@@ -21,6 +21,7 @@
 
 #include <cassert>
 #include <vector>
+#include <cstdio>
 
 namespace diff_drive_controller
 {
