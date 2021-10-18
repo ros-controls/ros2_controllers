@@ -211,7 +211,6 @@ controller_interface::return_type JointTrajectoryController::update(
                                 state_desired.velocities[i] - state_current.velocities[i],
                                 (uint64_t)period.nanoseconds());
           }
-
           assign_interface_from_point(joint_command_interface_[1], tmp_command_);
         }
       }
@@ -592,6 +591,10 @@ CallbackReturn JointTrajectoryController::on_configure(const rclcpp_lifecycle::S
     }
   }
 
+  if (contains_interface_type(state_interface_types_, hardware_interface::HW_IF_POSITION))
+  {
+    has_position_state_interface_ = true;
+  }
   if (contains_interface_type(state_interface_types_, hardware_interface::HW_IF_VELOCITY))
   {
     has_velocity_state_interface_ = true;
@@ -830,8 +833,17 @@ CallbackReturn JointTrajectoryController::on_deactivate(const rclcpp_lifecycle::
   // TODO(anyone): How to halt when using effort commands?
   for (size_t index = 0; index < joint_names_.size(); ++index)
   {
-    joint_command_interface_[0][index].get().set_value(
-      joint_command_interface_[0][index].get().get_value());
+    if (has_position_command_interface_)
+    {
+      joint_command_interface_[0][index].get().set_value(
+        joint_command_interface_[0][index].get().get_value());
+    }
+
+    if (has_velocity_command_interface_)
+    {
+      joint_command_interface_[1][index].get().set_value(
+        joint_command_interface_[1][index].get().get_value());
+    }
   }
 
   for (size_t index = 0; index < allowed_interface_types_.size(); ++index)
@@ -1027,7 +1039,19 @@ void JointTrajectoryController::fill_partial_goal(
       for (auto & it : trajectory_msg->points)
       {
         // Assume hold position with 0 velocity and acceleration for missing joints
-        it.positions.push_back(joint_command_interface_[0][index].get().get_value());
+        if (!it.positions.empty())
+        {
+          if (has_position_command_interface_)
+          {
+            // copy last command if cmd interface exists
+            it.positions.push_back(joint_command_interface_[0][index].get().get_value());
+          }
+          else if (has_position_state_interface_)
+          {
+            // copy current state if state interface exists
+            it.positions.push_back(joint_state_interface_[0][index].get().get_value());
+          }
+        }
         if (!it.velocities.empty())
         {
           it.velocities.push_back(0.0);
