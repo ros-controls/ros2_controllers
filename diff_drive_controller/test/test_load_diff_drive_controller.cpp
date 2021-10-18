@@ -17,7 +17,7 @@
 
 #include "controller_manager/controller_manager.hpp"
 #include "rclcpp/utilities.hpp"
-#include "test_common.hpp"
+#include "ros2_control_test_assets/descriptions.hpp"
 
 TEST(TestLoadDiffDriveController, load_controller)
 {
@@ -28,7 +28,7 @@ TEST(TestLoadDiffDriveController, load_controller)
 
   controller_manager::ControllerManager cm(
     std::make_unique<hardware_interface::ResourceManager>(
-      diff_drive_controller_testing::diffbot_urdf),
+      ros2_control_test_assets::minimal_robot_urdf),
     executor, "test_controller_manager");
 
   ASSERT_NO_THROW(
