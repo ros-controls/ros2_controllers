@@ -20,6 +20,7 @@
 #include <utility>
 #include <vector>
 
+#include "controller_interface/helpers.hpp"
 #include "rclcpp/logging.hpp"
 #include "rclcpp/qos.hpp"
 
