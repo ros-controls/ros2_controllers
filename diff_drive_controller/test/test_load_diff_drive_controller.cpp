@@ -28,7 +28,7 @@ TEST(TestLoadDiffDriveController, load_controller)
 
   controller_manager::ControllerManager cm(
     std::make_unique<hardware_interface::ResourceManager>(
-      ros2_control_test_assets::minimal_robot_urdf),
+      ros2_control_test_assets::diffbot_urdf),
     executor, "test_controller_manager");
 
   ASSERT_NO_THROW(
