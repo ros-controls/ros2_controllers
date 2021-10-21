@@ -17,6 +17,7 @@ find_package(Eigen3 REQUIRED)
 find_package(filters REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(hardware_interface REQUIRED)
+find_package(joint_limits REQUIRED)
 find_package(moveit_ros_move_group REQUIRED)
 find_package(moveit_ros_planning_interface REQUIRED)
 find_package(pluginlib REQUIRED)
@@ -36,10 +37,8 @@ add_library(
 )
 target_include_directories(
   admittance_controller
-  PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
-  ${EIGEN3_INCLUDE_DIR}
+  PRIVATE
+  include
 )
 ament_target_dependencies(
   admittance_controller
@@ -49,6 +48,7 @@ ament_target_dependencies(
   filters
   geometry_msgs
   hardware_interface
+  joint_limits
   moveit_ros_move_group
   moveit_ros_planning_interface
   pluginlib
@@ -63,8 +63,7 @@ ament_target_dependencies(
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
 target_compile_definitions(admittance_controller PRIVATE "ADMITTANCE_CONTROLLER_BUILDING_DLL")
-# prevent pluginlib from using boost
-target_compile_definitions(admittance_controller PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+
 pluginlib_export_plugin_description_file(controller_interface admittance_controller.xml)
 
 install(
@@ -118,6 +117,7 @@ ament_export_dependencies(
   filters
   geometry_msgs
   hardware_interface
+  joint_limits
   pluginlib
   rclcpp
   rclcpp_lifecycle

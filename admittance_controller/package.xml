@@ -3,7 +3,7 @@
 <package format="3">
   <name>admittance_controller</name>
   <version>0.0.0</version>
-  <description>Implemenation of admittance controllers for different input and output interface.</description>
+  <description>Implementation of admittance controllers for different input and output interface.</description>
   <maintainer email="denis@stogl.de">Denis Štogl</maintainer>
   <maintainer email="zelenak@picknik.ai">Andy Zelenak</maintainer>
   <license>Apache License 2.0</license>
@@ -15,6 +15,7 @@
   <depend>filters</depend>
   <depend>geometry_msgs</depend>
   <depend>hardware_interface</depend>
+  <depend>joint_limits</depend>
   <depend>moveit_ros_move_group</depend>
   <depend>moveit_ros_planning_interface</depend>
   <depend>pluginlib</depend>
