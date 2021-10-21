@@ -286,7 +286,8 @@ TEST_F(AdmittanceControllerTest, update_success)
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
   broadcast_tfs();
-  ASSERT_EQ(controller_->update(), controller_interface::return_type::OK);
+  ASSERT_EQ(controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+            controller_interface::return_type::OK);
 }
 
 TEST_F(AdmittanceControllerTest, deactivate_success)
@@ -308,7 +309,8 @@ TEST_F(AdmittanceControllerTest, reactivate_success)
   assign_interfaces();
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
   broadcast_tfs();
-  ASSERT_EQ(controller_->update(), controller_interface::return_type::OK);
+  ASSERT_EQ(controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+            controller_interface::return_type::OK);
 }
 
 TEST_F(AdmittanceControllerTest, publish_status_success)
@@ -320,7 +322,7 @@ TEST_F(AdmittanceControllerTest, publish_status_success)
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   broadcast_tfs();
-  ASSERT_EQ(controller_->update(), controller_interface::return_type::OK);
+  ASSERT_EQ(controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)), controller_interface::return_type::OK);
 
   ControllerStateMsg msg;
   subscribe_and_get_messages(msg);
@@ -418,7 +420,7 @@ TEST_F(AdmittanceControllerTest, receive_message_and_publish_updated_status)
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
   broadcast_tfs();
-  ASSERT_EQ(controller_->update(), controller_interface::return_type::OK);
+  ASSERT_EQ(controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)), controller_interface::return_type::OK);
 
   // After first update state values should be written to command values
   ASSERT_TRUE(std::equal(joint_state_values_.begin(), joint_state_values_.end(), joint_command_values_.begin(), joint_command_values_.end()));
@@ -432,7 +434,7 @@ TEST_F(AdmittanceControllerTest, receive_message_and_publish_updated_status)
   ASSERT_TRUE(controller_->wait_for_commands(executor));
 
   broadcast_tfs();
-  ASSERT_EQ(controller_->update(), controller_interface::return_type::OK);
+  ASSERT_EQ(controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)), controller_interface::return_type::OK);
 
   EXPECT_NEAR(joint_command_values_[0], 0.0, COMMON_THRESHOLD);
 

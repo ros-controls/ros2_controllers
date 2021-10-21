@@ -301,7 +301,7 @@ protected:
       "/test_admittance_controller/state", 10, subs_callback);
 
     // call update to publish the test value
-    ASSERT_EQ(controller_->update(), controller_interface::return_type::OK);
+    ASSERT_EQ(controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)), controller_interface::return_type::OK);
 
     // wait for message to be passed
     ASSERT_EQ(wait_for(subscription), rclcpp::WaitResultKind::Ready);
