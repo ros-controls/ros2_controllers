@@ -113,7 +113,7 @@ CallbackReturn AdmittanceController::on_configure(
     !admittance_->parameters_.get_parameters(get_node())
     )
   {
-    RCLCPP_ERROR(get_node()->get_logger(), "Error happend during reading parameters");
+    RCLCPP_ERROR(get_node()->get_logger(), "Error happened during reading parameters");
     return CallbackReturn::ERROR;
   }
 
@@ -376,7 +376,6 @@ CallbackReturn AdmittanceController::on_activate(const rclcpp_lifecycle::State &
 
   // Initialize Admittance Rule from current states
   admittance_->reset();
-  previous_time_ = get_node()->now();
 
   read_state_from_hardware(last_commanded_state_);
   if (joint_limiter_)
@@ -441,7 +440,8 @@ CallbackReturn AdmittanceController::on_deactivate(
   return CallbackReturn::SUCCESS;
 }
 
-controller_interface::return_type AdmittanceController::update()
+controller_interface::return_type AdmittanceController::update(
+  const rclcpp::Time & /*time*/, const rclcpp::Duration & period)
 {
   // get input commands
   auto input_wrench_cmd = input_wrench_command_.readFromRT();
@@ -467,11 +467,9 @@ controller_interface::return_type AdmittanceController::update()
   geometry_msgs::msg::Wrench ft_values;
   force_torque_sensor_->get_values_as_message(ft_values);
 
-  auto duration_since_last_call = get_node()->now() - previous_time_;
-
   // TODO(destogl): Enable this when unified mode is used
 //   if (admittance_->unified_mode_) {
-  //     admittance_->update(current_joint_states, ft_values, **input_pose_cmd, **input_wrench_cmd, duration_since_last_call, desired_joint_states);
+  //     admittance_->update(current_joint_states, ft_values, **input_pose_cmd, **input_wrench_cmd, period, desired_joint_states);
 //   } else {
 
   // TODO(destogl): refactor this into different admittance controllers: 1. Pose input, Joint State input and Unified mode (is there need for switching between unified and non-unified mode?)
@@ -481,7 +479,7 @@ controller_interface::return_type AdmittanceController::update()
     // TODO(destogl): add error handling
     if ((*input_joint_cmd)->points[0].positions.empty()) {
       for (auto index = 0u; index < num_joints; ++index) {
-        joint_deltas[index] = (*input_joint_cmd)->points[0].velocities[index] * duration_since_last_call.seconds();
+        joint_deltas[index] = (*input_joint_cmd)->points[0].velocities[index] * period.seconds();
       }
     } else {
       for (auto index = 0u; index < num_joints; ++index) {
@@ -491,16 +489,15 @@ controller_interface::return_type AdmittanceController::update()
       }
     }
 
-    admittance_->update(current_joint_states, ft_values, joint_deltas, duration_since_last_call, desired_joint_states);
+    admittance_->update(current_joint_states, ft_values, joint_deltas, period, desired_joint_states);
   } else {
-    admittance_->update(current_joint_states, ft_values, **input_pose_cmd, duration_since_last_call, desired_joint_states);
+    admittance_->update(current_joint_states, ft_values, **input_pose_cmd, period, desired_joint_states);
   }
 //   }
-  previous_time_ = get_node()->now();
 
   if (joint_limiter_)
   {
-    joint_limiter_->enforce(current_joint_states, desired_joint_states, duration_since_last_call);
+    joint_limiter_->enforce(current_joint_states, desired_joint_states, period);
   }
 
   // Write new joint angles to the robot
