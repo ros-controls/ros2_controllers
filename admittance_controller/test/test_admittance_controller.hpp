@@ -62,7 +62,7 @@ rclcpp::WaitResultKind wait_for(rclcpp::SubscriptionBase::SharedPtr subscription
 
 }  // namespace
 
-// subclassing and friending so we can access member varibles
+// subclassing and friending so we can access member variables
 class TestableAdmittanceController
 : public admittance_controller::AdmittanceController
 {

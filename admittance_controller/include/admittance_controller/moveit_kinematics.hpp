@@ -69,17 +69,24 @@ public:
 
   bool update_robot_state(const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state)
   {
-    if (current_joint_state.positions.size() != kinematic_state_->getVariableNames().size())
+    if (current_joint_state.positions.size() != joint_model_group_->getVariableNames().size())
     {
       RCLCPP_ERROR(node_->get_logger(), "Vector size mismatch in update_robot_state()");
       return false;
     }
 
-    kinematic_state_->setVariablePositions(current_joint_state.positions);
+    kinematic_state_->setJointGroupPositions(joint_model_group_, current_joint_state.positions);
     return true;
   }
 
 private:
+  /** \brief Possibly calculate a velocity scaling factor, due to proximity of
+   * singularity and direction of motion
+   */
+  double velocityScalingFactorForSingularity(const Eigen::VectorXd& commanded_velocity,
+                                             const Eigen::JacobiSVD<Eigen::MatrixXd>& svd,
+                                             const Eigen::MatrixXd& pseudo_inverse);
+
   // MoveIt setup
   const moveit::core::JointModelGroup* joint_model_group_;
   moveit::core::RobotStatePtr kinematic_state_;
@@ -87,6 +94,7 @@ private:
 
   // Pre-allocate for speed
   Eigen::MatrixXd jacobian_;
+  Eigen::MatrixXd matrix_s_;
   Eigen::MatrixXd pseudo_inverse_;
 };
 
