@@ -25,7 +25,6 @@ namespace velocity_controllers
 JointGroupVelocityController::JointGroupVelocityController()
 : forward_command_controller::ForwardCommandController()
 {
-  logger_name_ = "joint velocity controller";
   interface_name_ = hardware_interface::HW_IF_VELOCITY;
 }
 

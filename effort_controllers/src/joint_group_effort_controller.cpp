@@ -25,7 +25,6 @@ namespace effort_controllers
 JointGroupEffortController::JointGroupEffortController()
 : forward_command_controller::ForwardCommandController()
 {
-  logger_name_ = "joint effort controller";
   interface_name_ = hardware_interface::HW_IF_EFFORT;
 }
 
