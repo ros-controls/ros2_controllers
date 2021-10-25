@@ -2,8 +2,8 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.5.1 (2021-10-25)
+------------------
 * Fix diff_drive accel limit (`#242 <https://github.com/ros-controls/ros2_controllers/issues/242>`_) (backport `#252 <https://github.com/ros-controls/ros2_controllers/issues/252>`_) (`#257 <https://github.com/ros-controls/ros2_controllers/issues/257>`_)
 * Contributors: Josh Newans
 
