@@ -2,6 +2,11 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix diff_drive accel limit (`#242 <https://github.com/ros-controls/ros2_controllers/issues/242>`_) (backport `#252 <https://github.com/ros-controls/ros2_controllers/issues/252>`_) (`#257 <https://github.com/ros-controls/ros2_controllers/issues/257>`_)
+* Contributors: Josh Newans
+
 0.5.0 (2021-08-30)
 ------------------
 * Add auto declaration of parameters. (`#224 <https://github.com/ros-controls/ros2_controllers/issues/224>`_)
