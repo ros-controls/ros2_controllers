@@ -37,6 +37,16 @@ MoveItKinematics::MoveItKinematics(const std::shared_ptr<rclcpp::Node> & node, c
   kinematic_state_ = std::make_shared<moveit::core::RobotState>(kinematic_model);
 
   // By default, the MoveIt Jacobian frame is the last link
+
+  // TODO(destogl): manage also is this parameter is set!
+  auto robot_description_semantic =
+    node_->get_parameter("robot_description_semantic").as_string();
+    if (robot_description_semantic.empty())
+    {
+      RCLCPP_ERROR(node_->get_logger(), "Vector size mismatch in update_robot_state()");
+      // TODO(destogl): This should be cached in the AdmittanceController...
+      throw std::runtime_error(std::string("No 'robot_description_semantic' parameter found!"));
+    }
 }
 
 bool MoveItKinematics::convert_cartesian_deltas_to_joint_deltas(

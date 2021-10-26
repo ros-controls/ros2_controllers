@@ -371,6 +371,7 @@ CallbackReturn AdmittanceController::on_activate(const rclcpp_lifecycle::State &
     }
   }
 
+
   // Initialize interface of the FTS semantic semantic component
   force_torque_sensor_->assign_loaned_state_interfaces(state_interfaces_);
 
@@ -405,6 +406,7 @@ CallbackReturn AdmittanceController::on_activate(const rclcpp_lifecycle::State &
 
   input_joint_command_.writeFromNonRT(msg_joint);
 
+  // TODO(destogl): Move this to the Cartesian admittance controller
   std::shared_ptr<ControllerCommandPoseMsg> msg_pose = std::make_shared<ControllerCommandPoseMsg>();
   msg_pose->header.frame_id = admittance_->parameters_.control_frame_;
   if (admittance_->get_pose_of_control_frame_in_base_frame(*msg_pose) !=
@@ -451,10 +453,13 @@ controller_interface::return_type AdmittanceController::update(
   // Position has to always be there
   auto num_joints = joint_state_interface_[0].size();
   trajectory_msgs::msg::JointTrajectoryPoint current_joint_states;
-  current_joint_states.positions.resize(num_joints, 0.0);
+  current_joint_states.positions.resize(num_joints);
+  current_joint_states.velocities.resize(num_joints, 0.0);
+  current_joint_states.accelerations.resize(num_joints, 0.0);
   trajectory_msgs::msg::JointTrajectoryPoint desired_joint_states;
   desired_joint_states.positions.resize(num_joints);
   desired_joint_states.velocities.resize(num_joints);
+  desired_joint_states.accelerations.resize(num_joints);
 
   read_state_from_hardware(current_joint_states);
 
