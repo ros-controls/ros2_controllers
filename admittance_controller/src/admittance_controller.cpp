@@ -285,12 +285,7 @@ CallbackReturn AdmittanceController::on_configure(
 
   // HACK: This is workaround because it seems that updating parameters only in `on_activate` does
   // not work properly
-  if (!admittance_->parameters_.check_if_parameters_are_valid()) {
-    RCLCPP_WARN(get_node()->get_logger(),
-                "Parameters are not valid and therefore will not be udpated");
-  } else {
-    admittance_->parameters_.update();
-  }
+  admittance_->parameters_.update();
 
   RCLCPP_INFO(get_node()->get_logger(), "configure successful");
   return CallbackReturn::SUCCESS;
@@ -336,12 +331,7 @@ CallbackReturn AdmittanceController::on_activate(const rclcpp_lifecycle::State &
   const auto num_joints = joint_names_.size();
 
   // Update dynamic parameters before controller is started
-  if (!admittance_->parameters_.check_if_parameters_are_valid()) {
-    RCLCPP_WARN(get_node()->get_logger(),
-                "Parameters are not valid and therefore will not be udpated");
-  } else {
-    admittance_->parameters_.update();
-  }
+  admittance_->parameters_.update();
 
   // order all joints in the storage
   for (const auto & interface : command_interface_types_) {
@@ -445,6 +435,11 @@ CallbackReturn AdmittanceController::on_deactivate(
 controller_interface::return_type AdmittanceController::update(
   const rclcpp::Time & /*time*/, const rclcpp::Duration & period)
 {
+  if (admittance_->parameters_.enable_parameter_update_without_reactivation_)
+  {
+    admittance_->parameters_.update();
+  }
+
   // get input commands
   auto input_wrench_cmd = input_wrench_command_.readFromRT();
   auto input_joint_cmd = input_joint_command_.readFromRT();
