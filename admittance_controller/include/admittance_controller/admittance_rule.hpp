@@ -172,7 +172,7 @@ namespace admittance_controller
 class AdmittanceParameters : public controller_interface::ControllerParameters
 {
 public:
-  AdmittanceParameters() : controller_interface::ControllerParameters(7, 24, 4)
+  AdmittanceParameters() : controller_interface::ControllerParameters("", 7, 24, 4)
   {
     add_string_parameter("IK.base", false);
     add_string_parameter("IK.group_name", false);
@@ -180,6 +180,7 @@ public:
     add_string_parameter("sensor_frame", false);
 
     add_bool_parameter("open_loop_control", true);
+    add_bool_parameter("enable_parameter_update_without_reactivation", false);
 
     add_bool_parameter("admittance.selected_axes.x", true);
     add_bool_parameter("admittance.selected_axes.y", true);
@@ -285,7 +286,7 @@ public:
     }
   }
 
-  void update() override
+  void update_storage() override
   {
     ik_base_frame_ = string_parameters_[0].second;
     RCUTILS_LOG_INFO_NAMED(
@@ -308,10 +309,16 @@ public:
     RCUTILS_LOG_INFO_NAMED(
         logger_name_.c_str(),
        "Using open loop: %s", (open_loop_control_ ? "True" : "False"));
+    enable_parameter_update_without_reactivation_ = bool_parameters_[1].second;
+    RCUTILS_LOG_INFO_NAMED(
+        logger_name_.c_str(),
+       "Using update without reactivation: %s", (enable_parameter_update_without_reactivation_ ? "True" : "False"));
 
+
+    int offset_index_bool = 1;  // 2 because there is already one parameter
     for (auto i = 0ul; i < 6; ++i)
     {
-      selected_axes_[i] = bool_parameters_[i+1].second; // +1 because there is already one parameter
+      selected_axes_[i] = bool_parameters_[i + offset_index_bool].second;
       RCUTILS_LOG_INFO_NAMED(
         logger_name_.c_str(),
        "Axis %zu is %sselected", i, (selected_axes_[i] ? "" : "not "));
@@ -347,6 +354,7 @@ public:
   std::string control_frame_;
 
   bool open_loop_control_;
+  bool enable_parameter_update_without_reactivation_;
 
   std::array<double, 6> damping_;
   std::array<double, 6> damping_ratio_;
