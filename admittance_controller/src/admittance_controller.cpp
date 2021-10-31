@@ -50,6 +50,8 @@ CallbackReturn AdmittanceController::on_init()
 
   admittance_ = std::make_unique<admittance_controller::AdmittanceRule>();
 
+  admittance_->parameters_.initialize(get_node());
+
   try {
     // TODO: use variables as parameters
     get_node()->declare_parameter<std::vector<std::string>>("joints", std::vector<std::string>({}));
@@ -62,8 +64,7 @@ CallbackReturn AdmittanceController::on_init()
     // TODO(destogl): enable when IK-plugin support is added
     // get_node()->declare_parameter<std::string>("IK.plugin", "");
 
-    admittance_->parameters_.declare_parameters(get_node());
-
+    admittance_->parameters_.declare_parameters();
   } catch (const std::exception & e) {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
     return CallbackReturn::ERROR;
@@ -110,7 +111,7 @@ CallbackReturn AdmittanceController::on_configure(
     get_bool_param_and_error_if_empty(use_joint_commands_as_input_, "use_joint_commands_as_input") ||
     get_string_param_and_error_if_empty(joint_limiter_type_, "joint_limiter_type") ||
 
-    !admittance_->parameters_.get_parameters(get_node())
+    !admittance_->parameters_.get_parameters()
     )
   {
     RCLCPP_ERROR(get_node()->get_logger(), "Error happened during reading parameters");

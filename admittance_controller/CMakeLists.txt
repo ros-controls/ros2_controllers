@@ -12,6 +12,7 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(control_msgs REQUIRED)
+find_package(control_toolbox REQUIRED)
 find_package(controller_interface REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(filters REQUIRED)
@@ -43,6 +44,7 @@ target_include_directories(
 ament_target_dependencies(
   admittance_controller
   control_msgs
+  control_toolbox
   controller_interface
   ${Eigen_LIBRARIES}
   filters
@@ -113,6 +115,7 @@ ament_export_libraries(
 )
 ament_export_dependencies(
   control_msgs
+  control_toolbox
   controller_interface
   filters
   geometry_msgs

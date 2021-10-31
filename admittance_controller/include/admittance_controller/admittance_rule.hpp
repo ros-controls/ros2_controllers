@@ -22,8 +22,8 @@
 #include "angles/angles.h"
 #include "admittance_controller/moveit_kinematics.hpp"
 #include "control_msgs/msg/admittance_controller_state.hpp"
+#include "control_toolbox/parameter_handler.hpp"
 #include "controller_interface/controller_interface.hpp"
-#include "controller_interface/controller_parameters.hpp"
 #include "filters/filter_chain.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -169,10 +169,10 @@ void convert_array_to_message(const Type & vector, geometry_msgs::msg::Transform
 namespace admittance_controller
 {
 
-class AdmittanceParameters : public controller_interface::ControllerParameters
+class AdmittanceParameters : public control_toolbox::ParameterHandler
 {
 public:
-  AdmittanceParameters() : controller_interface::ControllerParameters("", 7, 24, 4)
+  AdmittanceParameters() : control_toolbox::ParameterHandler("", 7, 0, 24, 4)
   {
     add_string_parameter("IK.base", false);
     add_string_parameter("IK.group_name", false);
