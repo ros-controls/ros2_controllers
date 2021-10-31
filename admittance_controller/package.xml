@@ -11,6 +11,7 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>control_msgs</depend>
+  <depend>control_toolbox</depend>
   <depend>controller_interface</depend>
   <depend>filters</depend>
   <depend>geometry_msgs</depend>
