@@ -48,7 +48,7 @@ using lifecycle_msgs::msg::State;
 
 DiffDriveController::DiffDriveController() : controller_interface::ControllerInterface() {}
 
-const char* DiffDriveController::feedback_type() const {
+const char * DiffDriveController::feedback_type() const {
   return odom_params_.position_feedback ? HW_IF_POSITION : HW_IF_VELOCITY;
 }
 
@@ -188,15 +188,16 @@ controller_interface::return_type DiffDriveController::update(
   }
   else
   {
-    if (odom_params_.position_feedback){
+    if (odom_params_.position_feedback)
+    {
       double left_position_mean = 0.0;
       double right_position_mean = 0.0;
       for (size_t index = 0; index < wheels.wheels_per_side; ++index)
       {
-        const double left_position = registered_left_wheel_handles_[index]
-          .feedback.get().get_value();
-        const double right_position = registered_right_wheel_handles_[index]
-          .feedback.get().get_value();
+        const double left_position = 
+          registered_left_wheel_handles_[index].feedback.get().get_value();
+        const double right_position = 
+          registered_right_wheel_handles_[index].feedback.get().get_value();
 
         if (std::isnan(left_position) || std::isnan(right_position))
         {
@@ -215,14 +216,14 @@ controller_interface::return_type DiffDriveController::update(
     }
     else
     {
-      double left_velocity_mean  = 0.0;
+      double left_velocity_mean = 0.0;
       double right_velocity_mean = 0.0;
       for (size_t index = 0; index < wheels.wheels_per_side; ++index)
       {
-        const double left_velocity = registered_left_wheel_handles_[index]
-          .feedback.get().get_value();
-        const double right_velocity = registered_right_wheel_handles_[index]
-          .feedback.get().get_value();
+        const double left_velocity = 
+          registered_left_wheel_handles_[index].feedback.get().get_value();
+        const double right_velocity = 
+          registered_right_wheel_handles_[index].feedback.get().get_value();
 
         if (std::isnan(left_velocity) || std::isnan(right_velocity))
         {
@@ -624,7 +625,7 @@ CallbackReturn DiffDriveController::configure_side(
   {
     auto interface_name = feedback_type();
     const auto state_handle = std::find_if(
-      state_interfaces_.cbegin(), state_interfaces_.cend(), 
+      state_interfaces_.cbegin(), state_interfaces_.cend(),
       [&wheel_name, &interface_name](const auto & interface) {
         return interface.get_name() == wheel_name &&
                interface.get_interface_name() == interface_name;
