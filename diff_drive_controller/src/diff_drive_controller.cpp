@@ -48,7 +48,8 @@ using lifecycle_msgs::msg::State;
 
 DiffDriveController::DiffDriveController() : controller_interface::ControllerInterface() {}
 
-const char * DiffDriveController::feedback_type() const {
+const char * DiffDriveController::feedback_type() const
+{
   return odom_params_.position_feedback ? HW_IF_POSITION : HW_IF_VELOCITY;
 }
 
