@@ -86,7 +86,8 @@ bool Odometry::update(double left_pos, double right_pos, const rclcpp::Time & ti
   return true;
 }
 
-bool Odometry::updateFromVelocity(double left_vel, double right_vel, const rclcpp::Time & time){
+bool Odometry::updateFromVelocity(double left_vel, double right_vel, const rclcpp::Time & time)
+{
   const double dt = time.seconds() - timestamp_.seconds();
 
   // Compute linear and angular diff:
