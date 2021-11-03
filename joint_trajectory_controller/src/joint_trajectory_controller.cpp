@@ -26,6 +26,7 @@
 #include "angles/angles.h"
 #include "builtin_interfaces/msg/duration.hpp"
 #include "builtin_interfaces/msg/time.hpp"
+#include "controller_interface/helpers.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "joint_trajectory_controller/trajectory.hpp"
@@ -697,28 +698,6 @@ CallbackReturn JointTrajectoryController::on_configure(const rclcpp_lifecycle::S
   return CallbackReturn::SUCCESS;
 }
 
-// Fill ordered_interfaces with references to the matching interfaces
-// in the same order as in joint_names
-template <typename T>
-bool get_ordered_interfaces(
-  std::vector<T> & unordered_interfaces, const std::vector<std::string> & joint_names,
-  const std::string & interface_type, std::vector<std::reference_wrapper<T>> & ordered_interfaces)
-{
-  for (const auto & joint_name : joint_names)
-  {
-    for (auto & interface : unordered_interfaces)
-    {
-      if (
-        (interface.get_name() == joint_name) && (interface.get_interface_name() == interface_type))
-      {
-        ordered_interfaces.emplace_back(std::ref(interface));
-      }
-    }
-  }
-
-  return joint_names.size() == ordered_interfaces.size();
-}
-
 CallbackReturn JointTrajectoryController::on_activate(const rclcpp_lifecycle::State &)
 {
   // order all joints in the storage
@@ -727,7 +706,7 @@ CallbackReturn JointTrajectoryController::on_activate(const rclcpp_lifecycle::St
     auto it =
       std::find(allowed_interface_types_.begin(), allowed_interface_types_.end(), interface);
     auto index = std::distance(allowed_interface_types_.begin(), it);
-    if (!get_ordered_interfaces(
+    if (!controller_interface::get_ordered_interfaces(
           command_interfaces_, joint_names_, interface, joint_command_interface_[index]))
     {
       RCLCPP_ERROR(
@@ -741,7 +720,7 @@ CallbackReturn JointTrajectoryController::on_activate(const rclcpp_lifecycle::St
     auto it =
       std::find(allowed_interface_types_.begin(), allowed_interface_types_.end(), interface);
     auto index = std::distance(allowed_interface_types_.begin(), it);
-    if (!get_ordered_interfaces(
+    if (!controller_interface::get_ordered_interfaces(
           state_interfaces_, joint_names_, interface, joint_state_interface_[index]))
     {
       RCLCPP_ERROR(

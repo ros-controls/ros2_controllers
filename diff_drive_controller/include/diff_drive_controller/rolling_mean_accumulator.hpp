@@ -20,6 +20,7 @@
 #define DIFF_DRIVE_CONTROLLER__ROLLING_MEAN_ACCUMULATOR_HPP_
 
 #include <cassert>
+#include <cstdio>
 #include <vector>
 
 namespace diff_drive_controller

@@ -2,6 +2,9 @@
 Changelog for package imu_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.1.0 (2021-10-25)
+------------------
+
 1.0.0 (2021-09-29)
 ------------------
 * Add time and period to update function (`#241 <https://github.com/ros-controls/ros2_controllers/issues/241>`_)

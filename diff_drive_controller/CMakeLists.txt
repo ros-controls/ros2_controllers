@@ -60,6 +60,7 @@ install(TARGETS diff_drive_controller
 if(BUILD_TESTING)
   find_package(ament_cmake_gmock REQUIRED)
   find_package(controller_manager REQUIRED)
+  find_package(ros2_control_test_assets REQUIRED)
 
   ament_add_gmock(test_diff_drive_controller
     test/test_diff_drive_controller.cpp
@@ -87,6 +88,7 @@ if(BUILD_TESTING)
   target_include_directories(test_load_diff_drive_controller PRIVATE include)
   ament_target_dependencies(test_load_diff_drive_controller
     controller_manager
+    ros2_control_test_assets
   )
 
   ament_add_gmock(

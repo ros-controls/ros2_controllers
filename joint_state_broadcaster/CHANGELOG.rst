@@ -2,6 +2,11 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.1.0 (2021-10-25)
+------------------
+* Revise for-loop style (`#254 <https://github.com/ros-controls/ros2_controllers/issues/254>`_)
+* Contributors: bailaC
+
 1.0.0 (2021-09-29)
 ------------------
 * Add time and period to update function (`#241 <https://github.com/ros-controls/ros2_controllers/issues/241>`_)

@@ -20,6 +20,7 @@
 #include <utility>
 #include <vector>
 
+#include "controller_interface/helpers.hpp"
 #include "rclcpp/logging.hpp"
 #include "rclcpp/qos.hpp"
 
@@ -105,29 +106,6 @@ ForwardCommandController::state_interface_configuration() const
     controller_interface::interface_configuration_type::NONE};
 }
 
-// Fill ordered_interfaces with references to the matching interfaces
-// in the same order as in joint_names
-template <typename T>
-bool get_ordered_interfaces(
-  std::vector<T> & unordered_interfaces, const std::vector<std::string> & joint_names,
-  const std::string & interface_type, std::vector<std::reference_wrapper<T>> & ordered_interfaces)
-{
-  for (const auto & joint_name : joint_names)
-  {
-    for (auto & command_interface : unordered_interfaces)
-    {
-      if (
-        (command_interface.get_name() == joint_name) &&
-        (command_interface.get_interface_name() == interface_type))
-      {
-        ordered_interfaces.push_back(std::ref(command_interface));
-      }
-    }
-  }
-
-  return joint_names.size() == ordered_interfaces.size();
-}
-
 CallbackReturn ForwardCommandController::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
@@ -135,7 +113,7 @@ CallbackReturn ForwardCommandController::on_activate(
   //  also verify that we *only* have the resources defined in the "points" parameter
   std::vector<std::reference_wrapper<LoanedCommandInterface>> ordered_interfaces;
   if (
-    !get_ordered_interfaces(
+    !controller_interface::get_ordered_interfaces(
       command_interfaces_, joint_names_, interface_name_, ordered_interfaces) ||
     command_interfaces_.size() != ordered_interfaces.size())
   {
