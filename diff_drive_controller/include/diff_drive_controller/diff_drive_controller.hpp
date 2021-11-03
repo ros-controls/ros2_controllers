@@ -92,7 +92,7 @@ protected:
     std::reference_wrapper<hardware_interface::LoanedCommandInterface> velocity;
   };
 
-  const char* feedback_type() const;
+  const char * feedback_type() const;
   CallbackReturn configure_side(
     const std::string & side, const std::vector<std::string> & wheel_names,
     std::vector<WheelHandle> & registered_handles);
