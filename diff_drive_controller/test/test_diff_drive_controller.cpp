@@ -167,7 +167,7 @@ protected:
     left_wheel_names[0], HW_IF_POSITION, &position_values_[0]};
   hardware_interface::StateInterface right_wheel_pos_state_{
     right_wheel_names[0], HW_IF_POSITION, &position_values_[1]};
-hardware_interface::StateInterface left_wheel_vel_state_{
+  hardware_interface::StateInterface left_wheel_vel_state_{
     left_wheel_names[0], HW_IF_VELOCITY, &velocity_values_[0]};
   hardware_interface::StateInterface right_wheel_vel_state_{
     right_wheel_names[0], HW_IF_VELOCITY, &velocity_values_[1]};
