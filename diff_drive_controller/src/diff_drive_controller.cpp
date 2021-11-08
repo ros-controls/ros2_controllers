@@ -210,7 +210,6 @@ controller_interface::return_type DiffDriveController::update(
     left_feedback_mean /= wheels.wheels_per_side;
     right_feedback_mean /= wheels.wheels_per_side;
 
-
     if (odom_params_.position_feedback)
     {
       odometry_.update(left_feedback_mean, right_feedback_mean, current_time);
