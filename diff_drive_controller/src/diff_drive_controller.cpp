@@ -189,58 +189,36 @@ controller_interface::return_type DiffDriveController::update(
   }
   else
   {
+    double left_feedback_mean = 0.0;
+    double right_feedback_mean = 0.0;
+    for (size_t index = 0; index < wheels.wheels_per_side; ++index)
+    {
+      const double left_feedback =
+        registered_left_wheel_handles_[index].feedback.get().get_value();
+      const double right_feedback =
+        registered_right_wheel_handles_[index].feedback.get().get_value();
+
+      if (std::isnan(left_feedback) || std::isnan(right_feedback))
+      {
+        RCLCPP_ERROR(
+          logger, "Either the left or right wheel %s is invalid for index [%zu]", feedback_type(), index);
+        return controller_interface::return_type::ERROR;
+      }
+
+      left_feedback_mean += left_feedback;
+      right_feedback_mean += right_feedback;
+    }
+    left_feedback_mean /= wheels.wheels_per_side;
+    right_feedback_mean /= wheels.wheels_per_side;
+
+
     if (odom_params_.position_feedback)
     {
-      double left_position_mean = 0.0;
-      double right_position_mean = 0.0;
-      for (size_t index = 0; index < wheels.wheels_per_side; ++index)
-      {
-        const double left_position =
-          registered_left_wheel_handles_[index].feedback.get().get_value();
-        const double right_position =
-          registered_right_wheel_handles_[index].feedback.get().get_value();
-
-        if (std::isnan(left_position) || std::isnan(right_position))
-        {
-          RCLCPP_ERROR(
-            logger, "Either the left or right wheel position is invalid for index [%zu]", index);
-          return controller_interface::return_type::ERROR;
-        }
-
-        left_position_mean += left_position;
-        right_position_mean += right_position;
-      }
-      left_position_mean /= wheels.wheels_per_side;
-      right_position_mean /= wheels.wheels_per_side;
-
-      odometry_.update(left_position_mean, right_position_mean, current_time);
+      odometry_.update(left_feedback_mean, right_feedback_mean, current_time);
     }
     else
     {
-      double left_velocity_mean = 0.0;
-      double right_velocity_mean = 0.0;
-      for (size_t index = 0; index < wheels.wheels_per_side; ++index)
-      {
-        const double left_velocity =
-          registered_left_wheel_handles_[index].feedback.get().get_value();
-        const double right_velocity =
-          registered_right_wheel_handles_[index].feedback.get().get_value();
-
-        if (std::isnan(left_velocity) || std::isnan(right_velocity))
-        {
-          RCLCPP_ERROR(
-            logger, "Either the left or right wheel velocity is invalid for index [%zu]", index);
-          return controller_interface::return_type::ERROR;
-        }
-
-        left_velocity_mean += left_velocity;
-        right_velocity_mean += right_velocity;
-      }
-      left_velocity_mean /= wheels.wheels_per_side;
-      right_velocity_mean /= wheels.wheels_per_side;
-
-      // Estimate linear and angular velocity using joint velocity information
-      odometry_.updateFromVelocity(left_velocity_mean, right_velocity_mean, current_time);
+      odometry_.updateFromVelocity(left_feedback_mean, right_feedback_mean, current_time);
     }
   }
 
@@ -624,7 +602,7 @@ CallbackReturn DiffDriveController::configure_side(
   registered_handles.reserve(wheel_names.size());
   for (const auto & wheel_name : wheel_names)
   {
-    auto interface_name = feedback_type();
+    const auto interface_name = feedback_type();
     const auto state_handle = std::find_if(
       state_interfaces_.cbegin(), state_interfaces_.cend(),
       [&wheel_name, &interface_name](const auto & interface) {

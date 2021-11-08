@@ -66,22 +66,7 @@ bool Odometry::update(double left_pos, double right_pos, const rclcpp::Time & ti
   left_wheel_old_pos_ = left_wheel_cur_pos;
   right_wheel_old_pos_ = right_wheel_cur_pos;
 
-  // Compute linear and angular diff:
-  const double linear = (right_wheel_est_vel + left_wheel_est_vel) * 0.5;
-  // Now there is a bug about scout angular velocity
-  const double angular = (right_wheel_est_vel - left_wheel_est_vel) / wheel_separation_;
-
-  // Integrate odometry:
-  integrateExact(linear, angular);
-
-  timestamp_ = time;
-
-  // Estimate speeds using a rolling mean to filter them out:
-  linear_accumulator_.accumulate(linear / dt);
-  angular_accumulator_.accumulate(angular / dt);
-
-  linear_ = linear_accumulator_.getRollingMean();
-  angular_ = angular_accumulator_.getRollingMean();
+  updateFromVelocity(left_wheel_est_vel, right_wheel_est_vel, time);
 
   return true;
 }
