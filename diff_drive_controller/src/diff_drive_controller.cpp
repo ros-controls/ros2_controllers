@@ -133,9 +133,10 @@ InterfaceConfiguration DiffDriveController::state_interface_configuration() cons
 }
 
 controller_interface::return_type DiffDriveController::update(
-  const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
+  const rclcpp::Time & current_time, const rclcpp::Duration & period)
 {
   auto logger = node_->get_logger();
+  // TODO(destogl): remove this checks
   if (get_state().id() == State::PRIMARY_STATE_INACTIVE)
   {
     if (!is_halted)
@@ -146,8 +147,6 @@ controller_interface::return_type DiffDriveController::update(
     return controller_interface::return_type::OK;
   }
 
-  const auto current_time = time;
-
   std::shared_ptr<Twist> last_command_msg;
   received_velocity_msg_ptr_.get(last_command_msg);
 
@@ -157,13 +156,20 @@ controller_interface::return_type DiffDriveController::update(
     return controller_interface::return_type::ERROR;
   }
 
-  const auto age_of_last_command = current_time - last_command_msg->header.stamp;
-  // Brake if cmd_vel has timeout, override the stored command
-  if (age_of_last_command > cmd_vel_timeout_)
-  {
-    last_command_msg->twist.linear.x = 0.0;
-    last_command_msg->twist.angular.z = 0.0;
-  }
+//   if (last_command_msg->header.stamp.sec != 0 and last_command_msg->header.stamp.nanosec != 0)
+//   {
+//     if (last_command_msg_ != last_command_msg)
+//     {
+//       last_command_msg_ = last_command_msg;
+//       last_command_time_ = current_time;
+//     }
+//     // Brake if cmd_vel has timeout, override the stored command
+//     if ((current_time - last_command_time_) > cmd_vel_timeout_)
+//     {
+//       last_command_msg->twist.linear.x = 0.0;
+//       last_command_msg->twist.angular.z = 0.0;
+//     }
+//   }
 
   // command may be limited further by SpeedLimit,
   // without affecting the stored twist command
@@ -238,15 +244,12 @@ controller_interface::return_type DiffDriveController::update(
     realtime_odometry_transform_publisher_->unlockAndPublish();
   }
 
-  const auto update_dt = current_time - previous_update_timestamp_;
-  previous_update_timestamp_ = current_time;
-
   auto & last_command = previous_commands_.back().twist;
   auto & second_to_last_command = previous_commands_.front().twist;
   limiter_linear_.limit(
-    linear_command, last_command.linear.x, second_to_last_command.linear.x, update_dt.seconds());
+    linear_command, last_command.linear.x, second_to_last_command.linear.x, period.seconds());
   limiter_angular_.limit(
-    angular_command, last_command.angular.z, second_to_last_command.angular.z, update_dt.seconds());
+    angular_command, last_command.angular.z, second_to_last_command.angular.z, period.seconds());
 
   previous_commands_.pop();
   previous_commands_.emplace(command);

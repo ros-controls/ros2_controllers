@@ -141,7 +141,11 @@ protected:
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr
     velocity_command_unstamped_subscriber_ = nullptr;
 
+  // Why not use RealtimeBuffer??
   realtime_tools::RealtimeBox<std::shared_ptr<Twist>> received_velocity_msg_ptr_{nullptr};
+
+  std::shared_ptr<Twist> last_command_msg_;
+  rclcpp::Time last_command_time_;
 
   std::queue<Twist> previous_commands_;  // last two commands
 
