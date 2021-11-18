@@ -88,10 +88,11 @@ public:
 protected:
   struct WheelHandle
   {
-    std::reference_wrapper<const hardware_interface::LoanedStateInterface> position;
+    std::reference_wrapper<const hardware_interface::LoanedStateInterface> feedback;
     std::reference_wrapper<hardware_interface::LoanedCommandInterface> velocity;
   };
 
+  const char * feedback_type() const;
   CallbackReturn configure_side(
     const std::string & side, const std::vector<std::string> & wheel_names,
     std::vector<WheelHandle> & registered_handles);
@@ -115,6 +116,7 @@ protected:
   struct OdometryParams
   {
     bool open_loop = false;
+    bool position_feedback = true;
     bool enable_odom_tf = true;
     std::string base_frame_id = "base_link";
     std::string odom_frame_id = "odom";
