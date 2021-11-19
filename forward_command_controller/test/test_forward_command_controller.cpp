@@ -131,13 +131,6 @@ TEST_F(ForwardCommandControllerTest, ActivateWithWrongJointsNamesFails)
   // activate failed, 'joint4' is not a valid joint name for the hardware
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
-
-  auto result = controller_->get_node()->set_parameter(
-    {"joints", std::vector<std::string>{"joint1", "joint2"}});
-  ASSERT_TRUE(result.successful);
-
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
 }
 
 TEST_F(ForwardCommandControllerTest, ActivateWithWrongInterfaceNameFails)
