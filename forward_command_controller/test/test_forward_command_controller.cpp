@@ -74,7 +74,7 @@ void ForwardCommandControllerTest::SetUpController()
 TEST_F(ForwardCommandControllerTest, JointsParameterNotSet)
 {
   SetUpController();
-  controller_->get_node()->set_parameter({"interface_name", "dummy"});
+  controller_->get_node()->set_parameter({"interface_name", ""});
 
   // configure failed, 'joints' parameter not set
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
@@ -83,11 +83,10 @@ TEST_F(ForwardCommandControllerTest, JointsParameterNotSet)
 TEST_F(ForwardCommandControllerTest, InterfaceParameterNotSet)
 {
   SetUpController();
+  controller_->get_node()->set_parameter({"joints", std::vector<std::string>()});
 
   // configure failed, 'interface_name' parameter not set
-  controller_->get_node()->set_parameter({"joints", std::vector<std::string>()});
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
-  controller_->get_node()->set_parameter({"interface_name", ""});
 }
 
 TEST_F(ForwardCommandControllerTest, JointsParameterIsEmpty)
@@ -104,8 +103,6 @@ TEST_F(ForwardCommandControllerTest, JointsParameterIsEmpty)
 TEST_F(ForwardCommandControllerTest, InterfaceParameterEmpty)
 {
   SetUpController();
-
-  // configure failed, 'interface_name' parameter not set
   controller_->get_node()->set_parameter({"joints", std::vector<std::string>{"joint1", "joint2"}});
   controller_->get_node()->set_parameter({"interface_name", ""});
 
@@ -134,14 +131,6 @@ TEST_F(ForwardCommandControllerTest, ActivateWithWrongJointsNamesFails)
   // activate failed, 'joint4' is not a valid joint name for the hardware
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
-
-  auto result = controller_->get_node()->set_parameter(
-    {"joints", std::vector<std::string>{"joint1", "joint2"}});
-  ASSERT_TRUE(result.successful);
-
-  // activate failed, 'acceleration' is not a registered interface for `joint1`
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
 }
 
 TEST_F(ForwardCommandControllerTest, ActivateWithWrongInterfaceNameFails)
@@ -151,7 +140,7 @@ TEST_F(ForwardCommandControllerTest, ActivateWithWrongInterfaceNameFails)
   controller_->get_node()->set_parameter({"joints", joint_names_});
   controller_->get_node()->set_parameter({"interface_name", "acceleration"});
 
-  // activate failed, 'joint4' not in interfaces
+  // activate failed, 'acceleration' is not a registered interface for `joint1`
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
 }
@@ -163,6 +152,7 @@ TEST_F(ForwardCommandControllerTest, ActivateSuccess)
   controller_->get_node()->set_parameter({"joints", joint_names_});
   controller_->get_node()->set_parameter({"interface_name", "position"});
 
+  // activate successful
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 }
