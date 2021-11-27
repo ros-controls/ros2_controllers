@@ -72,12 +72,23 @@ void JointStateBroadcasterTest::TearDown() { state_broadcaster_.reset(nullptr); 
 void JointStateBroadcasterTest::SetUpStateBroadcaster(
   const std::vector<std::string> & joint_names, const std::vector<std::string> & interfaces)
 {
+  init_broadcaster_and_set_parameters(joint_names, interfaces);
+  assign_state_interfaces(joint_names, interfaces);
+}
+
+void JointStateBroadcasterTest::init_broadcaster_and_set_parameters(
+  const std::vector<std::string> & joint_names, const std::vector<std::string> & interfaces)
+{
   const auto result = state_broadcaster_->init("joint_state_broadcaster");
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
   state_broadcaster_->get_node()->set_parameter({"joints", joint_names});
   state_broadcaster_->get_node()->set_parameter({"interfaces", interfaces});
+}
 
+void JointStateBroadcasterTest::assign_state_interfaces(
+  const std::vector<std::string> & joint_names, const std::vector<std::string> & interfaces)
+{
   std::vector<LoanedStateInterface> state_ifs;
 
   if (joint_names.empty() || interfaces.empty())
@@ -383,6 +394,78 @@ TEST_F(JointStateBroadcasterTest, ActivateTestOneJointTwoInterfaces)
     state_broadcaster_->dynamic_joint_state_msg_.joint_names, ElementsAreArray(JOINT_NAMES));
   ASSERT_THAT(
     state_broadcaster_->dynamic_joint_state_msg_.interface_values[0].interface_names,
+    ElementsAreArray(IF_NAMES));
+
+  // publishers initialized
+  ASSERT_TRUE(state_broadcaster_->joint_state_publisher_);
+  ASSERT_TRUE(state_broadcaster_->dynamic_joint_state_publisher_);
+}
+
+TEST_F(JointStateBroadcasterTest, ActivateTestTwoJointTwoInterfacesAllMissing)
+{
+  const std::vector<std::string> JOINT_NAMES = {joint_names_[0], joint_names_[1]};
+  const std::vector<std::string> IF_NAMES = {interface_names_[0], interface_names_[1]};
+
+  init_broadcaster_and_set_parameters(JOINT_NAMES, {interface_names_[0], interface_names_[1]});
+
+  // assign state with interfaces which are not set in parameters --> We should actually not assign
+  // anything because CM will also not do that
+  // assign_state_interfaces(JOINT_NAMES, {interface_names_[2]});
+
+  // configure ok
+  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  // is none of requested interfaces do not exist, the controller will not be activated
+  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_ERROR);
+}
+
+TEST_F(JointStateBroadcasterTest, ActivateTestTwoJointTwoInterfacesOneMissing)
+{
+  const std::vector<std::string> JOINT_NAMES = {joint_names_[0], joint_names_[1]};
+  const std::vector<std::string> IF_NAMES = {interface_names_[0], interface_names_[1]};
+
+  init_broadcaster_and_set_parameters(JOINT_NAMES, {interface_names_[0], interface_names_[1]});
+
+  // Manually assign existing interfaces --> one we need is missing
+  std::vector<LoanedStateInterface> state_ifs;
+
+  state_ifs.emplace_back(joint_1_pos_state_);
+  // Missing Joint 1 vel state interface
+  state_ifs.emplace_back(joint_2_pos_state_);
+  state_ifs.emplace_back(joint_2_vel_state_);
+
+  state_broadcaster_->assign_interfaces({}, std::move(state_ifs));
+
+  // configure ok
+  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  // here a warning output is expected!
+  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  const size_t NUM_JOINTS = JOINT_NAMES.size();
+
+  // joint state initialized
+  ASSERT_THAT(state_broadcaster_->joint_state_msg_.name, ElementsAreArray(JOINT_NAMES));
+  ASSERT_THAT(state_broadcaster_->joint_state_msg_.position, SizeIs(NUM_JOINTS));
+  ASSERT_THAT(state_broadcaster_->joint_state_msg_.velocity, SizeIs(NUM_JOINTS));
+  ASSERT_THAT(state_broadcaster_->joint_state_msg_.effort, SizeIs(NUM_JOINTS));
+  // velocity for joint 1 should be nan because state interface does not exit
+  ASSERT_TRUE(std::isnan(state_broadcaster_->joint_state_msg_.velocity[0]));
+  for (auto i = 0ul; i < NUM_JOINTS; ++i)
+  {
+    ASSERT_TRUE(std::isnan(state_broadcaster_->joint_state_msg_.effort[i]));
+  }
+
+  // dynamic joint state initialized
+  ASSERT_THAT(state_broadcaster_->dynamic_joint_state_msg_.joint_names, SizeIs(NUM_JOINTS));
+  ASSERT_THAT(state_broadcaster_->dynamic_joint_state_msg_.interface_values, SizeIs(NUM_JOINTS));
+  ASSERT_THAT(
+    state_broadcaster_->dynamic_joint_state_msg_.joint_names, ElementsAreArray(JOINT_NAMES));
+  ASSERT_THAT(
+    state_broadcaster_->dynamic_joint_state_msg_.interface_values[0].interface_names,
+    ElementsAreArray({IF_NAMES[0]}));  // joint 1 has only pos interface
+  ASSERT_THAT(
+    state_broadcaster_->dynamic_joint_state_msg_.interface_values[1].interface_names,
     ElementsAreArray(IF_NAMES));
 
   // publishers initialized

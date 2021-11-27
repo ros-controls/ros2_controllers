@@ -140,11 +140,23 @@ CallbackReturn JointStateBroadcaster::on_activate(
 {
   if (!init_joint_data())
   {
+    RCLCPP_ERROR(
+      node_->get_logger(), "None of requested interfaces exist. Controller will not run.");
     return CallbackReturn::ERROR;
   }
 
   init_joint_state_msg();
   init_dynamic_joint_state_msg();
+
+  if (
+    !use_all_available_interfaces() &&
+    state_interfaces_.size() != (joints_.size() * interfaces_.size()))
+  {
+    RCLCPP_WARN(
+      node_->get_logger(),
+      "Not all requested interfaces exists. "
+      "Check ControllerManager output for more detailed information.");
+  }
 
   return CallbackReturn::SUCCESS;
 }
@@ -174,6 +186,11 @@ bool has_any_key(
 
 bool JointStateBroadcaster::init_joint_data()
 {
+  if (state_interfaces_.empty())
+  {
+    return false;
+  }
+
   // loop in reverse order, this maintains the order of values at retrieval time
   for (auto si = state_interfaces_.crbegin(); si != state_interfaces_.crend(); si++)
   {

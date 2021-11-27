@@ -38,6 +38,8 @@ class FriendJointStateBroadcaster : public joint_state_broadcaster::JointStateBr
   FRIEND_TEST(JointStateBroadcasterTest, ActivateTestWithoutInterfacesParameter);
   FRIEND_TEST(JointStateBroadcasterTest, ActivateTestTwoJointsOneInterface);
   FRIEND_TEST(JointStateBroadcasterTest, ActivateTestOneJointTwoInterfaces);
+  FRIEND_TEST(JointStateBroadcasterTest, ActivateTestTwoJointTwoInterfacesAllMissing);
+  FRIEND_TEST(JointStateBroadcasterTest, ActivateTestTwoJointTwoInterfacesOneMissing);
   FRIEND_TEST(JointStateBroadcasterTest, ExtraJointStatePublishTest);
 };
 
@@ -51,6 +53,14 @@ public:
   void TearDown();
 
   void SetUpStateBroadcaster(
+    const std::vector<std::string> & joint_names = {},
+    const std::vector<std::string> & interfaces = {});
+
+  void init_broadcaster_and_set_parameters(
+    const std::vector<std::string> & joint_names = {},
+    const std::vector<std::string> & interfaces = {});
+
+  void assign_state_interfaces(
     const std::vector<std::string> & joint_names = {},
     const std::vector<std::string> & interfaces = {});
 
