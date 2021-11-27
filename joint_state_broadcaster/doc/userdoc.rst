@@ -27,18 +27,17 @@ Parameters
 
 
 ``joints``
+
   Optional parameter (string array) to support broadcasting of only specific joints and interfaces.
   It has to be used in combination with ``interfaces`` parameters.
   Joint state broadcaster asks for access to all defined interfaces on all defined joints.
 
 
 ``interfaces``
+
   Optional parameter (string array) to support broadcasting of only specific joints and interfaces.
   It has to be used in combination with ``joints`` parameters.
-  
-  
- 
-
+   
 
 ``extra_joints``
 
