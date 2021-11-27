@@ -37,7 +37,7 @@ Parameters
 
   Optional parameter (string array) to support broadcasting of only specific joints and interfaces.
   It has to be used in combination with ``joints`` parameters.
-   
+
 
 ``extra_joints``
 
