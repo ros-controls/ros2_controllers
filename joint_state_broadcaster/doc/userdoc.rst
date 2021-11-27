@@ -13,7 +13,10 @@ Broadcasters are not real controllers, and therefore take no commands.
 Hardware interface type
 -----------------------
 
-All available *joint state interfaces* are used by this broadcaster.
+All available *joint state interfaces* are used, or interfaces defined by the ``joints`` and ``interfaces`` parameters of both are not empty.
+In the latter case, resulting interfaces is a "matrix" of interfaces resulting from the cross-product of those two vectors.
+If some requested interfaces are missing, the controller will print a warning about that, but work for other interfaces.
+If none of the requested interface are not defined, the controller returns error on activation.
 
 Parameters
 ----------
@@ -32,6 +35,9 @@ Parameters
 ``interfaces``
   Optional parameter (string array) to support broadcasting of only specific joints and interfaces.
   It has to be used in combination with ``joints`` parameters.
+  
+  
+ 
 
 
 ``extra_joints``
