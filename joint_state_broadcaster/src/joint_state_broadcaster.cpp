@@ -51,6 +51,8 @@ CallbackReturn JointStateBroadcaster::on_init()
   try
   {
     auto_declare<bool>("use_local_topics", false);
+    auto_declare<std::vector<std::string>>("joints", std::vector<std::string>({}));
+    auto_declare<std::vector<std::string>>("interfaces", std::vector<std::string>({}));
   }
   catch (const std::exception & e)
   {
@@ -71,14 +73,47 @@ JointStateBroadcaster::command_interface_configuration() const
 controller_interface::InterfaceConfiguration JointStateBroadcaster::state_interface_configuration()
   const
 {
-  return controller_interface::InterfaceConfiguration{
-    controller_interface::interface_configuration_type::ALL};
+  controller_interface::InterfaceConfiguration state_interfaces_config;
+
+  if (use_all_available_interfaces())
+  {
+    state_interfaces_config.type = controller_interface::interface_configuration_type::ALL;
+  }
+  else
+  {
+    state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
+    for (const auto & joint : joints_)
+    {
+      for (const auto & interface : interfaces_)
+      {
+        state_interfaces_config.names.push_back(joint + "/" + interface);
+      }
+    }
+  }
+
+  return state_interfaces_config;
 }
 
 CallbackReturn JointStateBroadcaster::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   use_local_topics_ = get_node()->get_parameter("use_local_topics").as_bool();
+  joints_ = get_node()->get_parameter("joints").as_string_array();
+  interfaces_ = get_node()->get_parameter("interfaces").as_string_array();
+
+  if (use_all_available_interfaces())
+  {
+    RCLCPP_INFO(
+      node_->get_logger(),
+      "'joints' or 'interfaces' parameter is empty. "
+      "All available state interfaces will be published");
+  }
+  else
+  {
+    RCLCPP_INFO(
+      node_->get_logger(),
+      "Publishing state interfaces defined in 'joints' and 'interfaces' parameters.");
+  }
 
   try
   {
@@ -105,11 +140,23 @@ CallbackReturn JointStateBroadcaster::on_activate(
 {
   if (!init_joint_data())
   {
+    RCLCPP_ERROR(
+      node_->get_logger(), "None of requested interfaces exist. Controller will not run.");
     return CallbackReturn::ERROR;
   }
 
   init_joint_state_msg();
   init_dynamic_joint_state_msg();
+
+  if (
+    !use_all_available_interfaces() &&
+    state_interfaces_.size() != (joints_.size() * interfaces_.size()))
+  {
+    RCLCPP_WARN(
+      node_->get_logger(),
+      "Not all requested interfaces exists. "
+      "Check ControllerManager output for more detailed information.");
+  }
 
   return CallbackReturn::SUCCESS;
 }
@@ -139,6 +186,11 @@ bool has_any_key(
 
 bool JointStateBroadcaster::init_joint_data()
 {
+  if (state_interfaces_.empty())
+  {
+    return false;
+  }
+
   // loop in reverse order, this maintains the order of values at retrieval time
   for (auto si = state_interfaces_.crbegin(); si != state_interfaces_.crend(); si++)
   {
@@ -211,6 +263,11 @@ void JointStateBroadcaster::init_dynamic_joint_state_msg()
     }
     dynamic_joint_state_msg_.interface_values.emplace_back(if_value);
   }
+}
+
+bool JointStateBroadcaster::use_all_available_interfaces() const
+{
+  return joints_.empty() || interfaces_.empty();
 }
 
 double get_value(
