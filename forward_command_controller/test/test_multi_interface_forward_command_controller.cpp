@@ -62,7 +62,7 @@ void MultiInterfaceForwardCommandControllerTest::SetUp()
 
 void MultiInterfaceForwardCommandControllerTest::TearDown() { controller_.reset(nullptr); }
 
-void MultiInterfaceForwardCommandControllerTest::SetUpController()
+void MultiInterfaceForwardCommandControllerTest::SetUpController(bool set_params_and_activate)
 {
   const auto result = controller_->init("multi_interface_forward_command_controller");
   ASSERT_EQ(result, controller_interface::return_type::OK);
@@ -72,6 +72,21 @@ void MultiInterfaceForwardCommandControllerTest::SetUpController()
   command_ifs.emplace_back(joint_1_vel_cmd_);
   command_ifs.emplace_back(joint_1_eff_cmd_);
   controller_->assign_interfaces(std::move(command_ifs), {});
+
+  if (set_params_and_activate)
+  {
+    SetParametersAndActivateController();
+  }
+}
+
+void MultiInterfaceForwardCommandControllerTest::SetParametersAndActivateController()
+{
+  controller_->get_node()->set_parameter({"joint", "joint1"});
+  controller_->get_node()->set_parameter(
+    {"interface_names", std::vector<std::string>{"position", "velocity", "effort"}});
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 }
 
 TEST_F(MultiInterfaceForwardCommandControllerTest, JointsParameterNotSet)
@@ -153,14 +168,7 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, ActivateWithWrongInterfaceNam
 
 TEST_F(MultiInterfaceForwardCommandControllerTest, ActivateSuccess)
 {
-  SetUpController();
-
-  controller_->get_node()->set_parameter({"joint", "joint1"});
-  controller_->get_node()->set_parameter(
-    {"interface_names", std::vector<std::string>{"position", "velocity", "effort"}});
-
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  SetUpController(true);
 
   // check joint commands are the default ones
   ASSERT_EQ(joint_1_pos_cmd_.get_value(), 1.1);
@@ -170,15 +178,7 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, ActivateSuccess)
 
 TEST_F(MultiInterfaceForwardCommandControllerTest, CommandSuccessTest)
 {
-  SetUpController();
-
-  // configure controller
-  controller_->get_node()->set_parameter({"joint", "joint1"});
-  controller_->get_node()->set_parameter(
-    {"interface_names", std::vector<std::string>{"position", "velocity", "effort"}});
-
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  SetUpController(true);
 
   // send command
   auto command_ptr = std::make_shared<forward_command_controller::CmdType>();
@@ -198,15 +198,7 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, CommandSuccessTest)
 
 TEST_F(MultiInterfaceForwardCommandControllerTest, NoCommandCheckTest)
 {
-  SetUpController();
-
-  // configure controller
-  controller_->get_node()->set_parameter({"joint", "joint1"});
-  controller_->get_node()->set_parameter(
-    {"interface_names", std::vector<std::string>{"position", "velocity", "effort"}});
-
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  SetUpController(true);
 
   // update successful, no command received yet
   ASSERT_EQ(
@@ -221,15 +213,7 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, NoCommandCheckTest)
 
 TEST_F(MultiInterfaceForwardCommandControllerTest, WrongCommandCheckTest)
 {
-  SetUpController();
-
-  // configure controller
-  controller_->get_node()->set_parameter({"joint", "joint1"});
-  controller_->get_node()->set_parameter(
-    {"interface_names", std::vector<std::string>{"position", "velocity", "effort"}});
-
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  SetUpController(true);
 
   // send command with wrong number of joints
   auto command_ptr = std::make_shared<forward_command_controller::CmdType>();
@@ -249,20 +233,7 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, WrongCommandCheckTest)
 
 TEST_F(MultiInterfaceForwardCommandControllerTest, CommandCallbackTest)
 {
-  SetUpController();
-
-  controller_->get_node()->set_parameter({"joint", "joint1"});
-  controller_->get_node()->set_parameter(
-    {"interface_names", std::vector<std::string>{"position", "velocity", "effort"}});
-
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-
-  auto node_state = controller_->configure();
-  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
-
-  node_state = controller_->activate();
-  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
+  SetUpController(true);
 
   // send a new command
   rclcpp::Node test_node("test_node");
@@ -291,14 +262,7 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, CommandCallbackTest)
 
 TEST_F(MultiInterfaceForwardCommandControllerTest, ActivateDeactivateCommandsResetSuccess)
 {
-  SetUpController();
-
-  controller_->get_node()->set_parameter({"joint", "joint1"});
-  controller_->get_node()->set_parameter(
-    {"interface_names", std::vector<std::string>{"position", "velocity", "effort"}});
-
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  SetUpController(true);
 
   // send command
   auto command_ptr = std::make_shared<forward_command_controller::CmdType>();

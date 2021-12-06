@@ -61,8 +61,8 @@ public:
   void SetUp();
   void TearDown();
 
-  void SetUpController();
-  void SetUpHandles();
+  void SetUpController(bool set_params_and_activate = false);
+  void SetParametersAndActivateController();
 
 protected:
   std::unique_ptr<FriendMultiInterfaceForwardCommandController> controller_;
