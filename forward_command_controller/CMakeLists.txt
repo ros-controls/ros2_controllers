@@ -92,6 +92,15 @@ if(BUILD_TESTING)
     hardware_interface
     ros2_control_test_assets
   )
+
+  ament_add_gmock(
+    test_multi_interface_forward_command_controller
+    test/test_multi_interface_forward_command_controller.cpp
+  )
+  target_include_directories(test_multi_interface_forward_command_controller PRIVATE include)
+  target_link_libraries(test_multi_interface_forward_command_controller
+    forward_command_controller
+  )
 endif()
 
 ament_export_dependencies(
