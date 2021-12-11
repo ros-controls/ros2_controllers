@@ -239,7 +239,7 @@ bool JointStateBroadcaster::init_joint_data()
     {
       interface_name = map_interface_to_joint_state_[interface_name];
     }
-    name_if_value_mapping_[si->get_name()][si->get_interface_name()] = kUninitializedValue;
+        name_if_value_mapping_[si->get_name()][interface_name] = kUninitializedValue;
   }
 
   // filter state interfaces that have at least one of the joint_states fields,
@@ -335,7 +335,7 @@ controller_interface::return_type JointStateBroadcaster::update(
     {
       interface_name = map_interface_to_joint_state_[interface_name];
     }
-    name_if_value_mapping_[state_interface.get_name()][state_interface.get_interface_name()] =
+    name_if_value_mapping_[state_interface.get_name()][interface_name] =
       state_interface.get_value();
     RCLCPP_DEBUG(
       get_node()->get_logger(), "%s: %f\n", state_interface.get_full_name().c_str(),
