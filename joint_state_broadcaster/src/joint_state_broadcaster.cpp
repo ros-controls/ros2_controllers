@@ -239,7 +239,7 @@ bool JointStateBroadcaster::init_joint_data()
     {
       interface_name = map_interface_to_joint_state_[interface_name];
     }
-        name_if_value_mapping_[si->get_name()][interface_name] = kUninitializedValue;
+    name_if_value_mapping_[si->get_name()][interface_name] = kUninitializedValue;
   }
 
   // filter state interfaces that have at least one of the joint_states fields,
