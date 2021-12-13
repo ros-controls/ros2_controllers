@@ -108,7 +108,7 @@ protected:
   std::unordered_map<std::string, std::unordered_map<std::string, double>> name_if_value_mapping_;
   std::shared_ptr<rclcpp::Publisher<control_msgs::msg::DynamicJointState>>
     dynamic_joint_state_publisher_;
-  control_msgs::msg::DynamicJointState dynamic_joint_state_msg_;
+  std::shared_ptr<realtime_tools::RealtimePublisher<control_msgs::msg::DynamicJointState>> realtime_dynamic_joint_state_publisher_ = nullptr;
 };
 
 }  // namespace joint_state_broadcaster
