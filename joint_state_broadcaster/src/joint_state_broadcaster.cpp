@@ -157,17 +157,16 @@ CallbackReturn JointStateBroadcaster::on_configure(
       topic_name_prefix + "joint_states", rclcpp::SystemDefaultsQoS());
 
     realtime_joint_state_publisher_ =
-    std::make_shared<realtime_tools::RealtimePublisher<sensor_msgs::msg::JointState>>(
-      joint_state_publisher_);
+      std::make_shared<realtime_tools::RealtimePublisher<sensor_msgs::msg::JointState>>(
+        joint_state_publisher_);
 
     dynamic_joint_state_publisher_ =
       get_node()->create_publisher<control_msgs::msg::DynamicJointState>(
         topic_name_prefix + "dynamic_joint_states", rclcpp::SystemDefaultsQoS());
 
     realtime_dynamic_joint_state_publisher_ =
-    std::make_shared<realtime_tools::RealtimePublisher<control_msgs::msg::DynamicJointState>>(
-      dynamic_joint_state_publisher_);
-
+      std::make_shared<realtime_tools::RealtimePublisher<control_msgs::msg::DynamicJointState>>(
+        dynamic_joint_state_publisher_);
   }
   catch (const std::exception & e)
   {
