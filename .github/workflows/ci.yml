@@ -8,7 +8,6 @@ on:
     # Run every morning to detect flakiness and broken dependencies
     - cron: '17 8 * * *'
 env:
-  # if changing this variable, also change jobs.rhel.container to match
   ROS_DISTRO: galactic
 
 jobs:
@@ -25,22 +24,6 @@ jobs:
      - uses: ros-industrial/industrial_ci@master
        env:
         ROS_REPO: ${{ matrix.ROS_REPO }}
-
-  rhel:
-    name: RHEL
-    runs-on: ubuntu-latest
-    container: jaronl/ros:galactic-alma
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          path: src/ros2_controllers
-      - run: |
-          rosdep init
-          rosdep update
-          rosdep install -iy --from-path src/ros2_controllers
-          source /opt/ros/$ROS_DISTRO/setup.bash
-          colcon build
-          colcon test
 
   ros-tooling-ci:
     name: ros-tooling ci
