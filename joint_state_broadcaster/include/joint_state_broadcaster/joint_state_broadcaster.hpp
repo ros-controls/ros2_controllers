@@ -38,7 +38,7 @@ using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface
  * There is a possibility to publish all available states (typical use), or only specific ones.
  * The latter is, for example, used when hardware provides multiple measurement sources for some
  * of its states, e.g., position.
- * Mapping of interfaces parameter enables to map the measurements
+ * It is possible to define a mapping of measurements
  * from different sources stored in custom interfaces to standard dynamic names in JointState
  * message.
  * If "joints" or "interfaces" parameter is empty, all available states are published.

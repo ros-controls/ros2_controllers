@@ -41,22 +41,22 @@ Parameters
 
 
 ``map_interface_to_joint_state``
-  Optional parameter (map) providing mapping between custom interface names to standard fields in ``joints_states`` message.
+  Optional parameter (map) providing mapping between custom interface names to standard fields in ``joint_states`` message.
   Usecases:
 
-    1. Hydraulics robots where feedback and commanded values have offset.
+    1. Hydraulics robots where feedback and commanded values often have an offset and reliance on open-loop control is common.
        Typically one would map both values in separate interfaces in the framework.
-       To visualize those data multiple JSB's and robot_state_publishers would be used to visualize both values in RViz.
+       To visualize those data multiple joint_state_broadcaster instances and robot_state_publishers would be used to visualize both values in RViz.
 
-    1. A robot provides different measuring techniques for its joint values which results in slightly different values.
+    1. A robot provides multiple measuring techniques for its joint values which results in slightly different values.
        Typically one would use separate interface for providing those values in the framework.
-       Using multiple JSB's we could publish and show both in RViz.
+       Using multiple joint_state_broadcaster instances we could publish and show both in RViz.
 
   Format (each line is optional):
 
   .. code-block:: yaml
 
       map_interface_to_joint_state
-        position: <custom_interfce>
+        position: <custom_interface>
         velocity: <custom_interface>
         effort: <custom_interface>
