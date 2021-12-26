@@ -65,18 +65,25 @@ Parameters
   Examples:
 
   .. code-block:: yaml
-      map_interface_to_joint_state
+
+      map_interface_to_joint_state:
         position: kf_estimated_position
 
+
   .. code-block:: yaml
-      map_interface_to_joint_state
+
+      map_interface_to_joint_state:
         velocity: derived_velocity
         effort: derived_effort
 
-  .. code-block:: yaml
-      map_interface_to_joint_state
-        effort: torque_sensor
 
   .. code-block:: yaml
-      map_interface_to_joint_state
+
+      map_interface_to_joint_state:
+        effort: torque_sensor
+
+
+  .. code-block:: yaml
+
+      map_interface_to_joint_state:
         effort: current_sensor
