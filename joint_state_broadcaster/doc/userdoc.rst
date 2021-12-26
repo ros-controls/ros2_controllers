@@ -56,7 +56,7 @@ Parameters
 
   .. code-block:: yaml
 
-      map_interface_to_joint_state
+      map_interface_to_joint_state:
         position: <custom_interface>
         velocity: <custom_interface>
         effort: <custom_interface>
