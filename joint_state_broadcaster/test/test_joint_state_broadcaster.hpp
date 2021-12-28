@@ -40,6 +40,9 @@ class FriendJointStateBroadcaster : public joint_state_broadcaster::JointStateBr
   FRIEND_TEST(JointStateBroadcasterTest, ActivateTestOneJointTwoInterfaces);
   FRIEND_TEST(JointStateBroadcasterTest, ActivateTestTwoJointTwoInterfacesAllMissing);
   FRIEND_TEST(JointStateBroadcasterTest, ActivateTestTwoJointTwoInterfacesOneMissing);
+  FRIEND_TEST(JointStateBroadcasterTest, TestCustomInterfaceWithoutMapping);
+  FRIEND_TEST(JointStateBroadcasterTest, TestCustomInterfaceMapping);
+  FRIEND_TEST(JointStateBroadcasterTest, TestCustomInterfaceMappingUpdate);
   FRIEND_TEST(JointStateBroadcasterTest, ExtraJointStatePublishTest);
 };
 
@@ -72,7 +75,9 @@ protected:
   // dummy joint state values used for tests
   const std::vector<std::string> joint_names_ = {"joint1", "joint2", "joint3"};
   const std::vector<std::string> interface_names_ = {HW_IF_POSITION, HW_IF_VELOCITY, HW_IF_EFFORT};
+  std::string custom_interface_name_ = "measured_position";
   std::vector<double> joint_values_ = {1.1, 2.1, 3.1};
+  double custom_joint_value_ = 3.5;
 
   hardware_interface::StateInterface joint_1_pos_state_{
     joint_names_[0], interface_names_[0], &joint_values_[0]};
@@ -92,6 +97,9 @@ protected:
     joint_names_[1], interface_names_[2], &joint_values_[1]};
   hardware_interface::StateInterface joint_3_eff_state_{
     joint_names_[2], interface_names_[2], &joint_values_[2]};
+
+  hardware_interface::StateInterface joint_X_custom_state{
+    joint_names_[0], custom_interface_name_, &custom_joint_value_};
 
   std::unique_ptr<FriendJointStateBroadcaster> state_broadcaster_;
 };
