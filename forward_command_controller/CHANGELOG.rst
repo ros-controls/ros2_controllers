@@ -2,8 +2,8 @@
 Changelog for package forward_command_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.2.0 (2021-12-29)
+------------------
 * Forward command controller test update (`#273 <https://github.com/ros-controls/ros2_controllers/issues/273>`_)
   * removed unnecessary lines and updated comments
   * fixed pre-commit issues
