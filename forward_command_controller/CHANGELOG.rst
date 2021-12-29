@@ -2,6 +2,14 @@
 Changelog for package forward_command_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Forward command controller test update (`#273 <https://github.com/ros-controls/ros2_controllers/issues/273>`_)
+  * removed unnecessary lines and updated comments
+  * fixed pre-commit issues
+  * removed extra part of test
+* Contributors: Jack Center
+
 1.1.0 (2021-10-25)
 ------------------
 * Move interface sorting into ControllerInterface (`#259 <https://github.com/ros-controls/ros2_controllers/issues/259>`_)
