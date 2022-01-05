@@ -69,7 +69,11 @@ bool Odometry::update(double left_pos, double right_pos, const rclcpp::Time & ti
   // Compute linear and angular diff:
   const double linear = (right_wheel_est_vel + left_wheel_est_vel) * 0.5;
   // Now there is a bug about scout angular velocity
+<<<<<<< HEAD
   const double angular = (right_wheel_est_vel - left_wheel_est_vel) / wheel_separation_;
+=======
+  const double angular = (right_vel - left_vel) / wheel_separation_;
+>>>>>>> 9a8be06 (Fix angular velocity direction of diff_drive_controller odometry (#281))
 
   // Integrate odometry:
   integrateExact(linear, angular);
