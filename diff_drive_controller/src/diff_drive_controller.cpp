@@ -100,7 +100,6 @@ CallbackReturn DiffDriveController::on_init()
     auto_declare<double>("angular.z.min_acceleration", NAN);
     auto_declare<double>("angular.z.max_jerk", NAN);
     auto_declare<double>("angular.z.min_jerk", NAN);
-
     auto_declare<double>("publish_rate", publish_rate_);
   }
   catch (const std::exception & e)
@@ -473,7 +472,7 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
 
   // limit the publication on the topics /odom and /tf
   publish_rate_ = node_->get_parameter("publish_rate").as_double();
-  publish_period_ = std::chrono::milliseconds(static_cast<int>(1000.0 / publish_rate_));
+  publish_period_ = rclcpp::Duration::from_seconds(1.0 / publish_rate_);
   previous_publish_timestamp_ = node_->get_clock()->now();
 
   // initialize odom values zeros
