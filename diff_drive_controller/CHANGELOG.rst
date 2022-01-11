@@ -2,6 +2,11 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add publish_rate option for the diff_drive_controller (backport `#278 <https://github.com/ros-controls/ros2_controllers/issues/278>`_) (`#284 <https://github.com/ros-controls/ros2_controllers/issues/284>`_)
+* Contributors: Benjamin Hug
+
 0.5.1 (2021-10-25)
 ------------------
 * Fix diff_drive accel limit (`#242 <https://github.com/ros-controls/ros2_controllers/issues/242>`_) (backport `#252 <https://github.com/ros-controls/ros2_controllers/issues/252>`_) (`#257 <https://github.com/ros-controls/ros2_controllers/issues/257>`_)
