@@ -2,6 +2,12 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add publish_rate option for the diff_drive_controller (`#278 <https://github.com/ros-controls/ros2_controllers/issues/278>`_)
+* Fix angular velocity direction of diff_drive_controller odometry (`#281 <https://github.com/ros-controls/ros2_controllers/issues/281>`_)
+* Contributors: Benjamin Hug, Paul Verhoeckx
+
 1.2.0 (2021-12-29)
 ------------------
 * Add velocity feedback option for diff_drive_controller (`#260 <https://github.com/ros-controls/ros2_controllers/issues/260>`_)

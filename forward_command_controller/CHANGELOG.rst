@@ -2,6 +2,11 @@
 Changelog for package forward_command_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Adding reset() for forward_command_controller (`#283 <https://github.com/ros-controls/ros2_controllers/issues/283>`_)
+* Contributors: bailaC
+
 1.2.0 (2021-12-29)
 ------------------
 * Forward command controller test update (`#273 <https://github.com/ros-controls/ros2_controllers/issues/273>`_)
