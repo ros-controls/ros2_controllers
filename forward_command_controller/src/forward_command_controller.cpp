@@ -15,6 +15,7 @@
 #include "forward_command_controller/forward_command_controller.hpp"
 
 #include <algorithm>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -151,12 +152,17 @@ CallbackReturn ForwardCommandController::on_activate(
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
   }
 
+  // reset command buffer if a command came through callback when controller was inactive
+  rt_command_ptr_ = realtime_tools::RealtimeBuffer<std::shared_ptr<CmdType>>(nullptr);
+
   return CallbackReturn::SUCCESS;
 }
 
 CallbackReturn ForwardCommandController::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
+  // reset command buffer
+  rt_command_ptr_ = realtime_tools::RealtimeBuffer<std::shared_ptr<CmdType>>(nullptr);
   return CallbackReturn::SUCCESS;
 }
 
