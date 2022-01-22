@@ -306,7 +306,7 @@ TEST_F(ForwardCommandControllerTest, ActivateDeactivateCommandsResetSuccess)
 
   // update successful
   ASSERT_EQ(
-    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_->update(),
     controller_interface::return_type::OK);
 
   // check command in handle was set
@@ -350,7 +350,7 @@ TEST_F(ForwardCommandControllerTest, ActivateDeactivateCommandsResetSuccess)
 
   // update successful
   ASSERT_EQ(
-    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_->update(),
     controller_interface::return_type::OK);
 
   // values should not change
@@ -363,7 +363,7 @@ TEST_F(ForwardCommandControllerTest, ActivateDeactivateCommandsResetSuccess)
 
   // update successful
   ASSERT_EQ(
-    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_->update(),
     controller_interface::return_type::OK);
 
   // check command in handle was set
