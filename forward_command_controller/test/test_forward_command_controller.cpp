@@ -305,9 +305,7 @@ TEST_F(ForwardCommandControllerTest, ActivateDeactivateCommandsResetSuccess)
   controller_->rt_command_ptr_.writeFromNonRT(command_msg);
 
   // update successful
-  ASSERT_EQ(
-    controller_->update(),
-    controller_interface::return_type::OK);
+  ASSERT_EQ(controller_->update(), controller_interface::return_type::OK);
 
   // check command in handle was set
   ASSERT_EQ(joint_1_pos_cmd_.get_value(), 10);
@@ -349,9 +347,7 @@ TEST_F(ForwardCommandControllerTest, ActivateDeactivateCommandsResetSuccess)
     controller_->rt_command_ptr_.readFromRT() && *(controller_->rt_command_ptr_.readFromRT()));
 
   // update successful
-  ASSERT_EQ(
-    controller_->update(),
-    controller_interface::return_type::OK);
+  ASSERT_EQ(controller_->update(), controller_interface::return_type::OK);
 
   // values should not change
   ASSERT_EQ(joint_1_pos_cmd_.get_value(), 10);
@@ -362,9 +358,7 @@ TEST_F(ForwardCommandControllerTest, ActivateDeactivateCommandsResetSuccess)
   controller_->rt_command_ptr_.writeFromNonRT(command_msg);
 
   // update successful
-  ASSERT_EQ(
-    controller_->update(),
-    controller_interface::return_type::OK);
+  ASSERT_EQ(controller_->update(), controller_interface::return_type::OK);
 
   // check command in handle was set
   ASSERT_EQ(joint_1_pos_cmd_.get_value(), 5.5);
