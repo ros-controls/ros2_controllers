@@ -357,7 +357,7 @@ public:
     {
       SCOPED_TRACE("Joint " + std::to_string(i));
       // TODO(anyone): add checking for velocties and accelerations
-      if (traj_controller_->get_has_position_command_interface())
+      if (traj_controller_->has_position_command_interface())
       {
         EXPECT_NEAR(expected_actual.positions[i], state_msg->actual.positions[i], allowed_delta);
       }
@@ -367,7 +367,7 @@ public:
     {
       SCOPED_TRACE("Joint " + std::to_string(i));
       // TODO(anyone): add checking for velocties and accelerations
-      if (traj_controller_->get_has_position_command_interface())
+      if (traj_controller_->has_position_command_interface())
       {
         EXPECT_NEAR(expected_desired.positions[i], state_msg->desired.positions[i], allowed_delta);
       }
