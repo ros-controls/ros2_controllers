@@ -544,7 +544,8 @@ TEST_P(TrajectoryControllerTestParameterized, test_partial_joint_list)
     command_interface_types_.end())
   {
     // estimate the sign of the velocity
-    if (0 > copysign(2.0, traj_msg.points[0].positions[0] - initial_joint2_cmd))
+    // joint rotates forward
+    if (traj_msg.points[0].positions[0] - initial_joint2_cmd < 0.0)
     {
       EXPECT_GT(0.0, joint_vel_[0]);
     }
