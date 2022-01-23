@@ -498,18 +498,12 @@ CallbackReturn JointTrajectoryController::on_configure(const rclcpp_lifecycle::S
     }
   }
 
-  if (contains_interface_type(command_interface_types_, hardware_interface::HW_IF_POSITION))
-  {
-    has_position_command_interface_ = true;
-  }
-  if (contains_interface_type(command_interface_types_, hardware_interface::HW_IF_VELOCITY))
-  {
-    has_velocity_command_interface_ = true;
-  }
-  if (contains_interface_type(command_interface_types_, hardware_interface::HW_IF_ACCELERATION))
-  {
-    has_acceleration_command_interface_ = true;
-  }
+  has_position_command_interface_ =
+    contains_interface_type(command_interface_types_, hardware_interface::HW_IF_POSITION);
+  has_velocity_command_interface_ =
+    contains_interface_type(command_interface_types_, hardware_interface::HW_IF_VELOCITY);
+  has_acceleration_command_interface_ =
+    contains_interface_type(command_interface_types_, hardware_interface::HW_IF_ACCELERATION);
 
   if (has_velocity_command_interface_)
   {
@@ -591,15 +585,12 @@ CallbackReturn JointTrajectoryController::on_configure(const rclcpp_lifecycle::S
     }
   }
 
-  has_position_state_interface_ = contains_interface_type(state_interface_types_, hardware_interface::HW_IF_POSITION;
-  if (contains_interface_type(state_interface_types_, hardware_interface::HW_IF_VELOCITY))
-  {
-    has_velocity_state_interface_ = true;
-  }
-  if (contains_interface_type(state_interface_types_, hardware_interface::HW_IF_ACCELERATION))
-  {
-    has_acceleration_state_interface_ = true;
-  }
+  has_position_state_interface_ =
+    contains_interface_type(state_interface_types_, hardware_interface::HW_IF_POSITION);
+  has_velocity_state_interface_ =
+    contains_interface_type(state_interface_types_, hardware_interface::HW_IF_VELOCITY);
+  has_acceleration_state_interface_ =
+    contains_interface_type(state_interface_types_, hardware_interface::HW_IF_ACCELERATION);
 
   if (has_velocity_state_interface_)
   {
