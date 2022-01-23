@@ -58,6 +58,11 @@ using test_trajectory_controllers::TestableJointTrajectoryController;
 using test_trajectory_controllers::TrajectoryControllerTest;
 using test_trajectory_controllers::TrajectoryControllerTestParameterized;
 
+bool is_same_sign(double val1, double val2)
+{
+  return val1 * val2 >= 0.0;
+}
+
 void spin(rclcpp::executors::MultiThreadedExecutor * exe) { exe->spin(); }
 
 TEST_P(TrajectoryControllerTestParameterized, configure)
@@ -545,22 +550,8 @@ TEST_P(TrajectoryControllerTestParameterized, test_partial_joint_list)
   {
     // estimate the sign of the velocity
     // joint rotates forward
-    if (traj_msg.points[0].positions[0] - initial_joint2_cmd < 0.0)
-    {
-      EXPECT_GT(0.0, joint_vel_[0]);
-    }
-    else if (0 < copysign(2.0, traj_msg.points[0].positions[0] - initial_joint2_cmd))
-    {
-      EXPECT_LT(0.0, joint_vel_[0]);
-    }
-    if (0 > copysign(2.0, traj_msg.points[0].positions[1] - initial_joint1_cmd))
-    {
-      EXPECT_GT(0.0, joint_vel_[1]);
-    }
-    else if (0 < copysign(2.0, traj_msg.points[0].positions[1] - initial_joint1_cmd))
-    {
-      EXPECT_LT(0.0, joint_vel_[1]);
-    }
+    EXPECT_TRUE(is_same_sign(traj_msg.points[0].positions[0] - initial_joint2_cmd, joint_vel_[0]));
+    EXPECT_TRUE(is_same_sign(traj_msg.points[0].positions[1] - initial_joint1_cmd, joint_vel_[1]));
     EXPECT_NEAR(0.0, joint_vel_[2], threshold)
       << "Joint 3 velocity should be 0.0 since it's not in the goal";
   }
