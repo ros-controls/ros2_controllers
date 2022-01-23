@@ -309,14 +309,14 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
   // TODO(denis): on my laptop I get delta of approx 0.1083. Is this me or is it something wrong?
   // Come the flackiness here?
   const auto allowed_delta = 0.11;  // 0.05;
-  if (traj_controller_->get_has_position_command_interface())
+  if (traj_controller_->has_position_command_interface())
   {
     EXPECT_NEAR(3.3, joint_pos_[0], allowed_delta);
     EXPECT_NEAR(4.4, joint_pos_[1], allowed_delta);
     EXPECT_NEAR(5.5, joint_pos_[2], allowed_delta);
   }
 
-  if (traj_controller_->get_has_velocity_command_interface())
+  if (traj_controller_->has_velocity_command_interface())
   {
     EXPECT_LT(0.0, joint_vel_[0]);
     EXPECT_LT(0.0, joint_vel_[1]);
@@ -461,7 +461,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_jumbled_joint_order)
     traj_msg.points[0].positions[1] = 3.0;
     traj_msg.points[0].positions[2] = 1.0;
 
-    if (traj_controller_->get_has_velocity_command_interface())
+    if (traj_controller_->has_velocity_command_interface())
     {
       traj_msg.points[0].velocities.resize(3);
       traj_msg.points[0].velocities[0] = -0.1;
@@ -478,14 +478,14 @@ TEST_P(TrajectoryControllerTestParameterized, test_jumbled_joint_order)
   //                Currently COMMON_THRESHOLD is adjusted.
   updateController(rclcpp::Duration::from_seconds(0.25));
 
-  if (traj_controller_->get_has_position_command_interface())
+  if (traj_controller_->has_position_command_interface())
   {
     EXPECT_NEAR(1.0, joint_pos_[0], COMMON_THRESHOLD);
     EXPECT_NEAR(2.0, joint_pos_[1], COMMON_THRESHOLD);
     EXPECT_NEAR(3.0, joint_pos_[2], COMMON_THRESHOLD);
   }
 
-  if (traj_controller_->get_has_velocity_command_interface())
+  if (traj_controller_->has_velocity_command_interface())
   {
     EXPECT_GT(0.0, joint_vel_[0]);
     EXPECT_GT(0.0, joint_vel_[1]);
@@ -533,7 +533,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_partial_joint_list)
 
   double threshold = 0.001;
 
-  if (traj_controller_->get_has_position_command_interface())
+  if (traj_controller_->has_position_command_interface())
   {
     EXPECT_NEAR(traj_msg.points[0].positions[1], joint_pos_[0], threshold);
     EXPECT_NEAR(traj_msg.points[0].positions[0], joint_pos_[1], threshold);
@@ -875,7 +875,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_erro
   traj_controller_->wait_for_trajectory(executor);
   updateController(rclcpp::Duration::from_seconds(1.1));
 
-  if (traj_controller_->get_has_position_command_interface())
+  if (traj_controller_->has_position_command_interface())
   {
     // JTC is executing trajectory in open-loop therefore:
     // - internal state does not have to be updated (in this test-case it shouldn't)
@@ -962,7 +962,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_no_jump_when_state_tracking_e
   traj_controller_->wait_for_trajectory(executor);
   updateController(rclcpp::Duration::from_seconds(1.1));
 
-  if (traj_controller_->get_has_position_command_interface())
+  if (traj_controller_->has_position_command_interface())
   {
     // JTC is executing trajectory in open-loop therefore:
     // - internal state does not have to be updated (in this test-case it shouldn't)
