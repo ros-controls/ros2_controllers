@@ -94,9 +94,9 @@ public:
     return last_commanded_state_;
   }
 
-  bool get_has_position_command_interface() { return has_position_command_interface_; }
+  bool has_position_command_interface() { return has_position_command_interface_; }
 
-  bool get_has_velocity_command_interface() { return has_velocity_command_interface_; }
+  bool has_velocity_command_interface() { return has_velocity_command_interface_; }
 
   rclcpp::WaitSet joint_cmd_sub_wait_set_;
 };
