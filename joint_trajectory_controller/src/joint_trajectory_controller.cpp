@@ -591,10 +591,7 @@ CallbackReturn JointTrajectoryController::on_configure(const rclcpp_lifecycle::S
     }
   }
 
-  if (contains_interface_type(state_interface_types_, hardware_interface::HW_IF_POSITION))
-  {
-    has_position_state_interface_ = true;
-  }
+  has_position_state_interface_ = contains_interface_type(state_interface_types_, hardware_interface::HW_IF_POSITION;
   if (contains_interface_type(state_interface_types_, hardware_interface::HW_IF_VELOCITY))
   {
     has_velocity_state_interface_ = true;
