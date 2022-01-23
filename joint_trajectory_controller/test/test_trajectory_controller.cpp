@@ -58,10 +58,7 @@ using test_trajectory_controllers::TestableJointTrajectoryController;
 using test_trajectory_controllers::TrajectoryControllerTest;
 using test_trajectory_controllers::TrajectoryControllerTestParameterized;
 
-bool is_same_sign(double val1, double val2)
-{
-  return val1 * val2 >= 0.0;
-}
+bool is_same_sign(double val1, double val2) { return val1 * val2 >= 0.0; }
 
 void spin(rclcpp::executors::MultiThreadedExecutor * exe) { exe->spin(); }
 
