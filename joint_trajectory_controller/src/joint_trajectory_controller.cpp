@@ -829,8 +829,7 @@ CallbackReturn JointTrajectoryController::on_deactivate(const rclcpp_lifecycle::
 
     if (has_velocity_command_interface_)
     {
-      joint_command_interface_[1][index].get().set_value(
-        joint_command_interface_[1][index].get().get_value());
+      joint_command_interface_[1][index].get().set_value(0.0);
     }
   }
 
