@@ -14,6 +14,7 @@ find_package(ament_cmake REQUIRED)
 find_package(angles REQUIRED)
 find_package(controller_interface REQUIRED)
 find_package(control_msgs REQUIRED)
+find_package(control_toolbox REQUIRED)
 find_package(hardware_interface REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -31,6 +32,7 @@ ament_target_dependencies(joint_trajectory_controller
   builtin_interfaces
   controller_interface
   control_msgs
+  control_toolbox
   hardware_interface
   pluginlib
   rclcpp
@@ -65,7 +67,7 @@ if(BUILD_TESTING)
   ament_add_gtest(test_trajectory_controller
     test/test_trajectory_controller.cpp
     ENV config_file=${CMAKE_CURRENT_SOURCE_DIR}/test/config/test_joint_trajectory_controller.yaml)
-  set_tests_properties(test_trajectory_controller PROPERTIES TIMEOUT 180)
+  set_tests_properties(test_trajectory_controller PROPERTIES TIMEOUT 220)
   target_include_directories(test_trajectory_controller PRIVATE include)
   target_link_libraries(test_trajectory_controller
     joint_trajectory_controller
