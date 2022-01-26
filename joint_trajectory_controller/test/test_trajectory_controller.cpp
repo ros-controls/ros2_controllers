@@ -318,9 +318,9 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
 
   if (traj_controller_->has_velocity_command_interface())
   {
-    EXPECT_LT(0.0, joint_vel_[0]);
-    EXPECT_LT(0.0, joint_vel_[1]);
-    EXPECT_LT(0.0, joint_vel_[2]);
+    EXPECT_LE(0.0, joint_vel_[0]);
+    EXPECT_LE(0.0, joint_vel_[1]);
+    EXPECT_LE(0.0, joint_vel_[2]);
   }
 
   // cleanup
