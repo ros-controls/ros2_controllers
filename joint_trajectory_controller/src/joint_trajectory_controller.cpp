@@ -228,9 +228,16 @@ controller_interface::return_type JointTrajectoryController::update(
       {
         assign_interface_from_point(joint_command_interface_[2], state_desired.accelerations);
       }
-      if (has_effort_command_interface_ && use_closed_loop_pid_adapter)
+      if (has_effort_command_interface_)
       {
-        assign_interface_from_point(joint_command_interface_[3], tmp_command_);
+        if (use_closed_loop_pid_adapter)
+        {
+          assign_interface_from_point(joint_command_interface_[3], tmp_command_);
+        }
+        else
+        {
+          assign_interface_from_point(joint_command_interface_[3], state_desired.effort);
+        }
       }
 
       for (size_t index = 0; index < joint_num; ++index)
@@ -536,7 +543,6 @@ CallbackReturn JointTrajectoryController::on_configure(const rclcpp_lifecycle::S
     return CallbackReturn::FAILURE;
   }
 
-  // TODO(livanov93): change when other option is implemented
   if (use_closed_loop_pid_adapter)
   {
     size_t num_joints = joint_names_.size();
