@@ -94,6 +94,10 @@ public:
     return last_commanded_state_;
   }
 
+  bool has_position_command_interface() { return has_position_command_interface_; }
+
+  bool has_velocity_command_interface() { return has_velocity_command_interface_; }
+
   rclcpp::WaitSet joint_cmd_sub_wait_set_;
 };
 
@@ -146,13 +150,27 @@ public:
     const rclcpp::Parameter state_interfaces_params("state_interfaces", state_interface_types_);
     node->set_parameters({joint_names_param, cmd_interfaces_params, state_interfaces_params});
   }
+  void SetPidParameters()
+  {
+    auto node = traj_controller_->get_node();
+
+    for (size_t i = 0; i < joint_names_.size(); ++i)
+    {
+      const std::string prefix = "gains." + joint_names_[i];
+      const rclcpp::Parameter k_p(prefix + ".p", 0.0);
+      const rclcpp::Parameter k_i(prefix + ".i", 0.0);
+      const rclcpp::Parameter k_d(prefix + ".d", 0.0);
+      const rclcpp::Parameter i_clamp(prefix + ".i_clamp", 0.0);
+      const rclcpp::Parameter ff_velocity_scale("ff_velocity_scale/" + joint_names_[i], 1.0);
+      node->set_parameters({k_p, k_i, k_d, i_clamp, ff_velocity_scale});
+    }
+  }
 
   void SetUpAndActivateTrajectoryController(
     bool use_local_parameters = true, const std::vector<rclcpp::Parameter> & parameters = {},
     rclcpp::Executor * executor = nullptr, bool separate_cmd_and_state_values = false)
   {
     SetUpTrajectoryController(use_local_parameters);
-
     traj_node_ = traj_controller_->get_node();
     for (const auto & param : parameters)
     {
@@ -166,6 +184,9 @@ public:
     // ignore velocity tolerances for this test since they aren't committed in test_robot->write()
     rclcpp::Parameter stopped_velocity_parameters("constraints.stopped_velocity_tolerance", 0.0);
     traj_node_->set_parameter(stopped_velocity_parameters);
+
+    // set pid parameters before configure
+    SetPidParameters();
 
     traj_controller_->configure();
     ActivateTrajectoryController(separate_cmd_and_state_values);
@@ -249,7 +270,8 @@ public:
   void publish(
     const builtin_interfaces::msg::Duration & delay_btwn_points,
     const std::vector<std::vector<double>> & points, rclcpp::Time start_time = rclcpp::Time(),
-    const std::vector<std::string> & joint_names = {})
+    const std::vector<std::string> & joint_names = {},
+    const std::vector<std::vector<double>> & points_velocities = {})
   {
     int wait_count = 0;
     const auto topic = trajectory_publisher_->get_topic_name();
@@ -294,6 +316,15 @@ public:
       duration_total = duration_total + duration;
     }
 
+    for (size_t index = 0; index < points_velocities.size(); ++index)
+    {
+      traj_msg.points[index].velocities.resize(points_velocities[index].size());
+      for (size_t j = 0; j < points_velocities[index].size(); ++j)
+      {
+        traj_msg.points[index].velocities[j] = points_velocities[index][j];
+      }
+    }
+
     trajectory_publisher_->publish(traj_msg);
   }
 
@@ -303,7 +334,7 @@ public:
     const auto end_time = start_time + wait_time;
     while (rclcpp::Clock().now() < end_time)
     {
-      traj_controller_->update();
+      traj_controller_->update(rclcpp::Clock().now(), rclcpp::Clock().now() - start_time);
     }
   }
 
@@ -326,14 +357,20 @@ public:
     {
       SCOPED_TRACE("Joint " + std::to_string(i));
       // TODO(anyone): add checking for velocties and accelerations
-      EXPECT_NEAR(expected_actual.positions[i], state_msg->actual.positions[i], allowed_delta);
+      if (traj_controller_->has_position_command_interface())
+      {
+        EXPECT_NEAR(expected_actual.positions[i], state_msg->actual.positions[i], allowed_delta);
+      }
     }
 
     for (size_t i = 0; i < expected_desired.positions.size(); ++i)
     {
       SCOPED_TRACE("Joint " + std::to_string(i));
       // TODO(anyone): add checking for velocties and accelerations
-      EXPECT_NEAR(expected_desired.positions[i], state_msg->desired.positions[i], allowed_delta);
+      if (traj_controller_->has_position_command_interface())
+      {
+        EXPECT_NEAR(expected_desired.positions[i], state_msg->desired.positions[i], allowed_delta);
+      }
     }
   }
 

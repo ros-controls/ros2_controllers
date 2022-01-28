@@ -7,35 +7,36 @@ on:
   schedule:
     # Run every morning to detect flakiness and broken dependencies
     - cron: '17 8 * * *'
+env:
+  ROS_DISTRO: galactic
 
 jobs:
-  ci_binary:
-    name: Galactic binary job
+  ros_industrial_ci:
+    name: industrial ci
     runs-on: ubuntu-latest
     strategy:
      matrix:
-       env:
-         - {ROS_DISTRO: galactic, ROS_REPO: main}
-         - {ROS_DISTRO: galactic, ROS_REPO: testing}
+      ROS_REPO: [main, testing]
     env:
      UPSTREAM_WORKSPACE: .github/workspace.repos
     steps:
-     - uses: actions/checkout@v1
+     - uses: actions/checkout@v2
      - uses: ros-industrial/industrial_ci@master
-       env: ${{matrix.env}}
+       env:
+        ROS_REPO: ${{ matrix.ROS_REPO }}
 
-  ci_source:
-    name: Galactic source job
+  ros-tooling-ci:
+    name: ros-tooling ci
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
     steps:
       - uses: ros-tooling/setup-ros@v0.2
         with:
-          required-ros-distributions: galactic
+          required-ros-distributions: ${{env.ROS_DISTRO}}
       - uses: ros-tooling/action-ros-ci@v0.2
         with:
-          target-ros2-distro: galactic
+          target-ros2-distro: ${{env.ROS_DISTRO}}
           # build all packages listed in the meta package
           package-name: |
             diff_drive_controller

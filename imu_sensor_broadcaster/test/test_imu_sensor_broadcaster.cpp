@@ -90,7 +90,9 @@ void IMUSensorBroadcasterTest::subscribe_and_get_message(sensor_msgs::msg::Imu &
     "/test_imu_sensor_broadcaster/imu", 10, subs_callback);
 
   // call update to publish the test value
-  ASSERT_EQ(imu_broadcaster_->update(), controller_interface::return_type::OK);
+  ASSERT_EQ(
+    imu_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
 
   // wait for message to be passed
   ASSERT_EQ(wait_for(subscription), rclcpp::WaitResultKind::Ready);
@@ -171,7 +173,9 @@ TEST_F(IMUSensorBroadcasterTest, SensorName_Update_Success)
   ASSERT_EQ(imu_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(imu_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  ASSERT_EQ(imu_broadcaster_->update(), controller_interface::return_type::OK);
+  ASSERT_EQ(
+    imu_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
 }
 
 TEST_F(IMUSensorBroadcasterTest, SensorName_Publish_Success)

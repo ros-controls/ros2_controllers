@@ -31,6 +31,30 @@ namespace joint_state_broadcaster
 {
 using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
+/**
+ * \brief Joint State Broadcaster for all or some state in a ros2_control system.
+ *
+ * JointStateBroadcaster publishes state interfaces from ros2_control as ROS messages.
+ * There is a possibility to publish all available states (typical use), or only specific ones.
+ * The latter is, for example, used when hardware provides multiple measurement sources for some
+ * of its states, e.g., position.
+ * It is possible to define a mapping of measurements
+ * from different sources stored in custom interfaces to standard dynamic names in JointState
+ * message.
+ * If "joints" or "interfaces" parameter is empty, all available states are published.
+ *
+ * \param use_local_topics Flag to publish topics in local namespace.
+ * \param joints Names of the joints to publish.
+ * \param interfaces Names of interfaces to publish.
+ * \param map_interface_to_joint_state.{HW_IF_POSITION|HW_IF_VELOCITY|HW_IF_EFFORT} mapping
+ * between custom interface names and standard names in sensor_msgs::msg::JointState message.
+ *
+ * Publishes to:
+ * - \b joint_states (sensor_msgs::msg::JointState): Joint states related to movement
+ * (position, velocity, effort).
+ * - \b dynamic_joint_states (control_msgs::msg::DynamicJointState): Joint states regardless of
+ * its interface type.
+ */
 class JointStateBroadcaster : public controller_interface::ControllerInterface
 {
 public:
@@ -44,7 +68,8 @@ public:
   controller_interface::InterfaceConfiguration state_interface_configuration() const override;
 
   JOINT_STATE_BROADCASTER_PUBLIC
-  controller_interface::return_type update() override;
+  controller_interface::return_type update(
+    const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
   JOINT_STATE_BROADCASTER_PUBLIC
   CallbackReturn on_init() override;
@@ -62,9 +87,14 @@ protected:
   bool init_joint_data();
   void init_joint_state_msg();
   void init_dynamic_joint_state_msg();
+  bool use_all_available_interfaces() const;
 
 protected:
+  // Optional parameters
   bool use_local_topics_;
+  std::vector<std::string> joints_;
+  std::vector<std::string> interfaces_;
+  std::unordered_map<std::string, std::string> map_interface_to_joint_state_;
 
   //  For the JointState message,
   //  we store the name of joints with compatible interfaces

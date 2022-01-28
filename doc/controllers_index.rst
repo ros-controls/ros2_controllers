@@ -16,6 +16,7 @@ The controllers' namespaces are commanding the following command interface types
 
   - ``position_controllers``: ``hardware_interface::HW_IF_POSITION``
   - ``velocity_controller``: ``hardware_interface::HW_IF_VELOCITY``
+  - ``effort_controllers``: ``hardware_interface::HW_IF_ACCELERATION``
   - ``effort_controllers``: ``hardware_interface::HW_IF_EFFORT``
   - ...
 

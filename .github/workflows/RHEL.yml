@@ -1,0 +1,28 @@
+name: RHEL Test
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+  schedule:
+    # Run every morning to detect flakiness and broken dependencies
+    - cron: '17 8 * * *'
+env:
+  # if changing this variable, also change jobs.RHEL.container to match
+  ROS_DISTRO: galactic
+
+jobs:
+  RHEL:
+    name: RHEL test
+    runs-on: ubuntu-latest
+    container: jaronl/ros:galactic-alma
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          path: src/ros2_controllers
+      - run: |
+          rosdep update
+          rosdep install -iy --from-path src/ros2_controllers
+          source /opt/ros/$ROS_DISTRO/setup.bash
+          colcon build
+          colcon test

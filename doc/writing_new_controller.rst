@@ -81,7 +81,7 @@ The following is a step-by-step guide to create source files, basic tests, and c
    2. Usually, the plugin name is defined by the package (namespace) and the class name, e.g.,
       ``<controller_name_package>/<ControllerName>``.
       This name defines the controller's type when the controller manager searches for it.
-      The other two files have to correspond to the definition done in macro at the bottom of the ``<controller_name>.cpp`` file.
+      The other two parameters have to correspond to the definition done in macro at the bottom of the ``<controller_name>.cpp`` file.
 
 6. **Writing simple test to check if the controller can be found and loaded**
 

@@ -82,7 +82,8 @@ public:
   controller_interface::InterfaceConfiguration state_interface_configuration() const override;
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  controller_interface::return_type update() override;
+  controller_interface::return_type update(
+    const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   CallbackReturn on_init() override;
@@ -134,6 +135,7 @@ protected:
   InterfaceReferences<hardware_interface::LoanedCommandInterface> joint_command_interface_;
   InterfaceReferences<hardware_interface::LoanedStateInterface> joint_state_interface_;
 
+  bool has_position_state_interface_ = false;
   bool has_velocity_state_interface_ = false;
   bool has_acceleration_state_interface_ = false;
   bool has_position_command_interface_ = false;
@@ -143,9 +145,12 @@ protected:
 
   /// If true, a velocity feedforward term plus corrective PID term is used
   bool use_closed_loop_pid_adapter = false;
-  std::vector<std::unique_ptr<control_toolbox::Pid>> pids_;
-  std::chrono::steady_clock::time_point last_update_time_;
-  std::vector<double> velocity_ff_;
+  using PidPtr = std::shared_ptr<control_toolbox::Pid>;
+  std::vector<PidPtr> pids_;
+  /// Feed-forward velocity weight factor when calculating closed loop pid adapter's command
+  std::vector<double> ff_velocity_scale_;
+  /// reserved storage for result of the command when closed loop pid adapter is used
+  std::vector<double> tmp_command_;
 
   // TODO(karsten1987): eventually activate and deactivate subscriber directly when its supported
   bool subscriber_is_active_ = false;

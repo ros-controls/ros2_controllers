@@ -106,7 +106,7 @@ bool Trajectory::sample(
 
   // time_from_start + trajectory time is the expected arrival time of trajectory
   const auto last_idx = trajectory_msg_->points.size() - 1;
-  for (auto i = 0ul; i < last_idx; ++i)
+  for (size_t i = 0; i < last_idx; ++i)
   {
     const auto & point = trajectory_msg_->points[i];
     const auto & next_point = trajectory_msg_->points[i + 1];
