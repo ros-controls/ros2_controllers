@@ -821,7 +821,8 @@ CallbackReturn JointTrajectoryController::on_deactivate(const rclcpp_lifecycle::
       joint_command_interface_[1][index].get().set_value(0.0);
     }
 
-    if (has_effort_command_interface_) {
+    if (has_effort_command_interface_)
+    {
       joint_command_interface_[3][index].get().set_value(0.0);
     }
   }
