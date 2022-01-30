@@ -64,12 +64,6 @@ CallbackReturn JointTrajectoryController::on_init()
     auto_declare<bool>("open_loop_control", open_loop_control_);
     auto_declare<double>("constraints.stopped_velocity_tolerance", 0.01);
     auto_declare<double>("constraints.goal_time", 0.0);
-    for (const auto & joint_name : joint_names_)
-    {
-      const std::string prefix = "constraints." + joint_name;
-      auto_declare<double>(prefix + ".trajectory", 0.0);
-      auto_declare<double>(prefix + ".goal", 0.0);
-    }
   }
   catch (const std::exception & e)
   {
@@ -494,20 +488,6 @@ CallbackReturn JointTrajectoryController::on_configure(const rclcpp_lifecycle::S
   // 2. velocity
   // 2. position [velocity, [acceleration]]
 
-  // effort can't be combined with other interfaces
-  if (contains_interface_type(command_interface_types_, hardware_interface::HW_IF_EFFORT))
-  {
-    if (command_interface_types_.size() == 1)
-    {
-      use_closed_loop_pid_adapter = true;
-    }
-    else
-    {
-      RCLCPP_ERROR(logger, "'effort' command interface has to be used alone.");
-      return CallbackReturn::FAILURE;
-    }
-  }
-
   has_position_command_interface_ =
     contains_interface_type(command_interface_types_, hardware_interface::HW_IF_POSITION);
   has_velocity_command_interface_ =
@@ -541,6 +521,20 @@ CallbackReturn JointTrajectoryController::on_configure(const rclcpp_lifecycle::S
       "'acceleration' command interface can only be used if 'velocity' and "
       "'position' interfaces are present");
     return CallbackReturn::FAILURE;
+  }
+
+  // effort can't be combined with other interfaces
+  if (has_effort_command_interface_)
+  {
+    if (command_interface_types_.size() == 1)
+    {
+      use_closed_loop_pid_adapter = true;
+    }
+    else
+    {
+      RCLCPP_ERROR(logger, "'effort' command interface has to be used alone.");
+      return CallbackReturn::FAILURE;
+    }
   }
 
   if (use_closed_loop_pid_adapter)
@@ -605,7 +599,7 @@ CallbackReturn JointTrajectoryController::on_configure(const rclcpp_lifecycle::S
 
   if (has_velocity_state_interface_)
   {
-    if (!contains_interface_type(state_interface_types_, hardware_interface::HW_IF_POSITION))
+    if (!has_position_state_interface_)
     {
       RCLCPP_ERROR(
         logger,
@@ -620,6 +614,22 @@ CallbackReturn JointTrajectoryController::on_configure(const rclcpp_lifecycle::S
       logger,
       "'acceleration' state interface cannot be used if 'position' and 'velocity' "
       "interfaces are not present.");
+    return CallbackReturn::FAILURE;
+  }
+  else if (has_velocity_command_interface_ && command_interface_types_.size() == 1)
+  {
+    RCLCPP_ERROR(
+      logger,
+      "'velocity' command interface can only be used alone if 'velocity' and "
+      "'position' state interfaces are present");
+    return CallbackReturn::FAILURE;
+  }
+  else if (has_effort_command_interface_)
+  {
+    RCLCPP_ERROR(
+      logger,
+      "'effort' command interface can only be used alone if 'velocity' and "
+      "'position' state interfaces are present");
     return CallbackReturn::FAILURE;
   }
 

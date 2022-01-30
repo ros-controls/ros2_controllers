@@ -1276,4 +1276,18 @@ TEST_F(TrajectoryControllerTest, incorrect_initialization_using_interface_parame
   // state interfaces: acceleration without position and velocity
   state_interface_types_ = {"acceleration"};
   set_parameter_and_check_result();
+
+  // velocity-only command interface: position - velocity not present
+  command_interface_types_ = {"velocity"};
+  state_interface_types_ = {"position"};
+  set_parameter_and_check_result();
+  state_interface_types_ = {"velocity"};
+  set_parameter_and_check_result();
+
+  // effort-only command interface: position - velocity not present
+  command_interface_types_ = {"effort"};
+  state_interface_types_ = {"position"};
+  set_parameter_and_check_result();
+  state_interface_types_ = {"velocity"};
+  set_parameter_and_check_result();
 }
