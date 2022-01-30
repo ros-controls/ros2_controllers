@@ -352,40 +352,45 @@ controller_interface::return_type JointStateBroadcaster::update(
       state_interface.get_value());
   }
 
-  auto & joint_state_msg = realtime_joint_state_publisher_->msg_;
-  auto & dynamic_joint_state_msg = realtime_dynamic_joint_state_publisher_->msg_;
-
-  joint_state_msg.header.stamp = time;
-  dynamic_joint_state_msg.header.stamp = time;
-
-  // update joint state message and dynamic joint state message
-  for (size_t i = 0; i < joint_names_.size(); ++i)
+  if (realtime_joint_state_publisher_ && realtime_dynamic_joint_state_publisher_->trylock())
   {
-    joint_state_msg.position[i] =
-      get_value(name_if_value_mapping_, joint_names_[i], HW_IF_POSITION);
-    joint_state_msg.velocity[i] =
-      get_value(name_if_value_mapping_, joint_names_[i], HW_IF_VELOCITY);
-    joint_state_msg.effort[i] = get_value(name_if_value_mapping_, joint_names_[i], HW_IF_EFFORT);
-  }
+    auto & joint_state_msg = realtime_joint_state_publisher_->msg_;
 
-  for (size_t joint_index = 0; joint_index < dynamic_joint_state_msg.joint_names.size();
-       ++joint_index)
-  {
-    const auto & name = dynamic_joint_state_msg.joint_names[joint_index];
-    for (size_t interface_index = 0;
-         interface_index <
-         dynamic_joint_state_msg.interface_values[joint_index].interface_names.size();
-         ++interface_index)
+    joint_state_msg.header.stamp = time;
+
+    // update joint state message and dynamic joint state message
+    for (size_t i = 0; i < joint_names_.size(); ++i)
     {
-      const auto & interface_name =
-        dynamic_joint_state_msg.interface_values[joint_index].interface_names[interface_index];
-      dynamic_joint_state_msg.interface_values[joint_index].values[interface_index] =
-        name_if_value_mapping_[name][interface_name];
+      joint_state_msg.position[i] =
+        get_value(name_if_value_mapping_, joint_names_[i], HW_IF_POSITION);
+      joint_state_msg.velocity[i] =
+        get_value(name_if_value_mapping_, joint_names_[i], HW_IF_VELOCITY);
+      joint_state_msg.effort[i] = get_value(name_if_value_mapping_, joint_names_[i], HW_IF_EFFORT);
     }
+    realtime_joint_state_publisher_->unlockAndPublish();
   }
-  // publish
-  realtime_joint_state_publisher_->unlockAndPublish();
-  realtime_dynamic_joint_state_publisher_->unlockAndPublish();
+
+  if (realtime_dynamic_joint_state_publisher_ && realtime_dynamic_joint_state_publisher_->trylock())
+  {
+    auto & dynamic_joint_state_msg = realtime_dynamic_joint_state_publisher_->msg_;
+    dynamic_joint_state_msg.header.stamp = time;
+    for (size_t joint_index = 0; joint_index < dynamic_joint_state_msg.joint_names.size();
+         ++joint_index)
+    {
+      const auto & name = dynamic_joint_state_msg.joint_names[joint_index];
+      for (size_t interface_index = 0;
+           interface_index <
+           dynamic_joint_state_msg.interface_values[joint_index].interface_names.size();
+           ++interface_index)
+      {
+        const auto & interface_name =
+          dynamic_joint_state_msg.interface_values[joint_index].interface_names[interface_index];
+        dynamic_joint_state_msg.interface_values[joint_index].values[interface_index] =
+          name_if_value_mapping_[name][interface_name];
+      }
+    }
+    realtime_dynamic_joint_state_publisher_->unlockAndPublish();
+  }
 
   return controller_interface::return_type::OK;
 }
