@@ -352,7 +352,7 @@ controller_interface::return_type JointStateBroadcaster::update(
       state_interface.get_value());
   }
 
-  if (realtime_joint_state_publisher_ && realtime_dynamic_joint_state_publisher_->trylock())
+  if (realtime_joint_state_publisher_ && realtime_joint_state_publisher_->trylock())
   {
     auto & joint_state_msg = realtime_joint_state_publisher_->msg_;
 
