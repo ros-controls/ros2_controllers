@@ -466,19 +466,20 @@ TEST_F(JointStateBroadcasterTest, TestCustomInterfaceWithoutMapping)
   const size_t NUM_JOINTS = JOINT_NAMES.size();
 
   // joint state initialized
-  ASSERT_THAT(state_broadcaster_->joint_state_msg_.name, SizeIs(0));
-  ASSERT_THAT(state_broadcaster_->joint_state_msg_.position, SizeIs(0));
-  ASSERT_THAT(state_broadcaster_->joint_state_msg_.velocity, SizeIs(0));
-  ASSERT_THAT(state_broadcaster_->joint_state_msg_.effort, SizeIs(0));
+  const auto & joint_state_msg = state_broadcaster_->realtime_joint_state_publisher_->msg_;
+  ASSERT_THAT(joint_state_msg.name, SizeIs(0));
+  ASSERT_THAT(joint_state_msg.position, SizeIs(0));
+  ASSERT_THAT(joint_state_msg.velocity, SizeIs(0));
+  ASSERT_THAT(joint_state_msg.effort, SizeIs(0));
 
   // dynamic joint state initialized
-  ASSERT_THAT(state_broadcaster_->dynamic_joint_state_msg_.joint_names, SizeIs(NUM_JOINTS));
-  ASSERT_THAT(state_broadcaster_->dynamic_joint_state_msg_.interface_values, SizeIs(NUM_JOINTS));
+  const auto & dynamic_joint_state_msg =
+    state_broadcaster_->realtime_dynamic_joint_state_publisher_->msg_;
+  ASSERT_THAT(dynamic_joint_state_msg.joint_names, SizeIs(NUM_JOINTS));
+  ASSERT_THAT(dynamic_joint_state_msg.interface_values, SizeIs(NUM_JOINTS));
+  ASSERT_THAT(dynamic_joint_state_msg.joint_names, ElementsAreArray(JOINT_NAMES));
   ASSERT_THAT(
-    state_broadcaster_->dynamic_joint_state_msg_.joint_names, ElementsAreArray(JOINT_NAMES));
-  ASSERT_THAT(
-    state_broadcaster_->dynamic_joint_state_msg_.interface_values[0].interface_names,
-    ElementsAreArray(IF_NAMES));
+    dynamic_joint_state_msg.interface_values[0].interface_names, ElementsAreArray(IF_NAMES));
 
   // publishers initialized
   ASSERT_TRUE(state_broadcaster_->joint_state_publisher_);
@@ -502,26 +503,28 @@ TEST_F(JointStateBroadcasterTest, TestCustomInterfaceMapping)
   const size_t NUM_JOINTS = JOINT_NAMES.size();
 
   // joint state initialized
-  ASSERT_THAT(state_broadcaster_->joint_state_msg_.name, ElementsAreArray(JOINT_NAMES));
-  ASSERT_THAT(state_broadcaster_->joint_state_msg_.position, SizeIs(NUM_JOINTS));
-  ASSERT_THAT(state_broadcaster_->joint_state_msg_.velocity, SizeIs(NUM_JOINTS));
+  const auto & joint_state_msg = state_broadcaster_->realtime_joint_state_publisher_->msg_;
+  ASSERT_THAT(joint_state_msg.name, ElementsAreArray(JOINT_NAMES));
+  ASSERT_THAT(joint_state_msg.position, SizeIs(NUM_JOINTS));
+  ASSERT_THAT(joint_state_msg.velocity, SizeIs(NUM_JOINTS));
   for (auto i = 0ul; i < NUM_JOINTS; ++i)
   {
-    ASSERT_TRUE(std::isnan(state_broadcaster_->joint_state_msg_.velocity[i]));
+    ASSERT_TRUE(std::isnan(joint_state_msg.velocity[i]));
   }
-  ASSERT_THAT(state_broadcaster_->joint_state_msg_.effort, SizeIs(NUM_JOINTS));
+  ASSERT_THAT(joint_state_msg.effort, SizeIs(NUM_JOINTS));
   for (auto i = 0ul; i < NUM_JOINTS; ++i)
   {
-    ASSERT_TRUE(std::isnan(state_broadcaster_->joint_state_msg_.effort[i]));
+    ASSERT_TRUE(std::isnan(joint_state_msg.effort[i]));
   }
 
   // dynamic joint state initialized
-  ASSERT_THAT(state_broadcaster_->dynamic_joint_state_msg_.joint_names, SizeIs(NUM_JOINTS));
-  ASSERT_THAT(state_broadcaster_->dynamic_joint_state_msg_.interface_values, SizeIs(NUM_JOINTS));
+  const auto & dynamic_joint_state_msg =
+    state_broadcaster_->realtime_dynamic_joint_state_publisher_->msg_;
+  ASSERT_THAT(dynamic_joint_state_msg.joint_names, SizeIs(NUM_JOINTS));
+  ASSERT_THAT(dynamic_joint_state_msg.interface_values, SizeIs(NUM_JOINTS));
+  ASSERT_THAT(dynamic_joint_state_msg.joint_names, ElementsAreArray(JOINT_NAMES));
   ASSERT_THAT(
-    state_broadcaster_->dynamic_joint_state_msg_.joint_names, ElementsAreArray(JOINT_NAMES));
-  ASSERT_THAT(
-    state_broadcaster_->dynamic_joint_state_msg_.interface_values[0].interface_names,
+    dynamic_joint_state_msg.interface_values[0].interface_names,
     ElementsAreArray({HW_IF_POSITION}));  // mapping to this value
 
   // publishers initialized
@@ -550,28 +553,30 @@ TEST_F(JointStateBroadcasterTest, TestCustomInterfaceMappingUpdate)
   const size_t NUM_JOINTS = JOINT_NAMES.size();
 
   // joint state initialized
-  ASSERT_THAT(state_broadcaster_->joint_state_msg_.name, ElementsAreArray(JOINT_NAMES));
-  ASSERT_THAT(state_broadcaster_->joint_state_msg_.position, SizeIs(NUM_JOINTS));
-  ASSERT_EQ(state_broadcaster_->joint_state_msg_.position[0], custom_joint_value_);
-  ASSERT_THAT(state_broadcaster_->joint_state_msg_.velocity, SizeIs(NUM_JOINTS));
+  const auto & joint_state_msg = state_broadcaster_->realtime_joint_state_publisher_->msg_;
+  ASSERT_THAT(joint_state_msg.name, ElementsAreArray(JOINT_NAMES));
+  ASSERT_THAT(joint_state_msg.position, SizeIs(NUM_JOINTS));
+  ASSERT_EQ(joint_state_msg.position[0], custom_joint_value_);
+  ASSERT_THAT(joint_state_msg.velocity, SizeIs(NUM_JOINTS));
   for (auto i = 0ul; i < NUM_JOINTS; ++i)
   {
-    ASSERT_TRUE(std::isnan(state_broadcaster_->joint_state_msg_.velocity[i]));
+    ASSERT_TRUE(std::isnan(joint_state_msg.velocity[i]));
   }
-  ASSERT_THAT(state_broadcaster_->joint_state_msg_.effort, SizeIs(NUM_JOINTS));
+  ASSERT_THAT(joint_state_msg.effort, SizeIs(NUM_JOINTS));
   for (auto i = 0ul; i < NUM_JOINTS; ++i)
   {
-    ASSERT_TRUE(std::isnan(state_broadcaster_->joint_state_msg_.effort[i]));
+    ASSERT_TRUE(std::isnan(joint_state_msg.effort[i]));
   }
 
   // dynamic joint state initialized
-  ASSERT_THAT(state_broadcaster_->dynamic_joint_state_msg_.joint_names, SizeIs(NUM_JOINTS));
-  ASSERT_THAT(state_broadcaster_->dynamic_joint_state_msg_.interface_values, SizeIs(NUM_JOINTS));
+  const auto & dynamic_joint_state_msg =
+    state_broadcaster_->realtime_dynamic_joint_state_publisher_->msg_;
+  ASSERT_THAT(dynamic_joint_state_msg.joint_names, SizeIs(NUM_JOINTS));
+  ASSERT_THAT(dynamic_joint_state_msg.interface_values, SizeIs(NUM_JOINTS));
+  ASSERT_THAT(dynamic_joint_state_msg.joint_names, ElementsAreArray(JOINT_NAMES));
   ASSERT_THAT(
-    state_broadcaster_->dynamic_joint_state_msg_.joint_names, ElementsAreArray(JOINT_NAMES));
-  ASSERT_THAT(
-    state_broadcaster_->dynamic_joint_state_msg_.interface_values[0].interface_names,
-    ElementsAreArray({HW_IF_POSITION}));  // mapping to this value
+    dynamic_joint_state_msg.interface_values[0].interface_names,
+    ElementsAreArray({HW_IF_POSITION}));
 
   // publishers initialized
   ASSERT_TRUE(state_broadcaster_->joint_state_publisher_);
