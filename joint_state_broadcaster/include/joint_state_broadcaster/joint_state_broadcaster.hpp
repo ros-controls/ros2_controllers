@@ -102,7 +102,7 @@ protected:
   std::vector<std::string> joint_names_;
   std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::JointState>> joint_state_publisher_;
   std::shared_ptr<realtime_tools::RealtimePublisher<sensor_msgs::msg::JointState>>
-    realtime_joint_state_publisher_ = nullptr;
+    realtime_joint_state_publisher_;
 
   //  For the DynamicJointState format, we use a map to buffer values in for easier lookup
   //  This allows to preserve whatever order or names/interfaces were initialized.
@@ -110,7 +110,7 @@ protected:
   std::shared_ptr<rclcpp::Publisher<control_msgs::msg::DynamicJointState>>
     dynamic_joint_state_publisher_;
   std::shared_ptr<realtime_tools::RealtimePublisher<control_msgs::msg::DynamicJointState>>
-    realtime_dynamic_joint_state_publisher_ = nullptr;
+    realtime_dynamic_joint_state_publisher_;
 };
 
 }  // namespace joint_state_broadcaster
