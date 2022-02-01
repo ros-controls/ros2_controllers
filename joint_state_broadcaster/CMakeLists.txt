@@ -16,6 +16,7 @@ find_package(controller_interface REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(rcutils REQUIRED)
+find_package(realtime_tools REQUIRED)
 find_package(sensor_msgs REQUIRED)
 
 add_library(joint_state_broadcaster
@@ -30,6 +31,7 @@ ament_target_dependencies(joint_state_broadcaster
   pluginlib
   rclcpp_lifecycle
   rcutils
+  realtime_tools
   sensor_msgs
 )
 # Causes the visibility macros to use dllexport rather than dllimport,
