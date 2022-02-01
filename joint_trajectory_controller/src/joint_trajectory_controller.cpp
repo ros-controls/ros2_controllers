@@ -608,29 +608,33 @@ CallbackReturn JointTrajectoryController::on_configure(const rclcpp_lifecycle::S
       return CallbackReturn::FAILURE;
     }
   }
-  else if (has_acceleration_state_interface_)
+  else
   {
-    RCLCPP_ERROR(
-      logger,
-      "'acceleration' state interface cannot be used if 'position' and 'velocity' "
-      "interfaces are not present.");
-    return CallbackReturn::FAILURE;
-  }
-  else if (has_velocity_command_interface_ && command_interface_types_.size() == 1)
-  {
-    RCLCPP_ERROR(
-      logger,
-      "'velocity' command interface can only be used alone if 'velocity' and "
-      "'position' state interfaces are present");
-    return CallbackReturn::FAILURE;
-  }
-  else if (has_effort_command_interface_)
-  {
-    RCLCPP_ERROR(
-      logger,
-      "'effort' command interface can only be used alone if 'velocity' and "
-      "'position' state interfaces are present");
-    return CallbackReturn::FAILURE;
+    if (has_acceleration_state_interface_)
+    {
+      RCLCPP_ERROR(
+        logger,
+        "'acceleration' state interface cannot be used if 'position' and 'velocity' "
+        "interfaces are not present.");
+      return CallbackReturn::FAILURE;
+    }
+    if (has_velocity_command_interface_ && command_interface_types_.size() == 1)
+    {
+      RCLCPP_ERROR(
+        logger,
+        "'velocity' command interface can only be used alone if 'velocity' and "
+        "'position' state interfaces are present");
+      return CallbackReturn::FAILURE;
+    }
+    // effort is always used alone so no need for size check
+    if (has_effort_command_interface_)
+    {
+      RCLCPP_ERROR(
+        logger,
+        "'effort' command interface can only be used alone if 'velocity' and "
+        "'position' state interfaces are present");
+      return CallbackReturn::FAILURE;
+    }
   }
 
   auto get_interface_list = [](const std::vector<std::string> & interface_types) {
