@@ -423,8 +423,7 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
   {
     velocity_command_subscriber_ = node_->create_subscription<Twist>(
       DEFAULT_COMMAND_TOPIC, rclcpp::SystemDefaultsQoS(),
-      [this](const std::shared_ptr<Twist> msg) -> void
-      {
+      [this](const std::shared_ptr<Twist> msg) -> void {
         if (!subscriber_is_active_)
         {
           RCLCPP_WARN(node_->get_logger(), "Can't accept new commands. subscriber is inactive");
@@ -445,8 +444,7 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
   {
     velocity_command_unstamped_subscriber_ = node_->create_subscription<geometry_msgs::msg::Twist>(
       DEFAULT_COMMAND_UNSTAMPED_TOPIC, rclcpp::SystemDefaultsQoS(),
-      [this](const std::shared_ptr<geometry_msgs::msg::Twist> msg) -> void
-      {
+      [this](const std::shared_ptr<geometry_msgs::msg::Twist> msg) -> void {
         if (!subscriber_is_active_)
         {
           RCLCPP_WARN(node_->get_logger(), "Can't accept new commands. subscriber is inactive");
@@ -587,8 +585,7 @@ CallbackReturn DiffDriveController::on_shutdown(const rclcpp_lifecycle::State &)
 
 void DiffDriveController::halt()
 {
-  const auto halt_wheels = [](auto & wheel_handles)
-  {
+  const auto halt_wheels = [](auto & wheel_handles) {
     for (const auto & wheel_handle : wheel_handles)
     {
       wheel_handle.velocity.get().set_value(0.0);
