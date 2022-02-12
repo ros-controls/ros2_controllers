@@ -107,7 +107,7 @@ JointTrajectoryController::state_interface_configuration() const
 }
 
 controller_interface::return_type JointTrajectoryController::update(
-  const rclcpp::Time & /*time*/, const rclcpp::Duration & period)
+  const rclcpp::Time & time, const rclcpp::Duration & period)
 {
   if (get_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
   {
@@ -167,12 +167,11 @@ controller_interface::return_type JointTrajectoryController::update(
     {
       if (open_loop_control_)
       {
-        (*traj_point_active_ptr_)
-          ->set_point_before_trajectory_msg(node_->now(), last_commanded_state_);
+        (*traj_point_active_ptr_)->set_point_before_trajectory_msg(time, last_commanded_state_);
       }
       else
       {
-        (*traj_point_active_ptr_)->set_point_before_trajectory_msg(node_->now(), state_current);
+        (*traj_point_active_ptr_)->set_point_before_trajectory_msg(time, state_current);
       }
     }
     resize_joint_trajectory_point(state_error, joint_num);
@@ -181,8 +180,7 @@ controller_interface::return_type JointTrajectoryController::update(
     TrajectoryPointConstIter start_segment_itr, end_segment_itr;
     // TODO(anyone): this is kind-of open-loop concept? I am right?
     const bool valid_point =
-      (*traj_point_active_ptr_)
-        ->sample(node_->now(), state_desired, start_segment_itr, end_segment_itr);
+      (*traj_point_active_ptr_)->sample(time, state_desired, start_segment_itr, end_segment_itr);
 
     if (valid_point)
     {
@@ -254,7 +252,7 @@ controller_interface::return_type JointTrajectoryController::update(
       {
         // send feedback
         auto feedback = std::make_shared<FollowJTrajAction::Feedback>();
-        feedback->header.stamp = node_->now();
+        feedback->header.stamp = time;
         feedback->joint_names = joint_names_;
 
         feedback->actual = state_current;
@@ -303,7 +301,7 @@ controller_interface::return_type JointTrajectoryController::update(
             const rclcpp::Time traj_start = (*traj_point_active_ptr_)->get_trajectory_start_time();
             const rclcpp::Time traj_end = traj_start + start_segment_itr->time_from_start;
 
-            const double difference = node_->now().seconds() - traj_end.seconds();
+            const double difference = time.seconds() - traj_end.seconds();
             if (difference > default_tolerances_.goal_time_tolerance)
             {
               auto result = std::make_shared<FollowJTrajAction::Result>();
