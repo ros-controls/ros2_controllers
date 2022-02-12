@@ -6,7 +6,7 @@ on:
       - master
   schedule:
     # Run every morning to detect flakiness and broken dependencies
-    - cron: '17 8 * * *'
+    - cron: "17 8 * * *"
 env:
   ROS_DISTRO: galactic
 
@@ -15,15 +15,15 @@ jobs:
     name: industrial ci
     runs-on: ubuntu-latest
     strategy:
-     matrix:
-      ROS_REPO: [main, testing]
+      matrix:
+        ROS_REPO: [main, testing]
     env:
-     UPSTREAM_WORKSPACE: .github/workspace.repos
+      UPSTREAM_WORKSPACE: .github/workspace.repos
     steps:
-     - uses: actions/checkout@v2
-     - uses: ros-industrial/industrial_ci@master
-       env:
-        ROS_REPO: ${{ matrix.ROS_REPO }}
+      - uses: actions/checkout@v2
+      - uses: ros-industrial/industrial_ci@master
+        env:
+          ROS_REPO: ${{ matrix.ROS_REPO }}
 
   ros-tooling-ci:
     name: ros-tooling ci

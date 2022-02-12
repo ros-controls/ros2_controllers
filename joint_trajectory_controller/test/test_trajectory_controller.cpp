@@ -1180,7 +1180,8 @@ INSTANTIATE_TEST_SUITE_P(
 
 TEST_F(TrajectoryControllerTest, incorrect_initialization_using_interface_parameters)
 {
-  auto set_parameter_and_check_result = [&]() {
+  auto set_parameter_and_check_result = [&]()
+  {
     EXPECT_EQ(traj_controller_->get_state().id(), State::PRIMARY_STATE_UNCONFIGURED);
     SetParameters();  // This call is replacing the way parameters are set via launch
     traj_controller_->configure();

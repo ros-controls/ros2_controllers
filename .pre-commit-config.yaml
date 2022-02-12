@@ -1,4 +1,3 @@
-
 # To use:
 #
 #     pre-commit run -a
@@ -36,21 +35,22 @@ repos:
   - repo: https://github.com/asottile/pyupgrade
     rev: v2.12.0
     hooks:
-    -   id: pyupgrade
+      - id: pyupgrade
         args: [--py36-plus]
 
   # PEP 257
   - repo: https://github.com/FalconSocial/pre-commit-mirrors-pep257
     rev: v0.3.3
     hooks:
-    - id: pep257
-      args: ["--ignore=D100,D101,D102,D103,D104,D105,D106,D107,D203,D212,D404"]
+      - id: pep257
+        args:
+          ["--ignore=D100,D101,D102,D103,D104,D105,D106,D107,D203,D212,D404"]
 
   - repo: https://github.com/pycqa/flake8
     rev: 3.9.0
     hooks:
-    - id: flake8
-      args: ["--ignore=E501"]
+      - id: flake8
+        args: ["--ignore=E501"]
 
   # CPP hooks
   - repo: local
@@ -58,10 +58,10 @@ repos:
       - id: clang-format
         name: clang-format
         description: Format files with ClangFormat.
-        entry: clang-format-10
+        entry: clang-format
         language: system
         files: \.(c|cc|cxx|cpp|frag|glsl|h|hpp|hxx|ih|ispc|ipp|java|js|m|proto|vert)$
-        args: ['-fallback-style=none', '-i']
+        args: ["-fallback-style=none", "-i"]
 
   - repo: local
     hooks:
@@ -111,7 +111,7 @@ repos:
     rev: 0.9.0a1
     hooks:
       - id: doc8
-        args: ['--max-line-length=100', '--ignore=D001']
+        args: ["--max-line-length=100", "--ignore=D001"]
         exclude: CHANGELOG\.rst$
 
   - repo: https://github.com/pre-commit/pygrep-hooks
@@ -128,5 +128,5 @@ repos:
     rev: v2.0.0
     hooks:
       - id: codespell
-        args: ['--write-changes']
+        args: ["--write-changes"]
         exclude: CHANGELOG\.rst|\.(svg|pyc)$

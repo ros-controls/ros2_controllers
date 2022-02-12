@@ -117,7 +117,8 @@ controller_interface::return_type JointTrajectoryController::update(
   auto compute_error_for_joint = [&](
                                    JointTrajectoryPoint & error, int index,
                                    const JointTrajectoryPoint & current,
-                                   const JointTrajectoryPoint & desired) {
+                                   const JointTrajectoryPoint & desired)
+  {
     // error defined as the difference between current and desired
     error.positions[index] =
       angles::shortest_angular_distance(current.positions[index], desired.positions[index]);
@@ -148,12 +149,13 @@ controller_interface::return_type JointTrajectoryController::update(
   // TODO(anyone): can I here also use const on joint_interface since the reference_wrapper is not
   // changed, but its value only?
   auto assign_interface_from_point =
-    [&, joint_num](auto & joint_inteface, const std::vector<double> & trajectory_point_interface) {
-      for (size_t index = 0; index < joint_num; ++index)
-      {
-        joint_inteface[index].get().set_value(trajectory_point_interface[index]);
-      }
-    };
+    [&, joint_num](auto & joint_inteface, const std::vector<double> & trajectory_point_interface)
+  {
+    for (size_t index = 0; index < joint_num; ++index)
+    {
+      joint_inteface[index].get().set_value(trajectory_point_interface[index]);
+    }
+  };
 
   // current state update
   state_current.time_from_start.set__sec(0);
@@ -330,12 +332,13 @@ void JointTrajectoryController::read_state_from_hardware(JointTrajectoryPoint & 
 {
   const auto joint_num = joint_names_.size();
   auto assign_point_from_interface =
-    [&, joint_num](std::vector<double> & trajectory_point_interface, const auto & joint_inteface) {
-      for (size_t index = 0; index < joint_num; ++index)
-      {
-        trajectory_point_interface[index] = joint_inteface[index].get().get_value();
-      }
-    };
+    [&, joint_num](std::vector<double> & trajectory_point_interface, const auto & joint_inteface)
+  {
+    for (size_t index = 0; index < joint_num; ++index)
+    {
+      trajectory_point_interface[index] = joint_inteface[index].get().get_value();
+    }
+  };
 
   // Assign values from the hardware
   // Position states always exist
@@ -369,17 +372,20 @@ bool JointTrajectoryController::read_state_from_command_interfaces(JointTrajecto
 
   const auto joint_num = joint_names_.size();
   auto assign_point_from_interface =
-    [&, joint_num](std::vector<double> & trajectory_point_interface, const auto & joint_inteface) {
-      for (size_t index = 0; index < joint_num; ++index)
-      {
-        trajectory_point_interface[index] = joint_inteface[index].get().get_value();
-      }
-    };
+    [&, joint_num](std::vector<double> & trajectory_point_interface, const auto & joint_inteface)
+  {
+    for (size_t index = 0; index < joint_num; ++index)
+    {
+      trajectory_point_interface[index] = joint_inteface[index].get().get_value();
+    }
+  };
 
-  auto interface_has_values = [](const auto & joint_interface) {
-    return std::find_if(joint_interface.begin(), joint_interface.end(), [](const auto & interface) {
-             return std::isnan(interface.get().get_value());
-           }) == joint_interface.end();
+  auto interface_has_values = [](const auto & joint_interface)
+  {
+    return std::find_if(
+             joint_interface.begin(), joint_interface.end(),
+             [](const auto & interface)
+             { return std::isnan(interface.get().get_value()); }) == joint_interface.end();
   };
 
   // Assign values from the command interfaces as state. Therefore needs check for both.
@@ -613,7 +619,8 @@ CallbackReturn JointTrajectoryController::on_configure(const rclcpp_lifecycle::S
     return CallbackReturn::FAILURE;
   }
 
-  auto get_interface_list = [](const std::vector<std::string> & interface_types) {
+  auto get_interface_list = [](const std::vector<std::string> & interface_types)
+  {
     std::stringstream ss_interfaces;
     for (size_t index = 0; index < interface_types.size(); ++index)
     {
@@ -640,7 +647,8 @@ CallbackReturn JointTrajectoryController::on_configure(const rclcpp_lifecycle::S
   // subscriber callback
   // non realtime
   // TODO(karsten): check if traj msg and point time are valid
-  auto callback = [this](const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg) -> void {
+  auto callback = [this](const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg) -> void
+  {
     if (!validate_trajectory_msg(*msg))
     {
       return;
@@ -1042,7 +1050,8 @@ void JointTrajectoryController::sort_to_local_joint_order(
   std::vector<size_t> mapping_vector = mapping(trajectory_msg->joint_names, joint_names_);
   auto remap = [this](
                  const std::vector<double> & to_remap,
-                 const std::vector<size_t> & mapping) -> std::vector<double> {
+                 const std::vector<size_t> & mapping) -> std::vector<double>
+  {
     if (to_remap.empty())
     {
       return to_remap;
