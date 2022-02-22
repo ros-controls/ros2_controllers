@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Author: Denis Štogl
+# Authors: Denis Štogl, Lovro Ivanov
 #
 
 import rclpy
