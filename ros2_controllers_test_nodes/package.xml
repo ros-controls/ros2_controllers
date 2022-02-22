@@ -6,6 +6,7 @@
   <description>Demo nodes for showing and testing functionalities of the ros2_control framework.</description>
 
   <maintainer email="denis@stoglrobotics.de">Denis Štogl</maintainer>
+  <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
 
   <license>Apache-2.0</license>
 

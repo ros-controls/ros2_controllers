@@ -42,9 +42,7 @@ class PublisherForwardPosition(Node):
             if goal is None or len(goal) == 0:
                 raise Exception(f'Values for goal "{name}" not set!')
 
-            float_goal = []
-            for value in goal:
-                float_goal.append(float(value))
+            float_goal = [float(value) for value in goal]
             self.goals.append(float_goal)
 
         publish_topic = "/" + controller_name + "/" + "commands"
