@@ -134,3 +134,7 @@ CallbackReturn TwistController::on_deactivate(const rclcpp_lifecycle::State & /*
 }
 
 }  // namespace cartesian_controllers
+#include "pluginlib/class_list_macros.hpp"
+
+PLUGINLIB_EXPORT_CLASS(
+  cartesian_controllers::TwistController, controller_interface::ControllerInterface)
