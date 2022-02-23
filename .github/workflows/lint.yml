@@ -27,6 +27,7 @@ jobs:
             gripper_controllers
             position_controllers
             ros2_controllers
+            ros2_controllers_test_nodes
             velocity_controllers
 
   ament_lint_cpplint:
@@ -52,4 +53,5 @@ jobs:
             gripper_controllers
             position_controllers
             ros2_controllers
+            ros2_controllers_test_nodes
             velocity_controllers
