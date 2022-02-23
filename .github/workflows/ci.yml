@@ -48,6 +48,7 @@ jobs:
             joint_trajectory_controller
             gripper_controllers
             position_controllers
+            ros2_controllers_test_nodes
             velocity_controllers
           vcs-repo-file-url: |
             https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/.github/workspace.repos
