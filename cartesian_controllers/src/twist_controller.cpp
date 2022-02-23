@@ -33,6 +33,8 @@ controller_interface::InterfaceConfiguration TwistController::command_interface_
   {
     command_interfaces_config.names.push_back(joint_name_ + "/" + interface);
   }
+
+  return command_interfaces_config;
 }
 
 controller_interface::InterfaceConfiguration TwistController::state_interface_configuration() const
@@ -59,7 +61,7 @@ CallbackReturn TwistController::on_init()
 }
 
 controller_interface::return_type TwistController::update(
-  const rclcpp::Time & time, const rclcpp::Duration & period)
+  const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
   auto twist_commands = rt_command_ptr_.readFromRT();
 
@@ -87,7 +89,7 @@ controller_interface::return_type TwistController::update(
   return controller_interface::return_type::OK;
 }
 
-CallbackReturn TwistController::on_configure(const rclcpp_lifecycle::State & previous_state)
+CallbackReturn TwistController::on_configure(const rclcpp_lifecycle::State & /*previous_state*/)
 {
   joint_name_ = node_->get_parameter("joint").as_string();
 
@@ -117,14 +119,14 @@ CallbackReturn TwistController::on_configure(const rclcpp_lifecycle::State & pre
   return CallbackReturn::SUCCESS;
 }
 
-CallbackReturn TwistController::on_activate(const rclcpp_lifecycle::State & previous_state)
+CallbackReturn TwistController::on_activate(const rclcpp_lifecycle::State & /*previous_state*/)
 {
   // reset command buffer if a command came through callback when controller was inactive
   rt_command_ptr_ = realtime_tools::RealtimeBuffer<std::shared_ptr<CmdType>>(nullptr);
   return CallbackReturn::SUCCESS;
 }
 
-CallbackReturn TwistController::on_deactivate(const rclcpp_lifecycle::State & previous_state)
+CallbackReturn TwistController::on_deactivate(const rclcpp_lifecycle::State & /*previous_state*/)
 {
   // reset command buffer
   rt_command_ptr_ = realtime_tools::RealtimeBuffer<std::shared_ptr<CmdType>>(nullptr);
