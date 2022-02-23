@@ -60,6 +60,24 @@ if(BUILD_TESTING)
   find_package(controller_manager REQUIRED)
   find_package(hardware_interface REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
+
+  ament_add_gmock(test_load_twist_controller test/test_load_twist_controller.cpp)
+  target_include_directories(test_load_twist_controller PRIVATE include)
+  ament_target_dependencies(
+          test_load_twist_controller
+          controller_manager
+          hardware_interface
+          ros2_control_test_assets
+  )
+
+  ament_add_gmock(test_twist_controller test/test_twist_controller.cpp)
+  target_include_directories(test_twist_controller PRIVATE include)
+  target_link_libraries(test_twist_controller twist_controller)
+  ament_target_dependencies(
+          test_twist_controller
+          controller_interface
+          hardware_interface
+  )
 endif()
 
 ament_export_dependencies(
