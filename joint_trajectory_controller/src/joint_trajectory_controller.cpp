@@ -148,10 +148,10 @@ controller_interface::return_type JointTrajectoryController::update(
   // TODO(anyone): can I here also use const on joint_interface since the reference_wrapper is not
   // changed, but its value only?
   auto assign_interface_from_point =
-    [&, joint_num](auto & joint_inteface, const std::vector<double> & trajectory_point_interface) {
+    [&, joint_num](auto & joint_interface, const std::vector<double> & trajectory_point_interface) {
       for (size_t index = 0; index < joint_num; ++index)
       {
-        joint_inteface[index].get().set_value(trajectory_point_interface[index]);
+        joint_interface[index].get().set_value(trajectory_point_interface[index]);
       }
     };
 
@@ -328,10 +328,10 @@ void JointTrajectoryController::read_state_from_hardware(JointTrajectoryPoint & 
 {
   const auto joint_num = joint_names_.size();
   auto assign_point_from_interface =
-    [&, joint_num](std::vector<double> & trajectory_point_interface, const auto & joint_inteface) {
+    [&, joint_num](std::vector<double> & trajectory_point_interface, const auto & joint_interface) {
       for (size_t index = 0; index < joint_num; ++index)
       {
-        trajectory_point_interface[index] = joint_inteface[index].get().get_value();
+        trajectory_point_interface[index] = joint_interface[index].get().get_value();
       }
     };
 
@@ -367,10 +367,10 @@ bool JointTrajectoryController::read_state_from_command_interfaces(JointTrajecto
 
   const auto joint_num = joint_names_.size();
   auto assign_point_from_interface =
-    [&, joint_num](std::vector<double> & trajectory_point_interface, const auto & joint_inteface) {
+    [&, joint_num](std::vector<double> & trajectory_point_interface, const auto & joint_interface) {
       for (size_t index = 0; index < joint_num; ++index)
       {
-        trajectory_point_interface[index] = joint_inteface[index].get().get_value();
+        trajectory_point_interface[index] = joint_interface[index].get().get_value();
       }
     };
 
