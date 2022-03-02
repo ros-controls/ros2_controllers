@@ -90,19 +90,9 @@ void JointStateBroadcasterTest::SetUpStateBroadcaster()
 
 TEST_F(JointStateBroadcasterTest, ConfigureErrorTest)
 {
-  // joint state not initialized yet
-  ASSERT_TRUE(state_broadcaster_->joint_state_msg_.name.empty());
-  ASSERT_TRUE(state_broadcaster_->joint_state_msg_.position.empty());
-  ASSERT_TRUE(state_broadcaster_->joint_state_msg_.velocity.empty());
-  ASSERT_TRUE(state_broadcaster_->joint_state_msg_.effort.empty());
-
-  // dynamic joint state not initialized yet
-  ASSERT_TRUE(state_broadcaster_->dynamic_joint_state_msg_.joint_names.empty());
-  ASSERT_TRUE(state_broadcaster_->dynamic_joint_state_msg_.interface_values.empty());
-
   // publishers not initialized yet
-  ASSERT_FALSE(state_broadcaster_->joint_state_publisher_);
-  ASSERT_FALSE(state_broadcaster_->dynamic_joint_state_publisher_);
+  ASSERT_FALSE(state_broadcaster_->realtime_joint_state_publisher_);
+  ASSERT_FALSE(state_broadcaster_->realtime_dynamic_joint_state_publisher_);
 
   // configure failed
   ASSERT_THROW(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), std::exception);
@@ -110,33 +100,13 @@ TEST_F(JointStateBroadcasterTest, ConfigureErrorTest)
   SetUpStateBroadcaster();
   // check state remains unchanged
 
-  // joint state still not initialized
-  ASSERT_TRUE(state_broadcaster_->joint_state_msg_.name.empty());
-  ASSERT_TRUE(state_broadcaster_->joint_state_msg_.position.empty());
-  ASSERT_TRUE(state_broadcaster_->joint_state_msg_.velocity.empty());
-  ASSERT_TRUE(state_broadcaster_->joint_state_msg_.effort.empty());
-
-  // dynamic joint state still not initialized
-  ASSERT_TRUE(state_broadcaster_->dynamic_joint_state_msg_.joint_names.empty());
-  ASSERT_TRUE(state_broadcaster_->dynamic_joint_state_msg_.interface_values.empty());
-
   // publishers still not initialized
-  ASSERT_FALSE(state_broadcaster_->joint_state_publisher_);
-  ASSERT_FALSE(state_broadcaster_->dynamic_joint_state_publisher_);
+  ASSERT_FALSE(state_broadcaster_->realtime_joint_state_publisher_);
+  ASSERT_FALSE(state_broadcaster_->realtime_dynamic_joint_state_publisher_);
 }
 
 TEST_F(JointStateBroadcasterTest, ConfigureSuccessTest)
 {
-  // joint state not initialized yet
-  ASSERT_THAT(state_broadcaster_->joint_state_msg_.name, IsEmpty());
-  ASSERT_THAT(state_broadcaster_->joint_state_msg_.position, IsEmpty());
-  ASSERT_THAT(state_broadcaster_->joint_state_msg_.velocity, IsEmpty());
-  ASSERT_THAT(state_broadcaster_->joint_state_msg_.effort, IsEmpty());
-
-  // dynamic joint state not initialized yet
-  ASSERT_THAT(state_broadcaster_->dynamic_joint_state_msg_.joint_names, IsEmpty());
-  ASSERT_THAT(state_broadcaster_->dynamic_joint_state_msg_.interface_values, IsEmpty());
-
   // publishers not initialized yet
   ASSERT_FALSE(state_broadcaster_->joint_state_publisher_);
   ASSERT_FALSE(state_broadcaster_->dynamic_joint_state_publisher_);
@@ -151,30 +121,29 @@ TEST_F(JointStateBroadcasterTest, ConfigureSuccessTest)
   const std::vector<std::string> IF_NAMES = {HW_IF_POSITION, HW_IF_VELOCITY, HW_IF_EFFORT};
   const size_t NUM_IFS = IF_NAMES.size();
 
+  // publishers initialized
+  ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
+  ASSERT_TRUE(state_broadcaster_->realtime_dynamic_joint_state_publisher_);
+
   // joint state initialized
-  ASSERT_THAT(state_broadcaster_->joint_state_msg_.name, ElementsAreArray(joint_names_));
-  ASSERT_THAT(state_broadcaster_->joint_state_msg_.position, SizeIs(NUM_JOINTS));
-  ASSERT_THAT(state_broadcaster_->joint_state_msg_.velocity, SizeIs(NUM_JOINTS));
-  ASSERT_THAT(state_broadcaster_->joint_state_msg_.effort, SizeIs(NUM_JOINTS));
+  const auto & joint_state_msg = state_broadcaster_->realtime_joint_state_publisher_->msg_;
+  ASSERT_THAT(joint_state_msg.name, ElementsAreArray(joint_names_));
+  ASSERT_THAT(joint_state_msg.position, SizeIs(NUM_JOINTS));
+  ASSERT_THAT(joint_state_msg.velocity, SizeIs(NUM_JOINTS));
+  ASSERT_THAT(joint_state_msg.effort, SizeIs(NUM_JOINTS));
 
   // dynamic joint state initialized
-  ASSERT_THAT(state_broadcaster_->dynamic_joint_state_msg_.joint_names, SizeIs(NUM_JOINTS));
-  ASSERT_THAT(state_broadcaster_->dynamic_joint_state_msg_.interface_values, SizeIs(NUM_IFS));
+  const auto & dynamic_joint_state_msg =
+    state_broadcaster_->realtime_dynamic_joint_state_publisher_->msg_;
+  ASSERT_THAT(dynamic_joint_state_msg.joint_names, SizeIs(NUM_JOINTS));
+  ASSERT_THAT(dynamic_joint_state_msg.interface_values, SizeIs(NUM_IFS));
+  ASSERT_THAT(dynamic_joint_state_msg.joint_names, ElementsAreArray(joint_names_));
   ASSERT_THAT(
-    state_broadcaster_->dynamic_joint_state_msg_.joint_names, ElementsAreArray(joint_names_));
+    dynamic_joint_state_msg.interface_values[0].interface_names, ElementsAreArray(IF_NAMES));
   ASSERT_THAT(
-    state_broadcaster_->dynamic_joint_state_msg_.interface_values[0].interface_names,
-    ElementsAreArray(IF_NAMES));
+    dynamic_joint_state_msg.interface_values[1].interface_names, ElementsAreArray(IF_NAMES));
   ASSERT_THAT(
-    state_broadcaster_->dynamic_joint_state_msg_.interface_values[1].interface_names,
-    ElementsAreArray(IF_NAMES));
-  ASSERT_THAT(
-    state_broadcaster_->dynamic_joint_state_msg_.interface_values[2].interface_names,
-    ElementsAreArray(IF_NAMES));
-
-  // publishers initialized
-  ASSERT_TRUE(state_broadcaster_->joint_state_publisher_);
-  ASSERT_TRUE(state_broadcaster_->dynamic_joint_state_publisher_);
+    dynamic_joint_state_msg.interface_values[2].interface_names, ElementsAreArray(IF_NAMES));
 }
 
 TEST_F(JointStateBroadcasterTest, UpdateTest)
@@ -267,7 +236,7 @@ void JointStateBroadcasterTest::test_published_dynamic_joint_state_message(
   // we only check that all values in this test are present in the message
   // and that it is the same across the interfaces
   // for test purposes they are mapped to the same doubles
-  for (auto i = 0ul; i < dynamic_joint_state_msg.joint_names.size(); ++i)
+  for (size_t i = 0; i < dynamic_joint_state_msg.joint_names.size(); ++i)
   {
     ASSERT_THAT(
       dynamic_joint_state_msg.interface_values[i].interface_names,
@@ -299,19 +268,9 @@ TEST_F(JointStateBroadcasterTest, DynamicJointStatePublishTestLocalTopic)
 
 TEST_F(JointStateBroadcasterTest, ExtraJointStatePublishTest)
 {
-  // joint state not initialized yet
-  ASSERT_TRUE(state_broadcaster_->joint_state_msg_.name.empty());
-  ASSERT_TRUE(state_broadcaster_->joint_state_msg_.position.empty());
-  ASSERT_TRUE(state_broadcaster_->joint_state_msg_.velocity.empty());
-  ASSERT_TRUE(state_broadcaster_->joint_state_msg_.effort.empty());
-
-  // dynamic joint state not initialized yet
-  ASSERT_TRUE(state_broadcaster_->dynamic_joint_state_msg_.joint_names.empty());
-  ASSERT_TRUE(state_broadcaster_->dynamic_joint_state_msg_.interface_values.empty());
-
   // publishers not initialized yet
-  ASSERT_FALSE(state_broadcaster_->joint_state_publisher_);
-  ASSERT_FALSE(state_broadcaster_->dynamic_joint_state_publisher_);
+  ASSERT_FALSE(state_broadcaster_->realtime_joint_state_publisher_);
+  ASSERT_FALSE(state_broadcaster_->realtime_dynamic_joint_state_publisher_);
 
   SetUpStateBroadcaster();
 
@@ -330,11 +289,14 @@ TEST_F(JointStateBroadcasterTest, ExtraJointStatePublishTest)
   const std::vector<std::string> IF_NAMES = {HW_IF_POSITION, HW_IF_VELOCITY, HW_IF_EFFORT};
 
   // joint state initialized
-  ASSERT_THAT(state_broadcaster_->joint_state_msg_.name, ElementsAreArray(all_joint_names));
-  ASSERT_THAT(state_broadcaster_->joint_state_msg_.position, SizeIs(NUM_JOINTS));
-  ASSERT_THAT(state_broadcaster_->joint_state_msg_.velocity, SizeIs(NUM_JOINTS));
-  ASSERT_THAT(state_broadcaster_->joint_state_msg_.effort, SizeIs(NUM_JOINTS));
+  const auto & joint_state_msg = state_broadcaster_->realtime_joint_state_publisher_->msg_;
+  ASSERT_THAT(joint_state_msg.name, ElementsAreArray(all_joint_names));
+  ASSERT_THAT(joint_state_msg.position, SizeIs(NUM_JOINTS));
+  ASSERT_THAT(joint_state_msg.velocity, SizeIs(NUM_JOINTS));
+  ASSERT_THAT(joint_state_msg.effort, SizeIs(NUM_JOINTS));
 
   // dynamic joint state initialized
-  ASSERT_THAT(state_broadcaster_->dynamic_joint_state_msg_.joint_names, SizeIs(NUM_JOINTS));
+  const auto & dynamic_joint_state_msg =
+    state_broadcaster_->realtime_dynamic_joint_state_publisher_->msg_;
+  ASSERT_THAT(dynamic_joint_state_msg.joint_names, SizeIs(NUM_JOINTS));
 }
