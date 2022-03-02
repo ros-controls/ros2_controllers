@@ -139,14 +139,11 @@ TEST_F(JointStateBroadcasterTest, ConfigureSuccessTest)
   ASSERT_THAT(dynamic_joint_state_msg.interface_values, SizeIs(NUM_IFS));
   ASSERT_THAT(dynamic_joint_state_msg.joint_names, ElementsAreArray(joint_names_));
   ASSERT_THAT(
-    dynamic_joint_state_msg.interface_values[0].interface_names,
-    ElementsAreArray(IF_NAMES));
+    dynamic_joint_state_msg.interface_values[0].interface_names, ElementsAreArray(IF_NAMES));
   ASSERT_THAT(
-    dynamic_joint_state_msg.interface_values[1].interface_names,
-    ElementsAreArray(IF_NAMES));
+    dynamic_joint_state_msg.interface_values[1].interface_names, ElementsAreArray(IF_NAMES));
   ASSERT_THAT(
-    dynamic_joint_state_msg.interface_values[2].interface_names,
-    ElementsAreArray(IF_NAMES));
+    dynamic_joint_state_msg.interface_values[2].interface_names, ElementsAreArray(IF_NAMES));
 }
 
 TEST_F(JointStateBroadcasterTest, UpdateTest)
@@ -172,9 +169,7 @@ void JointStateBroadcasterTest::test_published_joint_state_message(const std::st
   auto subscription =
     test_node.create_subscription<sensor_msgs::msg::JointState>(topic, 10, subs_callback);
 
-  ASSERT_EQ(
-    state_broadcaster_->update(),
-    controller_interface::return_type::OK);
+  ASSERT_EQ(state_broadcaster_->update(), controller_interface::return_type::OK);
 
   // wait for message to be passed
   ASSERT_EQ(wait_for(subscription), rclcpp::WaitResultKind::Ready);
