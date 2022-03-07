@@ -87,6 +87,7 @@ if(BUILD_TESTING)
     test/test_load_joint_trajectory_controller.cpp
   )
   target_include_directories(test_load_joint_trajectory_controller PRIVATE include)
+  target_link_libraries(test_load_joint_trajectory_controller joint_trajectory_controller)
   ament_target_dependencies(test_load_joint_trajectory_controller
     controller_manager
     realtime_tools
