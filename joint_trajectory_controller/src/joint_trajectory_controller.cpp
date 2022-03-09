@@ -26,6 +26,7 @@
 #include "angles/angles.h"
 #include "builtin_interfaces/msg/duration.hpp"
 #include "builtin_interfaces/msg/time.hpp"
+#include "controller_interface/helpers.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "joint_trajectory_controller/trajectory.hpp"
@@ -106,7 +107,7 @@ JointTrajectoryController::state_interface_configuration() const
 }
 
 controller_interface::return_type JointTrajectoryController::update(
-  const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
+  const rclcpp::Time & /*time*/, const rclcpp::Duration & period)
 {
   if (get_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
   {
@@ -148,7 +149,7 @@ controller_interface::return_type JointTrajectoryController::update(
   // changed, but its value only?
   auto assign_interface_from_point =
     [&, joint_num](auto & joint_inteface, const std::vector<double> & trajectory_point_interface) {
-      for (auto index = 0ul; index < joint_num; ++index)
+      for (size_t index = 0; index < joint_num; ++index)
       {
         joint_inteface[index].get().set_value(trajectory_point_interface[index]);
       }
@@ -196,7 +197,23 @@ controller_interface::return_type JointTrajectoryController::update(
       }
       if (has_velocity_command_interface_)
       {
-        assign_interface_from_point(joint_command_interface_[1], state_desired.velocities);
+        if (!use_closed_loop_pid_adapter)
+        {
+          assign_interface_from_point(joint_command_interface_[1], state_desired.velocities);
+        }
+        else
+        {
+          // Update PIDs
+          for (auto i = 0ul; i < joint_num; ++i)
+          {
+            tmp_command_[i] = (state_desired.velocities[i] * ff_velocity_scale_[i]) +
+                              pids_[i]->computeCommand(
+                                state_desired.positions[i] - state_current.positions[i],
+                                state_desired.velocities[i] - state_current.velocities[i],
+                                (uint64_t)period.nanoseconds());
+          }
+          assign_interface_from_point(joint_command_interface_[1], tmp_command_);
+        }
       }
       if (has_acceleration_command_interface_)
       {
@@ -208,7 +225,7 @@ controller_interface::return_type JointTrajectoryController::update(
       //         assign_interface_from_point(joint_command_interface_[3], state_desired.effort);
       //       }
 
-      for (auto index = 0ul; index < joint_num; ++index)
+      for (size_t index = 0; index < joint_num; ++index)
       {
         compute_error_for_joint(state_error, index, state_current, state_desired);
 
@@ -314,7 +331,7 @@ void JointTrajectoryController::read_state_from_hardware(JointTrajectoryPoint & 
   const auto joint_num = joint_names_.size();
   auto assign_point_from_interface =
     [&, joint_num](std::vector<double> & trajectory_point_interface, const auto & joint_inteface) {
-      for (auto index = 0ul; index < joint_num; ++index)
+      for (size_t index = 0; index < joint_num; ++index)
       {
         trajectory_point_interface[index] = joint_inteface[index].get().get_value();
       }
@@ -353,7 +370,7 @@ bool JointTrajectoryController::read_state_from_command_interfaces(JointTrajecto
   const auto joint_num = joint_names_.size();
   auto assign_point_from_interface =
     [&, joint_num](std::vector<double> & trajectory_point_interface, const auto & joint_inteface) {
-      for (auto index = 0ul; index < joint_num; ++index)
+      for (size_t index = 0; index < joint_num; ++index)
       {
         trajectory_point_interface[index] = joint_inteface[index].get().get_value();
       }
@@ -482,18 +499,12 @@ CallbackReturn JointTrajectoryController::on_configure(const rclcpp_lifecycle::S
     }
   }
 
-  if (contains_interface_type(command_interface_types_, hardware_interface::HW_IF_POSITION))
-  {
-    has_position_command_interface_ = true;
-  }
-  if (contains_interface_type(command_interface_types_, hardware_interface::HW_IF_VELOCITY))
-  {
-    has_velocity_command_interface_ = true;
-  }
-  if (contains_interface_type(command_interface_types_, hardware_interface::HW_IF_ACCELERATION))
-  {
-    has_acceleration_command_interface_ = true;
-  }
+  has_position_command_interface_ =
+    contains_interface_type(command_interface_types_, hardware_interface::HW_IF_POSITION);
+  has_velocity_command_interface_ =
+    contains_interface_type(command_interface_types_, hardware_interface::HW_IF_VELOCITY);
+  has_acceleration_command_interface_ =
+    contains_interface_type(command_interface_types_, hardware_interface::HW_IF_ACCELERATION);
 
   if (has_velocity_command_interface_)
   {
@@ -501,10 +512,6 @@ CallbackReturn JointTrajectoryController::on_configure(const rclcpp_lifecycle::S
     if (command_interface_types_.size() == 1)
     {
       use_closed_loop_pid_adapter = true;
-      // TODO(anyone): remove this when implemented
-      RCLCPP_ERROR(logger, "using 'velocity' command interface alone is not yet implemented yet.");
-      return CallbackReturn::FAILURE;
-      // if velocity interface can be used without position if multiple defined
     }
     else if (!has_position_command_interface_)
     {
@@ -523,6 +530,28 @@ CallbackReturn JointTrajectoryController::on_configure(const rclcpp_lifecycle::S
       "'acceleration' command interface can only be used if 'velocity' and "
       "'position' interfaces are present");
     return CallbackReturn::FAILURE;
+  }
+
+  // TODO(livanov93): change when other option is implemented
+  if (has_velocity_command_interface_ && use_closed_loop_pid_adapter)
+  {
+    size_t num_joints = joint_names_.size();
+    pids_.resize(num_joints);
+    ff_velocity_scale_.resize(num_joints);
+    tmp_command_.resize(num_joints, 0.0);
+
+    // Init PID gains from ROS parameter server
+    for (size_t i = 0; i < pids_.size(); ++i)
+    {
+      const std::string prefix = "gains." + joint_names_[i];
+      const auto k_p = auto_declare<double>(prefix + ".p", 0.0);
+      const auto k_i = auto_declare<double>(prefix + ".i", 0.0);
+      const auto k_d = auto_declare<double>(prefix + ".d", 0.0);
+      const auto i_clamp = auto_declare<double>(prefix + ".i_clamp", 0.0);
+      ff_velocity_scale_[i] = auto_declare<double>("ff_velocity_scale/" + joint_names_[i], 0.0);
+      // Initialize PID
+      pids_[i] = std::make_shared<control_toolbox::Pid>(k_p, k_i, k_d, i_clamp, -i_clamp);
+    }
   }
 
   // Read always state interfaces from the parameter because they can be used
@@ -557,14 +586,12 @@ CallbackReturn JointTrajectoryController::on_configure(const rclcpp_lifecycle::S
     }
   }
 
-  if (contains_interface_type(state_interface_types_, hardware_interface::HW_IF_VELOCITY))
-  {
-    has_velocity_state_interface_ = true;
-  }
-  if (contains_interface_type(state_interface_types_, hardware_interface::HW_IF_ACCELERATION))
-  {
-    has_acceleration_state_interface_ = true;
-  }
+  has_position_state_interface_ =
+    contains_interface_type(state_interface_types_, hardware_interface::HW_IF_POSITION);
+  has_velocity_state_interface_ =
+    contains_interface_type(state_interface_types_, hardware_interface::HW_IF_VELOCITY);
+  has_acceleration_state_interface_ =
+    contains_interface_type(state_interface_types_, hardware_interface::HW_IF_ACCELERATION);
 
   if (has_velocity_state_interface_)
   {
@@ -697,28 +724,6 @@ CallbackReturn JointTrajectoryController::on_configure(const rclcpp_lifecycle::S
   return CallbackReturn::SUCCESS;
 }
 
-// Fill ordered_interfaces with references to the matching interfaces
-// in the same order as in joint_names
-template <typename T>
-bool get_ordered_interfaces(
-  std::vector<T> & unordered_interfaces, const std::vector<std::string> & joint_names,
-  const std::string & interface_type, std::vector<std::reference_wrapper<T>> & ordered_interfaces)
-{
-  for (const auto & joint_name : joint_names)
-  {
-    for (auto & interface : unordered_interfaces)
-    {
-      if (
-        (interface.get_name() == joint_name) && (interface.get_interface_name() == interface_type))
-      {
-        ordered_interfaces.emplace_back(std::ref(interface));
-      }
-    }
-  }
-
-  return joint_names.size() == ordered_interfaces.size();
-}
-
 CallbackReturn JointTrajectoryController::on_activate(const rclcpp_lifecycle::State &)
 {
   // order all joints in the storage
@@ -727,7 +732,7 @@ CallbackReturn JointTrajectoryController::on_activate(const rclcpp_lifecycle::St
     auto it =
       std::find(allowed_interface_types_.begin(), allowed_interface_types_.end(), interface);
     auto index = std::distance(allowed_interface_types_.begin(), it);
-    if (!get_ordered_interfaces(
+    if (!controller_interface::get_ordered_interfaces(
           command_interfaces_, joint_names_, interface, joint_command_interface_[index]))
     {
       RCLCPP_ERROR(
@@ -741,7 +746,7 @@ CallbackReturn JointTrajectoryController::on_activate(const rclcpp_lifecycle::St
     auto it =
       std::find(allowed_interface_types_.begin(), allowed_interface_types_.end(), interface);
     auto index = std::distance(allowed_interface_types_.begin(), it);
-    if (!get_ordered_interfaces(
+    if (!controller_interface::get_ordered_interfaces(
           state_interfaces_, joint_names_, interface, joint_state_interface_[index]))
     {
       RCLCPP_ERROR(
@@ -793,13 +798,21 @@ CallbackReturn JointTrajectoryController::on_activate(const rclcpp_lifecycle::St
 CallbackReturn JointTrajectoryController::on_deactivate(const rclcpp_lifecycle::State &)
 {
   // TODO(anyone): How to halt when using effort commands?
-  for (auto index = 0ul; index < joint_names_.size(); ++index)
+  for (size_t index = 0; index < joint_names_.size(); ++index)
   {
-    joint_command_interface_[0][index].get().set_value(
-      joint_command_interface_[0][index].get().get_value());
+    if (has_position_command_interface_)
+    {
+      joint_command_interface_[0][index].get().set_value(
+        joint_command_interface_[0][index].get().get_value());
+    }
+
+    if (has_velocity_command_interface_)
+    {
+      joint_command_interface_[1][index].get().set_value(0.0);
+    }
   }
 
-  for (auto index = 0ul; index < allowed_interface_types_.size(); ++index)
+  for (size_t index = 0; index < allowed_interface_types_.size(); ++index)
   {
     joint_command_interface_[index].clear();
     joint_state_interface_[index].clear();
@@ -840,6 +853,12 @@ bool JointTrajectoryController::reset()
   traj_external_point_ptr_.reset();
   traj_home_point_ptr_.reset();
   traj_msg_home_ptr_.reset();
+
+  // reset pids
+  for (const auto & pid : pids_)
+  {
+    pid->reset();
+  }
 
   return true;
 }
@@ -970,7 +989,7 @@ void JointTrajectoryController::fill_partial_goal(
 
   trajectory_msg->joint_names.reserve(joint_names_.size());
 
-  for (auto index = 0ul; index < joint_names_.size(); ++index)
+  for (size_t index = 0; index < joint_names_.size(); ++index)
   {
     {
       if (
@@ -986,7 +1005,19 @@ void JointTrajectoryController::fill_partial_goal(
       for (auto & it : trajectory_msg->points)
       {
         // Assume hold position with 0 velocity and acceleration for missing joints
-        it.positions.push_back(joint_command_interface_[0][index].get().get_value());
+        if (!it.positions.empty())
+        {
+          if (has_position_command_interface_)
+          {
+            // copy last command if cmd interface exists
+            it.positions.push_back(joint_command_interface_[0][index].get().get_value());
+          }
+          else if (has_position_state_interface_)
+          {
+            // copy current state if state interface exists
+            it.positions.push_back(joint_state_interface_[0][index].get().get_value());
+          }
+        }
         if (!it.velocities.empty())
         {
           it.velocities.push_back(0.0);
@@ -1023,7 +1054,7 @@ void JointTrajectoryController::sort_to_local_joint_order(
     }
     std::vector<double> output;
     output.resize(mapping.size(), 0.0);
-    for (auto index = 0ul; index < mapping.size(); ++index)
+    for (size_t index = 0; index < mapping.size(); ++index)
     {
       auto map_index = mapping[index];
       output[map_index] = to_remap[index];
@@ -1031,7 +1062,7 @@ void JointTrajectoryController::sort_to_local_joint_order(
     return output;
   };
 
-  for (auto index = 0ul; index < trajectory_msg->points.size(); ++index)
+  for (size_t index = 0; index < trajectory_msg->points.size(); ++index)
   {
     trajectory_msg->points[index].positions =
       remap(trajectory_msg->points[index].positions, mapping_vector);
@@ -1106,7 +1137,7 @@ bool JointTrajectoryController::validate_trajectory_msg(
     }
   }
 
-  for (auto i = 0ul; i < trajectory.joint_names.size(); ++i)
+  for (size_t i = 0; i < trajectory.joint_names.size(); ++i)
   {
     const std::string & incoming_joint_name = trajectory.joint_names[i];
 
@@ -1121,7 +1152,7 @@ bool JointTrajectoryController::validate_trajectory_msg(
   }
 
   rclcpp::Duration previous_traj_time(0ms);
-  for (auto i = 0ul; i < trajectory.points.size(); ++i)
+  for (size_t i = 0; i < trajectory.points.size(); ++i)
   {
     if ((i > 0) && (rclcpp::Duration(trajectory.points[i].time_from_start) <= previous_traj_time))
     {

@@ -18,6 +18,7 @@ find_package(nav_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
+find_package(rcpputils REQUIRED)
 find_package(realtime_tools REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_msgs REQUIRED)
@@ -38,6 +39,7 @@ ament_target_dependencies(diff_drive_controller
   pluginlib
   rclcpp
   rclcpp_lifecycle
+  rcpputils
   realtime_tools
   tf2
   tf2_msgs
@@ -60,6 +62,7 @@ install(TARGETS diff_drive_controller
 if(BUILD_TESTING)
   find_package(ament_cmake_gmock REQUIRED)
   find_package(controller_manager REQUIRED)
+  find_package(ros2_control_test_assets REQUIRED)
 
   ament_add_gmock(test_diff_drive_controller
     test/test_diff_drive_controller.cpp
@@ -87,15 +90,8 @@ if(BUILD_TESTING)
   target_include_directories(test_load_diff_drive_controller PRIVATE include)
   ament_target_dependencies(test_load_diff_drive_controller
     controller_manager
+    ros2_control_test_assets
   )
-
-  ament_add_gmock(
-    test_accumulator
-    test/test_accumulator.cpp
-  )
-
-  target_include_directories(test_accumulator PRIVATE include)
-  ament_target_dependencies(test_accumulator)
 
 endif()
 

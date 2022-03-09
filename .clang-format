@@ -1,6 +1,6 @@
 ---
-Language:        Cpp
-BasedOnStyle:  Google
+Language: Cpp
+BasedOnStyle: Google
 
 ColumnLimit: 100
 AccessModifierOffset: -2
@@ -12,4 +12,3 @@ DerivePointerAlignment: false
 PointerAlignment: Middle
 ReflowComments: false
 IncludeBlocks: Preserve
-...

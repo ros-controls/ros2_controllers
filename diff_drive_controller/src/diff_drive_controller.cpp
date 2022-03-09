@@ -48,6 +48,11 @@ using lifecycle_msgs::msg::State;
 
 DiffDriveController::DiffDriveController() : controller_interface::ControllerInterface() {}
 
+const char * DiffDriveController::feedback_type() const
+{
+  return odom_params_.position_feedback ? HW_IF_POSITION : HW_IF_VELOCITY;
+}
+
 CallbackReturn DiffDriveController::on_init()
 {
   try
@@ -68,6 +73,7 @@ CallbackReturn DiffDriveController::on_init()
     auto_declare<std::vector<double>>("pose_covariance_diagonal", std::vector<double>());
     auto_declare<std::vector<double>>("twist_covariance_diagonal", std::vector<double>());
     auto_declare<bool>("open_loop", odom_params_.open_loop);
+    auto_declare<bool>("position_feedback", odom_params_.position_feedback);
     auto_declare<bool>("enable_odom_tf", odom_params_.enable_odom_tf);
 
     auto_declare<double>("cmd_vel_timeout", cmd_vel_timeout_.count() / 1000.0);
@@ -94,6 +100,7 @@ CallbackReturn DiffDriveController::on_init()
     auto_declare<double>("angular.z.min_acceleration", NAN);
     auto_declare<double>("angular.z.max_jerk", NAN);
     auto_declare<double>("angular.z.min_jerk", NAN);
+    auto_declare<double>("publish_rate", publish_rate_);
   }
   catch (const std::exception & e)
   {
@@ -123,11 +130,11 @@ InterfaceConfiguration DiffDriveController::state_interface_configuration() cons
   std::vector<std::string> conf_names;
   for (const auto & joint_name : left_wheel_names_)
   {
-    conf_names.push_back(joint_name + "/" + HW_IF_POSITION);
+    conf_names.push_back(joint_name + "/" + feedback_type());
   }
   for (const auto & joint_name : right_wheel_names_)
   {
-    conf_names.push_back(joint_name + "/" + HW_IF_POSITION);
+    conf_names.push_back(joint_name + "/" + feedback_type());
   }
   return {interface_configuration_type::INDIVIDUAL, conf_names};
 }
@@ -165,10 +172,11 @@ controller_interface::return_type DiffDriveController::update(
     last_command_msg->twist.angular.z = 0.0;
   }
 
-  // linear_command and angular_command may be limited further by SpeedLimit,
+  // command may be limited further by SpeedLimit,
   // without affecting the stored twist command
-  double linear_command = last_command_msg->twist.linear.x;
-  double angular_command = last_command_msg->twist.angular.z;
+  Twist command = *last_command_msg;
+  double & linear_command = command.twist.linear.x;
+  double & angular_command = command.twist.angular.z;
 
   // Apply (possibly new) multipliers:
   const auto wheels = wheel_params_;
@@ -182,59 +190,72 @@ controller_interface::return_type DiffDriveController::update(
   }
   else
   {
-    double left_position_mean = 0.0;
-    double right_position_mean = 0.0;
+    double left_feedback_mean = 0.0;
+    double right_feedback_mean = 0.0;
     for (size_t index = 0; index < wheels.wheels_per_side; ++index)
     {
-      const double left_position = registered_left_wheel_handles_[index].position.get().get_value();
-      const double right_position =
-        registered_right_wheel_handles_[index].position.get().get_value();
+      const double left_feedback = registered_left_wheel_handles_[index].feedback.get().get_value();
+      const double right_feedback =
+        registered_right_wheel_handles_[index].feedback.get().get_value();
 
-      if (std::isnan(left_position) || std::isnan(right_position))
+      if (std::isnan(left_feedback) || std::isnan(right_feedback))
       {
         RCLCPP_ERROR(
-          logger, "Either the left or right wheel position is invalid for index [%zu]", index);
+          logger, "Either the left or right wheel %s is invalid for index [%zu]", feedback_type(),
+          index);
         return controller_interface::return_type::ERROR;
       }
 
-      left_position_mean += left_position;
-      right_position_mean += right_position;
+      left_feedback_mean += left_feedback;
+      right_feedback_mean += right_feedback;
     }
-    left_position_mean /= wheels.wheels_per_side;
-    right_position_mean /= wheels.wheels_per_side;
+    left_feedback_mean /= wheels.wheels_per_side;
+    right_feedback_mean /= wheels.wheels_per_side;
 
-    odometry_.update(left_position_mean, right_position_mean, current_time);
+    if (odom_params_.position_feedback)
+    {
+      odometry_.update(left_feedback_mean, right_feedback_mean, current_time);
+    }
+    else
+    {
+      odometry_.updateFromVelocity(left_feedback_mean, right_feedback_mean, current_time);
+    }
   }
 
   tf2::Quaternion orientation;
   orientation.setRPY(0.0, 0.0, odometry_.getHeading());
 
-  if (realtime_odometry_publisher_->trylock())
+  if (previous_publish_timestamp_ + publish_period_ < current_time)
   {
-    auto & odometry_message = realtime_odometry_publisher_->msg_;
-    odometry_message.header.stamp = current_time;
-    odometry_message.pose.pose.position.x = odometry_.getX();
-    odometry_message.pose.pose.position.y = odometry_.getY();
-    odometry_message.pose.pose.orientation.x = orientation.x();
-    odometry_message.pose.pose.orientation.y = orientation.y();
-    odometry_message.pose.pose.orientation.z = orientation.z();
-    odometry_message.pose.pose.orientation.w = orientation.w();
-    odometry_message.twist.twist.linear.x = odometry_.getLinear();
-    odometry_message.twist.twist.angular.z = odometry_.getAngular();
-    realtime_odometry_publisher_->unlockAndPublish();
-  }
+    previous_publish_timestamp_ += publish_period_;
 
-  if (odom_params_.enable_odom_tf && realtime_odometry_transform_publisher_->trylock())
-  {
-    auto & transform = realtime_odometry_transform_publisher_->msg_.transforms.front();
-    transform.header.stamp = current_time;
-    transform.transform.translation.x = odometry_.getX();
-    transform.transform.translation.y = odometry_.getY();
-    transform.transform.rotation.x = orientation.x();
-    transform.transform.rotation.y = orientation.y();
-    transform.transform.rotation.z = orientation.z();
-    transform.transform.rotation.w = orientation.w();
-    realtime_odometry_transform_publisher_->unlockAndPublish();
+    if (realtime_odometry_publisher_->trylock())
+    {
+      auto & odometry_message = realtime_odometry_publisher_->msg_;
+      odometry_message.header.stamp = current_time;
+      odometry_message.pose.pose.position.x = odometry_.getX();
+      odometry_message.pose.pose.position.y = odometry_.getY();
+      odometry_message.pose.pose.orientation.x = orientation.x();
+      odometry_message.pose.pose.orientation.y = orientation.y();
+      odometry_message.pose.pose.orientation.z = orientation.z();
+      odometry_message.pose.pose.orientation.w = orientation.w();
+      odometry_message.twist.twist.linear.x = odometry_.getLinear();
+      odometry_message.twist.twist.angular.z = odometry_.getAngular();
+      realtime_odometry_publisher_->unlockAndPublish();
+    }
+
+    if (odom_params_.enable_odom_tf && realtime_odometry_transform_publisher_->trylock())
+    {
+      auto & transform = realtime_odometry_transform_publisher_->msg_.transforms.front();
+      transform.header.stamp = current_time;
+      transform.transform.translation.x = odometry_.getX();
+      transform.transform.translation.y = odometry_.getY();
+      transform.transform.rotation.x = orientation.x();
+      transform.transform.rotation.y = orientation.y();
+      transform.transform.rotation.z = orientation.z();
+      transform.transform.rotation.w = orientation.w();
+      realtime_odometry_transform_publisher_->unlockAndPublish();
+    }
   }
 
   const auto update_dt = current_time - previous_update_timestamp_;
@@ -248,15 +269,14 @@ controller_interface::return_type DiffDriveController::update(
     angular_command, last_command.angular.z, second_to_last_command.angular.z, update_dt.seconds());
 
   previous_commands_.pop();
-  previous_commands_.emplace(*last_command_msg);
+  previous_commands_.emplace(command);
 
   //    Publish limited velocity
   if (publish_limited_velocity_ && realtime_limited_velocity_publisher_->trylock())
   {
     auto & limited_velocity_command = realtime_limited_velocity_publisher_->msg_;
     limited_velocity_command.header.stamp = current_time;
-    limited_velocity_command.twist.linear.x = linear_command;
-    limited_velocity_command.twist.angular.z = angular_command;
+    limited_velocity_command.twist = command.twist;
     realtime_limited_velocity_publisher_->unlockAndPublish();
   }
 
@@ -331,6 +351,7 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
     twist_diagonal.begin(), twist_diagonal.end(), odom_params_.twist_covariance_diagonal.begin());
 
   odom_params_.open_loop = node_->get_parameter("open_loop").as_bool();
+  odom_params_.position_feedback = node_->get_parameter("position_feedback").as_bool();
   odom_params_.enable_odom_tf = node_->get_parameter("enable_odom_tf").as_bool();
 
   cmd_vel_timeout_ = std::chrono::milliseconds{
@@ -448,6 +469,11 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
   auto & odometry_message = realtime_odometry_publisher_->msg_;
   odometry_message.header.frame_id = odom_params_.odom_frame_id;
   odometry_message.child_frame_id = odom_params_.base_frame_id;
+
+  // limit the publication on the topics /odom and /tf
+  publish_rate_ = node_->get_parameter("publish_rate").as_double();
+  publish_period_ = rclcpp::Duration::from_seconds(1.0 / publish_rate_);
+  previous_publish_timestamp_ = node_->get_clock()->now();
 
   // initialize odom values zeros
   odometry_message.twist =
@@ -586,10 +612,12 @@ CallbackReturn DiffDriveController::configure_side(
   registered_handles.reserve(wheel_names.size());
   for (const auto & wheel_name : wheel_names)
   {
+    const auto interface_name = feedback_type();
     const auto state_handle = std::find_if(
-      state_interfaces_.cbegin(), state_interfaces_.cend(), [&wheel_name](const auto & interface) {
+      state_interfaces_.cbegin(), state_interfaces_.cend(),
+      [&wheel_name, &interface_name](const auto & interface) {
         return interface.get_name() == wheel_name &&
-               interface.get_interface_name() == HW_IF_POSITION;
+               interface.get_interface_name() == interface_name;
       });
 
     if (state_handle == state_interfaces_.cend())

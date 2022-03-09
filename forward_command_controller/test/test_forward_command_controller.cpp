@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <stddef.h>
-
 #include <functional>
 #include <memory>
 #include <string>
@@ -21,6 +19,8 @@
 #include <vector>
 
 #include "gmock/gmock.h"
+
+#include "test_forward_command_controller.hpp"
 
 #include "forward_command_controller/forward_command_controller.hpp"
 #include "hardware_interface/loaned_command_interface.hpp"
@@ -32,7 +32,6 @@
 #include "rclcpp/utilities.hpp"
 #include "rclcpp/wait_set.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
-#include "test_forward_command_controller.hpp"
 
 using CallbackReturn = forward_command_controller::ForwardCommandController::CallbackReturn;
 using hardware_interface::LoanedCommandInterface;
@@ -75,7 +74,7 @@ void ForwardCommandControllerTest::SetUpController()
 TEST_F(ForwardCommandControllerTest, JointsParameterNotSet)
 {
   SetUpController();
-  controller_->get_node()->set_parameter({"interface_name", "dummy"});
+  controller_->get_node()->set_parameter({"interface_name", ""});
 
   // configure failed, 'joints' parameter not set
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
@@ -84,11 +83,10 @@ TEST_F(ForwardCommandControllerTest, JointsParameterNotSet)
 TEST_F(ForwardCommandControllerTest, InterfaceParameterNotSet)
 {
   SetUpController();
+  controller_->get_node()->set_parameter({"joints", std::vector<std::string>()});
 
   // configure failed, 'interface_name' parameter not set
-  controller_->get_node()->set_parameter({"joints", std::vector<std::string>()});
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
-  controller_->get_node()->set_parameter({"interface_name", ""});
 }
 
 TEST_F(ForwardCommandControllerTest, JointsParameterIsEmpty)
@@ -105,8 +103,6 @@ TEST_F(ForwardCommandControllerTest, JointsParameterIsEmpty)
 TEST_F(ForwardCommandControllerTest, InterfaceParameterEmpty)
 {
   SetUpController();
-
-  // configure failed, 'interface_name' parameter not set
   controller_->get_node()->set_parameter({"joints", std::vector<std::string>{"joint1", "joint2"}});
   controller_->get_node()->set_parameter({"interface_name", ""});
 
@@ -135,14 +131,6 @@ TEST_F(ForwardCommandControllerTest, ActivateWithWrongJointsNamesFails)
   // activate failed, 'joint4' is not a valid joint name for the hardware
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
-
-  auto result = controller_->get_node()->set_parameter(
-    {"joints", std::vector<std::string>{"joint1", "joint2"}});
-  ASSERT_TRUE(result.successful);
-
-  // activate failed, 'acceleration' is not a registered interface for `joint1`
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
 }
 
 TEST_F(ForwardCommandControllerTest, ActivateWithWrongInterfaceNameFails)
@@ -152,7 +140,7 @@ TEST_F(ForwardCommandControllerTest, ActivateWithWrongInterfaceNameFails)
   controller_->get_node()->set_parameter({"joints", joint_names_});
   controller_->get_node()->set_parameter({"interface_name", "acceleration"});
 
-  // activate failed, 'joint4' not in interfaces
+  // activate failed, 'acceleration' is not a registered interface for `joint1`
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
 }
@@ -164,6 +152,7 @@ TEST_F(ForwardCommandControllerTest, ActivateSuccess)
   controller_->get_node()->set_parameter({"joints", joint_names_});
   controller_->get_node()->set_parameter({"interface_name", "position"});
 
+  // activate successful
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 }
@@ -290,4 +279,95 @@ TEST_F(ForwardCommandControllerTest, CommandCallbackTest)
   ASSERT_EQ(joint_1_pos_cmd_.get_value(), 10.0);
   ASSERT_EQ(joint_2_pos_cmd_.get_value(), 20.0);
   ASSERT_EQ(joint_3_pos_cmd_.get_value(), 30.0);
+}
+
+TEST_F(ForwardCommandControllerTest, ActivateDeactivateCommandsResetSuccess)
+{
+  SetUpController();
+
+  controller_->get_node()->set_parameter({"joints", joint_names_});
+  controller_->get_node()->set_parameter({"interface_name", "position"});
+
+  // default values
+  ASSERT_EQ(joint_1_pos_cmd_.get_value(), 1.1);
+  ASSERT_EQ(joint_2_pos_cmd_.get_value(), 2.1);
+  ASSERT_EQ(joint_3_pos_cmd_.get_value(), 3.1);
+
+  auto node_state = controller_->configure();
+  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
+
+  node_state = controller_->activate();
+  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
+
+  auto command_msg = std::make_shared<std_msgs::msg::Float64MultiArray>();
+  command_msg->data = {10.0, 20.0, 30.0};
+
+  controller_->rt_command_ptr_.writeFromNonRT(command_msg);
+
+  // update successful
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  // check command in handle was set
+  ASSERT_EQ(joint_1_pos_cmd_.get_value(), 10);
+  ASSERT_EQ(joint_2_pos_cmd_.get_value(), 20);
+  ASSERT_EQ(joint_3_pos_cmd_.get_value(), 30);
+
+  node_state = controller_->deactivate();
+  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
+
+  // command ptr should be reset (nullptr) after deactivation - same check as in `update`
+  ASSERT_FALSE(
+    controller_->rt_command_ptr_.readFromNonRT() &&
+    *(controller_->rt_command_ptr_.readFromNonRT()));
+  ASSERT_FALSE(
+    controller_->rt_command_ptr_.readFromRT() && *(controller_->rt_command_ptr_.readFromRT()));
+
+  // Controller is inactive but let's put some data into buffer (simulate callback when inactive)
+  command_msg = std::make_shared<std_msgs::msg::Float64MultiArray>();
+  command_msg->data = {5.5, 6.6, 7.7};
+
+  controller_->rt_command_ptr_.writeFromNonRT(command_msg);
+
+  // command ptr should be available and message should be there - same check as in `update`
+  ASSERT_TRUE(
+    controller_->rt_command_ptr_.readFromNonRT() &&
+    *(controller_->rt_command_ptr_.readFromNonRT()));
+  ASSERT_TRUE(
+    controller_->rt_command_ptr_.readFromRT() && *(controller_->rt_command_ptr_.readFromRT()));
+
+  // Now activate again
+  node_state = controller_->activate();
+  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
+
+  // command ptr should be reset (nullptr) after activation - same check as in `update`
+  ASSERT_FALSE(
+    controller_->rt_command_ptr_.readFromNonRT() &&
+    *(controller_->rt_command_ptr_.readFromNonRT()));
+  ASSERT_FALSE(
+    controller_->rt_command_ptr_.readFromRT() && *(controller_->rt_command_ptr_.readFromRT()));
+
+  // update successful
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  // values should not change
+  ASSERT_EQ(joint_1_pos_cmd_.get_value(), 10);
+  ASSERT_EQ(joint_2_pos_cmd_.get_value(), 20);
+  ASSERT_EQ(joint_3_pos_cmd_.get_value(), 30);
+
+  // set commands again
+  controller_->rt_command_ptr_.writeFromNonRT(command_msg);
+
+  // update successful
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  // check command in handle was set
+  ASSERT_EQ(joint_1_pos_cmd_.get_value(), 5.5);
+  ASSERT_EQ(joint_2_pos_cmd_.get_value(), 6.6);
+  ASSERT_EQ(joint_3_pos_cmd_.get_value(), 7.7);
 }
