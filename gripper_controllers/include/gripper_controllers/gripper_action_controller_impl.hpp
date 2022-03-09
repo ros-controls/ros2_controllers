@@ -64,6 +64,11 @@ template <const char * HardwareInterface>
 controller_interface::return_type GripperActionController<HardwareInterface>::update(
   const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
+  if (!rt_active_goal_) {
+    set_hold_position();
+    return controller_interface::return_type::OK;
+  }
+
   command_struct_rt_ = *(command_.readFromRT());
 
   const double current_position = joint_position_state_interface_->get().get_value();

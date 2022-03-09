@@ -80,6 +80,7 @@ if(BUILD_TESTING)
     realtime_tools
     ros2_control_test_assets
     trajectory_msgs
+    control_toolbox
   )
 
   ament_add_gtest(
@@ -91,6 +92,7 @@ if(BUILD_TESTING)
     controller_manager
     realtime_tools
     ros2_control_test_assets
+    control_toolbox
   )
 
   ament_add_gtest(
