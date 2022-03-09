@@ -172,7 +172,6 @@ public:
   {
     SetUpTrajectoryController(use_local_parameters);
 
-    traj_node_ = traj_controller_->get_node();
     for (const auto & param : parameters)
     {
       traj_controller_->get_node()->set_parameter(param);
@@ -189,7 +188,7 @@ public:
     // set pid parameters before configure
     SetPidParameters();
     traj_controller_->get_node()->configure();
-    
+
     ActivateTrajectoryController(separate_cmd_and_state_values);
   }
 

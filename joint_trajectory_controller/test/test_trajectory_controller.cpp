@@ -721,7 +721,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_trajectory_replace)
   // Denis: delta was 0.1 with 0.2 works for me
   waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.2);
 
-  RCLCPP_INFO(traj_node_->get_logger(), "Sending new trajectory");
+  RCLCPP_INFO(traj_controller_->get_node()->get_logger(), "Sending new trajectory");
   points_partial_new_velocities[0][0] =
     copysign(0.15, points_partial_new[0][0] - joint_state_pos_[0]);
   publish(time_from_start, points_partial_new, rclcpp::Time(), {}, points_partial_new_velocities);
