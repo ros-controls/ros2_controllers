@@ -115,6 +115,7 @@ endif()
 ament_export_dependencies(
   controller_interface
   control_msgs
+  control_toolbox
   hardware_interface
   rclcpp
   rclcpp_lifecycle
