@@ -390,7 +390,7 @@ TEST_F(TestDiffDriveController, correct_initialization_using_parameters)
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
   auto state = controller_->get_node()->configure();
-  assignResources();
+  assignResourcesPosFeedback();
 
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   EXPECT_EQ(0.01, left_wheel_vel_cmd_.get_value());
