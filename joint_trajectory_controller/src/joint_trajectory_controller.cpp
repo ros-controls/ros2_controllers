@@ -188,50 +188,7 @@ controller_interface::return_type JointTrajectoryController::update(
       bool outside_goal_tolerance = false;
       const bool before_last_point = end_segment_itr != (*traj_point_active_ptr_)->end();
 
-      // set values for next hardware write()
-      if (use_closed_loop_pid_adapter)
-      {
-        // Update PIDs
-        for (auto i = 0ul; i < joint_num; ++i)
-        {
-          tmp_command_[i] = (state_desired.velocities[i] * ff_velocity_scale_[i]) +
-                            pids_[i]->computeCommand(
-                              state_desired.positions[i] - state_current.positions[i],
-                              state_desired.velocities[i] - state_current.velocities[i],
-                              (uint64_t)period.nanoseconds());
-        }
-      }
-      if (has_position_command_interface_)
-      {
-        assign_interface_from_point(joint_command_interface_[0], state_desired.positions);
-      }
-      if (has_velocity_command_interface_)
-      {
-        if (use_closed_loop_pid_adapter)
-        {
-          assign_interface_from_point(joint_command_interface_[1], tmp_command_);
-        }
-        else
-        {
-          assign_interface_from_point(joint_command_interface_[1], state_desired.velocities);
-        }
-      }
-      if (has_acceleration_command_interface_)
-      {
-        assign_interface_from_point(joint_command_interface_[2], state_desired.accelerations);
-      }
-      if (has_effort_command_interface_)
-      {
-        if (use_closed_loop_pid_adapter)
-        {
-          assign_interface_from_point(joint_command_interface_[3], tmp_command_);
-        }
-        else
-        {
-          assign_interface_from_point(joint_command_interface_[3], state_desired.effort);
-        }
-      }
-
+      // Check state/goal tolerance
       for (size_t index = 0; index < joint_num; ++index)
       {
         compute_error_for_joint(state_error, index, state_current, state_desired);
@@ -253,8 +210,57 @@ controller_interface::return_type JointTrajectoryController::update(
         }
       }
 
-      // store command as state when hardware state has tracking offset
-      last_commanded_state_ = state_desired;
+      // set values for next hardware write() if tolerance is met
+      if (!abort && !outside_goal_tolerance)
+      {
+        if (use_closed_loop_pid_adapter)
+        {
+          // Update PIDs
+          for (auto i = 0ul; i < joint_num; ++i)
+          {
+            tmp_command_[i] = (state_desired.velocities[i] * ff_velocity_scale_[i]) +
+                              pids_[i]->computeCommand(
+                                state_desired.positions[i] - state_current.positions[i],
+                                state_desired.velocities[i] - state_current.velocities[i],
+                                (uint64_t)period.nanoseconds());
+          }
+        }
+
+        // set values for next hardware write()
+        if (has_position_command_interface_)
+        {
+          assign_interface_from_point(joint_command_interface_[0], state_desired.positions);
+        }
+        if (has_velocity_command_interface_)
+        {
+          if (use_closed_loop_pid_adapter)
+          {
+            assign_interface_from_point(joint_command_interface_[1], tmp_command_);
+          }
+          else
+          {
+            assign_interface_from_point(joint_command_interface_[1], state_desired.velocities);
+          }
+        }
+        if (has_acceleration_command_interface_)
+        {
+          assign_interface_from_point(joint_command_interface_[2], state_desired.accelerations);
+        }
+        if (has_effort_command_interface_)
+        {
+          if (use_closed_loop_pid_adapter)
+          {
+            assign_interface_from_point(joint_command_interface_[3], tmp_command_);
+          }
+          else
+          {
+            assign_interface_from_point(joint_command_interface_[3], state_desired.effort);
+          }
+        }
+
+        // store command as state when hardware state has tracking offset
+        last_commanded_state_ = state_desired;
+      }
 
       const auto active_goal = *rt_active_goal_.readFromRT();
       if (active_goal)
