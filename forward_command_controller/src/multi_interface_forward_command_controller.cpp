@@ -19,15 +19,6 @@
 
 #include "pluginlib/class_list_macros.hpp"
 
-// PLUGINLIB_EXPORT_CLASS(
-//   forward_command_controller::MultiInterfaceForwardCommandController<
-//     forward_command_controller::ForwardController>,
-//   controller_interface::ControllerInterface)
-// PLUGINLIB_EXPORT_CLASS(
-//   forward_command_controller::MultiInterfaceForwardCommandController<
-//     forward_command_controller::ChainableForwardController>,
-//   controller_interface::ControllerInterface)
-
 PLUGINLIB_EXPORT_CLASS(
   forward_command_controller::MultiInterfaceForwardCommandController,
   controller_interface::ControllerInterface)

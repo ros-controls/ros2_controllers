@@ -35,7 +35,8 @@ using hardware_interface::HW_IF_VELOCITY;
 
 // subclassing and friending so we can access member variables
 class FriendMultiInterfaceForwardCommandController
-: public forward_command_controller::MultiInterfaceForwardCommandController
+: public forward_command_controller::MultiInterfaceForwardCommandController<
+    forward_command_controller::ForwardController>
 {
   FRIEND_TEST(MultiInterfaceForwardCommandControllerTest, JointsParameterNotSet);
   FRIEND_TEST(MultiInterfaceForwardCommandControllerTest, InterfaceParameterNotSet);

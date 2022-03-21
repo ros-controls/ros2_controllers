@@ -16,16 +16,9 @@
 
 #include "forward_command_controller/chainable_forward_controller.hpp"
 #include "forward_command_controller/forward_controller.hpp"
+
 #include "pluginlib/class_list_macros.hpp"
 
-// PLUGINLIB_EXPORT_CLASS(
-//   forward_command_controller::ForwardCommandController<
-//     forward_command_controller::ForwardController>,
-//   controller_interface::ControllerInterface)
-// PLUGINLIB_EXPORT_CLASS(
-//   forward_command_controller::ForwardCommandController<
-//     forward_command_controller::ChainableForwardController>,
-//   controller_interface::ControllerInterface)
 PLUGINLIB_EXPORT_CLASS(
   forward_command_controller::ForwardCommandController, controller_interface::ControllerInterface)
 PLUGINLIB_EXPORT_CLASS(

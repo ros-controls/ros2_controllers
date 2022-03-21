@@ -22,7 +22,11 @@
 #include "controller_interface/chainable_controller_interface.hpp"
 #include "forward_command_controller/forward_controllers_base.hpp"
 #include "forward_command_controller/visibility_control.h"
+#include "rclcpp/subscription.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
+#include "rclcpp_lifecycle/state.hpp"
+#include "realtime_tools/realtime_buffer.h"
+#include "std_msgs/msg/float64_multi_array.hpp"
 
 namespace forward_command_controller
 {
