@@ -56,6 +56,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
   {
     // with the lifecycle node being initialized, we can declare parameters
     auto_declare<std::vector<std::string>>("joints", joint_names_);
+    auto_declare<std::vector<std::string>>("command_joints", command_joint_names_);
     auto_declare<std::vector<std::string>>("command_interfaces", command_interface_types_);
     auto_declare<std::vector<std::string>>("state_interfaces", state_interface_types_);
     auto_declare<double>("state_publish_rate", 50.0);
@@ -81,8 +82,8 @@ JointTrajectoryController::command_interface_configuration() const
 {
   controller_interface::InterfaceConfiguration conf;
   conf.type = controller_interface::interface_configuration_type::INDIVIDUAL;
-  conf.names.reserve(joint_names_.size() * command_interface_types_.size());
-  for (const auto & joint_name : joint_names_)
+  conf.names.reserve(command_joint_names_.size() * command_interface_types_.size());
+  for (const auto & joint_name : command_joint_names_)
   {
     for (const auto & interface_type : command_interface_types_)
     {
@@ -458,6 +459,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   // update parameters
   joint_names_ = get_node()->get_parameter("joints").as_string_array();
 
+  // TODO(destogl): why is this here? Add comment or move
   if (!reset())
   {
     return CallbackReturn::FAILURE;
@@ -465,7 +467,23 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
 
   if (joint_names_.empty())
   {
+    // TODO(destogl): is this correct? Can we really move-on if no joint names are not provided?
     RCLCPP_WARN(logger, "'joints' parameter is empty.");
+  }
+
+  command_joint_names_ = get_node()->get_parameter("command_joints").as_string_array();
+
+  if (command_joint_names_.empty())
+  {
+    command_joint_names_ = joint_names_;
+    RCLCPP_INFO(
+      logger, "No specific joint names are used for command interfaces. Using 'joints' parameter.");
+  }
+  else if (command_joint_names_.size() != joint_names_.size())
+  {
+    RCLCPP_ERROR(
+      logger, "'command_joints' parameter has to have the same size as 'joints' parameter.");
+    return CallbackReturn::FAILURE;
   }
 
   // Specialized, child controllers set interfaces before calling configure function.
@@ -775,12 +793,12 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
       std::find(allowed_interface_types_.begin(), allowed_interface_types_.end(), interface);
     auto index = std::distance(allowed_interface_types_.begin(), it);
     if (!controller_interface::get_ordered_interfaces(
-          command_interfaces_, joint_names_, interface, joint_command_interface_[index]))
+          command_interfaces_, command_joint_names_, interface, joint_command_interface_[index]))
     {
       RCLCPP_ERROR(
         get_node()->get_logger(), "Expected %zu '%s' command interfaces, got %zu.",
-        joint_names_.size(), interface.c_str(), joint_command_interface_[index].size());
-      return CallbackReturn::ERROR;
+        command_joint_names_.size(), interface.c_str(), joint_command_interface_[index].size());
+      return controller_interface::CallbackReturn::ERROR;
     }
   }
   for (const auto & interface : state_interface_types_)
@@ -794,7 +812,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
       RCLCPP_ERROR(
         get_node()->get_logger(), "Expected %zu '%s' state interfaces, got %zu.",
         joint_names_.size(), interface.c_str(), joint_state_interface_[index].size());
-      return CallbackReturn::ERROR;
+      return controller_interface::CallbackReturn::ERROR;
     }
   }
 
