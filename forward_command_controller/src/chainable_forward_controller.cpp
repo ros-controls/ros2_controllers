@@ -49,8 +49,9 @@ controller_interface::CallbackReturn ChainableForwardController::on_configure(
 
   // The names should be in the same order as for command interfaces for easier matching
   reference_interface_names_ = command_interface_names_;
+  // for any case make reference interfaces size of command interfaces
   reference_interfaces_.resize(
-    reference_interface_names_.size(), std::numeric_limits<double>::quiet_NaN());
+    command_interfaces_.size(), std::numeric_limits<double>::quiet_NaN());
 
   return CallbackReturn::SUCCESS;
 }

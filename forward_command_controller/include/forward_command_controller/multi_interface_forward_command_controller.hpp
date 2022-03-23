@@ -20,6 +20,7 @@
 
 #include "forward_command_controller/chainable_forward_controller.hpp"
 #include "forward_command_controller/forward_controller.hpp"
+#include "forward_command_controller/forward_controllers_base.hpp"
 #include "forward_command_controller/visibility_control.h"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 
