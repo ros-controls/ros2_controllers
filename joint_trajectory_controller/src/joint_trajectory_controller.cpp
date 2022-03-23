@@ -278,6 +278,7 @@ controller_interface::return_type JointTrajectoryController::update(
         // check abort
         if (abort || outside_goal_tolerance)
         {
+          set_hold_position();
           auto result = std::make_shared<FollowJTrajAction::Result>();
 
           if (abort)
@@ -319,6 +320,7 @@ controller_interface::return_type JointTrajectoryController::update(
             const double difference = time.seconds() - traj_end.seconds();
             if (difference > default_tolerances_.goal_time_tolerance)
             {
+              set_hold_position();
               auto result = std::make_shared<FollowJTrajAction::Result>();
               result->set__error_code(FollowJTrajAction::Result::GOAL_TOLERANCE_VIOLATED);
               active_goal->setAborted(result);
@@ -1229,6 +1231,7 @@ void JointTrajectoryController::preempt_active_goal()
   const auto active_goal = *rt_active_goal_.readFromNonRT();
   if (active_goal)
   {
+    set_hold_position();
     auto action_res = std::make_shared<FollowJTrajAction::Result>();
     action_res->set__error_code(FollowJTrajAction::Result::INVALID_GOAL);
     action_res->set__error_string("Current goal cancelled due to new incoming action.");

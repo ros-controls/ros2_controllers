@@ -382,12 +382,16 @@ TEST_F(TestTrajectoryActions, test_state_tolerances_fail)
   SetUpExecutor(params);
   SetUpControllerHardware();
 
+  const double init_pos1 = joint_pos_[0];
+  const double init_pos2 = joint_pos_[1];
+  const double init_pos3 = joint_pos_[2];
+
   std::shared_future<typename GoalHandle::SharedPtr> gh_future;
   // send goal
   {
     std::vector<JointTrajectoryPoint> points;
     JointTrajectoryPoint point;
-    point.time_from_start = rclcpp::Duration::from_seconds(1.0);
+    point.time_from_start = rclcpp::Duration::from_seconds(0.1);
     point.positions.resize(joint_names_.size());
 
     point.positions[0] = 4.0;
@@ -404,6 +408,13 @@ TEST_F(TestTrajectoryActions, test_state_tolerances_fail)
   EXPECT_EQ(
     control_msgs::action::FollowJointTrajectory_Result::PATH_TOLERANCE_VIOLATED,
     common_action_result_code_);
+
+  // run an update, it should be holding
+  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+
+  EXPECT_NEAR(init_pos1, joint_pos_[0], COMMON_THRESHOLD);
+  EXPECT_NEAR(init_pos2, joint_pos_[1], COMMON_THRESHOLD);
+  EXPECT_NEAR(init_pos3, joint_pos_[2], COMMON_THRESHOLD);
 }
 
 TEST_F(TestTrajectoryActions, test_cancel_hold_position)
