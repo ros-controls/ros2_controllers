@@ -68,7 +68,6 @@ public:
     const rclcpp_lifecycle::State & previous_state,
     std::vector<hardware_interface::LoanedCommandInterface> & command_interfaces);
 
-  FORWARD_COMMAND_CONTROLLER_PUBLIC
   controller_interface::CallbackReturn execute_deactivate(
     const rclcpp_lifecycle::State & previous_state);
 

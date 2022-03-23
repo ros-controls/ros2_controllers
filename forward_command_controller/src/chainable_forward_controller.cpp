@@ -32,9 +32,12 @@ ChainableForwardController::ChainableForwardController()
 {
 }
 
-CallbackReturn ChainableForwardController::on_init() { return execute_init(get_node()); }
+controller_interface::CallbackReturn ChainableForwardController::on_init()
+{
+  return execute_init(get_node());
+}
 
-CallbackReturn ChainableForwardController::on_configure(
+controller_interface::CallbackReturn ChainableForwardController::on_configure(
   const rclcpp_lifecycle::State & previous_state)
 {
   auto ret = execute_configure(previous_state, command_interfaces_);
@@ -48,7 +51,7 @@ CallbackReturn ChainableForwardController::on_configure(
   reference_interface_names_ = command_interface_names_;
   // for any case make reference interfaces size of command interfaces
   reference_interfaces_.resize(
-    reference_interface_names_.size(), std::numeric_limits<double>::quiet_NaN());
+    command_interfaces_.size(), std::numeric_limits<double>::quiet_NaN());
 
   for (const auto & value : reference_interfaces_)
   {
@@ -91,7 +94,7 @@ bool ChainableForwardController::on_set_chained_mode(bool chained_mode)
   return true;
 }
 
-CallbackReturn ChainableForwardController::on_activate(
+controller_interface::CallbackReturn ChainableForwardController::on_activate(
   const rclcpp_lifecycle::State & previous_state)
 {
   auto ret = execute_activate(previous_state, command_interfaces_);
@@ -104,10 +107,10 @@ CallbackReturn ChainableForwardController::on_activate(
     reference_interfaces_.begin(), reference_interfaces_.end(),
     std::numeric_limits<double>::quiet_NaN());
 
-  return CallbackReturn::SUCCESS;
+  return controller_interface::CallbackReturn::SUCCESS;
 }
 
-CallbackReturn ChainableForwardController::on_deactivate(
+controller_interface::CallbackReturn ChainableForwardController::on_deactivate(
   const rclcpp_lifecycle::State & previous_state)
 {
   return execute_deactivate(previous_state);
