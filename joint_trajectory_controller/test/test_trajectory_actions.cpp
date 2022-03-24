@@ -390,14 +390,23 @@ TEST_F(TestTrajectoryActions, test_state_tolerances_fail)
   // send goal
   {
     std::vector<JointTrajectoryPoint> points;
-    JointTrajectoryPoint point;
-    point.time_from_start = rclcpp::Duration::from_seconds(0.0001);
-    point.positions.resize(joint_names_.size());
+    JointTrajectoryPoint point1;
+    point1.time_from_start = rclcpp::Duration::from_seconds(0.0);
+    point1.positions.resize(joint_names_.size());
 
-    point.positions[0] = 4.0;
-    point.positions[1] = 5.0;
-    point.positions[2] = 6.0;
-    points.push_back(point);
+    point1.positions[0] = 4.0;
+    point1.positions[1] = 5.0;
+    point1.positions[2] = 6.0;
+    points.push_back(point1);
+
+    JointTrajectoryPoint point2;
+    point2.time_from_start = rclcpp::Duration::from_seconds(0.1);
+    point2.positions.resize(joint_names_.size());
+
+    point2.positions[0] = 7.0;
+    point2.positions[1] = 8.0;
+    point2.positions[2] = 9.0;
+    points.push_back(point2);
 
     gh_future = sendActionGoal(points, 1.0, goal_options_);
   }
