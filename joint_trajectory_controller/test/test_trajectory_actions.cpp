@@ -382,10 +382,6 @@ TEST_F(TestTrajectoryActions, test_state_tolerances_fail)
   SetUpExecutor(params);
   SetUpControllerHardware();
 
-  const double init_pos1 = joint_pos_[0];
-  const double init_pos2 = joint_pos_[1];
-  const double init_pos3 = joint_pos_[2];
-
   std::shared_future<typename GoalHandle::SharedPtr> gh_future;
   // send goal
   {
@@ -421,9 +417,9 @@ TEST_F(TestTrajectoryActions, test_state_tolerances_fail)
   // run an update, it should be holding
   traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
 
-  EXPECT_NEAR(init_pos1, joint_pos_[0], COMMON_THRESHOLD);
-  EXPECT_NEAR(init_pos2, joint_pos_[1], COMMON_THRESHOLD);
-  EXPECT_NEAR(init_pos3, joint_pos_[2], COMMON_THRESHOLD);
+  EXPECT_NEAR(INITIAL_POS_JOINT1, joint_pos_[0], COMMON_THRESHOLD);
+  EXPECT_NEAR(INITIAL_POS_JOINT2, joint_pos_[1], COMMON_THRESHOLD);
+  EXPECT_NEAR(INITIAL_POS_JOINT3, joint_pos_[2], COMMON_THRESHOLD);
 }
 
 TEST_F(TestTrajectoryActions, test_goal_tolerances_fail)
