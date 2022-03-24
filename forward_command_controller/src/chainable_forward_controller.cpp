@@ -51,12 +51,7 @@ controller_interface::CallbackReturn ChainableForwardController::on_configure(
   reference_interface_names_ = command_interface_names_;
   // for any case make reference interfaces size of command interfaces
   reference_interfaces_.resize(
-    command_interfaces_.size(), std::numeric_limits<double>::quiet_NaN());
-
-  for (const auto & value : reference_interfaces_)
-  {
-    RCLCPP_ERROR(get_node()->get_logger(), "Reference interface value is %f", value);
-  }
+    reference_interface_names_.size(), std::numeric_limits<double>::quiet_NaN());
 
   return CallbackReturn::SUCCESS;
 }
@@ -133,6 +128,10 @@ controller_interface::return_type ChainableForwardController::update_and_write_c
   {
     if (!std::isnan(reference_interfaces_[i]))
     {
+      RCLCPP_ERROR(
+        get_node()->get_logger(), "Reference interface value is %f; Command interface name is '%s'",
+        reference_interfaces_[i], command_interfaces_[i].get_full_name().c_str());
+
       command_interfaces_[i].set_value(reference_interfaces_[i]);
     }
   }

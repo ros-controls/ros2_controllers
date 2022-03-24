@@ -57,7 +57,7 @@ controller_interface::CallbackReturn ForwardControllersBase::execute_configure(
   auto ret = this->read_parameters();
   if (ret != controller_interface::CallbackReturn::SUCCESS)
   {
-    RCLCPP_ERROR(get_node()->get_logger(), "Error when reading parameters.");
+    RCLCPP_ERROR(node_->get_logger(), "Error when reading parameters.");
     return ret;
   }
 
