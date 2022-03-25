@@ -587,8 +587,8 @@ TEST_F(JointStateBroadcasterTest, UpdateTest)
 {
   SetUpStateBroadcaster();
 
-  auto node_state = state_broadcaster_->configure();
-  node_state = state_broadcaster_->activate();
+  auto node_state = state_broadcaster_->get_node()->configure();
+  node_state = state_broadcaster_->get_node()->activate();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
   ASSERT_EQ(
     state_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
@@ -597,10 +597,10 @@ TEST_F(JointStateBroadcasterTest, UpdateTest)
 
 void JointStateBroadcasterTest::test_published_joint_state_message(const std::string & topic)
 {
-  auto node_state = state_broadcaster_->configure();
+  auto node_state = state_broadcaster_->get_node()->configure();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
 
-  node_state = state_broadcaster_->activate();
+  node_state = state_broadcaster_->get_node()->activate();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
 
   rclcpp::Node test_node("test_node");
@@ -649,10 +649,10 @@ TEST_F(JointStateBroadcasterTest, JointStatePublishTestLocalTopic)
 void JointStateBroadcasterTest::test_published_dynamic_joint_state_message(
   const std::string & topic)
 {
-  auto node_state = state_broadcaster_->configure();
+  auto node_state = state_broadcaster_->get_node()->configure();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
 
-  node_state = state_broadcaster_->activate();
+  node_state = state_broadcaster_->get_node()->activate();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
 
   rclcpp::Node test_node("test_node");

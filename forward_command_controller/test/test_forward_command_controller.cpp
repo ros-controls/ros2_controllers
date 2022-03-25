@@ -250,10 +250,10 @@ TEST_F(ForwardCommandControllerTest, CommandCallbackTest)
   ASSERT_EQ(joint_2_pos_cmd_.get_value(), 2.1);
   ASSERT_EQ(joint_3_pos_cmd_.get_value(), 3.1);
 
-  auto node_state = controller_->configure();
+  auto node_state = controller_->get_node()->configure();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
 
-  node_state = controller_->activate();
+  node_state = controller_->get_node()->activate();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
 
   // send a new command
@@ -296,7 +296,7 @@ TEST_F(ForwardCommandControllerTest, ActivateDeactivateCommandsResetSuccess)
   auto node_state = controller_->configure();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
 
-  node_state = controller_->activate();
+  node_state = controller_->get_node()->activate();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
 
   auto command_msg = std::make_shared<std_msgs::msg::Float64MultiArray>();
@@ -314,7 +314,7 @@ TEST_F(ForwardCommandControllerTest, ActivateDeactivateCommandsResetSuccess)
   ASSERT_EQ(joint_2_pos_cmd_.get_value(), 20);
   ASSERT_EQ(joint_3_pos_cmd_.get_value(), 30);
 
-  node_state = controller_->deactivate();
+  node_state = controller_->get_node()->deactivate();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
 
   // command ptr should be reset (nullptr) after deactivation - same check as in `update`
@@ -338,7 +338,7 @@ TEST_F(ForwardCommandControllerTest, ActivateDeactivateCommandsResetSuccess)
     controller_->rt_command_ptr_.readFromRT() && *(controller_->rt_command_ptr_.readFromRT()));
 
   // Now activate again
-  node_state = controller_->activate();
+  node_state = controller_->get_node()->activate();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
 
   // command ptr should be reset (nullptr) after activation - same check as in `update`

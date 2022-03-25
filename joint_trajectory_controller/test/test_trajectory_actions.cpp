@@ -74,7 +74,7 @@ protected:
 
     SetUpAndActivateTrajectoryController(true, parameters);
 
-    executor_->add_node(traj_node_->get_node_base_interface());
+    executor_->add_node(traj_controller_->get_node()->get_node_base_interface());
 
     SetUpActionClient();
 
