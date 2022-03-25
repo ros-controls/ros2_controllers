@@ -21,7 +21,6 @@
 #include "rclcpp/executors/single_threaded_executor.hpp"
 #include "rclcpp/utilities.hpp"
 #include "ros2_control_test_assets/descriptions.hpp"
-#include "test_trajectory_controller_utils.hpp"
 
 TEST(TestLoadJointStateController, load_controller)
 {
