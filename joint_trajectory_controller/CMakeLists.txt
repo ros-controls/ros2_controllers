@@ -77,6 +77,7 @@ if(BUILD_TESTING)
     hardware_interface
     rclcpp
     rclcpp_lifecycle
+    control_toolbox
     realtime_tools
     ros2_control_test_assets
     trajectory_msgs
@@ -89,6 +90,7 @@ if(BUILD_TESTING)
   target_include_directories(test_load_joint_trajectory_controller PRIVATE include)
   ament_target_dependencies(test_load_joint_trajectory_controller
     controller_manager
+    control_toolbox
     realtime_tools
     ros2_control_test_assets
   )
@@ -115,6 +117,7 @@ endif()
 ament_export_dependencies(
   controller_interface
   control_msgs
+  control_toolbox
   hardware_interface
   rclcpp
   rclcpp_lifecycle
