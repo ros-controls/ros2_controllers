@@ -128,10 +128,6 @@ controller_interface::return_type ChainableForwardController::update_and_write_c
   {
     if (!std::isnan(reference_interfaces_[i]))
     {
-      RCLCPP_ERROR(
-        get_node()->get_logger(), "Reference interface value is %f; Command interface name is '%s'",
-        reference_interfaces_[i], command_interfaces_[i].get_full_name().c_str());
-
       command_interfaces_[i].set_value(reference_interfaces_[i]);
     }
   }
