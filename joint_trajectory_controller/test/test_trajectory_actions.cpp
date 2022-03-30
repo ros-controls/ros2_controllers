@@ -426,10 +426,13 @@ TEST_F(TestTrajectoryActions, test_goal_tolerances_fail)
 {
   // set joint tolerance parameters
   const double goal_tol = 0.1;
+  // set very small goal_time so that goal_time is violated
+  const double goal_time = 0.000001;
   std::vector<rclcpp::Parameter> params = {
     rclcpp::Parameter("constraints.joint1.goal", goal_tol),
     rclcpp::Parameter("constraints.joint2.goal", goal_tol),
-    rclcpp::Parameter("constraints.joint3.goal", goal_tol)};
+    rclcpp::Parameter("constraints.joint3.goal", goal_tol),
+    rclcpp::Parameter("constraints.goal_time", goal_time)};
 
   SetUpExecutor(params);
   SetUpControllerHardware();

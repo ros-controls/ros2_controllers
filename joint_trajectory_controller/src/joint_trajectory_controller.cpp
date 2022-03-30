@@ -186,6 +186,8 @@ controller_interface::return_type JointTrajectoryController::update(
     {
       bool abort = false;
       bool outside_goal_tolerance = false;
+      bool within_goal_time = true;
+      double time_difference = 0.0;
       const bool before_last_point = end_segment_itr != (*traj_point_active_ptr_)->end();
 
       // Check state/goal tolerance
@@ -207,11 +209,25 @@ controller_interface::return_type JointTrajectoryController::update(
             state_error, index, default_tolerances_.goal_state_tolerance[index], false))
         {
           outside_goal_tolerance = true;
+
+          if (default_tolerances_.goal_time_tolerance != 0.0)
+          {
+            // if we exceed goal_time_toleralance set it to aborted
+            const rclcpp::Time traj_start = (*traj_point_active_ptr_)->get_trajectory_start_time();
+            const rclcpp::Time traj_end = traj_start + start_segment_itr->time_from_start;
+
+            time_difference = node_->now().seconds() - traj_end.seconds();
+
+            if (time_difference > default_tolerances_.goal_time_tolerance)
+            {
+              within_goal_time = false;
+            }
+          }
         }
       }
 
       // set values for next hardware write() if tolerance is met
-      if (!abort && !outside_goal_tolerance)
+      if (!abort && within_goal_time)
       {
         if (use_closed_loop_pid_adapter)
         {
@@ -276,21 +292,13 @@ controller_interface::return_type JointTrajectoryController::update(
         active_goal->setFeedback(feedback);
 
         // check abort
-        if (abort || outside_goal_tolerance)
+        if (abort)
         {
           set_hold_position();
           auto result = std::make_shared<FollowJTrajAction::Result>();
 
-          if (abort)
-          {
-            RCLCPP_WARN(node_->get_logger(), "Aborted due to state tolerance violation");
-            result->set__error_code(FollowJTrajAction::Result::PATH_TOLERANCE_VIOLATED);
-          }
-          else if (outside_goal_tolerance)
-          {
-            RCLCPP_WARN(node_->get_logger(), "Aborted due to goal tolerance violation");
-            result->set__error_code(FollowJTrajAction::Result::GOAL_TOLERANCE_VIOLATED);
-          }
+          RCLCPP_WARN(node_->get_logger(), "Aborted due to state tolerance violation");
+          result->set__error_code(FollowJTrajAction::Result::PATH_TOLERANCE_VIOLATED);
           active_goal->setAborted(result);
           // TODO(matthew-reynolds): Need a lock-free write here
           // See https://github.com/ros-controls/ros2_controllers/issues/168
@@ -311,26 +319,18 @@ controller_interface::return_type JointTrajectoryController::update(
 
             RCLCPP_INFO(node_->get_logger(), "Goal reached, success!");
           }
-          else if (default_tolerances_.goal_time_tolerance != 0.0)
+          else if (!within_goal_time)
           {
-            // if we exceed goal_time_toleralance set it to aborted
-            const rclcpp::Time traj_start = (*traj_point_active_ptr_)->get_trajectory_start_time();
-            const rclcpp::Time traj_end = traj_start + start_segment_itr->time_from_start;
-
-            const double difference = time.seconds() - traj_end.seconds();
-            if (difference > default_tolerances_.goal_time_tolerance)
-            {
-              set_hold_position();
-              auto result = std::make_shared<FollowJTrajAction::Result>();
-              result->set__error_code(FollowJTrajAction::Result::GOAL_TOLERANCE_VIOLATED);
-              active_goal->setAborted(result);
-              // TODO(matthew-reynolds): Need a lock-free write here
-              // See https://github.com/ros-controls/ros2_controllers/issues/168
-              rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
-              RCLCPP_WARN(
-                node_->get_logger(), "Aborted due goal_time_tolerance exceeding by %f seconds",
-                difference);
-            }
+            set_hold_position();
+            auto result = std::make_shared<FollowJTrajAction::Result>();
+            result->set__error_code(FollowJTrajAction::Result::GOAL_TOLERANCE_VIOLATED);
+            active_goal->setAborted(result);
+            // TODO(matthew-reynolds): Need a lock-free write here
+            // See https://github.com/ros-controls/ros2_controllers/issues/168
+            rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
+            RCLCPP_WARN(
+              node_->get_logger(), "Aborted due goal_time_tolerance exceeding by %f seconds",
+              time_difference);
           }
         }
       }
