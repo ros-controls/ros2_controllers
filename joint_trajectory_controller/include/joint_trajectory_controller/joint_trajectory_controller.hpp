@@ -22,6 +22,7 @@
 #include <utility>
 #include <vector>
 
+// TODO: try minimizing the amount of includes
 #include "control_msgs/action/follow_joint_trajectory.hpp"
 #include "control_msgs/msg/joint_trajectory_controller_state.hpp"
 #include "control_toolbox/pid.hpp"
@@ -45,15 +46,12 @@
 
 using namespace std::chrono_literals;  // NOLINT
 
+// TODO check if this is needed at all
 namespace rclcpp_action
 {
 template <typename ActionT>
 class ServerGoalHandle;
 }  // namespace rclcpp_action
-namespace rclcpp_lifecycle
-{
-class State;
-}  // namespace rclcpp_lifecycle
 
 namespace joint_trajectory_controller
 {
@@ -163,16 +161,13 @@ protected:
   rclcpp::Subscription<trajectory_msgs::msg::JointTrajectory>::SharedPtr joint_command_subscriber_ =
     nullptr;
 
+  // TODO clean this mess
   std::shared_ptr<Trajectory> * traj_point_active_ptr_ = nullptr;
   std::shared_ptr<Trajectory> traj_external_point_ptr_ = nullptr;
   std::shared_ptr<Trajectory> traj_home_point_ptr_ = nullptr;
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> traj_msg_home_ptr_ = nullptr;
   realtime_tools::RealtimeBuffer<std::shared_ptr<trajectory_msgs::msg::JointTrajectory>>
     traj_msg_external_point_ptr_;
-
-  // The controller should be in halted state after creation otherwise memory corruption
-  // TODO(anyone): Is the variable relevant, since we are using lifecycle?
-  bool is_halted_ = true;
 
   using ControllerStateMsg = control_msgs::msg::JointTrajectoryControllerState;
   using StatePublisher = realtime_tools::RealtimePublisher<ControllerStateMsg>;
@@ -205,6 +200,7 @@ protected:
   void feedback_setup_callback(
     std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle);
 
+  // TODO try refactoring these into trajectory_operations.cpp or into trajectory.hpp directly
   // fill trajectory_msg so it matches joints controlled by this controller
   // positions set to current position, velocities, accelerations and efforts to 0.0
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
@@ -240,7 +236,7 @@ protected:
     const JointTrajectoryPoint & desired_state, const JointTrajectoryPoint & current_state,
     const JointTrajectoryPoint & state_error);
 
-  void read_state_from_hardware(JointTrajectoryPoint & state);
+  void read_state_from_state_interfaces(JointTrajectoryPoint & state);
 
   bool read_state_from_command_interfaces(JointTrajectoryPoint & state);
 

@@ -23,6 +23,7 @@
 #include <string>
 #include <vector>
 
+// TODO this is way too much
 #include "angles/angles.h"
 #include "builtin_interfaces/msg/duration.hpp"
 #include "builtin_interfaces/msg/time.hpp"
@@ -45,8 +46,7 @@
 
 namespace joint_trajectory_controller
 {
-JointTrajectoryController::JointTrajectoryController()
-: controller_interface::ControllerInterface(), joint_names_({})
+JointTrajectoryController::JointTrajectoryController() : controller_interface::ControllerInterface()
 {
 }
 
@@ -116,6 +116,7 @@ controller_interface::return_type JointTrajectoryController::update(
     return controller_interface::return_type::OK;
   }
 
+  // TODO turn this into a proper function & unit test plz
   auto compute_error_for_joint = [&](
                                    JointTrajectoryPoint & error, int index,
                                    const JointTrajectoryPoint & current,
@@ -133,6 +134,7 @@ controller_interface::return_type JointTrajectoryController::update(
     }
   };
 
+  // TODO if "RealtimeSubscriber" existed with an API to check for new message & get message that'd make this very readable
   // Check if a new external message has been received from nonRT threads
   auto current_external_msg = traj_external_point_ptr_->get_trajectory_msg();
   auto new_external_msg = traj_msg_external_point_ptr_.readFromRT();
@@ -144,10 +146,15 @@ controller_interface::return_type JointTrajectoryController::update(
     traj_external_point_ptr_->update(*new_external_msg);
   }
 
+  // TODO these should be class members and reserved in the configure method
+  // they may be resized here but if they were reserved large enough, it's ok
+  // it should also be cleaned at the end of update()
+  // perhaps this could be a class of it's own
   JointTrajectoryPoint state_current, state_desired, state_error;
   const auto joint_num = joint_names_.size();
   resize_joint_trajectory_point(state_current, joint_num);
 
+  // TODO please convert into member function
   // TODO(anyone): can I here also use const on joint_interface since the reference_wrapper is not
   // changed, but its value only?
   auto assign_interface_from_point =
@@ -159,8 +166,8 @@ controller_interface::return_type JointTrajectoryController::update(
     };
 
   // current state update
-  state_current.time_from_start.set__sec(0);
-  read_state_from_hardware(state_current);
+  state_current.time_from_start.sec = 0;
+  read_state_from_state_interfaces(state_current);
 
   // currently carrying out a trajectory
   if (traj_point_active_ptr_ && (*traj_point_active_ptr_)->has_trajectory_msg())
@@ -181,6 +188,7 @@ controller_interface::return_type JointTrajectoryController::update(
 
     // find segment for current timestamp
     TrajectoryPointConstIter start_segment_itr, end_segment_itr;
+    // trajectory interpolation is always open-loop
     const bool valid_point =
       (*traj_point_active_ptr_)->sample(time, state_desired, start_segment_itr, end_segment_itr);
 
@@ -335,7 +343,7 @@ controller_interface::return_type JointTrajectoryController::update(
   return controller_interface::return_type::OK;
 }
 
-void JointTrajectoryController::read_state_from_hardware(JointTrajectoryPoint & state)
+void JointTrajectoryController::read_state_from_state_interfaces(JointTrajectoryPoint & state)
 {
   const auto joint_num = joint_names_.size();
   auto assign_point_from_interface =
@@ -809,7 +817,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
 
   // Initialize current state storage if hardware state has tracking offset
   resize_joint_trajectory_point(last_commanded_state_, joint_names_.size());
-  read_state_from_hardware(last_commanded_state_);
+  read_state_from_state_interfaces(last_commanded_state_);
   // Handle restart of controller by reading last_commanded_state_ from commands is
   // those are not nan
   trajectory_msgs::msg::JointTrajectoryPoint state;
