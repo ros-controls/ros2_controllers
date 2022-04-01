@@ -243,11 +243,11 @@ TEST_P(TrajectoryControllerTestParameterized, cleanup)
   traj_controller_->wait_for_trajectory(executor);
   traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
 
-  auto state = traj_controller_->deactivate();
+  auto state = traj_controller_->get_node()->deactivate();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
 
-  state = traj_controller_->cleanup();
+  state = traj_controller_->get_node()->cleanup();
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
   // update for 0.25 seconds
   const auto start_time = rclcpp::Clock().now();
@@ -298,7 +298,7 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
   std::this_thread::sleep_for(FIRST_POINT_TIME);
   traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
   // deactivated
-  state = traj_controller_->deactivate();
+  state = traj_controller_->get_node()->deactivate();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
 
   // TODO(denis): on my laptop I get delta of approx 0.1083. Is this me or is it something wrong?
@@ -310,7 +310,7 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
   EXPECT_NEAR(5.5, joint_pos_[2], allowed_delta);
 
   // cleanup
-  state = traj_controller_->cleanup();
+  state = traj_controller_->get_node()->cleanup();
 
   // update loop receives a new msg and updates accordingly
   traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
@@ -761,7 +761,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_execute_partial_traj_in_futur
   rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", true);
   traj_node->set_parameter(partial_joints_parameters);
   traj_controller_->configure();
-  traj_controller_->activate();
+  traj_controller_->get_node()->activate();
 
   std::vector<std::vector<double>> full_traj{{{2., 3., 4.}, {4., 6., 8.}}};
   std::vector<std::vector<double>> partial_traj{

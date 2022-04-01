@@ -92,7 +92,7 @@ struct SegmentTolerances
  * \return Trajectory segment tolerances.
  */
 SegmentTolerances get_segment_tolerances(
-  const rclcpp::Node & node, const std::vector<std::string> & joint_names)
+  const rclcpp_lifecycle::LifecycleNode & node, const std::vector<std::string> & joint_names)
 {
   const auto n_joints = joint_names.size();
   SegmentTolerances tolerances;

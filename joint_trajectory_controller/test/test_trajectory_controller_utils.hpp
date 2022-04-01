@@ -117,7 +117,7 @@ public:
     command_interface_types_ = {"position"};
     state_interface_types_ = {"position", "velocity"};
 
-    node_ = std::make_shared<rclcpp::Node>("trajectory_publisher_");
+    node_ = std::make_shared<rclcpp_lifecycle::LifecycleNode>("trajectory_publisher_");
     trajectory_publisher_ = node_->create_publisher<trajectory_msgs::msg::JointTrajectory>(
       controller_name_ + "/joint_trajectory", rclcpp::SystemDefaultsQoS());
   }
@@ -216,7 +216,7 @@ public:
     }
 
     traj_controller_->assign_interfaces(std::move(cmd_interfaces), std::move(state_interfaces));
-    traj_controller_->activate();
+    traj_controller_->get_node()->activate();
   }
 
   static void TearDownTestCase() { rclcpp::shutdown(); }
@@ -350,11 +350,11 @@ public:
   std::vector<std::string> command_interface_types_;
   std::vector<std::string> state_interface_types_;
 
-  rclcpp::Node::SharedPtr node_;
+  rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
   rclcpp::Publisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr trajectory_publisher_;
 
   std::shared_ptr<TestableJointTrajectoryController> traj_controller_;
-  std::shared_ptr<rclcpp::Node> traj_node_;
+  std::shared_ptr<rclcpp_lifecycle::LifecycleNode> traj_node_;
   rclcpp::Subscription<control_msgs::msg::JointTrajectoryControllerState>::SharedPtr
     state_subscriber_;
   mutable std::mutex state_mutex_;

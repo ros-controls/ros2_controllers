@@ -46,7 +46,7 @@ public:
   bool init(
     std::experimental::optional<
       std::reference_wrapper<hardware_interface::LoanedCommandInterface>> /* joint_handle */,
-    const rclcpp::Node::SharedPtr & /* node */)
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr & /* node */)
   {
     return false;
   }
@@ -73,7 +73,7 @@ public:
   bool init(
     std::experimental::optional<std::reference_wrapper<hardware_interface::LoanedCommandInterface>>
       joint_handle,
-    const rclcpp::Node::SharedPtr & /* node */)
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr & /* node */)
   {
     joint_handle_ = joint_handle;
     return true;
@@ -116,7 +116,7 @@ class HardwareInterfaceAdapter<hardware_interface::HW_IF_EFFORT>
 public:
   template <typename ParameterT>
   auto auto_declare(
-    const rclcpp::Node::SharedPtr & node, const std::string & name,
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr & node, const std::string & name,
     const ParameterT & default_value)
   {
     if (!node->has_parameter(name))
@@ -132,7 +132,7 @@ public:
   bool init(
     std::experimental::optional<std::reference_wrapper<hardware_interface::LoanedCommandInterface>>
       joint_handle,
-    const rclcpp::Node::SharedPtr & node)
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr & node)
   {
     joint_handle_ = joint_handle;
     // Init PID gains from ROS parameter server
