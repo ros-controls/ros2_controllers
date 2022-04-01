@@ -124,7 +124,8 @@ CallbackReturn ForwardCommandController::on_activate(
   }
 
   // reset command buffer if a command came through callback when controller was inactive
-  rt_command_ptr_= realtime_tools::RealtimeBuffer<std::shared_ptr<CmdType>>(nullptr);;
+  rt_command_ptr_ = realtime_tools::RealtimeBuffer<std::shared_ptr<CmdType>>(nullptr);
+  ;
 
   return CallbackReturn::SUCCESS;
 }
@@ -133,7 +134,8 @@ CallbackReturn ForwardCommandController::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   // reset command buffer
-  rt_command_ptr_= realtime_tools::RealtimeBuffer<std::shared_ptr<CmdType>>(nullptr);;
+  rt_command_ptr_ = realtime_tools::RealtimeBuffer<std::shared_ptr<CmdType>>(nullptr);
+  ;
   return CallbackReturn::SUCCESS;
 }
 
