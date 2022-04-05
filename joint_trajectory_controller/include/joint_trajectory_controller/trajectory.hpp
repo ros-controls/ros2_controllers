@@ -72,7 +72,7 @@ public:
   */
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   bool sample(
-    const rclcpp::Time & sample_time, trajectory_msgs::msg::JointTrajectoryPoint & expected_state,
+    const rclcpp::Time & sample_time, trajectory_msgs::msg::JointTrajectoryPoint & output_state,
     TrajectoryPointConstIter & start_segment_itr, TrajectoryPointConstIter & end_segment_itr);
 
   /**

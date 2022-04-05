@@ -58,11 +58,11 @@ void Trajectory::update(std::shared_ptr<trajectory_msgs::msg::JointTrajectory> j
 }
 
 bool Trajectory::sample(
-  const rclcpp::Time & sample_time, trajectory_msgs::msg::JointTrajectoryPoint & expected_state,
+  const rclcpp::Time & sample_time, trajectory_msgs::msg::JointTrajectoryPoint & output_state,
   TrajectoryPointConstIter & start_segment_itr, TrajectoryPointConstIter & end_segment_itr)
 {
   THROW_ON_NULLPTR(trajectory_msg_)
-  expected_state = trajectory_msgs::msg::JointTrajectoryPoint();
+  output_state = trajectory_msgs::msg::JointTrajectoryPoint();
 
   if (trajectory_msg_->points.empty())
   {
@@ -98,7 +98,7 @@ bool Trajectory::sample(
 
     interpolate_between_points(
       t0, state_before_traj_msg_, first_point_timestamp, first_point_in_msg, sample_time,
-      expected_state);
+      output_state);
     start_segment_itr = begin();  // no segments before the first
     end_segment_itr = begin();
     return true;
@@ -118,7 +118,7 @@ bool Trajectory::sample(
 
     if (sample_time >= t0 && sample_time < t1)
     {
-      interpolate_between_points(t0, point, t1, next_point, sample_time, expected_state);
+      interpolate_between_points(t0, point, t1, next_point, sample_time, output_state);
       start_segment_itr = begin() + i;
       end_segment_itr = begin() + (i + 1);
       return true;
@@ -128,15 +128,15 @@ bool Trajectory::sample(
   // whole animation has played out
   start_segment_itr = --end();
   end_segment_itr = end();
-  expected_state = (*start_segment_itr);
+  output_state = (*start_segment_itr);
   // the trajectories in msg may have empty velocities/accel, so resize them
-  if (expected_state.velocities.empty())
+  if (output_state.velocities.empty())
   {
-    expected_state.velocities.resize(expected_state.positions.size(), 0.0);
+    output_state.velocities.resize(output_state.positions.size(), 0.0);
   }
-  if (expected_state.accelerations.empty())
+  if (output_state.accelerations.empty())
   {
-    expected_state.accelerations.resize(expected_state.positions.size(), 0.0);
+    output_state.accelerations.resize(output_state.positions.size(), 0.0);
   }
   return true;
 }
