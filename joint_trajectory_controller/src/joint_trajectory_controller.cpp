@@ -212,7 +212,7 @@ controller_interface::return_type JointTrajectoryController::update(
 
           if (default_tolerances_.goal_time_tolerance != 0.0)
           {
-            // if we exceed goal_time_toleralance set it to aborted
+            // if we exceed goal_time_tolerance set it to aborted
             const rclcpp::Time traj_start = (*traj_point_active_ptr_)->get_trajectory_start_time();
             const rclcpp::Time traj_end = traj_start + start_segment_itr->time_from_start;
 
@@ -332,6 +332,8 @@ controller_interface::return_type JointTrajectoryController::update(
               node_->get_logger(), "Aborted due goal_time_tolerance exceeding by %f seconds",
               time_difference);
           }
+          // else, run another cycle while waiting for outside_goal_tolerance
+          // to be satisfied or violated within the goal_time_tolerance
         }
       }
     }
