@@ -189,23 +189,52 @@ controller_interface::return_type JointTrajectoryController::update()
       const bool before_last_point = end_segment_itr != (*traj_point_active_ptr_)->end();
 
       // set values for next hardware write()
+      if (use_closed_loop_pid_adapter)
+      {
+        // Update PIDs
+        for (auto i = 0ul; i < joint_num; ++i)
+        {
+          tmp_command_[i] = (state_desired.velocities[i] * ff_velocity_scale_[i]) +
+                            pids_[i]->computeCommand(
+                              state_desired.positions[i] - state_current.positions[i],
+                              state_desired.velocities[i] - state_current.velocities[i],
+                              (uint64_t)period.nanoseconds());
+        }
+      }
       if (has_position_command_interface_)
       {
         assign_interface_from_point(joint_command_interface_[0], state_desired.positions);
       }
       if (has_velocity_command_interface_)
       {
+<<<<<<< HEAD
         assign_interface_from_point(joint_command_interface_[1], state_desired.velocities);
+=======
+        if (use_closed_loop_pid_adapter)
+        {
+          assign_interface_from_point(joint_command_interface_[1], tmp_command_);
+        }
+        else
+        {
+          assign_interface_from_point(joint_command_interface_[1], state_desired.velocities);
+        }
+>>>>>>> 97c9431 ([JTC] Implement effort-only command interface (#225))
       }
       if (has_acceleration_command_interface_)
       {
         assign_interface_from_point(joint_command_interface_[2], state_desired.accelerations);
       }
-      // TODO(anyone): Add here "if using_closed_loop_hw_interface_adapter" (see ROS1) - #171
-      //       if (check_if_interface_type_exist(
-      //           command_interface_types_, hardware_interface::HW_IF_EFFORT)) {
-      //         assign_interface_from_point(joint_command_interface_[3], state_desired.effort);
-      //       }
+      if (has_effort_command_interface_)
+      {
+        if (use_closed_loop_pid_adapter)
+        {
+          assign_interface_from_point(joint_command_interface_[3], tmp_command_);
+        }
+        else
+        {
+          assign_interface_from_point(joint_command_interface_[3], state_desired.effort);
+        }
+      }
 
       for (auto index = 0ul; index < joint_num; ++index)
       {
@@ -462,6 +491,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
   // 2. velocity
   // 2. position [velocity, [acceleration]]
 
+<<<<<<< HEAD
   // effort can't be combined with other interfaces
   if (contains_interface_type(command_interface_types_, hardware_interface::HW_IF_EFFORT))
   {
@@ -494,6 +524,16 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
   {
     has_acceleration_command_interface_ = true;
   }
+=======
+  has_position_command_interface_ =
+    contains_interface_type(command_interface_types_, hardware_interface::HW_IF_POSITION);
+  has_velocity_command_interface_ =
+    contains_interface_type(command_interface_types_, hardware_interface::HW_IF_VELOCITY);
+  has_acceleration_command_interface_ =
+    contains_interface_type(command_interface_types_, hardware_interface::HW_IF_ACCELERATION);
+  has_effort_command_interface_ =
+    contains_interface_type(command_interface_types_, hardware_interface::HW_IF_EFFORT);
+>>>>>>> 97c9431 ([JTC] Implement effort-only command interface (#225))
 
   if (has_velocity_command_interface_)
   {
@@ -525,6 +565,44 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
     return CallbackReturn::FAILURE;
   }
 
+<<<<<<< HEAD
+=======
+  // effort can't be combined with other interfaces
+  if (has_effort_command_interface_)
+  {
+    if (command_interface_types_.size() == 1)
+    {
+      use_closed_loop_pid_adapter = true;
+    }
+    else
+    {
+      RCLCPP_ERROR(logger, "'effort' command interface has to be used alone.");
+      return CallbackReturn::FAILURE;
+    }
+  }
+
+  if (use_closed_loop_pid_adapter)
+  {
+    size_t num_joints = joint_names_.size();
+    pids_.resize(num_joints);
+    ff_velocity_scale_.resize(num_joints);
+    tmp_command_.resize(num_joints, 0.0);
+
+    // Init PID gains from ROS parameter server
+    for (size_t i = 0; i < pids_.size(); ++i)
+    {
+      const std::string prefix = "gains." + joint_names_[i];
+      const auto k_p = auto_declare<double>(prefix + ".p", 0.0);
+      const auto k_i = auto_declare<double>(prefix + ".i", 0.0);
+      const auto k_d = auto_declare<double>(prefix + ".d", 0.0);
+      const auto i_clamp = auto_declare<double>(prefix + ".i_clamp", 0.0);
+      ff_velocity_scale_[i] = auto_declare<double>("ff_velocity_scale/" + joint_names_[i], 0.0);
+      // Initialize PID
+      pids_[i] = std::make_shared<control_toolbox::Pid>(k_p, k_i, k_d, i_clamp, -i_clamp);
+    }
+  }
+
+>>>>>>> 97c9431 ([JTC] Implement effort-only command interface (#225))
   // Read always state interfaces from the parameter because they can be used
   // independently from the controller's type.
   // Specialized, child controllers should set its default value.
@@ -568,7 +646,7 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
 
   if (has_velocity_state_interface_)
   {
-    if (!contains_interface_type(state_interface_types_, hardware_interface::HW_IF_POSITION))
+    if (!has_position_state_interface_)
     {
       RCLCPP_ERROR(
         logger,
@@ -577,13 +655,33 @@ JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
       return CallbackReturn::FAILURE;
     }
   }
-  else if (has_acceleration_state_interface_)
+  else
   {
-    RCLCPP_ERROR(
-      logger,
-      "'acceleration' state interface cannot be used if 'position' and 'velocity' "
-      "interfaces are not present.");
-    return CallbackReturn::FAILURE;
+    if (has_acceleration_state_interface_)
+    {
+      RCLCPP_ERROR(
+        logger,
+        "'acceleration' state interface cannot be used if 'position' and 'velocity' "
+        "interfaces are not present.");
+      return CallbackReturn::FAILURE;
+    }
+    if (has_velocity_command_interface_ && command_interface_types_.size() == 1)
+    {
+      RCLCPP_ERROR(
+        logger,
+        "'velocity' command interface can only be used alone if 'velocity' and "
+        "'position' state interfaces are present");
+      return CallbackReturn::FAILURE;
+    }
+    // effort is always used alone so no need for size check
+    if (has_effort_command_interface_)
+    {
+      RCLCPP_ERROR(
+        logger,
+        "'effort' command interface can only be used alone if 'velocity' and "
+        "'position' state interfaces are present");
+      return CallbackReturn::FAILURE;
+    }
   }
 
   auto get_interface_list = [](const std::vector<std::string> & interface_types) {
@@ -797,8 +895,26 @@ JointTrajectoryController::on_deactivate(const rclcpp_lifecycle::State &)
   // TODO(anyone): How to halt when using effort commands?
   for (auto index = 0ul; index < joint_names_.size(); ++index)
   {
+<<<<<<< HEAD
     joint_command_interface_[0][index].get().set_value(
       joint_command_interface_[0][index].get().get_value());
+=======
+    if (has_position_command_interface_)
+    {
+      joint_command_interface_[0][index].get().set_value(
+        joint_command_interface_[0][index].get().get_value());
+    }
+
+    if (has_velocity_command_interface_)
+    {
+      joint_command_interface_[1][index].get().set_value(0.0);
+    }
+
+    if (has_effort_command_interface_)
+    {
+      joint_command_interface_[3][index].get().set_value(0.0);
+    }
+>>>>>>> 97c9431 ([JTC] Implement effort-only command interface (#225))
   }
 
   for (auto index = 0ul; index < allowed_interface_types_.size(); ++index)
@@ -837,6 +953,11 @@ bool JointTrajectoryController::reset()
 {
   subscriber_is_active_ = false;
   joint_command_subscriber_.reset();
+
+  for (const auto & pid : pids_)
+  {
+    pid->reset();
+  }
 
   // iterator has no default value
   // prev_traj_point_ptr_;

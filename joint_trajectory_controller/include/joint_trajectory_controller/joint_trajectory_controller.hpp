@@ -142,11 +142,9 @@ protected:
   bool has_position_command_interface_ = false;
   bool has_velocity_command_interface_ = false;
   bool has_acceleration_command_interface_ = false;
+  bool has_effort_command_interface_ = false;
 
   /// If true, a velocity feedforward term plus corrective PID term is used
-  // TODO(anyone): This flag is not used for now
-  // There should be PID-approach used as in ROS1:
-  // https://github.com/ros-controls/ros_controllers/blob/noetic-devel/joint_trajectory_controller/include/joint_trajectory_controller/hardware_interface_adapter.h#L283
   bool use_closed_loop_pid_adapter = false;
 
   // TODO(karsten1987): eventually activate and deactivate subscriber directly when its supported
