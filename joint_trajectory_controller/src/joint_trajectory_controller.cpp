@@ -189,39 +189,48 @@ controller_interface::return_type JointTrajectoryController::update(
       const bool before_last_point = end_segment_itr != (*traj_point_active_ptr_)->end();
 
       // set values for next hardware write()
+      if (use_closed_loop_pid_adapter)
+      {
+        // Update PIDs
+        for (auto i = 0ul; i < joint_num; ++i)
+        {
+          tmp_command_[i] = (state_desired.velocities[i] * ff_velocity_scale_[i]) +
+                            pids_[i]->computeCommand(
+                              state_desired.positions[i] - state_current.positions[i],
+                              state_desired.velocities[i] - state_current.velocities[i],
+                              (uint64_t)period.nanoseconds());
+        }
+      }
       if (has_position_command_interface_)
       {
         assign_interface_from_point(joint_command_interface_[0], state_desired.positions);
       }
       if (has_velocity_command_interface_)
       {
-        if (!use_closed_loop_pid_adapter)
+        if (use_closed_loop_pid_adapter)
         {
-          assign_interface_from_point(joint_command_interface_[1], state_desired.velocities);
+          assign_interface_from_point(joint_command_interface_[1], tmp_command_);
         }
         else
         {
-          // Update PIDs
-          for (auto i = 0ul; i < joint_num; ++i)
-          {
-            tmp_command_[i] = (state_desired.velocities[i] * ff_velocity_scale_[i]) +
-                              pids_[i]->computeCommand(
-                                state_desired.positions[i] - state_current.positions[i],
-                                state_desired.velocities[i] - state_current.velocities[i],
-                                (uint64_t)period.nanoseconds());
-          }
-          assign_interface_from_point(joint_command_interface_[1], tmp_command_);
+          assign_interface_from_point(joint_command_interface_[1], state_desired.velocities);
         }
       }
       if (has_acceleration_command_interface_)
       {
         assign_interface_from_point(joint_command_interface_[2], state_desired.accelerations);
       }
-      // TODO(anyone): Add here "if using_closed_loop_hw_interface_adapter" (see ROS1) - #171
-      //       if (check_if_interface_type_exist(
-      //           command_interface_types_, hardware_interface::HW_IF_EFFORT)) {
-      //         assign_interface_from_point(joint_command_interface_[3], state_desired.effort);
-      //       }
+      if (has_effort_command_interface_)
+      {
+        if (use_closed_loop_pid_adapter)
+        {
+          assign_interface_from_point(joint_command_interface_[3], tmp_command_);
+        }
+        else
+        {
+          assign_interface_from_point(joint_command_interface_[3], state_desired.effort);
+        }
+      }
 
       for (size_t index = 0; index < joint_num; ++index)
       {
@@ -477,32 +486,14 @@ CallbackReturn JointTrajectoryController::on_configure(const rclcpp_lifecycle::S
   // 2. velocity
   // 2. position [velocity, [acceleration]]
 
-  // effort can't be combined with other interfaces
-  if (contains_interface_type(command_interface_types_, hardware_interface::HW_IF_EFFORT))
-  {
-    if (command_interface_types_.size() == 1)
-    {
-      // TODO(anyone): This flag is not used for now
-      // There should be PID-approach used as in ROS1:
-      // https://github.com/ros-controls/ros_controllers/blob/noetic-devel/joint_trajectory_controller/include/joint_trajectory_controller/hardware_interface_adapter.h#L283
-      use_closed_loop_pid_adapter = true;
-      // TODO(anyone): remove the next two lines when implemented
-      RCLCPP_ERROR(logger, "using 'effort' command interface alone is not yet implemented yet.");
-      return CallbackReturn::FAILURE;
-    }
-    else
-    {
-      RCLCPP_ERROR(logger, "'effort' command interface has to be used alone.");
-      return CallbackReturn::FAILURE;
-    }
-  }
-
   has_position_command_interface_ =
     contains_interface_type(command_interface_types_, hardware_interface::HW_IF_POSITION);
   has_velocity_command_interface_ =
     contains_interface_type(command_interface_types_, hardware_interface::HW_IF_VELOCITY);
   has_acceleration_command_interface_ =
     contains_interface_type(command_interface_types_, hardware_interface::HW_IF_ACCELERATION);
+  has_effort_command_interface_ =
+    contains_interface_type(command_interface_types_, hardware_interface::HW_IF_EFFORT);
 
   if (has_velocity_command_interface_)
   {
@@ -530,8 +521,21 @@ CallbackReturn JointTrajectoryController::on_configure(const rclcpp_lifecycle::S
     return CallbackReturn::FAILURE;
   }
 
-  // TODO(livanov93): change when other option is implemented
-  if (has_velocity_command_interface_ && use_closed_loop_pid_adapter)
+  // effort can't be combined with other interfaces
+  if (has_effort_command_interface_)
+  {
+    if (command_interface_types_.size() == 1)
+    {
+      use_closed_loop_pid_adapter = true;
+    }
+    else
+    {
+      RCLCPP_ERROR(logger, "'effort' command interface has to be used alone.");
+      return CallbackReturn::FAILURE;
+    }
+  }
+
+  if (use_closed_loop_pid_adapter)
   {
     size_t num_joints = joint_names_.size();
     pids_.resize(num_joints);
@@ -593,7 +597,7 @@ CallbackReturn JointTrajectoryController::on_configure(const rclcpp_lifecycle::S
 
   if (has_velocity_state_interface_)
   {
-    if (!contains_interface_type(state_interface_types_, hardware_interface::HW_IF_POSITION))
+    if (!has_position_state_interface_)
     {
       RCLCPP_ERROR(
         logger,
@@ -602,13 +606,33 @@ CallbackReturn JointTrajectoryController::on_configure(const rclcpp_lifecycle::S
       return CallbackReturn::FAILURE;
     }
   }
-  else if (has_acceleration_state_interface_)
+  else
   {
-    RCLCPP_ERROR(
-      logger,
-      "'acceleration' state interface cannot be used if 'position' and 'velocity' "
-      "interfaces are not present.");
-    return CallbackReturn::FAILURE;
+    if (has_acceleration_state_interface_)
+    {
+      RCLCPP_ERROR(
+        logger,
+        "'acceleration' state interface cannot be used if 'position' and 'velocity' "
+        "interfaces are not present.");
+      return CallbackReturn::FAILURE;
+    }
+    if (has_velocity_command_interface_ && command_interface_types_.size() == 1)
+    {
+      RCLCPP_ERROR(
+        logger,
+        "'velocity' command interface can only be used alone if 'velocity' and "
+        "'position' state interfaces are present");
+      return CallbackReturn::FAILURE;
+    }
+    // effort is always used alone so no need for size check
+    if (has_effort_command_interface_)
+    {
+      RCLCPP_ERROR(
+        logger,
+        "'effort' command interface can only be used alone if 'velocity' and "
+        "'position' state interfaces are present");
+      return CallbackReturn::FAILURE;
+    }
   }
 
   auto get_interface_list = [](const std::vector<std::string> & interface_types) {
@@ -808,6 +832,11 @@ CallbackReturn JointTrajectoryController::on_deactivate(const rclcpp_lifecycle::
     {
       joint_command_interface_[1][index].get().set_value(0.0);
     }
+
+    if (has_effort_command_interface_)
+    {
+      joint_command_interface_[3][index].get().set_value(0.0);
+    }
   }
 
   for (size_t index = 0; index < allowed_interface_types_.size(); ++index)
@@ -844,6 +873,11 @@ bool JointTrajectoryController::reset()
 {
   subscriber_is_active_ = false;
   joint_command_subscriber_.reset();
+
+  for (const auto & pid : pids_)
+  {
+    pid->reset();
+  }
 
   // iterator has no default value
   // prev_traj_point_ptr_;
