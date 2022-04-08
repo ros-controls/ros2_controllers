@@ -18,8 +18,10 @@
 
 #include "force_torque_sensor_broadcaster/force_torque_sensor_broadcaster.hpp"
 
+#include <chrono>
 #include <memory>
 #include <string>
+#include <thread>
 
 namespace force_torque_sensor_broadcaster
 {
@@ -108,6 +110,11 @@ CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
     sensor_state_publisher_ = node_->create_publisher<geometry_msgs::msg::WrenchStamped>(
       "~/wrench", rclcpp::SystemDefaultsQoS());
     realtime_publisher_ = std::make_unique<StatePublisher>(sensor_state_publisher_);
+    while (!realtime_publisher_->trylock())
+    {
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+    realtime_publisher_->unlock();
   }
   catch (const std::exception & e)
   {
