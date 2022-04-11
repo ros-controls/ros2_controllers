@@ -65,6 +65,7 @@ if(BUILD_TESTING)
   find_package(controller_manager REQUIRED)
   find_package(hardware_interface REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
+  include(GoogleTest)
 
   ament_add_gmock(
     test_load_imu_sensor_broadcaster
@@ -76,6 +77,7 @@ if(BUILD_TESTING)
     hardware_interface
     ros2_control_test_assets
   )
+  gtest_discover_tests(test_load_imu_sensor_broadcaster)
 
   ament_add_gmock(
     test_imu_sensor_broadcaster
@@ -93,6 +95,7 @@ if(BUILD_TESTING)
     hardware_interface
     ros2_control_test_assets
   )
+  gtest_discover_tests(test_imu_sensor_broadcaster)
 endif()
 
 ament_export_include_directories(

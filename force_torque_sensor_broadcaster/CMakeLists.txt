@@ -93,6 +93,8 @@ if(BUILD_TESTING)
     hardware_interface
     ros2_control_test_assets
   )
+  include(GoogleTest)
+  gtest_discover_tests(test_force_torque_sensor_broadcaster)
 endif()
 
 ament_export_include_directories(

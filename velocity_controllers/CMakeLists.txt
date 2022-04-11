@@ -49,6 +49,7 @@ if(BUILD_TESTING)
   find_package(ament_cmake_gmock REQUIRED)
   find_package(controller_manager REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
+  include(GoogleTest)
 
   ament_add_gmock(
     test_load_joint_group_velocity_controller
@@ -59,6 +60,7 @@ if(BUILD_TESTING)
     controller_manager
     ros2_control_test_assets
   )
+  gtest_discover_tests(test_load_joint_group_velocity_controller)
 
   ament_add_gmock(
     test_joint_group_velocity_controller
@@ -68,6 +70,7 @@ if(BUILD_TESTING)
   target_link_libraries(test_joint_group_velocity_controller
     velocity_controllers
   )
+  gtest_discover_tests(test_joint_group_velocity_controller)
 endif()
 
 ament_export_dependencies(

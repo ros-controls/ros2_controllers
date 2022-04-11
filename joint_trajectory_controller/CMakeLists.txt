@@ -59,10 +59,12 @@ if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
   find_package(controller_manager REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
+  include(GoogleTest)
 
   ament_add_gtest(test_trajectory test/test_trajectory.cpp)
   target_include_directories(test_trajectory PRIVATE include)
   target_link_libraries(test_trajectory joint_trajectory_controller)
+  gtest_discover_tests(test_trajectory)
 
   ament_add_gtest(test_trajectory_controller
     test/test_trajectory_controller.cpp
@@ -82,6 +84,7 @@ if(BUILD_TESTING)
     ros2_control_test_assets
     trajectory_msgs
   )
+  gtest_discover_tests(test_trajectory_controller)
 
   ament_add_gtest(
     test_load_joint_trajectory_controller
@@ -94,6 +97,7 @@ if(BUILD_TESTING)
     realtime_tools
     ros2_control_test_assets
   )
+  gtest_discover_tests(test_load_joint_trajectory_controller)
 
   ament_add_gtest(
     test_trajectory_actions
@@ -112,6 +116,7 @@ if(BUILD_TESTING)
     trajectory_msgs
     realtime_tools
   )
+  gtest_discover_tests(test_trajectory_actions)
 endif()
 
 ament_export_dependencies(

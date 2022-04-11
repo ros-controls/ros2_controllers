@@ -63,6 +63,7 @@ if(BUILD_TESTING)
   find_package(ament_cmake_gmock REQUIRED)
   find_package(controller_manager REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
+  include(GoogleTest)
 
   ament_add_gmock(test_diff_drive_controller
     test/test_diff_drive_controller.cpp
@@ -71,6 +72,7 @@ if(BUILD_TESTING)
   target_link_libraries(test_diff_drive_controller
     diff_drive_controller
   )
+  gtest_discover_tests(test_diff_drive_controller)
 
   ament_target_dependencies(test_diff_drive_controller
     geometry_msgs
@@ -92,6 +94,7 @@ if(BUILD_TESTING)
     controller_manager
     ros2_control_test_assets
   )
+  gtest_discover_tests(test_load_diff_drive_controller)
 
 endif()
 

@@ -58,6 +58,7 @@ if(BUILD_TESTING)
   find_package(hardware_interface REQUIRED)
   find_package(rclcpp REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
+  include(GoogleTest)
 
   ament_add_gmock(
     test_load_joint_state_broadcaster
@@ -69,6 +70,7 @@ if(BUILD_TESTING)
     hardware_interface
     ros2_control_test_assets
   )
+  gtest_discover_tests(test_load_joint_state_broadcaster)
 
   ament_add_gmock(
     test_joint_state_broadcaster
@@ -78,6 +80,7 @@ if(BUILD_TESTING)
   target_link_libraries(test_joint_state_broadcaster
     joint_state_broadcaster
   )
+  gtest_discover_tests(test_joint_state_broadcaster)
 endif()
 
 ament_export_dependencies(

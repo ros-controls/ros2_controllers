@@ -63,6 +63,7 @@ if(BUILD_TESTING)
   find_package(ament_cmake_gmock REQUIRED)
   find_package(controller_manager REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
+  include(GoogleTest)
 
   ament_add_gmock(
     test_load_gripper_action_controllers
@@ -72,6 +73,7 @@ if(BUILD_TESTING)
     controller_manager
     ros2_control_test_assets
   )
+  gtest_discover_tests(test_load_gripper_action_controllers)
 endif()
 
 ament_package()

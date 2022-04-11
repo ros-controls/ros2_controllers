@@ -58,6 +58,7 @@ if(BUILD_TESTING)
   find_package(controller_manager REQUIRED)
   find_package(hardware_interface REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
+  include(GoogleTest)
 
   ament_add_gmock(
     test_load_forward_command_controller
@@ -69,6 +70,7 @@ if(BUILD_TESTING)
     hardware_interface
     ros2_control_test_assets
   )
+  gtest_discover_tests(test_load_forward_command_controller)
 
   ament_add_gmock(
     test_forward_command_controller
@@ -78,6 +80,7 @@ if(BUILD_TESTING)
   target_link_libraries(test_forward_command_controller
     forward_command_controller
   )
+  gtest_discover_tests(test_forward_command_controller)
 endif()
 
 ament_export_dependencies(
