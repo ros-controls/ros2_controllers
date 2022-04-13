@@ -1,0 +1,8 @@
+<library path="camera_sensor_broadcaster">
+  <class name="camera_sensor_broadcaster/CameraSensorBroadcaster"
+         type="camera_sensor_broadcaster::CameraSensorBroadcaster" base_class_type="controller_interface::ControllerInterface">
+  <description>
+    This controller publishes the readings of camera interfaces as sensor_msgs/CameraInfo message.
+  </description>
+  </class>
+</library>
