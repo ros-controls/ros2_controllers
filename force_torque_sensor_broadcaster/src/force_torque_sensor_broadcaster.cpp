@@ -18,10 +18,8 @@
 
 #include "force_torque_sensor_broadcaster/force_torque_sensor_broadcaster.hpp"
 
-#include <chrono>
 #include <memory>
 #include <string>
-#include <thread>
 
 namespace force_torque_sensor_broadcaster
 {
