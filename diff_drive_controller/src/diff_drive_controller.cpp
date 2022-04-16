@@ -178,6 +178,9 @@ controller_interface::return_type DiffDriveController::update(
   double & linear_command = command.twist.linear.x;
   double & angular_command = command.twist.angular.z;
 
+  const auto update_dt = current_time - previous_update_timestamp_;
+  previous_update_timestamp_ = current_time;
+
   // Apply (possibly new) multipliers:
   const auto wheels = wheel_params_;
   const double wheel_separation = wheels.separation_multiplier * wheels.separation;
@@ -257,9 +260,6 @@ controller_interface::return_type DiffDriveController::update(
       realtime_odometry_transform_publisher_->unlockAndPublish();
     }
   }
-
-  const auto update_dt = current_time - previous_update_timestamp_;
-  previous_update_timestamp_ = current_time;
 
   auto & last_command = previous_commands_.back().twist;
   auto & second_to_last_command = previous_commands_.front().twist;
