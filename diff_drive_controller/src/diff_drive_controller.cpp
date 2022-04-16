@@ -218,7 +218,7 @@ controller_interface::return_type DiffDriveController::update(
     }
     else
     {
-      odometry_.updateFromVelocity(left_feedback_mean, right_feedback_mean, current_time);
+      odometry_.updateFromVelocity(left_feedback_mean*update_dt.seconds(), right_feedback_mean*update_dt.seconds(), current_time);
     }
   }
 
