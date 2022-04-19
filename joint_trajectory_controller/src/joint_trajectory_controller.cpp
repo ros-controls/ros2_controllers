@@ -1127,9 +1127,8 @@ bool JointTrajectoryController::validate_trajectory_point_field(
   if (joint_names_size != vector_field.size())
   {
     RCLCPP_ERROR(
-      get_node_const()->get_logger(),
-      "Mismatch between joint_names (%zu) and %s (%zu) at point #%zu.", joint_names_size,
-      string_for_vector_field.c_str(), vector_field.size(), i);
+      get_node()->get_logger(), "Mismatch between joint_names (%zu) and %s (%zu) at point #%zu.",
+      joint_names_size, string_for_vector_field.c_str(), vector_field.size(), i);
     return false;
   }
   return true;
@@ -1144,7 +1143,7 @@ bool JointTrajectoryController::validate_trajectory_msg(
     if (trajectory.joint_names.size() != joint_names_.size())
     {
       RCLCPP_ERROR(
-        get_node_const()->get_logger(),
+        get_node()->get_logger(),
         "Joints on incoming trajectory don't match the controller joints.");
       return false;
     }
@@ -1152,7 +1151,7 @@ bool JointTrajectoryController::validate_trajectory_msg(
 
   if (trajectory.joint_names.empty())
   {
-    RCLCPP_ERROR(get_node_const()->get_logger(), "Empty joint names on incoming trajectory.");
+    RCLCPP_ERROR(get_node()->get_logger(), "Empty joint names on incoming trajectory.");
     return false;
   }
 
@@ -1167,10 +1166,10 @@ bool JointTrajectoryController::validate_trajectory_msg(
     {
       trajectory_end_time += p.time_from_start;
     }
-    if (trajectory_end_time < get_node_const()->now())
+    if (trajectory_end_time < get_node()->now())
     {
       RCLCPP_ERROR(
-        get_node_const()->get_logger(),
+        get_node()->get_logger(),
         "Received trajectory with non zero time start time (%f) that ends on the past (%f)",
         trajectory_start_time.seconds(), trajectory_end_time.seconds());
       return false;
@@ -1185,7 +1184,7 @@ bool JointTrajectoryController::validate_trajectory_msg(
     if (it == joint_names_.end())
     {
       RCLCPP_ERROR(
-        get_node_const()->get_logger(), "Incoming joint %s doesn't match the controller's joints.",
+        get_node()->get_logger(), "Incoming joint %s doesn't match the controller's joints.",
         incoming_joint_name.c_str());
       return false;
     }
@@ -1197,7 +1196,7 @@ bool JointTrajectoryController::validate_trajectory_msg(
     if ((i > 0) && (rclcpp::Duration(trajectory.points[i].time_from_start) <= previous_traj_time))
     {
       RCLCPP_ERROR(
-        get_node_const()->get_logger(),
+        get_node()->get_logger(),
         "Time between points %zu and %zu is not strictly increasing, it is %f and %f respectively",
         i - 1, i, previous_traj_time.seconds(),
         rclcpp::Duration(trajectory.points[i].time_from_start).seconds());
