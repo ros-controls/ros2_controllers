@@ -39,8 +39,7 @@ public:
   POSITION_CONTROLLERS_PUBLIC
   JointGroupPositionController();
 
-  POSITION_CONTROLLERS_PUBLIC controller_interface::controller_interface::CallbackReturn on_init()
-    override;
+  POSITION_CONTROLLERS_PUBLIC controller_interface::CallbackReturn on_init() override;
 };
 
 }  // namespace position_controllers

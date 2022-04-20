@@ -33,7 +33,7 @@
 #include "rclcpp/wait_set.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 
-using CallbackReturn = forward_command_controller::ForwardCommandController::CallbackReturn;
+using CallbackReturn = controller_interface::CallbackReturn;
 using hardware_interface::LoanedCommandInterface;
 
 namespace
