@@ -29,10 +29,10 @@ JointGroupEffortController::JointGroupEffortController()
   interface_name_ = hardware_interface::HW_IF_EFFORT;
 }
 
-CallbackReturn JointGroupEffortController::on_init()
+controller_interface::CallbackReturn JointGroupEffortController::on_init()
 {
   auto ret = forward_command_controller::ForwardCommandController::on_init();
-  if (ret != CallbackReturn::SUCCESS)
+  if (ret != controller_interface::CallbackReturn::SUCCESS)
   {
     return ret;
   }
@@ -47,13 +47,13 @@ CallbackReturn JointGroupEffortController::on_init()
   catch (const std::exception & e)
   {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
-    return CallbackReturn::ERROR;
+    return controller_interface::CallbackReturn::ERROR;
   }
 
-  return CallbackReturn::SUCCESS;
+  return controller_interface::CallbackReturn::SUCCESS;
 }
 
-CallbackReturn JointGroupEffortController::on_deactivate(
+controller_interface::CallbackReturn JointGroupEffortController::on_deactivate(
   const rclcpp_lifecycle::State & previous_state)
 {
   auto ret = ForwardCommandController::on_deactivate(previous_state);

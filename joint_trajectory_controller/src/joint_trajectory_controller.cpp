@@ -50,7 +50,7 @@ JointTrajectoryController::JointTrajectoryController()
 {
 }
 
-CallbackReturn JointTrajectoryController::on_init()
+controller_interface::CallbackReturn JointTrajectoryController::on_init()
 {
   try
   {
@@ -438,7 +438,8 @@ bool JointTrajectoryController::read_state_from_command_interfaces(JointTrajecto
   return has_values;
 }
 
-CallbackReturn JointTrajectoryController::on_configure(const rclcpp_lifecycle::State &)
+controller_interface::CallbackReturn JointTrajectoryController::on_configure(
+  const rclcpp_lifecycle::State &)
 {
   const auto logger = node_->get_logger();
 
@@ -746,7 +747,8 @@ CallbackReturn JointTrajectoryController::on_configure(const rclcpp_lifecycle::S
   return CallbackReturn::SUCCESS;
 }
 
-CallbackReturn JointTrajectoryController::on_activate(const rclcpp_lifecycle::State &)
+controller_interface::CallbackReturn JointTrajectoryController::on_activate(
+  const rclcpp_lifecycle::State &)
 {
   // order all joints in the storage
   for (const auto & interface : command_interface_types_)
@@ -817,7 +819,8 @@ CallbackReturn JointTrajectoryController::on_activate(const rclcpp_lifecycle::St
   return CallbackReturn::SUCCESS;
 }
 
-CallbackReturn JointTrajectoryController::on_deactivate(const rclcpp_lifecycle::State &)
+controller_interface::CallbackReturn JointTrajectoryController::on_deactivate(
+  const rclcpp_lifecycle::State &)
 {
   // TODO(anyone): How to halt when using effort commands?
   for (size_t index = 0; index < joint_names_.size(); ++index)
@@ -851,7 +854,8 @@ CallbackReturn JointTrajectoryController::on_deactivate(const rclcpp_lifecycle::
   return CallbackReturn::SUCCESS;
 }
 
-CallbackReturn JointTrajectoryController::on_cleanup(const rclcpp_lifecycle::State &)
+controller_interface::CallbackReturn JointTrajectoryController::on_cleanup(
+  const rclcpp_lifecycle::State &)
 {
   // go home
   traj_home_point_ptr_->update(traj_msg_home_ptr_);
@@ -860,7 +864,8 @@ CallbackReturn JointTrajectoryController::on_cleanup(const rclcpp_lifecycle::Sta
   return CallbackReturn::SUCCESS;
 }
 
-CallbackReturn JointTrajectoryController::on_error(const rclcpp_lifecycle::State &)
+controller_interface::CallbackReturn JointTrajectoryController::on_error(
+  const rclcpp_lifecycle::State &)
 {
   if (!reset())
   {
@@ -895,7 +900,8 @@ bool JointTrajectoryController::reset()
   return true;
 }
 
-CallbackReturn JointTrajectoryController::on_shutdown(const rclcpp_lifecycle::State &)
+controller_interface::CallbackReturn JointTrajectoryController::on_shutdown(
+  const rclcpp_lifecycle::State &)
 {
   // TODO(karsten1987): what to do?
 

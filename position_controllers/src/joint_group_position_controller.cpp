@@ -29,7 +29,7 @@ JointGroupPositionController::JointGroupPositionController()
   interface_name_ = hardware_interface::HW_IF_POSITION;
 }
 
-CallbackReturn JointGroupPositionController::on_init()
+controller_interface::CallbackReturn JointGroupPositionController::on_init()
 {
   auto ret = forward_command_controller::ForwardCommandController::on_init();
   if (ret != CallbackReturn::SUCCESS)
