@@ -37,7 +37,7 @@ ForwardCommandController::ForwardCommandController()
 {
 }
 
-CallbackReturn ForwardCommandController::on_init()
+controller_interface::CallbackReturn ForwardCommandController::on_init()
 {
   try
   {
@@ -48,13 +48,13 @@ CallbackReturn ForwardCommandController::on_init()
   catch (const std::exception & e)
   {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
-    return CallbackReturn::ERROR;
+    return controller_interface::CallbackReturn::ERROR;
   }
 
-  return CallbackReturn::SUCCESS;
+  return controller_interface::CallbackReturn::SUCCESS;
 }
 
-CallbackReturn ForwardCommandController::on_configure(
+controller_interface::CallbackReturn ForwardCommandController::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   joint_names_ = node_->get_parameter("joints").as_string_array();
@@ -62,7 +62,7 @@ CallbackReturn ForwardCommandController::on_configure(
   if (joint_names_.empty())
   {
     RCLCPP_ERROR(get_node()->get_logger(), "'joints' parameter was empty");
-    return CallbackReturn::ERROR;
+    return controller_interface::CallbackReturn::ERROR;
   }
 
   // Specialized, child controllers set interfaces before calling configure function.
@@ -74,7 +74,7 @@ CallbackReturn ForwardCommandController::on_configure(
   if (interface_name_.empty())
   {
     RCLCPP_ERROR(get_node()->get_logger(), "'interface_name' parameter was empty");
-    return CallbackReturn::ERROR;
+    return controller_interface::CallbackReturn::ERROR;
   }
 
   joints_command_subscriber_ = get_node()->create_subscription<CmdType>(
@@ -82,7 +82,7 @@ CallbackReturn ForwardCommandController::on_configure(
     [this](const CmdType::SharedPtr msg) { rt_command_ptr_.writeFromNonRT(msg); });
 
   RCLCPP_INFO(get_node()->get_logger(), "configure successful");
-  return CallbackReturn::SUCCESS;
+  return controller_interface::CallbackReturn::SUCCESS;
 }
 
 controller_interface::InterfaceConfiguration
@@ -106,7 +106,7 @@ ForwardCommandController::state_interface_configuration() const
     controller_interface::interface_configuration_type::NONE};
 }
 
-CallbackReturn ForwardCommandController::on_activate(
+controller_interface::CallbackReturn ForwardCommandController::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   //  check if we have all resources defined in the "points" parameter
@@ -120,21 +120,21 @@ CallbackReturn ForwardCommandController::on_activate(
     RCLCPP_ERROR(
       node_->get_logger(), "Expected %zu position command interfaces, got %zu", joint_names_.size(),
       ordered_interfaces.size());
-    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
+    return controller_interface::CallbackReturn::ERROR;
   }
 
   // reset command buffer if a command came through callback when controller was inactive
   rt_command_ptr_.reset();
 
-  return CallbackReturn::SUCCESS;
+  return controller_interface::CallbackReturn::SUCCESS;
 }
 
-CallbackReturn ForwardCommandController::on_deactivate(
+controller_interface::CallbackReturn ForwardCommandController::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   // reset command buffer
   rt_command_ptr_.reset();
-  return CallbackReturn::SUCCESS;
+  return controller_interface::CallbackReturn::SUCCESS;
 }
 
 controller_interface::return_type ForwardCommandController::update(

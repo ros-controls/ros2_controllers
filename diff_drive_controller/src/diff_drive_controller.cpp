@@ -53,7 +53,7 @@ const char * DiffDriveController::feedback_type() const
   return odom_params_.position_feedback ? HW_IF_POSITION : HW_IF_VELOCITY;
 }
 
-CallbackReturn DiffDriveController::on_init()
+controller_interface::CallbackReturn DiffDriveController::on_init()
 {
   try
   {
@@ -105,10 +105,10 @@ CallbackReturn DiffDriveController::on_init()
   catch (const std::exception & e)
   {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
-    return CallbackReturn::ERROR;
+    return controller_interface::CallbackReturn::ERROR;
   }
 
-  return CallbackReturn::SUCCESS;
+  return controller_interface::CallbackReturn::SUCCESS;
 }
 
 InterfaceConfiguration DiffDriveController::command_interface_configuration() const
@@ -296,7 +296,8 @@ controller_interface::return_type DiffDriveController::update(
   return controller_interface::return_type::OK;
 }
 
-CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &)
+controller_interface::CallbackReturn DiffDriveController::on_configure(
+  const rclcpp_lifecycle::State &)
 {
   auto logger = node_->get_logger();
 
@@ -309,13 +310,13 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
     RCLCPP_ERROR(
       logger, "The number of left wheels [%zu] and the number of right wheels [%zu] are different",
       left_wheel_names_.size(), right_wheel_names_.size());
-    return CallbackReturn::ERROR;
+    return controller_interface::CallbackReturn::ERROR;
   }
 
   if (left_wheel_names_.empty())
   {
     RCLCPP_ERROR(logger, "Wheel names parameters are empty!");
-    return CallbackReturn::ERROR;
+    return controller_interface::CallbackReturn::ERROR;
   }
 
   wheel_params_.separation = node_->get_parameter("wheel_separation").as_double();
@@ -397,7 +398,7 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
 
   if (!reset())
   {
-    return CallbackReturn::ERROR;
+    return controller_interface::CallbackReturn::ERROR;
   }
 
   // left and right sides are both equal at this point
@@ -503,59 +504,64 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
   odometry_transform_message.transforms.front().child_frame_id = odom_params_.base_frame_id;
 
   previous_update_timestamp_ = node_->get_clock()->now();
-  return CallbackReturn::SUCCESS;
+  return controller_interface::CallbackReturn::SUCCESS;
 }
 
-CallbackReturn DiffDriveController::on_activate(const rclcpp_lifecycle::State &)
+controller_interface::CallbackReturn DiffDriveController::on_activate(
+  const rclcpp_lifecycle::State &)
 {
   const auto left_result =
     configure_side("left", left_wheel_names_, registered_left_wheel_handles_);
   const auto right_result =
     configure_side("right", right_wheel_names_, registered_right_wheel_handles_);
 
-  if (left_result == CallbackReturn::ERROR || right_result == CallbackReturn::ERROR)
+  if (
+    left_result == controller_interface::CallbackReturn::ERROR ||
+    right_result == controller_interface::CallbackReturn::ERROR)
   {
-    return CallbackReturn::ERROR;
+    return controller_interface::CallbackReturn::ERROR;
   }
 
   if (registered_left_wheel_handles_.empty() || registered_right_wheel_handles_.empty())
   {
     RCLCPP_ERROR(
       node_->get_logger(), "Either left wheel interfaces, right wheel interfaces are non existent");
-    return CallbackReturn::ERROR;
+    return controller_interface::CallbackReturn::ERROR;
   }
 
   is_halted = false;
   subscriber_is_active_ = true;
 
   RCLCPP_DEBUG(node_->get_logger(), "Subscriber and publisher are now active.");
-  return CallbackReturn::SUCCESS;
+  return controller_interface::CallbackReturn::SUCCESS;
 }
 
-CallbackReturn DiffDriveController::on_deactivate(const rclcpp_lifecycle::State &)
+controller_interface::CallbackReturn DiffDriveController::on_deactivate(
+  const rclcpp_lifecycle::State &)
 {
   subscriber_is_active_ = false;
-  return CallbackReturn::SUCCESS;
+  return controller_interface::CallbackReturn::SUCCESS;
 }
 
-CallbackReturn DiffDriveController::on_cleanup(const rclcpp_lifecycle::State &)
+controller_interface::CallbackReturn DiffDriveController::on_cleanup(
+  const rclcpp_lifecycle::State &)
 {
   if (!reset())
   {
-    return CallbackReturn::ERROR;
+    return controller_interface::CallbackReturn::ERROR;
   }
 
   received_velocity_msg_ptr_.set(std::make_shared<Twist>());
-  return CallbackReturn::SUCCESS;
+  return controller_interface::CallbackReturn::SUCCESS;
 }
 
-CallbackReturn DiffDriveController::on_error(const rclcpp_lifecycle::State &)
+controller_interface::CallbackReturn DiffDriveController::on_error(const rclcpp_lifecycle::State &)
 {
   if (!reset())
   {
-    return CallbackReturn::ERROR;
+    return controller_interface::CallbackReturn::ERROR;
   }
-  return CallbackReturn::SUCCESS;
+  return controller_interface::CallbackReturn::SUCCESS;
 }
 
 bool DiffDriveController::reset()
@@ -578,9 +584,10 @@ bool DiffDriveController::reset()
   return true;
 }
 
-CallbackReturn DiffDriveController::on_shutdown(const rclcpp_lifecycle::State &)
+controller_interface::CallbackReturn DiffDriveController::on_shutdown(
+  const rclcpp_lifecycle::State &)
 {
-  return CallbackReturn::SUCCESS;
+  return controller_interface::CallbackReturn::SUCCESS;
 }
 
 void DiffDriveController::halt()
@@ -596,7 +603,7 @@ void DiffDriveController::halt()
   halt_wheels(registered_right_wheel_handles_);
 }
 
-CallbackReturn DiffDriveController::configure_side(
+controller_interface::CallbackReturn DiffDriveController::configure_side(
   const std::string & side, const std::vector<std::string> & wheel_names,
   std::vector<WheelHandle> & registered_handles)
 {
@@ -605,7 +612,7 @@ CallbackReturn DiffDriveController::configure_side(
   if (wheel_names.empty())
   {
     RCLCPP_ERROR(logger, "No '%s' wheel names specified", side.c_str());
-    return CallbackReturn::ERROR;
+    return controller_interface::CallbackReturn::ERROR;
   }
 
   // register handles
@@ -623,7 +630,7 @@ CallbackReturn DiffDriveController::configure_side(
     if (state_handle == state_interfaces_.cend())
     {
       RCLCPP_ERROR(logger, "Unable to obtain joint state handle for %s", wheel_name.c_str());
-      return CallbackReturn::ERROR;
+      return controller_interface::CallbackReturn::ERROR;
     }
 
     const auto command_handle = std::find_if(
@@ -636,14 +643,14 @@ CallbackReturn DiffDriveController::configure_side(
     if (command_handle == command_interfaces_.end())
     {
       RCLCPP_ERROR(logger, "Unable to obtain joint command handle for %s", wheel_name.c_str());
-      return CallbackReturn::ERROR;
+      return controller_interface::CallbackReturn::ERROR;
     }
 
     registered_handles.emplace_back(
       WheelHandle{std::ref(*state_handle), std::ref(*command_handle)});
   }
 
-  return CallbackReturn::SUCCESS;
+  return controller_interface::CallbackReturn::SUCCESS;
 }
 }  // namespace diff_drive_controller
 

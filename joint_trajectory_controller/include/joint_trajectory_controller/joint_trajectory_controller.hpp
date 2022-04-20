@@ -57,8 +57,6 @@ class State;
 
 namespace joint_trajectory_controller
 {
-using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
-
 class Trajectory;
 
 class JointTrajectoryController : public controller_interface::ControllerInterface
@@ -86,25 +84,31 @@ public:
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  CallbackReturn on_init() override;
+  controller_interface::CallbackReturn on_init() override;
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  CallbackReturn on_configure(const rclcpp_lifecycle::State & previous_state) override;
+  controller_interface::CallbackReturn on_configure(
+    const rclcpp_lifecycle::State & previous_state) override;
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  CallbackReturn on_activate(const rclcpp_lifecycle::State & previous_state) override;
+  controller_interface::CallbackReturn on_activate(
+    const rclcpp_lifecycle::State & previous_state) override;
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  CallbackReturn on_deactivate(const rclcpp_lifecycle::State & previous_state) override;
+  controller_interface::CallbackReturn on_deactivate(
+    const rclcpp_lifecycle::State & previous_state) override;
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  CallbackReturn on_cleanup(const rclcpp_lifecycle::State & previous_state) override;
+  controller_interface::CallbackReturn on_cleanup(
+    const rclcpp_lifecycle::State & previous_state) override;
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  CallbackReturn on_error(const rclcpp_lifecycle::State & previous_state) override;
+  controller_interface::CallbackReturn on_error(
+    const rclcpp_lifecycle::State & previous_state) override;
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  CallbackReturn on_shutdown(const rclcpp_lifecycle::State & previous_state) override;
+  controller_interface::CallbackReturn on_shutdown(
+    const rclcpp_lifecycle::State & previous_state) override;
 
 protected:
   std::vector<std::string> joint_names_;

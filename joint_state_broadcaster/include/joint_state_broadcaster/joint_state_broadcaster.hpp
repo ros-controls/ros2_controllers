@@ -30,8 +30,6 @@
 
 namespace joint_state_broadcaster
 {
-using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
-
 /**
  * \brief Joint State Broadcaster for all or some state in a ros2_control system.
  *
@@ -73,16 +71,19 @@ public:
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
   JOINT_STATE_BROADCASTER_PUBLIC
-  CallbackReturn on_init() override;
+  controller_interface::CallbackReturn on_init() override;
 
   JOINT_STATE_BROADCASTER_PUBLIC
-  CallbackReturn on_configure(const rclcpp_lifecycle::State & previous_state) override;
+  controller_interface::CallbackReturn on_configure(
+    const rclcpp_lifecycle::State & previous_state) override;
 
   JOINT_STATE_BROADCASTER_PUBLIC
-  CallbackReturn on_activate(const rclcpp_lifecycle::State & previous_state) override;
+  controller_interface::CallbackReturn on_activate(
+    const rclcpp_lifecycle::State & previous_state) override;
 
   JOINT_STATE_BROADCASTER_PUBLIC
-  CallbackReturn on_deactivate(const rclcpp_lifecycle::State & previous_state) override;
+  controller_interface::CallbackReturn on_deactivate(
+    const rclcpp_lifecycle::State & previous_state) override;
 
 protected:
   bool init_joint_data();
