@@ -134,6 +134,11 @@ public:
   bool is_sampled_already() const { return sampled_already_; }
 
 private:
+  void deduce_from_derivatives(
+    trajectory_msgs::msg::JointTrajectoryPoint & first_state,
+    trajectory_msgs::msg::JointTrajectoryPoint & second_state, const size_t dim,
+    const double delta_t);
+
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg_;
   rclcpp::Time trajectory_start_time_;
 

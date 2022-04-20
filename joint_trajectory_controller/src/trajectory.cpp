@@ -88,41 +88,6 @@ bool Trajectory::sample(
     return false;
   }
 
-  auto deduce_from_derivatives = [&](
-                                   trajectory_msgs::msg::JointTrajectoryPoint & first_state,
-                                   trajectory_msgs::msg::JointTrajectoryPoint & second_state,
-                                   const size_t dim, const double delta_t) {
-    if (second_state.positions.empty())
-    {
-      second_state.positions.resize(dim);
-      if (first_state.velocities.empty())
-      {
-        first_state.velocities.resize(dim, 0.0);
-      }
-      if (second_state.velocities.empty())
-      {
-        second_state.velocities.resize(dim);
-        if (first_state.accelerations.empty())
-        {
-          first_state.accelerations.resize(dim, 0.0);
-        }
-        for (size_t i = 0; i < dim; ++i)
-        {
-          second_state.velocities[i] =
-            first_state.velocities[i] +
-            (first_state.accelerations[i] + second_state.accelerations[i]) * 0.5 * delta_t;
-        }
-      }
-      for (size_t i = 0; i < dim; ++i)
-      {
-        // second state velocity should be reached on the end of the segment, so use middle
-        second_state.positions[i] =
-          first_state.positions[i] +
-          (first_state.velocities[i] + second_state.velocities[i]) * 0.5 * delta_t;
-      }
-    }
-  };
-
   // current time hasn't reached traj time of the first point in the msg yet
   auto & first_point_in_msg = trajectory_msg_->points[0];
   const rclcpp::Time first_point_timestamp =
@@ -130,6 +95,7 @@ bool Trajectory::sample(
 
   if (sample_time < first_point_timestamp)
   {
+    // it changes points only if position and velocity are not exist, but their derivatives
     deduce_from_derivatives(
       state_before_traj_msg_, first_point_in_msg, state_before_traj_msg_.positions.size(),
       (first_point_timestamp - time_before_traj_msg_).seconds());
@@ -155,6 +121,7 @@ bool Trajectory::sample(
 
     if (sample_time >= t0 && sample_time < t1)
     {
+      // it changes points only if position and velocity are not exist, but their derivatives
       deduce_from_derivatives(
         point, next_point, state_before_traj_msg_.positions.size(), (t1 - t0).seconds());
 
@@ -309,6 +276,41 @@ void Trajectory::interpolate_between_points(
                              t[4] * 5.0 * coefficients[5];
       output.accelerations[i] = t[0] * 2.0 * coefficients[2] + t[1] * 6.0 * coefficients[3] +
                                 t[2] * 12.0 * coefficients[4] + t[3] * 20.0 * coefficients[5];
+    }
+  }
+}
+
+void Trajectory::deduce_from_derivatives(
+  trajectory_msgs::msg::JointTrajectoryPoint & first_state,
+  trajectory_msgs::msg::JointTrajectoryPoint & second_state, const size_t dim, const double delta_t)
+{
+  if (second_state.positions.empty())
+  {
+    second_state.positions.resize(dim);
+    if (first_state.velocities.empty())
+    {
+      first_state.velocities.resize(dim, 0.0);
+    }
+    if (second_state.velocities.empty())
+    {
+      second_state.velocities.resize(dim);
+      if (first_state.accelerations.empty())
+      {
+        first_state.accelerations.resize(dim, 0.0);
+      }
+      for (size_t i = 0; i < dim; ++i)
+      {
+        second_state.velocities[i] =
+          first_state.velocities[i] +
+          (first_state.accelerations[i] + second_state.accelerations[i]) * 0.5 * delta_t;
+      }
+    }
+    for (size_t i = 0; i < dim; ++i)
+    {
+      // second state velocity should be reached on the end of the segment, so use middle
+      second_state.positions[i] =
+        first_state.positions[i] +
+        (first_state.velocities[i] + second_state.velocities[i]) * 0.5 * delta_t;
     }
   }
 }

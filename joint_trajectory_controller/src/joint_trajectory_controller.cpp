@@ -967,9 +967,6 @@ rclcpp_action::GoalResponse JointTrajectoryController::goal_callback(
     return rclcpp_action::GoalResponse::REJECT;
   }
 
-  // TODO(denis): is here the following line missing?
-  //   add_new_trajectory_msg(std::make_shared(goal->trajectory));
-
   RCLCPP_INFO(node_->get_logger(), "Accepted new action goal");
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
@@ -1212,7 +1209,7 @@ bool JointTrajectoryController::validate_trajectory_msg(
 
     const size_t joint_count = trajectory.joint_names.size();
     const auto & points = trajectory.points;
-    // TODO(anyone): This currently supports only position, velocity and acceleration inputs
+    // This currently supports only position, velocity and acceleration inputs
     if (allow_integration_in_goal_trajectories_)
     {
       const bool all_empty = points[i].positions.empty() && points[i].velocities.empty() &&
@@ -1237,7 +1234,6 @@ bool JointTrajectoryController::validate_trajectory_msg(
       !validate_trajectory_point_field(joint_count, points[i].velocities, "velocities", i, true) ||
       !validate_trajectory_point_field(
         joint_count, points[i].accelerations, "accelerations", i, true) ||
-      // TODO(denis): should this be deleted, since effort goals are not supported?
       !validate_trajectory_point_field(joint_count, points[i].effort, "effort", i, true))
     {
       return false;
