@@ -1,0 +1,8 @@
+<library path="lidar_sensor_broadcaster">
+  <class name="lidar_sensor_broadcaster/LidarSensorBroadcaster"
+         type="lidar_sensor_broadcaster::LidarSensorBroadcaster" base_class_type="controller_interface::ControllerInterface">
+  <description>
+    This controller publishes the readings of lidar interfaces as sensor_msgs/LaserScan message.
+  </description>
+  </class>
+</library>
