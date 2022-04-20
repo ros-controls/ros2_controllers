@@ -328,7 +328,7 @@ TEST(TestTrajectory, sample_trajectory_velocity_with_interpolation)
     EXPECT_EQ(traj.begin(), end);
     EXPECT_NEAR(point_before_msg.positions[0], expected_state.positions[0], EPS);
     EXPECT_NEAR(point_before_msg.velocities[0], expected_state.velocities[0], EPS);
-    EXPECT_NEAR((velocity_first_seg/time_first_seg), expected_state.accelerations[0], EPS);
+    EXPECT_NEAR((velocity_first_seg / time_first_seg), expected_state.accelerations[0], EPS);
   }
 
   // sample before time_now
@@ -351,7 +351,7 @@ TEST(TestTrajectory, sample_trajectory_velocity_with_interpolation)
         0.5;
     EXPECT_NEAR(half_current_to_p1, expected_state.positions[0], EPS);
     EXPECT_NEAR(p1.velocities[0] / 2, expected_state.velocities[0], EPS);
-    EXPECT_NEAR((velocity_first_seg/time_first_seg), expected_state.accelerations[0], EPS);
+    EXPECT_NEAR((velocity_first_seg / time_first_seg), expected_state.accelerations[0], EPS);
   }
 
   // sample 1s after msg
@@ -363,7 +363,9 @@ TEST(TestTrajectory, sample_trajectory_velocity_with_interpolation)
     EXPECT_EQ((++traj.begin()), end);
     EXPECT_NEAR(position_first_seg, expected_state.positions[0], EPS);
     EXPECT_NEAR(p1.velocities[0], expected_state.velocities[0], EPS);
-    EXPECT_NEAR(((velocity_second_seg - velocity_first_seg/(time_second_seg - time_first_seg)), expected_state.accelerations[0], EPS);
+    EXPECT_NEAR(
+      (velocity_second_seg - velocity_first_seg / (time_second_seg - time_first_seg)),
+      expected_state.accelerations[0], EPS);
   }
 
   // sample 1.5s after msg
@@ -377,7 +379,9 @@ TEST(TestTrajectory, sample_trajectory_velocity_with_interpolation)
     EXPECT_NEAR(half_p1_to_p2, expected_state.positions[0], EPS);
     double half_p1_to_p2_vel = (p1.velocities[0] + p2.velocities[0]) / 2;
     EXPECT_NEAR(half_p1_to_p2_vel, expected_state.velocities[0], EPS);
-    EXPECT_NEAR(((velocity_second_seg - velocity_first_seg/(time_second_seg - time_first_seg)), expected_state.accelerations[0], EPS);
+    EXPECT_NEAR(
+      (velocity_second_seg - velocity_first_seg / (time_second_seg - time_first_seg)),
+      expected_state.accelerations[0], EPS);
   }
 
   // sample 2s after msg
@@ -389,7 +393,9 @@ TEST(TestTrajectory, sample_trajectory_velocity_with_interpolation)
     EXPECT_EQ((--traj.end()), end);
     EXPECT_NEAR(position_second_seg, expected_state.positions[0], EPS);
     EXPECT_NEAR(p2.velocities[0], expected_state.velocities[0], EPS);
-    EXPECT_NEAR(((velocity_third_seg - velocity_second_seg/(time_third_seg - time_second_seg)), expected_state.accelerations[0], EPS);
+    EXPECT_NEAR(
+      (velocity_third_seg - velocity_second_seg / (time_third_seg - time_second_seg)),
+      expected_state.accelerations[0], EPS);
   }
 
   // sample 2.5s after msg
@@ -403,7 +409,9 @@ TEST(TestTrajectory, sample_trajectory_velocity_with_interpolation)
     EXPECT_NEAR(half_p2_to_p3, expected_state.positions[0], EPS);
     double half_p2_to_p3_vel = (p2.velocities[0] + p3.velocities[0]) / 2;
     EXPECT_NEAR(half_p2_to_p3_vel, expected_state.velocities[0], EPS);
-    EXPECT_NEAR(((velocity_third_seg - velocity_second_seg/(time_third_seg - time_second_seg)), expected_state.accelerations[0], EPS);
+    EXPECT_NEAR(
+      (velocity_third_seg - velocity_second_seg / (time_third_seg - time_second_seg)),
+      expected_state.accelerations[0], EPS);
   }
 
   // sample 3s after msg
