@@ -129,6 +129,8 @@ protected:
   /// This is useful when robot is not exactly following the commanded trajectory.
   bool open_loop_control_ = false;
   trajectory_msgs::msg::JointTrajectoryPoint last_commanded_state_;
+  /// Allow integration in goal trajectories to accept goals without position or velocity specified
+  bool allow_integration_in_goal_trajectories_ = false;
 
   // The interfaces are defined as the types in 'allowed_interface_types_' member.
   // For convenience, for each type the interfaces are ordered so that i-th position

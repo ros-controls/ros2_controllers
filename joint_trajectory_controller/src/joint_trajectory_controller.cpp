@@ -62,6 +62,8 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
     auto_declare<double>("action_monitor_rate", 20.0);
     auto_declare<bool>("allow_partial_joints_goal", allow_partial_joints_goal_);
     auto_declare<bool>("open_loop_control", open_loop_control_);
+    auto_declare<bool>(
+      "allow_integration_in_goal_trajectories", allow_integration_in_goal_trajectories_);
     auto_declare<double>("constraints.stopped_velocity_tolerance", 0.01);
     auto_declare<double>("constraints.goal_time", 0.0);
   }
@@ -138,6 +140,7 @@ controller_interface::return_type JointTrajectoryController::update(
   {
     fill_partial_goal(*new_external_msg);
     sort_to_local_joint_order(*new_external_msg);
+    // TODO(denis): Add here integration of position and velocity
     traj_external_point_ptr_->update(*new_external_msg);
   }
 
@@ -178,7 +181,6 @@ controller_interface::return_type JointTrajectoryController::update(
 
     // find segment for current timestamp
     TrajectoryPointConstIter start_segment_itr, end_segment_itr;
-    // TODO(anyone): this is kind-of open-loop concept? I am right?
     const bool valid_point =
       (*traj_point_active_ptr_)->sample(time, state_desired, start_segment_itr, end_segment_itr);
 
@@ -659,6 +661,8 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
 
   // Read parameters customizing controller for special cases
   open_loop_control_ = node_->get_parameter("open_loop_control").get_value<bool>();
+  allow_integration_in_goal_trajectories_ =
+    node_->get_parameter("allow_integration_in_goal_trajectories").get_value<bool>();
 
   // subscriber callback
   // non realtime
@@ -1205,7 +1209,27 @@ bool JointTrajectoryController::validate_trajectory_msg(
 
     const size_t joint_count = trajectory.joint_names.size();
     const auto & points = trajectory.points;
-    if (
+    // This currently supports only position, velocity and acceleration inputs
+    if (allow_integration_in_goal_trajectories_)
+    {
+      const bool all_empty = points[i].positions.empty() && points[i].velocities.empty() &&
+                             points[i].accelerations.empty();
+      const bool position_error =
+        !points[i].positions.empty() &&
+        !validate_trajectory_point_field(joint_count, points[i].positions, "positions", i, false);
+      const bool velocity_error =
+        !points[i].velocities.empty() &&
+        !validate_trajectory_point_field(joint_count, points[i].velocities, "velocities", i, false);
+      const bool acceleration_error =
+        !points[i].accelerations.empty() &&
+        !validate_trajectory_point_field(
+          joint_count, points[i].accelerations, "accelerations", i, false);
+      if (all_empty || position_error || velocity_error || acceleration_error)
+      {
+        return false;
+      }
+    }
+    else if (
       !validate_trajectory_point_field(joint_count, points[i].positions, "positions", i, false) ||
       !validate_trajectory_point_field(joint_count, points[i].velocities, "velocities", i, true) ||
       !validate_trajectory_point_field(

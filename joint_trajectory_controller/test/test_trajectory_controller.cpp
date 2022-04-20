@@ -269,8 +269,8 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
 
   // This call is replacing the way parameters are set via launch
   SetParameters();
-  SetPidParameters();
-  traj_controller_->get_node()->configure();
+  SetParameters();  // This call is replacing the way parameters are set via launch
+  traj_controller_->configure();
   auto state = traj_controller_->get_state();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
 
@@ -670,8 +670,10 @@ TEST_P(TrajectoryControllerTestParameterized, test_partial_joint_list_not_allowe
 TEST_P(TrajectoryControllerTestParameterized, invalid_message)
 {
   rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", false);
+  rclcpp::Parameter allow_integration_parameters("allow_integration_in_goal_trajectories", false);
   rclcpp::executors::SingleThreadedExecutor executor;
-  SetUpAndActivateTrajectoryController(true, {partial_joints_parameters}, &executor);
+  SetUpAndActivateTrajectoryController(
+    true, {partial_joints_parameters, allow_integration_parameters}, &executor);
 
   trajectory_msgs::msg::JointTrajectory traj_msg, good_traj_msg;
 
@@ -724,6 +726,67 @@ TEST_P(TrajectoryControllerTestParameterized, invalid_message)
   // Non-strictly increasing waypoint times
   traj_msg = good_traj_msg;
   traj_msg.points.push_back(traj_msg.points.front());
+  EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
+}
+
+/// With allow_integration_in_goal_trajectories parameter trajectory missing position or velocities
+/// are accepted
+TEST_P(TrajectoryControllerTestParameterized, missing_positions_message_accepted)
+{
+  rclcpp::Parameter allow_integration_parameters("allow_integration_in_goal_trajectories", true);
+  rclcpp::executors::SingleThreadedExecutor executor;
+  SetUpAndActivateTrajectoryController(true, {allow_integration_parameters}, &executor);
+
+  trajectory_msgs::msg::JointTrajectory traj_msg, good_traj_msg;
+
+  good_traj_msg.joint_names = joint_names_;
+  good_traj_msg.header.stamp = rclcpp::Time(0);
+  good_traj_msg.points.resize(1);
+  good_traj_msg.points[0].time_from_start = rclcpp::Duration::from_seconds(0.25);
+  good_traj_msg.points[0].positions.resize(1);
+  good_traj_msg.points[0].positions = {1.0, 2.0, 3.0};
+  good_traj_msg.points[0].velocities.resize(1);
+  good_traj_msg.points[0].velocities = {-1.0, -2.0, -3.0};
+  good_traj_msg.points[0].accelerations.resize(1);
+  good_traj_msg.points[0].accelerations = {1.0, 2.0, 3.0};
+  EXPECT_TRUE(traj_controller_->validate_trajectory_msg(good_traj_msg));
+
+  // No position data
+  traj_msg = good_traj_msg;
+  traj_msg.points[0].positions.clear();
+  EXPECT_TRUE(traj_controller_->validate_trajectory_msg(traj_msg));
+
+  // No position and velocity data
+  traj_msg = good_traj_msg;
+  traj_msg.points[0].positions.clear();
+  traj_msg.points[0].velocities.clear();
+  EXPECT_TRUE(traj_controller_->validate_trajectory_msg(traj_msg));
+
+  // All empty
+  traj_msg = good_traj_msg;
+  traj_msg.points[0].positions.clear();
+  traj_msg.points[0].velocities.clear();
+  traj_msg.points[0].accelerations.clear();
+  EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
+
+  // Incompatible data sizes, too few positions
+  traj_msg = good_traj_msg;
+  traj_msg.points[0].positions = {1.0, 2.0};
+  EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
+
+  // Incompatible data sizes, too many positions
+  traj_msg = good_traj_msg;
+  traj_msg.points[0].positions = {1.0, 2.0, 3.0, 4.0};
+  EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
+
+  // Incompatible data sizes, too few velocities
+  traj_msg = good_traj_msg;
+  traj_msg.points[0].velocities = {1.0};
+  EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
+
+  // Incompatible data sizes, too few accelerations
+  traj_msg = good_traj_msg;
+  traj_msg.points[0].accelerations = {2.0};
   EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
 }
 
