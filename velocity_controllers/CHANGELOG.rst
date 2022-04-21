@@ -2,8 +2,8 @@
 Changelog for package velocity_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.3.0 (2022-04-21)
+------------------
 * Use CallbackReturn from controller_interface namespace (`#333 <https://github.com/ros-controls/ros2_controllers/issues/333>`_)
 * Contributors: Bence Magyar, Denis Štogl
 
