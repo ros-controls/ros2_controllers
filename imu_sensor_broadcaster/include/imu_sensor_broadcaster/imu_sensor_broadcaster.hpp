@@ -33,8 +33,6 @@
 
 namespace imu_sensor_broadcaster
 {
-using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
-
 class IMUSensorBroadcaster : public controller_interface::ControllerInterface
 {
 public:
@@ -44,16 +42,19 @@ public:
   IMU_SENSOR_BROADCASTER_PUBLIC
   controller_interface::InterfaceConfiguration state_interface_configuration() const override;
 
-  IMU_SENSOR_BROADCASTER_PUBLIC CallbackReturn on_init() override;
+  IMU_SENSOR_BROADCASTER_PUBLIC controller_interface::CallbackReturn on_init() override;
 
   IMU_SENSOR_BROADCASTER_PUBLIC
-  CallbackReturn on_configure(const rclcpp_lifecycle::State & previous_state) override;
+  controller_interface::CallbackReturn on_configure(
+    const rclcpp_lifecycle::State & previous_state) override;
 
   IMU_SENSOR_BROADCASTER_PUBLIC
-  CallbackReturn on_activate(const rclcpp_lifecycle::State & previous_state) override;
+  controller_interface::CallbackReturn on_activate(
+    const rclcpp_lifecycle::State & previous_state) override;
 
   IMU_SENSOR_BROADCASTER_PUBLIC
-  CallbackReturn on_deactivate(const rclcpp_lifecycle::State & previous_state) override;
+  controller_interface::CallbackReturn on_deactivate(
+    const rclcpp_lifecycle::State & previous_state) override;
 
   IMU_SENSOR_BROADCASTER_PUBLIC
   controller_interface::return_type update(

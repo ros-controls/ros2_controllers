@@ -30,7 +30,6 @@
 namespace forward_command_controller
 {
 using CmdType = std_msgs::msg::Float64MultiArray;
-using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
 /**
  * \brief Forward command controller for a set of joints.
@@ -57,16 +56,19 @@ public:
   controller_interface::InterfaceConfiguration state_interface_configuration() const override;
 
   FORWARD_COMMAND_CONTROLLER_PUBLIC
-  CallbackReturn on_init() override;
+  controller_interface::CallbackReturn on_init() override;
 
   FORWARD_COMMAND_CONTROLLER_PUBLIC
-  CallbackReturn on_configure(const rclcpp_lifecycle::State & previous_state) override;
+  controller_interface::CallbackReturn on_configure(
+    const rclcpp_lifecycle::State & previous_state) override;
 
   FORWARD_COMMAND_CONTROLLER_PUBLIC
-  CallbackReturn on_activate(const rclcpp_lifecycle::State & previous_state) override;
+  controller_interface::CallbackReturn on_activate(
+    const rclcpp_lifecycle::State & previous_state) override;
 
   FORWARD_COMMAND_CONTROLLER_PUBLIC
-  CallbackReturn on_deactivate(const rclcpp_lifecycle::State & previous_state) override;
+  controller_interface::CallbackReturn on_deactivate(
+    const rclcpp_lifecycle::State & previous_state) override;
 
   FORWARD_COMMAND_CONTROLLER_PUBLIC
   controller_interface::return_type update(

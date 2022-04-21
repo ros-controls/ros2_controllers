@@ -35,10 +35,8 @@ using hardware_interface::LoanedStateInterface;
 
 namespace
 {
-constexpr auto NODE_SUCCESS =
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
-constexpr auto NODE_ERROR =
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
+constexpr auto NODE_SUCCESS = controller_interface::CallbackReturn::SUCCESS;
+constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
 
 rclcpp::WaitResultKind wait_for(rclcpp::SubscriptionBase::SharedPtr subscription)
 {

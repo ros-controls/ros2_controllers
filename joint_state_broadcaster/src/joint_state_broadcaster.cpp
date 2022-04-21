@@ -46,7 +46,7 @@ using hardware_interface::HW_IF_VELOCITY;
 
 JointStateBroadcaster::JointStateBroadcaster() {}
 
-CallbackReturn JointStateBroadcaster::on_init()
+controller_interface::CallbackReturn JointStateBroadcaster::on_init()
 {
   try
   {
@@ -100,7 +100,7 @@ controller_interface::InterfaceConfiguration JointStateBroadcaster::state_interf
   return state_interfaces_config;
 }
 
-CallbackReturn JointStateBroadcaster::on_configure(
+controller_interface::CallbackReturn JointStateBroadcaster::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   use_local_topics_ = get_node()->get_parameter("use_local_topics").as_bool();
@@ -177,7 +177,7 @@ CallbackReturn JointStateBroadcaster::on_configure(
   return CallbackReturn::SUCCESS;
 }
 
-CallbackReturn JointStateBroadcaster::on_activate(
+controller_interface::CallbackReturn JointStateBroadcaster::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   if (!init_joint_data())
@@ -203,7 +203,7 @@ CallbackReturn JointStateBroadcaster::on_activate(
   return CallbackReturn::SUCCESS;
 }
 
-CallbackReturn JointStateBroadcaster::on_deactivate(
+controller_interface::CallbackReturn JointStateBroadcaster::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   return CallbackReturn::SUCCESS;

@@ -48,7 +48,8 @@ public:
   using joint_trajectory_controller::JointTrajectoryController::JointTrajectoryController;
   using joint_trajectory_controller::JointTrajectoryController::validate_trajectory_msg;
 
-  CallbackReturn on_configure(const rclcpp_lifecycle::State & previous_state) override
+  controller_interface::CallbackReturn on_configure(
+    const rclcpp_lifecycle::State & previous_state) override
   {
     auto ret = joint_trajectory_controller::JointTrajectoryController::on_configure(previous_state);
     // this class can still be useful without the wait set
