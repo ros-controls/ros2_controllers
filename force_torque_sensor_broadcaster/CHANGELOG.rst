@@ -2,6 +2,11 @@
 Changelog for package force_torque_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Use CallbackReturn from controller_interface namespace (`#333 <https://github.com/ros-controls/ros2_controllers/issues/333>`_)
+* Contributors: Bence Magyar, Denis Štogl
+
 2.2.0 (2022-03-25)
 ------------------
 
