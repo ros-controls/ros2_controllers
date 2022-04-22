@@ -45,14 +45,6 @@ namespace
 {
 constexpr auto NODE_SUCCESS = controller_interface::CallbackReturn::SUCCESS;
 constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
-
-rclcpp::WaitResultKind wait_for(rclcpp::SubscriptionBase::SharedPtr subscription)
-{
-  rclcpp::WaitSet wait_set;
-  wait_set.add_subscription(subscription);
-  const auto timeout = std::chrono::seconds(10);
-  return wait_set.wait(timeout).kind();
-}
 }  // namespace
 
 void JointStateBroadcasterTest::SetUpTestCase() { rclcpp::init(0, nullptr); }
@@ -684,7 +676,6 @@ void JointStateBroadcasterTest::test_published_dynamic_joint_state_message(
   }
   ASSERT_GE(max_sub_check_loop_count, 0) << "Test was unable to publish a message through "
                                             "controller/broadcaster update loop";
-
 
   // take message from subscription
   control_msgs::msg::DynamicJointState dynamic_joint_state_msg;
