@@ -123,8 +123,6 @@ controller_interface::return_type LidarSensorBroadcaster::update()
   if (realtime_publisher_ && realtime_publisher_->trylock())
   {
     realtime_publisher_->msg_.header.stamp = node_->now();
-    //lidar_sensor_->update_ranges(realtime_publisher_->msg_.ranges);
-    //lidar_sensor_->update_intensities(realtime_publisher_->msg_.intensities);
     lidar_sensor_->get_values_as_message(realtime_publisher_->msg_);
     realtime_publisher_->unlockAndPublish();
   }
