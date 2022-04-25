@@ -183,7 +183,7 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_activate(
   if (!init_joint_data())
   {
     RCLCPP_ERROR(
-      node_->get_logger(), "None of requested interfaces exist. Controller will not run.");
+      get_node()->get_logger(), "None of requested interfaces exist. Controller will not run.");
     return CallbackReturn::ERROR;
   }
 
@@ -195,7 +195,7 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_activate(
     state_interfaces_.size() != (joints_.size() * interfaces_.size()))
   {
     RCLCPP_WARN(
-      node_->get_logger(),
+      get_node()->get_logger(),
       "Not all requested interfaces exists. "
       "Check ControllerManager output for more detailed information.");
   }
