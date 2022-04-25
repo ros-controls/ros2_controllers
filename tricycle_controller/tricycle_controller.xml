@@ -1,0 +1,7 @@
+<library path="tricycle_controller">
+  <class name="tricycle_controller/TricycleController" type="tricycle_controller::TricycleController" base_class_type="controller_interface::ControllerInterface">
+  <description>
+    The tricycle controller for the amr robot.
+  </description>
+  </class>
+</library>
