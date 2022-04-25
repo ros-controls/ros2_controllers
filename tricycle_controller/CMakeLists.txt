@@ -16,6 +16,8 @@ find_package(rclcpp REQUIRED)
 find_package(rcpputils REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(realtime_tools REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_msgs REQUIRED)
 
 add_library(
   ${PROJECT_NAME}
@@ -43,6 +45,8 @@ ament_target_dependencies(
   rclcpp_lifecycle
   rcpputils
   realtime_tools
+  tf2
+  tf2_msgs
 )
 
 pluginlib_export_plugin_description_file(controller_interface tricycle_controller.xml)
