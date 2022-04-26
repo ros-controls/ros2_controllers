@@ -170,10 +170,6 @@ protected:
   realtime_tools::RealtimeBuffer<std::shared_ptr<trajectory_msgs::msg::JointTrajectory>>
     traj_msg_external_point_ptr_;
 
-  // The controller should be in halted state after creation otherwise memory corruption
-  // TODO(anyone): Is the variable relevant, since we are using lifecycle?
-  bool is_halted_ = true;
-
   using ControllerStateMsg = control_msgs::msg::JointTrajectoryControllerState;
   using StatePublisher = realtime_tools::RealtimePublisher<ControllerStateMsg>;
   using StatePublisherPtr = std::unique_ptr<StatePublisher>;
