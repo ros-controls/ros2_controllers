@@ -5,11 +5,11 @@
 
 namespace
 {
-constexpr auto DEFAULT_COMMAND_TOPIC = "~/cmd_vel";
-constexpr auto DEFAULT_COMMAND_UNSTAMPED_TOPIC = "~/cmd_vel_unstamped";
-constexpr auto DEFAULT_COMMAND_OUT_TOPIC = "~/cmd_vel_out";
-constexpr auto DEFAULT_ODOMETRY_TOPIC = "/odom";
-constexpr auto DEFAULT_TRANSFORM_TOPIC = "/tf";
+constexpr auto DEFAULT_COMMAND_TOPIC = "cmd_vel";
+constexpr auto DEFAULT_COMMAND_UNSTAMPED_TOPIC = "cmd_vel_unstamped";
+constexpr auto DEFAULT_COMMAND_OUT_TOPIC = "cmd_vel_out";
+constexpr auto DEFAULT_ODOMETRY_TOPIC = "odom";
+constexpr auto DEFAULT_TRANSFORM_TOPIC = "tf";
 }  // namespace
 
 namespace tricycle_controller
@@ -104,40 +104,134 @@ InterfaceConfiguration TricycleController::state_interface_configuration() const
 }
 
 controller_interface::return_type TricycleController::update(
-  const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
+  const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
-  // Get current states
-  double current_speed = wheel_front_joint_[0].feedback_state.get().get_value();  // in m/s
-  double current_steering_angle =
-    steering_joint_[0].position_state.get().get_value();  // in radians
+  const auto current_time = time;
 
-  // Get the last velocity command
-  std::shared_ptr<Twist> velocity_command;
-  received_velocity_msg_ptr_.get(velocity_command);
-
-  if (velocity_command == nullptr)
+  std::shared_ptr<Twist> last_command_msg;
+  received_velocity_msg_ptr_.get(last_command_msg);
+  if (last_command_msg == nullptr)
   {
-    return controller_interface::return_type::OK;
+    RCLCPP_WARN(get_node()->get_logger(), "Velocity message received was a nullptr.");
+    return controller_interface::return_type::ERROR;
   }
 
-  // Calculate the wheel velocity
-  const auto twist = *velocity_command;
-  double baselink_speed = twist.twist.linear.x;
-  double steering_angle = twist.twist.angular.z;
+  const auto age_of_last_command = current_time - last_command_msg->header.stamp;
+  // Brake if cmd_vel has timeout, override the stored command
+  if (age_of_last_command > cmd_vel_timeout_)
+  {
+    last_command_msg->twist.linear.x = 0.0;
+    last_command_msg->twist.angular.z = 0.0;
+  }
 
-  double delta_diff = normalize_angle(steering_angle - current_steering_angle);
+  // command may be limited further by SpeedLimit,
+  // without affecting the stored twist command
+  Twist command = *last_command_msg;
+  double & linear_command = command.twist.linear.x;
+  double & angular_command = command.twist.angular.z;
 
-  // front wheel has to drive faster in turns
-  double front_wheel_scale_factor = 1 / std::max(0.01, cos(steering_angle));
+  // if (odom_params_.open_loop)
+  // {
+  //   odometry_.updateOpenLoop(linear_command, angular_command, current_time);
+  // }
+  // else
+  // {
+  //   const double wheel_front_feedback =
+  //     wheel_front_joint_[0].feedback_state.get().get_value();  // in m/s
+  //   double current_steering_angle =
+  //     steering_joint_[0].position_state.get().get_value();  // in radians
+  //   if (std::isnan(wheel_front_feedback) || std::isnan(current_steering_angle))
+  //   {
+  //     RCLCPP_ERROR(logger, "Could not read feeback value");
+  //     return controller_interface::return_type::ERROR;
+  //   }
+  //   if (odom_params_.position_feedback)
+  //   {
+  //     odometry_.update(wheel_front_feedback, current_steering_angle, current_time);
+  //   }
+  //   else
+  //   {
+  //     odometry_.updateFromVelocity(wheel_front_feedback, current_steering_angle, current_time);
+  //   }
+  // }
 
-  // slow down when difference between commanded steering angle and current steering angle is large
-  double scale_speed_direction_diff_factor = std::max(0.01, cos(delta_diff));
+  // tf2::Quaternion orientation;
+  // orientation.setRPY(0.0, 0.0, odometry_.getHeading());
 
-  double steering_wheel_speed =
-    (baselink_speed * front_wheel_scale_factor * scale_speed_direction_diff_factor);
+  // if (previous_publish_timestamp_ + publish_period_ < current_time)
+  // {
+  //   previous_publish_timestamp_ += publish_period_;
 
-  wheel_front_joint_[0].velocity_command.get().set_value(steering_wheel_speed);
-  steering_joint_[0].position_command.get().set_value(steering_angle);
+  //   if (realtime_odometry_publisher_->trylock())
+  //   {
+  //     auto & odometry_message = realtime_odometry_publisher_->msg_;
+  //     odometry_message.header.stamp = current_time;
+  //     odometry_message.pose.pose.position.x = odometry_.getX();
+  //     odometry_message.pose.pose.position.y = odometry_.getY();
+  //     odometry_message.pose.pose.orientation.x = orientation.x();
+  //     odometry_message.pose.pose.orientation.y = orientation.y();
+  //     odometry_message.pose.pose.orientation.z = orientation.z();
+  //     odometry_message.pose.pose.orientation.w = orientation.w();
+  //     odometry_message.twist.twist.linear.x = odometry_.getLinear();
+  //     odometry_message.twist.twist.angular.z = odometry_.getAngular();
+  //     realtime_odometry_publisher_->unlockAndPublish();
+  //   }
+
+  //   if (odom_params_.enable_odom_tf && realtime_odometry_transform_publisher_->trylock())
+  //   {
+  //     auto & transform = realtime_odometry_transform_publisher_->msg_.transforms.front();
+  //     transform.header.stamp = current_time;
+  //     transform.transform.translation.x = odometry_.getX();
+  //     transform.transform.translation.y = odometry_.getY();
+  //     transform.transform.rotation.x = orientation.x();
+  //     transform.transform.rotation.y = orientation.y();
+  //     transform.transform.rotation.z = orientation.z();
+  //     transform.transform.rotation.w = orientation.w();
+  //     realtime_odometry_transform_publisher_->unlockAndPublish();
+  //   }
+  // }
+
+  const auto update_dt = current_time - previous_update_timestamp_;
+  previous_update_timestamp_ = current_time;
+
+  auto & last_command = previous_commands_.back().twist;
+  auto & second_to_last_command = previous_commands_.front().twist;
+  limiter_linear_.limit(
+    linear_command, last_command.linear.x, second_to_last_command.linear.x, update_dt.seconds());
+  limiter_angular_.limit(
+    angular_command, last_command.angular.z, second_to_last_command.angular.z, update_dt.seconds());
+
+  previous_commands_.pop();
+  previous_commands_.emplace(command);
+
+  //  Publish limited velocity
+  if (publish_limited_velocity_ && realtime_limited_velocity_publisher_->trylock())
+  {
+    auto & limited_velocity_command = realtime_limited_velocity_publisher_->msg_;
+    limited_velocity_command.header.stamp = current_time;
+    limited_velocity_command.twist = command.twist;
+    realtime_limited_velocity_publisher_->unlockAndPublish();
+  }
+
+  // Compute wheels velocities:
+
+  // // Calculate the wheel velocity and angle
+
+  // double delta_diff = normalize_angle(steering_angle - current_steering_angle);
+
+  // // front wheel has to drive faster in turns
+  // double front_wheel_scale_factor = 1 / std::max(0.01, cos(steering_angle));
+
+  // // slow down when difference between commanded steering angle and current steering angle is large
+  // double scale_speed_direction_diff_factor = std::max(0.01, cos(delta_diff));
+
+  // double steering_wheel_speed = baselink_speed * front_wheel_scale_factor * scale_speed_direction_diff_factor;
+
+
+
+  // Set wheel and angle
+  wheel_front_joint_[0].velocity_command.get().set_value(linear_command/wheel_params_.radius); // TODO: Different radii?
+  steering_joint_[0].position_command.get().set_value(-angular_command);
 
   return controller_interface::return_type::OK;
 }
@@ -175,9 +269,9 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
   const double left_wheel_radius = wheels.left_radius_multiplier * wheels.radius;
   const double right_wheel_radius = wheels.right_radius_multiplier * wheels.radius;
 
-  // odometry_.setWheelParams(wheel_separation, left_wheel_radius, right_wheel_radius);
-  // odometry_.setVelocityRollingWindowSize(
-  //   get_node()->get_parameter("velocity_rolling_window_size").as_int());
+  odometry_.setWheelParams(wheel_separation, left_wheel_radius, right_wheel_radius);
+  odometry_.setVelocityRollingWindowSize(
+    get_node()->get_parameter("velocity_rolling_window_size").as_int());
 
   odom_params_.odom_frame_id = get_node()->get_parameter("odom_frame_id").as_string();
   odom_params_.base_frame_id = get_node()->get_parameter("base_frame_id").as_string();
