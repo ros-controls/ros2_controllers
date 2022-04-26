@@ -1278,7 +1278,7 @@ INSTANTIATE_TEST_SUITE_P(
       std::vector<std::string>({"position", "velocity", "acceleration"}))));
 
 // only effort controller
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
   OnlyEffortTrajectoryControllers, TrajectoryControllerTestParameterized,
   ::testing::Values(
     std::make_tuple(
