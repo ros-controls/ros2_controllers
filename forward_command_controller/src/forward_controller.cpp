@@ -35,19 +35,25 @@ controller_interface::InterfaceConfiguration ForwardController::state_interface_
   return get_state_interface_configuration();
 }
 
-CallbackReturn ForwardController::on_init() { return execute_init(get_node()); }
+controller_interface::CallbackReturn ForwardController::on_init()
+{
+  return execute_init(get_node());
+}
 
-CallbackReturn ForwardController::on_configure(const rclcpp_lifecycle::State & previous_state)
+controller_interface::CallbackReturn ForwardController::on_configure(
+  const rclcpp_lifecycle::State & previous_state)
 {
   return execute_configure(previous_state, command_interfaces_);
 }
 
-CallbackReturn ForwardController::on_activate(const rclcpp_lifecycle::State & previous_state)
+controller_interface::CallbackReturn ForwardController::on_activate(
+  const rclcpp_lifecycle::State & previous_state)
 {
   return execute_activate(previous_state, command_interfaces_);
 }
 
-CallbackReturn ForwardController::on_deactivate(const rclcpp_lifecycle::State & previous_state)
+controller_interface::CallbackReturn ForwardController::on_deactivate(
+  const rclcpp_lifecycle::State & previous_state)
 {
   return execute_deactivate(previous_state);
 }

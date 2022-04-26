@@ -73,7 +73,7 @@ controller_interface::CallbackReturn ForwardControllersBase::execute_configure(
   // pre-reserve command interfaces
   command_interfaces.reserve(command_interface_names_.size());
 
-  RCLCPP_INFO(get_node()->get_logger(), "configure successful");
+  RCLCPP_INFO(node_->get_logger(), "configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
@@ -109,7 +109,7 @@ controller_interface::CallbackReturn ForwardControllersBase::execute_activate(
     command_interface_names_.size() != ordered_interfaces.size())
   {
     RCLCPP_ERROR(
-      get_node()->get_logger(), "Expected %zu command interfaces, got %zu",
+      node_->get_logger(), "Expected %zu command interfaces, got %zu",
       command_interface_names_.size(), ordered_interfaces.size());
     return controller_interface::CallbackReturn::ERROR;
   }
@@ -117,7 +117,7 @@ controller_interface::CallbackReturn ForwardControllersBase::execute_activate(
   // reset command buffer if a command came through callback when controller was inactive
   rt_command_ptr_ = realtime_tools::RealtimeBuffer<std::shared_ptr<CmdType>>(nullptr);
 
-  RCLCPP_INFO(get_node()->get_logger(), "activate successful");
+  RCLCPP_INFO(node_->get_logger(), "activate successful");
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
