@@ -125,7 +125,6 @@ protected:
   };
 
   // Preallocate variables used in the realtime update() function
-  // TODO(andyz): consolidate with last_commanded_state_?
   trajectory_msgs::msg::JointTrajectoryPoint state_current_;
   trajectory_msgs::msg::JointTrajectoryPoint state_desired_;
   trajectory_msgs::msg::JointTrajectoryPoint state_error_;
