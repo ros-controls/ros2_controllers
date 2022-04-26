@@ -176,7 +176,6 @@ controller_interface::return_type JointTrajectoryController::update(
         (*traj_point_active_ptr_)->set_point_before_trajectory_msg(time, state_current_);
       }
     }
-    resize_joint_trajectory_point(state_error_, dof_);
 
     // find segment for current timestamp
     TrajectoryPointConstIter start_segment_itr, end_segment_itr;
