@@ -1,4 +1,4 @@
-// Copyright 2020 PAL Robotics S.L.
+// Copyright 2021 Stogl Robotics Consulting UG (haftungsbescrhänkt)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef FORWARD_COMMAND_CONTROLLER__FORWARD_COMMAND_CONTROLLER_HPP_
-#define FORWARD_COMMAND_CONTROLLER__FORWARD_COMMAND_CONTROLLER_HPP_
+#ifndef FORWARD_COMMAND_CONTROLLER__MULTI_INTERFACE_FORWARD_COMMAND_CONTROLLER_HPP_
+#define FORWARD_COMMAND_CONTROLLER__MULTI_INTERFACE_FORWARD_COMMAND_CONTROLLER_HPP_
 
 #include <string>
 #include <vector>
@@ -24,30 +24,31 @@
 namespace forward_command_controller
 {
 /**
- * \brief Forward command controller for a set of joints.
+ * \brief Multi interface forward command controller for a set of interfaces.
  *
- * This class forwards the command signal down to a set of joints on the specified interface.
+ * This class forwards the command signal down to a set of interfaces on the specified joint.
  *
- * \param joints Names of the joints to control.
- * \param interface_name Name of the interface to command.
+ * \param joint Name of the joint to control.
+ * \param interface_names Names of the interfaces to command.
  *
  * Subscribes to:
  * - \b commands (std_msgs::msg::Float64MultiArray) : The commands to apply.
  */
-class ForwardCommandController : public ForwardControllersBase
+class MultiInterfaceForwardCommandController
+: public forward_command_controller::ForwardControllersBase
 {
 public:
   FORWARD_COMMAND_CONTROLLER_PUBLIC
-  ForwardCommandController();
+  MultiInterfaceForwardCommandController();
 
 protected:
   void declare_parameters() override;
   controller_interface::CallbackReturn read_parameters() override;
 
-  std::vector<std::string> joint_names_;
-  std::string interface_name_;
+  std::string joint_name_;
+  std::vector<std::string> interface_names_;
 };
 
 }  // namespace forward_command_controller
 
-#endif  // FORWARD_COMMAND_CONTROLLER__FORWARD_COMMAND_CONTROLLER_HPP_
+#endif  // FORWARD_COMMAND_CONTROLLER__MULTI_INTERFACE_FORWARD_COMMAND_CONTROLLER_HPP_
