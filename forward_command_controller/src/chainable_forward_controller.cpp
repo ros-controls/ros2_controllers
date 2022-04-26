@@ -41,7 +41,6 @@ controller_interface::CallbackReturn ChainableForwardController::on_configure(
   const rclcpp_lifecycle::State & previous_state)
 {
   auto ret = execute_configure(previous_state, command_interfaces_);
-  RCLCPP_ERROR(get_node()->get_logger(), "Configure is successful, now tryting configure ref_itfs");
   if (ret != CallbackReturn::SUCCESS)
   {
     return ret;
@@ -52,11 +51,6 @@ controller_interface::CallbackReturn ChainableForwardController::on_configure(
   // for any case make reference interfaces size of command interfaces
   reference_interfaces_.resize(
     reference_interface_names_.size(), std::numeric_limits<double>::quiet_NaN());
-
-  for (const auto & value : reference_interfaces_)
-  {
-    RCLCPP_ERROR(get_node()->get_logger(), "Reference interface value is %f", value);
-  }
 
   return CallbackReturn::SUCCESS;
 }
@@ -124,6 +118,8 @@ controller_interface::return_type ChainableForwardController::update_reference_f
   {
     reference_interfaces_ = (*joint_commands)->data;
   }
+
+  return controller_interface::return_type::OK;
 }
 
 controller_interface::return_type ChainableForwardController::update_and_write_commands(
