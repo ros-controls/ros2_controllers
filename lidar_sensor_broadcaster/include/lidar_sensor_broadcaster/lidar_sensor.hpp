@@ -36,11 +36,11 @@ public:
     interface_names_.emplace_back(name_ + "/" + "scan_time");
     interface_names_.emplace_back(name_ + "/" + "range_min");
     interface_names_.emplace_back(name_ + "/" + "range_max");
-    interface_names_.emplace_back(name_ + "/" + "ranges_init");
     interface_names_.emplace_back(name_ + "/" + "ranges_size");
-    interface_names_.emplace_back(name_ + "/" + "intensities_init");
     interface_names_.emplace_back(name_ + "/" + "intensities_size");
-
+    interface_names_.emplace_back(name_ + "/" + "ranges");
+    interface_names_.emplace_back(name_ + "/" + "intensities");
+    
     // Set default values to NaN
     angle_min_ = std::numeric_limits<float>::quiet_NaN();
     angle_max_ = std::numeric_limits<float>::quiet_NaN();
@@ -151,20 +151,6 @@ public:
     return range_max_;
   }
 
-  /// Return ranges_init
-  /**
-   * Return ranges_init
-   *
-   * \return ranges_init
-   */
-  std::vector<float> get_ranges_init()
-  {
-    size_t interface_offset = 7;
-    auto arrayData = state_interfaces_[interface_offset].get().get_array_value();
-    ranges_init_.assign(arrayData.begin(), arrayData.end());
-    return ranges_init_;
-  }
-
   /// Return ranges_size
   /**
    * Return ranges_size
@@ -173,23 +159,9 @@ public:
    */
   float get_ranges_size()
   {
-    size_t interface_offset = 8;
+    size_t interface_offset = 7;
     ranges_size_ = state_interfaces_[interface_offset].get().get_value();
     return ranges_size_;
-  }
-
-  /// Return intensities_init
-  /**
-   * Return intensities_init
-   *
-   * \return intensities_init
-   */
-  std::vector<float> get_intensities_init()
-  {
-    size_t interface_offset = 9;
-    auto arrayData = state_interfaces_[interface_offset].get().get_array_value();
-    intensities_init_.assign(arrayData.begin(), arrayData.end());
-    return intensities_init_;
   }
 
   /// Return intensities_size
@@ -200,11 +172,38 @@ public:
    */
   float get_intensities_size()
   {
-    size_t interface_offset = 10;
+    size_t interface_offset = 8;
     intensities_size_ = state_interfaces_[interface_offset].get().get_value();
     return intensities_size_;
   }
 
+  /// Return ranges_init
+  /**
+   * Return ranges_init
+   *
+   * \return ranges_init
+   */
+  std::vector<float> get_ranges()
+  {
+    size_t interface_offset = 9;
+    auto arrayData = state_interfaces_[interface_offset].get().get_array_value();
+    ranges_.assign(arrayData.begin(), arrayData.end());
+    return ranges_;
+  }
+
+  /// Return intensities_init
+  /**
+   * Return intensities_init
+   *
+   * \return intensities_init
+   */
+  std::vector<float> get_intensities()
+  {
+    size_t interface_offset = 10;
+    auto arrayData = state_interfaces_[interface_offset].get().get_array_value();
+    intensities_.assign(arrayData.begin(), arrayData.end());
+    return intensities_;
+  }
 
   // /// Return orientation.
   // /**
@@ -246,10 +245,10 @@ public:
     get_scan_time();
     get_min_range();
     get_max_range();
-    get_ranges_init();
     get_ranges_size();
-    get_intensities_init();
     get_intensities_size();
+    get_ranges();
+    get_intensities();
 
     // update the message values
     message.angle_min = angle_min_;
@@ -259,8 +258,8 @@ public:
     message.scan_time = scan_time_;
     message.range_min = range_min_;
     message.range_max = range_max_;
-    message.ranges = ranges_init_;
-    message.intensities = intensities_init_;
+    message.ranges = ranges_;
+    message.intensities = intensities_;
 
     //std::cout << "INIT: " << ranges_init_ << std::endl;
     //std::cout << "Size: " << ranges_size_ << std::endl;
@@ -279,9 +278,7 @@ protected:
   float scan_time_;
   float range_min_;
   float range_max_;
-  std::vector<float> ranges_init_;
   float ranges_size_;
-  std::vector<float> intensities_init_;
   float intensities_size_;
   std::vector<float> ranges_;
   std::vector<float> intensities_;
