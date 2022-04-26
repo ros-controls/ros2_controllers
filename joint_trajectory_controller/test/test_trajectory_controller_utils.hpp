@@ -93,7 +93,7 @@ public:
 
   trajectory_msgs::msg::JointTrajectoryPoint get_current_state_when_offset()
   {
-    return last_commanded_state_;
+    return state_desired_;
   }
 
   bool has_position_command_interface() { return has_position_command_interface_; }

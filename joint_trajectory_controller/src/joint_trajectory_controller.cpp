@@ -169,7 +169,7 @@ controller_interface::return_type JointTrajectoryController::update(
       first_sample = true;
       if (open_loop_control_)
       {
-        (*traj_point_active_ptr_)->set_point_before_trajectory_msg(time, last_commanded_state_);
+        (*traj_point_active_ptr_)->set_point_before_trajectory_msg(time, state_desired_);
       }
       else
       {
@@ -276,9 +276,6 @@ controller_interface::return_type JointTrajectoryController::update(
             assign_interface_from_point(joint_command_interface_[3], state_desired_.effort);
           }
         }
-
-        // store command as state when hardware state has tracking offset
-        last_commanded_state_ = state_desired_;
       }
 
       const auto active_goal = *rt_active_goal_.readFromRT();
@@ -818,10 +815,8 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   resize_joint_trajectory_point(state_current_, dof_);
   resize_joint_trajectory_point(state_desired_, dof_);
   resize_joint_trajectory_point(state_error_, dof_);
-  resize_joint_trajectory_point(last_commanded_state_, dof_);
   read_state_from_hardware(state_current_);
   read_state_from_hardware(state_desired_);
-  read_state_from_hardware(last_commanded_state_);
   // Handle restart of controller by reading from commands if
   // those are not nan
   trajectory_msgs::msg::JointTrajectoryPoint state;
@@ -830,7 +825,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   {
     state_current_ = state;
     state_desired_ = state;
-    last_commanded_state_ = state;
   }
 
   // TODO(karsten1987): activate subscriptions of subscriber
