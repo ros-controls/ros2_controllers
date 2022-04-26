@@ -33,14 +33,14 @@ void ForwardCommandController::declare_parameters()
   get_node()->declare_parameter<std::string>("interface_name", "");
 }
 
-CallbackReturn ForwardCommandController::read_parameters()
+controller_interface::CallbackReturn ForwardCommandController::read_parameters()
 {
   joint_names_ = get_node()->get_parameter("joints").as_string_array();
 
   if (joint_names_.empty())
   {
     RCLCPP_ERROR(get_node()->get_logger(), "'joints' parameter was empty");
-    return CallbackReturn::ERROR;
+    return controller_interface::CallbackReturn::ERROR;
   }
 
   // Specialized, child controllers set interfaces before calling configure function.
@@ -52,7 +52,7 @@ CallbackReturn ForwardCommandController::read_parameters()
   if (interface_name_.empty())
   {
     RCLCPP_ERROR(get_node()->get_logger(), "'interface_name' parameter was empty");
-    return CallbackReturn::ERROR;
+    return controller_interface::CallbackReturn::ERROR;
   }
 
   for (const auto & joint : joint_names_)
@@ -60,7 +60,7 @@ CallbackReturn ForwardCommandController::read_parameters()
     command_interface_types_.push_back(joint + "/" + interface_name_);
   }
 
-  return CallbackReturn::SUCCESS;
+  return controller_interface::CallbackReturn::SUCCESS;
 }
 
 }  // namespace forward_command_controller

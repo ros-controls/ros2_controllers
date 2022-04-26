@@ -34,7 +34,7 @@ ForwardControllersBase::ForwardControllersBase()
 {
 }
 
-CallbackReturn ForwardControllersBase::on_init()
+controller_interface::CallbackReturn ForwardControllersBase::on_init()
 {
   try
   {
@@ -43,27 +43,27 @@ CallbackReturn ForwardControllersBase::on_init()
   catch (const std::exception & e)
   {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
-    return CallbackReturn::ERROR;
+    return controller_interface::CallbackReturn::ERROR;
   }
 
-  return CallbackReturn::SUCCESS;
+  return controller_interface::CallbackReturn::SUCCESS;
 }
 
-CallbackReturn ForwardControllersBase::on_configure(
+controller_interface::CallbackReturn ForwardControllersBase::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   auto ret = this->read_parameters();
-  if (ret != CallbackReturn::SUCCESS)
+  if (ret != controller_interface::CallbackReturn::SUCCESS)
   {
     return ret;
   }
 
-  joints_command_subscriber_ = node_->create_subscription<CmdType>(
+  joints_command_subscriber_ = get_node()->create_subscription<CmdType>(
     "~/commands", rclcpp::SystemDefaultsQoS(),
     [this](const CmdType::SharedPtr msg) { rt_command_ptr_.writeFromNonRT(msg); });
 
   RCLCPP_INFO(get_node()->get_logger(), "configure successful");
-  return CallbackReturn::SUCCESS;
+  return controller_interface::CallbackReturn::SUCCESS;
 }
 
 controller_interface::InterfaceConfiguration
@@ -83,7 +83,7 @@ controller_interface::InterfaceConfiguration ForwardControllersBase::state_inter
     controller_interface::interface_configuration_type::NONE};
 }
 
-CallbackReturn ForwardControllersBase::on_activate(
+controller_interface::CallbackReturn ForwardControllersBase::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   //  check if we have all resources defined in the "points" parameter
@@ -97,24 +97,24 @@ CallbackReturn ForwardControllersBase::on_activate(
     command_interface_types_.size() != ordered_interfaces.size())
   {
     RCLCPP_ERROR(
-      node_->get_logger(), "Expected %zu command interfaces, got %zu",
+      get_node()->get_logger(), "Expected %zu command interfaces, got %zu",
       command_interface_types_.size(), ordered_interfaces.size());
-    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
+    return controller_interface::CallbackReturn::ERROR;
   }
 
   // reset command buffer if a command came through callback when controller was inactive
   rt_command_ptr_ = realtime_tools::RealtimeBuffer<std::shared_ptr<CmdType>>(nullptr);
 
   RCLCPP_INFO(get_node()->get_logger(), "activate successful");
-  return CallbackReturn::SUCCESS;
+  return controller_interface::CallbackReturn::SUCCESS;
 }
 
-CallbackReturn ForwardControllersBase::on_deactivate(
+controller_interface::CallbackReturn ForwardControllersBase::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   // reset command buffer
   rt_command_ptr_ = realtime_tools::RealtimeBuffer<std::shared_ptr<CmdType>>(nullptr);
-  return CallbackReturn::SUCCESS;
+  return controller_interface::CallbackReturn::SUCCESS;
 }
 
 controller_interface::return_type ForwardControllersBase::update(
@@ -131,7 +131,7 @@ controller_interface::return_type ForwardControllersBase::update(
   if ((*joint_commands)->data.size() != command_interfaces_.size())
   {
     RCLCPP_ERROR_THROTTLE(
-      get_node()->get_logger(), *node_->get_clock(), 1000,
+      get_node()->get_logger(), *(get_node()->get_clock()), 1000,
       "command size (%zu) does not match number of interfaces (%zu)",
       (*joint_commands)->data.size(), command_interfaces_.size());
     return controller_interface::return_type::ERROR;

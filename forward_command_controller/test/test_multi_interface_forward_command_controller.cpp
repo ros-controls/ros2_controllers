@@ -35,8 +35,6 @@
 #include "rclcpp/wait_set.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 
-using CallbackReturn =
-  forward_command_controller::MultiInterfaceForwardCommandController::CallbackReturn;
 using hardware_interface::LoanedCommandInterface;
 
 namespace
@@ -85,8 +83,10 @@ void MultiInterfaceForwardCommandControllerTest::SetParametersAndActivateControl
   controller_->get_node()->set_parameter(
     {"interface_names", std::vector<std::string>{"position", "velocity", "effort"}});
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  auto node_state = controller_->get_node()->configure();
+  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
+  node_state = controller_->get_node()->activate();
+  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
 }
 
 TEST_F(MultiInterfaceForwardCommandControllerTest, JointsParameterNotSet)
@@ -95,7 +95,9 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, JointsParameterNotSet)
   controller_->get_node()->set_parameter({"interface_names", std::vector<std::string>()});
 
   // configure failed, 'joint' parameter not set
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
+  ASSERT_EQ(
+    controller_->on_configure(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::ERROR);
 }
 
 TEST_F(MultiInterfaceForwardCommandControllerTest, InterfaceParameterNotSet)
@@ -104,7 +106,9 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, InterfaceParameterNotSet)
   controller_->get_node()->set_parameter({"joint", ""});
 
   // configure failed, 'interface_names' parameter not set
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
+  ASSERT_EQ(
+    controller_->on_configure(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::ERROR);
 }
 
 TEST_F(MultiInterfaceForwardCommandControllerTest, JointsParameterIsEmpty)
@@ -115,7 +119,9 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, JointsParameterIsEmpty)
   controller_->get_node()->set_parameter({"interface_names", std::vector<std::string>()});
 
   // configure failed, 'joint' is empty
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
+  ASSERT_EQ(
+    controller_->on_configure(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::ERROR);
 }
 
 TEST_F(MultiInterfaceForwardCommandControllerTest, InterfaceParameterEmpty)
@@ -125,7 +131,9 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, InterfaceParameterEmpty)
   controller_->get_node()->set_parameter({"interface_names", std::vector<std::string>()});
 
   // configure failed, 'interface_name' is empty
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
+  ASSERT_EQ(
+    controller_->on_configure(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::ERROR);
 }
 
 TEST_F(MultiInterfaceForwardCommandControllerTest, ConfigureParamsSuccess)
@@ -137,7 +145,9 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, ConfigureParamsSuccess)
     {"interface_names", std::vector<std::string>{"position", "velocity", "effort"}});
 
   // configure successful
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  ASSERT_EQ(
+    controller_->on_configure(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::SUCCESS);
 }
 
 TEST_F(MultiInterfaceForwardCommandControllerTest, ActivateWithWrongJointsNamesFails)
@@ -149,8 +159,12 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, ActivateWithWrongJointsNamesF
     {"interface_names", std::vector<std::string>{"position", "velocity", "effort"}});
 
   // activate failed, 'joint2' is not a valid joint name for the hardware
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
+  ASSERT_EQ(
+    controller_->on_configure(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_EQ(
+    controller_->on_activate(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::ERROR);
 }
 
 TEST_F(MultiInterfaceForwardCommandControllerTest, ActivateWithWrongInterfaceNameFails)
@@ -162,8 +176,12 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, ActivateWithWrongInterfaceNam
     {"interface_names", std::vector<std::string>{"position", "velocity", "acceleration"}});
 
   // activate failed, 'acceleration' is not a registered interface for `joint1`
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
+  ASSERT_EQ(
+    controller_->on_configure(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_EQ(
+    controller_->on_activate(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::ERROR);
 }
 
 TEST_F(MultiInterfaceForwardCommandControllerTest, ActivateSuccess)
@@ -279,7 +297,7 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, ActivateDeactivateCommandsRes
   ASSERT_EQ(joint_1_vel_cmd_.get_value(), 20.0);
   ASSERT_EQ(joint_1_eff_cmd_.get_value(), 30.0);
 
-  auto node_state = controller_->deactivate();
+  auto node_state = controller_->get_node()->deactivate();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
 
   // command ptr should be reset (nullptr) after deactivation - same check as in `update`
@@ -302,7 +320,7 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, ActivateDeactivateCommandsRes
     controller_->rt_command_ptr_.readFromRT() && *(controller_->rt_command_ptr_.readFromRT()));
 
   // Now activate again
-  node_state = controller_->activate();
+  node_state = controller_->get_node()->activate();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
 
   // command ptr should be reset (nullptr) after activation - same check as in `update`

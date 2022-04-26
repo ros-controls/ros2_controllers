@@ -23,8 +23,6 @@
 
 namespace forward_command_controller
 {
-using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
-
 /**
  * \brief Forward command controller for a set of joints.
  *
@@ -44,7 +42,7 @@ public:
 
 protected:
   void declare_parameters() override;
-  CallbackReturn read_parameters() override;
+  controller_interface::CallbackReturn read_parameters() override;
 
   std::vector<std::string> joint_names_;
   std::string interface_name_;

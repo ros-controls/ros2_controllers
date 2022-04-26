@@ -30,7 +30,6 @@
 namespace forward_command_controller
 {
 using CmdType = std_msgs::msg::Float64MultiArray;
-using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
 /**
  * \brief Forward command controller for a set of joints and interfaces.
@@ -56,16 +55,19 @@ public:
   controller_interface::InterfaceConfiguration state_interface_configuration() const override;
 
   FORWARD_COMMAND_CONTROLLER_PUBLIC
-  CallbackReturn on_init() override;
+  controller_interface::CallbackReturn on_init() override;
 
   FORWARD_COMMAND_CONTROLLER_PUBLIC
-  CallbackReturn on_configure(const rclcpp_lifecycle::State & previous_state) override;
+  controller_interface::CallbackReturn on_configure(
+    const rclcpp_lifecycle::State & previous_state) override;
 
   FORWARD_COMMAND_CONTROLLER_PUBLIC
-  CallbackReturn on_activate(const rclcpp_lifecycle::State & previous_state) override;
+  controller_interface::CallbackReturn on_activate(
+    const rclcpp_lifecycle::State & previous_state) override;
 
   FORWARD_COMMAND_CONTROLLER_PUBLIC
-  CallbackReturn on_deactivate(const rclcpp_lifecycle::State & previous_state) override;
+  controller_interface::CallbackReturn on_deactivate(
+    const rclcpp_lifecycle::State & previous_state) override;
 
   FORWARD_COMMAND_CONTROLLER_PUBLIC
   controller_interface::return_type update(
@@ -85,10 +87,10 @@ protected:
    *
    * It is expected that error handling of exceptions is done.
    *
-   * \returns CallbackReturn::SUCCESS if parameters are successfully read and their values are
-   * allowed, CallbackReturn::ERROR otherwise.
+   * \returns controller_interface::CallbackReturn::SUCCESS if parameters are successfully read and their values are
+   * allowed, controller_interface::CallbackReturn::ERROR otherwise.
    */
-  virtual CallbackReturn read_parameters() = 0;
+  virtual controller_interface::CallbackReturn read_parameters() = 0;
 
   std::vector<std::string> joint_names_;
   std::string interface_name_;

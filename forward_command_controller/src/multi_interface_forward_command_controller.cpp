@@ -30,7 +30,7 @@ void MultiInterfaceForwardCommandController::declare_parameters()
   get_node()->declare_parameter<std::vector<std::string>>("interface_names", interface_names_);
 }
 
-CallbackReturn MultiInterfaceForwardCommandController::read_parameters()
+controller_interface::CallbackReturn MultiInterfaceForwardCommandController::read_parameters()
 {
   joint_name_ = get_node()->get_parameter("joint").as_string();
   interface_names_ = get_node()->get_parameter("interface_names").as_string_array();
@@ -38,13 +38,13 @@ CallbackReturn MultiInterfaceForwardCommandController::read_parameters()
   if (joint_name_.empty())
   {
     RCLCPP_ERROR(get_node()->get_logger(), "'joint' parameter is empty");
-    return CallbackReturn::ERROR;
+    return controller_interface::CallbackReturn::ERROR;
   }
 
   if (interface_names_.empty())
   {
     RCLCPP_ERROR(get_node()->get_logger(), "'interfaces' parameter is empty");
-    return CallbackReturn::ERROR;
+    return controller_interface::CallbackReturn::ERROR;
   }
 
   for (const auto & interface : interface_names_)
@@ -52,7 +52,7 @@ CallbackReturn MultiInterfaceForwardCommandController::read_parameters()
     command_interface_types_.push_back(joint_name_ + "/" + interface);
   }
 
-  return CallbackReturn::SUCCESS;
+  return controller_interface::CallbackReturn::SUCCESS;
 }
 
 }  // namespace forward_command_controller
