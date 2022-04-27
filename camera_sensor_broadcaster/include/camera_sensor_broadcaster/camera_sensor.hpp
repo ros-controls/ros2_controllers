@@ -103,11 +103,15 @@ public:
   }
 
     //std::vector<float> get_data(){
-  std::vector<char> get_data(){
+  std::vector<unsigned char, std::allocator<unsigned char>> get_data(){
     size_t interface_offset = 6;
     auto arrayData = state_interfaces_[interface_offset].get().get_array_value();
-    //data_.assign(arrayData.begin(), arrayData.end());
-    std::transform(data_.begin(), data_.end(), arrayData.begin(), [](double x) { return (uint8_t)x;});
+    data_.clear();
+    
+    for(auto data : arrayData)
+      data_.push_back((unsigned char) data);
+    
+    //std::cout << "DATA SIZE: "  << data_.size() << std::endl;
     return data_;
   }
 
@@ -143,8 +147,8 @@ public:
     get_encoding();
     is_bigendian();
     get_step();
-    get_data();
     get_data_size();
+    get_data();
 
     // update the message values, calibration matrices unknown
     message.height = height_;
@@ -152,7 +156,7 @@ public:
     message.encoding = encoding_;
     message.is_bigendian = is_bigendian_;
     message.step = step_;
-    //message.data = data_;
+    message.data = data_;
     //message.set__data(data_);
     //message.distortion_model = distortion_model_;
 
@@ -171,7 +175,7 @@ protected:
   std::string encoding_;
   bool is_bigendian_;
   uint32_t step_;
-  std::vector<char> data_;
+  std::vector<unsigned char, std::allocator<unsigned char>> data_;
   size_t data_size_;
 };
 
