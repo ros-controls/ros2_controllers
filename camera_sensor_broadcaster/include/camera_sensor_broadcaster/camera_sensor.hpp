@@ -20,32 +20,33 @@
 #include <vector>
 
 #include "semantic_components/semantic_component_interface.hpp"
-#include "sensor_msgs/msg/camera_info.hpp"
+#include "sensor_msgs/msg/image.hpp"
 
 namespace semantic_components
 {
-class CameraSensor : public SemanticComponentInterface<sensor_msgs::msg::CameraInfo>
+class CameraSensor : public SemanticComponentInterface<sensor_msgs::msg::Image>
 {
 public:
-  explicit CameraSensor(const std::string & name) : SemanticComponentInterface(name, 2)
+  explicit CameraSensor(const std::string & name) : SemanticComponentInterface(name, 7)
   {
     interface_names_.emplace_back(name_ + "/" + "height");
     interface_names_.emplace_back(name_ + "/" + "width");
-    // interface_names_.emplace_back(name_ + "/" + "distortion_model");
-    // interface_names_.emplace_back(name_ + "/" + "D");
-    // interface_names_.emplace_back(name_ + "/" + "K");
-    // interface_names_.emplace_back(name_ + "/" + "R");
-    // interface_names_.emplace_back(name_ + "/" + "P");
-    // interface_names_.emplace_back(name_ + "/" + "binning_x");
-    // interface_names_.emplace_back(name_ + "/" + "binning_y");
-    // interface_names_.emplace_back(name_ + "/" + "roi.width");
-    // interface_names_.emplace_back(name_ + "/" + "roi.height");
+    interface_names_.emplace_back(name_ + "/" + "encoding");
+    interface_names_.emplace_back(name_ + "/" + "is_bigendian");
+    interface_names_.emplace_back(name_ + "/" + "step");
+    interface_names_.emplace_back(name_ + "/" + "data");
+    interface_names_.emplace_back(name_ + "/" + "data_size");
 
     // Set default values to NaN
     height_ = std::numeric_limits<uint32_t>::quiet_NaN();
     //height_.fill(std::numeric_limits<int>::quiet_NaN());
     width_ = std::numeric_limits<uint32_t>::quiet_NaN();
     //distortion_model_.fill(std::numeric_limits<std::string>::quiet_NaN());
+    encoding_ = std::numeric_limits<uint32_t>::quiet_NaN();
+    is_bigendian_ = std::numeric_limits<uint32_t>::quiet_NaN();
+    step_ = std::numeric_limits<uint32_t>::quiet_NaN();
+    data_size_ = std::numeric_limits<uint32_t>::quiet_NaN();
+
   }
 
   virtual ~CameraSensor() = default;
@@ -59,7 +60,7 @@ public:
   uint32_t get_height()
   {
     size_t interface_offset = 0;
-    height_ = state_interfaces_[interface_offset].get().get_value();
+    height_ = (int)state_interfaces_[interface_offset].get().get_value();
     return height_;
   }
 
@@ -72,21 +73,42 @@ public:
   uint32_t get_width()
   {
     size_t interface_offset = 1;
-    width_ = state_interfaces_[interface_offset].get().get_value();
+    width_ = (int)state_interfaces_[interface_offset].get().get_value();
     return width_;
   }
 
-  /// Return distortion model
-  /**
-   * Return distortion model reported by an Camera
-   *
-   * \return distortion model as string
-   */
-  std::string get_distortion_model()
-  {
+  std::string get_encoding(){
     size_t interface_offset = 2;
-    distortion_model_ = state_interfaces_[interface_offset].get().get_value();
-    return distortion_model_;
+    int tmp = (int) state_interfaces_[interface_offset].get().get_value(); 
+    encoding_ = "rgb8"; //modificar
+    return encoding_;
+  }
+
+  bool is_bigendian(){
+    size_t interface_offset = 3;
+    is_bigendian_ = (int) state_interfaces_[interface_offset].get().get_value();
+    return is_bigendian_;
+  }
+
+  uint32_t get_step(){
+    size_t interface_offset = 4;
+    step_ = (int) state_interfaces_[interface_offset].get().get_value();
+    return step_;
+  }
+
+  //std::vector<float> get_data(){
+  std::vector<char> get_data(){
+    size_t interface_offset = 5;
+    auto arrayData = state_interfaces_[interface_offset].get().get_array_value();
+    //data_.assign(arrayData.begin(), arrayData.end());
+    std::transform(data_.begin(), data_.end(), arrayData.begin(), [](double x) { return (uint8_t)x;});
+    return data_;
+  }
+
+  size_t get_data_size(){
+    size_t interface_offset = 6;
+    data_size_ = (size_t) state_interfaces_[interface_offset].get().get_value();
+    return data_size_;
   }
 
   // /// Return orientation.
@@ -111,17 +133,26 @@ public:
    * Constructs and return a Camera message from the current values.
    * \return Camera message from values;
    */
-  bool get_values_as_message(sensor_msgs::msg::CameraInfo & message)
+  bool get_values_as_message(sensor_msgs::msg::Image & message)
   {
     // call get_height() and get_width()  get_distortion_model() to
     // update with the latest values
     get_height();
     get_width();
-    //get_distortion_model();
+    get_encoding();
+    is_bigendian();
+    get_step();
+    get_data();
+    get_data_size();
 
     // update the message values, calibration matrices unknown
     message.height = height_;
     message.width = width_;
+    message.encoding = encoding_;
+    message.is_bigendian = is_bigendian_;
+    message.step = step_;
+    //message.data = data_;
+    //message.set__data(data_);
     //message.distortion_model = distortion_model_;
 
     return true;
@@ -135,7 +166,12 @@ protected:
   // Order is: orientation height, width, distortion_model,
   uint32_t height_;
   uint32_t width_;
-  std::string distortion_model_;
+  //std::string distortion_model_;
+  std::string encoding_;
+  bool is_bigendian_;
+  uint32_t step_;
+  std::vector<char> data_;
+  size_t data_size_;
 };
 
 }  // namespace semantic_components

@@ -29,7 +29,7 @@
 #include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_publisher.h"
 #include "camera_sensor.hpp"
-#include "sensor_msgs/msg/camera_info.hpp"
+#include "sensor_msgs/msg/image.hpp"
 
 namespace camera_sensor_broadcaster
 {
@@ -65,8 +65,8 @@ protected:
 
   std::unique_ptr<semantic_components::CameraSensor> camera_sensor_;
 
-  using StatePublisher = realtime_tools::RealtimePublisher<sensor_msgs::msg::CameraInfo>;
-  rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr sensor_state_publisher_;
+  using StatePublisher = realtime_tools::RealtimePublisher<sensor_msgs::msg::Image>;
+  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr sensor_state_publisher_;
   std::unique_ptr<StatePublisher> realtime_publisher_;
 };
 
