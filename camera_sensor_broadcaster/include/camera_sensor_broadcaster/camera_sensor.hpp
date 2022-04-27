@@ -34,8 +34,8 @@ public:
     interface_names_.emplace_back(name_ + "/" + "encoding");
     interface_names_.emplace_back(name_ + "/" + "is_bigendian");
     interface_names_.emplace_back(name_ + "/" + "step");
-    interface_names_.emplace_back(name_ + "/" + "data");
     interface_names_.emplace_back(name_ + "/" + "data_size");
+    interface_names_.emplace_back(name_ + "/" + "data");
 
     // Set default values to NaN
     height_ = std::numeric_limits<uint32_t>::quiet_NaN();
@@ -79,7 +79,7 @@ public:
 
   std::string get_encoding(){
     size_t interface_offset = 2;
-    int tmp = (int) state_interfaces_[interface_offset].get().get_value(); 
+    //int tmp = (int) state_interfaces_[interface_offset].get().get_value(); 
     encoding_ = "rgb8"; //modificar
     return encoding_;
   }
@@ -96,20 +96,21 @@ public:
     return step_;
   }
 
-  //std::vector<float> get_data(){
-  std::vector<char> get_data(){
+  size_t get_data_size(){
     size_t interface_offset = 5;
+    data_size_ = (size_t) state_interfaces_[interface_offset].get().get_value();
+    return data_size_;
+  }
+
+    //std::vector<float> get_data(){
+  std::vector<char> get_data(){
+    size_t interface_offset = 6;
     auto arrayData = state_interfaces_[interface_offset].get().get_array_value();
     //data_.assign(arrayData.begin(), arrayData.end());
     std::transform(data_.begin(), data_.end(), arrayData.begin(), [](double x) { return (uint8_t)x;});
     return data_;
   }
 
-  size_t get_data_size(){
-    size_t interface_offset = 6;
-    data_size_ = (size_t) state_interfaces_[interface_offset].get().get_value();
-    return data_size_;
-  }
 
   // /// Return orientation.
   // /**

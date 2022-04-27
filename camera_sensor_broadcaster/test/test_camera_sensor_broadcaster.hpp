@@ -83,7 +83,7 @@ protected:
 
   std::unique_ptr<FriendCameraSensorBroadcaster> camera_broadcaster_;
 
-  void subscribe_and_get_message(sensor_msgs::msg::CameraInfo & camera_msg);
+  void subscribe_and_get_message(sensor_msgs::msg::Image & camera_msg);
 };
 
 #endif  // TEST_CAMERA_SENSOR_BROADCASTER_HPP_

@@ -29,7 +29,7 @@
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/utilities.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
-#include "sensor_msgs/msg/camera_info.hpp"
+#include "sensor_msgs/msg/image.hpp"
 
 using hardware_interface::LoanedStateInterface;
 
@@ -83,12 +83,12 @@ void CameraSensorBroadcasterTest::SetUpCameraBroadcaster()
   camera_broadcaster_->assign_interfaces({}, std::move(state_ifs));
 }
 
-void CameraSensorBroadcasterTest::subscribe_and_get_message(sensor_msgs::msg::CameraInfo & camera_msg)
+void CameraSensorBroadcasterTest::subscribe_and_get_message(sensor_msgs::msg::Image & camera_msg)
 {
   // create a new subscriber
   rclcpp::Node test_subscription_node("test_subscription_node");
-  auto subs_callback = [&](const sensor_msgs::msg::CameraInfo::SharedPtr) {};
-  auto subscription = test_subscription_node.create_subscription<sensor_msgs::msg::CameraInfo>(
+  auto subs_callback = [&](const sensor_msgs::msg::Image::SharedPtr) {};
+  auto subscription = test_subscription_node.create_subscription<sensor_msgs::msg::Image>(
     "/test_camera_sensor_broadcaster/camera", 2, subs_callback); //10, subs_callback);
 
   // call update to publish the test value
@@ -187,7 +187,7 @@ TEST_F(CameraSensorBroadcasterTest, SensorName_Publish_Success)
   ASSERT_EQ(camera_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(camera_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  sensor_msgs::msg::CameraInfo camera_msg;
+  sensor_msgs::msg::Image camera_msg;
   subscribe_and_get_message(camera_msg);
 
   ASSERT_EQ(camera_msg.header.frame_id, frame_id_);
