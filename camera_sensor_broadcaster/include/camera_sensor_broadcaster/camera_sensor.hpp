@@ -60,7 +60,7 @@ public:
   uint32_t get_height()
   {
     size_t interface_offset = 0;
-    height_ = (int)state_interfaces_[interface_offset].get().get_value();
+    height_ = (int)state_interfaces_[interface_offset].get().get_int_value();
     return height_;
   }
 
@@ -73,13 +73,13 @@ public:
   uint32_t get_width()
   {
     size_t interface_offset = 1;
-    width_ = (int)state_interfaces_[interface_offset].get().get_value();
+    width_ = (int)state_interfaces_[interface_offset].get().get_int_value();
     return width_;
   }
 
   std::string get_encoding(){
     size_t interface_offset = 2;
-    int tmp = (int) state_interfaces_[interface_offset].get().get_value(); 
+    int tmp = (int) state_interfaces_[interface_offset].get().get_int_value(); 
     // UNKNOWN_PIXEL_FORMAT = 0,
     // L_INT8 = 1,
     // L_INT16 = 2,
@@ -141,19 +141,19 @@ public:
 
   bool is_bigendian(){
     size_t interface_offset = 3;
-    is_bigendian_ = (int) state_interfaces_[interface_offset].get().get_value();
+    is_bigendian_ = (int) state_interfaces_[interface_offset].get().get_int_value();
     return is_bigendian_;
   }
 
   uint32_t get_step(){
     size_t interface_offset = 4;
-    step_ = (int) state_interfaces_[interface_offset].get().get_value();
+    step_ = (int) state_interfaces_[interface_offset].get().get_int_value();
     return step_;
   }
 
   size_t get_data_size(){
     size_t interface_offset = 5;
-    data_size_ = (size_t) state_interfaces_[interface_offset].get().get_value();
+    data_size_ = (size_t) state_interfaces_[interface_offset].get().get_int_value();
     return data_size_;
   }
 
