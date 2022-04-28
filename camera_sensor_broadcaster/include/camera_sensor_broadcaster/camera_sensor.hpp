@@ -160,27 +160,27 @@ public:
     //std::vector<float> get_data(){
   std::vector<unsigned char, std::allocator<unsigned char>> get_data(){
     size_t interface_offset = 6;
-    auto arrayData = state_interfaces_[interface_offset].get().get_str_value();
+    auto arrayData = state_interfaces_[interface_offset].get().get_array_value();
 
 
-    // data_.clear();
-    
-    // for(auto data : arrayData)
-    //   data_.push_back((unsigned char) data);
-    
-    // //std::cout << "DATA SIZE: "  << data_.size() << std::endl;
-    // return data_;
-    
-    auto imageData =  reinterpret_cast<const unsigned char *>(arrayData.c_str());
     data_.clear();
-
-    for(int i = 0; i< arrayData.length(); i++){
-      std::cout << "imageData["<< i <<"] = " << (unsigned char) imageData[i] << std::endl;
-      data_.push_back((unsigned char) imageData[i]);
-    }
+    
+    for(auto data : arrayData)
+      data_.push_back((unsigned char) data);
     
     //std::cout << "DATA SIZE: "  << data_.size() << std::endl;
     return data_;
+    
+    // auto imageData =  reinterpret_cast<const unsigned char *>(arrayData.c_str());
+    // data_.clear();
+
+    // for(int i = 0; i< arrayData.length(); i++){
+    //   std::cout << "imageData["<< i <<"] = " << (unsigned char) imageData[i] << std::endl;
+    //   data_.push_back((unsigned char) imageData[i]);
+    // }
+    
+    // //std::cout << "DATA SIZE: "  << data_.size() << std::endl;
+    // return data_;
   }
 
 
