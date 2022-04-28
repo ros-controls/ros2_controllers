@@ -160,7 +160,7 @@ public:
     //std::vector<float> get_data(){
   std::vector<unsigned char, std::allocator<unsigned char>> get_data(){
     size_t interface_offset = 6;
-    auto arrayData = state_interfaces_[interface_offset].get().get_array_value();
+    auto arrayData = state_interfaces_[interface_offset].get().get_str_value();
 
 
     // data_.clear();
