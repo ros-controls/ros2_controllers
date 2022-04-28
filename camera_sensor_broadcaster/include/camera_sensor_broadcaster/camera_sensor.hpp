@@ -80,8 +80,62 @@ public:
   std::string get_encoding(){
     size_t interface_offset = 2;
     int tmp = (int) state_interfaces_[interface_offset].get().get_int_value(); 
-    if(tmp == 3)
+    // UNKNOWN_PIXEL_FORMAT = 0,
+    // L_INT8 = 1,
+    // L_INT16 = 2,
+    // RGB_INT8 = 3,
+    // RGBA_INT8 = 4,
+    // BGRA_INT8 = 5,
+    // RGB_INT16 = 6,
+    // RGB_INT32 = 7,
+    // BGR_INT8 = 8,
+    // BGR_INT16 = 9,
+    // BGR_INT32 = 10,
+    // R_FLOAT16 = 11,
+    // RGB_FLOAT16 = 12,
+    // R_FLOAT32 = 13,
+    // RGB_FLOAT32 = 14,
+    // BAYER_RGGB8 = 15,
+    // BAYER_BGGR8 = 16,
+    // BAYER_GBRG8 = 17,
+    // BAYER_GRBG8 = 18,
+    if(tmp == 1)
+      encoding_ = "";
+    else if(tmp == 2)
+      encoding_ = "";
+    else if(tmp == 3)
       encoding_ = "rgb8"; 
+    else if(tmp == 4)
+      encoding_ = "rgba8"; 
+    else if(tmp == 5)
+      encoding_ = "bgra8"; 
+    else if(tmp == 6)
+      encoding_ = "rgb16"; 
+    else if(tmp == 7)
+      encoding_ = ""; 
+    else if(tmp == 8)
+      encoding_ = "bgr8"; 
+    else if(tmp == 9)
+      encoding_ = "bgr16"; 
+    else if(tmp == 10)
+      encoding_ = ""; 
+    else if(tmp == 11)
+      encoding_ = ""; 
+    else if(tmp == 12)
+      encoding_ = "rgb16"; 
+    else if(tmp == 13)
+      encoding_ = ""; 
+    else if(tmp == 14)
+      encoding_ = ""; 
+    else if(tmp == 15)
+      encoding_ = "bayer_rggb8"; 
+    else if(tmp == 16)
+      encoding_ = "bayer_rggr8"; 
+    else if(tmp == 17)
+      encoding_ = "bayer_gbrg8"; 
+    else if(tmp == 18)
+      encoding_ = "bayer_grbg8"; 
+      
     return encoding_;
   }
 
