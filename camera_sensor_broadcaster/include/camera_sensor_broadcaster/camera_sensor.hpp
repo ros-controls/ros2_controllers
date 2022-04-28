@@ -135,7 +135,7 @@ public:
       encoding_ = "bayer_gbrg8"; 
     else if(tmp == 18)
       encoding_ = "bayer_grbg8"; 
-      
+
     return encoding_;
   }
 
@@ -162,9 +162,11 @@ public:
     size_t interface_offset = 6;
     auto arrayData = state_interfaces_[interface_offset].get().get_str_value();
 
-    //data_ =  reinterpret_cast<const unsigned char *>(arrayData);
-    //ou
-    data_ = reinterpret_cast<std::vector<const unsigned char>>(arrayData);
+    auto imageData =  reinterpret_cast<const unsigned char *>(arrayData.c_str());
+    data_.clear();
+
+    for(int i = 0; i< arrayData.length(); i++)
+      data_.push_back((unsigned char) imageData[i]);
     
     //std::cout << "DATA SIZE: "  << data_.size() << std::endl;
     return data_;
