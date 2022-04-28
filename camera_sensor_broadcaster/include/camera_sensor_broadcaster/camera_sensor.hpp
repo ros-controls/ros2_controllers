@@ -165,8 +165,10 @@ public:
     auto imageData =  reinterpret_cast<const unsigned char *>(arrayData.c_str());
     data_.clear();
 
-    for(int i = 0; i< arrayData.length(); i++)
+    for(int i = 0; i< arrayData.length(); i++){
+      std::cout << "imageData["<< i <<"] = " << (unsigned char) imageData[i] << std::endl;
       data_.push_back((unsigned char) imageData[i]);
+    }
     
     //std::cout << "DATA SIZE: "  << data_.size() << std::endl;
     return data_;
