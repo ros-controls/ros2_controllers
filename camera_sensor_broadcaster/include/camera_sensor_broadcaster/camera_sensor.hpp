@@ -60,7 +60,7 @@ public:
   uint32_t get_height()
   {
     size_t interface_offset = 0;
-    height_ = (int)state_interfaces_[interface_offset].get().get_value();
+    height_ = (int)state_interfaces_[interface_offset].get().get_int_value();
     return height_;
   }
 
@@ -73,43 +73,44 @@ public:
   uint32_t get_width()
   {
     size_t interface_offset = 1;
-    width_ = (int)state_interfaces_[interface_offset].get().get_value();
+    width_ = (int)state_interfaces_[interface_offset].get().get_int_value();
     return width_;
   }
 
   std::string get_encoding(){
     size_t interface_offset = 2;
-    //int tmp = (int) state_interfaces_[interface_offset].get().get_value(); 
-    encoding_ = "rgb8"; //modificar
+    int tmp = (int) state_interfaces_[interface_offset].get().get_int_value(); 
+    if(tmp == 3)
+      encoding_ = "rgb8"; 
     return encoding_;
   }
 
   bool is_bigendian(){
     size_t interface_offset = 3;
-    is_bigendian_ = (int) state_interfaces_[interface_offset].get().get_value();
+    is_bigendian_ = (int) state_interfaces_[interface_offset].get().get_int_value();
     return is_bigendian_;
   }
 
   uint32_t get_step(){
     size_t interface_offset = 4;
-    step_ = (int) state_interfaces_[interface_offset].get().get_value();
+    step_ = (int) state_interfaces_[interface_offset].get().get_int_value();
     return step_;
   }
 
   size_t get_data_size(){
     size_t interface_offset = 5;
-    data_size_ = (size_t) state_interfaces_[interface_offset].get().get_value();
+    data_size_ = (size_t) state_interfaces_[interface_offset].get().get_int_value();
     return data_size_;
   }
 
     //std::vector<float> get_data(){
   std::vector<unsigned char, std::allocator<unsigned char>> get_data(){
     size_t interface_offset = 6;
-    auto arrayData = state_interfaces_[interface_offset].get().get_array_value();
-    data_.clear();
-    
-    for(auto data : arrayData)
-      data_.push_back((unsigned char) data);
+    auto arrayData = state_interfaces_[interface_offset].get().get_str_value();
+
+    //data_ =  reinterpret_cast<const unsigned char *>(arrayData);
+    //ou
+    data_ = reinterpret_cast<std::vector<const unsigned char>>(arrayData);
     
     //std::cout << "DATA SIZE: "  << data_.size() << std::endl;
     return data_;
