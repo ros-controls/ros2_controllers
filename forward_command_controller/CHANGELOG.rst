@@ -2,8 +2,8 @@
 Changelog for package forward_command_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.4.0 (2022-04-29)
+------------------
 * Multi-interface Forward Controller (`#154 <https://github.com/ros-controls/ros2_controllers/issues/154>`_)
 * updated to use node getter functions (`#329 <https://github.com/ros-controls/ros2_controllers/issues/329>`_)
 * Contributors: Bence Magyar, Denis Štogl, Jack Center
