@@ -60,7 +60,7 @@ public:
   uint32_t get_height()
   {
     size_t interface_offset = 0;
-    height_ = (int)state_interfaces_[interface_offset].get().get_value();
+    height_ = (int)state_interfaces_[interface_offset].get().get_int_value();
     return height_;
   }
 
@@ -73,45 +73,94 @@ public:
   uint32_t get_width()
   {
     size_t interface_offset = 1;
-    width_ = (int)state_interfaces_[interface_offset].get().get_value();
+    width_ = state_interfaces_[interface_offset].get().get_int_value();
     return width_;
   }
 
   std::string get_encoding(){
     size_t interface_offset = 2;
-    //int tmp = (int) state_interfaces_[interface_offset].get().get_value(); 
-    encoding_ = "rgb8"; //modificar
+    int tmp = state_interfaces_[interface_offset].get().get_int_value();
+    // UNKNOWN_PIXEL_FORMAT = 0,
+    // L_INT8 = 1,
+    // L_INT16 = 2,
+    // RGB_INT8 = 3,
+    // RGBA_INT8 = 4,
+    // BGRA_INT8 = 5,
+    // RGB_INT16 = 6,
+    // RGB_INT32 = 7,
+    // BGR_INT8 = 8,
+    // BGR_INT16 = 9,
+    // BGR_INT32 = 10,
+    // R_FLOAT16 = 11,
+    // RGB_FLOAT16 = 12,
+    // R_FLOAT32 = 13,
+    // RGB_FLOAT32 = 14,
+    // BAYER_RGGB8 = 15,
+    // BAYER_BGGR8 = 16,
+    // BAYER_GBRG8 = 17,
+    // BAYER_GRBG8 = 18,
+    if(tmp == 1)
+      encoding_ = "";
+    else if(tmp == 2)
+      encoding_ = "";
+    else if(tmp == 3)
+      encoding_ = "rgb8"; 
+    else if(tmp == 4)
+      encoding_ = "rgba8"; 
+    else if(tmp == 5)
+      encoding_ = "bgra8"; 
+    else if(tmp == 6)
+      encoding_ = "rgb16"; 
+    else if(tmp == 7)
+      encoding_ = ""; 
+    else if(tmp == 8)
+      encoding_ = "bgr8"; 
+    else if(tmp == 9)
+      encoding_ = "bgr16"; 
+    else if(tmp == 10)
+      encoding_ = ""; 
+    else if(tmp == 11)
+      encoding_ = ""; 
+    else if(tmp == 12)
+      encoding_ = "rgb16"; 
+    else if(tmp == 13)
+      encoding_ = ""; 
+    else if(tmp == 14)
+      encoding_ = ""; 
+    else if(tmp == 15)
+      encoding_ = "bayer_rggb8"; 
+    else if(tmp == 16)
+      encoding_ = "bayer_rggr8"; 
+    else if(tmp == 17)
+      encoding_ = "bayer_gbrg8"; 
+    else if(tmp == 18)
+      encoding_ = "bayer_grbg8"; 
+      
     return encoding_;
   }
 
   bool is_bigendian(){
     size_t interface_offset = 3;
-    is_bigendian_ = (int) state_interfaces_[interface_offset].get().get_value();
+    is_bigendian_ = state_interfaces_[interface_offset].get().get_int_value();
     return is_bigendian_;
   }
 
   uint32_t get_step(){
     size_t interface_offset = 4;
-    step_ = (int) state_interfaces_[interface_offset].get().get_value();
+    step_ = state_interfaces_[interface_offset].get().get_int_value();
     return step_;
   }
 
   size_t get_data_size(){
     size_t interface_offset = 5;
-    data_size_ = (size_t) state_interfaces_[interface_offset].get().get_value();
+    data_size_ = (size_t) state_interfaces_[interface_offset].get().get_int_value();
     return data_size_;
   }
 
     //std::vector<float> get_data(){
   std::vector<unsigned char, std::allocator<unsigned char>> get_data(){
     size_t interface_offset = 6;
-    auto arrayData = state_interfaces_[interface_offset].get().get_array_value();
-    data_.clear();
-    
-    for(auto data : arrayData)
-      data_.push_back((unsigned char) data);
-    
-    //std::cout << "DATA SIZE: "  << data_.size() << std::endl;
+    data_= state_interfaces_[interface_offset].get().get_str_value();
     return data_;
   }
 
