@@ -60,7 +60,7 @@ public:
   uint32_t get_height()
   {
     size_t interface_offset = 0;
-    height_ = (int)state_interfaces_[interface_offset].get().get_value();
+    height_ = (int)state_interfaces_[interface_offset].get().get_int_value();
     return height_;
   }
 
@@ -73,13 +73,13 @@ public:
   uint32_t get_width()
   {
     size_t interface_offset = 1;
-    width_ = (int)state_interfaces_[interface_offset].get().get_value();
+    width_ = state_interfaces_[interface_offset].get().get_int_value();
     return width_;
   }
 
   std::string get_encoding(){
     size_t interface_offset = 2;
-    int tmp = (int) state_interfaces_[interface_offset].get().get_value(); 
+    int tmp = state_interfaces_[interface_offset].get().get_int_value();
     // UNKNOWN_PIXEL_FORMAT = 0,
     // L_INT8 = 1,
     // L_INT16 = 2,
@@ -135,52 +135,33 @@ public:
       encoding_ = "bayer_gbrg8"; 
     else if(tmp == 18)
       encoding_ = "bayer_grbg8"; 
-
+      
     return encoding_;
   }
 
   bool is_bigendian(){
     size_t interface_offset = 3;
-    is_bigendian_ = (int) state_interfaces_[interface_offset].get().get_value();
+    is_bigendian_ = state_interfaces_[interface_offset].get().get_int_value();
     return is_bigendian_;
   }
 
   uint32_t get_step(){
     size_t interface_offset = 4;
-    step_ = (int) state_interfaces_[interface_offset].get().get_value();
+    step_ = state_interfaces_[interface_offset].get().get_int_value();
     return step_;
   }
 
   size_t get_data_size(){
     size_t interface_offset = 5;
-    data_size_ = (size_t) state_interfaces_[interface_offset].get().get_value();
+    data_size_ = (size_t) state_interfaces_[interface_offset].get().get_int_value();
     return data_size_;
   }
 
     //std::vector<float> get_data(){
   std::vector<unsigned char, std::allocator<unsigned char>> get_data(){
     size_t interface_offset = 6;
-    auto arrayData = state_interfaces_[interface_offset].get().get_array_value();
-
-
-    data_.clear();
-    
-    for(auto data : arrayData)
-      data_.push_back((unsigned char) data);
-    
-    //std::cout << "DATA SIZE: "  << data_.size() << std::endl;
+    data_= state_interfaces_[interface_offset].get().get_str_value();
     return data_;
-    
-    // auto imageData =  reinterpret_cast<const unsigned char *>(arrayData.c_str());
-    // data_.clear();
-
-    // for(int i = 0; i< arrayData.length(); i++){
-    //   std::cout << "imageData["<< i <<"] = " << (unsigned char) imageData[i] << std::endl;
-    //   data_.push_back((unsigned char) imageData[i]);
-    // }
-    
-    // //std::cout << "DATA SIZE: "  << data_.size() << std::endl;
-    // return data_;
   }
 
 
