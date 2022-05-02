@@ -1064,7 +1064,8 @@ void JointTrajectoryController::fill_partial_goal(
         // Assume hold position with 0 velocity and acceleration for missing joints
         if (!it.positions.empty())
         {
-          if (has_position_command_interface_)
+          if (has_position_command_interface_ &&
+              !std::isnan(joint_command_interface_[0][index].get().get_value()))
           {
             // copy last command if cmd interface exists
             it.positions.push_back(joint_command_interface_[0][index].get().get_value());
