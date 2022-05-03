@@ -46,7 +46,7 @@
 namespace joint_trajectory_controller
 {
 JointTrajectoryController::JointTrajectoryController()
-: controller_interface::ControllerInterface(), joint_names_({})
+: controller_interface::ControllerInterface(), joint_names_({}), dof_(0)
 {
 }
 
