@@ -165,9 +165,11 @@ controller_interface::return_type JointTrajectoryController::update(
   // currently carrying out a trajectory
   if (traj_point_active_ptr_ && (*traj_point_active_ptr_)->has_trajectory_msg())
   {
+    bool first_sample = false;
     // if sampling the first time, set the point before you sample
     if (!(*traj_point_active_ptr_)->is_sampled_already())
     {
+      first_sample = true;
       if (open_loop_control_)
       {
         (*traj_point_active_ptr_)->set_point_before_trajectory_msg(time, last_commanded_state_);
@@ -197,8 +199,10 @@ controller_interface::return_type JointTrajectoryController::update(
       {
         compute_error_for_joint(state_error, index, state_current, state_desired);
 
+        // Always check the state tolerance on the first sample in case the first sample
+        // is the last point
         if (
-          before_last_point &&
+          (before_last_point || first_sample) &&
           !check_state_tolerance_per_joint(
             state_error, index, default_tolerances_.state_tolerance[index], false))
         {
