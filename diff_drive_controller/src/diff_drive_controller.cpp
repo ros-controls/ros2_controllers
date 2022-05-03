@@ -140,7 +140,7 @@ InterfaceConfiguration DiffDriveController::state_interface_configuration() cons
 }
 
 controller_interface::return_type DiffDriveController::update(
-  const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
+  const rclcpp::Time & time, const rclcpp::Duration & period)
 {
   auto logger = get_node()->get_logger();
   if (get_state().id() == State::PRIMARY_STATE_INACTIVE)
@@ -153,8 +153,6 @@ controller_interface::return_type DiffDriveController::update(
     return controller_interface::return_type::OK;
   }
 
-  const auto current_time = time;
-
   std::shared_ptr<Twist> last_command_msg;
   received_velocity_msg_ptr_.get(last_command_msg);
 
@@ -164,7 +162,7 @@ controller_interface::return_type DiffDriveController::update(
     return controller_interface::return_type::ERROR;
   }
 
-  const auto age_of_last_command = current_time - last_command_msg->header.stamp;
+  const auto age_of_last_command = time - last_command_msg->header.stamp;
   // Brake if cmd_vel has timeout, override the stored command
   if (age_of_last_command > cmd_vel_timeout_)
   {
@@ -178,6 +176,8 @@ controller_interface::return_type DiffDriveController::update(
   double & linear_command = command.twist.linear.x;
   double & angular_command = command.twist.angular.z;
 
+  previous_update_timestamp_ = time;
+
   // Apply (possibly new) multipliers:
   const auto wheels = wheel_params_;
   const double wheel_separation = wheels.separation_multiplier * wheels.separation;
@@ -186,7 +186,7 @@ controller_interface::return_type DiffDriveController::update(
 
   if (odom_params_.open_loop)
   {
-    odometry_.updateOpenLoop(linear_command, angular_command, current_time);
+    odometry_.updateOpenLoop(linear_command, angular_command, time);
   }
   else
   {
@@ -214,25 +214,27 @@ controller_interface::return_type DiffDriveController::update(
 
     if (odom_params_.position_feedback)
     {
-      odometry_.update(left_feedback_mean, right_feedback_mean, current_time);
+      odometry_.update(left_feedback_mean, right_feedback_mean, time);
     }
     else
     {
-      odometry_.updateFromVelocity(left_feedback_mean, right_feedback_mean, current_time);
+      odometry_.updateFromVelocity(
+        left_feedback_mean*period.seconds(), right_feedback_mean*period.seconds(),
+        time);
     }
   }
 
   tf2::Quaternion orientation;
   orientation.setRPY(0.0, 0.0, odometry_.getHeading());
 
-  if (previous_publish_timestamp_ + publish_period_ < current_time)
+  if (previous_publish_timestamp_ + publish_period_ < time)
   {
     previous_publish_timestamp_ += publish_period_;
 
     if (realtime_odometry_publisher_->trylock())
     {
       auto & odometry_message = realtime_odometry_publisher_->msg_;
-      odometry_message.header.stamp = current_time;
+      odometry_message.header.stamp = time;
       odometry_message.pose.pose.position.x = odometry_.getX();
       odometry_message.pose.pose.position.y = odometry_.getY();
       odometry_message.pose.pose.orientation.x = orientation.x();
@@ -247,7 +249,7 @@ controller_interface::return_type DiffDriveController::update(
     if (odom_params_.enable_odom_tf && realtime_odometry_transform_publisher_->trylock())
     {
       auto & transform = realtime_odometry_transform_publisher_->msg_.transforms.front();
-      transform.header.stamp = current_time;
+      transform.header.stamp = time;
       transform.transform.translation.x = odometry_.getX();
       transform.transform.translation.y = odometry_.getY();
       transform.transform.rotation.x = orientation.x();
@@ -258,15 +260,12 @@ controller_interface::return_type DiffDriveController::update(
     }
   }
 
-  const auto update_dt = current_time - previous_update_timestamp_;
-  previous_update_timestamp_ = current_time;
-
   auto & last_command = previous_commands_.back().twist;
   auto & second_to_last_command = previous_commands_.front().twist;
   limiter_linear_.limit(
-    linear_command, last_command.linear.x, second_to_last_command.linear.x, update_dt.seconds());
+    linear_command, last_command.linear.x, second_to_last_command.linear.x, period.seconds());
   limiter_angular_.limit(
-    angular_command, last_command.angular.z, second_to_last_command.angular.z, update_dt.seconds());
+    angular_command, last_command.angular.z, second_to_last_command.angular.z, period.seconds());
 
   previous_commands_.pop();
   previous_commands_.emplace(command);
@@ -275,7 +274,7 @@ controller_interface::return_type DiffDriveController::update(
   if (publish_limited_velocity_ && realtime_limited_velocity_publisher_->trylock())
   {
     auto & limited_velocity_command = realtime_limited_velocity_publisher_->msg_;
-    limited_velocity_command.header.stamp = current_time;
+    limited_velocity_command.header.stamp = time;
     limited_velocity_command.twist = command.twist;
     realtime_limited_velocity_publisher_->unlockAndPublish();
   }
