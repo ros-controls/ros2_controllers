@@ -49,7 +49,8 @@ using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface
 
 class TricycleController : public controller_interface::ControllerInterface
 {
-  using Twist = geometry_msgs::msg::TwistStamped;
+  using Twist = geometry_msgs::msg::Twist;
+  using TwistStamped = geometry_msgs::msg::TwistStamped;
   using AckermannDrive = ackermann_msgs::msg::AckermannDrive;
 
 public:
@@ -104,9 +105,7 @@ protected:
   CallbackReturn get_steering(
     const std::string & steering_joint_name, std::vector<SteeringHandle> & joint);
   double convert_trans_rot_vel_to_steering_angle(double v, double omega, double wheelbase);
-  int sgn(double num);
   std::tuple<double, double> process_twist_command(double linear_command, double angular_command);
-  controller_interface::return_type send_commands(const AckermannDrive::SharedPtr msg);
 
   std::string traction_joint_name_;
   std::string steering_joint_name_;
@@ -125,13 +124,14 @@ protected:
   {
     bool open_loop = false;
     bool enable_odom_tf = false;
-    bool odom_only_twist = false; // for doing the pose integration in seperate node
+    bool odom_only_twist = false;  // for doing the pose integration in seperate node
     std::string base_frame_id = "base_link";
     std::string odom_frame_id = "odom";
     std::array<double, 6> pose_covariance_diagonal;
     std::array<double, 6> twist_covariance_diagonal;
   } odom_params_;
 
+  bool publish_ackermann_command_ = false;
   std::shared_ptr<rclcpp::Publisher<AckermannDrive>> ackermann_command_publisher_ = nullptr;
   std::shared_ptr<realtime_tools::RealtimePublisher<AckermannDrive>>
     realtime_ackermann_command_publisher_ = nullptr;
@@ -151,26 +151,17 @@ protected:
   std::chrono::milliseconds cmd_vel_timeout_{500};
 
   bool subscriber_is_active_ = false;
-  rclcpp::Subscription<AckermannDrive>::SharedPtr validated_command_subscriber_ = nullptr;
-  rclcpp::Subscription<Twist>::SharedPtr velocity_command_subscriber_ = nullptr;
+  rclcpp::Subscription<TwistStamped>::SharedPtr velocity_command_subscriber_ = nullptr;
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr
     velocity_command_unstamped_subscriber_ = nullptr;
 
-  realtime_tools::RealtimeBox<std::shared_ptr<Twist>> received_velocity_msg_ptr_{nullptr};
+  realtime_tools::RealtimeBox<std::shared_ptr<TwistStamped>> received_velocity_msg_ptr_{nullptr};
 
-  std::queue<Twist> previous_commands_;                    // last two commands
-  std::queue<AckermannDrive> previous_ackermann_command_;  // last two steering angles
-
-  bool is_turning_on_spot_ = false;
+  std::queue<TwistStamped> previous_commands_;  // last two commands
 
   // speed limiters
   SpeedLimiter limiter_linear_;
   SpeedLimiter limiter_angular_;
-
-  bool publish_limited_velocity_ = false;
-  std::shared_ptr<rclcpp::Publisher<Twist>> limited_velocity_publisher_ = nullptr;
-  std::shared_ptr<realtime_tools::RealtimePublisher<Twist>> realtime_limited_velocity_publisher_ =
-    nullptr;
 
   rclcpp::Time previous_update_timestamp_{0};
 

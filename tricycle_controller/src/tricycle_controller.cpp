@@ -31,15 +31,10 @@
 
 namespace
 {
-  // TODO: Find out how to remap these topics from launch files and keep defaults
-constexpr auto DEFAULT_COMMAND_TOPIC = "cmd_vel";
-constexpr auto DEFAULT_COMMAND_UNSTAMPED_TOPIC =
-  "cmd_vel_smoothed";  
-constexpr auto DEFAULT_COMMAND_OUT_TOPIC = "cmd_vel_out";
-constexpr auto DEFAULT_ACKERMANN_OUT_TOPIC = "ackermann";
-constexpr auto DEFAULT_VALIDATED_ACKERMANN_TOPIC = "ackermann";
-constexpr auto DEFAULT_ODOMETRY_TOPIC = "odom";
-constexpr auto DEFAULT_TRANSFORM_TOPIC = "tf";
+constexpr auto DEFAULT_COMMAND_TOPIC = "~/cmd_vel";
+constexpr auto DEFAULT_ACKERMANN_OUT_TOPIC = "~/cmd_ackermann";
+constexpr auto DEFAULT_ODOMETRY_TOPIC = "~/odom";
+constexpr auto DEFAULT_TRANSFORM_TOPIC = "/tf";
 }  // namespace
 
 namespace tricycle_controller
@@ -73,7 +68,7 @@ CallbackReturn TricycleController::on_init()
     auto_declare<bool>("odom_only_twist", odom_params_.odom_only_twist);
 
     auto_declare<double>("cmd_vel_timeout", cmd_vel_timeout_.count() / 1000.0);
-    auto_declare<bool>("publish_limited_velocity", publish_limited_velocity_);
+    auto_declare<bool>("publish_ackermann_command", publish_ackermann_command_);
     auto_declare<int>("velocity_rolling_window_size", 10);
     auto_declare<bool>("use_stamped_vel", use_stamped_vel_);
 
@@ -133,7 +128,7 @@ controller_interface::return_type TricycleController::update(
       ->get_clock()
       ->now();  // original is current_time = time; time is always sim time when using gazebo_ros2_control. This is a hack to use system time instead.
 
-  std::shared_ptr<Twist> last_command_msg;
+  std::shared_ptr<TwistStamped> last_command_msg;
   received_velocity_msg_ptr_.get(last_command_msg);
   if (last_command_msg == nullptr)
   {
@@ -151,7 +146,7 @@ controller_interface::return_type TricycleController::update(
 
   // command may be limited further by SpeedLimit,
   // without affecting the stored twist command
-  Twist command = *last_command_msg;
+  TwistStamped command = *last_command_msg;
   double & linear_command = command.twist.linear.x;
   double & angular_command = command.twist.angular.z;
 
@@ -223,34 +218,21 @@ controller_interface::return_type TricycleController::update(
   previous_commands_.pop();
   previous_commands_.emplace(command);
 
-  //  Publish limited velocity
-  if (publish_limited_velocity_ && realtime_limited_velocity_publisher_->trylock())
-  {
-    auto & limited_velocity_command = realtime_limited_velocity_publisher_->msg_;
-    limited_velocity_command.header.stamp = current_time;
-    limited_velocity_command.twist = command.twist;
-    realtime_limited_velocity_publisher_->unlockAndPublish();
-  }
-
   // Compute wheel velocity and angle
   auto [alpha, Ws] = process_twist_command(linear_command, angular_command);
 
-  //  Publish tricycle command
-  if (realtime_ackermann_command_publisher_->trylock())
+  //  Publish ackermann command
+  if (publish_ackermann_command_ && realtime_ackermann_command_publisher_->trylock())
   {
     auto & realtime_ackermann_command = realtime_ackermann_command_publisher_->msg_;
-    realtime_ackermann_command.speed = Ws;
+    realtime_ackermann_command.speed =
+      Ws;  // speed in AckermannDrive is defined desired forward speed (m/s) but we use it here as wheel speed (rad/s)
     realtime_ackermann_command.steering_angle = alpha;
     realtime_ackermann_command_publisher_->unlockAndPublish();
   }
-  return controller_interface::return_type::OK;
-}
 
-controller_interface::return_type TricycleController::send_commands(
-  const AckermannDrive::SharedPtr msg)
-{
-  traction_joint_[0].velocity_command.get().set_value(msg->speed);
-  steering_joint_[0].position_command.get().set_value(msg->steering_angle);
+  traction_joint_[0].velocity_command.get().set_value(Ws);
+  steering_joint_[0].position_command.get().set_value(alpha);
   return controller_interface::return_type::OK;
 }
 
@@ -296,7 +278,7 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
 
   cmd_vel_timeout_ = std::chrono::milliseconds{
     static_cast<int>(get_node()->get_parameter("cmd_vel_timeout").as_double() * 1000.0)};
-  publish_limited_velocity_ = get_node()->get_parameter("publish_limited_velocity").as_bool();
+  publish_ackermann_command_ = get_node()->get_parameter("publish_ackermann_command").as_bool();
   use_stamped_vel_ = get_node()->get_parameter("use_stamped_vel").as_bool();
 
   try
@@ -340,42 +322,29 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
     return CallbackReturn::ERROR;
   }
 
-  if (publish_limited_velocity_)
-  {
-    limited_velocity_publisher_ =
-      get_node()->create_publisher<Twist>(DEFAULT_COMMAND_OUT_TOPIC, rclcpp::SystemDefaultsQoS());
-    realtime_limited_velocity_publisher_ =
-      std::make_shared<realtime_tools::RealtimePublisher<Twist>>(limited_velocity_publisher_);
-  }
-
-  const Twist empty_twist;
-  const AckermannDrive empty_ackermann_command;
-  received_velocity_msg_ptr_.set(std::make_shared<Twist>(empty_twist));
+  const TwistStamped empty_twist;
+  received_velocity_msg_ptr_.set(std::make_shared<TwistStamped>(empty_twist));
 
   // Fill last two commands with default constructed commands
   previous_commands_.emplace(empty_twist);
   previous_commands_.emplace(empty_twist);
-  previous_ackermann_command_.emplace(empty_ackermann_command);
-  previous_ackermann_command_.emplace(empty_ackermann_command);
 
-  // initialize simple command publisher
-  ackermann_command_publisher_ = get_node()->create_publisher<AckermannDrive>(
-    DEFAULT_ACKERMANN_OUT_TOPIC, rclcpp::SystemDefaultsQoS());
-  realtime_ackermann_command_publisher_ =
-    std::make_shared<realtime_tools::RealtimePublisher<AckermannDrive>>(
-      ackermann_command_publisher_);
-
-  // initialize validated simple command subscriber
-  validated_command_subscriber_ = get_node()->create_subscription<AckermannDrive>(
-    DEFAULT_VALIDATED_ACKERMANN_TOPIC, rclcpp::SystemDefaultsQoS(),
-    std::bind(&TricycleController::send_commands, this, std::placeholders::_1));
+  // initialize ackermann command publisher
+  if (publish_ackermann_command_)
+  {
+    ackermann_command_publisher_ = get_node()->create_publisher<AckermannDrive>(
+      DEFAULT_ACKERMANN_OUT_TOPIC, rclcpp::SystemDefaultsQoS());
+    realtime_ackermann_command_publisher_ =
+      std::make_shared<realtime_tools::RealtimePublisher<AckermannDrive>>(
+        ackermann_command_publisher_);
+  }
 
   // initialize command subscriber
   if (use_stamped_vel_)
   {
-    velocity_command_subscriber_ = get_node()->create_subscription<Twist>(
+    velocity_command_subscriber_ = get_node()->create_subscription<TwistStamped>(
       DEFAULT_COMMAND_TOPIC, rclcpp::SystemDefaultsQoS(),
-      [this](const std::shared_ptr<Twist> msg) -> void
+      [this](const std::shared_ptr<TwistStamped> msg) -> void
       {
         if (!subscriber_is_active_)
         {
@@ -396,24 +365,23 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
   }
   else
   {
-    velocity_command_unstamped_subscriber_ =
-      get_node()->create_subscription<geometry_msgs::msg::Twist>(
-        DEFAULT_COMMAND_UNSTAMPED_TOPIC, rclcpp::SystemDefaultsQoS(),
-        [this](const std::shared_ptr<geometry_msgs::msg::Twist> msg) -> void
+    velocity_command_unstamped_subscriber_ = get_node()->create_subscription<Twist>(
+      DEFAULT_COMMAND_TOPIC, rclcpp::SystemDefaultsQoS(),
+      [this](const std::shared_ptr<Twist> msg) -> void
+      {
+        if (!subscriber_is_active_)
         {
-          if (!subscriber_is_active_)
-          {
-            RCLCPP_WARN(
-              get_node()->get_logger(), "Can't accept new commands. subscriber is inactive");
-            return;
-          }
+          RCLCPP_WARN(
+            get_node()->get_logger(), "Can't accept new commands. subscriber is inactive");
+          return;
+        }
 
-          // Write fake header in the stored stamped command
-          std::shared_ptr<Twist> twist_stamped;
-          received_velocity_msg_ptr_.get(twist_stamped);
-          twist_stamped->twist = *msg;
-          twist_stamped->header.stamp = get_node()->get_clock()->now();
-        });
+        // Write fake header in the stored stamped command
+        std::shared_ptr<TwistStamped> twist_stamped;
+        received_velocity_msg_ptr_.get(twist_stamped);
+        twist_stamped->twist = *msg;
+        twist_stamped->header.stamp = get_node()->get_clock()->now();
+      });
   }
 
   // initialize odometry publisher and messasge
@@ -504,7 +472,7 @@ CallbackReturn TricycleController::on_cleanup(const rclcpp_lifecycle::State &)
     return CallbackReturn::ERROR;
   }
 
-  received_velocity_msg_ptr_.set(std::make_shared<Twist>());
+  received_velocity_msg_ptr_.set(std::make_shared<TwistStamped>());
   return CallbackReturn::SUCCESS;
 }
 
@@ -522,10 +490,8 @@ bool TricycleController::reset()
   odometry_.resetOdometry();
 
   // release the old queue
-  std::queue<Twist> empty_twist;
+  std::queue<TwistStamped> empty_twist;
   std::swap(previous_commands_, empty_twist);
-  std::queue<AckermannDrive> empty_ackermann_command;
-  std::swap(previous_ackermann_command_, empty_ackermann_command);
 
   // TODO: clear handles
   // traction_joint_.clear();
@@ -639,13 +605,6 @@ double TricycleController::convert_trans_rot_vel_to_steering_angle(
     return 0;
   }
   return std::atan(theta_dot / (Vx * wheelbase));
-}
-
-int TricycleController::sgn(double num)
-{
-  if (num < 0) return -1;
-  if (num > 0) return 1;
-  return 0;
 }
 
 std::tuple<double, double> TricycleController::process_twist_command(double Vx, double theta_dot)
