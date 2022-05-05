@@ -323,7 +323,6 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
   }
 
   const TwistStamped empty_twist;
-  const AckermannDrive empty_ackermann_command;
   received_velocity_msg_ptr_.set(std::make_shared<TwistStamped>(empty_twist));
 
   // Fill last two commands with default constructed commands
@@ -493,7 +492,6 @@ bool TricycleController::reset()
   // release the old queue
   std::queue<TwistStamped> empty_twist;
   std::swap(previous_commands_, empty_twist);
-  std::queue<AckermannDrive> empty_ackermann_command;
 
   // TODO: clear handles
   // traction_joint_.clear();
