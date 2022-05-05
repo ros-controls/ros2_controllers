@@ -329,8 +329,6 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
   // Fill last two commands with default constructed commands
   previous_commands_.emplace(empty_twist);
   previous_commands_.emplace(empty_twist);
-  previous_ackermann_command_.emplace(empty_ackermann_command);
-  previous_ackermann_command_.emplace(empty_ackermann_command);
 
   // initialize ackermann command publisher
   if (publish_ackermann_command_)
@@ -368,24 +366,23 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
   }
   else
   {
-    velocity_command_unstamped_subscriber_ =
-      get_node()->create_subscription<Twist>(
-        DEFAULT_COMMAND_TOPIC, rclcpp::SystemDefaultsQoS(),
-        [this](const std::shared_ptr<Twist> msg) -> void
+    velocity_command_unstamped_subscriber_ = get_node()->create_subscription<Twist>(
+      DEFAULT_COMMAND_TOPIC, rclcpp::SystemDefaultsQoS(),
+      [this](const std::shared_ptr<Twist> msg) -> void
+      {
+        if (!subscriber_is_active_)
         {
-          if (!subscriber_is_active_)
-          {
-            RCLCPP_WARN(
-              get_node()->get_logger(), "Can't accept new commands. subscriber is inactive");
-            return;
-          }
+          RCLCPP_WARN(
+            get_node()->get_logger(), "Can't accept new commands. subscriber is inactive");
+          return;
+        }
 
-          // Write fake header in the stored stamped command
-          std::shared_ptr<TwistStamped> twist_stamped;
-          received_velocity_msg_ptr_.get(twist_stamped);
-          twist_stamped->twist = *msg;
-          twist_stamped->header.stamp = get_node()->get_clock()->now();
-        });
+        // Write fake header in the stored stamped command
+        std::shared_ptr<TwistStamped> twist_stamped;
+        received_velocity_msg_ptr_.get(twist_stamped);
+        twist_stamped->twist = *msg;
+        twist_stamped->header.stamp = get_node()->get_clock()->now();
+      });
   }
 
   // initialize odometry publisher and messasge
@@ -497,7 +494,6 @@ bool TricycleController::reset()
   std::queue<TwistStamped> empty_twist;
   std::swap(previous_commands_, empty_twist);
   std::queue<AckermannDrive> empty_ackermann_command;
-  std::swap(previous_ackermann_command_, empty_ackermann_command);
 
   // TODO: clear handles
   // traction_joint_.clear();

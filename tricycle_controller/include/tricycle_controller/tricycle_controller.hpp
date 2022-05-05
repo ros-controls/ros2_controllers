@@ -124,7 +124,7 @@ protected:
   {
     bool open_loop = false;
     bool enable_odom_tf = false;
-    bool odom_only_twist = false; // for doing the pose integration in seperate node
+    bool odom_only_twist = false;  // for doing the pose integration in seperate node
     std::string base_frame_id = "base_link";
     std::string odom_frame_id = "odom";
     std::array<double, 6> pose_covariance_diagonal;
@@ -157,10 +157,7 @@ protected:
 
   realtime_tools::RealtimeBox<std::shared_ptr<TwistStamped>> received_velocity_msg_ptr_{nullptr};
 
-  std::queue<TwistStamped> previous_commands_;                    // last two commands
-  std::queue<AckermannDrive> previous_ackermann_command_;  // last two steering angles
-
-  bool is_turning_on_spot_ = false;
+  std::queue<TwistStamped> previous_commands_;  // last two commands
 
   // speed limiters
   SpeedLimiter limiter_linear_;
