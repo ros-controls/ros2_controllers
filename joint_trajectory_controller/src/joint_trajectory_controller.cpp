@@ -457,8 +457,10 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   joint_names_ = get_node()->get_parameter("joints").as_string_array();
   if ((dof_ > 0) && (joint_names_.size() != dof_))
   {
-    RCLCPP_ERROR(logger, "The JointTrajectoryController does not support restarting with a different number of DOF.");
-    // TODO(andyz): update vector lengths if num. joints did change and re-initialize them so we can continue
+    RCLCPP_ERROR(logger,
+      "The JointTrajectoryController does not support restarting with a different number of DOF");
+    // TODO(andyz): update vector lengths if num. joints did change and re-initialize them so we
+    // can continue
     return CallbackReturn::FAILURE;
   }
   dof_ = joint_names_.size();
