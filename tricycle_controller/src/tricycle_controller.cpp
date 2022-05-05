@@ -31,15 +31,13 @@
 
 namespace
 {
-  // TODO: Find out how to remap these topics from launch files and keep defaults
-constexpr auto DEFAULT_COMMAND_TOPIC = "cmd_vel";
-constexpr auto DEFAULT_COMMAND_UNSTAMPED_TOPIC =
-  "cmd_vel_smoothed";  
-constexpr auto DEFAULT_COMMAND_OUT_TOPIC = "cmd_vel_out";
-constexpr auto DEFAULT_ACKERMANN_OUT_TOPIC = "ackermann";
-constexpr auto DEFAULT_VALIDATED_ACKERMANN_TOPIC = "ackermann";
-constexpr auto DEFAULT_ODOMETRY_TOPIC = "odom";
-constexpr auto DEFAULT_TRANSFORM_TOPIC = "tf";
+constexpr auto DEFAULT_COMMAND_TOPIC = "~/cmd_vel";
+constexpr auto DEFAULT_COMMAND_UNSTAMPED_TOPIC = "~/cmd_vel_unstamped";
+constexpr auto DEFAULT_COMMAND_OUT_TOPIC = "~/cmd_vel_out";
+constexpr auto DEFAULT_ACKERMANN_OUT_TOPIC = "~/ackermann";
+constexpr auto DEFAULT_VALIDATED_ACKERMANN_TOPIC = "~/validated_ackermann";
+constexpr auto DEFAULT_ODOMETRY_TOPIC = "~/odom";
+constexpr auto DEFAULT_TRANSFORM_TOPIC = "/tf";
 }  // namespace
 
 namespace tricycle_controller
