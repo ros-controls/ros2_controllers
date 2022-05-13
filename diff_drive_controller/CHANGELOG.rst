@@ -2,6 +2,12 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* [diff_drive_controller] Made odom topic name relative as it was in ROS1. (`#343 <https://github.com/ros-controls/ros2_controllers/issues/343>`_)
+* Fix wrong integration of velocity feedback in odometry in diff_drive_controller (`#331 <https://github.com/ros-controls/ros2_controllers/issues/331>`_)
+* Contributors: Patrick Roncagliolo, Tony Baltovski
+
 2.4.0 (2022-04-29)
 ------------------
 * updated to use node getter functions (`#329 <https://github.com/ros-controls/ros2_controllers/issues/329>`_)

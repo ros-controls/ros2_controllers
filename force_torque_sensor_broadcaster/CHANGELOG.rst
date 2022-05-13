@@ -2,6 +2,11 @@
 Changelog for package force_torque_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* fix: :bug: make force_torque_sensor_broadcaster wait for realtime_publisher (`#327 <https://github.com/ros-controls/ros2_controllers/issues/327>`_)
+* Contributors: Jaron Lundwall, Denis Štogl
+
 2.4.0 (2022-04-29)
 ------------------
 * updated to use node getter functions (`#329 <https://github.com/ros-controls/ros2_controllers/issues/329>`_)
