@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.5.0 (2022-05-13)
+------------------
 * check for nans in command interface (`#346 <https://github.com/ros-controls/ros2_controllers/issues/346>`_)
 * Contributors: Michael Wiznitzer
 
