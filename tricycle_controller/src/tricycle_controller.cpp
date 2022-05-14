@@ -187,7 +187,7 @@ controller_interface::return_type TricycleController::update(
         odometry_message.pose.pose.orientation.w = orientation.w();
       }
       odometry_message.twist.twist.linear.x = odometry_.getLinear();
-      odometry_message.twist.twist.angular.z = -odometry_.getAngular();
+      odometry_message.twist.twist.angular.z = odometry_.getAngular();
       realtime_odometry_publisher_->unlockAndPublish();
     }
 
@@ -611,7 +611,6 @@ std::tuple<double, double> TricycleController::process_twist_command(double Vx, 
 {
   // using naming convention in http://users.isr.ist.utl.pt/~mir/cadeiras/robmovel/Kinematics.pdf
   double alpha, Ws;
-  theta_dot = -theta_dot;
 
   if (Vx == 0 && abs(theta_dot) > 0.1)
   {  // is spin action
