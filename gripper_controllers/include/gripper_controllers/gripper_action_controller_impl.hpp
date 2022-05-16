@@ -165,7 +165,7 @@ void GripperActionController<HardwareInterface>::check_for_success(
     pre_alloc_result_->position = current_position;
     pre_alloc_result_->reached_goal = true;
     pre_alloc_result_->stalled = false;
-    RCLCPP_INFO(get_node()->get_logger(), "Successfully moved to goal.");
+    RCLCPP_DEBUG(get_node()->get_logger(), "Successfully moved to goal.");
     rt_active_goal_->setSucceeded(pre_alloc_result_);
     rt_active_goal_.reset();
   }
@@ -183,12 +183,12 @@ void GripperActionController<HardwareInterface>::check_for_success(
       pre_alloc_result_->stalled = true;
       if(allow_stalling_)
       {
-        RCLCPP_INFO(get_node()->get_logger(), "Stall detected moving to goal. Returning success.");
+        RCLCPP_DEBUG(get_node()->get_logger(), "Stall detected moving to goal. Returning success.");
         rt_active_goal_->setSucceeded(pre_alloc_result_);
       }
       else
       {
-        RCLCPP_INFO(get_node()->get_logger(), "Stall detected moving to goal. Aborting action!");
+        RCLCPP_DEBUG(get_node()->get_logger(), "Stall detected moving to goal. Aborting action!");
         rt_active_goal_->setAborted(pre_alloc_result_);
       }
       rt_active_goal_.reset();
