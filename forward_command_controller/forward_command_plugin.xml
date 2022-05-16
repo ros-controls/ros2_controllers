@@ -48,14 +48,14 @@
 
   <class name="forward_command_controller/ChainableForwardCommandController"
          type="forward_command_controller::ChainableForwardCommandController"
-         base_class_type="controller_interface::ControllerInterface">
+         base_class_type="controller_interface::ChainableControllerInterface">
   <description>
     The forward command controller commands a group of joints in a given interface
   </description>
   </class>
   <class name="forward_command_controller/ChainableMultiInterfaceForwardCommandController"
          type="forward_command_controller::ChainableMultiInterfaceForwardCommandController"
-         base_class_type="controller_interface::ControllerInterface">
+         base_class_type="controller_interface::ChainableControllerInterface">
     <description>
       MultiInterfaceForwardController ros2_control controller.
     </description>

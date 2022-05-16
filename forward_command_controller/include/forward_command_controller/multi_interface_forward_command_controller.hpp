@@ -43,7 +43,7 @@ template <
     std::is_convertible<T *, forward_command_controller::ForwardControllersBase *>::value,
     T>::type * = nullptr,
   typename std::enable_if<
-    std::is_convertible<T *, controller_interface::ControllerInterface *>::value, T>::type * =
+    std::is_convertible<T *, controller_interface::ControllerInterfaceBase *>::value, T>::type * =
     nullptr>
 class BaseMultiInterfaceForwardCommandController : public T
 {
@@ -54,8 +54,8 @@ public:
 protected:
   void declare_parameters() override
   {
-    controller_interface::ControllerInterface::auto_declare<std::string>("joint", joint_name_);
-    controller_interface::ControllerInterface::auto_declare<std::vector<std::string>>(
+    controller_interface::ControllerInterfaceBase::auto_declare<std::string>("joint", joint_name_);
+    controller_interface::ControllerInterfaceBase::auto_declare<std::vector<std::string>>(
       "interface_names", interface_names_);
   };
 

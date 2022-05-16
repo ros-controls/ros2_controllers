@@ -24,4 +24,4 @@ PLUGINLIB_EXPORT_CLASS(
   controller_interface::ControllerInterface)
 PLUGINLIB_EXPORT_CLASS(
   forward_command_controller::ChainableMultiInterfaceForwardCommandController,
-  controller_interface::ControllerInterface)
+  controller_interface::ChainableControllerInterface)
