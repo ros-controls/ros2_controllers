@@ -27,7 +27,7 @@ namespace semantic_components
 class RangeSensor : public SemanticComponentInterface<sensor_msgs::msg::Range>
 {
 public:
-  explicit RangeSensor(const std::string & name) : SemanticComponentInterface(name, 9)
+  explicit RangeSensor(const std::string & name) : SemanticComponentInterface(name, 5)
   {
     interface_names_.emplace_back(name_ + "/" + "radiation_type");
     interface_names_.emplace_back(name_ + "/" + "field_of_view");
@@ -54,7 +54,7 @@ public:
   uint8_t get_radiation_type()
   {
     size_t interface_offset = 0;
-    radiation_type_ = state_interfaces_[interface_offset].get().get_value();
+    radiation_type_ = state_interfaces_[interface_offset].get().get_int_value();
     return radiation_type_;
   }
 
@@ -144,16 +144,11 @@ public:
     message.max_range = max_range_;
     message.range = range_;
 
-    //std::cout << "INIT: " << ranges_init_ << std::endl;
-    //std::cout << "Size: " << ranges_size_ << std::endl;
-    //std::cout << "INIT: " << intensities_init_ << std::endl;
-    //std::cout << "Size: " << intensities_size_ << std::endl;
-
     return true;
   }
 
 protected:
-  // Order is: angle_min, angle_max, angle_increment, time_increment, scan_time, range_min, range_max, ranges, intensities
+  // Order is: radiation_type, field_of_view, min_range, max_range, range
   uint8_t radiation_type_;
   float field_of_view_;
   float min_range_;
