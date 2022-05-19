@@ -68,8 +68,7 @@ CallbackReturn CameraSensorBroadcaster::on_configure(
   try
   {
     // register ft sensor data publisher
-    sensor_state_publisher_ =
-      node_->create_publisher<sensor_msgs::msg::Image>("~/cam_image", rclcpp::SystemDefaultsQoS());
+    sensor_state_publisher_ = node_->create_publisher<sensor_msgs::msg::Image>("~/cam_image", rclcpp::SystemDefaultsQoS());
     realtime_publisher_ = std::make_unique<StatePublisher>(sensor_state_publisher_);
   }
   catch (const std::exception & e)
