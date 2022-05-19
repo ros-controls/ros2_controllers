@@ -37,10 +37,9 @@ from python_qt_binding.QtCore import QTimer, Signal
 from python_qt_binding.QtWidgets import QWidget, QFormLayout
 
 from control_msgs.msg import JointTrajectoryControllerState
-from controller_manager_msgs.utils\
-    import ControllerLister, ControllerManagerLister
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
+from .utils import ControllerLister, ControllerManagerLister
 from .double_editor import DoubleEditor
 from .joint_limits_urdf import get_joint_limits
 from .update_combo import update_combo
@@ -391,8 +390,7 @@ class JointTrajectoryController(Plugin):
         self._widget.enable_button.setChecked(False)
 
     def _running_jtc_info(self):
-        from controller_manager_msgs.utils\
-            import filter_by_type, filter_by_state
+        from .utils import filter_by_type, filter_by_state
 
         controller_list = self._list_controllers()
         jtc_list = filter_by_type(controller_list,
