@@ -352,19 +352,10 @@ controller_interface::return_type JointStateBroadcaster::update(
       state_interface.get_value());
   }
 
-<<<<<<< HEAD
-  joint_state_msg_.header.stamp = time;
-  dynamic_joint_state_msg_.header.stamp = time;
-
-  // update joint state message and dynamic joint state message
-  for (size_t i = 0; i < joint_names_.size(); ++i)
-=======
   if (realtime_joint_state_publisher_ && realtime_joint_state_publisher_->trylock())
->>>>>>> 1363baf (Foxy:  `joint_state_broadcaster` to use realtime tools (#308))
   {
     auto & joint_state_msg = realtime_joint_state_publisher_->msg_;
-
-    joint_state_msg.header.stamp = get_node()->get_clock()->now();
+    joint_state_msg.header.stamp = time;
 
     // update joint state message and dynamic joint state message
     for (size_t i = 0; i < joint_names_.size(); ++i)
@@ -378,23 +369,12 @@ controller_interface::return_type JointStateBroadcaster::update(
     realtime_joint_state_publisher_->unlockAndPublish();
   }
 
-<<<<<<< HEAD
-  for (size_t joint_index = 0; joint_index < dynamic_joint_state_msg_.joint_names.size();
-       ++joint_index)
-  {
-    const auto & name = dynamic_joint_state_msg_.joint_names[joint_index];
-    for (size_t interface_index = 0;
-         interface_index <
-         dynamic_joint_state_msg_.interface_values[joint_index].interface_names.size();
-         ++interface_index)
-=======
   if (realtime_dynamic_joint_state_publisher_ && realtime_dynamic_joint_state_publisher_->trylock())
   {
     auto & dynamic_joint_state_msg = realtime_dynamic_joint_state_publisher_->msg_;
-    dynamic_joint_state_msg.header.stamp = get_node()->get_clock()->now();
+    dynamic_joint_state_msg.header.stamp = time;
     for (size_t joint_index = 0; joint_index < dynamic_joint_state_msg.joint_names.size();
          ++joint_index)
->>>>>>> 1363baf (Foxy:  `joint_state_broadcaster` to use realtime tools (#308))
     {
       const auto & name = dynamic_joint_state_msg.joint_names[joint_index];
       for (size_t interface_index = 0;
