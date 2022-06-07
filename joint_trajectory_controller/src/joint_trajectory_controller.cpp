@@ -231,7 +231,7 @@ controller_interface::return_type JointTrajectoryController::update(
       // set values for next hardware write() if tolerance is met
       if (!abort && within_goal_time)
       {
-        if (use_closed_loop_pid_adapter)
+        if (use_closed_loop_pid_adapter_)
         {
           // Update PIDs
           for (auto i = 0ul; i < joint_num; ++i)
@@ -251,7 +251,7 @@ controller_interface::return_type JointTrajectoryController::update(
         }
         if (has_velocity_command_interface_)
         {
-          if (use_closed_loop_pid_adapter)
+          if (use_closed_loop_pid_adapter_)
           {
             assign_interface_from_point(joint_command_interface_[1], tmp_command_);
           }
@@ -266,7 +266,7 @@ controller_interface::return_type JointTrajectoryController::update(
         }
         if (has_effort_command_interface_)
         {
-          if (use_closed_loop_pid_adapter)
+          if (use_closed_loop_pid_adapter_)
           {
             assign_interface_from_point(joint_command_interface_[3], tmp_command_);
           }
@@ -513,7 +513,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     // if there is only velocity then use also PID adapter
     if (command_interface_types_.size() == 1)
     {
-      use_closed_loop_pid_adapter = true;
+      use_closed_loop_pid_adapter_ = true;
     }
     else if (!has_position_command_interface_)
     {
@@ -539,7 +539,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   {
     if (command_interface_types_.size() == 1)
     {
-      use_closed_loop_pid_adapter = true;
+      use_closed_loop_pid_adapter_ = true;
     }
     else
     {
@@ -548,7 +548,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     }
   }
 
-  if (use_closed_loop_pid_adapter)
+  if (use_closed_loop_pid_adapter_)
   {
     size_t num_joints = joint_names_.size();
     pids_.resize(num_joints);
