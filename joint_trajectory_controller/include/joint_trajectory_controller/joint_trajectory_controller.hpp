@@ -112,6 +112,7 @@ public:
 
 protected:
   std::vector<std::string> joint_names_;
+  std::vector<std::string> command_joint_names_;
   std::vector<std::string> command_interface_types_;
   std::vector<std::string> state_interface_types_;
 

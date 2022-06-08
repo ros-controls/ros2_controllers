@@ -22,6 +22,8 @@ find_package(std_msgs REQUIRED)
 
 add_library(forward_command_controller
   SHARED
+  src/chainable_forward_controller.cpp
+  src/forward_controller.cpp
   src/forward_controllers_base.cpp
   src/forward_command_controller.cpp
   src/multi_interface_forward_command_controller.cpp
@@ -101,6 +103,31 @@ if(BUILD_TESTING)
   target_link_libraries(test_multi_interface_forward_command_controller
     forward_command_controller
   )
+
+  ament_add_gmock(
+    test_load_chained_forward_command_controller
+    test/test_load_chained_forward_command_controller.cpp
+  )
+  target_include_directories(test_load_chained_forward_command_controller PRIVATE include)
+  ament_target_dependencies(
+    test_load_chained_forward_command_controller
+    controller_manager
+    hardware_interface
+    ros2_control_test_assets
+  )
+
+  ament_add_gmock(
+    test_load_chained_multi_interface_forward_command_controller
+    test/test_load_chained_multi_interface_forward_command_controller.cpp
+  )
+  target_include_directories(test_load_chained_multi_interface_forward_command_controller PRIVATE include)
+  ament_target_dependencies(
+    test_load_chained_multi_interface_forward_command_controller
+    controller_manager
+    hardware_interface
+    ros2_control_test_assets
+  )
+
 endif()
 
 ament_export_dependencies(

@@ -28,14 +28,15 @@
 namespace forward_command_controller
 {
 ForwardControllersBase::ForwardControllersBase()
-: controller_interface::ControllerInterface(),
-  rt_command_ptr_(nullptr),
-  joints_command_subscriber_(nullptr)
+: rt_command_ptr_(nullptr), joints_command_subscriber_(nullptr)
 {
 }
 
-controller_interface::CallbackReturn ForwardControllersBase::on_init()
+controller_interface::CallbackReturn ForwardControllersBase::execute_init(
+  const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node)
 {
+  node_ = node;
+
   try
   {
     declare_parameters();
@@ -49,42 +50,53 @@ controller_interface::CallbackReturn ForwardControllersBase::on_init()
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn ForwardControllersBase::on_configure(
-  const rclcpp_lifecycle::State & /*previous_state*/)
+controller_interface::CallbackReturn ForwardControllersBase::execute_configure(
+  const rclcpp_lifecycle::State & /*previous_state*/,
+  std::vector<hardware_interface::LoanedCommandInterface> & command_interfaces)
 {
   auto ret = this->read_parameters();
   if (ret != controller_interface::CallbackReturn::SUCCESS)
   {
+    RCLCPP_ERROR(node_->get_logger(), "Error when reading parameters.");
     return ret;
   }
 
-  joints_command_subscriber_ = get_node()->create_subscription<CmdType>(
-    "~/commands", rclcpp::SystemDefaultsQoS(),
-    [this](const CmdType::SharedPtr msg) { rt_command_ptr_.writeFromNonRT(msg); });
+  joints_command_subscriber_ = node_->create_subscription<CmdType>(
+    "~/commands", rclcpp::SystemDefaultsQoS(), [this](const CmdType::SharedPtr msg) {
+      // check if message is correct size, if not ignore
+      if (msg->data.size() == command_interface_names_.size())
+      {
+        rt_command_ptr_.writeFromNonRT(msg);
+      }
+    });
 
-  RCLCPP_INFO(get_node()->get_logger(), "configure successful");
+  // pre-reserve command interfaces
+  command_interfaces.reserve(command_interface_names_.size());
+
+  RCLCPP_INFO(node_->get_logger(), "configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
 controller_interface::InterfaceConfiguration
-ForwardControllersBase::command_interface_configuration() const
+ForwardControllersBase::get_command_interface_configuration() const
 {
   controller_interface::InterfaceConfiguration command_interfaces_config;
   command_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
-  command_interfaces_config.names = command_interface_types_;
+  command_interfaces_config.names = command_interface_names_;
 
   return command_interfaces_config;
 }
 
-controller_interface::InterfaceConfiguration ForwardControllersBase::state_interface_configuration()
-  const
+controller_interface::InterfaceConfiguration
+ForwardControllersBase::get_state_interface_configuration() const
 {
   return controller_interface::InterfaceConfiguration{
     controller_interface::interface_configuration_type::NONE};
 }
 
-controller_interface::CallbackReturn ForwardControllersBase::on_activate(
-  const rclcpp_lifecycle::State & /*previous_state*/)
+controller_interface::CallbackReturn ForwardControllersBase::execute_activate(
+  const rclcpp_lifecycle::State & /*previous_state*/,
+  std::vector<hardware_interface::LoanedCommandInterface> & command_interfaces)
 {
   //  check if we have all resources defined in the "points" parameter
   //  also verify that we *only* have the resources defined in the "points" parameter
@@ -93,56 +105,28 @@ controller_interface::CallbackReturn ForwardControllersBase::on_activate(
     ordered_interfaces;
   if (
     !controller_interface::get_ordered_interfaces(
-      command_interfaces_, command_interface_types_, std::string(""), ordered_interfaces) ||
-    command_interface_types_.size() != ordered_interfaces.size())
+      command_interfaces, command_interface_names_, std::string(""), ordered_interfaces) ||
+    command_interface_names_.size() != ordered_interfaces.size())
   {
     RCLCPP_ERROR(
-      get_node()->get_logger(), "Expected %zu command interfaces, got %zu",
-      command_interface_types_.size(), ordered_interfaces.size());
+      node_->get_logger(), "Expected %zu command interfaces, got %zu",
+      command_interface_names_.size(), ordered_interfaces.size());
     return controller_interface::CallbackReturn::ERROR;
   }
 
   // reset command buffer if a command came through callback when controller was inactive
   rt_command_ptr_ = realtime_tools::RealtimeBuffer<std::shared_ptr<CmdType>>(nullptr);
 
-  RCLCPP_INFO(get_node()->get_logger(), "activate successful");
+  RCLCPP_INFO(node_->get_logger(), "activate successful");
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn ForwardControllersBase::on_deactivate(
+controller_interface::CallbackReturn ForwardControllersBase::execute_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   // reset command buffer
   rt_command_ptr_ = realtime_tools::RealtimeBuffer<std::shared_ptr<CmdType>>(nullptr);
   return controller_interface::CallbackReturn::SUCCESS;
-}
-
-controller_interface::return_type ForwardControllersBase::update(
-  const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
-{
-  auto joint_commands = rt_command_ptr_.readFromRT();
-
-  // no command received yet
-  if (!joint_commands || !(*joint_commands))
-  {
-    return controller_interface::return_type::OK;
-  }
-
-  if ((*joint_commands)->data.size() != command_interfaces_.size())
-  {
-    RCLCPP_ERROR_THROTTLE(
-      get_node()->get_logger(), *(get_node()->get_clock()), 1000,
-      "command size (%zu) does not match number of interfaces (%zu)",
-      (*joint_commands)->data.size(), command_interfaces_.size());
-    return controller_interface::return_type::ERROR;
-  }
-
-  for (auto index = 0ul; index < command_interfaces_.size(); ++index)
-  {
-    command_interfaces_[index].set_value((*joint_commands)->data[index]);
-  }
-
-  return controller_interface::return_type::OK;
 }
 
 }  // namespace forward_command_controller
