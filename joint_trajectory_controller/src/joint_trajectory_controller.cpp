@@ -82,6 +82,12 @@ JointTrajectoryController::command_interface_configuration() const
 {
   controller_interface::InterfaceConfiguration conf;
   conf.type = controller_interface::interface_configuration_type::INDIVIDUAL;
+  if (dof_ == 0)
+  {
+    fprintf(stderr, "During ros2_control interface configuration, degrees of freedom is not valid;"
+      " it should be positive. Actual DOF is %zu\n", dof_);
+    std::exit(EXIT_FAILURE);
+  }
   conf.names.reserve(dof_ * command_interface_types_.size());
   for (const auto & joint_name : joint_names_)
   {
