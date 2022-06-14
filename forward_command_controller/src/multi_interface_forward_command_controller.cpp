@@ -26,8 +26,8 @@ MultiInterfaceForwardCommandController::MultiInterfaceForwardCommandController()
 
 void MultiInterfaceForwardCommandController::declare_parameters()
 {
-  get_node()->declare_parameter<std::string>("joint", joint_name_);
-  get_node()->declare_parameter<std::vector<std::string>>("interface_names", interface_names_);
+  auto_declare("joint", joint_name_);
+  auto_declare("interface_names", interface_names_);
 }
 
 controller_interface::CallbackReturn MultiInterfaceForwardCommandController::read_parameters()
