@@ -20,8 +20,8 @@ setup(
     zip_safe=True,
     author="Noel Jimenez Garcia",
     author_email="noel.jimenez@pal-robotics.com",
-    maintainer="Noel Jimenez Garcia",
-    maintainer_email="noel.jimenez@pal-robotics.com",
+    maintainer="Bence Magyar",
+    maintainer_email="bence.magyar.robotics@gmail.com",
     license="Apache License, Version 2.0",
     tests_require=["pytest"],
     entry_points={
