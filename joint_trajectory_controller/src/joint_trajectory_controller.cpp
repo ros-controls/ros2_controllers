@@ -663,7 +663,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
 
   // Print output so users can be sure the interface setup is correct
   RCLCPP_INFO(
-    logger, "Command interfaces are [%s] and and state interfaces are [%s].",
+    logger, "Command interfaces are [%s] and state interfaces are [%s].",
     get_interface_list(command_interface_types_).c_str(),
     get_interface_list(state_interface_types_).c_str());
 
