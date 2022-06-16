@@ -33,7 +33,7 @@ add_library(
 )
 target_include_directories(${PROJECT_NAME}
     PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-           $<INSTALL_INTERFACE:include>)
+      $<INSTALL_INTERFACE:include>)
 ament_target_dependencies(
   ${PROJECT_NAME}
   ${THIS_PACKAGE_INCLUDE_DEPENDS}

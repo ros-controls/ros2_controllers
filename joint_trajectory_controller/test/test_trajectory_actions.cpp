@@ -98,7 +98,6 @@ protected:
       }
     });
 
-    // common_goal_response and common_result_response
     // sometimes doesn't receive calls when we don't sleep
     std::this_thread::sleep_for(std::chrono::milliseconds(300));
   }
