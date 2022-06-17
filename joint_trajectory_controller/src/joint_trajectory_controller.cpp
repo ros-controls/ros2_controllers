@@ -186,7 +186,7 @@ controller_interface::return_type JointTrajectoryController::update(
 
     if (valid_point)
     {
-      bool abort = false;
+      bool tolerance_violated_while_moving = false;
       bool outside_goal_tolerance = false;
       bool within_goal_time = true;
       double time_difference = 0.0;
@@ -202,7 +202,7 @@ controller_interface::return_type JointTrajectoryController::update(
           !check_state_tolerance_per_joint(
             state_error, index, default_tolerances_.state_tolerance[index], false))
         {
-          abort = true;
+          tolerance_violated_while_moving = true;
         }
         // past the final point, check that we end up inside goal tolerance
         if (
@@ -229,7 +229,7 @@ controller_interface::return_type JointTrajectoryController::update(
       }
 
       // set values for next hardware write() if tolerance is met
-      if (!abort && within_goal_time)
+      if (!tolerance_violated_while_moving && within_goal_time)
       {
         if (use_closed_loop_pid_adapter_)
         {
@@ -294,7 +294,7 @@ controller_interface::return_type JointTrajectoryController::update(
         active_goal->setFeedback(feedback);
 
         // check abort
-        if (abort)
+        if (tolerance_violated_while_moving)
         {
           set_hold_position();
           auto result = std::make_shared<FollowJTrajAction::Result>();
