@@ -299,15 +299,6 @@ namespace admittance_controller {
         const rclcpp::Duration &period,
         trajectory_msgs::msg::JointTrajectoryPoint &desired_joint_states);
 
-//  controller_interface::return_type update(
-//    const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state,
-//    const geometry_msgs::msg::Wrench & measured_wrench,
-//    const geometry_msgs::msg::PoseStamped & reference_pose,
-//    const geometry_msgs::msg::WrenchStamped & reference_force,
-//    const rclcpp::Duration & period,
-//    trajectory_msgs::msg::JointTrajectoryPoint & desired_joint_states
-//  );
-
     controller_interface::return_type get_controller_state(
         control_msgs::msg::AdmittanceControllerState &state_message
     );
@@ -331,7 +322,7 @@ namespace admittance_controller {
      * All values are in he controller frame
      */
     void calculate_admittance_rule(
-        const Eigen::Vector<double, 6> &wrench,
+        const Eigen::Matrix<double,6,1> &wrench,
         const rclcpp::Duration &period
     );
 
@@ -350,9 +341,9 @@ namespace admittance_controller {
     //
     int num_joints_;
 
-    Eigen::Vector<double, 6> admittance_acceleration_;
+    Eigen::Matrix<double,6,1> admittance_acceleration_;
     std::vector<double> admittance_acceleration_vec;
-    Eigen::Vector<double, 6> admittance_velocity_;
+    Eigen::Matrix<double,6,1> admittance_velocity_;
     std::vector<double> admittance_velocity_vec;
     Eigen::Matrix<double,4,4,Eigen::ColMajor> admittance_position_;
     std::vector<double> admittance_position_vec;
@@ -368,10 +359,10 @@ namespace admittance_controller {
     Eigen::Matrix<double,4,4,Eigen::ColMajor> cog_transform;
     std::vector<double> cog_transform_vec;
 
-    Eigen::Vector<double, 6> wrench;
-    Eigen::Vector<double, 6> desired_ee_vel;
-    Eigen::Vector<double, 3> cog_;
-    Eigen::Vector<double, 3> ee_weight;
+    Eigen::Matrix<double,6,1> wrench;
+    Eigen::Matrix<double,6,1> desired_ee_vel;
+    Eigen::Matrix<double,3,1> cog_;
+    Eigen::Matrix<double,3,1> ee_weight;
     std::vector<double> desired_ee_vel_vec;
 
     std::vector<double> joint_vel;

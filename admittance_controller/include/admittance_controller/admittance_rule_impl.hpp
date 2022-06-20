@@ -126,41 +126,42 @@ namespace admittance_controller {
     memcpy(cog_transform.data(),cog_transform_vec.data(), 16*sizeof(double));
 
     Eigen::Matrix4d cur_control_transform_inv = invert_transform(cur_control_transform);
-    Eigen::Matrix3d cur_control_rot_inv = cur_control_transform_inv(Eigen::seq(0,2), Eigen::seq(0,2));
-    Eigen::Matrix3d cur_control_rot = cur_control_transform(Eigen::seq(0,2), Eigen::seq(0,2));
-    Eigen::Matrix3d cur_sensor_rot = cur_sensor_transform(Eigen::seq(0,2), Eigen::seq(0,2));
-    Eigen::Matrix3d cog_rot = cog_transform(Eigen::seq(0,2), Eigen::seq(0,2));
+    Eigen::Matrix3d cur_control_rot = cur_control_transform.block<3,3>(0,0);
+    Eigen::Matrix3d cur_control_rot_inv = cur_control_transform_inv.block<3,3>(0,0);
+    Eigen::Matrix3d cur_sensor_rot = cur_sensor_transform.block<3,3>(0,0);
+    Eigen::Matrix3d cog_rot = cog_transform.block<3,3>(0,0);
 
-    desired_ee_vel(Eigen::seq(0,2)) = cur_control_rot_inv*desired_ee_vel(Eigen::seq(0,2));
-    desired_ee_vel(Eigen::seq(3,5)) = cur_control_rot_inv*desired_ee_vel(Eigen::seq(3,5));
+    // TODO fix this
+//    desired_ee_vel(Eigen::seq(0,2)) = cur_control_rot_inv*desired_ee_vel(Eigen::seq(0,2));
+//    desired_ee_vel(Eigen::seq(3,5)) = cur_control_rot_inv*desired_ee_vel(Eigen::seq(3,5));
 
     // apply filter and update wrench vector
     process_wrench_measurements(measured_wrench);
     // transform into control frame
-    Eigen::Vector<double,6> wrench_base;
-    Eigen::Vector<double,6> wrench_control;
-    wrench_base(Eigen::seq(0, 2)) = cur_sensor_rot * wrench(Eigen::seq(0, 2));
-    wrench_base(Eigen::seq(3, 5)) = cur_sensor_rot * wrench(Eigen::seq(3, 5));
+    Eigen::Matrix<double,6,1> wrench_base;
+    Eigen::Matrix<double,6,1> wrench_control;
+    wrench_base.block<3,1>(0,0) = cur_sensor_rot * wrench.block<3,1>(0,0);
+    wrench_base.block<3,1>(3,0) = cur_sensor_rot * wrench.block<3,1>(3,0);
 
     wrench_base[2] -= ee_weight[2];
-    wrench_base(Eigen::seq(3, 5)) -= (cog_rot*cog_).cross(ee_weight);
+    wrench_base.block<3,1>(3,0)-= (cog_rot*cog_).cross(ee_weight);
 
-    wrench_control(Eigen::seq(0, 2)) = cur_control_rot_inv * wrench_base(Eigen::seq(0, 2));
-    wrench_control(Eigen::seq(3, 5)) = cur_control_rot_inv * wrench_base(Eigen::seq(3, 5));
+    wrench_control.block<3,1>(0,0) = cur_control_rot_inv * wrench_base.block<3,1>(0,0);
+    wrench_control.block<3,1>(3,0) = cur_control_rot_inv * wrench_base.block<3,1>(3,0);
 
     // Compute admittance control law: F = M*a + D*v + S*(x - x_d)
     calculate_admittance_rule(wrench_control, period);
 
     // transform admittance values back to base frame
     // velocity
-    Eigen::Vector3d admittance_velocity_cf = cur_control_rot*admittance_velocity_(Eigen::seq(0,2));
+    Eigen::Vector3d admittance_velocity_cf = cur_control_rot*admittance_velocity_.block<3,1>(0,0);
     memcpy(admittance_velocity_vec.data(),admittance_velocity_cf.data(), 3*sizeof(double));
-    Eigen::Vector3d admittance_angular_vel_cf = cur_control_rot*admittance_velocity_(Eigen::seq(3,5));
+    Eigen::Vector3d admittance_angular_vel_cf = cur_control_rot*admittance_velocity_.block<3,1>(3,0);
     memcpy(admittance_velocity_vec.data()+3, admittance_angular_vel_cf.data(), 3*sizeof(double));
     // velocity acceleration
-    Eigen::Vector3d admittance_accel_cf = cur_control_rot * admittance_acceleration_(Eigen::seq(0, 2));
+    Eigen::Vector3d admittance_accel_cf = cur_control_rot * admittance_acceleration_.block<3,1>(0,0);
     memcpy(admittance_acceleration_vec.data(),admittance_accel_cf.data(), 3*sizeof(double));
-    Eigen::Vector3d admittance_angular_accel_cf = cur_control_rot * admittance_acceleration_(Eigen::seq(3, 5));
+    Eigen::Vector3d admittance_angular_accel_cf = cur_control_rot * admittance_acceleration_.block<3,1>(3,0);
     memcpy(admittance_acceleration_vec.data()+3, admittance_angular_vel_cf.data(), 3*sizeof(double));
 
     // calculate robot joint velocity from admittance velocity
@@ -189,7 +190,7 @@ namespace admittance_controller {
   }
 
   void AdmittanceRule::calculate_admittance_rule(
-      const Eigen::Vector<double, 6> &wrench,
+      const Eigen::Matrix<double,6,1> &wrench,
       const rclcpp::Duration &period
   ) {
     // Compute admittance control law: F = M*a + D*v + S*(x - x_d)
@@ -208,7 +209,8 @@ namespace admittance_controller {
       }
     }
 
-    auto R = admittance_position_(Eigen::seq(0,2), Eigen::seq(0,2));
+//    auto R = admittance_position_(Eigen::seq(0,2), Eigen::seq(0,2));
+    auto R = admittance_position_.block<3,3>(0,0);
     Eigen::Vector3d V = get_rotation_axis(R);
     double theta = acos((1.0/2.0)*(R.trace()-1));
     // if trace of the rotation matrix derivative is negative, then rotation axis needs to be flipped
@@ -237,7 +239,7 @@ namespace admittance_controller {
     Eigen::Matrix3d R_dot = skew_symmetric*R;
     R += R_dot*(1.0 / 1000);
     R = normalize_rotation(R);
-    admittance_position_(Eigen::seq(0,2), Eigen::seq(0,2)) = R;
+    admittance_position_.block<3,3>(0,0) = R;
   }
 
   Eigen::Vector3d AdmittanceRule::get_rotation_axis(const Eigen::Matrix3d& R) const{
@@ -305,11 +307,11 @@ namespace admittance_controller {
   Eigen::Matrix3d AdmittanceRule::normalize_rotation(Eigen::Matrix3d R){
     // enforce orthonormal constraint
 
-    Eigen::Vector3d R_0 = R(Eigen::seq(0,2), Eigen::seq(0,0));
+    Eigen::Vector3d R_0 = R.block<3,1>(0,0);
     R_0.normalize();
-    Eigen::Vector3d R_1 = R(Eigen::seq(0,2), Eigen::seq(1,1));
+    Eigen::Vector3d R_1 = R.block<3,1>(0,1);
     R_1.normalize();
-    Eigen::Vector3d R_2 = R(Eigen::seq(0,2), Eigen::seq(2,2));
+    Eigen::Vector3d R_2 = R.block<3,1>(0,2);
     R_2.normalize();
 
     double drift = R_0.dot(R_1);
@@ -328,10 +330,10 @@ namespace admittance_controller {
   }
 
   Eigen::Matrix4d AdmittanceRule::invert_transform(const Eigen::Matrix4d & T){
+    Eigen::Matrix3d R = T.block<3,3>(0,0);
     Eigen::Matrix4d T_inv = T;
-    Eigen::Matrix3d R = T_inv(Eigen::seq(0,2), Eigen::seq(0,2));
-    T_inv(Eigen::seq(0,2), Eigen::seq(0,2)) = R.transpose();
-    T_inv(Eigen::seq(0,2), Eigen::seq(3,3)) = -R.transpose()*T_inv(Eigen::seq(0,2), Eigen::seq(3,3));
+    T_inv.block<3,3>(0,0) = R.transpose();
+    T_inv.block<3,1>(0,3) = -R.transpose()*T_inv.block<3,1>(0,3);
     return T_inv;
 
   }
