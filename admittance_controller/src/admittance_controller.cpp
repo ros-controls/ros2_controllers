@@ -37,12 +37,6 @@ namespace admittance_controller {
 
   AdmittanceController::AdmittanceController() = default;
 
-  void AdmittanceController::wrench_stamped_callback(const std::shared_ptr<geometry_msgs::msg::WrenchStamped> msg) {
-    if (controller_is_active_) {
-      rtBuffers.input_wrench_command_.writeFromNonRT(msg);
-    }
-  }
-
   void
   AdmittanceController::joint_command_callback(const std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint> msg) {
     if (controller_is_active_) {
@@ -51,11 +45,7 @@ namespace admittance_controller {
   }
 
   CallbackReturn AdmittanceController::on_init() {
-//    // set chained mode
-//    set_chained_mode(true);
-    // initialize RTbuffers
-    rtBuffers.input_joint_command_.writeFromNonRT(std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint>());
-    rtBuffers.input_wrench_command_.writeFromNonRT(std::shared_ptr<geometry_msgs::msg::WrenchStamped>());
+
     // initialize controller parameters
     admittance_ = std::make_unique<admittance_controller::AdmittanceRule>();
     admittance_->parameters_.initialize(get_node());
@@ -81,18 +71,23 @@ namespace admittance_controller {
       RCLCPP_INFO(get_node()->get_logger(), "%s", ("command int types are: " + tmp + "\n").c_str());
     }
     for (const auto &tmp: params.chainable_command_interface_types_) {
-      RCLCPP_INFO(get_node()->get_logger(), "%s", ("chainable int types are: " + tmp + "\n").c_str());
+      if (tmp == hardware_interface::HW_IF_POSITION || tmp == hardware_interface::HW_IF_VELOCITY) {
+        RCLCPP_INFO(get_node()->get_logger(), "%s", ("chainable int types are: " + tmp + "\n").c_str());
+      } else {
+        RCLCPP_ERROR(get_node()->get_logger(), "interface type %s is not supported. Supported types are %s and %s",
+                     tmp.c_str(), hardware_interface::HW_IF_POSITION, hardware_interface::HW_IF_VELOCITY);
+        return CallbackReturn::ERROR;
+      }
     }
 
     try {
       admittance_->parameters_.declare_parameters();
     } catch (const std::exception &e) {
-      fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
+      RCLCPP_ERROR(get_node()->get_logger(), "Exception thrown during init stage with message: %s \n", e.what());
       return CallbackReturn::ERROR;
     }
 
     num_joints_ = params.joint_names_.size();
-
 
     return CallbackReturn::SUCCESS;
   }
@@ -145,7 +140,7 @@ namespace admittance_controller {
 
     position_reference_.clear();
     velocity_reference_.clear();
-    std::unordered_map<std::string, std::vector<double*> *> chainable_interface_map = {
+    std::unordered_map<std::string, std::vector<double *> *> chainable_interface_map = {
         {hardware_interface::HW_IF_POSITION, &position_reference_},
         {hardware_interface::HW_IF_VELOCITY, &velocity_reference_}};
 
@@ -153,10 +148,11 @@ namespace admittance_controller {
     for (const auto &interface: params.chainable_command_interface_types_) {
       for (const auto &joint: params.joint_names_) {
         chainable_interface_map[interface]->push_back(reference_interfaces_.data() + index);
-        chainable_command_interfaces.emplace_back(hardware_interface::CommandInterface(std::string(get_node()->get_name()),
-                                                                         joint + "/" + interface,
-                                                                                       reference_interfaces_.data() +
-                                                                                           index));
+        chainable_command_interfaces.emplace_back(
+            hardware_interface::CommandInterface(std::string(get_node()->get_name()),
+                                                 joint + "/" + interface,
+                                                 reference_interfaces_.data() +
+                                                 index));
         index++;
       }
     }
@@ -166,24 +162,24 @@ namespace admittance_controller {
 
   controller_interface::return_type AdmittanceController::update_reference_from_subscribers() {
     // update input reference from ros subscriber message
-    return controller_interface::return_type::OK; //TODO fix this
 
     joint_command_msg = *rtBuffers.input_joint_command_.readFromRT();
-    for (auto i = 0ul; i < joint_command_msg->positions.size(); i++) {
-      *position_reference_[i] = joint_command_msg->positions[i];
+
+    // ensure joint command msg has a message
+    if (joint_command_msg.get()){
+      for (auto i = 0ul; i < joint_command_msg->positions.size(); i++) {
+        *position_reference_[i] = joint_command_msg->positions[i];
+      }
+      for (auto i = 0ul; i < joint_command_msg->velocities.size(); i++) {
+        *velocity_reference_[i] = joint_command_msg->velocities[i];
+      }
     }
-    for (auto i = 0ul; i < joint_command_msg->velocities.size(); i++) {
-      *velocity_reference_[i] = joint_command_msg->velocities[i];
-    }
-//    for (auto i = 0ul; i < joint_command_msg->accelerations.size(); i++) {
-//    *velocity_acceleration_[i] = joint_command_msg->accelerations[i];
-//    }
 
     return controller_interface::return_type::OK;
   }
 
   bool AdmittanceController::on_set_chained_mode(bool chained_mode) {
-    // this method set chained mode to value of chained_mode if true is returned
+    // this method sets the chained mode to value of argument chained_mode if true is returned.
     return true;
   }
 
@@ -220,9 +216,6 @@ namespace admittance_controller {
     }
 
     // setup subscribers and publishers
-    input_wrench_command_subscriber_ = get_node()->create_subscription<geometry_msgs::msg::WrenchStamped>(
-        "~/ft_data", rclcpp::SystemDefaultsQoS(),
-        std::bind(&AdmittanceController::wrench_stamped_callback, this, std::placeholders::_1));
     input_joint_command_subscriber_ = get_node()->create_subscription<trajectory_msgs::msg::JointTrajectoryPoint>(
         "~/pose_commands", rclcpp::SystemDefaultsQoS(),
         std::bind(&AdmittanceController::joint_command_callback, this, std::placeholders::_1));
@@ -252,18 +245,19 @@ namespace admittance_controller {
 
 
   CallbackReturn AdmittanceController::on_activate(const rclcpp_lifecycle::State &previous_state) {
-    // on_activate is called when the lifecycle activates. Realtime constraints are required.
+    // on_activate is called when the lifecycle activates.
+
     controller_is_active_ = true;
     joint_position_command_interface_.clear();
-        joint_velocity_command_interface_.clear();
+    joint_velocity_command_interface_.clear();
     joint_position_state_interface_.clear();
-        joint_velocity_state_interface_.clear();
+    joint_velocity_state_interface_.clear();
+
     // assign state interfaces
     std::unordered_map<std::string, std::vector<std::reference_wrapper<hardware_interface::LoanedCommandInterface>> *> command_interface_map = {
         {hardware_interface::HW_IF_POSITION, &joint_position_command_interface_},
         {hardware_interface::HW_IF_VELOCITY, &joint_velocity_command_interface_}
     };
-
     for (auto i = 0ul; i < params.command_interface_types_.size(); i++) {
       for (auto j = 0ul; j < params.joint_names_.size(); j++) {
         command_interface_map[params.command_interface_types_[i]]->emplace_back(
@@ -275,7 +269,6 @@ namespace admittance_controller {
         {hardware_interface::HW_IF_POSITION, &joint_position_state_interface_},
         {hardware_interface::HW_IF_VELOCITY, &joint_velocity_state_interface_}
     };
-
     for (auto i = 0ul; i < params.state_interface_types_.size(); i++) {
       for (auto j = 0ul; j < params.joint_names_.size(); j++) {
         state_interface_map[params.state_interface_types_[i]]->emplace_back(state_interfaces_[i * num_joints_ + j]);
@@ -284,27 +277,23 @@ namespace admittance_controller {
 
     // Initialize interface of the FTS semantic semantic component
     force_torque_sensor_->assign_loaned_state_interfaces(state_interfaces_);
+
     // Initialize Admittance Rule from current states
     admittance_->reset();
 
     // if in open loop mode, the position state interface should be ignored
     if (params.open_loop_control_) {
-//        state_offset_.positions.resize(joint_position_state_interface_.size(), 0.0);
-//        for (int i=0; i < num_joints_; i++){
-//          state_offset_.positions[i] = joint_position_state_interface_[i].get().get_value();
-//        }
-//        open_loop_buffer.resize(joint_position_state_interface_.size(), 0.0);
-
       open_loop_buffer.resize(joint_position_state_interface_.size(), 0.0);
       for (int i = 0; i < num_joints_; i++) {
         open_loop_buffer[i] = joint_position_state_interface_[i].get().get_value();
       }
     }
-
-    // Handle state after restart or initial startup
+    // handle state after restart or initial startup
     read_state_from_hardware(last_state_reference_);
-    // if last_state_reference_ is empty, we have no information about the state, assume zero
-    if (last_state_reference_.positions.empty()) last_state_reference_.positions.resize(num_joints_, 0.0);
+    // if last_state_reference_ is empty, we have no information about the state, sending a command is dangerous
+    if (last_state_reference_.positions.empty()){
+      return CallbackReturn::ERROR;
+    }
     read_state_from_command_interfaces(last_commanded_state_);
     // if last_commanded_state_ is empty, then our safest option is to set it to the last reference
     if (last_commanded_state_.positions.empty()) last_commanded_state_.positions = last_state_reference_.positions;
@@ -314,8 +303,10 @@ namespace admittance_controller {
     if (last_state_reference_.accelerations.empty()) last_state_reference_.accelerations.assign(num_joints_, 0.0);
     if (last_commanded_state_.velocities.empty()) last_commanded_state_.velocities.assign(num_joints_, 0.0);
     if (last_commanded_state_.accelerations.empty()) last_commanded_state_.accelerations.assign(num_joints_, 0.0);
+
     // initialize state reference
     state_reference_ = last_state_reference_;
+    state_desired_ =  state_reference_;
 
     // if there are no state position interfaces, then force use of open loop control
     if (joint_position_state_interface_.empty() && !params.open_loop_control_) {
@@ -332,7 +323,7 @@ namespace admittance_controller {
     // Realtime constraints are required in this function
 
     // update input reference from chainable interfaces
-    read_state_reference_from_chainable_interfaces(state_reference_);
+    read_state_reference_interfaces(state_reference_);
 
     // sense: get all controller inputs
     geometry_msgs::msg::Wrench ft_values;
@@ -355,7 +346,7 @@ namespace admittance_controller {
     // action server out of tolerance
     for (auto i = 0ul; i < joint_position_command_interface_.size(); i++) {
       joint_position_command_interface_[i].get().set_value(state_desired_.positions[i]);
-      if(params.open_loop_control_){
+      if (params.open_loop_control_) {
         open_loop_buffer[i] = state_desired_.positions[i];
       }
       last_commanded_state_.positions[i] = state_desired_.positions[i];
@@ -365,7 +356,7 @@ namespace admittance_controller {
       joint_velocity_command_interface_[i].get().set_value(state_desired_.velocities[i]);
       last_commanded_state_.velocities[i] = state_desired_.velocities[i];
       last_commanded_state_.positions[i] = state_current_.positions[i] + state_desired_.velocities[i] * dt; // hack!
-      if(params.open_loop_control_){
+      if (params.open_loop_control_) {
         open_loop_buffer[i] = state_current_.positions[i] + state_desired_.velocities[i] * dt; // hack!
       }
     }
@@ -476,14 +467,13 @@ namespace admittance_controller {
     }
   }
 
-  void AdmittanceController::read_state_reference_from_chainable_interfaces(
+  void AdmittanceController::read_state_reference_interfaces(
       trajectory_msgs::msg::JointTrajectoryPoint &state_reference) {
     // Fill fields of state argument from hardware command interfaces. If the interface does not exist or
     // the values are nan, that corresponding state field will be set to empty
 
     state_reference.positions.resize(position_reference_.size(), 0.0);
     state_reference.velocities.resize(velocity_reference_.size(), 0.0);
-    state_reference.accelerations.resize(joint_acceleration_chainable_interface_.size(), 0.0);
 
     for (auto i = 0ul; i < position_reference_.size(); i++) {
       state_reference.positions[i] = *position_reference_[i];
@@ -496,13 +486,6 @@ namespace admittance_controller {
       state_reference.velocities[i] = *velocity_reference_[i];
       if (std::isnan(state_reference.velocities[i])) {
         state_reference.velocities = last_state_reference_.velocities;
-        break;
-      }
-    }
-    for (auto i = 0ul; i < joint_acceleration_chainable_interface_.size(); i++) {
-      state_reference.accelerations[i] = joint_acceleration_chainable_interface_[i].get().get_value();
-      if (std::isnan(state_reference.accelerations[i])) {
-        state_reference.accelerations = last_state_reference_.accelerations;
         break;
       }
     }

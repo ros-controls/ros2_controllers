@@ -52,7 +52,6 @@ namespace admittance_controller
     using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
     struct RTBuffers{
-        realtime_tools::RealtimeBuffer<std::shared_ptr<geometry_msgs::msg::WrenchStamped>> input_wrench_command_;
         realtime_tools::RealtimeBuffer<std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint>> input_joint_command_;
         std::unique_ptr<realtime_tools::RealtimePublisher<ControllerStateMsg>> state_publisher_;
     };
@@ -113,6 +112,7 @@ protected:
     bool on_set_chained_mode(bool chained_mode) override;
 
     int num_joints_{};
+
     std::vector<std::reference_wrapper<hardware_interface::LoanedCommandInterface>> joint_position_command_interface_;
     std::vector<std::reference_wrapper<hardware_interface::LoanedCommandInterface>> joint_velocity_command_interface_;
     std::vector<std::reference_wrapper<hardware_interface::LoanedCommandInterface>> joint_acceleration_command_interface_;
@@ -120,11 +120,10 @@ protected:
     std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>> joint_position_state_interface_;
     std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>> joint_velocity_state_interface_;
     std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>> joint_acceleration_state_interface_;
-//    std::vector<std::reference_wrapper<hardware_interface::CommandInterface>> joint_position_chainable_interface_;
-//    std::vector<std::reference_wrapper<hardware_interface::CommandInterface>> joint_velocity_chainable_interface_;
+
   std::vector<double*> position_reference_;
   std::vector<double*> velocity_reference_;
-    std::vector<std::reference_wrapper<hardware_interface::CommandInterface>> joint_acceleration_chainable_interface_;
+
     // Admittance rule and dependent variables;
     std::unique_ptr<admittance_controller::AdmittanceRule> admittance_;
     // joint limiter TODO
@@ -132,12 +131,9 @@ protected:
     // controller parameters filled by ROS
     ParameterStruct params;
     // ROS subscribers
-    rclcpp::Subscription<geometry_msgs::msg::WrenchStamped>::SharedPtr input_wrench_command_subscriber_ = nullptr;
     rclcpp::Subscription<trajectory_msgs::msg::JointTrajectoryPoint>::SharedPtr input_joint_command_subscriber_ = nullptr;
     rclcpp::Publisher<control_msgs::msg::AdmittanceControllerState>::SharedPtr  s_publisher_ = nullptr;
     // ROS messages
-    std::shared_ptr<trajectory_msgs::msg::JointTrajectory> traj_command_msg;
-    std::shared_ptr<geometry_msgs::msg::WrenchStamped> wrench_msg;
     std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint> joint_command_msg;
     // real-time buffer
     RTBuffers rtBuffers;
@@ -159,11 +155,10 @@ protected:
     std::vector<double> open_loop_buffer;
 
     // helper methods
-    void wrench_stamped_callback(const std::shared_ptr<geometry_msgs::msg::WrenchStamped> msg);
     void joint_command_callback(const std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint> msg);
     void read_state_from_hardware(trajectory_msgs::msg::JointTrajectoryPoint & state);
     void read_state_from_command_interfaces(trajectory_msgs::msg::JointTrajectoryPoint & state);
-    void read_state_reference_from_chainable_interfaces(trajectory_msgs::msg::JointTrajectoryPoint & state);
+    void read_state_reference_interfaces(trajectory_msgs::msg::JointTrajectoryPoint & state);
 
 };
 

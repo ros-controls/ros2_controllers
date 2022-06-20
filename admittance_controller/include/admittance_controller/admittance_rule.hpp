@@ -37,6 +37,7 @@ namespace {  // Utility namespace
   static constexpr double WRENCH_EPSILON = 1e-10;
   static constexpr double POSE_ERROR_EPSILON = 1e-12;
   static constexpr double POSE_EPSILON = 1e-15;
+  const double ROT_AXIS_EPSILON = 0.001;
 
 
 }  // utility namespace
@@ -46,9 +47,9 @@ namespace admittance_controller {
   class AdmittanceParameters : public control_toolbox::ParameterHandler {
   public:
     AdmittanceParameters() : control_toolbox::ParameterHandler("", 7, 0, 28, 7) {
-      add_string_parameter("IK.base", false);
-      add_string_parameter("IK.group_name", false);
-      add_string_parameter("IK.plugin_name", false);
+      add_string_parameter("kinematics.base", false);
+      add_string_parameter("kinematics.group_name", false);
+      add_string_parameter("kinematics.plugin_name", false);
       add_string_parameter("control_frame", true);
       add_string_parameter("sensor_frame", false);
       add_string_parameter("end_effector_name", false);
@@ -157,18 +158,18 @@ namespace admittance_controller {
     }
 
     void update_storage() override {
-      ik_base_frame_ = string_parameters_[0].second;
+      kinematics_base_frame_ = string_parameters_[0].second;
       RCUTILS_LOG_INFO_NAMED(
           logger_name_.c_str(),
-          "IK Base frame: %s", ik_base_frame_.c_str());
-      ik_group_name_ = string_parameters_[1].second;
+          "IK Base frame: %s", kinematics_base_frame_.c_str());
+      kinematics_group_name_ = string_parameters_[1].second;
       RCUTILS_LOG_INFO_NAMED(
           logger_name_.c_str(),
-          "IK group name frame: %s", ik_group_name_.c_str());
-      ik_plugin_name_ = string_parameters_[2].second;
+          "IK group name frame: %s", kinematics_group_name_.c_str());
+      kinematics_plugin_name_ = string_parameters_[2].second;
       RCUTILS_LOG_INFO_NAMED(
           logger_name_.c_str(),
-          "IK plugin name: %s", ik_plugin_name_.c_str());
+          "IK plugin name: %s", kinematics_plugin_name_.c_str());
       control_frame_ = string_parameters_[3].second;
       RCUTILS_LOG_INFO_NAMED(
           logger_name_.c_str(),
@@ -235,9 +236,9 @@ namespace admittance_controller {
     }
 
     // IK parameters
-    std::string ik_base_frame_;
-    std::string ik_group_name_;
-    std::string ik_plugin_name_;
+    std::string kinematics_base_frame_;
+    std::string kinematics_group_name_;
+    std::string kinematics_plugin_name_;
     std::string end_effector_name_;
     // Depends on the scenario: usually base_link, tool or end-effector
     std::string control_frame_;
@@ -264,24 +265,7 @@ namespace admittance_controller {
     AdmittanceRule() = default;
 
     controller_interface::return_type configure(std::shared_ptr<rclcpp_lifecycle::LifecycleNode> node, int num_joint);
-
     controller_interface::return_type reset();
-
-//  controller_interface::return_type update(
-//    const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state,
-//    const geometry_msgs::msg::Wrench & measured_wrench,
-//    const geometry_msgs::msg::PoseStamped & reference_pose,
-//    const rclcpp::Duration & period,
-//    trajectory_msgs::msg::JointTrajectoryPoint & desired_joint_states
-//  );
-//
-//  controller_interface::return_type update(
-//    const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state,
-//    const geometry_msgs::msg::Wrench & measured_wrench,
-//    const std::array<double, 6> & reference_joint_deltas,
-//    const rclcpp::Duration & period,
-//    trajectory_msgs::msg::JointTrajectoryPoint & desired_joint_states
-//  );
 
     /**
      * Calculate 'desired joint states' based on the 'measured force' and 'reference joint state'.
@@ -306,7 +290,7 @@ namespace admittance_controller {
 
   public:
     // TODO(destogl): Add parameter for this
-    bool feedforward_commanded_input_ = true;
+    bool use_feedforward_commanded_input_ = true;
 
 
     // Dynamic admittance parameters
@@ -314,57 +298,62 @@ namespace admittance_controller {
 
     // Filter parameter for exponential smoothing
     const double alpha = 0.1; // TODO make a ros param
-    const double EPSILON = 0.001;
+
 
 
   protected:
     /**
-     * All values are in he controller frame
+     * All values are in the controller frame
      */
     void calculate_admittance_rule(
         const Eigen::Matrix<double,6,1> &wrench,
-        const rclcpp::Duration &period
+        const Eigen::Matrix<double,6,1> &desired_vel,
+        const double dt
     );
 
-    void process_wrench_measurements(
-        const geometry_msgs::msg::Wrench &measured_wrench
+    Eigen::Matrix<double, 6,1> process_wrench_measurements(
+        const geometry_msgs::msg::Wrench &measured_wrench, const Eigen::Matrix<double, 6,1>& last_wrench
     );
 
-    Eigen::Matrix4d invert_transform(const Eigen::Matrix4d &T);
+    void normalize_rotation(Eigen::Matrix<double,3,3,Eigen::ColMajor>& R);
+    Eigen::Matrix<double,4,4,Eigen::ColMajor> invert_transform(Eigen::Matrix<double,4,4,Eigen::ColMajor> &T);
+    Eigen::Matrix<double,4,4,Eigen::ColMajor> get_transform(const std::vector<double>& positions, const std::string & link_name, bool & success);
     Eigen::Vector3d get_rotation_axis(const Eigen::Matrix3d& R) const;
-    Eigen::Matrix3d normalize_rotation(Eigen::Matrix3d R);
+    void convert_cartesian_deltas_to_joint_deltas(const std::vector<double>& positions,
+                                          const Eigen::Matrix<double, 6,1> & cartesian_delta, std::vector<double>& joint_delta, bool & success);
 
-    // Differential IK algorithm (loads a plugin)
-    std::shared_ptr<pluginlib::ClassLoader<kinematics_interface::KinematicsBaseClass>> ik_loader_;
-    std::unique_ptr<kinematics_interface::KinematicsBaseClass> ik_;
+    // Kinematics interface plugin loader
+    std::shared_ptr<pluginlib::ClassLoader<kinematics_interface::KinematicsBaseClass>> kinematics_loader_;
+    std::unique_ptr<kinematics_interface::KinematicsBaseClass> kinematics_;
 
-    //
+    // number of robot joint
     int num_joints_;
 
+    // buffers to pass data to kinematics interface
+    std::vector<double> transform_buffer_vec;
+    std::vector<double> joint_buffer_vec;
+    std::vector<double> cart_buffer_vec;
+
+    // admittance controller values
     Eigen::Matrix<double,6,1> admittance_acceleration_;
-    std::vector<double> admittance_acceleration_vec;
     Eigen::Matrix<double,6,1> admittance_velocity_;
-    std::vector<double> admittance_velocity_vec;
     Eigen::Matrix<double,4,4,Eigen::ColMajor> admittance_position_;
-    std::vector<double> admittance_position_vec;
 
+    // transforms
     Eigen::Matrix<double,4,4,Eigen::ColMajor> cur_ee_transform;
-    std::vector<double> cur_ee_transform_vec;
-    Eigen::Matrix<double,4,4,Eigen::ColMajor> desired_ee_transform;
-    std::vector<double> desired_ee_transform_vec;
+    Eigen::Matrix<double,4,4,Eigen::ColMajor> reference_ee_transform;
     Eigen::Matrix<double,4,4,Eigen::ColMajor> cur_sensor_transform;
-    std::vector<double> cur_sensor_transform_vec;
     Eigen::Matrix<double,4,4,Eigen::ColMajor> cur_control_transform;
-    std::vector<double> cur_control_transform_vec;
     Eigen::Matrix<double,4,4,Eigen::ColMajor> cog_transform;
-    std::vector<double> cog_transform_vec;
 
+    // external force
     Eigen::Matrix<double,6,1> wrench;
-    Eigen::Matrix<double,6,1> desired_ee_vel;
+    // position of center of gravity in cog_frame
     Eigen::Matrix<double,3,1> cog_;
+    // force applied to sensor due to weight of end effector
     Eigen::Matrix<double,3,1> ee_weight;
-    std::vector<double> desired_ee_vel_vec;
 
+    // admittance controller values in joint space
     std::vector<double> joint_vel;
     std::vector<double> joint_acc;
     std::vector<double> joint_pos;
