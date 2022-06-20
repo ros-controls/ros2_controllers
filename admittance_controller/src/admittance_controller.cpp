@@ -149,7 +149,7 @@ namespace admittance_controller {
         chainable_command_interfaces.emplace_back(hardware_interface::CommandInterface(std::string(get_node()->get_name()),
                                                                          joint + "/" + interface,
                                                                                        reference_interfaces_.data() +
-                                                                                       index));
+                                                                                       index++));
       }
     }
 
