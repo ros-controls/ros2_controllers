@@ -143,27 +143,21 @@ namespace admittance_controller {
     reference_interfaces_.resize(num_chainable_interfaces, std::numeric_limits<double>::quiet_NaN());
     chainable_command_interfaces.reserve(num_chainable_interfaces);
 
+    position_reference_.clear();
+    velocity_reference_.clear();
+    std::unordered_map<std::string, std::vector<double*> *> chainable_interface_map = {
+        {hardware_interface::HW_IF_POSITION, &position_reference_},
+        {hardware_interface::HW_IF_VELOCITY, &velocity_reference_}};
+
     auto index = 0ul;
     for (const auto &interface: params.chainable_command_interface_types_) {
       for (const auto &joint: params.joint_names_) {
+        chainable_interface_map[interface]->push_back(reference_interfaces_.data() + index);
         chainable_command_interfaces.emplace_back(hardware_interface::CommandInterface(std::string(get_node()->get_name()),
                                                                          joint + "/" + interface,
                                                                                        reference_interfaces_.data() +
-                                                                                       index++));
-      }
-    }
-
-    joint_position_chainable_interface_.clear();
-    joint_velocity_chainable_interface_.clear();
-    std::unordered_map<std::string, std::vector<std::reference_wrapper<hardware_interface::CommandInterface>> *> chainable_interface_map = {
-        {hardware_interface::HW_IF_POSITION, &joint_position_chainable_interface_},
-        {hardware_interface::HW_IF_VELOCITY, &joint_velocity_chainable_interface_}
-    };
-
-    for (auto i = 0ul; i < params.chainable_command_interface_types_.size(); i++) {
-      for (auto j = 0ul; j < params.joint_names_.size(); j++) {
-        chainable_interface_map[params.chainable_command_interface_types_[i]]->emplace_back(
-            chainable_command_interfaces[i * num_joints_ + j]);
+                                                                                           index));
+        index++;
       }
     }
 
@@ -176,14 +170,14 @@ namespace admittance_controller {
 
     joint_command_msg = *rtBuffers.input_joint_command_.readFromRT();
     for (auto i = 0ul; i < joint_command_msg->positions.size(); i++) {
-      joint_position_chainable_interface_[i].get().set_value(joint_command_msg->positions[i]);
+      *position_reference_[i] = joint_command_msg->positions[i];
     }
     for (auto i = 0ul; i < joint_command_msg->velocities.size(); i++) {
-      joint_velocity_chainable_interface_[i].get().set_value(joint_command_msg->velocities[i]);
+      *velocity_reference_[i] = joint_command_msg->velocities[i];
     }
-    for (auto i = 0ul; i < joint_command_msg->accelerations.size(); i++) {
-      joint_acceleration_chainable_interface_[i].get().set_value(joint_command_msg->accelerations[i]);
-    }
+//    for (auto i = 0ul; i < joint_command_msg->accelerations.size(); i++) {
+//    *velocity_acceleration_[i] = joint_command_msg->accelerations[i];
+//    }
 
     return controller_interface::return_type::OK;
   }
@@ -487,19 +481,19 @@ namespace admittance_controller {
     // Fill fields of state argument from hardware command interfaces. If the interface does not exist or
     // the values are nan, that corresponding state field will be set to empty
 
-    state_reference.positions.resize(joint_position_chainable_interface_.size(), 0.0);
-    state_reference.velocities.resize(joint_velocity_chainable_interface_.size(), 0.0);
+    state_reference.positions.resize(position_reference_.size(), 0.0);
+    state_reference.velocities.resize(velocity_reference_.size(), 0.0);
     state_reference.accelerations.resize(joint_acceleration_chainable_interface_.size(), 0.0);
 
-    for (auto i = 0ul; i < joint_position_chainable_interface_.size(); i++) {
-      state_reference.positions[i] = joint_position_chainable_interface_[i].get().get_value();
+    for (auto i = 0ul; i < position_reference_.size(); i++) {
+      state_reference.positions[i] = *position_reference_[i];
       if (std::isnan(state_reference.positions[i])) {
         state_reference.positions = last_state_reference_.positions;
         break;
       }
     }
-    for (auto i = 0ul; i < joint_velocity_chainable_interface_.size(); i++) {
-      state_reference.velocities[i] = joint_velocity_chainable_interface_[i].get().get_value();
+    for (auto i = 0ul; i < velocity_reference_.size(); i++) {
+      state_reference.velocities[i] = *velocity_reference_[i];
       if (std::isnan(state_reference.velocities[i])) {
         state_reference.velocities = last_state_reference_.velocities;
         break;

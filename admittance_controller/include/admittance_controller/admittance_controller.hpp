@@ -120,8 +120,10 @@ protected:
     std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>> joint_position_state_interface_;
     std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>> joint_velocity_state_interface_;
     std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>> joint_acceleration_state_interface_;
-    std::vector<std::reference_wrapper<hardware_interface::CommandInterface>> joint_position_chainable_interface_;
-    std::vector<std::reference_wrapper<hardware_interface::CommandInterface>> joint_velocity_chainable_interface_;
+//    std::vector<std::reference_wrapper<hardware_interface::CommandInterface>> joint_position_chainable_interface_;
+//    std::vector<std::reference_wrapper<hardware_interface::CommandInterface>> joint_velocity_chainable_interface_;
+  std::vector<double*> position_reference_;
+  std::vector<double*> velocity_reference_;
     std::vector<std::reference_wrapper<hardware_interface::CommandInterface>> joint_acceleration_chainable_interface_;
     // Admittance rule and dependent variables;
     std::unique_ptr<admittance_controller::AdmittanceRule> admittance_;
