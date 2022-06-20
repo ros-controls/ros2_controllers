@@ -79,16 +79,22 @@ namespace admittance_controller {
     desired_ee_transform_vec.resize(16, 0.0);
     cur_sensor_transform_vec.resize(16, 0.0);
     cur_control_transform_vec.resize(16, 0.0);
+    cog_transform_vec.resize(16, 0.0);
 
     cur_ee_transform.setZero();
     desired_ee_transform.setZero();
     cur_sensor_transform.setZero();
     cur_control_transform.setZero();
+    cog_transform.setZero();
     admittance_position_.setIdentity();
     admittance_velocity_.setZero();
     admittance_acceleration_.setZero();
     wrench.setZero();
     desired_ee_vel.setZero();
+
+    memcpy(cog_.data(), parameters_.cog_.data(), 3*sizeof(double));
+    ee_weight.setZero();
+    ee_weight[2] = -parameters_.force_;
 
     return controller_interface::return_type::OK;
   }
@@ -116,10 +122,14 @@ namespace admittance_controller {
     no_failure &= ik_->calculate_link_transform(current_joint_state.positions, parameters_.control_frame_, cur_control_transform_vec);
     memcpy(cur_control_transform.data(),cur_control_transform_vec.data(), 16*sizeof(double));
 
-    auto cur_control_transform_inv = invert_transform(cur_control_transform);
-    auto cur_control_rot_inv = cur_control_transform_inv(Eigen::seq(0,2), Eigen::seq(0,2));
-    auto cur_control_rot = cur_control_transform(Eigen::seq(0,2), Eigen::seq(0,2));
-    auto cur_sensor_rot = cur_sensor_transform(Eigen::seq(0,2), Eigen::seq(0,2));
+    no_failure &= ik_->calculate_link_transform(current_joint_state.positions, parameters_.control_frame_, cog_transform_vec);
+    memcpy(cog_transform.data(),cog_transform_vec.data(), 16*sizeof(double));
+
+    Eigen::Matrix4d cur_control_transform_inv = invert_transform(cur_control_transform);
+    Eigen::Matrix3d cur_control_rot_inv = cur_control_transform_inv(Eigen::seq(0,2), Eigen::seq(0,2));
+    Eigen::Matrix3d cur_control_rot = cur_control_transform(Eigen::seq(0,2), Eigen::seq(0,2));
+    Eigen::Matrix3d cur_sensor_rot = cur_sensor_transform(Eigen::seq(0,2), Eigen::seq(0,2));
+    Eigen::Matrix3d cog_rot = cog_transform(Eigen::seq(0,2), Eigen::seq(0,2));
 
     desired_ee_vel(Eigen::seq(0,2)) = cur_control_rot_inv*desired_ee_vel(Eigen::seq(0,2));
     desired_ee_vel(Eigen::seq(3,5)) = cur_control_rot_inv*desired_ee_vel(Eigen::seq(3,5));
@@ -127,9 +137,16 @@ namespace admittance_controller {
     // apply filter and update wrench vector
     process_wrench_measurements(measured_wrench);
     // transform into control frame
+    Eigen::Vector<double,6> wrench_base;
     Eigen::Vector<double,6> wrench_control;
-    wrench_control(Eigen::seq(0, 2)) = cur_control_rot_inv * cur_sensor_rot * wrench(Eigen::seq(0, 2));
-    wrench_control(Eigen::seq(3, 5)) = cur_control_rot_inv * cur_sensor_rot * wrench(Eigen::seq(3, 5));
+    wrench_base(Eigen::seq(0, 2)) = cur_sensor_rot * wrench(Eigen::seq(0, 2));
+    wrench_base(Eigen::seq(3, 5)) = cur_sensor_rot * wrench(Eigen::seq(3, 5));
+
+    wrench_base[2] -= ee_weight[2];
+    wrench_base(Eigen::seq(3, 5)) -= (cog_rot*cog_).cross(ee_weight);
+
+    wrench_control(Eigen::seq(0, 2)) = cur_control_rot_inv * wrench_base(Eigen::seq(0, 2));
+    wrench_control(Eigen::seq(3, 5)) = cur_control_rot_inv * wrench_base(Eigen::seq(3, 5));
 
     // Compute admittance control law: F = M*a + D*v + S*(x - x_d)
     calculate_admittance_rule(wrench_control, period);

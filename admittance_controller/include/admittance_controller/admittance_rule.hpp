@@ -45,13 +45,14 @@ namespace admittance_controller {
 
   class AdmittanceParameters : public control_toolbox::ParameterHandler {
   public:
-    AdmittanceParameters() : control_toolbox::ParameterHandler("", 7, 0, 24, 6) {
+    AdmittanceParameters() : control_toolbox::ParameterHandler("", 7, 0, 28, 7) {
       add_string_parameter("IK.base", false);
       add_string_parameter("IK.group_name", false);
       add_string_parameter("IK.plugin_name", false);
       add_string_parameter("control_frame", true);
       add_string_parameter("sensor_frame", false);
       add_string_parameter("end_effector_name", false);
+      add_string_parameter("CoG.frame", false);
 
       add_bool_parameter("open_loop_control", true);
       add_bool_parameter("enable_parameter_update_without_reactivation", false);
@@ -87,6 +88,11 @@ namespace admittance_controller {
       add_double_parameter("admittance.damping_ratio.rx", true);
       add_double_parameter("admittance.damping_ratio.ry", true);
       add_double_parameter("admittance.damping_ratio.rz", true);
+
+      add_double_parameter("CoG.x", false);
+      add_double_parameter("CoG.y", false);
+      add_double_parameter("CoG.z", false);
+      add_double_parameter("CoG.force", false);
     }
 
     bool check_if_parameters_are_valid() override {
@@ -174,7 +180,11 @@ namespace admittance_controller {
       end_effector_name_ = string_parameters_[5].second;
       RCUTILS_LOG_INFO_NAMED(
           logger_name_.c_str(),
-          "Sensor frame: %s", sensor_frame_.c_str());
+          "end effector name: %s", sensor_frame_.c_str());
+      cog_frame_ = string_parameters_[6].second;
+      RCUTILS_LOG_INFO_NAMED(
+          logger_name_.c_str(),
+          "COG frame: %s", cog_frame_.c_str());
 
       open_loop_control_ = bool_parameters_[0].second;
       RCUTILS_LOG_INFO_NAMED(
@@ -210,8 +220,18 @@ namespace admittance_controller {
             logger_name_.c_str(),
             "Damping_ratio for the axis %zu is %e", i, damping_ratio_[i]);
       }
-
       convert_damping_ratio_to_damping();
+
+      for (int i = 0; i < 3; i++){
+        cog_[i] = double_parameters_[24 + i].second;
+        RCUTILS_LOG_INFO_NAMED(
+            logger_name_.c_str(),
+            "Damping_ratio for the axis %zu is %e", i, cog_[i]);
+      }
+      force_ = double_parameters_[27].second;
+      RCUTILS_LOG_INFO_NAMED(
+          logger_name_.c_str(),
+          "CoG force %e", force_);
     }
 
     // IK parameters
@@ -224,15 +244,18 @@ namespace admittance_controller {
     // Admittance calculations (displacement etc) are done in this frame.
     // Frame where wrench measurements are taken
     std::string sensor_frame_;
+    std::string cog_frame_;
 
     bool open_loop_control_;
     bool enable_parameter_update_without_reactivation_;
 
     std::array<double, 6> damping_;
     std::array<double, 6> damping_ratio_;
+    std::array<double, 3> cog_;
     std::array<double, 6> mass_;
     std::array<bool, 6> selected_axes_;
     std::array<double, 6> stiffness_;
+    double force_;
   };
 
 
@@ -342,10 +365,13 @@ namespace admittance_controller {
     std::vector<double> cur_sensor_transform_vec;
     Eigen::Matrix<double,4,4,Eigen::ColMajor> cur_control_transform;
     std::vector<double> cur_control_transform_vec;
+    Eigen::Matrix<double,4,4,Eigen::ColMajor> cog_transform;
+    std::vector<double> cog_transform_vec;
 
     Eigen::Vector<double, 6> wrench;
-
     Eigen::Vector<double, 6> desired_ee_vel;
+    Eigen::Vector<double, 3> cog_;
+    Eigen::Vector<double, 3> ee_weight;
     std::vector<double> desired_ee_vel_vec;
 
     std::vector<double> joint_vel;
