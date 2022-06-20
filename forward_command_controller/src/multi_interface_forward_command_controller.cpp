@@ -14,6 +14,7 @@
 
 #include "forward_command_controller/multi_interface_forward_command_controller.hpp"
 
+
 #include <string>
 #include <vector>
 
@@ -57,8 +58,12 @@ controller_interface::CallbackReturn MultiInterfaceForwardCommandController::rea
 
 }  // namespace forward_command_controller
 
+
 #include "pluginlib/class_list_macros.hpp"
 
 PLUGINLIB_EXPORT_CLASS(
   forward_command_controller::MultiInterfaceForwardCommandController,
   controller_interface::ControllerInterface)
+PLUGINLIB_EXPORT_CLASS(
+  forward_command_controller::ChainableMultiInterfaceForwardCommandController,
+  controller_interface::ChainableControllerInterface)

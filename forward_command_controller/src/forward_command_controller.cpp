@@ -69,3 +69,6 @@ controller_interface::CallbackReturn ForwardCommandController::read_parameters()
 
 PLUGINLIB_EXPORT_CLASS(
   forward_command_controller::ForwardCommandController, controller_interface::ControllerInterface)
+PLUGINLIB_EXPORT_CLASS(
+  forward_command_controller::ChainableForwardCommandController,
+  controller_interface::ChainableControllerInterface)

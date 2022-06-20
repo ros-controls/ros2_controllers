@@ -1,4 +1,5 @@
-// Copyright 2020 PAL Robotics SL.
+// Copyright (c) 2021, PickNik, Inc.
+// Copyright (c) 2021, Stogl Robotics Consulting UG (haftungsbeschränkt) (template)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,7 +23,7 @@
 #include "rclcpp/utilities.hpp"
 #include "ros2_control_test_assets/descriptions.hpp"
 
-TEST(TestLoadForwardCommandController, load_controller)
+TEST(TestLoadMultiInterfaceForwardController, load_controller)
 {
   rclcpp::init(0, nullptr);
 
@@ -34,11 +35,7 @@ TEST(TestLoadForwardCommandController, load_controller)
       ros2_control_test_assets::minimal_robot_urdf),
     executor, "test_controller_manager");
 
-  cm.load_controller(
-    "test_forward_command_controller", "forward_command_controller/ForwardCommandController");
-
   ASSERT_NO_THROW(cm.load_controller(
-    "test_forward_command_controller", "forward_command_controller/ForwardCommandController"));
-
-  rclcpp::shutdown();
+    "test_forward_command_controller",
+    "forward_command_controller/ChainedMultiInterfaceForwardCommandController"));
 }

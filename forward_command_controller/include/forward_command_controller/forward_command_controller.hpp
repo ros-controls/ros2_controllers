@@ -18,8 +18,11 @@
 #include <string>
 #include <vector>
 
+#include "forward_command_controller/chainable_forward_controller.hpp"
+#include "forward_command_controller/forward_controller.hpp"
 #include "forward_command_controller/forward_controllers_base.hpp"
 #include "forward_command_controller/visibility_control.h"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
 
 namespace forward_command_controller
 {
@@ -34,18 +37,77 @@ namespace forward_command_controller
  * Subscribes to:
  * - \b commands (std_msgs::msg::Float64MultiArray) : The commands to apply.
  */
-class ForwardCommandController : public ForwardControllersBase
+template <
+  typename T,
+  typename std::enable_if<
+    std::is_convertible<T *, forward_command_controller::ForwardControllersBase *>::value,
+    T>::type * = nullptr,
+  typename std::enable_if<
+    std::is_convertible<T *, controller_interface::ControllerInterfaceBase *>::value, T>::type * =
+    nullptr>
+class BaseForwardCommandController : public T
 {
 public:
   FORWARD_COMMAND_CONTROLLER_PUBLIC
-  ForwardCommandController();
+  BaseForwardCommandController() : T() {}
 
 protected:
-  void declare_parameters() override;
-  controller_interface::CallbackReturn read_parameters() override;
+  void declare_parameters() override
+  {
+    controller_interface::ControllerInterfaceBase::auto_declare<std::vector<std::string>>(
+      "joints", std::vector<std::string>());
+    controller_interface::ControllerInterfaceBase::auto_declare<std::string>("interface_name", "");
+  };
+
+  controller_interface::CallbackReturn read_parameters() override
+  {
+    joint_names_ = T::get_node()->get_parameter("joints").as_string_array();
+
+    if (joint_names_.empty())
+    {
+      RCLCPP_ERROR(T::get_node()->get_logger(), "'joints' parameter was empty");
+      return controller_interface::CallbackReturn::ERROR;
+    }
+
+    // Specialized, child controllers set interfaces before calling configure function.
+    if (interface_name_.empty())
+    {
+      interface_name_ = T::get_node()->get_parameter("interface_name").as_string();
+    }
+
+    if (interface_name_.empty())
+    {
+      RCLCPP_ERROR(T::get_node()->get_logger(), "'interface_name' parameter was empty");
+      return controller_interface::CallbackReturn::ERROR;
+    }
+
+    for (const auto & joint : joint_names_)
+    {
+      T::command_interface_names_.push_back(joint + "/" + interface_name_);
+    }
+
+    return controller_interface::CallbackReturn::SUCCESS;
+  };
 
   std::vector<std::string> joint_names_;
   std::string interface_name_;
+};
+
+class ForwardCommandController : public BaseForwardCommandController<ForwardController>
+{
+public:
+  FORWARD_COMMAND_CONTROLLER_PUBLIC
+  ForwardCommandController() : BaseForwardCommandController<ForwardController>() {}
+};
+
+class ChainableForwardCommandController
+: public BaseForwardCommandController<ChainableForwardController>
+{
+public:
+  FORWARD_COMMAND_CONTROLLER_PUBLIC
+  ChainableForwardCommandController() : BaseForwardCommandController<ChainableForwardController>()
+  {
+  }
 };
 
 }  // namespace forward_command_controller
