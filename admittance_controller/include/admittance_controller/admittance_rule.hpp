@@ -297,8 +297,7 @@ namespace admittance_controller {
     AdmittanceParameters parameters_;
 
     // Filter parameter for exponential smoothing
-    const double alpha = 0.1; // TODO make a ros param
-
+    const double alpha = 0.1;//0.005; // TODO make a ros param
 
 
   protected:
@@ -306,13 +305,13 @@ namespace admittance_controller {
      * All values are in the controller frame
      */
     void calculate_admittance_rule(
-        const Eigen::Matrix<double,6,1> &wrench,
-        const Eigen::Matrix<double,6,1> &desired_vel,
+        const Eigen::Matrix<double,3,2> &wrench,
+        const Eigen::Matrix<double,3,2> &desired_vel,
         const double dt
     );
 
-    Eigen::Matrix<double, 6,1> process_wrench_measurements(
-        const geometry_msgs::msg::Wrench &measured_wrench, const Eigen::Matrix<double, 6,1>& last_wrench
+    Eigen::Matrix<double, 3, 2> process_wrench_measurements(
+        const geometry_msgs::msg::Wrench &measured_wrench, const Eigen::Matrix<double, 3, 2>& last_wrench
     );
 
     void normalize_rotation(Eigen::Matrix<double,3,3,Eigen::ColMajor>& R);
@@ -320,8 +319,10 @@ namespace admittance_controller {
     Eigen::Matrix<double,4,4,Eigen::ColMajor> get_transform(const std::vector<double>& positions, const std::string & link_name, bool & success);
     Eigen::Vector3d get_rotation_axis(const Eigen::Matrix3d& R) const;
     void convert_cartesian_deltas_to_joint_deltas(const std::vector<double>& positions,
-                                          const Eigen::Matrix<double, 6,1> & cartesian_delta, std::vector<double>& joint_delta, bool & success);
-
+                                          const Eigen::Matrix<double, 3,2> & cartesian_delta, std::vector<double>& joint_delta, bool & success);
+    Eigen::Matrix<double, 3, 2>  convert_joint_deltas_to_cartesian_deltas(const std::vector<double> &positions,
+                                                                  const std::vector<double> &joint_delta,
+                                                                  bool &success);
     // Kinematics interface plugin loader
     std::shared_ptr<pluginlib::ClassLoader<kinematics_interface::KinematicsBaseClass>> kinematics_loader_;
     std::unique_ptr<kinematics_interface::KinematicsBaseClass> kinematics_;
@@ -335,8 +336,8 @@ namespace admittance_controller {
     std::vector<double> cart_buffer_vec;
 
     // admittance controller values
-    Eigen::Matrix<double,6,1> admittance_acceleration_;
-    Eigen::Matrix<double,6,1> admittance_velocity_;
+    Eigen::Matrix<double,3,2> admittance_acceleration_;
+    Eigen::Matrix<double,3,2> admittance_velocity_;
     Eigen::Matrix<double,4,4,Eigen::ColMajor> admittance_position_;
 
     // transforms
@@ -347,7 +348,7 @@ namespace admittance_controller {
     Eigen::Matrix<double,4,4,Eigen::ColMajor> cog_transform;
 
     // external force
-    Eigen::Matrix<double,6,1> wrench;
+    Eigen::Matrix<double,3,2> wrench_;
     // position of center of gravity in cog_frame
     Eigen::Matrix<double,3,1> cog_;
     // force applied to sensor due to weight of end effector
