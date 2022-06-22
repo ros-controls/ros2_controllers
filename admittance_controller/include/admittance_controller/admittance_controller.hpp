@@ -46,34 +46,27 @@
 
 using namespace std::chrono_literals;
 
-namespace admittance_controller
-{
-    using ControllerStateMsg = control_msgs::msg::AdmittanceControllerState;
-    using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
+namespace admittance_controller {
+  using ControllerStateMsg = control_msgs::msg::AdmittanceControllerState;
+  using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
-    struct RTBuffers{
-        realtime_tools::RealtimeBuffer<std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint>> input_joint_command_;
-        std::unique_ptr<realtime_tools::RealtimePublisher<ControllerStateMsg>> state_publisher_;
-    };
+  struct RTBuffers {
+    realtime_tools::RealtimeBuffer<std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint>> input_joint_command_;
+    std::unique_ptr<realtime_tools::RealtimePublisher<ControllerStateMsg>> state_publisher_;
+  };
 
-    struct ParameterStruct{
-        std::vector<std::string> joint_names_;
-        std::vector<std::string> command_interface_types_;
-        std::vector<std::string> state_interface_types_;
-      std::vector<std::string> chainable_command_interface_types_;
-      std::string ft_sensor_name_;
-        bool use_joint_commands_as_input_;
-        std::string joint_limiter_type_;
-        bool allow_partial_joints_goal_;
-        bool allow_integration_in_goal_trajectories_;
-        double action_monitor_rate_;
-        bool open_loop_control_;
-    };
+  struct ParameterStruct {
+    std::vector<std::string> joint_names_;
+    std::vector<std::string> command_interface_types_;
+    std::vector<std::string> state_interface_types_;
+    std::vector<std::string> chainable_command_interface_types_;
+    std::string ft_sensor_name_;
+    std::string joint_limiter_type_;
+  };
 
 
-class AdmittanceController : public controller_interface::ChainableControllerInterface
-{
-public:
+  class AdmittanceController : public controller_interface::ChainableControllerInterface {
+  public:
     ADMITTANCE_CONTROLLER_PUBLIC
     AdmittanceController();
 
@@ -87,28 +80,30 @@ public:
     controller_interface::InterfaceConfiguration state_interface_configuration() const override;
 
     ADMITTANCE_CONTROLLER_PUBLIC
-    CallbackReturn on_configure(const rclcpp_lifecycle::State & previous_state) override;
+    CallbackReturn on_configure(const rclcpp_lifecycle::State &previous_state) override;
 
     ADMITTANCE_CONTROLLER_PUBLIC
-    CallbackReturn on_activate(const rclcpp_lifecycle::State & previous_state) override;
+    CallbackReturn on_activate(const rclcpp_lifecycle::State &previous_state) override;
 
     ADMITTANCE_CONTROLLER_PUBLIC
-    CallbackReturn on_deactivate(const rclcpp_lifecycle::State & previous_state) override;
+    CallbackReturn on_deactivate(const rclcpp_lifecycle::State &previous_state) override;
 
     ADMITTANCE_CONTROLLER_PUBLIC
-    CallbackReturn on_cleanup(const rclcpp_lifecycle::State & previous_state) override;
+    CallbackReturn on_cleanup(const rclcpp_lifecycle::State &previous_state) override;
 
     ADMITTANCE_CONTROLLER_PUBLIC
-    CallbackReturn on_error(const rclcpp_lifecycle::State & previous_state) override;
+    CallbackReturn on_error(const rclcpp_lifecycle::State &previous_state) override;
 
     ADMITTANCE_CONTROLLER_PUBLIC
     controller_interface::return_type update_and_write_commands(
-            const rclcpp::Time & time, const rclcpp::Duration & period) override;
+        const rclcpp::Time &time, const rclcpp::Duration &period) override;
 
 
-protected:
+  protected:
     std::vector<hardware_interface::CommandInterface> on_export_reference_interfaces() override;
-    controller_interface::return_type  update_reference_from_subscribers() override;
+
+    controller_interface::return_type update_reference_from_subscribers() override;
+
     bool on_set_chained_mode(bool chained_mode) override;
 
     int num_joints_{};
@@ -121,8 +116,8 @@ protected:
     std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>> joint_velocity_state_interface_;
     std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>> joint_acceleration_state_interface_;
 
-  std::vector<double*> position_reference_;
-  std::vector<double*> velocity_reference_;
+    std::vector<double *> position_reference_;
+    std::vector<double *> velocity_reference_;
 
     // Admittance rule and dependent variables;
     std::unique_ptr<admittance_controller::AdmittanceRule> admittance_;
@@ -132,7 +127,7 @@ protected:
     ParameterStruct params;
     // ROS subscribers
     rclcpp::Subscription<trajectory_msgs::msg::JointTrajectoryPoint>::SharedPtr input_joint_command_subscriber_ = nullptr;
-    rclcpp::Publisher<control_msgs::msg::AdmittanceControllerState>::SharedPtr  s_publisher_ = nullptr;
+    rclcpp::Publisher<control_msgs::msg::AdmittanceControllerState>::SharedPtr s_publisher_ = nullptr;
     // ROS messages
     std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint> joint_command_msg;
     // real-time buffer
@@ -141,8 +136,8 @@ protected:
     // controller running state
     bool controller_is_active_{};
     const std::set<std::string> allowed_state_interface_types_ = {
-            hardware_interface::HW_IF_POSITION,
-            hardware_interface::HW_IF_VELOCITY,
+        hardware_interface::HW_IF_POSITION,
+        hardware_interface::HW_IF_VELOCITY,
     };
     trajectory_msgs::msg::JointTrajectoryPoint last_commanded_state_;
     trajectory_msgs::msg::JointTrajectoryPoint last_state_reference_;
@@ -150,17 +145,20 @@ protected:
     trajectory_msgs::msg::JointTrajectoryPoint prev_trajectory_point_;
     // control loop data
     trajectory_msgs::msg::JointTrajectoryPoint state_reference_, state_current_, state_desired_,
-            state_error_;
+        state_error_;
     trajectory_msgs::msg::JointTrajectory pre_admittance_point;
     std::vector<double> open_loop_buffer;
 
     // helper methods
     void joint_command_callback(const std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint> msg);
-    void read_state_from_hardware(trajectory_msgs::msg::JointTrajectoryPoint & state);
-    void read_state_from_command_interfaces(trajectory_msgs::msg::JointTrajectoryPoint & state);
-    void read_state_reference_interfaces(trajectory_msgs::msg::JointTrajectoryPoint & state);
 
-};
+    void read_state_from_hardware(trajectory_msgs::msg::JointTrajectoryPoint &state);
+
+    void read_state_from_command_interfaces(trajectory_msgs::msg::JointTrajectoryPoint &state);
+
+    void read_state_reference_interfaces(trajectory_msgs::msg::JointTrajectoryPoint &state);
+
+  };
 
 }  // namespace admittance_controller
 

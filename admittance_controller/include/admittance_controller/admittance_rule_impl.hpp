@@ -122,16 +122,10 @@ namespace admittance_controller {
     auto cog_rot = cog_transform.block<3, 3>(0, 0);
 
     // apply filter and update wrench_ vector
-    wrench_ = process_wrench_measurements(measured_wrench, wrench_);
-
-    // transform wrench_ into base frame
-    Eigen::Matrix<double, 3, 2> wrench_base = cur_sensor_rot * wrench_;
-    // apply gravity compensation
-    wrench_base(2, 0) -= ee_weight[2];
-    wrench_base.block<3, 1>(0, 1) -= (cog_rot * cog_).cross(ee_weight);
+     process_wrench_measurements(measured_wrench, cur_sensor_rot, cog_rot);
 
     // transform wrench_ into control frame
-    Eigen::Matrix<double, 3, 2> wrench_control = cur_control_rot_inv * wrench_base;
+    Eigen::Matrix<double, 3, 2> wrench_control = cur_control_rot_inv * wrench_;
 
     // calculate desired cartesian velocity in control frame
     Eigen::Matrix<double, 3, 2> desired_vel = convert_joint_deltas_to_cartesian_deltas(current_joint_state.positions, current_joint_state.velocities,
@@ -345,6 +339,7 @@ namespace admittance_controller {
     Eigen::Matrix<double, 3, 2> cartesian_delta;
     success &= kinematics_->convert_joint_deltas_to_cartesian_deltas(positions, joint_delta, cart_buffer_vec);
     memcpy(cartesian_delta.data(), cart_buffer_vec.data(),  6 * sizeof(double));
+    return cartesian_delta;
   }
 
   controller_interface::return_type AdmittanceRule::get_controller_state(
@@ -367,26 +362,30 @@ namespace admittance_controller {
     return controller_interface::return_type::OK;
   }
 
-  Eigen::Matrix<double, 3, 2> AdmittanceRule::process_wrench_measurements(
-      const geometry_msgs::msg::Wrench &measured_wrench, const Eigen::Matrix<double, 3, 2> &last_wrench
+  void AdmittanceRule::process_wrench_measurements(
+      const geometry_msgs::msg::Wrench &measured_wrench, const Eigen::Matrix<double, 3, 3> &cur_sensor_rot, const Eigen::Matrix<double, 3, 3>& cog_rot
   ) {
-    Eigen::Matrix<double, 3, 2> new_wrench;
+    Eigen::Matrix<double, 3, 2, Eigen::ColMajor> new_wrench;
+  new_wrench(0,0) = measured_wrench.force.x;
+  new_wrench(1,0) = measured_wrench.force.y;
+  new_wrench(2,0) = measured_wrench.force.z;
+  new_wrench(0,1) = measured_wrench.torque.x;
+  new_wrench(1,1) = measured_wrench.torque.y;
+  new_wrench(2,1) = measured_wrench.torque.z;
 
-    new_wrench(0,0) = filters::exponentialSmoothing(
-        measured_wrench.force.x, last_wrench(0,0), alpha);
-    new_wrench(1,0) = filters::exponentialSmoothing(
-        measured_wrench.force.y, last_wrench(1,0), alpha);
-    new_wrench(2,0) = filters::exponentialSmoothing(
-        measured_wrench.force.z, last_wrench(2,0), alpha);
-    new_wrench(0,1) = filters::exponentialSmoothing(
-        measured_wrench.torque.x, last_wrench(0,1), alpha);
-    new_wrench(1,1) = filters::exponentialSmoothing(
-        measured_wrench.torque.y, last_wrench(1,1), alpha);
-    new_wrench(2,1) = filters::exponentialSmoothing(
-        measured_wrench.torque.z, last_wrench(2,1), alpha);
-    return new_wrench;
+    // transform to base frame
+    Eigen::Matrix<double, 3, 2> new_wrench_base = cur_sensor_rot * new_wrench;
 
-  }
+    // apply gravity compensation
+    new_wrench_base(2, 0) -= ee_weight[2];
+    new_wrench_base.block<3, 1>(0, 1) -= (cog_rot * cog_).cross(ee_weight);
+
+    for (auto i = 0; i < 6; i++){
+      wrench_(i) = filters::exponentialSmoothing(
+          new_wrench_base(i), wrench_(i), alpha);
+    }
+
+     }
 
 }  // namespace admittance_controller
 

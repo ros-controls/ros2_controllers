@@ -297,7 +297,7 @@ namespace admittance_controller {
     AdmittanceParameters parameters_;
 
     // Filter parameter for exponential smoothing
-    const double alpha = 0.1;//0.005; // TODO make a ros param
+    const double alpha = 0.005; // TODO make a ros param
 
 
   protected:
@@ -310,8 +310,8 @@ namespace admittance_controller {
         const double dt
     );
 
-    Eigen::Matrix<double, 3, 2> process_wrench_measurements(
-        const geometry_msgs::msg::Wrench &measured_wrench, const Eigen::Matrix<double, 3, 2>& last_wrench
+    void process_wrench_measurements(
+        const geometry_msgs::msg::Wrench &measured_wrench, const Eigen::Matrix<double, 3, 3>& sensor_rot, const Eigen::Matrix<double, 3, 3>& cog_rot
     );
 
     void normalize_rotation(Eigen::Matrix<double,3,3,Eigen::ColMajor>& R);
