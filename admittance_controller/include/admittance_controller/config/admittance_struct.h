@@ -8,7 +8,7 @@
 namespace admittance_struct_parameters {
 
   struct admittance_struct {
-    // if true, prevent config from updating
+    // if true, prevent parameters from updating
     bool lock_params_ = false;
     std::shared_ptr<rclcpp::node_interfaces::OnSetParametersCallbackHandle> handle_;
 
@@ -30,6 +30,7 @@ namespace admittance_struct_parameters {
       std::string base_ = "base_link";
       std::string tip_ = "ee_link";
       std::string group_name_ = "ur5e_manipulator";
+      double alpha_ = 5e-06;
     } kinematics_;
     struct ft_sensor {
       std::string name_ = "tcp_fts_sensor";
@@ -37,6 +38,7 @@ namespace admittance_struct_parameters {
         std::string id_ = "ee_link";
         bool external_ = false;
       } frame_;
+      double filter_coefficient_ = 0.005;
     } ft_sensor_;
     struct control {
       struct frame {
@@ -65,6 +67,7 @@ namespace admittance_struct_parameters {
       std::vector<double> stiffness_ = {50.0, 50.0, 50.0, 1.0, 1.0, 1.0};
     } admittance_;
     bool enable_parameter_update_without_reactivation_ = false;
+    bool use_feedforward_commanded_input_ = true;
     std::string joint_limiter_type_ = "joint_limits/SimpleJointLimiter";
     double state_publish_rate_ = 200.0;
 
@@ -73,7 +76,7 @@ namespace admittance_struct_parameters {
       rcl_interfaces::msg::SetParametersResult result;
       result.successful = !lock_params_;
       if (lock_params_) {
-        result.reason = "The config can not be updated because they are currently locked.";
+        result.reason = "The parameters can not be updated because they are currently locked.";
         return result;
       }
 
@@ -91,65 +94,74 @@ namespace admittance_struct_parameters {
         if (param.get_name() == "chainable_command_interfaces") {
           chainable_command_interfaces_ = param.as_string_array();
         }
-        if (param.get_name() == "plugin_name") {
+        if (param.get_name() == "kinematics.plugin_name") {
           kinematics_.plugin_name_ = param.as_string();
         }
-        if (param.get_name() == "base") {
+        if (param.get_name() == "kinematics.base") {
           kinematics_.base_ = param.as_string();
         }
-        if (param.get_name() == "tip") {
+        if (param.get_name() == "kinematics.tip") {
           kinematics_.tip_ = param.as_string();
         }
-        if (param.get_name() == "group_name") {
+        if (param.get_name() == "kinematics.group_name") {
           kinematics_.group_name_ = param.as_string();
         }
-        if (param.get_name() == "name") {
+        if (param.get_name() == "kinematics.alpha") {
+          kinematics_.alpha_ = param.as_double();
+        }
+        if (param.get_name() == "ft_sensor.name") {
           ft_sensor_.name_ = param.as_string();
         }
-        if (param.get_name() == "id") {
+        if (param.get_name() == "ft_sensor.frame.id") {
           ft_sensor_.frame_.id_ = param.as_string();
         }
-        if (param.get_name() == "external") {
+        if (param.get_name() == "ft_sensor.frame.external") {
           ft_sensor_.frame_.external_ = param.as_bool();
         }
-        if (param.get_name() == "id") {
+        if (param.get_name() == "ft_sensor.filter_coefficient") {
+          ft_sensor_.filter_coefficient_ = param.as_double();
+        }
+        if (param.get_name() == "control.frame.id") {
           control_.frame_.id_ = param.as_string();
         }
-        if (param.get_name() == "external") {
+        if (param.get_name() == "control.frame.external") {
           control_.frame_.external_ = param.as_bool();
         }
-        if (param.get_name() == "id") {
+        if (param.get_name() == "fixed_world_frame.id") {
           fixed_world_frame_.id_ = param.as_string();
         }
-        if (param.get_name() == "external") {
+        if (param.get_name() == "fixed_world_frame.external") {
           fixed_world_frame_.external_ = param.as_bool();
         }
-        if (param.get_name() == "id") {
+        if (param.get_name() == "gravity_compensation.frame.id") {
           gravity_compensation_.frame_.id_ = param.as_string();
         }
-        if (param.get_name() == "external") {
+        if (param.get_name() == "gravity_compensation.frame.external") {
           gravity_compensation_.frame_.external_ = param.as_bool();
         }
-        if (param.get_name() == "pos") {
+        if (param.get_name() == "gravity_compensation.CoG.pos") {
           gravity_compensation_.CoG_.pos_ = param.as_double_array();
         }
-        if (param.get_name() == "force") {
+        if (param.get_name() == "gravity_compensation.CoG.force") {
           gravity_compensation_.CoG_.force_ = param.as_double();
         }
-        if (param.get_name() == "selected_axes") {
+        if (param.get_name() == "admittance.selected_axes") {
           admittance_.selected_axes_ = param.as_bool_array();
         }
-        if (param.get_name() == "mass") {
+        if (param.get_name() == "admittance.mass") {
           admittance_.mass_ = param.as_double_array();
         }
-        if (param.get_name() == "damping_ratio") {
+        if (param.get_name() == "admittance.damping_ratio") {
           admittance_.damping_ratio_ = param.as_double_array();
         }
-        if (param.get_name() == "stiffness") {
+        if (param.get_name() == "admittance.stiffness") {
           admittance_.stiffness_ = param.as_double_array();
         }
         if (param.get_name() == "enable_parameter_update_without_reactivation") {
           enable_parameter_update_without_reactivation_ = param.as_bool();
+        }
+        if (param.get_name() == "use_feedforward_commanded_input") {
+          use_feedforward_commanded_input_ = param.as_bool();
         }
         if (param.get_name() == "joint_limiter_type") {
           joint_limiter_type_ = param.as_string();
@@ -166,113 +178,190 @@ namespace admittance_struct_parameters {
       if (!parameters_interface->has_parameter("joints")) {
         auto p_joints = rclcpp::ParameterValue(joints_);
         parameters_interface->declare_parameter("joints", p_joints);
+      } else {
+        joints_ = parameters_interface->get_parameter("joints").as_string_array();
       }
       if (!parameters_interface->has_parameter("command_interfaces")) {
         auto p_command_interfaces = rclcpp::ParameterValue(command_interfaces_);
         parameters_interface->declare_parameter("command_interfaces", p_command_interfaces);
+      } else {
+        command_interfaces_ = parameters_interface->get_parameter("command_interfaces").as_string_array();
       }
       if (!parameters_interface->has_parameter("state_interfaces")) {
         auto p_state_interfaces = rclcpp::ParameterValue(state_interfaces_);
         parameters_interface->declare_parameter("state_interfaces", p_state_interfaces);
+      } else {
+        state_interfaces_ = parameters_interface->get_parameter("state_interfaces").as_string_array();
       }
       if (!parameters_interface->has_parameter("chainable_command_interfaces")) {
         auto p_chainable_command_interfaces = rclcpp::ParameterValue(chainable_command_interfaces_);
         parameters_interface->declare_parameter("chainable_command_interfaces", p_chainable_command_interfaces);
+      } else {
+        chainable_command_interfaces_ = parameters_interface->get_parameter(
+            "chainable_command_interfaces").as_string_array();
       }
       if (!parameters_interface->has_parameter("kinematics.plugin_name")) {
         auto p_kinematics_plugin_name = rclcpp::ParameterValue(kinematics_.plugin_name_);
         parameters_interface->declare_parameter("kinematics.plugin_name", p_kinematics_plugin_name);
+      } else {
+        kinematics_.plugin_name_ = parameters_interface->get_parameter("kinematics.plugin_name").as_string();
       }
       if (!parameters_interface->has_parameter("kinematics.base")) {
         auto p_kinematics_base = rclcpp::ParameterValue(kinematics_.base_);
         parameters_interface->declare_parameter("kinematics.base", p_kinematics_base);
+      } else {
+        kinematics_.base_ = parameters_interface->get_parameter("kinematics.base").as_string();
       }
       if (!parameters_interface->has_parameter("kinematics.tip")) {
         auto p_kinematics_tip = rclcpp::ParameterValue(kinematics_.tip_);
         parameters_interface->declare_parameter("kinematics.tip", p_kinematics_tip);
+      } else {
+        kinematics_.tip_ = parameters_interface->get_parameter("kinematics.tip").as_string();
       }
       if (!parameters_interface->has_parameter("kinematics.group_name")) {
         auto p_kinematics_group_name = rclcpp::ParameterValue(kinematics_.group_name_);
         parameters_interface->declare_parameter("kinematics.group_name", p_kinematics_group_name);
+      } else {
+        kinematics_.group_name_ = parameters_interface->get_parameter("kinematics.group_name").as_string();
+      }
+      if (!parameters_interface->has_parameter("kinematics.alpha")) {
+        auto p_kinematics_alpha = rclcpp::ParameterValue(kinematics_.alpha_);
+        parameters_interface->declare_parameter("kinematics.alpha", p_kinematics_alpha);
+      } else {
+        kinematics_.alpha_ = parameters_interface->get_parameter("kinematics.alpha").as_double();
       }
       if (!parameters_interface->has_parameter("ft_sensor.name")) {
         auto p_ft_sensor_name = rclcpp::ParameterValue(ft_sensor_.name_);
         parameters_interface->declare_parameter("ft_sensor.name", p_ft_sensor_name);
+      } else {
+        ft_sensor_.name_ = parameters_interface->get_parameter("ft_sensor.name").as_string();
       }
       if (!parameters_interface->has_parameter("ft_sensor.frame.id")) {
         auto p_ft_sensor_frame_id = rclcpp::ParameterValue(ft_sensor_.frame_.id_);
         parameters_interface->declare_parameter("ft_sensor.frame.id", p_ft_sensor_frame_id);
+      } else {
+        ft_sensor_.frame_.id_ = parameters_interface->get_parameter("ft_sensor.frame.id").as_string();
       }
       if (!parameters_interface->has_parameter("ft_sensor.frame.external")) {
         auto p_ft_sensor_frame_external = rclcpp::ParameterValue(ft_sensor_.frame_.external_);
         parameters_interface->declare_parameter("ft_sensor.frame.external", p_ft_sensor_frame_external);
+      } else {
+        ft_sensor_.frame_.external_ = parameters_interface->get_parameter("ft_sensor.frame.external").as_bool();
+      }
+      if (!parameters_interface->has_parameter("ft_sensor.filter_coefficient")) {
+        auto p_ft_sensor_filter_coefficient = rclcpp::ParameterValue(ft_sensor_.filter_coefficient_);
+        parameters_interface->declare_parameter("ft_sensor.filter_coefficient", p_ft_sensor_filter_coefficient);
+      } else {
+        ft_sensor_.filter_coefficient_ = parameters_interface->get_parameter(
+            "ft_sensor.filter_coefficient").as_double();
       }
       if (!parameters_interface->has_parameter("control.frame.id")) {
         auto p_control_frame_id = rclcpp::ParameterValue(control_.frame_.id_);
         parameters_interface->declare_parameter("control.frame.id", p_control_frame_id);
+      } else {
+        control_.frame_.id_ = parameters_interface->get_parameter("control.frame.id").as_string();
       }
       if (!parameters_interface->has_parameter("control.frame.external")) {
         auto p_control_frame_external = rclcpp::ParameterValue(control_.frame_.external_);
         parameters_interface->declare_parameter("control.frame.external", p_control_frame_external);
+      } else {
+        control_.frame_.external_ = parameters_interface->get_parameter("control.frame.external").as_bool();
       }
       if (!parameters_interface->has_parameter("fixed_world_frame.id")) {
         auto p_fixed_world_frame_id = rclcpp::ParameterValue(fixed_world_frame_.id_);
         parameters_interface->declare_parameter("fixed_world_frame.id", p_fixed_world_frame_id);
+      } else {
+        fixed_world_frame_.id_ = parameters_interface->get_parameter("fixed_world_frame.id").as_string();
       }
       if (!parameters_interface->has_parameter("fixed_world_frame.external")) {
         auto p_fixed_world_frame_external = rclcpp::ParameterValue(fixed_world_frame_.external_);
         parameters_interface->declare_parameter("fixed_world_frame.external", p_fixed_world_frame_external);
+      } else {
+        fixed_world_frame_.external_ = parameters_interface->get_parameter("fixed_world_frame.external").as_bool();
       }
       if (!parameters_interface->has_parameter("gravity_compensation.frame.id")) {
         auto p_gravity_compensation_frame_id = rclcpp::ParameterValue(gravity_compensation_.frame_.id_);
         parameters_interface->declare_parameter("gravity_compensation.frame.id", p_gravity_compensation_frame_id);
+      } else {
+        gravity_compensation_.frame_.id_ = parameters_interface->get_parameter(
+            "gravity_compensation.frame.id").as_string();
       }
       if (!parameters_interface->has_parameter("gravity_compensation.frame.external")) {
         auto p_gravity_compensation_frame_external = rclcpp::ParameterValue(gravity_compensation_.frame_.external_);
         parameters_interface->declare_parameter("gravity_compensation.frame.external",
                                                 p_gravity_compensation_frame_external);
+      } else {
+        gravity_compensation_.frame_.external_ = parameters_interface->get_parameter(
+            "gravity_compensation.frame.external").as_bool();
       }
       if (!parameters_interface->has_parameter("gravity_compensation.CoG.pos")) {
         auto p_gravity_compensation_CoG_pos = rclcpp::ParameterValue(gravity_compensation_.CoG_.pos_);
         parameters_interface->declare_parameter("gravity_compensation.CoG.pos", p_gravity_compensation_CoG_pos);
+      } else {
+        gravity_compensation_.CoG_.pos_ = parameters_interface->get_parameter(
+            "gravity_compensation.CoG.pos").as_double_array();
       }
       if (!parameters_interface->has_parameter("gravity_compensation.CoG.force")) {
         auto p_gravity_compensation_CoG_force = rclcpp::ParameterValue(gravity_compensation_.CoG_.force_);
         parameters_interface->declare_parameter("gravity_compensation.CoG.force", p_gravity_compensation_CoG_force);
+      } else {
+        gravity_compensation_.CoG_.force_ = parameters_interface->get_parameter(
+            "gravity_compensation.CoG.force").as_double();
       }
       if (!parameters_interface->has_parameter("admittance.selected_axes")) {
         auto p_admittance_selected_axes = rclcpp::ParameterValue(admittance_.selected_axes_);
         parameters_interface->declare_parameter("admittance.selected_axes", p_admittance_selected_axes);
+      } else {
+        admittance_.selected_axes_ = parameters_interface->get_parameter("admittance.selected_axes").as_bool_array();
       }
       if (!parameters_interface->has_parameter("admittance.mass")) {
         auto p_admittance_mass = rclcpp::ParameterValue(admittance_.mass_);
         parameters_interface->declare_parameter("admittance.mass", p_admittance_mass);
+      } else {
+        admittance_.mass_ = parameters_interface->get_parameter("admittance.mass").as_double_array();
       }
       if (!parameters_interface->has_parameter("admittance.damping_ratio")) {
         auto p_admittance_damping_ratio = rclcpp::ParameterValue(admittance_.damping_ratio_);
         parameters_interface->declare_parameter("admittance.damping_ratio", p_admittance_damping_ratio);
+      } else {
+        admittance_.damping_ratio_ = parameters_interface->get_parameter("admittance.damping_ratio").as_double_array();
       }
       if (!parameters_interface->has_parameter("admittance.stiffness")) {
         auto p_admittance_stiffness = rclcpp::ParameterValue(admittance_.stiffness_);
         parameters_interface->declare_parameter("admittance.stiffness", p_admittance_stiffness);
+      } else {
+        admittance_.stiffness_ = parameters_interface->get_parameter("admittance.stiffness").as_double_array();
       }
       if (!parameters_interface->has_parameter("enable_parameter_update_without_reactivation")) {
         auto p_enable_parameter_update_without_reactivation = rclcpp::ParameterValue(
             enable_parameter_update_without_reactivation_);
         parameters_interface->declare_parameter("enable_parameter_update_without_reactivation",
                                                 p_enable_parameter_update_without_reactivation);
+      } else {
+        enable_parameter_update_without_reactivation_ = parameters_interface->get_parameter(
+            "enable_parameter_update_without_reactivation").as_bool();
+      }
+      if (!parameters_interface->has_parameter("use_feedforward_commanded_input")) {
+        auto p_use_feedforward_commanded_input = rclcpp::ParameterValue(use_feedforward_commanded_input_);
+        parameters_interface->declare_parameter("use_feedforward_commanded_input", p_use_feedforward_commanded_input);
+      } else {
+        use_feedforward_commanded_input_ = parameters_interface->get_parameter(
+            "use_feedforward_commanded_input").as_bool();
       }
       if (!parameters_interface->has_parameter("joint_limiter_type")) {
         auto p_joint_limiter_type = rclcpp::ParameterValue(joint_limiter_type_);
         parameters_interface->declare_parameter("joint_limiter_type", p_joint_limiter_type);
+      } else {
+        joint_limiter_type_ = parameters_interface->get_parameter("joint_limiter_type").as_string();
       }
       if (!parameters_interface->has_parameter("state_publish_rate")) {
         auto p_state_publish_rate = rclcpp::ParameterValue(state_publish_rate_);
         parameters_interface->declare_parameter("state_publish_rate", p_state_publish_rate);
+      } else {
+        state_publish_rate_ = parameters_interface->get_parameter("state_publish_rate").as_double();
       }
 
     }
   };
-
 
 } // namespace admittance_struct_parameters

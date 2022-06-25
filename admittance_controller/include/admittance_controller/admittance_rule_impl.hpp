@@ -98,7 +98,18 @@ namespace admittance_controller {
     admittance_acceleration_.setZero();
     wrench_.setZero();
 
-    // set config values
+    return controller_interface::return_type::OK;
+  }
+
+// Update from reference joint states
+  controller_interface::return_type AdmittanceRule::update(
+      const trajectory_msgs::msg::JointTrajectoryPoint &current_joint_state,
+      const geometry_msgs::msg::Wrench &measured_wrench,
+      const trajectory_msgs::msg::JointTrajectoryPoint &reference_joint_state,
+      const rclcpp::Duration &period,
+      trajectory_msgs::msg::JointTrajectoryPoint &desired_joint_state) {
+
+    // update param values
     memcpy(cog_.data(), parameters_->gravity_compensation_.CoG_.pos_.data(), 3*sizeof(double ));
     ee_weight.setZero();
     ee_weight[2] = -parameters_->gravity_compensation_.CoG_.force_;
@@ -110,18 +121,6 @@ namespace admittance_controller {
     {
       damping_[i] = parameters_->admittance_.damping_ratio_[i] * 2 * sqrt(mass_[i] * stiffness_[i]);
     }
-
-
-    return controller_interface::return_type::OK;
-  }
-
-// Update from reference joint states
-  controller_interface::return_type AdmittanceRule::update(
-      const trajectory_msgs::msg::JointTrajectoryPoint &current_joint_state,
-      const geometry_msgs::msg::Wrench &measured_wrench,
-      const trajectory_msgs::msg::JointTrajectoryPoint &reference_joint_state,
-      const rclcpp::Duration &period,
-      trajectory_msgs::msg::JointTrajectoryPoint &desired_joint_state) {
 
     // keep track of failed kinematics interface calls
     bool success = true;
@@ -165,7 +164,7 @@ namespace admittance_controller {
                                                                                        current_joint_state.velocities,
                                                                                        success);
 
-    desired_vel = cur_control_rot_inv * desired_vel * use_feedforward_commanded_input_;
+    desired_vel = cur_control_rot_inv * desired_vel * parameters_->use_feedforward_commanded_input_;
 
     // Compute admittance control law: F = M*a + D*v + S*(x - x_d)
     calculate_admittance_rule(wrench_control, desired_vel, dt);
@@ -470,7 +469,7 @@ namespace admittance_controller {
 
     for (auto i = 0; i < 6; i++) {
       wrench_(i) = filters::exponentialSmoothing(
-          new_wrench_base(i), wrench_(i), alpha);
+          new_wrench_base(i), wrench_(i), parameters_->ft_sensor_.filter_coefficient_);
     }
 
   }

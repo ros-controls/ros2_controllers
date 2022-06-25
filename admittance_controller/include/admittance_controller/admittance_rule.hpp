@@ -78,13 +78,13 @@ namespace admittance_controller {
 
   public:
     // TODO(destogl): Add parameter for this
-    bool use_feedforward_commanded_input_ = true;
+//    bool use_feedforward_commanded_input_ = true;
 
     // Dynamic admittance config
     std::shared_ptr<admittance_struct_parameters::admittance_struct> parameters_;
 
     // Filter parameter for exponential smoothing
-    const double alpha = 0.005; // TODO make a ros param
+//    const double alpha = 0.005; // TODO make a ros param
 
 
   protected:

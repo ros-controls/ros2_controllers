@@ -24,12 +24,14 @@ admittance_struct:
       base: base_link # Assumed to be stationary
       tip: ee_link
       group_name: ur5e_manipulator
+      alpha: 0.000005
 
     ft_sensor:
       name: tcp_fts_sensor
       frame:
         id: ee_link  # ee_link Wrench measurements are in this frame
         external: false # force torque frame exists within URDF kinematic chain
+      filter_coefficient: 0.005
 
     control:
       frame:
@@ -89,5 +91,6 @@ admittance_struct:
 
     # general settings
     enable_parameter_update_without_reactivation: false
+    use_feedforward_commanded_input: true
     joint_limiter_type: "joint_limits/SimpleJointLimiter"
     state_publish_rate: 200.0 # Defaults to 50
