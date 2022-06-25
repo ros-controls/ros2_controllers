@@ -46,17 +46,15 @@ namespace admittance_controller {
 
   CallbackReturn AdmittanceController::on_init() {
 
-    // initialize controller parameters
+    // initialize controller config
     admittance_ = std::make_unique<admittance_controller::AdmittanceRule>();
-    admittance_->parameters_.initialize(get_node());
+//    admittance_->parameters_.initialize(get_node());
     // TODO need error handling
     params = {
         get_node()->get_parameter("joints").as_string_array(),
         get_node()->get_parameter("command_interfaces").as_string_array(),
         get_node()->get_parameter("state_interfaces").as_string_array(),
         get_node()->get_parameter("chainable_command_interfaces").as_string_array(),
-        get_node()->get_parameter("ft_sensor_name").as_string(),
-        get_node()->get_parameter("joint_limiter_type").as_string(),
     };
 
     for (const auto &tmp: params.state_interface_types_) {
@@ -76,7 +74,7 @@ namespace admittance_controller {
     }
 
     try {
-      admittance_->parameters_.declare_parameters();
+      admittance_->parameters_ = std::make_shared<admittance_struct_parameters::admittance_struct>(get_node()->get_node_parameters_interface());
     } catch (const std::exception &e) {
       RCLCPP_ERROR(get_node()->get_logger(), "Exception thrown during init stage with message: %s \n", e.what());
       return CallbackReturn::ERROR;
@@ -178,12 +176,6 @@ namespace admittance_controller {
   }
 
   CallbackReturn AdmittanceController::on_configure(const rclcpp_lifecycle::State &previous_state) {
-    // load and set all ROS parameters
-    if (!admittance_->parameters_.get_parameters()) {
-      RCLCPP_ERROR(get_node()->get_logger(), "Error happened during reading parameters");
-      return CallbackReturn::ERROR;
-    }
-
     // Print output so users can be sure the interface setup is correct
     auto get_interface_list = [](const std::vector<std::string> &interface_types) {
       std::stringstream ss_command_interfaces;
@@ -218,13 +210,13 @@ namespace admittance_controller {
 
     // Initialize FTS semantic semantic_component
     force_torque_sensor_ = std::make_unique<semantic_components::ForceTorqueSensor>(
-        semantic_components::ForceTorqueSensor(params.ft_sensor_name_));
+        semantic_components::ForceTorqueSensor(admittance_->parameters_->ft_sensor_.name_));
 
     // configure admittance rule
     admittance_->configure(get_node(), num_joints_);
-    // HACK: This is workaround because it seems that updating parameters only in `on_activate` does
-    // not work properly: why?
-    admittance_->parameters_.update();
+//    // HACK: This is workaround because it seems that updating config only in `on_activate` does
+//    // not work properly: why?
+//    admittance_->parameters_.update();
 
     return LifecycleNodeInterface::on_configure(previous_state);
   }
@@ -233,6 +225,9 @@ namespace admittance_controller {
   CallbackReturn AdmittanceController::on_activate(const rclcpp_lifecycle::State &previous_state) {
     // on_activate is called when the lifecycle node activates.
     controller_is_active_ = true;
+
+    // Initialize Admittance Rule and update admittance config
+    admittance_->reset();
 
     // clear out vectors in case of restart
     joint_position_command_interface_.clear();
@@ -262,18 +257,8 @@ namespace admittance_controller {
       }
     }
 
-    // if there are no state position interfaces, then closed loop control cannot be used
-    if (joint_position_state_interface_.empty() && !admittance_->parameters_.open_loop_control_) {
-      RCLCPP_ERROR(get_node()->get_logger(),
-                   "Open loop control set to false but no position state interfaces were provided. Please add a position state interface");
-      return CallbackReturn::ERROR;
-    }
-
     // initialize interface of the FTS semantic semantic component
     force_torque_sensor_->assign_loaned_state_interfaces(state_interfaces_);
-
-    // Initialize Admittance Rule from current states
-    admittance_->reset();
 
     // handle state after restart or initial startup
     read_state_from_hardware(last_state_reference_);
@@ -283,11 +268,6 @@ namespace admittance_controller {
       RCLCPP_ERROR(get_node()->get_logger(),
                    "Failed to read from position from hardware state interface. Please ensure that a position state interface exist.");
       return CallbackReturn::ERROR;
-    }
-
-    // if in open loop mode, the position state interface should be ignored
-    if (admittance_->parameters_.open_loop_control_) {
-      open_loop_buffer = last_state_reference_.positions;
     }
 
     // reset dynamic fields in case non-zero
@@ -325,20 +305,12 @@ namespace admittance_controller {
     for (auto i = 0ul; i < joint_position_command_interface_.size(); i++) {
       joint_position_command_interface_[i].get().set_value(state_desired_.positions[i]);
       // if in open loop, feed the commanded state back into the input (open_loop_buffer)
-      if (admittance_->parameters_.open_loop_control_) {
-        open_loop_buffer[i] = state_desired_.positions[i];
-      }
       last_commanded_state_.positions[i] = state_desired_.positions[i];
     }
     double dt = period.seconds() + ((double) period.nanoseconds()) * 1E-9;
     for (auto i = 0ul; i < joint_velocity_command_interface_.size(); i++) {
       joint_velocity_command_interface_[i].get().set_value(state_desired_.velocities[i]);
       last_commanded_state_.velocities[i] = state_desired_.velocities[i];
-      // if in open loop and there are no position command interfaces,
-      if (admittance_->parameters_.open_loop_control_ && joint_position_command_interface_.empty()) {
-        open_loop_buffer[i] = state_current_.positions[i] + state_desired_.velocities[i] * dt; // hack!
-        last_commanded_state_.positions[i] = state_current_.positions[i] + state_desired_.velocities[i] * dt; // hack!
-      }
     }
     for (auto i = 0ul; i < joint_acceleration_command_interface_.size(); i++) {
       joint_acceleration_command_interface_[i].get().set_value(state_desired_.accelerations[i]);
@@ -389,11 +361,7 @@ namespace admittance_controller {
     // fill state message with values from hardware state interfaces
     // if any interface has nan values, assume state_current is the last command state
     for (auto i = 0ul; i < joint_position_state_interface_.size(); i++) {
-      if (admittance_->parameters_.open_loop_control_) {
-        state_current.positions[i] = open_loop_buffer[i];
-      } else {
         state_current.positions[i] = joint_position_state_interface_[i].get().get_value();
-      }
       if (std::isnan(state_current.positions[i])) {
         state_current.positions = last_commanded_state_.positions;
         break;

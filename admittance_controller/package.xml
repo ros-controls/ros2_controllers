@@ -29,6 +29,7 @@
   <depend>tf2_geometry_msgs</depend>
   <depend>tf2_ros</depend>
   <depend>trajectory_msgs</depend>
+  <depend>gen_param_struct</depend>
 <!--  <depend>moveit_ros_planning</depend>-->
 <!--  <depend>moveit_ros_planning_interface</depend>-->
 

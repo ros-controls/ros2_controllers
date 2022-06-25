@@ -31,14 +31,26 @@ find_package(tf2_ros REQUIRED)
 find_package(trajectory_msgs REQUIRED)
 find_package(angles REQUIRED)
 find_package(rcutils REQUIRED)
-
+find_package(tf2_kdl REQUIRED)
+find_package(gen_param_struct REQUIRED)
 
 
 # The admittance controller
 add_library(admittance_controller SHARED
         src/admittance_controller.cpp
-        src/parameter_handler.cpp
 )
+
+# specify which yaml root name to convert to struct
+set(YAML_FILE ${CMAKE_CURRENT_SOURCE_DIR}/include/admittance_controller/config/admittance_controller.yaml)
+# specify which yaml root name to convert to struct
+set(YAML_TARGET admittance_struct)
+# specify which yaml root name to convert to struct
+set(OUT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/admittance_controller/config)
+
+generate_param_struct_header(admittance_controller ${OUT_DIR} ${YAML_FILE} ${YAML_TARGET})
+
+
+
 target_include_directories(
   admittance_controller
   PRIVATE
@@ -52,7 +64,8 @@ ament_target_dependencies(
   control_toolbox
   controller_interface
         kinematics_interface
-  ${Eigen_LIBRARIES}
+#  ${Eigen_LIBRARIES}
+        Eigen3
   geometry_msgs
   hardware_interface
   joint_trajectory_controller
@@ -62,6 +75,7 @@ ament_target_dependencies(
   realtime_tools
   tf2
   tf2_eigen
+        tf2_kdl
   tf2_geometry_msgs
   tf2_ros
         angles

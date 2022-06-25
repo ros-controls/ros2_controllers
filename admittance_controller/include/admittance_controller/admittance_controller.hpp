@@ -60,8 +60,6 @@ namespace admittance_controller {
     std::vector<std::string> command_interface_types_;
     std::vector<std::string> state_interface_types_;
     std::vector<std::string> chainable_command_interface_types_;
-    std::string ft_sensor_name_;
-    std::string joint_limiter_type_;
   };
 
 
@@ -123,7 +121,7 @@ namespace admittance_controller {
     std::unique_ptr<admittance_controller::AdmittanceRule> admittance_;
     // joint limiter TODO
     std::unique_ptr<semantic_components::ForceTorqueSensor> force_torque_sensor_;
-    // controller parameters filled by ROS
+    // controller config filled by ROS
     ParameterStruct params;
     // ROS subscribers
     rclcpp::Subscription<trajectory_msgs::msg::JointTrajectoryPoint>::SharedPtr input_joint_command_subscriber_ = nullptr;
@@ -154,7 +152,7 @@ namespace admittance_controller {
 
     void read_state_from_hardware(trajectory_msgs::msg::JointTrajectoryPoint &state);
 
-    void read_state_from_command_interfaces(trajectory_msgs::msg::JointTrajectoryPoint &state);
+//    void read_state_from_command_interfaces(trajectory_msgs::msg::JointTrajectoryPoint &state);
 
     void read_state_reference_interfaces(trajectory_msgs::msg::JointTrajectoryPoint &state);
 

@@ -1,0 +1,93 @@
+admittance_struct:
+  ros__parameters:
+    joints:
+      - shoulder_pan_joint
+      - shoulder_lift_joint
+      - elbow_joint
+      - wrist_1_joint
+      - wrist_2_joint
+      - wrist_3_joint
+
+    command_interfaces:
+      - position
+
+    state_interfaces:
+      - position
+      - velocity
+
+    chainable_command_interfaces:
+      - position
+      - velocity
+
+    kinematics:
+      plugin_name: kdl_plugin/KDLKinematics
+      base: base_link # Assumed to be stationary
+      tip: ee_link
+      group_name: ur5e_manipulator
+
+    ft_sensor:
+      name: tcp_fts_sensor
+      frame:
+        id: ee_link  # ee_link Wrench measurements are in this frame
+        external: false # force torque frame exists within URDF kinematic chain
+
+    control:
+      frame:
+        id: ee_link # Admittance calcs (displacement etc) are done in this frame. Usually the tool or end-effector
+        external: false # control frame exists within URDF kinematic chain
+
+    fixed_world_frame:   # Gravity points down (neg. Z) in this frame (Usually: world or base_link)
+      id: base_link # Admittance calcs (displacement etc) are done in this frame. Usually the tool or end-effector
+      external: false # control frame exists within URDF kinematic chain
+
+    gravity_compensation:
+      frame:
+        id: ee_link
+        external: false
+
+      CoG: # specifies the center of gravity of the end effector
+        pos:
+        - 0.1 # x
+        - 0.0 # y
+        - 0.0 # z
+        force: 23.0 # mass * 9.81
+
+    admittance:
+      selected_axes:
+        - true # x
+        - true # y
+        - true # z
+        - true # rx
+        - true # ry
+        - true # rz
+
+      # Having ".0" at the end is MUST, otherwise there is a loading error
+      # F = M*a + D*v + S*(x - x_d)
+      mass:
+        - 3.0 # x
+        - 3.0 # y
+        - 3.0 # z
+        - 0.05 # rx
+        - 0.05 # ry
+        - 0.05 # rz
+
+      damping_ratio: # damping can be used instead: zeta = D / (2 * sqrt( M * S ))
+        - 2.828427 # x
+        - 2.828427 # y
+        - 2.828427 # z
+        - 2.828427 # rx
+        - 2.828427 # ry
+        - 2.828427 # rz
+
+      stiffness:
+        - 50.0 # x
+        - 50.0 # y
+        - 50.0 # z
+        - 1.0 # rx
+        - 1.0 # ry
+        - 1.0 # rz
+
+    # general settings
+    enable_parameter_update_without_reactivation: false
+    joint_limiter_type: "joint_limits/SimpleJointLimiter"
+    state_publish_rate: 200.0 # Defaults to 50
