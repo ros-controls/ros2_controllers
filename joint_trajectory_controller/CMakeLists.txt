@@ -21,6 +21,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
     rclcpp
     rclcpp_lifecycle
     realtime_tools
+    ruckig
     trajectory_msgs
 )
 
@@ -35,6 +36,9 @@ add_library(${PROJECT_NAME} SHARED
 )
 target_include_directories(${PROJECT_NAME} PRIVATE include)
 ament_target_dependencies(${PROJECT_NAME} ${THIS_PACKAGE_INCLUDE_DEPENDS})
+target_link_libraries(joint_trajectory_controller
+  ruckig::ruckig
+)
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
 target_compile_definitions(${PROJECT_NAME} PRIVATE "JOINT_TRAJECTORY_CONTROLLER_BUILDING_DLL" "_USE_MATH_DEFINES")
