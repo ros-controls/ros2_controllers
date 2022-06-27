@@ -90,7 +90,7 @@ admittance_struct:
         - 1.0 # rz
 
     # general settings
-    enable_parameter_update_without_reactivation: false
+    enable_parameter_update_without_reactivation: true
     use_feedforward_commanded_input: true
     joint_limiter_type: "joint_limits/SimpleJointLimiter"
     state_publish_rate: 200.0 # Defaults to 50

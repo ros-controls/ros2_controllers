@@ -39,10 +39,7 @@
 namespace {  // Utility namespace
 
 // Numerical accuracy checks. Used as deadbands.
-  static constexpr double WRENCH_EPSILON = 1e-10;
-  static constexpr double POSE_ERROR_EPSILON = 1e-12;
-  static constexpr double POSE_EPSILON = 1e-15;
-  const double ROT_AXIS_EPSILON = 0.001;
+  const double ROT_AXIS_EPSILON = 1e-6;
 
 
 }  // utility namespace
@@ -53,7 +50,7 @@ namespace admittance_controller {
   public:
     AdmittanceRule() = default;
 
-    controller_interface::return_type configure(std::shared_ptr<rclcpp_lifecycle::LifecycleNode> node, int num_joint);
+    controller_interface::return_type configure(const std::shared_ptr<rclcpp_lifecycle::LifecycleNode>& node, int num_joint);
     controller_interface::return_type reset();
 
     /**
@@ -72,8 +69,7 @@ namespace admittance_controller {
         const rclcpp::Duration &period,
         trajectory_msgs::msg::JointTrajectoryPoint &desired_joint_states);
 
-    control_msgs::msg::AdmittanceControllerState
-    get_controller_state( control_msgs::msg::AdmittanceControllerState & state_message);
+    void get_controller_state( control_msgs::msg::AdmittanceControllerState & state_message);
 
 
   public:
@@ -81,7 +77,8 @@ namespace admittance_controller {
 //    bool use_feedforward_commanded_input_ = true;
 
     // Dynamic admittance config
-    std::shared_ptr<admittance_struct_parameters::admittance_struct> parameters_;
+    std::shared_ptr<admittance_struct_parameters::admittance_struct> parameter_handler;
+    std::shared_ptr<admittance_struct_parameters::admittance_struct::params> parameters_;
 
     // Filter parameter for exponential smoothing
 //    const double alpha = 0.005; // TODO make a ros param
@@ -108,11 +105,8 @@ namespace admittance_controller {
                                                                   const std::vector<double> &joint_delta,
                                                                   bool &success);
     void normalize_rotation(Eigen::Matrix<double,3,3,Eigen::ColMajor>& R);
-    Eigen::Matrix<double,4,4,Eigen::ColMajor> invert_transform(Eigen::Matrix<double,4,4,Eigen::ColMajor> &T);
-    Eigen::Matrix<double,4,4,Eigen::ColMajor> get_transform(const std::vector<double>& positions, const std::string & link_name, bool & success);
+    Eigen::Matrix<double,4,4,Eigen::ColMajor> get_transform(const std::vector<double>& positions, const std::string & link_name, bool external, bool & success);
     void eigen_to_msg(const Eigen::Matrix<double, 3, 2>& wrench, const std::string& frame_id, geometry_msgs::msg::WrenchStamped& wrench_msg);
-    Eigen::Matrix<double, 4, 4, Eigen::ColMajor>
-    find_transform(const std::string &target_frame, const std::string &source_frame, bool &success);
 
     // Kinematics interface plugin loader
     std::shared_ptr<pluginlib::ClassLoader<kinematics_interface::KinematicsBaseClass>> kinematics_loader_;
@@ -137,10 +131,18 @@ namespace admittance_controller {
     Eigen::Matrix<double,4,4,Eigen::ColMajor> sensor_transform;
     Eigen::Matrix<double,4,4,Eigen::ColMajor> control_transform;
     Eigen::Matrix<double,4,4,Eigen::ColMajor> cog_transform;
-    Eigen::Matrix<double, 4, 4, Eigen::ColMajor> base_link_transform_;
+    Eigen::Matrix<double,4,4,Eigen::ColMajor> world_transform;
+
+    // rotations
+    Eigen::Matrix<double,3,3,Eigen::ColMajor> ee_rot;
+    Eigen::Matrix<double,3,3,Eigen::ColMajor> control_rot;
+    Eigen::Matrix<double,3,3,Eigen::ColMajor> sensor_rot;
+    Eigen::Matrix<double,3,3,Eigen::ColMajor> cog_rot;
+    Eigen::Matrix<double,3,3,Eigen::ColMajor> world_rot;
 
     // external force
     Eigen::Matrix<double,3,2> wrench_;
+    Eigen::Matrix<double, 3, 2> measured_wrench_;
     // position of center of gravity in cog_frame
     Eigen::Matrix<double,3,1> cog_;
     // force applied to sensor due to weight of end effector
