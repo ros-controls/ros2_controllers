@@ -48,7 +48,9 @@ namespace admittance_controller {
 
   class AdmittanceRule {
   public:
-    AdmittanceRule() = default;
+    AdmittanceRule(){
+      parameters_ = &parameters_copy;
+    }
 
     controller_interface::return_type configure(const std::shared_ptr<rclcpp_lifecycle::LifecycleNode>& node, int num_joint);
     controller_interface::return_type reset();
@@ -73,16 +75,10 @@ namespace admittance_controller {
 
 
   public:
-    // TODO(destogl): Add parameter for this
-//    bool use_feedforward_commanded_input_ = true;
-
-    // Dynamic admittance config
-    std::shared_ptr<admittance_struct_parameters::admittance_struct> parameter_handler;
-    std::shared_ptr<admittance_struct_parameters::admittance_struct::params> parameters_;
-
-    // Filter parameter for exponential smoothing
-//    const double alpha = 0.005; // TODO make a ros param
-
+    // admittance config parameters
+    std::shared_ptr<admittance_struct_parameters::admittance_struct> parameter_handler_;
+    admittance_struct_parameters::admittance_struct::params* parameters_;
+    admittance_struct_parameters::admittance_struct::params parameters_copy;
 
   protected:
     /**
@@ -105,6 +101,7 @@ namespace admittance_controller {
                                                                   const std::vector<double> &joint_delta,
                                                                   bool &success);
     void normalize_rotation(Eigen::Matrix<double,3,3,Eigen::ColMajor>& R);
+    Eigen::Matrix<double,4,4,Eigen::ColMajor> invert_transform(Eigen::Matrix<double,4,4,Eigen::ColMajor> T);
     Eigen::Matrix<double,4,4,Eigen::ColMajor> get_transform(const std::vector<double>& positions, const std::string & link_name, bool external, bool & success);
     void eigen_to_msg(const Eigen::Matrix<double, 3, 2>& wrench, const std::string& frame_id, geometry_msgs::msg::WrenchStamped& wrench_msg);
 
@@ -116,42 +113,42 @@ namespace admittance_controller {
     int num_joints_;
 
     // buffers to pass data to kinematics interface
-    std::vector<double> transform_buffer_vec;
-    std::vector<double> joint_buffer_vec;
-    std::vector<double> cart_buffer_vec;
+    std::vector<double> transform_buffer_vec_;
+    std::vector<double> joint_buffer_vec_;
+    std::vector<double> cart_buffer_vec_;
 
     // admittance controller values
-    Eigen::Matrix<double,3,2> admittance_acceleration_;
-    Eigen::Matrix<double,3,2> admittance_velocity_;
+    Eigen::Matrix<double,3,2,Eigen::ColMajor> admittance_acceleration_;
+    Eigen::Matrix<double,3,2,Eigen::ColMajor> admittance_velocity_;
     Eigen::Matrix<double,4,4,Eigen::ColMajor> admittance_position_;
 
     // transforms
-    Eigen::Matrix<double,4,4,Eigen::ColMajor> ee_transform;
-    Eigen::Matrix<double,4,4,Eigen::ColMajor> reference_ee_transform;
-    Eigen::Matrix<double,4,4,Eigen::ColMajor> sensor_transform;
-    Eigen::Matrix<double,4,4,Eigen::ColMajor> control_transform;
-    Eigen::Matrix<double,4,4,Eigen::ColMajor> cog_transform;
-    Eigen::Matrix<double,4,4,Eigen::ColMajor> world_transform;
+    Eigen::Matrix<double,4,4,Eigen::ColMajor> ee_transform_;
+    Eigen::Matrix<double,4,4,Eigen::ColMajor> reference_ee_transform_;
+    Eigen::Matrix<double,4,4,Eigen::ColMajor> sensor_transform_;
+    Eigen::Matrix<double,4,4,Eigen::ColMajor> control_transform_;
+    Eigen::Matrix<double,4,4,Eigen::ColMajor> cog_transform_;
+    Eigen::Matrix<double,4,4,Eigen::ColMajor> world_transform_;
 
     // rotations
-    Eigen::Matrix<double,3,3,Eigen::ColMajor> ee_rot;
-    Eigen::Matrix<double,3,3,Eigen::ColMajor> control_rot;
-    Eigen::Matrix<double,3,3,Eigen::ColMajor> sensor_rot;
-    Eigen::Matrix<double,3,3,Eigen::ColMajor> cog_rot;
-    Eigen::Matrix<double,3,3,Eigen::ColMajor> world_rot;
+    Eigen::Matrix<double,3,3,Eigen::ColMajor> ee_rot_;
+    Eigen::Matrix<double,3,3,Eigen::ColMajor> control_rot_;
+    Eigen::Matrix<double,3,3,Eigen::ColMajor> sensor_rot_;
+    Eigen::Matrix<double,3,3,Eigen::ColMajor> cog_rot_;
+    Eigen::Matrix<double,3,3,Eigen::ColMajor> world_rot_;
 
     // external force
-    Eigen::Matrix<double,3,2> wrench_;
-    Eigen::Matrix<double, 3, 2> measured_wrench_;
+    Eigen::Matrix<double,3,2,Eigen::ColMajor> wrench_;
+    Eigen::Matrix<double, 3,2,Eigen::ColMajor> measured_wrench_;
     // position of center of gravity in cog_frame
-    Eigen::Matrix<double,3,1> cog_;
+    Eigen::Vector3d cog_;
     // force applied to sensor due to weight of end effector
-    Eigen::Matrix<double,3,1> ee_weight;
+    Eigen::Vector3d ee_weight;
 
     // admittance controller values in joint space
-    std::vector<double> joint_vel;
-    std::vector<double> joint_acc;
-    std::vector<double> joint_pos;
+    std::vector<double> joint_pos_;
+    std::vector<double> joint_vel_;
+    std::vector<double> joint_acc_;
 
     std::vector<double> damping_;
     std::vector<double> mass_;
