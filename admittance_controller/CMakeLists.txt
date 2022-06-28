@@ -1,13 +1,13 @@
 cmake_minimum_required(VERSION 3.5)
 project(admittance_controller)
 
-if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 14)
-endif()
+if (NOT CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 14)
+endif ()
 
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic)
-endif()
+if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    add_compile_options(-Wall -Wextra -Wpedantic)
+endif ()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
@@ -32,52 +32,38 @@ find_package(trajectory_msgs REQUIRED)
 find_package(angles REQUIRED)
 find_package(rcutils REQUIRED)
 find_package(tf2_kdl REQUIRED)
-find_package(gen_param_struct REQUIRED)
-
 
 # The admittance controller
 add_library(admittance_controller SHARED
         src/admittance_controller.cpp
-)
-
-# specify which yaml root name to convert to struct
-set(YAML_FILE ${CMAKE_CURRENT_SOURCE_DIR}/include/admittance_controller/config/admittance_controller.yaml)
-# specify which yaml root name to convert to struct
-set(YAML_TARGET admittance_struct)
-# specify which yaml root name to convert to struct
-set(OUT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/admittance_controller/config)
-
-generate_param_struct_header(admittance_controller ${OUT_DIR} ${YAML_FILE} ${YAML_TARGET})
-
-
+        )
 
 target_include_directories(
-  admittance_controller
-  PRIVATE
-  include
+        admittance_controller
+        PRIVATE
+        include
 )
 
 ament_target_dependencies(
-  admittance_controller
-  backward_ros
-  control_msgs
-  control_toolbox
-  controller_interface
+        admittance_controller
+        backward_ros
+        control_msgs
+        control_toolbox
+        controller_interface
         kinematics_interface
-#  ${Eigen_LIBRARIES}
         Eigen3
-  geometry_msgs
-  hardware_interface
-  joint_trajectory_controller
-  pluginlib
-  rclcpp
-  rclcpp_lifecycle
-  realtime_tools
-  tf2
-  tf2_eigen
+        geometry_msgs
+        hardware_interface
+        joint_trajectory_controller
+        pluginlib
+        rclcpp
+        rclcpp_lifecycle
+        realtime_tools
+        tf2
+        tf2_eigen
         tf2_kdl
-  tf2_geometry_msgs
-  tf2_ros
+        tf2_geometry_msgs
+        tf2_ros
         angles
 )
 
@@ -88,70 +74,69 @@ pluginlib_export_plugin_description_file(controller_interface admittance_control
 
 
 install(
-  TARGETS admittance_controller
-  RUNTIME DESTINATION bin
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
+        TARGETS admittance_controller
+        RUNTIME DESTINATION bin
+        ARCHIVE DESTINATION lib
+        LIBRARY DESTINATION lib
 )
 
 install(
-  DIRECTORY include/
-  DESTINATION include
+        DIRECTORY include/
+        DESTINATION include
 )
 
-set(BUILD_TESTING 0)
-if(BUILD_TESTING)
-  find_package(ament_cmake_gmock REQUIRED)
-  find_package(controller_manager REQUIRED)
-  find_package(hardware_interface REQUIRED)
-  find_package(ros2_control_test_assets REQUIRED)
+set(BUILD_TESTING 0) # TODO enable testing one test are fixed
+if (BUILD_TESTING)
+    find_package(ament_cmake_gmock REQUIRED)
+    find_package(controller_manager REQUIRED)
+    find_package(hardware_interface REQUIRED)
+    find_package(ros2_control_test_assets REQUIRED)
 
-  ament_add_gmock(test_load_admittance_controller test/test_load_admittance_controller.cpp)
-  target_include_directories(test_load_admittance_controller PRIVATE include)
-  ament_target_dependencies(
-    test_load_admittance_controller
-    controller_manager
-    hardware_interface
-    ros2_control_test_assets
-  )
+    ament_add_gmock(test_load_admittance_controller test/test_load_admittance_controller.cpp)
+    target_include_directories(test_load_admittance_controller PRIVATE include)
+    ament_target_dependencies(
+            test_load_admittance_controller
+            controller_manager
+            hardware_interface
+            ros2_control_test_assets
+    )
 
-  ament_add_gmock(test_admittance_controller test/test_admittance_controller.cpp)
-  target_include_directories(test_admittance_controller PRIVATE include)
-  target_link_libraries(test_admittance_controller admittance_controller)
-  ament_target_dependencies(
-    test_admittance_controller
-    control_msgs
-    controller_interface
-    hardware_interface
-    ros2_control_test_assets
-  )
-endif()
+    ament_add_gmock(test_admittance_controller test/test_admittance_controller.cpp)
+    target_include_directories(test_admittance_controller PRIVATE include)
+    target_link_libraries(test_admittance_controller admittance_controller)
+    ament_target_dependencies(
+            test_admittance_controller
+            control_msgs
+            controller_interface
+            hardware_interface
+            ros2_control_test_assets
+    )
+endif ()
 
 ament_export_include_directories(
-  include
+        include
 )
 
 ament_export_libraries(
-  admittance_controller
+        admittance_controller
 )
 
-
 ament_export_dependencies(
-  backward_ros
-  control_msgs
-  control_toolbox
-  controller_interface
+        backward_ros
+        control_msgs
+        control_toolbox
+        controller_interface
         kinematics_interface
-  geometry_msgs
-  hardware_interface
-  joint_trajectory_controller
-  pluginlib
-  rclcpp
-  rclcpp_lifecycle
-  realtime_tools
-  tf2
-  tf2_eigen
-  tf2_geometry_msgs  tf2_ros
+        geometry_msgs
+        hardware_interface
+        joint_trajectory_controller
+        pluginlib
+        rclcpp
+        rclcpp_lifecycle
+        realtime_tools
+        tf2
+        tf2_eigen
+        tf2_geometry_msgs tf2_ros
 )
 
 ament_package()
