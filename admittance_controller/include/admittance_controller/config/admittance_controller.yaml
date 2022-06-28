@@ -24,7 +24,7 @@ admittance_struct:
       base: base_link # Assumed to be stationary
       tip: ee_link
       group_name: ur5e_manipulator
-      alpha: 0.000005
+      alpha: 0.0005
 
     ft_sensor:
       name: tcp_fts_sensor

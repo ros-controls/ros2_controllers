@@ -145,15 +145,10 @@ namespace admittance_controller {
     trajectory_msgs::msg::JointTrajectoryPoint state_reference_, state_current_, state_desired_,
         state_error_;
     trajectory_msgs::msg::JointTrajectory pre_admittance_point;
-    std::vector<double> open_loop_buffer;
 
     // helper methods
     void joint_command_callback(const std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint> msg);
-
     void read_state_from_hardware(trajectory_msgs::msg::JointTrajectoryPoint &state);
-
-//    void read_state_from_command_interfaces(trajectory_msgs::msg::JointTrajectoryPoint &state);
-
     void read_state_reference_interfaces(trajectory_msgs::msg::JointTrajectoryPoint &state);
 
   };
