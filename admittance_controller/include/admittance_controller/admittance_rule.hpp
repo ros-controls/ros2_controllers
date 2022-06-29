@@ -104,14 +104,6 @@ namespace admittance_controller {
                                                   const std::string &link_name,
                                                   Eigen::Matrix<double, Eigen::Dynamic, 1> &joint_delta, bool &success);
 
-    void convert_cartesian_deltas_to_joint_deltas_with_target(const std::vector<double> &positions,
-                                                              const Eigen::Matrix<double, Eigen::Dynamic, 1> &joint_target,
-                                                              double weight,
-                                                              Eigen::Matrix<double, 3, 2> &cartesian_delta,
-                                                              const std::string &link_name,
-                                                              Eigen::Matrix<double, Eigen::Dynamic, 1> &joint_delta,
-                                                              bool &success);
-
     Eigen::Matrix<double, 3, 2> convert_joint_deltas_to_cartesian_deltas(const std::vector<double> &positions,
                                                                          const std::vector<double> &joint_delta,
                                                                          const std::string &link_name,
@@ -119,13 +111,14 @@ namespace admittance_controller {
 
     void normalize_rotation(Eigen::Matrix<double, 3, 3, Eigen::ColMajor> &R);
 
-    Eigen::Matrix<double, 4, 4, Eigen::ColMajor> invert_transform(Eigen::Matrix<double, 4, 4, Eigen::ColMajor> T);
-
     Eigen::Matrix<double, 4, 4, Eigen::ColMajor>
     get_transform(const std::vector<double> &positions, const std::string &link_name, bool external, bool &success);
 
     void eigen_to_msg(const Eigen::Matrix<double, 3, 2> &wrench, const std::string &frame_id,
                       geometry_msgs::msg::WrenchStamped &wrench_msg);
+
+    template<typename T1, typename T2>
+    void vec_to_eigen(const std::vector<T1> data, T2 &matrix);
 
     // Kinematics interface plugin loader
     std::shared_ptr<pluginlib::ClassLoader<kinematics_interface::KinematicsBaseClass>> kinematics_loader_;
@@ -162,7 +155,7 @@ namespace admittance_controller {
     Eigen::Matrix<double, 3, 3, Eigen::ColMajor> world_rot_;
 
     // external force
-    Eigen::Matrix<double, 3, 2, Eigen::ColMajor> wrench_;
+    Eigen::Matrix<double, 3, 2, Eigen::ColMajor> wrench_world_;
     Eigen::Matrix<double, 3, 2, Eigen::ColMajor> measured_wrench_;
     // position of center of gravity in cog_frame
     Eigen::Vector3d cog_;
@@ -173,12 +166,12 @@ namespace admittance_controller {
     Eigen::Matrix<double, Eigen::Dynamic, 1> joint_pos_;
     Eigen::Matrix<double, Eigen::Dynamic, 1> joint_vel_;
     Eigen::Matrix<double, Eigen::Dynamic, 1> joint_acc_;
-    Eigen::Matrix<double, Eigen::Dynamic, 1> joint_target_;
 
-    std::vector<double> damping_;
-    std::vector<double> mass_;
-    std::vector<bool> selected_axes_;
-    std::vector<double> stiffness_;
+    Eigen::Matrix<double,6,1> damping_;
+    Eigen::Matrix<double,6,1> mass_;
+    Eigen::Matrix<double,6,1> mass_inv_;
+    Eigen::Matrix<double,6,1> selected_axes_;
+    Eigen::Matrix<double,6,1> stiffness_;
 
     // jacobian
     Eigen::Matrix<double, 6, Eigen::Dynamic, Eigen::ColMajor> jacobian_;
