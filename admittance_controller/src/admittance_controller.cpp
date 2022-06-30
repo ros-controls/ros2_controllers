@@ -80,6 +80,7 @@ namespace admittance_controller {
 
     try {
       admittance_->parameter_handler_ = std::make_shared<admittance_struct_parameters::admittance_struct>(get_node()->get_node_parameters_interface());
+      admittance_->parameters_ = &admittance_->parameter_handler_->params_;
     } catch (const std::exception &e) {
       RCLCPP_ERROR(get_node()->get_logger(), "Exception thrown during init stage with message: %s \n", e.what());
       return CallbackReturn::ERROR;

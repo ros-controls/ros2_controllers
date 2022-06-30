@@ -43,7 +43,7 @@ namespace admittance_controller {
     if (!parameters_->kinematics_.plugin_name_.empty()) {
       try {
         kinematics_loader_ = std::make_shared<pluginlib::ClassLoader<kinematics_interface::KinematicsBaseClass >>(
-            "kdl_plugin", "kinematics_interface::KinematicsBaseClass");
+            "kinematics_interface_kdl", "kinematics_interface::KinematicsBaseClass");
         kinematics_ = std::unique_ptr<kinematics_interface::KinematicsBaseClass>(
             kinematics_loader_->createUnmanagedInstance(parameters_->kinematics_.plugin_name_));
         if (!kinematics_->initialize(node, parameters_->kinematics_.tip_)) {
@@ -115,6 +115,7 @@ namespace admittance_controller {
       parameters_ = &parameter_handler_->params_;
     } else {
       // make a copy of the data
+      parameters_copy = parameter_handler_->params_;
       parameters_ = &parameters_copy;
     }
 
