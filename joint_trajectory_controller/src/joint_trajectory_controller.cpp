@@ -55,18 +55,18 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
   try
   {
     // with the lifecycle node being initialized, we can declare parameters
-    auto_declare<std::vector<std::string>>("joints", joint_names_);
-    auto_declare<std::vector<std::string>>("command_joints", command_joint_names_);
-    auto_declare<std::vector<std::string>>("command_interfaces", command_interface_types_);
-    auto_declare<std::vector<std::string>>("state_interfaces", state_interface_types_);
-    auto_declare<double>("state_publish_rate", 50.0);
-    auto_declare<double>("action_monitor_rate", 20.0);
-    auto_declare<bool>("allow_partial_joints_goal", allow_partial_joints_goal_);
-    auto_declare<bool>("open_loop_control", open_loop_control_);
-    auto_declare<bool>(
+    joint_names_ = auto_declare<std::vector<std::string>>("joints", joint_names_);
+    command_interface_types_ =
+      auto_declare<std::vector<std::string>>("command_interfaces", command_interface_types_);
+    state_interface_types_ =
+      auto_declare<std::vector<std::string>>("state_interfaces", state_interface_types_);
+    allow_partial_joints_goal_ =
+      auto_declare<bool>("allow_partial_joints_goal", allow_partial_joints_goal_);
+    open_loop_control_ = auto_declare<bool>("open_loop_control", open_loop_control_);
+    allow_integration_in_goal_trajectories_ = auto_declare<bool>(
       "allow_integration_in_goal_trajectories", allow_integration_in_goal_trajectories_);
-    auto_declare<double>("constraints.stopped_velocity_tolerance", 0.01);
-    auto_declare<double>("constraints.goal_time", 0.0);
+    state_publish_rate_ = auto_declare<double>("state_publish_rate", 50.0);
+    action_monitor_rate_ = auto_declare<double>("action_monitor_rate", 20.0);
   }
   catch (const std::exception & e)
   {
@@ -166,9 +166,11 @@ controller_interface::return_type JointTrajectoryController::update(
   // currently carrying out a trajectory
   if (traj_point_active_ptr_ && (*traj_point_active_ptr_)->has_trajectory_msg())
   {
+    bool first_sample = false;
     // if sampling the first time, set the point before you sample
     if (!(*traj_point_active_ptr_)->is_sampled_already())
     {
+      first_sample = true;
       if (open_loop_control_)
       {
         (*traj_point_active_ptr_)->set_point_before_trajectory_msg(time, last_commanded_state_);
@@ -187,7 +189,7 @@ controller_interface::return_type JointTrajectoryController::update(
 
     if (valid_point)
     {
-      bool abort = false;
+      bool tolerance_violated_while_moving = false;
       bool outside_goal_tolerance = false;
       bool within_goal_time = true;
       double time_difference = 0.0;
@@ -198,12 +200,14 @@ controller_interface::return_type JointTrajectoryController::update(
       {
         compute_error_for_joint(state_error, index, state_current, state_desired);
 
+        // Always check the state tolerance on the first sample in case the first sample
+        // is the last point
         if (
-          before_last_point &&
+          (before_last_point || first_sample) &&
           !check_state_tolerance_per_joint(
             state_error, index, default_tolerances_.state_tolerance[index], false))
         {
-          abort = true;
+          tolerance_violated_while_moving = true;
         }
         // past the final point, check that we end up inside goal tolerance
         if (
@@ -230,7 +234,7 @@ controller_interface::return_type JointTrajectoryController::update(
       }
 
       // set values for next hardware write() if tolerance is met
-      if (!abort && within_goal_time)
+      if (!tolerance_violated_while_moving && within_goal_time)
       {
         if (use_closed_loop_pid_adapter_)
         {
@@ -295,7 +299,7 @@ controller_interface::return_type JointTrajectoryController::update(
         active_goal->setFeedback(feedback);
 
         // check abort
-        if (abort)
+        if (tolerance_violated_while_moving)
         {
           set_hold_position();
           auto result = std::make_shared<FollowJTrajAction::Result>();
@@ -718,12 +722,10 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   // joint_command_subscriber_->on_activate();
 
   // State publisher
-  const double state_publish_rate =
-    get_node()->get_parameter("state_publish_rate").get_value<double>();
-  RCLCPP_INFO(logger, "Controller state will be published at %.2f Hz.", state_publish_rate);
-  if (state_publish_rate > 0.0)
+  RCLCPP_INFO(logger, "Controller state will be published at %.2f Hz.", state_publish_rate_);
+  if (state_publish_rate_ > 0.0)
   {
-    state_publisher_period_ = rclcpp::Duration::from_seconds(1.0 / state_publish_rate);
+    state_publisher_period_ = rclcpp::Duration::from_seconds(1.0 / state_publish_rate_);
   }
   else
   {
@@ -765,11 +767,8 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     RCLCPP_INFO(logger, "Goals with partial set of joints are allowed");
   }
 
-  const double action_monitor_rate =
-    get_node()->get_parameter("action_monitor_rate").get_value<double>();
-
-  RCLCPP_INFO(logger, "Action status changes will be monitored at %.2f Hz.", action_monitor_rate);
-  action_monitor_period_ = rclcpp::Duration::from_seconds(1.0 / action_monitor_rate);
+  RCLCPP_INFO(logger, "Action status changes will be monitored at %.2f Hz.", action_monitor_rate_);
+  action_monitor_period_ = rclcpp::Duration::from_seconds(1.0 / action_monitor_rate_);
 
   using namespace std::placeholders;
   action_server_ = rclcpp_action::create_server<FollowJTrajAction>(
@@ -1082,8 +1081,9 @@ void JointTrajectoryController::fill_partial_goal(
         // Assume hold position with 0 velocity and acceleration for missing joints
         if (!it.positions.empty())
         {
-          if (has_position_command_interface_ &&
-              !std::isnan(joint_command_interface_[0][index].get().get_value()))
+          if (
+            has_position_command_interface_ &&
+            !std::isnan(joint_command_interface_[0][index].get().get_value()))
           {
             // copy last command if cmd interface exists
             it.positions.push_back(joint_command_interface_[0][index].get().get_value());

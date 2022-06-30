@@ -471,6 +471,53 @@ TEST_F(TestTrajectoryActions, test_goal_tolerances_fail)
   EXPECT_NEAR(init_pos3, joint_pos_[2], COMMON_THRESHOLD);
 }
 
+TEST_F(TestTrajectoryActions, test_no_time_from_start_state_tolerance_fail)
+{
+  // set joint tolerance parameters
+  const double state_tol = 0.0001;
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("constraints.joint1.trajectory", state_tol),
+    rclcpp::Parameter("constraints.joint2.trajectory", state_tol),
+    rclcpp::Parameter("constraints.joint3.trajectory", state_tol)};
+
+  SetUpExecutor(params);
+  SetUpControllerHardware();
+
+  const double init_pos1 = joint_pos_[0];
+  const double init_pos2 = joint_pos_[1];
+  const double init_pos3 = joint_pos_[2];
+
+  std::shared_future<typename GoalHandle::SharedPtr> gh_future;
+  // send goal
+  {
+    std::vector<JointTrajectoryPoint> points;
+    JointTrajectoryPoint point;
+    point.time_from_start = rclcpp::Duration::from_seconds(0.0);
+    point.positions.resize(joint_names_.size());
+
+    point.positions[0] = 4.0;
+    point.positions[1] = 5.0;
+    point.positions[2] = 6.0;
+    points.push_back(point);
+
+    gh_future = sendActionGoal(points, 1.0, goal_options_);
+  }
+  controller_hw_thread_.join();
+
+  EXPECT_TRUE(gh_future.get());
+  EXPECT_EQ(rclcpp_action::ResultCode::ABORTED, common_resultcode_);
+  EXPECT_EQ(
+    control_msgs::action::FollowJointTrajectory_Result::PATH_TOLERANCE_VIOLATED,
+    common_action_result_code_);
+
+  // run an update, it should be holding
+  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+
+  EXPECT_NEAR(init_pos1, joint_pos_[0], COMMON_THRESHOLD);
+  EXPECT_NEAR(init_pos2, joint_pos_[1], COMMON_THRESHOLD);
+  EXPECT_NEAR(init_pos3, joint_pos_[2], COMMON_THRESHOLD);
+}
+
 TEST_F(TestTrajectoryActions, test_cancel_hold_position)
 {
   SetUpExecutor();
