@@ -21,6 +21,7 @@ admittance_struct:
 
     kinematics:
       plugin_name: kdl_plugin/KDLKinematics
+      plugin_package: kinematics_interface_kdl
       base: base_link # Assumed to be stationary
       tip: ee_link
       group_name: ur5e_manipulator
