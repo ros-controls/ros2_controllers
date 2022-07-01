@@ -58,7 +58,8 @@ void Trajectory::update(std::shared_ptr<trajectory_msgs::msg::JointTrajectory> j
 }
 
 bool Trajectory::sample(
-  const rclcpp::Time & sample_time, trajectory_msgs::msg::JointTrajectoryPoint & output_state,
+  const rclcpp::Time & sample_time, const InterpolationMethod interpolation_method,
+  trajectory_msgs::msg::JointTrajectoryPoint & output_state,
   TrajectoryPointConstIter & start_segment_itr, TrajectoryPointConstIter & end_segment_itr)
 {
   THROW_ON_NULLPTR(trajectory_msg_)
@@ -88,14 +89,14 @@ bool Trajectory::sample(
     return false;
   }
 
-  // current time hasn't reached traj time of the first point in the msg yet
   auto & first_point_in_msg = trajectory_msg_->points[0];
   const rclcpp::Time first_point_timestamp =
     trajectory_start_time_ + first_point_in_msg.time_from_start;
 
+  // current time hasn't reached traj time of the first point in the msg yet
   if (sample_time < first_point_timestamp)
   {
-    // it changes points only if position and velocity are not exist, but their derivatives
+    // it changes points only if position and velocity do not exist, but their derivatives
     deduce_from_derivatives(
       state_before_traj_msg_, first_point_in_msg, state_before_traj_msg_.positions.size(),
       (first_point_timestamp - time_before_traj_msg_).seconds());
