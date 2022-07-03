@@ -2,6 +2,9 @@
 Changelog for package force_torque_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 2.6.0 (2022-06-18)
 ------------------
 * Disable failing workflows (`#363 <https://github.com/ros-controls/ros2_controllers/issues/363>`_)
