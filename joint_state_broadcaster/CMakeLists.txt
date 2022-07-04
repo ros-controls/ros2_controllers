@@ -88,6 +88,7 @@ ament_export_dependencies(
   controller_interface
   rclcpp_lifecycle
   sensor_msgs
+  realtime_tools
 )
 ament_export_include_directories(
   include
