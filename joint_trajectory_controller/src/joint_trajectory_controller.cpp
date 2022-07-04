@@ -69,8 +69,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
     action_monitor_rate_ = auto_declare<double>("action_monitor_rate", 20.0);
 
     std::string interpolation_method = "";
-    interpolation_method =
-      auto_declare<std::string>("interpolation_method", "splines");
+    interpolation_method = auto_declare<std::string>("interpolation_method", "splines");
     if (interpolation_method == "none")
     {
       interpolation_method_ = InterpolationMethod::NONE;
@@ -206,7 +205,8 @@ controller_interface::return_type JointTrajectoryController::update(
     // find segment for current timestamp
     TrajectoryPointConstIter start_segment_itr, end_segment_itr;
     const bool valid_point =
-      (*traj_point_active_ptr_)->sample(time, interpolation_method_, state_desired, start_segment_itr, end_segment_itr);
+      (*traj_point_active_ptr_)
+        ->sample(time, interpolation_method_, state_desired, start_segment_itr, end_segment_itr);
 
     if (valid_point)
     {

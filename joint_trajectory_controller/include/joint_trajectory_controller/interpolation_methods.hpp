@@ -12,12 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef JOINT_TRAJECTORY_CONTROLLER_INTERPOLATION_METHODS_HPP_
-#define JOINT_TRAJECTORY_CONTROLLER_INTERPOLATION_METHODS_HPP_
+#ifndef JOINT_TRAJECTORY_CONTROLLER__INTERPOLATION_METHODS_HPP_
+#define JOINT_TRAJECTORY_CONTROLLER__INTERPOLATION_METHODS_HPP_
 
 namespace joint_trajectory_controller
 {
-enum class InterpolationMethod {NONE, SPLINE};
+enum class InterpolationMethod
+{
+  NONE,
+  SPLINE
+};
 }  // namespace joint_trajectory_controller
 
-#endif  // JOINT_TRAJECTORY_CONTROLLER_INTERPOLATION_METHODS_HPP_
+#endif  // JOINT_TRAJECTORY_CONTROLLER__INTERPOLATION_METHODS_HPP_

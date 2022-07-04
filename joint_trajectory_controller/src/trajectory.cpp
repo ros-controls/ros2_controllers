@@ -97,15 +97,22 @@ bool Trajectory::sample(
   // current time hasn't reached traj time of the first point in the msg yet
   if (sample_time < first_point_timestamp)
   {
-    // it changes points only if position and velocity do not exist, but their derivatives
-    deduce_from_derivatives(
-      state_before_traj_msg_, first_point_in_msg, state_before_traj_msg_.positions.size(),
-      (first_point_timestamp - time_before_traj_msg_).seconds());
+    // If interpolation is disabled, just forward the next waypoint
+    if (interpolation_method == joint_trajectory_controller::InterpolationMethod::NONE)
+    {
+      output_state = state_before_traj_msg_;
+    }
+    else
+    {
+      // it changes points only if position and velocity do not exist, but their derivatives
+      deduce_from_derivatives(
+        state_before_traj_msg_, first_point_in_msg, state_before_traj_msg_.positions.size(),
+        (first_point_timestamp - time_before_traj_msg_).seconds());
 
-    interpolate_between_points(
-      time_before_traj_msg_, state_before_traj_msg_, first_point_timestamp, first_point_in_msg,
-      sample_time, output_state);
-
+      interpolate_between_points(
+        time_before_traj_msg_, state_before_traj_msg_, first_point_timestamp, first_point_in_msg,
+        sample_time, output_state);
+    }
     start_segment_itr = begin();  // no segments before the first
     end_segment_itr = begin();
     return true;
@@ -123,6 +130,7 @@ bool Trajectory::sample(
 
     if (sample_time >= t0 && sample_time < t1)
     {
+      std::cout << "Somewhere prior to the first point" << std::endl;
       // If interpolation is disabled, just forward the next waypoint
       if (interpolation_method == joint_trajectory_controller::InterpolationMethod::NONE)
       {
@@ -133,15 +141,14 @@ bool Trajectory::sample(
       else
       {
         std::cout << "Spline interpolation" << std::endl;
-        // it changes points only if position and velocity are not exist, but their derivatives
+        // it changes points only if position and velocity do not exist, but their derivatives
         deduce_from_derivatives(
           point, next_point, state_before_traj_msg_.positions.size(), (t1 - t0).seconds());
 
         interpolate_between_points(t0, point, t1, next_point, sample_time, output_state);
-
-        start_segment_itr = begin() + i;
-        end_segment_itr = begin() + (i + 1);
       }
+      start_segment_itr = begin() + i;
+      end_segment_itr = begin() + (i + 1);
       return true;
     }
   }
