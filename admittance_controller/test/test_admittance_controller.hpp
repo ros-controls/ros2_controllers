@@ -40,7 +40,7 @@
 // TODO(anyone): replace the state and command message types
 using ControllerCommandWrenchMsg = geometry_msgs::msg::WrenchStamped;
 using ControllerCommandPoseMsg = geometry_msgs::msg::PoseStamped;
-using ControllerCommandJointMsg = trajectory_msgs::msg::JointTrajectory;
+using ControllerCommandJointMsg = trajectory_msgs::msg::JointTrajectoryPoint;
 using ControllerStateMsg = control_msgs::msg::AdmittanceControllerState;
 
 namespace
@@ -80,10 +80,7 @@ public:
     admittance_controller::AdmittanceController::on_configure(previous_state);
     // Only if on_configure is successful create subscription
     if (ret == CallbackReturn::SUCCESS) {
-      if (admittance_->unified_mode_) {
-        input_wrench_command_subscriber_wait_set_.add_subscription(input_wrench_command_subscriber_);
-      }
-      input_pose_command_subscriber_wait_set_.add_subscription(input_pose_command_subscriber_);
+      input_pose_command_subscriber_wait_set_.add_subscription(input_joint_command_subscriber_);
     }
     return ret;
   }
@@ -101,9 +98,6 @@ public:
   {
     bool success = input_pose_command_subscriber_wait_set_.wait(timeout).kind() == rclcpp::WaitResultKind::Ready;
 
-    if (admittance_->unified_mode_) {
-      success = success && input_wrench_command_subscriber_wait_set_.wait(timeout).kind() == rclcpp::WaitResultKind::Ready;
-    }
     if (success) {
       executor.spin_some();
     }
@@ -120,7 +114,7 @@ class AdmittanceControllerTest : public ::testing::Test
 public:
   static void SetUpTestCase()
   {
-    rclcpp::init(0, nullptr);
+//    rclcpp::init(0, nullptr);
   }
 
   void SetUp()
@@ -142,7 +136,7 @@ public:
 
   static void TearDownTestCase()
   {
-    rclcpp::shutdown();
+//    rclcpp::shutdown();
   }
 
   void TearDown()
@@ -157,58 +151,60 @@ protected:
     ASSERT_EQ(result, controller_interface::return_type::OK);
 
     assign_interfaces();
+    controller_->get_node()->set_parameter({"robot_description", robot_description_});
+    controller_->get_node()->set_parameter({"robot_description_semantic", robot_description_semantic_});
 
-    if (set_parameters) {
-      controller_->get_node()->set_parameter({"use_joint_commands_as_input", use_joint_commands_as_input});
-
-      controller_->get_node()->set_parameter({"joints", joint_names_});
-      controller_->get_node()->set_parameter({"command_interfaces", command_interface_types_});
-      controller_->get_node()->set_parameter({"state_interfaces", state_interface_types_});
-      controller_->get_node()->set_parameter({"ft_sensor_name", ft_sensor_name_});
-      controller_->get_node()->set_parameter({"hardware_state_has_offset", hardware_state_has_offset_});
-
-      controller_->get_node()->set_parameter({"IK.base", ik_base_frame_});
-      controller_->get_node()->set_parameter({"IK.tip", ik_tip_frame_});
-      // TODO(destogl): enable when IK support is added
-//       controller_->get_node()->set_parameter({"IK.plugin", ik_group_name_});
-      controller_->get_node()->set_parameter({"IK.group_name", ik_group_name_});
-      controller_->get_node()->set_parameter({"robot_description", robot_description_});
-      controller_->get_node()->set_parameter({"robot_description_semantic", robot_description_semantic_});
-
-      controller_->get_node()->set_parameter({"control_frame", control_frame_});
-      controller_->get_node()->set_parameter({"endeffector_frame", endeffector_frame_});
-      controller_->get_node()->set_parameter({"fixed_world_frame", fixed_world_frame_});
-      controller_->get_node()->set_parameter({"sensor_frame", sensor_frame_});
-
-      controller_->get_node()->set_parameter({"admittance.selected_axes.x", admittance_selected_axes_[0]});
-      controller_->get_node()->set_parameter({"admittance.selected_axes.y", admittance_selected_axes_[1]});
-      controller_->get_node()->set_parameter({"admittance.selected_axes.z", admittance_selected_axes_[2]});
-      controller_->get_node()->set_parameter({"admittance.selected_axes.rx", admittance_selected_axes_[3]});
-      controller_->get_node()->set_parameter({"admittance.selected_axes.ry", admittance_selected_axes_[4]});
-      controller_->get_node()->set_parameter({"admittance.selected_axes.rz", admittance_selected_axes_[5]});
-
-      controller_->get_node()->set_parameter({"admittance.mass.x", admittance_mass_[0]});
-      controller_->get_node()->set_parameter({"admittance.mass.y", admittance_mass_[1]});
-      controller_->get_node()->set_parameter({"admittance.mass.z", admittance_mass_[2]});
-      controller_->get_node()->set_parameter({"admittance.mass.rx", admittance_mass_[3]});
-      controller_->get_node()->set_parameter({"admittance.mass.ry", admittance_mass_[4]});
-      controller_->get_node()->set_parameter({"admittance.mass.rz", admittance_mass_[5]});
-
-      controller_->get_node()->set_parameter({"admittance.damping.x", admittance_damping_[0]});
-      controller_->get_node()->set_parameter({"admittance.damping.y", admittance_damping_[1]});
-      controller_->get_node()->set_parameter({"admittance.damping.z", admittance_damping_[2]});
-      controller_->get_node()->set_parameter({"admittance.damping.rx", admittance_damping_[3]});
-      controller_->get_node()->set_parameter({"admittance.damping.ry", admittance_damping_[4]});
-      controller_->get_node()->set_parameter({"admittance.damping.rz", admittance_damping_[5]});
-
-      controller_->get_node()->set_parameter({"admittance.stiffness.x", admittance_stiffness_[0]});
-      controller_->get_node()->set_parameter({"admittance.stiffness.y", admittance_stiffness_[1]});
-      controller_->get_node()->set_parameter({"admittance.stiffness.z", admittance_stiffness_[2]});
-      controller_->get_node()->set_parameter({"admittance.stiffness.rx", admittance_stiffness_[3]});
-      controller_->get_node()->set_parameter({"admittance.stiffness.ry", admittance_stiffness_[4]});
-      controller_->get_node()->set_parameter({"admittance.stiffness.rz", admittance_stiffness_[5]});
-
-    }
+//    if (set_parameters) {
+//      controller_->get_node()->set_parameter({"use_joint_commands_as_input", use_joint_commands_as_input});
+//
+//      controller_->get_node()->set_parameter({"joints", joint_names_});
+//      controller_->get_node()->set_parameter({"command_interfaces", command_interface_types_});
+//      controller_->get_node()->set_parameter({"state_interfaces", state_interface_types_});
+//      controller_->get_node()->set_parameter({"ft_sensor_name", ft_sensor_name_});
+//      controller_->get_node()->set_parameter({"hardware_state_has_offset", hardware_state_has_offset_});
+//
+//      controller_->get_node()->set_parameter({"IK.base", ik_base_frame_});
+//      controller_->get_node()->set_parameter({"IK.tip", ik_tip_frame_});
+//      // TODO(destogl): enable when IK support is added
+////       controller_->get_node()->set_parameter({"IK.plugin", ik_group_name_});
+//      controller_->get_node()->set_parameter({"IK.group_name", ik_group_name_});
+//      controller_->get_node()->set_parameter({"robot_description", robot_description_});
+//      controller_->get_node()->set_parameter({"robot_description_semantic", robot_description_semantic_});
+//
+//      controller_->get_node()->set_parameter({"control_frame", control_frame_});
+//      controller_->get_node()->set_parameter({"endeffector_frame", endeffector_frame_});
+//      controller_->get_node()->set_parameter({"fixed_world_frame", fixed_world_frame_});
+//      controller_->get_node()->set_parameter({"sensor_frame", sensor_frame_});
+//
+//      controller_->get_node()->set_parameter({"admittance.selected_axes.x", admittance_selected_axes_[0]});
+//      controller_->get_node()->set_parameter({"admittance.selected_axes.y", admittance_selected_axes_[1]});
+//      controller_->get_node()->set_parameter({"admittance.selected_axes.z", admittance_selected_axes_[2]});
+//      controller_->get_node()->set_parameter({"admittance.selected_axes.rx", admittance_selected_axes_[3]});
+//      controller_->get_node()->set_parameter({"admittance.selected_axes.ry", admittance_selected_axes_[4]});
+//      controller_->get_node()->set_parameter({"admittance.selected_axes.rz", admittance_selected_axes_[5]});
+//
+//      controller_->get_node()->set_parameter({"admittance.mass.x", admittance_mass_[0]});
+//      controller_->get_node()->set_parameter({"admittance.mass.y", admittance_mass_[1]});
+//      controller_->get_node()->set_parameter({"admittance.mass.z", admittance_mass_[2]});
+//      controller_->get_node()->set_parameter({"admittance.mass.rx", admittance_mass_[3]});
+//      controller_->get_node()->set_parameter({"admittance.mass.ry", admittance_mass_[4]});
+//      controller_->get_node()->set_parameter({"admittance.mass.rz", admittance_mass_[5]});
+//
+//      controller_->get_node()->set_parameter({"admittance.damping.x", admittance_damping_ratio_[0]});
+//      controller_->get_node()->set_parameter({"admittance.damping.y", admittance_damping_ratio_[1]});
+//      controller_->get_node()->set_parameter({"admittance.damping.z", admittance_damping_ratio_[2]});
+//      controller_->get_node()->set_parameter({"admittance.damping.rx", admittance_damping_ratio_[3]});
+//      controller_->get_node()->set_parameter({"admittance.damping.ry", admittance_damping_ratio_[4]});
+//      controller_->get_node()->set_parameter({"admittance.damping.rz", admittance_damping_ratio_[5]});
+//
+//      controller_->get_node()->set_parameter({"admittance.stiffness.x", admittance_stiffness_[0]});
+//      controller_->get_node()->set_parameter({"admittance.stiffness.y", admittance_stiffness_[1]});
+//      controller_->get_node()->set_parameter({"admittance.stiffness.z", admittance_stiffness_[2]});
+//      controller_->get_node()->set_parameter({"admittance.stiffness.rx", admittance_stiffness_[3]});
+//      controller_->get_node()->set_parameter({"admittance.stiffness.ry", admittance_stiffness_[4]});
+//      controller_->get_node()->set_parameter({"admittance.stiffness.rz", admittance_stiffness_[5]});
+//
+//    }
   }
 
   void assign_interfaces()
@@ -362,7 +358,7 @@ protected:
     wait_for_topic(joint_command_publisher_->get_topic_name());
 
     ControllerCommandJointMsg joint_msg;
-    joint_msg.joint_names = joint_names_;
+//    joint_msg.joint_names = joint_names_;
     trajectory_msgs::msg::JointTrajectoryPoint trajectory_point;
     auto num_joints = joint_names_.size();
     trajectory_point.positions.reserve(num_joints);
@@ -370,7 +366,7 @@ protected:
     for (auto index = 0u; index < num_joints; ++index) {
       trajectory_point.positions.emplace_back(joint_state_values_[index]);
     }
-    joint_msg.points.emplace_back(trajectory_point);
+    joint_msg = trajectory_point;
 
     joint_command_publisher_->publish(joint_msg);
   }
@@ -399,7 +395,7 @@ protected:
 
   std::array<bool, 6> admittance_selected_axes_ = {true, true, true, true, true, true};
   std::array<double, 6> admittance_mass_ = {5.5, 6.6, 7.7, 8.8, 9.9, 10.10};
-  std::array<double, 6> admittance_damping_ = {100.1, 100.2, 100.3, 100.4, 100.5, 100.6};
+  std::array<double, 6> admittance_damping_ratio_ = {2.828427, 2.828427, 2.828427 , 2.828427, 2.828427, 2.828427 };
   std::array<double, 6> admittance_stiffness_ = {214.1, 214.2, 214.3, 214.4, 214.5, 214.6};
 
   std::array<double, 6> joint_command_values_ = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
@@ -440,8 +436,20 @@ protected:
   void SetUpController(bool set_parameters = true)
   {
     AdmittanceControllerTest::SetUpController(set_parameters);
-    controller_->get_node()->undeclare_parameter(std::get<0>(GetParam()));
-    controller_->get_node()->declare_parameter(std::get<0>(GetParam()), std::get<1>(GetParam()));
+//    controller_->get_node()->undeclare_parameter(std::get<0>(GetParam()));
+//    controller_->get_node()->declare_parameter(std::get<0>(GetParam()), std::get<1>(GetParam()));
+//    rclcpp::Parameter parameter("joints");
+//    controller_->get_node()->set_parameter(parameter);
+//    controller_->get_node()->set_parameter({"joints", ""});
+    if (set_parameters){
+      auto tmp = std::get<1>(GetParam());
+      rclcpp::Parameter parameter(std::get<0>(GetParam()),std::get<1>(GetParam()));
+    } else{
+      controller_->get_node()->undeclare_parameter(std::get<0>(GetParam()));
+    }
+
+
+//    controller_->get_node()->set_parameter(parameter);
   }
 
 };

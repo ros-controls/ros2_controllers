@@ -21,11 +21,21 @@
 #include <utility>
 #include <vector>
 
+
+// When there are many mandatory parameters, set all by default and remove one by one in a
+// parameterized test
+TEST_P(AdmittanceControllerTestParameterizedParameters, one_parameter_is_invalid)
+{
+  SetUpController(true);
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
+}
+
 // When there are many mandatory parameters, set all by default and remove one by one in a
 // parameterized test
 TEST_P(AdmittanceControllerTestParameterizedParameters, one_parameter_is_missing)
 {
-  SetUpController();
+  SetUpController(false);
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
 }
@@ -60,11 +70,11 @@ INSTANTIATE_TEST_SUITE_P(
 //       rclcpp::ParameterValue(false)
 //     ),
     std::make_tuple(
-      std::string("IK.base"),
+      std::string("kinematics.base"),
       rclcpp::ParameterValue("")
     ),
     std::make_tuple(
-      std::string("IK.group_name"),
+      std::string("kinematics.group_name"),
       rclcpp::ParameterValue("")
     ),
     std::make_tuple(
@@ -177,57 +187,61 @@ INSTANTIATE_TEST_SUITE_P(
 
 TEST_F(AdmittanceControllerTest, all_parameters_set_configure_success)
 {
-  SetUpController();
 
-  ASSERT_TRUE(controller_->joint_names_.empty());
-  ASSERT_TRUE(controller_->command_interface_types_.empty());
+  ASSERT_TRUE(controller_->params.joint_names_.empty());
+  ASSERT_TRUE(controller_->params.command_interface_types_.empty());
+
+  SetUpController();
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  ASSERT_TRUE(!controller_->joint_names_.empty());
-  ASSERT_TRUE(controller_->joint_names_.size() == joint_names_.size());
-  ASSERT_TRUE(std::equal(controller_->joint_names_.begin(), controller_->joint_names_.end(),
+  ASSERT_TRUE(!controller_->params.joint_names_.empty());
+  ASSERT_TRUE(controller_->params.joint_names_.size() == joint_names_.size());
+  ASSERT_TRUE(std::equal(controller_->params.joint_names_.begin(), controller_->params.joint_names_.end(),
     joint_names_.begin(), joint_names_.end()));
 
-  ASSERT_TRUE(!controller_->command_interface_types_.empty());
-  ASSERT_TRUE(controller_->command_interface_types_.size() == command_interface_types_.size());
+  ASSERT_TRUE(!controller_->params.command_interface_types_.empty());
+  ASSERT_TRUE(controller_->params.command_interface_types_.size() == command_interface_types_.size());
   ASSERT_TRUE(std::equal(
-    controller_->command_interface_types_.begin(), controller_->command_interface_types_.end(),
+    controller_->params.command_interface_types_.begin(), controller_->params.command_interface_types_.end(),
     command_interface_types_.begin(), command_interface_types_.end()));
 
-  ASSERT_TRUE(!controller_->state_interface_types_.empty());
-  ASSERT_TRUE(controller_->state_interface_types_.size() == state_interface_types_.size());
+  ASSERT_TRUE(!controller_->params.state_interface_types_.empty());
+  ASSERT_TRUE(controller_->params.state_interface_types_.size() == state_interface_types_.size());
   ASSERT_TRUE(std::equal(
-    controller_->state_interface_types_.begin(), controller_->state_interface_types_.end(),
+    controller_->params.state_interface_types_.begin(), controller_->params.state_interface_types_.end(),
                          state_interface_types_.begin(), state_interface_types_.end()));
 
-  ASSERT_EQ(controller_->ft_sensor_name_, ft_sensor_name_);
-  ASSERT_EQ(controller_->admittance_->parameters_.ik_base_frame_, ik_base_frame_);
-  ASSERT_EQ(controller_->admittance_->parameters_.ik_group_name_, ik_group_name_);
-  ASSERT_EQ(controller_->admittance_->parameters_.sensor_frame_, sensor_frame_);
+  ASSERT_EQ(controller_->admittance_->parameters_->ft_sensor_.name_, ft_sensor_name_);
+  ASSERT_EQ(controller_->admittance_->parameters_->kinematics_.base_, ik_base_frame_);
+  ASSERT_EQ(controller_->admittance_->parameters_->kinematics_.group_name_, ik_group_name_);
+  ASSERT_EQ(controller_->admittance_->parameters_->ft_sensor_.frame_.id_, sensor_frame_);
 
-  ASSERT_TRUE(!controller_->admittance_->parameters_.selected_axes_.empty());
-  ASSERT_TRUE(controller_->admittance_->parameters_.selected_axes_.size() == admittance_selected_axes_.size());
+  ASSERT_TRUE(!controller_->admittance_->parameters_->admittance_.selected_axes_.empty());
+  ASSERT_TRUE(controller_->admittance_->parameters_->admittance_.selected_axes_.size() == admittance_selected_axes_.size());
   ASSERT_TRUE(std::equal(
-    controller_->admittance_->parameters_.selected_axes_.begin(), controller_->admittance_->parameters_.selected_axes_.end(),
+    controller_->admittance_->parameters_->admittance_.selected_axes_.begin(),
+    controller_->admittance_->parameters_->admittance_.selected_axes_.end(),
                          admittance_selected_axes_.begin(), admittance_selected_axes_.end()));
 
-  ASSERT_TRUE(!controller_->admittance_->parameters_.mass_.empty());
-  ASSERT_TRUE(controller_->admittance_->parameters_.mass_.size() == admittance_mass_.size());
+  ASSERT_TRUE(!controller_->admittance_->parameters_->admittance_.mass_.empty());
+  ASSERT_TRUE(controller_->admittance_->parameters_->admittance_.mass_.size() == admittance_mass_.size());
   ASSERT_TRUE(std::equal(
-    controller_->admittance_->parameters_.mass_.begin(), controller_->admittance_->parameters_.mass_.end(),
+    controller_->admittance_->parameters_->admittance_.mass_.begin(), controller_->admittance_->parameters_->admittance_.mass_.end(),
                          admittance_mass_.begin(), admittance_mass_.end()));
 
-  ASSERT_TRUE(!controller_->admittance_->parameters_.damping_.empty());
-  ASSERT_TRUE(controller_->admittance_->parameters_.damping_.size() == admittance_damping_.size());
+  ASSERT_TRUE(!controller_->admittance_->parameters_->admittance_.damping_ratio_.empty());
+  ASSERT_TRUE(controller_->admittance_->parameters_->admittance_.damping_ratio_.size() == admittance_damping_ratio_.size());
   ASSERT_TRUE(std::equal(
-    controller_->admittance_->parameters_.damping_.begin(), controller_->admittance_->parameters_.damping_.end(),
-                         admittance_damping_.begin(), admittance_damping_.end()));
+      controller_->admittance_->parameters_->admittance_.damping_ratio_.begin(),
+      controller_->admittance_->parameters_->admittance_.damping_ratio_.end(),
+      admittance_damping_ratio_.begin(), admittance_damping_ratio_.end()));
 
-  ASSERT_TRUE(!controller_->admittance_->parameters_.stiffness_.empty());
-  ASSERT_TRUE(controller_->admittance_->parameters_.stiffness_.size() == admittance_stiffness_.size());
+  ASSERT_TRUE(!controller_->admittance_->parameters_->admittance_.stiffness_.empty());
+  ASSERT_TRUE(controller_->admittance_->parameters_->admittance_.stiffness_.size() == admittance_stiffness_.size());
   ASSERT_TRUE(std::equal(
-    controller_->admittance_->parameters_.stiffness_.begin(), controller_->admittance_->parameters_.stiffness_.end(),
+    controller_->admittance_->parameters_->admittance_.stiffness_.begin(),
+    controller_->admittance_->parameters_->admittance_.stiffness_.end(),
                          admittance_stiffness_.begin(), admittance_stiffness_.end()));
 }
 
@@ -254,29 +268,30 @@ TEST_F(AdmittanceControllerTest, activate_success)
   SetUpController();
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-
   ASSERT_EQ(controller_->command_interfaces_.size(), command_interface_types_.size() * joint_names_.size());
-
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  // Check ordered interfaces
-  ASSERT_TRUE(!controller_->joint_command_interface_.empty());
+  // Check command interfaces size
+  std::unordered_map < std::string,
+      std::vector < std::reference_wrapper < hardware_interface::LoanedCommandInterface >> * >
+      command_interface_map = {
+      {hardware_interface::HW_IF_POSITION, &controller_->joint_position_command_interface_},
+      {hardware_interface::HW_IF_VELOCITY, &controller_->joint_velocity_command_interface_}
+  };
   for (const auto & interface : command_interface_types_) {
-    auto it = std::find(
-      controller_->allowed_interface_types_.begin(), controller_->allowed_interface_types_.end(), interface);
-    auto index = std::distance(controller_->allowed_interface_types_.begin(), it);
-
-    ASSERT_TRUE(controller_->joint_command_interface_[index].size() == joint_names_.size());
+    ASSERT_TRUE(command_interface_map[interface]->size() == joint_names_.size());
+  }
+  // Check state interfaces size
+  // assign state interfaces
+  std::unordered_map < std::string,
+      std::vector < std::reference_wrapper < hardware_interface::LoanedStateInterface >> * > state_interface_map = {
+      {hardware_interface::HW_IF_POSITION, &controller_->joint_position_state_interface_},
+      {hardware_interface::HW_IF_VELOCITY, &controller_->joint_velocity_state_interface_}
+  };
+  for (const auto & interface : command_interface_types_) {
+    ASSERT_TRUE(state_interface_map[interface]->size() == joint_names_.size());
   }
 
-  ASSERT_TRUE(!controller_->joint_state_interface_.empty());
-  for (const auto & interface : state_interface_types_) {
-    auto it = std::find(
-      controller_->allowed_interface_types_.begin(), controller_->allowed_interface_types_.end(), interface);
-    auto index = std::distance(controller_->allowed_interface_types_.begin(), it);
-
-    ASSERT_TRUE(controller_->joint_state_interface_[index].size() == joint_names_.size());
-  }
 }
 
 TEST_F(AdmittanceControllerTest, update_success)
@@ -442,5 +457,12 @@ TEST_F(AdmittanceControllerTest, receive_message_and_publish_updated_status)
   ASSERT_EQ(msg.input_wrench_command.header.frame_id, control_frame_);
 }
 
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  rclcpp::init(argc, argv);
+  int result =  RUN_ALL_TESTS();
+  rclcpp::shutdown();
+  return result;
+}
 
 // Add test, wrong interfaces

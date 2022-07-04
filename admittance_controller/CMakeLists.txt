@@ -98,23 +98,43 @@ install(
         DESTINATION include
 )
 
-set(BUILD_TESTING 0) # TODO enable testing one test are fixed
 if (BUILD_TESTING)
+    # create custom test function to pass yaml file into test main
+    function(add_test_with_yaml_input TARGET SOURCES YAML_FILE)
+        add_executable(${TARGET} ${SOURCES})
+        _ament_cmake_gmock_find_gmock()
+        target_include_directories(${TARGET} PUBLIC "${GMOCK_INCLUDE_DIRS}")
+        target_link_libraries(${TARGET} ${GMOCK_LIBRARIES})
+        set(executable "$<TARGET_FILE:${TARGET}>")
+        set(result_file "${AMENT_TEST_RESULTS_DIR}/${PROJECT_NAME}/${TARGET}.gtest.xml")
+        ament_add_test(
+            ${TARGET}
+            COMMAND ${executable} --ros-args --params-file ${YAML_FILE}
+            --gtest_output=xml:${result_file}
+            OUTPUT_FILE ${CMAKE_BINARY_DIR}/ament_cmake_gmock/test_load_admittance_controller.txt
+            RESULT_FILE ${result_file}
+        )
+    endfunction()
+    # find testing packages
     find_package(ament_cmake_gmock REQUIRED)
     find_package(controller_manager REQUIRED)
     find_package(hardware_interface REQUIRED)
     find_package(ros2_control_test_assets REQUIRED)
-
-    ament_add_gmock(test_load_admittance_controller test/test_load_admittance_controller.cpp)
-    target_include_directories(test_load_admittance_controller PRIVATE include)
+    # test loading admittance controller
+    add_test_with_yaml_input(test_load_admittance_controller "test/test_load_admittance_controller.cpp"
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/test_params.yaml)
+    target_include_directories(test_load_admittance_controller PUBLIC "${GMOCK_INCLUDE_DIRS}")
+    target_link_libraries(test_load_admittance_controller ${GMOCK_LIBRARIES})
     ament_target_dependencies(
-            test_load_admittance_controller
-            controller_manager
-            hardware_interface
-            ros2_control_test_assets
+        test_load_admittance_controller
+        controller_manager
+        hardware_interface
+        ros2_control_test_assets
     )
-
-    ament_add_gmock(test_admittance_controller test/test_admittance_controller.cpp)
+    # test admittance controller function
+#    ament_add_gmock(test_admittance_controller test/test_admittance_controller.cpp)
+    add_test_with_yaml_input(test_admittance_controller "test/test_admittance_controller.cpp"
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/test_params.yaml)
     target_include_directories(test_admittance_controller PRIVATE include)
     target_link_libraries(test_admittance_controller admittance_controller)
     ament_target_dependencies(
@@ -124,6 +144,7 @@ if (BUILD_TESTING)
             hardware_interface
             ros2_control_test_assets
     )
+
 endif ()
 
 ament_export_include_directories(
