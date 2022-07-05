@@ -159,8 +159,8 @@ namespace admittance_controller {
     ee_transform_ = get_transform(current_joint_state.positions, parameters_->kinematics_.tip_,
                                   false, success);
 
-    world_transform_ = get_transform(current_joint_state.positions, parameters_->fixed_world_frame_.id_,
-                                     parameters_->fixed_world_frame_.external_, success);
+    world_transform_ = get_transform(current_joint_state.positions, parameters_->fixed_world_frame_.frame_.id_,
+                                     parameters_->fixed_world_frame_.frame_.external_, success);
     sensor_transform_ = get_transform(current_joint_state.positions, parameters_->ft_sensor_.frame_.id_,
                                       parameters_->ft_sensor_.frame_.external_, success);
     cog_transform_ = get_transform(current_joint_state.positions, parameters_->gravity_compensation_.frame_.id_,
@@ -487,8 +487,8 @@ namespace admittance_controller {
 
   void AdmittanceRule::get_controller_state(control_msgs::msg::AdmittanceControllerState &state_message) {
 
-    eigen_to_msg(wrench_world_, parameters_->fixed_world_frame_.id_, state_message.measured_wrench_filtered);
-    eigen_to_msg(measured_wrench_, parameters_->fixed_world_frame_.id_, state_message.measured_wrench);
+    eigen_to_msg(wrench_world_, parameters_->fixed_world_frame_.frame_.id_, state_message.measured_wrench_filtered);
+    eigen_to_msg(measured_wrench_, parameters_->fixed_world_frame_.frame_.id_, state_message.measured_wrench);
     eigen_to_msg(control_rot_.transpose() * world_rot_.transpose() * measured_wrench_, parameters_->control_.frame_.id_,
                  state_message.measured_wrench_control_frame);
     eigen_to_msg(ee_rot_.transpose() * world_rot_.transpose() * measured_wrench_, parameters_->kinematics_.tip_,

@@ -48,13 +48,11 @@ target_include_directories(
 
 # uncomment to generate struct
 ## specify which yaml root name to convert to struct
-#set(YAML_FILE ${CMAKE_CURRENT_SOURCE_DIR}/include/admittance_controller/config/admittance_controller.yaml)
-## specify which yaml root name to convert to struct
-#set(YAML_TARGET admittance_struct)
+#set(YAML_FILE ${CMAKE_CURRENT_SOURCE_DIR}/include/admittance_controller/config/definition.yaml)
 ## specify which yaml root name to convert to struct
 #set(OUT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/admittance_controller/config)
 #
-#generate_param_struct_header(admittance_controller ${OUT_DIR} ${YAML_FILE} ${YAML_TARGET})
+#generate_param_struct_header(admittance_controller ${OUT_DIR} ${YAML_FILE})
 
 
 ament_target_dependencies(
