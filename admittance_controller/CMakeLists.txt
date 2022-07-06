@@ -32,7 +32,6 @@ find_package(trajectory_msgs REQUIRED)
 find_package(angles REQUIRED)
 find_package(rcutils REQUIRED)
 find_package(tf2_kdl REQUIRED)
-find_package(gen_param_struct REQUIRED)
 
 
 # The admittance controller
@@ -47,6 +46,7 @@ target_include_directories(
 )
 
 # uncomment to generate struct
+#find_package(gen_param_struct REQUIRED)
 ## specify which yaml root name to convert to struct
 #set(YAML_FILE ${CMAKE_CURRENT_SOURCE_DIR}/include/admittance_controller/config/definition.yaml)
 ## specify which yaml root name to convert to struct

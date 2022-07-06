@@ -147,7 +147,7 @@ admittance_struct:
 
     stiffness: {
       type: double_array,
-      default_value: [ .NAN, .NAN, .NAN, .NAN, .NAN, .NAN ],
+      fixed_size: 6,
       description: "specifies stiffness values for x, y, z, rx, ry, and rz used in the admittance calculation",
     }
 

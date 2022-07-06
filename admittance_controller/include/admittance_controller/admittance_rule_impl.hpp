@@ -153,13 +153,10 @@ namespace admittance_controller {
                                        parameters_->control_.frame_.external_, success);
     reference_ft_transform_ = get_transform(reference_joint_state.positions, parameters_->ft_sensor_.frame_.id_,
                                             parameters_->ft_sensor_.frame_.external_, success);
-
     ft_transform_ = get_transform(current_joint_state.positions, parameters_->ft_sensor_.frame_.id_,
                                   parameters_->ft_sensor_.frame_.external_, success);
-
     ee_transform_ = get_transform(current_joint_state.positions, parameters_->kinematics_.tip_,
                                   false, success);
-
     world_transform_ = get_transform(current_joint_state.positions, parameters_->fixed_world_frame_.frame_.id_,
                                      parameters_->fixed_world_frame_.frame_.external_, success);
     sensor_transform_ = get_transform(current_joint_state.positions, parameters_->ft_sensor_.frame_.id_,
@@ -177,7 +174,7 @@ namespace admittance_controller {
     // apply filter and update wrench_world_ vector
     process_wrench_measurements(measured_wrench, world_rot_ * sensor_rot_, world_rot_ * cog_rot_);
 
-    // transform wrench_world_ into control frame
+    // transform wrench_world_ into base frame
     Eigen::Matrix<double, 3, 2> wrench_base = world_rot_.transpose() * wrench_world_;
 
     // calculate desired cartesian velocity in control frame
@@ -194,7 +191,6 @@ namespace admittance_controller {
     // calculate drift due to integrating the joint positions
     Eigen::Matrix<double, 3, 1> admittance_position_base = reference_ft_transform_.block<3,1>(0, 3) + admittance_position_.block<3,1>(0, 3);
     Eigen::Matrix<double, 3, 1> admittance_actually_position_base = ft_transform_.block<3,1>(0,3);
-
     Eigen::Matrix<double, 3, 3> ft_rot = ft_transform_.block<3,3>(0,0);
     Eigen::Matrix<double, 3, 3> reference_ft_rot = reference_ft_transform_.block<3,3>(0,0);
     Eigen::Matrix<double, 3, 3> admittance_rot = admittance_position_.block<3,3>(0,0);
@@ -210,10 +206,11 @@ namespace admittance_controller {
     double sign = (tmp >= 0) ? 1.0 : -1.0;
     correction_velocity.block<3, 1>(0, 1) = .1*sign*theta*V;
 
+    // calculate joint velocities that correspondence to cartesian velocities
     convert_cartesian_deltas_to_joint_deltas(current_joint_state.positions, admittance_velocity_ + correction_velocity,
                                                parameters_->ft_sensor_.frame_.id_,
                                                joint_vel_, success);
-
+    // calculate joint velocities that correspondence to cartesian accelerations
     convert_cartesian_deltas_to_joint_deltas(current_joint_state.positions, admittance_acceleration_,
                                              parameters_->ft_sensor_.frame_.id_,
                                              joint_acc_, success);
@@ -231,7 +228,6 @@ namespace admittance_controller {
       state_message_.error_joint_state.positions[i] =
           reference_joint_state.positions[i] - current_joint_state.positions[i];
     }
-
     for (auto i = 0ul; i < reference_joint_state.velocities.size(); i++) {
       desired_joint_state.velocities[i] = reference_joint_state.velocities[i] + joint_vel_[i];
       state_message_.error_joint_state.velocities[i] =
@@ -336,8 +332,9 @@ namespace admittance_controller {
     new_wrench(1, 1) = measured_wrench.torque.y;
     new_wrench(2, 1) = measured_wrench.torque.z;
 
-    // transform to base frame
+    // transform to world frame
     Eigen::Matrix<double, 3, 2> new_wrench_base = sensor_world_rot * new_wrench;
+
     // store value for state message
     measured_wrench_ = new_wrench_base;
 
@@ -345,6 +342,7 @@ namespace admittance_controller {
     new_wrench_base(2, 0) -= ee_weight[2];
     new_wrench_base.block<3, 1>(0, 1) -= (cog_world_rot * cog_).cross(ee_weight);
 
+    // apply smoothing filter
     for (auto i = 0; i < 6; i++) {
       wrench_world_(i) = filters::exponentialSmoothing(
           new_wrench_base(i), wrench_world_(i), parameters_->ft_sensor_.filter_coefficient_);

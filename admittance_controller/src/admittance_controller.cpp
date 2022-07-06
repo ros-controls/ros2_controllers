@@ -50,17 +50,6 @@ namespace admittance_controller {
 
     admittance_ = std::make_unique<admittance_controller::AdmittanceRule>();
 
-    try {
-      admittance_->parameter_handler_ = std::make_shared<admittance_struct_parameters::admittance_struct>(
-          get_node()->get_node_parameters_interface());
-      admittance_->parameters_ = &admittance_->parameter_handler_->params_;
-    } catch (const std::exception &e) {
-      RCLCPP_ERROR(get_node()->get_logger(), "Exception thrown during init stage with message: %s \n", e.what());
-      return CallbackReturn::ERROR;
-    }
-
-    num_joints_ = admittance_->parameters_->joints_.size();
-
     for (const auto &tmp: admittance_->parameters_->state_interfaces_) {
       RCLCPP_INFO(get_node()->get_logger(), "%s", ("state int types are: " + tmp + "\n").c_str());
     }
@@ -185,9 +174,9 @@ namespace admittance_controller {
       RCLCPP_ERROR(get_node()->get_logger(), "Exception thrown during init stage with message: %s \n", e.what());
       return CallbackReturn::ERROR;
     }
-
     num_joints_ = admittance_->parameters_->joints_.size();
 
+    // print and validate interface types
     for (const auto &tmp: admittance_->parameters_->state_interfaces_) {
       RCLCPP_INFO(get_node()->get_logger(), "%s", ("state int types are: " + tmp + "\n").c_str());
     }
@@ -204,7 +193,6 @@ namespace admittance_controller {
         return CallbackReturn::ERROR;
       }
     }
-
 
     auto get_interface_list = [](const std::vector<std::string> &interface_types) {
       std::stringstream ss_command_interfaces;
@@ -325,14 +313,12 @@ namespace admittance_controller {
     // update input reference from chainable interfaces
     read_state_reference_interfaces(state_reference_);
 
-    // sense: get all controller inputs
+    // get all controller inputs
     geometry_msgs::msg::Wrench ft_values;
     force_torque_sensor_->get_values_as_message(ft_values);
     read_state_from_hardware(state_current_);
 
-    // command: determine desired state from trajectory or pose goal
-    // and apply admittance controller
-
+    // apply admittance control to reference to determine desired state
     admittance_->update(state_current_, ft_values, state_reference_, period, state_desired_);
 
     // write calculated values to joint interfaces
@@ -351,8 +337,6 @@ namespace admittance_controller {
       last_commanded_state_.accelerations[i] = state_desired_.accelerations[i];
     }
 
-    // save state reference before applying admittance rule TODO why is this here?
-    // pre_admittance_point.points[0] = state_reference_;
     // Publish controller state
     rtBuffers.state_publisher_->lock();
     rtBuffers.state_publisher_->msg_.input_joint_command = pre_admittance_point;
@@ -373,7 +357,6 @@ namespace admittance_controller {
   }
 
   CallbackReturn AdmittanceController::on_cleanup(const rclcpp_lifecycle::State &previous_state) {
-
     return CallbackReturn::SUCCESS;
   }
 
