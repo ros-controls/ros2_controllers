@@ -55,14 +55,6 @@ namespace admittance_controller {
     std::unique_ptr<realtime_tools::RealtimePublisher<ControllerStateMsg>> state_publisher_;
   };
 
-  struct ParameterStruct {
-    std::vector<std::string> joint_names_;
-    std::vector<std::string> command_interface_types_;
-    std::vector<std::string> state_interface_types_;
-    std::vector<std::string> chainable_command_interface_types_;
-  };
-
-
   class AdmittanceController : public controller_interface::ChainableControllerInterface {
   public:
     ADMITTANCE_CONTROLLER_PUBLIC
@@ -121,8 +113,6 @@ namespace admittance_controller {
     std::unique_ptr<admittance_controller::AdmittanceRule> admittance_;
     // joint limiter TODO
     std::unique_ptr<semantic_components::ForceTorqueSensor> force_torque_sensor_;
-    // controller config filled by ROS
-    ParameterStruct params;
     // ROS subscribers
     rclcpp::Subscription<trajectory_msgs::msg::JointTrajectoryPoint>::SharedPtr input_joint_command_subscriber_ = nullptr;
     rclcpp::Publisher<control_msgs::msg::AdmittanceControllerState>::SharedPtr s_publisher_ = nullptr;

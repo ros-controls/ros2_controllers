@@ -30,7 +30,7 @@
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
 constexpr size_t
-ROS_LOG_THROTTLE_PERIOD = 1 * 1000;  // Milliseconds to throttle logs inside loops
+    ROS_LOG_THROTTLE_PERIOD = 1 * 1000;  // Milliseconds to throttle logs inside loops
 
 namespace admittance_controller {
   using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
@@ -39,7 +39,7 @@ namespace admittance_controller {
   AdmittanceController::AdmittanceController() = default;
 
   void
-  AdmittanceController::joint_command_callback(const std::shared_ptr <trajectory_msgs::msg::JointTrajectoryPoint> msg) {
+  AdmittanceController::joint_command_callback(const std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint> msg) {
     if (controller_is_active_) {
       rtBuffers.input_joint_command_.writeFromNonRT(msg);
     }
@@ -49,44 +49,34 @@ namespace admittance_controller {
     // initialize controller config
 
     admittance_ = std::make_unique<admittance_controller::AdmittanceRule>();
-//    try {
-//      params = {
-//          get_node()->get_parameter("joints").as_string_array(),
-//          get_node()->get_parameter("command_interfaces").as_string_array(),
-//          get_node()->get_parameter("state_interfaces").as_string_array(),
-//          get_node()->get_parameter("chainable_command_interfaces").as_string_array(),
-//      };
-//    } catch (const std::exception &e) {
-//      RCLCPP_ERROR(get_node()->get_logger(),
-//                   "Exception thrown during init stage while reading parameters with message: %s \n", e.what());
-//      return CallbackReturn::ERROR;
-//    }
-//
-//    for (const auto &tmp: params.state_interface_types_) {
-//      RCLCPP_INFO(get_node()->get_logger(), "%s", ("state int types are: " + tmp + "\n").c_str());
-//    }
-//    for (const auto &tmp: params.command_interface_types_) {
-//      RCLCPP_INFO(get_node()->get_logger(), "%s", ("command int types are: " + tmp + "\n").c_str());
-//    }
-//    for (const auto &tmp: params.chainable_command_interface_types_) {
-//      if (tmp == hardware_interface::HW_IF_POSITION || tmp == hardware_interface::HW_IF_VELOCITY) {
-//        RCLCPP_INFO(get_node()->get_logger(), "%s", ("chainable int types are: " + tmp + "\n").c_str());
-//      } else {
-//        RCLCPP_ERROR(get_node()->get_logger(), "chainable interface type %s is not supported. Supported types are %s and %s",
-//                     tmp.c_str(), hardware_interface::HW_IF_POSITION, hardware_interface::HW_IF_VELOCITY);
-//        return CallbackReturn::ERROR;
-//      }
-//    }
-//
-//    try {
-//      admittance_->parameter_handler_ = std::make_shared<admittance_struct_parameters::admittance_struct>(get_node()->get_node_parameters_interface());
-//      admittance_->parameters_ = &admittance_->parameter_handler_->params_;
-//    } catch (const std::exception &e) {
-//      RCLCPP_ERROR(get_node()->get_logger(), "Exception thrown during init stage with message: %s \n", e.what());
-//      return CallbackReturn::ERROR;
-//    }
-//
-//    num_joints_ = params.joint_names_.size();
+
+    try {
+      admittance_->parameter_handler_ = std::make_shared<admittance_struct_parameters::admittance_struct>(
+          get_node()->get_node_parameters_interface());
+      admittance_->parameters_ = &admittance_->parameter_handler_->params_;
+    } catch (const std::exception &e) {
+      RCLCPP_ERROR(get_node()->get_logger(), "Exception thrown during init stage with message: %s \n", e.what());
+      return CallbackReturn::ERROR;
+    }
+
+    num_joints_ = admittance_->parameters_->joints_.size();
+
+    for (const auto &tmp: admittance_->parameters_->state_interfaces_) {
+      RCLCPP_INFO(get_node()->get_logger(), "%s", ("state int types are: " + tmp + "\n").c_str());
+    }
+    for (const auto &tmp: admittance_->parameters_->command_interfaces_) {
+      RCLCPP_INFO(get_node()->get_logger(), "%s", ("command int types are: " + tmp + "\n").c_str());
+    }
+    for (const auto &tmp: admittance_->parameters_->chainable_command_interfaces_) {
+      if (tmp == hardware_interface::HW_IF_POSITION || tmp == hardware_interface::HW_IF_VELOCITY) {
+        RCLCPP_INFO(get_node()->get_logger(), "%s", ("chainable int types are: " + tmp + "\n").c_str());
+      } else {
+        RCLCPP_ERROR(get_node()->get_logger(),
+                     "chainable interface type %s is not supported. Supported types are %s and %s",
+                     tmp.c_str(), hardware_interface::HW_IF_POSITION, hardware_interface::HW_IF_VELOCITY);
+        return CallbackReturn::ERROR;
+      }
+    }
 
     return CallbackReturn::SUCCESS;
   }
@@ -97,10 +87,10 @@ namespace admittance_controller {
     // controller manager will populate the state_interfaces_ vector field via the ControllerInterfaceBase.
     // Note: state_interface_types_ contains position, velocity, acceleration; effort is not supported
 
-    std::vector <std::string> state_interfaces_config_names; //= force_torque_sensor_->get_state_interface_names();
+    std::vector<std::string> state_interfaces_config_names; //= force_torque_sensor_->get_state_interface_names();
 
-    for (const auto &interface: params.state_interface_types_) {
-      for (const auto &joint: params.joint_names_) {
+    for (const auto &interface: admittance_->parameters_->state_interfaces_) {
+      for (const auto &joint: admittance_->parameters_->joints_) {
         state_interfaces_config_names.push_back(joint + "/" + interface);
       }
     }
@@ -118,10 +108,10 @@ namespace admittance_controller {
     // controller manager will populate the command_interfaces_ vector field via the ControllerInterfaceBase
     // Note: command_interface_types_ contains position, velocity; acceleration, effort are not supported
 
-    std::vector <std::string> command_interfaces_config_names;
+    std::vector<std::string> command_interfaces_config_names;
 
-    for (const auto &interface: params.command_interface_types_) {
-      for (const auto &joint: params.joint_names_) {
+    for (const auto &interface: admittance_->parameters_->command_interfaces_) {
+      for (const auto &joint: admittance_->parameters_->joints_) {
         command_interfaces_config_names.push_back(joint + "/" + interface);
       }
     }
@@ -130,23 +120,24 @@ namespace admittance_controller {
             command_interfaces_config_names};
   }
 
-  std::vector <hardware_interface::CommandInterface> AdmittanceController::on_export_reference_interfaces() {
+  std::vector<hardware_interface::CommandInterface> AdmittanceController::on_export_reference_interfaces() {
     // create CommandInterface interfaces that other controllers will be able to chain to
 
-    std::vector <hardware_interface::CommandInterface> chainable_command_interfaces;
-    auto num_chainable_interfaces = params.chainable_command_interface_types_.size() * params.joint_names_.size();
+    std::vector<hardware_interface::CommandInterface> chainable_command_interfaces;
+    auto num_chainable_interfaces =
+        admittance_->parameters_->chainable_command_interfaces_.size() * admittance_->parameters_->joints_.size();
     reference_interfaces_.resize(num_chainable_interfaces, std::numeric_limits<double>::quiet_NaN());
     chainable_command_interfaces.reserve(num_chainable_interfaces);
 
     position_reference_.clear();
     velocity_reference_.clear();
-    std::unordered_map < std::string, std::vector < double * > * > chainable_interface_map = {
+    std::unordered_map<std::string, std::vector<double *> *> chainable_interface_map = {
         {hardware_interface::HW_IF_POSITION, &position_reference_},
         {hardware_interface::HW_IF_VELOCITY, &velocity_reference_}};
 
     auto index = 0ul;
-    for (const auto &interface: params.chainable_command_interface_types_) {
-      for (const auto &joint: params.joint_names_) {
+    for (const auto &interface: admittance_->parameters_->chainable_command_interfaces_) {
+      for (const auto &joint: admittance_->parameters_->joints_) {
         chainable_interface_map[interface]->push_back(reference_interfaces_.data() + index);
         chainable_command_interfaces.emplace_back(
             hardware_interface::CommandInterface(std::string(get_node()->get_name()),
@@ -187,46 +178,35 @@ namespace admittance_controller {
     // Print output so users can be sure the interface setup is correct
 
     try {
-      params = {
-          get_node()->get_parameter("joints").as_string_array(),
-          get_node()->get_parameter("command_interfaces").as_string_array(),
-          get_node()->get_parameter("state_interfaces").as_string_array(),
-          get_node()->get_parameter("chainable_command_interfaces").as_string_array(),
-      };
-    } catch (const std::exception &e) {
-      RCLCPP_ERROR(get_node()->get_logger(),
-                   "Exception thrown during init stage while reading parameters with message: %s \n", e.what());
-      return CallbackReturn::ERROR;
-    }
-
-    for (const auto &tmp: params.state_interface_types_) {
-      RCLCPP_INFO(get_node()->get_logger(), "%s", ("state int types are: " + tmp + "\n").c_str());
-    }
-    for (const auto &tmp: params.command_interface_types_) {
-      RCLCPP_INFO(get_node()->get_logger(), "%s", ("command int types are: " + tmp + "\n").c_str());
-    }
-    for (const auto &tmp: params.chainable_command_interface_types_) {
-      if (tmp == hardware_interface::HW_IF_POSITION || tmp == hardware_interface::HW_IF_VELOCITY) {
-        RCLCPP_INFO(get_node()->get_logger(), "%s", ("chainable int types are: " + tmp + "\n").c_str());
-      } else {
-        RCLCPP_ERROR(get_node()->get_logger(), "chainable interface type %s is not supported. Supported types are %s and %s",
-                     tmp.c_str(), hardware_interface::HW_IF_POSITION, hardware_interface::HW_IF_VELOCITY);
-        return CallbackReturn::ERROR;
-      }
-    }
-
-    try {
-      admittance_->parameter_handler_ = std::make_shared<admittance_struct_parameters::admittance_struct>(get_node()->get_node_parameters_interface());
+      admittance_->parameter_handler_ = std::make_shared<admittance_struct_parameters::admittance_struct>(
+          get_node()->get_node_parameters_interface());
       admittance_->parameters_ = &admittance_->parameter_handler_->params_;
     } catch (const std::exception &e) {
       RCLCPP_ERROR(get_node()->get_logger(), "Exception thrown during init stage with message: %s \n", e.what());
       return CallbackReturn::ERROR;
     }
 
-    num_joints_ = params.joint_names_.size();
+    num_joints_ = admittance_->parameters_->joints_.size();
+
+    for (const auto &tmp: admittance_->parameters_->state_interfaces_) {
+      RCLCPP_INFO(get_node()->get_logger(), "%s", ("state int types are: " + tmp + "\n").c_str());
+    }
+    for (const auto &tmp: admittance_->parameters_->command_interfaces_) {
+      RCLCPP_INFO(get_node()->get_logger(), "%s", ("command int types are: " + tmp + "\n").c_str());
+    }
+    for (const auto &tmp: admittance_->parameters_->chainable_command_interfaces_) {
+      if (tmp == hardware_interface::HW_IF_POSITION || tmp == hardware_interface::HW_IF_VELOCITY) {
+        RCLCPP_INFO(get_node()->get_logger(), "%s", ("chainable int types are: " + tmp + "\n").c_str());
+      } else {
+        RCLCPP_ERROR(get_node()->get_logger(),
+                     "chainable interface type %s is not supported. Supported types are %s and %s",
+                     tmp.c_str(), hardware_interface::HW_IF_POSITION, hardware_interface::HW_IF_VELOCITY);
+        return CallbackReturn::ERROR;
+      }
+    }
 
 
-    auto get_interface_list = [](const std::vector <std::string> &interface_types) {
+    auto get_interface_list = [](const std::vector<std::string> &interface_types) {
       std::stringstream ss_command_interfaces;
       for (size_t index = 0; index < interface_types.size(); ++index) {
         if (index != 0) {
@@ -238,8 +218,8 @@ namespace admittance_controller {
     };
     RCLCPP_INFO(
         get_node()->get_logger(), "Command interfaces are [%s] and and state interfaces are [%s].",
-        get_interface_list(params.command_interface_types_).c_str(),
-        get_interface_list(params.state_interface_types_).c_str());
+        get_interface_list(admittance_->parameters_->command_interfaces_).c_str(),
+        get_interface_list(admittance_->parameters_->state_interfaces_).c_str());
 
     // setup subscribers and publishers
     input_joint_command_subscriber_ = get_node()->create_subscription<trajectory_msgs::msg::JointTrajectoryPoint>(
@@ -248,11 +228,11 @@ namespace admittance_controller {
     s_publisher_ = get_node()->create_publisher<control_msgs::msg::AdmittanceControllerState>(
         "~/state", rclcpp::SystemDefaultsQoS());
     rtBuffers.state_publisher_ =
-        std::make_unique < realtime_tools::RealtimePublisher < ControllerStateMsg >> (s_publisher_);
+        std::make_unique<realtime_tools::RealtimePublisher<ControllerStateMsg >>(s_publisher_);
 
     // Initialize state message
     rtBuffers.state_publisher_->lock();
-    rtBuffers.state_publisher_->msg_.joint_names = params.joint_names_;
+    rtBuffers.state_publisher_->msg_.joint_names = admittance_->parameters_->joints_;
     rtBuffers.state_publisher_->msg_.actual_joint_state.positions.resize(num_joints_, 0.0);
     rtBuffers.state_publisher_->msg_.desired_joint_state.positions.resize(num_joints_, 0.0);
     rtBuffers.state_publisher_->msg_.error_joint_state.positions.resize(num_joints_, 0.0);
@@ -263,7 +243,7 @@ namespace admittance_controller {
         semantic_components::ForceTorqueSensor(admittance_->parameters_->ft_sensor_.name_));
 
     // configure admittance rule
-    if (admittance_->configure(get_node(), num_joints_) == controller_interface::return_type::ERROR){
+    if (admittance_->configure(get_node(), num_joints_) == controller_interface::return_type::ERROR) {
       return CallbackReturn::ERROR;
     }
 
@@ -285,28 +265,29 @@ namespace admittance_controller {
     joint_velocity_state_interface_.clear();
 
     // assign command interfaces
-    std::unordered_map < std::string,
-        std::vector < std::reference_wrapper < hardware_interface::LoanedCommandInterface >> * >
+    std::unordered_map<std::string,
+        std::vector<std::reference_wrapper<hardware_interface::LoanedCommandInterface >> *>
         command_interface_map = {
-            {hardware_interface::HW_IF_POSITION, &joint_position_command_interface_},
-            {hardware_interface::HW_IF_VELOCITY, &joint_velocity_command_interface_}
-        };
-    for (auto i = 0ul; i < params.command_interface_types_.size(); i++) {
-      for (auto j = 0ul; j < params.joint_names_.size(); j++) {
-        command_interface_map[params.command_interface_types_[i]]->emplace_back(
+        {hardware_interface::HW_IF_POSITION, &joint_position_command_interface_},
+        {hardware_interface::HW_IF_VELOCITY, &joint_velocity_command_interface_}
+    };
+    for (auto i = 0ul; i < admittance_->parameters_->command_interfaces_.size(); i++) {
+      for (auto j = 0ul; j < admittance_->parameters_->joints_.size(); j++) {
+        command_interface_map[admittance_->parameters_->command_interfaces_[i]]->emplace_back(
             command_interfaces_[i * num_joints_ + j]);
       }
     }
 
     // assign state interfaces
-    std::unordered_map < std::string,
-        std::vector < std::reference_wrapper < hardware_interface::LoanedStateInterface >> * > state_interface_map = {
-            {hardware_interface::HW_IF_POSITION, &joint_position_state_interface_},
-            {hardware_interface::HW_IF_VELOCITY, &joint_velocity_state_interface_}
-        };
-    for (auto i = 0ul; i < params.state_interface_types_.size(); i++) {
-      for (auto j = 0ul; j < params.joint_names_.size(); j++) {
-        state_interface_map[params.state_interface_types_[i]]->emplace_back(state_interfaces_[i * num_joints_ + j]);
+    std::unordered_map<std::string,
+        std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface >> *> state_interface_map = {
+        {hardware_interface::HW_IF_POSITION, &joint_position_state_interface_},
+        {hardware_interface::HW_IF_VELOCITY, &joint_velocity_state_interface_}
+    };
+    for (auto i = 0ul; i < admittance_->parameters_->state_interfaces_.size(); i++) {
+      for (auto j = 0ul; j < admittance_->parameters_->joints_.size(); j++) {
+        state_interface_map[admittance_->parameters_->state_interfaces_[i]]->emplace_back(
+            state_interfaces_[i * num_joints_ + j]);
       }
     }
 
@@ -466,5 +447,5 @@ namespace admittance_controller {
 #include "pluginlib/class_list_macros.hpp"
 
 PLUGINLIB_EXPORT_CLASS(admittance_controller::AdmittanceController,
-    controller_interface::ChainableControllerInterface
+                       controller_interface::ChainableControllerInterface
 )

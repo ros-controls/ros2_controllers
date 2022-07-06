@@ -135,6 +135,7 @@ namespace admittance_controller {
     // update param values
     ee_weight.setZero();
     ee_weight[2] = -parameters_->gravity_compensation_.CoG_.force_;
+    vec_to_eigen(parameters_->gravity_compensation_.CoG_.pos_, cog_);
     vec_to_eigen(parameters_->admittance_.mass_, mass_);
     vec_to_eigen(parameters_->admittance_.stiffness_, stiffness_);
     vec_to_eigen(parameters_->admittance_.selected_axes_, selected_axes_);

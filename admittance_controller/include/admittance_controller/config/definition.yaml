@@ -1,202 +1,169 @@
 admittance_struct:
   joints: {
-    default_value: ["UNDEFINED"],
+    type: string_array,
     description: "specifies which joints will be used by the controller",
-    configurable: false,
-    optional: false
+    read_only: true
   }
   command_interfaces:
     {
-      default_value: ["UNDEFINED"],
+      type: string_array,
       description: "specifies which command interfaces to claim",
-      configurable: false,
-      optional: false
+      read_only: true
     }
 
   state_interfaces:
     {
-      default_value: ["UNDEFINED"],
+      type: string_array,
       description: "specifies which state interfaces to claim",
-      configurable: false,
-      optional: false
+      read_only: true
     }
 
   chainable_command_interfaces:
     {
-      default_value: ["UNDEFINED"],
+      type: string_array,
       description: "specifies which chainable interfaces to claim",
-      configurable: false,
-      optional: false
+      read_only: true
     }
 
   kinematics:
     plugin_name: {
-      default_value: "UNDEFINED",
-      description: "specifies which kinematics plugin to load",
-      configurable: true, # requires restart
-      optional: false
+      type: string,
+      description: "specifies which kinematics plugin to load"
     }
     plugin_package: {
-      default_value: "UNDEFINED",
-      description: "specifies the package to load the kinematics plugin from",
-      configurable: true, # requires restart
-      optional: false
+      type: string,
+      description: "specifies the package to load the kinematics plugin from"
     }
     base: {
-      default_value: "UNDEFINED",
-      description: "specifies the base link of the robot description used by the kinematics plugin",
-      configurable: true, # requires restart
-      optional: false
+      type: string,
+      description: "specifies the base link of the robot description used by the kinematics plugin"
     }
     tip: {
-      default_value: "UNDEFINED",
-      description: "specifies the end effector link of the robot description used by the kinematics plugin",
-      configurable: true, # requires restart
-      optional: false
+      type: string,
+      description: "specifies the end effector link of the robot description used by the kinematics plugin"
     }
     alpha: {
+      type: double,
       default_value: 0.0005,
-      description: "specifies the damping coefficient for the Jacobian pseudo inverse",
-      configurable: true, # requires restart
-      optional: true
+      description: "specifies the damping coefficient for the Jacobian pseudo inverse"
     }
     group_name: {
-      default_value: "UNDEFINED",
-      description: "specifies the group name for planning with Moveit",
-      configurable: true, # requires restart
-      optional: false
+      type: string,
+      description: "specifies the group name for planning with Moveit"
     }
 
   ft_sensor:
     name: {
-      default_value: "UNDEFINED",
-      description: "name of the force torque sensor in the robot description",
-      configurable: true, # requires restart
-      optional: false
+      type: string,
+      description: "name of the force torque sensor in the robot description"
     }
     frame:
       id: {
-        default_value: "UNDEFINED",
-        description: "frame of the force torque sensor",
-        configurable: true, # requires restart
-        optional: false
+        type: string,
+        description: "frame of the force torque sensor"
       }
       external: {
-        default_value: No,
-        description: "specifies if the force torque sensor is contained in the kinematics chain from the base to the tip",
-        configurable: true, # requires restart
-        optional: true
+        type: bool,
+        default_value: false,
+        description: "specifies if the force torque sensor is contained in the kinematics chain from the base to the tip"
       }
     filter_coefficient: {
+      type: double,
       default_value: 0.005,
-      description: "specifies the coefficient for the sensor's exponential filter",
-      configurable: true, # requires restartF
-      optional: true
+      description: "specifies the coefficient for the sensor's exponential filter"
     }
 
   control:
     frame:
       id: {
-        default_value: "UNDEFINED",
-        description: "control frame used for admittance control",
-        configurable: true,
-        optional: false
+        type: string,
+        description: "control frame used for admittance control"
       }
       external: {
-        default_value: No,
-        description: "specifies if the control frame is contained in the kinematics chain from the base to the tip",
-        configurable: true, # requires restart
-        optional: true
+        type: bool,
+        default_value: false,
+        description: "specifies if the control frame is contained in the kinematics chain from the base to the tip"
       }
 
   fixed_world_frame: # Gravity points down (neg. Z) in this frame (Usually: world or base_link)
     frame:
       id: {
-        default_value: "UNDEFINED",
-        description: "world frame, gravity points down (neg. Z) in this frame",
-        configurable: true,
-        optional: false
+        type: string,
+        description: "world frame, gravity points down (neg. Z) in this frame"
       }
       external: {
-        default_value: No,
-        description: "specifies if the world frame is contained in the kinematics chain from the base to the tip",
-        configurable: true, # requires restart
-        optional: true
+        type: bool,
+        default_value: false,
+        description: "specifies if the world frame is contained in the kinematics chain from the base to the tip"
       }
 
   gravity_compensation:
     frame:
       id: {
-        default_value: "UNDEFINED",
-        description: "frame which center of gravity (CoG) is defined in",
-        configurable: true,
-        optional: false
+        type: string,
+        description: "frame which center of gravity (CoG) is defined in"
       }
       external: {
-        default_value: No,
-        description: "specifies if the center of gravity frame is contained in the kinematics chain from the base to the tip",
-        configurable: true, # requires restart
-        optional: true
+        type: bool,
+        default_value: false,
+        description: "specifies if the center of gravity frame is contained in the kinematics chain from the base to the tip"
       }
     CoG: # specifies the center of gravity of the end effector
       pos: {
-        default_value: [ .NAN, .NAN, .NAN ],
-        description: "position of the center of gravity (CoG) in its frame",
-        configurable: true,
-        optional: false
+        type: double_array,
+        fixed_size: 3,
+        description: "position of the center of gravity (CoG) in its frame"
       }
       force: {
+        type: double,
         default_value: .NAN,
-        description: "weight of the end effector, e.g mass * 9.81",
-        configurable: true,
-        optional: false
+        description: "weight of the end effector, e.g mass * 9.81"
       }
 
   admittance:
     selected_axes:
       {
-        default_value: [ false, false, false, false, false, false ],
-        description: "specifies if the axes x, y, z, rx, ry, and rz are enabled",
-        configurable: true,
-        optional: false
+        type: bool_array,
+        fixed_size: 6,
+        description: "specifies if the axes x, y, z, rx, ry, and rz are enabled"
       }
 
     # Having ".0" at the end is MUST, otherwise there is a loading error
     # F = M*a + D*v + S*(x - x_d)
     mass: {
-      default_value: [ .NAN, .NAN, .NAN, .NAN, .NAN, .NAN ],
+      type: double_array,
+      fixed_size: 6,
       description: "specifies mass values for x, y, z, rx, ry, and rz used in the admittance calculation",
-      configurable: true,
-      optional: false,
-      bounds: [0.0001, 100000000.0]
+      bounds: [ 0.0001, 1000000.0]
     }
 
     damping_ratio: {
-      default_value: [ .NAN, .NAN, .NAN, .NAN, .NAN, .NAN],
+      type: double_array,
+      fixed_size: 6,
       description: "specifies damping ratio values for x, y, z, rx, ry, and rz used in the admittance calculation. 
       The values are calculated as damping can be used instead: zeta = D / (2 * sqrt( M * S ))",
-      configurable: true,
-      optional: false,
-      bounds: [0.1, 10]
+      bounds: [ 0.1, 10.0 ]
     }
 
     stiffness: {
+      type: double_array,
       default_value: [ .NAN, .NAN, .NAN, .NAN, .NAN, .NAN ],
       description: "specifies stiffness values for x, y, z, rx, ry, and rz used in the admittance calculation",
-      configurable: true,
-      optional: false,
     }
 
   # general settings
+  robot_description: {
+    type: string,
+    description: "Contains robot description in URDF format. The description is used to perform forward and inverse kinematics.",
+    read_only: true
+  }
   enable_parameter_update_without_reactivation: {
+    type: bool,
     default_value: true,
-    description: "if enabled, configurable parameters will be dynamically updated in the control loop",
-    configurable: true,
-    optional: true
+    description: "if enabled, parameters will be dynamically updated in the control loop"
   }
   use_feedforward_commanded_input: {
+    type: bool,
     default_value: true,
-    description: "if enabled, the velocity commanded to the admittance controller is added to its calculated admittance velocity",
-    configurable: true,
-    optional: true
+    description: "if enabled, the velocity commanded to the admittance controller is added to its calculated admittance velocity"
   }

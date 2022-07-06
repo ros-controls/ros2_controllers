@@ -188,28 +188,28 @@ INSTANTIATE_TEST_SUITE_P(
 TEST_F(AdmittanceControllerTest, all_parameters_set_configure_success)
 {
 
-  ASSERT_TRUE(controller_->params.joint_names_.empty());
-  ASSERT_TRUE(controller_->params.command_interface_types_.empty());
+  ASSERT_TRUE(controller_->admittance_->parameters_->joints_.empty());
+  ASSERT_TRUE(controller_->admittance_->parameters_->command_interfaces_.empty());
 
   SetUpController();
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  ASSERT_TRUE(!controller_->params.joint_names_.empty());
-  ASSERT_TRUE(controller_->params.joint_names_.size() == joint_names_.size());
-  ASSERT_TRUE(std::equal(controller_->params.joint_names_.begin(), controller_->params.joint_names_.end(),
+  ASSERT_TRUE(!controller_->admittance_->parameters_->joints_.empty());
+  ASSERT_TRUE(controller_->admittance_->parameters_->joints_.size() == joint_names_.size());
+  ASSERT_TRUE(std::equal(controller_->admittance_->parameters_->joints_.begin(), controller_->admittance_->parameters_->joints_.end(),
     joint_names_.begin(), joint_names_.end()));
 
-  ASSERT_TRUE(!controller_->params.command_interface_types_.empty());
-  ASSERT_TRUE(controller_->params.command_interface_types_.size() == command_interface_types_.size());
+  ASSERT_TRUE(!controller_->admittance_->parameters_->command_interfaces_.empty());
+  ASSERT_TRUE(controller_->admittance_->parameters_->command_interfaces_.size() == command_interface_types_.size());
   ASSERT_TRUE(std::equal(
-    controller_->params.command_interface_types_.begin(), controller_->params.command_interface_types_.end(),
+    controller_->admittance_->parameters_->command_interfaces_.begin(), controller_->admittance_->parameters_->command_interfaces_.end(),
     command_interface_types_.begin(), command_interface_types_.end()));
 
-  ASSERT_TRUE(!controller_->params.state_interface_types_.empty());
-  ASSERT_TRUE(controller_->params.state_interface_types_.size() == state_interface_types_.size());
+  ASSERT_TRUE(!controller_->admittance_->parameters_->state_interfaces_.empty());
+  ASSERT_TRUE(controller_->admittance_->parameters_->state_interfaces_.size() == state_interface_types_.size());
   ASSERT_TRUE(std::equal(
-    controller_->params.state_interface_types_.begin(), controller_->params.state_interface_types_.end(),
+    controller_->admittance_->parameters_->state_interfaces_.begin(), controller_->admittance_->parameters_->state_interfaces_.end(),
                          state_interface_types_.begin(), state_interface_types_.end()));
 
   ASSERT_EQ(controller_->admittance_->parameters_->ft_sensor_.name_, ft_sensor_name_);
