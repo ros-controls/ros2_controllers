@@ -84,8 +84,11 @@ JointTrajectoryController::command_interface_configuration() const
   conf.type = controller_interface::interface_configuration_type::INDIVIDUAL;
   if (dof_ == 0)
   {
-    fprintf(stderr, "During ros2_control interface configuration, degrees of freedom is not valid;"
-      " it should be positive. Actual DOF is %zu\n", dof_);
+    fprintf(
+      stderr,
+      "During ros2_control interface configuration, degrees of freedom is not valid;"
+      " it should be positive. Actual DOF is %zu\n",
+      dof_);
     std::exit(EXIT_FAILURE);
   }
   conf.names.reserve(dof_ * command_interface_types_.size());
@@ -463,12 +466,14 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   joint_names_ = get_node()->get_parameter("joints").as_string_array();
   if ((dof_ > 0) && (joint_names_.size() != dof_))
   {
-    RCLCPP_ERROR(logger,
+    RCLCPP_ERROR(
+      logger,
       "The JointTrajectoryController does not support restarting with a different number of DOF");
     // TODO(andyz): update vector lengths if num. joints did change and re-initialize them so we
     // can continue
     return CallbackReturn::FAILURE;
   }
+
   dof_ = joint_names_.size();
 
   if (!reset())
@@ -767,6 +772,11 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     std::bind(&JointTrajectoryController::cancel_callback, this, _1),
     std::bind(&JointTrajectoryController::feedback_setup_callback, this, _1));
 
+  resize_joint_trajectory_point(state_current_, dof_);
+  resize_joint_trajectory_point(state_desired_, dof_);
+  resize_joint_trajectory_point(state_error_, dof_);
+  resize_joint_trajectory_point(last_commanded_state_, dof_);
+
   return CallbackReturn::SUCCESS;
 }
 
@@ -783,8 +793,8 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
           command_interfaces_, joint_names_, interface, joint_command_interface_[index]))
     {
       RCLCPP_ERROR(
-        get_node()->get_logger(), "Expected %zu '%s' command interfaces, got %zu.",
-        dof_, interface.c_str(), joint_command_interface_[index].size());
+        get_node()->get_logger(), "Expected %zu '%s' command interfaces, got %zu.", dof_,
+        interface.c_str(), joint_command_interface_[index].size());
       return CallbackReturn::ERROR;
     }
   }
@@ -797,8 +807,8 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
           state_interfaces_, joint_names_, interface, joint_state_interface_[index]))
     {
       RCLCPP_ERROR(
-        get_node()->get_logger(), "Expected %zu '%s' state interfaces, got %zu.",
-        dof_, interface.c_str(), joint_state_interface_[index].size());
+        get_node()->get_logger(), "Expected %zu '%s' state interfaces, got %zu.", dof_,
+        interface.c_str(), joint_state_interface_[index].size());
       return CallbackReturn::ERROR;
     }
   }
@@ -827,10 +837,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   last_state_publish_time_ = get_node()->now();
 
   // Initialize current state storage if hardware state has tracking offset
-  resize_joint_trajectory_point(state_current_, dof_);
-  resize_joint_trajectory_point(state_desired_, dof_);
-  resize_joint_trajectory_point(state_error_, dof_);
-  resize_joint_trajectory_point(last_commanded_state_, dof_);
   read_state_from_hardware(state_current_);
   read_state_from_hardware(state_desired_);
   read_state_from_hardware(last_commanded_state_);
