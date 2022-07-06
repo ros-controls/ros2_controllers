@@ -15,13 +15,32 @@
 #ifndef JOINT_TRAJECTORY_CONTROLLER__INTERPOLATION_METHODS_HPP_
 #define JOINT_TRAJECTORY_CONTROLLER__INTERPOLATION_METHODS_HPP_
 
+#include <string>
+
 namespace joint_trajectory_controller
 {
 enum class InterpolationMethod
 {
   NONE,
-  SPLINE
+  VARIABLE_DEGREE_SPLINE
 };
+
+[[nodiscard]] inline InterpolationMethod from_string(const std::string & interpolation_method)
+{
+  if (interpolation_method.compare("none") == 0)
+  {
+    return InterpolationMethod::NONE;
+  }
+  else if (!interpolation_method.compare("splines") == 0)
+  {
+    return InterpolationMethod::VARIABLE_DEGREE_SPLINE;
+  }
+  // Default
+  else
+  {
+    return InterpolationMethod::VARIABLE_DEGREE_SPLINE;
+  }
+}
 }  // namespace joint_trajectory_controller
 
 #endif  // JOINT_TRAJECTORY_CONTROLLER__INTERPOLATION_METHODS_HPP_

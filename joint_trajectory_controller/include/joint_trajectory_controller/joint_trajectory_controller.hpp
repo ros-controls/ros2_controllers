@@ -141,7 +141,7 @@ protected:
   /// Allow integration in goal trajectories to accept goals without position or velocity specified
   bool allow_integration_in_goal_trajectories_ = false;
   /// Specify interpolation method. Default to splines.
-  InterpolationMethod interpolation_method_ { InterpolationMethod::SPLINE };
+  InterpolationMethod interpolation_method_{InterpolationMethod::VARIABLE_DEGREE_SPLINE};
 
   double state_publish_rate_;
   double action_monitor_rate_;

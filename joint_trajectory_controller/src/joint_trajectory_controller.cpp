@@ -68,21 +68,8 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
     state_publish_rate_ = auto_declare<double>("state_publish_rate", 50.0);
     action_monitor_rate_ = auto_declare<double>("action_monitor_rate", 20.0);
 
-    std::string interpolation_method = "";
-    interpolation_method = auto_declare<std::string>("interpolation_method", "splines");
-    if (interpolation_method == "none")
-    {
-      interpolation_method_ = InterpolationMethod::NONE;
-    }
-    else if (interpolation_method == "splines")
-    {
-      interpolation_method_ = InterpolationMethod::SPLINE;
-    }
-    else
-    {
-      fprintf(stderr, "Unexpected `interpolation_method` parameter.");
-      return CallbackReturn::ERROR;
-    }
+    std::string interpolation_string = auto_declare<std::string>("interpolation_method", "splines");
+    interpolation_method_ = from_string(interpolation_string);
   }
   catch (const std::exception & e)
   {
@@ -206,7 +193,7 @@ controller_interface::return_type JointTrajectoryController::update(
     TrajectoryPointConstIter start_segment_itr, end_segment_itr;
     const bool valid_point =
       (*traj_point_active_ptr_)
-        ->sample(time, interpolation_method_, state_desired, start_segment_itr, end_segment_itr);
+        ->sample(time, interpolation_method_, state_desired_, start_segment_itr, end_segment_itr);
 
     if (valid_point)
     {

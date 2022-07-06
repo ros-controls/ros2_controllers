@@ -36,7 +36,7 @@ namespace
 // Floating-point value comparison threshold
 const double EPS = 1e-8;
 const joint_trajectory_controller::InterpolationMethod DEFAULT_INTERPOLATION =
-  joint_trajectory_controller::InterpolationMethod::SPLINE;
+  joint_trajectory_controller::InterpolationMethod::VARIABLE_DEGREE_SPLINE;
 }  // namespace
 
 TEST(TestTrajectory, initialize_trajectory)

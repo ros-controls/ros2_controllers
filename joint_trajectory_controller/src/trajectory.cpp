@@ -14,7 +14,6 @@
 
 #include "joint_trajectory_controller/trajectory.hpp"
 
-#include <iostream>
 #include <memory>
 
 #include "hardware_interface/macros.hpp"
@@ -130,17 +129,14 @@ bool Trajectory::sample(
 
     if (sample_time >= t0 && sample_time < t1)
     {
-      std::cout << "Somewhere prior to the first point" << std::endl;
       // If interpolation is disabled, just forward the next waypoint
-      if (interpolation_method == joint_trajectory_controller::InterpolationMethod::NONE)
+      if (interpolation_method == InterpolationMethod::NONE)
       {
-        std::cout << "Traj pass-through" << std::endl;
         output_state = next_point;
       }
       // Do interpolation
       else
       {
-        std::cout << "Spline interpolation" << std::endl;
         // it changes points only if position and velocity do not exist, but their derivatives
         deduce_from_derivatives(
           point, next_point, state_before_traj_msg_.positions.size(), (t1 - t0).seconds());
