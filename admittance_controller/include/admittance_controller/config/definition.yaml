@@ -49,6 +49,7 @@ admittance_struct:
     }
     group_name: {
       type: string,
+      default_value: "",
       description: "specifies the group name for planning with Moveit"
     }
 
@@ -116,7 +117,7 @@ admittance_struct:
       }
       force: {
         type: double,
-        default_value: .NAN,
+        default_value: 0.0,
         description: "weight of the end effector, e.g mass * 9.81"
       }
 
@@ -141,14 +142,14 @@ admittance_struct:
       type: double_array,
       fixed_size: 6,
       description: "specifies damping ratio values for x, y, z, rx, ry, and rz used in the admittance calculation. 
-      The values are calculated as damping can be used instead: zeta = D / (2 * sqrt( M * S ))",
-      bounds: [ 0.1, 10.0 ]
+      The values are calculated as damping can be used instead: zeta = D / (2 * sqrt( M * S ))"
     }
 
     stiffness: {
       type: double_array,
       fixed_size: 6,
       description: "specifies stiffness values for x, y, z, rx, ry, and rz used in the admittance calculation",
+      bounds: [0.0, 100000000.0]
     }
 
   # general settings

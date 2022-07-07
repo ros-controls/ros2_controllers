@@ -22,165 +22,101 @@
 #include <vector>
 
 
-// When there are many mandatory parameters, set all by default and remove one by one in a
-// parameterized test
-TEST_P(AdmittanceControllerTestParameterizedParameters, one_parameter_is_invalid)
+// Test on_configure returns ERROR when a parameter is invalid
+TEST_P(AdmittanceControllerTestParameterizedInvalidParameters, one_parameter_is_invalid)
 {
-  SetUpController(true);
+  SetUpController();
+  auto name = std::get<0>(GetParam());
+  auto val = std::get<1>(GetParam());
+  rclcpp::Parameter parameter(name, val);
+  controller_->get_node()->set_parameter(parameter);
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
 }
 
-// When there are many mandatory parameters, set all by default and remove one by one in a
-// parameterized test
-TEST_P(AdmittanceControllerTestParameterizedParameters, one_parameter_is_missing)
+// Test on_configure returns ERROR when a required parameter is missing
+TEST_P(AdmittanceControllerTestParameterizedMissingParameters, one_parameter_is_missing)
 {
-  SetUpController(false);
-
+  SetUpController(GetParam());
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
 }
 
-// TODO(anyone): the new gtest version afer 1.8.0 uses INSTANTIATE_TEST_SUITE_P
 INSTANTIATE_TEST_SUITE_P(
-  MissingMandatoryParameterDuringConfiguration,
-  AdmittanceControllerTestParameterizedParameters,
-  ::testing::Values(
+    MissingMandatoryParameterDuringConfiguration,
+    AdmittanceControllerTestParameterizedMissingParameters,
+    ::testing::Values(
+//        "admittance.damping_ratio", optional
+        "admittance.mass",
+        "admittance.selected_axes",
+        "admittance.stiffness",
+        "chainable_command_interfaces",
+        "command_interfaces",
+        "control.frame.external",
+        "control.frame.id",
+        "fixed_world_frame.frame.external",
+        "fixed_world_frame.frame.id",
+//        "ft_sensor.filter_coefficient", optional
+        "ft_sensor.frame.external",
+        "ft_sensor.frame.id",
+        "ft_sensor.name",
+//        "gravity_compensation.CoG.force", optional
+        "gravity_compensation.CoG.pos",
+        "gravity_compensation.frame.external",
+        "gravity_compensation.frame.id",
+        "joints",
+//        "kinematics.alpha",  optional
+        "kinematics.base",
+        "kinematics.group_name",
+        "kinematics.plugin_name",
+        "kinematics.plugin_package",
+        "kinematics.tip",
+        "state_interfaces"
+    )
+);
+
+INSTANTIATE_TEST_SUITE_P(
+    InvalidParameterDuringConfiguration,
+    AdmittanceControllerTestParameterizedInvalidParameters,
+    ::testing::Values(
+    // wrong length COG
     std::make_tuple(
-      std::string("joints"),
-      rclcpp::ParameterValue(std::vector<std::string>())
+          std::string("gravity_compensation.CoG.pos"),
+          rclcpp::ParameterValue(std::vector<double>()={1,2,3,4})
     ),
+    // wrong length stiffness
     std::make_tuple(
-      std::string("command_interfaces"),
-      rclcpp::ParameterValue(std::vector<std::string>())
+        std::string("admittance.stiffness"),
+        rclcpp::ParameterValue(std::vector<double>()={1,2,3})
     ),
+      // negative stiffness
     std::make_tuple(
-      std::string("state_interfaces"),
-      rclcpp::ParameterValue(std::vector<std::string>())
+        std::string("admittance.stiffness"),
+        rclcpp::ParameterValue(std::vector<double>()={-1,-2,3,4,5,6})
     ),
+    // wrong length mass
     std::make_tuple(
-      std::string("ft_sensor_name"),
-      rclcpp::ParameterValue("")
+        std::string("admittance.mass"),
+        rclcpp::ParameterValue(std::vector<double>()={1,2,3})
     ),
-//     std::make_tuple(
-//       std::string("use_joint_commands_as_input"),
-//       rclcpp::ParameterValue(false)
-//     ),
-//     std::make_tuple(
-//       std::string("hardware_state_has_offset"),
-//       rclcpp::ParameterValue(false)
-//     ),
+    // negative mass
     std::make_tuple(
-      std::string("kinematics.base"),
-      rclcpp::ParameterValue("")
+        std::string("admittance.mass"),
+        rclcpp::ParameterValue(std::vector<double>()={-1,-2,3,4,5,6})
     ),
+    // wrong length damping ratio
     std::make_tuple(
-      std::string("kinematics.group_name"),
-      rclcpp::ParameterValue("")
+        std::string("admittance.damping_ratio"),
+        rclcpp::ParameterValue(std::vector<double>()={1,2,3})
     ),
+    // wrong length selected axes
     std::make_tuple(
-      std::string("control_frame"),
-      rclcpp::ParameterValue("")
+        std::string("admittance.selected_axes"),
+        rclcpp::ParameterValue(std::vector<double>()={1,2,3})
     ),
+    // invalid robot description
     std::make_tuple(
-      std::string("sensor_frame"),
-      rclcpp::ParameterValue("")
-    ),
-    // TODO(anyone): this tests are unstable...
-//     std::make_tuple(
-//       std::string("admittance.selected_axes.x"),
-//       rclcpp::ParameterValue(false)
-//     ),
-//     std::make_tuple(
-//       std::string("admittance.selected_axes.y"),
-//       rclcpp::ParameterValue(false)
-//     ),
-//     std::make_tuple(
-//       std::string("admittance.selected_axes.z"),
-//       rclcpp::ParameterValue(false)
-//     ),
-//     std::make_tuple(
-//       std::string("admittance.selected_axes.rx"),
-//       rclcpp::ParameterValue(false)
-//     ),
-//     std::make_tuple(
-//       std::string("admittance.selected_axes.ry"),
-//       rclcpp::ParameterValue(false)
-//     ),
-//     std::make_tuple(
-//       std::string("admittance.selected_axes.rz"),
-//       rclcpp::ParameterValue(false)
-//     ),
-    std::make_tuple(
-      std::string("admittance.mass.x"),
-      rclcpp::ParameterValue(std::numeric_limits<double>::quiet_NaN())
-    ),
-    std::make_tuple(
-      std::string("admittance.mass.y"),
-      rclcpp::ParameterValue(std::numeric_limits<double>::quiet_NaN())
-    ),
-    std::make_tuple(
-      std::string("admittance.mass.z"),
-      rclcpp::ParameterValue(std::numeric_limits<double>::quiet_NaN())
-    ),
-    std::make_tuple(
-      std::string("admittance.mass.rx"),
-      rclcpp::ParameterValue(std::numeric_limits<double>::quiet_NaN())
-    ),
-    std::make_tuple(
-      std::string("admittance.mass.ry"),
-      rclcpp::ParameterValue(std::numeric_limits<double>::quiet_NaN())
-    ),
-    std::make_tuple(
-      std::string("admittance.mass.rz"),
-      rclcpp::ParameterValue(std::numeric_limits<double>::quiet_NaN())
-    ),
-        std::make_tuple(
-      std::string("admittance.damping.x"),
-      rclcpp::ParameterValue(std::numeric_limits<double>::quiet_NaN())
-    ),
-    std::make_tuple(
-      std::string("admittance.damping.y"),
-      rclcpp::ParameterValue(std::numeric_limits<double>::quiet_NaN())
-    ),
-    std::make_tuple(
-      std::string("admittance.damping.z"),
-      rclcpp::ParameterValue(std::numeric_limits<double>::quiet_NaN())
-    ),
-    std::make_tuple(
-      std::string("admittance.damping.rx"),
-      rclcpp::ParameterValue(std::numeric_limits<double>::quiet_NaN())
-    ),
-    std::make_tuple(
-      std::string("admittance.damping.ry"),
-      rclcpp::ParameterValue(std::numeric_limits<double>::quiet_NaN())
-    ),
-    std::make_tuple(
-      std::string("admittance.damping.rz"),
-      rclcpp::ParameterValue(std::numeric_limits<double>::quiet_NaN())
-    ),
-        std::make_tuple(
-      std::string("admittance.stiffness.x"),
-      rclcpp::ParameterValue(std::numeric_limits<double>::quiet_NaN())
-    ),
-    std::make_tuple(
-      std::string("admittance.stiffness.y"),
-      rclcpp::ParameterValue(std::numeric_limits<double>::quiet_NaN())
-    ),
-    std::make_tuple(
-      std::string("admittance.stiffness.z"),
-      rclcpp::ParameterValue(std::numeric_limits<double>::quiet_NaN())
-    ),
-    std::make_tuple(
-      std::string("admittance.stiffness.rx"),
-      rclcpp::ParameterValue(std::numeric_limits<double>::quiet_NaN())
-    ),
-    std::make_tuple(
-      std::string("admittance.stiffness.ry"),
-      rclcpp::ParameterValue(std::numeric_limits<double>::quiet_NaN())
-    ),
-    std::make_tuple(
-      std::string("admittance.stiffness.rz"),
-      rclcpp::ParameterValue(std::numeric_limits<double>::quiet_NaN())
+        std::string("robot_description"),
+        rclcpp::ParameterValue(std::string()="bad_robot")
     )
   )
 );
@@ -188,10 +124,11 @@ INSTANTIATE_TEST_SUITE_P(
 TEST_F(AdmittanceControllerTest, all_parameters_set_configure_success)
 {
 
+  SetUpController();
+
   ASSERT_TRUE(controller_->admittance_->parameters_->joints_.empty());
   ASSERT_TRUE(controller_->admittance_->parameters_->command_interfaces_.empty());
 
-  SetUpController();
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
@@ -331,7 +268,7 @@ TEST_F(AdmittanceControllerTest, reactivate_success)
 TEST_F(AdmittanceControllerTest, publish_status_success)
 {
   // TODO: Write also a test when Cartesian commands are used.
-  SetUpController(true, true);
+  SetUpController();
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
@@ -428,7 +365,7 @@ TEST_F(AdmittanceControllerTest, publish_status_success)
 
 TEST_F(AdmittanceControllerTest, receive_message_and_publish_updated_status)
 {
-  SetUpController(true, true);
+  SetUpController();
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 

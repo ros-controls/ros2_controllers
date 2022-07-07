@@ -62,18 +62,14 @@ namespace admittance_struct_parameters {
         } frame_;
         struct CoG {
           std::vector<double> pos_;
-          double force_ = std::numeric_limits<double>::quiet_NaN();
+          double force_;
         } CoG_;
       } gravity_compensation_;
       struct admittance {
         std::vector<bool> selected_axes_;
         std::vector<double> mass_;
         std::vector<double> damping_ratio_;
-        std::vector<double> stiffness_ = {std::numeric_limits<double>::quiet_NaN(),
-                                          std::numeric_limits<double>::quiet_NaN(),
-                                          std::numeric_limits<double>::quiet_NaN(),
-                                          std::numeric_limits<double>::quiet_NaN(),
-                                          std::numeric_limits<double>::quiet_NaN(),};
+        std::vector<double> stiffness_;
       } admittance_;
       std::string robot_description_;
       bool enable_parameter_update_without_reactivation_ = true;
@@ -209,11 +205,21 @@ namespace admittance_struct_parameters {
           }
         }
         if (param.get_name() == "admittance.damping_ratio") {
-          validation_result = gen_param_struct_validators::validate_double_array_bounds(param, 0.1, 10.0);
+          validation_result = gen_param_struct_validators::validate_double_array_len(param, 6);
+          if (validation_result.success()) {
+            params_.admittance_.damping_ratio_ = param.as_double_array();
+            result.successful = true;
+          } else {
+            result.reason = validation_result.error_msg();
+            result.successful = false;
+          }
+        }
+        if (param.get_name() == "admittance.stiffness") {
+          validation_result = gen_param_struct_validators::validate_double_array_bounds(param, 0.0, 100000000.0);
           if (validation_result.success()) {
             validation_result = gen_param_struct_validators::validate_double_array_len(param, 6);
             if (validation_result.success()) {
-              params_.admittance_.damping_ratio_ = param.as_double_array();
+              params_.admittance_.stiffness_ = param.as_double_array();
               result.successful = true;
             } else {
               result.reason = validation_result.error_msg();
@@ -223,10 +229,6 @@ namespace admittance_struct_parameters {
             result.reason = validation_result.error_msg();
             result.successful = false;
           }
-        }
-        if (param.get_name() == "admittance.stiffness") {
-          params_.admittance_.stiffness_ = param.as_double_array();
-          result.successful = true;
         }
         if (param.get_name() == "robot_description") {
           params_.robot_description_ = param.as_string();
@@ -449,7 +451,7 @@ namespace admittance_struct_parameters {
         descriptor.description = "weight of the end effector, e.g mass * 9.81";
         descriptor.read_only = false;
         if (!parameters_interface->has_parameter("gravity_compensation.CoG.force")) {
-          auto p_gravity_compensation_CoG_force = rclcpp::ParameterValue(params_.gravity_compensation_.CoG_.force_);
+          auto p_gravity_compensation_CoG_force = rclcpp::ParameterType::PARAMETER_DOUBLE;
           parameters_interface->declare_parameter("gravity_compensation.CoG.force", p_gravity_compensation_CoG_force,
                                                   descriptor);
         }
@@ -479,10 +481,6 @@ namespace admittance_struct_parameters {
       {
         rcl_interfaces::msg::ParameterDescriptor descriptor;
         descriptor.description = "specifies damping ratio values for x, y, z, rx, ry, and rz used in the admittance calculation. The values are calculated as damping can be used instead: zeta = D / (2 * sqrt( M * S ))";
-        rcl_interfaces::msg::FloatingPointRange range;
-        range.from_value = 0.1;
-        range.to_value = 10.0;
-        descriptor.floating_point_range.push_back(range);
         descriptor.read_only = false;
         if (!parameters_interface->has_parameter("admittance.damping_ratio")) {
           auto p_admittance_damping_ratio = rclcpp::ParameterType::PARAMETER_DOUBLE_ARRAY;
@@ -492,9 +490,13 @@ namespace admittance_struct_parameters {
       {
         rcl_interfaces::msg::ParameterDescriptor descriptor;
         descriptor.description = "specifies stiffness values for x, y, z, rx, ry, and rz used in the admittance calculation";
+        rcl_interfaces::msg::FloatingPointRange range;
+        range.from_value = 0.0;
+        range.to_value = 100000000.0;
+        descriptor.floating_point_range.push_back(range);
         descriptor.read_only = false;
         if (!parameters_interface->has_parameter("admittance.stiffness")) {
-          auto p_admittance_stiffness = rclcpp::ParameterValue(params_.admittance_.stiffness_);
+          auto p_admittance_stiffness = rclcpp::ParameterType::PARAMETER_DOUBLE_ARRAY;
           parameters_interface->declare_parameter("admittance.stiffness", p_admittance_stiffness, descriptor);
         }
       }
@@ -609,23 +611,30 @@ namespace admittance_struct_parameters {
             "Invalid value set during initialization for parameter admittance.mass: " + validation_result.error_msg());
       }
       param = parameters_interface->get_parameter("admittance.damping_ratio");
-      validation_result = gen_param_struct_validators::validate_double_array_bounds(param, 0.1, 10.0);
+      validation_result = gen_param_struct_validators::validate_double_array_len(param, 6);
       if (validation_result.success()) {
-        validation_result = gen_param_struct_validators::validate_double_array_len(param, 6);
-        if (validation_result.success()) {
-          params_.admittance_.damping_ratio_ = param.as_double_array();
-        } else {
-          throw rclcpp::exceptions::InvalidParameterValueException(
-              "Invalid value set during initialization for parameter admittance.damping_ratio: " +
-              validation_result.error_msg());
-        }
+        params_.admittance_.damping_ratio_ = param.as_double_array();
       } else {
         throw rclcpp::exceptions::InvalidParameterValueException(
             "Invalid value set during initialization for parameter admittance.damping_ratio: " +
             validation_result.error_msg());
       }
       param = parameters_interface->get_parameter("admittance.stiffness");
-      params_.admittance_.stiffness_ = param.as_double_array();
+      validation_result = gen_param_struct_validators::validate_double_array_bounds(param, 0.0, 100000000.0);
+      if (validation_result.success()) {
+        validation_result = gen_param_struct_validators::validate_double_array_len(param, 6);
+        if (validation_result.success()) {
+          params_.admittance_.stiffness_ = param.as_double_array();
+        } else {
+          throw rclcpp::exceptions::InvalidParameterValueException(
+              "Invalid value set during initialization for parameter admittance.stiffness: " +
+              validation_result.error_msg());
+        }
+      } else {
+        throw rclcpp::exceptions::InvalidParameterValueException(
+            "Invalid value set during initialization for parameter admittance.stiffness: " +
+            validation_result.error_msg());
+      }
       param = parameters_interface->get_parameter("robot_description");
       params_.robot_description_ = param.as_string();
       param = parameters_interface->get_parameter("enable_parameter_update_without_reactivation");

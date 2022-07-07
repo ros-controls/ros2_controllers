@@ -145,66 +145,33 @@ public:
   }
 
 protected:
-  void SetUpController(bool set_parameters = true, bool use_joint_commands_as_input = false)
+
+  void SetUpController(const std::string& controller_name,
+                       const std::vector<rclcpp::Parameter> & parameter_overrides) {
+    auto options = rclcpp::NodeOptions()
+        .allow_undeclared_parameters(true).parameter_overrides(parameter_overrides)
+        .automatically_declare_parameters_from_overrides(true);
+    SetUpControllerCommon(controller_name, options);
+  }
+
+  void SetUpController(const std::string& controller_name="test_admittance_controller") {
+    auto options = rclcpp::NodeOptions()
+        .allow_undeclared_parameters(true)
+        .automatically_declare_parameters_from_overrides(true);
+    SetUpControllerCommon(controller_name, options);
+  }
+
+  void SetUpControllerCommon(const std::string& controller_name, const rclcpp::NodeOptions& options)
   {
-    const auto result = controller_->init("test_admittance_controller");
+//    auto options = rclcpp::NodeOptions()
+//        .allow_undeclared_parameters(true)
+//        .automatically_declare_parameters_from_overrides(true);
+    const auto result = controller_->init(controller_name, "", options);
     ASSERT_EQ(result, controller_interface::return_type::OK);
 
     assign_interfaces();
     controller_->get_node()->set_parameter({"robot_description", robot_description_});
     controller_->get_node()->set_parameter({"robot_description_semantic", robot_description_semantic_});
-
-//    if (set_parameters) {
-//      controller_->get_node()->set_parameter({"use_joint_commands_as_input", use_joint_commands_as_input});
-//
-//      controller_->get_node()->set_parameter({"joints", joint_names_});
-//      controller_->get_node()->set_parameter({"command_interfaces", command_interface_types_});
-//      controller_->get_node()->set_parameter({"state_interfaces", state_interface_types_});
-//      controller_->get_node()->set_parameter({"ft_sensor_name", ft_sensor_name_});
-//      controller_->get_node()->set_parameter({"hardware_state_has_offset", hardware_state_has_offset_});
-//
-//      controller_->get_node()->set_parameter({"IK.base", ik_base_frame_});
-//      controller_->get_node()->set_parameter({"IK.tip", ik_tip_frame_});
-//      // TODO(destogl): enable when IK support is added
-////       controller_->get_node()->set_parameter({"IK.plugin", ik_group_name_});
-//      controller_->get_node()->set_parameter({"IK.group_name", ik_group_name_});
-//      controller_->get_node()->set_parameter({"robot_description", robot_description_});
-//      controller_->get_node()->set_parameter({"robot_description_semantic", robot_description_semantic_});
-//
-//      controller_->get_node()->set_parameter({"control_frame", control_frame_});
-//      controller_->get_node()->set_parameter({"endeffector_frame", endeffector_frame_});
-//      controller_->get_node()->set_parameter({"fixed_world_frame", fixed_world_frame_});
-//      controller_->get_node()->set_parameter({"sensor_frame", sensor_frame_});
-//
-//      controller_->get_node()->set_parameter({"admittance.selected_axes.x", admittance_selected_axes_[0]});
-//      controller_->get_node()->set_parameter({"admittance.selected_axes.y", admittance_selected_axes_[1]});
-//      controller_->get_node()->set_parameter({"admittance.selected_axes.z", admittance_selected_axes_[2]});
-//      controller_->get_node()->set_parameter({"admittance.selected_axes.rx", admittance_selected_axes_[3]});
-//      controller_->get_node()->set_parameter({"admittance.selected_axes.ry", admittance_selected_axes_[4]});
-//      controller_->get_node()->set_parameter({"admittance.selected_axes.rz", admittance_selected_axes_[5]});
-//
-//      controller_->get_node()->set_parameter({"admittance.mass.x", admittance_mass_[0]});
-//      controller_->get_node()->set_parameter({"admittance.mass.y", admittance_mass_[1]});
-//      controller_->get_node()->set_parameter({"admittance.mass.z", admittance_mass_[2]});
-//      controller_->get_node()->set_parameter({"admittance.mass.rx", admittance_mass_[3]});
-//      controller_->get_node()->set_parameter({"admittance.mass.ry", admittance_mass_[4]});
-//      controller_->get_node()->set_parameter({"admittance.mass.rz", admittance_mass_[5]});
-//
-//      controller_->get_node()->set_parameter({"admittance.damping.x", admittance_damping_ratio_[0]});
-//      controller_->get_node()->set_parameter({"admittance.damping.y", admittance_damping_ratio_[1]});
-//      controller_->get_node()->set_parameter({"admittance.damping.z", admittance_damping_ratio_[2]});
-//      controller_->get_node()->set_parameter({"admittance.damping.rx", admittance_damping_ratio_[3]});
-//      controller_->get_node()->set_parameter({"admittance.damping.ry", admittance_damping_ratio_[4]});
-//      controller_->get_node()->set_parameter({"admittance.damping.rz", admittance_damping_ratio_[5]});
-//
-//      controller_->get_node()->set_parameter({"admittance.stiffness.x", admittance_stiffness_[0]});
-//      controller_->get_node()->set_parameter({"admittance.stiffness.y", admittance_stiffness_[1]});
-//      controller_->get_node()->set_parameter({"admittance.stiffness.z", admittance_stiffness_[2]});
-//      controller_->get_node()->set_parameter({"admittance.stiffness.rx", admittance_stiffness_[3]});
-//      controller_->get_node()->set_parameter({"admittance.stiffness.ry", admittance_stiffness_[4]});
-//      controller_->get_node()->set_parameter({"admittance.stiffness.rz", admittance_stiffness_[5]});
-//
-//    }
   }
 
   void assign_interfaces()
@@ -388,10 +355,10 @@ protected:
   const std::string robot_description_ = ros2_control_test_assets::valid_6d_robot_urdf;
   const std::string robot_description_semantic_ = ros2_control_test_assets::valid_6d_robot_srdf;
 
-  const std::string control_frame_ = "control_frame";
+  const std::string control_frame_ = "tool0";
   const std::string endeffector_frame_ = "endeffector_frame";
   const std::string fixed_world_frame_ = "fixed_world_frame";
-  const std::string sensor_frame_ = "sensor_frame";
+  const std::string sensor_frame_ = "link_6";
 
   std::array<bool, 6> admittance_selected_axes_ = {true, true, true, true, true, true};
   std::array<double, 6> admittance_mass_ = {5.5, 6.6, 7.7, 8.8, 9.9, 10.10};
@@ -416,8 +383,45 @@ protected:
   rclcpp::Node::SharedPtr test_broadcaster_node_;
 };
 
+
 // From the tutorial: https://www.sandordargo.com/blog/2019/04/24/parameterized-testing-with-gtest
-class AdmittanceControllerTestParameterizedParameters
+class AdmittanceControllerTestParameterizedMissingParameters
+    : public AdmittanceControllerTest,
+      public ::testing::WithParamInterface<std::string>
+{
+public:
+  virtual void SetUp()
+  {
+    AdmittanceControllerTest::SetUp();
+    auto node = std::make_shared<rclcpp::Node>("test_admittance_controller");
+    overrides_ = node->get_node_parameters_interface()->get_parameter_overrides();
+  }
+
+  static void TearDownTestCase()
+  {
+    AdmittanceControllerTest::TearDownTestCase();
+  }
+
+protected:
+  void SetUpController(const std::string& remove_name)
+  {
+    std::vector<rclcpp::Parameter> parameter_overrides;
+    for (const auto& override : overrides_){
+      if (override.first != remove_name){
+        rclcpp::Parameter param(override.first, override.second);
+        parameter_overrides.push_back(param);
+      }
+    }
+
+    AdmittanceControllerTest::SetUpController("test_admittance_controller_no_overrides", parameter_overrides);
+  }
+
+  std::map<std::string, rclcpp::ParameterValue> overrides_;
+};
+
+
+// From the tutorial: https://www.sandordargo.com/blog/2019/04/24/parameterized-testing-with-gtest
+class AdmittanceControllerTestParameterizedInvalidParameters
 : public AdmittanceControllerTest,
 public ::testing::WithParamInterface<std::tuple<std::string, rclcpp::ParameterValue>>
 {
@@ -433,25 +437,10 @@ public:
   }
 
 protected:
-  void SetUpController(bool set_parameters = true)
+  void SetUpController(bool val=false)
   {
-    AdmittanceControllerTest::SetUpController(set_parameters);
-//    controller_->get_node()->undeclare_parameter(std::get<0>(GetParam()));
-//    controller_->get_node()->declare_parameter(std::get<0>(GetParam()), std::get<1>(GetParam()));
-//    rclcpp::Parameter parameter("joints");
-//    controller_->get_node()->set_parameter(parameter);
-//    controller_->get_node()->set_parameter({"joints", ""});
-    if (set_parameters){
-      auto tmp = std::get<1>(GetParam());
-      rclcpp::Parameter parameter(std::get<0>(GetParam()),std::get<1>(GetParam()));
-    } else{
-      controller_->get_node()->undeclare_parameter(std::get<0>(GetParam()));
-    }
-
-
-//    controller_->get_node()->set_parameter(parameter);
+    AdmittanceControllerTest::SetUpController("test_admittance_controller");
   }
-
 };
 
 #endif  // TEST_ADMITTANCE_CONTROLLER_HPP_

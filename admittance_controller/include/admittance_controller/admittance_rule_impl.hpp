@@ -486,6 +486,10 @@ namespace admittance_controller {
 
   void AdmittanceRule::get_controller_state(control_msgs::msg::AdmittanceControllerState &state_message) {
 
+    // TODO these fields are not used
+    eigen_to_msg(0*wrench_world_, parameters_->control_.frame_.id_, state_message.input_wrench_command);
+    state_message.input_pose_command.header.frame_id = parameters_->control_.frame_.id_;
+
     eigen_to_msg(wrench_world_, parameters_->fixed_world_frame_.frame_.id_, state_message.measured_wrench_filtered);
     eigen_to_msg(measured_wrench_, parameters_->fixed_world_frame_.frame_.id_, state_message.measured_wrench);
     eigen_to_msg(control_rot_.transpose() * world_rot_.transpose() * measured_wrench_, parameters_->control_.frame_.id_,
@@ -497,6 +501,7 @@ namespace admittance_controller {
     state_message.desired_joint_state = state_message_.desired_joint_state;
     state_message.actual_joint_state = state_message_.actual_joint_state;
     state_message.error_joint_state = state_message_.error_joint_state;
+
 
     state_message.admittance_rule_calculated_values = state_message_.admittance_rule_calculated_values;
 
