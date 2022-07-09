@@ -83,7 +83,8 @@ public:
    */
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   bool sample(
-    const rclcpp::Time & sample_time, const InterpolationMethod interpolation_method,
+    const rclcpp::Time & sample_time,
+    const interpolation_methods::InterpolationMethod interpolation_method,
     trajectory_msgs::msg::JointTrajectoryPoint & output_state,
     TrajectoryPointConstIter & start_segment_itr, TrajectoryPointConstIter & end_segment_itr);
 

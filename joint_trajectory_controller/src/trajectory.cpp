@@ -58,7 +58,8 @@ void Trajectory::update(std::shared_ptr<trajectory_msgs::msg::JointTrajectory> j
 }
 
 bool Trajectory::sample(
-  const rclcpp::Time & sample_time, const InterpolationMethod interpolation_method,
+  const rclcpp::Time & sample_time,
+  const interpolation_methods::InterpolationMethod interpolation_method,
   trajectory_msgs::msg::JointTrajectoryPoint & output_state,
   TrajectoryPointConstIter & start_segment_itr, TrajectoryPointConstIter & end_segment_itr)
 {
@@ -97,7 +98,7 @@ bool Trajectory::sample(
   if (sample_time < first_point_timestamp)
   {
     // If interpolation is disabled, just forward the next waypoint
-    if (interpolation_method == joint_trajectory_controller::InterpolationMethod::NONE)
+    if (interpolation_method == interpolation_methods::InterpolationMethod::NONE)
     {
       output_state = state_before_traj_msg_;
     }
@@ -130,7 +131,7 @@ bool Trajectory::sample(
     if (sample_time >= t0 && sample_time < t1)
     {
       // If interpolation is disabled, just forward the next waypoint
-      if (interpolation_method == InterpolationMethod::NONE)
+      if (interpolation_method == interpolation_methods::InterpolationMethod::NONE)
       {
         output_state = next_point;
       }

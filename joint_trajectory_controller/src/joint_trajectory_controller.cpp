@@ -68,8 +68,10 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
     state_publish_rate_ = auto_declare<double>("state_publish_rate", 50.0);
     action_monitor_rate_ = auto_declare<double>("action_monitor_rate", 20.0);
 
-    std::string interpolation_string = auto_declare<std::string>("interpolation_method", "splines");
-    interpolation_method_ = from_string(interpolation_string);
+    std::string interpolation_string = auto_declare<std::string>(
+      "interpolation_method", interpolation_methods::InterpolationMethodMap.at(
+                                interpolation_methods::DEFAULT_INTERPOLATION));
+    interpolation_method_ = interpolation_methods::from_string(interpolation_string);
   }
   catch (const std::exception & e)
   {

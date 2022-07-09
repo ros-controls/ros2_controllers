@@ -29,14 +29,13 @@
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
+using namespace joint_trajectory_controller::interpolation_methods;  // NOLINT
 using namespace std::chrono_literals;
 
 namespace
 {
 // Floating-point value comparison threshold
 const double EPS = 1e-8;
-const joint_trajectory_controller::InterpolationMethod DEFAULT_INTERPOLATION =
-  joint_trajectory_controller::InterpolationMethod::VARIABLE_DEGREE_SPLINE;
 }  // namespace
 
 TEST(TestTrajectory, initialize_trajectory)
@@ -690,8 +689,7 @@ TEST(TestTrajectory, skip_interpolation)
 {
   // Simple passthrough without extra interpolation
   {
-    const joint_trajectory_controller::InterpolationMethod no_interpolation =
-      joint_trajectory_controller::InterpolationMethod::NONE;
+    const InterpolationMethod no_interpolation = InterpolationMethod::NONE;
 
     auto full_msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
     full_msg->header.stamp = rclcpp::Time(0);
