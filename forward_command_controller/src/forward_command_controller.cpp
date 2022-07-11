@@ -29,8 +29,8 @@ ForwardCommandController::ForwardCommandController() : ForwardControllersBase() 
 
 void ForwardCommandController::declare_parameters()
 {
-  get_node()->declare_parameter<std::vector<std::string>>("joints", std::vector<std::string>());
-  get_node()->declare_parameter<std::string>("interface_name", "");
+  auto_declare("joints", std::vector<std::string>());
+  auto_declare("interface_name", std::string());
 }
 
 controller_interface::CallbackReturn ForwardCommandController::read_parameters()
