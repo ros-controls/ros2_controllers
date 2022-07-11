@@ -67,6 +67,11 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
       "allow_integration_in_goal_trajectories", allow_integration_in_goal_trajectories_);
     state_publish_rate_ = auto_declare<double>("state_publish_rate", 50.0);
     action_monitor_rate_ = auto_declare<double>("action_monitor_rate", 20.0);
+
+    std::string interpolation_string = auto_declare<std::string>(
+      "interpolation_method", interpolation_methods::InterpolationMethodMap.at(
+                                interpolation_methods::DEFAULT_INTERPOLATION));
+    interpolation_method_ = interpolation_methods::from_string(interpolation_string);
   }
   catch (const std::exception & e)
   {
@@ -189,7 +194,8 @@ controller_interface::return_type JointTrajectoryController::update(
     // find segment for current timestamp
     TrajectoryPointConstIter start_segment_itr, end_segment_itr;
     const bool valid_point =
-      (*traj_point_active_ptr_)->sample(time, state_desired_, start_segment_itr, end_segment_itr);
+      (*traj_point_active_ptr_)
+        ->sample(time, interpolation_method_, state_desired_, start_segment_itr, end_segment_itr);
 
     if (valid_point)
     {

@@ -27,6 +27,7 @@
 #include "control_toolbox/pid.hpp"
 #include "controller_interface/controller_interface.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
+#include "joint_trajectory_controller/interpolation_methods.hpp"
 #include "joint_trajectory_controller/tolerances.hpp"
 #include "joint_trajectory_controller/visibility_control.h"
 #include "rclcpp/duration.hpp"
@@ -139,6 +140,9 @@ protected:
   trajectory_msgs::msg::JointTrajectoryPoint last_commanded_state_;
   /// Allow integration in goal trajectories to accept goals without position or velocity specified
   bool allow_integration_in_goal_trajectories_ = false;
+  /// Specify interpolation method. Default to splines.
+  interpolation_methods::InterpolationMethod interpolation_method_{
+    interpolation_methods::DEFAULT_INTERPOLATION};
 
   double state_publish_rate_;
   double action_monitor_rate_;
