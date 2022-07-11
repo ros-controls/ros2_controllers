@@ -223,7 +223,8 @@ controller_interface::CallbackReturn GripperActionController<HardwareInterface>:
   // Max allowable effort
   default_max_effort_ = get_node()->get_parameter("max_effort").as_double();
   default_max_effort_ = fabs(default_max_effort_);
-  // Allow stalling will make the action server return success if the gripper stalls when moving to the goal
+  // Allow stalling will make the action server return success if the 
+  // gripper stalls when moving to the goal
   allow_stalling_ = get_node()->get_parameter("allow_stalling").as_bool();
   // Stall - stall velocity threshold, stall timeout
   stall_velocity_threshold_ = get_node()->get_parameter("stall_velocity_threshold").as_double();
