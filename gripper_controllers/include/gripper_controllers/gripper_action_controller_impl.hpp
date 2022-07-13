@@ -46,6 +46,7 @@ controller_interface::CallbackReturn GripperActionController<HardwareInterface>:
     auto_declare<std::string>("joint", joint_name_);
     auto_declare<double>("goal_tolerance", 0.01);
     auto_declare<double>("max_effort", 0.0);
+    auto_declare<bool>("allow_stalling", false);
     auto_declare<double>("stall_velocity_threshold", 0.001);
     auto_declare<double>("stall_timeout", 1.0);
   }
@@ -164,6 +165,7 @@ void GripperActionController<HardwareInterface>::check_for_success(
     pre_alloc_result_->position = current_position;
     pre_alloc_result_->reached_goal = true;
     pre_alloc_result_->stalled = false;
+    RCLCPP_DEBUG(get_node()->get_logger(), "Successfully moved to goal.");
     rt_active_goal_->setSucceeded(pre_alloc_result_);
     rt_active_goal_.reset();
   }
@@ -179,7 +181,16 @@ void GripperActionController<HardwareInterface>::check_for_success(
       pre_alloc_result_->position = current_position;
       pre_alloc_result_->reached_goal = false;
       pre_alloc_result_->stalled = true;
-      rt_active_goal_->setAborted(pre_alloc_result_);
+      if(allow_stalling_)
+      {
+        RCLCPP_DEBUG(get_node()->get_logger(), "Stall detected moving to goal. Returning success.");
+        rt_active_goal_->setSucceeded(pre_alloc_result_);
+      }
+      else
+      {
+        RCLCPP_DEBUG(get_node()->get_logger(), "Stall detected moving to goal. Aborting action!");
+        rt_active_goal_->setAborted(pre_alloc_result_);
+      }
       rt_active_goal_.reset();
     }
   }
@@ -212,6 +223,9 @@ controller_interface::CallbackReturn GripperActionController<HardwareInterface>:
   // Max allowable effort
   default_max_effort_ = get_node()->get_parameter("max_effort").as_double();
   default_max_effort_ = fabs(default_max_effort_);
+  // Allow stalling will make the action server return success if the
+  // gripper stalls when moving to the goal
+  allow_stalling_ = get_node()->get_parameter("allow_stalling").as_bool();
   // Stall - stall velocity threshold, stall timeout
   stall_velocity_threshold_ = get_node()->get_parameter("stall_velocity_threshold").as_double();
   stall_timeout_ = get_node()->get_parameter("stall_timeout").as_double();
