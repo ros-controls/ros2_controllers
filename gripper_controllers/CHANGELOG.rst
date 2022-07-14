@@ -2,6 +2,11 @@
 Changelog for package gripper_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Allow gripper stalling when moving to goal (`#355 <https://github.com/ros-controls/ros2_controllers/issues/355>`_)
+* Contributors: Marq Rasmussen
+
 2.8.0 (2022-07-09)
 ------------------
 
