@@ -14,7 +14,6 @@
 
 /*
  * Author: Tony Najjar
- * Author: Sara Al Arab
  */
 
 #include <memory>

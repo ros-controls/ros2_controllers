@@ -14,7 +14,6 @@
 
 /*
  * Author: Tony Najjar
- * Author: Sara Al Arab
  */
 
 #ifndef TRICYCLE_CONTROLLER__TRICYCLE_CONTROLLER_HPP_

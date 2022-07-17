@@ -14,7 +14,6 @@
 
 /*
  * Author: Tony Najjar
- * Author: Sara Al Arab
  */
 
 #ifndef TRICYCLE_CONTROLLER__ODOMETRY_HPP_

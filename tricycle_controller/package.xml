@@ -4,8 +4,9 @@
   <name>tricycle_controller</name>
   <version>1.0.0</version>
   <description>Controller for a tricycle drive mobile base</description>
-  <maintainer email="tony.najjar@logivations.com">root</maintainer>
+  <maintainer email="tony.najjar@logivations.com">Tony Najjar</maintainer>
   <license>Apache License 2.0</license>
+  <author email="tony.najjar@logivations.com">Tony Najjar</author>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 

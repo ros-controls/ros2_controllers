@@ -1,5 +1,4 @@
-// Copyright (c) 2021, Bence Magyar and Denis Stogl
-// Copyright (c) 2021, Stogl Robotics Consulting UG (haftungsbeschränkt) (template)
+// Copyright 2022 Pixel Robotics.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,6 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+/*
+ * Author: Tony Najjar
+ */
 
 #ifndef TRICYCLE_CONTROLLER__VISIBILITY_CONTROL_H_
 #define TRICYCLE_CONTROLLER__VISIBILITY_CONTROL_H_
