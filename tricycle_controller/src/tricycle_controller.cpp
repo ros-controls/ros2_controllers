@@ -35,6 +35,7 @@ constexpr auto DEFAULT_COMMAND_TOPIC = "~/cmd_vel";
 constexpr auto DEFAULT_ACKERMANN_OUT_TOPIC = "~/cmd_ackermann";
 constexpr auto DEFAULT_ODOMETRY_TOPIC = "~/odom";
 constexpr auto DEFAULT_TRANSFORM_TOPIC = "/tf";
+constexpr auto DEFAULT_RESET_ODOM_SERVICE = "~/reset_odometry";
 }  // namespace
 
 namespace tricycle_controller
@@ -72,25 +73,21 @@ CallbackReturn TricycleController::on_init()
     auto_declare<int>("velocity_rolling_window_size", 10);
     auto_declare<bool>("use_stamped_vel", use_stamped_vel_);
 
-    auto_declare<bool>("linear.x.has_velocity_limits", false);
-    auto_declare<bool>("linear.x.has_acceleration_limits", false);
-    auto_declare<bool>("linear.x.has_jerk_limits", false);
-    auto_declare<double>("linear.x.max_velocity", NAN);
-    auto_declare<double>("linear.x.min_velocity", NAN);
-    auto_declare<double>("linear.x.max_acceleration", NAN);
-    auto_declare<double>("linear.x.min_acceleration", NAN);
-    auto_declare<double>("linear.x.max_jerk", NAN);
-    auto_declare<double>("linear.x.min_jerk", NAN);
+    auto_declare<double>("traction.max_velocity", NAN);
+    auto_declare<double>("traction.min_velocity", NAN);
+    auto_declare<double>("traction.max_acceleration", NAN);
+    auto_declare<double>("traction.min_acceleration", NAN);
+    auto_declare<double>("traction.max_deceleration", NAN);
+    auto_declare<double>("traction.min_deceleration", NAN);
+    auto_declare<double>("traction.max_jerk", NAN);
+    auto_declare<double>("traction.min_jerk", NAN);
 
-    auto_declare<bool>("angular.z.has_velocity_limits", false);
-    auto_declare<bool>("angular.z.has_acceleration_limits", false);
-    auto_declare<bool>("angular.z.has_jerk_limits", false);
-    auto_declare<double>("angular.z.max_velocity", NAN);
-    auto_declare<double>("angular.z.min_velocity", NAN);
-    auto_declare<double>("angular.z.max_acceleration", NAN);
-    auto_declare<double>("angular.z.min_acceleration", NAN);
-    auto_declare<double>("angular.z.max_jerk", NAN);
-    auto_declare<double>("angular.z.min_jerk", NAN);
+    auto_declare<double>("steering.max_position", NAN);
+    auto_declare<double>("steering.min_position", NAN);
+    auto_declare<double>("steering.max_velocity", NAN);
+    auto_declare<double>("steering.min_velocity", NAN);
+    auto_declare<double>("steering.max_acceleration", NAN);
+    auto_declare<double>("steering.min_acceleration", NAN);
     auto_declare<double>("publish_rate", publish_rate_);
   }
   catch (const std::exception & e)
@@ -144,7 +141,7 @@ controller_interface::return_type TricycleController::update(
     last_command_msg->twist.angular.z = 0.0;
   }
 
-  // command may be limited further by SpeedLimit,
+  // command may be limited further by Limiters,
   // without affecting the stored twist command
   TwistStamped command = *last_command_msg;
   double & linear_command = command.twist.linear.x;
@@ -156,14 +153,14 @@ controller_interface::return_type TricycleController::update(
   }
   else
   {
-    const double Ws = traction_joint_[0].velocity_state.get().get_value();  // in radians/s
-    double alpha = steering_joint_[0].position_state.get().get_value();     // in radians
-    if (std::isnan(Ws) || std::isnan(alpha))
+    double Ws_read = traction_joint_[0].velocity_state.get().get_value();     // in radians/s
+    double alpha_read = steering_joint_[0].position_state.get().get_value();  // in radians
+    if (std::isnan(Ws_read) || std::isnan(alpha_read))
     {
       RCLCPP_ERROR(get_node()->get_logger(), "Could not read feeback value");
       return controller_interface::return_type::ERROR;
     }
-    odometry_.updateFromVelocity(Ws, alpha, current_time);
+    odometry_.updateFromVelocity(Ws_read, alpha_read, current_time);
   }
 
   tf2::Quaternion orientation;
@@ -205,34 +202,61 @@ controller_interface::return_type TricycleController::update(
     }
   }
 
+  // Compute wheel velocity and angle
+  auto [alpha_write, Ws_write] = process_twist_command(linear_command, angular_command);
+
+  // Accelerate gradually until when steering motor has reached target angle
+  // Increase power to make it more strict (i.e to make it slower when angle difference is big)
+  // TODO: find the best function profile, e.g convex power functions
+  // TODO: Is there a better/more generic way to take into consideration motor velocity/acceleration limitations?
+  double alpha_delta = abs(alpha_write - steering_joint_[0].position_state.get().get_value());
+  double scale;
+  if (alpha_delta < M_PI / 6)
+  {
+    scale = 1;
+  }
+  else if (alpha_delta > M_PI_2)
+  {
+    scale = 0.01;
+  }
+  else
+  {
+    scale = cos(alpha_delta);
+  }
+  Ws_write *= scale;
+
   const auto update_dt = current_time - previous_update_timestamp_;
   previous_update_timestamp_ = current_time;
 
-  auto & last_command = previous_commands_.back().twist;
-  auto & second_to_last_command = previous_commands_.front().twist;
-  limiter_linear_.limit(
-    linear_command, last_command.linear.x, second_to_last_command.linear.x, update_dt.seconds());
-  limiter_angular_.limit(
-    angular_command, last_command.angular.z, second_to_last_command.angular.z, update_dt.seconds());
+  auto & last_command = previous_commands_.back();
+  auto & second_to_last_command = previous_commands_.front();
+
+  limiter_traction_.limit(
+    Ws_write, last_command.speed, second_to_last_command.speed, update_dt.seconds());
+
+  limiter_steering_.limit(
+    alpha_write, last_command.steering_angle, second_to_last_command.steering_angle,
+    update_dt.seconds());
 
   previous_commands_.pop();
-  previous_commands_.emplace(command);
-
-  // Compute wheel velocity and angle
-  auto [alpha, Ws] = process_twist_command(linear_command, angular_command);
+  AckermannDrive ackermann_command;
+  ackermann_command.speed =
+    Ws_write;  // speed in AckermannDrive is defined desired forward speed (m/s) but we use it here as wheel speed (rad/s)
+  ackermann_command.steering_angle = alpha_write;
+  previous_commands_.emplace(ackermann_command);
 
   //  Publish ackermann command
   if (publish_ackermann_command_ && realtime_ackermann_command_publisher_->trylock())
   {
     auto & realtime_ackermann_command = realtime_ackermann_command_publisher_->msg_;
     realtime_ackermann_command.speed =
-      Ws;  // speed in AckermannDrive is defined desired forward speed (m/s) but we use it here as wheel speed (rad/s)
-    realtime_ackermann_command.steering_angle = alpha;
+      Ws_write;  // speed in AckermannDrive is defined desired forward speed (m/s) but we use it here as wheel speed (rad/s)
+    realtime_ackermann_command.steering_angle = alpha_write;
     realtime_ackermann_command_publisher_->unlockAndPublish();
   }
 
-  traction_joint_[0].velocity_command.get().set_value(Ws);
-  steering_joint_[0].position_command.get().set_value(alpha);
+  traction_joint_[0].velocity_command.get().set_value(Ws_write);
+  steering_joint_[0].position_command.get().set_value(alpha_write);
   return controller_interface::return_type::OK;
 }
 
@@ -283,38 +307,36 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
 
   try
   {
-    limiter_linear_ = SpeedLimiter(
-      get_node()->get_parameter("linear.x.has_velocity_limits").as_bool(),
-      get_node()->get_parameter("linear.x.has_acceleration_limits").as_bool(),
-      get_node()->get_parameter("linear.x.has_jerk_limits").as_bool(),
-      get_node()->get_parameter("linear.x.min_velocity").as_double(),
-      get_node()->get_parameter("linear.x.max_velocity").as_double(),
-      get_node()->get_parameter("linear.x.min_acceleration").as_double(),
-      get_node()->get_parameter("linear.x.max_acceleration").as_double(),
-      get_node()->get_parameter("linear.x.min_jerk").as_double(),
-      get_node()->get_parameter("linear.x.max_jerk").as_double());
+    limiter_traction_ = TractionLimiter(
+      get_node()->get_parameter("traction.min_velocity").as_double(),
+      get_node()->get_parameter("traction.max_velocity").as_double(),
+      get_node()->get_parameter("traction.min_acceleration").as_double(),
+      get_node()->get_parameter("traction.max_acceleration").as_double(),
+      get_node()->get_parameter("traction.min_deceleration").as_double(),
+      get_node()->get_parameter("traction.max_deceleration").as_double(),
+      get_node()->get_parameter("traction.min_jerk").as_double(),
+      get_node()->get_parameter("traction.max_jerk").as_double());
   }
-  catch (const std::runtime_error & e)
+  catch (const std::invalid_argument & e)
   {
-    RCLCPP_ERROR(get_node()->get_logger(), "Error configuring linear speed limiter: %s", e.what());
+    RCLCPP_ERROR(get_node()->get_logger(), "Error configuring traction limiter: %s", e.what());
+    return CallbackReturn::ERROR;
   }
 
   try
   {
-    limiter_angular_ = SpeedLimiter(
-      get_node()->get_parameter("angular.z.has_velocity_limits").as_bool(),
-      get_node()->get_parameter("angular.z.has_acceleration_limits").as_bool(),
-      get_node()->get_parameter("angular.z.has_jerk_limits").as_bool(),
-      get_node()->get_parameter("angular.z.min_velocity").as_double(),
-      get_node()->get_parameter("angular.z.max_velocity").as_double(),
-      get_node()->get_parameter("angular.z.min_acceleration").as_double(),
-      get_node()->get_parameter("angular.z.max_acceleration").as_double(),
-      get_node()->get_parameter("angular.z.min_jerk").as_double(),
-      get_node()->get_parameter("angular.z.max_jerk").as_double());
+    limiter_steering_ = SteeringLimiter(
+      get_node()->get_parameter("steering.min_position").as_double(),
+      get_node()->get_parameter("steering.max_position").as_double(),
+      get_node()->get_parameter("steering.min_velocity").as_double(),
+      get_node()->get_parameter("steering.max_velocity").as_double(),
+      get_node()->get_parameter("steering.min_acceleration").as_double(),
+      get_node()->get_parameter("steering.max_acceleration").as_double());
   }
-  catch (const std::runtime_error & e)
+  catch (const std::invalid_argument & e)
   {
-    RCLCPP_ERROR(get_node()->get_logger(), "Error configuring angular speed limiter: %s", e.what());
+    RCLCPP_ERROR(get_node()->get_logger(), "Error configuring steering limiter: %s", e.what());
+    return CallbackReturn::ERROR;
   }
 
   if (!reset())
@@ -326,8 +348,9 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
   received_velocity_msg_ptr_.set(std::make_shared<TwistStamped>(empty_twist));
 
   // Fill last two commands with default constructed commands
-  previous_commands_.emplace(empty_twist);
-  previous_commands_.emplace(empty_twist);
+  const AckermannDrive empty_ackermann_drive;
+  previous_commands_.emplace(empty_ackermann_drive);
+  previous_commands_.emplace(empty_ackermann_drive);
 
   // initialize ackermann command publisher
   if (publish_ackermann_command_)
@@ -430,6 +453,12 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
     odometry_transform_message.transforms.front().child_frame_id = odom_params_.base_frame_id;
   }
 
+  // Create odom reset service
+  reset_odom_service_ = get_node()->create_service<std_srvs::srv::Empty>(
+    DEFAULT_RESET_ODOM_SERVICE, std::bind(
+                                  &TricycleController::reset_odometry, this, std::placeholders::_1,
+                                  std::placeholders::_2, std::placeholders::_3));
+
   previous_update_timestamp_ = get_node()->get_clock()->now();
   return CallbackReturn::SUCCESS;
 }
@@ -485,17 +514,25 @@ CallbackReturn TricycleController::on_error(const rclcpp_lifecycle::State &)
   return CallbackReturn::SUCCESS;
 }
 
+void TricycleController::reset_odometry(
+  const std::shared_ptr<rmw_request_id_t> /*request_header*/,
+  const std::shared_ptr<std_srvs::srv::Empty::Request> /*req*/,
+  std::shared_ptr<std_srvs::srv::Empty::Response> /*res*/)
+{
+  odometry_.resetOdometry();
+  RCLCPP_INFO(get_node()->get_logger(), "Odometry successfully reset");
+}
+
 bool TricycleController::reset()
 {
   odometry_.resetOdometry();
 
   // release the old queue
-  std::queue<TwistStamped> empty_twist;
-  std::swap(previous_commands_, empty_twist);
+  std::queue<AckermannDrive> empty_ackermann_drive;
+  std::swap(previous_commands_, empty_ackermann_drive);
 
-  // TODO: clear handles
-  // traction_joint_.clear();
-  // steering_joint_.clear();
+  traction_joint_.clear();
+  steering_joint_.clear();
 
   subscriber_is_active_ = false;
   velocity_command_subscriber_.reset();
@@ -604,7 +641,7 @@ double TricycleController::convert_trans_rot_vel_to_steering_angle(
   {
     return 0;
   }
-  return std::atan(theta_dot / (Vx * wheelbase));
+  return std::atan(theta_dot * wheelbase / Vx);
 }
 
 std::tuple<double, double> TricycleController::process_twist_command(double Vx, double theta_dot)
@@ -612,9 +649,11 @@ std::tuple<double, double> TricycleController::process_twist_command(double Vx, 
   // using naming convention in http://users.isr.ist.utl.pt/~mir/cadeiras/robmovel/Kinematics.pdf
   double alpha, Ws;
 
-  if (Vx == 0 && abs(theta_dot) > 0.1)
+  if (Vx == 0 && theta_dot != 0)
   {  // is spin action
-    Vx = 0.1;
+    alpha = theta_dot > 0 ? M_PI_2 : -M_PI_2;
+    Ws = abs(theta_dot) * wheel_params_.wheelbase / wheel_params_.radius;
+    return std::make_tuple(alpha, Ws);
   }
 
   alpha = convert_trans_rot_vel_to_steering_angle(Vx, theta_dot, wheel_params_.wheelbase);

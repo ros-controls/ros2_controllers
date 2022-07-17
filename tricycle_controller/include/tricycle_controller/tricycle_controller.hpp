@@ -33,6 +33,7 @@
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "hardware_interface/handle.hpp"
 #include "nav_msgs/msg/odometry.hpp"
+#include "std_srvs/srv/empty.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_box.h"
@@ -40,7 +41,8 @@
 #include "realtime_tools/realtime_publisher.h"
 #include "tf2_msgs/msg/tf_message.hpp"
 #include "tricycle_controller/odometry.hpp"
-#include "tricycle_controller/speed_limiter.hpp"
+#include "tricycle_controller/traction_limiter.hpp"
+#include "tricycle_controller/steering_limiter.hpp"
 #include "tricycle_controller/visibility_control.h"
 
 namespace tricycle_controller
@@ -157,11 +159,13 @@ protected:
 
   realtime_tools::RealtimeBox<std::shared_ptr<TwistStamped>> received_velocity_msg_ptr_{nullptr};
 
-  std::queue<TwistStamped> previous_commands_;  // last two commands
+  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr reset_odom_service_;
+
+  std::queue<AckermannDrive> previous_commands_;  // last two commands
 
   // speed limiters
-  SpeedLimiter limiter_linear_;
-  SpeedLimiter limiter_angular_;
+  TractionLimiter limiter_traction_;
+  SteeringLimiter limiter_steering_;
 
   rclcpp::Time previous_update_timestamp_{0};
 
@@ -173,6 +177,10 @@ protected:
   bool is_halted = false;
   bool use_stamped_vel_ = true;
 
+  void reset_odometry(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<std_srvs::srv::Empty::Request> req,
+    std::shared_ptr<std_srvs::srv::Empty::Response> res);
   bool reset();
   void halt();
 };

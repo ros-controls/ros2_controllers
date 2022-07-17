@@ -36,13 +36,6 @@ Odometry::Odometry(size_t velocity_rolling_window_size)
 {
 }
 
-void Odometry::init(const rclcpp::Time & time)
-{
-  // Reset accumulators and timestamp:
-  resetAccumulators();
-  timestamp_ = time;
-}
-
 bool Odometry::updateFromVelocity(double Ws, double alpha, const rclcpp::Time & time)
 {
   // using naming convention in http://users.isr.ist.utl.pt/~mir/cadeiras/robmovel/Kinematics.pdf
@@ -82,6 +75,7 @@ void Odometry::resetOdometry()
   x_ = 0.0;
   y_ = 0.0;
   heading_ = 0.0;
+  resetAccumulators();
 }
 
 void Odometry::setWheelParams(double wheelbase, double wheel_radius)
