@@ -27,6 +27,7 @@
 #include "control_toolbox/pid.hpp"
 #include "controller_interface/controller_interface.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
+#include "joint_trajectory_controller/interpolation_methods.hpp"
 #include "joint_trajectory_controller/tolerances.hpp"
 #include "joint_trajectory_controller/visibility_control.h"
 #include "rclcpp/duration.hpp"
@@ -124,13 +125,27 @@ protected:
     hardware_interface::HW_IF_EFFORT,
   };
 
+  // Preallocate variables used in the realtime update() function
+  trajectory_msgs::msg::JointTrajectoryPoint state_current_;
+  trajectory_msgs::msg::JointTrajectoryPoint state_desired_;
+  trajectory_msgs::msg::JointTrajectoryPoint state_error_;
+
+  // Degrees of freedom
+  size_t dof_;
+
   // Parameters for some special cases, e.g. hydraulics powered robots
-  /// Run he controller in open-loop, i.e., read hardware states only when starting controller.
-  /// This is useful when robot is not exactly following the commanded trajectory.
+  // Run the controller in open-loop, i.e., read hardware states only when starting controller.
+  // This is useful when robot is not exactly following the commanded trajectory.
   bool open_loop_control_ = false;
   trajectory_msgs::msg::JointTrajectoryPoint last_commanded_state_;
   /// Allow integration in goal trajectories to accept goals without position or velocity specified
   bool allow_integration_in_goal_trajectories_ = false;
+  /// Specify interpolation method. Default to splines.
+  interpolation_methods::InterpolationMethod interpolation_method_{
+    interpolation_methods::DEFAULT_INTERPOLATION};
+
+  double state_publish_rate_;
+  double action_monitor_rate_;
 
   // The interfaces are defined as the types in 'allowed_interface_types_' member.
   // For convenience, for each type the interfaces are ordered so that i-th position
@@ -150,12 +165,12 @@ protected:
   bool has_effort_command_interface_ = false;
 
   /// If true, a velocity feedforward term plus corrective PID term is used
-  bool use_closed_loop_pid_adapter = false;
+  bool use_closed_loop_pid_adapter_ = false;
   using PidPtr = std::shared_ptr<control_toolbox::Pid>;
   std::vector<PidPtr> pids_;
-  /// Feed-forward velocity weight factor when calculating closed loop pid adapter's command
+  // Feed-forward velocity weight factor when calculating closed loop pid adapter's command
   std::vector<double> ff_velocity_scale_;
-  /// reserved storage for result of the command when closed loop pid adapter is used
+  // reserved storage for result of the command when closed loop pid adapter is used
   std::vector<double> tmp_command_;
 
   // TODO(karsten1987): eventually activate and deactivate subscriber directly when its supported

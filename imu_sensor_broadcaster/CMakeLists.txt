@@ -1,55 +1,52 @@
 cmake_minimum_required(VERSION 3.5)
 project(imu_sensor_broadcaster)
 
-# Default to C++14
+# Default to C++17
 if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 14)
+  set(CMAKE_CXX_STANDARD 17)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-# find dependencies
+set(THIS_PACKAGE_INCLUDE_DEPENDS
+    controller_interface
+    sensor_msgs
+    hardware_interface
+    pluginlib
+    rclcpp
+    rclcpp_lifecycle
+    realtime_tools
+)
+
 find_package(ament_cmake REQUIRED)
-find_package(controller_interface REQUIRED)
-find_package(sensor_msgs REQUIRED)
-find_package(hardware_interface REQUIRED)
-find_package(pluginlib REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(rclcpp_lifecycle REQUIRED)
-find_package(realtime_tools REQUIRED)
+foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
+  find_package(${Dependency} REQUIRED)
+endforeach()
 
 add_library(
-  imu_sensor_broadcaster
+  ${PROJECT_NAME}
   SHARED
   src/imu_sensor_broadcaster.cpp
 )
 target_include_directories(
-  imu_sensor_broadcaster
+  ${PROJECT_NAME}
   PUBLIC
   include
 )
-ament_target_dependencies(
-  imu_sensor_broadcaster
-  sensor_msgs
-  controller_interface
-  hardware_interface
-  pluginlib
-  rclcpp
-  rclcpp_lifecycle
-  realtime_tools
-)
+ament_target_dependencies(${PROJECT_NAME} ${THIS_PACKAGE_INCLUDE_DEPENDS})
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
-target_compile_definitions(imu_sensor_broadcaster PRIVATE "IMU_SENSOR_BROADCASTER_BUILDING_DLL")
+target_compile_definitions(${PROJECT_NAME} PRIVATE "IMU_SENSOR_BROADCASTER_BUILDING_DLL")
 
 pluginlib_export_plugin_description_file(
   controller_interface imu_sensor_broadcaster.xml)
 
 install(
   TARGETS
-  imu_sensor_broadcaster
+  ${PROJECT_NAME}
   RUNTIME DESTINATION bin
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -83,7 +80,7 @@ if(BUILD_TESTING)
   )
   target_include_directories(test_imu_sensor_broadcaster PRIVATE include)
   target_link_libraries(test_imu_sensor_broadcaster
-    imu_sensor_broadcaster
+    ${PROJECT_NAME}
   )
   ament_target_dependencies(test_imu_sensor_broadcaster
     hardware_interface
@@ -99,15 +96,10 @@ ament_export_include_directories(
   include
 )
 ament_export_libraries(
-  imu_sensor_broadcaster
+  ${PROJECT_NAME}
 )
 ament_export_dependencies(
-  controller_interface
-  pluginlib
-  rclcpp
-  rclcpp_lifecycle
-  geometry_msgs
-  hardware_interface
+  ${THIS_PACKAGE_INCLUDE_DEPENDS}
 )
 
 ament_package()

@@ -2,6 +2,20 @@
 Changelog for package ros2_controllers_test_nodes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.9.0 (2022-07-14)
+------------------
+
+2.8.0 (2022-07-09)
+------------------
+* Fix deprecation in setup.cfg on Jammy (Humble and Rolling). (`#375 <https://github.com/ros-controls/ros2_controllers/issues/375>`_)
+* Contributors: Denis Štogl
+
+2.7.0 (2022-07-03)
+------------------
+
+2.6.0 (2022-06-18)
+------------------
+
 2.5.0 (2022-05-13)
 ------------------
 

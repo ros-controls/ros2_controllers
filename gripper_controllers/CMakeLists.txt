@@ -6,39 +6,36 @@ if(APPLE OR WIN32)
   return()
 endif()
 
-# Default to C++14
+# Default to C++17
 if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 14)
+  set(CMAKE_CXX_STANDARD 17)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra)
 endif()
 
+set(THIS_PACKAGE_INCLUDE_DEPENDS
+    rclcpp_action
+    control_msgs
+    control_toolbox
+    controller_interface
+    hardware_interface
+    pluginlib
+    realtime_tools
+    rclcpp
+)
+
 find_package(ament_cmake REQUIRED)
-find_package(rclcpp_action REQUIRED)
-find_package(control_msgs REQUIRED)
-find_package(control_toolbox REQUIRED)
-find_package(controller_interface REQUIRED)
-find_package(hardware_interface REQUIRED)
-find_package(pluginlib REQUIRED)
-find_package(realtime_tools REQUIRED)
-find_package(rclcpp REQUIRED)
+foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
+  find_package(${Dependency} REQUIRED)
+endforeach()
 
 add_library(gripper_action_controller SHARED
   src/gripper_action_controller.cpp
 )
-ament_target_dependencies(gripper_action_controller
-  controller_interface
-  control_msgs
-  control_toolbox
-  hardware_interface
-  pluginlib
-  rclcpp
-  rclcpp_lifecycle
-  rcutils
-  realtime_tools
-)
+ament_target_dependencies(gripper_action_controller ${THIS_PACKAGE_INCLUDE_DEPENDS})
 target_include_directories(gripper_action_controller
   PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE $<INSTALL_INTERFACE:include>
@@ -48,16 +45,13 @@ pluginlib_export_plugin_description_file(controller_interface ros_control_plugin
 ## Install ##
 #############
 
-# Install headers
 install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION include
 )
 
-# Install targets
 install(TARGETS gripper_action_controller
   LIBRARY DESTINATION lib
 )
-
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gmock REQUIRED)

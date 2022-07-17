@@ -162,6 +162,7 @@ private:
     stall_velocity_threshold_;  ///< Stall related parameters
   double default_max_effort_;   ///< Max allowed effort
   double goal_tolerance_;
+  bool allow_stalling_;   ///< If gripper stalls when moving to goal is considered successful
 
   /**
    * \brief Check for success and publish appropriate result and feedback.

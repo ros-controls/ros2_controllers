@@ -2,6 +2,36 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.9.0 (2022-07-14)
+------------------
+* Add option to skip interpolation in the joint trajectory controller (`#374 <https://github.com/ros-controls/ros2_controllers/issues/374>`_)
+  * Introduce `InterpolationMethods` structure
+  * Use parameters to define interpolation use in JTC
+* Contributors: Andy Zelenak
+
+2.8.0 (2022-07-09)
+------------------
+* Preallocate JTC variables to avoid resizing in realtime loops (`#340 <https://github.com/ros-controls/ros2_controllers/issues/340>`_)
+* Contributors: Andy Zelenak
+
+2.7.0 (2022-07-03)
+------------------
+* Properly retrieve parameters in the Joint Trajectory Controller (`#365 <https://github.com/ros-controls/ros2_controllers/issues/365>`_)
+* Rename the "abort" variable in the joint traj controller (`#367 <https://github.com/ros-controls/ros2_controllers/issues/367>`_)
+* account for edge case in JTC (`#350 <https://github.com/ros-controls/ros2_controllers/issues/350>`_)
+* Contributors: Andy Zelenak, Michael Wiznitzer
+
+2.6.0 (2022-06-18)
+------------------
+* Disable failing workflows (`#363 <https://github.com/ros-controls/ros2_controllers/issues/363>`_)
+* Fixed lof message in joint_trayectory_controller (`#366 <https://github.com/ros-controls/ros2_controllers/issues/366>`_)
+* CMakeLists cleanup (`#362 <https://github.com/ros-controls/ros2_controllers/issues/362>`_)
+* Fix exception about parameter already been declared & Change default c++ version to 17 (`#360 <https://github.com/ros-controls/ros2_controllers/issues/360>`_)
+  * Default C++ version to 17
+  * Replace explicit use of declare_paremeter with auto_declare
+* Member variable renaming in the Joint Traj Controller (`#361 <https://github.com/ros-controls/ros2_controllers/issues/361>`_)
+* Contributors: Alejandro Hernández Cordero, Andy Zelenak, Jafar Abdi
+
 2.5.0 (2022-05-13)
 ------------------
 * check for nans in command interface (`#346 <https://github.com/ros-controls/ros2_controllers/issues/346>`_)

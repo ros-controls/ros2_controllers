@@ -237,9 +237,9 @@ bool JointStateBroadcaster::init_joint_data()
   for (auto si = state_interfaces_.crbegin(); si != state_interfaces_.crend(); si++)
   {
     // initialize map if name is new
-    if (name_if_value_mapping_.count(si->get_name()) == 0)
+    if (name_if_value_mapping_.count(si->get_prefix_name()) == 0)
     {
-      name_if_value_mapping_[si->get_name()] = {};
+      name_if_value_mapping_[si->get_prefix_name()] = {};
     }
     // add interface name
     std::string interface_name = si->get_interface_name();
@@ -247,7 +247,7 @@ bool JointStateBroadcaster::init_joint_data()
     {
       interface_name = map_interface_to_joint_state_[interface_name];
     }
-    name_if_value_mapping_[si->get_name()][interface_name] = kUninitializedValue;
+    name_if_value_mapping_[si->get_prefix_name()][interface_name] = kUninitializedValue;
   }
 
   // filter state interfaces that have at least one of the joint_states fields,
@@ -345,10 +345,10 @@ controller_interface::return_type JointStateBroadcaster::update(
     {
       interface_name = map_interface_to_joint_state_[interface_name];
     }
-    name_if_value_mapping_[state_interface.get_name()][interface_name] =
+    name_if_value_mapping_[state_interface.get_prefix_name()][interface_name] =
       state_interface.get_value();
     RCLCPP_DEBUG(
-      get_node()->get_logger(), "%s: %f\n", state_interface.get_full_name().c_str(),
+      get_node()->get_logger(), "%s: %f\n", state_interface.get_name().c_str(),
       state_interface.get_value());
   }
 
