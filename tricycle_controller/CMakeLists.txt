@@ -55,11 +55,11 @@ ament_target_dependencies(
 
 pluginlib_export_plugin_description_file(controller_interface tricycle_controller.xml)
 
-install(TARGETS  ${PROJECT_NAME}
+install(TARGETS ${PROJECT_NAME}
 
-RUNTIME DESTINATION bin
-ARCHIVE DESTINATION lib
-LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
 )
 install(
   DIRECTORY
@@ -72,6 +72,25 @@ if(BUILD_TESTING)
   find_package(controller_manager REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
 
+  ament_add_gmock(test_tricycle_controller
+    test/test_tricycle_controller.cpp
+    ENV config_file=${CMAKE_CURRENT_SOURCE_DIR}/test/config/test_tricycle_controller.yaml)
+  target_include_directories(test_tricycle_controller PRIVATE include)
+  target_link_libraries(test_tricycle_controller
+    ${PROJECT_NAME}
+  )
+
+  ament_target_dependencies(test_tricycle_controller
+    geometry_msgs
+    hardware_interface
+    nav_msgs
+    rclcpp
+    rclcpp_lifecycle
+    realtime_tools
+    tf2
+    tf2_msgs
+  )
+
   ament_add_gmock(
     test_load_tricycle_controller
     test/test_load_tricycle_controller.cpp
@@ -81,9 +100,7 @@ if(BUILD_TESTING)
     controller_manager
     ros2_control_test_assets
   )
-
 endif()
-
 
 ament_export_include_directories(
   include
