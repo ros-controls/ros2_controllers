@@ -197,7 +197,7 @@ controller_interface::return_type TricycleController::update(
   }
 
   // Compute wheel velocity and angle
-  auto [alpha_write, Ws_write] = process_twist_command(linear_command, angular_command);
+  auto [alpha_write, Ws_write] = twist_to_ackermann(linear_command, angular_command);
 
   // Accelerate gradually until when steering motor has reached target angle
   // Increase power to make it more strict (i.e to make it slower when angle difference is big)
@@ -638,7 +638,7 @@ double TricycleController::convert_trans_rot_vel_to_steering_angle(
   return std::atan(theta_dot * wheelbase / Vx);
 }
 
-std::tuple<double, double> TricycleController::process_twist_command(double Vx, double theta_dot)
+std::tuple<double, double> TricycleController::twist_to_ackermann(double Vx, double theta_dot)
 {
   // using naming convention in http://users.isr.ist.utl.pt/~mir/cadeiras/robmovel/Kinematics.pdf
   double alpha, Ws;
