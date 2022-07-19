@@ -149,14 +149,14 @@ protected:
   void SetUpController(const std::string& controller_name,
                        const std::vector<rclcpp::Parameter> & parameter_overrides) {
     auto options = rclcpp::NodeOptions()
-        .allow_undeclared_parameters(true).parameter_overrides(parameter_overrides)
+        .allow_undeclared_parameters(false).parameter_overrides(parameter_overrides)
         .automatically_declare_parameters_from_overrides(true);
     SetUpControllerCommon(controller_name, options);
   }
 
   void SetUpController(const std::string& controller_name="test_admittance_controller") {
     auto options = rclcpp::NodeOptions()
-        .allow_undeclared_parameters(true)
+        .allow_undeclared_parameters(false)
         .automatically_declare_parameters_from_overrides(true);
     SetUpControllerCommon(controller_name, options);
   }
@@ -170,6 +170,8 @@ protected:
     ASSERT_EQ(result, controller_interface::return_type::OK);
 
     assign_interfaces();
+    controller_->get_node()->declare_parameter("robot_description", rclcpp::ParameterType::PARAMETER_STRING);
+    controller_->get_node()->declare_parameter("robot_description_semantic", rclcpp::ParameterType::PARAMETER_STRING);
     controller_->get_node()->set_parameter({"robot_description", robot_description_});
     controller_->get_node()->set_parameter({"robot_description_semantic", robot_description_semantic_});
   }
