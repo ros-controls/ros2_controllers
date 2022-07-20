@@ -2,6 +2,14 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.8.0 (2022-05-31)
+------------------
+* `joint_state_broadcaster` to use realtime tools (`#308 <https://github.com/ros-controls/ros2_controllers/issues/308>`_)
+  * joint_state_broadcaster to use realtime tools (`#276 <https://github.com/ros-controls/ros2_controllers/issues/276>`_)
+  * Use RealtimePublisher for joint_states
+  * Use RealtimePublisher for dynamic joint states
+* Contributors: John Morris
+
 0.7.0 (2022-01-24)
 ------------------
 
