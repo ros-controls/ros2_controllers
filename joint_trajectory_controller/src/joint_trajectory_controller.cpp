@@ -138,8 +138,11 @@ controller_interface::return_type JointTrajectoryController::update(
                                    const JointTrajectoryPoint & current,
                                    const JointTrajectoryPoint & desired) {
     // error defined as the difference between current and desired
-    error.positions[index] =
-      angles::shortest_angular_distance(current.positions[index], desired.positions[index]);
+    if (has_position_state_interface_ && has_position_command_interface_)
+    {
+      error.positions[index] =
+        angles::shortest_angular_distance(current.positions[index], desired.positions[index]);
+    }
     if (has_velocity_state_interface_ && has_velocity_command_interface_)
     {
       error.velocities[index] = desired.velocities[index] - current.velocities[index];
@@ -287,22 +290,21 @@ controller_interface::return_type JointTrajectoryController::update(
       {
         assign_interface_from_point(joint_command_interface_[2], state_desired_.accelerations);
       }
-        if (has_effort_command_interface_)
+      if (has_effort_command_interface_)
+      {
+        if (use_closed_loop_pid_adapter_)
         {
-          if (use_closed_loop_pid_adapter_)
-          {
-            assign_interface_from_point(joint_command_interface_[3], tmp_command_);
-          }
-          else
-          {
-            assign_interface_from_point(joint_command_interface_[3], state_desired_.effort);
-          }
+          assign_interface_from_point(joint_command_interface_[3], tmp_command_);
         }
-
-        // store the previous command. Used in open-loop control mode
-        last_commanded_state_ = state_desired_;
+        else
+        {
           assign_interface_from_point(joint_command_interface_[3], state_desired_.effort);
         }
+      }
+
+      // store the previous command. Used in open-loop control mode
+      last_commanded_state_ = state_desired_;
+    }
 
     const auto active_goal = *rt_active_goal_.readFromRT();
     if (active_goal)
@@ -703,6 +705,12 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   open_loop_control_ = get_node()->get_parameter("open_loop_control").get_value<bool>();
   allow_integration_in_goal_trajectories_ =
     get_node()->get_parameter("allow_integration_in_goal_trajectories").get_value<bool>();
+
+  std::string interpolation_string = get_node()->get_parameter("interpolation_method").as_string();
+  interpolation_method_ = interpolation_methods::from_string(interpolation_string);
+  RCLCPP_INFO(
+    logger, "Using '%s' interpolation method.",
+    interpolation_methods::InterpolationMethodMap.at(interpolation_method_).c_str());
 
   // subscriber callback
   // non realtime

@@ -266,8 +266,14 @@ TEST(TestTrajectory, interpolation_pos_vel_accel)
   end_state.velocities.push_back(4.0);
   end_state.accelerations.push_back(0.0);
 
-  auto traj = joint_trajectory_controller::Trajectory();
+  auto traj_data = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
+  traj_data->header.stamp = rclcpp::Time{0, 0};
+  traj_data->joint_names.push_back("test_joint");
+  traj_data->points.push_back(start_state);
+  traj_data->points.push_back(end_state);
+
   rclcpp::Time time_now(0);
+  auto traj = joint_trajectory_controller::Trajectory(time_now, start_state, std::move(traj_data));
   rclcpp::Duration period = rclcpp::Duration::from_nanoseconds(1e7);
   bool do_ruckig_smoothing = false;
 
@@ -715,7 +721,6 @@ TEST(TestTrajectory, sample_trajectory_acceleration_with_interpolation)
 
   // sample past given points - movement virtually stops
   {
-
     traj.sample(
       time_now + rclcpp::Duration::from_seconds(3.125), DEFAULT_INTERPOLATION, expected_state,
       start, end);
