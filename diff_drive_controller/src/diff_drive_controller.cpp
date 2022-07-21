@@ -74,11 +74,11 @@ controller_interface::CallbackReturn DiffDriveController::on_init()
 InterfaceConfiguration DiffDriveController::command_interface_configuration() const
 {
   std::vector<std::string> conf_names;
-  for (const auto & joint_name : left_wheel_names_)
+  for (const auto & joint_name : params_.left_wheel_names)
   {
     conf_names.push_back(joint_name + "/" + HW_IF_VELOCITY);
   }
-  for (const auto & joint_name : right_wheel_names_)
+  for (const auto & joint_name : params_.right_wheel_names)
   {
     conf_names.push_back(joint_name + "/" + HW_IF_VELOCITY);
   }
@@ -88,11 +88,11 @@ InterfaceConfiguration DiffDriveController::command_interface_configuration() co
 InterfaceConfiguration DiffDriveController::state_interface_configuration() const
 {
   std::vector<std::string> conf_names;
-  for (const auto & joint_name : left_wheel_names_)
+  for (const auto & joint_name : params_.left_wheel_names)
   {
     conf_names.push_back(joint_name + "/" + feedback_type());
   }
-  for (const auto & joint_name : right_wheel_names_)
+  for (const auto & joint_name : params_.right_wheel_names)
   {
     conf_names.push_back(joint_name + "/" + feedback_type());
   }
@@ -259,29 +259,25 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
 {
   auto logger = get_node()->get_logger();
 
-  // update parameters
-  left_wheel_names_ = get_node()->get_parameter("left_wheel_names").as_string_array();
-  right_wheel_names_ = get_node()->get_parameter("right_wheel_names").as_string_array();
-
-  if (left_wheel_names_.size() != right_wheel_names_.size())
-  {
-    RCLCPP_ERROR(
-      logger, "The number of left wheels [%zu] and the number of right wheels [%zu] are different",
-      left_wheel_names_.size(), right_wheel_names_.size());
-    return controller_interface::CallbackReturn::ERROR;
-  }
-
-  if (left_wheel_names_.empty())
-  {
-    RCLCPP_ERROR(logger, "Wheel names parameters are empty!");
-    return controller_interface::CallbackReturn::ERROR;
-  }
-
   // update parameters if they have changed
   if (param_listener_->is_old(params_))
   {
     params_ = param_listener_->get_params();
     RCLCPP_INFO(logger, "Parameters were updated");
+  }
+
+  if (params_.left_wheel_names.size() != params_.right_wheel_names.size())
+  {
+    RCLCPP_ERROR(
+      logger, "The number of left wheels [%zu] and the number of right wheels [%zu] are different",
+      params_.left_wheel_names.size(), params_.right_wheel_names.size());
+    return controller_interface::CallbackReturn::ERROR;
+  }
+
+  if (params_.left_wheel_names.empty())
+  {
+    RCLCPP_ERROR(logger, "Wheel names parameters are empty!");
+    return controller_interface::CallbackReturn::ERROR;
   }
 
   const double wheel_separation = params_.wheel_separation_multiplier * params_.wheel_separation;
@@ -325,7 +321,7 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   }
 
   // left and right sides are both equal at this point
-  params_.wheels_per_side = left_wheel_names_.size();
+  params_.wheels_per_side = params_.left_wheel_names.size();
 
   if (publish_limited_velocity_)
   {
@@ -437,9 +433,9 @@ controller_interface::CallbackReturn DiffDriveController::on_activate(
   const rclcpp_lifecycle::State &)
 {
   const auto left_result =
-    configure_side("left", left_wheel_names_, registered_left_wheel_handles_);
+    configure_side("left", params_.left_wheel_names, registered_left_wheel_handles_);
   const auto right_result =
-    configure_side("right", right_wheel_names_, registered_right_wheel_handles_);
+    configure_side("right", params_.right_wheel_names, registered_right_wheel_handles_);
 
   if (
     left_result == controller_interface::CallbackReturn::ERROR ||

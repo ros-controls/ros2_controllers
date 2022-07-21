@@ -6,7 +6,7 @@ diff_drive_controller:
   }
   right_wheel_names: {
     type: string_array,
-    default_value: [ ],
+    default_value: [],
     description: "name of right wheel actuators",
   }
   wheel_separation: {
@@ -51,12 +51,12 @@ diff_drive_controller:
   }
   pose_covariance_diagonal: {
     type: double_array,
-    default_value: [],
+    default_value: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
     description: "",
   }
   twist_covariance_diagonal: {
     type: double_array,
-    default_value: [ ],
+    default_value: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
     description: "",
   }
   open_loop: {

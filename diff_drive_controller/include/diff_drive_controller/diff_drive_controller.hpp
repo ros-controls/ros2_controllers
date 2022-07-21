@@ -104,8 +104,8 @@ protected:
     const std::string & side, const std::vector<std::string> & wheel_names,
     std::vector<WheelHandle> & registered_handles);
 
-  std::vector<std::string> left_wheel_names_;
-  std::vector<std::string> right_wheel_names_;
+//  std::vector<std::string> left_wheel_names_;
+//  std::vector<std::string> right_wheel_names_;
 
   std::vector<WheelHandle> registered_left_wheel_handles_;
   std::vector<WheelHandle> registered_right_wheel_handles_;
