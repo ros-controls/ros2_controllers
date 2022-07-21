@@ -43,7 +43,7 @@ controller_interface::CallbackReturn GripperActionController<HardwareInterface>:
   {
     // with the lifecycle node being initialized, we can declare parameters
     auto_declare<double>("action_monitor_rate", 20.0);
-    auto_declare<std::string>("joint", joint_name_);
+    joint_name_ = auto_declare<std::string>("joint", joint_name_);
     auto_declare<double>("goal_tolerance", 0.01);
     auto_declare<double>("max_effort", 0.0);
     auto_declare<bool>("allow_stalling", false);
