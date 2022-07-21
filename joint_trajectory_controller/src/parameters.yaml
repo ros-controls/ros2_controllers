@@ -1,0 +1,47 @@
+joint_trajectory_controller:
+  joints: {
+    type: string_array,
+    default_value: [],
+    description: "Names of joints used by the controller",
+  }
+  command_interfaces: {
+    type: string_array,
+    default_value: [],
+    description: "Names of command interfaces to claim",
+  }
+  state_interfaces: {
+    type: string_array,
+    default_value: [],
+    description: "Names of state interfaces to claim",
+  }
+  allow_partial_joints_goal: {
+    type: bool,
+    default_value: false,
+    description: "Goals with partial set of joints are allowed",
+  }
+  open_loop_control: {
+    type: bool,
+    default_value: false,
+    description: "Run the controller in open-loop, i.e., read hardware states only when starting controller. This is useful when robot is not exactly following the commanded trajectory.",
+  }
+  allow_integration_in_goal_trajectories: {
+    type: bool,
+    default_value: false,
+    description: "Allow integration in goal trajectories to accept goals without position or velocity specified",
+  }
+  state_publish_rate: {
+    type: double,
+    default_value: 50.0,
+    description: "Rate controller state is published",
+  }
+  action_monitor_rate: {
+    type: double,
+    default_value: 20.0,
+    description: "Rate status changes will be monitored",
+  }
+  interpolation_method: {
+    type: string,
+    default_value: "splines",
+    description: "none or splines",
+    validation: [validate_interpolation_method]
+  }

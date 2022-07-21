@@ -79,16 +79,16 @@ public:
     return success;
   }
 
-  void set_joint_names(const std::vector<std::string> & joint_names) { joint_names_ = joint_names; }
+  void set_joint_names(const std::vector<std::string> & joint_names) { params_.joints = joint_names; }
 
   void set_command_interfaces(const std::vector<std::string> & command_interfaces)
   {
-    command_interface_types_ = command_interfaces;
+    params_.command_interfaces = command_interfaces;
   }
 
   void set_state_interfaces(const std::vector<std::string> & state_interfaces)
   {
-    state_interface_types_ = state_interfaces;
+    params_.state_interfaces = state_interfaces;
   }
 
   trajectory_msgs::msg::JointTrajectoryPoint get_current_state_when_offset()
