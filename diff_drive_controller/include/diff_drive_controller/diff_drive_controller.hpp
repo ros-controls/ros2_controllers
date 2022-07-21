@@ -114,27 +114,6 @@ protected:
   std::shared_ptr<ParamListener> param_listener_;
   Params params_;
 
-//  struct WheelParams
-//  {
-//    size_t wheels_per_side = 0;
-//    double separation = 0.0;  // w.r.t. the midpoint of the wheel width
-//    double radius = 0.0;      // Assumed to be the same for both wheels
-//    double separation_multiplier = 1.0;
-//    double left_radius_multiplier = 1.0;
-//    double right_radius_multiplier = 1.0;
-//  } wheel_params_;
-//
-//  struct OdometryParams
-//  {
-//    bool open_loop = false;
-//    bool position_feedback = true;
-//    bool enable_odom_tf = true;
-//    std::string base_frame_id = "base_link";
-//    std::string odom_frame_id = "odom";
-//    std::array<double, 6> pose_covariance_diagonal;
-//    std::array<double, 6> twist_covariance_diagonal;
-//  } odom_params_;
-//
   Odometry odometry_;
 
     // Timeout to consider cmd_vel commands old
