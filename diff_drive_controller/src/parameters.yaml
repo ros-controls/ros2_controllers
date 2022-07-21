@@ -1,0 +1,177 @@
+diff_drive_controller:
+  left_wheel_names: {
+    type: string_array,
+    default_value: [],
+    description: "name of left wheel actuators",
+  }
+  right_wheel_names: {
+    type: string_array,
+    default_value: [ ],
+    description: "name of right wheel actuators",
+  }
+  wheel_separation: {
+    type: double,
+    default_value: 0.0,
+    description: "distance between the wheel w.r.t. the midpoint of the wheel width",
+  }
+  wheels_per_side: {
+    type: int,
+    default_value: 0,
+    description: "number of wheels on each side of robot body",
+  }
+  wheel_radius: {
+    type: double,
+    default_value: 0.0,
+    description: "assumed to be the same for both wheels",
+  }
+  wheel_separation_multiplier: {
+    type: double,
+    default_value: 1.0,
+    description: "",
+  }
+  left_wheel_radius_multiplier: {
+    type: double,
+    default_value: 1.0,
+    description: "",
+  }
+  right_wheel_radius_multiplier: {
+    type: double,
+    default_value: 1.0,
+    description: "",
+  }
+  odom_frame_id: {
+    type: string,
+    default_value: "odom",
+    description:  "frame id for odom",
+  }
+  base_frame_id: {
+    type: string,
+    default_value: "odom",
+    description: "frame id for base link",
+  }
+  pose_covariance_diagonal: {
+    type: double_array,
+    default_value: [],
+    description: "",
+  }
+  twist_covariance_diagonal: {
+    type: double_array,
+    default_value: [ ],
+    description: "",
+  }
+  open_loop: {
+    type: bool,
+    default_value: false,
+    description: "control in open loop mode",
+  }
+  position_feedback: {
+    type: bool,
+    default_value: true,
+    description: "",
+  }
+  enable_odom_tf: {
+    type: bool,
+    default_value: true,
+    description: "",
+  }
+  cmd_vel_timeout: {
+    type: double,
+    default_value: 0.5, # seconds
+    description: "Timeout to consider cmd_vel commands old",
+  }
+  publish_limited_velocity: {
+    type: bool,
+    default_value: false,
+      description: "Enforces velocity limit on published values",
+  }
+  velocity_rolling_window_size: {
+    type: int,
+    default_value: 10
+  }
+  use_stamped_vel: {
+    type: bool,
+    default_value: true
+  }
+  publish_rate: {
+    type: double,
+    default_value: 50.0 # Hz
+  }
+  linear:
+    x:
+      has_velocity_limits: {
+        type: bool,
+        default_value: false,
+      }
+      has_acceleration_limits: {
+        type: bool,
+        default_value: false,
+      }
+      has_jerk_limits: {
+        type: bool,
+        default_value: false,
+      }
+      max_velocity: {
+        type: double,
+        default_value: .NAN,
+      }
+      min_velocity: {
+        type: double,
+        default_value: .NAN,
+      }
+      max_acceleration: {
+        type: double,
+        default_value: .NAN,
+      }
+      min_acceleration: {
+        type: double,
+        default_value: .NAN,
+      }
+      max_jerk: {
+        type: double,
+        default_value: .NAN,
+      }
+      min_jerk: {
+        type: double,
+        default_value: .NAN,
+      }
+  angular:
+    z:
+      has_velocity_limits: {
+        type: bool,
+        default_value: false,
+      }
+      has_acceleration_limits: {
+        type: bool,
+        default_value: false,
+      }
+      has_jerk_limits: {
+        type: bool,
+        default_value: false,
+      }
+      max_velocity: {
+        type: double,
+        default_value: .NAN,
+      }
+      min_velocity: {
+        type: double,
+        default_value: .NAN,
+      }
+      max_acceleration: {
+        type: double,
+        default_value: .NAN,
+      }
+      min_acceleration: {
+        type: double,
+        default_value: .NAN,
+      }
+      max_jerk: {
+        type: double,
+        default_value: .NAN,
+      }
+      min_jerk: {
+        type: double,
+        default_value: .NAN,
+      }
+
+
+
