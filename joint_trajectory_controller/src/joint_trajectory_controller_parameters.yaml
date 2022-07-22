@@ -3,16 +3,34 @@ joint_trajectory_controller:
     type: string_array,
     default_value: [],
     description: "Names of joints used by the controller",
+    # TODO(tylerjw): fix tests to remove initalization without joints
+    # validation: {
+    #   size_gt<>: [0],
+    # }
   }
   command_interfaces: {
     type: string_array,
     default_value: [],
     description: "Names of command interfaces to claim",
+    validation: {
+      # TODO(tylerjw): fix tests to remove initalization without command_interfaces
+      # size_gt<>: [0],
+      unique<>: null,
+      subset_of<>: [["postion", "velocity", "acceleration", "effort",]],
+      command_interface_type_combinations: null,
+    }
   }
   state_interfaces: {
     type: string_array,
     default_value: [],
     description: "Names of state interfaces to claim",
+    validation: {
+      # TODO(tylerjw): fix tests to remove initalization without state_interfaces
+      # size_gt<>: [0],
+      unique<>: null,
+      subset_of<>: [["postion", "velocity", "acceleration",]],
+      state_interface_type_combinations: null,
+    }
   }
   allow_partial_joints_goal: {
     type: bool,
@@ -33,15 +51,23 @@ joint_trajectory_controller:
     type: double,
     default_value: 50.0,
     description: "Rate controller state is published",
+    validation: {
+      lower_bounds: [0.1]
+    }
   }
   action_monitor_rate: {
     type: double,
     default_value: 20.0,
     description: "Rate status changes will be monitored",
+    validation: {
+      lower_bounds: [0.1]
+    }
   }
   interpolation_method: {
     type: string,
     default_value: "splines",
-    description: "none or splines",
-    validation: [validate_interpolation_method]
+    description: "The type of interopoation to use if at all",
+    validation: {
+      one_of<>: [["splines", "none"]],
+    }
   }

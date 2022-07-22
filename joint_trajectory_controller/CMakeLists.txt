@@ -32,8 +32,8 @@ endforeach()
 find_package(generate_parameter_library REQUIRED)
 
 generate_parameter_library(joint_trajectory_controller_parameters
-  src/parameters.yaml
-  include/joint_trajectory_controller/validate_parameters.hpp
+  src/joint_trajectory_controller_parameters.yaml
+  include/joint_trajectory_controller/validate_joint_trajectory_controller_parameters.hpp
 )
 
 add_library(${PROJECT_NAME} SHARED

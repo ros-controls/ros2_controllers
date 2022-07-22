@@ -79,7 +79,10 @@ public:
     return success;
   }
 
-  void set_joint_names(const std::vector<std::string> & joint_names) { params_.joints = joint_names; }
+  void set_joint_names(const std::vector<std::string> & joint_names)
+  {
+    params_.joints = joint_names;
+  }
 
   void set_command_interfaces(const std::vector<std::string> & command_interfaces)
   {
