@@ -56,7 +56,6 @@ ament_target_dependencies(
 pluginlib_export_plugin_description_file(controller_interface tricycle_controller.xml)
 
 install(TARGETS ${PROJECT_NAME}
-
   RUNTIME DESTINATION bin
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
