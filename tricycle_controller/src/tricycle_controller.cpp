@@ -67,10 +67,11 @@ CallbackReturn TricycleController::on_init()
     auto_declare<bool>("enable_odom_tf", odom_params_.enable_odom_tf);
     auto_declare<bool>("odom_only_twist", odom_params_.odom_only_twist);
 
-    auto_declare<double>("cmd_vel_timeout", cmd_vel_timeout_.count() / 1000.0);
+    auto_declare<int>("cmd_vel_timeout", cmd_vel_timeout_.count());
     auto_declare<bool>("publish_ackermann_command", publish_ackermann_command_);
     auto_declare<int>("velocity_rolling_window_size", 10);
     auto_declare<bool>("use_stamped_vel", use_stamped_vel_);
+    auto_declare<double>("publish_rate", publish_rate_);
 
     auto_declare<double>("traction.max_velocity", NAN);
     auto_declare<double>("traction.min_velocity", NAN);
@@ -87,7 +88,6 @@ CallbackReturn TricycleController::on_init()
     auto_declare<double>("steering.min_velocity", NAN);
     auto_declare<double>("steering.max_acceleration", NAN);
     auto_declare<double>("steering.min_acceleration", NAN);
-    auto_declare<double>("publish_rate", publish_rate_);
   }
   catch (const std::exception & e)
   {
@@ -149,15 +149,15 @@ controller_interface::return_type TricycleController::update(
   TwistStamped command = *last_command_msg;
   double & linear_command = command.twist.linear.x;
   double & angular_command = command.twist.angular.z;
-
+  double Ws_read = traction_joint_[0].velocity_state.get().get_value();     // in radians/s
+  double alpha_read = steering_joint_[0].position_state.get().get_value();  // in radians
+  
   if (odom_params_.open_loop)
   {
     odometry_.updateOpenLoop(linear_command, angular_command, period);
   }
   else
   {
-    double Ws_read = traction_joint_[0].velocity_state.get().get_value();     // in radians/s
-    double alpha_read = steering_joint_[0].position_state.get().get_value();  // in radians
     if (std::isnan(Ws_read) || std::isnan(alpha_read))
     {
       RCLCPP_ERROR(get_node()->get_logger(), "Could not read feeback value");
@@ -208,11 +208,8 @@ controller_interface::return_type TricycleController::update(
   // Compute wheel velocity and angle
   auto [alpha_write, Ws_write] = twist_to_ackermann(linear_command, angular_command);
 
-  // Accelerate gradually until when steering motor has reached target angle
-  // Increase power to make it more strict (i.e to make it slower when angle difference is big)
-  // TODO: find the best function profile, e.g convex power functions
-  // TODO: Is there a better/more generic way to take into consideration motor velocity/acceleration limitations?
-  double alpha_delta = abs(alpha_write - steering_joint_[0].position_state.get().get_value());
+  // Reduce wheel speed until the target angle has been reached 
+  double alpha_delta = abs(alpha_write - alpha_read);
   double scale;
   if (alpha_delta < M_PI / 6)
   {
@@ -224,6 +221,7 @@ controller_interface::return_type TricycleController::update(
   }
   else
   {
+    // TODO: find the best function, e.g convex power functions
     scale = cos(alpha_delta);
   }
   Ws_write *= scale;
@@ -300,10 +298,12 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
   odom_params_.enable_odom_tf = get_node()->get_parameter("enable_odom_tf").as_bool();
   odom_params_.odom_only_twist = get_node()->get_parameter("odom_only_twist").as_bool();
 
-  cmd_vel_timeout_ = std::chrono::milliseconds{
-    static_cast<int>(get_node()->get_parameter("cmd_vel_timeout").as_double() * 1000.0)};
+  cmd_vel_timeout_ = std::chrono::milliseconds{get_node()->get_parameter("cmd_vel_timeout").as_int()};
   publish_ackermann_command_ = get_node()->get_parameter("publish_ackermann_command").as_bool();
   use_stamped_vel_ = get_node()->get_parameter("use_stamped_vel").as_bool();
+
+  publish_rate_ = get_node()->get_parameter("publish_rate").as_double();
+  publish_period_ = rclcpp::Duration::from_seconds(1.0 / publish_rate_);
 
   try
   {
@@ -418,9 +418,6 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
   odometry_message.header.frame_id = odom_params_.odom_frame_id;
   odometry_message.child_frame_id = odom_params_.base_frame_id;
 
-  // limit the publication on the topics /odom and /tf
-  publish_rate_ = get_node()->get_parameter("publish_rate").as_double();
-  publish_period_ = rclcpp::Duration::from_seconds(1.0 / publish_rate_);
   previous_publish_timestamp_ = get_node()->get_clock()->now();
 
   // initialize odom values zeros

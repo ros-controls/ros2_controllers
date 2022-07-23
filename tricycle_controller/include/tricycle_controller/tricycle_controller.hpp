@@ -117,8 +117,8 @@ protected:
 
   struct WheelParams
   {
-    double wheelbase = 0.0;  // w.r.t. the midpoint of the wheel width
-    double radius = 0.0;     // Assumed to be the same for both wheels
+    double wheelbase = 0.0;
+    double radius = 0.0;
   } wheel_params_;
 
   struct OdometryParams
