@@ -117,7 +117,7 @@ InterfaceConfiguration TricycleController::state_interface_configuration() const
 }
 
 controller_interface::return_type TricycleController::update(
-  const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
+  const rclcpp::Time & time, const rclcpp::Duration & period)
 {
   if (get_state().id() == State::PRIMARY_STATE_INACTIVE)
   {
@@ -152,7 +152,7 @@ controller_interface::return_type TricycleController::update(
 
   if (odom_params_.open_loop)
   {
-    odometry_.updateOpenLoop(linear_command, angular_command, time);
+    odometry_.updateOpenLoop(linear_command, angular_command, period);
   }
   else
   {
@@ -163,7 +163,7 @@ controller_interface::return_type TricycleController::update(
       RCLCPP_ERROR(get_node()->get_logger(), "Could not read feeback value");
       return controller_interface::return_type::ERROR;
     }
-    odometry_.updateFromVelocity(Ws_read, alpha_read, time);
+    odometry_.update(Ws_read, alpha_read, period);
   }
 
   tf2::Quaternion orientation;
@@ -228,18 +228,15 @@ controller_interface::return_type TricycleController::update(
   }
   Ws_write *= scale;
 
-  const auto update_dt = time - previous_update_timestamp_;
-  previous_update_timestamp_ = time;
-
   auto & last_command = previous_commands_.back();
   auto & second_to_last_command = previous_commands_.front();
 
   limiter_traction_.limit(
-    Ws_write, last_command.speed, second_to_last_command.speed, update_dt.seconds());
+    Ws_write, last_command.speed, second_to_last_command.speed, period.seconds());
 
   limiter_steering_.limit(
     alpha_write, last_command.steering_angle, second_to_last_command.steering_angle,
-    update_dt.seconds());
+    period.seconds());
 
   previous_commands_.pop();
   AckermannDrive ackermann_command;
@@ -462,7 +459,6 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
                                   &TricycleController::reset_odometry, this, std::placeholders::_1,
                                   std::placeholders::_2, std::placeholders::_3));
 
-  previous_update_timestamp_ = get_node()->get_clock()->now();
   return CallbackReturn::SUCCESS;
 }
 

@@ -166,8 +166,6 @@ protected:
   TractionLimiter limiter_traction_;
   SteeringLimiter limiter_steering_;
 
-  rclcpp::Time previous_update_timestamp_{0};
-
   // publish rate limiter
   double publish_rate_ = 50.0;
   rclcpp::Duration publish_period_ = rclcpp::Duration::from_nanoseconds(0);

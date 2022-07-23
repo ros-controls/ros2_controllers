@@ -31,8 +31,8 @@ class Odometry
 public:
   explicit Odometry(size_t velocity_rolling_window_size = 10);
 
-  bool updateFromVelocity(double left_vel, double right_vel, const rclcpp::Time & time);
-  void updateOpenLoop(double linear, double angular, const rclcpp::Time & time);
+  bool update(double left_vel, double right_vel, const rclcpp::Duration & dt);
+  void updateOpenLoop(double linear, double angular, const rclcpp::Duration & dt);
   void resetOdometry();
 
   double getX() const { return x_; }
@@ -50,9 +50,6 @@ private:
   void integrateRungeKutta2(double linear, double angular);
   void integrateExact(double linear, double angular);
   void resetAccumulators();
-
-  // Current timestamp:
-  rclcpp::Time timestamp_;
 
   // Current pose:
   double x_;        //   [m]
