@@ -95,29 +95,29 @@ TEST_P(TrajectoryControllerTestParameterized, configure_state_ignores_commands)
   executor.cancel();
 }
 
-// TEST_P(TrajectoryControllerTestParameterized, activate)
-// {
-//   SetUpTrajectoryController();
+TEST_P(TrajectoryControllerTestParameterized, activate)
+{
+  SetUpTrajectoryController();
 
-//   rclcpp::executors::MultiThreadedExecutor executor;
-//   executor.add_node(traj_controller_->get_node()->get_node_base_interface());
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(traj_controller_->get_node()->get_node_base_interface());
 
-//   traj_controller_->get_node()->configure();
-//   ASSERT_EQ(traj_controller_->get_state().id(), State::PRIMARY_STATE_INACTIVE);
+  traj_controller_->get_node()->configure();
+  ASSERT_EQ(traj_controller_->get_state().id(), State::PRIMARY_STATE_INACTIVE);
 
-//   auto cmd_interface_config = traj_controller_->command_interface_configuration();
-//   ASSERT_EQ(
-//     cmd_interface_config.names.size(), joint_names_.size() * command_interface_types_.size());
+  auto cmd_interface_config = traj_controller_->command_interface_configuration();
+  ASSERT_EQ(
+    cmd_interface_config.names.size(), joint_names_.size() * command_interface_types_.size());
 
-//   auto state_interface_config = traj_controller_->state_interface_configuration();
-//   ASSERT_EQ(
-//     state_interface_config.names.size(), joint_names_.size() * state_interface_types_.size());
+  auto state_interface_config = traj_controller_->state_interface_configuration();
+  ASSERT_EQ(
+    state_interface_config.names.size(), joint_names_.size() * state_interface_types_.size());
 
-//   ActivateTrajectoryController();
-//   ASSERT_EQ(traj_controller_->get_state().id(), State::PRIMARY_STATE_ACTIVE);
+  ActivateTrajectoryController();
+  ASSERT_EQ(traj_controller_->get_state().id(), State::PRIMARY_STATE_ACTIVE);
 
-//   executor.cancel();
-// }
+  executor.cancel();
+}
 
 // TEST_F(TestTrajectoryController, activation) {
 //   auto traj_controller = std::make_shared<ros_controllers::JointTrajectoryController>(
@@ -232,40 +232,46 @@ TEST_P(TrajectoryControllerTestParameterized, configure_state_ignores_commands)
 //   executor.cancel();
 // }
 
-// TEST_P(TrajectoryControllerTestParameterized, cleanup)
-// {
-//   SetUpAndActivateTrajectoryController();
+TEST_P(TrajectoryControllerTestParameterized, cleanup)
+{
+  SetUpAndActivateTrajectoryController();
 
-//   auto traj_node = traj_controller_->get_node();
-//   rclcpp::executors::MultiThreadedExecutor executor;
-//   executor.add_node(traj_node->get_node_base_interface());
+  auto traj_node = traj_controller_->get_node();
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(traj_node->get_node_base_interface());
 
-//   // send msg
-//   builtin_interfaces::msg::Duration time_from_start;
-//   time_from_start.sec = 1;
-//   time_from_start.nanosec = 0;
-//   std::vector<std::vector<double>> points{{{3.3, 4.4, 5.5}}};
-//   publish(time_from_start, points, rclcpp::Time());
-//   traj_controller_->wait_for_trajectory(executor);
-//   traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+  // send msg
+  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
+  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
+  // *INDENT-OFF*
+  std::vector<std::vector<double>> points{
+    {{3.3, 4.4, 5.5}}, {{7.7, 8.8, 9.9}}, {{10.10, 11.11, 12.12}}};
+  std::vector<std::vector<double>> points_velocities{
+    {{0.01, 0.01, 0.01}}, {{0.05, 0.05, 0.05}}, {{0.06, 0.06, 0.06}}};
+  // *INDENT-ON*
+  publish(time_from_start, points, rclcpp::Time(), {}, points_velocities);
+  traj_controller_->wait_for_trajectory(executor);
 
-//   auto state = traj_controller_->get_node()->deactivate();
-//   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
-//   traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+  traj_controller_->update(
+    rclcpp::Time(static_cast<uint64_t>(0.5 * 1e9)), rclcpp::Duration::from_seconds(0.5));
 
-//   state = traj_controller_->get_node()->cleanup();
-//   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
-//   // update for 0.25 seconds
-//   const auto start_time = rclcpp::Clock().now();
-//   updateController(rclcpp::Duration::from_seconds(0.25));
+  auto state = traj_controller_->get_node()->deactivate();
+  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
 
-//   // should be home pose again
-//   EXPECT_NEAR(INITIAL_POS_JOINT1, joint_pos_[0], COMMON_THRESHOLD);
-//   EXPECT_NEAR(INITIAL_POS_JOINT2, joint_pos_[1], COMMON_THRESHOLD);
-//   EXPECT_NEAR(INITIAL_POS_JOINT3, joint_pos_[2], COMMON_THRESHOLD);
+  state = traj_controller_->get_node()->cleanup();
+  ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
+  // update for 0.25 seconds
+  const auto start_time = rclcpp::Clock().now();
+  updateController(rclcpp::Duration::from_seconds(0.25));
 
-//   executor.cancel();
-// }
+  // should be home pose again
+  EXPECT_NEAR(INITIAL_POS_JOINT1, joint_pos_[0], COMMON_THRESHOLD);
+  EXPECT_NEAR(INITIAL_POS_JOINT2, joint_pos_[1], COMMON_THRESHOLD);
+  EXPECT_NEAR(INITIAL_POS_JOINT3, joint_pos_[2], COMMON_THRESHOLD);
+
+  executor.cancel();
+}
 
 TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_parameters)
 {
