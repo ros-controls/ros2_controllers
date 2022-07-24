@@ -25,7 +25,7 @@
 #include <thread>
 #include <vector>
 
-#include "gtest/gtest.h"
+#include "gmock/gmock.h"
 
 #include "builtin_interfaces/msg/duration.hpp"
 #include "builtin_interfaces/msg/time.hpp"
