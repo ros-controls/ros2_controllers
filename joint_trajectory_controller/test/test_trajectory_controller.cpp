@@ -61,34 +61,39 @@ bool is_same_sign(double val1, double val2) { return val1 * val2 >= 0.0; }
 
 void spin(rclcpp::executors::MultiThreadedExecutor * exe) { exe->spin(); }
 
-// TEST_P(TrajectoryControllerTestParameterized, configure_state)
-// {
-//   SetUpTrajectoryController();
+TEST_P(TrajectoryControllerTestParameterized, configure_state_ignores_commands)
+{
+  SetUpTrajectoryController();
 
-//   rclcpp::executors::MultiThreadedExecutor executor;
-//   executor.add_node(traj_controller_->get_node()->get_node_base_interface());
-//   const auto future_handle_ = std::async(std::launch::async, spin, &executor);
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(traj_controller_->get_node()->get_node_base_interface());
+  // const auto future_handle_ = std::async(std::launch::async, spin, &executor);
 
-//   const auto state = traj_controller_->get_node()->configure();
-//   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+  const auto state = traj_controller_->get_node()->configure();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
 
-//   // send msg
-//   builtin_interfaces::msg::Duration time_from_start;
-//   time_from_start.sec = 1;
-//   time_from_start.nanosec = 0;
-//   std::vector<std::vector<double>> points{{{3.3, 4.4, 5.5}}};
-//   publish(time_from_start, points, rclcpp::Time());
-//   std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  // send msg
+  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
+  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
+  // *INDENT-OFF*
+  std::vector<std::vector<double>> points{
+    {{3.3, 4.4, 5.5}}, {{7.7, 8.8, 9.9}}, {{10.10, 11.11, 12.12}}};
+  std::vector<std::vector<double>> points_velocities{
+    {{0.01, 0.01, 0.01}}, {{0.05, 0.05, 0.05}}, {{0.06, 0.06, 0.06}}};
+  // *INDENT-ON*
+  publish(time_from_start, points, rclcpp::Time(), {}, points_velocities);
+  traj_controller_->wait_for_trajectory(executor);
 
-//   traj_controller_->update(rclcpp::Time(time_from_start), rclcpp::Duration::from_seconds(0.01));
+  traj_controller_->update(
+    rclcpp::Time(static_cast<uint64_t>(0.5 * 1e9)), rclcpp::Duration::from_seconds(0.5));
 
-//   // hw position == 0 because controller is not activated
-//   EXPECT_EQ(0.0, joint_pos_[0]);
-//   EXPECT_EQ(0.0, joint_pos_[1]);
-//   EXPECT_EQ(0.0, joint_pos_[2]);
+  // hw position == 0 because controller is not activated
+  EXPECT_EQ(0.0, joint_pos_[0]);
+  EXPECT_EQ(0.0, joint_pos_[1]);
+  EXPECT_EQ(0.0, joint_pos_[2]);
 
-//   executor.cancel();
-// }
+  executor.cancel();
+}
 
 // TEST_P(TrajectoryControllerTestParameterized, activate)
 // {
@@ -298,7 +303,8 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
   traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.1));
 
   // wait so controller process the second point when deactivated
-  traj_controller_->update(rclcpp::Time(static_cast<uint64_t>(0.25 * 1e9)), rclcpp::Duration::from_seconds(0.15));
+  traj_controller_->update(
+    rclcpp::Time(static_cast<uint64_t>(0.25 * 1e9)), rclcpp::Duration::from_seconds(0.15));
   // deactivated
   state = traj_controller_->get_node()->deactivate();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
@@ -324,6 +330,22 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
     EXPECT_LE(0.0, joint_eff_[1]);
     EXPECT_LE(0.0, joint_eff_[2]);
   }
+
+  // cleanup
+  state = traj_controller_->get_node()->cleanup();
+  ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
+
+  // TODO: should the controller even allow calling update() when it is not active?
+  // update loop receives a new msg and updates accordingly
+  traj_controller_->update(
+    rclcpp::Time(static_cast<uint64_t>(0.35 * 1e9)), rclcpp::Duration::from_seconds(0.1));
+
+  EXPECT_NEAR(3.3, joint_pos_[0], allowed_delta);
+  EXPECT_NEAR(4.4, joint_pos_[1], allowed_delta);
+  EXPECT_NEAR(5.5, joint_pos_[2], allowed_delta);
+
+  // state = traj_controller_->get_node()->configure();
+  // ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
 
   executor.cancel();
 }
@@ -1217,8 +1239,7 @@ INSTANTIATE_TEST_SUITE_P(
       std::vector<std::string>({"position"}), std::vector<std::string>({"position", "velocity"})),
     std::make_tuple(
       std::vector<std::string>({"position"}),
-      std::vector<std::string>({"position", "velocity", "acceleration"}))
-    ));
+      std::vector<std::string>({"position", "velocity", "acceleration"}))));
 
 // // position_velocity controllers
 // INSTANTIATE_TEST_SUITE_P(
@@ -1266,7 +1287,6 @@ INSTANTIATE_TEST_SUITE_P(
 //     std::make_tuple(
 //       std::vector<std::string>({"effort"}),
 //       std::vector<std::string>({"position", "velocity", "acceleration"}))));
-
 
 // TEST_F(TrajectoryControllerTest, incorrect_initialization_using_interface_parameters)
 // {
