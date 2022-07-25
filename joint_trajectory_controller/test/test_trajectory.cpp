@@ -51,6 +51,7 @@ TEST(TestTrajectory, initialize_trajectory)
     trajectory_msgs::msg::JointTrajectoryPoint expected_point;
     joint_trajectory_controller::TrajectoryPointConstIter start, end;
     traj.sample(clock.now(), DEFAULT_INTERPOLATION, expected_point, start, end);
+    // traj.sample(rclcpp::Clock().now(), DEFAULT_INTERPOLATION, output_point, start, end, );
 
     EXPECT_EQ(traj.end(), start);
     EXPECT_EQ(traj.end(), end);

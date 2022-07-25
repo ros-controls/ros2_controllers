@@ -131,6 +131,9 @@ protected:
   trajectory_msgs::msg::JointTrajectoryPoint state_current_;
   trajectory_msgs::msg::JointTrajectoryPoint state_desired_;
   trajectory_msgs::msg::JointTrajectoryPoint state_error_;
+  trajectory_msgs::msg::JointTrajectoryPoint splines_state_;
+  trajectory_msgs::msg::JointTrajectoryPoint ruckig_state_;
+  trajectory_msgs::msg::JointTrajectoryPoint ruckig_input_state_;
 
   // Degrees of freedom
   size_t dof_;
@@ -175,6 +178,9 @@ protected:
   // reserved storage for result of the command when closed loop pid adapter is used
   std::vector<double> tmp_command_;
 
+  // joint limits for JTC
+  std::vector<joint_limits::JointLimits> joint_limits_;
+
   // TODO(karsten1987): eventually activate and deactivate subscriber directly when its supported
   bool subscriber_is_active_ = false;
   rclcpp::Subscription<trajectory_msgs::msg::JointTrajectory>::SharedPtr joint_command_subscriber_ =
@@ -194,6 +200,12 @@ protected:
   using StatePublisherPtr = std::unique_ptr<StatePublisher>;
   rclcpp::Publisher<ControllerStateMsg>::SharedPtr publisher_;
   StatePublisherPtr state_publisher_;
+  rclcpp::Publisher<ControllerStateMsg>::SharedPtr splines_output_pub_;
+  StatePublisherPtr splines_output_publisher_;
+  rclcpp::Publisher<ControllerStateMsg>::SharedPtr ruckig_input_pub_;
+  StatePublisherPtr ruckig_input_publisher_;
+  rclcpp::Publisher<ControllerStateMsg>::SharedPtr ruckig_input_target_pub_;
+  StatePublisherPtr ruckig_input_target_publisher_;
 
   using FollowJTrajAction = control_msgs::action::FollowJointTrajectory;
   using RealtimeGoalHandle = realtime_tools::RealtimeServerGoalHandle<FollowJTrajAction>;
@@ -260,7 +272,9 @@ protected:
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   void publish_state(
     const rclcpp::Time & time, const JointTrajectoryPoint & desired_state,
-    const JointTrajectoryPoint & current_state, const JointTrajectoryPoint & state_error);
+    const JointTrajectoryPoint & current_state, const JointTrajectoryPoint & state_error,
+    const JointTrajectoryPoint & splines_output, const JointTrajectoryPoint & ruckig_input_target,
+    const JointTrajectoryPoint & ruckig_input);
 
   virtual void read_state_from_hardware(JointTrajectoryPoint & state);
 
