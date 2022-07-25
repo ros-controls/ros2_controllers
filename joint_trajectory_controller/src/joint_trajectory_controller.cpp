@@ -611,12 +611,13 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     // Init PID gains from ROS parameter server
     for (size_t i = 0; i < pids_.size(); ++i)
     {
-      const std::string prefix = "gains." + joint_names_[i];
+      const std::string prefix = "gains." + command_joint_names_[i];
       const auto k_p = auto_declare<double>(prefix + ".p", 0.0);
       const auto k_i = auto_declare<double>(prefix + ".i", 0.0);
       const auto k_d = auto_declare<double>(prefix + ".d", 0.0);
       const auto i_clamp = auto_declare<double>(prefix + ".i_clamp", 0.0);
-      ff_velocity_scale_[i] = auto_declare<double>("ff_velocity_scale/" + joint_names_[i], 0.0);
+      ff_velocity_scale_[i] =
+        auto_declare<double>("ff_velocity_scale/" + command_joint_names_[i], 0.0);
       // Initialize PID
       pids_[i] = std::make_shared<control_toolbox::Pid>(k_p, k_i, k_d, i_clamp, -i_clamp);
     }
@@ -721,7 +722,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     get_interface_list(command_interface_types_).c_str(),
     get_interface_list(state_interface_types_).c_str());
 
-  default_tolerances_ = get_segment_tolerances(*get_node(), joint_names_);
+  default_tolerances_ = get_segment_tolerances(*get_node(), command_joint_names_);
 
   // Read parameters customizing controller for special cases
   open_loop_control_ = get_node()->get_parameter("open_loop_control").get_value<bool>();
@@ -757,7 +758,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   state_publisher_ = std::make_unique<StatePublisher>(publisher_);
 
   state_publisher_->lock();
-  state_publisher_->msg_.joint_names = joint_names_;
+  state_publisher_->msg_.joint_names = command_joint_names_;
   state_publisher_->msg_.desired.positions.resize(dof_);
   state_publisher_->msg_.desired.velocities.resize(dof_);
   state_publisher_->msg_.desired.accelerations.resize(dof_);
