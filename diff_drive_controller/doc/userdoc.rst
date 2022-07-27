@@ -103,11 +103,11 @@ right_wheel_radius_multiplier [double]
 
 Odometry
 ,,,,,,,,,
-odom_frame_id [string] (default: "base_link")
+base_frame_id [string] (default: "base_link")
   Name of the frame for odometry.
   This frame is parent of ``base_frame_id`` when controller publishes odometry.
 
-base_frame_id [string] (default: "odom")
+odom_frame_id [string] (default: "odom")
   Name of the robot's base frame that is child of the odometry frame.
 
 pose_covariance_diagonal [array<double>[6]] (default: "[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]")
