@@ -12,9 +12,9 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <build_depend>angles</build_depend>
+  <build_depend>generate_parameter_library</build_depend>
   <build_depend>pluginlib</build_depend>
   <build_depend>realtime_tools</build_depend>
-  <build_depend>generate_parameter_library</build_depend>
 
   <exec_depend>angles</exec_depend>
   <exec_depend>pluginlib</exec_depend>
