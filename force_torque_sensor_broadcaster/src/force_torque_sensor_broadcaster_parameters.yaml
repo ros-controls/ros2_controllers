@@ -1,0 +1,36 @@
+force_torque_sensor_broadcaster:
+  frame_id: {
+    type: string,
+    default_value: "",
+  }
+  sensor_name: {
+    type: string,
+    default_value: "",
+  }
+  interface_names:
+    force:
+      x: {
+        type: string,
+        default_value: "",
+      }
+      y: {
+        type: string,
+        default_value: "",
+      }
+      z: {
+        type: string,
+        default_value: "",
+      }
+    torque:
+      x: {
+        type: string,
+        default_value: "",
+      }
+      y: {
+        type: string,
+        default_value: "",
+      }
+      z: {
+        type: string,
+        default_value: "",
+      }
