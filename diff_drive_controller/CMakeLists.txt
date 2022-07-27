@@ -33,7 +33,7 @@ endforeach()
 find_package(generate_parameter_library REQUIRED)
 
 generate_parameter_library(diff_drive_controller_parameters
-  src/parameters.yaml
+  src/diff_drive_controller_parameter.yaml
 )
 
 add_library(${PROJECT_NAME} SHARED
