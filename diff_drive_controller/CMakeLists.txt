@@ -33,8 +33,8 @@ endforeach()
 find_package(generate_parameter_library REQUIRED)
 
 generate_parameter_library(diff_drive_controller_parameters
-    src/parameters.yaml
-    )
+  src/parameters.yaml
+)
 
 add_library(${PROJECT_NAME} SHARED
   src/diff_drive_controller.cpp
@@ -46,7 +46,7 @@ target_include_directories(${PROJECT_NAME}
   $<INSTALL_INTERFACE:include>)
 ament_target_dependencies(${PROJECT_NAME} ${THIS_PACKAGE_INCLUDE_DEPENDS})
 target_link_libraries(${PROJECT_NAME}
-    diff_drive_controller_parameters
+  diff_drive_controller_parameters
 )
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
