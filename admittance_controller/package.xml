@@ -29,7 +29,9 @@
   <depend>tf2_geometry_msgs</depend>
   <depend>tf2_ros</depend>
   <depend>trajectory_msgs</depend>
-  <depend>gen_param_struct</depend>
+<!--  uncomment to generate parameter listener code-->
+<!--  <depend>generate_parameter_library</depend>-->
+
 
   <test_depend>ament_cmake_gmock</test_depend>
   <test_depend>control_msgs</test_depend>

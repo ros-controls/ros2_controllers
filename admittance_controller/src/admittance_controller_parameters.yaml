@@ -1,4 +1,4 @@
-admittance_struct:
+admittance_controller:
   joints: {
     type: string_array,
     description: "specifies which joints will be used by the controller",
@@ -112,8 +112,10 @@ admittance_struct:
     CoG: # specifies the center of gravity of the end effector
       pos: {
         type: double_array,
-        fixed_size: 3,
-        description: "position of the center of gravity (CoG) in its frame"
+        description: "position of the center of gravity (CoG) in its frame",
+        validation: {
+          fixed_size<>: 3
+        }
       }
       force: {
         type: double,
@@ -125,31 +127,39 @@ admittance_struct:
     selected_axes:
       {
         type: bool_array,
-        fixed_size: 6,
-        description: "specifies if the axes x, y, z, rx, ry, and rz are enabled"
+        description: "specifies if the axes x, y, z, rx, ry, and rz are enabled",
+        validation: {
+          fixed_size<>: 6
+        }
       }
 
     # Having ".0" at the end is MUST, otherwise there is a loading error
     # F = M*a + D*v + S*(x - x_d)
     mass: {
       type: double_array,
-      fixed_size: 6,
       description: "specifies mass values for x, y, z, rx, ry, and rz used in the admittance calculation",
-      bounds: [ 0.0001, 1000000.0]
+      validation: {
+        fixed_size<>: 6,
+        element_bounds<>: [ 0.0001, 1000000.0 ]
+      }
     }
 
     damping_ratio: {
       type: double_array,
-      fixed_size: 6,
       description: "specifies damping ratio values for x, y, z, rx, ry, and rz used in the admittance calculation. 
-      The values are calculated as damping can be used instead: zeta = D / (2 * sqrt( M * S ))"
+      The values are calculated as damping can be used instead: zeta = D / (2 * sqrt( M * S ))",
+      validation: {
+        fixed_size<>: 6
+      }
     }
 
     stiffness: {
       type: double_array,
-      fixed_size: 6,
       description: "specifies stiffness values for x, y, z, rx, ry, and rz used in the admittance calculation",
-      bounds: [0.0, 100000000.0]
+      validation: {
+        fixed_size<>: 6,
+        element_bounds<>: [ 0.0, 100000000.0 ]
+      }
     }
 
   # general settings

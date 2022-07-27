@@ -39,7 +39,6 @@
 #include "rclcpp/time.hpp"
 #include "rclcpp/duration.hpp"
 
-
 // TODO(destogl): this is only temporary to work with servo. It should be either trajectory_msgs/msg/JointTrajectoryPoint or std_msgs/msg/Float64MultiArray
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 
@@ -50,15 +49,10 @@ namespace admittance_controller {
   using ControllerStateMsg = control_msgs::msg::AdmittanceControllerState;
   using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
-  struct RTBuffers {
-    realtime_tools::RealtimeBuffer<std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint>> input_joint_command_;
-    std::unique_ptr<realtime_tools::RealtimePublisher<ControllerStateMsg>> state_publisher_;
-  };
-
   class AdmittanceController : public controller_interface::ChainableControllerInterface {
   public:
     ADMITTANCE_CONTROLLER_PUBLIC
-    AdmittanceController();
+    AdmittanceController() = default;
 
     ADMITTANCE_CONTROLLER_PUBLIC
     CallbackReturn on_init() override;
@@ -96,8 +90,9 @@ namespace admittance_controller {
 
     bool on_set_chained_mode(bool chained_mode) override;
 
-    int num_joints_{};
+    int num_joints_;
 
+    // vectors to hold joint hardware interfaces
     std::vector<std::reference_wrapper<hardware_interface::LoanedCommandInterface>> joint_position_command_interface_;
     std::vector<std::reference_wrapper<hardware_interface::LoanedCommandInterface>> joint_velocity_command_interface_;
     std::vector<std::reference_wrapper<hardware_interface::LoanedCommandInterface>> joint_acceleration_command_interface_;
@@ -106,23 +101,30 @@ namespace admittance_controller {
     std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>> joint_velocity_state_interface_;
     std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>> joint_acceleration_state_interface_;
 
-    std::vector<double *> position_reference_;
-    std::vector<double *> velocity_reference_;
+    //
+    std::vector<double*> position_reference_;
+    std::vector<double*> velocity_reference_;
 
     // Admittance rule and dependent variables;
     std::unique_ptr<admittance_controller::AdmittanceRule> admittance_;
-    // joint limiter TODO
+
+    // force torque sensor
     std::unique_ptr<semantic_components::ForceTorqueSensor> force_torque_sensor_;
+
     // ROS subscribers
-    rclcpp::Subscription<trajectory_msgs::msg::JointTrajectoryPoint>::SharedPtr input_joint_command_subscriber_ = nullptr;
-    rclcpp::Publisher<control_msgs::msg::AdmittanceControllerState>::SharedPtr s_publisher_ = nullptr;
+    rclcpp::Subscription<trajectory_msgs::msg::JointTrajectoryPoint>::SharedPtr input_joint_command_subscriber_;
+    rclcpp::Publisher<control_msgs::msg::AdmittanceControllerState>::SharedPtr s_publisher_;
+
     // ROS messages
     std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint> joint_command_msg;
+
     // real-time buffer
-    RTBuffers rtBuffers;
+    realtime_tools::RealtimeBuffer<std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint>> input_joint_command_;
+    std::unique_ptr<realtime_tools::RealtimePublisher<ControllerStateMsg>> state_publisher_;
 
     // controller running state
-    bool controller_is_active_{};
+    bool controller_is_active_;
+
     const std::set<std::string> allowed_state_interface_types_ = {
         hardware_interface::HW_IF_POSITION,
         hardware_interface::HW_IF_VELOCITY,
@@ -137,7 +139,6 @@ namespace admittance_controller {
     trajectory_msgs::msg::JointTrajectory pre_admittance_point;
 
     // helper methods
-    void joint_command_callback(const std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint> msg);
     void read_state_from_hardware(trajectory_msgs::msg::JointTrajectoryPoint &state);
     void read_state_reference_interfaces(trajectory_msgs::msg::JointTrajectoryPoint &state);
 

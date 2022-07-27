@@ -18,7 +18,6 @@
 #define ADMITTANCE_CONTROLLER__ADMITTANCE_RULE_HPP_
 
 #include <map>
-
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include "tf2_ros/transform_listener.h"
@@ -29,36 +28,132 @@
 #include "controller_interface/controller_interface.hpp"
 #include "control_toolbox/filters.hpp"
 #include "geometry_msgs/msg/wrench_stamped.hpp"
-#include "config/admittance_struct.h"
+#include "config/admittance_controller_parameters.hpp"
 
 // kinematics plugins
 #include "kinematics_interface/kinematics_interface_base.hpp"
 #include "pluginlib/class_loader.hpp"
 
 
-namespace {  // Utility namespace
-
+namespace utility {
 // Numerical accuracy checks. Used as deadbands.
   const double ROT_AXIS_EPSILON = 1e-6;
-
-
 }  // utility namespace
 
 namespace admittance_controller {
 
+  struct Transforms {
+    Transforms() {
+      base_control_.setIdentity();
+      base_ft_.setIdentity();
+      base_tip_.setIdentity();
+      world_base_.setIdentity();
+      base_sensor_.setIdentity();
+      base_cog_.setIdentity();
+    }
+
+    Eigen::Matrix<double, 4, 4> base_control_;
+    Eigen::Matrix<double, 4, 4> base_ft_;
+    Eigen::Matrix<double, 4, 4> base_tip_;
+    Eigen::Matrix<double, 4, 4> world_base_;
+    Eigen::Matrix<double, 4, 4> base_sensor_;
+    Eigen::Matrix<double, 4, 4> base_cog_;
+  };
+
+  struct Rotations {
+    Rotations() {
+      base_control_.setIdentity();
+      base_ft_.setIdentity();
+      base_tip_.setIdentity();
+      world_base_.setIdentity();
+      base_world_.setIdentity();
+      base_sensor_.setIdentity();
+      base_cog_.setIdentity();
+      world_sensor_.setIdentity();
+      world_cog_.setIdentity();
+    }
+
+    Eigen::Matrix<double, 3, 3> base_control_;
+    Eigen::Matrix<double, 3, 3> base_ft_;
+    Eigen::Matrix<double, 3, 3> base_tip_;
+    Eigen::Matrix<double, 3, 3> world_base_;
+    Eigen::Matrix<double, 3, 3> base_world_;
+    Eigen::Matrix<double, 3, 3> base_sensor_;
+    Eigen::Matrix<double, 3, 3> base_cog_;
+    Eigen::Matrix<double, 3, 3> world_sensor_;
+    Eigen::Matrix<double, 3, 3> world_cog_;
+  };
+
+  struct AdmittanceState {
+    AdmittanceState() = default;
+
+    AdmittanceState(int num_joints) {
+      admittance_position_.setIdentity();
+      admittance_velocity_.setZero();
+      admittance_acceleration_.setZero();
+      damping_.setZero();
+      mass_.setOnes();
+      mass_inv_.setZero();
+      stiffness_.setZero();
+      selected_axes_.setZero();
+      joint_pos_ = Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor>(num_joints);
+      joint_vel_ = Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor>(num_joints);
+      joint_acc_ = Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor>(num_joints);
+      feedforward_vel_.setZero();
+    }
+
+    Eigen::Matrix<double, Eigen::Dynamic, 1> joint_pos_;
+    Eigen::Matrix<double, Eigen::Dynamic, 1> joint_vel_;
+    Eigen::Matrix<double, Eigen::Dynamic, 1> joint_acc_;
+    Eigen::Matrix<double, 6, 1> damping_;
+    Eigen::Matrix<double, 6, 1> mass_;
+    Eigen::Matrix<double, 6, 1> mass_inv_;
+    Eigen::Matrix<double, 6, 1> selected_axes_;
+    Eigen::Matrix<double, 6, 1> stiffness_;
+    Eigen::Matrix<double, 3, 2, Eigen::ColMajor> admittance_acceleration_;
+    Eigen::Matrix<double, 3, 2, Eigen::ColMajor> admittance_velocity_;
+    Eigen::Matrix<double, 4, 4, Eigen::ColMajor> admittance_position_;
+    Eigen::Matrix<double, 3, 2, Eigen::ColMajor> wrench_base;
+    Eigen::Matrix<double, 3, 2> feedforward_vel_;
+
+  };
+
   class AdmittanceRule {
   public:
-    AdmittanceRule() {
-      parameters_ = &parameters_copy;
+    AdmittanceRule(const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> &lifecycl_node) {
+      parameter_handler_ = std::make_shared<admittance_controller::ParamListener>(
+          lifecycl_node->get_node_parameters_interface());
+      parameters_ = parameter_handler_->get_params();
+      num_joints_ = parameters_.joints.size();
+      admittance_state_ = AdmittanceState(num_joints_);
+
     }
 
     controller_interface::return_type
     configure(const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> &node, int num_joint);
 
-    controller_interface::return_type reset();
+    controller_interface::return_type reset(int num_joints);
 
     /**
-     * Calculate 'desired joint states' based on the 'measured force' and 'reference joint state'.
+     * Calculate all transforms needed for admittance control using the loader kinematics plugin. If the transform does
+     * not exist in the kinematics model, then TF will be used for lookup. The return value is true if all transformation
+     * are calculated without an error
+     * \param[in] current_joint_state
+     * \param[in] reference_joint_state
+     * \param[in] success
+     */
+    bool get_all_transforms(const trajectory_msgs::msg::JointTrajectoryPoint &current_joint_state,
+                            const trajectory_msgs::msg::JointTrajectoryPoint &reference_joint_state);
+
+    /**
+    * Updates parameter_ struct if any parameters have changed since last update. Parameter dependent Eigen field
+    * members (ee_weight_, cog_, mass_, mass_inv_ stiffness, selected_axes, damping_) are also updated
+    */
+    void apply_parameters_update();
+
+    /**
+     * Calculate 'desired joint states' based on the 'measured force', 'reference joint state', and
+     * 'current_joint_state'.
      *
      * \param[in] current_joint_state
      * \param[in] measured_wrench
@@ -73,25 +168,45 @@ namespace admittance_controller {
         const rclcpp::Duration &period,
         trajectory_msgs::msg::JointTrajectoryPoint &desired_joint_states);
 
+    /**
+     * Fill fields of `state_message` from current admittance controller state.
+     *
+     * \param[in] state_message
+     */
     void get_controller_state(control_msgs::msg::AdmittanceControllerState &state_message);
-
 
   public:
     // admittance config parameters
-    std::shared_ptr<admittance_struct_parameters::admittance_struct> parameter_handler_;
-    admittance_struct_parameters::admittance_struct::params *parameters_;
-    admittance_struct_parameters::admittance_struct::params parameters_copy;
-
+    std::shared_ptr<admittance_controller::ParamListener> parameter_handler_;
+    admittance_controller::Params parameters_;
   protected:
     /**
-     * All values are in the controller frame
+     * Calculate the admittance rule from given the robot's current joint angles. the control frame rotation, the
+     * current force torque transform, the reference force torque transform, the force torque sensor frame id,
+     * the time delta, and the current admittance controller state. The admittance controller state input is updated
+     * with the new calculated values. A boolean value is returned indicating if any of the kinematics plugin calls
+     * failed.
+     * \param[in] current_joint_positions
+     * \param[in] base_control
+     * \param[in] base_ft
+     * \param[in] ref_base_ft
+     * \param[in] ft_sensor_frame
+     * \param[in] dt
+     * \param[in] admittance_state
+     * \param[out] success
      */
-    void calculate_admittance_rule(
-        const Eigen::Matrix<double, 3, 2> &wrench,
-        const Eigen::Matrix<double, 3, 2> &desired_vel,
-        const double dt
-    );
+    bool calculate_admittance_rule(const std::vector<double> &current_joint_positions,
+                                   const Eigen::Matrix<double, 3, 3, Eigen::ColMajor> &base_control,
+                                   Eigen::Matrix<double, 4, 4, Eigen::ColMajor> base_ft,
+                                   Eigen::Matrix<double, 4, 4, Eigen::ColMajor> ref_base_ft,
+                                   const std::string &ft_sensor_frame,
+                                   double dt,
+                                   AdmittanceState &admittance_state);
 
+    /**
+    * 
+    * \param[in] current_joint_positions
+    */
     void process_wrench_measurements(
         const geometry_msgs::msg::Wrench &measured_wrench, const Eigen::Matrix<double, 3, 3> &sensor_rot,
         const Eigen::Matrix<double, 3, 3> &cog_rot
@@ -99,83 +214,70 @@ namespace admittance_controller {
 
     Eigen::Vector3d get_rotation_axis(const Eigen::Matrix3d &R) const;
 
-    void convert_cartesian_deltas_to_joint_deltas(const std::vector<double> &positions,
+    bool convert_cartesian_deltas_to_joint_deltas(const std::vector<double> &positions,
                                                   const Eigen::Matrix<double, 3, 2> &cartesian_delta,
                                                   const std::string &link_name,
-                                                  Eigen::Matrix<double, Eigen::Dynamic, 1> &joint_delta, bool &success);
+                                                  Eigen::Matrix<double, Eigen::Dynamic, 1> &joint_delta);
 
-    Eigen::Matrix<double, 3, 2> convert_joint_deltas_to_cartesian_deltas(const std::vector<double> &positions,
-                                                                         const std::vector<double> &joint_delta,
-                                                                         const std::string &link_name,
-                                                                         bool &success);
+    bool convert_joint_deltas_to_cartesian_deltas(const std::vector<double> &positions,
+                                                  const std::vector<double> &joint_delta,
+                                                  const std::string &link_name,
+                                                  Eigen::Matrix<double, 3, 2> &cartesian_delta);
+     /**
+     * Normalizes given rotation matrix `R`
+     * \param[in] R
+     */
+    static void normalize_rotation(Eigen::Matrix<double, 3, 3, Eigen::ColMajor> &R);
 
-    void normalize_rotation(Eigen::Matrix<double, 3, 3, Eigen::ColMajor> &R);
-
-    Eigen::Matrix<double, 4, 4, Eigen::ColMajor>
-    get_transform(const std::vector<double> &positions, const std::string &link_name, bool external, bool &success);
+    /**
+    * Calculates the transform from the specified link to the robot's base link at the given joint positions. If
+     * `external` is set to true, then the link transform with will queried using TF lookup.
+    * \param[in] positions
+    * \param[in] link_name
+    * \param[in] external
+    * \param[in] transform
+    */
+    bool get_transform(const std::vector<double> &positions, const std::string &link_name, bool external,
+                       Eigen::Matrix<double, 4, 4, Eigen::ColMajor> &transform);
 
     void eigen_to_msg(const Eigen::Matrix<double, 3, 2> &wrench, const std::string &frame_id,
                       geometry_msgs::msg::WrenchStamped &wrench_msg);
 
     template<typename T1, typename T2>
-    void vec_to_eigen(const std::vector<T1> data, T2 &matrix);
+    void vec_to_eigen(const std::vector<T1>& data, T2 &matrix);
+
+    // number of robot joint
+    int num_joints_;
 
     // Kinematics interface plugin loader
     std::shared_ptr<pluginlib::ClassLoader<kinematics_interface::KinematicsBaseClass>> kinematics_loader_;
     std::unique_ptr<kinematics_interface::KinematicsBaseClass> kinematics_;
 
-    // number of robot joint
-    int num_joints_;
-
     // buffers to pass data to kinematics interface
     std::vector<double> transform_buffer_vec_;
     std::vector<double> joint_buffer_vec_;
     std::vector<double> cart_buffer_vec_;
-    std::vector<double> jacobian_buffer_vec_;
 
-    // admittance controller values
-    Eigen::Matrix<double, 3, 2, Eigen::ColMajor> admittance_acceleration_;
-    Eigen::Matrix<double, 3, 2, Eigen::ColMajor> admittance_velocity_;
-    Eigen::Matrix<double, 4, 4, Eigen::ColMajor> admittance_position_;
-
-    // transforms
-    Eigen::Matrix<double, 4, 4, Eigen::ColMajor> ee_transform_;
-    Eigen::Matrix<double, 4, 4, Eigen::ColMajor> reference_ft_transform_;
-    Eigen::Matrix<double, 4, 4, Eigen::ColMajor> sensor_transform_;
-    Eigen::Matrix<double, 4, 4, Eigen::ColMajor> control_transform_;
-    Eigen::Matrix<double, 4, 4, Eigen::ColMajor> cog_transform_;
-    Eigen::Matrix<double, 4, 4, Eigen::ColMajor> world_transform_;
-    Eigen::Matrix<double, 4, 4, Eigen::ColMajor> ft_transform_;
-
-    // rotations
-    Eigen::Matrix<double, 3, 3, Eigen::ColMajor> ee_rot_;
-    Eigen::Matrix<double, 3, 3, Eigen::ColMajor> control_rot_;
-    Eigen::Matrix<double, 3, 3, Eigen::ColMajor> sensor_rot_;
-    Eigen::Matrix<double, 3, 3, Eigen::ColMajor> cog_rot_;
-    Eigen::Matrix<double, 3, 3, Eigen::ColMajor> world_rot_;
-
-    // external force
-    Eigen::Matrix<double, 3, 2, Eigen::ColMajor> wrench_world_;
+    // measured wrench in ft frame
     Eigen::Matrix<double, 3, 2, Eigen::ColMajor> measured_wrench_;
+    // filtered wrench in world frame
+    Eigen::Matrix<double, 3, 2, Eigen::ColMajor> wrench_world_;
+
+    // admittance controllers internal state
+    AdmittanceState admittance_state_;
+
+    // transforms needed for admittance update
+    Transforms trans_;
+    Transforms trans_ref_;
+
+    // rotations needed for admittance update
+    Rotations rotations_;
+
     // position of center of gravity in cog_frame
     Eigen::Vector3d cog_;
+
     // force applied to sensor due to weight of end effector
     Eigen::Vector3d ee_weight;
-
-    // admittance controller values in joint space
-    Eigen::Matrix<double, Eigen::Dynamic, 1> joint_pos_;
-    Eigen::Matrix<double, Eigen::Dynamic, 1> joint_vel_;
-    Eigen::Matrix<double, Eigen::Dynamic, 1> joint_acc_;
-
-    Eigen::Matrix<double,6,1> damping_;
-    Eigen::Matrix<double,6,1> mass_;
-    Eigen::Matrix<double,6,1> mass_inv_;
-    Eigen::Matrix<double,6,1> selected_axes_;
-    Eigen::Matrix<double,6,1> stiffness_;
-
-    // jacobian
-    Eigen::Matrix<double, 6, Eigen::Dynamic, Eigen::ColMajor> jacobian_;
-    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor> identity;
 
     // ROS
     trajectory_msgs::msg::JointTrajectoryPoint admittance_rule_calculated_values_;

@@ -45,14 +45,11 @@ target_include_directories(
         include
 )
 
-# uncomment to generate struct
-#find_package(gen_param_struct REQUIRED)
-## specify which yaml root name to convert to struct
-#set(YAML_FILE ${CMAKE_CURRENT_SOURCE_DIR}/include/admittance_controller/config/definition.yaml)
-## specify which yaml root name to convert to struct
-#set(OUT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/admittance_controller/config)
-#
-#generate_param_struct_header(admittance_controller ${OUT_DIR} ${YAML_FILE})
+# uncomment to generate parameter listener code
+#find_package(generate_parameter_library REQUIRED)
+#generate_parameter_library(admittance_controller_parameters
+#    src/admittance_controller_parameters.yaml
+#    )
 
 
 ament_target_dependencies(
@@ -130,7 +127,6 @@ if (BUILD_TESTING)
         ros2_control_test_assets
     )
     # test admittance controller function
-#    ament_add_gmock(test_admittance_controller test/test_admittance_controller.cpp)
     add_test_with_yaml_input(test_admittance_controller "test/test_admittance_controller.cpp"
         ${CMAKE_CURRENT_SOURCE_DIR}/test/test_params.yaml)
     target_include_directories(test_admittance_controller PRIVATE include)

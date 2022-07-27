@@ -29,7 +29,7 @@
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
-#include "ros2_control_test_assets/6d_robot_description.hpp"
+#include "6d_robot_description.hpp"
 #include "semantic_components/force_torque_sensor.hpp"
 #include "rclcpp/parameter_value.hpp"
 #include "rclcpp/utilities.hpp"
@@ -74,6 +74,19 @@ class TestableAdmittanceController
   FRIEND_TEST(AdmittanceControllerTest, receive_message_and_publish_updated_status);
 
 public:
+
+
+  CallbackReturn on_init() override
+  {
+    get_node()->declare_parameter("robot_description", rclcpp::ParameterType::PARAMETER_STRING);
+    get_node()->declare_parameter("robot_description_semantic", rclcpp::ParameterType::PARAMETER_STRING);
+    get_node()->set_parameter({"robot_description", robot_description_});
+    get_node()->set_parameter({"robot_description_semantic", robot_description_semantic_});
+
+    return admittance_controller::AdmittanceController::on_init();
+  }
+
+
   CallbackReturn on_configure(const rclcpp_lifecycle::State & previous_state) override
   {
     auto ret =
@@ -107,6 +120,8 @@ public:
 private:
   rclcpp::WaitSet input_wrench_command_subscriber_wait_set_;
   rclcpp::WaitSet input_pose_command_subscriber_wait_set_;
+  const std::string robot_description_ = ros2_control_test_assets::valid_6d_robot_urdf;
+  const std::string robot_description_semantic_ = ros2_control_test_assets::valid_6d_robot_srdf;
 };
 
 class AdmittanceControllerTest : public ::testing::Test
@@ -163,17 +178,12 @@ protected:
 
   void SetUpControllerCommon(const std::string& controller_name, const rclcpp::NodeOptions& options)
   {
-//    auto options = rclcpp::NodeOptions()
-//        .allow_undeclared_parameters(true)
-//        .automatically_declare_parameters_from_overrides(true);
     const auto result = controller_->init(controller_name, "", options);
     ASSERT_EQ(result, controller_interface::return_type::OK);
 
+    controller_->export_reference_interfaces();
     assign_interfaces();
-    controller_->get_node()->declare_parameter("robot_description", rclcpp::ParameterType::PARAMETER_STRING);
-    controller_->get_node()->declare_parameter("robot_description_semantic", rclcpp::ParameterType::PARAMETER_STRING);
-    controller_->get_node()->set_parameter({"robot_description", robot_description_});
-    controller_->get_node()->set_parameter({"robot_description_semantic", robot_description_semantic_});
+
   }
 
   void assign_interfaces()
@@ -354,8 +364,8 @@ protected:
   const std::string ik_base_frame_ = "base_link";
   const std::string ik_tip_frame_ = "tool0";
   const std::string ik_group_name_ = "arm";
-  const std::string robot_description_ = ros2_control_test_assets::valid_6d_robot_urdf;
-  const std::string robot_description_semantic_ = ros2_control_test_assets::valid_6d_robot_srdf;
+//  const std::string robot_description_ = ros2_control_test_assets::valid_6d_robot_urdf;
+//  const std::string robot_description_semantic_ = ros2_control_test_assets::valid_6d_robot_srdf;
 
   const std::string control_frame_ = "tool0";
   const std::string endeffector_frame_ = "endeffector_frame";
