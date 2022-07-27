@@ -456,6 +456,9 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
 {
   const auto logger = get_node()->get_logger();
 
+  // update the dynamic map parameters
+  param_listener_->refresh_dynamic_parameters();
+
   // get parameters from the listener in case they were updated
   params_ = param_listener_->get_params();
 
@@ -492,11 +495,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   // allocation during activation
   joint_command_interface_.resize(allowed_interface_types_.size());
 
-  // Check if command interfaces combination is valid. Valid combinations are:
-  // 1. effort
-  // 2. velocity
-  // 2. position [velocity, [acceleration]]
-
   has_position_command_interface_ =
     contains_interface_type(params_.command_interfaces, hardware_interface::HW_IF_POSITION);
   has_velocity_command_interface_ =
@@ -518,17 +516,13 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     ff_velocity_scale_.resize(dof_);
     tmp_command_.resize(dof_, 0.0);
 
-    // Init PID gains from ROS parameter server
-    for (size_t i = 0; i < pids_.size(); ++i)
+    // Init PID gains from ROS parameters
+    for (size_t i = 0; i < dof_; ++i)
     {
-      const std::string prefix = "gains." + params_.joints[i];
-      const auto k_p = auto_declare<double>(prefix + ".p", 0.0);
-      const auto k_i = auto_declare<double>(prefix + ".i", 0.0);
-      const auto k_d = auto_declare<double>(prefix + ".d", 0.0);
-      const auto i_clamp = auto_declare<double>(prefix + ".i_clamp", 0.0);
-      ff_velocity_scale_[i] = auto_declare<double>("ff_velocity_scale/" + params_.joints[i], 0.0);
-      // Initialize PID
-      pids_[i] = std::make_shared<control_toolbox::Pid>(k_p, k_i, k_d, i_clamp, -i_clamp);
+      const auto & gains = params_.gains.joints_map.at(params_.joints[i]);
+      ff_velocity_scale_[i] = gains.ff_velocity_scale;
+      pids_[i] = std::make_shared<control_toolbox::Pid>(
+        gains.p, gains.i, gains.d, gains.i_clamp, -gains.i_clamp);
     }
   }
 
@@ -595,7 +589,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     get_interface_list(params_.command_interfaces).c_str(),
     get_interface_list(params_.state_interfaces).c_str());
 
-  default_tolerances_ = get_segment_tolerances(*get_node(), params_.joints);
+  default_tolerances_ = get_segment_tolerances(params_);
 
   // subscriber callback
   // non realtime
@@ -822,7 +816,10 @@ bool JointTrajectoryController::reset()
 
   for (const auto & pid : pids_)
   {
-    pid->reset();
+    if (pid)
+    {
+      pid->reset();
+    }
   }
 
   // iterator has no default value
@@ -831,12 +828,6 @@ bool JointTrajectoryController::reset()
   traj_external_point_ptr_.reset();
   traj_home_point_ptr_.reset();
   traj_msg_home_ptr_.reset();
-
-  // reset pids
-  for (const auto & pid : pids_)
-  {
-    pid->reset();
-  }
 
   return true;
 }

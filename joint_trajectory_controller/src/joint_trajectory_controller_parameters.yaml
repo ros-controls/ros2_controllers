@@ -3,20 +3,14 @@ joint_trajectory_controller:
     type: string_array,
     default_value: [],
     description: "Names of joints used by the controller",
-    # TODO(tylerjw): fix tests to remove initalization without joints
-    # validation: {
-    #   size_gt<>: [0],
-    # }
   }
   command_interfaces: {
     type: string_array,
     default_value: [],
     description: "Names of command interfaces to claim",
     validation: {
-      # TODO(tylerjw): fix tests to remove initalization without command_interfaces
-      # size_gt<>: [0],
       unique<>: null,
-      subset_of<>: [["postion", "velocity", "acceleration", "effort",]],
+      subset_of<>: [["position", "velocity", "acceleration", "effort",]],
       command_interface_type_combinations: null,
     }
   }
@@ -25,10 +19,8 @@ joint_trajectory_controller:
     default_value: [],
     description: "Names of state interfaces to claim",
     validation: {
-      # TODO(tylerjw): fix tests to remove initalization without state_interfaces
-      # size_gt<>: [0],
       unique<>: null,
-      subset_of<>: [["postion", "velocity", "acceleration",]],
+      subset_of<>: [["position", "velocity", "acceleration",]],
       state_interface_type_combinations: null,
     }
   }
@@ -71,3 +63,51 @@ joint_trajectory_controller:
       one_of<>: [["splines", "none"]],
     }
   }
+  gains:
+    __map_joints:
+      p: {
+        type: double,
+        default_value: 0.0,
+        description: "Proportional gain for PID"
+      }
+      i: {
+        type: double,
+        default_value: 0.0,
+        description: "Intigral gain for PID"
+      }
+      d: {
+        type: double,
+        default_value: 0.0,
+        description: "Derivative gain for PID"
+      }
+      i_clamp: {
+        type: double,
+        default_value: 0.0,
+        description: "Intigral clamp"
+      }
+      ff_velocity_scale: {
+        type: double,
+        default_value: 0.0,
+        description: "Feed forward velocity scale"
+      }
+  constraints:
+    stopped_velocity_tolerance: {
+      type: double,
+      default_value: 0.01,
+    }
+    goal_time: {
+      type: double,
+      default_value: 0.0,
+      validation: {
+        lower_bounds: [0.0],
+      }
+    }
+    __map_joints:
+      trajectory: {
+        type: double,
+        default_value: 0.0,
+      }
+      goal: {
+        type: double,
+        default_value: 0.0,
+      }
