@@ -65,7 +65,7 @@ namespace admittance_controller {
   }
 
   controller_interface::return_type AdmittanceRule::reset(int num_joints) {
-    // reset all values back to zero
+    // reset all values back to default
 
     //allocate dynamic buffers
     joint_buffer_vec_.assign(num_joints, 0.0);
@@ -258,8 +258,8 @@ namespace admittance_controller {
 
     // Compute admittance control law: F = M*a + D*v + S*(x - x_d)
     Eigen::Matrix<double, 6, 1> admittance_acceleration_flat = admittance_state.mass_inv_.cwiseProduct(wrench_flat +
-                                      D*(desired_vel_flat-admittance_velocity_flat) +
-                                       K*pose_error);
+                                      D*(desired_vel_flat-admittance_velocity_flat) + K*pose_error);
+
     // reshape admittance outputs
     admittance_state.admittance_acceleration_ = Eigen::Matrix<double, 3, 2>(admittance_acceleration_flat.data());
 
@@ -277,8 +277,6 @@ namespace admittance_controller {
     admittance_rotation += R_dot * dt;
     normalize_rotation(admittance_rotation);
     admittance_state.admittance_position_.block<3, 3>(0, 0) = admittance_rotation;
-
-    // update admittance joint values
 
     // calculate position drift due to integrating the joint positions
     auto admittance_position_base = ref_base_ft.block<3,1>(0, 3) + admittance_state.admittance_position_.block<3,1>(0, 3);

@@ -204,15 +204,29 @@ namespace admittance_controller {
                                    AdmittanceState &admittance_state);
 
     /**
-    *
-    * \param[in] current_joint_positions
-    */
+     * Updates internal estimate of wrench in world frame `wrench_world_` given the new measurement. The `wrench_world_`
+     * estimate includes gravity compensation
+     * \param[in] measured_wrench
+     * \param[in] sensor_rot
+     * \param[in] cog_rot
+     */
     void process_wrench_measurements(
         const geometry_msgs::msg::Wrench &measured_wrench, const Eigen::Matrix<double, 3, 3> &sensor_rot,
         const Eigen::Matrix<double, 3, 3> &cog_rot
     );
 
+    /**
+     * Returns the axis of rotation of a given rotation matrix
+     * \param[in] R
+     * \param[out] rotation_axis
+     */
     Eigen::Vector3d get_rotation_axis(const Eigen::Matrix3d &R) const;
+
+    /**
+    * Normalizes given rotation matrix `R`
+    * \param[in] R
+    */
+    static void normalize_rotation(Eigen::Matrix<double, 3, 3, Eigen::ColMajor> &R);
 
     bool convert_cartesian_deltas_to_joint_deltas(const std::vector<double> &positions,
                                                   const Eigen::Matrix<double, 3, 2> &cartesian_delta,
@@ -223,11 +237,7 @@ namespace admittance_controller {
                                                   const std::vector<double> &joint_delta,
                                                   const std::string &link_name,
                                                   Eigen::Matrix<double, 3, 2> &cartesian_delta);
-     /**
-     * Normalizes given rotation matrix `R`
-     * \param[in] R
-     */
-    static void normalize_rotation(Eigen::Matrix<double, 3, 3, Eigen::ColMajor> &R);
+
 
     /**
     * Calculates the transform from the specified link to the robot's base link at the given joint positions. If

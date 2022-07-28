@@ -90,7 +90,7 @@ namespace admittance_controller {
 
     bool on_set_chained_mode(bool chained_mode) override;
 
-    int num_joints_;
+    int num_joints_ = 0;
 
     // vectors to hold joint hardware interfaces
     std::vector<std::reference_wrapper<hardware_interface::LoanedCommandInterface>> joint_position_command_interface_;
@@ -121,9 +121,6 @@ namespace admittance_controller {
     // real-time buffer
     realtime_tools::RealtimeBuffer<std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint>> input_joint_command_;
     std::unique_ptr<realtime_tools::RealtimePublisher<ControllerStateMsg>> state_publisher_;
-
-    // controller running state
-    bool controller_is_active_;
 
     const std::set<std::string> allowed_state_interface_types_ = {
         hardware_interface::HW_IF_POSITION,

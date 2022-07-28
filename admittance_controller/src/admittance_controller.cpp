@@ -29,9 +29,6 @@
 #include "rcutils/logging_macros.h"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
-constexpr size_t
-    ROS_LOG_THROTTLE_PERIOD = 1 * 1000;  // Milliseconds to throttle logs inside loops
-
 namespace admittance_controller {
   using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
@@ -176,9 +173,7 @@ namespace admittance_controller {
 
     // setup subscribers and publishers
     auto joint_command_callback = [this](const std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint> msg) {
-      if (controller_is_active_) {
         input_joint_command_.writeFromNonRT(msg);
-      }
     };
     input_joint_command_subscriber_ = get_node()->create_subscription<trajectory_msgs::msg::JointTrajectoryPoint>(
         "~/joint_commands", rclcpp::SystemDefaultsQoS(), joint_command_callback);
@@ -213,7 +208,6 @@ namespace admittance_controller {
       return CallbackReturn::ERROR;
     }
 
-    controller_is_active_ = true;
     // update parameters if any have changed
     if (admittance_->parameter_handler_->is_old(admittance_->parameters_)){
       admittance_->parameters_ = admittance_->parameter_handler_->get_params();
@@ -350,7 +344,6 @@ namespace admittance_controller {
   }
 
   CallbackReturn AdmittanceController::on_deactivate(const rclcpp_lifecycle::State &previous_state) {
-    controller_is_active_ = false;
     force_torque_sensor_->release_interfaces();
 
     return LifecycleNodeInterface::on_deactivate(previous_state);
