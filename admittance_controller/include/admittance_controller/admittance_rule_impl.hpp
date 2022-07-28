@@ -87,9 +87,10 @@ namespace admittance_controller {
     trans_ref_ = Transforms();
     rotations_ = Rotations();
 
-    // reset wrenches
+    // reset forces
     wrench_world_.setZero();
     measured_wrench_.setZero();
+    ee_weight.setZero();
 
     return controller_interface::return_type::OK;
   }
@@ -306,7 +307,6 @@ namespace admittance_controller {
                                              admittance_state.joint_acc_);
 
     for (auto i = 0ul; i < admittance_state.joint_pos_.size(); i++) {
-      admittance_state.joint_vel_[i] += admittance_state.joint_acc_[i]*dt;
       admittance_state.joint_pos_[i] += admittance_state.joint_vel_[i]*dt;
     }
 

@@ -52,8 +52,10 @@ namespace admittance_controller {
     // claim the joint + interface combinations for state interfaces from the resource manager. Finally,
     // controller manager will populate the state_interfaces_ vector field via the ControllerInterfaceBase.
     // Note: state_interface_types_ contains position, velocity, acceleration; effort is not supported
-
-    std::vector<std::string> state_interfaces_config_names; //= force_torque_sensor_->get_state_interface_names();
+    std::vector<std::string> state_interfaces_config_names;
+    if (!admittance_){
+      return {controller_interface::interface_configuration_type::INDIVIDUAL,{}};
+    }
 
     for (const auto &interface: admittance_->parameters_.state_interfaces) {
       for (const auto &joint: admittance_->parameters_.joints) {
@@ -73,8 +75,10 @@ namespace admittance_controller {
     // claim the joint + interface combinations for command interfaces from the resource manager. Finally,
     // controller manager will populate the command_interfaces_ vector field via the ControllerInterfaceBase
     // Note: command_interface_types_ contains position, velocity; acceleration, effort are not supported
-
     std::vector<std::string> command_interfaces_config_names;
+    if (!admittance_){
+      return {controller_interface::interface_configuration_type::INDIVIDUAL,{}};
+    }
 
     for (const auto &interface: admittance_->parameters_.command_interfaces) {
       for (const auto &joint: admittance_->parameters_.joints) {
@@ -88,8 +92,11 @@ namespace admittance_controller {
 
   std::vector<hardware_interface::CommandInterface> AdmittanceController::on_export_reference_interfaces() {
     // create CommandInterface interfaces that other controllers will be able to chain with
-
     std::vector<hardware_interface::CommandInterface> chainable_command_interfaces;
+    if (!admittance_){
+      return chainable_command_interfaces;
+    }
+
     auto num_chainable_interfaces =
         admittance_->parameters_.chainable_command_interfaces.size() * admittance_->parameters_.joints.size();
     reference_interfaces_.resize(num_chainable_interfaces, std::numeric_limits<double>::quiet_NaN());
@@ -117,7 +124,13 @@ namespace admittance_controller {
   }
 
   CallbackReturn AdmittanceController::on_configure(const rclcpp_lifecycle::State &previous_state) {
-
+    try {
+      admittance_ = std::make_unique<admittance_controller::AdmittanceRule>(get_node());
+      num_joints_ = admittance_->parameters_.joints.size();
+    } catch (const std::exception &e) {
+      RCLCPP_ERROR(get_node()->get_logger(), "Exception thrown during init stage with message: %s \n", e.what());
+      return CallbackReturn::ERROR;
+    }
     // print and validate interface types
     for (const auto &tmp: admittance_->parameters_.state_interfaces) {
       RCLCPP_INFO(get_node()->get_logger(), "%s", ("state int types are: " + tmp + "\n").c_str());
@@ -341,21 +354,21 @@ namespace admittance_controller {
     // the values are nan, the corresponding state field will be set to empty.
 
     // if any interface has nan values, assume state_current is the last command state
-    for (auto i = 0ul; i < state_current.positions.size(); i++) {
+    for (auto i = 0ul; i < joint_position_state_interface_.size(); i++) {
       state_current.positions[i] = joint_position_state_interface_[i].get().get_value();
       if (std::isnan(state_current.positions[i])) {
         state_current.positions = last_commanded_state_.positions;
         break;
       }
     }
-    for (auto i = 0ul; i < state_current.velocities.size(); i++) {
+    for (auto i = 0ul; i < joint_velocity_state_interface_.size(); i++) {
       state_current.velocities[i] = joint_velocity_state_interface_[i].get().get_value();
       if (std::isnan(state_current.velocities[i])) {
         state_current.velocities = last_commanded_state_.velocities;
         break;
       }
     }
-    for (auto i = 0ul; i < state_current.accelerations.size(); i++) {
+    for (auto i = 0ul; i < joint_acceleration_state_interface_.size(); i++) {
       state_current.accelerations[i] = joint_acceleration_state_interface_[i].get().get_value();
       if (std::isnan(state_current.accelerations[i])) {
         state_current.accelerations = last_commanded_state_.accelerations;
@@ -370,14 +383,14 @@ namespace admittance_controller {
     // Fill fields of state_reference argument from controller references. If the interface does not exist or
     // the values are nan, the corresponding field will be set to empty
 
-    for (auto i = 0ul; i < state_reference.positions.size(); i++) {
+    for (auto i = 0ul; i < position_reference_.size(); i++) {
       state_reference.positions[i] = *position_reference_[i];
       if (std::isnan(state_reference.positions[i])) {
         state_reference.positions = last_state_reference_.positions;
         break;
       }
     }
-    for (auto i = 0ul; i < state_reference.velocities.size(); i++) {
+    for (auto i = 0ul; i < velocity_reference_.size(); i++) {
       state_reference.velocities[i] = *velocity_reference_[i];
       if (std::isnan(state_reference.velocities[i])) {
         state_reference.velocities = last_state_reference_.velocities;

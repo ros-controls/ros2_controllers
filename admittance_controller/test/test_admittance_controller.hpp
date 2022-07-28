@@ -140,8 +140,8 @@ public:
     command_publisher_node_ = std::make_shared<rclcpp::Node>("command_publisher");
     force_command_publisher_ = command_publisher_node_->create_publisher<ControllerCommandWrenchMsg>(
       "/test_admittance_controller/force_commands", rclcpp::SystemDefaultsQoS());
-    pose_command_publisher_ = command_publisher_node_->create_publisher<ControllerCommandPoseMsg>(
-      "/test_admittance_controller/pose_commands", rclcpp::SystemDefaultsQoS());
+//    pose_command_publisher_ = command_publisher_node_->create_publisher<ControllerCommandPoseMsg>(
+//      "/test_admittance_controller/pose_commands", rclcpp::SystemDefaultsQoS());
     joint_command_publisher_ = command_publisher_node_->create_publisher<ControllerCommandJointMsg>(
       "/test_admittance_controller/joint_commands", rclcpp::SystemDefaultsQoS());
 
@@ -161,28 +161,29 @@ public:
 
 protected:
 
-  void SetUpController(const std::string& controller_name,
+  controller_interface::return_type SetUpController(const std::string& controller_name,
                        const std::vector<rclcpp::Parameter> & parameter_overrides) {
     auto options = rclcpp::NodeOptions()
         .allow_undeclared_parameters(false).parameter_overrides(parameter_overrides)
         .automatically_declare_parameters_from_overrides(true);
-    SetUpControllerCommon(controller_name, options);
+    return SetUpControllerCommon(controller_name, options);
   }
 
-  void SetUpController(const std::string& controller_name="test_admittance_controller") {
+  controller_interface::return_type SetUpController(const std::string& controller_name="test_admittance_controller") {
     auto options = rclcpp::NodeOptions()
         .allow_undeclared_parameters(false)
         .automatically_declare_parameters_from_overrides(true);
-    SetUpControllerCommon(controller_name, options);
+    return SetUpControllerCommon(controller_name, options);
   }
 
-  void SetUpControllerCommon(const std::string& controller_name, const rclcpp::NodeOptions& options)
+  controller_interface::return_type SetUpControllerCommon(const std::string& controller_name, const rclcpp::NodeOptions& options)
   {
-    const auto result = controller_->init(controller_name, "", options);
-    ASSERT_EQ(result, controller_interface::return_type::OK);
+    auto result = controller_->init(controller_name, "", options);
 
     controller_->export_reference_interfaces();
     assign_interfaces();
+
+    return result;
 
   }
 
@@ -268,9 +269,7 @@ protected:
   void subscribe_and_get_messages(ControllerStateMsg & msg)
   {
     // create a new subscriber
-    auto subs_callback = [&](const ControllerStateMsg::SharedPtr)
-    {
-    };
+    auto subs_callback = [&](const ControllerStateMsg::SharedPtr){};
     auto subscription =
     test_subscription_node_->create_subscription<ControllerStateMsg>(
       "/test_admittance_controller/state", 10, subs_callback);
@@ -307,7 +306,7 @@ protected:
 //       wait_for_topic(force_command_publisher_->get_topic_name());
 //     }
 
-    wait_for_topic(pose_command_publisher_->get_topic_name());
+//    wait_for_topic(pose_command_publisher_->get_topic_name());
 
     ControllerCommandWrenchMsg force_msg;
     force_msg.header.frame_id = sensor_frame_;
@@ -332,7 +331,7 @@ protected:
 //     if (controller_->admittance_->unified_mode_) {
 //       force_command_publisher_->publish(force_msg);
 //     }
-    pose_command_publisher_->publish(pose_msg);
+//    pose_command_publisher_->publish(pose_msg);
 
     wait_for_topic(joint_command_publisher_->get_topic_name());
 
@@ -389,7 +388,7 @@ protected:
   std::unique_ptr<TestableAdmittanceController> controller_;
   rclcpp::Node::SharedPtr command_publisher_node_;
   rclcpp::Publisher<ControllerCommandWrenchMsg>::SharedPtr force_command_publisher_;
-  rclcpp::Publisher<ControllerCommandPoseMsg>::SharedPtr pose_command_publisher_;
+//  rclcpp::Publisher<ControllerCommandPoseMsg>::SharedPtr pose_command_publisher_;
   rclcpp::Publisher<ControllerCommandJointMsg>::SharedPtr joint_command_publisher_;
   rclcpp::Node::SharedPtr test_subscription_node_;
   rclcpp::Node::SharedPtr test_broadcaster_node_;
@@ -415,7 +414,7 @@ public:
   }
 
 protected:
-  void SetUpController(const std::string& remove_name)
+  controller_interface::return_type SetUpController(const std::string& remove_name)
   {
     std::vector<rclcpp::Parameter> parameter_overrides;
     for (const auto& override : overrides_){
@@ -425,7 +424,7 @@ protected:
       }
     }
 
-    AdmittanceControllerTest::SetUpController("test_admittance_controller_no_overrides", parameter_overrides);
+    return AdmittanceControllerTest::SetUpController("test_admittance_controller_no_overrides", parameter_overrides);
   }
 
   std::map<std::string, rclcpp::ParameterValue> overrides_;

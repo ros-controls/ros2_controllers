@@ -96,9 +96,9 @@ namespace admittance_controller {
       mass_inv_.setZero();
       stiffness_.setZero();
       selected_axes_.setZero();
-      joint_pos_ = Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor>(num_joints);
-      joint_vel_ = Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor>(num_joints);
-      joint_acc_ = Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor>(num_joints);
+      joint_pos_ = Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor>::Zero(num_joints);
+      joint_vel_ = Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor>::Zero(num_joints);
+      joint_acc_ = Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor>::Zero(num_joints);
       feedforward_vel_.setZero();
     }
 
@@ -204,7 +204,7 @@ namespace admittance_controller {
                                    AdmittanceState &admittance_state);
 
     /**
-    * 
+    *
     * \param[in] current_joint_positions
     */
     void process_wrench_measurements(
