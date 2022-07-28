@@ -13,6 +13,7 @@ endif()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
     controller_interface
+    generate_parameter_library
     hardware_interface
     pluginlib
     rclcpp
@@ -26,6 +27,15 @@ foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
 
+generate_parameter_library(
+  forward_command_controller_parameters
+  src/forward_command_controller_parameters.yaml
+)
+generate_parameter_library(
+  multi_interface_forward_command_controller_parameters
+  src/multi_interface_forward_command_controller_parameters.yaml
+)
+
 add_library(${PROJECT_NAME}
   SHARED
   src/forward_controllers_base.cpp
@@ -34,6 +44,10 @@ add_library(${PROJECT_NAME}
 )
 target_include_directories(${PROJECT_NAME} PRIVATE include)
 ament_target_dependencies(${PROJECT_NAME} ${THIS_PACKAGE_INCLUDE_DEPENDS})
+target_link_libraries(${PROJECT_NAME}
+  forward_command_controller_parameters
+  multi_interface_forward_command_controller_parameters
+)
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
 target_compile_definitions(${PROJECT_NAME} PRIVATE "FORWARD_COMMAND_CONTROLLER_BUILDING_DLL")
@@ -46,10 +60,14 @@ install(
 
 install(
   TARGETS
-  ${PROJECT_NAME}
+    forward_command_controller
+    forward_command_controller_parameters
+    multi_interface_forward_command_controller_parameters
+  EXPORT export_forward_command_controller
   RUNTIME DESTINATION bin
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
+  INCLUDES DESTINATION include
 )
 
 if(BUILD_TESTING)
@@ -100,11 +118,7 @@ if(BUILD_TESTING)
   )
 endif()
 
+ament_export_include_directories(include)
+ament_export_targets(export_forward_command_controller)
 ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
-ament_export_include_directories(
-  include
-)
-ament_export_libraries(
-  ${PROJECT_NAME}
-)
 ament_package()

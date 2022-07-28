@@ -14,6 +14,7 @@
 
 #include "forward_command_controller/multi_interface_forward_command_controller.hpp"
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -26,30 +27,33 @@ MultiInterfaceForwardCommandController::MultiInterfaceForwardCommandController()
 
 void MultiInterfaceForwardCommandController::declare_parameters()
 {
-  auto_declare("joint", joint_name_);
-  auto_declare("interface_names", interface_names_);
+  param_listener_ = std::make_shared<ParamListener>(get_node());
 }
 
 controller_interface::CallbackReturn MultiInterfaceForwardCommandController::read_parameters()
 {
-  joint_name_ = get_node()->get_parameter("joint").as_string();
-  interface_names_ = get_node()->get_parameter("interface_names").as_string_array();
+  if (!param_listener_)
+  {
+    RCLCPP_ERROR(get_node()->get_logger(), "Error encountered during init");
+    return controller_interface::CallbackReturn::ERROR;
+  }
+  params_ = param_listener_->get_params();
 
-  if (joint_name_.empty())
+  if (params_.joint.empty())
   {
     RCLCPP_ERROR(get_node()->get_logger(), "'joint' parameter is empty");
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  if (interface_names_.empty())
+  if (params_.interface_names.empty())
   {
     RCLCPP_ERROR(get_node()->get_logger(), "'interfaces' parameter is empty");
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  for (const auto & interface : interface_names_)
+  for (const auto & interface : params_.interface_names)
   {
-    command_interface_types_.push_back(joint_name_ + "/" + interface);
+    command_interface_types_.push_back(params_.joint + "/" + interface);
   }
 
   return controller_interface::CallbackReturn::SUCCESS;
