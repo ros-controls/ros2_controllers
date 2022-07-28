@@ -205,6 +205,10 @@ protected:
   rclcpp::TimerBase::SharedPtr goal_handle_timer_;
   rclcpp::Duration action_monitor_period_ = rclcpp::Duration(50ms);
 
+  // callback for topic interface
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
+  void topic_callback(const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg);
+
   // callbacks for action_server_
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   rclcpp_action::GoalResponse goal_callback(
