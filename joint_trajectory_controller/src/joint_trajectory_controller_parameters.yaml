@@ -85,11 +85,6 @@ joint_trajectory_controller:
         default_value: 0.0,
         description: "Intigral clamp"
       }
-      ff_velocity_scale: {
-        type: double,
-        default_value: 0.0,
-        description: "Feed forward velocity scale"
-      }
   constraints:
     stopped_velocity_tolerance: {
       type: double,

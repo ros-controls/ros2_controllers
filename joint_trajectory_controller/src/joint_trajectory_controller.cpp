@@ -519,8 +519,10 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     // Init PID gains from ROS parameters
     for (size_t i = 0; i < dof_; ++i)
     {
+      // TODO(tylerjw): use generate_parameter_library for this parameter
+      ff_velocity_scale_[i] = auto_declare<double>("ff_velocity_scale/" + params_.joints[i], 0.0);
+
       const auto & gains = params_.gains.joints_map.at(params_.joints[i]);
-      ff_velocity_scale_[i] = gains.ff_velocity_scale;
       pids_[i] = std::make_shared<control_toolbox::Pid>(
         gains.p, gains.i, gains.d, gains.i_clamp, -gains.i_clamp);
     }
