@@ -755,7 +755,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     std::string(get_node()->get_name()) + "/follow_joint_trajectory",
     std::bind(&JointTrajectoryController::goal_callback, this, _1, _2),
     std::bind(&JointTrajectoryController::cancel_callback, this, _1),
-    std::bind(&JointTrajectoryController::feedback_setup_callback, this, _1));
+    std::bind(&JointTrajectoryController::accepted_callback, this, _1));
 
   resize_joint_trajectory_point(state_current_, dof_);
   resize_joint_trajectory_point(state_desired_, dof_);
@@ -1028,7 +1028,7 @@ rclcpp_action::CancelResponse JointTrajectoryController::cancel_callback(
   return rclcpp_action::CancelResponse::ACCEPT;
 }
 
-void JointTrajectoryController::feedback_setup_callback(
+void JointTrajectoryController::accepted_callback(
   std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle)
 {
   // Update new trajectory
