@@ -13,18 +13,23 @@ endif()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
     controller_interface
-    sensor_msgs
+    generate_parameter_library
     hardware_interface
     pluginlib
     rclcpp
     rclcpp_lifecycle
     realtime_tools
+    sensor_msgs
 )
 
 find_package(ament_cmake REQUIRED)
 foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
+
+generate_parameter_library(imu_sensor_broadcaster_parameters
+  src/imu_sensor_broadcaster_parameters.yaml
+)
 
 add_library(
   ${PROJECT_NAME}
@@ -40,6 +45,9 @@ ament_target_dependencies(${PROJECT_NAME} ${THIS_PACKAGE_INCLUDE_DEPENDS})
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
 target_compile_definitions(${PROJECT_NAME} PRIVATE "IMU_SENSOR_BROADCASTER_BUILDING_DLL")
+target_link_libraries(imu_sensor_broadcaster
+  imu_sensor_broadcaster_parameters
+)
 
 pluginlib_export_plugin_description_file(
   controller_interface imu_sensor_broadcaster.xml)

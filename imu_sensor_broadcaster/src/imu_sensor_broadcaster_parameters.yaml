@@ -1,0 +1,9 @@
+imu_sensor_broadcaster:
+  sensor_name: {
+    type: string,
+    default_value: "",
+  }
+  frame_id: {
+    type: string,
+    default_value: "",
+  }
