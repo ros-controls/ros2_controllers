@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<?xml-model
+  href="http://download.ros.org/schema/package_format3.xsd"
+  schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>rqt_joint_trajectory_controller</name>
+  <version>2.5.0</version>
+  <description>Graphical frontend for interacting with joint_trajectory_controller instances.</description>
+
+  <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
+  <maintainer email="mathias.luedtke@ipa.fraunhofer.de">Mathias Lüdtke</maintainer>
+  <maintainer email="enrique.fernandez.perdomo@gmail.com">Enrique Fernandez</maintainer>
+
+  <license>Apache-2.0</license>
+
+  <url type="website">http://wiki.ros.org/rqt_joint_trajectory_controller</url>
+
+  <author email="adolfo.rodriguez@pal-robotics.com">Adolfo Rodriguez Tsouroukdissian</author>
+  <author email="noel.jimenez@pal-robotics.com">Noel Jimenez Garcia</author>
+
+  <exec_depend>control_msgs</exec_depend>
+  <exec_depend>controller_manager_msgs</exec_depend>
+  <exec_depend>python_qt_binding</exec_depend>
+  <exec_depend>python3-rospkg</exec_depend>
+  <exec_depend>trajectory_msgs</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>rqt_gui</exec_depend>
+  <exec_depend>rqt_gui_py</exec_depend>
+  <exec_depend>qt_gui</exec_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+    <rqt_gui plugin="${prefix}/plugin.xml"/>
+  </export>
+</package>
