@@ -17,20 +17,25 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
-    rclcpp_action
     control_msgs
     control_toolbox
     controller_interface
+    generate_parameter_library
     hardware_interface
     pluginlib
-    realtime_tools
     rclcpp
+    rclcpp_action
+    realtime_tools
 )
 
 find_package(ament_cmake REQUIRED)
 foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
+
+generate_parameter_library(gripper_action_controller_parameters
+  src/gripper_action_controller_parameters.yaml
+)
 
 add_library(gripper_action_controller SHARED
   src/gripper_action_controller.cpp
@@ -39,6 +44,9 @@ ament_target_dependencies(gripper_action_controller ${THIS_PACKAGE_INCLUDE_DEPEN
 target_include_directories(gripper_action_controller
   PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE $<INSTALL_INTERFACE:include>
+)
+target_link_libraries(gripper_action_controller
+  gripper_action_controller_parameters
 )
 pluginlib_export_plugin_description_file(controller_interface ros_control_plugins.xml)
 #############
