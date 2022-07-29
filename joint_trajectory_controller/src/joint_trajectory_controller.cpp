@@ -836,7 +836,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
     last_commanded_state_ = state;
   }
 
-  // TODO(karsten1987): activate subscriptions of subscriber
   return CallbackReturn::SUCCESS;
 }
 
