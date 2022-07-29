@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import print_function
 import os
 import rclpy
 import threading
@@ -34,7 +33,7 @@ from .joint_limits_urdf import get_joint_limits
 from .update_combo import update_combo
 
 # TODO:
-# - Better UI suppor for continuous joints (see DoubleEditor TODO)
+# - Better UI support for continuous joints (see DoubleEditor TODO)
 # - Can we load controller joints faster?, it's currently pretty slow
 # - If URDF is reloaded, allow to reset the whole plugin?
 # - Allow to configure:
@@ -99,7 +98,7 @@ class JointTrajectoryController(Plugin):
     jointStateChanged = Signal([dict])
 
     def __init__(self, context):
-        super(JointTrajectoryController, self).__init__(context)
+        super().__init__(context)
         self.setObjectName('JointTrajectoryController')
         self._node = rclpy.node.Node("rqt_joint_trajectory_controller")
         self._executor = None
@@ -204,7 +203,7 @@ class JointTrajectoryController(Plugin):
         try:
             idx = cm_list.index(cm_ns)
             cm_combo.setCurrentIndex(idx)
-            # Resore last session's controller, if running
+            # Restore last session's controller, if running
             self._update_jtc_list()
             jtc_name = instance_settings.value('jtc_name')
             jtc_combo = self._widget.jtc_combo

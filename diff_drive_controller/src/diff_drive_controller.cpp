@@ -77,8 +77,8 @@ controller_interface::CallbackReturn DiffDriveController::on_init()
     auto_declare<bool>("enable_odom_tf", odom_params_.enable_odom_tf);
 
     auto_declare<double>("cmd_vel_timeout", cmd_vel_timeout_.count() / 1000.0);
-    publish_limited_velocity_ = auto_declare<bool>("publish_limited_velocity",
-                                                   publish_limited_velocity_);
+    publish_limited_velocity_ =
+      auto_declare<bool>("publish_limited_velocity", publish_limited_velocity_);
     auto_declare<int>("velocity_rolling_window_size", 10);
     use_stamped_vel_ = auto_declare<bool>("use_stamped_vel", use_stamped_vel_);
 

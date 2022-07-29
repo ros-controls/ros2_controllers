@@ -49,7 +49,7 @@ class DoubleEditor(QWidget):
     valueChanged = Signal(float)
 
     def __init__(self, min_val, max_val):
-        super(DoubleEditor, self).__init__()
+        super().__init__()
 
         # Preconditions
         assert min_val < max_val
