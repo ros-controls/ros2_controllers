@@ -456,6 +456,12 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
 {
   const auto logger = get_node()->get_logger();
 
+  if (!param_listener_)
+  {
+    RCLCPP_ERROR(get_node()->get_logger(), "Error encountered during init");
+    return controller_interface::CallbackReturn::ERROR;
+  }
+
   // update the dynamic map parameters
   param_listener_->refresh_dynamic_parameters();
 

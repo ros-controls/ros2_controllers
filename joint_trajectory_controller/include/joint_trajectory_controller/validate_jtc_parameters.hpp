@@ -12,11 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef JOINT_TRAJECTORY_CONTROLLER__VALIDATE_JOINT_TRAJECTORY_CONTROLLER_PARAMETERS_HPP_
-#define JOINT_TRAJECTORY_CONTROLLER__VALIDATE_JOINT_TRAJECTORY_CONTROLLER_PARAMETERS_HPP_
+#ifndef JOINT_TRAJECTORY_CONTROLLER__VALIDATE_JTC_PARAMETERS_HPP_
+#define JOINT_TRAJECTORY_CONTROLLER__VALIDATE_JTC_PARAMETERS_HPP_
 
+#include <parameter_traits/parameter_traits.hpp>
 #include <string>
 
+namespace parameter_traits
+{
 Result command_interface_type_combinations(rclcpp::Parameter const & parameter)
 {
   auto const & interface_types = parameter.as_string_array();
@@ -82,4 +85,6 @@ Result state_interface_type_combinations(rclcpp::Parameter const & parameter)
   return OK;
 }
 
-#endif  // JOINT_TRAJECTORY_CONTROLLER__VALIDATE_JOINT_TRAJECTORY_CONTROLLER_PARAMETERS_HPP_
+}  // namespace parameter_traits
+
+#endif  // JOINT_TRAJECTORY_CONTROLLER__VALIDATE_JTC_PARAMETERS_HPP_
