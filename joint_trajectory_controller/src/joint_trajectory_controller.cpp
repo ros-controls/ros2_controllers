@@ -697,30 +697,10 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   allow_integration_in_goal_trajectories_ =
     get_node()->get_parameter("allow_integration_in_goal_trajectories").get_value<bool>();
 
-  // subscriber callback
-  // non realtime
-  // TODO(karsten): check if traj msg and point time are valid
-  auto callback = [this](const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg) -> void {
-    if (!validate_trajectory_msg(*msg))
-    {
-      return;
-    }
-
-    // http://wiki.ros.org/joint_trajectory_controller/UnderstandingTrajectoryReplacement
-    // always replace old msg with new one for now
-    if (subscriber_is_active_)
-    {
-      add_new_trajectory_msg(msg);
-    }
-  };
-
-  // TODO(karsten1987): create subscriber with subscription deactivated
   joint_command_subscriber_ =
     get_node()->create_subscription<trajectory_msgs::msg::JointTrajectory>(
-      "~/joint_trajectory", rclcpp::SystemDefaultsQoS(), callback);
-
-  // TODO(karsten1987): no lifecycle for subscriber yet
-  // joint_command_subscriber_->on_activate();
+      "~/joint_trajectory", rclcpp::SystemDefaultsQoS(),
+      std::bind(&JointTrajectoryController::topic_callback, this, std::placeholders::_1));
 
   // State publisher
   RCLCPP_INFO(logger, "Controller state will be published at %.2f Hz.", state_publish_rate_);
@@ -774,9 +754,9 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     get_node()->get_node_base_interface(), get_node()->get_node_clock_interface(),
     get_node()->get_node_logging_interface(), get_node()->get_node_waitables_interface(),
     std::string(get_node()->get_name()) + "/follow_joint_trajectory",
-    std::bind(&JointTrajectoryController::goal_callback, this, _1, _2),
-    std::bind(&JointTrajectoryController::cancel_callback, this, _1),
-    std::bind(&JointTrajectoryController::feedback_setup_callback, this, _1));
+    std::bind(&JointTrajectoryController::goal_received_callback, this, _1, _2),
+    std::bind(&JointTrajectoryController::goal_cancelled_callback, this, _1),
+    std::bind(&JointTrajectoryController::goal_accepted_callback, this, _1));
 
   resize_joint_trajectory_point(state_current_, dof_);
   resize_joint_trajectory_point(state_desired_, dof_);
@@ -857,7 +837,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
     last_commanded_state_ = state;
   }
 
-  // TODO(karsten1987): activate subscriptions of subscriber
   return CallbackReturn::SUCCESS;
 }
 
@@ -988,7 +967,22 @@ void JointTrajectoryController::publish_state(
   }
 }
 
-rclcpp_action::GoalResponse JointTrajectoryController::goal_callback(
+void JointTrajectoryController::topic_callback(
+  const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg)
+{
+  if (!validate_trajectory_msg(*msg))
+  {
+    return;
+  }
+  // http://wiki.ros.org/joint_trajectory_controller/UnderstandingTrajectoryReplacement
+  // always replace old msg with new one for now
+  if (subscriber_is_active_)
+  {
+    add_new_trajectory_msg(msg);
+  }
+};
+
+rclcpp_action::GoalResponse JointTrajectoryController::goal_received_callback(
   const rclcpp_action::GoalUUID &, std::shared_ptr<const FollowJTrajAction::Goal> goal)
 {
   RCLCPP_INFO(get_node()->get_logger(), "Received new action goal");
@@ -1010,7 +1004,7 @@ rclcpp_action::GoalResponse JointTrajectoryController::goal_callback(
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
 
-rclcpp_action::CancelResponse JointTrajectoryController::cancel_callback(
+rclcpp_action::CancelResponse JointTrajectoryController::goal_cancelled_callback(
   const std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle)
 {
   RCLCPP_INFO(get_node()->get_logger(), "Got request to cancel goal");
@@ -1034,7 +1028,7 @@ rclcpp_action::CancelResponse JointTrajectoryController::cancel_callback(
   return rclcpp_action::CancelResponse::ACCEPT;
 }
 
-void JointTrajectoryController::feedback_setup_callback(
+void JointTrajectoryController::goal_accepted_callback(
   std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle)
 {
   // Update new trajectory
