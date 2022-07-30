@@ -699,7 +699,8 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
 
   joint_command_subscriber_ =
     get_node()->create_subscription<trajectory_msgs::msg::JointTrajectory>(
-      "~/joint_trajectory", rclcpp::SystemDefaultsQoS(), std::bind(&JointTrajectoryController::topic_callback, this, std::placeholders::_1));
+      "~/joint_trajectory", rclcpp::SystemDefaultsQoS(),
+      std::bind(&JointTrajectoryController::topic_callback, this, std::placeholders::_1));
 
   // State publisher
   RCLCPP_INFO(logger, "Controller state will be published at %.2f Hz.", state_publish_rate_);
@@ -966,8 +967,8 @@ void JointTrajectoryController::publish_state(
   }
 }
 
-
-void JointTrajectoryController::topic_callback(const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg)
+void JointTrajectoryController::topic_callback(
+  const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg)
 {
   if (!validate_trajectory_msg(*msg))
   {
