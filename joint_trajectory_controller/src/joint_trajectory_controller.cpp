@@ -1003,7 +1003,7 @@ rclcpp_action::GoalResponse JointTrajectoryController::goal_received_callback(
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
 
-rclcpp_action::CancelResponse JointTrajectoryController::cancel_callback(
+rclcpp_action::CancelResponse JointTrajectoryController::goal_cancelled_callback(
   const std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle)
 {
   RCLCPP_INFO(get_node()->get_logger(), "Got request to cancel goal");
