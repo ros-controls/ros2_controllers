@@ -16,7 +16,7 @@
 
 # NOTE: The Python API contained in this file is considered UNSTABLE and
 # subject to change.
-# No backwards compatibility guarrantees are provided at this moment.
+# No backwards compatibility guarantees are provided at this moment.
 
 
 import rclpy

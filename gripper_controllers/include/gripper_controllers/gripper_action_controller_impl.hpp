@@ -181,7 +181,7 @@ void GripperActionController<HardwareInterface>::check_for_success(
       pre_alloc_result_->position = current_position;
       pre_alloc_result_->reached_goal = false;
       pre_alloc_result_->stalled = true;
-      if(allow_stalling_)
+      if (allow_stalling_)
       {
         RCLCPP_DEBUG(get_node()->get_logger(), "Stall detected moving to goal. Returning success.");
         rt_active_goal_->setSucceeded(pre_alloc_result_);
