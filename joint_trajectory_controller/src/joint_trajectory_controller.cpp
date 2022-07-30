@@ -753,9 +753,9 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     get_node()->get_node_base_interface(), get_node()->get_node_clock_interface(),
     get_node()->get_node_logging_interface(), get_node()->get_node_waitables_interface(),
     std::string(get_node()->get_name()) + "/follow_joint_trajectory",
-    std::bind(&JointTrajectoryController::goal_callback, this, _1, _2),
-    std::bind(&JointTrajectoryController::cancel_callback, this, _1),
-    std::bind(&JointTrajectoryController::accepted_callback, this, _1));
+    std::bind(&JointTrajectoryController::goal_received_callback, this, _1, _2),
+    std::bind(&JointTrajectoryController::goal_cancelled_callback, this, _1),
+    std::bind(&JointTrajectoryController::goal_accepted_callback, this, _1));
 
   resize_joint_trajectory_point(state_current_, dof_);
   resize_joint_trajectory_point(state_desired_, dof_);
@@ -981,7 +981,7 @@ void JointTrajectoryController::topic_callback(const std::shared_ptr<trajectory_
   }
 };
 
-rclcpp_action::GoalResponse JointTrajectoryController::goal_callback(
+rclcpp_action::GoalResponse JointTrajectoryController::goal_received_callback(
   const rclcpp_action::GoalUUID &, std::shared_ptr<const FollowJTrajAction::Goal> goal)
 {
   RCLCPP_INFO(get_node()->get_logger(), "Received new action goal");
@@ -1027,7 +1027,7 @@ rclcpp_action::CancelResponse JointTrajectoryController::cancel_callback(
   return rclcpp_action::CancelResponse::ACCEPT;
 }
 
-void JointTrajectoryController::accepted_callback(
+void JointTrajectoryController::goal_accepted_callback(
   std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle)
 {
   // Update new trajectory
