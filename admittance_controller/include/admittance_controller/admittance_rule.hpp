@@ -37,7 +37,7 @@
 
 namespace utility {
 // Numerical accuracy checks. Used as deadbands.
-  const double ROT_AXIS_EPSILON = 1e-6;
+  const double ROT_AXIS_EPSILON = 1e-12;
 }  // utility namespace
 
 namespace admittance_controller {
@@ -99,7 +99,6 @@ namespace admittance_controller {
       joint_pos_ = Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor>::Zero(num_joints);
       joint_vel_ = Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor>::Zero(num_joints);
       joint_acc_ = Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor>::Zero(num_joints);
-      feedforward_vel_.setZero();
     }
 
     Eigen::Matrix<double, Eigen::Dynamic, 1> joint_pos_;
@@ -110,12 +109,10 @@ namespace admittance_controller {
     Eigen::Matrix<double, 6, 1> mass_inv_;
     Eigen::Matrix<double, 6, 1> selected_axes_;
     Eigen::Matrix<double, 6, 1> stiffness_;
+    Eigen::Matrix<double, 3, 2, Eigen::ColMajor> wrench_base;
     Eigen::Matrix<double, 3, 2, Eigen::ColMajor> admittance_acceleration_;
     Eigen::Matrix<double, 3, 2, Eigen::ColMajor> admittance_velocity_;
     Eigen::Matrix<double, 4, 4, Eigen::ColMajor> admittance_position_;
-    Eigen::Matrix<double, 3, 2, Eigen::ColMajor> wrench_base;
-    Eigen::Matrix<double, 3, 2> feedforward_vel_;
-
   };
 
   class AdmittanceRule {
@@ -255,6 +252,9 @@ namespace admittance_controller {
 
     template<typename T1, typename T2>
     void vec_to_eigen(const std::vector<T1>& data, T2 &matrix);
+
+    template<typename T1, typename T2>
+    void eigen_to_vec(const T2 &matrix, std::vector<T1>& data);
 
     // number of robot joint
     int num_joints_;

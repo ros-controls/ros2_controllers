@@ -209,7 +209,6 @@ namespace admittance_controller {
     std::vector<std::string> chainable_command_interfaces;
     std::string robot_description;
     bool enable_parameter_update_without_reactivation = true;
-    bool use_feedforward_commanded_input = true;
     struct Kinematics {
       std::string plugin_name;
       std::string plugin_package;
@@ -252,6 +251,8 @@ namespace admittance_controller {
       std::vector<double> mass;
       std::vector<double> damping_ratio;
       std::vector<double> stiffness;
+      double linear_correction = 1.0;
+      double angular_correction = 0.1;
     } admittance;
     // for detecting if the parameter struct has been updated
     rclcpp::Time __stamp;
@@ -398,14 +399,25 @@ namespace admittance_controller {
           }
           updated_params.admittance.stiffness = param.as_double_array();
         }
+        if (param.get_name() == "admittance.linear_correction") {
+          if(auto validation_result = gen_param_struct_validators::lower_bounds<double>(param, 0.0);
+              !validation_result.success()) {
+            return validation_result;
+          }
+          updated_params.admittance.linear_correction = param.as_double();
+        }
+        if (param.get_name() == "admittance.angular_correction") {
+          if(auto validation_result = gen_param_struct_validators::lower_bounds<double>(param, 0.0);
+              !validation_result.success()) {
+            return validation_result;
+          }
+          updated_params.admittance.angular_correction = param.as_double();
+        }
         if (param.get_name() == "robot_description") {
           updated_params.robot_description = param.as_string();
         }
         if (param.get_name() == "enable_parameter_update_without_reactivation") {
           updated_params.enable_parameter_update_without_reactivation = param.as_bool();
-        }
-        if (param.get_name() == "use_feedforward_commanded_input") {
-          updated_params.use_feedforward_commanded_input = param.as_bool();
         }
       }
 
@@ -591,6 +603,20 @@ namespace admittance_controller {
         auto parameter = rclcpp::ParameterType::PARAMETER_DOUBLE_ARRAY;
         parameters_interface_->declare_parameter("admittance.stiffness", parameter, descriptor);
       }
+      if (!parameters_interface_->has_parameter("admittance.linear_correction")) {
+        rcl_interfaces::msg::ParameterDescriptor descriptor;
+        descriptor.description = "specifies the coefficient used in the linear drift correction calculation";
+        descriptor.read_only = false;
+        auto parameter = rclcpp::ParameterValue(params_.admittance.linear_correction);
+        parameters_interface_->declare_parameter("admittance.linear_correction", parameter, descriptor);
+      }
+      if (!parameters_interface_->has_parameter("admittance.angular_correction")) {
+        rcl_interfaces::msg::ParameterDescriptor descriptor;
+        descriptor.description = "specifies the coefficient used in the angular drift correction calculation";
+        descriptor.read_only = false;
+        auto parameter = rclcpp::ParameterValue(params_.admittance.angular_correction);
+        parameters_interface_->declare_parameter("admittance.angular_correction", parameter, descriptor);
+      }
       if (!parameters_interface_->has_parameter("robot_description")) {
         rcl_interfaces::msg::ParameterDescriptor descriptor;
         descriptor.description = "Contains robot description in URDF format. The description is used to perform forward and inverse kinematics.";
@@ -604,13 +630,6 @@ namespace admittance_controller {
         descriptor.read_only = false;
         auto parameter = rclcpp::ParameterValue(params_.enable_parameter_update_without_reactivation);
         parameters_interface_->declare_parameter("enable_parameter_update_without_reactivation", parameter, descriptor);
-      }
-      if (!parameters_interface_->has_parameter("use_feedforward_commanded_input")) {
-        rcl_interfaces::msg::ParameterDescriptor descriptor;
-        descriptor.description = "if enabled, the velocity commanded to the admittance controller is added to its calculated admittance velocity";
-        descriptor.read_only = false;
-        auto parameter = rclcpp::ParameterValue(params_.use_feedforward_commanded_input);
-        parameters_interface_->declare_parameter("use_feedforward_commanded_input", parameter, descriptor);
       }
       // get parameters and fill struct fields
       rclcpp::Parameter param;
@@ -692,12 +711,22 @@ namespace admittance_controller {
         throw rclcpp::exceptions::InvalidParameterValueException(fmt::format("Invalid value set during initialization for parameter 'admittance.stiffness': " + validation_result.error_msg()));
       }
       params_.admittance.stiffness = param.as_double_array();
+      param = parameters_interface_->get_parameter("admittance.linear_correction");
+      if(auto validation_result = gen_param_struct_validators::lower_bounds<double>(param, 0.0);
+          !validation_result.success()) {
+        throw rclcpp::exceptions::InvalidParameterValueException(fmt::format("Invalid value set during initialization for parameter 'admittance.linear_correction': " + validation_result.error_msg()));
+      }
+      params_.admittance.linear_correction = param.as_double();
+      param = parameters_interface_->get_parameter("admittance.angular_correction");
+      if(auto validation_result = gen_param_struct_validators::lower_bounds<double>(param, 0.0);
+          !validation_result.success()) {
+        throw rclcpp::exceptions::InvalidParameterValueException(fmt::format("Invalid value set during initialization for parameter 'admittance.angular_correction': " + validation_result.error_msg()));
+      }
+      params_.admittance.angular_correction = param.as_double();
       param = parameters_interface_->get_parameter("robot_description");
       params_.robot_description = param.as_string();
       param = parameters_interface_->get_parameter("enable_parameter_update_without_reactivation");
       params_.enable_parameter_update_without_reactivation = param.as_bool();
-      param = parameters_interface_->get_parameter("use_feedforward_commanded_input");
-      params_.use_feedforward_commanded_input = param.as_bool();
 
 
       params_.__stamp = clock_.now();

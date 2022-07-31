@@ -156,6 +156,24 @@ admittance_controller:
       }
     }
 
+    linear_correction: {
+      type: double,
+      description: "specifies the coefficient used in the linear drift correction calculation",
+      default_value: 1.0,
+      validation: {
+        lower_bounds<>: [ 0.0]
+      }
+    }
+
+    angular_correction: {
+      type: double,
+      description: "specifies the coefficient used in the angular drift correction calculation",
+      default_value: 0.1,
+      validation: {
+        lower_bounds<>: [ 0.0]
+      }
+    }
+
   # general settings
   robot_description: {
     type: string,
@@ -166,9 +184,4 @@ admittance_controller:
     type: bool,
     default_value: true,
     description: "if enabled, parameters will be dynamically updated in the control loop"
-  }
-  use_feedforward_commanded_input: {
-    type: bool,
-    default_value: true,
-    description: "if enabled, the velocity commanded to the admittance controller is added to its calculated admittance velocity"
   }

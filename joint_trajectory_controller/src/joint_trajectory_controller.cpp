@@ -60,6 +60,8 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
       auto_declare<std::vector<std::string>>("command_interfaces", command_interface_types_);
     state_interface_types_ =
       auto_declare<std::vector<std::string>>("state_interfaces", state_interface_types_);
+    command_joint_names_ =
+        auto_declare<std::vector<std::string>>("command_joints", command_interface_types_);
     allow_partial_joints_goal_ =
       auto_declare<bool>("allow_partial_joints_goal", allow_partial_joints_goal_);
     open_loop_control_ = auto_declare<bool>("open_loop_control", open_loop_control_);
