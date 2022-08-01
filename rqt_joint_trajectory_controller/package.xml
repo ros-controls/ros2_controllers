@@ -4,16 +4,12 @@
   schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>rqt_joint_trajectory_controller</name>
-  <version>2.5.0</version>
+  <version>2.9.0</version>
   <description>Graphical frontend for interacting with joint_trajectory_controller instances.</description>
 
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
-  <maintainer email="mathias.luedtke@ipa.fraunhofer.de">Mathias Lüdtke</maintainer>
-  <maintainer email="enrique.fernandez.perdomo@gmail.com">Enrique Fernandez</maintainer>
 
   <license>Apache-2.0</license>
-
-  <url type="website">http://wiki.ros.org/rqt_joint_trajectory_controller</url>
 
   <author email="adolfo.rodriguez@pal-robotics.com">Adolfo Rodriguez Tsouroukdissian</author>
   <author email="noel.jimenez@pal-robotics.com">Noel Jimenez Garcia</author>
