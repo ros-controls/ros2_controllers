@@ -348,7 +348,7 @@ controller_interface::return_type JointStateBroadcaster::update(
     name_if_value_mapping_[state_interface.get_prefix_name()][interface_name] =
       state_interface.get_value();
     RCLCPP_DEBUG(
-      get_node()->get_logger(), "%s: %f\n", state_interface.get_full_name().c_str(),
+      get_node()->get_logger(), "%s: %f\n", state_interface.get_name().c_str(),
       state_interface.get_value());
   }
 
