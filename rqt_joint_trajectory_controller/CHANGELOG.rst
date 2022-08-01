@@ -2,8 +2,8 @@
 Changelog for package rqt_joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.10.0 (2022-08-01)
+-------------------
 * Formatting changes from pre-commit (`#400 <https://github.com/ros-controls/ros2_controllers/issues/400>`_)
 * port rqt_joint_trajectory_controller to ros2 (`#356 <https://github.com/ros-controls/ros2_controllers/issues/356>`_)
 * Contributors: Bence Magyar, Noel Jiménez García, Tyler Weaver
