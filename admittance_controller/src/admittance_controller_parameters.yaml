@@ -156,24 +156,6 @@ admittance_controller:
       }
     }
 
-    linear_correction: {
-      type: double,
-      description: "specifies the coefficient used in the linear drift correction calculation",
-      default_value: 1.0,
-      validation: {
-        lower_bounds<>: [ 0.0]
-      }
-    }
-
-    angular_correction: {
-      type: double,
-      description: "specifies the coefficient used in the angular drift correction calculation",
-      default_value: 0.1,
-      validation: {
-        lower_bounds<>: [ 0.0]
-      }
-    }
-
   # general settings
   robot_description: {
     type: string,
