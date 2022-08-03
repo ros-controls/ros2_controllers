@@ -2,6 +2,7 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+<<<<<<< HEAD
 2.13.0 (2022-10-05)
 -------------------
 * Generate Parameter Library for Joint Trajectory Controller (`#384 <https://github.com/ros-controls/ros2_controllers/issues/384>`_)
@@ -116,6 +117,10 @@ Changelog for package joint_trajectory_controller
 ------------------
 * Fix missing control_toolbox dependency (`#291 <https://github.com/ros-controls/ros2_controllers/issues/291>`_)
 * Contributors: Denis Štogl
+=======
+1.5.0 (2022-08-03)
+------------------
+>>>>>>> 1.5.0
 
 2.0.0 (2022-01-28)
 ------------------
