@@ -225,6 +225,16 @@ namespace admittance_controller {
       admittance_->parameters_ = admittance_->parameter_handler_->get_params();
     }
 
+    // reset all interfaces in case of restart
+    joint_position_command_interface_.clear();
+    joint_velocity_command_interface_.clear();
+    joint_acceleration_command_interface_.clear();
+    joint_effort_command_interface_.clear();
+    joint_position_state_interface_.clear();
+    joint_velocity_state_interface_.clear();
+    joint_acceleration_state_interface_.clear();
+    joint_effort_state_interface_.clear();
+
     // assign command interfaces
     for (auto i = 0ul; i < admittance_->parameters_.command_interfaces.size(); i++) {
       for (auto j = 0ul; j < admittance_->parameters_.joints.size(); j++) {
@@ -348,14 +358,6 @@ namespace admittance_controller {
 
   CallbackReturn AdmittanceController::on_deactivate(const rclcpp_lifecycle::State &previous_state) {
     force_torque_sensor_->release_interfaces();
-    joint_position_command_interface_.clear();
-    joint_velocity_command_interface_.clear();
-    joint_acceleration_command_interface_.clear();
-    joint_effort_command_interface_.clear();
-    joint_position_state_interface_.clear();
-    joint_velocity_state_interface_.clear();
-    joint_acceleration_state_interface_.clear();
-    joint_effort_state_interface_.clear();
 
     return LifecycleNodeInterface::on_deactivate(previous_state);
   }
