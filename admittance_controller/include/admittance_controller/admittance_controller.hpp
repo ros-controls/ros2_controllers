@@ -100,8 +100,10 @@ namespace admittance_controller {
     std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>> joint_position_state_interface_;
     std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>> joint_velocity_state_interface_;
     std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>> joint_acceleration_state_interface_;
+    std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>> joint_effort_state_interface_;
 
-    //
+    // internal reference values
+    const std::vector<std::string> reference_interfaces_types_ = {"position", "velocity"};
     std::vector<double*> position_reference_;
     std::vector<double*> velocity_reference_;
 
@@ -122,18 +124,15 @@ namespace admittance_controller {
     realtime_tools::RealtimeBuffer<std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint>> input_joint_command_;
     std::unique_ptr<realtime_tools::RealtimePublisher<ControllerStateMsg>> state_publisher_;
 
-    const std::set<std::string> allowed_state_interface_types_ = {
-        hardware_interface::HW_IF_POSITION,
-        hardware_interface::HW_IF_VELOCITY,
-    };
     trajectory_msgs::msg::JointTrajectoryPoint last_commanded_state_;
     trajectory_msgs::msg::JointTrajectoryPoint last_state_reference_;
     trajectory_msgs::msg::JointTrajectoryPoint state_offset_;
     trajectory_msgs::msg::JointTrajectoryPoint prev_trajectory_point_;
+
     // control loop data
-    trajectory_msgs::msg::JointTrajectoryPoint state_reference_, state_current_, state_desired_,
-        state_error_;
+    trajectory_msgs::msg::JointTrajectoryPoint state_reference_, state_current_, state_desired_, state_error_;
     trajectory_msgs::msg::JointTrajectory pre_admittance_point;
+    size_t loop_counter = 0;
 
     // helper methods
     void read_state_from_hardware(trajectory_msgs::msg::JointTrajectoryPoint &state);

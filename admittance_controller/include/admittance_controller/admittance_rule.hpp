@@ -50,10 +50,12 @@ namespace admittance_controller {
       world_base_.setIdentity();
       base_sensor_.setIdentity();
       base_cog_.setIdentity();
+      base_desired_ft_.setIdentity();
     }
 
     Eigen::Matrix<double, 4, 4> base_control_;
     Eigen::Matrix<double, 4, 4> base_ft_;
+    Eigen::Matrix<double, 4, 4> base_desired_ft_;
     Eigen::Matrix<double, 4, 4> base_tip_;
     Eigen::Matrix<double, 4, 4> world_base_;
     Eigen::Matrix<double, 4, 4> base_sensor_;
@@ -64,6 +66,7 @@ namespace admittance_controller {
     Rotations() {
       base_control_.setIdentity();
       base_ft_.setIdentity();
+      base_desired_ft_.setIdentity();
       base_tip_.setIdentity();
       world_base_.setIdentity();
       base_world_.setIdentity();
@@ -75,6 +78,7 @@ namespace admittance_controller {
 
     Eigen::Matrix<double, 3, 3> base_control_;
     Eigen::Matrix<double, 3, 3> base_ft_;
+    Eigen::Matrix<double, 3, 3> base_desired_ft_;
     Eigen::Matrix<double, 3, 3> base_tip_;
     Eigen::Matrix<double, 3, 3> world_base_;
     Eigen::Matrix<double, 3, 3> base_world_;
@@ -140,7 +144,8 @@ namespace admittance_controller {
      * \param[in] success
      */
     bool get_all_transforms(const trajectory_msgs::msg::JointTrajectoryPoint &current_joint_state,
-                            const trajectory_msgs::msg::JointTrajectoryPoint &reference_joint_state);
+                            const trajectory_msgs::msg::JointTrajectoryPoint &reference_joint_state,
+                            const AdmittanceState &admittance_state);
 
     /**
     * Updates parameter_ struct if any parameters have changed since last update. Parameter dependent Eigen field
@@ -196,6 +201,7 @@ namespace admittance_controller {
                                    const Eigen::Matrix<double, 3, 3, Eigen::ColMajor> &base_control,
                                    Eigen::Matrix<double, 4, 4, Eigen::ColMajor> base_ft,
                                    Eigen::Matrix<double, 4, 4, Eigen::ColMajor> ref_base_ft,
+                                   Eigen::Matrix<double, 4, 4, Eigen::ColMajor> base_desired_ft,
                                    const std::string &ft_sensor_frame,
                                    double dt,
                                    AdmittanceState &admittance_state);
