@@ -2,6 +2,11 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* `joint_state_broadcaster` to use realtime tools (backport `#308 <https://github.com/ros-controls/ros2_controllers/issues/308>`_) (`#359 <https://github.com/ros-controls/ros2_controllers/issues/359>`_)
+* Contributors: John Morris, Bence Magyar
+
 1.4.0 (2022-02-23)
 ------------------
 
