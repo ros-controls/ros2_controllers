@@ -118,7 +118,8 @@ namespace admittance_controller {
   }
 
   bool AdmittanceRule::get_all_transforms(const trajectory_msgs::msg::JointTrajectoryPoint &current_joint_state,
-                                          const trajectory_msgs::msg::JointTrajectoryPoint &reference_joint_state) {
+                                          const trajectory_msgs::msg::JointTrajectoryPoint &reference_joint_state,
+                                          const AdmittanceState &admittance_state) {
     // get all reference transforms
     bool success = get_transform(reference_joint_state.positions, parameters_.ft_sensor.frame.id,
                                  parameters_.ft_sensor.frame.external, trans_ref_.base_ft_);
@@ -147,8 +148,17 @@ namespace admittance_controller {
     success &= get_transform(current_joint_state.positions, parameters_.control.frame.id,
                              parameters_.control.frame.external, trans_.base_control_);
 
+    // get desired transforms (reference + admittance)
+    for (auto i = 0ul; i < reference_joint_state.positions.size(); i++) {
+      joint_buffer_vec_[i] = reference_joint_state.positions[i] + admittance_state.joint_pos_[i];
+    }
+    success &= get_transform(joint_buffer_vec_, parameters_.ft_sensor.frame.id,
+                             parameters_.ft_sensor.frame.external, trans_ref_.base_desired_ft_);
+
+
     rotations_.base_control_ = trans_ref_.base_control_.block<3, 3>(0, 0);
     rotations_.base_ft_ = trans_.base_ft_.block<3, 3>(0, 0);
+    rotations_.base_desired_ft_ = trans_.base_desired_ft_.block<3, 3>(0, 0);
     rotations_.base_tip_ = trans_.base_tip_.block<3, 3>(0, 0);
     rotations_.world_base_ = trans_.world_base_.block<3, 3>(0, 0);
     rotations_.base_world_ = rotations_.world_base_.transpose();
@@ -169,22 +179,24 @@ namespace admittance_controller {
       trajectory_msgs::msg::JointTrajectoryPoint &desired_joint_state) {
 
     double dt = period.seconds() + ((double) period.nanoseconds()) * 1E-9;
+//    double dt = 1.0/(1000.0);
 
     if (parameters_.enable_parameter_update_without_reactivation) {
       apply_parameters_update();
     }
 
-    bool success = get_all_transforms(current_joint_state, reference_joint_state);
+    bool success = get_all_transforms(current_joint_state, reference_joint_state, admittance_state_);
 
     // apply filter and update wrench_world_ vector
     process_wrench_measurements(measured_wrench, rotations_.world_sensor_, rotations_.world_cog_);
 
     // transform wrench_world_ into base frame
+    // transform wrench_world_ into base frame
     admittance_state_.wrench_base = rotations_.base_world_ * wrench_world_;
 
     // Compute admittance control law
     success &= calculate_admittance_rule(current_joint_state.positions, rotations_.base_control_, trans_.base_ft_,
-                                         trans_ref_.base_ft_, parameters_.ft_sensor.frame.id, dt, admittance_state_);
+                                         trans_ref_.base_ft_, trans_ref_.base_desired_ft_, parameters_.ft_sensor.frame.id, dt, admittance_state_);
 
     // if a failure occurred during any kinematics interface calls, return an error and don't modify the desired reference
     if (!success) {
@@ -218,13 +230,10 @@ namespace admittance_controller {
                                                  const Eigen::Matrix<double, 3, 3, Eigen::ColMajor> &base_control,
                                                  Eigen::Matrix<double, 4, 4, Eigen::ColMajor> base_ft,
                                                  Eigen::Matrix<double, 4, 4, Eigen::ColMajor> ref_base_ft,
+                                                 Eigen::Matrix<double, 4, 4, Eigen::ColMajor> base_desired_ft,
                                                  const std::string &ft_sensor_frame,
                                                  double dt,
                                                  AdmittanceState &admittance_state) {
-
-    // reshape inputs
-    auto admittance_velocity_flat = Eigen::Matrix<double, 6, 1>(admittance_state.admittance_velocity_.data());
-    auto wrench_flat = Eigen::Matrix<double, 6, 1>(admittance_state.wrench_base.data());
 
     // create stiffness matrix
     Eigen::Matrix<double, 6, 6> K = Eigen::Matrix<double, 6, 6>::Zero();
@@ -248,73 +257,37 @@ namespace admittance_controller {
     D.block<3, 3>(0, 0) = D_pos;
     D.block<3, 3>(3, 3) = D_rot;
 
-    // calculate pose error
-    Eigen::Matrix<double, 6, 1> pose_error;
-    pose_error.block<3, 1>(0, 0) = admittance_state.admittance_position_.block<3, 1>(0, 3);
+    // calculate admittance relative offset
+    Eigen::Matrix<double, 6, 1> X;
+    X.block<3, 1>(0, 0) = base_desired_ft.block<3, 1>(0, 3) - ref_base_ft.block<3, 1>(0, 3);
+    Eigen::Matrix<double, 3, 3> R_ref = ref_base_ft.block<3, 3>(0, 0);
+    Eigen::Matrix<double, 3, 3> R_desired = base_desired_ft.block<3, 3>(0, 0);
+    Eigen::Matrix<double, 3, 3> R = R_desired * R_ref.transpose();
+    Eigen::Vector3d V = get_rotation_axis(R);
+    double theta = acos(std::clamp((1.0 / 2.0) * (R.trace() - 1), -1.0, 1.0));
+    X.block<3, 1>(3, 0) = -theta * V;
 
-    // calculate rotation error
-    Eigen::Matrix<double, 3, 3> admittance_rotation = admittance_state.admittance_position_.block<3, 3>(0, 0);
-    Eigen::Vector3d V = get_rotation_axis(admittance_rotation);
-    double theta = acos(std::clamp((1.0 / 2.0) * (admittance_rotation.trace() - 1), -1.0, 1.0));
-    pose_error.block<3, 1>(3, 0) = -theta * V;
+    // get admittance relative velocity
+    auto X_dot = Eigen::Matrix<double, 6, 1>(admittance_state.admittance_velocity_.data());
 
-    // Compute admittance control law: F = M*a + D*v + S*(x - x_d)
-    Eigen::Matrix<double, 6, 1> admittance_acceleration_flat = admittance_state.mass_inv_.cwiseProduct(wrench_flat -
-                                                                                                       D *
-                                                                                                       admittance_velocity_flat -
-                                                                                                       K * pose_error);
+    // get external force
+    auto F = Eigen::Matrix<double, 6, 1>(admittance_state.wrench_base.data());
 
-    // project acceleration into controllable subspace
-    auto tmp = Eigen::Matrix<double, 3, 2>(admittance_acceleration_flat.data());
+    // Compute admittance control law: F = M*a + D*v + S*x
+    Eigen::Matrix<double, 6, 1> X_ddot = admittance_state.mass_inv_.cwiseProduct(F - D * X_dot - K * X);
+    auto tmp = Eigen::Matrix<double, 3, 2>(X_ddot.data());
     bool success = convert_cartesian_deltas_to_joint_deltas(current_joint_positions, tmp,
-                                                            ft_sensor_frame,
-                                                            admittance_state.joint_acc_);
-    eigen_to_vec(admittance_state.joint_acc_, joint_buffer_vec_);
-    success &= convert_joint_deltas_to_cartesian_deltas(current_joint_positions, joint_buffer_vec_,
-                                                        ft_sensor_frame,
-                                                        admittance_state.admittance_acceleration_);
+                                                       ft_sensor_frame,
+                                                       admittance_state.joint_acc_);
 
-    // integrate velocity
-    admittance_state.admittance_velocity_ += admittance_state.admittance_acceleration_ * dt;
-    admittance_state.admittance_position_.block<3, 1>(0, 3) +=
-        admittance_state.admittance_velocity_.block<3, 1>(0, 0) * dt;
+    // integrate motion in joint space
+    admittance_state.joint_vel_ += admittance_state.joint_acc_ * dt;
+    admittance_state.joint_pos_ += admittance_state.joint_vel_ * dt;
 
-    // integrate rotational velocity
-    Eigen::Matrix3d skew_symmetric;
-    auto rot_vel = admittance_state.admittance_velocity_;
-    skew_symmetric << 0, -rot_vel(2, 1), rot_vel(1, 1),
-        rot_vel(2, 1), 0, -rot_vel(0, 1),
-        -rot_vel(1, 1), rot_vel(0, 1), 0;
-    Eigen::Matrix3d R_dot = skew_symmetric * admittance_rotation;
-    admittance_rotation += R_dot * dt;
-    normalize_rotation(admittance_rotation);
-    admittance_state.admittance_position_.block<3, 3>(0, 0) = admittance_rotation;
-
-    // calculate position drift due to integrating the joint positions
-    auto admittance_position_base =
-        ref_base_ft.block<3, 1>(0, 3) + admittance_state.admittance_position_.block<3, 1>(0, 3);
-    Eigen::Matrix<double, 3, 1> admittance_cur_position_base = base_ft.block<3, 1>(0, 3);
-    Eigen::Matrix<double, 3, 3> ft_rot = base_ft.block<3, 3>(0, 0);
-    Eigen::Matrix<double, 3, 3> reference_ft_rot = ref_base_ft.block<3, 3>(0, 0);
-
-    // calculate rotation drift due to integrating the joint positions
-    Eigen::Matrix<double, 3, 3> R = (admittance_rotation*reference_ft_rot).transpose()*ft_rot;
-
-    // calculate correction term
-    Eigen::Matrix<double, 3, 2> correction_term;
-    correction_term.block<3, 1>(0, 0) = parameters_.admittance.linear_correction*(admittance_position_base - admittance_cur_position_base);
-    V = get_rotation_axis(R);
-    theta = acos(std::clamp((1.0 / 2.0) * (R.trace() - 1), -1.0, 1.0));
-    correction_term.block<3, 1>(0, 1) = parameters_.admittance.angular_correction*theta * V;
-
-    // calculate joint velocities that correspondence to cartesian accelerations
-    success &= convert_cartesian_deltas_to_joint_deltas(current_joint_positions, admittance_state.admittance_velocity_ + correction_term,
-                                                        ft_sensor_frame,
-                                                        admittance_state.joint_vel_);
-
-    for (auto i = 0ul; i < admittance_state.joint_pos_.size(); i++) {
-      admittance_state.joint_pos_[i] += admittance_state.joint_vel_[i] * dt;
-    }
+    // calculate admittance velocity corresponding to joint velocity
+    eigen_to_vec(admittance_state.joint_vel_, joint_buffer_vec_);
+    success &= convert_joint_deltas_to_cartesian_deltas(current_joint_positions, joint_buffer_vec_, ft_sensor_frame,
+                                                        admittance_state.admittance_velocity_);
 
     return success;
 
@@ -530,7 +503,6 @@ namespace admittance_controller {
         matrix(row, col) = data[row + col * matrix.rows()];
       }
     }
-
   }
 
   template<typename T1, typename T2>
@@ -540,7 +512,6 @@ namespace admittance_controller {
         data[row + col * matrix.rows()] = matrix(row, col);
       }
     }
-
   }
 
 }  // namespace admittance_controller
