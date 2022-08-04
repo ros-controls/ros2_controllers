@@ -78,7 +78,7 @@ TEST_P(TrajectoryControllerTestParameterized, configure)
   time_from_start.sec = 1;
   time_from_start.nanosec = 0;
   std::vector<std::vector<double>> points{{{3.3, 4.4, 5.5}}};
-  publish(time_from_start, points);
+  publish(time_from_start, points, rclcpp::Time());
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
   traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
@@ -141,7 +141,7 @@ TEST_P(TrajectoryControllerTestParameterized, activate)
 //   time_from_start.sec = 1;
 //   time_from_start.nanosec = 0;
 //   std::vector<std::vector<double>> points {{{3.3, 4.4, 5.5}}};
-//   publish(time_from_start, points);
+//   publish(time_from_start, points, rclcpp::Time());
 //   // wait for msg is be published to the system
 //   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 //   executor.spin_once();
@@ -189,7 +189,7 @@ TEST_P(TrajectoryControllerTestParameterized, activate)
 //     {{10.10, 11.11, 12.12}}
 //   };
 //   // *INDENT-ON*
-//   publish(time_from_start, points);
+//   publish(time_from_start, points, rclcpp::Time());
 //   // wait for msg is be published to the system
 //   std::this_thread::sleep_for(std::chrono::milliseconds(500));
 //   executor.spin_once();
@@ -241,7 +241,7 @@ TEST_P(TrajectoryControllerTestParameterized, cleanup)
   time_from_start.sec = 1;
   time_from_start.nanosec = 0;
   std::vector<std::vector<double>> points{{{3.3, 4.4, 5.5}}};
-  publish(time_from_start, points);
+  publish(time_from_start, points, rclcpp::Time());
   traj_controller_->wait_for_trajectory(executor);
   traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
 
@@ -847,9 +847,10 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_old_trajectory)
   std::vector<std::vector<double>> points_old{{{2., 3., 4.}, {4., 5., 6.}}};
   std::vector<std::vector<double>> points_new{{{-1., -2., -3.}}};
 
+  RCLCPP_INFO(traj_controller_->get_node()->get_logger(), "Sending new trajectory in the future");
   const auto delay = std::chrono::milliseconds(500);
   builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(delay)};
-  publish(time_from_start, points_old);
+  publish(time_from_start, points_old, rclcpp::Time());
   trajectory_msgs::msg::JointTrajectoryPoint expected_actual, expected_desired;
   expected_actual.positions = {points_old[0].begin(), points_old[0].end()};
   expected_desired = expected_actual;
@@ -861,6 +862,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_old_trajectory)
   rclcpp::Time new_traj_start = rclcpp::Clock().now() - delay - std::chrono::milliseconds(100);
   expected_actual.positions = {points_old[1].begin(), points_old[1].end()};
   expected_desired = expected_actual;
+  std::cout << "Sending old trajectory" << std::endl;
   publish(time_from_start, points_new, new_traj_start);
   waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
 }
@@ -876,7 +878,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_partial_old_trajectory
 
   const auto delay = std::chrono::milliseconds(500);
   builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(delay)};
-  publish(time_from_start, points_old);
+  publish(time_from_start, points_old, rclcpp::Time());
   trajectory_msgs::msg::JointTrajectoryPoint expected_actual, expected_desired;
   expected_actual.positions = {points_old[0].begin(), points_old[0].end()};
   expected_desired = expected_actual;
@@ -1014,7 +1016,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_erro
 
     // Move joint back to the first goal
     points = {{first_goal}};
-    publish(time_from_start, points);
+    publish(time_from_start, points, rclcpp::Time());
     traj_controller_->wait_for_trajectory(executor);
 
     // One the first update(s) there should be a "jump" in the goal direction from command
@@ -1057,7 +1059,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_no_jump_when_state_tracking_e
   time_from_start.sec = 1;
   time_from_start.nanosec = 0;
   std::vector<std::vector<double>> points{{first_goal}};
-  publish(time_from_start, points);
+  publish(time_from_start, points, rclcpp::Time());
   traj_controller_->wait_for_trajectory(executor);
   updateController(rclcpp::Duration::from_seconds(1.1));
 
@@ -1074,7 +1076,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_no_jump_when_state_tracking_e
 
     // Move joint further in the same direction as before (to the second goal)
     points = {{second_goal}};
-    publish(time_from_start, points);
+    publish(time_from_start, points, rclcpp::Time());
     traj_controller_->wait_for_trajectory(executor);
 
     // One the first update(s) there **should not** be a "jump" in opposite direction from command
@@ -1101,7 +1103,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_no_jump_when_state_tracking_e
 
     // Move joint back to the first goal
     points = {{first_goal}};
-    publish(time_from_start, points);
+    publish(time_from_start, points, rclcpp::Time());
     traj_controller_->wait_for_trajectory(executor);
 
     // One the first update(s) there **should not** be a "jump" in the goal direction from command

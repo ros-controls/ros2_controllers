@@ -77,9 +77,10 @@ controller_interface::CallbackReturn DiffDriveController::on_init()
     auto_declare<bool>("enable_odom_tf", odom_params_.enable_odom_tf);
 
     auto_declare<double>("cmd_vel_timeout", cmd_vel_timeout_.count() / 1000.0);
-    auto_declare<bool>("publish_limited_velocity", publish_limited_velocity_);
+    publish_limited_velocity_ =
+      auto_declare<bool>("publish_limited_velocity", publish_limited_velocity_);
     auto_declare<int>("velocity_rolling_window_size", 10);
-    auto_declare<bool>("use_stamped_vel", use_stamped_vel_);
+    use_stamped_vel_ = auto_declare<bool>("use_stamped_vel", use_stamped_vel_);
 
     auto_declare<bool>("linear.x.has_velocity_limits", false);
     auto_declare<bool>("linear.x.has_acceleration_limits", false);
@@ -100,7 +101,7 @@ controller_interface::CallbackReturn DiffDriveController::on_init()
     auto_declare<double>("angular.z.min_acceleration", NAN);
     auto_declare<double>("angular.z.max_jerk", NAN);
     auto_declare<double>("angular.z.min_jerk", NAN);
-    auto_declare<double>("publish_rate", publish_rate_);
+    publish_rate_ = auto_declare<double>("publish_rate", publish_rate_);
   }
   catch (const std::exception & e)
   {

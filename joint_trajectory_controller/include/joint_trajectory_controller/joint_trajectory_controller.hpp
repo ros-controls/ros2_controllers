@@ -27,6 +27,7 @@
 #include "control_toolbox/pid.hpp"
 #include "controller_interface/controller_interface.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
+#include "joint_trajectory_controller/interpolation_methods.hpp"
 #include "joint_trajectory_controller/tolerances.hpp"
 #include "joint_trajectory_controller/visibility_control.h"
 #include "rclcpp/duration.hpp"
@@ -125,13 +126,24 @@ protected:
     hardware_interface::HW_IF_EFFORT,
   };
 
+  // Preallocate variables used in the realtime update() function
+  trajectory_msgs::msg::JointTrajectoryPoint state_current_;
+  trajectory_msgs::msg::JointTrajectoryPoint state_desired_;
+  trajectory_msgs::msg::JointTrajectoryPoint state_error_;
+
+  // Degrees of freedom
+  size_t dof_;
+
   // Parameters for some special cases, e.g. hydraulics powered robots
-  /// Run he controller in open-loop, i.e., read hardware states only when starting controller.
-  /// This is useful when robot is not exactly following the commanded trajectory.
+  // Run the controller in open-loop, i.e., read hardware states only when starting controller.
+  // This is useful when robot is not exactly following the commanded trajectory.
   bool open_loop_control_ = false;
   trajectory_msgs::msg::JointTrajectoryPoint last_commanded_state_;
   /// Allow integration in goal trajectories to accept goals without position or velocity specified
   bool allow_integration_in_goal_trajectories_ = false;
+  /// Specify interpolation method. Default to splines.
+  interpolation_methods::InterpolationMethod interpolation_method_{
+    interpolation_methods::DEFAULT_INTERPOLATION};
 
   double state_publish_rate_;
   double action_monitor_rate_;
@@ -157,9 +169,9 @@ protected:
   bool use_closed_loop_pid_adapter_ = false;
   using PidPtr = std::shared_ptr<control_toolbox::Pid>;
   std::vector<PidPtr> pids_;
-  /// Feed-forward velocity weight factor when calculating closed loop pid adapter's command
+  // Feed-forward velocity weight factor when calculating closed loop pid adapter's command
   std::vector<double> ff_velocity_scale_;
-  /// reserved storage for result of the command when closed loop pid adapter is used
+  // reserved storage for result of the command when closed loop pid adapter is used
   std::vector<double> tmp_command_;
 
   // TODO(karsten1987): eventually activate and deactivate subscriber directly when its supported
@@ -194,15 +206,19 @@ protected:
   rclcpp::TimerBase::SharedPtr goal_handle_timer_;
   rclcpp::Duration action_monitor_period_ = rclcpp::Duration(50ms);
 
+  // callback for topic interface
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
+  void topic_callback(const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg);
+
   // callbacks for action_server_
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  rclcpp_action::GoalResponse goal_callback(
+  rclcpp_action::GoalResponse goal_received_callback(
     const rclcpp_action::GoalUUID & uuid, std::shared_ptr<const FollowJTrajAction::Goal> goal);
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  rclcpp_action::CancelResponse cancel_callback(
+  rclcpp_action::CancelResponse goal_cancelled_callback(
     const std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle);
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  void feedback_setup_callback(
+  void goal_accepted_callback(
     std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle);
 
   // fill trajectory_msg so it matches joints controlled by this controller

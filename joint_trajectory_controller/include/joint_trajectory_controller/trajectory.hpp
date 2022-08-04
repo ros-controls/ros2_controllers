@@ -18,6 +18,7 @@
 #include <memory>
 #include <vector>
 
+#include "joint_trajectory_controller/interpolation_methods.hpp"
 #include "joint_trajectory_controller/visibility_control.h"
 #include "rclcpp/time.hpp"
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
@@ -75,13 +76,16 @@ public:
    *    return false
    *
    * \param[in] sample_time Time at which trajectory will be sampled.
+   * \param[in] interpolation_method Specify whether splines, another method, or no interpolation at all.
    * \param[out] expected_state Calculated new at \p sample_time.
    * \param[out] start_segment_itr Iterator to the start segment for given \p sample_time. See description above.
    * \param[out] end_segment_itr Iterator to the end segment for given \p sample_time. See description above.
    */
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   bool sample(
-    const rclcpp::Time & sample_time, trajectory_msgs::msg::JointTrajectoryPoint & output_state,
+    const rclcpp::Time & sample_time,
+    const interpolation_methods::InterpolationMethod interpolation_method,
+    trajectory_msgs::msg::JointTrajectoryPoint & output_state,
     TrajectoryPointConstIter & start_segment_itr, TrajectoryPointConstIter & end_segment_itr);
 
   /**

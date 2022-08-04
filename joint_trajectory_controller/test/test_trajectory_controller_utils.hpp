@@ -279,7 +279,7 @@ public:
    */
   void publish(
     const builtin_interfaces::msg::Duration & delay_btwn_points,
-    const std::vector<std::vector<double>> & points, rclcpp::Time start_time = rclcpp::Time(),
+    const std::vector<std::vector<double>> & points, rclcpp::Time start_time,
     const std::vector<std::string> & joint_names = {},
     const std::vector<std::vector<double>> & points_velocities = {})
   {
