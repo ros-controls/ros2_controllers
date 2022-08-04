@@ -2,6 +2,9 @@
 Changelog for package ros2_controllers_test_nodes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 2.10.0 (2022-08-01)
 -------------------
 

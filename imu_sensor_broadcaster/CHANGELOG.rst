@@ -2,6 +2,9 @@
 Changelog for package imu_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 2.10.0 (2022-08-01)
 -------------------
 
