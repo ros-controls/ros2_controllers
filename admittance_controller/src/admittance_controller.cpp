@@ -51,15 +51,6 @@ namespace admittance_controller {
     state_desired_ = last_state_reference_;
     state_current_ = last_state_reference_;
 
-    joint_position_command_interface_.reserve(num_joints_);
-    joint_velocity_command_interface_.reserve(num_joints_);
-    joint_acceleration_command_interface_.reserve(num_joints_);
-    joint_effort_command_interface_.reserve(num_joints_);
-    joint_position_state_interface_.reserve(num_joints_);
-    joint_velocity_state_interface_.reserve(num_joints_);
-    joint_acceleration_state_interface_.reserve(num_joints_);
-    joint_effort_state_interface_.reserve(num_joints_);
-
     return CallbackReturn::SUCCESS;
   }
 
@@ -73,11 +64,13 @@ namespace admittance_controller {
     }
 
     std::vector<std::string> state_interfaces_config_names;
-    for (const auto &interface: admittance_->parameters_.state_interfaces) {
+    for (auto i = 0ul; i < admittance_->parameters_.state_interfaces.size(); i++) {
+      const auto &interface = admittance_->parameters_.state_interfaces[i];
       for (const auto &joint: admittance_->parameters_.joints) {
         state_interfaces_config_names.push_back(joint + "/" + interface);
       }
     }
+
     auto ft_interfaces = force_torque_sensor_->get_state_interface_names();
     state_interfaces_config_names.insert(state_interfaces_config_names.end(), ft_interfaces.begin(),
                                          ft_interfaces.end());
@@ -124,8 +117,8 @@ namespace admittance_controller {
 
     // assign reference interfaces
     auto index = 0ul;
-    for (const auto& interface : reference_interfaces_types_) {
-      for (const auto& joint : admittance_->parameters_.joints) {
+    for (const auto &interface: reference_interfaces_types_) {
+      for (const auto &joint: admittance_->parameters_.joints) {
         if (hardware_interface::HW_IF_POSITION == interface)
           position_reference_.emplace_back(reference_interfaces_.data() + index);
         else if (hardware_interface::HW_IF_VELOCITY == interface) {
@@ -225,54 +218,33 @@ namespace admittance_controller {
       admittance_->parameters_ = admittance_->parameter_handler_->get_params();
     }
 
-    // reset all interfaces in case of restart
-    joint_position_command_interface_.clear();
-    joint_velocity_command_interface_.clear();
-    joint_acceleration_command_interface_.clear();
-    joint_effort_command_interface_.clear();
-    joint_position_state_interface_.clear();
-    joint_velocity_state_interface_.clear();
-    joint_acceleration_state_interface_.clear();
-    joint_effort_state_interface_.clear();
-
-    // assign command interfaces
-    for (auto i = 0ul; i < admittance_->parameters_.command_interfaces.size(); i++) {
-      for (auto j = 0ul; j < admittance_->parameters_.joints.size(); j++) {
-        if (hardware_interface::HW_IF_POSITION == admittance_->parameters_.command_interfaces[i]) {
-          joint_position_command_interface_.emplace_back(command_interfaces_[i * num_joints_ + j]);
-        } else if (hardware_interface::HW_IF_VELOCITY == admittance_->parameters_.command_interfaces[i]) {
-          joint_velocity_command_interface_.emplace_back(command_interfaces_[i * num_joints_ + j]);
-        } else if (hardware_interface::HW_IF_ACCELERATION == admittance_->parameters_.command_interfaces[i]) {
-          joint_acceleration_command_interface_.emplace_back(command_interfaces_[i * num_joints_ + j]);
-        } else if (hardware_interface::HW_IF_EFFORT == admittance_->parameters_.command_interfaces[i]) {
-          joint_effort_command_interface_.emplace_back(command_interfaces_[i * num_joints_ + j]);
-        }
-      }
-    }
-
-    // assign state interfaces
+    // get state interface inds
+    std::unordered_map<std::string, size_t> inter_to_ind = {{hardware_interface::HW_IF_POSITION,     -1},
+                                                            {hardware_interface::HW_IF_VELOCITY,     -1},
+                                                            {hardware_interface::HW_IF_ACCELERATION, -1}};
     for (auto i = 0ul; i < admittance_->parameters_.state_interfaces.size(); i++) {
-      for (auto j = 0ul; j < admittance_->parameters_.joints.size(); j++) {
-        if (hardware_interface::HW_IF_POSITION == admittance_->parameters_.state_interfaces[i]) {
-          joint_position_state_interface_.emplace_back(state_interfaces_[i * num_joints_ + j]);
-        } else if (hardware_interface::HW_IF_VELOCITY == admittance_->parameters_.state_interfaces[i]) {
-          joint_velocity_state_interface_.emplace_back(state_interfaces_[i * num_joints_ + j]);
-        } else if (hardware_interface::HW_IF_ACCELERATION == admittance_->parameters_.state_interfaces[i]) {
-          joint_acceleration_state_interface_.emplace_back(state_interfaces_[i * num_joints_ + j]);
-        } else if (hardware_interface::HW_IF_EFFORT == admittance_->parameters_.state_interfaces[i]) {
-          joint_effort_state_interface_.emplace_back(state_interfaces_[i * num_joints_ + j]);
-        }
-      }
+      const auto &interface = admittance_->parameters_.state_interfaces[i];
+      inter_to_ind[interface] = i;
     }
+    state_pos_ind = inter_to_ind[hardware_interface::HW_IF_POSITION];
+    state_vel_ind = inter_to_ind[hardware_interface::HW_IF_VELOCITY];
+    state_acc_ind = inter_to_ind[hardware_interface::HW_IF_ACCELERATION];
+
+    // get state interface inds
+    inter_to_ind = {{hardware_interface::HW_IF_POSITION,     -1},
+                    {hardware_interface::HW_IF_VELOCITY,     -1},
+                    {hardware_interface::HW_IF_ACCELERATION, -1}};
+    for (auto i = 0ul; i < admittance_->parameters_.command_interfaces.size(); i++) {
+      const auto &interface = admittance_->parameters_.command_interfaces[i];
+      inter_to_ind[interface] = i;
+    }
+    command_pos_ind = inter_to_ind[hardware_interface::HW_IF_POSITION];
+    command_vel_ind = inter_to_ind[hardware_interface::HW_IF_VELOCITY];
+    command_acc_ind = inter_to_ind[hardware_interface::HW_IF_ACCELERATION];
+
 
     // initialize interface of the FTS semantic semantic component
     force_torque_sensor_->assign_loaned_state_interfaces(state_interfaces_);
-
-    // if joint_position_state_interface_ is empty, we have no information about the state, continuing is dangerous
-    if (joint_position_state_interface_.empty()) {
-      RCLCPP_ERROR(get_node()->get_logger(), "No joint position state interface exist.");
-      return CallbackReturn::ERROR;
-    }
 
     // handle state after restart or initial startups
     read_state_from_hardware(state_current_);
@@ -331,18 +303,7 @@ namespace admittance_controller {
     admittance_->update(state_current_, ft_values, state_reference_, period, state_desired_);
 
     // write calculated values to joint interfaces
-    for (auto i = 0ul; i < joint_position_command_interface_.size(); i++) {
-      joint_position_command_interface_[i].get().set_value(state_desired_.positions[i]);
-      last_commanded_state_.positions[i] = state_desired_.positions[i];
-    }
-    for (auto i = 0ul; i < joint_velocity_command_interface_.size(); i++) {
-      joint_velocity_command_interface_[i].get().set_value(state_desired_.velocities[i]);
-      last_commanded_state_.velocities[i] = state_desired_.velocities[i];
-    }
-    for (auto i = 0ul; i < joint_acceleration_command_interface_.size(); i++) {
-      joint_acceleration_command_interface_[i].get().set_value(state_desired_.accelerations[i]);
-      last_commanded_state_.accelerations[i] = state_desired_.accelerations[i];
-    }
+    write_state_to_hardware(state_desired_);
 
     // Publish controller state
     state_publisher_->lock();
@@ -375,32 +336,57 @@ namespace admittance_controller {
   }
 
   void AdmittanceController::read_state_from_hardware(
-      trajectory_msgs::msg::JointTrajectoryPoint &state_reference) {
+      trajectory_msgs::msg::JointTrajectoryPoint &state_current) {
     // Fill fields of state_reference argument from hardware state interfaces. If the hardware does not exist or
     // the values are nan, the corresponding state field will be set to empty.
 
     // if any interface has nan values, assume state_reference is the last command state
-    for (auto i = 0ul; i < joint_position_state_interface_.size(); i++) {
-      state_reference.positions[i] = joint_position_state_interface_[i].get().get_value();
-      if (std::isnan(state_reference.positions[i])) {
-        state_reference.positions = last_commanded_state_.positions;
-        break;
+    for (auto joint_ind = 0ul; joint_ind < num_joints_; joint_ind++) {
+      for (auto inter_ind = 0; inter_ind < 3; inter_ind++) {
+        auto ind = joint_ind + num_joints_ * inter_ind;
+        if (inter_ind == state_pos_ind) {
+          state_current.positions[joint_ind] = state_interfaces_[ind].get_value();
+          if (std::isnan(state_current.positions[joint_ind])) {
+            state_current.positions = last_commanded_state_.positions;
+            break;
+          }
+        } else if (inter_ind == state_vel_ind) {
+          state_current.velocities[joint_ind] = state_interfaces_[ind].get_value();
+          if (std::isnan(state_current.positions[joint_ind])) {
+            state_current.velocities = last_commanded_state_.velocities;
+            break;
+          }
+        } else if (inter_ind == state_acc_ind) {
+          state_current.accelerations[joint_ind] = state_interfaces_[ind].get_value();
+          if (std::isnan(state_current.positions[joint_ind])) {
+            state_current.accelerations = last_commanded_state_.accelerations;
+            break;
+          }
+        }
       }
     }
-    for (auto i = 0ul; i < joint_velocity_state_interface_.size(); i++) {
-      state_reference.velocities[i] = joint_velocity_state_interface_[i].get().get_value();
-      if (std::isnan(state_reference.velocities[i])) {
-        state_reference.velocities = last_commanded_state_.velocities;
-        break;
+
+  }
+
+  void
+  AdmittanceController::write_state_to_hardware(const trajectory_msgs::msg::JointTrajectoryPoint &state_commanded) {
+    // Fill fields of state_reference argument from hardware state interfaces. If the hardware does not exist or
+    // the values are nan, the corresponding state field will be set to empty.
+
+    // if any interface has nan values, assume state_reference is the last command state
+    for (auto joint_ind = 0ul; joint_ind < num_joints_; joint_ind++) {
+      for (auto inter_ind = 0; inter_ind < 3; inter_ind++) {
+        auto ind = joint_ind + num_joints_ * inter_ind;
+        if (inter_ind == command_pos_ind) {
+          command_interfaces_[ind].set_value(state_commanded.positions[joint_ind]);
+        } else if (inter_ind == command_vel_ind) {
+          command_interfaces_[ind].set_value(state_commanded.velocities[joint_ind]);
+        } else if (inter_ind == command_acc_ind) {
+          command_interfaces_[ind].set_value(state_commanded.accelerations[joint_ind]);
+        }
       }
     }
-    for (auto i = 0ul; i < joint_acceleration_state_interface_.size(); i++) {
-      state_reference.accelerations[i] = joint_acceleration_state_interface_[i].get().get_value();
-      if (std::isnan(state_reference.accelerations[i])) {
-        state_reference.accelerations = last_commanded_state_.accelerations;
-        break;
-      }
-    }
+    last_commanded_state_ = state_desired_;
 
   }
 
