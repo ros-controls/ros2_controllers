@@ -23,7 +23,6 @@
 
 #include "gmock/gmock.h"
 
-#include "forward_command_controller/forward_controller.hpp"
 #include "forward_command_controller/multi_interface_forward_command_controller.hpp"
 #include "hardware_interface/handle.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
