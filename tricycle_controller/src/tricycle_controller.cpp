@@ -151,7 +151,7 @@ controller_interface::return_type TricycleController::update(
   double & angular_command = command.twist.angular.z;
   double Ws_read = traction_joint_[0].velocity_state.get().get_value();     // in radians/s
   double alpha_read = steering_joint_[0].position_state.get().get_value();  // in radians
-  
+
   if (odom_params_.open_loop)
   {
     odometry_.updateOpenLoop(linear_command, angular_command, period);
@@ -160,7 +160,7 @@ controller_interface::return_type TricycleController::update(
   {
     if (std::isnan(Ws_read) || std::isnan(alpha_read))
     {
-      RCLCPP_ERROR(get_node()->get_logger(), "Could not read feeback value");
+      RCLCPP_ERROR(get_node()->get_logger(), "Could not read feedback value");
       return controller_interface::return_type::ERROR;
     }
     odometry_.update(Ws_read, alpha_read, period);
@@ -208,7 +208,7 @@ controller_interface::return_type TricycleController::update(
   // Compute wheel velocity and angle
   auto [alpha_write, Ws_write] = twist_to_ackermann(linear_command, angular_command);
 
-  // Reduce wheel speed until the target angle has been reached 
+  // Reduce wheel speed until the target angle has been reached
   double alpha_delta = abs(alpha_write - alpha_read);
   double scale;
   if (alpha_delta < M_PI / 6)

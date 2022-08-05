@@ -125,7 +125,7 @@ protected:
   {
     bool open_loop = false;
     bool enable_odom_tf = false;
-    bool odom_only_twist = false;  // for doing the pose integration in seperate node
+    bool odom_only_twist = false;  // for doing the pose integration in separate node
     std::string base_frame_id = "base_link";
     std::string odom_frame_id = "odom";
     std::array<double, 6> pose_covariance_diagonal;
