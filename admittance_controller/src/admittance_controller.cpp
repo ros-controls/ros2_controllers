@@ -247,7 +247,7 @@ namespace admittance_controller {
     force_torque_sensor_->assign_loaned_state_interfaces(state_interfaces_);
 
     // handle state after restart or initial startups
-    read_state_from_hardware(state_current_);
+    read_state_from_hardware(state_current_, ft_values_);
 
     // initialize states from last read state reference
     last_commanded_state_ = state_current_;
@@ -295,12 +295,10 @@ namespace admittance_controller {
     read_state_reference_interfaces(state_reference_);
 
     // get all controller inputs
-    geometry_msgs::msg::Wrench ft_values;
-    force_torque_sensor_->get_values_as_message(ft_values);
-    read_state_from_hardware(state_current_);
+    read_state_from_hardware(state_current_, ft_values_);
 
     // apply admittance control to reference to determine desired state
-    admittance_->update(state_current_, ft_values, state_reference_, period, state_desired_);
+    admittance_->update(state_current_, ft_values_, state_reference_, period, state_desired_);
 
     // write calculated values to joint interfaces
     write_state_to_hardware(state_desired_);
@@ -336,7 +334,8 @@ namespace admittance_controller {
   }
 
   void AdmittanceController::read_state_from_hardware(
-      trajectory_msgs::msg::JointTrajectoryPoint &state_current) {
+      trajectory_msgs::msg::JointTrajectoryPoint &state_current,
+      geometry_msgs::msg::Wrench &ft_values) {
     // Fill fields of state_reference argument from hardware state interfaces. If the hardware does not exist or
     // the values are nan, the corresponding state field will be set to empty.
 
@@ -364,6 +363,11 @@ namespace admittance_controller {
           }
         }
       }
+    }
+    force_torque_sensor_->get_values_as_message(ft_values);
+    if (std::isnan(ft_values.force.x) || std::isnan(ft_values.force.y) || std::isnan(ft_values.force.z)
+        || std::isnan(ft_values.torque.x) || std::isnan(ft_values.torque.y) || std::isnan(ft_values.torque.z)){
+      ft_values = geometry_msgs::msg::Wrench();
     }
 
   }

@@ -138,11 +138,13 @@ namespace admittance_controller {
 
     // control loop data
     trajectory_msgs::msg::JointTrajectoryPoint state_reference_, state_current_, state_desired_, state_error_;
+    geometry_msgs::msg::Wrench ft_values_;
     trajectory_msgs::msg::JointTrajectory pre_admittance_point;
     size_t loop_counter = 0;
 
     // helper methods
-    void read_state_from_hardware(trajectory_msgs::msg::JointTrajectoryPoint &state);
+    void read_state_from_hardware(trajectory_msgs::msg::JointTrajectoryPoint &state_current,
+                                  geometry_msgs::msg::Wrench &ft_values);
     void read_state_reference_interfaces(trajectory_msgs::msg::JointTrajectoryPoint &state);
     void write_state_to_hardware(const trajectory_msgs::msg::JointTrajectoryPoint &state_commanded);
 
