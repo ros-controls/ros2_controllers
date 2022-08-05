@@ -32,14 +32,14 @@ namespace forward_command_controller
 using CmdType = std_msgs::msg::Float64MultiArray;
 
 /**
- * \brief Forward command controller base class for shared implementation.
+ * \brief Forward command controller for a set of joints and interfaces.
  *
  * This class forwards the command signal down to a set of joints or interfaces.
  *
  * Subscribes to:
  * - \b commands (std_msgs::msg::Float64MultiArray) : The commands to apply.
  */
-class ForwardControllersBase
+class ForwardControllersBase : public controller_interface::ControllerInterface
 {
 public:
   FORWARD_COMMAND_CONTROLLER_PUBLIC
@@ -49,27 +49,29 @@ public:
   ~ForwardControllersBase() = default;
 
   FORWARD_COMMAND_CONTROLLER_PUBLIC
-  controller_interface::InterfaceConfiguration get_command_interface_configuration() const;
+  controller_interface::InterfaceConfiguration command_interface_configuration() const override;
 
   FORWARD_COMMAND_CONTROLLER_PUBLIC
-  controller_interface::InterfaceConfiguration get_state_interface_configuration() const;
+  controller_interface::InterfaceConfiguration state_interface_configuration() const override;
 
   FORWARD_COMMAND_CONTROLLER_PUBLIC
-  controller_interface::CallbackReturn execute_init(
-    const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node);
+  controller_interface::CallbackReturn on_init() override;
 
   FORWARD_COMMAND_CONTROLLER_PUBLIC
-  controller_interface::CallbackReturn execute_configure(
-    const rclcpp_lifecycle::State & previous_state,
-    std::vector<hardware_interface::LoanedCommandInterface> & command_interfaces);
+  controller_interface::CallbackReturn on_configure(
+    const rclcpp_lifecycle::State & previous_state) override;
 
   FORWARD_COMMAND_CONTROLLER_PUBLIC
-  controller_interface::CallbackReturn execute_activate(
-    const rclcpp_lifecycle::State & previous_state,
-    std::vector<hardware_interface::LoanedCommandInterface> & command_interfaces);
+  controller_interface::CallbackReturn on_activate(
+    const rclcpp_lifecycle::State & previous_state) override;
 
-  controller_interface::CallbackReturn execute_deactivate(
-    const rclcpp_lifecycle::State & previous_state);
+  FORWARD_COMMAND_CONTROLLER_PUBLIC
+  controller_interface::CallbackReturn on_deactivate(
+    const rclcpp_lifecycle::State & previous_state) override;
+
+  FORWARD_COMMAND_CONTROLLER_PUBLIC
+  controller_interface::return_type update(
+    const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
 protected:
   /**
@@ -79,7 +81,7 @@ protected:
   virtual void declare_parameters() = 0;
 
   /**
-   * Derived controllers have to read parameters in this method and set `command_interface_names_`
+   * Derived controllers have to read parameters in this method and set `command_interface_types_`
    * variable. The variable is then used to propagate the command interface configuration to
    * controller manager. The method is called from `on_configure`-method of this class.
    *
@@ -93,13 +95,10 @@ protected:
   std::vector<std::string> joint_names_;
   std::string interface_name_;
 
-  std::vector<std::string> command_interface_names_;
+  std::vector<std::string> command_interface_types_;
 
   realtime_tools::RealtimeBuffer<std::shared_ptr<CmdType>> rt_command_ptr_;
   rclcpp::Subscription<CmdType>::SharedPtr joints_command_subscriber_;
-
-private:
-  std::shared_ptr<rclcpp_lifecycle::LifecycleNode> node_;
 };
 
 }  // namespace forward_command_controller
