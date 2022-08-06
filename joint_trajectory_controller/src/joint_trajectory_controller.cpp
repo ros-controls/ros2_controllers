@@ -704,7 +704,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     logger, "Using '%s' interpolation method.",
     interpolation_methods::InterpolationMethodMap.at(interpolation_method_).c_str());
 
-  // TODO(karsten1987): create subscriber with subscription deactivated
   joint_command_subscriber_ =
     get_node()->create_subscription<trajectory_msgs::msg::JointTrajectory>(
       "~/joint_trajectory", rclcpp::SystemDefaultsQoS(),
