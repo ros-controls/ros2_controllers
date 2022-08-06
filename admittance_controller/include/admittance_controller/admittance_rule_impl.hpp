@@ -178,8 +178,7 @@ namespace admittance_controller {
       const rclcpp::Duration &period,
       trajectory_msgs::msg::JointTrajectoryPoint &desired_joint_state) {
 
-    double dt = period.seconds() + ((double) period.nanoseconds()) * 1E-9;
-//    double dt = 1.0/(1000.0);
+    double dt = period.seconds();
 
     if (parameters_.enable_parameter_update_without_reactivation) {
       apply_parameters_update();
@@ -279,6 +278,10 @@ namespace admittance_controller {
     bool success = convert_cartesian_deltas_to_joint_deltas(current_joint_positions, tmp,
                                                        ft_sensor_frame,
                                                        admittance_state.joint_acc_);
+//
+//    std::cout <<  "joint_acc_" << admittance_state.joint_acc_ << std::endl;
+//    std::cout <<  "admittance_velocity_" << admittance_state.admittance_velocity_ << std::endl;
+//    std::cout <<  "dt" << std::to_string(dt) << std::endl;
 
     // integrate motion in joint space
     admittance_state.joint_vel_ += admittance_state.joint_acc_ * dt;

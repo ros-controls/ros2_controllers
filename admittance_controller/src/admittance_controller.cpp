@@ -112,8 +112,8 @@ namespace admittance_controller {
     //allocate dynamic memory
     chainable_command_interfaces.reserve(num_chainable_interfaces);
     reference_interfaces_.resize(num_chainable_interfaces, std::numeric_limits<double>::quiet_NaN());
-    position_reference_.reserve(num_joints_);
-    velocity_reference_.reserve(num_joints_);
+    position_reference_ = {};
+    velocity_reference_ = {};
 
     // assign reference interfaces
     auto index = 0ul;
