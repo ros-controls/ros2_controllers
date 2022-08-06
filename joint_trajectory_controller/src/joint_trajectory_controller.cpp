@@ -704,23 +704,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     logger, "Using '%s' interpolation method.",
     interpolation_methods::InterpolationMethodMap.at(interpolation_method_).c_str());
 
-  // subscriber callback
-  // non realtime
-  // TODO(karsten): check if traj msg and point time are valid
-  auto callback = [this](const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg) -> void {
-    if (!validate_trajectory_msg(*msg))
-    {
-      return;
-    }
-
-    // http://wiki.ros.org/joint_trajectory_controller/UnderstandingTrajectoryReplacement
-    // always replace old msg with new one for now
-    if (subscriber_is_active_)
-    {
-      add_new_trajectory_msg(msg);
-    }
-  };
-
   // TODO(karsten1987): create subscriber with subscription deactivated
   joint_command_subscriber_ =
     get_node()->create_subscription<trajectory_msgs::msg::JointTrajectory>(
