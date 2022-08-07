@@ -353,6 +353,11 @@ controller_interface::return_type JointTrajectoryController::update(
           // to be satisfied or violated within the goal_time_tolerance
         }
       }
+      else if (tolerance_violated_while_moving)
+      {
+        set_hold_position();
+        RCLCPP_ERROR(get_node()->get_logger(), "Holding position due to state tolerance violation");
+      }
     }
   }
 
