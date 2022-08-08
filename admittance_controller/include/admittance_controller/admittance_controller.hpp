@@ -52,9 +52,6 @@ namespace admittance_controller {
   class AdmittanceController : public controller_interface::ChainableControllerInterface {
   public:
     ADMITTANCE_CONTROLLER_PUBLIC
-    AdmittanceController() {
-      int o =0;
-    };
 
     ADMITTANCE_CONTROLLER_PUBLIC
     CallbackReturn on_init() override;

@@ -22,18 +22,6 @@
 #include <vector>
 
 
-//// Test on_configure returns ERROR when a parameter is invalid
-//TEST_P(AdmittanceControllerTestParameterizedInvalidParameters, one_parameter_is_invalid)
-//{
-//  SetUpController();
-//  auto name = std::get<0>(GetParam());
-//  auto val = std::get<1>(GetParam());
-//  rclcpp::Parameter parameter(name, val);
-//  controller_->get_node()->set_parameter(parameter);
-//
-//  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
-//}
-
 // Test on_configure returns ERROR when a required parameter is missing
 TEST_P(AdmittanceControllerTestParameterizedMissingParameters, one_parameter_is_missing)
 {
@@ -45,26 +33,18 @@ INSTANTIATE_TEST_SUITE_P(
     MissingMandatoryParameterDuringConfiguration,
     AdmittanceControllerTestParameterizedMissingParameters,
     ::testing::Values(
-//        "admittance.damping_ratio", optional
         "admittance.mass",
         "admittance.selected_axes",
         "admittance.stiffness",
         "chainable_command_interfaces",
         "command_interfaces",
-//        "control.frame.external", optional
         "control.frame.id",
-//        "fixed_world_frame.frame.external", optional
         "fixed_world_frame.frame.id",
-//        "ft_sensor.filter_coefficient", optional
-//        "ft_sensor.frame.external", optional
         "ft_sensor.frame.id",
         "ft_sensor.name",
-//        "gravity_compensation.CoG.force", optional
         "gravity_compensation.CoG.pos",
-//        "gravity_compensation.frame.external", optional
         "gravity_compensation.frame.id",
         "joints",
-//        "kinematics.alpha",  optional
         "kinematics.base",
         "kinematics.plugin_name",
         "kinematics.plugin_package",
@@ -203,27 +183,6 @@ TEST_F(AdmittanceControllerTest, activate_success)
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(controller_->command_interfaces_.size(), command_interface_types_.size() * joint_names_.size());
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-
-  // Check command interfaces size
-  std::unordered_map < std::string,
-      std::vector < std::reference_wrapper < hardware_interface::LoanedCommandInterface >> * >
-      command_interface_map = {
-      {hardware_interface::HW_IF_POSITION, &controller_->joint_position_command_interface_},
-      {hardware_interface::HW_IF_VELOCITY, &controller_->joint_velocity_command_interface_}
-  };
-  for (const auto & interface : command_interface_types_) {
-    ASSERT_TRUE(command_interface_map[interface]->size() == joint_names_.size());
-  }
-  // Check state interfaces size
-  // assign state interfaces
-  std::unordered_map < std::string,
-      std::vector < std::reference_wrapper < hardware_interface::LoanedStateInterface >> * > state_interface_map = {
-      {hardware_interface::HW_IF_POSITION, &controller_->joint_position_state_interface_},
-      {hardware_interface::HW_IF_VELOCITY, &controller_->joint_velocity_state_interface_}
-  };
-  for (const auto & interface : command_interface_types_) {
-    ASSERT_TRUE(state_interface_map[interface]->size() == joint_names_.size());
-  }
 
 }
 
