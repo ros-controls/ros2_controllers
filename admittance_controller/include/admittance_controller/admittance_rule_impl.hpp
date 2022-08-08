@@ -165,7 +165,7 @@ namespace admittance_controller {
       const rclcpp::Duration &period,
       trajectory_msgs::msg::JointTrajectoryPoint &desired_joint_state) {
 
-    double dt = period.seconds() + ((double) period.nanoseconds()) * 1E-9;
+    double dt = period.seconds();
 
     if (parameters_.enable_parameter_update_without_reactivation) {
       apply_parameters_update();

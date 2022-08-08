@@ -817,10 +817,7 @@ namespace joint_trajectory_controller
         std::bind(&JointTrajectoryController::cancel_callback, this, _1),
         std::bind(&JointTrajectoryController::feedback_setup_callback, this, _1));
 
-    resize_joint_trajectory_point(state_current_, dof_);
-    resize_joint_trajectory_point(state_desired_, dof_);
-    resize_joint_trajectory_point(state_error_, dof_);
-    resize_joint_trajectory_point(last_commanded_state_, dof_);
+    RCLCPP_ERROR(get_node()->get_logger(), "configure called!!!");
 
     return CallbackReturn::SUCCESS;
   }
@@ -882,6 +879,12 @@ namespace joint_trajectory_controller
     last_state_publish_time_ = get_node()->now();
 
     // Initialize current state storage if hardware state has tracking offset
+    resize_joint_trajectory_point(state_current_, dof_);
+    resize_joint_trajectory_point(state_desired_, dof_);
+    resize_joint_trajectory_point(state_error_, dof_);
+    resize_joint_trajectory_point(last_commanded_state_, dof_);
+
+    RCLCPP_ERROR(get_node()->get_logger(), "activate called!!!");
     read_state_from_hardware(state_current_);
     read_state_from_hardware(state_desired_);
     read_state_from_hardware(last_commanded_state_);
