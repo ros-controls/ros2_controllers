@@ -28,7 +28,7 @@
 #include "controller_interface/controller_interface.hpp"
 #include "control_toolbox/filters.hpp"
 #include "geometry_msgs/msg/wrench_stamped.hpp"
-#include "config/admittance_controller_parameters.hpp"
+#include "admittance_controller_parameters.hpp"
 
 // kinematics plugins
 #include "kinematics_interface/kinematics_interface_base.hpp"

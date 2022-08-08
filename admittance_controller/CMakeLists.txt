@@ -32,6 +32,7 @@ find_package(trajectory_msgs REQUIRED)
 find_package(angles REQUIRED)
 find_package(rcutils REQUIRED)
 find_package(tf2_kdl REQUIRED)
+find_package(generate_parameter_library REQUIRED)
 
 
 # The admittance controller
@@ -45,11 +46,11 @@ target_include_directories(
         include
 )
 
-# uncomment to generate parameter listener code
-#find_package(generate_parameter_library REQUIRED)
-#generate_parameter_library(admittance_controller_parameters
-#    src/admittance_controller_parameters.yaml
-#    )
+generate_parameter_library(admittance_controller_parameters
+    src/admittance_controller_parameters.yaml
+    )
+
+target_link_libraries(admittance_controller admittance_controller_parameters)
 
 
 ament_target_dependencies(
