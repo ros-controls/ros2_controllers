@@ -85,7 +85,6 @@ namespace admittance_controller {
     // reset transforms and rotations
     trans_ = Transforms();
     trans_ref_ = Transforms();
-    rotations_ = Rotations();
 
     // reset forces
     wrench_world_.setZero();
@@ -155,18 +154,6 @@ namespace admittance_controller {
     success &= get_transform(joint_buffer_vec_, parameters_.ft_sensor.frame.id,
                              parameters_.ft_sensor.frame.external, trans_ref_.base_desired_ft_);
 
-
-    rotations_.base_control_ = trans_ref_.base_control_.block<3, 3>(0, 0);
-    rotations_.base_ft_ = trans_.base_ft_.block<3, 3>(0, 0);
-    rotations_.base_desired_ft_ = trans_.base_desired_ft_.block<3, 3>(0, 0);
-    rotations_.base_tip_ = trans_.base_tip_.block<3, 3>(0, 0);
-    rotations_.world_base_ = trans_.world_base_.block<3, 3>(0, 0);
-    rotations_.base_world_ = rotations_.world_base_.transpose();
-    rotations_.base_sensor_ = trans_.base_sensor_.block<3, 3>(0, 0);
-    rotations_.base_cog_ = trans_.base_cog_.block<3, 3>(0, 0);
-    rotations_.world_sensor_ = rotations_.world_base_ * rotations_.base_sensor_;
-    rotations_.world_cog_ = rotations_.world_base_ * rotations_.base_cog_;
-
     return success;
   }
 
@@ -179,7 +166,6 @@ namespace admittance_controller {
       trajectory_msgs::msg::JointTrajectoryPoint &desired_joint_state) {
 
     double dt = period.seconds() + ((double) period.nanoseconds()) * 1E-9;
-//    double dt = 1.0/(1000.0);
 
     if (parameters_.enable_parameter_update_without_reactivation) {
       apply_parameters_update();
@@ -187,15 +173,23 @@ namespace admittance_controller {
 
     bool success = get_all_transforms(current_joint_state, reference_joint_state, admittance_state_);
 
+    // calculate needed rotations
+    Eigen::Matrix<double, 3, 3> rot_base_sensor = trans_.base_sensor_.block<3,3>(0,0);
+    Eigen::Matrix<double, 3, 3> rot_world_base = trans_.world_base_.block<3,3>(0,0);
+    Eigen::Matrix<double, 3, 3> rot_base_cog = trans_.base_cog_.block<3,3>(0,0);
+    Eigen::Matrix<double, 3, 3> rot_base_control = trans_.base_control_.block<3,3>(0,0);
+
     // apply filter and update wrench_world_ vector
-    process_wrench_measurements(measured_wrench, rotations_.world_sensor_, rotations_.world_cog_);
+    Eigen::Matrix<double, 3, 3> rot_world_sensor = rot_world_base*rot_base_sensor;
+    Eigen::Matrix<double, 3, 3> rot_world_cog = rot_world_base*rot_base_cog;
+    process_wrench_measurements(measured_wrench, rot_world_sensor, rot_world_cog);
 
     // transform wrench_world_ into base frame
     // transform wrench_world_ into base frame
-    admittance_state_.wrench_base = rotations_.base_world_ * wrench_world_;
+    admittance_state_.wrench_base = rot_world_base.transpose() * wrench_world_;
 
     // Compute admittance control law
-    success &= calculate_admittance_rule(current_joint_state.positions, rotations_.base_control_, trans_.base_ft_,
+    success &= calculate_admittance_rule(current_joint_state.positions, rot_base_control, trans_.base_ft_,
                                          trans_ref_.base_ft_, trans_ref_.base_desired_ft_, parameters_.ft_sensor.frame.id, dt, admittance_state_);
 
     // if a failure occurred during any kinematics interface calls, return an error and don't modify the desired reference

@@ -62,32 +62,6 @@ namespace admittance_controller {
     Eigen::Matrix<double, 4, 4> base_cog_;
   };
 
-  struct Rotations {
-    Rotations() {
-      base_control_.setIdentity();
-      base_ft_.setIdentity();
-      base_desired_ft_.setIdentity();
-      base_tip_.setIdentity();
-      world_base_.setIdentity();
-      base_world_.setIdentity();
-      base_sensor_.setIdentity();
-      base_cog_.setIdentity();
-      world_sensor_.setIdentity();
-      world_cog_.setIdentity();
-    }
-
-    Eigen::Matrix<double, 3, 3> base_control_;
-    Eigen::Matrix<double, 3, 3> base_ft_;
-    Eigen::Matrix<double, 3, 3> base_desired_ft_;
-    Eigen::Matrix<double, 3, 3> base_tip_;
-    Eigen::Matrix<double, 3, 3> world_base_;
-    Eigen::Matrix<double, 3, 3> base_world_;
-    Eigen::Matrix<double, 3, 3> base_sensor_;
-    Eigen::Matrix<double, 3, 3> base_cog_;
-    Eigen::Matrix<double, 3, 3> world_sensor_;
-    Eigen::Matrix<double, 3, 3> world_cog_;
-  };
-
   struct AdmittanceState {
     AdmittanceState() = default;
 
@@ -285,9 +259,6 @@ namespace admittance_controller {
     // transforms needed for admittance update
     Transforms trans_;
     Transforms trans_ref_;
-
-    // rotations needed for admittance update
-    Rotations rotations_;
 
     // position of center of gravity in cog_frame
     Eigen::Vector3d cog_;

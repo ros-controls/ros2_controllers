@@ -254,6 +254,7 @@ namespace admittance_controller {
     last_state_reference_ = state_current_;
 
     read_state_reference_interfaces(state_reference_);
+
     // reset dynamic fields in case non-zero
     state_reference_.velocities.assign(num_joints_, 0.0);
     state_reference_.accelerations.assign(num_joints_, 0.0);
