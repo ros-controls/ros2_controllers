@@ -120,9 +120,9 @@ namespace admittance_controller {
     for (const auto &interface: reference_interfaces_types_) {
       for (const auto &joint: admittance_->parameters_.joints) {
         if (hardware_interface::HW_IF_POSITION == interface)
-          position_reference_.emplace_back(reference_interfaces_.data() + index);
+          position_reference_.emplace_back(reference_interfaces_[index]);
         else if (hardware_interface::HW_IF_VELOCITY == interface) {
-          velocity_reference_.emplace_back(reference_interfaces_.data() + index);
+          velocity_reference_.emplace_back(reference_interfaces_[index]);
         }
         chainable_command_interfaces.emplace_back(
             hardware_interface::CommandInterface(std::string(get_node()->get_name()),
@@ -273,10 +273,10 @@ namespace admittance_controller {
     // if message exists, load values into references
     if (joint_command_msg.get()) {
       for (auto i = 0ul; i < joint_command_msg->positions.size(); i++) {
-        *position_reference_[i] = joint_command_msg->positions[i];
+        position_reference_[i].get() = joint_command_msg->positions[i];
       }
       for (auto i = 0ul; i < joint_command_msg->velocities.size(); i++) {
-        *velocity_reference_[i] = joint_command_msg->velocities[i];
+        velocity_reference_[i].get() = joint_command_msg->velocities[i];
       }
     }
 
@@ -400,18 +400,18 @@ namespace admittance_controller {
     // the values are nan, the corresponding field will be set to empty
 
     for (auto i = 0ul; i < position_reference_.size(); i++) {
-      if (std::isnan(*position_reference_[i])) {
-        *position_reference_[i] = last_state_reference_.positions[i];
+      if (std::isnan(position_reference_[i])) {
+        position_reference_[i].get() = last_state_reference_.positions[i];
       }
-      state_reference.positions[i] = *position_reference_[i];
+      state_reference.positions[i] = position_reference_[i];
     }
     last_state_reference_.positions = state_reference.positions;
 
     for (auto i = 0ul; i < velocity_reference_.size(); i++) {
-      if (std::isnan(*velocity_reference_[i])) {
-        *velocity_reference_[i] = last_state_reference_.velocities[i];
+      if (std::isnan(velocity_reference_[i])) {
+        velocity_reference_[i].get() = last_state_reference_.velocities[i];
       }
-      state_reference.velocities[i] = *velocity_reference_[i];
+      state_reference.velocities[i] = velocity_reference_[i];
     }
     last_state_reference_.velocities = state_reference.velocities;
 

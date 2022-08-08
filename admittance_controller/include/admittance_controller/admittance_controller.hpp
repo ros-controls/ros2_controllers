@@ -113,8 +113,8 @@ namespace admittance_controller {
 
     // internal reference values
     const std::vector<std::string> reference_interfaces_types_ = {"position", "velocity"};
-    std::vector<double*> position_reference_;
-    std::vector<double*> velocity_reference_;
+    std::vector<std::reference_wrapper<double>> position_reference_;
+    std::vector<std::reference_wrapper<double>> velocity_reference_;
 
     // Admittance rule and dependent variables;
     std::unique_ptr<admittance_controller::AdmittanceRule> admittance_;
