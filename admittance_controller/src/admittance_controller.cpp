@@ -189,10 +189,7 @@ namespace admittance_controller {
 
     // Initialize state message
     state_publisher_->lock();
-    state_publisher_->msg_.joint_names = admittance_->parameters_.joints;
-    state_publisher_->msg_.actual_joint_state.positions.resize(num_joints_, 0.0);
-    state_publisher_->msg_.desired_joint_state.positions.resize(num_joints_, 0.0);
-    state_publisher_->msg_.error_joint_state.positions.resize(num_joints_, 0.0);
+    admittance_->get_controller_state(state_publisher_->msg_);
     state_publisher_->unlock();
 
     // Initialize FTS semantic semantic_component
@@ -306,10 +303,6 @@ namespace admittance_controller {
 
     // Publish controller state
     state_publisher_->lock();
-    state_publisher_->msg_.input_joint_command = pre_admittance_point;
-    state_publisher_->msg_.desired_joint_state = state_desired_;
-    state_publisher_->msg_.actual_joint_state = state_current_;
-    state_publisher_->msg_.error_joint_state = state_error_;
     admittance_->get_controller_state(state_publisher_->msg_);
     state_publisher_->unlockAndPublish();
 

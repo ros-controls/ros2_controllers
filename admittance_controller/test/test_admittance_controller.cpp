@@ -337,8 +337,8 @@ TEST_F(AdmittanceControllerTest, receive_message_and_publish_updated_status)
 
   ControllerStateMsg msg;
   subscribe_and_get_messages(msg);
-  ASSERT_EQ(msg.input_wrench_command.header.frame_id, control_frame_);
-  ASSERT_EQ(msg.input_pose_command.header.frame_id, control_frame_);
+  ASSERT_EQ(msg.wrench_base.header.frame_id, control_frame_);
+  ASSERT_EQ(msg.wrench_base.header.frame_id, control_frame_);
 
   publish_commands();
   ASSERT_TRUE(controller_->wait_for_commands(executor));
@@ -349,7 +349,6 @@ TEST_F(AdmittanceControllerTest, receive_message_and_publish_updated_status)
   EXPECT_NEAR(joint_command_values_[0], joint_state_values_[0], COMMON_THRESHOLD);
 
   subscribe_and_get_messages(msg);
-  ASSERT_EQ(msg.input_wrench_command.header.frame_id, control_frame_);
 }
 
 int main(int argc, char** argv) {

@@ -68,11 +68,13 @@ namespace admittance_controller {
     // reset all values back to default
 
     // reset state message fields
-    state_message_.error_joint_state.positions.resize(num_joints, 0.0);
-    state_message_.error_joint_state.velocities.resize(num_joints, 0.0);
-    state_message_.admittance_rule_calculated_values.positions.resize(6, 0.0);
-    state_message_.admittance_rule_calculated_values.velocities.resize(6, 0.0);
-    state_message_.admittance_rule_calculated_values.accelerations.resize(6, 0.0);
+    for (const auto &name : parameters_.joints){
+      state_message_.joint_state.name.push_back(name);
+    }
+    state_message_.mass.data.resize(6, 0.0);
+    state_message_.selected_axes.data.resize(6, 0);
+    state_message_.damping.data.resize(6, 0);
+    state_message_.stiffness.data.resize(6, 0);
 
     // reset admittance state
     admittance_state_ = AdmittanceState(num_joints);
@@ -179,21 +181,13 @@ namespace admittance_controller {
     // update joint desired joint state
     for (auto i = 0ul; i < reference_joint_state.positions.size(); i++) {
       desired_joint_state.positions[i] = reference_joint_state.positions[i] + admittance_state_.joint_pos[i];
-      state_message_.error_joint_state.positions[i] =
-          reference_joint_state.positions[i] - current_joint_state.positions[i];
     }
     for (auto i = 0ul; i < reference_joint_state.velocities.size(); i++) {
       desired_joint_state.velocities[i] = admittance_state_.joint_vel[i];
-      state_message_.error_joint_state.velocities[i] =
-          reference_joint_state.velocities[i] - current_joint_state.velocities[i];
     }
     for (auto i = 0ul; i < reference_joint_state.accelerations.size(); i++) {
       desired_joint_state.accelerations[i] = admittance_state_.joint_acc[i];
     }
-
-    // update admittance state message
-    state_message_.actual_joint_state = current_joint_state;
-    state_message_.desired_joint_state = desired_joint_state;
 
     return controller_interface::return_type::OK;
   }
@@ -284,26 +278,7 @@ namespace admittance_controller {
   }
 
   void AdmittanceRule::get_controller_state(control_msgs::msg::AdmittanceControllerState &state_message) {
-
-    // TODO these fields are not used
-//    eigen_to_msg(0 * wrench_world_, parameters_.control.frame.id, state_message.input_wrench_command);
-//    state_message.input_pose_command.header.frame_id = parameters_.control.frame.id;
-//
-//    eigen_to_msg(wrench_world_, parameters_.fixed_world_frame.frame.id, state_message.measured_wrench_filtered);
-//    eigen_to_msg(measured_wrench_, parameters_.fixed_world_frame.frame.id, state_message.measured_wrench);
-//    eigen_to_msg(control_rot_.transpose() * world_rot_.transpose() * measured_wrench_, parameters_.control_.frame_.id_,
-//                 state_message.measured_wrench_control_frame);
-//    eigen_to_msg(ee_rot_.transpose() * world_rot_.transpose() * measured_wrench_, parameters_.kinematics_.tip_,
-//                 state_message.measured_wrench_endeffector_frame);
-
-    state_message.joint_names = parameters_.joints;
-    state_message.desired_joint_state = state_message_.desired_joint_state;
-    state_message.actual_joint_state = state_message_.actual_joint_state;
-    state_message.error_joint_state = state_message_.error_joint_state;
-
-
-    state_message.admittance_rule_calculated_values = state_message_.admittance_rule_calculated_values;
-
+    // TODO implement
   }
 
   template<typename T1, typename T2>
