@@ -39,7 +39,7 @@ test_admittance_controller:
       - velocity
 
     kinematics:
-      plugin_name: kinematics_interface_kdl/KDLKinematics
+      plugin_name: kinematics_interface_kdl/KinematicsInterfaceKDL
       plugin_package: kinematics_interface_kdl
       base: base_link # Assumed to be stationary
       tip: tool0
