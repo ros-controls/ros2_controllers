@@ -26,7 +26,7 @@
 namespace admittance_controller {
 
   controller_interface::return_type
-  AdmittanceRule::configure(const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> &node, int num_joints) {
+  AdmittanceRule::configure(const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> &node, size_t num_joints) {
     // configure admittance rule using num_joints and load kinematics interface
 
     num_joints_ = num_joints;
@@ -64,7 +64,7 @@ namespace admittance_controller {
     return controller_interface::return_type::OK;
   }
 
-  controller_interface::return_type AdmittanceRule::reset(int num_joints) {
+  controller_interface::return_type AdmittanceRule::reset(size_t num_joints) {
     // reset all values back to default
 
     // reset state message fields

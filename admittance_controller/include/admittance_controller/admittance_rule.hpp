@@ -94,9 +94,9 @@ namespace admittance_controller {
     }
 
     controller_interface::return_type
-    configure(const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> &node, int num_joint);
+    configure(const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> &node, size_t num_joint);
 
-    controller_interface::return_type reset(int num_joints);
+    controller_interface::return_type reset(size_t num_joints);
 
     /**
      * Calculate all transforms needed for admittance control using the loader kinematics plugin. If the transform does
@@ -181,7 +181,7 @@ namespace admittance_controller {
     void eigen_to_vec(const T2 &matrix, std::vector<T1> &data);
 
     // number of robot joint
-    int num_joints_;
+    size_t num_joints_;
 
     // Kinematics interface plugin loader
     std::shared_ptr<pluginlib::ClassLoader<kinematics_interface::KinematicsInterfaceBase>> kinematics_loader_;

@@ -89,24 +89,13 @@ namespace admittance_controller {
 
     bool on_set_chained_mode(bool chained_mode) override;
 
-    int num_joints_ = 0;
-
-    // vectors to hold joint hardware interfaces
-//    std::vector<hardware_interface::LoanedCommandInterface> joint_position_command_interface_;
-//    std::vector<hardware_interface::LoanedCommandInterface> joint_velocity_command_interface_;
-//    std::vector<hardware_interface::LoanedCommandInterface> joint_acceleration_command_interface_;
-//    std::vector<hardware_interface::LoanedCommandInterface> joint_effort_command_interface_;
-//    std::vector<hardware_interface::LoanedStateInterface> joint_position_state_interface_;
-//    std::vector<hardware_interface::LoanedStateInterface> joint_velocity_state_interface_;
-//    std::vector<hardware_interface::LoanedStateInterface> joint_acceleration_state_interface_;
-//    std::vector<hardware_interface::LoanedStateInterface> joint_effort_state_interface_;
+    size_t num_joints_ = 0;
     size_t state_pos_ind = -1;
     size_t state_vel_ind = -1;
     size_t state_acc_ind = -1;
     size_t command_pos_ind = -1;
     size_t command_vel_ind = -1;
     size_t command_acc_ind = -1;
-
 
     // internal reference values
     const std::vector<std::string> reference_interfaces_types_ = {"position", "velocity"};

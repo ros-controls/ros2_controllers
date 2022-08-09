@@ -67,7 +67,8 @@ namespace admittance_controller {
     for (auto i = 0ul; i < admittance_->parameters_.state_interfaces.size(); i++) {
       const auto &interface = admittance_->parameters_.state_interfaces[i];
       for (const auto &joint: admittance_->parameters_.joints) {
-        state_interfaces_config_names.push_back(joint + "/" + interface);
+        auto full_name = joint + "/" + interface;
+        state_interfaces_config_names.push_back(full_name);
       }
     }
 
@@ -91,7 +92,8 @@ namespace admittance_controller {
     std::vector<std::string> command_interfaces_config_names;
     for (const auto &interface: admittance_->parameters_.command_interfaces) {
       for (const auto &joint: admittance_->parameters_.joints) {
-        command_interfaces_config_names.push_back(joint + "/" + interface);
+        auto full_name = joint + "/" + interface;
+        command_interfaces_config_names.push_back(full_name);
       }
     }
 
@@ -124,9 +126,10 @@ namespace admittance_controller {
         else if (hardware_interface::HW_IF_VELOCITY == interface) {
           velocity_reference_.emplace_back(reference_interfaces_[index]);
         }
+        auto full_name = joint + "/" + interface;
         chainable_command_interfaces.emplace_back(
             hardware_interface::CommandInterface(std::string(get_node()->get_name()),
-                                                 joint + "/" + interface,
+                                                 full_name,
                                                  reference_interfaces_.data() +
                                                  index++));
       }
@@ -335,7 +338,7 @@ namespace admittance_controller {
 
     // if any interface has nan values, assume state_reference is the last command state
     for (auto joint_ind = 0ul; joint_ind < num_joints_; joint_ind++) {
-      for (auto inter_ind = 0; inter_ind < 3; inter_ind++) {
+      for (auto inter_ind = 0ul; inter_ind < 3; inter_ind++) {
         auto ind = joint_ind + num_joints_ * inter_ind;
         if (inter_ind == state_pos_ind) {
           state_current.positions[joint_ind] = state_interfaces_[ind].get_value();
@@ -373,7 +376,7 @@ namespace admittance_controller {
 
     // if any interface has nan values, assume state_reference is the last command state
     for (auto joint_ind = 0ul; joint_ind < num_joints_; joint_ind++) {
-      for (auto inter_ind = 0; inter_ind < 3; inter_ind++) {
+      for (auto inter_ind = 0ul; inter_ind < 3; inter_ind++) {
         auto ind = joint_ind + num_joints_ * inter_ind;
         if (inter_ind == command_pos_ind) {
           command_interfaces_[ind].set_value(state_commanded.positions[joint_ind]);
