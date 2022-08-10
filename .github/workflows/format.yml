@@ -4,11 +4,13 @@
 name: Format
 
 on:
-  workflow_dispatch:
   pull_request:
+<<<<<<< HEAD:.github/workflows/format.yml
   push:
     branches:
       - foxy
+=======
+>>>>>>> 4d3404f (Adjust CI configuration to ros2_control repository. (#408)):.github/workflows/ci-format.yml
 
 jobs:
   pre-commit:
@@ -17,8 +19,15 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v2
+<<<<<<< HEAD:.github/workflows/format.yml
     - name: Install clang-format-10
       run: sudo apt-get install clang-format-10 cppcheck
+=======
+      with:
+        python-version: 3.9.7
+    - name: Install system hooks
+      run: sudo apt install -qq clang-format-12 cppcheck
+>>>>>>> 4d3404f (Adjust CI configuration to ros2_control repository. (#408)):.github/workflows/ci-format.yml
     - uses: pre-commit/action@v2.0.3
       with:
         extra_args: --all-files --hook-stage manual
