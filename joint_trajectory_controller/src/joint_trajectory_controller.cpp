@@ -57,7 +57,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
     // with the lifecycle node being initialized, we can declare parameters
     joint_names_ = auto_declare<std::vector<std::string>>("joints", joint_names_);
     command_joint_names_ =
-      auto_declare<std::vector<std::string>>("command_joints", command_interface_types_);
+      auto_declare<std::vector<std::string>>("command_joints", command_joint_names_);
     command_interface_types_ =
       auto_declare<std::vector<std::string>>("command_interfaces", command_interface_types_);
     state_interface_types_ =

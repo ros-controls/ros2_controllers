@@ -160,7 +160,7 @@ TEST_P(TrajectoryControllerTestParameterized, check_interface_names_with_command
 
   std::vector<std::string> command_interface_names;
   command_interface_names.reserve(command_joint_names_.size() * command_interface_types_.size());
-  for (const auto & joint : joint_names_)
+  for (const auto & joint : command_joint_names_)
   {
     for (const auto & interface : command_interface_types_)
     {
