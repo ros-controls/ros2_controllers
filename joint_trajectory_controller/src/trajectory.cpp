@@ -64,8 +64,10 @@ void Trajectory::set_point_before_trajectory_msg(
 
   for (size_t i = 0; i < state_before_traj_msg_.positions.size(); i++)
   {
-    state_before_traj_msg_.positions[i] = first_point_in_msg.positions[i] +
-      angles::shortest_angular_distance(first_point_in_msg.positions[i], state_before_traj_msg_.positions[i]);
+    state_before_traj_msg_.positions[i] =
+      first_point_in_msg.positions[i] +
+      angles::shortest_angular_distance(
+        first_point_in_msg.positions[i], state_before_traj_msg_.positions[i]);
   }
 }
 
