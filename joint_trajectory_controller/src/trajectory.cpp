@@ -179,7 +179,8 @@ void Trajectory::interpolate_between_points(
   output.velocities.resize(dim, 0.0);
   output.accelerations.resize(dim, 0.0);
 
-  auto generate_powers = [](int n, double x, double * powers) {
+  auto generate_powers = [](int n, double x, double * powers)
+  {
     powers[0] = 1.0;
     for (int i = 1; i <= n; ++i)
     {

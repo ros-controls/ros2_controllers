@@ -341,7 +341,7 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
   state = traj_controller_->get_node()->cleanup();
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
 
-  // TODO: should the controller even allow calling update() when it is not active?
+  // TODO(anyone): should the controller even allow calling update() when it is not active?
   // update loop receives a new msg and updates accordingly
   traj_controller_->update(
     rclcpp::Time(static_cast<uint64_t>(0.35 * 1e9)), rclcpp::Duration::from_seconds(0.1));
@@ -413,7 +413,8 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
 //   rclcpp::executors::SingleThreadedExecutor executor;
 //   SetUpAndActivateTrajectoryController(true, {state_publish_rate_param}, &executor);
 
-//   auto future_handle = std::async(std::launch::async, [&executor]() -> void { executor.spin(); });
+//   auto future_handle = std::async(
+//     std::launch::async, [&executor]() -> void { executor.spin(); });
 
 //   using control_msgs::msg::JointTrajectoryControllerState;
 
@@ -453,7 +454,8 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
 // }
 
 // /**
-//  * @brief test_jumbled_joint_order Test sending trajectories with a joint order different from internal controller order
+//  * @brief test_jumbled_joint_order Test sending trajectories with a joint order different from
+//  * internal controller order
 //  */
 // TEST_P(TrajectoryControllerTestParameterized, test_jumbled_joint_order)
 // {
@@ -521,7 +523,8 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
 // }
 
 // /**
-//  * @brief test_partial_joint_list Test sending trajectories with a subset of the controlled joints
+//  * @brief test_partial_joint_list Test sending trajectories with a subset of the controlled
+//  * joints
 //  */
 // TEST_P(TrajectoryControllerTestParameterized, test_partial_joint_list)
 // {
@@ -574,8 +577,10 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
 //   {
 //     // estimate the sign of the velocity
 //     // joint rotates forward
-//     EXPECT_TRUE(is_same_sign(traj_msg.points[0].positions[0] - initial_joint2_cmd, joint_vel_[0]));
-//     EXPECT_TRUE(is_same_sign(traj_msg.points[0].positions[1] - initial_joint1_cmd, joint_vel_[1]));
+//     EXPECT_TRUE(
+//       is_same_sign(traj_msg.points[0].positions[0] - initial_joint2_cmd, joint_vel_[0]));
+//     EXPECT_TRUE(
+//       is_same_sign(traj_msg.points[0].positions[1] - initial_joint1_cmd, joint_vel_[1]));
 //     EXPECT_NEAR(0.0, joint_vel_[2], threshold)
 //       << "Joint 3 velocity should be 0.0 since it's not in the goal";
 //   }
@@ -586,8 +591,10 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
 //   {
 //     // estimate the sign of the velocity
 //     // joint rotates forward
-//     EXPECT_TRUE(is_same_sign(traj_msg.points[0].positions[0] - initial_joint2_cmd, joint_eff_[0]));
-//     EXPECT_TRUE(is_same_sign(traj_msg.points[0].positions[1] - initial_joint1_cmd, joint_eff_[1]));
+//     EXPECT_TRUE(
+//       is_same_sign(traj_msg.points[0].positions[0] - initial_joint2_cmd, joint_eff_[0]));
+//     EXPECT_TRUE(
+//       is_same_sign(traj_msg.points[0].positions[1] - initial_joint1_cmd, joint_eff_[1]));
 //     EXPECT_NEAR(0.0, joint_eff_[2], threshold)
 //       << "Joint 3 effort should be 0.0 since it's not in the goal";
 //   }
@@ -597,7 +604,8 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
 // }
 
 // /**
-//  * @brief test_partial_joint_list Test sending trajectories with a subset of the controlled joints without allow_partial_joints_goal
+//  * @brief test_partial_joint_list Test sending trajectories with a subset of the controlled
+//  * joints without allow_partial_joints_goal
 //  */
 // TEST_P(TrajectoryControllerTestParameterized, test_partial_joint_list_not_allowed)
 // {
@@ -655,8 +663,9 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
 //   }
 
 //   if (
-//     std::find(command_interface_types_.begin(), command_interface_types_.end(), "acceleration") !=
-//     command_interface_types_.end())
+//     std::find(
+//       command_interface_types_.begin(), command_interface_types_.end(), "acceleration") !=
+//       command_interface_types_.end())
 //   {
 //     EXPECT_NEAR(initial_joint_acc, joint_acc_[0], threshold)
 //       << "All joints accelerations should be 0.0 because goal was rejected";
@@ -675,7 +684,8 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
 // TEST_P(TrajectoryControllerTestParameterized, invalid_message)
 // {
 //   rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", false);
-//   rclcpp::Parameter allow_integration_parameters("allow_integration_in_goal_trajectories", false);
+//   rclcpp::Parameter allow_integration_parameters(
+//     "allow_integration_in_goal_trajectories", false);
 //   rclcpp::executors::SingleThreadedExecutor executor;
 //   SetUpAndActivateTrajectoryController(
 //     true, {partial_joints_parameters, allow_integration_parameters}, &executor);
@@ -734,8 +744,8 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
 //   EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
 // }
 
-// /// With allow_integration_in_goal_trajectories parameter trajectory missing position or velocities
-// /// are accepted
+// /// With allow_integration_in_goal_trajectories parameter trajectory missing position or
+// /// velocities are accepted
 // TEST_P(TrajectoryControllerTestParameterized, missing_positions_message_accepted)
 // {
 //   rclcpp::Parameter allow_integration_parameters("allow_integration_in_goal_trajectories", true);
@@ -817,8 +827,10 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
 //   trajectory_msgs::msg::JointTrajectoryPoint expected_actual, expected_desired;
 //   expected_actual.positions = {points_old[0].begin(), points_old[0].end()};
 //   expected_desired.positions = {points_old[0].begin(), points_old[0].end()};
-//   expected_actual.velocities = {points_old_velocities[0].begin(), points_old_velocities[0].end()};
-//   expected_desired.velocities = {points_old_velocities[0].begin(), points_old_velocities[0].end()};
+//   expected_actual.velocities = {
+//     points_old_velocities[0].begin(), points_old_velocities[0].end()};
+//   expected_desired.velocities = {
+//     points_old_velocities[0].begin(), points_old_velocities[0].end()};
 //   //  Check that we reached end of points_old trajectory
 //   // Denis: delta was 0.1 with 0.2 works for me
 //   waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.2);
@@ -826,7 +838,8 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
 //   RCLCPP_INFO(traj_controller_->get_node()->get_logger(), "Sending new trajectory");
 //   points_partial_new_velocities[0][0] =
 //     copysign(0.15, points_partial_new[0][0] - joint_state_pos_[0]);
-//   publish(time_from_start, points_partial_new, rclcpp::Time(), {}, points_partial_new_velocities);
+//   publish(
+//     time_from_start, points_partial_new, rclcpp::Time(), {}, points_partial_new_velocities);
 
 //   // Replaced trajectory is a mix of previous and current goal
 //   expected_desired.positions[0] = points_partial_new[0][0];
@@ -852,7 +865,8 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
 //   std::vector<std::vector<double>> points_old{{{2., 3., 4.}, {4., 5., 6.}}};
 //   std::vector<std::vector<double>> points_new{{{-1., -2., -3.}}};
 
-//   RCLCPP_INFO(traj_controller_->get_node()->get_logger(), "Sending new trajectory in the future");
+//   RCLCPP_INFO(
+//     traj_controller_->get_node()->get_logger(), "Sending new trajectory in the future");
 //   const auto delay = std::chrono::milliseconds(500);
 //   builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(delay)};
 //   publish(time_from_start, points_old, rclcpp::Time());
@@ -906,8 +920,9 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
 //   auto traj_node = traj_controller_->get_node();
 //   RCLCPP_WARN(
 //     traj_node->get_logger(),
-//     "Test disabled until current_trajectory is taken into account when adding a new trajectory.");
-//   // https://github.com/ros-controls/ros_controllers/blob/melodic-devel/joint_trajectory_controller/include/joint_trajectory_controller/init_joint_trajectory.h#L149
+//   "Test disabled until current_trajectory is taken into account when adding a new trajectory.");
+//   // https://github.com/ros-controls/ros_controllers/blob/melodic-devel/
+//   // joint_trajectory_controller/include/joint_trajectory_controller/init_joint_trajectory.h#L149
 //   return;
 
 //   // TODO(anyone): use SetUpAndActivateTrajectoryController method instead of the next line
@@ -951,7 +966,8 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
 //     points_delay, partial_traj, rclcpp::Clock().now() + delay * 2, {}, partial_traj_velocities);
 //   // Wait until the end start and end of partial traj
 
-//   expected_actual.positions = {partial_traj.back()[0], partial_traj.back()[1], full_traj.back()[2]};
+//   expected_actual.positions = {
+//     partial_traj.back()[0], partial_traj.back()[1], full_traj.back()[2]};
 //   expected_desired = expected_actual;
 
 //   waitAndCompareState(
@@ -1084,8 +1100,8 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
 //     publish(time_from_start, points, rclcpp::Time());
 //     traj_controller_->wait_for_trajectory(executor);
 
-//     // One the first update(s) there **should not** be a "jump" in opposite direction from command
-//     // (towards the state value)
+//     // One the first update(s) there **should not** be a "jump" in opposite direction from
+//     // command (towards the state value)
 //     EXPECT_NEAR(first_goal[0], joint_pos_[0], COMMON_THRESHOLD);
 //     traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
 //     // There should not be backward commands
@@ -1111,8 +1127,8 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
 //     publish(time_from_start, points, rclcpp::Time());
 //     traj_controller_->wait_for_trajectory(executor);
 
-//     // One the first update(s) there **should not** be a "jump" in the goal direction from command
-//     // (towards the state value)
+//     // One the first update(s) there **should not** be a "jump" in the goal direction from
+//     // command (towards the state value)
 //     EXPECT_NEAR(second_goal[0], joint_pos_[0], COMMON_THRESHOLD);
 //     traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
 //     // There should not be a jump toward commands
@@ -1279,7 +1295,8 @@ INSTANTIATE_TEST_SUITE_P(
 //   OnlyVelocityTrajectoryControllers, TrajectoryControllerTestParameterized,
 //   ::testing::Values(
 //     std::make_tuple(
-//       std::vector<std::string>({"velocity"}), std::vector<std::string>({"position", "velocity"})),
+//       std::vector<std::string>({"velocity"}),
+//       std::vector<std::string>({"position", "velocity"})),
 //     std::make_tuple(
 //       std::vector<std::string>({"velocity"}),
 //       std::vector<std::string>({"position", "velocity", "acceleration"}))));
@@ -1296,7 +1313,8 @@ INSTANTIATE_TEST_SUITE_P(
 
 TEST_F(TrajectoryControllerTest, incorrect_initialization_using_interface_parameters)
 {
-  auto set_parameter_and_check_result = [&]() {
+  auto set_parameter_and_check_result = [&]()
+  {
     EXPECT_EQ(traj_controller_->get_state().id(), State::PRIMARY_STATE_UNCONFIGURED);
     SetParameters();  // This call is replacing the way parameters are set via launch
     traj_controller_->get_node()->configure();
