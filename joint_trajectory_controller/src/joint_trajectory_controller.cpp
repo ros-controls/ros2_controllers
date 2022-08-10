@@ -140,6 +140,7 @@ controller_interface::return_type JointTrajectoryController::update(
   // Check if a new external message has been received from nonRT threads
   auto current_external_msg = traj_external_point_ptr_->get_trajectory_msg();
   auto new_external_msg = traj_msg_external_point_ptr_.readFromRT();
+  const auto active_goal = *rt_active_goal_.readFromRT();
   if (current_external_msg != *new_external_msg)
   {
     fill_partial_goal(*new_external_msg);
@@ -163,8 +164,19 @@ controller_interface::return_type JointTrajectoryController::update(
   state_current_.time_from_start.set__sec(0);
   read_state_from_hardware(state_current_);
 
+  // Handle edge case where goal becomes active mid-update
+  bool mismatch = false;
+  if (!active_goal)
+  {
+    const auto active_goal2 = *rt_active_goal_.readFromRT();
+    if (active_goal2)
+    {
+      mismatch = true;
+    }
+  }
+
   // currently carrying out a trajectory
-  if (traj_point_active_ptr_ && (*traj_point_active_ptr_)->has_trajectory_msg())
+  if (traj_point_active_ptr_ && (*traj_point_active_ptr_)->has_trajectory_msg() && !mismatch)
   {
     bool first_sample = false;
     // if sampling the first time, set the point before you sample
@@ -285,7 +297,6 @@ controller_interface::return_type JointTrajectoryController::update(
         last_commanded_state_ = state_desired_;
       }
 
-      const auto active_goal = *rt_active_goal_.readFromRT();
       if (active_goal)
       {
         // send feedback

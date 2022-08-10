@@ -93,18 +93,17 @@ if(BUILD_TESTING)
     ros2_control_test_assets
   )
 
-  # TODO(andyz): Disabled due to flakiness
-  # ament_add_gmock(
-  #   test_trajectory_actions
-  #   test/test_trajectory_actions.cpp
-  # )
-  # target_include_directories(test_trajectory_actions PRIVATE include)
-  # target_link_libraries(test_trajectory_actions
-  #   ${PROJECT_NAME}
-  # )
-  # ament_target_dependencies(test_trajectory_actions
-  #   ${THIS_PACKAGE_INCLUDE_DEPENDS}
-  # )
+  ament_add_gmock(
+    test_trajectory_actions
+    test/test_trajectory_actions.cpp
+  )
+  target_include_directories(test_trajectory_actions PRIVATE include)
+  target_link_libraries(test_trajectory_actions
+    ${PROJECT_NAME}
+  )
+  ament_target_dependencies(test_trajectory_actions
+    ${THIS_PACKAGE_INCLUDE_DEPENDS}
+  )
 endif()
 
 ament_export_targets(
