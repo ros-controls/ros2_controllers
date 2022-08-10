@@ -30,7 +30,7 @@
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
 namespace admittance_controller {
-  using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
+  using CallbackReturn = controller_interface::CallbackReturn;
 
   CallbackReturn AdmittanceController::on_init() {
     // initialize controller config

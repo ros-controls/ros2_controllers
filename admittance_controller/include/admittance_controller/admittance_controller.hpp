@@ -47,7 +47,7 @@ using namespace std::chrono_literals;
 
 namespace admittance_controller {
   using ControllerStateMsg = control_msgs::msg::AdmittanceControllerState;
-  using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
+  using CallbackReturn = controller_interface::CallbackReturn;
 
   class AdmittanceController : public controller_interface::ChainableControllerInterface {
   public:

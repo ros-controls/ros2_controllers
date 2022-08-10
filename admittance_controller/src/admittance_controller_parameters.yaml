@@ -4,6 +4,7 @@ admittance_controller:
     description: "specifies which joints will be used by the controller",
     read_only: true
   }
+
   command_interfaces:
     {
       type: string_array,
@@ -47,6 +48,7 @@ admittance_controller:
       default_value: 0.0005,
       description: "specifies the damping coefficient for the Jacobian pseudo inverse"
     }
+
   ft_sensor:
     name: {
       type: string,
@@ -56,11 +58,6 @@ admittance_controller:
       id: {
         type: string,
         description: "frame of the force torque sensor"
-      }
-      external: {
-        type: bool,
-        default_value: false,
-        description: "specifies if the force torque sensor is contained in the kinematics chain from the base to the tip"
       }
     filter_coefficient: {
       type: double,
@@ -74,11 +71,6 @@ admittance_controller:
         type: string,
         description: "control frame used for admittance control"
       }
-      external: {
-        type: bool,
-        default_value: false,
-        description: "specifies if the control frame is contained in the kinematics chain from the base to the tip"
-      }
 
   fixed_world_frame: # Gravity points down (neg. Z) in this frame (Usually: world or base_link)
     frame:
@@ -86,22 +78,12 @@ admittance_controller:
         type: string,
         description: "world frame, gravity points down (neg. Z) in this frame"
       }
-      external: {
-        type: bool,
-        default_value: false,
-        description: "specifies if the world frame is contained in the kinematics chain from the base to the tip"
-      }
 
   gravity_compensation:
     frame:
       id: {
         type: string,
         description: "frame which center of gravity (CoG) is defined in"
-      }
-      external: {
-        type: bool,
-        default_value: false,
-        description: "specifies if the center of gravity frame is contained in the kinematics chain from the base to the tip"
       }
     CoG: # specifies the center of gravity of the end effector
       pos: {
@@ -126,9 +108,6 @@ admittance_controller:
           fixed_size<>: 6
         }
       }
-
-    # Having ".0" at the end is MUST, otherwise there is a loading error
-    # F = M*a + D*v + S*(x - x_d)
     mass: {
       type: double_array,
       description: "specifies mass values for x, y, z, rx, ry, and rz used in the admittance calculation",
@@ -137,7 +116,6 @@ admittance_controller:
         element_bounds<>: [ 0.0001, 1000000.0 ]
       }
     }
-
     damping_ratio: {
       type: double_array,
       description: "specifies damping ratio values for x, y, z, rx, ry, and rz used in the admittance calculation.
@@ -146,7 +124,6 @@ admittance_controller:
         fixed_size<>: 6
       }
     }
-
     stiffness: {
       type: double_array,
       description: "specifies stiffness values for x, y, z, rx, ry, and rz used in the admittance calculation",
