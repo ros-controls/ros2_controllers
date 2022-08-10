@@ -134,7 +134,8 @@ controller_interface::return_type JointTrajectoryController::update(
   auto compute_error_for_joint = [&](
                                    JointTrajectoryPoint & error, int index,
                                    const JointTrajectoryPoint & current,
-                                   const JointTrajectoryPoint & desired) {
+                                   const JointTrajectoryPoint & desired)
+  {
     // error defined as the difference between current and desired
     error.positions[index] =
       angles::shortest_angular_distance(current.positions[index], desired.positions[index]);
@@ -162,12 +163,13 @@ controller_interface::return_type JointTrajectoryController::update(
   // TODO(anyone): can I here also use const on joint_interface since the reference_wrapper is not
   // changed, but its value only?
   auto assign_interface_from_point =
-    [&](auto & joint_interface, const std::vector<double> & trajectory_point_interface) {
-      for (size_t index = 0; index < dof_; ++index)
-      {
-        joint_interface[index].get().set_value(trajectory_point_interface[index]);
-      }
-    };
+    [&](auto & joint_interface, const std::vector<double> & trajectory_point_interface)
+  {
+    for (size_t index = 0; index < dof_; ++index)
+    {
+      joint_interface[index].get().set_value(trajectory_point_interface[index]);
+    }
+  };
 
   // current state update
   state_current_.time_from_start.set__sec(0);
@@ -368,12 +370,13 @@ controller_interface::return_type JointTrajectoryController::update(
 void JointTrajectoryController::read_state_from_hardware(JointTrajectoryPoint & state)
 {
   auto assign_point_from_interface =
-    [&](std::vector<double> & trajectory_point_interface, const auto & joint_interface) {
-      for (size_t index = 0; index < dof_; ++index)
-      {
-        trajectory_point_interface[index] = joint_interface[index].get().get_value();
-      }
-    };
+    [&](std::vector<double> & trajectory_point_interface, const auto & joint_interface)
+  {
+    for (size_t index = 0; index < dof_; ++index)
+    {
+      trajectory_point_interface[index] = joint_interface[index].get().get_value();
+    }
+  };
 
   // Assign values from the hardware
   // Position states always exist
@@ -406,17 +409,20 @@ bool JointTrajectoryController::read_state_from_command_interfaces(JointTrajecto
   bool has_values = true;
 
   auto assign_point_from_interface =
-    [&](std::vector<double> & trajectory_point_interface, const auto & joint_interface) {
-      for (size_t index = 0; index < dof_; ++index)
-      {
-        trajectory_point_interface[index] = joint_interface[index].get().get_value();
-      }
-    };
+    [&](std::vector<double> & trajectory_point_interface, const auto & joint_interface)
+  {
+    for (size_t index = 0; index < dof_; ++index)
+    {
+      trajectory_point_interface[index] = joint_interface[index].get().get_value();
+    }
+  };
 
-  auto interface_has_values = [](const auto & joint_interface) {
-    return std::find_if(joint_interface.begin(), joint_interface.end(), [](const auto & interface) {
-             return std::isnan(interface.get().get_value());
-           }) == joint_interface.end();
+  auto interface_has_values = [](const auto & joint_interface)
+  {
+    return std::find_if(
+             joint_interface.begin(), joint_interface.end(),
+             [](const auto & interface)
+             { return std::isnan(interface.get().get_value()); }) == joint_interface.end();
   };
 
   // Assign values from the command interfaces as state. Therefore needs check for both.
@@ -676,7 +682,8 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     }
   }
 
-  auto get_interface_list = [](const std::vector<std::string> & interface_types) {
+  auto get_interface_list = [](const std::vector<std::string> & interface_types)
+  {
     std::stringstream ss_interfaces;
     for (size_t index = 0; index < interface_types.size(); ++index)
     {
@@ -1133,7 +1140,8 @@ void JointTrajectoryController::sort_to_local_joint_order(
   std::vector<size_t> mapping_vector = mapping(trajectory_msg->joint_names, joint_names_);
   auto remap = [this](
                  const std::vector<double> & to_remap,
-                 const std::vector<size_t> & mapping) -> std::vector<double> {
+                 const std::vector<size_t> & mapping) -> std::vector<double>
+  {
     if (to_remap.empty())
     {
       return to_remap;
