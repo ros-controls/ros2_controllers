@@ -23,5 +23,3 @@ jobs:
       ros_repo: testing
       upstream_workspace: ros2_controllers.humble.repos
       ref_for_scheduled_build: master
-    secrets:
-      SCH_COMMON_KEY: ${{ secrets.SCH_COMMON_KEY }}
