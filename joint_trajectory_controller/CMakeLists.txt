@@ -51,15 +51,15 @@ install(TARGETS ${PROJECT_NAME}
 )
 
 if(BUILD_TESTING)
-  find_package(ament_cmake_gtest REQUIRED)
+  find_package(ament_cmake_gmock REQUIRED)
   find_package(controller_manager REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
 
-  ament_add_gtest(test_trajectory test/test_trajectory.cpp)
+  ament_add_gmock(test_trajectory test/test_trajectory.cpp)
   target_include_directories(test_trajectory PRIVATE include)
   target_link_libraries(test_trajectory ${PROJECT_NAME})
 
-  ament_add_gtest(test_trajectory_controller
+  ament_add_gmock(test_trajectory_controller
     test/test_trajectory_controller.cpp
     ENV config_file=${CMAKE_CURRENT_SOURCE_DIR}/test/config/test_joint_trajectory_controller.yaml)
   set_tests_properties(test_trajectory_controller PROPERTIES TIMEOUT 220)
@@ -71,7 +71,7 @@ if(BUILD_TESTING)
     ${THIS_PACKAGE_INCLUDE_DEPENDS}
   )
 
-  ament_add_gtest(
+  ament_add_gmock(
     test_load_joint_trajectory_controller
     test/test_load_joint_trajectory_controller.cpp
   )
@@ -84,7 +84,7 @@ if(BUILD_TESTING)
   )
 
   # TODO(andyz): Disabled due to flakiness
-  # ament_add_gtest(
+  # ament_add_gmock(
   #   test_trajectory_actions
   #   test/test_trajectory_actions.cpp
   # )
