@@ -318,6 +318,7 @@ namespace admittance_controller {
       state_message_.mass.data[i] = admittance_state_.mass[i];
     }
 
+    state_message_.wrench_base.header.frame_id = parameters_.kinematics.base;  // TODO(anyone) remove dynamic allocation here
     state_message_.wrench_base.wrench.force.x = admittance_state_.wrench_base[0];
     state_message_.wrench_base.wrench.force.y = admittance_state_.wrench_base[1];
     state_message_.wrench_base.wrench.force.z = admittance_state_.wrench_base[2];
@@ -325,6 +326,7 @@ namespace admittance_controller {
     state_message_.wrench_base.wrench.torque.y = admittance_state_.wrench_base[4];
     state_message_.wrench_base.wrench.torque.z = admittance_state_.wrench_base[5];
 
+    state_message_.admittance_velocity.header.frame_id = parameters_.kinematics.base;  // TODO(anyone) remove dynamic allocation here
     state_message_.admittance_velocity.twist.linear.x = admittance_state_.admittance_velocity[0];
     state_message_.admittance_velocity.twist.linear.y = admittance_state_.admittance_velocity[1];
     state_message_.admittance_velocity.twist.linear.z = admittance_state_.admittance_velocity[2];
@@ -332,6 +334,7 @@ namespace admittance_controller {
     state_message_.admittance_velocity.twist.angular.y = admittance_state_.admittance_velocity[4];
     state_message_.admittance_velocity.twist.angular.z = admittance_state_.admittance_velocity[5];
 
+    state_message_.admittance_acceleration.header.frame_id = parameters_.kinematics.base;  // TODO(anyone) remove dynamic allocation here
     state_message_.admittance_acceleration.twist.linear.x = admittance_state_.admittance_acceleration[0];
     state_message_.admittance_acceleration.twist.linear.y = admittance_state_.admittance_acceleration[1];
     state_message_.admittance_acceleration.twist.linear.z = admittance_state_.admittance_acceleration[2];
@@ -339,21 +342,21 @@ namespace admittance_controller {
     state_message_.admittance_acceleration.twist.angular.y = admittance_state_.admittance_acceleration[4];
     state_message_.admittance_acceleration.twist.angular.z = admittance_state_.admittance_acceleration[5];
 
-    state_message_.admittance_position.transform.translation.x = admittance_state_.admittance_position.translation().x();
-    state_message_.admittance_position.transform.translation.y = admittance_state_.admittance_position.translation().y();
-    state_message_.admittance_position.transform.translation.z = admittance_state_.admittance_position.translation().z();
-
+    state_message_.admittance_position.header.frame_id = parameters_.kinematics.base;  // TODO(anyone) remove dynamic allocation here
+    state_message_.admittance_position.child_frame_id = "admittance_offset"; // TODO(anyone) remove dynamic allocation here
     state_message_.admittance_position = tf2::eigenToTransform(admittance_state_.admittance_position);
 
+    state_message_.ref_trans_base_ft.header.frame_id = parameters_.kinematics.base;
+    state_message_.ref_trans_base_ft.header.frame_id = "ft_reference";
     state_message_.ref_trans_base_ft = tf2::eigenToTransform(admittance_state_.ref_trans_base_ft);
+
     Eigen::Quaterniond quat(admittance_state_.rot_base_control);
     state_message_.rot_base_control.w = quat.w();
     state_message_.rot_base_control.x = quat.x();
     state_message_.rot_base_control.y = quat.y();
     state_message_.rot_base_control.z = quat.z();
 
-    // TODO(anyone) remove dynamic allocation here
-    state_message_.ft_sensor_frame.data = admittance_state_.ft_sensor_frame;
+    state_message_.ft_sensor_frame.data = admittance_state_.ft_sensor_frame;  // TODO(anyone) remove dynamic allocation here
 
     return state_message_;
 

@@ -41,11 +41,11 @@ namespace admittance_controller {
 
   struct Transforms {
     Eigen::Isometry3d base_control_;
-    Eigen::Isometry3d  base_ft_;
-    Eigen::Isometry3d  base_tip_;
-    Eigen::Isometry3d  world_base_;
-    Eigen::Isometry3d  base_sensor_;
-    Eigen::Isometry3d  base_cog_;
+    Eigen::Isometry3d base_ft_;
+    Eigen::Isometry3d base_tip_;
+    Eigen::Isometry3d world_base_;
+    Eigen::Isometry3d base_sensor_;
+    Eigen::Isometry3d base_cog_;
   };
 
   struct AdmittanceState {
@@ -178,18 +178,12 @@ namespace admittance_controller {
     template<typename T1, typename T2>
     void vec_to_eigen(const std::vector<T1> &data, T2 &matrix);
 
-    template<typename T1, typename T2>
-    void eigen_to_vec(const T2 &matrix, std::vector<T1> &data);
-
     // number of robot joint
     size_t num_joints_;
 
     // Kinematics interface plugin loader
     std::shared_ptr<pluginlib::ClassLoader<kinematics_interface::KinematicsInterfaceBase>> kinematics_loader_;
     std::unique_ptr<kinematics_interface::KinematicsInterfaceBase> kinematics_;
-
-    // measured wrench in ft frame
-//    Eigen::Matrix<double, 3, 2, Eigen::ColMajor> measured_wrench_;
 
     // filtered wrench in world frame
     Eigen::Matrix<double, 6, 1> wrench_world_;
