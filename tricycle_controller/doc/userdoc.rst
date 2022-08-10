@@ -10,8 +10,8 @@ commands for the tricycle drive base. Odometry is computed from hardware feedbac
 Velocity commands
 -----------------
 
-The controller works with a velocity twist from which it extracts 
-the x component of the linear velocity and the z component of the angular velocity. 
+The controller works with a velocity twist from which it extracts
+the x component of the linear velocity and the z component of the angular velocity.
 Velocities on other components are ignored.
 
 

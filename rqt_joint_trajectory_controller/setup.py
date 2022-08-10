@@ -14,7 +14,6 @@ setup(
         ("share/" + package_name, ["package.xml"]),
         ("share/" + package_name + "/resource", glob("resource/*.*")),
         ("share/" + package_name, ["plugin.xml"]),
-
     ],
     install_requires=["setuptools"],
     zip_safe=True,

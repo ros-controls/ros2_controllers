@@ -1,4 +1,4 @@
-tricycle_controller: 
+tricycle_controller:
   ros__parameters:
     # Model
     traction_joint_name: traction_joint # Name of traction joint in URDF
@@ -16,7 +16,7 @@ tricycle_controller:
     pose_covariance_diagonal: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0] # Need to be set if fusing odom with other localization source
     twist_covariance_diagonal: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0] # Need to be set if fusing odom with other localization source
     velocity_rolling_window_size: 10 # Rolling window size of rcppmath::RollingMeanAccumulator applied on linear and angular speeds published on odom
-    
+
     # Rate Limiting
     traction: # All values should be positive
       # min_velocity: 0.0

@@ -19,7 +19,7 @@ def callback(msg):
     description = msg.data
 
 
-def get_joint_limits(node, key='robot_description', use_smallest_joint_limits=True):
+def get_joint_limits(node, key="robot_description", use_smallest_joint_limits=True):
     global description
     use_small = use_smallest_joint_limits
     use_mimic = True
@@ -39,53 +39,50 @@ def get_joint_limits(node, key='robot_description', use_smallest_joint_limits=Tr
     dependent_joints = {}
 
     if description != "":
-        robot = xml.dom.minidom.parseString(description)\
-            .getElementsByTagName('robot')[0]
+        robot = xml.dom.minidom.parseString(description).getElementsByTagName("robot")[0]
 
         # Find all non-fixed joints
         for child in robot.childNodes:
             if child.nodeType is child.TEXT_NODE:
                 continue
-            if child.localName == 'joint':
-                jtype = child.getAttribute('type')
-                if jtype == 'fixed':
+            if child.localName == "joint":
+                jtype = child.getAttribute("type")
+                if jtype == "fixed":
                     continue
-                name = child.getAttribute('name')
+                name = child.getAttribute("name")
                 try:
-                    limit = child.getElementsByTagName('limit')[0]
+                    limit = child.getElementsByTagName("limit")[0]
                 except:
                     continue
-                if jtype == 'continuous':
+                if jtype == "continuous":
                     minval = -pi
                     maxval = pi
                 else:
                     try:
-                        minval = float(limit.getAttribute('lower'))
-                        maxval = float(limit.getAttribute('upper'))
+                        minval = float(limit.getAttribute("lower"))
+                        maxval = float(limit.getAttribute("upper"))
                     except:
                         continue
                 try:
-                    maxvel = float(limit.getAttribute('velocity'))
+                    maxvel = float(limit.getAttribute("velocity"))
                 except:
                     continue
-                safety_tags = child.getElementsByTagName('safety_controller')
+                safety_tags = child.getElementsByTagName("safety_controller")
                 if use_small and len(safety_tags) == 1:
                     tag = safety_tags[0]
-                    if tag.hasAttribute('soft_lower_limit'):
-                        minval = max(minval,
-                                     float(tag.getAttribute('soft_lower_limit')))
-                    if tag.hasAttribute('soft_upper_limit'):
-                        maxval = min(maxval,
-                                     float(tag.getAttribute('soft_upper_limit')))
+                    if tag.hasAttribute("soft_lower_limit"):
+                        minval = max(minval, float(tag.getAttribute("soft_lower_limit")))
+                    if tag.hasAttribute("soft_upper_limit"):
+                        maxval = min(maxval, float(tag.getAttribute("soft_upper_limit")))
 
-                mimic_tags = child.getElementsByTagName('mimic')
+                mimic_tags = child.getElementsByTagName("mimic")
                 if use_mimic and len(mimic_tags) == 1:
                     tag = mimic_tags[0]
-                    entry = {'parent': tag.getAttribute('joint')}
-                    if tag.hasAttribute('multiplier'):
-                        entry['factor'] = float(tag.getAttribute('multiplier'))
-                    if tag.hasAttribute('offset'):
-                        entry['offset'] = float(tag.getAttribute('offset'))
+                    entry = {"parent": tag.getAttribute("joint")}
+                    if tag.hasAttribute("multiplier"):
+                        entry["factor"] = float(tag.getAttribute("multiplier"))
+                    if tag.hasAttribute("offset"):
+                        entry["offset"] = float(tag.getAttribute("offset"))
 
                     dependent_joints[name] = entry
                     continue
@@ -93,8 +90,8 @@ def get_joint_limits(node, key='robot_description', use_smallest_joint_limits=Tr
                 if name in dependent_joints:
                     continue
 
-                joint = {'min_position': minval, 'max_position': maxval}
-                joint["has_position_limits"] = jtype != 'continuous'
-                joint['max_velocity'] = maxvel
+                joint = {"min_position": minval, "max_position": maxval}
+                joint["has_position_limits"] = jtype != "continuous"
+                joint["max_velocity"] = maxvel
                 free_joints[name] = joint
     return free_joints
