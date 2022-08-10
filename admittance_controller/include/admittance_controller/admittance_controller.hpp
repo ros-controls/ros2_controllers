@@ -39,22 +39,17 @@
 #include "rclcpp/time.hpp"
 #include "rclcpp/duration.hpp"
 
-// TODO(destogl): this is only temporary to work with servo. It should be either trajectory_msgs/msg/JointTrajectoryPoint or std_msgs/msg/Float64MultiArray
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
-
-
-using namespace std::chrono_literals;
 
 namespace admittance_controller {
   using ControllerStateMsg = control_msgs::msg::AdmittanceControllerState;
-  using CallbackReturn = controller_interface::CallbackReturn;
 
   class AdmittanceController : public controller_interface::ChainableControllerInterface {
   public:
     ADMITTANCE_CONTROLLER_PUBLIC
 
     ADMITTANCE_CONTROLLER_PUBLIC
-    CallbackReturn on_init() override;
+    controller_interface::CallbackReturn on_init() override;
 
     ADMITTANCE_CONTROLLER_PUBLIC
     controller_interface::InterfaceConfiguration command_interface_configuration() const override;
@@ -63,19 +58,19 @@ namespace admittance_controller {
     controller_interface::InterfaceConfiguration state_interface_configuration() const override;
 
     ADMITTANCE_CONTROLLER_PUBLIC
-    CallbackReturn on_configure(const rclcpp_lifecycle::State &previous_state) override;
+    controller_interface::CallbackReturn on_configure(const rclcpp_lifecycle::State &previous_state) override;
 
     ADMITTANCE_CONTROLLER_PUBLIC
-    CallbackReturn on_activate(const rclcpp_lifecycle::State &previous_state) override;
+    controller_interface::CallbackReturn on_activate(const rclcpp_lifecycle::State &previous_state) override;
 
     ADMITTANCE_CONTROLLER_PUBLIC
-    CallbackReturn on_deactivate(const rclcpp_lifecycle::State &previous_state) override;
+    controller_interface::CallbackReturn on_deactivate(const rclcpp_lifecycle::State &previous_state) override;
 
     ADMITTANCE_CONTROLLER_PUBLIC
-    CallbackReturn on_cleanup(const rclcpp_lifecycle::State &previous_state) override;
+    controller_interface::CallbackReturn on_cleanup(const rclcpp_lifecycle::State &previous_state) override;
 
     ADMITTANCE_CONTROLLER_PUBLIC
-    CallbackReturn on_error(const rclcpp_lifecycle::State &previous_state) override;
+    controller_interface::CallbackReturn on_error(const rclcpp_lifecycle::State &previous_state) override;
 
     ADMITTANCE_CONTROLLER_PUBLIC
     controller_interface::return_type update_and_write_commands(
@@ -113,29 +108,28 @@ namespace admittance_controller {
     rclcpp::Publisher<control_msgs::msg::AdmittanceControllerState>::SharedPtr s_publisher_;
 
     // ROS messages
-    std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint> joint_command_msg;
+    std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint> joint_command_msg_;
 
     // real-time buffer
     realtime_tools::RealtimeBuffer<std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint>> input_joint_command_;
     std::unique_ptr<realtime_tools::RealtimePublisher<ControllerStateMsg>> state_publisher_;
 
-    trajectory_msgs::msg::JointTrajectoryPoint last_commanded_state_;
-    trajectory_msgs::msg::JointTrajectoryPoint last_state_reference_;
-    trajectory_msgs::msg::JointTrajectoryPoint state_offset_;
-    trajectory_msgs::msg::JointTrajectoryPoint prev_trajectory_point_;
+    trajectory_msgs::msg::JointTrajectoryPoint last_commanded_;
+    trajectory_msgs::msg::JointTrajectoryPoint last_reference_;
 
     // control loop data
-    trajectory_msgs::msg::JointTrajectoryPoint state_reference_, state_current_, state_desired_, state_error_;
+    // reference_: reference value read by the controller
+    // joint_state_: current joint readings from the hardware
+    // reference_admittance_: reference value used by the controller after the admittance values are applied
+    // ft_values_: values read from the force torque sensor
+    trajectory_msgs::msg::JointTrajectoryPoint reference_, joint_state_, reference_admittance_;
     geometry_msgs::msg::Wrench ft_values_;
-    trajectory_msgs::msg::JointTrajectory pre_admittance_point;
-    size_t loop_counter = 0;
 
     // helper methods
     void read_state_from_hardware(trajectory_msgs::msg::JointTrajectoryPoint &state_current,
                                   geometry_msgs::msg::Wrench &ft_values);
     void read_state_reference_interfaces(trajectory_msgs::msg::JointTrajectoryPoint &state);
     void write_state_to_hardware(const trajectory_msgs::msg::JointTrajectoryPoint &state_commanded);
-
   };
 
 }  // namespace admittance_controller

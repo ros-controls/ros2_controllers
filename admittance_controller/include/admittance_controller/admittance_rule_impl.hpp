@@ -89,7 +89,7 @@ namespace admittance_controller {
 
     // reset forces
     wrench_world_.setZero();
-    ee_weight.setZero();
+    ee_weight_.setZero();
 
     // load/initialize Eigen types from parameters
     apply_parameters_update();
@@ -102,7 +102,7 @@ namespace admittance_controller {
       parameters_ = parameter_handler_->get_params();
     }
     // update param values
-    ee_weight[2] = -parameters_.gravity_compensation.CoG.force;
+    ee_weight_[2] = -parameters_.gravity_compensation.CoG.force;
     vec_to_eigen(parameters_.gravity_compensation.CoG.pos, cog_);
     vec_to_eigen(parameters_.admittance.mass, admittance_state_.mass);
     vec_to_eigen(parameters_.admittance.stiffness, admittance_state_.stiffness);
@@ -281,8 +281,8 @@ namespace admittance_controller {
     Eigen::Matrix<double, 3, 2> new_wrench_base = sensor_world_rot * new_wrench;
 
     // apply gravity compensation
-    new_wrench_base(2, 0) -= ee_weight[2];
-    new_wrench_base.block<3, 1>(0, 1) -= (cog_world_rot * cog_).cross(ee_weight);
+    new_wrench_base(2, 0) -= ee_weight_[2];
+    new_wrench_base.block<3, 1>(0, 1) -= (cog_world_rot * cog_).cross(ee_weight_);
 
     // apply smoothing filter
     for (auto i = 0; i < 6; i++) {

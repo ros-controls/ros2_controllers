@@ -30,28 +30,27 @@
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
 namespace admittance_controller {
-  using CallbackReturn = controller_interface::CallbackReturn;
 
-  CallbackReturn AdmittanceController::on_init() {
+  controller_interface::CallbackReturn AdmittanceController::on_init() {
     // initialize controller config
     try {
       admittance_ = std::make_unique<admittance_controller::AdmittanceRule>(get_node());
     } catch (const std::exception &e) {
       RCLCPP_ERROR(get_node()->get_logger(), "Exception thrown during init stage with message: %s \n", e.what());
-      return CallbackReturn::ERROR;
+      return controller_interface::CallbackReturn::ERROR;
     }
     num_joints_ = admittance_->parameters_.joints.size();
 
     // allocate dynamic memory
-    last_state_reference_.positions.assign(num_joints_, 0.0);
-    last_state_reference_.velocities.assign(num_joints_, 0.0);
-    last_state_reference_.accelerations.assign(num_joints_, 0.0);
-    last_commanded_state_ = last_state_reference_;
-    state_reference_ = last_state_reference_;
-    state_desired_ = last_state_reference_;
-    state_current_ = last_state_reference_;
+    last_reference_.positions.assign(num_joints_, 0.0);
+    last_reference_.velocities.assign(num_joints_, 0.0);
+    last_reference_.accelerations.assign(num_joints_, 0.0);
+    last_commanded_ = last_reference_;
+    reference_ = last_reference_;
+    reference_admittance_ = last_reference_;
+    joint_state_ = last_reference_;
 
-    return CallbackReturn::SUCCESS;
+    return controller_interface::CallbackReturn::SUCCESS;
   }
 
   controller_interface::InterfaceConfiguration AdmittanceController::state_interface_configuration() const {
@@ -138,13 +137,13 @@ namespace admittance_controller {
     return chainable_command_interfaces;;
   }
 
-  CallbackReturn AdmittanceController::on_configure(const rclcpp_lifecycle::State &previous_state) {
+  controller_interface::CallbackReturn AdmittanceController::on_configure(const rclcpp_lifecycle::State &previous_state) {
     try {
       admittance_ = std::make_unique<admittance_controller::AdmittanceRule>(get_node());
       num_joints_ = admittance_->parameters_.joints.size();
     } catch (const std::exception &e) {
       RCLCPP_ERROR(get_node()->get_logger(), "Exception thrown during init stage with message: %s \n", e.what());
-      return CallbackReturn::ERROR;
+      return controller_interface::CallbackReturn::ERROR;
     }
     // print and validate interface types
     for (const auto &tmp: admittance_->parameters_.state_interfaces) {
@@ -160,7 +159,7 @@ namespace admittance_controller {
         RCLCPP_ERROR(get_node()->get_logger(),
                      "chainable interface type %s is not supported. Supported types are %s and %s",
                      tmp.c_str(), hardware_interface::HW_IF_POSITION, hardware_interface::HW_IF_VELOCITY);
-        return CallbackReturn::ERROR;
+        return controller_interface::CallbackReturn::ERROR;
       }
     }
 
@@ -201,16 +200,16 @@ namespace admittance_controller {
 
     // configure admittance rule
     if (admittance_->configure(get_node(), num_joints_) == controller_interface::return_type::ERROR) {
-      return CallbackReturn::ERROR;
+      return controller_interface::CallbackReturn::ERROR;
     }
 
     return LifecycleNodeInterface::on_configure(previous_state);
   }
 
-  CallbackReturn AdmittanceController::on_activate(const rclcpp_lifecycle::State &previous_state) {
+  controller_interface::CallbackReturn AdmittanceController::on_activate(const rclcpp_lifecycle::State &previous_state) {
     // on_activate is called when the lifecycle node activates.
     if (!admittance_) {
-      return CallbackReturn::ERROR;
+      return controller_interface::CallbackReturn::ERROR;
     }
 
     // update parameters if any have changed
@@ -247,20 +246,20 @@ namespace admittance_controller {
     force_torque_sensor_->assign_loaned_state_interfaces(state_interfaces_);
 
     // handle state after restart or initial startups
-    read_state_from_hardware(state_current_, ft_values_);
+    read_state_from_hardware(joint_state_, ft_values_);
 
     // initialize states from last read state reference
-    last_commanded_state_ = state_current_;
-    last_state_reference_ = state_current_;
+    last_commanded_ = joint_state_;
+    last_reference_ = joint_state_;
 
-    read_state_reference_interfaces(state_reference_);
+    read_state_reference_interfaces(reference_);
 
     // reset dynamic fields in case non-zero
-    state_reference_.velocities.assign(num_joints_, 0.0);
-    state_reference_.accelerations.assign(num_joints_, 0.0);
-    state_desired_ = state_reference_;
+    reference_.velocities.assign(num_joints_, 0.0);
+    reference_.accelerations.assign(num_joints_, 0.0);
+    reference_admittance_ = reference_;
 
-    return CallbackReturn::SUCCESS;
+    return controller_interface::CallbackReturn::SUCCESS;
   }
 
   controller_interface::return_type AdmittanceController::update_reference_from_subscribers() {
@@ -269,15 +268,15 @@ namespace admittance_controller {
       return controller_interface::return_type::ERROR;
     }
 
-    joint_command_msg = *input_joint_command_.readFromRT();
+    joint_command_msg_ = *input_joint_command_.readFromRT();
 
     // if message exists, load values into references
-    if (joint_command_msg.get()) {
-      for (auto i = 0ul; i < joint_command_msg->positions.size(); i++) {
-        position_reference_[i].get() = joint_command_msg->positions[i];
+    if (joint_command_msg_.get()) {
+      for (auto i = 0ul; i < joint_command_msg_->positions.size(); i++) {
+        position_reference_[i].get() = joint_command_msg_->positions[i];
       }
-      for (auto i = 0ul; i < joint_command_msg->velocities.size(); i++) {
-        velocity_reference_[i].get() = joint_command_msg->velocities[i];
+      for (auto i = 0ul; i < joint_command_msg_->velocities.size(); i++) {
+        velocity_reference_[i].get() = joint_command_msg_->velocities[i];
       }
     }
 
@@ -290,19 +289,18 @@ namespace admittance_controller {
     if (!admittance_) {
       return controller_interface::return_type::ERROR;
     }
-    loop_counter++;
 
     // update input reference from chainable interfaces
-    read_state_reference_interfaces(state_reference_);
+    read_state_reference_interfaces(reference_);
 
     // get all controller inputs
-    read_state_from_hardware(state_current_, ft_values_);
+    read_state_from_hardware(joint_state_, ft_values_);
 
     // apply admittance control to reference to determine desired state
-    admittance_->update(state_current_, ft_values_, state_reference_, period, state_desired_);
+    admittance_->update(joint_state_, ft_values_, reference_, period, reference_admittance_);
 
     // write calculated values to joint interfaces
-    write_state_to_hardware(state_desired_);
+    write_state_to_hardware(reference_admittance_);
 
     // Publish controller state
     state_publisher_->lock();
@@ -312,22 +310,22 @@ namespace admittance_controller {
     return controller_interface::return_type::OK;
   }
 
-  CallbackReturn AdmittanceController::on_deactivate(const rclcpp_lifecycle::State &previous_state) {
+  controller_interface::CallbackReturn AdmittanceController::on_deactivate(const rclcpp_lifecycle::State &previous_state) {
     force_torque_sensor_->release_interfaces();
 
     return LifecycleNodeInterface::on_deactivate(previous_state);
   }
 
-  CallbackReturn AdmittanceController::on_cleanup(const rclcpp_lifecycle::State &previous_state) {
-    return CallbackReturn::SUCCESS;
+  controller_interface::CallbackReturn AdmittanceController::on_cleanup(const rclcpp_lifecycle::State &previous_state) {
+    return controller_interface::CallbackReturn::SUCCESS;
   }
 
-  CallbackReturn AdmittanceController::on_error(const rclcpp_lifecycle::State &previous_state) {
+  controller_interface::CallbackReturn AdmittanceController::on_error(const rclcpp_lifecycle::State &previous_state) {
     if (!admittance_) {
-      return CallbackReturn::ERROR;
+      return controller_interface::CallbackReturn::ERROR;
     }
     admittance_->reset(num_joints_);
-    return CallbackReturn::SUCCESS;
+    return controller_interface::CallbackReturn::SUCCESS;
   }
 
   void AdmittanceController::read_state_from_hardware(
@@ -343,19 +341,19 @@ namespace admittance_controller {
         if (inter_ind == state_pos_ind) {
           state_current.positions[joint_ind] = state_interfaces_[ind].get_value();
           if (std::isnan(state_current.positions[joint_ind])) {
-            state_current.positions = last_commanded_state_.positions;
+            state_current.positions = last_commanded_.positions;
             break;
           }
         } else if (inter_ind == state_vel_ind) {
           state_current.velocities[joint_ind] = state_interfaces_[ind].get_value();
           if (std::isnan(state_current.positions[joint_ind])) {
-            state_current.velocities = last_commanded_state_.velocities;
+            state_current.velocities = last_commanded_.velocities;
             break;
           }
         } else if (inter_ind == state_acc_ind) {
           state_current.accelerations[joint_ind] = state_interfaces_[ind].get_value();
           if (std::isnan(state_current.positions[joint_ind])) {
-            state_current.accelerations = last_commanded_state_.accelerations;
+            state_current.accelerations = last_commanded_.accelerations;
             break;
           }
         }
@@ -387,7 +385,7 @@ namespace admittance_controller {
         }
       }
     }
-    last_commanded_state_ = state_desired_;
+    last_commanded_ = reference_admittance_;
 
   }
 
@@ -398,19 +396,19 @@ namespace admittance_controller {
 
     for (auto i = 0ul; i < position_reference_.size(); i++) {
       if (std::isnan(position_reference_[i])) {
-        position_reference_[i].get() = last_state_reference_.positions[i];
+        position_reference_[i].get() = last_reference_.positions[i];
       }
       state_reference.positions[i] = position_reference_[i];
     }
-    last_state_reference_.positions = state_reference.positions;
+    last_reference_.positions = state_reference.positions;
 
     for (auto i = 0ul; i < velocity_reference_.size(); i++) {
       if (std::isnan(velocity_reference_[i])) {
-        velocity_reference_[i].get() = last_state_reference_.velocities[i];
+        velocity_reference_[i].get() = last_reference_.velocities[i];
       }
       state_reference.velocities[i] = velocity_reference_[i];
     }
-    last_state_reference_.velocities = state_reference.velocities;
+    last_reference_.velocities = state_reference.velocities;
 
   }
 

@@ -199,7 +199,7 @@ namespace admittance_controller {
     Eigen::Vector3d cog_;
 
     // force applied to sensor due to weight of end effector
-    Eigen::Vector3d ee_weight;
+    Eigen::Vector3d ee_weight_;
 
     // ROS
     control_msgs::msg::AdmittanceControllerState state_message_;
