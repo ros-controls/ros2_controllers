@@ -56,6 +56,12 @@ void Trajectory::set_point_before_trajectory_msg(
   }
 
   auto & first_point_in_msg = trajectory_msg_->points[0];
+
+  if (first_point_in_msg.positions.size() != state_before_traj_msg_.positions.size())
+  {
+    return;
+  }
+
   for (size_t i = 0; i < state_before_traj_msg_.positions.size(); i++)
   {
     state_before_traj_msg_.positions[i] = first_point_in_msg.positions[i] +
