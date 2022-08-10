@@ -68,8 +68,12 @@ namespace admittance_controller {
     // reset all values back to default
 
     // reset state message fields
-    for (const auto &name : parameters_.joints){
-      state_message_.joint_state.name.push_back(name);
+    state_message_.joint_state.name.assign(num_joints, "");
+    state_message_.joint_state.position.assign(num_joints, 0);
+    state_message_.joint_state.velocity.assign(num_joints, 0);
+    state_message_.joint_state.effort.assign(num_joints, 0);
+    for (auto i = 0ul; i < parameters_.joints.size(); i++){
+      state_message_.joint_state.name = parameters_.joints;
     }
     state_message_.mass.data.resize(6, 0.0);
     state_message_.selected_axes.data.resize(6, 0);
@@ -232,10 +236,19 @@ namespace admittance_controller {
     auto X_dot = Eigen::Matrix<double, 6, 1>(admittance_state.admittance_velocity.data());
 
     // get external force
-    auto F = Eigen::Matrix<double, 6, 1>(admittance_state.wrench_base.data());
+    auto F_base = Eigen::Matrix<double, 6, 1>(admittance_state.wrench_base.data());
+
+    // zero out any forces in the control frame
+    Eigen::Matrix<double, 6, 1> F_control;
+    F_control.block<3,1>(0,0) = rot_base_control.transpose()*F_base.block<3,1>(0,0);
+    F_control.block<3,1>(3,0) = rot_base_control.transpose()*F_base.block<3,1>(3,0);
+    F_control = F_control.cwiseProduct(admittance_state.selected_axes);
+    F_base.block<3,1>(0,0) = rot_base_control*F_control.block<3,1>(0,0);
+    F_base.block<3,1>(3,0) = rot_base_control*F_control.block<3,1>(3,0);
+
 
     // Compute admittance control law: F = M*a + D*v + S*x
-    Eigen::Matrix<double, 6, 1> X_ddot = admittance_state.mass_inv.cwiseProduct(F - D * X_dot - K * X);
+    Eigen::Matrix<double, 6, 1> X_ddot = admittance_state.mass_inv.cwiseProduct(F_base - D * X_dot - K * X);
     bool success = kinematics_->convert_cartesian_deltas_to_joint_deltas(admittance_state.current_joint_pos, X_ddot,
                                                                          admittance_state.ft_sensor_frame, admittance_state.joint_acc);
 
@@ -246,6 +259,8 @@ namespace admittance_controller {
     // calculate admittance velocity corresponding to joint velocity
     success &= kinematics_->convert_joint_deltas_to_cartesian_deltas(admittance_state.current_joint_pos, admittance_state.joint_vel, admittance_state.ft_sensor_frame,
                                                         admittance_state.admittance_velocity);
+    success &= kinematics_->convert_joint_deltas_to_cartesian_deltas(admittance_state.current_joint_pos, admittance_state.joint_acc, admittance_state.ft_sensor_frame,
+                                                                     admittance_state.admittance_acceleration);
 
     return success;
   }
@@ -277,8 +292,71 @@ namespace admittance_controller {
 
   }
 
-  void AdmittanceRule::get_controller_state(control_msgs::msg::AdmittanceControllerState &state_message) {
-    // TODO implement
+  const control_msgs::msg::AdmittanceControllerState & AdmittanceRule::get_controller_state() {
+    for (auto i = 0ul; i < parameters_.joints.size(); i++) {
+      state_message_.joint_state.name[i] = parameters_.joints[i];
+    }
+    for (auto i = 0l; i < admittance_state_.joint_pos.size(); i++){
+      state_message_.joint_state.position[i] = admittance_state_.joint_pos[i];
+    }
+    for (auto i = 0l; i < admittance_state_.joint_vel.size(); i++){
+      state_message_.joint_state.velocity[i] = admittance_state_.joint_vel[i];
+    }
+    for (auto i = 0l; i < admittance_state_.joint_acc.size(); i++){
+      state_message_.joint_state.effort[i] = admittance_state_.joint_acc[i];
+    }
+    for (auto i = 0l; i < admittance_state_.stiffness.size(); i++){
+      state_message_.stiffness.data[i] = admittance_state_.stiffness[i];
+    }
+    for (auto i = 0l; i < admittance_state_.damping.size(); i++){
+      state_message_.damping.data[i] = admittance_state_.damping[i];
+    }
+    for (auto i = 0l; i < admittance_state_.selected_axes.size(); i++){
+      state_message_.selected_axes.data[i] = (bool) admittance_state_.selected_axes[i];
+    }
+    for (auto i = 0l; i < admittance_state_.mass.size(); i++){
+      state_message_.mass.data[i] = admittance_state_.mass[i];
+    }
+
+    state_message_.wrench_base.wrench.force.x = admittance_state_.wrench_base[0];
+    state_message_.wrench_base.wrench.force.y = admittance_state_.wrench_base[1];
+    state_message_.wrench_base.wrench.force.z = admittance_state_.wrench_base[2];
+    state_message_.wrench_base.wrench.torque.x = admittance_state_.wrench_base[3];
+    state_message_.wrench_base.wrench.torque.y = admittance_state_.wrench_base[4];
+    state_message_.wrench_base.wrench.torque.z = admittance_state_.wrench_base[5];
+
+    state_message_.admittance_velocity.twist.linear.x = admittance_state_.admittance_velocity[0];
+    state_message_.admittance_velocity.twist.linear.y = admittance_state_.admittance_velocity[1];
+    state_message_.admittance_velocity.twist.linear.z = admittance_state_.admittance_velocity[2];
+    state_message_.admittance_velocity.twist.angular.x = admittance_state_.admittance_velocity[3];
+    state_message_.admittance_velocity.twist.angular.y = admittance_state_.admittance_velocity[4];
+    state_message_.admittance_velocity.twist.angular.z = admittance_state_.admittance_velocity[5];
+
+    state_message_.admittance_acceleration.twist.linear.x = admittance_state_.admittance_acceleration[0];
+    state_message_.admittance_acceleration.twist.linear.y = admittance_state_.admittance_acceleration[1];
+    state_message_.admittance_acceleration.twist.linear.z = admittance_state_.admittance_acceleration[2];
+    state_message_.admittance_acceleration.twist.angular.x = admittance_state_.admittance_acceleration[3];
+    state_message_.admittance_acceleration.twist.angular.y = admittance_state_.admittance_acceleration[4];
+    state_message_.admittance_acceleration.twist.angular.z = admittance_state_.admittance_acceleration[5];
+
+    state_message_.admittance_position.transform.translation.x = admittance_state_.admittance_position.translation().x();
+    state_message_.admittance_position.transform.translation.y = admittance_state_.admittance_position.translation().y();
+    state_message_.admittance_position.transform.translation.z = admittance_state_.admittance_position.translation().z();
+
+    state_message_.admittance_position = tf2::eigenToTransform(admittance_state_.admittance_position);
+
+    state_message_.ref_trans_base_ft = tf2::eigenToTransform(admittance_state_.ref_trans_base_ft);
+    Eigen::Quaterniond quat(admittance_state_.rot_base_control);
+    state_message_.rot_base_control.w = quat.w();
+    state_message_.rot_base_control.x = quat.x();
+    state_message_.rot_base_control.y = quat.y();
+    state_message_.rot_base_control.z = quat.z();
+
+    // TODO(anyone) remove dynamic allocation here
+    state_message_.ft_sensor_frame.data = admittance_state_.ft_sensor_frame;
+
+    return state_message_;
+
   }
 
   template<typename T1, typename T2>
@@ -289,16 +367,6 @@ namespace admittance_controller {
       }
     }
   }
-
-  template<typename T1, typename T2>
-  void AdmittanceRule::eigen_to_vec(const T2 &matrix, std::vector<T1> &data) {
-    for (auto col = 0; col < matrix.cols(); col++) {
-      for (auto row = 0; row < matrix.rows(); row++) {
-        data[row + col * matrix.rows()] = matrix(row, col);
-      }
-    }
-  }
-
 
 }  // namespace admittance_controller
 

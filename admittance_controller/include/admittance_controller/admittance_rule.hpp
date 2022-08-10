@@ -22,6 +22,7 @@
 #include <Eigen/Geometry>
 #include "tf2_ros/transform_listener.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+#include "tf2_eigen/tf2_eigen.h"
 #include <tf2_ros/buffer.h>
 #include <trajectory_msgs/msg/detail/joint_trajectory_point__struct.hpp>
 #include "tf2_kdl/tf2_kdl/tf2_kdl.hpp"
@@ -50,7 +51,7 @@ namespace admittance_controller {
   struct AdmittanceState {
     AdmittanceState() = default;
 
-    AdmittanceState(int num_joints) {
+    AdmittanceState(size_t num_joints) {
       admittance_velocity.setZero();
       admittance_acceleration.setZero();
       damping.setZero();
@@ -90,7 +91,7 @@ namespace admittance_controller {
       parameters_ = parameter_handler_->get_params();
       num_joints_ = parameters_.joints.size();
       admittance_state_ = AdmittanceState(num_joints_);
-
+      reset(num_joints_);
     }
 
     controller_interface::return_type
@@ -138,7 +139,7 @@ namespace admittance_controller {
      *
      * \param[in] state_message
      */
-    void get_controller_state(control_msgs::msg::AdmittanceControllerState &state_message);
+    const control_msgs::msg::AdmittanceControllerState & get_controller_state();
 
   public:
     // admittance config parameters

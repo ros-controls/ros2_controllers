@@ -192,7 +192,7 @@ namespace admittance_controller {
 
     // Initialize state message
     state_publisher_->lock();
-    admittance_->get_controller_state(state_publisher_->msg_);
+    state_publisher_->msg_ = admittance_->get_controller_state();
     state_publisher_->unlock();
 
     // Initialize FTS semantic semantic_component
@@ -306,7 +306,7 @@ namespace admittance_controller {
 
     // Publish controller state
     state_publisher_->lock();
-    admittance_->get_controller_state(state_publisher_->msg_);
+    state_publisher_->msg_ = admittance_->get_controller_state();
     state_publisher_->unlockAndPublish();
 
     return controller_interface::return_type::OK;
