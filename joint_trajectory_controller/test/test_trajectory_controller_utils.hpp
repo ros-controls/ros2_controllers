@@ -345,7 +345,6 @@ public:
     while (rclcpp::Clock().now() < end_time)
     {
       traj_controller_->update(rclcpp::Clock().now(), rclcpp::Clock().now() - start_time);
-      std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
   }
 
