@@ -1,26 +1,26 @@
-name: Rolling RHEL Binary Build
+name: Foxy RHEL Binary Build
 on:
   workflow_dispatch:
     branches:
-      - master
+      - foxy
   pull_request:
     branches:
-      - master
+      - foxy
   push:
     branches:
-      - master
+      - foxy
   schedule:
     # Run every day to detect flakiness and broken dependencies
     - cron: '03 1 * * *'
 
 
 jobs:
-  rolling_rhel_binary:
-    name: Rolling RHEL binary build
+  foxy_rhel_binary:
+    name: Foxy RHEL binary build
     runs-on: ubuntu-latest
     env:
-      ROS_DISTRO: rolling
-    container: jaronl/ros:rolling-alma
+      ROS_DISTRO: foxy
+    container: jaronl/ros:foxy-alma
     steps:
       - uses: actions/checkout@v3
         with:
