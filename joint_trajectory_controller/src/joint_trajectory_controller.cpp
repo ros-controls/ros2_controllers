@@ -62,6 +62,8 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
       auto_declare<std::vector<std::string>>("command_interfaces", command_interface_types_);
     state_interface_types_ =
       auto_declare<std::vector<std::string>>("state_interfaces", state_interface_types_);
+    disable_closed_loop_pid_adapter_ =
+      auto_declare<bool>("disable_closed_loop_pid_adapter", disable_closed_loop_pid_adapter_);
     allow_partial_joints_goal_ =
       auto_declare<bool>("allow_partial_joints_goal", allow_partial_joints_goal_);
     open_loop_control_ = auto_declare<bool>("open_loop_control", open_loop_control_);
@@ -534,6 +536,9 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     return CallbackReturn::FAILURE;
   }
 
+  disable_closed_loop_pid_adapter_ =
+    get_node()->get_parameter("disable_closed_loop_pid_adapter").as_bool();
+
   // Check if only allowed interface types are used and initialize storage to avoid memory
   // allocation during activation
   joint_command_interface_.resize(allowed_interface_types_.size());
@@ -567,7 +572,17 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     // if there is only velocity then use also PID adapter
     if (command_interface_types_.size() == 1)
     {
-      use_closed_loop_pid_adapter_ = true;
+      if (!disable_closed_loop_pid_adapter_)
+      {
+        use_closed_loop_pid_adapter_ = true;
+      }
+      else
+      {
+        RCLCPP_WARN(
+          logger,
+          "Using only 'velocity' command interface without closed loop PID adapter because it is "
+          "disabled.");
+      }
     }
     else if (!has_position_command_interface_)
     {
@@ -593,7 +608,17 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   {
     if (command_interface_types_.size() == 1)
     {
-      use_closed_loop_pid_adapter_ = true;
+      if (!disable_closed_loop_pid_adapter_)
+      {
+        use_closed_loop_pid_adapter_ = true;
+      }
+      else
+      {
+        RCLCPP_WARN(
+          logger,
+          "Using only 'effort' command interface without closed loop PID adapter because it is "
+          "disabled.");
+      }
     }
     else
     {
@@ -1157,7 +1182,7 @@ void JointTrajectoryController::sort_to_local_joint_order(
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg)
 {
   // rearrange all points in the trajectory message based on mapping
-  std::vector<size_t> mapping_vector = mapping(trajectory_msg->joint_names, joint_names_);
+  std::vector<size_t> mapping_vector = mapping(trajectory_msg->joint_names, command_joint_names_);
   auto remap = [this](
                  const std::vector<double> & to_remap,
                  const std::vector<size_t> & mapping) -> std::vector<double>
@@ -1169,7 +1194,9 @@ void JointTrajectoryController::sort_to_local_joint_order(
     if (to_remap.size() != mapping.size())
     {
       RCLCPP_WARN(
-        get_node()->get_logger(), "Invalid input size (%zu) for sorting", to_remap.size());
+        get_node()->get_logger(),
+        "Invalid input size for sorting. Values have size %zu and mapping size %zu",
+        to_remap.size(), mapping.size());
       return to_remap;
     }
     std::vector<double> output;
