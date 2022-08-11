@@ -33,7 +33,7 @@
 #include "admittance_controller_parameters.hpp"
 
 // kinematics plugins
-#include "kinematics_interface/kinematics_interface_base.hpp"
+#include "kinematics_interface/kinematics_interface.hpp"
 #include "pluginlib/class_loader.hpp"
 
 
@@ -182,8 +182,8 @@ namespace admittance_controller {
     size_t num_joints_;
 
     // Kinematics interface plugin loader
-    std::shared_ptr<pluginlib::ClassLoader<kinematics_interface::KinematicsInterfaceBase>> kinematics_loader_;
-    std::unique_ptr<kinematics_interface::KinematicsInterfaceBase> kinematics_;
+    std::shared_ptr<pluginlib::ClassLoader<kinematics_interface::KinematicsInterface>> kinematics_loader_;
+    std::unique_ptr<kinematics_interface::KinematicsInterface> kinematics_;
 
     // filtered wrench in world frame
     Eigen::Matrix<double, 6, 1> wrench_world_;

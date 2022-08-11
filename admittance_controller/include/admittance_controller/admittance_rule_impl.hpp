@@ -42,9 +42,9 @@ namespace admittance_controller {
     // Load the differential IK plugin
     if (!parameters_.kinematics.plugin_name.empty()) {
       try {
-        kinematics_loader_ = std::make_shared<pluginlib::ClassLoader<kinematics_interface::KinematicsInterfaceBase >>(
-            parameters_.kinematics.plugin_package, "kinematics_interface::KinematicsInterfaceBase");
-        kinematics_ = std::unique_ptr<kinematics_interface::KinematicsInterfaceBase>(
+        kinematics_loader_ = std::make_shared<pluginlib::ClassLoader<kinematics_interface::KinematicsInterface >>(
+            parameters_.kinematics.plugin_package, "kinematics_interface::KinematicsInterface");
+        kinematics_ = std::unique_ptr<kinematics_interface::KinematicsInterface>(
             kinematics_loader_->createUnmanagedInstance(parameters_.kinematics.plugin_name));
         if (!kinematics_->initialize(node->get_node_parameters_interface(), parameters_.kinematics.tip)) {
           return controller_interface::return_type::ERROR;
