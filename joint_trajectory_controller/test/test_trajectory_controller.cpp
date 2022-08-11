@@ -209,8 +209,23 @@ TEST_P(TrajectoryControllerTestParameterized, check_disabling_of_closed_loop_pid
   const rclcpp::Parameter disable_param("disable_closed_loop_pid_adapter", true);
   traj_controller_->get_node()->set_parameter({disable_param});
 
-  // closed loop PID adapter is always disabled, independently from the used interfaces
-  EXPECT_FALSE(traj_controller_->get_use_closed_loop_pid_adapter());
+  const auto state = traj_controller_->get_node()->configure();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+
+  EXPECT_TRUE(traj_controller_->get_disable_closed_loop_pid_adapter());
+
+  // closed loop PID adapter is only not disabled for effort-only interface
+  if (
+    command_interface_types_.size() == 1 &&
+    std::find(command_interface_types_.begin(), command_interface_types_.end(), "effort") !=
+      command_interface_types_.end())
+  {
+    EXPECT_TRUE(traj_controller_->get_use_closed_loop_pid_adapter());
+  }
+  else
+  {
+    EXPECT_FALSE(traj_controller_->get_use_closed_loop_pid_adapter());
+  }
 }
 
 TEST_P(TrajectoryControllerTestParameterized, activate)

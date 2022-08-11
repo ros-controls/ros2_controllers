@@ -287,13 +287,9 @@ controller_interface::return_type JointTrajectoryController::update(
         }
         if (has_effort_command_interface_)
         {
-          if (use_closed_loop_pid_adapter_)
+          if (use_closed_loop_pid_adapter_)  // this should be always set to true when using effort
           {
             assign_interface_from_point(joint_command_interface_[3], tmp_command_);
-          }
-          else
-          {
-            assign_interface_from_point(joint_command_interface_[3], state_desired_.effort);
           }
         }
 
@@ -608,17 +604,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   {
     if (command_interface_types_.size() == 1)
     {
-      if (!disable_closed_loop_pid_adapter_)
-      {
-        use_closed_loop_pid_adapter_ = true;
-      }
-      else
-      {
-        RCLCPP_WARN(
-          logger,
-          "Using only 'effort' command interface without closed loop PID adapter because it is "
-          "disabled.");
-      }
+      use_closed_loop_pid_adapter_ = true;
     }
     else
     {
