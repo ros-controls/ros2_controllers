@@ -1182,7 +1182,7 @@ void JointTrajectoryController::sort_to_local_joint_order(
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg)
 {
   // rearrange all points in the trajectory message based on mapping
-  std::vector<size_t> mapping_vector = mapping(trajectory_msg->joint_names, command_joint_names_);
+  std::vector<size_t> mapping_vector = mapping(trajectory_msg->joint_names, joint_names_);
   auto remap = [this](
                  const std::vector<double> & to_remap,
                  const std::vector<size_t> & mapping) -> std::vector<double>

@@ -107,6 +107,10 @@ public:
 
   bool has_effort_command_interface() { return has_effort_command_interface_; }
 
+  bool get_disable_closed_loop_pid_adapter() { return disable_closed_loop_pid_adapter_; }
+
+  bool get_use_closed_loop_pid_adapter() { return use_closed_loop_pid_adapter_; }
+
   rclcpp::WaitSet joint_cmd_sub_wait_set_;
 };
 
