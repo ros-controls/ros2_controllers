@@ -36,8 +36,8 @@ TEST(TestLoadTricycleController, load_controller)
       ros2_control_test_assets::minimal_robot_urdf),
     executor, "test_controller_manager");
 
-  ASSERT_NO_THROW(cm.load_controller(
-    "test_tricycle_controller", "tricycle_controller/TricycleController"));
+  ASSERT_NO_THROW(
+    cm.load_controller("test_tricycle_controller", "tricycle_controller/TricycleController"));
 
   rclcpp::shutdown();
 }

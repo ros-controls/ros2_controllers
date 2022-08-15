@@ -24,6 +24,7 @@
 #include <memory>
 #include <queue>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "ackermann_msgs/msg/ackermann_drive.hpp"
@@ -32,16 +33,16 @@
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "hardware_interface/handle.hpp"
 #include "nav_msgs/msg/odometry.hpp"
-#include "std_srvs/srv/empty.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_box.h"
 #include "realtime_tools/realtime_buffer.h"
 #include "realtime_tools/realtime_publisher.h"
+#include "std_srvs/srv/empty.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"
 #include "tricycle_controller/odometry.hpp"
-#include "tricycle_controller/traction_limiter.hpp"
 #include "tricycle_controller/steering_limiter.hpp"
+#include "tricycle_controller/traction_limiter.hpp"
 #include "tricycle_controller/visibility_control.h"
 
 namespace tricycle_controller
@@ -125,7 +126,7 @@ protected:
   {
     bool open_loop = false;
     bool enable_odom_tf = false;
-    bool odom_only_twist = false;  // for doing the pose integration in seperate node
+    bool odom_only_twist = false;  // for doing the pose integration in separate node
     std::string base_frame_id = "base_link";
     std::string odom_frame_id = "odom";
     std::array<double, 6> pose_covariance_diagonal;
