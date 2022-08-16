@@ -87,16 +87,18 @@ protected:
   {
     setup_controller_hw_ = true;
 
-    controller_hw_thread_ = std::thread([&]() {
-      // controller hardware cycle update loop
-      auto start_time = rclcpp::Clock().now();
-      rclcpp::Duration wait = rclcpp::Duration::from_seconds(2.0);
-      auto end_time = start_time + wait;
-      while (rclcpp::Clock().now() < end_time)
+    controller_hw_thread_ = std::thread(
+      [&]()
       {
-        traj_controller_->update(rclcpp::Clock().now(), rclcpp::Clock().now() - start_time);
-      }
-    });
+        // controller hardware cycle update loop
+        auto start_time = rclcpp::Clock().now();
+        rclcpp::Duration wait = rclcpp::Duration::from_seconds(2.0);
+        auto end_time = start_time + wait;
+        while (rclcpp::Clock().now() < end_time)
+        {
+          traj_controller_->update(rclcpp::Clock().now(), rclcpp::Clock().now() - start_time);
+        }
+      });
 
     // sometimes doesn't receive calls when we don't sleep
     std::this_thread::sleep_for(std::chrono::milliseconds(300));
