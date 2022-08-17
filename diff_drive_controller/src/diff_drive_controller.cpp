@@ -423,7 +423,8 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   {
     velocity_command_subscriber_ = get_node()->create_subscription<Twist>(
       DEFAULT_COMMAND_TOPIC, rclcpp::SystemDefaultsQoS(),
-      [this](const std::shared_ptr<Twist> msg) -> void {
+      [this](const std::shared_ptr<Twist> msg) -> void
+      {
         if (!subscriber_is_active_)
         {
           RCLCPP_WARN(
@@ -446,7 +447,8 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
     velocity_command_unstamped_subscriber_ =
       get_node()->create_subscription<geometry_msgs::msg::Twist>(
         DEFAULT_COMMAND_UNSTAMPED_TOPIC, rclcpp::SystemDefaultsQoS(),
-        [this](const std::shared_ptr<geometry_msgs::msg::Twist> msg) -> void {
+        [this](const std::shared_ptr<geometry_msgs::msg::Twist> msg) -> void
+        {
           if (!subscriber_is_active_)
           {
             RCLCPP_WARN(
@@ -595,7 +597,8 @@ controller_interface::CallbackReturn DiffDriveController::on_shutdown(
 
 void DiffDriveController::halt()
 {
-  const auto halt_wheels = [](auto & wheel_handles) {
+  const auto halt_wheels = [](auto & wheel_handles)
+  {
     for (const auto & wheel_handle : wheel_handles)
     {
       wheel_handle.velocity.get().set_value(0.0);
@@ -625,7 +628,8 @@ controller_interface::CallbackReturn DiffDriveController::configure_side(
     const auto interface_name = feedback_type();
     const auto state_handle = std::find_if(
       state_interfaces_.cbegin(), state_interfaces_.cend(),
-      [&wheel_name, &interface_name](const auto & interface) {
+      [&wheel_name, &interface_name](const auto & interface)
+      {
         return interface.get_prefix_name() == wheel_name &&
                interface.get_interface_name() == interface_name;
       });
@@ -638,7 +642,8 @@ controller_interface::CallbackReturn DiffDriveController::configure_side(
 
     const auto command_handle = std::find_if(
       command_interfaces_.begin(), command_interfaces_.end(),
-      [&wheel_name](const auto & interface) {
+      [&wheel_name](const auto & interface)
+      {
         return interface.get_prefix_name() == wheel_name &&
                interface.get_interface_name() == HW_IF_VELOCITY;
       });
