@@ -1,13 +1,7 @@
 # ros2_controllers
 
-<<<<<<< HEAD
-## CI
-linux: [![Build Status](https://travis-ci.org/ros-controls/ros2_controllers.svg?branch=master)](https://travis-ci.org/ros-controls/ros2_controllers)
-
-## Getting Started:
-Have a look at here: https://github.com/ros-controls/ros2_control
-=======
 Commonly used and generalized controllers for ros2-control framework that are ready to use with many robots, MoveIt2 and Navigation2.
+
 
 ## Build status
 
@@ -31,7 +25,6 @@ ROS2 Distro | Branch | Build status | Documentation | Released packages
 
    Uses repos file: `src/$NAME$/$NAME$.repos`
 
->>>>>>> 4d3404f (Adjust CI configuration to ros2_control repository. (#408))
 
 ## Acknowledgements
 
