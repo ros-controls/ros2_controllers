@@ -238,9 +238,8 @@ controller_interface::CallbackReturn GripperActionController<HardwareInterface>:
 {
   auto position_command_interface_it = std::find_if(
     command_interfaces_.begin(), command_interfaces_.end(),
-    [](const hardware_interface::LoanedCommandInterface & command_interface) {
-      return command_interface.get_interface_name() == hardware_interface::HW_IF_POSITION;
-    });
+    [](const hardware_interface::LoanedCommandInterface & command_interface)
+    { return command_interface.get_interface_name() == hardware_interface::HW_IF_POSITION; });
   if (position_command_interface_it == command_interfaces_.end())
   {
     RCLCPP_ERROR(get_node()->get_logger(), "Expected 1 position command interface");
@@ -256,9 +255,8 @@ controller_interface::CallbackReturn GripperActionController<HardwareInterface>:
   }
   const auto position_state_interface_it = std::find_if(
     state_interfaces_.begin(), state_interfaces_.end(),
-    [](const hardware_interface::LoanedStateInterface & state_interface) {
-      return state_interface.get_interface_name() == hardware_interface::HW_IF_POSITION;
-    });
+    [](const hardware_interface::LoanedStateInterface & state_interface)
+    { return state_interface.get_interface_name() == hardware_interface::HW_IF_POSITION; });
   if (position_state_interface_it == state_interfaces_.end())
   {
     RCLCPP_ERROR(get_node()->get_logger(), "Expected 1 position state interface");
@@ -274,9 +272,8 @@ controller_interface::CallbackReturn GripperActionController<HardwareInterface>:
   }
   const auto velocity_state_interface_it = std::find_if(
     state_interfaces_.begin(), state_interfaces_.end(),
-    [](const hardware_interface::LoanedStateInterface & state_interface) {
-      return state_interface.get_interface_name() == hardware_interface::HW_IF_VELOCITY;
-    });
+    [](const hardware_interface::LoanedStateInterface & state_interface)
+    { return state_interface.get_interface_name() == hardware_interface::HW_IF_VELOCITY; });
   if (velocity_state_interface_it == state_interfaces_.end())
   {
     RCLCPP_ERROR(get_node()->get_logger(), "Expected 1 velocity state interface");
