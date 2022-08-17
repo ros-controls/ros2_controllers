@@ -15,7 +15,6 @@ jobs:
     - uses: ros-tooling/setup-ros@v0.2
     - uses: ros-tooling/action-ros-lint@v0.1
       with:
-<<<<<<< HEAD:.github/workflows/lint.yml
         distribution: foxy
         linter: ${{ matrix.linter }}
         package-name:
@@ -30,12 +29,6 @@ jobs:
             position_controllers
             ros2_controllers
             velocity_controllers
-=======
-        distribution: rolling
-        linter: ${{ matrix.linter }}
-        package-name:
-          diff_drive_controller
->>>>>>> 4d3404f (Adjust CI configuration to ros2_control repository. (#408)):.github/workflows/ci-ros-lint.yml
 
 
   ament_lint_100:
@@ -50,15 +43,10 @@ jobs:
     - uses: ros-tooling/setup-ros@v0.2
     - uses: ros-tooling/action-ros-lint@v0.1
       with:
-<<<<<<< HEAD:.github/workflows/lint.yml
         distribution: foxy
-=======
-        distribution: rolling
->>>>>>> 4d3404f (Adjust CI configuration to ros2_control repository. (#408)):.github/workflows/ci-ros-lint.yml
         linter: cpplint
         arguments: "--linelength=100 --filter=-whitespace/newline"
         package-name:
-<<<<<<< HEAD:.github/workflows/lint.yml
             diff_drive_controller
             effort_controllers
             force_torque_sensor_broadcaster
@@ -70,7 +58,3 @@ jobs:
             position_controllers
             ros2_controllers
             velocity_controllers
-=======
-          diff_drive_controller
-          ros2_controllers
->>>>>>> 4d3404f (Adjust CI configuration to ros2_control repository. (#408)):.github/workflows/ci-ros-lint.yml
