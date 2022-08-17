@@ -43,11 +43,6 @@ controller_interface::CallbackReturn IMUSensorBroadcaster::on_init()
 controller_interface::CallbackReturn IMUSensorBroadcaster::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  if (!param_listener_)
-  {
-    RCLCPP_ERROR(get_node()->get_logger(), "Error encountered during init");
-    return CallbackReturn::ERROR;
-  }
 
   params_ = param_listener_->get_params();
   if (params_.sensor_name.empty())

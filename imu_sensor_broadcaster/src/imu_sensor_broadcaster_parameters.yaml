@@ -2,8 +2,10 @@ imu_sensor_broadcaster:
   sensor_name: {
     type: string,
     default_value: "",
+    description: "Name of the sensor used as prefix for interfaces if there are no individual interface names defined.",
   }
   frame_id: {
     type: string,
     default_value: "",
+    description: "Sensor's frame_id in which values are published.",
   }
