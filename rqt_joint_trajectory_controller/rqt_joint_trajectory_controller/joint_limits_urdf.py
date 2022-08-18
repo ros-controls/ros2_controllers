@@ -66,7 +66,7 @@ def get_joint_limits(node, key="robot_description", use_smallest_joint_limits=Tr
                 name = child.getAttribute("name")
                 try:
                     limit = child.getElementsByTagName("limit")[0]
-                except:
+                except IndexError:
                     continue
                 if jtype == "continuous":
                     minval = -pi
@@ -75,11 +75,11 @@ def get_joint_limits(node, key="robot_description", use_smallest_joint_limits=Tr
                     try:
                         minval = float(limit.getAttribute("lower"))
                         maxval = float(limit.getAttribute("upper"))
-                    except:
+                    except ValueError:
                         continue
                 try:
                     maxvel = float(limit.getAttribute("velocity"))
-                except:
+                except ValueError:
                     continue
                 safety_tags = child.getElementsByTagName("safety_controller")
                 if use_small and len(safety_tags) == 1:
