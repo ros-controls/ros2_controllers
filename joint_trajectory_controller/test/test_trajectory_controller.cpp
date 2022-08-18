@@ -375,10 +375,10 @@ TEST_P(TrajectoryControllerTestParameterized, state_topic_consistency)
   }
 
   // No trajectory by default, no desired state or error
-  std::vector<double> desired_position{INITIAL_POS_JOINT1, INITIAL_POS_JOINT2, INITIAL_POS_JOINT3};
-  EXPECT_EQ(state->desired.positions, desired_position);
-  EXPECT_TRUE(state->desired.velocities.empty());
-  EXPECT_TRUE(state->desired.accelerations.empty());
+  EXPECT_TRUE(state->desired.positions.empty() || state->desired.positions == INITIAL_POS_JOINTS);
+  EXPECT_TRUE(state->desired.velocities.empty() || state->desired.velocities == INITIAL_VEL_JOINTS);
+  EXPECT_TRUE(
+    state->desired.accelerations.empty() || state->desired.accelerations == INITIAL_EFF_JOINTS);
 
   EXPECT_EQ(n_joints, state->actual.positions.size());
   if (
@@ -404,8 +404,8 @@ TEST_P(TrajectoryControllerTestParameterized, state_topic_consistency)
 
   std::vector<double> zeros(3, 0);
   EXPECT_EQ(state->error.positions, zeros);
-  EXPECT_EQ(state->error.velocities, zeros);
-  EXPECT_EQ(state->error.accelerations, zeros);
+  EXPECT_TRUE(state->error.velocities.empty() || state->error.velocities == zeros);
+  EXPECT_TRUE(state->error.accelerations.empty() || state->error.accelerations == zeros);
 }
 
 // void TrajectoryControllerTest::test_state_publish_rate_target(int target_msg_count)
