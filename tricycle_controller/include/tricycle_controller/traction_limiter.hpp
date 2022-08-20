@@ -23,6 +23,7 @@
 
 namespace tricycle_controller
 {
+
 class TractionLimiter
 {
 public:
@@ -38,8 +39,9 @@ public:
    * \param [in] max_jerk Maximum jerk [m/s^3], usually >= 0
    */
   TractionLimiter(
-    double min_velocity = NAN, double max_velocity = NAN, double min_acceleration = NAN,
-    double max_acceleration = NAN, double min_deceleration = NAN, double max_deceleration = NAN,
+    double min_velocity = NAN, double max_velocity = NAN,
+    double min_acceleration = NAN, double max_acceleration = NAN,
+    double min_deceleration = NAN, double max_deceleration = NAN,
     double min_jerk = NAN, double max_jerk = NAN);
 
   /**

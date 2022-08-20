@@ -221,7 +221,7 @@ controller_interface::return_type TricycleController::update(
   }
   else
   {
-    // TODO(anyone): find the best function, e.g convex power functions
+    // TODO: find the best function, e.g convex power functions
     scale = cos(alpha_delta);
   }
   Ws_write *= scale;
@@ -238,9 +238,8 @@ controller_interface::return_type TricycleController::update(
 
   previous_commands_.pop();
   AckermannDrive ackermann_command;
-  // speed in AckermannDrive is defined as desired forward speed (m/s) but it is used here as wheel
-  // speed (rad/s)
-  ackermann_command.speed = Ws_write;
+  ackermann_command.speed =
+    Ws_write;  // speed in AckermannDrive is defined desired forward speed (m/s) but we use it here as wheel speed (rad/s)
   ackermann_command.steering_angle = alpha_write;
   previous_commands_.emplace(ackermann_command);
 
@@ -248,9 +247,8 @@ controller_interface::return_type TricycleController::update(
   if (publish_ackermann_command_ && realtime_ackermann_command_publisher_->trylock())
   {
     auto & realtime_ackermann_command = realtime_ackermann_command_publisher_->msg_;
-    // speed in AckermannDrive is defined desired forward speed (m/s) but we use it here as wheel
-    // speed (rad/s)
-    realtime_ackermann_command.speed = Ws_write;
+    realtime_ackermann_command.speed =
+      Ws_write;  // speed in AckermannDrive is defined desired forward speed (m/s) but we use it here as wheel speed (rad/s)
     realtime_ackermann_command.steering_angle = alpha_write;
     realtime_ackermann_command_publisher_->unlockAndPublish();
   }
@@ -300,8 +298,7 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
   odom_params_.enable_odom_tf = get_node()->get_parameter("enable_odom_tf").as_bool();
   odom_params_.odom_only_twist = get_node()->get_parameter("odom_only_twist").as_bool();
 
-  cmd_vel_timeout_ =
-    std::chrono::milliseconds{get_node()->get_parameter("cmd_vel_timeout").as_int()};
+  cmd_vel_timeout_ = std::chrono::milliseconds{get_node()->get_parameter("cmd_vel_timeout").as_int()};
   publish_ackermann_command_ = get_node()->get_parameter("publish_ackermann_command").as_bool();
   use_stamped_vel_ = get_node()->get_parameter("use_stamped_vel").as_bool();
 
