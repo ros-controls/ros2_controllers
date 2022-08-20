@@ -356,55 +356,57 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
   executor.cancel();
 }
 
-// TEST_P(TrajectoryControllerTestParameterized, state_topic_consistency)
-// {
-//   rclcpp::executors::SingleThreadedExecutor executor;
-//   SetUpAndActivateTrajectoryController(true, {}, &executor);
-//   subscribeToState();
-//   updateController();
+TEST_P(TrajectoryControllerTestParameterized, state_topic_consistency)
+{
+  rclcpp::executors::SingleThreadedExecutor executor;
+  SetUpAndActivateTrajectoryController(true, {}, &executor);
+  subscribeToState();
+  updateController();
 
-//   // Spin to receive latest state
-//   executor.spin_some();
-//   auto state = getState();
+  // Spin to receive latest state
+  executor.spin_some();
+  auto state = getState();
 
-//   size_t n_joints = joint_names_.size();
+  size_t n_joints = joint_names_.size();
 
-//   for (unsigned int i = 0; i < n_joints; ++i)
-//   {
-//     EXPECT_EQ(joint_names_[i], state->joint_names[i]);
-//   }
+  for (unsigned int i = 0; i < n_joints; ++i)
+  {
+    EXPECT_EQ(joint_names_[i], state->joint_names[i]);
+  }
 
-//   // No trajectory by default, no desired state or error
-//   EXPECT_TRUE(state->desired.positions.empty());
-//   EXPECT_TRUE(state->desired.velocities.empty());
-//   EXPECT_TRUE(state->desired.accelerations.empty());
+  // No trajectory by default, no desired state or error
+  EXPECT_TRUE(state->desired.positions.empty() || state->desired.positions == INITIAL_POS_JOINTS);
+  EXPECT_TRUE(state->desired.velocities.empty() || state->desired.velocities == INITIAL_VEL_JOINTS);
+  EXPECT_TRUE(
+    state->desired.accelerations.empty() || state->desired.accelerations == INITIAL_EFF_JOINTS);
 
-//   EXPECT_EQ(n_joints, state->actual.positions.size());
-//   if (
-//     std::find(state_interface_types_.begin(), state_interface_types_.end(), "velocity") ==
-//     state_interface_types_.end())
-//   {
-//     EXPECT_TRUE(state->actual.velocities.empty());
-//   }
-//   else
-//   {
-//     EXPECT_EQ(n_joints, state->actual.velocities.size());
-//   }
-//   if (
-//     std::find(state_interface_types_.begin(), state_interface_types_.end(), "acceleration") ==
-//     state_interface_types_.end())
-//   {
-//     EXPECT_TRUE(state->actual.accelerations.empty());
-//   }
-//   else
-//   {
-//     EXPECT_EQ(n_joints, state->actual.accelerations.size());
-//   }
+  EXPECT_EQ(n_joints, state->actual.positions.size());
+  if (
+    std::find(state_interface_types_.begin(), state_interface_types_.end(), "velocity") ==
+    state_interface_types_.end())
+  {
+    EXPECT_TRUE(state->actual.velocities.empty());
+  }
+  else
+  {
+    EXPECT_EQ(n_joints, state->actual.velocities.size());
+  }
+  if (
+    std::find(state_interface_types_.begin(), state_interface_types_.end(), "acceleration") ==
+    state_interface_types_.end())
+  {
+    EXPECT_TRUE(state->actual.accelerations.empty());
+  }
+  else
+  {
+    EXPECT_EQ(n_joints, state->actual.accelerations.size());
+  }
 
-//   EXPECT_TRUE(state->error.positions.empty());
-//   EXPECT_TRUE(state->error.velocities.empty());
-//   EXPECT_TRUE(state->error.accelerations.empty());
-// }
+  std::vector<double> zeros(3, 0);
+  EXPECT_EQ(state->error.positions, zeros);
+  EXPECT_TRUE(state->error.velocities.empty() || state->error.velocities == zeros);
+  EXPECT_TRUE(state->error.accelerations.empty() || state->error.accelerations == zeros);
+}
 
 // void TrajectoryControllerTest::test_state_publish_rate_target(int target_msg_count)
 // {

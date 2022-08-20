@@ -139,5 +139,5 @@ repos:
     rev: v2.1.0
     hooks:
       - id: codespell
-        args: ['--write-changes']
+        args: ['--write-changes', '--uri-ignore-words-list=ist']
         exclude: CHANGELOG\.rst|\.(svg|pyc|drawio)$

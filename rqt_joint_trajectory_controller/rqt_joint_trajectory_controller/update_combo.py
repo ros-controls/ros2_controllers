@@ -48,9 +48,10 @@ def update_combo(combo, new_vals):
 
 
 def _is_permutation(a, b):
-    """
-    @type a []
-    @type b []
+    """Check is arrays are permutation of each other.
+
+    @type a [] first array with values to compare with the second one.
+    @type b [] second array with values to compare with the first one.
     @return True if C{a} is a permutation of C{b}, false otherwise
     @rtype bool
     """
