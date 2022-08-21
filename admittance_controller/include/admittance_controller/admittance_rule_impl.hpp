@@ -22,18 +22,16 @@
 #include <memory>
 #include <vector>
 
-#include "tf2_ros/transform_listener.h"
-
 #include "rclcpp/duration.hpp"
 #include "rclcpp/utilities.hpp"
+#include "tf2_ros/transform_listener.h"
 
 namespace admittance_controller
 {
+/// Configure admittance rule memory for num joints and load kinematics interface
 controller_interface::return_type AdmittanceRule::configure(
-  const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node, size_t num_joints)
+  const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node, const size_t num_joints)
 {
-  // configure admittance rule using num_joints and load kinematics interface
-
   num_joints_ = num_joints;
 
   // initialize ROS functions
@@ -79,16 +77,14 @@ controller_interface::return_type AdmittanceRule::configure(
   return controller_interface::return_type::OK;
 }
 
-controller_interface::return_type AdmittanceRule::reset(size_t num_joints)
+controller_interface::return_type AdmittanceRule::reset(const size_t num_joints)
 {
-  // reset all values back to default
-
   // reset state message fields
   state_message_.joint_state.name.assign(num_joints, "");
   state_message_.joint_state.position.assign(num_joints, 0);
   state_message_.joint_state.velocity.assign(num_joints, 0);
   state_message_.joint_state.effort.assign(num_joints, 0);
-  for (auto i = 0ul; i < parameters_.joints.size(); i++)
+  for (size_t i = 0; i < parameters_.joints.size(); ++i)
   {
     state_message_.joint_state.name = parameters_.joints;
   }
@@ -127,7 +123,7 @@ void AdmittanceRule::apply_parameters_update()
   vec_to_eigen(parameters_.admittance.stiffness, admittance_state_.stiffness);
   vec_to_eigen(parameters_.admittance.selected_axes, admittance_state_.selected_axes);
 
-  for (auto i = 0ul; i < 6; ++i)
+  for (size_t i = 0; i < 6; ++i)
   {
     admittance_state_.mass_inv[i] = 1.0 / parameters_.admittance.mass[i];
     admittance_state_.damping[i] = parameters_.admittance.damping_ratio[i] * 2 *
@@ -138,7 +134,7 @@ void AdmittanceRule::apply_parameters_update()
 bool AdmittanceRule::get_all_transforms(
   const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state,
   const trajectory_msgs::msg::JointTrajectoryPoint & reference_joint_state,
-  const AdmittanceState & admittance_state)
+  const AdmittanceState & /*admittance_state*/)
 {
   // get all reference transforms
   bool success = kinematics_->calculate_link_transform(
@@ -180,7 +176,7 @@ controller_interface::return_type AdmittanceRule::update(
   const trajectory_msgs::msg::JointTrajectoryPoint & reference_joint_state,
   const rclcpp::Duration & period, trajectory_msgs::msg::JointTrajectoryPoint & desired_joint_state)
 {
-  double dt = period.seconds();
+  const double dt = period.seconds();
 
   if (parameters_.enable_parameter_update_without_reactivation)
   {
@@ -222,16 +218,16 @@ controller_interface::return_type AdmittanceRule::update(
   }
 
   // update joint desired joint state
-  for (auto i = 0ul; i < reference_joint_state.positions.size(); i++)
+  for (size_t i = 0; i < reference_joint_state.positions.size(); ++i)
   {
     desired_joint_state.positions[i] =
       reference_joint_state.positions[i] + admittance_state_.joint_pos[i];
   }
-  for (auto i = 0ul; i < reference_joint_state.velocities.size(); i++)
+  for (size_t i = 0; i < reference_joint_state.velocities.size(); ++i)
   {
     desired_joint_state.velocities[i] = admittance_state_.joint_vel[i];
   }
-  for (auto i = 0ul; i < reference_joint_state.accelerations.size(); i++)
+  for (size_t i = 0; i < reference_joint_state.accelerations.size(); ++i)
   {
     desired_joint_state.accelerations[i] = admittance_state_.joint_acc[i];
   }
@@ -334,7 +330,7 @@ void AdmittanceRule::process_wrench_measurements(
   new_wrench_base.block<3, 1>(0, 1) -= (cog_world_rot * cog_).cross(ee_weight_);
 
   // apply smoothing filter
-  for (auto i = 0; i < 6; i++)
+  for (size_t i = 0; i < 6; ++i)
   {
     wrench_world_(i) = filters::exponentialSmoothing(
       new_wrench_base(i), wrench_world_(i), parameters_.ft_sensor.filter_coefficient);
@@ -343,35 +339,35 @@ void AdmittanceRule::process_wrench_measurements(
 
 const control_msgs::msg::AdmittanceControllerState & AdmittanceRule::get_controller_state()
 {
-  for (auto i = 0ul; i < parameters_.joints.size(); i++)
+  for (size_t i = 0; i < parameters_.joints.size(); ++i)
   {
     state_message_.joint_state.name[i] = parameters_.joints[i];
   }
-  for (auto i = 0l; i < admittance_state_.joint_pos.size(); i++)
+  for (size_t i = 0; i < admittance_state_.joint_pos.size(); ++i)
   {
     state_message_.joint_state.position[i] = admittance_state_.joint_pos[i];
   }
-  for (auto i = 0l; i < admittance_state_.joint_vel.size(); i++)
+  for (size_t i = 0; i < admittance_state_.joint_vel.size(); ++i)
   {
     state_message_.joint_state.velocity[i] = admittance_state_.joint_vel[i];
   }
-  for (auto i = 0l; i < admittance_state_.joint_acc.size(); i++)
+  for (size_t i = 0; i < admittance_state_.joint_acc.size(); ++i)
   {
     state_message_.joint_state.effort[i] = admittance_state_.joint_acc[i];
   }
-  for (auto i = 0l; i < admittance_state_.stiffness.size(); i++)
+  for (size_t i = 0; i < admittance_state_.stiffness.size(); ++i)
   {
     state_message_.stiffness.data[i] = admittance_state_.stiffness[i];
   }
-  for (auto i = 0l; i < admittance_state_.damping.size(); i++)
+  for (size_t i = 0; i < admittance_state_.damping.size(); ++i)
   {
     state_message_.damping.data[i] = admittance_state_.damping[i];
   }
-  for (auto i = 0l; i < admittance_state_.selected_axes.size(); i++)
+  for (size_t i = 0; i < admittance_state_.selected_axes.size(); ++i)
   {
     state_message_.selected_axes.data[i] = static_cast<bool>(admittance_state_.selected_axes[i]);
   }
-  for (auto i = 0l; i < admittance_state_.mass.size(); i++)
+  for (size_t i = 0; i < admittance_state_.mass.size(); ++i)
   {
     state_message_.mass.data[i] = admittance_state_.mass[i];
   }

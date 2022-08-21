@@ -62,7 +62,9 @@ install(TARGETS ${PROJECT_NAME}
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gmock REQUIRED)
+  find_package(control_msgs REQUIRED)
   find_package(controller_manager REQUIRED)
+  find_package(controller_interface REQUIRED)
   find_package(hardware_interface REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
 
@@ -84,9 +86,9 @@ if(BUILD_TESTING)
   endfunction()
 
   # test loading admittance controller
-  add_test_with_yaml_input(test_load_admittance_controller "test/test_load_admittance_controller.cpp"
+  add_test_with_yaml_input(test_load_admittance_controller test/test_load_admittance_controller.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_params.yaml)
-  target_include_directories(test_load_admittance_controller PUBLIC "${GMOCK_INCLUDE_DIRS}")
+  target_include_directories(test_load_admittance_controller PUBLIC ${GMOCK_INCLUDE_DIRS})
   target_link_libraries(test_load_admittance_controller ${GMOCK_LIBRARIES})
   ament_target_dependencies(
     test_load_admittance_controller
@@ -95,7 +97,7 @@ if(BUILD_TESTING)
     ros2_control_test_assets
   )
   # test admittance controller function
-  add_test_with_yaml_input(test_admittance_controller "test/test_admittance_controller.cpp"
+  add_test_with_yaml_input(test_admittance_controller test/test_admittance_controller.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_params.yaml)
   target_include_directories(test_admittance_controller PRIVATE include)
   target_link_libraries(test_admittance_controller admittance_controller)

@@ -96,8 +96,6 @@ protected:
 
   controller_interface::return_type update_reference_from_subscribers() override;
 
-  bool on_set_chained_mode(bool chained_mode) override;
-
   size_t num_joints_ = 0;
   size_t state_pos_ind = -1;
   size_t state_vel_ind = -1;

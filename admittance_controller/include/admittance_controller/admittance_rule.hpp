@@ -24,8 +24,6 @@
 #include <string>
 #include <vector>
 
-#include "tf2_ros/buffer.h"
-
 #include "admittance_controller_parameters.hpp"
 #include "control_msgs/msg/admittance_controller_state.hpp"
 #include "control_toolbox/filters.hpp"
@@ -33,12 +31,12 @@
 #include "geometry_msgs/msg/wrench_stamped.hpp"
 #include "kinematics_interface/kinematics_interface.hpp"
 #include "pluginlib/class_loader.hpp"
-#include "tf2_eigen/tf2_eigen.h"
+#include "tf2_eigen/tf2_eigen.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2_kdl/tf2_kdl/tf2_kdl.hpp"
+#include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
-// TODO(destogl): remove this include - this is wrong!
-#include "trajectory_msgs/msg/detail/joint_trajectory_point__struct.hpp"
+#include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
 namespace admittance_controller
 {
@@ -103,40 +101,42 @@ public:
     reset(num_joints_);
   }
 
+  /// Configure admittance rule memory using number of joints.
   controller_interface::return_type configure(
-    const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node, size_t num_joint);
+    const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node, const size_t num_joint);
 
-  controller_interface::return_type reset(size_t num_joints);
+  /// Reset all values back to default
+  controller_interface::return_type reset(const size_t num_joints);
 
   /**
-     * Calculate all transforms needed for admittance control using the loader kinematics plugin. If the transform does
-     * not exist in the kinematics model, then TF will be used for lookup. The return value is true if all transformation
-     * are calculated without an error
-     * \param[in] current_joint_state
-     * \param[in] reference_joint_state
-     * \param[in] success
-     */
+   * Calculate all transforms needed for admittance control using the loader kinematics plugin. If the transform does
+   * not exist in the kinematics model, then TF will be used for lookup. The return value is true if all transformation
+   * are calculated without an error
+   * \param[in] current_joint_state
+   * \param[in] reference_joint_state
+   * \param[in] success
+   */
   bool get_all_transforms(
     const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state,
     const trajectory_msgs::msg::JointTrajectoryPoint & reference_joint_state,
     const AdmittanceState & admittance_state);
 
   /**
-    * Updates parameter_ struct if any parameters have changed since last update. Parameter dependent Eigen field
-    * members (ee_weight_, cog_, mass_, mass_inv_ stiffness, selected_axes, damping_) are also updated
-    */
+   * Updates parameter_ struct if any parameters have changed since last update. Parameter dependent Eigen field
+   * members (ee_weight_, cog_, mass_, mass_inv_ stiffness, selected_axes, damping_) are also updated
+   */
   void apply_parameters_update();
 
   /**
-     * Calculate 'desired joint states' based on the 'measured force', 'reference joint state', and
-     * 'current_joint_state'.
-     *
-     * \param[in] current_joint_state
-     * \param[in] measured_wrench
-     * \param[in] reference_joint_state
-     * \param[in] period
-     * \param[out] desired_joint_state
-     */
+   * Calculate 'desired joint states' based on the 'measured force', 'reference joint state', and
+   * 'current_joint_state'.
+   *
+   * \param[in] current_joint_state
+   * \param[in] measured_wrench
+   * \param[in] reference_joint_state
+   * \param[in] period
+   * \param[out] desired_joint_state
+   */
   controller_interface::return_type update(
     const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state,
     const geometry_msgs::msg::Wrench & measured_wrench,
@@ -145,10 +145,10 @@ public:
     trajectory_msgs::msg::JointTrajectoryPoint & desired_joint_states);
 
   /**
-     * Fill fields of `state_message` from current admittance controller state.
-     *
-     * \param[in] state_message
-     */
+   * Fill fields of `state_message` from current admittance controller state.
+   *
+   * \param[in] state_message
+   */
   const control_msgs::msg::AdmittanceControllerState & get_controller_state();
 
 public:
@@ -158,29 +158,29 @@ public:
 
 protected:
   /**
-     * Calculate the admittance rule from given the robot's current joint angles. the control frame rotation, the
-     * current force torque transform, the reference force torque transform, the force torque sensor frame id,
-     * the time delta, and the current admittance controller state. The admittance controller state input is updated
-     * with the new calculated values. A boolean value is returned indicating if any of the kinematics plugin calls
-     * failed.
-     * \param[in] current_joint_positions
-     * \param[in] base_control
-     * \param[in] base_ft
-     * \param[in] ref_base_ft
-     * \param[in] ft_sensor_frame
-     * \param[in] dt
-     * \param[in] admittance_state
-     * \param[out] success
-     */
+   * Calculate the admittance rule from given the robot's current joint angles. the control frame rotation, the
+   * current force torque transform, the reference force torque transform, the force torque sensor frame id,
+   * the time delta, and the current admittance controller state. The admittance controller state input is updated
+   * with the new calculated values. A boolean value is returned indicating if any of the kinematics plugin calls
+   * failed.
+   * \param[in] current_joint_positions
+   * \param[in] base_control
+   * \param[in] base_ft
+   * \param[in] ref_base_ft
+   * \param[in] ft_sensor_frame
+   * \param[in] dt
+   * \param[in] admittance_state
+   * \param[out] success
+   */
   bool calculate_admittance_rule(AdmittanceState & admittance_state, double dt);
 
   /**
-     * Updates internal estimate of wrench in world frame `wrench_world_` given the new measurement. The `wrench_world_`
-     * estimate includes gravity compensation
-     * \param[in] measured_wrench
-     * \param[in] sensor_rot
-     * \param[in] cog_rot
-     */
+   * Updates internal estimate of wrench in world frame `wrench_world_` given the new measurement. The `wrench_world_`
+   * estimate includes gravity compensation
+   * \param[in] measured_wrench
+   * \param[in] sensor_rot
+   * \param[in] cog_rot
+   */
   void process_wrench_measurements(
     const geometry_msgs::msg::Wrench & measured_wrench,
     const Eigen::Matrix<double, 3, 3> & sensor_rot, const Eigen::Matrix<double, 3, 3> & cog_rot);

@@ -91,7 +91,7 @@ controller_interface::InterfaceConfiguration AdmittanceController::state_interfa
   }
 
   std::vector<std::string> state_interfaces_config_names;
-  for (auto i = 0ul; i < admittance_->parameters_.state_interfaces.size(); i++)
+  for (size_t i = 0; i < admittance_->parameters_.state_interfaces.size(); ++i)
   {
     const auto & interface = admittance_->parameters_.state_interfaces[i];
     for (const auto & joint : admittance_->parameters_.joints)
@@ -151,7 +151,7 @@ AdmittanceController::on_export_reference_interfaces()
 }
 
 controller_interface::CallbackReturn AdmittanceController::on_configure(
-  const rclcpp_lifecycle::State & previous_state)
+  const rclcpp_lifecycle::State & /*previous_state*/)
 {
   try
   {
@@ -235,11 +235,11 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  return LifecycleNodeInterface::on_configure(previous_state);
+  return controller_interface::CallbackReturn::SUCCESS;
 }
 
 controller_interface::CallbackReturn AdmittanceController::on_activate(
-  const rclcpp_lifecycle::State & previous_state)
+  const rclcpp_lifecycle::State & /*previous_state*/)
 {
   // on_activate is called when the lifecycle node activates.
   if (!admittance_)
@@ -258,7 +258,7 @@ controller_interface::CallbackReturn AdmittanceController::on_activate(
     {hardware_interface::HW_IF_POSITION, -1},
     {hardware_interface::HW_IF_VELOCITY, -1},
     {hardware_interface::HW_IF_ACCELERATION, -1}};
-  for (auto i = 0ul; i < admittance_->parameters_.state_interfaces.size(); i++)
+  for (size_t i = 0; i < admittance_->parameters_.state_interfaces.size(); ++i)
   {
     const auto & interface = admittance_->parameters_.state_interfaces[i];
     inter_to_ind[interface] = i;
@@ -272,7 +272,7 @@ controller_interface::CallbackReturn AdmittanceController::on_activate(
     {hardware_interface::HW_IF_POSITION, -1},
     {hardware_interface::HW_IF_VELOCITY, -1},
     {hardware_interface::HW_IF_ACCELERATION, -1}};
-  for (auto i = 0ul; i < admittance_->parameters_.command_interfaces.size(); i++)
+  for (size_t i = 0; i < admittance_->parameters_.command_interfaces.size(); ++i)
   {
     const auto & interface = admittance_->parameters_.command_interfaces[i];
     inter_to_ind[interface] = i;
@@ -314,11 +314,11 @@ controller_interface::return_type AdmittanceController::update_reference_from_su
   // if message exists, load values into references
   if (joint_command_msg_.get())
   {
-    for (auto i = 0ul; i < joint_command_msg_->positions.size(); i++)
+    for (size_t i = 0; i < joint_command_msg_->positions.size(); ++i)
     {
       position_reference_[i].get() = joint_command_msg_->positions[i];
     }
-    for (auto i = 0ul; i < joint_command_msg_->velocities.size(); i++)
+    for (size_t i = 0; i < joint_command_msg_->velocities.size(); ++i)
     {
       velocity_reference_[i].get() = joint_command_msg_->velocities[i];
     }
@@ -328,7 +328,7 @@ controller_interface::return_type AdmittanceController::update_reference_from_su
 }
 
 controller_interface::return_type AdmittanceController::update_and_write_commands(
-  const rclcpp::Time & time, const rclcpp::Duration & period)
+  const rclcpp::Time & /*time*/, const rclcpp::Duration & period)
 {
   // Realtime constraints are required in this function
   if (!admittance_)
@@ -365,13 +365,13 @@ controller_interface::CallbackReturn AdmittanceController::on_deactivate(
 }
 
 controller_interface::CallbackReturn AdmittanceController::on_cleanup(
-  const rclcpp_lifecycle::State & previous_state)
+  const rclcpp_lifecycle::State & /*previous_state*/)
 {
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
 controller_interface::CallbackReturn AdmittanceController::on_error(
-  const rclcpp_lifecycle::State & previous_state)
+  const rclcpp_lifecycle::State & /*previous_state*/)
 {
   if (!admittance_)
   {
@@ -389,9 +389,9 @@ void AdmittanceController::read_state_from_hardware(
   // not exist or the values are nan, the corresponding state field will be set to empty.
 
   // if any interface has nan values, assume state_reference is the last command state
-  for (auto joint_ind = 0ul; joint_ind < num_joints_; joint_ind++)
+  for (size_t joint_ind = 0; joint_ind < num_joints_; ++joint_ind)
   {
-    for (auto inter_ind = 0ul; inter_ind < 3; inter_ind++)
+    for (size_t inter_ind = 0; inter_ind < 3; ++inter_ind)
     {
       auto ind = joint_ind + num_joints_ * inter_ind;
       if (inter_ind == state_pos_ind)
@@ -440,9 +440,9 @@ void AdmittanceController::write_state_to_hardware(
   // not exist or the values are nan, the corresponding state field will be set to empty.
 
   // if any interface has nan values, assume state_reference is the last command state
-  for (auto joint_ind = 0ul; joint_ind < num_joints_; joint_ind++)
+  for (size_t joint_ind = 0; joint_ind < num_joints_; ++joint_ind)
   {
-    for (auto inter_ind = 0ul; inter_ind < 3; inter_ind++)
+    for (size_t inter_ind = 0; inter_ind < 3; ++inter_ind)
     {
       auto ind = joint_ind + num_joints_ * inter_ind;
       if (inter_ind == command_pos_ind)
@@ -470,7 +470,7 @@ void AdmittanceController::read_state_reference_interfaces(
   // If the interface does not exist or
   // the values are nan, the corresponding field will be set to empty
 
-  for (auto i = 0ul; i < position_reference_.size(); i++)
+  for (size_t i = 0; i < position_reference_.size(); ++i)
   {
     if (std::isnan(position_reference_[i]))
     {
@@ -480,7 +480,7 @@ void AdmittanceController::read_state_reference_interfaces(
   }
   last_reference_.positions = state_reference.positions;
 
-  for (auto i = 0ul; i < velocity_reference_.size(); i++)
+  for (size_t i = 0; i < velocity_reference_.size(); ++i)
   {
     if (std::isnan(velocity_reference_[i]))
     {
@@ -489,12 +489,6 @@ void AdmittanceController::read_state_reference_interfaces(
     state_reference.velocities[i] = velocity_reference_[i];
   }
   last_reference_.velocities = state_reference.velocities;
-}
-
-bool AdmittanceController::on_set_chained_mode(bool chained_mode)
-{
-  // this method sets the chained mode to value of argument chained_mode if true is returned.
-  return true;
 }
 
 }  // namespace admittance_controller
