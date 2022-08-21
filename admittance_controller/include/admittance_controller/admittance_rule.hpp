@@ -17,89 +17,98 @@
 #ifndef ADMITTANCE_CONTROLLER__ADMITTANCE_RULE_HPP_
 #define ADMITTANCE_CONTROLLER__ADMITTANCE_RULE_HPP_
 
-#include <map>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
-#include "tf2_ros/transform_listener.h"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
-#include "tf2_eigen/tf2_eigen.h"
-#include <tf2_ros/buffer.h>
-#include <trajectory_msgs/msg/detail/joint_trajectory_point__struct.hpp>
-#include "tf2_kdl/tf2_kdl/tf2_kdl.hpp"
-#include "control_msgs/msg/admittance_controller_state.hpp"
-#include "controller_interface/controller_interface.hpp"
-#include "control_toolbox/filters.hpp"
-#include "geometry_msgs/msg/wrench_stamped.hpp"
-#include "admittance_controller_parameters.hpp"
+#include <map>
+#include <memory>
+#include <string>
+#include <vector>
 
-// kinematics plugins
+#include "tf2_ros/buffer.h"
+
+#include "admittance_controller_parameters.hpp"
+#include "control_msgs/msg/admittance_controller_state.hpp"
+#include "control_toolbox/filters.hpp"
+#include "controller_interface/controller_interface.hpp"
+#include "geometry_msgs/msg/wrench_stamped.hpp"
 #include "kinematics_interface/kinematics_interface.hpp"
 #include "pluginlib/class_loader.hpp"
+#include "tf2_eigen/tf2_eigen.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+#include "tf2_kdl/tf2_kdl/tf2_kdl.hpp"
+#include "tf2_ros/transform_listener.h"
+// TODO(destogl): remove this include - this is wrong!
+#include "trajectory_msgs/msg/detail/joint_trajectory_point__struct.hpp"
 
+namespace admittance_controller
+{
+struct Transforms
+{
+  Eigen::Isometry3d base_control_;
+  Eigen::Isometry3d base_ft_;
+  Eigen::Isometry3d base_tip_;
+  Eigen::Isometry3d world_base_;
+  Eigen::Isometry3d base_sensor_;
+  Eigen::Isometry3d base_cog_;
+};
 
-namespace admittance_controller {
+struct AdmittanceState
+{
+  // TODO(destogl): does this constructor makes sense at all?
+  AdmittanceState() = default;
 
-  struct Transforms {
-    Eigen::Isometry3d base_control_;
-    Eigen::Isometry3d base_ft_;
-    Eigen::Isometry3d base_tip_;
-    Eigen::Isometry3d world_base_;
-    Eigen::Isometry3d base_sensor_;
-    Eigen::Isometry3d base_cog_;
-  };
+  explicit AdmittanceState(size_t num_joints)
+  {
+    admittance_velocity.setZero();
+    admittance_acceleration.setZero();
+    damping.setZero();
+    mass.setOnes();
+    mass_inv.setZero();
+    stiffness.setZero();
+    selected_axes.setZero();
+    current_joint_pos = Eigen::VectorXd::Zero(num_joints);
+    joint_pos = Eigen::VectorXd::Zero(num_joints);
+    joint_vel = Eigen::VectorXd::Zero(num_joints);
+    joint_acc = Eigen::VectorXd::Zero(num_joints);
+  }
 
-  struct AdmittanceState {
-    AdmittanceState() = default;
+  Eigen::VectorXd current_joint_pos;
+  Eigen::VectorXd joint_pos;
+  Eigen::VectorXd joint_vel;
+  Eigen::VectorXd joint_acc;
+  Eigen::Matrix<double, 6, 1> damping;
+  Eigen::Matrix<double, 6, 1> mass;
+  Eigen::Matrix<double, 6, 1> mass_inv;
+  Eigen::Matrix<double, 6, 1> selected_axes;
+  Eigen::Matrix<double, 6, 1> stiffness;
+  Eigen::Matrix<double, 6, 1> wrench_base;
+  Eigen::Matrix<double, 6, 1> admittance_acceleration;
+  Eigen::Matrix<double, 6, 1> admittance_velocity;
+  Eigen::Isometry3d admittance_position;
+  Eigen::Matrix<double, 3, 3> rot_base_control;
+  Eigen::Isometry3d ref_trans_base_ft;
+  std::string ft_sensor_frame;
+};
 
-    AdmittanceState(size_t num_joints) {
-      admittance_velocity.setZero();
-      admittance_acceleration.setZero();
-      damping.setZero();
-      mass.setOnes();
-      mass_inv.setZero();
-      stiffness.setZero();
-      selected_axes.setZero();
-      current_joint_pos = Eigen::VectorXd::Zero(num_joints);
-      joint_pos = Eigen::VectorXd::Zero(num_joints);
-      joint_vel = Eigen::VectorXd::Zero(num_joints);
-      joint_acc = Eigen::VectorXd::Zero(num_joints);
-    }
+class AdmittanceRule
+{
+public:
+  explicit AdmittanceRule(const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & lifecycl_node)
+  {
+    parameter_handler_ = std::make_shared<admittance_controller::ParamListener>(
+      lifecycl_node->get_node_parameters_interface());
+    parameters_ = parameter_handler_->get_params();
+    num_joints_ = parameters_.joints.size();
+    admittance_state_ = AdmittanceState(num_joints_);
+    reset(num_joints_);
+  }
 
-    Eigen::VectorXd current_joint_pos;
-    Eigen::VectorXd joint_pos;
-    Eigen::VectorXd joint_vel;
-    Eigen::VectorXd joint_acc;
-    Eigen::Matrix<double, 6, 1> damping;
-    Eigen::Matrix<double, 6, 1> mass;
-    Eigen::Matrix<double, 6, 1> mass_inv;
-    Eigen::Matrix<double, 6, 1> selected_axes;
-    Eigen::Matrix<double, 6, 1> stiffness;
-    Eigen::Matrix<double, 6, 1> wrench_base;
-    Eigen::Matrix<double, 6, 1> admittance_acceleration;
-    Eigen::Matrix<double, 6, 1> admittance_velocity;
-    Eigen::Isometry3d admittance_position;
-    Eigen::Matrix<double, 3, 3> rot_base_control;
-    Eigen::Isometry3d ref_trans_base_ft;
-    std::string ft_sensor_frame;
-  };
+  controller_interface::return_type configure(
+    const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node, size_t num_joint);
 
-  class AdmittanceRule {
-  public:
-    AdmittanceRule(const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> &lifecycl_node) {
-      parameter_handler_ = std::make_shared<admittance_controller::ParamListener>(
-          lifecycl_node->get_node_parameters_interface());
-      parameters_ = parameter_handler_->get_params();
-      num_joints_ = parameters_.joints.size();
-      admittance_state_ = AdmittanceState(num_joints_);
-      reset(num_joints_);
-    }
+  controller_interface::return_type reset(size_t num_joints);
 
-    controller_interface::return_type
-    configure(const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> &node, size_t num_joint);
-
-    controller_interface::return_type reset(size_t num_joints);
-
-    /**
+  /**
      * Calculate all transforms needed for admittance control using the loader kinematics plugin. If the transform does
      * not exist in the kinematics model, then TF will be used for lookup. The return value is true if all transformation
      * are calculated without an error
@@ -107,17 +116,18 @@ namespace admittance_controller {
      * \param[in] reference_joint_state
      * \param[in] success
      */
-    bool get_all_transforms(const trajectory_msgs::msg::JointTrajectoryPoint &current_joint_state,
-                            const trajectory_msgs::msg::JointTrajectoryPoint &reference_joint_state,
-                            const AdmittanceState &admittance_state);
+  bool get_all_transforms(
+    const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state,
+    const trajectory_msgs::msg::JointTrajectoryPoint & reference_joint_state,
+    const AdmittanceState & admittance_state);
 
-    /**
+  /**
     * Updates parameter_ struct if any parameters have changed since last update. Parameter dependent Eigen field
     * members (ee_weight_, cog_, mass_, mass_inv_ stiffness, selected_axes, damping_) are also updated
     */
-    void apply_parameters_update();
+  void apply_parameters_update();
 
-    /**
+  /**
      * Calculate 'desired joint states' based on the 'measured force', 'reference joint state', and
      * 'current_joint_state'.
      *
@@ -127,26 +137,27 @@ namespace admittance_controller {
      * \param[in] period
      * \param[out] desired_joint_state
      */
-    controller_interface::return_type update(
-        const trajectory_msgs::msg::JointTrajectoryPoint &current_joint_state,
-        const geometry_msgs::msg::Wrench &measured_wrench,
-        const trajectory_msgs::msg::JointTrajectoryPoint &reference_joint_state,
-        const rclcpp::Duration &period,
-        trajectory_msgs::msg::JointTrajectoryPoint &desired_joint_states);
+  controller_interface::return_type update(
+    const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state,
+    const geometry_msgs::msg::Wrench & measured_wrench,
+    const trajectory_msgs::msg::JointTrajectoryPoint & reference_joint_state,
+    const rclcpp::Duration & period,
+    trajectory_msgs::msg::JointTrajectoryPoint & desired_joint_states);
 
-    /**
+  /**
      * Fill fields of `state_message` from current admittance controller state.
      *
      * \param[in] state_message
      */
-    const control_msgs::msg::AdmittanceControllerState & get_controller_state();
+  const control_msgs::msg::AdmittanceControllerState & get_controller_state();
 
-  public:
-    // admittance config parameters
-    std::shared_ptr<admittance_controller::ParamListener> parameter_handler_;
-    admittance_controller::Params parameters_;
-  protected:
-    /**
+public:
+  // admittance config parameters
+  std::shared_ptr<admittance_controller::ParamListener> parameter_handler_;
+  admittance_controller::Params parameters_;
+
+protected:
+  /**
      * Calculate the admittance rule from given the robot's current joint angles. the control frame rotation, the
      * current force torque transform, the reference force torque transform, the force torque sensor frame id,
      * the time delta, and the current admittance controller state. The admittance controller state input is updated
@@ -161,53 +172,52 @@ namespace admittance_controller {
      * \param[in] admittance_state
      * \param[out] success
      */
-    bool calculate_admittance_rule(AdmittanceState &admittance_state, double dt);
+  bool calculate_admittance_rule(AdmittanceState & admittance_state, double dt);
 
-    /**
+  /**
      * Updates internal estimate of wrench in world frame `wrench_world_` given the new measurement. The `wrench_world_`
      * estimate includes gravity compensation
      * \param[in] measured_wrench
      * \param[in] sensor_rot
      * \param[in] cog_rot
      */
-    void process_wrench_measurements(
-        const geometry_msgs::msg::Wrench &measured_wrench, const Eigen::Matrix<double, 3, 3> &sensor_rot,
-        const Eigen::Matrix<double, 3, 3> &cog_rot
-    );
+  void process_wrench_measurements(
+    const geometry_msgs::msg::Wrench & measured_wrench,
+    const Eigen::Matrix<double, 3, 3> & sensor_rot, const Eigen::Matrix<double, 3, 3> & cog_rot);
 
-    template<typename T1, typename T2>
-    void vec_to_eigen(const std::vector<T1> &data, T2 &matrix);
+  template <typename T1, typename T2>
+  void vec_to_eigen(const std::vector<T1> & data, T2 & matrix);
 
-    // number of robot joint
-    size_t num_joints_;
+  // number of robot joint
+  size_t num_joints_;
 
-    // Kinematics interface plugin loader
-    std::shared_ptr<pluginlib::ClassLoader<kinematics_interface::KinematicsInterface>> kinematics_loader_;
-    std::unique_ptr<kinematics_interface::KinematicsInterface> kinematics_;
+  // Kinematics interface plugin loader
+  std::shared_ptr<pluginlib::ClassLoader<kinematics_interface::KinematicsInterface>>
+    kinematics_loader_;
+  std::unique_ptr<kinematics_interface::KinematicsInterface> kinematics_;
 
-    // filtered wrench in world frame
-    Eigen::Matrix<double, 6, 1> wrench_world_;
+  // filtered wrench in world frame
+  Eigen::Matrix<double, 6, 1> wrench_world_;
 
-    // admittance controllers internal state
-    AdmittanceState admittance_state_;
+  // admittance controllers internal state
+  AdmittanceState admittance_state_;
 
-    // transforms needed for admittance update
-    Transforms trans_;
-    Transforms trans_ref_;
+  // transforms needed for admittance update
+  Transforms trans_;
+  Transforms trans_ref_;
 
-    // position of center of gravity in cog_frame
-    Eigen::Vector3d cog_;
+  // position of center of gravity in cog_frame
+  Eigen::Vector3d cog_;
 
-    // force applied to sensor due to weight of end effector
-    Eigen::Vector3d ee_weight_;
+  // force applied to sensor due to weight of end effector
+  Eigen::Vector3d ee_weight_;
 
-    // ROS
-    control_msgs::msg::AdmittanceControllerState state_message_;
-    std::shared_ptr<rclcpp::Clock> clock_;
-    std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-    std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
-
-  };
+  // ROS
+  control_msgs::msg::AdmittanceControllerState state_message_;
+  std::shared_ptr<rclcpp::Clock> clock_;
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+};
 
 }  // namespace admittance_controller
 
