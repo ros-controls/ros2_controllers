@@ -27,7 +27,6 @@
 #include "control_toolbox/pid.hpp"
 #include "controller_interface/controller_interface.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
-//#include "joint_limits/joint_limits.hpp"
 #include "joint_trajectory_controller/interpolation_methods.hpp"
 #include "joint_trajectory_controller/tolerances.hpp"
 #include "joint_trajectory_controller/visibility_control.h"
@@ -68,16 +67,16 @@ public:
   JointTrajectoryController();
 
   /**
-     * @brief command_interface_configuration This controller requires the position command
-     * interfaces for the controlled joints
-     */
+   * @brief command_interface_configuration This controller requires the position command
+   * interfaces for the controlled joints
+   */
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   controller_interface::InterfaceConfiguration command_interface_configuration() const override;
 
   /**
-     * @brief command_interface_configuration This controller requires the position and velocity
-     * state interfaces for the controlled joints
-     */
+   * @brief command_interface_configuration This controller requires the position and velocity
+   * state interfaces for the controlled joints
+   */
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   controller_interface::InterfaceConfiguration state_interface_configuration() const override;
 
@@ -139,7 +138,6 @@ protected:
   // Run the controller in open-loop, i.e., read hardware states only when starting controller.
   // This is useful when robot is not exactly following the commanded trajectory.
   bool open_loop_control_ = false;
-
   trajectory_msgs::msg::JointTrajectoryPoint last_commanded_state_;
   /// Allow integration in goal trajectories to accept goals without position or velocity specified
   bool allow_integration_in_goal_trajectories_ = false;
@@ -176,7 +174,7 @@ protected:
   // reserved storage for result of the command when closed loop pid adapter is used
   std::vector<double> tmp_command_;
 
-  // TODO(karsten1987): eventually activate and deactivate subscriber directly when it's supported
+  // TODO(karsten1987): eventually activate and deactivate subscriber directly when its supported
   bool subscriber_is_active_ = false;
   rclcpp::Subscription<trajectory_msgs::msg::JointTrajectory>::SharedPtr joint_command_subscriber_ =
     nullptr;
@@ -208,18 +206,19 @@ protected:
   rclcpp::TimerBase::SharedPtr goal_handle_timer_;
   rclcpp::Duration action_monitor_period_ = rclcpp::Duration(50ms);
 
-  // joint limits for JTC
-  //    std::vector<joint_limits::JointLimits> joint_limits_;
+  // callback for topic interface
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
+  void topic_callback(const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg);
 
   // callbacks for action_server_
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  rclcpp_action::GoalResponse goal_callback(
+  rclcpp_action::GoalResponse goal_received_callback(
     const rclcpp_action::GoalUUID & uuid, std::shared_ptr<const FollowJTrajAction::Goal> goal);
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  rclcpp_action::CancelResponse cancel_callback(
+  rclcpp_action::CancelResponse goal_cancelled_callback(
     const std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle);
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  void feedback_setup_callback(
+  void goal_accepted_callback(
     std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle);
 
   // fill trajectory_msg so it matches joints controlled by this controller
