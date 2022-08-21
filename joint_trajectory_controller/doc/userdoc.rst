@@ -32,6 +32,26 @@ Other features
 
     Robust to system clock changes: Discontinuous system clock changes do not cause discontinuities in the execution of already queued trajectory segments.
 
+ros2_control interfaces
+------------------------
+
+References
+^^^^^^^^^^^
+(the controller is not yet implemented as chainable controller)
+
+States
+^^^^^^^
+The state interfaces are defined with ``joints`` and ``state_interfaces`` parameters as follows: ``<joint>/<state_interface>``.
+Supported state interfaces are ``position``, ``velocity``, ``acceleration`` and ``effort`` as defined in the [hardware_interface/hardware_interface_type_values.hpp](https://github.com/ros-controls/ros2_control/blob/master/hardware_interface/include/hardware_interface/types/hardware_interface_type_values.hpp).
+Legal combinations of state interfaces are:
+- ``position``
+- ``position`` and ``velocity``
+- ``position``, ``velocity`` and ``acceleration``
+- ``effort``
+
+Commands
+^^^^^^^^^
+
 
 Using Joint Trajectory Controller(s)
 ------------------------------------
@@ -84,8 +104,11 @@ A yaml file for using it could be:
 Details about parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-joint (list(string)):
-  Joint names to control.
+joints (list(string)):
+  Joint names to control and listen to.
+
+command_joints (list(string)):
+  Joint names to control. This parameters is used if JTC is used in a controller chain where command and state interfaces don't have same names.
 
 command_interface (list(string)):
   Command interfaces provided by the hardware interface for all joints.
