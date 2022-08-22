@@ -16,3 +16,7 @@ repositories:
     type: git
     url: https://github.com/ros-controls/ros2_control.git
     version: master
+  control_toolbox:
+    type: git
+    url: https://github.com/ros-controls/control_toolbox.git
+    version: ros2-master
