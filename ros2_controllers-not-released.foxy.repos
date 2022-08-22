@@ -8,10 +8,6 @@ repositories:
     type: git
     url: https://github.com/ros-controls/kinematics_interface.git
     version: master
-  generate_parameter_library:
-    type: git
-    url: https://github.com/picknikrobotics/generate_parameter_library.git
-    version: main
   control_msgs:
     type: git
     url: https://github.com/pac48/control_msgs.git
