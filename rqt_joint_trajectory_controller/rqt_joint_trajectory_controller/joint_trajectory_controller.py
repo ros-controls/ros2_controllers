@@ -321,7 +321,7 @@ class JointTrajectoryController(Plugin):
 
                 par = partial(self._update_single_cmd_cb, name=name)
                 joint_widget.valueChanged.connect(par)
-        except:
+        except Exception:
             # TODO: Can we do better than swallow the exception?
             from sys import exc_info
 
@@ -350,7 +350,7 @@ class JointTrajectoryController(Plugin):
         # Stop updating the joint positions
         try:
             self.jointStateChanged.disconnect(self._on_joint_state_change)
-        except:
+        except Exception:
             pass
 
         # Reset ROS interfaces
