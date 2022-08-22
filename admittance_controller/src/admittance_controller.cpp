@@ -248,7 +248,7 @@ controller_interface::CallbackReturn AdmittanceController::on_activate(
   }
 
   // update parameters if any have changed
-    admittance_->apply_parameters_update();
+  admittance_->apply_parameters_update();
 
   // get state interface inds
   std::unordered_map<std::string, size_t> inter_to_ind = {
