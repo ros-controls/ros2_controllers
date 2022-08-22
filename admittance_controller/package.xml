@@ -18,7 +18,6 @@
   <depend>filters</depend>
   <depend>geometry_msgs</depend>
   <depend>hardware_interface</depend>
-  <depend>joint_limits</depend>
   <depend>joint_trajectory_controller</depend>
   <depend>pluginlib</depend>
   <depend>rclcpp</depend>
