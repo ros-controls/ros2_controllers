@@ -40,7 +40,7 @@ test_admittance_controller:
 
     kinematics:
       plugin_name: kinematics_interface_kdl/KinematicsInterfaceKDL
-      plugin_package: kinematics_interface_kdl
+      plugin_package: kinematics_interface
       base: base_link # Assumed to be stationary
       tip: tool0
       group_name: arm
