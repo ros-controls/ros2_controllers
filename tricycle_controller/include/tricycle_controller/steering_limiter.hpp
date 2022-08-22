@@ -23,7 +23,6 @@
 
 namespace tricycle_controller
 {
-
 class SteeringLimiter
 {
 public:
@@ -37,9 +36,8 @@ public:
    * \param [in] max_acceleration Maximum acceleration [m/s^2] or [rad/s^2]
    */
   SteeringLimiter(
-    double min_position = NAN, double max_position = NAN,
-    double min_velocity = NAN, double max_velocity = NAN,
-    double min_acceleration = NAN, double max_acceleration = NAN);
+    double min_position = NAN, double max_position = NAN, double min_velocity = NAN,
+    double max_velocity = NAN, double min_acceleration = NAN, double max_acceleration = NAN);
 
   /**
    * \brief Limit the position, velocity and acceleration
@@ -78,7 +76,6 @@ public:
   double limit_acceleration(double & p, double p0, double p1, double dt);
 
 private:
-
   // Position limits:
   double min_position_;
   double max_position_;
@@ -90,7 +87,6 @@ private:
   // Acceleration limits:
   double min_acceleration_;
   double max_acceleration_;
-
 };
 
 }  // namespace tricycle_controller

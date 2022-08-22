@@ -95,6 +95,87 @@ TEST_P(TrajectoryControllerTestParameterized, configure_state_ignores_commands)
   executor.cancel();
 }
 
+TEST_P(TrajectoryControllerTestParameterized, check_interface_names)
+{
+  SetUpTrajectoryController();
+
+  const auto state = traj_controller_->get_node()->configure();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+
+  std::vector<std::string> state_interface_names;
+  state_interface_names.reserve(joint_names_.size() * state_interface_types_.size());
+  for (const auto & joint : joint_names_)
+  {
+    for (const auto & interface : state_interface_types_)
+    {
+      state_interface_names.push_back(joint + "/" + interface);
+    }
+  }
+  auto state_interfaces = traj_controller_->state_interface_configuration();
+  EXPECT_EQ(state_interfaces.type, controller_interface::interface_configuration_type::INDIVIDUAL);
+  EXPECT_EQ(state_interfaces.names.size(), joint_names_.size() * state_interface_types_.size());
+  ASSERT_THAT(state_interfaces.names, testing::UnorderedElementsAreArray(state_interface_names));
+
+  std::vector<std::string> command_interface_names;
+  command_interface_names.reserve(joint_names_.size() * command_interface_types_.size());
+  for (const auto & joint : joint_names_)
+  {
+    for (const auto & interface : command_interface_types_)
+    {
+      command_interface_names.push_back(joint + "/" + interface);
+    }
+  }
+  auto command_interfaces = traj_controller_->command_interface_configuration();
+  EXPECT_EQ(
+    command_interfaces.type, controller_interface::interface_configuration_type::INDIVIDUAL);
+  EXPECT_EQ(command_interfaces.names.size(), joint_names_.size() * command_interface_types_.size());
+  ASSERT_THAT(
+    command_interfaces.names, testing::UnorderedElementsAreArray(command_interface_names));
+}
+
+TEST_P(TrajectoryControllerTestParameterized, check_interface_names_with_command_joints)
+{
+  SetUpTrajectoryController();
+
+  // set command_joints parameter
+  const rclcpp::Parameter command_joint_names_param("command_joints", command_joint_names_);
+  traj_controller_->get_node()->set_parameter({command_joint_names_param});
+
+  const auto state = traj_controller_->get_node()->configure();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+
+  std::vector<std::string> state_interface_names;
+  state_interface_names.reserve(joint_names_.size() * state_interface_types_.size());
+  for (const auto & joint : joint_names_)
+  {
+    for (const auto & interface : state_interface_types_)
+    {
+      state_interface_names.push_back(joint + "/" + interface);
+    }
+  }
+  auto state_interfaces = traj_controller_->state_interface_configuration();
+  EXPECT_EQ(state_interfaces.type, controller_interface::interface_configuration_type::INDIVIDUAL);
+  EXPECT_EQ(state_interfaces.names.size(), joint_names_.size() * state_interface_types_.size());
+  ASSERT_THAT(state_interfaces.names, testing::UnorderedElementsAreArray(state_interface_names));
+
+  std::vector<std::string> command_interface_names;
+  command_interface_names.reserve(command_joint_names_.size() * command_interface_types_.size());
+  for (const auto & joint : command_joint_names_)
+  {
+    for (const auto & interface : command_interface_types_)
+    {
+      command_interface_names.push_back(joint + "/" + interface);
+    }
+  }
+  auto command_interfaces = traj_controller_->command_interface_configuration();
+  EXPECT_EQ(
+    command_interfaces.type, controller_interface::interface_configuration_type::INDIVIDUAL);
+  EXPECT_EQ(
+    command_interfaces.names.size(), command_joint_names_.size() * command_interface_types_.size());
+  ASSERT_THAT(
+    command_interfaces.names, testing::UnorderedElementsAreArray(command_interface_names));
+}
+
 TEST_P(TrajectoryControllerTestParameterized, activate)
 {
   SetUpTrajectoryController();
@@ -356,55 +437,57 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
   executor.cancel();
 }
 
-// TEST_P(TrajectoryControllerTestParameterized, state_topic_consistency)
-// {
-//   rclcpp::executors::SingleThreadedExecutor executor;
-//   SetUpAndActivateTrajectoryController(true, {}, &executor);
-//   subscribeToState();
-//   updateController();
+TEST_P(TrajectoryControllerTestParameterized, state_topic_consistency)
+{
+  rclcpp::executors::SingleThreadedExecutor executor;
+  SetUpAndActivateTrajectoryController(true, {}, &executor);
+  subscribeToState();
+  updateController();
 
-//   // Spin to receive latest state
-//   executor.spin_some();
-//   auto state = getState();
+  // Spin to receive latest state
+  executor.spin_some();
+  auto state = getState();
 
-//   size_t n_joints = joint_names_.size();
+  size_t n_joints = joint_names_.size();
 
-//   for (unsigned int i = 0; i < n_joints; ++i)
-//   {
-//     EXPECT_EQ(joint_names_[i], state->joint_names[i]);
-//   }
+  for (unsigned int i = 0; i < n_joints; ++i)
+  {
+    EXPECT_EQ(joint_names_[i], state->joint_names[i]);
+  }
 
-//   // No trajectory by default, no desired state or error
-//   EXPECT_TRUE(state->desired.positions.empty());
-//   EXPECT_TRUE(state->desired.velocities.empty());
-//   EXPECT_TRUE(state->desired.accelerations.empty());
+  // No trajectory by default, no desired state or error
+  EXPECT_TRUE(state->desired.positions.empty() || state->desired.positions == INITIAL_POS_JOINTS);
+  EXPECT_TRUE(state->desired.velocities.empty() || state->desired.velocities == INITIAL_VEL_JOINTS);
+  EXPECT_TRUE(
+    state->desired.accelerations.empty() || state->desired.accelerations == INITIAL_EFF_JOINTS);
 
-//   EXPECT_EQ(n_joints, state->actual.positions.size());
-//   if (
-//     std::find(state_interface_types_.begin(), state_interface_types_.end(), "velocity") ==
-//     state_interface_types_.end())
-//   {
-//     EXPECT_TRUE(state->actual.velocities.empty());
-//   }
-//   else
-//   {
-//     EXPECT_EQ(n_joints, state->actual.velocities.size());
-//   }
-//   if (
-//     std::find(state_interface_types_.begin(), state_interface_types_.end(), "acceleration") ==
-//     state_interface_types_.end())
-//   {
-//     EXPECT_TRUE(state->actual.accelerations.empty());
-//   }
-//   else
-//   {
-//     EXPECT_EQ(n_joints, state->actual.accelerations.size());
-//   }
+  EXPECT_EQ(n_joints, state->actual.positions.size());
+  if (
+    std::find(state_interface_types_.begin(), state_interface_types_.end(), "velocity") ==
+    state_interface_types_.end())
+  {
+    EXPECT_TRUE(state->actual.velocities.empty());
+  }
+  else
+  {
+    EXPECT_EQ(n_joints, state->actual.velocities.size());
+  }
+  if (
+    std::find(state_interface_types_.begin(), state_interface_types_.end(), "acceleration") ==
+    state_interface_types_.end())
+  {
+    EXPECT_TRUE(state->actual.accelerations.empty());
+  }
+  else
+  {
+    EXPECT_EQ(n_joints, state->actual.accelerations.size());
+  }
 
-//   EXPECT_TRUE(state->error.positions.empty());
-//   EXPECT_TRUE(state->error.velocities.empty());
-//   EXPECT_TRUE(state->error.accelerations.empty());
-// }
+  std::vector<double> zeros(3, 0);
+  EXPECT_EQ(state->error.positions, zeros);
+  EXPECT_TRUE(state->error.velocities.empty() || state->error.velocities == zeros);
+  EXPECT_TRUE(state->error.accelerations.empty() || state->error.accelerations == zeros);
+}
 
 // void TrajectoryControllerTest::test_state_publish_rate_target(int target_msg_count)
 // {

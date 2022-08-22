@@ -23,32 +23,31 @@ import rclpy
 from controller_manager_msgs.srv import ListControllers
 
 # Names of controller manager services, and their respective types
-_LIST_CONTROLLERS_STR = 'list_controllers'
-_LIST_CONTROLLERS_TYPE = 'controller_manager_msgs/srv/ListControllers'
-_LIST_CONTROLLER_TYPES_STR = 'list_controller_types'
-_LIST_CONTROLLER_TYPES_TYPE = 'controller_manager_msgs/srv/ListControllerTypes'
-_LOAD_CONTROLLER_STR = 'load_controller'
-_LOAD_CONTROLLER_TYPE = 'controller_manager_msgs/srv/LoadController'
-_UNLOAD_CONTROLLER_STR = 'unload_controller'
-_UNLOAD_CONTROLLER_TYPE = 'controller_manager_msgs/srv/UnloadController'
-_SWITCH_CONTROLLER_STR = 'switch_controller'
-_SWITCH_CONTROLLER_TYPE = 'controller_manager_msgs/srv/SwitchController'
-_RELOAD_CONTROLLER_LIBS_STR = 'reload_controller_libraries'
-_RELOAD_CONTROLLER_LIBS_TYPE = ('controller_manager_msgs/srv/'
-                                'ReloadControllerLibraries')
+_LIST_CONTROLLERS_STR = "list_controllers"
+_LIST_CONTROLLERS_TYPE = "controller_manager_msgs/srv/ListControllers"
+_LIST_CONTROLLER_TYPES_STR = "list_controller_types"
+_LIST_CONTROLLER_TYPES_TYPE = "controller_manager_msgs/srv/ListControllerTypes"
+_LOAD_CONTROLLER_STR = "load_controller"
+_LOAD_CONTROLLER_TYPE = "controller_manager_msgs/srv/LoadController"
+_UNLOAD_CONTROLLER_STR = "unload_controller"
+_UNLOAD_CONTROLLER_TYPE = "controller_manager_msgs/srv/UnloadController"
+_SWITCH_CONTROLLER_STR = "switch_controller"
+_SWITCH_CONTROLLER_TYPE = "controller_manager_msgs/srv/SwitchController"
+_RELOAD_CONTROLLER_LIBS_STR = "reload_controller_libraries"
+_RELOAD_CONTROLLER_LIBS_TYPE = "controller_manager_msgs/srv/" "ReloadControllerLibraries"
 
 # Map from service names to their respective type
 cm_services = {
-    _LIST_CONTROLLERS_STR:       _LIST_CONTROLLERS_TYPE,
-    _LIST_CONTROLLER_TYPES_STR:  _LIST_CONTROLLER_TYPES_TYPE,
-    _LOAD_CONTROLLER_STR:        _LOAD_CONTROLLER_TYPE,
-    _UNLOAD_CONTROLLER_STR:      _UNLOAD_CONTROLLER_TYPE,
-    _SWITCH_CONTROLLER_STR:      _SWITCH_CONTROLLER_TYPE,
-    _RELOAD_CONTROLLER_LIBS_STR: _RELOAD_CONTROLLER_LIBS_TYPE
+    _LIST_CONTROLLERS_STR: _LIST_CONTROLLERS_TYPE,
+    _LIST_CONTROLLER_TYPES_STR: _LIST_CONTROLLER_TYPES_TYPE,
+    _LOAD_CONTROLLER_STR: _LOAD_CONTROLLER_TYPE,
+    _UNLOAD_CONTROLLER_STR: _UNLOAD_CONTROLLER_TYPE,
+    _SWITCH_CONTROLLER_STR: _SWITCH_CONTROLLER_TYPE,
+    _RELOAD_CONTROLLER_LIBS_STR: _RELOAD_CONTROLLER_LIBS_TYPE,
 }
 
 
-def get_controller_managers(namespace='/', initial_guess=None):
+def get_controller_managers(namespace="/", initial_guess=None):
     """
     Get list of active controller manager namespaces.
 
@@ -78,8 +77,7 @@ def get_controller_managers(namespace='/', initial_guess=None):
     # 1. Remove entries not found in current list
     # 2. Add new untracked controller managers
     ns_list[:] = [ns for ns in ns_list if ns in ns_list_curr]
-    ns_list += [ns for ns in ns_list_curr
-                if ns not in ns_list and is_controller_manager(node, ns)]
+    ns_list += [ns for ns in ns_list_curr if ns not in ns_list and is_controller_manager(node, ns)]
 
     return sorted(ns_list)
 
@@ -97,8 +95,8 @@ def is_controller_manager(node, namespace):
     @rtype: bool
     """
     cm_ns = namespace
-    if not cm_ns or cm_ns[-1] != '/':
-        cm_ns += '/'
+    if not cm_ns or cm_ns[-1] != "/":
+        cm_ns += "/"
     for srv_name in cm_services.keys():
         if not _srv_exists(node, cm_ns + srv_name, cm_services[srv_name]):
             return False
@@ -126,14 +124,14 @@ def _sloppy_get_controller_managers(node, namespace):
 
     ns_list = []
     for srv_info in srv_list:
-        match_str = '/' + _LIST_CONTROLLERS_STR
+        match_str = "/" + _LIST_CONTROLLERS_STR
         # First element of srv_name is the service name
         if match_str in srv_info[0]:
             ns = srv_info[0].split(match_str)[0]
-            if ns == '':
+            if ns == "":
                 # controller manager services live in root namespace
                 # unlikely, but still possible
-                ns = '/'
+                ns = "/"
             ns_list.append(ns)
     return ns_list
 
@@ -164,6 +162,7 @@ def _srv_exists(node, srv_name, srv_type):
 #
 ###############################################################################
 
+
 class ControllerManagerLister:
     """
     Convenience functor for querying the list of active controller managers.
@@ -177,7 +176,7 @@ class ControllerManagerLister:
         >>> print(list_cm())
     """
 
-    def __init__(self, namespace='/'):
+    def __init__(self, namespace="/"):
         self._ns = namespace
         self._cm_list = []
 
@@ -201,14 +200,14 @@ class ControllerLister:
         >>> running_bar_ctrl = filter_by_type(running_ctrl, 'bar_base/bar')
     """
 
-    def __init__(self, namespace='/controller_manager'):
+    def __init__(self, namespace="/controller_manager"):
         """
         @param namespace Namespace of controller manager to monitor.
 
         @type namespace str
         """
         self._node = rclpy.node.Node("controller_lister")
-        self._srv_name = namespace + '/' + _LIST_CONTROLLERS_STR
+        self._srv_name = namespace + "/" + _LIST_CONTROLLERS_STR
         self._srv_client = self._create_client()
 
     """
@@ -223,6 +222,7 @@ class ControllerLister:
 
     def _create_client(self):
         return self._node.create_client(ListControllers, self._srv_name)
+
 
 ###############################################################################
 #
@@ -244,7 +244,7 @@ def filter_by_name(ctrl_list, ctrl_name, match_substring=False):
     @return: Controllers matching the specified name
     @rtype: [controller_manager_msgs/ControllerState]
     """
-    return _filter_by_attr(ctrl_list, 'name', ctrl_name, match_substring)
+    return _filter_by_attr(ctrl_list, "name", ctrl_name, match_substring)
 
 
 def filter_by_type(ctrl_list, ctrl_type, match_substring=False):
@@ -260,7 +260,7 @@ def filter_by_type(ctrl_list, ctrl_type, match_substring=False):
     @return: Controllers matching the specified type
     @rtype: [controller_manager_msgs/ControllerState]
     """
-    return _filter_by_attr(ctrl_list, 'type', ctrl_type, match_substring)
+    return _filter_by_attr(ctrl_list, "type", ctrl_type, match_substring)
 
 
 def filter_by_state(ctrl_list, ctrl_state, match_substring=False):
@@ -276,12 +276,10 @@ def filter_by_state(ctrl_list, ctrl_state, match_substring=False):
     @return: Controllers matching the specified state
     @rtype: [controller_manager_msgs/ControllerState]
     """
-    return _filter_by_attr(ctrl_list, 'state', ctrl_state, match_substring)
+    return _filter_by_attr(ctrl_list, "state", ctrl_state, match_substring)
 
 
-def filter_by_hardware_interface(ctrl_list,
-                                 hardware_interface,
-                                 match_substring=False):
+def filter_by_hardware_interface(ctrl_list, hardware_interface, match_substring=False):
     """
     Filter controller state list by controller hardware interface.
 
@@ -308,10 +306,7 @@ def filter_by_hardware_interface(ctrl_list,
     return list_out
 
 
-def filter_by_resources(ctrl_list,
-                        resources,
-                        hardware_interface=None,
-                        match_any=False):
+def filter_by_resources(ctrl_list, resources, hardware_interface=None, match_any=False):
     """
     Filter controller state list by claimed resources.
 
@@ -342,8 +337,7 @@ def filter_by_resources(ctrl_list,
     list_out = []
     for ctrl in ctrl_list:
         for resource_set in ctrl.claimed_resources:
-            if (hardware_interface is None or
-                    hardware_interface == resource_set.hardware_interface):
+            if hardware_interface is None or hardware_interface == resource_set.hardware_interface:
                 for res in resources:
                     add_ctrl = not match_any  # Initial flag value
                     if res in resource_set.resources:
@@ -371,6 +365,7 @@ def _filter_by_attr(list_in, attr_name, attr_val, match_substring=False):
             if getattr(val, attr_name) == attr_val:
                 list_out.append(val)
     return list_out
+
 
 ###############################################################################
 #

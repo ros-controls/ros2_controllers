@@ -31,106 +31,121 @@
 #include "geometry_msgs/msg/wrench_stamped.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "pluginlib/class_loader.hpp"
+#include "rclcpp/duration.hpp"
+#include "rclcpp/time.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_buffer.h"
 #include "realtime_tools/realtime_publisher.h"
 #include "semantic_components/force_torque_sensor.hpp"
-#include "rclcpp/time.hpp"
-#include "rclcpp/duration.hpp"
 
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 
-namespace admittance_controller {
-  using ControllerStateMsg = control_msgs::msg::AdmittanceControllerState;
+namespace admittance_controller
+{
+using ControllerStateMsg = control_msgs::msg::AdmittanceControllerState;
 
-  class AdmittanceController : public controller_interface::ChainableControllerInterface {
-  public:
-    ADMITTANCE_CONTROLLER_PUBLIC
+class AdmittanceController : public controller_interface::ChainableControllerInterface
+{
+public:
+  ADMITTANCE_CONTROLLER_PUBLIC
+  controller_interface::CallbackReturn on_init() override;
 
-    ADMITTANCE_CONTROLLER_PUBLIC
-    controller_interface::CallbackReturn on_init() override;
+  /// Export configuration of required state interfaces.
+  /**
+   * Allowed types of state interfaces are \ref hardware_interface::POSITION,
+   * \ref hardware_interface::VELOCITY, \ref hardware_interface::ACCELERATION.
+   */
+  ADMITTANCE_CONTROLLER_PUBLIC
+  controller_interface::InterfaceConfiguration command_interface_configuration() const override;
 
-    ADMITTANCE_CONTROLLER_PUBLIC
-    controller_interface::InterfaceConfiguration command_interface_configuration() const override;
+  /// Export configuration of required state interfaces.
+  /**
+   * Allowed types of state interfaces are \ref hardware_interface::POSITION,
+   * \ref hardware_interface::VELOCITY, \ref hardware_interface::ACCELERATION.
+   */
+  ADMITTANCE_CONTROLLER_PUBLIC
+  controller_interface::InterfaceConfiguration state_interface_configuration() const override;
 
-    ADMITTANCE_CONTROLLER_PUBLIC
-    controller_interface::InterfaceConfiguration state_interface_configuration() const override;
+  ADMITTANCE_CONTROLLER_PUBLIC
+  controller_interface::CallbackReturn on_configure(
+    const rclcpp_lifecycle::State & previous_state) override;
 
-    ADMITTANCE_CONTROLLER_PUBLIC
-    controller_interface::CallbackReturn on_configure(const rclcpp_lifecycle::State &previous_state) override;
+  ADMITTANCE_CONTROLLER_PUBLIC
+  controller_interface::CallbackReturn on_activate(
+    const rclcpp_lifecycle::State & previous_state) override;
 
-    ADMITTANCE_CONTROLLER_PUBLIC
-    controller_interface::CallbackReturn on_activate(const rclcpp_lifecycle::State &previous_state) override;
+  ADMITTANCE_CONTROLLER_PUBLIC
+  controller_interface::CallbackReturn on_deactivate(
+    const rclcpp_lifecycle::State & previous_state) override;
 
-    ADMITTANCE_CONTROLLER_PUBLIC
-    controller_interface::CallbackReturn on_deactivate(const rclcpp_lifecycle::State &previous_state) override;
+  ADMITTANCE_CONTROLLER_PUBLIC
+  controller_interface::CallbackReturn on_cleanup(
+    const rclcpp_lifecycle::State & previous_state) override;
 
-    ADMITTANCE_CONTROLLER_PUBLIC
-    controller_interface::CallbackReturn on_cleanup(const rclcpp_lifecycle::State &previous_state) override;
+  ADMITTANCE_CONTROLLER_PUBLIC
+  controller_interface::CallbackReturn on_error(
+    const rclcpp_lifecycle::State & previous_state) override;
 
-    ADMITTANCE_CONTROLLER_PUBLIC
-    controller_interface::CallbackReturn on_error(const rclcpp_lifecycle::State &previous_state) override;
+  ADMITTANCE_CONTROLLER_PUBLIC
+  controller_interface::return_type update_and_write_commands(
+    const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
-    ADMITTANCE_CONTROLLER_PUBLIC
-    controller_interface::return_type update_and_write_commands(
-        const rclcpp::Time &time, const rclcpp::Duration &period) override;
+protected:
+  std::vector<hardware_interface::CommandInterface> on_export_reference_interfaces() override;
 
+  controller_interface::return_type update_reference_from_subscribers() override;
 
-  protected:
-    std::vector<hardware_interface::CommandInterface> on_export_reference_interfaces() override;
+  size_t num_joints_ = 0;
+  size_t state_pos_ind = -1;
+  size_t state_vel_ind = -1;
+  size_t state_acc_ind = -1;
+  size_t command_pos_ind = -1;
+  size_t command_vel_ind = -1;
+  size_t command_acc_ind = -1;
 
-    controller_interface::return_type update_reference_from_subscribers() override;
+  // internal reference values
+  const std::vector<std::string> reference_interfaces_types_ = {"position", "velocity"};
+  std::vector<std::reference_wrapper<double>> position_reference_;
+  std::vector<std::reference_wrapper<double>> velocity_reference_;
 
-    bool on_set_chained_mode(bool chained_mode) override;
+  // Admittance rule and dependent variables;
+  std::unique_ptr<admittance_controller::AdmittanceRule> admittance_;
 
-    size_t num_joints_ = 0;
-    size_t state_pos_ind = -1;
-    size_t state_vel_ind = -1;
-    size_t state_acc_ind = -1;
-    size_t command_pos_ind = -1;
-    size_t command_vel_ind = -1;
-    size_t command_acc_ind = -1;
+  // force torque sensor
+  std::unique_ptr<semantic_components::ForceTorqueSensor> force_torque_sensor_;
 
-    // internal reference values
-    const std::vector<std::string> reference_interfaces_types_ = {"position", "velocity"};
-    std::vector<std::reference_wrapper<double>> position_reference_;
-    std::vector<std::reference_wrapper<double>> velocity_reference_;
+  // ROS subscribers
+  rclcpp::Subscription<trajectory_msgs::msg::JointTrajectoryPoint>::SharedPtr
+    input_joint_command_subscriber_;
+  rclcpp::Publisher<control_msgs::msg::AdmittanceControllerState>::SharedPtr s_publisher_;
 
-    // Admittance rule and dependent variables;
-    std::unique_ptr<admittance_controller::AdmittanceRule> admittance_;
+  // ROS messages
+  std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint> joint_command_msg_;
 
-    // force torque sensor
-    std::unique_ptr<semantic_components::ForceTorqueSensor> force_torque_sensor_;
+  // real-time buffer
+  realtime_tools::RealtimeBuffer<std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint>>
+    input_joint_command_;
+  std::unique_ptr<realtime_tools::RealtimePublisher<ControllerStateMsg>> state_publisher_;
 
-    // ROS subscribers
-    rclcpp::Subscription<trajectory_msgs::msg::JointTrajectoryPoint>::SharedPtr input_joint_command_subscriber_;
-    rclcpp::Publisher<control_msgs::msg::AdmittanceControllerState>::SharedPtr s_publisher_;
+  trajectory_msgs::msg::JointTrajectoryPoint last_commanded_;
+  trajectory_msgs::msg::JointTrajectoryPoint last_reference_;
 
-    // ROS messages
-    std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint> joint_command_msg_;
+  // control loop data
+  // reference_: reference value read by the controller
+  // joint_state_: current joint readings from the hardware
+  // reference_admittance_: reference value used by the controller after the admittance values are
+  // applied ft_values_: values read from the force torque sensor
+  trajectory_msgs::msg::JointTrajectoryPoint reference_, joint_state_, reference_admittance_;
+  geometry_msgs::msg::Wrench ft_values_;
 
-    // real-time buffer
-    realtime_tools::RealtimeBuffer<std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint>> input_joint_command_;
-    std::unique_ptr<realtime_tools::RealtimePublisher<ControllerStateMsg>> state_publisher_;
-
-    trajectory_msgs::msg::JointTrajectoryPoint last_commanded_;
-    trajectory_msgs::msg::JointTrajectoryPoint last_reference_;
-
-    // control loop data
-    // reference_: reference value read by the controller
-    // joint_state_: current joint readings from the hardware
-    // reference_admittance_: reference value used by the controller after the admittance values are applied
-    // ft_values_: values read from the force torque sensor
-    trajectory_msgs::msg::JointTrajectoryPoint reference_, joint_state_, reference_admittance_;
-    geometry_msgs::msg::Wrench ft_values_;
-
-    // helper methods
-    void read_state_from_hardware(trajectory_msgs::msg::JointTrajectoryPoint &state_current,
-                                  geometry_msgs::msg::Wrench &ft_values);
-    void read_state_reference_interfaces(trajectory_msgs::msg::JointTrajectoryPoint &state);
-    void write_state_to_hardware(const trajectory_msgs::msg::JointTrajectoryPoint &state_commanded);
-  };
+  // helper methods
+  void read_state_from_hardware(
+    trajectory_msgs::msg::JointTrajectoryPoint & state_current,
+    geometry_msgs::msg::Wrench & ft_values);
+  void read_state_reference_interfaces(trajectory_msgs::msg::JointTrajectoryPoint & state);
+  void write_state_to_hardware(const trajectory_msgs::msg::JointTrajectoryPoint & state_commanded);
+};
 
 }  // namespace admittance_controller
 

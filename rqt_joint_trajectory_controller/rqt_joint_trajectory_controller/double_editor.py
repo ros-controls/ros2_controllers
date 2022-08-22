@@ -43,6 +43,7 @@ class DoubleEditor(QWidget):
     #   DoubleEditor?
     """
     Widget that allows to edit the value of a floating-point value.
+
     Optionally subject to lower and upper bounds.
     """
 
@@ -59,15 +60,17 @@ class DoubleEditor(QWidget):
         self._max_val = max_val
 
         # Load editor UI
-        ui_file = os.path.join(get_package_share_directory('rqt_joint_trajectory_controller'),
-                               'resource', 'double_editor.ui')
+        ui_file = os.path.join(
+            get_package_share_directory("rqt_joint_trajectory_controller"),
+            "resource",
+            "double_editor.ui",
+        )
         loadUi(ui_file, self)
 
         # Setup widget ranges and slider scale factor
         self.slider.setRange(0, 100)
         self.slider.setSingleStep(1)
-        self._scale = (max_val - min_val) / \
-                      (self.slider.maximum() - self.slider.minimum())
+        self._scale = (max_val - min_val) / (self.slider.maximum() - self.slider.minimum())
         self.spin_box.setRange(min_val, max_val)
         self.spin_box.setSingleStep(self._scale)
 
@@ -82,8 +85,7 @@ class DoubleEditor(QWidget):
         return self._min_val + self._scale * (sval - self.slider.minimum())
 
     def _val_to_slider(self, val):
-        return round(self.slider.minimum() + (val - self._min_val) /
-                     self._scale)
+        return round(self.slider.minimum() + (val - self._min_val) / self._scale)
 
     def _on_slider_changed(self):
         val = self._slider_to_val(self.slider.value())
