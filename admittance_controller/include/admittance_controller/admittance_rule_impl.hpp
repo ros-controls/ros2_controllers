@@ -176,7 +176,7 @@ controller_interface::return_type AdmittanceRule::update(
 
   bool success = get_all_transforms(current_joint_state, reference_joint_state);
 
-  // calculate needed rotations
+  // rotations needed for calculation
   Eigen::Matrix<double, 3, 3> rot_base_sensor = admittance_transforms_.base_sensor_.rotation();
   Eigen::Matrix<double, 3, 3> rot_world_base = admittance_transforms_.world_base_.rotation();
   Eigen::Matrix<double, 3, 3> rot_base_cog = admittance_transforms_.base_cog_.rotation();
@@ -263,8 +263,8 @@ bool AdmittanceRule::calculate_admittance_rule(AdmittanceState & admittance_stat
   // get admittance relative velocity
   auto X_dot = Eigen::Matrix<double, 6, 1>(admittance_state.admittance_velocity.data());
 
-  // get external force
-  auto F_base = Eigen::Matrix<double, 6, 1>(admittance_state.wrench_base.data());
+  // external force expressed in the base frame
+  auto F_base = admittance_state.wrench_base;
 
   // zero out any forces in the control frame
   Eigen::Matrix<double, 6, 1> F_control;
@@ -282,8 +282,10 @@ bool AdmittanceRule::calculate_admittance_rule(AdmittanceState & admittance_stat
     admittance_state.joint_acc);
 
   // add damping if cartesian velocity falls below threshold
-  for (size_t i = 0; i < admittance_state.joint_acc.size(); i++){
-      admittance_state.joint_acc[i] -= parameters_.admittance.joint_damping*admittance_state.joint_vel[i];
+  for (size_t i = 0; i < admittance_state.joint_acc.size(); i++)
+  {
+    admittance_state.joint_acc[i] -=
+      parameters_.admittance.joint_damping * admittance_state.joint_vel[i];
   }
 
   // integrate motion in joint space

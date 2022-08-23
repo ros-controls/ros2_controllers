@@ -289,10 +289,11 @@ controller_interface::CallbackReturn AdmittanceController::on_activate(
 
   // initialize states
   read_state_from_hardware(joint_state_, ft_values_);
-  for (auto val : joint_state_.positions) {
-    if (std::isnan(val)) {
-      RCLCPP_ERROR(
-          get_node()->get_logger(), "Failed to read joint positions from the hardware.\n");
+  for (auto val : joint_state_.positions)
+  {
+    if (std::isnan(val))
+    {
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read joint positions from the hardware.\n");
       return controller_interface::CallbackReturn::ERROR;
     }
   }
@@ -376,12 +377,13 @@ controller_interface::CallbackReturn AdmittanceController::on_deactivate(
   command_acc_ind = -1;
 
   // reset to prevent stale references
- for (size_t i = 0; i < num_joints_; i++ ){
-   position_reference_[i].get() = std::numeric_limits<double>::quiet_NaN();
-   velocity_reference_[i].get() = std::numeric_limits<double>::quiet_NaN();
- }
+  for (size_t i = 0; i < num_joints_; i++)
+  {
+    position_reference_[i].get() = std::numeric_limits<double>::quiet_NaN();
+    velocity_reference_[i].get() = std::numeric_limits<double>::quiet_NaN();
+  }
 
- admittance_->reset(num_joints_);
+  admittance_->reset(num_joints_);
 
   return LifecycleNodeInterface::on_deactivate(previous_state);
 }

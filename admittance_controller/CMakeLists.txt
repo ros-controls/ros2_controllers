@@ -38,8 +38,6 @@ foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
 
-
-# The admittance controller
 add_library(${PROJECT_NAME} SHARED src/admittance_controller.cpp)
 target_include_directories(${PROJECT_NAME} PRIVATE include)
 generate_parameter_library(${PROJECT_NAME}_parameters src/admittance_controller_parameters.yaml)

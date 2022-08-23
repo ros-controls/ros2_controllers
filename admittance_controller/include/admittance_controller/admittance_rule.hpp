@@ -142,9 +142,9 @@ public:
     trajectory_msgs::msg::JointTrajectoryPoint & desired_joint_states);
 
   /**
-   * Fill fields of `state_message` from current admittance controller state.
+   * Set fields of `state_message` from current admittance controller state.
    *
-   * \param[in] state_message
+   * \param[out] state_message
    */
   const control_msgs::msg::AdmittanceControllerState & get_controller_state();
 
@@ -174,7 +174,8 @@ protected:
    */
   void process_wrench_measurements(
     const geometry_msgs::msg::Wrench & measured_wrench,
-    const Eigen::Matrix<double, 3, 3> & sensor_world_rot, const Eigen::Matrix<double, 3, 3> & cog_world_rot);
+    const Eigen::Matrix<double, 3, 3> & sensor_world_rot,
+    const Eigen::Matrix<double, 3, 3> & cog_world_rot);
 
   template <typename T1, typename T2>
   void vec_to_eigen(const std::vector<T1> & data, T2 & matrix);
