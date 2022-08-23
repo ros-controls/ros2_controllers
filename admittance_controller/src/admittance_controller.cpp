@@ -18,16 +18,14 @@
 
 #include <chrono>
 #include <cmath>
-#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "tf2_ros/buffer.h"
-
 #include "admittance_controller/admittance_rule_impl.hpp"
 #include "geometry_msgs/msg/wrench.hpp"
 #include "rcutils/logging_macros.h"
+#include "tf2_ros/buffer.h"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
 namespace admittance_controller
@@ -252,49 +250,54 @@ controller_interface::CallbackReturn AdmittanceController::on_activate(
   // update parameters if any have changed
   admittance_->apply_parameters_update();
 
-  // get state interface inds
-  std::unordered_map<std::string, size_t> inter_to_ind = {
-    {hardware_interface::HW_IF_POSITION, -1},
-    {hardware_interface::HW_IF_VELOCITY, -1},
-    {hardware_interface::HW_IF_ACCELERATION, -1}};
+  // get indices for state and command interfaces
   for (size_t i = 0; i < admittance_->parameters_.state_interfaces.size(); ++i)
   {
     const auto & interface = admittance_->parameters_.state_interfaces[i];
-    inter_to_ind[interface] = i;
+    if (interface == hardware_interface::HW_IF_POSITION)
+    {
+      state_pos_ind = i;
+    }
+    else if (interface == hardware_interface::HW_IF_VELOCITY)
+    {
+      state_vel_ind = i;
+    }
+    else if (interface == hardware_interface::HW_IF_ACCELERATION)
+    {
+      state_acc_ind = i;
+    }
   }
-  state_pos_ind = inter_to_ind[hardware_interface::HW_IF_POSITION];
-  state_vel_ind = inter_to_ind[hardware_interface::HW_IF_VELOCITY];
-  state_acc_ind = inter_to_ind[hardware_interface::HW_IF_ACCELERATION];
-
-  // get state interface inds
-  inter_to_ind = {
-    {hardware_interface::HW_IF_POSITION, -1},
-    {hardware_interface::HW_IF_VELOCITY, -1},
-    {hardware_interface::HW_IF_ACCELERATION, -1}};
   for (size_t i = 0; i < admittance_->parameters_.command_interfaces.size(); ++i)
   {
     const auto & interface = admittance_->parameters_.command_interfaces[i];
-    inter_to_ind[interface] = i;
+    if (interface == hardware_interface::HW_IF_POSITION)
+    {
+      command_pos_ind = i;
+    }
+    else if (interface == hardware_interface::HW_IF_VELOCITY)
+    {
+      command_vel_ind = i;
+    }
+    else if (interface == hardware_interface::HW_IF_ACCELERATION)
+    {
+      command_acc_ind = i;
+    }
   }
-  command_pos_ind = inter_to_ind[hardware_interface::HW_IF_POSITION];
-  command_vel_ind = inter_to_ind[hardware_interface::HW_IF_VELOCITY];
-  command_acc_ind = inter_to_ind[hardware_interface::HW_IF_ACCELERATION];
 
-  // initialize interface of the FTS semantic semantic component
+  // initialize interface of the FTS semantic component
   force_torque_sensor_->assign_loaned_state_interfaces(state_interfaces_);
 
   // handle state after restart or initial startups
   read_state_from_hardware(joint_state_, ft_values_);
 
-  // initialize states from last read state reference
+  // initialize states
+  for (auto val : joint_state_.positions)
+  {
+    RCLCPP_ERROR(get_node()->get_logger(), "val: %f \n", val);
+  }
   last_commanded_ = joint_state_;
   last_reference_ = joint_state_;
-
   read_state_reference_interfaces(reference_);
-
-  // reset dynamic fields in case non-zero
-  reference_.velocities.assign(num_joints_, 0.0);
-  reference_.accelerations.assign(num_joints_, 0.0);
   reference_admittance_ = reference_;
 
   return controller_interface::CallbackReturn::SUCCESS;
@@ -358,7 +361,28 @@ controller_interface::return_type AdmittanceController::update_and_write_command
 controller_interface::CallbackReturn AdmittanceController::on_deactivate(
   const rclcpp_lifecycle::State & previous_state)
 {
+  // release force torque sensor interface
   force_torque_sensor_->release_interfaces();
+
+  // reset indices
+  state_pos_ind = -1;
+  state_vel_ind = -1;
+  state_acc_ind = -1;
+  command_pos_ind = -1;
+  command_vel_ind = -1;
+  command_acc_ind = -1;
+
+  // reset to prevent stale references
+  auto assign_vector = [&](std::vector<double> & vec, double assigned_value)
+  {
+    for (auto & val : vec)
+    {
+      val = assigned_value;
+    }
+  };
+  assign_vector(reference_.positions, std::numeric_limits<double>::quiet_NaN());
+  assign_vector(reference_.velocities, std::numeric_limits<double>::quiet_NaN());
+  assign_vector(reference_.accelerations, std::numeric_limits<double>::quiet_NaN());
 
   return LifecycleNodeInterface::on_deactivate(previous_state);
 }
@@ -384,44 +408,46 @@ void AdmittanceController::read_state_from_hardware(
   trajectory_msgs::msg::JointTrajectoryPoint & state_current,
   geometry_msgs::msg::Wrench & ft_values)
 {
-  // Fill fields of state_reference argument from hardware state interfaces. If the hardware does
-  // not exist or the values are nan, the corresponding state field will be set to empty.
-
-  // if any interface has nan values, assume state_reference is the last command state
+  // if any interface has nan values, assume state_current is the last command state
+  bool nan_position = false;
+  bool nan_velocity = false;
+  bool nan_acceleration = false;
   for (size_t joint_ind = 0; joint_ind < num_joints_; ++joint_ind)
   {
     for (size_t inter_ind = 0; inter_ind < 3; ++inter_ind)
     {
-      auto ind = joint_ind + num_joints_ * inter_ind;
+      auto interface_value = state_interfaces_[joint_ind + num_joints_ * inter_ind].get_value();
       if (inter_ind == state_pos_ind)
       {
-        state_current.positions[joint_ind] = state_interfaces_[ind].get_value();
-        if (std::isnan(state_current.positions[joint_ind]))
-        {
-          state_current.positions = last_commanded_.positions;
-          break;
-        }
+        state_current.positions[joint_ind] = interface_value;
+        nan_position |= std::isnan(interface_value);
       }
       else if (inter_ind == state_vel_ind)
       {
-        state_current.velocities[joint_ind] = state_interfaces_[ind].get_value();
-        if (std::isnan(state_current.positions[joint_ind]))
-        {
-          state_current.velocities = last_commanded_.velocities;
-          break;
-        }
+        state_current.velocities[joint_ind] = interface_value;
+        nan_velocity |= std::isnan(interface_value);
       }
       else if (inter_ind == state_acc_ind)
       {
-        state_current.accelerations[joint_ind] = state_interfaces_[ind].get_value();
-        if (std::isnan(state_current.positions[joint_ind]))
-        {
-          state_current.accelerations = last_commanded_.accelerations;
-          break;
-        }
+        state_current.accelerations[joint_ind] = interface_value;
+        nan_acceleration |= std::isnan(interface_value);
       }
     }
   }
+  if (nan_position)
+  {
+    state_current.positions = last_commanded_.positions;
+  }
+  if (nan_velocity)
+  {
+    state_current.velocities = last_commanded_.velocities;
+  }
+  if (nan_acceleration)
+  {
+    state_current.accelerations = last_commanded_.accelerations;
+  }
+
+  // if any ft_values are nan, assume values are zero
   force_torque_sensor_->get_values_as_message(ft_values);
   if (
     std::isnan(ft_values.force.x) || std::isnan(ft_values.force.y) ||
@@ -435,10 +461,7 @@ void AdmittanceController::read_state_from_hardware(
 void AdmittanceController::write_state_to_hardware(
   const trajectory_msgs::msg::JointTrajectoryPoint & state_commanded)
 {
-  // Fill fields of state_reference argument from hardware state interfaces. If the hardware does
-  // not exist or the values are nan, the corresponding state field will be set to empty.
-
-  // if any interface has nan values, assume state_reference is the last command state
+  // if any interface has nan values, assume state_commanded is the last command state
   for (size_t joint_ind = 0; joint_ind < num_joints_; ++joint_ind)
   {
     for (size_t inter_ind = 0; inter_ind < 3; ++inter_ind)
@@ -458,35 +481,33 @@ void AdmittanceController::write_state_to_hardware(
       }
     }
   }
-  last_commanded_ = reference_admittance_;
+  last_commanded_ = state_commanded;
 }
 
 void AdmittanceController::read_state_reference_interfaces(
   trajectory_msgs::msg::JointTrajectoryPoint & state_reference)
 {
   // TODO(destogl): check why is this here?
-  // Fill fields of state_reference argument from controller references.
-  // If the interface does not exist or
-  // the values are nan, the corresponding field will be set to empty
 
-  for (size_t i = 0; i < position_reference_.size(); ++i)
+  // if any interface has nan values, assume state_reference is the last set reference
+  for (size_t i = 0; i < num_joints_; ++i)
   {
+    // update position
     if (std::isnan(position_reference_[i]))
     {
       position_reference_[i].get() = last_reference_.positions[i];
     }
     state_reference.positions[i] = position_reference_[i];
-  }
-  last_reference_.positions = state_reference.positions;
 
-  for (size_t i = 0; i < velocity_reference_.size(); ++i)
-  {
+    // update velocity
     if (std::isnan(velocity_reference_[i]))
     {
       velocity_reference_[i].get() = last_reference_.velocities[i];
     }
     state_reference.velocities[i] = velocity_reference_[i];
   }
+
+  last_reference_.positions = state_reference.positions;
   last_reference_.velocities = state_reference.velocities;
 }
 

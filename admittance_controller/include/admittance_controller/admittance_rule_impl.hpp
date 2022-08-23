@@ -209,18 +209,14 @@ controller_interface::return_type AdmittanceRule::update(
   }
 
   // update joint desired joint state
-  for (size_t i = 0; i < reference_joint_state.positions.size(); ++i)
+  for (size_t i = 0; i < num_joints_; ++i)
   {
     desired_joint_state.positions[i] =
       reference_joint_state.positions[i] + admittance_state_.joint_pos[i];
-  }
-  for (size_t i = 0; i < reference_joint_state.velocities.size(); ++i)
-  {
-    desired_joint_state.velocities[i] = admittance_state_.joint_vel[i];
-  }
-  for (size_t i = 0; i < reference_joint_state.accelerations.size(); ++i)
-  {
-    desired_joint_state.accelerations[i] = admittance_state_.joint_acc[i];
+    desired_joint_state.velocities[i] =
+      reference_joint_state.velocities[i] + admittance_state_.joint_vel[i];
+    desired_joint_state.accelerations[i] =
+      reference_joint_state.accelerations[i] + admittance_state_.joint_acc[i];
   }
 
   return controller_interface::return_type::OK;

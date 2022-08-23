@@ -142,12 +142,22 @@ protected:
   trajectory_msgs::msg::JointTrajectoryPoint reference_, joint_state_, reference_admittance_;
   geometry_msgs::msg::Wrench ft_values_;
 
-  // helper methods
+  /**
+  * @brief Read values from hardware interfaces and set corresponding fields of state_current and ft_values
+  */
   void read_state_from_hardware(
     trajectory_msgs::msg::JointTrajectoryPoint & state_current,
     geometry_msgs::msg::Wrench & ft_values);
+
+  /**
+  * @brief Set fields of state_reference with values from controllers exported position and velocity references
+  */
   void read_state_reference_interfaces(trajectory_msgs::msg::JointTrajectoryPoint & state);
-  void write_state_to_hardware(const trajectory_msgs::msg::JointTrajectoryPoint & state_commanded);
+
+  /**
+* @brief Write values from state_command to claimed hardware interfaces
+*/
+  void write_state_to_hardware(const trajectory_msgs::msg::JointTrajectoryPoint & state_command);
 };
 
 }  // namespace admittance_controller
