@@ -281,8 +281,13 @@ bool AdmittanceRule::calculate_admittance_rule(AdmittanceState & admittance_stat
     admittance_state.current_joint_pos, X_ddot, admittance_state.ft_sensor_frame,
     admittance_state.joint_acc);
 
+  // add damping if cartesian velocity falls below threshold
+  for (size_t i = 0; i < admittance_state.joint_acc.size(); i++){
+      admittance_state.joint_acc[i] -= parameters_.admittance.joint_damping*admittance_state.joint_vel[i];
+  }
+
   // integrate motion in joint space
-  admittance_state.joint_vel += admittance_state.joint_acc * dt;
+  admittance_state.joint_vel += (admittance_state.joint_acc) * dt;
   admittance_state.joint_pos += admittance_state.joint_vel * dt;
 
   // calculate admittance velocity corresponding to joint velocity

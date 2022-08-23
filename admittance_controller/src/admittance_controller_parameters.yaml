@@ -45,7 +45,7 @@ admittance_controller:
     }
     alpha: {
       type: double,
-      default_value: 0.0005,
+      default_value: 0.01,
       description: "specifies the damping coefficient for the Jacobian pseudo inverse"
     }
 
@@ -61,7 +61,7 @@ admittance_controller:
       }
     filter_coefficient: {
       type: double,
-      default_value: 0.005,
+      default_value: 0.05,
       description: "specifies the coefficient for the sensor's exponential filter"
     }
 
@@ -130,6 +130,14 @@ admittance_controller:
       validation: {
         fixed_size<>: 6,
         element_bounds<>: [ 0.0, 100000000.0 ]
+      }
+    }
+    joint_damping: {
+      type: double,
+      description: "specifies joint damping applied when the cartesian velocity norm is less than min_velocity",
+      default_value: 5,
+      validation: {
+        lower_bounds: [ 0.0 ]
       }
     }
 
