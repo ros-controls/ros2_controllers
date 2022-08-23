@@ -40,10 +40,11 @@
 
 namespace admittance_controller
 {
-struct Transforms
+struct AdmittanceTransforms
 {
-  Eigen::Isometry3d base_control_;
+  Eigen::Isometry3d ref_base_ft_;
   Eigen::Isometry3d base_ft_;
+  Eigen::Isometry3d base_control_;
   Eigen::Isometry3d base_tip_;
   Eigen::Isometry3d world_base_;
   Eigen::Isometry3d base_sensor_;
@@ -88,7 +89,8 @@ struct AdmittanceState
 class AdmittanceRule
 {
 public:
-  explicit AdmittanceRule(const std::shared_ptr<admittance_controller::ParamListener>& parameter_handler)
+  explicit AdmittanceRule(
+    const std::shared_ptr<admittance_controller::ParamListener> & parameter_handler)
   {
     parameter_handler_ = parameter_handler;
     parameters_ = parameter_handler_->get_params();
@@ -110,12 +112,11 @@ public:
    * are calculated without an error
    * \param[in] current_joint_state
    * \param[in] reference_joint_state
-   * \param[in] success
+   * \param[out] success
    */
   bool get_all_transforms(
     const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state,
-    const trajectory_msgs::msg::JointTrajectoryPoint & reference_joint_state,
-    const AdmittanceState & admittance_state);
+    const trajectory_msgs::msg::JointTrajectoryPoint & reference_joint_state);
 
   /**
    * Updates parameter_ struct if any parameters have changed since last update. Parameter dependent Eigen field
@@ -199,8 +200,7 @@ protected:
   AdmittanceState admittance_state_{0};
 
   // transforms needed for admittance update
-  Transforms trans_;
-  Transforms trans_ref_;
+  AdmittanceTransforms admittance_transforms_;
 
   // position of center of gravity in cog_frame
   Eigen::Vector3d cog_;
