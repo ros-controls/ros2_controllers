@@ -1,94 +1,94 @@
 admittance_controller:
   joints: {
     type: string_array,
-    description: "specifies which joints will be used by the controller",
+    description: "Specifies which joints will be used by the controller. ",
     read_only: true
   }
 
   command_interfaces:
     {
       type: string_array,
-      description: "specifies which command interfaces to claim",
+      description: "Specifies which command interfaces the controller will claim.",
       read_only: true
     }
 
   state_interfaces:
     {
       type: string_array,
-      description: "specifies which state interfaces to claim",
+      description: "Specifies which state interfaces the controller will claim.",
       read_only: true
     }
 
   chainable_command_interfaces:
     {
       type: string_array,
-      description: "specifies which chainable interfaces to claim",
+      description: "Specifies which reference interfaces the controller will export. Normally, the position and velocity are used.",
       read_only: true
     }
 
   kinematics:
     plugin_name: {
       type: string,
-      description: "specifies which kinematics plugin to load"
+      description: "Specifies the name of the kinematics plugin to load."
     }
     plugin_package: {
       type: string,
-      description: "specifies the package to load the kinematics plugin from"
+      description: "Specifies the package name that contains the kinematics plugin."
     }
     base: {
       type: string,
-      description: "specifies the base link of the robot description used by the kinematics plugin"
+      description: "Specifies the base link of the robot description used by the kinematics plugin."
     }
     tip: {
       type: string,
-      description: "specifies the end effector link of the robot description used by the kinematics plugin"
+      description: "Specifies the end effector link of the robot description used by the kinematics plugin."
     }
     alpha: {
       type: double,
       default_value: 0.01,
-      description: "specifies the damping coefficient for the Jacobian pseudo inverse"
+      description: "Specifies the damping coefficient for the Jacobian pseudo inverse."
     }
 
   ft_sensor:
     name: {
       type: string,
-      description: "name of the force torque sensor in the robot description"
+      description: "Specifies the name of the force torque sensor in the robot description which will be used in the admittance calculation."
     }
     frame:
       id: {
         type: string,
-        description: "frame of the force torque sensor"
+        description: "Specifies the frame/link name of the force torque sensor."
       }
     filter_coefficient: {
       type: double,
       default_value: 0.05,
-      description: "specifies the coefficient for the sensor's exponential filter"
+      description: "Specifies the filter coefficient for the sensor's exponential filter."
     }
 
   control:
     frame:
       id: {
         type: string,
-        description: "control frame used for admittance control"
+        description: "Specifies the control frame used for admittance calculation."
       }
 
   fixed_world_frame: # Gravity points down (neg. Z) in this frame (Usually: world or base_link)
     frame:
       id: {
         type: string,
-        description: "world frame, gravity points down (neg. Z) in this frame"
+        description: "Specifies the world frame use for admittance calculation. Gravity must point down in this frame."
       }
 
   gravity_compensation:
     frame:
       id: {
         type: string,
-        description: "frame which center of gravity (CoG) is defined in"
+        description: "Specifies the frame which center of gravity (CoG) is defined in. Normally, the force torque sensor frame should be used."
       }
-    CoG: # specifies the center of gravity of the end effector
+    CoG:
       pos: {
         type: double_array,
-        description: "position of the center of gravity (CoG) in its frame",
+        description: "Specifies the position of the center of gravity (CoG) of the end effector in the gravity compensation frame.",
         validation: {
           fixed_size<>: 3
         }
@@ -96,21 +96,21 @@ admittance_controller:
       force: {
         type: double,
         default_value: 0.0,
-        description: "weight of the end effector, e.g mass * 9.81"
+        description: "Specifies the weight of the end effector, e.g mass * 9.81."
       }
 
   admittance:
     selected_axes:
       {
         type: bool_array,
-        description: "specifies if the axes x, y, z, rx, ry, and rz are enabled",
+        description: "Specifies whether the axes x, y, z, rx, ry, and rz should be included in the admittance calculation.",
         validation: {
           fixed_size<>: 6
         }
       }
     mass: {
       type: double_array,
-      description: "specifies mass values for x, y, z, rx, ry, and rz used in the admittance calculation",
+      description: "Specifies the mass values for x, y, z, rx, ry, and rz used in the admittance calculation.",
       validation: {
         fixed_size<>: 6,
         element_bounds<>: [ 0.0001, 1000000.0 ]
@@ -118,15 +118,15 @@ admittance_controller:
     }
     damping_ratio: {
       type: double_array,
-      description: "specifies damping ratio values for x, y, z, rx, ry, and rz used in the admittance calculation.
-      The values are calculated as damping can be used instead: zeta = D / (2 * sqrt( M * S ))",
+      description: "Specifies damping ratio values for x, y, z, rx, ry, and rz used in the admittance calculation.
+      The damping ratio is defined as: zeta = D / (2 * sqrt( M * S )).",
       validation: {
         fixed_size<>: 6
       }
     }
     stiffness: {
       type: double_array,
-      description: "specifies stiffness values for x, y, z, rx, ry, and rz used in the admittance calculation",
+      description: "Specifies the stiffness values for x, y, z, rx, ry, and rz used in the admittance calculation.",
       validation: {
         fixed_size<>: 6,
         element_bounds<>: [ 0.0, 100000000.0 ]
@@ -134,7 +134,7 @@ admittance_controller:
     }
     joint_damping: {
       type: double,
-      description: "specifies joint damping applied when the cartesian velocity norm is less than min_velocity",
+      description: "Specifies the joint damping applied used in the admittance calculation.",
       default_value: 5,
       validation: {
         lower_bounds: [ 0.0 ]
@@ -144,11 +144,11 @@ admittance_controller:
   # general settings
   robot_description: {
     type: string,
-    description: "Contains robot description in URDF format. The description is used to perform forward and inverse kinematics.",
+    description: "Contains robot description in URDF format. The description is used for forward and inverse kinematics.",
     read_only: true
   }
   enable_parameter_update_without_reactivation: {
     type: bool,
     default_value: true,
-    description: "if enabled, parameters will be dynamically updated in the control loop"
+    description: "If enabled, the parameters will be dynamically updated while the controller is running."
   }
