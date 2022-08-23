@@ -120,6 +120,9 @@ protected:
     input_joint_command_subscriber_;
   rclcpp::Publisher<control_msgs::msg::AdmittanceControllerState>::SharedPtr s_publisher_;
 
+  // admittance parameters
+  std::shared_ptr<admittance_controller::ParamListener> parameter_handler_;
+
   // ROS messages
   std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint> joint_command_msg_;
 

@@ -37,7 +37,8 @@ controller_interface::CallbackReturn AdmittanceController::on_init()
   // initialize controller config
   try
   {
-    admittance_ = std::make_unique<admittance_controller::AdmittanceRule>(get_node());
+    parameter_handler_ = std::make_shared<admittance_controller::ParamListener>(get_node());
+    admittance_ = std::make_unique<admittance_controller::AdmittanceRule>(parameter_handler_);
   }
   catch (const std::exception & e)
   {
@@ -155,7 +156,8 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
 {
   try
   {
-    admittance_ = std::make_unique<admittance_controller::AdmittanceRule>(get_node());
+    parameter_handler_ = std::make_shared<admittance_controller::ParamListener>(get_node());
+    admittance_ = std::make_unique<admittance_controller::AdmittanceRule>(parameter_handler_);
     num_joints_ = admittance_->parameters_.joints.size();
   }
   catch (const std::exception & e)

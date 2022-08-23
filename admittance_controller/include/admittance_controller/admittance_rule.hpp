@@ -88,10 +88,9 @@ struct AdmittanceState
 class AdmittanceRule
 {
 public:
-  explicit AdmittanceRule(const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & lifecycl_node)
+  explicit AdmittanceRule(const std::shared_ptr<admittance_controller::ParamListener>& parameter_handler)
   {
-    parameter_handler_ = std::make_shared<admittance_controller::ParamListener>(
-      lifecycl_node->get_node_parameters_interface());
+    parameter_handler_ = parameter_handler;
     parameters_ = parameter_handler_->get_params();
     num_joints_ = parameters_.joints.size();
     admittance_state_ = AdmittanceState(num_joints_);
