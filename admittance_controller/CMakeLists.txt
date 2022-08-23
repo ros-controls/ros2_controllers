@@ -80,7 +80,7 @@ if(BUILD_TESTING)
       ${TARGET}
       COMMAND ${executable} --ros-args --params-file ${YAML_FILE}
       --gtest_output=xml:${result_file}
-      OUTPUT_FILE ${CMAKE_BINARY_DIR}/ament_cmake_gmock/test_load_admittance_controller.txt
+      OUTPUT_FILE ${AMENT_TEST_RESULTS_DIR}/${PROJECT_NAME}/${TARGET}.txt
       RESULT_FILE ${result_file}
     )
   endfunction()

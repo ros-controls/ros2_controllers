@@ -52,9 +52,6 @@ struct Transforms
 
 struct AdmittanceState
 {
-  // TODO(destogl): does this constructor makes sense at all?
-  AdmittanceState() = default;
-
   explicit AdmittanceState(size_t num_joints)
   {
     admittance_velocity.setZero();
@@ -200,7 +197,7 @@ protected:
   Eigen::Matrix<double, 6, 1> wrench_world_;
 
   // admittance controllers internal state
-  AdmittanceState admittance_state_;
+  AdmittanceState admittance_state_{0};
 
   // transforms needed for admittance update
   Transforms trans_;
