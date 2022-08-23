@@ -4,7 +4,12 @@ admittance_controller:
     description: "Specifies which joints will be used by the controller. ",
     read_only: true
   }
-
+  command_joints: {
+    type: string_array,
+    default_value: [],
+    description: "(optional) Specifies the joints for writing into another controllers reference. This parameter is only relevant when chaining the output of this controller to the input of another controller.",
+    read_only: true
+  }
   command_interfaces:
     {
       type: string_array,

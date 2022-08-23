@@ -18,6 +18,7 @@
 
 #include <chrono>
 #include <cmath>
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
@@ -44,6 +45,8 @@ controller_interface::CallbackReturn AdmittanceController::on_init()
       get_node()->get_logger(), "Exception thrown during init stage with message: %s \n", e.what());
     return controller_interface::CallbackReturn::ERROR;
   }
+
+  // number of joints in controllers is fixed after initialization
   num_joints_ = admittance_->parameters_.joints.size();
 
   // allocate dynamic memory
@@ -156,7 +159,6 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
   {
     parameter_handler_ = std::make_shared<admittance_controller::ParamListener>(get_node());
     admittance_ = std::make_unique<admittance_controller::AdmittanceRule>(parameter_handler_);
-    num_joints_ = admittance_->parameters_.joints.size();
   }
   catch (const std::exception & e)
   {
@@ -173,6 +175,8 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
   {
     RCLCPP_INFO(get_node()->get_logger(), "%s", ("command int types are: " + tmp + "\n").c_str());
   }
+
+  // validate exported interfaces
   for (const auto & tmp : admittance_->parameters_.chainable_command_interfaces)
   {
     if (tmp == hardware_interface::HW_IF_POSITION || tmp == hardware_interface::HW_IF_VELOCITY)
@@ -188,6 +192,76 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
         hardware_interface::HW_IF_POSITION, hardware_interface::HW_IF_VELOCITY);
       return controller_interface::CallbackReturn::ERROR;
     }
+  }
+
+  // Check if only allowed interface types are used and initialize storage to avoid memory
+  // allocation during activation
+  auto contains_interface_type =
+    [](const std::vector<std::string> & interface_type_list, const std::string & interface_type)
+  {
+    return std::find(interface_type_list.begin(), interface_type_list.end(), interface_type) !=
+           interface_type_list.end();
+  };
+
+  joint_command_interface_.resize(allowed_interface_types_.size());
+  for (const auto & interface : admittance_->parameters_.command_interfaces)
+  {
+    auto it =
+      std::find(allowed_interface_types_.begin(), allowed_interface_types_.end(), interface);
+    if (it == allowed_interface_types_.end())
+    {
+      RCLCPP_ERROR(
+        get_node()->get_logger(), "Command interface type '%s' not allowed!", interface.c_str());
+      return CallbackReturn::FAILURE;
+    }
+  }
+
+  has_position_command_interface_ = contains_interface_type(
+    admittance_->parameters_.command_interfaces, hardware_interface::HW_IF_POSITION);
+  has_velocity_command_interface_ = contains_interface_type(
+    admittance_->parameters_.command_interfaces, hardware_interface::HW_IF_VELOCITY);
+  has_acceleration_command_interface_ = contains_interface_type(
+    admittance_->parameters_.command_interfaces, hardware_interface::HW_IF_ACCELERATION);
+  has_effort_command_interface_ = contains_interface_type(
+    admittance_->parameters_.command_interfaces, hardware_interface::HW_IF_EFFORT);
+
+  // Check if only allowed interface types are used and initialize storage to avoid memory
+  // allocation during activation
+  // Note: 'effort' storage is also here, but never used. Still, for this is OK.
+  joint_state_interface_.resize(allowed_interface_types_.size());
+  for (const auto & interface : admittance_->parameters_.state_interfaces)
+  {
+    auto it =
+      std::find(allowed_interface_types_.begin(), allowed_interface_types_.end(), interface);
+    if (it == allowed_interface_types_.end())
+    {
+      RCLCPP_ERROR(
+        get_node()->get_logger(), "State interface type '%s' not allowed!", interface.c_str());
+      return CallbackReturn::FAILURE;
+    }
+  }
+
+  has_position_state_interface_ = contains_interface_type(
+    admittance_->parameters_.state_interfaces, hardware_interface::HW_IF_POSITION);
+  has_velocity_state_interface_ = contains_interface_type(
+    admittance_->parameters_.state_interfaces, hardware_interface::HW_IF_VELOCITY);
+  has_acceleration_state_interface_ = contains_interface_type(
+    admittance_->parameters_.state_interfaces, hardware_interface::HW_IF_ACCELERATION);
+
+  command_joint_names_ = admittance_->parameters_.command_joints;
+  if (command_joint_names_.empty())
+  {
+    command_joint_names_ = admittance_->parameters_.joints;
+    RCLCPP_INFO(
+      get_node()->get_logger(),
+      "No specific joint names are used for command interfaces. Using 'joints' parameter.");
+  }
+  else if (command_joint_names_.size() != num_joints_)
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(),
+      "'command_joints' parameter has to have the same size as 'joints' parameter.");
+    return CallbackReturn::FAILURE;
   }
 
   auto get_interface_list = [](const std::vector<std::string> & interface_types)
@@ -247,42 +321,39 @@ controller_interface::CallbackReturn AdmittanceController::on_activate(
     return controller_interface::CallbackReturn::ERROR;
   }
 
+  // order all joints in the storage
+  for (const auto & interface : admittance_->parameters_.command_interfaces)
+  {
+    auto it =
+      std::find(allowed_interface_types_.begin(), allowed_interface_types_.end(), interface);
+    auto index = std::distance(allowed_interface_types_.begin(), it);
+    if (!controller_interface::get_ordered_interfaces(
+          command_interfaces_, command_joint_names_, interface, joint_command_interface_[index]))
+    {
+      RCLCPP_ERROR(
+        get_node()->get_logger(), "Expected %zu '%s' command interfaces, got %zu.", num_joints_,
+        interface.c_str(), joint_command_interface_[index].size());
+      return CallbackReturn::ERROR;
+    }
+  }
+  for (const auto & interface : admittance_->parameters_.state_interfaces)
+  {
+    auto it =
+      std::find(allowed_interface_types_.begin(), allowed_interface_types_.end(), interface);
+    auto index = std::distance(allowed_interface_types_.begin(), it);
+    if (!controller_interface::get_ordered_interfaces(
+          state_interfaces_, admittance_->parameters_.joints, interface,
+          joint_state_interface_[index]))
+    {
+      RCLCPP_ERROR(
+        get_node()->get_logger(), "Expected %zu '%s' state interfaces, got %zu.", num_joints_,
+        interface.c_str(), joint_state_interface_[index].size());
+      return CallbackReturn::ERROR;
+    }
+  }
+
   // update parameters if any have changed
   admittance_->apply_parameters_update();
-
-  // get indices for state and command interfaces
-  for (size_t i = 0; i < admittance_->parameters_.state_interfaces.size(); ++i)
-  {
-    const auto & interface = admittance_->parameters_.state_interfaces[i];
-    if (interface == hardware_interface::HW_IF_POSITION)
-    {
-      state_pos_ind = i;
-    }
-    else if (interface == hardware_interface::HW_IF_VELOCITY)
-    {
-      state_vel_ind = i;
-    }
-    else if (interface == hardware_interface::HW_IF_ACCELERATION)
-    {
-      state_acc_ind = i;
-    }
-  }
-  for (size_t i = 0; i < admittance_->parameters_.command_interfaces.size(); ++i)
-  {
-    const auto & interface = admittance_->parameters_.command_interfaces[i];
-    if (interface == hardware_interface::HW_IF_POSITION)
-    {
-      command_pos_ind = i;
-    }
-    else if (interface == hardware_interface::HW_IF_VELOCITY)
-    {
-      command_vel_ind = i;
-    }
-    else if (interface == hardware_interface::HW_IF_ACCELERATION)
-    {
-      command_acc_ind = i;
-    }
-  }
 
   // initialize interface of the FTS semantic component
   force_torque_sensor_->assign_loaned_state_interfaces(state_interfaces_);
@@ -298,11 +369,11 @@ controller_interface::CallbackReturn AdmittanceController::on_activate(
     }
   }
 
+  // Use current joint_state as a default reference
   last_reference_ = joint_state_;
   last_commanded_ = joint_state_;
-
-  read_state_reference_interfaces(reference_);
-  reference_admittance_ = reference_;
+  reference_ = joint_state_;
+  reference_admittance_ = joint_state_;
 
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -365,16 +436,13 @@ controller_interface::return_type AdmittanceController::update_and_write_command
 controller_interface::CallbackReturn AdmittanceController::on_deactivate(
   const rclcpp_lifecycle::State & previous_state)
 {
+  if (!admittance_)
+  {
+    return controller_interface::CallbackReturn::ERROR;
+  }
+
   // release force torque sensor interface
   force_torque_sensor_->release_interfaces();
-
-  // reset indices
-  state_pos_ind = -1;
-  state_vel_ind = -1;
-  state_acc_ind = -1;
-  command_pos_ind = -1;
-  command_vel_ind = -1;
-  command_acc_ind = -1;
 
   // reset to prevent stale references
   for (size_t i = 0; i < num_joints_; i++)
@@ -384,8 +452,9 @@ controller_interface::CallbackReturn AdmittanceController::on_deactivate(
   }
 
   admittance_->reset(num_joints_);
+  release_interfaces();
 
-  return LifecycleNodeInterface::on_deactivate(previous_state);
+  return CallbackReturn::SUCCESS;
 }
 
 controller_interface::CallbackReturn AdmittanceController::on_cleanup(
@@ -413,28 +482,32 @@ void AdmittanceController::read_state_from_hardware(
   bool nan_position = false;
   bool nan_velocity = false;
   bool nan_acceleration = false;
+
+  size_t pos_ind = 0;
+  size_t vel_ind = pos_ind + has_velocity_command_interface_;
+  size_t acc_ind = vel_ind + has_acceleration_state_interface_;
   for (size_t joint_ind = 0; joint_ind < num_joints_; ++joint_ind)
   {
-    for (size_t inter_ind = 0; inter_ind < 3; ++inter_ind)
+    if (has_position_state_interface_)
     {
-      auto interface_value = state_interfaces_[joint_ind + num_joints_ * inter_ind].get_value();
-      if (inter_ind == state_pos_ind)
-      {
-        state_current.positions[joint_ind] = interface_value;
-        nan_position |= std::isnan(interface_value);
-      }
-      else if (inter_ind == state_vel_ind)
-      {
-        state_current.velocities[joint_ind] = interface_value;
-        nan_velocity |= std::isnan(interface_value);
-      }
-      else if (inter_ind == state_acc_ind)
-      {
-        state_current.accelerations[joint_ind] = interface_value;
-        nan_acceleration |= std::isnan(interface_value);
-      }
+      state_current.positions[joint_ind] =
+        state_interfaces_[pos_ind * num_joints_ + joint_ind].get_value();
+      nan_position |= std::isnan(state_current.positions[joint_ind]);
+    }
+    else if (has_velocity_state_interface_)
+    {
+      state_current.velocities[joint_ind] =
+        state_interfaces_[vel_ind * num_joints_ + joint_ind].get_value();
+      nan_velocity |= std::isnan(state_current.velocities[joint_ind]);
+    }
+    else if (has_acceleration_state_interface_)
+    {
+      state_current.accelerations[joint_ind] =
+        state_interfaces_[acc_ind * num_joints_ + joint_ind].get_value();
+      nan_acceleration |= std::isnan(state_current.accelerations[joint_ind]);
     }
   }
+
   if (nan_position)
   {
     state_current.positions = last_commanded_.positions;
@@ -463,23 +536,25 @@ void AdmittanceController::write_state_to_hardware(
   const trajectory_msgs::msg::JointTrajectoryPoint & state_commanded)
 {
   // if any interface has nan values, assume state_commanded is the last command state
+  size_t pos_ind = 0;
+  size_t vel_ind = pos_ind + has_velocity_command_interface_;
+  size_t acc_ind = vel_ind + has_acceleration_state_interface_;
   for (size_t joint_ind = 0; joint_ind < num_joints_; ++joint_ind)
   {
-    for (size_t inter_ind = 0; inter_ind < 3; ++inter_ind)
+    if (has_position_command_interface_)
     {
-      auto ind = joint_ind + num_joints_ * inter_ind;
-      if (inter_ind == command_pos_ind)
-      {
-        command_interfaces_[ind].set_value(state_commanded.positions[joint_ind]);
-      }
-      else if (inter_ind == command_vel_ind)
-      {
-        command_interfaces_[ind].set_value(state_commanded.velocities[joint_ind]);
-      }
-      else if (inter_ind == command_acc_ind)
-      {
-        command_interfaces_[ind].set_value(state_commanded.accelerations[joint_ind]);
-      }
+      command_interfaces_[pos_ind * num_joints_ + joint_ind].set_value(
+        state_commanded.positions[joint_ind]);
+    }
+    else if (has_velocity_command_interface_)
+    {
+      command_interfaces_[vel_ind * num_joints_ + joint_ind].set_value(
+        state_commanded.positions[joint_ind]);
+    }
+    else if (has_acceleration_command_interface_)
+    {
+      command_interfaces_[acc_ind * num_joints_ + joint_ind].set_value(
+        state_commanded.positions[joint_ind]);
     }
   }
   last_commanded_ = state_commanded;

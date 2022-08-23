@@ -97,15 +97,37 @@ protected:
   controller_interface::return_type update_reference_from_subscribers() override;
 
   size_t num_joints_ = 0;
-  size_t state_pos_ind = -1;
-  size_t state_vel_ind = -1;
-  size_t state_acc_ind = -1;
-  size_t command_pos_ind = -1;
-  size_t command_vel_ind = -1;
-  size_t command_acc_ind = -1;
+  std::vector<std::string> command_joint_names_;
+
+  // The interfaces are defined as the types in 'allowed_interface_types_' member.
+  // For convenience, for each type the interfaces are ordered so that i-th position
+  // matches i-th index in joint_names_
+  template <typename T>
+  using InterfaceReferences = std::vector<std::vector<std::reference_wrapper<T>>>;
+
+  InterfaceReferences<hardware_interface::LoanedCommandInterface> joint_command_interface_;
+  InterfaceReferences<hardware_interface::LoanedStateInterface> joint_state_interface_;
+
+  bool has_position_state_interface_ = false;
+  bool has_velocity_state_interface_ = false;
+  bool has_acceleration_state_interface_ = false;
+  bool has_position_command_interface_ = false;
+  bool has_velocity_command_interface_ = false;
+  bool has_acceleration_command_interface_ = false;
+  bool has_effort_command_interface_ = false;
+
+  // To reduce number of variables and to make the code shorter the interfaces are ordered in types
+  // as the following constants
+  const std::vector<std::string> allowed_interface_types_ = {
+    hardware_interface::HW_IF_POSITION,
+    hardware_interface::HW_IF_VELOCITY,
+    hardware_interface::HW_IF_ACCELERATION,
+    hardware_interface::HW_IF_EFFORT,
+  };
 
   // internal reference values
-  const std::vector<std::string> reference_interfaces_types_ = {"position", "velocity"};
+  const std::vector<std::string> reference_interfaces_types_ = {
+    hardware_interface::HW_IF_POSITION, hardware_interface::HW_IF_VELOCITY};
   std::vector<std::reference_wrapper<double>> position_reference_;
   std::vector<std::reference_wrapper<double>> velocity_reference_;
 
