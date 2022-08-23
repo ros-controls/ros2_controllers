@@ -101,7 +101,7 @@ controller_interface::return_type AdmittanceRule::reset(const size_t num_joints)
 
   // reset forces
   wrench_world_.setZero();
-  ee_weight_.setZero();
+  end_effector_weight_.setZero();
 
   // load/initialize Eigen types from parameters
   apply_parameters_update();
@@ -116,8 +116,8 @@ void AdmittanceRule::apply_parameters_update()
     parameters_ = parameter_handler_->get_params();
   }
   // update param values
-  ee_weight_[2] = -parameters_.gravity_compensation.CoG.force;
-  vec_to_eigen(parameters_.gravity_compensation.CoG.pos, cog_);
+  end_effector_weight_[2] = -parameters_.gravity_compensation.CoG.force;
+  vec_to_eigen(parameters_.gravity_compensation.CoG.pos, cog_pos_);
   vec_to_eigen(parameters_.admittance.mass, admittance_state_.mass);
   vec_to_eigen(parameters_.admittance.stiffness, admittance_state_.stiffness);
   vec_to_eigen(parameters_.admittance.selected_axes, admittance_state_.selected_axes);
@@ -317,8 +317,8 @@ void AdmittanceRule::process_wrench_measurements(
   Eigen::Matrix<double, 3, 2> new_wrench_base = sensor_world_rot * new_wrench;
 
   // apply gravity compensation
-  new_wrench_base(2, 0) -= ee_weight_[2];
-  new_wrench_base.block<3, 1>(0, 1) -= (cog_world_rot * cog_).cross(ee_weight_);
+  new_wrench_base(2, 0) -= end_effector_weight_[2];
+  new_wrench_base.block<3, 1>(0, 1) -= (cog_world_rot * cog_pos_).cross(end_effector_weight_);
 
   // apply smoothing filter
   for (size_t i = 0; i < 6; ++i)

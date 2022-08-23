@@ -120,7 +120,7 @@ public:
 
   /**
    * Updates parameter_ struct if any parameters have changed since last update. Parameter dependent Eigen field
-   * members (ee_weight_, cog_, mass_, mass_inv_ stiffness, selected_axes, damping_) are also updated
+   * members (end_effector_weight_, cog_pos_, mass_, mass_inv_ stiffness, selected_axes, damping_) are also updated
    */
   void apply_parameters_update();
 
@@ -203,10 +203,10 @@ protected:
   AdmittanceTransforms admittance_transforms_;
 
   // position of center of gravity in cog_frame
-  Eigen::Vector3d cog_;
+  Eigen::Vector3d cog_pos_;
 
   // force applied to sensor due to weight of end effector
-  Eigen::Vector3d ee_weight_;
+  Eigen::Vector3d end_effector_weight_;
 
   // ROS
   control_msgs::msg::AdmittanceControllerState state_message_;
