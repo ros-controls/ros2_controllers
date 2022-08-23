@@ -287,16 +287,19 @@ controller_interface::CallbackReturn AdmittanceController::on_activate(
   // initialize interface of the FTS semantic component
   force_torque_sensor_->assign_loaned_state_interfaces(state_interfaces_);
 
-  // handle state after restart or initial startups
-  read_state_from_hardware(joint_state_, ft_values_);
-
   // initialize states
-  for (auto val : joint_state_.positions)
-  {
-    RCLCPP_ERROR(get_node()->get_logger(), "val: %f \n", val);
+  read_state_from_hardware(joint_state_, ft_values_);
+  for (auto val : joint_state_.positions) {
+    if (std::isnan(val)) {
+      RCLCPP_ERROR(
+          get_node()->get_logger(), "Failed to read joint positions from the hardware.\n");
+      return controller_interface::CallbackReturn::ERROR;
+    }
   }
-  last_commanded_ = joint_state_;
+
   last_reference_ = joint_state_;
+  last_commanded_ = joint_state_;
+
   read_state_reference_interfaces(reference_);
   reference_admittance_ = reference_;
 
@@ -373,16 +376,12 @@ controller_interface::CallbackReturn AdmittanceController::on_deactivate(
   command_acc_ind = -1;
 
   // reset to prevent stale references
-  auto assign_vector = [&](std::vector<double> & vec, double assigned_value)
-  {
-    for (auto & val : vec)
-    {
-      val = assigned_value;
-    }
-  };
-  assign_vector(reference_.positions, std::numeric_limits<double>::quiet_NaN());
-  assign_vector(reference_.velocities, std::numeric_limits<double>::quiet_NaN());
-  assign_vector(reference_.accelerations, std::numeric_limits<double>::quiet_NaN());
+ for (size_t i = 0; i < num_joints_; i++ ){
+   position_reference_[i].get() = std::numeric_limits<double>::quiet_NaN();
+   velocity_reference_[i].get() = std::numeric_limits<double>::quiet_NaN();
+ }
+
+ admittance_->reset(num_joints_);
 
   return LifecycleNodeInterface::on_deactivate(previous_state);
 }
