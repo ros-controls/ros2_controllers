@@ -155,32 +155,26 @@ public:
 
 protected:
   /**
-   * Calculate the admittance rule from given the robot's current joint angles. the control frame rotation, the
-   * current force torque transform, the reference force torque transform, the force torque sensor frame id,
-   * the time delta, and the current admittance controller state. The admittance controller state input is updated
-   * with the new calculated values. A boolean value is returned indicating if any of the kinematics plugin calls
-   * failed.
-   * \param[in] current_joint_positions
-   * \param[in] base_control
-   * \param[in] base_ft
-   * \param[in] ref_base_ft
-   * \param[in] ft_sensor_frame
-   * \param[in] dt
+   * Calculates the admittance rule from given the robot's current joint angles. The admittance controller state input
+   * is updated with the new calculated values. A boolean value is returned indicating if any of the kinematics plugin
+   * calls failed.
    * \param[in] admittance_state
+   * \param[in] dt
    * \param[out] success
    */
   bool calculate_admittance_rule(AdmittanceState & admittance_state, double dt);
 
   /**
-   * Updates internal estimate of wrench in world frame `wrench_world_` given the new measurement. The `wrench_world_`
-   * estimate includes gravity compensation
+   * Updates internal estimate of wrench in world frame `wrench_world_` given the new measurement `measured_wrench`,
+   * the sensor to base frame rotation `sensor_world_rot`, and the center of gravity frame to base frame rotation `cog_world_rot`.
+   * The `wrench_world_` estimate includes gravity compensation
    * \param[in] measured_wrench
-   * \param[in] sensor_rot
-   * \param[in] cog_rot
+   * \param[in] sensor_world_rot
+   * \param[in] cog_world_rot
    */
   void process_wrench_measurements(
     const geometry_msgs::msg::Wrench & measured_wrench,
-    const Eigen::Matrix<double, 3, 3> & sensor_rot, const Eigen::Matrix<double, 3, 3> & cog_rot);
+    const Eigen::Matrix<double, 3, 3> & sensor_world_rot, const Eigen::Matrix<double, 3, 3> & cog_world_rot);
 
   template <typename T1, typename T2>
   void vec_to_eigen(const std::vector<T1> & data, T2 & matrix);
