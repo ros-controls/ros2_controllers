@@ -360,11 +360,16 @@ void JointTrajectoryController::read_state_from_hardware(JointTrajectoryPoint & 
   auto assign_point_from_interface =
     [&](std::vector<double> & trajectory_point_interface, const auto & joint_interface)
   {
+    trajectory_point_interface.resize(dof_);
     for (size_t index = 0; index < dof_; ++index)
     {
       trajectory_point_interface[index] = joint_interface[index].get().get_value();
     }
   };
+
+  state.positions.clear();
+  state.velocities.clear();
+  state.accelerations.clear();
 
   // Assign values from the hardware
   // Position states always exist
@@ -378,17 +383,6 @@ void JointTrajectoryController::read_state_from_hardware(JointTrajectoryPoint & 
     {
       assign_point_from_interface(state.accelerations, joint_state_interface_[2]);
     }
-    else
-    {
-      // Make empty so the property is ignored during interpolation
-      state.accelerations.clear();
-    }
-  }
-  else
-  {
-    // Make empty so the property is ignored during interpolation
-    state.velocities.clear();
-    state.accelerations.clear();
   }
 }
 
