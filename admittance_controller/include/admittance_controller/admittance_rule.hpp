@@ -33,7 +33,7 @@
 #include "pluginlib/class_loader.hpp"
 #include "tf2_eigen/tf2_eigen.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
-#include "tf2_kdl/tf2_kdl/tf2_kdl.hpp"
+#include "tf2_kdl/tf2_kdl.hpp"
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"

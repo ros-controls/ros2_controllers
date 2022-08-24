@@ -172,17 +172,16 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
   {
     command_joint_names_ = admittance_->parameters_.joints;
     RCLCPP_INFO(
-        get_node()->get_logger(),
-        "No specific joint names are used for command interfaces. Using 'joints' parameter.");
+      get_node()->get_logger(),
+      "No specific joint names are used for command interfaces. Using 'joints' parameter.");
   }
   else if (command_joint_names_.size() != num_joints_)
   {
     RCLCPP_ERROR(
-        get_node()->get_logger(),
-        "'command_joints' parameter has to have the same size as 'joints' parameter.");
+      get_node()->get_logger(),
+      "'command_joints' parameter has to have the same size as 'joints' parameter.");
     return CallbackReturn::FAILURE;
   }
-
 
   // print and validate interface types
   for (const auto & tmp : admittance_->parameters_.state_interfaces)
@@ -326,15 +325,15 @@ controller_interface::CallbackReturn AdmittanceController::on_activate(
   for (const auto & interface : admittance_->parameters_.state_interfaces)
   {
     auto it =
-        std::find(allowed_interface_types_.begin(), allowed_interface_types_.end(), interface);
+      std::find(allowed_interface_types_.begin(), allowed_interface_types_.end(), interface);
     auto index = std::distance(allowed_interface_types_.begin(), it);
     if (!controller_interface::get_ordered_interfaces(
-        state_interfaces_, admittance_->parameters_.joints, interface,
-        joint_state_interface_[index]))
+          state_interfaces_, admittance_->parameters_.joints, interface,
+          joint_state_interface_[index]))
     {
       RCLCPP_ERROR(
-          get_node()->get_logger(), "Expected %zu '%s' state interfaces, got %zu.", num_joints_,
-          interface.c_str(), joint_state_interface_[index].size());
+        get_node()->get_logger(), "Expected %zu '%s' state interfaces, got %zu.", num_joints_,
+        interface.c_str(), joint_state_interface_[index].size());
       return CallbackReturn::ERROR;
     }
   }
@@ -352,7 +351,6 @@ controller_interface::CallbackReturn AdmittanceController::on_activate(
       return CallbackReturn::ERROR;
     }
   }
-
 
   // update parameters if any have changed
   admittance_->apply_parameters_update();
