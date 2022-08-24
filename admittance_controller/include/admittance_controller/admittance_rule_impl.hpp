@@ -173,26 +173,22 @@ controller_interface::return_type AdmittanceRule::update(
 
   bool success = get_all_transforms(current_joint_state, reference_joint_state);
 
-  // rotations needed for calculation
-  Eigen::Matrix<double, 3, 3> rot_base_sensor = admittance_transforms_.base_ft_.rotation();
-  Eigen::Matrix<double, 3, 3> rot_world_base = admittance_transforms_.world_base_.rotation();
-  Eigen::Matrix<double, 3, 3> rot_base_cog = admittance_transforms_.base_cog_.rotation();
-  Eigen::Matrix<double, 3, 3> rot_base_control = admittance_transforms_.base_control_.rotation();
-
   // apply filter and update wrench_world_ vector
-  Eigen::Matrix<double, 3, 3> rot_world_sensor = rot_world_base * rot_base_sensor;
-  Eigen::Matrix<double, 3, 3> rot_world_cog = rot_world_base * rot_base_cog;
+  Eigen::Matrix<double, 3, 3> rot_world_sensor =
+    admittance_transforms_.world_base_.rotation() * admittance_transforms_.base_ft_.rotation();
+  Eigen::Matrix<double, 3, 3> rot_world_cog =
+    admittance_transforms_.world_base_.rotation() * admittance_transforms_.base_cog_.rotation();
   process_wrench_measurements(measured_wrench, rot_world_sensor, rot_world_cog);
 
   // transform wrench_world_ into base frame
   admittance_state_.wrench_base.block<3, 1>(0, 0) =
-    rot_world_base.transpose() * wrench_world_.block<3, 1>(0, 0);
+    admittance_transforms_.world_base_.rotation().transpose() * wrench_world_.block<3, 1>(0, 0);
   admittance_state_.wrench_base.block<3, 1>(3, 0) =
-    rot_world_base.transpose() * wrench_world_.block<3, 1>(3, 0);
+    admittance_transforms_.world_base_.rotation().transpose() * wrench_world_.block<3, 1>(3, 0);
 
   // Compute admittance control law
   vec_to_eigen(current_joint_state.positions, admittance_state_.current_joint_pos);
-  admittance_state_.rot_base_control = rot_base_control;
+  admittance_state_.rot_base_control = admittance_transforms_.base_control_.rotation();
   admittance_state_.ref_trans_base_ft = admittance_transforms_.ref_base_ft_;
   admittance_state_.ft_sensor_frame = parameters_.ft_sensor.frame.id;
   success &= calculate_admittance_rule(admittance_state_, dt);
