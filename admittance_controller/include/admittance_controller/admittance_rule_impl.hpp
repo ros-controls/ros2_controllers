@@ -34,11 +34,6 @@ controller_interface::return_type AdmittanceRule::configure(
 {
   num_joints_ = num_joints;
 
-  // initialize ROS functions
-  clock_ = node->get_clock();
-  tf_buffer_ = std::make_shared<tf2_ros::Buffer>(clock_);
-  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
-
   // initialize memory and values to zero  (non-realtime function)
   reset(num_joints);
 
@@ -224,7 +219,8 @@ controller_interface::return_type AdmittanceRule::update(
 
 bool AdmittanceRule::calculate_admittance_rule(AdmittanceState & admittance_state, double dt)
 {
-  // create stiffness matrix
+  // Create stiffness matrix in base frame. The values of admittance_state.stiffness correspond to the six diagonal
+  // elements of the stiffness matrix expressed in the control frame
   auto rot_base_control = admittance_state.rot_base_control;
   Eigen::Matrix<double, 6, 6> K = Eigen::Matrix<double, 6, 6>::Zero();
   Eigen::Matrix<double, 3, 3> K_pos = Eigen::Matrix<double, 3, 3>::Zero();
@@ -236,7 +232,8 @@ bool AdmittanceRule::calculate_admittance_rule(AdmittanceState & admittance_stat
   K.block<3, 3>(0, 0) = K_pos;
   K.block<3, 3>(3, 3) = K_rot;
 
-  // create damping matrix
+  // Create stiffness damping in base frame. The values of admittance_state.damping correspond to the six diagonal
+  // elements of the damping matrix expressed in the control frame.
   Eigen::Matrix<double, 6, 6> D = Eigen::Matrix<double, 6, 6>::Zero();
   Eigen::Matrix<double, 3, 3> D_pos = Eigen::Matrix<double, 3, 3>::Zero();
   Eigen::Matrix<double, 3, 3> D_rot = Eigen::Matrix<double, 3, 3>::Zero();
@@ -247,7 +244,7 @@ bool AdmittanceRule::calculate_admittance_rule(AdmittanceState & admittance_stat
   D.block<3, 3>(0, 0) = D_pos;
   D.block<3, 3>(3, 3) = D_rot;
 
-  // calculate admittance relative offset
+  // calculate admittance relative offset in base frame
   Eigen::Isometry3d desired_trans_base_ft;
   kinematics_->calculate_link_transform(
     admittance_state.current_joint_pos, admittance_state.ft_sensor_frame, desired_trans_base_ft);
@@ -274,7 +271,7 @@ bool AdmittanceRule::calculate_admittance_rule(AdmittanceState & admittance_stat
   F_base.block<3, 1>(0, 0) = rot_base_control * F_control.block<3, 1>(0, 0);
   F_base.block<3, 1>(3, 0) = rot_base_control * F_control.block<3, 1>(3, 0);
 
-  // Compute admittance control law: F = M*a + D*v + S*x
+  // Compute admittance control law in the base frame: F = M*x_ddot + D*x_dot + K*x
   Eigen::Matrix<double, 6, 1> X_ddot =
     admittance_state.mass_inv.cwiseProduct(F_base - D * X_dot - K * X);
   bool success = kinematics_->convert_cartesian_deltas_to_joint_deltas(

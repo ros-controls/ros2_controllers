@@ -22,6 +22,9 @@
 #include <string>
 #include <vector>
 
+// include generated parameter library
+#include "admittance_controller_parameters.hpp"
+
 #include "admittance_controller/admittance_rule.hpp"
 #include "admittance_controller/visibility_control.h"
 #include "control_msgs/msg/admittance_controller_state.hpp"
@@ -121,8 +124,7 @@ protected:
   const std::vector<std::string> allowed_interface_types_ = {
     hardware_interface::HW_IF_POSITION,
     hardware_interface::HW_IF_VELOCITY,
-    hardware_interface::HW_IF_ACCELERATION,
-    hardware_interface::HW_IF_EFFORT,
+    hardware_interface::HW_IF_ACCELERATION
   };
 
   // internal reference values

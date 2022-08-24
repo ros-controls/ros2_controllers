@@ -24,7 +24,6 @@
 #include <string>
 #include <vector>
 
-#include "admittance_controller_parameters.hpp"
 #include "control_msgs/msg/admittance_controller_state.hpp"
 #include "control_toolbox/filters.hpp"
 #include "controller_interface/controller_interface.hpp"
@@ -205,9 +204,6 @@ protected:
 
   // ROS
   control_msgs::msg::AdmittanceControllerState state_message_;
-  std::shared_ptr<rclcpp::Clock> clock_;
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 };
 
 }  // namespace admittance_controller
