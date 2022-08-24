@@ -41,13 +41,18 @@ namespace admittance_controller
 {
 struct AdmittanceTransforms
 {
+  // transformation from force torque sensor frame to base link frame at reference joint angles
   Eigen::Isometry3d ref_base_ft_;
+  // transformation from force torque sensor frame to base link frame at reference + admittance offset joint angles
   Eigen::Isometry3d base_ft_;
+  // transformation from control frame to base link frame at reference + admittance offset joint angles
   Eigen::Isometry3d base_control_;
+  // transformation from end effector frame to base link frame at reference + admittance offset joint angles
   Eigen::Isometry3d base_tip_;
-  Eigen::Isometry3d world_base_;
-  Eigen::Isometry3d base_sensor_;
+  // transformation from center of gravity frame to base link frame at reference + admittance offset joint angles
   Eigen::Isometry3d base_cog_;
+  // transformation from world frame to base link frame
+  Eigen::Isometry3d world_base_;
 };
 
 struct AdmittanceState
@@ -109,9 +114,9 @@ public:
    * Calculate all transforms needed for admittance control using the loader kinematics plugin. If the transform does
    * not exist in the kinematics model, then TF will be used for lookup. The return value is true if all transformation
    * are calculated without an error
-   * \param[in] current_joint_state
-   * \param[in] reference_joint_state
-   * \param[out] success
+   * \param[in] current_joint_state current joint state of the robot
+   * \param[in] reference_joint_state input joint state reference
+   * \param[out] success true if no calls to the kinematics interface fail
    */
   bool get_all_transforms(
     const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state,
@@ -127,11 +132,11 @@ public:
    * Calculate 'desired joint states' based on the 'measured force', 'reference joint state', and
    * 'current_joint_state'.
    *
-   * \param[in] current_joint_state
-   * \param[in] measured_wrench
-   * \param[in] reference_joint_state
-   * \param[in] period
-   * \param[out] desired_joint_state
+   * \param[in] current_joint_state current joint state of the robot
+   * \param[in] measured_wrench most recent measured wrench from force torque sensor
+   * \param[in] reference_joint_state input joint state reference
+   * \param[in] period time in seconds since last controller update
+   * \param[out] desired_joint_state joint state reference after the admittance offset is applied to the input reference
    */
   controller_interface::return_type update(
     const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state,
@@ -157,9 +162,9 @@ protected:
    * Calculates the admittance rule from given the robot's current joint angles. The admittance controller state input
    * is updated with the new calculated values. A boolean value is returned indicating if any of the kinematics plugin
    * calls failed.
-   * \param[in] admittance_state
-   * \param[in] dt
-   * \param[out] success
+   * \param[in] admittance_state contains all the information needed to calculate the admittance offset
+   * \param[in] dt controller period
+   * \param[out] success true if no calls to the kinematics interface fail
    */
   bool calculate_admittance_rule(AdmittanceState & admittance_state, double dt);
 
@@ -167,9 +172,9 @@ protected:
    * Updates internal estimate of wrench in world frame `wrench_world_` given the new measurement `measured_wrench`,
    * the sensor to base frame rotation `sensor_world_rot`, and the center of gravity frame to base frame rotation `cog_world_rot`.
    * The `wrench_world_` estimate includes gravity compensation
-   * \param[in] measured_wrench
-   * \param[in] sensor_world_rot
-   * \param[in] cog_world_rot
+   * \param[in] measured_wrench  most recent measured wrench from force torque sensor
+   * \param[in] sensor_world_rot rotation matrix from world frame to sensor frame
+   * \param[in] cog_world_rot rotation matrix from world frame to center of gravity frame
    */
   void process_wrench_measurements(
     const geometry_msgs::msg::Wrench & measured_wrench,

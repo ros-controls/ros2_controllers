@@ -148,9 +148,6 @@ bool AdmittanceRule::get_all_transforms(
     current_joint_state.positions, parameters_.fixed_world_frame.frame.id,
     admittance_transforms_.world_base_);
   success &= kinematics_->calculate_link_transform(
-    current_joint_state.positions, parameters_.ft_sensor.frame.id,
-    admittance_transforms_.base_sensor_);
-  success &= kinematics_->calculate_link_transform(
     current_joint_state.positions, parameters_.gravity_compensation.frame.id,
     admittance_transforms_.base_cog_);
   success &= kinematics_->calculate_link_transform(
@@ -177,7 +174,7 @@ controller_interface::return_type AdmittanceRule::update(
   bool success = get_all_transforms(current_joint_state, reference_joint_state);
 
   // rotations needed for calculation
-  Eigen::Matrix<double, 3, 3> rot_base_sensor = admittance_transforms_.base_sensor_.rotation();
+  Eigen::Matrix<double, 3, 3> rot_base_sensor = admittance_transforms_.base_ft_.rotation();
   Eigen::Matrix<double, 3, 3> rot_world_base = admittance_transforms_.world_base_.rotation();
   Eigen::Matrix<double, 3, 3> rot_base_cog = admittance_transforms_.base_cog_.rotation();
   Eigen::Matrix<double, 3, 3> rot_base_control = admittance_transforms_.base_control_.rotation();

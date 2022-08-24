@@ -7,4 +7,4 @@ In the non-chained mode, the controller listens to joint commands on the `~/join
 The controller requires an external kinematics plugin to function. The [kinematics_interface](https://github.com/ros-controls/kinematics_interface) repository provides an interface and an implementation that the admittance controller can use.
 
 ## Parameters:
-The admittance controller's uses the [generate_parameter_library](https://github.com/PickNikRobotics/generate_parameter_library) to handle its parameters. The parameter definition file, located [here](../admittance_controller/src/admittance_controller_parameters.yaml) contains descriptions for all the parameters used by the controller.  
+The admittance controller's uses the [generate_parameter_library](https://github.com/PickNikRobotics/generate_parameter_library) to handle its parameters. The parameter definition file, located [here](../admittance_controller/src/admittance_controller_parameters.yaml) contains descriptions for all the parameters used by the controller.
