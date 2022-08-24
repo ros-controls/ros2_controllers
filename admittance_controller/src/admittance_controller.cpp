@@ -72,7 +72,7 @@ controller_interface::InterfaceConfiguration AdmittanceController::command_inter
   std::vector<std::string> command_interfaces_config_names;
   for (const auto & interface : admittance_->parameters_.command_interfaces)
   {
-    for (const auto & joint : admittance_->parameters_.joints)
+    for (const auto & joint : command_joint_names_)
     {
       auto full_name = joint + "/" + interface;
       command_interfaces_config_names.push_back(full_name);
@@ -166,6 +166,24 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
       get_node()->get_logger(), "Exception thrown during init stage with message: %s \n", e.what());
     return controller_interface::CallbackReturn::ERROR;
   }
+
+  command_joint_names_ = admittance_->parameters_.command_joints;
+  if (command_joint_names_.empty())
+  {
+    command_joint_names_ = admittance_->parameters_.joints;
+    RCLCPP_INFO(
+        get_node()->get_logger(),
+        "No specific joint names are used for command interfaces. Using 'joints' parameter.");
+  }
+  else if (command_joint_names_.size() != num_joints_)
+  {
+    RCLCPP_ERROR(
+        get_node()->get_logger(),
+        "'command_joints' parameter has to have the same size as 'joints' parameter.");
+    return CallbackReturn::FAILURE;
+  }
+
+
   // print and validate interface types
   for (const auto & tmp : admittance_->parameters_.state_interfaces)
   {
@@ -227,7 +245,6 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
 
   // Check if only allowed interface types are used and initialize storage to avoid memory
   // allocation during activation
-  // Note: 'effort' storage is also here, but never used. Still, for this is OK.
   joint_state_interface_.resize(allowed_interface_types_.size());
   for (const auto & interface : admittance_->parameters_.state_interfaces)
   {
@@ -247,22 +264,6 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
     admittance_->parameters_.state_interfaces, hardware_interface::HW_IF_VELOCITY);
   has_acceleration_state_interface_ = contains_interface_type(
     admittance_->parameters_.state_interfaces, hardware_interface::HW_IF_ACCELERATION);
-
-  command_joint_names_ = admittance_->parameters_.command_joints;
-  if (command_joint_names_.empty())
-  {
-    command_joint_names_ = admittance_->parameters_.joints;
-    RCLCPP_INFO(
-      get_node()->get_logger(),
-      "No specific joint names are used for command interfaces. Using 'joints' parameter.");
-  }
-  else if (command_joint_names_.size() != num_joints_)
-  {
-    RCLCPP_ERROR(
-      get_node()->get_logger(),
-      "'command_joints' parameter has to have the same size as 'joints' parameter.");
-    return CallbackReturn::FAILURE;
-  }
 
   auto get_interface_list = [](const std::vector<std::string> & interface_types)
   {
@@ -322,6 +323,21 @@ controller_interface::CallbackReturn AdmittanceController::on_activate(
   }
 
   // order all joints in the storage
+  for (const auto & interface : admittance_->parameters_.state_interfaces)
+  {
+    auto it =
+        std::find(allowed_interface_types_.begin(), allowed_interface_types_.end(), interface);
+    auto index = std::distance(allowed_interface_types_.begin(), it);
+    if (!controller_interface::get_ordered_interfaces(
+        state_interfaces_, admittance_->parameters_.joints, interface,
+        joint_state_interface_[index]))
+    {
+      RCLCPP_ERROR(
+          get_node()->get_logger(), "Expected %zu '%s' state interfaces, got %zu.", num_joints_,
+          interface.c_str(), joint_state_interface_[index].size());
+      return CallbackReturn::ERROR;
+    }
+  }
   for (const auto & interface : admittance_->parameters_.command_interfaces)
   {
     auto it =
@@ -336,21 +352,7 @@ controller_interface::CallbackReturn AdmittanceController::on_activate(
       return CallbackReturn::ERROR;
     }
   }
-  for (const auto & interface : admittance_->parameters_.state_interfaces)
-  {
-    auto it =
-      std::find(allowed_interface_types_.begin(), allowed_interface_types_.end(), interface);
-    auto index = std::distance(allowed_interface_types_.begin(), it);
-    if (!controller_interface::get_ordered_interfaces(
-          state_interfaces_, admittance_->parameters_.joints, interface,
-          joint_state_interface_[index]))
-    {
-      RCLCPP_ERROR(
-        get_node()->get_logger(), "Expected %zu '%s' state interfaces, got %zu.", num_joints_,
-        interface.c_str(), joint_state_interface_[index].size());
-      return CallbackReturn::ERROR;
-    }
-  }
+
 
   // update parameters if any have changed
   admittance_->apply_parameters_update();
@@ -451,8 +453,13 @@ controller_interface::CallbackReturn AdmittanceController::on_deactivate(
     velocity_reference_[i].get() = std::numeric_limits<double>::quiet_NaN();
   }
 
-  admittance_->reset(num_joints_);
+  for (size_t index = 0; index < allowed_interface_types_.size(); ++index)
+  {
+    joint_command_interface_[index].clear();
+    joint_state_interface_[index].clear();
+  }
   release_interfaces();
+  admittance_->reset(num_joints_);
 
   return CallbackReturn::SUCCESS;
 }
