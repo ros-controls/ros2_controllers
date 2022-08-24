@@ -289,7 +289,7 @@ bool AdmittanceRule::calculate_admittance_rule(AdmittanceState & admittance_stat
   admittance_state.joint_vel += (admittance_state.joint_acc) * dt;
   admittance_state.joint_pos += admittance_state.joint_vel * dt;
 
-  // calculate admittance velocity corresponding to joint velocity
+  // calculate admittance velocity corresponding to joint velocity ("base_link" frame)
   success &= kinematics_->convert_joint_deltas_to_cartesian_deltas(
     admittance_state.current_joint_pos, admittance_state.joint_vel,
     admittance_state.ft_sensor_frame, admittance_state.admittance_velocity);
