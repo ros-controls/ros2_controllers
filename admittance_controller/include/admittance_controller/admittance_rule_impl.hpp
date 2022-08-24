@@ -87,6 +87,11 @@ controller_interface::return_type AdmittanceRule::reset(const size_t num_joints)
   state_message_.selected_axes.data.resize(6, 0);
   state_message_.damping.data.resize(6, 0);
   state_message_.stiffness.data.resize(6, 0);
+  state_message_.wrench_base.header.frame_id = parameters_.kinematics.base;
+  state_message_.admittance_velocity.header.frame_id = parameters_.kinematics.base;
+  state_message_.admittance_acceleration.header.frame_id = parameters_.kinematics.base;
+  state_message_.admittance_position.header.frame_id = parameters_.kinematics.base;
+  state_message_.admittance_position.child_frame_id = "admittance_offset";
 
   // reset admittance state
   admittance_state_ = AdmittanceState(num_joints);
@@ -342,8 +347,6 @@ const control_msgs::msg::AdmittanceControllerState & AdmittanceRule::get_control
     state_message_.mass.data[i] = admittance_state_.mass[i];
   }
 
-  state_message_.wrench_base.header.frame_id =
-    parameters_.kinematics.base;  // TODO(anyone) remove dynamic allocation here
   state_message_.wrench_base.wrench.force.x = admittance_state_.wrench_base[0];
   state_message_.wrench_base.wrench.force.y = admittance_state_.wrench_base[1];
   state_message_.wrench_base.wrench.force.z = admittance_state_.wrench_base[2];
@@ -351,8 +354,6 @@ const control_msgs::msg::AdmittanceControllerState & AdmittanceRule::get_control
   state_message_.wrench_base.wrench.torque.y = admittance_state_.wrench_base[4];
   state_message_.wrench_base.wrench.torque.z = admittance_state_.wrench_base[5];
 
-  state_message_.admittance_velocity.header.frame_id =
-    parameters_.kinematics.base;  // TODO(anyone) remove dynamic allocation here
   state_message_.admittance_velocity.twist.linear.x = admittance_state_.admittance_velocity[0];
   state_message_.admittance_velocity.twist.linear.y = admittance_state_.admittance_velocity[1];
   state_message_.admittance_velocity.twist.linear.z = admittance_state_.admittance_velocity[2];
@@ -360,8 +361,6 @@ const control_msgs::msg::AdmittanceControllerState & AdmittanceRule::get_control
   state_message_.admittance_velocity.twist.angular.y = admittance_state_.admittance_velocity[4];
   state_message_.admittance_velocity.twist.angular.z = admittance_state_.admittance_velocity[5];
 
-  state_message_.admittance_acceleration.header.frame_id =
-    parameters_.kinematics.base;  // TODO(anyone) remove dynamic allocation here
   state_message_.admittance_acceleration.twist.linear.x =
     admittance_state_.admittance_acceleration[0];
   state_message_.admittance_acceleration.twist.linear.y =
@@ -375,10 +374,6 @@ const control_msgs::msg::AdmittanceControllerState & AdmittanceRule::get_control
   state_message_.admittance_acceleration.twist.angular.z =
     admittance_state_.admittance_acceleration[5];
 
-  state_message_.admittance_position.header.frame_id =
-    parameters_.kinematics.base;  // TODO(anyone) remove dynamic allocation here
-  state_message_.admittance_position.child_frame_id =
-    "admittance_offset";  // TODO(anyone) remove dynamic allocation here
   state_message_.admittance_position = tf2::eigenToTransform(admittance_state_.admittance_position);
 
   state_message_.ref_trans_base_ft.header.frame_id = parameters_.kinematics.base;
