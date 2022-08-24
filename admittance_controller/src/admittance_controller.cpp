@@ -64,10 +64,6 @@ controller_interface::CallbackReturn AdmittanceController::on_init()
 controller_interface::InterfaceConfiguration AdmittanceController::command_interface_configuration()
   const
 {
-  if (!admittance_)
-  {
-    return {controller_interface::interface_configuration_type::INDIVIDUAL, {}};
-  }
 
   std::vector<std::string> command_interfaces_config_names;
   for (const auto & interface : admittance_->parameters_.command_interfaces)
@@ -87,10 +83,6 @@ controller_interface::InterfaceConfiguration AdmittanceController::command_inter
 controller_interface::InterfaceConfiguration AdmittanceController::state_interface_configuration()
   const
 {
-  if (!admittance_)
-  {
-    return {controller_interface::interface_configuration_type::INDIVIDUAL, {}};
-  }
 
   std::vector<std::string> state_interfaces_config_names;
   for (size_t i = 0; i < admittance_->parameters_.state_interfaces.size(); ++i)
@@ -132,7 +124,7 @@ AdmittanceController::on_export_reference_interfaces()
 
   // assign reference interfaces
   auto index = 0ul;
-  for (const auto & interface : reference_interfaces_types_)
+  for (const auto & interface : allowed_reference_interfaces_types_)
   {
     for (const auto & joint : admittance_->parameters_.joints)
     {
@@ -151,7 +143,7 @@ AdmittanceController::on_export_reference_interfaces()
   }
 
   return chainable_command_interfaces;
-  ;
+
 }
 
 controller_interface::CallbackReturn AdmittanceController::on_configure(
