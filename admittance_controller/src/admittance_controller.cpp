@@ -121,7 +121,7 @@ AdmittanceController::on_export_reference_interfaces()
   }
 
   std::vector<hardware_interface::CommandInterface> chainable_command_interfaces;
-  auto num_chainable_interfaces = admittance_->parameters_.chainable_command_interfaces.size() *
+  const auto num_chainable_interfaces = admittance_->parameters_.chainable_command_interfaces.size() *
                                   admittance_->parameters_.joints.size();
 
   // allocate dynamic memory
@@ -142,7 +142,7 @@ AdmittanceController::on_export_reference_interfaces()
       {
         velocity_reference_.emplace_back(reference_interfaces_[index]);
       }
-      auto full_name = joint + "/" + interface;
+      const auto full_name = joint + "/" + interface;
       chainable_command_interfaces.emplace_back(hardware_interface::CommandInterface(
         std::string(get_node()->get_name()), full_name, reference_interfaces_.data() + index++));
     }
