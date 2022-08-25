@@ -82,9 +82,7 @@ class PublisherJointTrajectory(Node):
                 if goal is None or len(goal) == 0:
                     raise Exception(f'Values for goal "{name}" not set!')
 
-                float_goal = []
-                for value in goal:
-                    float_goal.append(float(value))
+                float_goal = [float(value) for value in goal]
 
                 point = JointTrajectoryPoint()
                 point.positions = float_goal
@@ -105,8 +103,8 @@ class PublisherJointTrajectory(Node):
                     if len(param_value) != len(self.joints):
                         return [False, float_values]
 
-                    for value in param_value:
-                        float_values.append(float(value))
+                    
+                    float_values = [float(value) for value in param_value]
 
                     return [True, float_values]
 
