@@ -106,8 +106,8 @@ protected:
     const std::string & traction_joint_name, std::vector<TractionHandle> & joint);
   CallbackReturn get_steering(
     const std::string & steering_joint_name, std::vector<SteeringHandle> & joint);
-  double convert_trans_rot_vel_to_steering_angle(double v, double omega, double wheelbase);
-  std::tuple<double, double> twist_to_ackermann(double linear_command, double angular_command);
+  //double convert_trans_rot_vel_to_steering_angle(double v, double omega, double wheelbase);
+  std::tuple<double, double> twist_to_tricycle(double linear_command, double angular_command);
 
   std::string traction_joint_name_;
   std::string steering_joint_name_;

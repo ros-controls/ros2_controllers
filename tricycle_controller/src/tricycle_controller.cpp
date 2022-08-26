@@ -206,7 +206,7 @@ controller_interface::return_type TricycleController::update(
   }
 
   // Compute wheel velocity and angle
-  auto [alpha_write, Ws_write] = twist_to_ackermann(linear_command, angular_command);
+  auto [alpha_write, Ws_write] = twist_to_tricycle(linear_command, angular_command);
 
   // Reduce wheel speed until the target angle has been reached
   double alpha_delta = abs(alpha_write - alpha_read);
@@ -637,31 +637,29 @@ CallbackReturn TricycleController::get_steering(
   return CallbackReturn::SUCCESS;
 }
 
-double TricycleController::convert_trans_rot_vel_to_steering_angle(
-  double Vx, double theta_dot, double wheelbase)
-{
-  if (theta_dot == 0 || Vx == 0)
-  {
-    return 0;
-  }
-  return std::atan(theta_dot * wheelbase / Vx);
-}
+// double TricycleController::convert_trans_rot_vel_to_steering_angle(
+//   double Vx, double theta_dot, double wheelbase)
+// {
+//   if (theta_dot == 0 || Vx == 0)
+//   {
+//     return 0;
+//   }
+//   return std::atan(theta_dot * wheelbase / Vx);
+// }
 
-std::tuple<double, double> TricycleController::twist_to_ackermann(double Vx, double theta_dot)
+std::tuple<double, double> TricycleController::twist_to_tricycle(double linear_command, double angular_command)
 {
   // using naming convention in http://users.isr.ist.utl.pt/~mir/cadeiras/robmovel/Kinematics.pdf
-  double alpha, Ws;
+  double traction_velocity = sqrt(pow((angular_command * wheel_params_.wheelbase),2) + pow((linear_command),2)) / wheel_params_.radius;
+  double steering_position = atan2(angular_command * wheel_params_.wheelbase, linear_command); //atan(angular_command * wheel_separation / linear_command);
+  if(steering_position > M_PI_2)
+  {steering_position = steering_position - M_PI;}
+  if(steering_position < -M_PI_2)
+  {steering_position = steering_position + M_PI;}
+  if(linear_command < 0)
+  {traction_velocity = -traction_velocity;}
+  return std::make_tuple(steering_position, traction_velocity);
 
-  if (Vx == 0 && theta_dot != 0)
-  {  // is spin action
-    alpha = theta_dot > 0 ? M_PI_2 : -M_PI_2;
-    Ws = abs(theta_dot) * wheel_params_.wheelbase / wheel_params_.radius;
-    return std::make_tuple(alpha, Ws);
-  }
-
-  alpha = convert_trans_rot_vel_to_steering_angle(Vx, theta_dot, wheel_params_.wheelbase);
-  Ws = Vx / (wheel_params_.radius * std::cos(alpha));
-  return std::make_tuple(alpha, Ws);
 }
 
 }  // namespace tricycle_controller
