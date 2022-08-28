@@ -640,15 +640,16 @@ CallbackReturn TricycleController::get_steering(
 std::tuple<double, double> TricycleController::twist_to_tricycle(double linear_command, double angular_command)
 {
   // using naming convention in http://users.isr.ist.utl.pt/~mir/cadeiras/robmovel/Kinematics.pdf
-  double traction_velocity = sqrt(pow((angular_command * wheel_params_.wheelbase),2) + pow((linear_command),2)) / wheel_params_.radius;
-  double steering_position = atan2(angular_command * wheel_params_.wheelbase, linear_command); //atan(angular_command * wheel_separation / linear_command);
-  if(steering_position > M_PI_2)
-  {steering_position = steering_position - M_PI;}
-  if(steering_position < -M_PI_2)
-  {steering_position = steering_position + M_PI;}
+  // Here linear_command = Vx, angular_command = theta_dot, steering_wheel_angle = alpha
+  double Ws = sqrt(pow((angular_command * wheel_params_.wheelbase),2) + pow((linear_command),2)) / wheel_params_.radius;
+  double steering_wheel_angle = atan2(angular_command * wheel_params_.wheelbase, linear_command); 
+  if(steering_wheel_angle > M_PI_2)
+  {steering_wheel_angle = steering_wheel_angle - M_PI;}
+  if(steering_wheel_angle < -M_PI_2)
+  {steering_wheel_angle = steering_wheel_angle + M_PI;}
   if(linear_command < 0)
-  {traction_velocity = -traction_velocity;}
-  return std::make_tuple(steering_position, traction_velocity);
+  {Ws = -Ws;}
+  return std::make_tuple(steering_wheel_angle, Ws);
 
 }
 
