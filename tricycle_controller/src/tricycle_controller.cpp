@@ -637,16 +637,6 @@ CallbackReturn TricycleController::get_steering(
   return CallbackReturn::SUCCESS;
 }
 
-// double TricycleController::convert_trans_rot_vel_to_steering_angle(
-//   double Vx, double theta_dot, double wheelbase)
-// {
-//   if (theta_dot == 0 || Vx == 0)
-//   {
-//     return 0;
-//   }
-//   return std::atan(theta_dot * wheelbase / Vx);
-// }
-
 std::tuple<double, double> TricycleController::twist_to_tricycle(double linear_command, double angular_command)
 {
   // using naming convention in http://users.isr.ist.utl.pt/~mir/cadeiras/robmovel/Kinematics.pdf
