@@ -343,7 +343,6 @@ TEST_P(TrajectoryControllerTestParameterized, cleanup)
   state = traj_controller_->get_node()->cleanup();
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
   // update for 0.25 seconds
-  const auto start_time = rclcpp::Clock().now();
   updateController(rclcpp::Duration::from_seconds(0.25));
 
   // should be home pose again
