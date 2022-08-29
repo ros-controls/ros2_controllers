@@ -495,8 +495,7 @@ void TrajectoryControllerTest::test_state_publish_rate_target(int target_msg_cou
   rclcpp::executors::SingleThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(true, {state_publish_rate_param}, &executor);
 
-  auto future_handle = std::async(
-    std::launch::async, [&executor]() -> void { executor.spin(); });
+  auto future_handle = std::async(std::launch::async, [&executor]() -> void { executor.spin(); });
 
   using control_msgs::msg::JointTrajectoryControllerState;
 
