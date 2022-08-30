@@ -472,8 +472,16 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
       odometry_publisher_);
 
   auto & odometry_message = realtime_odometry_publisher_->msg_;
-  odometry_message.header.frame_id = odom_params_.odom_frame_id;
-  odometry_message.child_frame_id = odom_params_.base_frame_id;
+
+  std::string controller_namespace = std::string(node_->get_namespace());
+
+  if(controller_namespace == "/")
+    {controller_namespace = "";}
+  else
+    {controller_namespace = controller_namespace + "/";}
+
+  odometry_message.header.frame_id = controller_namespace + odom_params_.odom_frame_id;
+  odometry_message.child_frame_id = controller_namespace + odom_params_.base_frame_id;
 
   // limit the publication on the topics /odom and /tf
   publish_rate_ = get_node()->get_parameter("publish_rate").as_double();
@@ -504,8 +512,8 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   // keeping track of odom and base_link transforms only
   auto & odometry_transform_message = realtime_odometry_transform_publisher_->msg_;
   odometry_transform_message.transforms.resize(1);
-  odometry_transform_message.transforms.front().header.frame_id = odom_params_.odom_frame_id;
-  odometry_transform_message.transforms.front().child_frame_id = odom_params_.base_frame_id;
+  odometry_transform_message.transforms.front().header.frame_id = controller_namespace + odom_params_.odom_frame_id;
+  odometry_transform_message.transforms.front().child_frame_id = controller_namespace + odom_params_.base_frame_id;
 
   previous_update_timestamp_ = get_node()->get_clock()->now();
   return controller_interface::CallbackReturn::SUCCESS;
