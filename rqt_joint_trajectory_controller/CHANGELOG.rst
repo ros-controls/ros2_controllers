@@ -2,8 +2,8 @@
 Changelog for package rqt_joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.12.0 (2022-09-01)
+-------------------
 * fix: :bug: make bare exceptions more narrow (`#422 <https://github.com/ros-controls/ros2_controllers/issues/422>`_)
 * Fix formatting because pre-commit was not running on CI for some time. (`#409 <https://github.com/ros-controls/ros2_controllers/issues/409>`_)
 * Contributors: Denis Štogl, Jaron Lundwall
