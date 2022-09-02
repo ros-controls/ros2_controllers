@@ -2,6 +2,11 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.12.0 (2022-09-01)
+-------------------
+* Fix formatting CI job (`#418 <https://github.com/ros-controls/ros2_controllers/issues/418>`_)
+* Contributors: Tyler Weaver
+
 2.11.0 (2022-08-04)
 -------------------
 * Use explicit type in joint_state_broadcaster test (`#403 <https://github.com/ros-controls/ros2_controllers/issues/403>`_)
