@@ -229,6 +229,7 @@ bool has_any_key(
 
 bool JointStateBroadcaster::init_joint_data()
 {
+  joint_names_.clear()
   if (state_interfaces_.empty())
   {
     return false;
