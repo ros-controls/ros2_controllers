@@ -1087,9 +1087,12 @@ void JointTrajectoryController::goal_accepted_callback(
   rt_goal->execute();
   rt_active_goal_.writeFromNonRT(rt_goal);
 
+  // Set smartpointer to expire for create_wall_timer to delete previous entry from timer list
+  goal_handle_timer_.reset();
+
   // Setup goal status checking timer
   goal_handle_timer_ = get_node()->create_wall_timer(
-    action_monitor_period_.to_chrono<std::chrono::seconds>(),
+    action_monitor_period_.to_chrono<std::chrono::nanoseconds>(),
     std::bind(&RealtimeGoalHandle::runNonRealtime, rt_goal));
 }
 
