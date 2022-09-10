@@ -1,0 +1,31 @@
+pid_controller:
+  joints: {
+    type: string_array,
+    default_value: [],
+    description: "Specifies joints used by the controller. If state joints parameter is defined, then only command joints are defined with this parameter.",
+    read_only: true,
+    validation: {
+      unique<>: null,
+      not_empty<>: null,
+    }
+  }
+  state_joints: {
+    type: string_array,
+    default_value: [],
+    description: "(optional) Specifies joints for reading states. This parameter is only relevant when state joints are different then command joint, i.e., when a following controller is used.",
+    read_only: true,
+    validation: {
+      unique<>: null,
+    }
+  }
+  interface_name: {
+    type: string,
+    default_value: "",
+    description: "Name of the interface used by the controller on joints and command_joints.",
+    read_only: true,
+    validation: {
+      not_empty<>: null,
+      one_of<>: [["position", "velocity", "acceleration", "effort",]],
+      forbidden_interface_name_prefix: null
+    }
+  }
