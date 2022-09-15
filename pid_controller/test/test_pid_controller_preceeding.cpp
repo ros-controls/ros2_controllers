@@ -1,5 +1,4 @@
 // Copyright (c) 2022, Stogl Robotics Consulting UG (haftungsbeschränkt)
-// Copyright (c) 2022, Stogl Robotics Consulting UG (haftungsbeschränkt) (template)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,7 +21,7 @@
 #include <vector>
 
 using pid_controller::CMD_MY_ITFS;
-using pid_controller::control_mode_type;
+using pid_controller::feedforward_mode_type;
 using pid_controller::STATE_MY_ITFS;
 
 class PidControllerTest : public PidControllerFixture<TestablePidController>
@@ -33,15 +32,19 @@ TEST_F(PidControllerTest, all_parameters_set_configure_success)
 {
   SetUpController();
 
-  ASSERT_TRUE(controller_->params_.joints.empty());
-  ASSERT_TRUE(controller_->params_.state_joints.empty());
+  ASSERT_TRUE(controller_->params_.dof_names.empty());
+  ASSERT_TRUE(controller_->params_.reference_and_state_dof_names.empty());
   ASSERT_TRUE(controller_->params_.interface_name.empty());
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  ASSERT_THAT(controller_->params_.joints, testing::ElementsAreArray(joint_names_));
-  ASSERT_THAT(controller_->params_.state_joints, testing::ElementsAreArray(state_joint_names_));
-  ASSERT_THAT(controller_->state_joints_, testing::ElementsAreArray(state_joint_names_));
+  ASSERT_THAT(controller_->params_.dof_names, testing::ElementsAreArray(dof_names_));
+  ASSERT_THAT(
+    controller_->params_.reference_and_state_dof_names,
+    testing::ElementsAreArray(reference_and_reference_and_state_dof_names_));
+  ASSERT_THAT(
+    controller_->reference_and_reference_and_state_dof_names_,
+    testing::ElementsAreArray(reference_and_reference_and_state_dof_names_));
   ASSERT_EQ(controller_->params_.interface_name, interface_name_);
 }
 
@@ -52,30 +55,34 @@ TEST_F(PidControllerTest, check_exported_intefaces)
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   auto command_intefaces = controller_->command_interface_configuration();
-  ASSERT_EQ(command_intefaces.names.size(), joint_command_values_.size());
+  ASSERT_EQ(command_intefaces.names.size(), dof_command_values_.size());
   for (size_t i = 0; i < command_intefaces.names.size(); ++i)
   {
-    EXPECT_EQ(command_intefaces.names[i], joint_names_[i] + "/" + interface_name_);
+    EXPECT_EQ(command_intefaces.names[i], dof_names_[i] + "/" + interface_name_);
   }
 
   auto state_intefaces = controller_->state_interface_configuration();
-  ASSERT_EQ(state_intefaces.names.size(), joint_state_values_.size());
+  ASSERT_EQ(state_intefaces.names.size(), dof_state_values_.size());
   for (size_t i = 0; i < state_intefaces.names.size(); ++i)
   {
-    EXPECT_EQ(state_intefaces.names[i], state_joint_names_[i] + "/" + interface_name_);
+    EXPECT_EQ(
+      state_intefaces.names[i],
+      reference_and_reference_and_state_dof_names_[i] + "/" + interface_name_);
   }
 
   // check ref itfs
   auto reference_interfaces = controller_->export_reference_interfaces();
-  ASSERT_EQ(reference_interfaces.size(), joint_names_.size());
-  for (size_t i = 0; i < joint_names_.size(); ++i)
+  ASSERT_EQ(reference_interfaces.size(), dof_names_.size());
+  for (size_t i = 0; i < dof_names_.size(); ++i)
   {
     const std::string ref_itf_name = std::string(controller_->get_node()->get_name()) + "/" +
-                                     state_joint_names_[i] + "/" + interface_name_;
+                                     reference_and_reference_and_state_dof_names_[i] + "/" +
+                                     interface_name_;
     EXPECT_EQ(reference_interfaces[i].get_name(), ref_itf_name);
     EXPECT_EQ(reference_interfaces[i].get_prefix_name(), controller_->get_node()->get_name());
     EXPECT_EQ(
-      reference_interfaces[i].get_interface_name(), state_joint_names_[i] + "/" + interface_name_);
+      reference_interfaces[i].get_interface_name(),
+      reference_and_reference_and_state_dof_names_[i] + "/" + interface_name_);
   }
 }
 

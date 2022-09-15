@@ -1,31 +1,98 @@
 pid_controller:
-  joints: {
+  dof_names: {
     type: string_array,
     default_value: [],
-    description: "Specifies joints used by the controller. If state joints parameter is defined, then only command joints are defined with this parameter.",
+    description: "Specifies dof_names or axis used by the controller. If 'state_dof_names' parameter is defined, then only command dof names are defined with this parameter.",
     read_only: true,
     validation: {
       unique<>: null,
       not_empty<>: null,
     }
   }
-  state_joints: {
+  reference_and_state_dof_names: {
     type: string_array,
     default_value: [],
-    description: "(optional) Specifies joints for reading states. This parameter is only relevant when state joints are different then command joint, i.e., when a following controller is used.",
+    description: "(optional) Specifies dof_names or axis for getting reference and reading states. This parameter is only relevant when state dof names are different then command dof names, i.e., when a following controller is used.",
     read_only: true,
     validation: {
       unique<>: null,
     }
   }
-  interface_name: {
+  command_interface: {
     type: string,
     default_value: "",
-    description: "Name of the interface used by the controller on joints and command_joints.",
+    description: "Name of the interface used by the controller for writing commands to the hardware.",
     read_only: true,
     validation: {
       not_empty<>: null,
       one_of<>: [["position", "velocity", "acceleration", "effort",]],
+    }
+  }
+  reference_and_state_interfaces: {
+    type: string_array,
+    default_value: [],
+    description: "Name of the interfaces used by the controller getting hardware states and reference commands.",
+    read_only: true,
+    validation: {
+      not_empty<>: null,
+      size_lt<>: 3,
+      subset_of<>: [["position", "velocity", "acceleration", "effort",]],
       forbidden_interface_name_prefix: null
     }
+  }
+  use_external_measured_states: {
+    type: bool,
+    default_value: false,
+    description: "Use external states from a topic instead form state interfaces."
+  }
+  controller_state_publish_rate: {
+    type: double,
+    default_value: 50.0,
+    description: "Rate controller state is published",
+    validation: {
+      lower_bounds: [0.1]
+    }
+  }
+  gains:
+    __map_dof_names:
+      p: {
+        type: double,
+        default_value: 0.0,
+        description: "Proportional gain for PID"
+      }
+      i: {
+        type: double,
+        default_value: 0.0,
+        description: "Integral gain for PID"
+      }
+      d: {
+        type: double,
+        default_value: 0.0,
+        description: "Derivative gain for PID"
+      }
+      antiwindup: {
+        type: bool,
+        default_value: false,
+        description: "Antiwindup functionality."
+      }
+      i_clamp_max: {
+        type: double,
+        default_value: 0.0,
+        description: "Upper integral clamp. Only used if antiwindeup is activated."
+      }
+      i_clamp_min: {
+        type: double,
+        default_value: 0.0,
+        description: "Lower integral clamp. Only used if antiwindeup is activated."
+      }
+      feedforward_gain: {
+        type: double,
+        default_value: 0.0,
+        description: "Scale for the feed-forward."
+      }
+
+  runtime_param_update: {
+    type: bool,
+    default_value: false,
+    description: "Enable parameters update when controller is active on each control step. If the parameter is 'false' then reactivation of controller is needed to update parameters."
   }
