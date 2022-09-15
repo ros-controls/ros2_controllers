@@ -121,15 +121,15 @@ state_interfaces (list(string)):
   Values: position (mandatory) [velocity, [acceleration]].
   Acceleration interface can only be used in combination with position and velocity.
 
-  Default: 50.0
-
 state_publish_rate (double):
   Publish-rate of the controller's "state" topic.
 
-  Default: 20.0
+  Default: 50.0
 
 action_monitor_rate (double):
   Rate to monitor status changes when the controller is executing action (control_msgs::action::FollowJointTrajectory).
+
+  Default: 20.0
 
 allow_partial_joints_goal (boolean):
   Allow joint goals defining trajectory for only some joints.
