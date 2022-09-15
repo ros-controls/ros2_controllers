@@ -99,6 +99,11 @@ protected:
   std::vector<std::string> reference_and_state_dof_names_;
   size_t dof_;
 
+  using PidPtr = std::shared_ptr<control_toolbox::PidROS>;
+  std::vector<PidPtr> pids_;
+  // Feed-forward velocity weight factor when calculating closed loop pid adapter's command
+  std::vector<double> feedforward_gain_;
+
   // Command subscribers and Controller State publisher
   rclcpp::Subscription<ControllerReferenceMsg>::SharedPtr ref_subscriber_ = nullptr;
   realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerReferenceMsg>> input_ref_;
@@ -119,10 +124,8 @@ protected:
 
   bool on_set_chained_mode(bool chained_mode) override;
 
-  using PidPtr = std::shared_ptr<control_toolbox::PidROS>;
-  std::vector<PidPtr> pids_;
-  // Feed-forward velocity weight factor when calculating closed loop pid adapter's command
-  std::vector<double> feedforward_gain_;
+  // internal methods
+  controller_interface::CallbackReturn configure_parameters();
 
 private:
   // callback for topic interface

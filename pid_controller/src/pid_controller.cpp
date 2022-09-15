@@ -93,8 +93,7 @@ controller_interface::CallbackReturn PidController::on_init()
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn PidController::on_configure(
-  const rclcpp_lifecycle::State & /*previous_state*/)
+controller_interface::CallbackReturn PidController::configure_parameters()
 {
   params_ = param_listener_->get_params();
 
@@ -137,6 +136,12 @@ controller_interface::CallbackReturn PidController::on_configure(
       std::make_shared<control_toolbox::PidROS>(get_node(), "gains." + params_.dof_names[i]);
     pids_[i]->initPid();
   }
+}
+
+controller_interface::CallbackReturn PidController::on_configure(
+  const rclcpp_lifecycle::State & /*previous_state*/)
+{
+  configure_parameters();
 
   // topics QoS
   auto subscribers_qos = rclcpp::SystemDefaultsQoS();
