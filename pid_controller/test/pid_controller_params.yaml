@@ -1,7 +1,7 @@
 test_pid_controller:
   ros__parameters:
 
-    joints:
+    dof_names:
       - joint1
 
     interface_name: acceleration

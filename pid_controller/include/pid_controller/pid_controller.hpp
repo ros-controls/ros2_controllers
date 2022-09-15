@@ -1,5 +1,4 @@
 // Copyright (c) 2022, Stogl Robotics Consulting UG (haftungsbeschränkt)
-// Copyright (c) 2022, Stogl Robotics Consulting UG (haftungsbeschränkt) (template)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,6 +19,9 @@
 #include <string>
 #include <vector>
 
+#include "control_msgs/msg/multi_dof_command.hpp"
+#include "control_msgs/msg/multi_dof_state_stamped.hpp"
+#include "control_toolbox/pid_ros.hpp"
 #include "controller_interface/chainable_controller_interface.hpp"
 #include "pid_controller/visibility_control.h"
 #include "pid_controller_parameters.hpp"
@@ -33,6 +35,9 @@
 #include "control_msgs/msg/joint_controller_state.hpp"
 #include "control_msgs/msg/joint_jog.hpp"
 
+#include "control_msgs/msg/pid_state.hpp"
+#include "trajectory_msgs/msg/joint_trajectory_point.hpp"
+
 namespace pid_controller
 {
 // name constants for state interfaces
@@ -41,64 +46,68 @@ static constexpr size_t STATE_MY_ITFS = 0;
 // name constants for command interfaces
 static constexpr size_t CMD_MY_ITFS = 0;
 
-// TODO(anyone: xample setup for control mode (usually you will use some enums defined in messages)
-enum class control_mode_type : std::uint8_t
+enum class feedforward_mode_type : std::uint8_t
 {
-  FAST = 0,
-  SLOW = 1,
+  OFF = 0,
+  ON = 1,
 };
 
 class PidController : public controller_interface::ChainableControllerInterface
 {
 public:
-  TEMPLATES__ROS2_CONTROL__VISIBILITY_PUBLIC
+  PID_CONTROLLER__VISIBILITY_PUBLIC
   PidController();
 
-  TEMPLATES__ROS2_CONTROL__VISIBILITY_PUBLIC
+  PID_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::CallbackReturn on_init() override;
 
-  TEMPLATES__ROS2_CONTROL__VISIBILITY_PUBLIC
+  PID_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::InterfaceConfiguration command_interface_configuration() const override;
 
-  TEMPLATES__ROS2_CONTROL__VISIBILITY_PUBLIC
+  PID_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::InterfaceConfiguration state_interface_configuration() const override;
 
-  TEMPLATES__ROS2_CONTROL__VISIBILITY_PUBLIC
+  PID_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::CallbackReturn on_configure(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  TEMPLATES__ROS2_CONTROL__VISIBILITY_PUBLIC
+  PID_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::CallbackReturn on_activate(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  TEMPLATES__ROS2_CONTROL__VISIBILITY_PUBLIC
+  PID_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::CallbackReturn on_deactivate(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  TEMPLATES__ROS2_CONTROL__VISIBILITY_PUBLIC
+  PID_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::return_type update_reference_from_subscribers() override;
 
-  TEMPLATES__ROS2_CONTROL__VISIBILITY_PUBLIC
+  PID_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::return_type update_and_write_commands(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
   // TODO(anyone): replace the state and command message types
-  using ControllerCommandMsg = control_msgs::msg::JointJog;
+  using ControllerReferenceMsg = control_msgs::msg::MultiDOFCommand;
+  using ControllerMeasuredStateMsg = control_msgs::msg::MultiDOFCommand;
   using ControllerModeSrvType = std_srvs::srv::SetBool;
-  using ControllerStateMsg = control_msgs::msg::JointControllerState;
+  using ControllerStateMsg = control_msgs::msg::MultiDOFStateStamped;
 
 protected:
   std::shared_ptr<pid_controller::ParamListener> param_listener_;
   pid_controller::Params params_;
 
-  std::vector<std::string> state_joints_;
+  std::vector<std::string> reference_and_state_dof_names_;
+  size_t dof_;
 
   // Command subscribers and Controller State publisher
-  rclcpp::Subscription<ControllerCommandMsg>::SharedPtr cmd_subscriber_ = nullptr;
-  realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerCommandMsg>> input_cmd_;
+  rclcpp::Subscription<ControllerReferenceMsg>::SharedPtr ref_subscriber_ = nullptr;
+  realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerReferenceMsg>> input_ref_;
 
-  rclcpp::Service<ControllerModeSrvType>::SharedPtr set_slow_control_mode_service_;
-  realtime_tools::RealtimeBuffer<control_mode_type> control_mode_;
+  rclcpp::Subscription<ControllerMeasuredStateMsg>::SharedPtr measured_state_subscriber_ = nullptr;
+  realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerMeasuredStateMsg>> measured_state_;
+
+  rclcpp::Service<ControllerModeSrvType>::SharedPtr set_feedforward_control_service_;
+  realtime_tools::RealtimeBuffer<feedforward_mode_type> control_mode_;
 
   using ControllerStatePublisher = realtime_tools::RealtimePublisher<ControllerStateMsg>;
 
@@ -109,6 +118,16 @@ protected:
   std::vector<hardware_interface::CommandInterface> on_export_reference_interfaces() override;
 
   bool on_set_chained_mode(bool chained_mode) override;
+
+  using PidPtr = std::shared_ptr<control_toolbox::PidROS>;
+  std::vector<PidPtr> pids_;
+  // Feed-forward velocity weight factor when calculating closed loop pid adapter's command
+  std::vector<double> feedforward_gain_;
+
+private:
+  // callback for topic interface
+  PID_CONTROLLER__VISIBILITY_LOCAL
+  void reference_callback(const std::shared_ptr<ControllerReferenceMsg> msg);
 };
 
 }  // namespace pid_controller

@@ -35,7 +35,7 @@
 
 // TODO(anyone): replace the state and command message types
 using ControllerStateMsg = pid_controller::PidController::ControllerStateMsg;
-using ControllerCommandMsg = pid_controller::PidController::ControllerCommandMsg;
+using ControllerCommandMsg = pid_controller::PidController::ControllerReferenceMsg;
 using ControllerModeSrvType = pid_controller::PidController::ControllerModeSrvType;
 
 namespace
@@ -65,7 +65,7 @@ public:
     // Only if on_configure is successful create subscription
     if (ret == CallbackReturn::SUCCESS)
     {
-      cmd_subscriber_wait_set_.add_subscription(cmd_subscriber_);
+      ref_subscriber_wait_set_.add_subscription(ref_subscriber_);
     }
     return ret;
   }
@@ -100,13 +100,13 @@ public:
     rclcpp::Executor & executor,
     const std::chrono::milliseconds & timeout = std::chrono::milliseconds{500})
   {
-    return wait_for_command(executor, cmd_subscriber_wait_set_, timeout);
+    return wait_for_command(executor, ref_subscriber_wait_set_, timeout);
   }
 
   // TODO(anyone): add implementation of any methods of your controller is needed
 
 private:
-  rclcpp::WaitSet cmd_subscriber_wait_set_;
+  rclcpp::WaitSet ref_subscriber_wait_set_;
 };
 
 // We are using template class here for easier reuse of Fixture in specializations of controllers
@@ -140,25 +140,25 @@ protected:
     ASSERT_EQ(controller_->init(controller_name), controller_interface::return_type::OK);
 
     std::vector<hardware_interface::LoanedCommandInterface> command_ifs;
-    command_itfs_.reserve(joint_command_values_.size());
-    command_ifs.reserve(joint_command_values_.size());
+    command_itfs_.reserve(dof_command_values_.size());
+    command_ifs.reserve(dof_command_values_.size());
 
-    for (size_t i = 0; i < joint_command_values_.size(); ++i)
+    for (size_t i = 0; i < dof_command_values_.size(); ++i)
     {
       command_itfs_.emplace_back(hardware_interface::CommandInterface(
-        joint_names_[i], interface_name_, &joint_command_values_[i]));
+        dof_names_[i], interface_name_, &dof_command_values_[i]));
       command_ifs.emplace_back(command_itfs_.back());
     }
     // TODO(anyone): Add other command interfaces, if any
 
     std::vector<hardware_interface::LoanedStateInterface> state_ifs;
-    state_itfs_.reserve(joint_state_values_.size());
-    state_ifs.reserve(joint_state_values_.size());
+    state_itfs_.reserve(dof_state_values_.size());
+    state_ifs.reserve(dof_state_values_.size());
 
-    for (size_t i = 0; i < joint_state_values_.size(); ++i)
+    for (size_t i = 0; i < dof_state_values_.size(); ++i)
     {
-      state_itfs_.emplace_back(hardware_interface::StateInterface(
-        joint_names_[i], interface_name_, &joint_state_values_[i]));
+      state_itfs_.emplace_back(
+        hardware_interface::StateInterface(dof_names_[i], interface_name_, &dof_state_values_[i]));
       state_ifs.emplace_back(state_itfs_.back());
     }
     // TODO(anyone): Add other state interfaces, if any
@@ -224,10 +224,11 @@ protected:
     wait_for_topic(command_publisher_->get_topic_name());
 
     ControllerCommandMsg msg;
-    msg.joint_names = joint_names_;
-    msg.displacements = displacements;
-    msg.velocities = velocities;
-    msg.duration = duration;
+    msg.dof_names = dof_names_;
+    // TODO(destogl): Update name of the arguments and remove unnecessary ones
+    msg.values = displacements;
+    //     msg.velocities = velocities;
+    //     msg.duration = duration;
 
     command_publisher_->publish(msg);
   }
@@ -255,11 +256,11 @@ protected:
   // TODO(anyone): adjust the members as needed
 
   // Controller-related parameters
-  std::vector<std::string> joint_names_ = {"joint1"};
-  std::vector<std::string> state_joint_names_ = {"joint1state"};
+  std::vector<std::string> dof_names_ = {"joint1"};
+  std::vector<std::string> state_dof_names_ = {"joint1state"};
   std::string interface_name_ = "acceleration";
-  std::array<double, 1> joint_state_values_ = {1.1};
-  std::array<double, 1> joint_command_values_ = {101.101};
+  std::array<double, 1> dof_state_values_ = {1.1};
+  std::array<double, 1> dof_command_values_ = {101.101};
 
   std::vector<hardware_interface::StateInterface> state_itfs_;
   std::vector<hardware_interface::CommandInterface> command_itfs_;
