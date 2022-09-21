@@ -56,6 +56,8 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
   {
     // with the lifecycle node being initialized, we can declare parameters
     joint_names_ = auto_declare<std::vector<std::string>>("joints", joint_names_);
+    command_joint_names_ =
+      auto_declare<std::vector<std::string>>("command_joints", command_joint_names_);
     command_interface_types_ =
       auto_declare<std::vector<std::string>>("command_interfaces", command_interface_types_);
     state_interface_types_ =
@@ -68,7 +70,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
     state_publish_rate_ = auto_declare<double>("state_publish_rate", 50.0);
     action_monitor_rate_ = auto_declare<double>("action_monitor_rate", 20.0);
 
-    std::string interpolation_string = auto_declare<std::string>(
+    const std::string interpolation_string = auto_declare<std::string>(
       "interpolation_method", interpolation_methods::InterpolationMethodMap.at(
                                 interpolation_methods::DEFAULT_INTERPOLATION));
     interpolation_method_ = interpolation_methods::from_string(interpolation_string);
@@ -97,7 +99,7 @@ JointTrajectoryController::command_interface_configuration() const
     std::exit(EXIT_FAILURE);
   }
   conf.names.reserve(dof_ * command_interface_types_.size());
-  for (const auto & joint_name : joint_names_)
+  for (const auto & joint_name : command_joint_names_)
   {
     for (const auto & interface_type : command_interface_types_)
     {
@@ -134,7 +136,8 @@ controller_interface::return_type JointTrajectoryController::update(
   auto compute_error_for_joint = [&](
                                    JointTrajectoryPoint & error, int index,
                                    const JointTrajectoryPoint & current,
-                                   const JointTrajectoryPoint & desired) {
+                                   const JointTrajectoryPoint & desired)
+  {
     // error defined as the difference between current and desired
     error.positions[index] =
       angles::shortest_angular_distance(current.positions[index], desired.positions[index]);
@@ -162,12 +165,13 @@ controller_interface::return_type JointTrajectoryController::update(
   // TODO(anyone): can I here also use const on joint_interface since the reference_wrapper is not
   // changed, but its value only?
   auto assign_interface_from_point =
-    [&](auto & joint_interface, const std::vector<double> & trajectory_point_interface) {
-      for (size_t index = 0; index < dof_; ++index)
-      {
-        joint_interface[index].get().set_value(trajectory_point_interface[index]);
-      }
-    };
+    [&](auto & joint_interface, const std::vector<double> & trajectory_point_interface)
+  {
+    for (size_t index = 0; index < dof_; ++index)
+    {
+      joint_interface[index].get().set_value(trajectory_point_interface[index]);
+    }
+  };
 
   // current state update
   state_current_.time_from_start.set__sec(0);
@@ -353,6 +357,11 @@ controller_interface::return_type JointTrajectoryController::update(
           // to be satisfied or violated within the goal_time_tolerance
         }
       }
+      else if (tolerance_violated_while_moving)
+      {
+        set_hold_position();
+        RCLCPP_ERROR(get_node()->get_logger(), "Holding position due to state tolerance violation");
+      }
     }
   }
 
@@ -363,12 +372,13 @@ controller_interface::return_type JointTrajectoryController::update(
 void JointTrajectoryController::read_state_from_hardware(JointTrajectoryPoint & state)
 {
   auto assign_point_from_interface =
-    [&](std::vector<double> & trajectory_point_interface, const auto & joint_interface) {
-      for (size_t index = 0; index < dof_; ++index)
-      {
-        trajectory_point_interface[index] = joint_interface[index].get().get_value();
-      }
-    };
+    [&](std::vector<double> & trajectory_point_interface, const auto & joint_interface)
+  {
+    for (size_t index = 0; index < dof_; ++index)
+    {
+      trajectory_point_interface[index] = joint_interface[index].get().get_value();
+    }
+  };
 
   // Assign values from the hardware
   // Position states always exist
@@ -401,17 +411,20 @@ bool JointTrajectoryController::read_state_from_command_interfaces(JointTrajecto
   bool has_values = true;
 
   auto assign_point_from_interface =
-    [&](std::vector<double> & trajectory_point_interface, const auto & joint_interface) {
-      for (size_t index = 0; index < dof_; ++index)
-      {
-        trajectory_point_interface[index] = joint_interface[index].get().get_value();
-      }
-    };
+    [&](std::vector<double> & trajectory_point_interface, const auto & joint_interface)
+  {
+    for (size_t index = 0; index < dof_; ++index)
+    {
+      trajectory_point_interface[index] = joint_interface[index].get().get_value();
+    }
+  };
 
-  auto interface_has_values = [](const auto & joint_interface) {
-    return std::find_if(joint_interface.begin(), joint_interface.end(), [](const auto & interface) {
-             return std::isnan(interface.get().get_value());
-           }) == joint_interface.end();
+  auto interface_has_values = [](const auto & joint_interface)
+  {
+    return std::find_if(
+             joint_interface.begin(), joint_interface.end(),
+             [](const auto & interface)
+             { return std::isnan(interface.get().get_value()); }) == joint_interface.end();
   };
 
   // Assign values from the command interfaces as state. Therefore needs check for both.
@@ -482,6 +495,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
 
   dof_ = joint_names_.size();
 
+  // TODO(destogl): why is this here? Add comment or move
   if (!reset())
   {
     return CallbackReturn::FAILURE;
@@ -489,7 +503,23 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
 
   if (joint_names_.empty())
   {
+    // TODO(destogl): is this correct? Can we really move-on if no joint names are not provided?
     RCLCPP_WARN(logger, "'joints' parameter is empty.");
+  }
+
+  command_joint_names_ = get_node()->get_parameter("command_joints").as_string_array();
+
+  if (command_joint_names_.empty())
+  {
+    command_joint_names_ = joint_names_;
+    RCLCPP_INFO(
+      logger, "No specific joint names are used for command interfaces. Using 'joints' parameter.");
+  }
+  else if (command_joint_names_.size() != joint_names_.size())
+  {
+    RCLCPP_ERROR(
+      logger, "'command_joints' parameter has to have the same size as 'joints' parameter.");
+    return CallbackReturn::FAILURE;
   }
 
   // Specialized, child controllers set interfaces before calling configure function.
@@ -581,12 +611,13 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     // Init PID gains from ROS parameter server
     for (size_t i = 0; i < pids_.size(); ++i)
     {
-      const std::string prefix = "gains." + joint_names_[i];
+      const std::string prefix = "gains." + command_joint_names_[i];
       const auto k_p = auto_declare<double>(prefix + ".p", 0.0);
       const auto k_i = auto_declare<double>(prefix + ".i", 0.0);
       const auto k_d = auto_declare<double>(prefix + ".d", 0.0);
       const auto i_clamp = auto_declare<double>(prefix + ".i_clamp", 0.0);
-      ff_velocity_scale_[i] = auto_declare<double>("ff_velocity_scale/" + joint_names_[i], 0.0);
+      ff_velocity_scale_[i] =
+        auto_declare<double>("ff_velocity_scale/" + command_joint_names_[i], 0.0);
       // Initialize PID
       pids_[i] = std::make_shared<control_toolbox::Pid>(k_p, k_i, k_d, i_clamp, -i_clamp);
     }
@@ -671,7 +702,8 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     }
   }
 
-  auto get_interface_list = [](const std::vector<std::string> & interface_types) {
+  auto get_interface_list = [](const std::vector<std::string> & interface_types)
+  {
     std::stringstream ss_interfaces;
     for (size_t index = 0; index < interface_types.size(); ++index)
     {
@@ -690,39 +722,27 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     get_interface_list(command_interface_types_).c_str(),
     get_interface_list(state_interface_types_).c_str());
 
-  default_tolerances_ = get_segment_tolerances(*get_node(), joint_names_);
+  default_tolerances_ = get_segment_tolerances(*get_node(), command_joint_names_);
 
   // Read parameters customizing controller for special cases
   open_loop_control_ = get_node()->get_parameter("open_loop_control").get_value<bool>();
   allow_integration_in_goal_trajectories_ =
     get_node()->get_parameter("allow_integration_in_goal_trajectories").get_value<bool>();
 
-  // subscriber callback
-  // non realtime
-  // TODO(karsten): check if traj msg and point time are valid
-  auto callback = [this](const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg) -> void {
-    if (!validate_trajectory_msg(*msg))
-    {
-      return;
-    }
+  const std::string interpolation_string =
+    get_node()->get_parameter("interpolation_method").as_string();
+  interpolation_method_ = interpolation_methods::from_string(interpolation_string);
+  RCLCPP_INFO(
+    logger, "Using '%s' interpolation method.",
+    interpolation_methods::InterpolationMethodMap.at(interpolation_method_).c_str());
 
-    // http://wiki.ros.org/joint_trajectory_controller/UnderstandingTrajectoryReplacement
-    // always replace old msg with new one for now
-    if (subscriber_is_active_)
-    {
-      add_new_trajectory_msg(msg);
-    }
-  };
-
-  // TODO(karsten1987): create subscriber with subscription deactivated
   joint_command_subscriber_ =
     get_node()->create_subscription<trajectory_msgs::msg::JointTrajectory>(
-      "~/joint_trajectory", rclcpp::SystemDefaultsQoS(), callback);
-
-  // TODO(karsten1987): no lifecycle for subscriber yet
-  // joint_command_subscriber_->on_activate();
+      "~/joint_trajectory", rclcpp::SystemDefaultsQoS(),
+      std::bind(&JointTrajectoryController::topic_callback, this, std::placeholders::_1));
 
   // State publisher
+  state_publish_rate_ = get_node()->get_parameter("state_publish_rate").get_value<double>();
   RCLCPP_INFO(logger, "Controller state will be published at %.2f Hz.", state_publish_rate_);
   if (state_publish_rate_ > 0.0)
   {
@@ -738,7 +758,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   state_publisher_ = std::make_unique<StatePublisher>(publisher_);
 
   state_publisher_->lock();
-  state_publisher_->msg_.joint_names = joint_names_;
+  state_publisher_->msg_.joint_names = command_joint_names_;
   state_publisher_->msg_.desired.positions.resize(dof_);
   state_publisher_->msg_.desired.velocities.resize(dof_);
   state_publisher_->msg_.desired.accelerations.resize(dof_);
@@ -766,6 +786,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     RCLCPP_INFO(logger, "Goals with partial set of joints are allowed");
   }
 
+  action_monitor_rate_ = get_node()->get_parameter("action_monitor_rate").get_value<double>();
   RCLCPP_INFO(logger, "Action status changes will be monitored at %.2f Hz.", action_monitor_rate_);
   action_monitor_period_ = rclcpp::Duration::from_seconds(1.0 / action_monitor_rate_);
 
@@ -774,9 +795,9 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     get_node()->get_node_base_interface(), get_node()->get_node_clock_interface(),
     get_node()->get_node_logging_interface(), get_node()->get_node_waitables_interface(),
     std::string(get_node()->get_name()) + "/follow_joint_trajectory",
-    std::bind(&JointTrajectoryController::goal_callback, this, _1, _2),
-    std::bind(&JointTrajectoryController::cancel_callback, this, _1),
-    std::bind(&JointTrajectoryController::feedback_setup_callback, this, _1));
+    std::bind(&JointTrajectoryController::goal_received_callback, this, _1, _2),
+    std::bind(&JointTrajectoryController::goal_cancelled_callback, this, _1),
+    std::bind(&JointTrajectoryController::goal_accepted_callback, this, _1));
 
   resize_joint_trajectory_point(state_current_, dof_);
   resize_joint_trajectory_point(state_desired_, dof_);
@@ -796,7 +817,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
       std::find(allowed_interface_types_.begin(), allowed_interface_types_.end(), interface);
     auto index = std::distance(allowed_interface_types_.begin(), it);
     if (!controller_interface::get_ordered_interfaces(
-          command_interfaces_, joint_names_, interface, joint_command_interface_[index]))
+          command_interfaces_, command_joint_names_, interface, joint_command_interface_[index]))
     {
       RCLCPP_ERROR(
         get_node()->get_logger(), "Expected %zu '%s' command interfaces, got %zu.", dof_,
@@ -857,7 +878,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
     last_commanded_state_ = state;
   }
 
-  // TODO(karsten1987): activate subscriptions of subscriber
   return CallbackReturn::SUCCESS;
 }
 
@@ -988,7 +1008,22 @@ void JointTrajectoryController::publish_state(
   }
 }
 
-rclcpp_action::GoalResponse JointTrajectoryController::goal_callback(
+void JointTrajectoryController::topic_callback(
+  const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg)
+{
+  if (!validate_trajectory_msg(*msg))
+  {
+    return;
+  }
+  // http://wiki.ros.org/joint_trajectory_controller/UnderstandingTrajectoryReplacement
+  // always replace old msg with new one for now
+  if (subscriber_is_active_)
+  {
+    add_new_trajectory_msg(msg);
+  }
+};
+
+rclcpp_action::GoalResponse JointTrajectoryController::goal_received_callback(
   const rclcpp_action::GoalUUID &, std::shared_ptr<const FollowJTrajAction::Goal> goal)
 {
   RCLCPP_INFO(get_node()->get_logger(), "Received new action goal");
@@ -1010,7 +1045,7 @@ rclcpp_action::GoalResponse JointTrajectoryController::goal_callback(
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
 
-rclcpp_action::CancelResponse JointTrajectoryController::cancel_callback(
+rclcpp_action::CancelResponse JointTrajectoryController::goal_cancelled_callback(
   const std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle)
 {
   RCLCPP_INFO(get_node()->get_logger(), "Got request to cancel goal");
@@ -1034,7 +1069,7 @@ rclcpp_action::CancelResponse JointTrajectoryController::cancel_callback(
   return rclcpp_action::CancelResponse::ACCEPT;
 }
 
-void JointTrajectoryController::feedback_setup_callback(
+void JointTrajectoryController::goal_accepted_callback(
   std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle)
 {
   // Update new trajectory
@@ -1052,9 +1087,12 @@ void JointTrajectoryController::feedback_setup_callback(
   rt_goal->execute();
   rt_active_goal_.writeFromNonRT(rt_goal);
 
+  // Set smartpointer to expire for create_wall_timer to delete previous entry from timer list
+  goal_handle_timer_.reset();
+
   // Setup goal status checking timer
   goal_handle_timer_ = get_node()->create_wall_timer(
-    action_monitor_period_.to_chrono<std::chrono::seconds>(),
+    action_monitor_period_.to_chrono<std::chrono::nanoseconds>(),
     std::bind(&RealtimeGoalHandle::runNonRealtime, rt_goal));
 }
 
@@ -1125,7 +1163,8 @@ void JointTrajectoryController::sort_to_local_joint_order(
   std::vector<size_t> mapping_vector = mapping(trajectory_msg->joint_names, joint_names_);
   auto remap = [this](
                  const std::vector<double> & to_remap,
-                 const std::vector<size_t> & mapping) -> std::vector<double> {
+                 const std::vector<size_t> & mapping) -> std::vector<double>
+  {
     if (to_remap.empty())
     {
       return to_remap;

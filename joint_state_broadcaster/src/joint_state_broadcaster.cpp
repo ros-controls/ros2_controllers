@@ -200,6 +200,8 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_activate(
 controller_interface::CallbackReturn JointStateBroadcaster::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
+  joint_names_.clear();
+
   return CallbackReturn::SUCCESS;
 }
 
@@ -222,6 +224,7 @@ bool has_any_key(
 
 bool JointStateBroadcaster::init_joint_data()
 {
+  joint_names_.clear();
   if (state_interfaces_.empty())
   {
     return false;

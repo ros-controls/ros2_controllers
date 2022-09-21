@@ -17,7 +17,7 @@
 #include <memory>
 #include <vector>
 
-#include "gtest/gtest.h"
+#include "gmock/gmock.h"
 
 #include "builtin_interfaces/msg/duration.hpp"
 #include "builtin_interfaces/msg/time.hpp"
@@ -40,6 +40,7 @@ const double EPS = 1e-8;
 
 TEST(TestTrajectory, initialize_trajectory)
 {
+  auto clock = rclcpp::Clock(RCL_STEADY_TIME);
   {
     auto empty_msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
     empty_msg->header.stamp.sec = 2;
@@ -49,7 +50,7 @@ TEST(TestTrajectory, initialize_trajectory)
 
     trajectory_msgs::msg::JointTrajectoryPoint expected_point;
     joint_trajectory_controller::TrajectoryPointConstIter start, end;
-    traj.sample(rclcpp::Clock().now(), DEFAULT_INTERPOLATION, expected_point, start, end);
+    traj.sample(clock.now(), DEFAULT_INTERPOLATION, expected_point, start, end);
 
     EXPECT_EQ(traj.end(), start);
     EXPECT_EQ(traj.end(), end);
@@ -59,13 +60,13 @@ TEST(TestTrajectory, initialize_trajectory)
     auto empty_msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
     empty_msg->header.stamp.sec = 0;
     empty_msg->header.stamp.nanosec = 0;
-    const auto now = rclcpp::Clock().now();
+    const auto now = clock.now();
     auto traj = joint_trajectory_controller::Trajectory(empty_msg);
     const auto traj_starttime = traj.time_from_start();
 
     trajectory_msgs::msg::JointTrajectoryPoint expected_point;
     joint_trajectory_controller::TrajectoryPointConstIter start, end;
-    traj.sample(rclcpp::Clock().now(), DEFAULT_INTERPOLATION, expected_point, start, end);
+    traj.sample(clock.now(), DEFAULT_INTERPOLATION, expected_point, start, end);
 
     EXPECT_EQ(traj.end(), start);
     EXPECT_EQ(traj.end(), end);

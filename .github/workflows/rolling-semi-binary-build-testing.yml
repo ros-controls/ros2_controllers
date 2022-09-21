@@ -1,7 +1,10 @@
-name: Rolling Binary Build
-# Build & test all dependencies from released (binary) packages.
+name: Rolling Semi-Binary Build - testing
+# description: 'Build & test that compiles the main dependencies from source.'
 
 on:
+  workflow_dispatch:
+    branches:
+      - master
   pull_request:
     branches:
       - master
@@ -10,12 +13,13 @@ on:
       - master
   schedule:
     # Run every morning to detect flakiness and broken dependencies
-    - cron: '08 18 * * *'
+    - cron: '33 1 * * *'
 
 jobs:
-  binary:
+  semi_binary:
     uses: ./.github/workflows/reusable-industrial-ci-with-cache.yml
     with:
       ros_distro: rolling
-      upstream_workspace: ros2_controllers-not-released.rolling.repos
+      ros_repo: testing
+      upstream_workspace: ros2_controllers.rolling.repos
       ref_for_scheduled_build: master
