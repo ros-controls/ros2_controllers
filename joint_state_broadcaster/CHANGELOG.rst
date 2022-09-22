@@ -2,6 +2,9 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.8.1 (2022-08-03)
 ------------------
 * Add realtime_tools as export dependency (`#377 <https://github.com/ros-controls/ros2_controllers/issues/377>`_)
