@@ -349,11 +349,12 @@ public:
 
   void updateController(rclcpp::Duration wait_time = rclcpp::Duration::from_seconds(0.2))
   {
-    const auto start_time = rclcpp::Clock().now();
+    auto clock = rclcpp::Clock(RCL_STEADY_TIME);
+    const auto start_time = clock.now();
     const auto end_time = start_time + wait_time;
-    while (rclcpp::Clock().now() < end_time)
+    while (clock.now() < end_time)
     {
-      traj_controller_->update(rclcpp::Clock().now(), rclcpp::Clock().now() - start_time);
+      traj_controller_->update(clock.now(), clock.now() - start_time);
     }
   }
 

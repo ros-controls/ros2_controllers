@@ -298,6 +298,7 @@ controller_interface::CallbackReturn GripperActionController<HardwareInterface>:
   // Command - non RT version
   command_struct_.position_ = joint_position_state_interface_->get().get_value();
   command_struct_.max_effort_ = default_max_effort_;
+  command_.initRT(command_struct_);
 
   // Result
   pre_alloc_result_ = std::make_shared<control_msgs::action::GripperCommand::Result>();

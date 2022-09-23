@@ -2,6 +2,12 @@
 Changelog for package gripper_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.12.0 (2022-09-01)
+-------------------
+* Add an initialization of the gripper action command for safe startup. (`#425 <https://github.com/ros-controls/ros2_controllers/issues/425>`_)
+* Fix formatting CI job (`#418 <https://github.com/ros-controls/ros2_controllers/issues/418>`_)
+* Contributors: Shota Aoki, Tyler Weaver
+
 2.11.0 (2022-08-04)
 -------------------
 
