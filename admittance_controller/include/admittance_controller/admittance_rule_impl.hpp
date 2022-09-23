@@ -217,21 +217,24 @@ controller_interface::return_type AdmittanceRule::update(
 
 bool AdmittanceRule::calculate_admittance_rule(AdmittanceState & admittance_state, double dt)
 {
-  // Create stiffness matrix in base frame. The values of admittance_state.stiffness correspond to the six diagonal
-  // elements of the stiffness matrix expressed in the control frame
+  // Create stiffness matrix in base frame. The user-provided values of admittance_state.stiffness correspond to the
+  // six diagonal elements of the stiffness matrix expressed in the control frame
   auto rot_base_control = admittance_state.rot_base_control;
   Eigen::Matrix<double, 6, 6> K = Eigen::Matrix<double, 6, 6>::Zero();
   Eigen::Matrix<double, 3, 3> K_pos = Eigen::Matrix<double, 3, 3>::Zero();
   Eigen::Matrix<double, 3, 3> K_rot = Eigen::Matrix<double, 3, 3>::Zero();
   K_pos.diagonal() = admittance_state.stiffness.block<3, 1>(0, 0);
   K_rot.diagonal() = admittance_state.stiffness.block<3, 1>(3, 0);
+  // Transform to the control frame
+  // A reference is here:  https://users.wpi.edu/~jfu2/rbe502/files/force_control.pdf
+  // Force Control by Luigi Villani and Joris De Schutter
+  // Page 200
   K_pos = rot_base_control * K_pos * rot_base_control.transpose();
   K_rot = rot_base_control * K_rot * rot_base_control.transpose();
   K.block<3, 3>(0, 0) = K_pos;
   K.block<3, 3>(3, 3) = K_rot;
 
-  // Create stiffness damping in base frame. The values of admittance_state.damping correspond to the six diagonal
-  // elements of the damping matrix expressed in the control frame.
+  // The same for damping
   Eigen::Matrix<double, 6, 6> D = Eigen::Matrix<double, 6, 6>::Zero();
   Eigen::Matrix<double, 3, 3> D_pos = Eigen::Matrix<double, 3, 3>::Zero();
   Eigen::Matrix<double, 3, 3> D_rot = Eigen::Matrix<double, 3, 3>::Zero();

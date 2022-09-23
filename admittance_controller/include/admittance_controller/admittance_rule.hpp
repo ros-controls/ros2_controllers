@@ -148,7 +148,7 @@ public:
   /**
    * Set fields of `state_message` from current admittance controller state.
    *
-   * \param[out] state_message
+   * \param[out] state_message message containing target position/vel/accel, wrench, and actual robot state, among other things
    */
   const control_msgs::msg::AdmittanceControllerState & get_controller_state();
 
