@@ -1,5 +1,8 @@
 name: Rolling RHEL Binary Build
 on:
+  workflow_dispatch:
+    branches:
+      - master
   pull_request:
     branches:
       - master
@@ -12,20 +15,19 @@ on:
 
 
 jobs:
-# TODO(andyz): disabled because it started failing at the transition to Humble
-#  rolling_rhel_binary:
-#    name: Rolling RHEL binary build
-#    runs-on: ubuntu-latest
-#    env:
-#      ROS_DISTRO: rolling
-#    container: jaronl/ros:rolling-alma
-#    steps:
-#      - uses: actions/checkout@v3
-#        with:
-#          path: src/ros2_controllers
-#      - run: |
-#          rosdep update
-#          rosdep install -iy --from-path src/ros2_controllers
-#          source /opt/ros/${{ env.ROS_DISTRO }}/setup.bash
-#          colcon build
-#          colcon test
+  rolling_rhel_binary:
+    name: Rolling RHEL binary build
+    runs-on: ubuntu-latest
+    env:
+      ROS_DISTRO: rolling
+    container: jaronl/ros:rolling-alma
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          path: src/ros2_controllers
+      - run: |
+          rosdep update
+          rosdep install -iy --from-path src/ros2_controllers
+          source /opt/ros/${{ env.ROS_DISTRO }}/setup.bash
+          colcon build
+          colcon test

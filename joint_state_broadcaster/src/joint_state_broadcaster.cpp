@@ -123,7 +123,8 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_configure(
       "Publishing state interfaces defined in 'joints' and 'interfaces' parameters.");
   }
 
-  auto get_map_interface_parameter = [&](const std::string & interface) {
+  auto get_map_interface_parameter = [&](const std::string & interface)
+  {
     std::string interface_to_map =
       get_node()
         ->get_parameter(std::string("map_interface_to_joint_state.") + interface)
@@ -206,6 +207,8 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_activate(
 controller_interface::CallbackReturn JointStateBroadcaster::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
+  joint_names_.clear();
+
   return CallbackReturn::SUCCESS;
 }
 
@@ -228,6 +231,7 @@ bool has_any_key(
 
 bool JointStateBroadcaster::init_joint_data()
 {
+  joint_names_.clear();
   if (state_interfaces_.empty())
   {
     return false;

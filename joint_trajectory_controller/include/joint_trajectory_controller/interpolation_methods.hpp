@@ -15,9 +15,10 @@
 #ifndef JOINT_TRAJECTORY_CONTROLLER__INTERPOLATION_METHODS_HPP_
 #define JOINT_TRAJECTORY_CONTROLLER__INTERPOLATION_METHODS_HPP_
 
-#include <rclcpp/rclcpp.hpp>
 #include <string>
 #include <unordered_map>
+
+#include "rclcpp/rclcpp.hpp"
 
 namespace joint_trajectory_controller
 {

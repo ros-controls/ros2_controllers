@@ -2,6 +2,17 @@
 Changelog for package force_torque_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.12.0 (2022-09-01)
+-------------------
+* Generate params for ForceTorqueSensorBroadcaster (`#395 <https://github.com/ros-controls/ros2_controllers/issues/395>`_)
+* Contributors: Tyler Weaver
+
+2.11.0 (2022-08-04)
+-------------------
+
+2.10.0 (2022-08-01)
+-------------------
+
 2.9.0 (2022-07-14)
 ------------------
 

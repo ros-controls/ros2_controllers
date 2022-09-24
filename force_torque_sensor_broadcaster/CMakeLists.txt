@@ -26,6 +26,11 @@ foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
 
+find_package(generate_parameter_library REQUIRED)
+generate_parameter_library(force_torque_sensor_broadcaster_parameters
+  src/force_torque_sensor_broadcaster_parameters.yaml
+)
+
 add_library(
   ${PROJECT_NAME}
   SHARED
@@ -37,6 +42,9 @@ target_include_directories(${PROJECT_NAME}
 ament_target_dependencies(
   ${PROJECT_NAME}
   ${THIS_PACKAGE_INCLUDE_DEPENDS}
+)
+target_link_libraries(force_torque_sensor_broadcaster
+  force_torque_sensor_broadcaster_parameters
 )
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
