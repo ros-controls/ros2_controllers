@@ -3,6 +3,10 @@ joint_trajectory_controller:
     type: string_array,
     default_value: [],
     description: "Names of joints used by the controller",
+    validation: {
+      unique<>: null,
+      not_empty<>: null,
+    } 
   }
   command_interfaces: {
     type: string_array,
