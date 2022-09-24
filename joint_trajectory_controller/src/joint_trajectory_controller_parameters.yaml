@@ -5,7 +5,6 @@ joint_trajectory_controller:
     description: "Names of joints used by the controller",
     validation: {
       unique<>: null,
-      not_empty<>: null,
     } 
   }
   command_interfaces: {
@@ -14,7 +13,6 @@ joint_trajectory_controller:
     description: "Names of command interfaces to claim",
     validation: {
       unique<>: null,
-      not_empty<>: null,
       subset_of<>: [["position", "velocity", "acceleration", "effort",]],
       command_interface_type_combinations: null,
     }
