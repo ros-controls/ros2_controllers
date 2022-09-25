@@ -85,7 +85,7 @@ JointTrajectoryController::command_interface_configuration() const
     std::exit(EXIT_FAILURE);
   }
   conf.names.reserve(dof_ * params_.command_interfaces.size());
-  for (const auto & joint_name : params_.joints)
+  for (const auto & joint_name : command_joint_name_)
   {
     for (const auto & interface_type : params_.command_interfaces)
     {
