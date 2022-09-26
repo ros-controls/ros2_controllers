@@ -5,7 +5,15 @@ joint_trajectory_controller:
     description: "Names of joints used by the controller",
     validation: {
       unique<>: null,
-    } 
+    }
+  }
+  command_joints: {
+    type: string_array,
+    default_value: [],
+    description: "Names of the commanding joints used by the controller",
+    validation: {
+      unique<>: null,
+    }
   }
   command_interfaces: {
     type: string_array,
@@ -86,16 +94,23 @@ joint_trajectory_controller:
       i_clamp: {
         type: double,
         default_value: 0.0,
-        description: "Intigral clamp"
+        description: "Integrale clamp. Symmetrical in both positive and negative direction."
+      }
+      ff_velocity_scale: {
+        type: double,
+        default_value: 0.0,
+        description: "Feed-forward scaling of velocity."
       }
   constraints:
     stopped_velocity_tolerance: {
       type: double,
       default_value: 0.01,
+      description: "Velocity tolerance for at the end of the trajectory that indicates that controlled system is stopped.",
     }
     goal_time: {
       type: double,
       default_value: 0.0,
+      description: "Time tolerance for achieving trajectory goal before or after commanded time.",
       validation: {
         lower_bounds: [0.0],
       }
@@ -104,8 +119,10 @@ joint_trajectory_controller:
       trajectory: {
         type: double,
         default_value: 0.0,
+        description: "Per-joint trajectory offset tolerance during movement.",
       }
       goal: {
         type: double,
         default_value: 0.0,
+        description: "Per-joint trajectory offset tolerance at the goal position.",
       }

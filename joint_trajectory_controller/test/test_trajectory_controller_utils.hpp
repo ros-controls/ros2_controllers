@@ -99,6 +99,8 @@ public:
     params_.state_interfaces = state_interfaces;
   }
 
+  void trigger_declare_parameters() { param_listener_->declare_params(); }
+
   trajectory_msgs::msg::JointTrajectoryPoint get_current_state_when_offset()
   {
     return last_commanded_state_;
@@ -155,6 +157,7 @@ public:
     {
       FAIL();
     }
+    SetParameters();
   }
 
   void SetParameters()
@@ -165,8 +168,10 @@ public:
     const rclcpp::Parameter state_interfaces_params("state_interfaces", state_interface_types_);
     node->set_parameters({joint_names_param, cmd_interfaces_params, state_interfaces_params});
   }
+
   void SetPidParameters()
   {
+    traj_controller_->trigger_declare_parameters();
     auto node = traj_controller_->get_node();
 
     for (size_t i = 0; i < joint_names_.size(); ++i)
@@ -176,7 +181,7 @@ public:
       const rclcpp::Parameter k_i(prefix + ".i", 0.0);
       const rclcpp::Parameter k_d(prefix + ".d", 0.0);
       const rclcpp::Parameter i_clamp(prefix + ".i_clamp", 0.0);
-      const rclcpp::Parameter ff_velocity_scale("ff_velocity_scale/" + joint_names_[i], 1.0);
+      const rclcpp::Parameter ff_velocity_scale(prefix + ".ff_velocity_scale", 1.0);
       node->set_parameters({k_p, k_i, k_d, i_clamp, ff_velocity_scale});
     }
   }
@@ -187,21 +192,21 @@ public:
   {
     SetUpTrajectoryController(use_local_parameters);
 
-    for (const auto & param : parameters)
-    {
-      traj_controller_->get_node()->set_parameter(param);
-    }
     if (executor)
     {
       executor->add_node(traj_controller_->get_node()->get_node_base_interface());
     }
 
+    // set pid parameters before configure
+    SetPidParameters();
+    for (const auto & param : parameters)
+    {
+      traj_controller_->get_node()->set_parameter(param);
+    }
     // ignore velocity tolerances for this test since they aren't committed in test_robot->write()
     rclcpp::Parameter stopped_velocity_parameters("constraints.stopped_velocity_tolerance", 0.0);
     traj_controller_->get_node()->set_parameter(stopped_velocity_parameters);
 
-    // set pid parameters before configure
-    SetPidParameters();
     traj_controller_->get_node()->configure();
 
     ActivateTrajectoryController(separate_cmd_and_state_values);

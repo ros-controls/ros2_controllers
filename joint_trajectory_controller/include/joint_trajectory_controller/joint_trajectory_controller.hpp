@@ -131,6 +131,9 @@ protected:
   // Degrees of freedom
   size_t dof_;
 
+  // Storing command joint names for interfaces
+  std::vector<std::string> command_joint_names_;
+
   // Parameters from ROS for joint_trajectory_controller
   std::shared_ptr<ParamListener> param_listener_;
   Params params_;

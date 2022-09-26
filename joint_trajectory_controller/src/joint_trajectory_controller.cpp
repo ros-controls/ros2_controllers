@@ -85,7 +85,7 @@ JointTrajectoryController::command_interface_configuration() const
     std::exit(EXIT_FAILURE);
   }
   conf.names.reserve(dof_ * params_.command_interfaces.size());
-  for (const auto & joint_name : command_joint_name_)
+  for (const auto & joint_name : command_joint_names_)
   {
     for (const auto & interface_type : params_.command_interfaces)
     {
@@ -504,7 +504,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     RCLCPP_WARN(logger, "'joints' parameter is empty.");
   }
 
-  std::vector<std::string> command_joint_names_ = params_.command_joint_names;
+  command_joint_names_ = params_.command_joints;
 
   if (command_joint_names_.empty())
   {
@@ -519,11 +519,11 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     return CallbackReturn::FAILURE;
   }
 
-#  // Specialized, child controllers set interfaces before calling configure function.
-#  if (command_interface_types_.empty())
-#  {
-#    command_interface_types_ = get_node()->get_parameter("command_interfaces").as_string_array();
-#  }
+  //  // Specialized, child controllers set interfaces before calling configure function.
+  //  if (command_interface_types_.empty())
+  //  {
+  //   command_interface_types_ = get_node()->get_parameter("command_interfaces").as_string_array();
+  //  }
 
   if (params_.command_interfaces.empty())
   {
@@ -565,6 +565,16 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
       const auto & gains = params_.gains.joints_map.at(params_.joints[i]);
       pids_[i] = std::make_shared<control_toolbox::Pid>(
         gains.p, gains.i, gains.d, gains.i_clamp, -gains.i_clamp);
+
+      // TODO(destogl): remove this in ROS2 Iron
+      // Check deprecated style for "ff_velocity_scale" parameter definition.
+      if (gains.ff_velocity_scale == 0.0)
+      {
+        RCLCPP_WARN(
+          get_node()->get_logger(),
+          "'ff_velocity_scale' parameters is not defined under 'gains.<joint_name>.' structure. "
+          "Maybe you are using deprecated format 'ff_velocity_scale/<joint_name>'!");
+      }
     }
   }
 
