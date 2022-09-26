@@ -15,8 +15,9 @@
 #ifndef JOINT_TRAJECTORY_CONTROLLER__VALIDATE_JTC_PARAMETERS_HPP_
 #define JOINT_TRAJECTORY_CONTROLLER__VALIDATE_JTC_PARAMETERS_HPP_
 
-#include <parameter_traits/parameter_traits.hpp>
 #include <string>
+
+#include "parameter_traits/parameter_traits.hpp"
 
 namespace parameter_traits
 {
