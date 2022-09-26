@@ -11,7 +11,3 @@ repositories:
     type: git
     url: https://github.com/ros-controls/realtime_tools.git
     version: master
-  generate_parameter_library:
-    type: git
-    url: https://github.com/picknikrobotics/generate_parameter_library.git
-    version: 0d8f54aeae41ee49e1b559ee67021019a547d01c
