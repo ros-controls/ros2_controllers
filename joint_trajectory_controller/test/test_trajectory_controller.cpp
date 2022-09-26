@@ -63,10 +63,9 @@ void spin(rclcpp::executors::MultiThreadedExecutor * exe) { exe->spin(); }
 
 TEST_P(TrajectoryControllerTestParameterized, configure_state_ignores_commands)
 {
-  SetUpTrajectoryController();
-
   rclcpp::executors::MultiThreadedExecutor executor;
-  executor.add_node(traj_controller_->get_node()->get_node_base_interface());
+  SetUpTrajectoryController(executor);
+
   // const auto future_handle_ = std::async(std::launch::async, spin, &executor);
 
   const auto state = traj_controller_->get_node()->configure();
@@ -97,7 +96,8 @@ TEST_P(TrajectoryControllerTestParameterized, configure_state_ignores_commands)
 
 TEST_P(TrajectoryControllerTestParameterized, check_interface_names)
 {
-  SetUpTrajectoryController();
+  rclcpp::executors::MultiThreadedExecutor executor;
+  SetUpTrajectoryController(executor);
 
   const auto state = traj_controller_->get_node()->configure();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
@@ -135,7 +135,8 @@ TEST_P(TrajectoryControllerTestParameterized, check_interface_names)
 
 TEST_P(TrajectoryControllerTestParameterized, check_interface_names_with_command_joints)
 {
-  SetUpTrajectoryController();
+  rclcpp::executors::MultiThreadedExecutor executor;
+  SetUpTrajectoryController(executor);
 
   // set command_joints parameter
   const rclcpp::Parameter command_joint_names_param("command_joints", command_joint_names_);
@@ -178,10 +179,8 @@ TEST_P(TrajectoryControllerTestParameterized, check_interface_names_with_command
 
 TEST_P(TrajectoryControllerTestParameterized, activate)
 {
-  SetUpTrajectoryController();
-
   rclcpp::executors::MultiThreadedExecutor executor;
-  executor.add_node(traj_controller_->get_node()->get_node_base_interface());
+  SetUpTrajectoryController(executor);
 
   traj_controller_->get_node()->configure();
   ASSERT_EQ(traj_controller_->get_state().id(), State::PRIMARY_STATE_INACTIVE);
@@ -315,11 +314,8 @@ TEST_P(TrajectoryControllerTestParameterized, activate)
 
 TEST_P(TrajectoryControllerTestParameterized, cleanup)
 {
-  SetUpAndActivateTrajectoryController();
-
-  auto traj_node = traj_controller_->get_node();
   rclcpp::executors::MultiThreadedExecutor executor;
-  executor.add_node(traj_node->get_node_base_interface());
+  SetUpAndActivateTrajectoryController(executor);
 
   // send msg
   constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
@@ -355,7 +351,8 @@ TEST_P(TrajectoryControllerTestParameterized, cleanup)
 
 TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_parameters)
 {
-  SetUpTrajectoryController(false);
+  rclcpp::executors::MultiThreadedExecutor executor;
+  SetUpTrajectoryController(executor, false);
 
   // This call is replacing the way parameters are set via launch
   SetParameters();
@@ -364,8 +361,6 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
 
   ActivateTrajectoryController();
-  rclcpp::executors::MultiThreadedExecutor executor;
-  executor.add_node(traj_controller_->get_node()->get_node_base_interface());
 
   state = traj_controller_->get_state();
   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
@@ -439,7 +434,7 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
 TEST_P(TrajectoryControllerTestParameterized, state_topic_consistency)
 {
   rclcpp::executors::SingleThreadedExecutor executor;
-  SetUpAndActivateTrajectoryController(true, {}, &executor);
+  SetUpAndActivateTrajectoryController(executor, true, {});
   subscribeToState();
   updateController();
 
@@ -493,7 +488,7 @@ void TrajectoryControllerTest::test_state_publish_rate_target(int target_msg_cou
   rclcpp::Parameter state_publish_rate_param(
     "state_publish_rate", static_cast<double>(target_msg_count));
   rclcpp::executors::SingleThreadedExecutor executor;
-  SetUpAndActivateTrajectoryController(true, {state_publish_rate_param}, &executor);
+  SetUpAndActivateTrajectoryController(executor, true, {state_publish_rate_param});
 
   auto future_handle = std::async(std::launch::async, [&executor]() -> void { executor.spin(); });
 

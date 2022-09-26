@@ -143,9 +143,10 @@ public:
       controller_name_ + "/joint_trajectory", rclcpp::SystemDefaultsQoS());
   }
 
-  void SetUpTrajectoryController(bool use_local_parameters = true)
+  void SetUpTrajectoryController(rclcpp::Executor & executor, bool use_local_parameters = true)
   {
     traj_controller_ = std::make_shared<TestableJointTrajectoryController>();
+
     if (use_local_parameters)
     {
       traj_controller_->set_joint_names(joint_names_);
@@ -157,6 +158,7 @@ public:
     {
       FAIL();
     }
+    executor.add_node(traj_controller_->get_node()->get_node_base_interface());
     SetParameters();
   }
 
@@ -187,15 +189,11 @@ public:
   }
 
   void SetUpAndActivateTrajectoryController(
-    bool use_local_parameters = true, const std::vector<rclcpp::Parameter> & parameters = {},
-    rclcpp::Executor * executor = nullptr, bool separate_cmd_and_state_values = false)
+    rclcpp::Executor & executor, bool use_local_parameters = true,
+    const std::vector<rclcpp::Parameter> & parameters = {},
+    bool separate_cmd_and_state_values = false)
   {
-    SetUpTrajectoryController(use_local_parameters);
-
-    if (executor)
-    {
-      executor->add_node(traj_controller_->get_node()->get_node_base_interface());
-    }
+    SetUpTrajectoryController(executor, use_local_parameters);
 
     // set pid parameters before configure
     SetPidParameters();
