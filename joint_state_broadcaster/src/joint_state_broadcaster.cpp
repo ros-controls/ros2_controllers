@@ -120,23 +120,24 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_configure(
   }
 
   auto get_map_interface_parameter =
-    [&](std::string const & interface, std::string const & interface_to_map) {
-      if (
-        std::find(params_.interfaces.begin(), params_.interfaces.end(), interface) !=
-        params_.interfaces.end())
-      {
-        map_interface_to_joint_state_[interface] = interface;
-        RCLCPP_WARN(
-          get_node()->get_logger(),
-          "Mapping from '%s' to interface '%s' will not be done, because '%s' is defined "
-          "in 'interface' parameter.",
-          interface_to_map.c_str(), interface.c_str(), interface.c_str());
-      }
-      else
-      {
-        map_interface_to_joint_state_[interface_to_map] = interface;
-      }
-    };
+    [&](std::string const & interface, std::string const & interface_to_map)
+  {
+    if (
+      std::find(params_.interfaces.begin(), params_.interfaces.end(), interface) !=
+      params_.interfaces.end())
+    {
+      map_interface_to_joint_state_[interface] = interface;
+      RCLCPP_WARN(
+        get_node()->get_logger(),
+        "Mapping from '%s' to interface '%s' will not be done, because '%s' is defined "
+        "in 'interface' parameter.",
+        interface_to_map.c_str(), interface.c_str(), interface.c_str());
+    }
+    else
+    {
+      map_interface_to_joint_state_[interface_to_map] = interface;
+    }
+  };
 
   map_interface_to_joint_state_ = {};
   get_map_interface_parameter(HW_IF_POSITION, params_.map_interface_to_joint_state.position);
