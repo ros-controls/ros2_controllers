@@ -5,6 +5,10 @@ repositories:
 #     url: git@github.com:<some_github_namespace>/<some_ros_package>.git
 #     version: master
 
+  cpp_polyfills:
+    type: git
+    url: https://github.com/picknikrobotics/cpp_polyfills.git
+    version: main
   generate_parameter_library:
     type: git
     url: https://github.com/picknikrobotics/generate_parameter_library.git
