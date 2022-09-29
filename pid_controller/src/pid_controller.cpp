@@ -136,12 +136,18 @@ controller_interface::CallbackReturn PidController::configure_parameters()
       std::make_shared<control_toolbox::PidROS>(get_node(), "gains." + params_.dof_names[i]);
     pids_[i]->initPid();
   }
+
+  return CallbackReturn::SUCCESS;
 }
 
 controller_interface::CallbackReturn PidController::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  configure_parameters();
+  auto ret = configure_parameters();
+  if (ret != CallbackReturn::SUCCESS)
+  {
+    return ret;
+  }
 
   // topics QoS
   auto subscribers_qos = rclcpp::SystemDefaultsQoS();

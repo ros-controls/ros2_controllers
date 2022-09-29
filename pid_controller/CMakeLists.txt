@@ -16,6 +16,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   control_msgs
   controller_interface
   hardware_interface
+  parameter_traits
   pluginlib
   rclcpp
   rclcpp_lifecycle
@@ -117,7 +118,7 @@ ament_export_include_directories(
   include
 )
 ament_export_dependencies(
-
+  ${THIS_PACKAGE_INCLUDE_DEPENDS}
 )
 ament_export_libraries(
   pid_controller
