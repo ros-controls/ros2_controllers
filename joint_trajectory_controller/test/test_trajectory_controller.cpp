@@ -199,47 +199,27 @@ TEST_P(TrajectoryControllerTestParameterized, activate)
   executor.cancel();
 }
 
-// TEST_F(TestTrajectoryController, activation) {
-//   auto traj_controller = std::make_shared<ros_controllers::JointTrajectoryController>(
-//     joint_names_, op_mode_);
-//   auto ret = traj_controller->init(test_robot_, controller_name_);
-//   if (ret != controller_interface::return_type::OK) {
-//     FAIL();
-//   }
-//
-//   auto traj_node = traj_controller->get_node();
-//   rclcpp::executors::MultiThreadedExecutor executor;
-//   executor.add_node(traj_node->get_node_base_interface());
-//
-//   auto state = traj_controller_->configure();
-//   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
-//
-//   state = traj_node->activate();
-//   ASSERT_EQ(state.id(), State::PRIMARY_STATE_ACTIVE);
-//
-//   // wait for the subscriber and publisher to completely setup
-//   std::this_thread::sleep_for(std::chrono::seconds(2));
-//
-//   // send msg
-//   builtin_interfaces::msg::Duration time_from_start;
-//   time_from_start.sec = 1;
-//   time_from_start.nanosec = 0;
-//   std::vector<std::vector<double>> points {{{3.3, 4.4, 5.5}}};
-//   publish(time_from_start, points, rclcpp::Time());
-//   // wait for msg is be published to the system
-//   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-//   executor.spin_once();
-//
-//   traj_controller->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
-//   resource_manager_->write();
-//
-//   // change in hw position
-//   EXPECT_EQ(3.3, joint_pos_[0]);
-//   EXPECT_EQ(4.4, joint_pos_[1]);
-//   EXPECT_EQ(5.5, joint_pos_[2]);
-//
-//   executor.cancel();
-// }
+TEST_F(TrajectoryControllerTest, receive_command)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+  SetUpAndActivateTrajectoryController(executor);
+
+  // send msg
+  auto duration = rclcpp::Duration::from_nanoseconds(1);
+  builtin_interfaces::msg::Duration time_from_start{duration};
+  std::vector<std::vector<double>> points{{{3.3, 4.4, 5.5}}};
+  publish(time_from_start, points, rclcpp::Time());
+  EXPECT_TRUE(traj_controller_->wait_for_trajectory(executor));
+
+  updateController(duration);
+
+  // change in hw position
+  EXPECT_EQ(points[0][0], joint_pos_[0]);
+  EXPECT_EQ(points[0][1], joint_pos_[1]);
+  EXPECT_EQ(points[0][2], joint_pos_[2]);
+
+  executor.cancel();
+}
 
 // TEST_F(TestTrajectoryController, reactivation) {
 //   auto traj_controller = std::make_shared<ros_controllers::JointTrajectoryController>(
