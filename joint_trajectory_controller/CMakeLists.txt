@@ -29,11 +29,19 @@ foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
 
+find_package(generate_parameter_library REQUIRED)
+
+generate_parameter_library(joint_trajectory_controller_parameters
+  src/joint_trajectory_controller_parameters.yaml
+  include/joint_trajectory_controller/validate_jtc_parameters.hpp
+)
+
 add_library(${PROJECT_NAME} SHARED
   src/joint_trajectory_controller.cpp
   src/trajectory.cpp
 )
 target_include_directories(${PROJECT_NAME} PRIVATE include)
+target_link_libraries(${PROJECT_NAME} joint_trajectory_controller_parameters)
 ament_target_dependencies(${PROJECT_NAME} ${THIS_PACKAGE_INCLUDE_DEPENDS})
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.

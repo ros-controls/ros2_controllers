@@ -36,6 +36,7 @@
 #include <vector>
 
 #include "control_msgs/action/follow_joint_trajectory.hpp"
+#include "joint_trajectory_controller_parameters.hpp"
 
 #include "rclcpp/node.hpp"
 
@@ -87,44 +88,33 @@ struct SegmentTolerances
  *    goal: 0.01
  * \endcode
  *
- * \param node LifecycleNode where the tolerances are specified.
- * \param joint_names Names of joints to look for in the parameter server for a tolerance specification.
+ * \param params The ROS Parameters
  * \return Trajectory segment tolerances.
  */
-SegmentTolerances get_segment_tolerances(
-  const rclcpp_lifecycle::LifecycleNode & node, const std::vector<std::string> & joint_names)
+SegmentTolerances get_segment_tolerances(Params const & params)
 {
-  const auto n_joints = joint_names.size();
+  auto const & constraints = params.constraints;
+  auto const n_joints = params.joints.size();
+
   SegmentTolerances tolerances;
+  tolerances.goal_time_tolerance = constraints.goal_time;
 
   // State and goal state tolerances
-  double stopped_velocity_tolerance = 0.01;
-  node.get_parameter_or<double>(
-    "constraints.stopped_velocity_tolerance", stopped_velocity_tolerance,
-    stopped_velocity_tolerance);
-
   tolerances.state_tolerance.resize(n_joints);
   tolerances.goal_state_tolerance.resize(n_joints);
   for (size_t i = 0; i < n_joints; ++i)
   {
-    const std::string prefix = "constraints." + joint_names[i];
-
-    node.get_parameter_or<double>(
-      prefix + ".trajectory", tolerances.state_tolerance[i].position, 0.0);
-    node.get_parameter_or<double>(
-      prefix + ".goal", tolerances.goal_state_tolerance[i].position, 0.0);
+    auto const joint = params.joints[i];
+    tolerances.state_tolerance[i].position = constraints.joints_map.at(joint).trajectory;
+    tolerances.goal_state_tolerance[i].position = constraints.joints_map.at(joint).goal;
+    tolerances.goal_state_tolerance[i].velocity = constraints.stopped_velocity_tolerance;
 
     auto logger = rclcpp::get_logger("tolerance");
     RCLCPP_DEBUG(
-      logger, "%s %f", (prefix + ".trajectory").c_str(), tolerances.state_tolerance[i].position);
+      logger, "%s %f", (joint + ".trajectory").c_str(), tolerances.state_tolerance[i].position);
     RCLCPP_DEBUG(
-      logger, "%s %f", (prefix + ".goal").c_str(), tolerances.goal_state_tolerance[i].position);
-
-    tolerances.goal_state_tolerance[i].velocity = stopped_velocity_tolerance;
+      logger, "%s %f", (joint + ".goal").c_str(), tolerances.goal_state_tolerance[i].position);
   }
-
-  // Goal time tolerance
-  node.get_parameter_or<double>("constraints.goal_time", tolerances.goal_time_tolerance, 0.0);
 
   return tolerances;
 }
