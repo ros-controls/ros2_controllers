@@ -24,3 +24,4 @@ jobs:
       ros_repo: main
       upstream_workspace: ros2_controllers-not-released.rolling.repos
       ref_for_scheduled_build: master
+      unique_build_type_name: ${{ github.job }}
