@@ -13,13 +13,13 @@ on:
     # Run every day to detect flakiness and broken dependencies
     - cron: '03 1 * * *'
 
+env:
+  ROS_DISTRO: humble
 
 jobs:
   humble_rhel_binary:
     name: Humble RHEL binary build
     runs-on: ubuntu-latest
-    env:
-      ROS_DISTRO: humble
     container: ghcr.io/ros-controls/ros:${{ env.ROS_DISTRO }}-rhel
     steps:
       - uses: actions/checkout@v3
