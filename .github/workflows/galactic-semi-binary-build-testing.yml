@@ -23,4 +23,3 @@ jobs:
       ros_repo: testing
       upstream_workspace: ros2_controllers.galactic.repos
       ref_for_scheduled_build: galactic
-      unique_build_type_name: ${{ github.job }}
