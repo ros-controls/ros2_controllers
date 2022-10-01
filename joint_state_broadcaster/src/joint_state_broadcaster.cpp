@@ -53,6 +53,7 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_init()
     auto_declare<bool>("use_local_topics", false);
     auto_declare<std::vector<std::string>>("joints", std::vector<std::string>({}));
     auto_declare<std::vector<std::string>>("interfaces", std::vector<std::string>({}));
+    auto_declare<std::vector<std::string>>("extra_joints", std::vector<std::string>({}));
     auto_declare<std::string>(
       std::string("map_interface_to_joint_state.") + HW_IF_POSITION, HW_IF_POSITION);
     auto_declare<std::string>(
