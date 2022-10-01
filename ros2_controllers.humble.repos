@@ -11,12 +11,3 @@ repositories:
     type: git
     url: https://github.com/ros-controls/realtime_tools.git
     version: master
-    
-  cpp_polyfills:
-    type: git
-    url: https://github.com/picknikrobotics/cpp_polyfills.git
-    version: main
-  generate_parameter_library:
-    type: git
-    url: https://github.com/picknikrobotics/generate_parameter_library.git
-    version: main
