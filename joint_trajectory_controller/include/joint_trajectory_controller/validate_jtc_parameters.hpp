@@ -21,7 +21,7 @@
 
 namespace parameter_traits
 {
-Result command_interface_type_combinations(rclcpp::Parameter const & parameter)
+ValidateResult command_interface_type_combinations(rclcpp::Parameter const & parameter)
 {
   auto const & interface_types = parameter.as_string_array();
 
@@ -34,7 +34,7 @@ Result command_interface_type_combinations(rclcpp::Parameter const & parameter)
     contains<std::string>(interface_types, "velocity") && interface_types.size() > 1 &&
     !contains<std::string>(interface_types, "position"))
   {
-    return ERROR(
+    return make_error(
       "'velocity' command interface can be used either alone or 'position' "
       "interface has to be present");
   }
@@ -44,20 +44,20 @@ Result command_interface_type_combinations(rclcpp::Parameter const & parameter)
     (!contains<std::string>(interface_types, "velocity") &&
      !contains<std::string>(interface_types, "position")))
   {
-    return ERROR(
+    return make_error(
       "'acceleration' command interface can only be used if 'velocity' and "
       "'position' interfaces are present");
   }
 
   if (contains<std::string>(interface_types, "effort") && interface_types.size() > 1)
   {
-    return ERROR("'effort' command interface has to be used alone");
+    return make_error("'effort' command interface has to be used alone");
   }
 
-  return OK;
+  return ok();
 }
 
-Result state_interface_type_combinations(rclcpp::Parameter const & parameter)
+ValidateResult state_interface_type_combinations(rclcpp::Parameter const & parameter)
 {
   auto const & interface_types = parameter.as_string_array();
 
@@ -68,7 +68,7 @@ Result state_interface_type_combinations(rclcpp::Parameter const & parameter)
     contains<std::string>(interface_types, "velocity") &&
     !contains<std::string>(interface_types, "position"))
   {
-    return ERROR(
+    return make_error(
       "'velocity' state interface cannot be used if 'position' interface "
       "is missing.");
   }
@@ -78,12 +78,12 @@ Result state_interface_type_combinations(rclcpp::Parameter const & parameter)
     (!contains<std::string>(interface_types, "position") ||
      !contains<std::string>(interface_types, "velocity")))
   {
-    return ERROR(
+    return make_error(
       "'acceleration' state interface cannot be used if 'position' and 'velocity' "
       "interfaces are not present.");
   }
 
-  return OK;
+  return ok();
 }
 
 }  // namespace parameter_traits
