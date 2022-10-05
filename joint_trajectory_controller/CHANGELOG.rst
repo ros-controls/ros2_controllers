@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.13.0 (2022-10-05)
+-------------------
 * Generate Parameter Library for Joint Trajectory Controller (`#384 <https://github.com/ros-controls/ros2_controllers/issues/384>`_)
 * Fix rates in JTC userdoc.rst (`#433 <https://github.com/ros-controls/ros2_controllers/issues/433>`_)
 * Fix for high CPU usage by JTC in gzserver (`#428 <https://github.com/ros-controls/ros2_controllers/issues/428>`_)
