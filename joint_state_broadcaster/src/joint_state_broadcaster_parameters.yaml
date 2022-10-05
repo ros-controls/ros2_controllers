@@ -7,6 +7,10 @@ joint_state_broadcaster:
     type: string_array,
     default_value: [],
   }
+  extra_joints: {
+    type: string_array,
+    default_value: [],
+  }
   interfaces: {
     type: string_array,
     default_value: [],
