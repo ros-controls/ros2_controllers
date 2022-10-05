@@ -52,7 +52,11 @@ ament_target_dependencies(
   tf2
   tf2_msgs
 )
-
+# Causes the visibility macros to use dllexport rather than dllimport,
+# which is appropriate when building the dll but not consuming it.
+target_compile_definitions(${PROJECT_NAME} PRIVATE "TRICYCLE_CONTROLLER_BUILDING_DLL")
+# prevent pluginlib from using boost
+target_compile_definitions(${PROJECT_NAME} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 pluginlib_export_plugin_description_file(controller_interface tricycle_controller.xml)
 
 install(TARGETS ${PROJECT_NAME}
@@ -99,6 +103,7 @@ if(BUILD_TESTING)
     controller_manager
     ros2_control_test_assets
   )
+  target_compile_definitions(test_load_tricycle_controller PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 endif()
 
 ament_export_include_directories(
