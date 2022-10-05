@@ -2,6 +2,9 @@
 Changelog for package tricycle_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 2.12.0 (2022-09-01)
 -------------------
 * Fix formatting CI job (`#418 <https://github.com/ros-controls/ros2_controllers/issues/418>`_)
