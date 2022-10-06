@@ -2,6 +2,13 @@
 Changelog for package imu_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.13.0 (2022-10-05)
+-------------------
+* Fix undeclared and wrong parameters in controllers. (`#438 <https://github.com/ros-controls/ros2_controllers/issues/438>`_)
+  * Add missing parameter declaration in the joint state broadcaster.
+  * Fix unsensible test in IMU Sensor Broadcaster.
+* Contributors: Denis Štogl
+
 2.12.0 (2022-09-01)
 -------------------
 

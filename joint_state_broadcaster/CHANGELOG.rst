@@ -2,6 +2,15 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.13.0 (2022-10-05)
+-------------------
+* Generate parameters for Joint State Broadcaster (`#401 <https://github.com/ros-controls/ros2_controllers/issues/401>`_)
+* Fix undeclared and wrong parameters in controllers. (`#438 <https://github.com/ros-controls/ros2_controllers/issues/438>`_)
+  * Add missing parameter declaration in the joint state broadcaster.
+  * Fix unsensible test in IMU Sensor Broadcaster.
+* [JointStateBroadcaster] Reset internal variables to avoid duplication of joints (`#431 <https://github.com/ros-controls/ros2_controllers/issues/431>`_)
+* Contributors: Denis Štogl, Gilmar Correia, Tyler Weaver, Bence Magyar
+
 2.12.0 (2022-09-01)
 -------------------
 * Fix formatting CI job (`#418 <https://github.com/ros-controls/ros2_controllers/issues/418>`_)

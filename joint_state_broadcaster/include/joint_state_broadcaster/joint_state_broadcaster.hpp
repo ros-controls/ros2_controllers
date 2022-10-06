@@ -23,6 +23,7 @@
 #include "control_msgs/msg/dynamic_joint_state.hpp"
 #include "controller_interface/controller_interface.hpp"
 #include "joint_state_broadcaster/visibility_control.h"
+#include "joint_state_broadcaster_parameters.hpp"
 #include "rclcpp_lifecycle/lifecycle_publisher.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "realtime_tools/realtime_publisher.h"
@@ -93,9 +94,8 @@ protected:
 
 protected:
   // Optional parameters
-  bool use_local_topics_;
-  std::vector<std::string> joints_;
-  std::vector<std::string> interfaces_;
+  std::shared_ptr<ParamListener> param_listener_;
+  Params params_;
   std::unordered_map<std::string, std::string> map_interface_to_joint_state_;
 
   //  For the JointState message,
