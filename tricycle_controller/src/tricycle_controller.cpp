@@ -160,7 +160,7 @@ controller_interface::return_type TricycleController::update()
   double & angular_command = command.twist.angular.z;
   double Ws_read = traction_joint_[0].velocity_state.get().get_value();     // in radians/s
   double alpha_read = steering_joint_[0].position_state.get().get_value();  // in radians
-  
+
   if (odom_params_.open_loop)
   {
     odometry_.updateOpenLoop(linear_command, angular_command, current_time);
@@ -169,7 +169,7 @@ controller_interface::return_type TricycleController::update()
   {
     if (std::isnan(Ws_read) || std::isnan(alpha_read))
     {
-      RCLCPP_ERROR(get_node()->get_logger(), "Could not read feeback value");
+      RCLCPP_ERROR(get_node()->get_logger(), "Could not read feedback value");
       return controller_interface::return_type::ERROR;
     }
     odometry_.update(Ws_read, alpha_read, current_time);
@@ -218,7 +218,7 @@ controller_interface::return_type TricycleController::update()
   double alpha_write, Ws_write;
   std::tie(alpha_write, Ws_write) = twist_to_ackermann(linear_command, angular_command);
 
-  // Reduce wheel speed until the target angle has been reached 
+  // Reduce wheel speed until the target angle has been reached
   double alpha_delta = abs(alpha_write - alpha_read);
   double scale;
   if (alpha_delta < M_PI / 6)
@@ -311,7 +311,8 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
   odom_params_.enable_odom_tf = get_node()->get_parameter("enable_odom_tf").as_bool();
   odom_params_.odom_only_twist = get_node()->get_parameter("odom_only_twist").as_bool();
 
-  cmd_vel_timeout_ = std::chrono::milliseconds{get_node()->get_parameter("cmd_vel_timeout").as_int()};
+  cmd_vel_timeout_ =
+    std::chrono::milliseconds{get_node()->get_parameter("cmd_vel_timeout").as_int()};
   publish_ackermann_command_ = get_node()->get_parameter("publish_ackermann_command").as_bool();
   use_stamped_vel_ = get_node()->get_parameter("use_stamped_vel").as_bool();
 
@@ -380,8 +381,7 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
   {
     velocity_command_subscriber_ = get_node()->create_subscription<TwistStamped>(
       DEFAULT_COMMAND_TOPIC, rclcpp::SystemDefaultsQoS(),
-      [this](const std::shared_ptr<TwistStamped> msg) -> void
-      {
+      [this](const std::shared_ptr<TwistStamped> msg) -> void {
         if (!subscriber_is_active_)
         {
           RCLCPP_WARN(
@@ -403,8 +403,7 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
   {
     velocity_command_unstamped_subscriber_ = get_node()->create_subscription<Twist>(
       DEFAULT_COMMAND_TOPIC, rclcpp::SystemDefaultsQoS(),
-      [this](const std::shared_ptr<Twist> msg) -> void
-      {
+      [this](const std::shared_ptr<Twist> msg) -> void {
         if (!subscriber_is_active_)
         {
           RCLCPP_WARN(
@@ -572,8 +571,7 @@ CallbackReturn TricycleController::get_traction(
   // Lookup the velocity state interface
   const auto state_handle = std::find_if(
     state_interfaces_.cbegin(), state_interfaces_.cend(),
-    [&traction_joint_name](const auto & interface)
-    {
+    [&traction_joint_name](const auto & interface) {
       return interface.get_name() == traction_joint_name &&
              interface.get_interface_name() == HW_IF_VELOCITY;
     });
@@ -588,8 +586,7 @@ CallbackReturn TricycleController::get_traction(
   // Lookup the velocity command interface
   const auto command_handle = std::find_if(
     command_interfaces_.begin(), command_interfaces_.end(),
-    [&traction_joint_name](const auto & interface)
-    {
+    [&traction_joint_name](const auto & interface) {
       return interface.get_name() == traction_joint_name &&
              interface.get_interface_name() == HW_IF_VELOCITY;
     });
@@ -614,8 +611,7 @@ CallbackReturn TricycleController::get_steering(
   // Lookup the velocity state interface
   const auto state_handle = std::find_if(
     state_interfaces_.cbegin(), state_interfaces_.cend(),
-    [&steering_joint_name](const auto & interface)
-    {
+    [&steering_joint_name](const auto & interface) {
       return interface.get_name() == steering_joint_name &&
              interface.get_interface_name() == HW_IF_POSITION;
     });
@@ -630,8 +626,7 @@ CallbackReturn TricycleController::get_steering(
   // Lookup the velocity command interface
   const auto command_handle = std::find_if(
     command_interfaces_.begin(), command_interfaces_.end(),
-    [&steering_joint_name](const auto & interface)
-    {
+    [&steering_joint_name](const auto & interface) {
       return interface.get_name() == steering_joint_name &&
              interface.get_interface_name() == HW_IF_POSITION;
     });
