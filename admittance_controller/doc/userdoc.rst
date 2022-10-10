@@ -6,7 +6,7 @@ Admittance Controller
 Admittance controller enables you do zero-force control from a force measured on your TCP.
 The controller implements ``ChainedControllerInterface``, so it is possible to add another controllers in front of it, e.g., ``JointTrajectoryController``.
 
-The controller requires an external kinematics plugin to function. The [kinematics_interface](https://github.com/ros-controls/kinematics_interface) repository provides an interface and an implementation that the admittance controller can use.
+The controller requires an external kinematics plugin to function. The `kinematics_interface <https://github.com/ros-controls/kinematics_interface>`_ repository provides an interface and an implementation that the admittance controller can use.
 
 Parameters:
 
@@ -18,8 +18,9 @@ ROS2 interface of the controller
 Parameters
 ^^^^^^^^^^^
 
-The admittance controller's uses the [generate_parameter_library](https://github.com/PickNikRobotics/generate_parameter_library) to handle its parameters.
-The parameter definition file, located [here](../admittance_controller/src/admittance_controller_parameters.yaml) contains descriptions for all the parameters used by the controller.
+The admittance controller's uses the `generate_parameter_library <https://github.com/PickNikRobotics/generate_parameter_library>`_ to handle its parameters.
+The parameter `definition file located in the src folder <https://github.com/ros-controls/ros2_controllers/blob/master/admittance_controller/src/admittance_controller_parameters.yaml>`_ contains descriptions for all the parameters used by the controller.
+An example parameter file can be found in the `test folder of the controller <https://github.com/ros-controls/ros2_controllers/blob/master/admittance_controller/test/test_params.yaml>`_
 
 
 Topics
