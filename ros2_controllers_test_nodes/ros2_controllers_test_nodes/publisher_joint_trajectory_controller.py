@@ -18,6 +18,7 @@
 import rclpy
 from rclpy.node import Node
 from builtin_interfaces.msg import Duration
+from rcl_interfaces.msg import ParameterDescriptor
 
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from sensor_msgs.msg import JointState
@@ -66,7 +67,7 @@ class PublisherJointTrajectory(Node):
         # Read all positions from parameters
         self.goals = []  # List of JointTrajectoryPoint
         for name in goal_names:
-            self.declare_parameter(name)
+            self.declare_parameter(name, descriptor=ParameterDescriptor(dynamic_typing=True))
             goal = self.get_parameter(name).value
 
             # TODO(anyone): remove this "if" part in ROS Iron
