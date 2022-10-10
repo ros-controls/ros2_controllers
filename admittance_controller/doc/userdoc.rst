@@ -25,7 +25,7 @@ The parameter definition file, located [here](../admittance_controller/src/admit
 Topics
 ^^^^^^^
 
-~/reference (input topic) [trajectory_msgs::msg::JointTrajectoryPoint]
+~/joint_references (input topic) [trajectory_msgs::msg::JointTrajectoryPoint]
   Target joint commands when controller is not in chained mode.
 
 ~/state (output topic) [control_msgs::msg::AdmittanceControllerState]

@@ -18,8 +18,12 @@
 #define TEST_ADMITTANCE_CONTROLLER_HPP_
 
 #include <chrono>
+#include <map>
 #include <memory>
 #include <string>
+#include <tuple>
+#include <utility>
+#include <vector>
 
 #include "gmock/gmock.h"
 
@@ -139,11 +143,11 @@ public:
     command_publisher_node_ = std::make_shared<rclcpp::Node>("command_publisher");
     force_command_publisher_ =
       command_publisher_node_->create_publisher<ControllerCommandWrenchMsg>(
-        "/test_admittance_controller/force_commands", rclcpp::SystemDefaultsQoS());
-    //    pose_command_publisher_ = command_publisher_node_->create_publisher<ControllerCommandPoseMsg>(
-    //      "/test_admittance_controller/pose_commands", rclcpp::SystemDefaultsQoS());
+        "/test_admittance_controller/force_references", rclcpp::SystemDefaultsQoS());
+    // pose_command_publisher_ =command_publisher_node_->create_publisher<ControllerCommandPoseMsg>(
+    //    "/test_admittance_controller/pose_commands", rclcpp::SystemDefaultsQoS());
     joint_command_publisher_ = command_publisher_node_->create_publisher<ControllerCommandJointMsg>(
-      "/test_admittance_controller/joint_commands", rclcpp::SystemDefaultsQoS());
+      "/test_admittance_controller/joint_references", rclcpp::SystemDefaultsQoS());
 
     test_subscription_node_ = std::make_shared<rclcpp::Node>("test_subscription_node");
     test_broadcaster_node_ = std::make_shared<rclcpp::Node>("test_broadcaster_node");
@@ -275,7 +279,7 @@ protected:
     // create a new subscriber
     auto subs_callback = [&](const ControllerStateMsg::SharedPtr) {};
     auto subscription = test_subscription_node_->create_subscription<ControllerStateMsg>(
-      "/test_admittance_controller/state", 10, subs_callback);
+      "/test_admittance_controller/status", 10, subs_callback);
 
     // call update to publish the test value
     ASSERT_EQ(
@@ -450,7 +454,7 @@ public:
   static void TearDownTestCase() { AdmittanceControllerTest::TearDownTestCase(); }
 
 protected:
-  void SetUpController(bool val = false)
+  void SetUpController()
   {
     AdmittanceControllerTest::SetUpController("test_admittance_controller");
   }

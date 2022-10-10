@@ -217,8 +217,8 @@ controller_interface::return_type AdmittanceRule::update(
 
 bool AdmittanceRule::calculate_admittance_rule(AdmittanceState & admittance_state, double dt)
 {
-  // Create stiffness matrix in base frame. The user-provided values of admittance_state.stiffness correspond to the
-  // six diagonal elements of the stiffness matrix expressed in the control frame
+  // Create stiffness matrix in base frame. The user-provided values of admittance_state.stiffness
+  // correspond to the six diagonal elements of the stiffness matrix expressed in the control frame
   auto rot_base_control = admittance_state.rot_base_control;
   Eigen::Matrix<double, 6, 6> K = Eigen::Matrix<double, 6, 6>::Zero();
   Eigen::Matrix<double, 3, 3> K_pos = Eigen::Matrix<double, 3, 3>::Zero();
@@ -280,7 +280,7 @@ bool AdmittanceRule::calculate_admittance_rule(AdmittanceState & admittance_stat
     admittance_state.joint_acc);
 
   // add damping if cartesian velocity falls below threshold
-  for (size_t i = 0; i < admittance_state.joint_acc.size(); i++)
+  for (int64_t i = 0; i < admittance_state.joint_acc.size(); ++i)
   {
     admittance_state.joint_acc[i] -=
       parameters_.admittance.joint_damping * admittance_state.joint_vel[i];
