@@ -38,15 +38,15 @@ foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
 
-add_library(${PROJECT_NAME} SHARED src/admittance_controller.cpp)
-target_include_directories(${PROJECT_NAME} PRIVATE include)
-generate_parameter_library(${PROJECT_NAME}_parameters src/admittance_controller_parameters.yaml)
-target_link_libraries(${PROJECT_NAME} admittance_controller_parameters)
-ament_target_dependencies(${PROJECT_NAME} ${THIS_PACKAGE_INCLUDE_DEPENDS})
+add_library(admittance_controller SHARED src/admittance_controller.cpp)
+target_include_directories(admittance_controller PRIVATE include)
+generate_parameter_library(admittance_controller_parameters src/admittance_controller_parameters.yaml)
+target_link_libraries(admittance_controller admittance_controller_parameters)
+ament_target_dependencies(admittance_controller ${THIS_PACKAGE_INCLUDE_DEPENDS})
 
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
-target_compile_definitions(${PROJECT_NAME} PRIVATE "ADMITTANCE_CONTROLLER_BUILDING_DLL")
+target_compile_definitions(admittance_controller PRIVATE "ADMITTANCE_CONTROLLER_BUILDING_DLL")
 
 pluginlib_export_plugin_description_file(controller_interface admittance_controller.xml)
 
@@ -54,7 +54,8 @@ install(DIRECTORY include/
   DESTINATION include
 )
 
-install(TARGETS ${PROJECT_NAME}
+install(TARGETS admittance_controller admittance_controller_parameters
+  EXPORT export_admittance_controller
   RUNTIME DESTINATION bin
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -67,23 +68,6 @@ if(BUILD_TESTING)
   find_package(controller_interface REQUIRED)
   find_package(hardware_interface REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
-
-  ## create custom test function to pass yaml file into test main
-  #function(add_test_with_yaml_input TARGET SOURCES YAML_FILE)
-    #add_executable(${TARGET} ${SOURCES})
-    #_ament_cmake_gmock_find_gmock()
-    #target_include_directories(${TARGET} PUBLIC "${GMOCK_INCLUDE_DIRS}")
-    #target_link_libraries(${TARGET} ${GMOCK_LIBRARIES})
-    #set(executable "$<TARGET_FILE:${TARGET}>")
-    #set(result_file "${AMENT_TEST_RESULTS_DIR}/${PROJECT_NAME}/${TARGET}.gtest.xml")
-    #ament_add_test(
-      #${TARGET}
-      #COMMAND ${executable} --ros-args --params-file ${YAML_FILE}
-      #--gtest_output=xml:${result_file}
-      #OUTPUT_FILE ${AMENT_TEST_RESULTS_DIR}/${PROJECT_NAME}/${TARGET}.txt
-      #RESULT_FILE ${result_file}
-    #)
-  #endfunction()
 
   # test loading admittance controller
   add_rostest_with_parameters_gmock(test_load_admittance_controller test/test_load_admittance_controller.cpp
@@ -110,13 +94,10 @@ if(BUILD_TESTING)
   )
 endif()
 
-ament_export_include_directories(
-  include
+ament_export_targets(
+  export_admittance_controller HAS_LIBRARY_TARGET
 )
 ament_export_dependencies(
   ${THIS_PACKAGE_INCLUDE_DEPENDS}
-)
-ament_export_libraries(
-  ${PROJECT_NAME}
 )
 ament_package()
