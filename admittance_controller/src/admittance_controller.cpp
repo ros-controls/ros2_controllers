@@ -280,9 +280,9 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
   { input_joint_command_.writeFromNonRT(msg); };
   input_joint_command_subscriber_ =
     get_node()->create_subscription<trajectory_msgs::msg::JointTrajectoryPoint>(
-      "~/joint_commands", rclcpp::SystemDefaultsQoS(), joint_command_callback);
+      "~/reference", rclcpp::SystemDefaultsQoS(), joint_command_callback);
   s_publisher_ = get_node()->create_publisher<control_msgs::msg::AdmittanceControllerState>(
-    "~/state", rclcpp::SystemDefaultsQoS());
+    "~/status", rclcpp::SystemDefaultsQoS());
   state_publisher_ =
     std::make_unique<realtime_tools::RealtimePublisher<ControllerStateMsg>>(s_publisher_);
 
@@ -426,7 +426,7 @@ controller_interface::return_type AdmittanceController::update_and_write_command
 }
 
 controller_interface::CallbackReturn AdmittanceController::on_deactivate(
-  const rclcpp_lifecycle::State & previous_state)
+  const rclcpp_lifecycle::State & /*previous_state*/)
 {
   if (!admittance_)
   {
