@@ -13,6 +13,7 @@ endif()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
     controller_interface
+    generate_parameter_library
     geometry_msgs
     hardware_interface
     pluginlib
@@ -26,7 +27,6 @@ foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
 
-find_package(generate_parameter_library REQUIRED)
 generate_parameter_library(force_torque_sensor_broadcaster_parameters
   src/force_torque_sensor_broadcaster_parameters.yaml
 )
@@ -54,8 +54,8 @@ pluginlib_export_plugin_description_file(
   controller_interface force_torque_sensor_broadcaster.xml)
 
 install(
-  TARGETS
-  ${PROJECT_NAME}
+  TARGETS force_torque_sensor_broadcaster force_torque_sensor_broadcaster_parameters
+  EXPORT export_force_torque_sensor_broadcaster
   RUNTIME DESTINATION bin
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -101,11 +101,8 @@ if(BUILD_TESTING)
   )
 endif()
 
-ament_export_include_directories(
-  include
-)
-ament_export_libraries(
-  ${PROJECT_NAME}
+ament_export_targets(
+  export_force_torque_sensor_broadcaster HAS_LIBRARY_TARGET
 )
 ament_export_dependencies(
   ${THIS_PACKAGE_INCLUDE_DEPENDS}
