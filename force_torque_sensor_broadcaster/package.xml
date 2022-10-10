@@ -13,6 +13,8 @@
 
   <build_depend>generate_parameter_library</build_depend>
 
+  <build_export_depend>parameter_traits/</build_export_depend>
+
   <depend>controller_interface</depend>
   <depend>geometry_msgs</depend>
   <depend>hardware_interface</depend>
