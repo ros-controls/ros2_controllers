@@ -102,7 +102,7 @@ void IMUSensorBroadcasterTest::subscribe_and_get_message(sensor_msgs::msg::Imu &
   ASSERT_TRUE(subscription->take(imu_msg, msg_info));
 }
 
-TEST_F(IMUSensorBroadcasterTest, SensorName_InterfaceNames_NotSet)
+TEST_F(IMUSensorBroadcasterTest, SensorName_FrameId_NotSet)
 {
   SetUpIMUBroadcaster();
 
@@ -110,21 +110,18 @@ TEST_F(IMUSensorBroadcasterTest, SensorName_InterfaceNames_NotSet)
   ASSERT_EQ(imu_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
 }
 
-TEST_F(IMUSensorBroadcasterTest, SensorName_FrameId_NotSet)
+TEST_F(IMUSensorBroadcasterTest, SensorName_NotSet)
 {
   SetUpIMUBroadcaster();
 
-  // set the 'interface_names'
-  imu_broadcaster_->get_node()->set_parameter(
-    {"interface_names.angular_velocity.x", "imu_sensor/angular_velocity.x"});
-  imu_broadcaster_->get_node()->set_parameter(
-    {"interface_names.linear_acceleration.z", "imu_sensor/linear_acceleration.z"});
+  // set the 'frame_id'
+  imu_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
 
-  // configure failed, 'frame_id' parameter not set
+  // configure failed, 'sensor_name' parameter not set
   ASSERT_EQ(imu_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
 }
 
-TEST_F(IMUSensorBroadcasterTest, InterfaceNames_FrameId_NotSet)
+TEST_F(IMUSensorBroadcasterTest, FrameId_NotSet)
 {
   SetUpIMUBroadcaster();
 

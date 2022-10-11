@@ -2,6 +2,12 @@
 Changelog for package ros2_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.13.0 (2022-10-05)
+-------------------
+
+2.12.0 (2022-09-01)
+-------------------
+
 2.11.0 (2022-08-04)
 -------------------
 * Tricycle controller (`#345 <https://github.com/ros-controls/ros2_controllers/issues/345>`_)

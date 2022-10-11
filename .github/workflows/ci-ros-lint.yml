@@ -19,6 +19,17 @@ jobs:
         linter: ${{ matrix.linter }}
         package-name:
           diff_drive_controller
+          effort_controllers
+          force_torque_sensor_broadcaster
+          forward_command_controller
+          joint_state_broadcaster
+          joint_trajectory_controller
+          gripper_controllers
+          position_controllers
+          ros2_controllers
+          ros2_controllers_test_nodes
+          tricycle_controller
+          velocity_controllers
 
 
   ament_lint_100:
@@ -38,4 +49,14 @@ jobs:
         arguments: "--linelength=100 --filter=-whitespace/newline"
         package-name:
           diff_drive_controller
+          effort_controllers
+          force_torque_sensor_broadcaster
+          forward_command_controller
+          joint_state_broadcaster
+          joint_trajectory_controller
+          gripper_controllers
+          position_controllers
           ros2_controllers
+          ros2_controllers_test_nodes
+          tricycle_controller
+          velocity_controllers
