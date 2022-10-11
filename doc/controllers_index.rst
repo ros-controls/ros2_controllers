@@ -32,7 +32,7 @@ Guidelines and Best Practices
 
 
 Available Controllers
-=====================
+*********************
 
 .. toctree::
    :titlesonly:
@@ -46,7 +46,7 @@ Available Controllers
 
 
 Available Broadcasters
-======================
+**********************
 
 .. toctree::
    :titlesonly:
