@@ -13,9 +13,10 @@ endif()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
     angles
-    controller_interface
     control_msgs
     control_toolbox
+    controller_interface
+    generate_parameter_library
     hardware_interface
     pluginlib
     rclcpp
@@ -28,8 +29,6 @@ find_package(ament_cmake REQUIRED)
 foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
-
-find_package(generate_parameter_library REQUIRED)
 
 generate_parameter_library(joint_trajectory_controller_parameters
   src/joint_trajectory_controller_parameters.yaml
@@ -52,7 +51,8 @@ install(DIRECTORY include/
   DESTINATION include
 )
 
-install(TARGETS ${PROJECT_NAME}
+install(TARGETS joint_trajectory_controller joint_trajectory_controller_parameters
+  EXPORT export_joint_trajectory_controller
   RUNTIME DESTINATION bin
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -105,13 +105,10 @@ if(BUILD_TESTING)
   # )
 endif()
 
+ament_export_targets(
+  export_joint_trajectory_controller HAS_LIBRARY_TARGET
+)
 ament_export_dependencies(
   ${THIS_PACKAGE_INCLUDE_DEPENDS}
-)
-ament_export_include_directories(
-  include
-)
-ament_export_libraries(
-  ${PROJECT_NAME}
 )
 ament_package()
