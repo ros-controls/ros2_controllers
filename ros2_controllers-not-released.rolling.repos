@@ -1,10 +1,5 @@
 repositories:
-  ## EXAMPLE DEPENDENCY
-#   <some_ros_package>:
-#     type: git
-#     url: git@github.com:<some_github_namespace>/<some_ros_package>.git
-#     version: master
-  control_msgs:
+  generate_parameter_library:
     type: git
-    url: https://github.com/ros-controls/control_msgs.git
-    version: humble
+    url: https://github.com/picknikrobotics/generate_parameter_library.git
+    version: main
