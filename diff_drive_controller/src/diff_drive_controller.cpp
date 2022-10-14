@@ -220,7 +220,8 @@ controller_interface::return_type DiffDriveController::update(
     else
     {
       odometry_.updateFromVelocity(
-        left_feedback_mean * period.seconds(), right_feedback_mean * period.seconds(), time);
+        left_feedback_mean * left_wheel_radius * period.seconds(),
+        right_feedback_mean * right_wheel_radius * period.seconds(), time);
     }
   }
 
