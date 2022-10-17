@@ -49,17 +49,6 @@ target_link_libraries(gripper_action_controller
   gripper_action_controller_parameters
 )
 pluginlib_export_plugin_description_file(controller_interface ros_control_plugins.xml)
-#############
-## Install ##
-#############
-
-install(DIRECTORY include/${PROJECT_NAME}/
-  DESTINATION include
-)
-
-install(TARGETS gripper_action_controller
-  LIBRARY DESTINATION lib
-)
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gmock REQUIRED)
@@ -76,4 +65,22 @@ if(BUILD_TESTING)
   )
 endif()
 
+install(
+  DIRECTORY include/
+  DESTINATION include
+)
+
+install(
+  TARGETS
+    gripper_action_controller
+    gripper_action_controller_parameters
+  EXPORT export_gripper_action_controller
+  RUNTIME DESTINATION bin
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  INCLUDES DESTINATION include
+)
+
+ament_export_targets(export_gripper_action_controller HAS_LIBRARY_TARGET)
+ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
 ament_package()
