@@ -13,6 +13,7 @@ endif()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
     controller_interface
+    generate_parameter_library
     geometry_msgs
     hardware_interface
     nav_msgs
@@ -30,38 +31,26 @@ foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
 
-find_package(generate_parameter_library REQUIRED)
-
 generate_parameter_library(diff_drive_controller_parameters
   src/diff_drive_controller_parameter.yaml
 )
 
-add_library(${PROJECT_NAME} SHARED
+add_library(diff_drive_controller SHARED
   src/diff_drive_controller.cpp
   src/odometry.cpp
   src/speed_limiter.cpp
 )
-target_include_directories(${PROJECT_NAME}
+target_include_directories(diff_drive_controller
   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
-ament_target_dependencies(${PROJECT_NAME} ${THIS_PACKAGE_INCLUDE_DEPENDS})
-target_link_libraries(${PROJECT_NAME}
+ament_target_dependencies(diff_drive_controller ${THIS_PACKAGE_INCLUDE_DEPENDS})
+target_link_libraries(diff_drive_controller
   diff_drive_controller_parameters
 )
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
-target_compile_definitions(${PROJECT_NAME} PRIVATE "DIFF_DRIVE_CONTROLLER_BUILDING_DLL")
+target_compile_definitions(diff_drive_controller PRIVATE "DIFF_DRIVE_CONTROLLER_BUILDING_DLL")
 pluginlib_export_plugin_description_file(controller_interface diff_drive_plugin.xml)
-
-install(DIRECTORY include/
-  DESTINATION include
-)
-
-install(TARGETS ${PROJECT_NAME}
-  RUNTIME DESTINATION bin
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-)
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gmock REQUIRED)
@@ -73,7 +62,7 @@ if(BUILD_TESTING)
     ENV config_file=${CMAKE_CURRENT_SOURCE_DIR}/test/config/test_diff_drive_controller.yaml)
   target_include_directories(test_diff_drive_controller PRIVATE include)
   target_link_libraries(test_diff_drive_controller
-    ${PROJECT_NAME}
+    diff_drive_controller
   )
 
   ament_target_dependencies(test_diff_drive_controller
@@ -99,13 +88,22 @@ if(BUILD_TESTING)
 
 endif()
 
-ament_export_dependencies(
-  ${THIS_PACKAGE_INCLUDE_DEPENDS}
+install(
+  DIRECTORY include/
+  DESTINATION include
 )
-ament_export_include_directories(
-  include
+
+install(
+  TARGETS
+    diff_drive_controller
+    diff_drive_controller_parameters
+  EXPORT export_diff_drive_controller
+  RUNTIME DESTINATION bin
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  INCLUDES DESTINATION include
 )
-ament_export_libraries(
-  ${PROJECT_NAME}
-)
+
+ament_export_targets(export_diff_drive_controller HAS_LIBRARY_TARGET)
+ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
 ament_package()
