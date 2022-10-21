@@ -20,6 +20,9 @@ The controllers' namespaces are commanding the following command interface types
   - ``effort_controllers``: ``hardware_interface::HW_IF_EFFORT``
   - ...
 
+.. _common hardware interface definitions: https://github.com/ros-controls/ros2_control/blob/master/hardware_interface/include/hardware_interface/types/hardware_interface_type_values.hpp
+
+
 
 Guidelines and Best Practices
 *****************************
