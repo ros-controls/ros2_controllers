@@ -75,7 +75,7 @@ controller_interface::CallbackReturn IMUSensorBroadcaster::on_configure(
 
   realtime_publisher_->lock();
   realtime_publisher_->msg_.header.frame_id = params_.frame_id;
-  // convert double vector to fixes size array in the message
+  // convert double vector to fixed-size array in the message
   for (size_t i = 0; i < 9; ++i)
   {
     realtime_publisher_->msg_.orientation_covariance[i] = params_.static_covariance_orientation[i];
