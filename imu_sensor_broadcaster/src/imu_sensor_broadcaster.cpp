@@ -27,8 +27,8 @@ controller_interface::CallbackReturn IMUSensorBroadcaster::on_init()
 {
   try
   {
-    auto_declare<std::string>("sensor_name", "");
-    auto_declare<std::string>("frame_id", "");
+    param_listener_ = std::make_shared<ParamListener>(get_node());
+    params_ = param_listener_->get_params();
   }
   catch (const std::exception & e)
   {
@@ -43,22 +43,21 @@ controller_interface::CallbackReturn IMUSensorBroadcaster::on_init()
 controller_interface::CallbackReturn IMUSensorBroadcaster::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  sensor_name_ = get_node()->get_parameter("sensor_name").as_string();
-  if (sensor_name_.empty())
+  params_ = param_listener_->get_params();
+  if (params_.sensor_name.empty())
   {
     RCLCPP_ERROR(get_node()->get_logger(), "'sensor_name' parameter has to be specified.");
     return CallbackReturn::ERROR;
   }
 
-  frame_id_ = get_node()->get_parameter("frame_id").as_string();
-  if (frame_id_.empty())
+  if (params_.frame_id.empty())
   {
     RCLCPP_ERROR(get_node()->get_logger(), "'frame_id' parameter has to be provided.");
     return CallbackReturn::ERROR;
   }
 
-  imu_sensor_ =
-    std::make_unique<semantic_components::IMUSensor>(semantic_components::IMUSensor(sensor_name_));
+  imu_sensor_ = std::make_unique<semantic_components::IMUSensor>(
+    semantic_components::IMUSensor(params_.sensor_name));
   try
   {
     // register ft sensor data publisher
@@ -75,7 +74,16 @@ controller_interface::CallbackReturn IMUSensorBroadcaster::on_configure(
   }
 
   realtime_publisher_->lock();
-  realtime_publisher_->msg_.header.frame_id = frame_id_;
+  realtime_publisher_->msg_.header.frame_id = params_.frame_id;
+  // convert double vector to fixed-size array in the message
+  for (size_t i = 0; i < 9; ++i)
+  {
+    realtime_publisher_->msg_.orientation_covariance[i] = params_.static_covariance_orientation[i];
+    realtime_publisher_->msg_.angular_velocity_covariance[i] =
+      params_.static_covariance_angular_velocity[i];
+    realtime_publisher_->msg_.linear_acceleration_covariance[i] =
+      params_.static_covariance_linear_acceleration[i];
+  }
   realtime_publisher_->unlock();
 
   RCLCPP_DEBUG(get_node()->get_logger(), "configure successful");
