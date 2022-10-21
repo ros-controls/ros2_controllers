@@ -43,7 +43,6 @@ controller_interface::CallbackReturn IMUSensorBroadcaster::on_init()
 controller_interface::CallbackReturn IMUSensorBroadcaster::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-
   params_ = param_listener_->get_params();
   if (params_.sensor_name.empty())
   {
@@ -76,6 +75,15 @@ controller_interface::CallbackReturn IMUSensorBroadcaster::on_configure(
 
   realtime_publisher_->lock();
   realtime_publisher_->msg_.header.frame_id = params_.frame_id;
+  // convert double vector to fixed-size array in the message
+  for (size_t i = 0; i < 9; ++i)
+  {
+    realtime_publisher_->msg_.orientation_covariance[i] = params_.static_covariance_orientation[i];
+    realtime_publisher_->msg_.angular_velocity_covariance[i] =
+      params_.static_covariance_angular_velocity[i];
+    realtime_publisher_->msg_.linear_acceleration_covariance[i] =
+      params_.static_covariance_linear_acceleration[i];
+  }
   realtime_publisher_->unlock();
 
   RCLCPP_DEBUG(get_node()->get_logger(), "configure successful");
