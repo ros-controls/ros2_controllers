@@ -2,6 +2,49 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.13.0 (2022-10-05)
+-------------------
+* Generate parameters for Joint State Broadcaster (`#401 <https://github.com/ros-controls/ros2_controllers/issues/401>`_)
+* Fix undeclared and wrong parameters in controllers. (`#438 <https://github.com/ros-controls/ros2_controllers/issues/438>`_)
+  * Add missing parameter declaration in the joint state broadcaster.
+  * Fix unsensible test in IMU Sensor Broadcaster.
+* [JointStateBroadcaster] Reset internal variables to avoid duplication of joints (`#431 <https://github.com/ros-controls/ros2_controllers/issues/431>`_)
+* Contributors: Denis Štogl, Gilmar Correia, Tyler Weaver, Bence Magyar
+
+2.12.0 (2022-09-01)
+-------------------
+* Fix formatting CI job (`#418 <https://github.com/ros-controls/ros2_controllers/issues/418>`_)
+* Contributors: Tyler Weaver
+
+2.11.0 (2022-08-04)
+-------------------
+* Use explicit type in joint_state_broadcaster test (`#403 <https://github.com/ros-controls/ros2_controllers/issues/403>`_)
+  This use of `auto` is causing a static assert on RHEL. Explicitly
+  specifying the type seems to resolve the failure and allow the test to
+  be compiled.
+* Contributors: Scott K Logan
+
+2.10.0 (2022-08-01)
+-------------------
+
+2.9.0 (2022-07-14)
+------------------
+
+2.8.0 (2022-07-09)
+------------------
+
+2.7.0 (2022-07-03)
+------------------
+* Update controllers with new get_name hardware interfaces (`#369 <https://github.com/ros-controls/ros2_controllers/issues/369>`_)
+* Contributors: Lucas Schulze
+
+2.6.0 (2022-06-18)
+------------------
+* Fix exception about parameter already been declared & Change default c++ version to 17 (`#360 <https://github.com/ros-controls/ros2_controllers/issues/360>`_)
+  * Default C++ version to 17
+  * Replace explicit use of declare_paremeter with auto_declare
+* Contributors: Jafar Abdi
+
 2.5.0 (2022-05-13)
 ------------------
 * fix: :bug: make force_torque_sensor_broadcaster wait for realtime_publisher (`#327 <https://github.com/ros-controls/ros2_controllers/issues/327>`_)

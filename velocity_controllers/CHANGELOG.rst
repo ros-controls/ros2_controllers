@@ -2,6 +2,35 @@
 Changelog for package velocity_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.13.0 (2022-10-05)
+-------------------
+
+2.12.0 (2022-09-01)
+-------------------
+
+2.11.0 (2022-08-04)
+-------------------
+
+2.10.0 (2022-08-01)
+-------------------
+
+2.9.0 (2022-07-14)
+------------------
+
+2.8.0 (2022-07-09)
+------------------
+
+2.7.0 (2022-07-03)
+------------------
+
+2.6.0 (2022-06-18)
+------------------
+* CMakeLists cleanup (`#362 <https://github.com/ros-controls/ros2_controllers/issues/362>`_)
+* Fix exception about parameter already been declared & Change default c++ version to 17 (`#360 <https://github.com/ros-controls/ros2_controllers/issues/360>`_)
+  * Default C++ version to 17
+  * Replace explicit use of declare_paremeter with auto_declare
+* Contributors: AndyZe, Jafar
+
 2.5.0 (2022-05-13)
 ------------------
 

@@ -2,6 +2,34 @@
 Changelog for package ros2_controllers_test_nodes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.13.0 (2022-10-05)
+-------------------
+* Enable definition of all fields in JointTrajectory message when using test node. (`#389 <https://github.com/ros-controls/ros2_controllers/issues/389>`_)
+* Contributors: Denis Štogl
+
+2.12.0 (2022-09-01)
+-------------------
+
+2.11.0 (2022-08-04)
+-------------------
+
+2.10.0 (2022-08-01)
+-------------------
+
+2.9.0 (2022-07-14)
+------------------
+
+2.8.0 (2022-07-09)
+------------------
+* Fix deprecation in setup.cfg on Jammy (Humble and Rolling). (`#375 <https://github.com/ros-controls/ros2_controllers/issues/375>`_)
+* Contributors: Denis Štogl
+
+2.7.0 (2022-07-03)
+------------------
+
+2.6.0 (2022-06-18)
+------------------
+
 2.5.0 (2022-05-13)
 ------------------
 

@@ -2,6 +2,45 @@
 Changelog for package gripper_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.13.0 (2022-10-05)
+-------------------
+
+2.12.0 (2022-09-01)
+-------------------
+* Add an initialization of the gripper action command for safe startup. (`#425 <https://github.com/ros-controls/ros2_controllers/issues/425>`_)
+* Fix formatting CI job (`#418 <https://github.com/ros-controls/ros2_controllers/issues/418>`_)
+* Contributors: Shota Aoki, Tyler Weaver
+
+2.11.0 (2022-08-04)
+-------------------
+
+2.10.0 (2022-08-01)
+-------------------
+* Formatting changes from pre-commit (`#400 <https://github.com/ros-controls/ros2_controllers/issues/400>`_)
+* Parameter loading fixup in diff_drive and gripper controllers (`#385 <https://github.com/ros-controls/ros2_controllers/issues/385>`_)
+* Contributors: Andy Zelenak, Tyler Weaver
+
+2.9.0 (2022-07-14)
+------------------
+* Allow gripper stalling when moving to goal (`#355 <https://github.com/ros-controls/ros2_controllers/issues/355>`_)
+* Contributors: Marq Rasmussen
+
+2.8.0 (2022-07-09)
+------------------
+
+2.7.0 (2022-07-03)
+------------------
+* Update controllers with new get_name hardware interfaces (`#369 <https://github.com/ros-controls/ros2_controllers/issues/369>`_)
+* Contributors: Lucas Schulze
+
+2.6.0 (2022-06-18)
+------------------
+* CMakeLists cleanup (`#362 <https://github.com/ros-controls/ros2_controllers/issues/362>`_)
+* Fix exception about parameter already been declared & Change default c++ version to 17 (`#360 <https://github.com/ros-controls/ros2_controllers/issues/360>`_)
+  * Default C++ version to 17
+  * Replace explicit use of declare_paremeter with auto_declare
+* Contributors: Andy Zelenak, Jafar Abdi
+
 2.5.0 (2022-05-13)
 ------------------
 

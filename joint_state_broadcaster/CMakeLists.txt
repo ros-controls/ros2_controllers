@@ -1,9 +1,10 @@
 cmake_minimum_required(VERSION 3.5)
 project(joint_state_broadcaster)
 
-# Default to C++14
+# Default to C++17
 if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 14)
+  set(CMAKE_CXX_STANDARD 17)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -13,11 +14,16 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(control_msgs REQUIRED)
 find_package(controller_interface REQUIRED)
+find_package(generate_parameter_library REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(rcutils REQUIRED)
 find_package(realtime_tools REQUIRED)
 find_package(sensor_msgs REQUIRED)
+
+generate_parameter_library(joint_state_broadcaster_parameters
+  src/joint_state_broadcaster_parameters.yaml
+)
 
 add_library(joint_state_broadcaster
   SHARED
@@ -28,11 +34,15 @@ ament_target_dependencies(joint_state_broadcaster
   builtin_interfaces
   control_msgs
   controller_interface
+  generate_parameter_library
   pluginlib
   rclcpp_lifecycle
   rcutils
   realtime_tools
   sensor_msgs
+)
+target_link_libraries(joint_state_broadcaster
+  joint_state_broadcaster_parameters
 )
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
@@ -83,6 +93,7 @@ endif()
 ament_export_dependencies(
   control_msgs
   controller_interface
+  generate_parameter_library
   rclcpp_lifecycle
   sensor_msgs
 )

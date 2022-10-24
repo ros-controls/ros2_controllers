@@ -25,6 +25,7 @@
 
 #include "controller_interface/controller_interface.hpp"
 #include "imu_sensor_broadcaster/visibility_control.h"
+#include "imu_sensor_broadcaster_parameters.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_publisher.h"
@@ -61,8 +62,8 @@ public:
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
 protected:
-  std::string sensor_name_;
-  std::string frame_id_;
+  std::shared_ptr<ParamListener> param_listener_;
+  Params params_;
 
   std::unique_ptr<semantic_components::IMUSensor> imu_sensor_;
 

@@ -32,14 +32,8 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_init()
 {
   try
   {
-    auto_declare<std::string>("sensor_name", "");
-    auto_declare<std::string>("interface_names.force.x", "");
-    auto_declare<std::string>("interface_names.force.y", "");
-    auto_declare<std::string>("interface_names.force.z", "");
-    auto_declare<std::string>("interface_names.torque.x", "");
-    auto_declare<std::string>("interface_names.torque.y", "");
-    auto_declare<std::string>("interface_names.torque.z", "");
-    auto_declare<std::string>("frame_id", "");
+    param_listener_ = std::make_shared<ParamListener>(get_node());
+    params_ = param_listener_->get_params();
   }
   catch (const std::exception & e)
   {
@@ -53,18 +47,14 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_init()
 controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  sensor_name_ = get_node()->get_parameter("sensor_name").as_string();
-  interface_names_[0] = get_node()->get_parameter("interface_names.force.x").as_string();
-  interface_names_[1] = get_node()->get_parameter("interface_names.force.y").as_string();
-  interface_names_[2] = get_node()->get_parameter("interface_names.force.z").as_string();
-  interface_names_[3] = get_node()->get_parameter("interface_names.torque.x").as_string();
-  interface_names_[4] = get_node()->get_parameter("interface_names.torque.y").as_string();
-  interface_names_[5] = get_node()->get_parameter("interface_names.torque.z").as_string();
+  params_ = param_listener_->get_params();
 
   const bool no_interface_names_defined =
-    std::count(interface_names_.begin(), interface_names_.end(), "") == 6;
+    params_.interface_names.force.x.empty() && params_.interface_names.force.y.empty() &&
+    params_.interface_names.force.z.empty() && params_.interface_names.torque.x.empty() &&
+    params_.interface_names.torque.y.empty() && params_.interface_names.torque.z.empty();
 
-  if (sensor_name_.empty() && no_interface_names_defined)
+  if (params_.sensor_name.empty() && no_interface_names_defined)
   {
     RCLCPP_ERROR(
       get_node()->get_logger(),
@@ -73,7 +63,7 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  if (!sensor_name_.empty() && !no_interface_names_defined)
+  if (!params_.sensor_name.empty() && !no_interface_names_defined)
   {
     RCLCPP_ERROR(
       get_node()->get_logger(),
@@ -82,24 +72,25 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  frame_id_ = get_node()->get_parameter("frame_id").as_string();
-  if (frame_id_.empty())
+  if (params_.frame_id.empty())
   {
     RCLCPP_ERROR(get_node()->get_logger(), "'frame_id' parameter has to be provided.");
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  if (!sensor_name_.empty())
+  if (!params_.sensor_name.empty())
   {
     force_torque_sensor_ = std::make_unique<semantic_components::ForceTorqueSensor>(
-      semantic_components::ForceTorqueSensor(sensor_name_));
+      semantic_components::ForceTorqueSensor(params_.sensor_name));
   }
   else
   {
+    auto const & force_names = params_.interface_names.force;
+    auto const & torque_names = params_.interface_names.torque;
     force_torque_sensor_ = std::make_unique<semantic_components::ForceTorqueSensor>(
       semantic_components::ForceTorqueSensor(
-        interface_names_[0], interface_names_[1], interface_names_[2], interface_names_[3],
-        interface_names_[4], interface_names_[5]));
+        force_names.x, force_names.y, force_names.z, torque_names.x, torque_names.y,
+        torque_names.z));
   }
 
   try
@@ -118,7 +109,7 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
   }
 
   realtime_publisher_->lock();
-  realtime_publisher_->msg_.header.frame_id = frame_id_;
+  realtime_publisher_->msg_.header.frame_id = params_.frame_id;
   realtime_publisher_->unlock();
 
   RCLCPP_DEBUG(get_node()->get_logger(), "configure successful");

@@ -77,9 +77,10 @@ controller_interface::CallbackReturn DiffDriveController::on_init()
     auto_declare<bool>("enable_odom_tf", odom_params_.enable_odom_tf);
 
     auto_declare<double>("cmd_vel_timeout", cmd_vel_timeout_.count() / 1000.0);
-    auto_declare<bool>("publish_limited_velocity", publish_limited_velocity_);
+    publish_limited_velocity_ =
+      auto_declare<bool>("publish_limited_velocity", publish_limited_velocity_);
     auto_declare<int>("velocity_rolling_window_size", 10);
-    auto_declare<bool>("use_stamped_vel", use_stamped_vel_);
+    use_stamped_vel_ = auto_declare<bool>("use_stamped_vel", use_stamped_vel_);
 
     auto_declare<bool>("linear.x.has_velocity_limits", false);
     auto_declare<bool>("linear.x.has_acceleration_limits", false);
@@ -100,7 +101,7 @@ controller_interface::CallbackReturn DiffDriveController::on_init()
     auto_declare<double>("angular.z.min_acceleration", NAN);
     auto_declare<double>("angular.z.max_jerk", NAN);
     auto_declare<double>("angular.z.min_jerk", NAN);
-    auto_declare<double>("publish_rate", publish_rate_);
+    publish_rate_ = auto_declare<double>("publish_rate", publish_rate_);
   }
   catch (const std::exception & e)
   {
@@ -219,8 +220,7 @@ controller_interface::return_type DiffDriveController::update(
     else
     {
       odometry_.updateFromVelocity(
-        left_feedback_mean*period.seconds(), right_feedback_mean*period.seconds(),
-        time);
+        left_feedback_mean * period.seconds(), right_feedback_mean * period.seconds(), time);
     }
   }
 
@@ -423,7 +423,8 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   {
     velocity_command_subscriber_ = get_node()->create_subscription<Twist>(
       DEFAULT_COMMAND_TOPIC, rclcpp::SystemDefaultsQoS(),
-      [this](const std::shared_ptr<Twist> msg) -> void {
+      [this](const std::shared_ptr<Twist> msg) -> void
+      {
         if (!subscriber_is_active_)
         {
           RCLCPP_WARN(
@@ -446,7 +447,8 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
     velocity_command_unstamped_subscriber_ =
       get_node()->create_subscription<geometry_msgs::msg::Twist>(
         DEFAULT_COMMAND_UNSTAMPED_TOPIC, rclcpp::SystemDefaultsQoS(),
-        [this](const std::shared_ptr<geometry_msgs::msg::Twist> msg) -> void {
+        [this](const std::shared_ptr<geometry_msgs::msg::Twist> msg) -> void
+        {
           if (!subscriber_is_active_)
           {
             RCLCPP_WARN(
@@ -595,7 +597,8 @@ controller_interface::CallbackReturn DiffDriveController::on_shutdown(
 
 void DiffDriveController::halt()
 {
-  const auto halt_wheels = [](auto & wheel_handles) {
+  const auto halt_wheels = [](auto & wheel_handles)
+  {
     for (const auto & wheel_handle : wheel_handles)
     {
       wheel_handle.velocity.get().set_value(0.0);
@@ -625,8 +628,9 @@ controller_interface::CallbackReturn DiffDriveController::configure_side(
     const auto interface_name = feedback_type();
     const auto state_handle = std::find_if(
       state_interfaces_.cbegin(), state_interfaces_.cend(),
-      [&wheel_name, &interface_name](const auto & interface) {
-        return interface.get_name() == wheel_name &&
+      [&wheel_name, &interface_name](const auto & interface)
+      {
+        return interface.get_prefix_name() == wheel_name &&
                interface.get_interface_name() == interface_name;
       });
 
@@ -638,8 +642,9 @@ controller_interface::CallbackReturn DiffDriveController::configure_side(
 
     const auto command_handle = std::find_if(
       command_interfaces_.begin(), command_interfaces_.end(),
-      [&wheel_name](const auto & interface) {
-        return interface.get_name() == wheel_name &&
+      [&wheel_name](const auto & interface)
+      {
+        return interface.get_prefix_name() == wheel_name &&
                interface.get_interface_name() == HW_IF_VELOCITY;
       });
 
