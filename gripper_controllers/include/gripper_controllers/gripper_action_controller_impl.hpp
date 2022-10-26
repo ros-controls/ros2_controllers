@@ -282,7 +282,6 @@ controller_interface::CallbackReturn GripperActionController<HardwareInterface>:
 
   // Command - non RT version
   command_struct_.position_ = joint_position_state_interface_->get().get_value();
-<<<<<<< HEAD
   command_struct_.max_effort_ = default_max_effort_;
   command_.initRT(command_struct_);
 ||||||| parent of c083ee9 (Generate parameters for Gripper Action)
