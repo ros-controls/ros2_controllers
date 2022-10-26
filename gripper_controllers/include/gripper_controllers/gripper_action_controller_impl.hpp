@@ -284,11 +284,7 @@ controller_interface::CallbackReturn GripperActionController<HardwareInterface>:
   command_struct_.position_ = joint_position_state_interface_->get().get_value();
   command_struct_.max_effort_ = default_max_effort_;
   command_.initRT(command_struct_);
-||||||| parent of c083ee9 (Generate parameters for Gripper Action)
-  command_struct_.max_effort_ = default_max_effort_;
-=======
   command_struct_.max_effort_ = params_.max_effort;
->>>>>>> c083ee9 (Generate parameters for Gripper Action)
 
   // Result
   pre_alloc_result_ = std::make_shared<control_msgs::action::GripperCommand::Result>();
