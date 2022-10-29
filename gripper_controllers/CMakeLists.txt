@@ -63,6 +63,15 @@ if(BUILD_TESTING)
     controller_manager
     ros2_control_test_assets
   )
+
+  ament_add_gmock(
+    test_gripper_controllers
+    test/test_gripper_controllers.cpp
+  )
+  target_include_directories(test_gripper_controllers PRIVATE include)
+  target_link_libraries(test_gripper_controllers
+    gripper_action_controller
+  )
 endif()
 
 install(
