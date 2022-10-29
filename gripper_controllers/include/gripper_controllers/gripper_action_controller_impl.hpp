@@ -211,7 +211,7 @@ controller_interface::CallbackReturn GripperActionController<HardwareInterface>:
   // Controlled joint
   if (params_.joint.empty())
   {
-    RCLCPP_ERROR(logger, "Could not find joint name on param server");
+    RCLCPP_ERROR(logger, "Joint name cannot be empty");
     return controller_interface::CallbackReturn::ERROR;
   }
 
