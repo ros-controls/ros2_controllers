@@ -43,6 +43,7 @@
 #include "realtime_tools/realtime_server_goal_handle.h"
 
 // Project
+#include "gripper_action_controller_parameters.hpp"
 #include "gripper_controllers/hardware_interface_adapter.hpp"
 
 namespace gripper_action_controller
@@ -130,7 +131,8 @@ private:
   std::experimental::optional<std::reference_wrapper<hardware_interface::LoanedStateInterface>>
     joint_velocity_state_interface_;
 
-  std::string joint_name_;  ///< Controlled joint names.
+  std::shared_ptr<ParamListener> param_listener_;
+  Params params_;
 
   HwIfaceAdapter hw_iface_adapter_;  ///< Adapts desired goal state to HW interface.
 
@@ -157,12 +159,6 @@ private:
 
   rclcpp::Time last_movement_time_ = rclcpp::Time(0, 0, RCL_ROS_TIME);  ///< Store stall time
   double computed_command_;                                             ///< Computed command
-
-  double stall_timeout_,
-    stall_velocity_threshold_;  ///< Stall related parameters
-  double default_max_effort_;   ///< Max allowed effort
-  double goal_tolerance_;
-  bool allow_stalling_;  ///< If gripper stalls when moving to goal is considered successful
 
   /**
    * \brief Check for success and publish appropriate result and feedback.
