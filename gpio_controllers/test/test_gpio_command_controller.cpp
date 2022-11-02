@@ -82,6 +82,18 @@ TEST_F(GpioCommandControllerTest, GpiosParameterIsEmpty)
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
 }
 
+TEST_F(GpioCommandControllerTest, GpioWithMissingGpioParams)
+{
+  SetUpController();
+  controller_->get_node()->set_parameter({"gpios", std::vector<std::string>{"gpio1", "gpio2"}});
+  controller_->get_node()->set_parameter(
+    {"command_interfaces.gpio1", std::vector<std::string>{"dig.1", "dig.2"}});
+  controller_->get_node()->set_parameter(
+    {"command_interfaces.gpio2", std::vector<std::string>()});
+  // // activate failed, command interface for 'gpio2' is not set up
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
+}
+
 TEST_F(GpioCommandControllerTest, ConfigureAndActivateParamsSuccess)
 {
   SetUpController();
