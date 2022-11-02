@@ -150,16 +150,23 @@ CallbackReturn GpioCommandController::on_activate(
     return CallbackReturn::ERROR;
   }
 
-  //initialize gpio state msg
+  // initialize gpio state msg
   auto & gpio_state_msg = realtime_gpio_state_publisher_->msg_;
-  for(auto i = 0ul; i<interface_types_.size();i++){
-    gpio_state_msg.interface_names.push_back(interface_types_[i]);
-    gpio_state_msg.values.push_back(std::numeric_limits<double>::quiet_NaN());
+  gpio_state_msg.header.stamp = get_node()->now();
+  gpio_state_msg.joint_names.resize(gpio_names_.size());
+  gpio_state_msg.interface_values.resize(gpio_names_.size());
+  for(auto g = 0ul; g < gpio_names_.size(); g++){
+    gpio_state_msg.joint_names[g] = gpio_names_[g];
+    for(const auto & interface_name: interface_names_[gpio_names_[g]]){
+      gpio_state_msg.interface_values[g].interface_names.push_back(interface_name);
+      gpio_state_msg.interface_values[g].values.push_back(std::numeric_limits<double>::quiet_NaN());
+    }
   }
 
   // reset command buffer if a command came through callback when controller was inactive
   rt_command_ptr_.reset();
 
+  RCLCPP_INFO(get_node()->get_logger(), "activate successful");
   return CallbackReturn::SUCCESS;
 }
 
@@ -179,12 +186,19 @@ controller_interface::return_type GpioCommandController::update(
   {
     auto & gpio_state_msg = realtime_gpio_state_publisher_->msg_;
 
-    for (size_t iindex = 0; iindex < state_interfaces_.size(); ++iindex){
-      gpio_state_msg.values[iindex] = state_interfaces_[iindex].get_value();
+    gpio_state_msg.header.stamp = get_node()->now();
+
+    auto sindex = 0ul;
+    for(auto g = 0ul; g < gpio_names_.size(); g++){
+      for(auto i = 0ul; i < interface_names_[gpio_names_[g]].size(); i++){
+        gpio_state_msg.interface_values[g].values[i] = state_interfaces_[sindex].get_value();
+        sindex ++;
+      }
     }
+
     realtime_gpio_state_publisher_->unlockAndPublish();
-  } 
-  
+  }
+
   auto gpio_commands = rt_command_ptr_.readFromRT();
 
   // no command received yet

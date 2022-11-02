@@ -28,13 +28,13 @@
 #include "realtime_tools/realtime_buffer.h"
 #include "realtime_tools/realtime_publisher.h"
 #include "std_msgs/msg/float64_multi_array.hpp"
-#include "control_msgs/msg/interface_value.hpp"
+#include "control_msgs/msg/dynamic_joint_state.hpp"
 
 namespace gpio_controllers
 {
 using CmdType = std_msgs::msg::Float64MultiArray;
-using StateType = control_msgs::msg::InterfaceValue;
-using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
+using StateType = control_msgs::msg::DynamicJointState;
+using CallbackReturn = controller_interface::CallbackReturn;
 
 class GpioCommandController : public controller_interface::ControllerInterface
 {
