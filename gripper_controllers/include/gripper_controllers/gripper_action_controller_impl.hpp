@@ -306,9 +306,9 @@ template <const char * HardwareInterface>
 controller_interface::CallbackReturn GripperActionController<HardwareInterface>::on_deactivate(
   const rclcpp_lifecycle::State &)
 {
-  joint_position_command_interface_ = std::experimental::nullopt;
-  joint_position_state_interface_ = std::experimental::nullopt;
-  joint_velocity_state_interface_ = std::experimental::nullopt;
+  joint_position_command_interface_ = std::nullopt;
+  joint_position_state_interface_ = std::nullopt;
+  joint_velocity_state_interface_ = std::nullopt;
   release_interfaces();
   return controller_interface::CallbackReturn::SUCCESS;
 }
