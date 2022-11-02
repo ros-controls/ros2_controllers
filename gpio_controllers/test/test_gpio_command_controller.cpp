@@ -87,9 +87,9 @@ TEST_F(GpioCommandControllerTest, ConfigureAndActivateParamsSuccess)
   SetUpController();
   controller_->get_node()->set_parameter({"gpios", gpio_names_});
   controller_->get_node()->set_parameter(
-    {"interface_names.gpio1", std::vector<std::string>{"dig.1", "dig.2"}});
+    {"command_interfaces.gpio1", std::vector<std::string>{"dig.1", "dig.2"}});
   controller_->get_node()->set_parameter(
-    {"interface_names.gpio2", std::vector<std::string>{"ana.1"}});
+    {"command_interfaces.gpio2", std::vector<std::string>{"ana.1"}});
 
   // configure successful
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
@@ -100,13 +100,10 @@ TEST_F(GpioCommandControllerTest, ActivateWithWrongGpiosNamesFails)
 {
   SetUpController();
   controller_->get_node()->set_parameter({"gpios", std::vector<std::string>{"gpio1", "gpio4"}});
-  // controller_->get_node()->set_parameter(
-  //   {"interface_names", std::vector<std::string>{"dig.1", "dig.2", "ana.1"}});
-
   controller_->get_node()->set_parameter(
-    {"interface_names.gpio1", std::vector<std::string>{"dig.1", "dig.2"}});
+    {"command_interfaces.gpio1", std::vector<std::string>{"dig.1", "dig.2"}});
   controller_->get_node()->set_parameter(
-    {"interface_names.gpio4", std::vector<std::string>{"ana.1"}});
+    {"command_interfaces.gpio4", std::vector<std::string>{"ana.1"}});
   // // activate failed, 'gpio4' is not a valid gpio name for the hardware
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
@@ -117,9 +114,9 @@ TEST_F(GpioCommandControllerTest, CommandSuccessTest)
   SetUpController();
   controller_->get_node()->set_parameter({"gpios", gpio_names_});
   controller_->get_node()->set_parameter(
-    {"interface_names.gpio1", std::vector<std::string>{"dig.1", "dig.2"}});
+    {"command_interfaces.gpio1", std::vector<std::string>{"dig.1", "dig.2"}});
   controller_->get_node()->set_parameter(
-    {"interface_names.gpio2", std::vector<std::string>{"ana.1"}});
+    {"command_interfaces.gpio2", std::vector<std::string>{"ana.1"}});
 
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
@@ -155,9 +152,9 @@ TEST_F(GpioCommandControllerTest, WrongCommandCheckTest)
   SetUpController();
   controller_->get_node()->set_parameter({"gpios", gpio_names_});
   controller_->get_node()->set_parameter(
-    {"interface_names.gpio1", std::vector<std::string>{"dig.1", "dig.2"}});
+    {"command_interfaces.gpio1", std::vector<std::string>{"dig.1", "dig.2"}});
   controller_->get_node()->set_parameter(
-    {"interface_names.gpio2", std::vector<std::string>{"ana.1"}});
+    {"command_interfaces.gpio2", std::vector<std::string>{"ana.1"}});
 
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
@@ -183,9 +180,9 @@ TEST_F(GpioCommandControllerTest, NoCommandCheckTest)
   SetUpController();
   controller_->get_node()->set_parameter({"gpios", gpio_names_});
   controller_->get_node()->set_parameter(
-    {"interface_names.gpio1", std::vector<std::string>{"dig.1", "dig.2"}});
+    {"command_interfaces.gpio1", std::vector<std::string>{"dig.1", "dig.2"}});
   controller_->get_node()->set_parameter(
-    {"interface_names.gpio2", std::vector<std::string>{"ana.1"}});
+    {"command_interfaces.gpio2", std::vector<std::string>{"ana.1"}});
 
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
@@ -206,9 +203,9 @@ TEST_F(GpioCommandControllerTest, CommandCallbackTest)
   SetUpController();
   controller_->get_node()->set_parameter({"gpios", gpio_names_});
   controller_->get_node()->set_parameter(
-    {"interface_names.gpio1", std::vector<std::string>{"dig.1", "dig.2"}});
+    {"command_interfaces.gpio1", std::vector<std::string>{"dig.1", "dig.2"}});
   controller_->get_node()->set_parameter(
-    {"interface_names.gpio2", std::vector<std::string>{"ana.1"}});
+    {"command_interfaces.gpio2", std::vector<std::string>{"ana.1"}});
 
 
   // default values

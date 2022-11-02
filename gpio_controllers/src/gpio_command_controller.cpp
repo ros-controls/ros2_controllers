@@ -44,7 +44,7 @@ CallbackReturn GpioCommandController::on_init()
     auto_declare<std::vector<std::string>>("gpios", std::vector<std::string>());
     gpio_names_ = node_->get_parameter("gpios").as_string_array();
     for(std::string &gpio : gpio_names_) 
-      auto_declare<std::vector<std::string>>("interface_names." + gpio, std::vector<std::string>());
+      auto_declare<std::vector<std::string>>("command_interfaces." + gpio, std::vector<std::string>());
   }
   catch (const std::exception & e)
   {
@@ -66,9 +66,9 @@ CallbackReturn GpioCommandController::on_configure(
     }
 
     for(std::string &gpio : gpio_names_){
-      auto interfaces = node_->get_parameter("interface_names." + gpio).as_string_array();
+      auto interfaces = node_->get_parameter("command_interfaces." + gpio).as_string_array();
       if (interfaces.empty()){
-        RCLCPP_ERROR(get_node()->get_logger(), "'interface_names.%s' parameter was empty",gpio.c_str());
+        RCLCPP_ERROR(get_node()->get_logger(), "'command_interfaces.%s' parameter was empty",gpio.c_str());
         return CallbackReturn::ERROR;
       }
       if ( !interface_names_.insert( std::make_pair( gpio, interfaces) ).second ) {
