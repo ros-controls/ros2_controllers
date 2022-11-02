@@ -42,7 +42,7 @@ CallbackReturn GpioCommandController::on_init()
   try
   {
     auto_declare<std::vector<std::string>>("gpios", std::vector<std::string>());
-    gpio_names_ = node_->get_parameter("gpios").as_string_array();
+    gpio_names_ = get_node()->get_parameter("gpios").as_string_array();
     for(std::string &gpio : gpio_names_)
       auto_declare<std::vector<std::string>>("command_interfaces."
           + gpio, std::vector<std::string>());
@@ -59,7 +59,7 @@ CallbackReturn GpioCommandController::on_init()
 CallbackReturn GpioCommandController::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-    gpio_names_ = node_->get_parameter("gpios").as_string_array();
+    gpio_names_ = get_node()->get_parameter("gpios").as_string_array();
 
     if (gpio_names_.empty()){
         RCLCPP_ERROR(get_node()->get_logger(), "'gpios' parameter was empty");
@@ -67,7 +67,7 @@ CallbackReturn GpioCommandController::on_configure(
     }
 
     for(std::string &gpio : gpio_names_){
-      auto interfaces = node_->get_parameter("command_interfaces." + gpio).as_string_array();
+      auto interfaces = get_node()->get_parameter("command_interfaces." + gpio).as_string_array();
       if (interfaces.empty()){
         RCLCPP_ERROR(get_node()->get_logger(),
             "'command_interfaces.%s' parameter was empty", gpio.c_str());
@@ -82,13 +82,30 @@ CallbackReturn GpioCommandController::on_configure(
 
     for(const auto & gpio : gpio_names_){
       for(const auto & interface_name: interface_names_[gpio]){
-        command_interface_types_.push_back(gpio + "/" + interface_name);
+        interface_types_.push_back(gpio + "/" + interface_name);
       }
     }
 
-    gpios_command_subscriber_ = get_node()->create_subscription<CmdType>(
-        "~/commands", rclcpp::SystemDefaultsQoS(),
-        [this](const CmdType::SharedPtr msg) { rt_command_ptr_.writeFromNonRT(msg); });
+    try
+    {
+      gpios_command_subscriber_ = get_node()->create_subscription<CmdType>(
+          "~/commands", rclcpp::SystemDefaultsQoS(),
+          [this](const CmdType::SharedPtr msg) { rt_command_ptr_.writeFromNonRT(msg); });
+
+      gpio_state_publisher_ =
+        get_node()->create_publisher<StateType>(
+          "~/gpio_states", rclcpp::SystemDefaultsQoS());
+
+      realtime_gpio_state_publisher_ =
+        std::make_shared<realtime_tools::RealtimePublisher<StateType>>(
+          gpio_state_publisher_);
+    }
+    catch (const std::exception & e)
+    {
+      // get_node() may throw, logging raw here
+      fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
+      return CallbackReturn::ERROR;
+    }
 
     RCLCPP_INFO(get_node()->get_logger(), "configure successful");
     return CallbackReturn::SUCCESS;
@@ -97,18 +114,21 @@ CallbackReturn GpioCommandController::on_configure(
 controller_interface::InterfaceConfiguration
 GpioCommandController::command_interface_configuration() const
 {
-    controller_interface::InterfaceConfiguration command_interfaces_config;
-    command_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
-    command_interfaces_config.names = command_interface_types_;
+  controller_interface::InterfaceConfiguration command_interfaces_config;
+  command_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
+  command_interfaces_config.names = interface_types_;
 
-    return command_interfaces_config;
+  return command_interfaces_config;
 }
 
 controller_interface::InterfaceConfiguration
 GpioCommandController::state_interface_configuration() const
 {
-  return controller_interface::InterfaceConfiguration{
-    controller_interface::interface_configuration_type::NONE};
+  controller_interface::InterfaceConfiguration state_interfaces_config;
+  state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
+  state_interfaces_config.names = interface_types_;
+
+  return state_interfaces_config;
 }
 
 CallbackReturn GpioCommandController::on_activate(
@@ -117,17 +137,24 @@ CallbackReturn GpioCommandController::on_activate(
   std::vector<std::reference_wrapper<LoanedCommandInterface>> ordered_interfaces;
   if (
     !controller_interface::get_ordered_interfaces(
-      command_interfaces_, command_interface_types_, std::string(""), ordered_interfaces) ||
+      command_interfaces_, interface_types_, std::string(""), ordered_interfaces) ||
     command_interfaces_.size() != ordered_interfaces.size())
   {
     RCLCPP_ERROR(
-      node_->get_logger(),
-      "Expected %zu command interfaces, got %zu", command_interface_types_.size(),
+      get_node()->get_logger(),
+      "Expected %zu command interfaces, got %zu", interface_types_.size(),
       ordered_interfaces.size());
 
-    for(const auto & interface: command_interface_types_)
-      RCLCPP_ERROR(node_->get_logger(), "Got %s", interface.c_str());
+    for(const auto & interface: interface_types_)
+      RCLCPP_ERROR(get_node()->get_logger(), "Got %s", interface.c_str());
     return CallbackReturn::ERROR;
+  }
+
+  //initialize gpio state msg
+  auto & gpio_state_msg = realtime_gpio_state_publisher_->msg_;
+  for(auto i = 0ul; i<interface_types_.size();i++){
+    gpio_state_msg.interface_names.push_back(interface_types_[i]);
+    gpio_state_msg.values.push_back(std::numeric_limits<double>::quiet_NaN());
   }
 
   // reset command buffer if a command came through callback when controller was inactive
@@ -147,6 +174,17 @@ CallbackReturn GpioCommandController::on_deactivate(
 controller_interface::return_type GpioCommandController::update(
   const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
+  //publish gpio state msg
+  if (realtime_gpio_state_publisher_ && realtime_gpio_state_publisher_->trylock())
+  {
+    auto & gpio_state_msg = realtime_gpio_state_publisher_->msg_;
+
+    for (size_t iindex = 0; iindex < state_interfaces_.size(); ++iindex){
+      gpio_state_msg.values[iindex] = state_interfaces_[iindex].get_value();
+    }
+    realtime_gpio_state_publisher_->unlockAndPublish();
+  } 
+  
   auto gpio_commands = rt_command_ptr_.readFromRT();
 
   // no command received yet
@@ -158,15 +196,15 @@ controller_interface::return_type GpioCommandController::update(
   if ((*gpio_commands)->data.size() != command_interfaces_.size())
   {
     RCLCPP_ERROR_THROTTLE(
-      get_node()->get_logger(), *node_->get_clock(), 1000,
+      get_node()->get_logger(), *get_node()->get_clock(), 1000,
       "command size (%zu) does not match number of interfaces (%zu)",
       (*gpio_commands)->data.size(), command_interfaces_.size());
     return controller_interface::return_type::ERROR;
   }
 
-  for (size_t index = 0; index < command_interfaces_.size(); ++index)
+  for (size_t cindex = 0; cindex < command_interfaces_.size(); ++cindex)
   {
-    command_interfaces_[index].set_value((*gpio_commands)->data[index]);
+    command_interfaces_[cindex].set_value((*gpio_commands)->data[cindex]);
   }
 
   return controller_interface::return_type::OK;

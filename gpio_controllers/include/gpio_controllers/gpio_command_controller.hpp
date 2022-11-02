@@ -26,11 +26,14 @@
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_buffer.h"
+#include "realtime_tools/realtime_publisher.h"
 #include "std_msgs/msg/float64_multi_array.hpp"
+#include "control_msgs/msg/interface_value.hpp"
 
 namespace gpio_controllers
 {
 using CmdType = std_msgs::msg::Float64MultiArray;
+using StateType = control_msgs::msg::InterfaceValue;
 using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
 class GpioCommandController : public controller_interface::ControllerInterface
@@ -64,10 +67,13 @@ public:
 protected:
   std::vector<std::string> gpio_names_;
   std::unordered_map<std::string, std::vector<std::string>> interface_names_;
-  std::vector<std::string> command_interface_types_;
+  std::vector<std::string> interface_types_;
 
   realtime_tools::RealtimeBuffer<std::shared_ptr<CmdType>> rt_command_ptr_;
   rclcpp::Subscription<CmdType>::SharedPtr gpios_command_subscriber_;
+
+  std::shared_ptr<rclcpp::Publisher<StateType>> gpio_state_publisher_;
+  std::shared_ptr<realtime_tools::RealtimePublisher<StateType>> realtime_gpio_state_publisher_;
 
   std::string logger_name_;
 };
