@@ -63,7 +63,7 @@ if(BUILD_TESTING)
     test_load_gpio_command_controller
     test/test_load_gpio_command_controller.cpp
   )
-  
+
   target_include_directories(test_load_gpio_command_controller PRIVATE include)
   ament_target_dependencies(test_load_gpio_command_controller
     controller_manager

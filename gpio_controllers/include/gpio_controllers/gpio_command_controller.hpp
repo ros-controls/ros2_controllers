@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GPIO_COMMAND_CONTROLLER__GPIO_COMMAND_CONTROLLER_HPP_
-#define GPIO_COMMAND_CONTROLLER__GPIO_COMMAND_CONTROLLER_HPP_
+#ifndef GPIO_CONTROLLERS__GPIO_COMMAND_CONTROLLER_HPP_
+#define GPIO_CONTROLLERS__GPIO_COMMAND_CONTROLLER_HPP_
 
 #include <memory>
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 #include "controller_interface/controller_interface.hpp"
 #include "gpio_controllers/visibility_control.h"
@@ -62,7 +63,7 @@ public:
 
 protected:
   std::vector<std::string> gpio_names_;
-  std::unordered_map<std::string,std::vector<std::string>> interface_names_;
+  std::unordered_map<std::string, std::vector<std::string>> interface_names_;
   std::vector<std::string> command_interface_types_;
 
   realtime_tools::RealtimeBuffer<std::shared_ptr<CmdType>> rt_command_ptr_;
@@ -73,4 +74,4 @@ protected:
 
 }  // namespace gpio_controllers
 
-#endif  // GPIO_COMMAND_CONTROLLER__GPIO_COMMAND_CONTROLLER_HPP_
+#endif  // GPIO_CONTROLLERS__GPIO_COMMAND_CONTROLLER_HPP_

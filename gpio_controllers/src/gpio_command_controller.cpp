@@ -43,8 +43,9 @@ CallbackReturn GpioCommandController::on_init()
   {
     auto_declare<std::vector<std::string>>("gpios", std::vector<std::string>());
     gpio_names_ = node_->get_parameter("gpios").as_string_array();
-    for(std::string &gpio : gpio_names_) 
-      auto_declare<std::vector<std::string>>("command_interfaces." + gpio, std::vector<std::string>());
+    for(std::string &gpio : gpio_names_)
+      auto_declare<std::vector<std::string>>("command_interfaces."
+          + gpio, std::vector<std::string>());
   }
   catch (const std::exception & e)
   {
@@ -68,19 +69,21 @@ CallbackReturn GpioCommandController::on_configure(
     for(std::string &gpio : gpio_names_){
       auto interfaces = node_->get_parameter("command_interfaces." + gpio).as_string_array();
       if (interfaces.empty()){
-        RCLCPP_ERROR(get_node()->get_logger(), "'command_interfaces.%s' parameter was empty",gpio.c_str());
+        RCLCPP_ERROR(get_node()->get_logger(),
+            "'command_interfaces.%s' parameter was empty", gpio.c_str());
         return CallbackReturn::ERROR;
       }
       if ( !interface_names_.insert( std::make_pair( gpio, interfaces) ).second ) {
-        RCLCPP_ERROR(get_node()->get_logger(), "Trying to override existing gpio setup. Wrong controller parameters.");
+        RCLCPP_ERROR(get_node()->get_logger(),
+            "Trying to override existing gpio setup. Wrong controller parameters.");
         return CallbackReturn::ERROR;
       }
     }
 
-    for (const auto & gpio : gpio_names_){
-      for (const auto & interface_name: interface_names_[gpio]){
-            command_interface_types_.push_back(gpio + "/" + interface_name);
-        }
+    for(const auto & gpio : gpio_names_){
+      for(const auto & interface_name: interface_names_[gpio]){
+        command_interface_types_.push_back(gpio + "/" + interface_name);
+      }
     }
 
     gpios_command_subscriber_ = get_node()->create_subscription<CmdType>(
@@ -118,8 +121,10 @@ CallbackReturn GpioCommandController::on_activate(
     command_interfaces_.size() != ordered_interfaces.size())
   {
     RCLCPP_ERROR(
-      node_->get_logger(), "Expected %zu command interfaces, got %zu", command_interface_types_.size(),
+      node_->get_logger(),
+      "Expected %zu command interfaces, got %zu", command_interface_types_.size(),
       ordered_interfaces.size());
+
     for(const auto & interface: command_interface_types_)
       RCLCPP_ERROR(node_->get_logger(), "Got %s", interface.c_str());
     return CallbackReturn::ERROR;
@@ -167,7 +172,7 @@ controller_interface::return_type GpioCommandController::update(
   return controller_interface::return_type::OK;
 }
 
-}  // namespace gpio_command_controller
+}  // namespace gpio_controllers
 
 #include "pluginlib/class_list_macros.hpp"
 
