@@ -2,7 +2,6 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-<<<<<<< HEAD
 2.13.0 (2022-10-05)
 -------------------
 * Generate parameters for Joint State Broadcaster (`#401 <https://github.com/ros-controls/ros2_controllers/issues/401>`_)
@@ -73,12 +72,6 @@ Changelog for package joint_state_broadcaster
 
 2.0.1 (2022-02-01)
 ------------------
-=======
-1.5.0 (2022-08-03)
-------------------
-* `joint_state_broadcaster` to use realtime tools (backport `#308 <https://github.com/ros-controls/ros2_controllers/issues/308>`_) (`#359 <https://github.com/ros-controls/ros2_controllers/issues/359>`_)
-* Contributors: John Morris, Bence Magyar
->>>>>>> 1.5.0
 
 2.0.0 (2022-01-28)
 ------------------
