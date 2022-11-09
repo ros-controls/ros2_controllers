@@ -473,7 +473,7 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
 
   auto & odometry_message = realtime_odometry_publisher_->msg_;
 
-  std::string controller_namespace = std::string(node_->get_namespace());
+  std::string controller_namespace = std::string(get_node()->get_namespace());
 
   if (controller_namespace == "/")
   {
