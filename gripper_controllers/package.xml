@@ -17,6 +17,7 @@
   <depend>control_msgs</depend>
   <depend>control_toolbox</depend>
   <depend>controller_interface</depend>
+  <depend>generate_parameter_library</depend>
   <depend>hardware_interface</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_action</depend>
