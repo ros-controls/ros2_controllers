@@ -483,7 +483,7 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   }
 
   odom_params_.odom_frame_id = controller_namespace + odom_params_.odom_frame_id;
-  odometry_message.child_frame_id = controller_namespace + odom_params_.base_frame_id;
+  odom_params_.base_frame_id = controller_namespace + odom_params_.base_frame_id;
 
   auto & odometry_message = realtime_odometry_publisher_->msg_;
   odometry_message.header.frame_id = odom_params_.odom_frame_id;
