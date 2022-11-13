@@ -51,7 +51,7 @@
 #include <boost/accumulators/statistics/stats.hpp>
 #include <boost/function.hpp>
 
-namespace ros2_ackermann_cont
+namespace ackermann_steering_controller
 {
 
 namespace bacc = boost::accumulators;
