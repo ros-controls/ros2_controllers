@@ -22,7 +22,7 @@
 #include <string>
 #include <vector>
 
-#include "ros2_ackermann_cont/odometry.h"
+#include "ackermann_steering_controller/odometry.hpp"
 
 #include "controller_interface/chainable_controller_interface.hpp"
 #include "hardware_interface/handle.hpp"
