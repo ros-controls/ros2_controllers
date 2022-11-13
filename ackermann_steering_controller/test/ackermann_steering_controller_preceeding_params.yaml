@@ -1,0 +1,9 @@
+test_ackermann_steering_controller:
+  ros__parameters:
+    joints:
+      - joint1
+
+    interface_name: acceleration
+
+    state_joints:
+      - joint1state
