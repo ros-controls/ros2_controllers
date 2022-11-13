@@ -1,9 +1,35 @@
 test_ackermann_steering_controller:
   ros__parameters:
 
-    joints:
-      - joint1
-
-    interface_name: acceleration
-
     reference_timeout: 0.1
+
+    rear_wheel_name: "rear_wheel_joint"
+
+    front_steer_name: "front_steer_joint"
+
+    publish_rate: 50.0
+
+    open_loop: false
+
+    wheel_separation_multiplier: 1.0
+
+    wheel_separation: 0.0
+
+    wheel_radius: 1.0
+
+    steer_pos_multiplier: 1.0
+
+    velocity_rolling_window_size: 10
+
+    allow_multiple_cmd_vel_publishers: true
+
+    base_frame_id: "base_link"
+
+    odom_frame_id: "odom"
+
+    enable_odom_tf: true
+
+    twist_covariance_diagonal: [0, 7, 14, 21, 28, 35]
+
+    pose_covariance_diagonal: [0, 7, 14, 21, 28, 35]
+
