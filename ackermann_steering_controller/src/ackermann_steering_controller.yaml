@@ -1,4 +1,4 @@
-ackermann_steering_controller_ros2:
+ackermann_steering_controller:
   reference_timeout: {
     type: double,
     default_value: 0.0,
