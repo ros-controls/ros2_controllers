@@ -49,13 +49,22 @@ constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
 class TestableAckermannSteeringController : public ackermann_steering_controller::AckermannSteeringController
 {
   FRIEND_TEST(AckermannSteeringControllerTest, all_parameters_set_configure_success);
+  FRIEND_TEST(AckermannSteeringControllerTest, check_exported_intefaces);
   FRIEND_TEST(AckermannSteeringControllerTest, activate_success);
+  FRIEND_TEST(AckermannSteeringControllerTest, update_success);
+  FRIEND_TEST(AckermannSteeringControllerTest, deactivate_success);
   FRIEND_TEST(AckermannSteeringControllerTest, reactivate_success);
   FRIEND_TEST(AckermannSteeringControllerTest, test_setting_slow_mode_service);
-  FRIEND_TEST(AckermannSteeringControllerTest, test_update_logic_fast);
-  FRIEND_TEST(AckermannSteeringControllerTest, test_update_logic_slow);
   FRIEND_TEST(AckermannSteeringControllerTest, test_update_logic_chainable_fast);
   FRIEND_TEST(AckermannSteeringControllerTest, test_update_logic_chainable_slow);
+  FRIEND_TEST(AckermannSteeringControllerTest, publish_status_success);
+  FRIEND_TEST(AckermannSteeringControllerTest, receive_message_and_publish_updated_status);
+  FRIEND_TEST(AckermannSteeringControllerTest, test_message_timeout);
+  FRIEND_TEST(AckermannSteeringControllerTest, test_message_wrong_num_joints);
+  FRIEND_TEST(AckermannSteeringControllerTest, test_message_accepted);
+  FRIEND_TEST(AckermannSteeringControllerTest, test_update_logic);
+  FRIEND_TEST(AckermannSteeringControllerTest, test_ref_timeout_zero_for_update);
+  FRIEND_TEST(AckermannSteeringControllerTest, test_ref_timeout_zero_for_reference_callback);
 
 public:
   controller_interface::CallbackReturn on_configure(
@@ -172,7 +181,12 @@ protected:
 
     // call update to publish the test value
     ASSERT_EQ(
-      controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_->update_reference_from_subscribers(
+      controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+    ASSERT_EQ(
+    controller_->update_and_write_commands(
+      controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
       controller_interface::return_type::OK);
 
     // call update to publish the test value
@@ -181,7 +195,10 @@ protected:
     rclcpp::WaitSet wait_set;          // block used to wait on message
     wait_set.add_subscription(subscription);
     while (max_sub_check_loop_count--) {
-      controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+      controller_->update_reference_from_subscribers(
+        controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01));
+      controller_->update_and_write_commands(
+        controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01));
       // check if message has been received
       if (wait_set.wait(std::chrono::milliseconds(2)).kind() == rclcpp::WaitResultKind::Ready) {
         break;
@@ -197,7 +214,7 @@ protected:
 
   // TODO(anyone): add/remove arguments as it suites your command message type
   void publish_commands(
-    const std::vector<double> & displacements = {0.45},
+    const rclcpp::Time & stamp, const std::vector<std::string> & joint_names = {"joint1_test"}, const std::vector<double> & displacements = {0.45},
     const std::vector<double> & velocities = {0.0}, const double duration = 1.25)
   {
     auto wait_for_topic = [&](const auto topic_name) {
@@ -216,7 +233,8 @@ protected:
     wait_for_topic(command_publisher_->get_topic_name());
 
     ControllerReferenceMsg msg;
-    msg.joint_names = joint_names_;
+    msg.header.stamp = stamp;
+    msg.joint_names = joint_names;
     msg.displacements = displacements;
     msg.velocities = velocities;
     msg.duration = duration;
@@ -254,6 +272,8 @@ protected:
 
   std::vector<hardware_interface::StateInterface> state_itfs_;
   std::vector<hardware_interface::CommandInterface> command_itfs_;
+
+  double ref_timeout_ = 0.2;
 
   // Test related parameters
   std::unique_ptr<TestableAckermannSteeringController> controller_;

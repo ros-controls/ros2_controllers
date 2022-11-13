@@ -15,11 +15,17 @@
 #ifndef ACKERMANN_STEERING_CONTROLLER__ACKERMANN_STEERING_CONTROLLER_HPP_
 #define ACKERMANN_STEERING_CONTROLLER__ACKERMANN_STEERING_CONTROLLER_HPP_
 
+#include <chrono>
+#include <cmath>
 #include <memory>
+#include <queue>
 #include <string>
 #include <vector>
 
+#include "ros2_ackermann_cont/odometry.h"
+
 #include "controller_interface/chainable_controller_interface.hpp"
+#include "hardware_interface/handle.hpp"
 #include "ackermann_steering_controller_parameters.hpp"
 #include "ackermann_steering_controller/visibility_control.h"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
@@ -29,22 +35,22 @@
 #include "std_srvs/srv/set_bool.hpp"
 
 // TODO(anyone): Replace with controller specific messages
-#include "control_msgs/msg/joint_controller_state.hpp"
-#include "control_msgs/msg/joint_jog.hpp"
+#include "geometry_msgs/msg/twist.hpp"
+#include "geometry_msgs/msg/twist_stamped.hpp"
+#include "tf2_msgs/msg/tf_message.hpp"
+#include "nav_msgs/msg/odometry.hpp"
+
 
 namespace ackermann_steering_controller
 {
 // name constants for state interfaces
-static constexpr size_t STATE_MY_ITFS = 0;
+static constexpr size_t NR_STATE_ITFS = 2;
 
 // name constants for command interfaces
-static constexpr size_t CMD_MY_ITFS = 0;
+static constexpr size_t NR_CMD_ITFS = 2;
 
-// TODO(anyone: example setup for control mode (usually you will use some enums defined in messages)
-enum class control_mode_type : std::uint8_t {
-  FAST = 0,
-  SLOW = 1,
-};
+// name constants for reference interfaces
+static constexpr size_t NR_REF_ITFS = 2;
 
 class AckermannSteeringController : public controller_interface::ChainableControllerInterface
 {
@@ -74,44 +80,88 @@ public:
     const rclcpp_lifecycle::State & previous_state) override;
 
   TEMPLATES__ROS2_CONTROL__VISIBILITY_PUBLIC
-  controller_interface::return_type update_reference_from_subscribers() override;
+  controller_interface::return_type update_reference_from_subscribers(
+    const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
   TEMPLATES__ROS2_CONTROL__VISIBILITY_PUBLIC
   controller_interface::return_type update_and_write_commands(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
   // TODO(anyone): replace the state and command message types
-  using ControllerReferenceMsg = control_msgs::msg::JointJog;
-  using ControllerModeSrvType = std_srvs::srv::SetBool;
-  using ControllerStateMsg = control_msgs::msg::JointControllerState;
+  using ControllerReferenceMsg = geometry_msgs::msg::TwistStamped;
+  using ControllerStateMsgOdom = nav_msgs::msg::Odometry;
+  using ControllerStateMsgTf = tf2_msgs::msg::TFMessage;
 
 protected:
   std::shared_ptr<ackermann_steering_controller::ParamListener> param_listener_;
   ackermann_steering_controller::Params params_;
 
-  std::vector<std::string> state_joints_;
 
   // Command subscribers and Controller State publisher
   rclcpp::Subscription<ControllerReferenceMsg>::SharedPtr ref_subscriber_ = nullptr;
   realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerReferenceMsg>> input_ref_;
+  rclcpp::Duration ref_timeout_ = rclcpp::Duration::from_seconds(0.0);  // 0ms
 
-  rclcpp::Service<ControllerModeSrvType>::SharedPtr set_slow_control_mode_service_;
-  realtime_tools::RealtimeBuffer<control_mode_type> control_mode_;
 
-  using ControllerStatePublisher = realtime_tools::RealtimePublisher<ControllerStateMsg>;
+  using ControllerStatePublisherOdom = realtime_tools::RealtimePublisher<ControllerStateMsgOdom>;
+  using ControllerStatePublisherTf = realtime_tools::RealtimePublisher<ControllerStateMsgTf>;
 
-  rclcpp::Publisher<ControllerStateMsg>::SharedPtr s_publisher_;
-  std::unique_ptr<ControllerStatePublisher> state_publisher_;
+  rclcpp::Publisher<ControllerStateMsgOdom>::SharedPtr odom_s_publisher_;
+  rclcpp::Publisher<ControllerStateMsgTf>::SharedPtr tf_odom_s_publisher_;
+
+  std::unique_ptr<ControllerStatePublisherOdom> rt_odom_state_publisher_;
+  std::unique_ptr<ControllerStatePublisherTf> rt_tf_odom_state_publisher_;
 
   // override methods from ChainableControllerInterface
   std::vector<hardware_interface::CommandInterface> on_export_reference_interfaces() override;
 
   bool on_set_chained_mode(bool chained_mode) override;
 
+  struct WheelHandle
+  {
+    std::reference_wrapper<const hardware_interface::LoanedStateInterface> feedback;
+    // std::reference_wrapper<hardware_interface::LoanedCommandInterface> velocity;
+  };
+
+  std::vector<WheelHandle> registered_rear_wheel_handles_;
+  std::vector<WheelHandle> registered_front_wheel_handles_;
+
+  /// Odometry related:
+  rclcpp::Duration publish_period_ = rclcpp::Duration::from_nanoseconds(0);
+  bool open_loop_;
+  rclcpp::Time previous_publish_timestamp_{0};
+
+  /// Velocity command related:
+  struct Commands
+  {
+    double lin;
+    double ang;
+    rclcpp::Time stamp;
+
+    Commands() : lin(0.0), ang(0.0), stamp(0.0) {}
+  };
+
+  // Odometry related:
+  Odometry odometry_;
+
 private:
   // callback for topic interface
   TEMPLATES__ROS2_CONTROL__VISIBILITY_LOCAL
   void reference_callback(const std::shared_ptr<ControllerReferenceMsg> msg);
+
+  /// Frame to use for the robot base:
+  std::string base_frame_id_;
+
+  /// Frame to use for odometry and odom tf:
+  std::string odom_frame_id_;
+
+  /// Whether to publish odometry to tf or not:
+  bool enable_odom_tf_;
+
+  // store last velocity
+  double last_linear_velocity_;
+  double last_angular_velocity_;
+
 };
 
 }  // namespace ackermann_steering_controller

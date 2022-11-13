@@ -5,3 +5,5 @@ test_ackermann_steering_controller:
       - joint1
 
     interface_name: acceleration
+
+    reference_timeout: 0.1
