@@ -20,14 +20,14 @@
 #include <memory>
 #include <queue>
 #include <string>
-#include <vector>
 #include <utility>
+#include <vector>
 
-#include "controller_interface/chainable_controller_interface.hpp"
 #include "ackermann_steering_controller/odometry.hpp"
-#include "hardware_interface/handle.hpp"
-#include "ackermann_steering_controller_parameters.hpp"
 #include "ackermann_steering_controller/visibility_control.h"
+#include "ackermann_steering_controller_parameters.hpp"
+#include "controller_interface/chainable_controller_interface.hpp"
+#include "hardware_interface/handle.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_buffer.h"
@@ -37,9 +37,8 @@
 // TODO(anyone): Replace with controller specific messages
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
-#include "tf2_msgs/msg/tf_message.hpp"
 #include "nav_msgs/msg/odometry.hpp"
-
+#include "tf2_msgs/msg/tf_message.hpp"
 
 namespace ackermann_steering_controller
 {
@@ -55,35 +54,33 @@ static constexpr size_t NR_REF_ITFS = 2;
 class AckermannSteeringController : public controller_interface::ChainableControllerInterface
 {
 public:
-  TEMPLATES__ROS2_CONTROL__VISIBILITY_PUBLIC
+  ACKERMANN_STEERING_CONTROLLER__VISIBILITY_PUBLIC
   AckermannSteeringController();
 
-  TEMPLATES__ROS2_CONTROL__VISIBILITY_PUBLIC
+  ACKERMANN_STEERING_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::CallbackReturn on_init() override;
 
-  TEMPLATES__ROS2_CONTROL__VISIBILITY_PUBLIC
+  ACKERMANN_STEERING_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::InterfaceConfiguration command_interface_configuration() const override;
 
-  TEMPLATES__ROS2_CONTROL__VISIBILITY_PUBLIC
+  ACKERMANN_STEERING_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::InterfaceConfiguration state_interface_configuration() const override;
 
-  TEMPLATES__ROS2_CONTROL__VISIBILITY_PUBLIC
+  ACKERMANN_STEERING_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::CallbackReturn on_configure(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  TEMPLATES__ROS2_CONTROL__VISIBILITY_PUBLIC
+  ACKERMANN_STEERING_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::CallbackReturn on_activate(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  TEMPLATES__ROS2_CONTROL__VISIBILITY_PUBLIC
+  ACKERMANN_STEERING_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::CallbackReturn on_deactivate(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  TEMPLATES__ROS2_CONTROL__VISIBILITY_PUBLIC
-  controller_interface::return_type update_reference_from_subscribers(
-    const rclcpp::Time & time, const rclcpp::Duration & period) override;
+  ACKERMANN_STEERING_CONTROLLER__VISIBILITY_PUBLIC
 
-  TEMPLATES__ROS2_CONTROL__VISIBILITY_PUBLIC
+  ACKERMANN_STEERING_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::return_type update_and_write_commands(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
@@ -96,12 +93,10 @@ protected:
   std::shared_ptr<ackermann_steering_controller::ParamListener> param_listener_;
   ackermann_steering_controller::Params params_;
 
-
   // Command subscribers and Controller State publisher
   rclcpp::Subscription<ControllerReferenceMsg>::SharedPtr ref_subscriber_ = nullptr;
   realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerReferenceMsg>> input_ref_;
   rclcpp::Duration ref_timeout_ = rclcpp::Duration::from_seconds(0.0);  // 0ms
-
 
   using ControllerStatePublisherOdom = realtime_tools::RealtimePublisher<ControllerStateMsgOdom>;
   using ControllerStatePublisherTf = realtime_tools::RealtimePublisher<ControllerStateMsgTf>;
@@ -127,7 +122,8 @@ protected:
   std::vector<WheelHandle> registered_front_wheel_handles_;
 
   /// Odometry related:
-  rclcpp::Duration publish_period_ = rclcpp::Duration::from_nanoseconds(0);;
+  rclcpp::Duration publish_period_ = rclcpp::Duration::from_nanoseconds(0);
+  ;
   bool open_loop_;
   rclcpp::Time previous_publish_timestamp_{0};
   /// Velocity command related:
@@ -145,7 +141,7 @@ protected:
 
 private:
   // callback for topic interface
-  TEMPLATES__ROS2_CONTROL__VISIBILITY_LOCAL
+  ACKERMANN_STEERING_CONTROLLER__VISIBILITY_LOCAL
   void reference_callback(const std::shared_ptr<ControllerReferenceMsg> msg);
 
   /// Frame to use for the robot base:
@@ -160,7 +156,6 @@ private:
   // store last velocity
   double last_linear_velocity_ = 0.0;
   double last_angular_velocity_ = 0.0;
-
 };
 
 }  // namespace ackermann_steering_controller

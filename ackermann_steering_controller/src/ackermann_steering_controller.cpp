@@ -16,10 +16,10 @@
 
 #include <limits>
 #include <memory>
-#include <string>
-#include <vector>
-#include <utility>
 #include <queue>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "controller_interface/helpers.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
@@ -43,7 +43,8 @@ static constexpr rmw_qos_profile_t rmw_qos_profile_services_hist_keep_all = {
   RMW_QOS_LIVELINESS_LEASE_DURATION_DEFAULT,
   false};
 
-using ControllerReferenceMsg = ackermann_steering_controller::AckermannSteeringController::ControllerReferenceMsg;
+using ControllerReferenceMsg =
+  ackermann_steering_controller::AckermannSteeringController::ControllerReferenceMsg;
 
 // called from RT control loop
 void reset_controller_reference_msg(
@@ -51,7 +52,7 @@ void reset_controller_reference_msg(
   const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node)
 {
   msg->header.stamp = node->now();
-  msg->twist.linear.x  = std::numeric_limits<double>::quiet_NaN();
+  msg->twist.linear.x = std::numeric_limits<double>::quiet_NaN();
   msg->twist.linear.y = std::numeric_limits<double>::quiet_NaN();
   msg->twist.linear.z = std::numeric_limits<double>::quiet_NaN();
   msg->twist.angular.x = std::numeric_limits<double>::quiet_NaN();
@@ -63,14 +64,19 @@ void reset_controller_reference_msg(
 
 namespace ackermann_steering_controller
 {
-AckermannSteeringController::AckermannSteeringController() : controller_interface::ChainableControllerInterface() {}
+AckermannSteeringController::AckermannSteeringController()
+: controller_interface::ChainableControllerInterface()
+{
+}
 
 controller_interface::CallbackReturn AckermannSteeringController::on_init()
 {
-
-  try {
+  try
+  {
     param_listener_ = std::make_shared<ackermann_steering_controller::ParamListener>(get_node());
-  } catch (const std::exception & e) {
+  }
+  catch (const std::exception & e)
+  {
     fprintf(stderr, "Exception thrown during controller's init with message: %s \n", e.what());
     return controller_interface::CallbackReturn::ERROR;
   }
@@ -100,15 +106,18 @@ controller_interface::CallbackReturn AckermannSteeringController::on_configure(
     std::bind(&AckermannSteeringController::reference_callback, this, std::placeholders::_1));
 
   std::shared_ptr<ControllerReferenceMsg> msg = std::make_shared<ControllerReferenceMsg>();
-  reset_controller_reference_msg(msg,get_node());
+  reset_controller_reference_msg(msg, get_node());
   input_ref_.writeFromNonRT(msg);
 
-  try {
+  try
+  {
     // State publisher
-    odom_s_publisher_ =
-      get_node()->create_publisher<ControllerStateMsgOdom>("~/odometry", rclcpp::SystemDefaultsQoS());
+    odom_s_publisher_ = get_node()->create_publisher<ControllerStateMsgOdom>(
+      "~/odometry", rclcpp::SystemDefaultsQoS());
     rt_odom_state_publisher_ = std::make_unique<ControllerStatePublisherOdom>(odom_s_publisher_);
-  } catch (const std::exception & e) {
+  }
+  catch (const std::exception & e)
+  {
     fprintf(
       stderr, "Exception thrown during publisher creation at configure stage with message : %s \n",
       e.what());
@@ -130,15 +139,19 @@ controller_interface::CallbackReturn AckermannSteeringController::on_configure(
     const size_t diagonal_index = NUM_DIMENSIONS * index + index;
     covariance[diagonal_index] = params_.pose_covariance_diagonal[index];
     covariance[diagonal_index] = params_.twist_covariance_diagonal[index];
-  }  
+  }
   rt_odom_state_publisher_->unlock();
 
-  try {
+  try
+  {
     // Tf State publisher
     tf_odom_s_publisher_ = get_node()->create_publisher<ControllerStateMsgTf>(
       "~/tf_odometry", rclcpp::SystemDefaultsQoS());
-    rt_tf_odom_state_publisher_ = std::make_unique<ControllerStatePublisherTf>(tf_odom_s_publisher_);
-  } catch (const std::exception & e) {
+    rt_tf_odom_state_publisher_ =
+      std::make_unique<ControllerStatePublisherTf>(tf_odom_s_publisher_);
+  }
+  catch (const std::exception & e)
+  {
     fprintf(
       stderr, "Exception thrown during publisher creation at configure stage with message : %s \n",
       e.what());
@@ -154,17 +167,19 @@ controller_interface::CallbackReturn AckermannSteeringController::on_configure(
   rt_tf_odom_state_publisher_->unlock();
 
   // calculation publication period of odometry and tf odometry messages
-  publish_period_ = rclcpp::Durationf::from_seconds(1.0 / params_.publish_rate);
+  publish_period_ = rclcpp::Duration::from_seconds(1.0 / params_.publish_rate);
   fprintf(stderr, "publish_period_ = %d \n", publish_period_);
 
   RCLCPP_INFO(get_node()->get_logger(), "configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-void AckermannSteeringController::reference_callback(const std::shared_ptr<ControllerReferenceMsg> msg)
+void AckermannSteeringController::reference_callback(
+  const std::shared_ptr<ControllerReferenceMsg> msg)
 {
   // if no timestamp provided use current time for command timestamp
-  if (msg->header.stamp.sec == 0 && msg->header.stamp.nanosec == 0u) {
+  if (msg->header.stamp.sec == 0 && msg->header.stamp.nanosec == 0u)
+  {
     RCLCPP_WARN(
       get_node()->get_logger(),
       "Timestamp in header is missing, using current time as command timestamp.");
@@ -172,24 +187,26 @@ void AckermannSteeringController::reference_callback(const std::shared_ptr<Contr
   }
   const auto age_of_last_command = get_node()->now() - msg->header.stamp;
 
-    if (ref_timeout_ == rclcpp::Duration::from_seconds(0) || age_of_last_command <= ref_timeout_) {
+  if (ref_timeout_ == rclcpp::Duration::from_seconds(0) || age_of_last_command <= ref_timeout_)
+  {
     input_ref_.writeFromNonRT(msg);
-    } else {
+  }
+  else
+  {
     RCLCPP_ERROR(
       get_node()->get_logger(),
       "Received message has timestamp %.10f older for %.10f which is more then allowed timeout "
       "(%.4f).",
       rclcpp::Time(msg->header.stamp).seconds(), age_of_last_command.seconds(),
       ref_timeout_.seconds());
-    }
-    
+  }
 }
 
-controller_interface::InterfaceConfiguration AckermannSteeringController::command_interface_configuration() const
+controller_interface::InterfaceConfiguration
+AckermannSteeringController::command_interface_configuration() const
 {
   controller_interface::InterfaceConfiguration command_interfaces_config;
   command_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
-
 
   command_interfaces_config.names.reserve(NR_CMD_ITFS);
   command_interfaces_config.names.push_back(
@@ -200,7 +217,8 @@ controller_interface::InterfaceConfiguration AckermannSteeringController::comman
   return command_interfaces_config;
 }
 
-controller_interface::InterfaceConfiguration AckermannSteeringController::state_interface_configuration() const
+controller_interface::InterfaceConfiguration
+AckermannSteeringController::state_interface_configuration() const
 {
   controller_interface::InterfaceConfiguration state_interfaces_config;
   state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
@@ -209,14 +227,13 @@ controller_interface::InterfaceConfiguration AckermannSteeringController::state_
   state_interfaces_config.names.push_back(
     params_.rear_wheel_name + "/" + hardware_interface::HW_IF_POSITION);
   state_interfaces_config.names.push_back(
-    params_.front_steer_name + "/" + hardware_interface::HW_IF_POSITION); 
+    params_.front_steer_name + "/" + hardware_interface::HW_IF_POSITION);
 
   return state_interfaces_config;
 }
 
-
-
-std::vector<hardware_interface::CommandInterface> AckermannSteeringController::on_export_reference_interfaces()
+std::vector<hardware_interface::CommandInterface>
+AckermannSteeringController::on_export_reference_interfaces()
 {
   reference_interfaces_.resize(NR_REF_ITFS, std::numeric_limits<double>::quiet_NaN());
 
@@ -254,7 +271,8 @@ controller_interface::CallbackReturn AckermannSteeringController::on_deactivate(
 {
   // TODO(anyone): depending on number of interfaces, use definitions, e.g., `CMD_MY_ITFS`,
   // instead of a loop
-  for (size_t i = 0; i < NR_CMD_ITFS; ++i) {
+  for (size_t i = 0; i < NR_CMD_ITFS; ++i)
+  {
     command_interfaces_[i].set_value(std::numeric_limits<double>::quiet_NaN());
   }
   return controller_interface::CallbackReturn::SUCCESS;
@@ -268,15 +286,20 @@ controller_interface::return_type AckermannSteeringController::update_reference_
 
   // TODO(anyone): depending on number of interfaces, use definitions, e.g., `CMD_MY_ITFS`,
   // instead of a loop
-    // send message only if there is no timeout
-  if (age_of_last_command <= ref_timeout_ || ref_timeout_ == rclcpp::Duration::from_seconds(0)) {
-    if (!std::isnan(current_ref->twist.linear.x) && !std::isnan(current_ref->twist.angular.z)) {
+  // send message only if there is no timeout
+  if (age_of_last_command <= ref_timeout_ || ref_timeout_ == rclcpp::Duration::from_seconds(0))
+  {
+    if (!std::isnan(current_ref->twist.linear.x) && !std::isnan(current_ref->twist.angular.z))
+    {
       reference_interfaces_[0] = current_ref->twist.linear.x;
-      reference_interfaces_[1] = current_ref->twist.angular.z;     
+      reference_interfaces_[1] = current_ref->twist.angular.z;
     }
-  } else {
+  }
+  else
+  {
     reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();
-    reference_interfaces_[1] = std::numeric_limits<double>::quiet_NaN();}
+    reference_interfaces_[1] = std::numeric_limits<double>::quiet_NaN();
+  }
   return controller_interface::return_type::OK;
 }
 
@@ -294,11 +317,11 @@ controller_interface::return_type AckermannSteeringController::update_and_write_
 
     if (std::isnan(wheel_position) || std::isnan(steer_position))
     {
-      return controller_interface::return_type::OK; 
+      return controller_interface::return_type::OK;
     }
 
     // Estimate linear and angular velocity using joint information
-    odometry_.update(wheel_position, steer_position,time);
+    odometry_.update(wheel_position, steer_position, time);
   }
 
   // MOVE ROBOT
@@ -315,8 +338,7 @@ controller_interface::return_type AckermannSteeringController::update_and_write_
   last_linear_velocity_ = reference_interfaces_[0];
   last_angular_velocity_ = reference_interfaces_[1];
 
-    previous_publish_timestamp_ = time;
-
+  previous_publish_timestamp_ = time;
 
   // omega = linear_vel / radius
   command_interfaces_[0].set_value(last_linear_velocity_ / params_.wheel_radius);
@@ -327,18 +349,21 @@ controller_interface::return_type AckermannSteeringController::update_and_write_
     reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();
     reference_interfaces_[1] = std::numeric_limits<double>::quiet_NaN();
   }
-    fprintf(stderr, "previous_publish_timestamp_ + publish_period_ < time  = %d, %d, %d, %d\n", time,
-     previous_publish_timestamp_,  publish_period_, (previous_publish_timestamp_ + publish_period_) < time);
-      // fprintf(stderr, "Exception thrown during controller's init with message: %s \n", e.what());
+  fprintf(
+    stderr, "previous_publish_timestamp_ + publish_period_ < time  = %d, %d, %d, %d\n", time,
+    previous_publish_timestamp_, publish_period_,
+    (previous_publish_timestamp_ + publish_period_) < time);
+  // fprintf(stderr, "Exception thrown during controller's init with message: %s \n", e.what());
 
   // Publish odometry message
   if (previous_publish_timestamp_ + publish_period_ < time)
   {
     fprintf(stderr, "debuggin2 \n");
-    fprintf(stderr, "previous_publish_timestamp_ + publish_period_ < time  = %d, %d, %d, %d\n", time, 
-    previous_publish_timestamp_,  publish_period_, (previous_publish_timestamp_ + publish_period_) < time);
+    fprintf(
+      stderr, "previous_publish_timestamp_ + publish_period_ < time  = %d, %d, %d, %d\n", time,
+      previous_publish_timestamp_, publish_period_,
+      (previous_publish_timestamp_ + publish_period_) < time);
 
-    
     previous_publish_timestamp_ += publish_period_;
     // Compute and store orientation info
     tf2::Quaternion orientation;
@@ -360,13 +385,15 @@ controller_interface::return_type AckermannSteeringController::update_and_write_
     if (params_.enable_odom_tf && rt_tf_odom_state_publisher_->trylock())
     {
       rt_tf_odom_state_publisher_->msg_.transforms.front().header.stamp = time;
-      rt_tf_odom_state_publisher_->msg_.transforms.front().transform.translation.x = odometry_.getX();
-      rt_tf_odom_state_publisher_->msg_.transforms.front().transform.translation.y = odometry_.getY();
-      rt_tf_odom_state_publisher_->msg_.transforms.front().transform.rotation = tf2::toMsg(orientation);
+      rt_tf_odom_state_publisher_->msg_.transforms.front().transform.translation.x =
+        odometry_.getX();
+      rt_tf_odom_state_publisher_->msg_.transforms.front().transform.translation.y =
+        odometry_.getY();
+      rt_tf_odom_state_publisher_->msg_.transforms.front().transform.rotation =
+        tf2::toMsg(orientation);
       rt_tf_odom_state_publisher_->unlockAndPublish();
     }
   }
-
 
   return controller_interface::return_type::OK;
 }
@@ -376,4 +403,5 @@ controller_interface::return_type AckermannSteeringController::update_and_write_
 #include "pluginlib/class_list_macros.hpp"
 
 PLUGINLIB_EXPORT_CLASS(
-  ackermann_steering_controller::AckermannSteeringController, controller_interface::ChainableControllerInterface)
+  ackermann_steering_controller::AckermannSteeringController,
+  controller_interface::ChainableControllerInterface)
