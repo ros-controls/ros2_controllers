@@ -29,7 +29,7 @@ test_ackermann_steering_controller:
 
     enable_odom_tf: true
 
-    twist_covariance_diagonal: [0, 7, 14, 21, 28, 35]
+    twist_covariance_diagonal: [0.0, 7.0, 14.0, 21.0, 28.0, 35.0]
 
-    pose_covariance_diagonal: [0, 7, 14, 21, 28, 35]
+    pose_covariance_diagonal: [0.0, 7.0, 14.0, 21.0, 28.0, 35.0]
 

@@ -21,10 +21,10 @@
 #include <queue>
 #include <string>
 #include <vector>
-
-#include "ackermann_steering_controller/odometry.hpp"
+#include <utility>
 
 #include "controller_interface/chainable_controller_interface.hpp"
+#include "ackermann_steering_controller/odometry.hpp"
 #include "hardware_interface/handle.hpp"
 #include "ackermann_steering_controller_parameters.hpp"
 #include "ackermann_steering_controller/visibility_control.h"
@@ -127,10 +127,9 @@ protected:
   std::vector<WheelHandle> registered_front_wheel_handles_;
 
   /// Odometry related:
-  rclcpp::Duration publish_period_ = rclcpp::Duration::from_nanoseconds(0);
+  rclcpp::Duration publish_period_ = rclcpp::Duration::from_nanoseconds(0);;
   bool open_loop_;
   rclcpp::Time previous_publish_timestamp_{0};
-
   /// Velocity command related:
   struct Commands
   {
@@ -159,8 +158,8 @@ private:
   bool enable_odom_tf_;
 
   // store last velocity
-  double last_linear_velocity_;
-  double last_angular_velocity_;
+  double last_linear_velocity_ = 0.0;
+  double last_angular_velocity_ = 0.0;
 
 };
 

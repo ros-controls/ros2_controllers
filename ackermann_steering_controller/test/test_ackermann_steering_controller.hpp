@@ -15,6 +15,8 @@
 #ifndef TEMPLATES__ROS2_CONTROL__CONTROLLER__TEST_ACKERMANN_STEERING_CONTROLLER_HPP_
 #define TEMPLATES__ROS2_CONTROL__CONTROLLER__TEST_ACKERMANN_STEERING_CONTROLLER_HPP_
 
+#include "gmock/gmock.h"
+
 #include <chrono>
 #include <limits>
 #include <memory>
@@ -24,19 +26,19 @@
 #include <vector>
 
 #include "ackermann_steering_controller/ackermann_steering_controller.hpp"
-#include "gmock/gmock.h"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
+#include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "rclcpp/parameter_value.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp/utilities.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 
 // TODO(anyone): replace the state and command message types
-using ControllerStateMsg = ackermann_steering_controller::AckermannSteeringController::ControllerStateMsg;
+using ControllerStateMsgOdom = ackermann_steering_controller::AckermannSteeringController::ControllerStateMsgOdom;
+using ControllerStateMsgTf = ackermann_steering_controller::AckermannSteeringController::ControllerStateMsgTf;
 using ControllerReferenceMsg = ackermann_steering_controller::AckermannSteeringController::ControllerReferenceMsg;
-using ControllerModeSrvType = ackermann_steering_controller::AckermannSteeringController::ControllerModeSrvType;
 
 namespace
 {
@@ -54,15 +56,14 @@ class TestableAckermannSteeringController : public ackermann_steering_controller
   FRIEND_TEST(AckermannSteeringControllerTest, update_success);
   FRIEND_TEST(AckermannSteeringControllerTest, deactivate_success);
   FRIEND_TEST(AckermannSteeringControllerTest, reactivate_success);
-  FRIEND_TEST(AckermannSteeringControllerTest, test_setting_slow_mode_service);
-  FRIEND_TEST(AckermannSteeringControllerTest, test_update_logic_chainable_fast);
-  FRIEND_TEST(AckermannSteeringControllerTest, test_update_logic_chainable_slow);
+  // FRIEND_TEST(AckermannSteeringControllerTest, test_setting_slow_mode_service);
+  // FRIEND_TEST(AckermannSteeringControllerTest, test_update_logic_chainable_fast);
+  // FRIEND_TEST(AckermannSteeringControllerTest, test_update_logic_chainable_slow);
   FRIEND_TEST(AckermannSteeringControllerTest, publish_status_success);
   FRIEND_TEST(AckermannSteeringControllerTest, receive_message_and_publish_updated_status);
-  FRIEND_TEST(AckermannSteeringControllerTest, test_message_timeout);
-  FRIEND_TEST(AckermannSteeringControllerTest, test_message_wrong_num_joints);
+  // FRIEND_TEST(AckermannSteeringControllerTest, test_message_timeout);
   FRIEND_TEST(AckermannSteeringControllerTest, test_message_accepted);
-  FRIEND_TEST(AckermannSteeringControllerTest, test_update_logic);
+  // FRIEND_TEST(AckermannSteeringControllerTest, test_update_logic);
   FRIEND_TEST(AckermannSteeringControllerTest, test_ref_timeout_zero_for_update);
   FRIEND_TEST(AckermannSteeringControllerTest, test_ref_timeout_zero_for_reference_callback);
 
@@ -130,11 +131,8 @@ public:
 
     command_publisher_node_ = std::make_shared<rclcpp::Node>("command_publisher");
     command_publisher_ = command_publisher_node_->create_publisher<ControllerReferenceMsg>(
-      "/test_ackermann_steering_controller/commands", rclcpp::SystemDefaultsQoS());
+      "/test_ackermann_steering_controller/reference", rclcpp::SystemDefaultsQoS());
 
-    service_caller_node_ = std::make_shared<rclcpp::Node>("service_caller");
-    slow_control_service_client_ = service_caller_node_->create_client<ControllerModeSrvType>(
-      "/test_ackermann_steering_controller/set_slow_control_mode");
   }
 
   static void TearDownTestCase() {}
@@ -150,34 +148,38 @@ protected:
     command_itfs_.reserve(joint_command_values_.size());
     command_ifs.reserve(joint_command_values_.size());
 
-    for (size_t i = 0; i < joint_command_values_.size(); ++i) {
-      command_itfs_.emplace_back(hardware_interface::CommandInterface(
-        joint_names_[i], interface_name_, &joint_command_values_[i]));
-      command_ifs.emplace_back(command_itfs_.back());
-    }
+    command_itfs_.emplace_back(hardware_interface::CommandInterface(
+      rear_wheel_name, hardware_interface::HW_IF_VELOCITY, &joint_command_values_[0]));
+    command_ifs.emplace_back(command_itfs_.back());
+
+    command_itfs_.emplace_back(hardware_interface::CommandInterface(
+        front_steer_name, hardware_interface::HW_IF_VELOCITY, &joint_command_values_[1]));
+    command_ifs.emplace_back(command_itfs_.back());
     // TODO(anyone): Add other command interfaces, if any
 
     std::vector<hardware_interface::LoanedStateInterface> state_ifs;
     state_itfs_.reserve(joint_state_values_.size());
     state_ifs.reserve(joint_state_values_.size());
 
-    for (size_t i = 0; i < joint_state_values_.size(); ++i) {
-      state_itfs_.emplace_back(hardware_interface::StateInterface(
-        joint_names_[i], interface_name_, &joint_state_values_[i]));
-      state_ifs.emplace_back(state_itfs_.back());
-    }
+    state_itfs_.emplace_back(hardware_interface::StateInterface(
+      rear_wheel_name, hardware_interface::HW_IF_POSITION, &joint_state_values_[0]));
+    state_ifs.emplace_back(state_itfs_.back());
+
+    state_itfs_.emplace_back(hardware_interface::StateInterface(
+      front_steer_name, hardware_interface::HW_IF_POSITION, &joint_state_values_[1]));
+    state_ifs.emplace_back(state_itfs_.back());
     // TODO(anyone): Add other state interfaces, if any
 
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
   }
 
-  void subscribe_and_get_messages(ControllerStateMsg & msg)
+  void subscribe_and_get_messages(ControllerStateMsgOdom & msg_odom)
   {
     // create a new subscriber
     rclcpp::Node test_subscription_node("test_subscription_node");
-    auto subs_callback = [&](const ControllerStateMsg::SharedPtr) {};
-    auto subscription = test_subscription_node.create_subscription<ControllerStateMsg>(
-      "/test_ackermann_steering_controller/state", 10, subs_callback);
+    auto subs_callback_odom = [&](const ControllerStateMsgOdom::SharedPtr) {};
+    auto subscription_odom = test_subscription_node.create_subscription<ControllerStateMsgOdom>(
+      "/test_ackermann_steering_controller/odometry", 10, subs_callback_odom);
 
     // call update to publish the test value
     ASSERT_EQ(
@@ -193,7 +195,7 @@ protected:
     // since update doesn't guarantee a published message, republish until received
     int max_sub_check_loop_count = 5;  // max number of tries for pub/sub loop
     rclcpp::WaitSet wait_set;          // block used to wait on message
-    wait_set.add_subscription(subscription);
+    wait_set.add_subscription(subscription_odom);
     while (max_sub_check_loop_count--) {
       controller_->update_reference_from_subscribers(
         controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01));
@@ -204,18 +206,19 @@ protected:
         break;
       }
     }
+
     ASSERT_GE(max_sub_check_loop_count, 0) << "Test was unable to publish a message through "
                                               "controller/broadcaster update loop";
 
     // take message from subscription
-    rclcpp::MessageInfo msg_info;
-    ASSERT_TRUE(subscription->take(msg, msg_info));
+    rclcpp::MessageInfo msg_odom_info;
+    ASSERT_TRUE(subscription_odom->take(msg_odom, msg_odom_info));
   }
 
   // TODO(anyone): add/remove arguments as it suites your command message type
   void publish_commands(
-    const rclcpp::Time & stamp, const std::vector<std::string> & joint_names = {"joint1_test"}, const std::vector<double> & displacements = {0.45},
-    const std::vector<double> & velocities = {0.0}, const double duration = 1.25)
+    const rclcpp::Time & stamp, const double & twist_linear_x = 0.45,
+    const double & twist_angular_z = 0.0)
   {
     auto wait_for_topic = [&](const auto topic_name) {
       size_t wait_count = 0;
@@ -233,42 +236,27 @@ protected:
     wait_for_topic(command_publisher_->get_topic_name());
 
     ControllerReferenceMsg msg;
+
     msg.header.stamp = stamp;
-    msg.joint_names = joint_names;
-    msg.displacements = displacements;
-    msg.velocities = velocities;
-    msg.duration = duration;
+    msg.twist.linear.x  = twist_linear_x;
+    msg.twist.linear.y = std::numeric_limits<double>::quiet_NaN();
+    msg.twist.linear.z = std::numeric_limits<double>::quiet_NaN();
+    msg.twist.angular.x = std::numeric_limits<double>::quiet_NaN();
+    msg.twist.angular.y = std::numeric_limits<double>::quiet_NaN();
+    msg.twist.angular.z = twist_angular_z;
 
     command_publisher_->publish(msg);
   }
 
-  std::shared_ptr<ControllerModeSrvType::Response> call_service(
-    const bool slow_control, rclcpp::Executor & executor)
-  {
-    auto request = std::make_shared<ControllerModeSrvType::Request>();
-    request->data = slow_control;
-
-    bool wait_for_service_ret =
-      slow_control_service_client_->wait_for_service(std::chrono::milliseconds(500));
-    EXPECT_TRUE(wait_for_service_ret);
-    if (!wait_for_service_ret) {
-      throw std::runtime_error("Services is not available!");
-    }
-    auto result = slow_control_service_client_->async_send_request(request);
-    EXPECT_EQ(executor.spin_until_future_complete(result), rclcpp::FutureReturnCode::SUCCESS);
-
-    return result.get();
-  }
 
 protected:
   // TODO(anyone): adjust the members as needed
+  std::string rear_wheel_name = "rear_wheel_joint";
+  std::string front_steer_name = "front_steer_joint";
 
   // Controller-related parameters
-  std::vector<std::string> joint_names_ = {"joint1"};
-  std::vector<std::string> state_joint_names_ = {"joint1state"};
-  std::string interface_name_ = "acceleration";
-  std::array<double, 1> joint_state_values_ = {1.1};
-  std::array<double, 1> joint_command_values_ = {101.101};
+  std::array<double, 2> joint_state_values_ = {1.1, 2.2};
+  std::array<double, 2> joint_command_values_ = {101.101, 202.202};
 
   std::vector<hardware_interface::StateInterface> state_itfs_;
   std::vector<hardware_interface::CommandInterface> command_itfs_;
@@ -279,8 +267,7 @@ protected:
   std::unique_ptr<TestableAckermannSteeringController> controller_;
   rclcpp::Node::SharedPtr command_publisher_node_;
   rclcpp::Publisher<ControllerReferenceMsg>::SharedPtr command_publisher_;
-  rclcpp::Node::SharedPtr service_caller_node_;
-  rclcpp::Client<ControllerModeSrvType>::SharedPtr slow_control_service_client_;
+
 };
 
 #endif  // TEMPLATES__ROS2_CONTROL__CONTROLLER__TEST_ACKERMANN_STEERING_CONTROLLER_HPP_

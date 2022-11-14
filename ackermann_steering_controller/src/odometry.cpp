@@ -41,6 +41,7 @@
  */
 
 #include <ackermann_steering_controller/odometry.hpp>
+#include <cmath>
 
 namespace ackermann_steering_controller
 {
