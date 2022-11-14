@@ -278,11 +278,10 @@ controller_interface::CallbackReturn AckermannSteeringController::on_deactivate(
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::return_type AckermannSteeringController::update_reference_from_subscribers(
-  const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
+controller_interface::return_type AckermannSteeringController::update_reference_from_subscribers()
 {
   auto current_ref = *(input_ref_.readFromRT());
-  const auto age_of_last_command = time - (current_ref)->header.stamp;
+  const auto age_of_last_command = get_node()->now() - (current_ref)->header.stamp;
 
   // TODO(anyone): depending on number of interfaces, use definitions, e.g., `CMD_MY_ITFS`,
   // instead of a loop

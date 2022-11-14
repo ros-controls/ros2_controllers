@@ -150,9 +150,7 @@ TEST_F(AckermannSteeringControllerTest, reactivate_success)
   ASSERT_TRUE(std::isnan(controller_->command_interfaces_[NR_CMD_ITFS - 2].get_value()));
 
   ASSERT_EQ(
-    controller_->update_reference_from_subscribers(
-      controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
+    controller_->update_reference_from_subscribers(), controller_interface::return_type::OK);
   ASSERT_EQ(
     controller_->update_and_write_commands(
       controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
@@ -188,9 +186,7 @@ TEST_F(AckermannSteeringControllerTest, receive_message_and_publish_updated_stat
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   ASSERT_EQ(
-    controller_->update_reference_from_subscribers(
-      controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
+    controller_->update_reference_from_subscribers(), controller_interface::return_type::OK);
   ASSERT_EQ(
     controller_->update_and_write_commands(
       controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
@@ -204,9 +200,7 @@ TEST_F(AckermannSteeringControllerTest, receive_message_and_publish_updated_stat
   ASSERT_TRUE(controller_->wait_for_commands(executor));
 
   ASSERT_EQ(
-    controller_->update_reference_from_subscribers(
-      controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
+    controller_->update_reference_from_subscribers(), controller_interface::return_type::OK);
   ASSERT_EQ(
     controller_->update_and_write_commands(
       controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
@@ -437,9 +431,7 @@ TEST_F(AckermannSteeringControllerTest, test_ref_timeout_zero_for_update)
 
   ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
   ASSERT_EQ(
-    controller_->update_reference_from_subscribers(
-      controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
+    controller_->update_reference_from_subscribers(), controller_interface::return_type::OK);
   ASSERT_EQ(
     controller_->update_and_write_commands(
       controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
