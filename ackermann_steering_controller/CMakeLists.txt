@@ -41,12 +41,13 @@ find_package(ament_cmake REQUIRED)
 # Add ackermann_steering_controller library related compile commands
 generate_parameter_library(ackermann_steering_controller_parameters
   src/ackermann_steering_controller.yaml
-  include/ackermann_steering_controller/validate_ackermann_steering_controller_parameters.hpp
+  # include/ackermann_steering_controller/validate_ackermann_steering_controller_parameters.hpp
 )
 add_library(
   ackermann_steering_controller
   SHARED
   src/ackermann_steering_controller.cpp
+  src/odometry.cpp
 )
 target_include_directories(ackermann_steering_controller PRIVATE include)
 target_link_libraries(ackermann_steering_controller ackermann_steering_controller_parameters)
@@ -92,14 +93,14 @@ if(BUILD_TESTING)
   #   ros2_control_test_assets
   # )
 
-  # add_rostest_with_parameters_gmock(test_ackermann_steering_controller test/test_ackermann_steering_controller.cpp ${CMAKE_CURRENT_SOURCE_DIR}/test/ackermann_steering_controller_params.yaml)
-  # target_include_directories(test_ackermann_steering_controller PRIVATE include)
-  # target_link_libraries(test_ackermann_steering_controller ackermann_steering_controller)
-  # ament_target_dependencies(
-  #   test_ackermann_steering_controller
-  #   controller_interface
-  #   hardware_interface
-  # )
+  add_rostest_with_parameters_gmock(test_ackermann_steering_controller test/test_ackermann_steering_controller.cpp ${CMAKE_CURRENT_SOURCE_DIR}/test/ackermann_steering_controller_params.yaml)
+  target_include_directories(test_ackermann_steering_controller PRIVATE include)
+  target_link_libraries(test_ackermann_steering_controller ackermann_steering_controller)
+  ament_target_dependencies(
+    test_ackermann_steering_controller
+    controller_interface
+    hardware_interface
+  )
 
   # add_rostest_with_parameters_gmock(test_ackermann_steering_controller_preceeding test/test_ackermann_steering_controller_preceeding.cpp ${CMAKE_CURRENT_SOURCE_DIR}/test/ackermann_steering_controller_preceeding_params.yaml)
   # target_include_directories(test_ackermann_steering_controller_preceeding PRIVATE include)
