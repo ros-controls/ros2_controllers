@@ -27,7 +27,7 @@ ackermann_steering_controller:
 
   publish_rate: {
     type: double,
-    default_value: 50.0,
+    default_value: 100.0,
     description: "In Hz. Controller state will be published at this rate.",
     read_only: true,
     
