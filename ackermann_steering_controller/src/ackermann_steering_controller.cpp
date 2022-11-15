@@ -170,8 +170,8 @@ controller_interface::CallbackReturn AckermannSteeringController::on_configure(
 
   // calculation publication period of odometry and tf odometry messages
   publish_period_ = rclcpp::Duration::from_seconds(1.0 / params_.publish_rate);
-  fprintf(stderr, "publish_period_, publish_rate = %f,%f \n",
-          publish_period_.seconds(), params_.publish_rate);
+  // fprintf(stderr, "publish_period_, publish_rate = %f,%f \n",
+  //         publish_period_.seconds(), params_.publish_rate);
   RCLCPP_INFO(get_node()->get_logger(), "configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -341,29 +341,30 @@ AckermannSteeringController::update_and_write_commands(
   }
   // fprintf(stderr, "Exception thrown during controller's init with message: %s
   // \n", e.what());
-  fprintf(stderr, "outside \n");
-  fprintf(
-      stderr,
-      "all in sec time, previous_publish_timestamp_, publish_period_, "
-      "previous_publish_timestamp_ + publish_period_) < time  = %f, %f, %f, "
-      "%d\n",
-      time.seconds(), previous_publish_timestamp_.seconds(),
-      publish_period_.seconds(),
-      (previous_publish_timestamp_.seconds() + publish_period_.seconds()) <
-          time.seconds());
+  // fprintf(stderr, "outside \n");
+  // fprintf(
+  //     stderr,
+  //     "all in sec time, previous_publish_timestamp_, publish_period_, "
+  //     "previous_publish_timestamp_ + publish_period_) < time  = %f, %f, %f, "
+  //     "%d\n",
+  //     time.seconds(), previous_publish_timestamp_.seconds(),
+  //     publish_period_.seconds(),
+  //     (previous_publish_timestamp_.seconds() + publish_period_.seconds()) <
+  //         time.seconds());
   // Publish odometry message
   if (previous_publish_timestamp_.seconds() + publish_period_.seconds() <
       time.seconds()) {
-    fprintf(stderr, "inside \n");
-    fprintf(
-        stderr,
-        "all in sec time, previous_publish_timestamp_, publish_period_, "
-        "previous_publish_timestamp_ + publish_period_) < time  = %f, %f, %f, "
-        "%d\n",
-        time.seconds(), previous_publish_timestamp_.seconds(),
-        publish_period_.seconds(),
-        (previous_publish_timestamp_.seconds() + publish_period_.seconds()) <
-            time.seconds());
+    // fprintf(stderr, "inside \n");
+    // fprintf(
+    //     stderr,
+    //     "all in sec time, previous_publish_timestamp_, publish_period_, "
+    //     "previous_publish_timestamp_ + publish_period_) < time  = %f, %f, %f,
+    //     "
+    //     "%d\n",
+    //     time.seconds(), previous_publish_timestamp_.seconds(),
+    //     publish_period_.seconds(),
+    //     (previous_publish_timestamp_.seconds() + publish_period_.seconds()) <
+    //         time.seconds());
 
     previous_publish_timestamp_ += publish_period_;
     // Compute and store orientation info
