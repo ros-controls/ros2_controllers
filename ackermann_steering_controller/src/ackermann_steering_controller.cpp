@@ -212,7 +212,7 @@ AckermannSteeringController::command_interface_configuration() const
   command_interfaces_config.names.push_back(
     params_.rear_wheel_name + "/" + hardware_interface::HW_IF_VELOCITY);
   command_interfaces_config.names.push_back(
-    params_.front_steer_name + "/" + hardware_interface::HW_IF_VELOCITY);
+    params_.front_steer_name + "/" + hardware_interface::HW_IF_POSITION);
 
   return command_interfaces_config;
 }
@@ -245,7 +245,7 @@ AckermannSteeringController::on_export_reference_interfaces()
     &reference_interfaces_[0]));
 
   reference_interfaces.push_back(hardware_interface::CommandInterface(
-    get_node()->get_name(), std::string("angular/") + hardware_interface::HW_IF_VELOCITY,
+    get_node()->get_name(), std::string("angular/") + hardware_interface::HW_IF_POSITION,
     &reference_interfaces_[1]));
 
   return reference_interfaces;
