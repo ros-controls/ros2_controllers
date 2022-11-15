@@ -278,6 +278,7 @@ public:
         std::lock_guard<std::mutex> guard(state_mutex_);
         state_msg_ = msg;
       });
+    state_sub_wait_set_.add_subscription(state_subscriber_);
   }
 
   /// Publish trajectory msgs with multiple points
@@ -349,12 +350,30 @@ public:
 
   void updateController(rclcpp::Duration wait_time = rclcpp::Duration::from_seconds(0.2))
   {
-    auto clock = rclcpp::Clock(RCL_STEADY_TIME);
-    const auto start_time = clock.now();
-    const auto end_time = start_time + wait_time;
-    while (clock.now() < end_time)
+    
+    rclcpp::Time now_time = rclcpp::Clock(RCL_STEADY_TIME).now();
+    traj_controller_->update(now_time, wait_time);
+    traj_controller_->update(now_time + wait_time, wait_time);
+  }
+  
+  /* Returns true if timed out, else returns false */
+  bool waitForSubscriberToBeReady(rclcpp::Duration timeout = rclcpp::Duration::from_seconds(.2))
+  {
+    // mark start_time for determining timeout
+    rclcpp::Clock clock = rclcpp::Clock(RCL_STEADY_TIME);
+    rclcpp::Time start_time = clock.now();
+    // sleep until subscriber has a publisher or timeout
+    while(
+      clock.now() < start_time + timeout &&
+      state_subscriber_->get_publisher_count() < 1
+    )
     {
-      traj_controller_->update(clock.now(), clock.now() - start_time);
+      rclcpp::sleep_for(std::chrono::milliseconds(100));
+    }
+    if (clock.now() > start_time + timeout) {
+      return true;
+    } else {
+      return false;
     }
   }
 
@@ -370,8 +389,7 @@ public:
     traj_controller_->wait_for_trajectory(executor);
     updateController(controller_wait_time);
     // Spin to receive latest state
-    executor.spin_some();
-    auto state_msg = getState();
+    auto state_msg = getState(executor);
     ASSERT_TRUE(state_msg);
     for (size_t i = 0; i < expected_actual.positions.size(); ++i)
     {
@@ -394,9 +412,18 @@ public:
     }
   }
 
-  std::shared_ptr<control_msgs::msg::JointTrajectoryControllerState> getState() const
+  std::shared_ptr<control_msgs::msg::JointTrajectoryControllerState> getState(
+    rclcpp::Executor & executor
+  )
   {
+    executor.spin_some();
+    std::chrono::milliseconds timeout(500);
+    if (state_sub_wait_set_.wait(timeout).kind() == rclcpp::WaitResultKind::Ready)
+    {
+      executor.spin_some();
+    }
     std::lock_guard<std::mutex> guard(state_mutex_);
+    EXPECT_NE(state_msg_, nullptr) << "Warning: state message is null";
     return state_msg_;
   }
   void test_state_publish_rate_target(int target_msg_count);
@@ -416,6 +443,7 @@ public:
     state_subscriber_;
   mutable std::mutex state_mutex_;
   std::shared_ptr<control_msgs::msg::JointTrajectoryControllerState> state_msg_;
+  rclcpp::WaitSet state_sub_wait_set_;
 
   std::vector<double> joint_pos_;
   std::vector<double> joint_vel_;

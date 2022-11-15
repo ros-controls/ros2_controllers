@@ -439,13 +439,13 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
 TEST_P(TrajectoryControllerTestParameterized, state_topic_consistency)
 {
   rclcpp::executors::SingleThreadedExecutor executor;
-  SetUpAndActivateTrajectoryController(true, {}, &executor);
+  SetUpAndActivateTrajectoryController(true, {rclcpp::Parameter("state_publish_rate", 0.0)}, &executor);
   subscribeToState();
+  ASSERT_FALSE(waitForSubscriberToBeReady()) << "subscriber was never ready";
   updateController();
 
   // Spin to receive latest state
-  executor.spin_some();
-  auto state = getState();
+  auto state = getState(executor);
 
   size_t n_joints = joint_names_.size();
 
@@ -525,14 +525,9 @@ void TrajectoryControllerTest::test_state_publish_rate_target(int target_msg_cou
 /**
  * @brief test_state_publish_rate Test that state publish rate matches configure rate
  */
-TEST_P(TrajectoryControllerTestParameterized, test_state_publish_rate)
+TEST_F(TrajectoryControllerTest, test_state_publish_rate)
 {
   test_state_publish_rate_target(10);
-}
-
-TEST_P(TrajectoryControllerTestParameterized, zero_state_publish_rate)
-{
-  test_state_publish_rate_target(0);
 }
 
 // /**

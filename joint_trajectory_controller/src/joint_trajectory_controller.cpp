@@ -974,12 +974,10 @@ void JointTrajectoryController::publish_state(
   const JointTrajectoryPoint & desired_state, const JointTrajectoryPoint & current_state,
   const JointTrajectoryPoint & state_error)
 {
-  if (state_publisher_period_.seconds() <= 0.0)
-  {
-    return;
-  }
-
-  if (get_node()->now() < (last_state_publish_time_ + state_publisher_period_))
+  if (
+    state_publisher_period_.seconds() > 0 &&
+    get_node()->now() < (last_state_publish_time_ + state_publisher_period_)
+  )
   {
     return;
   }
