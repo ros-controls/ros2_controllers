@@ -1,4 +1,5 @@
-// Copyright (c) 2022, Stogl Robotics Consulting UG (haftungsbeschränkt) (template)
+// Copyright (c) 2022, Stogl Robotics Consulting UG (haftungsbeschränkt)
+// (template)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -40,8 +41,7 @@
 #include "nav_msgs/msg/odometry.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"
 
-namespace ackermann_steering_controller
-{
+namespace ackermann_steering_controller {
 // name constants for state interfaces
 static constexpr size_t NR_STATE_ITFS = 2;
 
@@ -51,9 +51,9 @@ static constexpr size_t NR_CMD_ITFS = 2;
 // name constants for reference interfaces
 static constexpr size_t NR_REF_ITFS = 2;
 
-class AckermannSteeringController : public controller_interface::ChainableControllerInterface
-{
-public:
+class AckermannSteeringController
+    : public controller_interface::ChainableControllerInterface {
+ public:
   ACKERMANN_STEERING_CONTROLLER__VISIBILITY_PUBLIC
   AckermannSteeringController();
 
@@ -61,45 +61,51 @@ public:
   controller_interface::CallbackReturn on_init() override;
 
   ACKERMANN_STEERING_CONTROLLER__VISIBILITY_PUBLIC
-  controller_interface::InterfaceConfiguration command_interface_configuration() const override;
+  controller_interface::InterfaceConfiguration command_interface_configuration()
+      const override;
 
   ACKERMANN_STEERING_CONTROLLER__VISIBILITY_PUBLIC
-  controller_interface::InterfaceConfiguration state_interface_configuration() const override;
+  controller_interface::InterfaceConfiguration state_interface_configuration()
+      const override;
 
   ACKERMANN_STEERING_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::CallbackReturn on_configure(
-    const rclcpp_lifecycle::State & previous_state) override;
+      const rclcpp_lifecycle::State& previous_state) override;
 
   ACKERMANN_STEERING_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::CallbackReturn on_activate(
-    const rclcpp_lifecycle::State & previous_state) override;
+      const rclcpp_lifecycle::State& previous_state) override;
 
   ACKERMANN_STEERING_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::CallbackReturn on_deactivate(
-    const rclcpp_lifecycle::State & previous_state) override;
+      const rclcpp_lifecycle::State& previous_state) override;
 
   ACKERMANN_STEERING_CONTROLLER__VISIBILITY_PUBLIC
 
   ACKERMANN_STEERING_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::return_type update_and_write_commands(
-    const rclcpp::Time & time, const rclcpp::Duration & period) override;
+      const rclcpp::Time& time, const rclcpp::Duration& period) override;
 
   // TODO(anyone): replace the state and command message types
   using ControllerReferenceMsg = geometry_msgs::msg::TwistStamped;
   using ControllerStateMsgOdom = nav_msgs::msg::Odometry;
   using ControllerStateMsgTf = tf2_msgs::msg::TFMessage;
 
-protected:
+ protected:
   std::shared_ptr<ackermann_steering_controller::ParamListener> param_listener_;
   ackermann_steering_controller::Params params_;
 
   // Command subscribers and Controller State publisher
-  rclcpp::Subscription<ControllerReferenceMsg>::SharedPtr ref_subscriber_ = nullptr;
-  realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerReferenceMsg>> input_ref_;
+  rclcpp::Subscription<ControllerReferenceMsg>::SharedPtr ref_subscriber_ =
+      nullptr;
+  realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerReferenceMsg>>
+      input_ref_;
   rclcpp::Duration ref_timeout_ = rclcpp::Duration::from_seconds(0.0);  // 0ms
 
-  using ControllerStatePublisherOdom = realtime_tools::RealtimePublisher<ControllerStateMsgOdom>;
-  using ControllerStatePublisherTf = realtime_tools::RealtimePublisher<ControllerStateMsgTf>;
+  using ControllerStatePublisherOdom =
+      realtime_tools::RealtimePublisher<ControllerStateMsgOdom>;
+  using ControllerStatePublisherTf =
+      realtime_tools::RealtimePublisher<ControllerStateMsgTf>;
 
   rclcpp::Publisher<ControllerStateMsgOdom>::SharedPtr odom_s_publisher_;
   rclcpp::Publisher<ControllerStateMsgTf>::SharedPtr tf_odom_s_publisher_;
@@ -108,14 +114,16 @@ protected:
   std::unique_ptr<ControllerStatePublisherTf> rt_tf_odom_state_publisher_;
 
   // override methods from ChainableControllerInterface
-  std::vector<hardware_interface::CommandInterface> on_export_reference_interfaces() override;
+  std::vector<hardware_interface::CommandInterface>
+  on_export_reference_interfaces() override;
 
   bool on_set_chained_mode(bool chained_mode) override;
 
-  struct WheelHandle
-  {
-    std::reference_wrapper<const hardware_interface::LoanedStateInterface> feedback;
-    // std::reference_wrapper<hardware_interface::LoanedCommandInterface> velocity;
+  struct WheelHandle {
+    std::reference_wrapper<const hardware_interface::LoanedStateInterface>
+        feedback;
+    // std::reference_wrapper<hardware_interface::LoanedCommandInterface>
+    // velocity;
   };
 
   std::vector<WheelHandle> registered_rear_wheel_handles_;
@@ -127,8 +135,7 @@ protected:
   bool open_loop_;
   rclcpp::Time previous_publish_timestamp_{0};
   /// Velocity command related:
-  struct Commands
-  {
+  struct Commands {
     double lin;
     double ang;
     rclcpp::Time stamp;
@@ -139,7 +146,7 @@ protected:
   // Odometry related:
   Odometry odometry_;
 
-private:
+ private:
   // callback for topic interface
   ACKERMANN_STEERING_CONTROLLER__VISIBILITY_LOCAL
   void reference_callback(const std::shared_ptr<ControllerReferenceMsg> msg);
