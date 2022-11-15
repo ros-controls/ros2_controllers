@@ -239,6 +239,35 @@ TEST_F(AckermannSteeringControllerTest, test_message_timeout) {
             (*(controller_->input_ref_.readFromNonRT()))->header.stamp);
   EXPECT_TRUE(std::isnan((*reference)->twist.linear.x));
   EXPECT_TRUE(std::isnan((*reference)->twist.angular.z));
+  // EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.linear.x,
+  // 0.45);
+  // EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z,
+  // 0.0);
+}
+
+TEST_F(AckermannSteeringControllerTest, test_time_stamp_zero) {
+  SetUpController();
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  // try to set command with time before timeout - command is not updated
+  auto reference = controller_->input_ref_.readFromNonRT();
+  auto old_timestamp = (*reference)->header.stamp;
+  EXPECT_TRUE(std::isnan((*reference)->twist.linear.x));
+  EXPECT_TRUE(std::isnan((*reference)->twist.angular.z));
+  publish_commands(rclcpp::Time(0));
+  ASSERT_TRUE(controller_->wait_for_commands(executor));
+  ASSERT_EQ(old_timestamp.sec,
+            (*(controller_->input_ref_.readFromNonRT()))->header.stamp.sec);
+  EXPECT_FALSE(
+      std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.linear.x));
+  EXPECT_FALSE(std::isnan(
+      (*(controller_->input_ref_.readFromNonRT()))->twist.angular.z));
+  EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.linear.x, 0.45);
+  EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z, 0.0);
 }
 
 TEST_F(AckermannSteeringControllerTest, test_message_accepted) {
