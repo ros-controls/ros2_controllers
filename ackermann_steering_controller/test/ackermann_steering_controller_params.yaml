@@ -1,7 +1,7 @@
 test_ackermann_steering_controller:
   ros__parameters:
 
-    reference_timeout: 0.1
+    reference_timeout: 0.2
 
     rear_wheel_name: "rear_wheel_joint"
 
