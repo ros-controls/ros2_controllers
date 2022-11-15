@@ -131,6 +131,8 @@ controller_interface::CallbackReturn AckermannSteeringController::on_configure(
   rt_odom_state_publisher_->msg_.child_frame_id = params_.base_frame_id;
   rt_odom_state_publisher_->msg_.pose.pose.position.z = 0;
 
+  previous_publish_timestamp_ = rt_odom_state_publisher_->msg_.header.stamp;
+
   auto& covariance = rt_odom_state_publisher_->msg_.twist.covariance;
   constexpr size_t NUM_DIMENSIONS = 6;
   for (size_t index = 0; index < 6; ++index) {
