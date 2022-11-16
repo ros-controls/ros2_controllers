@@ -131,7 +131,7 @@ controller_interface::CallbackReturn AckermannSteeringController::on_configure(
   rt_odom_state_publisher_->msg_.child_frame_id = params_.base_frame_id;
   rt_odom_state_publisher_->msg_.pose.pose.position.z = 0;
 
-  previous_publish_timestamp_ = get_node()->now();
+  previous_publish_timestamp_ = rclcpp::Time(0);
 
   auto& covariance = rt_odom_state_publisher_->msg_.twist.covariance;
   constexpr size_t NUM_DIMENSIONS = 6;
@@ -354,17 +354,15 @@ AckermannSteeringController::update_and_write_commands(
   // Publish odometry message
   if (previous_publish_timestamp_.seconds() + publish_period_.seconds() <
       time.seconds()) {
-    // fprintf(stderr, "inside \n");
-    // fprintf(
-    //     stderr,
-    //     "all in sec time, previous_publish_timestamp_, publish_period_, "
-    //     "previous_publish_timestamp_ + publish_period_) < time  = %f, %f, %f,
-    //     "
-    //     "%d\n",
-    //     time.seconds(), previous_publish_timestamp_.seconds(),
-    //     publish_period_.seconds(),
-    //     (previous_publish_timestamp_.seconds() + publish_period_.seconds()) <
-    //         time.seconds());
+    fprintf(stderr, "inside \n");
+    fprintf(stderr,
+            "all in sec time, previous_publish_timestamp_, publish_period_, "
+            "previous_publish_timestamp_ + publish_period_) < time  = %f, %f, "
+            "%f,%d\n",
+            time.seconds(), previous_publish_timestamp_.seconds(),
+            publish_period_.seconds(),
+            (previous_publish_timestamp_.seconds() +
+             publish_period_.seconds()) < time.seconds());
 
     previous_publish_timestamp_ += publish_period_;
     // Compute and store orientation info
