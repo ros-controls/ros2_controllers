@@ -30,11 +30,11 @@
   <depend>tf2_ros</depend>
   <depend>trajectory_msgs</depend>
 
-
   <test_depend>ament_cmake_gmock</test_depend>
   <test_depend>control_msgs</test_depend>
   <test_depend>controller_manager</test_depend>
   <test_depend>hardware_interface</test_depend>
+  <test_depend>kinematics_interface_kdl</test_depend>
   <test_depend>ros2_control_test_assets</test_depend>
 
   <export>
