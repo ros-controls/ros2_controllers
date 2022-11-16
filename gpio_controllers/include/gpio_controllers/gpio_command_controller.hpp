@@ -17,9 +17,10 @@
 
 #include <memory>
 #include <string>
-#include <vector>
 #include <unordered_map>
+#include <vector>
 
+#include "control_msgs/msg/dynamic_joint_state.hpp"
 #include "controller_interface/controller_interface.hpp"
 #include "gpio_controllers/visibility_control.h"
 #include "rclcpp/subscription.hpp"
@@ -28,7 +29,6 @@
 #include "realtime_tools/realtime_buffer.h"
 #include "realtime_tools/realtime_publisher.h"
 #include "std_msgs/msg/float64_multi_array.hpp"
-#include "control_msgs/msg/dynamic_joint_state.hpp"
 
 namespace gpio_controllers
 {

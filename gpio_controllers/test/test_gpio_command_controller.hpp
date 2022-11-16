@@ -21,9 +21,9 @@
 
 #include "gmock/gmock.h"
 
+#include "gpio_controllers/gpio_command_controller.hpp"
 #include "hardware_interface/handle.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
-#include "gpio_controllers/gpio_command_controller.hpp"
 
 using hardware_interface::CommandInterface;
 using hardware_interface::StateInterface;

@@ -69,7 +69,7 @@ void GpioCommandControllerTest::SetUpController()
   state_ifs.emplace_back(gpio_1_1_dig_state_);
   state_ifs.emplace_back(gpio_1_2_dig_state_);
   state_ifs.emplace_back(gpio_2_ana_state_);
-  
+
   controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
 }
 
@@ -96,8 +96,7 @@ TEST_F(GpioCommandControllerTest, GpioWithMissingGpioParams)
   controller_->get_node()->set_parameter({"gpios", std::vector<std::string>{"gpio1", "gpio2"}});
   controller_->get_node()->set_parameter(
     {"command_interfaces.gpio1", std::vector<std::string>{"dig.1", "dig.2"}});
-  controller_->get_node()->set_parameter(
-    {"command_interfaces.gpio2", std::vector<std::string>()});
+  controller_->get_node()->set_parameter({"command_interfaces.gpio2", std::vector<std::string>()});
   // // activate failed, command interface for 'gpio2' is not set up
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
 }
@@ -138,7 +137,6 @@ TEST_F(GpioCommandControllerTest, CommandSuccessTest)
   controller_->get_node()->set_parameter(
     {"command_interfaces.gpio2", std::vector<std::string>{"ana.1"}});
 
-
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
@@ -177,10 +175,8 @@ TEST_F(GpioCommandControllerTest, WrongCommandCheckTest)
   controller_->get_node()->set_parameter(
     {"command_interfaces.gpio2", std::vector<std::string>{"ana.1"}});
 
-
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-
 
   // send command with wrong number of gpios
   auto command_ptr = std::make_shared<CmdType>();
@@ -206,7 +202,6 @@ TEST_F(GpioCommandControllerTest, NoCommandCheckTest)
     {"command_interfaces.gpio1", std::vector<std::string>{"dig.1", "dig.2"}});
   controller_->get_node()->set_parameter(
     {"command_interfaces.gpio2", std::vector<std::string>{"ana.1"}});
-
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
@@ -234,7 +229,6 @@ TEST_F(GpioCommandControllerTest, CommandCallbackTest)
     {"state_interfaces.gpio1", std::vector<std::string>{"dig.1", "dig.2"}});
   controller_->get_node()->set_parameter(
     {"state_interfaces.gpio2", std::vector<std::string>{"ana.1"}});
-
 
   // default values
   ASSERT_EQ(gpio_1_1_dig_cmd_.get_value(), 1.0);
@@ -288,7 +282,6 @@ TEST_F(GpioCommandControllerTest, StateCallbackTest)
     {"state_interfaces.gpio1", std::vector<std::string>{"dig.1", "dig.2"}});
   controller_->get_node()->set_parameter(
     {"state_interfaces.gpio2", std::vector<std::string>{"ana.1"}});
-
 
   // default values
   ASSERT_EQ(gpio_1_1_dig_cmd_.get_value(), 1.0);

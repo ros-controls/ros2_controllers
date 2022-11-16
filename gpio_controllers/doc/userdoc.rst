@@ -20,9 +20,9 @@ A yaml file for using it could be:
         ros__parameters:
             update_rate: 100  # Hz
             joint_state_broadcaster:
-                type: joint_state_broadcaster/JointStateBroadcaster
+            type: joint_state_broadcaster/JointStateBroadcaster
             gpio_command_controller:
-                type: gpio_controllers/GpioCommandController
+            type: gpio_controllers/GpioCommandController
 
     gpio_command_controller:
         ros__parameters:
