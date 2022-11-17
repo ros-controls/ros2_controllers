@@ -131,8 +131,6 @@ controller_interface::CallbackReturn AckermannSteeringController::on_configure(
   rt_odom_state_publisher_->msg_.child_frame_id = params_.base_frame_id;
   rt_odom_state_publisher_->msg_.pose.pose.position.z = 0;
 
-  previous_publish_timestamp_ = rclcpp::Time(0);
-
   auto& covariance = rt_odom_state_publisher_->msg_.twist.covariance;
   constexpr size_t NUM_DIMENSIONS = 6;
   for (size_t index = 0; index < 6; ++index) {
@@ -168,10 +166,6 @@ controller_interface::CallbackReturn AckermannSteeringController::on_configure(
   rt_tf_odom_state_publisher_->msg_.transforms[0].transform.translation.z = 0.0;
   rt_tf_odom_state_publisher_->unlock();
 
-  // calculation publication period of odometry and tf odometry messages
-  publish_period_ = rclcpp::Duration::from_seconds(1.0 / params_.publish_rate);
-  // fprintf(stderr, "publish_period_, publish_rate = %f,%f \n",
-  //         publish_period_.seconds(), params_.publish_rate);
   RCLCPP_INFO(get_node()->get_logger(), "configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -339,61 +333,35 @@ AckermannSteeringController::update_and_write_commands(
     reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();
     reference_interfaces_[1] = std::numeric_limits<double>::quiet_NaN();
   }
-  // fprintf(stderr, "Exception thrown during controller's init with message: %s
-  // \n", e.what());
-  // fprintf(stderr, "outside \n");
-  // fprintf(
-  //     stderr,
-  //     "all in sec time, previous_publish_timestamp_, publish_period_, "
-  //     "previous_publish_timestamp_ + publish_period_) < time  = %f, %f, %f, "
-  //     "%d\n",
-  //     time.seconds(), previous_publish_timestamp_.seconds(),
-  //     publish_period_.seconds(),
-  //     (previous_publish_timestamp_.seconds() + publish_period_.seconds()) <
-  //         time.seconds());
+
   // Publish odometry message
-  if (previous_publish_timestamp_.seconds() + publish_period_.seconds() <
-      time.seconds()) {
-    fprintf(stderr, "inside \n");
-    fprintf(stderr,
-            "all in sec time, previous_publish_timestamp_, publish_period_, "
-            "previous_publish_timestamp_ + publish_period_) < time  = %f, %f, "
-            "%f,%d\n",
-            time.seconds(), previous_publish_timestamp_.seconds(),
-            publish_period_.seconds(),
-            (previous_publish_timestamp_.seconds() +
-             publish_period_.seconds()) < time.seconds());
+  // Compute and store orientation info
+  tf2::Quaternion orientation;
+  orientation.setRPY(0.0, 0.0, odometry_.getHeading());
 
-    previous_publish_timestamp_ += publish_period_;
-    // Compute and store orientation info
-    tf2::Quaternion orientation;
-    orientation.setRPY(0.0, 0.0, odometry_.getHeading());
+  // Populate odom message and publish
+  if (rt_odom_state_publisher_->trylock()) {
+    rt_odom_state_publisher_->msg_.header.stamp = time;
+    rt_odom_state_publisher_->msg_.pose.pose.position.x = odometry_.getX();
+    rt_odom_state_publisher_->msg_.pose.pose.position.y = odometry_.getY();
+    rt_odom_state_publisher_->msg_.pose.pose.orientation =
+        tf2::toMsg(orientation);
+    rt_odom_state_publisher_->msg_.twist.twist.linear.x = odometry_.getLinear();
+    rt_odom_state_publisher_->msg_.twist.twist.angular.z =
+        odometry_.getAngular();
+    rt_odom_state_publisher_->unlockAndPublish();
+  }
 
-    // Populate odom message and publish
-    if (rt_odom_state_publisher_->trylock()) {
-      rt_odom_state_publisher_->msg_.header.stamp = time;
-      rt_odom_state_publisher_->msg_.pose.pose.position.x = odometry_.getX();
-      rt_odom_state_publisher_->msg_.pose.pose.position.y = odometry_.getY();
-      rt_odom_state_publisher_->msg_.pose.pose.orientation =
-          tf2::toMsg(orientation);
-      rt_odom_state_publisher_->msg_.twist.twist.linear.x =
-          odometry_.getLinear();
-      rt_odom_state_publisher_->msg_.twist.twist.angular.z =
-          odometry_.getAngular();
-      rt_odom_state_publisher_->unlockAndPublish();
-    }
-
-    // Publish tf /odom frame
-    if (params_.enable_odom_tf && rt_tf_odom_state_publisher_->trylock()) {
-      rt_tf_odom_state_publisher_->msg_.transforms.front().header.stamp = time;
-      rt_tf_odom_state_publisher_->msg_.transforms.front()
-          .transform.translation.x = odometry_.getX();
-      rt_tf_odom_state_publisher_->msg_.transforms.front()
-          .transform.translation.y = odometry_.getY();
-      rt_tf_odom_state_publisher_->msg_.transforms.front().transform.rotation =
-          tf2::toMsg(orientation);
-      rt_tf_odom_state_publisher_->unlockAndPublish();
-    }
+  // Publish tf /odom frame
+  if (params_.enable_odom_tf && rt_tf_odom_state_publisher_->trylock()) {
+    rt_tf_odom_state_publisher_->msg_.transforms.front().header.stamp = time;
+    rt_tf_odom_state_publisher_->msg_.transforms.front()
+        .transform.translation.x = odometry_.getX();
+    rt_tf_odom_state_publisher_->msg_.transforms.front()
+        .transform.translation.y = odometry_.getY();
+    rt_tf_odom_state_publisher_->msg_.transforms.front().transform.rotation =
+        tf2::toMsg(orientation);
+    rt_tf_odom_state_publisher_->unlockAndPublish();
   }
 
   return controller_interface::return_type::OK;
