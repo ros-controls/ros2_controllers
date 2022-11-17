@@ -71,7 +71,6 @@ CallbackReturn TricycleController::on_init()
     auto_declare<bool>("publish_ackermann_command", publish_ackermann_command_);
     auto_declare<int>("velocity_rolling_window_size", 10);
     auto_declare<bool>("use_stamped_vel", use_stamped_vel_);
-    auto_declare<double>("publish_rate", publish_rate_);
 
     auto_declare<double>("traction.max_velocity", NAN);
     auto_declare<double>("traction.min_velocity", NAN);
@@ -169,9 +168,6 @@ controller_interface::return_type TricycleController::update(
   tf2::Quaternion orientation;
   orientation.setRPY(0.0, 0.0, odometry_.getHeading());
 
-  if (previous_publish_timestamp_ + publish_period_ < time)
-  {
-    previous_publish_timestamp_ += publish_period_;
 
     if (realtime_odometry_publisher_->trylock())
     {
@@ -203,7 +199,6 @@ controller_interface::return_type TricycleController::update(
       transform.transform.rotation.w = orientation.w();
       realtime_odometry_transform_publisher_->unlockAndPublish();
     }
-  }
 
   // Compute wheel velocity and angle
   auto [alpha_write, Ws_write] = twist_to_ackermann(linear_command, angular_command);
@@ -304,9 +299,6 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
     std::chrono::milliseconds{get_node()->get_parameter("cmd_vel_timeout").as_int()};
   publish_ackermann_command_ = get_node()->get_parameter("publish_ackermann_command").as_bool();
   use_stamped_vel_ = get_node()->get_parameter("use_stamped_vel").as_bool();
-
-  publish_rate_ = get_node()->get_parameter("publish_rate").as_double();
-  publish_period_ = rclcpp::Duration::from_seconds(1.0 / publish_rate_);
 
   try
   {
@@ -420,8 +412,6 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
   auto & odometry_message = realtime_odometry_publisher_->msg_;
   odometry_message.header.frame_id = odom_params_.odom_frame_id;
   odometry_message.child_frame_id = odom_params_.base_frame_id;
-
-  previous_publish_timestamp_ = get_node()->get_clock()->now();
 
   // initialize odom values zeros
   odometry_message.twist =
