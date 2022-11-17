@@ -61,7 +61,7 @@ TEST_F(AckermannSteeringControllerTest, check_exported_intefaces)
     controller_->params_.rear_wheel_name + "/" + hardware_interface::HW_IF_VELOCITY);
   EXPECT_EQ(
     command_intefaces.names[1],
-    controller_->params_.front_steer_name + "/" + hardware_interface::HW_IF_VELOCITY);
+    controller_->params_.front_steer_name + "/" + hardware_interface::HW_IF_POSITION);
 
   auto state_intefaces = controller_->state_interface_configuration();
   ASSERT_EQ(state_intefaces.names.size(), joint_state_values_.size());
@@ -85,12 +85,12 @@ TEST_F(AckermannSteeringControllerTest, check_exported_intefaces)
     std::string("linear") + "/" + hardware_interface::HW_IF_VELOCITY);
 
   const std::string ref_itf_name_1 = std::string(controller_->get_node()->get_name()) + "/" +
-                                     "angular" + "/" + hardware_interface::HW_IF_VELOCITY;
+                                     "angular" + "/" + hardware_interface::HW_IF_POSITION;
   EXPECT_EQ(reference_interfaces[1].get_name(), ref_itf_name_1);
   EXPECT_EQ(reference_interfaces[1].get_prefix_name(), controller_->get_node()->get_name());
   EXPECT_EQ(
     reference_interfaces[1].get_interface_name(),
-    std::string("angular") + "/" + hardware_interface::HW_IF_VELOCITY);
+    std::string("angular") + "/" + hardware_interface::HW_IF_POSITION);
 }
 
 TEST_F(AckermannSteeringControllerTest, activate_success)
@@ -321,8 +321,7 @@ TEST_F(AckermannSteeringControllerTest, test_update_logic_chainable) {
   ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x,
             TEST_LINEAR_VELOCITY_X);
   ASSERT_EQ(
-      controller_->update_reference_from_subscribers(
-          controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
+      controller_->update_reference_from_subscribers(),
       controller_interface::return_type::OK);
   ASSERT_EQ(
       controller_->update_and_write_commands(
@@ -355,8 +354,7 @@ TEST_F(AckermannSteeringControllerTest, test_update_logic_chainable) {
   ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x,
             TEST_LINEAR_VELOCITY_X);
   ASSERT_EQ(
-      controller_->update_reference_from_subscribers(
-          controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
+      controller_->update_reference_from_subscribers(),
       controller_interface::return_type::OK);
   ASSERT_EQ(
       controller_->update_and_write_commands(
@@ -406,8 +404,7 @@ TEST_F(AckermannSteeringControllerTest, test_update_logic)
   ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x,
             TEST_LINEAR_VELOCITY_X);
   ASSERT_EQ(
-      controller_->update_reference_from_subscribers(
-          controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
+      controller_->update_reference_from_subscribers(),
       controller_interface::return_type::OK);
   ASSERT_EQ(
       controller_->update_and_write_commands(
@@ -435,8 +432,7 @@ TEST_F(AckermannSteeringControllerTest, test_update_logic)
   ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x,
             TEST_LINEAR_VELOCITY_X);
   ASSERT_EQ(
-      controller_->update_reference_from_subscribers(
-          controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
+      controller_->update_reference_from_subscribers(),
       controller_interface::return_type::OK);
   ASSERT_EQ(
       controller_->update_and_write_commands(
