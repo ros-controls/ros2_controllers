@@ -168,10 +168,6 @@ controller_interface::CallbackReturn AckermannSteeringController::on_configure(
   rt_tf_odom_state_publisher_->msg_.transforms[0].transform.translation.z = 0.0;
   rt_tf_odom_state_publisher_->unlock();
 
-  // calculation publication period of odometry and tf odometry messages
-  publish_period_ = rclcpp::Duration::from_seconds(1.0 / params_.publish_rate);
-  //fprintf(stderr, "publish_period_ = %d \n", publish_period_);
-
   RCLCPP_INFO(get_node()->get_logger(), "configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -350,52 +346,35 @@ controller_interface::return_type AckermannSteeringController::update_and_write_
     reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();
     reference_interfaces_[1] = std::numeric_limits<double>::quiet_NaN();
   }
-  // fprintf(
-  //   stderr, "previous_publish_timestamp_ + publish_period_ < time  = %d, %d, %d, %d\n", time,
-  //   previous_publish_timestamp_, publish_period_,
-  //   (previous_publish_timestamp_ + publish_period_) < time);
-  // fprintf(stderr, "Exception thrown during controller's init with message: %s \n", e.what());
 
   // Publish odometry message
-  // if (previous_publish_timestamp_ + publish_period_ < time)
-  if ((previous_publish_timestamp_ + publish_period_).nanoseconds() < time.nanoseconds())
-  {
-    // fprintf(stderr, "debuggin2 \n");
-    // fprintf(
-    //   stderr, "previous_publish_timestamp_ + publish_period_ < time  = %d, %d, %d, %d\n", time,
-    //   previous_publish_timestamp_, publish_period_,
-    //   (previous_publish_timestamp_ + publish_period_) < time);
-    previous_publish_timestamp_ = rclcpp::Time(time.nanoseconds());
+  // Compute and store orientation info
+  tf2::Quaternion orientation;
+  orientation.setRPY(0.0, 0.0, odometry_.getHeading());
 
-    //previous_publish_timestamp_ += publish_period_;
-    // Compute and store orientation info
-    tf2::Quaternion orientation;
-    orientation.setRPY(0.0, 0.0, odometry_.getHeading());
-
-    // Populate odom message and publish
-    if (rt_odom_state_publisher_->trylock())
-    {
-      rt_odom_state_publisher_->msg_.header.stamp = time;
-      rt_odom_state_publisher_->msg_.pose.pose.position.x = odometry_.getX();
-      rt_odom_state_publisher_->msg_.pose.pose.position.y = odometry_.getY();
-      rt_odom_state_publisher_->msg_.pose.pose.orientation = tf2::toMsg(orientation);
-      rt_odom_state_publisher_->msg_.twist.twist.linear.x = odometry_.getLinear();
-      rt_odom_state_publisher_->msg_.twist.twist.angular.z = odometry_.getAngular();
-      rt_odom_state_publisher_->unlockAndPublish();
-    }
-
-    // Publish tf /odom frame
-    if (params_.enable_odom_tf && rt_tf_odom_state_publisher_->trylock())
-    {
-      rt_tf_odom_state_publisher_->msg_.transforms.front().header.stamp = time;
-      rt_tf_odom_state_publisher_->msg_.transforms.front().transform.translation.x =
-        odometry_.getX();
-      rt_tf_odom_state_publisher_->msg_.transforms.front().transform.translation.y =
-        odometry_.getY();
-      rt_tf_odom_state_publisher_->msg_.transforms.front().transform.rotation =
+  // Populate odom message and publish
+  if (rt_odom_state_publisher_->trylock()) {
+    rt_odom_state_publisher_->msg_.header.stamp = time;
+    rt_odom_state_publisher_->msg_.pose.pose.position.x = odometry_.getX();
+    rt_odom_state_publisher_->msg_.pose.pose.position.y = odometry_.getY();
+    rt_odom_state_publisher_->msg_.pose.pose.orientation =
         tf2::toMsg(orientation);
-      rt_tf_odom_state_publisher_->unlockAndPublish();
-    }
+    rt_odom_state_publisher_->msg_.twist.twist.linear.x = odometry_.getLinear();
+    rt_odom_state_publisher_->msg_.twist.twist.angular.z =
+        odometry_.getAngular();
+    rt_odom_state_publisher_->unlockAndPublish();
+  }
+
+  // Publish tf /odom frame
+  if (params_.enable_odom_tf && rt_tf_odom_state_publisher_->trylock()) {
+    rt_tf_odom_state_publisher_->msg_.transforms.front().header.stamp = time;
+    rt_tf_odom_state_publisher_->msg_.transforms.front()
+        .transform.translation.x = odometry_.getX();
+    rt_tf_odom_state_publisher_->msg_.transforms.front()
+        .transform.translation.y = odometry_.getY();
+    rt_tf_odom_state_publisher_->msg_.transforms.front().transform.rotation =
+        tf2::toMsg(orientation);
+    rt_tf_odom_state_publisher_->unlockAndPublish();
   }
 
   return controller_interface::return_type::OK;

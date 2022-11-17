@@ -7,8 +7,6 @@ test_ackermann_steering_controller:
 
     front_steer_name: "front_steer_joint"
 
-    publish_rate: 50.0
-
     open_loop: false
 
     wheel_separation_multiplier: 1.0

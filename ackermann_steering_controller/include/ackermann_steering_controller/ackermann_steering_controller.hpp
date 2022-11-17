@@ -127,7 +127,6 @@ protected:
   rclcpp::Duration publish_period_ = rclcpp::Duration::from_nanoseconds(0);
   ;
   bool open_loop_;
-  rclcpp::Time previous_publish_timestamp_{0};
   /// Velocity command related:
   struct Commands
   {
