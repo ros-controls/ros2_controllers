@@ -170,7 +170,7 @@ controller_interface::CallbackReturn AckermannSteeringController::on_configure(
 
   // calculation publication period of odometry and tf odometry messages
   publish_period_ = rclcpp::Duration::from_seconds(1.0 / params_.publish_rate);
-  fprintf(stderr, "publish_period_ = %d \n", publish_period_);
+  //fprintf(stderr, "publish_period_ = %d \n", publish_period_);
 
   RCLCPP_INFO(get_node()->get_logger(), "configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
@@ -400,6 +400,8 @@ controller_interface::return_type AckermannSteeringController::update_and_write_
 
   return controller_interface::return_type::OK;
 }
+
+void AckermannSteeringController::publish_state(const AckermannDrive & state) { return; }
 
 }  // namespace ackermann_steering_controller
 

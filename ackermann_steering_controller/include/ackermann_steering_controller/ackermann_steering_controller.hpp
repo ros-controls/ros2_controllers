@@ -35,6 +35,7 @@
 #include "std_srvs/srv/set_bool.hpp"
 
 // TODO(anyone): Replace with controller specific messages
+#include "ackermann_msgs/msg/ackermann_drive.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
@@ -139,6 +140,10 @@ protected:
 
   // Odometry related:
   Odometry odometry_;
+
+  using AckermannDrive = ackermann_msgs::msg::AckermannDrive;
+  ACKERMANN_STEERING_CONTROLLER__VISIBILITY_PUBLIC
+  void publish_state(const AckermannDrive & state);
 
 private:
   // callback for topic interface
