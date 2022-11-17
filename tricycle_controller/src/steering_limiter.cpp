@@ -16,9 +16,9 @@
  * Author: Tony Najjar
  */
 
-#include <string>
 #include <algorithm>
 #include <stdexcept>
+#include <string>
 
 #include "rcppmath/clamp.hpp"
 #include "tricycle_controller/steering_limiter.hpp"
