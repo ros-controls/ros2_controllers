@@ -131,6 +131,8 @@ controller_interface::CallbackReturn AckermannSteeringController::on_configure(
   rt_odom_state_publisher_->msg_.child_frame_id = params_.base_frame_id;
   rt_odom_state_publisher_->msg_.pose.pose.position.z = 0;
 
+  previous_publish_timestamp_ = rclcpp::Time(0);
+
   auto & covariance = rt_odom_state_publisher_->msg_.twist.covariance;
   constexpr size_t NUM_DIMENSIONS = 6;
   for (size_t index = 0; index < 6; ++index)
@@ -168,8 +170,8 @@ controller_interface::CallbackReturn AckermannSteeringController::on_configure(
 
   // calculation publication period of odometry and tf odometry messages
   publish_period_ = rclcpp::Duration::from_seconds(1.0 / params_.publish_rate);
-  // fprintf(stderr, "publish_period_, publish_rate = %f,%f \n",
-  //         publish_period_.seconds(), params_.publish_rate);
+  fprintf(stderr, "publish_period_ = %d \n", publish_period_);
+
   RCLCPP_INFO(get_node()->get_logger(), "configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -337,7 +339,7 @@ controller_interface::return_type AckermannSteeringController::update_and_write_
   last_linear_velocity_ = reference_interfaces_[0];
   last_angular_velocity_ = reference_interfaces_[1];
 
-  previous_publish_timestamp_ = time;
+  //previous_publish_timestamp_ = time;
 
   // omega = linear_vel / radius
   command_interfaces_[0].set_value(last_linear_velocity_ / params_.wheel_radius);
@@ -348,34 +350,24 @@ controller_interface::return_type AckermannSteeringController::update_and_write_
     reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();
     reference_interfaces_[1] = std::numeric_limits<double>::quiet_NaN();
   }
-  // fprintf(stderr, "Exception thrown during controller's init with message: %s
-  // \n", e.what());
-  // fprintf(stderr, "outside \n");
   // fprintf(
-  //     stderr,
-  //     "all in sec time, previous_publish_timestamp_, publish_period_, "
-  //     "previous_publish_timestamp_ + publish_period_) < time  = %f, %f, %f, "
-  //     "%d\n",
-  //     time.seconds(), previous_publish_timestamp_.seconds(),
-  //     publish_period_.seconds(),
-  //     (previous_publish_timestamp_.seconds() + publish_period_.seconds()) <
-  //         time.seconds());
-  // Publish odometry message
-  if (previous_publish_timestamp_.seconds() + publish_period_.seconds() <
-      time.seconds()) {
-    // fprintf(stderr, "inside \n");
-    // fprintf(
-    //     stderr,
-    //     "all in sec time, previous_publish_timestamp_, publish_period_, "
-    //     "previous_publish_timestamp_ + publish_period_) < time  = %f, %f, %f,
-    //     "
-    //     "%d\n",
-    //     time.seconds(), previous_publish_timestamp_.seconds(),
-    //     publish_period_.seconds(),
-    //     (previous_publish_timestamp_.seconds() + publish_period_.seconds()) <
-    //         time.seconds());
+  //   stderr, "previous_publish_timestamp_ + publish_period_ < time  = %d, %d, %d, %d\n", time,
+  //   previous_publish_timestamp_, publish_period_,
+  //   (previous_publish_timestamp_ + publish_period_) < time);
+  // fprintf(stderr, "Exception thrown during controller's init with message: %s \n", e.what());
 
-    previous_publish_timestamp_ += publish_period_;
+  // Publish odometry message
+  // if (previous_publish_timestamp_ + publish_period_ < time)
+  if ((previous_publish_timestamp_ + publish_period_).nanoseconds() < time.nanoseconds())
+  {
+    // fprintf(stderr, "debuggin2 \n");
+    // fprintf(
+    //   stderr, "previous_publish_timestamp_ + publish_period_ < time  = %d, %d, %d, %d\n", time,
+    //   previous_publish_timestamp_, publish_period_,
+    //   (previous_publish_timestamp_ + publish_period_) < time);
+    previous_publish_timestamp_ = rclcpp::Time(time.nanoseconds());
+
+    //previous_publish_timestamp_ += publish_period_;
     // Compute and store orientation info
     tf2::Quaternion orientation;
     orientation.setRPY(0.0, 0.0, odometry_.getHeading());
