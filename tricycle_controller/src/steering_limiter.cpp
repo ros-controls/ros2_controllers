@@ -16,6 +16,7 @@
  * Author: Tony Najjar
  */
 
+#include <string>
 #include <algorithm>
 #include <stdexcept>
 
