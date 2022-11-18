@@ -22,15 +22,9 @@
 
 #include "test_gripper_controllers.hpp"
 
-// #include "forward_command_controller/forward_command_controller.hpp"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
-#include "rclcpp/node.hpp"
-#include "rclcpp/qos.hpp"
-#include "rclcpp/subscription.hpp"
-#include "rclcpp/utilities.hpp"
-#include "rclcpp/wait_set.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 
 using hardware_interface::LoanedCommandInterface;
