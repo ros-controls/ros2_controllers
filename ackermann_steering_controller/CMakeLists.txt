@@ -21,6 +21,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   tf2_msgs
   tf2_geometry_msgs
   ackermann_msgs
+  custom_messages
 )
 
 find_package(ament_cmake REQUIRED)
@@ -38,6 +39,10 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+
+set(msg_files
+  msg/AckermanControllerState.msg
+)
 
 # Add ackermann_steering_controller library related compile commands
 generate_parameter_library(ackermann_steering_controller_parameters
@@ -116,6 +121,7 @@ endif()
 ament_export_include_directories(
   include
 )
+
 ament_export_dependencies(
   
 )

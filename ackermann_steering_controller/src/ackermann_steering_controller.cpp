@@ -111,7 +111,7 @@ controller_interface::CallbackReturn AckermannSteeringController::on_configure(
 
   try
   {
-    // State publisher
+    // Odom state publisher
     odom_s_publisher_ = get_node()->create_publisher<ControllerStateMsgOdom>(
       "~/odometry", rclcpp::SystemDefaultsQoS());
     rt_odom_state_publisher_ = std::make_unique<ControllerStatePublisherOdom>(odom_s_publisher_);
@@ -166,6 +166,37 @@ controller_interface::CallbackReturn AckermannSteeringController::on_configure(
   rt_tf_odom_state_publisher_->msg_.transforms[0].transform.translation.z = 0.0;
   rt_tf_odom_state_publisher_->unlock();
 
+  try
+  {
+    // State publisher
+    controller_s_publisher_ = get_node()->create_publisher<AckermanControllerState>(
+      "~/controller_state", rclcpp::SystemDefaultsQoS());
+    controller_state_publisher_ =
+      std::make_unique<ControllerStatePublisher>(controller_s_publisher_);
+  }
+  catch (const std::exception & e)
+  {
+    fprintf(
+      stderr, "Exception thrown during publisher creation at configure stage with message : %s \n",
+      e.what());
+    return controller_interface::CallbackReturn::ERROR;
+  }
+
+  // TODO(anyone): Reserve memory in state publisher depending on the message type
+  controller_state_publisher_->lock();
+  controller_state_publisher_->msg_.header.stamp = get_node()->now();
+  controller_state_publisher_->msg_.header.frame_id = params_.odom_frame_id;
+  controller_state_publisher_->msg_.odom.pose.pose.position.z = 0;
+  controller_state_publisher_->msg_.odom.child_frame_id = params_.base_frame_id;
+  controller_state_publisher_->unlock();
+  auto & covariance_controller = controller_state_publisher_->msg_.odom.twist.covariance;
+  for (size_t index = 0; index < 6; ++index)
+  {
+    // 0, 7, 14, 21, 28, 35
+    const size_t diagonal_index = NUM_DIMENSIONS * index + index;
+    covariance_controller[diagonal_index] = params_.pose_covariance_diagonal[index];
+    covariance_controller[diagonal_index] = params_.twist_covariance_diagonal[index];
+  }
   RCLCPP_INFO(get_node()->get_logger(), "configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -309,7 +340,6 @@ controller_interface::return_type AckermannSteeringController::update_and_write_
   {
     const double wheel_position = state_interfaces_[0].get_value();
     const double steer_position = state_interfaces_[1].get_value() * params_.steer_pos_multiplier;
-    state_current_.steering_angle = steer_position;
 
     if (std::isnan(wheel_position) || std::isnan(steer_position))
     {
@@ -374,34 +404,25 @@ controller_interface::return_type AckermannSteeringController::update_and_write_
     rt_tf_odom_state_publisher_->unlockAndPublish();
   }
 
+  if (controller_state_publisher_->trylock())
+  {
+    controller_state_publisher_->msg_.header.stamp = time;
+    controller_state_publisher_->msg_.odom.pose.pose.position.x = odometry_.getX();
+    controller_state_publisher_->msg_.odom.pose.pose.position.y = odometry_.getY();
+    controller_state_publisher_->msg_.odom.pose.pose.orientation = tf2::toMsg(orientation);
+    controller_state_publisher_->msg_.odom.twist.twist.linear.x = odometry_.getLinear();
+    controller_state_publisher_->msg_.odom.twist.twist.angular.z = odometry_.getAngular();
+    controller_state_publisher_->msg_.wheel_position = state_interfaces_[0].get_value();
+    controller_state_publisher_->msg_.steer_position =
+      state_interfaces_[1].get_value() * params_.steer_pos_multiplier;
+
+    controller_state_publisher_->unlockAndPublish();
+  }
+
   //publish_state(state_current_, state_desired);
   return controller_interface::return_type::OK;
 }
 
-void AckermannSteeringController::publish_state(
-  const AckermannDrive & desired_state, const AckermannDrive & current_state)
-{
-  // if (state_publisher_ && state_publisher_->trylock())
-  // {
-  //   state_publisher_->msg_.header.stamp = get_node()->now();
-  //   state_publisher_->msg_.desired.positions = desired_state.positions;
-  //   state_publisher_->msg_.desired.velocities = desired_state.velocities;
-  //   state_publisher_->msg_.desired.accelerations = desired_state.accelerations;
-  //   state_publisher_->msg_.actual.positions = current_state.positions;
-  //   state_publisher_->msg_.error.positions = state_error.positions;
-  //   if (has_velocity_state_interface_)
-  //   {
-  //     state_publisher_->msg_.actual.velocities = current_state.velocities;
-  //     state_publisher_->msg_.error.velocities = state_error.velocities;
-  //   }
-  //   if (has_acceleration_state_interface_)
-  //   {
-  //     state_publisher_->msg_.actual.accelerations = current_state.accelerations;
-  //     state_publisher_->msg_.error.accelerations = state_error.accelerations;
-  //   }
-
-  //   state_publisher_->unlockAndPublish();
-}
 }  // namespace ackermann_steering_controller
 
 #include "pluginlib/class_list_macros.hpp"

@@ -36,6 +36,7 @@
 
 // TODO(anyone): Replace with controller specific messages
 #include "ackermann_msgs/msg/ackermann_drive.hpp"
+#include "custom_messages/msg/ackerman_controller_state.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
@@ -140,17 +141,13 @@ protected:
   // Odometry related:
   Odometry odometry_;
 
-  using AckermannDrive = ackermann_msgs::msg::AckermannDrive;
+  using AckermanControllerState = custom_messages::msg::AckermanControllerState;
   ACKERMANN_STEERING_CONTROLLER__VISIBILITY_PUBLIC
-  void publish_state(const AckermannDrive & desired_state, const AckermannDrive & current_state);
-  AckermannDrive state_current_;
-  AckermannDrive state_desired_;
+  AckermanControllerState published_state_;
 
-  // using ControllerStateMsg = control_msgs::msg::JointTrajectoryControllerState;
-  // using StatePublisher = realtime_tools::RealtimePublisher<ControllerStateMsg>;
-  // using StatePublisherPtr = std::unique_ptr<StatePublisher>;
-  // rclcpp::Publisher<ControllerStateMsg>::SharedPtr publisher_;
-  // StatePublisherPtr state_publisher_;
+  using ControllerStatePublisher = realtime_tools::RealtimePublisher<AckermanControllerState>;
+  rclcpp::Publisher<AckermanControllerState>::SharedPtr controller_s_publisher_;
+  std::unique_ptr<ControllerStatePublisher> controller_state_publisher_;
 
 private:
   // callback for topic interface
