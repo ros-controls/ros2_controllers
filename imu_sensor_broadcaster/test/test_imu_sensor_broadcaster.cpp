@@ -189,15 +189,22 @@ TEST_F(IMUSensorBroadcasterTest, SensorName_Publish_Success)
   sensor_msgs::msg::Imu imu_msg;
   subscribe_and_get_message(imu_msg);
 
-  ASSERT_EQ(imu_msg.header.frame_id, frame_id_);
-  ASSERT_EQ(imu_msg.orientation.x, sensor_values_[0]);
-  ASSERT_EQ(imu_msg.orientation.y, sensor_values_[1]);
-  ASSERT_EQ(imu_msg.orientation.z, sensor_values_[2]);
-  ASSERT_EQ(imu_msg.orientation.w, sensor_values_[3]);
-  ASSERT_EQ(imu_msg.angular_velocity.x, sensor_values_[4]);
-  ASSERT_EQ(imu_msg.angular_velocity.y, sensor_values_[5]);
-  ASSERT_EQ(imu_msg.angular_velocity.z, sensor_values_[6]);
-  ASSERT_EQ(imu_msg.linear_acceleration.x, sensor_values_[7]);
-  ASSERT_EQ(imu_msg.linear_acceleration.y, sensor_values_[8]);
-  ASSERT_EQ(imu_msg.linear_acceleration.z, sensor_values_[9]);
+  EXPECT_EQ(imu_msg.header.frame_id, frame_id_);
+  EXPECT_EQ(imu_msg.orientation.x, sensor_values_[0]);
+  EXPECT_EQ(imu_msg.orientation.y, sensor_values_[1]);
+  EXPECT_EQ(imu_msg.orientation.z, sensor_values_[2]);
+  EXPECT_EQ(imu_msg.orientation.w, sensor_values_[3]);
+  EXPECT_EQ(imu_msg.angular_velocity.x, sensor_values_[4]);
+  EXPECT_EQ(imu_msg.angular_velocity.y, sensor_values_[5]);
+  EXPECT_EQ(imu_msg.angular_velocity.z, sensor_values_[6]);
+  EXPECT_EQ(imu_msg.linear_acceleration.x, sensor_values_[7]);
+  EXPECT_EQ(imu_msg.linear_acceleration.y, sensor_values_[8]);
+  EXPECT_EQ(imu_msg.linear_acceleration.z, sensor_values_[9]);
+
+  for (size_t i = 0; i < 9; ++i)
+  {
+    EXPECT_EQ(imu_msg.orientation_covariance[i], 0.0);
+    EXPECT_EQ(imu_msg.angular_velocity_covariance[i], 0.0);
+    EXPECT_EQ(imu_msg.linear_acceleration_covariance[i], 0.0);
+  }
 }

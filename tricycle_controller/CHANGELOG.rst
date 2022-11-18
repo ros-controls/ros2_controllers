@@ -2,6 +2,14 @@
 Changelog for package tricycle_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.14.0 (2022-11-18)
+-------------------
+* Include <string> to fix compilation error on macOS (`#467 <https://github.com/ros-controls/ros2_controllers/issues/467>`_)
+* Contributors: light-tech
+
+2.13.0 (2022-10-05)
+-------------------
+
 2.12.0 (2022-09-01)
 -------------------
 * Fix formatting CI job (`#418 <https://github.com/ros-controls/ros2_controllers/issues/418>`_)
