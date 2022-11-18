@@ -2,8 +2,8 @@
 Changelog for package ros2_controllers_test_nodes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.14.0 (2022-11-18)
+-------------------
 * Remove deprecation warning when parameter without value is set. (`#445 <https://github.com/ros-controls/ros2_controllers/issues/445>`_)
 * Contributors: Denis Štogl
 

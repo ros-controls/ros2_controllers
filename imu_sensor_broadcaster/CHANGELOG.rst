@@ -2,8 +2,8 @@
 Changelog for package imu_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.14.0 (2022-11-18)
+-------------------
 * [IMU Broadcaster] Added parameters for definition of static covariances. (`#455 <https://github.com/ros-controls/ros2_controllers/issues/455>`_)
 * Generate parameters for IMU Sensor Broadcaster (`#399 <https://github.com/ros-controls/ros2_controllers/issues/399>`_)
 * Contributors: Denis Štogl, Tyler Weaver

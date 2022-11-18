@@ -2,8 +2,8 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.14.0 (2022-11-18)
+-------------------
 * Bring admittance_controller version up to speed
 * [AdmittanceController] Add missing dependecies for the tests (`#465 <https://github.com/ros-controls/ros2_controllers/issues/465>`_)
   We need a concrete implementation of `kinematics_interface` for tests to work. We use `kinematics_interface_kdl` implementation in the tests.
