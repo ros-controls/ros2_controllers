@@ -2,6 +2,11 @@
 Changelog for package forward_command_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Generate params for ForwardCommandController (`#396 <https://github.com/ros-controls/ros2_controllers/issues/396>`_)
+* Contributors: Tyler Weaver
+
 2.13.0 (2022-10-05)
 -------------------
 

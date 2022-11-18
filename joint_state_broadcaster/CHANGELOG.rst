@@ -2,6 +2,9 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 2.13.0 (2022-10-05)
 -------------------
 * Generate parameters for Joint State Broadcaster (`#401 <https://github.com/ros-controls/ros2_controllers/issues/401>`_)
