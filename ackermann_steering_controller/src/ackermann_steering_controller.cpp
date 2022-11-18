@@ -309,6 +309,7 @@ controller_interface::return_type AckermannSteeringController::update_and_write_
   {
     const double wheel_position = state_interfaces_[0].get_value();
     const double steer_position = state_interfaces_[1].get_value() * params_.steer_pos_multiplier;
+    state_current_.steering_angle = steer_position;
 
     if (std::isnan(wheel_position) || std::isnan(steer_position))
     {
@@ -351,35 +352,56 @@ controller_interface::return_type AckermannSteeringController::update_and_write_
   orientation.setRPY(0.0, 0.0, odometry_.getHeading());
 
   // Populate odom message and publish
-  if (rt_odom_state_publisher_->trylock()) {
+  if (rt_odom_state_publisher_->trylock())
+  {
     rt_odom_state_publisher_->msg_.header.stamp = time;
     rt_odom_state_publisher_->msg_.pose.pose.position.x = odometry_.getX();
     rt_odom_state_publisher_->msg_.pose.pose.position.y = odometry_.getY();
-    rt_odom_state_publisher_->msg_.pose.pose.orientation =
-        tf2::toMsg(orientation);
+    rt_odom_state_publisher_->msg_.pose.pose.orientation = tf2::toMsg(orientation);
     rt_odom_state_publisher_->msg_.twist.twist.linear.x = odometry_.getLinear();
-    rt_odom_state_publisher_->msg_.twist.twist.angular.z =
-        odometry_.getAngular();
+    rt_odom_state_publisher_->msg_.twist.twist.angular.z = odometry_.getAngular();
     rt_odom_state_publisher_->unlockAndPublish();
   }
 
   // Publish tf /odom frame
-  if (params_.enable_odom_tf && rt_tf_odom_state_publisher_->trylock()) {
+  if (params_.enable_odom_tf && rt_tf_odom_state_publisher_->trylock())
+  {
     rt_tf_odom_state_publisher_->msg_.transforms.front().header.stamp = time;
-    rt_tf_odom_state_publisher_->msg_.transforms.front()
-        .transform.translation.x = odometry_.getX();
-    rt_tf_odom_state_publisher_->msg_.transforms.front()
-        .transform.translation.y = odometry_.getY();
+    rt_tf_odom_state_publisher_->msg_.transforms.front().transform.translation.x = odometry_.getX();
+    rt_tf_odom_state_publisher_->msg_.transforms.front().transform.translation.y = odometry_.getY();
     rt_tf_odom_state_publisher_->msg_.transforms.front().transform.rotation =
-        tf2::toMsg(orientation);
+      tf2::toMsg(orientation);
     rt_tf_odom_state_publisher_->unlockAndPublish();
   }
 
+  //publish_state(state_current_, state_desired);
   return controller_interface::return_type::OK;
 }
 
-void AckermannSteeringController::publish_state(const AckermannDrive & state) { return; }
+void AckermannSteeringController::publish_state(
+  const AckermannDrive & desired_state, const AckermannDrive & current_state)
+{
+  // if (state_publisher_ && state_publisher_->trylock())
+  // {
+  //   state_publisher_->msg_.header.stamp = get_node()->now();
+  //   state_publisher_->msg_.desired.positions = desired_state.positions;
+  //   state_publisher_->msg_.desired.velocities = desired_state.velocities;
+  //   state_publisher_->msg_.desired.accelerations = desired_state.accelerations;
+  //   state_publisher_->msg_.actual.positions = current_state.positions;
+  //   state_publisher_->msg_.error.positions = state_error.positions;
+  //   if (has_velocity_state_interface_)
+  //   {
+  //     state_publisher_->msg_.actual.velocities = current_state.velocities;
+  //     state_publisher_->msg_.error.velocities = state_error.velocities;
+  //   }
+  //   if (has_acceleration_state_interface_)
+  //   {
+  //     state_publisher_->msg_.actual.accelerations = current_state.accelerations;
+  //     state_publisher_->msg_.error.accelerations = state_error.accelerations;
+  //   }
 
+  //   state_publisher_->unlockAndPublish();
+}
 }  // namespace ackermann_steering_controller
 
 #include "pluginlib/class_list_macros.hpp"

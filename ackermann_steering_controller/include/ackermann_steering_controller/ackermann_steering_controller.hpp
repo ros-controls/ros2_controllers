@@ -142,7 +142,15 @@ protected:
 
   using AckermannDrive = ackermann_msgs::msg::AckermannDrive;
   ACKERMANN_STEERING_CONTROLLER__VISIBILITY_PUBLIC
-  void publish_state(const AckermannDrive & state);
+  void publish_state(const AckermannDrive & desired_state, const AckermannDrive & current_state);
+  AckermannDrive state_current_;
+  AckermannDrive state_desired_;
+
+  // using ControllerStateMsg = control_msgs::msg::JointTrajectoryControllerState;
+  // using StatePublisher = realtime_tools::RealtimePublisher<ControllerStateMsg>;
+  // using StatePublisherPtr = std::unique_ptr<StatePublisher>;
+  // rclcpp::Publisher<ControllerStateMsg>::SharedPtr publisher_;
+  // StatePublisherPtr state_publisher_;
 
 private:
   // callback for topic interface
