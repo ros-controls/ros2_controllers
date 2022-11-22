@@ -69,6 +69,11 @@ AckermannSteeringController::AckermannSteeringController()
 {
 }
 
+const char * AckermannSteeringController::feedback_type() const
+{
+  return params_.position_feedback ? hardware_interface::HW_IF_POSITION : hardware_interface::HW_IF_VELOCITY;
+}
+
 controller_interface::CallbackReturn AckermannSteeringController::on_init()
 {
   try
@@ -252,7 +257,7 @@ AckermannSteeringController::state_interface_configuration() const
 
   state_interfaces_config.names.reserve(NR_STATE_ITFS);
   state_interfaces_config.names.push_back(
-    params_.rear_wheel_name + "/" + hardware_interface::HW_IF_POSITION);
+    params_.rear_wheel_name + "/" + feedback_type());
   state_interfaces_config.names.push_back(
     params_.front_steer_name + "/" + hardware_interface::HW_IF_POSITION);
 
@@ -338,16 +343,35 @@ controller_interface::return_type AckermannSteeringController::update_and_write_
   }
   else
   {
-    const double wheel_position = state_interfaces_[0].get_value();
-    const double steer_position = state_interfaces_[1].get_value() * params_.steer_pos_multiplier;
-
-    if (std::isnan(wheel_position) || std::isnan(steer_position))
+    if (params_.position_feedback)
     {
-      return controller_interface::return_type::OK;
-    }
+      const double wheel_position = state_interfaces_[0].get_value();
+      const double steer_position = state_interfaces_[1].get_value() * params_.steer_pos_multiplier;
+      const double wheel_vel = 0.0;
 
-    // Estimate linear and angular velocity using joint information
-    odometry_.update(wheel_position, steer_position, time);
+      if (std::isnan(wheel_position) || std::isnan(steer_position))
+      {
+        return controller_interface::return_type::OK;
+      }
+
+        // Estimate linear and angular velocity using joint information
+        odometry_.update(wheel_position, steer_position, wheel_vel, params_.position_feedback, time);
+
+    } else{
+
+        const double wheel_position = 0.0;
+        const double steer_position = state_interfaces_[1].get_value() * params_.steer_pos_multiplier;
+        const double wheel_vel = state_interfaces_[0].get_value();
+
+        if (std::isnan(wheel_position) || std::isnan(steer_position))
+        {
+          return controller_interface::return_type::OK;
+        }
+        // Estimate linear and angular velocity using joint information
+        odometry_.update(wheel_position, steer_position, wheel_vel, params_.position_feedback, time);
+
+      }
+
   }
 
   // MOVE ROBOT

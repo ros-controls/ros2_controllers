@@ -89,7 +89,7 @@ public:
      * \param time      Current time
      * \return true if the odometry is actually updated
      */
-  bool update(double rear_wheel_pos, double front_steer_pos, const rclcpp::Time & time);
+  bool update(double rear_wheel_pos, double front_steer_pos, double rear_wheel_vel, bool position_feedback, const rclcpp::Time & time);
 
   /**
      * \brief Updates the odometry class with latest velocity command

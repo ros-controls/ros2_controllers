@@ -75,43 +75,75 @@ namespace ackermann_steering_controller
   }
 
   // TODO(destogl): enalbe also velocity interface to update using velocity from the rear wheel
-  bool Odometry::update(double rear_wheel_pos, double front_steer_pos, const rclcpp::Time &time)
+  bool Odometry::update(double rear_wheel_pos, double front_steer_pos, double rear_wheel_vel, bool position_feedback, const rclcpp::Time &time)
   {
-    /// Get current wheel joint positions:
-    const double rear_wheel_cur_pos = rear_wheel_pos * wheel_radius_;
+    if (position_feedback)
+    {
+      /// Get current wheel joint positions:
+      const double rear_wheel_cur_pos = rear_wheel_pos * wheel_radius_;
 
-    /// Estimate velocity of wheels using old and current position:
-    //const double left_wheel_est_vel  = left_wheel_cur_pos  - left_wheel_old_pos_;
-    //const double right_wheel_est_vel = right_wheel_cur_pos - right_wheel_old_pos_;
+      /// Estimate velocity of wheels using old and current position:
+      //const double left_wheel_est_vel  = left_wheel_cur_pos  - left_wheel_old_pos_;
+      //const double right_wheel_est_vel = right_wheel_cur_pos - right_wheel_old_pos_;
 
-    const double rear_wheel_est_vel = rear_wheel_cur_pos - rear_wheel_old_pos_;
+      const double rear_wheel_est_vel = rear_wheel_cur_pos - rear_wheel_old_pos_;
 
-    /// Update old position with current:
-    rear_wheel_old_pos_ = rear_wheel_cur_pos;
+      /// Update old position with current:
+      rear_wheel_old_pos_ = rear_wheel_cur_pos;
 
-    /// Compute linear and angular diff:
-    const double linear  = rear_wheel_est_vel;//(right_wheel_est_vel + left_wheel_est_vel) * 0.5;
-    //const double angular = (right_wheel_est_vel - left_wheel_est_vel) / wheel_separation_w_;
-    const double angular = tan(front_steer_pos) * linear / wheel_separation_;
+      /// Compute linear and angular diff:
+      const double linear  = rear_wheel_est_vel;//(right_wheel_est_vel + left_wheel_est_vel) * 0.5;
+      //const double angular = (right_wheel_est_vel - left_wheel_est_vel) / wheel_separation_w_;
+      const double angular = tan(front_steer_pos) * linear / wheel_separation_;
 
-    /// Integrate odometry:
-    integrate_fun_(linear, angular);
+      /// Integrate odometry:
+      integrate_fun_(linear, angular);
 
-    /// We cannot estimate the speed with very small time intervals:
-    const double dt = time.seconds() - timestamp_.seconds();
-    if (dt < 0.0001)
-      return false; // Interval too small to integrate with
+      /// We cannot estimate the speed with very small time intervals:
+      const double dt = time.seconds() - timestamp_.seconds();
+      if (dt < 0.0001)
+        return false; // Interval too small to integrate with
 
-    timestamp_ = time;
+      timestamp_ = time;
 
-    /// Estimate speeds using a rolling mean to filter them out:
-    linear_acc_(linear/dt);
-    angular_acc_(angular/dt);
+      /// Estimate speeds using a rolling mean to filter them out:
+      linear_acc_(linear/dt);
+      angular_acc_(angular/dt);
 
-    linear_ = bacc::rolling_mean(linear_acc_);
-    angular_ = bacc::rolling_mean(angular_acc_);
+      linear_ = bacc::rolling_mean(linear_acc_);
+      angular_ = bacc::rolling_mean(angular_acc_);
 
-    return true;
+      return true;
+
+    } else {
+
+      /// Compute linear and angular diff:
+      const double linear  = rear_wheel_vel;//(right_wheel_est_vel + left_wheel_est_vel) * 0.5;
+      //const double angular = (right_wheel_est_vel - left_wheel_est_vel) / wheel_separation_w_;
+      const double angular = tan(front_steer_pos) * linear / wheel_separation_;
+
+      /// Integrate odometry:
+      integrate_fun_(linear, angular);
+
+      /// We cannot estimate the speed with very small time intervals:
+      const double dt = time.seconds() - timestamp_.seconds();
+      if (dt < 0.0001)
+        return false; // Interval too small to integrate with
+
+      timestamp_ = time;
+
+      /// Estimate speeds using a rolling mean to filter them out:
+      linear_acc_(linear/dt);
+      angular_acc_(angular/dt);
+
+      linear_ = bacc::rolling_mean(linear_acc_);
+      angular_ = bacc::rolling_mean(angular_acc_);
+
+      return true;
+
+
+    }
+
   }
 
   void Odometry::updateOpenLoop(double linear, double angular, const rclcpp::Time &time)
