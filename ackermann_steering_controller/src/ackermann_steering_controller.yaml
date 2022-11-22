@@ -129,6 +129,15 @@ ackermann_steering_controller:
     
   }
 
+  position_feedback: {
+    type: bool,
+    default_value: false,
+    description: "choice of feedbacktype, if position_feedback is false then HW_IF_VELOCITY is taken as interface type, if
+    position_feedback is true then HW_IF_POSITION is taken as interface type",
+    read_only: false,
+    
+  }
+
 
 
 
