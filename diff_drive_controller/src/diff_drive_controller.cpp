@@ -67,6 +67,14 @@ controller_interface::CallbackReturn DiffDriveController::on_init()
     auto_declare<double>("wheel_separation_multiplier", wheel_params_.separation_multiplier);
     auto_declare<double>("left_wheel_radius_multiplier", wheel_params_.left_radius_multiplier);
     auto_declare<double>("right_wheel_radius_multiplier", wheel_params_.right_radius_multiplier);
+    auto_declare<bool>(
+      "left_wheel.has_velocity_limits", wheel_params_.left_wheel_has_velocity_limits);
+    auto_declare<bool>(
+      "right_wheel.has_velocity_limits", wheel_params_.right_wheel_has_velocity_limits);
+    auto_declare<double>("left_wheel.max_velocity", wheel_params_.left_wheel_max_velocity);
+    auto_declare<double>("right_wheel.max_velocity", wheel_params_.right_wheel_max_velocity);
+    auto_declare<double>("left_wheel.min_velocity", wheel_params_.left_wheel_min_velocity);
+    auto_declare<double>("right_wheel.min_velocity", wheel_params_.right_wheel_min_velocity);
 
     auto_declare<std::string>("odom_frame_id", odom_params_.odom_frame_id);
     auto_declare<std::string>("base_frame_id", odom_params_.base_frame_id);
@@ -280,10 +288,50 @@ controller_interface::return_type DiffDriveController::update(
   }
 
   // Compute wheels velocities:
-  const double velocity_left =
+  double velocity_left =
     (linear_command - angular_command * wheel_separation / 2.0) / left_wheel_radius;
-  const double velocity_right =
+  double velocity_right =
     (linear_command + angular_command * wheel_separation / 2.0) / right_wheel_radius;
+
+  // Limit individual wheel velocity to keep heading:
+  if (wheels.left_wheel_has_velocity_limits)
+  {
+    if (velocity_left > wheels.left_wheel_max_velocity && velocity_left != 0)
+    {
+      const double reduction_ratio = wheels.left_wheel_max_velocity / velocity_left;
+      velocity_left *= reduction_ratio;
+      velocity_right *= reduction_ratio;
+    }
+    else if (velocity_left < wheels.left_wheel_min_velocity && velocity_right != 0)
+    {
+      // If velocity and limit is on the same side of the sign we won't be able to keep heading
+      if (copysign(1.0, velocity_left) == copysign(1.0, wheels.left_wheel_min_velocity))
+      {
+        const double ratio = wheels.left_wheel_min_velocity / velocity_left;
+        velocity_left *= ratio;
+        velocity_right *= ratio;
+      }
+    }
+  }
+  if (wheels.right_wheel_has_velocity_limits)
+  {
+    if (velocity_right > wheels.right_wheel_max_velocity)
+    {
+      const double reduction_ratio = wheels.right_wheel_max_velocity / velocity_right;
+      velocity_left *= reduction_ratio;
+      velocity_right *= reduction_ratio;
+    }
+    else if (velocity_right < wheels.right_wheel_min_velocity)
+    {
+      // If velocity and limit is on the same side of the sign we wont be able to keep heading
+      if (copysign(1.0, velocity_right) == copysign(1.0, wheels.right_wheel_min_velocity))
+      {
+        const double ratio = wheels.right_wheel_min_velocity / velocity_right;
+        velocity_left *= ratio;
+        velocity_right *= ratio;
+      }
+    }
+  }
 
   // Set wheels velocities:
   for (size_t index = 0; index < wheels.wheels_per_side; ++index)
@@ -328,6 +376,18 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
     get_node()->get_parameter("left_wheel_radius_multiplier").as_double();
   wheel_params_.right_radius_multiplier =
     get_node()->get_parameter("right_wheel_radius_multiplier").as_double();
+  wheel_params_.left_wheel_has_velocity_limits =
+    node_->get_parameter("left_wheel.has_velocity_limits").as_bool();
+  wheel_params_.right_wheel_has_velocity_limits =
+    node_->get_parameter("right_wheel.has_velocity_limits").as_bool();
+  wheel_params_.left_wheel_max_velocity =
+    node_->get_parameter("left_wheel.max_velocity").as_double();
+  wheel_params_.right_wheel_max_velocity =
+    node_->get_parameter("right_wheel.max_velocity").as_double();
+  wheel_params_.left_wheel_min_velocity =
+    node_->get_parameter("left_wheel.min_velocity").as_double();
+  wheel_params_.right_wheel_min_velocity =
+    node_->get_parameter("right_wheel.min_velocity").as_double();
 
   const auto wheels = wheel_params_;
 

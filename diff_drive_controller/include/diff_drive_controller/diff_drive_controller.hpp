@@ -115,6 +115,12 @@ protected:
     double separation_multiplier = 1.0;
     double left_radius_multiplier = 1.0;
     double right_radius_multiplier = 1.0;
+    bool left_wheel_has_velocity_limits = false;
+    bool right_wheel_has_velocity_limits = false;
+    double left_wheel_max_velocity = NAN;
+    double right_wheel_max_velocity = NAN;
+    double left_wheel_min_velocity = NAN;
+    double right_wheel_min_velocity = NAN;
   } wheel_params_;
 
   struct OdometryParams
