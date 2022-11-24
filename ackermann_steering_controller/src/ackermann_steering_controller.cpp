@@ -253,7 +253,7 @@ AckermannSteeringController::state_interface_configuration() const
   state_interfaces_config.names.reserve(NR_STATE_ITFS);
   const auto rear_wheel_feedback = params_.position_feedback ? hardware_interface::HW_IF_POSITION
                                                              : hardware_interface::HW_IF_VELOCITY;
-  state_interfaces_config.names.push_back(params_.rear_wheel_name + "/" + feedback_type());
+  state_interfaces_config.names.push_back(params_.rear_wheel_name + "/" + rear_wheel_feedback);
   state_interfaces_config.names.push_back(
     params_.front_steer_name + "/" + hardware_interface::HW_IF_POSITION);
 
@@ -370,7 +370,7 @@ controller_interface::return_type AckermannSteeringController::update_and_write_
     last_linear_velocity_ = reference_interfaces_[0];
     last_angular_velocity_ = reference_interfaces_[1];
 
-    //previous_publish_timestamp_ = time;
+    // previous_publish_timestamp_ = time;
 
     // omega = linear_vel / radius
     command_interfaces_[0].set_value(last_linear_velocity_ / params_.wheel_radius);
@@ -435,7 +435,6 @@ controller_interface::return_type AckermannSteeringController::update_and_write_
     controller_state_publisher_->unlockAndPublish();
   }
 
-  //publish_state(state_current_, state_desired);
   return controller_interface::return_type::OK;
 }
 

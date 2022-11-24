@@ -96,8 +96,6 @@ protected:
   std::shared_ptr<ackermann_steering_controller::ParamListener> param_listener_;
   ackermann_steering_controller::Params params_;
 
-  const char * feedback_type() const;
-
   // Command subscribers and Controller State publisher
   rclcpp::Subscription<ControllerReferenceMsg>::SharedPtr ref_subscriber_ = nullptr;
   realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerReferenceMsg>> input_ref_;
