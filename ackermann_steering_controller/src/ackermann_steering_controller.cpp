@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Stogl Robotics Consulting UG (haftungsbeschränkt) (template)
+// Copyright (c) 2022, Stogl Robotics Consulting UG (haftungsbeschränkt)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -67,11 +67,6 @@ namespace ackermann_steering_controller
 AckermannSteeringController::AckermannSteeringController()
 : controller_interface::ChainableControllerInterface()
 {
-}
-
-const char * AckermannSteeringController::feedback_type() const
-{
-  return params_.position_feedback ? hardware_interface::HW_IF_POSITION : hardware_interface::HW_IF_VELOCITY;
 }
 
 controller_interface::CallbackReturn AckermannSteeringController::on_init()
@@ -256,8 +251,9 @@ AckermannSteeringController::state_interface_configuration() const
   state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
 
   state_interfaces_config.names.reserve(NR_STATE_ITFS);
-  state_interfaces_config.names.push_back(
-    params_.rear_wheel_name + "/" + feedback_type());
+  const auto rear_wheel_feedback = params_.position_feedback ? hardware_interface::HW_IF_POSITION
+                                                             : hardware_interface::HW_IF_VELOCITY;
+  state_interfaces_config.names.push_back(params_.rear_wheel_name + "/" + feedback_type());
   state_interfaces_config.names.push_back(
     params_.front_steer_name + "/" + hardware_interface::HW_IF_POSITION);
 
@@ -335,43 +331,32 @@ controller_interface::return_type AckermannSteeringController::update_reference_
 }
 
 controller_interface::return_type AckermannSteeringController::update_and_write_commands(
-  const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
+  const rclcpp::Time & time, const rclcpp::Duration & period)
 {
   if (params_.open_loop)
   {
-    odometry_.updateOpenLoop(last_linear_velocity_, last_angular_velocity_, time);
+    odometry_.updateOpenLoop(last_linear_velocity_, last_angular_velocity_, period.seconds());
   }
   else
   {
-    if (params_.position_feedback)
+    const double rear_wheel_value = state_interfaces_[0].get_value();
+    const double steer_position = state_interfaces_[1].get_value() * params_.steer_pos_multiplier;
+
+    if (!std::isnan(rear_wheel_value) && !std::isnan(steer_position))
     {
-      const double wheel_position = state_interfaces_[0].get_value();
-      const double steer_position = state_interfaces_[1].get_value() * params_.steer_pos_multiplier;
-      const double wheel_vel = 0.0;
-
-      if (std::isnan(wheel_position) || std::isnan(steer_position))
+      if (params_.position_feedback)
       {
-        return controller_interface::return_type::OK;
-      }
-
         // Estimate linear and angular velocity using joint information
-        odometry_.update(wheel_position, steer_position, wheel_vel, params_.position_feedback, time);
-
-    } else{
-
-        const double wheel_position = 0.0;
-        const double steer_position = state_interfaces_[1].get_value() * params_.steer_pos_multiplier;
-        const double wheel_vel = state_interfaces_[0].get_value();
-
-        if (std::isnan(wheel_position) || std::isnan(steer_position))
-        {
-          return controller_interface::return_type::OK;
-        }
-        // Estimate linear and angular velocity using joint information
-        odometry_.update(wheel_position, steer_position, wheel_vel, params_.position_feedback, time);
-
+        odometry_.update(
+          rear_wheel_value, steer_position, 0.0, params_.position_feedback, period.seconds());
       }
-
+      else
+      {
+        // Estimate linear and angular velocity using joint information
+        odometry_.update(
+          0.0, steer_position, rear_wheel_value, params_.position_feedback, period.seconds());
+      }
+    }
   }
 
   // MOVE ROBOT
@@ -379,20 +364,18 @@ controller_interface::return_type AckermannSteeringController::update_and_write_
   // Limit velocities and accelerations:
   // TODO(destogl): add limiter for the velocities
 
-  if (std::isnan(reference_interfaces_[0]) || std::isnan(reference_interfaces_[1]))
+  if (!std::isnan(reference_interfaces_[0]) && !std::isnan(reference_interfaces_[1]))
   {
-    return controller_interface::return_type::OK;
+    // store and set commands
+    last_linear_velocity_ = reference_interfaces_[0];
+    last_angular_velocity_ = reference_interfaces_[1];
+
+    //previous_publish_timestamp_ = time;
+
+    // omega = linear_vel / radius
+    command_interfaces_[0].set_value(last_linear_velocity_ / params_.wheel_radius);
+    command_interfaces_[1].set_value(last_angular_velocity_);
   }
-
-  // store and set commands
-  last_linear_velocity_ = reference_interfaces_[0];
-  last_angular_velocity_ = reference_interfaces_[1];
-
-  //previous_publish_timestamp_ = time;
-
-  // omega = linear_vel / radius
-  command_interfaces_[0].set_value(last_linear_velocity_ / params_.wheel_radius);
-  command_interfaces_[1].set_value(last_angular_velocity_);
 
   if (ref_timeout_ == rclcpp::Duration::from_seconds(0) || is_in_chained_mode())
   {
@@ -436,9 +419,18 @@ controller_interface::return_type AckermannSteeringController::update_and_write_
     controller_state_publisher_->msg_.odom.pose.pose.orientation = tf2::toMsg(orientation);
     controller_state_publisher_->msg_.odom.twist.twist.linear.x = odometry_.getLinear();
     controller_state_publisher_->msg_.odom.twist.twist.angular.z = odometry_.getAngular();
-    controller_state_publisher_->msg_.wheel_position = state_interfaces_[0].get_value();
+    if (params_.position_feedback)
+    {
+      controller_state_publisher_->msg_.rear_wheel_position = state_interfaces_[0].get_value();
+    }
+    else
+    {
+      controller_state_publisher_->msg_.rear_wheel_velocity = state_interfaces_[0].get_value();
+    }
     controller_state_publisher_->msg_.steer_position =
       state_interfaces_[1].get_value() * params_.steer_pos_multiplier;
+    controller_state_publisher_->msg_.linear_velocity_command = command_interfaces_[0].get_value();
+    controller_state_publisher_->msg_.steering_angle_command = command_interfaces_[1].get_value();
 
     controller_state_publisher_->unlockAndPublish();
   }

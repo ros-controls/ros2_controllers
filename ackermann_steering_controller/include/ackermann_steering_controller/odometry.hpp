@@ -53,7 +53,6 @@
 
 namespace ackermann_steering_controller
 {
-
 namespace bacc = boost::accumulators;
 
 /**
@@ -71,7 +70,7 @@ public:
      * Timestamp will get the current time value
      * Value will be set to zero
      * \param velocity_rolling_window_size Rolling window size used to compute the velocity mean
-     * 
+     *
      */
   // ackermann_steering_controller_ros2::Params params;
   explicit Odometry(size_t velocity_rolling_window_size = 10);
@@ -89,7 +88,9 @@ public:
      * \param time      Current time
      * \return true if the odometry is actually updated
      */
-  bool update(double rear_wheel_pos, double front_steer_pos, double rear_wheel_vel, bool position_feedback, const rclcpp::Time & time);
+  bool update(
+    const double rear_wheel_pos, const double front_steer_pos, const double rear_wheel_vel,
+    const bool position_feedback, const double dt);
 
   /**
      * \brief Updates the odometry class with latest velocity command
@@ -97,7 +98,7 @@ public:
      * \param angular Angular velocity [rad/s]
      * \param time    Current time
      */
-  void updateOpenLoop(double linear, double angular, const rclcpp::Time & time);
+  void updateOpenLoop(const double linear, const double angular, const double dt);
 
   /**
      * \brief heading getter
@@ -187,7 +188,7 @@ private:
   RollingMeanAcc linear_acc_;
   RollingMeanAcc angular_acc_;
 
-  /// Integration funcion, used to integrate the odometry:
+  /// Integration function, used to integrate the odometry:
   IntegrationFunction integrate_fun_;
 };
-}
+}  // namespace ackermann_steering_controller
