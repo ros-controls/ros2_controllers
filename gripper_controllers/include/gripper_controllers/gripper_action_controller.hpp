@@ -107,7 +107,7 @@ public:
   // pre-allocated memory that is re-used to set the realtime buffer
   Commands command_struct_, command_struct_rt_;
 
-private:
+protected:
   using GripperCommandAction = control_msgs::action::GripperCommand;
   using ActionServer = rclcpp_action::Server<GripperCommandAction>;
   using ActionServerPtr = ActionServer::SharedPtr;
