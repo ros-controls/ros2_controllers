@@ -60,19 +60,6 @@ void reset_controller_reference_msg(
   msg->twist.angular.z = std::numeric_limits<double>::quiet_NaN();
 }
 
-// called from RT control loop
-void reset_controller_reference_msg_unstamped(
-  const std::shared_ptr<geometry_msgs::msg::Twist> & msg,
-  const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node)
-{
-  msg->linear.x = std::numeric_limits<double>::quiet_NaN();
-  msg->linear.y = std::numeric_limits<double>::quiet_NaN();
-  msg->linear.z = std::numeric_limits<double>::quiet_NaN();
-  msg->angular.x = std::numeric_limits<double>::quiet_NaN();
-  msg->angular.y = std::numeric_limits<double>::quiet_NaN();
-  msg->angular.z = std::numeric_limits<double>::quiet_NaN();
-}
-
 }  // namespace
 
 namespace ackermann_steering_controller
@@ -119,10 +106,6 @@ controller_interface::CallbackReturn AckermannSteeringController::on_configure(
     ref_subscriber_ = get_node()->create_subscription<ControllerReferenceMsg>(
       "~/reference", subscribers_qos,
       std::bind(&AckermannSteeringController::reference_callback, this, std::placeholders::_1));
-
-    std::shared_ptr<ControllerReferenceMsg> msg = std::make_shared<ControllerReferenceMsg>();
-    reset_controller_reference_msg(msg, get_node());
-    input_ref_.writeFromNonRT(msg);
   }
   else
   {
@@ -130,11 +113,11 @@ controller_interface::CallbackReturn AckermannSteeringController::on_configure(
       "~/reference_unstamped", subscribers_qos,
       std::bind(
         &AckermannSteeringController::reference_callback_unstamped, this, std::placeholders::_1));
-
-    std::shared_ptr<geometry_msgs::msg::Twist> msg = std::make_shared<geometry_msgs::msg::Twist>();
-    reset_controller_reference_msg_unstamped(msg, get_node());
-    input_ref_unstamped_.writeFromNonRT(msg);
   }
+
+  std::shared_ptr<ControllerReferenceMsg> msg = std::make_shared<ControllerReferenceMsg>();
+  reset_controller_reference_msg(msg, get_node());
+  input_ref_.writeFromNonRT(msg);
 
   try
   {
@@ -259,7 +242,32 @@ void AckermannSteeringController::reference_callback(
 void AckermannSteeringController::reference_callback_unstamped(
   const std::shared_ptr<geometry_msgs::msg::Twist> msg)
 {
-  input_ref_unstamped_.writeFromNonRT(msg);
+  auto twist_stamped = *(input_ref_.readFromNonRT());
+  twist_stamped->header.stamp = get_node()->now();
+  // if no timestamp provided use current time for command timestamp
+  if (twist_stamped->header.stamp.sec == 0 && twist_stamped->header.stamp.nanosec == 0u)
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "Timestamp in header is missing, using current time as command timestamp.");
+    twist_stamped->header.stamp = get_node()->now();
+  }
+
+  const auto age_of_last_command = get_node()->now() - twist_stamped->header.stamp;
+
+  if (ref_timeout_ == rclcpp::Duration::from_seconds(0) || age_of_last_command <= ref_timeout_)
+  {
+    twist_stamped->twist = *msg;
+  }
+  else
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(),
+      "Received message has timestamp %.10f older for %.10f which is more then allowed timeout "
+      "(%.4f).",
+      rclcpp::Time(twist_stamped->header.stamp).seconds(), age_of_last_command.seconds(),
+      ref_timeout_.seconds());
+  }
 }
 
 controller_interface::InterfaceConfiguration
@@ -321,16 +329,8 @@ bool AckermannSteeringController::on_set_chained_mode(bool chained_mode)
 controller_interface::CallbackReturn AckermannSteeringController::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  if (params_.use_stamped_vel)
-  {
-    // Set default value in command
-    reset_controller_reference_msg(*(input_ref_.readFromRT()), get_node());
-  }
-  else
-  {
-    // Set default value in command
-    reset_controller_reference_msg_unstamped(*(input_ref_unstamped_.readFromRT()), get_node());
-  }
+  // Set default value in command
+  reset_controller_reference_msg(*(input_ref_.readFromRT()), get_node());
 
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -349,37 +349,24 @@ controller_interface::CallbackReturn AckermannSteeringController::on_deactivate(
 
 controller_interface::return_type AckermannSteeringController::update_reference_from_subscribers()
 {
-  if (params_.use_stamped_vel)
-  {
-    auto current_ref = *(input_ref_.readFromRT());
-    const auto age_of_last_command = get_node()->now() - (current_ref)->header.stamp;
+  auto current_ref = *(input_ref_.readFromRT());
+  const auto age_of_last_command = get_node()->now() - (current_ref)->header.stamp;
 
-    // TODO(anyone): depending on number of interfaces, use definitions, e.g., `CMD_MY_ITFS`,
-    // instead of a loop
-    // send message only if there is no timeout
-    if (age_of_last_command <= ref_timeout_ || ref_timeout_ == rclcpp::Duration::from_seconds(0))
+  // TODO(anyone): depending on number of interfaces, use definitions, e.g., `CMD_MY_ITFS`,
+  // instead of a loop
+  // send message only if there is no timeout
+  if (age_of_last_command <= ref_timeout_ || ref_timeout_ == rclcpp::Duration::from_seconds(0))
+  {
+    if (!std::isnan(current_ref->twist.linear.x) && !std::isnan(current_ref->twist.angular.z))
     {
-      if (!std::isnan(current_ref->twist.linear.x) && !std::isnan(current_ref->twist.angular.z))
-      {
-        reference_interfaces_[0] = current_ref->twist.linear.x;
-        reference_interfaces_[1] = current_ref->twist.angular.z;
-      }
-    }
-    else
-    {
-      reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();
-      reference_interfaces_[1] = std::numeric_limits<double>::quiet_NaN();
+      reference_interfaces_[0] = current_ref->twist.linear.x;
+      reference_interfaces_[1] = current_ref->twist.angular.z;
     }
   }
   else
   {
-    auto current_ref = *(input_ref_unstamped_.readFromRT());
-
-    if (!std::isnan(current_ref->linear.x) && !std::isnan(current_ref->angular.z))
-    {
-      reference_interfaces_[0] = current_ref->linear.x;
-      reference_interfaces_[1] = current_ref->angular.z;
-    }
+    reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();
+    reference_interfaces_[1] = std::numeric_limits<double>::quiet_NaN();
   }
 
   return controller_interface::return_type::OK;
