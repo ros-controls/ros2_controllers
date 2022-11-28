@@ -98,7 +98,9 @@ protected:
 
   // Command subscribers and Controller State publisher
   rclcpp::Subscription<ControllerReferenceMsg>::SharedPtr ref_subscriber_ = nullptr;
+  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr ref_subscriber_unstamped_ = nullptr;
   realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerReferenceMsg>> input_ref_;
+  realtime_tools::RealtimeBuffer<std::shared_ptr<geometry_msgs::msg::Twist>> input_ref_unstamped_;
   rclcpp::Duration ref_timeout_ = rclcpp::Duration::from_seconds(0.0);  // 0ms
 
   using ControllerStatePublisherOdom = realtime_tools::RealtimePublisher<ControllerStateMsgOdom>;
@@ -153,6 +155,7 @@ private:
   // callback for topic interface
   ACKERMANN_STEERING_CONTROLLER__VISIBILITY_LOCAL
   void reference_callback(const std::shared_ptr<ControllerReferenceMsg> msg);
+  void reference_callback_unstamped(const std::shared_ptr<geometry_msgs::msg::Twist> msg);
 
   /// Frame to use for the robot base:
   std::string base_frame_id_;

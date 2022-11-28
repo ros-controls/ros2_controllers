@@ -13,7 +13,7 @@ ackermann_steering_controller:
     default_value: "rear_wheel_joint",
     description: "Name of the rear wheel.",
     read_only: true,
-    
+
   }
 
   front_steer_name: {
@@ -21,7 +21,7 @@ ackermann_steering_controller:
     default_value: "front_steer_joint",
     description: "Name of the front steer wheel.",
     read_only: true,
-    
+
   }
 
   open_loop: {
@@ -29,7 +29,7 @@ ackermann_steering_controller:
     default_value: false,
     description: "bool parameter decides if open oop or not (feedback).",
     read_only: false,
-    
+
   }
 
   wheel_separation_multiplier: {
@@ -37,7 +37,7 @@ ackermann_steering_controller:
     default_value: 1.0,
     description: "Wheel separation height will be multiplied by value of the wheel_separation_h_multiplier.",
     read_only: false,
-    
+
   }
 
   wheel_separation: {
@@ -45,7 +45,7 @@ ackermann_steering_controller:
     default_value: 0.0,
     description: "Wheel separation.",
     read_only: false,
-    
+
   }
 
   wheel_radius: {
@@ -53,7 +53,7 @@ ackermann_steering_controller:
     default_value: 0.0,
     description: "Wheel radius.",
     read_only: false,
-    
+
   }
 
   wheel_radius_multiplier: {
@@ -61,7 +61,7 @@ ackermann_steering_controller:
     default_value: 1.0,
     description: "Wheel radius will be multiplied by value of wheel_radius_multiplier.",
     read_only: false,
-    
+
   }
 
   steer_pos_multiplier: {
@@ -69,7 +69,7 @@ ackermann_steering_controller:
     default_value: 1.0,
     description: "Steer pos will be multiplied by value of steer_pos_multiplier.",
     read_only: false,
-    
+
   }
 
   velocity_rolling_window_size: {
@@ -77,7 +77,7 @@ ackermann_steering_controller:
     default_value: 10,
     description: "The number of velocity samples to average together to compute the odometry twist.linear.x and twist.angular.z velocities.",
     read_only: false,
-    
+
   }
 
   allow_multiple_cmd_vel_publishers: {
@@ -85,7 +85,7 @@ ackermann_steering_controller:
     default_value: true,
     description: "Allow multiple cmd_vel publishers is enabled or disabled?.",
     read_only: false,
-    
+
   }
 
   base_frame_id: {
@@ -93,7 +93,7 @@ ackermann_steering_controller:
     default_value: "base_link",
     description: "Base frame_id set to value of base_frame_id.",
     read_only: false,
-    
+
   }
 
   odom_frame_id: {
@@ -101,7 +101,7 @@ ackermann_steering_controller:
     default_value: "odom",
     description: "Odometry frame_id set to value of odom_frame_id.",
     read_only: false,
-    
+
   }
 
 
@@ -110,7 +110,7 @@ ackermann_steering_controller:
     default_value: true,
     description: "Publishing to tf is enabled or disabled ?.",
     read_only: false,
-    
+
   }
 
   twist_covariance_diagonal: {
@@ -118,7 +118,7 @@ ackermann_steering_controller:
     default_value: [0, 7, 14, 21, 28, 35],
     description: "diagonal values of twist covariance matrix.",
     read_only: false,
-    
+
   }
 
   pose_covariance_diagonal: {
@@ -126,7 +126,7 @@ ackermann_steering_controller:
     default_value: [0, 7, 14, 21, 28, 35],
     description: "diagonal values of pose covariance matrix.",
     read_only: false,
-    
+
   }
 
   position_feedback: {
@@ -135,13 +135,14 @@ ackermann_steering_controller:
     description: "choice of feedbacktype, if position_feedback is false then HW_IF_VELOCITY is taken as interface type, if
     position_feedback is true then HW_IF_POSITION is taken as interface type",
     read_only: false,
-    
+
   }
 
+  use_stamped_vel: {
+    type: bool,
+    default_value: true,
+    description: "choice of vel type, if use_stamped_vel is false then geometry_msgs::msg::Twist is taken as vel msg type, if
+    use_stamped_vel is true then geometry_msgs::msg::TwistStamped is taken as vel msg type",
+    read_only: false,
 
-
-
-
-
-
-
+  }
