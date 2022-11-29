@@ -37,7 +37,7 @@ TEST_F(AckermannSteeringControllerTest, all_parameters_set_configure_success)
   // ASSERT_TRUE(controller_->params_.joints.empty());
   // ASSERT_TRUE(controller_->params_.state_joints.empty());
   // ASSERT_TRUE(controller_->params_.interface_name.empty());
-  ASSERT_EQ(controller_->params_.reference_timeout, 0.0);
+  ASSERT_EQ(controller_->params_.reference_timeout, 1);
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
@@ -195,7 +195,14 @@ TEST_F(AckermannSteeringControllerTest, receive_message_and_publish_updated_stat
 
   ASSERT_EQ(msg.pose.pose.position.z, 0);
 
-  publish_commands(controller_->get_node()->now());
+  if (controller_->params_.use_stamped_vel)
+  {
+    publish_commands(controller_->get_node()->now());
+  }
+  else
+  {
+    publish_commands_unstamped();
+  }
   ASSERT_TRUE(controller_->wait_for_commands(executor));
 
   ASSERT_EQ(
@@ -211,7 +218,7 @@ TEST_F(AckermannSteeringControllerTest, receive_message_and_publish_updated_stat
   ASSERT_EQ(msg.pose.pose.position.z, 0);
 }
 
-TEST_F(AckermannSteeringControllerTest, test_message_timeout)
+TEST_F(AckermannSteeringControllerTest, test_sending_too_old_message)
 {
   SetUpController();
   rclcpp::executors::MultiThreadedExecutor executor;
@@ -225,20 +232,33 @@ TEST_F(AckermannSteeringControllerTest, test_message_timeout)
   auto old_timestamp = (*reference)->header.stamp;
   EXPECT_TRUE(std::isnan((*reference)->twist.linear.x));
   EXPECT_TRUE(std::isnan((*reference)->twist.angular.z));
-  publish_commands(controller_->get_node()->now() - controller_->ref_timeout_ -
-                   rclcpp::Duration::from_seconds(0.1));
-  ASSERT_TRUE(controller_->wait_for_commands(executor));
-  ASSERT_EQ(old_timestamp,
-            (*(controller_->input_ref_.readFromNonRT()))->header.stamp);
-  EXPECT_TRUE(std::isnan((*reference)->twist.linear.x));
-  EXPECT_TRUE(std::isnan((*reference)->twist.angular.z));
+  if (controller_->params_.use_stamped_vel)
+  {
+    publish_commands(
+      controller_->get_node()->now() - controller_->ref_timeout_ -
+      rclcpp::Duration::from_seconds(0.1));
+    ASSERT_TRUE(controller_->wait_for_commands(executor));
+    ASSERT_EQ(old_timestamp, (*(controller_->input_ref_.readFromNonRT()))->header.stamp);
+    EXPECT_TRUE(std::isnan((*reference)->twist.linear.x));
+    EXPECT_TRUE(std::isnan((*reference)->twist.angular.z));
+  }
+  else
+  {
+    publish_commands_unstamped();
+    ASSERT_TRUE(controller_->wait_for_commands(executor));
+    ASSERT_NE(old_timestamp, (*(controller_->input_ref_.readFromNonRT()))->header.stamp);
+    EXPECT_EQ((*reference)->twist.linear.x, 0.45);
+    EXPECT_EQ((*reference)->twist.angular.z, 0.0);
+  }
+
   // EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.linear.x,
   // 0.45);
   // EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z,
   // 0.0);
 }
 
-TEST_F(AckermannSteeringControllerTest, test_time_stamp_zero) {
+TEST_F(AckermannSteeringControllerTest, test_time_stamp_zero)
+{
   SetUpController();
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
@@ -251,14 +271,18 @@ TEST_F(AckermannSteeringControllerTest, test_time_stamp_zero) {
   auto old_timestamp = (*reference)->header.stamp;
   EXPECT_TRUE(std::isnan((*reference)->twist.linear.x));
   EXPECT_TRUE(std::isnan((*reference)->twist.angular.z));
-  publish_commands(rclcpp::Time(0));
+  if (controller_->params_.use_stamped_vel)
+  {
+    publish_commands(rclcpp::Time(0));
+  }
+  else
+  {
+    publish_commands_unstamped();
+  }
   ASSERT_TRUE(controller_->wait_for_commands(executor));
-  ASSERT_EQ(old_timestamp.sec,
-            (*(controller_->input_ref_.readFromNonRT()))->header.stamp.sec);
-  EXPECT_FALSE(
-      std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.linear.x));
-  EXPECT_FALSE(std::isnan(
-      (*(controller_->input_ref_.readFromNonRT()))->twist.angular.z));
+  ASSERT_EQ(old_timestamp.sec, (*(controller_->input_ref_.readFromNonRT()))->header.stamp.sec);
+  EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.linear.x));
+  EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z));
   EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.linear.x, 0.45);
   EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z, 0.0);
 }
@@ -276,7 +300,14 @@ TEST_F(AckermannSteeringControllerTest, test_message_accepted)
   auto reference = controller_->input_ref_.readFromNonRT();
   EXPECT_TRUE(std::isnan((*reference)->twist.linear.x));
   EXPECT_TRUE(std::isnan((*reference)->twist.angular.z));
-  publish_commands(controller_->get_node()->now());
+  if (controller_->params_.use_stamped_vel)
+  {
+    publish_commands(controller_->get_node()->now());
+  }
+  else
+  {
+    publish_commands_unstamped();
+  }
   ASSERT_TRUE(controller_->wait_for_commands(executor));
   EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.linear.x));
   EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z));
@@ -284,7 +315,8 @@ TEST_F(AckermannSteeringControllerTest, test_message_accepted)
   EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z, 0.0);
 }
 
-TEST_F(AckermannSteeringControllerTest, test_update_logic_chainable) {
+TEST_F(AckermannSteeringControllerTest, test_update_logic_chainable)
+{
   // 1. age>ref_timeout 2. age<ref_timeout
   SetUpController();
   rclcpp::executors::MultiThreadedExecutor executor;
@@ -299,11 +331,9 @@ TEST_F(AckermannSteeringControllerTest, test_update_logic_chainable) {
   static constexpr double TEST_LINEAR_VELOCITY_X = 1.5;
   static constexpr double TEST_ANGULAR_VELOCITY_Z = 1.1;
   joint_command_values_[NR_CMD_ITFS - 2] = 111;
-  std::shared_ptr<ControllerReferenceMsg> msg =
-      std::make_shared<ControllerReferenceMsg>();
+  std::shared_ptr<ControllerReferenceMsg> msg = std::make_shared<ControllerReferenceMsg>();
 
-  msg->header.stamp = controller_->get_node()->now() -
-                      controller_->ref_timeout_ -
+  msg->header.stamp = controller_->get_node()->now() - controller_->ref_timeout_ -
                       rclcpp::Duration::from_seconds(0.1);
   msg->twist.linear.x = TEST_LINEAR_VELOCITY_X;
   msg->twist.linear.y = std::numeric_limits<double>::quiet_NaN();
@@ -313,31 +343,27 @@ TEST_F(AckermannSteeringControllerTest, test_update_logic_chainable) {
   msg->twist.angular.z = TEST_ANGULAR_VELOCITY_Z;
   controller_->input_ref_.writeFromNonRT(msg);
   const auto age_of_last_command =
-      controller_->get_node()->now() -
-      (*(controller_->input_ref_.readFromNonRT()))->header.stamp;
+    controller_->get_node()->now() - (*(controller_->input_ref_.readFromNonRT()))->header.stamp;
 
   // age_of_last_command > ref_timeout_
   ASSERT_FALSE(age_of_last_command <= controller_->ref_timeout_);
-  ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x,
-            TEST_LINEAR_VELOCITY_X);
+  ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
   ASSERT_EQ(
-      controller_->update_reference_from_subscribers(),
-      controller_interface::return_type::OK);
+    controller_->update_reference_from_subscribers(), controller_interface::return_type::OK);
   ASSERT_EQ(
-      controller_->update_and_write_commands(
-          controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
-      controller_interface::return_type::OK);
+    controller_->update_and_write_commands(
+      controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
 
-  EXPECT_EQ(joint_command_values_[NR_CMD_ITFS - 2], 111);
-  ASSERT_TRUE(std::isnan(controller_->reference_interfaces_[0]));
-  for (const auto& interface : controller_->reference_interfaces_) {
-    EXPECT_TRUE(std::isnan(interface));
+  EXPECT_EQ(joint_command_values_[NR_CMD_ITFS - 2], 0);
+  ASSERT_EQ(controller_->reference_interfaces_[0], 0);
+  for (const auto & interface : controller_->reference_interfaces_)
+  {
+    ASSERT_EQ(interface, 0);
   }
 
-  std::shared_ptr<ControllerReferenceMsg> msg_2 =
-      std::make_shared<ControllerReferenceMsg>();
-  msg_2->header.stamp =
-      controller_->get_node()->now() - rclcpp::Duration::from_seconds(0.01);
+  std::shared_ptr<ControllerReferenceMsg> msg_2 = std::make_shared<ControllerReferenceMsg>();
+  msg_2->header.stamp = controller_->get_node()->now() - rclcpp::Duration::from_seconds(0.01);
   msg_2->twist.linear.x = TEST_LINEAR_VELOCITY_X;
   msg_2->twist.linear.y = std::numeric_limits<double>::quiet_NaN();
   msg_2->twist.linear.z = std::numeric_limits<double>::quiet_NaN();
@@ -346,25 +372,22 @@ TEST_F(AckermannSteeringControllerTest, test_update_logic_chainable) {
   msg_2->twist.angular.z = TEST_ANGULAR_VELOCITY_Z;
   controller_->input_ref_.writeFromNonRT(msg_2);
   const auto age_of_last_command_2 =
-      controller_->get_node()->now() -
-      (*(controller_->input_ref_.readFromNonRT()))->header.stamp;
+    controller_->get_node()->now() - (*(controller_->input_ref_.readFromNonRT()))->header.stamp;
 
   // age_of_last_command_2 < ref_timeout_
   ASSERT_TRUE(age_of_last_command_2 <= controller_->ref_timeout_);
-  ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x,
-            TEST_LINEAR_VELOCITY_X);
+  ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
   ASSERT_EQ(
-      controller_->update_reference_from_subscribers(),
-      controller_interface::return_type::OK);
+    controller_->update_reference_from_subscribers(), controller_interface::return_type::OK);
   ASSERT_EQ(
-      controller_->update_and_write_commands(
-          controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
-      controller_interface::return_type::OK);
+    controller_->update_and_write_commands(
+      controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
 
   EXPECT_NE(joint_command_values_[NR_CMD_ITFS - 2], 111);
-  ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x,
-            TEST_LINEAR_VELOCITY_X);
-  for (const auto& interface : controller_->reference_interfaces_) {
+  ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
+  for (const auto & interface : controller_->reference_interfaces_)
+  {
     EXPECT_FALSE(std::isnan(interface));
   }
 }
@@ -384,10 +407,8 @@ TEST_F(AckermannSteeringControllerTest, test_update_logic)
   static constexpr double TEST_LINEAR_VELOCITY_X = 1.5;
   static constexpr double TEST_ANGULAR_VELOCITY_Z = 1.1;
   joint_command_values_[NR_CMD_ITFS - 2] = 111;
-  std::shared_ptr<ControllerReferenceMsg> msg =
-      std::make_shared<ControllerReferenceMsg>();
-  msg->header.stamp = controller_->get_node()->now() -
-                      controller_->ref_timeout_ -
+  std::shared_ptr<ControllerReferenceMsg> msg = std::make_shared<ControllerReferenceMsg>();
+  msg->header.stamp = controller_->get_node()->now() - controller_->ref_timeout_ -
                       rclcpp::Duration::from_seconds(0.1);
   msg->twist.linear.x = TEST_LINEAR_VELOCITY_X;
   msg->twist.linear.y = std::numeric_limits<double>::quiet_NaN();
@@ -397,25 +418,21 @@ TEST_F(AckermannSteeringControllerTest, test_update_logic)
   msg->twist.angular.z = TEST_ANGULAR_VELOCITY_Z;
   controller_->input_ref_.writeFromNonRT(msg);
   const auto age_of_last_command =
-      controller_->get_node()->now() -
-      (*(controller_->input_ref_.readFromNonRT()))->header.stamp;
+    controller_->get_node()->now() - (*(controller_->input_ref_.readFromNonRT()))->header.stamp;
 
   ASSERT_FALSE(age_of_last_command <= controller_->ref_timeout_);
-  ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x,
-            TEST_LINEAR_VELOCITY_X);
+  ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
   ASSERT_EQ(
-      controller_->update_reference_from_subscribers(),
-      controller_interface::return_type::OK);
+    controller_->update_reference_from_subscribers(), controller_interface::return_type::OK);
   ASSERT_EQ(
-      controller_->update_and_write_commands(
-          controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
-      controller_interface::return_type::OK);
+    controller_->update_and_write_commands(
+      controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
 
-  EXPECT_EQ(joint_command_values_[NR_CMD_ITFS - 2], 111);
-  ASSERT_TRUE(std::isnan(controller_->reference_interfaces_[0]));
+  EXPECT_EQ(joint_command_values_[NR_CMD_ITFS - 2], 0);
+  ASSERT_EQ(controller_->reference_interfaces_[0], 0);
 
-  std::shared_ptr<ControllerReferenceMsg> msg_2 =
-      std::make_shared<ControllerReferenceMsg>();
+  std::shared_ptr<ControllerReferenceMsg> msg_2 = std::make_shared<ControllerReferenceMsg>();
   msg_2->header.stamp = controller_->get_node()->now();
   msg_2->twist.linear.x = TEST_LINEAR_VELOCITY_X;
   msg_2->twist.linear.y = std::numeric_limits<double>::quiet_NaN();
@@ -425,24 +442,20 @@ TEST_F(AckermannSteeringControllerTest, test_update_logic)
   msg_2->twist.angular.z = TEST_ANGULAR_VELOCITY_Z;
   controller_->input_ref_.writeFromNonRT(msg_2);
   const auto age_of_last_command_2 =
-      controller_->get_node()->now() -
-      (*(controller_->input_ref_.readFromNonRT()))->header.stamp;
+    controller_->get_node()->now() - (*(controller_->input_ref_.readFromNonRT()))->header.stamp;
 
   ASSERT_TRUE(age_of_last_command_2 <= controller_->ref_timeout_);
-  ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x,
-            TEST_LINEAR_VELOCITY_X);
+  ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
   ASSERT_EQ(
-      controller_->update_reference_from_subscribers(),
-      controller_interface::return_type::OK);
+    controller_->update_reference_from_subscribers(), controller_interface::return_type::OK);
   ASSERT_EQ(
-      controller_->update_and_write_commands(
-          controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
-      controller_interface::return_type::OK);
+    controller_->update_and_write_commands(
+      controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
 
   EXPECT_EQ(joint_command_values_[NR_CMD_ITFS - 2], TEST_LINEAR_VELOCITY_X);
   EXPECT_NE(joint_command_values_[NR_CMD_ITFS - 2], 111);
-  ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x,
-            TEST_LINEAR_VELOCITY_X);
+  ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
 }
 
 TEST_F(AckermannSteeringControllerTest, test_ref_timeout_zero_for_update)
@@ -482,10 +495,8 @@ TEST_F(AckermannSteeringControllerTest, test_ref_timeout_zero_for_update)
     controller_interface::return_type::OK);
 
   EXPECT_EQ(joint_command_values_[NR_STATE_ITFS - 2], TEST_LINEAR_VELOCITY_X);
-  ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x,
-            TEST_LINEAR_VELOCITY_X);
-  ASSERT_FALSE(
-      std::isnan((*(controller_->input_ref_.readFromRT()))->twist.linear.x));
+  ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
+  ASSERT_FALSE(std::isnan((*(controller_->input_ref_.readFromRT()))->twist.linear.x));
 }
 
 TEST_F(AckermannSteeringControllerTest, test_ref_timeout_zero_for_reference_callback)
@@ -499,8 +510,45 @@ TEST_F(AckermannSteeringControllerTest, test_ref_timeout_zero_for_reference_call
   EXPECT_TRUE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.linear.x));
   EXPECT_TRUE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z));
   controller_->ref_timeout_ = rclcpp::Duration::from_seconds(0.0);
-  publish_commands(controller_->get_node()->now());
+  if (controller_->params_.use_stamped_vel)
+  {
+    publish_commands(controller_->get_node()->now());
+  }
+  else
+  {
+    publish_commands_unstamped();
+  }
   ASSERT_TRUE(controller_->wait_for_commands(executor));
+
+  EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.linear.x));
+  EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z));
+  EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.linear.x, 0.45);
+  EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z, 0.0);
+}
+
+//test is expected to fail in case of param use_stamped_vel is true
+
+TEST_F(AckermannSteeringControllerTest, test_age_of_last_command_zero_reference_callback_unstamped)
+{
+  fprintf(
+    stderr,
+    "-------------------------Expect to fail when use_stamped_vel is true---------------- \n");
+  SetUpController();
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  EXPECT_TRUE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.linear.x));
+  EXPECT_TRUE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z));
+  publish_commands_unstamped();
+  ASSERT_TRUE(controller_->wait_for_commands(executor));
+
+  const auto age_of_last_command =
+    controller_->get_node()->now() - (*(controller_->input_ref_.readFromNonRT()))->header.stamp;
+  ASSERT_TRUE(
+    age_of_last_command >= rclcpp::Duration::from_seconds(0) &&
+    age_of_last_command <= rclcpp::Duration::from_seconds(0.00001));
 
   EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.linear.x));
   EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z));
