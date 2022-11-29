@@ -40,8 +40,10 @@
  * Author: Masaru Morita
  */
 
-#include <ackermann_steering_controller/odometry.hpp>
+#include "ackermann_steering_controller/odometry.hpp"
+
 #include <cmath>
+#include <iostream>
 
 namespace ackermann_steering_controller
 {
@@ -76,36 +78,30 @@ void Odometry::init(const rclcpp::Time & time)
 }
 
 // TODO(destogl): enable also velocity interface to update using velocity from the rear wheel
-bool Odometry::update(
-  const double rear_wheel_pos, const double front_steer_pos, const double rear_wheel_vel,
-  const bool position_feedback, const double dt)
+bool Odometry::updateFromPosition(
+  const double rear_wheel_pos, const double front_steer_pos, const double dt)
 {
-  // (right_wheel_est_vel + left_wheel_est_vel) * 0.5;
-  double linear = rear_wheel_vel;
+  /// Get current wheel joint positions:
+  const double rear_wheel_cur_pos = rear_wheel_pos * wheel_radius_;
 
-  if (position_feedback)
-  {
-    /// Get current wheel joint positions:
-    const double rear_wheel_cur_pos = rear_wheel_pos * wheel_radius_;
+  /// Estimate velocity of wheels using old and current position:
+  //const double left_wheel_est_vel  = left_wheel_cur_pos  - left_wheel_old_pos_;
+  //const double right_wheel_est_vel = right_wheel_cur_pos - right_wheel_old_pos_;
 
-    /// Estimate velocity of wheels using old and current position:
-    //const double left_wheel_est_vel  = left_wheel_cur_pos  - left_wheel_old_pos_;
-    //const double right_wheel_est_vel = right_wheel_cur_pos - right_wheel_old_pos_;
+  const double rear_wheel_est_pos_diff = rear_wheel_cur_pos - rear_wheel_old_pos_;
 
-    const double rear_wheel_est_vel = rear_wheel_cur_pos - rear_wheel_old_pos_;
+  /// Update old position with current:
+  rear_wheel_old_pos_ = rear_wheel_cur_pos;
 
-    /// Update old position with current:
-    rear_wheel_old_pos_ = rear_wheel_cur_pos;
-
-    /// Compute linear and angular diff:
-    double linear = rear_wheel_est_vel;  //(right_wheel_est_vel + left_wheel_est_vel) * 0.5;
-  }
+  /// Compute linear and angular diff:
+  const double linear_velocity =
+    rear_wheel_est_pos_diff / dt;  //(right_wheel_est_vel + left_wheel_est_vel) * 0.5;
 
   //const double angular = (right_wheel_est_vel - left_wheel_est_vel) / wheel_separation_w_;
-  const double angular = tan(front_steer_pos) * linear / wheel_separation_;
+  const double angular = tan(front_steer_pos) * linear_velocity / wheel_separation_;
 
   /// Integrate odometry:
-  integrate_fun_(linear, angular);
+  integrate_fun_(linear_velocity * dt, angular);
 
   /// We cannot estimate the speed with very small time intervals:
   if (dt < 0.0001)
@@ -114,8 +110,36 @@ bool Odometry::update(
   }
 
   /// Estimate speeds using a rolling mean to filter them out:
-  linear_acc_(linear / dt);
+  linear_acc_(linear_velocity);
   angular_acc_(angular / dt);
+
+  linear_ = bacc::rolling_mean(linear_acc_);
+  angular_ = bacc::rolling_mean(angular_acc_);
+
+  return true;
+}
+
+bool Odometry::updateFromVelocity(
+  const double rear_wheel_vel, const double front_steer_pos, const double dt)
+{
+  // (right_wheel_est_vel + left_wheel_est_vel) * 0.5;
+  double linear_velocity = rear_wheel_vel * wheel_radius_;
+
+  //const double angular = (right_wheel_est_vel - left_wheel_est_vel) / wheel_separation_w_;
+  const double angular = tan(front_steer_pos) * linear_velocity / wheel_separation_;
+
+  /// Integrate odometry:
+  integrate_fun_(linear_velocity * dt, angular * dt);
+
+  /// We cannot estimate the speed with very small time intervals:
+  if (dt < 0.0001)
+  {
+    return false;  // Interval too small to integrate with
+  }
+
+  /// Estimate speeds using a rolling mean to filter them out:
+  linear_acc_(linear_velocity);
+  angular_acc_(angular);
 
   linear_ = bacc::rolling_mean(linear_acc_);
   angular_ = bacc::rolling_mean(angular_acc_);

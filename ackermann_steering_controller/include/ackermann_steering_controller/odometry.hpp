@@ -85,12 +85,21 @@ public:
      * \brief Updates the odometry class with latest wheels position
      * \param rear_wheel_pos  Rear wheel position [rad]
      * \param front_steer_pos Front Steer position [rad]
-     * \param time      Current time
+     * \param dt      time difference to last call
      * \return true if the odometry is actually updated
      */
-  bool update(
-    const double rear_wheel_pos, const double front_steer_pos, const double rear_wheel_vel,
-    const bool position_feedback, const double dt);
+  bool updateFromPosition(
+    const double rear_wheel_pos, const double front_steer_pos, const double dt);
+
+  /**
+     * \brief Updates the odometry class with latest wheels position
+     * \param rear_wheel_vel  Rear wheel velocity [rad/s]
+     * \param front_steer_pos Front Steer position [rad]
+     * \param dt      time difference to last call
+     * \return true if the odometry is actually updated
+     */
+  bool updateFromVelocity(
+    const double rear_wheel_vel, const double front_steer_pos, const double dt);
 
   /**
      * \brief Updates the odometry class with latest velocity command

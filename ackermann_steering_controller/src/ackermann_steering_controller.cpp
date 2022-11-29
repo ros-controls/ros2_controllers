@@ -389,14 +389,12 @@ controller_interface::return_type AckermannSteeringController::update_and_write_
       if (params_.position_feedback)
       {
         // Estimate linear and angular velocity using joint information
-        odometry_.update(
-          rear_wheel_value, steer_position, 0.0, params_.position_feedback, period.seconds());
+        odometry_.updateFromPosition(rear_wheel_value, steer_position, period.seconds());
       }
       else
       {
         // Estimate linear and angular velocity using joint information
-        odometry_.update(
-          0.0, steer_position, rear_wheel_value, params_.position_feedback, period.seconds());
+        odometry_.updateFromVelocity(rear_wheel_value, steer_position, period.seconds());
       }
     }
   }
