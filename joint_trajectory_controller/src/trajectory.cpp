@@ -55,6 +55,7 @@ void Trajectory::update(std::shared_ptr<trajectory_msgs::msg::JointTrajectory> j
   trajectory_msg_ = joint_trajectory;
   trajectory_start_time_ = static_cast<rclcpp::Time>(joint_trajectory->header.stamp);
   sampled_already_ = false;
+  prev_start_idx_ = 0;
 }
 
 bool Trajectory::sample(
@@ -80,6 +81,7 @@ bool Trajectory::sample(
       trajectory_start_time_ = sample_time;
     }
 
+    prev_start_idx_ = 0;
     sampled_already_ = true;
   }
 
@@ -120,8 +122,7 @@ bool Trajectory::sample(
 
   // time_from_start + trajectory time is the expected arrival time of trajectory
   const auto last_idx = trajectory_msg_->points.size() - 1;
-  const auto prev_idx = start_segment_itr - begin();
-  for (size_t i = prev_idx; i < last_idx; ++i)
+  for (size_t i = prev_start_idx_; i < last_idx; ++i)
   {
     auto & point = trajectory_msg_->points[i];
     auto & next_point = trajectory_msg_->points[i + 1];
@@ -147,6 +148,7 @@ bool Trajectory::sample(
       }
       start_segment_itr = begin() + i;
       end_segment_itr = begin() + (i + 1);
+      prev_start_idx_ = i;
       return true;
     }
   }
