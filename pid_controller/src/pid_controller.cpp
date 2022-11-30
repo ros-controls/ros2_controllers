@@ -23,19 +23,19 @@
 #include "controller_interface/helpers.hpp"
 
 // TODO(destogl): should we add some knowledge from the control there here?
-// The main knowledge could be with regard to the input and output interfaces and their phyical
+// The main knowledge could be with regard to the input (reference/state) and output (command) interfaces and their physical
 // meaning, for example:
 //
-// input POSITION; output VELOCITY --> PI CONTROLLER
-// input VELOCITY; output ACCELERATION --> PI CONTROLLER
+// reference/state POSITION; command VELOCITY --> PI CONTROLLER
+// reference/state VELOCITY; command ACCELERATION --> PI CONTROLLER
 //
-// input VELOCITY; output POSITION --> PD CONTROLLER
-// input ACCELERATION; output VELOCITY --> PD CONTROLLER
+// reference/state VELOCITY; command POSITION --> PD CONTROLLER
+// reference/state ACCELERATION; command VELOCITY --> PD CONTROLLER
 //
-// input POSITION; output POSITION --> PID CONTROLLER
-// input VELOCITY; output VELOCITY --> PID CONTROLLER
-// input ACCELERATION; output ACCELERATION --> PID CONTROLLER
-// input EFFORT; output EFFORT --> PID CONTROLLER
+// reference/state POSITION; command POSITION --> PID CONTROLLER
+// reference/state VELOCITY; command VELOCITY --> PID CONTROLLER
+// reference/state ACCELERATION; command ACCELERATION --> PID CONTROLLER
+// reference/state EFFORT; command EFFORT --> PID CONTROLLER
 //
 
 namespace
@@ -62,6 +62,7 @@ void reset_controller_reference_msg(
 {
   msg->dof_names = dof_names;
   msg->values.resize(dof_names.size(), std::numeric_limits<double>::quiet_NaN());
+  msg->values_dot.resize(dof_names.size(), std::numeric_limits<double>::quiet_NaN());
 }
 
 void reset_controller_measured_state_msg(
@@ -160,7 +161,7 @@ controller_interface::CallbackReturn PidController::on_configure(
     std::bind(&PidController::reference_callback, this, std::placeholders::_1));
 
   std::shared_ptr<ControllerReferenceMsg> msg = std::make_shared<ControllerReferenceMsg>();
-  reset_controller_reference_msg(msg, params_.dof_names);
+  reset_controller_reference_msg(msg, reference_and_state_dof_names_);
   input_ref_.writeFromNonRT(msg);
 
   // input state Subscriber and callback
@@ -168,6 +169,7 @@ controller_interface::CallbackReturn PidController::on_configure(
   {
     auto measured_state_callback =
       [&](const std::shared_ptr<ControllerMeasuredStateMsg> msg) -> void {
+      // TODO(destogl): Sort the input values based on joint and interface names
       measured_state_.writeFromNonRT(msg);
     };
     measured_state_subscriber_ = get_node()->create_subscription<ControllerMeasuredStateMsg>(
@@ -177,6 +179,9 @@ controller_interface::CallbackReturn PidController::on_configure(
     std::make_shared<ControllerMeasuredStateMsg>();
   reset_controller_measured_state_msg(measured_state_msg, reference_and_state_dof_names_);
   measured_state_.writeFromNonRT(measured_state_msg);
+
+  measured_state_values_.resize(
+    dof_ * params_.reference_and_state_interfaces.size(), std::numeric_limits<double>::quiet_NaN());
 
   auto set_feedforward_control_callback =
     [&](
@@ -214,10 +219,9 @@ controller_interface::CallbackReturn PidController::on_configure(
 
   // Reserve memory in state publisher
   state_publisher_->lock();
-  state_publisher_->msg_.dof_states.reserve(reference_and_state_dof_names_.size());
+  state_publisher_->msg_.dof_states.resize(reference_and_state_dof_names_.size());
   for (size_t i = 0; i < reference_and_state_dof_names_.size(); ++i)
   {
-    state_publisher_->msg_.dof_states[i] = control_msgs::msg::SingleDOFState();
     state_publisher_->msg_.dof_states[i].name = reference_and_state_dof_names_[i];
   }
   state_publisher_->unlock();
@@ -247,8 +251,7 @@ void PidController::reference_callback(const std::shared_ptr<ControllerReference
     auto ref_msg = msg;  // simple initialization
 
     // sort values in the ref_msg
-    ref_msg->dof_names = reference_and_state_dof_names_;
-    ref_msg->values.assign(ref_msg->values.size(), std::numeric_limits<double>::quiet_NaN());
+    reset_controller_reference_msg(msg, reference_and_state_dof_names_);
 
     bool all_found = true;
     for (size_t i = 0; i < msg->dof_names.size(); ++i)
@@ -266,6 +269,7 @@ void PidController::reference_callback(const std::shared_ptr<ControllerReference
 
       auto position = std::distance(ref_msg->dof_names.begin(), found_it);
       ref_msg->values[position] = msg->values[i];
+      ref_msg->values_dot[position] = msg->values_dot[i];
     }
 
     if (all_found)
@@ -357,10 +361,8 @@ controller_interface::CallbackReturn PidController::on_activate(
   reset_controller_measured_state_msg(
     *(measured_state_.readFromRT()), reference_and_state_dof_names_);
 
-  for (size_t i = 0; i < dof_; ++i)
-  {
-    reference_interfaces_[i] = std::numeric_limits<double>::quiet_NaN();
-  }
+  reference_interfaces_.assign(reference_interfaces_.size(), std::numeric_limits<double>::quiet_NaN());
+  measured_state_values_.assign(measured_state_values_.size(), std::numeric_limits<double>::quiet_NaN());
 
   // TODO(destogl): make here parameter update
 
@@ -383,11 +385,15 @@ controller_interface::return_type PidController::update_reference_from_subscribe
 {
   auto current_ref = input_ref_.readFromRT();
 
-  for (size_t i = 0; i < reference_interfaces_.size(); ++i)
+  for (size_t i = 0; i < dof_; ++i)
   {
     if (!std::isnan((*current_ref)->values[i]))
     {
       reference_interfaces_[i] = (*current_ref)->values[i];
+      if (reference_interfaces_.size() == 2 * dof_ && !std::isnan((*current_ref)->values_dot[i]))
+      {
+        reference_interfaces_[dof_ + i] = (*current_ref)->values_dot[i];
+      }
 
       (*current_ref)->values[i] = std::numeric_limits<double>::quiet_NaN();
     }
@@ -400,18 +406,34 @@ controller_interface::return_type PidController::update_and_write_commands(
 {
   // TODO(destogl): make here runtime parameter update if allowed
 
-  auto measured_state = measured_state_.readFromRT();
+  if (params_.use_external_measured_states)
+  {
+    for (size_t i = 0; i < dof_; ++i)
+    {
+      measured_state_values_[i] = (*(measured_state_.readFromRT()))->values[i];
+      if (measured_state_values_.size() == 2 * dof_)
+      {
+        measured_state_values_[dof_ + i] = (*(measured_state_.readFromRT()))->values_dot[i];
+      }
+    }
+  }
+  else
+  {
+    for (size_t i = 0; i < measured_state_values_.size(); ++i)
+    {
+      measured_state_values_[i] = state_interfaces_[i].get_value();
+    }
+  }
 
   for (size_t i = 0; i < dof_; ++i)
   {
     double tmp_command = std::numeric_limits<double>::quiet_NaN();
 
-    if (
-      *(control_mode_.readFromRT()) == feedforward_mode_type::ON &&
-      !std::isnan(reference_interfaces_[i]) && !std::isnan((*measured_state)->values[i]))
+    // Using feedforward
+    if (!std::isnan(reference_interfaces_[i]) && !std::isnan(measured_state_values_[i]))
     {
       // calculate feed-forward
-      if (!std::isnan(reference_interfaces_[dof_ + i]))
+      if (*(control_mode_.readFromRT()) == feedforward_mode_type::ON)
       {
         tmp_command = reference_interfaces_[dof_ + i] *
                       params_.gains.dof_names_map[params_.dof_names[i]].feedforward_gain;
@@ -421,35 +443,34 @@ controller_interface::return_type PidController::update_and_write_commands(
         tmp_command = 0.0;
       }
 
-      if (
-        reference_interfaces_.size() > dof_ &&
-        (*measured_state)->values.size())  // TODO(denis): make this Always sufficiently big
+      if (reference_interfaces_.size() == 2 * dof_ && measured_state_values_.size() == 2 * dof_)
       {
         if (
           !std::isnan(reference_interfaces_[dof_ + i]) &&
-          !std::isnan((*measured_state)->values[dof_ + i]))
+          !std::isnan(measured_state_values_[dof_ + i]))
         {
           // use calculation with 'error' and 'error_dot'
           tmp_command += pids_[i]->computeCommand(
-            reference_interfaces_[i] - (*measured_state)->values[i],
-            reference_interfaces_[dof_ + i] - (*measured_state)->values[dof_ + i], period);
+            reference_interfaces_[i] - measured_state_values_[i],
+            reference_interfaces_[dof_ + i] - measured_state_values_[dof_ + i], period);
         }
         else
         {
           // Fallback to calculation with 'error' only
           tmp_command += pids_[i]->computeCommand(
-            reference_interfaces_[i] - (*measured_state)->values[i], period);
+            reference_interfaces_[i] - measured_state_values_[i], period);
         }
       }
       else
       {
         // use calculation with 'error' only
         tmp_command +=
-          pids_[i]->computeCommand(reference_interfaces_[i] - (*measured_state)->values[i], period);
+          pids_[i]->computeCommand(reference_interfaces_[i] - measured_state_values_[i], period);
       }
-    }
 
-    command_interfaces_[i].set_value(tmp_command);
+      // write calculated values
+      command_interfaces_[i].set_value(tmp_command);
+    }
   }
 
   if (state_publisher_ && state_publisher_->trylock())
@@ -458,10 +479,21 @@ controller_interface::return_type PidController::update_and_write_commands(
     for (size_t i = 0; i < dof_; ++i)
     {
       state_publisher_->msg_.dof_states[i].set_point = reference_interfaces_[i];
-      state_publisher_->msg_.dof_states[i].process_value = (*measured_state)->values[i];
+      state_publisher_->msg_.dof_states[i].process_value = measured_state_values_[i];
+      if (reference_interfaces_.size() == 2 * dof_ && measured_state_values_.size() == 2 * dof_)
+      {
+        state_publisher_->msg_.dof_states[i].process_value = measured_state_values_[i];
+      }
       state_publisher_->msg_.dof_states[i].error =
-        reference_interfaces_[i] - (*measured_state)->values[i];
-      state_publisher_->msg_.dof_states[i].time_step = period.nanoseconds();
+        reference_interfaces_[i] - measured_state_values_[i];
+      if (reference_interfaces_.size() == 2 * dof_ && measured_state_values_.size() == 2 * dof_)
+      {
+        state_publisher_->msg_.dof_states[i].error_dot =
+          reference_interfaces_[dof_ + i] - measured_state_values_[dof_ + i];
+      }
+      state_publisher_->msg_.dof_states[i].time_step = period.seconds();
+      // Command can store the old calculated values. This should be obvious because at least one
+      // another value is NaN.
       state_publisher_->msg_.dof_states[i].command = command_interfaces_[i].get_value();
 
       auto gains = pids_[i]->getGains();
