@@ -14,6 +14,7 @@ endif()
 # find dependencies
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   control_msgs
+  control_toolbox
   controller_interface
   hardware_interface
   parameter_traits
@@ -75,7 +76,6 @@ if(BUILD_TESTING)
   set(ament_cmake_cpplint_FOUND TRUE)
   find_package(ament_cmake_gmock REQUIRED)
   find_package(controller_manager REQUIRED)
-  find_package(hardware_interface REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
 
   ament_add_gmock(test_load_pid_controller test/test_load_pid_controller.cpp)
@@ -83,7 +83,6 @@ if(BUILD_TESTING)
   ament_target_dependencies(
     test_load_pid_controller
     controller_manager
-    hardware_interface
     ros2_control_test_assets
   )
 
