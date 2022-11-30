@@ -363,7 +363,7 @@ public:
   }
   
   /* Returns true if timed out, else returns false */
-  bool waitForSubscriberToBeReady(rclcpp::Duration timeout = rclcpp::Duration::from_seconds(.2))
+  bool waitForSubscriberToBeReady(rclcpp::Duration timeout = rclcpp::Duration::from_seconds(0.2))
   {
     // mark start_time for determining timeout
     rclcpp::Clock clock = rclcpp::Clock(RCL_STEADY_TIME);
