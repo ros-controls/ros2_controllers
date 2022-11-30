@@ -98,6 +98,7 @@ protected:
 
   std::vector<std::string> reference_and_state_dof_names_;
   size_t dof_;
+  std::vector<double> measured_state_values_;
 
   using PidPtr = std::shared_ptr<control_toolbox::PidROS>;
   std::vector<PidPtr> pids_;
