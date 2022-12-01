@@ -37,7 +37,6 @@ find_package(ament_cmake REQUIRED)
 # Add pid_controller library related compile commands
 generate_parameter_library(pid_controller_parameters
   src/pid_controller.yaml
-  include/pid_controller/validate_pid_controller_parameters.hpp
 )
 add_library(
   pid_controller

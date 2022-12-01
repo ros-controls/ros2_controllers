@@ -206,7 +206,8 @@ protected:
     const std::vector<double> & displacements = {0.45},
     const std::vector<double> & velocities = {0.0}, const double duration = 1.25)
   {
-    auto wait_for_topic = [&](const auto topic_name) {
+    auto wait_for_topic = [&](const auto topic_name)
+    {
       size_t wait_count = 0;
       while (command_publisher_node_->count_subscribers(topic_name) == 0)
       {

@@ -168,7 +168,8 @@ controller_interface::CallbackReturn PidController::on_configure(
   if (params_.use_external_measured_states)
   {
     auto measured_state_callback =
-      [&](const std::shared_ptr<ControllerMeasuredStateMsg> msg) -> void {
+      [&](const std::shared_ptr<ControllerMeasuredStateMsg> msg) -> void
+    {
       // TODO(destogl): Sort the input values based on joint and interface names
       measured_state_.writeFromNonRT(msg);
     };
@@ -186,17 +187,18 @@ controller_interface::CallbackReturn PidController::on_configure(
   auto set_feedforward_control_callback =
     [&](
       const std::shared_ptr<ControllerModeSrvType::Request> request,
-      std::shared_ptr<ControllerModeSrvType::Response> response) {
-      if (request->data)
-      {
-        control_mode_.writeFromNonRT(feedforward_mode_type::ON);
-      }
-      else
-      {
-        control_mode_.writeFromNonRT(feedforward_mode_type::OFF);
-      }
-      response->success = true;
-    };
+      std::shared_ptr<ControllerModeSrvType::Response> response)
+  {
+    if (request->data)
+    {
+      control_mode_.writeFromNonRT(feedforward_mode_type::ON);
+    }
+    else
+    {
+      control_mode_.writeFromNonRT(feedforward_mode_type::OFF);
+    }
+    response->success = true;
+  };
 
   set_feedforward_control_service_ = get_node()->create_service<ControllerModeSrvType>(
     "~/set_feedforward_control", set_feedforward_control_callback,
@@ -361,8 +363,10 @@ controller_interface::CallbackReturn PidController::on_activate(
   reset_controller_measured_state_msg(
     *(measured_state_.readFromRT()), reference_and_state_dof_names_);
 
-  reference_interfaces_.assign(reference_interfaces_.size(), std::numeric_limits<double>::quiet_NaN());
-  measured_state_values_.assign(measured_state_values_.size(), std::numeric_limits<double>::quiet_NaN());
+  reference_interfaces_.assign(
+    reference_interfaces_.size(), std::numeric_limits<double>::quiet_NaN());
+  measured_state_values_.assign(
+    measured_state_values_.size(), std::numeric_limits<double>::quiet_NaN());
 
   // TODO(destogl): make here parameter update
 
@@ -457,8 +461,8 @@ controller_interface::return_type PidController::update_and_write_commands(
         else
         {
           // Fallback to calculation with 'error' only
-          tmp_command += pids_[i]->computeCommand(
-            reference_interfaces_[i] - measured_state_values_[i], period);
+          tmp_command +=
+            pids_[i]->computeCommand(reference_interfaces_[i] - measured_state_values_[i], period);
         }
       }
       else
