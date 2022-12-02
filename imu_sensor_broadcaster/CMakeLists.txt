@@ -13,12 +13,13 @@ endif()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
     controller_interface
-    sensor_msgs
+    generate_parameter_library
     hardware_interface
     pluginlib
     rclcpp
     rclcpp_lifecycle
     realtime_tools
+    sensor_msgs
 )
 
 find_package(ament_cmake REQUIRED)
@@ -26,36 +27,28 @@ foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
 
+generate_parameter_library(imu_sensor_broadcaster_parameters
+  src/imu_sensor_broadcaster_parameters.yaml
+)
+
 add_library(
-  ${PROJECT_NAME}
-  SHARED
+  imu_sensor_broadcaster SHARED
   src/imu_sensor_broadcaster.cpp
 )
-target_include_directories(
-  ${PROJECT_NAME}
-  PUBLIC
-  include
+target_include_directories(imu_sensor_broadcaster
+  PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PRIVATE $<INSTALL_INTERFACE:include>
 )
-ament_target_dependencies(${PROJECT_NAME} ${THIS_PACKAGE_INCLUDE_DEPENDS})
+ament_target_dependencies(imu_sensor_broadcaster ${THIS_PACKAGE_INCLUDE_DEPENDS})
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
-target_compile_definitions(${PROJECT_NAME} PRIVATE "IMU_SENSOR_BROADCASTER_BUILDING_DLL")
+target_compile_definitions(imu_sensor_broadcaster PRIVATE "IMU_SENSOR_BROADCASTER_BUILDING_DLL")
+target_link_libraries(imu_sensor_broadcaster
+  imu_sensor_broadcaster_parameters
+)
 
 pluginlib_export_plugin_description_file(
   controller_interface imu_sensor_broadcaster.xml)
-
-install(
-  TARGETS
-  ${PROJECT_NAME}
-  RUNTIME DESTINATION bin
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-)
-
-install(
-  DIRECTORY include/
-  DESTINATION include
-)
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gmock REQUIRED)
@@ -80,7 +73,7 @@ if(BUILD_TESTING)
   )
   target_include_directories(test_imu_sensor_broadcaster PRIVATE include)
   target_link_libraries(test_imu_sensor_broadcaster
-    ${PROJECT_NAME}
+    imu_sensor_broadcaster
   )
   ament_target_dependencies(test_imu_sensor_broadcaster
     hardware_interface
@@ -92,14 +85,22 @@ if(BUILD_TESTING)
   )
 endif()
 
-ament_export_include_directories(
-  include
-)
-ament_export_libraries(
-  ${PROJECT_NAME}
-)
-ament_export_dependencies(
-  ${THIS_PACKAGE_INCLUDE_DEPENDS}
+install(
+  DIRECTORY include/
+  DESTINATION include
 )
 
+install(
+  TARGETS
+    imu_sensor_broadcaster
+    imu_sensor_broadcaster_parameters
+  EXPORT export_imu_sensor_broadcaster
+  RUNTIME DESTINATION bin
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  INCLUDES DESTINATION include
+)
+
+ament_export_targets(export_imu_sensor_broadcaster HAS_LIBRARY_TARGET)
+ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
 ament_package()

@@ -79,17 +79,27 @@ public:
     return success;
   }
 
-  void set_joint_names(const std::vector<std::string> & joint_names) { joint_names_ = joint_names; }
+  void set_joint_names(const std::vector<std::string> & joint_names)
+  {
+    params_.joints = joint_names;
+  }
+
+  void set_command_joint_names(const std::vector<std::string> & command_joint_names)
+  {
+    command_joint_names_ = command_joint_names;
+  }
 
   void set_command_interfaces(const std::vector<std::string> & command_interfaces)
   {
-    command_interface_types_ = command_interfaces;
+    params_.command_interfaces = command_interfaces;
   }
 
   void set_state_interfaces(const std::vector<std::string> & state_interfaces)
   {
-    state_interface_types_ = state_interfaces;
+    params_.state_interfaces = state_interfaces;
   }
+
+  void trigger_declare_parameters() { param_listener_->declare_params(); }
 
   trajectory_msgs::msg::JointTrajectoryPoint get_current_state_when_offset()
   {
@@ -115,6 +125,8 @@ public:
     controller_name_ = "test_joint_trajectory_controller";
 
     joint_names_ = {"joint1", "joint2", "joint3"};
+    command_joint_names_ = {
+      "following_controller/joint1", "following_controller/joint2", "following_controller/joint3"};
     joint_pos_.resize(joint_names_.size(), 0.0);
     joint_state_pos_.resize(joint_names_.size(), 0.0);
     joint_vel_.resize(joint_names_.size(), 0.0);
@@ -131,9 +143,10 @@ public:
       controller_name_ + "/joint_trajectory", rclcpp::SystemDefaultsQoS());
   }
 
-  void SetUpTrajectoryController(bool use_local_parameters = true)
+  void SetUpTrajectoryController(rclcpp::Executor & executor, bool use_local_parameters = true)
   {
     traj_controller_ = std::make_shared<TestableJointTrajectoryController>();
+
     if (use_local_parameters)
     {
       traj_controller_->set_joint_names(joint_names_);
@@ -145,6 +158,8 @@ public:
     {
       FAIL();
     }
+    executor.add_node(traj_controller_->get_node()->get_node_base_interface());
+    SetParameters();
   }
 
   void SetParameters()
@@ -155,8 +170,10 @@ public:
     const rclcpp::Parameter state_interfaces_params("state_interfaces", state_interface_types_);
     node->set_parameters({joint_names_param, cmd_interfaces_params, state_interfaces_params});
   }
+
   void SetPidParameters()
   {
+    traj_controller_->trigger_declare_parameters();
     auto node = traj_controller_->get_node();
 
     for (size_t i = 0; i < joint_names_.size(); ++i)
@@ -166,32 +183,28 @@ public:
       const rclcpp::Parameter k_i(prefix + ".i", 0.0);
       const rclcpp::Parameter k_d(prefix + ".d", 0.0);
       const rclcpp::Parameter i_clamp(prefix + ".i_clamp", 0.0);
-      const rclcpp::Parameter ff_velocity_scale("ff_velocity_scale/" + joint_names_[i], 1.0);
+      const rclcpp::Parameter ff_velocity_scale(prefix + ".ff_velocity_scale", 1.0);
       node->set_parameters({k_p, k_i, k_d, i_clamp, ff_velocity_scale});
     }
   }
 
   void SetUpAndActivateTrajectoryController(
-    bool use_local_parameters = true, const std::vector<rclcpp::Parameter> & parameters = {},
-    rclcpp::Executor * executor = nullptr, bool separate_cmd_and_state_values = false)
+    rclcpp::Executor & executor, bool use_local_parameters = true,
+    const std::vector<rclcpp::Parameter> & parameters = {},
+    bool separate_cmd_and_state_values = false)
   {
-    SetUpTrajectoryController(use_local_parameters);
+    SetUpTrajectoryController(executor, use_local_parameters);
 
+    // set pid parameters before configure
+    SetPidParameters();
     for (const auto & param : parameters)
     {
       traj_controller_->get_node()->set_parameter(param);
     }
-    if (executor)
-    {
-      executor->add_node(traj_controller_->get_node()->get_node_base_interface());
-    }
-
     // ignore velocity tolerances for this test since they aren't committed in test_robot->write()
     rclcpp::Parameter stopped_velocity_parameters("constraints.stopped_velocity_tolerance", 0.0);
     traj_controller_->get_node()->set_parameter(stopped_velocity_parameters);
 
-    // set pid parameters before configure
-    SetPidParameters();
     traj_controller_->get_node()->configure();
 
     ActivateTrajectoryController(separate_cmd_and_state_values);
@@ -265,7 +278,9 @@ public:
     // I do not understand why spin_some provides only one message
     qos.keep_last(1);
     state_subscriber_ = traj_lifecycle_node->create_subscription<JointTrajectoryControllerState>(
-      controller_name_ + "/state", qos, [&](std::shared_ptr<JointTrajectoryControllerState> msg) {
+      controller_name_ + "/state", qos,
+      [&](std::shared_ptr<JointTrajectoryControllerState> msg)
+      {
         std::lock_guard<std::mutex> guard(state_mutex_);
         state_msg_ = msg;
       });
@@ -340,11 +355,12 @@ public:
 
   void updateController(rclcpp::Duration wait_time = rclcpp::Duration::from_seconds(0.2))
   {
-    const auto start_time = rclcpp::Clock().now();
+    auto clock = rclcpp::Clock(RCL_STEADY_TIME);
+    const auto start_time = clock.now();
     const auto end_time = start_time + wait_time;
-    while (rclcpp::Clock().now() < end_time)
+    while (clock.now() < end_time)
     {
-      traj_controller_->update(rclcpp::Clock().now(), rclcpp::Clock().now() - start_time);
+      traj_controller_->update(clock.now(), clock.now() - start_time);
     }
   }
 
@@ -394,6 +410,7 @@ public:
   std::string controller_name_;
 
   std::vector<std::string> joint_names_;
+  std::vector<std::string> command_joint_names_;
   std::vector<std::string> command_interface_types_;
   std::vector<std::string> state_interface_types_;
 

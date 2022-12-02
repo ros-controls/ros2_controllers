@@ -13,6 +13,7 @@ endif()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
     controller_interface
+    generate_parameter_library
     geometry_msgs
     hardware_interface
     pluginlib
@@ -26,6 +27,10 @@ foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
 
+generate_parameter_library(force_torque_sensor_broadcaster_parameters
+  src/force_torque_sensor_broadcaster_parameters.yaml
+)
+
 add_library(
   ${PROJECT_NAME}
   SHARED
@@ -38,6 +43,9 @@ ament_target_dependencies(
   ${PROJECT_NAME}
   ${THIS_PACKAGE_INCLUDE_DEPENDS}
 )
+target_link_libraries(force_torque_sensor_broadcaster
+  force_torque_sensor_broadcaster_parameters
+)
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
 target_compile_definitions(${PROJECT_NAME} PRIVATE "FORCE_TORQUE_SENSOR_BROADCASTER_BUILDING_DLL")
@@ -46,8 +54,8 @@ pluginlib_export_plugin_description_file(
   controller_interface force_torque_sensor_broadcaster.xml)
 
 install(
-  TARGETS
-  ${PROJECT_NAME}
+  TARGETS force_torque_sensor_broadcaster force_torque_sensor_broadcaster_parameters
+  EXPORT export_force_torque_sensor_broadcaster
   RUNTIME DESTINATION bin
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -93,11 +101,8 @@ if(BUILD_TESTING)
   )
 endif()
 
-ament_export_include_directories(
-  include
-)
-ament_export_libraries(
-  ${PROJECT_NAME}
+ament_export_targets(
+  export_force_torque_sensor_broadcaster HAS_LIBRARY_TARGET
 )
 ament_export_dependencies(
   ${THIS_PACKAGE_INCLUDE_DEPENDS}

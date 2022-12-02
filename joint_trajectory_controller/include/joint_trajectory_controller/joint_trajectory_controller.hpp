@@ -44,6 +44,8 @@
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
+#include "joint_trajectory_controller_parameters.hpp"
+
 using namespace std::chrono_literals;  // NOLINT
 
 namespace rclcpp_action
@@ -112,10 +114,6 @@ public:
     const rclcpp_lifecycle::State & previous_state) override;
 
 protected:
-  std::vector<std::string> joint_names_;
-  std::vector<std::string> command_interface_types_;
-  std::vector<std::string> state_interface_types_;
-
   // To reduce number of variables and to make the code shorter the interfaces are ordered in types
   // as the following constants
   const std::vector<std::string> allowed_interface_types_ = {
@@ -133,19 +131,17 @@ protected:
   // Degrees of freedom
   size_t dof_;
 
-  // Parameters for some special cases, e.g. hydraulics powered robots
-  // Run the controller in open-loop, i.e., read hardware states only when starting controller.
-  // This is useful when robot is not exactly following the commanded trajectory.
-  bool open_loop_control_ = false;
+  // Storing command joint names for interfaces
+  std::vector<std::string> command_joint_names_;
+
+  // Parameters from ROS for joint_trajectory_controller
+  std::shared_ptr<ParamListener> param_listener_;
+  Params params_;
+
   trajectory_msgs::msg::JointTrajectoryPoint last_commanded_state_;
-  /// Allow integration in goal trajectories to accept goals without position or velocity specified
-  bool allow_integration_in_goal_trajectories_ = false;
   /// Specify interpolation method. Default to splines.
   interpolation_methods::InterpolationMethod interpolation_method_{
     interpolation_methods::DEFAULT_INTERPOLATION};
-
-  double state_publish_rate_;
-  double action_monitor_rate_;
 
   // The interfaces are defined as the types in 'allowed_interface_types_' member.
   // For convenience, for each type the interfaces are ordered so that i-th position
@@ -200,20 +196,23 @@ protected:
   using RealtimeGoalHandleBuffer = realtime_tools::RealtimeBuffer<RealtimeGoalHandlePtr>;
 
   rclcpp_action::Server<FollowJTrajAction>::SharedPtr action_server_;
-  bool allow_partial_joints_goal_ = false;
   RealtimeGoalHandleBuffer rt_active_goal_;  ///< Currently active action goal, if any.
   rclcpp::TimerBase::SharedPtr goal_handle_timer_;
   rclcpp::Duration action_monitor_period_ = rclcpp::Duration(50ms);
 
+  // callback for topic interface
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
+  void topic_callback(const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg);
+
   // callbacks for action_server_
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  rclcpp_action::GoalResponse goal_callback(
+  rclcpp_action::GoalResponse goal_received_callback(
     const rclcpp_action::GoalUUID & uuid, std::shared_ptr<const FollowJTrajAction::Goal> goal);
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  rclcpp_action::CancelResponse cancel_callback(
+  rclcpp_action::CancelResponse goal_cancelled_callback(
     const std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle);
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  void feedback_setup_callback(
+  void goal_accepted_callback(
     std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle);
 
   // fill trajectory_msg so it matches joints controlled by this controller

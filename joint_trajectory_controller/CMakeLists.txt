@@ -13,9 +13,10 @@ endif()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
     angles
-    controller_interface
     control_msgs
     control_toolbox
+    controller_interface
+    generate_parameter_library
     hardware_interface
     pluginlib
     rclcpp
@@ -29,11 +30,17 @@ foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
 
+generate_parameter_library(joint_trajectory_controller_parameters
+  src/joint_trajectory_controller_parameters.yaml
+  include/joint_trajectory_controller/validate_jtc_parameters.hpp
+)
+
 add_library(${PROJECT_NAME} SHARED
   src/joint_trajectory_controller.cpp
   src/trajectory.cpp
 )
 target_include_directories(${PROJECT_NAME} PRIVATE include)
+target_link_libraries(${PROJECT_NAME} joint_trajectory_controller_parameters)
 ament_target_dependencies(${PROJECT_NAME} ${THIS_PACKAGE_INCLUDE_DEPENDS})
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
@@ -44,22 +51,23 @@ install(DIRECTORY include/
   DESTINATION include
 )
 
-install(TARGETS ${PROJECT_NAME}
+install(TARGETS joint_trajectory_controller joint_trajectory_controller_parameters
+  EXPORT export_joint_trajectory_controller
   RUNTIME DESTINATION bin
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
 )
 
 if(BUILD_TESTING)
-  find_package(ament_cmake_gtest REQUIRED)
+  find_package(ament_cmake_gmock REQUIRED)
   find_package(controller_manager REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
 
-  ament_add_gtest(test_trajectory test/test_trajectory.cpp)
+  ament_add_gmock(test_trajectory test/test_trajectory.cpp)
   target_include_directories(test_trajectory PRIVATE include)
   target_link_libraries(test_trajectory ${PROJECT_NAME})
 
-  ament_add_gtest(test_trajectory_controller
+  ament_add_gmock(test_trajectory_controller
     test/test_trajectory_controller.cpp
     ENV config_file=${CMAKE_CURRENT_SOURCE_DIR}/test/config/test_joint_trajectory_controller.yaml)
   set_tests_properties(test_trajectory_controller PROPERTIES TIMEOUT 220)
@@ -71,7 +79,7 @@ if(BUILD_TESTING)
     ${THIS_PACKAGE_INCLUDE_DEPENDS}
   )
 
-  ament_add_gtest(
+  ament_add_gmock(
     test_load_joint_trajectory_controller
     test/test_load_joint_trajectory_controller.cpp
   )
@@ -84,7 +92,7 @@ if(BUILD_TESTING)
   )
 
   # TODO(andyz): Disabled due to flakiness
-  # ament_add_gtest(
+  # ament_add_gmock(
   #   test_trajectory_actions
   #   test/test_trajectory_actions.cpp
   # )
@@ -97,13 +105,10 @@ if(BUILD_TESTING)
   # )
 endif()
 
+ament_export_targets(
+  export_joint_trajectory_controller HAS_LIBRARY_TARGET
+)
 ament_export_dependencies(
   ${THIS_PACKAGE_INCLUDE_DEPENDS}
-)
-ament_export_include_directories(
-  include
-)
-ament_export_libraries(
-  ${PROJECT_NAME}
 )
 ament_package()

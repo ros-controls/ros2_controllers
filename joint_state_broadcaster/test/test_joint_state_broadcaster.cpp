@@ -683,7 +683,7 @@ void JointStateBroadcasterTest::test_published_dynamic_joint_state_message(
   ASSERT_TRUE(subscription->take(dynamic_joint_state_msg, msg_info));
 
   const size_t NUM_JOINTS = 3;
-  const auto INTERFACE_NAMES = {HW_IF_POSITION, HW_IF_VELOCITY, HW_IF_EFFORT};
+  const std::vector<std::string> INTERFACE_NAMES = {HW_IF_POSITION, HW_IF_VELOCITY, HW_IF_EFFORT};
   ASSERT_THAT(dynamic_joint_state_msg.joint_names, SizeIs(NUM_JOINTS));
   // the order in the message may be different
   // we only check that all values in this test are present in the message

@@ -2,6 +2,29 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.14.0 (2022-11-18)
+-------------------
+* Odom Topic & Frame Namespaces  (`#461 <https://github.com/ros-controls/ros2_controllers/issues/461>`_)
+* Write detailed Diff-Drive-Controller documentation to make all the interfaces understandable. (`#371 <https://github.com/ros-controls/ros2_controllers/issues/371>`_)
+* Contributors: Denis Štogl, sp-sophia-labs
+
+2.13.0 (2022-10-05)
+-------------------
+
+2.12.0 (2022-09-01)
+-------------------
+* Fix formatting CI job (`#418 <https://github.com/ros-controls/ros2_controllers/issues/418>`_)
+* Contributors: Tyler Weaver
+
+2.11.0 (2022-08-04)
+-------------------
+
+2.10.0 (2022-08-01)
+-------------------
+* Formatting changes from pre-commit (`#400 <https://github.com/ros-controls/ros2_controllers/issues/400>`_)
+* Parameter loading fixup in diff_drive and gripper controllers (`#385 <https://github.com/ros-controls/ros2_controllers/issues/385>`_)
+* Contributors: Andy Zelenak, Tyler Weaver
+
 2.9.0 (2022-07-14)
 ------------------
 
