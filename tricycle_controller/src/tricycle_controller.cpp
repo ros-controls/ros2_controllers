@@ -168,37 +168,36 @@ controller_interface::return_type TricycleController::update(
   tf2::Quaternion orientation;
   orientation.setRPY(0.0, 0.0, odometry_.getHeading());
 
-
-    if (realtime_odometry_publisher_->trylock())
+  if (realtime_odometry_publisher_->trylock())
+  {
+    auto & odometry_message = realtime_odometry_publisher_->msg_;
+    odometry_message.header.stamp = time;
+    if (!odom_params_.odom_only_twist)
     {
-      auto & odometry_message = realtime_odometry_publisher_->msg_;
-      odometry_message.header.stamp = time;
-      if (!odom_params_.odom_only_twist)
-      {
-        odometry_message.pose.pose.position.x = odometry_.getX();
-        odometry_message.pose.pose.position.y = odometry_.getY();
-        odometry_message.pose.pose.orientation.x = orientation.x();
-        odometry_message.pose.pose.orientation.y = orientation.y();
-        odometry_message.pose.pose.orientation.z = orientation.z();
-        odometry_message.pose.pose.orientation.w = orientation.w();
-      }
-      odometry_message.twist.twist.linear.x = odometry_.getLinear();
-      odometry_message.twist.twist.angular.z = odometry_.getAngular();
-      realtime_odometry_publisher_->unlockAndPublish();
+      odometry_message.pose.pose.position.x = odometry_.getX();
+      odometry_message.pose.pose.position.y = odometry_.getY();
+      odometry_message.pose.pose.orientation.x = orientation.x();
+      odometry_message.pose.pose.orientation.y = orientation.y();
+      odometry_message.pose.pose.orientation.z = orientation.z();
+      odometry_message.pose.pose.orientation.w = orientation.w();
     }
+    odometry_message.twist.twist.linear.x = odometry_.getLinear();
+    odometry_message.twist.twist.angular.z = odometry_.getAngular();
+    realtime_odometry_publisher_->unlockAndPublish();
+  }
 
-    if (odom_params_.enable_odom_tf && realtime_odometry_transform_publisher_->trylock())
-    {
-      auto & transform = realtime_odometry_transform_publisher_->msg_.transforms.front();
-      transform.header.stamp = time;
-      transform.transform.translation.x = odometry_.getX();
-      transform.transform.translation.y = odometry_.getY();
-      transform.transform.rotation.x = orientation.x();
-      transform.transform.rotation.y = orientation.y();
-      transform.transform.rotation.z = orientation.z();
-      transform.transform.rotation.w = orientation.w();
-      realtime_odometry_transform_publisher_->unlockAndPublish();
-    }
+  if (odom_params_.enable_odom_tf && realtime_odometry_transform_publisher_->trylock())
+  {
+    auto & transform = realtime_odometry_transform_publisher_->msg_.transforms.front();
+    transform.header.stamp = time;
+    transform.transform.translation.x = odometry_.getX();
+    transform.transform.translation.y = odometry_.getY();
+    transform.transform.rotation.x = orientation.x();
+    transform.transform.rotation.y = orientation.y();
+    transform.transform.rotation.z = orientation.z();
+    transform.transform.rotation.w = orientation.w();
+    realtime_odometry_transform_publisher_->unlockAndPublish();
+  }
 
   // Compute wheel velocity and angle
   auto [alpha_write, Ws_write] = twist_to_ackermann(linear_command, angular_command);
