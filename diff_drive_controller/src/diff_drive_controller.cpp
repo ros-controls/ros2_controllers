@@ -28,7 +28,6 @@
 #include "rclcpp/logging.hpp"
 #include "tf2/LinearMath/Quaternion.h"
 
-
 namespace
 {
 constexpr auto DEFAULT_COMMAND_TOPIC = "~/cmd_vel";
@@ -139,10 +138,9 @@ controller_interface::return_type DiffDriveController::update(
   previous_update_timestamp_ = time;
 
   // Apply (possibly new) multipliers:
-//  const auto wheels = wheel_params_;
   const double wheel_separation = params_.wheel_separation_multiplier * params_.wheel_separation;
   const double left_wheel_radius = params_.left_wheel_radius_multiplier * params_.wheel_radius;
-  const double right_wheel_radius = params_.right_wheel_radius_multiplier* params_.wheel_radius;
+  const double right_wheel_radius = params_.right_wheel_radius_multiplier * params_.wheel_radius;
 
   if (params_.open_loop)
   {
@@ -282,7 +280,7 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
 
   const double wheel_separation = params_.wheel_separation_multiplier * params_.wheel_separation;
   const double left_wheel_radius = params_.left_wheel_radius_multiplier * params_.wheel_radius;
-  const double right_wheel_radius = params_.right_wheel_radius_multiplier* params_.wheel_radius;
+  const double right_wheel_radius = params_.right_wheel_radius_multiplier * params_.wheel_radius;
 
   odometry_.setWheelParams(wheel_separation, left_wheel_radius, right_wheel_radius);
   odometry_.setVelocityRollingWindowSize(params_.velocity_rolling_window_size);
@@ -293,27 +291,16 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   use_stamped_vel_ = get_node()->get_parameter("use_stamped_vel").as_bool();
 
   limiter_linear_ = SpeedLimiter(
-      params_.linear.x.has_velocity_limits,
-      params_.linear.x.has_acceleration_limits,
-      params_.linear.x.has_jerk_limits,
-      params_.linear.x.min_velocity,
-      params_.linear.x.max_velocity,
-      params_.linear.x.min_acceleration,
-      params_.linear.x.max_acceleration,
-      params_.linear.x.min_jerk,
-      params_.linear.x.max_jerk);
+    params_.linear.x.has_velocity_limits, params_.linear.x.has_acceleration_limits,
+    params_.linear.x.has_jerk_limits, params_.linear.x.min_velocity, params_.linear.x.max_velocity,
+    params_.linear.x.min_acceleration, params_.linear.x.max_acceleration, params_.linear.x.min_jerk,
+    params_.linear.x.max_jerk);
 
   limiter_angular_ = SpeedLimiter(
-      params_.angular.z.has_velocity_limits,
-      params_.angular.z.has_acceleration_limits,
-      params_.angular.z.has_jerk_limits,
-      params_.angular.z.min_velocity,
-      params_.angular.z.max_velocity,
-      params_.angular.z.min_acceleration,
-      params_.angular.z.max_acceleration,
-      params_.angular.z.min_jerk,
-      params_.angular.z.max_jerk);
-
+    params_.angular.z.has_velocity_limits, params_.angular.z.has_acceleration_limits,
+    params_.angular.z.has_jerk_limits, params_.angular.z.min_velocity,
+    params_.angular.z.max_velocity, params_.angular.z.min_acceleration,
+    params_.angular.z.max_acceleration, params_.angular.z.min_jerk, params_.angular.z.max_jerk);
 
   if (!reset())
   {
@@ -424,8 +411,7 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
     // 0, 7, 14, 21, 28, 35
     const size_t diagonal_index = NUM_DIMENSIONS * index + index;
     odometry_message.pose.covariance[diagonal_index] = params_.pose_covariance_diagonal[index];
-    odometry_message.twist.covariance[diagonal_index] =
-      params_.twist_covariance_diagonal[index];
+    odometry_message.twist.covariance[diagonal_index] = params_.twist_covariance_diagonal[index];
   }
 
   // initialize transform publisher and message

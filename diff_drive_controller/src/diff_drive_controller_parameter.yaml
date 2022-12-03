@@ -172,6 +172,3 @@ diff_drive_controller:
         type: double,
         default_value: .NAN,
       }
-
-
-

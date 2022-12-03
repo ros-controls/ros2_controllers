@@ -44,7 +44,6 @@
 
 #include "diff_drive_controller_parameters.hpp"
 
-
 namespace diff_drive_controller
 {
 class DiffDriveController : public controller_interface::ControllerInterface
@@ -104,9 +103,6 @@ protected:
     const std::string & side, const std::vector<std::string> & wheel_names,
     std::vector<WheelHandle> & registered_handles);
 
-//  std::vector<std::string> left_wheel_names_;
-//  std::vector<std::string> right_wheel_names_;
-
   std::vector<WheelHandle> registered_left_wheel_handles_;
   std::vector<WheelHandle> registered_right_wheel_handles_;
 
@@ -116,8 +112,8 @@ protected:
 
   Odometry odometry_;
 
-    // Timeout to consider cmd_vel commands old
-    std::chrono::milliseconds cmd_vel_timeout_{500};
+  // Timeout to consider cmd_vel commands old
+  std::chrono::milliseconds cmd_vel_timeout_{500};
 
   std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::Odometry>> odometry_publisher_ = nullptr;
   std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>>
@@ -127,7 +123,6 @@ protected:
     nullptr;
   std::shared_ptr<realtime_tools::RealtimePublisher<tf2_msgs::msg::TFMessage>>
     realtime_odometry_transform_publisher_ = nullptr;
-
 
   bool subscriber_is_active_ = false;
   rclcpp::Subscription<Twist>::SharedPtr velocity_command_subscriber_ = nullptr;
