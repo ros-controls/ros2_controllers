@@ -2,6 +2,12 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.14.0 (2022-11-18)
+-------------------
+* Odom Topic & Frame Namespaces  (`#461 <https://github.com/ros-controls/ros2_controllers/issues/461>`_)
+* Write detailed Diff-Drive-Controller documentation to make all the interfaces understandable. (`#371 <https://github.com/ros-controls/ros2_controllers/issues/371>`_)
+* Contributors: Denis Štogl, sp-sophia-labs
+
 2.13.0 (2022-10-05)
 -------------------
 
