@@ -462,6 +462,67 @@ bool JointTrajectoryController::read_state_from_command_interfaces(JointTrajecto
   return has_values;
 }
 
+void JointTrajectoryController::query_state_service(
+  const std::shared_ptr<control_msgs::srv::QueryTrajectoryState::Request> request,
+  std::shared_ptr<control_msgs::srv::QueryTrajectoryState::Response> response)
+{
+  const auto logger = get_node()->get_logger();
+  const auto active_goal = *rt_active_goal_.readFromRT();
+  response->name = params_.joints;
+  trajectory_msgs::msg::JointTrajectoryPoint state_requested;
+  // Preconditions
+  if (get_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+  {
+    RCLCPP_ERROR(logger, "Can't sample trajectory. Controller is not running.");
+    response->success = false;
+    return;
+  }
+
+  // If there is no active goal, set it to the current state
+  if (!active_goal)
+  {
+    response->position = state_current_.positions;
+    response->velocity = state_current_.velocities;
+    response->acceleration = state_current_.accelerations;
+    response->success = true;
+    return;
+  }
+
+  // If the requested time is beyond the total trajectory time, respond with end state
+  if (
+    static_cast<rclcpp::Time>(request->time) >
+    ((*traj_point_active_ptr_)->get_trajectory_start_time() +
+     (*traj_point_active_ptr_)->end()->time_from_start))
+  {
+    const TrajectoryPointConstIter end_point = (*traj_point_active_ptr_)->end();
+    response->position = end_point->positions;
+    response->velocity = end_point->velocities;
+    response->acceleration = end_point->accelerations;
+    response->success = true;
+    return;
+  }
+
+  if (traj_point_active_ptr_ && (*traj_point_active_ptr_)->has_trajectory_msg())
+  {
+    // find segment for current timestamp
+    TrajectoryPointConstIter start_segment_itr, end_segment_itr;
+    response->success = (*traj_point_active_ptr_)
+                          ->sample(
+                            request->time, interpolation_method_, state_requested,
+                            start_segment_itr, end_segment_itr);
+    response->position = state_requested.positions;
+    response->velocity = state_requested.velocities;
+    response->acceleration = state_requested.accelerations;
+    response->success = true;
+  }
+  else
+  {
+    RCLCPP_WARN(logger, "There is no active trajectory active pointer..");
+    response->success = false;
+    return;
+  }
+}
+
 controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   const rclcpp_lifecycle::State &)
 {
@@ -718,6 +779,10 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   resize_joint_trajectory_point(state_desired_, dof_);
   resize_joint_trajectory_point(state_error_, dof_);
   resize_joint_trajectory_point(last_commanded_state_, dof_);
+
+  query_state_srv_ = get_node()->create_service<control_msgs::srv::QueryTrajectoryState>(
+    std::string(get_node()->get_name()) + "/query_state",
+    std::bind(&JointTrajectoryController::query_state_service, this, _1, _2));
 
   return CallbackReturn::SUCCESS;
 }
