@@ -34,8 +34,9 @@ TEST(TestLoadAckermannSteeringController, load_controller)
       ros2_control_test_assets::minimal_robot_urdf),
     executor, "test_controller_manager");
 
-  ASSERT_NO_THROW(
-    cm.load_controller("test_ackermann_steering_controller", "ackermann_steering_controller/AckermannSteeringController"));
+  ASSERT_NO_THROW(cm.load_controller(
+    "test_ackermann_steering_controller",
+    "ackermann_steering_controller/AckermannSteeringController"));
 
   rclcpp::shutdown();
 }

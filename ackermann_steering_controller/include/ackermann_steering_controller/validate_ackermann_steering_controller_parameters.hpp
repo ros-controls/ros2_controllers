@@ -25,7 +25,8 @@ Result forbidden_interface_name_prefix(rclcpp::Parameter const & parameter)
 {
   auto const & interface_name = parameter.as_string();
 
-  if (interface_name.rfind("blup_", 0) == 0) {
+  if (interface_name.rfind("blup_", 0) == 0)
+  {
     return ERROR("'interface_name' parameter can not start with 'blup_'");
   }
 

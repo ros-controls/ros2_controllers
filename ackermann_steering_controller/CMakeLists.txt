@@ -71,6 +71,23 @@ install(
   LIBRARY DESTINATION lib
 )
 
+
+add_library(
+  ackermann_odometry
+  SHARED
+  src/ackermann_odometry.cpp
+)
+target_include_directories(ackermann_odometry PRIVATE include)
+ament_target_dependencies(ackermann_odometry ${THIS_PACKAGE_INCLUDE_DEPENDS})
+
+install(
+  TARGETS
+  ackermann_odometry
+  RUNTIME DESTINATION bin
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+)
+
 install(
   DIRECTORY include/
   DESTINATION include
