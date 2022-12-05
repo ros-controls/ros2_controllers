@@ -91,8 +91,8 @@ controller_interface::CallbackReturn AckermannSteeringController::on_configure(
 
   const double wheel_seperation = params_.wheel_separation_multiplier * params_.wheel_separation;
   const double wheel_radius = params_.wheel_radius_multiplier * params_.wheel_radius;
-  odometry_.setWheelParams(wheel_seperation, wheel_radius);
-  odometry_.setVelocityRollingWindowSize(params_.velocity_rolling_window_size);
+  odometry_.set_wheel_params(wheel_seperation, wheel_radius);
+  odometry_.set_velocity_rolling_window_size(params_.velocity_rolling_window_size);
 
   // topics QoS
   auto subscribers_qos = rclcpp::SystemDefaultsQoS();
@@ -377,7 +377,7 @@ controller_interface::return_type AckermannSteeringController::update_and_write_
 {
   if (params_.open_loop)
   {
-    odometry_.updateOpenLoop(last_linear_velocity_, last_angular_velocity_, period.seconds());
+    odometry_.update_open_loop(last_linear_velocity_, last_angular_velocity_, period.seconds());
   }
   else
   {
@@ -389,12 +389,12 @@ controller_interface::return_type AckermannSteeringController::update_and_write_
       if (params_.position_feedback)
       {
         // Estimate linear and angular velocity using joint information
-        odometry_.updateFromPosition(rear_wheel_value, steer_position, period.seconds());
+        odometry_.update_from_position(rear_wheel_value, steer_position, period.seconds());
       }
       else
       {
         // Estimate linear and angular velocity using joint information
-        odometry_.updateFromVelocity(rear_wheel_value, steer_position, period.seconds());
+        odometry_.update_from_velocity(rear_wheel_value, steer_position, period.seconds());
       }
     }
   }
@@ -426,17 +426,17 @@ controller_interface::return_type AckermannSteeringController::update_and_write_
   // Publish odometry message
   // Compute and store orientation info
   tf2::Quaternion orientation;
-  orientation.setRPY(0.0, 0.0, odometry_.getHeading());
+  orientation.setRPY(0.0, 0.0, odometry_.get_heading());
 
   // Populate odom message and publish
   if (rt_odom_state_publisher_->trylock())
   {
     rt_odom_state_publisher_->msg_.header.stamp = time;
-    rt_odom_state_publisher_->msg_.pose.pose.position.x = odometry_.getX();
-    rt_odom_state_publisher_->msg_.pose.pose.position.y = odometry_.getY();
+    rt_odom_state_publisher_->msg_.pose.pose.position.x = odometry_.get_x();
+    rt_odom_state_publisher_->msg_.pose.pose.position.y = odometry_.get_y();
     rt_odom_state_publisher_->msg_.pose.pose.orientation = tf2::toMsg(orientation);
-    rt_odom_state_publisher_->msg_.twist.twist.linear.x = odometry_.getLinear();
-    rt_odom_state_publisher_->msg_.twist.twist.angular.z = odometry_.getAngular();
+    rt_odom_state_publisher_->msg_.twist.twist.linear.x = odometry_.get_linear();
+    rt_odom_state_publisher_->msg_.twist.twist.angular.z = odometry_.get_angular();
     rt_odom_state_publisher_->unlockAndPublish();
   }
 
@@ -444,8 +444,10 @@ controller_interface::return_type AckermannSteeringController::update_and_write_
   if (params_.enable_odom_tf && rt_tf_odom_state_publisher_->trylock())
   {
     rt_tf_odom_state_publisher_->msg_.transforms.front().header.stamp = time;
-    rt_tf_odom_state_publisher_->msg_.transforms.front().transform.translation.x = odometry_.getX();
-    rt_tf_odom_state_publisher_->msg_.transforms.front().transform.translation.y = odometry_.getY();
+    rt_tf_odom_state_publisher_->msg_.transforms.front().transform.translation.x =
+      odometry_.get_x();
+    rt_tf_odom_state_publisher_->msg_.transforms.front().transform.translation.y =
+      odometry_.get_y();
     rt_tf_odom_state_publisher_->msg_.transforms.front().transform.rotation =
       tf2::toMsg(orientation);
     rt_tf_odom_state_publisher_->unlockAndPublish();
@@ -454,11 +456,11 @@ controller_interface::return_type AckermannSteeringController::update_and_write_
   if (controller_state_publisher_->trylock())
   {
     controller_state_publisher_->msg_.header.stamp = time;
-    controller_state_publisher_->msg_.odom.pose.pose.position.x = odometry_.getX();
-    controller_state_publisher_->msg_.odom.pose.pose.position.y = odometry_.getY();
+    controller_state_publisher_->msg_.odom.pose.pose.position.x = odometry_.get_x();
+    controller_state_publisher_->msg_.odom.pose.pose.position.y = odometry_.get_y();
     controller_state_publisher_->msg_.odom.pose.pose.orientation = tf2::toMsg(orientation);
-    controller_state_publisher_->msg_.odom.twist.twist.linear.x = odometry_.getLinear();
-    controller_state_publisher_->msg_.odom.twist.twist.angular.z = odometry_.getAngular();
+    controller_state_publisher_->msg_.odom.twist.twist.linear.x = odometry_.get_linear();
+    controller_state_publisher_->msg_.odom.twist.twist.angular.z = odometry_.get_angular();
     if (params_.position_feedback)
     {
       controller_state_publisher_->msg_.rear_wheel_position = state_interfaces_[0].get_value();

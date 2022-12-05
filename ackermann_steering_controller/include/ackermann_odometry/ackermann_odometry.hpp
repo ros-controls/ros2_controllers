@@ -67,7 +67,7 @@ public:
      * \param dt      time difference to last call
      * \return true if the odometry is actually updated
      */
-  bool updateFromPosition(
+  bool update_from_position(
     const double rear_wheel_pos, const double front_steer_pos, const double dt);
 
   /**
@@ -77,7 +77,7 @@ public:
      * \param dt      time difference to last call
      * \return true if the odometry is actually updated
      */
-  bool updateFromVelocity(
+  bool update_from_velocity(
     const double rear_wheel_vel, const double front_steer_pos, const double dt);
 
   /**
@@ -86,48 +86,48 @@ public:
      * \param angular Angular velocity [rad/s]
      * \param time    Current time
      */
-  void updateOpenLoop(const double linear, const double angular, const double dt);
+  void update_open_loop(const double linear, const double angular, const double dt);
 
   /**
      * \brief heading getter
      * \return heading [rad]
      */
-  double getHeading() const { return heading_; }
+  double get_heading() const { return heading_; }
 
   /**
      * \brief x position getter
      * \return x position [m]
      */
-  double getX() const { return x_; }
+  double get_x() const { return x_; }
 
   /**
      * \brief y position getter
      * \return y position [m]
      */
-  double getY() const { return y_; }
+  double get_y() const { return y_; }
 
   /**
      * \brief linear velocity getter
      * \return linear velocity [m/s]
      */
-  double getLinear() const { return linear_; }
+  double get_linear() const { return linear_; }
 
   /**
      * \brief angular velocity getter
      * \return angular velocity [rad/s]
      */
-  double getAngular() const { return angular_; }
+  double get_angular() const { return angular_; }
 
   /**
      * \brief Sets the wheel parameters: radius and separation
      */
-  void setWheelParams(double wheel_reparation_h, double wheel_radius);
+  void set_wheel_params(double wheel_reparation_h, double wheel_radius);
 
   /**
      * \brief Velocity rolling window size setter
      * \param velocity_rolling_window_size Velocity rolling window size
      */
-  void setVelocityRollingWindowSize(size_t velocity_rolling_window_size);
+  void set_velocity_rolling_window_size(size_t velocity_rolling_window_size);
 
 private:
   /// Rolling mean accumulator and window:
@@ -139,19 +139,19 @@ private:
      * \param linear  Linear  velocity   [m] (linear  displacement, i.e. m/s * dt) computed by encoders
      * \param angular Angular velocity [rad] (angular displacement, i.e. m/s * dt) computed by encoders
      */
-  void integrateRungeKutta2(double linear, double angular);
+  void integrate_runge_kutta_2(double linear, double angular);
 
   /**
      * \brief Integrates the velocities (linear and angular) using exact method
      * \param linear  Linear  velocity   [m] (linear  displacement, i.e. m/s * dt) computed by encoders
      * \param angular Angular velocity [rad] (angular displacement, i.e. m/s * dt) computed by encoders
      */
-  void integrateExact(double linear, double angular);
+  void integrate_exact(double linear, double angular);
 
   /**
      *  \brief Reset linear and angular accumulators
      */
-  void resetAccumulators();
+  void reset_accumulators();
 
   /// Current timestamp:
   rclcpp::Time timestamp_;

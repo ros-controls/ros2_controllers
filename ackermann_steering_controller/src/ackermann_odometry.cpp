@@ -44,7 +44,7 @@ AckermannOdometry::AckermannOdometry(size_t velocity_rolling_window_size)
   linear_acc_(RollingWindow::window_size = velocity_rolling_window_size),
   angular_acc_(RollingWindow::window_size = velocity_rolling_window_size),
   integrate_fun_(std::bind(
-    &AckermannOdometry::integrateExact, this, std::placeholders::_1, std::placeholders::_2))
+    &AckermannOdometry::integrate_exact, this, std::placeholders::_1, std::placeholders::_2))
 
 {
 }
@@ -52,12 +52,12 @@ AckermannOdometry::AckermannOdometry(size_t velocity_rolling_window_size)
 void AckermannOdometry::init(const rclcpp::Time & time)
 {
   // Reset accumulators and timestamp:
-  resetAccumulators();
+  reset_accumulators();
   timestamp_ = time;
 }
 
 // TODO(destogl): enable also velocity interface to update using velocity from the rear wheel
-bool AckermannOdometry::updateFromPosition(
+bool AckermannOdometry::update_from_position(
   const double rear_wheel_pos, const double front_steer_pos, const double dt)
 {
   /// Get current wheel joint positions:
@@ -98,7 +98,7 @@ bool AckermannOdometry::updateFromPosition(
   return true;
 }
 
-bool AckermannOdometry::updateFromVelocity(
+bool AckermannOdometry::update_from_velocity(
   const double rear_wheel_vel, const double front_steer_pos, const double dt)
 {
   // (right_wheel_est_vel + left_wheel_est_vel) * 0.5;
@@ -126,7 +126,7 @@ bool AckermannOdometry::updateFromVelocity(
   return true;
 }
 
-void AckermannOdometry::updateOpenLoop(const double linear, const double angular, const double dt)
+void AckermannOdometry::update_open_loop(const double linear, const double angular, const double dt)
 {
   /// Save last linear and angular velocity:
   linear_ = linear;
@@ -136,20 +136,20 @@ void AckermannOdometry::updateOpenLoop(const double linear, const double angular
   integrate_fun_(linear * dt, angular * dt);
 }
 
-void AckermannOdometry::setWheelParams(double wheel_separation, double wheel_radius)
+void AckermannOdometry::set_wheel_params(double wheel_separation, double wheel_radius)
 {
   wheel_separation_ = wheel_separation;
   wheel_radius_ = wheel_radius;
 }
 
-void AckermannOdometry::setVelocityRollingWindowSize(size_t velocity_rolling_window_size)
+void AckermannOdometry::set_velocity_rolling_window_size(size_t velocity_rolling_window_size)
 {
   velocity_rolling_window_size_ = velocity_rolling_window_size;
 
-  resetAccumulators();
+  reset_accumulators();
 }
 
-void AckermannOdometry::integrateRungeKutta2(double linear, double angular)
+void AckermannOdometry::integrate_runge_kutta_2(double linear, double angular)
 {
   const double direction = heading_ + angular * 0.5;
 
@@ -164,10 +164,10 @@ void AckermannOdometry::integrateRungeKutta2(double linear, double angular)
    * \param linear
    * \param angular
    */
-void AckermannOdometry::integrateExact(double linear, double angular)
+void AckermannOdometry::integrate_exact(double linear, double angular)
 {
   if (fabs(angular) < 1e-6)
-    integrateRungeKutta2(linear, angular);
+    integrate_runge_kutta_2(linear, angular);
   else
   {
     /// Exact integration (should solve problems when angular is zero):
@@ -179,7 +179,7 @@ void AckermannOdometry::integrateExact(double linear, double angular)
   }
 }
 
-void AckermannOdometry::resetAccumulators()
+void AckermannOdometry::reset_accumulators()
 {
   linear_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
   angular_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
