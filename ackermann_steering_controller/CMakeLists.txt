@@ -49,27 +49,6 @@ generate_parameter_library(ackermann_steering_controller_parameters
   src/ackermann_steering_controller.yaml
   # include/ackermann_steering_controller/validate_ackermann_steering_controller_parameters.hpp
 )
-add_library(
-  ackermann_steering_controller
-  SHARED
-  src/ackermann_steering_controller.cpp
-  src/odometry.cpp
-)
-target_include_directories(ackermann_steering_controller PRIVATE include)
-target_link_libraries(ackermann_steering_controller ackermann_steering_controller_parameters)
-ament_target_dependencies(ackermann_steering_controller ${THIS_PACKAGE_INCLUDE_DEPENDS})
-target_compile_definitions(ackermann_steering_controller PRIVATE "ACKERMANN_STEERING_CONTROLLER_BUILDING_DLL")
-
-pluginlib_export_plugin_description_file(
-  controller_interface ackermann_steering_controller.xml)
-
-install(
-  TARGETS
-  ackermann_steering_controller
-  RUNTIME DESTINATION bin
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-)
 
 
 add_library(
@@ -87,6 +66,30 @@ install(
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
 )
+
+
+add_library(
+  ackermann_steering_controller
+  SHARED
+  src/ackermann_steering_controller.cpp
+)
+target_include_directories(ackermann_steering_controller PRIVATE include)
+target_link_libraries(ackermann_steering_controller ackermann_steering_controller_parameters ackermann_odometry)
+ament_target_dependencies(ackermann_steering_controller ${THIS_PACKAGE_INCLUDE_DEPENDS})
+target_compile_definitions(ackermann_steering_controller PRIVATE "ACKERMANN_STEERING_CONTROLLER_BUILDING_DLL")
+
+pluginlib_export_plugin_description_file(
+  controller_interface ackermann_steering_controller.xml)
+
+install(
+  TARGETS
+  ackermann_steering_controller
+  RUNTIME DESTINATION bin
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+)
+
+
 
 install(
   DIRECTORY include/

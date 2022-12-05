@@ -23,7 +23,7 @@
 #include <utility>
 #include <vector>
 
-#include "ackermann_steering_controller/odometry.hpp"
+#include "ackermann_odometry/ackermann_odometry.hpp"
 #include "ackermann_steering_controller/visibility_control.h"
 #include "ackermann_steering_controller_parameters.hpp"
 #include "controller_interface/chainable_controller_interface.hpp"
@@ -140,7 +140,7 @@ protected:
   };
 
   // Odometry related:
-  Odometry odometry_;
+  ackermann_odometry::AckermannOdometry odometry_;
 
   using AckermanControllerState = custom_messages::msg::AckermanControllerState;
   ACKERMANN_STEERING_CONTROLLER__VISIBILITY_PUBLIC
