@@ -2,6 +2,11 @@
 Changelog for package gripper_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add basic gripper controller tests (`#459 <https://github.com/ros-controls/ros2_controllers/issues/459>`_)
+* Contributors: Bence Magyar
+
 2.14.0 (2022-11-18)
 -------------------
 * Use optional from C++17 (`#460 <https://github.com/ros-controls/ros2_controllers/issues/460>`_)
