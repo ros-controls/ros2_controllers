@@ -91,7 +91,8 @@ controller_interface::CallbackReturn AckermannSteeringController::on_configure(
 
   const double wheel_seperation = params_.wheel_separation_multiplier * params_.wheel_separation;
   const double wheel_radius = params_.wheel_radius_multiplier * params_.wheel_radius;
-  odometry_.set_wheel_params(wheel_seperation, wheel_radius);
+  const double wheelbase = params_.wheelbase_multiplier * params_.wheelbase;
+  odometry_.set_wheel_params(wheel_seperation, wheel_radius, wheelbase);
   odometry_.set_velocity_rolling_window_size(params_.velocity_rolling_window_size);
 
   // topics QoS
@@ -279,9 +280,12 @@ AckermannSteeringController::command_interface_configuration() const
   command_interfaces_config.names.reserve(NR_CMD_ITFS);
   command_interfaces_config.names.push_back(
     params_.rear_wheel_name + "/" + hardware_interface::HW_IF_VELOCITY);
-  command_interfaces_config.names.push_back(
-    params_.front_steer_name + "/" + hardware_interface::HW_IF_POSITION);
 
+  for (int i = 0; i < params_.front_steer_names.size(); i++)
+  {
+    command_interfaces_config.names.push_back(
+      params_.front_steer_names[i] + "/" + hardware_interface::HW_IF_POSITION);
+  }
   return command_interfaces_config;
 }
 
@@ -295,8 +299,12 @@ AckermannSteeringController::state_interface_configuration() const
   const auto rear_wheel_feedback = params_.position_feedback ? hardware_interface::HW_IF_POSITION
                                                              : hardware_interface::HW_IF_VELOCITY;
   state_interfaces_config.names.push_back(params_.rear_wheel_name + "/" + rear_wheel_feedback);
-  state_interfaces_config.names.push_back(
-    params_.front_steer_name + "/" + hardware_interface::HW_IF_POSITION);
+
+  for (int i = 0; i < params_.front_steer_names.size(); i++)
+  {
+    state_interfaces_config.names.push_back(
+      params_.front_steer_names[i] + "/" + hardware_interface::HW_IF_POSITION);
+  }
 
   return state_interfaces_config;
 }

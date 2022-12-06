@@ -16,9 +16,9 @@ ackermann_steering_controller:
 
   }
 
-  front_steer_name: {
-    type: string,
-    default_value: "front_steer_joint",
+  front_steer_names: {
+    type: string_array,
+    default_value: ["front_steer_joint"],
     description: "Name of the front steer wheel.",
     read_only: true,
 
@@ -48,6 +48,21 @@ ackermann_steering_controller:
 
   }
 
+  wheelbase_multiplier: {
+    type: double,
+    default_value: 1.0,
+    description: "Wheelbase will be multiplied by value of the wheelbase_multiplier.",
+    read_only: false,
+
+  }
+
+  wheelbase: {
+    type: double,
+    default_value: 0.0,
+    description: "Wheelbase length.",
+    read_only: false,
+
+  }
   wheel_radius: {
     type: double,
     default_value: 0.0,

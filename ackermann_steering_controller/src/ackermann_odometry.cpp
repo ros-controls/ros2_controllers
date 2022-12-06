@@ -38,6 +38,7 @@ AckermannOdometry::AckermannOdometry(size_t velocity_rolling_window_size)
   linear_(0.0),
   angular_(0.0),
   wheel_separation_(0.0),
+  wheelbase_(0.0),
   wheel_radius_(0.0),
   rear_wheel_old_pos_(0.0),
   velocity_rolling_window_size_(0.0),
@@ -136,10 +137,12 @@ void AckermannOdometry::update_open_loop(const double linear, const double angul
   integrate_fun_(linear * dt, angular * dt);
 }
 
-void AckermannOdometry::set_wheel_params(double wheel_separation, double wheel_radius)
+void AckermannOdometry::set_wheel_params(
+  double wheel_separation, double wheel_radius, double wheelbase)
 {
   wheel_separation_ = wheel_separation;
   wheel_radius_ = wheel_radius;
+  wheelbase_ = wheelbase;
 }
 
 void AckermannOdometry::set_velocity_rolling_window_size(size_t velocity_rolling_window_size)

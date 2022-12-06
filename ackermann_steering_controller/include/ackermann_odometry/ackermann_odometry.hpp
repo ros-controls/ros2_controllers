@@ -121,7 +121,7 @@ public:
   /**
      * \brief Sets the wheel parameters: radius and separation
      */
-  void set_wheel_params(double wheel_reparation_h, double wheel_radius);
+  void set_wheel_params(double wheel_reparation_h, double wheel_radius, double wheelbase);
 
   /**
      * \brief Velocity rolling window size setter
@@ -166,6 +166,7 @@ private:
   double angular_;  // [rad/s]
 
   double wheel_separation_;
+  double wheelbase_;
   double wheel_radius_;
 
   /// Previous wheel position/state [rad]:
