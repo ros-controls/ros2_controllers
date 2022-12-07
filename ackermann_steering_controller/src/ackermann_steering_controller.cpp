@@ -276,11 +276,13 @@ AckermannSteeringController::command_interface_configuration() const
 {
   controller_interface::InterfaceConfiguration command_interfaces_config;
   command_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
-
   command_interfaces_config.names.reserve(NR_CMD_ITFS);
-  command_interfaces_config.names.push_back(
-    params_.rear_wheel_name + "/" + hardware_interface::HW_IF_VELOCITY);
 
+  for (int i = 0; i < params_.front_steer_names.size(); i++)
+  {
+    command_interfaces_config.names.push_back(
+      params_.rear_wheel_names[i] + "/" + hardware_interface::HW_IF_VELOCITY);
+  }
   for (int i = 0; i < params_.front_steer_names.size(); i++)
   {
     command_interfaces_config.names.push_back(
@@ -298,7 +300,12 @@ AckermannSteeringController::state_interface_configuration() const
   state_interfaces_config.names.reserve(NR_STATE_ITFS);
   const auto rear_wheel_feedback = params_.position_feedback ? hardware_interface::HW_IF_POSITION
                                                              : hardware_interface::HW_IF_VELOCITY;
-  state_interfaces_config.names.push_back(params_.rear_wheel_name + "/" + rear_wheel_feedback);
+
+  for (int i = 0; i < params_.front_steer_names.size(); i++)
+  {
+    state_interfaces_config.names.push_back(
+      params_.rear_wheel_names[i] + "/" + rear_wheel_feedback);
+  }
 
   for (int i = 0; i < params_.front_steer_names.size(); i++)
   {
@@ -415,14 +422,14 @@ controller_interface::return_type AckermannSteeringController::update_and_write_
   if (!std::isnan(reference_interfaces_[0]) && !std::isnan(reference_interfaces_[1]))
   {
     // store and set commands
-    last_linear_velocity_ = reference_interfaces_[0];
-    last_angular_velocity_ = reference_interfaces_[1];
-
+    const double linear_command = reference_interfaces_[0];
+    const double angular_command = reference_interfaces_[1];
+    auto [alpha_write, Ws_write] = odometry_.twist_to_ackermann(linear_command, angular_command);
     // previous_publish_timestamp_ = time;
 
     // omega = linear_vel / radius
-    command_interfaces_[0].set_value(last_linear_velocity_ / params_.wheel_radius);
-    command_interfaces_[1].set_value(last_angular_velocity_);
+    command_interfaces_[0].set_value(Ws_write);
+    command_interfaces_[1].set_value(alpha_write);
   }
 
   if (ref_timeout_ == rclcpp::Duration::from_seconds(0) || is_in_chained_mode())

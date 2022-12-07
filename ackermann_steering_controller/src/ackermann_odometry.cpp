@@ -152,6 +152,33 @@ void AckermannOdometry::set_velocity_rolling_window_size(size_t velocity_rolling
   reset_accumulators();
 }
 
+double AckermannOdometry::convert_trans_rot_vel_to_steering_angle(
+  double Vx, double theta_dot, double wheelbase)
+{
+  if (theta_dot == 0 || Vx == 0)
+  {
+    return 0;
+  }
+  return std::atan(theta_dot * wheelbase / Vx);
+}
+
+std::tuple<double, double> AckermannOdometry::twist_to_ackermann(double Vx, double theta_dot)
+{
+  // using naming convention in http://users.isr.ist.utl.pt/~mir/cadeiras/robmovel/Kinematics.pdf
+  double alpha, Ws;
+
+  if (Vx == 0 && theta_dot != 0)
+  {  // is spin action
+    alpha = theta_dot > 0 ? M_PI_2 : -M_PI_2;
+    Ws = abs(theta_dot) * wheel_separation_ / wheel_radius_;
+    return std::make_tuple(alpha, Ws);
+  }
+
+  alpha = convert_trans_rot_vel_to_steering_angle(Vx, theta_dot, wheel_separation_);
+  Ws = Vx / (wheel_radius_ * std::cos(alpha));
+  return std::make_tuple(alpha, Ws);
+}
+
 void AckermannOdometry::integrate_runge_kutta_2(double linear, double angular)
 {
   const double direction = heading_ + angular * 0.5;

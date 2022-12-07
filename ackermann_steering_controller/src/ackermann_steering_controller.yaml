@@ -8,10 +8,10 @@ ackermann_steering_controller:
 #    }
   }
 
-  rear_wheel_name: {
-    type: string,
-    default_value: "rear_wheel_joint",
-    description: "Name of the rear wheel.",
+  rear_wheel_names: {
+    type: string_array,
+    default_value: ["rear_wheel_joint"],
+    description: "Name of rear wheels.",
     read_only: true,
 
   }
@@ -19,7 +19,7 @@ ackermann_steering_controller:
   front_steer_names: {
     type: string_array,
     default_value: ["front_steer_joint"],
-    description: "Name of the front steer wheel.",
+    description: "Names of front steer wheels.",
     read_only: true,
 
   }
@@ -63,6 +63,7 @@ ackermann_steering_controller:
     read_only: false,
 
   }
+
   wheel_radius: {
     type: double,
     default_value: 0.0,

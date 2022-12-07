@@ -129,6 +129,21 @@ public:
      */
   void set_velocity_rolling_window_size(size_t velocity_rolling_window_size);
 
+  /**
+    * \brief TODO
+    * \param Vx  TODO
+    * \param theta_dot TODO
+    * \param wheelbase TODO
+    */
+  double convert_trans_rot_vel_to_steering_angle(double Vx, double theta_dot, double wheelbase);
+
+  /**
+     * \brief TODO
+     * \param Vx  TODO
+     * \param theta_dot TODO
+     */
+  std::tuple<double, double> twist_to_ackermann(double Vx, double theta_dot);
+
 private:
   /// Rolling mean accumulator and window:
   typedef bacc::accumulator_set<double, bacc::stats<bacc::tag::rolling_mean> > RollingMeanAcc;
