@@ -199,6 +199,32 @@ TEST_P(TrajectoryControllerTestParameterized, activate)
   executor.cancel();
 }
 
+TEST_P(TrajectoryControllerTestParameterized, activate_deactivate)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+  SetUpTrajectoryController(executor);
+
+  traj_controller_->get_node()->configure();
+  ASSERT_EQ(traj_controller_->get_state().id(), State::PRIMARY_STATE_INACTIVE);
+
+  auto cmd_interface_config = traj_controller_->command_interface_configuration();
+  ASSERT_EQ(
+    cmd_interface_config.names.size(), joint_names_.size() * command_interface_types_.size());
+
+  auto state_interface_config = traj_controller_->state_interface_configuration();
+  ASSERT_EQ(
+    state_interface_config.names.size(), joint_names_.size() * state_interface_types_.size());
+
+  ActivateTrajectoryController();
+  ASSERT_EQ(traj_controller_->get_state().id(), State::PRIMARY_STATE_ACTIVE);
+  traj_controller_->get_node()->deactivate();
+  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+  traj_controller_->get_node()->activate();
+  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+
+  executor.cancel();
+}
+
 // TEST_F(TestTrajectoryController, activation) {
 //   auto traj_controller = std::make_shared<ros_controllers::JointTrajectoryController>(
 //     joint_names_, op_mode_);
