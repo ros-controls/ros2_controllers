@@ -215,6 +215,11 @@ TEST_P(TrajectoryControllerTestParameterized, activate_deactivate)
   ASSERT_EQ(
     state_interface_config.names.size(), joint_names_.size() * state_interface_types_.size());
 
+  // Activate
+  // Execute trajectory
+  // Deactivate
+  // Activate
+  // Segfault
   ActivateTrajectoryController();
   ASSERT_EQ(traj_controller_->get_state().id(), State::PRIMARY_STATE_ACTIVE);
   traj_controller_->get_node()->deactivate();
