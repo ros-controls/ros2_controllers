@@ -24,16 +24,11 @@
 #include "realtime_tools/realtime_buffer.h"
 #include "realtime_tools/realtime_publisher.h"
 
-//#include <ros/time.h>
-#include <boost/accumulators/accumulators.hpp>
-#include <boost/accumulators/statistics/rolling_mean.hpp>
-#include <boost/accumulators/statistics/stats.hpp>
 #include <boost/function.hpp>
+#include "rcpputils/rolling_mean_accumulator.hpp"
 
 namespace ackermann_odometry
 {
-namespace bacc = boost::accumulators;
-
 /**
    * \brief The Odometry class handles odometry readings
    * (2D pose and velocity with related timestamp)
@@ -146,8 +141,7 @@ public:
 
 private:
   /// Rolling mean accumulator and window:
-  typedef bacc::accumulator_set<double, bacc::stats<bacc::tag::rolling_mean> > RollingMeanAcc;
-  typedef bacc::tag::rolling_window RollingWindow;
+  typedef rcpputils::RollingMeanAccumulator<double> RollingMeanAccumulator;
 
   /**
      * \brief Integrates the velocities (linear and angular) using 2nd order Runge-Kutta
@@ -188,9 +182,9 @@ private:
   double rear_wheel_old_pos_;
 
   /// Rolling mean accumulators for the linar and angular velocities:
-  int velocity_rolling_window_size_;
-  RollingMeanAcc linear_acc_;
-  RollingMeanAcc angular_acc_;
+  size_t velocity_rolling_window_size_;
+  RollingMeanAccumulator linear_acc_;
+  RollingMeanAccumulator angular_acc_;
 
   /// Integration function, used to integrate the odometry:
   IntegrationFunction integrate_fun_;

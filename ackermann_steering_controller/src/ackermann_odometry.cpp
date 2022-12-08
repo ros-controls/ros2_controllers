@@ -26,7 +26,6 @@
 
 namespace ackermann_odometry
 {
-namespace bacc = boost::accumulators;
 // using namespace ackermann_steering_controller_ros2;
 // ackermann_steering_controller_ros2::Params params;
 
@@ -41,9 +40,9 @@ AckermannOdometry::AckermannOdometry(size_t velocity_rolling_window_size)
   wheelbase_(0.0),
   wheel_radius_(0.0),
   rear_wheel_old_pos_(0.0),
-  velocity_rolling_window_size_(0.0),
-  linear_acc_(RollingWindow::window_size = velocity_rolling_window_size),
-  angular_acc_(RollingWindow::window_size = velocity_rolling_window_size),
+  velocity_rolling_window_size_(velocity_rolling_window_size),
+  linear_acc_(velocity_rolling_window_size),
+  angular_acc_(velocity_rolling_window_size),
   integrate_fun_(std::bind(
     &AckermannOdometry::integrate_exact, this, std::placeholders::_1, std::placeholders::_2))
 
@@ -90,11 +89,11 @@ bool AckermannOdometry::update_from_position(
   }
 
   /// Estimate speeds using a rolling mean to filter them out:
-  linear_acc_(linear_velocity);
-  angular_acc_(angular / dt);
+  linear_acc_.accumulate(linear_velocity);
+  angular_acc_.accumulate(angular / dt);
 
-  linear_ = bacc::rolling_mean(linear_acc_);
-  angular_ = bacc::rolling_mean(angular_acc_);
+  linear_ = linear_acc_.getRollingMean();
+  angular_ = angular_acc_.getRollingMean();
 
   return true;
 }
@@ -118,11 +117,11 @@ bool AckermannOdometry::update_from_velocity(
   }
 
   /// Estimate speeds using a rolling mean to filter them out:
-  linear_acc_(linear_velocity);
-  angular_acc_(angular);
+  linear_acc_.accumulate(linear_velocity);
+  angular_acc_.accumulate(angular);
 
-  linear_ = bacc::rolling_mean(linear_acc_);
-  angular_ = bacc::rolling_mean(angular_acc_);
+  linear_ = linear_acc_.getRollingMean();
+  angular_ = angular_acc_.getRollingMean();
 
   return true;
 }
@@ -152,6 +151,7 @@ void AckermannOdometry::set_velocity_rolling_window_size(size_t velocity_rolling
   reset_accumulators();
 }
 
+//TODO: change functions depending on fwd kinematics model
 double AckermannOdometry::convert_trans_rot_vel_to_steering_angle(
   double Vx, double theta_dot, double wheelbase)
 {
@@ -162,6 +162,7 @@ double AckermannOdometry::convert_trans_rot_vel_to_steering_angle(
   return std::atan(theta_dot * wheelbase / Vx);
 }
 
+//TODO: change functions depending on fwd kinematics model
 std::tuple<double, double> AckermannOdometry::twist_to_ackermann(double Vx, double theta_dot)
 {
   // using naming convention in http://users.isr.ist.utl.pt/~mir/cadeiras/robmovel/Kinematics.pdf
@@ -211,8 +212,9 @@ void AckermannOdometry::integrate_exact(double linear, double angular)
 
 void AckermannOdometry::reset_accumulators()
 {
-  linear_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
-  angular_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
+  linear_acc_ = RollingMeanAccumulator(velocity_rolling_window_size_);
+  angular_acc_ = RollingMeanAccumulator(velocity_rolling_window_size_);
+  // TODO: angular rolling window size?
 }
 
 }  // namespace ackermann_odometry
