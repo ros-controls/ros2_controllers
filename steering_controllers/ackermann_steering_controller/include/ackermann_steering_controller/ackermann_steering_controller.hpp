@@ -23,7 +23,6 @@
 #include <utility>
 #include <vector>
 
-#include "ackermann_odometry/ackermann_odometry.hpp"
 #include "ackermann_steering_controller/visibility_control.h"
 #include "ackermann_steering_controller_parameters.hpp"
 #include "controller_interface/chainable_controller_interface.hpp"
@@ -33,6 +32,7 @@
 #include "realtime_tools/realtime_buffer.h"
 #include "realtime_tools/realtime_publisher.h"
 #include "std_srvs/srv/set_bool.hpp"
+#include "steering_odometry/steering_odometry.hpp"
 
 // TODO(anyone): Replace with controller specific messages
 #include "ackermann_msgs/msg/ackermann_drive.hpp"
@@ -140,7 +140,7 @@ protected:
   };
 
   // Odometry related:
-  ackermann_odometry::AckermannOdometry odometry_;
+  steering_odometry::SteeringOdometry odometry_;
 
   using AckermanControllerState = custom_messages::msg::AckermanControllerState;
   ACKERMANN_STEERING_CONTROLLER__VISIBILITY_PUBLIC

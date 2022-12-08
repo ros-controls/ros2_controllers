@@ -19,17 +19,14 @@
  * Author: Dr. Ing. Denis Stogl
  */
 
-#include "ackermann_odometry/ackermann_odometry.hpp"
+#include "steering_odometry/steering_odometry.hpp"
 
 #include <cmath>
 #include <iostream>
 
-namespace ackermann_odometry
+namespace steering_odometry
 {
-// using namespace ackermann_steering_controller_ros2;
-// ackermann_steering_controller_ros2::Params params;
-
-AckermannOdometry::AckermannOdometry(size_t velocity_rolling_window_size)
+SteeringOdometry::SteeringOdometry(size_t velocity_rolling_window_size)
 : timestamp_(0.0),
   x_(0.0),
   y_(0.0),
@@ -44,12 +41,12 @@ AckermannOdometry::AckermannOdometry(size_t velocity_rolling_window_size)
   linear_acc_(velocity_rolling_window_size),
   angular_acc_(velocity_rolling_window_size),
   integrate_fun_(std::bind(
-    &AckermannOdometry::integrate_exact, this, std::placeholders::_1, std::placeholders::_2))
+    &SteeringOdometry::integrate_exact, this, std::placeholders::_1, std::placeholders::_2))
 
 {
 }
 
-void AckermannOdometry::init(const rclcpp::Time & time)
+void SteeringOdometry::init(const rclcpp::Time & time)
 {
   // Reset accumulators and timestamp:
   reset_accumulators();
@@ -57,7 +54,7 @@ void AckermannOdometry::init(const rclcpp::Time & time)
 }
 
 // TODO(destogl): enable also velocity interface to update using velocity from the rear wheel
-bool AckermannOdometry::update_from_position(
+bool SteeringOdometry::update_from_position(
   const double rear_wheel_pos, const double front_steer_pos, const double dt)
 {
   /// Get current wheel joint positions:
@@ -98,7 +95,7 @@ bool AckermannOdometry::update_from_position(
   return true;
 }
 
-bool AckermannOdometry::update_from_velocity(
+bool SteeringOdometry::update_from_velocity(
   const double rear_wheel_vel, const double front_steer_pos, const double dt)
 {
   // (right_wheel_est_vel + left_wheel_est_vel) * 0.5;
@@ -126,7 +123,7 @@ bool AckermannOdometry::update_from_velocity(
   return true;
 }
 
-void AckermannOdometry::update_open_loop(const double linear, const double angular, const double dt)
+void SteeringOdometry::update_open_loop(const double linear, const double angular, const double dt)
 {
   /// Save last linear and angular velocity:
   linear_ = linear;
@@ -136,7 +133,7 @@ void AckermannOdometry::update_open_loop(const double linear, const double angul
   integrate_fun_(linear * dt, angular * dt);
 }
 
-void AckermannOdometry::set_wheel_params(
+void SteeringOdometry::set_wheel_params(
   double wheel_separation, double wheel_radius, double wheelbase)
 {
   wheel_separation_ = wheel_separation;
@@ -144,7 +141,7 @@ void AckermannOdometry::set_wheel_params(
   wheelbase_ = wheelbase;
 }
 
-void AckermannOdometry::set_velocity_rolling_window_size(size_t velocity_rolling_window_size)
+void SteeringOdometry::set_velocity_rolling_window_size(size_t velocity_rolling_window_size)
 {
   velocity_rolling_window_size_ = velocity_rolling_window_size;
 
@@ -152,7 +149,7 @@ void AckermannOdometry::set_velocity_rolling_window_size(size_t velocity_rolling
 }
 
 //TODO: change functions depending on fwd kinematics model
-double AckermannOdometry::convert_trans_rot_vel_to_steering_angle(
+double SteeringOdometry::convert_trans_rot_vel_to_steering_angle(
   double Vx, double theta_dot, double wheelbase)
 {
   if (theta_dot == 0 || Vx == 0)
@@ -163,7 +160,7 @@ double AckermannOdometry::convert_trans_rot_vel_to_steering_angle(
 }
 
 //TODO: change functions depending on fwd kinematics model
-std::tuple<double, double> AckermannOdometry::twist_to_ackermann(double Vx, double theta_dot)
+std::tuple<double, double> SteeringOdometry::twist_to_ackermann(double Vx, double theta_dot)
 {
   // using naming convention in http://users.isr.ist.utl.pt/~mir/cadeiras/robmovel/Kinematics.pdf
   double alpha, Ws;
@@ -180,7 +177,7 @@ std::tuple<double, double> AckermannOdometry::twist_to_ackermann(double Vx, doub
   return std::make_tuple(alpha, Ws);
 }
 
-void AckermannOdometry::integrate_runge_kutta_2(double linear, double angular)
+void SteeringOdometry::integrate_runge_kutta_2(double linear, double angular)
 {
   const double direction = heading_ + angular * 0.5;
 
@@ -195,7 +192,7 @@ void AckermannOdometry::integrate_runge_kutta_2(double linear, double angular)
    * \param linear
    * \param angular
    */
-void AckermannOdometry::integrate_exact(double linear, double angular)
+void SteeringOdometry::integrate_exact(double linear, double angular)
 {
   if (fabs(angular) < 1e-6)
     integrate_runge_kutta_2(linear, angular);
@@ -210,11 +207,11 @@ void AckermannOdometry::integrate_exact(double linear, double angular)
   }
 }
 
-void AckermannOdometry::reset_accumulators()
+void SteeringOdometry::reset_accumulators()
 {
   linear_acc_ = RollingMeanAccumulator(velocity_rolling_window_size_);
   angular_acc_ = RollingMeanAccumulator(velocity_rolling_window_size_);
   // TODO: angular rolling window size?
 }
 
-}  // namespace ackermann_odometry
+}  // namespace steering_odometry

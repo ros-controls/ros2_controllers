@@ -22,6 +22,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   tf2_geometry_msgs
   ackermann_msgs
   custom_messages
+  steering_odometry
 )
 
 find_package(ament_cmake REQUIRED)
@@ -51,22 +52,6 @@ generate_parameter_library(ackermann_steering_controller_parameters
 )
 
 
-add_library(
-  ackermann_odometry
-  SHARED
-  src/ackermann_odometry.cpp
-)
-target_include_directories(ackermann_odometry PRIVATE include)
-ament_target_dependencies(ackermann_odometry ${THIS_PACKAGE_INCLUDE_DEPENDS})
-
-install(
-  TARGETS
-  ackermann_odometry
-  RUNTIME DESTINATION bin
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-)
-
 
 add_library(
   ackermann_steering_controller
@@ -74,7 +59,7 @@ add_library(
   src/ackermann_steering_controller.cpp
 )
 target_include_directories(ackermann_steering_controller PRIVATE include)
-target_link_libraries(ackermann_steering_controller ackermann_steering_controller_parameters ackermann_odometry)
+target_link_libraries(ackermann_steering_controller ackermann_steering_controller_parameters)
 ament_target_dependencies(ackermann_steering_controller ${THIS_PACKAGE_INCLUDE_DEPENDS})
 target_compile_definitions(ackermann_steering_controller PRIVATE "ACKERMANN_STEERING_CONTROLLER_BUILDING_DLL")
 

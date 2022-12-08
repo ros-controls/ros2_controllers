@@ -27,13 +27,13 @@
 #include <boost/function.hpp>
 #include "rcpputils/rolling_mean_accumulator.hpp"
 
-namespace ackermann_odometry
+namespace steering_odometry
 {
 /**
    * \brief The Odometry class handles odometry readings
    * (2D pose and velocity with related timestamp)
    */
-class AckermannOdometry
+class SteeringOdometry
 {
 public:
   /// Integration function, used to integrate the odometry:
@@ -47,7 +47,7 @@ public:
      *
      */
   // ackermann_steering_controller_ros2::Params params;
-  explicit AckermannOdometry(size_t velocity_rolling_window_size = 10);
+  explicit SteeringOdometry(size_t velocity_rolling_window_size = 10);
 
   /**
      * \brief Initialize the odometry
@@ -189,4 +189,4 @@ private:
   /// Integration function, used to integrate the odometry:
   IntegrationFunction integrate_fun_;
 };
-}  // namespace ackermann_odometry
+}  // namespace steering_odometry
