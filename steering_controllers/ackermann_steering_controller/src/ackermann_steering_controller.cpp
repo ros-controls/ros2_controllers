@@ -278,12 +278,12 @@ AckermannSteeringController::command_interface_configuration() const
   command_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
   command_interfaces_config.names.reserve(NR_CMD_ITFS);
 
-  for (int i = 0; i < params_.front_steer_names.size(); i++)
+  for (size_t i = 0; i < params_.front_steer_names.size(); i++)
   {
     command_interfaces_config.names.push_back(
       params_.rear_wheel_names[i] + "/" + hardware_interface::HW_IF_VELOCITY);
   }
-  for (int i = 0; i < params_.front_steer_names.size(); i++)
+  for (size_t i = 0; i < params_.front_steer_names.size(); i++)
   {
     command_interfaces_config.names.push_back(
       params_.front_steer_names[i] + "/" + hardware_interface::HW_IF_POSITION);
@@ -301,13 +301,13 @@ AckermannSteeringController::state_interface_configuration() const
   const auto rear_wheel_feedback = params_.position_feedback ? hardware_interface::HW_IF_POSITION
                                                              : hardware_interface::HW_IF_VELOCITY;
 
-  for (int i = 0; i < params_.front_steer_names.size(); i++)
+  for (size_t i = 0; i < params_.front_steer_names.size(); i++)
   {
     state_interfaces_config.names.push_back(
       params_.rear_wheel_names[i] + "/" + rear_wheel_feedback);
   }
 
-  for (int i = 0; i < params_.front_steer_names.size(); i++)
+  for (size_t i = 0; i < params_.front_steer_names.size(); i++)
   {
     state_interfaces_config.names.push_back(
       params_.front_steer_names[i] + "/" + hardware_interface::HW_IF_POSITION);

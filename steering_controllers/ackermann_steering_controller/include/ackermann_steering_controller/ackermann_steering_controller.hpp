@@ -127,7 +127,7 @@ protected:
 
   /// Odometry related:
   rclcpp::Duration publish_period_ = rclcpp::Duration::from_nanoseconds(0);
-  ;
+
   bool open_loop_;
   /// Velocity command related:
   struct Commands
@@ -143,7 +143,6 @@ protected:
   steering_odometry::SteeringOdometry odometry_;
 
   using AckermanControllerState = custom_messages::msg::AckermanControllerState;
-  ACKERMANN_STEERING_CONTROLLER__VISIBILITY_PUBLIC
   AckermanControllerState published_state_;
 
   using ControllerStatePublisher = realtime_tools::RealtimePublisher<AckermanControllerState>;
