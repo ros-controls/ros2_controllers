@@ -40,7 +40,8 @@
 #include "realtime_tools/realtime_publisher.h"
 #include "std_srvs/srv/empty.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"
-#include "tricycle_controller/odometry.hpp"
+//#include "tricycle_controller/odometry.hpp"
+#include "steering_odometry/steering_odometry.hpp"
 #include "tricycle_controller/steering_limiter.hpp"
 #include "tricycle_controller/traction_limiter.hpp"
 #include "tricycle_controller/visibility_control.h"
@@ -106,8 +107,6 @@ protected:
     const std::string & traction_joint_name, std::vector<TractionHandle> & joint);
   CallbackReturn get_steering(
     const std::string & steering_joint_name, std::vector<SteeringHandle> & joint);
-  double convert_trans_rot_vel_to_steering_angle(double v, double omega, double wheelbase);
-  std::tuple<double, double> twist_to_ackermann(double linear_command, double angular_command);
 
   std::string traction_joint_name_;
   std::string steering_joint_name_;
@@ -138,7 +137,7 @@ protected:
   std::shared_ptr<realtime_tools::RealtimePublisher<AckermannDrive>>
     realtime_ackermann_command_publisher_ = nullptr;
 
-  Odometry odometry_;
+  steering_odometry::SteeringOdometry odometry_;
 
   std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::Odometry>> odometry_publisher_ = nullptr;
   std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>>

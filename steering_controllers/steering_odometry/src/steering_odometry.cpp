@@ -177,6 +177,14 @@ std::tuple<double, double> SteeringOdometry::twist_to_ackermann(double Vx, doubl
   return std::make_tuple(alpha, Ws);
 }
 
+void SteeringOdometry::reset_odometry()
+{
+  x_ = 0.0;
+  y_ = 0.0;
+  heading_ = 0.0;
+  reset_accumulators();
+}
+
 void SteeringOdometry::integrate_runge_kutta_2(double linear, double angular)
 {
   const double direction = heading_ + angular * 0.5;
@@ -213,5 +221,4 @@ void SteeringOdometry::reset_accumulators()
   angular_acc_ = RollingMeanAccumulator(velocity_rolling_window_size_);
   // TODO: angular rolling window size?
 }
-
 }  // namespace steering_odometry

@@ -139,6 +139,11 @@ public:
      */
   std::tuple<double, double> twist_to_ackermann(double Vx, double theta_dot);
 
+  /**
+     *  \brief Reset poses, heading, and accumulators
+     */
+  void reset_odometry();
+
 private:
   /// Rolling mean accumulator and window:
   typedef rcpputils::RollingMeanAccumulator<double> RollingMeanAccumulator;

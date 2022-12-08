@@ -154,7 +154,7 @@ controller_interface::return_type TricycleController::update(
 
   if (odom_params_.open_loop)
   {
-    odometry_.updateOpenLoop(linear_command, angular_command, period);
+    odometry_.update_open_loop(linear_command, angular_command, period.seconds());
   }
   else
   {
@@ -163,11 +163,11 @@ controller_interface::return_type TricycleController::update(
       RCLCPP_ERROR(get_node()->get_logger(), "Could not read feedback value");
       return controller_interface::return_type::ERROR;
     }
-    odometry_.update(Ws_read, alpha_read, period);
+    odometry_.update_from_velocity(Ws_read, alpha_read, period.seconds());
   }
 
   tf2::Quaternion orientation;
-  orientation.setRPY(0.0, 0.0, odometry_.getHeading());
+  orientation.setRPY(0.0, 0.0, odometry_.get_heading());
 
   if (previous_publish_timestamp_ + publish_period_ < time)
   {
@@ -179,15 +179,15 @@ controller_interface::return_type TricycleController::update(
       odometry_message.header.stamp = time;
       if (!odom_params_.odom_only_twist)
       {
-        odometry_message.pose.pose.position.x = odometry_.getX();
-        odometry_message.pose.pose.position.y = odometry_.getY();
+        odometry_message.pose.pose.position.x = odometry_.get_x();
+        odometry_message.pose.pose.position.y = odometry_.get_y();
         odometry_message.pose.pose.orientation.x = orientation.x();
         odometry_message.pose.pose.orientation.y = orientation.y();
         odometry_message.pose.pose.orientation.z = orientation.z();
         odometry_message.pose.pose.orientation.w = orientation.w();
       }
-      odometry_message.twist.twist.linear.x = odometry_.getLinear();
-      odometry_message.twist.twist.angular.z = odometry_.getAngular();
+      odometry_message.twist.twist.linear.x = odometry_.get_linear();
+      odometry_message.twist.twist.angular.z = odometry_.get_angular();
       realtime_odometry_publisher_->unlockAndPublish();
     }
 
@@ -195,8 +195,8 @@ controller_interface::return_type TricycleController::update(
     {
       auto & transform = realtime_odometry_transform_publisher_->msg_.transforms.front();
       transform.header.stamp = time;
-      transform.transform.translation.x = odometry_.getX();
-      transform.transform.translation.y = odometry_.getY();
+      transform.transform.translation.x = odometry_.get_x();
+      transform.transform.translation.y = odometry_.get_y();
       transform.transform.rotation.x = orientation.x();
       transform.transform.rotation.y = orientation.y();
       transform.transform.rotation.z = orientation.z();
@@ -206,7 +206,7 @@ controller_interface::return_type TricycleController::update(
   }
 
   // Compute wheel velocity and angle
-  auto [alpha_write, Ws_write] = twist_to_ackermann(linear_command, angular_command);
+  auto [alpha_write, Ws_write] = odometry_.twist_to_ackermann(linear_command, angular_command);
 
   // Reduce wheel speed until the target angle has been reached
   double alpha_delta = abs(alpha_write - alpha_read);
@@ -281,8 +281,8 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
   wheel_params_.wheelbase = get_node()->get_parameter("wheelbase").as_double();
   wheel_params_.radius = get_node()->get_parameter("wheel_radius").as_double();
 
-  odometry_.setWheelParams(wheel_params_.wheelbase, wheel_params_.radius);
-  odometry_.setVelocityRollingWindowSize(
+  odometry_.set_wheel_params(wheel_params_.wheelbase, wheel_params_.radius, 0.0);
+  odometry_.set_velocity_rolling_window_size(
     get_node()->get_parameter("velocity_rolling_window_size").as_int());
 
   odom_params_.odom_frame_id = get_node()->get_parameter("odom_frame_id").as_string();
@@ -518,13 +518,13 @@ void TricycleController::reset_odometry(
   const std::shared_ptr<std_srvs::srv::Empty::Request> /*req*/,
   std::shared_ptr<std_srvs::srv::Empty::Response> /*res*/)
 {
-  odometry_.resetOdometry();
+  odometry_.reset_odometry();
   RCLCPP_INFO(get_node()->get_logger(), "Odometry successfully reset");
 }
 
 bool TricycleController::reset()
 {
-  odometry_.resetOdometry();
+  odometry_.reset_odometry();
 
   // release the old queue
   std::queue<AckermannDrive> empty_ackermann_drive;
@@ -635,33 +635,6 @@ CallbackReturn TricycleController::get_steering(
   // Create the steering joint instance
   joint.emplace_back(SteeringHandle{std::ref(*state_handle), std::ref(*command_handle)});
   return CallbackReturn::SUCCESS;
-}
-
-double TricycleController::convert_trans_rot_vel_to_steering_angle(
-  double Vx, double theta_dot, double wheelbase)
-{
-  if (theta_dot == 0 || Vx == 0)
-  {
-    return 0;
-  }
-  return std::atan(theta_dot * wheelbase / Vx);
-}
-
-std::tuple<double, double> TricycleController::twist_to_ackermann(double Vx, double theta_dot)
-{
-  // using naming convention in http://users.isr.ist.utl.pt/~mir/cadeiras/robmovel/Kinematics.pdf
-  double alpha, Ws;
-
-  if (Vx == 0 && theta_dot != 0)
-  {  // is spin action
-    alpha = theta_dot > 0 ? M_PI_2 : -M_PI_2;
-    Ws = abs(theta_dot) * wheel_params_.wheelbase / wheel_params_.radius;
-    return std::make_tuple(alpha, Ws);
-  }
-
-  alpha = convert_trans_rot_vel_to_steering_angle(Vx, theta_dot, wheel_params_.wheelbase);
-  Ws = Vx / (wheel_params_.radius * std::cos(alpha));
-  return std::make_tuple(alpha, Ws);
 }
 
 }  // namespace tricycle_controller
