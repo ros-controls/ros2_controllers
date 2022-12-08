@@ -6,20 +6,29 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 # find dependencies
+set(THIS_PACKAGE_INCLUDE_DEPENDS
+  controller_interface
+  hardware_interface
+  pluginlib
+  nav_msgs
+  std_srvs
+  geometry_msgs
+  rclcpp
+  rcpputils
+  rclcpp_lifecycle
+  realtime_tools
+  tf2
+  tf2_msgs
+  ackermann_msgs
+  steering_odometry
+)
+
 find_package(ament_cmake REQUIRED)
-find_package(controller_interface REQUIRED)
-find_package(hardware_interface REQUIRED)
-find_package(pluginlib REQUIRED)
-find_package(nav_msgs REQUIRED)
-find_package(std_srvs REQUIRED)
-find_package(geometry_msgs REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(rcpputils REQUIRED)
-find_package(rclcpp_lifecycle REQUIRED)
-find_package(realtime_tools REQUIRED)
-find_package(tf2 REQUIRED)
-find_package(tf2_msgs REQUIRED)
-find_package(ackermann_msgs REQUIRED)
+find_package(generate_parameter_library REQUIRED)
+foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
+  find_package(${Dependency} REQUIRED)
+endforeach()
+
 
 add_library(
   ${PROJECT_NAME}
@@ -37,20 +46,7 @@ target_include_directories(
 
 ament_target_dependencies(
   ${PROJECT_NAME}
-  ackermann_msgs
-  builtin_interfaces
-  controller_interface
-  geometry_msgs
-  hardware_interface
-  nav_msgs
-  std_srvs
-  pluginlib
-  rclcpp
-  rclcpp_lifecycle
-  rcpputils
-  realtime_tools
-  tf2
-  tf2_msgs
+  ${THIS_PACKAGE_INCLUDE_DEPENDS}
 )
 
 pluginlib_export_plugin_description_file(controller_interface tricycle_controller.xml)
@@ -108,11 +104,7 @@ ament_export_libraries(
   ${PROJECT_NAME}
 )
 ament_export_dependencies(
-  controller_interface
-  geometry_msgs
-  hardware_interface
-  rclcpp
-  rclcpp_lifecycle
+  ${THIS_PACKAGE_INCLUDE_DEPENDS}
 )
 
 ament_package()

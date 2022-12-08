@@ -31,16 +31,6 @@ foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
 
-cmake_minimum_required(VERSION 3.8)
-project(ackermann_steering_controller)
-
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic)
-endif()
-
-# find dependencies
-find_package(ament_cmake REQUIRED)
-
 set(msg_files
   msg/AckermanControllerState.msg
 )
@@ -54,21 +44,21 @@ generate_parameter_library(ackermann_steering_controller_parameters
 
 
 add_library(
-  ackermann_steering_controller
+  ${PROJECT_NAME}
   SHARED
   src/ackermann_steering_controller.cpp
 )
-target_include_directories(ackermann_steering_controller PRIVATE include)
-target_link_libraries(ackermann_steering_controller ackermann_steering_controller_parameters)
-ament_target_dependencies(ackermann_steering_controller ${THIS_PACKAGE_INCLUDE_DEPENDS})
-target_compile_definitions(ackermann_steering_controller PRIVATE "ACKERMANN_STEERING_CONTROLLER_BUILDING_DLL")
+target_include_directories(  ${PROJECT_NAME} PRIVATE include)
+target_link_libraries(${PROJECT_NAME} ackermann_steering_controller_parameters)
+ament_target_dependencies(${PROJECT_NAME} ${THIS_PACKAGE_INCLUDE_DEPENDS})
+target_compile_definitions(${PROJECT_NAME} PRIVATE "ACKERMANN_STEERING_CONTROLLER_BUILDING_DLL")
 
 pluginlib_export_plugin_description_file(
   controller_interface ackermann_steering_controller.xml)
 
 install(
   TARGETS
-  ackermann_steering_controller
+  ${PROJECT_NAME}
   RUNTIME DESTINATION bin
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -128,7 +118,7 @@ ament_export_include_directories(
 )
 
 ament_export_dependencies(
-
+  ${THIS_PACKAGE_INCLUDE_DEPENDS}
 )
 ament_export_libraries(
   ackermann_steering_controller
