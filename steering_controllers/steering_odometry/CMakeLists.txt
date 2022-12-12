@@ -31,16 +31,16 @@ if(BUILD_TESTING)
 endif()
 
 add_library(
-  steering_odometry
+  ${PROJECT_NAME}
   SHARED
   src/steering_odometry.cpp
 )
-target_include_directories(steering_odometry PRIVATE include)
-ament_target_dependencies(steering_odometry ${THIS_PACKAGE_INCLUDE_DEPENDS})
+target_include_directories(${PROJECT_NAME} PRIVATE include)
+ament_target_dependencies(${PROJECT_NAME} ${THIS_PACKAGE_INCLUDE_DEPENDS})
 
 install(
   TARGETS
-  steering_odometry
+  ${PROJECT_NAME}
   RUNTIME DESTINATION bin
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -60,7 +60,7 @@ ament_export_dependencies(
   ${THIS_PACKAGE_INCLUDE_DEPENDS}
 )
 ament_export_libraries(
-  steering_odometry
+  ${PROJECT_NAME}
 )
 
 ament_package()
