@@ -2,6 +2,9 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.15.0 (2022-12-06)
+-------------------
+
 2.14.0 (2022-11-18)
 -------------------
 * Fix parameter library export (`#448 <https://github.com/ros-controls/ros2_controllers/issues/448>`_)

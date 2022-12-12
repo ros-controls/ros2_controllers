@@ -2,6 +2,11 @@
 Changelog for package tricycle_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.15.0 (2022-12-06)
+-------------------
+* [TricycleController] Removed “publish period” functionality ⏱ #abi-break #behavior-break (`#468 <https://github.com/ros-controls/ros2_controllers/issues/468>`_)
+* Contributors: Robotgir, Denis Štogl
+
 2.14.0 (2022-11-18)
 -------------------
 * Include <string> to fix compilation error on macOS (`#467 <https://github.com/ros-controls/ros2_controllers/issues/467>`_)

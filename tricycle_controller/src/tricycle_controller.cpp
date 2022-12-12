@@ -71,7 +71,6 @@ CallbackReturn TricycleController::on_init()
     auto_declare<bool>("publish_ackermann_command", publish_ackermann_command_);
     auto_declare<int>("velocity_rolling_window_size", 10);
     auto_declare<bool>("use_stamped_vel", use_stamped_vel_);
-    auto_declare<double>("publish_rate", publish_rate_);
 
     auto_declare<double>("traction.max_velocity", NAN);
     auto_declare<double>("traction.min_velocity", NAN);
@@ -169,40 +168,35 @@ controller_interface::return_type TricycleController::update(
   tf2::Quaternion orientation;
   orientation.setRPY(0.0, 0.0, odometry_.getHeading());
 
-  if (previous_publish_timestamp_ + publish_period_ < time)
+  if (realtime_odometry_publisher_->trylock())
   {
-    previous_publish_timestamp_ += publish_period_;
-
-    if (realtime_odometry_publisher_->trylock())
+    auto & odometry_message = realtime_odometry_publisher_->msg_;
+    odometry_message.header.stamp = time;
+    if (!odom_params_.odom_only_twist)
     {
-      auto & odometry_message = realtime_odometry_publisher_->msg_;
-      odometry_message.header.stamp = time;
-      if (!odom_params_.odom_only_twist)
-      {
-        odometry_message.pose.pose.position.x = odometry_.getX();
-        odometry_message.pose.pose.position.y = odometry_.getY();
-        odometry_message.pose.pose.orientation.x = orientation.x();
-        odometry_message.pose.pose.orientation.y = orientation.y();
-        odometry_message.pose.pose.orientation.z = orientation.z();
-        odometry_message.pose.pose.orientation.w = orientation.w();
-      }
-      odometry_message.twist.twist.linear.x = odometry_.getLinear();
-      odometry_message.twist.twist.angular.z = odometry_.getAngular();
-      realtime_odometry_publisher_->unlockAndPublish();
+      odometry_message.pose.pose.position.x = odometry_.getX();
+      odometry_message.pose.pose.position.y = odometry_.getY();
+      odometry_message.pose.pose.orientation.x = orientation.x();
+      odometry_message.pose.pose.orientation.y = orientation.y();
+      odometry_message.pose.pose.orientation.z = orientation.z();
+      odometry_message.pose.pose.orientation.w = orientation.w();
     }
+    odometry_message.twist.twist.linear.x = odometry_.getLinear();
+    odometry_message.twist.twist.angular.z = odometry_.getAngular();
+    realtime_odometry_publisher_->unlockAndPublish();
+  }
 
-    if (odom_params_.enable_odom_tf && realtime_odometry_transform_publisher_->trylock())
-    {
-      auto & transform = realtime_odometry_transform_publisher_->msg_.transforms.front();
-      transform.header.stamp = time;
-      transform.transform.translation.x = odometry_.getX();
-      transform.transform.translation.y = odometry_.getY();
-      transform.transform.rotation.x = orientation.x();
-      transform.transform.rotation.y = orientation.y();
-      transform.transform.rotation.z = orientation.z();
-      transform.transform.rotation.w = orientation.w();
-      realtime_odometry_transform_publisher_->unlockAndPublish();
-    }
+  if (odom_params_.enable_odom_tf && realtime_odometry_transform_publisher_->trylock())
+  {
+    auto & transform = realtime_odometry_transform_publisher_->msg_.transforms.front();
+    transform.header.stamp = time;
+    transform.transform.translation.x = odometry_.getX();
+    transform.transform.translation.y = odometry_.getY();
+    transform.transform.rotation.x = orientation.x();
+    transform.transform.rotation.y = orientation.y();
+    transform.transform.rotation.z = orientation.z();
+    transform.transform.rotation.w = orientation.w();
+    realtime_odometry_transform_publisher_->unlockAndPublish();
   }
 
   // Compute wheel velocity and angle
@@ -304,9 +298,6 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
     std::chrono::milliseconds{get_node()->get_parameter("cmd_vel_timeout").as_int()};
   publish_ackermann_command_ = get_node()->get_parameter("publish_ackermann_command").as_bool();
   use_stamped_vel_ = get_node()->get_parameter("use_stamped_vel").as_bool();
-
-  publish_rate_ = get_node()->get_parameter("publish_rate").as_double();
-  publish_period_ = rclcpp::Duration::from_seconds(1.0 / publish_rate_);
 
   try
   {
@@ -420,8 +411,6 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
   auto & odometry_message = realtime_odometry_publisher_->msg_;
   odometry_message.header.frame_id = odom_params_.odom_frame_id;
   odometry_message.child_frame_id = odom_params_.base_frame_id;
-
-  previous_publish_timestamp_ = get_node()->get_clock()->now();
 
   // initialize odom values zeros
   odometry_message.twist =

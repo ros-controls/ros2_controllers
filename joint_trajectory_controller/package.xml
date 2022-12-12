@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="3">
   <name>joint_trajectory_controller</name>
-  <version>2.14.0</version>
+  <version>2.15.0</version>
   <description>Controller for executing joint-space trajectories on a group of joints</description>
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
   <maintainer email="jordan.palacios@pal-robotics.com">Jordan Palacios</maintainer>
@@ -22,11 +22,13 @@
   <depend>controller_interface</depend>
   <depend>control_msgs</depend>
   <depend>control_toolbox</depend>
+  <depend>generate_parameter_library</depend>
   <depend>hardware_interface</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_lifecycle</depend>
+  <depend>rsl</depend>
+  <depend>tl_expected</depend>
   <depend>trajectory_msgs</depend>
-  <depend>generate_parameter_library</depend>
 
   <test_depend>ament_cmake_gmock</test_depend>
   <test_depend>controller_manager</test_depend>

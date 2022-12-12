@@ -30,6 +30,12 @@ foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
 
+find_package(generate_parameter_library REQUIRED)
+
+generate_parameter_library(diff_drive_controller_parameters
+  src/diff_drive_controller_parameter.yaml
+)
+
 add_library(${PROJECT_NAME} SHARED
   src/diff_drive_controller.cpp
   src/odometry.cpp
@@ -39,6 +45,9 @@ target_include_directories(${PROJECT_NAME}
   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 ament_target_dependencies(${PROJECT_NAME} ${THIS_PACKAGE_INCLUDE_DEPENDS})
+target_link_libraries(${PROJECT_NAME}
+  diff_drive_controller_parameters
+)
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
 target_compile_definitions(${PROJECT_NAME} PRIVATE "DIFF_DRIVE_CONTROLLER_BUILDING_DLL")

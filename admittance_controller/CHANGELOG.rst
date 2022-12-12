@@ -2,6 +2,9 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.15.0 (2022-12-06)
+-------------------
+
 2.14.0 (2022-11-18)
 -------------------
 * Bring admittance_controller version up to speed
