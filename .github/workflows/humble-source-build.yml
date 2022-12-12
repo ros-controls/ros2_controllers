@@ -15,5 +15,5 @@ jobs:
     uses: ./.github/workflows/reusable-ros-tooling-source-build.yml
     with:
       ros_distro: humble
-      ref: master
+      ref: humble
       ros2_repo_branch: humble
