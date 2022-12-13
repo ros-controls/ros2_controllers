@@ -23,6 +23,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   ackermann_msgs
   custom_messages
   steering_odometry
+  steering_controllers
 )
 
 find_package(ament_cmake REQUIRED)
@@ -48,7 +49,7 @@ add_library(
   SHARED
   src/ackermann_steering_controller.cpp
 )
-target_include_directories(  ${PROJECT_NAME} PRIVATE include)
+target_include_directories(${PROJECT_NAME} PRIVATE include)
 target_link_libraries(${PROJECT_NAME} ackermann_steering_controller_parameters)
 ament_target_dependencies(${PROJECT_NAME} ${THIS_PACKAGE_INCLUDE_DEPENDS})
 target_compile_definitions(${PROJECT_NAME} PRIVATE "ACKERMANN_STEERING_CONTROLLER_BUILDING_DLL")
@@ -121,7 +122,7 @@ ament_export_dependencies(
   ${THIS_PACKAGE_INCLUDE_DEPENDS}
 )
 ament_export_libraries(
-  ackermann_steering_controller
+  ${PROJECT_NAME}
 )
 
 ament_package()

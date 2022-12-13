@@ -1,13 +1,11 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>ackermann_steering_controller</name>
+  <name>steering_controllers</name>
   <version>0.0.0</version>
-  <description>DESCRIPTION</description>
-  <maintainer email="giridhar6937@gmail.com">giridharvb</maintainer>
-  <license>MIT</license>
-
-  <buildtool_depend>ament_cmake</buildtool_depend>
+  <description>TODO: Package description</description>
+  <maintainer email="tomislav.petkovic.fer@gmail.com">tomislav</maintainer>
+  <license>TODO: License declaration</license>
 
   <build_depend>generate_parameter_library</build_depend>
 
@@ -28,7 +26,6 @@
   <depend>ackermann_msgs</depend>
   <depend>steering_odometry</depend>
   <depend>custom_messages</depend>
-  <depend>steering_controllers</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_cmake_gmock</test_depend>
