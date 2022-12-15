@@ -140,7 +140,7 @@ controller_interface::return_type JointTrajectoryController::update(
   // Check if a new external message has been received from nonRT threads
   auto current_external_msg = traj_external_point_ptr_->get_trajectory_msg();
   auto new_external_msg = traj_msg_external_point_ptr_.readFromRT();
-  const auto active_goal = *rt_active_goal_.readFromRT();
+  auto active_goal = *rt_active_goal_.readFromRT();
   if (current_external_msg != *new_external_msg)
   {
     fill_partial_goal(*new_external_msg);
@@ -168,8 +168,9 @@ controller_interface::return_type JointTrajectoryController::update(
   bool mismatch = false;
   if (!active_goal)
   {
-    const auto active_goal2 = *rt_active_goal_.readFromRT();
-    if (active_goal2)
+    active_goal = *rt_active_goal_.readFromRT();
+    // If the goal became active mid-update but the traj-msg is still old, then don't process
+    if (active_goal && current_external_msg == *new_external_msg)
     {
       mismatch = true;
     }
