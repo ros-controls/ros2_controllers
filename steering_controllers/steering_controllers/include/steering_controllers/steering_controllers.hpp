@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STEERING_CONTROLLERS__steering_controllers_HPP_
-#define STEERING_CONTROLLERS__steering_controllers_HPP_
+#ifndef STEERING_CONTROLLERS__STEERING_CONTROLLERS_HPP_
+#define STEERING_CONTROLLERS__STEERING_CONTROLLERS_HPP_
 
 #include <chrono>
 #include <cmath>
@@ -44,15 +44,6 @@
 
 namespace steering_controllers
 {
-// name constants for state interfaces
-static constexpr size_t NR_STATE_ITFS = 2;
-
-// name constants for command interfaces
-static constexpr size_t NR_CMD_ITFS = 2;
-
-// name constants for reference interfaces
-static constexpr size_t NR_REF_ITFS = 2;
-
 class SteeringControllers : public controller_interface::ChainableControllerInterface
 {
 public:
@@ -157,6 +148,13 @@ private:
 
   /// Whether to publish odometry to tf or not:
   bool enable_odom_tf_;
+  // name constants for state interfaces
+  size_t NR_STATE_ITFS = 2;
+
+  size_t NR_CMD_ITFS = 2;
+
+  // name constants for reference interfaces
+  size_t NR_REF_ITFS = 2;
 
   // store last velocity
   double last_linear_velocity_ = 0.0;

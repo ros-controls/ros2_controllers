@@ -12,11 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "steering_controllers/steering_controllers.hpp"
+#include "ackermann_steering_controller/ackermann_steering_controller.hpp"
 
 namespace ackermann_steering_controller
 {
-using AckermannSteeringController = steering_controllers::SteeringControllers;
+//using AckermannSteeringController = steering_controllers::SteeringControllers;
+AckermannSteeringController::AckermannSteeringController()
+: steering_controllers::SteeringControllers()
+{
+}
+controller_interface::CallbackReturn AckermannSteeringController::on_configure(
+  const rclcpp_lifecycle::State & /*previous_state*/)
+{
+  return controller_interface::CallbackReturn::ERROR;
+}
 }  // namespace ackermann_steering_controller
 
 #include "pluginlib/class_list_macros.hpp"
