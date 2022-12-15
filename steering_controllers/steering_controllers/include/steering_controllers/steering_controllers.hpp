@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef ACKERMANN_STEERING_CONTROLLER__ACKERMANN_STEERING_CONTROLLER_HPP_
-#define ACKERMANN_STEERING_CONTROLLER__ACKERMANN_STEERING_CONTROLLER_HPP_
+#ifndef STEERING_CONTROLLERS__steering_controllers_HPP_
+#define STEERING_CONTROLLERS__steering_controllers_HPP_
 
 #include <chrono>
 #include <cmath>
@@ -42,7 +42,7 @@
 #include "nav_msgs/msg/odometry.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"
 
-namespace ackermann_steering_controller
+namespace steering_controllers
 {
 // name constants for state interfaces
 static constexpr size_t NR_STATE_ITFS = 2;
@@ -53,39 +53,33 @@ static constexpr size_t NR_CMD_ITFS = 2;
 // name constants for reference interfaces
 static constexpr size_t NR_REF_ITFS = 2;
 
-class AckermannSteeringController : public controller_interface::ChainableControllerInterface
+class SteeringControllers : public controller_interface::ChainableControllerInterface
 {
 public:
-  ACKERMANN_STEERING_CONTROLLER__VISIBILITY_PUBLIC
-  AckermannSteeringController();
+  STEERING_CONTROLLERS__VISIBILITY_PUBLIC SteeringControllers();
 
-  ACKERMANN_STEERING_CONTROLLER__VISIBILITY_PUBLIC
-  controller_interface::CallbackReturn on_init() override;
+  STEERING_CONTROLLERS__VISIBILITY_PUBLIC controller_interface::CallbackReturn on_init() override;
 
-  ACKERMANN_STEERING_CONTROLLER__VISIBILITY_PUBLIC
-  controller_interface::InterfaceConfiguration command_interface_configuration() const override;
+  STEERING_CONTROLLERS__VISIBILITY_PUBLIC controller_interface::InterfaceConfiguration
+  command_interface_configuration() const override;
 
-  ACKERMANN_STEERING_CONTROLLER__VISIBILITY_PUBLIC
-  controller_interface::InterfaceConfiguration state_interface_configuration() const override;
+  STEERING_CONTROLLERS__VISIBILITY_PUBLIC controller_interface::InterfaceConfiguration
+  state_interface_configuration() const override;
 
-  ACKERMANN_STEERING_CONTROLLER__VISIBILITY_PUBLIC
-  controller_interface::CallbackReturn on_configure(
+  STEERING_CONTROLLERS__VISIBILITY_PUBLIC controller_interface::CallbackReturn on_configure(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  ACKERMANN_STEERING_CONTROLLER__VISIBILITY_PUBLIC
-  controller_interface::CallbackReturn on_activate(
+  STEERING_CONTROLLERS__VISIBILITY_PUBLIC controller_interface::CallbackReturn on_activate(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  ACKERMANN_STEERING_CONTROLLER__VISIBILITY_PUBLIC
-  controller_interface::CallbackReturn on_deactivate(
+  STEERING_CONTROLLERS__VISIBILITY_PUBLIC controller_interface::CallbackReturn on_deactivate(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  ACKERMANN_STEERING_CONTROLLER__VISIBILITY_PUBLIC
-  controller_interface::return_type update_reference_from_subscribers() override;
+  STEERING_CONTROLLERS__VISIBILITY_PUBLIC controller_interface::return_type
+  update_reference_from_subscribers() override;
 
-  ACKERMANN_STEERING_CONTROLLER__VISIBILITY_PUBLIC
-  controller_interface::return_type update_and_write_commands(
-    const rclcpp::Time & time, const rclcpp::Duration & period) override;
+  STEERING_CONTROLLERS__VISIBILITY_PUBLIC controller_interface::return_type
+  update_and_write_commands(const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
   // TODO(anyone): replace the state and command message types
   using ControllerReferenceMsg = geometry_msgs::msg::TwistStamped;
@@ -93,8 +87,8 @@ public:
   using ControllerStateMsgTf = tf2_msgs::msg::TFMessage;
 
 protected:
-  std::shared_ptr<ackermann_steering_controller::ParamListener> param_listener_;
-  ackermann_steering_controller::Params params_;
+  std::shared_ptr<steering_controllers::ParamListener> param_listener_;
+  steering_controllers::Params params_;
 
   // Command subscribers and Controller State publisher
   rclcpp::Subscription<ControllerReferenceMsg>::SharedPtr ref_subscriber_ = nullptr;
@@ -151,8 +145,8 @@ protected:
 
 private:
   // callback for topic interface
-  ACKERMANN_STEERING_CONTROLLER__VISIBILITY_LOCAL
-  void reference_callback(const std::shared_ptr<ControllerReferenceMsg> msg);
+  STEERING_CONTROLLERS__VISIBILITY_LOCAL void reference_callback(
+    const std::shared_ptr<ControllerReferenceMsg> msg);
   void reference_callback_unstamped(const std::shared_ptr<geometry_msgs::msg::Twist> msg);
 
   /// Frame to use for the robot base:
@@ -169,6 +163,6 @@ private:
   double last_angular_velocity_ = 0.0;
 };
 
-}  // namespace ackermann_steering_controller
+}  // namespace steering_controllers
 
-#endif  // ACKERMANN_STEERING_CONTROLLER__ACKERMANN_STEERING_CONTROLLER_HPP_
+#endif  // STEERING_CONTROLLERS__steering_controllers_HPP_

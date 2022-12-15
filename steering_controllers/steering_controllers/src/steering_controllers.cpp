@@ -43,8 +43,7 @@ static constexpr rmw_qos_profile_t rmw_qos_profile_services_hist_keep_all = {
   RMW_QOS_LIVELINESS_LEASE_DURATION_DEFAULT,
   false};
 
-using ControllerReferenceMsg =
-  ackermann_steering_controller::AckermannSteeringController::ControllerReferenceMsg;
+using ControllerReferenceMsg = steering_controllers::SteeringControllers::ControllerReferenceMsg;
 
 // called from RT control loop
 void reset_controller_reference_msg(
@@ -62,18 +61,15 @@ void reset_controller_reference_msg(
 
 }  // namespace
 
-namespace ackermann_steering_controller
+namespace steering_controllers
 {
-AckermannSteeringController::AckermannSteeringController()
-: controller_interface::ChainableControllerInterface()
-{
-}
+SteeringControllers::SteeringControllers() : controller_interface::ChainableControllerInterface() {}
 
-controller_interface::CallbackReturn AckermannSteeringController::on_init()
+controller_interface::CallbackReturn SteeringControllers::on_init()
 {
   try
   {
-    param_listener_ = std::make_shared<ackermann_steering_controller::ParamListener>(get_node());
+    param_listener_ = std::make_shared<steering_controllers::ParamListener>(get_node());
   }
   catch (const std::exception & e)
   {
@@ -84,7 +80,7 @@ controller_interface::CallbackReturn AckermannSteeringController::on_init()
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn AckermannSteeringController::on_configure(
+controller_interface::CallbackReturn SteeringControllers::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   params_ = param_listener_->get_params();
@@ -106,14 +102,13 @@ controller_interface::CallbackReturn AckermannSteeringController::on_configure(
   {
     ref_subscriber_ = get_node()->create_subscription<ControllerReferenceMsg>(
       "~/reference", subscribers_qos,
-      std::bind(&AckermannSteeringController::reference_callback, this, std::placeholders::_1));
+      std::bind(&SteeringControllers::reference_callback, this, std::placeholders::_1));
   }
   else
   {
     ref_subscriber_unstamped_ = get_node()->create_subscription<geometry_msgs::msg::Twist>(
       "~/reference_unstamped", subscribers_qos,
-      std::bind(
-        &AckermannSteeringController::reference_callback_unstamped, this, std::placeholders::_1));
+      std::bind(&SteeringControllers::reference_callback_unstamped, this, std::placeholders::_1));
   }
 
   std::shared_ptr<ControllerReferenceMsg> msg = std::make_shared<ControllerReferenceMsg>();
@@ -212,8 +207,7 @@ controller_interface::CallbackReturn AckermannSteeringController::on_configure(
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-void AckermannSteeringController::reference_callback(
-  const std::shared_ptr<ControllerReferenceMsg> msg)
+void SteeringControllers::reference_callback(const std::shared_ptr<ControllerReferenceMsg> msg)
 {
   // if no timestamp provided use current time for command timestamp
   if (msg->header.stamp.sec == 0 && msg->header.stamp.nanosec == 0u)
@@ -240,7 +234,7 @@ void AckermannSteeringController::reference_callback(
   }
 }
 
-void AckermannSteeringController::reference_callback_unstamped(
+void SteeringControllers::reference_callback_unstamped(
   const std::shared_ptr<geometry_msgs::msg::Twist> msg)
 {
   auto twist_stamped = *(input_ref_.readFromNonRT());
@@ -271,8 +265,8 @@ void AckermannSteeringController::reference_callback_unstamped(
   }
 }
 
-controller_interface::InterfaceConfiguration
-AckermannSteeringController::command_interface_configuration() const
+controller_interface::InterfaceConfiguration SteeringControllers::command_interface_configuration()
+  const
 {
   controller_interface::InterfaceConfiguration command_interfaces_config;
   command_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
@@ -291,8 +285,8 @@ AckermannSteeringController::command_interface_configuration() const
   return command_interfaces_config;
 }
 
-controller_interface::InterfaceConfiguration
-AckermannSteeringController::state_interface_configuration() const
+controller_interface::InterfaceConfiguration SteeringControllers::state_interface_configuration()
+  const
 {
   controller_interface::InterfaceConfiguration state_interfaces_config;
   state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
@@ -317,7 +311,7 @@ AckermannSteeringController::state_interface_configuration() const
 }
 
 std::vector<hardware_interface::CommandInterface>
-AckermannSteeringController::on_export_reference_interfaces()
+SteeringControllers::on_export_reference_interfaces()
 {
   reference_interfaces_.resize(NR_REF_ITFS, std::numeric_limits<double>::quiet_NaN());
 
@@ -335,13 +329,13 @@ AckermannSteeringController::on_export_reference_interfaces()
   return reference_interfaces;
 }
 
-bool AckermannSteeringController::on_set_chained_mode(bool chained_mode)
+bool SteeringControllers::on_set_chained_mode(bool chained_mode)
 {
   // Always accept switch to/from chained mode
   return true || chained_mode;
 }
 
-controller_interface::CallbackReturn AckermannSteeringController::on_activate(
+controller_interface::CallbackReturn SteeringControllers::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   // Set default value in command
@@ -350,7 +344,7 @@ controller_interface::CallbackReturn AckermannSteeringController::on_activate(
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn AckermannSteeringController::on_deactivate(
+controller_interface::CallbackReturn SteeringControllers::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   // TODO(anyone): depending on number of interfaces, use definitions, e.g., `CMD_MY_ITFS`,
@@ -362,7 +356,7 @@ controller_interface::CallbackReturn AckermannSteeringController::on_deactivate(
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::return_type AckermannSteeringController::update_reference_from_subscribers()
+controller_interface::return_type SteeringControllers::update_reference_from_subscribers()
 {
   auto current_ref = *(input_ref_.readFromRT());
   const auto age_of_last_command = get_node()->now() - (current_ref)->header.stamp;
@@ -387,7 +381,7 @@ controller_interface::return_type AckermannSteeringController::update_reference_
   return controller_interface::return_type::OK;
 }
 
-controller_interface::return_type AckermannSteeringController::update_and_write_commands(
+controller_interface::return_type SteeringControllers::update_and_write_commands(
   const rclcpp::Time & time, const rclcpp::Duration & period)
 {
   if (params_.open_loop)
@@ -495,10 +489,10 @@ controller_interface::return_type AckermannSteeringController::update_and_write_
   return controller_interface::return_type::OK;
 }
 
-}  // namespace ackermann_steering_controller
+}  // namespace steering_controllers
 
 // #include "pluginlib/class_list_macros.hpp"
 
 // PLUGINLIB_EXPORT_CLASS(
-//   ackermann_steering_controller::AckermannSteeringController,
+//   steering_controllers::SteeringControllers,
 //   controller_interface::ChainableControllerInterface)

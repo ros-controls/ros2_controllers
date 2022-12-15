@@ -1,4 +1,4 @@
-ackermann_steering_controller:
+steering_controllers:
   reference_timeout: {
     type: double,
     default_value: 1,
