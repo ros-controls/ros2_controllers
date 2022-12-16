@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef ACKERMANN_STEERING_CONTROLLER__STEERING_CONTROLLERS_HPP_
-#define ACKERMANN_STEERING_CONTROLLER__STEERING_CONTROLLERS_HPP_
+#ifndef ACKERMANN_STEERING_CONTROLLER__HPP_
+#define ACKERMANN_STEERING_CONTROLLER___HPP_
 
 #include "steering_controllers/steering_controllers.hpp"
 namespace ackermann_steering_controller
@@ -23,10 +23,10 @@ class AckermannSteeringController : public steering_controllers::SteeringControl
 public:
   AckermannSteeringController();
 
-  STEERING_CONTROLLERS__VISIBILITY_PUBLIC controller_interface::CallbackReturn on_configure(
-    const rclcpp_lifecycle::State & previous_state) override;
+  STEERING_CONTROLLERS__VISIBILITY_PUBLIC controller_interface::CallbackReturn configure_odometry()
+    override;
 };
 
 }  // namespace ackermann_steering_controller
 
-#endif  // STEERING_CONTROLLERS__steering_controllers_HPP_
+#endif  // ACKERMANN_STEERING_CONTROLLER__HPP_

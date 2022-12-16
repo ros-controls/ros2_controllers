@@ -80,8 +80,7 @@ controller_interface::CallbackReturn SteeringControllers::on_init()
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn SteeringControllers::on_configure(
-  const rclcpp_lifecycle::State & /*previous_state*/)
+controller_interface::CallbackReturn SteeringControllers::configure_odometry()
 {
   params_ = param_listener_->get_params();
 
@@ -91,6 +90,14 @@ controller_interface::CallbackReturn SteeringControllers::on_configure(
   odometry_.set_wheel_params(wheel_seperation, wheel_radius, wheelbase);
   odometry_.set_velocity_rolling_window_size(params_.velocity_rolling_window_size);
 
+  RCLCPP_INFO(get_node()->get_logger(), "odom configure successful");
+  return controller_interface::CallbackReturn::SUCCESS;
+}
+
+controller_interface::CallbackReturn SteeringControllers::on_configure(
+  const rclcpp_lifecycle::State & /*previous_state*/)
+{
+  auto odometry_conf_msg = configure_odometry();
   // topics QoS
   auto subscribers_qos = rclcpp::SystemDefaultsQoS();
   subscribers_qos.keep_last(1);

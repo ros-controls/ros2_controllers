@@ -21,11 +21,21 @@ AckermannSteeringController::AckermannSteeringController()
 : steering_controllers::SteeringControllers()
 {
 }
-controller_interface::CallbackReturn AckermannSteeringController::on_configure(
-  const rclcpp_lifecycle::State & /*previous_state*/)
+
+controller_interface::CallbackReturn AckermannSteeringController::configure_odometry()
 {
-  return controller_interface::CallbackReturn::ERROR;
+  params_ = param_listener_->get_params();
+
+  const double wheel_seperation = params_.wheel_separation_multiplier * params_.wheel_separation;
+  const double wheel_radius = params_.wheel_radius_multiplier * params_.wheel_radius;
+  const double wheelbase = params_.wheelbase_multiplier * params_.wheelbase;
+  odometry_.set_wheel_params(wheel_seperation, wheel_radius, wheelbase);
+  odometry_.set_velocity_rolling_window_size(params_.velocity_rolling_window_size);
+
+  RCLCPP_INFO(get_node()->get_logger(), "odom configure successful INSIDE ACKERMANN");
+  return controller_interface::CallbackReturn::SUCCESS;
 }
+
 }  // namespace ackermann_steering_controller
 
 #include "pluginlib/class_list_macros.hpp"

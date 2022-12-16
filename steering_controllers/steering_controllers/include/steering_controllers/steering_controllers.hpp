@@ -57,6 +57,9 @@ public:
   STEERING_CONTROLLERS__VISIBILITY_PUBLIC controller_interface::InterfaceConfiguration
   state_interface_configuration() const override;
 
+  virtual STEERING_CONTROLLERS__VISIBILITY_PUBLIC controller_interface::CallbackReturn
+  configure_odometry();
+
   STEERING_CONTROLLERS__VISIBILITY_PUBLIC controller_interface::CallbackReturn on_configure(
     const rclcpp_lifecycle::State & previous_state) override;
 
