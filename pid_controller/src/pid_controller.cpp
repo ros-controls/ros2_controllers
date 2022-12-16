@@ -23,8 +23,8 @@
 #include "controller_interface/helpers.hpp"
 
 // TODO(destogl): should we add some knowledge from the control there here?
-// The main knowledge could be with regard to the input (reference/state) and output (command) interfaces and their physical
-// meaning, for example:
+// The main knowledge could be with regard to the input (reference/state) and output (command)
+// interfaces and their physical meaning, for example:
 //
 // reference/state POSITION; command VELOCITY --> PI CONTROLLER
 // reference/state VELOCITY; command ACCELERATION --> PI CONTROLLER
@@ -133,9 +133,13 @@ controller_interface::CallbackReturn PidController::configure_parameters()
 
   for (size_t i = 0; i < dof_; ++i)
   {
+    // prefix should be interpreted as parameters prefix
     pids_[i] =
-      std::make_shared<control_toolbox::PidROS>(get_node(), "gains." + params_.dof_names[i]);
-    pids_[i]->initPid();
+      std::make_shared<control_toolbox::PidROS>(get_node(), "gains." + params_.dof_names[i], true);
+    if (!pids_[i]->initPid())
+    {
+      return CallbackReturn::FAILURE;
+    }
   }
 
   return CallbackReturn::SUCCESS;
@@ -168,8 +172,7 @@ controller_interface::CallbackReturn PidController::on_configure(
   if (params_.use_external_measured_states)
   {
     auto measured_state_callback =
-      [&](const std::shared_ptr<ControllerMeasuredStateMsg> msg) -> void
-    {
+      [&](const std::shared_ptr<ControllerMeasuredStateMsg> msg) -> void {
       // TODO(destogl): Sort the input values based on joint and interface names
       measured_state_.writeFromNonRT(msg);
     };
@@ -187,18 +190,17 @@ controller_interface::CallbackReturn PidController::on_configure(
   auto set_feedforward_control_callback =
     [&](
       const std::shared_ptr<ControllerModeSrvType::Request> request,
-      std::shared_ptr<ControllerModeSrvType::Response> response)
-  {
-    if (request->data)
-    {
-      control_mode_.writeFromNonRT(feedforward_mode_type::ON);
-    }
-    else
-    {
-      control_mode_.writeFromNonRT(feedforward_mode_type::OFF);
-    }
-    response->success = true;
-  };
+      std::shared_ptr<ControllerModeSrvType::Response> response) {
+      if (request->data)
+      {
+        control_mode_.writeFromNonRT(feedforward_mode_type::ON);
+      }
+      else
+      {
+        control_mode_.writeFromNonRT(feedforward_mode_type::OFF);
+      }
+      response->success = true;
+    };
 
   set_feedforward_control_service_ = get_node()->create_service<ControllerModeSrvType>(
     "~/set_feedforward_control", set_feedforward_control_callback,
@@ -412,12 +414,13 @@ controller_interface::return_type PidController::update_and_write_commands(
 
   if (params_.use_external_measured_states)
   {
+    const auto measured_state = *(measured_state_.readFromRT());
     for (size_t i = 0; i < dof_; ++i)
     {
-      measured_state_values_[i] = (*(measured_state_.readFromRT()))->values[i];
+      measured_state_values_[i] = measured_state->values[i];
       if (measured_state_values_.size() == 2 * dof_)
       {
-        measured_state_values_[dof_ + i] = (*(measured_state_.readFromRT()))->values_dot[i];
+        measured_state_values_[dof_ + i] = measured_state->values_dot[i];
       }
     }
   }
