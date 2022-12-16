@@ -219,7 +219,7 @@ TEST_P(TrajectoryControllerTestParameterized, activate_deactivate)
   // Execute trajectory
   // Deactivate
   // Activate
-  // Segfault
+  // Segfault without #423
   ActivateTrajectoryController();
   ASSERT_EQ(traj_controller_->get_state().id(), State::PRIMARY_STATE_ACTIVE);
   traj_controller_->get_node()->deactivate();
