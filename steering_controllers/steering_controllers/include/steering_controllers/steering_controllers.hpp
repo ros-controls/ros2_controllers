@@ -57,6 +57,9 @@ public:
   STEERING_CONTROLLERS__VISIBILITY_PUBLIC controller_interface::InterfaceConfiguration
   state_interface_configuration() const override;
 
+  STEERING_CONTROLLERS__VISIBILITY_PUBLIC controller_interface::CallbackReturn
+  set_interface_numbers(size_t nr_state_itfs, size_t nr_cmd_itfs, size_t nr_ref_itfs);
+
   virtual STEERING_CONTROLLERS__VISIBILITY_PUBLIC controller_interface::CallbackReturn
   configure_odometry();
 
@@ -137,6 +140,13 @@ protected:
   rclcpp::Publisher<AckermanControllerState>::SharedPtr controller_s_publisher_;
   std::unique_ptr<ControllerStatePublisher> controller_state_publisher_;
 
+  // name constants for state interfaces
+  size_t nr_state_itfs_;
+  // name constants for command interfaces
+  size_t nr_cmd_itfs_;
+  // name constants for reference interfaces
+  size_t nr_ref_itfs_;
+
 private:
   // callback for topic interface
   STEERING_CONTROLLERS__VISIBILITY_LOCAL void reference_callback(
@@ -151,13 +161,6 @@ private:
 
   /// Whether to publish odometry to tf or not:
   bool enable_odom_tf_;
-  // name constants for state interfaces
-  size_t NR_STATE_ITFS = 2;
-
-  size_t NR_CMD_ITFS = 2;
-
-  // name constants for reference interfaces
-  size_t NR_REF_ITFS = 2;
 
   // store last velocity
   double last_linear_velocity_ = 0.0;

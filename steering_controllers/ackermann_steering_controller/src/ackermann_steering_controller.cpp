@@ -32,6 +32,12 @@ controller_interface::CallbackReturn AckermannSteeringController::configure_odom
   odometry_.set_wheel_params(wheel_seperation, wheel_radius, wheelbase);
   odometry_.set_velocity_rolling_window_size(params_.velocity_rolling_window_size);
 
+  const size_t nr_state_itfs = 2;
+  const size_t nr_cmd_itfs = 2;
+  const size_t nr_ref_itfs = 2;
+
+  set_interface_numbers(nr_state_itfs, nr_cmd_itfs, nr_ref_itfs);
+
   RCLCPP_INFO(get_node()->get_logger(), "odom configure successful INSIDE ACKERMANN");
   return controller_interface::CallbackReturn::SUCCESS;
 }

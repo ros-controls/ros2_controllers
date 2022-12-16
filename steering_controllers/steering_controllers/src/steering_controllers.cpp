@@ -80,6 +80,14 @@ controller_interface::CallbackReturn SteeringControllers::on_init()
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
+controller_interface::CallbackReturn SteeringControllers::set_interface_numbers(
+  size_t nr_state_itfs = 2, size_t nr_cmd_itfs = 2, size_t nr_ref_itfs = 2)
+{
+  nr_state_itfs_ = nr_state_itfs;
+  nr_cmd_itfs_ = nr_cmd_itfs;
+  nr_ref_itfs_ = nr_ref_itfs;
+}
+
 controller_interface::CallbackReturn SteeringControllers::configure_odometry()
 {
   params_ = param_listener_->get_params();
@@ -89,6 +97,8 @@ controller_interface::CallbackReturn SteeringControllers::configure_odometry()
   const double wheelbase = params_.wheelbase_multiplier * params_.wheelbase;
   odometry_.set_wheel_params(wheel_seperation, wheel_radius, wheelbase);
   odometry_.set_velocity_rolling_window_size(params_.velocity_rolling_window_size);
+
+  set_interface_numbers();
 
   RCLCPP_INFO(get_node()->get_logger(), "odom configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
@@ -277,7 +287,7 @@ controller_interface::InterfaceConfiguration SteeringControllers::command_interf
 {
   controller_interface::InterfaceConfiguration command_interfaces_config;
   command_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
-  command_interfaces_config.names.reserve(NR_CMD_ITFS);
+  command_interfaces_config.names.reserve(nr_cmd_itfs_);
 
   for (size_t i = 0; i < params_.front_steer_names.size(); i++)
   {
@@ -298,7 +308,7 @@ controller_interface::InterfaceConfiguration SteeringControllers::state_interfac
   controller_interface::InterfaceConfiguration state_interfaces_config;
   state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
 
-  state_interfaces_config.names.reserve(NR_STATE_ITFS);
+  state_interfaces_config.names.reserve(nr_state_itfs_);
   const auto rear_wheel_feedback = params_.position_feedback ? hardware_interface::HW_IF_POSITION
                                                              : hardware_interface::HW_IF_VELOCITY;
 
@@ -320,10 +330,10 @@ controller_interface::InterfaceConfiguration SteeringControllers::state_interfac
 std::vector<hardware_interface::CommandInterface>
 SteeringControllers::on_export_reference_interfaces()
 {
-  reference_interfaces_.resize(NR_REF_ITFS, std::numeric_limits<double>::quiet_NaN());
+  reference_interfaces_.resize(nr_ref_itfs_, std::numeric_limits<double>::quiet_NaN());
 
   std::vector<hardware_interface::CommandInterface> reference_interfaces;
-  reference_interfaces.reserve(NR_REF_ITFS);
+  reference_interfaces.reserve(nr_ref_itfs_);
 
   reference_interfaces.push_back(hardware_interface::CommandInterface(
     get_node()->get_name(), std::string("linear/") + hardware_interface::HW_IF_VELOCITY,
@@ -356,7 +366,7 @@ controller_interface::CallbackReturn SteeringControllers::on_deactivate(
 {
   // TODO(anyone): depending on number of interfaces, use definitions, e.g., `CMD_MY_ITFS`,
   // instead of a loop
-  for (size_t i = 0; i < NR_CMD_ITFS; ++i)
+  for (size_t i = 0; i < nr_cmd_itfs_; ++i)
   {
     command_interfaces_[i].set_value(std::numeric_limits<double>::quiet_NaN());
   }
