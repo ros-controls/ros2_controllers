@@ -42,8 +42,6 @@ generate_parameter_library(ackermann_steering_controller_parameters
   # include/ackermann_steering_controller/validate_ackermann_steering_controller_parameters.hpp
 )
 
-
-
 add_library(
   ${PROJECT_NAME}
   SHARED
