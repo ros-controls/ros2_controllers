@@ -1,7 +1,0 @@
-std_msgs/Header header
-nav_msgs/Odometry odom
-float64 rear_wheel_position
-float64 rear_wheel_velocity
-float64 steer_position
-float64 linear_velocity_command
-float64 steering_angle_command

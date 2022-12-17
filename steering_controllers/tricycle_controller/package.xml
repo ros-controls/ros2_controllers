@@ -23,6 +23,8 @@
   <depend>tf2</depend>
   <depend>tf2_msgs</depend>
   <depend>ackermann_msgs</depend>
+  <depend>steering_controllers</depend>
+  <depend>stering_odometry</depend>
 
   <build_depend>pluginlib</build_depend>
 

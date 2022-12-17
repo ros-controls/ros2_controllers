@@ -21,7 +21,6 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   tf2_msgs
   tf2_geometry_msgs
   ackermann_msgs
-  custom_messages
   steering_odometry
 )
 

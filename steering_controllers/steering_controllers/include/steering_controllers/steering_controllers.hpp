@@ -36,7 +36,7 @@
 
 // TODO(anyone): Replace with controller specific messages
 #include "ackermann_msgs/msg/ackermann_drive.hpp"
-#include "custom_messages/msg/ackerman_controller_state.hpp"
+#include "control_msgs/msg/steering_controller_status.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
@@ -133,7 +133,7 @@ protected:
   // Odometry related:
   steering_odometry::SteeringOdometry odometry_;
 
-  using AckermanControllerState = custom_messages::msg::AckermanControllerState;
+  using AckermanControllerState = control_msgs::msg::SteeringControllerStatus;
   AckermanControllerState published_state_;
 
   using ControllerStatePublisher = realtime_tools::RealtimePublisher<AckermanControllerState>;
