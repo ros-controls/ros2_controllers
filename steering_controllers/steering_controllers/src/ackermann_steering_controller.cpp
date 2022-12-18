@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "ackermann_steering_controller/ackermann_steering_controller.hpp"
+#include "steering_controllers/ackermann_steering_controller.hpp"
 
 namespace ackermann_steering_controller
 {

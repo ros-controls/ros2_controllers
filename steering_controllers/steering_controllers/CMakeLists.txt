@@ -34,6 +34,7 @@ add_library(
   ${PROJECT_NAME}
   SHARED
   src/steering_controllers.cpp
+  src/ackermann_steering_controller.cpp
 )
 generate_parameter_library(steering_controllers_parameters
   src/steering_controllers.yaml
@@ -47,8 +48,8 @@ target_link_libraries(${PROJECT_NAME} steering_controllers_parameters)
 ament_target_dependencies(${PROJECT_NAME} ${THIS_PACKAGE_INCLUDE_DEPENDS})
 target_compile_definitions(${PROJECT_NAME} PRIVATE "STEERING_CONTROLLERS_BUILDING_DLL")
 
-# pluginlib_export_plugin_description_file(
-#   controller_interface ackermann_steering_controller.xml)
+pluginlib_export_plugin_description_file(
+  controller_interface steering_controllers.xml)
 
 install(
   TARGETS
