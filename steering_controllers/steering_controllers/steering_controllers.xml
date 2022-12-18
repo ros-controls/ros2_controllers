@@ -5,4 +5,10 @@
     AckermannSteeringController ros2_control controller.
   </description>
   </class>
+  <class name="bicycle_steering_controller/BicycleSteeringController"
+         type="bicycle_steering_controller::BicycleSteeringController" base_class_type="controller_interface::ChainableControllerInterface">
+  <description>
+    BicycleSteeringController ros2_control controller.
+  </description>
+  </class>
 </library>

@@ -16,6 +16,7 @@
 #define ACKERMANN_STEERING_CONTROLLER___HPP_
 
 #include "steering_controllers/steering_controllers.hpp"
+
 namespace ackermann_steering_controller
 {
 class AckermannSteeringController : public steering_controllers::SteeringControllers
@@ -26,7 +27,18 @@ public:
   STEERING_CONTROLLERS__VISIBILITY_PUBLIC controller_interface::CallbackReturn configure_odometry()
     override;
 };
-
 }  // namespace ackermann_steering_controller
+
+namespace bicycle_steering_controller
+{
+class BicycleSteeringController : public steering_controllers::SteeringControllers
+{
+public:
+  BicycleSteeringController();
+
+  STEERING_CONTROLLERS__VISIBILITY_PUBLIC controller_interface::CallbackReturn configure_odometry()
+    override;
+};
+}  // namespace bicycle_steering_controller
 
 #endif  // ACKERMANN_STEERING_CONTROLLER__HPP_
