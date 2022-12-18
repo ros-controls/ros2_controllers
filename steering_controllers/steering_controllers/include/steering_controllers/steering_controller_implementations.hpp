@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef ACKERMANN_STEERING_CONTROLLER__HPP_
-#define ACKERMANN_STEERING_CONTROLLER___HPP_
+#ifndef STEERING_CONTROLLERS_IMPLEMENTATIONS_HPP_
+#define STEERING_CONTROLLERS_IMPLEMENTATIONS_HPP_
 
 #include "steering_controllers/steering_controllers.hpp"
 
@@ -41,4 +41,4 @@ public:
 };
 }  // namespace bicycle_steering_controller
 
-#endif  // ACKERMANN_STEERING_CONTROLLER__HPP_
+#endif  // STEERING_CONTROLLERS_IMPLEMENTATIONS_HPP_
