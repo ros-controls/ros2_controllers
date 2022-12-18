@@ -3,9 +3,11 @@
 <package format="3">
   <name>steering_controllers</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
-  <maintainer email="tomislav.petkovic.fer@gmail.com">tomislav</maintainer>
-  <license>TODO: License declaration</license>
+  <description>Package for steering robot configurations including odometry and interfaces.</description>
+  <license>Apache License 2.0</license>
+  <maintainer email="tomislav.petkovic.fer@gmail.com">dr. sc. Tomislav Petkovic</maintainer>
+  <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
+  <maintainer email="denis.stogl@stoglrobotics.de">Dr.-Ing. Denis Štogl</maintainer>
 
   <build_depend>generate_parameter_library</build_depend>
 
