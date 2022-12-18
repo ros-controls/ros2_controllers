@@ -34,7 +34,7 @@ add_library(
   ${PROJECT_NAME}
   SHARED
   src/steering_controllers.cpp
-  src/ackermann_steering_controller.cpp
+  src/steering_controller_implementations.cpp
 )
 generate_parameter_library(steering_controllers_parameters
   src/steering_controllers.yaml
