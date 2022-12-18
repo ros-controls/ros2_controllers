@@ -31,13 +31,14 @@ controller_interface::CallbackReturn AckermannSteeringController::configure_odom
   odometry_.set_wheel_params(wheel_seperation, wheel_radius, wheelbase);
   odometry_.set_velocity_rolling_window_size(params_.velocity_rolling_window_size);
 
-  const size_t nr_state_itfs = 2;
-  const size_t nr_cmd_itfs = 2;
+  // TODO: enable position/velocity configure
+  const size_t nr_state_itfs = 4;
+  const size_t nr_cmd_itfs = 4;
   const size_t nr_ref_itfs = 2;
 
   set_interface_numbers(nr_state_itfs, nr_cmd_itfs, nr_ref_itfs);
 
-  RCLCPP_INFO(get_node()->get_logger(), "odom configure successful INSIDE ACKERMANN");
+  RCLCPP_INFO(get_node()->get_logger(), "ackermann odom configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
 }
 }  // namespace ackermann_steering_controller
@@ -58,16 +59,46 @@ controller_interface::CallbackReturn BicycleSteeringController::configure_odomet
   odometry_.set_wheel_params(wheel_seperation, wheel_radius, wheelbase);
   odometry_.set_velocity_rolling_window_size(params_.velocity_rolling_window_size);
 
+  // TODO: enable position/velocity configure
   const size_t nr_state_itfs = 2;
   const size_t nr_cmd_itfs = 2;
   const size_t nr_ref_itfs = 2;
 
   set_interface_numbers(nr_state_itfs, nr_cmd_itfs, nr_ref_itfs);
 
-  RCLCPP_INFO(get_node()->get_logger(), "odom configure successful INSIDE ACKERMANN");
+  RCLCPP_INFO(get_node()->get_logger(), "bicycle odom configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
 }
 }  // namespace bicycle_steering_controller
+
+namespace tricycle_steering_controller
+{
+TricycleSteeringController::TricycleSteeringController()
+: steering_controllers::SteeringControllers()
+{
+}
+
+controller_interface::CallbackReturn TricycleSteeringController::configure_odometry()
+{
+  params_ = param_listener_->get_params();
+
+  const double wheel_seperation = params_.wheel_separation_multiplier * params_.wheel_separation;
+  const double wheel_radius = params_.wheel_radius_multiplier * params_.wheel_radius;
+  const double wheelbase = params_.wheelbase_multiplier * params_.wheelbase;
+  odometry_.set_wheel_params(wheel_seperation, wheel_radius, wheelbase);
+  odometry_.set_velocity_rolling_window_size(params_.velocity_rolling_window_size);
+
+  // TODO: enable position/velocity configure
+  const size_t nr_state_itfs = 3;
+  const size_t nr_cmd_itfs = 2;
+  const size_t nr_ref_itfs = 2;
+
+  set_interface_numbers(nr_state_itfs, nr_cmd_itfs, nr_ref_itfs);
+
+  RCLCPP_INFO(get_node()->get_logger(), "ackermann odom configure successful");
+  return controller_interface::CallbackReturn::SUCCESS;
+}
+}  // namespace tricycle_steering_controller
 
 #include "pluginlib/class_list_macros.hpp"
 
@@ -77,4 +108,8 @@ PLUGINLIB_EXPORT_CLASS(
 
 PLUGINLIB_EXPORT_CLASS(
   bicycle_steering_controller::BicycleSteeringController,
+  controller_interface::ChainableControllerInterface)
+
+PLUGINLIB_EXPORT_CLASS(
+  tricycle_steering_controller::TricycleSteeringController,
   controller_interface::ChainableControllerInterface)

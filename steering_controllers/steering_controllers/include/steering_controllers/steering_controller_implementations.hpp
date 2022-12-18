@@ -41,4 +41,16 @@ public:
 };
 }  // namespace bicycle_steering_controller
 
+namespace tricycle_steering_controller
+{
+class TricycleSteeringController : public steering_controllers::SteeringControllers
+{
+public:
+  TricycleSteeringController();
+
+  STEERING_CONTROLLERS__VISIBILITY_PUBLIC controller_interface::CallbackReturn configure_odometry()
+    override;
+};
+}  // namespace tricycle_steering_controller
+
 #endif  // STEERING_CONTROLLERS_IMPLEMENTATIONS_HPP_
