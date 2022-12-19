@@ -30,9 +30,9 @@
 #include "realtime_tools/realtime_buffer.h"
 #include "realtime_tools/realtime_publisher.h"
 #include "std_srvs/srv/set_bool.hpp"
+#include "steering_controllers/steering_odometry.hpp"
 #include "steering_controllers/visibility_control.h"
 #include "steering_controllers_parameters.hpp"
-#include "steering_odometry/steering_odometry.hpp"
 
 // TODO(anyone): Replace with controller specific messages
 #include "ackermann_msgs/msg/ackermann_drive.hpp"

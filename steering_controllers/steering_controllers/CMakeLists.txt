@@ -21,7 +21,6 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   tf2_msgs
   tf2_geometry_msgs
   ackermann_msgs
-  steering_odometry
 )
 
 find_package(ament_cmake REQUIRED)
@@ -34,6 +33,7 @@ add_library(
   ${PROJECT_NAME}
   SHARED
   src/steering_controllers.cpp
+  src/steering_odometry.cpp
   src/steering_controller_implementations.cpp
 )
 generate_parameter_library(steering_controllers_parameters

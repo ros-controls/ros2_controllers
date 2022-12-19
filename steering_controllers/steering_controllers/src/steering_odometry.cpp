@@ -19,7 +19,7 @@
  * Author: Dr. Ing. Denis Stogl
  */
 
-#include "steering_odometry/steering_odometry.hpp"
+#include "steering_controllers/steering_odometry.hpp"
 
 #include <cmath>
 #include <iostream>
