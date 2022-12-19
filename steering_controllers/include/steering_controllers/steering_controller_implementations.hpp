@@ -38,6 +38,9 @@ public:
 
   STEERING_CONTROLLERS__VISIBILITY_PUBLIC controller_interface::CallbackReturn configure_odometry()
     override;
+
+  STEERING_CONTROLLERS__VISIBILITY_PUBLIC bool update_odometry(
+    const rclcpp::Duration & period) override;
 };
 }  // namespace bicycle_steering_controller
 
@@ -50,6 +53,8 @@ public:
 
   STEERING_CONTROLLERS__VISIBILITY_PUBLIC controller_interface::CallbackReturn configure_odometry()
     override;
+  STEERING_CONTROLLERS__VISIBILITY_PUBLIC bool update_odometry(
+    const rclcpp::Duration & period) override;
 };
 }  // namespace tricycle_steering_controller
 

@@ -68,6 +68,33 @@ controller_interface::CallbackReturn BicycleSteeringController::configure_odomet
   RCLCPP_INFO(get_node()->get_logger(), "bicycle odom configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
 }
+
+bool BicycleSteeringController::update_odometry(const rclcpp::Duration & period)
+{
+  if (params_.open_loop)
+  {
+    odometry_.update_open_loop(last_linear_velocity_, last_angular_velocity_, period.seconds());
+  }
+  else
+  {
+    const double rear_wheel_value = state_interfaces_[0].get_value();
+    const double steer_position = state_interfaces_[1].get_value() * params_.steer_pos_multiplier;
+    if (!std::isnan(rear_wheel_value) && !std::isnan(steer_position))
+    {
+      if (params_.position_feedback)
+      {
+        // Estimate linear and angular velocity using joint information
+        odometry_.update_from_position(rear_wheel_value, steer_position, period.seconds());
+      }
+      else
+      {
+        // Estimate linear and angular velocity using joint information
+        odometry_.update_from_velocity(rear_wheel_value, steer_position, period.seconds());
+      }
+    }
+  }
+  return true;
+}
 }  // namespace bicycle_steering_controller
 
 namespace tricycle_steering_controller
@@ -89,7 +116,7 @@ controller_interface::CallbackReturn TricycleSteeringController::configure_odome
 
   // TODO: enable position/velocity configure
   const size_t nr_state_itfs = 3;
-  const size_t nr_cmd_itfs = 2;
+  const size_t nr_cmd_itfs = 3;
   const size_t nr_ref_itfs = 2;
 
   set_interface_numbers(nr_state_itfs, nr_cmd_itfs, nr_ref_itfs);
@@ -97,6 +124,39 @@ controller_interface::CallbackReturn TricycleSteeringController::configure_odome
   RCLCPP_INFO(get_node()->get_logger(), "ackermann odom configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
 }
+
+bool TricycleSteeringController::update_odometry(const rclcpp::Duration & period)
+{
+  if (params_.open_loop)
+  {
+    odometry_.update_open_loop(last_linear_velocity_, last_angular_velocity_, period.seconds());
+  }
+  else
+  {
+    const double rear_right_wheel_value = state_interfaces_[0].get_value();
+    const double rear_left_wheel_value = state_interfaces_[1].get_value();
+    const double steer_position = state_interfaces_[2].get_value() * params_.steer_pos_multiplier;
+    if (
+      !std::isnan(rear_right_wheel_value) && !std::isnan(rear_left_wheel_value) &&
+      !std::isnan(steer_position))
+    {
+      if (params_.position_feedback)
+      {
+        // Estimate linear and angular velocity using joint information
+        odometry_.update_from_position(
+          rear_right_wheel_value, rear_left_wheel_value, steer_position, period.seconds());
+      }
+      else
+      {
+        // Estimate linear and angular velocity using joint information
+        odometry_.update_from_velocity(
+          rear_right_wheel_value, rear_left_wheel_value, steer_position, period.seconds());
+      }
+    }
+  }
+  return true;
+}
+
 }  // namespace tricycle_steering_controller
 
 #include "pluginlib/class_list_macros.hpp"

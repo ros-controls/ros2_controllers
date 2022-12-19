@@ -60,6 +60,9 @@ public:
   virtual STEERING_CONTROLLERS__VISIBILITY_PUBLIC controller_interface::CallbackReturn
   configure_odometry();
 
+  virtual STEERING_CONTROLLERS__VISIBILITY_PUBLIC bool update_odometry(
+    const rclcpp::Duration & period);
+
   STEERING_CONTROLLERS__VISIBILITY_PUBLIC controller_interface::CallbackReturn on_configure(
     const rclcpp_lifecycle::State & previous_state) override;
 
@@ -124,15 +127,15 @@ protected:
   STEERING_CONTROLLERS__VISIBILITY_PROTECTED controller_interface::CallbackReturn
   set_interface_numbers(size_t nr_state_itfs, size_t nr_cmd_itfs, size_t nr_ref_itfs);
 
+  // store last velocity
+  double last_linear_velocity_ = 0.0;
+  double last_angular_velocity_ = 0.0;
+
 private:
   // callback for topic interface
   STEERING_CONTROLLERS__VISIBILITY_LOCAL void reference_callback(
     const std::shared_ptr<ControllerReferenceMsg> msg);
   void reference_callback_unstamped(const std::shared_ptr<geometry_msgs::msg::Twist> msg);
-
-  // store last velocity
-  double last_linear_velocity_ = 0.0;
-  double last_angular_velocity_ = 0.0;
 };
 
 }  // namespace steering_controllers

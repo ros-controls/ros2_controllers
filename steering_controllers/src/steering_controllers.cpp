@@ -388,32 +388,16 @@ controller_interface::return_type SteeringControllers::update_reference_from_sub
   return controller_interface::return_type::OK;
 }
 
+bool SteeringControllers::update_odometry(const rclcpp::Duration & period)
+{
+  RCLCPP_INFO(get_node()->get_logger(), "Odometry update not implemented");
+  return false;
+}
+
 controller_interface::return_type SteeringControllers::update_and_write_commands(
   const rclcpp::Time & time, const rclcpp::Duration & period)
 {
-  if (params_.open_loop)
-  {
-    odometry_.update_open_loop(last_linear_velocity_, last_angular_velocity_, period.seconds());
-  }
-  else
-  {
-    const double rear_wheel_value = state_interfaces_[0].get_value();
-    const double steer_position = state_interfaces_[1].get_value() * params_.steer_pos_multiplier;
-
-    if (!std::isnan(rear_wheel_value) && !std::isnan(steer_position))
-    {
-      if (params_.position_feedback)
-      {
-        // Estimate linear and angular velocity using joint information
-        odometry_.update_from_position(rear_wheel_value, steer_position, period.seconds());
-      }
-      else
-      {
-        // Estimate linear and angular velocity using joint information
-        odometry_.update_from_velocity(rear_wheel_value, steer_position, period.seconds());
-      }
-    }
-  }
+  update_odometry(period);
 
   // MOVE ROBOT
 

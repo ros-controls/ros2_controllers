@@ -59,8 +59,13 @@ public:
      * \param dt      time difference to last call
      * \return true if the odometry is actually updated
      */
+
   bool update_from_position(
     const double rear_wheel_pos, const double front_steer_pos, const double dt);
+
+  bool update_from_position(
+    const double rear_right_wheel_pos, const double rear_left_wheel_pos,
+    const double front_steer_pos, const double dt);
 
   /**
      * \brief Updates the odometry class with latest wheels position
@@ -71,6 +76,10 @@ public:
      */
   bool update_from_velocity(
     const double rear_wheel_vel, const double front_steer_pos, const double dt);
+
+  bool update_from_velocity(
+    const double rear_right_wheel_vel, const double rear_left_wheel_vel,
+    const double front_steer_pos, const double dt);
 
   /**
      * \brief Updates the odometry class with latest velocity command
@@ -123,13 +132,6 @@ public:
   void set_velocity_rolling_window_size(size_t velocity_rolling_window_size);
 
   /**
-    * \brief TODO
-    * \param Vx  TODO
-    * \param theta_dot TODO
-    */
-  double convert_trans_rot_vel_to_steering_angle(double Vx, double theta_dot);
-
-  /**
      * \brief TODO
      * \param Vx  TODO
      * \param theta_dot TODO
@@ -143,6 +145,13 @@ public:
 
 private:
   /**
+     * \brief Uses precomputed linear and angular velocities to compute dometry and update accumulators
+     * \param linear  Linear  velocity   [m] (linear  displacement, i.e. m/s * dt) computed by previous odometry method
+     * \param angular Angular velocity [rad] (angular displacement, i.e. m/s * dt) computed by previous odometry method
+     */
+  bool update_odometry(const double linear_velocity, const double angular, const double dt);
+
+  /**
      * \brief Integrates the velocities (linear and angular) using 2nd order Runge-Kutta
      * \param linear  Linear  velocity   [m] (linear  displacement, i.e. m/s * dt) computed by encoders
      * \param angular Angular velocity [rad] (angular displacement, i.e. m/s * dt) computed by encoders
@@ -155,6 +164,13 @@ private:
      * \param angular Angular velocity [rad] (angular displacement, i.e. m/s * dt) computed by encoders
      */
   void integrate_exact(double linear, double angular);
+
+  /**
+    * \brief TODO
+    * \param Vx  TODO
+    * \param theta_dot TODO
+    */
+  double convert_trans_rot_vel_to_steering_angle(double Vx, double theta_dot);
 
   /**
      *  \brief Reset linear and angular accumulators
@@ -179,7 +195,8 @@ private:
 
   /// Previous wheel position/state [rad]:
   double rear_wheel_old_pos_;
-
+  double rear_right_wheel_old_pos_;
+  double rear_left_wheel_old_pos_;
   /// Rolling mean accumulators for the linar and angular velocities:
   size_t velocity_rolling_window_size_;
   rcpputils::RollingMeanAccumulator<double> linear_acc_;
