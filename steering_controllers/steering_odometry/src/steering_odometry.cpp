@@ -134,10 +134,10 @@ void SteeringOdometry::update_open_loop(const double linear, const double angula
 }
 
 void SteeringOdometry::set_wheel_params(
-  double wheel_separation, double wheel_radius, double wheelbase)
+  double wheel_radius, double wheel_separation, double wheelbase)
 {
-  wheel_separation_ = wheel_separation;
   wheel_radius_ = wheel_radius;
+  wheel_separation_ = wheel_separation;
   wheelbase_ = wheelbase;
 }
 

@@ -114,9 +114,10 @@ public:
   double get_angular() const { return angular_; }
 
   /**
-     * \brief Sets the wheel parameters: radius and separation
+     * \brief Sets the wheel parameters: radius, separation and wheelbase
      */
-  void set_wheel_params(double wheel_reparation_h, double wheel_radius, double wheelbase);
+  void set_wheel_params(
+    double wheel_radius, double wheel_separation_h = 0.0, double wheelbase = 0.0);
 
   /**
      * \brief Velocity rolling window size setter

@@ -25,10 +25,10 @@ controller_interface::CallbackReturn AckermannSteeringController::configure_odom
 {
   params_ = param_listener_->get_params();
 
-  const double wheel_seperation = params_.wheel_separation_multiplier * params_.wheel_separation;
   const double wheel_radius = params_.wheel_radius_multiplier * params_.wheel_radius;
+  const double wheel_seperation = params_.wheel_separation_multiplier * params_.wheel_separation;
   const double wheelbase = params_.wheelbase_multiplier * params_.wheelbase;
-  odometry_.set_wheel_params(wheel_seperation, wheel_radius, wheelbase);
+  odometry_.set_wheel_params(wheel_radius, wheel_seperation, wheelbase);
   odometry_.set_velocity_rolling_window_size(params_.velocity_rolling_window_size);
 
   // TODO: enable position/velocity configure
@@ -55,8 +55,7 @@ controller_interface::CallbackReturn BicycleSteeringController::configure_odomet
 
   const double wheel_seperation = params_.wheel_separation_multiplier * params_.wheel_separation;
   const double wheel_radius = params_.wheel_radius_multiplier * params_.wheel_radius;
-  const double wheelbase = params_.wheelbase_multiplier * params_.wheelbase;
-  odometry_.set_wheel_params(wheel_seperation, wheel_radius, wheelbase);
+  odometry_.set_wheel_params(wheel_radius, wheel_seperation);
   odometry_.set_velocity_rolling_window_size(params_.velocity_rolling_window_size);
 
   // TODO: enable position/velocity configure
@@ -82,10 +81,10 @@ controller_interface::CallbackReturn TricycleSteeringController::configure_odome
 {
   params_ = param_listener_->get_params();
 
-  const double wheel_seperation = params_.wheel_separation_multiplier * params_.wheel_separation;
   const double wheel_radius = params_.wheel_radius_multiplier * params_.wheel_radius;
+  const double wheel_seperation = params_.wheel_separation_multiplier * params_.wheel_separation;
   const double wheelbase = params_.wheelbase_multiplier * params_.wheelbase;
-  odometry_.set_wheel_params(wheel_seperation, wheel_radius, wheelbase);
+  odometry_.set_wheel_params(wheel_radius, wheel_seperation, wheelbase);
   odometry_.set_velocity_rolling_window_size(params_.velocity_rolling_window_size);
 
   // TODO: enable position/velocity configure
