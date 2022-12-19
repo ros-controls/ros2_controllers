@@ -107,30 +107,8 @@ protected:
 
   bool on_set_chained_mode(bool chained_mode) override;
 
-  struct WheelHandle
-  {
-    std::reference_wrapper<const hardware_interface::LoanedStateInterface> feedback;
-    // std::reference_wrapper<hardware_interface::LoanedCommandInterface> velocity;
-  };
-
-  std::vector<WheelHandle> registered_rear_wheel_handles_;
-  std::vector<WheelHandle> registered_front_wheel_handles_;
-
   /// Odometry related:
   rclcpp::Duration publish_period_ = rclcpp::Duration::from_nanoseconds(0);
-
-  bool open_loop_;
-  /// Velocity command related:
-  struct Commands
-  {
-    double lin;
-    double ang;
-    rclcpp::Time stamp;
-
-    Commands() : lin(0.0), ang(0.0), stamp(0.0) {}
-  };
-
-  // Odometry related:
   steering_odometry::SteeringOdometry odometry_;
 
   using AckermanControllerState = control_msgs::msg::SteeringControllerStatus;
