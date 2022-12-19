@@ -88,6 +88,12 @@ controller_interface::CallbackReturn SteeringControllers::set_interface_numbers(
   nr_ref_itfs_ = nr_ref_itfs;
 }
 
+controller_interface::CallbackReturn SteeringControllers::configure_odometry()
+{
+  RCLCPP_INFO(get_node()->get_logger(), "Configure odometry not implemented");
+  return controller_interface::CallbackReturn::ERROR;
+}
+
 controller_interface::CallbackReturn SteeringControllers::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {

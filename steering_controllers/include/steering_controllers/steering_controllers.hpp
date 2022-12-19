@@ -57,9 +57,6 @@ public:
   STEERING_CONTROLLERS__VISIBILITY_PUBLIC controller_interface::InterfaceConfiguration
   state_interface_configuration() const override;
 
-  STEERING_CONTROLLERS__VISIBILITY_PUBLIC controller_interface::CallbackReturn
-  set_interface_numbers(size_t nr_state_itfs, size_t nr_cmd_itfs, size_t nr_ref_itfs);
-
   virtual STEERING_CONTROLLERS__VISIBILITY_PUBLIC controller_interface::CallbackReturn
   configure_odometry();
 
@@ -123,6 +120,9 @@ protected:
   size_t nr_cmd_itfs_;
   // name constants for reference interfaces
   size_t nr_ref_itfs_;
+
+  STEERING_CONTROLLERS__VISIBILITY_PROTECTED controller_interface::CallbackReturn
+  set_interface_numbers(size_t nr_state_itfs, size_t nr_cmd_itfs, size_t nr_ref_itfs);
 
 private:
   // callback for topic interface

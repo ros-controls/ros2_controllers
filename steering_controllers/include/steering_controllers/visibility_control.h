@@ -38,6 +38,7 @@
 #define STEERING_CONTROLLERS__VISIBILITY_IMPORT
 #if __GNUC__ >= 4
 #define STEERING_CONTROLLERS__VISIBILITY_PUBLIC __attribute__((visibility("default")))
+#define STEERING_CONTROLLERS__VISIBILITY_PROTECTED __attribute__((visibility("protected")))
 #define STEERING_CONTROLLERS__VISIBILITY_LOCAL __attribute__((visibility("hidden")))
 #else
 #define STEERING_CONTROLLERS__VISIBILITY_PUBLIC
