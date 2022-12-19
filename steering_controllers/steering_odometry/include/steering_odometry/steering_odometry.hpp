@@ -36,9 +36,6 @@ namespace steering_odometry
 class SteeringOdometry
 {
 public:
-  /// Integration function, used to integrate the odometry:
-  typedef boost::function<void(double, double)> IntegrationFunction;
-
   /**
      * \brief Constructor
      * Timestamp will get the current time value
@@ -129,9 +126,8 @@ public:
     * \brief TODO
     * \param Vx  TODO
     * \param theta_dot TODO
-    * \param wheelbase TODO
     */
-  double convert_trans_rot_vel_to_steering_angle(double Vx, double theta_dot, double wheelbase);
+  double convert_trans_rot_vel_to_steering_angle(double Vx, double theta_dot);
 
   /**
      * \brief TODO
@@ -146,9 +142,6 @@ public:
   void reset_odometry();
 
 private:
-  /// Rolling mean accumulator and window:
-  typedef rcpputils::RollingMeanAccumulator<double> RollingMeanAccumulator;
-
   /**
      * \brief Integrates the velocities (linear and angular) using 2nd order Runge-Kutta
      * \param linear  Linear  velocity   [m] (linear  displacement, i.e. m/s * dt) computed by encoders
@@ -189,10 +182,7 @@ private:
 
   /// Rolling mean accumulators for the linar and angular velocities:
   size_t velocity_rolling_window_size_;
-  RollingMeanAccumulator linear_acc_;
-  RollingMeanAccumulator angular_acc_;
-
-  /// Integration function, used to integrate the odometry:
-  IntegrationFunction integrate_fun_;
+  rcpputils::RollingMeanAccumulator<double> linear_acc_;
+  rcpputils::RollingMeanAccumulator<double> angular_acc_;
 };
 }  // namespace steering_odometry

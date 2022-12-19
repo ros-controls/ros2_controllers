@@ -39,10 +39,7 @@ SteeringOdometry::SteeringOdometry(size_t velocity_rolling_window_size)
   rear_wheel_old_pos_(0.0),
   velocity_rolling_window_size_(velocity_rolling_window_size),
   linear_acc_(velocity_rolling_window_size),
-  angular_acc_(velocity_rolling_window_size),
-  integrate_fun_(std::bind(
-    &SteeringOdometry::integrate_exact, this, std::placeholders::_1, std::placeholders::_2))
-
+  angular_acc_(velocity_rolling_window_size)
 {
 }
 
@@ -77,7 +74,7 @@ bool SteeringOdometry::update_from_position(
   const double angular = tan(front_steer_pos) * linear_velocity / wheel_separation_;
 
   /// Integrate odometry:
-  integrate_fun_(linear_velocity * dt, angular);
+  SteeringOdometry::integrate_exact(linear_velocity * dt, angular);
 
   /// We cannot estimate the speed with very small time intervals:
   if (dt < 0.0001)
@@ -105,7 +102,7 @@ bool SteeringOdometry::update_from_velocity(
   const double angular = tan(front_steer_pos) * linear_velocity / wheel_separation_;
 
   /// Integrate odometry:
-  integrate_fun_(linear_velocity * dt, angular * dt);
+  SteeringOdometry::integrate_exact(linear_velocity * dt, angular * dt);
 
   /// We cannot estimate the speed with very small time intervals:
   if (dt < 0.0001)
@@ -130,7 +127,7 @@ void SteeringOdometry::update_open_loop(const double linear, const double angula
   angular_ = angular;
 
   /// Integrate odometry:
-  integrate_fun_(linear * dt, angular * dt);
+  SteeringOdometry::integrate_exact(linear * dt, angular * dt);
 }
 
 void SteeringOdometry::set_wheel_params(
@@ -149,14 +146,13 @@ void SteeringOdometry::set_velocity_rolling_window_size(size_t velocity_rolling_
 }
 
 //TODO: change functions depending on fwd kinematics model
-double SteeringOdometry::convert_trans_rot_vel_to_steering_angle(
-  double Vx, double theta_dot, double wheelbase)
+double SteeringOdometry::convert_trans_rot_vel_to_steering_angle(double Vx, double theta_dot)
 {
   if (theta_dot == 0 || Vx == 0)
   {
     return 0;
   }
-  return std::atan(theta_dot * wheelbase / Vx);
+  return std::atan(theta_dot * wheel_separation_ / Vx);
 }
 
 //TODO: change functions depending on fwd kinematics model
@@ -172,7 +168,7 @@ std::tuple<double, double> SteeringOdometry::twist_to_ackermann(double Vx, doubl
     return std::make_tuple(alpha, Ws);
   }
 
-  alpha = convert_trans_rot_vel_to_steering_angle(Vx, theta_dot, wheel_separation_);
+  alpha = SteeringOdometry::convert_trans_rot_vel_to_steering_angle(Vx, theta_dot);
   Ws = Vx / (wheel_radius_ * std::cos(alpha));
   return std::make_tuple(alpha, Ws);
 }
@@ -217,8 +213,8 @@ void SteeringOdometry::integrate_exact(double linear, double angular)
 
 void SteeringOdometry::reset_accumulators()
 {
-  linear_acc_ = RollingMeanAccumulator(velocity_rolling_window_size_);
-  angular_acc_ = RollingMeanAccumulator(velocity_rolling_window_size_);
+  linear_acc_ = rcpputils::RollingMeanAccumulator<double>(velocity_rolling_window_size_);
+  angular_acc_ = rcpputils::RollingMeanAccumulator<double>(velocity_rolling_window_size_);
   // TODO: angular rolling window size?
 }
 }  // namespace steering_odometry
