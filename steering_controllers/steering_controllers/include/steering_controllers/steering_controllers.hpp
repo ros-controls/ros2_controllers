@@ -107,8 +107,7 @@ protected:
 
   bool on_set_chained_mode(bool chained_mode) override;
 
-  /// Odometry related:
-  rclcpp::Duration publish_period_ = rclcpp::Duration::from_nanoseconds(0);
+  /// Odometry:
   steering_odometry::SteeringOdometry odometry_;
 
   using AckermanControllerState = control_msgs::msg::SteeringControllerStatus;
@@ -130,15 +129,6 @@ private:
   STEERING_CONTROLLERS__VISIBILITY_LOCAL void reference_callback(
     const std::shared_ptr<ControllerReferenceMsg> msg);
   void reference_callback_unstamped(const std::shared_ptr<geometry_msgs::msg::Twist> msg);
-
-  /// Frame to use for the robot base:
-  std::string base_frame_id_;
-
-  /// Frame to use for odometry and odom tf:
-  std::string odom_frame_id_;
-
-  /// Whether to publish odometry to tf or not:
-  bool enable_odom_tf_;
 
   // store last velocity
   double last_linear_velocity_ = 0.0;
