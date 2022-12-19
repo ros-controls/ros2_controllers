@@ -279,7 +279,7 @@ controller_interface::InterfaceConfiguration SteeringControllers::command_interf
   command_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
   command_interfaces_config.names.reserve(nr_cmd_itfs_);
 
-  for (size_t i = 0; i < params_.front_steer_names.size(); i++)
+  for (size_t i = 0; i < params_.rear_wheel_names.size(); i++)
   {
     command_interfaces_config.names.push_back(
       params_.rear_wheel_names[i] + "/" + hardware_interface::HW_IF_VELOCITY);
