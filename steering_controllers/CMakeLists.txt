@@ -25,6 +25,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
 
 find_package(ament_cmake REQUIRED)
 find_package(generate_parameter_library REQUIRED)
+
 foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
@@ -34,13 +35,15 @@ add_library(
   SHARED
   src/steering_controllers.cpp
   src/steering_odometry.cpp
-  src/steering_controller_implementations.cpp
+  src/ackermann_steering_controller.cpp
+  src/bicycle_steering_controller.cpp
+  src/tricycle_steering_controller.cpp
 )
 generate_parameter_library(steering_controllers_parameters
   src/steering_controllers.yaml
 )
 
-#target_include_directories(${PROJECT_NAME} PRIVATE include)
+# target_include_directories(${PROJECT_NAME} PRIVATE include)
 target_include_directories(${PROJECT_NAME} PUBLIC
   "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
@@ -66,9 +69,11 @@ install(
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
+
   # the following line skips the linter which checks for copyrights
   # comment the line when a copyright and license is added to all source files
   set(ament_cmake_copyright_FOUND TRUE)
+
   # the following line skips cpplint (only works in a git repo)
   # comment the line when this package is in a git repo and when
   # a copyright and license is added to all source files

@@ -17,18 +17,6 @@
 
 #include "steering_controllers/steering_controllers.hpp"
 
-namespace ackermann_steering_controller
-{
-class AckermannSteeringController : public steering_controllers::SteeringControllers
-{
-public:
-  AckermannSteeringController();
-
-  STEERING_CONTROLLERS__VISIBILITY_PUBLIC controller_interface::CallbackReturn configure_odometry()
-    override;
-};
-}  // namespace ackermann_steering_controller
-
 namespace bicycle_steering_controller
 {
 class BicycleSteeringController : public steering_controllers::SteeringControllers
@@ -43,19 +31,5 @@ public:
     const rclcpp::Duration & period) override;
 };
 }  // namespace bicycle_steering_controller
-
-namespace tricycle_steering_controller
-{
-class TricycleSteeringController : public steering_controllers::SteeringControllers
-{
-public:
-  TricycleSteeringController();
-
-  STEERING_CONTROLLERS__VISIBILITY_PUBLIC controller_interface::CallbackReturn configure_odometry()
-    override;
-  STEERING_CONTROLLERS__VISIBILITY_PUBLIC bool update_odometry(
-    const rclcpp::Duration & period) override;
-};
-}  // namespace tricycle_steering_controller
 
 #endif  // STEERING_CONTROLLERS_IMPLEMENTATIONS_HPP_
