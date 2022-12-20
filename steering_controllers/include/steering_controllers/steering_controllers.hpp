@@ -35,7 +35,7 @@
 #include "steering_controllers_parameters.hpp"
 
 // TODO(anyone): Replace with controller specific messages
-#include "ackermann_msgs/msg/ackermann_drive.hpp"
+#include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"
 #include "control_msgs/msg/steering_controller_status.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
@@ -78,8 +78,8 @@ public:
   STEERING_CONTROLLERS__VISIBILITY_PUBLIC controller_interface::return_type
   update_and_write_commands(const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
-  // TODO(anyone): replace the state and command message types
-  using ControllerReferenceMsg = geometry_msgs::msg::TwistStamped;
+  using ControllerAckermannReferenceMsg = ackermann_msgs::msg::AckermannDriveStamped;
+  using ControllerTwistReferenceMsg = geometry_msgs::msg::TwistStamped;
   using ControllerStateMsgOdom = nav_msgs::msg::Odometry;
   using ControllerStateMsgTf = tf2_msgs::msg::TFMessage;
 
@@ -88,9 +88,9 @@ protected:
   steering_controllers::Params params_;
 
   // Command subscribers and Controller State publisher
-  rclcpp::Subscription<ControllerReferenceMsg>::SharedPtr ref_subscriber_ = nullptr;
+  rclcpp::Subscription<ControllerTwistReferenceMsg>::SharedPtr ref_subscriber_ = nullptr;
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr ref_subscriber_unstamped_ = nullptr;
-  realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerReferenceMsg>> input_ref_;
+  realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerTwistReferenceMsg>> input_ref_;
   rclcpp::Duration ref_timeout_ = rclcpp::Duration::from_seconds(0.0);  // 0ms
 
   using ControllerStatePublisherOdom = realtime_tools::RealtimePublisher<ControllerStateMsgOdom>;
@@ -134,7 +134,7 @@ protected:
 private:
   // callback for topic interface
   STEERING_CONTROLLERS__VISIBILITY_LOCAL void reference_callback(
-    const std::shared_ptr<ControllerReferenceMsg> msg);
+    const std::shared_ptr<ControllerTwistReferenceMsg> msg);
   void reference_callback_unstamped(const std::shared_ptr<geometry_msgs::msg::Twist> msg);
 };
 

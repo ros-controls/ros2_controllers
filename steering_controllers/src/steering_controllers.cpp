@@ -43,11 +43,12 @@ static constexpr rmw_qos_profile_t rmw_qos_profile_services_hist_keep_all = {
   RMW_QOS_LIVELINESS_LEASE_DURATION_DEFAULT,
   false};
 
-using ControllerReferenceMsg = steering_controllers::SteeringControllers::ControllerReferenceMsg;
+using ControllerTwistReferenceMsg =
+  steering_controllers::SteeringControllers::ControllerTwistReferenceMsg;
 
 // called from RT control loop
 void reset_controller_reference_msg(
-  const std::shared_ptr<ControllerReferenceMsg> & msg,
+  const std::shared_ptr<ControllerTwistReferenceMsg> & msg,
   const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node)
 {
   msg->header.stamp = node->now();
@@ -107,7 +108,7 @@ controller_interface::CallbackReturn SteeringControllers::on_configure(
   ref_timeout_ = rclcpp::Duration::from_seconds(params_.reference_timeout);
   if (params_.use_stamped_vel)
   {
-    ref_subscriber_ = get_node()->create_subscription<ControllerReferenceMsg>(
+    ref_subscriber_ = get_node()->create_subscription<ControllerTwistReferenceMsg>(
       "~/reference", subscribers_qos,
       std::bind(&SteeringControllers::reference_callback, this, std::placeholders::_1));
   }
@@ -118,7 +119,8 @@ controller_interface::CallbackReturn SteeringControllers::on_configure(
       std::bind(&SteeringControllers::reference_callback_unstamped, this, std::placeholders::_1));
   }
 
-  std::shared_ptr<ControllerReferenceMsg> msg = std::make_shared<ControllerReferenceMsg>();
+  std::shared_ptr<ControllerTwistReferenceMsg> msg =
+    std::make_shared<ControllerTwistReferenceMsg>();
   reset_controller_reference_msg(msg, get_node());
   input_ref_.writeFromNonRT(msg);
 
@@ -214,7 +216,7 @@ controller_interface::CallbackReturn SteeringControllers::on_configure(
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-void SteeringControllers::reference_callback(const std::shared_ptr<ControllerReferenceMsg> msg)
+void SteeringControllers::reference_callback(const std::shared_ptr<ControllerTwistReferenceMsg> msg)
 {
   // if no timestamp provided use current time for command timestamp
   if (msg->header.stamp.sec == 0 && msg->header.stamp.nanosec == 0u)
