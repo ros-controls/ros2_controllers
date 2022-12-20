@@ -108,7 +108,7 @@ controller_interface::CallbackReturn SteeringControllers::on_configure(
   ref_timeout_ = rclcpp::Duration::from_seconds(params_.reference_timeout);
   if (params_.use_stamped_vel)
   {
-    ref_subscriber_ = get_node()->create_subscription<ControllerTwistReferenceMsg>(
+    ref_subscriber_twist_ = get_node()->create_subscription<ControllerTwistReferenceMsg>(
       "~/reference", subscribers_qos,
       std::bind(&SteeringControllers::reference_callback, this, std::placeholders::_1));
   }
@@ -246,6 +246,7 @@ void SteeringControllers::reference_callback(const std::shared_ptr<ControllerTwi
 void SteeringControllers::reference_callback_unstamped(
   const std::shared_ptr<geometry_msgs::msg::Twist> msg)
 {
+  RCLCPP_WARN(get_node()->get_logger(), "Using unstamped messages is deprecated.");
   auto twist_stamped = *(input_ref_.readFromNonRT());
   twist_stamped->header.stamp = get_node()->now();
   // if no timestamp provided use current time for command timestamp
