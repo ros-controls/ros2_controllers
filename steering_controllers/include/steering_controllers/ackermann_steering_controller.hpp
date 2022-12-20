@@ -11,6 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
+// Authors: dr. sc. Tomislav Petkovic, Dr. Ing. Denis Štogl
+//
 
 #ifndef STEERING_CONTROLLERS_IMPLEMENTATIONS_HPP_
 #define STEERING_CONTROLLERS_IMPLEMENTATIONS_HPP_

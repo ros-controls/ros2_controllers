@@ -5,9 +5,14 @@
   <version>0.0.0</version>
   <description>Package for steering robot configurations including odometry and interfaces.</description>
   <license>Apache License 2.0</license>
-  <maintainer email="tomislav.petkovic.fer@gmail.com">dr. sc. Tomislav Petkovic</maintainer>
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
   <maintainer email="denis.stogl@stoglrobotics.de">Dr.-Ing. Denis Štogl</maintainer>
+  <maintainer email="tomislav.petkovic.fer@gmail.com">dr. sc. Tomislav Petkovic</maintainer>
+  <maintainer email="tony.najjar@logivations.com">Tony Najjar</maintainer>
+
+  <author email="denis.stogl@stoglrobotics.de">Dr.-Ing. Denis Štogl</author>
+  <author email="tomislav.petkovic.fer@gmail.com">dr. sc. Tomislav Petkovic</author>
+  <author email="tony.najjar@logivations.com">Tony Najjar</author>
 
   <build_depend>generate_parameter_library</build_depend>
 
