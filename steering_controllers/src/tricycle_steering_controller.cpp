@@ -23,8 +23,6 @@ TricycleSteeringController::TricycleSteeringController()
 
 controller_interface::CallbackReturn TricycleSteeringController::configure_odometry()
 {
-  params_ = param_listener_->get_params();
-
   const double wheel_radius = params_.wheel_radius_multiplier * params_.wheel_radius;
   const double wheel_seperation = params_.wheel_separation_multiplier * params_.wheel_separation;
   const double wheelbase = params_.wheelbase_multiplier * params_.wheelbase;

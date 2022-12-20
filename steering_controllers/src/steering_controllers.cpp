@@ -85,7 +85,8 @@ controller_interface::CallbackReturn SteeringControllers::configure_odometry()
 controller_interface::CallbackReturn SteeringControllers::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  auto odometry_conf_msg = configure_odometry();
+  params_ = param_listener_->get_params();
+  configure_odometry();
   // topics QoS
   auto subscribers_qos = rclcpp::SystemDefaultsQoS();
   subscribers_qos.keep_last(1);
@@ -296,7 +297,7 @@ controller_interface::InterfaceConfiguration SteeringControllers::state_interfac
   const auto rear_wheel_feedback = params_.position_feedback ? hardware_interface::HW_IF_POSITION
                                                              : hardware_interface::HW_IF_VELOCITY;
 
-  for (size_t i = 0; i < params_.front_steer_names.size(); i++)
+  for (size_t i = 0; i < params_.rear_wheel_names.size(); i++)
   {
     state_interfaces_config.names.push_back(
       params_.rear_wheel_names[i] + "/" + rear_wheel_feedback);
@@ -475,9 +476,3 @@ controller_interface::return_type SteeringControllers::update_and_write_commands
 }
 
 }  // namespace steering_controllers
-
-// #include "pluginlib/class_list_macros.hpp"
-
-// PLUGINLIB_EXPORT_CLASS(
-//   steering_controllers::SteeringControllers,
-//   controller_interface::ChainableControllerInterface)

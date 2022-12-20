@@ -22,8 +22,6 @@ BicycleSteeringController::BicycleSteeringController() : steering_controllers::S
 
 controller_interface::CallbackReturn BicycleSteeringController::configure_odometry()
 {
-  params_ = param_listener_->get_params();
-
   const double wheel_seperation = params_.wheel_separation_multiplier * params_.wheel_separation;
   const double wheel_radius = params_.wheel_radius_multiplier * params_.wheel_radius;
   odometry_.set_wheel_params(wheel_radius, wheel_seperation);
