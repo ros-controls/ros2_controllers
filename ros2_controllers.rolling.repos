@@ -9,8 +9,8 @@ repositories:
     version: master
   control_msgs:
     type: git
-    url: https://github.com/ros-controls/control_msgs.git
-    version: humble
+    url: https://github.com/StoglRobotics-forks/control_msgs.git
+    version: add-steering-controller-status-msgs
   control_toolbox:
     type: git
     url: https://github.com/ros-controls/control_toolbox.git
