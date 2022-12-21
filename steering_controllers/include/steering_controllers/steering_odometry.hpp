@@ -63,6 +63,10 @@ public:
     const double rear_right_wheel_pos, const double rear_left_wheel_pos,
     const double front_steer_pos, const double dt);
 
+  bool update_from_position(
+    const double rear_right_wheel_pos, const double rear_left_wheel_pos,
+    const double front_right_steer_pos, const double front_left_steer_pos, const double dt);
+
   /**
      * \brief Updates the odometry class with latest wheels position
      * \param rear_wheel_vel  Rear wheel velocity [rad/s]
@@ -76,6 +80,10 @@ public:
   bool update_from_velocity(
     const double rear_right_wheel_vel, const double rear_left_wheel_vel,
     const double front_steer_pos, const double dt);
+
+  bool update_from_velocity(
+    const double rear_right_wheel_vel, const double rear_left_wheel_vel,
+    const double front_right_steer_pos, const double front_left_steer_pos, const double dt);
 
   /**
      * \brief Updates the odometry class with latest velocity command

@@ -74,6 +74,7 @@ controller_interface::CallbackReturn SteeringControllers::set_interface_numbers(
   nr_state_itfs_ = nr_state_itfs;
   nr_cmd_itfs_ = nr_cmd_itfs;
   nr_ref_itfs_ = nr_ref_itfs;
+  return controller_interface::CallbackReturn::SUCCESS;
 }
 
 controller_interface::CallbackReturn SteeringControllers::on_configure(

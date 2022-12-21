@@ -40,7 +40,6 @@ controller_interface::CallbackReturn AckermannSteeringController::configure_odom
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-// TODO: this is bicycle odometry ATM, implement ackermann
 bool AckermannSteeringController::update_odometry(const rclcpp::Duration & period)
 {
   if (params_.open_loop)
@@ -49,19 +48,29 @@ bool AckermannSteeringController::update_odometry(const rclcpp::Duration & perio
   }
   else
   {
-    const double rear_wheel_value = state_interfaces_[0].get_value();
-    const double steer_position = state_interfaces_[1].get_value() * params_.steer_pos_multiplier;
-    if (!std::isnan(rear_wheel_value) && !std::isnan(steer_position))
+    const double rear_right_wheel_value = state_interfaces_[0].get_value();
+    const double rear_left_wheel_value = state_interfaces_[1].get_value();
+    const double front_right_steer_position =
+      state_interfaces_[2].get_value() * params_.steer_pos_multiplier;
+    const double front_left_steer_position =
+      state_interfaces_[3].get_value() * params_.steer_pos_multiplier;
+    if (
+      !std::isnan(rear_right_wheel_value) && !std::isnan(rear_left_wheel_value) &&
+      !std::isnan(front_right_steer_position) && !std::isnan(front_left_steer_position))
     {
       if (params_.position_feedback)
       {
         // Estimate linear and angular velocity using joint information
-        odometry_.update_from_position(rear_wheel_value, steer_position, period.seconds());
+        odometry_.update_from_position(
+          rear_right_wheel_value, rear_left_wheel_value, front_right_steer_position,
+          front_left_steer_position, period.seconds());
       }
       else
       {
         // Estimate linear and angular velocity using joint information
-        odometry_.update_from_velocity(rear_wheel_value, steer_position, period.seconds());
+        odometry_.update_from_velocity(
+          rear_right_wheel_value, rear_left_wheel_value, front_right_steer_position,
+          front_left_steer_position, period.seconds());
       }
     }
   }

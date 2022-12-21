@@ -96,14 +96,6 @@ steering_controllers:
 
   }
 
-  allow_multiple_cmd_vel_publishers: {
-    type: bool,
-    default_value: true,
-    description: "Allow multiple cmd_vel publishers is enabled or disabled?.",
-    read_only: false,
-
-  }
-
   base_frame_id: {
     type: string,
     default_value: "base_link",
