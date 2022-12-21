@@ -42,6 +42,8 @@
 #include "realtime_tools/realtime_publisher.h"
 #include "tf2_msgs/msg/tf_message.hpp"
 
+#include "diff_drive_controller_parameters.hpp"
+
 namespace diff_drive_controller
 {
 class DiffDriveController : public controller_interface::ControllerInterface
@@ -101,34 +103,17 @@ protected:
     const std::string & side, const std::vector<std::string> & wheel_names,
     std::vector<WheelHandle> & registered_handles);
 
-  std::vector<std::string> left_wheel_names_;
-  std::vector<std::string> right_wheel_names_;
-
   std::vector<WheelHandle> registered_left_wheel_handles_;
   std::vector<WheelHandle> registered_right_wheel_handles_;
 
-  struct WheelParams
-  {
-    size_t wheels_per_side = 0;
-    double separation = 0.0;  // w.r.t. the midpoint of the wheel width
-    double radius = 0.0;      // Assumed to be the same for both wheels
-    double separation_multiplier = 1.0;
-    double left_radius_multiplier = 1.0;
-    double right_radius_multiplier = 1.0;
-  } wheel_params_;
-
-  struct OdometryParams
-  {
-    bool open_loop = false;
-    bool position_feedback = true;
-    bool enable_odom_tf = true;
-    std::string base_frame_id = "base_link";
-    std::string odom_frame_id = "odom";
-    std::array<double, 6> pose_covariance_diagonal;
-    std::array<double, 6> twist_covariance_diagonal;
-  } odom_params_;
+  // Parameters from ROS for diff_drive_controller
+  std::shared_ptr<ParamListener> param_listener_;
+  Params params_;
 
   Odometry odometry_;
+
+  // Timeout to consider cmd_vel commands old
+  std::chrono::milliseconds cmd_vel_timeout_{500};
 
   std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::Odometry>> odometry_publisher_ = nullptr;
   std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>>
@@ -138,9 +123,6 @@ protected:
     nullptr;
   std::shared_ptr<realtime_tools::RealtimePublisher<tf2_msgs::msg::TFMessage>>
     realtime_odometry_transform_publisher_ = nullptr;
-
-  // Timeout to consider cmd_vel commands old
-  std::chrono::milliseconds cmd_vel_timeout_{500};
 
   bool subscriber_is_active_ = false;
   rclcpp::Subscription<Twist>::SharedPtr velocity_command_subscriber_ = nullptr;
