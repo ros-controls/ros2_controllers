@@ -29,6 +29,9 @@ public:
 
   STEERING_CONTROLLERS__VISIBILITY_PUBLIC controller_interface::CallbackReturn configure_odometry()
     override;
+
+  STEERING_CONTROLLERS__VISIBILITY_PUBLIC bool update_odometry(
+    const rclcpp::Duration & period) override;
 };
 }  // namespace ackermann_steering_controller
 
