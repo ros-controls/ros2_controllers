@@ -8,7 +8,7 @@ steering_controllers:
 #    }
   }
 
-  rear_wheel_names: {
+  rear_wheels_names: {
     type: string_array,
     default_value: ["rear_wheel_joint"],
     description: "Name of rear wheels.",
@@ -16,7 +16,7 @@ steering_controllers:
 
   }
 
-  front_steer_names: {
+  front_wheels_names: {
     type: string_array,
     default_value: ["front_steer_joint"],
     description: "Names of front steer wheels.",

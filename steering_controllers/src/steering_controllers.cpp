@@ -269,15 +269,15 @@ controller_interface::InterfaceConfiguration SteeringControllers::command_interf
   command_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
   command_interfaces_config.names.reserve(nr_cmd_itfs_);
 
-  for (size_t i = 0; i < params_.rear_wheel_names.size(); i++)
+  for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
   {
     command_interfaces_config.names.push_back(
-      params_.rear_wheel_names[i] + "/" + hardware_interface::HW_IF_VELOCITY);
+      params_.rear_wheels_names[i] + "/" + hardware_interface::HW_IF_VELOCITY);
   }
-  for (size_t i = 0; i < params_.front_steer_names.size(); i++)
+  for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
   {
     command_interfaces_config.names.push_back(
-      params_.front_steer_names[i] + "/" + hardware_interface::HW_IF_POSITION);
+      params_.front_wheels_names[i] + "/" + hardware_interface::HW_IF_POSITION);
   }
   return command_interfaces_config;
 }
@@ -292,16 +292,16 @@ controller_interface::InterfaceConfiguration SteeringControllers::state_interfac
   const auto rear_wheel_feedback = params_.position_feedback ? hardware_interface::HW_IF_POSITION
                                                              : hardware_interface::HW_IF_VELOCITY;
 
-  for (size_t i = 0; i < params_.rear_wheel_names.size(); i++)
+  for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
   {
     state_interfaces_config.names.push_back(
-      params_.rear_wheel_names[i] + "/" + rear_wheel_feedback);
+      params_.rear_wheels_names[i] + "/" + rear_wheel_feedback);
   }
 
-  for (size_t i = 0; i < params_.front_steer_names.size(); i++)
+  for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
   {
     state_interfaces_config.names.push_back(
-      params_.front_steer_names[i] + "/" + hardware_interface::HW_IF_POSITION);
+      params_.front_wheels_names[i] + "/" + hardware_interface::HW_IF_POSITION);
   }
 
   return state_interfaces_config;
