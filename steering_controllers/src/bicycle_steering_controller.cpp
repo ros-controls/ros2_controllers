@@ -20,19 +20,29 @@ BicycleSteeringController::BicycleSteeringController() : steering_controllers::S
 {
 }
 
+void BicycleSteeringController::initialize_implementation_parameter_listener()
+{
+  bicycle_param_listener_ =
+    std::make_shared<bicycle_steering_controller::ParamListener>(get_node());
+}
+
 controller_interface::CallbackReturn BicycleSteeringController::configure_odometry()
 {
-  const double wheel_seperation = params_.wheel_separation_multiplier * params_.wheel_separation;
-  const double wheel_radius = params_.wheel_radius_multiplier * params_.wheel_radius;
+  bicycle_steering_controller::Params bicycle_params = bicycle_param_listener_->get_params();
+
+  const double wheel_seperation =
+    bicycle_params.wheel_separation_multiplier * bicycle_params.wheel_separation;
+  const double wheel_radius = bicycle_params.wheel_radius_multiplier * bicycle_params.wheel_radius;
   odometry_.set_wheel_params(wheel_radius, wheel_seperation);
   odometry_.set_velocity_rolling_window_size(params_.velocity_rolling_window_size);
 
-  // TODO: enable position/velocity configure
+  // TODO(petkovich): enable position/velocity configure
   const size_t nr_state_itfs = 2;
   const size_t nr_cmd_itfs = 2;
   const size_t nr_ref_itfs = 2;
 
   set_interface_numbers(nr_state_itfs, nr_cmd_itfs, nr_ref_itfs);
+  RCLCPP_INFO(get_node()->get_logger(), "%f %f", wheel_seperation, wheel_radius);
 
   RCLCPP_INFO(get_node()->get_logger(), "bicycle odom configure successful");
   return controller_interface::CallbackReturn::SUCCESS;

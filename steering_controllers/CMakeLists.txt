@@ -39,15 +39,29 @@ add_library(
   src/bicycle_steering_controller.cpp
   src/tricycle_steering_controller.cpp
 )
+
 generate_parameter_library(steering_controllers_parameters
-  src/steering_controllers.yaml
+  config/steering_controllers.yaml
+)
+generate_parameter_library(bicycle_controller_parameters
+  config/bicycle_steering_controller.yaml
+)
+generate_parameter_library(tricycle_controller_parameters
+  config/tricycle_steering_controller.yaml
+)
+generate_parameter_library(ackermann_controller_parameters
+  config/ackermann_steering_controller.yaml
 )
 
 # target_include_directories(${PROJECT_NAME} PRIVATE include)
 target_include_directories(${PROJECT_NAME} PUBLIC
   "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
-target_link_libraries(${PROJECT_NAME} steering_controllers_parameters)
+target_link_libraries(${PROJECT_NAME}
+  steering_controllers_parameters
+  bicycle_controller_parameters
+  tricycle_controller_parameters
+  ackermann_controller_parameters)
 ament_target_dependencies(${PROJECT_NAME} ${THIS_PACKAGE_INCLUDE_DEPENDS})
 target_compile_definitions(${PROJECT_NAME} PRIVATE "STEERING_CONTROLLERS_BUILDING_DLL")
 

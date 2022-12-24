@@ -20,16 +20,25 @@ TricycleSteeringController::TricycleSteeringController()
 : steering_controllers::SteeringControllers()
 {
 }
+void TricycleSteeringController::initialize_implementation_parameter_listener()
+{
+  tricycle_param_listener_ =
+    std::make_shared<tricycle_steering_controller::ParamListener>(get_node());
+}
 
 controller_interface::CallbackReturn TricycleSteeringController::configure_odometry()
 {
-  const double wheel_radius = params_.wheel_radius_multiplier * params_.wheel_radius;
-  const double wheel_seperation = params_.wheel_separation_multiplier * params_.wheel_separation;
-  const double wheelbase = params_.wheelbase_multiplier * params_.wheelbase;
+  tricycle_steering_controller::Params tricycle_params = tricycle_param_listener_->get_params();
+
+  const double wheel_radius =
+    tricycle_params.wheel_radius_multiplier * tricycle_params.wheel_radius;
+  const double wheel_seperation =
+    tricycle_params.wheel_separation_multiplier * tricycle_params.wheel_separation;
+  const double wheelbase = tricycle_params.wheelbase_multiplier * tricycle_params.wheelbase;
   odometry_.set_wheel_params(wheel_radius, wheel_seperation, wheelbase);
   odometry_.set_velocity_rolling_window_size(params_.velocity_rolling_window_size);
 
-  // TODO: enable position/velocity configure
+  // TODO(petkovich): enable position/velocity configure
   const size_t nr_state_itfs = 3;
   const size_t nr_cmd_itfs = 3;
   const size_t nr_ref_itfs = 2;

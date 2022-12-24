@@ -15,10 +15,13 @@
 // Authors: dr. sc. Tomislav Petkovic, Dr. Ing. Denis Štogl
 //
 
-#ifndef STEERING_CONTROLLERS_IMPLEMENTATIONS_HPP_
-#define STEERING_CONTROLLERS_IMPLEMENTATIONS_HPP_
+#ifndef STEERING_CONTROLLERS__TRICYCLE_STEERING_CONTROLLER_HPP_
+#define STEERING_CONTROLLERS__TRICYCLE_STEERING_CONTROLLER_HPP_
+
+#include <memory>
 
 #include "steering_controllers/steering_controllers.hpp"
+#include "tricycle_controller_parameters.hpp"
 
 namespace tricycle_steering_controller
 {
@@ -29,9 +32,16 @@ public:
 
   STEERING_CONTROLLERS__VISIBILITY_PUBLIC controller_interface::CallbackReturn configure_odometry()
     override;
+
   STEERING_CONTROLLERS__VISIBILITY_PUBLIC bool update_odometry(
     const rclcpp::Duration & period) override;
+
+  STEERING_CONTROLLERS__VISIBILITY_PUBLIC void initialize_implementation_parameter_listener()
+    override;
+
+private:
+  std::shared_ptr<tricycle_steering_controller::ParamListener> tricycle_param_listener_;
 };
 }  // namespace tricycle_steering_controller
 
-#endif  // STEERING_CONTROLLERS_IMPLEMENTATIONS_HPP_
+#endif  // STEERING_CONTROLLERS__TRICYCLE_STEERING_CONTROLLER_HPP_

@@ -15,9 +15,12 @@
 // Authors: dr. sc. Tomislav Petkovic, Dr. Ing. Denis Štogl
 //
 
-#ifndef STEERING_CONTROLLERS_IMPLEMENTATIONS_HPP_
-#define STEERING_CONTROLLERS_IMPLEMENTATIONS_HPP_
+#ifndef STEERING_CONTROLLERS__BICYCLE_STEERING_CONTROLLER_HPP_
+#define STEERING_CONTROLLERS__BICYCLE_STEERING_CONTROLLER_HPP_
 
+#include <memory>
+
+#include "bicycle_controller_parameters.hpp"
 #include "steering_controllers/steering_controllers.hpp"
 
 namespace bicycle_steering_controller
@@ -32,7 +35,13 @@ public:
 
   STEERING_CONTROLLERS__VISIBILITY_PUBLIC bool update_odometry(
     const rclcpp::Duration & period) override;
+
+  STEERING_CONTROLLERS__VISIBILITY_PUBLIC void initialize_implementation_parameter_listener()
+    override;
+
+private:
+  std::shared_ptr<bicycle_steering_controller::ParamListener> bicycle_param_listener_;
 };
 }  // namespace bicycle_steering_controller
 
-#endif  // STEERING_CONTROLLERS_IMPLEMENTATIONS_HPP_
+#endif  // STEERING_CONTROLLERS__BICYCLE_STEERING_CONTROLLER_HPP_

@@ -49,6 +49,9 @@ class SteeringControllers : public controller_interface::ChainableControllerInte
 public:
   STEERING_CONTROLLERS__VISIBILITY_PUBLIC SteeringControllers();
 
+  virtual STEERING_CONTROLLERS__VISIBILITY_PUBLIC void
+  initialize_implementation_parameter_listener() = 0;
+
   STEERING_CONTROLLERS__VISIBILITY_PUBLIC controller_interface::CallbackReturn on_init() override;
 
   STEERING_CONTROLLERS__VISIBILITY_PUBLIC controller_interface::InterfaceConfiguration
@@ -141,4 +144,4 @@ private:
 
 }  // namespace steering_controllers
 
-#endif  // STEERING_CONTROLLERS__steering_controllers_HPP_
+#endif  // STEERING_CONTROLLERS__STEERING_CONTROLLERS_HPP_

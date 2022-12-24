@@ -58,6 +58,7 @@ controller_interface::CallbackReturn SteeringControllers::on_init()
   try
   {
     param_listener_ = std::make_shared<steering_controllers::ParamListener>(get_node());
+    initialize_implementation_parameter_listener();
   }
   catch (const std::exception & e)
   {

@@ -1,0 +1,48 @@
+tricycle_steering_controller:
+  wheel_separation_multiplier:
+    {
+      type: double,
+      default_value: 1.0,
+      description: "Wheel separation height will be multiplied by value of the wheel_separation_h_multiplier.",
+      read_only: false,
+    }
+
+  wheel_separation:
+    {
+      type: double,
+      default_value: 0.0,
+      description: "Wheel separation.",
+      read_only: false,
+    }
+
+  wheelbase_multiplier:
+    {
+      type: double,
+      default_value: 1.0,
+      description: "Wheelbase will be multiplied by value of the wheelbase_multiplier.",
+      read_only: false,
+    }
+
+  wheelbase:
+    {
+      type: double,
+      default_value: 0.0,
+      description: "Wheelbase length.",
+      read_only: false,
+    }
+
+  wheel_radius:
+    {
+      type: double,
+      default_value: 0.0,
+      description: "Wheel radius.",
+      read_only: false,
+    }
+
+  wheel_radius_multiplier:
+    {
+      type: double,
+      default_value: 1.0,
+      description: "Wheel radius will be multiplied by value of wheel_radius_multiplier.",
+      read_only: false,
+    }
