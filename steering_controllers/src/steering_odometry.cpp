@@ -72,7 +72,7 @@ bool SteeringOdometry::update_odometry(
   return true;
 }
 
-// TODO(destogl): enable also velocity interface to update using velocity from the rear wheel
+// TODO(petkovich): enable also velocity interface to update using velocity from the rear wheel
 bool SteeringOdometry::update_from_position(
   const double rear_wheel_pos, const double front_steer_pos, const double dt)
 {
@@ -85,7 +85,6 @@ bool SteeringOdometry::update_from_position(
 
   /// Compute linear and angular diff:
   const double linear_velocity = rear_wheel_est_pos_diff / dt;
-
   const double angular = tan(front_steer_pos) * linear_velocity / wheel_separation_;
 
   update_odometry(linear_velocity, angular, dt);
@@ -99,7 +98,7 @@ bool SteeringOdometry::update_from_position(
 {
   /// Get current wheel joint positions:
   const double rear_right_wheel_cur_pos = rear_right_wheel_pos * wheel_radius_;
-  const double rear_left_wheel_cur_pos = rear_left_wheel_cur_pos * wheel_radius_;
+  const double rear_left_wheel_cur_pos = rear_left_wheel_pos * wheel_radius_;
 
   const double rear_right_wheel_est_pos_diff = rear_right_wheel_cur_pos - rear_right_wheel_old_pos_;
   const double rear_left_wheel_est_pos_diff = rear_left_wheel_cur_pos - rear_left_wheel_old_pos_;
@@ -108,11 +107,8 @@ bool SteeringOdometry::update_from_position(
   rear_right_wheel_old_pos_ = rear_right_wheel_cur_pos;
   rear_left_wheel_old_pos_ = rear_left_wheel_cur_pos;
 
-  /// Compute linear and angular diff:
   const double linear_velocity =
     (rear_right_wheel_est_pos_diff + rear_left_wheel_est_pos_diff) * 0.5 / dt;
-
-  //const double angular = (rear_right_wheel_est_pos_diff - rear_left_wheel_est_pos_diff) / wheel_separation_w_;
   const double angular = tan(front_steer_pos) * linear_velocity / wheel_separation_;
 
   update_odometry(linear_velocity, angular, dt);
@@ -126,7 +122,7 @@ bool SteeringOdometry::update_from_position(
 {
   /// Get current wheel joint positions:
   const double rear_right_wheel_cur_pos = rear_right_wheel_pos * wheel_radius_;
-  const double rear_left_wheel_cur_pos = rear_left_wheel_cur_pos * wheel_radius_;
+  const double rear_left_wheel_cur_pos = rear_left_wheel_pos * wheel_radius_;
 
   const double rear_right_wheel_est_pos_diff = rear_right_wheel_cur_pos - rear_right_wheel_old_pos_;
   const double rear_left_wheel_est_pos_diff = rear_left_wheel_cur_pos - rear_left_wheel_old_pos_;
@@ -138,9 +134,7 @@ bool SteeringOdometry::update_from_position(
   /// Compute linear and angular diff:
   const double linear_velocity =
     (rear_right_wheel_est_pos_diff + rear_left_wheel_est_pos_diff) * 0.5 / dt;
-
   const double front_steer_pos = (front_right_steer_pos + front_left_steer_pos) * 0.5;
-  //const double angular = (rear_right_wheel_est_pos_diff - rear_left_wheel_est_pos_diff) / wheel_separation_w_;
   const double angular = tan(front_steer_pos) * linear_velocity / wheel_separation_;
 
   update_odometry(linear_velocity, angular, dt);
@@ -151,10 +145,7 @@ bool SteeringOdometry::update_from_position(
 bool SteeringOdometry::update_from_velocity(
   const double rear_wheel_vel, const double front_steer_pos, const double dt)
 {
-  // (right_wheel_est_vel + left_wheel_est_vel) * 0.5;
   double linear_velocity = rear_wheel_vel * wheel_radius_;
-
-  //const double angular = (right_wheel_est_vel - left_wheel_est_vel) / wheel_separation_w_;
   const double angular = tan(front_steer_pos) * linear_velocity / wheel_separation_;
 
   update_odometry(linear_velocity, angular, dt);
@@ -166,10 +157,7 @@ bool SteeringOdometry::update_from_velocity(
   const double rear_right_wheel_vel, const double rear_left_wheel_vel, const double front_steer_pos,
   const double dt)
 {
-  // (right_wheel_est_vel + left_wheel_est_vel) * 0.5;
   double linear_velocity = (rear_right_wheel_vel + rear_left_wheel_vel) * wheel_radius_ * 0.5;
-
-  //const double angular = (right_wheel_est_vel - left_wheel_est_vel) / wheel_separation_w_;
   const double angular = tan(front_steer_pos) * linear_velocity / wheel_separation_;
 
   update_odometry(linear_velocity, angular, dt);
@@ -181,12 +169,8 @@ bool SteeringOdometry::update_from_velocity(
   const double rear_right_wheel_vel, const double rear_left_wheel_vel,
   const double front_right_steer_pos, const double front_left_steer_pos, const double dt)
 {
-  // (right_wheel_est_vel + left_wheel_est_vel) * 0.5;
   double linear_velocity = (rear_right_wheel_vel + rear_left_wheel_vel) * wheel_radius_ * 0.5;
-
-  //const double angular = (right_wheel_est_vel - left_wheel_est_vel) / wheel_separation_w_;
   const double front_steer_pos = (front_right_steer_pos + front_left_steer_pos) * 0.5;
-
   const double angular = tan(front_steer_pos) * linear_velocity / wheel_separation_;
 
   update_odometry(linear_velocity, angular, dt);
@@ -219,7 +203,7 @@ void SteeringOdometry::set_velocity_rolling_window_size(size_t velocity_rolling_
   reset_accumulators();
 }
 
-//TODO: change functions depending on fwd kinematics model
+// TODO(petkovich): change functions depending on fwd kinematics model
 double SteeringOdometry::convert_trans_rot_vel_to_steering_angle(double Vx, double theta_dot)
 {
   if (theta_dot == 0 || Vx == 0)
@@ -229,7 +213,7 @@ double SteeringOdometry::convert_trans_rot_vel_to_steering_angle(double Vx, doub
   return std::atan(theta_dot * wheel_separation_ / Vx);
 }
 
-//TODO: change functions depending on fwd kinematics model
+// TODO(petkovich): change functions depending on fwd kinematics model
 std::tuple<double, double> SteeringOdometry::twist_to_ackermann(double Vx, double theta_dot)
 {
   // using naming convention in http://users.isr.ist.utl.pt/~mir/cadeiras/robmovel/Kinematics.pdf
@@ -289,6 +273,6 @@ void SteeringOdometry::reset_accumulators()
 {
   linear_acc_ = rcpputils::RollingMeanAccumulator<double>(velocity_rolling_window_size_);
   angular_acc_ = rcpputils::RollingMeanAccumulator<double>(velocity_rolling_window_size_);
-  // TODO: angular rolling window size?
+  // TODO(petkovich): angular rolling window size?
 }
 }  // namespace steering_odometry
