@@ -31,11 +31,9 @@ controller_interface::CallbackReturn AckermannSteeringController::configure_odom
 {
   ackermann_steering_controller::Params ackerman_params = ackermann_param_listener_->get_params();
 
-  const double wheel_radius =
-    ackerman_params.wheel_radius_multiplier * ackerman_params.wheel_radius;
-  const double wheel_seperation =
-    ackerman_params.wheel_separation_multiplier * ackerman_params.wheel_separation;
-  const double wheelbase = ackerman_params.wheelbase_multiplier * ackerman_params.wheelbase;
+  const double wheel_radius = ackerman_params.wheel_radius;
+  const double wheel_seperation = ackerman_params.wheel_separation;
+  const double wheelbase = ackerman_params.wheelbase;
   odometry_.set_wheel_params(wheel_radius, wheel_seperation, wheelbase);
   odometry_.set_velocity_rolling_window_size(params_.velocity_rolling_window_size);
 
@@ -60,10 +58,8 @@ bool AckermannSteeringController::update_odometry(const rclcpp::Duration & perio
   {
     const double rear_right_wheel_value = state_interfaces_[0].get_value();
     const double rear_left_wheel_value = state_interfaces_[1].get_value();
-    const double front_right_steer_position =
-      state_interfaces_[2].get_value() * params_.steer_pos_multiplier;
-    const double front_left_steer_position =
-      state_interfaces_[3].get_value() * params_.steer_pos_multiplier;
+    const double front_right_steer_position = state_interfaces_[2].get_value();
+    const double front_left_steer_position = state_interfaces_[3].get_value();
     if (
       !std::isnan(rear_right_wheel_value) && !std::isnan(rear_left_wheel_value) &&
       !std::isnan(front_right_steer_position) && !std::isnan(front_left_steer_position))

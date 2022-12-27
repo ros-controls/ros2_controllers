@@ -32,14 +32,6 @@ steering_controllers:
 
   }
 
-  steer_pos_multiplier: {
-    type: double,
-    default_value: 1.0,
-    description: "Steer pos will be multiplied by value of steer_pos_multiplier.",
-    read_only: false,
-
-  }
-
   velocity_rolling_window_size: {
     type: int,
     default_value: 10,

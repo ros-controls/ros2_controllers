@@ -454,8 +454,7 @@ controller_interface::return_type SteeringControllers::update_and_write_commands
     {
       controller_state_publisher_->msg_.rear_wheel_velocity = state_interfaces_[0].get_value();
     }
-    controller_state_publisher_->msg_.steer_position =
-      state_interfaces_[1].get_value() * params_.steer_pos_multiplier;
+    controller_state_publisher_->msg_.steer_position = state_interfaces_[1].get_value();
     controller_state_publisher_->msg_.linear_velocity_command = command_interfaces_[0].get_value();
     controller_state_publisher_->msg_.steering_angle_command = command_interfaces_[1].get_value();
 

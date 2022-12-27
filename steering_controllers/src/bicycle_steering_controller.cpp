@@ -30,9 +30,8 @@ controller_interface::CallbackReturn BicycleSteeringController::configure_odomet
 {
   bicycle_steering_controller::Params bicycle_params = bicycle_param_listener_->get_params();
 
-  const double wheel_seperation =
-    bicycle_params.wheel_separation_multiplier * bicycle_params.wheel_separation;
-  const double wheel_radius = bicycle_params.wheel_radius_multiplier * bicycle_params.wheel_radius;
+  const double wheel_seperation = bicycle_params.wheel_separation;
+  const double wheel_radius = bicycle_params.wheel_radius;
   odometry_.set_wheel_params(wheel_radius, wheel_seperation);
   odometry_.set_velocity_rolling_window_size(params_.velocity_rolling_window_size);
 
@@ -57,7 +56,7 @@ bool BicycleSteeringController::update_odometry(const rclcpp::Duration & period)
   else
   {
     const double rear_wheel_value = state_interfaces_[0].get_value();
-    const double steer_position = state_interfaces_[1].get_value() * params_.steer_pos_multiplier;
+    const double steer_position = state_interfaces_[1].get_value();
     if (!std::isnan(rear_wheel_value) && !std::isnan(steer_position))
     {
       if (params_.position_feedback)
