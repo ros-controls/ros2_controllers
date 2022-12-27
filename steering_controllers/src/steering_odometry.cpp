@@ -33,7 +33,7 @@ SteeringOdometry::SteeringOdometry(size_t velocity_rolling_window_size)
   heading_(0.0),
   linear_(0.0),
   angular_(0.0),
-  wheel_separation_(0.0),
+  wheel_track_(0.0),
   wheelbase_(0.0),
   wheel_radius_(0.0),
   rear_wheel_old_pos_(0.0),
@@ -85,7 +85,7 @@ bool SteeringOdometry::update_from_position(
 
   /// Compute linear and angular diff:
   const double linear_velocity = rear_wheel_est_pos_diff / dt;
-  const double angular = tan(front_steer_pos) * linear_velocity / wheel_separation_;
+  const double angular = tan(front_steer_pos) * linear_velocity / wheelbase_;
 
   update_odometry(linear_velocity, angular, dt);
 
@@ -109,7 +109,7 @@ bool SteeringOdometry::update_from_position(
 
   const double linear_velocity =
     (rear_right_wheel_est_pos_diff + rear_left_wheel_est_pos_diff) * 0.5 / dt;
-  const double angular = tan(front_steer_pos) * linear_velocity / wheel_separation_;
+  const double angular = tan(front_steer_pos) * linear_velocity / wheelbase_;
 
   update_odometry(linear_velocity, angular, dt);
 
@@ -135,7 +135,7 @@ bool SteeringOdometry::update_from_position(
   const double linear_velocity =
     (rear_right_wheel_est_pos_diff + rear_left_wheel_est_pos_diff) * 0.5 / dt;
   const double front_steer_pos = (front_right_steer_pos + front_left_steer_pos) * 0.5;
-  const double angular = tan(front_steer_pos) * linear_velocity / wheel_separation_;
+  const double angular = tan(front_steer_pos) * linear_velocity / wheelbase_;
 
   update_odometry(linear_velocity, angular, dt);
 
@@ -146,7 +146,7 @@ bool SteeringOdometry::update_from_velocity(
   const double rear_wheel_vel, const double front_steer_pos, const double dt)
 {
   double linear_velocity = rear_wheel_vel * wheel_radius_;
-  const double angular = tan(front_steer_pos) * linear_velocity / wheel_separation_;
+  const double angular = tan(front_steer_pos) * linear_velocity / wheelbase_;
 
   update_odometry(linear_velocity, angular, dt);
 
@@ -158,7 +158,7 @@ bool SteeringOdometry::update_from_velocity(
   const double dt)
 {
   double linear_velocity = (rear_right_wheel_vel + rear_left_wheel_vel) * wheel_radius_ * 0.5;
-  const double angular = tan(front_steer_pos) * linear_velocity / wheel_separation_;
+  const double angular = tan(front_steer_pos) * linear_velocity / wheelbase_;
 
   update_odometry(linear_velocity, angular, dt);
 
@@ -171,7 +171,8 @@ bool SteeringOdometry::update_from_velocity(
 {
   double linear_velocity = (rear_right_wheel_vel + rear_left_wheel_vel) * wheel_radius_ * 0.5;
   const double front_steer_pos = (front_right_steer_pos + front_left_steer_pos) * 0.5;
-  const double angular = tan(front_steer_pos) * linear_velocity / wheel_separation_;
+  const double angular = tan(front_steer_pos) * linear_velocity / wheelbase_;
+  // TODO(petkovich): Does wheel_track_ come into play if Wr and Wl are not the same?
 
   update_odometry(linear_velocity, angular, dt);
 
@@ -188,12 +189,11 @@ void SteeringOdometry::update_open_loop(const double linear, const double angula
   SteeringOdometry::integrate_exact(linear * dt, angular * dt);
 }
 
-void SteeringOdometry::set_wheel_params(
-  double wheel_radius, double wheel_separation, double wheelbase)
+void SteeringOdometry::set_wheel_params(double wheel_radius, double wheelbase, double wheel_track)
 {
   wheel_radius_ = wheel_radius;
-  wheel_separation_ = wheel_separation;
   wheelbase_ = wheelbase;
+  wheel_track_ = wheel_track;
 }
 
 void SteeringOdometry::set_velocity_rolling_window_size(size_t velocity_rolling_window_size)
@@ -210,7 +210,7 @@ double SteeringOdometry::convert_trans_rot_vel_to_steering_angle(double Vx, doub
   {
     return 0;
   }
-  return std::atan(theta_dot * wheel_separation_ / Vx);
+  return std::atan(theta_dot * wheelbase_ / Vx);
 }
 
 // TODO(petkovich): change functions depending on fwd kinematics model
@@ -222,7 +222,7 @@ std::tuple<double, double> SteeringOdometry::twist_to_ackermann(double Vx, doubl
   if (Vx == 0 && theta_dot != 0)
   {  // is spin action
     alpha = theta_dot > 0 ? M_PI_2 : -M_PI_2;
-    Ws = abs(theta_dot) * wheel_separation_ / wheel_radius_;
+    Ws = abs(theta_dot) * wheelbase_ / wheel_radius_;
     return std::make_tuple(alpha, Ws);
   }
 

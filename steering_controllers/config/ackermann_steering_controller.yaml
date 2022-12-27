@@ -1,10 +1,17 @@
 ackermann_steering_controller:
-
-  wheel_separation:
+  front_wheel_track:
     {
       type: double,
       default_value: 0.0,
-      description: "Wheel separation.",
+      description: "Front wheel track length.",
+      read_only: false,
+    }
+
+  rear_wheel_track:
+    {
+      type: double,
+      default_value: 0.0,
+      description: "Rear wheel track length.",
       read_only: false,
     }
 
@@ -16,10 +23,18 @@ ackermann_steering_controller:
       read_only: false,
     }
 
-  wheel_radius:
+  front_wheels_radius:
     {
       type: double,
       default_value: 0.0,
-      description: "Wheel radius.",
+      description: "Front wheels radius.",
+      read_only: false,
+    }
+
+  rear_wheels_radius:
+    {
+      type: double,
+      default_value: 0.0,
+      description: "Rear wheels radius.",
       read_only: false,
     }

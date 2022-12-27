@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include <tuple>
+
 #include "realtime_tools/realtime_buffer.h"
 #include "realtime_tools/realtime_publisher.h"
 
@@ -126,8 +128,7 @@ public:
   /**
      * \brief Sets the wheel parameters: radius, separation and wheelbase
      */
-  void set_wheel_params(
-    double wheel_radius, double wheel_separation_h = 0.0, double wheelbase = 0.0);
+  void set_wheel_params(double wheel_radius, double wheelbase = 0.0, double wheel_track = 0.0);
 
   /**
      * \brief Velocity rolling window size setter
@@ -193,7 +194,7 @@ private:
   double linear_;   //   [m/s]
   double angular_;  // [rad/s]
 
-  double wheel_separation_;
+  double wheel_track_;
   double wheelbase_;
   double wheel_radius_;
 

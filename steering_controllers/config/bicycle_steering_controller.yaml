@@ -1,17 +1,24 @@
 bicycle_steering_controller:
-
-  wheel_separation:
+  wheelbase:
     {
       type: double,
       default_value: 0.0,
-      description: "Wheel separation.",
+      description: "Wheelbase length.",
       read_only: false,
     }
 
-  wheel_radius:
+  front_wheel_radius:
     {
       type: double,
       default_value: 0.0,
-      description: "Wheel radius.",
+      description: "Front wheel radius.",
+      read_only: false,
+    }
+
+  rear_wheel_radius:
+    {
+      type: double,
+      default_value: 0.0,
+      description: "Rear wheel radius.",
       read_only: false,
     }

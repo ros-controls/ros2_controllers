@@ -30,18 +30,24 @@ controller_interface::CallbackReturn BicycleSteeringController::configure_odomet
 {
   bicycle_steering_controller::Params bicycle_params = bicycle_param_listener_->get_params();
 
-  const double wheel_seperation = bicycle_params.wheel_separation;
-  const double wheel_radius = bicycle_params.wheel_radius;
-  odometry_.set_wheel_params(wheel_radius, wheel_seperation);
-  odometry_.set_velocity_rolling_window_size(params_.velocity_rolling_window_size);
+  const double wheelbase = bicycle_params.wheelbase;
+  const double front_wheel_radius = bicycle_params.front_wheel_radius;
+  const double rear_wheel_radius = bicycle_params.rear_wheel_radius;
 
-  // TODO(petkovich): enable position/velocity configure
+  if (params_.front_steering)
+  {
+    odometry_.set_wheel_params(rear_wheel_radius, wheelbase);
+  }
+  else
+  {
+    odometry_.set_wheel_params(front_wheel_radius, wheelbase);
+  }
+
   const size_t nr_state_itfs = 2;
   const size_t nr_cmd_itfs = 2;
   const size_t nr_ref_itfs = 2;
 
   set_interface_numbers(nr_state_itfs, nr_cmd_itfs, nr_ref_itfs);
-  RCLCPP_INFO(get_node()->get_logger(), "%f %f", wheel_seperation, wheel_radius);
 
   RCLCPP_INFO(get_node()->get_logger(), "bicycle odom configure successful");
   return controller_interface::CallbackReturn::SUCCESS;

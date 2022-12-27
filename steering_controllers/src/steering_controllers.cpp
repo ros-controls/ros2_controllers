@@ -82,6 +82,8 @@ controller_interface::CallbackReturn SteeringControllers::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   params_ = param_listener_->get_params();
+  odometry_.set_velocity_rolling_window_size(params_.velocity_rolling_window_size);
+
   configure_odometry();
   // topics QoS
   auto subscribers_qos = rclcpp::SystemDefaultsQoS();
@@ -269,16 +271,19 @@ controller_interface::InterfaceConfiguration SteeringControllers::command_interf
   controller_interface::InterfaceConfiguration command_interfaces_config;
   command_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
   command_interfaces_config.names.reserve(nr_cmd_itfs_);
-
+  const auto front_wheels_command = params_.front_steering ? hardware_interface::HW_IF_POSITION
+                                                           : hardware_interface::HW_IF_VELOCITY;
+  const auto rear_wheels_command = params_.front_steering ? hardware_interface::HW_IF_VELOCITY
+                                                          : hardware_interface::HW_IF_POSITION;
   for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
   {
     command_interfaces_config.names.push_back(
-      params_.rear_wheels_names[i] + "/" + hardware_interface::HW_IF_VELOCITY);
+      params_.rear_wheels_names[i] + "/" + rear_wheels_command);
   }
   for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
   {
     command_interfaces_config.names.push_back(
-      params_.front_wheels_names[i] + "/" + hardware_interface::HW_IF_POSITION);
+      params_.front_wheels_names[i] + "/" + front_wheels_command);
   }
   return command_interfaces_config;
 }
@@ -290,19 +295,36 @@ controller_interface::InterfaceConfiguration SteeringControllers::state_interfac
   state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
 
   state_interfaces_config.names.reserve(nr_state_itfs_);
-  const auto rear_wheel_feedback = params_.position_feedback ? hardware_interface::HW_IF_POSITION
-                                                             : hardware_interface::HW_IF_VELOCITY;
-
-  for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
+  const auto traction_wheels_feedback = params_.position_feedback
+                                          ? hardware_interface::HW_IF_POSITION
+                                          : hardware_interface::HW_IF_VELOCITY;
+  if (params_.front_steering)
   {
-    state_interfaces_config.names.push_back(
-      params_.rear_wheels_names[i] + "/" + rear_wheel_feedback);
+    for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
+    {
+      state_interfaces_config.names.push_back(
+        params_.rear_wheels_names[i] + "/" + traction_wheels_feedback);
+    }
+
+    for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
+    {
+      state_interfaces_config.names.push_back(
+        params_.front_wheels_names[i] + "/" + hardware_interface::HW_IF_POSITION);
+    }
   }
-
-  for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
+  else
   {
-    state_interfaces_config.names.push_back(
-      params_.front_wheels_names[i] + "/" + hardware_interface::HW_IF_POSITION);
+    for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
+    {
+      state_interfaces_config.names.push_back(
+        params_.front_wheels_names[i] + "/" + traction_wheels_feedback);
+    }
+
+    for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
+    {
+      state_interfaces_config.names.push_back(
+        params_.rear_wheels_names[i] + "/" + hardware_interface::HW_IF_POSITION);
+    }
   }
 
   return state_interfaces_config;
@@ -395,9 +417,7 @@ controller_interface::return_type SteeringControllers::update_and_write_commands
     const double linear_command = reference_interfaces_[0];
     const double angular_command = reference_interfaces_[1];
     auto [alpha_write, Ws_write] = odometry_.twist_to_ackermann(linear_command, angular_command);
-    // previous_publish_timestamp_ = time;
 
-    // omega = linear_vel / radius
     command_interfaces_[0].set_value(Ws_write);
     command_interfaces_[1].set_value(alpha_write);
   }

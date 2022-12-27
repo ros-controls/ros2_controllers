@@ -8,6 +8,14 @@ steering_controllers:
 #    }
   }
 
+  front_steering: {
+    type: bool,
+    default_value: true,
+    description: "Is the steering on the front of the robot?",
+    read_only: false,
+
+  }
+
   rear_wheels_names: {
     type: string_array,
     default_value: ["rear_wheel_joint"],
@@ -55,7 +63,6 @@ steering_controllers:
     read_only: false,
 
   }
-
 
   enable_odom_tf: {
     type: bool,

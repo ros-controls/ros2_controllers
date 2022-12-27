@@ -31,13 +31,21 @@ controller_interface::CallbackReturn AckermannSteeringController::configure_odom
 {
   ackermann_steering_controller::Params ackerman_params = ackermann_param_listener_->get_params();
 
-  const double wheel_radius = ackerman_params.wheel_radius;
-  const double wheel_seperation = ackerman_params.wheel_separation;
+  const double front_wheels_radius = ackerman_params.front_wheels_radius;
+  const double rear_wheels_radius = ackerman_params.rear_wheels_radius;
+  const double front_wheel_track = ackerman_params.front_wheel_track;
+  const double rear_wheel_track = ackerman_params.rear_wheel_track;
   const double wheelbase = ackerman_params.wheelbase;
-  odometry_.set_wheel_params(wheel_radius, wheel_seperation, wheelbase);
-  odometry_.set_velocity_rolling_window_size(params_.velocity_rolling_window_size);
 
-  // TODO(petkovich): enable position/velocity configure
+  if (params_.front_steering)
+  {
+    odometry_.set_wheel_params(rear_wheels_radius, wheelbase, rear_wheel_track);
+  }
+  else
+  {
+    odometry_.set_wheel_params(front_wheels_radius, wheelbase, front_wheel_track);
+  }
+
   const size_t nr_state_itfs = 4;
   const size_t nr_cmd_itfs = 4;
   const size_t nr_ref_itfs = 2;

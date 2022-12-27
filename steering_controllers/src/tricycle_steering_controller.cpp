@@ -30,20 +30,27 @@ controller_interface::CallbackReturn TricycleSteeringController::configure_odome
 {
   tricycle_steering_controller::Params tricycle_params = tricycle_param_listener_->get_params();
 
-  const double wheel_radius = tricycle_params.wheel_radius;
-  const double wheel_seperation = tricycle_params.wheel_separation;
+  const double front_wheels_radius = tricycle_params.front_wheels_radius;
+  const double rear_wheels_radius = tricycle_params.rear_wheels_radius;
+  const double wheel_track = tricycle_params.wheel_track;
   const double wheelbase = tricycle_params.wheelbase;
-  odometry_.set_wheel_params(wheel_radius, wheel_seperation, wheelbase);
-  odometry_.set_velocity_rolling_window_size(params_.velocity_rolling_window_size);
 
-  // TODO(petkovich): enable position/velocity configure
+  if (params_.front_steering)
+  {
+    odometry_.set_wheel_params(rear_wheels_radius, wheelbase, wheel_track);
+  }
+  else
+  {
+    odometry_.set_wheel_params(front_wheels_radius, wheelbase, wheel_track);
+  }
+
   const size_t nr_state_itfs = 3;
   const size_t nr_cmd_itfs = 3;
   const size_t nr_ref_itfs = 2;
 
   set_interface_numbers(nr_state_itfs, nr_cmd_itfs, nr_ref_itfs);
 
-  RCLCPP_INFO(get_node()->get_logger(), "ackermann odom configure successful");
+  RCLCPP_INFO(get_node()->get_logger(), "tricycle odom configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
