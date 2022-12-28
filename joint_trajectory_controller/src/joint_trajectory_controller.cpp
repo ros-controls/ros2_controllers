@@ -565,14 +565,18 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
 
       // TODO(destogl): remove this in ROS2 Iron
       // Check deprecated style for "ff_velocity_scale" parameter definition.
-      if (gains.ff_velocity_scale == 0.0)
+      double ff_velocity_scale_tmp =
+        auto_declare<double>("ff_velocity_scale/" + params_.joints[i], -1.0);
+      if (ff_velocity_scale_tmp != -1.0)
       {
         RCLCPP_WARN(
           get_node()->get_logger(),
-          "'ff_velocity_scale' parameters is not defined under 'gains.<joint_name>.' structure. "
-          "Maybe you are using deprecated format 'ff_velocity_scale/<joint_name>'!");
+          "You are using deprecated format 'ff_velocity_scale/%s: %f'! "
+          "'ff_velocity_scale' parameters have to be defined under 'gains.<joint_name>.' "
+          "structure. ",
+          command_joint_names_[i].c_str(), ff_velocity_scale_tmp);
 
-        ff_velocity_scale_[i] = auto_declare<double>("ff_velocity_scale/" + params_.joints[i], 0.0);
+        ff_velocity_scale_[i] = ff_velocity_scale_tmp;
       }
       else
       {
