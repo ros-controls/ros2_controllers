@@ -140,29 +140,64 @@ open_loop_control (boolean):
 
   If this flag is set, the controller tries to read the values from the command interfaces on starting. If they have real numeric values, those will be used instead of state interfaces. Therefore it is important set command interfaces to NaN (std::numeric_limits<double>::quiet_NaN()) or state values when the hardware is started.
 
-constraints (structure)
+constraints (structure):
   Default values for tolerances if no explicit values are states in JointTrajectory message.
 
-constraints.stopped_velocity_tolerance (double)
+constraints.stopped_velocity_tolerance (double):
   Default value for end velocity deviation.
 
   Default: 0.01
 
-constraints.goal_time (double)
+constraints.goal_time (double):
   Maximally allowed tolerance for not reaching the end of the trajectory in a predefined time.
 
   Default: 0.0 (not checked)
 
-constraints.<joint_name>.trajectory
+constraints.<joint_name>.trajectory (double):
   Maximally allowed deviation from the target trajectory for a given joint.
 
   Default: 0.0 (tolerance is not enforced)
 
-constraints.<joint_name>.goal
+constraints.<joint_name>.goal (double):
   Maximally allowed deviation from the goal (end of the trajectory) for a given joint.
 
   Default: 0.0 (tolerance is not enforced)
 
+gains (structure):
+  If ``velocity`` is the only command interface for all joints or an ``effort`` command interface is configured, PID controllers are used for every joint. This structure contains the controller gains for every joint with the control law
+
+  .. math::
+
+   u = k_ff v_d + k_p (s_d - s) + k_i \sum(s_d - s) dt + k_d (v_d - v) 
+
+  with the desired velocity :math:`v_d` and position :math:`s_d`, 
+  the measured velocity :math:`v` and position :math:`s`, the controller period :math:`dt`,
+  and the ``velocity`` or ``effort`` setpoint :math:`u`, respectively.
+
+gains.<joint_name>.p (double):
+  Proportional gain :math:`k_p` for PID
+
+  Default: 0.0 
+
+gains.<joint_name>.i (double):
+  Integral gain :math:`k_i` for PID
+
+  Default: 0.0 
+
+gains.<joint_name>.d (double):
+  Derivative gain :math:`k_d` for PID
+
+  Default: 0.0 
+
+gains.<joint_name>.i_clamp (double):
+  Integral clamp. Symmetrical in both positive and negative direction.
+
+  Default: 0.0 
+
+gains.<joint_name>.ff_velocity_scale (double):
+  Feed-forward scaling :math:`k_ff` of velocity
+
+  Default: 0.0 
 
 ROS2 interface of the controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
