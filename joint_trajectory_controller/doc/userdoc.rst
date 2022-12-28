@@ -168,36 +168,36 @@ gains (structure):
 
   .. math::
 
-   u = k_ff v_d + k_p (s_d - s) + k_i \sum(s_d - s) dt + k_d (v_d - v) 
+   u = k_ff v_d + k_p (s_d - s) + k_i \sum(s_d - s) dt + k_d (v_d - v)
 
-  with the desired velocity :math:`v_d` and position :math:`s_d`, 
+  with the desired velocity :math:`v_d` and position :math:`s_d`,
   the measured velocity :math:`v` and position :math:`s`, the controller period :math:`dt`,
   and the ``velocity`` or ``effort`` setpoint :math:`u`, respectively.
 
 gains.<joint_name>.p (double):
   Proportional gain :math:`k_p` for PID
 
-  Default: 0.0 
+  Default: 0.0
 
 gains.<joint_name>.i (double):
   Integral gain :math:`k_i` for PID
 
-  Default: 0.0 
+  Default: 0.0
 
 gains.<joint_name>.d (double):
   Derivative gain :math:`k_d` for PID
 
-  Default: 0.0 
+  Default: 0.0
 
 gains.<joint_name>.i_clamp (double):
   Integral clamp. Symmetrical in both positive and negative direction.
 
-  Default: 0.0 
+  Default: 0.0
 
 gains.<joint_name>.ff_velocity_scale (double):
   Feed-forward scaling :math:`k_ff` of velocity
 
-  Default: 0.0 
+  Default: 0.0
 
 ROS2 interface of the controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
