@@ -483,6 +483,176 @@ TEST_P(TrajectoryControllerTestParameterized, state_topic_consistency)
   EXPECT_TRUE(state->error.accelerations.empty() || state->error.accelerations == zeros);
 }
 
+// Floating-point value comparison threshold
+const double EPS = 1e-6;
+/**
+ * @brief check if position error of revolute joints are normalized if not configured so
+*/
+TEST_P(TrajectoryControllerTestParameterized, position_error_not_normalized)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+  SetUpAndActivateTrajectoryController(executor, true, {}, true);
+  subscribeToState();
+
+  size_t n_joints = joint_names_.size();
+
+  // send msg
+  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
+  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
+  // *INDENT-OFF*
+  std::vector<std::vector<double>> points{
+    {{3.3, 4.4, 9.9}}, {{7.7, 8.8, 9.9}}, {{10.10, 11.11, 12.12}}};
+  std::vector<std::vector<double>> points_velocities{
+    {{0.01, 0.01, 0.01}}, {{0.05, 0.05, 0.05}}, {{0.06, 0.06, 0.06}}};
+  // *INDENT-ON*
+  publish(time_from_start, points, rclcpp::Time(), {}, points_velocities);
+  traj_controller_->wait_for_trajectory(executor);
+
+  // first update
+  updateController(rclcpp::Duration(FIRST_POINT_TIME));
+
+  // Spin to receive latest state
+  executor.spin_some();
+  auto state_msg = getState();
+  ASSERT_TRUE(state_msg);
+
+  const auto allowed_delta = 0.1;
+
+  // no update of state_interface
+  EXPECT_EQ(state_msg->actual.positions, INITIAL_POS_JOINTS);
+
+  // has the msg the correct vector sizes?
+  EXPECT_EQ(n_joints, state_msg->desired.positions.size());
+  EXPECT_EQ(n_joints, state_msg->actual.positions.size());
+  EXPECT_EQ(n_joints, state_msg->error.positions.size());
+
+  // are the correct desired positions used?
+  EXPECT_NEAR(points[0][0], state_msg->desired.positions[0], allowed_delta);
+  EXPECT_NEAR(points[0][1], state_msg->desired.positions[1], allowed_delta);
+  EXPECT_NEAR(points[0][2], state_msg->desired.positions[2], 3 * allowed_delta);
+
+  // no normalization of position error
+  EXPECT_NEAR(
+    state_msg->error.positions[0], state_msg->desired.positions[0] - INITIAL_POS_JOINTS[0], EPS);
+  EXPECT_NEAR(
+    state_msg->error.positions[1], state_msg->desired.positions[1] - INITIAL_POS_JOINTS[1], EPS);
+  EXPECT_NEAR(
+    state_msg->error.positions[2], state_msg->desired.positions[2] - INITIAL_POS_JOINTS[2], EPS);
+
+  if (traj_controller_->has_position_command_interface())
+  {
+    std::cout << "has_position_command_interface\n";
+    // check command interface
+    EXPECT_NEAR(points[0][0], joint_pos_[0], allowed_delta);
+    EXPECT_NEAR(points[0][1], joint_pos_[1], allowed_delta);
+    EXPECT_NEAR(points[0][2], joint_pos_[2], allowed_delta);
+  }
+
+  if (traj_controller_->has_velocity_command_interface())
+  {
+    std::cout << "has_velocity command_interface: " << joint_vel_[0] << " " << joint_vel_[1] << " "
+              << joint_vel_[2] << "\n";
+    // check command interface
+    EXPECT_LE(0.0, joint_vel_[0]);
+    EXPECT_LE(0.0, joint_vel_[1]);
+    EXPECT_LE(0.0, joint_vel_[2]);
+  }
+
+  if (traj_controller_->has_effort_command_interface())
+  {
+    std::cout << "has_position_command_interface\n";
+    // check command interface
+    EXPECT_LE(0.0, joint_eff_[0]);
+    EXPECT_LE(0.0, joint_eff_[1]);
+    EXPECT_LE(0.0, joint_eff_[2]);
+  }
+
+  executor.cancel();
+}
+
+/**
+ * @brief check if position error of revolute joints are normalized if configured so
+*/
+TEST_P(TrajectoryControllerTestParameterized, position_error_normalized)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+  SetUpAndActivateTrajectoryController(executor, true, {}, true, true);
+  subscribeToState();
+
+  size_t n_joints = joint_names_.size();
+
+  // send msg
+  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
+  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
+  // *INDENT-OFF*
+  std::vector<std::vector<double>> points{
+    {{3.3, 4.4, 9.9}}, {{7.7, 8.8, 9.9}}, {{10.10, 11.11, 12.12}}};
+  std::vector<std::vector<double>> points_velocities{
+    {{0.01, 0.01, 0.01}}, {{0.05, 0.05, 0.05}}, {{0.06, 0.06, 0.06}}};
+  // *INDENT-ON*
+  publish(time_from_start, points, rclcpp::Time(), {}, points_velocities);
+  traj_controller_->wait_for_trajectory(executor);
+
+  // first update
+  updateController(rclcpp::Duration(FIRST_POINT_TIME));
+
+  // Spin to receive latest state
+  executor.spin_some();
+  auto state_msg = getState();
+  ASSERT_TRUE(state_msg);
+
+  const auto allowed_delta = 0.1;
+
+  // no update of state_interface
+  EXPECT_EQ(state_msg->actual.positions, INITIAL_POS_JOINTS);
+
+  // has the msg the correct vector sizes?
+  EXPECT_EQ(n_joints, state_msg->desired.positions.size());
+  EXPECT_EQ(n_joints, state_msg->actual.positions.size());
+  EXPECT_EQ(n_joints, state_msg->error.positions.size());
+
+  // are the correct desired positions used?
+  EXPECT_NEAR(points[0][0], state_msg->desired.positions[0], allowed_delta);
+  EXPECT_NEAR(points[0][1], state_msg->desired.positions[1], allowed_delta);
+  EXPECT_NEAR(points[0][2], state_msg->desired.positions[2], 3 * allowed_delta);
+
+  // no normalization of position error
+  EXPECT_NEAR(
+    state_msg->error.positions[0], state_msg->desired.positions[0] - INITIAL_POS_JOINTS[0], EPS);
+  EXPECT_NEAR(
+    state_msg->error.positions[1], state_msg->desired.positions[1] - INITIAL_POS_JOINTS[1], EPS);
+  // normalization of position error
+  EXPECT_NEAR(
+    state_msg->error.positions[2],
+    state_msg->desired.positions[2] - INITIAL_POS_JOINTS[2] - 2 * M_PI, EPS);
+
+  if (traj_controller_->has_position_command_interface())
+  {
+    // check command interface
+    EXPECT_NEAR(points[0][0], joint_pos_[0], allowed_delta);
+    EXPECT_NEAR(points[0][1], joint_pos_[1], allowed_delta);
+    EXPECT_NEAR(points[0][2], joint_pos_[2], allowed_delta);
+  }
+
+  if (traj_controller_->has_velocity_command_interface())
+  {
+    // check command interface
+    EXPECT_LE(0.0, joint_vel_[0]);
+    EXPECT_LE(0.0, joint_vel_[1]);
+    EXPECT_LE(0.0, joint_vel_[2]);
+  }
+
+  if (traj_controller_->has_effort_command_interface())
+  {
+    // check command interface
+    EXPECT_LE(0.0, joint_eff_[0]);
+    EXPECT_LE(0.0, joint_eff_[1]);
+    EXPECT_LE(0.0, joint_eff_[2]);
+  }
+
+  executor.cancel();
+}
+
 void TrajectoryControllerTest::test_state_publish_rate_target(int target_msg_count)
 {
   rclcpp::Parameter state_publish_rate_param(

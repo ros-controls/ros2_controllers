@@ -171,7 +171,7 @@ public:
     node->set_parameters({joint_names_param, cmd_interfaces_params, state_interfaces_params});
   }
 
-  void SetPidParameters()
+  void SetPidParameters(bool normalize_error_default = false)
   {
     traj_controller_->trigger_declare_parameters();
     auto node = traj_controller_->get_node();
@@ -184,19 +184,20 @@ public:
       const rclcpp::Parameter k_d(prefix + ".d", 0.0);
       const rclcpp::Parameter i_clamp(prefix + ".i_clamp", 0.0);
       const rclcpp::Parameter ff_velocity_scale(prefix + ".ff_velocity_scale", 1.0);
-      node->set_parameters({k_p, k_i, k_d, i_clamp, ff_velocity_scale});
+      const rclcpp::Parameter normalize_error(prefix + ".normalize_error", normalize_error_default);
+      node->set_parameters({k_p, k_i, k_d, i_clamp, ff_velocity_scale, normalize_error});
     }
   }
 
   void SetUpAndActivateTrajectoryController(
     rclcpp::Executor & executor, bool use_local_parameters = true,
     const std::vector<rclcpp::Parameter> & parameters = {},
-    bool separate_cmd_and_state_values = false)
+    bool separate_cmd_and_state_values = false, bool normalize_error_default = false)
   {
     SetUpTrajectoryController(executor, use_local_parameters);
 
     // set pid parameters before configure
-    SetPidParameters();
+    SetPidParameters(normalize_error_default);
     for (const auto & param : parameters)
     {
       traj_controller_->get_node()->set_parameter(param);
