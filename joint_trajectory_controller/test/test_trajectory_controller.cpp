@@ -495,7 +495,8 @@ const double EPS = 1e-6;
 TEST_P(TrajectoryControllerTestParameterized, position_error_not_normalized)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
-  SetUpAndActivateTrajectoryController(executor, true, {}, true);
+  constexpr double k_p = 10.0;
+  SetUpAndActivateTrajectoryController(executor, true, {}, true, k_p, 0.0, false);
   subscribeToState();
 
   size_t n_joints = joint_names_.size();
@@ -505,7 +506,7 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_normalized)
   builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
   // *INDENT-OFF*
   std::vector<std::vector<double>> points{
-    {{3.3, 4.4, 9.9}}, {{7.7, 8.8, 9.9}}, {{10.10, 11.11, 12.12}}};
+    {{3.3, 4.4, 6.6}}, {{7.7, 8.8, 9.9}}, {{10.10, 11.11, 12.12}}};
   std::vector<std::vector<double>> points_velocities{
     {{0.01, 0.01, 0.01}}, {{0.05, 0.05, 0.05}}, {{0.06, 0.06, 0.06}}};
   // *INDENT-ON*
@@ -545,7 +546,6 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_normalized)
 
   if (traj_controller_->has_position_command_interface())
   {
-    std::cout << "has_position_command_interface\n";
     // check command interface
     EXPECT_NEAR(points[0][0], joint_pos_[0], allowed_delta);
     EXPECT_NEAR(points[0][1], joint_pos_[1], allowed_delta);
@@ -554,17 +554,30 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_normalized)
 
   if (traj_controller_->has_velocity_command_interface())
   {
-    std::cout << "has_velocity command_interface: " << joint_vel_[0] << " " << joint_vel_[1] << " "
-              << joint_vel_[2] << "\n";
     // check command interface
     EXPECT_LE(0.0, joint_vel_[0]);
     EXPECT_LE(0.0, joint_vel_[1]);
     EXPECT_LE(0.0, joint_vel_[2]);
+
+    // use_closed_loop_pid_adapter_?
+    if (traj_controller_->use_closed_loop_pid_adapter())
+    {
+      // we expect u = k_p * (s_d-s)
+      EXPECT_NEAR(
+        k_p * (state_msg->desired.positions[0] - INITIAL_POS_JOINTS[0]), joint_vel_[0],
+        k_p * allowed_delta);
+      EXPECT_NEAR(
+        k_p * (state_msg->desired.positions[1] - INITIAL_POS_JOINTS[1]), joint_vel_[1],
+        k_p * allowed_delta);
+      // no normalization of position error
+      EXPECT_NEAR(
+        k_p * (state_msg->desired.positions[2] - INITIAL_POS_JOINTS[2]), joint_vel_[2],
+        k_p * allowed_delta);
+    }
   }
 
   if (traj_controller_->has_effort_command_interface())
   {
-    std::cout << "has_position_command_interface\n";
     // check command interface
     EXPECT_LE(0.0, joint_eff_[0]);
     EXPECT_LE(0.0, joint_eff_[1]);
@@ -580,7 +593,8 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_normalized)
 TEST_P(TrajectoryControllerTestParameterized, position_error_normalized)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
-  SetUpAndActivateTrajectoryController(executor, true, {}, true, true);
+  constexpr double k_p = 10.0;
+  SetUpAndActivateTrajectoryController(executor, true, {}, true, k_p, 0.0, true);
   subscribeToState();
 
   size_t n_joints = joint_names_.size();
@@ -590,7 +604,7 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_normalized)
   builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
   // *INDENT-OFF*
   std::vector<std::vector<double>> points{
-    {{3.3, 4.4, 9.9}}, {{7.7, 8.8, 9.9}}, {{10.10, 11.11, 12.12}}};
+    {{3.3, 4.4, 6.6}}, {{7.7, 8.8, 9.9}}, {{10.10, 11.11, 12.12}}};
   std::vector<std::vector<double>> points_velocities{
     {{0.01, 0.01, 0.01}}, {{0.05, 0.05, 0.05}}, {{0.06, 0.06, 0.06}}};
   // *INDENT-ON*
@@ -643,7 +657,28 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_normalized)
     // check command interface
     EXPECT_LE(0.0, joint_vel_[0]);
     EXPECT_LE(0.0, joint_vel_[1]);
-    EXPECT_LE(0.0, joint_vel_[2]);
+
+    // use_closed_loop_pid_adapter_?
+    if (traj_controller_->use_closed_loop_pid_adapter())
+    {
+      EXPECT_GE(0.0, joint_vel_[2]);
+      // we expect u = k_p * (s_d-s)
+      EXPECT_NEAR(
+        k_p * (state_msg->desired.positions[0] - INITIAL_POS_JOINTS[0]), joint_vel_[0],
+        k_p * allowed_delta);
+      EXPECT_NEAR(
+        k_p * (state_msg->desired.positions[1] - INITIAL_POS_JOINTS[1]), joint_vel_[1],
+        k_p * allowed_delta);
+      // normalization of position error
+      EXPECT_NEAR(
+        k_p * (state_msg->desired.positions[2] - INITIAL_POS_JOINTS[2] - 2 * M_PI), joint_vel_[2],
+        k_p * allowed_delta);
+    }
+    else
+    {
+      // interpolated points_velocities only
+      EXPECT_LE(0.0, joint_vel_[2]);
+    }
   }
 
   if (traj_controller_->has_effort_command_interface())
