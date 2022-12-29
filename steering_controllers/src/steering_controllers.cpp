@@ -271,19 +271,34 @@ controller_interface::InterfaceConfiguration SteeringControllers::command_interf
   controller_interface::InterfaceConfiguration command_interfaces_config;
   command_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
   command_interfaces_config.names.reserve(nr_cmd_itfs_);
-  const auto front_wheels_command = params_.front_steering ? hardware_interface::HW_IF_POSITION
-                                                           : hardware_interface::HW_IF_VELOCITY;
-  const auto rear_wheels_command = params_.front_steering ? hardware_interface::HW_IF_VELOCITY
-                                                          : hardware_interface::HW_IF_POSITION;
-  for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
+
+  if (params_.front_steering)
   {
-    command_interfaces_config.names.push_back(
-      params_.rear_wheels_names[i] + "/" + rear_wheels_command);
+    for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
+    {
+      command_interfaces_config.names.push_back(
+        params_.rear_wheels_names[i] + "/" + hardware_interface::HW_IF_VELOCITY);
+    }
+
+    for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
+    {
+      command_interfaces_config.names.push_back(
+        params_.front_wheels_names[i] + "/" + hardware_interface::HW_IF_POSITION);
+    }
   }
-  for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
+  else
   {
-    command_interfaces_config.names.push_back(
-      params_.front_wheels_names[i] + "/" + front_wheels_command);
+    for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
+    {
+      command_interfaces_config.names.push_back(
+        params_.front_wheels_names[i] + "/" + hardware_interface::HW_IF_VELOCITY);
+    }
+
+    for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
+    {
+      command_interfaces_config.names.push_back(
+        params_.rear_wheels_names[i] + "/" + hardware_interface::HW_IF_POSITION);
+    }
   }
   return command_interfaces_config;
 }
