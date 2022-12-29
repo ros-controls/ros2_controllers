@@ -27,6 +27,9 @@
 
 namespace steering_odometry
 {
+const unsigned int BICYCLE_CONFIG = 0;
+const unsigned int TRICYCLE_CONFIG = 1;
+const unsigned int ACKERMANN_CONFIG = 2;
 /**
    * \brief The Odometry class handles odometry readings
    * (2D pose and velocity with related timestamp)
@@ -96,6 +99,12 @@ public:
   void update_open_loop(const double linear, const double angular, const double dt);
 
   /**
+     * \brief Set odometry type
+     * \param type odometry type
+     */
+  void set_odometry_type(const unsigned int type);
+
+  /**
      * \brief heading getter
      * \return heading [rad]
      */
@@ -137,9 +146,9 @@ public:
   void set_velocity_rolling_window_size(size_t velocity_rolling_window_size);
 
   /**
-     * \brief TODO
-     * \param Vx  TODO
-     * \param theta_dot TODO
+     * \brief Calculates inverse kinematics for the desired linear and angular velocities
+     * \param Vx  Desired linear velocity [m/s]
+     * \param theta_dot Desired angular velocity [rad/s]
      */
   std::tuple<double, double> twist_to_ackermann(double Vx, double theta_dot);
 
@@ -171,9 +180,9 @@ private:
   void integrate_exact(double linear, double angular);
 
   /**
-    * \brief TODO
-    * \param Vx  TODO
-    * \param theta_dot TODO
+    * \brief Calculates steering angle from the desired translational and rotational velocity
+    * \param Vx   Linear  velocity   [m]
+    * \param theta_dot Angular velocity [rad]
     */
   double convert_trans_rot_vel_to_steering_angle(double Vx, double theta_dot);
 
@@ -197,6 +206,9 @@ private:
   double wheel_track_;
   double wheelbase_;
   double wheel_radius_;
+
+  /// Configuration type used for thr forward kinematics
+  unsigned int config_type_;
 
   /// Previous wheel position/state [rad]:
   double rear_wheel_old_pos_;

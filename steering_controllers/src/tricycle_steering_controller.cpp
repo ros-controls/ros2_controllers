@@ -44,6 +44,8 @@ controller_interface::CallbackReturn TricycleSteeringController::configure_odome
     odometry_.set_wheel_params(front_wheels_radius, wheelbase, wheel_track);
   }
 
+  odometry_.set_odometry_type(steering_odometry::TRICYCLE_CONFIG);
+
   const size_t nr_state_itfs = 3;
   const size_t nr_cmd_itfs = 3;
   const size_t nr_ref_itfs = 2;
