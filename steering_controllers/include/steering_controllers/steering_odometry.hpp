@@ -55,40 +55,73 @@ public:
 
   /**
      * \brief Updates the odometry class with latest wheels position
-     * \param rear_wheel_pos  Rear wheel position [rad]
-     * \param front_steer_pos Front Steer position [rad]
+     * \param traction_wheel_pos  traction wheel position [rad]
+     * \param steer_pos Front Steer position [rad]
      * \param dt      time difference to last call
      * \return true if the odometry is actually updated
      */
-
   bool update_from_position(
-    const double rear_wheel_pos, const double front_steer_pos, const double dt);
-
-  bool update_from_position(
-    const double rear_right_wheel_pos, const double rear_left_wheel_pos,
-    const double front_steer_pos, const double dt);
-
-  bool update_from_position(
-    const double rear_right_wheel_pos, const double rear_left_wheel_pos,
-    const double front_right_steer_pos, const double front_left_steer_pos, const double dt);
+    const double traction_wheel_pos, const double steer_pos, const double dt);
 
   /**
      * \brief Updates the odometry class with latest wheels position
-     * \param rear_wheel_vel  Rear wheel velocity [rad/s]
-     * \param front_steer_pos Front Steer position [rad]
+     * \param right_traction_wheel_pos  Right traction wheel velocity [rad]
+     * \param left_traction_wheel_pos  Left traction wheel velocity [rad]
+     * \param front_steer_pos Steer wheel position [rad]
+     * \param dt      time difference to last call
+     * \return true if the odometry is actually updated
+     */
+  bool update_from_position(
+    const double right_traction_wheel_pos, const double left_traction_wheel_pos,
+    const double steer_pos, const double dt);
+
+  /**
+     * \brief Updates the odometry class with latest wheels position
+     * \param right_traction_wheel_pos  Right traction wheel position [rad]
+     * \param left_traction_wheel_pos  Left traction wheel position [rad]
+     * \param right_steer_pos Right steer wheel position [rad]
+     * \param left_steer_pos Left steer wheel position [rad]
+     * \param dt      time difference to last call
+     * \return true if the odometry is actually updated
+     */
+  bool update_from_position(
+    const double right_traction_wheel_pos, const double left_traction_wheel_pos,
+    const double right_steer_pos, const double left_steer_pos, const double dt);
+
+  /**
+     * \brief Updates the odometry class with latest wheels position
+     * \param traction_wheel_vel  Traction wheel velocity [rad/s]
+     * \param front_steer_pos Steer wheel position [rad]
      * \param dt      time difference to last call
      * \return true if the odometry is actually updated
      */
   bool update_from_velocity(
-    const double rear_wheel_vel, const double front_steer_pos, const double dt);
+    const double traction_wheel_vel, const double steer_pos, const double dt);
 
+  /**
+     * \brief Updates the odometry class with latest wheels position
+     * \param right_traction_wheel_vel  Right traction wheel velocity [rad/s]
+     * \param left_traction_wheel_vel  Left traction wheel velocity [rad/s]
+     * \param front_steer_pos Steer wheel position [rad]
+     * \param dt      time difference to last call
+     * \return true if the odometry is actually updated
+     */
   bool update_from_velocity(
-    const double rear_right_wheel_vel, const double rear_left_wheel_vel,
-    const double front_steer_pos, const double dt);
+    const double right_traction_wheel_vel, const double left_traction_wheel_vel,
+    const double steer_pos, const double dt);
 
+  /**
+     * \brief Updates the odometry class with latest wheels position
+     * \param right_traction_wheel_vel  Right traction wheel velocity [rad/s]
+     * \param left_traction_wheel_vel  Left traction wheel velocity [rad/s]
+     * \param right_steer_pos Right steer wheel position [rad]
+     * \param left_steer_pos Left steer wheel position [rad]
+     * \param dt      time difference to last call
+     * \return true if the odometry is actually updated
+     */
   bool update_from_velocity(
-    const double rear_right_wheel_vel, const double rear_left_wheel_vel,
-    const double front_right_steer_pos, const double front_left_steer_pos, const double dt);
+    const double right_traction_wheel_vel, const double left_traction_wheel_vel,
+    const double right_steer_pos, const double left_steer_pos, const double dt);
 
   /**
      * \brief Updates the odometry class with latest velocity command
@@ -196,9 +229,10 @@ private:
   rclcpp::Time timestamp_;
 
   /// Current pose:
-  double x_;        //   [m]
-  double y_;        //   [m]
-  double heading_;  // [rad]
+  double x_;          //   [m]
+  double y_;          //   [m]
+  double steer_pos_;  // [rad]
+  double heading_;    // [rad]
 
   /// Current velocity:
   double linear_;   //   [m/s]
@@ -212,9 +246,9 @@ private:
   unsigned int config_type_;
 
   /// Previous wheel position/state [rad]:
-  double rear_wheel_old_pos_;
-  double rear_right_wheel_old_pos_;
-  double rear_left_wheel_old_pos_;
+  double traction_wheel_old_pos_;
+  double traction_right_wheel_old_pos_;
+  double traction_left_wheel_old_pos_;
   /// Rolling mean accumulators for the linar and angular velocities:
   size_t velocity_rolling_window_size_;
   rcpputils::RollingMeanAccumulator<double> linear_acc_;

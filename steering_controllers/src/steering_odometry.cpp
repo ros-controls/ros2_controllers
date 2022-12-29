@@ -36,7 +36,7 @@ SteeringOdometry::SteeringOdometry(size_t velocity_rolling_window_size)
   wheel_track_(0.0),
   wheelbase_(0.0),
   wheel_radius_(0.0),
-  rear_wheel_old_pos_(0.0),
+  traction_wheel_old_pos_(0.0),
   velocity_rolling_window_size_(velocity_rolling_window_size),
   linear_acc_(velocity_rolling_window_size),
   angular_acc_(velocity_rolling_window_size)
@@ -72,20 +72,21 @@ bool SteeringOdometry::update_odometry(
   return true;
 }
 
-// TODO(petkovich): enable also velocity interface to update using velocity from the rear wheel
+// TODO(petkovich): enable also velocity interface to update using velocity from the traction wheel
 bool SteeringOdometry::update_from_position(
-  const double rear_wheel_pos, const double front_steer_pos, const double dt)
+  const double traction_wheel_pos, const double steer_pos, const double dt)
 {
   /// Get current wheel joint positions:
-  const double rear_wheel_cur_pos = rear_wheel_pos * wheel_radius_;
-  const double rear_wheel_est_pos_diff = rear_wheel_cur_pos - rear_wheel_old_pos_;
+  const double traction_wheel_cur_pos = traction_wheel_pos * wheel_radius_;
+  const double traction_wheel_est_pos_diff = traction_wheel_cur_pos - traction_wheel_old_pos_;
 
   /// Update old position with current:
-  rear_wheel_old_pos_ = rear_wheel_cur_pos;
+  traction_wheel_old_pos_ = traction_wheel_cur_pos;
 
   /// Compute linear and angular diff:
-  const double linear_velocity = rear_wheel_est_pos_diff / dt;
-  const double angular = tan(front_steer_pos) * linear_velocity / wheelbase_;
+  const double linear_velocity = traction_wheel_est_pos_diff / dt;
+  steer_pos_ = steer_pos;
+  const double angular = tan(steer_pos) * linear_velocity / wheelbase_;
 
   update_odometry(linear_velocity, angular, dt);
 
@@ -93,49 +94,53 @@ bool SteeringOdometry::update_from_position(
 }
 
 bool SteeringOdometry::update_from_position(
-  const double rear_right_wheel_pos, const double rear_left_wheel_pos, const double front_steer_pos,
-  const double dt)
+  const double traction_right_wheel_pos, const double traction_left_wheel_pos,
+  const double steer_pos, const double dt)
 {
   /// Get current wheel joint positions:
-  const double rear_right_wheel_cur_pos = rear_right_wheel_pos * wheel_radius_;
-  const double rear_left_wheel_cur_pos = rear_left_wheel_pos * wheel_radius_;
+  const double traction_right_wheel_cur_pos = traction_right_wheel_pos * wheel_radius_;
+  const double traction_left_wheel_cur_pos = traction_left_wheel_pos * wheel_radius_;
 
-  const double rear_right_wheel_est_pos_diff = rear_right_wheel_cur_pos - rear_right_wheel_old_pos_;
-  const double rear_left_wheel_est_pos_diff = rear_left_wheel_cur_pos - rear_left_wheel_old_pos_;
+  const double traction_right_wheel_est_pos_diff =
+    traction_right_wheel_cur_pos - traction_right_wheel_old_pos_;
+  const double traction_left_wheel_est_pos_diff =
+    traction_left_wheel_cur_pos - traction_left_wheel_old_pos_;
 
   /// Update old position with current:
-  rear_right_wheel_old_pos_ = rear_right_wheel_cur_pos;
-  rear_left_wheel_old_pos_ = rear_left_wheel_cur_pos;
+  traction_right_wheel_old_pos_ = traction_right_wheel_cur_pos;
+  traction_left_wheel_old_pos_ = traction_left_wheel_cur_pos;
 
   const double linear_velocity =
-    (rear_right_wheel_est_pos_diff + rear_left_wheel_est_pos_diff) * 0.5 / dt;
-  const double angular = tan(front_steer_pos) * linear_velocity / wheelbase_;
-
+    (traction_right_wheel_est_pos_diff + traction_left_wheel_est_pos_diff) * 0.5 / dt;
+  steer_pos_ = steer_pos;
+  const double angular = tan(steer_pos_) * linear_velocity / wheelbase_;
   update_odometry(linear_velocity, angular, dt);
 
   return true;
 }
 
 bool SteeringOdometry::update_from_position(
-  const double rear_right_wheel_pos, const double rear_left_wheel_pos,
-  const double front_right_steer_pos, const double front_left_steer_pos, const double dt)
+  const double traction_right_wheel_pos, const double traction_left_wheel_pos,
+  const double right_steer_pos, const double left_steer_pos, const double dt)
 {
   /// Get current wheel joint positions:
-  const double rear_right_wheel_cur_pos = rear_right_wheel_pos * wheel_radius_;
-  const double rear_left_wheel_cur_pos = rear_left_wheel_pos * wheel_radius_;
+  const double traction_right_wheel_cur_pos = traction_right_wheel_pos * wheel_radius_;
+  const double traction_left_wheel_cur_pos = traction_left_wheel_pos * wheel_radius_;
 
-  const double rear_right_wheel_est_pos_diff = rear_right_wheel_cur_pos - rear_right_wheel_old_pos_;
-  const double rear_left_wheel_est_pos_diff = rear_left_wheel_cur_pos - rear_left_wheel_old_pos_;
+  const double traction_right_wheel_est_pos_diff =
+    traction_right_wheel_cur_pos - traction_right_wheel_old_pos_;
+  const double traction_left_wheel_est_pos_diff =
+    traction_left_wheel_cur_pos - traction_left_wheel_old_pos_;
 
   /// Update old position with current:
-  rear_right_wheel_old_pos_ = rear_right_wheel_cur_pos;
-  rear_left_wheel_old_pos_ = rear_left_wheel_cur_pos;
+  traction_right_wheel_old_pos_ = traction_right_wheel_cur_pos;
+  traction_left_wheel_old_pos_ = traction_left_wheel_cur_pos;
 
   /// Compute linear and angular diff:
   const double linear_velocity =
-    (rear_right_wheel_est_pos_diff + rear_left_wheel_est_pos_diff) * 0.5 / dt;
-  const double front_steer_pos = (front_right_steer_pos + front_left_steer_pos) * 0.5;
-  const double angular = tan(front_steer_pos) * linear_velocity / wheelbase_;
+    (traction_right_wheel_est_pos_diff + traction_left_wheel_est_pos_diff) * 0.5 / dt;
+  steer_pos_ = (right_steer_pos + left_steer_pos) * 0.5;
+  const double angular = tan(steer_pos_) * linear_velocity / wheelbase_;
 
   update_odometry(linear_velocity, angular, dt);
 
@@ -143,10 +148,11 @@ bool SteeringOdometry::update_from_position(
 }
 
 bool SteeringOdometry::update_from_velocity(
-  const double rear_wheel_vel, const double front_steer_pos, const double dt)
+  const double traction_wheel_vel, const double steer_pos, const double dt)
 {
-  double linear_velocity = rear_wheel_vel * wheel_radius_;
-  const double angular = tan(front_steer_pos) * linear_velocity / wheelbase_;
+  steer_pos_ = steer_pos;
+  double linear_velocity = traction_wheel_vel * wheel_radius_;
+  const double angular = tan(steer_pos) * linear_velocity / wheelbase_;
 
   update_odometry(linear_velocity, angular, dt);
 
@@ -154,25 +160,27 @@ bool SteeringOdometry::update_from_velocity(
 }
 
 bool SteeringOdometry::update_from_velocity(
-  const double rear_right_wheel_vel, const double rear_left_wheel_vel, const double front_steer_pos,
-  const double dt)
+  const double right_traction_wheel_vel, const double left_traction_wheel_vel,
+  const double steer_pos, const double dt)
 {
-  double linear_velocity = (rear_right_wheel_vel + rear_left_wheel_vel) * wheel_radius_ * 0.5;
-  const double angular = tan(front_steer_pos) * linear_velocity / wheelbase_;
+  double linear_velocity =
+    (right_traction_wheel_vel + left_traction_wheel_vel) * wheel_radius_ * 0.5;
+  steer_pos_ = steer_pos;
 
+  const double angular = tan(steer_pos_) * linear_velocity / wheelbase_;
   update_odometry(linear_velocity, angular, dt);
 
   return true;
 }
 
 bool SteeringOdometry::update_from_velocity(
-  const double rear_right_wheel_vel, const double rear_left_wheel_vel,
-  const double front_right_steer_pos, const double front_left_steer_pos, const double dt)
+  const double right_traction_wheel_vel, const double left_traction_wheel_vel,
+  const double right_steer_pos, const double left_steer_pos, const double dt)
 {
-  double linear_velocity = (rear_right_wheel_vel + rear_left_wheel_vel) * wheel_radius_ * 0.5;
-  const double front_steer_pos = (front_right_steer_pos + front_left_steer_pos) * 0.5;
-  const double angular = tan(front_steer_pos) * linear_velocity / wheelbase_;
-  // TODO(petkovich): Does wheel_track_ come into play if Wr and Wl are not the same?
+  steer_pos_ = (right_steer_pos + left_steer_pos) * 0.5;
+  double linear_velocity =
+    (right_traction_wheel_vel + left_traction_wheel_vel) * wheel_radius_ * 0.5;
+  const double angular = steer_pos_ * linear_velocity / wheelbase_;
 
   update_odometry(linear_velocity, angular, dt);
 
@@ -228,7 +236,7 @@ std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_comma
   else
   {
     alpha = SteeringOdometry::convert_trans_rot_vel_to_steering_angle(Vx, theta_dot);
-    Ws = Vx / (wheel_radius_ * std::cos(alpha));
+    Ws = Vx / (wheel_radius_ * std::cos(steer_pos_));
   }
 
   if (config_type_ == BICYCLE_CONFIG)
@@ -241,15 +249,15 @@ std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_comma
   {
     std::vector<double> traction_commands;
     std::vector<double> steering_commands;
-    if (fabs(heading_) < 1e-6)
+    if (fabs(steer_pos_) < 1e-6)
     {
       traction_commands = {Ws, Ws};
     }
     else
     {
-      double turning_radius = wheelbase_ / std::tan(heading_);
-      double Wr = Ws * (turning_radius - wheel_track_ * 0.5) / turning_radius;
-      double Wl = Ws * (turning_radius + wheel_track_ * 0.5) / turning_radius;
+      double turning_radius = wheelbase_ / std::tan(steer_pos_);
+      double Wr = Ws * (turning_radius + wheel_track_ * 0.5) / turning_radius;
+      double Wl = Ws * (turning_radius - wheel_track_ * 0.5) / turning_radius;
       traction_commands = {Wr, Wl};
     }
     steering_commands = {alpha};
@@ -259,15 +267,15 @@ std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_comma
   {
     std::vector<double> traction_commands;
     std::vector<double> steering_commands;
-    if (fabs(heading_) < 1e-6)
+    if (fabs(steer_pos_) < 1e-6)
     {
       traction_commands = {Ws, Ws};
     }
     else
     {
-      double turning_radius = wheelbase_ / std::tan(heading_);
-      double Wr = Ws * (turning_radius - wheel_track_ * 0.5) / turning_radius;
-      double Wl = Ws * (turning_radius + wheel_track_ * 0.5) / turning_radius;
+      double turning_radius = wheelbase_ / std::tan(steer_pos_);
+      double Wr = Ws * (turning_radius + wheel_track_ * 0.5) / turning_radius;
+      double Wl = Ws * (turning_radius - wheel_track_ * 0.5) / turning_radius;
       traction_commands = {Wr, Wl};
     }
     // TODO(petkovich): implement this
