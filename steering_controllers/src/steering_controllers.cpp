@@ -416,16 +416,17 @@ controller_interface::return_type SteeringControllers::update_and_write_commands
     // store and set commands
     const double linear_command = reference_interfaces_[0];
     const double angular_command = reference_interfaces_[1];
-    auto [alpha_write, Ws_write] = odometry_.twist_to_ackermann(linear_command, angular_command);
+    auto [traction_commands, steering_commands] =
+      odometry_.get_commands(linear_command, angular_command);
     if (params_.front_steering)
     {
       for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
       {
-        command_interfaces_[i].set_value(Ws_write);
+        command_interfaces_[i].set_value(traction_commands[i]);
       }
       for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
       {
-        command_interfaces_[i + params_.rear_wheels_names.size()].set_value(alpha_write);
+        command_interfaces_[i + params_.rear_wheels_names.size()].set_value(steering_commands[i]);
       }
     }
     else
@@ -433,11 +434,12 @@ controller_interface::return_type SteeringControllers::update_and_write_commands
       {
         for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
         {
-          command_interfaces_[i].set_value(Ws_write);
+          command_interfaces_[i].set_value(traction_commands[i]);
         }
         for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
         {
-          command_interfaces_[i + params_.front_wheels_names.size()].set_value(alpha_write);
+          command_interfaces_[i + params_.front_wheels_names.size()].set_value(
+            steering_commands[i]);
         }
       }
     }

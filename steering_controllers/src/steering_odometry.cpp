@@ -205,7 +205,6 @@ void SteeringOdometry::set_velocity_rolling_window_size(size_t velocity_rolling_
 
 void SteeringOdometry::set_odometry_type(const unsigned int type) { config_type_ = type; }
 
-// TODO(petkovich): change functions depending on fwd kinematics model
 double SteeringOdometry::convert_trans_rot_vel_to_steering_angle(double Vx, double theta_dot)
 {
   if (theta_dot == 0 || Vx == 0)
@@ -215,22 +214,45 @@ double SteeringOdometry::convert_trans_rot_vel_to_steering_angle(double Vx, doub
   return std::atan(theta_dot * wheelbase_ / Vx);
 }
 
-// TODO(petkovich): change functions depending on fwd kinematics model
-std::tuple<double, double> SteeringOdometry::twist_to_ackermann(double Vx, double theta_dot)
+std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_commands(
+  double Vx, double theta_dot)
 {
-  // using naming convention in http://users.isr.ist.utl.pt/~mir/cadeiras/robmovel/Kinematics.pdf
-  double alpha, Ws;
+  // desired velocty and steering angle of the midle of traction and steering axis
+  double Ws, alpha;
 
   if (Vx == 0 && theta_dot != 0)
-  {  // is spin action
+  {
     alpha = theta_dot > 0 ? M_PI_2 : -M_PI_2;
     Ws = abs(theta_dot) * wheelbase_ / wheel_radius_;
-    return std::make_tuple(alpha, Ws);
+  }
+  else
+  {
+    alpha = SteeringOdometry::convert_trans_rot_vel_to_steering_angle(Vx, theta_dot);
+    Ws = Vx / (wheel_radius_ * std::cos(alpha));
   }
 
-  alpha = SteeringOdometry::convert_trans_rot_vel_to_steering_angle(Vx, theta_dot);
-  Ws = Vx / (wheel_radius_ * std::cos(alpha));
-  return std::make_tuple(alpha, Ws);
+  if (config_type_ == BICYCLE_CONFIG)
+  {
+    std::vector<double> traction_commands = {Ws};
+    std::vector<double> steering_commands = {alpha};
+    return std::make_tuple(traction_commands, steering_commands);
+  }
+  else if (config_type_ == TRICYCLE_CONFIG)
+  {
+    std::vector<double> traction_commands = {Ws, Ws};
+    std::vector<double> steering_commands = {alpha};
+    return std::make_tuple(traction_commands, steering_commands);
+  }
+  else if (config_type_ == ACKERMANN_CONFIG)
+  {
+    std::vector<double> traction_commands = {Ws, Ws};
+    std::vector<double> steering_commands = {alpha, alpha};
+    return std::make_tuple(traction_commands, steering_commands);
+  }
+  else
+  {
+    throw std::runtime_error("Config not implemented");
+  }
 }
 
 void SteeringOdometry::reset_odometry()

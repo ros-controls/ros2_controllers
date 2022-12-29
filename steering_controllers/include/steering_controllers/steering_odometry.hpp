@@ -18,6 +18,7 @@
 #pragma once
 
 #include <tuple>
+#include <vector>
 
 #include "realtime_tools/realtime_buffer.h"
 #include "realtime_tools/realtime_publisher.h"
@@ -44,7 +45,6 @@ public:
      * \param velocity_rolling_window_size Rolling window size used to compute the velocity mean
      *
      */
-  // ackermann_steering_controller_ros2::Params params;
   explicit SteeringOdometry(size_t velocity_rolling_window_size = 10);
 
   /**
@@ -149,8 +149,9 @@ public:
      * \brief Calculates inverse kinematics for the desired linear and angular velocities
      * \param Vx  Desired linear velocity [m/s]
      * \param theta_dot Desired angular velocity [rad/s]
+     * \return Tuple of velocity commands and steering commands
      */
-  std::tuple<double, double> twist_to_ackermann(double Vx, double theta_dot);
+  std::tuple<std::vector<double>, std::vector<double>> get_commands(double Vx, double theta_dot);
 
   /**
      *  \brief Reset poses, heading, and accumulators
