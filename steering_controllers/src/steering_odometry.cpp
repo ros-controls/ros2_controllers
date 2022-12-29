@@ -239,14 +239,42 @@ std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_comma
   }
   else if (config_type_ == TRICYCLE_CONFIG)
   {
-    std::vector<double> traction_commands = {Ws, Ws};
-    std::vector<double> steering_commands = {alpha};
+    std::vector<double> traction_commands;
+    std::vector<double> steering_commands;
+    if (fabs(heading_) < 1e-6)
+    {
+      traction_commands = {Ws, Ws};
+    }
+    else
+    {
+      double turning_radius = wheelbase_ / std::tan(heading_);
+      double Wr = Ws * (turning_radius - wheel_track_ * 0.5) / turning_radius;
+      double Wl = Ws * (turning_radius + wheel_track_ * 0.5) / turning_radius;
+      traction_commands = {Wr, Wl};
+    }
+    steering_commands = {alpha};
     return std::make_tuple(traction_commands, steering_commands);
   }
   else if (config_type_ == ACKERMANN_CONFIG)
   {
-    std::vector<double> traction_commands = {Ws, Ws};
-    std::vector<double> steering_commands = {alpha, alpha};
+    std::vector<double> traction_commands;
+    std::vector<double> steering_commands;
+    if (fabs(heading_) < 1e-6)
+    {
+      traction_commands = {Ws, Ws};
+    }
+    else
+    {
+      double turning_radius = wheelbase_ / std::tan(heading_);
+      double Wr = Ws * (turning_radius - wheel_track_ * 0.5) / turning_radius;
+      double Wl = Ws * (turning_radius + wheel_track_ * 0.5) / turning_radius;
+      traction_commands = {Wr, Wl};
+    }
+    // TODO(petkovich): implement this
+    // double wanted_turning_radius = wheelbase_ / std::tan(alpha);
+    double alpha_r = alpha;
+    double alpha_l = alpha;
+    steering_commands = {alpha_r, alpha_l};
     return std::make_tuple(traction_commands, steering_commands);
   }
   else
