@@ -43,7 +43,7 @@ controller_interface::CallbackReturn BicycleSteeringController::configure_odomet
     odometry_.set_wheel_params(front_wheel_radius, wheelbase);
   }
 
-  odometry_.set_odometry_type(steering_odometry::ACKERMANN_CONFIG);
+  odometry_.set_odometry_type(steering_odometry::BICYCLE_CONFIG);
 
   const size_t nr_state_itfs = 2;
   const size_t nr_cmd_itfs = 2;

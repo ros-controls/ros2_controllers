@@ -46,7 +46,7 @@ controller_interface::CallbackReturn AckermannSteeringController::configure_odom
     odometry_.set_wheel_params(front_wheels_radius, wheelbase, front_wheel_track);
   }
 
-  odometry_.set_odometry_type(steering_odometry::TRICYCLE_CONFIG);
+  odometry_.set_odometry_type(steering_odometry::ACKERMANN_CONFIG);
 
   const size_t nr_state_itfs = 4;
   const size_t nr_cmd_itfs = 4;
