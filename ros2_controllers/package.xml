@@ -10,6 +10,7 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <exec_depend>ackermann_steering_controller</exec_depend>
   <exec_depend>admittance_controller</exec_depend>
   <exec_depend>bicycle_steering_controller</exec_depend>
   <exec_depend>diff_drive_controller</exec_depend>
