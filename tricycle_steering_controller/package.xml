@@ -4,8 +4,15 @@
   <name>tricycle_steering_controller</name>
   <version>0.0.0</version>
   <description>Steering controller with tricycle kinematics. Rear fixed wheels are powering the vehicle and front wheel is steering.</description>
-  <maintainer email="denis@stoglrobotics.de">Dr.-Ing. Denis Štogl</maintainer>
-  <license>Apache-2.0</license>
+  <license>Apache License 2.0</license>
+  <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
+  <maintainer email="denis.stogl@stoglrobotics.de">Dr.-Ing. Denis Štogl</maintainer>
+  <maintainer email="tomislav.petkovic.fer@gmail.com">dr. sc. Tomislav Petkovic</maintainer>
+  <maintainer email="tony.najjar@logivations.com">Tony Najjar</maintainer>
+
+  <author email="denis.stogl@stoglrobotics.de">Dr.-Ing. Denis Štogl</author>
+  <author email="tomislav.petkovic.fer@gmail.com">dr. sc. Tomislav Petkovic</author>
+  <author email="tony.najjar@logivations.com">Tony Najjar</author>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 

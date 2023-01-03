@@ -3,9 +3,14 @@
 <package format="3">
   <name>bicycle_steering_controller</name>
   <version>0.0.0</version>
-  <description>Steering controller with bicycle kinematics. Rear fixed wheel is powering the wehicle and front wheel is steering.</description>
-  <maintainer email="denis@stoglrobotics.de">Dr.-Ing. Denis Štogl</maintainer>
-  <license>Apache-2.0</license>
+  <description>Steering controller with bicycle kinematics. Rear fixed wheel is powering the vehicle and front wheel is steering.</description>
+  <license>Apache License 2.0</license>
+  <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
+  <maintainer email="denis.stogl@stoglrobotics.de">Dr.-Ing. Denis Štogl</maintainer>
+  <maintainer email="tomislav.petkovic.fer@gmail.com">dr. sc. Tomislav Petkovic</maintainer>
+
+  <author email="denis.stogl@stoglrobotics.de">Dr.-Ing. Denis Štogl</author>
+  <author email="tomislav.petkovic.fer@gmail.com">dr. sc. Tomislav Petkovic</author>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
