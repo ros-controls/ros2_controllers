@@ -15,8 +15,8 @@
 // Authors: dr. sc. Tomislav Petkovic, Dr. Ing. Denis Štogl
 //
 
-#ifndef STEERING_CONTROLLERS__VISIBILITY_CONTROL_H_
-#define STEERING_CONTROLLERS__VISIBILITY_CONTROL_H_
+#ifndef STEERING_CONTROLLERS_LIBRARY__VISIBILITY_CONTROL_H_
+#define STEERING_CONTROLLERS_LIBRARY__VISIBILITY_CONTROL_H_
 
 // This logic was borrowed (then namespaced) from the examples on the gcc wiki:
 //     https://gcc.gnu.org/wiki/Visibility
@@ -50,4 +50,4 @@
 #define STEERING_CONTROLLERS__VISIBILITY_PUBLIC_TYPE
 #endif
 
-#endif  // STEERING_CONTROLLERS__VISIBILITY_CONTROL_H_
+#endif  // STEERING_CONTROLLERS_LIBRARY__VISIBILITY_CONTROL_H_

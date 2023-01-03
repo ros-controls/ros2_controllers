@@ -1,4 +1,4 @@
-steering_controllers:
+steering_controllers_library:
   reference_timeout: {
     type: double,
     default_value: 1,

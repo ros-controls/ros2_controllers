@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STEERING_CONTROLLERS__STEERING_CONTROLLERS_HPP_
-#define STEERING_CONTROLLERS__STEERING_CONTROLLERS_HPP_
+#ifndef STEERING_CONTROLLERS_LIBRARY__STEERING_CONTROLLERS_LIBRARY_HPP_
+#define STEERING_CONTROLLERS_LIBRARY__STEERING_CONTROLLERS_LIBRARY_HPP_
 
 #include <chrono>
 #include <cmath>
@@ -30,9 +30,9 @@
 #include "realtime_tools/realtime_buffer.h"
 #include "realtime_tools/realtime_publisher.h"
 #include "std_srvs/srv/set_bool.hpp"
-#include "steering_controllers/steering_odometry.hpp"
-#include "steering_controllers/visibility_control.h"
-#include "steering_controllers_parameters.hpp"
+#include "steering_controllers_library/steering_odometry.hpp"
+#include "steering_controllers_library/visibility_control.h"
+#include "steering_controllers_library_parameters.hpp"
 
 // TODO(anyone): Replace with controller specific messages
 #include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"
@@ -42,12 +42,12 @@
 #include "nav_msgs/msg/odometry.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"
 
-namespace steering_controllers
+namespace steering_controllers_library
 {
-class SteeringControllers : public controller_interface::ChainableControllerInterface
+class SteeringControllersLibrary : public controller_interface::ChainableControllerInterface
 {
 public:
-  STEERING_CONTROLLERS__VISIBILITY_PUBLIC SteeringControllers();
+  STEERING_CONTROLLERS__VISIBILITY_PUBLIC SteeringControllersLibrary();
 
   virtual STEERING_CONTROLLERS__VISIBILITY_PUBLIC void
   initialize_implementation_parameter_listener() = 0;
@@ -87,8 +87,11 @@ public:
   using ControllerStateMsgTf = tf2_msgs::msg::TFMessage;
 
 protected:
-  std::shared_ptr<steering_controllers::ParamListener> param_listener_;
-  steering_controllers::Params params_;
+  controller_interface::CallbackReturn set_interface_numbers(
+    size_t nr_state_itfs, size_t nr_cmd_itfs, size_t nr_ref_itfs);
+
+  std::shared_ptr<steering_controllers_library::ParamListener> param_listener_;
+  steering_controllers_library::Params params_;
 
   // Command subscribers and Controller State publisher
   rclcpp::Subscription<ControllerTwistReferenceMsg>::SharedPtr ref_subscriber_twist_ = nullptr;
@@ -128,9 +131,6 @@ protected:
   // name constants for reference interfaces
   size_t nr_ref_itfs_;
 
-  STEERING_CONTROLLERS__VISIBILITY_PROTECTED controller_interface::CallbackReturn
-  set_interface_numbers(size_t nr_state_itfs, size_t nr_cmd_itfs, size_t nr_ref_itfs);
-
   // store last velocity
   double last_linear_velocity_ = 0.0;
   double last_angular_velocity_ = 0.0;
@@ -142,6 +142,6 @@ private:
   void reference_callback_unstamped(const std::shared_ptr<geometry_msgs::msg::Twist> msg);
 };
 
-}  // namespace steering_controllers
+}  // namespace steering_controllers_library
 
-#endif  // STEERING_CONTROLLERS__STEERING_CONTROLLERS_HPP_
+#endif  // STEERING_CONTROLLERS_LIBRARY__STEERING_CONTROLLERS_LIBRARY_HPP_

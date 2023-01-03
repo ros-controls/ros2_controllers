@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "steering_controllers/steering_controllers.hpp"
+#include "steering_controllers_library/steering_controllers_library.hpp"
 
 #include <limits>
 #include <memory>
@@ -31,7 +31,7 @@ namespace
 {  // utility
 
 using ControllerTwistReferenceMsg =
-  steering_controllers::SteeringControllers::ControllerTwistReferenceMsg;
+  steering_controllers_library::SteeringControllersLibrary::ControllerTwistReferenceMsg;
 
 // called from RT control loop
 void reset_controller_reference_msg(
@@ -49,15 +49,18 @@ void reset_controller_reference_msg(
 
 }  // namespace
 
-namespace steering_controllers
+namespace steering_controllers_library
 {
-SteeringControllers::SteeringControllers() : controller_interface::ChainableControllerInterface() {}
+SteeringControllersLibrary::SteeringControllersLibrary()
+: controller_interface::ChainableControllerInterface()
+{
+}
 
-controller_interface::CallbackReturn SteeringControllers::on_init()
+controller_interface::CallbackReturn SteeringControllersLibrary::on_init()
 {
   try
   {
-    param_listener_ = std::make_shared<steering_controllers::ParamListener>(get_node());
+    param_listener_ = std::make_shared<steering_controllers_library::ParamListener>(get_node());
     initialize_implementation_parameter_listener();
   }
   catch (const std::exception & e)
@@ -69,7 +72,7 @@ controller_interface::CallbackReturn SteeringControllers::on_init()
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn SteeringControllers::set_interface_numbers(
+controller_interface::CallbackReturn SteeringControllersLibrary::set_interface_numbers(
   size_t nr_state_itfs = 2, size_t nr_cmd_itfs = 2, size_t nr_ref_itfs = 2)
 {
   nr_state_itfs_ = nr_state_itfs;
@@ -78,7 +81,7 @@ controller_interface::CallbackReturn SteeringControllers::set_interface_numbers(
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn SteeringControllers::on_configure(
+controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   params_ = param_listener_->get_params();
@@ -96,13 +99,14 @@ controller_interface::CallbackReturn SteeringControllers::on_configure(
   {
     ref_subscriber_twist_ = get_node()->create_subscription<ControllerTwistReferenceMsg>(
       "~/reference", subscribers_qos,
-      std::bind(&SteeringControllers::reference_callback, this, std::placeholders::_1));
+      std::bind(&SteeringControllersLibrary::reference_callback, this, std::placeholders::_1));
   }
   else
   {
     ref_subscriber_unstamped_ = get_node()->create_subscription<geometry_msgs::msg::Twist>(
       "~/reference_unstamped", subscribers_qos,
-      std::bind(&SteeringControllers::reference_callback_unstamped, this, std::placeholders::_1));
+      std::bind(
+        &SteeringControllersLibrary::reference_callback_unstamped, this, std::placeholders::_1));
   }
 
   std::shared_ptr<ControllerTwistReferenceMsg> msg =
@@ -202,7 +206,8 @@ controller_interface::CallbackReturn SteeringControllers::on_configure(
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-void SteeringControllers::reference_callback(const std::shared_ptr<ControllerTwistReferenceMsg> msg)
+void SteeringControllersLibrary::reference_callback(
+  const std::shared_ptr<ControllerTwistReferenceMsg> msg)
 {
   // if no timestamp provided use current time for command timestamp
   if (msg->header.stamp.sec == 0 && msg->header.stamp.nanosec == 0u)
@@ -229,7 +234,7 @@ void SteeringControllers::reference_callback(const std::shared_ptr<ControllerTwi
   }
 }
 
-void SteeringControllers::reference_callback_unstamped(
+void SteeringControllersLibrary::reference_callback_unstamped(
   const std::shared_ptr<geometry_msgs::msg::Twist> msg)
 {
   RCLCPP_WARN(
@@ -265,8 +270,8 @@ void SteeringControllers::reference_callback_unstamped(
   }
 }
 
-controller_interface::InterfaceConfiguration SteeringControllers::command_interface_configuration()
-  const
+controller_interface::InterfaceConfiguration
+SteeringControllersLibrary::command_interface_configuration() const
 {
   controller_interface::InterfaceConfiguration command_interfaces_config;
   command_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
@@ -303,8 +308,8 @@ controller_interface::InterfaceConfiguration SteeringControllers::command_interf
   return command_interfaces_config;
 }
 
-controller_interface::InterfaceConfiguration SteeringControllers::state_interface_configuration()
-  const
+controller_interface::InterfaceConfiguration
+SteeringControllersLibrary::state_interface_configuration() const
 {
   controller_interface::InterfaceConfiguration state_interfaces_config;
   state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
@@ -346,7 +351,7 @@ controller_interface::InterfaceConfiguration SteeringControllers::state_interfac
 }
 
 std::vector<hardware_interface::CommandInterface>
-SteeringControllers::on_export_reference_interfaces()
+SteeringControllersLibrary::on_export_reference_interfaces()
 {
   reference_interfaces_.resize(nr_ref_itfs_, std::numeric_limits<double>::quiet_NaN());
 
@@ -364,13 +369,13 @@ SteeringControllers::on_export_reference_interfaces()
   return reference_interfaces;
 }
 
-bool SteeringControllers::on_set_chained_mode(bool chained_mode)
+bool SteeringControllersLibrary::on_set_chained_mode(bool chained_mode)
 {
   // Always accept switch to/from chained mode
   return true || chained_mode;
 }
 
-controller_interface::CallbackReturn SteeringControllers::on_activate(
+controller_interface::CallbackReturn SteeringControllersLibrary::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   // Set default value in command
@@ -379,7 +384,7 @@ controller_interface::CallbackReturn SteeringControllers::on_activate(
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn SteeringControllers::on_deactivate(
+controller_interface::CallbackReturn SteeringControllersLibrary::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   // TODO(anyone): depending on number of interfaces, use definitions, e.g., `CMD_MY_ITFS`,
@@ -391,7 +396,7 @@ controller_interface::CallbackReturn SteeringControllers::on_deactivate(
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::return_type SteeringControllers::update_reference_from_subscribers()
+controller_interface::return_type SteeringControllersLibrary::update_reference_from_subscribers()
 {
   auto current_ref = *(input_ref_.readFromRT());
   const auto age_of_last_command = get_node()->now() - (current_ref)->header.stamp;
@@ -416,7 +421,7 @@ controller_interface::return_type SteeringControllers::update_reference_from_sub
   return controller_interface::return_type::OK;
 }
 
-controller_interface::return_type SteeringControllers::update_and_write_commands(
+controller_interface::return_type SteeringControllersLibrary::update_and_write_commands(
   const rclcpp::Time & time, const rclcpp::Duration & period)
 {
   update_odometry(period);
@@ -568,4 +573,4 @@ controller_interface::return_type SteeringControllers::update_and_write_commands
   return controller_interface::return_type::OK;
 }
 
-}  // namespace steering_controllers
+}  // namespace steering_controllers_library

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>steering_controllers</name>
+  <name>steering_controllers_library</name>
   <version>0.0.0</version>
   <description>Package for steering robot configurations including odometry and interfaces.</description>
   <license>Apache License 2.0</license>

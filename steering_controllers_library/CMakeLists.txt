@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(steering_controllers)
+project(steering_controllers_library)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -33,40 +33,33 @@ endforeach()
 add_library(
   ${PROJECT_NAME}
   SHARED
-  src/steering_controllers.cpp
+  src/steering_controllers_library.cpp
   src/steering_odometry.cpp
-  src/ackermann_steering_controller.cpp
-  src/bicycle_steering_controller.cpp
-  src/tricycle_steering_controller.cpp
+  #src/ackermann_steering_controller.cpp
+  #src/bicycle_steering_controller.cpp
+  #src/tricycle_steering_controller.cpp
 )
 
-generate_parameter_library(steering_controllers_parameters
-  config/steering_controllers.yaml
+generate_parameter_library(steering_controllers_library_parameters
+  config/steering_controllers_library.yaml
 )
-generate_parameter_library(bicycle_controller_parameters
-  config/bicycle_steering_controller.yaml
-)
-generate_parameter_library(tricycle_controller_parameters
-  config/tricycle_steering_controller.yaml
-)
-generate_parameter_library(ackermann_controller_parameters
-  config/ackermann_steering_controller.yaml
-)
+#generate_parameter_library(bicycle_controller_parameters
+  #config/bicycle_steering_controller.yaml
+#)
+#generate_parameter_library(tricycle_controller_parameters
+  #config/tricycle_steering_controller.yaml
+#)
+#generate_parameter_library(ackermann_controller_parameters
+  #config/ackermann_steering_controller.yaml
+#)
 
-# target_include_directories(${PROJECT_NAME} PRIVATE include)
 target_include_directories(${PROJECT_NAME} PUBLIC
   "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(${PROJECT_NAME}
-  steering_controllers_parameters
-  bicycle_controller_parameters
-  tricycle_controller_parameters
-  ackermann_controller_parameters)
+  steering_controllers_library_parameters)
 ament_target_dependencies(${PROJECT_NAME} ${THIS_PACKAGE_INCLUDE_DEPENDS})
 target_compile_definitions(${PROJECT_NAME} PRIVATE "STEERING_CONTROLLERS_BUILDING_DLL")
-
-pluginlib_export_plugin_description_file(
-  controller_interface steering_controllers.xml)
 
 install(
   TARGETS
@@ -78,7 +71,8 @@ install(
 
 install(
   DIRECTORY include/
-  DESTINATION include/${PROJECT_NAME}
+  #DESTINATION include/${PROJECT_NAME}   # TODO: it should be this, but then it doesn't compile (?)
+  DESTINATION include
 )
 
 if(BUILD_TESTING)
