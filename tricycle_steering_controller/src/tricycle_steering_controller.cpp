@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "steering_controllers/tricycle_steering_controller.hpp"
+#include "tricycle_steering_controller/tricycle_steering_controller.hpp"
 
 namespace tricycle_steering_controller
 {
 TricycleSteeringController::TricycleSteeringController()
-: steering_controllers::SteeringControllers()
+: steering_controllers_library::SteeringControllersLibrary()
 {
 }
 void TricycleSteeringController::initialize_implementation_parameter_listener()
@@ -64,9 +64,9 @@ bool TricycleSteeringController::update_odometry(const rclcpp::Duration & period
   }
   else
   {
-    const double rear_right_wheel_value = state_interfaces_[0].get_value();
-    const double rear_left_wheel_value = state_interfaces_[1].get_value();
-    const double steer_position = state_interfaces_[2].get_value();
+    const double rear_right_wheel_value = state_interfaces_[STATE_DRIVE_RIGHT_WHEEL].get_value();
+    const double rear_left_wheel_value = state_interfaces_[STATE_DRIVE_LEFT_WHEEL].get_value();
+    const double steer_position = state_interfaces_[STATE_STEER_AXIS].get_value();
     if (
       !std::isnan(rear_right_wheel_value) && !std::isnan(rear_left_wheel_value) &&
       !std::isnan(steer_position))

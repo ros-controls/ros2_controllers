@@ -15,20 +15,30 @@
 // Authors: dr. sc. Tomislav Petkovic, Dr. Ing. Denis Štogl
 //
 
-#ifndef STEERING_CONTROLLERS__BICYCLE_STEERING_CONTROLLER_HPP_
-#define STEERING_CONTROLLERS__BICYCLE_STEERING_CONTROLLER_HPP_
+#ifndef TRICYCLE_STEERING_CONTROLLER__TRICYCLE_STEERING_CONTROLLER_HPP_
+#define TRICYCLE_STEERING_CONTROLLER__TRICYCLE_STEERING_CONTROLLER_HPP_
 
 #include <memory>
 
-#include "bicycle_controller_parameters.hpp"
-#include "steering_controllers/steering_controllers.hpp"
+#include "steering_controllers_library/steering_controllers_library.hpp"
+#include "tricycle_steering_controller/visibility_control.h"
+#include "tricycle_steering_controller_parameters.hpp"
 
-namespace bicycle_steering_controller
+namespace tricycle_steering_controller
 {
-class BicycleSteeringController : public steering_controllers::SteeringControllers
+// name constants for state interfaces
+static constexpr size_t STATE_DRIVE_RIGHT_WHEEL = 0;
+static constexpr size_t STATE_DRIVE_LEFT_WHEEL = 1;
+static constexpr size_t STATE_STEER_AXIS = 2;
+
+// name constants for command interfaces
+static constexpr size_t CMD_DRIVE_WHEEL = 0;
+static constexpr size_t CMD_STEER = 1;
+
+class TricycleSteeringController : public steering_controllers_library::SteeringControllersLibrary
 {
 public:
-  BicycleSteeringController();
+  TricycleSteeringController();
 
   STEERING_CONTROLLERS__VISIBILITY_PUBLIC controller_interface::CallbackReturn configure_odometry()
     override;
@@ -40,8 +50,8 @@ public:
     override;
 
 private:
-  std::shared_ptr<bicycle_steering_controller::ParamListener> bicycle_param_listener_;
+  std::shared_ptr<tricycle_steering_controller::ParamListener> tricycle_param_listener_;
 };
-}  // namespace bicycle_steering_controller
+}  // namespace tricycle_steering_controller
 
-#endif  // STEERING_CONTROLLERS__BICYCLE_STEERING_CONTROLLER_HPP_
+#endif  // TRICYCLE_STEERING_CONTROLLER__TRICYCLE_STEERING_CONTROLLER_HPP_
