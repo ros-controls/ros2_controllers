@@ -35,23 +35,11 @@ add_library(
   SHARED
   src/steering_controllers_library.cpp
   src/steering_odometry.cpp
-  #src/ackermann_steering_controller.cpp
-  #src/bicycle_steering_controller.cpp
-  #src/tricycle_steering_controller.cpp
 )
 
 generate_parameter_library(steering_controllers_library_parameters
   config/steering_controllers_library.yaml
 )
-#generate_parameter_library(bicycle_controller_parameters
-  #config/bicycle_steering_controller.yaml
-#)
-#generate_parameter_library(tricycle_controller_parameters
-  #config/tricycle_steering_controller.yaml
-#)
-#generate_parameter_library(ackermann_controller_parameters
-  #config/ackermann_steering_controller.yaml
-#)
 
 target_include_directories(${PROJECT_NAME} PUBLIC
   "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
