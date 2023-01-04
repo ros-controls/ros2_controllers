@@ -85,6 +85,7 @@ public:
   using ControllerTwistReferenceMsg = geometry_msgs::msg::TwistStamped;
   using ControllerStateMsgOdom = nav_msgs::msg::Odometry;
   using ControllerStateMsgTf = tf2_msgs::msg::TFMessage;
+  using AckermanControllerState = control_msgs::msg::SteeringControllerStatus;
 
 protected:
   controller_interface::CallbackReturn set_interface_numbers(
@@ -117,7 +118,6 @@ protected:
   /// Odometry:
   steering_odometry::SteeringOdometry odometry_;
 
-  using AckermanControllerState = control_msgs::msg::SteeringControllerStatus;
   AckermanControllerState published_state_;
 
   using ControllerStatePublisher = realtime_tools::RealtimePublisher<AckermanControllerState>;
