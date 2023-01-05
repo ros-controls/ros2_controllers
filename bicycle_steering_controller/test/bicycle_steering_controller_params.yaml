@@ -7,7 +7,7 @@ test_bicycle_steering_controller:
     velocity_rolling_window_size: 10
     position_feedback: false
     use_stamped_vel: true
-    rear_wheels_names: [rear_right_wheel_joint, rear_left_wheel_joint]
+    rear_wheels_names: [rear_wheel_joint]
     front_wheels_names: [steering_axis_joint]
 
     wheelbase: 3.24644

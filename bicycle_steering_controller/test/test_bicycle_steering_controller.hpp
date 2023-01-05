@@ -143,28 +143,39 @@ protected:
   {
     ASSERT_EQ(controller_->init(controller_name), controller_interface::return_type::OK);
 
+    if (position_feedback_ == true)
+    {
+      traction_interface_name_ = "position";
+    }
+    else
+    {
+      traction_interface_name_ = "velocity";
+    }
+
     std::vector<hardware_interface::LoanedCommandInterface> command_ifs;
     command_itfs_.reserve(joint_command_values_.size());
     command_ifs.reserve(joint_command_values_.size());
 
-    for (size_t i = 0; i < joint_command_values_.size(); ++i)
-    {
-      command_itfs_.emplace_back(hardware_interface::CommandInterface(
-        joint_names_[i], interface_name_, &joint_command_values_[i]));
-      command_ifs.emplace_back(command_itfs_.back());
-    }
+    command_itfs_.emplace_back(hardware_interface::CommandInterface(
+      rear_wheels_names_[0], traction_interface_name_, &joint_command_values_[0]));
+    command_ifs.emplace_back(command_itfs_.back());
+
+    command_itfs_.emplace_back(hardware_interface::CommandInterface(
+      front_wheels_names_[0], steering_interface_name_, &joint_command_values_[1]));
+    command_ifs.emplace_back(command_itfs_.back());
     // TODO(anyone): Add other command interfaces, if any
 
     std::vector<hardware_interface::LoanedStateInterface> state_ifs;
     state_itfs_.reserve(joint_state_values_.size());
     state_ifs.reserve(joint_state_values_.size());
 
-    for (size_t i = 0; i < joint_state_values_.size(); ++i)
-    {
-      state_itfs_.emplace_back(hardware_interface::StateInterface(
-        joint_names_[i], interface_name_, &joint_state_values_[i]));
-      state_ifs.emplace_back(state_itfs_.back());
-    }
+    state_itfs_.emplace_back(hardware_interface::StateInterface(
+      rear_wheels_names_[0], traction_interface_name_, &joint_state_values_[0]));
+    state_ifs.emplace_back(state_itfs_.back());
+
+    state_itfs_.emplace_back(hardware_interface::StateInterface(
+      front_wheels_names_[0], steering_interface_name_, &joint_state_values_[1]));
+    state_ifs.emplace_back(state_itfs_.back());
     // TODO(anyone): Add other state interfaces, if any
 
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
@@ -175,13 +186,7 @@ protected:
   //   // create a new subscriber
   //   rclcpp::Node test_subscription_node("test_subscription_node");
   //   auto subs_callback = [&](const ControllerStateMsg::SharedPtr) {};
-  //   auto subscription = test_subscription_node.create_subscription<ControllerStateMsg>(
-  //     "/test_bicycle_steering_controller/state", 10, subs_callback);
-
-  //   // call update to publish the test value
-  //   ASSERT_EQ(
-  //     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-  //     controller_interface::return_type::OK);
+  //   auto subscription = test_subscription_node.creinterface_name_
 
   //   // call update to publish the test value
   //   // since update doesn't guarantee a published message, republish until received
@@ -191,7 +196,7 @@ protected:
   //   while (max_sub_check_loop_count--)
   //   {
   //     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
-  //     // check if message has been received
+  //     // check if messageparams_ has been received
   //     if (wait_set.wait(std::chrono::milliseconds(2)).kind() == rclcpp::WaitResultKind::Ready)
   //     {
   //       break;
@@ -260,11 +265,24 @@ protected:
   // TODO(anyone): adjust the members as needed
 
   // Controller-related parameters
-  std::vector<std::string> joint_names_ = {"joint1"};
-  std::vector<std::string> state_joint_names_ = {"joint1state"};
-  std::string interface_name_ = "acceleration";
-  std::array<double, 1> joint_state_values_ = {1.1};
-  std::array<double, 1> joint_command_values_ = {101.101};
+
+  double reference_timeout_ = 2.0;
+  bool front_steering_ = true;
+  bool open_loop_ = false;
+  unsigned int velocity_rolling_window_size_ = 10;
+  bool position_feedback_ = false;
+  bool use_stamped_vel_ = true;
+  std::vector<std::string> rear_wheels_names_ = {"rear_wheel_joint"};
+  std::vector<std::string> front_wheels_names_ = {"steering_axis_joint"};
+  double wheelbase_ = 3.24644;
+  double front_wheel_radius_ = 0.45;
+  double rear_wheels_radius_ = 0.45;
+
+  std::array<double, 2> joint_state_values_ = {1.1, 2.0};
+  std::array<double, 2> joint_command_values_ = {2.1, 101.101};
+  std::string steering_interface_name_ = "position";
+
+  std::string traction_interface_name_ = "";
 
   std::vector<hardware_interface::StateInterface> state_itfs_;
   std::vector<hardware_interface::CommandInterface> command_itfs_;

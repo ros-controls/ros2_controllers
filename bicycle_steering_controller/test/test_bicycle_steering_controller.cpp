@@ -32,17 +32,21 @@ class BicycleSteeringControllerTest
 TEST_F(BicycleSteeringControllerTest, all_parameters_set_configure_success)
 {
   SetUpController();
-  ASSERT_FALSE(controller_->params_.rear_wheels_names.empty());
-  ASSERT_FALSE(controller_->params_.front_wheels_names.empty());
+  // ASSERT_FALSE(controller_->params_.rear_wheels_names.empty());
+  // ASSERT_FALSE(controller_->params_.front_wheels_names.empty());
   // ASSERT_TRUE(controller_->params_.state_joints.empty());
   // ASSERT_TRUE(controller_->params_.interface_name.empty());
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  // ASSERT_THAT(controller_->params_.joints, testing::ElementsAreArray(joint_names_));
-  // ASSERT_TRUE(controller_->params_.state_joints.empty());
-  // ASSERT_THAT(controller_->state_joints_, testing::ElementsAreArray(joint_names_));
-  // ASSERT_EQ(controller_->params_.interface_name, interface_name_);
+  ASSERT_THAT(
+    controller_->params_.rear_wheels_names, testing::ElementsAreArray(rear_wheels_names_));
+  ASSERT_THAT(
+    controller_->params_.front_wheels_names, testing::ElementsAreArray(front_wheels_names_));
+  ASSERT_EQ(controller_->params_.front_steering, front_steering_);
+  ASSERT_EQ(controller_->params_.open_loop, open_loop_);
+  ASSERT_EQ(controller_->params_.velocity_rolling_window_size, velocity_rolling_window_size_);
+  ASSERT_EQ(controller_->params_.position_feedback, position_feedback_);
 }
 
 // TEST_F(BicycleSteeringControllerTest, check_exported_intefaces)
