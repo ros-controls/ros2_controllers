@@ -1,0 +1,30 @@
+test_mecanum_drive_controller:
+  ros__parameters:
+
+    reference_timeout: 0.1
+
+    wheel0_name: "front_left_wheel_joint"
+
+    wheel1_name: "back_left_wheel_joint"
+
+    wheel2_name: "back_right_wheel_joint"
+
+    wheel3_name: "front_right_wheel_joint"
+
+    base_frame_id: "base_link"
+
+    odom_frame_id: "odom"
+
+    enable_odom_tf: true
+
+    base_frame_offset: [0.0, 0.0, 0.0]
+
+    wheels_radius: 0.0
+
+    wheels_k: 0.0
+
+    use_realigned_roller_joints: false
+
+    twist_covariance_diagonal: [0.0, 7.0, 14.0, 21.0, 28.0, 35.0]
+
+    pose_covariance_diagonal: [0.0, 7.0, 14.0, 21.0, 28.0, 35.0]

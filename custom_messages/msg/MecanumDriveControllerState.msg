@@ -1,0 +1,9 @@
+std_msgs/Header header
+nav_msgs/Odometry odom
+float64 front_left_wheel_velocity
+float64 back_left_wheel_velocity
+float64 back_right_wheel_velocity
+float64 front_right_wheel_velocity
+float64 linear_x_velocity_command
+float64 linear_y_velocity_command
+float64 angular_z_command
