@@ -50,27 +50,27 @@ constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
 class TestableMecanumDriveController : public mecanum_drive_controller::MecanumDriveController
 {
   FRIEND_TEST(MecanumDriveControllerTest, all_parameters_set_configure_success);
-  // FRIEND_TEST(MecanumDriveControllerTest, check_exported_intefaces);
-  // FRIEND_TEST(MecanumDriveControllerTest, activate_success);
-  // FRIEND_TEST(MecanumDriveControllerTest, update_success);
-  // FRIEND_TEST(MecanumDriveControllerTest, deactivate_success);
-  // FRIEND_TEST(MecanumDriveControllerTest, reactivate_success);
-  // FRIEND_TEST(MecanumDriveControllerTest, publish_status_success);
-  // FRIEND_TEST(MecanumDriveControllerTest, receive_message_and_publish_updated_status);
-  // FRIEND_TEST(MecanumDriveControllerTest, test_message_timeout);
-  // FRIEND_TEST(MecanumDriveControllerTest, test_message_wrong_num_joints);
-  // FRIEND_TEST(MecanumDriveControllerTest, test_message_accepted);
-  // FRIEND_TEST(MecanumDriveControllerTest, test_update_logic);
-  // FRIEND_TEST(MecanumDriveControllerTest, test_ref_timeout_zero_for_update);
-  // FRIEND_TEST(MecanumDriveControllerTest, test_ref_timeout_zero_for_reference_callback);
+  FRIEND_TEST(MecanumDriveControllerTest, check_exported_intefaces);
+  FRIEND_TEST(MecanumDriveControllerTest, activate_success);
+  FRIEND_TEST(MecanumDriveControllerTest, update_success);
+  FRIEND_TEST(MecanumDriveControllerTest, deactivate_success);
+  FRIEND_TEST(MecanumDriveControllerTest, reactivate_success);
+  FRIEND_TEST(MecanumDriveControllerTest, publish_status_success);
+  FRIEND_TEST(MecanumDriveControllerTest, receive_message_and_publish_updated_status);
+  FRIEND_TEST(MecanumDriveControllerTest, test_sending_too_old_message);
+  FRIEND_TEST(MecanumDriveControllerTest, test_time_stamp_zero);
+  FRIEND_TEST(MecanumDriveControllerTest, test_message_accepted);
+  FRIEND_TEST(MecanumDriveControllerTest, test_update_logic_chainable);
+  FRIEND_TEST(MecanumDriveControllerTest, test_update_logic);
+  FRIEND_TEST(MecanumDriveControllerTest, test_ref_timeout_zero_for_update);
+  FRIEND_TEST(MecanumDriveControllerTest, test_ref_timeout_zero_for_reference_callback);
 
 public:
   controller_interface::CallbackReturn on_configure(
     const rclcpp_lifecycle::State & previous_state) override
-  { fprintf(stderr," here_ on_configure _1");
+  {
     auto ret = mecanum_drive_controller::MecanumDriveController::on_configure(previous_state);
     // Only if on_configure is successful create subscription
-    fprintf(stderr," here_ on_configure _2");
     if (ret == CallbackReturn::SUCCESS) {
       ref_subscriber_wait_set_.add_subscription(ref_subscriber_);
     }
@@ -129,7 +129,7 @@ public:
 
     command_publisher_node_ = std::make_shared<rclcpp::Node>("command_publisher");
     command_publisher_ = command_publisher_node_->create_publisher<ControllerReferenceMsg>(
-      "/test_mecanum_drive_controller/commands", rclcpp::SystemDefaultsQoS());
+      "/test_mecanum_drive_controller/reference", rclcpp::SystemDefaultsQoS());
 
     odom_s_publisher_node_ = std::make_shared<rclcpp::Node>("odom_s_publisher");
     odom_s_publisher_ = odom_s_publisher_node_->create_publisher<OdomStateMsg>(
@@ -177,13 +177,12 @@ protected:
   }
 
   void subscribe_and_get_messages(ControllerStateMsg & msg)
-  { fprintf(stderr," here_publish_1");
+  { 
     // create a new subscriber
     rclcpp::Node test_subscription_node("test_subscription_node");
     auto subs_callback = [&](const ControllerStateMsg::SharedPtr) {};
     auto subscription = test_subscription_node.create_subscription<ControllerStateMsg>(
       "/test_mecanum_drive_controller/controller_state", 10, subs_callback);
-    	fprintf(stderr," here_publish_2");
     // call update to publish the test value
     ASSERT_EQ(
     controller_->update_reference_from_subscribers(
@@ -193,13 +192,11 @@ protected:
     controller_->update_and_write_commands(
       controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
       controller_interface::return_type::OK);
-    	fprintf(stderr," here_publish_3");
     // call update to publish the test value
     // since update doesn't guarantee a published message, republish until received
     int max_sub_check_loop_count = 5;  // max number of tries for pub/sub loop
     rclcpp::WaitSet wait_set;          // block used to wait on message
     wait_set.add_subscription(subscription);
-    	fprintf(stderr," here_publish_4");
     while (max_sub_check_loop_count--) {
       controller_->update_reference_from_subscribers(
         controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01));
@@ -210,14 +207,12 @@ protected:
         break;
       }
     }
-    	fprintf(stderr," here_publish_5");
     ASSERT_GE(max_sub_check_loop_count, 0) << "Test was unable to publish a message through "
                                               "controller/broadcaster update loop";
 
     // take message from subscription
     rclcpp::MessageInfo msg_info;
     ASSERT_TRUE(subscription->take(msg, msg_info));
-    	fprintf(stderr," here_publish_6");
   }
 
   // TODO(anyone): add/remove arguments as it suites your command message type
