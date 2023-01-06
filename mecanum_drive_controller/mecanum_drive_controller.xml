@@ -1,0 +1,8 @@
+<library path="mecanum_drive_controller">
+  <class name="mecanum_drive_controller/MecanumDriveController"
+         type="mecanum_drive_controller::MecanumDriveController" base_class_type="controller_interface::ChainableControllerInterface">
+  <description>
+    MecanumDriveController ros2_control controller.
+  </description>
+  </class>
+</library>

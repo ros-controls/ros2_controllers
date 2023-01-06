@@ -1,0 +1,11 @@
+test_mecanum_drive_controller:
+  ros__parameters:
+    joints:
+      - joint1
+
+    interface_name: acceleration
+
+    state_joints:
+      - joint1state
+
+    reference_timeout: 0.1
