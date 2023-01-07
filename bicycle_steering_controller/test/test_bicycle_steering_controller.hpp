@@ -280,8 +280,9 @@ protected:
 
   std::array<double, 2> joint_state_values_ = {1.1, 2.0};
   std::array<double, 2> joint_command_values_ = {2.1, 101.101};
+  std::array<std::string, 2> joint_reference_interfaces_ = {"linear/velocity", "angular/position"};
   std::string steering_interface_name_ = "position";
-
+  // defined in setup
   std::string traction_interface_name_ = "";
 
   std::vector<hardware_interface::StateInterface> state_itfs_;
