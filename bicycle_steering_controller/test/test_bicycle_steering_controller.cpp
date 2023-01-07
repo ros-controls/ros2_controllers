@@ -95,43 +95,42 @@ TEST_F(BicycleSteeringControllerTest, activate_success)
   EXPECT_TRUE(std::isnan((*msg)->twist.angular.z));
 }
 
-// TEST_F(BicycleSteeringControllerTest, update_success)
-// {
-//   SetUpController();
+TEST_F(BicycleSteeringControllerTest, update_success)
+{
+  SetUpController();
 
-//   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-//   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-//   ASSERT_EQ(
-//     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-//     controller_interface::return_type::OK);
-// }
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+}
 
-// TEST_F(BicycleSteeringControllerTest, deactivate_success)
-// {
-//   SetUpController();
+TEST_F(BicycleSteeringControllerTest, deactivate_success)
+{
+  SetUpController();
 
-//   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-//   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-//   ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-// }
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+}
 
-// TEST_F(BicycleSteeringControllerTest, reactivate_success)
-// {
-//   SetUpController();
+TEST_F(BicycleSteeringControllerTest, reactivate_success)
+{
+  SetUpController();
 
-//   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-//   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-//   ASSERT_EQ(controller_->command_interfaces_[CMD_MY_ITFS].get_value(), 101.101);
-//   ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-//   ASSERT_TRUE(std::isnan(controller_->command_interfaces_[CMD_MY_ITFS].get_value()));
-//   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-//   ASSERT_TRUE(std::isnan(controller_->command_interfaces_[CMD_MY_ITFS].get_value()));
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[0].get_value()));
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[0].get_value()));
 
-//   ASSERT_EQ(
-//     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-//     controller_interface::return_type::OK);
-// }
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+}
 
 // TEST_F(BicycleSteeringControllerTest, test_setting_slow_mode_service)
 // {
@@ -159,41 +158,36 @@ TEST_F(BicycleSteeringControllerTest, activate_success)
 //   ASSERT_EQ(*(controller_->control_mode_.readFromRT()), control_mode_type::FAST);
 // }
 
-// TEST_F(BicycleSteeringControllerTest, test_update_logic_fast)
-// {
-//   SetUpController();
-//   rclcpp::executors::MultiThreadedExecutor executor;
-//   executor.add_node(controller_->get_node()->get_node_base_interface());
-//   executor.add_node(service_caller_node_->get_node_base_interface());
+TEST_F(BicycleSteeringControllerTest, test_update_logic)
+{
+  SetUpController();
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
 
-//   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-//   controller_->set_chained_mode(false);
-//   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-//   ASSERT_FALSE(controller_->is_in_chained_mode());
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  controller_->set_chained_mode(false);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_FALSE(controller_->is_in_chained_mode());
 
-//   // set command statically
-//   static constexpr double TEST_DISPLACEMENT = 23.24;
-//   std::shared_ptr<ControllerReferenceMsg> msg = std::make_shared<ControllerReferenceMsg>();
-//   msg->joint_names = joint_names_;
-//   msg->displacements.resize(joint_names_.size(), TEST_DISPLACEMENT);
-//   msg->velocities.resize(joint_names_.size(), std::numeric_limits<double>::quiet_NaN());
-//   msg->duration = std::numeric_limits<double>::quiet_NaN();
-//   controller_->input_ref_.writeFromNonRT(msg);
+  // set command statically
+  static constexpr double TEST_COMMAND = 2.1;
+  std::shared_ptr<ControllerReferenceMsg> msg = std::make_shared<ControllerReferenceMsg>();
+  msg->twist.linear.x = 0.1;
+  msg->twist.angular.z = 0.0;
+  controller_->input_ref_.writeFromNonRT(msg);
 
-//   ASSERT_EQ(
-//     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-//     controller_interface::return_type::OK);
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
 
-//   EXPECT_EQ(*(controller_->control_mode_.readFromRT()), control_mode_type::FAST);
-//   EXPECT_EQ(joint_command_values_[STATE_MY_ITFS], TEST_DISPLACEMENT);
-//   EXPECT_TRUE(std::isnan((*(controller_->input_ref_.readFromRT()))->displacements[0]));
-//   EXPECT_EQ(*(controller_->control_mode_.readFromRT()), control_mode_type::FAST);
-//   EXPECT_EQ(controller_->reference_interfaces_.size(), joint_names_.size());
-//   for (const auto & interface : controller_->reference_interfaces_)
-//   {
-//     EXPECT_TRUE(std::isnan(interface));
-//   }
-// }
+  EXPECT_EQ(joint_command_values_[0], TEST_COMMAND);
+  EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromRT()))->twist.linear.x));
+  EXPECT_EQ(controller_->reference_interfaces_.size(), joint_names_.size());
+  for (const auto & interface : controller_->reference_interfaces_)
+  {
+    EXPECT_TRUE(std::isnan(interface));
+  }
+}
 
 // TEST_F(BicycleSteeringControllerTest, test_update_logic_slow)
 // {

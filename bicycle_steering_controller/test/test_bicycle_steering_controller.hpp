@@ -56,7 +56,7 @@ class TestableBicycleSteeringController
   FRIEND_TEST(BicycleSteeringControllerTest, activate_success);
   FRIEND_TEST(BicycleSteeringControllerTest, reactivate_success);
   FRIEND_TEST(BicycleSteeringControllerTest, test_setting_slow_mode_service);
-  FRIEND_TEST(BicycleSteeringControllerTest, test_update_logic_fast);
+  FRIEND_TEST(BicycleSteeringControllerTest, test_update_logic);
   FRIEND_TEST(BicycleSteeringControllerTest, test_update_logic_slow);
   FRIEND_TEST(BicycleSteeringControllerTest, test_update_logic_chainable_fast);
   FRIEND_TEST(BicycleSteeringControllerTest, test_update_logic_chainable_slow);
@@ -163,7 +163,6 @@ protected:
     command_itfs_.emplace_back(hardware_interface::CommandInterface(
       front_wheels_names_[0], steering_interface_name_, &joint_command_values_[1]));
     command_ifs.emplace_back(command_itfs_.back());
-    // TODO(anyone): Add other command interfaces, if any
 
     std::vector<hardware_interface::LoanedStateInterface> state_ifs;
     state_itfs_.reserve(joint_state_values_.size());
@@ -176,7 +175,6 @@ protected:
     state_itfs_.emplace_back(hardware_interface::StateInterface(
       front_wheels_names_[0], steering_interface_name_, &joint_state_values_[1]));
     state_ifs.emplace_back(state_itfs_.back());
-    // TODO(anyone): Add other state interfaces, if any
 
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
   }
