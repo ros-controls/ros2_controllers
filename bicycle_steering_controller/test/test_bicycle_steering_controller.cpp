@@ -78,34 +78,22 @@ TEST_F(BicycleSteeringControllerTest, check_exported_intefaces)
   }
 }
 
-// TEST_F(BicycleSteeringControllerTest, activate_success)
-// {
-//   SetUpController();
+TEST_F(BicycleSteeringControllerTest, activate_success)
+{
+  SetUpController();
 
-//   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-//   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-//   // check that the message is reset
-//   auto msg = controller_->input_ref_.readFromNonRT();
-//   EXPECT_EQ((*msg)->displacements.size(), joint_names_.size());
-//   for (const auto & cmd : (*msg)->displacements)
-//   {
-//     EXPECT_TRUE(std::isnan(cmd));
-//   }
-//   EXPECT_EQ((*msg)->velocities.size(), joint_names_.size());
-//   for (const auto & cmd : (*msg)->velocities)
-//   {
-//     EXPECT_TRUE(std::isnan(cmd));
-//   }
-
-//   ASSERT_TRUE(std::isnan((*msg)->duration));
-
-//   EXPECT_EQ(controller_->reference_interfaces_.size(), joint_names_.size());
-//   for (const auto & interface : controller_->reference_interfaces_)
-//   {
-//     EXPECT_TRUE(std::isnan(interface));
-//   }
-// }
+  // check that the message is reset
+  auto msg = controller_->input_ref_.readFromNonRT();
+  EXPECT_TRUE(std::isnan((*msg)->twist.linear.x));
+  EXPECT_TRUE(std::isnan((*msg)->twist.linear.y));
+  EXPECT_TRUE(std::isnan((*msg)->twist.linear.z));
+  EXPECT_TRUE(std::isnan((*msg)->twist.angular.x));
+  EXPECT_TRUE(std::isnan((*msg)->twist.angular.y));
+  EXPECT_TRUE(std::isnan((*msg)->twist.angular.z));
+}
 
 // TEST_F(BicycleSteeringControllerTest, update_success)
 // {

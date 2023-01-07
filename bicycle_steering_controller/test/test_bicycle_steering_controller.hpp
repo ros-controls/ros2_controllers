@@ -274,6 +274,8 @@ protected:
   bool use_stamped_vel_ = true;
   std::vector<std::string> rear_wheels_names_ = {"rear_wheel_joint"};
   std::vector<std::string> front_wheels_names_ = {"steering_axis_joint"};
+  std::vector<std::string> joint_names_ = {rear_wheels_names_[0], front_wheels_names_[0]};
+
   double wheelbase_ = 3.24644;
   double front_wheel_radius_ = 0.45;
   double rear_wheels_radius_ = 0.45;
