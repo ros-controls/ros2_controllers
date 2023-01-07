@@ -179,34 +179,35 @@ protected:
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
   }
 
-  // void subscribe_and_get_messages(ControllerStateMsg & msg)
-  // {
-  //   // create a new subscriber
-  //   rclcpp::Node test_subscription_node("test_subscription_node");
-  //   auto subs_callback = [&](const ControllerStateMsg::SharedPtr) {};
-  //   auto subscription = test_subscription_node.creinterface_name_
+  void subscribe_and_get_messages(ControllerStateMsg & msg)
+  {
+    // create a new subscriber
+    rclcpp::Node test_subscription_node("test_subscription_node");
+    auto subs_callback = [&](const ControllerStateMsg::SharedPtr) {};
+    auto subscription = test_subscription_node.create_subscription<ControllerStateMsg>(
+      "/test_bicycle_steering_controller/controller_state", 10, subs_callback);
 
-  //   // call update to publish the test value
-  //   // since update doesn't guarantee a published message, republish until received
-  //   int max_sub_check_loop_count = 5;  // max number of tries for pub/sub loop
-  //   rclcpp::WaitSet wait_set;          // block used to wait on message
-  //   wait_set.add_subscription(subscription);
-  //   while (max_sub_check_loop_count--)
-  //   {
-  //     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
-  //     // check if messageparams_ has been received
-  //     if (wait_set.wait(std::chrono::milliseconds(2)).kind() == rclcpp::WaitResultKind::Ready)
-  //     {
-  //       break;
-  //     }
-  //   }
-  //   ASSERT_GE(max_sub_check_loop_count, 0) << "Test was unable to publish a message through "
-  //                                             "controller/broadcaster update loop";
+    // call update to publish the test value
+    // since update doesn't guarantee a published message, republish until received
+    int max_sub_check_loop_count = 5;  // max number of tries for pub/sub loop
+    rclcpp::WaitSet wait_set;          // block used to wait on max_sub_check_loop_count
+    wait_set.add_subscription(subscription);
+    while (max_sub_check_loop_count--)
+    {
+      controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+      // check if messageparams_ has been received
+      if (wait_set.wait(std::chrono::milliseconds(2)).kind() == rclcpp::WaitResultKind::Ready)
+      {
+        break;
+      }
+    }
+    ASSERT_GE(max_sub_check_loop_count, 0) << "Test was unable to publish a message through "
+                                              "controller/broadcaster update loop";
 
-  //   // take message from subscription
-  //   rclcpp::MessageInfo msg_info;
-  //   ASSERT_TRUE(subscription->take(msg, msg_info));
-  // }
+    // take message from subscription
+    rclcpp::MessageInfo msg_info;
+    ASSERT_TRUE(subscription->take(msg, msg_info));
+  }
 
   // // TODO(anyone): add/remove arguments as it suites your command message type
   // void publish_commands(
