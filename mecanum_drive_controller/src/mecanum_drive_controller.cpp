@@ -346,8 +346,50 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
     odometry_.update(wheel0_vel, wheel1_vel, wheel2_vel, wheel3_vel, period.seconds());
   }
 
-  
+  // INVERSE KINEMATICS (move robot).
+  // Compute wheels velocities (this is the actual ik):
+  // NOTE: the input desired twist (from topic /cmd_vel) is a body twist.
+  auto current_ref = input_ref_.readFromRT();
+  const auto age_of_last_command = time - (*current_ref)->header.stamp;
+  if (age_of_last_command <= ref_timeout_ ||
+          ref_timeout_ == rclcpp::Duration::from_seconds(0)) 
+  {
+    tf2::Quaternion orientation_2;
+    orientation_2.setRPY(0.0, 0.0, params_.base_frame_offset[2]);
 
+    tf2::Matrix3x3 R_b_c = tf2::Matrix3x3((orientation_2));
+    tf2::Vector3 v_Ob_b_b0_c = R_b_c * tf2::Vector3(reference_interfaces_[0], reference_interfaces_[1], 0.0);
+    tf2::Vector3 Ob_c = tf2::Vector3(params_.base_frame_offset[0], params_.base_frame_offset[1], 0.0);
+
+    double vx_Oc_c_c0_c_ = v_Ob_b_b0_c.x() + Ob_c.y() * reference_interfaces_[2];
+    double vy_Oc_c_c0_c_ = v_Ob_b_b0_c.y() - Ob_c.x() * reference_interfaces_[2];
+    double wz_c_c0_c_ = reference_interfaces_[2];
+
+    double w0_vel = 1.0 / params_.wheels_radius * (vx_Oc_c_c0_c_ - vy_Oc_c_c0_c_ - params_.wheels_k * wz_c_c0_c_);
+    double w1_vel = 1.0 / params_.wheels_radius * (vx_Oc_c_c0_c_ + vy_Oc_c_c0_c_ - params_.wheels_k * wz_c_c0_c_);
+    double w2_vel = 1.0 / params_.wheels_radius * (vx_Oc_c_c0_c_ - vy_Oc_c_c0_c_ + params_.wheels_k * wz_c_c0_c_);
+    double w3_vel = 1.0 / params_.wheels_radius * (vx_Oc_c_c0_c_ + vy_Oc_c_c0_c_ + params_.wheels_k * wz_c_c0_c_);
+
+    // Set wheels velocities:
+
+    command_interfaces_[0].set_value(w0_vel);
+    // command_interfaces_[1].set_value(w1_vel);
+    command_interfaces_[1].set_value(99);
+    command_interfaces_[2].set_value(w2_vel);
+    command_interfaces_[3].set_value(w3_vel);
+
+  } else {
+      reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();
+      reference_interfaces_[1] = std::numeric_limits<double>::quiet_NaN();
+      reference_interfaces_[2] = std::numeric_limits<double>::quiet_NaN();
+      command_interfaces_[0].set_value(0.0);
+      // command_interfaces_[1].set_value(w1_vel);
+      command_interfaces_[1].set_value(0.0);
+      command_interfaces_[2].set_value(0.0);
+      command_interfaces_[3].set_value(0.0);
+    }
+
+  
   // Publish odometry message
   // Compute and store orientation info
   tf2::Quaternion orientation;
@@ -396,49 +438,6 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
 
     controller_state_publisher_->unlockAndPublish();
   }
-
-  // INVERSE KINEMATICS (move robot).
-  // Compute wheels velocities (this is the actual ik):
-  // NOTE: the input desired twist (from topic /cmd_vel) is a body twist.
-  auto current_ref = input_ref_.readFromRT();
-  const auto age_of_last_command = time - (*current_ref)->header.stamp;
-  if (age_of_last_command <= ref_timeout_ ||
-          ref_timeout_ == rclcpp::Duration::from_seconds(0)) 
-  {
-    tf2::Quaternion orientation_2;
-    orientation_2.setRPY(0.0, 0.0, params_.base_frame_offset[2]);
-
-    tf2::Matrix3x3 R_b_c = tf2::Matrix3x3((orientation_2));
-    tf2::Vector3 v_Ob_b_b0_c = R_b_c * tf2::Vector3(reference_interfaces_[0], reference_interfaces_[1], 0.0);
-    tf2::Vector3 Ob_c = tf2::Vector3(params_.base_frame_offset[0], params_.base_frame_offset[1], 0.0);
-
-    double vx_Oc_c_c0_c_ = v_Ob_b_b0_c.x() + Ob_c.y() * reference_interfaces_[2];
-    double vy_Oc_c_c0_c_ = v_Ob_b_b0_c.y() - Ob_c.x() * reference_interfaces_[2];
-    double wz_c_c0_c_ = reference_interfaces_[2];
-
-    double w0_vel = 1.0 / params_.wheels_radius * (vx_Oc_c_c0_c_ - vy_Oc_c_c0_c_ - params_.wheels_k * wz_c_c0_c_);
-    double w1_vel = 1.0 / params_.wheels_radius * (vx_Oc_c_c0_c_ + vy_Oc_c_c0_c_ - params_.wheels_k * wz_c_c0_c_);
-    double w2_vel = 1.0 / params_.wheels_radius * (vx_Oc_c_c0_c_ - vy_Oc_c_c0_c_ + params_.wheels_k * wz_c_c0_c_);
-    double w3_vel = 1.0 / params_.wheels_radius * (vx_Oc_c_c0_c_ + vy_Oc_c_c0_c_ + params_.wheels_k * wz_c_c0_c_);
-
-    // Set wheels velocities:
-
-    command_interfaces_[0].set_value(w0_vel);
-    // command_interfaces_[1].set_value(w1_vel);
-    command_interfaces_[1].set_value(99);
-    command_interfaces_[2].set_value(w2_vel);
-    command_interfaces_[3].set_value(w3_vel);
-
-  } else {
-      reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();
-      reference_interfaces_[1] = std::numeric_limits<double>::quiet_NaN();
-      reference_interfaces_[2] = std::numeric_limits<double>::quiet_NaN();
-      command_interfaces_[0].set_value(0.0);
-      // command_interfaces_[1].set_value(w1_vel);
-      command_interfaces_[1].set_value(0.0);
-      command_interfaces_[2].set_value(0.0);
-      command_interfaces_[3].set_value(0.0);
-    }
 
   return controller_interface::return_type::OK;
 
