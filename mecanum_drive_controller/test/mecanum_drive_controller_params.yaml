@@ -21,7 +21,7 @@ test_mecanum_drive_controller:
 
     wheels_radius: 0.5
 
-    wheels_k: 0.0
+    wheels_k: 1.0
 
     use_realigned_roller_joints: false
 
