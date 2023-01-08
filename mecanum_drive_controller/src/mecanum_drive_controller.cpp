@@ -373,13 +373,13 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
     // Set wheels velocities:
 
     command_interfaces_[0].set_value(w0_vel);
-    fprintf(stderr," command_interfaces_[0] = %f", w0_vel);
+    fprintf(stderr," command_interfaces_[0] = %f \n", w0_vel);
     command_interfaces_[1].set_value(w1_vel);
-    fprintf(stderr," command_interfaces_[1] = %f", w1_vel);
+    fprintf(stderr," command_interfaces_[1] = %f \n", w1_vel);
     command_interfaces_[2].set_value(w2_vel);
-    fprintf(stderr," command_interfaces_[2] = %f", w2_vel);
+    fprintf(stderr," command_interfaces_[2] = %f \n", w2_vel);
     command_interfaces_[3].set_value(w3_vel);
-    fprintf(stderr," command_interfaces_[3] = %f", w3_vel);
+    fprintf(stderr," command_interfaces_[3] = %f \n", w3_vel);
 
   } else {
       reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();

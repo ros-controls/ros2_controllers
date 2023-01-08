@@ -66,14 +66,14 @@ bool Odometry::update(double wheel0_vel, double wheel1_vel, double wheel2_vel, d
   //   {
   //       for(int y=0;y<3;y++)  // loop for the three elements on the line
   //       { 
-  //           cout<<R_c_b[x][y]<<", ";
+  //           cout<<R_c_b[x][y]  \n<<", ";
   //       }
   //   cout<<endl;  // when the inner loop is done, go to a new line
   //   }
 
   // for(int j=0;j<3;j++)  // loop for the three elements on the line
   // { 
-  //     cout<<Oc_b[j]<<", ";
+  //     cout<<Oc_b[j]  \n<<", ";
   // }
   // cout<<endl;
   vx_Ob_b_b0_b_ = v_Oc_c_c0_b.x() + Oc_b.y() * wz_c_c0_c;
@@ -93,8 +93,8 @@ bool Odometry::update(double wheel0_vel, double wheel1_vel, double wheel2_vel, d
 
   px_b_b0_ += vx_Ob_b_b0_b0.x() * dt;
   py_b_b0_ += vx_Ob_b_b0_b0.y() * dt;
-  fprintf(stderr," px_b_b0_ = %f", px_b_b0_);
-  fprintf(stderr," py_b_b0_ = %f", py_b_b0_);
+  fprintf(stderr," px_b_b0_ = %f  \n", px_b_b0_);
+  fprintf(stderr," py_b_b0_ = %f  \n", py_b_b0_);
 
   return true;
 }
