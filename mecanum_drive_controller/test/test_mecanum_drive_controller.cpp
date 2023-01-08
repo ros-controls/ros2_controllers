@@ -152,7 +152,6 @@ TEST_F(MecanumDriveControllerTest, reactivate_success)
     controller_->update_and_write_commands(
       controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
-      fprintf(stderr," reactivate_success _1");
 
 }
 
@@ -217,7 +216,7 @@ TEST_F(MecanumDriveControllerTest, receive_message_and_publish_updated_status)
 //here
   EXPECT_EQ(joint_command_values_[1], 3.0);
   EXPECT_FALSE(std::isnan(joint_command_values_[1]));
-  fprintf(stderr," joint_command_values_[1]= %f", joint_command_values_[1]);
+  fprintf(stderr," joint_command_values_[1]= %f \n", joint_command_values_[1]);
 
   subscribe_and_get_messages(msg);
 
