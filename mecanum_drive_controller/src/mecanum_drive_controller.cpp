@@ -180,7 +180,7 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
   controller_state_publisher_->lock();
   controller_state_publisher_->msg_.header.stamp = get_node()->now();
   controller_state_publisher_->msg_.header.frame_id = params_.odom_frame_id;
-  controller_state_publisher_->msg_.odom.pose.pose.position.x = 0;
+  controller_state_publisher_->msg_.odom.pose.pose.position.x = 0.0;
   controller_state_publisher_->msg_.odom.child_frame_id = params_.base_frame_id;
   controller_state_publisher_->unlock();
   auto & covariance_controller = controller_state_publisher_->msg_.odom.twist.covariance;
@@ -373,10 +373,13 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
     // Set wheels velocities:
 
     command_interfaces_[0].set_value(w0_vel);
-    // command_interfaces_[1].set_value(w1_vel);
-    command_interfaces_[1].set_value(99);
+    fprintf(stderr," command_interfaces_[0] = %f", w0_vel);
+    command_interfaces_[1].set_value(w1_vel);
+    fprintf(stderr," command_interfaces_[1] = %f", w1_vel);
     command_interfaces_[2].set_value(w2_vel);
+    fprintf(stderr," command_interfaces_[2] = %f", w2_vel);
     command_interfaces_[3].set_value(w3_vel);
+    fprintf(stderr," command_interfaces_[3] = %f", w3_vel);
 
   } else {
       reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();
