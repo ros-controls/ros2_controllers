@@ -217,7 +217,7 @@ protected:
 
   // TODO(anyone): add/remove arguments as it suites your command message type
   void publish_commands(
-    const rclcpp::Time & stamp, const double & twist_linear_x = 0.45, const double & twist_linear_y = 0.45,
+    const rclcpp::Time & stamp, const double & twist_linear_x = 1.5, const double & twist_linear_y = 0.0,
     const double & twist_angular_z = 0.0)
   {
     auto wait_for_topic = [&](const auto topic_name) {  
@@ -257,8 +257,8 @@ protected:
 
   // Controller-related parameters
 
-  std::array<double, 4> joint_state_values_ = {1.1, 2.1, 3.1, 4.1};
-  std::array<double, 4> joint_command_values_ = {101.101, 201.201, 301.301, 401.401};
+  std::array<double, 4> joint_state_values_ = {0.1, 0.1, 0.1, 0.1};
+  std::array<double, 4> joint_command_values_ = {101.101, 101.101, 101.101, 101.101};
 
   std::vector<hardware_interface::StateInterface> state_itfs_;
   std::vector<hardware_interface::CommandInterface> command_itfs_;

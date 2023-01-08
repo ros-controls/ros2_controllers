@@ -93,8 +93,8 @@ bool Odometry::update(double wheel0_vel, double wheel1_vel, double wheel2_vel, d
 
   px_b_b0_ += vx_Ob_b_b0_b0.x() * dt;
   py_b_b0_ += vx_Ob_b_b0_b0.y() * dt;
-  // fprintf(stderr," px_b_b0_ = %f", px_b_b0_);
-  // fprintf(stderr," py_b_b0_ = %f", py_b_b0_);
+  fprintf(stderr," px_b_b0_ = %f", px_b_b0_);
+  fprintf(stderr," py_b_b0_ = %f", py_b_b0_);
 
   return true;
 }
