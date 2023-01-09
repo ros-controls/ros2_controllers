@@ -26,30 +26,31 @@
 #include "tf2/transform_datatypes.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
-namespace {  // utility
+namespace
+{  // utility
 
 // TODO(destogl): remove this when merged upstream
 // Changed services history QoS to keep all so we don't lose any client service
 // calls
 static constexpr rmw_qos_profile_t rmw_qos_profile_services_hist_keep_all = {
-    RMW_QOS_POLICY_HISTORY_KEEP_ALL,
-    1,  // message queue depth
-    RMW_QOS_POLICY_RELIABILITY_RELIABLE,
-    RMW_QOS_POLICY_DURABILITY_VOLATILE,
-    RMW_QOS_DEADLINE_DEFAULT,
-    RMW_QOS_LIFESPAN_DEFAULT,
-    RMW_QOS_POLICY_LIVELINESS_SYSTEM_DEFAULT,
-    RMW_QOS_LIVELINESS_LEASE_DURATION_DEFAULT,
-    false};
+  RMW_QOS_POLICY_HISTORY_KEEP_ALL,
+  1,  // message queue depth
+  RMW_QOS_POLICY_RELIABILITY_RELIABLE,
+  RMW_QOS_POLICY_DURABILITY_VOLATILE,
+  RMW_QOS_DEADLINE_DEFAULT,
+  RMW_QOS_LIFESPAN_DEFAULT,
+  RMW_QOS_POLICY_LIVELINESS_SYSTEM_DEFAULT,
+  RMW_QOS_LIVELINESS_LEASE_DURATION_DEFAULT,
+  false};
 
 using ControllerReferenceMsg =
-    mecanum_drive_controller::MecanumDriveController::ControllerReferenceMsg;
+  mecanum_drive_controller::MecanumDriveController::ControllerReferenceMsg;
 
 // called from RT control loop
 void reset_controller_reference_msg(
-    const std::shared_ptr<ControllerReferenceMsg>& msg,
-    const std::shared_ptr<rclcpp_lifecycle::LifecycleNode>& node) {
-
+  const std::shared_ptr<ControllerReferenceMsg> & msg,
+  const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node)
+{
   msg->header.stamp = node->now();
   msg->twist.linear.x = std::numeric_limits<double>::quiet_NaN();
   msg->twist.linear.y = std::numeric_limits<double>::quiet_NaN();
@@ -61,18 +62,22 @@ void reset_controller_reference_msg(
 
 }  // namespace
 
-namespace mecanum_drive_controller {
+namespace mecanum_drive_controller
+{
 MecanumDriveController::MecanumDriveController()
-    : controller_interface::ChainableControllerInterface() {}
+: controller_interface::ChainableControllerInterface()
+{
+}
 
-controller_interface::CallbackReturn MecanumDriveController::on_init() {
-  try {
-    param_listener_ =
-        std::make_shared<mecanum_drive_controller::ParamListener>(get_node());
-  } catch (const std::exception& e) {
-    fprintf(stderr,
-            "Exception thrown during controller's init with message: %s \n",
-            e.what());
+controller_interface::CallbackReturn MecanumDriveController::on_init()
+{
+  try
+  {
+    param_listener_ = std::make_shared<mecanum_drive_controller::ParamListener>(get_node());
+  }
+  catch (const std::exception & e)
+  {
+    fprintf(stderr, "Exception thrown during controller's init with message: %s \n", e.what());
     return controller_interface::CallbackReturn::ERROR;
   }
 
@@ -80,11 +85,12 @@ controller_interface::CallbackReturn MecanumDriveController::on_init() {
 }
 
 controller_interface::CallbackReturn MecanumDriveController::on_configure(
-    const rclcpp_lifecycle::State& /*previous_state*/) {
+  const rclcpp_lifecycle::State & /*previous_state*/)
+{
   params_ = param_listener_->get_params();
 
   // Set wheel params for the odometry computation
-  odometry_.setWheelsParams(params_.wheels_k, params_.wheels_radius); 
+  odometry_.setWheelsParams(params_.wheels_k, params_.wheels_radius);
 
   // topics QoS
   auto subscribers_qos = rclcpp::SystemDefaultsQoS();
@@ -94,20 +100,18 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
   // Reference Subscriber
   ref_timeout_ = rclcpp::Duration::from_seconds(params_.reference_timeout);
   ref_subscriber_ = get_node()->create_subscription<ControllerReferenceMsg>(
-      "~/reference", subscribers_qos,
-      std::bind(&MecanumDriveController::reference_callback, this,
-                std::placeholders::_1));
+    "~/reference", subscribers_qos,
+    std::bind(&MecanumDriveController::reference_callback, this, std::placeholders::_1));
 
-  std::shared_ptr<ControllerReferenceMsg> msg =
-      std::make_shared<ControllerReferenceMsg>();
-  reset_controller_reference_msg(msg,get_node());
+  std::shared_ptr<ControllerReferenceMsg> msg = std::make_shared<ControllerReferenceMsg>();
+  reset_controller_reference_msg(msg, get_node());
   input_ref_.writeFromNonRT(msg);
 
   try
   {
     // Odom state publisher
-    odom_s_publisher_ = get_node()->create_publisher<OdomStateMsg>(
-      "~/odometry", rclcpp::SystemDefaultsQoS());
+    odom_s_publisher_ =
+      get_node()->create_publisher<OdomStateMsg>("~/odometry", rclcpp::SystemDefaultsQoS());
     rt_odom_state_publisher_ = std::make_unique<OdomStatePublisher>(odom_s_publisher_);
   }
   catch (const std::exception & e)
@@ -139,10 +143,9 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
   try
   {
     // Tf State publisher
-    tf_odom_s_publisher_ = get_node()->create_publisher<TfStateMsg>(
-      "~/tf_odometry", rclcpp::SystemDefaultsQoS());
-    rt_tf_odom_state_publisher_ =
-      std::make_unique<TfStatePublisher>(tf_odom_s_publisher_);
+    tf_odom_s_publisher_ =
+      get_node()->create_publisher<TfStateMsg>("~/tf_odometry", rclcpp::SystemDefaultsQoS());
+    rt_tf_odom_state_publisher_ = std::make_unique<TfStatePublisher>(tf_odom_s_publisher_);
   }
   catch (const std::exception & e)
   {
@@ -160,17 +163,21 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
   rt_tf_odom_state_publisher_->msg_.transforms[0].transform.translation.z = 0.0;
   rt_tf_odom_state_publisher_->unlock();
 
-
-  try {
+  try
+  {
     // controller State publisher
     controller_s_publisher_ = get_node()->create_publisher<ControllerStateMsg>(
-        "~/controller_state", rclcpp::SystemDefaultsQoS());
-    controller_state_publisher_ = std::make_unique<ControllerStatePublisher>(controller_s_publisher_);
-  } catch (const std::exception& e) {
-    fprintf(stderr,
-            "Exception thrown during publisher creation at configure stage "
-            "with message : %s \n",
-            e.what());
+      "~/controller_state", rclcpp::SystemDefaultsQoS());
+    controller_state_publisher_ =
+      std::make_unique<ControllerStatePublisher>(controller_s_publisher_);
+  }
+  catch (const std::exception & e)
+  {
+    fprintf(
+      stderr,
+      "Exception thrown during publisher creation at configure stage "
+      "with message : %s \n",
+      e.what());
     return controller_interface::CallbackReturn::ERROR;
   }
 
@@ -196,13 +203,15 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-void MecanumDriveController::reference_callback(
-    const std::shared_ptr<ControllerReferenceMsg> msg) {
+void MecanumDriveController::reference_callback(const std::shared_ptr<ControllerReferenceMsg> msg)
+{
   // if no timestamp provided use current time for command timestamp
-  if (msg->header.stamp.sec == 0 && msg->header.stamp.nanosec == 0u) {
-    RCLCPP_WARN(get_node()->get_logger(),
-                "Timestamp in header is missing, using current time as command "
-                "timestamp.");
+  if (msg->header.stamp.sec == 0 && msg->header.stamp.nanosec == 0u)
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "Timestamp in header is missing, using current time as command "
+      "timestamp.");
     msg->header.stamp = get_node()->now();
   }
   const auto age_of_last_command = get_node()->now() - msg->header.stamp;
@@ -223,8 +232,8 @@ void MecanumDriveController::reference_callback(
 }
 
 controller_interface::InterfaceConfiguration
-MecanumDriveController::command_interface_configuration() const {
-
+MecanumDriveController::command_interface_configuration() const
+{
   controller_interface::InterfaceConfiguration command_interfaces_config;
   command_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
 
@@ -238,27 +247,31 @@ MecanumDriveController::command_interface_configuration() const {
   command_interfaces_config.names.push_back(
     params_.wheel3_name + "/" + hardware_interface::HW_IF_VELOCITY);
 
-
   return command_interfaces_config;
 }
 
-controller_interface::InterfaceConfiguration
-MecanumDriveController::state_interface_configuration() const {
-
+controller_interface::InterfaceConfiguration MecanumDriveController::state_interface_configuration()
+  const
+{
   controller_interface::InterfaceConfiguration state_interfaces_config;
   state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
 
   state_interfaces_config.names.reserve(NR_STATE_ITFS);
-  state_interfaces_config.names.push_back(params_.wheel0_name + "/" + hardware_interface::HW_IF_VELOCITY);
-  state_interfaces_config.names.push_back(params_.wheel1_name + "/" + hardware_interface::HW_IF_VELOCITY);
-  state_interfaces_config.names.push_back(params_.wheel2_name + "/" + hardware_interface::HW_IF_VELOCITY);
-  state_interfaces_config.names.push_back(params_.wheel3_name + "/" + hardware_interface::HW_IF_VELOCITY);
+  state_interfaces_config.names.push_back(
+    params_.wheel0_name + "/" + hardware_interface::HW_IF_VELOCITY);
+  state_interfaces_config.names.push_back(
+    params_.wheel1_name + "/" + hardware_interface::HW_IF_VELOCITY);
+  state_interfaces_config.names.push_back(
+    params_.wheel2_name + "/" + hardware_interface::HW_IF_VELOCITY);
+  state_interfaces_config.names.push_back(
+    params_.wheel3_name + "/" + hardware_interface::HW_IF_VELOCITY);
 
   return state_interfaces_config;
 }
 
 std::vector<hardware_interface::CommandInterface>
-MecanumDriveController::on_export_reference_interfaces() {
+MecanumDriveController::on_export_reference_interfaces()
+{
   reference_interfaces_.resize(NR_REF_ITFS, std::numeric_limits<double>::quiet_NaN());
 
   std::vector<hardware_interface::CommandInterface> reference_interfaces;
@@ -279,33 +292,36 @@ MecanumDriveController::on_export_reference_interfaces() {
   return reference_interfaces;
 }
 
-bool MecanumDriveController::on_set_chained_mode(bool chained_mode) {
+bool MecanumDriveController::on_set_chained_mode(bool chained_mode)
+{
   // Always accept switch to/from chained mode
   return true || chained_mode;
 }
 
 controller_interface::CallbackReturn MecanumDriveController::on_activate(
-    const rclcpp_lifecycle::State& /*previous_state*/) {
+  const rclcpp_lifecycle::State & /*previous_state*/)
+{
   // Set default value in command
-  reset_controller_reference_msg(*(input_ref_.readFromRT()),
-                                 get_node());
+  reset_controller_reference_msg(*(input_ref_.readFromRT()), get_node());
 
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
 controller_interface::CallbackReturn MecanumDriveController::on_deactivate(
-    const rclcpp_lifecycle::State& /*previous_state*/) {
+  const rclcpp_lifecycle::State & /*previous_state*/)
+{
   // TODO(anyone): depending on number of interfaces, use definitions, e.g.,
   // `CMD_MY_ITFS`, instead of a loop
-  for (size_t i = 0; i < NR_CMD_ITFS; ++i) {
+  for (size_t i = 0; i < NR_CMD_ITFS; ++i)
+  {
     command_interfaces_[i].set_value(std::numeric_limits<double>::quiet_NaN());
   }
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::return_type
-MecanumDriveController::update_reference_from_subscribers(
-    const rclcpp::Time& time, const rclcpp::Duration& /*period*/) {
+controller_interface::return_type MecanumDriveController::update_reference_from_subscribers(
+  const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
+{
   auto current_ref = *(input_ref_.readFromRT());
   const auto age_of_last_command = get_node()->now() - (current_ref)->header.stamp;
 
@@ -332,16 +348,18 @@ MecanumDriveController::update_reference_from_subscribers(
 }
 
 controller_interface::return_type MecanumDriveController::update_and_write_commands(
-    const rclcpp::Time& time, const rclcpp::Duration& period) {
-
+  const rclcpp::Time & time, const rclcpp::Duration & period)
+{
   // FORWARD KINEMATICS (odometry).
   double wheel0_vel = state_interfaces_[0].get_value();
   double wheel1_vel = state_interfaces_[1].get_value();
   double wheel2_vel = state_interfaces_[2].get_value();
   double wheel3_vel = state_interfaces_[3].get_value();
 
-  if (!std::isnan(wheel0_vel) && !std::isnan(wheel1_vel) && !std::isnan(wheel2_vel) && !std::isnan(wheel3_vel)){
-      
+  if (
+    !std::isnan(wheel0_vel) && !std::isnan(wheel1_vel) && !std::isnan(wheel2_vel) &&
+    !std::isnan(wheel3_vel))
+  {
     // Estimate twist (using joint information) and integrate
     odometry_.update(wheel0_vel, wheel1_vel, wheel2_vel, wheel3_vel, period.seconds());
   }
@@ -351,48 +369,53 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
   // NOTE: the input desired twist (from topic /cmd_vel) is a body twist.
   auto current_ref = input_ref_.readFromRT();
   const auto age_of_last_command = time - (*current_ref)->header.stamp;
-  if (age_of_last_command <= ref_timeout_ ||
-          ref_timeout_ == rclcpp::Duration::from_seconds(0)) 
+  if (age_of_last_command <= ref_timeout_ || ref_timeout_ == rclcpp::Duration::from_seconds(0))
   {
     tf2::Quaternion orientation_2;
     orientation_2.setRPY(0.0, 0.0, params_.base_frame_offset[2]);
 
     tf2::Matrix3x3 R_b_c = tf2::Matrix3x3((orientation_2));
-    tf2::Vector3 v_Ob_b_b0_c = R_b_c * tf2::Vector3(reference_interfaces_[0], reference_interfaces_[1], 0.0);
-    tf2::Vector3 Ob_c = tf2::Vector3(params_.base_frame_offset[0], params_.base_frame_offset[1], 0.0);
+    tf2::Vector3 v_Ob_b_b0_c =
+      R_b_c * tf2::Vector3(reference_interfaces_[0], reference_interfaces_[1], 0.0);
+    tf2::Vector3 Ob_c =
+      tf2::Vector3(params_.base_frame_offset[0], params_.base_frame_offset[1], 0.0);
 
     double vx_Oc_c_c0_c_ = v_Ob_b_b0_c.x() + Ob_c.y() * reference_interfaces_[2];
     double vy_Oc_c_c0_c_ = v_Ob_b_b0_c.y() - Ob_c.x() * reference_interfaces_[2];
     double wz_c_c0_c_ = reference_interfaces_[2];
 
-    double w0_vel = 1.0 / params_.wheels_radius * (vx_Oc_c_c0_c_ - vy_Oc_c_c0_c_ - params_.wheels_k * wz_c_c0_c_);
-    double w1_vel = 1.0 / params_.wheels_radius * (vx_Oc_c_c0_c_ + vy_Oc_c_c0_c_ - params_.wheels_k * wz_c_c0_c_);
-    double w2_vel = 1.0 / params_.wheels_radius * (vx_Oc_c_c0_c_ - vy_Oc_c_c0_c_ + params_.wheels_k * wz_c_c0_c_);
-    double w3_vel = 1.0 / params_.wheels_radius * (vx_Oc_c_c0_c_ + vy_Oc_c_c0_c_ + params_.wheels_k * wz_c_c0_c_);
+    double w0_vel =
+      1.0 / params_.wheels_radius * (vx_Oc_c_c0_c_ - vy_Oc_c_c0_c_ - params_.wheels_k * wz_c_c0_c_);
+    double w1_vel =
+      1.0 / params_.wheels_radius * (vx_Oc_c_c0_c_ + vy_Oc_c_c0_c_ - params_.wheels_k * wz_c_c0_c_);
+    double w2_vel =
+      1.0 / params_.wheels_radius * (vx_Oc_c_c0_c_ - vy_Oc_c_c0_c_ + params_.wheels_k * wz_c_c0_c_);
+    double w3_vel =
+      1.0 / params_.wheels_radius * (vx_Oc_c_c0_c_ + vy_Oc_c_c0_c_ + params_.wheels_k * wz_c_c0_c_);
 
     // Set wheels velocities:
 
     command_interfaces_[0].set_value(w0_vel);
-    fprintf(stderr," command_interfaces_[0] = %f \n", w0_vel);
+    fprintf(stderr, " command_interfaces_[0] = %f \n", w0_vel);
     command_interfaces_[1].set_value(w1_vel);
-    fprintf(stderr," command_interfaces_[1] = %f \n", w1_vel);
+    fprintf(stderr, " command_interfaces_[1] = %f \n", w1_vel);
     command_interfaces_[2].set_value(w2_vel);
-    fprintf(stderr," command_interfaces_[2] = %f \n", w2_vel);
+    fprintf(stderr, " command_interfaces_[2] = %f \n", w2_vel);
     command_interfaces_[3].set_value(w3_vel);
-    fprintf(stderr," command_interfaces_[3] = %f \n", w3_vel);
+    fprintf(stderr, " command_interfaces_[3] = %f \n", w3_vel);
+  }
+  else
+  {
+    reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();
+    reference_interfaces_[1] = std::numeric_limits<double>::quiet_NaN();
+    reference_interfaces_[2] = std::numeric_limits<double>::quiet_NaN();
+    command_interfaces_[0].set_value(0.0);
+    // command_interfaces_[1].set_value(w1_vel);
+    command_interfaces_[1].set_value(0.0);
+    command_interfaces_[2].set_value(0.0);
+    command_interfaces_[3].set_value(0.0);
+  }
 
-  } else {
-      reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();
-      reference_interfaces_[1] = std::numeric_limits<double>::quiet_NaN();
-      reference_interfaces_[2] = std::numeric_limits<double>::quiet_NaN();
-      command_interfaces_[0].set_value(0.0);
-      // command_interfaces_[1].set_value(w1_vel);
-      command_interfaces_[1].set_value(0.0);
-      command_interfaces_[2].set_value(0.0);
-      command_interfaces_[3].set_value(0.0);
-    }
-
-  
   // Publish odometry message
   // Compute and store orientation info
   tf2::Quaternion orientation;
@@ -425,7 +448,7 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
   if (controller_state_publisher_->trylock())
   {
     controller_state_publisher_->msg_.header.stamp = get_node()->now();
-    controller_state_publisher_->msg_.odom.pose.pose.position.x = odometry_.getX();  
+    controller_state_publisher_->msg_.odom.pose.pose.position.x = odometry_.getX();
     controller_state_publisher_->msg_.odom.pose.pose.position.y = odometry_.getY();
     controller_state_publisher_->msg_.odom.pose.pose.orientation = tf2::toMsg(orientation);
     controller_state_publisher_->msg_.odom.twist.twist.linear.x = odometry_.getVx();
@@ -443,12 +466,12 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
   }
 
   return controller_interface::return_type::OK;
-
 }
 
 }  // namespace mecanum_drive_controller
 
 #include "pluginlib/class_list_macros.hpp"
 
-PLUGINLIB_EXPORT_CLASS(mecanum_drive_controller::MecanumDriveController,
-                       controller_interface::ChainableControllerInterface)
+PLUGINLIB_EXPORT_CLASS(
+  mecanum_drive_controller::MecanumDriveController,
+  controller_interface::ChainableControllerInterface)

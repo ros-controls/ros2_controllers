@@ -6,8 +6,8 @@
 #include "realtime_tools/realtime_publisher.h"
 
 #include <boost/accumulators/accumulators.hpp>
-#include <boost/accumulators/statistics/stats.hpp>
 #include <boost/accumulators/statistics/rolling_mean.hpp>
+#include <boost/accumulators/statistics/stats.hpp>
 #include <boost/function.hpp>
 
 #define PLANAR_POINT_DIM 3
@@ -41,38 +41,21 @@ public:
   /// \param wheel3_vel  Wheel velocity [rad/s]
   /// \param time      Current time
   /// \return true if the odometry is actually updated
-  bool update(double wheel0_vel, double wheel1_vel, double wheel2_vel, double wheel3_vel, const double dt);
+  bool update(
+    double wheel0_vel, double wheel1_vel, double wheel2_vel, double wheel3_vel, const double dt);
 
   /// \return position (x component) [m]
-  double getX() const
-  {
-    return px_b_b0_;
-  }
+  double getX() const { return px_b_b0_; }
   /// \return position (y component) [m]
-  double getY() const
-  {
-    return py_b_b0_;
-  }
+  double getY() const { return py_b_b0_; }
   /// \return orientation (z component) [m]
-  double getRz() const
-  {
-    return rz_b_b0_;
-  }
+  double getRz() const { return rz_b_b0_; }
   /// \return body velocity of the base frame (linear x component) [m/s]
-  double getVx() const
-  {
-    return vx_Ob_b_b0_b_;
-  }
+  double getVx() const { return vx_Ob_b_b0_b_; }
   /// \return body velocity of the base frame (linear y component) [m/s]
-  double getVy() const
-  {
-    return vy_Ob_b_b0_b_;
-  }
+  double getVy() const { return vy_Ob_b_b0_b_; }
   /// \return body velocity of the base frame (angular z component) [m/s]
-  double getWz() const
-  {
-    return wz_b_b0_b_;
-  }
+  double getWz() const { return wz_b_b0_b_; }
 
   /// \brief Sets the wheels parameters: mecanum geometric param and radius
   /// \param wheels_k       Wheels geometric param (used in mecanum wheels' ik) [m]

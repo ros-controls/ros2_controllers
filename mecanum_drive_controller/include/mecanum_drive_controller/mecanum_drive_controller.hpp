@@ -16,17 +16,17 @@
 #define MECANUM_DRIVE_CONTROLLER__MECANUM_DRIVE_CONTROLLER_HPP_
 
 #include <chrono>
-#include <memory>
-#include <string>
-#include <vector>
 #include <cmath>
+#include <memory>
 #include <queue>
+#include <string>
 #include <utility>
+#include <vector>
 
-#include "mecanum_drive_controller/odometry.hpp"
 #include "controller_interface/chainable_controller_interface.hpp"
-#include "mecanum_drive_controller_parameters.hpp"
+#include "mecanum_drive_controller/odometry.hpp"
 #include "mecanum_drive_controller/visibility_control.h"
+#include "mecanum_drive_controller_parameters.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_buffer.h"
@@ -48,7 +48,6 @@ static constexpr size_t NR_CMD_ITFS = 4;
 
 // name constants for reference interfaces
 static constexpr size_t NR_REF_ITFS = 3;
-
 
 class MecanumDriveController : public controller_interface::ChainableControllerInterface
 {
@@ -91,7 +90,6 @@ public:
   using TfStateMsg = tf2_msgs::msg::TFMessage;
   using ControllerStateMsg = custom_messages::msg::MecanumDriveControllerState;
 
-
 protected:
   std::shared_ptr<mecanum_drive_controller::ParamListener> param_listener_;
   mecanum_drive_controller::Params params_;
@@ -104,7 +102,6 @@ protected:
   using OdomStatePublisher = realtime_tools::RealtimePublisher<OdomStateMsg>;
   rclcpp::Publisher<OdomStateMsg>::SharedPtr odom_s_publisher_;
   std::unique_ptr<OdomStatePublisher> rt_odom_state_publisher_;
-
 
   using TfStatePublisher = realtime_tools::RealtimePublisher<TfStateMsg>;
   rclcpp::Publisher<TfStateMsg>::SharedPtr tf_odom_s_publisher_;
@@ -121,7 +118,7 @@ protected:
 
   // Odometry related:
   Odometry odometry_;
-  
+
 private:
   // callback for topic interface
   TEMPLATES__ROS2_CONTROL__VISIBILITY_LOCAL

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "test_mecanum_drive_controller.hpp"
+#include "hardware_interface/types/hardware_interface_type_values.hpp"
 
 #include <limits>
 #include <memory>
@@ -22,15 +22,16 @@
 #include <vector>
 
 using mecanum_drive_controller::NR_CMD_ITFS;
-using mecanum_drive_controller::NR_STATE_ITFS;
 using mecanum_drive_controller::NR_REF_ITFS;
+using mecanum_drive_controller::NR_STATE_ITFS;
 
-class MecanumDriveControllerTest : public MecanumDriveControllerFixture<TestableMecanumDriveController>
+class MecanumDriveControllerTest
+: public MecanumDriveControllerFixture<TestableMecanumDriveController>
 {
 };
 
 TEST_F(MecanumDriveControllerTest, all_parameters_set_configure_success)
-{ 
+{
   SetUpController();
 
   ASSERT_EQ(controller_->params_.reference_timeout, 0.0);
@@ -46,13 +47,15 @@ TEST_F(MecanumDriveControllerTest, check_exported_intefaces)
 
   auto command_intefaces = controller_->command_interface_configuration();
   ASSERT_EQ(command_intefaces.names.size(), joint_command_values_.size());
-  for (size_t i = 0; i < command_intefaces.names.size(); ++i) {
+  for (size_t i = 0; i < command_intefaces.names.size(); ++i)
+  {
     EXPECT_EQ(command_intefaces.names[i], joint_names_[i] + "/" + interface_name_);
   }
 
   auto state_intefaces = controller_->state_interface_configuration();
   ASSERT_EQ(state_intefaces.names.size(), joint_state_values_.size());
-  for (size_t i = 0; i < state_intefaces.names.size(); ++i) {
+  for (size_t i = 0; i < state_intefaces.names.size(); ++i)
+  {
     EXPECT_EQ(state_intefaces.names[i], joint_names_[i] + "/" + interface_name_);
   }
 
@@ -83,7 +86,6 @@ TEST_F(MecanumDriveControllerTest, check_exported_intefaces)
   EXPECT_EQ(
     reference_interfaces[2].get_interface_name(),
     std::string("angular_z") + "/" + hardware_interface::HW_IF_VELOCITY);
-  
 }
 
 TEST_F(MecanumDriveControllerTest, activate_success)
@@ -138,11 +140,11 @@ TEST_F(MecanumDriveControllerTest, reactivate_success)
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->command_interfaces_[NR_CMD_ITFS-4].get_value(), 101.101);
+  ASSERT_EQ(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_value(), 101.101);
   ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[NR_CMD_ITFS-4].get_value()));
+  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_value()));
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[NR_CMD_ITFS-4].get_value()));
+  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_value()));
 
   ASSERT_EQ(
     controller_->update_reference_from_subscribers(
@@ -152,11 +154,10 @@ TEST_F(MecanumDriveControllerTest, reactivate_success)
     controller_->update_and_write_commands(
       controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
-
 }
 
 TEST_F(MecanumDriveControllerTest, publish_status_success)
-{ 	
+{
   SetUpController();
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
@@ -196,7 +197,7 @@ TEST_F(MecanumDriveControllerTest, receive_message_and_publish_updated_status)
     controller_->update_and_write_commands(
       controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
-//here
+  //here
   ControllerStateMsg msg;
   subscribe_and_get_messages(msg);
   joint_command_values_[1] = 111;
@@ -213,10 +214,10 @@ TEST_F(MecanumDriveControllerTest, receive_message_and_publish_updated_status)
     controller_->update_and_write_commands(
       controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
-//here
+  //here
   EXPECT_EQ(joint_command_values_[1], 3.0);
   EXPECT_FALSE(std::isnan(joint_command_values_[1]));
-  fprintf(stderr," joint_command_values_[1]= %f \n", joint_command_values_[1]);
+  fprintf(stderr, " joint_command_values_[1]= %f \n", joint_command_values_[1]);
 
   subscribe_and_get_messages(msg);
 
@@ -243,17 +244,14 @@ TEST_F(MecanumDriveControllerTest, test_sending_too_old_message)
     controller_->get_node()->now() - controller_->ref_timeout_ -
     rclcpp::Duration::from_seconds(0.1));
   ASSERT_TRUE(controller_->wait_for_commands(executor));
-	ASSERT_EQ(old_timestamp, (*(controller_->input_ref_.readFromNonRT()))->header.stamp);
+  ASSERT_EQ(old_timestamp, (*(controller_->input_ref_.readFromNonRT()))->header.stamp);
   // ASSERT_EQ((*reference)->twist.linear.x, 0.45);
   // ASSERT_EQ((*reference)->twist.linear.y, 0.45);
   // ASSERT_EQ((*reference)->twist.angular.z, 0.0);
   EXPECT_TRUE(std::isnan((*reference)->twist.linear.x));
   EXPECT_TRUE(std::isnan((*reference)->twist.linear.y));
   EXPECT_TRUE(std::isnan((*reference)->twist.angular.z));
-  
 }
-
-
 
 TEST_F(MecanumDriveControllerTest, test_time_stamp_zero)
 {
@@ -272,7 +270,7 @@ TEST_F(MecanumDriveControllerTest, test_time_stamp_zero)
   EXPECT_TRUE(std::isnan((*reference)->twist.angular.z));
 
   publish_commands(rclcpp::Time(0));
- 
+
   ASSERT_TRUE(controller_->wait_for_commands(executor));
   ASSERT_EQ(old_timestamp.sec, (*(controller_->input_ref_.readFromNonRT()))->header.stamp.sec);
   EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.linear.x));
@@ -281,7 +279,6 @@ TEST_F(MecanumDriveControllerTest, test_time_stamp_zero)
   EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.linear.y, 0.0);
   EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z, 0.0);
 }
-
 
 TEST_F(MecanumDriveControllerTest, test_message_accepted)
 {
@@ -540,7 +537,6 @@ TEST_F(MecanumDriveControllerTest, test_ref_timeout_zero_for_reference_callback)
   EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.linear.y, 0.0);
   EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z, 0.0);
 }
-
 
 int main(int argc, char ** argv)
 {

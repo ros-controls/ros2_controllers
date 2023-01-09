@@ -3,7 +3,6 @@
 #include <tf2/transform_datatypes.h>
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
-
 #include <boost/bind.hpp>
 using namespace std;
 namespace mecanum_drive_controller
@@ -11,19 +10,19 @@ namespace mecanum_drive_controller
 namespace bacc = boost::accumulators;
 
 Odometry::Odometry(size_t velocity_rolling_window_size)
-  : timestamp_(0.0)
-  , px_b_b0_(0.0)
-  , py_b_b0_(0.0)
-  , rz_b_b0_(0.0)
-  , vx_Ob_b_b0_b_(0.0)
-  , vy_Ob_b_b0_b_(0.0)
-  , wz_b_b0_b_(0.0)
-  , wheels_k_(0.0)
-  , wheels_radius_(0.0)
+: timestamp_(0.0),
+  px_b_b0_(0.0),
+  py_b_b0_(0.0),
+  rz_b_b0_(0.0),
+  vx_Ob_b_b0_b_(0.0),
+  vy_Ob_b_b0_b_(0.0),
+  wz_b_b0_b_(0.0),
+  wheels_k_(0.0),
+  wheels_radius_(0.0)
 {
 }
 
-void Odometry::init(const rclcpp::Time& time, double base_frame_offset[PLANAR_POINT_DIM])
+void Odometry::init(const rclcpp::Time & time, double base_frame_offset[PLANAR_POINT_DIM])
 {
   // Reset timestamp:
   timestamp_ = time;
@@ -34,12 +33,12 @@ void Odometry::init(const rclcpp::Time& time, double base_frame_offset[PLANAR_PO
   base_frame_offset_[2] = base_frame_offset[2];
 }
 
-bool Odometry::update(double wheel0_vel, double wheel1_vel, double wheel2_vel, double wheel3_vel, const double dt)
+bool Odometry::update(
+  double wheel0_vel, double wheel1_vel, double wheel2_vel, double wheel3_vel, const double dt)
 {
   /// We cannot estimate the speed with very small time intervals:
   // const double dt = (time - timestamp_).toSec();
-  if (dt < 0.0001)
-    return false;  // Interval too small to integrate with
+  if (dt < 0.0001) return false;  // Interval too small to integrate with
 
   // timestamp_ = time;
 
@@ -50,12 +49,14 @@ bool Odometry::update(double wheel0_vel, double wheel1_vel, double wheel2_vel, d
   ///       post-processing at will. We prefer this way of doing as filtering introduces delay (which makes it
   ///       difficult to interpret and compare behavior curves).
   double vx_Oc_c_c0_c = 0.25 * wheels_radius_ * (wheel0_vel + wheel1_vel + wheel2_vel + wheel3_vel);
-  double vy_Oc_c_c0_c = 0.25 * wheels_radius_ * (-wheel0_vel + wheel1_vel - wheel2_vel + wheel3_vel);
-  double wz_c_c0_c = 0.25 * wheels_radius_ / wheels_k_ * (-wheel0_vel - wheel1_vel + wheel2_vel + wheel3_vel);
+  double vy_Oc_c_c0_c =
+    0.25 * wheels_radius_ * (-wheel0_vel + wheel1_vel - wheel2_vel + wheel3_vel);
+  double wz_c_c0_c =
+    0.25 * wheels_radius_ / wheels_k_ * (-wheel0_vel - wheel1_vel + wheel2_vel + wheel3_vel);
 
   tf2::Quaternion orientation_R_c_b;
-  orientation_R_c_b.setRPY(0.0, 0.0,-base_frame_offset_[2]);
-  
+  orientation_R_c_b.setRPY(0.0, 0.0, -base_frame_offset_[2]);
+
   tf2::Matrix3x3 R_c_b = tf2::Matrix3x3((orientation_R_c_b));
   tf2::Vector3 v_Oc_c_c0_b = R_c_b * tf2::Vector3(vx_Oc_c_c0_c, vy_Oc_c_c0_c, 0.0);
   tf2::Vector3 Oc_b = R_c_b * tf2::Vector3(-base_frame_offset_[0], -base_frame_offset_[1], 0.0);
@@ -65,14 +66,14 @@ bool Odometry::update(double wheel0_vel, double wheel1_vel, double wheel2_vel, d
   // for(int x=0;x<3;x++)  // loop 3 times for three lines
   //   {
   //       for(int y=0;y<3;y++)  // loop for the three elements on the line
-  //       { 
+  //       {
   //           cout<<R_c_b[x][y]  \n<<", ";
   //       }
   //   cout<<endl;  // when the inner loop is done, go to a new line
   //   }
 
   // for(int j=0;j<3;j++)  // loop for the three elements on the line
-  // { 
+  // {
   //     cout<<Oc_b[j]  \n<<", ";
   // }
   // cout<<endl;
@@ -86,15 +87,15 @@ bool Odometry::update(double wheel0_vel, double wheel1_vel, double wheel2_vel, d
   rz_b_b0_ += wz_b_b0_b_ * dt;
 
   tf2::Quaternion orientation_R_b_b0;
-  orientation_R_b_b0.setRPY(0.0, 0.0,-base_frame_offset_[2]);
+  orientation_R_b_b0.setRPY(0.0, 0.0, -base_frame_offset_[2]);
 
   tf2::Matrix3x3 R_b_b0 = tf2::Matrix3x3((orientation_R_b_b0));
   tf2::Vector3 vx_Ob_b_b0_b0 = R_b_b0 * tf2::Vector3(vx_Ob_b_b0_b_, vy_Ob_b_b0_b_, 0.0);
 
   px_b_b0_ += vx_Ob_b_b0_b0.x() * dt;
   py_b_b0_ += vx_Ob_b_b0_b0.y() * dt;
-  fprintf(stderr," px_b_b0_ = %f  \n", px_b_b0_);
-  fprintf(stderr," py_b_b0_ = %f  \n", py_b_b0_);
+  fprintf(stderr, " px_b_b0_ = %f  \n", px_b_b0_);
+  fprintf(stderr, " py_b_b0_ = %f  \n", py_b_b0_);
 
   return true;
 }
