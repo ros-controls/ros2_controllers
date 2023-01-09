@@ -170,17 +170,17 @@ TEST_F(BicycleSteeringControllerTest, test_update_logic)
   ASSERT_FALSE(controller_->is_in_chained_mode());
 
   // set command statically
-  static constexpr double TEST_COMMAND = 2.1;
   std::shared_ptr<ControllerReferenceMsg> msg = std::make_shared<ControllerReferenceMsg>();
   msg->twist.linear.x = 0.1;
-  msg->twist.angular.z = 0.0;
+  msg->twist.angular.z = 0.2;
   controller_->input_ref_.writeFromNonRT(msg);
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  EXPECT_EQ(joint_command_values_[0], TEST_COMMAND);
+  EXPECT_EQ(command_itfs_[0], 1.0);
+  EXPECT_EQ(command_itfs_[1], 1.0);
   EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromRT()))->twist.linear.x));
   EXPECT_EQ(controller_->reference_interfaces_.size(), joint_names_.size());
   for (const auto & interface : controller_->reference_interfaces_)
@@ -324,37 +324,40 @@ TEST_F(BicycleSteeringControllerTest, publish_status_success)
   subscribe_and_get_messages(msg);
 }
 
-// TEST_F(BicycleSteeringControllerTest, receive_message_and_publish_updated_status)
-// {
-//   SetUpController();
-//   rclcpp::executors::MultiThreadedExecutor executor;
-//   executor.add_node(controller_->get_node()->get_node_base_interface());
+TEST_F(BicycleSteeringControllerTest, receive_message_and_publish_updated_status)
+{
+  SetUpController();
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
 
-//   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-//   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-//   ASSERT_EQ(
-//     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-//     controller_interface::return_type::OK);
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
 
-//   ControllerStateMsg msg;
-//   subscribe_and_get_messages(msg);
+  ControllerStateMsg msg;
+  subscribe_and_get_messages(msg);
 
-//   ASSERT_EQ(msg.set_point, 101.101);
+  EXPECT_EQ(msg.linear_velocity_command.data[0], 1.1);
+  EXPECT_EQ(msg.steering_angle_command.data[0], 2.2);
 
-//   publish_commands();
-//   ASSERT_TRUE(controller_->wait_for_commands(executor));
+  // publish_commands();
+  // ASSERT_TRUE(controller_->wait_for_commands(executor));
 
-//   ASSERT_EQ(
-//     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-//     controller_interface::return_type::OK);
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
 
-//   EXPECT_EQ(joint_command_values_[CMD_MY_ITFS], 0.45);
+  EXPECT_EQ(command_itfs_[0], 1.0);
+  EXPECT_EQ(command_itfs_[1], 1.0);
 
-//   subscribe_and_get_messages(msg);
+  subscribe_and_get_messages(msg);
 
-//   ASSERT_EQ(msg.set_point, 0.45);
-// }
+  EXPECT_EQ(msg.linear_velocity_command.data[0], 1.1);
+  EXPECT_EQ(msg.steering_angle_command.data[0], 2.2);
+}
 
 int main(int argc, char ** argv)
 {

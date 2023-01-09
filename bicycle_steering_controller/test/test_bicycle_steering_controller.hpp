@@ -209,37 +209,32 @@ protected:
     ASSERT_TRUE(subscription->take(msg, msg_info));
   }
 
-  // // TODO(anyone): add/remove arguments as it suites your command message type
-  // void publish_commands(
-  //   const std::vector<double> & displacements = {0.45},
-  //   const std::vector<double> & velocities = {0.0}, const double duration = 1.25)
-  // {
-  //   auto wait_for_topic = [&](const auto topic_name)
-  //   {
-  //     size_t wait_count = 0;
-  //     while (command_publisher_node_->count_subscribers(topic_name) == 0)
-  //     {
-  //       if (wait_count >= 5)
-  //       {
-  //         auto error_msg =
-  //           std::string("publishing to ") + topic_name + " but no node subscribes to it";
-  //         throw std::runtime_error(error_msg);
-  //       }
-  //       std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  //       ++wait_count;
-  //     }
-  //   };
+  void publish_commands(const double linear = 0.5, const double angular = 0.1)
+  {
+    auto wait_for_topic = [&](const auto topic_name)
+    {
+      size_t wait_count = 0;
+      while (command_publisher_node_->count_subscribers(topic_name) == 0)
+      {
+        if (wait_count >= 5)
+        {
+          auto error_msg =
+            std::string("publishing to ") + topic_name + " but no node subscribes to it";
+          throw std::runtime_error(error_msg);
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        ++wait_count;
+      }
+    };
 
-  //   wait_for_topic(command_publisher_->get_topic_name());
+    // wait_for_topic(command_publisher_->get_topic_name());
 
-  //   ControllerReferenceMsg msg;
-  //   msg.joint_names = joint_names_;
-  //   msg.displacements = displacements;
-  //   msg.velocities = velocities;
-  //   msg.duration = duration;
+    ControllerReferenceMsg msg;
+    msg.twist.linear.x = linear;
+    msg.twist.angular.z = angular;
 
-  //   command_publisher_->publish(msg);
-  // }
+    command_publisher_->publish(msg);
+  }
 
   // std::shared_ptr<ControllerModeSrvType::Response> call_service(
   //   const bool slow_control, rclcpp::Executor & executor)
@@ -280,7 +275,7 @@ protected:
   double rear_wheels_radius_ = 0.45;
 
   std::array<double, 2> joint_state_values_ = {1.1, 2.0};
-  std::array<double, 2> joint_command_values_ = {2.1, 101.101};
+  std::array<double, 2> joint_command_values_ = {1.1, 2.2};
   std::array<std::string, 2> joint_reference_interfaces_ = {"linear/velocity", "angular/position"};
   std::string steering_interface_name_ = "position";
   // defined in setup
