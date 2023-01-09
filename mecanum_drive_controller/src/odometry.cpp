@@ -1,6 +1,21 @@
+// Copyright (c) 2022, Stogl Robotics Consulting UG (haftungsbeschränkt)
+// (template)
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #include "mecanum_drive_controller/odometry.hpp"
 
-#include <tf2/transform_datatypes.h>
+#include "tf2/transform_datatypes.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 #include <boost/bind.hpp>
@@ -44,10 +59,12 @@ bool Odometry::update(
 
   /// Compute FK (i.e. compute mobile robot's body twist out of its wheels velocities):
   /// NOTE: we use the IK of the mecanum wheels which we invert using a pseudo-inverse.
-  /// NOTE: the mecanum IK gives the body speed at the center frame, we then offset this velocity at the base frame.
-  /// NOTE: in the diff drive the velocity is filtered out, but we prefer to return it raw and let the user perform
-  ///       post-processing at will. We prefer this way of doing as filtering introduces delay (which makes it
-  ///       difficult to interpret and compare behavior curves).
+  /// NOTE: the mecanum IK gives the body speed at the center frame, we then offset this velocity
+  ///       at the base frame.
+  /// NOTE: in the diff drive the velocity is filtered out, but we prefer to return it raw and
+  ///       let the user perform post-processing at will.
+  ///       We prefer this way of doing as filtering introduces delay (which makes it difficult
+  ///       to interpret and compare behavior curves).
   double vx_Oc_c_c0_c = 0.25 * wheels_radius_ * (wheel0_vel + wheel1_vel + wheel2_vel + wheel3_vel);
   double vy_Oc_c_c0_c =
     0.25 * wheels_radius_ * (-wheel0_vel + wheel1_vel - wheel2_vel + wheel3_vel);
@@ -82,8 +99,8 @@ bool Odometry::update(
   wz_b_b0_b_ = wz_c_c0_c;
 
   /// Integration.
-  /// NOTE: the position is expressed in the odometry frame (frame b0), unlike the twist which is expressed in the body
-  ///       frame (frame b).
+  /// NOTE: the position is expressed in the odometry frame (frame b0), unlike the twist which is
+  ///       expressed in the body frame (frame b).
   rz_b_b0_ += wz_b_b0_b_ * dt;
 
   tf2::Quaternion orientation_R_b_b0;

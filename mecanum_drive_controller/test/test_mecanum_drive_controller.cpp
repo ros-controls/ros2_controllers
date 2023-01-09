@@ -13,13 +13,14 @@
 // limitations under the License.
 
 #include "test_mecanum_drive_controller.hpp"
-#include "hardware_interface/types/hardware_interface_type_values.hpp"
 
 #include <limits>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
+
+#include "hardware_interface/types/hardware_interface_type_values.hpp"
 
 using mecanum_drive_controller::NR_CMD_ITFS;
 using mecanum_drive_controller::NR_REF_ITFS;
@@ -197,7 +198,6 @@ TEST_F(MecanumDriveControllerTest, receive_message_and_publish_updated_status)
     controller_->update_and_write_commands(
       controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
-  //here
   ControllerStateMsg msg;
   subscribe_and_get_messages(msg);
   joint_command_values_[1] = 111;
@@ -214,7 +214,6 @@ TEST_F(MecanumDriveControllerTest, receive_message_and_publish_updated_status)
     controller_->update_and_write_commands(
       controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
-  //here
   EXPECT_EQ(joint_command_values_[1], 3.0);
   EXPECT_FALSE(std::isnan(joint_command_values_[1]));
   fprintf(stderr, " joint_command_values_[1]= %f \n", joint_command_values_[1]);

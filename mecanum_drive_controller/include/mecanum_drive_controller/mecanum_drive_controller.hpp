@@ -52,35 +52,35 @@ static constexpr size_t NR_REF_ITFS = 3;
 class MecanumDriveController : public controller_interface::ChainableControllerInterface
 {
 public:
-  TEMPLATES__ROS2_CONTROL__VISIBILITY_PUBLIC
+  MECANUM_DRIVE_CONTROLLER__VISIBILITY_PUBLIC
   MecanumDriveController();
 
-  TEMPLATES__ROS2_CONTROL__VISIBILITY_PUBLIC
+  MECANUM_DRIVE_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::CallbackReturn on_init() override;
 
-  TEMPLATES__ROS2_CONTROL__VISIBILITY_PUBLIC
+  MECANUM_DRIVE_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::InterfaceConfiguration command_interface_configuration() const override;
 
-  TEMPLATES__ROS2_CONTROL__VISIBILITY_PUBLIC
+  MECANUM_DRIVE_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::InterfaceConfiguration state_interface_configuration() const override;
 
-  TEMPLATES__ROS2_CONTROL__VISIBILITY_PUBLIC
+  MECANUM_DRIVE_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::CallbackReturn on_configure(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  TEMPLATES__ROS2_CONTROL__VISIBILITY_PUBLIC
+  MECANUM_DRIVE_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::CallbackReturn on_activate(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  TEMPLATES__ROS2_CONTROL__VISIBILITY_PUBLIC
+  MECANUM_DRIVE_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::CallbackReturn on_deactivate(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  TEMPLATES__ROS2_CONTROL__VISIBILITY_PUBLIC
+  MECANUM_DRIVE_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::return_type update_reference_from_subscribers(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
-  TEMPLATES__ROS2_CONTROL__VISIBILITY_PUBLIC
+  MECANUM_DRIVE_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::return_type update_and_write_commands(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
@@ -121,7 +121,7 @@ protected:
 
 private:
   // callback for topic interface
-  TEMPLATES__ROS2_CONTROL__VISIBILITY_LOCAL
+  MECANUM_DRIVE_CONTROLLER__VISIBILITY_LOCAL
   void reference_callback(const std::shared_ptr<ControllerReferenceMsg> msg);
 };
 

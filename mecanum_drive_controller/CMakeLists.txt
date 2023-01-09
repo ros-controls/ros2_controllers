@@ -42,7 +42,6 @@ find_package(ament_cmake REQUIRED)
 # Add mecanum_drive_controller library related compile commands
 generate_parameter_library(mecanum_drive_controller_parameters
   src/mecanum_drive_controller.yaml
-  include/mecanum_drive_controller/validate_mecanum_drive_controller_parameters.hpp
 )
 add_library(
   mecanum_drive_controller
@@ -94,7 +93,9 @@ if(BUILD_TESTING)
     ros2_control_test_assets
   )
 
-  add_rostest_with_parameters_gmock(test_mecanum_drive_controller test/test_mecanum_drive_controller.cpp ${CMAKE_CURRENT_SOURCE_DIR}/test/mecanum_drive_controller_params.yaml)
+  add_rostest_with_parameters_gmock(
+    test_mecanum_drive_controller test/test_mecanum_drive_controller.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/mecanum_drive_controller_params.yaml)
   target_include_directories(test_mecanum_drive_controller PRIVATE include)
   target_link_libraries(test_mecanum_drive_controller mecanum_drive_controller)
   ament_target_dependencies(
@@ -103,7 +104,9 @@ if(BUILD_TESTING)
     hardware_interface
   )
 
-  # add_rostest_with_parameters_gmock(test_mecanum_drive_controller_preceeding test/test_mecanum_drive_controller_preceeding.cpp ${CMAKE_CURRENT_SOURCE_DIR}/test/mecanum_drive_controller_preceeding_params.yaml)
+  # add_rostest_with_parameters_gmock(
+  #   test_mecanum_drive_controller_preceeding test/test_mecanum_drive_controller_preceeding.cpp
+  #   ${CMAKE_CURRENT_SOURCE_DIR}/test/mecanum_drive_controller_preceeding_params.yaml)
   # target_include_directories(test_mecanum_drive_controller_preceeding PRIVATE include)
   # target_link_libraries(test_mecanum_drive_controller_preceeding mecanum_drive_controller)
   # ament_target_dependencies(
