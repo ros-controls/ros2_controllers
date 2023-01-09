@@ -559,7 +559,7 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_normalized)
     EXPECT_LE(0.0, joint_vel_[1]);
     EXPECT_LE(0.0, joint_vel_[2]);
 
-    // use_closed_loop_pid_adapter_?
+    // use_closed_loop_pid_adapter_
     if (traj_controller_->use_closed_loop_pid_adapter())
     {
       // we expect u = k_p * (s_d-s)
@@ -634,12 +634,11 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_normalized)
   EXPECT_NEAR(points[0][1], state_msg->desired.positions[1], allowed_delta);
   EXPECT_NEAR(points[0][2], state_msg->desired.positions[2], 3 * allowed_delta);
 
-  // no normalization of position error
+  // is error.positions[2] normalized?
   EXPECT_NEAR(
     state_msg->error.positions[0], state_msg->desired.positions[0] - INITIAL_POS_JOINTS[0], EPS);
   EXPECT_NEAR(
     state_msg->error.positions[1], state_msg->desired.positions[1] - INITIAL_POS_JOINTS[1], EPS);
-  // normalization of position error
   EXPECT_NEAR(
     state_msg->error.positions[2],
     state_msg->desired.positions[2] - INITIAL_POS_JOINTS[2] - 2 * M_PI, EPS);
@@ -658,18 +657,18 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_normalized)
     EXPECT_LE(0.0, joint_vel_[0]);
     EXPECT_LE(0.0, joint_vel_[1]);
 
-    // use_closed_loop_pid_adapter_?
+    // use_closed_loop_pid_adapter_
     if (traj_controller_->use_closed_loop_pid_adapter())
     {
       EXPECT_GE(0.0, joint_vel_[2]);
-      // we expect u = k_p * (s_d-s)
+      // we expect u = k_p * (s_d-s) for positions[0] and positions[1]
       EXPECT_NEAR(
         k_p * (state_msg->desired.positions[0] - INITIAL_POS_JOINTS[0]), joint_vel_[0],
         k_p * allowed_delta);
       EXPECT_NEAR(
         k_p * (state_msg->desired.positions[1] - INITIAL_POS_JOINTS[1]), joint_vel_[1],
         k_p * allowed_delta);
-      // normalization of position error
+      // is error of positions[2] normalized?
       EXPECT_NEAR(
         k_p * (state_msg->desired.positions[2] - INITIAL_POS_JOINTS[2] - 2 * M_PI), joint_vel_[2],
         k_p * allowed_delta);
