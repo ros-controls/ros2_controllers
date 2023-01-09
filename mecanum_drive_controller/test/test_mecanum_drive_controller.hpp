@@ -23,11 +23,11 @@
 #include <utility>
 #include <vector>
 
-#include "mecanum_drive_controller/mecanum_drive_controller.hpp"
 #include "gmock/gmock.h"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
+#include "mecanum_drive_controller/mecanum_drive_controller.hpp"
 #include "rclcpp/parameter_value.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp/utilities.hpp"
@@ -35,7 +35,8 @@
 
 // TODO(anyone): replace the state and command message types
 using ControllerStateMsg = mecanum_drive_controller::MecanumDriveController::ControllerStateMsg;
-using ControllerReferenceMsg = mecanum_drive_controller::MecanumDriveController::ControllerReferenceMsg;
+using ControllerReferenceMsg =
+  mecanum_drive_controller::MecanumDriveController::ControllerReferenceMsg;
 using TfStateMsg = mecanum_drive_controller::MecanumDriveController::TfStateMsg;
 using OdomStateMsg = mecanum_drive_controller::MecanumDriveController::OdomStateMsg;
 
@@ -71,7 +72,8 @@ public:
   {
     auto ret = mecanum_drive_controller::MecanumDriveController::on_configure(previous_state);
     // Only if on_configure is successful create subscription
-    if (ret == CallbackReturn::SUCCESS) {
+    if (ret == CallbackReturn::SUCCESS)
+    {
       ref_subscriber_wait_set_.add_subscription(ref_subscriber_);
     }
     return ret;
@@ -96,7 +98,8 @@ public:
     const std::chrono::milliseconds & timeout = std::chrono::milliseconds{500})
   {
     bool success = subscriber_wait_set.wait(timeout).kind() == rclcpp::WaitResultKind::Ready;
-    if (success) {
+    if (success)
+    {
       executor.spin_some();
     }
     return success;
@@ -135,11 +138,9 @@ public:
     odom_s_publisher_ = odom_s_publisher_node_->create_publisher<OdomStateMsg>(
       "/test_mecanum_drive_controller/odometry", rclcpp::SystemDefaultsQoS());
 
-
     tf_odom_s_publisher_node_ = std::make_shared<rclcpp::Node>("tf_odom_s_publisher");
     tf_odom_s_publisher_ = tf_odom_s_publisher_node_->create_publisher<TfStateMsg>(
       "/test_mecanum_drive_controller/tf_odometry", rclcpp::SystemDefaultsQoS());
-
   }
 
   static void TearDownTestCase() {}
@@ -154,8 +155,9 @@ protected:
     std::vector<hardware_interface::LoanedCommandInterface> command_ifs;
     command_itfs_.reserve(joint_command_values_.size());
     command_ifs.reserve(joint_command_values_.size());
-  
-    for (size_t i = 0; i < joint_command_values_.size(); ++i) {
+
+    for (size_t i = 0; i < joint_command_values_.size(); ++i)
+    {
       command_itfs_.emplace_back(hardware_interface::CommandInterface(
         joint_names_[i], interface_name_, &joint_command_values_[i]));
       command_ifs.emplace_back(command_itfs_.back());
@@ -166,7 +168,8 @@ protected:
     state_itfs_.reserve(joint_state_values_.size());
     state_ifs.reserve(joint_state_values_.size());
 
-    for (size_t i = 0; i < joint_state_values_.size(); ++i) {
+    for (size_t i = 0; i < joint_state_values_.size(); ++i)
+    {
       state_itfs_.emplace_back(hardware_interface::StateInterface(
         joint_names_[i], interface_name_, &joint_state_values_[i]));
       state_ifs.emplace_back(state_itfs_.back());
@@ -177,7 +180,7 @@ protected:
   }
 
   void subscribe_and_get_messages(ControllerStateMsg & msg)
-  { 
+  {
     // create a new subscriber
     rclcpp::Node test_subscription_node("test_subscription_node");
     auto subs_callback = [&](const ControllerStateMsg::SharedPtr) {};
@@ -185,25 +188,27 @@ protected:
       "/test_mecanum_drive_controller/controller_state", 10, subs_callback);
     // call update to publish the test value
     ASSERT_EQ(
-    controller_->update_reference_from_subscribers(
-      controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
+      controller_->update_reference_from_subscribers(
+        controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
+      controller_interface::return_type::OK);
     ASSERT_EQ(
-    controller_->update_and_write_commands(
-      controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
+      controller_->update_and_write_commands(
+        controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
       controller_interface::return_type::OK);
     // call update to publish the test value
     // since update doesn't guarantee a published message, republish until received
     int max_sub_check_loop_count = 5;  // max number of tries for pub/sub loop
     rclcpp::WaitSet wait_set;          // block used to wait on message
     wait_set.add_subscription(subscription);
-    while (max_sub_check_loop_count--) {
+    while (max_sub_check_loop_count--)
+    {
       controller_->update_reference_from_subscribers(
         controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01));
       controller_->update_and_write_commands(
         controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01));
       // check if message has been received
-      if (wait_set.wait(std::chrono::milliseconds(2)).kind() == rclcpp::WaitResultKind::Ready) {
+      if (wait_set.wait(std::chrono::milliseconds(2)).kind() == rclcpp::WaitResultKind::Ready)
+      {
         break;
       }
     }
@@ -217,13 +222,16 @@ protected:
 
   // TODO(anyone): add/remove arguments as it suites your command message type
   void publish_commands(
-    const rclcpp::Time & stamp, const double & twist_linear_x = 1.5, const double & twist_linear_y = 0.0,
-    const double & twist_angular_z = 0.0)
+    const rclcpp::Time & stamp, const double & twist_linear_x = 1.5,
+    const double & twist_linear_y = 0.0, const double & twist_angular_z = 0.0)
   {
-    auto wait_for_topic = [&](const auto topic_name) {  
+    auto wait_for_topic = [&](const auto topic_name)
+    {
       size_t wait_count = 0;
-      while (command_publisher_node_->count_subscribers(topic_name) == 0) {
-        if (wait_count >= 5) {
+      while (command_publisher_node_->count_subscribers(topic_name) == 0)
+      {
+        if (wait_count >= 5)
+        {
           auto error_msg =
             std::string("publishing to ") + topic_name + " but no node subscribes to it";
           throw std::runtime_error(error_msg);
@@ -247,12 +255,15 @@ protected:
     command_publisher_->publish(msg);
   }
 
-
 protected:
   // TODO(anyone): adjust the members as needed
 
-  std::vector<std::string> joint_names_ = {"front_left_wheel_joint", "back_left_wheel_joint", "back_right_wheel_joint", "front_right_wheel_joint"};
-  std::vector<std::string> state_joint_names_ = {"state_front_left_wheel_joint", "state_back_left_wheel_joint", "state_back_right_wheel_joint", "state_front_right_wheel_joint"};
+  std::vector<std::string> joint_names_ = {
+    "front_left_wheel_joint", "back_left_wheel_joint", "back_right_wheel_joint",
+    "front_right_wheel_joint"};
+  std::vector<std::string> state_joint_names_ = {
+    "state_front_left_wheel_joint", "state_back_left_wheel_joint", "state_back_right_wheel_joint",
+    "state_front_right_wheel_joint"};
   std::string interface_name_ = "velocity";
 
   // Controller-related parameters

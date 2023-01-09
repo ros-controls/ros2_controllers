@@ -24,7 +24,8 @@ using mecanum_drive_controller::CMD_MY_ITFS;
 using mecanum_drive_controller::control_mode_type;
 using mecanum_drive_controller::STATE_MY_ITFS;
 
-class MecanumDriveControllerTest : public MecanumDriveControllerFixture<TestableMecanumDriveController>
+class MecanumDriveControllerTest
+: public MecanumDriveControllerFixture<TestableMecanumDriveController>
 {
 };
 
@@ -52,20 +53,23 @@ TEST_F(MecanumDriveControllerTest, check_exported_intefaces)
 
   auto command_intefaces = controller_->command_interface_configuration();
   ASSERT_EQ(command_intefaces.names.size(), joint_command_values_.size());
-  for (size_t i = 0; i < command_intefaces.names.size(); ++i) {
+  for (size_t i = 0; i < command_intefaces.names.size(); ++i)
+  {
     EXPECT_EQ(command_intefaces.names[i], joint_names_[i] + "/" + interface_name_);
   }
 
   auto state_intefaces = controller_->state_interface_configuration();
   ASSERT_EQ(state_intefaces.names.size(), joint_state_values_.size());
-  for (size_t i = 0; i < state_intefaces.names.size(); ++i) {
+  for (size_t i = 0; i < state_intefaces.names.size(); ++i)
+  {
     EXPECT_EQ(state_intefaces.names[i], state_joint_names_[i] + "/" + interface_name_);
   }
 
   // check ref itfs
   auto reference_interfaces = controller_->export_reference_interfaces();
   ASSERT_EQ(reference_interfaces.size(), joint_names_.size());
-  for (size_t i = 0; i < joint_names_.size(); ++i) {
+  for (size_t i = 0; i < joint_names_.size(); ++i)
+  {
     const std::string ref_itf_name = std::string(controller_->get_node()->get_name()) + "/" +
                                      state_joint_names_[i] + "/" + interface_name_;
     EXPECT_EQ(reference_interfaces[i].get_name(), ref_itf_name);
