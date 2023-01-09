@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TEMPLATES__ROS2_CONTROL__CONTROLLER__TEST_MECANUM_DRIVE_CONTROLLER_HPP_
-#define TEMPLATES__ROS2_CONTROL__CONTROLLER__TEST_MECANUM_DRIVE_CONTROLLER_HPP_
+#ifndef TEST_MECANUM_DRIVE_CONTROLLER_HPP_
+#define TEST_MECANUM_DRIVE_CONTROLLER_HPP_
 
 #include <chrono>
 #include <limits>
@@ -286,4 +286,4 @@ protected:
   rclcpp::Publisher<TfStateMsg>::SharedPtr tf_odom_s_publisher_;
 };
 
-#endif  // TEMPLATES__ROS2_CONTROL__CONTROLLER__TEST_MECANUM_DRIVE_CONTROLLER_HPP_
+#endif  // TEST_MECANUM_DRIVE_CONTROLLER_HPP_
