@@ -20,6 +20,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   tf2
   tf2_msgs
   tf2_geometry_msgs
+  custom_messages
 )
 
 find_package(ament_cmake REQUIRED)
@@ -27,16 +28,6 @@ find_package(generate_parameter_library REQUIRED)
 foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
-
-cmake_minimum_required(VERSION 3.8)
-project(mecanum_drive_controller)
-
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic)
-endif()
-
-# find dependencies
-find_package(ament_cmake REQUIRED)
 
 # Add mecanum_drive_controller library related compile commands
 generate_parameter_library(mecanum_drive_controller_parameters
