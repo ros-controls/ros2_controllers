@@ -21,8 +21,7 @@
 using namespace std;
 namespace mecanum_drive_controller
 {
-namespace bacc = boost::accumulators;
-
+  
 Odometry::Odometry(size_t velocity_rolling_window_size)
 : timestamp_(0.0),
   px_b_b0_(0.0),

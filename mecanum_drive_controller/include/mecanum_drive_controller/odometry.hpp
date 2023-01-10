@@ -72,9 +72,6 @@ public:
   void setWheelsParams(double wheels_k, double wheels_radius);
 
 private:
-  /// Rolling mean accumulator and window:
-  typedef bacc::accumulator_set<double, bacc::stats<bacc::tag::rolling_mean> > RollingMeanAcc;
-  typedef bacc::tag::rolling_window RollingWindow;
 
   /// Current timestamp:
   rclcpp::Time timestamp_;
