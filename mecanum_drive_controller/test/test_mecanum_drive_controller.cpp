@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Stogl Robotics Consulting UG (haftungsbeschränkt) (template)
+// Copyright (c) 2022, Stogl Robotics Consulting UG (haftungsbeschränkt)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -177,7 +177,6 @@ TEST_F(MecanumDriveControllerTest, publish_status_success)
   subscribe_and_get_messages(msg);
 
   EXPECT_FALSE(std::isnan(msg.odom.pose.pose.position.x));
-  // EXPECT_EQ(msg.odom.pose.pose.position.x, 0);
 }
 
 TEST_F(MecanumDriveControllerTest, receive_message_and_publish_updated_status)
@@ -233,8 +232,8 @@ TEST_F(MecanumDriveControllerTest, test_sending_too_old_message)
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   // try to set command with time before timeout - command is not updated
-  auto reference = controller_->input_ref_.readFromNonRT();
-  auto old_timestamp = (*reference)->header.stamp;
+  auto reference = *(controller_->input_ref_.readFromNonRT());
+  auto old_timestamp = reference->header.stamp;
   EXPECT_TRUE(std::isnan((*reference)->twist.linear.x));
   EXPECT_TRUE(std::isnan((*reference)->twist.linear.y));
   EXPECT_TRUE(std::isnan((*reference)->twist.angular.z));
@@ -244,9 +243,6 @@ TEST_F(MecanumDriveControllerTest, test_sending_too_old_message)
     rclcpp::Duration::from_seconds(0.1));
   ASSERT_TRUE(controller_->wait_for_commands(executor));
   ASSERT_EQ(old_timestamp, (*(controller_->input_ref_.readFromNonRT()))->header.stamp);
-  // ASSERT_EQ((*reference)->twist.linear.x, 0.45);
-  // ASSERT_EQ((*reference)->twist.linear.y, 0.45);
-  // ASSERT_EQ((*reference)->twist.angular.z, 0.0);
   EXPECT_TRUE(std::isnan((*reference)->twist.linear.x));
   EXPECT_TRUE(std::isnan((*reference)->twist.linear.y));
   EXPECT_TRUE(std::isnan((*reference)->twist.angular.z));

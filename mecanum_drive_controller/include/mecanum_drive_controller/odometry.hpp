@@ -16,14 +16,9 @@
 #ifndef MECANUM_DRIVE_CONTROLLER__ODOMETRY_HPP_
 #define MECANUM_DRIVE_CONTROLLER__ODOMETRY_HPP_
 
-// #include <ros/time.h>
 #include "realtime_tools/realtime_buffer.h"
 #include "realtime_tools/realtime_publisher.h"
 
-#include <boost/accumulators/accumulators.hpp>
-#include <boost/accumulators/statistics/rolling_mean.hpp>
-#include <boost/accumulators/statistics/stats.hpp>
-#include <boost/function.hpp>
 
 #define PLANAR_POINT_DIM 3
 
