@@ -24,7 +24,6 @@
 
 namespace mecanum_drive_controller
 {
-namespace bacc = boost::accumulators;
 
 /// \brief The Odometry class handles odometry readings
 /// (2D pose and velocity with related timestamp)
@@ -81,7 +80,7 @@ private:
   rclcpp::Time timestamp_;
 
   /// Reference frame (wrt to center frame).
-  double base_frame_offset_[PLANAR_POINT_DIM];
+  std::array<double, PLANAR_POINT_DIM> base_frame_offset_;
 
   /// Current pose:
   double px_b_b0_;  // [m]
