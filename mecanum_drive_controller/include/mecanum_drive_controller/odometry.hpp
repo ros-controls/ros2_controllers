@@ -32,7 +32,7 @@ class Odometry
 {
 public:
   /// Integration function, used to integrate the odometry:
-  typedef boost::function<void(double, double, double)> IntegrationFunction;
+  typedef std::function<void(double, double, double)> IntegrationFunction;
 
   /// \brief Constructor
   /// Timestamp will get the current time value
