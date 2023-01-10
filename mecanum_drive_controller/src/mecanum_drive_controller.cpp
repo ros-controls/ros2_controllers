@@ -1,5 +1,4 @@
 // Copyright (c) 2022, Stogl Robotics Consulting UG (haftungsbeschränkt)
-// (template)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,19 +28,6 @@
 namespace
 {  // utility
 
-// TODO(destogl): remove this when merged upstream
-// Changed services history QoS to keep all so we don't lose any client service
-// calls
-static constexpr rmw_qos_profile_t rmw_qos_profile_services_hist_keep_all = {
-  RMW_QOS_POLICY_HISTORY_KEEP_ALL,
-  1,  // message queue depth
-  RMW_QOS_POLICY_RELIABILITY_RELIABLE,
-  RMW_QOS_POLICY_DURABILITY_VOLATILE,
-  RMW_QOS_DEADLINE_DEFAULT,
-  RMW_QOS_LIFESPAN_DEFAULT,
-  RMW_QOS_POLICY_LIVELINESS_SYSTEM_DEFAULT,
-  RMW_QOS_LIVELINESS_LEASE_DURATION_DEFAULT,
-  false};
 
 using ControllerReferenceMsg =
   mecanum_drive_controller::MecanumDriveController::ControllerReferenceMsg;
@@ -133,7 +119,6 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
   constexpr size_t NUM_DIMENSIONS = 6;
   for (size_t index = 0; index < 6; ++index)
   {
-    // 0, 7, 14, 21, 28, 35
     const size_t diagonal_index = NUM_DIMENSIONS * index + index;
     covariance[diagonal_index] = params_.pose_covariance_diagonal[index];
     covariance[diagonal_index] = params_.twist_covariance_diagonal[index];
@@ -181,14 +166,11 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  // // TODO(anyone): Reserve memory in state publisher depending on the message
-  // // type
-
   controller_state_publisher_->lock();
   controller_state_publisher_->msg_.header.stamp = get_node()->now();
   controller_state_publisher_->msg_.header.frame_id = params_.odom_frame_id;
-  controller_state_publisher_->msg_.odom.pose.pose.position.x = 0.0;
   controller_state_publisher_->msg_.odom.child_frame_id = params_.base_frame_id;
+  controller_state_publisher_->msg_.odom.pose.pose.position.x = 0.0;
   controller_state_publisher_->unlock();
   auto & covariance_controller = controller_state_publisher_->msg_.odom.twist.covariance;
   for (size_t index = 0; index < 6; ++index)
@@ -310,8 +292,6 @@ controller_interface::CallbackReturn MecanumDriveController::on_activate(
 controller_interface::CallbackReturn MecanumDriveController::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  // TODO(anyone): depending on number of interfaces, use definitions, e.g.,
-  // `CMD_MY_ITFS`, instead of a loop
   for (size_t i = 0; i < NR_CMD_ITFS; ++i)
   {
     command_interfaces_[i].set_value(std::numeric_limits<double>::quiet_NaN());
@@ -323,10 +303,8 @@ controller_interface::return_type MecanumDriveController::update_reference_from_
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
   auto current_ref = *(input_ref_.readFromRT());
-  const auto age_of_last_command = get_node()->now() - (current_ref)->header.stamp;
+  const auto age_of_last_command = time - (current_ref)->header.stamp;
 
-  // TODO(anyone): depending on number of interfaces, use definitions, e.g., `CMD_MY_ITFS`,
-  // instead of a loop
   // send message only if there is no timeout
   if (age_of_last_command <= ref_timeout_ || ref_timeout_ == rclcpp::Duration::from_seconds(0))
   {
@@ -366,15 +344,15 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
 
   // INVERSE KINEMATICS (move robot).
   // Compute wheels velocities (this is the actual ik):
-  // NOTE: the input desired twist (from topic /cmd_vel) is a body twist.
+  // NOTE: the input desired twist (from topic `~/reference`) is a body twist.
   auto current_ref = input_ref_.readFromRT();
   const auto age_of_last_command = time - (*current_ref)->header.stamp;
   if (age_of_last_command <= ref_timeout_ || ref_timeout_ == rclcpp::Duration::from_seconds(0))
   {
-    tf2::Quaternion orientation_2;
-    orientation_2.setRPY(0.0, 0.0, params_.base_frame_offset[2]);
+    tf2::Quaternion quaternion;
+    quaternion.setRPY(0.0, 0.0, params_.base_frame_offset[2]);
 
-    tf2::Matrix3x3 R_b_c = tf2::Matrix3x3((orientation_2));
+    tf2::Matrix3x3 R_b_c = tf2::Matrix3x3((quaternion));
     tf2::Vector3 v_Ob_b_b0_c =
       R_b_c * tf2::Vector3(reference_interfaces_[0], reference_interfaces_[1], 0.0);
     tf2::Vector3 Ob_c =
@@ -410,7 +388,6 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
     reference_interfaces_[1] = std::numeric_limits<double>::quiet_NaN();
     reference_interfaces_[2] = std::numeric_limits<double>::quiet_NaN();
     command_interfaces_[0].set_value(0.0);
-    // command_interfaces_[1].set_value(w1_vel);
     command_interfaces_[1].set_value(0.0);
     command_interfaces_[2].set_value(0.0);
     command_interfaces_[3].set_value(0.0);

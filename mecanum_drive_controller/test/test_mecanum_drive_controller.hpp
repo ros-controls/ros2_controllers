@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Stogl Robotics Consulting UG (haftungsbeschränkt) (template)
+// Copyright (c) 2022, Stogl Robotics Consulting UG (haftungsbeschränkt)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@
 #include "rclcpp/utilities.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 
-// TODO(anyone): replace the state and command message types
 using ControllerStateMsg = mecanum_drive_controller::MecanumDriveController::ControllerStateMsg;
 using ControllerReferenceMsg =
   mecanum_drive_controller::MecanumDriveController::ControllerReferenceMsg;
@@ -112,8 +111,6 @@ public:
     return wait_for_command(executor, ref_subscriber_wait_set_, timeout);
   }
 
-  // TODO(anyone): add implementation of any methods of your controller is needed
-
 private:
   rclcpp::WaitSet ref_subscriber_wait_set_;
 };
@@ -162,7 +159,6 @@ protected:
         joint_names_[i], interface_name_, &joint_command_values_[i]));
       command_ifs.emplace_back(command_itfs_.back());
     }
-    // TODO(anyone): Add other command interfaces, if any
 
     std::vector<hardware_interface::LoanedStateInterface> state_ifs;
     state_itfs_.reserve(joint_state_values_.size());
@@ -174,7 +170,6 @@ protected:
         joint_names_[i], interface_name_, &joint_state_values_[i]));
       state_ifs.emplace_back(state_itfs_.back());
     }
-    // TODO(anyone): Add other state interfaces, if any
 
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
   }
@@ -220,7 +215,6 @@ protected:
     ASSERT_TRUE(subscription->take(msg, msg_info));
   }
 
-  // TODO(anyone): add/remove arguments as it suites your command message type
   void publish_commands(
     const rclcpp::Time & stamp, const double & twist_linear_x = 1.5,
     const double & twist_linear_y = 0.0, const double & twist_angular_z = 0.0)
@@ -256,8 +250,6 @@ protected:
   }
 
 protected:
-  // TODO(anyone): adjust the members as needed
-
   std::vector<std::string> joint_names_ = {
     "front_left_wheel_joint", "back_left_wheel_joint", "back_right_wheel_joint",
     "front_right_wheel_joint"};

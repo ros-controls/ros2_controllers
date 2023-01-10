@@ -1,5 +1,4 @@
 // Copyright (c) 2022, Stogl Robotics Consulting UG (haftungsbeschränkt)
-// (template)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -78,22 +77,6 @@ bool Odometry::update(
   tf2::Vector3 v_Oc_c_c0_b = R_c_b * tf2::Vector3(vx_Oc_c_c0_c, vy_Oc_c_c0_c, 0.0);
   tf2::Vector3 Oc_b = R_c_b * tf2::Vector3(-base_frame_offset_[0], -base_frame_offset_[1], 0.0);
 
-  // fprintf(stderr," R_c_b = %f", R_c_b[2][2]);
-
-  // for(int x=0;x<3;x++)  // loop 3 times for three lines
-  //   {
-  //       for(int y=0;y<3;y++)  // loop for the three elements on the line
-  //       {
-  //           cout<<R_c_b[x][y]  \n<<", ";
-  //       }
-  //   cout<<endl;  // when the inner loop is done, go to a new line
-  //   }
-
-  // for(int j=0;j<3;j++)  // loop for the three elements on the line
-  // {
-  //     cout<<Oc_b[j]  \n<<", ";
-  // }
-  // cout<<endl;
   vx_Ob_b_b0_b_ = v_Oc_c_c0_b.x() + Oc_b.y() * wz_c_c0_c;
   vy_Ob_b_b0_b_ = v_Oc_c_c0_b.y() - Oc_b.x() * wz_c_c0_c;
   wz_b_b0_b_ = wz_c_c0_c;

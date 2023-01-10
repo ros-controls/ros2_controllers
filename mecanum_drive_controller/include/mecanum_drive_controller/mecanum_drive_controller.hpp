@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Stogl Robotics Consulting UG (haftungsbeschränkt) (template)
+// Copyright (c) 2022, Stogl Robotics Consulting UG (haftungsbeschränkt)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@
 #include "realtime_tools/realtime_publisher.h"
 #include "std_srvs/srv/set_bool.hpp"
 
-// TODO(anyone): Replace with controller specific messages
 #include "custom_messages/msg/mecanum_drive_controller_state.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
@@ -84,7 +83,6 @@ public:
   controller_interface::return_type update_and_write_commands(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
-  // TODO(anyone): replace the state and command message types
   using ControllerReferenceMsg = geometry_msgs::msg::TwistStamped;
   using OdomStateMsg = nav_msgs::msg::Odometry;
   using TfStateMsg = tf2_msgs::msg::TFMessage;
@@ -97,7 +95,7 @@ protected:
   // Command subscribers and Controller State publisher
   rclcpp::Subscription<ControllerReferenceMsg>::SharedPtr ref_subscriber_ = nullptr;
   realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerReferenceMsg>> input_ref_;
-  rclcpp::Duration ref_timeout_ = rclcpp::Duration::from_seconds(0.0);  // 0ms
+  rclcpp::Duration ref_timeout_ = rclcpp::Duration::from_seconds(0.0);
 
   using OdomStatePublisher = realtime_tools::RealtimePublisher<OdomStateMsg>;
   rclcpp::Publisher<OdomStateMsg>::SharedPtr odom_s_publisher_;
@@ -116,7 +114,6 @@ protected:
 
   bool on_set_chained_mode(bool chained_mode) override;
 
-  // Odometry related:
   Odometry odometry_;
 
 private:

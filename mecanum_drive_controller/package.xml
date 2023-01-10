@@ -12,36 +12,21 @@
   <build_depend>generate_parameter_library</build_depend>
 
   <depend>control_msgs</depend>
-
   <depend>controller_interface</depend>
-
   <depend>geometry_msgs</depend>
-
   <depend>hardware_interface</depend>
-
   <depend>nav_msgs</depend>
-
   <depend>pluginlib</depend>
-
   <depend>rclcpp</depend>
-
   <depend>rclcpp_lifecycle</depend>
-
   <depend>realtime_tools</depend>
-
   <depend>rcpputils</depend>
-
+  <depend>std_srvs</depend>
   <depend>tf2</depend>
-
   <depend>tf2_msgs</depend>
-
   <depend>tf2_geometry_msgs</depend>
 
-  <depend>std_srvs</depend>
 
-  <depend>custom_messages</depend>
-
-  <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_cmake_gmock</test_depend>
   <test_depend>controller_manager</test_depend>
   <test_depend>hardware_interface</test_depend>
