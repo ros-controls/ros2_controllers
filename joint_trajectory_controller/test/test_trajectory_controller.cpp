@@ -421,9 +421,13 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
   traj_controller_->update(
     rclcpp::Time(static_cast<uint64_t>(0.35 * 1e9)), rclcpp::Duration::from_seconds(0.1));
 
-  EXPECT_NEAR(3.3, joint_pos_[0], allowed_delta);
-  EXPECT_NEAR(4.4, joint_pos_[1], allowed_delta);
-  EXPECT_NEAR(5.5, joint_pos_[2], allowed_delta);
+  if (traj_controller_->has_position_command_interface())
+  {
+    // otherwise this won't be updated
+    EXPECT_NEAR(3.3, joint_pos_[0], allowed_delta);
+    EXPECT_NEAR(4.4, joint_pos_[1], allowed_delta);
+    EXPECT_NEAR(5.5, joint_pos_[2], allowed_delta);
+  }
 
   // state = traj_controller_->get_node()->configure();
   // ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
@@ -1367,16 +1371,15 @@ INSTANTIATE_TEST_SUITE_P(
       std::vector<std::string>({"position", "velocity", "acceleration"}),
       std::vector<std::string>({"position", "velocity", "acceleration"}))));
 
-// // only velocity controller
-// INSTANTIATE_TEST_SUITE_P(
-//   OnlyVelocityTrajectoryControllers, TrajectoryControllerTestParameterized,
-//   ::testing::Values(
-//     std::make_tuple(
-//       std::vector<std::string>({"velocity"}),
-//       std::vector<std::string>({"position", "velocity"})),
-//     std::make_tuple(
-//       std::vector<std::string>({"velocity"}),
-//       std::vector<std::string>({"position", "velocity", "acceleration"}))));
+// only velocity controller
+INSTANTIATE_TEST_SUITE_P(
+  OnlyVelocityTrajectoryControllers, TrajectoryControllerTestParameterized,
+  ::testing::Values(
+    std::make_tuple(
+      std::vector<std::string>({"velocity"}), std::vector<std::string>({"position", "velocity"})),
+    std::make_tuple(
+      std::vector<std::string>({"velocity"}),
+      std::vector<std::string>({"position", "velocity", "acceleration"}))));
 
 // // only effort controller
 // INSTANTIATE_TEST_SUITE_P(
