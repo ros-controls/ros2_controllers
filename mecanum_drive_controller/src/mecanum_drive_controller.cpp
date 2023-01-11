@@ -171,7 +171,6 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
   controller_state_publisher_->msg_.header.frame_id = params_.odom_frame_id;
   controller_state_publisher_->msg_.odom.child_frame_id = params_.base_frame_id;
   controller_state_publisher_->msg_.odom.pose.pose.position.x = 0.0;
-  controller_state_publisher_->unlock();
   auto & covariance_controller = controller_state_publisher_->msg_.odom.twist.covariance;
   for (size_t index = 0; index < 6; ++index)
   {
@@ -180,6 +179,7 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
     covariance_controller[diagonal_index] = params_.pose_covariance_diagonal[index];
     covariance_controller[diagonal_index] = params_.twist_covariance_diagonal[index];
   }
+  controller_state_publisher_->unlock();
 
   RCLCPP_INFO(get_node()->get_logger(), "configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
