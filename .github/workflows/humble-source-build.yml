@@ -2,13 +2,13 @@ name: Humble Source Build
 on:
   workflow_dispatch:
     branches:
-      - master
+      - humble
   push:
     branches:
-      - master
+      - humble
   schedule:
     # Run every day to detect flakiness and broken dependencies
-    - cron: '03 3 * * *'
+    - cron: '03 4 * * *'
 
 jobs:
   source:
