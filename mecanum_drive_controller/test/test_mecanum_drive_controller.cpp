@@ -36,8 +36,20 @@ TEST_F(MecanumDriveControllerTest, all_parameters_set_configure_success)
   SetUpController();
 
   ASSERT_EQ(controller_->params_.reference_timeout, 0.0);
+  ASSERT_EQ(controller_->params_.wheels_radius, 0.0);
+  ASSERT_EQ(controller_->params_.wheels_k, 0.0);
+
+  for(size_t i = 0; i<controller_->params_.base_frame_offset.size(); i++){
+    ASSERT_EQ(controller_->params_.base_frame_offset[i], 0.0);
+  }
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(controller_->params_.reference_timeout, 0.1);
+  ASSERT_EQ(controller_->params_.wheels_radius, 0.5);
+  ASSERT_EQ(controller_->params_.wheels_k, 1.0);
+
+  for(size_t i = 0; i<controller_->params_.base_frame_offset.size(); i++){
+    ASSERT_EQ(controller_->params_.base_frame_offset[i], 0.0);
+  }
 }
 
 TEST_F(MecanumDriveControllerTest, check_exported_intefaces)
@@ -164,6 +176,12 @@ TEST_F(MecanumDriveControllerTest, publish_status_success)
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
+  ControllerStateMsg msg;
+  subscribe_and_get_messages(msg);
+
+  EXPECT_TRUE(msg.odom.pose.pose.position.x >= 0.0 && msg.odom.pose.pose.position.x <= 0.0005);
+  EXPECT_TRUE(msg.odom.pose.pose.position.y >= 0.0 && msg.odom.pose.pose.position.y <= 0.0005);
+
   ASSERT_EQ(
     controller_->update_reference_from_subscribers(
       controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
@@ -173,10 +191,12 @@ TEST_F(MecanumDriveControllerTest, publish_status_success)
       controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  ControllerStateMsg msg;
   subscribe_and_get_messages(msg);
+  fprintf(stderr, " msg.odom.pose.pose.position.y= %f \n", msg.odom.pose.pose.position.y);
 
-  EXPECT_FALSE(std::isnan(msg.odom.pose.pose.position.x));
+  EXPECT_FALSE(msg.odom.pose.pose.position.x >= 0.0 && msg.odom.pose.pose.position.x <= 0.0005);
+  EXPECT_TRUE(msg.odom.pose.pose.position.y >= 0.0 && msg.odom.pose.pose.position.y <= 0.0005);
+
 }
 
 TEST_F(MecanumDriveControllerTest, receive_message_and_publish_updated_status)
@@ -260,7 +280,6 @@ TEST_F(MecanumDriveControllerTest, test_time_stamp_zero)
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  // try to set command with time before timeout - command is not updated
   auto reference = controller_->input_ref_.readFromNonRT();
   auto old_timestamp = (*reference)->header.stamp;
   EXPECT_TRUE(std::isnan((*reference)->twist.linear.x));
@@ -276,11 +295,13 @@ TEST_F(MecanumDriveControllerTest, test_time_stamp_zero)
   EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.linear.x, 1.5);
   EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.linear.y, 0.0);
   EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z, 0.0);
+  EXPECT_NE((*(controller_->input_ref_.readFromNonRT()))->header.stamp.sec, 0.0);
 }
 
 TEST_F(MecanumDriveControllerTest, test_message_accepted)
 {
   SetUpController();
+  
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
@@ -302,10 +323,11 @@ TEST_F(MecanumDriveControllerTest, test_message_accepted)
   EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z, 0.0);
 }
 
-TEST_F(MecanumDriveControllerTest, test_update_logic_chainable)
+TEST_F(MecanumDriveControllerTest, test_update_logic_not_chainable)
 {
   // 1. age>ref_timeout 2. age<ref_timeout
   SetUpController();
+
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
@@ -347,11 +369,14 @@ TEST_F(MecanumDriveControllerTest, test_update_logic_chainable)
   EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[0]));
 
   EXPECT_EQ(joint_command_values_[1], 0);
-  // ASSERT_EQ(controller_->reference_interfaces_[0], 0);
   for (const auto & interface : controller_->reference_interfaces_)
   {
-    // ASSERT_EQ(interface, 0);
     EXPECT_TRUE(std::isnan(interface));
+  }
+  for (size_t i = 0; i < controller_->command_interfaces_.size(); ++i)
+  {
+    // EXPECT_TRUE(std::isnan(controller_->command_interfaces_[i].get_value()));
+    EXPECT_EQ(controller_->command_interfaces_[i].get_value(), 0.0);
   }
 
   std::shared_ptr<ControllerReferenceMsg> msg_2 = std::make_shared<ControllerReferenceMsg>();
@@ -386,6 +411,10 @@ TEST_F(MecanumDriveControllerTest, test_update_logic_chainable)
   for (const auto & interface : controller_->reference_interfaces_)
   {
     EXPECT_FALSE(std::isnan(interface));
+  }
+  for (size_t i = 0; i < controller_->command_interfaces_.size(); ++i)
+  {
+    EXPECT_EQ(controller_->command_interfaces_[i].get_value(), 3.0);
   }
 }
 
@@ -429,6 +458,15 @@ TEST_F(MecanumDriveControllerTest, test_update_logic)
 
   EXPECT_EQ(joint_command_values_[1], 0);
   EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[0]));
+  for (const auto & interface : controller_->reference_interfaces_)
+  {
+    EXPECT_TRUE(std::isnan(interface));
+  }
+  for (size_t i = 0; i < controller_->command_interfaces_.size(); ++i)
+  {
+    // EXPECT_TRUE(std::isnan(controller_->command_interfaces_[i].get_value()));
+    EXPECT_EQ(controller_->command_interfaces_[i].get_value(), 0.0);
+  }
 
   std::shared_ptr<ControllerReferenceMsg> msg_2 = std::make_shared<ControllerReferenceMsg>();
   msg_2->header.stamp = controller_->get_node()->now();
@@ -461,6 +499,14 @@ TEST_F(MecanumDriveControllerTest, test_update_logic)
   EXPECT_EQ(joint_command_values_[1], 3.0);
 
   ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
+  for (const auto & interface : controller_->reference_interfaces_)
+  {
+    EXPECT_FALSE(std::isnan(interface));
+  }
+  for (size_t i = 0; i < controller_->command_interfaces_.size(); ++i)
+  {
+    EXPECT_EQ(controller_->command_interfaces_[i].get_value(), 3.0);
+  }
 }
 
 TEST_F(MecanumDriveControllerTest, test_ref_timeout_zero_for_update)
