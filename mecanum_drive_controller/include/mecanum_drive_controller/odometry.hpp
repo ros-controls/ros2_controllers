@@ -110,6 +110,8 @@ private:
   // // double body_velocity_base_frame_.angular_z;     // [rad/s]
 
   /// Wheels kinematic parameters [m]:
+  /// lx and ly represent the distance from the robot's center to the wheels projected on 
+  /// the x and y axis with origin at robots center respectively, wheels_k_ = lx+ly
   double wheels_k_;
   double wheels_radius_;
 };
