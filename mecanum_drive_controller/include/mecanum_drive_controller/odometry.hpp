@@ -18,6 +18,7 @@
 
 #include "realtime_tools/realtime_buffer.h"
 #include "realtime_tools/realtime_publisher.h"
+#include "geometry_msgs/msg/twist.hpp"
 
 
 #define PLANAR_POINT_DIM 3
@@ -54,17 +55,17 @@ public:
     double wheel0_vel, double wheel1_vel, double wheel2_vel, double wheel3_vel, const double dt);
 
   /// \return position (x component) [m]
-  double getX() const { return px_b_b0_; }
+  double getX() const { return position_x_base_frame_; }
   /// \return position (y component) [m]
-  double getY() const { return py_b_b0_; }
+  double getY() const { return position_y_base_frame_; }
   /// \return orientation (z component) [m]
-  double getRz() const { return rz_b_b0_; }
+  double getRz() const { return orientation_z_base_frame_; }
   /// \return body velocity of the base frame (linear x component) [m/s]
-  double getVx() const { return vx_Ob_b_b0_b_; }
+  double getVx() const { return body_velocity_base_frame_.linear_x; }
   /// \return body velocity of the base frame (linear y component) [m/s]
-  double getVy() const { return vy_Ob_b_b0_b_; }
+  double getVy() const { return body_velocity_base_frame_.linear_y; }
   /// \return body velocity of the base frame (angular z component) [m/s]
-  double getWz() const { return wz_b_b0_b_; }
+  double getWz() const { return body_velocity_base_frame_.angular_z; }
 
   /// \brief Sets the wheels parameters: mecanum geometric param and radius
   /// \param wheels_k       Wheels geometric param (used in mecanum wheels' ik) [m]
@@ -80,21 +81,33 @@ private:
   std::array<double, PLANAR_POINT_DIM> base_frame_offset_;
 
   /// Current pose:
-  double px_b_b0_;  // [m]
-  double py_b_b0_;  // [m]
-  double rz_b_b0_;  // [rad]
+  double position_x_base_frame_;  // [m]
+  double position_y_base_frame_;  // [m]
+  double orientation_z_base_frame_;  // [rad]
 
   /// Current velocity.
   /// \note The indices meaning is the following:
   ///    b : base frame
   ///    c : center frame
-  ///    Ob: origin of the base frame
+  ///    body_velocity_base_frame_: body_velocity w.r.t base frame
+  ///    body_velocity_center_frame_: body_velocity w.r.t center frame
   ///    Oc: origin of the center frame
   ///    b0: initial position if the base frame
   ///    c0: initial position of the center frame
-  double vx_Ob_b_b0_b_;  // [m/s]
-  double vy_Ob_b_b0_b_;  // [m/s]
-  double wz_b_b0_b_;     // [rad/s]
+
+  struct body_velocity{
+    double linear_x;  // [m/s]
+    double linear_y;  // [m/s]
+    double angular_z;  // [rad/s]
+
+    body_velocity() : linear_x(0.0), linear_y(0.0), angular_z(0.0) {}
+  };
+
+  body_velocity body_velocity_base_frame_;
+  body_velocity body_velocity_center_frame_;
+  // // body_velocity_base_frame_.linear_x;  // [m/s] body_velocity_base_frame_.linear_x
+  // // double body_velocity_base_frame_.linear_y;  // [m/s] 
+  // // double body_velocity_base_frame_.angular_z;     // [rad/s]
 
   /// Wheels kinematic parameters [m]:
   double wheels_k_;
