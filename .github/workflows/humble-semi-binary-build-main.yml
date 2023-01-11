@@ -4,16 +4,16 @@ name: Humble Semi-Binary Build - main
 on:
   workflow_dispatch:
     branches:
-      - master
+      - humble
   pull_request:
     branches:
-      - master
+      - humble
   push:
     branches:
-      - master
+      - humble
   schedule:
     # Run every morning to detect flakiness and broken dependencies
-    - cron: '33 1 * * *'
+    - cron: '33 2 * * *'
 
 jobs:
   semi_binary:
