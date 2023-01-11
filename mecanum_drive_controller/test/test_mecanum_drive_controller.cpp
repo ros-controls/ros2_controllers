@@ -199,7 +199,8 @@ TEST_F(MecanumDriveControllerTest, receive_message_and_publish_updated_status)
     controller_interface::return_type::OK);
   ControllerStateMsg msg;
   subscribe_and_get_messages(msg);
-  joint_command_values_[1] = 111;
+  joint_command_values_[1] = command_lin_x;
+
   EXPECT_TRUE(std::isnan(msg.linear_x_velocity_command));
 
   publish_commands(controller_->get_node()->now());
@@ -213,6 +214,8 @@ TEST_F(MecanumDriveControllerTest, receive_message_and_publish_updated_status)
     controller_->update_and_write_commands(
       controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
+//  w0_vel = 1.0 / params_.wheels_radius * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y - params_.wheels_k * body_velocity_center_frame_.angular_z);
+//  joint_command_values_[1] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0) 
   EXPECT_EQ(joint_command_values_[1], 3.0);
   EXPECT_FALSE(std::isnan(joint_command_values_[1]));
   fprintf(stderr, " joint_command_values_[1]= %f \n", joint_command_values_[1]);
@@ -234,18 +237,18 @@ TEST_F(MecanumDriveControllerTest, test_sending_too_old_message)
   // try to set command with time before timeout - command is not updated
   auto reference = *(controller_->input_ref_.readFromNonRT());
   auto old_timestamp = reference->header.stamp;
-  EXPECT_TRUE(std::isnan((*reference)->twist.linear.x));
-  EXPECT_TRUE(std::isnan((*reference)->twist.linear.y));
-  EXPECT_TRUE(std::isnan((*reference)->twist.angular.z));
+  EXPECT_TRUE(std::isnan((reference)->twist.linear.x));
+  EXPECT_TRUE(std::isnan((reference)->twist.linear.y));
+  EXPECT_TRUE(std::isnan((reference)->twist.angular.z));
 
   publish_commands(
     controller_->get_node()->now() - controller_->ref_timeout_ -
     rclcpp::Duration::from_seconds(0.1));
   ASSERT_TRUE(controller_->wait_for_commands(executor));
   ASSERT_EQ(old_timestamp, (*(controller_->input_ref_.readFromNonRT()))->header.stamp);
-  EXPECT_TRUE(std::isnan((*reference)->twist.linear.x));
-  EXPECT_TRUE(std::isnan((*reference)->twist.linear.y));
-  EXPECT_TRUE(std::isnan((*reference)->twist.angular.z));
+  EXPECT_TRUE(std::isnan((reference)->twist.linear.x));
+  EXPECT_TRUE(std::isnan((reference)->twist.linear.y));
+  EXPECT_TRUE(std::isnan((reference)->twist.angular.z));
 }
 
 TEST_F(MecanumDriveControllerTest, test_time_stamp_zero)
@@ -312,10 +315,8 @@ TEST_F(MecanumDriveControllerTest, test_update_logic_chainable)
   ASSERT_FALSE(controller_->is_in_chained_mode());
 
   // set command statically
-  static constexpr double TEST_LINEAR_VELOCITY_X = 1.5;
-  static constexpr double TEST_LINEAR_VELOCITY_y = 0.0;
-  static constexpr double TEST_ANGULAR_VELOCITY_Z = 0.0;
-  joint_command_values_[1] = 111;
+  joint_command_values_[1] = command_lin_x;
+
   std::shared_ptr<ControllerReferenceMsg> msg = std::make_shared<ControllerReferenceMsg>();
 
   msg->header.stamp = controller_->get_node()->now() - controller_->ref_timeout_ -
@@ -377,7 +378,9 @@ TEST_F(MecanumDriveControllerTest, test_update_logic_chainable)
       controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  EXPECT_NE(joint_command_values_[1], 111);
+  EXPECT_NE(joint_command_values_[1], command_lin_x);
+//  w0_vel = 1.0 / params_.wheels_radius * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y - params_.wheels_k * body_velocity_center_frame_.angular_z);
+//  joint_command_values_[1] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0)  
   EXPECT_EQ(joint_command_values_[1], 3.0);
   ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
   for (const auto & interface : controller_->reference_interfaces_)
@@ -398,10 +401,8 @@ TEST_F(MecanumDriveControllerTest, test_update_logic)
   auto reference = controller_->input_ref_.readFromNonRT();
 
   // set command statically
-  static constexpr double TEST_LINEAR_VELOCITY_X = 1.5;
-  static constexpr double TEST_LINEAR_VELOCITY_y = 0.0;
-  static constexpr double TEST_ANGULAR_VELOCITY_Z = 0.0;
-  joint_command_values_[1] = 111;
+  joint_command_values_[1] = command_lin_x;
+
   std::shared_ptr<ControllerReferenceMsg> msg = std::make_shared<ControllerReferenceMsg>();
   msg->header.stamp = controller_->get_node()->now() - controller_->ref_timeout_ -
                       rclcpp::Duration::from_seconds(0.1);
@@ -454,7 +455,9 @@ TEST_F(MecanumDriveControllerTest, test_update_logic)
 
   // EXPECT_EQ(joint_command_values_[NR_CMD_ITFS - 2], TEST_LINEAR_VELOCITY_X);
   EXPECT_FALSE(std::isnan(joint_command_values_[1]));
-  EXPECT_NE(joint_command_values_[1], 111);
+  EXPECT_NE(joint_command_values_[1], command_lin_x);
+//  w0_vel = 1.0 / params_.wheels_radius * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y - params_.wheels_k * body_velocity_center_frame_.angular_z);
+//  joint_command_values_[1] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0) 
   EXPECT_EQ(joint_command_values_[1], 3.0);
 
   ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
@@ -471,10 +474,7 @@ TEST_F(MecanumDriveControllerTest, test_ref_timeout_zero_for_update)
   auto reference = controller_->input_ref_.readFromNonRT();
 
   // set command statically
-  static constexpr double TEST_LINEAR_VELOCITY_X = 1.5;
-  static constexpr double TEST_LINEAR_VELOCITY_y = 0.0;
-  static constexpr double TEST_ANGULAR_VELOCITY_Z = 0.0;
-  joint_command_values_[1] = 111;
+  joint_command_values_[1] = command_lin_x;
 
   controller_->ref_timeout_ = rclcpp::Duration::from_seconds(0.0);
   std::shared_ptr<ControllerReferenceMsg> msg = std::make_shared<ControllerReferenceMsg>();
@@ -502,7 +502,9 @@ TEST_F(MecanumDriveControllerTest, test_ref_timeout_zero_for_update)
 
   // EXPECT_EQ(joint_command_values_[NR_STATE_ITFS - 2], TEST_LINEAR_VELOCITY_X);
   EXPECT_FALSE(std::isnan(joint_command_values_[1]));
-  EXPECT_NE(joint_command_values_[1], 111);
+  EXPECT_NE(joint_command_values_[1], command_lin_x);
+//  w0_vel = 1.0 / params_.wheels_radius * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y - params_.wheels_k * body_velocity_center_frame_.angular_z);
+//  joint_command_values_[1] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0) 
   EXPECT_EQ(joint_command_values_[1], 3.0);
   ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
   ASSERT_FALSE(std::isnan((*(controller_->input_ref_.readFromRT()))->twist.linear.x));
