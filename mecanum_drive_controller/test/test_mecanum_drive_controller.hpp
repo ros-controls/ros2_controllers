@@ -263,6 +263,11 @@ protected:
   std::array<double, 4> joint_state_values_ = {0.1, 0.1, 0.1, 0.1};
   std::array<double, 4> joint_command_values_ = {101.101, 101.101, 101.101, 101.101};
 
+  static constexpr double TEST_LINEAR_VELOCITY_X = 1.5;
+  static constexpr double TEST_LINEAR_VELOCITY_y = 0.0;
+  static constexpr double TEST_ANGULAR_VELOCITY_Z = 0.0;
+  double command_lin_x = 111;
+
   std::vector<hardware_interface::StateInterface> state_itfs_;
   std::vector<hardware_interface::CommandInterface> command_itfs_;
 
