@@ -19,6 +19,7 @@
   <exec_depend>pluginlib</exec_depend>
   <exec_depend>realtime_tools</exec_depend>
 
+  <depend>backward_ros</depend>
   <depend>controller_interface</depend>
   <depend>control_msgs</depend>
   <depend>control_toolbox</depend>
