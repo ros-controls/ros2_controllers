@@ -238,7 +238,6 @@ TEST_F(MecanumDriveControllerTest, receive_message_and_publish_updated_status)
 //  joint_command_values_[1] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0) 
   EXPECT_EQ(joint_command_values_[1], 3.0);
   EXPECT_FALSE(std::isnan(joint_command_values_[1]));
-  fprintf(stderr, " joint_command_values_[1]= %f \n", joint_command_values_[1]);
 
   subscribe_and_get_messages(msg);
 
