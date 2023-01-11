@@ -274,7 +274,7 @@ protected:
   double ref_timeout_ = 0.2;
 
   // Test related parameters
-  std::unique_ptr<TestableMecanumDriveController> controller_;
+  std::unique_ptr<CtrlType> controller_;
   rclcpp::Node::SharedPtr command_publisher_node_;
   rclcpp::Publisher<ControllerReferenceMsg>::SharedPtr command_publisher_;
   rclcpp::Node::SharedPtr odom_s_publisher_node_;
