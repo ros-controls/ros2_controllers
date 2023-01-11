@@ -210,6 +210,8 @@ void MecanumDriveController::reference_callback(const std::shared_ptr<Controller
       "(%.4f).",
       rclcpp::Time(msg->header.stamp).seconds(), age_of_last_command.seconds(),
       ref_timeout_.seconds());
+      reset_controller_reference_msg(msg, get_node());
+
   }
 }
 
@@ -308,7 +310,7 @@ controller_interface::return_type MecanumDriveController::update_reference_from_
   // send message only if there is no timeout
   if (age_of_last_command <= ref_timeout_ || ref_timeout_ == rclcpp::Duration::from_seconds(0))
   {
-    if (!std::isnan(current_ref->twist.linear.x) && !std::isnan(current_ref->twist.angular.z))
+    if (!std::isnan(current_ref->twist.linear.x) && !std::isnan(current_ref->twist.linear.y) && !std::isnan(current_ref->twist.angular.z))
     {
       reference_interfaces_[0] = current_ref->twist.linear.x;
       reference_interfaces_[1] = current_ref->twist.linear.y;
@@ -351,9 +353,9 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
   {
     tf2::Quaternion quaternion;
     quaternion.setRPY(0.0, 0.0, params_.base_frame_offset[2]);
-  /// \note The variables meaning:
-  /// angular_transformation_from_base_2_center: Rotation transformation matrix, to transform from base frame to center frame
-  /// linear_transformation_from_base_2_center: offset/linear transformation matrix, to transform from base frame to center frame
+    /// \note The variables meaning:
+    /// angular_transformation_from_base_2_center: Rotation transformation matrix, to transform from base frame to center frame
+    /// linear_transformation_from_base_2_center: offset/linear transformation matrix, to transform from base frame to center frame
 
     tf2::Matrix3x3 angular_transformation_from_base_2_center = tf2::Matrix3x3((quaternion));
     tf2::Vector3 body_velocity_base_frame_w_r_t_center_frame_ =

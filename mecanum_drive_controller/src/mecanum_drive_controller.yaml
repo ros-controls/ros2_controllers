@@ -85,7 +85,7 @@ mecanum_drive_controller:
 
   twist_covariance_diagonal: {
     type: double_array,
-    default_value: [0, 7, 14, 21, 28, 35],
+    default_value: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1],
     description: "diagonal values of twist covariance matrix.",
     read_only: false,
 
@@ -93,7 +93,7 @@ mecanum_drive_controller:
 
   pose_covariance_diagonal: {
     type: double_array,
-    default_value: [0, 7, 14, 21, 28, 35],
+    default_value: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1],
     description: "diagonal values of pose covariance matrix.",
     read_only: false,
 
