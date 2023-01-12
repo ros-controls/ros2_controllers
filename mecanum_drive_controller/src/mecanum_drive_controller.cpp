@@ -357,24 +357,26 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
     /// angular_transformation_from_base_2_center: Rotation transformation matrix, to transform from base frame to center frame
     /// linear_transformation_from_base_2_center: offset/linear transformation matrix, to transform from base frame to center frame
 
+    
+
     tf2::Matrix3x3 angular_transformation_from_base_2_center = tf2::Matrix3x3((quaternion));
-    tf2::Vector3 body_velocity_base_frame_w_r_t_center_frame_ =
+    tf2::Vector3 velocity_in_base_frame_w_r_t_center_frame_ =
       angular_transformation_from_base_2_center * tf2::Vector3(reference_interfaces_[0], reference_interfaces_[1], 0.0);
     tf2::Vector3 linear_transformation_from_base_2_center =
       tf2::Vector3(params_.base_frame_offset[0], params_.base_frame_offset[1], 0.0);
 
-    body_velocity_center_frame_.linear_x = body_velocity_base_frame_w_r_t_center_frame_.x() + linear_transformation_from_base_2_center.y() * reference_interfaces_[2];
-    body_velocity_center_frame_.linear_y = body_velocity_base_frame_w_r_t_center_frame_.y() - linear_transformation_from_base_2_center.x() * reference_interfaces_[2];
-    body_velocity_center_frame_.angular_z = reference_interfaces_[2];
+    velocity_in_center_frame_linear_x = velocity_in_base_frame_w_r_t_center_frame_.x() + linear_transformation_from_base_2_center.y() * reference_interfaces_[2];
+    velocity_in_center_frame_linear_y = velocity_in_base_frame_w_r_t_center_frame_.y() - linear_transformation_from_base_2_center.x() * reference_interfaces_[2];
+    velocity_in_center_frame_angular_z = reference_interfaces_[2];
 
     double w0_vel =
-      1.0 / params_.wheels_radius * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y - params_.wheels_k * body_velocity_center_frame_.angular_z);
+      1.0 / params_.wheels_radius * (velocity_in_center_frame_linear_x - velocity_in_center_frame_linear_y - params_.wheels_k * velocity_in_center_frame_angular_z);
     double w1_vel =
-      1.0 / params_.wheels_radius * (body_velocity_center_frame_.linear_x + body_velocity_center_frame_.linear_y - params_.wheels_k * body_velocity_center_frame_.angular_z);
+      1.0 / params_.wheels_radius * (velocity_in_center_frame_linear_x + velocity_in_center_frame_linear_y - params_.wheels_k * velocity_in_center_frame_angular_z);
     double w2_vel =
-      1.0 / params_.wheels_radius * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y + params_.wheels_k * body_velocity_center_frame_.angular_z);
+      1.0 / params_.wheels_radius * (velocity_in_center_frame_linear_x - velocity_in_center_frame_linear_y + params_.wheels_k * velocity_in_center_frame_angular_z);
     double w3_vel =
-      1.0 / params_.wheels_radius * (body_velocity_center_frame_.linear_x + body_velocity_center_frame_.linear_y + params_.wheels_k * body_velocity_center_frame_.angular_z);
+      1.0 / params_.wheels_radius * (velocity_in_center_frame_linear_x + velocity_in_center_frame_linear_y + params_.wheels_k * velocity_in_center_frame_angular_z);
 
     // Set wheels velocities:
 

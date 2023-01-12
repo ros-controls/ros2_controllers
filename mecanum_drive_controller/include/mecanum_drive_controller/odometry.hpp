@@ -42,7 +42,7 @@ public:
 
   /// \brief Initialize the odometry
   /// \param time Current time
-  void init(const rclcpp::Time & time, double base_frame_offset[PLANAR_POINT_DIM]);
+  void init(const rclcpp::Time & time, std::array<double, PLANAR_POINT_DIM> base_frame_offset);
 
   /// \brief Updates the odometry class with latest wheels position
   /// \param wheel0_vel  Wheel velocity [rad/s]
@@ -55,17 +55,17 @@ public:
     double wheel0_vel, double wheel1_vel, double wheel2_vel, double wheel3_vel, const double dt);
 
   /// \return position (x component) [m]
-  double getX() const { return position_x_base_frame_; }
+  double getX() const { return position_x_in_base_frame_; }
   /// \return position (y component) [m]
-  double getY() const { return position_y_base_frame_; }
+  double getY() const { return position_y_in_base_frame_; }
   /// \return orientation (z component) [m]
-  double getRz() const { return orientation_z_base_frame_; }
+  double getRz() const { return orientation_z_in_base_frame_; }
   /// \return body velocity of the base frame (linear x component) [m/s]
-  double getVx() const { return body_velocity_base_frame_.linear_x; }
+  double getVx() const { return velocity_in_base_frame_linear_x; }
   /// \return body velocity of the base frame (linear y component) [m/s]
-  double getVy() const { return body_velocity_base_frame_.linear_y; }
+  double getVy() const { return velocity_in_base_frame_linear_y; }
   /// \return body velocity of the base frame (angular z component) [m/s]
-  double getWz() const { return body_velocity_base_frame_.angular_z; }
+  double getWz() const { return velocity_in_base_frame_angular_z;; }
 
   /// \brief Sets the wheels parameters: mecanum geometric param and radius
   /// \param wheels_k       Wheels geometric param (used in mecanum wheels' ik) [m]
@@ -81,33 +81,13 @@ private:
   std::array<double, PLANAR_POINT_DIM> base_frame_offset_;
 
   /// Current pose:
-  double position_x_base_frame_;  // [m]
-  double position_y_base_frame_;  // [m]
-  double orientation_z_base_frame_;  // [rad]
+  double position_x_in_base_frame_;  // [m]
+  double position_y_in_base_frame_;  // [m]
+  double orientation_z_in_base_frame_;  // [rad]
 
-  /// Current velocity.
-  /// \note The indices meaning is the following:
-  ///    b : base frame
-  ///    c : center frame
-  ///    body_velocity_base_frame_: body_velocity w.r.t base frame
-  ///    body_velocity_center_frame_: body_velocity w.r.t center frame
-  ///    Oc: origin of the center frame
-  ///    b0: initial position if the base frame
-  ///    c0: initial position of the center frame
-
-  struct body_velocity{
-    double linear_x;  // [m/s]
-    double linear_y;  // [m/s]
-    double angular_z;  // [rad/s]
-
-    body_velocity() : linear_x(0.0), linear_y(0.0), angular_z(0.0) {}
-  };
-
-  body_velocity body_velocity_base_frame_;
-  body_velocity body_velocity_center_frame_;
-  // // body_velocity_base_frame_.linear_x;  // [m/s] body_velocity_base_frame_.linear_x
-  // // double body_velocity_base_frame_.linear_y;  // [m/s] 
-  // // double body_velocity_base_frame_.angular_z;     // [rad/s]
+  double velocity_in_base_frame_linear_x;  // [m/s]
+  double velocity_in_base_frame_linear_y;  // [m/s] 
+  double velocity_in_base_frame_angular_z;    // [rad/s]
 
   /// Wheels kinematic parameters [m]:
   /// lx and ly represent the distance from the robot's center to the wheels projected on 
