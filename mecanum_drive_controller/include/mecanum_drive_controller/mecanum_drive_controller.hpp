@@ -120,14 +120,10 @@ private:
   // callback for topic interface
   MECANUM_DRIVE_CONTROLLER__VISIBILITY_LOCAL
   void reference_callback(const std::shared_ptr<ControllerReferenceMsg> msg);
-  struct body_velocity{
-    double linear_x;  // [m/s]
-    double linear_y;  // [m/s]
-    double angular_z;  // [rad/s]
 
-    body_velocity() : linear_x(0.0), linear_y(0.0), angular_z(0.0) {}
-  };
-  body_velocity body_velocity_center_frame_;
+  double velocity_in_center_frame_linear_x;  // [m/s]
+  double velocity_in_center_frame_linear_y;  // [m/s] 
+  double velocity_in_center_frame_angular_z;     // [rad/s]
 
 };
 
