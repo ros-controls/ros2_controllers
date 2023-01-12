@@ -2,6 +2,11 @@
 Changelog for package rqt_joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* 🔧 Fixes and updated on pre-commit hooks and their action (`#492 <https://github.com/ros-controls/ros2_controllers/issues/492>`_) (`#496 <https://github.com/ros-controls/ros2_controllers/issues/496>`_)
+* Contributors: Denis Stogl
+
 2.15.0 (2022-12-06)
 -------------------
 
