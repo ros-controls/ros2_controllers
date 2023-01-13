@@ -108,7 +108,6 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  // TODO(anyone): Reserve memory in state publisher depending on the message type
   rt_odom_state_publisher_->lock();
   rt_odom_state_publisher_->msg_.header.stamp = get_node()->now();
   rt_odom_state_publisher_->msg_.header.frame_id = params_.odom_frame_id;
