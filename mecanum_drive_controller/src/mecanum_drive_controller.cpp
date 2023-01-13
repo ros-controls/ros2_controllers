@@ -315,6 +315,14 @@ controller_interface::return_type MecanumDriveController::update_reference_from_
       reference_interfaces_[0] = current_ref->twist.linear.x;
       reference_interfaces_[1] = current_ref->twist.linear.y;
       reference_interfaces_[2] = current_ref->twist.angular.z;
+
+      if (ref_timeout_ == rclcpp::Duration::from_seconds(0))
+      {
+        current_ref->twist.linear.x = std::numeric_limits<double>::quiet_NaN();
+        current_ref->twist.linear.y = std::numeric_limits<double>::quiet_NaN();
+        current_ref->twist.angular.z = std::numeric_limits<double>::quiet_NaN();
+      }
+
     }
   }
   else
@@ -322,6 +330,13 @@ controller_interface::return_type MecanumDriveController::update_reference_from_
     reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();
     reference_interfaces_[1] = std::numeric_limits<double>::quiet_NaN();
     reference_interfaces_[2] = std::numeric_limits<double>::quiet_NaN();
+
+    if (!std::isnan(current_ref->twist.linear.x) && !std::isnan(current_ref->twist.linear.y) && !std::isnan(current_ref->twist.angular.z))
+    {
+      current_ref->twist.linear.x = std::numeric_limits<double>::quiet_NaN();
+      current_ref->twist.linear.y = std::numeric_limits<double>::quiet_NaN();
+      current_ref->twist.angular.z = std::numeric_limits<double>::quiet_NaN();
+    }
   }
 
   return controller_interface::return_type::OK;
@@ -347,8 +362,8 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
   // INVERSE KINEMATICS (move robot).
   // Compute wheels velocities (this is the actual ik):
   // NOTE: the input desired twist (from topic `~/reference`) is a body twist.
-  auto current_ref = input_ref_.readFromRT();
-  const auto age_of_last_command = time - (*current_ref)->header.stamp;
+  auto current_ref = *(input_ref_.readFromRT());
+  const auto age_of_last_command = time - current_ref->header.stamp;
   if (age_of_last_command <= ref_timeout_ || ref_timeout_ == rclcpp::Duration::from_seconds(0))
   {
     tf2::Quaternion quaternion;
@@ -388,6 +403,8 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
     fprintf(stderr, " command_interfaces_[2] = %f \n", w2_vel);
     command_interfaces_[3].set_value(w3_vel);
     fprintf(stderr, " command_interfaces_[3] = %f \n", w3_vel);
+
+
   }
   else
   {
@@ -395,9 +412,14 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
     reference_interfaces_[1] = std::numeric_limits<double>::quiet_NaN();
     reference_interfaces_[2] = std::numeric_limits<double>::quiet_NaN();
     command_interfaces_[0].set_value(0.0);
+    fprintf(stderr, " command_interfaces_[0] = %f \n", command_interfaces_[0].get_value());
     command_interfaces_[1].set_value(0.0);
     command_interfaces_[2].set_value(0.0);
     command_interfaces_[3].set_value(0.0);
+
+    current_ref->twist.linear.x = std::numeric_limits<double>::quiet_NaN();
+    current_ref->twist.linear.y = std::numeric_limits<double>::quiet_NaN();
+    current_ref->twist.angular.z = std::numeric_limits<double>::quiet_NaN();
   }
 
   // Publish odometry message
