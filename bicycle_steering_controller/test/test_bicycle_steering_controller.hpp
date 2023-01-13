@@ -38,6 +38,13 @@ using ControllerStateMsg =
 using ControllerReferenceMsg =
   steering_controllers_library::SteeringControllersLibrary::ControllerTwistReferenceMsg;
 
+// name constants for state interfaces
+using bicycle_steering_controller::STATE_DRIVE_WHEEL;
+using bicycle_steering_controller::STATE_STEER_AXIS;
+
+using bicycle_steering_controller::CMD_DRIVE_WHEEL;
+using bicycle_steering_controller::CMD_STEER;
+
 namespace
 {
 constexpr auto NODE_SUCCESS = controller_interface::CallbackReturn::SUCCESS;
@@ -150,11 +157,11 @@ protected:
     command_ifs.reserve(joint_command_values_.size());
 
     command_itfs_.emplace_back(hardware_interface::CommandInterface(
-      rear_wheels_names_[0], traction_interface_name_, &joint_command_values_[0]));
+      rear_wheels_names_[0], traction_interface_name_, &joint_command_values_[CMD_DRIVE_WHEEL]));
     command_ifs.emplace_back(command_itfs_.back());
 
     command_itfs_.emplace_back(hardware_interface::CommandInterface(
-      front_wheels_names_[0], steering_interface_name_, &joint_command_values_[1]));
+      front_wheels_names_[0], steering_interface_name_, &joint_command_values_[CMD_STEER]));
     command_ifs.emplace_back(command_itfs_.back());
 
     std::vector<hardware_interface::LoanedStateInterface> state_ifs;
@@ -162,11 +169,11 @@ protected:
     state_ifs.reserve(joint_state_values_.size());
 
     state_itfs_.emplace_back(hardware_interface::StateInterface(
-      rear_wheels_names_[0], traction_interface_name_, &joint_state_values_[0]));
+      rear_wheels_names_[0], traction_interface_name_, &joint_state_values_[STATE_DRIVE_WHEEL]));
     state_ifs.emplace_back(state_itfs_.back());
 
     state_itfs_.emplace_back(hardware_interface::StateInterface(
-      front_wheels_names_[0], steering_interface_name_, &joint_state_values_[1]));
+      front_wheels_names_[0], steering_interface_name_, &joint_state_values_[CMD_STEER]));
     state_ifs.emplace_back(state_itfs_.back());
 
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));

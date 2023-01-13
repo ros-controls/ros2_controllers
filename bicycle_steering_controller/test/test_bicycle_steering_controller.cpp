@@ -20,10 +20,6 @@
 #include <utility>
 #include <vector>
 
-// using bicycle_steering_controller::CMD_MY_ITFS;
-// using bicycle_steering_controller::control_mode_type;
-// using bicycle_steering_controller::STATE_MY_ITFS;
-
 class BicycleSteeringControllerTest
 : public BicycleSteeringControllerFixture<TestableBicycleSteeringController>
 {
@@ -32,10 +28,6 @@ class BicycleSteeringControllerTest
 TEST_F(BicycleSteeringControllerTest, all_parameters_set_configure_success)
 {
   SetUpController();
-  // ASSERT_FALSE(controller_->params_.rear_wheels_names.empty());
-  // ASSERT_FALSE(controller_->params_.front_wheels_names.empty());
-  // ASSERT_TRUE(controller_->params_.state_joints.empty());
-  // ASSERT_TRUE(controller_->params_.interface_name.empty());
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
@@ -60,13 +52,19 @@ TEST_F(BicycleSteeringControllerTest, check_exported_intefaces)
 
   auto command_intefaces = controller_->command_interface_configuration();
   ASSERT_EQ(command_intefaces.names.size(), joint_command_values_.size());
-  EXPECT_EQ(command_intefaces.names[0], rear_wheels_names_[0] + "/" + traction_interface_name_);
-  EXPECT_EQ(command_intefaces.names[1], front_wheels_names_[0] + "/" + steering_interface_name_);
+  EXPECT_EQ(
+    command_intefaces.names[CMD_DRIVE_WHEEL],
+    rear_wheels_names_[0] + "/" + traction_interface_name_);
+  EXPECT_EQ(
+    command_intefaces.names[CMD_STEER], front_wheels_names_[0] + "/" + steering_interface_name_);
 
   auto state_intefaces = controller_->state_interface_configuration();
   ASSERT_EQ(state_intefaces.names.size(), joint_state_values_.size());
-  EXPECT_EQ(state_intefaces.names[0], rear_wheels_names_[0] + "/" + traction_interface_name_);
-  EXPECT_EQ(state_intefaces.names[1], front_wheels_names_[0] + "/" + steering_interface_name_);
+  EXPECT_EQ(
+    state_intefaces.names[STATE_DRIVE_WHEEL],
+    rear_wheels_names_[0] + "/" + traction_interface_name_);
+  EXPECT_EQ(
+    state_intefaces.names[CMD_STEER], front_wheels_names_[0] + "/" + steering_interface_name_);
 
   // check ref itfs
   auto reference_interfaces = controller_->export_reference_interfaces();

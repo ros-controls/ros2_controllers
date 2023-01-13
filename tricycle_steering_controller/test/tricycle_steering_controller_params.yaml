@@ -1,7 +1,15 @@
-test_tricycle_steering_controller:
+test_bicycle_steering_controller:
   ros__parameters:
 
-    joints:
-      - joint1
+    reference_timeout: 2.0
+    front_steering: true
+    open_loop: false
+    velocity_rolling_window_size: 10
+    position_feedback: false
+    use_stamped_vel: true
+    rear_wheels_names: [rear_right_wheel_joint, rear_left_wheel_joint]
+    front_wheels_names: [steering_axis_joint]
 
-    interface_name: acceleration
+    wheelbase: 3.24644
+    front_wheel_sradius: 0.45
+    rear_wheels_radius: 0.45
