@@ -49,8 +49,9 @@ public:
   STEERING_CONTROLLERS__VISIBILITY_PUBLIC void initialize_implementation_parameter_listener()
     override;
 
-private:
+protected:
   std::shared_ptr<tricycle_steering_controller::ParamListener> tricycle_param_listener_;
+  tricycle_steering_controller::Params tricycle_params_;
 };
 }  // namespace tricycle_steering_controller
 

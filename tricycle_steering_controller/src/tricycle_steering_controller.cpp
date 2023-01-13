@@ -28,12 +28,12 @@ void TricycleSteeringController::initialize_implementation_parameter_listener()
 
 controller_interface::CallbackReturn TricycleSteeringController::configure_odometry()
 {
-  tricycle_steering_controller::Params tricycle_params = tricycle_param_listener_->get_params();
+  tricycle_params_ = tricycle_param_listener_->get_params();
 
-  const double front_wheels_radius = tricycle_params.front_wheels_radius;
-  const double rear_wheels_radius = tricycle_params.rear_wheels_radius;
-  const double wheel_track = tricycle_params.wheel_track;
-  const double wheelbase = tricycle_params.wheelbase;
+  const double front_wheels_radius = tricycle_params_.front_wheels_radius;
+  const double rear_wheels_radius = tricycle_params_.rear_wheels_radius;
+  const double wheel_track = tricycle_params_.wheel_track;
+  const double wheelbase = tricycle_params_.wheelbase;
 
   if (params_.front_steering)
   {
