@@ -1,5 +1,4 @@
 // Copyright (c) 2023, Stogl Robotics Consulting UG (haftungsbeschränkt)
-// Copyright (c) 2023, Stogl Robotics Consulting UG (haftungsbeschränkt) (template)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,18 +33,17 @@
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "tricycle_steering_controller/tricycle_steering_controller.hpp"
 
-// TODO(anyone): replace the state and command message types
 using ControllerStateMsg =
-  steering_controllers_library::SteeringControllersLibrary::ControllerStateMsg;
+  steering_controllers_library::SteeringControllersLibrary::AckermanControllerState;
 using ControllerReferenceMsg =
-  steering_controllers_library::SteeringControllersLibrary::ControllerReferenceMsg;
-using ControllerModeSrvType =
-  steering_controllers_library::SteeringControllersLibrary::ControllerModeSrvType;
+  steering_controllers_library::SteeringControllersLibrary::ControllerTwistReferenceMsg;
 
 namespace
 {
 constexpr auto NODE_SUCCESS = controller_interface::CallbackReturn::SUCCESS;
 constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
+const double COMMON_THRESHOLD = 1e-6;
+
 }  // namespace
 // namespace
 
@@ -55,12 +53,12 @@ class TestableTricycleSteeringController
 {
   FRIEND_TEST(TricycleSteeringControllerTest, all_parameters_set_configure_success);
   FRIEND_TEST(TricycleSteeringControllerTest, activate_success);
+  FRIEND_TEST(TricycleSteeringControllerTest, update_success);
+  FRIEND_TEST(TricycleSteeringControllerTest, deactivate_success);
   FRIEND_TEST(TricycleSteeringControllerTest, reactivate_success);
-  FRIEND_TEST(TricycleSteeringControllerTest, test_setting_slow_mode_service);
-  FRIEND_TEST(TricycleSteeringControllerTest, test_update_logic_fast);
-  FRIEND_TEST(TricycleSteeringControllerTest, test_update_logic_slow);
-  FRIEND_TEST(TricycleSteeringControllerTest, test_update_logic_chainable_fast);
-  FRIEND_TEST(TricycleSteeringControllerTest, test_update_logic_chainable_slow);
+  FRIEND_TEST(TricycleSteeringControllerTest, test_update_logic);
+  FRIEND_TEST(TricycleSteeringControllerTest, publish_status_success);
+  FRIEND_TEST(TricycleSteeringControllerTest, receive_message_and_publish_updated_status);
 
 public:
   controller_interface::CallbackReturn on_configure(
@@ -71,7 +69,7 @@ public:
     // Only if on_configure is successful create subscription
     if (ret == CallbackReturn::SUCCESS)
     {
-      ref_subscriber_wait_set_.add_subscription(ref_subscriber_);
+      ref_subscriber_wait_set_.add_subscription(ref_subscriber_twist_);
     }
     return ret;
   }
@@ -129,11 +127,9 @@ public:
 
     command_publisher_node_ = std::make_shared<rclcpp::Node>("command_publisher");
     command_publisher_ = command_publisher_node_->create_publisher<ControllerReferenceMsg>(
-      "/test_tricycle_steering_controller/commands", rclcpp::SystemDefaultsQoS());
+      "/test_tricycle_steering_controller/reference", rclcpp::SystemDefaultsQoS());
 
-    service_caller_node_ = std::make_shared<rclcpp::Node>("service_caller");
-    slow_control_service_client_ = service_caller_node_->create_client<ControllerModeSrvType>(
-      "/test_tricycle_steering_controller/set_slow_control_mode");
+    // service_caller_node_ = std::make_shared<rclcpp::Node>("service_caller");
   }
 
   static void TearDownTestCase() {}
@@ -145,29 +141,38 @@ protected:
   {
     ASSERT_EQ(controller_->init(controller_name), controller_interface::return_type::OK);
 
+    if (position_feedback_ == true)
+    {
+      traction_interface_name_ = "position";
+    }
+    else
+    {
+      traction_interface_name_ = "velocity";
+    }
+
     std::vector<hardware_interface::LoanedCommandInterface> command_ifs;
     command_itfs_.reserve(joint_command_values_.size());
     command_ifs.reserve(joint_command_values_.size());
 
-    for (size_t i = 0; i < joint_command_values_.size(); ++i)
-    {
-      command_itfs_.emplace_back(hardware_interface::CommandInterface(
-        joint_names_[i], interface_name_, &joint_command_values_[i]));
-      command_ifs.emplace_back(command_itfs_.back());
-    }
-    // TODO(anyone): Add other command interfaces, if any
+    command_itfs_.emplace_back(hardware_interface::CommandInterface(
+      rear_wheels_names_[0], traction_interface_name_, &joint_command_values_[0]));
+    command_ifs.emplace_back(command_itfs_.back());
+
+    command_itfs_.emplace_back(hardware_interface::CommandInterface(
+      front_wheels_names_[0], steering_interface_name_, &joint_command_values_[1]));
+    command_ifs.emplace_back(command_itfs_.back());
 
     std::vector<hardware_interface::LoanedStateInterface> state_ifs;
     state_itfs_.reserve(joint_state_values_.size());
     state_ifs.reserve(joint_state_values_.size());
 
-    for (size_t i = 0; i < joint_state_values_.size(); ++i)
-    {
-      state_itfs_.emplace_back(hardware_interface::StateInterface(
-        joint_names_[i], interface_name_, &joint_state_values_[i]));
-      state_ifs.emplace_back(state_itfs_.back());
-    }
-    // TODO(anyone): Add other state interfaces, if any
+    state_itfs_.emplace_back(hardware_interface::StateInterface(
+      rear_wheels_names_[0], traction_interface_name_, &joint_state_values_[0]));
+    state_ifs.emplace_back(state_itfs_.back());
+
+    state_itfs_.emplace_back(hardware_interface::StateInterface(
+      front_wheels_names_[0], steering_interface_name_, &joint_state_values_[1]));
+    state_ifs.emplace_back(state_itfs_.back());
 
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
   }
@@ -178,7 +183,7 @@ protected:
     rclcpp::Node test_subscription_node("test_subscription_node");
     auto subs_callback = [&](const ControllerStateMsg::SharedPtr) {};
     auto subscription = test_subscription_node.create_subscription<ControllerStateMsg>(
-      "/test_tricycle_steering_controller/state", 10, subs_callback);
+      "/test_tricycle_steering_controller/controller_state", 10, subs_callback);
 
     // call update to publish the test value
     ASSERT_EQ(
@@ -207,10 +212,7 @@ protected:
     ASSERT_TRUE(subscription->take(msg, msg_info));
   }
 
-  // TODO(anyone): add/remove arguments as it suites your command message type
-  void publish_commands(
-    const std::vector<double> & displacements = {0.45},
-    const std::vector<double> & velocities = {0.0}, const double duration = 1.25)
+  void publish_commands(const double linear = 0.1, const double angular = 0.2)
   {
     auto wait_for_topic = [&](const auto topic_name)
     {
@@ -231,42 +233,34 @@ protected:
     wait_for_topic(command_publisher_->get_topic_name());
 
     ControllerReferenceMsg msg;
-    msg.joint_names = joint_names_;
-    msg.displacements = displacements;
-    msg.velocities = velocities;
-    msg.duration = duration;
+    msg.twist.linear.x = linear;
+    msg.twist.angular.z = angular;
 
     command_publisher_->publish(msg);
   }
 
-  std::shared_ptr<ControllerModeSrvType::Response> call_service(
-    const bool slow_control, rclcpp::Executor & executor)
-  {
-    auto request = std::make_shared<ControllerModeSrvType::Request>();
-    request->data = slow_control;
-
-    bool wait_for_service_ret =
-      slow_control_service_client_->wait_for_service(std::chrono::milliseconds(500));
-    EXPECT_TRUE(wait_for_service_ret);
-    if (!wait_for_service_ret)
-    {
-      throw std::runtime_error("Services is not available!");
-    }
-    auto result = slow_control_service_client_->async_send_request(request);
-    EXPECT_EQ(executor.spin_until_future_complete(result), rclcpp::FutureReturnCode::SUCCESS);
-
-    return result.get();
-  }
-
 protected:
-  // TODO(anyone): adjust the members as needed
-
   // Controller-related parameters
-  std::vector<std::string> joint_names_ = {"joint1"};
-  std::vector<std::string> state_joint_names_ = {"joint1state"};
-  std::string interface_name_ = "acceleration";
-  std::array<double, 1> joint_state_values_ = {1.1};
-  std::array<double, 1> joint_command_values_ = {101.101};
+  double reference_timeout_ = 2.0;
+  bool front_steering_ = true;
+  bool open_loop_ = false;
+  unsigned int velocity_rolling_window_size_ = 10;
+  bool position_feedback_ = false;
+  bool use_stamped_vel_ = true;
+  std::vector<std::string> rear_wheels_names_ = {"rear_wheel_joint"};
+  std::vector<std::string> front_wheels_names_ = {"steering_axis_joint"};
+  std::vector<std::string> joint_names_ = {rear_wheels_names_[0], front_wheels_names_[0]};
+
+  double wheelbase_ = 3.24644;
+  double front_wheels_radius_ = 0.45;
+  double rear_wheels_radius_ = 0.45;
+
+  std::array<double, 2> joint_state_values_ = {3.3, 0.5};
+  std::array<double, 2> joint_command_values_ = {1.1, 2.2};
+  std::array<std::string, 2> joint_reference_interfaces_ = {"linear/velocity", "angular/position"};
+  std::string steering_interface_name_ = "position";
+  // defined in setup
+  std::string traction_interface_name_ = "";
 
   std::vector<hardware_interface::StateInterface> state_itfs_;
   std::vector<hardware_interface::CommandInterface> command_itfs_;
@@ -275,8 +269,6 @@ protected:
   std::unique_ptr<TestableTricycleSteeringController> controller_;
   rclcpp::Node::SharedPtr command_publisher_node_;
   rclcpp::Publisher<ControllerReferenceMsg>::SharedPtr command_publisher_;
-  rclcpp::Node::SharedPtr service_caller_node_;
-  rclcpp::Client<ControllerModeSrvType>::SharedPtr slow_control_service_client_;
 };
 
 #endif  // TEST_TRICYCLE_STEERING_CONTROLLER_HPP_

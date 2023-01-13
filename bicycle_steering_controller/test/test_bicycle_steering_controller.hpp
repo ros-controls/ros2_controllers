@@ -33,19 +33,16 @@
 #include "rclcpp/utilities.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 
-// TODO(anyone): replace the state and command message types
 using ControllerStateMsg =
   steering_controllers_library::SteeringControllersLibrary::AckermanControllerState;
 using ControllerReferenceMsg =
   steering_controllers_library::SteeringControllersLibrary::ControllerTwistReferenceMsg;
-// using ControllerModeSrvType =
-//   steering_controllers_library::SteeringControllersLibrary::ControllerModeSrvType;
 
 namespace
 {
 constexpr auto NODE_SUCCESS = controller_interface::CallbackReturn::SUCCESS;
 constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
-const double COMMON_THRESHOLD = 1e-6;  // destogl: increased for 0.0001 for stable CI builds?
+const double COMMON_THRESHOLD = 1e-6;
 
 }  // namespace
 // namespace
@@ -128,8 +125,6 @@ public:
     command_publisher_node_ = std::make_shared<rclcpp::Node>("command_publisher");
     command_publisher_ = command_publisher_node_->create_publisher<ControllerReferenceMsg>(
       "/test_bicycle_steering_controller/reference", rclcpp::SystemDefaultsQoS());
-
-    // service_caller_node_ = std::make_shared<rclcpp::Node>("service_caller");
   }
 
   static void TearDownTestCase() {}
@@ -234,30 +229,8 @@ protected:
     command_publisher_->publish(msg);
   }
 
-  // std::shared_ptr<ControllerModeSrvType::Response> call_service(
-  //   const bool slow_control, rclcpp::Executor & executor)
-  // {
-  //   auto request = std::make_shared<ControllerModeSrvType::Request>();
-  //   request->data = slow_control;
-
-  //   bool wait_for_service_ret =
-  //     slow_control_service_client_->wait_for_service(std::chrono::milliseconds(500));
-  //   EXPECT_TRUE(wait_for_service_ret);
-  //   if (!wait_for_service_ret)
-  //   {
-  //     throw std::runtime_error("Services is not available!");
-  //   }
-  //   auto result = slow_control_service_client_->async_send_request(request);
-  //   EXPECT_EQ(executor.spin_until_future_complete(result), rclcpp::FutureReturnCode::SUCCESS);
-
-  //   return result.get();
-  // }
-
 protected:
-  // TODO(anyone): adjust the members as needed
-
   // Controller-related parameters
-
   double reference_timeout_ = 2.0;
   bool front_steering_ = true;
   bool open_loop_ = false;
@@ -286,7 +259,6 @@ protected:
   std::unique_ptr<TestableBicycleSteeringController> controller_;
   rclcpp::Node::SharedPtr command_publisher_node_;
   rclcpp::Publisher<ControllerReferenceMsg>::SharedPtr command_publisher_;
-  // rclcpp::Node::SharedPtr service_caller_node_;
 };
 
 #endif  // TEST_BICYCLE_STEERING_CONTROLLER_HPP_
