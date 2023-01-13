@@ -32,17 +32,17 @@ TEST_F(TricycleSteeringControllerTest, all_parameters_set_configure_success)
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  // ASSERT_THAT(
-  //   controller_->params_.rear_wheels_names, testing::ElementsAreArray(rear_wheels_names_));
-  // ASSERT_THAT(
-  //   controller_->params_.front_wheels_names, testing::ElementsAreArray(front_wheels_names_));
-  // ASSERT_EQ(controller_->params_.front_steering, front_steering_);
-  // ASSERT_EQ(controller_->params_.open_loop, open_loop_);
-  // ASSERT_EQ(controller_->params_.velocity_rolling_window_size, velocity_rolling_window_size_);
-  // ASSERT_EQ(controller_->params_.position_feedback, position_feedback_);
-  // ASSERT_EQ(controller_->tricycle_params_.wheelbase, wheelbase_);
-  // ASSERT_EQ(controller_->tricycle_params_.front_wheels_radius, front_wheels_radius_);
-  // ASSERT_EQ(controller_->tricycle_params_.rear_wheels_radius, rear_wheels_radius_);
+  ASSERT_THAT(
+    controller_->params_.rear_wheels_names, testing::ElementsAreArray(rear_wheels_names_));
+  ASSERT_THAT(
+    controller_->params_.front_wheels_names, testing::ElementsAreArray(front_wheels_names_));
+  ASSERT_EQ(controller_->params_.front_steering, front_steering_);
+  ASSERT_EQ(controller_->params_.open_loop, open_loop_);
+  ASSERT_EQ(controller_->params_.velocity_rolling_window_size, velocity_rolling_window_size_);
+  ASSERT_EQ(controller_->params_.position_feedback, position_feedback_);
+  ASSERT_EQ(controller_->tricycle_params_.wheelbase, wheelbase_);
+  ASSERT_EQ(controller_->tricycle_params_.front_wheels_radius, front_wheels_radius_);
+  ASSERT_EQ(controller_->tricycle_params_.rear_wheels_radius, rear_wheels_radius_);
 }
 
 // TEST_F(TricycleSteeringControllerTest, check_exported_intefaces)
