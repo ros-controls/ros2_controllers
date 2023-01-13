@@ -190,7 +190,7 @@ protected:
     wait_set.add_subscription(subscription);
     while (max_sub_check_loop_count--)
     {
-      controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+      controller_->update_and_write_commands(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
       // check if messageparams_ has been received
       if (wait_set.wait(std::chrono::milliseconds(2)).kind() == rclcpp::WaitResultKind::Ready)
       {
@@ -267,10 +267,10 @@ protected:
   std::vector<std::string> joint_names_ = {rear_wheels_names_[0], front_wheels_names_[0]};
 
   double wheelbase_ = 3.24644;
-  double front_wheel_radius_ = 0.45;
+  double front_wheels_radius_ = 0.45;
   double rear_wheels_radius_ = 0.45;
 
-  std::array<double, 2> joint_state_values_ = {1.1, 2.0};
+  std::array<double, 2> joint_state_values_ = {3.3, 0.5};
   std::array<double, 2> joint_command_values_ = {1.1, 2.2};
   std::array<std::string, 2> joint_reference_interfaces_ = {"linear/velocity", "angular/position"};
   std::string steering_interface_name_ = "position";

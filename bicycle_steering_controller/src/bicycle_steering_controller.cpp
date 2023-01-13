@@ -29,11 +29,11 @@ void BicycleSteeringController::initialize_implementation_parameter_listener()
 
 controller_interface::CallbackReturn BicycleSteeringController::configure_odometry()
 {
-  bicycle_steering_controller::Params bicycle_params = bicycle_param_listener_->get_params();
+  bicycle_params_ = bicycle_param_listener_->get_params();
 
-  const double wheelbase = bicycle_params.wheelbase;
-  const double front_wheel_radius = bicycle_params.front_wheel_radius;
-  const double rear_wheel_radius = bicycle_params.rear_wheel_radius;
+  const double wheelbase = bicycle_params_.wheelbase;
+  const double front_wheel_radius = bicycle_params_.front_wheel_radius;
+  const double rear_wheel_radius = bicycle_params_.rear_wheel_radius;
 
   if (params_.front_steering)
   {

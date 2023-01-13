@@ -40,8 +40,9 @@ public:
   BICYCLE_STEERING_CONTROLLER__VISIBILITY_PUBLIC void initialize_implementation_parameter_listener()
     override;
 
-private:
+protected:
   std::shared_ptr<bicycle_steering_controller::ParamListener> bicycle_param_listener_;
+  bicycle_steering_controller::Params bicycle_params_;
 };
 }  // namespace bicycle_steering_controller
 

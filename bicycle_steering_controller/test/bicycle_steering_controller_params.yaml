@@ -12,4 +12,4 @@ test_bicycle_steering_controller:
 
     wheelbase: 3.24644
     front_wheel_radius: 0.45
-    rear_wheels_radius: 0.45
+    rear_wheel_radius: 0.45

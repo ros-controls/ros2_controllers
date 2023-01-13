@@ -47,6 +47,9 @@ TEST_F(BicycleSteeringControllerTest, all_parameters_set_configure_success)
   ASSERT_EQ(controller_->params_.open_loop, open_loop_);
   ASSERT_EQ(controller_->params_.velocity_rolling_window_size, velocity_rolling_window_size_);
   ASSERT_EQ(controller_->params_.position_feedback, position_feedback_);
+  ASSERT_EQ(controller_->bicycle_params_.wheelbase, wheelbase_);
+  ASSERT_EQ(controller_->bicycle_params_.front_wheel_radius, front_wheels_radius_);
+  ASSERT_EQ(controller_->bicycle_params_.rear_wheel_radius, rear_wheels_radius_);
 }
 
 TEST_F(BicycleSteeringControllerTest, check_exported_intefaces)
@@ -103,7 +106,7 @@ TEST_F(BicycleSteeringControllerTest, update_success)
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   ASSERT_EQ(
-    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_->update_and_write_commands(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 }
 
@@ -128,7 +131,7 @@ TEST_F(BicycleSteeringControllerTest, reactivate_success)
   ASSERT_TRUE(std::isnan(controller_->command_interfaces_[0].get_value()));
 
   ASSERT_EQ(
-    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_->update_and_write_commands(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 }
 
@@ -145,21 +148,25 @@ TEST_F(BicycleSteeringControllerTest, test_update_logic)
 
   // set command statically
   std::shared_ptr<ControllerReferenceMsg> msg = std::make_shared<ControllerReferenceMsg>();
+  msg->header.stamp = controller_->get_node()->now();
   msg->twist.linear.x = 0.1;
   msg->twist.angular.z = 0.2;
   controller_->input_ref_.writeFromNonRT(msg);
 
   ASSERT_EQ(
-    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_->update_reference_from_subscribers(), controller_interface::return_type::OK);
+
+  ASSERT_EQ(
+    controller_->update_and_write_commands(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  EXPECT_EQ(controller_->command_interfaces_[0].get_value(), 1.1);
-  EXPECT_EQ(controller_->command_interfaces_[1].get_value(), 2.2);
+  EXPECT_EQ(controller_->command_interfaces_[0].get_value(), 0.253221);
+  EXPECT_EQ(controller_->command_interfaces_[1].get_value(), 1.41798);
   EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromRT()))->twist.linear.x));
   EXPECT_EQ(controller_->reference_interfaces_.size(), joint_names_.size());
   for (const auto & interface : controller_->reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_FALSE(std::isnan(interface));
   }
 }
 
@@ -171,7 +178,7 @@ TEST_F(BicycleSteeringControllerTest, publish_status_success)
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   ASSERT_EQ(
-    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_->update_and_write_commands(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
   ControllerStateMsg msg;
@@ -188,7 +195,7 @@ TEST_F(BicycleSteeringControllerTest, receive_message_and_publish_updated_status
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   ASSERT_EQ(
-    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_->update_and_write_commands(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
   ControllerStateMsg msg;
@@ -201,7 +208,7 @@ TEST_F(BicycleSteeringControllerTest, receive_message_and_publish_updated_status
   // ASSERT_TRUE(controller_->wait_for_commands(executor));
 
   ASSERT_EQ(
-    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_->update_and_write_commands(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
   EXPECT_EQ(controller_->command_interfaces_[0].get_value(), 1.1);
