@@ -125,7 +125,7 @@ public:
 
     command_publisher_node_ = std::make_shared<rclcpp::Node>("command_publisher");
     command_publisher_ = command_publisher_node_->create_publisher<ControllerReferenceMsg>(
-      "/test_bicycle_steering_controller/commands", rclcpp::SystemDefaultsQoS());
+      "/test_bicycle_steering_controller/reference", rclcpp::SystemDefaultsQoS());
 
     // service_caller_node_ = std::make_shared<rclcpp::Node>("service_caller");
   }
@@ -205,7 +205,7 @@ protected:
     ASSERT_TRUE(subscription->take(msg, msg_info));
   }
 
-  void publish_commands(const double linear = 0.5, const double angular = 0.1)
+  void publish_commands(const double linear = 0.1, const double angular = 0.2)
   {
     auto wait_for_topic = [&](const auto topic_name)
     {
@@ -223,7 +223,7 @@ protected:
       }
     };
 
-    // wait_for_topic(command_publisher_->get_topic_name());
+    wait_for_topic(command_publisher_->get_topic_name());
 
     ControllerReferenceMsg msg;
     msg.twist.linear.x = linear;

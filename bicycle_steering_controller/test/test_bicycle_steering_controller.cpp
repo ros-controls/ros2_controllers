@@ -204,20 +204,23 @@ TEST_F(BicycleSteeringControllerTest, receive_message_and_publish_updated_status
   EXPECT_EQ(msg.linear_velocity_command.data[0], 1.1);
   EXPECT_EQ(msg.steering_angle_command.data[0], 2.2);
 
-  // publish_commands();
-  // ASSERT_TRUE(controller_->wait_for_commands(executor));
+  publish_commands();
+  ASSERT_TRUE(controller_->wait_for_commands(executor));
+
+  ASSERT_EQ(
+    controller_->update_reference_from_subscribers(), controller_interface::return_type::OK);
 
   ASSERT_EQ(
     controller_->update_and_write_commands(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  EXPECT_EQ(controller_->command_interfaces_[0].get_value(), 1.1);
-  EXPECT_EQ(controller_->command_interfaces_[1].get_value(), 2.2);
+  EXPECT_EQ(controller_->command_interfaces_[0].get_value(), 0.253221);
+  EXPECT_EQ(controller_->command_interfaces_[1].get_value(), 1.41798);
 
   subscribe_and_get_messages(msg);
 
-  EXPECT_EQ(msg.linear_velocity_command.data[0], 1.1);
-  EXPECT_EQ(msg.steering_angle_command.data[0], 2.2);
+  EXPECT_EQ(msg.linear_velocity_command.data[0], 0.253221);
+  EXPECT_EQ(msg.steering_angle_command.data[0], 1.41798);
 }
 
 int main(int argc, char ** argv)
