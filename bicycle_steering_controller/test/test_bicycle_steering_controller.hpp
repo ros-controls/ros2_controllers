@@ -45,6 +45,8 @@ namespace
 {
 constexpr auto NODE_SUCCESS = controller_interface::CallbackReturn::SUCCESS;
 constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
+const double COMMON_THRESHOLD = 1e-6;  // destogl: increased for 0.0001 for stable CI builds?
+
 }  // namespace
 // namespace
 

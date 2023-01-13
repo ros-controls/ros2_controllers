@@ -106,7 +106,7 @@ TEST_F(BicycleSteeringControllerTest, update_success)
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   ASSERT_EQ(
-    controller_->update_and_write_commands(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 }
 
@@ -131,7 +131,7 @@ TEST_F(BicycleSteeringControllerTest, reactivate_success)
   ASSERT_TRUE(std::isnan(controller_->command_interfaces_[0].get_value()));
 
   ASSERT_EQ(
-    controller_->update_and_write_commands(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 }
 
@@ -154,14 +154,13 @@ TEST_F(BicycleSteeringControllerTest, test_update_logic)
   controller_->input_ref_.writeFromNonRT(msg);
 
   ASSERT_EQ(
-    controller_->update_reference_from_subscribers(), controller_interface::return_type::OK);
-
-  ASSERT_EQ(
-    controller_->update_and_write_commands(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  EXPECT_EQ(controller_->command_interfaces_[0].get_value(), 0.253221);
-  EXPECT_EQ(controller_->command_interfaces_[1].get_value(), 1.41798);
+  EXPECT_NEAR(controller_->command_interfaces_[0].get_value(), 0.253221, COMMON_THRESHOLD);
+  EXPECT_NEAR(
+    controller_->command_interfaces_[1].get_value(), 1.4179821977774734, COMMON_THRESHOLD);
+
   EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromRT()))->twist.linear.x));
   EXPECT_EQ(controller_->reference_interfaces_.size(), joint_names_.size());
   for (const auto & interface : controller_->reference_interfaces_)
@@ -178,7 +177,7 @@ TEST_F(BicycleSteeringControllerTest, publish_status_success)
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   ASSERT_EQ(
-    controller_->update_and_write_commands(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
   ControllerStateMsg msg;
@@ -195,7 +194,7 @@ TEST_F(BicycleSteeringControllerTest, receive_message_and_publish_updated_status
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   ASSERT_EQ(
-    controller_->update_and_write_commands(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
   ControllerStateMsg msg;
@@ -208,19 +207,17 @@ TEST_F(BicycleSteeringControllerTest, receive_message_and_publish_updated_status
   ASSERT_TRUE(controller_->wait_for_commands(executor));
 
   ASSERT_EQ(
-    controller_->update_reference_from_subscribers(), controller_interface::return_type::OK);
-
-  ASSERT_EQ(
-    controller_->update_and_write_commands(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  EXPECT_EQ(controller_->command_interfaces_[0].get_value(), 0.253221);
-  EXPECT_EQ(controller_->command_interfaces_[1].get_value(), 1.41798);
+  EXPECT_NEAR(controller_->command_interfaces_[0].get_value(), 0.253221, COMMON_THRESHOLD);
+  EXPECT_NEAR(
+    controller_->command_interfaces_[1].get_value(), 1.4179821977774734, COMMON_THRESHOLD);
 
   subscribe_and_get_messages(msg);
 
-  EXPECT_EQ(msg.linear_velocity_command.data[0], 0.253221);
-  EXPECT_EQ(msg.steering_angle_command.data[0], 1.41798);
+  EXPECT_NEAR(msg.linear_velocity_command.data[0], 0.253221, COMMON_THRESHOLD);
+  EXPECT_NEAR(msg.steering_angle_command.data[0], 1.4179821977774734, COMMON_THRESHOLD);
 }
 
 int main(int argc, char ** argv)
