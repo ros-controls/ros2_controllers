@@ -38,6 +38,15 @@ using ControllerStateMsg =
 using ControllerReferenceMsg =
   steering_controllers_library::SteeringControllersLibrary::ControllerTwistReferenceMsg;
 
+// name constants for state interfaces
+using tricycle_steering_controller::STATE_DRIVE_LEFT_WHEEL;
+using tricycle_steering_controller::STATE_DRIVE_RIGHT_WHEEL;
+using tricycle_steering_controller::STATE_STEER_AXIS;
+
+// name constants for command interfaces
+using tricycle_steering_controller::CMD_DRIVE_WHEEL;
+using tricycle_steering_controller::CMD_STEER;
+
 namespace
 {
 constexpr auto NODE_SUCCESS = controller_interface::CallbackReturn::SUCCESS;
@@ -67,10 +76,10 @@ public:
     auto ret =
       tricycle_steering_controller::TricycleSteeringController::on_configure(previous_state);
     // Only if on_configure is successful create subscription
-    if (ret == CallbackReturn::SUCCESS)
-    {
-      ref_subscriber_wait_set_.add_subscription(ref_subscriber_twist_);
-    }
+    // if (ret == CallbackReturn::SUCCESS)
+    // {
+    //   ref_subscriber_wait_set_.add_subscription(ref_subscriber_twist_);
+    // }
     return ret;
   }
 
@@ -128,8 +137,6 @@ public:
     command_publisher_node_ = std::make_shared<rclcpp::Node>("command_publisher");
     command_publisher_ = command_publisher_node_->create_publisher<ControllerReferenceMsg>(
       "/test_tricycle_steering_controller/reference", rclcpp::SystemDefaultsQoS());
-
-    // service_caller_node_ = std::make_shared<rclcpp::Node>("service_caller");
   }
 
   static void TearDownTestCase() {}
@@ -155,11 +162,11 @@ protected:
     command_ifs.reserve(joint_command_values_.size());
 
     command_itfs_.emplace_back(hardware_interface::CommandInterface(
-      rear_wheels_names_[0], traction_interface_name_, &joint_command_values_[0]));
+      rear_wheels_names_[0], traction_interface_name_, &joint_command_values_[CMD_DRIVE_WHEEL]));
     command_ifs.emplace_back(command_itfs_.back());
 
     command_itfs_.emplace_back(hardware_interface::CommandInterface(
-      front_wheels_names_[0], steering_interface_name_, &joint_command_values_[1]));
+      front_wheels_names_[0], steering_interface_name_, &joint_command_values_[CMD_STEER]));
     command_ifs.emplace_back(command_itfs_.back());
 
     std::vector<hardware_interface::LoanedStateInterface> state_ifs;
@@ -167,11 +174,17 @@ protected:
     state_ifs.reserve(joint_state_values_.size());
 
     state_itfs_.emplace_back(hardware_interface::StateInterface(
-      rear_wheels_names_[0], traction_interface_name_, &joint_state_values_[0]));
+      rear_wheels_names_[0], traction_interface_name_,
+      &joint_state_values_[STATE_DRIVE_RIGHT_WHEEL]));
     state_ifs.emplace_back(state_itfs_.back());
 
     state_itfs_.emplace_back(hardware_interface::StateInterface(
-      front_wheels_names_[0], steering_interface_name_, &joint_state_values_[1]));
+      rear_wheels_names_[1], traction_interface_name_,
+      &joint_state_values_[STATE_DRIVE_LEFT_WHEEL]));
+    state_ifs.emplace_back(state_itfs_.back());
+
+    state_itfs_.emplace_back(hardware_interface::StateInterface(
+      front_wheels_names_[0], steering_interface_name_, &joint_state_values_[CMD_STEER]));
     state_ifs.emplace_back(state_itfs_.back());
 
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
@@ -249,13 +262,14 @@ protected:
   bool use_stamped_vel_ = true;
   std::vector<std::string> rear_wheels_names_ = {"rear_right_wheel_joint", "rear_left_wheel_joint"};
   std::vector<std::string> front_wheels_names_ = {"steering_axis_joint"};
-  std::vector<std::string> joint_names_ = {rear_wheels_names_[0], front_wheels_names_[0]};
+  std::vector<std::string> joint_names_ = {
+    rear_wheels_names_[0], rear_wheels_names_[1], front_wheels_names_[0]};
 
   double wheelbase_ = 3.24644;
   double front_wheels_radius_ = 0.45;
   double rear_wheels_radius_ = 0.45;
 
-  std::array<double, 2> joint_state_values_ = {3.3, 0.5};
+  std::array<double, 3> joint_state_values_ = {3.3, 3.3, 0.5};
   std::array<double, 2> joint_command_values_ = {1.1, 2.2};
   std::array<std::string, 2> joint_reference_interfaces_ = {"linear/velocity", "angular/position"};
   std::string steering_interface_name_ = "position";

@@ -42,6 +42,7 @@ using ControllerReferenceMsg =
 using bicycle_steering_controller::STATE_DRIVE_WHEEL;
 using bicycle_steering_controller::STATE_STEER_AXIS;
 
+// name constants for command interfaces
 using bicycle_steering_controller::CMD_DRIVE_WHEEL;
 using bicycle_steering_controller::CMD_STEER;
 
