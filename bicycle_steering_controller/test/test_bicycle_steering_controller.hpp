@@ -190,14 +190,17 @@ protected:
       "/test_bicycle_steering_controller/controller_state", 10, subs_callback);
 
     // call update to publish the test value
+    ASSERT_EQ(
+      controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+      controller_interface::return_type::OK);
     // since update doesn't guarantee a published message, republish until received
     int max_sub_check_loop_count = 5;  // max number of tries for pub/sub loop
     rclcpp::WaitSet wait_set;          // block used to wait on max_sub_check_loop_count
     wait_set.add_subscription(subscription);
     while (max_sub_check_loop_count--)
     {
-      controller_->update_and_write_commands(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
-      // check if messageparams_ has been received
+      controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+      // check if message has been received
       if (wait_set.wait(std::chrono::milliseconds(2)).kind() == rclcpp::WaitResultKind::Ready)
       {
         break;

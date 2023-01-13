@@ -169,12 +169,11 @@ protected:
 
     command_itfs_.emplace_back(hardware_interface::CommandInterface(
       front_wheels_names_[0], steering_interface_name_,
-      &joint_command_values_[STATE_DRIVE_RIGHT_WHEEL]));
+      &joint_command_values_[STATE_DRIVE_LEFT_WHEEL]));
     command_ifs.emplace_back(command_itfs_.back());
 
     command_itfs_.emplace_back(hardware_interface::CommandInterface(
-      front_wheels_names_[0], steering_interface_name_,
-      &joint_command_values_[STATE_DRIVE_LEFT_WHEEL]));
+      front_wheels_names_[0], steering_interface_name_, &joint_command_values_[STATE_STEER_AXIS]));
     command_ifs.emplace_back(command_itfs_.back());
 
     std::vector<hardware_interface::LoanedStateInterface> state_ifs;
@@ -210,8 +209,6 @@ protected:
     ASSERT_EQ(
       controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
       controller_interface::return_type::OK);
-
-    // call update to publish the test value
     // since update doesn't guarantee a published message, republish until received
     int max_sub_check_loop_count = 5;  // max number of tries for pub/sub loop
     rclcpp::WaitSet wait_set;          // block used to wait on message
@@ -277,7 +274,7 @@ protected:
   double front_wheels_radius_ = 0.45;
   double rear_wheels_radius_ = 0.45;
 
-  std::array<double, 3> joint_state_values_ = {3.3, 3.3, 0.0};
+  std::array<double, 3> joint_state_values_ = {0.5, 0.5, 0.0};
   std::array<double, 3> joint_command_values_ = {1.1, 3.3, 2.2};
   std::array<std::string, 2> joint_reference_interfaces_ = {"linear/velocity", "angular/position"};
   std::string steering_interface_name_ = "position";

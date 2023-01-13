@@ -210,9 +210,11 @@ TEST_F(BicycleSteeringControllerTest, receive_message_and_publish_updated_status
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  EXPECT_NEAR(controller_->command_interfaces_[0].get_value(), 0.253221, COMMON_THRESHOLD);
   EXPECT_NEAR(
-    controller_->command_interfaces_[1].get_value(), 1.4179821977774734, COMMON_THRESHOLD);
+    controller_->command_interfaces_[STATE_DRIVE_WHEEL].get_value(), 0.253221, COMMON_THRESHOLD);
+  EXPECT_NEAR(
+    controller_->command_interfaces_[STATE_STEER_AXIS].get_value(), 1.4179821977774734,
+    COMMON_THRESHOLD);
 
   subscribe_and_get_messages(msg);
 

@@ -182,54 +182,53 @@ TEST_F(TricycleSteeringControllerTest, test_update_logic)
   }
 }
 
-// TEST_F(TricycleSteeringControllerTest, publish_status_success)
-// {
-//   SetUpController();
+TEST_F(TricycleSteeringControllerTest, receive_message_and_publish_updated_status)
+{
+  SetUpController();
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
 
-//   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-//   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-//   ASSERT_EQ(
-//     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-//     controller_interface::return_type::OK);
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
 
-//   ControllerStateMsg msg;
-//   subscribe_and_get_messages(msg);
+  ControllerStateMsg msg;
+  subscribe_and_get_messages(msg);
 
-//   ASSERT_EQ(msg.set_point, 101.101);
-// }
+  EXPECT_EQ(msg.linear_velocity_command.data[STATE_DRIVE_RIGHT_WHEEL], 1.1);
+  EXPECT_EQ(msg.linear_velocity_command.data[STATE_DRIVE_LEFT_WHEEL], 3.3);
+  EXPECT_EQ(msg.steering_angle_command.data[0], 2.2);
 
-// TEST_F(TricycleSteeringControllerTest, receive_message_and_publish_updated_status)
-// {
-//   SetUpController();
-//   rclcpp::executors::MultiThreadedExecutor executor;
-//   executor.add_node(controller_->get_node()->get_node_base_interface());
+  publish_commands();
+  ASSERT_TRUE(controller_->wait_for_commands(executor));
 
-//   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-//   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
 
-//   ASSERT_EQ(
-//     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-//     controller_interface::return_type::OK);
+  EXPECT_NEAR(
+    controller_->command_interfaces_[STATE_DRIVE_RIGHT_WHEEL].get_value(), 0.22222222222222224,
+    COMMON_THRESHOLD);
+  EXPECT_NEAR(
+    controller_->command_interfaces_[STATE_DRIVE_LEFT_WHEEL].get_value(), 0.22222222222222224,
+    COMMON_THRESHOLD);
+  EXPECT_NEAR(
+    controller_->command_interfaces_[STATE_STEER_AXIS].get_value(), 1.4179821977774734,
+    COMMON_THRESHOLD);
 
-//   ControllerStateMsg msg;
-//   subscribe_and_get_messages(msg);
+  subscribe_and_get_messages(msg);
 
-//   ASSERT_EQ(msg.set_point, 101.101);
-
-//   publish_commands();
-//   ASSERT_TRUE(controller_->wait_for_commands(executor));
-
-//   ASSERT_EQ(
-//     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-//     controller_interface::return_type::OK);
-
-//   EXPECT_EQ(joint_command_values_[CMD_STEER], 0.45);
-
-//   subscribe_and_get_messages(msg);
-
-//   ASSERT_EQ(msg.set_point, 0.45);
-// }
+  EXPECT_NEAR(
+    msg.linear_velocity_command.data[STATE_DRIVE_RIGHT_WHEEL], 0.22222222222222224,
+    COMMON_THRESHOLD);
+  EXPECT_NEAR(
+    msg.linear_velocity_command.data[STATE_DRIVE_LEFT_WHEEL], 0.22222222222222224,
+    COMMON_THRESHOLD);
+  EXPECT_NEAR(msg.steering_angle_command.data[0], 1.4179821977774734, COMMON_THRESHOLD);
+}
 
 int main(int argc, char ** argv)
 {
