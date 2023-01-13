@@ -165,10 +165,10 @@ TEST_F(TricycleSteeringControllerTest, test_update_logic)
     controller_interface::return_type::OK);
 
   EXPECT_NEAR(
-    controller_->command_interfaces_[STATE_DRIVE_RIGHT_WHEEL].get_value(), 0.253221,
+    controller_->command_interfaces_[STATE_DRIVE_RIGHT_WHEEL].get_value(), 0.22222222222222224,
     COMMON_THRESHOLD);
   EXPECT_NEAR(
-    controller_->command_interfaces_[STATE_DRIVE_LEFT_WHEEL].get_value(), 0.253221,
+    controller_->command_interfaces_[STATE_DRIVE_LEFT_WHEEL].get_value(), 0.22222222222222224,
     COMMON_THRESHOLD);
   EXPECT_NEAR(
     controller_->command_interfaces_[STATE_STEER_AXIS].get_value(), 1.4179821977774734,

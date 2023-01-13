@@ -192,7 +192,7 @@ protected:
     state_ifs.emplace_back(state_itfs_.back());
 
     state_itfs_.emplace_back(hardware_interface::StateInterface(
-      front_wheels_names_[0], steering_interface_name_, &joint_state_values_[CMD_STEER]));
+      front_wheels_names_[0], steering_interface_name_, &joint_state_values_[STATE_STEER_AXIS]));
     state_ifs.emplace_back(state_itfs_.back());
 
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
@@ -277,7 +277,7 @@ protected:
   double front_wheels_radius_ = 0.45;
   double rear_wheels_radius_ = 0.45;
 
-  std::array<double, 3> joint_state_values_ = {3.3, 3.3, 0.5};
+  std::array<double, 3> joint_state_values_ = {3.3, 3.3, 0.0};
   std::array<double, 3> joint_command_values_ = {1.1, 3.3, 2.2};
   std::array<std::string, 2> joint_reference_interfaces_ = {"linear/velocity", "angular/position"};
   std::string steering_interface_name_ = "position";
