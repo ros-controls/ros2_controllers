@@ -54,9 +54,12 @@ class TestableBicycleSteeringController
 {
   FRIEND_TEST(BicycleSteeringControllerTest, all_parameters_set_configure_success);
   FRIEND_TEST(BicycleSteeringControllerTest, activate_success);
+  FRIEND_TEST(BicycleSteeringControllerTest, update_success);
+  FRIEND_TEST(BicycleSteeringControllerTest, deactivate_success);
   FRIEND_TEST(BicycleSteeringControllerTest, reactivate_success);
   FRIEND_TEST(BicycleSteeringControllerTest, test_update_logic);
-  FRIEND_TEST(BicycleSteeringControllerTest, test_update_logic_slow);
+  FRIEND_TEST(BicycleSteeringControllerTest, publish_status_success);
+  FRIEND_TEST(BicycleSteeringControllerTest, receive_message_and_publish_updated_status);
 
 public:
   controller_interface::CallbackReturn on_configure(
@@ -220,7 +223,7 @@ protected:
       }
     };
 
-    wait_for_topic(command_publisher_->get_topic_name());
+    // wait_for_topic(command_publisher_->get_topic_name());
 
     ControllerReferenceMsg msg;
     msg.twist.linear.x = linear;

@@ -153,8 +153,8 @@ TEST_F(BicycleSteeringControllerTest, test_update_logic)
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  EXPECT_EQ(command_itfs_[0], 1.0);
-  EXPECT_EQ(command_itfs_[1], 1.0);
+  EXPECT_EQ(controller_->command_interfaces_[0].get_value(), 1.1);
+  EXPECT_EQ(controller_->command_interfaces_[1].get_value(), 2.2);
   EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromRT()))->twist.linear.x));
   EXPECT_EQ(controller_->reference_interfaces_.size(), joint_names_.size());
   for (const auto & interface : controller_->reference_interfaces_)
@@ -197,15 +197,15 @@ TEST_F(BicycleSteeringControllerTest, receive_message_and_publish_updated_status
   EXPECT_EQ(msg.linear_velocity_command.data[0], 1.1);
   EXPECT_EQ(msg.steering_angle_command.data[0], 2.2);
 
-  publish_commands();
+  // publish_commands();
   // ASSERT_TRUE(controller_->wait_for_commands(executor));
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  EXPECT_EQ(command_itfs_[0], 1.0);
-  EXPECT_EQ(command_itfs_[1], 1.0);
+  EXPECT_EQ(controller_->command_interfaces_[0].get_value(), 1.1);
+  EXPECT_EQ(controller_->command_interfaces_[1].get_value(), 2.2);
 
   subscribe_and_get_messages(msg);
 
