@@ -5,32 +5,49 @@ mecanum_drive_controller:
     description: "Timeout for controller references after which they will be reset. This is especially useful for controllers that can cause unwanted and dangerous behaviour if reference is not reset, e.g., velocity controllers. If value is 0 the reference is reset after each run.",
 
   }
-  wheel0_name: {
-    type: string,
-    default_value: "front_left_wheel_joint",
-    description: "Name of the front left wheel.",
-    read_only: true,
 
-  }
-  wheel1_name: {
-    type: string,
-    default_value: "back_left_wheel_joint",
-    description: "Name of the back left wheel.",
-    read_only: true,
+  kinematics:
+    base_frame_offset:
+      x: {
+        type: double,
+        default_value: 0.0,
+        description: "Base frame offset along X axis of base_frame (base_link frame)." ,
+        read_only: true,
+      }
+      y: {
+        type: double,
+        default_value: 0.0,
+        description: "Base frame offset along Y axis of base_frame (base_link frame)." ,
+        read_only: true,
+      }
+      theta: {
+        type: double,
+        default_value: 0.0,
+        description: "Base frame offset along Theta axis of base_frame (base_link frame).",
+        read_only: true,
+      }
 
-  }
-  wheel2_name: {
-    type: string,
-    default_value: "back_right_wheel_joint",
-    description: "Name of the back right wheel.",
-    read_only: true,
+    wheels_radius: {
+      type: double,
+      default_value: 0.0,
+      description: "Wheel's radius.",
+      read_only: false,
 
-  }
-  wheel3_name: {
-    type: string,
-    default_value: "front_right_wheel_joint",
-    description: "Name of the front right wheel.",
-    read_only: true,
+    }
+
+    wheels_k: {
+      type: double,
+      default_value: 0.0,
+      description: "Wheels geometric param used in mecanum wheels' IK.",
+      read_only: false,
+
+    }
+
+  wheel_names: {
+    type: string_array,
+    default_value: ["", "", "", ""],
+    description: "Name of the wheels.",
+    read_only: false,
 
   }
   base_frame_id: {
@@ -54,27 +71,7 @@ mecanum_drive_controller:
     read_only: false,
 
   }
-  base_frame_offset: {
-    type: double_array,
-    default_value: [0.0, 0.0, 0.0],
-    description: "Base frame offset values, [base_frame_offset/x base_frame_offset/y base_frame_offset/theta].",
-    read_only: false,
 
-  }
-  wheels_radius: {
-    type: double,
-    default_value: 0.0,
-    description: "Wheel's radius.",
-    read_only: false,
-
-  }
-  wheels_k: {
-    type: double,
-    default_value: 0.0,
-    description: "Wheels geometric param used in mecanum wheels' IK.",
-    read_only: false,
-
-  }
   use_realigned_roller_joints: {
     type: bool,
     default_value: false,
