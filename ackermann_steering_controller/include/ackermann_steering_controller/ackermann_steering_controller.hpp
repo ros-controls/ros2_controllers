@@ -50,8 +50,9 @@ public:
   ACKERMANN_STEERING_CONTROLLER__VISIBILITY_PUBLIC void
   initialize_implementation_parameter_listener() override;
 
-private:
+protected:
   std::shared_ptr<ackermann_steering_controller::ParamListener> ackermann_param_listener_;
+  ackermann_steering_controller::Params ackermann_params_;
 };
 }  // namespace ackermann_steering_controller
 

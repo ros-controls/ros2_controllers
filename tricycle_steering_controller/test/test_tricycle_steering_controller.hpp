@@ -52,7 +52,6 @@ namespace
 constexpr auto NODE_SUCCESS = controller_interface::CallbackReturn::SUCCESS;
 constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
 const double COMMON_THRESHOLD = 1e-6;
-
 }  // namespace
 // namespace
 
@@ -117,8 +116,6 @@ public:
     return wait_for_command(executor, ref_subscriber_wait_set_, timeout);
   }
 
-  // TODO(anyone): add implementation of any methods of your controller is needed
-
 private:
   rclcpp::WaitSet ref_subscriber_wait_set_;
 };
@@ -168,7 +165,7 @@ protected:
     command_ifs.emplace_back(command_itfs_.back());
 
     command_itfs_.emplace_back(hardware_interface::CommandInterface(
-      front_wheels_names_[0], steering_interface_name_,
+      rear_wheels_names_[1], steering_interface_name_,
       &joint_command_values_[STATE_DRIVE_LEFT_WHEEL]));
     command_ifs.emplace_back(command_itfs_.back());
 
@@ -271,6 +268,8 @@ protected:
     rear_wheels_names_[0], rear_wheels_names_[1], front_wheels_names_[0]};
 
   double wheelbase_ = 3.24644;
+  double wheel_track_ = 1.212121;
+
   double front_wheels_radius_ = 0.45;
   double rear_wheels_radius_ = 0.45;
 

@@ -29,13 +29,13 @@ void AckermannSteeringController::initialize_implementation_parameter_listener()
 
 controller_interface::CallbackReturn AckermannSteeringController::configure_odometry()
 {
-  ackermann_steering_controller::Params ackerman_params = ackermann_param_listener_->get_params();
+  ackermann_params_ = ackermann_param_listener_->get_params();
 
-  const double front_wheels_radius = ackerman_params.front_wheels_radius;
-  const double rear_wheels_radius = ackerman_params.rear_wheels_radius;
-  const double front_wheel_track = ackerman_params.front_wheel_track;
-  const double rear_wheel_track = ackerman_params.rear_wheel_track;
-  const double wheelbase = ackerman_params.wheelbase;
+  const double front_wheels_radius = ackermann_params_.front_wheels_radius;
+  const double rear_wheels_radius = ackermann_params_.rear_wheels_radius;
+  const double front_wheel_track = ackermann_params_.front_wheel_track;
+  const double rear_wheel_track = ackermann_params_.rear_wheel_track;
+  const double wheelbase = ackermann_params_.wheelbase;
 
   if (params_.front_steering)
   {
