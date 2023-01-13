@@ -76,10 +76,10 @@ public:
     auto ret =
       tricycle_steering_controller::TricycleSteeringController::on_configure(previous_state);
     // Only if on_configure is successful create subscription
-    // if (ret == CallbackReturn::SUCCESS)
-    // {
-    //   ref_subscriber_wait_set_.add_subscription(ref_subscriber_twist_);
-    // }
+    if (ret == CallbackReturn::SUCCESS)
+    {
+      ref_subscriber_wait_set_.add_subscription(ref_subscriber_twist_);
+    }
     return ret;
   }
 

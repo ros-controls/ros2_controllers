@@ -1,4 +1,4 @@
-test_bicycle_steering_controller:
+test_tricycle_steering_controller:
   ros__parameters:
 
     reference_timeout: 2.0
