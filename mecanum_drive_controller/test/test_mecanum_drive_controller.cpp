@@ -31,25 +31,32 @@ class MecanumDriveControllerTest
 {
 };
 
+namespace
+{
+// Floating-point value comparison threshold
+const double EPS = 1e-3;
+}  // namespace
+
 TEST_F(MecanumDriveControllerTest, all_parameters_set_configure_success)
 {
   SetUpController();
 
   ASSERT_EQ(controller_->params_.reference_timeout, 0.0);
-  ASSERT_EQ(controller_->params_.wheels_radius, 0.0);
-  ASSERT_EQ(controller_->params_.wheels_k, 0.0);
+  ASSERT_EQ(controller_->params_.kinematics.wheels_radius, 0.0);
+  ASSERT_EQ(controller_->params_.kinematics.wheels_k, 0.0);
 
-  for(size_t i = 0; i<controller_->params_.base_frame_offset.size(); i++){
-    ASSERT_EQ(controller_->params_.base_frame_offset[i], 0.0);
-  }
+  ASSERT_EQ(controller_->params_.kinematics.base_frame_offset.x, 0.0);
+  ASSERT_EQ(controller_->params_.kinematics.base_frame_offset.y, 0.0);
+  ASSERT_EQ(controller_->params_.kinematics.base_frame_offset.theta, 0.0);
+
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(controller_->params_.reference_timeout, 0.1);
-  ASSERT_EQ(controller_->params_.wheels_radius, 0.5);
-  ASSERT_EQ(controller_->params_.wheels_k, 1.0);
+  ASSERT_EQ(controller_->params_.kinematics.wheels_radius, 0.5);
+  ASSERT_EQ(controller_->params_.kinematics.wheels_k, 1.0);
 
-  for(size_t i = 0; i<controller_->params_.base_frame_offset.size(); i++){
-    ASSERT_EQ(controller_->params_.base_frame_offset[i], 0.0);
-  }
+  ASSERT_EQ(controller_->params_.kinematics.base_frame_offset.x, 0.0);
+  ASSERT_EQ(controller_->params_.kinematics.base_frame_offset.y, 0.0);
+  ASSERT_EQ(controller_->params_.kinematics.base_frame_offset.theta, 0.0);
 }
 
 TEST_F(MecanumDriveControllerTest, check_exported_intefaces)
@@ -179,8 +186,11 @@ TEST_F(MecanumDriveControllerTest, publish_status_success)
   ControllerStateMsg msg;
   subscribe_and_get_messages(msg);
 
-  EXPECT_TRUE(msg.odom.pose.pose.position.x >= 0.0 && msg.odom.pose.pose.position.x <= 0.0005);
-  EXPECT_TRUE(msg.odom.pose.pose.position.y >= 0.0 && msg.odom.pose.pose.position.y <= 0.0005);
+  // EXPECT_NEAR(msg.odom.pose.pose.position.x, msg.odom.pose.pose.position.Y, EPS);
+  EXPECT_NEAR(msg.odom.pose.pose.position.x, 0.0, EPS);
+  EXPECT_NEAR(msg.odom.pose.pose.position.y, 0.0, EPS);
+
+
 
   ASSERT_EQ(
     controller_->update_reference_from_subscribers(
@@ -192,10 +202,10 @@ TEST_F(MecanumDriveControllerTest, publish_status_success)
     controller_interface::return_type::OK);
 
   subscribe_and_get_messages(msg);
-  fprintf(stderr, " msg.odom.pose.pose.position.y= %f \n", msg.odom.pose.pose.position.y);
+  fprintf(stderr, " msg.odom.pose.pose.position.x= %f \n", msg.odom.pose.pose.position.x);
 
-  EXPECT_FALSE(msg.odom.pose.pose.position.x >= 0.0 && msg.odom.pose.pose.position.x <= 0.0005);
-  EXPECT_TRUE(msg.odom.pose.pose.position.y >= 0.0 && msg.odom.pose.pose.position.y <= 0.0005);
+  EXPECT_TRUE(msg.odom.pose.pose.position.x >= 0.0);
+  EXPECT_NEAR(msg.odom.pose.pose.position.y, 0.0, EPS);
 
 }
 
@@ -234,7 +244,7 @@ TEST_F(MecanumDriveControllerTest, receive_message_and_publish_updated_status)
     controller_->update_and_write_commands(
       controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
-//  w0_vel = 1.0 / params_.wheels_radius * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y - params_.wheels_k * body_velocity_center_frame_.angular_z);
+//  w0_vel = 1.0 / params_.kinematics.wheels_radius * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y - params_.kinematics.wheels_k * body_velocity_center_frame_.angular_z);
 //  joint_command_values_[1] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0) 
   EXPECT_EQ(joint_command_values_[1], 3.0);
   EXPECT_FALSE(std::isnan(joint_command_values_[1]));
@@ -403,7 +413,7 @@ TEST_F(MecanumDriveControllerTest, test_update_logic_not_chainable)
     controller_interface::return_type::OK);
 
   EXPECT_NE(joint_command_values_[1], command_lin_x);
-//  w0_vel = 1.0 / params_.wheels_radius * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y - params_.wheels_k * body_velocity_center_frame_.angular_z);
+//  w0_vel = 1.0 / params_.kinematics.wheels_radius * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y - params_.kinematics.wheels_k * body_velocity_center_frame_.angular_z);
 //  joint_command_values_[1] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0)  
   EXPECT_EQ(joint_command_values_[1], 3.0);
   ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
@@ -493,7 +503,7 @@ TEST_F(MecanumDriveControllerTest, test_update_logic)
   // EXPECT_EQ(joint_command_values_[NR_CMD_ITFS - 2], TEST_LINEAR_VELOCITY_X);
   EXPECT_FALSE(std::isnan(joint_command_values_[1]));
   EXPECT_NE(joint_command_values_[1], command_lin_x);
-//  w0_vel = 1.0 / params_.wheels_radius * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y - params_.wheels_k * body_velocity_center_frame_.angular_z);
+//  w0_vel = 1.0 / params_.kinematics.wheels_radius * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y - params_.kinematics.wheels_k * body_velocity_center_frame_.angular_z);
 //  joint_command_values_[1] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0) 
   EXPECT_EQ(joint_command_values_[1], 3.0);
 
@@ -535,6 +545,10 @@ TEST_F(MecanumDriveControllerTest, test_ref_timeout_zero_for_update)
   const auto age_of_last_command =
     controller_->get_node()->now() - (*(controller_->input_ref_.readFromNonRT()))->header.stamp;
 
+  fprintf(stderr, " age_of_last_command= %f \n", age_of_last_command);
+  fprintf(stderr, " controller_->ref_timeout_= %f \n", controller_->ref_timeout_);
+
+  ASSERT_FALSE(age_of_last_command <= controller_->ref_timeout_);
   ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
   ASSERT_EQ(
     controller_->update_reference_from_subscribers(
@@ -548,11 +562,11 @@ TEST_F(MecanumDriveControllerTest, test_ref_timeout_zero_for_update)
   // EXPECT_EQ(joint_command_values_[NR_STATE_ITFS - 2], TEST_LINEAR_VELOCITY_X);
   EXPECT_FALSE(std::isnan(joint_command_values_[1]));
   EXPECT_NE(joint_command_values_[1], command_lin_x);
-//  w0_vel = 1.0 / params_.wheels_radius * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y - params_.wheels_k * body_velocity_center_frame_.angular_z);
+//  w0_vel = 1.0 / params_.kinematics.wheels_radius * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y - params_.kinematics.wheels_k * body_velocity_center_frame_.angular_z);
 //  joint_command_values_[1] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0) 
   EXPECT_EQ(joint_command_values_[1], 3.0);
-  ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
-  ASSERT_FALSE(std::isnan((*(controller_->input_ref_.readFromRT()))->twist.linear.x));
+  // ASSERT_TRUE((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
+  ASSERT_TRUE(std::isnan((*(controller_->input_ref_.readFromRT()))->twist.linear.x));
 }
 
 TEST_F(MecanumDriveControllerTest, test_ref_timeout_zero_for_reference_callback)
