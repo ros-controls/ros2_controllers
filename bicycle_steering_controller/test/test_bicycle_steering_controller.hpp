@@ -60,6 +60,7 @@ class TestableBicycleSteeringController
 : public bicycle_steering_controller::BicycleSteeringController
 {
   FRIEND_TEST(BicycleSteeringControllerTest, all_parameters_set_configure_success);
+  FRIEND_TEST(BicycleSteeringControllerTest, check_exported_intefaces);
   FRIEND_TEST(BicycleSteeringControllerTest, activate_success);
   FRIEND_TEST(BicycleSteeringControllerTest, update_success);
   FRIEND_TEST(BicycleSteeringControllerTest, deactivate_success);
@@ -158,11 +159,11 @@ protected:
     command_ifs.reserve(joint_command_values_.size());
 
     command_itfs_.emplace_back(hardware_interface::CommandInterface(
-      rear_wheels_names_[0], traction_interface_name_, &joint_command_values_[CMD_DRIVE_WHEEL]));
+      rear_wheels_names_[0], traction_interface_name_, &joint_command_values_[STATE_DRIVE_WHEEL]));
     command_ifs.emplace_back(command_itfs_.back());
 
     command_itfs_.emplace_back(hardware_interface::CommandInterface(
-      front_wheels_names_[0], steering_interface_name_, &joint_command_values_[CMD_STEER]));
+      front_wheels_names_[0], steering_interface_name_, &joint_command_values_[STATE_STEER_AXIS]));
     command_ifs.emplace_back(command_itfs_.back());
 
     std::vector<hardware_interface::LoanedStateInterface> state_ifs;
@@ -174,7 +175,7 @@ protected:
     state_ifs.emplace_back(state_itfs_.back());
 
     state_itfs_.emplace_back(hardware_interface::StateInterface(
-      front_wheels_names_[0], steering_interface_name_, &joint_state_values_[CMD_STEER]));
+      front_wheels_names_[0], steering_interface_name_, &joint_state_values_[STATE_STEER_AXIS]));
     state_ifs.emplace_back(state_itfs_.back());
 
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));

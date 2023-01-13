@@ -61,6 +61,7 @@ class TestableTricycleSteeringController
 : public tricycle_steering_controller::TricycleSteeringController
 {
   FRIEND_TEST(TricycleSteeringControllerTest, all_parameters_set_configure_success);
+  FRIEND_TEST(TricycleSteeringControllerTest, check_exported_intefaces);
   FRIEND_TEST(TricycleSteeringControllerTest, activate_success);
   FRIEND_TEST(TricycleSteeringControllerTest, update_success);
   FRIEND_TEST(TricycleSteeringControllerTest, deactivate_success);
@@ -162,11 +163,18 @@ protected:
     command_ifs.reserve(joint_command_values_.size());
 
     command_itfs_.emplace_back(hardware_interface::CommandInterface(
-      rear_wheels_names_[0], traction_interface_name_, &joint_command_values_[CMD_DRIVE_WHEEL]));
+      rear_wheels_names_[0], traction_interface_name_,
+      &joint_command_values_[STATE_DRIVE_RIGHT_WHEEL]));
     command_ifs.emplace_back(command_itfs_.back());
 
     command_itfs_.emplace_back(hardware_interface::CommandInterface(
-      front_wheels_names_[0], steering_interface_name_, &joint_command_values_[CMD_STEER]));
+      front_wheels_names_[0], steering_interface_name_,
+      &joint_command_values_[STATE_DRIVE_RIGHT_WHEEL]));
+    command_ifs.emplace_back(command_itfs_.back());
+
+    command_itfs_.emplace_back(hardware_interface::CommandInterface(
+      front_wheels_names_[0], steering_interface_name_,
+      &joint_command_values_[STATE_DRIVE_LEFT_WHEEL]));
     command_ifs.emplace_back(command_itfs_.back());
 
     std::vector<hardware_interface::LoanedStateInterface> state_ifs;
@@ -270,7 +278,7 @@ protected:
   double rear_wheels_radius_ = 0.45;
 
   std::array<double, 3> joint_state_values_ = {3.3, 3.3, 0.5};
-  std::array<double, 2> joint_command_values_ = {1.1, 2.2};
+  std::array<double, 3> joint_command_values_ = {1.1, 3.3, 2.2};
   std::array<std::string, 2> joint_reference_interfaces_ = {"linear/velocity", "angular/position"};
   std::string steering_interface_name_ = "position";
   // defined in setup

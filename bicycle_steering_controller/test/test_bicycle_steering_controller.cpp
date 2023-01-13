@@ -53,10 +53,11 @@ TEST_F(BicycleSteeringControllerTest, check_exported_intefaces)
   auto command_intefaces = controller_->command_interface_configuration();
   ASSERT_EQ(command_intefaces.names.size(), joint_command_values_.size());
   EXPECT_EQ(
-    command_intefaces.names[CMD_DRIVE_WHEEL],
+    command_intefaces.names[STATE_DRIVE_WHEEL],
     rear_wheels_names_[0] + "/" + traction_interface_name_);
   EXPECT_EQ(
-    command_intefaces.names[CMD_STEER], front_wheels_names_[0] + "/" + steering_interface_name_);
+    command_intefaces.names[STATE_STEER_AXIS],
+    front_wheels_names_[0] + "/" + steering_interface_name_);
 
   auto state_intefaces = controller_->state_interface_configuration();
   ASSERT_EQ(state_intefaces.names.size(), joint_state_values_.size());
@@ -64,7 +65,8 @@ TEST_F(BicycleSteeringControllerTest, check_exported_intefaces)
     state_intefaces.names[STATE_DRIVE_WHEEL],
     rear_wheels_names_[0] + "/" + traction_interface_name_);
   EXPECT_EQ(
-    state_intefaces.names[CMD_STEER], front_wheels_names_[0] + "/" + steering_interface_name_);
+    state_intefaces.names[STATE_STEER_AXIS],
+    front_wheels_names_[0] + "/" + steering_interface_name_);
 
   // check ref itfs
   auto reference_interfaces = controller_->export_reference_interfaces();
