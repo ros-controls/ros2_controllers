@@ -266,9 +266,9 @@ TEST_F(MecanumDriveControllerTest, test_sending_too_old_message)
   // try to set command with time before timeout - command is not updated
   auto reference = *(controller_->input_ref_.readFromNonRT());
   auto old_timestamp = reference->header.stamp;
-  EXPECT_TRUE(std::isnan((reference)->twist.linear.x));
-  EXPECT_TRUE(std::isnan((reference)->twist.linear.y));
-  EXPECT_TRUE(std::isnan((reference)->twist.angular.z));
+  EXPECT_TRUE(std::isnan(reference->twist.linear.x));
+  EXPECT_TRUE(std::isnan(reference->twist.linear.y));
+  EXPECT_TRUE(std::isnan(reference->twist.angular.z));
 
   publish_commands(
     controller_->get_node()->now() - controller_->ref_timeout_ -
@@ -374,7 +374,6 @@ TEST_F(MecanumDriveControllerTest, test_update_logic_not_chainable)
       controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  // EXPECT_TRUE(std::isnan(joint_command_values_[NR_CMD_ITFS - 2]));
   EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[0]));
 
   EXPECT_EQ(joint_command_values_[1], 0);
