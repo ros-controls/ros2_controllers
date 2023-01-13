@@ -162,7 +162,7 @@ TEST_F(BicycleSteeringControllerTest, test_update_logic)
     controller_->command_interfaces_[1].get_value(), 1.4179821977774734, COMMON_THRESHOLD);
 
   EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromRT()))->twist.linear.x));
-  EXPECT_EQ(controller_->reference_interfaces_.size(), joint_names_.size());
+  EXPECT_EQ(controller_->reference_interfaces_.size(), joint_reference_interfaces_.size());
   for (const auto & interface : controller_->reference_interfaces_)
   {
     EXPECT_FALSE(std::isnan(interface));

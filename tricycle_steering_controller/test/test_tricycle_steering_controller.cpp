@@ -142,125 +142,45 @@ TEST_F(TricycleSteeringControllerTest, reactivate_success)
     controller_interface::return_type::OK);
 }
 
-// TEST_F(TricycleSteeringControllerTest, test_update_logic_slow)
-// {
-//   SetUpController();
-//   rclcpp::executors::MultiThreadedExecutor executor;
-//   executor.add_node(controller_->get_node()->get_node_base_interface());
-//   executor.add_node(service_caller_node_->get_node_base_interface());
+TEST_F(TricycleSteeringControllerTest, test_update_logic)
+{
+  SetUpController();
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
 
-//   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-//   controller_->set_chained_mode(false);
-//   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-//   ASSERT_FALSE(controller_->is_in_chained_mode());
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  controller_->set_chained_mode(false);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_FALSE(controller_->is_in_chained_mode());
 
-//   // set command statically
-//   static constexpr double TEST_DISPLACEMENT = 23.24;
-//   std::shared_ptr<ControllerReferenceMsg> msg = std::make_shared<ControllerReferenceMsg>();
-//   // When slow mode is enabled command ends up being half of the value
-//   msg->joint_names = joint_names_;
-//   msg->displacements.resize(joint_names_.size(), TEST_DISPLACEMENT);
-//   msg->velocities.resize(joint_names_.size(), std::numeric_limits<double>::quiet_NaN());
-//   msg->duration = std::numeric_limits<double>::quiet_NaN();
-//   controller_->input_ref_.writeFromNonRT(msg);
-//   controller_->control_mode_.writeFromNonRT(control_mode_type::SLOW);
+  // set command statically
+  std::shared_ptr<ControllerReferenceMsg> msg = std::make_shared<ControllerReferenceMsg>();
+  msg->header.stamp = controller_->get_node()->now();
+  msg->twist.linear.x = 0.1;
+  msg->twist.angular.z = 0.2;
+  controller_->input_ref_.writeFromNonRT(msg);
 
-//   EXPECT_EQ(*(controller_->control_mode_.readFromRT()), control_mode_type::SLOW);
-//   ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->displacements[0], TEST_DISPLACEMENT);
-//   ASSERT_EQ(
-//     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-//     controller_interface::return_type::OK);
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
 
-//   EXPECT_EQ(joint_command_values_[STATE_DRIVE_RIGHT_WHEEL], TEST_DISPLACEMENT / 2);
-//   EXPECT_TRUE(std::isnan((*(controller_->input_ref_.readFromRT()))->displacements[0]));
-//   EXPECT_EQ(controller_->reference_interfaces_.size(), joint_names_.size());
-//   for (const auto & interface : controller_->reference_interfaces_)
-//   {
-//     EXPECT_TRUE(std::isnan(interface));
-//   }
-// }
+  EXPECT_NEAR(
+    controller_->command_interfaces_[STATE_DRIVE_RIGHT_WHEEL].get_value(), 0.253221,
+    COMMON_THRESHOLD);
+  EXPECT_NEAR(
+    controller_->command_interfaces_[STATE_DRIVE_LEFT_WHEEL].get_value(), 0.253221,
+    COMMON_THRESHOLD);
+  EXPECT_NEAR(
+    controller_->command_interfaces_[STATE_STEER_AXIS].get_value(), 1.4179821977774734,
+    COMMON_THRESHOLD);
 
-// TEST_F(TricycleSteeringControllerTest, test_update_logic_chainable_fast)
-// {
-//   SetUpController();
-//   rclcpp::executors::MultiThreadedExecutor executor;
-//   executor.add_node(controller_->get_node()->get_node_base_interface());
-//   executor.add_node(service_caller_node_->get_node_base_interface());
-
-//   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-//   controller_->set_chained_mode(true);
-//   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-//   ASSERT_TRUE(controller_->is_in_chained_mode());
-
-//   // set command statically
-//   static constexpr double TEST_DISPLACEMENT = 23.24;
-//   std::shared_ptr<ControllerReferenceMsg> msg = std::make_shared<ControllerReferenceMsg>();
-//   msg->joint_names = joint_names_;
-//   msg->displacements.resize(joint_names_.size(), TEST_DISPLACEMENT);
-//   msg->velocities.resize(joint_names_.size(), std::numeric_limits<double>::quiet_NaN());
-//   msg->duration = std::numeric_limits<double>::quiet_NaN();
-//   controller_->input_ref_.writeFromNonRT(msg);
-//   // this is input source in chained mode
-//   controller_->reference_interfaces_[STATE_DRIVE_RIGHT_WHEEL] = TEST_DISPLACEMENT * 2;
-
-//   ASSERT_EQ(
-//     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-//     controller_interface::return_type::OK);
-
-//   EXPECT_EQ(*(controller_->control_mode_.readFromRT()), control_mode_type::FAST);
-//   // reference_interfaces is directly applied
-//   EXPECT_EQ(joint_command_values_[STATE_DRIVE_RIGHT_WHEEL], TEST_DISPLACEMENT * 2);
-//   // message is not touched in chained mode
-//   EXPECT_EQ((*(controller_->input_ref_.readFromRT()))->displacements[0], TEST_DISPLACEMENT);
-//   EXPECT_EQ(*(controller_->control_mode_.readFromRT()), control_mode_type::FAST);
-//   EXPECT_EQ(controller_->reference_interfaces_.size(), joint_names_.size());
-//   for (const auto & interface : controller_->reference_interfaces_)
-//   {
-//     EXPECT_TRUE(std::isnan(interface));
-//   }
-// }
-
-// TEST_F(TricycleSteeringControllerTest, test_update_logic_chainable_slow)
-// {
-//   SetUpController();
-//   rclcpp::executors::MultiThreadedExecutor executor;
-//   executor.add_node(controller_->get_node()->get_node_base_interface());
-//   executor.add_node(service_caller_node_->get_node_base_interface());
-
-//   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-//   controller_->set_chained_mode(true);
-//   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-//   ASSERT_TRUE(controller_->is_in_chained_mode());
-
-//   // set command statically
-//   static constexpr double TEST_DISPLACEMENT = 23.24;
-//   std::shared_ptr<ControllerReferenceMsg> msg = std::make_shared<ControllerReferenceMsg>();
-//   // When slow mode is enabled command ends up being half of the value
-//   msg->joint_names = joint_names_;
-//   msg->displacements.resize(joint_names_.size(), TEST_DISPLACEMENT);
-//   msg->velocities.resize(joint_names_.size(), std::numeric_limits<double>::quiet_NaN());
-//   msg->duration = std::numeric_limits<double>::quiet_NaN();
-//   controller_->input_ref_.writeFromNonRT(msg);
-//   controller_->control_mode_.writeFromNonRT(control_mode_type::SLOW);
-//   // this is input source in chained mode
-//   controller_->reference_interfaces_[STATE_DRIVE_RIGHT_WHEEL] = TEST_DISPLACEMENT * 4;
-
-//   EXPECT_EQ(*(controller_->control_mode_.readFromRT()), control_mode_type::SLOW);
-//   ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->displacements[0], TEST_DISPLACEMENT);
-//   ASSERT_EQ(
-//     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-//     controller_interface::return_type::OK);
-
-//   // reference_interfaces is directly applied
-//   EXPECT_EQ(joint_command_values_[STATE_DRIVE_RIGHT_WHEEL], TEST_DISPLACEMENT * 2);
-//   // message is not touched in chained mode
-//   EXPECT_EQ((*(controller_->input_ref_.readFromRT()))->displacements[0], TEST_DISPLACEMENT);
-//   EXPECT_EQ(controller_->reference_interfaces_.size(), joint_names_.size());
-//   for (const auto & interface : controller_->reference_interfaces_)
-//   {
-//     EXPECT_TRUE(std::isnan(interface));
-//   }
-// }
+  EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromRT()))->twist.linear.x));
+  EXPECT_EQ(controller_->reference_interfaces_.size(), joint_reference_interfaces_.size());
+  for (const auto & interface : controller_->reference_interfaces_)
+  {
+    EXPECT_FALSE(std::isnan(interface));
+  }
+}
 
 // TEST_F(TricycleSteeringControllerTest, publish_status_success)
 // {
