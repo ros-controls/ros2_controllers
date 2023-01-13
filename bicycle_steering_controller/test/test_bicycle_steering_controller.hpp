@@ -55,11 +55,8 @@ class TestableBicycleSteeringController
   FRIEND_TEST(BicycleSteeringControllerTest, all_parameters_set_configure_success);
   FRIEND_TEST(BicycleSteeringControllerTest, activate_success);
   FRIEND_TEST(BicycleSteeringControllerTest, reactivate_success);
-  FRIEND_TEST(BicycleSteeringControllerTest, test_setting_slow_mode_service);
   FRIEND_TEST(BicycleSteeringControllerTest, test_update_logic);
   FRIEND_TEST(BicycleSteeringControllerTest, test_update_logic_slow);
-  FRIEND_TEST(BicycleSteeringControllerTest, test_update_logic_chainable_fast);
-  FRIEND_TEST(BicycleSteeringControllerTest, test_update_logic_chainable_slow);
 
 public:
   controller_interface::CallbackReturn on_configure(
@@ -107,8 +104,6 @@ public:
     return wait_for_command(executor, ref_subscriber_wait_set_, timeout);
   }
 
-  // TODO(anyone): add implementation of any methods of your controller is needed
-
 private:
   rclcpp::WaitSet ref_subscriber_wait_set_;
 };
@@ -130,8 +125,6 @@ public:
       "/test_bicycle_steering_controller/commands", rclcpp::SystemDefaultsQoS());
 
     // service_caller_node_ = std::make_shared<rclcpp::Node>("service_caller");
-    // slow_control_service_client_ = service_caller_node_->create_client<ControllerModeSrvType>(
-    //   "/test_bicycle_steering_controller/set_slow_control_mode");
   }
 
   static void TearDownTestCase() {}
@@ -227,7 +220,7 @@ protected:
       }
     };
 
-    // wait_for_topic(command_publisher_->get_topic_name());
+    wait_for_topic(command_publisher_->get_topic_name());
 
     ControllerReferenceMsg msg;
     msg.twist.linear.x = linear;
@@ -289,7 +282,6 @@ protected:
   rclcpp::Node::SharedPtr command_publisher_node_;
   rclcpp::Publisher<ControllerReferenceMsg>::SharedPtr command_publisher_;
   // rclcpp::Node::SharedPtr service_caller_node_;
-  // rclcpp::Client<ControllerModeSrvType>::SharedPtr slow_control_service_client_;
 };
 
 #endif  // TEST_BICYCLE_STEERING_CONTROLLER_HPP_
