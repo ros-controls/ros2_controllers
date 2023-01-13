@@ -3,13 +3,17 @@ test_mecanum_drive_controller:
 
     reference_timeout: 0.1
 
-    wheel0_name: "front_left_wheel_joint"
+    kinematics:
+      base_frame_offset:
+        x: 0.0
+        y: 0.0
+        theta: 0.0
 
-    wheel1_name: "back_left_wheel_joint"
+      wheels_radius: 0.5
 
-    wheel2_name: "back_right_wheel_joint"
+      wheels_k: 1.0
 
-    wheel3_name: "front_right_wheel_joint"
+    wheel_names: ["front_left_wheel_joint", "back_left_wheel_joint", "back_right_wheel_joint", "front_right_wheel_joint"]
 
     base_frame_id: "base_link"
 
@@ -18,10 +22,6 @@ test_mecanum_drive_controller:
     enable_odom_tf: true
 
     base_frame_offset: [0.0, 0.0, 0.0]
-
-    wheels_radius: 0.5
-
-    wheels_k: 1.0
 
     use_realigned_roller_joints: false
 

@@ -76,7 +76,7 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
   params_ = param_listener_->get_params();
 
   // Set wheel params for the odometry computation
-  odometry_.setWheelsParams(params_.wheels_k, params_.wheels_radius);
+  odometry_.setWheelsParams(params_.kinematics.wheels_k, params_.kinematics.wheels_radius);
 
   // topics QoS
   auto subscribers_qos = rclcpp::SystemDefaultsQoS();
@@ -223,13 +223,13 @@ MecanumDriveController::command_interface_configuration() const
 
   command_interfaces_config.names.reserve(NR_CMD_ITFS);
   command_interfaces_config.names.push_back(
-    params_.wheel0_name + "/" + hardware_interface::HW_IF_VELOCITY);
+    params_.wheel_names[0] + "/" + hardware_interface::HW_IF_VELOCITY);
   command_interfaces_config.names.push_back(
-    params_.wheel1_name + "/" + hardware_interface::HW_IF_VELOCITY);
+    params_.wheel_names[1] + "/" + hardware_interface::HW_IF_VELOCITY);
   command_interfaces_config.names.push_back(
-    params_.wheel2_name + "/" + hardware_interface::HW_IF_VELOCITY);
+    params_.wheel_names[2] + "/" + hardware_interface::HW_IF_VELOCITY);
   command_interfaces_config.names.push_back(
-    params_.wheel3_name + "/" + hardware_interface::HW_IF_VELOCITY);
+    params_.wheel_names[3] + "/" + hardware_interface::HW_IF_VELOCITY);
 
   return command_interfaces_config;
 }
@@ -242,13 +242,13 @@ controller_interface::InterfaceConfiguration MecanumDriveController::state_inter
 
   state_interfaces_config.names.reserve(NR_STATE_ITFS);
   state_interfaces_config.names.push_back(
-    params_.wheel0_name + "/" + hardware_interface::HW_IF_VELOCITY);
+    params_.wheel_names[0] + "/" + hardware_interface::HW_IF_VELOCITY);
   state_interfaces_config.names.push_back(
-    params_.wheel1_name + "/" + hardware_interface::HW_IF_VELOCITY);
+    params_.wheel_names[1] + "/" + hardware_interface::HW_IF_VELOCITY);
   state_interfaces_config.names.push_back(
-    params_.wheel2_name + "/" + hardware_interface::HW_IF_VELOCITY);
+    params_.wheel_names[2] + "/" + hardware_interface::HW_IF_VELOCITY);
   state_interfaces_config.names.push_back(
-    params_.wheel3_name + "/" + hardware_interface::HW_IF_VELOCITY);
+    params_.wheel_names[3] + "/" + hardware_interface::HW_IF_VELOCITY);
 
   return state_interfaces_config;
 }
@@ -367,7 +367,7 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
   if (age_of_last_command <= ref_timeout_ || ref_timeout_ == rclcpp::Duration::from_seconds(0))
   {
     tf2::Quaternion quaternion;
-    quaternion.setRPY(0.0, 0.0, params_.base_frame_offset[2]);
+    quaternion.setRPY(0.0, 0.0, params_.kinematics.base_frame_offset.theta);
     /// \note The variables meaning:
     /// angular_transformation_from_base_2_center: Rotation transformation matrix, to transform from base frame to center frame
     /// linear_transformation_from_base_2_center: offset/linear transformation matrix, to transform from base frame to center frame
@@ -378,20 +378,20 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
     tf2::Vector3 velocity_in_base_frame_w_r_t_center_frame_ =
       angular_transformation_from_base_2_center * tf2::Vector3(reference_interfaces_[0], reference_interfaces_[1], 0.0);
     tf2::Vector3 linear_transformation_from_base_2_center =
-      tf2::Vector3(params_.base_frame_offset[0], params_.base_frame_offset[1], 0.0);
+      tf2::Vector3(params_.kinematics.base_frame_offset.x, params_.kinematics.base_frame_offset.y, 0.0);
 
     velocity_in_center_frame_linear_x = velocity_in_base_frame_w_r_t_center_frame_.x() + linear_transformation_from_base_2_center.y() * reference_interfaces_[2];
     velocity_in_center_frame_linear_y = velocity_in_base_frame_w_r_t_center_frame_.y() - linear_transformation_from_base_2_center.x() * reference_interfaces_[2];
     velocity_in_center_frame_angular_z = reference_interfaces_[2];
 
     double w0_vel =
-      1.0 / params_.wheels_radius * (velocity_in_center_frame_linear_x - velocity_in_center_frame_linear_y - params_.wheels_k * velocity_in_center_frame_angular_z);
+      1.0 / params_.kinematics.wheels_radius * (velocity_in_center_frame_linear_x - velocity_in_center_frame_linear_y - params_.kinematics.wheels_k * velocity_in_center_frame_angular_z);
     double w1_vel =
-      1.0 / params_.wheels_radius * (velocity_in_center_frame_linear_x + velocity_in_center_frame_linear_y - params_.wheels_k * velocity_in_center_frame_angular_z);
+      1.0 / params_.kinematics.wheels_radius * (velocity_in_center_frame_linear_x + velocity_in_center_frame_linear_y - params_.kinematics.wheels_k * velocity_in_center_frame_angular_z);
     double w2_vel =
-      1.0 / params_.wheels_radius * (velocity_in_center_frame_linear_x - velocity_in_center_frame_linear_y + params_.wheels_k * velocity_in_center_frame_angular_z);
+      1.0 / params_.kinematics.wheels_radius * (velocity_in_center_frame_linear_x - velocity_in_center_frame_linear_y + params_.kinematics.wheels_k * velocity_in_center_frame_angular_z);
     double w3_vel =
-      1.0 / params_.wheels_radius * (velocity_in_center_frame_linear_x + velocity_in_center_frame_linear_y + params_.wheels_k * velocity_in_center_frame_angular_z);
+      1.0 / params_.kinematics.wheels_radius * (velocity_in_center_frame_linear_x + velocity_in_center_frame_linear_y + params_.kinematics.wheels_k * velocity_in_center_frame_angular_z);
 
     // Set wheels velocities:
 
