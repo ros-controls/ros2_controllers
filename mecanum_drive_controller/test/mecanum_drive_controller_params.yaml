@@ -3,6 +3,8 @@ test_mecanum_drive_controller:
 
     reference_timeout: 0.1
 
+    reference_names: ["linear_x", "linear_y", "angular_z"]
+
     interface_name: velocity  
 
     kinematics:
