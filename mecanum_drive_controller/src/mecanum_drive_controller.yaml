@@ -6,6 +6,21 @@ mecanum_drive_controller:
 
   }
 
+  state_joint_names: {
+    type: string_array,
+    default_value: [],
+    description: "(optional) Specifies joints for reading states. This parameter is only relevant when state joints are different then command joint, i.e., when a following controller is used.",
+    read_only: true,
+
+  }
+
+  interface_name: {
+    type: string,
+    default_value: "",
+    description: "Name of the interface used by the controller on joints and command_joints.",
+    read_only: true,
+  }
+
   kinematics:
     base_frame_offset:
       x: {
@@ -43,9 +58,9 @@ mecanum_drive_controller:
 
     }
 
-  wheel_names: {
+  joint_names: {
     type: string_array,
-    default_value: ["", "", "", ""],
+    default_value: [],
     description: "Name of the wheels.",
     read_only: false,
 

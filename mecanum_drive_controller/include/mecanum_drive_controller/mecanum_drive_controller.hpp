@@ -92,6 +92,8 @@ protected:
   std::shared_ptr<mecanum_drive_controller::ParamListener> param_listener_;
   mecanum_drive_controller::Params params_;
 
+  std::vector<std::string> state_joint_names_;
+
   // Command subscribers and Controller State publisher
   rclcpp::Subscription<ControllerReferenceMsg>::SharedPtr ref_subscriber_ = nullptr;
   realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerReferenceMsg>> input_ref_;
