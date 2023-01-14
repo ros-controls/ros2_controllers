@@ -50,7 +50,12 @@ TEST_F(MecanumDriveControllerTest, all_parameters_set_configure_success)
   ASSERT_EQ(controller_->params_.kinematics.base_frame_offset.y, 0.0);
   ASSERT_EQ(controller_->params_.kinematics.base_frame_offset.theta, 0.0);
 
+  ASSERT_TRUE(controller_->params_.joint_names.empty());
+  ASSERT_TRUE(controller_->params_.state_joint_names.empty());
+  ASSERT_TRUE(controller_->params_.interface_name.empty());
+
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
   ASSERT_EQ(controller_->params_.reference_timeout, 0.1);
   ASSERT_EQ(controller_->params_.kinematics.wheels_radius, 0.5);
   ASSERT_EQ(controller_->params_.kinematics.wheels_k, 1.0);
@@ -58,6 +63,11 @@ TEST_F(MecanumDriveControllerTest, all_parameters_set_configure_success)
   ASSERT_EQ(controller_->params_.kinematics.base_frame_offset.x, 0.0);
   ASSERT_EQ(controller_->params_.kinematics.base_frame_offset.y, 0.0);
   ASSERT_EQ(controller_->params_.kinematics.base_frame_offset.theta, 0.0);
+
+  ASSERT_THAT(controller_->params_.joint_names, testing::ElementsAreArray(joint_names_));
+  ASSERT_TRUE(controller_->params_.state_joint_names.empty());
+  ASSERT_EQ(controller_->params_.interface_name, interface_name_);
+
 }
 
 // checking if all interfaces, command, state and reference are exported as expected
@@ -83,7 +93,7 @@ TEST_F(MecanumDriveControllerTest, check_exported_intefaces)
     EXPECT_EQ(state_intefaces.names[i], joint_names_[i] + "/" + interface_name_);
   }
 
-  // check ref itfs configuration reference_names_
+  // check ref itfs configuration,  reference_names_
 
   auto reference_interfaces = controller_->export_reference_interfaces();
   ASSERT_EQ(reference_interfaces.size(), NR_REF_ITFS);

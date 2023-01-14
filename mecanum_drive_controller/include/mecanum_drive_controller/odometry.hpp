@@ -75,7 +75,7 @@ private:
   /// Current timestamp:
   rclcpp::Time timestamp_;
 
-  /// Reference frame (wrt to center frame).
+  /// Reference frame (wrt to center frame). [x, y, theta]
   std::array<double, PLANAR_POINT_DIM> base_frame_offset_;
 
   /// Current pose:
@@ -91,7 +91,7 @@ private:
   /// lx and ly represent the distance from the robot's center to the wheels projected on 
   /// the x and y axis with origin at robots center respectively, wheels_k_ = lx+ly
   double wheels_k_;
-  double wheels_radius_;
+  double wheels_radius_;  // [m]
 };
 
 }  // namespace mecanum_drive_controller
