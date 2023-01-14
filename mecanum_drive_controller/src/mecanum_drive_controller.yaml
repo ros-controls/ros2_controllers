@@ -5,6 +5,14 @@ mecanum_drive_controller:
     description: "Timeout for controller references after which they will be reset. This is especially useful for controllers that can cause unwanted and dangerous behaviour if reference is not reset, e.g., velocity controllers. If value is 0 the reference is reset after each run.",
 
   }
+  
+  joint_names: {
+    type: string_array,
+    default_value: [],
+    description: "Name of the wheels joints.",
+    read_only: false,
+
+  }
 
   state_joint_names: {
     type: string_array,
@@ -60,18 +68,12 @@ mecanum_drive_controller:
     wheels_k: {
       type: double,
       default_value: 0.0,
-      description: "Wheels geometric param used in mecanum wheels' IK.",
+      description: "Wheels geometric param used in mecanum wheels' IK. lx and ly represent the distance from the robot's center to the wheels projected on 
+      the x and y axis with origin at robots center respectively, wheels_k = lx+ly",
       read_only: false,
 
     }
 
-  joint_names: {
-    type: string_array,
-    default_value: [],
-    description: "Name of the wheels.",
-    read_only: false,
-
-  }
   base_frame_id: {
     type: string,
     default_value: "base_link",

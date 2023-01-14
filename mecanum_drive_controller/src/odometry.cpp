@@ -53,8 +53,6 @@ bool Odometry::update(
   // const double dt = (time - timestamp_).toSec();
   if (dt < 0.0001) return false;  // Interval too small to integrate with
 
-  // timestamp_ = time;
-
   /// Compute FK (i.e. compute mobile robot's body twist out of its wheels velocities):
   /// NOTE: we use the IK of the mecanum wheels which we invert using a pseudo-inverse.
   /// NOTE: the mecanum IK gives the body speed at the center frame, we then offset this velocity
@@ -98,8 +96,9 @@ bool Odometry::update(
 
   position_x_in_base_frame_ += velocity_in_base_frame_w_r_t_odom_frame_.x() * dt;
   position_y_in_base_frame_ += velocity_in_base_frame_w_r_t_odom_frame_.y() * dt;
-  fprintf(stderr, " position_x_in_base_frame_ = %f  \n", position_x_in_base_frame_);
-  fprintf(stderr, " position_y_in_base_frame_ = %f  \n", position_y_in_base_frame_);
+  // leaving the below comments intentionally
+  // fprintf(stderr, " position_x_in_base_frame_ = %f  \n", position_x_in_base_frame_);
+  // fprintf(stderr, " position_y_in_base_frame_ = %f  \n", position_y_in_base_frame_);
 
   return true;
 }

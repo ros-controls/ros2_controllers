@@ -61,7 +61,7 @@ class TestableMecanumDriveController : public mecanum_drive_controller::MecanumD
   FRIEND_TEST(MecanumDriveControllerTest, test_time_stamp_zero);
   FRIEND_TEST(MecanumDriveControllerTest, test_message_accepted);
   FRIEND_TEST(MecanumDriveControllerTest, test_update_logic_not_chainable);
-    FRIEND_TEST(MecanumDriveControllerTest, test_ref_timeout_zero_for_update);
+  FRIEND_TEST(MecanumDriveControllerTest, test_ref_timeout_zero_for_update);
   FRIEND_TEST(MecanumDriveControllerTest, test_ref_timeout_zero_for_reference_callback);
 
 public:
@@ -272,7 +272,7 @@ protected:
   std::vector<hardware_interface::StateInterface> state_itfs_;
   std::vector<hardware_interface::CommandInterface> command_itfs_;
 
-  double ref_timeout_ = 0.2;
+  double ref_timeout_ = 0.1;
 
   // Test related parameters
   std::unique_ptr<CtrlType> controller_;

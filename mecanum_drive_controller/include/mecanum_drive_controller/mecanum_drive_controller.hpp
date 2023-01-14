@@ -92,11 +92,14 @@ protected:
   std::shared_ptr<mecanum_drive_controller::ParamListener> param_listener_;
   mecanum_drive_controller::Params params_;
 
+  // used for chained controller
   std::vector<std::string> state_joint_names_;
+
+  //Names of the references, ex: high level vel commands from MoveIt, Nav2, etc. used for preceding controller
   std::vector<std::string> reference_names_;
 
 
-  // Command subscribers and Controller State publisher
+  // Command subscribers and Controller State, odom state, tf state publishers
   rclcpp::Subscription<ControllerReferenceMsg>::SharedPtr ref_subscriber_ = nullptr;
   realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerReferenceMsg>> input_ref_;
   rclcpp::Duration ref_timeout_ = rclcpp::Duration::from_seconds(0.0);

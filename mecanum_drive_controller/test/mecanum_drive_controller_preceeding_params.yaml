@@ -3,6 +3,8 @@ test_mecanum_drive_controller:
 
     reference_timeout: 0.1
 
+    joint_names: ["front_left_wheel_joint", "back_left_wheel_joint", "back_right_wheel_joint", "front_right_wheel_joint"]
+
     state_joint_names: ["state_front_left_wheel_joint", "state_back_left_wheel_joint", "state_back_right_wheel_joint", "state_front_right_wheel_joint"]
 
     interface_name: velocity
@@ -16,8 +18,6 @@ test_mecanum_drive_controller:
       wheels_radius: 0.5
 
       wheels_k: 1.0
-
-    joint_names: ["front_left_wheel_joint", "back_left_wheel_joint", "back_right_wheel_joint", "front_right_wheel_joint"]
 
     base_frame_id: "base_link"
 
