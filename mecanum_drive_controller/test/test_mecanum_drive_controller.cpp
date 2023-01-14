@@ -83,33 +83,18 @@ TEST_F(MecanumDriveControllerTest, check_exported_intefaces)
     EXPECT_EQ(state_intefaces.names[i], joint_names_[i] + "/" + interface_name_);
   }
 
-  // check ref itfs configuration
+  // check ref itfs configuration reference_names_
+
   auto reference_interfaces = controller_->export_reference_interfaces();
   ASSERT_EQ(reference_interfaces.size(), NR_REF_ITFS);
-
-  const std::string ref_itf_name_0 = std::string(controller_->get_node()->get_name()) + "/" +
-                                     "linear_x" + "/" + hardware_interface::HW_IF_VELOCITY;
-  EXPECT_EQ(reference_interfaces[0].get_name(), ref_itf_name_0);
-  EXPECT_EQ(reference_interfaces[0].get_prefix_name(), controller_->get_node()->get_name());
-  EXPECT_EQ(
-    reference_interfaces[0].get_interface_name(),
-    std::string("linear_x") + "/" + hardware_interface::HW_IF_VELOCITY);
-
-  const std::string ref_itf_name_1 = std::string(controller_->get_node()->get_name()) + "/" +
-                                     "linear_y" + "/" + hardware_interface::HW_IF_VELOCITY;
-  EXPECT_EQ(reference_interfaces[1].get_name(), ref_itf_name_1);
-  EXPECT_EQ(reference_interfaces[1].get_prefix_name(), controller_->get_node()->get_name());
-  EXPECT_EQ(
-    reference_interfaces[1].get_interface_name(),
-    std::string("linear_y") + "/" + hardware_interface::HW_IF_VELOCITY);
-
-  const std::string ref_itf_name_2 = std::string(controller_->get_node()->get_name()) + "/" +
-                                     "angular_z" + "/" + hardware_interface::HW_IF_VELOCITY;
-  EXPECT_EQ(reference_interfaces[2].get_name(), ref_itf_name_2);
-  EXPECT_EQ(reference_interfaces[2].get_prefix_name(), controller_->get_node()->get_name());
-  EXPECT_EQ(
-    reference_interfaces[2].get_interface_name(),
-    std::string("angular_z") + "/" + hardware_interface::HW_IF_VELOCITY);
+  for (size_t i = 0; i < reference_names_.size(); ++i) {
+    const std::string ref_itf_name = std::string(controller_->get_node()->get_name()) + "/" +
+                                     reference_names_[i] + "/" + interface_name_;
+    EXPECT_EQ(reference_interfaces[i].get_name(), ref_itf_name);
+    EXPECT_EQ(reference_interfaces[i].get_prefix_name(), controller_->get_node()->get_name());
+    EXPECT_EQ(
+      reference_interfaces[i].get_interface_name(), reference_names_[i] + "/" + interface_name_);
+  }
 }
 
 // checking if calling activate() resets the controller reference msg
