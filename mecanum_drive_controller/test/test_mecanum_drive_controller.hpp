@@ -61,7 +61,7 @@ class TestableMecanumDriveController : public mecanum_drive_controller::MecanumD
   FRIEND_TEST(MecanumDriveControllerTest, test_time_stamp_zero);
   FRIEND_TEST(MecanumDriveControllerTest, test_message_accepted);
   FRIEND_TEST(MecanumDriveControllerTest, test_update_logic_not_chainable);
-  FRIEND_TEST(MecanumDriveControllerTest, test_ref_timeout_zero_for_update);
+    FRIEND_TEST(MecanumDriveControllerTest, test_ref_timeout_zero_for_update);
   FRIEND_TEST(MecanumDriveControllerTest, test_ref_timeout_zero_for_reference_callback);
 
 public:
@@ -249,9 +249,11 @@ protected:
   }
 
 protected:
+  std::vector<std::string> reference_names_ = {"linear_x", "linear_y", "angular_z"};
   std::vector<std::string> joint_names_ = {
     "front_left_wheel_joint", "back_left_wheel_joint", "back_right_wheel_joint",
     "front_right_wheel_joint"};
+
   std::vector<std::string> state_joint_names_ = {
     "state_front_left_wheel_joint", "state_back_left_wheel_joint", "state_back_right_wheel_joint",
     "state_front_right_wheel_joint"};
