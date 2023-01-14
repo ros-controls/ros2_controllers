@@ -14,6 +14,13 @@ mecanum_drive_controller:
 
   }
 
+  reference_names: {
+    type: string_array,
+    default_value: [],
+    description: " Names of the references, ex: high level vel commands from MoveIt, Nav2, etc.",
+    read_only: true,
+  }
+
   interface_name: {
     type: string,
     default_value: "",

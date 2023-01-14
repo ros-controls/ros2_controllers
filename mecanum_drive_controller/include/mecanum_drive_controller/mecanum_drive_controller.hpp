@@ -93,6 +93,8 @@ protected:
   mecanum_drive_controller::Params params_;
 
   std::vector<std::string> state_joint_names_;
+  std::vector<std::string> reference_names_;
+
 
   // Command subscribers and Controller State publisher
   rclcpp::Subscription<ControllerReferenceMsg>::SharedPtr ref_subscriber_ = nullptr;

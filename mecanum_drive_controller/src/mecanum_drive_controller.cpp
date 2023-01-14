@@ -89,6 +89,8 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
     return CallbackReturn::FAILURE;
   }
 
+  reference_names_ = params_.reference_names;
+
   // Set wheel params for the odometry computation
   odometry_.setWheelsParams(params_.kinematics.wheels_k, params_.kinematics.wheels_radius);
 
@@ -234,15 +236,11 @@ MecanumDriveController::command_interface_configuration() const
   controller_interface::InterfaceConfiguration command_interfaces_config;
   command_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
 
-  command_interfaces_config.names.reserve(NR_CMD_ITFS);
-  command_interfaces_config.names.push_back(
-    params_.joint_names[0] + "/" + hardware_interface::HW_IF_VELOCITY);
-  command_interfaces_config.names.push_back(
-    params_.joint_names[1] + "/" + hardware_interface::HW_IF_VELOCITY);
-  command_interfaces_config.names.push_back(
-    params_.joint_names[2] + "/" + hardware_interface::HW_IF_VELOCITY);
-  command_interfaces_config.names.push_back(
-    params_.joint_names[3] + "/" + hardware_interface::HW_IF_VELOCITY);
+  command_interfaces_config.names.reserve(params_.joint_names.size());
+  for (const auto& joint : params_.joint_names) {
+    command_interfaces_config.names.push_back(joint + "/" +
+                                              params_.interface_name);
+  }
 
   return command_interfaces_config;
 }
@@ -253,15 +251,12 @@ controller_interface::InterfaceConfiguration MecanumDriveController::state_inter
   controller_interface::InterfaceConfiguration state_interfaces_config;
   state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
 
-  state_interfaces_config.names.reserve(NR_STATE_ITFS);
-  state_interfaces_config.names.push_back(
-    params_.state_joint_names[0] + "/" + hardware_interface::HW_IF_VELOCITY);
-  state_interfaces_config.names.push_back(
-    params_.state_joint_names[1] + "/" + hardware_interface::HW_IF_VELOCITY);
-  state_interfaces_config.names.push_back(
-    params_.state_joint_names[2] + "/" + hardware_interface::HW_IF_VELOCITY);
-  state_interfaces_config.names.push_back(
-    params_.state_joint_names[3] + "/" + hardware_interface::HW_IF_VELOCITY);
+  state_interfaces_config.names.reserve(state_joint_names_.size());
+
+  for (const auto& joint : state_joint_names_) {
+    state_interfaces_config.names.push_back(joint + "/" +
+                                            params_.interface_name);
+  }
 
   return state_interfaces_config;
 }
@@ -272,19 +267,14 @@ MecanumDriveController::on_export_reference_interfaces()
   reference_interfaces_.resize(NR_REF_ITFS, std::numeric_limits<double>::quiet_NaN());
 
   std::vector<hardware_interface::CommandInterface> reference_interfaces;
-  reference_interfaces.reserve(NR_REF_ITFS);
 
-  reference_interfaces.push_back(hardware_interface::CommandInterface(
-    get_node()->get_name(), std::string("linear_x/") + hardware_interface::HW_IF_VELOCITY,
-    &reference_interfaces_[0]));
+  reference_interfaces.reserve(reference_interfaces_.size());
 
-  reference_interfaces.push_back(hardware_interface::CommandInterface(
-    get_node()->get_name(), std::string("linear_y/") + hardware_interface::HW_IF_VELOCITY,
-    &reference_interfaces_[1]));
-
-  reference_interfaces.push_back(hardware_interface::CommandInterface(
-    get_node()->get_name(), std::string("angular_z/") + hardware_interface::HW_IF_VELOCITY,
-    &reference_interfaces_[2]));
+  for (size_t i = 0; i < reference_interfaces_.size(); ++i) {
+    reference_interfaces.push_back(hardware_interface::CommandInterface(
+        get_node()->get_name(), reference_names_[i] + "/" + params_.interface_name,
+        &reference_interfaces_[i]));
+  }
 
   return reference_interfaces;
 }
