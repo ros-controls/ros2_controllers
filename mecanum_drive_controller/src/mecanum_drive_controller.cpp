@@ -75,6 +75,20 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
 {
   params_ = param_listener_->get_params();
 
+  if (!params_.state_joint_names.empty()) {
+    state_joint_names_ = params_.state_joint_names;
+  } else {
+    state_joint_names_ = params_.joint_names;
+  }
+
+  if (params_.joint_names.size() != state_joint_names_.size()) {
+    RCLCPP_FATAL(get_node()->get_logger(),
+                 "Size of 'joints' (%d) and 'state_joint_names' (%d) parameters has "
+                 "to be the same!",
+                 params_.joint_names.size(), state_joint_names_.size());
+    return CallbackReturn::FAILURE;
+  }
+
   // Set wheel params for the odometry computation
   odometry_.setWheelsParams(params_.kinematics.wheels_k, params_.kinematics.wheels_radius);
 
@@ -222,13 +236,13 @@ MecanumDriveController::command_interface_configuration() const
 
   command_interfaces_config.names.reserve(NR_CMD_ITFS);
   command_interfaces_config.names.push_back(
-    params_.wheel_names[0] + "/" + hardware_interface::HW_IF_VELOCITY);
+    params_.joint_names[0] + "/" + hardware_interface::HW_IF_VELOCITY);
   command_interfaces_config.names.push_back(
-    params_.wheel_names[1] + "/" + hardware_interface::HW_IF_VELOCITY);
+    params_.joint_names[1] + "/" + hardware_interface::HW_IF_VELOCITY);
   command_interfaces_config.names.push_back(
-    params_.wheel_names[2] + "/" + hardware_interface::HW_IF_VELOCITY);
+    params_.joint_names[2] + "/" + hardware_interface::HW_IF_VELOCITY);
   command_interfaces_config.names.push_back(
-    params_.wheel_names[3] + "/" + hardware_interface::HW_IF_VELOCITY);
+    params_.joint_names[3] + "/" + hardware_interface::HW_IF_VELOCITY);
 
   return command_interfaces_config;
 }
@@ -241,13 +255,13 @@ controller_interface::InterfaceConfiguration MecanumDriveController::state_inter
 
   state_interfaces_config.names.reserve(NR_STATE_ITFS);
   state_interfaces_config.names.push_back(
-    params_.wheel_names[0] + "/" + hardware_interface::HW_IF_VELOCITY);
+    params_.state_joint_names[0] + "/" + hardware_interface::HW_IF_VELOCITY);
   state_interfaces_config.names.push_back(
-    params_.wheel_names[1] + "/" + hardware_interface::HW_IF_VELOCITY);
+    params_.state_joint_names[1] + "/" + hardware_interface::HW_IF_VELOCITY);
   state_interfaces_config.names.push_back(
-    params_.wheel_names[2] + "/" + hardware_interface::HW_IF_VELOCITY);
+    params_.state_joint_names[2] + "/" + hardware_interface::HW_IF_VELOCITY);
   state_interfaces_config.names.push_back(
-    params_.wheel_names[3] + "/" + hardware_interface::HW_IF_VELOCITY);
+    params_.state_joint_names[3] + "/" + hardware_interface::HW_IF_VELOCITY);
 
   return state_interfaces_config;
 }
