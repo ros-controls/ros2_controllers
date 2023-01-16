@@ -46,11 +46,7 @@ controller_interface::CallbackReturn BicycleSteeringController::configure_odomet
 
   odometry_.set_odometry_type(steering_odometry::BICYCLE_CONFIG);
 
-  const size_t nr_state_itfs = 2;
-  const size_t nr_cmd_itfs = 2;
-  const size_t nr_ref_itfs = 2;
-
-  set_interface_numbers(nr_state_itfs, nr_cmd_itfs, nr_ref_itfs);
+  set_interface_numbers(NR_STATE_ITFS, NR_CMD_ITFS, NR_REF_ITFS);
 
   RCLCPP_INFO(get_node()->get_logger(), "bicycle odometry configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
