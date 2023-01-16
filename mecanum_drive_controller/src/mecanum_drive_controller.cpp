@@ -387,25 +387,25 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
     velocity_in_center_frame_linear_y = velocity_in_base_frame_w_r_t_center_frame_.y() - linear_trans_from_base_to_center.x() * reference_interfaces_[2];
     velocity_in_center_frame_angular_z = reference_interfaces_[2];
 
-    double w0_vel =
+    double w_front_left_vel =
       1.0 / params_.kinematics.wheels_radius * (velocity_in_center_frame_linear_x - velocity_in_center_frame_linear_y - params_.kinematics.wheels_k * velocity_in_center_frame_angular_z);
-    double w1_vel =
+    double w_back_left_vel =
       1.0 / params_.kinematics.wheels_radius * (velocity_in_center_frame_linear_x + velocity_in_center_frame_linear_y - params_.kinematics.wheels_k * velocity_in_center_frame_angular_z);
-    double w2_vel =
+    double w_back_right_vel =
       1.0 / params_.kinematics.wheels_radius * (velocity_in_center_frame_linear_x - velocity_in_center_frame_linear_y + params_.kinematics.wheels_k * velocity_in_center_frame_angular_z);
-    double w3_vel =
+    double w_front_right_vel =
       1.0 / params_.kinematics.wheels_radius * (velocity_in_center_frame_linear_x + velocity_in_center_frame_linear_y + params_.kinematics.wheels_k * velocity_in_center_frame_angular_z);
 
     // Set wheels velocities:
 
-    command_interfaces_[0].set_value(w0_vel);
-    fprintf(stderr, " command_interfaces_[0] = %f \n", w0_vel);
-    command_interfaces_[1].set_value(w1_vel);
-    fprintf(stderr, " command_interfaces_[1] = %f \n", w1_vel);
-    command_interfaces_[2].set_value(w2_vel);
-    fprintf(stderr, " command_interfaces_[2] = %f \n", w2_vel);
-    command_interfaces_[3].set_value(w3_vel);
-    fprintf(stderr, " command_interfaces_[3] = %f \n", w3_vel);
+    command_interfaces_[0].set_value(w_front_left_vel);
+    fprintf(stderr, " command_interfaces_[0] = %f \n", w_front_left_vel);
+    command_interfaces_[1].set_value(w_back_left_vel);
+    fprintf(stderr, " command_interfaces_[1] = %f \n", w_back_left_vel);
+    command_interfaces_[2].set_value(w_back_right_vel);
+    fprintf(stderr, " command_interfaces_[2] = %f \n", w_back_right_vel);
+    command_interfaces_[3].set_value(w_front_right_vel);
+    fprintf(stderr, " command_interfaces_[3] = %f \n", w_front_right_vel);
 
 
   }
