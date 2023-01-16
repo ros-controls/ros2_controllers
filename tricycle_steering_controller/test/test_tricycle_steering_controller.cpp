@@ -55,11 +55,11 @@ TEST_F(TricycleSteeringControllerTest, check_exported_intefaces)
   auto command_intefaces = controller_->command_interface_configuration();
   ASSERT_EQ(command_intefaces.names.size(), joint_command_values_.size());
   EXPECT_EQ(
-    command_intefaces.names[STATE_DRIVE_RIGHT_WHEEL],
-    rear_wheels_names_[STATE_DRIVE_RIGHT_WHEEL] + "/" + traction_interface_name_);
+    command_intefaces.names[STATE_TRACTION_RIGHT_WHEEL],
+    rear_wheels_names_[STATE_TRACTION_RIGHT_WHEEL] + "/" + traction_interface_name_);
   EXPECT_EQ(
-    command_intefaces.names[STATE_DRIVE_LEFT_WHEEL],
-    rear_wheels_names_[STATE_DRIVE_LEFT_WHEEL] + "/" + traction_interface_name_);
+    command_intefaces.names[STATE_TRACTION_LEFT_WHEEL],
+    rear_wheels_names_[STATE_TRACTION_LEFT_WHEEL] + "/" + traction_interface_name_);
   EXPECT_EQ(
     command_intefaces.names[STATE_STEER_AXIS],
     front_wheels_names_[0] + "/" + steering_interface_name_);
@@ -67,11 +67,11 @@ TEST_F(TricycleSteeringControllerTest, check_exported_intefaces)
   auto state_intefaces = controller_->state_interface_configuration();
   ASSERT_EQ(state_intefaces.names.size(), joint_state_values_.size());
   EXPECT_EQ(
-    state_intefaces.names[STATE_DRIVE_RIGHT_WHEEL],
-    rear_wheels_names_[STATE_DRIVE_RIGHT_WHEEL] + "/" + traction_interface_name_);
+    state_intefaces.names[STATE_TRACTION_RIGHT_WHEEL],
+    rear_wheels_names_[STATE_TRACTION_RIGHT_WHEEL] + "/" + traction_interface_name_);
   EXPECT_EQ(
-    state_intefaces.names[STATE_DRIVE_LEFT_WHEEL],
-    rear_wheels_names_[STATE_DRIVE_LEFT_WHEEL] + "/" + traction_interface_name_);
+    state_intefaces.names[STATE_TRACTION_LEFT_WHEEL],
+    rear_wheels_names_[STATE_TRACTION_LEFT_WHEEL] + "/" + traction_interface_name_);
   EXPECT_EQ(
     state_intefaces.names[STATE_STEER_AXIS],
     front_wheels_names_[0] + "/" + steering_interface_name_);
@@ -166,10 +166,10 @@ TEST_F(TricycleSteeringControllerTest, test_update_logic)
     controller_interface::return_type::OK);
 
   EXPECT_NEAR(
-    controller_->command_interfaces_[STATE_DRIVE_RIGHT_WHEEL].get_value(), 0.22222222222222224,
+    controller_->command_interfaces_[STATE_TRACTION_RIGHT_WHEEL].get_value(), 0.22222222222222224,
     COMMON_THRESHOLD);
   EXPECT_NEAR(
-    controller_->command_interfaces_[STATE_DRIVE_LEFT_WHEEL].get_value(), 0.22222222222222224,
+    controller_->command_interfaces_[STATE_TRACTION_LEFT_WHEEL].get_value(), 0.22222222222222224,
     COMMON_THRESHOLD);
   EXPECT_NEAR(
     controller_->command_interfaces_[STATE_STEER_AXIS].get_value(), 1.4179821977774734,
@@ -199,8 +199,8 @@ TEST_F(TricycleSteeringControllerTest, receive_message_and_publish_updated_statu
   ControllerStateMsg msg;
   subscribe_and_get_messages(msg);
 
-  EXPECT_EQ(msg.linear_velocity_command.data[STATE_DRIVE_RIGHT_WHEEL], 1.1);
-  EXPECT_EQ(msg.linear_velocity_command.data[STATE_DRIVE_LEFT_WHEEL], 3.3);
+  EXPECT_EQ(msg.linear_velocity_command.data[STATE_TRACTION_RIGHT_WHEEL], 1.1);
+  EXPECT_EQ(msg.linear_velocity_command.data[STATE_TRACTION_LEFT_WHEEL], 3.3);
   EXPECT_EQ(msg.steering_angle_command.data[0], 2.2);
 
   publish_commands();
@@ -211,10 +211,10 @@ TEST_F(TricycleSteeringControllerTest, receive_message_and_publish_updated_statu
     controller_interface::return_type::OK);
 
   EXPECT_NEAR(
-    controller_->command_interfaces_[STATE_DRIVE_RIGHT_WHEEL].get_value(), 0.22222222222222224,
+    controller_->command_interfaces_[STATE_TRACTION_RIGHT_WHEEL].get_value(), 0.22222222222222224,
     COMMON_THRESHOLD);
   EXPECT_NEAR(
-    controller_->command_interfaces_[STATE_DRIVE_LEFT_WHEEL].get_value(), 0.22222222222222224,
+    controller_->command_interfaces_[STATE_TRACTION_LEFT_WHEEL].get_value(), 0.22222222222222224,
     COMMON_THRESHOLD);
   EXPECT_NEAR(
     controller_->command_interfaces_[STATE_STEER_AXIS].get_value(), 1.4179821977774734,
@@ -223,10 +223,10 @@ TEST_F(TricycleSteeringControllerTest, receive_message_and_publish_updated_statu
   subscribe_and_get_messages(msg);
 
   EXPECT_NEAR(
-    msg.linear_velocity_command.data[STATE_DRIVE_RIGHT_WHEEL], 0.22222222222222224,
+    msg.linear_velocity_command.data[STATE_TRACTION_RIGHT_WHEEL], 0.22222222222222224,
     COMMON_THRESHOLD);
   EXPECT_NEAR(
-    msg.linear_velocity_command.data[STATE_DRIVE_LEFT_WHEEL], 0.22222222222222224,
+    msg.linear_velocity_command.data[STATE_TRACTION_LEFT_WHEEL], 0.22222222222222224,
     COMMON_THRESHOLD);
   EXPECT_NEAR(msg.steering_angle_command.data[0], 1.4179821977774734, COMMON_THRESHOLD);
 }

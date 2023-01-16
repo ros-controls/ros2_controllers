@@ -36,6 +36,10 @@ static constexpr size_t STATE_STEER_LEFT_WHEEL = 3;
 static constexpr size_t CMD_DRIVE_WHEEL = 0;
 static constexpr size_t CMD_STEER = 1;
 
+static constexpr size_t NR_STATE_ITFS = 4;
+static constexpr size_t NR_CMD_ITFS = 4;
+static constexpr size_t NR_REF_ITFS = 2;
+
 class AckermannSteeringController : public steering_controllers_library::SteeringControllersLibrary
 {
 public:

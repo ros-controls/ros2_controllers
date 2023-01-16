@@ -39,8 +39,8 @@ using ControllerReferenceMsg =
   steering_controllers_library::SteeringControllersLibrary::ControllerTwistReferenceMsg;
 
 // name constants for state interfaces
-using bicycle_steering_controller::STATE_DRIVE_WHEEL;
 using bicycle_steering_controller::STATE_STEER_AXIS;
+using bicycle_steering_controller::STATE_TRACTION_WHEEL;
 
 // name constants for command interfaces
 using bicycle_steering_controller::CMD_DRIVE_WHEEL;
@@ -159,7 +159,8 @@ protected:
     command_ifs.reserve(joint_command_values_.size());
 
     command_itfs_.emplace_back(hardware_interface::CommandInterface(
-      rear_wheels_names_[0], traction_interface_name_, &joint_command_values_[STATE_DRIVE_WHEEL]));
+      rear_wheels_names_[0], traction_interface_name_,
+      &joint_command_values_[STATE_TRACTION_WHEEL]));
     command_ifs.emplace_back(command_itfs_.back());
 
     command_itfs_.emplace_back(hardware_interface::CommandInterface(
@@ -171,7 +172,7 @@ protected:
     state_ifs.reserve(joint_state_values_.size());
 
     state_itfs_.emplace_back(hardware_interface::StateInterface(
-      rear_wheels_names_[0], traction_interface_name_, &joint_state_values_[STATE_DRIVE_WHEEL]));
+      rear_wheels_names_[0], traction_interface_name_, &joint_state_values_[STATE_TRACTION_WHEEL]));
     state_ifs.emplace_back(state_itfs_.back());
 
     state_itfs_.emplace_back(hardware_interface::StateInterface(

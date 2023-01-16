@@ -64,7 +64,7 @@ bool BicycleSteeringController::update_odometry(const rclcpp::Duration & period)
   }
   else
   {
-    const double rear_wheel_value = state_interfaces_[STATE_DRIVE_WHEEL].get_value();
+    const double rear_wheel_value = state_interfaces_[STATE_TRACTION_WHEEL].get_value();
     const double steer_position = state_interfaces_[STATE_STEER_AXIS].get_value();
     if (!std::isnan(rear_wheel_value) && !std::isnan(steer_position))
     {

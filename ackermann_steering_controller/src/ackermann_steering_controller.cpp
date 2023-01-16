@@ -48,11 +48,7 @@ controller_interface::CallbackReturn AckermannSteeringController::configure_odom
 
   odometry_.set_odometry_type(steering_odometry::ACKERMANN_CONFIG);
 
-  const size_t nr_state_itfs = 4;
-  const size_t nr_cmd_itfs = 4;
-  const size_t nr_ref_itfs = 2;
-
-  set_interface_numbers(nr_state_itfs, nr_cmd_itfs, nr_ref_itfs);
+  set_interface_numbers(NR_STATE_ITFS, NR_CMD_ITFS, NR_REF_ITFS);
 
   RCLCPP_INFO(get_node()->get_logger(), "ackermann odom configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
@@ -66,8 +62,8 @@ bool AckermannSteeringController::update_odometry(const rclcpp::Duration & perio
   }
   else
   {
-    const double rear_right_wheel_value = state_interfaces_[STATE_DRIVE_RIGHT_WHEEL].get_value();
-    const double rear_left_wheel_value = state_interfaces_[STATE_DRIVE_LEFT_WHEEL].get_value();
+    const double rear_right_wheel_value = state_interfaces_[STATE_TRACTION_RIGHT_WHEEL].get_value();
+    const double rear_left_wheel_value = state_interfaces_[STATE_TRACTION_LEFT_WHEEL].get_value();
     const double front_right_steer_position =
       state_interfaces_[STATE_STEER_RIGHT_WHEEL].get_value();
     const double front_left_steer_position = state_interfaces_[STATE_STEER_LEFT_WHEEL].get_value();

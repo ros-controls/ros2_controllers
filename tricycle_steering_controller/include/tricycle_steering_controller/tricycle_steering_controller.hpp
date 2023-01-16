@@ -27,8 +27,8 @@
 namespace tricycle_steering_controller
 {
 // name constants for state interfaces
-static constexpr size_t STATE_DRIVE_RIGHT_WHEEL = 0;
-static constexpr size_t STATE_DRIVE_LEFT_WHEEL = 1;
+static constexpr size_t STATE_TRACTION_RIGHT_WHEEL = 0;
+static constexpr size_t STATE_TRACTION_LEFT_WHEEL = 1;
 static constexpr size_t STATE_STEER_AXIS = 2;
 
 // name constants for command interfaces

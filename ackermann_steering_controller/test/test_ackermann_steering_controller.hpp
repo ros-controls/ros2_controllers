@@ -39,10 +39,10 @@ using ControllerReferenceMsg =
   steering_controllers_library::SteeringControllersLibrary::ControllerTwistReferenceMsg;
 
 // name constants for state interfaces
-using ackermann_steering_controller::STATE_DRIVE_LEFT_WHEEL;
-using ackermann_steering_controller::STATE_DRIVE_RIGHT_WHEEL;
 using ackermann_steering_controller::STATE_STEER_LEFT_WHEEL;
 using ackermann_steering_controller::STATE_STEER_RIGHT_WHEEL;
+using ackermann_steering_controller::STATE_TRACTION_LEFT_WHEEL;
+using ackermann_steering_controller::STATE_TRACTION_RIGHT_WHEEL;
 
 // name constants for command interfaces
 using ackermann_steering_controller::CMD_DRIVE_WHEEL;
@@ -162,12 +162,12 @@ protected:
 
     command_itfs_.emplace_back(hardware_interface::CommandInterface(
       rear_wheels_names_[0], traction_interface_name_,
-      &joint_command_values_[STATE_DRIVE_RIGHT_WHEEL]));
+      &joint_command_values_[STATE_TRACTION_RIGHT_WHEEL]));
     command_ifs.emplace_back(command_itfs_.back());
 
     command_itfs_.emplace_back(hardware_interface::CommandInterface(
       rear_wheels_names_[1], steering_interface_name_,
-      &joint_command_values_[STATE_DRIVE_LEFT_WHEEL]));
+      &joint_command_values_[STATE_TRACTION_LEFT_WHEEL]));
     command_ifs.emplace_back(command_itfs_.back());
 
     command_itfs_.emplace_back(hardware_interface::CommandInterface(
@@ -186,12 +186,12 @@ protected:
 
     state_itfs_.emplace_back(hardware_interface::StateInterface(
       rear_wheels_names_[0], traction_interface_name_,
-      &joint_state_values_[STATE_DRIVE_RIGHT_WHEEL]));
+      &joint_state_values_[STATE_TRACTION_RIGHT_WHEEL]));
     state_ifs.emplace_back(state_itfs_.back());
 
     state_itfs_.emplace_back(hardware_interface::StateInterface(
       rear_wheels_names_[1], traction_interface_name_,
-      &joint_state_values_[STATE_DRIVE_LEFT_WHEEL]));
+      &joint_state_values_[STATE_TRACTION_LEFT_WHEEL]));
     state_ifs.emplace_back(state_itfs_.back());
 
     state_itfs_.emplace_back(hardware_interface::StateInterface(

@@ -27,7 +27,7 @@
 namespace bicycle_steering_controller
 {
 // name constants for state interfaces
-static constexpr size_t STATE_DRIVE_WHEEL = 0;
+static constexpr size_t STATE_TRACTION_WHEEL = 0;
 static constexpr size_t STATE_STEER_AXIS = 1;
 
 // name constants for command interfaces
