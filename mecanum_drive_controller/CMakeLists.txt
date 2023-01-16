@@ -20,7 +20,6 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   tf2
   tf2_msgs
   tf2_geometry_msgs
-  custom_messages
 )
 
 find_package(ament_cmake REQUIRED)
