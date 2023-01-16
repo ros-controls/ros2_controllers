@@ -53,10 +53,10 @@ TEST_F(BicycleSteeringControllerTest, check_exported_intefaces)
   auto command_intefaces = controller_->command_interface_configuration();
   ASSERT_EQ(command_intefaces.names.size(), joint_command_values_.size());
   EXPECT_EQ(
-    command_intefaces.names[STATE_TRACTION_WHEEL],
+    command_intefaces.names[CMD_DRIVE_WHEEL],
     rear_wheels_names_[0] + "/" + traction_interface_name_);
   EXPECT_EQ(
-    command_intefaces.names[STATE_STEER_AXIS],
+    command_intefaces.names[CMD_STEER_WHEEL],
     front_wheels_names_[0] + "/" + steering_interface_name_);
 
   auto state_intefaces = controller_->state_interface_configuration();
@@ -157,9 +157,11 @@ TEST_F(BicycleSteeringControllerTest, test_update_logic)
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  EXPECT_NEAR(controller_->command_interfaces_[0].get_value(), 0.253221, COMMON_THRESHOLD);
   EXPECT_NEAR(
-    controller_->command_interfaces_[1].get_value(), 1.4179821977774734, COMMON_THRESHOLD);
+    controller_->command_interfaces_[CMD_DRIVE_WHEEL].get_value(), 0.253221, COMMON_THRESHOLD);
+  EXPECT_NEAR(
+    controller_->command_interfaces_[CMD_STEER_WHEEL].get_value(), 1.4179821977774734,
+    COMMON_THRESHOLD);
 
   EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromRT()))->twist.linear.x));
   EXPECT_EQ(controller_->reference_interfaces_.size(), joint_reference_interfaces_.size());
@@ -211,9 +213,9 @@ TEST_F(BicycleSteeringControllerTest, receive_message_and_publish_updated_status
     controller_interface::return_type::OK);
 
   EXPECT_NEAR(
-    controller_->command_interfaces_[STATE_TRACTION_WHEEL].get_value(), 0.253221, COMMON_THRESHOLD);
+    controller_->command_interfaces_[CMD_DRIVE_WHEEL].get_value(), 0.253221, COMMON_THRESHOLD);
   EXPECT_NEAR(
-    controller_->command_interfaces_[STATE_STEER_AXIS].get_value(), 1.4179821977774734,
+    controller_->command_interfaces_[CMD_STEER_WHEEL].get_value(), 1.4179821977774734,
     COMMON_THRESHOLD);
 
   subscribe_and_get_messages(msg);
