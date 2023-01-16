@@ -61,6 +61,7 @@ class TestableMecanumDriveController : public mecanum_drive_controller::MecanumD
   FRIEND_TEST(MecanumDriveControllerTest, test_time_stamp_zero);
   FRIEND_TEST(MecanumDriveControllerTest, test_message_accepted);
   FRIEND_TEST(MecanumDriveControllerTest, test_update_logic_not_chainable);
+  FRIEND_TEST(MecanumDriveControllerTest, test_update_logic_chainable);
   FRIEND_TEST(MecanumDriveControllerTest, test_ref_timeout_zero_for_update);
   FRIEND_TEST(MecanumDriveControllerTest, test_ref_timeout_zero_for_reference_callback);
 
