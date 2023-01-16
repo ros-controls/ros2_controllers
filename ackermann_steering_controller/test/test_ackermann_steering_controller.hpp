@@ -280,15 +280,18 @@ protected:
   bool position_feedback_ = false;
   bool use_stamped_vel_ = true;
   std::vector<std::string> rear_wheels_names_ = {"rear_right_wheel_joint", "rear_left_wheel_joint"};
-  std::vector<std::string> rear_wheels_preceeding_names_ = {
-    "pid_controller/rear_right_wheel_joint", "pid_controller/rear_left_wheel_joint"};
   std::vector<std::string> front_wheels_names_ = {
     "front_right_steering_joint", "front_left_steering_joint"};
-  std::vector<std::string> front_wheels_preceeding_names_ = {
-    "pid_controller/front_right_steering_joint", "pid_controller/front_left_steering_joint"};
-
   std::vector<std::string> joint_names_ = {
     rear_wheels_names_[0], rear_wheels_names_[1], front_wheels_names_[0], front_wheels_names_[1]};
+
+  std::vector<std::string> rear_wheels_preceeding_names_ = {
+    "pid_controller/rear_right_wheel_joint", "pid_controller/rear_left_wheel_joint"};
+  std::vector<std::string> front_wheels_preceeding_names_ = {
+    "pid_controller/front_right_steering_joint", "pid_controller/front_left_steering_joint"};
+  std::vector<std::string> preceeding_joint_names_ = {
+    rear_wheels_preceeding_names_[0], rear_wheels_preceeding_names_[1],
+    front_wheels_preceeding_names_[0], front_wheels_preceeding_names_[1]};
 
   double wheelbase_ = 3.24644;
   double front_wheel_track_ = 2.12321;

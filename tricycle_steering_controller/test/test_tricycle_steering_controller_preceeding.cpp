@@ -21,10 +21,6 @@
 #include <utility>
 #include <vector>
 
-using tricycle_steering_controller::CMD_MY_ITFS;
-using tricycle_steering_controller::control_mode_type;
-using tricycle_steering_controller::STATE_MY_ITFS;
-
 class TricycleSteeringControllerTest
 : public TricycleSteeringControllerFixture<TestableTricycleSteeringController>
 {
@@ -34,16 +30,22 @@ TEST_F(TricycleSteeringControllerTest, all_parameters_set_configure_success)
 {
   SetUpController();
 
-  ASSERT_TRUE(controller_->params_.joints.empty());
-  ASSERT_TRUE(controller_->params_.state_joints.empty());
-  ASSERT_TRUE(controller_->params_.interface_name.empty());
-
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  ASSERT_THAT(controller_->params_.joints, testing::ElementsAreArray(joint_names_));
-  ASSERT_THAT(controller_->params_.state_joints, testing::ElementsAreArray(state_joint_names_));
-  ASSERT_THAT(controller_->state_joints_, testing::ElementsAreArray(state_joint_names_));
-  ASSERT_EQ(controller_->params_.interface_name, interface_name_);
+  ASSERT_THAT(
+    controller_->params_.rear_wheels_names,
+    testing::ElementsAreArray(rear_wheels_preceeding_names_));
+  ASSERT_THAT(
+    controller_->params_.front_wheels_names,
+    testing::ElementsAreArray(front_wheels_preceeding_names_));
+  ASSERT_EQ(controller_->params_.front_steering, front_steering_);
+  ASSERT_EQ(controller_->params_.open_loop, open_loop_);
+  ASSERT_EQ(controller_->params_.velocity_rolling_window_size, velocity_rolling_window_size_);
+  ASSERT_EQ(controller_->params_.position_feedback, position_feedback_);
+  ASSERT_EQ(controller_->tricycle_params_.wheelbase, wheelbase_);
+  ASSERT_EQ(controller_->tricycle_params_.front_wheels_radius, front_wheels_radius_);
+  ASSERT_EQ(controller_->tricycle_params_.rear_wheels_radius, rear_wheels_radius_);
+  ASSERT_EQ(controller_->tricycle_params_.wheel_track, wheel_track_);
 }
 
 TEST_F(TricycleSteeringControllerTest, check_exported_intefaces)
@@ -54,29 +56,38 @@ TEST_F(TricycleSteeringControllerTest, check_exported_intefaces)
 
   auto command_intefaces = controller_->command_interface_configuration();
   ASSERT_EQ(command_intefaces.names.size(), joint_command_values_.size());
-  for (size_t i = 0; i < command_intefaces.names.size(); ++i)
-  {
-    EXPECT_EQ(command_intefaces.names[i], joint_names_[i] + "/" + interface_name_);
-  }
+  EXPECT_EQ(
+    command_intefaces.names[CMD_TRACTION_RIGHT_WHEEL],
+    preceeding_prefix_ + "/" + rear_wheels_names_[0] + "/" + traction_interface_name_);
+  EXPECT_EQ(
+    command_intefaces.names[CMD_TRACTION_LEFT_WHEEL],
+    preceeding_prefix_ + "/" + rear_wheels_names_[1] + "/" + traction_interface_name_);
+  EXPECT_EQ(
+    command_intefaces.names[CMD_STEER_WHEEL],
+    preceeding_prefix_ + "/" + front_wheels_names_[0] + "/" + steering_interface_name_);
 
   auto state_intefaces = controller_->state_interface_configuration();
   ASSERT_EQ(state_intefaces.names.size(), joint_state_values_.size());
-  for (size_t i = 0; i < state_intefaces.names.size(); ++i)
-  {
-    EXPECT_EQ(state_intefaces.names[i], state_joint_names_[i] + "/" + interface_name_);
-  }
+  EXPECT_EQ(
+    state_intefaces.names[STATE_TRACTION_RIGHT_WHEEL],
+    preceeding_prefix_ + "/" + rear_wheels_names_[0] + "/" + traction_interface_name_);
+  EXPECT_EQ(
+    state_intefaces.names[STATE_TRACTION_LEFT_WHEEL],
+    preceeding_prefix_ + "/" + rear_wheels_names_[1] + "/" + traction_interface_name_);
+  EXPECT_EQ(
+    state_intefaces.names[STATE_STEER_AXIS],
+    preceeding_prefix_ + "/" + front_wheels_names_[0] + "/" + steering_interface_name_);
 
   // check ref itfs
   auto reference_interfaces = controller_->export_reference_interfaces();
-  ASSERT_EQ(reference_interfaces.size(), joint_names_.size());
-  for (size_t i = 0; i < joint_names_.size(); ++i)
+  ASSERT_EQ(reference_interfaces.size(), joint_reference_interfaces_.size());
+  for (size_t i = 0; i < joint_reference_interfaces_.size(); ++i)
   {
-    const std::string ref_itf_name = std::string(controller_->get_node()->get_name()) + "/" +
-                                     state_joint_names_[i] + "/" + interface_name_;
+    const std::string ref_itf_name =
+      std::string(controller_->get_node()->get_name()) + "/" + joint_reference_interfaces_[i];
     EXPECT_EQ(reference_interfaces[i].get_name(), ref_itf_name);
     EXPECT_EQ(reference_interfaces[i].get_prefix_name(), controller_->get_node()->get_name());
-    EXPECT_EQ(
-      reference_interfaces[i].get_interface_name(), state_joint_names_[i] + "/" + interface_name_);
+    EXPECT_EQ(reference_interfaces[i].get_interface_name(), joint_reference_interfaces_[i]);
   }
 }
 
