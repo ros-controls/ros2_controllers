@@ -467,9 +467,9 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
     controller_state_publisher_->msg_.back_left_wheel_velocity = state_interfaces_[1].get_value();
     controller_state_publisher_->msg_.back_right_wheel_velocity = state_interfaces_[2].get_value();
     controller_state_publisher_->msg_.front_right_wheel_velocity = state_interfaces_[3].get_value();
-    controller_state_publisher_->msg_.linear_x_velocity_command = reference_interfaces_[0];
-    controller_state_publisher_->msg_.linear_y_velocity_command = reference_interfaces_[1];
-    controller_state_publisher_->msg_.angular_z_command = reference_interfaces_[2];
+    controller_state_publisher_->msg_.reference_vel.linear.x = reference_interfaces_[0];
+    controller_state_publisher_->msg_.reference_vel.linear.y = reference_interfaces_[1];
+    controller_state_publisher_->msg_.reference_vel.angular.z = reference_interfaces_[2];
 
     controller_state_publisher_->unlockAndPublish();
   }

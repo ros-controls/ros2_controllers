@@ -33,7 +33,7 @@
 #include "realtime_tools/realtime_publisher.h"
 #include "std_srvs/srv/set_bool.hpp"
 
-#include "custom_messages/msg/mecanum_drive_controller_state.hpp"
+#include "control_msgs/msg/mecanum_drive_controller_state.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"
@@ -86,7 +86,7 @@ public:
   using ControllerReferenceMsg = geometry_msgs::msg::TwistStamped;
   using OdomStateMsg = nav_msgs::msg::Odometry;
   using TfStateMsg = tf2_msgs::msg::TFMessage;
-  using ControllerStateMsg = custom_messages::msg::MecanumDriveControllerState;
+  using ControllerStateMsg = control_msgs::msg::MecanumDriveControllerState;
 
 protected:
   std::shared_ptr<mecanum_drive_controller::ParamListener> param_listener_;
