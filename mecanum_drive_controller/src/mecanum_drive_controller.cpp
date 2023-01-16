@@ -349,17 +349,17 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
   const rclcpp::Time & time, const rclcpp::Duration & period)
 {
   // FORWARD KINEMATICS (odometry).
-  double wheel0_vel = state_interfaces_[0].get_value();
-  double wheel1_vel = state_interfaces_[1].get_value();
-  double wheel2_vel = state_interfaces_[2].get_value();
-  double wheel3_vel = state_interfaces_[3].get_value();
+  double wheel_front_left_vel = state_interfaces_[0].get_value();
+  double wheel_back_left_vel = state_interfaces_[1].get_value();
+  double wheel_back_right_vel = state_interfaces_[2].get_value();
+  double wheel_front_right_vel = state_interfaces_[3].get_value();
 
   if (
-    !std::isnan(wheel0_vel) && !std::isnan(wheel1_vel) && !std::isnan(wheel2_vel) &&
-    !std::isnan(wheel3_vel))
+    !std::isnan(wheel_front_left_vel) && !std::isnan(wheel_back_left_vel) && !std::isnan(wheel_back_right_vel) &&
+    !std::isnan(wheel_front_right_vel))
   {
     // Estimate twist (using joint information) and integrate
-    odometry_.update(wheel0_vel, wheel1_vel, wheel2_vel, wheel3_vel, period.seconds());
+    odometry_.update(wheel_front_left_vel, wheel_back_left_vel, wheel_back_right_vel, wheel_front_right_vel, period.seconds());
   }
 
   // INVERSE KINEMATICS (move robot).
