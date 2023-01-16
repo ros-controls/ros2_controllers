@@ -2,7 +2,7 @@
   <class name="tricycle_steering_controller/TricycleSteeringController"
          type="tricycle_steering_controller::TricycleSteeringController" base_class_type="controller_interface::ChainableControllerInterface">
   <description>
-    TricycleSteeringController ros2_control controller.
+    Steering controller for Tricycle kinematics with two traction and one steering joint.
   </description>
   </class>
 </library>
