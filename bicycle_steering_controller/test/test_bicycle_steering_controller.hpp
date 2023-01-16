@@ -43,8 +43,8 @@ using bicycle_steering_controller::STATE_STEER_AXIS;
 using bicycle_steering_controller::STATE_TRACTION_WHEEL;
 
 // name constants for command interfaces
-using bicycle_steering_controller::CMD_DRIVE_WHEEL;
 using bicycle_steering_controller::CMD_STEER_WHEEL;
+using bicycle_steering_controller::CMD_TRACTION_WHEEL;
 
 namespace
 {
@@ -159,7 +159,7 @@ protected:
     command_ifs.reserve(joint_command_values_.size());
 
     command_itfs_.emplace_back(hardware_interface::CommandInterface(
-      rear_wheels_names_[0], traction_interface_name_, &joint_command_values_[CMD_DRIVE_WHEEL]));
+      rear_wheels_names_[0], traction_interface_name_, &joint_command_values_[CMD_TRACTION_WHEEL]));
     command_ifs.emplace_back(command_itfs_.back());
 
     command_itfs_.emplace_back(hardware_interface::CommandInterface(
@@ -253,6 +253,11 @@ protected:
   std::vector<std::string> front_wheels_names_ = {"steering_axis_joint"};
   std::vector<std::string> joint_names_ = {rear_wheels_names_[0], front_wheels_names_[0]};
 
+  std::vector<std::string> rear_wheels_preceeding_names_ = {"pid_controller/rear_wheel_joint"};
+  std::vector<std::string> front_wheels_preceeding_names_ = {"pid_controller/steering_axis_joint"};
+  std::vector<std::string> preceeding_joint_names_ = {
+    rear_wheels_preceeding_names_[0], front_wheels_preceeding_names_[0]};
+
   double wheelbase_ = 3.24644;
   double front_wheels_radius_ = 0.45;
   double rear_wheels_radius_ = 0.45;
@@ -261,8 +266,10 @@ protected:
   std::array<double, 2> joint_command_values_ = {1.1, 2.2};
   std::array<std::string, 2> joint_reference_interfaces_ = {"linear/velocity", "angular/position"};
   std::string steering_interface_name_ = "position";
+
   // defined in setup
   std::string traction_interface_name_ = "";
+  std::string preceeding_prefix_ = "pid_controller";
 
   std::vector<hardware_interface::StateInterface> state_itfs_;
   std::vector<hardware_interface::CommandInterface> command_itfs_;

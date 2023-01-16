@@ -53,7 +53,7 @@ TEST_F(BicycleSteeringControllerTest, check_exported_intefaces)
   auto command_intefaces = controller_->command_interface_configuration();
   ASSERT_EQ(command_intefaces.names.size(), joint_command_values_.size());
   EXPECT_EQ(
-    command_intefaces.names[CMD_DRIVE_WHEEL],
+    command_intefaces.names[CMD_TRACTION_WHEEL],
     rear_wheels_names_[0] + "/" + traction_interface_name_);
   EXPECT_EQ(
     command_intefaces.names[CMD_STEER_WHEEL],
@@ -158,7 +158,7 @@ TEST_F(BicycleSteeringControllerTest, test_update_logic)
     controller_interface::return_type::OK);
 
   EXPECT_NEAR(
-    controller_->command_interfaces_[CMD_DRIVE_WHEEL].get_value(), 0.253221, COMMON_THRESHOLD);
+    controller_->command_interfaces_[CMD_TRACTION_WHEEL].get_value(), 0.253221, COMMON_THRESHOLD);
   EXPECT_NEAR(
     controller_->command_interfaces_[CMD_STEER_WHEEL].get_value(), 1.4179821977774734,
     COMMON_THRESHOLD);
@@ -213,7 +213,7 @@ TEST_F(BicycleSteeringControllerTest, receive_message_and_publish_updated_status
     controller_interface::return_type::OK);
 
   EXPECT_NEAR(
-    controller_->command_interfaces_[CMD_DRIVE_WHEEL].get_value(), 0.253221, COMMON_THRESHOLD);
+    controller_->command_interfaces_[CMD_TRACTION_WHEEL].get_value(), 0.253221, COMMON_THRESHOLD);
   EXPECT_NEAR(
     controller_->command_interfaces_[CMD_STEER_WHEEL].get_value(), 1.4179821977774734,
     COMMON_THRESHOLD);
