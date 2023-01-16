@@ -67,7 +67,6 @@ TEST_F(MecanumDriveControllerTest, all_parameters_set_configure_success)
   ASSERT_THAT(controller_->params_.joint_names, testing::ElementsAreArray(joint_names_));
   ASSERT_TRUE(controller_->params_.state_joint_names.empty());
   ASSERT_EQ(controller_->params_.interface_name, interface_name_);
-
 }
 
 // checking if all interfaces, command, state and reference are exported as expected
@@ -97,7 +96,8 @@ TEST_F(MecanumDriveControllerTest, check_exported_intefaces)
 
   auto reference_interfaces = controller_->export_reference_interfaces();
   ASSERT_EQ(reference_interfaces.size(), NR_REF_ITFS);
-  for (size_t i = 0; i < reference_names_.size(); ++i) {
+  for (size_t i = 0; i < reference_names_.size(); ++i)
+  {
     const std::string ref_itf_name = std::string(controller_->get_node()->get_name()) + "/" +
                                      reference_names_[i] + "/" + interface_name_;
     EXPECT_EQ(reference_interfaces[i].get_name(), ref_itf_name);
@@ -203,11 +203,9 @@ TEST_F(MecanumDriveControllerTest, publish_status_success)
 
   EXPECT_NEAR(msg.odom.pose.pose.position.y, 0.0, EPS);
   EXPECT_EQ(msg.reference_vel.linear.x, 1.5);
-
-
 }
 
-// Tests the msg subscriber and publisher 
+// Tests the msg subscriber and publisher
 TEST_F(MecanumDriveControllerTest, receive_message_and_publish_updated_status)
 {
   SetUpController();
@@ -243,8 +241,8 @@ TEST_F(MecanumDriveControllerTest, receive_message_and_publish_updated_status)
     controller_->update_and_write_commands(
       controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
-//  w0_vel = 1.0 / params_.kinematics.wheels_radius * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y - params_.kinematics.wheels_k * body_velocity_center_frame_.angular_z);
-//  joint_command_values_[1] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0) 
+  //  w0_vel = 1.0 / params_.kinematics.wheels_radius * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y - params_.kinematics.wheels_k * body_velocity_center_frame_.angular_z);
+  //  joint_command_values_[1] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0)
   EXPECT_EQ(joint_command_values_[1], 3.0);
 
   subscribe_and_get_messages(msg);
@@ -310,7 +308,7 @@ TEST_F(MecanumDriveControllerTest, test_time_stamp_zero)
 TEST_F(MecanumDriveControllerTest, test_message_accepted)
 {
   SetUpController();
-  
+
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
@@ -417,8 +415,8 @@ TEST_F(MecanumDriveControllerTest, test_update_logic_not_chainable)
     controller_interface::return_type::OK);
 
   EXPECT_NE(joint_command_values_[1], command_lin_x);
-//  w0_vel = 1.0 / params_.kinematics.wheels_radius * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y - params_.kinematics.wheels_k * body_velocity_center_frame_.angular_z);
-//  joint_command_values_[1] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0)  
+  //  w0_vel = 1.0 / params_.kinematics.wheels_radius * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y - params_.kinematics.wheels_k * body_velocity_center_frame_.angular_z);
+  //  joint_command_values_[1] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0)
   EXPECT_EQ(joint_command_values_[1], 3.0);
   ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
   for (const auto & interface : controller_->reference_interfaces_)
@@ -468,8 +466,8 @@ TEST_F(MecanumDriveControllerTest, test_update_logic_chainable)
     controller_interface::return_type::OK);
 
   EXPECT_NE(joint_command_values_[1], command_lin_x);
-//  w0_vel = 1.0 / params_.kinematics.wheels_radius * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y - params_.kinematics.wheels_k * body_velocity_center_frame_.angular_z);
-//  joint_command_values_[1] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0)  
+  //  w0_vel = 1.0 / params_.kinematics.wheels_radius * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y - params_.kinematics.wheels_k * body_velocity_center_frame_.angular_z);
+  //  joint_command_values_[1] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0)
   EXPECT_EQ(joint_command_values_[1], 3.0);
   for (const auto & interface : controller_->reference_interfaces_)
   {
@@ -525,8 +523,8 @@ TEST_F(MecanumDriveControllerTest, test_ref_timeout_zero_for_update)
 
   EXPECT_FALSE(std::isnan(joint_command_values_[1]));
   EXPECT_NE(joint_command_values_[1], command_lin_x);
-//  w0_vel = 1.0 / params_.kinematics.wheels_radius * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y - params_.kinematics.wheels_k * body_velocity_center_frame_.angular_z);
-//  joint_command_values_[1] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0) 
+  //  w0_vel = 1.0 / params_.kinematics.wheels_radius * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y - params_.kinematics.wheels_k * body_velocity_center_frame_.angular_z);
+  //  joint_command_values_[1] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0)
   EXPECT_EQ(joint_command_values_[1], 3.0);
   ASSERT_TRUE(std::isnan((*(controller_->input_ref_.readFromRT()))->twist.linear.x));
 }

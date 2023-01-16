@@ -98,7 +98,6 @@ protected:
   //Names of the references, ex: high level vel commands from MoveIt, Nav2, etc. used for preceding controller
   std::vector<std::string> reference_names_;
 
-
   // Command subscribers and Controller State, odom state, tf state publishers
   rclcpp::Subscription<ControllerReferenceMsg>::SharedPtr ref_subscriber_ = nullptr;
   realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerReferenceMsg>> input_ref_;
@@ -128,10 +127,9 @@ private:
   MECANUM_DRIVE_CONTROLLER__VISIBILITY_LOCAL
   void reference_callback(const std::shared_ptr<ControllerReferenceMsg> msg);
 
-  double velocity_in_center_frame_linear_x;  // [m/s]
-  double velocity_in_center_frame_linear_y;  // [m/s] 
-  double velocity_in_center_frame_angular_z;     // [rad/s]
-
+  double velocity_in_center_frame_linear_x;   // [m/s]
+  double velocity_in_center_frame_linear_y;   // [m/s]
+  double velocity_in_center_frame_angular_z;  // [rad/s]
 };
 
 }  // namespace mecanum_drive_controller

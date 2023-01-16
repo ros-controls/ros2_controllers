@@ -28,7 +28,6 @@
 namespace
 {  // utility
 
-
 using ControllerReferenceMsg =
   mecanum_drive_controller::MecanumDriveController::ControllerReferenceMsg;
 
@@ -75,17 +74,22 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
 {
   params_ = param_listener_->get_params();
 
-  if (!params_.state_joint_names.empty()) {
+  if (!params_.state_joint_names.empty())
+  {
     state_joint_names_ = params_.state_joint_names;
-  } else {
+  }
+  else
+  {
     state_joint_names_ = params_.joint_names;
   }
 
-  if (params_.joint_names.size() != state_joint_names_.size()) {
-    RCLCPP_FATAL(get_node()->get_logger(),
-                 "Size of 'joints' (%d) and 'state_joint_names' (%d) parameters has "
-                 "to be the same!",
-                 params_.joint_names.size(), state_joint_names_.size());
+  if (params_.joint_names.size() != state_joint_names_.size())
+  {
+    RCLCPP_FATAL(
+      get_node()->get_logger(),
+      "Size of 'joints' (%d) and 'state_joint_names' (%d) parameters has "
+      "to be the same!",
+      params_.joint_names.size(), state_joint_names_.size());
     return CallbackReturn::FAILURE;
   }
 
@@ -225,8 +229,7 @@ void MecanumDriveController::reference_callback(const std::shared_ptr<Controller
       "(%.4f).",
       rclcpp::Time(msg->header.stamp).seconds(), age_of_last_command.seconds(),
       ref_timeout_.seconds());
-      reset_controller_reference_msg(msg, get_node());
-
+    reset_controller_reference_msg(msg, get_node());
   }
 }
 
@@ -237,9 +240,9 @@ MecanumDriveController::command_interface_configuration() const
   command_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
 
   command_interfaces_config.names.reserve(params_.joint_names.size());
-  for (const auto& joint : params_.joint_names) {
-    command_interfaces_config.names.push_back(joint + "/" +
-                                              params_.interface_name);
+  for (const auto & joint : params_.joint_names)
+  {
+    command_interfaces_config.names.push_back(joint + "/" + params_.interface_name);
   }
 
   return command_interfaces_config;
@@ -253,9 +256,9 @@ controller_interface::InterfaceConfiguration MecanumDriveController::state_inter
 
   state_interfaces_config.names.reserve(state_joint_names_.size());
 
-  for (const auto& joint : state_joint_names_) {
-    state_interfaces_config.names.push_back(joint + "/" +
-                                            params_.interface_name);
+  for (const auto & joint : state_joint_names_)
+  {
+    state_interfaces_config.names.push_back(joint + "/" + params_.interface_name);
   }
 
   return state_interfaces_config;
@@ -270,10 +273,11 @@ MecanumDriveController::on_export_reference_interfaces()
 
   reference_interfaces.reserve(reference_interfaces_.size());
 
-  for (size_t i = 0; i < reference_interfaces_.size(); ++i) {
+  for (size_t i = 0; i < reference_interfaces_.size(); ++i)
+  {
     reference_interfaces.push_back(hardware_interface::CommandInterface(
-        get_node()->get_name(), reference_names_[i] + "/" + params_.interface_name,
-        &reference_interfaces_[i]));
+      get_node()->get_name(), reference_names_[i] + "/" + params_.interface_name,
+      &reference_interfaces_[i]));
   }
 
   return reference_interfaces;
@@ -313,7 +317,9 @@ controller_interface::return_type MecanumDriveController::update_reference_from_
   // send message only if there is no timeout
   if (age_of_last_command <= ref_timeout_ || ref_timeout_ == rclcpp::Duration::from_seconds(0))
   {
-    if (!std::isnan(current_ref->twist.linear.x) && !std::isnan(current_ref->twist.linear.y) && !std::isnan(current_ref->twist.angular.z))
+    if (
+      !std::isnan(current_ref->twist.linear.x) && !std::isnan(current_ref->twist.linear.y) &&
+      !std::isnan(current_ref->twist.angular.z))
     {
       reference_interfaces_[0] = current_ref->twist.linear.x;
       reference_interfaces_[1] = current_ref->twist.linear.y;
@@ -325,7 +331,6 @@ controller_interface::return_type MecanumDriveController::update_reference_from_
         current_ref->twist.linear.y = std::numeric_limits<double>::quiet_NaN();
         current_ref->twist.angular.z = std::numeric_limits<double>::quiet_NaN();
       }
-
     }
   }
   else
@@ -334,7 +339,9 @@ controller_interface::return_type MecanumDriveController::update_reference_from_
     reference_interfaces_[1] = std::numeric_limits<double>::quiet_NaN();
     reference_interfaces_[2] = std::numeric_limits<double>::quiet_NaN();
 
-    if (!std::isnan(current_ref->twist.linear.x) && !std::isnan(current_ref->twist.linear.y) && !std::isnan(current_ref->twist.angular.z))
+    if (
+      !std::isnan(current_ref->twist.linear.x) && !std::isnan(current_ref->twist.linear.y) &&
+      !std::isnan(current_ref->twist.angular.z))
     {
       current_ref->twist.linear.x = std::numeric_limits<double>::quiet_NaN();
       current_ref->twist.linear.y = std::numeric_limits<double>::quiet_NaN();
@@ -355,11 +362,13 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
   double wheel_front_right_vel = state_interfaces_[3].get_value();
 
   if (
-    !std::isnan(wheel_front_left_vel) && !std::isnan(wheel_back_left_vel) && !std::isnan(wheel_back_right_vel) &&
-    !std::isnan(wheel_front_right_vel))
+    !std::isnan(wheel_front_left_vel) && !std::isnan(wheel_back_left_vel) &&
+    !std::isnan(wheel_back_right_vel) && !std::isnan(wheel_front_right_vel))
   {
     // Estimate twist (using joint information) and integrate
-    odometry_.update(wheel_front_left_vel, wheel_back_left_vel, wheel_back_right_vel, wheel_front_right_vel, period.seconds());
+    odometry_.update(
+      wheel_front_left_vel, wheel_back_left_vel, wheel_back_right_vel, wheel_front_right_vel,
+      period.seconds());
   }
 
   // INVERSE KINEMATICS (move robot).
@@ -375,26 +384,37 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
     /// rotation_from_base_to_center: Rotation transformation matrix, to transform from base frame to center frame
     /// linear_trans_from_base_to_center: offset/linear transformation matrix, to transform from base frame to center frame
 
-    
-
     tf2::Matrix3x3 rotation_from_base_to_center = tf2::Matrix3x3((quaternion));
     tf2::Vector3 velocity_in_base_frame_w_r_t_center_frame_ =
-      rotation_from_base_to_center * tf2::Vector3(reference_interfaces_[0], reference_interfaces_[1], 0.0);
-    tf2::Vector3 linear_trans_from_base_to_center =
-      tf2::Vector3(params_.kinematics.base_frame_offset.x, params_.kinematics.base_frame_offset.y, 0.0);
+      rotation_from_base_to_center *
+      tf2::Vector3(reference_interfaces_[0], reference_interfaces_[1], 0.0);
+    tf2::Vector3 linear_trans_from_base_to_center = tf2::Vector3(
+      params_.kinematics.base_frame_offset.x, params_.kinematics.base_frame_offset.y, 0.0);
 
-    velocity_in_center_frame_linear_x = velocity_in_base_frame_w_r_t_center_frame_.x() + linear_trans_from_base_to_center.y() * reference_interfaces_[2];
-    velocity_in_center_frame_linear_y = velocity_in_base_frame_w_r_t_center_frame_.y() - linear_trans_from_base_to_center.x() * reference_interfaces_[2];
+    velocity_in_center_frame_linear_x =
+      velocity_in_base_frame_w_r_t_center_frame_.x() +
+      linear_trans_from_base_to_center.y() * reference_interfaces_[2];
+    velocity_in_center_frame_linear_y =
+      velocity_in_base_frame_w_r_t_center_frame_.y() -
+      linear_trans_from_base_to_center.x() * reference_interfaces_[2];
     velocity_in_center_frame_angular_z = reference_interfaces_[2];
 
     double w_front_left_vel =
-      1.0 / params_.kinematics.wheels_radius * (velocity_in_center_frame_linear_x - velocity_in_center_frame_linear_y - params_.kinematics.wheels_k * velocity_in_center_frame_angular_z);
+      1.0 / params_.kinematics.wheels_radius *
+      (velocity_in_center_frame_linear_x - velocity_in_center_frame_linear_y -
+       params_.kinematics.wheels_k * velocity_in_center_frame_angular_z);
     double w_back_left_vel =
-      1.0 / params_.kinematics.wheels_radius * (velocity_in_center_frame_linear_x + velocity_in_center_frame_linear_y - params_.kinematics.wheels_k * velocity_in_center_frame_angular_z);
+      1.0 / params_.kinematics.wheels_radius *
+      (velocity_in_center_frame_linear_x + velocity_in_center_frame_linear_y -
+       params_.kinematics.wheels_k * velocity_in_center_frame_angular_z);
     double w_back_right_vel =
-      1.0 / params_.kinematics.wheels_radius * (velocity_in_center_frame_linear_x - velocity_in_center_frame_linear_y + params_.kinematics.wheels_k * velocity_in_center_frame_angular_z);
+      1.0 / params_.kinematics.wheels_radius *
+      (velocity_in_center_frame_linear_x - velocity_in_center_frame_linear_y +
+       params_.kinematics.wheels_k * velocity_in_center_frame_angular_z);
     double w_front_right_vel =
-      1.0 / params_.kinematics.wheels_radius * (velocity_in_center_frame_linear_x + velocity_in_center_frame_linear_y + params_.kinematics.wheels_k * velocity_in_center_frame_angular_z);
+      1.0 / params_.kinematics.wheels_radius *
+      (velocity_in_center_frame_linear_x + velocity_in_center_frame_linear_y +
+       params_.kinematics.wheels_k * velocity_in_center_frame_angular_z);
 
     // Set wheels velocities:
 
@@ -406,15 +426,13 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
     fprintf(stderr, " command_interfaces_[2] = %f \n", w_back_right_vel);
     command_interfaces_[3].set_value(w_front_right_vel);
     fprintf(stderr, " command_interfaces_[3] = %f \n", w_front_right_vel);
-
-
   }
   else
   {
     reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();
     reference_interfaces_[1] = std::numeric_limits<double>::quiet_NaN();
     reference_interfaces_[2] = std::numeric_limits<double>::quiet_NaN();
-    
+
     command_interfaces_[0].set_value(0.0);
     fprintf(stderr, " command_interfaces_[0] = %f \n", command_interfaces_[0].get_value());
     command_interfaces_[1].set_value(0.0);
