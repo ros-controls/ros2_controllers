@@ -33,8 +33,10 @@ static constexpr size_t STATE_STEER_RIGHT_WHEEL = 2;
 static constexpr size_t STATE_STEER_LEFT_WHEEL = 3;
 
 // name constants for command interfaces
-static constexpr size_t CMD_DRIVE_WHEEL = 0;
-static constexpr size_t CMD_STEER = 1;
+static constexpr size_t CMD_TRACTION_RIGHT_WHEEL = 0;
+static constexpr size_t CMD_TRACTION_LEFT_WHEEL = 1;
+static constexpr size_t CMD_STEER_RIGHT_WHEEL = 2;
+static constexpr size_t CMD_STEER_LEFT_WHEEL = 3;
 
 static constexpr size_t NR_STATE_ITFS = 4;
 static constexpr size_t NR_CMD_ITFS = 4;

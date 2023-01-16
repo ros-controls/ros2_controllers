@@ -45,8 +45,10 @@ using ackermann_steering_controller::STATE_TRACTION_LEFT_WHEEL;
 using ackermann_steering_controller::STATE_TRACTION_RIGHT_WHEEL;
 
 // name constants for command interfaces
-using ackermann_steering_controller::CMD_DRIVE_WHEEL;
-using ackermann_steering_controller::CMD_STEER;
+using ackermann_steering_controller::CMD_STEER_LEFT_WHEEL;
+using ackermann_steering_controller::CMD_STEER_RIGHT_WHEEL;
+using ackermann_steering_controller::CMD_TRACTION_LEFT_WHEEL;
+using ackermann_steering_controller::CMD_TRACTION_RIGHT_WHEEL;
 
 namespace
 {
@@ -162,22 +164,22 @@ protected:
 
     command_itfs_.emplace_back(hardware_interface::CommandInterface(
       rear_wheels_names_[0], traction_interface_name_,
-      &joint_command_values_[STATE_TRACTION_RIGHT_WHEEL]));
+      &joint_command_values_[CMD_TRACTION_RIGHT_WHEEL]));
     command_ifs.emplace_back(command_itfs_.back());
 
     command_itfs_.emplace_back(hardware_interface::CommandInterface(
       rear_wheels_names_[1], steering_interface_name_,
-      &joint_command_values_[STATE_TRACTION_LEFT_WHEEL]));
+      &joint_command_values_[CMD_TRACTION_LEFT_WHEEL]));
     command_ifs.emplace_back(command_itfs_.back());
 
     command_itfs_.emplace_back(hardware_interface::CommandInterface(
       front_wheels_names_[0], steering_interface_name_,
-      &joint_command_values_[STATE_STEER_RIGHT_WHEEL]));
+      &joint_command_values_[CMD_STEER_RIGHT_WHEEL]));
     command_ifs.emplace_back(command_itfs_.back());
 
     command_itfs_.emplace_back(hardware_interface::CommandInterface(
       front_wheels_names_[1], steering_interface_name_,
-      &joint_command_values_[STATE_STEER_LEFT_WHEEL]));
+      &joint_command_values_[CMD_STEER_LEFT_WHEEL]));
     command_ifs.emplace_back(command_itfs_.back());
 
     std::vector<hardware_interface::LoanedStateInterface> state_ifs;
