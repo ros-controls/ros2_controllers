@@ -7,7 +7,7 @@ test_mecanum_drive_controller:
 
     reference_names: ["linear_x", "linear_y", "angular_z"]
 
-    interface_name: velocity  
+    interface_name: velocity
 
     kinematics:
       base_frame_offset:

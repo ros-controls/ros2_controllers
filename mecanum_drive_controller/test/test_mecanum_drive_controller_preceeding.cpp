@@ -42,10 +42,10 @@ TEST_F(MecanumDriveControllerTest, all_parameters_set_configure_success)
 
   ASSERT_EQ(controller_->params_.reference_timeout, 0.1);
   ASSERT_THAT(controller_->params_.joint_names, testing::ElementsAreArray(joint_names_));
-  ASSERT_THAT(controller_->params_.state_joint_names, testing::ElementsAreArray(state_joint_names_));
+  ASSERT_THAT(
+    controller_->params_.state_joint_names, testing::ElementsAreArray(state_joint_names_));
   ASSERT_THAT(controller_->state_joint_names_, testing::ElementsAreArray(state_joint_names_));
   ASSERT_EQ(controller_->params_.interface_name, interface_name_);
-
 }
 
 TEST_F(MecanumDriveControllerTest, check_exported_intefaces)
@@ -67,7 +67,6 @@ TEST_F(MecanumDriveControllerTest, check_exported_intefaces)
   {
     EXPECT_EQ(state_intefaces.names[i], state_joint_names_[i] + "/" + interface_name_);
   }
-
 }
 
 int main(int argc, char ** argv)

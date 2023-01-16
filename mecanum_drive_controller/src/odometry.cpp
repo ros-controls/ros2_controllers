@@ -21,7 +21,6 @@
 using namespace std;
 namespace mecanum_drive_controller
 {
-
 Odometry::Odometry(size_t velocity_rolling_window_size)
 : timestamp_(0.0),
   position_x_in_base_frame_(0.0),
@@ -35,7 +34,8 @@ Odometry::Odometry(size_t velocity_rolling_window_size)
 {
 }
 
-void Odometry::init(const rclcpp::Time & time, std::array<double, PLANAR_POINT_DIM> base_frame_offset)
+void Odometry::init(
+  const rclcpp::Time & time, std::array<double, PLANAR_POINT_DIM> base_frame_offset)
 {
   // Reset timestamp:
   timestamp_ = time;
@@ -66,7 +66,8 @@ bool Odometry::update(
   /// angular_transformation_from_center_2_base: Rotation transformation matrix, to transform from center frame to base frame
   /// linear_transformation_from_center_2_base: offset/linear transformation matrix, to transform from center frame to base frame
 
-  double velocity_in_center_frame_linear_x = 0.25 * wheels_radius_ * (wheel0_vel + wheel1_vel + wheel2_vel + wheel3_vel);
+  double velocity_in_center_frame_linear_x =
+    0.25 * wheels_radius_ * (wheel0_vel + wheel1_vel + wheel2_vel + wheel3_vel);
   double velocity_in_center_frame_linear_y =
     0.25 * wheels_radius_ * (-wheel0_vel + wheel1_vel - wheel2_vel + wheel3_vel);
   double velocity_in_center_frame_angular_z =
@@ -76,11 +77,19 @@ bool Odometry::update(
   orientation_R_c_b.setRPY(0.0, 0.0, -base_frame_offset_[2]);
 
   tf2::Matrix3x3 angular_transformation_from_center_2_base = tf2::Matrix3x3((orientation_R_c_b));
-  tf2::Vector3 velocity_in_center_frame_w_r_t_base_frame_ =angular_transformation_from_center_2_base * tf2::Vector3(velocity_in_center_frame_linear_x, velocity_in_center_frame_linear_y, 0.0);
-  tf2::Vector3 linear_transformation_from_center_2_base =angular_transformation_from_center_2_base * tf2::Vector3(-base_frame_offset_[0], -base_frame_offset_[1], 0.0);
+  tf2::Vector3 velocity_in_center_frame_w_r_t_base_frame_ =
+    angular_transformation_from_center_2_base *
+    tf2::Vector3(velocity_in_center_frame_linear_x, velocity_in_center_frame_linear_y, 0.0);
+  tf2::Vector3 linear_transformation_from_center_2_base =
+    angular_transformation_from_center_2_base *
+    tf2::Vector3(-base_frame_offset_[0], -base_frame_offset_[1], 0.0);
 
-  velocity_in_base_frame_linear_x = velocity_in_center_frame_w_r_t_base_frame_.x() + linear_transformation_from_center_2_base.y() * velocity_in_center_frame_angular_z;
-  velocity_in_base_frame_linear_y = velocity_in_center_frame_w_r_t_base_frame_.y() - linear_transformation_from_center_2_base.x() * velocity_in_center_frame_angular_z;
+  velocity_in_base_frame_linear_x =
+    velocity_in_center_frame_w_r_t_base_frame_.x() +
+    linear_transformation_from_center_2_base.y() * velocity_in_center_frame_angular_z;
+  velocity_in_base_frame_linear_y =
+    velocity_in_center_frame_w_r_t_base_frame_.y() -
+    linear_transformation_from_center_2_base.x() * velocity_in_center_frame_angular_z;
   velocity_in_base_frame_angular_z = velocity_in_center_frame_angular_z;
 
   /// Integration.
@@ -92,7 +101,9 @@ bool Odometry::update(
   orientation_R_b_odom.setRPY(0.0, 0.0, -base_frame_offset_[2]);
 
   tf2::Matrix3x3 angular_transformation_from_base_2_odom = tf2::Matrix3x3((orientation_R_b_odom));
-  tf2::Vector3 velocity_in_base_frame_w_r_t_odom_frame_ = angular_transformation_from_base_2_odom * tf2::Vector3(velocity_in_base_frame_linear_x, velocity_in_base_frame_linear_y, 0.0);
+  tf2::Vector3 velocity_in_base_frame_w_r_t_odom_frame_ =
+    angular_transformation_from_base_2_odom *
+    tf2::Vector3(velocity_in_base_frame_linear_x, velocity_in_base_frame_linear_y, 0.0);
 
   position_x_in_base_frame_ += velocity_in_base_frame_w_r_t_odom_frame_.x() * dt;
   position_y_in_base_frame_ += velocity_in_base_frame_w_r_t_odom_frame_.y() * dt;
