@@ -346,6 +346,11 @@ TEST_F(MecanumDriveControllerTest, test_update_logic_not_chainable)
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_FALSE(controller_->is_in_chained_mode());
 
+  for (const auto & interface : controller_->reference_interfaces_)
+  {
+    EXPECT_TRUE(std::isnan(interface));
+  }
+
   // set command statically
   joint_command_values_[1] = command_lin_x;
 
@@ -416,6 +421,56 @@ TEST_F(MecanumDriveControllerTest, test_update_logic_not_chainable)
 //  joint_command_values_[1] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0)  
   EXPECT_EQ(joint_command_values_[1], 3.0);
   ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
+  for (const auto & interface : controller_->reference_interfaces_)
+  {
+    EXPECT_FALSE(std::isnan(interface));
+  }
+  for (size_t i = 0; i < controller_->command_interfaces_.size(); ++i)
+  {
+    EXPECT_EQ(controller_->command_interfaces_[i].get_value(), 3.0);
+  }
+}
+
+TEST_F(MecanumDriveControllerTest, test_update_logic_chainable)
+{
+  // 1. age>ref_timeout 2. age<ref_timeout
+  SetUpController();
+
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  controller_->set_chained_mode(true);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(controller_->is_in_chained_mode());
+
+  for (const auto & interface : controller_->reference_interfaces_)
+  {
+    EXPECT_TRUE(std::isnan(interface));
+  }
+
+  // set command statically
+  joint_command_values_[1] = command_lin_x;
+
+  controller_->reference_interfaces_[0] = 1.5;
+  controller_->reference_interfaces_[1] = 0.0;
+  controller_->reference_interfaces_[2] = 0.0;
+
+  const auto age_of_last_command =
+    controller_->get_node()->now() - (*(controller_->input_ref_.readFromNonRT()))->header.stamp;
+
+  // age_of_last_command < ref_timeout_
+  ASSERT_TRUE(age_of_last_command <= controller_->ref_timeout_);
+
+  ASSERT_EQ(
+    controller_->update_and_write_commands(
+      controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  EXPECT_NE(joint_command_values_[1], command_lin_x);
+//  w0_vel = 1.0 / params_.kinematics.wheels_radius * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y - params_.kinematics.wheels_k * body_velocity_center_frame_.angular_z);
+//  joint_command_values_[1] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0)  
+  EXPECT_EQ(joint_command_values_[1], 3.0);
   for (const auto & interface : controller_->reference_interfaces_)
   {
     EXPECT_FALSE(std::isnan(interface));
