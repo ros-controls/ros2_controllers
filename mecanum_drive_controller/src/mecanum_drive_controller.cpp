@@ -372,19 +372,19 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
     tf2::Quaternion quaternion;
     quaternion.setRPY(0.0, 0.0, params_.kinematics.base_frame_offset.theta);
     /// \note The variables meaning:
-    /// angular_transformation_from_base_2_center: Rotation transformation matrix, to transform from base frame to center frame
-    /// linear_transformation_from_base_2_center: offset/linear transformation matrix, to transform from base frame to center frame
+    /// rotation_from_base_to_center: Rotation transformation matrix, to transform from base frame to center frame
+    /// linear_trans_from_base_to_center: offset/linear transformation matrix, to transform from base frame to center frame
 
     
 
-    tf2::Matrix3x3 angular_transformation_from_base_2_center = tf2::Matrix3x3((quaternion));
+    tf2::Matrix3x3 rotation_from_base_to_center = tf2::Matrix3x3((quaternion));
     tf2::Vector3 velocity_in_base_frame_w_r_t_center_frame_ =
-      angular_transformation_from_base_2_center * tf2::Vector3(reference_interfaces_[0], reference_interfaces_[1], 0.0);
-    tf2::Vector3 linear_transformation_from_base_2_center =
+      rotation_from_base_to_center * tf2::Vector3(reference_interfaces_[0], reference_interfaces_[1], 0.0);
+    tf2::Vector3 linear_trans_from_base_to_center =
       tf2::Vector3(params_.kinematics.base_frame_offset.x, params_.kinematics.base_frame_offset.y, 0.0);
 
-    velocity_in_center_frame_linear_x = velocity_in_base_frame_w_r_t_center_frame_.x() + linear_transformation_from_base_2_center.y() * reference_interfaces_[2];
-    velocity_in_center_frame_linear_y = velocity_in_base_frame_w_r_t_center_frame_.y() - linear_transformation_from_base_2_center.x() * reference_interfaces_[2];
+    velocity_in_center_frame_linear_x = velocity_in_base_frame_w_r_t_center_frame_.x() + linear_trans_from_base_to_center.y() * reference_interfaces_[2];
+    velocity_in_center_frame_linear_y = velocity_in_base_frame_w_r_t_center_frame_.y() - linear_trans_from_base_to_center.x() * reference_interfaces_[2];
     velocity_in_center_frame_angular_z = reference_interfaces_[2];
 
     double w0_vel =
@@ -414,6 +414,7 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
     reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();
     reference_interfaces_[1] = std::numeric_limits<double>::quiet_NaN();
     reference_interfaces_[2] = std::numeric_limits<double>::quiet_NaN();
+    
     command_interfaces_[0].set_value(0.0);
     fprintf(stderr, " command_interfaces_[0] = %f \n", command_interfaces_[0].get_value());
     command_interfaces_[1].set_value(0.0);
