@@ -483,12 +483,6 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
     }
   }
 
-  if (ref_timeout_ == rclcpp::Duration::from_seconds(0) || is_in_chained_mode())
-  {
-    reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();
-    reference_interfaces_[1] = std::numeric_limits<double>::quiet_NaN();
-  }
-
   // Publish odometry message
   // Compute and store orientation info
   tf2::Quaternion orientation;
@@ -586,6 +580,9 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
 
     controller_state_publisher_->unlockAndPublish();
   }
+
+  reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();
+  reference_interfaces_[1] = std::numeric_limits<double>::quiet_NaN();
 
   return controller_interface::return_type::OK;
 }

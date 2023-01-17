@@ -188,7 +188,7 @@ TEST_F(AckermannSteeringControllerTest, test_update_logic)
   EXPECT_EQ(controller_->reference_interfaces_.size(), joint_reference_interfaces_.size());
   for (const auto & interface : controller_->reference_interfaces_)
   {
-    EXPECT_FALSE(std::isnan(interface));
+    EXPECT_TRUE(std::isnan(interface));
   }
 }
 
