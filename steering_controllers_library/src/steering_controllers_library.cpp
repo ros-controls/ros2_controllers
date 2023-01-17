@@ -527,55 +527,37 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
     controller_state_publisher_->msg_.steer_positions.data.clear();
     controller_state_publisher_->msg_.steering_angle_command.data.clear();
 
-    if (params_.front_steering)
+    auto number_of_traction_wheels = params_.rear_wheels_names.size();
+    auto number_of_steering_wheels = params_.front_wheels_names.size();
+
+    if (!params_.front_steering)
     {
-      for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
-      {
-        if (params_.position_feedback)
-        {
-          controller_state_publisher_->msg_.traction_wheels_position.data.push_back(
-            state_interfaces_[i].get_value());
-        }
-        else
-        {
-          controller_state_publisher_->msg_.traction_wheels_velocity.data.push_back(
-            state_interfaces_[i].get_value());
-        }
-        controller_state_publisher_->msg_.linear_velocity_command.data.push_back(
-          command_interfaces_[i].get_value());
-      }
-      for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
-      {
-        controller_state_publisher_->msg_.steer_positions.data.push_back(
-          state_interfaces_[params_.rear_wheels_names.size() + i].get_value());
-        controller_state_publisher_->msg_.steering_angle_command.data.push_back(
-          command_interfaces_[params_.rear_wheels_names.size() + i].get_value());
-      }
+      number_of_traction_wheels = params_.front_wheels_names.size();
+      number_of_steering_wheels = params_.rear_wheels_names.size();
     }
-    else
+
+    for (size_t i = 0; i < number_of_traction_wheels; ++i)
     {
-      for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
+      if (params_.position_feedback)
       {
-        if (params_.position_feedback)
-        {
-          controller_state_publisher_->msg_.traction_wheels_position.data.push_back(
-            state_interfaces_[i].get_value());
-        }
-        else
-        {
-          controller_state_publisher_->msg_.traction_wheels_velocity.data.push_back(
-            state_interfaces_[i].get_value());
-        }
-        controller_state_publisher_->msg_.linear_velocity_command.data.push_back(
-          command_interfaces_[i].get_value());
+        controller_state_publisher_->msg_.traction_wheels_position.data.push_back(
+          state_interfaces_[i].get_value());
       }
-      for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
+      else
       {
-        controller_state_publisher_->msg_.steer_positions.data.push_back(
-          state_interfaces_[params_.front_wheels_names.size() + i].get_value());
-        controller_state_publisher_->msg_.steering_angle_command.data.push_back(
-          command_interfaces_[params_.front_wheels_names.size() + i].get_value());
+        controller_state_publisher_->msg_.traction_wheels_velocity.data.push_back(
+          state_interfaces_[i].get_value());
       }
+      controller_state_publisher_->msg_.linear_velocity_command.data.push_back(
+        command_interfaces_[i].get_value());
+    }
+
+    for (size_t i = 0; i < number_of_steering_wheels; ++i)
+    {
+      controller_state_publisher_->msg_.steer_positions.data.push_back(
+        state_interfaces_[number_of_traction_wheels + i].get_value());
+      controller_state_publisher_->msg_.steering_angle_command.data.push_back(
+        command_interfaces_[number_of_traction_wheels + i].get_value());
     }
 
     controller_state_publisher_->unlockAndPublish();
