@@ -67,10 +67,10 @@ TEST_F(BicycleSteeringControllerTest, check_exported_intefaces)
 
   EXPECT_EQ(
     state_intefaces.names[STATE_TRACTION_WHEEL],
-    preceeding_prefix_ + "/" + rear_wheels_names_[0] + "/" + traction_interface_name_);
+    controller_->rear_wheels_state_names_[0] + "/" + traction_interface_name_);
   EXPECT_EQ(
     state_intefaces.names[STATE_STEER_AXIS],
-    preceeding_prefix_ + "/" + front_wheels_names_[0] + "/" + steering_interface_name_);
+    controller_->front_wheels_state_names_[0] + "/" + steering_interface_name_);
 
   // check ref itfs
   auto reference_interfaces = controller_->export_reference_interfaces();

@@ -88,6 +88,25 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
   odometry_.set_velocity_rolling_window_size(params_.velocity_rolling_window_size);
 
   configure_odometry();
+
+  if (!params_.rear_wheels_state_names.empty())
+  {
+    rear_wheels_state_names_ = params_.rear_wheels_state_names;
+  }
+  else
+  {
+    rear_wheels_state_names_ = params_.rear_wheels_names;
+  }
+
+  if (!params_.front_wheels_state_names.empty())
+  {
+    front_wheels_state_names_ = params_.front_wheels_state_names;
+  }
+  else
+  {
+    front_wheels_state_names_ = params_.front_wheels_names;
+  }
+
   // topics QoS
   auto subscribers_qos = rclcpp::SystemDefaultsQoS();
   subscribers_qos.keep_last(1);
@@ -186,7 +205,6 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  // TODO(anyone): Reserve memory in state publisher depending on the message type
   controller_state_publisher_->lock();
   controller_state_publisher_->msg_.header.stamp = get_node()->now();
   controller_state_publisher_->msg_.header.frame_id = params_.odom_frame_id;
@@ -319,30 +337,30 @@ SteeringControllersLibrary::state_interface_configuration() const
                                           : hardware_interface::HW_IF_VELOCITY;
   if (params_.front_steering)
   {
-    for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
+    for (size_t i = 0; i < rear_wheels_state_names_.size(); i++)
     {
       state_interfaces_config.names.push_back(
-        params_.rear_wheels_names[i] + "/" + traction_wheels_feedback);
+        rear_wheels_state_names_[i] + "/" + traction_wheels_feedback);
     }
 
-    for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
+    for (size_t i = 0; i < front_wheels_state_names_.size(); i++)
     {
       state_interfaces_config.names.push_back(
-        params_.front_wheels_names[i] + "/" + hardware_interface::HW_IF_POSITION);
+        front_wheels_state_names_[i] + "/" + hardware_interface::HW_IF_POSITION);
     }
   }
   else
   {
-    for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
+    for (size_t i = 0; i < front_wheels_state_names_.size(); i++)
     {
       state_interfaces_config.names.push_back(
-        params_.front_wheels_names[i] + "/" + traction_wheels_feedback);
+        front_wheels_state_names_[i] + "/" + traction_wheels_feedback);
     }
 
-    for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
+    for (size_t i = 0; i < rear_wheels_state_names_.size(); i++)
     {
       state_interfaces_config.names.push_back(
-        params_.rear_wheels_names[i] + "/" + hardware_interface::HW_IF_POSITION);
+        rear_wheels_state_names_[i] + "/" + hardware_interface::HW_IF_POSITION);
     }
   }
 

@@ -9,21 +9,51 @@ steering_controllers_library:
     type: bool,
     default_value: true,
     description: "Is the steering on the front of the robot?",
-    read_only: false,
+    read_only: true,
   }
 
   rear_wheels_names: {
     type: string_array,
-    default_value: ["rear_wheel_joint"],
-    description: "Name of rear wheels.",
+    description: "Names of rear wheel joints.",
     read_only: true,
+    validation: {
+      size_lt<>: [5],
+      unique<>: null,
+      not_empty<>: null,
+    }
   }
 
   front_wheels_names: {
     type: string_array,
-    default_value: ["front_steer_joint"],
-    description: "Names of front steer wheels.",
+    description: "Names of front wheel joints.",
     read_only: true,
+    validation: {
+      size_lt<>: [5],
+      unique<>: null,
+      not_empty<>: null,
+    }
+  }
+
+  rear_wheels_state_names: {
+    type: string_array,
+    description: "(Optional) Names of rear wheel joints to read states from. If not set joint names from 'rear_wheels_names' will be used.",
+    default_value: [],
+    read_only: true,
+    validation: {
+      size_lt<>: [5],
+      unique<>: null,
+    }
+  }
+
+  front_wheels_state_names: {
+    type: string_array,
+    description: "(Optional) Names of front wheel joints to read states from. If not set joint names from 'front_wheels_names' will be used.",
+    default_value: [],
+    read_only: true,
+    validation: {
+      size_lt<>: [5],
+      unique<>: null,
+    }
   }
 
   open_loop: {

@@ -71,16 +71,16 @@ TEST_F(AckermannSteeringControllerTest, check_exported_intefaces)
   ASSERT_EQ(state_intefaces.names.size(), joint_state_values_.size());
   EXPECT_EQ(
     state_intefaces.names[STATE_TRACTION_RIGHT_WHEEL],
-    rear_wheels_names_[0] + "/" + traction_interface_name_);
+    controller_->rear_wheels_state_names_[0] + "/" + traction_interface_name_);
   EXPECT_EQ(
     state_intefaces.names[STATE_TRACTION_LEFT_WHEEL],
-    rear_wheels_names_[1] + "/" + traction_interface_name_);
+    controller_->rear_wheels_state_names_[1] + "/" + traction_interface_name_);
   EXPECT_EQ(
     state_intefaces.names[STATE_STEER_RIGHT_WHEEL],
-    front_wheels_names_[0] + "/" + steering_interface_name_);
+    controller_->front_wheels_state_names_[0] + "/" + steering_interface_name_);
   EXPECT_EQ(
     state_intefaces.names[STATE_STEER_LEFT_WHEEL],
-    front_wheels_names_[1] + "/" + steering_interface_name_);
+    controller_->front_wheels_state_names_[1] + "/" + steering_interface_name_);
 
   // check ref itfs
   auto reference_interfaces = controller_->export_reference_interfaces();

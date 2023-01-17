@@ -135,6 +135,9 @@ protected:
   double last_linear_velocity_ = 0.0;
   double last_angular_velocity_ = 0.0;
 
+  std::vector<std::string> rear_wheels_state_names_;
+  std::vector<std::string> front_wheels_state_names_;
+
 private:
   // callback for topic interface
   STEERING_CONTROLLERS__VISIBILITY_LOCAL void reference_callback(
