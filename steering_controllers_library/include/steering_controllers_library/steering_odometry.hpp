@@ -15,7 +15,8 @@
 // Authors: dr. sc. Tomislav Petkovic, Dr. Ing. Denis Štogl
 //
 
-#pragma once
+#ifndef STEERING_CONTROLLERS_LIBRARY__STEERING_ODOMETRY_HPP_
+#define STEERING_CONTROLLERS_LIBRARY__STEERING_ODOMETRY_HPP_
 
 #include <tuple>
 #include <vector>
@@ -255,3 +256,5 @@ private:
   rcpputils::RollingMeanAccumulator<double> angular_acc_;
 };
 }  // namespace steering_odometry
+
+#endif  // STEERING_CONTROLLERS_LIBRARY__STEERING_ODOMETRY_HPP_
