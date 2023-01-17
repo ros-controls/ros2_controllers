@@ -3,9 +3,6 @@ steering_controllers_library:
     type: double,
     default_value: 1,
     description: "Timeout for controller references after which they will be reset. This is especially useful for controllers that can cause unwanted and dangerous behaviour if reference is not reset, e.g., velocity controllers. If value is 0 the reference is reset after each run.",
-#    validation: {
-#      gt_eq<>: 0.0,
-#    }
   }
 
   front_steering: {
@@ -13,7 +10,6 @@ steering_controllers_library:
     default_value: true,
     description: "Is the steering on the front of the robot?",
     read_only: false,
-
   }
 
   rear_wheels_names: {
@@ -21,7 +17,6 @@ steering_controllers_library:
     default_value: ["rear_wheel_joint"],
     description: "Name of rear wheels.",
     read_only: true,
-
   }
 
   front_wheels_names: {
@@ -29,7 +24,6 @@ steering_controllers_library:
     default_value: ["front_steer_joint"],
     description: "Names of front steer wheels.",
     read_only: true,
-
   }
 
   open_loop: {
@@ -37,7 +31,6 @@ steering_controllers_library:
     default_value: false,
     description: "bool parameter decides if open oop or not (feedback).",
     read_only: false,
-
   }
 
   velocity_rolling_window_size: {
@@ -45,7 +38,6 @@ steering_controllers_library:
     default_value: 10,
     description: "The number of velocity samples to average together to compute the odometry twist.linear.x and twist.angular.z velocities.",
     read_only: false,
-
   }
 
   base_frame_id: {
@@ -53,7 +45,6 @@ steering_controllers_library:
     default_value: "base_link",
     description: "Base frame_id set to value of base_frame_id.",
     read_only: false,
-
   }
 
   odom_frame_id: {
@@ -61,7 +52,6 @@ steering_controllers_library:
     default_value: "odom",
     description: "Odometry frame_id set to value of odom_frame_id.",
     read_only: false,
-
   }
 
   enable_odom_tf: {
@@ -69,7 +59,6 @@ steering_controllers_library:
     default_value: true,
     description: "Publishing to tf is enabled or disabled ?.",
     read_only: false,
-
   }
 
   twist_covariance_diagonal: {
@@ -77,7 +66,6 @@ steering_controllers_library:
     default_value: [0, 7, 14, 21, 28, 35],
     description: "diagonal values of twist covariance matrix.",
     read_only: false,
-
   }
 
   pose_covariance_diagonal: {
@@ -85,23 +73,20 @@ steering_controllers_library:
     default_value: [0, 7, 14, 21, 28, 35],
     description: "diagonal values of pose covariance matrix.",
     read_only: false,
-
   }
 
   position_feedback: {
     type: bool,
     default_value: false,
-    description: "choice of feedbacktype, if position_feedback is false then HW_IF_VELOCITY is taken as interface type, if
+    description: "Choice of feedback type, if position_feedback is false then HW_IF_VELOCITY is taken as interface type, if
     position_feedback is true then HW_IF_POSITION is taken as interface type",
     read_only: false,
-
   }
 
   use_stamped_vel: {
     type: bool,
     default_value: false,
-    description: "choice of vel type, if use_stamped_vel is false then geometry_msgs::msg::Twist is taken as vel msg type, if
+    description: "Choice of vel type, if use_stamped_vel is false then geometry_msgs::msg::Twist is taken as vel msg type, if
     use_stamped_vel is true then geometry_msgs::msg::TwistStamped is taken as vel msg type",
     read_only: false,
-
   }

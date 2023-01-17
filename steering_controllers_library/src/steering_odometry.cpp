@@ -333,6 +333,6 @@ void SteeringOdometry::reset_accumulators()
 {
   linear_acc_ = rcpputils::RollingMeanAccumulator<double>(velocity_rolling_window_size_);
   angular_acc_ = rcpputils::RollingMeanAccumulator<double>(velocity_rolling_window_size_);
-  // TODO(petkovich): angular rolling window size?
 }
+
 }  // namespace steering_odometry

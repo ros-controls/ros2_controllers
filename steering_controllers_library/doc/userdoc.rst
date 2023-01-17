@@ -19,5 +19,4 @@ Other features
 
     Realtime-safe implementation.
     Odometry publishing
-    Velocity, acceleration and jerk limits
     Automatic stop after command timeout
