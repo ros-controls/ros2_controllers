@@ -69,6 +69,7 @@ class TestableAckermannSteeringController
   FRIEND_TEST(AckermannSteeringControllerTest, deactivate_success);
   FRIEND_TEST(AckermannSteeringControllerTest, reactivate_success);
   FRIEND_TEST(AckermannSteeringControllerTest, test_update_logic);
+  FRIEND_TEST(AckermannSteeringControllerTest, test_update_logic_chained);
   FRIEND_TEST(AckermannSteeringControllerTest, publish_status_success);
   FRIEND_TEST(AckermannSteeringControllerTest, receive_message_and_publish_updated_status);
 

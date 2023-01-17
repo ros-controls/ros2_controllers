@@ -67,6 +67,7 @@ class TestableTricycleSteeringController
   FRIEND_TEST(TricycleSteeringControllerTest, deactivate_success);
   FRIEND_TEST(TricycleSteeringControllerTest, reactivate_success);
   FRIEND_TEST(TricycleSteeringControllerTest, test_update_logic);
+  FRIEND_TEST(TricycleSteeringControllerTest, test_update_logic_chained);
   FRIEND_TEST(TricycleSteeringControllerTest, publish_status_success);
   FRIEND_TEST(TricycleSteeringControllerTest, receive_message_and_publish_updated_status);
 

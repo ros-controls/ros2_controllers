@@ -66,6 +66,7 @@ class TestableBicycleSteeringController
   FRIEND_TEST(BicycleSteeringControllerTest, deactivate_success);
   FRIEND_TEST(BicycleSteeringControllerTest, reactivate_success);
   FRIEND_TEST(BicycleSteeringControllerTest, test_update_logic);
+  FRIEND_TEST(BicycleSteeringControllerTest, test_update_logic_chained);
   FRIEND_TEST(BicycleSteeringControllerTest, publish_status_success);
   FRIEND_TEST(BicycleSteeringControllerTest, receive_message_and_publish_updated_status);
 

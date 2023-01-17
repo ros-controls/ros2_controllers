@@ -414,8 +414,13 @@ controller_interface::return_type SteeringControllersLibrary::update_reference_f
   }
   else
   {
-    reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();
-    reference_interfaces_[1] = std::numeric_limits<double>::quiet_NaN();
+    if (!std::isnan(current_ref->twist.linear.x) && !std::isnan(current_ref->twist.angular.z))
+    {
+      reference_interfaces_[0] = 0.0;
+      reference_interfaces_[1] = 0.0;
+      current_ref->twist.linear.x = std::numeric_limits<double>::quiet_NaN();
+      current_ref->twist.angular.z = std::numeric_limits<double>::quiet_NaN();
+    }
   }
 
   return controller_interface::return_type::OK;

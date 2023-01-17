@@ -192,6 +192,45 @@ TEST_F(AckermannSteeringControllerTest, test_update_logic)
   }
 }
 
+TEST_F(AckermannSteeringControllerTest, test_update_logic_chained)
+{
+  SetUpController();
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  controller_->set_chained_mode(true);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(controller_->is_in_chained_mode());
+
+  controller_->reference_interfaces_[0] = 0.1;
+  controller_->reference_interfaces_[1] = 0.2;
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  EXPECT_NEAR(
+
+    controller_->command_interfaces_[STATE_TRACTION_RIGHT_WHEEL].get_value(), 0.22222222222222224,
+    COMMON_THRESHOLD);
+  EXPECT_NEAR(
+    controller_->command_interfaces_[STATE_TRACTION_LEFT_WHEEL].get_value(), 0.22222222222222224,
+    COMMON_THRESHOLD);
+  EXPECT_NEAR(
+    controller_->command_interfaces_[STATE_STEER_RIGHT_WHEEL].get_value(), 1.4179821977774734,
+    COMMON_THRESHOLD);
+  EXPECT_NEAR(
+    controller_->command_interfaces_[STATE_STEER_LEFT_WHEEL].get_value(), 1.4179821977774734,
+    COMMON_THRESHOLD);
+
+  EXPECT_TRUE(std::isnan((*(controller_->input_ref_.readFromRT()))->twist.linear.x));
+  EXPECT_EQ(controller_->reference_interfaces_.size(), joint_reference_interfaces_.size());
+  for (const auto & interface : controller_->reference_interfaces_)
+  {
+    EXPECT_TRUE(std::isnan(interface));
+  }
+}
+
 TEST_F(AckermannSteeringControllerTest, receive_message_and_publish_updated_status)
 {
   SetUpController();
