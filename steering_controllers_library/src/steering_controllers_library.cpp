@@ -404,8 +404,6 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_activate(
 controller_interface::CallbackReturn SteeringControllersLibrary::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  // TODO(anyone): depending on number of interfaces, use definitions, e.g., `CMD_MY_ITFS`,
-  // instead of a loop
   for (size_t i = 0; i < nr_cmd_itfs_; ++i)
   {
     command_interfaces_[i].set_value(std::numeric_limits<double>::quiet_NaN());
@@ -418,8 +416,6 @@ controller_interface::return_type SteeringControllersLibrary::update_reference_f
   auto current_ref = *(input_ref_.readFromRT());
   const auto age_of_last_command = get_node()->now() - (current_ref)->header.stamp;
 
-  // TODO(anyone): depending on number of interfaces, use definitions, e.g., `CMD_MY_ITFS`,
-  // instead of a loop
   // send message only if there is no timeout
   if (age_of_last_command <= ref_timeout_ || ref_timeout_ == rclcpp::Duration::from_seconds(0))
   {
@@ -562,7 +558,6 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
           command_interfaces_[params_.rear_wheels_names.size() + i].get_value());
       }
     }
-
     else
     {
       for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
