@@ -330,7 +330,7 @@ TEST_F(MecanumDriveControllerTest, test_message_accepted)
   EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z, 0.0);
 }
 
-//Test that checks the status of chainable mode and update methods logic
+//Test that checks the status of chainable mode and update methods logic accordingly, when ref_timeout and within ref_timeout 
 TEST_F(MecanumDriveControllerTest, test_update_logic_not_chainable)
 {
   // 1. age>ref_timeout 2. age<ref_timeout
@@ -429,6 +429,7 @@ TEST_F(MecanumDriveControllerTest, test_update_logic_not_chainable)
   }
 }
 
+//Test that checks the status of chainable mode and update methods logic accordingly, when ref_timeout and within ref_timeout 
 TEST_F(MecanumDriveControllerTest, test_update_logic_chainable)
 {
   // 1. age>ref_timeout 2. age<ref_timeout
