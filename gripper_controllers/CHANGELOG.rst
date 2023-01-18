@@ -2,6 +2,11 @@
 Changelog for package gripper_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.16.0 (2023-01-12)
+-------------------
+* Add backward_ros to all controllers (`#489 <https://github.com/ros-controls/ros2_controllers/issues/489>`_)
+* Contributors: Bence Magyar
+
 2.15.0 (2022-12-06)
 -------------------
 * Add basic gripper controller tests (`#459 <https://github.com/ros-controls/ros2_controllers/issues/459>`_)
