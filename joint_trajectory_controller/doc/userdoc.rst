@@ -42,8 +42,9 @@ References
 States
 ^^^^^^^
 The state interfaces are defined with ``joints`` and ``state_interfaces`` parameters as follows: ``<joint>/<state_interface>``.
-Supported state interfaces are ``position``, ``velocity``, ``acceleration`` and ``effort`` as defined in the [hardware_interface/hardware_interface_type_values.hpp](https://github.com/ros-controls/ros2_control/blob/master/hardware_interface/include/hardware_interface/types/hardware_interface_type_values.hpp).
+Supported state interfaces are ``position``, ``velocity``, ``acceleration`` and ``effort`` as defined in the `hardware_interface/hardware_interface_type_values.hpp <https://github.com/ros-controls/ros2_control/blob/master/hardware_interface/include/hardware_interface/types/hardware_interface_type_values.hpp>`_.
 Legal combinations of state interfaces are:
+
 - ``position``
 - ``position`` and ``velocity``
 - ``position``, ``velocity`` and ``acceleration``
@@ -104,37 +105,37 @@ A yaml file for using it could be:
 Details about parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-joints (list(string)):
+joints (list(string))
   Joint names to control and listen to.
 
-command_joints (list(string)):
+command_joints (list(string))
   Joint names to control. This parameters is used if JTC is used in a controller chain where command and state interfaces don't have same names.
 
-command_interface (list(string)):
+command_interface (list(string))
   Command interfaces provided by the hardware interface for all joints.
 
   Values: [position | velocity | acceleration] (multiple allowed)
 
-state_interfaces (list(string)):
+state_interfaces (list(string))
   State interfaces provided by the hardware for all joints.
 
   Values: position (mandatory) [velocity, [acceleration]].
   Acceleration interface can only be used in combination with position and velocity.
 
-state_publish_rate (double):
+state_publish_rate (double)
   Publish-rate of the controller's "state" topic.
 
   Default: 50.0
 
-action_monitor_rate (double):
+action_monitor_rate (double)
   Rate to monitor status changes when the controller is executing action (control_msgs::action::FollowJointTrajectory).
 
   Default: 20.0
 
-allow_partial_joints_goal (boolean):
+allow_partial_joints_goal (boolean)
   Allow joint goals defining trajectory for only some joints.
 
-open_loop_control (boolean):
+open_loop_control (boolean)
   Use controller in open-loop control mode using ignoring the states provided by hardware interface and using last commands as states in the next control step. This is useful if hardware states are not following commands, i.e., an offset between those (typical for hydraulic manipulators).
 
   If this flag is set, the controller tries to read the values from the command interfaces on starting. If they have real numeric values, those will be used instead of state interfaces. Therefore it is important set command interfaces to NaN (std::numeric_limits<double>::quiet_NaN()) or state values when the hardware is started.
@@ -152,16 +153,51 @@ constraints.goal_time (double)
 
   Default: 0.0 (not checked)
 
-constraints.<joint_name>.trajectory
+constraints.<joint_name>.trajectory (double)
   Maximally allowed deviation from the target trajectory for a given joint.
 
   Default: 0.0 (tolerance is not enforced)
 
-constraints.<joint_name>.goal
+constraints.<joint_name>.goal (double)
   Maximally allowed deviation from the goal (end of the trajectory) for a given joint.
 
   Default: 0.0 (tolerance is not enforced)
 
+gains (structure)
+  If ``velocity`` is the only command interface for all joints or an ``effort`` command interface is configured, PID controllers are used for every joint. This structure contains the controller gains for every joint with the control law
+
+  .. math::
+
+   u = k_ff v_d + k_p (s_d - s) + k_i \sum(s_d - s) dt + k_d (v_d - v)
+
+  with the desired velocity :math:`v_d` and position :math:`s_d`,
+  the measured velocity :math:`v` and position :math:`s`, the controller period :math:`dt`,
+  and the ``velocity`` or ``effort`` setpoint :math:`u`, respectively.
+
+gains.<joint_name>.p (double)
+  Proportional gain :math:`k_p` for PID
+
+  Default: 0.0
+
+gains.<joint_name>.i (double)
+  Integral gain :math:`k_i` for PID
+
+  Default: 0.0
+
+gains.<joint_name>.d (double)
+  Derivative gain :math:`k_d` for PID
+
+  Default: 0.0
+
+gains.<joint_name>.i_clamp (double)
+  Integral clamp. Symmetrical in both positive and negative direction.
+
+  Default: 0.0
+
+gains.<joint_name>.ff_velocity_scale (double)
+  Feed-forward scaling :math:`k_ff` of velocity
+
+  Default: 0.0
 
 ROS2 interface of the controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

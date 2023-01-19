@@ -46,7 +46,7 @@ diff_drive_controller:
   }
   base_frame_id: {
     type: string,
-    default_value: "odom",
+    default_value: "base_link",
     description: "Name of the robot's base frame that is child of the odometry frame.",
   }
   pose_covariance_diagonal: {
