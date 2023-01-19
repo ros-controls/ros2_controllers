@@ -23,7 +23,6 @@
 #include <utility>
 #include <vector>
 
-#include "steering_controllers_library/steering_controllers_library.hpp"
 #include "gmock/gmock.h"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
@@ -32,29 +31,35 @@
 #include "rclcpp/time.hpp"
 #include "rclcpp/utilities.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
+#include "steering_controllers_library/steering_controllers_library.hpp"
 
 using ControllerStateMsg =
   steering_controllers_library::SteeringControllersLibrary::AckermanControllerState;
 using ControllerReferenceMsg =
   steering_controllers_library::SteeringControllersLibrary::ControllerTwistReferenceMsg;
 
+// NOTE: Testing steering_controllers_library for ackermann vehicle configuration only
+
 // name constants for state interfaces
-using steering_controllers_library::STATE_STEER_LEFT_WHEEL;
-using steering_controllers_library::STATE_STEER_RIGHT_WHEEL;
-using steering_controllers_library::STATE_TRACTION_LEFT_WHEEL;
-using steering_controllers_library::STATE_TRACTION_RIGHT_WHEEL;
+static constexpr size_t STATE_TRACTION_RIGHT_WHEEL = 0;
+static constexpr size_t STATE_TRACTION_LEFT_WHEEL = 1;
+static constexpr size_t STATE_STEER_RIGHT_WHEEL = 2;
+static constexpr size_t STATE_STEER_LEFT_WHEEL = 3;
 
 // name constants for command interfaces
-using steering_controllers_library::CMD_STEER_LEFT_WHEEL;
-using steering_controllers_library::CMD_STEER_RIGHT_WHEEL;
-using steering_controllers_library::CMD_TRACTION_LEFT_WHEEL;
-using steering_controllers_library::CMD_TRACTION_RIGHT_WHEEL;
+static constexpr size_t CMD_TRACTION_RIGHT_WHEEL = 0;
+static constexpr size_t CMD_TRACTION_LEFT_WHEEL = 1;
+static constexpr size_t CMD_STEER_RIGHT_WHEEL = 2;
+static constexpr size_t CMD_STEER_LEFT_WHEEL = 3;
+
+static constexpr size_t NR_STATE_ITFS = 4;
+static constexpr size_t NR_CMD_ITFS = 4;
+static constexpr size_t NR_REF_ITFS = 2;
 
 namespace
 {
 constexpr auto NODE_SUCCESS = controller_interface::CallbackReturn::SUCCESS;
 constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
-const double COMMON_THRESHOLD = 1e-6;
 }  // namespace
 // namespace
 
@@ -62,8 +67,8 @@ const double COMMON_THRESHOLD = 1e-6;
 class TestableSteeringControllersLibrary
 : public steering_controllers_library::SteeringControllersLibrary
 {
-  FRIEND_TEST(SteeringControllersLibraryTest, test_update_logic_not_chainable);
-
+  FRIEND_TEST(SteeringControllersLibraryTest, check_exported_intefaces);
+  FRIEND_TEST(SteeringControllersLibraryTest, test_both_update_methods_for_ref_timeout);
 
 public:
   controller_interface::CallbackReturn on_configure(
@@ -111,6 +116,20 @@ public:
   {
     return wait_for_command(executor, ref_subscriber_wait_set_, timeout);
   }
+
+  // implementing methods which are declared virtual in the steering_controllers_library.hpp
+  void initialize_implementation_parameter_listener()
+  {
+    param_listener_ = std::make_shared<steering_controllers_library::ParamListener>(get_node());
+  }
+
+  controller_interface::CallbackReturn configure_odometry()
+  {
+    set_interface_numbers(NR_STATE_ITFS, NR_CMD_ITFS, NR_REF_ITFS);
+    return controller_interface::CallbackReturn::SUCCESS;
+  }
+
+  bool update_odometry(const rclcpp::Duration & period) { return true; }
 
 private:
   rclcpp::WaitSet ref_subscriber_wait_set_;
@@ -308,7 +327,7 @@ protected:
   std::vector<hardware_interface::CommandInterface> command_itfs_;
 
   // Test related parameters
-  std::unique_ptr<TestableSteeringControllersLibrary> controller_;
+  std::unique_ptr<CtrlType> controller_;
   rclcpp::Node::SharedPtr command_publisher_node_;
   rclcpp::Publisher<ControllerReferenceMsg>::SharedPtr command_publisher_;
 };

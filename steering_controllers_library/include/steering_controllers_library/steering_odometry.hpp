@@ -250,7 +250,7 @@ private:
   double traction_wheel_old_pos_;
   double traction_right_wheel_old_pos_;
   double traction_left_wheel_old_pos_;
-  /// Rolling mean accumulators for the linar and angular velocities:
+  /// Rolling mean accumulators for the linear and angular velocities:
   size_t velocity_rolling_window_size_;
   rcpputils::RollingMeanAccumulator<double> linear_acc_;
   rcpputils::RollingMeanAccumulator<double> angular_acc_;

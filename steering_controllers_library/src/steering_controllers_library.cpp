@@ -411,7 +411,8 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_deactivate(
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::return_type SteeringControllersLibrary::update_reference_from_subscribers(const rclcpp::Time & time, const rclcpp::Duration & period)
+controller_interface::return_type SteeringControllersLibrary::update_reference_from_subscribers(
+  const rclcpp::Time & time, const rclcpp::Duration & period)
 {
   auto current_ref = *(input_ref_.readFromRT());
   const auto age_of_last_command = time - (current_ref)->header.stamp;
@@ -429,20 +430,20 @@ controller_interface::return_type SteeringControllersLibrary::update_reference_f
   {
     if (!std::isnan(current_ref->twist.linear.x) && !std::isnan(current_ref->twist.angular.z))
     {
-      if(params_.position_feedback == false)
+      if (params_.position_feedback == false)
       {
         reference_interfaces_[0] = 0.0;
         reference_interfaces_[1] = 0.0;
         current_ref->twist.linear.x = std::numeric_limits<double>::quiet_NaN();
-        current_ref->twist.angular.z = std::numeric_limits<double>::quiet_NaN();  
-      } else 
+        current_ref->twist.angular.z = std::numeric_limits<double>::quiet_NaN();
+      }
+      else
       {
         reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();
         reference_interfaces_[1] = std::numeric_limits<double>::quiet_NaN();
         current_ref->twist.linear.x = std::numeric_limits<double>::quiet_NaN();
         current_ref->twist.angular.z = std::numeric_limits<double>::quiet_NaN();
-      } 
-
+      }
     }
   }
 
@@ -495,24 +496,24 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
           }
         }
       }
-    } 
+    }
   }
   else
   {
-      reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();
-      reference_interfaces_[1] = std::numeric_limits<double>::quiet_NaN();
+    reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();
+    reference_interfaces_[1] = std::numeric_limits<double>::quiet_NaN();
 
-      for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
-      {
-        command_interfaces_[i].set_value(0.0);
-      }
-      for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
-      {
-        command_interfaces_[i + params_.rear_wheels_names.size()].set_value(0.0);
-      }
+    for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
+    {
+      command_interfaces_[i].set_value(0.0);
+    }
+    for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
+    {
+      command_interfaces_[i + params_.rear_wheels_names.size()].set_value(0.0);
+    }
 
-      current_ref->twist.linear.x = std::numeric_limits<double>::quiet_NaN();
-      current_ref->twist.angular.z = std::numeric_limits<double>::quiet_NaN();
+    current_ref->twist.linear.x = std::numeric_limits<double>::quiet_NaN();
+    current_ref->twist.angular.z = std::numeric_limits<double>::quiet_NaN();
   }
 
   // Publish odometry message

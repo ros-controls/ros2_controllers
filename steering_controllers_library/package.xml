@@ -14,6 +14,8 @@
   <author email="tomislav.petkovic.fer@gmail.com">dr. sc. Tomislav Petkovic</author>
   <author email="tony.najjar@logivations.com">Tony Najjar</author>
 
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
   <build_depend>generate_parameter_library</build_depend>
 
   <depend>control_msgs</depend>
