@@ -373,6 +373,13 @@ TEST_F(MecanumDriveControllerTest, test_update_logic_not_chainable)
     controller_->update_reference_from_subscribers(
       controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
+
+  EXPECT_EQ(controller_->reference_interfaces_[1], 0);
+  for (const auto & interface : controller_->reference_interfaces_)
+  {
+    EXPECT_FALSE(std::isnan(interface));
+  }
+
   ASSERT_EQ(
     controller_->update_and_write_commands(
       controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
