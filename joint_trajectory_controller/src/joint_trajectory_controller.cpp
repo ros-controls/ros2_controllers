@@ -125,8 +125,17 @@ controller_interface::return_type JointTrajectoryController::update(
                                    const JointTrajectoryPoint & desired)
   {
     // error defined as the difference between current and desired
-    error.positions[index] =
-      angles::shortest_angular_distance(current.positions[index], desired.positions[index]);
+    if (normalize_joint_error_[index])
+    {
+      // if desired, the shortest_angular_distance is calculated, i.e., the error is
+      //  normalized between -pi<error<pi
+      error.positions[index] =
+        angles::shortest_angular_distance(current.positions[index], desired.positions[index]);
+    }
+    else
+    {
+      error.positions[index] = desired.positions[index] - current.positions[index];
+    }
     if (has_velocity_state_interface_ && has_velocity_command_interface_)
     {
       error.velocities[index] = desired.velocities[index] - current.velocities[index];
@@ -243,8 +252,7 @@ controller_interface::return_type JointTrajectoryController::update(
           {
             tmp_command_[i] = (state_desired_.velocities[i] * ff_velocity_scale_[i]) +
                               pids_[i]->computeCommand(
-                                state_desired_.positions[i] - state_current_.positions[i],
-                                state_desired_.velocities[i] - state_current_.velocities[i],
+                                state_error_.positions[i], state_error_.velocities[i],
                                 (uint64_t)period.nanoseconds());
           }
         }
@@ -579,6 +587,14 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
         ff_velocity_scale_[i] = gains.ff_velocity_scale;
       }
     }
+  }
+
+  // Configure joint position error normalization from ROS parameters
+  normalize_joint_error_.resize(dof_);
+  for (size_t i = 0; i < dof_; ++i)
+  {
+    const auto & gains = params_.gains.joints_map.at(params_.joints[i]);
+    normalize_joint_error_[i] = gains.normalize_error;
   }
 
   if (params_.state_interfaces.empty())

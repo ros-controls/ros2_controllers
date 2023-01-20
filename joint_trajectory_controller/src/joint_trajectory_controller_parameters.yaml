@@ -101,6 +101,11 @@ joint_trajectory_controller:
         default_value: 0.0,
         description: "Feed-forward scaling of velocity."
       }
+      normalize_error: {
+        type: bool,
+        default_value: false,
+        description: "Use position error normalization to -pi to pi."
+      }
   constraints:
     stopped_velocity_tolerance: {
       type: double,
