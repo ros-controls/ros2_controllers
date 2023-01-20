@@ -469,7 +469,7 @@ void JointTrajectoryController::query_state_service(
   const auto logger = get_node()->get_logger();
   const auto active_goal = *rt_active_goal_.readFromRT();
   response->name = params_.joints;
-  trajectory_msgs::msg::JointTrajectoryPoint state_requested;
+  trajectory_msgs::msg::JointTrajectoryPoint state_requested = state_current_;
   // Preconditions
   if (get_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
   {
@@ -477,50 +477,36 @@ void JointTrajectoryController::query_state_service(
     response->success = false;
     return;
   }
-
-  // If there is no active goal, set it to the current state
-  if (!active_goal)
+  if ((traj_point_active_ptr_ && (*traj_point_active_ptr_)->has_trajectory_msg()))
   {
-    response->position = state_current_.positions;
-    response->velocity = state_current_.velocities;
-    response->acceleration = state_current_.accelerations;
-    response->success = true;
-    return;
-  }
-
-  // If the requested time is beyond the total trajectory time, respond with end state
-  if (
-    static_cast<rclcpp::Time>(request->time) >
-    ((*traj_point_active_ptr_)->get_trajectory_start_time() +
-     (*traj_point_active_ptr_)->end()->time_from_start))
-  {
-    const TrajectoryPointConstIter end_point = (*traj_point_active_ptr_)->end();
-    response->position = end_point->positions;
-    response->velocity = end_point->velocities;
-    response->acceleration = end_point->accelerations;
-    response->success = true;
-    return;
-  }
-
-  if (traj_point_active_ptr_ && (*traj_point_active_ptr_)->has_trajectory_msg())
-  {
-    // find segment for current timestamp
     TrajectoryPointConstIter start_segment_itr, end_segment_itr;
     response->success = (*traj_point_active_ptr_)
                           ->sample(
-                            request->time, interpolation_method_, state_requested,
-                            start_segment_itr, end_segment_itr);
-    response->position = state_requested.positions;
-    response->velocity = state_requested.velocities;
-    response->acceleration = state_requested.accelerations;
-    response->success = true;
+                            static_cast<rclcpp::Time>(request->time), interpolation_method_,
+                            state_requested, start_segment_itr, end_segment_itr);
+    // If the requested sample time precedes the trajectory finish time respond as failure
+    if (response->success)
+    {
+      if (end_segment_itr == (*traj_point_active_ptr_)->end())
+      {
+        RCLCPP_ERROR(logger, "Requested sample time precedes the current trajectory end time.");
+        response->success = false;
+      }
+    }
+    else
+    {
+      RCLCPP_ERROR(
+        logger, "Requested sample time is earlier than the current trajectory start time.");
+    }
   }
   else
   {
-    RCLCPP_WARN(logger, "There is no active trajectory active pointer..");
+    RCLCPP_ERROR(logger, "Currently there is no valid trajectory instance.");
     response->success = false;
-    return;
   }
+  response->position = state_requested.positions;
+  response->velocity = state_requested.velocities;
+  response->acceleration = state_requested.accelerations;
 }
 
 controller_interface::CallbackReturn JointTrajectoryController::on_configure(
