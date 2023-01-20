@@ -244,7 +244,7 @@ private:
   double wheel_radius_;
 
   /// Configuration type used for thr forward kinematics
-  unsigned int config_type_;
+  int config_type_ = -1;
 
   /// Previous wheel position/state [rad]:
   double traction_wheel_old_pos_;

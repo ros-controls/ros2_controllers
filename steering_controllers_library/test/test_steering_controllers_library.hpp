@@ -56,6 +56,12 @@ static constexpr size_t NR_STATE_ITFS = 4;
 static constexpr size_t NR_CMD_ITFS = 4;
 static constexpr size_t NR_REF_ITFS = 2;
 
+static constexpr double WHEELBASE_ = 3.24644;
+static constexpr double FRONT_WHEEL_TRACK_ = 2.12321;
+static constexpr double REAR_WHEEL_TRACK_ = 1.76868;
+static constexpr double FRONT_WHEELS_RADIUS_ = 0.45;
+static constexpr double REAR_WHEELS_RADIUS_ = 0.45;
+
 namespace
 {
 constexpr auto NODE_SUCCESS = controller_interface::CallbackReturn::SUCCESS;
@@ -126,6 +132,9 @@ public:
   controller_interface::CallbackReturn configure_odometry()
   {
     set_interface_numbers(NR_STATE_ITFS, NR_CMD_ITFS, NR_REF_ITFS);
+    odometry_.set_wheel_params(FRONT_WHEELS_RADIUS_, WHEELBASE_, REAR_WHEEL_TRACK_);
+    odometry_.set_odometry_type(steering_odometry::ACKERMANN_CONFIG);
+
     return controller_interface::CallbackReturn::SUCCESS;
   }
 
@@ -313,10 +322,7 @@ protected:
 
   std::array<double, 4> joint_state_values_ = {0.5, 0.5, 0.0, 0.0};
   std::array<double, 4> joint_command_values_ = {1.1, 3.3, 2.2, 4.4};
-  static constexpr double TEST_LINEAR_VELOCITY_X = 1.5;
-  static constexpr double TEST_LINEAR_VELOCITY_y = 0.0;
-  static constexpr double TEST_ANGULAR_VELOCITY_Z = 0.0;
-  double command_lin_x = 111;
+
   std::array<std::string, 2> joint_reference_interfaces_ = {"linear/velocity", "angular/position"};
   std::string steering_interface_name_ = "position";
   // defined in setup
