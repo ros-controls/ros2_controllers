@@ -411,11 +411,10 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_deactivate(
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::return_type SteeringControllersLibrary::update_reference_from_subscribers(
-  const rclcpp::Time & time, const rclcpp::Duration & period)
+controller_interface::return_type SteeringControllersLibrary::update_reference_from_subscribers()
 {
   auto current_ref = *(input_ref_.readFromRT());
-  const auto age_of_last_command = time - (current_ref)->header.stamp;
+  const auto age_of_last_command = get_node()->now() - (current_ref)->header.stamp;
 
   // send message only if there is no timeout
   if (age_of_last_command <= ref_timeout_ || ref_timeout_ == rclcpp::Duration::from_seconds(0))
@@ -430,20 +429,10 @@ controller_interface::return_type SteeringControllersLibrary::update_reference_f
   {
     if (!std::isnan(current_ref->twist.linear.x) && !std::isnan(current_ref->twist.angular.z))
     {
-      if (params_.position_feedback == false)
-      {
-        reference_interfaces_[0] = 0.0;
-        reference_interfaces_[1] = 0.0;
-        current_ref->twist.linear.x = std::numeric_limits<double>::quiet_NaN();
-        current_ref->twist.angular.z = std::numeric_limits<double>::quiet_NaN();
-      }
-      else
-      {
-        reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();
-        reference_interfaces_[1] = std::numeric_limits<double>::quiet_NaN();
-        current_ref->twist.linear.x = std::numeric_limits<double>::quiet_NaN();
-        current_ref->twist.angular.z = std::numeric_limits<double>::quiet_NaN();
-      }
+      reference_interfaces_[0] = 0.0;
+      reference_interfaces_[1] = 0.0;
+      current_ref->twist.linear.x = std::numeric_limits<double>::quiet_NaN();
+      current_ref->twist.angular.z = std::numeric_limits<double>::quiet_NaN();
     }
   }
 
@@ -460,60 +449,38 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
   // Limit velocities and accelerations:
   // TODO(destogl): add limiter for the velocities
 
-  auto current_ref = *(input_ref_.readFromRT());
-  const auto age_of_last_command = time - current_ref->header.stamp;
-  if (age_of_last_command <= ref_timeout_ || ref_timeout_ == rclcpp::Duration::from_seconds(0))
+  if (!std::isnan(reference_interfaces_[0]) && !std::isnan(reference_interfaces_[1]))
   {
-    if (!std::isnan(reference_interfaces_[0]) && !std::isnan(reference_interfaces_[1]))
+    // store and set commands
+    const double linear_command = reference_interfaces_[0];
+    const double angular_command = reference_interfaces_[1];
+    auto [traction_commands, steering_commands] =
+      odometry_.get_commands(linear_command, angular_command);
+    if (params_.front_steering)
     {
-      // store and set commands
-      const double linear_command = reference_interfaces_[0];
-      const double angular_command = reference_interfaces_[1];
-      auto [traction_commands, steering_commands] =
-        odometry_.get_commands(linear_command, angular_command);
-      if (params_.front_steering)
+      for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
       {
-        for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
+        command_interfaces_[i].set_value(traction_commands[i]);
+      }
+      for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
+      {
+        command_interfaces_[i + params_.rear_wheels_names.size()].set_value(steering_commands[i]);
+      }
+    }
+    else
+    {
+      {
+        for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
         {
           command_interfaces_[i].set_value(traction_commands[i]);
         }
-        for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
+        for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
         {
-          command_interfaces_[i + params_.rear_wheels_names.size()].set_value(steering_commands[i]);
-        }
-      }
-      else
-      {
-        {
-          for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
-          {
-            command_interfaces_[i].set_value(traction_commands[i]);
-          }
-          for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
-          {
-            command_interfaces_[i + params_.front_wheels_names.size()].set_value(
-              steering_commands[i]);
-          }
+          command_interfaces_[i + params_.front_wheels_names.size()].set_value(
+            steering_commands[i]);
         }
       }
     }
-  }
-  else
-  {
-    reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();
-    reference_interfaces_[1] = std::numeric_limits<double>::quiet_NaN();
-
-    for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
-    {
-      command_interfaces_[i].set_value(0.0);
-    }
-    for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
-    {
-      command_interfaces_[i + params_.rear_wheels_names.size()].set_value(0.0);
-    }
-
-    current_ref->twist.linear.x = std::numeric_limits<double>::quiet_NaN();
-    current_ref->twist.angular.z = std::numeric_limits<double>::quiet_NaN();
   }
 
   // Publish odometry message

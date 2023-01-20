@@ -122,9 +122,7 @@ TEST_F(SteeringControllersLibraryTest, test_both_update_methods_for_ref_timeout)
   ASSERT_FALSE(age_of_last_command <= controller_->ref_timeout_);
   ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
   ASSERT_EQ(
-    controller_->update_reference_from_subscribers(
-      controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
+    controller_->update_reference_from_subscribers(), controller_interface::return_type::OK);
 
   EXPECT_EQ(controller_->reference_interfaces_[1], 0);
   for (const auto & interface : controller_->reference_interfaces_)
@@ -169,9 +167,7 @@ TEST_F(SteeringControllersLibraryTest, test_both_update_methods_for_ref_timeout)
   ASSERT_FALSE(age_of_last_command <= controller_->ref_timeout_);
   ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
   ASSERT_EQ(
-    controller_->update_reference_from_subscribers(
-      controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
+    controller_->update_reference_from_subscribers(), controller_interface::return_type::OK);
 
   EXPECT_NE(controller_->reference_interfaces_[1], 0);
   EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[1]));
