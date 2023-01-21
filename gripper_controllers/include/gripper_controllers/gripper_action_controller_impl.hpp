@@ -105,6 +105,10 @@ void GripperActionController<HardwareInterface>::accepted_callback(
     rt_active_goal_ = rt_goal;
     rt_active_goal_->execute();
   }
+
+  // Set smartpointer to expire for create_wall_timer to delete previous entry from timer list
+  goal_handle_timer_.reset();
+
   // Setup goal status checking timer
   goal_handle_timer_ = get_node()->create_wall_timer(
     action_monitor_period_.to_chrono<std::chrono::nanoseconds>(),
