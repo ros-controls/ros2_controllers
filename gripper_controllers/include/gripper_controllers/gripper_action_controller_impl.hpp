@@ -107,7 +107,7 @@ void GripperActionController<HardwareInterface>::accepted_callback(
   }
   // Setup goal status checking timer
   goal_handle_timer_ = get_node()->create_wall_timer(
-    action_monitor_period_.to_chrono<std::chrono::seconds>(),
+    action_monitor_period_.to_chrono<std::chrono::nanoseconds>(),
     std::bind(&RealtimeGoalHandle::runNonRealtime, rt_active_goal_));
 }
 
