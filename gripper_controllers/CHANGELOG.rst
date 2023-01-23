@@ -2,6 +2,25 @@
 Changelog for package gripper_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.16.0 (2023-01-19)
+-------------------
+* Add backward_ros to all controllers (`#489 <https://github.com/ros-controls/ros2_controllers/issues/489>`_) (`#493 <https://github.com/ros-controls/ros2_controllers/issues/493>`_)
+* Contributors: Bence Magyar
+
+2.15.0 (2022-12-06)
+-------------------
+* Add basic gripper controller tests (`#459 <https://github.com/ros-controls/ros2_controllers/issues/459>`_)
+* Contributors: Bence Magyar
+
+2.14.0 (2022-11-18)
+-------------------
+* Use optional from C++17 (`#460 <https://github.com/ros-controls/ros2_controllers/issues/460>`_)
+* Generate parameters for Gripper Action (`#398 <https://github.com/ros-controls/ros2_controllers/issues/398>`_)
+* Contributors: Bence Magyar, Tyler Weaver
+
+2.13.0 (2022-10-05)
+-------------------
+
 2.12.0 (2022-09-01)
 -------------------
 * Add an initialization of the gripper action command for safe startup. (`#425 <https://github.com/ros-controls/ros2_controllers/issues/425>`_)

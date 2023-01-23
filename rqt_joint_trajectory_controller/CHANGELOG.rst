@@ -2,6 +2,20 @@
 Changelog for package rqt_joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.16.0 (2023-01-19)
+-------------------
+* 🔧 Fixes and updated on pre-commit hooks and their action (`#492 <https://github.com/ros-controls/ros2_controllers/issues/492>`_) (`#496 <https://github.com/ros-controls/ros2_controllers/issues/496>`_)
+* Contributors: Denis Stogl
+
+2.15.0 (2022-12-06)
+-------------------
+
+2.14.0 (2022-11-18)
+-------------------
+
+2.13.0 (2022-10-05)
+-------------------
+
 2.12.0 (2022-09-01)
 -------------------
 * fix: :bug: make bare exceptions more narrow (`#422 <https://github.com/ros-controls/ros2_controllers/issues/422>`_)

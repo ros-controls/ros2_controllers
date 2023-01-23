@@ -2,6 +2,22 @@
 Changelog for package force_torque_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.16.0 (2023-01-19)
+-------------------
+* Add backward_ros to all controllers (`#489 <https://github.com/ros-controls/ros2_controllers/issues/489>`_) (`#493 <https://github.com/ros-controls/ros2_controllers/issues/493>`_)
+* Contributors: Bence Magyar
+
+2.15.0 (2022-12-06)
+-------------------
+
+2.14.0 (2022-11-18)
+-------------------
+* Fix parameter library export (`#448 <https://github.com/ros-controls/ros2_controllers/issues/448>`_)
+* Contributors: Tyler Weaver
+
+2.13.0 (2022-10-05)
+-------------------
+
 2.12.0 (2022-09-01)
 -------------------
 * Generate params for ForceTorqueSensorBroadcaster (`#395 <https://github.com/ros-controls/ros2_controllers/issues/395>`_)

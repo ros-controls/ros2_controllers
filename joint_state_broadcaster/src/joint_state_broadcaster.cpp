@@ -50,15 +50,8 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_init()
 {
   try
   {
-    auto_declare<bool>("use_local_topics", false);
-    auto_declare<std::vector<std::string>>("joints", std::vector<std::string>({}));
-    auto_declare<std::vector<std::string>>("interfaces", std::vector<std::string>({}));
-    auto_declare<std::string>(
-      std::string("map_interface_to_joint_state.") + HW_IF_POSITION, HW_IF_POSITION);
-    auto_declare<std::string>(
-      std::string("map_interface_to_joint_state.") + HW_IF_VELOCITY, HW_IF_VELOCITY);
-    auto_declare<std::string>(
-      std::string("map_interface_to_joint_state.") + HW_IF_EFFORT, HW_IF_EFFORT);
+    param_listener_ = std::make_shared<ParamListener>(get_node());
+    params_ = param_listener_->get_params();
   }
   catch (const std::exception & e)
   {
@@ -88,9 +81,9 @@ controller_interface::InterfaceConfiguration JointStateBroadcaster::state_interf
   else
   {
     state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
-    for (const auto & joint : joints_)
+    for (const auto & joint : params_.joints)
     {
-      for (const auto & interface : interfaces_)
+      for (const auto & interface : params_.interfaces)
       {
         state_interfaces_config.names.push_back(joint + "/" + interface);
       }
@@ -103,9 +96,12 @@ controller_interface::InterfaceConfiguration JointStateBroadcaster::state_interf
 controller_interface::CallbackReturn JointStateBroadcaster::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  use_local_topics_ = get_node()->get_parameter("use_local_topics").as_bool();
-  joints_ = get_node()->get_parameter("joints").as_string_array();
-  interfaces_ = get_node()->get_parameter("interfaces").as_string_array();
+  if (!param_listener_)
+  {
+    RCLCPP_ERROR(get_node()->get_logger(), "Error encountered during init");
+    return controller_interface::CallbackReturn::ERROR;
+  }
+  params_ = param_listener_->get_params();
 
   if (use_all_available_interfaces())
   {
@@ -113,8 +109,8 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_configure(
       get_node()->get_logger(),
       "'joints' or 'interfaces' parameter is empty. "
       "All available state interfaces will be published");
-    joints_.clear();
-    interfaces_.clear();
+    params_.joints.clear();
+    params_.interfaces.clear();
   }
   else
   {
@@ -123,14 +119,12 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_configure(
       "Publishing state interfaces defined in 'joints' and 'interfaces' parameters.");
   }
 
-  auto get_map_interface_parameter = [&](const std::string & interface)
+  auto get_map_interface_parameter =
+    [&](std::string const & interface, std::string const & interface_to_map)
   {
-    std::string interface_to_map =
-      get_node()
-        ->get_parameter(std::string("map_interface_to_joint_state.") + interface)
-        .as_string();
-
-    if (std::find(interfaces_.begin(), interfaces_.end(), interface) != interfaces_.end())
+    if (
+      std::find(params_.interfaces.begin(), params_.interfaces.end(), interface) !=
+      params_.interfaces.end())
     {
       map_interface_to_joint_state_[interface] = interface;
       RCLCPP_WARN(
@@ -146,13 +140,13 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_configure(
   };
 
   map_interface_to_joint_state_ = {};
-  get_map_interface_parameter(HW_IF_POSITION);
-  get_map_interface_parameter(HW_IF_VELOCITY);
-  get_map_interface_parameter(HW_IF_EFFORT);
+  get_map_interface_parameter(HW_IF_POSITION, params_.map_interface_to_joint_state.position);
+  get_map_interface_parameter(HW_IF_VELOCITY, params_.map_interface_to_joint_state.velocity);
+  get_map_interface_parameter(HW_IF_EFFORT, params_.map_interface_to_joint_state.effort);
 
   try
   {
-    const std::string topic_name_prefix = use_local_topics_ ? "~/" : "";
+    const std::string topic_name_prefix = params_.use_local_topics ? "~/" : "";
 
     joint_state_publisher_ = get_node()->create_publisher<sensor_msgs::msg::JointState>(
       topic_name_prefix + "joint_states", rclcpp::SystemDefaultsQoS());
@@ -193,7 +187,7 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_activate(
 
   if (
     !use_all_available_interfaces() &&
-    state_interfaces_.size() != (joints_.size() * interfaces_.size()))
+    state_interfaces_.size() != (params_.joints.size() * params_.interfaces.size()))
   {
     RCLCPP_WARN(
       get_node()->get_logger(),
@@ -207,6 +201,8 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_activate(
 controller_interface::CallbackReturn JointStateBroadcaster::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
+  joint_names_.clear();
+
   return CallbackReturn::SUCCESS;
 }
 
@@ -229,6 +225,7 @@ bool has_any_key(
 
 bool JointStateBroadcaster::init_joint_data()
 {
+  joint_names_.clear();
   if (state_interfaces_.empty())
   {
     return false;
@@ -317,7 +314,7 @@ void JointStateBroadcaster::init_dynamic_joint_state_msg()
 
 bool JointStateBroadcaster::use_all_available_interfaces() const
 {
-  return joints_.empty() || interfaces_.empty();
+  return params_.joints.empty() || params_.interfaces.empty();
 }
 
 double get_value(

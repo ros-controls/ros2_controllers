@@ -29,35 +29,33 @@ ForwardCommandController::ForwardCommandController() : ForwardControllersBase() 
 
 void ForwardCommandController::declare_parameters()
 {
-  auto_declare("joints", std::vector<std::string>());
-  auto_declare("interface_name", std::string());
+  param_listener_ = std::make_shared<ParamListener>(get_node());
 }
 
 controller_interface::CallbackReturn ForwardCommandController::read_parameters()
 {
-  joint_names_ = get_node()->get_parameter("joints").as_string_array();
+  if (!param_listener_)
+  {
+    RCLCPP_ERROR(get_node()->get_logger(), "Error encountered during init");
+    return controller_interface::CallbackReturn::ERROR;
+  }
+  params_ = param_listener_->get_params();
 
-  if (joint_names_.empty())
+  if (params_.joints.empty())
   {
     RCLCPP_ERROR(get_node()->get_logger(), "'joints' parameter was empty");
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  // Specialized, child controllers set interfaces before calling configure function.
-  if (interface_name_.empty())
-  {
-    interface_name_ = get_node()->get_parameter("interface_name").as_string();
-  }
-
-  if (interface_name_.empty())
+  if (params_.interface_name.empty())
   {
     RCLCPP_ERROR(get_node()->get_logger(), "'interface_name' parameter was empty");
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  for (const auto & joint : joint_names_)
+  for (const auto & joint : params_.joints)
   {
-    command_interface_types_.push_back(joint + "/" + interface_name_);
+    command_interface_types_.push_back(joint + "/" + params_.interface_name);
   }
 
   return controller_interface::CallbackReturn::SUCCESS;
