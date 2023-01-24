@@ -29,6 +29,7 @@ class MecanumDriveControllerTest
 {
 };
 
+// checking if all parameters are initialized and set as expected
 TEST_F(MecanumDriveControllerTest, all_parameters_set_configure_success)
 {
   SetUpController();
@@ -48,6 +49,7 @@ TEST_F(MecanumDriveControllerTest, all_parameters_set_configure_success)
   ASSERT_EQ(controller_->params_.interface_name, interface_name_);
 }
 
+// checking if all interfaces, command and state interfaces are exported as expected
 TEST_F(MecanumDriveControllerTest, check_exported_intefaces)
 {
   SetUpController();
