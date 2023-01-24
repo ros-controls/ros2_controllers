@@ -50,7 +50,7 @@ constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
 class TestableMecanumDriveController : public mecanum_drive_controller::MecanumDriveController
 {
   FRIEND_TEST(MecanumDriveControllerTest, all_parameters_set_configure_success);
-  FRIEND_TEST(MecanumDriveControllerTest, check_exported_intefaces);
+  FRIEND_TEST(MecanumDriveControllerTest, check_exported_interfaces);
   FRIEND_TEST(MecanumDriveControllerTest, activate_success);
   FRIEND_TEST(MecanumDriveControllerTest, update_success);
   FRIEND_TEST(MecanumDriveControllerTest, deactivate_success);

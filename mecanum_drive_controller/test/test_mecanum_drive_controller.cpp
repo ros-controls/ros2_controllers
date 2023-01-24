@@ -70,7 +70,7 @@ TEST_F(MecanumDriveControllerTest, all_parameters_set_configure_success)
 }
 
 // checking if all interfaces, command, state and reference are exported as expected
-TEST_F(MecanumDriveControllerTest, check_exported_intefaces)
+TEST_F(MecanumDriveControllerTest, check_exported_interfaces)
 {
   SetUpController();
 
@@ -436,7 +436,7 @@ TEST_F(MecanumDriveControllerTest, test_update_logic_not_chainable)
   }
 }
 
-//Test that checks the status of chainable mode and update methods logic accordingly, when ref_timeout and within ref_timeout 
+//Test that checks the status of chainable mode and update_and_write_commands() method logic accordingly, when ref_timeout and within ref_timeout 
 TEST_F(MecanumDriveControllerTest, test_update_logic_chainable)
 {
   // 1. age>ref_timeout 2. age<ref_timeout
