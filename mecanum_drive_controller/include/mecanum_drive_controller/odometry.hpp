@@ -42,14 +42,14 @@ public:
   void init(const rclcpp::Time & time, std::array<double, PLANAR_POINT_DIM> base_frame_offset);
 
   /// \brief Updates the odometry class with latest wheels position
-  /// \param wheel0_vel  Wheel velocity [rad/s]
-  /// \param wheel1_vel  Wheel velocity [rad/s]
-  /// \param wheel2_vel  Wheel velocity [rad/s]
-  /// \param wheel3_vel  Wheel velocity [rad/s]
+  /// \param wheel_front_left_vel  Wheel velocity [rad/s]
+  /// \param wheel_back_left_vel  Wheel velocity [rad/s]
+  /// \param wheel_back_right_vel  Wheel velocity [rad/s]
+  /// \param wheel_front_right_vel  Wheel velocity [rad/s]
   /// \param time      Current time
   /// \return true if the odometry is actually updated
   bool update(
-    double wheel0_vel, double wheel1_vel, double wheel2_vel, double wheel3_vel, const double dt);
+    double wheel_front_left_vel, double wheel_back_left_vel, double wheel_back_right_vel, double wheel_front_right_vel, const double dt);
 
   /// \return position (x component) [m]
   double getX() const { return position_x_in_base_frame_; }
