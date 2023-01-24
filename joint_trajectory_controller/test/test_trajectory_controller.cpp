@@ -199,7 +199,8 @@ TEST_P(TrajectoryControllerTestParameterized, activate)
   executor.cancel();
 }
 
-TEST_P(TrajectoryControllerTestParameterized, activate_deactivate)
+// TODO(destogl): merge this with "reactivation" test
+TEST_P(TrajectoryControllerTestParameterized, activate_deactivate_activate)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
   SetUpTrajectoryController(executor);
@@ -222,10 +223,14 @@ TEST_P(TrajectoryControllerTestParameterized, activate_deactivate)
   // Segfault without #423
   ActivateTrajectoryController();
   ASSERT_EQ(traj_controller_->get_state().id(), State::PRIMARY_STATE_ACTIVE);
-  traj_controller_->get_node()->deactivate();
-  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
-  traj_controller_->get_node()->activate();
-  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+
+  //   traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+  //   traj_controller_->get_node()->deactivate();
+  //   ASSERT_EQ(traj_controller_->get_state().id(), State::PRIMARY_STATE_DEACTIVE);
+  //   traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+  //   traj_controller_->get_node()->activate();
+  //   ASSERT_EQ(traj_controller_->get_state().id(), State::PRIMARY_STATE_ACTIVE);
+  //   traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
 
   executor.cancel();
 }
@@ -272,76 +277,79 @@ TEST_P(TrajectoryControllerTestParameterized, activate_deactivate)
 //   executor.cancel();
 // }
 
-// TEST_F(TestTrajectoryController, reactivation) {
-//   auto traj_controller = std::make_shared<ros_controllers::JointTrajectoryController>(
-//     joint_names_, op_mode_);
-//   auto ret = traj_controller->init(test_robot_, controller_name_);
-//   if (ret != controller_interface::return_type::OK) {
-//     FAIL();
-//   }
-//
-//   auto traj_node = traj_controller->get_node();
-//   rclcpp::executors::MultiThreadedExecutor executor;
-//   executor.add_node(traj_node->get_node_base_interface());
-//
-//   auto state = traj_controller_->configure();
-//   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
-//
-//   state = traj_node->activate();
-//   ASSERT_EQ(state.id(), State::PRIMARY_STATE_ACTIVE);
-//
-//   // wait for the subscriber and publisher to completely setup
-//   std::this_thread::sleep_for(std::chrono::seconds(2));
-//
-//   // send msg
-//   builtin_interfaces::msg::Duration time_from_start;
-//   time_from_start.sec = 1;
-//   time_from_start.nanosec = 0;
-//   // *INDENT-OFF*
-//   std::vector<std::vector<double>> points {
-//     {{3.3, 4.4, 5.5}},
-//     {{7.7, 8.8, 9.9}},
-//     {{10.10, 11.11, 12.12}}
-//   };
-//   // *INDENT-ON*
-//   publish(time_from_start, points, rclcpp::Time());
-//   // wait for msg is be published to the system
-//   std::this_thread::sleep_for(std::chrono::milliseconds(500));
-//   executor.spin_once();
-//
-//   traj_controller->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
-//   resource_manager_->write();
-//
-//   // deactivated
-//   // wait so controller process the second point when deactivated
-//   std::this_thread::sleep_for(std::chrono::milliseconds(500));
-//   state = traj_controller_->deactivate();
-//   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
-//   resource_manager_->read();
-//   traj_controller->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
-//   resource_manager_->write();
-//
-//   // no change in hw position
-//   EXPECT_EQ(3.3, joint_pos_[0]);
-//   EXPECT_EQ(4.4, joint_pos_[1]);
-//   EXPECT_EQ(5.5, joint_pos_[2]);
-//
-//   // reactivated
-//   // wait so controller process the third point when reactivated
-//   std::this_thread::sleep_for(std::chrono::milliseconds(3000));
-//   state = traj_node->activate();
-//   ASSERT_EQ(state.id(), State::PRIMARY_STATE_ACTIVE);
-//   resource_manager_->read();
-//   traj_controller->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
-//   resource_manager_->write();
-//
-//   // change in hw position to 3rd point
-//   EXPECT_EQ(10.10, joint_pos_[0]);
-//   EXPECT_EQ(11.11, joint_pos_[1]);
-//   EXPECT_EQ(12.12, joint_pos_[2]);
-//
-//   executor.cancel();
-// }
+// Test controller reactivation and issues mentioned in #423 - controller crashing when executing
+// trajectory after reactivaton
+TEST_P(TrajectoryControllerTestParameterized, reactivation)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+  SetUpTrajectoryController(executor);
+
+  traj_controller_->get_node()->configure();
+  ASSERT_EQ(traj_controller_->get_state().id(), State::PRIMARY_STATE_INACTIVE);
+
+  auto cmd_interface_config = traj_controller_->command_interface_configuration();
+  ASSERT_EQ(
+    cmd_interface_config.names.size(), joint_names_.size() * command_interface_types_.size());
+
+  auto state_interface_config = traj_controller_->state_interface_configuration();
+  ASSERT_EQ(
+    state_interface_config.names.size(), joint_names_.size() * state_interface_types_.size());
+
+  // ACTIVATE FIRST TIME
+  ActivateTrajectoryController();
+  ASSERT_EQ(traj_controller_->get_state().id(), State::PRIMARY_STATE_ACTIVE);
+
+  // send msg
+  builtin_interfaces::msg::Duration time_from_start;
+  time_from_start.sec = 1;
+  time_from_start.nanosec = 0;
+  // *INDENT-OFF*
+  std::vector<std::vector<double>> points{
+    {{3.3, 4.4, 5.5}}, {{7.7, 8.8, 9.9}}, {{10.10, 11.11, 12.12}}};
+  // *INDENT-ON*
+  publish(time_from_start, points, rclcpp::Time());
+  // wait for msg is be published to the system
+  executor.spin_some();
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
+  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+
+  // TODO(destogl): no need to enable this in the first iteration
+  //   auto expected_actual = trajectory_msgs::msg::JointTrajectoryPoint();
+  //   expected_actual.positions = {3.3/2, 4.4/2, 5.5/2};
+  //
+  //   auto expected_desired = trajectory_msgs::msg::JointTrajectoryPoint();
+  //   expected_desired.positions = {3.3, 4.4, 5.5};
+  //
+  //   waitAndCompareState(expected_actual, expected_desired, executor,
+  //   rclcpp::Duration::from_seconds(0.5), COMMON_THRESHOLD);
+
+  // wait so controller process the second point before deactivation
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+  // DEACTIVATE
+  traj_controller_->get_node()->deactivate();
+  ASSERT_EQ(traj_controller_->get_state().id(), State::PRIMARY_STATE_INACTIVE);
+
+  // no change in hw position
+  EXPECT_EQ(3.3, joint_pos_[0]);
+  EXPECT_EQ(4.4, joint_pos_[1]);
+  EXPECT_EQ(5.5, joint_pos_[2]);
+
+  // reactivated
+  // wait so controller process the third point when reactivated
+  std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+  traj_controller_->get_node()->activate();
+  ASSERT_EQ(traj_controller_->get_state().id(), State::PRIMARY_STATE_ACTIVE);
+  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+
+  // change in hw position to 3rd point
+  EXPECT_EQ(10.10, joint_pos_[0]);
+  EXPECT_EQ(11.11, joint_pos_[1]);
+  EXPECT_EQ(12.12, joint_pos_[2]);
+
+  executor.cancel();
+}
 
 TEST_P(TrajectoryControllerTestParameterized, cleanup)
 {
