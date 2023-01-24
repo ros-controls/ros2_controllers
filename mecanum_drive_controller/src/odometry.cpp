@@ -47,7 +47,7 @@ void Odometry::init(
 }
 
 bool Odometry::update(
-  double wheel0_vel, double wheel1_vel, double wheel2_vel, double wheel3_vel, const double dt)
+  double wheel_front_left_vel, double wheel_back_left_vel, double wheel_back_right_vel, double wheel_front_right_vel, const double dt)
 {
   /// We cannot estimate the speed with very small time intervals:
   // const double dt = (time - timestamp_).toSec();
@@ -67,11 +67,11 @@ bool Odometry::update(
   /// linear_transformation_from_center_2_base: offset/linear transformation matrix, to transform from center frame to base frame
 
   double velocity_in_center_frame_linear_x =
-    0.25 * wheels_radius_ * (wheel0_vel + wheel1_vel + wheel2_vel + wheel3_vel);
+    0.25 * wheels_radius_ * (wheel_front_left_vel + wheel_back_left_vel + wheel_back_right_vel + wheel_front_right_vel);
   double velocity_in_center_frame_linear_y =
-    0.25 * wheels_radius_ * (-wheel0_vel + wheel1_vel - wheel2_vel + wheel3_vel);
+    0.25 * wheels_radius_ * (-wheel_front_left_vel + wheel_back_left_vel - wheel_back_right_vel + wheel_front_right_vel);
   double velocity_in_center_frame_angular_z =
-    0.25 * wheels_radius_ / wheels_k_ * (-wheel0_vel - wheel1_vel + wheel2_vel + wheel3_vel);
+    0.25 * wheels_radius_ / wheels_k_ * (-wheel_front_left_vel - wheel_back_left_vel + wheel_back_right_vel + wheel_front_right_vel);
 
   tf2::Quaternion orientation_R_c_b;
   orientation_R_c_b.setRPY(0.0, 0.0, -base_frame_offset_[2]);
