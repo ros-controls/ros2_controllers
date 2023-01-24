@@ -434,7 +434,8 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
     reference_interfaces_[2] = std::numeric_limits<double>::quiet_NaN();
 
     command_interfaces_[0].set_value(0.0);
-    fprintf(stderr, " command_interfaces_[0] = %f \n", command_interfaces_[0].get_value());
+    //  left intentionally for debug
+    // fprintf(stderr, " command_interfaces_[0] = %f \n", command_interfaces_[0].get_value());
     command_interfaces_[1].set_value(0.0);
     command_interfaces_[2].set_value(0.0);
     command_interfaces_[3].set_value(0.0);

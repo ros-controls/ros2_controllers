@@ -93,8 +93,8 @@ bool Odometry::update(
   velocity_in_base_frame_angular_z = velocity_in_center_frame_angular_z;
 
   /// Integration.
-  /// NOTE: the position is expressed in the odometry frame (frame b0), unlike the twist which is
-  ///       expressed in the body frame (frame b).
+  /// NOTE: the position is expressed in the odometry frame , unlike the twist which is
+  ///       expressed in the body frame.
   orientation_z_in_base_frame_ += velocity_in_base_frame_angular_z * dt;
 
   tf2::Quaternion orientation_R_b_odom;
