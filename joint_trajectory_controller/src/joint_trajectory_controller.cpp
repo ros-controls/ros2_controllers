@@ -467,16 +467,16 @@ void JointTrajectoryController::query_state_service(
   std::shared_ptr<control_msgs::srv::QueryTrajectoryState::Response> response)
 {
   const auto logger = get_node()->get_logger();
-  const auto active_goal = *rt_active_goal_.readFromRT();
-  response->name = params_.joints;
-  trajectory_msgs::msg::JointTrajectoryPoint state_requested = state_current_;
   // Preconditions
   if (get_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
   {
-    RCLCPP_ERROR(logger, "Can't sample trajectory. Controller is not running.");
+    RCLCPP_ERROR(logger, "Can't sample trajectory. Controller is not active.");
     response->success = false;
     return;
   }
+  const auto active_goal = *rt_active_goal_.readFromRT();
+  response->name = params_.joints;
+  trajectory_msgs::msg::JointTrajectoryPoint state_requested = state_current_;
   if ((traj_point_active_ptr_ && (*traj_point_active_ptr_)->has_trajectory_msg()))
   {
     TrajectoryPointConstIter start_segment_itr, end_segment_itr;
