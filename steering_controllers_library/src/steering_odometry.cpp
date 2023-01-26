@@ -72,7 +72,6 @@ bool SteeringOdometry::update_odometry(
   return true;
 }
 
-// TODO(petkovich): enable also velocity interface to update using velocity from the traction wheel
 bool SteeringOdometry::update_from_position(
   const double traction_wheel_pos, const double steer_pos, const double dt)
 {
