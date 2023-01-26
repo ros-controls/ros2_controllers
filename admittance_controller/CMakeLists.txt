@@ -78,7 +78,7 @@ if(BUILD_TESTING)
   find_package(controller_manager REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
 
-  # Dynamically loaded durrint test
+  # Dynamically loaded during test
   find_package(kinematics_interface_kdl REQUIRED)
 
   # test loading admittance controller
