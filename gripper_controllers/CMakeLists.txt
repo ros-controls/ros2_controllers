@@ -10,17 +10,23 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
   add_compile_options(-Wall -Wextra)
 endif()
 
+set(THIS_PACKAGE_INCLUDE_DEPENDS
+  control_msgs
+  control_toolbox
+  controller_interface
+  generate_parameter_library
+  hardware_interface
+  pluginlib
+  rclcpp
+  rclcpp_action
+  realtime_tools
+)
+
 find_package(ament_cmake REQUIRED)
 find_package(backward_ros REQUIRED)
-find_package(control_msgs REQUIRED)
-find_package(control_toolbox REQUIRED)
-find_package(controller_interface REQUIRED)
-find_package(generate_parameter_library REQUIRED)
-find_package(hardware_interface REQUIRED)
-find_package(pluginlib REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(rclcpp_action REQUIRED)
-find_package(realtime_tools REQUIRED)
+foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
+  find_package(${Dependency} REQUIRED)
+endforeach()
 
 generate_parameter_library(gripper_action_controller_parameters
   src/gripper_action_controller_parameters.yaml
@@ -37,17 +43,8 @@ target_include_directories(gripper_action_controller PUBLIC
 target_link_libraries(gripper_action_controller PUBLIC
   gripper_action_controller_parameters
 )
-ament_target_dependencies(gripper_action_controller PUBLIC
-  control_msgs
-  control_toolbox
-  controller_interface
-  generate_parameter_library
-  hardware_interface
-  pluginlib
-  rclcpp
-  rclcpp_action
-  realtime_tools
-)
+ament_target_dependencies(gripper_action_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
+
 pluginlib_export_plugin_description_file(controller_interface ros_control_plugins.xml)
 
 if(BUILD_TESTING)
@@ -87,15 +84,5 @@ install(
 )
 
 ament_export_targets(export_gripper_action_controller HAS_LIBRARY_TARGET)
-ament_export_dependencies(
-  control_msgs
-  control_toolbox
-  controller_interface
-  generate_parameter_library
-  hardware_interface
-  pluginlib
-  rclcpp
-  rclcpp_action
-  realtime_tools
-)
+ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
 ament_package()

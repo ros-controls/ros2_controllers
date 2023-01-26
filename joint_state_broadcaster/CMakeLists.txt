@@ -5,17 +5,23 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
   add_compile_options(-Wall -Wextra)
 endif()
 
+set(THIS_PACKAGE_INCLUDE_DEPENDS
+  builtin_interfaces
+  control_msgs
+  controller_interface
+  generate_parameter_library
+  pluginlib
+  rclcpp_lifecycle
+  rcutils
+  realtime_tools
+  sensor_msgs
+)
+
 find_package(ament_cmake REQUIRED)
 find_package(backward_ros REQUIRED)
-find_package(builtin_interfaces REQUIRED)
-find_package(control_msgs REQUIRED)
-find_package(controller_interface REQUIRED)
-find_package(generate_parameter_library REQUIRED)
-find_package(pluginlib REQUIRED)
-find_package(rclcpp_lifecycle REQUIRED)
-find_package(rcutils REQUIRED)
-find_package(realtime_tools REQUIRED)
-find_package(sensor_msgs REQUIRED)
+foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
+  find_package(${Dependency} REQUIRED)
+endforeach()
 
 generate_parameter_library(joint_state_broadcaster_parameters
   src/joint_state_broadcaster_parameters.yaml
@@ -32,17 +38,7 @@ target_include_directories(joint_state_broadcaster PUBLIC
 target_link_libraries(joint_state_broadcaster PUBLIC
   joint_state_broadcaster_parameters
 )
-ament_target_dependencies(joint_state_broadcaster PUBLIC
-  builtin_interfaces
-  control_msgs
-  controller_interface
-  generate_parameter_library
-  pluginlib
-  rclcpp_lifecycle
-  rcutils
-  realtime_tools
-  sensor_msgs
-)
+ament_target_dependencies(joint_state_broadcaster PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
 target_compile_definitions(joint_state_broadcaster PRIVATE "JOINT_STATE_BROADCASTER_BUILDING_DLL")
@@ -93,15 +89,5 @@ install(
 )
 
 ament_export_targets(export_joint_state_broadcaster HAS_LIBRARY_TARGET)
-ament_export_dependencies(
-  builtin_interfaces
-  control_msgs
-  controller_interface
-  generate_parameter_library
-  pluginlib
-  rclcpp_lifecycle
-  rcutils
-  realtime_tools
-  sensor_msgs
-)
+ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
 ament_package()

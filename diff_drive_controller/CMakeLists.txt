@@ -5,21 +5,26 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
   add_compile_options(-Wall -Wextra)
 endif()
 
+set(THIS_PACKAGE_INCLUDE_DEPENDS
+  controller_interface
+  generate_parameter_library
+  geometry_msgs
+  hardware_interface
+  nav_msgs
+  pluginlib
+  rclcpp
+  rclcpp_lifecycle
+  rcpputils
+  realtime_tools
+  tf2
+  tf2_msgs
+)
+
 find_package(ament_cmake REQUIRED)
 find_package(backward_ros REQUIRED)
-
-find_package(controller_interface REQUIRED)
-find_package(generate_parameter_library REQUIRED)
-find_package(geometry_msgs REQUIRED)
-find_package(hardware_interface REQUIRED)
-find_package(nav_msgs REQUIRED)
-find_package(pluginlib REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(rclcpp_lifecycle REQUIRED)
-find_package(rcpputils REQUIRED)
-find_package(realtime_tools REQUIRED)
-find_package(tf2 REQUIRED)
-find_package(tf2_msgs REQUIRED)
+foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
+  find_package(${Dependency} REQUIRED)
+endforeach()
 
 generate_parameter_library(diff_drive_controller_parameters
   src/diff_drive_controller_parameter.yaml
@@ -35,22 +40,8 @@ target_include_directories(diff_drive_controller PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/diff_drive_controller>
 )
-target_link_libraries(diff_drive_controller PUBLIC
-  diff_drive_controller_parameters
-)
-ament_target_dependencies(diff_drive_controller PUBLIC
-  controller_interface
-  geometry_msgs
-  hardware_interface
-  nav_msgs
-  pluginlib
-  rclcpp
-  rclcpp_lifecycle
-  rcpputils
-  realtime_tools
-  tf2
-  tf2_msgs
-)
+target_link_libraries(diff_drive_controller PUBLIC diff_drive_controller_parameters)
+ament_target_dependencies(diff_drive_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
 target_compile_definitions(diff_drive_controller PRIVATE "DIFF_DRIVE_CONTROLLER_BUILDING_DLL")
@@ -99,17 +90,5 @@ install(TARGETS diff_drive_controller diff_drive_controller_parameters
 )
 
 ament_export_targets(export_diff_drive_controller HAS_LIBRARY_TARGET)
-ament_export_dependencies(
-  controller_interface
-  geometry_msgs
-  hardware_interface
-  nav_msgs
-  pluginlib
-  rclcpp
-  rclcpp_lifecycle
-  rcpputils
-  realtime_tools
-  tf2
-  tf2_msgs
-)
+ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
 ament_package()

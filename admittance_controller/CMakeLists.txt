@@ -5,46 +5,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-find_package(ament_cmake REQUIRED)
-find_package(backward_ros REQUIRED)
-
-find_package(angles REQUIRED)
-find_package(control_msgs REQUIRED)
-find_package(control_toolbox REQUIRED)
-find_package(controller_interface REQUIRED)
-find_package(Eigen3 REQUIRED)
-find_package(generate_parameter_library REQUIRED)
-find_package(geometry_msgs REQUIRED)
-find_package(hardware_interface REQUIRED)
-find_package(joint_trajectory_controller REQUIRED)
-find_package(kinematics_interface REQUIRED)
-find_package(pluginlib REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(rclcpp_lifecycle REQUIRED)
-find_package(realtime_tools REQUIRED)
-find_package(tf2 REQUIRED)
-find_package(tf2_eigen REQUIRED)
-find_package(tf2_geometry_msgs REQUIRED)
-find_package(tf2_kdl REQUIRED)
-find_package(tf2_ros REQUIRED)
-find_package(trajectory_msgs REQUIRED)
-
-generate_parameter_library(admittance_controller_parameters
-  src/admittance_controller_parameters.yaml
-)
-
-add_library(admittance_controller SHARED
-  src/admittance_controller.cpp
-)
-target_compile_features(admittance_controller PUBLIC cxx_std_17)
-target_include_directories(admittance_controller PUBLIC
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include/admittance_controller>
-)
-target_link_libraries(admittance_controller PUBLIC
-  admittance_controller_parameters
-)
-ament_target_dependencies(admittance_controller PUBLIC
+set(THIS_PACKAGE_INCLUDE_DEPENDS
   angles
   control_msgs
   control_toolbox
@@ -66,6 +27,29 @@ ament_target_dependencies(admittance_controller PUBLIC
   tf2_ros
   trajectory_msgs
 )
+
+find_package(ament_cmake REQUIRED)
+find_package(backward_ros REQUIRED)
+foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
+  find_package(${Dependency} REQUIRED)
+endforeach()
+
+generate_parameter_library(admittance_controller_parameters
+  src/admittance_controller_parameters.yaml
+)
+
+add_library(admittance_controller SHARED
+  src/admittance_controller.cpp
+)
+target_compile_features(admittance_controller PUBLIC cxx_std_17)
+target_include_directories(admittance_controller PUBLIC
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include/admittance_controller>
+)
+target_link_libraries(admittance_controller PUBLIC
+  admittance_controller_parameters
+)
+ament_target_dependencies(admittance_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
 
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
@@ -119,26 +103,5 @@ install(TARGETS admittance_controller admittance_controller_parameters
 )
 
 ament_export_targets(export_admittance_controller HAS_LIBRARY_TARGET)
-ament_export_dependencies(
-  angles
-  control_msgs
-  control_toolbox
-  controller_interface
-  Eigen3
-  generate_parameter_library
-  geometry_msgs
-  hardware_interface
-  joint_trajectory_controller
-  kinematics_interface
-  pluginlib
-  rclcpp
-  rclcpp_lifecycle
-  realtime_tools
-  tf2
-  tf2_eigen
-  tf2_geometry_msgs
-  tf2_kdl
-  tf2_ros
-  trajectory_msgs
-)
+ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
 ament_package()

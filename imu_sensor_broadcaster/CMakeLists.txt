@@ -5,16 +5,22 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
+set(THIS_PACKAGE_INCLUDE_DEPENDS
+  controller_interface
+  generate_parameter_library
+  hardware_interface
+  pluginlib
+  rclcpp
+  rclcpp_lifecycle
+  realtime_tools
+  sensor_msgs
+)
+
 find_package(ament_cmake REQUIRED)
 find_package(backward_ros REQUIRED)
-find_package(controller_interface REQUIRED)
-find_package(generate_parameter_library REQUIRED)
-find_package(hardware_interface REQUIRED)
-find_package(pluginlib REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(rclcpp_lifecycle REQUIRED)
-find_package(realtime_tools REQUIRED)
-find_package(sensor_msgs REQUIRED)
+foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
+  find_package(${Dependency} REQUIRED)
+endforeach()
 
 generate_parameter_library(imu_sensor_broadcaster_parameters
   src/imu_sensor_broadcaster_parameters.yaml
@@ -31,16 +37,7 @@ target_include_directories(imu_sensor_broadcaster PUBLIC
 target_link_libraries(imu_sensor_broadcaster PUBLIC
   imu_sensor_broadcaster_parameters
 )
-ament_target_dependencies(imu_sensor_broadcaster PUBLIC
-  controller_interface
-  generate_parameter_library
-  hardware_interface
-  pluginlib
-  rclcpp
-  rclcpp_lifecycle
-  realtime_tools
-  sensor_msgs
-)
+ament_target_dependencies(imu_sensor_broadcaster PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
 
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
@@ -93,14 +90,5 @@ install(
 )
 
 ament_export_targets(export_imu_sensor_broadcaster HAS_LIBRARY_TARGET)
-ament_export_dependencies(
-  controller_interface
-  generate_parameter_library
-  hardware_interface
-  pluginlib
-  rclcpp
-  rclcpp_lifecycle
-  realtime_tools
-  sensor_msgs
-)
+ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
 ament_package()

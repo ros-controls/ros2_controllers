@@ -5,11 +5,17 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
+set(THIS_PACKAGE_INCLUDE_DEPENDS
+  forward_command_controller
+  pluginlib
+  rclcpp
+)
+
 find_package(ament_cmake REQUIRED)
 find_package(backward_ros REQUIRED)
-find_package(forward_command_controller REQUIRED)
-find_package(pluginlib REQUIRED)
-find_package(rclcpp REQUIRED)
+foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
+  find_package(${Dependency} REQUIRED)
+endforeach()
 
 add_library(velocity_controllers SHARED
   src/joint_group_velocity_controller.cpp
@@ -19,11 +25,7 @@ target_include_directories(velocity_controllers PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/velocity_controllers>
 )
-ament_target_dependencies(velocity_controllers PUBLIC
-  forward_command_controller
-  pluginlib
-  rclcpp
-)
+ament_target_dependencies(velocity_controllers PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
 
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
@@ -69,9 +71,5 @@ install(
 )
 
 ament_export_targets(export_velocity_controllers HAS_LIBRARY_TARGET)
-ament_export_dependencies(
-  forward_command_controller
-  pluginlib
-  rclcpp
-)
+ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
 ament_package()
