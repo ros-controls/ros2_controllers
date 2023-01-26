@@ -24,6 +24,7 @@
 
 #include "control_msgs/action/follow_joint_trajectory.hpp"
 #include "control_msgs/msg/joint_trajectory_controller_state.hpp"
+#include "control_msgs/srv/query_trajectory_state.hpp"
 #include "control_toolbox/pid.hpp"
 #include "controller_interface/controller_interface.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
@@ -177,6 +178,8 @@ protected:
   rclcpp::Subscription<trajectory_msgs::msg::JointTrajectory>::SharedPtr joint_command_subscriber_ =
     nullptr;
 
+  rclcpp::Service<control_msgs::srv::QueryTrajectoryState>::SharedPtr query_state_srv_;
+
   std::shared_ptr<Trajectory> * traj_point_active_ptr_ = nullptr;
   std::shared_ptr<Trajectory> traj_external_point_ptr_ = nullptr;
   std::shared_ptr<Trajectory> traj_home_point_ptr_ = nullptr;
@@ -259,6 +262,10 @@ protected:
 
   bool read_state_from_command_interfaces(JointTrajectoryPoint & state);
   bool read_commands_from_command_interfaces(JointTrajectoryPoint & commands);
+
+  void query_state_service(
+    const std::shared_ptr<control_msgs::srv::QueryTrajectoryState::Request> request,
+    std::shared_ptr<control_msgs::srv::QueryTrajectoryState::Response> response);
 
 private:
   bool contains_interface_type(
