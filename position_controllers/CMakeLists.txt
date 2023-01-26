@@ -11,12 +11,6 @@ find_package(forward_command_controller REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 
-set(THIS_PACKAGE_INCLUDE_DEPENDS
-  forward_command_controller
-  pluginlib
-  rclcpp
-)
-
 add_library(position_controllers SHARED
   src/joint_group_position_controller.cpp
 )

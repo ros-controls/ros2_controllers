@@ -21,22 +21,6 @@ find_package(rsl REQUIRED)
 find_package(tl_expected REQUIRED)
 find_package(trajectory_msgs REQUIRED)
 
-set(THIS_PACKAGE_INCLUDE_DEPENDS
-  angles
-  control_msgs
-  control_toolbox
-  controller_interface
-  generate_parameter_library
-  hardware_interface
-  pluginlib
-  rclcpp
-  rclcpp_lifecycle
-  realtime_tools
-  rsl
-  tl_expected
-  trajectory_msgs
-)
-
 generate_parameter_library(joint_trajectory_controller_parameters
   src/joint_trajectory_controller_parameters.yaml
   include/joint_trajectory_controller/validate_jtc_parameters.hpp
