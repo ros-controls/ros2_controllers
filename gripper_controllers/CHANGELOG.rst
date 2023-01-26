@@ -2,6 +2,11 @@
 Changelog for package gripper_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Changing to_chrono to use nanoseconds & Reset gripper action goal timer to match JTC impl (`#507 <https://github.com/ros-controls/ros2_controllers/issues/507>`_)
+* Contributors: Dan Wahl
+
 3.0.0 (2023-01-19)
 ------------------
 * Add backward_ros to all controllers (`#489 <https://github.com/ros-controls/ros2_controllers/issues/489>`_)

@@ -2,6 +2,9 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 3.0.0 (2023-01-19)
 ------------------
 * diff_drive base_frame_id param (`#495 <https://github.com/ros-controls/ros2_controllers/issues/495>`_)
