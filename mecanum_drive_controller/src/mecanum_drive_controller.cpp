@@ -478,6 +478,10 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
     controller_state_publisher_->unlockAndPublish();
   }
 
+  reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();
+  reference_interfaces_[1] = std::numeric_limits<double>::quiet_NaN();
+  reference_interfaces_[2] = std::numeric_limits<double>::quiet_NaN();
+
   return controller_interface::return_type::OK;
 }
 
