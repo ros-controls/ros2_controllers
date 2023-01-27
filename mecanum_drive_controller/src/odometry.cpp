@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Stogl Robotics Consulting UG (haftungsbeschränkt)
+// Copyright (c) 2023, Stogl Robotics Consulting UG (haftungsbeschränkt)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -107,9 +107,6 @@ bool Odometry::update(
 
   position_x_in_base_frame_ += velocity_in_base_frame_w_r_t_odom_frame_.x() * dt;
   position_y_in_base_frame_ += velocity_in_base_frame_w_r_t_odom_frame_.y() * dt;
-  // leaving the below comments intentionally
-  // fprintf(stderr, " position_x_in_base_frame_ = %f  \n", position_x_in_base_frame_);
-  // fprintf(stderr, " position_y_in_base_frame_ = %f  \n", position_y_in_base_frame_);
 
   return true;
 }

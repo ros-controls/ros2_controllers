@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Stogl Robotics Consulting UG (haftungsbeschränkt)
+// Copyright (c) 2023, Stogl Robotics Consulting UG (haftungsbeschränkt)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -127,9 +127,9 @@ private:
   MECANUM_DRIVE_CONTROLLER__VISIBILITY_LOCAL
   void reference_callback(const std::shared_ptr<ControllerReferenceMsg> msg);
 
-  double velocity_in_center_frame_linear_x;   // [m/s]
-  double velocity_in_center_frame_linear_y;   // [m/s]
-  double velocity_in_center_frame_angular_z;  // [rad/s]
+  double velocity_in_center_frame_linear_x_;   // [m/s]
+  double velocity_in_center_frame_linear_y_;   // [m/s]
+  double velocity_in_center_frame_angular_z_;  // [rad/s]
 };
 
 }  // namespace mecanum_drive_controller

@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Stogl Robotics Consulting UG (haftungsbeschränkt)
+// Copyright (c) 2023, Stogl Robotics Consulting UG (haftungsbeschränkt)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -374,9 +374,9 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
   // INVERSE KINEMATICS (move robot).
   // Compute wheels velocities (this is the actual ik):
   // NOTE: the input desired twist (from topic `~/reference`) is a body twist.
-  auto current_ref = *(input_ref_.readFromRT());
-  const auto age_of_last_command = time - current_ref->header.stamp;
-  if (age_of_last_command <= ref_timeout_ || ref_timeout_ == rclcpp::Duration::from_seconds(0))
+  if (
+    !std::isnan(reference_interfaces_[0]) && !std::isnan(reference_interfaces_[1]) &&
+    !std::isnan(reference_interfaces_[2]))
   {
     tf2::Quaternion quaternion;
     quaternion.setRPY(0.0, 0.0, params_.kinematics.base_frame_offset.theta);
@@ -417,32 +417,17 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
        params_.kinematics.wheels_k * velocity_in_center_frame_angular_z);
 
     // Set wheels velocities:
-
     command_interfaces_[0].set_value(w_front_left_vel);
-    fprintf(stderr, " command_interfaces_[0] = %f \n", w_front_left_vel);
     command_interfaces_[1].set_value(w_back_left_vel);
-    fprintf(stderr, " command_interfaces_[1] = %f \n", w_back_left_vel);
     command_interfaces_[2].set_value(w_back_right_vel);
-    fprintf(stderr, " command_interfaces_[2] = %f \n", w_back_right_vel);
     command_interfaces_[3].set_value(w_front_right_vel);
-    fprintf(stderr, " command_interfaces_[3] = %f \n", w_front_right_vel);
   }
   else
   {
-    reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();
-    reference_interfaces_[1] = std::numeric_limits<double>::quiet_NaN();
-    reference_interfaces_[2] = std::numeric_limits<double>::quiet_NaN();
-
     command_interfaces_[0].set_value(0.0);
-    //  left intentionally for debug
-    // fprintf(stderr, " command_interfaces_[0] = %f \n", command_interfaces_[0].get_value());
     command_interfaces_[1].set_value(0.0);
     command_interfaces_[2].set_value(0.0);
     command_interfaces_[3].set_value(0.0);
-
-    current_ref->twist.linear.x = std::numeric_limits<double>::quiet_NaN();
-    current_ref->twist.linear.y = std::numeric_limits<double>::quiet_NaN();
-    current_ref->twist.angular.z = std::numeric_limits<double>::quiet_NaN();
   }
 
   // Publish odometry message
