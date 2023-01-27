@@ -475,7 +475,6 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
     controller_state_publisher_->msg_.reference_vel.linear.x = reference_interfaces_[0];
     controller_state_publisher_->msg_.reference_vel.linear.y = reference_interfaces_[1];
     controller_state_publisher_->msg_.reference_vel.angular.z = reference_interfaces_[2];
-
     controller_state_publisher_->unlockAndPublish();
   }
 
