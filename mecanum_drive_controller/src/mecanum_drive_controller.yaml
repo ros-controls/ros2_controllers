@@ -32,7 +32,7 @@ mecanum_drive_controller:
   interface_name: {
     type: string,
     default_value: "",
-    description: "Name of the interface used by the controller on joints and command_joints.",
+    description: "Name of the interface used by the controller for sending commands, reading states and getting references.",
     read_only: true,
   }
 
