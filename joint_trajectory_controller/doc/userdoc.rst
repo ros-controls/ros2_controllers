@@ -168,7 +168,7 @@ gains (structure)
 
   .. math::
 
-   u = k_{ff} v_d + k_p e + k_i \sum e dt + k_d (v_d - v)
+     u = k_{ff} v_d + k_p e + k_i \sum e dt + k_d (v_d - v)
 
   with the desired velocity :math:`v_d`, the measured velocity :math:`v`, the position error :math:`e` (definition see below),
   the controller period :math:`dt`, and the ``velocity`` or ``effort`` manipulated variable (control variable) :math:`u`, respectively.
