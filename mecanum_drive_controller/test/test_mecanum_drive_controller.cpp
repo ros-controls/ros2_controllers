@@ -193,8 +193,8 @@ TEST_F(MecanumDriveControllerTest, publish_status_success)
   ControllerStateMsg msg;
   subscribe_and_get_messages(msg);
 
-  EXPECT_NEAR(msg.odom.pose.pose.position.y, 0.0, EPS);
-  EXPECT_EQ(msg.reference_vel.linear.x, 1.5);
+  EXPECT_NEAR(msg.odometry.pose.pose.position.y, 0.0, EPS);
+  EXPECT_EQ(msg.reference_velocity.linear.x, 1.5);
 }
 
 // Tests the msg subscriber and publisher
@@ -220,7 +220,7 @@ TEST_F(MecanumDriveControllerTest, receive_message_and_publish_updated_status)
   subscribe_and_get_messages(msg);
   joint_command_values_[1] = command_lin_x;
 
-  EXPECT_TRUE(std::isnan(msg.reference_vel.linear.x));
+  EXPECT_TRUE(std::isnan(msg.reference_velocity.linear.x));
 
   publish_commands(controller_->get_node()->now());
   ASSERT_TRUE(controller_->wait_for_commands(executor));
@@ -239,7 +239,7 @@ TEST_F(MecanumDriveControllerTest, receive_message_and_publish_updated_status)
 
   subscribe_and_get_messages(msg);
 
-  ASSERT_EQ(msg.reference_vel.linear.x, 1.5);
+  ASSERT_EQ(msg.reference_velocity.linear.x, 1.5);
 }
 
 // Tests controller behavior when too old msg is sent / age_of_last_command > ref_timeout case

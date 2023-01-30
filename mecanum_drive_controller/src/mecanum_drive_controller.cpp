@@ -190,9 +190,9 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
   controller_state_publisher_->lock();
   controller_state_publisher_->msg_.header.stamp = get_node()->now();
   controller_state_publisher_->msg_.header.frame_id = params_.odom_frame_id;
-  controller_state_publisher_->msg_.odom.child_frame_id = params_.base_frame_id;
-  controller_state_publisher_->msg_.odom.pose.pose.position.x = 0.0;
-  auto & covariance_controller = controller_state_publisher_->msg_.odom.twist.covariance;
+  controller_state_publisher_->msg_.odometry.child_frame_id = params_.base_frame_id;
+  controller_state_publisher_->msg_.odometry.pose.pose.position.x = 0.0;
+  auto & covariance_controller = controller_state_publisher_->msg_.odometry.twist.covariance;
   for (size_t index = 0; index < 6; ++index)
   {
     // 0, 7, 14, 21, 28, 35
@@ -468,19 +468,19 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
   if (controller_state_publisher_->trylock())
   {
     controller_state_publisher_->msg_.header.stamp = get_node()->now();
-    controller_state_publisher_->msg_.odom.pose.pose.position.x = odometry_.getX();
-    controller_state_publisher_->msg_.odom.pose.pose.position.y = odometry_.getY();
-    controller_state_publisher_->msg_.odom.pose.pose.orientation = tf2::toMsg(orientation);
-    controller_state_publisher_->msg_.odom.twist.twist.linear.x = odometry_.getVx();
-    controller_state_publisher_->msg_.odom.twist.twist.linear.y = odometry_.getVy();
-    controller_state_publisher_->msg_.odom.twist.twist.angular.z = odometry_.getWz();
+    controller_state_publisher_->msg_.odometry.pose.pose.position.x = odometry_.getX();
+    controller_state_publisher_->msg_.odometry.pose.pose.position.y = odometry_.getY();
+    controller_state_publisher_->msg_.odometry.pose.pose.orientation = tf2::toMsg(orientation);
+    controller_state_publisher_->msg_.odometry.twist.twist.linear.x = odometry_.getVx();
+    controller_state_publisher_->msg_.odometry.twist.twist.linear.y = odometry_.getVy();
+    controller_state_publisher_->msg_.odometry.twist.twist.angular.z = odometry_.getWz();
     controller_state_publisher_->msg_.front_left_wheel_velocity = state_interfaces_[0].get_value();
     controller_state_publisher_->msg_.back_left_wheel_velocity = state_interfaces_[1].get_value();
     controller_state_publisher_->msg_.back_right_wheel_velocity = state_interfaces_[2].get_value();
     controller_state_publisher_->msg_.front_right_wheel_velocity = state_interfaces_[3].get_value();
-    controller_state_publisher_->msg_.reference_vel.linear.x = reference_interfaces_[0];
-    controller_state_publisher_->msg_.reference_vel.linear.y = reference_interfaces_[1];
-    controller_state_publisher_->msg_.reference_vel.angular.z = reference_interfaces_[2];
+    controller_state_publisher_->msg_.reference_velocity.linear.x = reference_interfaces_[0];
+    controller_state_publisher_->msg_.reference_velocity.linear.y = reference_interfaces_[1];
+    controller_state_publisher_->msg_.reference_velocity.angular.z = reference_interfaces_[2];
     controller_state_publisher_->unlockAndPublish();
   }
 
