@@ -1,0 +1,46 @@
+four_steering_controller:
+  wheel_names: {
+    type: string_array,
+    default_value: [],
+    description: "Link names of the wheel joints.",
+  }
+  steer_names: {
+    type: string_array,
+    default_value: [],
+    description: "Link names of the steer joints.",
+  }
+  wheel_steering_y_offset_: {
+    type: double,
+    default_value: 0.15,
+    description: "Distance from mid-point of the wheel width and the associated steer joint.",
+  }
+  wheel_radius_: {
+    type: double,
+    default_value: 1.0,
+    description: "Radius of a wheel.",
+  }
+  wheel_base_: {
+    type: double,
+    default_value: 1.0,
+    description: "Distance between fron and rear wheels.",
+  }
+  track_: {
+    type: double,
+    default_value: 1.0,
+    description: "Distance between right and left wheels. (Mid-point of the wheel width).",
+  }
+  position_feedback: {
+    type: bool,
+    default_value: true,
+    description: "Is there position feedback from hardware.",
+  }
+  cmd_vel_timeout: {
+    type: double,
+    default_value: 4.0, # Hz
+    description: "Timeout on cmd_vel command.",
+  }  
+  publish_rate: {
+    type: double,
+    default_value: 50.0, # Hz
+    description: "Publishing rate (Hz) of the odometry and TF messages.",
+  }
