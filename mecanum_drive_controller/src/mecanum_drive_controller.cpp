@@ -383,8 +383,10 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
     tf2::Quaternion quaternion;
     quaternion.setRPY(0.0, 0.0, params_.kinematics.base_frame_offset.theta);
     /// \note The variables meaning:
-    /// rotation_from_base_to_center: Rotation transformation matrix, to transform from base frame to center frame
-    /// linear_trans_from_base_to_center: offset/linear transformation matrix, to transform from base frame to center frame
+    /// rotation_from_base_to_center: Rotation transformation matrix, to transform from
+    /// base frame to center frame
+    /// linear_trans_from_base_to_center: offset/linear transformation matrix, to
+    /// transform from base frame to center frame
 
     tf2::Matrix3x3 rotation_from_base_to_center = tf2::Matrix3x3((quaternion));
     tf2::Vector3 velocity_in_base_frame_w_r_t_center_frame_ =
