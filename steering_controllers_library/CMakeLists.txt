@@ -59,7 +59,7 @@ install(
 
 install(
   DIRECTORY include/
-  DESTINATION include
+  DESTINATION include/${PROJECT_NAME}
 )
 
 if(BUILD_TESTING)
@@ -81,7 +81,7 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(
-  include
+  include/${PROJECT_NAME}
   include/steering_controllers_library_parameters
 )
 
