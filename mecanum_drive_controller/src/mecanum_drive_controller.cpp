@@ -96,7 +96,7 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
   reference_names_ = params_.reference_names;
 
   // Set wheel params for the odometry computation
-  odometry_.setWheelsParams(params_.kinematics.wheels_k, params_.kinematics.wheels_radius);
+  odometry_.setWheelsParams(params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis, params_.kinematics.wheels_radius);
 
   // topics QoS
   auto subscribers_qos = rclcpp::SystemDefaultsQoS();
@@ -402,19 +402,19 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
     double w_front_left_vel =
       1.0 / params_.kinematics.wheels_radius *
       (velocity_in_center_frame_linear_x_ - velocity_in_center_frame_linear_y_ -
-       params_.kinematics.wheels_k * velocity_in_center_frame_angular_z_);
+       params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis * velocity_in_center_frame_angular_z_);
     double w_back_left_vel =
       1.0 / params_.kinematics.wheels_radius *
       (velocity_in_center_frame_linear_x_ + velocity_in_center_frame_linear_y_ -
-       params_.kinematics.wheels_k * velocity_in_center_frame_angular_z_);
+       params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis * velocity_in_center_frame_angular_z_);
     double w_back_right_vel =
       1.0 / params_.kinematics.wheels_radius *
       (velocity_in_center_frame_linear_x_ - velocity_in_center_frame_linear_y_ +
-       params_.kinematics.wheels_k * velocity_in_center_frame_angular_z_);
+       params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis * velocity_in_center_frame_angular_z_);
     double w_front_right_vel =
       1.0 / params_.kinematics.wheels_radius *
       (velocity_in_center_frame_linear_x_ + velocity_in_center_frame_linear_y_ +
-       params_.kinematics.wheels_k * velocity_in_center_frame_angular_z_);
+       params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis * velocity_in_center_frame_angular_z_);
 
     // Set wheels velocities:
     command_interfaces_[0].set_value(w_front_left_vel);

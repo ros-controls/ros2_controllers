@@ -28,7 +28,7 @@ Odometry::Odometry()
   velocity_in_base_frame_linear_x(0.0),
   velocity_in_base_frame_linear_y(0.0),
   velocity_in_base_frame_angular_z(0.0),
-  wheels_k_(0.0),
+  sum_of_robot_center_projection_on_X_Y_axis_(0.0),
   wheels_radius_(0.0)
 {
 }
@@ -70,7 +70,7 @@ bool Odometry::update(
   double velocity_in_center_frame_linear_y =
     0.25 * wheels_radius_ * (-wheel_front_left_vel + wheel_back_left_vel - wheel_back_right_vel + wheel_front_right_vel);
   double velocity_in_center_frame_angular_z =
-    0.25 * wheels_radius_ / wheels_k_ * (-wheel_front_left_vel - wheel_back_left_vel + wheel_back_right_vel + wheel_front_right_vel);
+    0.25 * wheels_radius_ / sum_of_robot_center_projection_on_X_Y_axis_ * (-wheel_front_left_vel - wheel_back_left_vel + wheel_back_right_vel + wheel_front_right_vel);
 
   tf2::Quaternion orientation_R_c_b;
   orientation_R_c_b.setRPY(0.0, 0.0, -base_frame_offset_[2]);
@@ -110,9 +110,9 @@ bool Odometry::update(
   return true;
 }
 
-void Odometry::setWheelsParams(double wheels_k, double wheels_radius)
+void Odometry::setWheelsParams(double sum_of_robot_center_projection_on_X_Y_axis, double wheels_radius)
 {
-  wheels_k_ = wheels_k;
+  sum_of_robot_center_projection_on_X_Y_axis_ = sum_of_robot_center_projection_on_X_Y_axis;
   wheels_radius_ = wheels_radius;
 }
 

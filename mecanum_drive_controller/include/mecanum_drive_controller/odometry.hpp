@@ -68,9 +68,9 @@ public:
   }
 
   /// \brief Sets the wheels parameters: mecanum geometric param and radius
-  /// \param wheels_k       Wheels geometric param (used in mecanum wheels' ik) [m]
+  /// \param sum_of_robot_center_projection_on_X_Y_axis       Wheels geometric param (used in mecanum wheels' ik) [m]
   /// \param wheels_radius  Wheels radius [m]
-  void setWheelsParams(double wheels_k, double wheels_radius);
+  void setWheelsParams(double sum_of_robot_center_projection_on_X_Y_axis, double wheels_radius);
 
 private:
   /// Current timestamp:
@@ -90,8 +90,8 @@ private:
 
   /// Wheels kinematic parameters [m]:
   /// lx and ly represent the distance from the robot's center to the wheels projected on
-  /// the x and y axis with origin at robots center respectively, wheels_k_ = lx+ly
-  double wheels_k_;
+  /// the x and y axis with origin at robots center respectively, sum_of_robot_center_projection_on_X_Y_axis_ = lx+ly
+  double sum_of_robot_center_projection_on_X_Y_axis_;
   double wheels_radius_;  // [m]
 };
 

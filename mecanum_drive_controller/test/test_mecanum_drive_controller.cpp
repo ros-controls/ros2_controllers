@@ -44,7 +44,7 @@ TEST_F(MecanumDriveControllerTest, all_parameters_set_configure_success)
 
   ASSERT_EQ(controller_->params_.reference_timeout, 0.0);
   ASSERT_EQ(controller_->params_.kinematics.wheels_radius, 0.0);
-  ASSERT_EQ(controller_->params_.kinematics.wheels_k, 0.0);
+  ASSERT_EQ(controller_->params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis, 0.0);
 
   ASSERT_EQ(controller_->params_.kinematics.base_frame_offset.x, 0.0);
   ASSERT_EQ(controller_->params_.kinematics.base_frame_offset.y, 0.0);
@@ -58,7 +58,7 @@ TEST_F(MecanumDriveControllerTest, all_parameters_set_configure_success)
 
   ASSERT_EQ(controller_->params_.reference_timeout, 0.1);
   ASSERT_EQ(controller_->params_.kinematics.wheels_radius, 0.5);
-  ASSERT_EQ(controller_->params_.kinematics.wheels_k, 1.0);
+  ASSERT_EQ(controller_->params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis, 1.0);
 
   ASSERT_EQ(controller_->params_.kinematics.base_frame_offset.x, 0.0);
   ASSERT_EQ(controller_->params_.kinematics.base_frame_offset.y, 0.0);
@@ -241,7 +241,7 @@ TEST_F(MecanumDriveControllerTest, receive_message_and_publish_updated_status)
     controller_->update_and_write_commands(
       controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
-  //  w0_vel = 1.0 / params_.kinematics.wheels_radius * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y - params_.kinematics.wheels_k * body_velocity_center_frame_.angular_z);
+  //  w0_vel = 1.0 / params_.kinematics.wheels_radius * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y - params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis * body_velocity_center_frame_.angular_z);
   //  joint_command_values_[1] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0)
   EXPECT_EQ(joint_command_values_[1], 3.0);
 
@@ -422,7 +422,7 @@ TEST_F(MecanumDriveControllerTest, test_update_logic_not_chainable)
     controller_interface::return_type::OK);
 
   EXPECT_NE(joint_command_values_[1], command_lin_x);
-  //  w0_vel = 1.0 / params_.kinematics.wheels_radius * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y - params_.kinematics.wheels_k * body_velocity_center_frame_.angular_z);
+  //  w0_vel = 1.0 / params_.kinematics.wheels_radius * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y - params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis * body_velocity_center_frame_.angular_z);
   //  joint_command_values_[1] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0)
   EXPECT_EQ(joint_command_values_[1], 3.0);
   ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
@@ -474,7 +474,7 @@ TEST_F(MecanumDriveControllerTest, test_update_logic_chainable)
     controller_interface::return_type::OK);
 
   EXPECT_NE(joint_command_values_[1], command_lin_x);
-  //  w0_vel = 1.0 / params_.kinematics.wheels_radius * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y - params_.kinematics.wheels_k * body_velocity_center_frame_.angular_z);
+  //  w0_vel = 1.0 / params_.kinematics.wheels_radius * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y - params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis * body_velocity_center_frame_.angular_z);
   //  joint_command_values_[1] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0)
   EXPECT_EQ(joint_command_values_[1], 3.0);
   for (const auto & interface : controller_->reference_interfaces_)
@@ -531,7 +531,7 @@ TEST_F(MecanumDriveControllerTest, test_ref_timeout_zero_for_update)
 
   EXPECT_FALSE(std::isnan(joint_command_values_[1]));
   EXPECT_NE(joint_command_values_[1], command_lin_x);
-  //  w0_vel = 1.0 / params_.kinematics.wheels_radius * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y - params_.kinematics.wheels_k * body_velocity_center_frame_.angular_z);
+  //  w0_vel = 1.0 / params_.kinematics.wheels_radius * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y - params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis * body_velocity_center_frame_.angular_z);
   //  joint_command_values_[1] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0)
   EXPECT_EQ(joint_command_values_[1], 3.0);
   ASSERT_TRUE(std::isnan((*(controller_->input_ref_.readFromRT()))->twist.linear.x));
