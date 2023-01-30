@@ -20,7 +20,7 @@
 using namespace std;
 namespace mecanum_drive_controller
 {
-Odometry::Odometry(size_t velocity_rolling_window_size)
+Odometry::Odometry()
 : timestamp_(0.0),
   position_x_in_base_frame_(0.0),
   position_y_in_base_frame_(0.0),

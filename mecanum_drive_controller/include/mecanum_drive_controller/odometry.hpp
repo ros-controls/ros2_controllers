@@ -34,8 +34,7 @@ public:
   /// \brief Constructor
   /// Timestamp will get the current time value
   /// Value will be set to zero
-  /// \param velocity_rolling_window_size Rolling window size used to compute the velocity mean
-  Odometry(size_t velocity_rolling_window_size = 10);
+  Odometry();
 
   /// \brief Initialize the odometry
   /// \param time Current time
