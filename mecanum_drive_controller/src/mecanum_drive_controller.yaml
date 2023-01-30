@@ -65,11 +65,11 @@ mecanum_drive_controller:
 
     }
 
-    wheels_k: {
+    sum_of_robot_center_projection_on_X_Y_axis: {
       type: double,
       default_value: 0.0,
       description: "Wheels geometric param used in mecanum wheels' IK. lx and ly represent the distance from the robot's center to the wheels projected on
-      the x and y axis with origin at robots center respectively, wheels_k = lx+ly",
+      the x and y axis with origin at robots center respectively, sum_of_robot_center_projection_on_X_Y_axis = lx+ly",
       read_only: false,
 
     }

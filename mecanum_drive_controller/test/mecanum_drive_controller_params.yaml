@@ -14,7 +14,7 @@ test_mecanum_drive_controller:
 
       wheels_radius: 0.5
 
-      wheels_k: 1.0
+      sum_of_robot_center_projection_on_X_Y_axis: 1.0
 
     base_frame_id: "base_link"
 
