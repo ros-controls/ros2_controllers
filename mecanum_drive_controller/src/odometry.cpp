@@ -17,7 +17,6 @@
 #include "tf2/transform_datatypes.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
-using namespace std;
 namespace mecanum_drive_controller
 {
 Odometry::Odometry()
@@ -63,8 +62,10 @@ bool Odometry::update(
   ///       to interpret and compare behavior curves).
 
   /// \note The variables meaning:
-  /// angular_transformation_from_center_2_base: Rotation transformation matrix, to transform from center frame to base frame
-  /// linear_transformation_from_center_2_base: offset/linear transformation matrix, to transform from center frame to base frame
+  /// angular_transformation_from_center_2_base: Rotation transformation matrix, to transform
+  /// from center frame to base frame
+  /// linear_transformation_from_center_2_base: offset/linear transformation matrix,
+  /// to transform from center frame to base frame
 
   double velocity_in_center_frame_linear_x =
     0.25 * wheels_radius_ *
