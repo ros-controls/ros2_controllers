@@ -429,6 +429,13 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
     command_interfaces_[1].set_value(w_back_left_vel);
     command_interfaces_[2].set_value(w_back_right_vel);
     command_interfaces_[3].set_value(w_front_right_vel);
+    
+    if (ref_timeout_ == rclcpp::Duration::from_seconds(0)) 
+    {
+      reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();
+      reference_interfaces_[1] = std::numeric_limits<double>::quiet_NaN();
+      reference_interfaces_[2] = std::numeric_limits<double>::quiet_NaN();
+    }
   }
   else
   {
