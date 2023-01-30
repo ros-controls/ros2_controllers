@@ -96,14 +96,6 @@ mecanum_drive_controller:
 
   }
 
-  use_realigned_roller_joints: {
-    type: bool,
-    default_value: false,
-    description: "This mode is used when the mecanum wheels are simulated and we use realigned rollers to mimic mecanum wheels.",
-    read_only: false,
-
-  }
-
   twist_covariance_diagonal: {
     type: double_array,
     default_value: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1],
