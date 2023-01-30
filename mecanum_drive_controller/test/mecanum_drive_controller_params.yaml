@@ -3,7 +3,7 @@ test_mecanum_drive_controller:
 
     reference_timeout: 0.1
 
-    joint_names: ["front_left_wheel_joint", "back_left_wheel_joint", "back_right_wheel_joint", "front_right_wheel_joint"]
+    command_joint_names: ["front_left_wheel_joint", "back_left_wheel_joint", "back_right_wheel_joint", "front_right_wheel_joint"]
 
     reference_names: ["linear_x", "linear_y", "angular_z"]
 

@@ -80,16 +80,16 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
   }
   else
   {
-    state_joint_names_ = params_.joint_names;
+    state_joint_names_ = params_.command_joint_names;
   }
 
-  if (params_.joint_names.size() != state_joint_names_.size())
+  if (params_.command_joint_names.size() != state_joint_names_.size())
   {
     RCLCPP_FATAL(
       get_node()->get_logger(),
       "Size of 'joints' (%ld) and 'state_joint_names' (%ld) parameters has "
       "to be the same!",
-      params_.joint_names.size(), state_joint_names_.size());
+      params_.command_joint_names.size(), state_joint_names_.size());
     return CallbackReturn::FAILURE;
   }
 
@@ -239,8 +239,8 @@ MecanumDriveController::command_interface_configuration() const
   controller_interface::InterfaceConfiguration command_interfaces_config;
   command_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
 
-  command_interfaces_config.names.reserve(params_.joint_names.size());
-  for (const auto & joint : params_.joint_names)
+  command_interfaces_config.names.reserve(params_.command_joint_names.size());
+  for (const auto & joint : params_.command_joint_names)
   {
     command_interfaces_config.names.push_back(joint + "/" + params_.interface_name);
   }

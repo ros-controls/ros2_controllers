@@ -50,7 +50,7 @@ TEST_F(MecanumDriveControllerTest, all_parameters_set_configure_success)
   ASSERT_EQ(controller_->params_.kinematics.base_frame_offset.y, 0.0);
   ASSERT_EQ(controller_->params_.kinematics.base_frame_offset.theta, 0.0);
 
-  ASSERT_TRUE(controller_->params_.joint_names.empty());
+  ASSERT_TRUE(controller_->params_.command_joint_names.empty());
   ASSERT_TRUE(controller_->params_.state_joint_names.empty());
   ASSERT_TRUE(controller_->params_.interface_name.empty());
 
@@ -64,7 +64,7 @@ TEST_F(MecanumDriveControllerTest, all_parameters_set_configure_success)
   ASSERT_EQ(controller_->params_.kinematics.base_frame_offset.y, 0.0);
   ASSERT_EQ(controller_->params_.kinematics.base_frame_offset.theta, 0.0);
 
-  ASSERT_THAT(controller_->params_.joint_names, testing::ElementsAreArray(joint_names_));
+  ASSERT_THAT(controller_->params_.command_joint_names, testing::ElementsAreArray(command_joint_names_));
   ASSERT_TRUE(controller_->params_.state_joint_names.empty());
   ASSERT_EQ(controller_->params_.interface_name, interface_name_);
 }
@@ -81,7 +81,7 @@ TEST_F(MecanumDriveControllerTest, check_exported_interfaces)
   ASSERT_EQ(command_intefaces.names.size(), joint_command_values_.size());
   for (size_t i = 0; i < command_intefaces.names.size(); ++i)
   {
-    EXPECT_EQ(command_intefaces.names[i], joint_names_[i] + "/" + interface_name_);
+    EXPECT_EQ(command_intefaces.names[i], command_joint_names_[i] + "/" + interface_name_);
   }
 
   // check state itfs configuration
@@ -89,7 +89,7 @@ TEST_F(MecanumDriveControllerTest, check_exported_interfaces)
   ASSERT_EQ(state_intefaces.names.size(), joint_state_values_.size());
   for (size_t i = 0; i < state_intefaces.names.size(); ++i)
   {
-    EXPECT_EQ(state_intefaces.names[i], joint_names_[i] + "/" + interface_name_);
+    EXPECT_EQ(state_intefaces.names[i], command_joint_names_[i] + "/" + interface_name_);
   }
 
   // check ref itfs configuration,  reference_names_

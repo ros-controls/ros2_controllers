@@ -156,7 +156,7 @@ protected:
     for (size_t i = 0; i < joint_command_values_.size(); ++i)
     {
       command_itfs_.emplace_back(hardware_interface::CommandInterface(
-        joint_names_[i], interface_name_, &joint_command_values_[i]));
+        command_joint_names_[i], interface_name_, &joint_command_values_[i]));
       command_ifs.emplace_back(command_itfs_.back());
     }
 
@@ -167,7 +167,7 @@ protected:
     for (size_t i = 0; i < joint_state_values_.size(); ++i)
     {
       state_itfs_.emplace_back(hardware_interface::StateInterface(
-        joint_names_[i], interface_name_, &joint_state_values_[i]));
+        command_joint_names_[i], interface_name_, &joint_state_values_[i]));
       state_ifs.emplace_back(state_itfs_.back());
     }
 
@@ -251,7 +251,7 @@ protected:
 
 protected:
   std::vector<std::string> reference_names_ = {"linear_x", "linear_y", "angular_z"};
-  std::vector<std::string> joint_names_ = {
+  std::vector<std::string> command_joint_names_ = {
     "front_left_wheel_joint", "back_left_wheel_joint", "back_right_wheel_joint",
     "front_right_wheel_joint"};
 
