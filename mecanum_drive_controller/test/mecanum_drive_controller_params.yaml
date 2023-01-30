@@ -22,8 +22,6 @@ test_mecanum_drive_controller:
 
     enable_odom_tf: true
 
-    use_realigned_roller_joints: false
-
     twist_covariance_diagonal: [0.0, 7.0, 14.0, 21.0, 28.0, 35.0]
 
     pose_covariance_diagonal: [0.0, 7.0, 14.0, 21.0, 28.0, 35.0]
