@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.8)
-project(steering_controllers_library)
+cmake_minimum_required(VERSION 3.16)
+project(steering_controllers_library LANGUAGES CXX)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -59,7 +59,6 @@ install(
 
 install(
   DIRECTORY include/
-  #DESTINATION include/${PROJECT_NAME}   # TODO: it should be this, but then it doesn't compile (?)
   DESTINATION include
 )
 
@@ -83,6 +82,7 @@ endif()
 
 ament_export_include_directories(
   include
+  include/steering_controllers_library_parameters
 )
 
 ament_export_dependencies(
