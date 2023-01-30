@@ -17,7 +17,6 @@
 #include "tf2/transform_datatypes.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
-#include <boost/bind.hpp>
 using namespace std;
 namespace mecanum_drive_controller
 {
