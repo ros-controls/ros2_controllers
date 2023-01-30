@@ -157,7 +157,7 @@ TEST_F(MecanumDriveControllerTest, deactivate_success)
   ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 }
 
-//checks the functionality of on_activate and on_deactivate methods from the controller
+// checks the functionality of on_activate and on_deactivate methods from the controller
 TEST_F(MecanumDriveControllerTest, reactivate_success)
 {
   SetUpController();
@@ -180,7 +180,7 @@ TEST_F(MecanumDriveControllerTest, reactivate_success)
     controller_interface::return_type::OK);
 }
 
-//test to check the status of controller state publisher
+// test to check the status of controller state publisher
 TEST_F(MecanumDriveControllerTest, publish_status_success)
 {
   SetUpController();
@@ -233,7 +233,10 @@ TEST_F(MecanumDriveControllerTest, receive_message_and_publish_updated_status)
     controller_->update_and_write_commands(
       controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
-  //  w0_vel = 1.0 / params_.kinematics.wheels_radius * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y - params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis * body_velocity_center_frame_.angular_z);
+  //  w0_vel = 1.0 / params_.kinematics.wheels_radius *
+  // (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y
+  // - params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis
+  // * body_velocity_center_frame_.angular_z);
   //  joint_command_values_[1] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0)
   EXPECT_EQ(joint_command_values_[1], 3.0);
 
@@ -268,7 +271,7 @@ TEST_F(MecanumDriveControllerTest, test_sending_too_old_message)
   EXPECT_TRUE(std::isnan((reference)->twist.angular.z));
 }
 
-//Tests the case when msg time stamp is zero
+// Tests the case when msg time stamp is zero
 TEST_F(MecanumDriveControllerTest, test_time_stamp_zero)
 {
   SetUpController();
@@ -296,7 +299,7 @@ TEST_F(MecanumDriveControllerTest, test_time_stamp_zero)
   EXPECT_NE((*(controller_->input_ref_.readFromNonRT()))->header.stamp.sec, 0.0);
 }
 
-//Tests the condition for msg to be accepted, i.e, if age_of_last_command < ref_timeout
+// Tests the condition for msg to be accepted, i.e, if age_of_last_command < ref_timeout
 TEST_F(MecanumDriveControllerTest, test_message_accepted)
 {
   SetUpController();
@@ -322,7 +325,8 @@ TEST_F(MecanumDriveControllerTest, test_message_accepted)
   EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z, 0.0);
 }
 
-//Test that checks the status of chainable mode and update methods logic accordingly, when ref_timeout and within ref_timeout
+// Test that checks the status of chainable mode and update methods logic accordingly,
+//  when ref_timeout and within ref_timeout
 TEST_F(MecanumDriveControllerTest, test_update_logic_not_chainable)
 {
   // 1. age>ref_timeout 2. age<ref_timeout
@@ -414,7 +418,10 @@ TEST_F(MecanumDriveControllerTest, test_update_logic_not_chainable)
     controller_interface::return_type::OK);
 
   EXPECT_NE(joint_command_values_[1], command_lin_x);
-  //  w0_vel = 1.0 / params_.kinematics.wheels_radius * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y - params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis * body_velocity_center_frame_.angular_z);
+  //  w0_vel = 1.0 / params_.kinematics.wheels_radius
+  // * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y
+  // - params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis
+  // * body_velocity_center_frame_.angular_z);
   //  joint_command_values_[1] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0)
   EXPECT_EQ(joint_command_values_[1], 3.0);
   ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
@@ -422,14 +429,15 @@ TEST_F(MecanumDriveControllerTest, test_update_logic_not_chainable)
   {
     EXPECT_TRUE(std::isnan(interface));
   }
-  
+
   for (size_t i = 0; i < controller_->command_interfaces_.size(); ++i)
   {
     EXPECT_EQ(controller_->command_interfaces_[i].get_value(), 3.0);
   }
 }
 
-//Test that checks the status of chainable mode and update_and_write_commands() method logic accordingly, when ref_timeout and within ref_timeout
+// Test that checks the status of chainable mode and update_and_write_commands()
+// method logic accordingly, when ref_timeout and within ref_timeout
 TEST_F(MecanumDriveControllerTest, test_update_logic_chainable)
 {
   // 1. age>ref_timeout 2. age<ref_timeout
@@ -467,7 +475,10 @@ TEST_F(MecanumDriveControllerTest, test_update_logic_chainable)
     controller_interface::return_type::OK);
 
   EXPECT_NE(joint_command_values_[1], command_lin_x);
-  //  w0_vel = 1.0 / params_.kinematics.wheels_radius * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y - params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis * body_velocity_center_frame_.angular_z);
+  //  w0_vel = 1.0 / params_.kinematics.wheels_radius
+  // * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y
+  // - params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis
+  // * body_velocity_center_frame_.angular_z);
   //  joint_command_values_[1] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0)
   EXPECT_EQ(joint_command_values_[1], 3.0);
   for (const auto & interface : controller_->reference_interfaces_)
@@ -524,7 +535,10 @@ TEST_F(MecanumDriveControllerTest, test_ref_timeout_zero_for_update)
 
   EXPECT_FALSE(std::isnan(joint_command_values_[1]));
   EXPECT_NE(joint_command_values_[1], command_lin_x);
-  //  w0_vel = 1.0 / params_.kinematics.wheels_radius * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y - params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis * body_velocity_center_frame_.angular_z);
+  //  w0_vel = 1.0 / params_.kinematics.wheels_radius
+  // * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y
+  // - params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis
+  // * body_velocity_center_frame_.angular_z);
   //  joint_command_values_[1] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0)
   EXPECT_EQ(joint_command_values_[1], 3.0);
   ASSERT_TRUE(std::isnan((*(controller_->input_ref_.readFromRT()))->twist.linear.x));
@@ -544,7 +558,7 @@ TEST_F(MecanumDriveControllerTest, test_ref_timeout_zero_for_reference_callback)
   EXPECT_TRUE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z));
   controller_->ref_timeout_ = rclcpp::Duration::from_seconds(0.0);
 
-  //reference_callback() is called implicitly when publish_commands() is called.
+  // reference_callback() is called implicitly when publish_commands() is called.
   publish_commands(controller_->get_node()->now());
 
   ASSERT_TRUE(controller_->wait_for_commands(executor));

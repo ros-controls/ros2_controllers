@@ -69,7 +69,8 @@ public:
   }
 
   /// \brief Sets the wheels parameters: mecanum geometric param and radius
-  /// \param sum_of_robot_center_projection_on_X_Y_axis       Wheels geometric param (used in mecanum wheels' ik) [m]
+  /// \param sum_of_robot_center_projection_on_X_Y_axis Wheels geometric param
+  /// (used in mecanum wheels' ik) [m]
   /// \param wheels_radius  Wheels radius [m]
   void setWheelsParams(double sum_of_robot_center_projection_on_X_Y_axis, double wheels_radius);
 
@@ -90,12 +91,13 @@ private:
   double velocity_in_base_frame_angular_z;  // [rad/s]
 
   /// Wheels kinematic parameters [m]:
-  /// lx and ly represent the distance from the robot's center to the wheels projected on
-  /// the x and y axis with origin at robots center respectively, sum_of_robot_center_projection_on_X_Y_axis_ = lx+ly
+  /// lx and ly represent the distance from the robot's center to the wheels
+  /// projected on the x and y axis with origin at robots center respectively,
+  /// sum_of_robot_center_projection_on_X_Y_axis_ = lx+ly
   double sum_of_robot_center_projection_on_X_Y_axis_;
   double wheels_radius_;  // [m]
 };
 
 }  // namespace mecanum_drive_controller
 
-#endif /* MECANUM_DRIVE_CONTROLLER__ODOMETRY_HPP_ */
+#endif  // MECANUM_DRIVE_CONTROLLER__ODOMETRY_HPP_ */
