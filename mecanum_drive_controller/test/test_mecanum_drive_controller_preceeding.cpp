@@ -42,7 +42,8 @@ TEST_F(MecanumDriveControllerTest, all_parameters_set_configure_success)
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   ASSERT_EQ(controller_->params_.reference_timeout, 0.1);
-  ASSERT_THAT(controller_->params_.command_joint_names, testing::ElementsAreArray(command_joint_names_));
+  ASSERT_THAT(
+    controller_->params_.command_joint_names, testing::ElementsAreArray(command_joint_names_));
   ASSERT_THAT(
     controller_->params_.state_joint_names, testing::ElementsAreArray(state_joint_names_));
   ASSERT_THAT(controller_->state_joint_names_, testing::ElementsAreArray(state_joint_names_));
@@ -60,7 +61,7 @@ TEST_F(MecanumDriveControllerTest, check_exported_intefaces)
   ASSERT_EQ(command_intefaces.names.size(), joint_command_values_.size());
   for (size_t i = 0; i < command_intefaces.names.size(); ++i)
   {
-    EXPECT_EQ(command_intefaces.names[i],command_joint_names_[i] + "/" + interface_name_);
+    EXPECT_EQ(command_intefaces.names[i], command_joint_names_[i] + "/" + interface_name_);
   }
 
   auto state_intefaces = controller_->state_interface_configuration();

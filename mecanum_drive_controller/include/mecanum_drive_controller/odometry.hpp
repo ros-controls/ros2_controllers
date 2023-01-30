@@ -48,7 +48,8 @@ public:
   /// \param time      Current time
   /// \return true if the odometry is actually updated
   bool update(
-    double wheel_front_left_vel, double wheel_back_left_vel, double wheel_back_right_vel, double wheel_front_right_vel, const double dt);
+    double wheel_front_left_vel, double wheel_back_left_vel, double wheel_back_right_vel,
+    double wheel_front_right_vel, const double dt);
 
   /// \return position (x component) [m]
   double getX() const { return position_x_in_base_frame_; }
