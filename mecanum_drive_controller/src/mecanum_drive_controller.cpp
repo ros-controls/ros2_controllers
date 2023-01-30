@@ -87,7 +87,7 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
   {
     RCLCPP_FATAL(
       get_node()->get_logger(),
-      "Size of 'joints' (%d) and 'state_joint_names' (%d) parameters has "
+      "Size of 'joints' (%ld) and 'state_joint_names' (%ld) parameters has "
       "to be the same!",
       params_.joint_names.size(), state_joint_names_.size());
     return CallbackReturn::FAILURE;
@@ -391,30 +391,30 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
     tf2::Vector3 linear_trans_from_base_to_center = tf2::Vector3(
       params_.kinematics.base_frame_offset.x, params_.kinematics.base_frame_offset.y, 0.0);
 
-    velocity_in_center_frame_linear_x =
+    velocity_in_center_frame_linear_x_ =
       velocity_in_base_frame_w_r_t_center_frame_.x() +
       linear_trans_from_base_to_center.y() * reference_interfaces_[2];
-    velocity_in_center_frame_linear_y =
+    velocity_in_center_frame_linear_y_ =
       velocity_in_base_frame_w_r_t_center_frame_.y() -
       linear_trans_from_base_to_center.x() * reference_interfaces_[2];
-    velocity_in_center_frame_angular_z = reference_interfaces_[2];
+    velocity_in_center_frame_angular_z_ = reference_interfaces_[2];
 
     double w_front_left_vel =
       1.0 / params_.kinematics.wheels_radius *
-      (velocity_in_center_frame_linear_x - velocity_in_center_frame_linear_y -
-       params_.kinematics.wheels_k * velocity_in_center_frame_angular_z);
+      (velocity_in_center_frame_linear_x_ - velocity_in_center_frame_linear_y_ -
+       params_.kinematics.wheels_k * velocity_in_center_frame_angular_z_);
     double w_back_left_vel =
       1.0 / params_.kinematics.wheels_radius *
-      (velocity_in_center_frame_linear_x + velocity_in_center_frame_linear_y -
-       params_.kinematics.wheels_k * velocity_in_center_frame_angular_z);
+      (velocity_in_center_frame_linear_x_ + velocity_in_center_frame_linear_y_ -
+       params_.kinematics.wheels_k * velocity_in_center_frame_angular_z_);
     double w_back_right_vel =
       1.0 / params_.kinematics.wheels_radius *
-      (velocity_in_center_frame_linear_x - velocity_in_center_frame_linear_y +
-       params_.kinematics.wheels_k * velocity_in_center_frame_angular_z);
+      (velocity_in_center_frame_linear_x_ - velocity_in_center_frame_linear_y_ +
+       params_.kinematics.wheels_k * velocity_in_center_frame_angular_z_);
     double w_front_right_vel =
       1.0 / params_.kinematics.wheels_radius *
-      (velocity_in_center_frame_linear_x + velocity_in_center_frame_linear_y +
-       params_.kinematics.wheels_k * velocity_in_center_frame_angular_z);
+      (velocity_in_center_frame_linear_x_ + velocity_in_center_frame_linear_y_ +
+       params_.kinematics.wheels_k * velocity_in_center_frame_angular_z_);
 
     // Set wheels velocities:
     command_interfaces_[0].set_value(w_front_left_vel);
