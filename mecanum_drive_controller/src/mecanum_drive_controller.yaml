@@ -6,7 +6,7 @@ mecanum_drive_controller:
 
   }
 
-  joint_names: {
+  command_joint_names: {
     type: string_array,
     default_value: [],
     description: "Name of the wheels joints.",
