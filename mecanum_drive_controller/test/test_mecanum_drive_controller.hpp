@@ -174,7 +174,7 @@ protected:
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
   }
 
-  void subscribe_and_get_messages(ControllerStateMsg & msg)
+  void subscribe_to_controller_status_execute_update_and_get_messages(ControllerStateMsg & msg)
   {
     // create a new subscriber
     rclcpp::Node test_subscription_node("test_subscription_node");
@@ -183,12 +183,7 @@ protected:
       "/test_mecanum_drive_controller/controller_state", 10, subs_callback);
     // call update to publish the test value
     ASSERT_EQ(
-      controller_->update_reference_from_subscribers(
-        controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
-      controller_interface::return_type::OK);
-    ASSERT_EQ(
-      controller_->update_and_write_commands(
-        controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
+      controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
       controller_interface::return_type::OK);
     // call update to publish the test value
     // since update doesn't guarantee a published message, republish until received
@@ -197,10 +192,7 @@ protected:
     wait_set.add_subscription(subscription);
     while (max_sub_check_loop_count--)
     {
-      controller_->update_reference_from_subscribers(
-        controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01));
-      controller_->update_and_write_commands(
-        controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01));
+      controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01));
       // check if message has been received
       if (wait_set.wait(std::chrono::milliseconds(2)).kind() == rclcpp::WaitResultKind::Ready)
       {
