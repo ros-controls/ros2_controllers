@@ -22,7 +22,7 @@
 #include "rclcpp/utilities.hpp"
 #include "ros2_control_test_assets/descriptions.hpp"
 
-TEST(TestLoadMecanumDriveController, load_controller)
+TEST(TestLoadMecanumDriveController, when_loading_controller_expect_no_exception)
 {
   rclcpp::init(0, nullptr);
 
