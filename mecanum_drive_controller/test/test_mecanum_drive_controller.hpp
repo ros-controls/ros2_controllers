@@ -49,21 +49,21 @@ constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
 // subclassing and friending so we can access member variables
 class TestableMecanumDriveController : public mecanum_drive_controller::MecanumDriveController
 {
-  FRIEND_TEST(MecanumDriveControllerTest, all_parameters_set_configure_success);
-  FRIEND_TEST(MecanumDriveControllerTest, check_exported_interfaces);
-  FRIEND_TEST(MecanumDriveControllerTest, activate_success);
-  FRIEND_TEST(MecanumDriveControllerTest, update_success);
-  FRIEND_TEST(MecanumDriveControllerTest, deactivate_success);
-  FRIEND_TEST(MecanumDriveControllerTest, reactivate_success);
-  FRIEND_TEST(MecanumDriveControllerTest, publish_status_success);
-  FRIEND_TEST(MecanumDriveControllerTest, receive_message_and_publish_updated_status);
-  FRIEND_TEST(MecanumDriveControllerTest, test_sending_too_old_message);
-  FRIEND_TEST(MecanumDriveControllerTest, test_time_stamp_zero);
-  FRIEND_TEST(MecanumDriveControllerTest, test_message_accepted);
-  FRIEND_TEST(MecanumDriveControllerTest, test_update_logic_not_chainable);
-  FRIEND_TEST(MecanumDriveControllerTest, test_update_logic_chainable);
+  FRIEND_TEST(MecanumDriveControllerTest, when_all_parameters_are_set_expect_them_in_storage);
+  FRIEND_TEST(MecanumDriveControllerTest, when_exported_all_interfaces_expect_them_in_storage);
+  FRIEND_TEST(MecanumDriveControllerTest, when_activated_expect_reference_msg_reset);
+  FRIEND_TEST(MecanumDriveControllerTest, when_update_successful_expect_return_type_success);
+  FRIEND_TEST(MecanumDriveControllerTest, when_deactivated_expect_return_type_success);
+  FRIEND_TEST(MecanumDriveControllerTest, when_reactivated_expect_reference_msg_reset);
+  FRIEND_TEST(MecanumDriveControllerTest, when_published_success_expect_in_storage);
+  FRIEND_TEST(MecanumDriveControllerTest, when_subscribed_msg_received_publish_succeeded_expect_value_in_storage);
+  FRIEND_TEST(MecanumDriveControllerTest, when_sending_too_old_message_expect_nan_in_reference_msg);
+  FRIEND_TEST(MecanumDriveControllerTest, when_time_stamp_zero_expect_setting_to_current);
+  FRIEND_TEST(MecanumDriveControllerTest, when_message_accepted_expect_reference_msg_in_rt_buffer);
+  FRIEND_TEST(MecanumDriveControllerTest, test_update_logic_not_chainable_mode);
+  FRIEND_TEST(MecanumDriveControllerTest, test_update_logic_chainable_mode);
   FRIEND_TEST(MecanumDriveControllerTest, test_ref_timeout_zero_for_update);
-  FRIEND_TEST(MecanumDriveControllerTest, test_ref_timeout_zero_for_reference_callback);
+  FRIEND_TEST(MecanumDriveControllerTest, when_ref_timeout_zero_for_reference_callback_expect_reference_msg_in_rt_buffer);
 
 public:
   controller_interface::CallbackReturn on_configure(
