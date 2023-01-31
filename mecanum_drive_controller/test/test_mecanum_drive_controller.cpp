@@ -37,8 +37,8 @@ namespace
 const double EPS = 1e-3;
 }  // namespace
 
-// when_all_parameters_are_set_expect_them_in_storage"
-TEST_F(MecanumDriveControllerTest, all_parameters_set_configure_success)
+// when_all_parameters_are_set_expect_them_in_storage
+TEST_F(MecanumDriveControllerTest, when_all_parameters_are_set_expect_them_in_storage)
 {
   SetUpController();
 
@@ -71,7 +71,7 @@ TEST_F(MecanumDriveControllerTest, all_parameters_set_configure_success)
 }
 
 // when all command, state and reference interfaces are exported then expect them in storage
-TEST_F(MecanumDriveControllerTest, check_exported_interfaces)
+TEST_F(MecanumDriveControllerTest, when_exported_all_interfaces_expect_them_in_storage)
 {
   SetUpController();
 
@@ -109,7 +109,7 @@ TEST_F(MecanumDriveControllerTest, check_exported_interfaces)
 }
 
 // when calling activate() expect resetting of the controller reference msg
-TEST_F(MecanumDriveControllerTest, activate_success)
+TEST_F(MecanumDriveControllerTest, when_activated_expect_reference_msg_reset)
 {
   SetUpController();
 
@@ -130,7 +130,7 @@ TEST_F(MecanumDriveControllerTest, activate_success)
 }
 
 // when calling update methods expect return type are a success
-TEST_F(MecanumDriveControllerTest, update_success)
+TEST_F(MecanumDriveControllerTest, when_update_successful_expect_return_type_success)
 {
   SetUpController();
 
@@ -148,7 +148,7 @@ TEST_F(MecanumDriveControllerTest, update_success)
 }
 
 // when controller lifecycle methods expect return type is a success
-TEST_F(MecanumDriveControllerTest, deactivate_success)
+TEST_F(MecanumDriveControllerTest, when_deactivated_expect_return_type_success)
 {
   SetUpController();
 
@@ -157,9 +157,10 @@ TEST_F(MecanumDriveControllerTest, deactivate_success)
   ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 }
 
-// when calling on_activate and on_deactivate methods from the controller expect
-// resetting of reference msg and nan values in command_interfaces respectively
-TEST_F(MecanumDriveControllerTest, reactivate_success)
+// when calling on_activate, on_deactivate and on_activate methods consecutively 
+// expect resetting of reference msg, nan values in command_interfaces and 
+// resetting of reference msg respectively
+TEST_F(MecanumDriveControllerTest, when_reactivated_expect_reference_msg_reset)
 {
   SetUpController();
 
@@ -182,7 +183,7 @@ TEST_F(MecanumDriveControllerTest, reactivate_success)
 }
 
 // when controller state published expect state value in storage
-TEST_F(MecanumDriveControllerTest, publish_status_success)
+TEST_F(MecanumDriveControllerTest, when_published_success_expect_in_storage)
 {
   SetUpController();
 
@@ -199,7 +200,7 @@ TEST_F(MecanumDriveControllerTest, publish_status_success)
 }
 
 // when msg subscribed and published expect value in storage
-TEST_F(MecanumDriveControllerTest, receive_message_and_publish_updated_status)
+TEST_F(MecanumDriveControllerTest, when_subscribed_msg_received_publish_succeeded_expect_value_in_storage)
 {
   SetUpController();
 
@@ -248,7 +249,7 @@ TEST_F(MecanumDriveControllerTest, receive_message_and_publish_updated_status)
 }
 
 // when too old msg is sent expect nan values in reference msg
-TEST_F(MecanumDriveControllerTest, test_sending_too_old_message)
+TEST_F(MecanumDriveControllerTest, when_sending_too_old_message_expect_nan_in_reference_msg)
 {
   SetUpController();
   rclcpp::executors::MultiThreadedExecutor executor;
@@ -275,7 +276,7 @@ TEST_F(MecanumDriveControllerTest, test_sending_too_old_message)
 }
 
 // when time stamp is zero expect that time stamp is set to current time stamp
-TEST_F(MecanumDriveControllerTest, test_time_stamp_zero)
+TEST_F(MecanumDriveControllerTest, when_time_stamp_zero_expect_setting_to_current)
 {
   SetUpController();
   rclcpp::executors::MultiThreadedExecutor executor;
@@ -304,7 +305,7 @@ TEST_F(MecanumDriveControllerTest, test_time_stamp_zero)
 }
 
 // when age_of_last_command < ref_timeout expect reference msg is accepted and is in rt buffer
-TEST_F(MecanumDriveControllerTest, test_message_accepted)
+TEST_F(MecanumDriveControllerTest, when_message_accepted_expect_reference_msg_in_rt_buffer)
 {
   SetUpController();
 
@@ -335,7 +336,7 @@ TEST_F(MecanumDriveControllerTest, test_message_accepted)
 // when not in chainable mode and age_of_last_command < reference_timeout expect
 // command_interfaces are calculated to non-nan and reference_interfaces set to nan
 
-TEST_F(MecanumDriveControllerTest, test_update_logic_not_chainable)
+TEST_F(MecanumDriveControllerTest, test_update_logic_not_chainable_mode)
 {
   // 1. age>ref_timeout 2. age<ref_timeout
   SetUpController();
@@ -447,7 +448,7 @@ TEST_F(MecanumDriveControllerTest, test_update_logic_not_chainable)
 // when in chainable mode and age_of_last_command < reference_timeout expect
 // reference_interfaces set by preceding controller and command_interfaces
 // are calculated to non-nan values and reference_interfaces are set to nan
-TEST_F(MecanumDriveControllerTest, test_update_logic_chainable)
+TEST_F(MecanumDriveControllerTest, test_update_logic_chainable_mode)
 {
   SetUpController();
 
@@ -555,7 +556,7 @@ TEST_F(MecanumDriveControllerTest, test_ref_timeout_zero_for_update)
 
 // when ref_timeout = 0 expect reference_callback() writes reference_msg to rt buffer
 // from nonrt thread
-TEST_F(MecanumDriveControllerTest, test_ref_timeout_zero_for_reference_callback)
+TEST_F(MecanumDriveControllerTest, when_ref_timeout_zero_for_reference_callback_expect_reference_msg_in_rt_buffer)
 {
   SetUpController();
   rclcpp::executors::MultiThreadedExecutor executor;
