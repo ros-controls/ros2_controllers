@@ -349,6 +349,22 @@ TEST_P(TrajectoryControllerTestParameterized, cleanup)
   executor.cancel();
 }
 
+TEST_P(TrajectoryControllerTestParameterized, cleanup_after_configure)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+  SetUpTrajectoryController(executor);
+
+  // configure controller
+  auto state = traj_controller_->get_node()->configure();
+  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+
+  // cleanup controller
+  state = traj_controller_->get_node()->cleanup();
+  ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
+
+  executor.cancel();
+}
+
 TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_parameters)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
