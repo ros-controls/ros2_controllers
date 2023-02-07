@@ -23,6 +23,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
     realtime_tools
     tf2
     tf2_msgs
+    four_wheel_steering_msgs
 )
 
 find_package(ament_cmake REQUIRED)
