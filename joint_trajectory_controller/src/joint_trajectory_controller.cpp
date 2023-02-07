@@ -57,9 +57,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
     // Create the parameter listener and get the parameters
     param_listener_ = std::make_shared<ParamListener>(get_node());
     params_ = param_listener_->get_params();
-
-    // Set interpolation method from string parameter
-    interpolation_method_ = interpolation_methods::from_string(params_.interpolation_method);
   }
   catch (const std::exception & e)
   {
