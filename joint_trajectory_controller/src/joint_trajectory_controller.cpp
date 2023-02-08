@@ -835,8 +835,11 @@ controller_interface::CallbackReturn JointTrajectoryController::on_cleanup(
   const rclcpp_lifecycle::State &)
 {
   // go home
-  traj_home_point_ptr_->update(traj_msg_home_ptr_);
-  traj_point_active_ptr_ = &traj_home_point_ptr_;
+  if (traj_home_point_ptr_ != nullptr)
+  {
+    traj_home_point_ptr_->update(traj_msg_home_ptr_);
+    traj_point_active_ptr_ = &traj_home_point_ptr_;
+  }
 
   return CallbackReturn::SUCCESS;
 }
