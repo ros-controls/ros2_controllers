@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 3.8)
-project(bicycle_steering_controller)
+cmake_minimum_required(VERSION 3.16)
+project(bicycle_steering_controller LANGUAGES CXX)
 
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
@@ -9,6 +9,7 @@ endif()
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   controller_interface
   hardware_interface
+  generate_parameter_library
   pluginlib
   rclcpp
   rclcpp_lifecycle
@@ -18,12 +19,11 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
 )
 
 find_package(ament_cmake REQUIRED)
-find_package(generate_parameter_library REQUIRED)
+find_package(backward_ros REQUIRED)
 foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
 
-# Add bicycle_steering_controller library related compile commands
 generate_parameter_library(bicycle_steering_controller_parameters
   src/bicycle_steering_controller.yaml
 )
@@ -33,28 +33,20 @@ add_library(
   SHARED
   src/bicycle_steering_controller.cpp
 )
+target_compile_features(bicycle_steering_controller PUBLIC cxx_std_17)
 target_include_directories(bicycle_steering_controller PUBLIC
   "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
-target_link_libraries(bicycle_steering_controller bicycle_steering_controller_parameters)
-ament_target_dependencies(bicycle_steering_controller ${THIS_PACKAGE_INCLUDE_DEPENDS})
-target_compile_definitions(bicycle_steering_controller PRIVATE "BICYCLE_STEERING_CONTROLLER_BUILDING_DLL")
+target_link_libraries(bicycle_steering_controller PUBLIC
+  bicycle_steering_controller_parameters)
+ament_target_dependencies(bicycle_steering_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
+
+# Causes the visibility macros to use dllexport rather than dllimport,
+# which is appropriate when building the dll but not consuming it.
+target_compile_definitions(bicycle_steering_controller PRIVATE "ACKERMANN_STEERING_CONTROLLER_BUILDING_DLL")
 
 pluginlib_export_plugin_description_file(
   controller_interface bicycle_steering_controller.xml)
-
-install(
-  TARGETS
-  bicycle_steering_controller
-  RUNTIME DESTINATION bin
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-)
-
-install(
-  DIRECTORY include/
-  DESTINATION include/${PROJECT_NAME}
-)
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gmock REQUIRED)
@@ -94,14 +86,19 @@ if(BUILD_TESTING)
   )
 endif()
 
-ament_export_include_directories(
-  include
-)
-ament_export_dependencies(
-  ${THIS_PACKAGE_INCLUDE_DEPENDS}
-)
-ament_export_libraries(
-  bicycle_steering_controller
+install(
+  DIRECTORY include/
+  DESTINATION include/bicycle_steering_controller
 )
 
+install(
+  TARGETS bicycle_steering_controller bicycle_steering_controller_parameters
+  EXPORT export_bicycle_steering_controller
+  RUNTIME DESTINATION bin
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+)
+
+ament_export_targets(export_bicycle_steering_controller HAS_LIBRARY_TARGET)
+ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
 ament_package()

@@ -48,6 +48,7 @@ Available Controllers
    Effort Controllers <../effort_controllers/doc/userdoc.rst>
 
 
+
 Available Broadcasters
 **********************
 
@@ -56,3 +57,12 @@ Available Broadcasters
 
    Joint State Broadcaster <../joint_state_broadcaster/doc/userdoc.rst>
    Imu Sensor Broadcaster <../imu_sensor_broadcaster/doc/userdoc.rst>
+
+
+Available Controller Libraries
+******************************
+
+.. toctree::
+   :titlesonly:
+
+   Steering Controllers Library <../steering_controllers_library/doc/userdoc.rst>

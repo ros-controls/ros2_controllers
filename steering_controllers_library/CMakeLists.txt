@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 project(steering_controllers_library LANGUAGES CXX)
 
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
@@ -9,6 +9,7 @@ endif()
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   control_msgs
   controller_interface
+  generate_parameter_library
   geometry_msgs
   hardware_interface
   nav_msgs
@@ -24,43 +25,32 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
 )
 
 find_package(ament_cmake REQUIRED)
-find_package(generate_parameter_library REQUIRED)
-
+find_package(backward_ros REQUIRED)
 foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
 
+generate_parameter_library(steering_controllers_library_parameters
+  src/steering_controllers_library.yaml
+)
+
 add_library(
-  ${PROJECT_NAME}
+  steering_controllers_library
   SHARED
   src/steering_controllers_library.cpp
   src/steering_odometry.cpp
 )
-
-generate_parameter_library(steering_controllers_library_parameters
-  config/steering_controllers_library.yaml
-)
-
-target_include_directories(${PROJECT_NAME} PUBLIC
+target_compile_features(steering_controllers_library PUBLIC cxx_std_17)
+target_include_directories(steering_controllers_library PUBLIC
   "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
-  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
-target_link_libraries(${PROJECT_NAME}
+  "$<INSTALL_INTERFACE:include/steering_controllers_library>")
+target_link_libraries(steering_controllers_library PUBLIC
   steering_controllers_library_parameters)
-ament_target_dependencies(${PROJECT_NAME} ${THIS_PACKAGE_INCLUDE_DEPENDS})
-target_compile_definitions(${PROJECT_NAME} PRIVATE "STEERING_CONTROLLERS_BUILDING_DLL")
+ament_target_dependencies(steering_controllers_library PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
 
-install(
-  TARGETS
-  ${PROJECT_NAME}
-  RUNTIME DESTINATION bin
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-)
-
-install(
-  DIRECTORY include/
-  DESTINATION include/${PROJECT_NAME}
-)
+# Causes the visibility macros to use dllexport rather than dllimport,
+# which is appropriate when building the dll but not consuming it.
+target_compile_definitions(steering_controllers_library PRIVATE "STEERING_CONTROLLERS_BUILDING_DLL")
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gmock REQUIRED)
@@ -80,16 +70,19 @@ if(BUILD_TESTING)
   )
 endif()
 
-ament_export_include_directories(
-  include/${PROJECT_NAME}
-  include/steering_controllers_library_parameters
+install(
+  DIRECTORY include/
+  DESTINATION include/steering_controllers_library
 )
 
-ament_export_dependencies(
-  ${THIS_PACKAGE_INCLUDE_DEPENDS}
-)
-ament_export_libraries(
-  ${PROJECT_NAME}
+install(
+  TARGETS steering_controllers_library steering_controllers_library_parameters
+  EXPORT export_steering_controllers_library
+  RUNTIME DESTINATION bin
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
 )
 
+ament_export_targets(export_steering_controllers_library HAS_LIBRARY_TARGET)
+ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
 ament_package()
