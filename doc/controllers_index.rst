@@ -40,10 +40,13 @@ Available Controllers
 .. toctree::
    :titlesonly:
 
+   Ackermann Steering Controller <../ackermann_steering_controller/doc/userdoc.rst>
+   Bicycle Steering Controller <../bicycle_steering_controller/doc/userdoc.rst>
    Differential Drive <../diff_drive_controller/doc/userdoc.rst>
    Forward Command <../forward_command_controller/doc/userdoc.rst>
    Joint Trajectory <../joint_trajectory_controller/doc/userdoc.rst>
    Position Controllers <../position_controllers/doc/userdoc.rst>
+   Tricycle Steering Controller <../tricycle_steering_controller/doc/userdoc.rst>
    Velocity Controllers <../velocity_controllers/doc/userdoc.rst>
    Effort Controllers <../effort_controllers/doc/userdoc.rst>
 
