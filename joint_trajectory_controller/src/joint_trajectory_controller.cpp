@@ -356,7 +356,7 @@ controller_interface::return_type JointTrajectoryController::update(
     }
   }
 
-  publish_state(state_desired_, state_current_, state_error_);
+  publish_state(time, state_desired_, state_current_, state_error_);
   return controller_interface::return_type::OK;
 }
 
@@ -705,17 +705,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
       "~/joint_trajectory", rclcpp::SystemDefaultsQoS(),
       std::bind(&JointTrajectoryController::topic_callback, this, std::placeholders::_1));
 
-  // State publisher
-  RCLCPP_INFO(logger, "Controller state will be published at %.2f Hz.", params_.state_publish_rate);
-  if (params_.state_publish_rate > 0.0)
-  {
-    state_publisher_period_ = rclcpp::Duration::from_seconds(1.0 / params_.state_publish_rate);
-  }
-  else
-  {
-    state_publisher_period_ = rclcpp::Duration::from_seconds(0.0);
-  }
-
   publisher_ =
     get_node()->create_publisher<ControllerStateMsg>("~/state", rclcpp::SystemDefaultsQoS());
   state_publisher_ = std::make_unique<StatePublisher>(publisher_);
@@ -738,8 +727,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     state_publisher_->msg_.error.accelerations.resize(dof_);
   }
   state_publisher_->unlock();
-
-  last_state_publish_time_ = get_node()->now();
 
   // action server configuration
   if (params_.allow_partial_joints_goal)
@@ -826,7 +813,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
 
   subscriber_is_active_ = true;
   traj_point_active_ptr_ = &traj_external_point_ptr_;
-  last_state_publish_time_ = get_node()->now();
 
   // Initialize current state storage if hardware state has tracking offset
   read_state_from_hardware(state_current_);
@@ -936,23 +922,12 @@ controller_interface::CallbackReturn JointTrajectoryController::on_shutdown(
 }
 
 void JointTrajectoryController::publish_state(
-  const JointTrajectoryPoint & desired_state, const JointTrajectoryPoint & current_state,
-  const JointTrajectoryPoint & state_error)
+  const rclcpp::Time & time, const JointTrajectoryPoint & desired_state,
+  const JointTrajectoryPoint & current_state, const JointTrajectoryPoint & state_error)
 {
-  if (state_publisher_period_.seconds() <= 0.0)
+  if (state_publisher_->trylock())
   {
-    return;
-  }
-
-  if (get_node()->now() < (last_state_publish_time_ + state_publisher_period_))
-  {
-    return;
-  }
-
-  if (state_publisher_ && state_publisher_->trylock())
-  {
-    last_state_publish_time_ = get_node()->now();
-    state_publisher_->msg_.header.stamp = last_state_publish_time_;
+    state_publisher_->msg_.header.stamp = time;
     state_publisher_->msg_.desired.positions = desired_state.positions;
     state_publisher_->msg_.desired.velocities = desired_state.velocities;
     state_publisher_->msg_.desired.accelerations = desired_state.accelerations;
