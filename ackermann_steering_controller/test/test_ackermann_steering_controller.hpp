@@ -56,7 +56,6 @@ constexpr auto NODE_SUCCESS = controller_interface::CallbackReturn::SUCCESS;
 constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
 const double COMMON_THRESHOLD = 1e-6;
 }  // namespace
-// namespace
 
 // subclassing and friending so we can access member variables
 class TestableAckermannSteeringController
