@@ -3,7 +3,7 @@ bicycle_steering_controller:
     {
       type: double,
       default_value: 0.0,
-      description: "Distance between front and rear wheel.",
+      description: "Distance between front and rear wheel. For details see: https://en.wikipedia.org/wiki/Wheelbase",
       read_only: false,
     }
 
