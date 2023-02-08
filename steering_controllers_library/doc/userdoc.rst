@@ -6,6 +6,8 @@ steering_controllers
 Controllers for mobile robots with steering drive.
 Input for control are robot base_link twist stamped commands which are translated to traction and steering commands for the drive base. Odometry is computed from hardware feedback and published.
 
+Nomenclature used for the controller is used from `wikipedia <https://en.wikipedia.org/wiki/Wheelbase>`_.
+
 Velocity commands
 -----------------
 

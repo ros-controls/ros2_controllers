@@ -3,7 +3,7 @@ tricycle_steering_controller:
     {
       type: double,
       default_value: 0.0,
-      description: "Wheel track length.",
+      description: "Wheel track length. For details see: https://en.wikipedia.org/wiki/Wheelbase",
       read_only: false,
     }
 
@@ -11,7 +11,7 @@ tricycle_steering_controller:
     {
       type: double,
       default_value: 0.0,
-      description: "Distance between front and rear wheels.",
+      description: "Distance between front and rear wheels. For details see: https://en.wikipedia.org/wiki/Wheelbase",
       read_only: false,
     }
 
