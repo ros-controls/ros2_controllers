@@ -97,7 +97,6 @@ controller_interface::return_type FourSteeringController::update(
     }
     return controller_interface::return_type::OK;
   }
-  //std::shared_ptr<Twist> last_command_msg;
 
   std::shared_ptr<four_wheel_steering_msgs::msg::FourWheelSteeringStamped> last_command_msg;
   received_velocity_msg_ptr_.get(last_command_msg);
@@ -117,139 +116,77 @@ controller_interface::return_type FourSteeringController::update(
     last_command_msg->data.rear_steering_angle = 0.0;
     last_command_msg->data.acceleration = 0.0;
   }
-  // Save twist command:
-/*   Twist command = *last_command_msg;
-  double & linear_cmd_x = command.twist.linear.x;
-  double & linear_cmd_y = command.twist.linear.y;
-  double & angular_cmd = command.twist.angular.z;
- */
 
   four_wheel_steering_msgs::msg::FourWheelSteeringStamped  curr_cmd_4ws = *last_command_msg;
   const double steering_track = params_.track_ - 2 * params_.wheel_steering_y_offset_;
   const double joint_number = params_.wheel_names.size();
-  //const double sign = copysign(1.0, linear_cmd_x);
-/* 
-  if(fabs(linear_cmd_x) > 0.001)
-  {
-    const double vel_steering_offset = (angular_cmd * params_.wheel_steering_y_offset_)/params_.wheel_radius_;
 
-    vel_left_front = sign * std::hypot((linear_cmd_x - angular_cmd * steering_track/2),
-                                        (params_.wheel_base_*angular_cmd/2.0)) / params_.wheel_radius_
-                      - vel_steering_offset;
-    wheel_vel_cmd[0] = vel_left_front;
+  double steer_radius = hypot((params_.wheel_base_ / tan(curr_cmd_4ws.data.front_steering_angle)) + steering_track/2, params_.wheel_base_);
+  double angular_speed = curr_cmd_4ws.data.speed / steer_radius;
 
-    vel_right_front = sign * std::hypot((linear_cmd_x + angular_cmd * steering_track/2),
-                                        (params_.wheel_base_*angular_cmd/2.0)) / params_.wheel_radius_
-                      + vel_steering_offset;
-    wheel_vel_cmd[1] = vel_right_front;
-
-    vel_left_rear = sign * std::hypot((linear_cmd_x - angular_cmd * steering_track/2),
-                                        (params_.wheel_base_*angular_cmd/2.0)) / params_.wheel_radius_
-                      - vel_steering_offset;
-    wheel_vel_cmd[2] = vel_left_rear;
-
-    vel_right_rear = sign * std::hypot((linear_cmd_x + angular_cmd * steering_track/2),
-                                      (params_.wheel_base_*angular_cmd/2.0)) / params_.wheel_radius_
-                      + vel_steering_offset;
-    wheel_vel_cmd[3] = vel_right_rear;
-    
-  }
-  // Compute steering angles
-  //if(fabs(linear_cmd_x) > 0.001 && fabs(angular_cmd) > 0.001 )
-  //if(fabs(2.0*linear_cmd_x) > fabs(angular_cmd*steering_track) && fabs(linear_cmd_y) < 0.001)
-  //if(fabs(linear_cmd_x) > 0.001 && fabs(angular_cmd) > 0.001)
-  if(fabs(linear_cmd_x) > 0.001)
-  {
-    if(fabs(angular_cmd) > 2*fabs(linear_cmd_x)*steering_track)
-    {
-      float sign = copysign(1, angular_cmd);
-      angular_cmd = sign * 2*fabs(linear_cmd_x)*steering_track;
-    }
-
-    front_left_steering = atan(angular_cmd * params_.wheel_base_ /
-                                (2.0 * linear_cmd_x - angular_cmd * steering_track));
-    steer_cmd[0] = front_left_steering;
-
-    front_right_steering = atan(angular_cmd * params_.wheel_base_ /
-                                  (2.0 * linear_cmd_x + angular_cmd * steering_track));
-    steer_cmd[1] = front_right_steering;
-  
-    rear_left_steering = -front_left_steering;
-    rear_right_steering = -front_right_steering;
-    steer_cmd[2] = rear_left_steering;
-    steer_cmd[3] = rear_right_steering;
-  }
- else if(fabs(linear_cmd_x) > 0.001) //Straight motion
-  {
-    front_left_steering = copysign(M_PI_2, angular_cmd);
-    steer_cmd[0] = front_left_steering;
-
-    front_right_steering = copysign(M_PI_2, angular_cmd);
-    steer_cmd[1] = front_right_steering;
-
-    rear_left_steering = -front_left_steering;
-    rear_right_steering = -front_right_steering;
-    steer_cmd[2] = rear_left_steering;
-    steer_cmd[3] = rear_right_steering;
-  }
-
-  
-  // In-Phase steering:
-  if(fabs(linear_cmd_x) > 0.001 && fabs(linear_cmd_y) >= 0.001 && fabs(angular_cmd) < 0.001)
-  {
-    wheel_vel = sign * std::hypot(linear_cmd_x, linear_cmd_y);
-    wheel_vel_cmd[0] = wheel_vel;
-    wheel_vel_cmd[1] = wheel_vel;
-    wheel_vel_cmd[2] = wheel_vel;
-    wheel_vel_cmd[3] = wheel_vel;
-
-    front_left_steering = atan(linear_cmd_y / linear_cmd_x);
-    steer_cmd[0] = front_left_steering;
-    front_right_steering = atan(linear_cmd_y / linear_cmd_x);
-    steer_cmd[1] = front_right_steering;
-    rear_left_steering = front_left_steering;
-    steer_cmd[2] = rear_left_steering;
-    rear_right_steering = front_right_steering;        
-    steer_cmd[3] = rear_right_steering;
-    // FIXME missing wheel speed
-  }
-   else if(fabs(linear_cmd_x) < 0.001 && fabs(linear_cmd_y) < 0.001 && fabs(angular_cmd) > 0.001)   
-  {
-    // Pivot Steering:
-    front_left_steering = -atan(params_.wheel_base_ / steering_track);
-    steer_cmd[0] = front_left_steering;
-    front_right_steering = atan(params_.wheel_base_ / steering_track);
-    steer_cmd[1] = front_right_steering;
-    rear_left_steering = atan(params_.wheel_base_ / steering_track);
-    steer_cmd[2] = rear_left_steering;
-    rear_right_steering = -atan(params_.wheel_base_ / steering_track);
-    steer_cmd[3] = rear_right_steering;
-    vel_left_front = -angular_cmd;
-    vel_right_front = angular_cmd;
-    wheel_vel_cmd[0] = vel_left_front;
-    wheel_vel_cmd[1] = vel_right_front;
-    wheel_vel_cmd[2] = -vel_left_front;
-    wheel_vel_cmd[3] = -vel_right_front;
-  }
-
-  for(int index=0; index < joint_number; index++){
-    alpha_read[index] = registered_steer_handles_[index].feedback_pos.get().get_value()*180.0/M_PI;
-    std::cout << "Joint: " << index << "  " << "Angle: " << alpha_read[index] << std::endl;
-  }
-  std::cout << "===============" << std::endl;
-
-  // Set wheels velocities:
+  //Read Values from the Handles:
   for (size_t index=0; index < joint_number; index++)
   {
-    registered_wheel_handles_[index].velocity.get().set_value(wheel_vel_cmd[index]);
+    alphas_read[index] = registered_steer_handles_[index].feedback_pos.get().get_value();
+    ws_read[index] = registered_wheel_handles_[index].feedback.get().get_value();
   }
- 
-  for(int index=0; index < joint_number; index++){
-    w_speed[index] = registered_wheel_handles_[index].feedback.get().get_value();
-    std::cout << "Wheel: " << index << "  " << "Speed: " << w_speed[index] << std::endl;
+  
+  if (params_.open_loop)
+  {
+    odometry_.updateOpenLoop(curr_cmd_4ws.data.speed, angular_speed, time);
   }
-  std::cout << "===============" << std::endl;
- */
+  else
+  {
+    double left_feedback_mean = 0.0;
+    double right_feedback_mean = 0.0;
+
+    left_feedback_mean = alphas_read[0] + alphas_read[2];
+    right_feedback_mean = alphas_read[1] + alphas_read[3];
+
+    left_feedback_mean /= params_.wheels_per_side;
+    right_feedback_mean /= params_.wheels_per_side;
+    if (params_.position_feedback)
+    {
+      odometry_.update(left_feedback_mean, right_feedback_mean, time);
+    }
+    else
+    {
+      odometry_.updateFromVelocity(
+        left_feedback_mean * params_.wheel_radius_ * period.seconds(),
+        right_feedback_mean * params_.wheel_radius_ * period.seconds(), time);
+    }
+  }
+
+  tf2::Quaternion orientation;
+  orientation.setRPY(0.0, 0.0, odometry_.getHeading());
+
+  if (realtime_odometry_publisher_->trylock())
+  {
+    auto & odometry_message = realtime_odometry_publisher_->msg_;
+    odometry_message.header.stamp = time;
+    odometry_message.pose.pose.position.x = odometry_.getX();
+    odometry_message.pose.pose.position.y = odometry_.getY();
+    odometry_message.pose.pose.orientation.x = orientation.x();
+    odometry_message.pose.pose.orientation.y = orientation.y();
+    odometry_message.pose.pose.orientation.z = orientation.z();
+    odometry_message.pose.pose.orientation.w = orientation.w();
+    odometry_message.twist.twist.linear.x = odometry_.getLinear();
+    odometry_message.twist.twist.angular.z = odometry_.getAngular();
+    realtime_odometry_publisher_->unlockAndPublish();
+  }
+
+  if (params_.enable_odom_tf && realtime_odometry_transform_publisher_->trylock())
+  {
+    auto & transform = realtime_odometry_transform_publisher_->msg_.transforms.front();
+    transform.header.stamp = time;
+    transform.transform.translation.x = odometry_.getX();
+    transform.transform.translation.y = odometry_.getY();
+    transform.transform.rotation.x = orientation.x();
+    transform.transform.rotation.y = orientation.y();
+    transform.transform.rotation.z = orientation.z();
+    transform.transform.rotation.w = orientation.w();
+    realtime_odometry_transform_publisher_->unlockAndPublish();
+  }
 
   curr_cmd_4ws.data.front_steering_angle = std::clamp(curr_cmd_4ws.data.front_steering_angle, static_cast<float>(-M_PI_2/2), static_cast<float>(M_PI_2/2));
   curr_cmd_4ws.data.rear_steering_angle = std::clamp(curr_cmd_4ws.data.rear_steering_angle,  static_cast<float>(-M_PI_2/2), static_cast<float>(M_PI_2/2));
@@ -368,6 +305,8 @@ controller_interface::CallbackReturn FourSteeringController::on_configure(
   {
     return controller_interface::CallbackReturn::ERROR;
   }
+  odometry_.setWheelParams(params_.track_, params_.wheel_radius_);
+  odometry_.setVelocityRollingWindowSize(params_.velocity_rolling_window_size);
 
   const four_wheel_steering_msgs::msg::FourWheelSteeringStamped empty_cmd;
   received_velocity_msg_ptr_.set(std::make_shared<four_wheel_steering_msgs::msg::FourWheelSteeringStamped>(empty_cmd));
@@ -399,7 +338,46 @@ controller_interface::CallbackReturn FourSteeringController::on_configure(
       }
     );
 
-  previous_update_timestamp_ = get_node()->get_clock()->now();
+
+  // initialize odometry publisher and messasge
+  odometry_publisher_ = get_node()->create_publisher<nav_msgs::msg::Odometry>(
+    DEFAULT_ODOMETRY_TOPIC, rclcpp::SystemDefaultsQoS());
+  realtime_odometry_publisher_ =
+    std::make_shared<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>>(
+      odometry_publisher_);
+
+  auto & odometry_message = realtime_odometry_publisher_->msg_;
+  odometry_message.header.frame_id = params_.odom_frame_id;
+  odometry_message.child_frame_id = params_.base_frame_id;
+
+  // initialize odom values zeros
+  odometry_message.twist =
+    geometry_msgs::msg::TwistWithCovariance(rosidl_runtime_cpp::MessageInitialization::ALL);
+
+  constexpr size_t NUM_DIMENSIONS = 6;
+  for (size_t index = 0; index < 6; ++index)
+  {
+    // 0, 7, 14, 21, 28, 35
+    const size_t diagonal_index = NUM_DIMENSIONS * index + index;
+    odometry_message.pose.covariance[diagonal_index] = params_.pose_covariance_diagonal[index];
+    odometry_message.twist.covariance[diagonal_index] = params_.twist_covariance_diagonal[index];
+  }
+  
+  if (params_.enable_odom_tf)
+  {
+    // initialize transform publisher and message
+    odometry_transform_publisher_ = get_node()->create_publisher<tf2_msgs::msg::TFMessage>(
+      DEFAULT_TRANSFORM_TOPIC, rclcpp::SystemDefaultsQoS());
+    realtime_odometry_transform_publisher_ =
+      std::make_shared<realtime_tools::RealtimePublisher<tf2_msgs::msg::TFMessage>>(
+        odometry_transform_publisher_);
+
+    // keeping track of odom and base_link transforms only
+    auto & odometry_transform_message = realtime_odometry_transform_publisher_->msg_;
+    odometry_transform_message.transforms.resize(1);
+    odometry_transform_message.transforms.front().header.frame_id = params_.odom_frame_id;
+    odometry_transform_message.transforms.front().child_frame_id = params_.base_frame_id;
+  }
 
   return CallbackReturn::SUCCESS;
 }

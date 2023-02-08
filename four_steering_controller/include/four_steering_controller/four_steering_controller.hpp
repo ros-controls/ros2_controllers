@@ -154,12 +154,19 @@ protected:
   double steer_cmd[4] = { 0 };
   double alpha_read[4] = { 0 };
   double w_speed[4] = { 0 };
+  
+  double ws_read[4] = { 0 };
+  double alphas_read[4] = { 0 };
+  
+  
   bool pivot = false;
+  
   double vel_left_front = 0.0, vel_right_front = 0.0;
   double vel_left_rear = 0.0, vel_right_rear = 0.0;
   double front_left_steering = 0.0, front_right_steering = 0.0;
   double rear_left_steering = 0.0, rear_right_steering = 0.0;
   double wheel_vel = 0.0;
+  
   bool reset();
   void halt();
 };
