@@ -189,6 +189,17 @@ TEST(TestTrajectory, sample_trajectory_positions)
     ASSERT_EQ(traj.end(), end);
     EXPECT_NEAR(p3.positions[0], expected_state.positions[0], EPS);
   }
+
+  // sample long past given points for same trajectory, it should receive the same end point
+  // so later in the query_state_service we set it to failure
+  {
+    traj.sample(
+      time_now + rclcpp::Duration::from_seconds(30.0), DEFAULT_INTERPOLATION, expected_state, start,
+      end);
+    ASSERT_EQ((--traj.end()), start);
+    ASSERT_EQ(traj.end(), end);
+    EXPECT_NEAR(p3.positions[0], expected_state.positions[0], EPS);
+  }
 }
 
 TEST(TestTrajectory, interpolation_pos_vel)

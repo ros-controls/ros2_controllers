@@ -150,7 +150,7 @@ controller_interface::return_type DiffDriveController::update(
   {
     double left_feedback_mean = 0.0;
     double right_feedback_mean = 0.0;
-    for (size_t index = 0; index < params_.wheels_per_side; ++index)
+    for (size_t index = 0; index < static_cast<size_t>(params_.wheels_per_side); ++index)
     {
       const double left_feedback = registered_left_wheel_handles_[index].feedback.get().get_value();
       const double right_feedback =
@@ -244,7 +244,7 @@ controller_interface::return_type DiffDriveController::update(
     (linear_command + angular_command * wheel_separation / 2.0) / right_wheel_radius;
 
   // Set wheels velocities:
-  for (size_t index = 0; index < params_.wheels_per_side; ++index)
+  for (size_t index = 0; index < static_cast<size_t>(params_.wheels_per_side); ++index)
   {
     registered_left_wheel_handles_[index].velocity.get().set_value(velocity_left);
     registered_right_wheel_handles_[index].velocity.get().set_value(velocity_right);

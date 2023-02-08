@@ -2,6 +2,22 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.1.0 (2023-01-26)
+------------------
+* ported the joint_trajectory_controller query_state service to ROS2 (`#481 <https://github.com/ros-controls/ros2_controllers/issues/481>`_)
+* [JTC] Configurable joint positon error normalization behavior (`#491 <https://github.com/ros-controls/ros2_controllers/issues/491>`_)
+* Contributors: Christoph Fröhlich, Sai Kishor Kothakota, Bence Magyar
+
+3.0.0 (2023-01-19)
+------------------
+* [JTC] Add pid gain structure to documentation (`#485 <https://github.com/ros-controls/ros2_controllers/issues/485>`_)
+* [JTC] Activate test for only velocity controller (`#487 <https://github.com/ros-controls/ros2_controllers/issues/487>`_)
+* [JTC] Allow ff_velocity_scale=0 without deprecated warning (`#490 <https://github.com/ros-controls/ros2_controllers/issues/490>`_)
+* Add backward_ros to all controllers (`#489 <https://github.com/ros-controls/ros2_controllers/issues/489>`_)
+* Fix markup in userdoc.rst (`#480 <https://github.com/ros-controls/ros2_controllers/issues/480>`_)
+* [JTC] Remove deprecation from parameters validation file. (`#476 <https://github.com/ros-controls/ros2_controllers/issues/476>`_)
+* Contributors: Bence Magyar, Christoph Fröhlich, Denis Štogl
+
 2.15.0 (2022-12-06)
 -------------------
 

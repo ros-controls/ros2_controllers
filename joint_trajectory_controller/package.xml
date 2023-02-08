@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="3">
   <name>joint_trajectory_controller</name>
-  <version>2.15.0</version>
+  <version>3.1.0</version>
   <description>Controller for executing joint-space trajectories on a group of joints</description>
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
   <maintainer email="jordan.palacios@pal-robotics.com">Jordan Palacios</maintainer>
@@ -19,6 +19,7 @@
   <exec_depend>pluginlib</exec_depend>
   <exec_depend>realtime_tools</exec_depend>
 
+  <depend>backward_ros</depend>
   <depend>controller_interface</depend>
   <depend>control_msgs</depend>
   <depend>control_toolbox</depend>
