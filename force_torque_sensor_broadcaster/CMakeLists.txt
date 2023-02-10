@@ -1,25 +1,19 @@
-cmake_minimum_required(VERSION 3.5)
-project(force_torque_sensor_broadcaster)
+cmake_minimum_required(VERSION 3.16)
+project(force_torque_sensor_broadcaster LANGUAGES CXX)
 
-# Default to C++17
-if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 17)
-  set(CMAKE_CXX_STANDARD_REQUIRED ON)
-endif()
-
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
-    controller_interface
-    generate_parameter_library
-    geometry_msgs
-    hardware_interface
-    pluginlib
-    rclcpp
-    rclcpp_lifecycle
-    realtime_tools
+  controller_interface
+  generate_parameter_library
+  geometry_msgs
+  hardware_interface
+  pluginlib
+  rclcpp
+  rclcpp_lifecycle
+  realtime_tools
 )
 
 find_package(ament_cmake REQUIRED)
@@ -32,81 +26,68 @@ generate_parameter_library(force_torque_sensor_broadcaster_parameters
   src/force_torque_sensor_broadcaster_parameters.yaml
 )
 
-add_library(
-  ${PROJECT_NAME}
-  SHARED
+add_library(force_torque_sensor_broadcaster SHARED
   src/force_torque_sensor_broadcaster.cpp
 )
-target_include_directories(${PROJECT_NAME}
-    PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-      $<INSTALL_INTERFACE:include>)
-ament_target_dependencies(
-  ${PROJECT_NAME}
-  ${THIS_PACKAGE_INCLUDE_DEPENDS}
+target_compile_features(force_torque_sensor_broadcaster PUBLIC cxx_std_17)
+target_include_directories(force_torque_sensor_broadcaster PUBLIC
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include/force_torque_sensor_broadcaster>
 )
-target_link_libraries(force_torque_sensor_broadcaster
+target_link_libraries(force_torque_sensor_broadcaster PUBLIC
   force_torque_sensor_broadcaster_parameters
 )
+ament_target_dependencies(force_torque_sensor_broadcaster PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
+
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
-target_compile_definitions(${PROJECT_NAME} PRIVATE "FORCE_TORQUE_SENSOR_BROADCASTER_BUILDING_DLL")
+target_compile_definitions(force_torque_sensor_broadcaster PRIVATE "FORCE_TORQUE_SENSOR_BROADCASTER_BUILDING_DLL")
 
 pluginlib_export_plugin_description_file(
   controller_interface force_torque_sensor_broadcaster.xml)
 
+if(BUILD_TESTING)
+  find_package(ament_cmake_gmock REQUIRED)
+  find_package(controller_manager REQUIRED)
+  find_package(ros2_control_test_assets REQUIRED)
+
+  ament_add_gmock(test_load_force_torque_sensor_broadcaster
+    test/test_load_force_torque_sensor_broadcaster.cpp
+  )
+  target_link_libraries(test_load_force_torque_sensor_broadcaster
+    force_torque_sensor_broadcaster
+  )
+  ament_target_dependencies(test_load_force_torque_sensor_broadcaster
+    controller_manager
+    hardware_interface
+    ros2_control_test_assets
+  )
+
+  ament_add_gmock(test_force_torque_sensor_broadcaster
+    test/test_force_torque_sensor_broadcaster.cpp
+  )
+  target_link_libraries(test_force_torque_sensor_broadcaster
+    force_torque_sensor_broadcaster
+  )
+  ament_target_dependencies(test_force_torque_sensor_broadcaster
+    hardware_interface
+  )
+endif()
+
 install(
-  TARGETS force_torque_sensor_broadcaster force_torque_sensor_broadcaster_parameters
+  DIRECTORY include/
+  DESTINATION include/force_torque_sensor_broadcaster
+)
+install(
+  TARGETS
+    force_torque_sensor_broadcaster
+    force_torque_sensor_broadcaster_parameters
   EXPORT export_force_torque_sensor_broadcaster
   RUNTIME DESTINATION bin
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
 )
 
-install(
-  DIRECTORY include/
-  DESTINATION include
-)
-
-if(BUILD_TESTING)
-  find_package(ament_cmake_gmock REQUIRED)
-  find_package(controller_manager REQUIRED)
-  find_package(hardware_interface REQUIRED)
-  find_package(ros2_control_test_assets REQUIRED)
-
-  ament_add_gmock(
-    test_load_force_torque_sensor_broadcaster
-    test/test_load_force_torque_sensor_broadcaster.cpp
-  )
-  target_include_directories(test_load_force_torque_sensor_broadcaster PRIVATE include)
-  ament_target_dependencies(test_load_force_torque_sensor_broadcaster
-    controller_manager
-    hardware_interface
-    ros2_control_test_assets
-  )
-
-  ament_add_gmock(
-    test_force_torque_sensor_broadcaster
-    test/test_force_torque_sensor_broadcaster.cpp
-  )
-  target_include_directories(test_force_torque_sensor_broadcaster PRIVATE include)
-  target_link_libraries(test_force_torque_sensor_broadcaster
-    ${PROJECT_NAME}
-  )
-  ament_target_dependencies(test_force_torque_sensor_broadcaster
-    hardware_interface
-  )
-  ament_target_dependencies(test_load_force_torque_sensor_broadcaster
-    controller_manager
-    hardware_interface
-    ros2_control_test_assets
-  )
-endif()
-
-ament_export_targets(
-  export_force_torque_sensor_broadcaster HAS_LIBRARY_TARGET
-)
-ament_export_dependencies(
-  ${THIS_PACKAGE_INCLUDE_DEPENDS}
-)
-
+ament_export_targets(export_force_torque_sensor_broadcaster HAS_LIBRARY_TARGET)
+ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
 ament_package()
