@@ -168,11 +168,10 @@ gains (structure)
 
   .. math::
 
-   u = k_ff v_d + k_p (s_d - s) + k_i \sum(s_d - s) dt + k_d (v_d - v)
+     u = k_{ff} v_d + k_p e + k_i \sum e dt + k_d (v_d - v)
 
-  with the desired velocity :math:`v_d` and position :math:`s_d`,
-  the measured velocity :math:`v` and position :math:`s`, the controller period :math:`dt`,
-  and the ``velocity`` or ``effort`` setpoint :math:`u`, respectively.
+  with the desired velocity :math:`v_d`, the measured velocity :math:`v`, the position error :math:`e` (definition see below),
+  the controller period :math:`dt`, and the ``velocity`` or ``effort`` manipulated variable (control variable) :math:`u`, respectively.
 
 gains.<joint_name>.p (double)
   Proportional gain :math:`k_p` for PID
@@ -195,9 +194,17 @@ gains.<joint_name>.i_clamp (double)
   Default: 0.0
 
 gains.<joint_name>.ff_velocity_scale (double)
-  Feed-forward scaling :math:`k_ff` of velocity
+  Feed-forward scaling :math:`k_{ff}` of velocity
 
   Default: 0.0
+
+gains.<joint_name>.normalize_error (bool)
+  If true, the position error :math:`e = normalize(s_d - s)` is normalized between :math:`-\pi, \pi`.
+  Otherwise  :math:`e = s_d - s` is used, with the desired position :math:`s_d` and the measured
+  position :math:`s` from the state interface. Use this for revolute joints without end stop,
+  where the shortest rotation to the target position is the desired motion.
+
+  Default: false
 
 ROS2 interface of the controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
