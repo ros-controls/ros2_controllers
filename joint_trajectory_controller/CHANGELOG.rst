@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.2.0 (2023-02-10)
+------------------
 * fix JTC segfault (`#518 <https://github.com/ros-controls/ros2_controllers/issues/518>`_)
 * fix interpolation logic (`#516 <https://github.com/ros-controls/ros2_controllers/issues/516>`_)
 * Fix overriding of install (`#510 <https://github.com/ros-controls/ros2_controllers/issues/510>`_)

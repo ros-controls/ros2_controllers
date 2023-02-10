@@ -2,8 +2,8 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.2.0 (2023-02-10)
+------------------
 * Fix overriding of install (`#510 <https://github.com/ros-controls/ros2_controllers/issues/510>`_)
 * Remove compile warnings. (`#519 <https://github.com/ros-controls/ros2_controllers/issues/519>`_)
 * Contributors: Dr. Denis, Tyler Weaver, Chris Thrasher

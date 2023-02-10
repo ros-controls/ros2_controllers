@@ -2,8 +2,8 @@
 Changelog for package imu_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.2.0 (2023-02-10)
+------------------
 * Fix overriding of install (`#510 <https://github.com/ros-controls/ros2_controllers/issues/510>`_)
 * Contributors: Tyler Weaver, Chris Thrasher
 
