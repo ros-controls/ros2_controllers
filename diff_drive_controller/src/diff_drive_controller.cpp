@@ -387,15 +387,15 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   }
   else
   {
-    controller_namespace = controller_namespace + "/";
+    controller_namespace = controller_namespace.erase(0, 1) + "/";
   }
 
   const auto odom_frame_id = controller_namespace + params_.odom_frame_id;
   const auto base_frame_id = controller_namespace + params_.base_frame_id;
 
   auto & odometry_message = realtime_odometry_publisher_->msg_;
-  odometry_message.header.frame_id = controller_namespace + odom_frame_id;
-  odometry_message.child_frame_id = controller_namespace + base_frame_id;
+  odometry_message.header.frame_id = odom_frame_id;
+  odometry_message.child_frame_id = base_frame_id;
 
   // limit the publication on the topics /odom and /tf
   publish_rate_ = get_node()->get_parameter("publish_rate").as_double();
