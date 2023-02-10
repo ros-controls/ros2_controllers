@@ -2,6 +2,11 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix overriding of install (`#510 <https://github.com/ros-controls/ros2_controllers/issues/510>`_)
+* Contributors: Tyler Weaver, Chris Thrasher
+
 3.1.0 (2023-01-26)
 ------------------
 

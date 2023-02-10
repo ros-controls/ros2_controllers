@@ -2,6 +2,17 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* fix JTC segfault (`#518 <https://github.com/ros-controls/ros2_controllers/issues/518>`_)
+* fix interpolation logic (`#516 <https://github.com/ros-controls/ros2_controllers/issues/516>`_)
+* Fix overriding of install (`#510 <https://github.com/ros-controls/ros2_controllers/issues/510>`_)
+* Add JTC normalize_error parameter to doc (`#511 <https://github.com/ros-controls/ros2_controllers/issues/511>`_)
+* Fix JTC segfault on unload (`#515 <https://github.com/ros-controls/ros2_controllers/issues/515>`_)
+* Don't set interpolation_method\_ twice (`#517 <https://github.com/ros-controls/ros2_controllers/issues/517>`_)
+* Remove compile warnings. (`#519 <https://github.com/ros-controls/ros2_controllers/issues/519>`_)
+* Contributors: Andy Zelenak, Christoph Fröhlich, Dr. Denis, Michael Wiznitzer, Márk Szitanics, Solomon Wiznitzer, Tyler Weaver, Chris Thrasher
+
 3.1.0 (2023-01-26)
 ------------------
 * ported the joint_trajectory_controller query_state service to ROS2 (`#481 <https://github.com/ros-controls/ros2_controllers/issues/481>`_)
