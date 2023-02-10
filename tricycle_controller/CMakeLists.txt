@@ -1,71 +1,47 @@
-cmake_minimum_required(VERSION 3.8)
-project(tricycle_controller)
+cmake_minimum_required(VERSION 3.16)
+project(tricycle_controller LANGUAGES CXX)
 
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-# find dependencies
-find_package(ament_cmake REQUIRED)
-find_package(backward_ros REQUIRED)
-find_package(controller_interface REQUIRED)
-find_package(hardware_interface REQUIRED)
-find_package(pluginlib REQUIRED)
-find_package(nav_msgs REQUIRED)
-find_package(std_srvs REQUIRED)
-find_package(geometry_msgs REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(rcpputils REQUIRED)
-find_package(rclcpp_lifecycle REQUIRED)
-find_package(realtime_tools REQUIRED)
-find_package(tf2 REQUIRED)
-find_package(tf2_msgs REQUIRED)
-find_package(ackermann_msgs REQUIRED)
-
-add_library(
-  ${PROJECT_NAME}
-  SHARED
-  src/tricycle_controller.cpp
-  src/odometry.cpp
-  src/traction_limiter.cpp
-  src/steering_limiter.cpp
-)
-target_include_directories(
-  ${PROJECT_NAME}
-  PRIVATE
-  include
-)
-
-ament_target_dependencies(
-  ${PROJECT_NAME}
+set(THIS_PACKAGE_INCLUDE_DEPENDS
   ackermann_msgs
   builtin_interfaces
   controller_interface
   geometry_msgs
   hardware_interface
   nav_msgs
-  std_srvs
   pluginlib
   rclcpp
   rclcpp_lifecycle
   rcpputils
   realtime_tools
+  std_srvs
   tf2
   tf2_msgs
 )
 
-pluginlib_export_plugin_description_file(controller_interface tricycle_controller.xml)
+find_package(ament_cmake REQUIRED)
+find_package(backward_ros REQUIRED)
+foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
+  find_package(${Dependency} REQUIRED)
+endforeach()
 
-install(TARGETS ${PROJECT_NAME}
-  RUNTIME DESTINATION bin
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
+add_library(tricycle_controller SHARED
+  src/tricycle_controller.cpp
+  src/odometry.cpp
+  src/traction_limiter.cpp
+  src/steering_limiter.cpp
 )
-install(
-  DIRECTORY
-  include/
-  DESTINATION include
+target_compile_features(tricycle_controller PUBLIC cxx_std_17)
+target_include_directories(tricycle_controller PUBLIC
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include/tricycle_controller>
 )
+ament_target_dependencies(tricycle_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
+
+pluginlib_export_plugin_description_file(controller_interface tricycle_controller.xml)
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gmock REQUIRED)
@@ -75,11 +51,9 @@ if(BUILD_TESTING)
   ament_add_gmock(test_tricycle_controller
     test/test_tricycle_controller.cpp
     ENV config_file=${CMAKE_CURRENT_SOURCE_DIR}/test/config/test_tricycle_controller.yaml)
-  target_include_directories(test_tricycle_controller PRIVATE include)
   target_link_libraries(test_tricycle_controller
-    ${PROJECT_NAME}
+    tricycle_controller
   )
-
   ament_target_dependencies(test_tricycle_controller
     geometry_msgs
     hardware_interface
@@ -91,29 +65,31 @@ if(BUILD_TESTING)
     tf2_msgs
   )
 
-  ament_add_gmock(
-    test_load_tricycle_controller
+  ament_add_gmock(test_load_tricycle_controller
     test/test_load_tricycle_controller.cpp
   )
-  target_include_directories(test_load_tricycle_controller PRIVATE include)
+  target_link_libraries(test_load_tricycle_controller
+    tricycle_controller
+  )
   ament_target_dependencies(test_load_tricycle_controller
     controller_manager
     ros2_control_test_assets
   )
 endif()
 
-ament_export_include_directories(
-  include
+install(
+  DIRECTORY include/
+  DESTINATION include/tricycle_controller
 )
-ament_export_libraries(
-  ${PROJECT_NAME}
-)
-ament_export_dependencies(
-  controller_interface
-  geometry_msgs
-  hardware_interface
-  rclcpp
-  rclcpp_lifecycle
+install(
+  TARGETS
+    tricycle_controller
+  EXPORT export_tricycle_controller
+  RUNTIME DESTINATION bin
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
 )
 
+ament_export_targets(export_tricycle_controller HAS_LIBRARY_TARGET)
+ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
 ament_package()
