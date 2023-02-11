@@ -89,3 +89,8 @@ four_steering_controller:
     default_value: 10,
     description: "Size of the rolling window for calculation of mean velocity use in odometry.",
   }
+  use_stamped_cmd_: {
+    type: bool,
+    default_value: true,
+    description: "If the command messages are stamped or not.",
+  }

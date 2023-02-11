@@ -22,10 +22,12 @@
 #include "realtime_tools/realtime_box.h"
 #include "realtime_tools/realtime_buffer.h"
 #include "realtime_tools/realtime_publisher.h"
+#include "std_srvs/srv/empty.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"
 
 #include "four_steering_controller_parameters.hpp"
 #include "four_wheel_steering_msgs/msg/four_wheel_steering_stamped.hpp"
+#include "four_wheel_steering_msgs/msg/four_wheel_steering.hpp"
 
 namespace four_steering_controller
 {
@@ -123,23 +125,14 @@ protected:
     realtime_odometry_transform_publisher_ = nullptr;
 
   bool subscriber_is_active_ = false;
-  rclcpp::Subscription<four_wheel_steering_msgs::msg::FourWheelSteeringStamped>::SharedPtr velocity_command_subscriber_ = nullptr;
-  rclcpp::Subscription<four_wheel_steering_msgs::msg::FourWheelSteeringStamped>::SharedPtr
-    velocity_command_unstamped_subscriber_ = nullptr;
+  rclcpp::Subscription<four_wheel_steering_msgs::msg::FourWheelSteering>::SharedPtr velocity_command_unstamped_subscriber_ = nullptr;
+  rclcpp::Subscription<four_wheel_steering_msgs::msg::FourWheelSteeringStamped>::SharedPtr velocity_command_stamped_subscriber_ = nullptr;
 
   realtime_tools::RealtimeBox<std::shared_ptr<four_wheel_steering_msgs::msg::FourWheelSteeringStamped>> received_velocity_msg_ptr_{nullptr};
 
+  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr reset_odom_service_;
+
   std::queue<four_wheel_steering_msgs::msg::FourWheelSteeringStamped> previous_commands_;  // last two commands
-
-  // speed limiters
-  SpeedLimiter limiter_linear_;
-  SpeedLimiter limiter_angular_;
-
-  bool publish_limited_velocity_ = false;
-  std::shared_ptr<rclcpp::Publisher<four_wheel_steering_msgs::msg::FourWheelSteeringStamped>> limited_velocity_publisher_ = nullptr;
-  std::shared_ptr<realtime_tools::RealtimePublisher<four_wheel_steering_msgs::msg::FourWheelSteeringStamped>> realtime_limited_velocity_publisher_ =
-    nullptr;
-
   rclcpp::Time previous_update_timestamp_{0};
 
   // publish rate limiter
@@ -152,14 +145,8 @@ protected:
   
   double wheel_vel_cmd[4] = { 0 };
   double steer_cmd[4] = { 0 };
-  double alpha_read[4] = { 0 };
-  double w_speed[4] = { 0 };
-  
   double ws_read[4] = { 0 };
   double alphas_read[4] = { 0 };
-  
-  
-  bool pivot = false;
   
   double vel_left_front = 0.0, vel_right_front = 0.0;
   double vel_left_rear = 0.0, vel_right_rear = 0.0;
@@ -167,6 +154,10 @@ protected:
   double rear_left_steering = 0.0, rear_right_steering = 0.0;
   double wheel_vel = 0.0;
   
+  void reset_odometry(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<std_srvs::srv::Empty::Request> req,
+    std::shared_ptr<std_srvs::srv::Empty::Response> res);
   bool reset();
   void halt();
 };

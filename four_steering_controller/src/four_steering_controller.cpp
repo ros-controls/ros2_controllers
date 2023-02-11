@@ -17,6 +17,7 @@ constexpr auto DEFAULT_COMMAND_UNSTAMPED_TOPIC = "~/cmd_vel_unstamped";
 constexpr auto DEFAULT_COMMAND_OUT_TOPIC = "~/cmd_vel_out";
 constexpr auto DEFAULT_ODOMETRY_TOPIC = "~/odom";
 constexpr auto DEFAULT_TRANSFORM_TOPIC = "/tf";
+constexpr auto DEFAULT_RESET_ODOM_SERVICE = "~/reset_odometry";
 }  // namespace
 
 namespace four_steering_controller
@@ -112,9 +113,8 @@ controller_interface::return_type FourSteeringController::update(
   if (age_of_last_command > cmd_vel_timeout_)
   {
     last_command_msg->data.speed = 0.0;
-    last_command_msg->data.front_steering_angle = 0.0;
-    last_command_msg->data.rear_steering_angle = 0.0;
     last_command_msg->data.acceleration = 0.0;
+    last_command_msg->data.jerk = 0.0;
   }
 
   four_wheel_steering_msgs::msg::FourWheelSteeringStamped  curr_cmd_4ws = *last_command_msg;
@@ -147,7 +147,22 @@ controller_interface::return_type FourSteeringController::update(
     right_feedback_mean /= params_.wheels_per_side;
     if (params_.position_feedback)
     {
-      odometry_.update(left_feedback_mean, right_feedback_mean, time);
+      double front_steering_pos = 0.0;
+      if(fabs(alphas_read[0]) > 0.001 || fabs(alphas_read[1]) > 0.001)
+      {
+        front_steering_pos = atan(2*tan(alphas_read[0])*tan(alphas_read[1])/
+                                (tan(alphas_read[0]) + tan(alphas_read[1])));
+      }
+      
+      double rear_steering_pos = 0.0;
+      if(fabs(alphas_read[2]) > 0.001 || fabs(alphas_read[3]) > 0.001)
+      {
+        rear_steering_pos = atan(2*tan(alphas_read[2])*tan(alphas_read[3])/
+                                      (tan(alphas_read[2]) + tan(alphas_read[3])));
+      }
+
+      odometry_.update(ws_read[0], ws_read[1], ws_read[2], ws_read[3],
+                      front_steering_pos, rear_steering_pos, time);
     }
     else
     {
@@ -159,7 +174,6 @@ controller_interface::return_type FourSteeringController::update(
 
   tf2::Quaternion orientation;
   orientation.setRPY(0.0, 0.0, odometry_.getHeading());
-
   if (realtime_odometry_publisher_->trylock())
   {
     auto & odometry_message = realtime_odometry_publisher_->msg_;
@@ -170,11 +184,10 @@ controller_interface::return_type FourSteeringController::update(
     odometry_message.pose.pose.orientation.y = orientation.y();
     odometry_message.pose.pose.orientation.z = orientation.z();
     odometry_message.pose.pose.orientation.w = orientation.w();
-    odometry_message.twist.twist.linear.x = odometry_.getLinear();
+    odometry_message.twist.twist.linear.x = odometry_.getLinearX();
     odometry_message.twist.twist.angular.z = odometry_.getAngular();
     realtime_odometry_publisher_->unlockAndPublish();
   }
-
   if (params_.enable_odom_tf && realtime_odometry_transform_publisher_->trylock())
   {
     auto & transform = realtime_odometry_transform_publisher_->msg_.transforms.front();
@@ -188,8 +201,8 @@ controller_interface::return_type FourSteeringController::update(
     realtime_odometry_transform_publisher_->unlockAndPublish();
   }
 
-  curr_cmd_4ws.data.front_steering_angle = std::clamp(curr_cmd_4ws.data.front_steering_angle, static_cast<float>(-M_PI_2/2), static_cast<float>(M_PI_2/2));
-  curr_cmd_4ws.data.rear_steering_angle = std::clamp(curr_cmd_4ws.data.rear_steering_angle,  static_cast<float>(-M_PI_2/2), static_cast<float>(M_PI_2/2));
+  curr_cmd_4ws.data.front_steering_angle = std::clamp(curr_cmd_4ws.data.front_steering_angle, -M_PI_4, M_PI_4);
+  curr_cmd_4ws.data.rear_steering_angle = std::clamp(curr_cmd_4ws.data.rear_steering_angle,  -M_PI_4, M_PI_4);
 
   // Compute steering angles
   const double tan_front_steering = tan(curr_cmd_4ws.data.front_steering_angle);
@@ -206,20 +219,9 @@ controller_interface::return_type FourSteeringController::update(
     rear_right_steering = atan(params_.wheel_base_*tan_rear_steering/(params_.wheel_base_+steering_diff));
     steer_cmd[3] = rear_right_steering;
   }
-  if(tan_front_steering == 1.0)
-  {
-    pivot = true;
-    front_left_steering = -atan(params_.wheel_base_ / steering_track);
-    steer_cmd[0] = front_left_steering;
-    front_right_steering = atan(params_.wheel_base_ / steering_track);
-    steer_cmd[1] = front_right_steering;
-    rear_left_steering = atan(params_.wheel_base_ / steering_track);
-    steer_cmd[2] = rear_left_steering;
-    rear_right_steering = -atan(params_.wheel_base_ / steering_track);
-    steer_cmd[3] = rear_right_steering;
-  }
+
   // Compute wheels velocities:
-  if(fabs(curr_cmd_4ws.data.speed) > 0.001 && !pivot)
+  if(fabs(curr_cmd_4ws.data.speed) >= 0.0)
   {
     //Virutal front and rear wheelbase
     // distance between the projection of the CIR on the wheelbase and the front axle
@@ -258,16 +260,7 @@ controller_interface::return_type FourSteeringController::update(
                       + vel_steering_offset;
     wheel_vel_cmd[3] = vel_right_rear;
   }
-  if(pivot)
-  {
-    vel_left_front = -curr_cmd_4ws.data.speed;
-    vel_right_front = curr_cmd_4ws.data.speed;
-    wheel_vel_cmd[0] = vel_left_front;
-    wheel_vel_cmd[1] = vel_right_front;
-    wheel_vel_cmd[2] = vel_left_front;
-    wheel_vel_cmd[3] = vel_right_front;
-    pivot = false;
-  }
+
   //Send steering cmds:
   for (size_t index=0; index < joint_number; index++)
   {
@@ -305,7 +298,7 @@ controller_interface::CallbackReturn FourSteeringController::on_configure(
   {
     return controller_interface::CallbackReturn::ERROR;
   }
-  odometry_.setWheelParams(params_.track_, params_.wheel_radius_);
+  odometry_.setWheelParams(params_.track_ - 2*params_.wheel_steering_y_offset_, params_.wheel_radius_, params_.wheel_base_, params_.wheel_steering_y_offset_);
   odometry_.setVelocityRollingWindowSize(params_.velocity_rolling_window_size);
 
   const four_wheel_steering_msgs::msg::FourWheelSteeringStamped empty_cmd;
@@ -315,10 +308,34 @@ controller_interface::CallbackReturn FourSteeringController::on_configure(
   previous_commands_.emplace(empty_cmd);
 
   // initialize command subscriber 
-  velocity_command_unstamped_subscriber_ =
-    get_node()->create_subscription<four_wheel_steering_msgs::msg::FourWheelSteeringStamped>(
-      DEFAULT_COMMAND_TOPIC, rclcpp::SystemDefaultsQoS(),
-      [this](const std::shared_ptr<four_wheel_steering_msgs::msg::FourWheelSteeringStamped> msg) -> void
+  if(params_.use_stamped_cmd_)
+  {
+    velocity_command_stamped_subscriber_ =
+      get_node()->create_subscription<four_wheel_steering_msgs::msg::FourWheelSteeringStamped>(
+        DEFAULT_COMMAND_TOPIC, rclcpp::SystemDefaultsQoS(),
+        [this](const std::shared_ptr<four_wheel_steering_msgs::msg::FourWheelSteeringStamped> msg) -> void
+        {
+          if (!subscriber_is_active_)
+          {
+            RCLCPP_WARN(
+              get_node()->get_logger(), "Can't accept new commands. subscriber is inactive");
+            return;
+          }
+          if ((msg->header.stamp.sec == 0) && (msg->header.stamp.nanosec == 0))
+          {
+            RCLCPP_WARN_ONCE(
+              get_node()->get_logger(),
+              "Received FourWheelSteeringStamped with zero timestamp, setting it to current "
+              "time, this message will only be shown once");
+            msg->header.stamp = get_node()->get_clock()->now();
+          }
+          received_velocity_msg_ptr_.set(std::move(msg));
+        }
+      );
+  } else {
+    velocity_command_unstamped_subscriber_ = get_node()->create_subscription<four_wheel_steering_msgs::msg::FourWheelSteering>(
+      DEFAULT_COMMAND_UNSTAMPED_TOPIC, rclcpp::SystemDefaultsQoS(),
+      [this](const std::shared_ptr<four_wheel_steering_msgs::msg::FourWheelSteering> msg) -> void
       {
         if (!subscriber_is_active_)
         {
@@ -326,18 +343,14 @@ controller_interface::CallbackReturn FourSteeringController::on_configure(
             get_node()->get_logger(), "Can't accept new commands. subscriber is inactive");
           return;
         }
-        if ((msg->header.stamp.sec == 0) && (msg->header.stamp.nanosec == 0))
-        {
-          RCLCPP_WARN_ONCE(
-            get_node()->get_logger(),
-            "Received TwistStamped with zero timestamp, setting it to current "
-            "time, this message will only be shown once");
-          msg->header.stamp = get_node()->get_clock()->now();
-        }
-        received_velocity_msg_ptr_.set(std::move(msg));
-      }
-    );
 
+        // Write fake header in the stored stamped command
+        std::shared_ptr<four_wheel_steering_msgs::msg::FourWheelSteeringStamped> four_ws_stamped;
+        received_velocity_msg_ptr_.get(four_ws_stamped);
+        four_ws_stamped->data = *msg;
+        four_ws_stamped->header.stamp = get_node()->get_clock()->now();
+      });
+  }
 
   // initialize odometry publisher and messasge
   odometry_publisher_ = get_node()->create_publisher<nav_msgs::msg::Odometry>(
@@ -379,12 +392,18 @@ controller_interface::CallbackReturn FourSteeringController::on_configure(
     odometry_transform_message.transforms.front().child_frame_id = params_.base_frame_id;
   }
 
+  // Create odom reset service
+  reset_odom_service_ = get_node()->create_service<std_srvs::srv::Empty>(
+    DEFAULT_RESET_ODOM_SERVICE, std::bind(
+                                  &FourSteeringController::reset_odometry, this, std::placeholders::_1,
+                                  std::placeholders::_2, std::placeholders::_3));
+
   return CallbackReturn::SUCCESS;
 }
 
 controller_interface::CallbackReturn FourSteeringController::on_activate(const rclcpp_lifecycle::State &)
 {
-  std::cout << "On_activate: configuring wheels and steers. " << std::endl;
+  std::cout << "On_activate: configuring Wheels and Steers. " << std::endl;
 
   const auto wheels_result =
     configure_wheels(params_.wheel_names, registered_wheel_handles_);
@@ -441,21 +460,31 @@ controller_interface::CallbackReturn FourSteeringController::on_error(const rclc
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
+void FourSteeringController::reset_odometry(
+  const std::shared_ptr<rmw_request_id_t> /*request_header*/,
+  const std::shared_ptr<std_srvs::srv::Empty::Request> /*req*/,
+  std::shared_ptr<std_srvs::srv::Empty::Response> /*res*/)
+{
+  odometry_.resetOdometry();
+  RCLCPP_INFO(get_node()->get_logger(), "Odometry successfully reset");
+}
+
+
 bool FourSteeringController::reset()
 {
   // release the old queue
-  std::queue<four_wheel_steering_msgs::msg::FourWheelSteeringStamped> empty;
-  std::swap(previous_commands_, empty);
+  std::queue<four_wheel_steering_msgs::msg::FourWheelSteeringStamped> empty_four_ws;
+  std::swap(previous_commands_, empty_four_ws);
+
   registered_wheel_handles_.clear();
   registered_steer_handles_.clear();
 
   subscriber_is_active_ = false;
-  velocity_command_subscriber_.reset();
+  velocity_command_stamped_subscriber_.reset();
   velocity_command_unstamped_subscriber_.reset();
 
   received_velocity_msg_ptr_.set(nullptr);
   is_halted = false;
-
   return true;
 }
 
@@ -472,10 +501,8 @@ void FourSteeringController::halt()
     for (const auto & wheel_handle : wheel_handles)
     {
       wheel_handle.velocity.get().set_value(0.0);
-
     }
   };
-
   const auto halt_steers = [](auto & steer_handles)
   {
     for (const auto & steer_handle : steer_handles)
@@ -486,7 +513,6 @@ void FourSteeringController::halt()
 
   halt_wheels(registered_wheel_handles_);
   halt_steers(registered_steer_handles_);
-
 }
 
 controller_interface::CallbackReturn FourSteeringController::configure_wheels(

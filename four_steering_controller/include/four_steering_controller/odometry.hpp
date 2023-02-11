@@ -14,7 +14,9 @@ public:
   explicit Odometry(size_t velocity_rolling_window_size = 10);
 
   void init(const rclcpp::Time & time);
-  bool update(double left_pos, double right_pos, const rclcpp::Time & time);
+  bool update(const double &fl_speed, const double &fr_speed,
+              const double &rl_speed, const double &rr_speed,
+              double front_steering, double rear_steering, const rclcpp::Time &time);
   bool updateFromVelocity(double left_vel, double right_vel, const rclcpp::Time & time);
   void updateOpenLoop(double linear, double angular, const rclcpp::Time & time);
   void resetOdometry();
@@ -23,14 +25,18 @@ public:
   double getY() const { return y_; }
   double getHeading() const { return heading_; }
   double getLinear() const { return linear_; }
+  double getLinearX() const { return linear_x_; }
+  double getLinearY() const { return linear_y_; }
+
   double getAngular() const { return angular_; }
 
-  void setWheelParams(double wheel_separation, double wheel_radius);
+  void setWheelParams( double steering_track, double wheel_radius,
+                       double wheel_base, double wheel_steering_y_offset);
   void setVelocityRollingWindowSize(size_t velocity_rolling_window_size);
 
 private:
   using RollingMeanAccumulator = rcppmath::RollingMeanAccumulator<double>;
-
+  void integrateXY(double linear_x, double linear_y, double angular);
   void integrateRungeKutta2(double linear, double angular);
   void integrateExact(double linear, double angular);
   void resetAccumulators();
@@ -46,14 +52,16 @@ private:
   // Current velocity:
   double linear_;   //   [m/s]
   double angular_;  // [rad/s]
-
+  double linear_x_;
+  double linear_y_;
   // Wheel kinematic parameters [m]:
   double wheel_separation_;
   double wheel_radius_;
-  
+  double wheel_steering_y_offset_;
+  double wheel_base_;
+  double steering_track_;
   // Previous wheel position/state [rad]:
-  double left_wheel_old_pos_;
-  double right_wheel_old_pos_;
+  double wheel_old_pos_;
 
   // Rolling mean accumulators for the linear and angular velocities:
   size_t velocity_rolling_window_size_;
