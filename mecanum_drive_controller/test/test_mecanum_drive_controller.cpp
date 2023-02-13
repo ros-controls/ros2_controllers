@@ -91,18 +91,18 @@ TEST_F(MecanumDriveControllerTest, when_controller_configured_expect_properly_ex
     EXPECT_EQ(state_intefaces.names[i], command_joint_names_[i] + "/" + interface_name_);
   }
 
-  // check ref itfs configuration, 
+  // check ref itfs configuration,
 
   auto reference_interfaces = controller_->export_reference_interfaces();
   ASSERT_EQ(reference_interfaces.size(), NR_REF_ITFS);
 
   for (size_t i = 0; i < reference_interface_names.size(); ++i)
   {
-    const std::string ref_itf_name = std::string(controller_->get_node()->get_name()) + std::string("/") +reference_interface_names[i];
+    const std::string ref_itf_name = std::string(controller_->get_node()->get_name()) +
+                                     std::string("/") + reference_interface_names[i];
     EXPECT_EQ(reference_interfaces[i].get_name(), ref_itf_name);
     EXPECT_EQ(reference_interfaces[i].get_prefix_name(), controller_->get_node()->get_name());
-    EXPECT_EQ(
-      reference_interfaces[i].get_interface_name(), reference_interface_names[i]);
+    EXPECT_EQ(reference_interfaces[i].get_interface_name(), reference_interface_names[i]);
   }
 }
 
@@ -141,7 +141,9 @@ TEST_F(MecanumDriveControllerTest, when_active_controller_is_deactivated_expect_
   ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 }
 
-TEST_F(MecanumDriveControllerTest, when_controller_is_reactivated_expect_cmd_itfs_not_set_and_update_success)
+TEST_F(
+  MecanumDriveControllerTest,
+  when_controller_is_reactivated_expect_cmd_itfs_not_set_and_update_success)
 {
   SetUpController();
 
@@ -158,7 +160,8 @@ TEST_F(MecanumDriveControllerTest, when_controller_is_reactivated_expect_cmd_itf
     controller_interface::return_type::OK);
 }
 
-// when update is called expect the previously set reference before calling update, inside the controller state message
+// when update is called expect the previously set reference before calling update,
+// inside the controller state message
 TEST_F(MecanumDriveControllerTest, when_update_is_called_expect_status_message)
 {
   SetUpController();
@@ -175,9 +178,11 @@ TEST_F(MecanumDriveControllerTest, when_update_is_called_expect_status_message)
   EXPECT_EQ(msg.reference_velocity.linear.x, 1.5);
 }
 
-// reference_interfaces and command_interfaces values depend on the reference_msg, the below test shows two cases
-// when reference_msg is not received and when it is received.
-TEST_F(MecanumDriveControllerTest, when_reference_msg_received_expect_updated_commands_and_status_message)
+// reference_interfaces and command_interfaces values depend on the reference_msg,
+// the below test shows two cases when reference_msg is not received and when it is received.
+TEST_F(
+  MecanumDriveControllerTest,
+  when_reference_msg_received_expect_updated_commands_and_status_message)
 {
   SetUpController();
 
@@ -197,7 +202,8 @@ TEST_F(MecanumDriveControllerTest, when_reference_msg_received_expect_updated_co
   EXPECT_TRUE(std::isnan(msg.reference_velocity.linear.x));
 
   // reference_callback() is implicitly called when publish_commands() is called
-  // reference_msg is published with provided time stamp when publish_commands( time_stamp) is called
+  // reference_msg is published with provided time stamp when publish_commands( time_stamp)
+  // is called
   publish_commands(controller_->get_node()->now());
   ASSERT_TRUE(controller_->wait_for_commands(executor));
 
@@ -237,7 +243,8 @@ TEST_F(MecanumDriveControllerTest, when_reference_msg_is_too_old_expect_unset_re
   EXPECT_TRUE(std::isnan(reference->twist.angular.z));
 
   // reference_callback() is implicitly called when publish_commands() is called
-  // reference_msg is published with provided time stamp when publish_commands( time_stamp) is called
+  // reference_msg is published with provided time stamp when publish_commands( time_stamp)
+  // is called
   publish_commands(
     controller_->get_node()->now() - controller_->ref_timeout_ -
     rclcpp::Duration::from_seconds(0.1));
@@ -249,7 +256,9 @@ TEST_F(MecanumDriveControllerTest, when_reference_msg_is_too_old_expect_unset_re
 }
 
 // when time stamp is zero expect that time stamp is set to current time stamp
-TEST_F(MecanumDriveControllerTest, when_reference_msg_has_timestamp_zero_expect_reference_set_and_timestamp_set_to_current_time)
+TEST_F(
+  MecanumDriveControllerTest,
+  when_reference_msg_has_timestamp_zero_expect_reference_set_and_timestamp_set_to_current_time)
 {
   SetUpController();
   rclcpp::executors::MultiThreadedExecutor executor;
@@ -265,7 +274,8 @@ TEST_F(MecanumDriveControllerTest, when_reference_msg_has_timestamp_zero_expect_
   EXPECT_TRUE(std::isnan((*reference)->twist.angular.z));
 
   // reference_callback() is implicitly called when publish_commands() is called
-  // reference_msg is published with provided time stamp when publish_commands( time_stamp) is called
+  // reference_msg is published with provided time stamp when publish_commands( time_stamp)
+  // is called
   publish_commands(rclcpp::Time(0));
 
   ASSERT_TRUE(controller_->wait_for_commands(executor));
@@ -295,7 +305,8 @@ TEST_F(MecanumDriveControllerTest, when_message_has_valid_timestamp_expect_refer
   EXPECT_TRUE(std::isnan((*reference)->twist.angular.z));
 
   // reference_callback() is implicitly called when publish_commands() is called
-  // reference_msg is published with provided time stamp when publish_commands( time_stamp) is called
+  // reference_msg is published with provided time stamp when publish_commands( time_stamp)
+  // is called
   publish_commands(controller_->get_node()->now());
 
   ASSERT_TRUE(controller_->wait_for_commands(executor));
@@ -307,9 +318,11 @@ TEST_F(MecanumDriveControllerTest, when_message_has_valid_timestamp_expect_refer
 }
 
 // when not in chainable mode and ref_msg_timedout expect
-// command_interfaces are set to 0.0 and when ref_msg is not timedout expect command_interfaces are set to 
-// valid command values
-TEST_F(MecanumDriveControllerTest, when_ref_msg_old_expect_cmnd_itfs_set_to_zero_otherwise_to_valid_cmnds)
+// command_interfaces are set to 0.0 and when ref_msg is not timedout expect
+// command_interfaces are set to valid command values
+TEST_F(
+  MecanumDriveControllerTest,
+  when_ref_msg_old_expect_cmnd_itfs_set_to_zero_otherwise_to_valid_cmnds)
 {
   // 1. age>ref_timeout 2. age<ref_timeout
   SetUpController();
@@ -401,9 +414,12 @@ TEST_F(MecanumDriveControllerTest, when_ref_msg_old_expect_cmnd_itfs_set_to_zero
   }
 }
 
-// when in chained mode the reference_interfaces of chained controller and command_interfaces of preceding controller point to same 
-// memory location, hence reference_interfaces are not exclusively set by the update method of chained controller
-TEST_F(MecanumDriveControllerTest, when_controller_in_chainable_mode_expect_receiving_commands_from_reference_interfaces_directly)
+// when in chained mode the reference_interfaces of chained controller and command_interfaces
+// of preceding controller point to same memory location, hence reference_interfaces are not
+// exclusively set by the update method of chained controller
+TEST_F(
+  MecanumDriveControllerTest,
+  when_controller_in_chainable_mode_expect_receiving_commands_from_reference_interfaces_directly)
 {
   SetUpController();
 
@@ -422,13 +438,15 @@ TEST_F(MecanumDriveControllerTest, when_controller_in_chainable_mode_expect_rece
 
   // set command statically
   joint_command_values_[1] = command_lin_x;
-  // imitating preceding controllers command_interfaces setting reference_interfaces of chained controller.
+  // imitating preceding controllers command_interfaces setting reference_interfaces of chained
+  //controller.
   controller_->reference_interfaces_[0] = 3.0;
   controller_->reference_interfaces_[1] = 0.0;
   controller_->reference_interfaces_[2] = 0.0;
 
   // reference_callback() is implicitly called when publish_commands() is called
-  // reference_msg is published with provided time stamp when publish_commands( time_stamp) is called
+  // reference_msg is published with provided time stamp when publish_commands( time_stamp)
+  // is called
   publish_commands(controller_->get_node()->now());
 
   ASSERT_EQ(
@@ -457,7 +475,9 @@ TEST_F(MecanumDriveControllerTest, when_controller_in_chainable_mode_expect_rece
 
 // when ref_timeout = 0 expect reference_msg is accepted only once and command_interfaces
 // are calculated to valid values and reference_interfaces are unset
-TEST_F(MecanumDriveControllerTest, when_reference_timeout_is_zero_expect_reference_msg_being_used_only_once)
+TEST_F(
+  MecanumDriveControllerTest,
+  when_reference_timeout_is_zero_expect_reference_msg_being_used_only_once)
 {
   SetUpController();
   rclcpp::executors::MultiThreadedExecutor executor;
@@ -500,7 +520,9 @@ TEST_F(MecanumDriveControllerTest, when_reference_timeout_is_zero_expect_referen
   ASSERT_TRUE(std::isnan((*(controller_->input_ref_.readFromRT()))->twist.linear.x));
 }
 
-TEST_F(MecanumDriveControllerTest, when_ref_timeout_zero_for_reference_callback_expect_reference_msg_being_used_only_once)
+TEST_F(
+  MecanumDriveControllerTest,
+  when_ref_timeout_zero_for_reference_callback_expect_reference_msg_being_used_only_once)
 {
   SetUpController();
   rclcpp::executors::MultiThreadedExecutor executor;
@@ -514,7 +536,8 @@ TEST_F(MecanumDriveControllerTest, when_ref_timeout_zero_for_reference_callback_
   controller_->ref_timeout_ = rclcpp::Duration::from_seconds(0.0);
 
   // reference_callback() is called implicitly when publish_commands() is called.
-  // reference_msg is published with provided time stamp when publish_commands( time_stamp) is called
+  // reference_msg is published with provided time stamp when publish_commands( time_stamp)
+  // is called
   publish_commands(controller_->get_node()->now());
 
   ASSERT_TRUE(controller_->wait_for_commands(executor));
