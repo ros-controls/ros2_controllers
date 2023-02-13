@@ -93,8 +93,6 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
     return CallbackReturn::FAILURE;
   }
 
-  reference_names_ = params_.reference_names;
-
   // Set wheel params for the odometry computation
   odometry_.setWheelsParams(
     params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis,
@@ -275,10 +273,12 @@ MecanumDriveController::on_export_reference_interfaces()
 
   reference_interfaces.reserve(reference_interfaces_.size());
 
+  std::vector<std::string> reference_interface_names = {"linear/x/velocity", "linear/y/velocity", "angular/z/velocity"};
+  
   for (size_t i = 0; i < reference_interfaces_.size(); ++i)
   {
     reference_interfaces.push_back(hardware_interface::CommandInterface(
-      get_node()->get_name(), reference_names_[i] + "/" + params_.interface_name,
+      get_node()->get_name(), reference_interface_names[i],
       &reference_interfaces_[i]));
   }
 

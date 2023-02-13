@@ -69,7 +69,6 @@ TEST_F(MecanumDriveControllerTest, when_controller_is_configured_expect_all_para
   ASSERT_EQ(controller_->params_.interface_name, interface_name_);
 }
 
-// when all command, state and reference interfaces are exported then expect them in storage
 TEST_F(MecanumDriveControllerTest, when_controller_configured_expect_properly_exported_interfaces)
 {
   SetUpController();
@@ -92,18 +91,18 @@ TEST_F(MecanumDriveControllerTest, when_controller_configured_expect_properly_ex
     EXPECT_EQ(state_intefaces.names[i], command_joint_names_[i] + "/" + interface_name_);
   }
 
-  // check ref itfs configuration,  reference_names_
+  // check ref itfs configuration, 
 
   auto reference_interfaces = controller_->export_reference_interfaces();
   ASSERT_EQ(reference_interfaces.size(), NR_REF_ITFS);
-  for (size_t i = 0; i < reference_names_.size(); ++i)
+
+  for (size_t i = 0; i < reference_interface_names.size(); ++i)
   {
-    const std::string ref_itf_name = std::string(controller_->get_node()->get_name()) + "/" +
-                                     reference_names_[i] + "/" + interface_name_;
+    const std::string ref_itf_name = std::string(controller_->get_node()->get_name()) + std::string("/") +reference_interface_names[i];
     EXPECT_EQ(reference_interfaces[i].get_name(), ref_itf_name);
     EXPECT_EQ(reference_interfaces[i].get_prefix_name(), controller_->get_node()->get_name());
     EXPECT_EQ(
-      reference_interfaces[i].get_interface_name(), reference_names_[i] + "/" + interface_name_);
+      reference_interfaces[i].get_interface_name(), reference_interface_names[i]);
   }
 }
 
@@ -119,15 +118,8 @@ TEST_F(MecanumDriveControllerTest, when_controller_is_activated_expect_reference
   EXPECT_TRUE(std::isnan((*msg)->twist.linear.x));
 
   ASSERT_TRUE(std::isnan((*msg)->twist.angular.z));
-
-  EXPECT_EQ(controller_->reference_interfaces_.size(), NR_REF_ITFS);
-  for (const auto & interface : controller_->reference_interfaces_)
-  {
-    EXPECT_TRUE(std::isnan(interface));
-  }
 }
 
-// when calling update methods expect return type are a success
 TEST_F(MecanumDriveControllerTest, when_controller_active_and_update_called_expect_success)
 {
   SetUpController();
@@ -140,7 +132,6 @@ TEST_F(MecanumDriveControllerTest, when_controller_active_and_update_called_expe
     controller_interface::return_type::OK);
 }
 
-// when controller lifecycle methods expect return type is a success
 TEST_F(MecanumDriveControllerTest, when_active_controller_is_deactivated_expect_success)
 {
   SetUpController();
@@ -150,9 +141,6 @@ TEST_F(MecanumDriveControllerTest, when_active_controller_is_deactivated_expect_
   ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 }
 
-// when calling on_activate, on_deactivate and on_activate methods consecutively 
-// expect resetting of reference msg, nan values in command_interfaces and 
-// resetting of reference msg respectively
 TEST_F(MecanumDriveControllerTest, when_controller_is_reactivated_expect_cmd_itfs_not_set_and_update_success)
 {
   SetUpController();
@@ -170,7 +158,7 @@ TEST_F(MecanumDriveControllerTest, when_controller_is_reactivated_expect_cmd_itf
     controller_interface::return_type::OK);
 }
 
-// when controller state published expect state value in storage
+// when update is called expect the previously set reference before calling update, inside the controller state message
 TEST_F(MecanumDriveControllerTest, when_update_is_called_expect_status_message)
 {
   SetUpController();
@@ -187,7 +175,8 @@ TEST_F(MecanumDriveControllerTest, when_update_is_called_expect_status_message)
   EXPECT_EQ(msg.reference_velocity.linear.x, 1.5);
 }
 
-// when msg subscribed and published expect value in storage
+// reference_interfaces and command_interfaces values depend on the reference_msg, the below test shows two cases
+// when reference_msg is not received and when it is received.
 TEST_F(MecanumDriveControllerTest, when_reference_msg_received_expect_updated_commands_and_status_message)
 {
   SetUpController();
@@ -197,17 +186,18 @@ TEST_F(MecanumDriveControllerTest, when_reference_msg_received_expect_updated_co
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-
+  // no reference_msg sent
   ASSERT_EQ(
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
   ControllerStateMsg msg;
-  subscribe_and_get_messages(msg);
+  subscribe_to_controller_status_execute_update_and_get_messages(msg);
   joint_command_values_[1] = command_lin_x;
 
   EXPECT_TRUE(std::isnan(msg.reference_velocity.linear.x));
 
   // reference_callback() is implicitly called when publish_commands() is called
+  // reference_msg is published with provided time stamp when publish_commands( time_stamp) is called
   publish_commands(controller_->get_node()->now());
   ASSERT_TRUE(controller_->wait_for_commands(executor));
 
@@ -215,20 +205,22 @@ TEST_F(MecanumDriveControllerTest, when_reference_msg_received_expect_updated_co
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  //  w0_vel = 1.0 / params_.kinematics.wheels_radius *
-  // (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y
-  // - params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis
-  // * body_velocity_center_frame_.angular_z);
+  // w_back_left_vel =
+  // 1.0 / params_.kinematics.wheels_radius *
+  // (velocity_in_center_frame_linear_x_ + velocity_in_center_frame_linear_y_ -
+  // params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis *
+  // velocity_in_center_frame_angular_z_);
   //  joint_command_values_[1] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0)
   EXPECT_EQ(joint_command_values_[1], 3.0);
 
-  subscribe_and_get_messages(msg);
+  subscribe_to_controller_status_execute_update_and_get_messages(msg);
 
   ASSERT_EQ(msg.reference_velocity.linear.x, 1.5);
-  ASSERT_EQ(msg.back_left_wheel_velocity, 3.0);
+  ASSERT_EQ(msg.back_left_wheel_velocity, 0.1);
+  ASSERT_EQ(msg.back_right_wheel_velocity, 0.1);
 }
 
-// when too old msg is sent expect nan values in reference msg
+// when too old msg is sent expect reference msg reset
 TEST_F(MecanumDriveControllerTest, when_reference_msg_is_too_old_expect_unset_reference)
 {
   SetUpController();
@@ -245,6 +237,7 @@ TEST_F(MecanumDriveControllerTest, when_reference_msg_is_too_old_expect_unset_re
   EXPECT_TRUE(std::isnan(reference->twist.angular.z));
 
   // reference_callback() is implicitly called when publish_commands() is called
+  // reference_msg is published with provided time stamp when publish_commands( time_stamp) is called
   publish_commands(
     controller_->get_node()->now() - controller_->ref_timeout_ -
     rclcpp::Duration::from_seconds(0.1));
@@ -272,6 +265,7 @@ TEST_F(MecanumDriveControllerTest, when_reference_msg_has_timestamp_zero_expect_
   EXPECT_TRUE(std::isnan((*reference)->twist.angular.z));
 
   // reference_callback() is implicitly called when publish_commands() is called
+  // reference_msg is published with provided time stamp when publish_commands( time_stamp) is called
   publish_commands(rclcpp::Time(0));
 
   ASSERT_TRUE(controller_->wait_for_commands(executor));
@@ -284,7 +278,8 @@ TEST_F(MecanumDriveControllerTest, when_reference_msg_has_timestamp_zero_expect_
   EXPECT_NE((*(controller_->input_ref_.readFromNonRT()))->header.stamp.sec, 0.0);
 }
 
-// when age_of_last_command < ref_timeout expect reference msg is accepted and is in rt buffer
+// when the reference_msg has valid timestamp then the timeout check in reference_callback()
+// shall pass and reference_msg is not reset
 TEST_F(MecanumDriveControllerTest, when_message_has_valid_timestamp_expect_reference_set)
 {
   SetUpController();
@@ -300,6 +295,7 @@ TEST_F(MecanumDriveControllerTest, when_message_has_valid_timestamp_expect_refer
   EXPECT_TRUE(std::isnan((*reference)->twist.angular.z));
 
   // reference_callback() is implicitly called when publish_commands() is called
+  // reference_msg is published with provided time stamp when publish_commands( time_stamp) is called
   publish_commands(controller_->get_node()->now());
 
   ASSERT_TRUE(controller_->wait_for_commands(executor));
@@ -310,12 +306,10 @@ TEST_F(MecanumDriveControllerTest, when_message_has_valid_timestamp_expect_refer
   EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z, 0.0);
 }
 
-// when not in chainable mode and age_of_last_command > reference_timeout expect
-// command_interfaces are set to 0.0 and reference_interfaces set to nan
-// followed by
-// when not in chainable mode and age_of_last_command < reference_timeout expect
-// command_interfaces are calculated to non-nan and reference_interfaces set to nan
-TEST_F(MecanumDriveControllerTest, when_reference_message_times_out_expect_commands_are_zeroed)
+// when not in chainable mode and ref_msg_timedout expect
+// command_interfaces are set to 0.0 and when ref_msg is not timedout expect command_interfaces are set to 
+// valid command values
+TEST_F(MecanumDriveControllerTest, when_ref_msg_old_expect_cmnd_itfs_set_to_zero_otherwise_to_valid_cmnds)
 {
   // 1. age>ref_timeout 2. age<ref_timeout
   SetUpController();
@@ -354,21 +348,8 @@ TEST_F(MecanumDriveControllerTest, when_reference_message_times_out_expect_comma
   ASSERT_FALSE(age_of_last_command <= controller_->ref_timeout_);
   ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
   ASSERT_EQ(
-    controller_->update_reference_from_subscribers(
-      controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
+    controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
-
-  EXPECT_EQ(controller_->reference_interfaces_[1], 0);
-  for (const auto & interface : controller_->reference_interfaces_)
-  {
-    EXPECT_FALSE(std::isnan(interface));
-  }
-
-  ASSERT_EQ(
-    controller_->update_and_write_commands(
-      controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
-
   EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[0]));
 
   EXPECT_EQ(joint_command_values_[1], 0);
@@ -397,19 +378,15 @@ TEST_F(MecanumDriveControllerTest, when_reference_message_times_out_expect_comma
   ASSERT_TRUE(age_of_last_command_2 <= controller_->ref_timeout_);
   ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
   ASSERT_EQ(
-    controller_->update_reference_from_subscribers(
-      controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
-  ASSERT_EQ(
-    controller_->update_and_write_commands(
-      controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
+    controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
   EXPECT_NE(joint_command_values_[1], command_lin_x);
-  //  w0_vel = 1.0 / params_.kinematics.wheels_radius
-  // * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y
-  // - params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis
-  // * body_velocity_center_frame_.angular_z);
+  // w_back_left_vel =
+  // 1.0 / params_.kinematics.wheels_radius *
+  // (velocity_in_center_frame_linear_x_ + velocity_in_center_frame_linear_y_ -
+  // params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis *
+  // velocity_in_center_frame_angular_z_);
   //  joint_command_values_[1] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0)
   EXPECT_EQ(joint_command_values_[1], 3.0);
   ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
@@ -424,9 +401,8 @@ TEST_F(MecanumDriveControllerTest, when_reference_message_times_out_expect_comma
   }
 }
 
-// when in chainable mode and age_of_last_command < reference_timeout expect
-// reference_interfaces set by preceding controller and command_interfaces
-// are calculated to non-nan values and reference_interfaces are set to nan
+// when in chained mode the reference_interfaces of chained controller and command_interfaces of preceding controller point to same 
+// memory location, hence reference_interfaces are not exclusively set by the update method of chained controller
 TEST_F(MecanumDriveControllerTest, when_controller_in_chainable_mode_expect_receiving_commands_from_reference_interfaces_directly)
 {
   SetUpController();
@@ -446,41 +422,41 @@ TEST_F(MecanumDriveControllerTest, when_controller_in_chainable_mode_expect_rece
 
   // set command statically
   joint_command_values_[1] = command_lin_x;
-
-  controller_->reference_interfaces_[0] = 1.5;
+  // imitating preceding controllers command_interfaces setting reference_interfaces of chained controller.
+  controller_->reference_interfaces_[0] = 3.0;
   controller_->reference_interfaces_[1] = 0.0;
   controller_->reference_interfaces_[2] = 0.0;
 
-  const auto age_of_last_command =
-    controller_->get_node()->now() - (*(controller_->input_ref_.readFromNonRT()))->header.stamp;
-
-  // age_of_last_command < ref_timeout_
-  ASSERT_TRUE(age_of_last_command <= controller_->ref_timeout_);
+  // reference_callback() is implicitly called when publish_commands() is called
+  // reference_msg is published with provided time stamp when publish_commands( time_stamp) is called
+  publish_commands(controller_->get_node()->now());
 
   ASSERT_EQ(
-    controller_->update_and_write_commands(
-      controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
+    controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
   EXPECT_NE(joint_command_values_[1], command_lin_x);
-  //  w0_vel = 1.0 / params_.kinematics.wheels_radius
-  // * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y
-  // - params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis
-  // * body_velocity_center_frame_.angular_z);
-  //  joint_command_values_[1] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0)
-  EXPECT_EQ(joint_command_values_[1], 3.0);
+
+  // w_back_left_vel =
+  // 1.0 / params_.kinematics.wheels_radius *
+  // (velocity_in_center_frame_linear_x_ + velocity_in_center_frame_linear_y_ -
+  // params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis *
+  // velocity_in_center_frame_angular_z_);
+
+  //  joint_command_values_[1] = 1.0 / 0.5 * (3.0 - 0.0 - 1 * 0.0)
+  EXPECT_EQ(joint_command_values_[1], 6.0);
   for (const auto & interface : controller_->reference_interfaces_)
   {
     EXPECT_TRUE(std::isnan(interface));
   }
   for (size_t i = 0; i < controller_->command_interfaces_.size(); ++i)
   {
-    EXPECT_EQ(controller_->command_interfaces_[i].get_value(), 3.0);
+    EXPECT_EQ(controller_->command_interfaces_[i].get_value(), 6.0);
   }
 }
 
-// when ref_timeout = 0 expect reference_msg is accepted and command_interfaces
-// are calculated to non-nan values and reference_interfaces are set to nan
+// when ref_timeout = 0 expect reference_msg is accepted only once and command_interfaces
+// are calculated to valid values and reference_interfaces are unset
 TEST_F(MecanumDriveControllerTest, when_reference_timeout_is_zero_expect_reference_msg_being_used_only_once)
 {
   SetUpController();
@@ -488,8 +464,6 @@ TEST_F(MecanumDriveControllerTest, when_reference_timeout_is_zero_expect_referen
   executor.add_node(controller_->get_node()->get_node_base_interface());
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-
-  auto reference = controller_->input_ref_.readFromNonRT();
 
   // set command statically
   joint_command_values_[1] = command_lin_x;
@@ -508,34 +482,25 @@ TEST_F(MecanumDriveControllerTest, when_reference_timeout_is_zero_expect_referen
   const auto age_of_last_command =
     controller_->get_node()->now() - (*(controller_->input_ref_.readFromNonRT()))->header.stamp;
 
-  fprintf(stderr, " age_of_last_command= %f \n", age_of_last_command);
-  fprintf(stderr, " controller_->ref_timeout_= %f \n", controller_->ref_timeout_);
-
   ASSERT_FALSE(age_of_last_command <= controller_->ref_timeout_);
   ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
   ASSERT_EQ(
-    controller_->update_reference_from_subscribers(
-      controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
-  ASSERT_EQ(
-    controller_->update_and_write_commands(
-      controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
+    controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
   EXPECT_FALSE(std::isnan(joint_command_values_[1]));
   EXPECT_NE(joint_command_values_[1], command_lin_x);
-  //  w0_vel = 1.0 / params_.kinematics.wheels_radius
-  // * (body_velocity_center_frame_.linear_x - body_velocity_center_frame_.linear_y
-  // - params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis
-  // * body_velocity_center_frame_.angular_z);
+  // w_back_left_vel =
+  // 1.0 / params_.kinematics.wheels_radius *
+  // (velocity_in_center_frame_linear_x_ + velocity_in_center_frame_linear_y_ -
+  // params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis *
+  // velocity_in_center_frame_angular_z_);
   //  joint_command_values_[1] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0)
   EXPECT_EQ(joint_command_values_[1], 3.0);
   ASSERT_TRUE(std::isnan((*(controller_->input_ref_.readFromRT()))->twist.linear.x));
 }
 
-// when ref_timeout = 0 expect reference_callback() writes reference_msg to rt buffer
-// from nonrt thread
-TEST_F(MecanumDriveControllerTest, when_ref_timeout_zero_for_reference_callback_expect_reference_msg_in_rt_buffer)
+TEST_F(MecanumDriveControllerTest, when_ref_timeout_zero_for_reference_callback_expect_reference_msg_being_used_only_once)
 {
   SetUpController();
   rclcpp::executors::MultiThreadedExecutor executor;
@@ -549,6 +514,7 @@ TEST_F(MecanumDriveControllerTest, when_ref_timeout_zero_for_reference_callback_
   controller_->ref_timeout_ = rclcpp::Duration::from_seconds(0.0);
 
   // reference_callback() is called implicitly when publish_commands() is called.
+  // reference_msg is published with provided time stamp when publish_commands( time_stamp) is called
   publish_commands(controller_->get_node()->now());
 
   ASSERT_TRUE(controller_->wait_for_commands(executor));
