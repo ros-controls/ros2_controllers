@@ -33,7 +33,6 @@ namespace four_steering_controller
 {
 class FourSteeringController : public controller_interface::ControllerInterface
 {
-  using Twist = geometry_msgs::msg::TwistStamped;
 
 public:
   FOUR_STEERING_CONTROLLER_PUBLIC
@@ -127,22 +126,31 @@ protected:
   bool subscriber_is_active_ = false;
   rclcpp::Subscription<four_wheel_steering_msgs::msg::FourWheelSteering>::SharedPtr velocity_command_unstamped_subscriber_ = nullptr;
   rclcpp::Subscription<four_wheel_steering_msgs::msg::FourWheelSteeringStamped>::SharedPtr velocity_command_stamped_subscriber_ = nullptr;
-
+  rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr velocity_twist_cmd_stamped_subscriber_ = nullptr;
+  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr velocity_twist_cmd_unstamped_subscriber_ = nullptr;
+  
   realtime_tools::RealtimeBox<std::shared_ptr<four_wheel_steering_msgs::msg::FourWheelSteeringStamped>> received_velocity_msg_ptr_{nullptr};
+  realtime_tools::RealtimeBox<std::shared_ptr<geometry_msgs::msg::TwistStamped>> received_velocity_twist_msg_ptr_{nullptr};
+
 
   rclcpp::Service<std_srvs::srv::Empty>::SharedPtr reset_odom_service_;
 
   std::queue<four_wheel_steering_msgs::msg::FourWheelSteeringStamped> previous_commands_;  // last two commands
+  std::queue<geometry_msgs::msg::TwistStamped> previous_twist_commands_;  
   rclcpp::Time previous_update_timestamp_{0};
 
-  // publish rate limiter
-  double publish_rate_ = 50.0;
-  rclcpp::Duration publish_period_ = rclcpp::Duration::from_nanoseconds(0);
-  rclcpp::Time previous_publish_timestamp_{0};
+  //Limiters
+  SpeedLimiter limiter_lin_;
+  SpeedLimiter limiter_ang_;
 
   bool is_halted = false;
   bool use_stamped_vel_ = true;
   
+  geometry_msgs::msg::TwistStamped last0_cmd_;
+  geometry_msgs::msg::TwistStamped last1_cmd_;
+  four_wheel_steering_msgs::msg::FourWheelSteeringStamped last0_cmd_4ws_;
+  four_wheel_steering_msgs::msg::FourWheelSteeringStamped last1_cmd_4ws_;
+
   double wheel_vel_cmd[4] = { 0 };
   double steer_cmd[4] = { 0 };
   double ws_read[4] = { 0 };

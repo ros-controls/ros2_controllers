@@ -94,3 +94,8 @@ four_steering_controller:
     default_value: true,
     description: "If the command messages are stamped or not.",
   }
+  enable_twist_cmd_: {
+    type: bool,
+    default_value: false,
+    description: "Choose which types of command to use ''twist'' or ''4ws_steering''.",
+  }
