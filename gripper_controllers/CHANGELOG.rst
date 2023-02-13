@@ -2,6 +2,9 @@
 Changelog for package gripper_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 2.16.1 (2023-01-31)
 -------------------
 * Changing to_chrono to use nanoseconds (`#507 <https://github.com/ros-controls/ros2_controllers/issues/507>`_) (`#509 <https://github.com/ros-controls/ros2_controllers/issues/509>`_)
