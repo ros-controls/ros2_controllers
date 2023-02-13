@@ -3,7 +3,6 @@ mecanum_drive_controller:
     type: double,
     default_value: 0.0,
     description: "Timeout for controller references after which they will be reset. This is especially useful for controllers that can cause unwanted and dangerous behavior if reference is not reset, e.g., velocity controllers. If value is 0 the reference is reset after each run.",
-
   }
 
   command_joint_names: {
@@ -11,7 +10,6 @@ mecanum_drive_controller:
     default_value: [],
     description: "Name of the wheels joints.",
     read_only: false,
-
   }
 
   state_joint_names: {
@@ -19,7 +17,6 @@ mecanum_drive_controller:
     default_value: [],
     description: "(optional) Specifies joints for reading states. This parameter is only relevant when state joints are different then command joint, i.e., when a following controller is used.",
     read_only: true,
-
   }
 
   reference_names: {
@@ -62,7 +59,6 @@ mecanum_drive_controller:
       default_value: 0.0,
       description: "Wheel's radius.",
       read_only: false,
-
     }
 
     sum_of_robot_center_projection_on_X_Y_axis: {
@@ -71,7 +67,6 @@ mecanum_drive_controller:
       description: "Wheels geometric param used in mecanum wheels' IK. lx and ly represent the distance from the robot's center to the wheels projected on
       the x and y axis with origin at robots center respectively, sum_of_robot_center_projection_on_X_Y_axis = lx+ly",
       read_only: false,
-
     }
 
   base_frame_id: {
@@ -86,14 +81,12 @@ mecanum_drive_controller:
     default_value: "odom",
     description: "Odometry frame_id set to value of odom_frame_id.",
     read_only: false,
-
   }
   enable_odom_tf: {
     type: bool,
     default_value: true,
     description: "Publishing to tf is enabled or disabled ?.",
     read_only: false,
-
   }
 
   twist_covariance_diagonal: {
@@ -101,7 +94,6 @@ mecanum_drive_controller:
     default_value: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1],
     description: "diagonal values of twist covariance matrix.",
     read_only: false,
-
   }
 
   pose_covariance_diagonal: {
@@ -109,5 +101,4 @@ mecanum_drive_controller:
     default_value: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1],
     description: "diagonal values of pose covariance matrix.",
     read_only: false,
-
   }
