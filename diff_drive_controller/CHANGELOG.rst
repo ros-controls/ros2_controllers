@@ -2,6 +2,11 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* [DiffDriveController] Fix prefixing of frame id with controller's namespace (`#522 <https://github.com/ros-controls/ros2_controllers/issues/522>`_)
+* Contributors: Tim Verbelen
+
 2.17.0 (2023-02-13)
 -------------------
 
