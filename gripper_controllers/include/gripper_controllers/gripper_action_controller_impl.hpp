@@ -28,11 +28,12 @@ template <const char * HardwareInterface>
 void GripperActionController<HardwareInterface>::preempt_active_goal()
 {
   // Cancels the currently active goal
-  if (rt_active_goal_)
+  const auto active_goal = *rt_active_goal_.readFromNonRT();
+  if (active_goal)
   {
     // Marks the current goal as canceled
-    rt_active_goal_->setCanceled(std::make_shared<GripperCommandAction::Result>());
-    rt_active_goal_.reset();
+    active_goal->setCanceled(std::make_shared<GripperCommandAction::Result>());
+    rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
   }
 }
 
@@ -86,25 +87,23 @@ template <const char * HardwareInterface>
 void GripperActionController<HardwareInterface>::accepted_callback(
   std::shared_ptr<GoalHandle> goal_handle)  // Try to update goal
 {
-  {
-    auto rt_goal = std::make_shared<RealtimeGoalHandle>(goal_handle);
+  auto rt_goal = std::make_shared<RealtimeGoalHandle>(goal_handle);
 
-    // Accept new goal
-    preempt_active_goal();
+  // Accept new goal
+  preempt_active_goal();
 
-    // This is the non-realtime command_struct
-    // We use command_ for sharing
-    command_struct_.position_ = goal_handle->get_goal()->command.position;
-    command_struct_.max_effort_ = goal_handle->get_goal()->command.max_effort;
-    command_.writeFromNonRT(command_struct_);
+  // This is the non-realtime command_struct
+  // We use command_ for sharing
+  command_struct_.position_ = goal_handle->get_goal()->command.position;
+  command_struct_.max_effort_ = goal_handle->get_goal()->command.max_effort;
+  command_.writeFromNonRT(command_struct_);
 
-    pre_alloc_result_->reached_goal = false;
-    pre_alloc_result_->stalled = false;
+  pre_alloc_result_->reached_goal = false;
+  pre_alloc_result_->stalled = false;
 
-    last_movement_time_ = get_node()->now();
-    rt_active_goal_ = rt_goal;
-    rt_active_goal_->execute();
-  }
+  last_movement_time_ = get_node()->now();
+  rt_goal->execute();
+  rt_active_goal_.writeFromNonRT(rt_goal);
 
   // Set smartpointer to expire for create_wall_timer to delete previous entry from timer list
   goal_handle_timer_.reset();
@@ -112,7 +111,7 @@ void GripperActionController<HardwareInterface>::accepted_callback(
   // Setup goal status checking timer
   goal_handle_timer_ = get_node()->create_wall_timer(
     action_monitor_period_.to_chrono<std::chrono::nanoseconds>(),
-    std::bind(&RealtimeGoalHandle::runNonRealtime, rt_active_goal_));
+    std::bind(&RealtimeGoalHandle::runNonRealtime, rt_goal));
 }
 
 template <const char * HardwareInterface>
@@ -122,7 +121,8 @@ rclcpp_action::CancelResponse GripperActionController<HardwareInterface>::cancel
   RCLCPP_INFO(get_node()->get_logger(), "Got request to cancel goal");
 
   // Check that cancel request refers to currently active goal (if any)
-  if (rt_active_goal_ && rt_active_goal_->gh_ == goal_handle)
+  const auto active_goal = *rt_active_goal_.readFromNonRT();
+  if (active_goal && active_goal->gh_ == goal_handle)
   {
     // Enter hold current position mode
     set_hold_position();
@@ -132,9 +132,9 @@ rclcpp_action::CancelResponse GripperActionController<HardwareInterface>::cancel
 
     // Mark the current goal as canceled
     auto action_res = std::make_shared<GripperCommandAction::Result>();
-    rt_active_goal_->setCanceled(action_res);
+    active_goal->setCanceled(action_res);
     // Reset current goal
-    rt_active_goal_.reset();
+    rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
   }
   return rclcpp_action::CancelResponse::ACCEPT;
 }
@@ -152,7 +152,8 @@ void GripperActionController<HardwareInterface>::check_for_success(
   const rclcpp::Time & time, double error_position, double current_position,
   double current_velocity)
 {
-  if (!rt_active_goal_)
+  const auto active_goal = *rt_active_goal_.readFromNonRT();
+  if (!active_goal)
   {
     return;
   }
@@ -164,8 +165,8 @@ void GripperActionController<HardwareInterface>::check_for_success(
     pre_alloc_result_->reached_goal = true;
     pre_alloc_result_->stalled = false;
     RCLCPP_DEBUG(get_node()->get_logger(), "Successfully moved to goal.");
-    rt_active_goal_->setSucceeded(pre_alloc_result_);
-    rt_active_goal_.reset();
+    active_goal->setSucceeded(pre_alloc_result_);
+    rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
   }
   else
   {
@@ -183,14 +184,14 @@ void GripperActionController<HardwareInterface>::check_for_success(
       if (params_.allow_stalling)
       {
         RCLCPP_DEBUG(get_node()->get_logger(), "Stall detected moving to goal. Returning success.");
-        rt_active_goal_->setSucceeded(pre_alloc_result_);
+        active_goal->setSucceeded(pre_alloc_result_);
       }
       else
       {
         RCLCPP_DEBUG(get_node()->get_logger(), "Stall detected moving to goal. Aborting action!");
-        rt_active_goal_->setAborted(pre_alloc_result_);
+        active_goal->setAborted(pre_alloc_result_);
       }
-      rt_active_goal_.reset();
+      rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
     }
   }
 }
