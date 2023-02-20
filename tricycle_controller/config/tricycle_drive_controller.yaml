@@ -9,7 +9,6 @@ tricycle_controller:
     # Odometry
     odom_frame_id: odom
     base_frame_id: base_link
-    publish_rate: 50.0 # publish rate of odom and tf
     open_loop: false # if True, uses cmd_vel instead of hardware interface feedback to compute odometry
     enable_odom_tf: true # If True, publishes odom<-base_link TF
     odom_only_twist: false # If True, publishes on /odom only linear.x and angular.z; Useful for computing odometry in another node, e.g robot_localization's ekf
