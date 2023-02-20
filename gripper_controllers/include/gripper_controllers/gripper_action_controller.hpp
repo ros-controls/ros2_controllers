@@ -135,7 +135,8 @@ protected:
 
   HwIfaceAdapter hw_iface_adapter_;  ///< Adapts desired goal state to HW interface.
 
-  RealtimeGoalHandleBuffer rt_active_goal_;  ///< Container for the currently active action goal, if any.
+  RealtimeGoalHandleBuffer
+    rt_active_goal_;  ///< Container for the currently active action goal, if any.
   control_msgs::action::GripperCommand::Result::SharedPtr pre_alloc_result_;
 
   rclcpp::Duration action_monitor_period_;
