@@ -12,7 +12,7 @@ Execution logic of the controller
 ----------------------------------
 
 The controller uses velocity input, i.e., stamped or unstamped Twist messages where linear ``x`` and angular ``z`` components are used.
-Angular component is under
+Angular component under
 Values in other components are ignored.
 In the chain mode the controller provides two reference interfaces, one for linear velocity and one for steering angle position.
 Other relevant features are:
@@ -35,7 +35,7 @@ Description of controller's interfaces
 
 References (from a preceding controller)
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-- <controller_name>/linear/velocity      [double]  # in [m/s]
+- <controller_name>/linear/velocity      [double], in m/s
 - <controller_name>/angular/position     [double]  # in [rad]
 
 Commands
@@ -85,4 +85,4 @@ Parameters
 
 For list of parameters and their meaning YAML file in the ``src`` folder of the controller's package.
 
-For an exameplary parameterization see the ``test`` folder of the controller's package.
+For an exemplary parameterization see the ``test`` folder of the controller's package.
