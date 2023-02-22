@@ -273,8 +273,6 @@ public:
   void subscribeToState()
   {
     auto traj_lifecycle_node = traj_controller_->get_node();
-    traj_lifecycle_node->set_parameter(
-      rclcpp::Parameter("state_publish_rate", static_cast<double>(100)));
 
     using control_msgs::msg::JointTrajectoryControllerState;
 
@@ -410,7 +408,6 @@ public:
     std::lock_guard<std::mutex> guard(state_mutex_);
     return state_msg_;
   }
-  void test_state_publish_rate_target(int target_msg_count);
 
   std::string controller_name_;
 

@@ -50,14 +50,6 @@ joint_trajectory_controller:
     default_value: false,
     description: "Allow integration in goal trajectories to accept goals without position or velocity specified",
   }
-  state_publish_rate: {
-    type: double,
-    default_value: 50.0,
-    description: "Rate controller state is published",
-    validation: {
-      lower_bounds: [0.1]
-    }
-  }
   action_monitor_rate: {
     type: double,
     default_value: 20.0,

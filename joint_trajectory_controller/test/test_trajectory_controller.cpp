@@ -707,53 +707,6 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_normalized)
   executor.cancel();
 }
 
-void TrajectoryControllerTest::test_state_publish_rate_target(int target_msg_count)
-{
-  rclcpp::Parameter state_publish_rate_param(
-    "state_publish_rate", static_cast<double>(target_msg_count));
-  rclcpp::executors::SingleThreadedExecutor executor;
-  SetUpAndActivateTrajectoryController(executor, true, {state_publish_rate_param});
-
-  auto future_handle = std::async(std::launch::async, [&executor]() -> void { executor.spin(); });
-
-  using control_msgs::msg::JointTrajectoryControllerState;
-
-  const int qos_level = 10;
-  int echo_received_counter = 0;
-  rclcpp::Subscription<JointTrajectoryControllerState>::SharedPtr subs =
-    traj_controller_->get_node()->create_subscription<JointTrajectoryControllerState>(
-      controller_name_ + "/state", qos_level,
-      [&](JointTrajectoryControllerState::UniquePtr) { ++echo_received_counter; });
-
-  // update for 1second
-  auto clock = rclcpp::Clock(RCL_STEADY_TIME);
-  const auto start_time = clock.now();
-  const rclcpp::Duration wait = rclcpp::Duration::from_seconds(1.0);
-  const auto end_time = start_time + wait;
-  while (clock.now() < end_time)
-  {
-    traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
-  }
-
-  // We may miss the last message since time allowed is exactly the time needed
-  EXPECT_NEAR(target_msg_count, echo_received_counter, 1);
-
-  executor.cancel();
-}
-
-/**
- * @brief test_state_publish_rate Test that state publish rate matches configure rate
- */
-TEST_P(TrajectoryControllerTestParameterized, test_state_publish_rate)
-{
-  test_state_publish_rate_target(10);
-}
-
-// TEST_P(TrajectoryControllerTestParameterized, zero_state_publish_rate)
-// {
-//   test_state_publish_rate_target(0);
-// }
-
 // /**
 //  * @brief test_jumbled_joint_order Test sending trajectories with a joint order different from
 //  * internal controller order

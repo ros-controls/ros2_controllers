@@ -192,9 +192,6 @@ protected:
   rclcpp::Publisher<ControllerStateMsg>::SharedPtr publisher_;
   StatePublisherPtr state_publisher_;
 
-  rclcpp::Duration state_publisher_period_ = rclcpp::Duration(20ms);
-  rclcpp::Time last_state_publish_time_;
-
   using FollowJTrajAction = control_msgs::action::FollowJointTrajectory;
   using RealtimeGoalHandle = realtime_tools::RealtimeServerGoalHandle<FollowJTrajAction>;
   using RealtimeGoalHandlePtr = std::shared_ptr<RealtimeGoalHandle>;
@@ -252,8 +249,8 @@ protected:
   using JointTrajectoryPoint = trajectory_msgs::msg::JointTrajectoryPoint;
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   void publish_state(
-    const JointTrajectoryPoint & desired_state, const JointTrajectoryPoint & current_state,
-    const JointTrajectoryPoint & state_error);
+    const rclcpp::Time & time, const JointTrajectoryPoint & desired_state,
+    const JointTrajectoryPoint & current_state, const JointTrajectoryPoint & state_error);
 
   void read_state_from_hardware(JointTrajectoryPoint & state);
 
