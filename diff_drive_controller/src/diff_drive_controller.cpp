@@ -379,23 +379,19 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
     std::make_shared<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>>(
       odometry_publisher_);
 
-  std::string controller_namespace = std::string(get_node()->get_namespace());
-
-  if (controller_namespace == "/")
+  // Append the tf prefix if there is one
+  std::string tf_prefix = "";
+  if (params_.tf_frame_prefix != "")
   {
-    controller_namespace = "";
-  }
-  else
-  {
-    controller_namespace = controller_namespace + "/";
+      tf_prefix = params_.tf_frame_prefix + "_";
   }
 
-  const auto odom_frame_id = controller_namespace + params_.odom_frame_id;
-  const auto base_frame_id = controller_namespace + params_.base_frame_id;
+  const auto odom_frame_id = tf_prefix + params_.odom_frame_id;
+  const auto base_frame_id = tf_prefix + params_.base_frame_id;
 
   auto & odometry_message = realtime_odometry_publisher_->msg_;
-  odometry_message.header.frame_id = controller_namespace + odom_frame_id;
-  odometry_message.child_frame_id = controller_namespace + base_frame_id;
+  odometry_message.header.frame_id = odom_frame_id;
+  odometry_message.child_frame_id = base_frame_id;
 
   // limit the publication on the topics /odom and /tf
   publish_rate_ = get_node()->get_parameter("publish_rate").as_double();

@@ -39,6 +39,11 @@ diff_drive_controller:
     default_value: 1.0,
     description: "Correction factor when radius of right wheels differs from the nominal value in ``wheel_radius`` parameter.",
   }
+  tf_frame_prefix: {
+    type: string,
+    default_value: "",
+    description:  "Prefix to be appended to the tf frames, will be added to odom_id and base_frame_id before publishing",
+  }
   odom_frame_id: {
     type: string,
     default_value: "odom",
