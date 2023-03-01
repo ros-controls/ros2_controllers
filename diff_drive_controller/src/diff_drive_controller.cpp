@@ -381,9 +381,21 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
 
   // Append the tf prefix if there is one
   std::string tf_prefix = "";
-  if (params_.tf_frame_prefix != "")
+  if (params_.tf_frame_prefix_enable)
   {
-      tf_prefix = params_.tf_frame_prefix + "_";
+      if (params_.tf_frame_prefix != "")
+      {
+          tf_prefix = params_.tf_frame_prefix;
+      } else {
+          tf_prefix = std::string(get_node()->get_namespace());
+      }
+
+      if (tf_prefix == "/")
+      {
+          tf_prefix = "";
+      } else {
+          tf_prefix = tf_prefix + "/";
+      }
   }
 
   const auto odom_frame_id = tf_prefix + params_.odom_frame_id;
