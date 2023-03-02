@@ -20,7 +20,6 @@
 #include <stdexcept>
 #include <string>
 
-#include "rcppmath/clamp.hpp"
 #include "tricycle_controller/traction_limiter.hpp"
 
 namespace tricycle_controller
