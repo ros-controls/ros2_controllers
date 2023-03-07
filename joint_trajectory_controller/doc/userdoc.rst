@@ -42,8 +42,9 @@ References
 States
 ^^^^^^^
 The state interfaces are defined with ``joints`` and ``state_interfaces`` parameters as follows: ``<joint>/<state_interface>``.
-Supported state interfaces are ``position``, ``velocity``, ``acceleration`` and ``effort`` as defined in the [hardware_interface/hardware_interface_type_values.hpp](https://github.com/ros-controls/ros2_control/blob/master/hardware_interface/include/hardware_interface/types/hardware_interface_type_values.hpp).
+Supported state interfaces are ``position``, ``velocity``, ``acceleration`` and ``effort`` as defined in the `hardware_interface/hardware_interface_type_values.hpp <https://github.com/ros-controls/ros2_control/blob/master/hardware_interface/include/hardware_interface/types/hardware_interface_type_values.hpp>`_.
 Legal combinations of state interfaces are:
+
 - ``position``
 - ``position`` and ``velocity``
 - ``position``, ``velocity`` and ``acceleration``
