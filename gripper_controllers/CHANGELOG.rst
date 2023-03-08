@@ -2,6 +2,12 @@
 Changelog for package gripper_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.3.0 (2023-03-07)
+------------------
+* Add comments about auto-generated header files (`#539 <https://github.com/ros-controls/ros2_controllers/issues/539>`_)
+* Fix Segfault in GripperActionController (`#527 <https://github.com/ros-controls/ros2_controllers/issues/527>`_)
+* Contributors: AndyZe, Erik Holum
+
 3.2.0 (2023-02-10)
 ------------------
 * Fix overriding of install (`#510 <https://github.com/ros-controls/ros2_controllers/issues/510>`_)
