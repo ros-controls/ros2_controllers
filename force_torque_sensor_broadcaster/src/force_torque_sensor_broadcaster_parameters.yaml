@@ -47,4 +47,3 @@ force_torque_sensor_broadcaster:
     default_value: [],
     description: "Array of additional frames to publish filtered Wrench to"
   }
-

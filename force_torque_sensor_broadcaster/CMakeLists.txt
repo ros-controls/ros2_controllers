@@ -60,7 +60,7 @@ if(BUILD_TESTING)
     test/test_load_force_torque_sensor_broadcaster.cpp
   )
   target_link_libraries(test_load_force_torque_sensor_broadcaster
-    force_torque_sensor_broadcaster
+    force_torque_sensor_broadcaster force_torque_sensor_broadcaster_parameters
   )
   ament_target_dependencies(test_load_force_torque_sensor_broadcaster
     controller_manager
@@ -72,16 +72,28 @@ if(BUILD_TESTING)
     test/test_force_torque_sensor_broadcaster.cpp
   )
   target_link_libraries(test_force_torque_sensor_broadcaster
-    force_torque_sensor_broadcaster
+    force_torque_sensor_broadcaster force_torque_sensor_broadcaster_parameters
   )
+
   ament_target_dependencies(test_force_torque_sensor_broadcaster
     hardware_interface
   )
-  ament_target_dependencies(test_load_force_torque_sensor_broadcaster
+
+  add_rostest_with_parameters_gmock(test_force_torque_sensor_broadcaster_with_filters
+    test/test_force_torque_sensor_broadcaster_with_filters.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_force_torque_sensor_broadcaster_with_filters_parameters.yaml
+  )
+  target_include_directories(test_force_torque_sensor_broadcaster_with_filters PRIVATE include)
+
+  target_link_libraries(test_force_torque_sensor_broadcaster_with_filters
+    force_torque_sensor_broadcaster force_torque_sensor_broadcaster_parameters)
+
+  ament_target_dependencies(test_force_torque_sensor_broadcaster_with_filters
     controller_manager
     hardware_interface
     ros2_control_test_assets
   )
+
 endif()
 
 install(

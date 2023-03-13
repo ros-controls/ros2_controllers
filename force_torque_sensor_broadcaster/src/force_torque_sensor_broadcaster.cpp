@@ -109,7 +109,6 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
       e.what());
     return CallbackReturn::ERROR;
   }
-
   if (!filter_chain_->configure(
         "sensor_filter_chain", get_node()->get_node_logging_interface(),
         get_node()->get_node_parameters_interface()))
@@ -118,19 +117,27 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
       get_node()->get_logger(),
       "Could not configure sensor filter chain, please check if the "
       "parameters are provided correctly.");
+    // user helper
+    auto allparams = get_node()->get_node_parameters_interface()->list_parameters({}, 0);
+    std::cerr << " available params are:\n" << std::endl;
+    for (const auto & name : allparams.names)
+    {
+      std::cerr << name << std::endl;
+    }
     return CallbackReturn::ERROR;
   }
-
   try
   {
     // register ft sensor data publisher
     sensor_raw_state_publisher_ = get_node()->create_publisher<geometry_msgs::msg::WrenchStamped>(
       "~/wrench", rclcpp::SystemDefaultsQoS());
     realtime_raw_publisher_ = std::make_unique<StateRTPublisher>(sensor_raw_state_publisher_);
- 
-    sensor_filtered_state_publisher_ = get_node()->create_publisher<geometry_msgs::msg::WrenchStamped>(
-      "~/wrench_filtered", rclcpp::SystemDefaultsQoS());
-    realtime_filtered_publisher_ = std::make_unique<StateRTPublisher>(sensor_filtered_state_publisher_);
+
+    sensor_filtered_state_publisher_ =
+      get_node()->create_publisher<geometry_msgs::msg::WrenchStamped>(
+        "~/wrench_filtered", rclcpp::SystemDefaultsQoS());
+    realtime_filtered_publisher_ =
+      std::make_unique<StateRTPublisher>(sensor_filtered_state_publisher_);
   }
   catch (const std::exception & e)
   {

@@ -1,0 +1,19 @@
+FTS_NoFilter:
+  ros__parameters:
+    sensor_name: "fts_sensor"
+    frame_id: "fts_sensor_frame"
+    sensor_filter_chain: "none"
+
+FTS_SingleFilter:
+  ros__parameters:
+    sensor_name: "fts_sensor"
+    frame_id: "fts_sensor_frame"
+    sensor_filter_chain:
+      filter1:
+        type: "control_filters/LowPassFilterWrench"
+        name: "low_pass_filter"
+        params:
+          sampling_frequency: 200.0
+          damping_frequency: 50.0
+          damping_intensity: 1.0
+          divider: 1
