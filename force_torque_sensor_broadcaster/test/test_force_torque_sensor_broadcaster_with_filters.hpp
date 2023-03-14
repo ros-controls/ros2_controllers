@@ -26,12 +26,19 @@
 
 #include "force_torque_sensor_broadcaster/force_torque_sensor_broadcaster.hpp"
 
+namespace
+{
+const double COMMON_THRESHOLD = 0.001;
+}
+
 // subclassing and friending so we can access member variables
 class FriendForceTorqueSensorBroadcasterWithFilter
 : public force_torque_sensor_broadcaster::ForceTorqueSensorBroadcaster
 {
   FRIEND_TEST(ForceTorqueSensorBroadcasterWithFilterTest, NoFilter_Configure_Success);
-  FRIEND_TEST(ForceTorqueSensorBroadcasterWithFilterTest, SingleFilter_Configure_Success);
+  FRIEND_TEST(ForceTorqueSensorBroadcasterWithFilterTest, SingleFilterLP_Configure_Update);
+  FRIEND_TEST(ForceTorqueSensorBroadcasterWithFilterTest, SingleFilterGC_Configure_Update);
+  FRIEND_TEST(ForceTorqueSensorBroadcasterWithFilterTest, ChainedFilterLPGC_Configure_Update);
 };
 
 class ForceTorqueSensorBroadcasterWithFilterTest : public ::testing::Test

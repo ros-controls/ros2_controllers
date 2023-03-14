@@ -4,7 +4,7 @@ FTS_NoFilter:
     frame_id: "fts_sensor_frame"
     sensor_filter_chain: "none"
 
-FTS_SingleFilter:
+FTS_SingleFilterLP:
   ros__parameters:
     sensor_name: "fts_sensor"
     frame_id: "fts_sensor_frame"
@@ -17,3 +17,41 @@ FTS_SingleFilter:
           damping_frequency: 50.0
           damping_intensity: 1.0
           divider: 1
+
+FTS_SingleFilterGC:
+  ros__parameters:
+    sensor_name: "fts_sensor"
+    frame_id: "fts_sensor_frame"
+    sensor_filter_chain:
+      filter1:
+        type: "control_filters/GravityCompensationWrench"
+        name: "gravity_compensation"
+        params:
+          world_frame: "world"
+          sensor_frame: "world"
+          CoG:
+            pos: [0.0, 0.1, 0.0]
+            force: [0.0, 0.0, -49.05]  # -gravity_acc * mass
+
+FTS_ChainedFilterLPGC:
+  ros__parameters:
+    sensor_name: "fts_sensor"
+    frame_id: "fts_sensor_frame"
+    sensor_filter_chain:
+      filter1:
+        type: "control_filters/LowPassFilterWrench"
+        name: "low_pass_filter"
+        params:
+          sampling_frequency: 200.0
+          damping_frequency: 50.0
+          damping_intensity: 1.0
+          divider: 1
+      filter2:
+        type: "control_filters/GravityCompensationWrench"
+        name: "gravity_compensation"
+        params:
+          world_frame: "world"
+          sensor_frame: "world"
+          CoG:
+            pos: [0.0, 0.1, 0.0]
+            force: [0.0, 0.0, -49.05]  # -gravity_acc * mass

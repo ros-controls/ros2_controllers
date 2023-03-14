@@ -89,9 +89,9 @@ TEST_F(ForceTorqueSensorBroadcasterWithFilterTest, NoFilter_Configure_Success)
   ASSERT_EQ(wrench_out.wrench.torque.z, wrench_in.wrench.torque.z);
 }
 
-TEST_F(ForceTorqueSensorBroadcasterWithFilterTest, SingleFilter_Configure_Success)
+TEST_F(ForceTorqueSensorBroadcasterWithFilterTest, SingleFilterLP_Configure_Update)
 {
-  SetUpFTSBroadcaster("FTS_SingleFilter");
+  SetUpFTSBroadcaster("FTS_SingleFilterLP");
 
   // debug helper, in case filters is not found
   pluginlib::ClassLoader<filters::FilterBase<geometry_msgs::msg::WrenchStamped>> filter_loader(
@@ -131,6 +131,117 @@ TEST_F(ForceTorqueSensorBroadcasterWithFilterTest, SingleFilter_Configure_Succes
   ASSERT_EQ(wrench_out.wrench.torque.x, wrench_in.wrench.torque.x);
   ASSERT_EQ(wrench_out.wrench.torque.y, wrench_in.wrench.torque.y);
   ASSERT_EQ(wrench_out.wrench.torque.z, wrench_in.wrench.torque.z);
+}
+
+TEST_F(ForceTorqueSensorBroadcasterWithFilterTest, SingleFilterGC_Configure_Update)
+{
+  SetUpFTSBroadcaster("FTS_SingleFilterGC");
+
+  // debug helper, in case filters is not found
+  pluginlib::ClassLoader<filters::FilterBase<geometry_msgs::msg::WrenchStamped>> filter_loader(
+    "filters", "filters::FilterBase<geometry_msgs::msg::WrenchStamped>");
+  std::shared_ptr<filters::FilterBase<geometry_msgs::msg::WrenchStamped>> filter;
+  std::stringstream sstr;
+  sstr << "available filters:" << std::endl;
+  for (const auto & available_class : filter_loader.getDeclaredClasses())
+  {
+    sstr << "  " << available_class << std::endl;
+  }
+
+  // configure passed with one filter
+  ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS) << sstr.str();
+  geometry_msgs::msg::WrenchStamped wrench_in, wrench_out;
+  wrench_in.header.frame_id = "world";
+  wrench_in.wrench.force.x = 1.0;
+
+  // update passed
+  EXPECT_TRUE(fts_broadcaster_->filter_chain_->update(wrench_in, wrench_out));
+
+  // test if the correct gravity compensation filter was loaded (should match values in yaml file)
+  double gravity_acc = 9.81;
+  double mass = 5.0;
+  double cog_y = 0.1;
+  // with no tf different with world, sensor frame is world frame, calculation is simplified
+  double grav_force_z = gravity_acc * mass;
+  double grav_torque_x = cog_y * grav_force_z;
+  // expect change
+  geometry_msgs::msg::WrenchStamped in, out;
+  in.header.frame_id = "world";
+  in.wrench.force.x = 1.0;
+  in.wrench.torque.x = 10.0;
+
+  ASSERT_EQ(wrench_out.wrench.force.x, wrench_in.wrench.force.x);
+  ASSERT_EQ(wrench_out.wrench.force.y, wrench_in.wrench.force.y);
+  EXPECT_NEAR(wrench_out.wrench.force.z, wrench_in.wrench.force.z + grav_force_z, COMMON_THRESHOLD);
+  EXPECT_NEAR(
+    wrench_out.wrench.torque.x, wrench_in.wrench.torque.x + grav_torque_x, COMMON_THRESHOLD);
+  ASSERT_EQ(wrench_out.wrench.torque.y, wrench_in.wrench.torque.y);
+  ASSERT_EQ(wrench_out.wrench.torque.z, wrench_in.wrench.torque.z);
+}
+
+TEST_F(ForceTorqueSensorBroadcasterWithFilterTest, ChainedFilterLPGC_Configure_Update)
+{
+  SetUpFTSBroadcaster("FTS_ChainedFilterLPGC");
+
+  // debug helper, in case filters is not found
+  pluginlib::ClassLoader<filters::FilterBase<geometry_msgs::msg::WrenchStamped>> filter_loader(
+    "filters", "filters::FilterBase<geometry_msgs::msg::WrenchStamped>");
+  std::shared_ptr<filters::FilterBase<geometry_msgs::msg::WrenchStamped>> filter;
+  std::stringstream sstr;
+  sstr << "available filters:" << std::endl;
+  for (const auto & available_class : filter_loader.getDeclaredClasses())
+  {
+    sstr << "  " << available_class << std::endl;
+  }
+
+  // configure passed with two filters
+  ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS) << sstr.str();
+  geometry_msgs::msg::WrenchStamped wrench_in, wrench_out;
+  wrench_in.header.frame_id = "world";
+  wrench_in.wrench.force.x = 1.0;
+
+  // update passed
+  EXPECT_TRUE(fts_broadcaster_->filter_chain_->update(wrench_in, wrench_out));
+
+  // test if the correct chained filter was loaded (should match values in yaml file)
+  double sampling_freq = 200.0;
+  double damping_freq = 50.0;
+  double damping_intensity = 1.0;
+  double a1, b1;
+  a1 = exp(
+    -1.0 / sampling_freq * (2.0 * M_PI * damping_freq) / (pow(10.0, damping_intensity / -10.0)));
+  b1 = 1.0 - a1;
+
+  double gravity_acc = 9.81;
+  double mass = 5.0;
+  double cog_y = 0.1;
+  // with no tf different with world, sensor frame is world frame, calculation is simplified
+  double grav_force_z = gravity_acc * mass;
+  double grav_torque_x = cog_y * grav_force_z;
+
+  geometry_msgs::msg::WrenchStamped in, out;
+  in.header.frame_id = "world";
+  in.wrench.force.x = 1.0;
+  in.wrench.torque.x = 10.0;
+  // expect change
+  ASSERT_EQ(wrench_out.wrench.force.x, 0.0);
+  ASSERT_EQ(wrench_out.wrench.force.y, 0.0);
+  EXPECT_NEAR(wrench_out.wrench.force.z, 0.0 + grav_force_z, COMMON_THRESHOLD);
+  EXPECT_NEAR(wrench_out.wrench.torque.x, 0.0 + grav_torque_x, COMMON_THRESHOLD);
+  ASSERT_EQ(wrench_out.wrench.torque.y, 0.0);
+  ASSERT_EQ(wrench_out.wrench.torque.z, 0.0);
+
+  // udpdate twice because currently the IIR has a zero output at first iteration
+  EXPECT_TRUE(fts_broadcaster_->filter_chain_->update(wrench_in, wrench_out));
+
+  ASSERT_EQ(wrench_out.wrench.force.x, b1 * wrench_in.wrench.force.x);
+  ASSERT_EQ(wrench_out.wrench.force.y, b1 * wrench_in.wrench.force.y);
+  EXPECT_NEAR(
+    wrench_out.wrench.force.z, b1 * wrench_in.wrench.force.z + grav_force_z, COMMON_THRESHOLD);
+  EXPECT_NEAR(
+    wrench_out.wrench.torque.x, b1 * wrench_in.wrench.torque.x + grav_torque_x, COMMON_THRESHOLD);
+  ASSERT_EQ(wrench_out.wrench.torque.y, b1 * wrench_in.wrench.torque.y);
+  ASSERT_EQ(wrench_out.wrench.torque.z, b1 * wrench_in.wrench.torque.z);
 }
 
 int main(int argc, char ** argv)
