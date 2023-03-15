@@ -167,7 +167,7 @@ protected:
     auto options = rclcpp::NodeOptions()
                      .allow_undeclared_parameters(false)
                      .parameter_overrides(parameter_overrides)
-                     .automatically_declare_parameters_from_overrides(true);
+                     .automatically_declare_parameters_from_overrides(false);
     return SetUpControllerCommon(controller_name, options);
   }
 
@@ -176,7 +176,7 @@ protected:
   {
     auto options = rclcpp::NodeOptions()
                      .allow_undeclared_parameters(false)
-                     .automatically_declare_parameters_from_overrides(true);
+                     .automatically_declare_parameters_from_overrides(false);
     return SetUpControllerCommon(controller_name, options);
   }
 
