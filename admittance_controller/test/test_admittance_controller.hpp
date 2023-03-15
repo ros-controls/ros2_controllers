@@ -53,6 +53,8 @@ const double COMMON_THRESHOLD = 0.001;
 
 constexpr auto NODE_SUCCESS =
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+constexpr auto NODE_FAILURE =
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
 constexpr auto NODE_ERROR =
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
 
@@ -248,9 +250,10 @@ protected:
     transform_stamped.transform.rotation.w = 1;
 
     transform_stamped.child_frame_id = ik_base_frame_;
+    // world to kinematic base frame
     br.sendTransform(transform_stamped);
-
     transform_stamped.child_frame_id = ik_tip_frame_;
+    // world to kinematic tip frame
     br.sendTransform(transform_stamped);
 
     transform_stamped.header.frame_id = ik_tip_frame_;
@@ -263,14 +266,17 @@ protected:
     transform_stamped.transform.rotation.w = 1;
 
     transform_stamped.child_frame_id = control_frame_;
+    // kinematic tip to control frame
     br.sendTransform(transform_stamped);
 
     transform_stamped.transform.translation.z = 0.05;
     transform_stamped.child_frame_id = sensor_frame_;
+    // kinematic tip to sensor frame
     br.sendTransform(transform_stamped);
 
     transform_stamped.transform.translation.z = 0.2;
     transform_stamped.child_frame_id = endeffector_frame_;
+    // kinematic tip to end-effector frame
     br.sendTransform(transform_stamped);
   }
 

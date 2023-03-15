@@ -24,8 +24,16 @@
 // Test on_configure returns ERROR when a required parameter is missing
 TEST_P(AdmittanceControllerTestParameterizedMissingParameters, one_parameter_is_missing)
 {
-  ASSERT_EQ(SetUpController(GetParam()), controller_interface::return_type::ERROR);
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
+  auto ret = SetUpController(GetParam());
+  // additionally, test params required during configure only if init worked
+  if (ret == controller_interface::return_type::OK)
+  {
+    ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_FAILURE);
+  }
+  else
+  {
+    ASSERT_EQ(ret, controller_interface::return_type::ERROR);
+  }
 }
 
 INSTANTIATE_TEST_SUITE_P(
@@ -33,9 +41,9 @@ INSTANTIATE_TEST_SUITE_P(
   AdmittanceControllerTestParameterizedMissingParameters,
   ::testing::Values(
     "admittance.mass", "admittance.selected_axes", "admittance.stiffness",
-    "chainable_command_interfaces", "command_interfaces", "control.frame.id",
-    "fixed_world_frame.frame.id", "ft_sensor.frame.id", "ft_sensor.name",
-    "gravity_compensation.CoG.pos", "gravity_compensation.frame.id", "joints", "kinematics.base",
+    "chainable_command_interfaces", "command_interfaces", "control.frame.id", "ft_sensor.frame.id",
+    "ft_sensor.name", "sensor_filter_chain.filter2.params.CoG.pos",
+    "sensor_filter_chain.filter2.params.sensor_frame", "joints", "kinematics.base",
     "kinematics.plugin_name", "kinematics.plugin_package", "kinematics.tip", "state_interfaces"));
 
 INSTANTIATE_TEST_SUITE_P(
@@ -43,7 +51,7 @@ INSTANTIATE_TEST_SUITE_P(
   ::testing::Values(
     // wrong length COG
     std::make_tuple(
-      std::string("gravity_compensation.CoG.pos"),
+      std::string("sensor_filter_chain.filter2.params.CoG.pos"),
       rclcpp::ParameterValue(std::vector<double>() = {1, 2, 3, 4})),
     // wrong length stiffness
     std::make_tuple(

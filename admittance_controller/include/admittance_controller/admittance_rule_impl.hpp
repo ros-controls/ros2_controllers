@@ -22,8 +22,11 @@
 #include <memory>
 #include <vector>
 
+#include "geometry_msgs/msg/transform_stamped.hpp"
 #include "rclcpp/duration.hpp"
 #include "rclcpp/utilities.hpp"
+#include "tf2_eigen/tf2_eigen.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2_ros/transform_listener.h"
 
 namespace admittance_controller
@@ -100,8 +103,7 @@ controller_interface::return_type AdmittanceRule::reset(const size_t num_joints)
   admittance_transforms_ = AdmittanceTransforms();
 
   // reset forces
-  wrench_world_.setZero();
-  end_effector_weight_.setZero();
+  wrench_base_.setZero();
 
   // load/initialize Eigen types from parameters
   apply_parameters_update();
@@ -116,8 +118,6 @@ void AdmittanceRule::apply_parameters_update()
     parameters_ = parameter_handler_->get_params();
   }
   // update param values
-  end_effector_weight_[2] = -parameters_.gravity_compensation.CoG.force;
-  vec_to_eigen(parameters_.gravity_compensation.CoG.pos, cog_pos_);
   vec_to_eigen(parameters_.admittance.mass, admittance_state_.mass);
   vec_to_eigen(parameters_.admittance.stiffness, admittance_state_.stiffness);
   vec_to_eigen(parameters_.admittance.selected_axes, admittance_state_.selected_axes);
@@ -145,12 +145,6 @@ bool AdmittanceRule::get_all_transforms(
   success &= kinematics_->calculate_link_transform(
     current_joint_state.positions, parameters_.kinematics.tip, admittance_transforms_.base_tip_);
   success &= kinematics_->calculate_link_transform(
-    current_joint_state.positions, parameters_.fixed_world_frame.frame.id,
-    admittance_transforms_.world_base_);
-  success &= kinematics_->calculate_link_transform(
-    current_joint_state.positions, parameters_.gravity_compensation.frame.id,
-    admittance_transforms_.base_cog_);
-  success &= kinematics_->calculate_link_transform(
     current_joint_state.positions, parameters_.control.frame.id,
     admittance_transforms_.base_control_);
 
@@ -173,18 +167,25 @@ controller_interface::return_type AdmittanceRule::update(
 
   bool success = get_all_transforms(current_joint_state, reference_joint_state);
 
-  // apply filter and update wrench_world_ vector
-  Eigen::Matrix<double, 3, 3> rot_world_sensor =
-    admittance_transforms_.world_base_.rotation() * admittance_transforms_.base_ft_.rotation();
-  Eigen::Matrix<double, 3, 3> rot_world_cog =
-    admittance_transforms_.world_base_.rotation() * admittance_transforms_.base_cog_.rotation();
-  process_wrench_measurements(measured_wrench, rot_world_sensor, rot_world_cog);
+  // process the wrench measurements
+  if (!process_wrench_measurements(measured_wrench))
+  {
+    desired_joint_state = reference_joint_state;
+    return controller_interface::return_type::ERROR;
+  }
+  // fill the Wrench (there is no fromMsg for wrench)
+  wrench_filtered_ft_(0) = measured_wrench_filtered_.wrench.force.x;
+  wrench_filtered_ft_(1) = measured_wrench_filtered_.wrench.force.y;
+  wrench_filtered_ft_(2) = measured_wrench_filtered_.wrench.force.z;
+  wrench_filtered_ft_(3) = measured_wrench_filtered_.wrench.torque.x;
+  wrench_filtered_ft_(4) = measured_wrench_filtered_.wrench.torque.y;
+  wrench_filtered_ft_(5) = measured_wrench_filtered_.wrench.torque.z;
 
-  // transform wrench_world_ into base frame
+  // Rotate (and not transform) to the base frame, explanation lower
   admittance_state_.wrench_base.block<3, 1>(0, 0) =
-    admittance_transforms_.world_base_.rotation().transpose() * wrench_world_.block<3, 1>(0, 0);
+    admittance_transforms_.base_ft_.rotation() * wrench_filtered_ft_.block<3, 1>(0, 0);
   admittance_state_.wrench_base.block<3, 1>(3, 0) =
-    admittance_transforms_.world_base_.rotation().transpose() * wrench_world_.block<3, 1>(3, 0);
+    admittance_transforms_.base_ft_.rotation() * wrench_filtered_ft_.block<3, 1>(3, 0);
 
   // Compute admittance control law
   vec_to_eigen(current_joint_state.positions, admittance_state_.current_joint_pos);
@@ -225,8 +226,8 @@ bool AdmittanceRule::calculate_admittance_rule(AdmittanceState & admittance_stat
   Eigen::Matrix<double, 3, 3> K_rot = Eigen::Matrix<double, 3, 3>::Zero();
   K_pos.diagonal() = admittance_state.stiffness.block<3, 1>(0, 0);
   K_rot.diagonal() = admittance_state.stiffness.block<3, 1>(3, 0);
-  // Transform to the control frame
-  // A reference is here:  https://users.wpi.edu/~jfu2/rbe502/files/force_control.pdf
+  // Rotate (and not transform) to the control frame, explanation can be found
+  // in the reference here:  https://users.wpi.edu/~jfu2/rbe502/files/force_control.pdf
   // Force Control by Luigi Villani and Joris De Schutter
   // Page 200
   K_pos = rot_base_control * K_pos * rot_base_control.transpose();
@@ -266,9 +267,14 @@ bool AdmittanceRule::calculate_admittance_rule(AdmittanceState & admittance_stat
 
   // zero out any forces in the control frame
   Eigen::Matrix<double, 6, 1> F_control;
+  // rotate to control frame
   F_control.block<3, 1>(0, 0) = rot_base_control.transpose() * F_base.block<3, 1>(0, 0);
   F_control.block<3, 1>(3, 0) = rot_base_control.transpose() * F_base.block<3, 1>(3, 0);
+
+  // select the axis to apply the zeroing to
   F_control = F_control.cwiseProduct(admittance_state.selected_axes);
+
+  // rotate to base frame
   F_base.block<3, 1>(0, 0) = rot_base_control * F_control.block<3, 1>(0, 0);
   F_base.block<3, 1>(3, 0) = rot_base_control * F_control.block<3, 1>(3, 0);
 
@@ -301,32 +307,13 @@ bool AdmittanceRule::calculate_admittance_rule(AdmittanceState & admittance_stat
   return success;
 }
 
-void AdmittanceRule::process_wrench_measurements(
-  const geometry_msgs::msg::Wrench & measured_wrench,
-  const Eigen::Matrix<double, 3, 3> & sensor_world_rot,
-  const Eigen::Matrix<double, 3, 3> & cog_world_rot)
+bool AdmittanceRule::process_wrench_measurements(const geometry_msgs::msg::Wrench & measured_wrench)
 {
-  Eigen::Matrix<double, 3, 2, Eigen::ColMajor> new_wrench;
-  new_wrench(0, 0) = measured_wrench.force.x;
-  new_wrench(1, 0) = measured_wrench.force.y;
-  new_wrench(2, 0) = measured_wrench.force.z;
-  new_wrench(0, 1) = measured_wrench.torque.x;
-  new_wrench(1, 1) = measured_wrench.torque.y;
-  new_wrench(2, 1) = measured_wrench.torque.z;
-
-  // transform to world frame
-  Eigen::Matrix<double, 3, 2> new_wrench_base = sensor_world_rot * new_wrench;
-
-  // apply gravity compensation
-  new_wrench_base(2, 0) -= end_effector_weight_[2];
-  new_wrench_base.block<3, 1>(0, 1) -= (cog_world_rot * cog_pos_).cross(end_effector_weight_);
-
-  // apply smoothing filter
-  for (size_t i = 0; i < 6; ++i)
-  {
-    wrench_world_(i) = filters::exponentialSmoothing(
-      new_wrench_base(i), wrench_world_(i), parameters_.ft_sensor.filter_coefficient);
-  }
+  // pass the measured_wrench in its original frame, output will be in the same frame
+  measured_wrench_.header.frame_id = parameters_.ft_sensor.frame.id;
+  measured_wrench_.wrench = measured_wrench;
+  // apply the filter
+  return filter_chain_->update(measured_wrench_, measured_wrench_filtered_);
 }
 
 const control_msgs::msg::AdmittanceControllerState & AdmittanceRule::get_controller_state()

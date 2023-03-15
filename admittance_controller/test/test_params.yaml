@@ -51,29 +51,31 @@ test_admittance_controller:
       frame:
         id: link_6  # tool0 Wrench measurements are in this frame
         external: false # force torque frame exists within URDF kinematic chain
-      filter_coefficient: 0.005
 
+    sensor_filter_chain:
+      filter1:
+        type: "control_filters/LowPassFilterWrench"
+        name: "low_pass_filter"
+        params:
+          # coefficients make up for same value of alpha = 0.005of the exponentialSmooth filter
+          sampling_frequency: 100.0
+          damping_frequency: 134.0
+          damping_intensity: 1.0
+          divider: 1
+      filter2:
+        type: "control_filters/GravityCompensationWrench"
+        name: "gravity_compensation"
+        params:
+          world_frame: "base_link"  
+          sensor_frame: "tool0"  # tool0 Wrench measurements are in this frame
+          force_frame: "base_link"  # gravity is expressed in this frame
+          CoG:
+            pos: [0.1, 0.0, 0.0]
+            force: [0.0, 0.0, -23.0]  # -gravity_acc * mass
     control:
       frame:
         id: tool0 # Admittance calcs (displacement etc) are done in this frame. Usually the tool or end-effector
         external: false # control frame exists within URDF kinematic chain
-
-    fixed_world_frame:   # Gravity points down (neg. Z) in this frame (Usually: world or base_link)
-      frame:
-        id: base_link # Admittance calcs (displacement etc) are done in this frame. Usually the tool or end-effector
-        external: false # control frame exists within URDF kinematic chain
-
-    gravity_compensation:
-      frame:
-        id: tool0
-        external: false
-
-      CoG: # specifies the center of gravity of the end effector
-        pos:
-          - 0.1 # x
-          - 0.0 # y
-          - 0.0 # z
-        force: 23.0 # mass * 9.81
 
     admittance:
       selected_axes:
