@@ -24,8 +24,16 @@
 // Test on_configure returns ERROR when a required parameter is missing
 TEST_P(AdmittanceControllerTestParameterizedMissingParameters, one_parameter_is_missing)
 {
-  ASSERT_EQ(SetUpController(GetParam()), controller_interface::return_type::ERROR);
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
+  auto ret = SetUpController(GetParam());
+  // additionally, test params required during configure only if init worked
+  if (ret == controller_interface::return_type::OK)
+  {
+    ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_FAILURE);
+  }
+  else
+  {
+    ASSERT_EQ(ret, controller_interface::return_type::ERROR);
+  }
 }
 
 INSTANTIATE_TEST_SUITE_P(
