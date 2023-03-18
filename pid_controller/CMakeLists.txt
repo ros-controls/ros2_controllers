@@ -43,7 +43,10 @@ add_library(
   SHARED
   src/pid_controller.cpp
 )
-target_include_directories(pid_controller PRIVATE include)
+target_include_directories(pid_controller  PUBLIC
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include/pid_controller>
+)
 target_link_libraries(pid_controller pid_controller_parameters)
 ament_target_dependencies(pid_controller ${THIS_PACKAGE_INCLUDE_DEPENDS})
 target_compile_definitions(pid_controller PRIVATE "PID_CONTROLLER_BUILDING_DLL")
@@ -52,8 +55,8 @@ pluginlib_export_plugin_description_file(
   controller_interface pid_controller.xml)
 
 install(
-  TARGETS
-  pid_controller
+  TARGETS pid_controller pid_controller_parameters
+  EXPORT export_pid_controller
   RUNTIME DESTINATION bin
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -61,7 +64,7 @@ install(
 
 install(
   DIRECTORY include/
-  DESTINATION include
+  DESTINATION include/pid_controller
 )
 
 if(BUILD_TESTING)
@@ -112,14 +115,6 @@ if(BUILD_TESTING)
   #)
 endif()
 
-ament_export_include_directories(
-  include
-)
-ament_export_dependencies(
-  ${THIS_PACKAGE_INCLUDE_DEPENDS}
-)
-ament_export_libraries(
-  pid_controller
-)
-
+ament_export_targets(export_pid_controller HAS_LIBRARY_TARGET)
+ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
 ament_package()
