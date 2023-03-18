@@ -114,6 +114,7 @@ TEST_F(AdmittanceControllerTest, all_parameters_set_configure_success)
   ASSERT_EQ(controller_->admittance_->parameters_.ft_sensor.name, ft_sensor_name_);
   ASSERT_EQ(controller_->admittance_->parameters_.kinematics.base, ik_base_frame_);
   ASSERT_EQ(controller_->admittance_->parameters_.ft_sensor.frame.id, sensor_frame_);
+  ASSERT_EQ(controller_->admittance_->parameters_.ft_sensor.meas_frame.id, sensor_meas_frame_);
 
   ASSERT_TRUE(!controller_->admittance_->parameters_.admittance.selected_axes.empty());
   ASSERT_TRUE(
@@ -232,14 +233,14 @@ TEST_F(AdmittanceControllerTest, publish_status_success)
   ControllerStateMsg msg;
   subscribe_and_get_messages(msg);
 
-  //   // Check that wrench command are all zero since not used
-  //   ASSERT_EQ(msg.wrench_base.header.frame_id, ik_base_frame_);
-  //   ASSERT_EQ(msg.wrench_base.wrench.force.x, 0.0);
-  //   ASSERT_EQ(msg.wrench_base.wrench.force.y, 0.0);
-  //   ASSERT_TRUE(msg.wrench_base.wrench.force.z > 0.15);
-  //   ASSERT_TRUE(msg.wrench_base.wrench.torque.x != 0.0);
-  //   ASSERT_TRUE(msg.wrench_base.wrench.torque.y != 0.0);
-  //   ASSERT_EQ(msg.wrench_base.wrench.torque.z, 0.0);
+  //   // Check that wrench command match the compensation for -m*g =-23 and CoG 0.1 x
+  ASSERT_EQ(msg.wrench_base.header.frame_id, ik_base_frame_);
+  EXPECT_NEAR(msg.wrench_base.wrench.force.x, -20.713, COMMON_THRESHOLD);
+  EXPECT_NEAR(msg.wrench_base.wrench.force.y, 3.3487, COMMON_THRESHOLD);
+  EXPECT_NEAR(msg.wrench_base.wrench.force.z, -9.42043, COMMON_THRESHOLD);
+  EXPECT_NEAR(msg.wrench_base.wrench.torque.x, 0.7209, COMMON_THRESHOLD);
+  EXPECT_NEAR(msg.wrench_base.wrench.torque.y, -1.001, COMMON_THRESHOLD);
+  EXPECT_NEAR(msg.wrench_base.wrench.torque.z, -1.94115, COMMON_THRESHOLD);
 
   //   // Check joint command message
   //   for (auto i = 0ul; i < joint_names_.size(); i++)
@@ -283,7 +284,10 @@ TEST_F(AdmittanceControllerTest, receive_message_and_publish_updated_status)
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  EXPECT_NEAR(joint_command_values_[0], joint_state_values_[0], COMMON_THRESHOLD);
+  for (auto i = 0ul; i < joint_state_values_.size(); i++)
+  {
+    EXPECT_NEAR(joint_state_values_[i], joint_command_values_[i], COMMON_THRESHOLD);
+  }
 
   subscribe_and_get_messages(msg);
 }

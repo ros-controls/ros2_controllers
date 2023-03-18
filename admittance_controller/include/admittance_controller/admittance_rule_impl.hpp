@@ -167,7 +167,7 @@ controller_interface::return_type AdmittanceRule::update(
 
   bool success = get_all_transforms(current_joint_state, reference_joint_state);
 
-  // process the wrench measurements
+  // process the wrench measurements, expect the result in ft_sensor.frame (=FK-accessible frame)
   if (!process_wrench_measurements(measured_wrench))
   {
     desired_joint_state = reference_joint_state;
@@ -309,11 +309,26 @@ bool AdmittanceRule::calculate_admittance_rule(AdmittanceState & admittance_stat
 
 bool AdmittanceRule::process_wrench_measurements(const geometry_msgs::msg::Wrench & measured_wrench)
 {
-  // pass the measured_wrench in its original frame, output will be in the same frame
-  measured_wrench_.header.frame_id = parameters_.ft_sensor.frame.id;
+  // pass the measured_wrench in its ft_sensor meas_frame
+  measured_wrench_.header.frame_id = parameters_.ft_sensor.meas_frame.id;
   measured_wrench_.wrench = measured_wrench;
+  // output should be ft_sensor frame (because kinematics is only up to there)
+  measured_wrench_filtered_.header.frame_id = parameters_.ft_sensor.frame.id;
   // apply the filter
-  return filter_chain_->update(measured_wrench_, measured_wrench_filtered_);
+  auto ret = filter_chain_->update(measured_wrench_, measured_wrench_filtered_);
+  // check the output wrench was correctly transformed into the desired frame
+  if (measured_wrench_filtered_.header.frame_id != parameters_.ft_sensor.frame.id)
+  {
+    RCLCPP_ERROR_ONCE(
+      rclcpp::get_logger("AdmittanceRule"),
+      "Wrench frame transformation missing.\n"
+      "If ft_sensor.frame != ft_sensor.meas_frame, kinematics has no idea about "
+      "ft_sensor.meas_frame.\n"
+      "Fix the frames or provide a filter that transforms the wrench from ft_sensor.meas_frame"
+      " to ft_sensor.frame");
+    return false;
+  }
+  return ret;
 }
 
 const control_msgs::msg::AdmittanceControllerState & AdmittanceRule::get_controller_state()

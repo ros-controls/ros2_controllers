@@ -269,9 +269,11 @@ protected:
     // kinematic tip to control frame
     br.sendTransform(transform_stamped);
 
+    // no sensor_frame transform, as it must be one kinematic link it is attached to
+
     transform_stamped.transform.translation.z = 0.05;
-    transform_stamped.child_frame_id = sensor_frame_;
-    // kinematic tip to sensor frame
+    transform_stamped.child_frame_id = sensor_meas_frame_;
+    // kinematic tip to sensor measurement frame
     br.sendTransform(transform_stamped);
 
     transform_stamped.transform.translation.z = 0.2;
@@ -380,7 +382,7 @@ protected:
   bool hardware_state_has_offset_ = false;
 
   const std::string ik_base_frame_ = "base_link";
-  const std::string ik_tip_frame_ = "tool0";
+  const std::string ik_tip_frame_ = "link_6";
   const std::string ik_group_name_ = "arm";
   //  const std::string robot_description_ = ros2_control_test_assets::valid_6d_robot_urdf;
   //  const std::string robot_description_semantic_ = ros2_control_test_assets::valid_6d_robot_srdf;
@@ -389,6 +391,7 @@ protected:
   const std::string endeffector_frame_ = "endeffector_frame";
   const std::string fixed_world_frame_ = "fixed_world_frame";
   const std::string sensor_frame_ = "link_6";
+  const std::string sensor_meas_frame_ = "ft_mount";
 
   std::array<bool, 6> admittance_selected_axes_ = {true, true, true, true, true, true};
   std::array<double, 6> admittance_mass_ = {5.5, 6.6, 7.7, 8.8, 9.9, 10.10};

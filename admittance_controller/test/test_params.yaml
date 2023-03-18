@@ -49,8 +49,11 @@ test_admittance_controller:
     ft_sensor:
       name: ft_sensor_name
       frame:
-        id: link_6  # tool0 Wrench measurements are in this frame
+        id: link_6  # Where the sensor is located in the kinematics (usually tool frame)
         external: false # force torque frame exists within URDF kinematic chain
+      meas_frame:
+        id: ft_mount  # Wrench measurements are in this frame
+        external: true  # not part of robot URDF, (depends on sensor thickness for instance)
 
     sensor_filter_chain:
       filter1:
@@ -66,12 +69,12 @@ test_admittance_controller:
         type: "control_filters/GravityCompensationWrench"
         name: "gravity_compensation"
         params:
-          world_frame: "base_link"  
-          sensor_frame: "tool0"  # tool0 Wrench measurements are in this frame
-          force_frame: "base_link"  # gravity is expressed in this frame
+          world_frame: "fixed_world_frame"
+          sensor_frame: "ft_mount"  # CoG is defined in this frame in this frame
           CoG:
             pos: [0.1, 0.0, 0.0]
             force: [0.0, 0.0, -23.0]  # -gravity_acc * mass
+
     control:
       frame:
         id: tool0 # Admittance calcs (displacement etc) are done in this frame. Usually the tool or end-effector

@@ -64,6 +64,11 @@ admittance_controller:
         type: string,
         description: "Specifies the frame/link name of the force torque sensor."
       }
+    meas_frame:
+      id: {
+        type: string,
+        description: "Specifies the measurement frame of the force torque sensor (depends on sensor thickness)."
+      }
 
   control:
     frame:
