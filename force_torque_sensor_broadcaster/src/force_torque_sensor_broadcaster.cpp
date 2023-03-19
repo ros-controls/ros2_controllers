@@ -117,13 +117,6 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
       get_node()->get_logger(),
       "Could not configure sensor filter chain, please check if the "
       "parameters are provided correctly.");
-    // user helper
-    auto allparams = get_node()->get_node_parameters_interface()->list_parameters({}, 0);
-    std::cerr << " available params are:\n" << std::endl;
-    for (const auto & name : allparams.names)
-    {
-      std::cerr << name << std::endl;
-    }
     return CallbackReturn::ERROR;
   }
   try
