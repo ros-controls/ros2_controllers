@@ -98,6 +98,37 @@ void ForceTorqueSensorBroadcasterTest::subscribe_and_get_message(
   ASSERT_TRUE(subscription->take(wrench_msg, msg_info));
 }
 
+void ForceTorqueSensorBroadcasterTest::subscribe_additional_frames_and_get_message(
+  const std::string & frame, geometry_msgs::msg::WrenchStamped & wrench_msg)
+{
+  // create a new subscriber
+  rclcpp::Node test_subscription_node("test_subscription_node");
+  auto subs_callback = [&](const geometry_msgs::msg::WrenchStamped::SharedPtr) {};
+  auto subscription = test_subscription_node.create_subscription<geometry_msgs::msg::WrenchStamped>(
+    "/test_force_torque_sensor_broadcaster/wrench_filtered_" + frame, 10, subs_callback);
+
+  // call update to publish the test value
+  // since update doesn't guarantee a published message, republish until received
+  int max_sub_check_loop_count = 5;  // max number of tries for pub/sub loop
+  rclcpp::WaitSet wait_set;          // block used to wait on message
+  wait_set.add_subscription(subscription);
+  while (max_sub_check_loop_count--)
+  {
+    fts_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+    // check if message has been received
+    if (wait_set.wait(std::chrono::milliseconds(2)).kind() == rclcpp::WaitResultKind::Ready)
+    {
+      break;
+    }
+  }
+  ASSERT_GE(max_sub_check_loop_count, 0) << "Test was unable to publish a message through "
+                                            "controller/broadcaster update loop";
+
+  // take message from subscription
+  rclcpp::MessageInfo msg_info;
+  ASSERT_TRUE(subscription->take(wrench_msg, msg_info));
+}
+
 TEST_F(ForceTorqueSensorBroadcasterTest, SensorName_InterfaceNames_NotSet)
 {
   SetUpFTSBroadcaster();
@@ -256,6 +287,32 @@ TEST_F(ForceTorqueSensorBroadcasterTest, SensorName_Publish_Success)
   subscribe_and_get_message(wrench_msg);
 
   ASSERT_EQ(wrench_msg.header.frame_id, frame_id_);
+  ASSERT_EQ(wrench_msg.wrench.force.x, sensor_values_[0]);
+  ASSERT_EQ(wrench_msg.wrench.force.y, sensor_values_[1]);
+  ASSERT_EQ(wrench_msg.wrench.force.z, sensor_values_[2]);
+  ASSERT_EQ(wrench_msg.wrench.torque.x, sensor_values_[3]);
+  ASSERT_EQ(wrench_msg.wrench.torque.y, sensor_values_[4]);
+  ASSERT_EQ(wrench_msg.wrench.torque.z, sensor_values_[5]);
+}
+
+TEST_F(ForceTorqueSensorBroadcasterTest, AdditionalFrame_Publish_Success)
+{
+  SetUpFTSBroadcaster();
+
+  // set the params 'sensor_name', 'frame_id', additional_frames_to_publish
+  fts_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
+  fts_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
+  std::string additional_frame = "fts_sensor_frame";  //permits to get a valid lookupTransform
+  fts_broadcaster_->get_node()->set_parameter(
+    {"additional_frames_to_publish", std::vector<std::string>({additional_frame})});
+
+  ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(fts_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  geometry_msgs::msg::WrenchStamped wrench_msg;
+  subscribe_additional_frames_and_get_message(additional_frame, wrench_msg);
+
+  ASSERT_EQ(wrench_msg.header.frame_id, additional_frame);
   ASSERT_EQ(wrench_msg.wrench.force.x, sensor_values_[0]);
   ASSERT_EQ(wrench_msg.wrench.force.y, sensor_values_[1]);
   ASSERT_EQ(wrench_msg.wrench.force.z, sensor_values_[2]);

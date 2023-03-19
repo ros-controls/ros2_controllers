@@ -67,6 +67,8 @@ protected:
   std::unique_ptr<FriendForceTorqueSensorBroadcaster> fts_broadcaster_;
 
   void subscribe_and_get_message(geometry_msgs::msg::WrenchStamped & wrench_msg);
+  void subscribe_additional_frames_and_get_message(
+    const std::string & frame, geometry_msgs::msg::WrenchStamped & wrench_msg);
 };
 
 #endif  // TEST_FORCE_TORQUE_SENSOR_BROADCASTER_HPP_
