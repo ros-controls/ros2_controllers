@@ -140,8 +140,8 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  wrench_raw_.header.frame_id = frame_id_;
-  wrench_filtered_.header.frame_id = frame_id_;
+  wrench_raw_.header.frame_id = params_.frame_id;
+  wrench_filtered_.header.frame_id = params_.frame_id;
 
   realtime_raw_publisher_->lock();
   realtime_raw_publisher_->msg_.header.frame_id = params_.frame_id;
@@ -214,14 +214,23 @@ controller_interface::return_type ForceTorqueSensorBroadcaster::update(
   wrench_raw_.header.stamp = time;
   force_torque_sensor_->get_values_as_message(wrench_raw_.wrench);
 
-  // Filter sensor data
-  filter_chain_->update(wrench_raw_, wrench_filtered_);
-
   if (realtime_raw_publisher_ && realtime_raw_publisher_->trylock())
   {
     realtime_raw_publisher_->msg_.header.stamp = time;
     realtime_raw_publisher_->msg_.wrench = wrench_raw_.wrench;
     realtime_raw_publisher_->unlockAndPublish();
+  }
+
+  // Filter sensor data
+  auto filtered = filter_chain_->update(wrench_raw_, wrench_filtered_);
+  if (!filtered)
+  {
+    wrench_filtered_.wrench.force.x = std::numeric_limits<double>::quiet_NaN();
+    wrench_filtered_.wrench.force.y = std::numeric_limits<double>::quiet_NaN();
+    wrench_filtered_.wrench.force.z = std::numeric_limits<double>::quiet_NaN();
+    wrench_filtered_.wrench.torque.x = std::numeric_limits<double>::quiet_NaN();
+    wrench_filtered_.wrench.torque.y = std::numeric_limits<double>::quiet_NaN();
+    wrench_filtered_.wrench.torque.z = std::numeric_limits<double>::quiet_NaN();
   }
 
   if (realtime_filtered_publisher_ && realtime_filtered_publisher_->trylock())
@@ -235,22 +244,23 @@ controller_interface::return_type ForceTorqueSensorBroadcaster::update(
   {
     try
     {
-      auto transform =
-        tf_buffer_->lookupTransform(publisher->msg_.header.frame_id, frame_id_, tf2::TimePointZero);
-      tf2::doTransform(wrench_filtered_, publisher->msg_, transform);
-
-      if (publisher && publisher->trylock())
+      if (filtered)
       {
-        publisher->msg_.header.stamp = time;
-        publisher->unlockAndPublish();
+        auto transform = tf_buffer_->lookupTransform(
+          publisher->msg_.header.frame_id, params_.frame_id, tf2::TimePointZero);
+        tf2::doTransform(wrench_filtered_, publisher->msg_, transform);
+      }
+      else
+      {
+        throw tf2::TransformException("cannot transform, filtered message is invalid");
       }
     }
     catch (const tf2::TransformException & e)
     {
       RCLCPP_ERROR_SKIPFIRST_THROTTLE(
         get_node()->get_logger(), *(get_node()->get_clock()), 5000,
-        "LookupTransform failed from '%s' to '%s'.", frame_id_.c_str(),
-        publisher->msg_.header.frame_id.c_str());
+        "LookupTransform failed from '%s' to '%s'. %s", params_.frame_id.c_str(),
+        publisher->msg_.header.frame_id.c_str(), e.what());
       publisher->msg_.wrench.force.x = std::numeric_limits<double>::quiet_NaN();
       publisher->msg_.wrench.force.y = std::numeric_limits<double>::quiet_NaN();
       publisher->msg_.wrench.force.z = std::numeric_limits<double>::quiet_NaN();
@@ -258,8 +268,12 @@ controller_interface::return_type ForceTorqueSensorBroadcaster::update(
       publisher->msg_.wrench.torque.y = std::numeric_limits<double>::quiet_NaN();
       publisher->msg_.wrench.torque.z = std::numeric_limits<double>::quiet_NaN();
     }
+    if (publisher && publisher->trylock())
+    {
+      publisher->msg_.header.stamp = time;
+      publisher->unlockAndPublish();
+    }
   }
-
   return controller_interface::return_type::OK;
 }
 

@@ -76,7 +76,6 @@ protected:
   Params params_;
   std::string sensor_name_;
   std::array<std::string, 6> interface_names_;
-  std::string frame_id_;
   std::vector<std::string> additional_frames_to_publish_;
 
   std::unique_ptr<semantic_components::ForceTorqueSensor> force_torque_sensor_;
