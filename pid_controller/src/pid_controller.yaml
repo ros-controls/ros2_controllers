@@ -45,14 +45,6 @@ pid_controller:
     default_value: false,
     description: "Use external states from a topic instead form state interfaces."
   }
-  controller_state_publish_rate: {
-    type: double,
-    default_value: 50.0,
-    description: "Rate controller state is published",
-    validation: {
-      lower_bounds: [0.1]
-    }
-  }
   gains:
     __map_dof_names:
       p: {
