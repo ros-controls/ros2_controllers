@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="3">
   <name>velocity_controllers</name>
-  <version>3.1.0</version>
+  <version>3.3.0</version>
   <description>Generic controller for forwarding commands.</description>
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
   <maintainer email="jordan.palacios@pal-robotics.com">Jordan Palacios</maintainer>
@@ -12,9 +12,8 @@
 
   <depend>backward_ros</depend>
   <depend>forward_command_controller</depend>
+  <depend>pluginlib</depend>
   <depend>rclcpp</depend>
-
-  <build_depend>pluginlib</build_depend>
 
   <test_depend>ament_cmake_gmock</test_depend>
   <test_depend>controller_manager</test_depend>

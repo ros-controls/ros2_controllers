@@ -89,7 +89,6 @@ A yaml file for using it could be:
             - position
             - velocity
 
-          state_publish_rate: 50.0
           action_monitor_rate: 20.0
 
           allow_partial_joints_goal: false
@@ -122,11 +121,6 @@ state_interfaces (list(string))
   Values: position (mandatory) [velocity, [acceleration]].
   Acceleration interface can only be used in combination with position and velocity.
 
-state_publish_rate (double)
-  Publish-rate of the controller's "state" topic.
-
-  Default: 50.0
-
 action_monitor_rate (double)
   Rate to monitor status changes when the controller is executing action (control_msgs::action::FollowJointTrajectory).
 
@@ -135,8 +129,22 @@ action_monitor_rate (double)
 allow_partial_joints_goal (boolean)
   Allow joint goals defining trajectory for only some joints.
 
+  Default: false
+
+allow_integration_in_goal_trajectories (boolean)
+  Allow integration in goal trajectories to accept goals without position or velocity specified
+
+  Default: false
+
+interpolation_method (string)
+  The type of interpolation to use, if any. Can be "splines" or "none".
+
+  Default: splines
+
 open_loop_control (boolean)
   Use controller in open-loop control mode using ignoring the states provided by hardware interface and using last commands as states in the next control step. This is useful if hardware states are not following commands, i.e., an offset between those (typical for hydraulic manipulators).
+
+  Default: false
 
   If this flag is set, the controller tries to read the values from the command interfaces on starting. If they have real numeric values, those will be used instead of state interfaces. Therefore it is important set command interfaces to NaN (std::numeric_limits<double>::quiet_NaN()) or state values when the hardware is started.
 
@@ -168,11 +176,10 @@ gains (structure)
 
   .. math::
 
-   u = k_ff v_d + k_p (s_d - s) + k_i \sum(s_d - s) dt + k_d (v_d - v)
+     u = k_{ff} v_d + k_p e + k_i \sum e dt + k_d (v_d - v)
 
-  with the desired velocity :math:`v_d` and position :math:`s_d`,
-  the measured velocity :math:`v` and position :math:`s`, the controller period :math:`dt`,
-  and the ``velocity`` or ``effort`` setpoint :math:`u`, respectively.
+  with the desired velocity :math:`v_d`, the measured velocity :math:`v`, the position error :math:`e` (definition see below),
+  the controller period :math:`dt`, and the ``velocity`` or ``effort`` manipulated variable (control variable) :math:`u`, respectively.
 
 gains.<joint_name>.p (double)
   Proportional gain :math:`k_p` for PID
@@ -195,9 +202,17 @@ gains.<joint_name>.i_clamp (double)
   Default: 0.0
 
 gains.<joint_name>.ff_velocity_scale (double)
-  Feed-forward scaling :math:`k_ff` of velocity
+  Feed-forward scaling :math:`k_{ff}` of velocity
 
   Default: 0.0
+
+gains.<joint_name>.normalize_error (bool)
+  If true, the position error :math:`e = normalize(s_d - s)` is normalized between :math:`-\pi, \pi`.
+  Otherwise  :math:`e = s_d - s` is used, with the desired position :math:`s_d` and the measured
+  position :math:`s` from the state interface. Use this for revolute joints without end stop,
+  where the shortest rotation to the target position is the desired motion.
+
+  Default: false
 
 ROS2 interface of the controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -206,7 +221,7 @@ ROS2 interface of the controller
   Topic for commanding the controller.
 
 ~/state (output topic) [control_msgs::msg::JointTrajectoryControllerState]
-  Topic publishing internal states.
+  Topic publishing internal states with the update-rate of the controller manager.
 
 ~/follow_joint_trajectory (action server) [control_msgs::action::FollowJointTrajectory]
   Action server for commanding the controller.

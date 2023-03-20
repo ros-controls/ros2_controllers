@@ -20,7 +20,6 @@
 #include <stdexcept>
 #include <string>
 
-#include "rcppmath/clamp.hpp"
 #include "tricycle_controller/steering_limiter.hpp"
 
 namespace tricycle_controller
@@ -76,7 +75,7 @@ double SteeringLimiter::limit(double & p, double p0, double p1, double dt)
 double SteeringLimiter::limit_position(double & p)
 {
   const double tmp = p;
-  p = rcppmath::clamp(p, min_position_, max_position_);
+  p = std::clamp(p, min_position_, max_position_);
 
   return tmp != 0.0 ? p / tmp : 1.0;
 }
@@ -88,7 +87,7 @@ double SteeringLimiter::limit_velocity(double & p, double p0, double dt)
   const double dv_min = min_velocity_ * dt;
   const double dv_max = max_velocity_ * dt;
 
-  double dv = rcppmath::clamp(std::fabs(p - p0), dv_min, dv_max);
+  double dv = std::clamp(std::fabs(p - p0), dv_min, dv_max);
   dv *= (p - p0 >= 0 ? 1 : -1);
   p = p0 + dv;
 
@@ -107,7 +106,7 @@ double SteeringLimiter::limit_acceleration(double & p, double p0, double p1, dou
   const double da_min = min_acceleration_ * dt2;
   const double da_max = max_acceleration_ * dt2;
 
-  double da = rcppmath::clamp(std::fabs(dv - dp0), da_min, da_max);
+  double da = std::clamp(std::fabs(dv - dp0), da_min, da_max);
   da *= (dv - dp0 >= 0 ? 1 : -1);
   p = p0 + dp0 + da;
 

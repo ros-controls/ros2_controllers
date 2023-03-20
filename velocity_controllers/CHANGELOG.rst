@@ -2,6 +2,14 @@
 Changelog for package velocity_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.3.0 (2023-03-07)
+------------------
+
+3.2.0 (2023-02-10)
+------------------
+* Fix overriding of install (`#510 <https://github.com/ros-controls/ros2_controllers/issues/510>`_)
+* Contributors: Tyler Weaver, Chris Thrasher
+
 3.1.0 (2023-01-26)
 ------------------
 
