@@ -41,18 +41,11 @@
 namespace
 {  // utility
 
-// TODO(destogl): remove this when merged upstream
 // Changed services history QoS to keep all so we don't lose any client service calls
-static constexpr rmw_qos_profile_t rmw_qos_profile_services_hist_keep_all = {
-  RMW_QOS_POLICY_HISTORY_KEEP_ALL,
-  1,  // message queue depth
-  RMW_QOS_POLICY_RELIABILITY_RELIABLE,
-  RMW_QOS_POLICY_DURABILITY_VOLATILE,
-  RMW_QOS_DEADLINE_DEFAULT,
-  RMW_QOS_LIFESPAN_DEFAULT,
-  RMW_QOS_POLICY_LIVELINESS_SYSTEM_DEFAULT,
-  RMW_QOS_LIVELINESS_LEASE_DURATION_DEFAULT,
-  false};
+rclcpp::QoS qos_services =
+  rclcpp::QoS(rclcpp::QoSInitialization(RMW_QOS_POLICY_HISTORY_KEEP_ALL, 1))
+    .reliable()
+    .durability_volatile();
 
 using ControllerCommandMsg = pid_controller::PidController::ControllerReferenceMsg;
 
@@ -172,7 +165,8 @@ controller_interface::CallbackReturn PidController::on_configure(
   if (params_.use_external_measured_states)
   {
     auto measured_state_callback =
-      [&](const std::shared_ptr<ControllerMeasuredStateMsg> msg) -> void {
+      [&](const std::shared_ptr<ControllerMeasuredStateMsg> msg) -> void
+    {
       // TODO(destogl): Sort the input values based on joint and interface names
       measured_state_.writeFromNonRT(msg);
     };
@@ -190,21 +184,21 @@ controller_interface::CallbackReturn PidController::on_configure(
   auto set_feedforward_control_callback =
     [&](
       const std::shared_ptr<ControllerModeSrvType::Request> request,
-      std::shared_ptr<ControllerModeSrvType::Response> response) {
-      if (request->data)
-      {
-        control_mode_.writeFromNonRT(feedforward_mode_type::ON);
-      }
-      else
-      {
-        control_mode_.writeFromNonRT(feedforward_mode_type::OFF);
-      }
-      response->success = true;
-    };
+      std::shared_ptr<ControllerModeSrvType::Response> response)
+  {
+    if (request->data)
+    {
+      control_mode_.writeFromNonRT(feedforward_mode_type::ON);
+    }
+    else
+    {
+      control_mode_.writeFromNonRT(feedforward_mode_type::OFF);
+    }
+    response->success = true;
+  };
 
   set_feedforward_control_service_ = get_node()->create_service<ControllerModeSrvType>(
-    "~/set_feedforward_control", set_feedforward_control_callback,
-    rmw_qos_profile_services_hist_keep_all);
+    "~/set_feedforward_control", set_feedforward_control_callback, qos_services);
 
   try
   {
@@ -229,8 +223,6 @@ controller_interface::CallbackReturn PidController::on_configure(
     state_publisher_->msg_.dof_states[i].name = reference_and_state_dof_names_[i];
   }
   state_publisher_->unlock();
-
-  // TODO(destogl): Add separate timer-callback for the controller status publisher
 
   RCLCPP_INFO(get_node()->get_logger(), "configure successful");
   return controller_interface::CallbackReturn::SUCCESS;

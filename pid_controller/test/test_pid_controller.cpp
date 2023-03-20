@@ -34,7 +34,10 @@ TEST_F(PidControllerTest, all_parameters_set_configure_success)
 
   ASSERT_TRUE(controller_->params_.dof_names.empty());
   ASSERT_TRUE(controller_->params_.reference_and_state_dof_names.empty());
-  ASSERT_TRUE(controller_->params_.interface_name.empty());
+  ASSERT_TRUE(controller_->params_.command_interface.empty());
+  ASSERT_TRUE(controller_->params_.reference_and_state_interfaces.empty());
+  ASSERT_FALSE(controller_->params_.use_external_measured_states);
+  ASSERT_FALSE(controller_->params_.runtime_param_update);
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
@@ -43,7 +46,20 @@ TEST_F(PidControllerTest, all_parameters_set_configure_success)
   ASSERT_THAT(
     controller_->reference_and_reference_and_state_dof_names_,
     testing::ElementsAreArray(dof_names_));
-  ASSERT_EQ(controller_->params_.interface_name, interface_name_);
+  for (const auto & dof_name : dof_names_)
+  {
+    ASSERT_EQ(controller_->params_.gains[dof_name].p, 1.0);
+    ASSERT_EQ(controller_->params_.gains[dof_name].i, 2.0);
+    ASSERT_EQ(controller_->params_.gains[dof_name].d, 10.0);
+    ASSERT_FALSE(controller_->params_.gains[dof_name].antiwindup);
+    ASSERT_EQ(controller_->params_.gains[dof_name].i_clamp_max, 5.0);
+    ASSERT_EQ(controller_->params_.gains[dof_name].i_clamp_min, -5.0);
+    ASSERT_EQ(controller_->params_.gains[dof_name].feedforward_gain, 0.0);
+  }
+  ASSERT_EQ(controller_->params_.command_interface, command_interface_);
+  ASSERT_TRUE(controller_->params_.reference_and_state_interfaces.empty());
+  ASSERT_FALSE(controller_->params_.use_external_measured_states);
+  ASSERT_FALSE(controller_->params_.runtime_param_update);
 }
 
 TEST_F(PidControllerTest, check_exported_intefaces)
@@ -56,14 +72,14 @@ TEST_F(PidControllerTest, check_exported_intefaces)
   ASSERT_EQ(command_intefaces.names.size(), dof_command_values_.size());
   for (size_t i = 0; i < command_intefaces.names.size(); ++i)
   {
-    EXPECT_EQ(command_intefaces.names[i], dof_names_[i] + "/" + interface_name_);
+    EXPECT_EQ(command_intefaces.names[i], dof_names_[i] + "/" + command_interface_);
   }
 
   auto state_intefaces = controller_->state_interface_configuration();
   ASSERT_EQ(state_intefaces.names.size(), dof_state_values_.size());
   for (size_t i = 0; i < state_intefaces.names.size(); ++i)
   {
-    EXPECT_EQ(state_intefaces.names[i], dof_names_[i] + "/" + interface_name_);
+    EXPECT_EQ(state_intefaces.names[i], dof_names_[i] + "/" + command_interface_);
   }
 
   // check ref itfs
@@ -72,10 +88,11 @@ TEST_F(PidControllerTest, check_exported_intefaces)
   for (size_t i = 0; i < dof_names_.size(); ++i)
   {
     const std::string ref_itf_name = std::string(controller_->get_node()->get_name()) + "/" +
-                                     dof_names_[i] + "/" + interface_name_;
+                                     dof_names_[i] + "/" + command_interface_;
     EXPECT_EQ(reference_interfaces[i].get_name(), ref_itf_name);
     EXPECT_EQ(reference_interfaces[i].get_prefix_name(), controller_->get_node()->get_name());
-    EXPECT_EQ(reference_interfaces[i].get_interface_name(), dof_names_[i] + "/" + interface_name_);
+    EXPECT_EQ(
+      reference_interfaces[i].get_interface_name(), dof_names_[i] + "/" + command_interface_);
   }
 }
 

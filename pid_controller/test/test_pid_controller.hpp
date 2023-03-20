@@ -259,7 +259,7 @@ protected:
   // Controller-related parameters
   std::vector<std::string> dof_names_ = {"joint1"};
   std::vector<std::string> state_dof_names_ = {"joint1state"};
-  std::string interface_name_ = "acceleration";
+  std::string command_interface_ = "acceleration";
   std::array<double, 1> dof_state_values_ = {1.1};
   std::array<double, 1> dof_command_values_ = {101.101};
 
