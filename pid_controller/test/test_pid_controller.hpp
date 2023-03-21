@@ -33,7 +33,6 @@
 #include "rclcpp/utilities.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 
-// TODO(anyone): replace the state and command message types
 using ControllerStateMsg = pid_controller::PidController::ControllerStateMsg;
 using ControllerCommandMsg = pid_controller::PidController::ControllerReferenceMsg;
 using ControllerModeSrvType = pid_controller::PidController::ControllerModeSrvType;
@@ -146,7 +145,7 @@ protected:
     for (size_t i = 0; i < dof_command_values_.size(); ++i)
     {
       command_itfs_.emplace_back(hardware_interface::CommandInterface(
-        dof_names_[i], interface_name_, &dof_command_values_[i]));
+        dof_names_[i], command_interface_, &dof_command_values_[i]));
       command_ifs.emplace_back(command_itfs_.back());
     }
     // TODO(anyone): Add other command interfaces, if any
@@ -157,8 +156,8 @@ protected:
 
     for (size_t i = 0; i < dof_state_values_.size(); ++i)
     {
-      state_itfs_.emplace_back(
-        hardware_interface::StateInterface(dof_names_[i], interface_name_, &dof_state_values_[i]));
+      state_itfs_.emplace_back(hardware_interface::StateInterface(
+        dof_names_[i], command_interface_, &dof_state_values_[i]));
       state_ifs.emplace_back(state_itfs_.back());
     }
     // TODO(anyone): Add other state interfaces, if any
@@ -201,10 +200,8 @@ protected:
     ASSERT_TRUE(subscription->take(msg, msg_info));
   }
 
-  // TODO(anyone): add/remove arguments as it suites your command message type
   void publish_commands(
-    const std::vector<double> & displacements = {0.45},
-    const std::vector<double> & velocities = {0.0}, const double duration = 1.25)
+    const std::vector<double> & values = {0.45}, const std::vector<double> & values_dot = {0.0})
   {
     auto wait_for_topic = [&](const auto topic_name)
     {
@@ -226,10 +223,8 @@ protected:
 
     ControllerCommandMsg msg;
     msg.dof_names = dof_names_;
-    // TODO(destogl): Update name of the arguments and remove unnecessary ones
-    msg.values = displacements;
-    //     msg.velocities = velocities;
-    //     msg.duration = duration;
+    msg.values = values;
+    msg.values_dot = values_dot;
 
     command_publisher_->publish(msg);
   }

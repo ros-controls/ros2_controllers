@@ -481,7 +481,7 @@ controller_interface::return_type PidController::update_and_write_commands(
       state_publisher_->msg_.dof_states[i].process_value = measured_state_values_[i];
       if (reference_interfaces_.size() == 2 * dof_ && measured_state_values_.size() == 2 * dof_)
       {
-        state_publisher_->msg_.dof_states[i].process_value = measured_state_values_[i];
+        state_publisher_->msg_.dof_states[i].process_value_dot = measured_state_values_[dof_ + i];
       }
       state_publisher_->msg_.dof_states[i].error =
         reference_interfaces_[i] - measured_state_values_[i];
@@ -494,13 +494,6 @@ controller_interface::return_type PidController::update_and_write_commands(
       // Command can store the old calculated values. This should be obvious because at least one
       // another value is NaN.
       state_publisher_->msg_.dof_states[i].command = command_interfaces_[i].get_value();
-
-      auto gains = pids_[i]->getGains();
-      state_publisher_->msg_.dof_states[i].p = gains.p_gain_;
-      state_publisher_->msg_.dof_states[i].i = gains.i_gain_;
-      state_publisher_->msg_.dof_states[i].d = gains.d_gain_;
-      state_publisher_->msg_.dof_states[i].i_clamp = gains.i_max_;
-      state_publisher_->msg_.dof_states[i].antiwindup = gains.antiwindup_;
     }
     state_publisher_->unlockAndPublish();
   }
