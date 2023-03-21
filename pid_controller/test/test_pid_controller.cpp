@@ -43,18 +43,16 @@ TEST_F(PidControllerTest, all_parameters_set_configure_success)
 
   ASSERT_THAT(controller_->params_.dof_names, testing::ElementsAreArray(dof_names_));
   ASSERT_TRUE(controller_->params_.reference_and_state_dof_names.empty());
-  ASSERT_THAT(
-    controller_->reference_and_reference_and_state_dof_names_,
-    testing::ElementsAreArray(dof_names_));
+  ASSERT_THAT(controller_->reference_and_state_dof_names_, testing::ElementsAreArray(dof_names_));
   for (const auto & dof_name : dof_names_)
   {
-    ASSERT_EQ(controller_->params_.gains[dof_name].p, 1.0);
-    ASSERT_EQ(controller_->params_.gains[dof_name].i, 2.0);
-    ASSERT_EQ(controller_->params_.gains[dof_name].d, 10.0);
-    ASSERT_FALSE(controller_->params_.gains[dof_name].antiwindup);
-    ASSERT_EQ(controller_->params_.gains[dof_name].i_clamp_max, 5.0);
-    ASSERT_EQ(controller_->params_.gains[dof_name].i_clamp_min, -5.0);
-    ASSERT_EQ(controller_->params_.gains[dof_name].feedforward_gain, 0.0);
+    ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].p, 1.0);
+    ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].i, 2.0);
+    ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].d, 10.0);
+    ASSERT_FALSE(controller_->params_.gains.dof_names_map[dof_name].antiwindup);
+    ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].i_clamp_max, 5.0);
+    ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].i_clamp_min, -5.0);
+    ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].feedforward_gain, 0.0);
   }
   ASSERT_EQ(controller_->params_.command_interface, command_interface_);
   ASSERT_TRUE(controller_->params_.reference_and_state_interfaces.empty());
@@ -104,19 +102,17 @@ TEST_F(PidControllerTest, activate_success)
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   // check that the message is reset
-  auto msg = controller_->input_cmd_.readFromNonRT();
-  EXPECT_EQ((*msg)->displacements.size(), dof_names_.size());
-  for (const auto & cmd : (*msg)->displacements)
+  auto msg = controller_->input_ref_.readFromNonRT();
+  EXPECT_EQ((*msg)->values.size(), dof_names_.size());
+  for (const auto & cmd : (*msg)->values)
   {
     EXPECT_TRUE(std::isnan(cmd));
   }
-  EXPECT_EQ((*msg)->velocities.size(), dof_names_.size());
-  for (const auto & cmd : (*msg)->velocities)
+  EXPECT_EQ((*msg)->values_dot.size(), dof_names_.size());
+  for (const auto & cmd : (*msg)->values_dot)
   {
     EXPECT_TRUE(std::isnan(cmd));
   }
-
-  ASSERT_TRUE(std::isnan((*msg)->duration));
 
   EXPECT_EQ(controller_->reference_interfaces_.size(), dof_names_.size());
   for (const auto & interface : controller_->reference_interfaces_)
@@ -204,20 +200,19 @@ TEST_F(PidControllerTest, test_update_logic_fast)
   // set command statically
   static constexpr double TEST_DISPLACEMENT = 23.24;
   std::shared_ptr<ControllerCommandMsg> msg = std::make_shared<ControllerCommandMsg>();
-  msg->joint_names = dof_names_;
-  msg->displacements.resize(dof_names_.size(), TEST_DISPLACEMENT);
-  msg->velocities.resize(dof_names_.size(), std::numeric_limits<double>::quiet_NaN());
-  msg->duration = std::numeric_limits<double>::quiet_NaN();
-  controller_->input_cmd_.writeFromNonRT(msg);
+  msg->dof_names = dof_names_;
+  msg->values.resize(dof_names_.size(), TEST_DISPLACEMENT);
+  msg->values_dot.resize(dof_names_.size(), std::numeric_limits<double>::quiet_NaN());
+  controller_->input_ref_.writeFromNonRT(msg);
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  EXPECT_EQ(*(controller_->control_mode_.readFromRT()), control_mode_type::FAST);
+  EXPECT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::ON);
   EXPECT_EQ(dof_command_values_[STATE_MY_ITFS], TEST_DISPLACEMENT);
-  EXPECT_TRUE(std::isnan((*(controller_->input_cmd_.readFromRT()))->displacements[0]));
-  EXPECT_EQ(*(controller_->control_mode_.readFromRT()), control_mode_type::FAST);
+  EXPECT_TRUE(std::isnan((*(controller_->input_ref_.readFromRT()))->values[0]));
+  EXPECT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::ON);
   EXPECT_EQ(controller_->reference_interfaces_.size(), dof_names_.size());
   for (const auto & interface : controller_->reference_interfaces_)
   {
@@ -241,21 +236,20 @@ TEST_F(PidControllerTest, test_update_logic_slow)
   static constexpr double TEST_DISPLACEMENT = 23.24;
   std::shared_ptr<ControllerCommandMsg> msg = std::make_shared<ControllerCommandMsg>();
   // When slow mode is enabled command ends up being half of the value
-  msg->joint_names = dof_names_;
-  msg->displacements.resize(dof_names_.size(), TEST_DISPLACEMENT);
-  msg->velocities.resize(dof_names_.size(), std::numeric_limits<double>::quiet_NaN());
-  msg->duration = std::numeric_limits<double>::quiet_NaN();
-  controller_->input_cmd_.writeFromNonRT(msg);
-  controller_->control_mode_.writeFromNonRT(control_mode_type::SLOW);
+  msg->dof_names = dof_names_;
+  msg->values.resize(dof_names_.size(), TEST_DISPLACEMENT);
+  msg->values_dot.resize(dof_names_.size(), std::numeric_limits<double>::quiet_NaN());
+  controller_->input_ref_.writeFromNonRT(msg);
+  controller_->control_mode_.writeFromNonRT(feedforward_mode_type::OFF);
 
-  EXPECT_EQ(*(controller_->control_mode_.readFromRT()), control_mode_type::SLOW);
-  ASSERT_EQ((*(controller_->input_cmd_.readFromRT()))->displacements[0], TEST_DISPLACEMENT);
+  EXPECT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::OFF);
+  ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->values[0], TEST_DISPLACEMENT);
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
   EXPECT_EQ(dof_command_values_[STATE_MY_ITFS], TEST_DISPLACEMENT / 2);
-  EXPECT_TRUE(std::isnan((*(controller_->input_cmd_.readFromRT()))->displacements[0]));
+  EXPECT_TRUE(std::isnan((*(controller_->input_ref_.readFromRT()))->values[0]));
   EXPECT_EQ(controller_->reference_interfaces_.size(), dof_names_.size());
   for (const auto & interface : controller_->reference_interfaces_)
   {
@@ -278,11 +272,10 @@ TEST_F(PidControllerTest, test_update_logic_chainable_fast)
   // set command statically
   static constexpr double TEST_DISPLACEMENT = 23.24;
   std::shared_ptr<ControllerCommandMsg> msg = std::make_shared<ControllerCommandMsg>();
-  msg->joint_names = dof_names_;
-  msg->displacements.resize(dof_names_.size(), TEST_DISPLACEMENT);
-  msg->velocities.resize(dof_names_.size(), std::numeric_limits<double>::quiet_NaN());
-  msg->duration = std::numeric_limits<double>::quiet_NaN();
-  controller_->input_cmd_.writeFromNonRT(msg);
+  msg->dof_names = dof_names_;
+  msg->values.resize(dof_names_.size(), TEST_DISPLACEMENT);
+  msg->values_dot.resize(dof_names_.size(), std::numeric_limits<double>::quiet_NaN());
+  controller_->input_ref_.writeFromNonRT(msg);
   // this is input source in chained mode
   controller_->reference_interfaces_[STATE_MY_ITFS] = TEST_DISPLACEMENT * 2;
 
@@ -290,12 +283,12 @@ TEST_F(PidControllerTest, test_update_logic_chainable_fast)
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  EXPECT_EQ(*(controller_->control_mode_.readFromRT()), control_mode_type::FAST);
+  EXPECT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::ON);
   // reference_interfaces is directly applied
   EXPECT_EQ(dof_command_values_[STATE_MY_ITFS], TEST_DISPLACEMENT * 2);
   // message is not touched in chained mode
-  EXPECT_EQ((*(controller_->input_cmd_.readFromRT()))->displacements[0], TEST_DISPLACEMENT);
-  EXPECT_EQ(*(controller_->control_mode_.readFromRT()), control_mode_type::FAST);
+  EXPECT_EQ((*(controller_->input_ref_.readFromRT()))->values[0], TEST_DISPLACEMENT);
+  EXPECT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::ON);
   EXPECT_EQ(controller_->reference_interfaces_.size(), dof_names_.size());
   for (const auto & interface : controller_->reference_interfaces_)
   {
@@ -319,17 +312,16 @@ TEST_F(PidControllerTest, test_update_logic_chainable_slow)
   static constexpr double TEST_DISPLACEMENT = 23.24;
   std::shared_ptr<ControllerCommandMsg> msg = std::make_shared<ControllerCommandMsg>();
   // When slow mode is enabled command ends up being half of the value
-  msg->joint_names = dof_names_;
-  msg->displacements.resize(dof_names_.size(), TEST_DISPLACEMENT);
-  msg->velocities.resize(dof_names_.size(), std::numeric_limits<double>::quiet_NaN());
-  msg->duration = std::numeric_limits<double>::quiet_NaN();
-  controller_->input_cmd_.writeFromNonRT(msg);
-  controller_->control_mode_.writeFromNonRT(control_mode_type::SLOW);
+  msg->dof_names = dof_names_;
+  msg->values.resize(dof_names_.size(), TEST_DISPLACEMENT);
+  msg->values_dot.resize(dof_names_.size(), std::numeric_limits<double>::quiet_NaN());
+  controller_->input_ref_.writeFromNonRT(msg);
+  controller_->control_mode_.writeFromNonRT(feedforward_mode_type::OFF);
   // this is input source in chained mode
   controller_->reference_interfaces_[STATE_MY_ITFS] = TEST_DISPLACEMENT * 4;
 
-  EXPECT_EQ(*(controller_->control_mode_.readFromRT()), control_mode_type::SLOW);
-  ASSERT_EQ((*(controller_->input_cmd_.readFromRT()))->displacements[0], TEST_DISPLACEMENT);
+  EXPECT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::OFF);
+  ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->values[0], TEST_DISPLACEMENT);
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
@@ -337,7 +329,7 @@ TEST_F(PidControllerTest, test_update_logic_chainable_slow)
   // reference_interfaces is directly applied
   EXPECT_EQ(dof_command_values_[STATE_MY_ITFS], TEST_DISPLACEMENT * 2);
   // message is not touched in chained mode
-  EXPECT_EQ((*(controller_->input_cmd_.readFromRT()))->displacements[0], TEST_DISPLACEMENT);
+  EXPECT_EQ((*(controller_->input_ref_.readFromRT()))->values[0], TEST_DISPLACEMENT);
   EXPECT_EQ(controller_->reference_interfaces_.size(), dof_names_.size());
   for (const auto & interface : controller_->reference_interfaces_)
   {
@@ -359,7 +351,8 @@ TEST_F(PidControllerTest, publish_status_success)
   ControllerStateMsg msg;
   subscribe_and_get_messages(msg);
 
-  ASSERT_EQ(msg.set_point, 101.101);
+  ASSERT_EQ(msg.dof_states.size(), 1);
+  ASSERT_EQ(msg.dof_states[0].set_point, 101.101);
 }
 
 TEST_F(PidControllerTest, receive_message_and_publish_updated_status)
@@ -378,7 +371,8 @@ TEST_F(PidControllerTest, receive_message_and_publish_updated_status)
   ControllerStateMsg msg;
   subscribe_and_get_messages(msg);
 
-  ASSERT_EQ(msg.set_point, 101.101);
+  ASSERT_EQ(msg.dof_states.size(), 1);
+  ASSERT_EQ(msg.dof_states[0].set_point, 101.101);
 
   publish_commands();
   ASSERT_TRUE(controller_->wait_for_commands(executor));
@@ -391,7 +385,8 @@ TEST_F(PidControllerTest, receive_message_and_publish_updated_status)
 
   subscribe_and_get_messages(msg);
 
-  ASSERT_EQ(msg.set_point, 0.45);
+  ASSERT_EQ(msg.dof_states.size(), 1);
+  ASSERT_EQ(msg.dof_states[0].set_point, 0.45);
 }
 
 int main(int argc, char ** argv)
