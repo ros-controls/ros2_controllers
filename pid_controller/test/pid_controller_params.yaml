@@ -3,7 +3,9 @@ test_pid_controller:
     dof_names:
       - joint1
 
-    interface_name: acceleration
+    command_interface: position
+
+    reference_and_state_interfaces: ["position"]
 
     gains:
       joint1: {p: 1.0, i: 2.0, d: 10.0, i_clamp_max: 5.0, i_clamp_min: -5.0}
