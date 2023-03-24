@@ -442,6 +442,7 @@ controller_interface::return_type PidController::update_and_write_commands(
         tmp_command = 0.0;
       }
 
+      // checking if there are two interfaces
       if (reference_interfaces_.size() == 2 * dof_ && measured_state_values_.size() == 2 * dof_)
       {
         if (

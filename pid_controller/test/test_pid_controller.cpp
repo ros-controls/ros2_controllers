@@ -55,7 +55,9 @@ TEST_F(PidControllerTest, all_parameters_set_configure_success)
     ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].feedforward_gain, 0.0);
   }
   ASSERT_EQ(controller_->params_.command_interface, command_interface_);
-  ASSERT_TRUE(controller_->params_.reference_and_state_interfaces.empty());
+  EXPECT_THAT(
+    controller_->params_.reference_and_state_interfaces,
+    testing::ElementsAreArray(state_interfaces_));
   ASSERT_FALSE(controller_->params_.use_external_measured_states);
   ASSERT_FALSE(controller_->params_.runtime_param_update);
 }
@@ -66,31 +68,41 @@ TEST_F(PidControllerTest, check_exported_intefaces)
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  auto command_intefaces = controller_->command_interface_configuration();
-  ASSERT_EQ(command_intefaces.names.size(), dof_command_values_.size());
-  for (size_t i = 0; i < command_intefaces.names.size(); ++i)
+  auto command_interfaces = controller_->command_interface_configuration();
+  ASSERT_EQ(command_interfaces.names.size(), dof_command_values_.size());
+  for (size_t i = 0; i < command_interfaces.names.size(); ++i)
   {
-    EXPECT_EQ(command_intefaces.names[i], dof_names_[i] + "/" + command_interface_);
+    EXPECT_EQ(command_interfaces.names[i], dof_names_[i] + "/" + command_interface_);
   }
 
   auto state_intefaces = controller_->state_interface_configuration();
   ASSERT_EQ(state_intefaces.names.size(), dof_state_values_.size());
-  for (size_t i = 0; i < state_intefaces.names.size(); ++i)
+  size_t si_index = 0;
+  for (const auto & interface : state_interfaces_)
   {
-    EXPECT_EQ(state_intefaces.names[i], dof_names_[i] + "/" + command_interface_);
+    for (const auto & dof_name : dof_names_)
+    {
+      EXPECT_EQ(state_intefaces.names[si_index], dof_name + "/" + interface);
+      ++si_index;
+    }
   }
 
   // check ref itfs
   auto reference_interfaces = controller_->export_reference_interfaces();
-  ASSERT_EQ(reference_interfaces.size(), dof_names_.size());
-  for (size_t i = 0; i < dof_names_.size(); ++i)
+  ASSERT_EQ(reference_interfaces.size(), dof_state_values_.size());
+  size_t ri_index = 0;
+  for (const auto & interface : state_interfaces_)
   {
-    const std::string ref_itf_name = std::string(controller_->get_node()->get_name()) + "/" +
-                                     dof_names_[i] + "/" + command_interface_;
-    EXPECT_EQ(reference_interfaces[i].get_name(), ref_itf_name);
-    EXPECT_EQ(reference_interfaces[i].get_prefix_name(), controller_->get_node()->get_name());
-    EXPECT_EQ(
-      reference_interfaces[i].get_interface_name(), dof_names_[i] + "/" + command_interface_);
+    for (const auto & dof_name : dof_names_)
+    {
+      const std::string ref_itf_name =
+        std::string(controller_->get_node()->get_name()) + "/" + dof_name + "/" + interface;
+      EXPECT_EQ(reference_interfaces[ri_index].get_name(), ref_itf_name);
+      EXPECT_EQ(
+        reference_interfaces[ri_index].get_prefix_name(), controller_->get_node()->get_name());
+      EXPECT_EQ(reference_interfaces[ri_index].get_interface_name(), dof_name + "/" + interface);
+      ++ri_index;
+    }
   }
 }
 
@@ -114,7 +126,7 @@ TEST_F(PidControllerTest, activate_success)
     EXPECT_TRUE(std::isnan(cmd));
   }
 
-  EXPECT_EQ(controller_->reference_interfaces_.size(), dof_names_.size());
+  EXPECT_EQ(controller_->reference_interfaces_.size(), dof_state_values_.size());
   for (const auto & interface : controller_->reference_interfaces_)
   {
     EXPECT_TRUE(std::isnan(interface));
@@ -159,7 +171,7 @@ TEST_F(PidControllerTest, reactivate_success)
     controller_interface::return_type::OK);
 }
 
-TEST_F(PidControllerTest, test_setting_slow_mode_service)
+TEST_F(PidControllerTest, test_feedforward_mode_service)
 {
   SetUpController();
 
@@ -185,7 +197,7 @@ TEST_F(PidControllerTest, test_setting_slow_mode_service)
   ASSERT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::OFF);
 }
 
-TEST_F(PidControllerTest, test_update_logic_fast)
+TEST_F(PidControllerTest, test_update_logic_feedforward_off)
 {
   SetUpController();
   rclcpp::executors::MultiThreadedExecutor executor;
@@ -196,68 +208,97 @@ TEST_F(PidControllerTest, test_update_logic_fast)
   controller_->set_chained_mode(false);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_FALSE(controller_->is_in_chained_mode());
-
-  // set command statically
-  static constexpr double TEST_DISPLACEMENT = 23.24;
-  std::shared_ptr<ControllerCommandMsg> msg = std::make_shared<ControllerCommandMsg>();
-  msg->dof_names = dof_names_;
-  msg->values.resize(dof_names_.size(), TEST_DISPLACEMENT);
-  msg->values_dot.resize(dof_names_.size(), std::numeric_limits<double>::quiet_NaN());
-  controller_->input_ref_.writeFromNonRT(msg);
-
-  ASSERT_EQ(
-    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
-
-  EXPECT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::ON);
-  EXPECT_EQ(dof_command_values_[STATE_MY_ITFS], TEST_DISPLACEMENT);
   EXPECT_TRUE(std::isnan((*(controller_->input_ref_.readFromRT()))->values[0]));
-  EXPECT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::ON);
-  EXPECT_EQ(controller_->reference_interfaces_.size(), dof_names_.size());
+  EXPECT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::OFF);
   for (const auto & interface : controller_->reference_interfaces_)
   {
     EXPECT_TRUE(std::isnan(interface));
   }
-}
 
-TEST_F(PidControllerTest, test_update_logic_slow)
-{
-  SetUpController();
-  rclcpp::executors::MultiThreadedExecutor executor;
-  executor.add_node(controller_->get_node()->get_node_base_interface());
-  executor.add_node(service_caller_node_->get_node_base_interface());
-
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  controller_->set_chained_mode(false);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_FALSE(controller_->is_in_chained_mode());
-
-  // set command statically
-  static constexpr double TEST_DISPLACEMENT = 23.24;
   std::shared_ptr<ControllerCommandMsg> msg = std::make_shared<ControllerCommandMsg>();
-  // When slow mode is enabled command ends up being half of the value
   msg->dof_names = dof_names_;
-  msg->values.resize(dof_names_.size(), TEST_DISPLACEMENT);
+  msg->values.resize(dof_names_.size(), 0.0);
+  for (size_t i = 0; i < dof_command_values_.size(); ++i)
+  {
+    msg->values[i] = dof_command_values_[i];
+  }
   msg->values_dot.resize(dof_names_.size(), std::numeric_limits<double>::quiet_NaN());
   controller_->input_ref_.writeFromNonRT(msg);
-  controller_->control_mode_.writeFromNonRT(feedforward_mode_type::OFF);
+
+  for (size_t i = 0; i < dof_command_values_.size(); ++i)
+  {
+    EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromRT()))->values[i]));
+    EXPECT_EQ((*(controller_->input_ref_.readFromRT()))->values[i], dof_command_values_[i]);
+    EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[i]));
+  }
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
 
   EXPECT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::OFF);
-  ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->values[0], TEST_DISPLACEMENT);
-  ASSERT_EQ(
-    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
+  EXPECT_EQ(
+    controller_->reference_interfaces_.size(), dof_names_.size() * state_interfaces_.size());
+  EXPECT_EQ(controller_->reference_interfaces_.size(), dof_state_values_.size());
+  for (size_t i = 0; i < dof_command_values_.size(); ++i)
+  {
+    EXPECT_TRUE(std::isnan((*(controller_->input_ref_.readFromRT()))->values[i]));
+  }
+}
 
-  EXPECT_EQ(dof_command_values_[STATE_MY_ITFS], TEST_DISPLACEMENT / 2);
+TEST_F(PidControllerTest, test_update_logic_feedforward_on)
+{
+  SetUpController();
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+  executor.add_node(service_caller_node_->get_node_base_interface());
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  controller_->set_chained_mode(false);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_FALSE(controller_->is_in_chained_mode());
   EXPECT_TRUE(std::isnan((*(controller_->input_ref_.readFromRT()))->values[0]));
-  EXPECT_EQ(controller_->reference_interfaces_.size(), dof_names_.size());
+  EXPECT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::OFF);
   for (const auto & interface : controller_->reference_interfaces_)
   {
     EXPECT_TRUE(std::isnan(interface));
   }
+
+  std::shared_ptr<ControllerCommandMsg> msg = std::make_shared<ControllerCommandMsg>();
+  msg->dof_names = dof_names_;
+  msg->values.resize(dof_names_.size(), 0.0);
+  for (size_t i = 0; i < dof_command_values_.size(); ++i)
+  {
+    msg->values[i] = dof_command_values_[i];
+  }
+  msg->values_dot.resize(dof_names_.size(), std::numeric_limits<double>::quiet_NaN());
+  controller_->input_ref_.writeFromNonRT(msg);
+
+  controller_->control_mode_.writeFromNonRT(feedforward_mode_type::ON);
+  EXPECT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::ON);
+
+  for (size_t i = 0; i < dof_command_values_.size(); ++i)
+  {
+    EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromRT()))->values[i]));
+    EXPECT_EQ((*(controller_->input_ref_.readFromRT()))->values[i], dof_command_values_[i]);
+    EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[i]));
+  }
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  EXPECT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::ON);
+  EXPECT_EQ(
+    controller_->reference_interfaces_.size(), dof_names_.size() * state_interfaces_.size());
+  EXPECT_EQ(controller_->reference_interfaces_.size(), dof_state_values_.size());
+  for (size_t i = 0; i < dof_command_values_.size(); ++i)
+  {
+    EXPECT_TRUE(std::isnan((*(controller_->input_ref_.readFromRT()))->values[i]));
+  }
 }
 
-TEST_F(PidControllerTest, test_update_logic_chainable_fast)
+TEST_F(PidControllerTest, test_update_logic_chainable_feedforward_off)
 {
   SetUpController();
   rclcpp::executors::MultiThreadedExecutor executor;
@@ -269,34 +310,40 @@ TEST_F(PidControllerTest, test_update_logic_chainable_fast)
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_TRUE(controller_->is_in_chained_mode());
 
-  // set command statically
-  static constexpr double TEST_DISPLACEMENT = 23.24;
   std::shared_ptr<ControllerCommandMsg> msg = std::make_shared<ControllerCommandMsg>();
   msg->dof_names = dof_names_;
-  msg->values.resize(dof_names_.size(), TEST_DISPLACEMENT);
+  msg->values.resize(dof_names_.size(), 0.0);
+  for (size_t i = 0; i < dof_command_values_.size(); ++i)
+  {
+    msg->values[i] = dof_command_values_[i];
+  }
   msg->values_dot.resize(dof_names_.size(), std::numeric_limits<double>::quiet_NaN());
   controller_->input_ref_.writeFromNonRT(msg);
-  // this is input source in chained mode
-  controller_->reference_interfaces_[STATE_MY_ITFS] = TEST_DISPLACEMENT * 2;
+
+  for (size_t i = 0; i < dof_command_values_.size(); ++i)
+  {
+    EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromRT()))->values[i]));
+    EXPECT_EQ((*(controller_->input_ref_.readFromRT()))->values[i], dof_command_values_[i]);
+    EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[i]));
+  }
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  EXPECT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::ON);
-  // reference_interfaces is directly applied
-  EXPECT_EQ(dof_command_values_[STATE_MY_ITFS], TEST_DISPLACEMENT * 2);
-  // message is not touched in chained mode
-  EXPECT_EQ((*(controller_->input_ref_.readFromRT()))->values[0], TEST_DISPLACEMENT);
-  EXPECT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::ON);
-  EXPECT_EQ(controller_->reference_interfaces_.size(), dof_names_.size());
-  for (const auto & interface : controller_->reference_interfaces_)
+  ASSERT_TRUE(controller_->is_in_chained_mode());
+  EXPECT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::OFF);
+  EXPECT_EQ(
+    controller_->reference_interfaces_.size(), dof_names_.size() * state_interfaces_.size());
+  EXPECT_EQ(controller_->reference_interfaces_.size(), dof_state_values_.size());
+  for (size_t i = 0; i < dof_command_values_.size(); ++i)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromRT()))->values[i]));
+    EXPECT_EQ((*(controller_->input_ref_.readFromRT()))->values[i], dof_command_values_[i]);
   }
 }
 
-TEST_F(PidControllerTest, test_update_logic_chainable_slow)
+TEST_F(PidControllerTest, test_update_logic_chainable_feedforward_on)
 {
   SetUpController();
   rclcpp::executors::MultiThreadedExecutor executor;
@@ -307,37 +354,45 @@ TEST_F(PidControllerTest, test_update_logic_chainable_slow)
   controller_->set_chained_mode(true);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_TRUE(controller_->is_in_chained_mode());
+  EXPECT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::OFF);
 
-  // set command statically
-  static constexpr double TEST_DISPLACEMENT = 23.24;
   std::shared_ptr<ControllerCommandMsg> msg = std::make_shared<ControllerCommandMsg>();
-  // When slow mode is enabled command ends up being half of the value
   msg->dof_names = dof_names_;
-  msg->values.resize(dof_names_.size(), TEST_DISPLACEMENT);
+  msg->values.resize(dof_names_.size(), 0.0);
+  for (size_t i = 0; i < dof_command_values_.size(); ++i)
+  {
+    msg->values[i] = dof_command_values_[i];
+  }
   msg->values_dot.resize(dof_names_.size(), std::numeric_limits<double>::quiet_NaN());
   controller_->input_ref_.writeFromNonRT(msg);
-  controller_->control_mode_.writeFromNonRT(feedforward_mode_type::OFF);
-  // this is input source in chained mode
-  controller_->reference_interfaces_[STATE_MY_ITFS] = TEST_DISPLACEMENT * 4;
 
-  EXPECT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::OFF);
-  ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->values[0], TEST_DISPLACEMENT);
+  controller_->control_mode_.writeFromNonRT(feedforward_mode_type::ON);
+  EXPECT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::ON);
+
+  for (size_t i = 0; i < dof_command_values_.size(); ++i)
+  {
+    EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromRT()))->values[i]));
+    EXPECT_EQ((*(controller_->input_ref_.readFromRT()))->values[i], dof_command_values_[i]);
+    EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[i]));
+  }
+
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  // reference_interfaces is directly applied
-  EXPECT_EQ(dof_command_values_[STATE_MY_ITFS], TEST_DISPLACEMENT * 2);
-  // message is not touched in chained mode
-  EXPECT_EQ((*(controller_->input_ref_.readFromRT()))->values[0], TEST_DISPLACEMENT);
-  EXPECT_EQ(controller_->reference_interfaces_.size(), dof_names_.size());
-  for (const auto & interface : controller_->reference_interfaces_)
+  ASSERT_TRUE(controller_->is_in_chained_mode());
+  EXPECT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::ON);
+  EXPECT_EQ(
+    controller_->reference_interfaces_.size(), dof_names_.size() * state_interfaces_.size());
+  EXPECT_EQ(controller_->reference_interfaces_.size(), dof_state_values_.size());
+  for (size_t i = 0; i < dof_command_values_.size(); ++i)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromRT()))->values[i]));
+    EXPECT_EQ((*(controller_->input_ref_.readFromRT()))->values[i], dof_command_values_[i]);
   }
 }
 
-TEST_F(PidControllerTest, publish_status_success)
+TEST_F(PidControllerTest, subscribe_and_get_messages_success)
 {
   SetUpController();
 
@@ -351,8 +406,13 @@ TEST_F(PidControllerTest, publish_status_success)
   ControllerStateMsg msg;
   subscribe_and_get_messages(msg);
 
-  ASSERT_EQ(msg.dof_states.size(), 1);
-  ASSERT_EQ(msg.dof_states[0].set_point, 101.101);
+  ASSERT_EQ(msg.dof_states.size(), dof_names_.size());
+  for (size_t i = 0; i < dof_names_.size(); ++i)
+  {
+    ASSERT_EQ(msg.dof_states[i].name, dof_names_[i]);
+    EXPECT_TRUE(std::isnan(msg.dof_states[i].set_point));
+    ASSERT_EQ(msg.dof_states[i].command, dof_command_values_[i]);
+  }
 }
 
 TEST_F(PidControllerTest, receive_message_and_publish_updated_status)
@@ -371,22 +431,45 @@ TEST_F(PidControllerTest, receive_message_and_publish_updated_status)
   ControllerStateMsg msg;
   subscribe_and_get_messages(msg);
 
-  ASSERT_EQ(msg.dof_states.size(), 1);
-  ASSERT_EQ(msg.dof_states[0].set_point, 101.101);
+  ASSERT_EQ(msg.dof_states.size(), dof_names_.size());
+  for (size_t i = 0; i < dof_names_.size(); ++i)
+  {
+    ASSERT_EQ(msg.dof_states[i].name, dof_names_[i]);
+    EXPECT_TRUE(std::isnan(msg.dof_states[i].set_point));
+    ASSERT_EQ(msg.dof_states[i].command, dof_command_values_[i]);
+  }
+
+  for (size_t i = 0; i < controller_->reference_interfaces_.size(); ++i)
+  {
+    EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[i]));
+  }
 
   publish_commands();
   ASSERT_TRUE(controller_->wait_for_commands(executor));
+
+  for (size_t i = 0; i < controller_->reference_interfaces_.size(); ++i)
+  {
+    EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[i]));
+  }
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  EXPECT_EQ(dof_command_values_[CMD_MY_ITFS], 0.45);
+  for (size_t i = 0; i < controller_->reference_interfaces_.size(); ++i)
+  {
+    ASSERT_EQ(controller_->reference_interfaces_[i], 0.45);
+  }
 
   subscribe_and_get_messages(msg);
 
-  ASSERT_EQ(msg.dof_states.size(), 1);
-  ASSERT_EQ(msg.dof_states[0].set_point, 0.45);
+  ASSERT_EQ(msg.dof_states.size(), dof_names_.size());
+  for (size_t i = 0; i < dof_names_.size(); ++i)
+  {
+    ASSERT_EQ(msg.dof_states[i].name, dof_names_[i]);
+    ASSERT_EQ(msg.dof_states[i].set_point, 0.45);
+    ASSERT_NE(msg.dof_states[i].command, dof_command_values_[i]);
+  }
 }
 
 int main(int argc, char ** argv)
