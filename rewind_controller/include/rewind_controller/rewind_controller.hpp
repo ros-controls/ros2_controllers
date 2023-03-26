@@ -25,16 +25,27 @@ class RewindController : public controller_interface::ChainableControllerInterfa
 {
 public:
   REWIND_CONTROLLER__VISIBILITY_PUBLIC
-  RewindController();
+  RewindController(){}
 
   REWIND_CONTROLLER__VISIBILITY_PUBLIC
-  controller_interface::CallbackReturn on_init() override;
+  controller_interface::CallbackReturn on_init() override
+  {
+    return controller_interface::CallbackReturn::SUCCESS;
+  }
 
   REWIND_CONTROLLER__VISIBILITY_PUBLIC
-  controller_interface::InterfaceConfiguration command_interface_configuration() const override;
+  controller_interface::InterfaceConfiguration command_interface_configuration() const override
+  {
+    controller_interface::InterfaceConfiguration command_interfaces_config;
+    return command_interfaces_config;
+  }
 
   REWIND_CONTROLLER__VISIBILITY_PUBLIC
-  controller_interface::InterfaceConfiguration state_interface_configuration() const override;
+  controller_interface::InterfaceConfiguration state_interface_configuration() const override
+  {
+    controller_interface::InterfaceConfiguration state_interfaces_config;
+    return state_interfaces_config;
+  }
 
 protected:
   std::vector<hardware_interface::CommandInterface> on_export_reference_interfaces() override

@@ -30,6 +30,9 @@ target_include_directories(rewind_controller PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/rewind_controller>
 )
+# target_link_libraries(rewind_controller PUBLIC
+#   rewind_controller_parameters
+# )
 ament_target_dependencies(rewind_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
 
 # Causes the visibility macros to use dllexport rather than dllimport,
@@ -37,6 +40,20 @@ ament_target_dependencies(rewind_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPEND
 target_compile_definitions(rewind_controller PRIVATE "rewind_controller_BUILDING_DLL")
 
 pluginlib_export_plugin_description_file(controller_interface rewind_controller.xml)
+
+if(BUILD_TESTING)
+  find_package(ament_cmake_gmock REQUIRED)
+  find_package(controller_manager REQUIRED)
+  find_package(ros2_control_test_assets REQUIRED)
+
+  ament_add_gmock(test_load_controller test/test_load_controller.cpp)
+  target_include_directories(test_load_controller PRIVATE include)
+  ament_target_dependencies(
+    test_load_controller
+    controller_manager
+    ros2_control_test_assets
+  )
+endif()
 
 install(
   DIRECTORY include/

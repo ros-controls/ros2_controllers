@@ -1,0 +1,9 @@
+test_rewind_controller:
+  ros__parameters:
+    dof_names:
+      - joint1
+
+    interface_name: position
+
+    state_dof_names:
+      - joint1state
