@@ -1,0 +1,9 @@
+<library path="rewind_controller">
+  <class name="rewind_controller/RewindController"
+         type="rewind_controller::RewindController"
+         base_class_type="controller_interface::ChainableControllerInterface">
+    <description>
+      Save a buffer of controller commands and replay them in reverse upon request.
+    </description>
+  </class>
+</library>
