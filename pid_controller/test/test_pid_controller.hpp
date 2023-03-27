@@ -124,6 +124,7 @@ public:
     state_interfaces_ = {"position"};
     dof_state_values_ = {1.1};
     dof_command_values_ = {101.101};
+    reference_and_state_dof_names_ = {"joint1state"};
 
     // initialize controller
     controller_ = std::make_unique<CtrlType>();
@@ -267,6 +268,7 @@ protected:
   std::vector<std::string> state_interfaces_;
   std::vector<double> dof_state_values_;
   std::vector<double> dof_command_values_;
+  std::vector<std::string> reference_and_state_dof_names_;
 
   std::vector<hardware_interface::StateInterface> state_itfs_;
   std::vector<hardware_interface::CommandInterface> command_itfs_;
