@@ -3,7 +3,9 @@ test_pid_controller:
     dof_names:
       - joint1
 
-    interface_name: acceleration
+    command_interface: position
 
-    state_dof_names:
+    reference_and_state_interfaces: ["position"]
+
+    reference_and_state_dof_names:
       - joint1state
