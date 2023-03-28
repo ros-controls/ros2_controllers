@@ -370,7 +370,8 @@ controller_interface::CallbackReturn AdmittanceController::on_activate(
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::return_type AdmittanceController::update_reference_from_subscribers()
+controller_interface::return_type AdmittanceController::update_reference_from_subscribers(
+  const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
   // update input reference from ros subscriber message
   if (!admittance_)
