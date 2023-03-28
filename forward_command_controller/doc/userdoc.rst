@@ -3,9 +3,13 @@
 forward_command_controller
 ==========================
 
-This is a collection of controllers that work using the "effort" joint command interface but may accept different joint-level commands at the controller level, e.g. controlling the effort on a certain joint to achieve a set position.
+This is a base class implementing a feedforward controller. Specific implementations can be found in:
+
+- `Position Controllers <../position_controllers/doc/userdoc.rst>`_
+- `Velocity Controllers <../velocity_controllers/doc/userdoc.rst>`_
+- `Effort Controllers <../effort_controllers/doc/userdoc.rst>`_
 
 Hardware interface type
 -----------------------
 
-These controllers work with joints using the "effort" command interface.
+This controller can be used for every type of command interface.
