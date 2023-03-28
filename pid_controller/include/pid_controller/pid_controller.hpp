@@ -39,11 +39,6 @@
 
 namespace pid_controller
 {
-// name constants for state interfaces
-static constexpr size_t STATE_MY_ITFS = 0;
-
-// name constants for command interfaces
-static constexpr size_t CMD_MY_ITFS = 0;
 
 enum class feedforward_mode_type : std::uint8_t
 {
