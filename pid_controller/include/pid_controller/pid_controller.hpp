@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Stogl Robotics Consulting UG (haftungsbeschränkt)
+// Copyright (c) 2023, Stogl Robotics Consulting UG (haftungsbeschränkt)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
+// Authors: Daniel Azanov, Dr. Denis
+//
 
 #ifndef PID_CONTROLLER__PID_CONTROLLER_HPP_
 #define PID_CONTROLLER__PID_CONTROLLER_HPP_
@@ -74,13 +77,13 @@ public:
     const rclcpp_lifecycle::State & previous_state) override;
 
   PID_CONTROLLER__VISIBILITY_PUBLIC
-  controller_interface::return_type update_reference_from_subscribers() override;
+  controller_interface::return_type update_reference_from_subscribers(
+    const rclcpp::Time & /*time*/, const rclcpp::Duration & period) override;
 
   PID_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::return_type update_and_write_commands(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
-  // TODO(anyone): replace the state and command message types
   using ControllerReferenceMsg = control_msgs::msg::MultiDOFCommand;
   using ControllerMeasuredStateMsg = control_msgs::msg::MultiDOFCommand;
   using ControllerModeSrvType = std_srvs::srv::SetBool;

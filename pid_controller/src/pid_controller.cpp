@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Stogl Robotics Consulting UG (haftungsbeschränkt)
+// Copyright (c) 2023, Stogl Robotics Consulting UG (haftungsbeschränkt)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
+// Authors: Daniel Azanov, Dr. Denis
+//
 
 #include "pid_controller/pid_controller.hpp"
 
@@ -22,7 +25,6 @@
 #include "control_msgs/msg/single_dof_state.hpp"
 #include "controller_interface/helpers.hpp"
 
-// TODO(destogl): should we add some knowledge from the control there here?
 // The main knowledge could be with regard to the input (reference/state) and output (command)
 // interfaces and their physical meaning, for example:
 //
@@ -370,7 +372,6 @@ controller_interface::CallbackReturn PidController::on_activate(
 controller_interface::CallbackReturn PidController::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  // TODO(anyone): depending on number of interfaces, use definitions, e.g., `CMD_MY_ITFS`,
   // instead of a loop
   for (size_t i = 0; i < dof_; ++i)
   {
@@ -379,7 +380,8 @@ controller_interface::CallbackReturn PidController::on_deactivate(
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::return_type PidController::update_reference_from_subscribers()
+controller_interface::return_type PidController::update_reference_from_subscribers(
+  const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
   auto current_ref = input_ref_.readFromRT();
 
@@ -402,8 +404,6 @@ controller_interface::return_type PidController::update_reference_from_subscribe
 controller_interface::return_type PidController::update_and_write_commands(
   const rclcpp::Time & time, const rclcpp::Duration & period)
 {
-  // TODO(destogl): make here runtime parameter update if allowed
-
   if (params_.use_external_measured_states)
   {
     const auto measured_state = *(measured_state_.readFromRT());

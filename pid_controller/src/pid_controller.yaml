@@ -4,10 +4,10 @@ pid_controller:
     default_value: [],
     description: "Specifies dof_names or axis used by the controller. If 'state_dof_names' parameter is defined, then only command dof names are defined with this parameter.",
     read_only: true,
-    #validation: {
-      #unique<>: null,
-      #not_empty<>: null,
-    #}
+    validation: {
+      unique<>: null,
+      not_empty<>: null,
+    }
   }
   reference_and_state_dof_names: {
     type: string_array,

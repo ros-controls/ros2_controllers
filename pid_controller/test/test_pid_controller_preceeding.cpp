@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Stogl Robotics Consulting UG (haftungsbeschränkt)
+// Copyright (c) 2023, Stogl Robotics Consulting UG (haftungsbeschränkt)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
+// Authors: Daniel Azanov, Dr. Denis
+//
 
 #include "test_pid_controller.hpp"
 
@@ -20,9 +23,7 @@
 #include <utility>
 #include <vector>
 
-using pid_controller::CMD_MY_ITFS;
 using pid_controller::feedforward_mode_type;
-using pid_controller::STATE_MY_ITFS;
 
 class PidControllerTest : public PidControllerFixture<TestablePidController>
 {
