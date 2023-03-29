@@ -5,9 +5,9 @@ forward_command_controller
 
 This is a base class implementing a feedforward controller. Specific implementations can be found in:
 
-- `Position Controllers <../position_controllers/doc/userdoc.rst>`_
-- `Velocity Controllers <../velocity_controllers/doc/userdoc.rst>`_
-- `Effort Controllers <../effort_controllers/doc/userdoc.rst>`_
+- :ref:`position_controllers_userdoc`
+- :ref:`velocity_controllers_userdoc`
+- :ref:`effort_controllers_userdoc`
 
 Hardware interface type
 -----------------------
