@@ -490,41 +490,53 @@ bool JointTrajectoryController::read_commands_from_command_interfaces(
   };
 
   // Assign values from the command interfaces as command.
-  if (has_position_command_interface_ && interface_has_values(joint_command_interface_[0]))
+  if (has_position_command_interface_)
   {
-    assign_point_from_interface(commands.positions, joint_command_interface_[0]);
+    if (interface_has_values(joint_command_interface_[0]))
+    {
+      assign_point_from_interface(commands.positions, joint_command_interface_[0]);
+    }
+    else
+    {
+      commands.positions.clear();
+      has_values = false;
+    }
   }
-  else
+  if (has_velocity_command_interface_)
   {
-    commands.positions.clear();
-    has_values = false;
+    if (interface_has_values(joint_command_interface_[1]))
+    {
+      assign_point_from_interface(commands.velocities, joint_command_interface_[1]);
+    }
+    else
+    {
+      commands.velocities.clear();
+      has_values = false;
+    }
   }
-  if (has_velocity_command_interface_ && interface_has_values(joint_command_interface_[1]))
+  if (has_acceleration_command_interface_)
   {
-    assign_point_from_interface(commands.velocities, joint_command_interface_[1]);
+    if (interface_has_values(joint_command_interface_[2]))
+    {
+      assign_point_from_interface(commands.accelerations, joint_command_interface_[2]);
+    }
+    else
+    {
+      commands.accelerations.clear();
+      has_values = false;
+    }
   }
-  else
+  if (has_effort_command_interface_)
   {
-    commands.velocities.clear();
-    has_values = false;
-  }
-  if (has_acceleration_command_interface_ && interface_has_values(joint_command_interface_[2]))
-  {
-    assign_point_from_interface(commands.accelerations, joint_command_interface_[2]);
-  }
-  else
-  {
-    commands.accelerations.clear();
-    has_values = false;
-  }
-  if (has_effort_command_interface_ && interface_has_values(joint_command_interface_[3]))
-  {
-    assign_point_from_interface(commands.effort, joint_command_interface_[3]);
-  }
-  else
-  {
-    commands.effort.clear();
-    has_values = false;
+    if (interface_has_values(joint_command_interface_[3]))
+    {
+      assign_point_from_interface(commands.effort, joint_command_interface_[3]);
+    }
+    else
+    {
+      commands.effort.clear();
+      has_values = false;
+    }
   }
 
   return has_values;
