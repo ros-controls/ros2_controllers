@@ -29,7 +29,6 @@
 
 #include "builtin_interfaces/msg/duration.hpp"
 #include "builtin_interfaces/msg/time.hpp"
-// #include "control_msgs/msg/detail/joint_trajectory_controller_state__struct.hpp"
 #include "controller_interface/controller_interface.hpp"
 #include "hardware_interface/resource_manager.hpp"
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
@@ -49,9 +48,10 @@
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 #include "std_msgs/msg/header.hpp"
-#include "test_trajectory_controller_utils.hpp"
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
+
+#include "test_trajectory_controller_utils.hpp"
 
 using lifecycle_msgs::msg::State;
 using test_trajectory_controllers::TrajectoryControllerTest;
