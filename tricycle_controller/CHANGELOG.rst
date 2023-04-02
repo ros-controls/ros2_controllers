@@ -2,6 +2,9 @@
 Changelog for package tricycle_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 3.3.0 (2023-03-07)
 ------------------
 * Use std::clamp instead of rcppmath::clamp (`#540 <https://github.com/ros-controls/ros2_controllers/issues/540>`_)
