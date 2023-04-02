@@ -2,8 +2,8 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.4.0 (2023-04-02)
+------------------
 * [AdmittanceController] Addintional argument in methods of ControllerInterface (`#553 <https://github.com/ros-controls/ros2_controllers/issues/553>`_)
 * Removed auto param decl (`#546 <https://github.com/ros-controls/ros2_controllers/issues/546>`_)
 * Contributors: Dr. Denis, GuiHome

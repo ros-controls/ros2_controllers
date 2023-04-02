@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.4.0 (2023-04-02)
+------------------
 * Update JTC documentation (`#541 <https://github.com/ros-controls/ros2_controllers/issues/541>`_)
 * Contributors: Christoph Fröhlich
 
