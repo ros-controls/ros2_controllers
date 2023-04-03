@@ -149,7 +149,7 @@ open_loop_control (boolean)
   This is useful if hardware states are not following commands, i.e., an offset between those (typical for hydraulic manipulators).
 
   .. Note::
-     If this flag is set, the controller tries to read the values from the command interfaces on starting.
+     If this flag is set, the controller tries to read the values from the command interfaces on activation.
      If they have real numeric values, those will be used instead of state interfaces.
      Therefore it is important set command interfaces to NaN (i.e., ``std::numeric_limits<double>::quiet_NaN()``) or state values when the hardware is started.
 
