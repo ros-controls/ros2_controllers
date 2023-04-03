@@ -23,9 +23,7 @@
 #include <utility>
 #include <vector>
 
-using pid_controller::CMD_MY_ITFS;
 using pid_controller::feedforward_mode_type;
-using pid_controller::STATE_MY_ITFS;
 
 class PidControllerTest : public PidControllerFixture<TestablePidController>
 {
@@ -163,11 +161,11 @@ TEST_F(PidControllerTest, reactivate_success)
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->command_interfaces_[CMD_MY_ITFS].get_value(), 101.101);
+  ASSERT_EQ(controller_->command_interfaces_[0].get_value(), 101.101);
   ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[CMD_MY_ITFS].get_value()));
+  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[0].get_value()));
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[CMD_MY_ITFS].get_value()));
+  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[0].get_value()));
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),

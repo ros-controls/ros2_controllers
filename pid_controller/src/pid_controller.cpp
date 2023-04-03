@@ -478,11 +478,11 @@ controller_interface::return_type PidController::update_and_write_commands(
     state_publisher_->msg_.header.stamp = time;
     for (size_t i = 0; i < dof_; ++i)
     {
-      state_publisher_->msg_.dof_states[i].set_point = reference_interfaces_[i];
-      state_publisher_->msg_.dof_states[i].process_value = measured_state_values_[i];
+      state_publisher_->msg_.dof_states[i].reference = reference_interfaces_[i];
+      state_publisher_->msg_.dof_states[i].feedback = measured_state_values_[i];
       if (reference_interfaces_.size() == 2 * dof_ && measured_state_values_.size() == 2 * dof_)
       {
-        state_publisher_->msg_.dof_states[i].process_value_dot = measured_state_values_[dof_ + i];
+        state_publisher_->msg_.dof_states[i].feedback_dot = measured_state_values_[dof_ + i];
       }
       state_publisher_->msg_.dof_states[i].error =
         reference_interfaces_[i] - measured_state_values_[i];
@@ -494,7 +494,7 @@ controller_interface::return_type PidController::update_and_write_commands(
       state_publisher_->msg_.dof_states[i].time_step = period.seconds();
       // Command can store the old calculated values. This should be obvious because at least one
       // another value is NaN.
-      state_publisher_->msg_.dof_states[i].command = command_interfaces_[i].get_value();
+      state_publisher_->msg_.dof_states[i].output = command_interfaces_[i].get_value();
     }
     state_publisher_->unlockAndPublish();
   }
