@@ -21,24 +21,14 @@
 #include <utility>
 #include <vector>
 
-// Test on_configure returns ERROR when a required parameter is missing
-TEST_P(AdmittanceControllerTestParameterizedMissingParameters, one_parameter_is_missing)
+// Test on_init returns ERROR when a required parameter is missing
+TEST_P(AdmittanceControllerTestParameterizedMissingParameters, one_init_parameter_is_missing)
 {
-  auto ret = SetUpController(GetParam());
-  // additionally, test params required during configure only if init worked
-  if (ret == controller_interface::return_type::OK)
-  {
-    ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_FAILURE);
-  }
-  else
-  {
-    ASSERT_EQ(ret, controller_interface::return_type::ERROR);
-  }
+  ASSERT_EQ(SetUpController(GetParam()), controller_interface::return_type::ERROR);
 }
 
 INSTANTIATE_TEST_SUITE_P(
-  MissingMandatoryParameterDuringConfiguration,
-  AdmittanceControllerTestParameterizedMissingParameters,
+  MissingMandatoryParameterDuringInit, AdmittanceControllerTestParameterizedMissingParameters,
   ::testing::Values(
     "admittance.mass", "admittance.selected_axes", "admittance.stiffness",
     "chainable_command_interfaces", "command_interfaces", "control.frame.id",
