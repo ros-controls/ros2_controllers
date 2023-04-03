@@ -21,30 +21,34 @@
 #include <utility>
 #include <vector>
 
-// Test on_configure returns ERROR when a required parameter is missing
-TEST_P(AdmittanceControllerTestParameterizedMissingParameters, one_parameter_is_missing)
+// Test on_init returns ERROR when a required parameter is missing
+TEST_P(AdmittanceControllerTestParameterizedMissingParameters, one_control_parameter_is_missing)
 {
-  auto ret = SetUpController(GetParam());
-  // additionally, test params required during configure only if init worked
-  if (ret == controller_interface::return_type::OK)
-  {
-    ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_FAILURE);
-  }
-  else
-  {
-    ASSERT_EQ(ret, controller_interface::return_type::ERROR);
-  }
+  ASSERT_EQ(SetUpController(GetParam()), controller_interface::return_type::ERROR);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+  MissingMandatoryParameterDuringInit, AdmittanceControllerTestParameterizedMissingParameters,
+  ::testing::Values(
+    "admittance.mass", "admittance.selected_axes", "admittance.stiffness",
+    "chainable_command_interfaces", "command_interfaces", "control.frame.id", "ft_sensor.frame.id",
+    "ft_sensor.name", "joints", "kinematics.base", "kinematics.plugin_name",
+    "kinematics.plugin_package", "kinematics.tip", "state_interfaces"));
+
+// Test on_configure returns FAILURE when a required parameter is missing
+TEST_P(
+  AdmittanceControllerTestParameterizedMissingConfigParameters, one_config_parameter_is_missing)
+{
+  SetUpController(GetParam());
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_FAILURE);
 }
 
 INSTANTIATE_TEST_SUITE_P(
   MissingMandatoryParameterDuringConfiguration,
-  AdmittanceControllerTestParameterizedMissingParameters,
+  AdmittanceControllerTestParameterizedMissingConfigParameters,
   ::testing::Values(
-    "admittance.mass", "admittance.selected_axes", "admittance.stiffness",
-    "chainable_command_interfaces", "command_interfaces", "control.frame.id", "ft_sensor.frame.id",
-    "ft_sensor.name", "sensor_filter_chain.filter2.params.CoG.pos",
-    "sensor_filter_chain.filter2.params.sensor_frame", "joints", "kinematics.base",
-    "kinematics.plugin_name", "kinematics.plugin_package", "kinematics.tip", "state_interfaces"));
+    "sensor_filter_chain.filter2.params.CoG.pos",
+    "sensor_filter_chain.filter2.params.sensor_frame"));
 
 INSTANTIATE_TEST_SUITE_P(
   InvalidParameterDuringConfiguration, AdmittanceControllerTestParameterizedInvalidParameters,

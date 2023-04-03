@@ -452,6 +452,11 @@ protected:
   std::map<std::string, rclcpp::ParameterValue> overrides_;
 };
 
+class AdmittanceControllerTestParameterizedMissingConfigParameters
+: public AdmittanceControllerTestParameterizedMissingParameters
+{
+};
+
 // From the tutorial: https://www.sandordargo.com/blog/2019/04/24/parameterized-testing-with-gtest
 class AdmittanceControllerTestParameterizedInvalidParameters
 : public AdmittanceControllerTest,
