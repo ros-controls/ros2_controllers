@@ -2,7 +2,7 @@ pid_controller:
   dof_names: {
     type: string_array,
     default_value: [],
-    description: "Specifies dof_names or axis used by the controller. If 'state_dof_names' parameter is defined, then only command dof names are defined with this parameter.",
+    description: "Specifies dof_names or axes used by the controller. If 'state_dof_names' parameter is defined, then only command dof names are defined with this parameter.",
     read_only: true,
     validation: {
       unique<>: null,
@@ -12,33 +12,30 @@ pid_controller:
   reference_and_state_dof_names: {
     type: string_array,
     default_value: [],
-    description: "(optional) Specifies dof_names or axis for getting reference and reading states. This parameter is only relevant when state dof names are different then command dof names, i.e., when a following controller is used.",
+    description: "(optional) Specifies dof_names or axes for getting reference and reading states. This parameter is only relevant when state dof names are different then command dof names, i.e., when a following controller is used.",
     read_only: true,
-    #validation: {
-      #unique<>: null,
-    #}
+    validation: {
+      unique<>: null,
+    }
   }
   command_interface: {
     type: string,
     default_value: "",
     description: "Name of the interface used by the controller for writing commands to the hardware.",
     read_only: true,
-    #validation: {
-      #not_empty<>: null,
-      #one_of<>: [["position", "velocity", "acceleration", "effort",]],
-    #}
+    validation: {
+      not_empty<>: null,
+    }
   }
   reference_and_state_interfaces: {
     type: string_array,
     default_value: [],
-    description: "Name of the interfaces used by the controller getting hardware states and reference commands. The second interface should be the derivation of the first.",
+    description: "Name of the interfaces used by the controller getting hardware states and reference commands. The second interface should be the derivative of the first.",
     read_only: true,
-    #validation: {
-      #not_empty<>: null,
-      #size_lt<>: 3,
-      #subset_of<>: [["position", "velocity", "acceleration", "effort",]],
-      #forbidden_interface_name_prefix: null
-    #}
+    validation: {
+      not_empty<>: null,
+      size_lt<>: 3,
+    }
   }
   use_external_measured_states: {
     type: bool,
