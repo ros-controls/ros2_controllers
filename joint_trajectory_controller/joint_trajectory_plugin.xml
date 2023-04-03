@@ -1,7 +1,14 @@
 <library path="joint_trajectory_controller">
   <class name="joint_trajectory_controller/JointTrajectoryController" type="joint_trajectory_controller::JointTrajectoryController" base_class_type="controller_interface::ControllerInterface">
-  <description>
-    The joint trajectory controller executes joint-space trajectories on a set of joints
-  </description>
+    <description>
+      The joint trajectory controller executes joint-space trajectories on a set of joints.
+    </description>
+  </class>
+</library>
+<library path="cartesian_trajectory_generator">
+  <class name="trajectory_interpolators/CartesianTrajectoryGenerator" type="cartesian_trajectory_generator::CartesianTrajectoryGenerator" base_class_type="controller_interface::ControllerInterface">
+    <description>
+      The cartesian trajectory generator executes cartesian-space trajectories on a set of input points.
+    </description>
   </class>
 </library>

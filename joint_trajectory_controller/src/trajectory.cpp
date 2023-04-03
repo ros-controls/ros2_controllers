@@ -331,6 +331,32 @@ void Trajectory::deduce_from_derivatives(
         (first_state.velocities[i] + second_state.velocities[i]) * 0.5 * delta_t;
     }
   }
+  else
+  {
+    for (size_t i = 0; i < dim; ++i)
+    {
+      if (std::isnan(second_state.positions[i]))
+      {
+        double first_state_velocity =
+          first_state.velocities.empty() ? 0.0 : first_state.velocities[i];
+        if (std::isnan(first_state_velocity))
+        {
+          first_state.velocities[i] = 0.0;
+          first_state_velocity = 0.0;
+        }
+        double second_state_velocity =
+          second_state.velocities.empty() ? 0.0 : second_state.velocities[i];
+        if (std::isnan(second_state_velocity))
+        {
+          second_state.velocities[i] = 0.0;
+          second_state_velocity = 0.0;
+        }
+
+        second_state.positions[i] =
+          first_state.positions[i] + (first_state_velocity + second_state_velocity) * 0.5 * delta_t;
+      }
+    }
+  }
 }
 
 TrajectoryPointConstIter Trajectory::begin() const

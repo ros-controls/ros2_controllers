@@ -25,11 +25,15 @@
   <depend>control_toolbox</depend>
   <depend>generate_parameter_library</depend>
   <depend>hardware_interface</depend>
+  <depend>nav_msgs</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_lifecycle</depend>
   <depend>rsl</depend>
   <depend>tl_expected</depend>
   <depend>trajectory_msgs</depend>
+  <depend>tf2</depend>
+  <depend>tf2_geometry_msgs</depend>
+
 
   <test_depend>ament_cmake_gmock</test_depend>
   <test_depend>controller_manager</test_depend>

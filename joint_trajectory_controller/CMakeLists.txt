@@ -12,6 +12,8 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   controller_interface
   generate_parameter_library
   hardware_interface
+  joint_limits
+  nav_msgs
   pluginlib
   rclcpp
   rclcpp_lifecycle
@@ -19,6 +21,8 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   rsl
   tl_expected
   trajectory_msgs
+  tf2
+  tf2_geometry_msgs
 )
 
 find_package(ament_cmake REQUIRED)
@@ -49,6 +53,20 @@ ament_target_dependencies(joint_trajectory_controller PUBLIC ${THIS_PACKAGE_INCL
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
 target_compile_definitions(joint_trajectory_controller PRIVATE "JOINT_TRAJECTORY_CONTROLLER_BUILDING_DLL" "_USE_MATH_DEFINES")
+
+add_library(cartesian_trajectory_generator SHARED
+  src/cartesian_trajectory_generator.cpp
+)
+target_compile_features(cartesian_trajectory_generator PUBLIC cxx_std_17)
+target_include_directories(cartesian_trajectory_generator PUBLIC
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include/joint_trajectory_controller>
+)
+target_link_libraries(cartesian_trajectory_generator PUBLIC
+  joint_trajectory_controller
+)
+ament_target_dependencies(cartesian_trajectory_generator PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
+
 pluginlib_export_plugin_description_file(controller_interface joint_trajectory_plugin.xml)
 
 if(BUILD_TESTING)
@@ -80,6 +98,19 @@ if(BUILD_TESTING)
     ros2_control_test_assets
   )
 
+  ament_add_gmock(test_load_cartesian_trajectory_generator
+    test/test_load_cartesian_trajectory_generator
+  )
+  target_link_libraries(test_load_cartesian_trajectory_generator
+    cartesian_trajectory_generator
+  )
+  ament_target_dependencies(test_load_cartesian_trajectory_generator
+    controller_manager
+    control_toolbox
+    realtime_tools
+    ros2_control_test_assets
+  )
+
   # TODO(andyz): Disabled due to flakiness
   # ament_add_gmock(test_trajectory_actions
   #   test/test_trajectory_actions.cpp
@@ -95,6 +126,7 @@ install(
   DESTINATION include/joint_trajectory_controller
 )
 install(TARGETS
+    cartesian_trajectory_generator
     joint_trajectory_controller
     joint_trajectory_controller_parameters
   EXPORT export_joint_trajectory_controller
