@@ -67,14 +67,14 @@ if(BUILD_TESTING)
   )
 
   add_rostest_with_parameters_gmock(
-    test_pid_controller_preceeding
-    test/test_pid_controller_preceeding.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/pid_controller_preceeding_params.yaml
+    test_pid_controller_preceding
+    test/test_pid_controller_preceding.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/pid_controller_preceding_params.yaml
   )
-  target_include_directories(test_pid_controller_preceeding PRIVATE include)
-  target_link_libraries(test_pid_controller_preceeding pid_controller)
+  target_include_directories(test_pid_controller_preceding PRIVATE include)
+  target_link_libraries(test_pid_controller_preceding pid_controller)
   ament_target_dependencies(
-    test_pid_controller_preceeding
+    test_pid_controller_preceding
     controller_interface
     hardware_interface
   )
