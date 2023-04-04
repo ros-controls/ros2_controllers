@@ -7,6 +7,7 @@ endif()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   control_msgs
+  generate_parameter_library
   controller_interface
   hardware_interface
   parameter_traits
@@ -14,6 +15,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   rclcpp
   rclcpp_lifecycle
   realtime_tools
+  std_msgs
 )
 
 find_package(ament_cmake REQUIRED)
@@ -21,6 +23,10 @@ find_package(backward_ros REQUIRED)
 foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
+
+generate_parameter_library(passthrough_controller_parameters
+  src/passthrough_controller_parameters.yaml
+)
 
 add_library(passthrough_controller SHARED
   src/passthrough_controller.cpp
@@ -30,9 +36,9 @@ target_include_directories(passthrough_controller PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/passthrough_controller>
 )
-# target_link_libraries(passthrough_controller PUBLIC
-#   passthrough_controller_parameters
-# )
+ target_link_libraries(passthrough_controller PUBLIC
+   passthrough_controller_parameters
+ )
 ament_target_dependencies(passthrough_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
 
 # Causes the visibility macros to use dllexport rather than dllimport,
@@ -62,6 +68,7 @@ install(
 
 install(TARGETS
     passthrough_controller
+    passthrough_controller_parameters
   EXPORT export_passthrough_controller
   RUNTIME DESTINATION bin
   ARCHIVE DESTINATION lib

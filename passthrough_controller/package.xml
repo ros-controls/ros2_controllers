@@ -2,15 +2,16 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>passthrough_controller</name>
-  <version>0.0.0</version>
+  <version>3.3.0</version>
   <description>A simple demo of chainable controllers. It passes commands through without change.</description>
-  <maintainer email="TODO@TODO.com">Sai Kishor Kothakota</maintainer>
+  <maintainer email="sai.kishor@pal-robotics.com">Sai Kishor Kothakota</maintainer>
   <maintainer email="zelenak@picknik.ai">Andy Zelenak</maintainer>
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>control_msgs</depend>
+  <depend>generate_parameter_library</depend>
   <depend>controller_interface</depend>
   <depend>hardware_interface</depend>
   <depend>parameter_traits</depend>
@@ -18,6 +19,7 @@
   <depend>rclcpp</depend>
   <depend>rclcpp_lifecycle</depend>
   <depend>realtime_tools</depend>
+  <depend>std_msgs</depend>
 
   <test_depend>ament_cmake_gmock</test_depend>
   <test_depend>controller_manager</test_depend>
