@@ -206,7 +206,7 @@ controller_interface::CallbackReturn PidController::on_configure(
   {
     // State publisher
     s_publisher_ =
-      get_node()->create_publisher<ControllerStateMsg>("~/state", rclcpp::SystemDefaultsQoS());
+      get_node()->create_publisher<ControllerStateMsg>("~/controller_state", rclcpp::SystemDefaultsQoS());
     state_publisher_ = std::make_unique<ControllerStatePublisher>(s_publisher_);
   }
   catch (const std::exception & e)
@@ -290,9 +290,9 @@ controller_interface::InterfaceConfiguration PidController::command_interface_co
   command_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
 
   command_interfaces_config.names.reserve(params_.dof_names.size());
-  for (const auto & joint : params_.dof_names)
+  for (const auto & dof_name : params_.dof_names)
   {
-    command_interfaces_config.names.push_back(joint + "/" + params_.command_interface);
+    command_interfaces_config.names.push_back(dof_name + "/" + params_.command_interface);
   }
 
   return command_interfaces_config;
@@ -313,9 +313,9 @@ controller_interface::InterfaceConfiguration PidController::state_interface_conf
     state_interfaces_config.names.reserve(dof_ * params_.reference_and_state_interfaces.size());
     for (const auto & interface : params_.reference_and_state_interfaces)
     {
-      for (const auto & joint : reference_and_state_dof_names_)
+      for (const auto & dof_name : reference_and_state_dof_names_)
       {
-        state_interfaces_config.names.push_back(joint + "/" + interface);
+        state_interfaces_config.names.push_back(dof_name + "/" + interface);
       }
     }
   }
@@ -334,10 +334,10 @@ std::vector<hardware_interface::CommandInterface> PidController::on_export_refer
   size_t index = 0;
   for (const auto & interface : params_.reference_and_state_interfaces)
   {
-    for (const auto & joint : reference_and_state_dof_names_)
+    for (const auto & dof_name : reference_and_state_dof_names_)
     {
       reference_interfaces.push_back(hardware_interface::CommandInterface(
-        get_node()->get_name(), joint + "/" + interface, &reference_interfaces_[index]));
+        get_node()->get_name(), dof_name + "/" + interface, &reference_interfaces_[index]));
       ++index;
     }
   }

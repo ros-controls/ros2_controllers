@@ -107,8 +107,6 @@ public:
     return wait_for_command(executor, ref_subscriber_wait_set_, timeout);
   }
 
-  // TODO(anyone): add implementation of any methods of your controller is needed
-
 private:
   rclcpp::WaitSet ref_subscriber_wait_set_;
 };
@@ -185,7 +183,7 @@ protected:
     rclcpp::Node test_subscription_node("test_subscription_node");
     auto subs_callback = [&](const ControllerStateMsg::SharedPtr) {};
     auto subscription = test_subscription_node.create_subscription<ControllerStateMsg>(
-      "/test_pid_controller/state", 10, subs_callback);
+      "/test_pid_controller/controller_state", 10, subs_callback);
 
     // call update to publish the test value
     ASSERT_EQ(
