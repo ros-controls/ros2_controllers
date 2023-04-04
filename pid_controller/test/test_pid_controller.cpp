@@ -411,8 +411,8 @@ TEST_F(PidControllerTest, subscribe_and_get_messages_success)
   for (size_t i = 0; i < dof_names_.size(); ++i)
   {
     ASSERT_EQ(msg.dof_states[i].name, dof_names_[i]);
-    EXPECT_TRUE(std::isnan(msg.dof_states[i].set_point));
-    ASSERT_EQ(msg.dof_states[i].command, dof_command_values_[i]);
+    EXPECT_TRUE(std::isnan(msg.dof_states[i].reference));
+    ASSERT_EQ(msg.dof_states[i].output, dof_command_values_[i]);
   }
 }
 
@@ -436,8 +436,8 @@ TEST_F(PidControllerTest, receive_message_and_publish_updated_status)
   for (size_t i = 0; i < dof_names_.size(); ++i)
   {
     ASSERT_EQ(msg.dof_states[i].name, dof_names_[i]);
-    EXPECT_TRUE(std::isnan(msg.dof_states[i].set_point));
-    ASSERT_EQ(msg.dof_states[i].command, dof_command_values_[i]);
+    EXPECT_TRUE(std::isnan(msg.dof_states[i].reference));
+    ASSERT_EQ(msg.dof_states[i].output, dof_command_values_[i]);
   }
 
   for (size_t i = 0; i < controller_->reference_interfaces_.size(); ++i)
@@ -468,8 +468,8 @@ TEST_F(PidControllerTest, receive_message_and_publish_updated_status)
   for (size_t i = 0; i < dof_names_.size(); ++i)
   {
     ASSERT_EQ(msg.dof_states[i].name, dof_names_[i]);
-    ASSERT_EQ(msg.dof_states[i].set_point, 0.45);
-    ASSERT_NE(msg.dof_states[i].command, dof_command_values_[i]);
+    ASSERT_EQ(msg.dof_states[i].reference, 0.45);
+    ASSERT_NE(msg.dof_states[i].output, dof_command_values_[i]);
   }
 }
 
