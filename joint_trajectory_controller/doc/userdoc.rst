@@ -155,9 +155,18 @@ allow_partial_joints_goal (boolean)
   Allow joint goals defining trajectory for only some joints.
 
 open_loop_control (boolean)
-  Use controller in open-loop control mode using ignoring the states provided by hardware interface and using last commands as states in the next control step. This is useful if hardware states are not following commands, i.e., an offset between those (typical for hydraulic manipulators).
+  Use controller in open-loop control mode:
+    + The controller ignores the states provided by hardware interface but using last commands as states for starting the trajectory interpolation.
+    + It deactivates the feedback control, see the ``gains`` structure.
 
-  If this flag is set, the controller tries to read the values from the command interfaces on starting. If they have real numeric values, those will be used instead of state interfaces. Therefore it is important set command interfaces to NaN (std::numeric_limits<double>::quiet_NaN()) or state values when the hardware is started.
+  This is useful if hardware states are not following commands, i.e., an offset between those (typical for hydraulic manipulators).
+
+  .. Note::
+     If this flag is set, the controller tries to read the values from the command interfaces on activation.
+     If they have real numeric values, those will be used instead of state interfaces.
+     Therefore it is important set command interfaces to NaN (i.e., ``std::numeric_limits<double>::quiet_NaN()``) or state values when the hardware is started.
+
+  Default: false
 
 allow_nonzero_velocity_at_trajectory_end (boolean)
   If false, the last velocity point has to be zero or the goal will be rejected.
@@ -188,7 +197,10 @@ constraints.<joint_name>.goal (double)
   Default: 0.0 (tolerance is not enforced)
 
 gains (structure)
-  If ``velocity`` is the only command interface for all joints or an ``effort`` command interface is configured, PID controllers are used for every joint. This structure contains the controller gains for every joint with the control law
+  Only relevant, if ``open_loop_control`` is not set.
+
+  If ``velocity`` is the only command interface for all joints or an ``effort`` command interface is configured, PID controllers are used for every joint.
+  This structure contains the controller gains for every joint with the control law
 
   .. math::
 
