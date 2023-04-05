@@ -55,7 +55,7 @@ joint_trajectory_controller:
     default_value: 20.0,
     description: "Rate status changes will be monitored",
     validation: {
-      lower_bounds: [0.1]
+      gt_eq: [0.1]
     }
   }
   interpolation_method: {
@@ -109,7 +109,7 @@ joint_trajectory_controller:
       default_value: 0.0,
       description: "Time tolerance for achieving trajectory goal before or after commanded time.",
       validation: {
-        lower_bounds: [0.0],
+        gt_eq: [0.0],
       }
     }
     __map_joints:
