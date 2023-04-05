@@ -17,7 +17,7 @@
 namespace passthrough_controller
 {
 
-} // namespace passthrough_controller
+}  // namespace passthrough_controller
 
 #include "pluginlib/class_list_macros.hpp"
 

@@ -59,6 +59,13 @@ if(BUILD_TESTING)
     controller_manager
     ros2_control_test_assets
   )
+
+  ament_add_gmock(test_passthrough_controller
+    test/test_passthrough_controller.cpp
+  )
+  target_link_libraries(test_passthrough_controller
+    passthrough_controller
+  )
 endif()
 
 install(
