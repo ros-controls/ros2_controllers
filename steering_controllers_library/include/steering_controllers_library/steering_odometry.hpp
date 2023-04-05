@@ -239,9 +239,10 @@ private:
   double linear_;   //   [m/s]
   double angular_;  // [rad/s]
 
-  double wheel_track_;
-  double wheelbase_;
-  double wheel_radius_;
+  /// Kinematic parameters
+  double wheel_track_;   // [m]
+  double wheelbase_;     // [m]
+  double wheel_radius_;  // [m]
 
   /// Configuration type used for thr forward kinematics
   int config_type_ = -1;
