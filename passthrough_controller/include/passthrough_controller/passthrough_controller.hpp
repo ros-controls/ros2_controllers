@@ -160,6 +160,14 @@ public:
     // message is valid
     if (!(!joint_commands || !(*joint_commands)))
     {
+      if (reference_interfaces_.size() != (*joint_commands)->data.size())
+      {
+        RCLCPP_ERROR_THROTTLE(
+          get_node()->get_logger(), *(get_node()->get_clock()), 1000,
+          "command size (%zu) does not match number of reference interfaces (%zu)",
+          (*joint_commands)->data.size(), reference_interfaces_.size());
+        return controller_interface::return_type::ERROR;
+      }
       reference_interfaces_ = (*joint_commands)->data;
     }
 
