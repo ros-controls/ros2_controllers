@@ -4,7 +4,7 @@ gripper_action_controller:
     default_value: 20.0,
     description: "Hz",
     validation: {
-      lower_bounds: [0.1]
+      gt_eq: [0.1]
     },
   }
   joint: {
@@ -15,7 +15,7 @@ gripper_action_controller:
     type: double,
     default_value: 0.01,
     validation: {
-      lower_bounds: [0.0]
+      gt_eq: [0.0]
     },
   }
   max_effort: {
@@ -23,7 +23,7 @@ gripper_action_controller:
     default_value: 0.0,
     description: "Max allowable effort",
     validation: {
-      lower_bounds: [0.0]
+      gt_eq: [0.0]
     },
   }
   allow_stalling: {
