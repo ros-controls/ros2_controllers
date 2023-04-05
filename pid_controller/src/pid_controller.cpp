@@ -205,8 +205,8 @@ controller_interface::CallbackReturn PidController::on_configure(
   try
   {
     // State publisher
-    s_publisher_ =
-      get_node()->create_publisher<ControllerStateMsg>("~/controller_state", rclcpp::SystemDefaultsQoS());
+    s_publisher_ = get_node()->create_publisher<ControllerStateMsg>(
+      "~/controller_state", rclcpp::SystemDefaultsQoS());
     state_publisher_ = std::make_unique<ControllerStatePublisher>(s_publisher_);
   }
   catch (const std::exception & e)
