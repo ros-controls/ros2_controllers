@@ -87,9 +87,7 @@ bool SteeringOdometry::update_from_position(
   steer_pos_ = steer_pos;
   const double angular = tan(steer_pos) * linear_velocity / wheelbase_;
 
-  update_odometry(linear_velocity, angular, dt);
-
-  return true;
+  return update_odometry(linear_velocity, angular, dt);
 }
 
 bool SteeringOdometry::update_from_position(
@@ -113,9 +111,8 @@ bool SteeringOdometry::update_from_position(
     (traction_right_wheel_est_pos_diff + traction_left_wheel_est_pos_diff) * 0.5 / dt;
   steer_pos_ = steer_pos;
   const double angular = tan(steer_pos_) * linear_velocity / wheelbase_;
-  update_odometry(linear_velocity, angular, dt);
 
-  return true;
+  return update_odometry(linear_velocity, angular, dt);
 }
 
 bool SteeringOdometry::update_from_position(
@@ -141,9 +138,7 @@ bool SteeringOdometry::update_from_position(
   steer_pos_ = (right_steer_pos + left_steer_pos) * 0.5;
   const double angular = tan(steer_pos_) * linear_velocity / wheelbase_;
 
-  update_odometry(linear_velocity, angular, dt);
-
-  return true;
+  return update_odometry(linear_velocity, angular, dt);
 }
 
 bool SteeringOdometry::update_from_velocity(
@@ -153,9 +148,7 @@ bool SteeringOdometry::update_from_velocity(
   double linear_velocity = traction_wheel_vel * wheel_radius_;
   const double angular = tan(steer_pos) * linear_velocity / wheelbase_;
 
-  update_odometry(linear_velocity, angular, dt);
-
-  return true;
+  return update_odometry(linear_velocity, angular, dt);
 }
 
 bool SteeringOdometry::update_from_velocity(
@@ -167,9 +160,8 @@ bool SteeringOdometry::update_from_velocity(
   steer_pos_ = steer_pos;
 
   const double angular = tan(steer_pos_) * linear_velocity / wheelbase_;
-  update_odometry(linear_velocity, angular, dt);
 
-  return true;
+  return update_odometry(linear_velocity, angular, dt);
 }
 
 bool SteeringOdometry::update_from_velocity(
@@ -181,9 +173,7 @@ bool SteeringOdometry::update_from_velocity(
     (right_traction_wheel_vel + left_traction_wheel_vel) * wheel_radius_ * 0.5;
   const double angular = steer_pos_ * linear_velocity / wheelbase_;
 
-  update_odometry(linear_velocity, angular, dt);
-
-  return true;
+  return update_odometry(linear_velocity, angular, dt);
 }
 
 void SteeringOdometry::update_open_loop(const double linear, const double angular, const double dt)
@@ -320,9 +310,9 @@ void SteeringOdometry::integrate_runge_kutta_2(double linear, double angular)
 void SteeringOdometry::integrate_exact(double linear, double angular)
 {
   if (fabs(angular) < 1e-6)
-{
+  {
     integrate_runge_kutta_2(linear, angular);
-}
+  }
   else
   {
     /// Exact integration (should solve problems when angular is zero):
