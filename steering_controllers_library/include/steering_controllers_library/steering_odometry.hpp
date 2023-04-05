@@ -244,7 +244,7 @@ private:
   double wheelbase_;     // [m]
   double wheel_radius_;  // [m]
 
-  /// Configuration type used for thr forward kinematics
+  /// Configuration type used for the forward kinematics
   int config_type_ = -1;
 
   /// Previous wheel position/state [rad]:
