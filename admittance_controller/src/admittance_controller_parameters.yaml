@@ -142,7 +142,7 @@ admittance_controller:
       description: "Specifies the joint damping applied used in the admittance calculation.",
       default_value: 5,
       validation: {
-        lower_bounds: [ 0.0 ]
+        gt_eq: [ 0.0 ]
       }
     }
 
