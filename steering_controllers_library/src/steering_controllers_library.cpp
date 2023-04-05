@@ -208,17 +208,7 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
   controller_state_publisher_->lock();
   controller_state_publisher_->msg_.header.stamp = get_node()->now();
   controller_state_publisher_->msg_.header.frame_id = params_.odom_frame_id;
-  controller_state_publisher_->msg_.odom.pose.pose.position.z = 0;
-  controller_state_publisher_->msg_.odom.child_frame_id = params_.base_frame_id;
   controller_state_publisher_->unlock();
-  auto & covariance_controller = controller_state_publisher_->msg_.odom.twist.covariance;
-  for (size_t index = 0; index < 6; ++index)
-  {
-    // 0, 7, 14, 21, 28, 35
-    const size_t diagonal_index = NUM_DIMENSIONS * index + index;
-    covariance_controller[diagonal_index] = params_.pose_covariance_diagonal[index];
-    covariance_controller[diagonal_index] = params_.twist_covariance_diagonal[index];
-  }
   RCLCPP_INFO(get_node()->get_logger(), "configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -412,7 +402,7 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_deactivate(
 }
 
 controller_interface::return_type SteeringControllersLibrary::update_reference_from_subscribers(
-  const rclcpp::Time & time, const rclcpp::Duration & period)
+  const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
   auto current_ref = *(input_ref_.readFromRT());
   const auto age_of_last_command = time - (current_ref)->header.stamp;
@@ -517,16 +507,11 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
   if (controller_state_publisher_->trylock())
   {
     controller_state_publisher_->msg_.header.stamp = time;
-    controller_state_publisher_->msg_.odom.pose.pose.position.x = odometry_.get_x();
-    controller_state_publisher_->msg_.odom.pose.pose.position.y = odometry_.get_y();
-    controller_state_publisher_->msg_.odom.pose.pose.orientation = tf2::toMsg(orientation);
-    controller_state_publisher_->msg_.odom.twist.twist.linear.x = odometry_.get_linear();
-    controller_state_publisher_->msg_.odom.twist.twist.angular.z = odometry_.get_angular();
-    controller_state_publisher_->msg_.traction_wheels_position.data.clear();
-    controller_state_publisher_->msg_.traction_wheels_velocity.data.clear();
-    controller_state_publisher_->msg_.linear_velocity_command.data.clear();
-    controller_state_publisher_->msg_.steer_positions.data.clear();
-    controller_state_publisher_->msg_.steering_angle_command.data.clear();
+    controller_state_publisher_->msg_.traction_wheels_position.clear();
+    controller_state_publisher_->msg_.traction_wheels_velocity.clear();
+    controller_state_publisher_->msg_.linear_velocity_command.clear();
+    controller_state_publisher_->msg_.steer_positions.clear();
+    controller_state_publisher_->msg_.steering_angle_command.clear();
 
     auto number_of_traction_wheels = params_.rear_wheels_names.size();
     auto number_of_steering_wheels = params_.front_wheels_names.size();
@@ -541,23 +526,23 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
     {
       if (params_.position_feedback)
       {
-        controller_state_publisher_->msg_.traction_wheels_position.data.push_back(
+        controller_state_publisher_->msg_.traction_wheels_position.push_back(
           state_interfaces_[i].get_value());
       }
       else
       {
-        controller_state_publisher_->msg_.traction_wheels_velocity.data.push_back(
+        controller_state_publisher_->msg_.traction_wheels_velocity.push_back(
           state_interfaces_[i].get_value());
       }
-      controller_state_publisher_->msg_.linear_velocity_command.data.push_back(
+      controller_state_publisher_->msg_.linear_velocity_command.push_back(
         command_interfaces_[i].get_value());
     }
 
     for (size_t i = 0; i < number_of_steering_wheels; ++i)
     {
-      controller_state_publisher_->msg_.steer_positions.data.push_back(
+      controller_state_publisher_->msg_.steer_positions.push_back(
         state_interfaces_[number_of_traction_wheels + i].get_value());
-      controller_state_publisher_->msg_.steering_angle_command.data.push_back(
+      controller_state_publisher_->msg_.steering_angle_command.push_back(
         command_interfaces_[number_of_traction_wheels + i].get_value());
     }
 
