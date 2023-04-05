@@ -24,7 +24,7 @@ Depending on the reference/state and command interface of the hardware a differe
 
    Theoretically one can misuse :ref:`Joint Trajectory Controller (JTC)<joint_trajectory_controller_userdoc>` for the same purpose by sending only one reference point into it.
    Nevertheless, this is not recommended. JTC should be used if you need to interpolate between trajectory points using linear, cubic or quintic interpolation. PID Controller doesn't do that.
-   PID term of JTC has differnet purpose - it enable commanding only ``velocity`` or ``effort`` interfaces to hardware. 
+   PID term of JTC has different purpose - it enables commanding only ``velocity`` or ``effort`` interfaces to hardware.
 
 Execution logic of the controller
 ----------------------------------
