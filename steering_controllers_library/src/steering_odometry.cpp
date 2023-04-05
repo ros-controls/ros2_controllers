@@ -320,7 +320,9 @@ void SteeringOdometry::integrate_runge_kutta_2(double linear, double angular)
 void SteeringOdometry::integrate_exact(double linear, double angular)
 {
   if (fabs(angular) < 1e-6)
+{
     integrate_runge_kutta_2(linear, angular);
+}
   else
   {
     /// Exact integration (should solve problems when angular is zero):
