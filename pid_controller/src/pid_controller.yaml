@@ -40,7 +40,7 @@ pid_controller:
   use_external_measured_states: {
     type: bool,
     default_value: false,
-    description: "Use external states from a topic instead form state interfaces."
+    description: "Use external states from a topic instead from state interfaces."
   }
   gains:
     __map_dof_names:
@@ -67,17 +67,17 @@ pid_controller:
       i_clamp_max: {
         type: double,
         default_value: 0.0,
-        description: "Upper integral clamp. Only used if antiwindeup is activated."
+        description: "Upper integral clamp. Only used if antiwindup is activated."
       }
       i_clamp_min: {
         type: double,
         default_value: 0.0,
-        description: "Lower integral clamp. Only used if antiwindeup is activated."
+        description: "Lower integral clamp. Only used if antiwindup is activated."
       }
       feedforward_gain: {
         type: double,
         default_value: 0.0,
-        description: "Scale for the feed-forward."
+        description: "Gain for the feed-forward part."
       }
 
   runtime_param_update: {
