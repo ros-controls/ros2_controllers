@@ -3,7 +3,7 @@
 steering_controllers_library
 =============================
 
-Library with shared functionalities for mobile robots controllers with steering drive (2 degrees of freedom).
+Library with shared functionalities for mobile robot controllers with steering drive (2 degrees of freedom).
 The library implements generic odometry and update methods and defines the main interfaces.
 
 Nomenclature used for the controller is used from `wikipedia <https://en.wikipedia.org/wiki/Wheelbase>`_.
