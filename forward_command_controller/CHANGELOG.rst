@@ -2,6 +2,12 @@
 Changelog for package forward_command_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.4.0 (2023-04-02)
+------------------
+* Fix broken links (`#554 <https://github.com/ros-controls/ros2_controllers/issues/554>`_)
+* Update docs (`#552 <https://github.com/ros-controls/ros2_controllers/issues/552>`_)
+* Contributors: Christoph Fröhlich
+
 3.3.0 (2023-03-07)
 ------------------
 * Add comments about auto-generated header files (`#539 <https://github.com/ros-controls/ros2_controllers/issues/539>`_)
