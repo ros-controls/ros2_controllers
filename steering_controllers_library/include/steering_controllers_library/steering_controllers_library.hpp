@@ -76,7 +76,8 @@ public:
     const rclcpp_lifecycle::State & previous_state) override;
 
   STEERING_CONTROLLERS__VISIBILITY_PUBLIC controller_interface::return_type
-  update_reference_from_subscribers() override;
+  update_reference_from_subscribers(
+    const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
   STEERING_CONTROLLERS__VISIBILITY_PUBLIC controller_interface::return_type
   update_and_write_commands(const rclcpp::Time & time, const rclcpp::Duration & period) override;

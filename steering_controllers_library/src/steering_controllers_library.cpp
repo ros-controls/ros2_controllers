@@ -411,10 +411,11 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_deactivate(
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::return_type SteeringControllersLibrary::update_reference_from_subscribers()
+controller_interface::return_type SteeringControllersLibrary::update_reference_from_subscribers(
+  const rclcpp::Time & time, const rclcpp::Duration & period)
 {
   auto current_ref = *(input_ref_.readFromRT());
-  const auto age_of_last_command = get_node()->now() - (current_ref)->header.stamp;
+  const auto age_of_last_command = time - (current_ref)->header.stamp;
 
   // send message only if there is no timeout
   if (age_of_last_command <= ref_timeout_ || ref_timeout_ == rclcpp::Duration::from_seconds(0))
