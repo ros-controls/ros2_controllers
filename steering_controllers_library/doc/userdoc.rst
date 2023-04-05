@@ -1,4 +1,4 @@
-.. _steering_controllers_libaray_userdoc:
+.. _steering_controllers_library_userdoc:
 
 steering_controllers_library
 =============================
