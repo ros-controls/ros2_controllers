@@ -3,11 +3,11 @@
 pid_controller
 =========================
 
-PID Controller implementation that uses PidROS implemenation from `control_toolbox <https://github.com/ros-controls/control_toolbox/>`_ package.
+PID Controller implementation that uses PidROS implementation from `control_toolbox <https://github.com/ros-controls/control_toolbox/>`_ package.
 The controller can be used directly by sending references through a topic or in a chain having preceding or following controllers.
-It also enables to use first derivation of the reference and its feedback to have second-order PID control.
+It also enables to use the first derivative of the reference and its feedback to have second-order PID control.
 
-Depending on the referece/state and command interface of hardware differnt parameters setup of PidROS should be used as for example:
+Depending on the reference/state and command interface of the hardware a different parameter setup of PidROS should be used as for example:
 
 - reference/state POSITION; command VELOCITY --> PI CONTROLLER
 - reference/state VELOCITY; command ACCELERATION --> PI CONTROLLER
@@ -22,17 +22,22 @@ Depending on the referece/state and command interface of hardware differnt param
 
 .. note::
 
-   Theretically one can missuse :ref:`Joint Trajectory Controller (JTC)<joint_trajectory_controller_userdoc>` for the same purpose by sending only one reference point into it.
-   Nevertheless, this is not recommended. JTC should be use if you need to interpolate between trajectory points using linear, cubic or quintic interplation. PID Controller doesn't to that.
+   Theoretically one can misuse :ref:`Joint Trajectory Controller (JTC)<joint_trajectory_controller_userdoc>` for the same purpose by sending only one reference point into it.
+   Nevertheless, this is not recommended. JTC should be used if you need to interpolate between trajectory points using linear, cubic or quintic interpolation. PID Controller doesn't do that.
    PID term of JTC has differnet purpose - it enable commanding only ``velocity`` or ``effort`` interfaces to hardware. 
 
 Execution logic of the controller
 ----------------------------------
 
 The controller can be also used in "feed-forward" mode where feed-forward gain is used to increase controllers dynamics.
-If one type of the reference and state interfaces is used only immediate error is used, if there are two, then the second interface type is considerd to be first derivative of the first type.
+If one type of the reference and state interfaces is used, only immediate error is used. If there are two, then the second interface type is considered to be the first derivative of the first type.
 For example a valid combination would be ``position`` and ``velocity`` interface types.
 
+Using the controller
+------------------------------
+
+Pluginlib-Library: pid_controller
+Plugin name: pid_controller/PidController
 
 Description of controller's interfaces
 --------------------------------------
@@ -40,7 +45,7 @@ Description of controller's interfaces
 References (from a preceding controller)
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 - <reference_and_state_dof_names[i]>/<reference_and_state_interfaces[j]>  [double]
-  **NOTE**: ``reference_and_state_dof_names`` can be ``reference_and_state_dof_names`` parameter of if empty ``dof_names``.
+  **NOTE**: ``reference_and_state_dof_names[i]`` can be from ``reference_and_state_dof_names`` parameter, or if it is empty then ``dof_names``.
 
 Commands
 ,,,,,,,,,
@@ -49,16 +54,16 @@ Commands
 States
 ,,,,,,,
 - <reference_and_state_dof_names[i]>/<reference_and_state_interfaces[j]>  [double]
-  **NOTE**: ``reference_and_state_dof_names`` can be ``reference_and_state_dof_names`` parameter of if empty ``dof_names``.
+  **NOTE**: ``reference_and_state_dof_names[i]`` can be from ``reference_and_state_dof_names`` parameter, or if it is empty then ``dof_names``.
 
 
 Subscribers
 ,,,,,,,,,,,,
-Used when controller is not in chained mode (``in_chained_mode == false``).
+If controller is not in chained mode (``in_chained_mode == false``):
 
 - <controller_name>/reference  [control_msgs/msg/MultiDOFCommand]
 
-Used when controller parameter ``use_external_measured_states`` is used.
+If controller parameter ``use_external_measured_states`` is true:
 
 - <controller_name>/measured_state  [control_msgs/msg/MultiDOFCommand]
 
@@ -74,6 +79,6 @@ Publishers
 Parameters
 ,,,,,,,,,,,
 
-For list of parameters and their meaning YAML file in the ``src`` folder of the controller's package.
+For a list of parameters and their meaning see the YAML file in the ``src`` folder of the controller's package.
 
-For an exameplary parameterization see the ``test`` folder of the controller's package.
+For an exemplary parameterization see the ``test`` folder of the controller's package.
