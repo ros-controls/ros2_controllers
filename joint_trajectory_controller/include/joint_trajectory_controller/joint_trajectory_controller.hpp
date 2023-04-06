@@ -24,6 +24,7 @@
 
 #include "control_msgs/action/follow_joint_trajectory.hpp"
 #include "control_msgs/msg/joint_trajectory_controller_state.hpp"
+#include "control_msgs/srv/reset_dofs.hpp"
 #include "control_msgs/srv/query_trajectory_state.hpp"
 #include "control_toolbox/pid.hpp"
 #include "controller_interface/controller_interface.hpp"
@@ -203,6 +204,11 @@ protected:
   RealtimeGoalHandleBuffer rt_active_goal_;  ///< Currently active action goal, if any.
   rclcpp::TimerBase::SharedPtr goal_handle_timer_;
   rclcpp::Duration action_monitor_period_ = rclcpp::Duration(50ms);
+
+  using ControllerResetDofsSrvType = control_msgs::srv::ResetDofs;
+
+  realtime_tools::RealtimeBuffer<std::vector<bool>> reset_dofs_flags_;
+  rclcpp::Service<ControllerResetDofsSrvType>::SharedPtr reset_dofs_service_;
 
   std::vector<joint_limits::JointLimits> joint_limits_;
 

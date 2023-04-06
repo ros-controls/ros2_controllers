@@ -179,6 +179,25 @@ controller_interface::return_type JointTrajectoryController::update(
       first_sample = true;
       if (params_.open_loop_control)
       {
+        auto reset_flags = reset_dofs_flags_.readFromRT();
+        for (size_t i = 0; i < dof_; ++i)
+        {
+          if (reset_flags->at(i))
+          {
+            last_commanded_state_.positions[i] = state_current_.positions[i];
+            if (has_velocity_state_interface_)
+            {
+              last_commanded_state_.velocities[i] = state_current_.velocities[i];
+            }
+            if (has_acceleration_state_interface_)
+            {
+              last_commanded_state_.accelerations[i] = state_current_.accelerations[i];
+            }
+
+            reset_flags->at(i) = false; // reset flag in the buffer for one-shot execution
+          }
+        }
+
         (*traj_point_active_ptr_)->set_point_before_trajectory_msg(time, last_commanded_state_);
       }
       else
@@ -756,6 +775,47 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   query_state_srv_ = get_node()->create_service<control_msgs::srv::QueryTrajectoryState>(
     std::string(get_node()->get_name()) + "/query_state",
     std::bind(&JointTrajectoryController::query_state_service, this, _1, _2));
+
+  // Initialize memory and RT buffer for DoF reset flags
+  std::vector<bool> reset_flags;
+  reset_flags.resize(dof_, false);
+  reset_dofs_flags_.writeFromNonRT(reset_flags);
+
+  // Control mode service
+  auto reset_dofs_service_callback =
+  [&](
+    const std::shared_ptr<ControllerResetDofsSrvType::Request> request,
+    std::shared_ptr<ControllerResetDofsSrvType::Response> response)
+  {
+    response->ok = true;
+
+    std::vector<bool> reset_flags;
+    reset_flags.resize(dof_, false);
+
+    for (size_t i = 0; i < request->names.size(); ++i)
+    {
+      auto it =
+        std::find(command_joint_names_.begin(), command_joint_names_.end(), request->names[i]);
+      if (it != command_joint_names_.end())
+      {
+        RCLCPP_INFO(get_node()->get_logger(), "Resetting dof '%s'.", request->names[i].c_str());
+        auto cmd_itf_index = std::distance(command_joint_names_.begin(), it);
+        reset_flags[cmd_itf_index] = true;
+      }
+      else
+      {
+        RCLCPP_WARN(
+          get_node()->get_logger(), "Name '%s' is not command interface. Ignoring this entry.",
+                    request->names[i].c_str());
+        response->ok = false;
+      }
+    }
+
+    reset_dofs_flags_.writeFromNonRT(reset_flags);
+  };
+
+  reset_dofs_service_ = get_node()->create_service<ControllerResetDofsSrvType>(
+    "~/reset_dofs", reset_dofs_service_callback);
 
   return CallbackReturn::SUCCESS;
 }

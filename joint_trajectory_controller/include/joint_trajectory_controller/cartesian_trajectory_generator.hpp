@@ -20,7 +20,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "control_msgs/srv/reset_axis.hpp"
 #include "control_msgs/srv/set_dof_limits.hpp"
 #include "joint_limits/joint_limits.hpp"
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
@@ -54,7 +53,6 @@ public:
 
   using ControllerReferenceMsg = trajectory_msgs::msg::MultiDOFJointTrajectoryPoint;
   using ControllerFeedbackMsg = nav_msgs::msg::Odometry;
-  using ControllerModeSrvType = control_msgs::srv::ResetAxis;
   using SetLimitsModeSrvType = control_msgs::srv::SetDOFLimits;
 
 protected:
