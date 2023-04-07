@@ -67,11 +67,9 @@ TEST_F(PidControllerTest, check_exported_intefaces)
   size_t si_index = 0;
   for (const auto & interface : state_interfaces_)
   {
-    for (const auto & dof_name : dof_names_)
+    for (const auto & dof_name : reference_and_state_dof_names_)
     {
-      EXPECT_EQ(
-        state_intefaces.names[si_index],
-        reference_and_state_dof_names_[si_index] + "/" + interface);
+      EXPECT_EQ(state_intefaces.names[si_index], dof_name + "/" + interface);
       ++si_index;
     }
   }
@@ -82,16 +80,14 @@ TEST_F(PidControllerTest, check_exported_intefaces)
   size_t ri_index = 0;
   for (const auto & interface : state_interfaces_)
   {
-    for (const auto & dof_name : dof_names_)
+    for (const auto & dof_name : reference_and_state_dof_names_)
     {
-      const std::string ref_itf_name = std::string(controller_->get_node()->get_name()) + "/" +
-                                       reference_and_state_dof_names_[ri_index] + "/" + interface;
+      const std::string ref_itf_name =
+        std::string(controller_->get_node()->get_name()) + "/" + dof_name + "/" + interface;
       EXPECT_EQ(reference_interfaces[ri_index].get_name(), ref_itf_name);
       EXPECT_EQ(
         reference_interfaces[ri_index].get_prefix_name(), controller_->get_node()->get_name());
-      EXPECT_EQ(
-        reference_interfaces[ri_index].get_interface_name(),
-        reference_and_state_dof_names_[ri_index] + "/" + interface);
+      EXPECT_EQ(reference_interfaces[ri_index].get_interface_name(), dof_name + "/" + interface);
       ++ri_index;
     }
   }
