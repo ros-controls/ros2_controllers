@@ -99,7 +99,7 @@ if(BUILD_TESTING)
   )
 
   ament_add_gmock(test_load_cartesian_trajectory_generator
-    test/test_load_cartesian_trajectory_generator
+    test/test_load_cartesian_trajectory_generator.cpp
   )
   target_link_libraries(test_load_cartesian_trajectory_generator
     cartesian_trajectory_generator
