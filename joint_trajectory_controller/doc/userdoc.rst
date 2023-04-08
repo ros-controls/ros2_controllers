@@ -139,11 +139,17 @@ If tolerances are violated during trajectory execution, the action goal is abort
 The topic interface is a fire-and-forget alternative.
 Use this interface if you don't care about execution monitoring.
 The controller's path and goal tolerance specification is not used in this case, as there is no mechanism to notify the sender about tolerance violations.
+Note that although some degree of monitoring is available through the ``query_state`` service and ``~/state`` topic it is much more cumbersome to realize than with the action interface.
 
 The controller's state is published via
 
 ~/state (output topic) [control_msgs::msg::JointTrajectoryControllerState]
   Topic publishing internal states with the update-rate of the controller manager.
+
+and current action state can be queried via the service
+
+~/query_state (service) [control_msgs::srv::QueryTrajectoryState]
+  Query controller state at any future time.
 
 Preemption policy [#f1]_
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
