@@ -130,23 +130,16 @@ Both use the ``trajectory_msgs/JointTrajectory`` message to specify trajectories
 The primary way to send trajectories is through the action interface, and should be favored when execution monitoring is desired.
 Action goals allow to specify not only the trajectory to execute, but also (optionally) path and goal tolerances.
 When no tolerances are specified, the defaults given in the parameter interface are used (see :ref:`parameters`).
-If tolerances are violated during trajectory execution, the action goal is aborted and the client is notified.
+If tolerances are violated during trajectory execution, the action goal is aborted, the client is notified, and the current position is held.
 
-.. note::
-
-  Even when a goal has been aborted, the controller will still attempt to execute the trajectory as best as possible.
-
-The topic interface is a fire-and-forget alternative.
-Use this interface if you don't care about execution monitoring.
+The topic interface is a fire-and-forget alternative. Use this interface if you don't care about execution monitoring.
 The controller's path and goal tolerance specification is not used in this case, as there is no mechanism to notify the sender about tolerance violations.
-Note that although some degree of monitoring is available through the ``query_state`` service and ``~/state`` topic it is much more cumbersome to realize than with the action interface.
+Note that although some degree of monitoring is available through the ``~/query_state`` service and ``~/state`` topic it is much more cumbersome to realize than with the action interface.
 
-The controller's state is published via
+Further interfaces are:
 
 ~/state (output topic) [control_msgs::msg::JointTrajectoryControllerState]
   Topic publishing internal states with the update-rate of the controller manager.
-
-and current action state can be queried via the service
 
 ~/query_state (service) [control_msgs::srv::QueryTrajectoryState]
   Query controller state at any future time.
@@ -156,9 +149,9 @@ Preemption policy [#f1]_
 
 Only one action goal can be active at any moment, or none if the topic interface is used. Path and goal tolerances are checked only for the trajectory segments of the active goal.
 
-When an active action goal is preempted by another command coming from either the action or the topic interface, the goal is canceled and the client is notified.
+When an active action goal is preempted by another command coming from the action interface, the goal is canceled and the client is notified.
 
-Sending an empty trajectory message from the topic interface (not the action interface) will stop the execution of all queued trajectories and enter position hold mode.
+Sending an empty trajectory message from the topic interface (not the action interface) will override the current action goal and not abort the action.
 
 Trajectory replacement [#f2]_
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
