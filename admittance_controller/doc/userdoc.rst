@@ -1,4 +1,4 @@
-.. _joint_trajectory_controller_userdoc:
+.. _admittance_controller_userdoc:
 
 Admittance Controller
 ======================
