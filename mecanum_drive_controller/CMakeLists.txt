@@ -10,6 +10,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   controller_interface
   hardware_interface
   generate_parameter_library
+  nav_msgs
   pluginlib
   rclcpp
   rclcpp_lifecycle
