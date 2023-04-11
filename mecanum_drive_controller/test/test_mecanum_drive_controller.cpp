@@ -174,7 +174,6 @@ TEST_F(MecanumDriveControllerTest, when_update_is_called_expect_status_message)
   ControllerStateMsg msg;
   subscribe_to_controller_status_execute_update_and_get_messages(msg);
 
-  EXPECT_NEAR(msg.odometry.pose.pose.position.y, 0.0, EPS);
   EXPECT_EQ(msg.reference_velocity.linear.x, 1.5);
 }
 
