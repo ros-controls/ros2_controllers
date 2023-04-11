@@ -439,7 +439,7 @@ TEST_F(
   // set command statically
   joint_command_values_[1] = command_lin_x;
   // imitating preceding controllers command_interfaces setting reference_interfaces of chained
-  //controller.
+  // controller.
   controller_->reference_interfaces_[0] = 3.0;
   controller_->reference_interfaces_[1] = 0.0;
   controller_->reference_interfaces_[2] = 0.0;
