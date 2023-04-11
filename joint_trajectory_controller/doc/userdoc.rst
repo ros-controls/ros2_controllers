@@ -4,6 +4,8 @@ joint_trajectory_controller
 ===========================
 
 Controller for executing joint-space trajectories on a group of joints.
+The controller interpolates in time between the points so that their distance can be arbitrary.
+Even trajectories with only one point are accepted.
 Trajectories are specified as a set of waypoints to be reached at specific time instants,
 which the controller attempts to execute as well as the mechanism allows.
 Waypoints consist of positions, and optionally velocities and accelerations.
@@ -14,7 +16,7 @@ Waypoints consist of positions, and optionally velocities and accelerations.
 Trajectory representation [#f1]_
 ---------------------------------
 
-The controller is templated to work with multiple trajectory representations.
+Trajectories are represented internally with ``trajectory_msgs/msg/JointTrajectory`` data structure.
 By default, a spline interpolator is provided, but it's possible to support other representations.
 The spline interpolator uses the following interpolation strategies depending on the waypoint specification:
 
