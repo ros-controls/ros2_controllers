@@ -34,8 +34,10 @@ TEST(TestLoadBicycleSteeringController, load_controller)
       ros2_control_test_assets::minimal_robot_urdf),
     executor, "test_controller_manager");
 
-  ASSERT_NO_THROW(cm.load_controller(
-    "test_bicycle_steering_controller", "bicycle_steering_controller/BicycleSteeringController"));
+  ASSERT_NE(+
+    cm.load_controller(
+      "test_bicycle_steering_controller", "bicycle_steering_controller/BicycleSteeringController"),
+    nullptr);
 
   rclcpp::shutdown();
 }
