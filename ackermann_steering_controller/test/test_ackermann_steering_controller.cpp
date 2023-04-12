@@ -275,11 +275,9 @@ TEST_F(AckermannSteeringControllerTest, receive_message_and_publish_updated_stat
   subscribe_and_get_messages(msg);
 
   EXPECT_NEAR(
-    msg.linear_velocity_command[CMD_TRACTION_RIGHT_WHEEL], 0.22222222222222224,
-    COMMON_THRESHOLD);
+    msg.linear_velocity_command[CMD_TRACTION_RIGHT_WHEEL], 0.22222222222222224, COMMON_THRESHOLD);
   EXPECT_NEAR(
-    msg.linear_velocity_command[CMD_TRACTION_LEFT_WHEEL], 0.22222222222222224,
-    COMMON_THRESHOLD);
+    msg.linear_velocity_command[CMD_TRACTION_LEFT_WHEEL], 0.22222222222222224, COMMON_THRESHOLD);
   EXPECT_NEAR(msg.steering_angle_command[0], 1.4179821977774734, COMMON_THRESHOLD);
   EXPECT_NEAR(msg.steering_angle_command[1], 1.4179821977774734, COMMON_THRESHOLD);
 }
