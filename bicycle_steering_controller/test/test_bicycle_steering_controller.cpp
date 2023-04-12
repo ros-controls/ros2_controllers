@@ -234,8 +234,8 @@ TEST_F(BicycleSteeringControllerTest, receive_message_and_publish_updated_status
   ControllerStateMsg msg;
   subscribe_and_get_messages(msg);
 
-  EXPECT_EQ(msg.linear_velocity_command.data[0], 1.1);
-  EXPECT_EQ(msg.steering_angle_command.data[0], 2.2);
+  EXPECT_EQ(msg.linear_velocity_command[0], 1.1);
+  EXPECT_EQ(msg.steering_angle_command[0], 2.2);
 
   publish_commands();
   ASSERT_TRUE(controller_->wait_for_commands(executor));
@@ -252,8 +252,8 @@ TEST_F(BicycleSteeringControllerTest, receive_message_and_publish_updated_status
 
   subscribe_and_get_messages(msg);
 
-  EXPECT_NEAR(msg.linear_velocity_command.data[0], 0.253221, COMMON_THRESHOLD);
-  EXPECT_NEAR(msg.steering_angle_command.data[0], 1.4179821977774734, COMMON_THRESHOLD);
+  EXPECT_NEAR(msg.linear_velocity_command[0], 0.253221, COMMON_THRESHOLD);
+  EXPECT_NEAR(msg.steering_angle_command[0], 1.4179821977774734, COMMON_THRESHOLD);
 }
 
 int main(int argc, char ** argv)
