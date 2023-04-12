@@ -2,7 +2,7 @@ pid_controller:
   dof_names: {
     type: string_array,
     default_value: [],
-    description: "Specifies dof_names or axes used by the controller. If 'state_dof_names' parameter is defined, then only command dof names are defined with this parameter.",
+    description: "Specifies dof_names or axes used by the controller. If 'reference_and_state_dof_names' parameter is defined, then only command dof names are defined with this parameter.",
     read_only: true,
     validation: {
       unique<>: null,
