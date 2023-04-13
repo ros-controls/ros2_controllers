@@ -152,14 +152,6 @@ AdmittanceController::on_export_reference_interfaces()
 controller_interface::CallbackReturn AdmittanceController::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  if (!admittance_)
-  {
-    RCLCPP_ERROR(
-      get_node()->get_logger(),
-      "on_configure should not be called unless Init successfully completed");
-    return CallbackReturn::ERROR;
-  }
-
   command_joint_names_ = admittance_->parameters_.command_joints;
 
   if (command_joint_names_.empty())

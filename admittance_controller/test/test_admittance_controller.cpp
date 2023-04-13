@@ -22,7 +22,7 @@
 #include <vector>
 
 // Test on_init returns ERROR when a required parameter is missing
-TEST_P(AdmittanceControllerTestParameterizedMissingParameters, one_control_parameter_is_missing)
+TEST_P(AdmittanceControllerTestParameterizedMissingParameters, one_init_parameter_is_missing)
 {
   ASSERT_EQ(SetUpController(GetParam()), controller_interface::return_type::ERROR);
 }
