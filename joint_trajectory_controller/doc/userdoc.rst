@@ -29,7 +29,6 @@ The spline interpolator uses the following interpolation strategies depending on
 Hardware interface type [#f1]_
 -------------------------------
 
-The controller is templated to work with multiple hardware interface types.
 Currently joints with position, velocity and effort interfaces are supported.
 For position-controlled joints, desired positions are simply forwarded to the joints;
 while for velocity (effort) joints, the position+velocity trajectory following error is mapped to velocity (effort) commands through a PID loop.
