@@ -114,37 +114,6 @@ A yaml file for using it could be:
               goal: 0.03
 
 
-.. _ROS 2 interface:
-
-ROS 2 interface of the controller [#f1]_
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-There are two mechanisms for sending trajectories to the controller:
-
-~/follow_joint_trajectory (action server) [control_msgs::action::FollowJointTrajectory]
-  Action server for commanding the controller.
-
-~/joint_trajectory (input topic) [trajectory_msgs::msg::JointTrajectory]
-  Topic for commanding the controller.
-
-Both use the ``trajectory_msgs/JointTrajectory`` message to specify trajectories, and require specifying values for all the controller joints (as opposed to only a subset) if ``allow_partial_joints_goal`` is not set to ``True``.
-
-The primary way to send trajectories is through the action interface, and should be favored when execution monitoring is desired.
-Action goals allow to specify not only the trajectory to execute, but also (optionally) path and goal tolerances.
-When no tolerances are specified, the defaults given in the parameter interface are used (see :ref:`parameters`).
-If tolerances are violated during trajectory execution, the action goal is aborted, the client is notified, and the current position is held.
-
-The topic interface is a fire-and-forget alternative. Use this interface if you don't care about execution monitoring.
-The controller's path and goal tolerance specification is not used in this case, as there is no mechanism to notify the sender about tolerance violations.
-Note that although some degree of monitoring is available through the ``~/query_state`` service and ``~/state`` topic it is much more cumbersome to realize than with the action interface.
-
-Further interfaces are:
-
-~/state (output topic) [control_msgs::msg::JointTrajectoryControllerState]
-  Topic publishing internal states with the update-rate of the controller manager.
-
-~/query_state (service) [control_msgs::srv::QueryTrajectoryState]
-  Query controller state at any future time.
-
 Preemption policy [#f1]_
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -280,6 +249,37 @@ gains.<joint_name>.normalize_error (bool)
   Default: false
 
 
+.. _ROS 2 interface:
+
+ROS 2 interface of the controller [#f1]_
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+There are two mechanisms for sending trajectories to the controller:
+
+~/follow_joint_trajectory (action server) [control_msgs::action::FollowJointTrajectory]
+  Action server for commanding the controller.
+
+~/joint_trajectory (input topic) [trajectory_msgs::msg::JointTrajectory]
+  Topic for commanding the controller.
+
+Both use the ``trajectory_msgs/JointTrajectory`` message to specify trajectories, and require specifying values for all the controller joints (as opposed to only a subset) if ``allow_partial_joints_goal`` is not set to ``True``.
+
+The primary way to send trajectories is through the action interface, and should be favored when execution monitoring is desired.
+Action goals allow to specify not only the trajectory to execute, but also (optionally) path and goal tolerances.
+When no tolerances are specified, the defaults given in the parameter interface are used (see :ref:`parameters`).
+If tolerances are violated during trajectory execution, the action goal is aborted, the client is notified, and the current position is held.
+
+The topic interface is a fire-and-forget alternative. Use this interface if you don't care about execution monitoring.
+The controller's path and goal tolerance specification is not used in this case, as there is no mechanism to notify the sender about tolerance violations.
+Note that although some degree of monitoring is available through the ``~/query_state`` service and ``~/state`` topic it is much more cumbersome to realize than with the action interface.
+
+Further interfaces are:
+
+~/state (output topic) [control_msgs::msg::JointTrajectoryControllerState]
+  Topic publishing internal states with the update-rate of the controller manager.
+
+~/query_state (service) [control_msgs::srv::QueryTrajectoryState]
+  Query controller state at any future time.
+
 Specialized versions of JointTrajectoryController (TBD in ...)
 --------------------------------------------------------------
 
@@ -296,17 +296,6 @@ The following version of the Joint Trajectory Controller are available mapping t
   - position_velocity_acceleration_controllers::JointTrajectoryController
     - Input: position, [velocity, [acceleration]]
     - Output: position, velocity and acceleration
-
-..   - velocity_controllers::JointTrajectoryController
-..     - Input: position, [velocity, [acceleration]]
-..     - Output: velocity
-.. TODO(anyone): would it be possible to output velocity and acceleration?
-..               (to have an vel_acc_controllers)
-..   - effort_controllers::JointTrajectoryController
-..     - Input: position, [velocity, [acceleration]]
-..     - Output: effort
-
-(*Not implemented yet*) When using pure ``velocity`` or ``effort`` controllers a command is generated using the desired state and state error using a velocity feedforward term plus a corrective PID term. (#171)
 
 
 .. rubric:: Footnote
