@@ -2,6 +2,9 @@
 Changelog for package forward_command_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.5.0 (2023-04-14)
+------------------
+
 3.4.0 (2023-04-02)
 ------------------
 * Fix broken links (`#554 <https://github.com/ros-controls/ros2_controllers/issues/554>`_)
