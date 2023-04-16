@@ -29,9 +29,23 @@ The spline interpolator uses the following interpolation strategies depending on
 Hardware interface type [#f1]_
 -------------------------------
 
-Currently joints with position, velocity and effort interfaces are supported.
-For position-controlled joints, desired positions are simply forwarded to the joints;
-while for velocity (effort) joints, the position+velocity trajectory following error is mapped to velocity (effort) commands through a PID loop.
+Currently joints with position, velocity, acceleration, and effort interfaces are supported. The joints can have one or more command interfaces, where the following control laws are applied at the same time:
+
+- For command interfaces ``position``, the desired positions are simply forwarded to the joints,
+- For command interfaces ``acceleration``, desired accelerations are simply forwarded to the joints.
+- For ``velocity`` (``effort``) command interfaces, the position+velocity trajectory following error is mapped to ``velocity`` (``effort``) commands through a PID loop (:ref:`parameters`).
+
+This leads to the the following allowed combinations of command and state interfaces:
+
+- With command interface ``position``, there are no restrictions for state interfaces.
+- With command interface ``velocity``:
+
+   - if command interface ``velocity`` is the only one, state interfaces must include  ``position, velocity`` .
+   - no restrictions otherwise.
+
+- With command interface ``effort``, state interfaces must include  ``position, velocity``.
+- With command interface ``acceleration``, there are no restrictions for state interfaces.
+
 Example controller configurations can be found :ref:`below <ROS 2 interface>`.
 
 Similarly to the trajectory representation case above, it's possible to support new hardware interfaces, or alternative mappings to an already supported interface (eg. a proxy controller for generating effort commands).
