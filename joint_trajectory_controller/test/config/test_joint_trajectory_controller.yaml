@@ -27,16 +27,38 @@ test_joint_trajectory_controller:
 
   gains:
     __map_joints:
-        p: 10.0
-        i: 1.0
-        d: 1.0
-        i_clamp: 10.0
-        ff_velocity_scale: 0.0
-        normalize_error: 0.02
+        joint1:
+          p: 10.0
+          i: 1.0
+          d: 1.0
+          i_clamp: 10.0
+          ff_velocity_scale: 0.0
+          normalize_error: 0.02
+        joint2:
+          p: 10.0
+          i: 1.0
+          d: 1.0
+          i_clamp: 10.0
+          ff_velocity_scale: 0.0
+          normalize_error: 0.02
+        joint3:
+          p: 10.0
+          i: 1.0
+          d: 1.0
+          i_clamp: 10.0
+          ff_velocity_scale: 0.0
+          normalize_error: 0.02
 
   constraints:
      stopped_velocity_tolerance: 0.03
      goal_time: 0.012
      __map_joints:
-             trjectory: 0.6
-             goal: 0.2
+          joints1:
+            trjectory: 0.6
+            goal: 0.2
+          joints2:
+            trjectory: 0.6
+            goal: 0.2
+          joints3:
+            trjectory: 0.6
+            goal: 0.2
