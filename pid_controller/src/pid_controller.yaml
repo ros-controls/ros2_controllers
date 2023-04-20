@@ -77,7 +77,7 @@ pid_controller:
       save_iterm: {
         type: bool,
         default_value: false,
-        description: "Save Integral Term functionality."
+        description: "Enables save of integral term on pid reset. Integrator error will not be set to 0."
       }
       feedforward_gain: {
         type: double,
