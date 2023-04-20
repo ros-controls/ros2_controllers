@@ -77,7 +77,7 @@ pid_controller:
       save_iterm: {
         type: bool,
         default_value: false,
-        description: "Enables save of integral term on pid reset. Integrator error will not be set to 0."
+        description: "Enables save of integral term on pid reset. Integrator error will not be set to 0.  This is useful for pid loops that are enabled/disabled with constant steady-state external disturbance."
       }
       feedforward_gain: {
         type: double,
