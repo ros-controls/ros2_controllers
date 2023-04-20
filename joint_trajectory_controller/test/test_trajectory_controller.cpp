@@ -707,6 +707,11 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_normalized)
   executor.cancel();
 }
 
+TEST_P(TrajectoryControllerTestParameterized, test_non_default_parameters){
+  std::vector<std::String> joint_names 
+  traj_controller_.getnode().get_parameter("joints",joint_names)
+}
+
 // /**
 //  * @brief test_jumbled_joint_order Test sending trajectories with a joint order different from
 //  * internal controller order
