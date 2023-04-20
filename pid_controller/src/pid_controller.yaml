@@ -74,6 +74,11 @@ pid_controller:
         default_value: 0.0,
         description: "Lower integral clamp. Only used if antiwindup is activated."
       }
+      save_iterm: {
+        type: bool,
+        default_value: false,
+        description: "Save Integral Term functionality."
+      }
       feedforward_gain: {
         type: double,
         default_value: 0.0,
