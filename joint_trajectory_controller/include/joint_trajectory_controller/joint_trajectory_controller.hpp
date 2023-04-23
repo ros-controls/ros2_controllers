@@ -166,6 +166,8 @@ protected:
   std::vector<PidPtr> pids_;
   // Feed-forward velocity weight factor when calculating closed loop pid adapter's command
   std::vector<double> ff_velocity_scale_;
+  // Configuration for every joint, if position error is normalized
+  std::vector<bool> normalize_joint_error_;
   // reserved storage for result of the command when closed loop pid adapter is used
   std::vector<double> tmp_command_;
 
