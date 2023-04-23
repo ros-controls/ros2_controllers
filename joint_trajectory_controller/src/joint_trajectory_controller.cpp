@@ -462,6 +462,81 @@ bool JointTrajectoryController::read_state_from_command_interfaces(JointTrajecto
   return has_values;
 }
 
+bool JointTrajectoryController::read_commands_from_command_interfaces(
+  JointTrajectoryPoint & commands)
+{
+  bool has_values = true;
+
+  auto assign_point_from_interface =
+    [&](std::vector<double> & trajectory_point_interface, const auto & joint_interface)
+  {
+    for (size_t index = 0; index < dof_; ++index)
+    {
+      trajectory_point_interface[index] = joint_interface[index].get().get_value();
+    }
+  };
+
+  auto interface_has_values = [](const auto & joint_interface)
+  {
+    return std::find_if(
+             joint_interface.begin(), joint_interface.end(),
+             [](const auto & interface)
+             { return std::isnan(interface.get().get_value()); }) == joint_interface.end();
+  };
+
+  // Assign values from the command interfaces as command.
+  if (has_position_command_interface_)
+  {
+    if (interface_has_values(joint_command_interface_[0]))
+    {
+      assign_point_from_interface(commands.positions, joint_command_interface_[0]);
+    }
+    else
+    {
+      commands.positions.clear();
+      has_values = false;
+    }
+  }
+  if (has_velocity_command_interface_)
+  {
+    if (interface_has_values(joint_command_interface_[1]))
+    {
+      assign_point_from_interface(commands.velocities, joint_command_interface_[1]);
+    }
+    else
+    {
+      commands.velocities.clear();
+      has_values = false;
+    }
+  }
+  if (has_acceleration_command_interface_)
+  {
+    if (interface_has_values(joint_command_interface_[2]))
+    {
+      assign_point_from_interface(commands.accelerations, joint_command_interface_[2]);
+    }
+    else
+    {
+      commands.accelerations.clear();
+      has_values = false;
+    }
+  }
+  if (has_effort_command_interface_)
+  {
+    if (interface_has_values(joint_command_interface_[3]))
+    {
+      assign_point_from_interface(commands.effort, joint_command_interface_[3]);
+    }
+    else
+    {
+      commands.effort.clear();
+      has_values = false;
+    }
+  }
+
+  return has_values;
+}
+
 controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   const rclcpp_lifecycle::State &)
 {
@@ -670,26 +745,65 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     state_publisher_period_ = rclcpp::Duration::from_seconds(0.0);
   }
 
-  publisher_ =
+  publisher_legacy_ =
     get_node()->create_publisher<ControllerStateMsg>("~/state", rclcpp::SystemDefaultsQoS());
+  state_publisher_legacy_ = std::make_unique<StatePublisher>(publisher_legacy_);
+
+  state_publisher_legacy_->lock();
+  state_publisher_legacy_->msg_.joint_names = params_.joints;
+  state_publisher_legacy_->msg_.desired.positions.resize(dof_);
+  state_publisher_legacy_->msg_.desired.velocities.resize(dof_);
+  state_publisher_legacy_->msg_.desired.accelerations.resize(dof_);
+  state_publisher_legacy_->msg_.actual.positions.resize(dof_);
+  state_publisher_legacy_->msg_.error.positions.resize(dof_);
+  if (has_velocity_state_interface_)
+  {
+    state_publisher_legacy_->msg_.actual.velocities.resize(dof_);
+    state_publisher_legacy_->msg_.error.velocities.resize(dof_);
+  }
+  if (has_acceleration_state_interface_)
+  {
+    state_publisher_legacy_->msg_.actual.accelerations.resize(dof_);
+    state_publisher_legacy_->msg_.error.accelerations.resize(dof_);
+  }
+  state_publisher_legacy_->unlock();
+
+  publisher_ = get_node()->create_publisher<ControllerStateMsg>(
+    "~/controller_state", rclcpp::SystemDefaultsQoS());
   state_publisher_ = std::make_unique<StatePublisher>(publisher_);
 
   state_publisher_->lock();
   state_publisher_->msg_.joint_names = params_.joints;
-  state_publisher_->msg_.desired.positions.resize(dof_);
-  state_publisher_->msg_.desired.velocities.resize(dof_);
-  state_publisher_->msg_.desired.accelerations.resize(dof_);
-  state_publisher_->msg_.actual.positions.resize(dof_);
+  state_publisher_->msg_.reference.positions.resize(dof_);
+  state_publisher_->msg_.reference.velocities.resize(dof_);
+  state_publisher_->msg_.reference.accelerations.resize(dof_);
+  state_publisher_->msg_.feedback.positions.resize(dof_);
   state_publisher_->msg_.error.positions.resize(dof_);
   if (has_velocity_state_interface_)
   {
-    state_publisher_->msg_.actual.velocities.resize(dof_);
+    state_publisher_->msg_.feedback.velocities.resize(dof_);
     state_publisher_->msg_.error.velocities.resize(dof_);
   }
   if (has_acceleration_state_interface_)
   {
-    state_publisher_->msg_.actual.accelerations.resize(dof_);
+    state_publisher_->msg_.feedback.accelerations.resize(dof_);
     state_publisher_->msg_.error.accelerations.resize(dof_);
+  }
+  if (has_position_command_interface_)
+  {
+    state_publisher_->msg_.output.positions.resize(dof_);
+  }
+  if (has_velocity_command_interface_)
+  {
+    state_publisher_->msg_.output.velocities.resize(dof_);
+  }
+  if (has_acceleration_command_interface_)
+  {
+    state_publisher_->msg_.output.accelerations.resize(dof_);
+  }
+  if (has_effort_command_interface_)
+  {
+    state_publisher_->msg_.output.effort.resize(dof_);
   }
   state_publisher_->unlock();
 
@@ -715,6 +829,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     std::bind(&JointTrajectoryController::goal_accepted_callback, this, _1));
 
   resize_joint_trajectory_point(state_current_, dof_);
+  resize_joint_trajectory_point_command(command_current_, dof_);
   resize_joint_trajectory_point(state_desired_, dof_);
   resize_joint_trajectory_point(state_error_, dof_);
   resize_joint_trajectory_point(last_commanded_state_, dof_);
@@ -899,24 +1014,58 @@ void JointTrajectoryController::publish_state(
     return;
   }
 
+  if (state_publisher_legacy_ && state_publisher_legacy_->trylock())
+  {
+    last_state_publish_time_ = get_node()->now();
+    state_publisher_legacy_->msg_.header.stamp = last_state_publish_time_;
+    state_publisher_legacy_->msg_.desired.positions = desired_state.positions;
+    state_publisher_legacy_->msg_.desired.velocities = desired_state.velocities;
+    state_publisher_legacy_->msg_.desired.accelerations = desired_state.accelerations;
+    state_publisher_legacy_->msg_.actual.positions = current_state.positions;
+    state_publisher_legacy_->msg_.error.positions = state_error.positions;
+    if (has_velocity_state_interface_)
+    {
+      state_publisher_legacy_->msg_.actual.velocities = current_state.velocities;
+      state_publisher_legacy_->msg_.error.velocities = state_error.velocities;
+    }
+    if (has_acceleration_state_interface_)
+    {
+      state_publisher_legacy_->msg_.actual.accelerations = current_state.accelerations;
+      state_publisher_legacy_->msg_.error.accelerations = state_error.accelerations;
+    }
+
+    state_publisher_legacy_->unlockAndPublish();
+
+    if (publisher_legacy_->get_subscription_count())
+    {
+      RCLCPP_WARN_THROTTLE(
+        get_node()->get_logger(), *get_node()->get_clock(), 1000,
+        "Subscription to deprecated ~/state topic. Use ~/controller_state instead.");
+    }
+  }
+
   if (state_publisher_ && state_publisher_->trylock())
   {
     last_state_publish_time_ = get_node()->now();
     state_publisher_->msg_.header.stamp = last_state_publish_time_;
-    state_publisher_->msg_.desired.positions = desired_state.positions;
-    state_publisher_->msg_.desired.velocities = desired_state.velocities;
-    state_publisher_->msg_.desired.accelerations = desired_state.accelerations;
-    state_publisher_->msg_.actual.positions = current_state.positions;
+    state_publisher_->msg_.reference.positions = desired_state.positions;
+    state_publisher_->msg_.reference.velocities = desired_state.velocities;
+    state_publisher_->msg_.reference.accelerations = desired_state.accelerations;
+    state_publisher_->msg_.feedback.positions = current_state.positions;
     state_publisher_->msg_.error.positions = state_error.positions;
     if (has_velocity_state_interface_)
     {
-      state_publisher_->msg_.actual.velocities = current_state.velocities;
+      state_publisher_->msg_.feedback.velocities = current_state.velocities;
       state_publisher_->msg_.error.velocities = state_error.velocities;
     }
     if (has_acceleration_state_interface_)
     {
-      state_publisher_->msg_.actual.accelerations = current_state.accelerations;
+      state_publisher_->msg_.feedback.accelerations = current_state.accelerations;
       state_publisher_->msg_.error.accelerations = state_error.accelerations;
+    }
+    if (read_commands_from_command_interfaces(command_current_))
+    {
+      state_publisher_->msg_.output = command_current_;
     }
 
     state_publisher_->unlockAndPublish();
@@ -1286,6 +1435,27 @@ void JointTrajectoryController::resize_joint_trajectory_point(
   if (has_acceleration_state_interface_)
   {
     point.accelerations.resize(size, 0.0);
+  }
+}
+
+void JointTrajectoryController::resize_joint_trajectory_point_command(
+  trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size)
+{
+  if (has_position_command_interface_)
+  {
+    point.positions.resize(size, 0.0);
+  }
+  if (has_velocity_command_interface_)
+  {
+    point.velocities.resize(size, 0.0);
+  }
+  if (has_acceleration_command_interface_)
+  {
+    point.accelerations.resize(size, 0.0);
+  }
+  if (has_effort_command_interface_)
+  {
+    point.effort.resize(size, 0.0);
   }
 }
 
