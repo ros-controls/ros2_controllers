@@ -388,7 +388,7 @@ public:
       // TODO(anyone): add checking for velocities and accelerations
       if (traj_controller_->has_position_command_interface())
       {
-        EXPECT_NEAR(expected_actual.positions[i], state_msg->actual.positions[i], allowed_delta);
+        EXPECT_NEAR(expected_actual.positions[i], state_msg->feedback.positions[i], allowed_delta);
       }
     }
 
@@ -398,7 +398,8 @@ public:
       // TODO(anyone): add checking for velocities and accelerations
       if (traj_controller_->has_position_command_interface())
       {
-        EXPECT_NEAR(expected_desired.positions[i], state_msg->desired.positions[i], allowed_delta);
+        EXPECT_NEAR(
+          expected_desired.positions[i], state_msg->reference.positions[i], allowed_delta);
       }
     }
   }

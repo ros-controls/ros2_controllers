@@ -546,34 +546,6 @@ TEST_P(TrajectoryControllerTestParameterized, state_topic_consistency)
   {
     EXPECT_EQ(n_joints, state->output.effort.size());
   }
-
-  // TODO(anyone): remove deprecated field checks
-  EXPECT_TRUE(state->desired.positions.empty() || state->desired.positions == INITIAL_POS_JOINTS);
-  EXPECT_TRUE(state->desired.velocities.empty() || state->desired.velocities == INITIAL_VEL_JOINTS);
-  EXPECT_TRUE(
-    state->desired.accelerations.empty() || state->desired.accelerations == INITIAL_EFF_JOINTS);
-
-  EXPECT_EQ(n_joints, state->actual.positions.size());
-  if (
-    std::find(state_interface_types_.begin(), state_interface_types_.end(), "velocity") ==
-    state_interface_types_.end())
-  {
-    EXPECT_TRUE(state->actual.velocities.empty());
-  }
-  else
-  {
-    EXPECT_EQ(n_joints, state->actual.velocities.size());
-  }
-  if (
-    std::find(state_interface_types_.begin(), state_interface_types_.end(), "acceleration") ==
-    state_interface_types_.end())
-  {
-    EXPECT_TRUE(state->actual.accelerations.empty());
-  }
-  else
-  {
-    EXPECT_EQ(n_joints, state->actual.accelerations.size());
-  }
 }
 
 // Floating-point value comparison threshold

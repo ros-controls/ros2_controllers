@@ -818,19 +818,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     state_publisher_->msg_.output.effort.resize(dof_);
   }
 
-  // TODO(anyone): remove deprecated fields
-  state_publisher_->msg_.desired.positions.resize(dof_);
-  state_publisher_->msg_.desired.velocities.resize(dof_);
-  state_publisher_->msg_.desired.accelerations.resize(dof_);
-  state_publisher_->msg_.actual.positions.resize(dof_);
-  if (has_velocity_state_interface_)
-  {
-    state_publisher_->msg_.actual.velocities.resize(dof_);
-  }
-  if (has_acceleration_state_interface_)
-  {
-    state_publisher_->msg_.actual.accelerations.resize(dof_);
-  }
   state_publisher_->unlock();
 
   // action server configuration
@@ -1052,20 +1039,6 @@ void JointTrajectoryController::publish_state(
     if (read_commands_from_command_interfaces(command_current_))
     {
       state_publisher_->msg_.output = command_current_;
-    }
-
-    // TODO(anyone): remove deprecated fields
-    state_publisher_->msg_.desired.positions = desired_state.positions;
-    state_publisher_->msg_.desired.velocities = desired_state.velocities;
-    state_publisher_->msg_.desired.accelerations = desired_state.accelerations;
-    state_publisher_->msg_.actual.positions = current_state.positions;
-    if (has_velocity_state_interface_)
-    {
-      state_publisher_->msg_.actual.velocities = current_state.velocities;
-    }
-    if (has_acceleration_state_interface_)
-    {
-      state_publisher_->msg_.actual.accelerations = current_state.accelerations;
     }
 
     state_publisher_->unlockAndPublish();
