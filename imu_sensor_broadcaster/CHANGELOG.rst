@@ -2,6 +2,12 @@
 Changelog for package imu_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.5.0 (2023-04-14)
+------------------
+
+3.4.0 (2023-04-02)
+------------------
+
 3.3.0 (2023-03-07)
 ------------------
 * Add comments about auto-generated header files (`#539 <https://github.com/ros-controls/ros2_controllers/issues/539>`_)
