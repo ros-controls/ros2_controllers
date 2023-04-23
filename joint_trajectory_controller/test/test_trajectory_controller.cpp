@@ -707,9 +707,10 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_normalized)
   executor.cancel();
 }
 
-TEST_P(TrajectoryControllerTestParameterized, test_non_default_parameters){
-  std::vector<std::String> joint_names 
-  traj_controller_.getnode().get_parameter("joints",joint_names)
+TEST_P(TrajectoryControllerTestParameterized, test_non_default_parameters)
+{
+  double amt = 0;
+  traj_controller_.get_node().get_param("action_monitor_rate", amt) ASSERT_EQ(amt, 20.0);
 }
 
 // /**
