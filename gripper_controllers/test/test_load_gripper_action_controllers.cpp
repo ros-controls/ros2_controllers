@@ -36,10 +36,6 @@ TEST(TestLoadGripperActionControllers, load_controller)
     cm.load_controller(
       "test_gripper_action_position_controller", "position_controllers/GripperActionController"),
     nullptr);
-  ASSERT_NE(
-    cm.load_controller(
-      "test_gripper_action_effort_controller", "effort_controllers/GripperActionController"),
-    nullptr);
 
   rclcpp::shutdown();
 }
