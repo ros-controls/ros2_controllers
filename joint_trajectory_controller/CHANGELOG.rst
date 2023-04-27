@@ -2,6 +2,12 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.5.0 (2023-04-14)
+------------------
+* [Parameters] Use `gt_eq` instead of deprecated `lower_bounds` in validators (`#561 <https://github.com/ros-controls/ros2_controllers/issues/561>`_)
+* [JTC] Disable use of closed-loop PID adapter if controller is used in open-loop mode. (`#551 <https://github.com/ros-controls/ros2_controllers/issues/551>`_)
+* Contributors: Dr. Denis
+
 3.4.0 (2023-04-02)
 ------------------
 * Update JTC documentation (`#541 <https://github.com/ros-controls/ros2_controllers/issues/541>`_)
