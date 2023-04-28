@@ -230,7 +230,7 @@ ROS2 interface of the controller
 ~/joint_trajectory (input topic) [trajectory_msgs::msg::JointTrajectory]
   Topic for commanding the controller.
 
-~/state (output topic) [control_msgs::msg::JointTrajectoryControllerState]
+~/controller_state (output topic) [control_msgs::msg::JointTrajectoryControllerState]
   Topic publishing internal states with the update-rate of the controller manager.
 
 ~/follow_joint_trajectory (action server) [control_msgs::action::FollowJointTrajectory]
