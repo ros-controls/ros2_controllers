@@ -1,4 +1,4 @@
-.. _joint_trajectory_controller_userdoc:
+.. _addmittance_controller_userdoc:
 
 Admittance Controller
 ======================
@@ -7,9 +7,6 @@ Admittance controller enables you do zero-force control from a force measured on
 The controller implements ``ChainedControllerInterface``, so it is possible to add another controllers in front of it, e.g., ``JointTrajectoryController``.
 
 The controller requires an external kinematics plugin to function. The `kinematics_interface <https://github.com/ros-controls/kinematics_interface>`_ repository provides an interface and an implementation that the admittance controller can use.
-
-Parameters:
-
 
 
 ROS2 interface of the controller
