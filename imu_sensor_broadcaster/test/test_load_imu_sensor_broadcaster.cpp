@@ -38,8 +38,10 @@ TEST(TestLoadIMUSensorBroadcaster, load_controller)
       ros2_control_test_assets::minimal_robot_urdf),
     executor, "test_controller_manager");
 
-  ASSERT_NO_THROW(cm.load_controller(
-    "test_imu_sensor_broadcaster", "imu_sensor_broadcaster/IMUSensorBroadcaster"));
+  ASSERT_NE(
+    cm.load_controller(
+      "test_imu_sensor_broadcaster", "imu_sensor_broadcaster/IMUSensorBroadcaster"),
+    nullptr);
 
   rclcpp::shutdown();
 }
