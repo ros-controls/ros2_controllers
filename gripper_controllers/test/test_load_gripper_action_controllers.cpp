@@ -32,10 +32,14 @@ TEST(TestLoadGripperActionControllers, load_controller)
       ros2_control_test_assets::minimal_robot_urdf),
     executor, "test_controller_manager");
 
-  ASSERT_NO_THROW(cm.load_controller(
-    "test_gripper_action_position_controller", "position_controllers/GripperActionController"));
-  ASSERT_NO_THROW(cm.load_controller(
-    "test_gripper_action_effort_controller", "effort_controllers/GripperActionController"));
+  ASSERT_NE(
+    cm.load_controller(
+      "test_gripper_action_position_controller", "position_controllers/GripperActionController"),
+    nullptr);
+  ASSERT_NE(
+    cm.load_controller(
+      "test_gripper_action_effort_controller", "effort_controllers/GripperActionController"),
+    nullptr);
 
   rclcpp::shutdown();
 }

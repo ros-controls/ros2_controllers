@@ -16,7 +16,7 @@
  * Author: Tony Najjar
  */
 
-#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 #include <memory>
 
 #include "controller_manager/controller_manager.hpp"
@@ -36,8 +36,9 @@ TEST(TestLoadTricycleController, load_controller)
       ros2_control_test_assets::minimal_robot_urdf),
     executor, "test_controller_manager");
 
-  ASSERT_NO_THROW(
-    cm.load_controller("test_tricycle_controller", "tricycle_controller/TricycleController"));
+  ASSERT_NE(
+    cm.load_controller("test_tricycle_controller", "tricycle_controller/TricycleController"),
+    nullptr);
 
   rclcpp::shutdown();
 }
