@@ -245,17 +245,17 @@ The controller types are placed into namespaces according to their command types
 The following version of the Joint Trajectory Controller are available mapping the following interfaces:
 
 * position_controllers::JointTrajectoryController
-  
+
   * Input: position, [velocity, [acceleration]]
   * Output: position
-  
+
 * position_velocity_controllers::JointTrajectoryController
-  
+
   * Input: position, [velocity, [acceleration]]
   * Output: position and velocity
-  
+
 * position_velocity_acceleration_controllers::JointTrajectoryController
-  
+
   * Input: position, [velocity, [acceleration]]
   * Output: position, velocity and acceleration
 
