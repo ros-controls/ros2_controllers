@@ -1,4 +1,4 @@
-// Copyright 2022 VoodooIT, sole proprietorship
+// Copyright 2021, PickNik Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,14 +21,14 @@
 
 #include "controller_interface/controller_interface.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
-#include "realtime_tools/realtime_buffer.h"
-
 #include "cartesian_controllers/visibility_control.h"
+#include "realtime_tools/realtime_buffer.h"
 
 namespace cartesian_controllers
 {
 using CmdType = geometry_msgs::msg::TwistStamped;
 using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
+
 class TwistController : public controller_interface::ControllerInterface
 {
 public:
@@ -45,10 +45,6 @@ public:
   CallbackReturn on_init() override;
 
   CARTESIAN_CONTROLLERS_PUBLIC
-  controller_interface::return_type update(
-    const rclcpp::Time & time, const rclcpp::Duration & period) override;
-
-  CARTESIAN_CONTROLLERS_PUBLIC
   CallbackReturn on_configure(const rclcpp_lifecycle::State & previous_state) override;
 
   CARTESIAN_CONTROLLERS_PUBLIC
@@ -56,6 +52,10 @@ public:
 
   CARTESIAN_CONTROLLERS_PUBLIC
   CallbackReturn on_deactivate(const rclcpp_lifecycle::State & previous_state) override;
+
+  CARTESIAN_CONTROLLERS_PUBLIC
+  controller_interface::return_type update(
+    const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
 protected:
   std::string joint_name_;

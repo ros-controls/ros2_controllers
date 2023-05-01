@@ -14,6 +14,7 @@
 
 #include "test_twist_controller.hpp"
 
+#include <lifecycle_msgs/msg/state.hpp>
 #include <memory>
 #include <string>
 #include <utility>
@@ -151,7 +152,7 @@ TEST_F(TwistControllerTest, command_callback_test)
     auto node_state = controller_->configure();
     ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
 
-    node_state = controller_->activate();
+    node_state = controller_->get_node()->activate();
     ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
 
     // send a new command

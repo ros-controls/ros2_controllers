@@ -1,4 +1,4 @@
-// Copyright 2022 VoodooIT, sole proprietorship
+// Copyright 2021, PickNik Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,8 +14,17 @@
 
 #include "cartesian_controllers/twist_controller.hpp"
 
+#include <memory>
+#include <string>
+#include <vector>
+
+#include "controller_interface/helpers.hpp"
+#include "hardware_interface/loaned_command_interface.hpp"
+
 namespace cartesian_controllers
 {
+using hardware_interface::LoanedCommandInterface;
+
 TwistController::TwistController()
 : controller_interface::ControllerInterface(),
   rt_command_ptr_(nullptr),
@@ -60,38 +69,9 @@ CallbackReturn TwistController::on_init()
   return CallbackReturn::SUCCESS;
 }
 
-controller_interface::return_type TwistController::update(
-  const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
-{
-  auto twist_commands = rt_command_ptr_.readFromRT();
-
-  // no command received yet
-  if (!twist_commands || !(*twist_commands))
-  {
-    return controller_interface::return_type::OK;
-  }
-
-  if (command_interfaces_.size() != 6)
-  {
-    RCLCPP_ERROR_THROTTLE(
-      get_node()->get_logger(), *node_->get_clock(), 1000,
-      "Twist controller needs does not match number of interfaces needed 6, given (%zu) interfaces",
-      command_interfaces_.size());
-    return controller_interface::return_type::ERROR;
-  }
-  command_interfaces_[0].set_value((*twist_commands)->twist.linear.x);
-  command_interfaces_[1].set_value((*twist_commands)->twist.linear.y);
-  command_interfaces_[2].set_value((*twist_commands)->twist.linear.z);
-  command_interfaces_[3].set_value((*twist_commands)->twist.angular.x);
-  command_interfaces_[4].set_value((*twist_commands)->twist.angular.y);
-  command_interfaces_[5].set_value((*twist_commands)->twist.angular.z);
-
-  return controller_interface::return_type::OK;
-}
-
 CallbackReturn TwistController::on_configure(const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  joint_name_ = node_->get_parameter("joint").as_string();
+  joint_name_ = get_node()->get_parameter("joint").as_string();
 
   if (joint_name_.empty())
   {
@@ -102,7 +82,7 @@ CallbackReturn TwistController::on_configure(const rclcpp_lifecycle::State & /*p
   // Specialized, child controllers set interfaces before calling configure function.
   if (interface_names_.empty())
   {
-    interface_names_ = node_->get_parameter("interface_names").as_string_array();
+    interface_names_ = get_node()->get_parameter("interface_names").as_string_array();
   }
 
   if (interface_names_.empty())
@@ -133,7 +113,36 @@ CallbackReturn TwistController::on_deactivate(const rclcpp_lifecycle::State & /*
   return CallbackReturn::SUCCESS;
 }
 
+controller_interface::return_type TwistController::update(
+  const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
+{
+  auto twist_commands = rt_command_ptr_.readFromRT();
+
+  // no command received yet
+  if (!twist_commands || !(*twist_commands))
+  {
+    return controller_interface::return_type::OK;
+  }
+
+  if (command_interfaces_.size() != 6)
+  {
+    RCLCPP_ERROR_THROTTLE(
+      get_node()->get_logger(), *get_node()->get_clock(), 1000,
+      "Twist controller needs does not match number of interfaces needed 6, given (%zu) interfaces",
+      command_interfaces_.size());
+    return controller_interface::return_type::ERROR;
+  }
+  command_interfaces_[0].set_value((*twist_commands)->twist.linear.x);
+  command_interfaces_[1].set_value((*twist_commands)->twist.linear.y);
+  command_interfaces_[2].set_value((*twist_commands)->twist.linear.z);
+  command_interfaces_[3].set_value((*twist_commands)->twist.angular.x);
+  command_interfaces_[4].set_value((*twist_commands)->twist.angular.y);
+  command_interfaces_[5].set_value((*twist_commands)->twist.angular.z);
+
+  return controller_interface::return_type::OK;
+}
 }  // namespace cartesian_controllers
+
 #include "pluginlib/class_list_macros.hpp"
 
 PLUGINLIB_EXPORT_CLASS(
