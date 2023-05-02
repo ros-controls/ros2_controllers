@@ -155,6 +155,8 @@ controller_interface::return_type JointTrajectoryController::update(
     sort_to_local_joint_order(*new_external_msg);
     // TODO(denis): Add here integration of position and velocity
     traj_external_point_ptr_->update(*new_external_msg);
+    // set the active trajectory pointer to the new goal
+    traj_point_active_ptr_ = &traj_external_point_ptr_;
   }
 
   // TODO(anyone): can I here also use const on joint_interface since the reference_wrapper is not
@@ -318,6 +320,8 @@ controller_interface::return_type JointTrajectoryController::update(
           // TODO(matthew-reynolds): Need a lock-free write here
           // See https://github.com/ros-controls/ros2_controllers/issues/168
           rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
+          // remove the active trajectory pointer so that we stop commanding the hardware
+          traj_point_active_ptr_ = nullptr;
 
           // check goal tolerance
         }
@@ -331,6 +335,8 @@ controller_interface::return_type JointTrajectoryController::update(
             // TODO(matthew-reynolds): Need a lock-free write here
             // See https://github.com/ros-controls/ros2_controllers/issues/168
             rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
+            // remove the active trajectory pointer so that we stop commanding the hardware
+            traj_point_active_ptr_ = nullptr;
 
             RCLCPP_INFO(get_node()->get_logger(), "Goal reached, success!");
           }
