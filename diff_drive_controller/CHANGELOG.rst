@@ -2,6 +2,12 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.6.0 (2023-04-29)
+------------------
+* Renovate load controller tests (`#569 <https://github.com/ros-controls/ros2_controllers/issues/569>`_)
+* adjusted open_loop param description in diff_drive_controller_parameter.yaml (`#570 <https://github.com/ros-controls/ros2_controllers/issues/570>`_)
+* Contributors: Bence Magyar, muritane
+
 3.5.0 (2023-04-14)
 ------------------
 

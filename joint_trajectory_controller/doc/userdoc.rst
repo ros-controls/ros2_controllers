@@ -20,31 +20,31 @@ Trajectories are represented internally with ``trajectory_msgs/msg/JointTrajecto
 By default, a spline interpolator is provided, but it's possible to support other representations.
 The spline interpolator uses the following interpolation strategies depending on the waypoint specification:
 
-    Linear: Only position is specified. Guarantees continuity at the position level. Discouraged because it yields trajectories with discontinuous velocities at the waypoints.
+* Linear: Only position is specified. Guarantees continuity at the position level. Discouraged because it yields trajectories with discontinuous velocities at the waypoints.
 
-    Cubic: Position and velocity are specified. Guarantees continuity at the velocity level.
+* Cubic: Position and velocity are specified. Guarantees continuity at the velocity level.
 
-    Quintic: Position, velocity and acceleration are specified: Guarantees continuity at the acceleration level.
+* Quintic: Position, velocity and acceleration are specified: Guarantees continuity at the acceleration level.
 
 Hardware interface type [#f1]_
 -------------------------------
 
 Currently joints with position, velocity, acceleration, and effort interfaces are supported. The joints can have one or more command interfaces, where the following control laws are applied at the same time:
 
-- For command interfaces ``position``, the desired positions are simply forwarded to the joints,
-- For command interfaces ``acceleration``, desired accelerations are simply forwarded to the joints.
-- For ``velocity`` (``effort``) command interfaces, the position+velocity trajectory following error is mapped to ``velocity`` (``effort``) commands through a PID loop (:ref:`parameters`).
+* For command interfaces ``position``, the desired positions are simply forwarded to the joints,
+* For command interfaces ``acceleration``, desired accelerations are simply forwarded to the joints.
+* For ``velocity`` (``effort``) command interfaces, the position+velocity trajectory following error is mapped to ``velocity`` (``effort``) commands through a PID loop (:ref:`parameters`).
 
 This leads to the the following allowed combinations of command and state interfaces:
 
-- With command interface ``position``, there are no restrictions for state interfaces.
-- With command interface ``velocity``:
+* With command interface ``position``, there are no restrictions for state interfaces.
+* With command interface ``velocity``:
 
-   - if command interface ``velocity`` is the only one, state interfaces must include  ``position, velocity`` .
-   - no restrictions otherwise.
+  * if command interface ``velocity`` is the only one, state interfaces must include  ``position, velocity`` .
+  * no restrictions otherwise.
 
-- With command interface ``effort``, state interfaces must include  ``position, velocity``.
-- With command interface ``acceleration``, there are no restrictions for state interfaces.
+* With command interface ``effort``, state interfaces must include  ``position, velocity``.
+* With command interface ``acceleration``, there are no restrictions for state interfaces.
 
 Example controller configurations can be found :ref:`below <ROS 2 interface>`.
 
@@ -53,11 +53,11 @@ Similarly to the trajectory representation case above, it's possible to support 
 Other features
 --------------
 
-    Realtime-safe implementation.
+* Realtime-safe implementation.
 
-    Proper handling of wrapping (continuous) joints.
+* Proper handling of wrapping (continuous) joints.
 
-    Robust to system clock changes: Discontinuous system clock changes do not cause discontinuities in the execution of already queued trajectory segments.
+* Robust to system clock changes: Discontinuous system clock changes do not cause discontinuities in the execution of already queued trajectory segments.
 
 
 Using Joint Trajectory Controller(s)
@@ -160,8 +160,9 @@ interpolation_method (string)
 
 open_loop_control (boolean)
   Use controller in open-loop control mode:
-    + The controller ignores the states provided by hardware interface but using last commands as states for starting the trajectory interpolation.
-    + It deactivates the feedback control, see the ``gains`` structure.
+
+  * The controller ignores the states provided by hardware interface but using last commands as states for starting the trajectory interpolation.
+  * It deactivates the feedback control, see the ``gains`` structure.
 
   This is useful if hardware states are not following commands, i.e., an offset between those (typical for hydraulic manipulators).
 
@@ -260,18 +261,18 @@ Supported state interfaces are ``position``, ``velocity``, ``acceleration`` and 
 
 Legal combinations of state interfaces are:
 
-- ``position``
-- ``position`` and ``velocity``
-- ``position``, ``velocity`` and ``acceleration``
-- ``effort``
+* ``position``
+* ``position`` and ``velocity``
+* ``position``, ``velocity`` and ``acceleration``
+* ``effort``
 
 Commands
 ,,,,,,,,,
 
 There are two mechanisms for sending trajectories to the controller:
 
-- via action, see :ref:`actions <Actions>`
-- via topic, see :ref:`subscriber <Subscriber>`
+* via action, see :ref:`actions <Actions>`
+* via topic, see :ref:`subscriber <Subscriber>`
 
 Both use the ``trajectory_msgs/JointTrajectory`` message to specify trajectories, and require specifying values for all the controller joints (as opposed to only a subset) if ``allow_partial_joints_goal`` is not set to ``True``.
 
@@ -280,9 +281,8 @@ Both use the ``trajectory_msgs/JointTrajectory`` message to specify trajectories
 Actions  [#f1]_
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-Action server for commanding the controller:
-
-- <controller_name>/follow_joint_trajectory [control_msgs::action::FollowJointTrajectory]
+<controller_name>/follow_joint_trajectory [control_msgs::action::FollowJointTrajectory]
+  Action server for commanding the controller
 
 
 The primary way to send trajectories is through the action interface, and should be favored when execution monitoring is desired.
@@ -295,9 +295,8 @@ If tolerances are violated during trajectory execution, the action goal is abort
 Subscriber [#f1]_
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-Topic for commanding the controller:
-
-- <controller_name>/joint_trajectory [trajectory_msgs::msg::JointTrajectory]
+<controller_name>/joint_trajectory [trajectory_msgs::msg::JointTrajectory]
+  Topic for commanding the controller
 
 The topic interface is a fire-and-forget alternative. Use this interface if you don't care about execution monitoring.
 The controller's path and goal tolerance specification is not used in this case, as there is no mechanism to notify the sender about tolerance violations.
@@ -307,17 +306,15 @@ Note that although some degree of monitoring is available through the ``~/query_
 Publishers
 ,,,,,,,,,,,
 
-Topic publishing internal states with the update-rate of the controller manager:
-
-- <controller_name>/controller_state [control_msgs::msg::JointTrajectoryControllerState]
+<controller_name>/controller_state [control_msgs::msg::JointTrajectoryControllerState]
+  Topic publishing internal states with the update-rate of the controller manager
 
 
 Services
 ,,,,,,,,,,,
 
-Query controller state at any future time:
-
-- <controller_name>/query_state [control_msgs::srv::QueryTrajectoryState]
+<controller_name>/query_state [control_msgs::srv::QueryTrajectoryState]
+  Query controller state at any future time
 
 
 Specialized versions of JointTrajectoryController (TBD in ...)
@@ -327,15 +324,7 @@ The controller types are placed into namespaces according to their command types
 
 The following version of the Joint Trajectory Controller are available mapping the following interfaces:
 
-  - position_controllers::JointTrajectoryController
-    - Input: position, [velocity, [acceleration]]
-    - Output: position
-  - position_velocity_controllers::JointTrajectoryController
-    - Input: position, [velocity, [acceleration]]
-    - Output: position and velocity
-  - position_velocity_acceleration_controllers::JointTrajectoryController
-    - Input: position, [velocity, [acceleration]]
-    - Output: position, velocity and acceleration
+* position_controllers::JointTrajectoryController
 
 
 .. rubric:: Footnote

@@ -2,6 +2,12 @@
 Changelog for package forward_command_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.6.0 (2023-04-29)
+------------------
+* Renovate load controller tests (`#569 <https://github.com/ros-controls/ros2_controllers/issues/569>`_)
+* Fix docs format (`#589 <https://github.com/ros-controls/ros2_controllers/issues/589>`_)
+* Contributors: Bence Magyar, Christoph Fröhlich
+
 3.5.0 (2023-04-14)
 ------------------
 

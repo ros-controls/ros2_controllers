@@ -2,6 +2,11 @@
 Changelog for package gripper_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.6.0 (2023-04-29)
+------------------
+* Renovate load controller tests (`#569 <https://github.com/ros-controls/ros2_controllers/issues/569>`_)
+* Contributors: Bence Magyar
+
 3.5.0 (2023-04-14)
 ------------------
 * [Parameters] Use `gt_eq` instead of deprecated `lower_bounds` in validators (`#561 <https://github.com/ros-controls/ros2_controllers/issues/561>`_)

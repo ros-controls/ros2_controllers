@@ -2,6 +2,13 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.6.0 (2023-04-29)
+------------------
+* Renovate load controller tests (`#569 <https://github.com/ros-controls/ros2_controllers/issues/569>`_)
+* Fix docs format (`#589 <https://github.com/ros-controls/ros2_controllers/issues/589>`_)
+* [JTC] Implement new ~/controller_state message (`#557 <https://github.com/ros-controls/ros2_controllers/issues/557>`_)
+* Contributors: Bence Magyar, Christoph Fröhlich
+
 3.5.0 (2023-04-14)
 ------------------
 * [Parameters] Use `gt_eq` instead of deprecated `lower_bounds` in validators (`#561 <https://github.com/ros-controls/ros2_controllers/issues/561>`_)
