@@ -2,6 +2,11 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix wrong publish timestamp initialization (`#585 <https://github.com/ros-controls/ros2_controllers/issues/585>`_) (`#593 <https://github.com/ros-controls/ros2_controllers/issues/593>`_)
+* Contributors: mergify[bot]
+
 2.18.0 (2023-04-29)
 -------------------
 * adjusted open_loop param description in diff_drive_controller_parameter.yaml (`#570 <https://github.com/ros-controls/ros2_controllers/issues/570>`_) (`#576 <https://github.com/ros-controls/ros2_controllers/issues/576>`_)

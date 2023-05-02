@@ -2,6 +2,9 @@
 Changelog for package forward_command_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 2.18.0 (2023-04-29)
 -------------------
 * Fix docs format (`#591 <https://github.com/ros-controls/ros2_controllers/issues/591>`_)

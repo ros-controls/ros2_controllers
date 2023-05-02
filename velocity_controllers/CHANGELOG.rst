@@ -2,6 +2,9 @@
 Changelog for package velocity_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 2.18.0 (2023-04-29)
 -------------------
 
