@@ -2,6 +2,12 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.18.0 (2023-04-29)
+-------------------
+* Fix docs format (`#591 <https://github.com/ros-controls/ros2_controllers/issues/591>`_)
+* [JTC] Configurable joint positon error normalization behavior (`#491 <https://github.com/ros-controls/ros2_controllers/issues/491>`_) (`#579 <https://github.com/ros-controls/ros2_controllers/issues/579>`_)
+* Contributors: Christoph Fröhlich, Bence Magyar
+
 2.17.3 (2023-04-14)
 -------------------
 * [JTC] Add pid gain structure to documentation (`#485 <https://github.com/ros-controls/ros2_controllers/issues/485>`_) (`#543 <https://github.com/ros-controls/ros2_controllers/issues/543>`_)

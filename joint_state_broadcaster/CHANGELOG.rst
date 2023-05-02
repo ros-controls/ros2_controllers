@@ -2,6 +2,11 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.18.0 (2023-04-29)
+-------------------
+* Fix docs format (`#591 <https://github.com/ros-controls/ros2_controllers/issues/591>`_)
+* Contributors: Christoph Fröhlich
+
 2.17.3 (2023-04-14)
 -------------------
 
