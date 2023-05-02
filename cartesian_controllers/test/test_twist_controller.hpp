@@ -141,7 +141,7 @@ protected:
 
     if (set_parameters) {
       controller_->get_node()->set_parameter({"joint", joint_name_});
-      controller_->get_node()->set_parameter({"interface_name", interface_names_});
+      controller_->get_node()->set_parameter({"interface_names", interface_names_});
     }
   }
 
