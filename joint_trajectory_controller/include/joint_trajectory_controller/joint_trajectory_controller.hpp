@@ -125,6 +125,7 @@ protected:
 
   // Preallocate variables used in the realtime update() function
   trajectory_msgs::msg::JointTrajectoryPoint state_current_;
+  trajectory_msgs::msg::JointTrajectoryPoint command_current_;
   trajectory_msgs::msg::JointTrajectoryPoint state_desired_;
   trajectory_msgs::msg::JointTrajectoryPoint state_error_;
 
@@ -186,6 +187,8 @@ protected:
   using ControllerStateMsg = control_msgs::msg::JointTrajectoryControllerState;
   using StatePublisher = realtime_tools::RealtimePublisher<ControllerStateMsg>;
   using StatePublisherPtr = std::unique_ptr<StatePublisher>;
+  rclcpp::Publisher<ControllerStateMsg>::SharedPtr publisher_legacy_;
+  StatePublisherPtr state_publisher_legacy_;
   rclcpp::Publisher<ControllerStateMsg>::SharedPtr publisher_;
   StatePublisherPtr state_publisher_;
 
@@ -255,12 +258,15 @@ protected:
   void read_state_from_hardware(JointTrajectoryPoint & state);
 
   bool read_state_from_command_interfaces(JointTrajectoryPoint & state);
+  bool read_commands_from_command_interfaces(JointTrajectoryPoint & commands);
 
 private:
   bool contains_interface_type(
     const std::vector<std::string> & interface_type_list, const std::string & interface_type);
 
   void resize_joint_trajectory_point(
+    trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size);
+  void resize_joint_trajectory_point_command(
     trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size);
 };
 

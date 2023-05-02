@@ -270,6 +270,28 @@ public:
 
   static void TearDownTestCase() { rclcpp::shutdown(); }
 
+  void subscribeToStateLegacy()
+  {
+    auto traj_lifecycle_node = traj_controller_->get_node();
+    traj_lifecycle_node->set_parameter(
+      rclcpp::Parameter("state_publish_rate", static_cast<double>(100)));
+
+    using control_msgs::msg::JointTrajectoryControllerState;
+
+    auto qos = rclcpp::SensorDataQoS();
+    // Needed, otherwise spin_some() returns only the oldest message in the queue
+    // I do not understand why spin_some provides only one message
+    qos.keep_last(1);
+    state_legacy_subscriber_ =
+      traj_lifecycle_node->create_subscription<JointTrajectoryControllerState>(
+        controller_name_ + "/state", qos,
+        [&](std::shared_ptr<JointTrajectoryControllerState> msg)
+        {
+          std::lock_guard<std::mutex> guard(state_legacy_mutex_);
+          state_legacy_msg_ = msg;
+        });
+  }
+
   void subscribeToState()
   {
     auto traj_lifecycle_node = traj_controller_->get_node();
@@ -283,7 +305,7 @@ public:
     // I do not understand why spin_some provides only one message
     qos.keep_last(1);
     state_subscriber_ = traj_lifecycle_node->create_subscription<JointTrajectoryControllerState>(
-      controller_name_ + "/state", qos,
+      controller_name_ + "/controller_state", qos,
       [&](std::shared_ptr<JointTrajectoryControllerState> msg)
       {
         std::lock_guard<std::mutex> guard(state_mutex_);
@@ -405,6 +427,11 @@ public:
     }
   }
 
+  std::shared_ptr<control_msgs::msg::JointTrajectoryControllerState> getStateLegacy() const
+  {
+    std::lock_guard<std::mutex> guard(state_legacy_mutex_);
+    return state_legacy_msg_;
+  }
   std::shared_ptr<control_msgs::msg::JointTrajectoryControllerState> getState() const
   {
     std::lock_guard<std::mutex> guard(state_mutex_);
@@ -427,6 +454,10 @@ public:
     state_subscriber_;
   mutable std::mutex state_mutex_;
   std::shared_ptr<control_msgs::msg::JointTrajectoryControllerState> state_msg_;
+  rclcpp::Subscription<control_msgs::msg::JointTrajectoryControllerState>::SharedPtr
+    state_legacy_subscriber_;
+  mutable std::mutex state_legacy_mutex_;
+  std::shared_ptr<control_msgs::msg::JointTrajectoryControllerState> state_legacy_msg_;
 
   std::vector<double> joint_pos_;
   std::vector<double> joint_vel_;

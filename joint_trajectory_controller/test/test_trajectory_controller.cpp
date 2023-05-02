@@ -447,16 +447,16 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
   executor.cancel();
 }
 
-TEST_P(TrajectoryControllerTestParameterized, state_topic_consistency)
+TEST_P(TrajectoryControllerTestParameterized, state_topic_legacy_consistency)
 {
   rclcpp::executors::SingleThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(executor, true, {});
-  subscribeToState();
+  subscribeToStateLegacy();
   updateController();
 
   // Spin to receive latest state
   executor.spin_some();
-  auto state = getState();
+  auto state = getStateLegacy();
 
   size_t n_joints = joint_names_.size();
 
@@ -499,6 +499,103 @@ TEST_P(TrajectoryControllerTestParameterized, state_topic_consistency)
   EXPECT_TRUE(state->error.accelerations.empty() || state->error.accelerations == zeros);
 }
 
+TEST_P(TrajectoryControllerTestParameterized, state_topic_consistency)
+{
+  rclcpp::executors::SingleThreadedExecutor executor;
+  SetUpAndActivateTrajectoryController(executor, true, {});
+  subscribeToState();
+  updateController();
+
+  // Spin to receive latest state
+  executor.spin_some();
+  auto state = getState();
+
+  size_t n_joints = joint_names_.size();
+
+  for (unsigned int i = 0; i < n_joints; ++i)
+  {
+    EXPECT_EQ(joint_names_[i], state->joint_names[i]);
+  }
+
+  // No trajectory by default, no reference state or error
+  EXPECT_TRUE(
+    state->reference.positions.empty() || state->reference.positions == INITIAL_POS_JOINTS);
+  EXPECT_TRUE(
+    state->reference.velocities.empty() || state->reference.velocities == INITIAL_VEL_JOINTS);
+  EXPECT_TRUE(
+    state->reference.accelerations.empty() || state->reference.accelerations == INITIAL_EFF_JOINTS);
+
+  std::vector<double> zeros(3, 0);
+  EXPECT_EQ(state->error.positions, zeros);
+  EXPECT_TRUE(state->error.velocities.empty() || state->error.velocities == zeros);
+  EXPECT_TRUE(state->error.accelerations.empty() || state->error.accelerations == zeros);
+
+  // expect feedback including all state_interfaces
+  EXPECT_EQ(n_joints, state->feedback.positions.size());
+  if (
+    std::find(state_interface_types_.begin(), state_interface_types_.end(), "velocity") ==
+    state_interface_types_.end())
+  {
+    EXPECT_TRUE(state->feedback.velocities.empty());
+  }
+  else
+  {
+    EXPECT_EQ(n_joints, state->feedback.velocities.size());
+  }
+  if (
+    std::find(state_interface_types_.begin(), state_interface_types_.end(), "acceleration") ==
+    state_interface_types_.end())
+  {
+    EXPECT_TRUE(state->feedback.accelerations.empty());
+  }
+  else
+  {
+    EXPECT_EQ(n_joints, state->feedback.accelerations.size());
+  }
+
+  // expect output including all command_interfaces
+  if (
+    std::find(command_interface_types_.begin(), command_interface_types_.end(), "position") ==
+    command_interface_types_.end())
+  {
+    EXPECT_TRUE(state->output.positions.empty());
+  }
+  else
+  {
+    EXPECT_EQ(n_joints, state->output.positions.size());
+  }
+  if (
+    std::find(command_interface_types_.begin(), command_interface_types_.end(), "velocity") ==
+    command_interface_types_.end())
+  {
+    EXPECT_TRUE(state->output.velocities.empty());
+  }
+  else
+  {
+    EXPECT_EQ(n_joints, state->output.velocities.size());
+  }
+  if (
+    std::find(command_interface_types_.begin(), command_interface_types_.end(), "acceleration") ==
+    command_interface_types_.end())
+  {
+    EXPECT_TRUE(state->output.accelerations.empty());
+  }
+  else
+  {
+    EXPECT_EQ(n_joints, state->output.accelerations.size());
+  }
+  if (
+    std::find(command_interface_types_.begin(), command_interface_types_.end(), "effort") ==
+    command_interface_types_.end())
+  {
+    EXPECT_TRUE(state->output.effort.empty());
+  }
+  else
+  {
+    EXPECT_EQ(n_joints, state->output.effort.size());
+  }
+}
+
 // Floating-point value comparison threshold
 const double EPS = 1e-6;
 /**
@@ -536,25 +633,25 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_normalized)
   const auto allowed_delta = 0.1;
 
   // no update of state_interface
-  EXPECT_EQ(state_msg->actual.positions, INITIAL_POS_JOINTS);
+  EXPECT_EQ(state_msg->feedback.positions, INITIAL_POS_JOINTS);
 
   // has the msg the correct vector sizes?
-  EXPECT_EQ(n_joints, state_msg->desired.positions.size());
-  EXPECT_EQ(n_joints, state_msg->actual.positions.size());
+  EXPECT_EQ(n_joints, state_msg->reference.positions.size());
+  EXPECT_EQ(n_joints, state_msg->feedback.positions.size());
   EXPECT_EQ(n_joints, state_msg->error.positions.size());
 
-  // are the correct desired positions used?
-  EXPECT_NEAR(points[0][0], state_msg->desired.positions[0], allowed_delta);
-  EXPECT_NEAR(points[0][1], state_msg->desired.positions[1], allowed_delta);
-  EXPECT_NEAR(points[0][2], state_msg->desired.positions[2], 3 * allowed_delta);
+  // are the correct reference positions used?
+  EXPECT_NEAR(points[0][0], state_msg->reference.positions[0], allowed_delta);
+  EXPECT_NEAR(points[0][1], state_msg->reference.positions[1], allowed_delta);
+  EXPECT_NEAR(points[0][2], state_msg->reference.positions[2], 3 * allowed_delta);
 
   // no normalization of position error
   EXPECT_NEAR(
-    state_msg->error.positions[0], state_msg->desired.positions[0] - INITIAL_POS_JOINTS[0], EPS);
+    state_msg->error.positions[0], state_msg->reference.positions[0] - INITIAL_POS_JOINTS[0], EPS);
   EXPECT_NEAR(
-    state_msg->error.positions[1], state_msg->desired.positions[1] - INITIAL_POS_JOINTS[1], EPS);
+    state_msg->error.positions[1], state_msg->reference.positions[1] - INITIAL_POS_JOINTS[1], EPS);
   EXPECT_NEAR(
-    state_msg->error.positions[2], state_msg->desired.positions[2] - INITIAL_POS_JOINTS[2], EPS);
+    state_msg->error.positions[2], state_msg->reference.positions[2] - INITIAL_POS_JOINTS[2], EPS);
 
   if (traj_controller_->has_position_command_interface())
   {
@@ -576,14 +673,14 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_normalized)
     {
       // we expect u = k_p * (s_d-s)
       EXPECT_NEAR(
-        k_p * (state_msg->desired.positions[0] - INITIAL_POS_JOINTS[0]), joint_vel_[0],
+        k_p * (state_msg->reference.positions[0] - INITIAL_POS_JOINTS[0]), joint_vel_[0],
         k_p * allowed_delta);
       EXPECT_NEAR(
-        k_p * (state_msg->desired.positions[1] - INITIAL_POS_JOINTS[1]), joint_vel_[1],
+        k_p * (state_msg->reference.positions[1] - INITIAL_POS_JOINTS[1]), joint_vel_[1],
         k_p * allowed_delta);
       // no normalization of position error
       EXPECT_NEAR(
-        k_p * (state_msg->desired.positions[2] - INITIAL_POS_JOINTS[2]), joint_vel_[2],
+        k_p * (state_msg->reference.positions[2] - INITIAL_POS_JOINTS[2]), joint_vel_[2],
         k_p * allowed_delta);
     }
   }
@@ -634,26 +731,26 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_normalized)
   const auto allowed_delta = 0.1;
 
   // no update of state_interface
-  EXPECT_EQ(state_msg->actual.positions, INITIAL_POS_JOINTS);
+  EXPECT_EQ(state_msg->feedback.positions, INITIAL_POS_JOINTS);
 
   // has the msg the correct vector sizes?
-  EXPECT_EQ(n_joints, state_msg->desired.positions.size());
-  EXPECT_EQ(n_joints, state_msg->actual.positions.size());
+  EXPECT_EQ(n_joints, state_msg->reference.positions.size());
+  EXPECT_EQ(n_joints, state_msg->feedback.positions.size());
   EXPECT_EQ(n_joints, state_msg->error.positions.size());
 
-  // are the correct desired positions used?
-  EXPECT_NEAR(points[0][0], state_msg->desired.positions[0], allowed_delta);
-  EXPECT_NEAR(points[0][1], state_msg->desired.positions[1], allowed_delta);
-  EXPECT_NEAR(points[0][2], state_msg->desired.positions[2], 3 * allowed_delta);
+  // are the correct reference positions used?
+  EXPECT_NEAR(points[0][0], state_msg->reference.positions[0], allowed_delta);
+  EXPECT_NEAR(points[0][1], state_msg->reference.positions[1], allowed_delta);
+  EXPECT_NEAR(points[0][2], state_msg->reference.positions[2], 3 * allowed_delta);
 
   // is error.positions[2] normalized?
   EXPECT_NEAR(
-    state_msg->error.positions[0], state_msg->desired.positions[0] - INITIAL_POS_JOINTS[0], EPS);
+    state_msg->error.positions[0], state_msg->reference.positions[0] - INITIAL_POS_JOINTS[0], EPS);
   EXPECT_NEAR(
-    state_msg->error.positions[1], state_msg->desired.positions[1] - INITIAL_POS_JOINTS[1], EPS);
+    state_msg->error.positions[1], state_msg->reference.positions[1] - INITIAL_POS_JOINTS[1], EPS);
   EXPECT_NEAR(
     state_msg->error.positions[2],
-    state_msg->desired.positions[2] - INITIAL_POS_JOINTS[2] - 2 * M_PI, EPS);
+    state_msg->reference.positions[2] - INITIAL_POS_JOINTS[2] - 2 * M_PI, EPS);
 
   if (traj_controller_->has_position_command_interface())
   {
@@ -675,14 +772,14 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_normalized)
       EXPECT_GE(0.0, joint_vel_[2]);
       // we expect u = k_p * (s_d-s) for positions[0] and positions[1]
       EXPECT_NEAR(
-        k_p * (state_msg->desired.positions[0] - INITIAL_POS_JOINTS[0]), joint_vel_[0],
+        k_p * (state_msg->reference.positions[0] - INITIAL_POS_JOINTS[0]), joint_vel_[0],
         k_p * allowed_delta);
       EXPECT_NEAR(
-        k_p * (state_msg->desired.positions[1] - INITIAL_POS_JOINTS[1]), joint_vel_[1],
+        k_p * (state_msg->reference.positions[1] - INITIAL_POS_JOINTS[1]), joint_vel_[1],
         k_p * allowed_delta);
       // is error of positions[2] normalized?
       EXPECT_NEAR(
-        k_p * (state_msg->desired.positions[2] - INITIAL_POS_JOINTS[2] - 2 * M_PI), joint_vel_[2],
+        k_p * (state_msg->reference.positions[2] - INITIAL_POS_JOINTS[2] - 2 * M_PI), joint_vel_[2],
         k_p * allowed_delta);
     }
     else
