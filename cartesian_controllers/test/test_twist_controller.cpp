@@ -43,7 +43,7 @@ TEST_F(TwistControllerTest, joint_names_parameter_not_set)
   ASSERT_TRUE(controller_->joint_name_.empty());
   ASSERT_TRUE(controller_->interface_names_.empty());
 
-  controller_->get_node()->set_parameter({"joint", joint_name_});
+  controller_->get_node()->set_parameter({"interface_names", interface_names_});
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
 
@@ -55,7 +55,7 @@ TEST_F(TwistControllerTest, interface_parameter_not_set)
 {
   SetUpController(false);
 
-  controller_->get_node()->set_parameter({"interface_names", interface_names_});
+  controller_->get_node()->set_parameter({"joint", joint_name_});
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
 
@@ -138,6 +138,8 @@ TEST_F(TwistControllerTest, reactivate_success)
 TEST_F(TwistControllerTest, command_callback_test)
 {
     SetUpController();
+    rclcpp::executors::MultiThreadedExecutor executor;
+    executor.add_node(controller_->get_node()->get_node_base_interface());
 
     // default values
     ASSERT_EQ(command_itfs_.size(), 6u);
@@ -149,20 +151,15 @@ TEST_F(TwistControllerTest, command_callback_test)
     ASSERT_EQ(command_itfs_[4].get_value(), 0.0);
     ASSERT_EQ(command_itfs_[5].get_value(), 0.0);
 
-    auto node_state = controller_->configure();
+    auto node_state = controller_->get_node()->configure();
     ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
 
     node_state = controller_->get_node()->activate();
     ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
 
-    // send a new command
+    // send a new command and wait
     publish_commands();
-
-    // wait for command message to be passed
-    ASSERT_EQ(wait_for(controller_->twist_command_subscriber_), rclcpp::WaitResultKind::Ready);
-
-    // process callbacks
-    rclcpp::spin_some(controller_->get_node()->get_node_base_interface());
+    ASSERT_TRUE(controller_->wait_for_commands(executor));
 
     // update successful
     ASSERT_EQ(
