@@ -19,9 +19,9 @@
 #include <string>
 #include <vector>
 
+#include "cartesian_controllers/visibility_control.h"
 #include "controller_interface/controller_interface.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
-#include "cartesian_controllers/visibility_control.h"
 #include "realtime_tools/realtime_buffer.h"
 
 namespace cartesian_controllers

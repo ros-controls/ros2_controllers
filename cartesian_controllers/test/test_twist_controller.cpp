@@ -34,7 +34,8 @@ INSTANTIATE_TEST_SUITE_P(
   MissingMandatoryParameterDuringConfiguration, TwistControllerTestParameterizedParameters,
   ::testing::Values(
     std::make_tuple(std::string("joint"), rclcpp::ParameterValue(std::string())),
-    std::make_tuple(std::string("interface_names"), rclcpp::ParameterValue(std::vector<std::string>({})))));
+    std::make_tuple(
+      std::string("interface_names"), rclcpp::ParameterValue(std::vector<std::string>({})))));
 
 TEST_F(TwistControllerTest, joint_names_parameter_not_set)
 {
@@ -74,11 +75,12 @@ TEST_F(TwistControllerTest, all_parameters_set_configure_success)
 
   ASSERT_TRUE(!controller_->joint_name_.empty());
   ASSERT_TRUE(controller_->joint_name_.size() == joint_name_.size());
-  ASSERT_TRUE(controller_->joint_name_== joint_name_);
+  ASSERT_TRUE(controller_->joint_name_ == joint_name_);
 
   ASSERT_TRUE(!controller_->interface_names_.empty());
- ASSERT_TRUE(std::equal(controller_->interface_names_.begin(), controller_->interface_names_.end(),
-                        interface_names_.begin(), interface_names_.end()));
+  ASSERT_TRUE(std::equal(
+    controller_->interface_names_.begin(), controller_->interface_names_.end(),
+    interface_names_.begin(), interface_names_.end()));
 }
 
 TEST_F(TwistControllerTest, check_intefaces)
@@ -89,7 +91,6 @@ TEST_F(TwistControllerTest, check_intefaces)
 
   auto command_intefaces = controller_->command_interface_configuration();
   ASSERT_EQ(command_intefaces.names.size(), joint_command_values_.size());
-
 }
 
 TEST_F(TwistControllerTest, activate_success)
@@ -137,41 +138,40 @@ TEST_F(TwistControllerTest, reactivate_success)
 
 TEST_F(TwistControllerTest, command_callback_test)
 {
-    SetUpController();
-    rclcpp::executors::MultiThreadedExecutor executor;
-    executor.add_node(controller_->get_node()->get_node_base_interface());
+  SetUpController();
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
 
-    // default values
-    ASSERT_EQ(command_itfs_.size(), 6u);
+  // default values
+  ASSERT_EQ(command_itfs_.size(), 6u);
 
-    ASSERT_EQ(command_itfs_[0].get_value(), 0.0);
-    ASSERT_EQ(command_itfs_[1].get_value(), 0.0);
-    ASSERT_EQ(command_itfs_[2].get_value(), 0.1);
-    ASSERT_EQ(command_itfs_[3].get_value(), 0.0);
-    ASSERT_EQ(command_itfs_[4].get_value(), 0.0);
-    ASSERT_EQ(command_itfs_[5].get_value(), 0.0);
+  ASSERT_EQ(command_itfs_[0].get_value(), 0.0);
+  ASSERT_EQ(command_itfs_[1].get_value(), 0.0);
+  ASSERT_EQ(command_itfs_[2].get_value(), 0.1);
+  ASSERT_EQ(command_itfs_[3].get_value(), 0.0);
+  ASSERT_EQ(command_itfs_[4].get_value(), 0.0);
+  ASSERT_EQ(command_itfs_[5].get_value(), 0.0);
 
-    auto node_state = controller_->get_node()->configure();
-    ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
+  auto node_state = controller_->get_node()->configure();
+  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
 
-    node_state = controller_->get_node()->activate();
-    ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
+  node_state = controller_->get_node()->activate();
+  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
 
-    // send a new command and wait
-    publish_commands();
-    ASSERT_TRUE(controller_->wait_for_commands(executor));
+  // send a new command and wait
+  publish_commands();
+  ASSERT_TRUE(controller_->wait_for_commands(executor));
 
-    // update successful
-    ASSERT_EQ(
-            controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-            controller_interface::return_type::OK);
+  // update successful
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
 
-    // check command in handle was set
-    ASSERT_EQ(command_itfs_[0].get_value(), 10.0);
-    ASSERT_EQ(command_itfs_[1].get_value(), 10.0);
-    ASSERT_EQ(command_itfs_[2].get_value(), 10.0);
-    ASSERT_EQ(command_itfs_[3].get_value(), 0.1);
-    ASSERT_EQ(command_itfs_[4].get_value(), 0.1);
-    ASSERT_EQ(command_itfs_[5].get_value(), 0.1);
+  // check command in handle was set
+  ASSERT_EQ(command_itfs_[0].get_value(), 10.0);
+  ASSERT_EQ(command_itfs_[1].get_value(), 10.0);
+  ASSERT_EQ(command_itfs_[2].get_value(), 10.0);
+  ASSERT_EQ(command_itfs_[3].get_value(), 0.1);
+  ASSERT_EQ(command_itfs_[4].get_value(), 0.1);
+  ASSERT_EQ(command_itfs_[5].get_value(), 0.1);
 }
-

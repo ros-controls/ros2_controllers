@@ -32,7 +32,6 @@
 #include "rclcpp/utilities.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 
-
 using ControllerCommandMsg = geometry_msgs::msg::TwistStamped;
 
 namespace
@@ -70,7 +69,8 @@ public:
   {
     auto ret = cartesian_controllers::TwistController::on_configure(previous_state);
     // Only if on_configure is successful create subscription
-    if (ret == CallbackReturn::SUCCESS) {
+    if (ret == CallbackReturn::SUCCESS)
+    {
       command_subscriber_wait_set_.add_subscription(twist_command_subscriber_);
     }
     return ret;
@@ -89,7 +89,8 @@ public:
   {
     bool success =
       command_subscriber_wait_set_.wait(timeout).kind() == rclcpp::WaitResultKind::Ready;
-    if (success) {
+    if (success)
+    {
       executor.spin_some();
     }
     return success;
@@ -128,7 +129,8 @@ protected:
     command_itfs_.reserve(joint_command_values_.size());
     command_ifs.reserve(joint_command_values_.size());
 
-    for (auto i = 0u; i < joint_command_values_.size(); ++i) {
+    for (auto i = 0u; i < joint_command_values_.size(); ++i)
+    {
       command_itfs_.emplace_back(hardware_interface::CommandInterface(
         joint_name_, interface_names_[i], &joint_command_values_[i]));
       command_ifs.emplace_back(command_itfs_.back());
@@ -139,7 +141,8 @@ protected:
 
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
 
-    if (set_parameters) {
+    if (set_parameters)
+    {
       controller_->get_node()->set_parameter({"joint", joint_name_});
       controller_->get_node()->set_parameter({"interface_names", interface_names_});
     }
@@ -147,10 +150,13 @@ protected:
 
   void publish_commands()
   {
-    auto wait_for_topic = [&](const auto topic_name) {
+    auto wait_for_topic = [&](const auto topic_name)
+    {
       size_t wait_count = 0;
-      while (command_publisher_node_->count_subscribers(topic_name) == 0) {
-        if (wait_count >= 5) {
+      while (command_publisher_node_->count_subscribers(topic_name) == 0)
+      {
+        if (wait_count >= 5)
+        {
           auto error_msg =
             std::string("publishing to ") + topic_name + " but no node subscribes to it";
           throw std::runtime_error(error_msg);
@@ -176,7 +182,8 @@ protected:
 
   // Controller-related parameters
   std::string joint_name_ = "tcp";
-  std::vector<std::string> interface_names_ = {"linear.x", "linear.y", "linear.z", "angular.x", "angular.y", "angular.z" };
+  std::vector<std::string> interface_names_ = {"linear.x",  "linear.y",  "linear.z",
+                                               "angular.x", "angular.y", "angular.z"};
   std::array<double, 6> joint_command_values_ = {0.0, 0.0, 0.1, 0.0, 0.0, 0.0};
 
   std::vector<hardware_interface::CommandInterface> command_itfs_;
