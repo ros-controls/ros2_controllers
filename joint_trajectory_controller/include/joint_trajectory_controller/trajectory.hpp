@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "joint_limits/joint_limits.hpp"
+#include "joint_limits/joint_limiter_interface.hpp"
 #include "joint_trajectory_controller/interpolation_methods.hpp"
 #include "joint_trajectory_controller/visibility_control.h"
 #include "rclcpp/time.hpp"
@@ -92,7 +93,8 @@ public:
     const interpolation_methods::InterpolationMethod interpolation_method,
     trajectory_msgs::msg::JointTrajectoryPoint & output_state,
     TrajectoryPointConstIter & start_segment_itr, TrajectoryPointConstIter & end_segment_itr,
-    const rclcpp::Duration & period, const std::vector<joint_limits::JointLimits> & joint_limits,
+    const rclcpp::Duration & period,
+    std::unique_ptr<joint_limits::JointLimiterInterface<joint_limits::JointLimits>> & joint_limiter,
     trajectory_msgs::msg::JointTrajectoryPoint & splines_state,
     trajectory_msgs::msg::JointTrajectoryPoint & ruckig_state,
     trajectory_msgs::msg::JointTrajectoryPoint & ruckig_input_state);
@@ -122,7 +124,6 @@ public:
     const rclcpp::Time & time_b, const trajectory_msgs::msg::JointTrajectoryPoint & state_b,
     const rclcpp::Time & sample_time, const bool do_ruckig_smoothing, const bool skip_splines,
     trajectory_msgs::msg::JointTrajectoryPoint & output, const rclcpp::Duration & period,
-    const std::vector<joint_limits::JointLimits> & joint_limits,
     trajectory_msgs::msg::JointTrajectoryPoint & splines_state,
     trajectory_msgs::msg::JointTrajectoryPoint & ruckig_state,
     trajectory_msgs::msg::JointTrajectoryPoint & ruckig_input_state);
@@ -174,6 +175,8 @@ private:
   // This flag determines whether we need to initialize the state or use the previous
   // Ruckig output.
   bool have_previous_ruckig_output_ = false;
+
+  trajectory_msgs::msg::JointTrajectoryPoint previous_state_;
 };
 
 /**

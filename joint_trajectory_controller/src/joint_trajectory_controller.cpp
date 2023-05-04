@@ -58,6 +58,14 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
     // Create the parameter listener and get the parameters
     param_listener_ = std::make_shared<ParamListener>(get_node());
     params_ = param_listener_->get_params();
+
+    joint_limiter_loader_ = std::make_shared<pluginlib::ClassLoader<JointLimiter>>(
+      "joint_limits", "joint_limits::JointLimiterInterface<joint_limits::JointLimits>");
+    RCLCPP_DEBUG(get_node()->get_logger(), "Available joint limiter classes:");
+    for (const auto & available_class : joint_limiter_loader_->getDeclaredClasses())
+    {
+      RCLCPP_DEBUG(get_node()->get_logger(), "  %s", available_class.c_str());
+    }
   }
   catch (const std::exception & e)
   {
@@ -217,7 +225,7 @@ controller_interface::return_type JointTrajectoryController::update(
       (*traj_point_active_ptr_)
         ->sample(
           time, interpolation_method_, state_desired_, start_segment_itr, end_segment_itr, period,
-          joint_limits_, splines_state_, ruckig_state_, ruckig_input_state_);
+          joint_limiter_, splines_state_, ruckig_state_, ruckig_input_state_);
 
     if (valid_point)
     {
@@ -518,7 +526,7 @@ void JointTrajectoryController::query_state_service(
                           ->sample(
                             static_cast<rclcpp::Time>(request->time), interpolation_method_,
                             state_requested, start_segment_itr, end_segment_itr, period,
-                            joint_limits_, splines_state_, ruckig_state_, ruckig_input_state_);
+                            joint_limiter_, splines_state_, ruckig_state_, ruckig_input_state_);
     // If the requested sample time precedes the trajectory finish time respond as failure
     if (response->success)
     {
@@ -659,15 +667,30 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
 
   // Initialize joint limits
   joint_limits_.resize(dof_);
-  for (size_t i = 0; i < joint_limits_.size(); ++i)
+  // for (size_t i = 0; i < joint_limits_.size(); ++i)
+  // {
+  //   if (joint_limits::declare_parameters(command_joint_names_[i], get_node()))
+  //   {
+  //     joint_limits::get_joint_limits(command_joint_names_[i], get_node(), joint_limits_[i]);
+  //     RCLCPP_INFO(
+  //       get_node()->get_logger(), "Limits for joint %zu (%s) are: \n%s", i,
+  //       command_joint_names_[i].c_str(), joint_limits_[i].to_string().c_str());
+  //   }
+  // }
+
+  // Initialize joint limits
+  if (!params_.joint_limiter_type.empty())
   {
-    if (joint_limits::declare_parameters(command_joint_names_[i], get_node()))
-    {
-      joint_limits::get_joint_limits(command_joint_names_[i], get_node(), joint_limits_[i]);
-      RCLCPP_INFO(
-        get_node()->get_logger(), "Limits for joint %zu (%s) are: \n%s", i,
-        command_joint_names_[i].c_str(), joint_limits_[i].to_string().c_str());
-    }
+    RCLCPP_INFO(
+      get_node()->get_logger(), "Using joint limiter plugin: '%s'", params_.joint_limiter_type.c_str());
+    joint_limiter_ = std::unique_ptr<JointLimiter>(
+      joint_limiter_loader_->createUnmanagedInstance(params_.joint_limiter_type));
+    joint_limiter_->init(command_joint_names_, get_node());
+  }
+  else
+  {
+    RCLCPP_INFO(
+      get_node()->get_logger(), "Not using joint limiter plugin as none defined.");
   }
 
   if (params_.state_interfaces.empty())
