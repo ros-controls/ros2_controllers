@@ -126,7 +126,7 @@ joint_trajectory_controller:
 
   joint_limiter_type: {
     type: string,
-    default_value: "joint_limits/SimpleJointLimiter",
+    default_value: "",
     description: "The type of joint limiter to use. If empty, no joint limiter will be used.
       Per default, the simple joint limiter implementation from 'joint_limits' package is used.
       For other official implementations see 'joint_limiters' package in 'ros2_control' repository.",
