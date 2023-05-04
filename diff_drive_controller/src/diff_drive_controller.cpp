@@ -558,6 +558,7 @@ controller_interface::CallbackReturn DiffDriveController::configure_side(
   }
 
   // register handles
+  registered_handles.clear();
   registered_handles.reserve(wheel_names.size());
   for (const auto & wheel_name : wheel_names)
   {
