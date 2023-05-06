@@ -481,6 +481,8 @@ controller_interface::CallbackReturn DiffDriveController::on_deactivate(
   const rclcpp_lifecycle::State &)
 {
   subscriber_is_active_ = false;
+  registered_left_wheel_handles_.clear();
+  registered_right_wheel_handles_.clear();
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
@@ -558,7 +560,6 @@ controller_interface::CallbackReturn DiffDriveController::configure_side(
   }
 
   // register handles
-  registered_handles.clear();
   registered_handles.reserve(wheel_names.size());
   for (const auto & wheel_name : wheel_names)
   {
