@@ -207,7 +207,7 @@ controller_interface::return_type JointTrajectoryController::update(
               last_commanded_state_.accelerations[i] = state_current_.accelerations[i];
             }
 
-            reset_flags->at(i) = false; // reset flag in the buffer for one-shot execution
+            reset_flags->at(i) = false;  // reset flag in the buffer for one-shot execution
           }
         }
 
@@ -893,9 +893,9 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
 
   // Control mode service
   auto reset_dofs_service_callback =
-  [&](
-    const std::shared_ptr<ControllerResetDofsSrvType::Request> request,
-    std::shared_ptr<ControllerResetDofsSrvType::Response> response)
+    [&](
+      const std::shared_ptr<ControllerResetDofsSrvType::Request> request,
+      std::shared_ptr<ControllerResetDofsSrvType::Response> response)
   {
     response->ok = true;
 
@@ -916,7 +916,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
       {
         RCLCPP_WARN(
           get_node()->get_logger(), "Name '%s' is not command interface. Ignoring this entry.",
-                    request->names[i].c_str());
+          request->names[i].c_str());
         response->ok = false;
       }
     }

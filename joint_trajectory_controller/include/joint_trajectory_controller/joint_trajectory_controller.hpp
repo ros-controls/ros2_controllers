@@ -24,8 +24,8 @@
 
 #include "control_msgs/action/follow_joint_trajectory.hpp"
 #include "control_msgs/msg/joint_trajectory_controller_state.hpp"
-#include "control_msgs/srv/reset_dofs.hpp"
 #include "control_msgs/srv/query_trajectory_state.hpp"
+#include "control_msgs/srv/reset_dofs.hpp"
 #include "control_toolbox/pid.hpp"
 #include "controller_interface/controller_interface.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
