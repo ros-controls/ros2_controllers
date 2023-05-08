@@ -481,6 +481,7 @@ controller_interface::CallbackReturn DiffDriveController::on_deactivate(
   const rclcpp_lifecycle::State &)
 {
   subscriber_is_active_ = false;
+  halt();
   registered_left_wheel_handles_.clear();
   registered_right_wheel_handles_.clear();
   return controller_interface::CallbackReturn::SUCCESS;
