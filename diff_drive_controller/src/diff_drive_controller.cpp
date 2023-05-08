@@ -482,6 +482,11 @@ controller_interface::CallbackReturn DiffDriveController::on_deactivate(
 {
   subscriber_is_active_ = false;
   halt();
+    if (!is_halted)
+    {
+      halt();
+      is_halted = true;
+    }
   registered_left_wheel_handles_.clear();
   registered_right_wheel_handles_.clear();
   return controller_interface::CallbackReturn::SUCCESS;
