@@ -81,12 +81,13 @@ if(BUILD_TESTING)
   )
 
   # TODO(andyz): Disabled due to flakiness
-  # ament_add_gmock(test_trajectory_actions
-  #   test/test_trajectory_actions.cpp
-  # )
-  # target_link_libraries(test_trajectory_actions
-  #   joint_trajectory_controller
-  # )
+  # TODO(christophfroehlich): Temporarily (?) activated again
+  ament_add_gmock(test_trajectory_actions
+    test/test_trajectory_actions.cpp
+  )
+  target_link_libraries(test_trajectory_actions
+    joint_trajectory_controller
+  )
 endif()
 
 
