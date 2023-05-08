@@ -10,11 +10,11 @@ Trajectory representation
 
 The controller is templated to work with multiple trajectory representations. By default, a spline interpolator is provided, but it's possible to support other representations. The spline interpolator uses the following interpolation strategies depending on the waypoint specification:
 
-    Linear: Only position is specified. Guarantees continuity at the position level. Discouraged because it yields trajectories with discontinuous velocities at the waypoints.
+* Linear: Only position is specified. Guarantees continuity at the position level. Discouraged because it yields trajectories with discontinuous velocities at the waypoints.
 
-    Cubic: Position and velocity are specified. Guarantees continuity at the velocity level.
+* Cubic: Position and velocity are specified. Guarantees continuity at the velocity level.
 
-    Quintic: Position, velocity and acceleration are specified: Guarantees continuity at the acceleration level.
+* Quintic: Position, velocity and acceleration are specified: Guarantees continuity at the acceleration level.
 
 Hardware interface type
 -----------------------
@@ -26,11 +26,11 @@ Similarly to the trajectory representation case above, it's possible to support 
 Other features
 --------------
 
-    Realtime-safe implementation.
+* Realtime-safe implementation.
 
-    Proper handling of wrapping (continuous) joints.
+* Proper handling of wrapping (continuous) joints.
 
-    Robust to system clock changes: Discontinuous system clock changes do not cause discontinuities in the execution of already queued trajectory segments.
+* Robust to system clock changes: Discontinuous system clock changes do not cause discontinuities in the execution of already queued trajectory segments.
 
 ros2_control interfaces
 ------------------------
@@ -45,10 +45,10 @@ The state interfaces are defined with ``joints`` and ``state_interfaces`` parame
 Supported state interfaces are ``position``, ``velocity``, ``acceleration`` and ``effort`` as defined in the `hardware_interface/hardware_interface_type_values.hpp <https://github.com/ros-controls/ros2_control/blob/master/hardware_interface/include/hardware_interface/types/hardware_interface_type_values.hpp>`_.
 Legal combinations of state interfaces are:
 
-- ``position``
-- ``position`` and ``velocity``
-- ``position``, ``velocity`` and ``acceleration``
-- ``effort``
+* ``position``
+* ``position`` and ``velocity``
+* ``position``, ``velocity`` and ``acceleration``
+* ``effort``
 
 Commands
 ^^^^^^^^^
@@ -142,11 +142,18 @@ interpolation_method (string)
   Default: splines
 
 open_loop_control (boolean)
-  Use controller in open-loop control mode using ignoring the states provided by hardware interface and using last commands as states in the next control step. This is useful if hardware states are not following commands, i.e., an offset between those (typical for hydraulic manipulators).
+  Use controller in open-loop control mode:
+    + The controller ignores the states provided by hardware interface but using last commands as states for starting the trajectory interpolation.
+    + It deactivates the feedback control, see the ``gains`` structure.
+
+  This is useful if hardware states are not following commands, i.e., an offset between those (typical for hydraulic manipulators).
+
+  .. Note::
+     If this flag is set, the controller tries to read the values from the command interfaces on activation.
+     If they have real numeric values, those will be used instead of state interfaces.
+     Therefore it is important set command interfaces to NaN (i.e., ``std::numeric_limits<double>::quiet_NaN()``) or state values when the hardware is started.
 
   Default: false
-
-  If this flag is set, the controller tries to read the values from the command interfaces on starting. If they have real numeric values, those will be used instead of state interfaces. Therefore it is important set command interfaces to NaN (std::numeric_limits<double>::quiet_NaN()) or state values when the hardware is started.
 
 constraints (structure)
   Default values for tolerances if no explicit values are states in JointTrajectory message.
@@ -172,7 +179,10 @@ constraints.<joint_name>.goal (double)
   Default: 0.0 (tolerance is not enforced)
 
 gains (structure)
-  If ``velocity`` is the only command interface for all joints or an ``effort`` command interface is configured, PID controllers are used for every joint. This structure contains the controller gains for every joint with the control law
+  Only relevant, if ``open_loop_control`` is not set.
+
+  If ``velocity`` is the only command interface for all joints or an ``effort`` command interface is configured, PID controllers are used for every joint.
+  This structure contains the controller gains for every joint with the control law
 
   .. math::
 
@@ -220,7 +230,7 @@ ROS2 interface of the controller
 ~/joint_trajectory (input topic) [trajectory_msgs::msg::JointTrajectory]
   Topic for commanding the controller.
 
-~/state (output topic) [control_msgs::msg::JointTrajectoryControllerState]
+~/controller_state (output topic) [control_msgs::msg::JointTrajectoryControllerState]
   Topic publishing internal states with the update-rate of the controller manager.
 
 ~/follow_joint_trajectory (action server) [control_msgs::action::FollowJointTrajectory]
@@ -234,23 +244,28 @@ The controller types are placed into namespaces according to their command types
 
 The following version of the Joint Trajectory Controller are available mapping the following interfaces:
 
-  - position_controllers::JointTrajectoryController
-    - Input: position, [velocity, [acceleration]]
-    - Output: position
-  - position_velocity_controllers::JointTrajectoryController
-    - Input: position, [velocity, [acceleration]]
-    - Output: position and velocity
-  - position_velocity_acceleration_controllers::JointTrajectoryController
-    - Input: position, [velocity, [acceleration]]
-    - Output: position, velocity and acceleration
+* position_controllers::JointTrajectoryController
 
-..   - velocity_controllers::JointTrajectoryController
-..     - Input: position, [velocity, [acceleration]]
-..     - Output: velocity
+  * Input: position, [velocity, [acceleration]]
+  * Output: position
+
+* position_velocity_controllers::JointTrajectoryController
+
+  * Input: position, [velocity, [acceleration]]
+  * Output: position and velocity
+
+* position_velocity_acceleration_controllers::JointTrajectoryController
+
+  * Input: position, [velocity, [acceleration]]
+  * Output: position, velocity and acceleration
+
+..   * velocity_controllers::JointTrajectoryController
+..     * Input: position, [velocity, [acceleration]]
+..     * Output: velocity
 .. TODO(anyone): would it be possible to output velocty and acceleration?
 ..               (to have an vel_acc_controllers)
-..   - effort_controllers::JointTrajectoryController
-..     - Input: position, [velocity, [acceleration]]
-..     - Output: effort
+..   * effort_controllers::JointTrajectoryController
+..     * Input: position, [velocity, [acceleration]]
+..     * Output: effort
 
 (*Not implemented yet*) When using pure ``velocity`` or ``effort`` controllers a command is generated using the desired state and state error using a velocity feedforward term plus a corrective PID term. (#171)

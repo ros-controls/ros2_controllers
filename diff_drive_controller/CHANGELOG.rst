@@ -2,6 +2,23 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.7.0 (2023-05-02)
+------------------
+* Fix wrong publish timestamp initialization (`#585 <https://github.com/ros-controls/ros2_controllers/issues/585>`_)
+* Contributors: Noel Jiménez García
+
+3.6.0 (2023-04-29)
+------------------
+* Renovate load controller tests (`#569 <https://github.com/ros-controls/ros2_controllers/issues/569>`_)
+* adjusted open_loop param description in diff_drive_controller_parameter.yaml (`#570 <https://github.com/ros-controls/ros2_controllers/issues/570>`_)
+* Contributors: Bence Magyar, muritane
+
+3.5.0 (2023-04-14)
+------------------
+
+3.4.0 (2023-04-02)
+------------------
+
 3.3.0 (2023-03-07)
 ------------------
 * Add comments about auto-generated header files (`#539 <https://github.com/ros-controls/ros2_controllers/issues/539>`_)
