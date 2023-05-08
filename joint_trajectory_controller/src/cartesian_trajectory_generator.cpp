@@ -137,8 +137,8 @@ controller_interface::CallbackReturn CartesianTrajectoryGenerator::on_configure(
   feedback_subscriber_ = get_node()->create_subscription<ControllerFeedbackMsg>(
     "~/feedback", subscribers_qos, feedback_callback);
   std::shared_ptr<ControllerFeedbackMsg> feedback_msg = std::make_shared<ControllerFeedbackMsg>();
-  reset_controller_feedback_msg(feedback_msg);
-  feedback_.writeFromNonRT(feedback_msg);
+  // initialize feedback to null pointer since it is used to determine if we have valid data or not
+  feedback_.writeFromNonRT(nullptr);
 
   // service QoS
   auto services_qos = rclcpp::SystemDefaultsQoS();  // message queue depth
@@ -161,10 +161,6 @@ void CartesianTrajectoryGenerator::reference_callback(
 {
   // store input ref for later use
   input_ref_.writeFromNonRT(msg);
-
-  trajectory_msgs::msg::JointTrajectoryPoint state;
-  resize_joint_trajectory_point(state, dof_);
-  read_state_from_hardware(state);
 
   // assume for now that we are working with trajectories with one point - we don't know exactly
   // where we are in the trajectory before sampling - nevertheless this should work for the use case
@@ -381,13 +377,14 @@ controller_interface::CallbackReturn CartesianTrajectoryGenerator::on_activate(
   traj_point_active_ptr_ = &traj_external_point_ptr_;
 
   // Initialize current state storage if hardware state has tracking offset
-  read_state_from_hardware(state_current_);
-  read_state_from_hardware(state_desired_);
-  read_state_from_hardware(last_commanded_state_);
-  // Handle restart of controller by reading from commands if
-  // those are not nan
   trajectory_msgs::msg::JointTrajectoryPoint state;
   resize_joint_trajectory_point(state, dof_);
+  if (read_state_from_hardware(state)) return CallbackReturn::ERROR;
+  state_current_ = state;
+  state_desired_ = state;
+  last_commanded_state_ = state;
+  // Handle restart of controller by reading from commands if
+  // those are not nan
   if (read_state_from_command_interfaces(state))
   {
     state_current_ = state;
@@ -398,10 +395,11 @@ controller_interface::CallbackReturn CartesianTrajectoryGenerator::on_activate(
   return CallbackReturn::SUCCESS;
 }
 
-void CartesianTrajectoryGenerator::read_state_from_hardware(JointTrajectoryPoint & state)
+bool CartesianTrajectoryGenerator::read_state_from_hardware(JointTrajectoryPoint & state)
 {
   std::array<double, 3> orientation_angles;
   const auto measured_state = *(feedback_.readFromRT());
+  if (!measured_state) return false;
   tf2::Quaternion measured_q;
   tf2::fromMsg(measured_state->pose.pose.orientation, measured_q);
   tf2::Matrix3x3 m(measured_q);
@@ -424,6 +422,7 @@ void CartesianTrajectoryGenerator::read_state_from_hardware(JointTrajectoryPoint
   state.velocities[5] = measured_state->twist.twist.angular.z;
 
   state.accelerations.clear();
+  return true;
 }
 }  // namespace cartesian_trajectory_generator
 

@@ -280,7 +280,7 @@ protected:
     const JointTrajectoryPoint & splines_output, const JointTrajectoryPoint & ruckig_input_target,
     const JointTrajectoryPoint & ruckig_input);
 
-  virtual void read_state_from_hardware(JointTrajectoryPoint & state);
+  virtual bool read_state_from_hardware(JointTrajectoryPoint & state);
 
   bool read_state_from_command_interfaces(JointTrajectoryPoint & state);
 

@@ -56,7 +56,7 @@ public:
   using SetLimitsModeSrvType = control_msgs::srv::SetDOFLimits;
 
 protected:
-  void read_state_from_hardware(JointTrajectoryPoint & state) override;
+  bool read_state_from_hardware(JointTrajectoryPoint & state) override;
 
   // Command subscribers and Controller State publisher
   rclcpp::Subscription<ControllerReferenceMsg>::SharedPtr ref_subscriber_ = nullptr;
