@@ -378,7 +378,7 @@ controller_interface::CallbackReturn CartesianTrajectoryGenerator::on_activate(
   // Initialize current state storage if hardware state has tracking offset
   trajectory_msgs::msg::JointTrajectoryPoint state;
   resize_joint_trajectory_point(state, dof_);
-  if (read_state_from_hardware(state)) return CallbackReturn::ERROR;
+  if (!read_state_from_hardware(state)) return CallbackReturn::ERROR;
   state_current_ = state;
   state_desired_ = state;
   last_commanded_state_ = state;
