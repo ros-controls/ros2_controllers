@@ -136,7 +136,6 @@ controller_interface::CallbackReturn CartesianTrajectoryGenerator::on_configure(
   { feedback_.writeFromNonRT(msg); };
   feedback_subscriber_ = get_node()->create_subscription<ControllerFeedbackMsg>(
     "~/feedback", subscribers_qos, feedback_callback);
-  std::shared_ptr<ControllerFeedbackMsg> feedback_msg = std::make_shared<ControllerFeedbackMsg>();
   // initialize feedback to null pointer since it is used to determine if we have valid data or not
   feedback_.writeFromNonRT(nullptr);
 
