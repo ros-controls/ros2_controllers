@@ -70,17 +70,13 @@ protected:
   {
     setup_executor_ = true;
 
-    executor_ = std::make_unique<rclcpp::executors::MultiThreadedExecutor>();
-
-    SetUpAndActivateTrajectoryController(true, parameters);
-
-    executor_->add_node(traj_controller_->get_node()->get_node_base_interface());
+    SetUpAndActivateTrajectoryController(executor_, true, parameters);
 
     SetUpActionClient();
 
-    executor_->add_node(node_->get_node_base_interface());
+    executor_.add_node(node_->get_node_base_interface());
 
-    executor_future_handle_ = std::async(std::launch::async, [&]() -> void { executor_->spin(); });
+    executor_future_handle_ = std::async(std::launch::async, [&]() -> void { executor_.spin(); });
   }
 
   void SetUpControllerHardware()
@@ -132,7 +128,7 @@ protected:
     if (setup_executor_)
     {
       setup_executor_ = false;
-      executor_->cancel();
+      executor_.cancel();
       executor_future_handle_.wait();
     }
   }
@@ -169,7 +165,7 @@ protected:
   int common_action_result_code_ = control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL;
 
   bool setup_executor_ = false;
-  rclcpp::executors::MultiThreadedExecutor::UniquePtr executor_;
+  rclcpp::executors::MultiThreadedExecutor executor_;
   std::future<void> executor_future_handle_;
 
   bool setup_controller_hw_ = false;
@@ -417,7 +413,7 @@ TEST_F(TestTrajectoryActions, test_state_tolerances_fail)
     common_action_result_code_);
 
   // run an update, it should be holding
-  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+  updateController(rclcpp::Duration::from_seconds(0.01));
 
   EXPECT_NEAR(INITIAL_POS_JOINT1, joint_pos_[0], COMMON_THRESHOLD);
   EXPECT_NEAR(INITIAL_POS_JOINT2, joint_pos_[1], COMMON_THRESHOLD);
@@ -467,7 +463,7 @@ TEST_F(TestTrajectoryActions, test_goal_tolerances_fail)
     common_action_result_code_);
 
   // run an update, it should be holding
-  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+  updateController(rclcpp::Duration::from_seconds(0.01));
 
   EXPECT_NEAR(init_pos1, joint_pos_[0], COMMON_THRESHOLD);
   EXPECT_NEAR(init_pos2, joint_pos_[1], COMMON_THRESHOLD);
@@ -514,7 +510,7 @@ TEST_F(TestTrajectoryActions, test_no_time_from_start_state_tolerance_fail)
     common_action_result_code_);
 
   // run an update, it should be holding
-  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+  updateController(rclcpp::Duration::from_seconds(0.01));
 
   EXPECT_NEAR(init_pos1, joint_pos_[0], COMMON_THRESHOLD);
   EXPECT_NEAR(init_pos2, joint_pos_[1], COMMON_THRESHOLD);
@@ -563,7 +559,7 @@ TEST_F(TestTrajectoryActions, test_cancel_hold_position)
   const double prev_pos3 = joint_pos_[2];
 
   // run an update, it should be holding
-  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+  updateController(rclcpp::Duration::from_seconds(0.01));
 
   EXPECT_EQ(prev_pos1, joint_pos_[0]);
   EXPECT_EQ(prev_pos2, joint_pos_[1]);
