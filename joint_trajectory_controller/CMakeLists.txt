@@ -80,8 +80,6 @@ if(BUILD_TESTING)
     ros2_control_test_assets
   )
 
-  # TODO(andyz): Disabled due to flakiness
-  # TODO(christophfroehlich): Temporarily (?) activated again
   ament_add_gmock(test_trajectory_actions
     test/test_trajectory_actions.cpp
   )
