@@ -33,31 +33,6 @@ namespace admittance_controller
 {
 controller_interface::CallbackReturn AdmittanceController::on_init()
 {
-  // initialize controller config
-  try
-  {
-    parameter_handler_ = std::make_shared<admittance_controller::ParamListener>(get_node());
-    admittance_ = std::make_unique<admittance_controller::AdmittanceRule>(parameter_handler_);
-  }
-  catch (const std::exception & e)
-  {
-    RCLCPP_ERROR(
-      get_node()->get_logger(), "Exception thrown during init stage with message: %s \n", e.what());
-    return controller_interface::CallbackReturn::ERROR;
-  }
-
-  // number of joints in controllers is fixed after initialization
-  num_joints_ = admittance_->parameters_.joints.size();
-
-  // allocate dynamic memory
-  last_reference_.positions.assign(num_joints_, 0.0);
-  last_reference_.velocities.assign(num_joints_, 0.0);
-  last_reference_.accelerations.assign(num_joints_, 0.0);
-  last_commanded_ = last_reference_;
-  reference_ = last_reference_;
-  reference_admittance_ = last_reference_;
-  joint_state_ = last_reference_;
-
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
@@ -147,6 +122,31 @@ AdmittanceController::on_export_reference_interfaces()
 controller_interface::CallbackReturn AdmittanceController::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
+  try
+  {
+    parameter_handler_ = std::make_shared<admittance_controller::ParamListener>(get_node());
+    admittance_ = std::make_unique<admittance_controller::AdmittanceRule>(parameter_handler_);
+  }
+  catch (const std::exception & e)
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(), "Exception thrown during configuration stage with message: %s \n",
+      e.what());
+    return controller_interface::CallbackReturn::ERROR;
+  }
+
+  // number of joints in controllers is fixed after initialization
+  num_joints_ = admittance_->parameters_.joints.size();
+
+  // allocate dynamic memory
+  last_reference_.positions.assign(num_joints_, 0.0);
+  last_reference_.velocities.assign(num_joints_, 0.0);
+  last_reference_.accelerations.assign(num_joints_, 0.0);
+  last_commanded_ = last_reference_;
+  reference_ = last_reference_;
+  reference_admittance_ = last_reference_;
+  joint_state_ = last_reference_;
+
   command_joint_names_ = admittance_->parameters_.command_joints;
   if (command_joint_names_.empty())
   {

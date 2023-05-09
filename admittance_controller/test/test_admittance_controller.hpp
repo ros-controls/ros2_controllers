@@ -187,6 +187,11 @@ protected:
   {
     auto result = controller_->init(controller_name, "", options);
 
+    if (controller_->on_configure(rclcpp_lifecycle::State()) == NODE_ERROR)
+    {
+      return controller_interface::return_type::ERROR;
+    }
+
     controller_->export_reference_interfaces();
     assign_interfaces();
 
