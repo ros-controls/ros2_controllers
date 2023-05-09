@@ -10,7 +10,6 @@ on:
         type: choice
         options:
         - foxy
-        - galactic
         - humble
         - rolling
       branch:
@@ -20,7 +19,6 @@ on:
         type: choice
         options:
         - foxy
-        - galactic
         - humble
         - master
 

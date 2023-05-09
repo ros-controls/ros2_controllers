@@ -2,6 +2,11 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.7.0 (2023-05-02)
+------------------
+* Fix JTC from immediately returning success (`#565 <https://github.com/ros-controls/ros2_controllers/issues/565>`_)
+* Contributors: Marq Rasmussen
+
 3.6.0 (2023-04-29)
 ------------------
 * Renovate load controller tests (`#569 <https://github.com/ros-controls/ros2_controllers/issues/569>`_)
