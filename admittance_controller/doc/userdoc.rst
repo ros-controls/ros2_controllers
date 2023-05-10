@@ -1,4 +1,6 @@
-.. _addmittance_controller_userdoc:
+:github_url: https://github.com/ros-controls/ros2_controllers/blob/|github_branch|/admittance_controller/doc/userdoc.rst
+
+.. _admittance_controller_userdoc:
 
 Admittance Controller
 ======================

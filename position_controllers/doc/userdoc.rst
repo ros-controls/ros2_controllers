@@ -1,3 +1,5 @@
+:github_url: https://github.com/ros-controls/ros2_controllers/blob/|github_branch|/position_controllers/doc/userdoc.rst
+
 .. _position_controllers_userdoc:
 
 position_controllers

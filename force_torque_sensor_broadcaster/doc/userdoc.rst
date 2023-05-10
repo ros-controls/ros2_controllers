@@ -1,3 +1,5 @@
+:github_url: https://github.com/ros-controls/ros2_controllers/blob/|github_branch|/force_torque_sensor_broadcaster/doc/userdoc.rst
+
 .. _force_torque_sensor_broadcaster_userdoc:
 
 Force Torque Sensor Broadcaster
