@@ -1412,7 +1412,8 @@ void JointTrajectoryController::preempt_active_goal()
 
 void JointTrajectoryController::set_hold_position()
 {
-  start_holding_ = true;  // Should I use writeFromNonRT?
+  // TODO(c-rizz) Should I use writeFromNonRT?
+  start_holding_ = true;
 }
 
 bool JointTrajectoryController::contains_interface_type(
