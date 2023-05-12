@@ -120,7 +120,7 @@ controller_interface::return_type JointTrajectoryController::update(
   state_current_.time_from_start.set__sec(0);
   read_state_from_hardware(state_current_);
 
-  if (start_holding)
+  if (start_holding_)
   {
     // Command to stay at current position
     trajectory_msgs::msg::JointTrajectory current_pose_msg;
@@ -136,7 +136,7 @@ controller_interface::return_type JointTrajectoryController::update(
         ->get_trajectory_msg();  // Used to avoid updating the trajectory back to the aborted one
     traj_external_point_ptr_->update(
       std::make_shared<trajectory_msgs::msg::JointTrajectory>(current_pose_msg));
-    start_holding = false;
+    start_holding_ = false;
   }
 
   auto compute_error_for_joint = [&](
@@ -733,6 +733,9 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     RCLCPP_ERROR(logger, "'state_interfaces' parameter is empty.");
     return CallbackReturn::FAILURE;
   }
+
+  // Should the controller start by holding position after on_configure?
+  start_holding_ = params_.start_holding;
 
   // Check if only allowed interface types are used and initialize storage to avoid memory
   // allocation during activation
@@ -1409,7 +1412,7 @@ void JointTrajectoryController::preempt_active_goal()
 
 void JointTrajectoryController::set_hold_position()
 {
-  start_holding = true;  // Should I use writeFromNonRT?
+  start_holding_ = true;  // Should I use writeFromNonRT?
 }
 
 bool JointTrajectoryController::contains_interface_type(

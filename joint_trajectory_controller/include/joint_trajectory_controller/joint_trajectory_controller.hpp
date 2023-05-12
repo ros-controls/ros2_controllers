@@ -163,6 +163,8 @@ protected:
   bool has_acceleration_command_interface_ = false;
   bool has_effort_command_interface_ = false;
 
+  // Should the controller start holding position?
+  bool start_holding_ = true;
   /// If true, a velocity feedforward term plus corrective PID term is used
   bool use_closed_loop_pid_adapter_ = false;
   using PidPtr = std::shared_ptr<control_toolbox::Pid>;
@@ -264,7 +266,6 @@ protected:
     const std::shared_ptr<control_msgs::srv::QueryTrajectoryState::Request> request,
     std::shared_ptr<control_msgs::srv::QueryTrajectoryState::Response> response);
 
-  bool start_holding = true;  // Should the controller start by holding position?
 private:
   bool contains_interface_type(
     const std::vector<std::string> & interface_type_list, const std::string & interface_type);

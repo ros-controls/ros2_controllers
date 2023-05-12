@@ -66,6 +66,11 @@ joint_trajectory_controller:
       one_of<>: [["splines", "none"]],
     }
   }
+  start_holding: {
+    type: bool,
+    default_value: true,
+    description: "If true, start with holding position after activation",
+  }
   gains:
     __map_joints:
       p: {

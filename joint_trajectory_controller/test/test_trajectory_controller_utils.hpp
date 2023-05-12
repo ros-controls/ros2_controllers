@@ -25,6 +25,7 @@
 
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
+#include "joint_trajectory_controller/trajectory.hpp"
 
 namespace
 {
@@ -35,6 +36,7 @@ const double INITIAL_POS_JOINT3 = 3.1;
 const std::vector<double> INITIAL_POS_JOINTS = {
   INITIAL_POS_JOINT1, INITIAL_POS_JOINT2, INITIAL_POS_JOINT3};
 const std::vector<double> INITIAL_VEL_JOINTS = {0.0, 0.0, 0.0};
+const std::vector<double> INITIAL_VEL_JOINTS_NONZERO = {1.0, 2.0, 3.0};
 const std::vector<double> INITIAL_ACC_JOINTS = {0.0, 0.0, 0.0};
 const std::vector<double> INITIAL_EFF_JOINTS = {0.0, 0.0, 0.0};
 }  // namespace
@@ -115,6 +117,11 @@ public:
   bool use_closed_loop_pid_adapter() { return use_closed_loop_pid_adapter_; }
 
   rclcpp::WaitSet joint_cmd_sub_wait_set_;
+
+  bool carryingOutTrajectory() const
+  {
+    return (traj_point_active_ptr_ && (*traj_point_active_ptr_)->has_trajectory_msg());
+  }
 };
 
 class TrajectoryControllerTest : public ::testing::Test
@@ -196,7 +203,7 @@ public:
     rclcpp::Executor & executor, bool use_local_parameters = true,
     const std::vector<rclcpp::Parameter> & parameters = {},
     bool separate_cmd_and_state_values = false, double k_p = 0.0, double ff = 1.0,
-    bool normalize_error = false)
+    bool normalize_error = false, bool initialize_nonzero_velocity = false)
   {
     SetUpTrajectoryController(executor, use_local_parameters);
 
@@ -212,10 +219,11 @@ public:
 
     traj_controller_->get_node()->configure();
 
-    ActivateTrajectoryController(separate_cmd_and_state_values);
+    ActivateTrajectoryController(separate_cmd_and_state_values, initialize_nonzero_velocity);
   }
 
-  void ActivateTrajectoryController(bool separate_cmd_and_state_values = false)
+  void ActivateTrajectoryController(
+    bool separate_cmd_and_state_values = false, bool initialize_nonzero_velocity = false)
   {
     std::vector<hardware_interface::LoanedCommandInterface> cmd_interfaces;
     std::vector<hardware_interface::LoanedStateInterface> state_interfaces;
@@ -257,7 +265,8 @@ public:
       cmd_interfaces.emplace_back(eff_cmd_interfaces_.back());
       cmd_interfaces.back().set_value(INITIAL_EFF_JOINTS[i]);
       joint_state_pos_[i] = INITIAL_POS_JOINTS[i];
-      joint_state_vel_[i] = INITIAL_VEL_JOINTS[i];
+      joint_state_vel_[i] =
+        initialize_nonzero_velocity ? INITIAL_VEL_JOINTS_NONZERO[i] : INITIAL_VEL_JOINTS[i];
       joint_state_acc_[i] = INITIAL_ACC_JOINTS[i];
       state_interfaces.emplace_back(pos_state_interfaces_.back());
       state_interfaces.emplace_back(vel_state_interfaces_.back());

@@ -155,6 +155,11 @@ open_loop_control (boolean)
 
   Default: false
 
+start_holding (bool)
+  If true, start with holding position after activation
+
+  Default: true
+
 constraints (structure)
   Default values for tolerances if no explicit values are states in JointTrajectory message.
 

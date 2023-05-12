@@ -548,6 +548,62 @@ TEST_P(TrajectoryControllerTestParameterized, state_topic_consistency)
   }
 }
 
+/**
+ * @brief check if hold on startup is deactivated
+*/
+TEST_P(TrajectoryControllerTestParameterized, no_hold_on_startup)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+
+  rclcpp::Parameter start_holding_parameter("start_holding", false);
+  SetUpAndActivateTrajectoryController(
+    executor, true, {start_holding_parameter}, false, false, 0.0, 1.0, true);
+  subscribeToState();
+
+  size_t n_joints = joint_names_.size();
+
+  // first update
+  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
+  updateController(rclcpp::Duration(FIRST_POINT_TIME));
+
+  // Spin to receive latest state
+  executor.spin_some();
+  auto state_msg = getState();
+  ASSERT_TRUE(state_msg);
+
+  ASSERT_FALSE(traj_controller_->carryingOutTrajectory());
+
+  executor.cancel();
+}
+
+/**
+ * @brief check if hold on startup
+*/
+TEST_P(TrajectoryControllerTestParameterized, hold_on_startup)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+
+  rclcpp::Parameter start_holding_parameter("start_holding", true);
+  SetUpAndActivateTrajectoryController(
+    executor, true, {start_holding_parameter}, false, 0.0, 1.0, true);
+  subscribeToState();
+
+  size_t n_joints = joint_names_.size();
+
+  // first update
+  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
+  updateController(rclcpp::Duration(FIRST_POINT_TIME));
+
+  // Spin to receive latest state
+  executor.spin_some();
+  auto state_msg = getState();
+  ASSERT_TRUE(state_msg);
+
+  ASSERT_TRUE(traj_controller_->carryingOutTrajectory());
+
+  executor.cancel();
+}
+
 // Floating-point value comparison threshold
 const double EPS = 1e-6;
 /**
