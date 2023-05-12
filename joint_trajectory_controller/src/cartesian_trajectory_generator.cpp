@@ -59,29 +59,6 @@ void reset_controller_reference_msg(const std::shared_ptr<ControllerReferenceMsg
 {
   reset_controller_reference_msg(*msg);
 }
-
-using ControllerFeedbackMsg =
-  cartesian_trajectory_generator::CartesianTrajectoryGenerator::ControllerFeedbackMsg;
-
-// called from RT control loop
-void reset_controller_feedback_msg(ControllerFeedbackMsg & msg)
-{
-  msg.pose.pose.position.x = std::numeric_limits<double>::quiet_NaN();
-  msg.pose.pose.position.y = std::numeric_limits<double>::quiet_NaN();
-  msg.pose.pose.position.z = std::numeric_limits<double>::quiet_NaN();
-  msg.pose.pose.orientation.x = std::numeric_limits<double>::quiet_NaN();
-  msg.pose.pose.orientation.y = std::numeric_limits<double>::quiet_NaN();
-  msg.pose.pose.orientation.z = std::numeric_limits<double>::quiet_NaN();
-  msg.pose.pose.orientation.w = std::numeric_limits<double>::quiet_NaN();
-  msg.pose.covariance.fill(std::numeric_limits<double>::quiet_NaN());
-
-  reset_twist_msg(msg.twist.twist);
-  msg.twist.covariance.fill(std::numeric_limits<double>::quiet_NaN());
-}
-void reset_controller_feedback_msg(const std::shared_ptr<ControllerFeedbackMsg> & msg)
-{
-  reset_controller_feedback_msg(*msg);
-}
 }  // namespace
 
 namespace cartesian_trajectory_generator
