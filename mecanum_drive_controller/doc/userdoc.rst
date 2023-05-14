@@ -32,7 +32,9 @@ Commands
 States
 ,,,,,,,
 - <joint_names[i]>/<interface_name>  [double]  # in [rad] or [rad/s]
-  **NOTE**: ``joint_name`` can be ``state_joint_names`` parameter of if empty ``command_joint_names``.
+  ..note ::
+  
+  ``joint_names[i]`` can be of ``state_joint_names`` parameter (if used), ``command_joint_names`` otherwise.
 
 
 Subscribers
@@ -50,6 +52,6 @@ Publishers
 Parameters
 ,,,,,,,,,,,
 
-For list of parameters and their meaning YAML file in the ``src`` folder of the controller's package.
+For list of parameters and their meaning, see the YAML file in the ``src`` folder of the controller's package.
 
-For an exameplary parameterization see the ``test`` folder of the controller's package.
+For an exemplary parameterization see the ``test`` folder of the controller's package.
