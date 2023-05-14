@@ -1,3 +1,5 @@
+:github_url: https://github.com/ros-controls/ros2_controllers/blob/|github_branch|/joint_trajectory_controller/doc/userdoc.rst
+
 .. _joint_trajectory_controller_userdoc:
 
 joint_trajectory_controller
