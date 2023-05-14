@@ -723,14 +723,9 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_normalized)
 
   if (traj_controller_->has_velocity_command_interface())
   {
-    // check command interface
-    EXPECT_LT(0.0, joint_vel_[0]);
-    EXPECT_LT(0.0, joint_vel_[1]);
-
     // use_closed_loop_pid_adapter_
     if (traj_controller_->use_closed_loop_pid_adapter())
     {
-      EXPECT_GT(0.0, joint_vel_[2]);
       // we expect u = k_p * (s_d-s) for positions[0] and positions[1]
       EXPECT_NEAR(
         k_p * (state_msg->reference.positions[0] - INITIAL_POS_JOINTS[0]), joint_vel_[0],
@@ -739,6 +734,7 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_normalized)
         k_p * (state_msg->reference.positions[1] - INITIAL_POS_JOINTS[1]), joint_vel_[1],
         k_p * allowed_delta);
       // is error of positions[2] normalized?
+      EXPECT_GT(0.0, joint_vel_[2]);
       EXPECT_NEAR(
         k_p * (state_msg->reference.positions[2] - INITIAL_POS_JOINTS[2] - 2 * M_PI), joint_vel_[2],
         k_p * allowed_delta);
@@ -746,16 +742,39 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_normalized)
     else
     {
       // interpolated points_velocities only
+      // check command interface
+      EXPECT_LT(0.0, joint_vel_[0]);
+      EXPECT_LT(0.0, joint_vel_[1]);
       EXPECT_LT(0.0, joint_vel_[2]);
     }
   }
 
   if (traj_controller_->has_effort_command_interface())
   {
-    // check command interface
-    EXPECT_LT(0.0, joint_eff_[0]);
-    EXPECT_LT(0.0, joint_eff_[1]);
-    EXPECT_LT(0.0, joint_eff_[2]);
+    // use_closed_loop_pid_adapter_
+    if (traj_controller_->use_closed_loop_pid_adapter())
+    {
+      // we expect u = k_p * (s_d-s) for positions[0] and positions[1]
+      EXPECT_NEAR(
+        k_p * (state_msg->reference.positions[0] - INITIAL_POS_JOINTS[0]), joint_eff_[0],
+        k_p * allowed_delta);
+      EXPECT_NEAR(
+        k_p * (state_msg->reference.positions[1] - INITIAL_POS_JOINTS[1]), joint_eff_[1],
+        k_p * allowed_delta);
+      // is error of positions[2] normalized?
+      EXPECT_GT(0.0, joint_eff_[2]);
+      EXPECT_NEAR(
+        k_p * (state_msg->reference.positions[2] - INITIAL_POS_JOINTS[2] - 2 * M_PI), joint_eff_[2],
+        k_p * allowed_delta);
+    }
+    else
+    {
+      // interpolated points_velocities only
+      // check command interface
+      EXPECT_LT(0.0, joint_eff_[0]);
+      EXPECT_LT(0.0, joint_eff_[1]);
+      EXPECT_LT(0.0, joint_eff_[2]);
+    }
   }
 
   executor.cancel();
@@ -1608,15 +1627,15 @@ INSTANTIATE_TEST_SUITE_P(
       std::vector<std::string>({"velocity"}),
       std::vector<std::string>({"position", "velocity", "acceleration"}))));
 
-// // only effort controller
-// INSTANTIATE_TEST_SUITE_P(
-//   OnlyEffortTrajectoryControllers, TrajectoryControllerTestParameterized,
-//   ::testing::Values(
-//     std::make_tuple(
-//       std::vector<std::string>({"effort"}), std::vector<std::string>({"position", "velocity"})),
-//     std::make_tuple(
-//       std::vector<std::string>({"effort"}),
-//       std::vector<std::string>({"position", "velocity", "acceleration"}))));
+// only effort controller
+INSTANTIATE_TEST_SUITE_P(
+  OnlyEffortTrajectoryControllers, TrajectoryControllerTestParameterized,
+  ::testing::Values(
+    std::make_tuple(
+      std::vector<std::string>({"effort"}), std::vector<std::string>({"position", "velocity"})),
+    std::make_tuple(
+      std::vector<std::string>({"effort"}),
+      std::vector<std::string>({"position", "velocity", "acceleration"}))));
 
 // TODO(destogl): this tests should be changed because we are using `generate_parameters_library`
 // TEST_F(TrajectoryControllerTest, incorrect_initialization_using_interface_parameters)
