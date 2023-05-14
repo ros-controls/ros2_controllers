@@ -1347,17 +1347,14 @@ TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_erro
     // One the first update(s) there should be a "jump" in opposite direction from command
     // (towards the state value)
     EXPECT_NEAR(first_goal[0], joint_pos_[0], COMMON_THRESHOLD);
-    // traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
     updateController(rclcpp::Duration::from_seconds(0.01));
     // Expect backward commands at first
     EXPECT_NEAR(joint_state_pos_[0], joint_pos_[0], COMMON_THRESHOLD);
     EXPECT_GT(joint_pos_[0], joint_state_pos_[0]);
     EXPECT_LT(joint_pos_[0], first_goal[0]);
-    // traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
     updateController(rclcpp::Duration::from_seconds(0.01));
     EXPECT_GT(joint_pos_[0], joint_state_pos_[0]);
     EXPECT_LT(joint_pos_[0], first_goal[0]);
-    // traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
     updateController(rclcpp::Duration::from_seconds(0.01));
     EXPECT_GT(joint_pos_[0], joint_state_pos_[0]);
     EXPECT_LT(joint_pos_[0], first_goal[0]);
@@ -1377,17 +1374,14 @@ TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_erro
     // One the first update(s) there should be a "jump" in the goal direction from command
     // (towards the state value)
     EXPECT_NEAR(second_goal[0], joint_pos_[0], COMMON_THRESHOLD);
-    // traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
     updateController(rclcpp::Duration::from_seconds(0.01));
     // Expect backward commands at first
     EXPECT_NEAR(joint_state_pos_[0], joint_pos_[0], COMMON_THRESHOLD);
     EXPECT_LT(joint_pos_[0], joint_state_pos_[0]);
     EXPECT_GT(joint_pos_[0], first_goal[0]);
-    // traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
     updateController(rclcpp::Duration::from_seconds(0.01));
     EXPECT_LT(joint_pos_[0], joint_state_pos_[0]);
     EXPECT_GT(joint_pos_[0], first_goal[0]);
-    // traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
     updateController(rclcpp::Duration::from_seconds(0.01));
     EXPECT_LT(joint_pos_[0], joint_state_pos_[0]);
     EXPECT_GT(joint_pos_[0], first_goal[0]);
@@ -1451,17 +1445,14 @@ TEST_P(TrajectoryControllerTestParameterized, test_no_jump_when_state_tracking_e
     // One the first update(s) there **should not** be a "jump" in opposite direction from
     // command (towards the state value)
     EXPECT_NEAR(first_goal[0], joint_pos_[0], COMMON_THRESHOLD);
-    // traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
     updateController(rclcpp::Duration::from_seconds(0.01));
     // There should not be backward commands
     EXPECT_NEAR(first_goal[0], joint_pos_[0], COMMON_THRESHOLD);
     EXPECT_GT(joint_pos_[0], first_goal[0]);
     EXPECT_LT(joint_pos_[0], second_goal[0]);
-    // traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
     updateController(rclcpp::Duration::from_seconds(0.01));
     EXPECT_GT(joint_pos_[0], first_goal[0]);
     EXPECT_LT(joint_pos_[0], second_goal[0]);
-    // traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
     updateController(rclcpp::Duration::from_seconds(0.01));
     EXPECT_GT(joint_pos_[0], first_goal[0]);
     EXPECT_LT(joint_pos_[0], second_goal[0]);
@@ -1481,17 +1472,14 @@ TEST_P(TrajectoryControllerTestParameterized, test_no_jump_when_state_tracking_e
     // One the first update(s) there **should not** be a "jump" in the goal direction from
     // command (towards the state value)
     EXPECT_NEAR(second_goal[0], joint_pos_[0], COMMON_THRESHOLD);
-    // traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
     updateController(rclcpp::Duration::from_seconds(0.01));
     // There should not be a jump toward commands
     EXPECT_NEAR(second_goal[0], joint_pos_[0], COMMON_THRESHOLD);
     EXPECT_LT(joint_pos_[0], second_goal[0]);
     EXPECT_GT(joint_pos_[0], first_goal[0]);
-    // traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
     updateController(rclcpp::Duration::from_seconds(0.01));
     EXPECT_GT(joint_pos_[0], first_goal[0]);
     EXPECT_LT(joint_pos_[0], second_goal[0]);
-    // traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
     updateController(rclcpp::Duration::from_seconds(0.01));
     EXPECT_GT(joint_pos_[0], first_goal[0]);
     EXPECT_LT(joint_pos_[0], second_goal[0]);
@@ -1505,107 +1493,99 @@ TEST_P(TrajectoryControllerTestParameterized, test_no_jump_when_state_tracking_e
 }
 #endif
 
-// // Testing that values are read from state interfaces when hardware is started for the first
-// // time and hardware state has offset --> this is indicated by NaN values in state interfaces
-// TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_first_controller_start)
-// {
-//   rclcpp::executors::SingleThreadedExecutor executor;
-//   // default if false so it will not be actually set parameter
-//   rclcpp::Parameter is_open_loop_parameters("open_loop_control", true);
+// Testing that values are read from state interfaces when hardware is started for the first
+// time and hardware state has offset --> this is indicated by NaN values in state interfaces
+TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_first_controller_start)
+{
+  rclcpp::executors::SingleThreadedExecutor executor;
+  // default if false so it will not be actually set parameter
+  rclcpp::Parameter is_open_loop_parameters("open_loop_control", true);
 
-//   // set command values to NaN
-//   for (size_t i = 0; i < 3; ++i)
-//   {
-//     joint_pos_[i] = std::numeric_limits<double>::quiet_NaN();
-//     joint_vel_[i] = std::numeric_limits<double>::quiet_NaN();
-//     joint_acc_[i] = std::numeric_limits<double>::quiet_NaN();
-//   }
-//   SetUpAndActivateTrajectoryController(true, {is_open_loop_parameters}, &executor, true);
+  // set command values to NaN
+  for (size_t i = 0; i < 3; ++i)
+  {
+    joint_pos_[i] = std::numeric_limits<double>::quiet_NaN();
+    joint_vel_[i] = std::numeric_limits<double>::quiet_NaN();
+    joint_acc_[i] = std::numeric_limits<double>::quiet_NaN();
+  }
+  SetUpAndActivateTrajectoryController(executor, true, {is_open_loop_parameters}, true);
 
-//   auto current_state_when_offset = traj_controller_->get_current_state_when_offset();
+  auto current_state_when_offset = traj_controller_->get_current_state_when_offset();
 
-//   for (size_t i = 0; i < 3; ++i)
-//   {
-//     EXPECT_EQ(current_state_when_offset.positions[i], joint_state_pos_[i]);
+  for (size_t i = 0; i < 3; ++i)
+  {
+    EXPECT_EQ(current_state_when_offset.positions[i], joint_state_pos_[i]);
 
-//     // check velocity
-//     if (
-//       std::find(
-//         state_interface_types_.begin(), state_interface_types_.end(),
-//         hardware_interface::HW_IF_VELOCITY) != state_interface_types_.end() &&
-//       std::find(
-//         command_interface_types_.begin(), command_interface_types_.end(),
-//         hardware_interface::HW_IF_VELOCITY) != command_interface_types_.end())
-//     {
-//       EXPECT_EQ(current_state_when_offset.positions[i], joint_state_pos_[i]);
-//     }
+    // check velocity
+    if (
+      std::find(
+        state_interface_types_.begin(), state_interface_types_.end(),
+        hardware_interface::HW_IF_VELOCITY) != state_interface_types_.end() &&
+      traj_controller_->has_velocity_command_interface())
+    {
+      EXPECT_EQ(current_state_when_offset.positions[i], joint_state_pos_[i]);
+    }
 
-//     // check acceleration
-//     if (
-//       std::find(
-//         state_interface_types_.begin(), state_interface_types_.end(),
-//         hardware_interface::HW_IF_ACCELERATION) != state_interface_types_.end() &&
-//       std::find(
-//         command_interface_types_.begin(), command_interface_types_.end(),
-//         hardware_interface::HW_IF_ACCELERATION) != command_interface_types_.end())
-//     {
-//       EXPECT_EQ(current_state_when_offset.positions[i], joint_state_pos_[i]);
-//     }
-//   }
+    // check acceleration
+    if (
+      std::find(
+        state_interface_types_.begin(), state_interface_types_.end(),
+        hardware_interface::HW_IF_ACCELERATION) != state_interface_types_.end() &&
+      traj_controller_->has_acceleration_command_interface())
+    {
+      EXPECT_EQ(current_state_when_offset.positions[i], joint_state_pos_[i]);
+    }
+  }
 
-//   executor.cancel();
-// }
+  executor.cancel();
+}
 
-// // Testing that values are read from state interfaces when hardware is started after some values
-// // are set on the hardware commands
-// TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_later_controller_start)
-// {
-//   rclcpp::executors::SingleThreadedExecutor executor;
-//   // default if false so it will not be actually set parameter
-//   rclcpp::Parameter is_open_loop_parameters("open_loop_control", true);
+// Testing that values are read from state interfaces when hardware is started after some values
+// are set on the hardware commands
+TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_later_controller_start)
+{
+  rclcpp::executors::SingleThreadedExecutor executor;
+  // default if false so it will not be actually set parameter
+  rclcpp::Parameter is_open_loop_parameters("open_loop_control", true);
 
-//   // set command values to NaN
-//   for (size_t i = 0; i < 3; ++i)
-//   {
-//     joint_pos_[i] = 3.1 + i;
-//     joint_vel_[i] = 0.25 + i;
-//     joint_acc_[i] = 0.02 + i / 10.0;
-//   }
-//   SetUpAndActivateTrajectoryController(true, {is_open_loop_parameters}, &executor, true);
+  // set command values to NaN
+  for (size_t i = 0; i < 3; ++i)
+  {
+    joint_pos_[i] = 3.1 + i;
+    joint_vel_[i] = 0.25 + i;
+    joint_acc_[i] = 0.02 + i / 10.0;
+  }
+  SetUpAndActivateTrajectoryController(executor, true, {is_open_loop_parameters}, true);
 
-//   auto current_state_when_offset = traj_controller_->get_current_state_when_offset();
+  auto current_state_when_offset = traj_controller_->get_current_state_when_offset();
 
-//   for (size_t i = 0; i < 3; ++i)
-//   {
-//     EXPECT_EQ(current_state_when_offset.positions[i], joint_pos_[i]);
+  for (size_t i = 0; i < 3; ++i)
+  {
+    EXPECT_EQ(current_state_when_offset.positions[i], joint_pos_[i]);
 
-//     // check velocity
-//     if (
-//       std::find(
-//         state_interface_types_.begin(), state_interface_types_.end(),
-//         hardware_interface::HW_IF_VELOCITY) != state_interface_types_.end() &&
-//       std::find(
-//         command_interface_types_.begin(), command_interface_types_.end(),
-//         hardware_interface::HW_IF_VELOCITY) != command_interface_types_.end())
-//     {
-//       EXPECT_EQ(current_state_when_offset.positions[i], joint_pos_[i]);
-//     }
+    // check velocity
+    if (
+      std::find(
+        state_interface_types_.begin(), state_interface_types_.end(),
+        hardware_interface::HW_IF_VELOCITY) != state_interface_types_.end() &&
+      traj_controller_->has_velocity_command_interface())
+    {
+      EXPECT_EQ(current_state_when_offset.positions[i], joint_pos_[i]);
+    }
 
-//     // check acceleration
-//     if (
-//       std::find(
-//         state_interface_types_.begin(), state_interface_types_.end(),
-//         hardware_interface::HW_IF_ACCELERATION) != state_interface_types_.end() &&
-//       std::find(
-//         command_interface_types_.begin(), command_interface_types_.end(),
-//         hardware_interface::HW_IF_ACCELERATION) != command_interface_types_.end())
-//     {
-//       EXPECT_EQ(current_state_when_offset.positions[i], joint_pos_[i]);
-//     }
-//   }
+    // check acceleration
+    if (
+      std::find(
+        state_interface_types_.begin(), state_interface_types_.end(),
+        hardware_interface::HW_IF_ACCELERATION) != state_interface_types_.end() &&
+      traj_controller_->has_acceleration_command_interface())
+    {
+      EXPECT_EQ(current_state_when_offset.positions[i], joint_pos_[i]);
+    }
+  }
 
-//   executor.cancel();
-// }
+  executor.cancel();
+}
 
 // position controllers
 INSTANTIATE_TEST_SUITE_P(
