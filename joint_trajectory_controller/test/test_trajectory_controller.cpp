@@ -1188,7 +1188,9 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_partial_old_trajectory
 //     expected_actual, expected_desired, executor, rclcpp::Duration(delay * (2 + 2)), 0.1);
 // }
 
-// TODO(anyone) this test fails with errors like this
+// TODO(destogl) this test fails with errors
+// second publish() gives an error, because end time is before current time
+// as well as
 // 2: The difference between joint_state_pos_[0] and joint_pos_[0] is 0.02999799000000003,
 // which exceeds COMMON_THRESHOLD, where
 // 2: joint_state_pos_[0] evaluates to 6.2999999999999998,
@@ -1197,6 +1199,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_partial_old_trajectory
 // 2: [  FAILED  ] PositionTrajectoryControllers/TrajectoryControllerTestParameterized.
 // test_jump_when_state_tracking_error_updated/0, where GetParam() =
 // ({ "position" }, { "position" }) (3372 ms)
+
 #if 0
 TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_error_updated)
 {
@@ -1217,7 +1220,8 @@ TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_erro
   time_from_start.sec = 1;
   time_from_start.nanosec = 0;
   std::vector<std::vector<double>> points{{first_goal}};
-  publish(time_from_start, points, rclcpp::Time(), {}, first_goal_velocities);
+  publish(time_from_start, points,
+    rclcpp::Time(0.0, 0.0, RCL_STEADY_TIME), {}, first_goal_velocities);
   traj_controller_->wait_for_trajectory(executor);
   updateController(rclcpp::Duration::from_seconds(1.1));
 
@@ -1234,7 +1238,8 @@ TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_erro
 
     // Move joint further in the same direction as before (to the second goal)
     points = {{second_goal}};
-    publish(time_from_start, points, rclcpp::Time(1.0), {}, second_goal_velocities);
+    publish(time_from_start, points,
+      rclcpp::Time(1.0, 0.0, RCL_STEADY_TIME), {}, second_goal_velocities);
     traj_controller_->wait_for_trajectory(executor);
 
     // One the first update(s) there should be a "jump" in opposite direction from command
@@ -1242,7 +1247,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_erro
     EXPECT_NEAR(first_goal[0], joint_pos_[0], COMMON_THRESHOLD);
     updateController(rclcpp::Duration::from_seconds(0.01));
     // Expect backward commands at first
-    EXPECT_NEAR(joint_state_pos_[0], joint_pos_[0], COMMON_THRESHOLD);
+    EXPECT_NEAR(joint_state_pos_[0], joint_pos_[0], state_from_command_offset + COMMON_THRESHOLD);
     EXPECT_GT(joint_pos_[0], joint_state_pos_[0]);
     EXPECT_LT(joint_pos_[0], first_goal[0]);
     updateController(rclcpp::Duration::from_seconds(0.01));
@@ -1261,7 +1266,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_erro
 
     // Move joint back to the first goal
     points = {{first_goal}};
-    publish(time_from_start, points, rclcpp::Time());
+    publish(time_from_start, points, rclcpp::Time(0.0, 0.0, RCL_STEADY_TIME));
     traj_controller_->wait_for_trajectory(executor);
 
     // One the first update(s) there should be a "jump" in the goal direction from command
@@ -1288,7 +1293,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_erro
 }
 #endif
 
-// TODO(anyone) this test fails
+// TODO(destogl) this test fails
 // 2: The difference between second_goal[0] and joint_pos_[0] is 0.032986635000000319,
 // which exceeds COMMON_THRESHOLD, where
 // 2: second_goal[0] evaluates to 6.5999999999999996,
@@ -1301,7 +1306,6 @@ TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_erro
 TEST_P(TrajectoryControllerTestParameterized, test_no_jump_when_state_tracking_error_not_updated)
 {
   rclcpp::executors::SingleThreadedExecutor executor;
-  // default if false so it will not be actually set parameter
   rclcpp::Parameter is_open_loop_parameters("open_loop_control", true);
   SetUpAndActivateTrajectoryController(executor, true, {is_open_loop_parameters}, true);
 
@@ -1315,7 +1319,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_no_jump_when_state_tracking_e
   time_from_start.sec = 1;
   time_from_start.nanosec = 0;
   std::vector<std::vector<double>> points{{first_goal}};
-  publish(time_from_start, points, rclcpp::Time());
+  publish(time_from_start, points, rclcpp::Time(0.0, 0.0, RCL_STEADY_TIME));
   traj_controller_->wait_for_trajectory(executor);
   updateController(rclcpp::Duration::from_seconds(1.1));
 
@@ -1332,7 +1336,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_no_jump_when_state_tracking_e
 
     // Move joint further in the same direction as before (to the second goal)
     points = {{second_goal}};
-    publish(time_from_start, points, rclcpp::Time());
+    publish(time_from_start, points, rclcpp::Time(0.0, 0.0, RCL_STEADY_TIME));
     traj_controller_->wait_for_trajectory(executor);
 
     // One the first update(s) there **should not** be a "jump" in opposite direction from
@@ -1359,7 +1363,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_no_jump_when_state_tracking_e
 
     // Move joint back to the first goal
     points = {{first_goal}};
-    publish(time_from_start, points, rclcpp::Time());
+    publish(time_from_start, points, rclcpp::Time(0.0, 0.0, RCL_STEADY_TIME));
     traj_controller_->wait_for_trajectory(executor);
 
     // One the first update(s) there **should not** be a "jump" in the goal direction from
