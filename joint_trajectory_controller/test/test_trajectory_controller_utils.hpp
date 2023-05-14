@@ -110,6 +110,8 @@ public:
 
   bool has_velocity_command_interface() { return has_velocity_command_interface_; }
 
+  bool has_acceleration_command_interface() { return has_acceleration_command_interface_; }
+
   bool has_effort_command_interface() { return has_effort_command_interface_; }
 
   bool use_closed_loop_pid_adapter() { return use_closed_loop_pid_adapter_; }
