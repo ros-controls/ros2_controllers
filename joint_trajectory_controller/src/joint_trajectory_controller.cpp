@@ -476,7 +476,6 @@ bool JointTrajectoryController::read_state_from_command_interfaces(JointTrajecto
   return has_values;
 }
 
-<<<<<<< HEAD
 bool JointTrajectoryController::read_commands_from_command_interfaces(
   JointTrajectoryPoint & commands)
 {
@@ -550,7 +549,8 @@ bool JointTrajectoryController::read_commands_from_command_interfaces(
   }
 
   return has_values;
-=======
+}
+
 void JointTrajectoryController::query_state_service(
   const std::shared_ptr<control_msgs::srv::QueryTrajectoryState::Request> request,
   std::shared_ptr<control_msgs::srv::QueryTrajectoryState::Response> response)
@@ -596,7 +596,6 @@ void JointTrajectoryController::query_state_service(
   response->position = state_requested.positions;
   response->velocity = state_requested.velocities;
   response->acceleration = state_requested.accelerations;
->>>>>>> 7c79feb (ported the joint_trajectory_controller query_state service to ROS2 (#481))
 }
 
 controller_interface::CallbackReturn JointTrajectoryController::on_configure(
