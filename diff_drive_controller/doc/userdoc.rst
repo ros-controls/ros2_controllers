@@ -1,3 +1,5 @@
+:github_url: https://github.com/ros-controls/ros2_controllers/blob/|github_branch|/diff_drive_controller/doc/userdoc.rst
+
 .. _diff_drive_controller_userdoc:
 
 diff_drive_controller
