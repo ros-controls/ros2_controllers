@@ -1,3 +1,5 @@
+:github_url: https://github.com/ros-controls/ros2_controllers/blob/|github_branch|/doc/controllers_index.rst
+
 .. _controllers:
 
 #################

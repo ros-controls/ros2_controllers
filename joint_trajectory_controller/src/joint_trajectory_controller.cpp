@@ -551,6 +551,53 @@ bool JointTrajectoryController::read_commands_from_command_interfaces(
   return has_values;
 }
 
+void JointTrajectoryController::query_state_service(
+  const std::shared_ptr<control_msgs::srv::QueryTrajectoryState::Request> request,
+  std::shared_ptr<control_msgs::srv::QueryTrajectoryState::Response> response)
+{
+  const auto logger = get_node()->get_logger();
+  // Preconditions
+  if (get_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+  {
+    RCLCPP_ERROR(logger, "Can't sample trajectory. Controller is not active.");
+    response->success = false;
+    return;
+  }
+  const auto active_goal = *rt_active_goal_.readFromRT();
+  response->name = params_.joints;
+  trajectory_msgs::msg::JointTrajectoryPoint state_requested = state_current_;
+  if ((traj_point_active_ptr_ && (*traj_point_active_ptr_)->has_trajectory_msg()))
+  {
+    TrajectoryPointConstIter start_segment_itr, end_segment_itr;
+    response->success = (*traj_point_active_ptr_)
+                          ->sample(
+                            static_cast<rclcpp::Time>(request->time), interpolation_method_,
+                            state_requested, start_segment_itr, end_segment_itr);
+    // If the requested sample time precedes the trajectory finish time respond as failure
+    if (response->success)
+    {
+      if (end_segment_itr == (*traj_point_active_ptr_)->end())
+      {
+        RCLCPP_ERROR(logger, "Requested sample time precedes the current trajectory end time.");
+        response->success = false;
+      }
+    }
+    else
+    {
+      RCLCPP_ERROR(
+        logger, "Requested sample time is earlier than the current trajectory start time.");
+    }
+  }
+  else
+  {
+    RCLCPP_ERROR(logger, "Currently there is no valid trajectory instance.");
+    response->success = false;
+  }
+  response->position = state_requested.positions;
+  response->velocity = state_requested.velocities;
+  response->acceleration = state_requested.accelerations;
+}
+
 controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   const rclcpp_lifecycle::State &)
 {
@@ -855,6 +902,10 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   resize_joint_trajectory_point(state_desired_, dof_);
   resize_joint_trajectory_point(state_error_, dof_);
   resize_joint_trajectory_point(last_commanded_state_, dof_);
+
+  query_state_srv_ = get_node()->create_service<control_msgs::srv::QueryTrajectoryState>(
+    std::string(get_node()->get_name()) + "/query_state",
+    std::bind(&JointTrajectoryController::query_state_service, this, _1, _2));
 
   return CallbackReturn::SUCCESS;
 }
