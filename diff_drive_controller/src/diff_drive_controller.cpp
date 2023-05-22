@@ -194,7 +194,7 @@ controller_interface::return_type DiffDriveController::update(
       should_publish = true;
     }
   }
-  catch (const std::runtime_error)
+  catch (const std::runtime_error &)
   {
     // Handle exceptions when the time source changes and initialize publish timestamp
     previous_publish_timestamp_ = time;
