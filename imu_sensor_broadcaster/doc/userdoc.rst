@@ -1,3 +1,5 @@
+:github_url: https://github.com/ros-controls/ros2_controllers/blob/|github_branch|/imu_sensor_broadcaster/doc/userdoc.rst
+
 .. _imu_sensor_broadcaster_userdoc:
 
 IMU Sensor Broadcaster

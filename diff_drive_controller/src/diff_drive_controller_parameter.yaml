@@ -62,7 +62,7 @@ diff_drive_controller:
   open_loop: {
     type: bool,
     default_value: false,
-    description: "If set to false the odometry of the robot will be calculated from the commanded values and not from feedback.",
+    description: "If set to true the odometry of the robot will be calculated from the commanded values and not from feedback.",
   }
   position_feedback: {
     type: bool,

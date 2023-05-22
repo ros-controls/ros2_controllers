@@ -2,6 +2,24 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.8.0 (2023-05-14)
+------------------
+
+3.7.0 (2023-05-02)
+------------------
+
+3.6.0 (2023-04-29)
+------------------
+* Renovate load controller tests (`#569 <https://github.com/ros-controls/ros2_controllers/issues/569>`_)
+* Fix docs format (`#589 <https://github.com/ros-controls/ros2_controllers/issues/589>`_)
+* Contributors: Bence Magyar, Christoph Fröhlich
+
+3.5.0 (2023-04-14)
+------------------
+* Misplaced param init in admittance_controller (`#547 <https://github.com/ros-controls/ros2_controllers/issues/547>`_)
+* [Parameters] Use `gt_eq` instead of deprecated `lower_bounds` in validators (`#561 <https://github.com/ros-controls/ros2_controllers/issues/561>`_)
+* Contributors: Dr. Denis, GuiHome
+
 3.4.0 (2023-04-02)
 ------------------
 * [AdmittanceController] Addintional argument in methods of ControllerInterface (`#553 <https://github.com/ros-controls/ros2_controllers/issues/553>`_)
