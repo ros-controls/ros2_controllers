@@ -68,7 +68,7 @@ TEST_F(BicycleSteeringControllerTest, check_exported_intefaces)
     state_intefaces.names[STATE_STEER_AXIS],
     controller_->front_wheels_state_names_[0] + "/" + steering_interface_name_);
 
-  // check ref itfs
+  // check ref itfsTIME
   auto reference_interfaces = controller_->export_reference_interfaces();
   ASSERT_EQ(reference_interfaces.size(), joint_reference_interfaces_.size());
   for (size_t i = 0; i < joint_reference_interfaces_.size(); ++i)
@@ -106,7 +106,7 @@ TEST_F(BicycleSteeringControllerTest, update_success)
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   ASSERT_EQ(
-    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 }
 
@@ -131,7 +131,7 @@ TEST_F(BicycleSteeringControllerTest, reactivate_success)
   ASSERT_TRUE(std::isnan(controller_->command_interfaces_[0].get_value()));
 
   ASSERT_EQ(
-    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 }
 
@@ -154,7 +154,7 @@ TEST_F(BicycleSteeringControllerTest, test_update_logic)
   controller_->input_ref_.writeFromNonRT(msg);
 
   ASSERT_EQ(
-    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
   EXPECT_NEAR(
@@ -186,7 +186,7 @@ TEST_F(BicycleSteeringControllerTest, test_update_logic_chained)
   controller_->reference_interfaces_[1] = 0.2;
 
   ASSERT_EQ(
-    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
   EXPECT_NEAR(
@@ -211,7 +211,7 @@ TEST_F(BicycleSteeringControllerTest, publish_status_success)
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   ASSERT_EQ(
-    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
   ControllerStateMsg msg;
@@ -228,7 +228,7 @@ TEST_F(BicycleSteeringControllerTest, receive_message_and_publish_updated_status
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   ASSERT_EQ(
-    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
   ControllerStateMsg msg;
@@ -241,7 +241,7 @@ TEST_F(BicycleSteeringControllerTest, receive_message_and_publish_updated_status
   ASSERT_TRUE(controller_->wait_for_commands(executor));
 
   ASSERT_EQ(
-    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
   EXPECT_NEAR(

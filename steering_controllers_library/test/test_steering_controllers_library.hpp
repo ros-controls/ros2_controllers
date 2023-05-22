@@ -240,7 +240,7 @@ protected:
 
     // call update to publish the test value
     ASSERT_EQ(
-      controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+      controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
       controller_interface::return_type::OK);
 
     // call update to publish the test value
@@ -250,7 +250,7 @@ protected:
     wait_set.add_subscription(subscription);
     while (max_sub_check_loop_count--)
     {
-      controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+      controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01));
       // check if message has been received
       if (wait_set.wait(std::chrono::milliseconds(2)).kind() == rclcpp::WaitResultKind::Ready)
       {

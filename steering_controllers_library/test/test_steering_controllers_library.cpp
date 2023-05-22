@@ -64,7 +64,7 @@ TEST_F(SteeringControllersLibraryTest, check_exported_intefaces)
     state_intefaces.names[STATE_STEER_LEFT_WHEEL],
     controller_->front_wheels_state_names_[1] + "/" + steering_interface_name_);
 
-  // check ref itfs
+  // check ref itfsTIME
   auto reference_interfaces = controller_->export_reference_interfaces();
   ASSERT_EQ(reference_interfaces.size(), joint_reference_interfaces_.size());
   for (size_t i = 0; i < joint_reference_interfaces_.size(); ++i)
