@@ -80,13 +80,12 @@ if(BUILD_TESTING)
     ros2_control_test_assets
   )
 
-  # TODO(andyz): Disabled due to flakiness
-  # ament_add_gmock(test_trajectory_actions
-  #   test/test_trajectory_actions.cpp
-  # )
-  # target_link_libraries(test_trajectory_actions
-  #   joint_trajectory_controller
-  # )
+  ament_add_gmock(test_trajectory_actions
+    test/test_trajectory_actions.cpp
+  )
+  target_link_libraries(test_trajectory_actions
+    joint_trajectory_controller
+  )
 endif()
 
 
