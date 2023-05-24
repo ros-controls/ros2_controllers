@@ -763,8 +763,24 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_normalized)
 /**
  * @brief check if non default parameters are assigned properly
 */
-TEST_P(TrajectoryControllerTestParameterized, test_non_default_parameters) {}
-
+TEST_P(TrajectoryControllerTestParameterized, test_non_default_parameters)
+{
+  std::shared_ptr<test_trajectory_controllers::TestableJointTrajectoryController>
+    test_traj_controller =
+      std::make_shared<test_trajectory_controllers::TestableJointTrajectoryController>();
+  // read the non default config values from ENV variable config_file
+  const char * config_file_path = std::getenv("config_file");
+  if (config_file_path == nullptr)
+  {
+    RCLCPP_ERROR(rclcpp::get_logger("my_node"), "CONFIG_FILE_PATH environment variable not set");
+    return 1;
+  }
+  // assign those values to parameters
+  // test_traj_controller->set_command_interfaces();
+  // test_traj_controller->set_joint_names();
+  // test_traj_controller->set_command_interfaces();
+  // test_traj_controller->set_state_interfaces();
+}
 // /**
 //  * @brief test_jumbled_joint_order Test sending trajectories with a joint order different from
 //  * internal controller order
