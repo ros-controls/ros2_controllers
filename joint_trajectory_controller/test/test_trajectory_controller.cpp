@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <stddef.h>
+#include <yaml-cpp/yaml.h>
 
 #include <array>
 #include <chrono>
@@ -773,8 +774,19 @@ TEST_P(TrajectoryControllerTestParameterized, test_non_default_parameters)
   if (config_file_path == nullptr)
   {
     RCLCPP_ERROR(rclcpp::get_logger("my_node"), "CONFIG_FILE_PATH environment variable not set");
-    return 1;
   }
+  YAML::Node config_node;
+  try
+  {
+    auto config_node = YAML::LoadFile(config_file_path);
+  }
+  catch (const YAML::Exception & e)
+  {
+    RCLCPP_ERROR(rclcpp::get_logger("my_node"), "Error loading YAML file: %s", e.what());
+  }
+  auto value = config_node["test_joint_trajectory_controller"]["action_monitor_rate"].as<double>();
+  ASSERT_EQ(value, 30.0);
+
   // assign those values to parameters
   // test_traj_controller->set_command_interfaces();
   // test_traj_controller->set_joint_names();

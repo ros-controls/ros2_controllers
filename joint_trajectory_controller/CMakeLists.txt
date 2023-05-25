@@ -26,6 +26,7 @@ find_package(backward_ros REQUIRED)
 foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
+find_package(yaml-cpp REQUIRED)
 
 generate_parameter_library(joint_trajectory_controller_parameters
   src/joint_trajectory_controller_parameters.yaml
@@ -65,6 +66,7 @@ if(BUILD_TESTING)
   set_tests_properties(test_trajectory_controller PROPERTIES TIMEOUT 220)
   target_link_libraries(test_trajectory_controller
     joint_trajectory_controller
+    yaml-cpp
   )
 
   ament_add_gmock(test_load_joint_trajectory_controller
