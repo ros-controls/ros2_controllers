@@ -17,16 +17,16 @@ Values in other components are ignored.
 In the chain mode the controller provides two reference interfaces, one for linear velocity and one for steering angle position.
 Other relevant features are:
 
-  - support for front and rear steering configurations;
-  - odometry publishing as Odometry and TF message;
-  - input command timeout based on a parameter.
+* support for front and rear steering configurations;
+* odometry publishing as Odometry and TF message;
+* input command timeout based on a parameter.
 
 The command for the wheels are calculated using ``odometry`` library where based on concrete kinematics traction and steering commands are calculated.
 Currently implemented kinematics in corresponding packages are:
 
-  - :ref:`Bicycle <bicycle_steering_controller_userdoc>` - with one steering and one drive joints;
-  - :ref:`Tricylce <tricycle_steering_controller_userdoc>` - with one steering and two drive joints;
-  - :ref:`Ackermann <ackermann_steering_controller_userdoc>` - with two seering and two drive joints.
+* :ref:`Bicycle <bicycle_steering_controller_userdoc>` - with one steering and one drive joints;
+* :ref:`Tricylce <tricycle_steering_controller_userdoc>` - with one steering and two drive joints;
+* :ref:`Ackermann <ackermann_steering_controller_userdoc>` - with two seering and two drive joints.
 
 
 
@@ -52,8 +52,10 @@ Commands
 
 States
 ,,,,,,,
-``position_feedback == true`` --> ``TRACTION_FEEDBACK_TYPE = position``
-``position_feedback == false`` --> ``TRACTION_FEEDBACK_TYPE = velocity``
+Depending on the ``position_feedback``, different feedback types are expected
+
+* ``position_feedback == true`` --> ``TRACTION_FEEDBACK_TYPE = position``
+* ``position_feedback == false`` --> ``TRACTION_FEEDBACK_TYPE = velocity``
 
 ``front_steering == true``
 
