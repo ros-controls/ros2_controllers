@@ -54,10 +54,11 @@ if(BUILD_TESTING)
   find_package(hardware_interface REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
 
-  ament_add_gmock(test_load_bicycle_steering_controller test/test_load_bicycle_steering_controller.cpp)
-  target_include_directories(test_load_bicycle_steering_controller PRIVATE include)
-  ament_target_dependencies(
-    test_load_bicycle_steering_controller
+  add_rostest_with_parameters_gmock(test_load_bicycle_steering_controller
+    test/test_load_bicycle_steering_controller.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/bicycle_steering_controller_params.yaml
+  )
+  ament_target_dependencies(test_load_bicycle_steering_controller
     controller_manager
     hardware_interface
     ros2_control_test_assets

@@ -24,8 +24,6 @@
 
 TEST(TestLoadTricycleSteeringController, load_controller)
 {
-  rclcpp::init(0, nullptr);
-
   std::shared_ptr<rclcpp::Executor> executor =
     std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
 
@@ -39,6 +37,13 @@ TEST(TestLoadTricycleSteeringController, load_controller)
       "test_tricycle_steering_controller",
       "tricycle_steering_controller/TricycleSteeringController"),
     nullptr);
+}
 
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  rclcpp::init(argc, argv);
+  int result = RUN_ALL_TESTS();
   rclcpp::shutdown();
+  return result;
 }

@@ -35,8 +35,8 @@ add_library(
 )
 target_compile_features(ackermann_steering_controller PUBLIC cxx_std_17)
 target_include_directories(ackermann_steering_controller PUBLIC
-  "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
-  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>)
 target_link_libraries(ackermann_steering_controller PUBLIC
   ackermann_steering_controller_parameters)
 ament_target_dependencies(ackermann_steering_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
@@ -54,18 +54,21 @@ if(BUILD_TESTING)
   find_package(hardware_interface REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
 
-  ament_add_gmock(test_load_ackermann_steering_controller test/test_load_ackermann_steering_controller.cpp)
-  target_include_directories(test_load_ackermann_steering_controller PRIVATE include)
-  ament_target_dependencies(
-    test_load_ackermann_steering_controller
+
+  add_rostest_with_parameters_gmock(test_load_ackermann_steering_controller
+    test/test_load_ackermann_steering_controller.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/ackermann_steering_controller_params.yaml
+  )
+  ament_target_dependencies(test_load_ackermann_steering_controller
     controller_manager
     hardware_interface
     ros2_control_test_assets
   )
 
-  add_rostest_with_parameters_gmock(
-    test_ackermann_steering_controller test/test_ackermann_steering_controller.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/ackermann_steering_controller_params.yaml)
+  add_rostest_with_parameters_gmock(test_ackermann_steering_controller
+    test/test_ackermann_steering_controller.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/ackermann_steering_controller_params.yaml
+  )
   target_include_directories(test_ackermann_steering_controller PRIVATE include)
   target_link_libraries(test_ackermann_steering_controller ackermann_steering_controller)
   ament_target_dependencies(
