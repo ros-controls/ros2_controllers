@@ -42,14 +42,19 @@ Available Controllers
 .. toctree::
    :titlesonly:
 
+   Ackermann Steering Controller <../ackermann_steering_controller/doc/userdoc.rst>
    Admittance Controller <../admittance_controller/doc/userdoc.rst>
+   Bicycle Steering Controller <../bicycle_steering_controller/doc/userdoc.rst>
    Differential Drive Controller <../diff_drive_controller/doc/userdoc.rst>
    Effort Controllers <../effort_controllers/doc/userdoc.rst>
    Forward Command Controller <../forward_command_controller/doc/userdoc.rst>
    Joint Trajectory Controller <../joint_trajectory_controller/doc/userdoc.rst>
    Position Controllers <../position_controllers/doc/userdoc.rst>
    Tricycle Controller <../tricycle_controller/doc/userdoc.rst>
+   Tricycle Steering Controller <../tricycle_steering_controller/doc/userdoc.rst>
    Velocity Controllers <../velocity_controllers/doc/userdoc.rst>
+   Effort Controllers <../effort_controllers/doc/userdoc.rst>
+   Steering Controllers Library <../steering_controllers_library/doc/userdoc.rst>
 
 
 Available Broadcasters
