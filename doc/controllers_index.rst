@@ -1,4 +1,4 @@
-:github_url: https://github.com/ros-controls/ros2_controllers/blob/|github_branch|/doc/controllers_index.rst
+:github_url: https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/doc/controllers_index.rst
 
 .. _controllers:
 
@@ -22,7 +22,7 @@ The controllers' namespaces are commanding the following command interface types
   - ``effort_controllers``: ``hardware_interface::HW_IF_EFFORT``
   - ...
 
-.. _common hardware interface definitions: https://github.com/ros-controls/ros2_control/blob/master/hardware_interface/include/hardware_interface/types/hardware_interface_type_values.hpp
+.. _common hardware interface definitions: https://github.com/ros-controls/ros2_control/blob/{REPOS_FILE_BRANCH}/hardware_interface/include/hardware_interface/types/hardware_interface_type_values.hpp
 
 
 
