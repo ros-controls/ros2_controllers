@@ -2,8 +2,8 @@
 Changelog for package gripper_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.9.0 (2023-05-28)
+------------------
 * Fix compilation warnings (`#621 <https://github.com/ros-controls/ros2_controllers/issues/621>`_)
 * Contributors: Noel Jiménez García, Mathias Lüdtke
 
