@@ -552,7 +552,7 @@ TEST_P(TrajectoryControllerTestParameterized, state_topic_consistency)
 const double EPS = 1e-6;
 /**
  * @brief check if position error of revolute joints are normalized if not configured so
-*/
+ */
 TEST_P(TrajectoryControllerTestParameterized, position_error_not_normalized)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
@@ -659,7 +659,7 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_normalized)
 
 /**
  * @brief check if position error of revolute joints are normalized if configured so
-*/
+ */
 TEST_P(TrajectoryControllerTestParameterized, position_error_normalized)
 {
   rclcpp::executors::MultiThreadedExecutor executor;

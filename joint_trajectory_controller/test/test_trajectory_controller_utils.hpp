@@ -61,12 +61,12 @@ public:
   }
 
   /**
-  * @brief wait_for_trajectory block until a new JointTrajectory is received.
-  * Requires that the executor is not spinned elsewhere between the
-  *  message publication and the call to this function
-  *
-  * @return true if new JointTrajectory msg was received, false if timeout
-  */
+   * @brief wait_for_trajectory block until a new JointTrajectory is received.
+   * Requires that the executor is not spinned elsewhere between the
+   *  message publication and the call to this function
+   *
+   * @return true if new JointTrajectory msg was received, false if timeout
+   */
   bool wait_for_trajectory(
     rclcpp::Executor & executor,
     const std::chrono::milliseconds & timeout = std::chrono::milliseconds{500})
@@ -293,7 +293,8 @@ public:
   /**
    *  delay_btwn_points - delay between each points
    *  points - vector of trajectories. One point per controlled joint
-   *  joint_names - names of joints, if empty, will use joint_names_ up to the number of provided points
+   *  joint_names - names of joints, if empty, will use joint_names_ up to the number of provided
+   * points
    */
   void publish(
     const builtin_interfaces::msg::Duration & delay_btwn_points,
