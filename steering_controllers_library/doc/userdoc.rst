@@ -1,3 +1,5 @@
+:github_url: https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/steering_controllers_library/doc/userdoc.rst
+
 .. _steering_controllers_library_userdoc:
 
 steering_controllers_library
