@@ -302,10 +302,9 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   odometry_.setWheelParams(wheel_separation, left_wheel_radius, right_wheel_radius);
   odometry_.setVelocityRollingWindowSize(params_.velocity_rolling_window_size);
 
-  cmd_vel_timeout_ = std::chrono::milliseconds{
-    static_cast<int>(get_node()->get_parameter("cmd_vel_timeout").as_double() * 1000.0)};
-  publish_limited_velocity_ = get_node()->get_parameter("publish_limited_velocity").as_bool();
-  use_stamped_vel_ = get_node()->get_parameter("use_stamped_vel").as_bool();
+  cmd_vel_timeout_ = std::chrono::milliseconds{static_cast<int>(params_.cmd_vel_timeout * 1000.0)};
+  publish_limited_velocity_ = params_.publish_limited_velocity;
+  use_stamped_vel_ = params_.use_stamped_vel;
 
   limiter_linear_ = SpeedLimiter(
     params_.linear.x.has_velocity_limits, params_.linear.x.has_acceleration_limits,
@@ -414,7 +413,7 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   odometry_message.child_frame_id = controller_namespace + base_frame_id;
 
   // limit the publication on the topics /odom and /tf
-  publish_rate_ = get_node()->get_parameter("publish_rate").as_double();
+  publish_rate_ = params_.publish_rate;
   publish_period_ = rclcpp::Duration::from_seconds(1.0 / publish_rate_);
 
   // initialize odom values zeros
