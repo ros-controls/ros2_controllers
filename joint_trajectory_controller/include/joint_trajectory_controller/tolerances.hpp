@@ -123,8 +123,8 @@ SegmentTolerances get_segment_tolerances(Params const & params)
  * \param state_error State error to check.
  * \param joint_idx Joint index for the state error
  * \param state_tolerance State tolerance of joint to check \p state_error against.
- * \param show_errors If the joint that violate its tolerance should be output to console. NOT REALTIME if true
- * \return True if \p state_error fulfills \p state_tolerance.
+ * \param show_errors If the joint that violate its tolerance should be output to console. NOT
+ * REALTIME if true \return True if \p state_error fulfills \p state_tolerance.
  */
 inline bool check_state_tolerance_per_joint(
   const trajectory_msgs::msg::JointTrajectoryPoint & state_error, int joint_idx,
