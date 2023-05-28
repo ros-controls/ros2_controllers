@@ -1,14 +1,15 @@
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Changelog for package rqt_joint_trajectory_controller
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Changelog for package steering_controllers_library
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Forthcoming
 -----------
+* Fix sphinx for steering odometry library/controllers (`#626 <https://github.com/ros-controls/ros2_controllers/issues/626>`_)
+* Steering odometry library and controllers (`#484 <https://github.com/ros-controls/ros2_controllers/issues/484>`_)
+* Contributors: Bence Magyar, Christoph Fröhlich, Tomislav Petković
 
 3.8.0 (2023-05-14)
 ------------------
-* switch from dash to underscore in setup.cfg (`#595 <https://github.com/ros-controls/ros2_controllers/issues/595>`_)
-* Contributors: Alex Moriarty
 
 3.7.0 (2023-05-02)
 ------------------
@@ -33,8 +34,6 @@ Forthcoming
 
 3.0.0 (2023-01-19)
 ------------------
-* 🔧 Fixes and updated on pre-commit hooks and their action (`#492 <https://github.com/ros-controls/ros2_controllers/issues/492>`_)
-* Contributors: Denis Štogl
 
 2.15.0 (2022-12-06)
 -------------------
@@ -47,18 +46,12 @@ Forthcoming
 
 2.12.0 (2022-09-01)
 -------------------
-* fix: :bug: make bare exceptions more narrow (`#422 <https://github.com/ros-controls/ros2_controllers/issues/422>`_)
-* Fix formatting because pre-commit was not running on CI for some time. (`#409 <https://github.com/ros-controls/ros2_controllers/issues/409>`_)
-* Contributors: Denis Štogl, Jaron Lundwall
 
 2.11.0 (2022-08-04)
 -------------------
 
 2.10.0 (2022-08-01)
 -------------------
-* Formatting changes from pre-commit (`#400 <https://github.com/ros-controls/ros2_controllers/issues/400>`_)
-* port rqt_joint_trajectory_controller to ros2 (`#356 <https://github.com/ros-controls/ros2_controllers/issues/356>`_)
-* Contributors: Bence Magyar, Noel Jiménez García, Tyler Weaver
 
 2.9.0 (2022-07-14)
 ------------------
