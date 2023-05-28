@@ -2,8 +2,8 @@
 Changelog for package ros2_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.21.0 (2023-05-28)
+-------------------
 * Fix overriding of install (`#510 <https://github.com/ros-controls/ros2_controllers/issues/510>`_) (`#605 <https://github.com/ros-controls/ros2_controllers/issues/605>`_)
 * Contributors: Felix Exner (fexner)
 
