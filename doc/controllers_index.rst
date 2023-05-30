@@ -1,3 +1,5 @@
+:github_url: https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/doc/controllers_index.rst
+
 .. _controllers:
 
 #################
@@ -20,7 +22,7 @@ The controllers' namespaces are commanding the following command interface types
   - ``effort_controllers``: ``hardware_interface::HW_IF_EFFORT``
   - ...
 
-.. _common hardware interface definitions: https://github.com/ros-controls/ros2_control/blob/master/hardware_interface/include/hardware_interface/types/hardware_interface_type_values.hpp
+.. _common hardware interface definitions: https://github.com/ros-controls/ros2_control/blob/{REPOS_FILE_BRANCH}/hardware_interface/include/hardware_interface/types/hardware_interface_type_values.hpp
 
 
 
@@ -40,14 +42,18 @@ Available Controllers
 .. toctree::
    :titlesonly:
 
+   Ackermann Steering Controller <../ackermann_steering_controller/doc/userdoc.rst>
    Admittance Controller <../admittance_controller/doc/userdoc.rst>
-   Tricycle Controller <../tricycle_controller/doc/userdoc.rst>
+   Bicycle Steering Controller <../bicycle_steering_controller/doc/userdoc.rst>
    Differential Drive Controller <../diff_drive_controller/doc/userdoc.rst>
+   Effort Controllers <../effort_controllers/doc/userdoc.rst>
    Forward Command Controller <../forward_command_controller/doc/userdoc.rst>
    Joint Trajectory Controller <../joint_trajectory_controller/doc/userdoc.rst>
    Position Controllers <../position_controllers/doc/userdoc.rst>
+   Steering Controllers Library <../steering_controllers_library/doc/userdoc.rst>
+   Tricycle Controller <../tricycle_controller/doc/userdoc.rst>
+   Tricycle Steering Controller <../tricycle_steering_controller/doc/userdoc.rst>
    Velocity Controllers <../velocity_controllers/doc/userdoc.rst>
-   Effort Controllers <../effort_controllers/doc/userdoc.rst>
 
 
 Available Broadcasters

@@ -1,3 +1,5 @@
+:github_url: https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/doc/writing_new_controller.rst
+
 .. _writing_new_controllers:
 
 Writing a new controller

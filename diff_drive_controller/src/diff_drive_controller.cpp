@@ -185,7 +185,23 @@ controller_interface::return_type DiffDriveController::update(
   tf2::Quaternion orientation;
   orientation.setRPY(0.0, 0.0, odometry_.getHeading());
 
-  if (previous_publish_timestamp_ + publish_period_ < time)
+  bool should_publish = false;
+  try
+  {
+    if (previous_publish_timestamp_ + publish_period_ < time)
+    {
+      previous_publish_timestamp_ += publish_period_;
+      should_publish = true;
+    }
+  }
+  catch (const std::runtime_error &)
+  {
+    // Handle exceptions when the time source changes and initialize publish timestamp
+    previous_publish_timestamp_ = time;
+    should_publish = true;
+  }
+
+  if (should_publish)
   {
     previous_publish_timestamp_ += publish_period_;
 
@@ -286,10 +302,9 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   odometry_.setWheelParams(wheel_separation, left_wheel_radius, right_wheel_radius);
   odometry_.setVelocityRollingWindowSize(params_.velocity_rolling_window_size);
 
-  cmd_vel_timeout_ = std::chrono::milliseconds{
-    static_cast<int>(get_node()->get_parameter("cmd_vel_timeout").as_double() * 1000.0)};
-  publish_limited_velocity_ = get_node()->get_parameter("publish_limited_velocity").as_bool();
-  use_stamped_vel_ = get_node()->get_parameter("use_stamped_vel").as_bool();
+  cmd_vel_timeout_ = std::chrono::milliseconds{static_cast<int>(params_.cmd_vel_timeout * 1000.0)};
+  publish_limited_velocity_ = params_.publish_limited_velocity;
+  use_stamped_vel_ = params_.use_stamped_vel;
 
   limiter_linear_ = SpeedLimiter(
     params_.linear.x.has_velocity_limits, params_.linear.x.has_acceleration_limits,
@@ -410,9 +425,8 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   odometry_message.child_frame_id = base_frame_id;
 
   // limit the publication on the topics /odom and /tf
-  publish_rate_ = get_node()->get_parameter("publish_rate").as_double();
+  publish_rate_ = params_.publish_rate;
   publish_period_ = rclcpp::Duration::from_seconds(1.0 / publish_rate_);
-  previous_publish_timestamp_ = get_node()->get_clock()->now();
 
   // initialize odom values zeros
   odometry_message.twist =
@@ -478,6 +492,13 @@ controller_interface::CallbackReturn DiffDriveController::on_deactivate(
   const rclcpp_lifecycle::State &)
 {
   subscriber_is_active_ = false;
+  if (!is_halted)
+  {
+    halt();
+    is_halted = true;
+  }
+  registered_left_wheel_handles_.clear();
+  registered_right_wheel_handles_.clear();
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
