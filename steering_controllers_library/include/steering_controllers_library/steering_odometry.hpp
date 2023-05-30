@@ -25,7 +25,7 @@
 #include "realtime_tools/realtime_publisher.h"
 
 #include <boost/function.hpp>
-#include "rcpputils/rolling_mean_accumulator.hpp"
+#include "rcppmath/rolling_mean_accumulator.hpp"
 
 namespace steering_odometry
 {
