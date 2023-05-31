@@ -155,14 +155,7 @@ allow_partial_joints_goal (boolean)
   Allow joint goals defining trajectory for only some joints.
 
 open_loop_control (boolean)
-<<<<<<< HEAD
   Use controller in open-loop control mode using ignoring the states provided by hardware interface and using last commands as states in the next control step. This is useful if hardware states are not following commands, i.e., an offset between those (typical for hydraulic manipulators).
-=======
-  Use controller in open-loop control mode:
-
-  * The controller ignores the states provided by hardware interface but using last commands as states for starting the trajectory interpolation.
-  * It deactivates the feedback control, see the ``gains`` structure.
->>>>>>> 6851df1 ([JTC] Import docs from wiki.ros.org (#566))
 
   If this flag is set, the controller tries to read the values from the command interfaces on starting. If they have real numeric values, those will be used instead of state interfaces. Therefore it is important set command interfaces to NaN (std::numeric_limits<double>::quiet_NaN()) or state values when the hardware is started.
 
@@ -225,10 +218,6 @@ gains.<joint_name>.ff_velocity_scale (double)
 
   Default: 0.0
 
-<<<<<<< HEAD
-ROS2 interface of the controller
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-=======
 gains.<joint_name>.normalize_error (bool)
   If true, the position error :math:`e = normalize(s_d - s)` is normalized between :math:`-\pi, \pi`.
   Otherwise  :math:`e = s_d - s` is used, with the desired position :math:`s_d` and the measured
@@ -237,17 +226,11 @@ gains.<joint_name>.normalize_error (bool)
 
   Default: false
 
->>>>>>> 6851df1 ([JTC] Import docs from wiki.ros.org (#566))
 
 .. _ROS 2 interface:
 
-<<<<<<< HEAD
-~/controller_state (output topic) [control_msgs::msg::JointTrajectoryControllerState]
-  Topic publishing internal states.
-=======
 Description of controller's interfaces
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
->>>>>>> 6851df1 ([JTC] Import docs from wiki.ros.org (#566))
 
 References
 ,,,,,,,,,,,,,,,,,,
