@@ -412,7 +412,7 @@ controller_interface::return_type SteeringControllersLibrary::update_reference_f
 controller_interface::return_type SteeringControllersLibrary::update_and_write_commands(
   const rclcpp::Time & time, const rclcpp::Duration & period)
 {
-  if (is_in_chained_mode())
+  if (!is_in_chained_mode())
   {
     auto current_ref = *(input_ref_.readFromRT());
     const auto age_of_last_command = time - (current_ref)->header.stamp;
