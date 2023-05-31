@@ -226,6 +226,7 @@ gains.<joint_name>.normalize_error (bool)
 
   Default: false
 
+.. _ROS 2 interface:
 
 Description of controller's interfaces
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -258,8 +259,6 @@ There are two mechanisms for sending trajectories to the controller:
 
 Both use the ``trajectory_msgs/JointTrajectory`` message to specify trajectories, and require specifying values for all the controller joints (as opposed to only a subset) if ``allow_partial_joints_goal`` is not set to ``True``.
 
-
-.. _ROS 2 interface:
 
 .. _Actions:
 
