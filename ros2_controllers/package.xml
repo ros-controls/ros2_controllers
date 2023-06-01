@@ -10,7 +10,9 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <exec_depend>ackermann_steering_controller</exec_depend>
   <exec_depend>admittance_controller</exec_depend>
+  <exec_depend>bicycle_steering_controller</exec_depend>
   <exec_depend>diff_drive_controller</exec_depend>
   <exec_depend>effort_controllers</exec_depend>
   <exec_depend>force_torque_sensor_broadcaster</exec_depend>
@@ -19,7 +21,9 @@
   <exec_depend>joint_state_broadcaster</exec_depend>
   <exec_depend>joint_trajectory_controller</exec_depend>
   <exec_depend>position_controllers</exec_depend>
+  <exec_depend>steering_controllers_library</exec_depend>
   <exec_depend>tricycle_controller</exec_depend>
+  <exec_depend>tricycle_steering_controller</exec_depend>
   <exec_depend>velocity_controllers</exec_depend>
 
   <export>
