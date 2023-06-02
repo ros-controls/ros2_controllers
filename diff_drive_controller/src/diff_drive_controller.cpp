@@ -203,8 +203,6 @@ controller_interface::return_type DiffDriveController::update(
 
   if (should_publish)
   {
-    previous_publish_timestamp_ += publish_period_;
-
     if (realtime_odometry_publisher_->trylock())
     {
       auto & odometry_message = realtime_odometry_publisher_->msg_;
