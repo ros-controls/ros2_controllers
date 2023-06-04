@@ -2,6 +2,15 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.21.0 (2023-05-28)
+-------------------
+* Deprecations in generate_parameter_library. (`#616 <https://github.com/ros-controls/ros2_controllers/issues/616>`_)
+* Remove compile warnings. (`#519 <https://github.com/ros-controls/ros2_controllers/issues/519>`_) (`#620 <https://github.com/ros-controls/ros2_controllers/issues/620>`_)
+* ported the joint_trajectory_controller query_state service to ROS2 (backport `#481 <https://github.com/ros-controls/ros2_controllers/issues/481>`_) (`#614 <https://github.com/ros-controls/ros2_controllers/issues/614>`_)
+* Fix github links on control.ros.org (`#604 <https://github.com/ros-controls/ros2_controllers/issues/604>`_) (`#617 <https://github.com/ros-controls/ros2_controllers/issues/617>`_)
+* Fix overriding of install (`#510 <https://github.com/ros-controls/ros2_controllers/issues/510>`_) (`#605 <https://github.com/ros-controls/ros2_controllers/issues/605>`_)
+* Contributors: Dr. Denis, Felix Exner (fexner), Christoph Fröhlich
+
 2.20.0 (2023-05-14)
 -------------------
 

@@ -7,7 +7,7 @@ package_name = "rqt_joint_trajectory_controller"
 
 setup(
     name=package_name,
-    version="2.20.0",
+    version="2.21.0",
     packages=[package_name],
     data_files=[
         ("share/ament_index/resource_index/packages", ["resource/" + package_name]),

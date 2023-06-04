@@ -2,6 +2,12 @@
 Changelog for package gripper_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.21.0 (2023-05-28)
+-------------------
+* Fix compilation warnings (`#621 <https://github.com/ros-controls/ros2_controllers/issues/621>`_) (`#623 <https://github.com/ros-controls/ros2_controllers/issues/623>`_)
+* Fix overriding of install (`#510 <https://github.com/ros-controls/ros2_controllers/issues/510>`_) (`#605 <https://github.com/ros-controls/ros2_controllers/issues/605>`_)
+* Contributors: Felix Exner (fexner), Christoph Fröhlich, Mathias Lüdtke, Noel Jiménez García
+
 2.20.0 (2023-05-14)
 -------------------
 

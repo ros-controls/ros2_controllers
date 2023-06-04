@@ -2,6 +2,14 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.21.0 (2023-05-28)
+-------------------
+* Fix compilation warnings (`#621 <https://github.com/ros-controls/ros2_controllers/issues/621>`_) (`#623 <https://github.com/ros-controls/ros2_controllers/issues/623>`_)
+* Remove compile warnings. (`#519 <https://github.com/ros-controls/ros2_controllers/issues/519>`_) (`#620 <https://github.com/ros-controls/ros2_controllers/issues/620>`_)
+* Fix github links on control.ros.org (`#604 <https://github.com/ros-controls/ros2_controllers/issues/604>`_) (`#617 <https://github.com/ros-controls/ros2_controllers/issues/617>`_)
+* Fix overriding of install (`#510 <https://github.com/ros-controls/ros2_controllers/issues/510>`_) (`#605 <https://github.com/ros-controls/ros2_controllers/issues/605>`_)
+* Contributors: Felix Exner (fexner), Christoph Fröhlich, Mathias Lüdtke, Noel Jiménez García
+
 2.20.0 (2023-05-14)
 -------------------
 * Clear registered handles of DiffDriveController on deactivate (`#596 <https://github.com/ros-controls/ros2_controllers/issues/596>`_) (`#606 <https://github.com/ros-controls/ros2_controllers/issues/606>`_)
