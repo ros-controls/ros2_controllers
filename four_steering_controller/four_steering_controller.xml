@@ -1,0 +1,7 @@
+<library path="four_steering_controller">
+  <class name="four_steering_controller/FourSteeringController" type="four_steering_controller::FourSteeringController" base_class_type="controller_interface::ControllerInterface">
+  <description>
+    The four steering drive controller transforms linear and angular velocity messages into signals for each wheel(s) and steer(s).
+  </description>
+  </class>
+</library>
