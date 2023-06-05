@@ -2,6 +2,12 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.10.0 (2023-06-04)
+-------------------
+* Remove unnecessary include (`#645 <https://github.com/ros-controls/ros2_controllers/issues/645>`_)
+* enable ReflowComments to also use ColumnLimit on comments (`#625 <https://github.com/ros-controls/ros2_controllers/issues/625>`_)
+* Contributors: Bence Magyar, Sai Kishor Kothakota
+
 3.9.0 (2023-05-28)
 ------------------
 * Fix sphinx for steering odometry library/controllers (`#626 <https://github.com/ros-controls/ros2_controllers/issues/626>`_)

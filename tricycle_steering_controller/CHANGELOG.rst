@@ -2,6 +2,9 @@
 Changelog for package tricycle_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.10.0 (2023-06-04)
+-------------------
+
 3.9.0 (2023-05-28)
 ------------------
 * Fix sphinx for steering odometry library/controllers (`#626 <https://github.com/ros-controls/ros2_controllers/issues/626>`_)
