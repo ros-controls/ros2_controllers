@@ -1,4 +1,4 @@
-:github_url: https://github.com/ros-controls/ros2_controllers/blob/|github_branch|/joint_trajectory_controller/doc/userdoc.rst
+:github_url: https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/joint_trajectory_controller/doc/userdoc.rst
 
 .. _joint_trajectory_controller_userdoc:
 
@@ -226,7 +226,6 @@ gains.<joint_name>.normalize_error (bool)
 
   Default: false
 
-
 .. _ROS 2 interface:
 
 Description of controller's interfaces
@@ -259,6 +258,7 @@ There are two mechanisms for sending trajectories to the controller:
 * via topic, see :ref:`subscriber <Subscriber>`
 
 Both use the ``trajectory_msgs/JointTrajectory`` message to specify trajectories, and require specifying values for all the controller joints (as opposed to only a subset) if ``allow_partial_joints_goal`` is not set to ``True``.
+
 
 .. _Actions:
 

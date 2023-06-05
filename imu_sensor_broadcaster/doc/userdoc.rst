@@ -1,4 +1,4 @@
-:github_url: https://github.com/ros-controls/ros2_controllers/blob/|github_branch|/imu_sensor_broadcaster/doc/userdoc.rst
+:github_url: https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/imu_sensor_broadcaster/doc/userdoc.rst
 
 .. _imu_sensor_broadcaster_userdoc:
 

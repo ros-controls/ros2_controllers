@@ -1,4 +1,4 @@
-:github_url: https://github.com/ros-controls/ros2_controllers/blob/|github_branch|/effort_controllers/doc/userdoc.rst
+:github_url: https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/effort_controllers/doc/userdoc.rst
 
 .. _effort_controllers_userdoc:
 

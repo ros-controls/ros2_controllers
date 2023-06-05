@@ -1,4 +1,4 @@
-:github_url: https://github.com/ros-controls/ros2_controllers/blob/|github_branch|/velocity_controllers/doc/userdoc.rst
+:github_url: https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/velocity_controllers/doc/userdoc.rst
 
 .. _velocity_controllers_userdoc:
 
