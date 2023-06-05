@@ -132,6 +132,18 @@ TEST_F(ForceTorqueSensorBroadcasterTest, SensorName_IsEmpty_InterfaceNames_NotSe
   ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
 }
 
+TEST_F(ForceTorqueSensorBroadcasterTest, InterfaceNames_IsEmpty_SensorName_NotSet)
+{
+  SetUpFTSBroadcaster();
+
+  // set the 'interface_names' empty
+  fts_broadcaster_->get_node()->set_parameter({"interface_names.force.x", ""});
+  fts_broadcaster_->get_node()->set_parameter({"interface_names.torque.z", ""});
+
+  // configure failed, 'interface_name' parameter empty
+  ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
+}
+
 TEST_F(ForceTorqueSensorBroadcasterTest, SensorName_Configure_Success)
 {
   SetUpFTSBroadcaster();
