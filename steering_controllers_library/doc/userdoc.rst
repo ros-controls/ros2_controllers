@@ -86,7 +86,8 @@ Publishers
 
 Parameters
 ,,,,,,,,,,,
-
-For list of parameters and their meaning YAML file in the ``src`` folder of the controller's package.
+This controller uses the `generate_parameter_library <https://github.com/PickNikRobotics/generate_parameter_library>`_ to handle its parameters.
 
 For an exemplary parameterization see the ``test`` folder of the controller's package.
+
+.. generate_parameter_library_details:: ../src/steering_controllers_library.yaml
