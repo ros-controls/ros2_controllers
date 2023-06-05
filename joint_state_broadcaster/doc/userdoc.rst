@@ -22,25 +22,9 @@ If none of the requested interface are not defined, the controller returns error
 
 Parameters
 ----------
+This controller uses the `generate_parameter_library <https://github.com/PickNikRobotics/generate_parameter_library>`_ to handle its parameters.
 
-use_local_topics
-  Optional parameter (boolean; default: ``False``) defining if ``joint_states`` and ``dynamic_joint_states`` messages should be published into local namespace, e.g., ``/my_state_broadcaster/joint_states``.
-
-
-joints
-  Optional parameter (string array) to support broadcasting of only specific joints and interfaces.
-  It has to be used in combination with the ``interfaces`` parameter.
-  Joint state broadcaster asks for access to all defined interfaces on all defined joints.
-
-
-interfaces
-  Optional parameter (string array) to support broadcasting of only specific joints and interfaces.
-  It has to be used in combination with the ``joints`` parameter.
-
-
-extra_joints
-  Optional parameter (string array) with names of extra joints to be added to ``joint_states`` and ``dynamic_joint_states`` with state set to 0.
-
+For an exemplary parameterization see the ``test`` folder of the controller's package.
 
 map_interface_to_joint_state
   Optional parameter (map) providing mapping between custom interface names to standard fields in ``joint_states`` message.
@@ -89,3 +73,7 @@ map_interface_to_joint_state
 
       map_interface_to_joint_state:
         effort: current_sensor
+
+Full list of parameters:
+
+.. generate_parameter_library_details:: ../src/joint_state_broadcaster_parameters.yaml

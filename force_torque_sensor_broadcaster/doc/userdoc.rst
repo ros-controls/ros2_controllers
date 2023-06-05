@@ -12,15 +12,10 @@ The controller is a wrapper around ``ForceTorqueSensor`` semantic component (see
 
 Parameters
 ^^^^^^^^^^^
-The interfaces can be defined in two ways, using ``sensor_name`` or ``interface_names`` parameter.
-Those two parameters can not be defined at the same time
+This controller uses the `generate_parameter_library <https://github.com/PickNikRobotics/generate_parameter_library>`_ to handle its parameters.
 
-frame_id (mandatory)
-  Frame in which the output message will be published.
-
-sensor_name (optional)
-  Defines sensor name used as prefix for its interfaces.
-  If used standard interface names for a 6D FTS will be used: <sensor_name>/force.x, ..., <sensor_name>/torque.z.
+The interfaces can be defined in two ways, using ``sensor_name`` or ``interface_names`` parameter:
+Those two parameters cannot be defined at the same time.
 
 interface_names.[force|torque].[x|y|z] (optional)
   Defines custom, per axis interface names.
@@ -34,3 +29,7 @@ interface_names.[force|torque].[x|y|z] (optional)
      interface_names:
        force:
          x: example_name/example_interface
+
+Full list of parameters:
+
+.. generate_parameter_library_details:: ../src/force_torque_sensor_broadcaster_parameters.yaml
