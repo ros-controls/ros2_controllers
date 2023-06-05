@@ -3,11 +3,17 @@ imu_sensor_broadcaster:
     type: string,
     default_value: "",
     description: "Name of the sensor used as prefix for interfaces if there are no individual interface names defined.",
+    validation: {
+      not_empty<>: null
+    }
   }
   frame_id: {
     type: string,
     default_value: "",
     description: "Sensor's frame_id in which values are published.",
+    validation: {
+      not_empty<>: null
+    }
   }
   static_covariance_orientation: {
     type: double_array,
