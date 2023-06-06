@@ -55,7 +55,6 @@ target_compile_definitions(steering_controllers_library PRIVATE "STEERING_CONTRO
 if(BUILD_TESTING)
   find_package(ament_cmake_gmock REQUIRED)
   find_package(controller_manager REQUIRED)
-  find_package(hardware_interface REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
 
   add_rostest_with_parameters_gmock(
