@@ -48,11 +48,12 @@ Available Controllers
    :titlesonly:
 
    Differential Drive <../diff_drive_controller/doc/userdoc.rst>
+   Effort Controllers <../effort_controllers/doc/userdoc.rst>
    Forward Command <../forward_command_controller/doc/userdoc.rst>
    Joint Trajectory <../joint_trajectory_controller/doc/userdoc.rst>
    Position Controllers <../position_controllers/doc/userdoc.rst>
+   Tricycle Controller <../tricycle_controller/doc/userdoc.rst>
    Velocity Controllers <../velocity_controllers/doc/userdoc.rst>
-   Effort Controllers <../effort_controllers/doc/userdoc.rst>
 
 
 Available Broadcasters
@@ -61,5 +62,7 @@ Available Broadcasters
 .. toctree::
    :titlesonly:
 
-   Joint State Broadcaster <../joint_state_broadcaster/doc/userdoc.rst>
+   Force Torque Sensor Broadcaster <../force_torque_sensor_broadcaster/doc/userdoc.rst>
    Imu Sensor Broadcaster <../imu_sensor_broadcaster/doc/userdoc.rst>
+   Joint State Controller (deprecated) <../joint_state_controller/doc/userdoc.rst>
+   Joint State Broadcaster <../joint_state_broadcaster/doc/userdoc.rst>
