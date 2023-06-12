@@ -11,10 +11,6 @@ The controller is a wrapper around ``IMUSensor`` semantic component (see ``contr
 
 Parameters
 ^^^^^^^^^^^
-frame_id (mandatory)
-  Frame in which the output message will be published.
+This controller uses the `generate_parameter_library <https://github.com/PickNikRobotics/generate_parameter_library>`_ to handle its parameters.
 
-sensor_name (mandatory)
-  Defines sensor name used as prefix for its interfaces.
-  Interface names are: <sensor_name>/orientation.x, ..., <sensor_name>/angular_velocity.x, ...,
-  <sensor_name>/linear_acceleration.x.
+.. generate_parameter_library_details:: ../src/imu_sensor_broadcaster_parameters.yaml
