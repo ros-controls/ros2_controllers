@@ -2,7 +2,9 @@ imu_sensor_broadcaster:
   sensor_name: {
     type: string,
     default_value: "",
-    description: "Name of the sensor used as prefix for interfaces if there are no individual interface names defined.",
+    description: "Defines sensor name used as prefix for its interfaces.
+    Interface names are: ``<sensor_name>/orientation.x, ..., <sensor_name>/angular_velocity.x, ...,
+    <sensor_name>/linear_acceleration.x.``",
     validation: {
       not_empty<>: null
     }
