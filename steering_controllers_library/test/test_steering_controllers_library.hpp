@@ -138,7 +138,7 @@ public:
     return controller_interface::CallbackReturn::SUCCESS;
   }
 
-  bool update_odometry(const rclcpp::Duration & period) { return true; }
+  bool update_odometry(const rclcpp::Duration & /*period*/) { return true; }
 
 private:
   rclcpp::WaitSet ref_subscriber_wait_set_;

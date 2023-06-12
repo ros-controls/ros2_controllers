@@ -2,6 +2,11 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.10.1 (2023-06-06)
+-------------------
+* Second round of dependencies fix (`#655 <https://github.com/ros-controls/ros2_controllers/issues/655>`_)
+* Contributors: Bence Magyar
+
 3.10.0 (2023-06-04)
 -------------------
 * Remove unnecessary include (`#645 <https://github.com/ros-controls/ros2_controllers/issues/645>`_)
