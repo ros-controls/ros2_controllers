@@ -54,8 +54,6 @@ Available Controllers
    Tricycle Controller <../tricycle_controller/doc/userdoc.rst>
    Tricycle Steering Controller <../tricycle_steering_controller/doc/userdoc.rst>
    Velocity Controllers <../velocity_controllers/doc/userdoc.rst>
-   Effort Controllers <../effort_controllers/doc/userdoc.rst>
-   Steering Controllers Library <../steering_controllers_library/doc/userdoc.rst>
 
 
 Available Broadcasters
