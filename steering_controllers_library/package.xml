@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>steering_controllers_library</name>
-  <version>3.10.0</version>
+  <version>3.10.1</version>
   <description>Package for steering robot configurations including odometry and interfaces.</description>
   <license>Apache License 2.0</license>
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
@@ -18,6 +18,7 @@
 
   <build_depend>generate_parameter_library</build_depend>
 
+  <depend>backward_ros</depend>
   <depend>control_msgs</depend>
   <depend>controller_interface</depend>
   <depend>geometry_msgs</depend>
@@ -36,7 +37,6 @@
 
   <test_depend>ament_cmake_gmock</test_depend>
   <test_depend>controller_manager</test_depend>
-  <test_depend>hardware_interface</test_depend>
   <test_depend>ros2_control_test_assets</test_depend>
 
   <export>
