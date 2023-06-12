@@ -14,9 +14,6 @@ This is a base class implementing a feedforward controller. Specific implementat
 Hardware interface type
 -----------------------
 
-<<<<<<< HEAD
-These controllers work with joints using the "effort" command interface.
-=======
 This controller can be used for every type of command interface.
 
 Parameters
@@ -33,4 +30,3 @@ multi_interface_forward_command_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. generate_parameter_library_details:: ../src/multi_interface_forward_command_controller_parameters.yaml
->>>>>>> c74a329 (Let sphinx add parameter description to documentation (#651))
