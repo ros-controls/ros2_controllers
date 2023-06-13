@@ -167,8 +167,13 @@ controller_interface::return_type DiffDriveController::update(
       left_feedback_mean += left_feedback;
       right_feedback_mean += right_feedback;
     }
+<<<<<<< HEAD
     left_feedback_mean /= static_cast<double>(wheels_per_side_);
     right_feedback_mean /= static_cast<double>(wheels_per_side_);
+=======
+    left_feedback_mean /= static_cast<double>(params_.wheels_per_side);
+    right_feedback_mean /= static_cast<double>(params_.wheels_per_side);
+>>>>>>> 23f0def (Added -Wconversion flag and fix warnings (#667))
 
     if (params_.position_feedback)
     {

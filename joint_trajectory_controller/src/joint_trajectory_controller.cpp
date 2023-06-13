@@ -118,9 +118,17 @@ controller_interface::return_type JointTrajectoryController::update(
   {
     return controller_interface::return_type::OK;
   }
+<<<<<<< HEAD
   auto logger = this->get_node()->get_logger();
   // update dynamic parameters
   if (param_listener_->is_old(params_))
+=======
+
+  auto compute_error_for_joint = [&](
+                                   JointTrajectoryPoint & error, size_t index,
+                                   const JointTrajectoryPoint & current,
+                                   const JointTrajectoryPoint & desired)
+>>>>>>> 23f0def (Added -Wconversion flag and fix warnings (#667))
   {
     params_ = param_listener_->get_params();
     default_tolerances_ = get_segment_tolerances(logger, params_);

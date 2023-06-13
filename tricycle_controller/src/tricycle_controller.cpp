@@ -52,9 +52,47 @@ CallbackReturn TricycleController::on_init()
 {
   try
   {
+<<<<<<< HEAD
     // Create the parameter listener and get the parameters
     param_listener_ = std::make_shared<ParamListener>(get_node());
     params_ = param_listener_->get_params();
+=======
+    // with the lifecycle node being initialized, we can declare parameters
+    auto_declare<std::string>("traction_joint_name", std::string());
+    auto_declare<std::string>("steering_joint_name", std::string());
+
+    auto_declare<double>("wheelbase", wheel_params_.wheelbase);
+    auto_declare<double>("wheel_radius", wheel_params_.radius);
+
+    auto_declare<std::string>("odom_frame_id", odom_params_.odom_frame_id);
+    auto_declare<std::string>("base_frame_id", odom_params_.base_frame_id);
+    auto_declare<std::vector<double>>("pose_covariance_diagonal", std::vector<double>());
+    auto_declare<std::vector<double>>("twist_covariance_diagonal", std::vector<double>());
+    auto_declare<bool>("open_loop", odom_params_.open_loop);
+    auto_declare<bool>("enable_odom_tf", odom_params_.enable_odom_tf);
+    auto_declare<bool>("odom_only_twist", odom_params_.odom_only_twist);
+
+    auto_declare<int>("cmd_vel_timeout", static_cast<int>(cmd_vel_timeout_.count()));
+    auto_declare<bool>("publish_ackermann_command", publish_ackermann_command_);
+    auto_declare<int>("velocity_rolling_window_size", 10);
+    auto_declare<bool>("use_stamped_vel", use_stamped_vel_);
+
+    auto_declare<double>("traction.max_velocity", NAN);
+    auto_declare<double>("traction.min_velocity", NAN);
+    auto_declare<double>("traction.max_acceleration", NAN);
+    auto_declare<double>("traction.min_acceleration", NAN);
+    auto_declare<double>("traction.max_deceleration", NAN);
+    auto_declare<double>("traction.min_deceleration", NAN);
+    auto_declare<double>("traction.max_jerk", NAN);
+    auto_declare<double>("traction.min_jerk", NAN);
+
+    auto_declare<double>("steering.max_position", NAN);
+    auto_declare<double>("steering.min_position", NAN);
+    auto_declare<double>("steering.max_velocity", NAN);
+    auto_declare<double>("steering.min_velocity", NAN);
+    auto_declare<double>("steering.max_acceleration", NAN);
+    auto_declare<double>("steering.min_acceleration", NAN);
+>>>>>>> 23f0def (Added -Wconversion flag and fix warnings (#667))
   }
   catch (const std::exception & e)
   {
