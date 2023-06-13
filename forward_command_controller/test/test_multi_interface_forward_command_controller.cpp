@@ -203,7 +203,7 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, CommandSuccessTest)
 
   // update successful, command received
   ASSERT_EQ(
-    controller_->update(rclcpp::Time(0.1), rclcpp::Duration::from_seconds(0.01)),
+    controller_->update(rclcpp::Time(100000000), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
   // check command in handle was set
@@ -298,7 +298,7 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, ActivateDeactivateCommandsRes
 
   // update successful, command received
   ASSERT_EQ(
-    controller_->update(rclcpp::Time(0.1), rclcpp::Duration::from_seconds(0.01)),
+    controller_->update(rclcpp::Time(100000000), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
   // check command in handle was set

@@ -293,7 +293,7 @@ SegmentTolerances get_segment_tolerances(
  * REALTIME if true \return True if \p state_error fulfills \p state_tolerance.
  */
 inline bool check_state_tolerance_per_joint(
-  const trajectory_msgs::msg::JointTrajectoryPoint & state_error, int joint_idx,
+  const trajectory_msgs::msg::JointTrajectoryPoint & state_error, size_t joint_idx,
   const StateTolerances & state_tolerance, bool show_errors = false)
 {
   using std::abs;

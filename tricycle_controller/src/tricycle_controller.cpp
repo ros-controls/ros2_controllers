@@ -67,7 +67,7 @@ CallbackReturn TricycleController::on_init()
     auto_declare<bool>("enable_odom_tf", odom_params_.enable_odom_tf);
     auto_declare<bool>("odom_only_twist", odom_params_.odom_only_twist);
 
-    auto_declare<int>("cmd_vel_timeout", cmd_vel_timeout_.count());
+    auto_declare<int>("cmd_vel_timeout", static_cast<int>(cmd_vel_timeout_.count()));
     auto_declare<bool>("publish_ackermann_command", publish_ackermann_command_);
     auto_declare<int>("velocity_rolling_window_size", 10);
     auto_declare<bool>("use_stamped_vel", use_stamped_vel_);
@@ -234,8 +234,8 @@ controller_interface::return_type TricycleController::update(
   AckermannDrive ackermann_command;
   // speed in AckermannDrive is defined as desired forward speed (m/s) but it is used here as wheel
   // speed (rad/s)
-  ackermann_command.speed = Ws_write;
-  ackermann_command.steering_angle = alpha_write;
+  ackermann_command.speed = static_cast<float>(Ws_write);
+  ackermann_command.steering_angle = static_cast<float>(alpha_write);
   previous_commands_.emplace(ackermann_command);
 
   //  Publish ackermann command
@@ -244,8 +244,8 @@ controller_interface::return_type TricycleController::update(
     auto & realtime_ackermann_command = realtime_ackermann_command_publisher_->msg_;
     // speed in AckermannDrive is defined desired forward speed (m/s) but we use it here as wheel
     // speed (rad/s)
-    realtime_ackermann_command.speed = Ws_write;
-    realtime_ackermann_command.steering_angle = alpha_write;
+    realtime_ackermann_command.speed = static_cast<float>(Ws_write);
+    realtime_ackermann_command.steering_angle = static_cast<float>(alpha_write);
     realtime_ackermann_command_publisher_->unlockAndPublish();
   }
 

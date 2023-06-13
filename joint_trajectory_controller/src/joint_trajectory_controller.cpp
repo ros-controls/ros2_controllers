@@ -136,7 +136,7 @@ controller_interface::return_type JointTrajectoryController::update(
   }
 
   auto compute_error_for_joint = [&](
-                                   JointTrajectoryPoint & error, int index,
+                                   JointTrajectoryPoint & error, size_t index,
                                    const JointTrajectoryPoint & current,
                                    const JointTrajectoryPoint & desired)
   {
