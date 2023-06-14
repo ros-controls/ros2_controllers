@@ -7,7 +7,7 @@ if(APPLE OR WIN32)
 endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
-  add_compile_options(-Wall -Wextra)
+  add_compile_options(-Wall -Wextra -Wconversion)
 endif()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
