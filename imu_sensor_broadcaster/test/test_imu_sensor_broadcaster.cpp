@@ -40,9 +40,9 @@ constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
 
 }  // namespace
 
-void IMUSensorBroadcasterTest::SetUpTestCase() { rclcpp::init(0, nullptr); }
+void IMUSensorBroadcasterTest::SetUpTestCase() {}
 
-void IMUSensorBroadcasterTest::TearDownTestCase() { rclcpp::shutdown(); }
+void IMUSensorBroadcasterTest::TearDownTestCase() {}
 
 void IMUSensorBroadcasterTest::SetUp()
 {
@@ -100,36 +100,6 @@ void IMUSensorBroadcasterTest::subscribe_and_get_message(sensor_msgs::msg::Imu &
   // take message from subscription
   rclcpp::MessageInfo msg_info;
   ASSERT_TRUE(subscription->take(imu_msg, msg_info));
-}
-
-TEST_F(IMUSensorBroadcasterTest, SensorName_FrameId_NotSet)
-{
-  SetUpIMUBroadcaster();
-
-  // configure failed
-  ASSERT_EQ(imu_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
-}
-
-TEST_F(IMUSensorBroadcasterTest, SensorName_NotSet)
-{
-  SetUpIMUBroadcaster();
-
-  // set the 'frame_id'
-  imu_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
-
-  // configure failed, 'sensor_name' parameter not set
-  ASSERT_EQ(imu_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
-}
-
-TEST_F(IMUSensorBroadcasterTest, FrameId_NotSet)
-{
-  SetUpIMUBroadcaster();
-
-  // set the 'sensor_name'
-  imu_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
-
-  // configure failed, 'frame_id' parameter not set
-  ASSERT_EQ(imu_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
 }
 
 TEST_F(IMUSensorBroadcasterTest, SensorName_Configure_Success)
@@ -207,4 +177,13 @@ TEST_F(IMUSensorBroadcasterTest, SensorName_Publish_Success)
     EXPECT_EQ(imu_msg.angular_velocity_covariance[i], 0.0);
     EXPECT_EQ(imu_msg.linear_acceleration_covariance[i], 0.0);
   }
+}
+
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleMock(&argc, argv);
+  rclcpp::init(argc, argv);
+  int result = RUN_ALL_TESTS();
+  rclcpp::shutdown();
+  return result;
 }

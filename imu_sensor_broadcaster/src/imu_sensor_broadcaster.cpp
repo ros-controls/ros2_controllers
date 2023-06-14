@@ -44,17 +44,6 @@ controller_interface::CallbackReturn IMUSensorBroadcaster::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   params_ = param_listener_->get_params();
-  if (params_.sensor_name.empty())
-  {
-    RCLCPP_ERROR(get_node()->get_logger(), "'sensor_name' parameter has to be specified.");
-    return CallbackReturn::ERROR;
-  }
-
-  if (params_.frame_id.empty())
-  {
-    RCLCPP_ERROR(get_node()->get_logger(), "'frame_id' parameter has to be provided.");
-    return CallbackReturn::ERROR;
-  }
 
   imu_sensor_ = std::make_unique<semantic_components::IMUSensor>(
     semantic_components::IMUSensor(params_.sensor_name));
