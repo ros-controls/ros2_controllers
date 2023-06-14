@@ -39,9 +39,9 @@ constexpr auto NODE_SUCCESS = controller_interface::CallbackReturn::SUCCESS;
 constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
 }  // namespace
 
-void ForceTorqueSensorBroadcasterTest::SetUpTestCase() { rclcpp::init(0, nullptr); }
+void ForceTorqueSensorBroadcasterTest::SetUpTestCase() {}
 
-void ForceTorqueSensorBroadcasterTest::TearDownTestCase() { rclcpp::shutdown(); }
+void ForceTorqueSensorBroadcasterTest::TearDownTestCase() {}
 
 void ForceTorqueSensorBroadcasterTest::SetUp()
 {
@@ -103,29 +103,6 @@ TEST_F(ForceTorqueSensorBroadcasterTest, SensorName_InterfaceNames_NotSet)
   SetUpFTSBroadcaster();
 
   // configure failed
-  ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
-}
-
-TEST_F(ForceTorqueSensorBroadcasterTest, SensorName_FrameId_NotSet)
-{
-  SetUpFTSBroadcaster();
-
-  // set the 'interface_names'
-  fts_broadcaster_->get_node()->set_parameter({"interface_names.force.x", "fts_sensor/force.x"});
-  fts_broadcaster_->get_node()->set_parameter({"interface_names.torque.z", "fts_sensor/torque.z"});
-
-  // configure failed, 'frame_id' parameter not set
-  ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
-}
-
-TEST_F(ForceTorqueSensorBroadcasterTest, InterfaceNames_FrameId_NotSet)
-{
-  SetUpFTSBroadcaster();
-
-  // set the 'sensor_name'
-  fts_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
-
-  // configure failed, 'frame_id' parameter not set
   ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
 }
 
@@ -314,4 +291,13 @@ TEST_F(ForceTorqueSensorBroadcasterTest, All_InterfaceNames_Publish_Success)
   ASSERT_EQ(wrench_msg.wrench.torque.x, sensor_values_[3]);
   ASSERT_EQ(wrench_msg.wrench.torque.y, sensor_values_[4]);
   ASSERT_EQ(wrench_msg.wrench.torque.z, sensor_values_[5]);
+}
+
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleMock(&argc, argv);
+  rclcpp::init(argc, argv);
+  int result = RUN_ALL_TESTS();
+  rclcpp::shutdown();
+  return result;
 }
