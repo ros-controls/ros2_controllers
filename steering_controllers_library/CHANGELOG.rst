@@ -2,8 +2,8 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.22.0 (2023-06-14)
+-------------------
 * Bump versions for release
 * Let sphinx add parameter description to documentation (backport `#651 <https://github.com/ros-controls/ros2_controllers/issues/651>`_) (`#663 <https://github.com/ros-controls/ros2_controllers/issues/663>`_)
 * Second round of dependencies fix (`#655 <https://github.com/ros-controls/ros2_controllers/issues/655>`_) (`#656 <https://github.com/ros-controls/ros2_controllers/issues/656>`_)
