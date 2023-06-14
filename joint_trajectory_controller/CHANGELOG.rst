@@ -2,6 +2,13 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Docs: Use branch name substitution for all links (backport `#618 <https://github.com/ros-controls/ros2_controllers/issues/618>`_) (`#633 <https://github.com/ros-controls/ros2_controllers/issues/633>`_)
+* [JTC] Import docs from wiki.ros.org (backport `#566 <https://github.com/ros-controls/ros2_controllers/issues/566>`_) (`#634 <https://github.com/ros-controls/ros2_controllers/issues/634>`_)
+* [Formatting] enable ReflowComments to also use ColumnLimit on comments   (`#628 <https://github.com/ros-controls/ros2_controllers/issues/628>`_)
+* Contributors: Sai Kishor Kothakota, Christoph Fröhlich
+
 2.21.0 (2023-05-28)
 -------------------
 * Deprecations in generate_parameter_library. (`#616 <https://github.com/ros-controls/ros2_controllers/issues/616>`_)

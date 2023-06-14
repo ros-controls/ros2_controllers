@@ -2,6 +2,11 @@
 Changelog for package ros2_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Steering odometry library and controllers (backport `#484 <https://github.com/ros-controls/ros2_controllers/issues/484>`_) (`#624 <https://github.com/ros-controls/ros2_controllers/issues/624>`_)
+* Contributors: Tomislav Petković, Reza Kermani, Denis Štogl
+
 2.21.0 (2023-05-28)
 -------------------
 * Fix overriding of install (`#510 <https://github.com/ros-controls/ros2_controllers/issues/510>`_) (`#605 <https://github.com/ros-controls/ros2_controllers/issues/605>`_)

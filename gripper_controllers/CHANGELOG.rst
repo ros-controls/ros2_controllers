@@ -2,6 +2,12 @@
 Changelog for package gripper_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Let sphinx add parameter description to documentation (backport `#651 <https://github.com/ros-controls/ros2_controllers/issues/651>`_) (`#663 <https://github.com/ros-controls/ros2_controllers/issues/663>`_)
+* [JTC] Fix missing parameter deprecation warnings (`#630 <https://github.com/ros-controls/ros2_controllers/issues/630>`_)
+* Contributors: Noel Jiménez García, Christoph Fröhlich
+
 2.21.0 (2023-05-28)
 -------------------
 * Fix compilation warnings (`#621 <https://github.com/ros-controls/ros2_controllers/issues/621>`_) (`#623 <https://github.com/ros-controls/ros2_controllers/issues/623>`_)
