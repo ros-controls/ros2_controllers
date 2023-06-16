@@ -1299,7 +1299,7 @@ bool JointTrajectoryController::validate_trajectory_msg(
     {
       RCLCPP_ERROR(
         get_node()->get_logger(),
-        "Received trajectory with non zero time start time (%f) that ends on the past (%f)",
+        "Received trajectory with non-zero start time (%f) that ends in the past (%f)",
         trajectory_start_time.seconds(), trajectory_end_time.seconds());
       return false;
     }
