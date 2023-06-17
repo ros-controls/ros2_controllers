@@ -3,6 +3,9 @@ force_torque_sensor_broadcaster:
     type: string,
     default_value: "",
     description: "Sensor's frame_id in which values are published.",
+    validation: {
+      not_empty<>: null
+    }
   }
   sensor_name: {
     type: string,
