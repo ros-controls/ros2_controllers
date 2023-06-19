@@ -133,7 +133,7 @@ controller_interface::return_type JointTrajectoryController::update(
     {
       error.positions[index] = desired.positions[index] - current.positions[index];
     }
-    if (has_velocity_state_interface_ && has_velocity_command_interface_)
+    if (has_velocity_state_interface_ && (has_velocity_command_interface_ || has_effort_command_interface_))
     {
       error.velocities[index] = desired.velocities[index] - current.velocities[index];
     }
