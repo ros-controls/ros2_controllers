@@ -2,6 +2,53 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.22.0 (2023-06-14)
+-------------------
+* Use generate_parameter_library for all params (`#601 <https://github.com/ros-controls/ros2_controllers/issues/601>`_) (`#627 <https://github.com/ros-controls/ros2_controllers/issues/627>`_)
+* Docs: Use branch name substitution for all links (backport `#618 <https://github.com/ros-controls/ros2_controllers/issues/618>`_) (`#633 <https://github.com/ros-controls/ros2_controllers/issues/633>`_)
+* [Formatting] enable ReflowComments to also use ColumnLimit on comments   (`#628 <https://github.com/ros-controls/ros2_controllers/issues/628>`_)
+* Contributors: Sai Kishor Kothakota, Christoph Fröhlich
+
+2.21.0 (2023-05-28)
+-------------------
+* Fix compilation warnings (`#621 <https://github.com/ros-controls/ros2_controllers/issues/621>`_) (`#623 <https://github.com/ros-controls/ros2_controllers/issues/623>`_)
+* Remove compile warnings. (`#519 <https://github.com/ros-controls/ros2_controllers/issues/519>`_) (`#620 <https://github.com/ros-controls/ros2_controllers/issues/620>`_)
+* Fix github links on control.ros.org (`#604 <https://github.com/ros-controls/ros2_controllers/issues/604>`_) (`#617 <https://github.com/ros-controls/ros2_controllers/issues/617>`_)
+* Fix overriding of install (`#510 <https://github.com/ros-controls/ros2_controllers/issues/510>`_) (`#605 <https://github.com/ros-controls/ros2_controllers/issues/605>`_)
+* Contributors: Felix Exner (fexner), Christoph Fröhlich, Mathias Lüdtke, Noel Jiménez García
+
+2.20.0 (2023-05-14)
+-------------------
+* Clear registered handles of DiffDriveController on deactivate (`#596 <https://github.com/ros-controls/ros2_controllers/issues/596>`_) (`#606 <https://github.com/ros-controls/ros2_controllers/issues/606>`_)
+* Contributors: Noel Jiménez García
+
+2.19.0 (2023-05-02)
+-------------------
+* Fix wrong publish timestamp initialization (`#585 <https://github.com/ros-controls/ros2_controllers/issues/585>`_) (`#593 <https://github.com/ros-controls/ros2_controllers/issues/593>`_)
+* Contributors: mergify[bot]
+
+2.18.0 (2023-04-29)
+-------------------
+* adjusted open_loop param description in diff_drive_controller_parameter.yaml (`#570 <https://github.com/ros-controls/ros2_controllers/issues/570>`_) (`#576 <https://github.com/ros-controls/ros2_controllers/issues/576>`_)
+* Contributors: muritane
+
+2.17.3 (2023-04-14)
+-------------------
+
+2.17.2 (2023-03-07)
+-------------------
+
+2.17.1 (2023-02-20)
+-------------------
+* [DiffDriveController] Fix prefixing of frame id with controller's namespace (`#522 <https://github.com/ros-controls/ros2_controllers/issues/522>`_)
+* Contributors: Tim Verbelen
+
+2.17.0 (2023-02-13)
+-------------------
+
+2.16.1 (2023-01-31)
+-------------------
+
 2.16.0 (2023-01-19)
 -------------------
 * diff_drive base_frame_id param (`#495 <https://github.com/ros-controls/ros2_controllers/issues/495>`_) (`#498 <https://github.com/ros-controls/ros2_controllers/issues/498>`_)

@@ -2,6 +2,41 @@
 Changelog for package velocity_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.22.0 (2023-06-14)
+-------------------
+* Docs: Use branch name substitution for all links (backport `#618 <https://github.com/ros-controls/ros2_controllers/issues/618>`_) (`#633 <https://github.com/ros-controls/ros2_controllers/issues/633>`_)
+* Contributors: Christoph Fröhlich
+
+2.21.0 (2023-05-28)
+-------------------
+* Fix github links on control.ros.org (`#604 <https://github.com/ros-controls/ros2_controllers/issues/604>`_) (`#617 <https://github.com/ros-controls/ros2_controllers/issues/617>`_)
+* Fix overriding of install (`#510 <https://github.com/ros-controls/ros2_controllers/issues/510>`_) (`#605 <https://github.com/ros-controls/ros2_controllers/issues/605>`_)
+* Contributors: Felix Exner (fexner), Christoph Fröhlich
+
+2.20.0 (2023-05-14)
+-------------------
+
+2.19.0 (2023-05-02)
+-------------------
+
+2.18.0 (2023-04-29)
+-------------------
+
+2.17.3 (2023-04-14)
+-------------------
+
+2.17.2 (2023-03-07)
+-------------------
+
+2.17.1 (2023-02-20)
+-------------------
+
+2.17.0 (2023-02-13)
+-------------------
+
+2.16.1 (2023-01-31)
+-------------------
+
 2.16.0 (2023-01-19)
 -------------------
 * Add backward_ros to all controllers (`#489 <https://github.com/ros-controls/ros2_controllers/issues/489>`_) (`#493 <https://github.com/ros-controls/ros2_controllers/issues/493>`_)

@@ -1,20 +1,14 @@
-cmake_minimum_required(VERSION 3.5)
-project(effort_controllers)
+cmake_minimum_required(VERSION 3.16)
+project(effort_controllers LANGUAGES CXX)
 
-# Default to C++17
-if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 17)
-  set(CMAKE_CXX_STANDARD_REQUIRED ON)
-endif()
-
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
-    forward_command_controller
-    pluginlib
-    rclcpp
+  forward_command_controller
+  pluginlib
+  rclcpp
 )
 
 find_package(ament_cmake REQUIRED)
@@ -23,64 +17,57 @@ foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
 
-add_library(${PROJECT_NAME}
-  SHARED
+add_library(effort_controllers SHARED
   src/joint_group_effort_controller.cpp
 )
-target_include_directories(${PROJECT_NAME} PRIVATE include)
-ament_target_dependencies(${PROJECT_NAME}
-  ${THIS_PACKAGE_INCLUDE_DEPENDS}
+target_compile_features(effort_controllers PUBLIC cxx_std_17)
+target_include_directories(effort_controllers PUBLIC
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include/effort_controllers>
 )
+ament_target_dependencies(effort_controllers PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
+
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
-target_compile_definitions(${PROJECT_NAME} PRIVATE "EFFORT_CONTROLLERS_BUILDING_DLL")
+target_compile_definitions(effort_controllers PRIVATE "EFFORT_CONTROLLERS_BUILDING_DLL")
 pluginlib_export_plugin_description_file(controller_interface effort_controllers_plugins.xml)
-
-install(
-  DIRECTORY include/
-  DESTINATION include
-)
-
-install(
-  TARGETS
-  ${PROJECT_NAME}
-  RUNTIME DESTINATION bin
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-)
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gmock REQUIRED)
   find_package(controller_manager REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
 
-  ament_add_gmock(
-    test_load_joint_group_effort_controller
+  ament_add_gmock(test_load_joint_group_effort_controller
     test/test_load_joint_group_effort_controller.cpp
   )
-  target_include_directories(test_load_joint_group_effort_controller PRIVATE include)
+  target_link_libraries(test_load_joint_group_effort_controller
+    effort_controllers
+  )
   ament_target_dependencies(test_load_joint_group_effort_controller
     controller_manager
     ros2_control_test_assets
   )
 
-  ament_add_gmock(
-    test_joint_group_effort_controller
+  ament_add_gmock(test_joint_group_effort_controller
     test/test_joint_group_effort_controller.cpp
   )
-  target_include_directories(test_joint_group_effort_controller PRIVATE include)
   target_link_libraries(test_joint_group_effort_controller
-    ${PROJECT_NAME}
+    effort_controllers
   )
 endif()
 
-ament_export_dependencies(
-  forward_command_controller
+install(
+  DIRECTORY include/
+  DESTINATION include/effort_controllers
 )
-ament_export_include_directories(
-  include
+install(
+  TARGETS effort_controllers
+  EXPORT export_effort_controllers
+  RUNTIME DESTINATION bin
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
 )
-ament_export_libraries(
-  ${PROJECT_NAME}
-)
+
+ament_export_targets(export_effort_controllers HAS_LIBRARY_TARGET)
+ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
 ament_package()

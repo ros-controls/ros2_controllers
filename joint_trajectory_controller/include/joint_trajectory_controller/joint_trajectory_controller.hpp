@@ -24,6 +24,7 @@
 
 #include "control_msgs/action/follow_joint_trajectory.hpp"
 #include "control_msgs/msg/joint_trajectory_controller_state.hpp"
+#include "control_msgs/srv/query_trajectory_state.hpp"
 #include "control_toolbox/pid.hpp"
 #include "controller_interface/controller_interface.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
@@ -125,6 +126,7 @@ protected:
 
   // Preallocate variables used in the realtime update() function
   trajectory_msgs::msg::JointTrajectoryPoint state_current_;
+  trajectory_msgs::msg::JointTrajectoryPoint command_current_;
   trajectory_msgs::msg::JointTrajectoryPoint state_desired_;
   trajectory_msgs::msg::JointTrajectoryPoint state_error_;
 
@@ -166,6 +168,8 @@ protected:
   std::vector<PidPtr> pids_;
   // Feed-forward velocity weight factor when calculating closed loop pid adapter's command
   std::vector<double> ff_velocity_scale_;
+  // Configuration for every joint, if position error is normalized
+  std::vector<bool> normalize_joint_error_;
   // reserved storage for result of the command when closed loop pid adapter is used
   std::vector<double> tmp_command_;
 
@@ -173,6 +177,8 @@ protected:
   bool subscriber_is_active_ = false;
   rclcpp::Subscription<trajectory_msgs::msg::JointTrajectory>::SharedPtr joint_command_subscriber_ =
     nullptr;
+
+  rclcpp::Service<control_msgs::srv::QueryTrajectoryState>::SharedPtr query_state_srv_;
 
   std::shared_ptr<Trajectory> * traj_point_active_ptr_ = nullptr;
   std::shared_ptr<Trajectory> traj_external_point_ptr_ = nullptr;
@@ -184,6 +190,8 @@ protected:
   using ControllerStateMsg = control_msgs::msg::JointTrajectoryControllerState;
   using StatePublisher = realtime_tools::RealtimePublisher<ControllerStateMsg>;
   using StatePublisherPtr = std::unique_ptr<StatePublisher>;
+  rclcpp::Publisher<ControllerStateMsg>::SharedPtr publisher_legacy_;
+  StatePublisherPtr state_publisher_legacy_;
   rclcpp::Publisher<ControllerStateMsg>::SharedPtr publisher_;
   StatePublisherPtr state_publisher_;
 
@@ -253,12 +261,19 @@ protected:
   void read_state_from_hardware(JointTrajectoryPoint & state);
 
   bool read_state_from_command_interfaces(JointTrajectoryPoint & state);
+  bool read_commands_from_command_interfaces(JointTrajectoryPoint & commands);
+
+  void query_state_service(
+    const std::shared_ptr<control_msgs::srv::QueryTrajectoryState::Request> request,
+    std::shared_ptr<control_msgs::srv::QueryTrajectoryState::Response> response);
 
 private:
   bool contains_interface_type(
     const std::vector<std::string> & interface_type_list, const std::string & interface_type);
 
   void resize_joint_trajectory_point(
+    trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size);
+  void resize_joint_trajectory_point_command(
     trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size);
 };
 

@@ -19,8 +19,8 @@
 #include "hardware_interface/macros.hpp"
 #include "rclcpp/duration.hpp"
 #include "rclcpp/time.hpp"
-#include "rcppmath/clamp.hpp"
 #include "std_msgs/msg/header.hpp"
+
 namespace joint_trajectory_controller
 {
 Trajectory::Trajectory() : trajectory_start_time_(0), time_before_traj_msg_(0) {}
@@ -64,7 +64,6 @@ bool Trajectory::sample(
   TrajectoryPointConstIter & start_segment_itr, TrajectoryPointConstIter & end_segment_itr)
 {
   THROW_ON_NULLPTR(trajectory_msg_)
-  output_state = trajectory_msgs::msg::JointTrajectoryPoint();
 
   if (trajectory_msg_->points.empty())
   {
@@ -90,6 +89,7 @@ bool Trajectory::sample(
     return false;
   }
 
+  output_state = trajectory_msgs::msg::JointTrajectoryPoint();
   auto & first_point_in_msg = trajectory_msg_->points[0];
   const rclcpp::Time first_point_timestamp =
     trajectory_start_time_ + first_point_in_msg.time_from_start;

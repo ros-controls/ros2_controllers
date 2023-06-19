@@ -61,12 +61,12 @@ public:
   }
 
   /**
-  * @brief wait_for_trajectory block until a new JointTrajectory is received.
-  * Requires that the executor is not spinned elsewhere between the
-  *  message publication and the call to this function
-  *
-  * @return true if new JointTrajectory msg was received, false if timeout
-  */
+   * @brief wait_for_trajectory block until a new JointTrajectory is received.
+   * Requires that the executor is not spinned elsewhere between the
+   *  message publication and the call to this function
+   *
+   * @return true if new JointTrajectory msg was received, false if timeout
+   */
   bool wait_for_trajectory(
     rclcpp::Executor & executor,
     const std::chrono::milliseconds & timeout = std::chrono::milliseconds{500})
@@ -111,6 +111,8 @@ public:
   bool has_velocity_command_interface() { return has_velocity_command_interface_; }
 
   bool has_effort_command_interface() { return has_effort_command_interface_; }
+
+  bool use_closed_loop_pid_adapter() { return use_closed_loop_pid_adapter_; }
 
   rclcpp::WaitSet joint_cmd_sub_wait_set_;
 };
@@ -171,7 +173,8 @@ public:
     node->set_parameters({joint_names_param, cmd_interfaces_params, state_interfaces_params});
   }
 
-  void SetPidParameters()
+  void SetPidParameters(
+    double p_default = 0.0, double ff_default = 1.0, bool normalize_error_default = false)
   {
     traj_controller_->trigger_declare_parameters();
     auto node = traj_controller_->get_node();
@@ -179,24 +182,26 @@ public:
     for (size_t i = 0; i < joint_names_.size(); ++i)
     {
       const std::string prefix = "gains." + joint_names_[i];
-      const rclcpp::Parameter k_p(prefix + ".p", 0.0);
+      const rclcpp::Parameter k_p(prefix + ".p", p_default);
       const rclcpp::Parameter k_i(prefix + ".i", 0.0);
       const rclcpp::Parameter k_d(prefix + ".d", 0.0);
       const rclcpp::Parameter i_clamp(prefix + ".i_clamp", 0.0);
-      const rclcpp::Parameter ff_velocity_scale(prefix + ".ff_velocity_scale", 1.0);
-      node->set_parameters({k_p, k_i, k_d, i_clamp, ff_velocity_scale});
+      const rclcpp::Parameter ff_velocity_scale(prefix + ".ff_velocity_scale", ff_default);
+      const rclcpp::Parameter normalize_error(prefix + ".normalize_error", normalize_error_default);
+      node->set_parameters({k_p, k_i, k_d, i_clamp, ff_velocity_scale, normalize_error});
     }
   }
 
   void SetUpAndActivateTrajectoryController(
     rclcpp::Executor & executor, bool use_local_parameters = true,
     const std::vector<rclcpp::Parameter> & parameters = {},
-    bool separate_cmd_and_state_values = false)
+    bool separate_cmd_and_state_values = false, double k_p = 0.0, double ff = 1.0,
+    bool normalize_error = false)
   {
     SetUpTrajectoryController(executor, use_local_parameters);
 
     // set pid parameters before configure
-    SetPidParameters();
+    SetPidParameters(k_p, ff, normalize_error);
     for (const auto & param : parameters)
     {
       traj_controller_->get_node()->set_parameter(param);
@@ -265,6 +270,28 @@ public:
 
   static void TearDownTestCase() { rclcpp::shutdown(); }
 
+  void subscribeToStateLegacy()
+  {
+    auto traj_lifecycle_node = traj_controller_->get_node();
+    traj_lifecycle_node->set_parameter(
+      rclcpp::Parameter("state_publish_rate", static_cast<double>(100)));
+
+    using control_msgs::msg::JointTrajectoryControllerState;
+
+    auto qos = rclcpp::SensorDataQoS();
+    // Needed, otherwise spin_some() returns only the oldest message in the queue
+    // I do not understand why spin_some provides only one message
+    qos.keep_last(1);
+    state_legacy_subscriber_ =
+      traj_lifecycle_node->create_subscription<JointTrajectoryControllerState>(
+        controller_name_ + "/state", qos,
+        [&](std::shared_ptr<JointTrajectoryControllerState> msg)
+        {
+          std::lock_guard<std::mutex> guard(state_legacy_mutex_);
+          state_legacy_msg_ = msg;
+        });
+  }
+
   void subscribeToState()
   {
     auto traj_lifecycle_node = traj_controller_->get_node();
@@ -278,7 +305,7 @@ public:
     // I do not understand why spin_some provides only one message
     qos.keep_last(1);
     state_subscriber_ = traj_lifecycle_node->create_subscription<JointTrajectoryControllerState>(
-      controller_name_ + "/state", qos,
+      controller_name_ + "/controller_state", qos,
       [&](std::shared_ptr<JointTrajectoryControllerState> msg)
       {
         std::lock_guard<std::mutex> guard(state_mutex_);
@@ -290,7 +317,8 @@ public:
   /**
    *  delay_btwn_points - delay between each points
    *  points - vector of trajectories. One point per controlled joint
-   *  joint_names - names of joints, if empty, will use joint_names_ up to the number of provided points
+   *  joint_names - names of joints, if empty, will use joint_names_ up to the number of provided
+   * points
    */
   void publish(
     const builtin_interfaces::msg::Duration & delay_btwn_points,
@@ -400,6 +428,11 @@ public:
     }
   }
 
+  std::shared_ptr<control_msgs::msg::JointTrajectoryControllerState> getStateLegacy() const
+  {
+    std::lock_guard<std::mutex> guard(state_legacy_mutex_);
+    return state_legacy_msg_;
+  }
   std::shared_ptr<control_msgs::msg::JointTrajectoryControllerState> getState() const
   {
     std::lock_guard<std::mutex> guard(state_mutex_);
@@ -422,6 +455,10 @@ public:
     state_subscriber_;
   mutable std::mutex state_mutex_;
   std::shared_ptr<control_msgs::msg::JointTrajectoryControllerState> state_msg_;
+  rclcpp::Subscription<control_msgs::msg::JointTrajectoryControllerState>::SharedPtr
+    state_legacy_subscriber_;
+  mutable std::mutex state_legacy_mutex_;
+  std::shared_ptr<control_msgs::msg::JointTrajectoryControllerState> state_legacy_msg_;
 
   std::vector<double> joint_pos_;
   std::vector<double> joint_vel_;
