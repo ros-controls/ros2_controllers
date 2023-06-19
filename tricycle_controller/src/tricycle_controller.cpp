@@ -222,11 +222,12 @@ controller_interface::return_type TricycleController::update(
       // TODO(anyone): find the best function, e.g convex power functions
       scale = cos(alpha_delta);
     }
-    Ws_write *= scale;
   }
   else {
     scale = (alpha_delta < M_PI / 6) ? 1.0 : 0.0;
   }
+
+  Ws_write *= scale;
 
   auto & last_command = previous_commands_.back();
   auto & second_to_last_command = previous_commands_.front();
