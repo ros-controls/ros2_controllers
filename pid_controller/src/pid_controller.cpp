@@ -357,11 +357,6 @@ controller_interface::CallbackReturn PidController::on_activate(
 controller_interface::CallbackReturn PidController::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  // instead of a loop
-  for (size_t i = 0; i < dof_; ++i)
-  {
-    command_interfaces_[i].set_value(std::numeric_limits<double>::quiet_NaN());
-  }
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
