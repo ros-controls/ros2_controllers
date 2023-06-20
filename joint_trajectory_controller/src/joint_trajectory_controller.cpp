@@ -31,10 +31,10 @@
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "joint_trajectory_controller/trajectory.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
+#include "rclcpp/event_handler.hpp"
 #include "rclcpp/logging.hpp"
 #include "rclcpp/parameter.hpp"
 #include "rclcpp/qos.hpp"
-#include "rclcpp/qos_event.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp_action/create_server.hpp"
 #include "rclcpp_action/server_goal_handle.hpp"
@@ -117,7 +117,7 @@ controller_interface::return_type JointTrajectoryController::update(
   }
 
   auto compute_error_for_joint = [&](
-                                   JointTrajectoryPoint & error, int index,
+                                   JointTrajectoryPoint & error, size_t index,
                                    const JointTrajectoryPoint & current,
                                    const JointTrajectoryPoint & desired)
   {
@@ -1299,7 +1299,7 @@ bool JointTrajectoryController::validate_trajectory_msg(
     {
       RCLCPP_ERROR(
         get_node()->get_logger(),
-        "Received trajectory with non zero time start time (%f) that ends on the past (%f)",
+        "Received trajectory with non-zero start time (%f) that ends in the past (%f)",
         trajectory_start_time.seconds(), trajectory_end_time.seconds());
       return false;
     }
