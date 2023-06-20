@@ -72,6 +72,8 @@ CallbackReturn TricycleController::on_init()
     auto_declare<bool>("publish_ackermann_command", publish_ackermann_command_);
     auto_declare<int>("velocity_rolling_window_size", 10);
     auto_declare<bool>("use_stamped_vel", use_stamped_vel_);
+    auto_declare<bool>("use_exact_mode", use_exact_mode_);
+    auto_declare<double>("exact_mode_threshold", exact_mode_threshold_);
 
     auto_declare<double>("traction.max_velocity", NAN);
     auto_declare<double>("traction.min_velocity", NAN);
@@ -224,7 +226,7 @@ controller_interface::return_type TricycleController::update(
     }
   }
   else {
-    scale = (alpha_delta < M_PI / 6) ? 1.0 : 0.0;
+    scale = (alpha_delta < exact_mode_threshold_) ? 1.0 : 0.0;
   }
 
   Ws_write *= scale;
@@ -307,6 +309,8 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
     std::chrono::milliseconds{get_node()->get_parameter("cmd_vel_timeout").as_int()};
   publish_ackermann_command_ = get_node()->get_parameter("publish_ackermann_command").as_bool();
   use_stamped_vel_ = get_node()->get_parameter("use_stamped_vel").as_bool();
+  use_exact_mode_ = get_node()->get_parameter("use_exact_mode_").as_bool();
+  exact_mode_threshold_ = get_node()->get_parameter("exact_mode_threshold_").as_double();
 
   try
   {

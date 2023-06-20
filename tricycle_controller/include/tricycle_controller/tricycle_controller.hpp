@@ -172,6 +172,7 @@ protected:
   bool is_halted = false;
   bool use_stamped_vel_ = true;
   bool use_exact_mode_ = false;
+  double exact_mode_threshold_ = M_PI / 6;
 
   void reset_odometry(
     const std::shared_ptr<rmw_request_id_t> request_header,
