@@ -110,6 +110,8 @@ public:
 
   bool has_velocity_command_interface() { return has_velocity_command_interface_; }
 
+  bool has_acceleration_command_interface() { return has_acceleration_command_interface_; }
+
   bool has_effort_command_interface() { return has_effort_command_interface_; }
 
   bool use_closed_loop_pid_adapter() { return use_closed_loop_pid_adapter_; }
@@ -363,7 +365,13 @@ public:
     const auto end_time = start_time + wait_time;
     while (clock.now() < end_time)
     {
-      traj_controller_->update(clock.now(), clock.now() - start_time);
+      // TODO(christophfroehlich): use the node's clock here for internal comparison
+      // if using RCL_STEADY_TIME ->
+      //   C++ exception with description
+      //   "can't compare times with different time sources" thrown in the test body.
+      // traj_controller_->update(clock.now(), clock.now() - start_time);
+      // maybe we can set the node clock to use RCL_STEADY_TIME too?
+      traj_controller_->update(node_->get_clock()->now(), clock.now() - start_time);
     }
   }
 
