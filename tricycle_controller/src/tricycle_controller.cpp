@@ -309,8 +309,8 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
     std::chrono::milliseconds{get_node()->get_parameter("cmd_vel_timeout").as_int()};
   publish_ackermann_command_ = get_node()->get_parameter("publish_ackermann_command").as_bool();
   use_stamped_vel_ = get_node()->get_parameter("use_stamped_vel").as_bool();
-  use_exact_mode_ = get_node()->get_parameter("use_exact_mode_").as_bool();
-  exact_mode_threshold_ = get_node()->get_parameter("exact_mode_threshold_").as_double();
+  use_exact_mode_ = get_node()->get_parameter("use_exact_mode").as_bool();
+  exact_mode_threshold_ = get_node()->get_parameter("exact_mode_threshold").as_double();
 
   try
   {
