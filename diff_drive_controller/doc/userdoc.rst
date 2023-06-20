@@ -1,3 +1,5 @@
+:github_url: https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/diff_drive_controller/doc/userdoc.rst
+
 .. _diff_drive_controller_userdoc:
 
 diff_drive_controller
@@ -70,9 +72,9 @@ Services
 Parameters
 ------------
 
-Check `parameter definition file for details <https://github.com/ros-controls/ros2_controllers/blob/master/diff_drive_controller/src/diff_drive_controller_parameter.yaml>`_.
+Check `parameter definition file for details <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/diff_drive_controller/src/diff_drive_controller_parameter.yaml>`_.
 
-Note that the documentation on parameters for joint limits can be found in `their header file <https://github.com/ros-controls/ros2_control/blob/master/joint_limits/include/joint_limits/joint_limits_rosparam.hpp#L56-L75>`_.
+Note that the documentation on parameters for joint limits can be found in `their header file <https://github.com/ros-controls/ros2_control/blob/{REPOS_FILE_BRANCH}/joint_limits/include/joint_limits/joint_limits_rosparam.hpp#L56-L75>`_.
 Those parameters are:
 
 linear.x [JointLimits structure]

@@ -147,18 +147,6 @@ AdmittanceController::on_export_reference_interfaces()
 controller_interface::CallbackReturn AdmittanceController::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  try
-  {
-    parameter_handler_ = std::make_shared<admittance_controller::ParamListener>(get_node());
-    admittance_ = std::make_unique<admittance_controller::AdmittanceRule>(parameter_handler_);
-  }
-  catch (const std::exception & e)
-  {
-    RCLCPP_ERROR(
-      get_node()->get_logger(), "Exception thrown during init stage with message: %s \n", e.what());
-    return controller_interface::CallbackReturn::ERROR;
-  }
-
   command_joint_names_ = admittance_->parameters_.command_joints;
   if (command_joint_names_.empty())
   {

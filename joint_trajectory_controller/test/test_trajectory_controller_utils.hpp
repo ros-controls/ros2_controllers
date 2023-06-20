@@ -61,12 +61,12 @@ public:
   }
 
   /**
-  * @brief wait_for_trajectory block until a new JointTrajectory is received.
-  * Requires that the executor is not spinned elsewhere between the
-  *  message publication and the call to this function
-  *
-  * @return true if new JointTrajectory msg was received, false if timeout
-  */
+   * @brief wait_for_trajectory block until a new JointTrajectory is received.
+   * Requires that the executor is not spinned elsewhere between the
+   *  message publication and the call to this function
+   *
+   * @return true if new JointTrajectory msg was received, false if timeout
+   */
   bool wait_for_trajectory(
     rclcpp::Executor & executor,
     const std::chrono::milliseconds & timeout = std::chrono::milliseconds{500})
@@ -281,7 +281,7 @@ public:
     // I do not understand why spin_some provides only one message
     qos.keep_last(1);
     state_subscriber_ = traj_lifecycle_node->create_subscription<JointTrajectoryControllerState>(
-      controller_name_ + "/state", qos,
+      controller_name_ + "/controller_state", qos,
       [&](std::shared_ptr<JointTrajectoryControllerState> msg)
       {
         std::lock_guard<std::mutex> guard(state_mutex_);
@@ -293,7 +293,8 @@ public:
   /**
    *  delay_btwn_points - delay between each points
    *  points - vector of trajectories. One point per controlled joint
-   *  joint_names - names of joints, if empty, will use joint_names_ up to the number of provided points
+   *  joint_names - names of joints, if empty, will use joint_names_ up to the number of provided
+   * points
    */
   void publish(
     const builtin_interfaces::msg::Duration & delay_btwn_points,
@@ -385,20 +386,21 @@ public:
     for (size_t i = 0; i < expected_actual.positions.size(); ++i)
     {
       SCOPED_TRACE("Joint " + std::to_string(i));
-      // TODO(anyone): add checking for velocties and accelerations
+      // TODO(anyone): add checking for velocities and accelerations
       if (traj_controller_->has_position_command_interface())
       {
-        EXPECT_NEAR(expected_actual.positions[i], state_msg->actual.positions[i], allowed_delta);
+        EXPECT_NEAR(expected_actual.positions[i], state_msg->feedback.positions[i], allowed_delta);
       }
     }
 
     for (size_t i = 0; i < expected_desired.positions.size(); ++i)
     {
       SCOPED_TRACE("Joint " + std::to_string(i));
-      // TODO(anyone): add checking for velocties and accelerations
+      // TODO(anyone): add checking for velocities and accelerations
       if (traj_controller_->has_position_command_interface())
       {
-        EXPECT_NEAR(expected_desired.positions[i], state_msg->desired.positions[i], allowed_delta);
+        EXPECT_NEAR(
+          expected_desired.positions[i], state_msg->reference.positions[i], allowed_delta);
       }
     }
   }

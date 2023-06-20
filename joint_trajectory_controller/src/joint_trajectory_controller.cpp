@@ -31,10 +31,10 @@
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "joint_trajectory_controller/trajectory.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
+#include "rclcpp/event_handler.hpp"
 #include "rclcpp/logging.hpp"
 #include "rclcpp/parameter.hpp"
 #include "rclcpp/qos.hpp"
-#include "rclcpp/qos_event.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp_action/create_server.hpp"
 #include "rclcpp_action/server_goal_handle.hpp"
@@ -117,7 +117,7 @@ controller_interface::return_type JointTrajectoryController::update(
   }
 
   auto compute_error_for_joint = [&](
-                                   JointTrajectoryPoint & error, int index,
+                                   JointTrajectoryPoint & error, size_t index,
                                    const JointTrajectoryPoint & current,
                                    const JointTrajectoryPoint & desired)
   {
@@ -152,6 +152,8 @@ controller_interface::return_type JointTrajectoryController::update(
     sort_to_local_joint_order(*new_external_msg);
     // TODO(denis): Add here integration of position and velocity
     traj_external_point_ptr_->update(*new_external_msg);
+    // set the active trajectory pointer to the new goal
+    traj_point_active_ptr_ = &traj_external_point_ptr_;
   }
 
   // TODO(anyone): can I here also use const on joint_interface since the reference_wrapper is not
@@ -315,6 +317,8 @@ controller_interface::return_type JointTrajectoryController::update(
           // TODO(matthew-reynolds): Need a lock-free write here
           // See https://github.com/ros-controls/ros2_controllers/issues/168
           rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
+          // remove the active trajectory pointer so that we stop commanding the hardware
+          traj_point_active_ptr_ = nullptr;
 
           // check goal tolerance
         }
@@ -328,6 +332,8 @@ controller_interface::return_type JointTrajectoryController::update(
             // TODO(matthew-reynolds): Need a lock-free write here
             // See https://github.com/ros-controls/ros2_controllers/issues/168
             rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
+            // remove the active trajectory pointer so that we stop commanding the hardware
+            traj_point_active_ptr_ = nullptr;
 
             RCLCPP_INFO(get_node()->get_logger(), "Goal reached, success!");
           }
@@ -467,6 +473,81 @@ bool JointTrajectoryController::read_state_from_command_interfaces(JointTrajecto
   return has_values;
 }
 
+bool JointTrajectoryController::read_commands_from_command_interfaces(
+  JointTrajectoryPoint & commands)
+{
+  bool has_values = true;
+
+  auto assign_point_from_interface =
+    [&](std::vector<double> & trajectory_point_interface, const auto & joint_interface)
+  {
+    for (size_t index = 0; index < dof_; ++index)
+    {
+      trajectory_point_interface[index] = joint_interface[index].get().get_value();
+    }
+  };
+
+  auto interface_has_values = [](const auto & joint_interface)
+  {
+    return std::find_if(
+             joint_interface.begin(), joint_interface.end(),
+             [](const auto & interface)
+             { return std::isnan(interface.get().get_value()); }) == joint_interface.end();
+  };
+
+  // Assign values from the command interfaces as command.
+  if (has_position_command_interface_)
+  {
+    if (interface_has_values(joint_command_interface_[0]))
+    {
+      assign_point_from_interface(commands.positions, joint_command_interface_[0]);
+    }
+    else
+    {
+      commands.positions.clear();
+      has_values = false;
+    }
+  }
+  if (has_velocity_command_interface_)
+  {
+    if (interface_has_values(joint_command_interface_[1]))
+    {
+      assign_point_from_interface(commands.velocities, joint_command_interface_[1]);
+    }
+    else
+    {
+      commands.velocities.clear();
+      has_values = false;
+    }
+  }
+  if (has_acceleration_command_interface_)
+  {
+    if (interface_has_values(joint_command_interface_[2]))
+    {
+      assign_point_from_interface(commands.accelerations, joint_command_interface_[2]);
+    }
+    else
+    {
+      commands.accelerations.clear();
+      has_values = false;
+    }
+  }
+  if (has_effort_command_interface_)
+  {
+    if (interface_has_values(joint_command_interface_[3]))
+    {
+      assign_point_from_interface(commands.effort, joint_command_interface_[3]);
+    }
+    else
+    {
+      commands.effort.clear();
+      has_values = false;
+    }
+  }
+
+  return has_values;
+}
+
 void JointTrajectoryController::query_state_service(
   const std::shared_ptr<control_msgs::srv::QueryTrajectoryState::Request> request,
   std::shared_ptr<control_msgs::srv::QueryTrajectoryState::Response> response)
@@ -599,7 +680,8 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   // if there is only velocity or if there is effort command interface
   // then use also PID adapter
   use_closed_loop_pid_adapter_ =
-    (has_velocity_command_interface_ && params_.command_interfaces.size() == 1) ||
+    (has_velocity_command_interface_ && params_.command_interfaces.size() == 1 &&
+     !params_.open_loop_control) ||
     has_effort_command_interface_;
 
   if (use_closed_loop_pid_adapter_)
@@ -705,27 +787,44 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
       "~/joint_trajectory", rclcpp::SystemDefaultsQoS(),
       std::bind(&JointTrajectoryController::topic_callback, this, std::placeholders::_1));
 
-  publisher_ =
-    get_node()->create_publisher<ControllerStateMsg>("~/state", rclcpp::SystemDefaultsQoS());
+  publisher_ = get_node()->create_publisher<ControllerStateMsg>(
+    "~/controller_state", rclcpp::SystemDefaultsQoS());
   state_publisher_ = std::make_unique<StatePublisher>(publisher_);
 
   state_publisher_->lock();
   state_publisher_->msg_.joint_names = params_.joints;
-  state_publisher_->msg_.desired.positions.resize(dof_);
-  state_publisher_->msg_.desired.velocities.resize(dof_);
-  state_publisher_->msg_.desired.accelerations.resize(dof_);
-  state_publisher_->msg_.actual.positions.resize(dof_);
+  state_publisher_->msg_.reference.positions.resize(dof_);
+  state_publisher_->msg_.reference.velocities.resize(dof_);
+  state_publisher_->msg_.reference.accelerations.resize(dof_);
+  state_publisher_->msg_.feedback.positions.resize(dof_);
   state_publisher_->msg_.error.positions.resize(dof_);
   if (has_velocity_state_interface_)
   {
-    state_publisher_->msg_.actual.velocities.resize(dof_);
+    state_publisher_->msg_.feedback.velocities.resize(dof_);
     state_publisher_->msg_.error.velocities.resize(dof_);
   }
   if (has_acceleration_state_interface_)
   {
-    state_publisher_->msg_.actual.accelerations.resize(dof_);
+    state_publisher_->msg_.feedback.accelerations.resize(dof_);
     state_publisher_->msg_.error.accelerations.resize(dof_);
   }
+  if (has_position_command_interface_)
+  {
+    state_publisher_->msg_.output.positions.resize(dof_);
+  }
+  if (has_velocity_command_interface_)
+  {
+    state_publisher_->msg_.output.velocities.resize(dof_);
+  }
+  if (has_acceleration_command_interface_)
+  {
+    state_publisher_->msg_.output.accelerations.resize(dof_);
+  }
+  if (has_effort_command_interface_)
+  {
+    state_publisher_->msg_.output.effort.resize(dof_);
+  }
+
   state_publisher_->unlock();
 
   // action server configuration
@@ -748,6 +847,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     std::bind(&JointTrajectoryController::goal_accepted_callback, this, _1));
 
   resize_joint_trajectory_point(state_current_, dof_);
+  resize_joint_trajectory_point_command(command_current_, dof_);
   resize_joint_trajectory_point(state_desired_, dof_);
   resize_joint_trajectory_point(state_error_, dof_);
   resize_joint_trajectory_point(last_commanded_state_, dof_);
@@ -928,20 +1028,24 @@ void JointTrajectoryController::publish_state(
   if (state_publisher_->trylock())
   {
     state_publisher_->msg_.header.stamp = time;
-    state_publisher_->msg_.desired.positions = desired_state.positions;
-    state_publisher_->msg_.desired.velocities = desired_state.velocities;
-    state_publisher_->msg_.desired.accelerations = desired_state.accelerations;
-    state_publisher_->msg_.actual.positions = current_state.positions;
+    state_publisher_->msg_.reference.positions = desired_state.positions;
+    state_publisher_->msg_.reference.velocities = desired_state.velocities;
+    state_publisher_->msg_.reference.accelerations = desired_state.accelerations;
+    state_publisher_->msg_.feedback.positions = current_state.positions;
     state_publisher_->msg_.error.positions = state_error.positions;
     if (has_velocity_state_interface_)
     {
-      state_publisher_->msg_.actual.velocities = current_state.velocities;
+      state_publisher_->msg_.feedback.velocities = current_state.velocities;
       state_publisher_->msg_.error.velocities = state_error.velocities;
     }
     if (has_acceleration_state_interface_)
     {
-      state_publisher_->msg_.actual.accelerations = current_state.accelerations;
+      state_publisher_->msg_.feedback.accelerations = current_state.accelerations;
       state_publisher_->msg_.error.accelerations = state_error.accelerations;
+    }
+    if (read_commands_from_command_interfaces(command_current_))
+    {
+      state_publisher_->msg_.output = command_current_;
     }
 
     state_publisher_->unlockAndPublish();
@@ -1195,7 +1299,7 @@ bool JointTrajectoryController::validate_trajectory_msg(
     {
       RCLCPP_ERROR(
         get_node()->get_logger(),
-        "Received trajectory with non zero time start time (%f) that ends on the past (%f)",
+        "Received trajectory with non-zero start time (%f) that ends in the past (%f)",
         trajectory_start_time.seconds(), trajectory_end_time.seconds());
       return false;
     }
@@ -1311,6 +1415,27 @@ void JointTrajectoryController::resize_joint_trajectory_point(
   if (has_acceleration_state_interface_)
   {
     point.accelerations.resize(size, 0.0);
+  }
+}
+
+void JointTrajectoryController::resize_joint_trajectory_point_command(
+  trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size)
+{
+  if (has_position_command_interface_)
+  {
+    point.positions.resize(size, 0.0);
+  }
+  if (has_velocity_command_interface_)
+  {
+    point.velocities.resize(size, 0.0);
+  }
+  if (has_acceleration_command_interface_)
+  {
+    point.accelerations.resize(size, 0.0);
+  }
+  if (has_effort_command_interface_)
+  {
+    point.effort.resize(size, 0.0);
   }
 }
 
