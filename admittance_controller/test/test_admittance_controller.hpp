@@ -27,7 +27,6 @@
 
 #include "gmock/gmock.h"
 
-#include "6d_robot_description.hpp"
 #include "admittance_controller/admittance_controller.hpp"
 #include "control_msgs/msg/admittance_controller_state.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
@@ -38,6 +37,7 @@
 #include "rclcpp/utilities.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "semantic_components/force_torque_sensor.hpp"
+#include "test_asset_6d_robot_description.hpp"
 #include "tf2_ros/transform_broadcaster.h"
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 
