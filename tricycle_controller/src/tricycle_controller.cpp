@@ -35,6 +35,7 @@ constexpr auto DEFAULT_ACKERMANN_OUT_TOPIC = "~/cmd_ackermann";
 constexpr auto DEFAULT_ODOMETRY_TOPIC = "~/odom";
 constexpr auto DEFAULT_TRANSFORM_TOPIC = "/tf";
 constexpr auto DEFAULT_RESET_ODOM_SERVICE = "~/reset_odometry";
+constexpr auto DEFAULT_SET_EXACT_MODE_SERVICE = "~/set_exact_mode";
 }  // namespace
 
 namespace tricycle_controller
@@ -71,6 +72,8 @@ CallbackReturn TricycleController::on_init()
     auto_declare<bool>("publish_ackermann_command", publish_ackermann_command_);
     auto_declare<int>("velocity_rolling_window_size", 10);
     auto_declare<bool>("use_stamped_vel", use_stamped_vel_);
+    auto_declare<bool>("use_exact_mode", use_exact_mode_);
+    auto_declare<double>("exact_mode_threshold", exact_mode_threshold_);
 
     auto_declare<double>("traction.max_velocity", NAN);
     auto_declare<double>("traction.min_velocity", NAN);
@@ -202,22 +205,30 @@ controller_interface::return_type TricycleController::update(
   // Compute wheel velocity and angle
   auto [alpha_write, Ws_write] = twist_to_ackermann(linear_command, angular_command);
 
-  // Reduce wheel speed until the target angle has been reached
   double alpha_delta = abs(alpha_write - alpha_read);
   double scale;
-  if (alpha_delta < M_PI / 6)
+  // in non-exact mode, reduce wheel speed until the target angle has been reached
+  if(!use_exact_mode_)
   {
-    scale = 1;
+      // reduce wheel speed until the target angle has been reached
+    if (alpha_delta < M_PI / 6)
+    {
+      scale = 1.0;
+    }
+    else if (alpha_delta > M_PI_2)
+    {
+      scale = 0.01;
+    }
+    else
+    {
+      // TODO(anyone): find the best function, e.g convex power functions
+      scale = cos(alpha_delta);
+    }
   }
-  else if (alpha_delta > M_PI_2)
-  {
-    scale = 0.01;
+  else {
+    scale = (alpha_delta < exact_mode_threshold_) ? 1.0 : 0.0;
   }
-  else
-  {
-    // TODO(anyone): find the best function, e.g convex power functions
-    scale = cos(alpha_delta);
-  }
+
   Ws_write *= scale;
 
   auto & last_command = previous_commands_.back();
@@ -298,6 +309,8 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
     std::chrono::milliseconds{get_node()->get_parameter("cmd_vel_timeout").as_int()};
   publish_ackermann_command_ = get_node()->get_parameter("publish_ackermann_command").as_bool();
   use_stamped_vel_ = get_node()->get_parameter("use_stamped_vel").as_bool();
+  use_exact_mode_ = get_node()->get_parameter("use_exact_mode").as_bool();
+  exact_mode_threshold_ = get_node()->get_parameter("exact_mode_threshold").as_double();
 
   try
   {
@@ -448,6 +461,12 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
                                   &TricycleController::reset_odometry, this, std::placeholders::_1,
                                   std::placeholders::_2, std::placeholders::_3));
 
+  // Create set exact mode service
+  set_exact_mode_service_ = get_node()->create_service<std_srvs::srv::SetBool>(
+    DEFAULT_SET_EXACT_MODE_SERVICE, std::bind(
+                                  &TricycleController::set_exact_mode, this, std::placeholders::_1,
+                                  std::placeholders::_2, std::placeholders::_3));
+
   return CallbackReturn::SUCCESS;
 }
 
@@ -509,6 +528,23 @@ void TricycleController::reset_odometry(
 {
   odometry_.resetOdometry();
   RCLCPP_INFO(get_node()->get_logger(), "Odometry successfully reset");
+}
+
+void TricycleController::set_exact_mode(
+  const std::shared_ptr<rmw_request_id_t> /*request_header*/,
+  const std::shared_ptr<std_srvs::srv::SetBool::Request> req,
+  std::shared_ptr<std_srvs::srv::SetBool::Response> /*res*/)
+{
+  if (req->data)
+  {
+    use_exact_mode_ = true;
+    RCLCPP_INFO(get_node()->get_logger(), "Exact mode enabled");
+  }
+  else
+  {
+    use_exact_mode_ = false;
+    RCLCPP_INFO(get_node()->get_logger(), "Exact mode disabled");
+  }
 }
 
 bool TricycleController::reset()

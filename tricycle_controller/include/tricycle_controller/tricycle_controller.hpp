@@ -39,6 +39,7 @@
 #include "realtime_tools/realtime_buffer.h"
 #include "realtime_tools/realtime_publisher.h"
 #include "std_srvs/srv/empty.hpp"
+#include "std_srvs/srv/set_bool.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"
 #include "tricycle_controller/odometry.hpp"
 #include "tricycle_controller/steering_limiter.hpp"
@@ -160,6 +161,7 @@ protected:
   realtime_tools::RealtimeBox<std::shared_ptr<TwistStamped>> received_velocity_msg_ptr_{nullptr};
 
   rclcpp::Service<std_srvs::srv::Empty>::SharedPtr reset_odom_service_;
+  rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr set_exact_mode_service_;
 
   std::queue<AckermannDrive> previous_commands_;  // last two commands
 
@@ -169,11 +171,17 @@ protected:
 
   bool is_halted = false;
   bool use_stamped_vel_ = true;
+  bool use_exact_mode_ = false;
+  double exact_mode_threshold_ = M_PI / 6;
 
   void reset_odometry(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<std_srvs::srv::Empty::Request> req,
     std::shared_ptr<std_srvs::srv::Empty::Response> res);
+  void set_exact_mode(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<std_srvs::srv::SetBool::Request> req,
+    std::shared_ptr<std_srvs::srv::SetBool::Response> res);
   bool reset();
   void halt();
 };
