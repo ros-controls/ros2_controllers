@@ -72,12 +72,6 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  if (params_.frame_id.empty())
-  {
-    RCLCPP_ERROR(get_node()->get_logger(), "'frame_id' parameter has to be provided.");
-    return controller_interface::CallbackReturn::ERROR;
-  }
-
   if (!params_.sensor_name.empty())
   {
     force_torque_sensor_ = std::make_unique<semantic_components::ForceTorqueSensor>(
