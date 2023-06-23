@@ -376,7 +376,7 @@ controller_interface::return_type JointTrajectoryController::update(
         {
           joint_command_interface_[1][index].get().set_value(0.0);
         }
-        
+
         // TODO(anyone): How to halt when using effort commands?
         if (has_effort_command_interface_)
         {
