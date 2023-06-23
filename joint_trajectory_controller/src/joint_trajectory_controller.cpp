@@ -362,8 +362,7 @@ controller_interface::return_type JointTrajectoryController::update(
     }
     else
     {
-      /// Likely an Empty trajectory from set_hold_position()
-      /// Command hold position
+      RCLCPP_DEBUG(get_node()->get_logger(), "Likely an Empty trajectory from set_hold_position(). Holding position...");
       for (size_t index = 0; index < dof_; ++index)
       {
         if (has_position_command_interface_)
