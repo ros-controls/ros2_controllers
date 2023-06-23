@@ -2,6 +2,9 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 2.22.0 (2023-06-14)
 -------------------
 * Bump versions for release
