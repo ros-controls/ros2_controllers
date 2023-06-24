@@ -2,8 +2,8 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.11.0 (2023-06-24)
+-------------------
 * Fix cpplint (`#681 <https://github.com/ros-controls/ros2_controllers/issues/681>`_)
 * Added -Wconversion flag and fix warnings (`#667 <https://github.com/ros-controls/ros2_controllers/issues/667>`_)
 * Contributors: Christoph Fröhlich, gwalck
