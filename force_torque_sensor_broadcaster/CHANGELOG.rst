@@ -2,6 +2,12 @@
 Changelog for package force_torque_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Broadcaster parameters (`#650 <https://github.com/ros-controls/ros2_controllers/issues/650>`_)
+* Added -Wconversion flag and fix warnings (`#667 <https://github.com/ros-controls/ros2_controllers/issues/667>`_)
+* Contributors: Christoph Fröhlich, gwalck
+
 3.10.1 (2023-06-06)
 -------------------
 
