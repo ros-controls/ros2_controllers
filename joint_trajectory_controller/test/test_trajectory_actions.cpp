@@ -502,6 +502,16 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_goal_tolerances_fail)
   EXPECT_EQ(
     control_msgs::action::FollowJointTrajectory_Result::GOAL_TOLERANCE_VIOLATED,
     common_action_result_code_);
+
+  // run an update, it should be holding the last received goal
+  updateController(rclcpp::Duration::from_seconds(0.01));
+
+  if (traj_controller_->has_position_command_interface())
+  {
+    EXPECT_NEAR(4.0, joint_pos_[0], COMMON_THRESHOLD);
+    EXPECT_NEAR(5.0, joint_pos_[1], COMMON_THRESHOLD);
+    EXPECT_NEAR(6.0, joint_pos_[2], COMMON_THRESHOLD);
+  }
 }
 
 TEST_P(TestTrajectoryActionsTestParameterized, test_no_time_from_start_state_tolerance_fail)
