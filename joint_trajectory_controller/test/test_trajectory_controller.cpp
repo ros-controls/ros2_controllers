@@ -1109,16 +1109,18 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_partial_old_trajectory
 
   std::vector<std::vector<double>> points_old{{{2., 3., 4.}, {4., 5., 6.}}};
   std::vector<std::vector<double>> points_new{{{-1., -2., -3.}, {-2., -4., -6.}}};
-
+  trajectory_msgs::msg::JointTrajectoryPoint expected_actual, expected_desired;
   const auto delay = std::chrono::milliseconds(500);
   builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(delay)};
+
+  // send points_old and wait to reach first point
   publish(time_from_start, points_old, rclcpp::Time());
-  trajectory_msgs::msg::JointTrajectoryPoint expected_actual, expected_desired, expected_old;
   expected_actual.positions = {points_old[0].begin(), points_old[0].end()};
   expected_desired = expected_actual;
   //  Check that we reached end of points_old[0]trajectory
   waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
 
+  // send points_new before the old trajectory is finished
   RCLCPP_INFO(
     traj_controller_->get_node()->get_logger(), "Sending new trajectory partially in the past");
   //  New trajectory first point is in the past, second is in the future
