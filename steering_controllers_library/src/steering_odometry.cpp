@@ -140,6 +140,57 @@ bool SteeringOdometry::update_from_position(
 
   return update_odometry(linear_velocity, angular, dt);
 }
+bool SteeringOdometry::update_four_steering(
+  const double fr_speed, const double fl_speed, const double rr_speed,
+  const double rl_speed, const double front_steering, const double rear_steering, const double dt)
+{
+  const double front_tmp = cos(front_steering) * (tan(front_steering) - tan(rear_steering)) / wheelbase_;
+
+  const double front_left_tmp = front_tmp / sqrt(1 - wheel_track_ * front_tmp * cos(front_steering)
+                                              +pow(wheel_track_*front_tmp / 2, 2));
+  const double front_right_tmp = front_tmp / sqrt(1 + wheel_track_ * front_tmp * cos(front_steering)
+                                              +pow(wheel_track_*front_tmp / 2, 2));
+
+  const double fl_speed_tmp = fl_speed * (1 / (1 - y_steering_offset_ * front_left_tmp));
+  const double fr_speed_tmp = fr_speed * (1 / (1 - y_steering_offset_ * front_right_tmp));
+
+  const double front_linear_speed = wheel_radius_ * copysign(1.0, fl_speed_tmp + fr_speed_tmp) *
+      sqrt((pow(fl_speed, 2) + pow(fr_speed, 2)) / (2 + pow(wheel_track_ * front_tmp, 2) / 2.0));
+
+  const double rear_tmp = cos(rear_steering) * (tan(front_steering) - tan(rear_steering)) / wheelbase_;
+
+  const double rear_left_tmp = rear_tmp / sqrt(1 - wheel_track_ * rear_tmp * cos(rear_steering)
+                                              + pow(wheel_track_ * rear_tmp/ 2, 2));
+  const double rear_right_tmp = rear_tmp / sqrt(1 + wheel_track_ * rear_tmp * cos(rear_steering)
+                                              +pow(wheel_track_ * rear_tmp/ 2, 2));
+
+  const double rl_speed_tmp = rl_speed * (1 / (1 - y_steering_offset_ * rear_left_tmp));
+  const double rr_speed_tmp = rr_speed * (1 / (1 - y_steering_offset_ * rear_right_tmp));
+
+  const double rear_linear_speed = wheel_radius_ * copysign(1.0, rl_speed_tmp + rr_speed_tmp)*
+      sqrt((pow(rl_speed_tmp, 2) + pow(rr_speed_tmp, 2)) / (2 + pow(wheel_track_ * rear_tmp, 2) / 2.0));
+
+  angular_ = (front_linear_speed * front_tmp + rear_linear_speed * rear_tmp) / 2.0;
+
+  linear_x_ = (front_linear_speed * cos(front_steering) + rear_linear_speed * cos(rear_steering)) / 2.0;
+  linear_y_ = (front_linear_speed * sin(front_steering) - wheelbase_ * angular_ / 2.0
+              + rear_linear_speed * sin(rear_steering) + wheelbase_ * angular_ / 2.0) / 2.0;
+
+  linear_velocity =  copysign(1.0, rear_linear_speed)*sqrt(pow(linear_x_,2)+pow(linear_y_,2));
+
+  /// Integrate odometry:
+  // integrateXY(linear_x_*dt, linear_y_*dt, angular_*dt);
+
+  // linear_accel_acc_((linear_vel_prev_ - linear_velocity)/dt);
+  // linear_vel_prev_ = linear_velocity;
+  // linear_jerk_acc_((linear_accel_prev_ - bacc::rolling_mean(linear_accel_acc_))/dt);
+  // linear_accel_prev_ = bacc::rolling_mean(linear_accel_acc_);
+  // front_steer_vel_acc_((front_steer_vel_prev_ - front_steering)/dt);
+  // front_steer_vel_prev_ = front_steering;
+  // rear_steer_vel_acc_((rear_steer_vel_prev_ - rear_steering)/dt);
+  // rear_steer_vel_prev_ = rear_steering;
+  return update_odometry(linear_velocity, angular_, dt);
+}
 
 bool SteeringOdometry::update_from_velocity(
   const double traction_wheel_vel, const double steer_pos, const double dt)
@@ -191,6 +242,14 @@ void SteeringOdometry::set_wheel_params(double wheel_radius, double wheelbase, d
   wheel_radius_ = wheel_radius;
   wheelbase_ = wheelbase;
   wheel_track_ = wheel_track;
+}
+
+void SteeringOdometry::set_wheel_params(double wheel_radius, double wheelbase, double wheel_track, double y_steering_offset)
+{
+  wheel_radius_ = wheel_radius;
+  wheelbase_ = wheelbase;
+  wheel_track_ = wheel_track;
+  y_steering_offset_ = y_steering_offset;
 }
 
 void SteeringOdometry::set_velocity_rolling_window_size(size_t velocity_rolling_window_size)
@@ -276,6 +335,49 @@ std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_comma
       double alpha_l = std::atan2(numerator, denominator_first_member + denominator_second_member);
       steering_commands = {alpha_r, alpha_l};
     }
+    return std::make_tuple(traction_commands, steering_commands);
+  }
+  else if (config_type_ == FOUR_STEERING_CONFIG) 
+  {
+    std::vector<double> traction_commands;
+    std::vector<double> steering_commands;
+    
+    double steering_track = wheel_track_- 2 * y_steering_offset_;
+    double vel_steering_offset = (alpha * y_steering_offset_) / wheel_radius_;
+    double sign = copysign(1.0, Ws);
+    double vel_left_front  = sign * std::hypot((Ws - alpha * steering_track / 2),
+                                        (wheelbase_ * alpha / 2.0)) / wheel_radius_
+                      - vel_steering_offset;
+    double vel_right_front = sign * std::hypot((Ws + alpha * steering_track / 2),
+                                        (wheelbase_ * alpha / 2.0)) / wheel_radius_
+                      + vel_steering_offset;
+    double vel_left_rear = sign * std::hypot((Ws - alpha * steering_track / 2),
+                                      (wheelbase_ * alpha / 2.0)) / wheel_radius_
+                    - vel_steering_offset;
+    double vel_right_rear = sign * std::hypot((Ws + alpha * steering_track / 2),
+                                        (wheelbase_ * alpha / 2.0)) / wheel_radius_
+                      + vel_steering_offset;
+    traction_commands = {vel_left_front, vel_right_front, vel_left_rear, vel_right_rear};
+
+    double front_left_steering = 0.0;
+    double front_right_steering = 0.0;
+    // Compute steering angles
+    if(fabs(2.0 * Ws) > fabs(alpha * steering_track))
+    {
+      front_left_steering = atan(alpha * wheelbase_ /
+                                  (2.0 * Ws - alpha * steering_track));
+      front_right_steering = atan(alpha * wheelbase_ /
+                                    (2.0 * Ws + alpha * steering_track));
+    }
+    else if(fabs(Ws) > 0.001)
+    {
+      front_left_steering = copysign(M_PI_2, alpha);
+      front_right_steering = copysign(M_PI_2, alpha);
+    }
+    double rear_left_steering = -front_left_steering;
+    double rear_right_steering = -front_right_steering;
+    steering_commands = {front_left_steering, front_right_steering, rear_left_steering, rear_right_steering};
+
     return std::make_tuple(traction_commands, steering_commands);
   }
   else

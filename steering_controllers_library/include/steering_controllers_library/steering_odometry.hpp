@@ -31,6 +31,8 @@ namespace steering_odometry
 const unsigned int BICYCLE_CONFIG = 0;
 const unsigned int TRICYCLE_CONFIG = 1;
 const unsigned int ACKERMANN_CONFIG = 2;
+const unsigned int FOUR_STEERING_CONFIG = 3;
+
 /**
  * \brief The Odometry class handles odometry readings
  * (2D pose and velocity with related timestamp)
@@ -124,6 +126,21 @@ public:
     const double right_steer_pos, const double left_steer_pos, const double dt);
 
   /**
+   * \brief Updates the odometry class with latest wheels position
+   * \param fr_speed Front Right traction wheel velocity [rad/s]
+   * \param fl_speed Front Left traction wheel velocity [rad/s]
+   * \param rr_speed Rear Right steer wheel position [rad/s]
+   * \param rl_speed Rear Left steer wheel position [rad/s]
+   * \param front_steering Imaginary front steer wheel position [rad]
+   * \param rear_steering Imaginary rear steer wheel position [rad]
+   * \param dt      time difference to last call
+   * \return true if the odometry is actually updated
+   */
+  bool update_four_steering(
+    const double fr_speed, const double fl_speed, const double rr_speed,
+    const double rl_speed, const double front_steering, const double rear_steering, const double dt);
+
+  /**
    * \brief Updates the odometry class with latest velocity command
    * \param linear  Linear velocity [m/s]
    * \param angular Angular velocity [rad/s]
@@ -171,6 +188,17 @@ public:
    * \brief Sets the wheel parameters: radius, separation and wheelbase
    */
   void set_wheel_params(double wheel_radius, double wheelbase = 0.0, double wheel_track = 0.0);
+
+  /**
+   * \brief Sets the wheel parameters: radius, separation and wheelbase
+   */
+  void set_wheel_params(double wheel_radius, double wheelbase = 0.0, double wheel_track = 0.0);
+
+  /**
+   * \brief Sets the wheel parameters: radius, separation. wheelbase and wheel_steering_y_offset
+   */
+  void set_wheel_params(double wheel_radius, double wheelbase = 0.0,
+                        double wheel_track = 0.0, double y_steering_offset = 0.0);
 
   /**
    * \brief Velocity rolling window size setter
@@ -245,6 +273,7 @@ private:
   double wheel_track_;   // [m]
   double wheelbase_;     // [m]
   double wheel_radius_;  // [m]
+  double y_steering_offset_;  // [m]
 
   /// Configuration type used for the forward kinematics
   int config_type_ = -1;
