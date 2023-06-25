@@ -231,7 +231,7 @@ controller_interface::return_type JointTrajectoryController::update(
             const rclcpp::Time traj_start = (*traj_point_active_ptr_)->get_trajectory_start_time();
             const rclcpp::Time traj_end = traj_start + start_segment_itr->time_from_start;
 
-            time_difference = get_node()->now().seconds() - traj_end.seconds();
+            time_difference = time.seconds() - traj_end.seconds();
 
             if (time_difference > default_tolerances_.goal_time_tolerance)
             {
