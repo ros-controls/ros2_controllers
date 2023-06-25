@@ -1,0 +1,8 @@
+<library path="four_wheel_steering_controller">
+  <class name="four_wheel_steering_controller/FourWheelSteeringController"
+         type="four_wheel_steering_controller::FourWheelSteeringController" base_class_type="controller_interface::ChainableControllerInterface">
+  <description>
+    Steering controller for 4 WheelSteering robotic platform with four traction and four steering joints.
+  </description>
+  </class>
+</library>
