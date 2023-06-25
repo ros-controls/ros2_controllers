@@ -1092,7 +1092,8 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_old_trajectory)
 
   RCLCPP_INFO(traj_controller_->get_node()->get_logger(), "Sending new trajectory in the past");
   //  New trajectory will end before current time
-  rclcpp::Time new_traj_start = rclcpp::Clock().now() - delay - std::chrono::milliseconds(100);
+  rclcpp::Time new_traj_start =
+    rclcpp::Clock(RCL_STEADY_TIME).now() - delay - std::chrono::milliseconds(100);
   expected_actual.positions = {points_old[1].begin(), points_old[1].end()};
   expected_desired = expected_actual;
   std::cout << "Sending old trajectory" << std::endl;
@@ -1112,7 +1113,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_partial_old_trajectory
   const auto delay = std::chrono::milliseconds(500);
   builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(delay)};
   publish(time_from_start, points_old, rclcpp::Time());
-  trajectory_msgs::msg::JointTrajectoryPoint expected_actual, expected_desired;
+  trajectory_msgs::msg::JointTrajectoryPoint expected_actual, expected_desired, expected_old;
   expected_actual.positions = {points_old[0].begin(), points_old[0].end()};
   expected_desired = expected_actual;
   //  Check that we reached end of points_old[0]trajectory
@@ -1121,10 +1122,12 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_partial_old_trajectory
   RCLCPP_INFO(
     traj_controller_->get_node()->get_logger(), "Sending new trajectory partially in the past");
   //  New trajectory first point is in the past, second is in the future
-  rclcpp::Time new_traj_start = rclcpp::Clock().now() - delay - std::chrono::milliseconds(100);
-  expected_actual.positions = {points_new[1].begin(), points_new[1].end()};
-  expected_desired = expected_actual;
+  rclcpp::Time new_traj_start =
+    rclcpp::Clock(RCL_STEADY_TIME).now() - delay - std::chrono::milliseconds(100);
   publish(time_from_start, points_new, new_traj_start);
+  // it should not have accepted the new goal but finish the old one
+  expected_actual.positions = {points_old[1].begin(), points_old[1].end()};
+  expected_desired.positions = {points_old[1].begin(), points_old[1].end()};
   waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
 }
 
@@ -1163,7 +1166,8 @@ TEST_P(TrajectoryControllerTestParameterized, test_execute_partial_traj_in_futur
   // Send partial trajectory starting after full trajecotry is complete
   RCLCPP_INFO(traj_controller_->get_node()->get_logger(), "Sending new trajectory in the future");
   publish(
-    points_delay, partial_traj, rclcpp::Clock().now() + delay * 2, {}, partial_traj_velocities);
+    points_delay, partial_traj, rclcpp::Clock(RCL_STEADY_TIME).now() + delay * 2, {},
+    partial_traj_velocities);
   // Wait until the end start and end of partial traj
 
   expected_actual.positions = {partial_traj.back()[0], partial_traj.back()[1], full_traj.back()[2]};
