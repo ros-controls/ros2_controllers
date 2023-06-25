@@ -139,6 +139,8 @@ protected:
 
   std::vector<std::string> rear_wheels_state_names_;
   std::vector<std::string> front_wheels_state_names_;
+  std::vector<std::string> wheels_names_;
+  std::vector<std::string> steers_names_;
 
 private:
   // callback for topic interface

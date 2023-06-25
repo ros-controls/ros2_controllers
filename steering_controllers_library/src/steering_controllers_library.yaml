@@ -12,6 +12,13 @@ steering_controllers_library:
     read_only: true,
   }
 
+  four_steering: {
+    type: bool,
+    default_value: true,
+    description: "Is a four wheel steering robot?",
+    read_only: true,
+  }
+
   rear_wheels_names: {
     type: string_array,
     description: "Names of rear wheel joints.",
@@ -26,6 +33,28 @@ steering_controllers_library:
   front_wheels_names: {
     type: string_array,
     description: "Names of front wheel joints.",
+    read_only: true,
+    validation: {
+      size_lt<>: [5],
+      unique<>: null,
+      not_empty<>: null,
+    }
+  }
+
+  wheels_names: {
+    type: string_array,
+    description: "Names of wheel joints.",
+    read_only: true,
+    validation: {
+      size_lt<>: [5],
+      unique<>: null,
+      not_empty<>: null,
+    }
+  }
+
+  steers_names: {
+    type: string_array,
+    description: "Names of steer joints.",
     read_only: true,
     validation: {
       size_lt<>: [5],

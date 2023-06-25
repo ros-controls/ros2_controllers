@@ -90,10 +90,9 @@ bool FourWheelSteeringController::update_odometry(const rclcpp::Duration & perio
           rear_left_wheel_value, front_steer_position, rear_steer_position, period.seconds());
       }
     }
-  return true;
+    return true;
   }
 }
-
 }  // namespace four_wheel_steering_controller
 
 #include "pluginlib/class_list_macros.hpp"

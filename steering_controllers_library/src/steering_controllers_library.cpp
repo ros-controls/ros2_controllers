@@ -344,12 +344,12 @@ SteeringControllersLibrary::state_interface_configuration() const
     for (size_t i = 0; i <  params_.wheels_names.size(); i++)
     {
       state_interfaces_config.names.push_back(
-        wheels_names[i] + "/" + hardware_interface::HW_IF_VELOCITY);
+        wheels_names_[i] + "/" + hardware_interface::HW_IF_VELOCITY);
     }
     for (size_t i = 0; i <  params_.steers_names.size(); i++)
     {
       state_interfaces_config.names.push_back(
-        steers_names[i] + "/" + hardware_interface::HW_IF_POSITION);
+        steers_names_[i] + "/" + hardware_interface::HW_IF_POSITION);
     }
   }
 
@@ -482,9 +482,9 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
       {
         command_interfaces_[i].set_value(traction_commands[i]);
       }
-      for (size_t i = 0; i < params_.steers_names.size(0; i++))
+      for (size_t i = 0; i < params_.steers_names.size(); i++)
       {
-        command_interfaces_[i + params_wheels_names.size()].set_value(steering_commands[i])
+        command_interfaces_[i + params_.wheels_names.size()].set_value(steering_commands[i]);
       }
     }
 

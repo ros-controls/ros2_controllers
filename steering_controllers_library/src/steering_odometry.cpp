@@ -172,11 +172,11 @@ bool SteeringOdometry::update_four_steering(
 
   angular_ = (front_linear_speed * front_tmp + rear_linear_speed * rear_tmp) / 2.0;
 
-  linear_x_ = (front_linear_speed * cos(front_steering) + rear_linear_speed * cos(rear_steering)) / 2.0;
-  linear_y_ = (front_linear_speed * sin(front_steering) - wheelbase_ * angular_ / 2.0
+  const double linear_x_ = (front_linear_speed * cos(front_steering) + rear_linear_speed * cos(rear_steering)) / 2.0;
+  const double linear_y_ = (front_linear_speed * sin(front_steering) - wheelbase_ * angular_ / 2.0
               + rear_linear_speed * sin(rear_steering) + wheelbase_ * angular_ / 2.0) / 2.0;
 
-  linear_velocity =  copysign(1.0, rear_linear_speed)*sqrt(pow(linear_x_,2)+pow(linear_y_,2));
+  const double linear_velocity =  copysign(1.0, rear_linear_speed)*sqrt(pow(linear_x_,2)+pow(linear_y_,2));
 
   /// Integrate odometry:
   // integrateXY(linear_x_*dt, linear_y_*dt, angular_*dt);
