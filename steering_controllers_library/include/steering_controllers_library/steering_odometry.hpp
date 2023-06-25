@@ -92,6 +92,21 @@ public:
 
   /**
    * \brief Updates the odometry class with latest wheels position
+   * \param fr_speed Traction wheel velocity [rad/s]
+   * \param fl_speed Steer wheel position [rad]
+   * \param rr_speed time difference to last call
+   * \param rl_speed Traction wheel velocity [rad/s]
+   * \param front_steering Steer wheel position [rad]
+   * \param rear_steering time difference to last call
+   * \param dt Steer wheel position [rad]
+   * \return true if the odometry is actually updated
+   */
+  bool update_four_steering(
+    const double fr_speed, const double fl_speed, const double rr_speed,
+    const double rl_speed, const double front_steering, const double rear_steering, const double dt);
+
+  /**
+   * \brief Updates the odometry class with latest wheels position
    * \param traction_wheel_vel  Traction wheel velocity [rad/s]
    * \param front_steer_pos Steer wheel position [rad]
    * \param dt      time difference to last call
@@ -124,21 +139,6 @@ public:
   bool update_from_velocity(
     const double right_traction_wheel_vel, const double left_traction_wheel_vel,
     const double right_steer_pos, const double left_steer_pos, const double dt);
-
-  /**
-   * \brief Updates the odometry class with latest wheels position
-   * \param fr_speed Front Right traction wheel velocity [rad/s]
-   * \param fl_speed Front Left traction wheel velocity [rad/s]
-   * \param rr_speed Rear Right steer wheel position [rad/s]
-   * \param rl_speed Rear Left steer wheel position [rad/s]
-   * \param front_steering Imaginary front steer wheel position [rad]
-   * \param rear_steering Imaginary rear steer wheel position [rad]
-   * \param dt      time difference to last call
-   * \return true if the odometry is actually updated
-   */
-  bool update_four_steering(
-    const double fr_speed, const double fl_speed, const double rr_speed,
-    const double rl_speed, const double front_steering, const double rear_steering, const double dt);
 
   /**
    * \brief Updates the odometry class with latest velocity command
@@ -183,11 +183,6 @@ public:
    * \return angular velocity [rad/s]
    */
   double get_angular() const { return angular_; }
-
-  /**
-   * \brief Sets the wheel parameters: radius, separation and wheelbase
-   */
-  void set_wheel_params(double wheel_radius, double wheelbase = 0.0, double wheel_track = 0.0);
 
   /**
    * \brief Sets the wheel parameters: radius, separation and wheelbase

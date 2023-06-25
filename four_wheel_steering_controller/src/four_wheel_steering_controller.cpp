@@ -38,7 +38,7 @@ controller_interface::CallbackReturn FourWheelSteeringController::configure_odom
 
   odometry_.set_wheel_params(wheel_radius, wheelbase, wheel_track, y_steering_offset);
 
-  odometry_.set_odometry_type(steering_odometry::FOUR_WHEEL_CONFIG);
+  odometry_.set_odometry_type(steering_odometry::FOUR_STEERING_CONFIG);
 
   set_interface_numbers(NR_STATE_ITFS, NR_CMD_ITFS, NR_REF_ITFS);
 
@@ -85,13 +85,15 @@ bool FourWheelSteeringController::update_odometry(const rclcpp::Duration & perio
                                         (tan(rear_right_steer_position) + tan(rear_left_steer_position)));
         }
         // Estimate linear and angular velocity using joint information
-        odometry_.update_from_position(
+        odometry_.update_four_steering(
           front_right_wheel_value, front_left_wheel_value, rear_right_wheel_value,
-          rear_left_wheel_value, front_steer_position, rear_steer_position period.seconds());
+          rear_left_wheel_value, front_steer_position, rear_steer_position, period.seconds());
+      }
     }
-  }
   return true;
+  }
 }
+
 }  // namespace four_wheel_steering_controller
 
 #include "pluginlib/class_list_macros.hpp"

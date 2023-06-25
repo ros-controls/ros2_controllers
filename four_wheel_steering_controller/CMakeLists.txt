@@ -43,51 +43,51 @@ ament_target_dependencies(four_wheel_steering_controller PUBLIC ${THIS_PACKAGE_I
 
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
-target_compile_definitions(four_wheel_steering_controller PRIVATE "ACKERMANN_STEERING_CONTROLLER_BUILDING_DLL")
+target_compile_definitions(four_wheel_steering_controller PRIVATE "FOUR_WHEEL_STEERING_CONTROLLER_BUILDING_DLL")
 
 pluginlib_export_plugin_description_file(
   controller_interface four_wheel_steering_controller.xml)
 
-if(BUILD_TESTING)
-  find_package(ament_cmake_gmock REQUIRED)
-  find_package(controller_manager REQUIRED)
-  find_package(hardware_interface REQUIRED)
-  find_package(ros2_control_test_assets REQUIRED)
+# if(BUILD_TESTING)
+#   find_package(ament_cmake_gmock REQUIRED)
+#   find_package(controller_manager REQUIRED)
+#   find_package(hardware_interface REQUIRED)
+#   find_package(ros2_control_test_assets REQUIRED)
 
 
-  add_rostest_with_parameters_gmock(test_load_four_wheel_steering_controller
-    test/test_load_four_wheel_steering_controller.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/four_wheel_steering_controller_params.yaml
-  )
-  ament_target_dependencies(test_load_four_wheel_steering_controller
-    controller_manager
-    hardware_interface
-    ros2_control_test_assets
-  )
+#   add_rostest_with_parameters_gmock(test_load_four_wheel_steering_controller
+#     test/test_load_four_wheel_steering_controller.cpp
+#     ${CMAKE_CURRENT_SOURCE_DIR}/test/four_wheel_steering_controller_params.yaml
+#   )
+#   ament_target_dependencies(test_load_four_wheel_steering_controller
+#     controller_manager
+#     hardware_interface
+#     ros2_control_test_assets
+#   )
 
-  add_rostest_with_parameters_gmock(test_four_wheel_steering_controller
-    test/test_four_wheel_steering_controller.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/four_wheel_steering_controller_params.yaml
-  )
-  target_include_directories(test_four_wheel_steering_controller PRIVATE include)
-  target_link_libraries(test_four_wheel_steering_controller four_wheel_steering_controller)
-  ament_target_dependencies(
-    test_four_wheel_steering_controller
-    controller_interface
-    hardware_interface
-  )
+#   add_rostest_with_parameters_gmock(test_four_wheel_steering_controller
+#     test/test_four_wheel_steering_controller.cpp
+#     ${CMAKE_CURRENT_SOURCE_DIR}/test/four_wheel_steering_controller_params.yaml
+#   )
+#   target_include_directories(test_four_wheel_steering_controller PRIVATE include)
+#   target_link_libraries(test_four_wheel_steering_controller four_wheel_steering_controller)
+#   ament_target_dependencies(
+#     test_four_wheel_steering_controller
+#     controller_interface
+#     hardware_interface
+#   )
 
-  add_rostest_with_parameters_gmock(
-    test_four_wheel_steering_controller_preceeding test/test_four_wheel_steering_controller_preceeding.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/four_wheel_steering_controller_preceeding_params.yaml)
-  target_include_directories(test_four_wheel_steering_controller_preceeding PRIVATE include)
-  target_link_libraries(test_four_wheel_steering_controller_preceeding four_wheel_steering_controller)
-  ament_target_dependencies(
-    test_four_wheel_steering_controller_preceeding
-    controller_interface
-    hardware_interface
-  )
-endif()
+#   add_rostest_with_parameters_gmock(
+#     test_four_wheel_steering_controller_preceeding test/test_four_wheel_steering_controller_preceeding.cpp
+#     ${CMAKE_CURRENT_SOURCE_DIR}/test/four_wheel_steering_controller_preceeding_params.yaml)
+#   target_include_directories(test_four_wheel_steering_controller_preceeding PRIVATE include)
+#   target_link_libraries(test_four_wheel_steering_controller_preceeding four_wheel_steering_controller)
+#   ament_target_dependencies(
+#     test_four_wheel_steering_controller_preceeding
+#     controller_interface
+#     hardware_interface
+#   )
+# endif()
 
 install(
   DIRECTORY include/

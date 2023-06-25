@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>ackermann_steering_controller</name>
+  <name>four_wheel_steering_controller</name>
   <version>3.10.1</version>
   <description>Steering controller for Four-Wheels kinematics. All wheels can steer and drive the robotic platform.</description>
   <license>Apache License 2.0</license>

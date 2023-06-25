@@ -1,0 +1,29 @@
+four_wheel_steering_controller:
+  wheel_radius:
+    {
+      type: double,
+      default_value: 0.0,
+      description: "Wheel radius.",
+      read_only: false,
+    }
+  wheel_track:
+    {
+      type: double,
+      default_value: 0.0,
+      description: "Wheels track length.",
+      read_only: false,
+    }
+  wheelbase:
+    {
+      type: double,
+      default_value: 0.0,
+      description: "Distance between front and rear wheels.",
+      read_only: false,
+    }
+  y_steering_offset:
+    {
+      type: double,
+      default_value: 0.0,
+      description: "Offest between the steering and wheel joints.",
+      read_only: false,
+    }
