@@ -30,6 +30,9 @@ using hardware_interface::HW_IF_POSITION;
 using hardware_interface::HW_IF_VELOCITY;
 using hardware_interface::StateInterface;
 
+namespace
+{
+
 // subclassing and friending so we can access member variables
 class FriendGripperController
 : public gripper_action_controller::GripperActionController<HW_IF_POSITION>
@@ -61,5 +64,7 @@ protected:
   StateInterface joint_1_vel_state_{joint_name_, HW_IF_VELOCITY, &joint_states_[1]};
   CommandInterface joint_1_pos_cmd_{joint_name_, HW_IF_POSITION, &joint_commands_[0]};
 };
+
+}  // anonymous namespace
 
 #endif  // TEST_GRIPPER_CONTROLLERS_HPP_

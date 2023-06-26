@@ -2,6 +2,27 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.11.0 (2023-06-24)
+-------------------
+* Added -Wconversion flag and fix warnings (`#667 <https://github.com/ros-controls/ros2_controllers/issues/667>`_)
+* Contributors: gwalck
+
+3.10.1 (2023-06-06)
+-------------------
+
+3.10.0 (2023-06-04)
+-------------------
+
+3.9.0 (2023-05-28)
+------------------
+* Use branch name substitution for all links (`#618 <https://github.com/ros-controls/ros2_controllers/issues/618>`_)
+* [JTC] Fix deprecated header (`#610 <https://github.com/ros-controls/ros2_controllers/issues/610>`_)
+* Fix github links on control.ros.org (`#604 <https://github.com/ros-controls/ros2_controllers/issues/604>`_)
+* Contributors: Christoph Fröhlich
+
+3.8.0 (2023-05-14)
+------------------
+
 3.7.0 (2023-05-02)
 ------------------
 

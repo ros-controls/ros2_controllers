@@ -35,13 +35,13 @@
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/clock.hpp"
 #include "rclcpp/duration.hpp"
+#include "rclcpp/event_handler.hpp"
 #include "rclcpp/executors/multi_threaded_executor.hpp"
 #include "rclcpp/executors/single_threaded_executor.hpp"
 #include "rclcpp/node.hpp"
 #include "rclcpp/parameter.hpp"
 #include "rclcpp/publisher.hpp"
 #include "rclcpp/qos.hpp"
-#include "rclcpp/qos_event.hpp"
 #include "rclcpp/subscription.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp/utilities.hpp"
@@ -445,7 +445,7 @@ TEST_P(TrajectoryControllerTestParameterized, state_topic_consistency)
 const double EPS = 1e-6;
 /**
  * @brief check if position error of revolute joints are normalized if not configured so
-*/
+ */
 TEST_P(TrajectoryControllerTestParameterized, position_error_not_normalized)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
@@ -552,7 +552,7 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_normalized)
 
 /**
  * @brief check if position error of revolute joints are normalized if configured so
-*/
+ */
 TEST_P(TrajectoryControllerTestParameterized, position_error_normalized)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
