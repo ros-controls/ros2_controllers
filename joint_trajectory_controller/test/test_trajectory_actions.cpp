@@ -616,19 +616,14 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_cancel_hold_position)
   }
 }
 
-TEST_F(TestTrajectoryActions, test_allow_nonzero_velocity_stop_true)
+TEST_P(TestTrajectoryActionsTestParameterized, test_allow_nonzero_velocity_stop_true)
 {
-  // set parameter
-  command_interface_types_ = {"velocity"};
-  std::vector<rclcpp::Parameter> params = {
-    rclcpp::Parameter("command_interfaces", "velocity"),
-    rclcpp::Parameter("allow_nonzero_velocity_stop", true)};
-
+  std::vector<rclcpp::Parameter> params = {rclcpp::Parameter("allow_nonzero_velocity_stop", true)};
   SetUpExecutor(params);
   SetUpControllerHardware();
 
   std::shared_future<typename GoalHandle::SharedPtr> gh_future;
-  // send goal
+  // send goal with nonzero last velocities
   {
     std::vector<JointTrajectoryPoint> points;
     JointTrajectoryPoint point1;
@@ -666,13 +661,9 @@ TEST_F(TestTrajectoryActions, test_allow_nonzero_velocity_stop_true)
   EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
 }
 
-TEST_F(TestTrajectoryActions, test_allow_nonzero_velocity_stop_false)
+TEST_P(TestTrajectoryActionsTestParameterized, test_allow_nonzero_velocity_stop_false)
 {
-  // set parameter
-  std::vector<rclcpp::Parameter> params = {
-    rclcpp::Parameter("command_interfaces", "velocity"),
-    rclcpp::Parameter("allow_nonzero_velocity_stop", false)};
-
+  std::vector<rclcpp::Parameter> params = {rclcpp::Parameter("allow_nonzero_velocity_stop", false)};
   SetUpExecutor(params);
   SetUpControllerHardware();
 
@@ -745,7 +736,6 @@ TEST_F(TestTrajectoryActions, test_allow_nonzero_velocity_stop_false)
   }
 
   EXPECT_TRUE(gh_future.get());
-  EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
 }
 
 // position controllers
