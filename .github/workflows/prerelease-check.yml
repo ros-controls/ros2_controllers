@@ -9,7 +9,6 @@ on:
         default: 'rolling'
         type: choice
         options:
-        - foxy
         - humble
         - rolling
       branch:
@@ -18,7 +17,6 @@ on:
         default: 'master'
         type: choice
         options:
-        - foxy
         - humble
         - master
 

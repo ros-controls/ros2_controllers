@@ -1,4 +1,6 @@
-.. _addmittance_controller_userdoc:
+:github_url: https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/admittance_controller/doc/userdoc.rst
+
+.. _admittance_controller_userdoc:
 
 Admittance Controller
 ======================
@@ -16,8 +18,8 @@ Parameters
 ^^^^^^^^^^^
 
 The admittance controller's uses the `generate_parameter_library <https://github.com/PickNikRobotics/generate_parameter_library>`_ to handle its parameters.
-The parameter `definition file located in the src folder <https://github.com/ros-controls/ros2_controllers/blob/master/admittance_controller/src/admittance_controller_parameters.yaml>`_ contains descriptions for all the parameters used by the controller.
-An example parameter file can be found in the `test folder of the controller <https://github.com/ros-controls/ros2_controllers/blob/master/admittance_controller/test/test_params.yaml>`_
+The parameter `definition file located in the src folder <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/admittance_controller/src/admittance_controller_parameters.yaml>`_ contains descriptions for all the parameters used by the controller.
+An example parameter file can be found in the `test folder of the controller <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/admittance_controller/test/test_params.yaml>`_
 
 
 Topics
@@ -42,14 +44,14 @@ The controller has ``position`` and ``velocity`` reference interfaces exported i
 States
 ^^^^^^^
 The state interfaces are defined with ``joints`` and ``state_interfaces`` parameters as follows: ``<joint>/<state_interface>``.
-Supported state interfaces are ``position``, ``velocity``, and ``acceleration`` as defined in the `hardware_interface/hardware_interface_type_values.hpp <https://github.com/ros-controls/ros2_control/blob/master/hardware_interface/include/hardware_interface/types/hardware_interface_type_values.hpp>`_.
+Supported state interfaces are ``position``, ``velocity``, and ``acceleration`` as defined in the `hardware_interface/hardware_interface_type_values.hpp <https://github.com/ros-controls/ros2_control/blob/{REPOS_FILE_BRANCH}/hardware_interface/include/hardware_interface/types/hardware_interface_type_values.hpp>`_.
 If some interface is not provided, the last commanded interface will be used for calculation.
 
-For handling TCP wrenches `*Force Torque Sensor* semantic component  (from package *controller_interface*) <https://github.com/ros-controls/ros2_control/blob/master/controller_interface/include/semantic_components/force_torque_sensor.hpp>`_ is used.
+For handling TCP wrenches `*Force Torque Sensor* semantic component  (from package *controller_interface*) <https://github.com/ros-controls/ros2_control/blob/{REPOS_FILE_BRANCH}/controller_interface/include/semantic_components/force_torque_sensor.hpp>`_ is used.
 The interfaces have prefix ``ft_sensor.name``, building the interfaces: ``<sensor_name>/[force.x|force.y|force.z|torque.x|torque.y|torque.z]``.
 
 
 Commands
 ^^^^^^^^^
 The command interfaces are defined with ``joints`` and ``command_interfaces`` parameters as follows: ``<joint>/<command_interface>``.
-Supported state interfaces are ``position``, ``velocity``, and ``acceleration`` as defined in the `hardware_interface/hardware_interface_type_values.hpp <https://github.com/ros-controls/ros2_control/blob/master/hardware_interface/include/hardware_interface/types/hardware_interface_type_values.hpp>`_.
+Supported state interfaces are ``position``, ``velocity``, and ``acceleration`` as defined in the `hardware_interface/hardware_interface_type_values.hpp <https://github.com/ros-controls/ros2_control/blob/{REPOS_FILE_BRANCH}/hardware_interface/include/hardware_interface/types/hardware_interface_type_values.hpp>`_.
