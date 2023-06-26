@@ -175,6 +175,9 @@ open_loop_control (boolean)
 
   Default: false
 
+allow_nonzero_velocity_stop (boolean)
+  If not set true, the last velocity point has to be zero or the goal will be rejected.
+
 constraints (structure)
   Default values for tolerances if no explicit values are states in JointTrajectory message.
 
