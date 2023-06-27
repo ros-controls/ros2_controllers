@@ -453,6 +453,7 @@ TEST_P(TrajectoryControllerTestParameterized, no_hold_on_startup)
 
   constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
   updateController(rclcpp::Duration(FIRST_POINT_TIME));
+  // after startup without start_with_holding being set, we expect no active trajectory
   ASSERT_FALSE(traj_controller_->carryingOutTrajectory());
 
   executor.cancel();
@@ -470,6 +471,8 @@ TEST_P(TrajectoryControllerTestParameterized, hold_on_startup)
 
   constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
   updateController(rclcpp::Duration(FIRST_POINT_TIME));
+  // after startup with start_with_holding being set, we expect an active trajectory:
+  // one point, being the position at startup
   ASSERT_TRUE(traj_controller_->carryingOutTrajectory());
 
   executor.cancel();

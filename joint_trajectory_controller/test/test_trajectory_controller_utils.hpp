@@ -119,6 +119,7 @@ public:
 
   rclcpp::WaitSet joint_cmd_sub_wait_set_;
 
+  // TODO(christophfroehlich): redundant to changes proposed by #609. choose one implementation
   bool carryingOutTrajectory() const
   {
     return (traj_point_active_ptr_ && (*traj_point_active_ptr_)->has_trajectory_msg());
