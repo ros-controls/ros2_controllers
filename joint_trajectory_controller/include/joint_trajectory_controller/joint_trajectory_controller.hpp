@@ -164,7 +164,7 @@ protected:
   bool has_effort_command_interface_ = false;
 
   // Should the controller start holding position?
-  bool start_holding_ = true;
+  bool start_with_holding_ = true;
   /// If true, a velocity feedforward term plus corrective PID term is used
   bool use_closed_loop_pid_adapter_ = false;
   using PidPtr = std::shared_ptr<control_toolbox::Pid>;

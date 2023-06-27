@@ -443,13 +443,13 @@ TEST_P(TrajectoryControllerTestParameterized, state_topic_consistency)
 
 /**
  * @brief check if hold on startup is deactivated
-*/
+ */
 TEST_P(TrajectoryControllerTestParameterized, no_hold_on_startup)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
 
-  rclcpp::Parameter start_holding_parameter("start_holding", false);
-  SetUpAndActivateTrajectoryController(executor, true, {start_holding_parameter});
+  rclcpp::Parameter start_with_holding_parameter("start_with_holding", false);
+  SetUpAndActivateTrajectoryController(executor, true, {start_with_holding_parameter});
 
   constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
   updateController(rclcpp::Duration(FIRST_POINT_TIME));
@@ -460,13 +460,13 @@ TEST_P(TrajectoryControllerTestParameterized, no_hold_on_startup)
 
 /**
  * @brief check if hold on startup
-*/
+ */
 TEST_P(TrajectoryControllerTestParameterized, hold_on_startup)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
 
-  rclcpp::Parameter start_holding_parameter("start_holding", true);
-  SetUpAndActivateTrajectoryController(executor, true, {start_holding_parameter});
+  rclcpp::Parameter start_with_holding_parameter("start_with_holding", true);
+  SetUpAndActivateTrajectoryController(executor, true, {start_with_holding_parameter});
 
   constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
   updateController(rclcpp::Duration(FIRST_POINT_TIME));

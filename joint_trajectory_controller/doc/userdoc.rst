@@ -175,7 +175,7 @@ open_loop_control (boolean)
 
   Default: false
 
-start_holding (bool)
+start_with_holding (bool)
   If true, start with holding position after activation
 
   Default: true
