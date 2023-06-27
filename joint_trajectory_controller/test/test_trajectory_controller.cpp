@@ -66,7 +66,7 @@ TEST_P(TrajectoryControllerTestParameterized, configure_state_ignores_commands)
   rclcpp::executors::MultiThreadedExecutor executor;
   SetUpTrajectoryController(executor);
   traj_controller_->get_node()->set_parameter(
-    rclcpp::Parameter("allow_nonzero_velocity_stop", true));
+    rclcpp::Parameter("allow_nonzero_velocity_at_trajectory_end", true));
 
   // const auto future_handle_ = std::async(std::launch::async, spin, &executor);
 
@@ -204,7 +204,8 @@ TEST_P(TrajectoryControllerTestParameterized, activate)
 TEST_P(TrajectoryControllerTestParameterized, cleanup)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
-  std::vector<rclcpp::Parameter> params = {rclcpp::Parameter("allow_nonzero_velocity_stop", true)};
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("allow_nonzero_velocity_at_trajectory_end", true)};
   SetUpAndActivateTrajectoryController(executor, true, params);
 
   // send msg
@@ -263,7 +264,7 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
   rclcpp::executors::MultiThreadedExecutor executor;
   SetUpTrajectoryController(executor, false);
   traj_controller_->get_node()->set_parameter(
-    rclcpp::Parameter("allow_nonzero_velocity_stop", true));
+    rclcpp::Parameter("allow_nonzero_velocity_at_trajectory_end", true));
 
   // This call is replacing the way parameters are set via launch
   SetParameters();
@@ -455,7 +456,8 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_normalized)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
   constexpr double k_p = 10.0;
-  std::vector<rclcpp::Parameter> params = {rclcpp::Parameter("allow_nonzero_velocity_stop", true)};
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("allow_nonzero_velocity_at_trajectory_end", true)};
   SetUpAndActivateTrajectoryController(executor, true, params, true, k_p, 0.0, false);
   subscribeToState();
 
@@ -563,7 +565,8 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_normalized)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
   constexpr double k_p = 10.0;
-  std::vector<rclcpp::Parameter> params = {rclcpp::Parameter("allow_nonzero_velocity_stop", true)};
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("allow_nonzero_velocity_at_trajectory_end", true)};
   SetUpAndActivateTrajectoryController(executor, true, params, true, k_p, 0.0, true);
   subscribeToState();
 

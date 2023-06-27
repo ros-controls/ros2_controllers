@@ -616,9 +616,10 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_cancel_hold_position)
   }
 }
 
-TEST_P(TestTrajectoryActionsTestParameterized, test_allow_nonzero_velocity_stop_true)
+TEST_P(TestTrajectoryActionsTestParameterized, test_allow_nonzero_velocity_at_trajectory_end_true)
 {
-  std::vector<rclcpp::Parameter> params = {rclcpp::Parameter("allow_nonzero_velocity_stop", true)};
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("allow_nonzero_velocity_at_trajectory_end", true)};
   SetUpExecutor(params);
   SetUpControllerHardware();
 
@@ -661,9 +662,10 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_allow_nonzero_velocity_stop_
   EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
 }
 
-TEST_P(TestTrajectoryActionsTestParameterized, test_allow_nonzero_velocity_stop_false)
+TEST_P(TestTrajectoryActionsTestParameterized, test_allow_nonzero_velocity_at_trajectory_end_false)
 {
-  std::vector<rclcpp::Parameter> params = {rclcpp::Parameter("allow_nonzero_velocity_stop", false)};
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("allow_nonzero_velocity_at_trajectory_end", false)};
   SetUpExecutor(params);
   SetUpControllerHardware();
 

@@ -65,11 +65,11 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
   }
 
   // TODO(christophfroehlich): remove deprecation warning
-  if (params_.allow_nonzero_velocity_stop)
+  if (params_.allow_nonzero_velocity_at_trajectory_end)
   {
     RCLCPP_WARN(
       get_node()->get_logger(),
-      "[Deprecated]: \"allow_nonzero_velocity_stop\" is set to "
+      "[Deprecated]: \"allow_nonzero_velocity_at_trajectory_end\" is set to "
       "true. The default behavior will change to false.");
   }
 
@@ -1328,7 +1328,7 @@ bool JointTrajectoryController::validate_trajectory_msg(
     }
   }
 
-  if (!params_.allow_nonzero_velocity_stop)
+  if (!params_.allow_nonzero_velocity_at_trajectory_end)
   {
     for (size_t i = 0; i < trajectory.points.back().velocities.size(); ++i)
     {

@@ -66,7 +66,7 @@ joint_trajectory_controller:
       one_of<>: [["splines", "none"]],
     }
   }
-  allow_nonzero_velocity_stop: {
+  allow_nonzero_velocity_at_trajectory_end: {
     type: bool,
     default_value: true,
     description: "If not set true, the last velocity point has to be zero or the goal will be rejected",
