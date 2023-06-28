@@ -6,9 +6,13 @@ on:
   workflow_dispatch:
     branches:
       - master
+      - '*feature*'
+      - '*feature/**'
   pull_request:
     branches:
       - master
+      - '*feature*'
+      - '*feature/**'
   push:
     branches:
       - master
