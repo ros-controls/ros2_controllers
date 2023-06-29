@@ -711,6 +711,96 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_normalized)
 }
 
 /**
+ * @brief check if use_closed_loop_pid is active
+ */
+TEST_P(TrajectoryControllerTestParameterized, use_closed_loop_pid)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+
+  SetUpAndActivateTrajectoryController(executor);
+
+  if (
+    (traj_controller_->has_velocity_command_interface() &&
+     !traj_controller_->has_position_command_interface() &&
+     !traj_controller_->has_effort_command_interface() &&
+     !traj_controller_->has_acceleration_command_interface() &&
+     !traj_controller_->is_open_loop()) ||
+    traj_controller_->has_effort_command_interface())
+  {
+    EXPECT_TRUE(traj_controller_->use_closed_loop_pid_adapter());
+  }
+}
+
+/**
+ * @brief check if velocity error is calculated correctly
+ */
+TEST_P(TrajectoryControllerTestParameterized, velocity_error)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+  SetUpAndActivateTrajectoryController(executor, true, {}, true);
+  subscribeToState();
+
+  size_t n_joints = joint_names_.size();
+
+  // send msg
+  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
+  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
+  // *INDENT-OFF*
+  std::vector<std::vector<double>> points_positions{
+    {{3.3, 4.4, 6.6}}, {{7.7, 8.8, 9.9}}, {{10.10, 11.11, 12.12}}};
+  std::vector<std::vector<double>> points_velocities{
+    {{0.1, 0.1, 0.1}}, {{0.2, 0.2, 0.2}}, {{0.3, 0.3, 0.3}}};
+  // *INDENT-ON*
+  publish(time_from_start, points_positions, rclcpp::Time(), {}, points_velocities);
+  traj_controller_->wait_for_trajectory(executor);
+
+  // first update
+  updateController(rclcpp::Duration(FIRST_POINT_TIME));
+
+  // Spin to receive latest state
+  executor.spin_some();
+  auto state_msg = getState();
+  ASSERT_TRUE(state_msg);
+
+  // has the msg the correct vector sizes?
+  EXPECT_EQ(n_joints, state_msg->reference.positions.size());
+  EXPECT_EQ(n_joints, state_msg->feedback.positions.size());
+  EXPECT_EQ(n_joints, state_msg->error.positions.size());
+  if (traj_controller_->has_velocity_state_interface())
+  {
+    EXPECT_EQ(n_joints, state_msg->reference.velocities.size());
+    EXPECT_EQ(n_joints, state_msg->feedback.velocities.size());
+    EXPECT_EQ(n_joints, state_msg->error.velocities.size());
+  }
+  if (traj_controller_->has_acceleration_state_interface())
+  {
+    EXPECT_EQ(n_joints, state_msg->reference.accelerations.size());
+    EXPECT_EQ(n_joints, state_msg->feedback.accelerations.size());
+    EXPECT_EQ(n_joints, state_msg->error.accelerations.size());
+  }
+
+  // no change in state interface should happen
+  if (traj_controller_->has_velocity_state_interface())
+  {
+    EXPECT_EQ(state_msg->feedback.velocities, INITIAL_VEL_JOINTS);
+  }
+  // is the velocity error correct?
+  if (
+    traj_controller_->use_closed_loop_pid_adapter()  // always needed for PID controller
+    || (traj_controller_->has_velocity_state_interface() &&
+        traj_controller_->has_velocity_command_interface()))
+  {
+    // don't check against a value, because spline intepolation might overshoot depending on
+    // interface combinations
+    EXPECT_GE(state_msg->error.velocities[0], points_velocities[0][0]);
+    EXPECT_GE(state_msg->error.velocities[1], points_velocities[0][1]);
+    EXPECT_GE(state_msg->error.velocities[2], points_velocities[0][2]);
+  }
+
+  executor.cancel();
+}
+
+/**
  * @brief test_jumbled_joint_order Test sending trajectories with a joint order different from
  * internal controller order
  */
