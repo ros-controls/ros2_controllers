@@ -129,12 +129,6 @@ public:
   bool has_nontrivial_traj() { return (*traj_point_active_ptr_)->has_nontrivial_msg(); }
 
   rclcpp::WaitSet joint_cmd_sub_wait_set_;
-
-  // TODO(christophfroehlich): redundant to changes proposed by #609. choose one implementation
-  bool carryingOutTrajectory() const
-  {
-    return (traj_point_active_ptr_ && (*traj_point_active_ptr_)->has_trajectory_msg());
-  }
 };
 
 class TrajectoryControllerTest : public ::testing::Test
