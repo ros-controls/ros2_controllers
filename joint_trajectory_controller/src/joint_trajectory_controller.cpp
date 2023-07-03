@@ -193,7 +193,7 @@ controller_interface::return_type JointTrajectoryController::update(
   };
 
   // currently carrying out a trajectory
-  if (traj_point_active_ptr_ && (*traj_point_active_ptr_)->has_trajectory_msg())
+  if (has_active_trajectory())
   {
     bool first_sample = false;
     // if sampling the first time, set the point before you sample
@@ -584,7 +584,7 @@ void JointTrajectoryController::query_state_service(
   const auto active_goal = *rt_active_goal_.readFromRT();
   response->name = params_.joints;
   trajectory_msgs::msg::JointTrajectoryPoint state_requested = state_current_;
-  if ((traj_point_active_ptr_ && (*traj_point_active_ptr_)->has_trajectory_msg()))
+  if (has_active_trajectory())
   {
     TrajectoryPointConstIter start_segment_itr, end_segment_itr;
     response->success = (*traj_point_active_ptr_)
@@ -1458,6 +1458,11 @@ void JointTrajectoryController::resize_joint_trajectory_point_command(
   {
     point.effort.resize(size, 0.0);
   }
+}
+
+bool JointTrajectoryController::has_active_trajectory()
+{
+  return traj_point_active_ptr_ && (*traj_point_active_ptr_)->has_trajectory_msg();
 }
 
 }  // namespace joint_trajectory_controller
