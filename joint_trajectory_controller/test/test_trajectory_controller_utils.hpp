@@ -123,6 +123,10 @@ public:
 
   bool is_open_loop() { return params_.open_loop_control; }
 
+  bool has_active_traj() { return has_active_trajectory(); }
+
+  bool has_nontrivial_traj() { return (*traj_point_active_ptr_)->has_nontrivial_msg(); }
+
   rclcpp::WaitSet joint_cmd_sub_wait_set_;
 };
 

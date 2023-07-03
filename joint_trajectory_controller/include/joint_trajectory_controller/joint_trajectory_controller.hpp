@@ -248,6 +248,9 @@ protected:
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   bool reset();
 
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
+  bool has_active_trajectory();
+
   using JointTrajectoryPoint = trajectory_msgs::msg::JointTrajectoryPoint;
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   void publish_state(
