@@ -131,7 +131,7 @@ controller_interface::return_type JointTrajectoryController::update(
     current_pose_msg.points[0].accelerations.clear();  // ensure no acceleration
     current_pose_msg.points[0].effort.clear();  // ensure no explicit effort (PID will fix this)
 
-    aborted_traj_ptr =
+    aborted_traj_ptr_ =
       traj_external_point_ptr_
         ->get_trajectory_msg();  // Used to avoid updating the trajectory back to the aborted one
     traj_external_point_ptr_->update(
@@ -171,7 +171,7 @@ controller_interface::return_type JointTrajectoryController::update(
   // Check if a new external message has been received from nonRT threads
   auto current_external_msg = traj_external_point_ptr_->get_trajectory_msg();
   auto new_external_msg = traj_msg_external_point_ptr_.readFromRT();
-  if (current_external_msg != *new_external_msg && aborted_traj_ptr != *new_external_msg)
+  if (current_external_msg != *new_external_msg && aborted_traj_ptr_ != *new_external_msg)
   {
     fill_partial_goal(*new_external_msg);
     sort_to_local_joint_order(*new_external_msg);
@@ -340,9 +340,8 @@ controller_interface::return_type JointTrajectoryController::update(
           rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
           // remove the active trajectory pointer so that we stop commanding the hardware
           traj_point_active_ptr_ = nullptr;
-
-          // check goal tolerance
         }
+        // check goal tolerance
         else if (!before_last_point)
         {
           if (!outside_goal_tolerance)

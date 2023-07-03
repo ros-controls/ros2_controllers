@@ -189,7 +189,7 @@ protected:
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> traj_msg_home_ptr_ = nullptr;
   realtime_tools::RealtimeBuffer<std::shared_ptr<trajectory_msgs::msg::JointTrajectory>>
     traj_msg_external_point_ptr_;
-  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> aborted_traj_ptr = nullptr;
+  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> aborted_traj_ptr_ = nullptr;
 
   using ControllerStateMsg = control_msgs::msg::JointTrajectoryControllerState;
   using StatePublisher = realtime_tools::RealtimePublisher<ControllerStateMsg>;
