@@ -346,6 +346,7 @@ controller_interface::return_type JointTrajectoryController::update(
         {
           if (!outside_goal_tolerance)
           {
+            set_hold_position();
             auto res = std::make_shared<FollowJTrajAction::Result>();
             res->set__error_code(FollowJTrajAction::Result::SUCCESSFUL);
             active_goal->setSucceeded(res);
