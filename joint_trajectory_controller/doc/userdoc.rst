@@ -176,7 +176,7 @@ open_loop_control (boolean)
   Default: false
 
 allow_nonzero_velocity_at_trajectory_end (boolean)
-  If not set true, the last velocity point has to be zero or the goal will be rejected.
+  If false, the last velocity point has to be zero or the goal will be rejected.
 
   Default: true
 
