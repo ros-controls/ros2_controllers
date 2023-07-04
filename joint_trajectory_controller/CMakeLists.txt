@@ -12,6 +12,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   controller_interface
   generate_parameter_library
   hardware_interface
+  joint_limits
   pluginlib
   rclcpp
   rclcpp_lifecycle

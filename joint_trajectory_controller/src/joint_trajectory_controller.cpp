@@ -57,6 +57,14 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
     // Create the parameter listener and get the parameters
     param_listener_ = std::make_shared<ParamListener>(get_node());
     params_ = param_listener_->get_params();
+
+    joint_limiter_loader_ = std::make_shared<pluginlib::ClassLoader<JointLimiter>>(
+      "joint_limits", "joint_limits::JointLimiterInterface<joint_limits::JointLimits>");
+    RCLCPP_DEBUG(get_node()->get_logger(), "Available joint limiter classes:");
+    for (const auto & available_class : joint_limiter_loader_->getDeclaredClasses())
+    {
+      RCLCPP_DEBUG(get_node()->get_logger(), "  %s", available_class.c_str());
+    }
   }
   catch (const std::exception & e)
   {
@@ -208,6 +216,11 @@ controller_interface::return_type JointTrajectoryController::update(
 
     if (valid_point)
     {
+      if (joint_limiter_)
+      {
+        joint_limiter_->enforce(state_current_, state_desired_, period);
+      }
+
       bool tolerance_violated_while_moving = false;
       bool outside_goal_tolerance = false;
       bool within_goal_time = true;
@@ -601,6 +614,14 @@ void JointTrajectoryController::query_state_service(
     RCLCPP_ERROR(logger, "Currently there is no valid trajectory instance.");
     response->success = false;
   }
+
+  if (joint_limiter_)
+  {
+    // TODO(gwalck) is this correct to set an absolute value for the period here ?
+    const rclcpp::Duration period = rclcpp::Duration::from_seconds(0.01);
+    joint_limiter_->enforce(state_current_, state_requested, period);
+  }
+
   response->position = state_requested.positions;
   response->velocity = state_requested.velocities;
   response->acceleration = state_requested.accelerations;
@@ -718,6 +739,21 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   {
     const auto & gains = params_.gains.joints_map.at(params_.joints[i]);
     normalize_joint_error_[i] = gains.normalize_error;
+  }
+
+  // Initialize joint limits
+  if (!params_.joint_limiter_type.empty())
+  {
+    RCLCPP_INFO(
+      get_node()->get_logger(), "Using joint limiter plugin: '%s'",
+      params_.joint_limiter_type.c_str());
+    joint_limiter_ = std::unique_ptr<JointLimiter>(
+      joint_limiter_loader_->createUnmanagedInstance(params_.joint_limiter_type));
+    joint_limiter_->init(command_joint_names_, get_node());
+  }
+  else
+  {
+    RCLCPP_INFO(get_node()->get_logger(), "Not using joint limiter plugin as none defined.");
   }
 
   if (params_.state_interfaces.empty())
@@ -938,6 +974,11 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
     state_current_ = state;
     state_desired_ = state;
     last_commanded_state_ = state;
+  }
+
+  if (joint_limiter_)
+  {
+    joint_limiter_->configure(last_commanded_state_);
   }
 
   return CallbackReturn::SUCCESS;
