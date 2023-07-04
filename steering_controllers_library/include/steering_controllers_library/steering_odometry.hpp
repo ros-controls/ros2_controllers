@@ -192,8 +192,8 @@ public:
   /**
    * \brief Sets the wheel parameters: radius, separation. wheelbase and wheel_steering_y_offset
    */
-  void set_wheel_params(double wheel_radius, double wheelbase = 0.0,
-                        double wheel_track = 0.0, double y_steering_offset = 0.0);
+  void set_wheel_params(double wheel_radius, double wheelbase,
+                        double wheel_track, double y_steering_offset);
 
   /**
    * \brief Velocity rolling window size setter
