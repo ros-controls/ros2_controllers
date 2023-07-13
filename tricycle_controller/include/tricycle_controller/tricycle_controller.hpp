@@ -171,6 +171,7 @@ protected:
 
   bool is_halted = false;
   bool use_stamped_vel_ = true;
+  bool use_twist_as_ackermann_msg_ = false;
   bool use_exact_mode_ = false;
   double exact_mode_threshold_ = M_PI / 6;
 

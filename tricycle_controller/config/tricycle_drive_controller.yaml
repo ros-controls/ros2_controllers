@@ -38,10 +38,11 @@ tricycle_controller:
     # cmd_vel input
     cmd_vel_timeout: 500 # In milliseconds. Timeout to stop if no cmd_vel is received
     use_stamped_vel: false # Set to True if using TwistStamped.
+    use_twist_as_ackermann_msg: false # If true, the cmd_vel input is interpreted as an AckermannDrive message where linear.x is the desired speed (m/s) and angular.z is the desired steering angle (rad/s).
 
     # Debug
     publish_ackermann_command: true # Publishes AckermannDrive. The speed does not comply to the msg definition, it the wheel angular speed in rad/s.
 
     # Use exact mode
     use_exact_mode: false # If True, the traction wheel will not actuate until the steering wheel is at the desired position within an error of exact_mode_threshold. Can be set via service.
-    exact_mode_threshold: 0.5233 # In rad. The steering wheel position error threshold to activate the traction wheel actuation. Has no effect if use_exact_mode is False.
+    exact_mode_threshold: 0.5233 # In rad. The steering wheel position error threshold to activate the traction wheel actuation. Has no effect if use_exact_mode is False.      use_twist_as_ackermann_msg: false
