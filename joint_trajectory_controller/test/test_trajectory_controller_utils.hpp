@@ -99,6 +99,11 @@ public:
     params_.state_interfaces = state_interfaces;
   }
 
+  void set_joint_limiter_type(const std::string & joint_limiter_type)
+  {
+    params_.joint_limiter_type = joint_limiter_type;
+  }
+
   void trigger_declare_parameters() { param_listener_->declare_params(); }
 
   trajectory_msgs::msg::JointTrajectoryPoint get_current_state_when_offset()
@@ -121,6 +126,8 @@ public:
 
   bool use_closed_loop_pid_adapter() { return use_closed_loop_pid_adapter_; }
 
+  bool has_joint_limiter() { return joint_limiter_ != nullptr; }
+
   bool is_open_loop() { return params_.open_loop_control; }
 
   rclcpp::WaitSet joint_cmd_sub_wait_set_;
@@ -129,7 +136,7 @@ public:
 class TrajectoryControllerTest : public ::testing::Test
 {
 public:
-  static void SetUpTestCase() { rclcpp::init(0, nullptr); }
+  static void SetUpTestCase() { }
 
   virtual void SetUp()
   {
@@ -163,6 +170,7 @@ public:
       traj_controller_->set_joint_names(joint_names_);
       traj_controller_->set_command_interfaces(command_interface_types_);
       traj_controller_->set_state_interfaces(state_interface_types_);
+      traj_controller_->set_joint_limiter_type(joint_limiter_type_);
     }
     auto ret = traj_controller_->init(controller_name_);
     if (ret != controller_interface::return_type::OK)
@@ -179,7 +187,8 @@ public:
     const rclcpp::Parameter joint_names_param("joints", joint_names_);
     const rclcpp::Parameter cmd_interfaces_params("command_interfaces", command_interface_types_);
     const rclcpp::Parameter state_interfaces_params("state_interfaces", state_interface_types_);
-    node->set_parameters({joint_names_param, cmd_interfaces_params, state_interfaces_params});
+    const rclcpp::Parameter joint_limiter_type_params("joint_limiter_type", joint_limiter_type_);
+    node->set_parameters({joint_names_param, cmd_interfaces_params, state_interfaces_params, joint_limiter_type_params});
   }
 
   void SetPidParameters(
@@ -224,8 +233,13 @@ public:
     ActivateTrajectoryController(separate_cmd_and_state_values);
   }
 
-  void ActivateTrajectoryController(bool separate_cmd_and_state_values = false)
+  void ActivateTrajectoryController(
+    bool separate_cmd_and_state_values = false,
+    const std::vector<double> & init_pos_state=INITIAL_POS_JOINTS,
+    const std::vector<double> & init_vel_state=INITIAL_VEL_JOINTS,
+    const std::vector<double> & init_acc_state=INITIAL_ACC_JOINTS)
   {
+    separate_cmd_and_state_values_ = separate_cmd_and_state_values;
     std::vector<hardware_interface::LoanedCommandInterface> cmd_interfaces;
     std::vector<hardware_interface::LoanedStateInterface> state_interfaces;
     pos_cmd_interfaces_.reserve(joint_names_.size());
@@ -258,16 +272,16 @@ public:
 
       // Add to export lists and set initial values
       cmd_interfaces.emplace_back(pos_cmd_interfaces_.back());
-      cmd_interfaces.back().set_value(INITIAL_POS_JOINTS[i]);
+      cmd_interfaces.back().set_value(init_pos_state[i]);
       cmd_interfaces.emplace_back(vel_cmd_interfaces_.back());
-      cmd_interfaces.back().set_value(INITIAL_VEL_JOINTS[i]);
+      cmd_interfaces.back().set_value(init_vel_state[i]);
       cmd_interfaces.emplace_back(acc_cmd_interfaces_.back());
-      cmd_interfaces.back().set_value(INITIAL_ACC_JOINTS[i]);
+      cmd_interfaces.back().set_value(init_acc_state[i]);
       cmd_interfaces.emplace_back(eff_cmd_interfaces_.back());
       cmd_interfaces.back().set_value(INITIAL_EFF_JOINTS[i]);
-      joint_state_pos_[i] = INITIAL_POS_JOINTS[i];
-      joint_state_vel_[i] = INITIAL_VEL_JOINTS[i];
-      joint_state_acc_[i] = INITIAL_ACC_JOINTS[i];
+      joint_state_pos_[i] = init_pos_state[i];
+      joint_state_vel_[i] = init_vel_state[i];
+      joint_state_acc_[i] = init_acc_state[i];
       state_interfaces.emplace_back(pos_state_interfaces_.back());
       state_interfaces.emplace_back(vel_state_interfaces_.back());
       state_interfaces.emplace_back(acc_state_interfaces_.back());
@@ -277,7 +291,7 @@ public:
     traj_controller_->get_node()->activate();
   }
 
-  static void TearDownTestCase() { rclcpp::shutdown(); }
+  static void TearDownTestCase() { }
 
   void subscribeToState()
   {
@@ -368,6 +382,110 @@ public:
     trajectory_publisher_->publish(traj_msg);
   }
 
+  // semi-implicit Euler integration
+  inline void integrate(rclcpp::Duration dt = rclcpp::Duration::from_seconds(0.001))
+  {
+    for (size_t i = 0; i < joint_names_.size(); ++i)
+    {
+      joint_state_vel_[i] += joint_acc_[i] * dt.seconds();
+      joint_state_pos_[i] += joint_vel_[i] * dt.seconds();
+    }
+  }
+
+  void updateState(rclcpp::Duration dt = rclcpp::Duration::from_seconds(0.001))
+  {
+    for (size_t i = 0; i < joint_state_pos_.size(); ++i)
+    {
+      // ACCELERATIONS
+      bool compute_acc_from_vel = false;
+      if (traj_controller_->has_acceleration_state_interface())  // if state acc 
+      {
+        if (!traj_controller_->has_acceleration_command_interface())  // but no cmd acc 
+        {
+          // with no cmd acc no matter separate cmd/state or not one needs to compute it
+          // if vel state, derive it later
+          if (traj_controller_->has_velocity_state_interface())
+          {
+            compute_acc_from_vel = true;
+          }
+          //else we don't handle effort interface to not over-complicate
+        }
+        else // cmd acc
+        {
+          if (separate_cmd_and_state_values_)
+          {
+            // copy
+            joint_state_acc_[i] = joint_acc_[i];
+          }
+        }
+      }
+      else
+      {
+        joint_state_acc_[i] = std::numeric_limits<double>::quiet_NaN();
+      }
+
+      // VELOCITIES
+      if (traj_controller_->has_velocity_state_interface())  // if state vel 
+      {
+        // store previous value for acc computation
+        auto previous_vel = joint_state_vel_[i];
+        if (!traj_controller_->has_velocity_command_interface())  // but no cmd vel 
+        {
+          // with no cmd vel no matter separate cmd/state or not one needs to compute it
+          // if pos cmd, derive it
+          if (traj_controller_->has_position_command_interface())
+          {
+            joint_state_vel_[i] = (joint_pos_[i] - joint_state_pos_[i])/dt.seconds();
+          }
+          // else we don't handle effort interface to not over-complicate              
+        }
+        else // cmd vel
+        {
+          if (separate_cmd_and_state_values_)
+          {
+          // copy
+            joint_state_vel_[i] = joint_vel_[i];
+          }
+        }
+        if (compute_acc_from_vel)
+          joint_state_acc_[i] = (joint_state_vel_[i]-previous_vel)/dt.seconds();
+      }
+      else
+      {
+        joint_state_vel_[i] = std::numeric_limits<double>::quiet_NaN();
+      }
+    
+      // else there is no test case with no vel interface that requires acc state 
+              
+      // POSITIONS
+      if (traj_controller_->has_position_state_interface())  // if state pos 
+      {
+        if (!traj_controller_->has_position_command_interface())  // but no cmd pos 
+        {
+          // with no cmd pos no matter separate cmd/state or not one needs to compute it
+          // if vel cmd, integrate it
+          if (traj_controller_->has_velocity_command_interface())
+          {
+            joint_state_pos_[i] = joint_state_pos_[i] + joint_vel_[i] * dt.seconds();
+          }
+          // else we don't handle effort interface to not over-complicate              
+        }
+        else // cmd pos
+        {
+          if (separate_cmd_and_state_values_)
+          {
+            // copy
+            joint_state_pos_[i] = joint_pos_[i];
+          }
+        }
+      }
+      else
+      {
+        joint_state_pos_[i] = std::numeric_limits<double>::quiet_NaN();
+      }
+    }
+  }
+
   void updateController(rclcpp::Duration wait_time = rclcpp::Duration::from_seconds(0.2))
   {
     auto clock = rclcpp::Clock(RCL_STEADY_TIME);
@@ -378,7 +496,10 @@ public:
     while (clock.now() < end_time)
     {
       auto now = clock.now();
-      traj_controller_->update(now, now - previous_time);
+      auto dt = now - previous_time;
+      traj_controller_->update(now, dt);
+      if(traj_controller_->has_joint_limiter())
+        updateState(dt);
       previous_time = now;
     }
   }
@@ -427,11 +548,12 @@ public:
   }
 
   std::string controller_name_;
-
+  bool separate_cmd_and_state_values_;
   std::vector<std::string> joint_names_;
   std::vector<std::string> command_joint_names_;
   std::vector<std::string> command_interface_types_;
   std::vector<std::string> state_interface_types_;
+  std::string joint_limiter_type_;
 
   rclcpp::Node::SharedPtr node_;
   rclcpp::Publisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr trajectory_publisher_;
@@ -462,7 +584,7 @@ public:
 class TrajectoryControllerTestParameterized
 : public TrajectoryControllerTest,
   public ::testing::WithParamInterface<
-    std::tuple<std::vector<std::string>, std::vector<std::string>>>
+    std::tuple<std::vector<std::string>, std::vector<std::string>, std::string>>
 {
 public:
   virtual void SetUp()
@@ -470,6 +592,7 @@ public:
     TrajectoryControllerTest::SetUp();
     command_interface_types_ = std::get<0>(GetParam());
     state_interface_types_ = std::get<1>(GetParam());
+    joint_limiter_type_ = std::get<2>(GetParam());
   }
 
   static void TearDownTestCase() { TrajectoryControllerTest::TearDownTestCase(); }

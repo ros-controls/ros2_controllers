@@ -118,7 +118,7 @@ protected:
     }
   }
 
-  static void TearDownTestCase() { rclcpp::shutdown(); }
+  static void TearDownTestCase() { }
 
   void TearDown()
   {
@@ -783,3 +783,12 @@ INSTANTIATE_TEST_SUITE_P(
     std::make_tuple(
       std::vector<std::string>({"effort"}),
       std::vector<std::string>({"position", "velocity", "acceleration"}))));
+
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  rclcpp::init(argc, argv);
+  int result = RUN_ALL_TESTS();
+  rclcpp::shutdown();
+  return result;
+}

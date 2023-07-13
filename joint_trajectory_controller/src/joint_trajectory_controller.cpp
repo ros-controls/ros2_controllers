@@ -218,7 +218,11 @@ controller_interface::return_type JointTrajectoryController::update(
     {
       if (joint_limiter_)
       {
-        joint_limiter_->enforce(state_current_, state_desired_, period);
+        if (!joint_limiter_->enforce(state_current_, state_desired_, period))
+        {
+          RCLCPP_WARN_ONCE(get_node()->get_logger(), "Joint limiter returned an error");
+          return controller_interface::return_type::ERROR;
+        }
       }
 
       bool tolerance_violated_while_moving = false;

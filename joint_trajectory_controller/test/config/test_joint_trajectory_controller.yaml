@@ -1,12 +1,78 @@
 test_joint_trajectory_controller:
-  joints:
-    - joint1
-    - joint2
-    - joint3
+  ros__parameters:
+    joints:
+      - jointAA2
+      - jointBBB
+      - joint3
 
-  command_interfaces:
-    - position
+    command_interfaces:
+      - position
 
-  state_interfaces:
-    - position
-    - velocity
+    state_interfaces:
+      - position
+      - velocity
+
+    joint_limiter_type: "" # will be set from within the Tests
+  
+    joint_limits:
+      # Get full specification from parameter server
+      joint1:
+        has_position_limits: true
+        min_position: -15.0
+        max_position: 15.0
+        has_velocity_limits: true
+        max_velocity: 5.0
+        has_acceleration_limits: true
+        max_acceleration: 8.0
+        has_deceleration_limits: true
+        max_deceleration: 8.0
+        has_jerk_limits: true
+        max_jerk: 100.0
+        has_effort_limits: true
+        max_effort: 20.0
+        angle_wraparound: true
+        has_soft_limits: true
+        k_position: 10.0
+        k_velocity: 20.0
+        soft_lower_limit: 0.1
+        soft_upper_limit: 0.9
+      joint2:
+        has_position_limits: true
+        min_position: -15.0
+        max_position: 15.0
+        has_velocity_limits: true
+        max_velocity: 5.0
+        has_acceleration_limits: true
+        max_acceleration: 8.0
+        has_deceleration_limits: true
+        max_deceleration: 8.0
+        has_jerk_limits: true
+        max_jerk: 100.0
+        has_effort_limits: true
+        max_effort: 20.0
+        angle_wraparound: true
+        has_soft_limits: true
+        k_position: 10.0
+        k_velocity: 20.0
+        soft_lower_limit: 0.1
+        soft_upper_limit: 0.9
+      joint3:
+        has_position_limits: true
+        min_position: -15.0
+        max_position: 15.0
+        has_velocity_limits: true
+        max_velocity: 5.0
+        has_acceleration_limits: true
+        max_acceleration: 8.0
+        has_deceleration_limits: true
+        max_deceleration: 8.0
+        has_jerk_limits: true
+        max_jerk: 100.0
+        has_effort_limits: true
+        max_effort: 20.0
+        angle_wraparound: true
+        has_soft_limits: true
+        k_position: 10.0
+        k_velocity: 20.0
+        soft_lower_limit: 0.1
+        soft_upper_limit: 0.9

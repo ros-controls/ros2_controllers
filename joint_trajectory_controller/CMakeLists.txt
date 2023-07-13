@@ -60,9 +60,14 @@ if(BUILD_TESTING)
   ament_add_gmock(test_trajectory test/test_trajectory.cpp)
   target_link_libraries(test_trajectory joint_trajectory_controller)
 
-  ament_add_gmock(test_trajectory_controller
+  #ament_add_gmock(test_trajectory_controller
+  #  test/test_trajectory_controller.cpp
+  #  ENV config_file=${CMAKE_CURRENT_SOURCE_DIR}/test/config/test_joint_trajectory_controller.yaml)
+
+  add_rostest_with_parameters_gmock(test_trajectory_controller
     test/test_trajectory_controller.cpp
-    ENV config_file=${CMAKE_CURRENT_SOURCE_DIR}/test/config/test_joint_trajectory_controller.yaml)
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/config/test_joint_trajectory_controller.yaml
+  )
   set_tests_properties(test_trajectory_controller PROPERTIES TIMEOUT 220)
   target_link_libraries(test_trajectory_controller
     joint_trajectory_controller
@@ -81,8 +86,13 @@ if(BUILD_TESTING)
     ros2_control_test_assets
   )
 
-  ament_add_gmock(test_trajectory_actions
+  #ament_add_gmock(test_trajectory_actions
+  #  test/test_trajectory_actions.cpp
+  #)
+
+  add_rostest_with_parameters_gmock(test_trajectory_actions
     test/test_trajectory_actions.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/config/test_joint_trajectory_controller.yaml
   )
   set_tests_properties(test_trajectory_actions PROPERTIES TIMEOUT 300)
   target_link_libraries(test_trajectory_actions
