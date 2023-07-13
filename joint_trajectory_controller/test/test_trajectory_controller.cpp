@@ -187,8 +187,7 @@ TEST_P(TrajectoryControllerTestParameterized, check_limiter_loading)
   const auto state = traj_controller_->get_node()->configure();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
 
-  if ((joint_limiter_type_.empty()) != true)
-    ASSERT_TRUE(traj_controller_->has_joint_limiter());
+  if ((joint_limiter_type_.empty()) != true) ASSERT_TRUE(traj_controller_->has_joint_limiter());
 }
 
 TEST_P(TrajectoryControllerTestParameterized, activate)
@@ -274,8 +273,7 @@ TEST_P(TrajectoryControllerTestParameterized, cleanup_after_configure)
 TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_parameters)
 {
   // this test fails with a limiter due to limit violating requests/expectations
-  if (!joint_limiter_type_.empty())
-    return;
+  if (!joint_limiter_type_.empty()) return;
 
   rclcpp::executors::MultiThreadedExecutor executor;
   SetUpTrajectoryController(executor, false);
@@ -369,8 +367,7 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
 TEST_P(TrajectoryControllerTestParameterized, joint_limit_pos)
 {
   // This test is to verify if joint limits are applied, so verify a limiter is requested
-  if (joint_limiter_type_.empty())
-    return;
+  if (joint_limiter_type_.empty()) return;
 
   const double POS_JOINT_CLOSE_LIMIT = 14.0;
   const double VEL_JOINT_CLOSE_LIMIT = 1.9;
@@ -387,13 +384,13 @@ TEST_P(TrajectoryControllerTestParameterized, joint_limit_pos)
   auto state = traj_controller_->get_state();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
 
-    // enforce the state to be close to the limits
-  ActivateTrajectoryController(true, //separate cmd/state
+  // enforce the state to be close to the limits
+  ActivateTrajectoryController(
+    true,  // separate cmd/state
     {POS_JOINT_CLOSE_LIMIT, -POS_JOINT_CLOSE_LIMIT, 0.0},
     {VEL_JOINT_CLOSE_LIMIT, -VEL_JOINT_CLOSE_LIMIT, 0.0},
-    {ACC_JOINT_CLOSE_LIMIT, -ACC_JOINT_CLOSE_LIMIT, 0.0}
-  );
-  
+    {ACC_JOINT_CLOSE_LIMIT, -ACC_JOINT_CLOSE_LIMIT, 0.0});
+
   state = traj_controller_->get_state();
   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
   EXPECT_EQ(POS_JOINT_CLOSE_LIMIT, joint_pos_[0]);
@@ -404,49 +401,25 @@ TEST_P(TrajectoryControllerTestParameterized, joint_limit_pos)
   constexpr auto THIRD_POINT_TIME = std::chrono::milliseconds(4000);
   builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(THIRD_POINT_TIME)};
   // *INDENT-OFF*
-  std::vector<std::vector<double>> points{
-    {{20.20, -15.15, 0.0}}};
-  std::vector<std::vector<double>> points_velocities{
-    {{0.0, 0.0, 0.0}}};
+  std::vector<std::vector<double>> points{{{20.20, -15.15, 0.0}}};
+  std::vector<std::vector<double>> points_velocities{{{0.0, 0.0, 0.0}}};
   // *INDENT-ON*
   publish(time_from_start, points, rclcpp::Time(), {}, points_velocities);
   traj_controller_->wait_for_trajectory(executor);
 
-  // reach first point in 16 steps (to see how limiter limits) 
+  // reach first point in 16 steps (to see how limiter limits)
   rclcpp::Duration dt = rclcpp::Duration::from_seconds(0.25);
-  // create a realistic next state from the joint state (otherwise updateState will produce wrong acc/vel)
-  //integrate();
+  // create a realistic next state from the joint state (otherwise updateState will produce wrong
+  // acc/vel)
+  // integrate();
 
   for (unsigned int i = 0; i < 16; ++i)
   {
-    
-    std::cout << "BEFORE " << joint_state_pos_[0] <<  
-      "\t " << joint_state_vel_[0] <<
-      "\t " << joint_state_acc_[0] <<
-      "\t |#| " << joint_pos_[0] <<  
-      "\t " << joint_vel_[0] <<
-      "\t " << joint_acc_[0]<< std::endl;
-    auto ret = traj_controller_->update(
-      rclcpp::Time(static_cast<uint64_t>(i * dt.seconds() * 1e9)), dt);
-    if (ret != controller_interface::return_type::OK)
-    {
-      std::cout << "UPDATE FAILED " << std::endl;
-    }
-    std::cout << "UPDATE " << joint_state_pos_[0] <<  
-      "\t " << joint_state_vel_[0] <<
-      "\t " << joint_state_acc_[0] <<
-      "\t |#| " << joint_pos_[0] <<  
-      "\t " << joint_vel_[0] <<
-      "\t " << joint_acc_[0]<< std::endl;
+    auto ret =
+      traj_controller_->update(rclcpp::Time(static_cast<uint64_t>(i * dt.seconds() * 1e9)), dt);
 
-    //integrate(dt);
-    //updateState(dt);
-    std::cout << "STATE " << joint_state_pos_[0] <<  
-      "\t " << joint_state_vel_[0] <<
-      "\t " << joint_state_acc_[0] <<
-      "\t |#| " << joint_pos_[0] <<  
-      "\t " << joint_vel_[0] <<
-      "\t " << joint_acc_[0]<< std::endl;
+    // integrate(dt);
+    // updateState(dt);
     // check state pos within limit
     if (traj_controller_->has_position_state_interface())
     {
@@ -463,7 +436,9 @@ TEST_P(TrajectoryControllerTestParameterized, joint_limit_pos)
     }
 
     // check cmd vel within limit
-    if (traj_controller_->has_velocity_state_interface() && traj_controller_->has_velocity_command_interface())
+    if (
+      traj_controller_->has_velocity_state_interface() &&
+      traj_controller_->has_velocity_command_interface())
     {
       ASSERT_LE(joint_vel_[0], 5.0);
       ASSERT_GE(joint_vel_[1], -5.0);
@@ -471,7 +446,9 @@ TEST_P(TrajectoryControllerTestParameterized, joint_limit_pos)
     }
 
     // check state acc within limit
-    if (traj_controller_->has_acceleration_state_interface() && traj_controller_->has_acceleration_command_interface())
+    if (
+      traj_controller_->has_acceleration_state_interface() &&
+      traj_controller_->has_acceleration_command_interface())
     {
       ASSERT_LE(joint_acc_[0], 8.0);
       ASSERT_GE(joint_acc_[1], -8.0);
@@ -486,12 +463,10 @@ TEST_P(TrajectoryControllerTestParameterized, joint_limit_pos)
   executor.cancel();
 }
 
-
 TEST_P(TrajectoryControllerTestParameterized, joint_limit_vel)
 {
   // This test is to verify if joint limits are applied, so verify a limiter is requested
-  if (joint_limiter_type_.empty())
-    return;
+  if (joint_limiter_type_.empty()) return;
 
   const double POS_JOINT_POINT = 14.0;
   const double VEL_JOINT_POINT = 0.0;
@@ -509,66 +484,43 @@ TEST_P(TrajectoryControllerTestParameterized, joint_limit_vel)
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
 
   // enforce the state to be close to the limits
-  ActivateTrajectoryController(true, //separate cmd/state
-    {POS_JOINT_POINT, -POS_JOINT_POINT, 0.0},
-    {VEL_JOINT_POINT, -VEL_JOINT_POINT, 0.0},
-    {ACC_JOINT_POINT, ACC_JOINT_POINT, 0.0}
-  );
-  
+  ActivateTrajectoryController(
+    true,  // separate cmd/state
+    {POS_JOINT_POINT, -POS_JOINT_POINT, 0.0}, {VEL_JOINT_POINT, -VEL_JOINT_POINT, 0.0},
+    {ACC_JOINT_POINT, ACC_JOINT_POINT, 0.0});
+
   state = traj_controller_->get_state();
   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
   EXPECT_EQ(POS_JOINT_POINT, joint_pos_[0]);
   EXPECT_EQ(-POS_JOINT_POINT, joint_pos_[1]);
   EXPECT_EQ(0.0, joint_pos_[2]);
 
-  // trajectory that goes in one point 
-  // from upper to lower to upper for joint1 
-  // and from lower to upper for joint2, with a time 
+  // trajectory that goes in one point
+  // from upper to lower to upper for joint1
+  // and from lower to upper for joint2, with a time
   // that should lead to a max velocity being reached if traj gen is not limiting.
 
   // send msg
   constexpr auto THIRD_POINT_TIME = std::chrono::milliseconds(4000);
   builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(THIRD_POINT_TIME)};
   // *INDENT-OFF*
-  std::vector<std::vector<double>> points{
-    {{-POS_JOINT_POINT, POS_JOINT_POINT, 0.0}}};
-  std::vector<std::vector<double>> points_velocities{
-    {{0.0, 0.0, 0.0}}};
+  std::vector<std::vector<double>> points{{{-POS_JOINT_POINT, POS_JOINT_POINT, 0.0}}};
+  std::vector<std::vector<double>> points_velocities{{{0.0, 0.0, 0.0}}};
   // *INDENT-ON*
   publish(time_from_start, points, rclcpp::Time(), {}, points_velocities);
   traj_controller_->wait_for_trajectory(executor);
 
-  // reach first point in 16 steps (to see how limiter limits) 
+  // reach first point in 16 steps (to see how limiter limits)
   rclcpp::Duration dt = rclcpp::Duration::from_seconds(0.25);
-  // create a realistic next state from the joint state (otherwise updateState will produce wrong acc/vel)
+  // create a realistic next state from the joint state (otherwise updateState will produce wrong
+  // acc/vel)
   integrate();
 
   for (unsigned int i = 0; i < 16; ++i)
   {
-    
-    std::cout << "BEFORE " << joint_state_pos_[0] <<  
-      "\t " << joint_state_vel_[0] <<
-      "\t " << joint_state_acc_[0] <<
-      "\t |#| " << joint_pos_[0] <<  
-      "\t " << joint_vel_[0] <<
-      "\t " << joint_acc_[0]<< std::endl;
-    traj_controller_->update(
-      rclcpp::Time(static_cast<uint64_t>(i * dt.seconds() * 1e9)), dt);
-    std::cout << "UPDATE " << joint_state_pos_[0] <<  
-      "\t " << joint_state_vel_[0] <<
-      "\t " << joint_state_acc_[0] <<
-      "\t |#| " << joint_pos_[0] <<  
-      "\t " << joint_vel_[0] <<
-      "\t " << joint_acc_[0]<< std::endl;
-
-    //integrate(dt);
+    traj_controller_->update(rclcpp::Time(static_cast<uint64_t>(i * dt.seconds() * 1e9)), dt);
+    // integrate(dt);
     updateState(dt);
-    std::cout << "STATE " << joint_state_pos_[0] <<  
-      "\t " << joint_state_vel_[0] <<
-      "\t " << joint_state_acc_[0] <<
-      "\t |#| " << joint_pos_[0] <<  
-      "\t " << joint_vel_[0] <<
-      "\t " << joint_acc_[0]<< std::endl;
     // check state pos within limit
     if (traj_controller_->has_position_state_interface())
     {
@@ -577,7 +529,9 @@ TEST_P(TrajectoryControllerTestParameterized, joint_limit_vel)
       ASSERT_EQ(joint_state_pos_[2], 0.0);
     }
 
-    if (traj_controller_->has_position_command_interface() && traj_controller_->has_velocity_state_interface() )
+    if (
+      traj_controller_->has_position_command_interface() &&
+      traj_controller_->has_velocity_state_interface())
     {
       ASSERT_GE(joint_state_vel_[0], -5.0);
       ASSERT_LE(joint_state_vel_[1], 5.0);
@@ -607,7 +561,6 @@ TEST_P(TrajectoryControllerTestParameterized, joint_limit_vel)
 
   executor.cancel();
 }
-
 
 TEST_P(TrajectoryControllerTestParameterized, state_topic_consistency)
 {
@@ -713,9 +666,9 @@ const double EPS = 1e-6;
  */
 TEST_P(TrajectoryControllerTestParameterized, position_error_not_normalized)
 {
-  // this test fails with a limiter due to state required to evolve with the limiter and no evolution expected
-  if (!joint_limiter_type_.empty())
-    return;
+  // this test fails with a limiter due to state required to evolve with the limiter and no
+  // evolution expected
+  if (!joint_limiter_type_.empty()) return;
 
   rclcpp::executors::MultiThreadedExecutor executor;
   constexpr double k_p = 10.0;
@@ -826,10 +779,9 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_normalized)
  */
 TEST_P(TrajectoryControllerTestParameterized, position_error_normalized)
 {
-  // this test fails with a limiter due to state required to evolve with the limiter and no evolution expected
-  if (!joint_limiter_type_.empty())
-    return;
-  
+  // this test fails with a limiter due to state required to evolve with the limiter and no
+  // evolution expected
+  if (!joint_limiter_type_.empty()) return;
 
   rclcpp::executors::MultiThreadedExecutor executor;
   constexpr double k_p = 10.0;
@@ -977,9 +929,9 @@ TEST_P(TrajectoryControllerTestParameterized, use_closed_loop_pid)
  */
 TEST_P(TrajectoryControllerTestParameterized, velocity_error)
 {
-  // this test fails with a limiter due to state required to evolve with the limiter and no evolution expected
-  if (!joint_limiter_type_.empty())
-    return;
+  // this test fails with a limiter due to state required to evolve with the limiter and no
+  // evolution expected
+  if (!joint_limiter_type_.empty()) return;
 
   rclcpp::executors::MultiThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(executor, true, {}, true);
@@ -1052,8 +1004,7 @@ TEST_P(TrajectoryControllerTestParameterized, velocity_error)
 TEST_P(TrajectoryControllerTestParameterized, test_jumbled_joint_order)
 {
   // this test fails with a limiter due to invalid requests/expectations that trigger the limiter
-  if (!joint_limiter_type_.empty())
-    return;
+  if (!joint_limiter_type_.empty()) return;
 
   rclcpp::executors::SingleThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(executor);
@@ -1125,9 +1076,8 @@ TEST_P(TrajectoryControllerTestParameterized, test_jumbled_joint_order)
  */
 TEST_P(TrajectoryControllerTestParameterized, test_partial_joint_list)
 {
-    // this test fails TODO RECHECK
-  if (!joint_limiter_type_.empty())
-    return;
+  // this test fails TODO RECHECK
+  if (!joint_limiter_type_.empty()) return;
   rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", true);
 
   rclcpp::executors::SingleThreadedExecutor executor;
@@ -1408,8 +1358,7 @@ TEST_P(TrajectoryControllerTestParameterized, missing_positions_message_accepted
 TEST_P(TrajectoryControllerTestParameterized, test_trajectory_replace)
 {
   // this test fails TODO RECHECK
-  if (!joint_limiter_type_.empty())
-    return;
+  if (!joint_limiter_type_.empty()) return;
 
   rclcpp::executors::SingleThreadedExecutor executor;
   rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", true);
@@ -1456,8 +1405,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_trajectory_replace)
 TEST_P(TrajectoryControllerTestParameterized, test_ignore_old_trajectory)
 {
   // this test fails TODO RECHECK
-  if (!joint_limiter_type_.empty())
-    return;
+  if (!joint_limiter_type_.empty()) return;
 
   rclcpp::executors::SingleThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(executor, true, {});
@@ -1491,8 +1439,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_old_trajectory)
 TEST_P(TrajectoryControllerTestParameterized, test_ignore_partial_old_trajectory)
 {
   // this test fails TODO RECHECK
-  if (!joint_limiter_type_.empty())
-    return;
+  if (!joint_limiter_type_.empty()) return;
 
   rclcpp::executors::SingleThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(executor, true, {});
@@ -1870,9 +1817,11 @@ TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_later_co
 INSTANTIATE_TEST_SUITE_P(
   PositionTrajectoryControllers, TrajectoryControllerTestParameterized,
   ::testing::Values(
-    std::make_tuple(std::vector<std::string>({"position"}), std::vector<std::string>({"position"}), ""),
     std::make_tuple(
-      std::vector<std::string>({"position"}), std::vector<std::string>({"position", "velocity"}), ""),
+      std::vector<std::string>({"position"}), std::vector<std::string>({"position"}), ""),
+    std::make_tuple(
+      std::vector<std::string>({"position"}), std::vector<std::string>({"position", "velocity"}),
+      ""),
     std::make_tuple(
       std::vector<std::string>({"position"}),
       std::vector<std::string>({"position", "velocity", "acceleration"}), "")));
@@ -1882,7 +1831,8 @@ INSTANTIATE_TEST_SUITE_P(
   PositionVelocityTrajectoryControllers, TrajectoryControllerTestParameterized,
   ::testing::Values(
     std::make_tuple(
-      std::vector<std::string>({"position", "velocity"}), std::vector<std::string>({"position"}), ""),
+      std::vector<std::string>({"position", "velocity"}), std::vector<std::string>({"position"}),
+      ""),
     std::make_tuple(
       std::vector<std::string>({"position", "velocity"}),
       std::vector<std::string>({"position", "velocity"}), ""),
@@ -1909,7 +1859,8 @@ INSTANTIATE_TEST_SUITE_P(
   OnlyVelocityTrajectoryControllers, TrajectoryControllerTestParameterized,
   ::testing::Values(
     std::make_tuple(
-      std::vector<std::string>({"velocity"}), std::vector<std::string>({"position", "velocity"}), ""),
+      std::vector<std::string>({"velocity"}), std::vector<std::string>({"position", "velocity"}),
+      ""),
     std::make_tuple(
       std::vector<std::string>({"velocity"}),
       std::vector<std::string>({"position", "velocity", "acceleration"}), "")));
@@ -1924,31 +1875,35 @@ INSTANTIATE_TEST_SUITE_P(
       std::vector<std::string>({"effort"}),
       std::vector<std::string>({"position", "velocity", "acceleration"}), "")));
 
-
 // position controllers with limiters
 INSTANTIATE_TEST_SUITE_P(
   PositionTrajectoryControllersLimiter, TrajectoryControllerTestParameterized,
   ::testing::Values(
-    std::make_tuple(std::vector<std::string>({"position"}), std::vector<std::string>({"position"}), "joint_limits/SimpleJointLimiter"),
     std::make_tuple(
-      std::vector<std::string>({"position"}), std::vector<std::string>({"position", "velocity"}), "joint_limits/SimpleJointLimiter"),
+      std::vector<std::string>({"position"}), std::vector<std::string>({"position"}),
+      "joint_limits/SimpleJointLimiter"),
+    std::make_tuple(
+      std::vector<std::string>({"position"}), std::vector<std::string>({"position", "velocity"}),
+      "joint_limits/SimpleJointLimiter"),
     std::make_tuple(
       std::vector<std::string>({"position"}),
-      std::vector<std::string>({"position", "velocity", "acceleration"}), "joint_limits/SimpleJointLimiter"))
-      );
+      std::vector<std::string>({"position", "velocity", "acceleration"}),
+      "joint_limits/SimpleJointLimiter")));
 
 // position_velocity controllers with limiters
 INSTANTIATE_TEST_SUITE_P(
   PositionVelocityTrajectoryControllersLimiter, TrajectoryControllerTestParameterized,
   ::testing::Values(
     std::make_tuple(
-      std::vector<std::string>({"position", "velocity"}), std::vector<std::string>({"position"}), "joint_limits/SimpleJointLimiter"),
+      std::vector<std::string>({"position", "velocity"}), std::vector<std::string>({"position"}),
+      "joint_limits/SimpleJointLimiter"),
     std::make_tuple(
       std::vector<std::string>({"position", "velocity"}),
       std::vector<std::string>({"position", "velocity"}), "joint_limits/SimpleJointLimiter"),
     std::make_tuple(
       std::vector<std::string>({"position", "velocity"}),
-      std::vector<std::string>({"position", "velocity", "acceleration"}), "joint_limits/SimpleJointLimiter")));
+      std::vector<std::string>({"position", "velocity", "acceleration"}),
+      "joint_limits/SimpleJointLimiter")));
 
 // position_velocity_acceleration controllers with limiters
 INSTANTIATE_TEST_SUITE_P(
@@ -1962,29 +1917,31 @@ INSTANTIATE_TEST_SUITE_P(
       std::vector<std::string>({"position", "velocity"}), "joint_limits/SimpleJointLimiter"),
     std::make_tuple(
       std::vector<std::string>({"position", "velocity", "acceleration"}),
-      std::vector<std::string>({"position", "velocity", "acceleration"}), "joint_limits/SimpleJointLimiter")));
-
+      std::vector<std::string>({"position", "velocity", "acceleration"}),
+      "joint_limits/SimpleJointLimiter")));
 
 // only velocity controller with limiters
 INSTANTIATE_TEST_SUITE_P(
   OnlyVelocityTrajectoryControllersLimiter, TrajectoryControllerTestParameterized,
   ::testing::Values(
     std::make_tuple(
-      std::vector<std::string>({"velocity"}), std::vector<std::string>({"position", "velocity"}), "joint_limits/SimpleJointLimiter"),
+      std::vector<std::string>({"velocity"}), std::vector<std::string>({"position", "velocity"}),
+      "joint_limits/SimpleJointLimiter"),
     std::make_tuple(
       std::vector<std::string>({"velocity"}),
-      std::vector<std::string>({"position", "velocity", "acceleration"}), "joint_limits/SimpleJointLimiter")));
+      std::vector<std::string>({"position", "velocity", "acceleration"}),
+      "joint_limits/SimpleJointLimiter")));
 
-// only effort controller with limiters 
-/* SimpleJointLimiter does not handler effort interfaces so test make no sens (pass because output is all same as input)
-INSTANTIATE_TEST_SUITE_P(
-  OnlyEffortTrajectoryControllersLimiter, TrajectoryControllerTestParameterized,
+// only effort controller with limiters
+/* SimpleJointLimiter does not handler effort interfaces so test make no sens (pass because output
+is all same as input) INSTANTIATE_TEST_SUITE_P( OnlyEffortTrajectoryControllersLimiter,
+TrajectoryControllerTestParameterized,
   ::testing::Values(
     std::make_tuple(
-      std::vector<std::string>({"effort"}), std::vector<std::string>({"position", "velocity"}), "joint_limits/SimpleJointLimiter"),
-    std::make_tuple(
-      std::vector<std::string>({"effort"}),
-      std::vector<std::string>({"position", "velocity", "acceleration"}), "joint_limits/SimpleJointLimiter")));
+      std::vector<std::string>({"effort"}), std::vector<std::string>({"position", "velocity"}),
+"joint_limits/SimpleJointLimiter"), std::make_tuple( std::vector<std::string>({"effort"}),
+      std::vector<std::string>({"position", "velocity", "acceleration"}),
+"joint_limits/SimpleJointLimiter")));
 */
 
 // TODO(destogl): this tests should be changed because we are using `generate_parameters_library`

@@ -15,6 +15,7 @@
 #ifndef TEST_TRAJECTORY_CONTROLLER_UTILS_HPP_
 #define TEST_TRAJECTORY_CONTROLLER_UTILS_HPP_
 
+#include <limits>
 #include <memory>
 #include <string>
 #include <tuple>
@@ -136,7 +137,7 @@ public:
 class TrajectoryControllerTest : public ::testing::Test
 {
 public:
-  static void SetUpTestCase() { }
+  static void SetUpTestCase() {}
 
   virtual void SetUp()
   {
@@ -188,7 +189,9 @@ public:
     const rclcpp::Parameter cmd_interfaces_params("command_interfaces", command_interface_types_);
     const rclcpp::Parameter state_interfaces_params("state_interfaces", state_interface_types_);
     const rclcpp::Parameter joint_limiter_type_params("joint_limiter_type", joint_limiter_type_);
-    node->set_parameters({joint_names_param, cmd_interfaces_params, state_interfaces_params, joint_limiter_type_params});
+    node->set_parameters(
+      {joint_names_param, cmd_interfaces_params, state_interfaces_params,
+       joint_limiter_type_params});
   }
 
   void SetPidParameters(
@@ -235,9 +238,9 @@ public:
 
   void ActivateTrajectoryController(
     bool separate_cmd_and_state_values = false,
-    const std::vector<double> & init_pos_state=INITIAL_POS_JOINTS,
-    const std::vector<double> & init_vel_state=INITIAL_VEL_JOINTS,
-    const std::vector<double> & init_acc_state=INITIAL_ACC_JOINTS)
+    const std::vector<double> & init_pos_state = INITIAL_POS_JOINTS,
+    const std::vector<double> & init_vel_state = INITIAL_VEL_JOINTS,
+    const std::vector<double> & init_acc_state = INITIAL_ACC_JOINTS)
   {
     separate_cmd_and_state_values_ = separate_cmd_and_state_values;
     std::vector<hardware_interface::LoanedCommandInterface> cmd_interfaces;
@@ -291,7 +294,7 @@ public:
     traj_controller_->get_node()->activate();
   }
 
-  static void TearDownTestCase() { }
+  static void TearDownTestCase() {}
 
   void subscribeToState()
   {
@@ -398,9 +401,9 @@ public:
     {
       // ACCELERATIONS
       bool compute_acc_from_vel = false;
-      if (traj_controller_->has_acceleration_state_interface())  // if state acc 
+      if (traj_controller_->has_acceleration_state_interface())  // if state acc
       {
-        if (!traj_controller_->has_acceleration_command_interface())  // but no cmd acc 
+        if (!traj_controller_->has_acceleration_command_interface())  // but no cmd acc
         {
           // with no cmd acc no matter separate cmd/state or not one needs to compute it
           // if vel state, derive it later
@@ -408,9 +411,9 @@ public:
           {
             compute_acc_from_vel = true;
           }
-          //else we don't handle effort interface to not over-complicate
+          // else we don't handle effort interface to not over-complicate
         }
-        else // cmd acc
+        else  // cmd acc
         {
           if (separate_cmd_and_state_values_)
           {
@@ -425,42 +428,42 @@ public:
       }
 
       // VELOCITIES
-      if (traj_controller_->has_velocity_state_interface())  // if state vel 
+      if (traj_controller_->has_velocity_state_interface())  // if state vel
       {
         // store previous value for acc computation
         auto previous_vel = joint_state_vel_[i];
-        if (!traj_controller_->has_velocity_command_interface())  // but no cmd vel 
+        if (!traj_controller_->has_velocity_command_interface())  // but no cmd vel
         {
           // with no cmd vel no matter separate cmd/state or not one needs to compute it
           // if pos cmd, derive it
           if (traj_controller_->has_position_command_interface())
           {
-            joint_state_vel_[i] = (joint_pos_[i] - joint_state_pos_[i])/dt.seconds();
+            joint_state_vel_[i] = (joint_pos_[i] - joint_state_pos_[i]) / dt.seconds();
           }
-          // else we don't handle effort interface to not over-complicate              
+          // else we don't handle effort interface to not over-complicate
         }
-        else // cmd vel
+        else  // cmd vel
         {
           if (separate_cmd_and_state_values_)
           {
-          // copy
+            // copy
             joint_state_vel_[i] = joint_vel_[i];
           }
         }
         if (compute_acc_from_vel)
-          joint_state_acc_[i] = (joint_state_vel_[i]-previous_vel)/dt.seconds();
+          joint_state_acc_[i] = (joint_state_vel_[i] - previous_vel) / dt.seconds();
       }
       else
       {
         joint_state_vel_[i] = std::numeric_limits<double>::quiet_NaN();
       }
-    
-      // else there is no test case with no vel interface that requires acc state 
-              
+
+      // else there is no test case with no vel interface that requires acc state
+
       // POSITIONS
-      if (traj_controller_->has_position_state_interface())  // if state pos 
+      if (traj_controller_->has_position_state_interface())  // if state pos
       {
-        if (!traj_controller_->has_position_command_interface())  // but no cmd pos 
+        if (!traj_controller_->has_position_command_interface())  // but no cmd pos
         {
           // with no cmd pos no matter separate cmd/state or not one needs to compute it
           // if vel cmd, integrate it
@@ -468,9 +471,9 @@ public:
           {
             joint_state_pos_[i] = joint_state_pos_[i] + joint_vel_[i] * dt.seconds();
           }
-          // else we don't handle effort interface to not over-complicate              
+          // else we don't handle effort interface to not over-complicate
         }
-        else // cmd pos
+        else  // cmd pos
         {
           if (separate_cmd_and_state_values_)
           {
@@ -498,8 +501,7 @@ public:
       auto now = clock.now();
       auto dt = now - previous_time;
       traj_controller_->update(now, dt);
-      if(traj_controller_->has_joint_limiter())
-        updateState(dt);
+      if (traj_controller_->has_joint_limiter()) updateState(dt);
       previous_time = now;
     }
   }

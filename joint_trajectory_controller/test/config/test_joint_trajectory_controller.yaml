@@ -13,7 +13,7 @@ test_joint_trajectory_controller:
       - velocity
 
     joint_limiter_type: "" # will be set from within the Tests
-  
+
     joint_limits:
       # Get full specification from parameter server
       joint1:

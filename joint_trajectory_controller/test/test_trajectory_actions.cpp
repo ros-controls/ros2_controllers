@@ -118,7 +118,7 @@ protected:
     }
   }
 
-  static void TearDownTestCase() { }
+  static void TearDownTestCase() {}
 
   void TearDown()
   {
