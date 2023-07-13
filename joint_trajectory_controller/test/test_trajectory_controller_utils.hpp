@@ -444,6 +444,12 @@ public:
         }
         else  // cmd vel
         {
+          if (traj_controller_->use_closed_loop_pid_adapter())
+          {
+            RCLCPP_WARN_ONCE(
+              traj_controller_->get_node()->get_logger(), "PID is not yet handled in updateState");
+          }
+
           if (separate_cmd_and_state_values_)
           {
             // copy

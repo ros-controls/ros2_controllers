@@ -375,8 +375,9 @@ TEST_P(TrajectoryControllerTestParameterized, joint_limit_pos)
 
   rclcpp::executors::MultiThreadedExecutor executor;
   SetUpTrajectoryController(executor, false);
-  traj_controller_->get_node()->set_parameter(
-    rclcpp::Parameter("allow_nonzero_velocity_at_trajectory_end", true));
+  // joint limiter tests currently do not handle PID
+  // TODO(gwalck) upgrade upgrade updateState to handle it
+  traj_controller_->get_node()->set_parameter(rclcpp::Parameter("open_loop_control", true));
 
   // This call is replacing the way parameters are set via launch
   SetParameters();
@@ -409,36 +410,65 @@ TEST_P(TrajectoryControllerTestParameterized, joint_limit_pos)
 
   // reach first point in 16 steps (to see how limiter limits)
   rclcpp::Duration dt = rclcpp::Duration::from_seconds(0.25);
-  // create a realistic next state from the joint state (otherwise updateState will produce wrong
-  // acc/vel)
-  // integrate();
-
   for (unsigned int i = 0; i < 16; ++i)
   {
     auto ret =
       traj_controller_->update(rclcpp::Time(static_cast<uint64_t>(i * dt.seconds() * 1e9)), dt);
 
-    // integrate(dt);
-    // updateState(dt);
+    auto prev_joint_pos = joint_state_pos_;
+    updateState(dt);
+
     // check state pos within limit
     if (traj_controller_->has_position_state_interface())
     {
       ASSERT_LE(joint_state_pos_[0], 15.0);
       ASSERT_GE(joint_state_pos_[1], -15.0);
       ASSERT_EQ(joint_state_pos_[2], 0.0);
+
+      // check current state changed after the first iteration
+      // TODO(gwalck) remove that when time+dt is used in sampling
+      if (i > 0)
+      {
+        // TODO(gwalck) joint limiter currently sets vel to zero
+        // when it leads to pos going in limits instead of slow down.
+        /*
+        ASSERT_GT(joint_state_pos_[0], prev_joint_pos[0]);
+        ASSERT_LT(joint_state_pos_[1], prev_joint_pos[1]);
+        ASSERT_EQ(joint_state_pos_[2], prev_joint_pos[2]);
+        */
+      }
     }
 
     if (traj_controller_->has_position_command_interface())
     {
+      // check md pos within limit
       ASSERT_LE(joint_pos_[0], 15.0);
       ASSERT_GE(joint_pos_[1], -15.0);
       ASSERT_EQ(joint_pos_[2], 0.0);
     }
 
+    if (traj_controller_->has_velocity_state_interface())
+    {
+      // check vel state within limit
+      ASSERT_GE(joint_state_vel_[0], -5.0);
+      ASSERT_LE(joint_state_vel_[1], 5.0);
+      ASSERT_EQ(joint_state_vel_[2], 0.0);
+
+      // check desired vel is changing at all (avoid test passing with no vel out)
+      // TODO(gwalck) remove i constraint when time+dt is used in sampling
+      if (i > 0)  // last point is not reached so will never be null
+      {
+        // TODO(gwalck) joint limiter currently sets vel to zero
+        // when it leads to pos going in limits instead of slow down.
+        /*
+        ASSERT_NE(joint_vel_[0], 0.0);
+        ASSERT_NE(joint_vel_[1], 0.0);
+        */
+      }
+    }
+
     // check cmd vel within limit
-    if (
-      traj_controller_->has_velocity_state_interface() &&
-      traj_controller_->has_velocity_command_interface())
+    if (traj_controller_->has_velocity_command_interface())
     {
       ASSERT_LE(joint_vel_[0], 5.0);
       ASSERT_GE(joint_vel_[1], -5.0);
@@ -446,9 +476,7 @@ TEST_P(TrajectoryControllerTestParameterized, joint_limit_pos)
     }
 
     // check state acc within limit
-    if (
-      traj_controller_->has_acceleration_state_interface() &&
-      traj_controller_->has_acceleration_command_interface())
+    if (traj_controller_->has_acceleration_command_interface())
     {
       ASSERT_LE(joint_acc_[0], 8.0);
       ASSERT_GE(joint_acc_[1], -8.0);
@@ -473,9 +501,11 @@ TEST_P(TrajectoryControllerTestParameterized, joint_limit_vel)
   const double ACC_JOINT_POINT = 0.0;
 
   rclcpp::executors::MultiThreadedExecutor executor;
+
   SetUpTrajectoryController(executor, false);
-  traj_controller_->get_node()->set_parameter(
-    rclcpp::Parameter("allow_nonzero_velocity_at_trajectory_end", true));
+  // joint limiter tests currently do not handle PID
+  // TODO(gwalck) upgrade upgrade updateState to handle it
+  traj_controller_->get_node()->set_parameter(rclcpp::Parameter("open_loop_control", true));
 
   // This call is replacing the way parameters are set via launch
   SetParameters();
@@ -496,7 +526,7 @@ TEST_P(TrajectoryControllerTestParameterized, joint_limit_vel)
   EXPECT_EQ(0.0, joint_pos_[2]);
 
   // trajectory that goes in one point
-  // from upper to lower to upper for joint1
+  // from upper to lower for joint1
   // and from lower to upper for joint2, with a time
   // that should lead to a max velocity being reached if traj gen is not limiting.
 
@@ -519,31 +549,51 @@ TEST_P(TrajectoryControllerTestParameterized, joint_limit_vel)
   for (unsigned int i = 0; i < 16; ++i)
   {
     traj_controller_->update(rclcpp::Time(static_cast<uint64_t>(i * dt.seconds() * 1e9)), dt);
-    // integrate(dt);
+
+    auto prev_joint_pos = joint_state_pos_;
     updateState(dt);
-    // check state pos within limit
+
     if (traj_controller_->has_position_state_interface())
     {
+      // check state pos within limit
       ASSERT_GE(joint_state_pos_[0], -15.0);
       ASSERT_LE(joint_state_pos_[1], 15.0);
       ASSERT_EQ(joint_state_pos_[2], 0.0);
+
+      // check current state changed after the first iteration
+      // TODO(gwalck) remove that when time+dt is used in sampling
+      if (i > 0)
+      {
+        ASSERT_LT(joint_state_pos_[0], prev_joint_pos[0]);
+        ASSERT_GT(joint_state_pos_[1], prev_joint_pos[1]);
+        ASSERT_EQ(joint_state_pos_[2], prev_joint_pos[2]);
+      }
     }
 
     if (
       traj_controller_->has_position_command_interface() &&
       traj_controller_->has_velocity_state_interface())
     {
+      // check state vel within limit
       ASSERT_GE(joint_state_vel_[0], -5.0);
       ASSERT_LE(joint_state_vel_[1], 5.0);
       ASSERT_EQ(joint_state_vel_[2], 0.0);
     }
 
-    // check cmd vel within limit
     if (traj_controller_->has_velocity_command_interface())
     {
+      // check vel cmd within limit
       ASSERT_GE(joint_vel_[0], -5.0);
       ASSERT_LE(joint_vel_[1], 5.0);
       ASSERT_EQ(joint_vel_[2], 0.0);
+
+      // check desired vel is changing at all (avoid test passing with no vel out)
+      // TODO(gwalck) remove i constraint when time+dt is used in sampling
+      if (i > 0)  // last point is not reached so will never be null
+      {
+        ASSERT_NE(joint_vel_[0], 0.0);
+        ASSERT_NE(joint_vel_[1], 0.0);
+      }
     }
 
     // check state acc within limit
