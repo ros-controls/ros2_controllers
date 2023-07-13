@@ -179,6 +179,18 @@ TEST_P(TrajectoryControllerTestParameterized, check_interface_names_with_command
     command_interfaces.names, testing::UnorderedElementsAreArray(command_interface_names));
 }
 
+TEST_P(TrajectoryControllerTestParameterized, check_limiter_loading)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+  SetUpTrajectoryController(executor);
+
+  const auto state = traj_controller_->get_node()->configure();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+
+  if ((joint_limiter_type_.empty()) != true)
+    ASSERT_TRUE(traj_controller_->has_joint_limiter());
+}
+
 TEST_P(TrajectoryControllerTestParameterized, activate)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
@@ -353,6 +365,249 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
 
   executor.cancel();
 }
+
+TEST_P(TrajectoryControllerTestParameterized, joint_limit_pos)
+{
+  // This test is to verify if joint limits are applied, so verify a limiter is requested
+  if (joint_limiter_type_.empty())
+    return;
+
+  const double POS_JOINT_CLOSE_LIMIT = 14.0;
+  const double VEL_JOINT_CLOSE_LIMIT = 1.9;
+  const double ACC_JOINT_CLOSE_LIMIT = 7.5;
+
+  rclcpp::executors::MultiThreadedExecutor executor;
+  SetUpTrajectoryController(executor, false);
+  traj_controller_->get_node()->set_parameter(
+    rclcpp::Parameter("allow_nonzero_velocity_at_trajectory_end", true));
+
+  // This call is replacing the way parameters are set via launch
+  SetParameters();
+  traj_controller_->configure();
+  auto state = traj_controller_->get_state();
+  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+
+    // enforce the state to be close to the limits
+  ActivateTrajectoryController(true, //separate cmd/state
+    {POS_JOINT_CLOSE_LIMIT, -POS_JOINT_CLOSE_LIMIT, 0.0},
+    {VEL_JOINT_CLOSE_LIMIT, -VEL_JOINT_CLOSE_LIMIT, 0.0},
+    {ACC_JOINT_CLOSE_LIMIT, -ACC_JOINT_CLOSE_LIMIT, 0.0}
+  );
+  
+  state = traj_controller_->get_state();
+  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+  EXPECT_EQ(POS_JOINT_CLOSE_LIMIT, joint_pos_[0]);
+  EXPECT_EQ(-POS_JOINT_CLOSE_LIMIT, joint_pos_[1]);
+  EXPECT_EQ(0.0, joint_pos_[2]);
+
+  // send msg
+  constexpr auto THIRD_POINT_TIME = std::chrono::milliseconds(4000);
+  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(THIRD_POINT_TIME)};
+  // *INDENT-OFF*
+  std::vector<std::vector<double>> points{
+    {{20.20, -15.15, 0.0}}};
+  std::vector<std::vector<double>> points_velocities{
+    {{0.0, 0.0, 0.0}}};
+  // *INDENT-ON*
+  publish(time_from_start, points, rclcpp::Time(), {}, points_velocities);
+  traj_controller_->wait_for_trajectory(executor);
+
+  // reach first point in 16 steps (to see how limiter limits) 
+  rclcpp::Duration dt = rclcpp::Duration::from_seconds(0.25);
+  // create a realistic next state from the joint state (otherwise updateState will produce wrong acc/vel)
+  //integrate();
+
+  for (unsigned int i = 0; i < 16; ++i)
+  {
+    
+    std::cout << "BEFORE " << joint_state_pos_[0] <<  
+      "\t " << joint_state_vel_[0] <<
+      "\t " << joint_state_acc_[0] <<
+      "\t |#| " << joint_pos_[0] <<  
+      "\t " << joint_vel_[0] <<
+      "\t " << joint_acc_[0]<< std::endl;
+    auto ret = traj_controller_->update(
+      rclcpp::Time(static_cast<uint64_t>(i * dt.seconds() * 1e9)), dt);
+    if (ret != controller_interface::return_type::OK)
+    {
+      std::cout << "UPDATE FAILED " << std::endl;
+    }
+    std::cout << "UPDATE " << joint_state_pos_[0] <<  
+      "\t " << joint_state_vel_[0] <<
+      "\t " << joint_state_acc_[0] <<
+      "\t |#| " << joint_pos_[0] <<  
+      "\t " << joint_vel_[0] <<
+      "\t " << joint_acc_[0]<< std::endl;
+
+    //integrate(dt);
+    //updateState(dt);
+    std::cout << "STATE " << joint_state_pos_[0] <<  
+      "\t " << joint_state_vel_[0] <<
+      "\t " << joint_state_acc_[0] <<
+      "\t |#| " << joint_pos_[0] <<  
+      "\t " << joint_vel_[0] <<
+      "\t " << joint_acc_[0]<< std::endl;
+    // check state pos within limit
+    if (traj_controller_->has_position_state_interface())
+    {
+      ASSERT_LE(joint_state_pos_[0], 15.0);
+      ASSERT_GE(joint_state_pos_[1], -15.0);
+      ASSERT_EQ(joint_state_pos_[2], 0.0);
+    }
+
+    if (traj_controller_->has_position_command_interface())
+    {
+      ASSERT_LE(joint_pos_[0], 15.0);
+      ASSERT_GE(joint_pos_[1], -15.0);
+      ASSERT_EQ(joint_pos_[2], 0.0);
+    }
+
+    // check cmd vel within limit
+    if (traj_controller_->has_velocity_state_interface() && traj_controller_->has_velocity_command_interface())
+    {
+      ASSERT_LE(joint_vel_[0], 5.0);
+      ASSERT_GE(joint_vel_[1], -5.0);
+      ASSERT_EQ(joint_vel_[2], 0.0);
+    }
+
+    // check state acc within limit
+    if (traj_controller_->has_acceleration_state_interface() && traj_controller_->has_acceleration_command_interface())
+    {
+      ASSERT_LE(joint_acc_[0], 8.0);
+      ASSERT_GE(joint_acc_[1], -8.0);
+      ASSERT_EQ(joint_acc_[2], 0.0);
+    }
+  }
+
+  // deactivated
+  state = traj_controller_->get_node()->deactivate();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+
+  executor.cancel();
+}
+
+
+TEST_P(TrajectoryControllerTestParameterized, joint_limit_vel)
+{
+  // This test is to verify if joint limits are applied, so verify a limiter is requested
+  if (joint_limiter_type_.empty())
+    return;
+
+  const double POS_JOINT_POINT = 14.0;
+  const double VEL_JOINT_POINT = 0.0;
+  const double ACC_JOINT_POINT = 0.0;
+
+  rclcpp::executors::MultiThreadedExecutor executor;
+  SetUpTrajectoryController(executor, false);
+  traj_controller_->get_node()->set_parameter(
+    rclcpp::Parameter("allow_nonzero_velocity_at_trajectory_end", true));
+
+  // This call is replacing the way parameters are set via launch
+  SetParameters();
+  traj_controller_->configure();
+  auto state = traj_controller_->get_state();
+  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+
+  // enforce the state to be close to the limits
+  ActivateTrajectoryController(true, //separate cmd/state
+    {POS_JOINT_POINT, -POS_JOINT_POINT, 0.0},
+    {VEL_JOINT_POINT, -VEL_JOINT_POINT, 0.0},
+    {ACC_JOINT_POINT, ACC_JOINT_POINT, 0.0}
+  );
+  
+  state = traj_controller_->get_state();
+  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+  EXPECT_EQ(POS_JOINT_POINT, joint_pos_[0]);
+  EXPECT_EQ(-POS_JOINT_POINT, joint_pos_[1]);
+  EXPECT_EQ(0.0, joint_pos_[2]);
+
+  // trajectory that goes in one point 
+  // from upper to lower to upper for joint1 
+  // and from lower to upper for joint2, with a time 
+  // that should lead to a max velocity being reached if traj gen is not limiting.
+
+  // send msg
+  constexpr auto THIRD_POINT_TIME = std::chrono::milliseconds(4000);
+  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(THIRD_POINT_TIME)};
+  // *INDENT-OFF*
+  std::vector<std::vector<double>> points{
+    {{-POS_JOINT_POINT, POS_JOINT_POINT, 0.0}}};
+  std::vector<std::vector<double>> points_velocities{
+    {{0.0, 0.0, 0.0}}};
+  // *INDENT-ON*
+  publish(time_from_start, points, rclcpp::Time(), {}, points_velocities);
+  traj_controller_->wait_for_trajectory(executor);
+
+  // reach first point in 16 steps (to see how limiter limits) 
+  rclcpp::Duration dt = rclcpp::Duration::from_seconds(0.25);
+  // create a realistic next state from the joint state (otherwise updateState will produce wrong acc/vel)
+  integrate();
+
+  for (unsigned int i = 0; i < 16; ++i)
+  {
+    
+    std::cout << "BEFORE " << joint_state_pos_[0] <<  
+      "\t " << joint_state_vel_[0] <<
+      "\t " << joint_state_acc_[0] <<
+      "\t |#| " << joint_pos_[0] <<  
+      "\t " << joint_vel_[0] <<
+      "\t " << joint_acc_[0]<< std::endl;
+    traj_controller_->update(
+      rclcpp::Time(static_cast<uint64_t>(i * dt.seconds() * 1e9)), dt);
+    std::cout << "UPDATE " << joint_state_pos_[0] <<  
+      "\t " << joint_state_vel_[0] <<
+      "\t " << joint_state_acc_[0] <<
+      "\t |#| " << joint_pos_[0] <<  
+      "\t " << joint_vel_[0] <<
+      "\t " << joint_acc_[0]<< std::endl;
+
+    //integrate(dt);
+    updateState(dt);
+    std::cout << "STATE " << joint_state_pos_[0] <<  
+      "\t " << joint_state_vel_[0] <<
+      "\t " << joint_state_acc_[0] <<
+      "\t |#| " << joint_pos_[0] <<  
+      "\t " << joint_vel_[0] <<
+      "\t " << joint_acc_[0]<< std::endl;
+    // check state pos within limit
+    if (traj_controller_->has_position_state_interface())
+    {
+      ASSERT_GE(joint_state_pos_[0], -15.0);
+      ASSERT_LE(joint_state_pos_[1], 15.0);
+      ASSERT_EQ(joint_state_pos_[2], 0.0);
+    }
+
+    if (traj_controller_->has_position_command_interface() && traj_controller_->has_velocity_state_interface() )
+    {
+      ASSERT_GE(joint_state_vel_[0], -5.0);
+      ASSERT_LE(joint_state_vel_[1], 5.0);
+      ASSERT_EQ(joint_state_vel_[2], 0.0);
+    }
+
+    // check cmd vel within limit
+    if (traj_controller_->has_velocity_command_interface())
+    {
+      ASSERT_GE(joint_vel_[0], -5.0);
+      ASSERT_LE(joint_vel_[1], 5.0);
+      ASSERT_EQ(joint_vel_[2], 0.0);
+    }
+
+    // check state acc within limit
+    if (traj_controller_->has_acceleration_command_interface())
+    {
+      ASSERT_GE(joint_acc_[0], -8.0);
+      ASSERT_LE(joint_acc_[1], 8.0);
+      ASSERT_EQ(joint_acc_[2], 0.0);
+    }
+  }
+
+  // deactivated
+  state = traj_controller_->get_node()->deactivate();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+
+  executor.cancel();
+}
+
 
 TEST_P(TrajectoryControllerTestParameterized, state_topic_consistency)
 {
@@ -1723,7 +1978,7 @@ INSTANTIATE_TEST_SUITE_P(
 // only effort controller with limiters 
 /* SimpleJointLimiter does not handler effort interfaces so test make no sens (pass because output is all same as input)
 INSTANTIATE_TEST_SUITE_P(
-  OnlyEffortTrajectoryControllers, TrajectoryControllerTestParameterized,
+  OnlyEffortTrajectoryControllersLimiter, TrajectoryControllerTestParameterized,
   ::testing::Values(
     std::make_tuple(
       std::vector<std::string>({"effort"}), std::vector<std::string>({"position", "velocity"}), "joint_limits/SimpleJointLimiter"),
