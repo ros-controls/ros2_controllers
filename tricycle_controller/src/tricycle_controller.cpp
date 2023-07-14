@@ -70,6 +70,7 @@ CallbackReturn TricycleController::on_init()
 
     auto_declare<int>("cmd_vel_timeout", cmd_vel_timeout_.count());
     auto_declare<bool>("publish_ackermann_command", publish_ackermann_command_);
+    auto_declare<bool>("use_twist_as_ackermann_msg", use_twist_as_ackermann_msg_);
     auto_declare<int>("velocity_rolling_window_size", 10);
     auto_declare<bool>("use_stamped_vel", use_stamped_vel_);
     auto_declare<bool>("use_exact_mode", use_exact_mode_);
