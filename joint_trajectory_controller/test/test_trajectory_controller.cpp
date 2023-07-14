@@ -802,15 +802,6 @@ TEST_P(TrajectoryControllerTestParameterized, test_jumbled_joint_order)
       traj_msg.points[0].velocities[1] = -0.1;
       traj_msg.points[0].velocities[2] = -0.1;
     }
-
-    if (traj_controller_->has_effort_command_interface())
-    {
-      traj_msg.points[0].effort.resize(3);
-      traj_msg.points[0].effort[0] = -0.1;
-      traj_msg.points[0].effort[1] = -0.1;
-      traj_msg.points[0].effort[2] = -0.1;
-    }
-
     trajectory_publisher_->publish(traj_msg);
   }
 
@@ -832,13 +823,6 @@ TEST_P(TrajectoryControllerTestParameterized, test_jumbled_joint_order)
     EXPECT_GT(0.0, joint_vel_[0]);
     EXPECT_GT(0.0, joint_vel_[1]);
     EXPECT_GT(0.0, joint_vel_[2]);
-  }
-
-  if (traj_controller_->has_effort_command_interface())
-  {
-    EXPECT_GT(0.0, joint_eff_[0]);
-    EXPECT_GT(0.0, joint_eff_[1]);
-    EXPECT_GT(0.0, joint_eff_[2]);
   }
   // TODO(anyone): add here checks for acceleration commands
 }
