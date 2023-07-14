@@ -1050,10 +1050,9 @@ TEST_P(TrajectoryControllerTestParameterized, invalid_message)
   traj_msg.points[0].accelerations = {1.0, 2.0};
   EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
 
-  // Incompatible data sizes, too few efforts
+  // Effort is not supported in trajectory message
   traj_msg = good_traj_msg;
-  traj_msg.points[0].positions.clear();
-  traj_msg.points[0].effort = {1.0, 2.0};
+  traj_msg.points[0].effort = {1.0, 2.0, 3.0};
   EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
 
   // Non-strictly increasing waypoint times
