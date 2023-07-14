@@ -1383,7 +1383,7 @@ bool JointTrajectoryController::validate_trajectory_msg(
       return false;
     }
     // reject effort entries
-    if (points[i].effort.size() > 0)
+    if (!points[i].effort.empty())
     {
       RCLCPP_ERROR(
         get_node()->get_logger(), "Trajectories with effort fields are currently not supported.");
