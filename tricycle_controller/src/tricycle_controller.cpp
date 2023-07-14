@@ -202,13 +202,15 @@ controller_interface::return_type TricycleController::update(
     realtime_odometry_transform_publisher_->unlockAndPublish();
   }
 
+  double alpha_write;
+  double Ws_write;
   // Compute wheel velocity and angle
   if (use_twist_as_ackermann_msg_) {
-    auto [alpha_write, Ws_write] = twist_to_ackermann(linear_command, angular_command);
+    std::tie(alpha_write, Ws_write) = twist_to_ackermann(linear_command, angular_command);
   }
   else {
-    auto alpha_write = angular_command;
-    auto Ws_write = linear_command;
+    alpha_write = angular_command;
+    Ws_write = linear_command;
   }
 
 
