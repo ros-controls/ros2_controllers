@@ -208,7 +208,7 @@ controller_interface::return_type TricycleController::update(
   // Compute wheel velocity and angle
   if (use_twist_as_ackermann_msg_) {
     alpha_write = angular_command;
-    Ws_write = linear_command;
+    Ws_write = linear_command / wheel_params_.radius;
   }
   else {
     std::tie(alpha_write, Ws_write) = twist_to_ackermann(linear_command, angular_command);

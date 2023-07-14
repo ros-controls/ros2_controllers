@@ -38,7 +38,7 @@ tricycle_controller:
     # cmd_vel input
     cmd_vel_timeout: 500 # In milliseconds. Timeout to stop if no cmd_vel is received
     use_stamped_vel: false # Set to True if using TwistStamped.
-    use_twist_as_ackermann_msg: false # If true, the cmd_vel input is interpreted as an AckermannDrive message where linear.x is the desired speed (m/s) and angular.z is the desired steering angle (rad/s).
+    use_twist_as_ackermann_msg: false # If true, the cmd_vel input is interpreted as an AckermannDrive message where linear.x is the desired wheel linear speed in the wheel frame (m/s) and angular.z is the desired steering angle (rad/s).
 
     # Debug
     publish_ackermann_command: true # Publishes AckermannDrive. The speed does not comply to the msg definition, it the wheel angular speed in rad/s.
