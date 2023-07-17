@@ -54,7 +54,9 @@ public:
     const trajectory_msgs::msg::JointTrajectoryPoint & current_point);
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  void update(std::shared_ptr<trajectory_msgs::msg::JointTrajectory> joint_trajectory);
+  void update(
+    std::shared_ptr<trajectory_msgs::msg::JointTrajectory> joint_trajectory,
+    rcl_clock_type_t clock_type = RCL_ROS_TIME);
 
   /// Find the segment (made up of 2 points) and its expected state from the
   /// containing trajectory.
