@@ -131,11 +131,13 @@ controller_interface::return_type JointTrajectoryController::update(
     current_pose_msg.points[0].accelerations.clear();  // ensure no acceleration
     current_pose_msg.points[0].effort.clear();  // ensure no explicit effort (PID will fix this)
 
-    aborted_traj_ptr_ =
-      traj_external_point_ptr_
-        ->get_trajectory_msg();  // Used to avoid updating the trajectory back to the aborted one
+    // Avoid updating the trajectory back to the aborted one
+    aborted_traj_ptr_ = traj_external_point_ptr_->get_trajectory_msg();
+    // set the active trajectory pointer to the new goal
     traj_external_point_ptr_->update(
       std::make_shared<trajectory_msgs::msg::JointTrajectory>(current_pose_msg));
+    traj_point_active_ptr_ = &traj_external_point_ptr_;
+
     start_with_holding_ = false;
   }
 

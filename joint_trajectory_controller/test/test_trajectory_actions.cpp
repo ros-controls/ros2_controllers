@@ -248,8 +248,7 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_success_single_point_sendgoa
 
   // it should be holding the last position goal
   // i.e., active but trivial trajectory (one point only)
-  EXPECT_TRUE(traj_controller_->has_active_traj());
-  EXPECT_FALSE(traj_controller_->has_nontrivial_traj());
+  EXPECT_TRUE(traj_controller_->has_trivial_traj());
 
   if (traj_controller_->has_position_command_interface())
   {
@@ -306,8 +305,7 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_success_multi_point_sendgoal
 
   // it should be holding the last position goal
   // i.e., active but trivial trajectory (one point only)
-  EXPECT_TRUE(traj_controller_->has_active_traj());
-  EXPECT_FALSE(traj_controller_->has_nontrivial_traj());
+  EXPECT_TRUE(traj_controller_->has_trivial_traj());
 
   if (traj_controller_->has_position_command_interface())
   {
@@ -359,8 +357,7 @@ TEST_F(TestTrajectoryActions, test_goal_tolerances_single_point_success)
 
   // it should be holding the last position goal
   // i.e., active but trivial trajectory (one point only)
-  EXPECT_TRUE(traj_controller_->has_active_traj());
-  EXPECT_FALSE(traj_controller_->has_nontrivial_traj());
+  EXPECT_TRUE(traj_controller_->has_trivial_traj());
 
   if (traj_controller_->has_position_command_interface())
   {
@@ -429,8 +426,7 @@ TEST_F(TestTrajectoryActions, test_goal_tolerances_multi_point_success)
 
   // it should be holding the last position goal
   // i.e., active but trivial trajectory (one point only)
-  EXPECT_TRUE(traj_controller_->has_active_traj());
-  EXPECT_FALSE(traj_controller_->has_nontrivial_traj());
+  EXPECT_TRUE(traj_controller_->has_trivial_traj());
 
   if (traj_controller_->has_position_command_interface())
   {
@@ -489,8 +485,7 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_state_tolerances_fail)
 
   // it should be holding the position (being the initial one)
   // i.e., active but trivial trajectory (one point only)
-  EXPECT_TRUE(traj_controller_->has_active_traj());
-  EXPECT_FALSE(traj_controller_->has_nontrivial_traj());
+  EXPECT_TRUE(traj_controller_->has_trivial_traj());
 
   if (traj_controller_->has_position_command_interface())
   {
@@ -545,8 +540,7 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_goal_tolerances_fail)
 
   // it should be holding the position (being the initial one)
   // i.e., active but trivial trajectory (one point only)
-  EXPECT_TRUE(traj_controller_->has_active_traj());
-  EXPECT_FALSE(traj_controller_->has_nontrivial_traj());
+  EXPECT_TRUE(traj_controller_->has_trivial_traj());
 
   if (traj_controller_->has_position_command_interface())
   {
@@ -596,8 +590,7 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_no_time_from_start_state_tol
 
   // it should be holding the position (being the initial one)
   // i.e., active but trivial trajectory (one point only)
-  EXPECT_TRUE(traj_controller_->has_active_traj());
-  EXPECT_FALSE(traj_controller_->has_nontrivial_traj());
+  EXPECT_TRUE(traj_controller_->has_trivial_traj());
 
   if (traj_controller_->has_position_command_interface())
   {
@@ -653,8 +646,7 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_cancel_hold_position)
 
   // it should be holding the last position,
   // i.e., active but trivial trajectory (one point only)
-  EXPECT_TRUE(traj_controller_->has_active_traj());
-  EXPECT_FALSE(traj_controller_->has_nontrivial_traj());
+  EXPECT_TRUE(traj_controller_->has_trivial_traj());
 
   if (traj_controller_->has_position_command_interface())
   {

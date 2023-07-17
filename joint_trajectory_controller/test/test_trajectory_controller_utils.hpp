@@ -131,6 +131,11 @@ public:
     return has_active_trajectory() && (*traj_point_active_ptr_)->has_nontrivial_msg();
   }
 
+  bool has_trivial_traj()
+  {
+    return has_active_trajectory() && (*traj_point_active_ptr_)->has_nontrivial_msg() == false;
+  }
+
   rclcpp::WaitSet joint_cmd_sub_wait_set_;
 };
 
