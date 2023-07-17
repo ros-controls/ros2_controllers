@@ -18,11 +18,8 @@
 #include <string>
 #include <vector>
 
-<<<<<<< HEAD
 #include "parameter_traits/parameter_traits.hpp"
-=======
 #include "rclcpp/parameter.hpp"
->>>>>>> e49c540 (Fix namespace for parameter traits(#703))
 #include "rsl/algorithm.hpp"
 #include "tl_expected/expected.hpp"
 
