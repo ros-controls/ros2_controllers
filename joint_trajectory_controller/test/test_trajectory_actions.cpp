@@ -629,6 +629,130 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_cancel_hold_position)
   }
 }
 
+TEST_P(TestTrajectoryActionsTestParameterized, test_allow_nonzero_velocity_at_trajectory_end_true)
+{
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("allow_nonzero_velocity_at_trajectory_end", true)};
+  SetUpExecutor(params);
+  SetUpControllerHardware();
+
+  std::shared_future<typename GoalHandle::SharedPtr> gh_future;
+  // send goal with nonzero last velocities
+  {
+    std::vector<JointTrajectoryPoint> points;
+    JointTrajectoryPoint point1;
+    point1.time_from_start = rclcpp::Duration::from_seconds(0.0);
+    point1.positions.resize(joint_names_.size());
+    point1.velocities.resize(joint_names_.size());
+
+    point1.positions[0] = 4.0;
+    point1.positions[1] = 5.0;
+    point1.positions[2] = 6.0;
+    point1.velocities[0] = 4.0;
+    point1.velocities[1] = 5.0;
+    point1.velocities[2] = 6.0;
+    points.push_back(point1);
+
+    JointTrajectoryPoint point2;
+    point2.time_from_start = rclcpp::Duration::from_seconds(0.1);
+    point2.positions.resize(joint_names_.size());
+    point2.velocities.resize(joint_names_.size());
+
+    point2.positions[0] = 7.0;
+    point2.positions[1] = 8.0;
+    point2.positions[2] = 9.0;
+    point2.velocities[0] = 4.0;
+    point2.velocities[1] = 5.0;
+    point2.velocities[2] = 6.0;
+    points.push_back(point2);
+
+    gh_future = sendActionGoal(points, 1.0, goal_options_);
+  }
+  controller_hw_thread_.join();
+
+  // will be accepted despite nonzero last point
+  EXPECT_TRUE(gh_future.get());
+  EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
+}
+
+TEST_P(TestTrajectoryActionsTestParameterized, test_allow_nonzero_velocity_at_trajectory_end_false)
+{
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("allow_nonzero_velocity_at_trajectory_end", false)};
+  SetUpExecutor(params);
+  SetUpControllerHardware();
+
+  std::shared_future<typename GoalHandle::SharedPtr> gh_future;
+  // send goal with nonzero last velocities
+  {
+    std::vector<JointTrajectoryPoint> points;
+    JointTrajectoryPoint point1;
+    point1.time_from_start = rclcpp::Duration::from_seconds(0.0);
+    point1.positions.resize(joint_names_.size());
+    point1.velocities.resize(joint_names_.size());
+
+    point1.positions[0] = 4.0;
+    point1.positions[1] = 5.0;
+    point1.positions[2] = 6.0;
+    point1.velocities[0] = 4.0;
+    point1.velocities[1] = 5.0;
+    point1.velocities[2] = 6.0;
+    points.push_back(point1);
+
+    JointTrajectoryPoint point2;
+    point2.time_from_start = rclcpp::Duration::from_seconds(0.1);
+    point2.positions.resize(joint_names_.size());
+    point2.velocities.resize(joint_names_.size());
+
+    point2.positions[0] = 7.0;
+    point2.positions[1] = 8.0;
+    point2.positions[2] = 9.0;
+    point2.velocities[0] = 4.0;
+    point2.velocities[1] = 5.0;
+    point2.velocities[2] = 6.0;
+    points.push_back(point2);
+
+    gh_future = sendActionGoal(points, 1.0, goal_options_);
+  }
+  controller_hw_thread_.join();
+
+  EXPECT_FALSE(gh_future.get());
+
+  // send goal with last velocity being zero
+  {
+    std::vector<JointTrajectoryPoint> points;
+    JointTrajectoryPoint point1;
+    point1.time_from_start = rclcpp::Duration::from_seconds(0.0);
+    point1.positions.resize(joint_names_.size());
+    point1.velocities.resize(joint_names_.size());
+
+    point1.positions[0] = 4.0;
+    point1.positions[1] = 5.0;
+    point1.positions[2] = 6.0;
+    point1.velocities[0] = 4.0;
+    point1.velocities[1] = 5.0;
+    point1.velocities[2] = 6.0;
+    points.push_back(point1);
+
+    JointTrajectoryPoint point2;
+    point2.time_from_start = rclcpp::Duration::from_seconds(0.1);
+    point2.positions.resize(joint_names_.size());
+    point2.velocities.resize(joint_names_.size());
+
+    point2.positions[0] = 7.0;
+    point2.positions[1] = 8.0;
+    point2.positions[2] = 9.0;
+    point2.velocities[0] = 0.0;
+    point2.velocities[1] = 0.0;
+    point2.velocities[2] = 0.0;
+    points.push_back(point2);
+
+    gh_future = sendActionGoal(points, 1.0, goal_options_);
+  }
+
+  EXPECT_TRUE(gh_future.get());
+}
+
 // position controllers
 INSTANTIATE_TEST_SUITE_P(
   PositionTrajectoryControllersActions, TestTrajectoryActionsTestParameterized,
