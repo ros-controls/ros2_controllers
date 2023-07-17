@@ -296,7 +296,9 @@ SteeringControllersLibrary::command_interface_configuration() const
       command_interfaces_config.names.push_back(
         params_.steers_names[i] + "/" + hardware_interface::HW_IF_POSITION);
     }
+    return command_interfaces_config;
   }
+
   if (params_.front_steering)
   {
     for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
@@ -351,6 +353,7 @@ SteeringControllersLibrary::state_interface_configuration() const
       state_interfaces_config.names.push_back(
         steers_names_[i] + "/" + hardware_interface::HW_IF_POSITION);
     }
+  return state_interfaces_config;
   }
 
   if (params_.front_steering)
@@ -487,29 +490,31 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
         command_interfaces_[i + params_.wheels_names.size()].set_value(steering_commands[i]);
       }
     }
-
-    if (params_.front_steering)
-    {
-      for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
-      {
-        command_interfaces_[i].set_value(traction_commands[i]);
-      }
-      for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
-      {
-        command_interfaces_[i + params_.rear_wheels_names.size()].set_value(steering_commands[i]);
-      }
-    }
     else
     {
+      if (params_.front_steering)
       {
-        for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
+        for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
         {
           command_interfaces_[i].set_value(traction_commands[i]);
         }
-        for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
+        for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
         {
-          command_interfaces_[i + params_.front_wheels_names.size()].set_value(
-            steering_commands[i]);
+          command_interfaces_[i + params_.rear_wheels_names.size()].set_value(steering_commands[i]);
+        }
+      }
+      else
+      {
+        {
+          for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
+          {
+            command_interfaces_[i].set_value(traction_commands[i]);
+          }
+          for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
+          {
+            command_interfaces_[i + params_.front_wheels_names.size()].set_value(
+              steering_commands[i]);
+          }
         }
       }
     }
