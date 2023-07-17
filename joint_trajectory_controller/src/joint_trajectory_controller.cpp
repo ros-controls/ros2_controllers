@@ -961,7 +961,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
 controller_interface::CallbackReturn JointTrajectoryController::on_deactivate(
   const rclcpp_lifecycle::State &)
 {
-  // TODO(anyone): How to halt when using effort commands?
   for (size_t index = 0; index < dof_; ++index)
   {
     if (has_position_command_interface_)
@@ -975,6 +974,12 @@ controller_interface::CallbackReturn JointTrajectoryController::on_deactivate(
       joint_command_interface_[1][index].get().set_value(0.0);
     }
 
+    if (has_acceleration_command_interface_)
+    {
+      joint_command_interface_[2][index].get().set_value(0.0);
+    }
+
+    // TODO(anyone): How to halt when using effort commands?
     if (has_effort_command_interface_)
     {
       joint_command_interface_[3][index].get().set_value(0.0);
