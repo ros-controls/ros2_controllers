@@ -65,6 +65,8 @@ TEST_P(TrajectoryControllerTestParameterized, configure_state_ignores_commands)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
   SetUpTrajectoryController(executor);
+  traj_controller_->get_node()->set_parameter(
+    rclcpp::Parameter("allow_nonzero_velocity_at_trajectory_end", true));
 
   // const auto future_handle_ = std::async(std::launch::async, spin, &executor);
 
@@ -202,7 +204,9 @@ TEST_P(TrajectoryControllerTestParameterized, activate)
 TEST_P(TrajectoryControllerTestParameterized, cleanup)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
-  SetUpAndActivateTrajectoryController(executor);
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("allow_nonzero_velocity_at_trajectory_end", true)};
+  SetUpAndActivateTrajectoryController(executor, true, params);
 
   // send msg
   constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
@@ -259,6 +263,8 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
 {
   rclcpp::executors::MultiThreadedExecutor executor;
   SetUpTrajectoryController(executor, false);
+  traj_controller_->get_node()->set_parameter(
+    rclcpp::Parameter("allow_nonzero_velocity_at_trajectory_end", true));
 
   // This call is replacing the way parameters are set via launch
   SetParameters();
@@ -450,7 +456,9 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_normalized)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
   constexpr double k_p = 10.0;
-  SetUpAndActivateTrajectoryController(executor, true, {}, true, k_p, 0.0, false);
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("allow_nonzero_velocity_at_trajectory_end", true)};
+  SetUpAndActivateTrajectoryController(executor, true, params, true, k_p, 0.0, false);
   subscribeToState();
 
   size_t n_joints = joint_names_.size();
@@ -557,7 +565,9 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_normalized)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
   constexpr double k_p = 10.0;
-  SetUpAndActivateTrajectoryController(executor, true, {}, true, k_p, 0.0, true);
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("allow_nonzero_velocity_at_trajectory_end", true)};
+  SetUpAndActivateTrajectoryController(executor, true, params, true, k_p, 0.0, true);
   subscribeToState();
 
   size_t n_joints = joint_names_.size();
