@@ -435,6 +435,41 @@ public:
     return state_msg_;
   }
 
+  void expectHoldingPoint(std::vector<double> points)
+  {
+    // it should be holding the given point
+    // i.e., active but trivial trajectory (one point only)
+    EXPECT_TRUE(traj_controller_->has_trivial_traj());
+
+    if (traj_controller_->has_position_command_interface())
+    {
+      EXPECT_NEAR(points.at(0), joint_pos_[0], COMMON_THRESHOLD);
+      EXPECT_NEAR(points.at(1), joint_pos_[1], COMMON_THRESHOLD);
+      EXPECT_NEAR(points.at(2), joint_pos_[2], COMMON_THRESHOLD);
+    }
+
+    if (traj_controller_->has_velocity_command_interface())
+    {
+      EXPECT_EQ(0.0, joint_vel_[0]);
+      EXPECT_EQ(0.0, joint_vel_[1]);
+      EXPECT_EQ(0.0, joint_vel_[2]);
+    }
+
+    if (traj_controller_->has_acceleration_command_interface())
+    {
+      EXPECT_EQ(0.0, joint_acc_[0]);
+      EXPECT_EQ(0.0, joint_acc_[1]);
+      EXPECT_EQ(0.0, joint_acc_[2]);
+    }
+
+    if (traj_controller_->has_effort_command_interface())
+    {
+      EXPECT_EQ(0.0, joint_eff_[0]);
+      EXPECT_EQ(0.0, joint_eff_[1]);
+      EXPECT_EQ(0.0, joint_eff_[2]);
+    }
+  }
+
   std::string controller_name_;
 
   std::vector<std::string> joint_names_;

@@ -473,8 +473,8 @@ TEST_P(TrajectoryControllerTestParameterized, hold_on_startup)
   updateController(rclcpp::Duration(FIRST_POINT_TIME));
   // after startup with start_with_holding being set, we expect an active trajectory:
   // one point, being the position at startup
-  ASSERT_TRUE(traj_controller_->has_active_traj());
-  ASSERT_FALSE(traj_controller_->has_nontrivial_traj());
+  std::vector<double> initial_positions{INITIAL_POS_JOINT1, INITIAL_POS_JOINT2, INITIAL_POS_JOINT3};
+  expectHoldingPoint(initial_positions);
 
   executor.cancel();
 }
