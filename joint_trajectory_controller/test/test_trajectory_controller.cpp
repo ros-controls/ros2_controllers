@@ -1182,7 +1182,6 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_old_trajectory)
     traj_controller_->get_node()->get_clock()->now() - delay - std::chrono::milliseconds(100);
   expected_actual.positions = {points_old[1].begin(), points_old[1].end()};
   expected_desired = expected_actual;
-  std::cout << "Sending old trajectory" << std::endl;
   publish(time_from_start, points_new, new_traj_start);
   waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
 }
