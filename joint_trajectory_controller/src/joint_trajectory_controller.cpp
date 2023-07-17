@@ -116,10 +116,6 @@ controller_interface::return_type JointTrajectoryController::update(
     return controller_interface::return_type::OK;
   }
 
-  // current state update
-  state_current_.time_from_start.set__sec(0);
-  read_state_from_hardware(state_current_);
-
   auto compute_error_for_joint = [&](
                                    JointTrajectoryPoint & error, size_t index,
                                    const JointTrajectoryPoint & current,
@@ -172,6 +168,10 @@ controller_interface::return_type JointTrajectoryController::update(
       joint_interface[index].get().set_value(trajectory_point_interface[index]);
     }
   };
+
+  // current state update
+  state_current_.time_from_start.set__sec(0);
+  read_state_from_hardware(state_current_);
 
   // currently carrying out a trajectory
   if (has_active_trajectory())
