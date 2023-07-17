@@ -162,7 +162,7 @@ controller_interface::return_type JointTrajectoryController::update(
     fill_partial_goal(*new_external_msg);
     sort_to_local_joint_order(*new_external_msg);
     // TODO(denis): Add here integration of position and velocity
-    traj_external_point_ptr_->update(*new_external_msg);
+    traj_external_point_ptr_->update(*new_external_msg, get_node()->get_clock()->get_clock_type());
     // set the active trajectory pointer to the new goal
     traj_point_active_ptr_ = &traj_external_point_ptr_;
   }
@@ -205,6 +205,9 @@ controller_interface::return_type JointTrajectoryController::update(
     const bool valid_point =
       (*traj_point_active_ptr_)
         ->sample(time, interpolation_method_, state_desired_, start_segment_itr, end_segment_itr);
+    // save that for later, otherwise we might get a race condition if action is accepted within
+    // execution of this method()
+    const auto active_goal = *rt_active_goal_.readFromRT();
 
     if (valid_point)
     {
@@ -303,7 +306,6 @@ controller_interface::return_type JointTrajectoryController::update(
         last_commanded_state_ = state_desired_;
       }
 
-      const auto active_goal = *rt_active_goal_.readFromRT();
       if (active_goal)
       {
         // send feedback
@@ -1295,7 +1297,8 @@ bool JointTrajectoryController::validate_trajectory_msg(
     return false;
   }
 
-  const auto trajectory_start_time = static_cast<rclcpp::Time>(trajectory.header.stamp);
+  const auto trajectory_start_time =
+    rclcpp::Time(trajectory.header.stamp, get_node()->now().get_clock_type());
   // If the starting time it set to 0.0, it means the controller should start it now.
   // Otherwise we check if the trajectory ends before the current time,
   // in which case it can be ignored.

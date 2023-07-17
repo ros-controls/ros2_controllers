@@ -50,10 +50,12 @@ void Trajectory::set_point_before_trajectory_msg(
   state_before_traj_msg_ = current_point;
 }
 
-void Trajectory::update(std::shared_ptr<trajectory_msgs::msg::JointTrajectory> joint_trajectory)
+void Trajectory::update(
+  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> joint_trajectory,
+  rcl_clock_type_t clock_type)
 {
   trajectory_msg_ = joint_trajectory;
-  trajectory_start_time_ = static_cast<rclcpp::Time>(joint_trajectory->header.stamp);
+  trajectory_start_time_ = rclcpp::Time(joint_trajectory->header.stamp, clock_type);
   sampled_already_ = false;
 }
 
