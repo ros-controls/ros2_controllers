@@ -317,25 +317,12 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
   // reactivated
   // wait so controller process the third point when reactivated
   std::this_thread::sleep_for(std::chrono::milliseconds(3000));
-  // TODO(anyone) test copied from ROS 1: it fails now!
-  //  should the old trajectory really be processed after reactivation?
-#if 0
   ActivateTrajectoryController();
   state = traj_controller_->get_state();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_ACTIVE);
 
-  updateController(rclcpp::Duration::from_seconds(0.5));
-  // traj_controller_->update(
-  //   rclcpp::Time(static_cast<uint64_t>(0.75 * 1e9)), rclcpp::Duration::from_seconds(0.01));
-
-  // change in hw position to 3rd point
-  if (traj_controller_->has_position_command_interface())
-  {
-    EXPECT_NEAR(10.10, joint_pos_[0], allowed_delta);
-    EXPECT_NEAR(11.11, joint_pos_[1], allowed_delta);
-    EXPECT_NEAR(12.12, joint_pos_[2], allowed_delta);
-  }
-#endif
+  // TODO(christophfroehlich) add test if there is no active trajectory after
+  // reactivation once #558 or #609 got merged (needs methods for TestableJointTrajectoryController)
 
   executor.cancel();
 }
