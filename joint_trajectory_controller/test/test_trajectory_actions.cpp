@@ -66,15 +66,22 @@ protected:
     goal_options_.feedback_callback = nullptr;
   }
 
-  void SetUpExecutor(const std::vector<rclcpp::Parameter> & parameters = {})
+  void SetUpExecutor(
+    const std::vector<rclcpp::Parameter> & parameters = {},
+    bool separate_cmd_and_state_values = false)
   {
     setup_executor_ = true;
 
+<<<<<<< HEAD
     executor_ = std::make_unique<rclcpp::executors::MultiThreadedExecutor>();
 
     SetUpAndActivateTrajectoryController(true, parameters);
 
     executor_->add_node(traj_controller_->get_node()->get_node_base_interface());
+=======
+    SetUpAndActivateTrajectoryController(
+      executor_, true, parameters, separate_cmd_and_state_values);
+>>>>>>> 7e13d1d ([JTC] Fix time sources and wrong checks in tests (#686))
 
     SetUpActionClient();
 
@@ -476,15 +483,13 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_goal_tolerances_fail)
     rclcpp::Parameter("constraints.joint3.goal", goal_tol),
     rclcpp::Parameter("constraints.goal_time", goal_time)};
 
-  SetUpExecutor(params);
+  // separate command from states -> goal won't never be reached
+  bool separate_cmd_and_state_values = true;
+  SetUpExecutor(params, separate_cmd_and_state_values);
   SetUpControllerHardware();
 
-  const double init_pos1 = joint_pos_[0];
-  const double init_pos2 = joint_pos_[1];
-  const double init_pos3 = joint_pos_[2];
-
   std::shared_future<typename GoalHandle::SharedPtr> gh_future;
-  // send goal
+  // send goal; one point only -> command is directly set to reach this goal (no interpolation)
   {
     std::vector<JointTrajectoryPoint> points;
     JointTrajectoryPoint point;
@@ -506,14 +511,19 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_goal_tolerances_fail)
     control_msgs::action::FollowJointTrajectory_Result::GOAL_TOLERANCE_VIOLATED,
     common_action_result_code_);
 
+<<<<<<< HEAD
   // run an update, it should be holding
   traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+=======
+  // run an update, it should be holding the last received goal
+  updateController(rclcpp::Duration::from_seconds(0.01));
+>>>>>>> 7e13d1d ([JTC] Fix time sources and wrong checks in tests (#686))
 
   if (traj_controller_->has_position_command_interface())
   {
-    EXPECT_NEAR(init_pos1, joint_pos_[0], COMMON_THRESHOLD);
-    EXPECT_NEAR(init_pos2, joint_pos_[1], COMMON_THRESHOLD);
-    EXPECT_NEAR(init_pos3, joint_pos_[2], COMMON_THRESHOLD);
+    EXPECT_NEAR(4.0, joint_pos_[0], COMMON_THRESHOLD);
+    EXPECT_NEAR(5.0, joint_pos_[1], COMMON_THRESHOLD);
+    EXPECT_NEAR(6.0, joint_pos_[2], COMMON_THRESHOLD);
   }
 }
 
