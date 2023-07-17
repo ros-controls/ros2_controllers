@@ -138,4 +138,4 @@ That's it! Enjoy writing great controllers!
 Useful External References
 ---------------------------
 
-- `Templates and scripts for generating controllers shell <https://rtw.stoglrobotics.de/master/use-cases/ros2_control/setup_controller.html#uc-setup-ros2-controller>`_
+- `Templates and scripts for generating controllers shell <https://rtw.stoglrobotics.de/master/use-cases/ros2_control/setup_controller.html>`_
