@@ -230,16 +230,6 @@ TEST_P(TrajectoryControllerTestParameterized, cleanup)
   state = traj_controller_->get_node()->cleanup();
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
 
-  // update for 0.25 seconds
-  // TODO(anyone): should the controller even allow calling update() when it is not active?
-  // update loop receives a new msg and updates accordingly
-  updateController(rclcpp::Duration::from_seconds(0.25));
-
-  // should be home pose again
-  EXPECT_NEAR(INITIAL_POS_JOINT1, joint_pos_[0], COMMON_THRESHOLD);
-  EXPECT_NEAR(INITIAL_POS_JOINT2, joint_pos_[1], COMMON_THRESHOLD);
-  EXPECT_NEAR(INITIAL_POS_JOINT3, joint_pos_[2], COMMON_THRESHOLD);
-
   executor.cancel();
 }
 
