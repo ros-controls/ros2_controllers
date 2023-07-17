@@ -312,7 +312,7 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_success_multi_point_sendgoal
 /**
  * Makes sense with position command interface only,
  * because no integration to position state interface is implemented
-*/
+ */
 TEST_F(TestTrajectoryActions, test_goal_tolerances_single_point_success)
 {
   // set tolerance parameters
@@ -357,7 +357,7 @@ TEST_F(TestTrajectoryActions, test_goal_tolerances_single_point_success)
 /**
  * Makes sense with position command interface only,
  * because no integration to position state interface is implemented
-*/
+ */
 TEST_F(TestTrajectoryActions, test_goal_tolerances_multi_point_success)
 {
   // set tolerance parameters
