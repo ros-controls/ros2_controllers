@@ -779,15 +779,6 @@ TEST_P(TrajectoryControllerTestParameterized, test_jumbled_joint_order)
       traj_msg.points[0].velocities[1] = -0.1;
       traj_msg.points[0].velocities[2] = -0.1;
     }
-
-    if (traj_controller_->has_effort_command_interface())
-    {
-      traj_msg.points[0].effort.resize(3);
-      traj_msg.points[0].effort[0] = -0.1;
-      traj_msg.points[0].effort[1] = -0.1;
-      traj_msg.points[0].effort[2] = -0.1;
-    }
-
     trajectory_publisher_->publish(traj_msg);
   }
 
@@ -809,13 +800,6 @@ TEST_P(TrajectoryControllerTestParameterized, test_jumbled_joint_order)
     EXPECT_GT(0.0, joint_vel_[0]);
     EXPECT_GT(0.0, joint_vel_[1]);
     EXPECT_GT(0.0, joint_vel_[2]);
-  }
-
-  if (traj_controller_->has_effort_command_interface())
-  {
-    EXPECT_GT(0.0, joint_eff_[0]);
-    EXPECT_GT(0.0, joint_eff_[1]);
-    EXPECT_GT(0.0, joint_eff_[2]);
   }
   // TODO(anyone): add here checks for acceleration commands
 }
@@ -1027,10 +1011,9 @@ TEST_P(TrajectoryControllerTestParameterized, invalid_message)
   traj_msg.points[0].accelerations = {1.0, 2.0};
   EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
 
-  // Incompatible data sizes, too few efforts
+  // Effort is not supported in trajectory message
   traj_msg = good_traj_msg;
-  traj_msg.points[0].positions.clear();
-  traj_msg.points[0].effort = {1.0, 2.0};
+  traj_msg.points[0].effort = {1.0, 2.0, 3.0};
   EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
 
   // Non-strictly increasing waypoint times
