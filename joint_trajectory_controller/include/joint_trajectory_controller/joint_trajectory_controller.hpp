@@ -163,8 +163,6 @@ protected:
   bool has_acceleration_command_interface_ = false;
   bool has_effort_command_interface_ = false;
 
-  // Should the controller start holding position?
-  bool start_with_holding_ = true;
   /// If true, a velocity feedforward term plus corrective PID term is used
   bool use_closed_loop_pid_adapter_ = false;
   using PidPtr = std::shared_ptr<control_toolbox::Pid>;
@@ -189,7 +187,6 @@ protected:
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> traj_msg_home_ptr_ = nullptr;
   realtime_tools::RealtimeBuffer<std::shared_ptr<trajectory_msgs::msg::JointTrajectory>>
     traj_msg_external_point_ptr_;
-  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> aborted_traj_ptr_ = nullptr;
 
   using ControllerStateMsg = control_msgs::msg::JointTrajectoryControllerState;
   using StatePublisher = realtime_tools::RealtimePublisher<ControllerStateMsg>;
