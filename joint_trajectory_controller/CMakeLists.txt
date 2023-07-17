@@ -78,6 +78,7 @@ if(BUILD_TESTING)
     ros2_control_test_assets
   )
 
+<<<<<<< HEAD
   # TODO(andyz): Disabled due to flakiness
   # ament_add_gmock(test_trajectory_actions
   #   test/test_trajectory_actions.cpp
@@ -85,6 +86,15 @@ if(BUILD_TESTING)
   # target_link_libraries(test_trajectory_actions
   #   joint_trajectory_controller
   # )
+=======
+  ament_add_gmock(test_trajectory_actions
+    test/test_trajectory_actions.cpp
+  )
+  set_tests_properties(test_trajectory_actions PROPERTIES TIMEOUT 300)
+  target_link_libraries(test_trajectory_actions
+    joint_trajectory_controller
+  )
+>>>>>>> 8674f2d (Increase action tests timeout (#680))
 endif()
 
 
