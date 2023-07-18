@@ -515,7 +515,9 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_no_time_from_start_state_tol
     rclcpp::Parameter("constraints.joint2.trajectory", state_tol),
     rclcpp::Parameter("constraints.joint3.trajectory", state_tol)};
 
-  SetUpExecutor(params);
+  // separate command from states -> goal won't never be reached
+  bool separate_cmd_and_state_values = true;
+  SetUpExecutor(params, separate_cmd_and_state_values);
   SetUpControllerHardware();
 
   std::shared_future<typename GoalHandle::SharedPtr> gh_future;
