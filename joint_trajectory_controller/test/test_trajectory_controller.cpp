@@ -65,6 +65,8 @@ TEST_P(TrajectoryControllerTestParameterized, configure_state_ignores_commands)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
   SetUpTrajectoryController(executor);
+  traj_controller_->get_node()->set_parameter(
+    rclcpp::Parameter("allow_nonzero_velocity_at_trajectory_end", true));
 
   // const auto future_handle_ = std::async(std::launch::async, spin, &executor);
 
@@ -202,7 +204,9 @@ TEST_P(TrajectoryControllerTestParameterized, activate)
 TEST_P(TrajectoryControllerTestParameterized, cleanup)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
-  SetUpAndActivateTrajectoryController(executor);
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("allow_nonzero_velocity_at_trajectory_end", true)};
+  SetUpAndActivateTrajectoryController(executor, true, params);
 
   // send msg
   constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
@@ -225,16 +229,6 @@ TEST_P(TrajectoryControllerTestParameterized, cleanup)
 
   state = traj_controller_->get_node()->cleanup();
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
-
-  // update for 0.25 seconds
-  // TODO(anyone): should the controller even allow calling update() when it is not active?
-  // update loop receives a new msg and updates accordingly
-  updateController(rclcpp::Duration::from_seconds(0.25));
-
-  // should be home pose again
-  EXPECT_NEAR(INITIAL_POS_JOINT1, joint_pos_[0], COMMON_THRESHOLD);
-  EXPECT_NEAR(INITIAL_POS_JOINT2, joint_pos_[1], COMMON_THRESHOLD);
-  EXPECT_NEAR(INITIAL_POS_JOINT3, joint_pos_[2], COMMON_THRESHOLD);
 
   executor.cancel();
 }
@@ -259,6 +253,8 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
 {
   rclcpp::executors::MultiThreadedExecutor executor;
   SetUpTrajectoryController(executor, false);
+  traj_controller_->get_node()->set_parameter(
+    rclcpp::Parameter("allow_nonzero_velocity_at_trajectory_end", true));
 
   // This call is replacing the way parameters are set via launch
   SetParameters();
@@ -321,25 +317,12 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
   // reactivated
   // wait so controller process the third point when reactivated
   std::this_thread::sleep_for(std::chrono::milliseconds(3000));
-  // TODO(anyone) test copied from ROS 1: it fails now!
-  //  should the old trajectory really be processed after reactivation?
-#if 0
   ActivateTrajectoryController();
   state = traj_controller_->get_state();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_ACTIVE);
 
-  updateController(rclcpp::Duration::from_seconds(0.5));
-  // traj_controller_->update(
-  //   rclcpp::Time(static_cast<uint64_t>(0.75 * 1e9)), rclcpp::Duration::from_seconds(0.01));
-
-  // change in hw position to 3rd point
-  if (traj_controller_->has_position_command_interface())
-  {
-    EXPECT_NEAR(10.10, joint_pos_[0], allowed_delta);
-    EXPECT_NEAR(11.11, joint_pos_[1], allowed_delta);
-    EXPECT_NEAR(12.12, joint_pos_[2], allowed_delta);
-  }
-#endif
+  // TODO(christophfroehlich) add test if there is no active trajectory after
+  // reactivation once #558 or #609 got merged (needs methods for TestableJointTrajectoryController)
 
   executor.cancel();
 }
@@ -488,7 +471,9 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_normalized)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
   constexpr double k_p = 10.0;
-  SetUpAndActivateTrajectoryController(executor, true, {}, true, k_p, 0.0, false);
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("allow_nonzero_velocity_at_trajectory_end", true)};
+  SetUpAndActivateTrajectoryController(executor, true, params, true, k_p, 0.0, false);
   subscribeToState();
 
   size_t n_joints = joint_names_.size();
@@ -595,7 +580,9 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_normalized)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
   constexpr double k_p = 10.0;
-  SetUpAndActivateTrajectoryController(executor, true, {}, true, k_p, 0.0, true);
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("allow_nonzero_velocity_at_trajectory_end", true)};
+  SetUpAndActivateTrajectoryController(executor, true, params, true, k_p, 0.0, true);
   subscribeToState();
 
   size_t n_joints = joint_names_.size();

@@ -181,6 +181,11 @@ start_with_holding (bool)
 
   Default: true
 
+allow_nonzero_velocity_at_trajectory_end (boolean)
+  If false, the last velocity point has to be zero or the goal will be rejected.
+
+  Default: true
+
 constraints (structure)
   Default values for tolerances if no explicit values are states in JointTrajectory message.
 

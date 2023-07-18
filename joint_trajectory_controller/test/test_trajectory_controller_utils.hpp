@@ -381,9 +381,13 @@ public:
     auto clock = rclcpp::Clock(RCL_STEADY_TIME);
     const auto start_time = clock.now();
     const auto end_time = start_time + wait_time;
+    auto previous_time = start_time;
+
     while (clock.now() < end_time)
     {
-      traj_controller_->update(clock.now(), clock.now() - start_time);
+      auto now = clock.now();
+      traj_controller_->update(now, now - previous_time);
+      previous_time = now;
     }
   }
 
