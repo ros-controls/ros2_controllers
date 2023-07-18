@@ -536,6 +536,104 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_normalized)
 }
 
 /**
+ * @brief check if no timeout is triggered
+*/
+TEST_P(TrajectoryControllerTestParameterized, no_timeout)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+  // zero is default value, just for demonstration
+  rclcpp::Parameter cmd_timeout_parameter("cmd_timeout", 0.0);
+  SetUpAndActivateTrajectoryController(executor, true, {cmd_timeout_parameter}, false);
+  subscribeToState();
+
+  size_t n_joints = joint_names_.size();
+
+  // send msg
+  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
+  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
+  // *INDENT-OFF*
+  std::vector<std::vector<double>> points{
+    {{3.3, 4.4, 6.6}}, {{7.7, 8.8, 9.9}}, {{10.10, 11.11, 12.12}}};
+  std::vector<std::vector<double>> points_velocities{
+    {{0.01, 0.01, 0.01}}, {{0.05, 0.05, 0.05}}, {{0.06, 0.06, 0.06}}};
+  // *INDENT-ON*
+  publish(time_from_start, points, rclcpp::Time(), {}, points_velocities);
+  traj_controller_->wait_for_trajectory(executor);
+
+  // first update
+  updateController(rclcpp::Duration(FIRST_POINT_TIME));
+
+  // Spin to receive latest state
+  executor.spin_some();
+  auto state_msg = getState();
+  ASSERT_TRUE(state_msg);
+
+  // has the msg the correct vector sizes?
+  EXPECT_EQ(n_joints, state_msg->reference.positions.size());
+
+  // is the desired position sampled?
+  EXPECT_NEAR(state_msg->reference.positions[0], points.at(0).at(0), 1e-2);
+  EXPECT_NEAR(state_msg->reference.positions[1], points.at(0).at(1), 1e-2);
+  EXPECT_NEAR(state_msg->reference.positions[2], points.at(0).at(2), 1e-2);
+
+  executor.cancel();
+}
+
+/**
+ * @brief check if timeout is triggered
+*/
+TEST_P(TrajectoryControllerTestParameterized, timeout)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+  constexpr double cmd_timeout = 0.1;
+  rclcpp::Parameter cmd_timeout_parameter("cmd_timeout", cmd_timeout);
+  SetUpAndActivateTrajectoryController(executor, true, {cmd_timeout_parameter}, false);
+  subscribeToState();
+
+  size_t n_joints = joint_names_.size();
+
+  // send msg
+  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
+  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
+  // *INDENT-OFF*
+  std::vector<std::vector<double>> points{
+    {{3.3, 4.4, 6.6}}, {{7.7, 8.8, 9.9}}, {{10.10, 11.11, 12.12}}};
+  std::vector<std::vector<double>> points_velocities{
+    {{0.01, 0.01, 0.01}}, {{0.05, 0.05, 0.05}}, {{0.06, 0.06, 0.06}}};
+  // *INDENT-ON*
+
+  // auto clock = rclcpp::Clock(RCL_STEADY_TIME);
+  // rclcpp::Duration wait_time = rclcpp::Duration::from_seconds(1.0);
+  publish(time_from_start, points, rclcpp::Time(), {}, points_velocities);
+  traj_controller_->wait_for_trajectory(executor);
+
+  // first update
+  updateController(rclcpp::Duration(FIRST_POINT_TIME));
+
+  // Spin to receive latest state
+  executor.spin_some();
+  auto state_msg = getState();
+  ASSERT_TRUE(state_msg);
+
+  // has the msg the correct vector sizes?
+  EXPECT_EQ(n_joints, state_msg->reference.positions.size());
+
+  // TODO(christophfroehlich): using EXPECT_LT now ->
+  //  better calculate the true expected value after timeout
+  EXPECT_LT(
+    state_msg->reference.positions[0],
+    INITIAL_POS_JOINTS[0] + (points.at(0).at(0) - INITIAL_POS_JOINTS[0]) * cmd_timeout / 0.25);
+  EXPECT_LT(
+    state_msg->reference.positions[1],
+    INITIAL_POS_JOINTS[1] + (points.at(0).at(1) - INITIAL_POS_JOINTS[0]) * cmd_timeout / 0.25);
+  EXPECT_LT(
+    state_msg->reference.positions[2],
+    INITIAL_POS_JOINTS[2] + (points.at(0).at(2) - INITIAL_POS_JOINTS[0]) * cmd_timeout / 0.25);
+
+  executor.cancel();
+}
+
+/**
  * @brief check if position error of revolute joints are normalized if configured so
  */
 TEST_P(TrajectoryControllerTestParameterized, position_error_normalized)

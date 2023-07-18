@@ -71,6 +71,11 @@ joint_trajectory_controller:
     default_value: true,
     description: "If false, the last velocity point has to be zero or the goal will be rejected",
   }
+  cmd_timeout: {
+    type: double,
+    default_value: 0.0, # seconds
+    description: "Timeout after which input command is considered staled. If zero, timeout is deactivated",
+  }
   gains:
     __map_joints:
       p: {

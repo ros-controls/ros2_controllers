@@ -174,6 +174,11 @@ protected:
   // reserved storage for result of the command when closed loop pid adapter is used
   std::vector<double> tmp_command_;
 
+  // Timeout to consider commands old
+  std::chrono::milliseconds cmd_timeout_{500};
+  // save the timestamp when the last msg was received
+  rclcpp::Time last_msg_received_;
+
   // TODO(karsten1987): eventually activate and deactivate subscriber directly when its supported
   bool subscriber_is_active_ = false;
   rclcpp::Subscription<trajectory_msgs::msg::JointTrajectory>::SharedPtr joint_command_subscriber_ =

@@ -185,6 +185,16 @@ controller_interface::return_type JointTrajectoryController::update(
   // currently carrying out a trajectory
   if (traj_point_active_ptr_ && (*traj_point_active_ptr_)->has_trajectory_msg())
   {
+    // is timeout configured?
+    if (params_.cmd_timeout > 0)
+    {
+      if (time - last_msg_received_ > cmd_timeout_)
+      {
+        RCLCPP_WARN(get_node()->get_logger(), "Aborted due to timeout");
+        set_hold_position();
+      }
+    }
+
     bool first_sample = false;
     // if sampling the first time, set the point before you sample
     if (!(*traj_point_active_ptr_)->is_sampled_already())
@@ -867,6 +877,8 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     std::string(get_node()->get_name()) + "/query_state",
     std::bind(&JointTrajectoryController::query_state_service, this, _1, _2));
 
+  cmd_timeout_ = std::chrono::milliseconds{static_cast<int>(params_.cmd_timeout * 1000.0)};
+
   return CallbackReturn::SUCCESS;
 }
 
@@ -1396,6 +1408,9 @@ bool JointTrajectoryController::validate_trajectory_msg(
 void JointTrajectoryController::add_new_trajectory_msg(
   const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & traj_msg)
 {
+  // we have to save this timestamp, because header timestamp can be zero by design
+  last_msg_received_ = this->get_node()->get_clock()->now();
+
   traj_msg_external_point_ptr_.writeFromNonRT(traj_msg);
 }
 
