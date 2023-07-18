@@ -177,7 +177,7 @@ protected:
   // Timeout to consider commands old
   std::chrono::milliseconds cmd_timeout_{500};
   // save the timestamp when the last msg was received
-  rclcpp::Time last_msg_received_;
+  rclcpp::Time last_msg_received_{0};
 
   // TODO(karsten1987): eventually activate and deactivate subscriber directly when its supported
   bool subscriber_is_active_ = false;

@@ -188,7 +188,7 @@ controller_interface::return_type JointTrajectoryController::update(
     // is timeout configured?
     if (params_.cmd_timeout > 0.0)
     {
-      if (time - last_msg_received_ > cmd_timeout_)
+      if (last_msg_received_.seconds() > 0 && (time - last_msg_received_ > cmd_timeout_))
       {
         RCLCPP_WARN(get_node()->get_logger(), "Aborted due to timeout");
         set_hold_position();
@@ -1435,6 +1435,9 @@ void JointTrajectoryController::set_hold_position()
 
   auto traj_msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>(empty_msg);
   add_new_trajectory_msg(traj_msg);
+
+  // otherwise we will end up in a loop after timeout
+  last_msg_received_ = rclcpp::Time(0, 0, last_msg_received_.get_clock_type());
 }
 
 bool JointTrajectoryController::contains_interface_type(
