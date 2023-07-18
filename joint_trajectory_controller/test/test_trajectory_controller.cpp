@@ -602,8 +602,6 @@ TEST_P(TrajectoryControllerTestParameterized, timeout)
     {{0.01, 0.01, 0.01}}, {{0.05, 0.05, 0.05}}, {{0.06, 0.06, 0.06}}};
   // *INDENT-ON*
 
-  // auto clock = rclcpp::Clock(RCL_STEADY_TIME);
-  // rclcpp::Duration wait_time = rclcpp::Duration::from_seconds(1.0);
   publish(time_from_start, points, rclcpp::Time(), {}, points_velocities);
   traj_controller_->wait_for_trajectory(executor);
 
