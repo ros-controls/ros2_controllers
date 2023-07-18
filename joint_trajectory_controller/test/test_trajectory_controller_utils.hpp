@@ -124,9 +124,9 @@ public:
 
   bool is_open_loop() { return params_.open_loop_control; }
 
-  bool has_active_traj() { return has_active_trajectory(); }
+  bool has_active_traj() const { return has_active_trajectory(); }
 
-  bool has_trivial_traj()
+  bool has_trivial_traj() const
   {
     return has_active_trajectory() && (*traj_point_active_ptr_)->has_nontrivial_msg() == false;
   }

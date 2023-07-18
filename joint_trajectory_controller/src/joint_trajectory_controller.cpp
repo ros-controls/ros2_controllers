@@ -1464,7 +1464,7 @@ void JointTrajectoryController::resize_joint_trajectory_point_command(
   }
 }
 
-bool JointTrajectoryController::has_active_trajectory()
+bool JointTrajectoryController::has_active_trajectory() const
 {
   return traj_point_active_ptr_ && (*traj_point_active_ptr_)->has_trajectory_msg();
 }
