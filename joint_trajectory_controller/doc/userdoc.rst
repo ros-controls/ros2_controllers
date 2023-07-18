@@ -180,6 +180,11 @@ allow_nonzero_velocity_at_trajectory_end (boolean)
 
   Default: true
 
+cmd_timeout (double)
+  Timeout in seconds after which input command is considered staled. If zero, timeout is deactivated
+
+  Default: 0.0
+
 constraints (structure)
   Default values for tolerances if no explicit values are states in JointTrajectory message.
 
