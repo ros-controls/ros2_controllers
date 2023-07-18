@@ -186,7 +186,7 @@ controller_interface::return_type JointTrajectoryController::update(
   if (traj_point_active_ptr_ && (*traj_point_active_ptr_)->has_trajectory_msg())
   {
     // is timeout configured?
-    if (params_.cmd_timeout > 0)
+    if (params_.cmd_timeout > 0.0)
     {
       if (time - last_msg_received_ > cmd_timeout_)
       {
