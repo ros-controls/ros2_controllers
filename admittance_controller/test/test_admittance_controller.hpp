@@ -456,9 +456,15 @@ public:
   static void TearDownTestCase() { AdmittanceControllerTest::TearDownTestCase(); }
 
 protected:
-  void SetUpController()
+  controller_interface::return_type SetUpController()
   {
-    AdmittanceControllerTest::SetUpController("test_admittance_controller");
+    auto param_name = std::get<0>(GetParam());
+    auto param_value = std::get<1>(GetParam());
+    std::vector<rclcpp::Parameter> parameter_overrides;
+    rclcpp::Parameter param(param_name, param_value);
+    parameter_overrides.push_back(param);
+    return AdmittanceControllerTest::SetUpController(
+      "test_admittance_controller", parameter_overrides);
   }
 };
 
