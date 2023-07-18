@@ -74,7 +74,9 @@ joint_trajectory_controller:
   cmd_timeout: {
     type: double,
     default_value: 0.0, # seconds
-    description: "Timeout after which input command is considered staled. If zero, timeout is deactivated",
+    description: "Timeout after which the input command is considered stale.
+     Timeout is counted from the end of the trajectory (the last point).
+     If zero, timeout is deactivated",
   }
   gains:
     __map_joints:
@@ -86,7 +88,7 @@ joint_trajectory_controller:
       i: {
         type: double,
         default_value: 0.0,
-        description: "Intigral gain for PID"
+        description: "Integral gain for PID"
       }
       d: {
         type: double,
@@ -96,7 +98,7 @@ joint_trajectory_controller:
       i_clamp: {
         type: double,
         default_value: 0.0,
-        description: "Integrale clamp. Symmetrical in both positive and negative direction."
+        description: "Integral clamp. Symmetrical in both positive and negative direction."
       }
       ff_velocity_scale: {
         type: double,

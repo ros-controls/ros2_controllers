@@ -25,6 +25,7 @@
 
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
+#include "joint_trajectory_controller/trajectory.hpp"
 
 namespace
 {
@@ -122,6 +123,10 @@ public:
   bool use_closed_loop_pid_adapter() { return use_closed_loop_pid_adapter_; }
 
   bool is_open_loop() { return params_.open_loop_control; }
+
+  bool has_active_traj() { return has_active_trajectory(); }
+
+  bool has_nontrivial_traj() { return (*traj_point_active_ptr_)->has_nontrivial_msg(); }
 
   rclcpp::WaitSet joint_cmd_sub_wait_set_;
 };

@@ -164,6 +164,7 @@ controller_interface::return_type JointTrajectoryController::update(
     // TODO(denis): Add here integration of position and velocity
     traj_external_point_ptr_->update(*new_external_msg);
     // set the active trajectory pointer to the new goal
+    RCLCPP_DEBUG(get_node()->get_logger(), "set the active trajectory pointer to the new goal");
     traj_point_active_ptr_ = &traj_external_point_ptr_;
   }
 
@@ -183,18 +184,8 @@ controller_interface::return_type JointTrajectoryController::update(
   read_state_from_hardware(state_current_);
 
   // currently carrying out a trajectory
-  if (traj_point_active_ptr_ && (*traj_point_active_ptr_)->has_trajectory_msg())
+  if (has_active_trajectory())
   {
-    // is timeout configured?
-    if (params_.cmd_timeout > 0.0)
-    {
-      if (last_msg_received_.seconds() > 0 && (time - last_msg_received_ > cmd_timeout_))
-      {
-        RCLCPP_WARN(get_node()->get_logger(), "Aborted due to timeout");
-        set_hold_position();
-      }
-    }
-
     bool first_sample = false;
     // if sampling the first time, set the point before you sample
     if (!(*traj_point_active_ptr_)->is_sampled_already())
@@ -218,11 +209,25 @@ controller_interface::return_type JointTrajectoryController::update(
 
     if (valid_point)
     {
+      const rclcpp::Time traj_start = (*traj_point_active_ptr_)->get_trajectory_start_time();
+      const rclcpp::Time traj_end = traj_start + start_segment_itr->time_from_start;
+      double time_difference = time.seconds() - traj_end.seconds();
       bool tolerance_violated_while_moving = false;
       bool outside_goal_tolerance = false;
       bool within_goal_time = true;
-      double time_difference = 0.0;
       const bool before_last_point = end_segment_itr != (*traj_point_active_ptr_)->end();
+
+      // is timeout configured? Check independent of other tolerances
+      if (cmd_timeout_ > 0.0)
+      {
+        if (time_difference > cmd_timeout_)
+        {
+          RCLCPP_WARN(get_node()->get_logger(), "Aborted due to command timeout");
+          set_hold_position();
+          // remove the active trajectory pointer so that we stop commanding the hardware
+          traj_point_active_ptr_ = nullptr;
+        }
+      }
 
       // Check state/goal tolerance
       for (size_t index = 0; index < dof_; ++index)
@@ -249,11 +254,6 @@ controller_interface::return_type JointTrajectoryController::update(
           if (default_tolerances_.goal_time_tolerance != 0.0)
           {
             // if we exceed goal_time_tolerance set it to aborted
-            const rclcpp::Time traj_start = (*traj_point_active_ptr_)->get_trajectory_start_time();
-            const rclcpp::Time traj_end = traj_start + start_segment_itr->time_from_start;
-
-            time_difference = time.seconds() - traj_end.seconds();
-
             if (time_difference > default_tolerances_.goal_time_tolerance)
             {
               within_goal_time = false;
@@ -584,7 +584,7 @@ void JointTrajectoryController::query_state_service(
   const auto active_goal = *rt_active_goal_.readFromRT();
   response->name = params_.joints;
   trajectory_msgs::msg::JointTrajectoryPoint state_requested = state_current_;
-  if ((traj_point_active_ptr_ && (*traj_point_active_ptr_)->has_trajectory_msg()))
+  if (has_active_trajectory())
   {
     TrajectoryPointConstIter start_segment_itr, end_segment_itr;
     response->success = (*traj_point_active_ptr_)
@@ -877,7 +877,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     std::string(get_node()->get_name()) + "/query_state",
     std::bind(&JointTrajectoryController::query_state_service, this, _1, _2));
 
-  cmd_timeout_ = std::chrono::milliseconds{static_cast<int>(params_.cmd_timeout * 1000.0)};
+  cmd_timeout_ = params_.cmd_timeout;
 
   return CallbackReturn::SUCCESS;
 }
@@ -1408,9 +1408,6 @@ bool JointTrajectoryController::validate_trajectory_msg(
 void JointTrajectoryController::add_new_trajectory_msg(
   const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & traj_msg)
 {
-  // we have to save this timestamp, because header timestamp can be zero by design
-  last_msg_received_ = this->get_node()->get_clock()->now();
-
   traj_msg_external_point_ptr_.writeFromNonRT(traj_msg);
 }
 
@@ -1435,9 +1432,6 @@ void JointTrajectoryController::set_hold_position()
 
   auto traj_msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>(empty_msg);
   add_new_trajectory_msg(traj_msg);
-
-  // otherwise we will end up in a loop after timeout
-  last_msg_received_ = rclcpp::Time(0, 0, last_msg_received_.get_clock_type());
 }
 
 bool JointTrajectoryController::contains_interface_type(
@@ -1480,6 +1474,11 @@ void JointTrajectoryController::resize_joint_trajectory_point_command(
   {
     point.effort.resize(size, 0.0);
   }
+}
+
+bool JointTrajectoryController::has_active_trajectory()
+{
+  return traj_point_active_ptr_ && (*traj_point_active_ptr_)->has_trajectory_msg();
 }
 
 }  // namespace joint_trajectory_controller
