@@ -592,7 +592,7 @@ TEST_P(TrajectoryControllerTestParameterized, no_timeout)
   traj_controller_->wait_for_trajectory(executor);
 
   // first update
-  updateController(rclcpp::Duration(FIRST_POINT_TIME));
+  updateController(rclcpp::Duration(FIRST_POINT_TIME) * 4);
 
   // Spin to receive latest state
   executor.spin_some();
@@ -602,14 +602,17 @@ TEST_P(TrajectoryControllerTestParameterized, no_timeout)
   // has the msg the correct vector sizes?
   EXPECT_EQ(n_joints, state_msg->reference.positions.size());
 
-  // is the desired position sampled?
-  EXPECT_NEAR(state_msg->reference.positions[0], points.at(0).at(0), 1e-2);
-  EXPECT_NEAR(state_msg->reference.positions[1], points.at(0).at(1), 1e-2);
-  EXPECT_NEAR(state_msg->reference.positions[2], points.at(0).at(2), 1e-2);
   // is the trajectory still active?
   EXPECT_TRUE(traj_controller_->has_active_traj());
   // should still hold the points from above
   EXPECT_TRUE(traj_controller_->has_nontrivial_traj());
+  EXPECT_NEAR(state_msg->reference.positions[0], points.at(2).at(0), 1e-2);
+  EXPECT_NEAR(state_msg->reference.positions[1], points.at(2).at(1), 1e-2);
+  EXPECT_NEAR(state_msg->reference.positions[2], points.at(2).at(2), 1e-2);
+  // value of velocities is different from above due to spline interpolation
+  EXPECT_GT(state_msg->reference.velocities[0], 0.0);
+  EXPECT_GT(state_msg->reference.velocities[1], 0.0);
+  EXPECT_GT(state_msg->reference.velocities[2], 0.0);
 
   executor.cancel();
 }
@@ -638,14 +641,34 @@ TEST_P(TrajectoryControllerTestParameterized, timeout)
   publish(time_from_start, points, rclcpp::Time(0, 0, RCL_STEADY_TIME), {}, points_velocities);
   traj_controller_->wait_for_trajectory(executor);
 
-  // update until end of trajectory + timeout
-  updateController(rclcpp::Duration(FIRST_POINT_TIME) * 4);
+  // update until end of trajectory -> no timeout should have occurred
+  updateController(rclcpp::Duration(FIRST_POINT_TIME) * 3);
+  // is a trajectory active?
+  EXPECT_TRUE(traj_controller_->has_active_traj());
+  // should have the trajectory with three points
+  EXPECT_TRUE(traj_controller_->has_nontrivial_traj());
+
+  // update until timeout should have happened
+  updateController(rclcpp::Duration(FIRST_POINT_TIME));
+
+  // Spin to receive latest state
+  executor.spin_some();
+  auto state_msg = getState();
+  ASSERT_TRUE(state_msg);
 
   // after timeout, set_hold_position adds a new trajectory
   // is a trajectory active?
   EXPECT_TRUE(traj_controller_->has_active_traj());
   // should be not more than one point now (from hold position)
   EXPECT_FALSE(traj_controller_->has_nontrivial_traj());
+  // should hold last position with zero velocity
+  EXPECT_NEAR(state_msg->reference.positions[0], points.at(2).at(0), 1e-2);
+  EXPECT_NEAR(state_msg->reference.positions[1], points.at(2).at(1), 1e-2);
+  EXPECT_NEAR(state_msg->reference.positions[2], points.at(2).at(2), 1e-2);
+  // TODO(christophfroehlich): activate once #558 is merged
+  // EXPECT_NEAR(state_msg->reference.velocities[0], 0.0, 1e-2);
+  // EXPECT_NEAR(state_msg->reference.velocities[1], 0.0, 1e-2);
+  // EXPECT_NEAR(state_msg->reference.velocities[2], 0.0, 1e-2);
 
   executor.cancel();
 }

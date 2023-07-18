@@ -209,24 +209,28 @@ controller_interface::return_type JointTrajectoryController::update(
 
     if (valid_point)
     {
-      const rclcpp::Time traj_start = (*traj_point_active_ptr_)->get_trajectory_start_time();
-      const rclcpp::Time traj_end = traj_start + start_segment_itr->time_from_start;
-      double time_difference = time.seconds() - traj_end.seconds();
+      const rclcpp::Time traj_start = (*traj_point_active_ptr_)->time_from_start();
+      // this is the time instance
+      // - started with the first segment: when the first point will be reached (in the future)
+      // - later: when the point of the current segment was reached
+      const rclcpp::Time segment_time_from_start = traj_start + start_segment_itr->time_from_start;
+      // time_difference is
+      // - negative until first point is reached
+      // - counting from zero to time_from_start of next point
+      double time_difference = time.seconds() - segment_time_from_start.seconds();
       bool tolerance_violated_while_moving = false;
       bool outside_goal_tolerance = false;
       bool within_goal_time = true;
       const bool before_last_point = end_segment_itr != (*traj_point_active_ptr_)->end();
 
-      // is timeout configured? Check independent of other tolerances
-      if (cmd_timeout_ > 0.0)
+      // have we reached the end and is a timeout configured? Check independently of other
+      // tolerances
+      if (!before_last_point && cmd_timeout_ > 0.0 && time_difference > cmd_timeout_)
       {
-        if (time_difference > cmd_timeout_)
-        {
-          RCLCPP_WARN(get_node()->get_logger(), "Aborted due to command timeout");
-          set_hold_position();
-          // remove the active trajectory pointer so that we stop commanding the hardware
-          traj_point_active_ptr_ = nullptr;
-        }
+        RCLCPP_WARN(get_node()->get_logger(), "Aborted due to command timeout");
+        set_hold_position();
+        // remove the active trajectory pointer so that we stop commanding the hardware
+        traj_point_active_ptr_ = nullptr;
       }
 
       // Check state/goal tolerance
