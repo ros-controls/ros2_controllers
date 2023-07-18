@@ -177,9 +177,7 @@ public:
       traj_controller_->set_command_interfaces(command_interface_types_);
       traj_controller_->set_state_interfaces(state_interface_types_);
     }
-    rclcpp::NodeOptions node_options;
-    node_options.clock_type(RCL_STEADY_TIME);
-    auto ret = traj_controller_->init(controller_name_, "", node_options);
+    auto ret = traj_controller_->init(controller_name_);
     if (ret != controller_interface::return_type::OK)
     {
       FAIL();
