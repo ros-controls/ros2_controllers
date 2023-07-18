@@ -1610,13 +1610,12 @@ TEST_P(TrajectoryControllerTestParameterized, test_state_tolerances_fail)
     EXPECT_NEAR(0.0, joint_vel_[2], COMMON_THRESHOLD);
   }
 
-  // TODO(christophfroehlich) activate once it got merged
-  // if (traj_controller_->has_acceleration_command_interface())
-  // {
-  //   EXPECT_NEAR(0.0, joint_acc_[0], COMMON_THRESHOLD);
-  //   EXPECT_NEAR(0.0, joint_acc_[1], COMMON_THRESHOLD);
-  //   EXPECT_NEAR(0.0, joint_acc_[2], COMMON_THRESHOLD);
-  // }
+  if (traj_controller_->has_acceleration_command_interface())
+  {
+    EXPECT_NEAR(0.0, joint_acc_[0], COMMON_THRESHOLD);
+    EXPECT_NEAR(0.0, joint_acc_[1], COMMON_THRESHOLD);
+    EXPECT_NEAR(0.0, joint_acc_[2], COMMON_THRESHOLD);
+  }
 
   if (traj_controller_->has_effort_command_interface())
   {
@@ -1672,13 +1671,12 @@ TEST_P(TrajectoryControllerTestParameterized, test_goal_tolerances_fail)
     EXPECT_NEAR(0.0, joint_vel_[2], COMMON_THRESHOLD);
   }
 
-  // TODO(christophfroehlich) activate once it got merged
-  // if (traj_controller_->has_acceleration_command_interface())
-  // {
-  //   EXPECT_NEAR(0.0, joint_acc_[0], COMMON_THRESHOLD);
-  //   EXPECT_NEAR(0.0, joint_acc_[1], COMMON_THRESHOLD);
-  //   EXPECT_NEAR(0.0, joint_acc_[2], COMMON_THRESHOLD);
-  // }
+  if (traj_controller_->has_acceleration_command_interface())
+  {
+    EXPECT_NEAR(0.0, joint_acc_[0], COMMON_THRESHOLD);
+    EXPECT_NEAR(0.0, joint_acc_[1], COMMON_THRESHOLD);
+    EXPECT_NEAR(0.0, joint_acc_[2], COMMON_THRESHOLD);
+  }
 
   if (traj_controller_->has_effort_command_interface())
   {
