@@ -1201,8 +1201,10 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_partial_old_trajectory
   RCLCPP_INFO(
     traj_controller_->get_node()->get_logger(), "Sending new trajectory partially in the past");
   //  New trajectory first point is in the past, second is in the future
+  auto now =  // ensure the same time, i.e., values+clock_type
+    static_cast<builtin_interfaces::msg::Time>(traj_controller_->get_node()->get_clock()->now());
   rclcpp::Time new_traj_start =
-    rclcpp::Clock(RCL_STEADY_TIME).now() - delay - std::chrono::milliseconds(100);
+    static_cast<rclcpp::Time>(now) - delay - std::chrono::milliseconds(100);
   publish(time_from_start, points_new, new_traj_start);
   // it should have accepted the new goal and already have finished it
   expected_actual.positions = {points_new[1].begin(), points_new[1].end()};
