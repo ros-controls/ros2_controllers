@@ -176,7 +176,7 @@ open_loop_control (boolean)
   Default: false
 
 start_with_holding (bool)
-  If true, start with holding position after activation. Otherwise, now command will be sent until
+  If true, start with holding position after activation. Otherwise, no command will be sent until
   the first trajectory is received.
 
   Default: true
