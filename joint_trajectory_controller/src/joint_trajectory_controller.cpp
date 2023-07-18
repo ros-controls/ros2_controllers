@@ -987,6 +987,11 @@ controller_interface::CallbackReturn JointTrajectoryController::on_deactivate(
 
   subscriber_is_active_ = false;
 
+  traj_point_active_ptr_ = nullptr;
+  traj_external_point_ptr_.reset();
+  traj_home_point_ptr_.reset();
+  traj_msg_home_ptr_.reset();
+
   return CallbackReturn::SUCCESS;
 }
 

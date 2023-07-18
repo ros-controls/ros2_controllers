@@ -285,44 +285,38 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
   // first update
   traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.1));
 
-  // wait so controller process the second point when deactivated
+  // wait for reaching the first point
+  // controller would process the second point when deactivated below
   traj_controller_->update(
     rclcpp::Time(static_cast<uint64_t>(0.25 * 1e9)), rclcpp::Duration::from_seconds(0.15));
-  // deactivated
-  state = traj_controller_->get_node()->deactivate();
-  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
-
-  const auto allowed_delta = 0.05;
+  EXPECT_TRUE(traj_controller_->has_active_traj());
   if (traj_controller_->has_position_command_interface())
   {
-    EXPECT_NEAR(3.3, joint_pos_[0], allowed_delta);
-    EXPECT_NEAR(4.4, joint_pos_[1], allowed_delta);
-    EXPECT_NEAR(5.5, joint_pos_[2], allowed_delta);
+    EXPECT_NEAR(points.at(0).at(0), joint_pos_[0], COMMON_THRESHOLD);
+    EXPECT_NEAR(points.at(0).at(1), joint_pos_[1], COMMON_THRESHOLD);
+    EXPECT_NEAR(points.at(0).at(2), joint_pos_[2], COMMON_THRESHOLD);
   }
 
-  if (traj_controller_->has_velocity_command_interface())
-  {
-    EXPECT_LE(0.0, joint_vel_[0]);
-    EXPECT_LE(0.0, joint_vel_[1]);
-    EXPECT_LE(0.0, joint_vel_[2]);
-  }
+  // deactivate
+  std::vector<double> deactivated_positions{joint_pos_[0], joint_pos_[1], joint_pos_[2]};
+  state = traj_controller_->get_node()->deactivate();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+  // it should be holding the current point
+  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.1));
+  expectHoldingPointDeactivated(deactivated_positions);
 
-  if (traj_controller_->has_effort_command_interface())
-  {
-    EXPECT_LE(0.0, joint_eff_[0]);
-    EXPECT_LE(0.0, joint_eff_[1]);
-    EXPECT_LE(0.0, joint_eff_[2]);
-  }
-
-  // reactivated
-  // wait so controller process the third point when reactivated
+  // reactivate
+  // wait so controller would have processed the third point when reactivated -> but it shouldn't
   std::this_thread::sleep_for(std::chrono::milliseconds(3000));
-  ActivateTrajectoryController();
+
+  ActivateTrajectoryController(false, deactivated_positions);
   state = traj_controller_->get_state();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_ACTIVE);
 
-  // TODO(christophfroehlich) add test if there is no active trajectory after
-  // reactivation once #558 or #609 got merged (needs methods for TestableJointTrajectoryController)
+  // it should still be holding the position at time of deactivation
+  // i.e., active but trivial trajectory (one point only)
+  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.1));
+  expectHoldingPoint(deactivated_positions);
 
   executor.cancel();
 }
