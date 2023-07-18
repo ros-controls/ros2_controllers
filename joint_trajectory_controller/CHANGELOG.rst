@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.12.0 (2023-07-18)
+-------------------
 * Remove reactivation test from ROS 1
 * Don't test update after cleanup
 * Fix namespace for parameter traits(`#703 <https://github.com/ros-controls/ros2_controllers/issues/703>`_)
