@@ -536,6 +536,37 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_normalized)
 }
 
 /**
+ * @brief cmd_timeout must be greater than constraints.goal_time
+ */
+TEST_P(TrajectoryControllerTestParameterized, accept_correct_cmd_timeout)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+  // zero is default value, just for demonstration
+  double cmd_timeout = 3.0;
+  rclcpp::Parameter cmd_timeout_parameter("cmd_timeout", cmd_timeout);
+  rclcpp::Parameter goal_time_parameter("constraints.goal_time", 2.0);
+  SetUpAndActivateTrajectoryController(
+    executor, true, {cmd_timeout_parameter, goal_time_parameter}, false);
+
+  EXPECT_DOUBLE_EQ(cmd_timeout, traj_controller_->get_cmd_timeout());
+}
+
+/**
+ * @brief cmd_timeout must be greater than constraints.goal_time
+ */
+TEST_P(TrajectoryControllerTestParameterized, decline_false_cmd_timeout)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+  // zero is default value, just for demonstration
+  rclcpp::Parameter cmd_timeout_parameter("cmd_timeout", 1.0);
+  rclcpp::Parameter goal_time_parameter("constraints.goal_time", 2.0);
+  SetUpAndActivateTrajectoryController(
+    executor, true, {cmd_timeout_parameter, goal_time_parameter}, false);
+
+  EXPECT_DOUBLE_EQ(0.0, traj_controller_->get_cmd_timeout());
+}
+
+/**
  * @brief check if no timeout is triggered
  */
 TEST_P(TrajectoryControllerTestParameterized, no_timeout)
