@@ -1204,9 +1204,9 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_partial_old_trajectory
   rclcpp::Time new_traj_start =
     rclcpp::Clock(RCL_STEADY_TIME).now() - delay - std::chrono::milliseconds(100);
   publish(time_from_start, points_new, new_traj_start);
-  // it should not have accepted the new goal but finish the old one
-  expected_actual.positions = {points_old[1].begin(), points_old[1].end()};
-  expected_desired.positions = {points_old[1].begin(), points_old[1].end()};
+  // it should have accepted the new goal and already have finished it
+  expected_actual.positions = {points_new[1].begin(), points_new[1].end()};
+  expected_desired = expected_actual;
   waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
 }
 
