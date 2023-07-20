@@ -589,14 +589,14 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_cancel_hold_position)
   EXPECT_EQ(
     control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL, common_action_result_code_);
 
-  std::vector<double> pref_positions{joint_pos_[0], joint_pos_[1], joint_pos_[2]};
+  std::vector<double> cancelled_position{joint_pos_[0], joint_pos_[1], joint_pos_[2]};
 
   // run an update
   updateController(rclcpp::Duration::from_seconds(0.01));
 
   // it should be holding the last position,
   // i.e., active but trivial trajectory (one point only)
-  expectHoldingPoint(pref_positions);
+  expectHoldingPoint(cancelled_position);
 }
 
 TEST_P(TestTrajectoryActionsTestParameterized, test_allow_nonzero_velocity_at_trajectory_end_true)
