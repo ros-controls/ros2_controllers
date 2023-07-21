@@ -12,7 +12,7 @@ By default, a spline interpolator is provided, but it's possible to support othe
 
 Interpolation Method ``none``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-It returns the initial point before the time for the first trajectory data point is reached. Then, it basically takes the next given datapoint. Additionally, it does not deduce trajectory from derivatives.
+It returns the initial point until the time for the first trajectory data point is reached. Then, it simply takes the next given datapoint. Additionally, it does not deduce trajectory from derivatives, i.e., one has to provide position and its derivatives as needed.
 
 Interpolation Method ``spline`` [#f1]_
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -25,8 +25,7 @@ The spline interpolator uses the following interpolation strategies depending on
 
 * Quintic: Position, velocity and acceleration are specified: Guarantees continuity at the acceleration level.
 
-Trajectories with velocity fields only or acceleration fields only are accepted, if ``allow_integration_in_goal_trajectories`` is true.
-Position (and velocity) is then integrated from velocity (or acceleration, respectively) by Heun's method.
+Trajectories with velocity fields only, velocity and acceleration only, or acceleration fields only can be processed and are accepted, if ``allow_integration_in_goal_trajectories`` is true. Position (and velocity) is then integrated from velocity (or acceleration, respectively) by Heun's method.
 
 Visualized Examples
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
