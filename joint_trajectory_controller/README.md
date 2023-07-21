@@ -2,4 +2,4 @@
 
 The package implements controllers to interpolate joint's trajectory.
 
-For detailed documentation check the `docs` folder or [ros2_control documentation](https://ros-controls.github.io/control.ros.org/).
+For detailed documentation check the `docs` folder or [ros2_control documentation](https://control.ros.org/).
