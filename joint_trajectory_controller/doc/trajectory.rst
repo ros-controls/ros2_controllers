@@ -27,6 +27,8 @@ The spline interpolator uses the following interpolation strategies depending on
 
 Trajectories with velocity fields only, velocity and acceleration only, or acceleration fields only can be processed and are accepted, if ``allow_integration_in_goal_trajectories`` is true. Position (and velocity) is then integrated from velocity (or acceleration, respectively) by Heun's method.
 
+There will be no deduction of the time derivatives from position (or velocity) to velocity (or acceleration).
+
 Visualized Examples
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 To visualize the difference of the different interpolation methods and their inputs, different trajectories defined at a 0.5s grid and are sampled at a rate of 10ms.
