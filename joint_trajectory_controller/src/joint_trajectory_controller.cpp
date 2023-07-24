@@ -328,7 +328,11 @@ controller_interface::return_type JointTrajectoryController::update(
 
           RCLCPP_WARN(get_node()->get_logger(), "Aborted due to state tolerance violation");
 
-          set_hold_position();
+          // remove the active trajectory pointer so that we stop commanding the hardware
+          traj_point_active_ptr_ = nullptr;
+
+          traj_msg_external_point_ptr_.reset();
+          traj_msg_external_point_ptr_.initRT(set_hold_position());
         }
         // check goal tolerance
         else if (!before_last_point)
@@ -344,7 +348,11 @@ controller_interface::return_type JointTrajectoryController::update(
 
             RCLCPP_INFO(get_node()->get_logger(), "Goal reached, success!");
 
-            set_hold_position();
+            // remove the active trajectory pointer so that we stop commanding the hardware
+            traj_point_active_ptr_ = nullptr;
+
+            traj_msg_external_point_ptr_.reset();
+            traj_msg_external_point_ptr_.initRT(set_hold_position());
           }
           else if (!within_goal_time)
           {
@@ -359,7 +367,11 @@ controller_interface::return_type JointTrajectoryController::update(
               get_node()->get_logger(), "Aborted due goal_time_tolerance exceeding by %f seconds",
               time_difference);
 
-            set_hold_position();
+            // remove the active trajectory pointer so that we stop commanding the hardware
+            traj_point_active_ptr_ = nullptr;
+
+            traj_msg_external_point_ptr_.reset();
+            traj_msg_external_point_ptr_.initRT(set_hold_position());
           }
           // else, run another cycle while waiting for outside_goal_tolerance
           // to be satisfied or violated within the goal_time_tolerance
@@ -369,7 +381,11 @@ controller_interface::return_type JointTrajectoryController::update(
       {
         RCLCPP_ERROR(get_node()->get_logger(), "Holding position due to state tolerance violation");
 
-        set_hold_position();
+        // remove the active trajectory pointer so that we stop commanding the hardware
+        traj_point_active_ptr_ = nullptr;
+
+        traj_msg_external_point_ptr_.reset();
+        traj_msg_external_point_ptr_.initRT(set_hold_position());
       }
     }
   }
@@ -944,7 +960,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   // Should the controller start by holding position after on_configure?
   if (params_.start_with_holding)
   {
-    set_hold_position();
+    add_new_trajectory_msg(set_hold_position());
   }
 
   return CallbackReturn::SUCCESS;
@@ -1135,7 +1151,7 @@ rclcpp_action::CancelResponse JointTrajectoryController::goal_cancelled_callback
     rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
 
     // Enter hold current position mode
-    set_hold_position();
+    add_new_trajectory_msg(set_hold_position());
   }
   return rclcpp_action::CancelResponse::ACCEPT;
 }
@@ -1420,7 +1436,7 @@ void JointTrajectoryController::preempt_active_goal()
   const auto active_goal = *rt_active_goal_.readFromNonRT();
   if (active_goal)
   {
-    set_hold_position();
+    add_new_trajectory_msg(set_hold_position());
     auto action_res = std::make_shared<FollowJTrajAction::Result>();
     action_res->set__error_code(FollowJTrajAction::Result::INVALID_GOAL);
     action_res->set__error_string("Current goal cancelled due to new incoming action.");
@@ -1429,7 +1445,8 @@ void JointTrajectoryController::preempt_active_goal()
   }
 }
 
-void JointTrajectoryController::set_hold_position()
+std::shared_ptr<trajectory_msgs::msg::JointTrajectory>
+JointTrajectoryController::set_hold_position()
 {
   // Command to stay at current position
   trajectory_msgs::msg::JointTrajectory current_pose_msg;
@@ -1441,7 +1458,7 @@ void JointTrajectoryController::set_hold_position()
   current_pose_msg.points[0].accelerations.clear();  // ensure no acceleration
   current_pose_msg.points[0].effort.clear();  // ensure no explicit effort (PID will fix this)
 
-  add_new_trajectory_msg(std::make_shared<trajectory_msgs::msg::JointTrajectory>(current_pose_msg));
+  return std::make_shared<trajectory_msgs::msg::JointTrajectory>(current_pose_msg);
 }
 
 bool JointTrajectoryController::contains_interface_type(
