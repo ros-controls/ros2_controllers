@@ -2,6 +2,9 @@
 Changelog for package ros2_controllers_test_nodes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.12.0 (2023-07-18)
+-------------------
+
 3.11.0 (2023-06-24)
 -------------------
 * Removes deprecated if-branch (`#653 <https://github.com/ros-controls/ros2_controllers/issues/653>`_)

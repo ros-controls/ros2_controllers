@@ -2,6 +2,9 @@
 Changelog for package imu_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.12.0 (2023-07-18)
+-------------------
+
 3.11.0 (2023-06-24)
 -------------------
 * Broadcaster parameters (`#650 <https://github.com/ros-controls/ros2_controllers/issues/650>`_)

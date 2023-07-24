@@ -64,6 +64,15 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
     return CallbackReturn::ERROR;
   }
 
+  // TODO(christophfroehlich): remove deprecation warning
+  if (params_.allow_nonzero_velocity_at_trajectory_end)
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "[Deprecated]: \"allow_nonzero_velocity_at_trajectory_end\" is set to "
+      "true. The default behavior will change to false.");
+  }
+
   return CallbackReturn::SUCCESS;
 }
 
@@ -133,7 +142,9 @@ controller_interface::return_type JointTrajectoryController::update(
     {
       error.positions[index] = desired.positions[index] - current.positions[index];
     }
-    if (has_velocity_state_interface_ && has_velocity_command_interface_)
+    if (
+      has_velocity_state_interface_ &&
+      (has_velocity_command_interface_ || has_effort_command_interface_))
     {
       error.velocities[index] = desired.velocities[index] - current.velocities[index];
     }
@@ -231,7 +242,7 @@ controller_interface::return_type JointTrajectoryController::update(
             const rclcpp::Time traj_start = (*traj_point_active_ptr_)->get_trajectory_start_time();
             const rclcpp::Time traj_end = traj_start + start_segment_itr->time_from_start;
 
-            time_difference = get_node()->now().seconds() - traj_end.seconds();
+            time_difference = time.seconds() - traj_end.seconds();
 
             if (time_difference > default_tolerances_.goal_time_tolerance)
             {
@@ -239,6 +250,57 @@ controller_interface::return_type JointTrajectoryController::update(
             }
           }
         }
+      }
+
+      // set values for next hardware write() if tolerance is met
+      if (!tolerance_violated_while_moving && within_goal_time)
+      {
+        if (use_closed_loop_pid_adapter_)
+        {
+          // Update PIDs
+          for (auto i = 0ul; i < dof_; ++i)
+          {
+            tmp_command_[i] = (state_desired_.velocities[i] * ff_velocity_scale_[i]) +
+                              pids_[i]->computeCommand(
+                                state_error_.positions[i], state_error_.velocities[i],
+                                (uint64_t)period.nanoseconds());
+          }
+        }
+
+        // set values for next hardware write()
+        if (has_position_command_interface_)
+        {
+          assign_interface_from_point(joint_command_interface_[0], state_desired_.positions);
+        }
+        if (has_velocity_command_interface_)
+        {
+          if (use_closed_loop_pid_adapter_)
+          {
+            assign_interface_from_point(joint_command_interface_[1], tmp_command_);
+          }
+          else
+          {
+            assign_interface_from_point(joint_command_interface_[1], state_desired_.velocities);
+          }
+        }
+        if (has_acceleration_command_interface_)
+        {
+          assign_interface_from_point(joint_command_interface_[2], state_desired_.accelerations);
+        }
+        if (has_effort_command_interface_)
+        {
+          if (use_closed_loop_pid_adapter_)
+          {
+            assign_interface_from_point(joint_command_interface_[3], tmp_command_);
+          }
+          else
+          {
+            assign_interface_from_point(joint_command_interface_[3], state_desired_.effort);
+          }
+        }
+
+        // store the previous command. Used in open-loop control mode
+        last_commanded_state_ = state_desired_;
       }
 
       const auto active_goal = *rt_active_goal_.readFromRT();
@@ -307,57 +369,6 @@ controller_interface::return_type JointTrajectoryController::update(
       {
         set_hold_position();
         RCLCPP_ERROR(get_node()->get_logger(), "Holding position due to state tolerance violation");
-      }
-
-      // set values for next hardware write() if tolerance is met
-      if (!tolerance_violated_while_moving && within_goal_time)
-      {
-        if (use_closed_loop_pid_adapter_)
-        {
-          // Update PIDs
-          for (auto i = 0ul; i < dof_; ++i)
-          {
-            tmp_command_[i] = (state_desired_.velocities[i] * ff_velocity_scale_[i]) +
-                              pids_[i]->computeCommand(
-                                state_error_.positions[i], state_error_.velocities[i],
-                                (uint64_t)period.nanoseconds());
-          }
-        }
-
-        // set values for next hardware write()
-        if (has_position_command_interface_)
-        {
-          assign_interface_from_point(joint_command_interface_[0], state_desired_.positions);
-        }
-        if (has_velocity_command_interface_)
-        {
-          if (traj_point_active_ptr_ && use_closed_loop_pid_adapter_)
-          {
-            assign_interface_from_point(joint_command_interface_[1], tmp_command_);
-          }
-          else
-          {
-            assign_interface_from_point(joint_command_interface_[1], state_desired_.velocities);
-          }
-        }
-        if (has_acceleration_command_interface_)
-        {
-          assign_interface_from_point(joint_command_interface_[2], state_desired_.accelerations);
-        }
-        if (has_effort_command_interface_)
-        {
-          if (traj_point_active_ptr_ && use_closed_loop_pid_adapter_)
-          {
-            assign_interface_from_point(joint_command_interface_[3], tmp_command_);
-          }
-          else
-          {
-            assign_interface_from_point(joint_command_interface_[3], state_desired_.effort);
-          }
-        }
-
-        // store the previous command. Used in open-loop control mode
-        last_commanded_state_ = state_desired_;
       }
     }
   }
@@ -1316,6 +1327,20 @@ bool JointTrajectoryController::validate_trajectory_msg(
         get_node()->get_logger(), "Incoming joint %s doesn't match the controller's joints.",
         incoming_joint_name.c_str());
       return false;
+    }
+  }
+
+  if (!params_.allow_nonzero_velocity_at_trajectory_end)
+  {
+    for (size_t i = 0; i < trajectory.points.back().velocities.size(); ++i)
+    {
+      if (trajectory.points.back().velocities.at(i) != 0.)
+      {
+        RCLCPP_ERROR(
+          get_node()->get_logger(), "Velocity of last trajectory point of joint %s is not zero: %f",
+          trajectory.joint_names.at(i).c_str(), trajectory.points.back().velocities.at(i));
+        return false;
+      }
     }
   }
 
