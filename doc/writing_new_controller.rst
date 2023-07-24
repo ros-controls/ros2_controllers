@@ -5,7 +5,7 @@
 Writing a new controller
 ========================
 
-In this framework controllers are libraries, dynamically loaded by the controller manager using the `pluginlib <https://docs.ros.org/en/{REPOS_FILE_BRANCH}/Tutorials/Beginner-Client-Libraries/Pluginlib.html>`_ interface.
+In this framework controllers are libraries, dynamically loaded by the controller manager using the `pluginlib <https://docs.ros.org/en/{DISTRO}/Tutorials/Beginner-Client-Libraries/Pluginlib.html>`_ interface.
 The following is a step-by-step guide to create source files, basic tests, and compile rules for a new controller.
 
 1. **Preparing package**
