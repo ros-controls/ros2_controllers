@@ -123,6 +123,11 @@ public:
 
   bool is_open_loop() { return params_.open_loop_control; }
 
+  joint_trajectory_controller::SegmentTolerances get_active_tolerances()
+  {
+    return *(active_tolerances_.readFromRT());
+  }
+
   rclcpp::WaitSet joint_cmd_sub_wait_set_;
 };
 
@@ -215,9 +220,6 @@ public:
     {
       traj_controller_->get_node()->set_parameter(param);
     }
-    // ignore velocity tolerances for this test since they aren't committed in test_robot->write()
-    rclcpp::Parameter stopped_velocity_parameters("constraints.stopped_velocity_tolerance", 0.0);
-    traj_controller_->get_node()->set_parameter(stopped_velocity_parameters);
 
     traj_controller_->get_node()->configure();
 

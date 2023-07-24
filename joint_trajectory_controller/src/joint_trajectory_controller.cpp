@@ -213,6 +213,7 @@ controller_interface::return_type JointTrajectoryController::update(
       bool within_goal_time = true;
       double time_difference = 0.0;
       const bool before_last_point = end_segment_itr != (*traj_point_active_ptr_)->end();
+      auto active_tol = active_tolerances_.readFromRT();
 
       // Check state/goal tolerance
       for (size_t index = 0; index < dof_; ++index)
@@ -224,7 +225,7 @@ controller_interface::return_type JointTrajectoryController::update(
         if (
           (before_last_point || first_sample) &&
           !check_state_tolerance_per_joint(
-            state_error_, index, default_tolerances_.state_tolerance[index], false))
+            state_error_, index, active_tol->state_tolerance[index], false))
         {
           tolerance_violated_while_moving = true;
         }
@@ -232,11 +233,11 @@ controller_interface::return_type JointTrajectoryController::update(
         if (
           !before_last_point &&
           !check_state_tolerance_per_joint(
-            state_error_, index, default_tolerances_.goal_state_tolerance[index], false))
+            state_error_, index, active_tol->goal_state_tolerance[index], false))
         {
           outside_goal_tolerance = true;
 
-          if (default_tolerances_.goal_time_tolerance != 0.0)
+          if (active_tol->goal_time_tolerance != 0.0)
           {
             // if we exceed goal_time_tolerance set it to aborted
             const rclcpp::Time traj_start = (*traj_point_active_ptr_)->get_trajectory_start_time();
@@ -244,7 +245,7 @@ controller_interface::return_type JointTrajectoryController::update(
 
             time_difference = time.seconds() - traj_end.seconds();
 
-            if (time_difference > default_tolerances_.goal_time_tolerance)
+            if (time_difference > active_tol->goal_time_tolerance)
             {
               within_goal_time = false;
             }
@@ -785,7 +786,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     get_interface_list(params_.state_interfaces).c_str());
 
   default_tolerances_ = get_segment_tolerances(params_);
-
+  active_tolerances_.initRT(default_tolerances_);
   const std::string interpolation_string =
     get_node()->get_parameter("interpolation_method").as_string();
   interpolation_method_ = interpolation_methods::from_string(interpolation_string);
@@ -1141,6 +1142,10 @@ void JointTrajectoryController::goal_accepted_callback(
   rt_goal->preallocated_feedback_->joint_names = params_.joints;
   rt_goal->execute();
   rt_active_goal_.writeFromNonRT(rt_goal);
+
+  // Update tolerances if specified in the goal
+  active_tolerances_.writeFromNonRT(
+    get_segment_tolerances(default_tolerances_, *(goal_handle->get_goal()), params_));
 
   // Set smartpointer to expire for create_wall_timer to delete previous entry from timer list
   goal_handle_timer_.reset();
