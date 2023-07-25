@@ -154,10 +154,16 @@ controller_interface::return_type JointTrajectoryController::update(
     }
   };
 
+  // don't update goal after we sampled the trajectory to avoid any racecondition
+  const auto active_goal = *rt_active_goal_.readFromRT();
+
   // Check if a new external message has been received from nonRT threads
   auto current_external_msg = traj_external_point_ptr_->get_trajectory_msg();
   auto new_external_msg = traj_msg_external_point_ptr_.readFromRT();
-  if (current_external_msg != *new_external_msg)
+  // Discard, if a goal is pending but still not active (somewhere stuck in goal_handle_timer_)
+  if (
+    current_external_msg != *new_external_msg &&
+    (*(rt_has_pending_goal_.readFromRT()) && !active_goal) == false)
   {
     fill_partial_goal(*new_external_msg);
     sort_to_local_joint_order(*new_external_msg);
@@ -182,12 +188,8 @@ controller_interface::return_type JointTrajectoryController::update(
   state_current_.time_from_start.set__sec(0);
   read_state_from_hardware(state_current_);
 
-  // don't update goal after we sampled the trajectory to avoid any racecondition
-  const auto active_goal = *rt_active_goal_.readFromRT();
-
   // currently carrying out a trajectory.
-  // Discard, if pending but still not active goal (somewhere stuck in goal_handle_timer_)
-  if (has_active_trajectory() && (*(rt_has_pending_goal_.readFromRT()) && !active_goal) == false)
+  if (has_active_trajectory())
   {
     bool first_sample = false;
     // if sampling the first time, set the point before you sample
