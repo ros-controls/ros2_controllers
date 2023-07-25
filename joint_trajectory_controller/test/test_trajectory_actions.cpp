@@ -439,10 +439,6 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_state_tolerances_fail)
   controller_hw_thread_.join();
 
   EXPECT_TRUE(gh_future.get());
-  // TODO(christophfroehlich) sometimes the trajectory is overwritten by
-  // set_hold_postition on tolerance_violated_while_moving, without canceling the goal
-  // -> next update is reaching goal successfully if separate_cmd_and_state_values would be false
-  // why can there be a new goal accepted, but active_goal==false immediately afterwards?
   EXPECT_EQ(rclcpp_action::ResultCode::ABORTED, common_resultcode_);
   EXPECT_EQ(
     control_msgs::action::FollowJointTrajectory_Result::PATH_TOLERANCE_VIOLATED,
