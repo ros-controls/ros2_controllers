@@ -182,8 +182,12 @@ controller_interface::return_type JointTrajectoryController::update(
   state_current_.time_from_start.set__sec(0);
   read_state_from_hardware(state_current_);
 
-  // currently carrying out a trajectory
-  if (has_active_trajectory())
+  // don't update goal after we sampled the trajectory to avoid any racecondition
+  const auto active_goal = *rt_active_goal_.readFromRT();
+
+  // currently carrying out a trajectory.
+  // Discard, if pending but still not active goal (somewhere stuck in goal_handle_timer_)
+  if (has_active_trajectory() && (*(rt_has_pending_goal_.readFromRT()) && !active_goal) == false)
   {
     bool first_sample = false;
     // if sampling the first time, set the point before you sample
@@ -303,7 +307,6 @@ controller_interface::return_type JointTrajectoryController::update(
         last_commanded_state_ = state_desired_;
       }
 
-      const auto active_goal = *rt_active_goal_.readFromRT();
       if (active_goal)
       {
         // send feedback
@@ -325,6 +328,7 @@ controller_interface::return_type JointTrajectoryController::update(
           // TODO(matthew-reynolds): Need a lock-free write here
           // See https://github.com/ros-controls/ros2_controllers/issues/168
           rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
+          rt_has_pending_goal_.writeFromNonRT(false);
 
           RCLCPP_WARN(get_node()->get_logger(), "Aborted due to state tolerance violation");
 
@@ -345,9 +349,9 @@ controller_interface::return_type JointTrajectoryController::update(
             // TODO(matthew-reynolds): Need a lock-free write here
             // See https://github.com/ros-controls/ros2_controllers/issues/168
             rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
+            rt_has_pending_goal_.writeFromNonRT(false);
 
             RCLCPP_INFO(get_node()->get_logger(), "Goal reached, success!");
-
             // remove the active trajectory pointer so that we stop commanding the hardware
             traj_point_active_ptr_ = nullptr;
 
@@ -362,6 +366,7 @@ controller_interface::return_type JointTrajectoryController::update(
             // TODO(matthew-reynolds): Need a lock-free write here
             // See https://github.com/ros-controls/ros2_controllers/issues/168
             rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
+            rt_has_pending_goal_.writeFromNonRT(false);
 
             RCLCPP_WARN(
               get_node()->get_logger(), "Aborted due goal_time_tolerance exceeding by %f seconds",
@@ -377,8 +382,10 @@ controller_interface::return_type JointTrajectoryController::update(
           // to be satisfied or violated within the goal_time_tolerance
         }
       }
-      else if (tolerance_violated_while_moving)
+      else if (tolerance_violated_while_moving && *(rt_has_pending_goal_.readFromRT()) == false)
       {
+        // we need to ensure that there is no pending goal -> we get a race condition otherwise
+
         RCLCPP_ERROR(get_node()->get_logger(), "Holding position due to state tolerance violation");
 
         // remove the active trajectory pointer so that we stop commanding the hardware
@@ -1146,6 +1153,7 @@ rclcpp_action::CancelResponse JointTrajectoryController::goal_cancelled_callback
       get_node()->get_logger(), "Canceling active action goal because cancel callback received.");
 
     // Mark the current goal as canceled
+    rt_has_pending_goal_.writeFromNonRT(false);
     auto action_res = std::make_shared<FollowJTrajAction::Result>();
     active_goal->setCanceled(action_res);
     rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
@@ -1159,6 +1167,9 @@ rclcpp_action::CancelResponse JointTrajectoryController::goal_cancelled_callback
 void JointTrajectoryController::goal_accepted_callback(
   std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle)
 {
+  // mark a pending goal
+  rt_has_pending_goal_.writeFromNonRT(true);
+
   // Update new trajectory
   {
     preempt_active_goal();
