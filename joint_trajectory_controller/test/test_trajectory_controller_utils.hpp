@@ -128,7 +128,7 @@ public:
 
   bool has_trivial_traj()
   {
-    return has_active_trajectory() && (*traj_point_active_ptr_)->has_nontrivial_msg() == false;
+    return has_active_trajectory() && traj_external_point_ptr_->has_nontrivial_msg() == false;
   }
 
   rclcpp::WaitSet joint_cmd_sub_wait_set_;

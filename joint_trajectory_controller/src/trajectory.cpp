@@ -353,14 +353,7 @@ bool Trajectory::has_trajectory_msg() const { return trajectory_msg_.get() != nu
 
 bool Trajectory::has_nontrivial_msg() const
 {
-  if (has_trajectory_msg())
-  {
-    return trajectory_msg_->points.size() > 1;
-  }
-  else
-  {
-    return false;
-  }
+  return has_trajectory_msg() && trajectory_msg_->points.size() > 1;
 }
 
 }  // namespace joint_trajectory_controller

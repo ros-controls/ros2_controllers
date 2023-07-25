@@ -169,8 +169,6 @@ controller_interface::return_type JointTrajectoryController::update(
     sort_to_local_joint_order(*new_external_msg);
     // TODO(denis): Add here integration of position and velocity
     traj_external_point_ptr_->update(*new_external_msg);
-    // set the active trajectory pointer to the new goal
-    traj_point_active_ptr_ = &traj_external_point_ptr_;
   }
 
   // TODO(anyone): can I here also use const on joint_interface since the reference_wrapper is not
@@ -193,24 +191,23 @@ controller_interface::return_type JointTrajectoryController::update(
   {
     bool first_sample = false;
     // if sampling the first time, set the point before you sample
-    if (!(*traj_point_active_ptr_)->is_sampled_already())
+    if (!traj_external_point_ptr_->is_sampled_already())
     {
       first_sample = true;
       if (params_.open_loop_control)
       {
-        (*traj_point_active_ptr_)->set_point_before_trajectory_msg(time, last_commanded_state_);
+        traj_external_point_ptr_->set_point_before_trajectory_msg(time, last_commanded_state_);
       }
       else
       {
-        (*traj_point_active_ptr_)->set_point_before_trajectory_msg(time, state_current_);
+        traj_external_point_ptr_->set_point_before_trajectory_msg(time, state_current_);
       }
     }
 
     // find segment for current timestamp
     TrajectoryPointConstIter start_segment_itr, end_segment_itr;
-    const bool valid_point =
-      (*traj_point_active_ptr_)
-        ->sample(time, interpolation_method_, state_desired_, start_segment_itr, end_segment_itr);
+    const bool valid_point = traj_external_point_ptr_->sample(
+      time, interpolation_method_, state_desired_, start_segment_itr, end_segment_itr);
 
     if (valid_point)
     {
@@ -218,7 +215,7 @@ controller_interface::return_type JointTrajectoryController::update(
       bool outside_goal_tolerance = false;
       bool within_goal_time = true;
       double time_difference = 0.0;
-      const bool before_last_point = end_segment_itr != (*traj_point_active_ptr_)->end();
+      const bool before_last_point = end_segment_itr != traj_external_point_ptr_->end();
 
       // Check state/goal tolerance
       for (size_t index = 0; index < dof_; ++index)
@@ -245,7 +242,7 @@ controller_interface::return_type JointTrajectoryController::update(
           if (default_tolerances_.goal_time_tolerance != 0.0)
           {
             // if we exceed goal_time_tolerance set it to aborted
-            const rclcpp::Time traj_start = (*traj_point_active_ptr_)->get_trajectory_start_time();
+            const rclcpp::Time traj_start = traj_external_point_ptr_->get_trajectory_start_time();
             const rclcpp::Time traj_end = traj_start + start_segment_itr->time_from_start;
 
             time_difference = time.seconds() - traj_end.seconds();
@@ -327,9 +324,6 @@ controller_interface::return_type JointTrajectoryController::update(
 
           RCLCPP_WARN(get_node()->get_logger(), "Aborted due to state tolerance violation");
 
-          // remove the active trajectory pointer so that we stop commanding the hardware
-          traj_point_active_ptr_ = nullptr;
-
           traj_msg_external_point_ptr_.reset();
           traj_msg_external_point_ptr_.initRT(set_hold_position());
         }
@@ -347,8 +341,6 @@ controller_interface::return_type JointTrajectoryController::update(
             rt_has_pending_goal_.writeFromNonRT(false);
 
             RCLCPP_INFO(get_node()->get_logger(), "Goal reached, success!");
-            // remove the active trajectory pointer so that we stop commanding the hardware
-            traj_point_active_ptr_ = nullptr;
 
             traj_msg_external_point_ptr_.reset();
             traj_msg_external_point_ptr_.initRT(set_hold_position());
@@ -367,9 +359,6 @@ controller_interface::return_type JointTrajectoryController::update(
               get_node()->get_logger(), "Aborted due goal_time_tolerance exceeding by %f seconds",
               time_difference);
 
-            // remove the active trajectory pointer so that we stop commanding the hardware
-            traj_point_active_ptr_ = nullptr;
-
             traj_msg_external_point_ptr_.reset();
             traj_msg_external_point_ptr_.initRT(set_hold_position());
           }
@@ -382,9 +371,6 @@ controller_interface::return_type JointTrajectoryController::update(
         // we need to ensure that there is no pending goal -> we get a race condition otherwise
 
         RCLCPP_ERROR(get_node()->get_logger(), "Holding position due to state tolerance violation");
-
-        // remove the active trajectory pointer so that we stop commanding the hardware
-        traj_point_active_ptr_ = nullptr;
 
         traj_msg_external_point_ptr_.reset();
         traj_msg_external_point_ptr_.initRT(set_hold_position());
@@ -596,14 +582,13 @@ void JointTrajectoryController::query_state_service(
   if (has_active_trajectory())
   {
     TrajectoryPointConstIter start_segment_itr, end_segment_itr;
-    response->success = (*traj_point_active_ptr_)
-                          ->sample(
-                            static_cast<rclcpp::Time>(request->time), interpolation_method_,
-                            state_requested, start_segment_itr, end_segment_itr);
+    response->success = traj_external_point_ptr_->sample(
+      static_cast<rclcpp::Time>(request->time), interpolation_method_, state_requested,
+      start_segment_itr, end_segment_itr);
     // If the requested sample time precedes the trajectory finish time respond as failure
     if (response->success)
     {
-      if (end_segment_itr == (*traj_point_active_ptr_)->end())
+      if (end_segment_itr == traj_external_point_ptr_->end())
       {
         RCLCPP_ERROR(logger, "Requested sample time precedes the current trajectory end time.");
         response->success = false;
@@ -942,7 +927,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
     std::shared_ptr<trajectory_msgs::msg::JointTrajectory>());
 
   subscriber_is_active_ = true;
-  traj_point_active_ptr_ = &traj_external_point_ptr_;
 
   // Initialize current state storage if hardware state has tracking offset
   read_state_from_hardware(state_current_);
@@ -1005,7 +989,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_deactivate(
 
   subscriber_is_active_ = false;
 
-  traj_point_active_ptr_ = nullptr;
   traj_external_point_ptr_.reset();
   traj_home_point_ptr_.reset();
   traj_msg_home_ptr_.reset();
@@ -1020,7 +1003,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_cleanup(
   if (traj_home_point_ptr_ != nullptr)
   {
     traj_home_point_ptr_->update(traj_msg_home_ptr_);
-    traj_point_active_ptr_ = &traj_home_point_ptr_;
+    traj_external_point_ptr_ = traj_home_point_ptr_;
   }
 
   return CallbackReturn::SUCCESS;
@@ -1051,7 +1034,6 @@ bool JointTrajectoryController::reset()
 
   // iterator has no default value
   // prev_traj_point_ptr_;
-  traj_point_active_ptr_ = nullptr;
   traj_external_point_ptr_.reset();
   traj_home_point_ptr_.reset();
   traj_msg_home_ptr_.reset();
@@ -1532,7 +1514,7 @@ void JointTrajectoryController::resize_joint_trajectory_point_command(
 
 bool JointTrajectoryController::has_active_trajectory()
 {
-  return traj_point_active_ptr_ && (*traj_point_active_ptr_)->has_trajectory_msg();
+  return traj_external_point_ptr_ != nullptr && traj_external_point_ptr_->has_trajectory_msg();
 }
 
 }  // namespace joint_trajectory_controller
