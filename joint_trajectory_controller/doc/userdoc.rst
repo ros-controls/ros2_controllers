@@ -12,7 +12,7 @@ Trajectories are specified as a set of waypoints to be reached at specific time 
 which the controller attempts to execute as well as the mechanism allows.
 Waypoints consist of positions, and optionally velocities and accelerations.
 
-*Parts of this documentation were originally published in the ROS 1 wiki under the* `CC BY 3.0 license <http://creativecommons.org/licenses/by/3.0/>`_. *Citations are given in the respective section, but were adapted for the ROS 2 implementation.* [#f1]_
+*Parts of this documentation were originally published in the ROS 1 wiki under the* `CC BY 3.0 license <https://creativecommons.org/licenses/by/3.0/>`_. *Citations are given in the respective section, but were adapted for the ROS 2 implementation.* [#f1]_
 
 Hardware interface type [#f1]_
 -------------------------------
