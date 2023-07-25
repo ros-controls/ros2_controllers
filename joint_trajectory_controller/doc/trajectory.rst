@@ -82,7 +82,7 @@ To visualize the difference of the different interpolation methods and their inp
 .. image:: spline_position_velocity_acceleration.png
   :alt: Sampled trajectory with splines if position, velocity, and acceleration is given
 
-* Sampled trajectory if position, velocity, and acceleration points are given with a nonzero initial point:
+* Sampled trajectory if the same position, velocity, and acceleration points as above are given, but with a nonzero initial point:
 
 .. image:: spline_position_velocity_acceleration_initialpoint.png
   :alt: Sampled trajectory with splines if position, velocity, and acceleration is given with nonzero initial point
