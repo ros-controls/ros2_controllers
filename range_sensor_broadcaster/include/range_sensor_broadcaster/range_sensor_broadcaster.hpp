@@ -30,9 +30,6 @@
 #include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_publisher.h"
 #include "semantic_components/range_sensor.hpp"
-// /home/chf1si/workspace/robot/ruediger_docker_noproxy/robot_ws/src/ros2_controllers/range_sensor_broadcaster/include/range_sensor_broadcaster/
-// ../../../../ros2_control/controller_interface/include/semantic_components/range_sensor.hpp
-// #include "../../../../ros2_control/controller_interface/include/semantic_components/range_sensor.hpp"
 #include "sensor_msgs/msg/range.hpp"
 
 namespace range_sensor_broadcaster
