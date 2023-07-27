@@ -331,16 +331,20 @@ void AdmittanceRule::process_wrench_measurements(
 
 const control_msgs::msg::AdmittanceControllerState & AdmittanceRule::get_controller_state()
 {
+  for (size_t i = 0; i < 6; ++i)
+  {
+    state_message_.stiffness.data[i] = admittance_state_.stiffness[i];
+    state_message_.damping.data[i] = admittance_state_.damping[i];
+    state_message_.selected_axes.data[i] = static_cast<bool>(admittance_state_.selected_axes[i]);
+    state_message_.mass.data[i] = admittance_state_.mass[i];
+  }
+
   for (size_t i = 0; i < parameters_.joints.size(); ++i)
   {
     state_message_.joint_state.name[i] = parameters_.joints[i];
     state_message_.joint_state.position[i] = admittance_state_.joint_pos[i];
     state_message_.joint_state.velocity[i] = admittance_state_.joint_vel[i];
     state_message_.joint_state.effort[i] = admittance_state_.joint_acc[i];
-    state_message_.stiffness.data[i] = admittance_state_.stiffness[i];
-    state_message_.damping.data[i] = admittance_state_.damping[i];
-    state_message_.selected_axes.data[i] = static_cast<bool>(admittance_state_.selected_axes[i]);
-    state_message_.mass.data[i] = admittance_state_.mass[i];
   }
 
   state_message_.wrench_base.wrench.force.x = admittance_state_.wrench_base[0];
