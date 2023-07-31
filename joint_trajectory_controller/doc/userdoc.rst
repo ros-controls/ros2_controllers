@@ -12,21 +12,7 @@ Trajectories are specified as a set of waypoints to be reached at specific time 
 which the controller attempts to execute as well as the mechanism allows.
 Waypoints consist of positions, and optionally velocities and accelerations.
 
-
-*Parts of this documentation were originally published in the ROS 1 wiki under the* `CC BY 3.0 license <http://creativecommons.org/licenses/by/3.0/>`_. *Citations are given in the respective section, but were adapted for the ROS 2 implementation.* [#f1]_ [#f2]_
-
-Trajectory representation [#f1]_
----------------------------------
-
-Trajectories are represented internally with ``trajectory_msgs/msg/JointTrajectory`` data structure.
-By default, a spline interpolator is provided, but it's possible to support other representations.
-The spline interpolator uses the following interpolation strategies depending on the waypoint specification:
-
-* Linear: Only position is specified. Guarantees continuity at the position level. Discouraged because it yields trajectories with discontinuous velocities at the waypoints.
-
-* Cubic: Position and velocity are specified. Guarantees continuity at the velocity level.
-
-* Quintic: Position, velocity and acceleration are specified: Guarantees continuity at the acceleration level.
+*Parts of this documentation were originally published in the ROS 1 wiki under the* `CC BY 3.0 license <https://creativecommons.org/licenses/by/3.0/>`_. *Citations are given in the respective section, but were adapted for the ROS 2 implementation.* [#f1]_
 
 Hardware interface type [#f1]_
 -------------------------------
@@ -115,10 +101,11 @@ Preemption policy [#f1]_
 
 Only one action goal can be active at any moment, or none if the topic interface is used. Path and goal tolerances are checked only for the trajectory segments of the active goal.
 
-When an active action goal is preempted by another command coming from the action interface, the goal is canceled and the client is notified.
+When an active action goal is preempted by another command coming from the action interface, the goal is canceled and the client is notified. The trajectory is replaced in a defined way, see :ref:`trajectory replacement <joint_trajectory_controller_trajectory_replacement>`.
 
 Sending an empty trajectory message from the topic interface (not the action interface) will override the current action goal and not abort the action.
 
+<<<<<<< HEAD
 .. _parameters:
 
 Details about parameters
@@ -225,6 +212,8 @@ gains.<joint_name>.normalize_error (bool)
   where the shortest rotation to the target position is the desired motion.
 
   Default: false
+=======
+>>>>>>> fa72170 ([JTC] Update trajectory documentation (#714))
 
 .. _ROS 2 interface:
 
@@ -257,7 +246,7 @@ There are two mechanisms for sending trajectories to the controller:
 * via action, see :ref:`actions <Actions>`
 * via topic, see :ref:`subscriber <Subscriber>`
 
-Both use the ``trajectory_msgs/JointTrajectory`` message to specify trajectories, and require specifying values for all the controller joints (as opposed to only a subset) if ``allow_partial_joints_goal`` is not set to ``True``.
+Both use the ``trajectory_msgs/msg/JointTrajectory`` message to specify trajectories, and require specifying values for all the controller joints (as opposed to only a subset) if ``allow_partial_joints_goal`` is not set to ``True``. For further information on the message format, see :ref:`trajectory representation <joint_trajectory_controller_trajectory_representation>`.
 
 
 .. _Actions:
@@ -301,17 +290,27 @@ Services
   Query controller state at any future time
 
 
-Specialized versions of JointTrajectoryController (TBD in ...)
+Specialized versions of JointTrajectoryController
 --------------------------------------------------------------
+(TBD in ...)
 
-The controller types are placed into namespaces according to their command types for the hardware (see `general introduction into controllers <../../index.rst>`_).
+The controller types are placed into namespaces according to their command types for the hardware (see :ref:`controllers`).
 
 The following version of the Joint Trajectory Controller are available mapping the following interfaces:
 
 * position_controllers::JointTrajectoryController
 
 
+Further information
+--------------------------------------------------------------
+
+.. toctree::
+   :titlesonly:
+
+   Trajectory Representation <trajectory.rst>
+   joint_trajectory_controller Parameters <parameters.rst>
+
+
 .. rubric:: Footnote
 
 .. [#f1] Adolfo Rodriguez: `joint_trajectory_controller <http://wiki.ros.org/joint_trajectory_controller>`_
-.. [#f2] Adolfo Rodriguez: `Understanding trajectory replacement <http://wiki.ros.org/joint_trajectory_controller/UnderstandingTrajectoryReplacement>`_
