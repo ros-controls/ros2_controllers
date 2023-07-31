@@ -1,0 +1,177 @@
+diff_drive_controller:
+  left_wheel_names: {
+    type: string_array,
+    default_value: [],
+    description: "Link names of the left side wheels",
+  }
+  right_wheel_names: {
+    type: string_array,
+    default_value: [],
+    description: "Link names of the right side wheels",
+  }
+  wheel_separation: {
+    type: double,
+    default_value: 0.0,
+    description: "Shortest distance between the left and right wheels. If this parameter is wrong, the robot will not behave correctly in curves.",
+  }
+  wheels_per_side: {
+    type: int,
+    default_value: 0,
+    description: "Number of wheels on each wide of the robot. This is important to take the wheels slip into account when multiple wheels on each side are present. If there are more wheels then control signals for each side, you should enter number or control signals. For example, Husky has two wheels on each side, but they use one control signal, in this case '1' is the correct value of the parameter.",
+  }
+  wheel_radius: {
+    type: double,
+    default_value: 0.0,
+    description: "Radius of a wheel, i.e., wheels size, used for transformation of linear velocity into wheel rotations. If this parameter is wrong the robot will move faster or slower then expected.",
+  }
+  wheel_separation_multiplier: {
+    type: double,
+    default_value: 1.0,
+    description: "Correction factor for wheel separation (TODO(destogl): Please help me describe this correctly)",
+  }
+  left_wheel_radius_multiplier: {
+    type: double,
+    default_value: 1.0,
+    description: "Correction factor when radius of left wheels differs from the nominal value in ``wheel_radius`` parameter.",
+  }
+  right_wheel_radius_multiplier: {
+    type: double,
+    default_value: 1.0,
+    description: "Correction factor when radius of right wheels differs from the nominal value in ``wheel_radius`` parameter.",
+  }
+  odom_frame_id: {
+    type: string,
+    default_value: "odom",
+    description:  "Name of the frame for odometry. This frame is parent of ``base_frame_id`` when controller publishes odometry.",
+  }
+  base_frame_id: {
+    type: string,
+    default_value: "base_link",
+    description: "Name of the robot's base frame that is child of the odometry frame.",
+  }
+  pose_covariance_diagonal: {
+    type: double_array,
+    default_value: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    description: "Odometry covariance for the encoder output of the robot for the pose. These values should be tuned to your robot's sample odometry data, but these values are a good place to start: ``[0.001, 0.001, 0.001, 0.001, 0.001, 0.01]``.",
+  }
+  twist_covariance_diagonal: {
+    type: double_array,
+    default_value: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    description: "Odometry covariance for the encoder output of the robot for the speed. These values should be tuned to your robot's sample odometry data, but these values are a good place to start: ``[0.001, 0.001, 0.001, 0.001, 0.001, 0.01]``.",
+  }
+  open_loop: {
+    type: bool,
+    default_value: false,
+    description: "If set to true the odometry of the robot will be calculated from the commanded values and not from feedback.",
+  }
+  position_feedback: {
+    type: bool,
+    default_value: true,
+    description: "Is there position feedback from hardware.",
+  }
+  enable_odom_tf: {
+    type: bool,
+    default_value: true,
+    description: "Publish transformation between ``odom_frame_id`` and ``base_frame_id``.",
+  }
+  cmd_vel_timeout: {
+    type: double,
+    default_value: 0.5, # seconds
+    description: "Timeout after which input command on ``cmd_vel`` topic is considered staled.",
+  }
+  publish_limited_velocity: {
+    type: bool,
+    default_value: false,
+    description: "Publish limited velocity value.",
+  }
+  velocity_rolling_window_size: {
+    type: int,
+    default_value: 10,
+    description: "Size of the rolling window for calculation of mean velocity use in odometry.",
+  }
+  use_stamped_vel: {
+    type: bool,
+    default_value: true,
+    description: "Use stamp from input velocity message to calculate how old the command actually is.",
+  }
+  publish_rate: {
+    type: double,
+    default_value: 50.0, # Hz
+    description: "Publishing rate (Hz) of the odometry and TF messages.",
+  }
+  linear:
+    x:
+      has_velocity_limits: {
+        type: bool,
+        default_value: false,
+      }
+      has_acceleration_limits: {
+        type: bool,
+        default_value: false,
+      }
+      has_jerk_limits: {
+        type: bool,
+        default_value: false,
+      }
+      max_velocity: {
+        type: double,
+        default_value: .NAN,
+      }
+      min_velocity: {
+        type: double,
+        default_value: .NAN,
+      }
+      max_acceleration: {
+        type: double,
+        default_value: .NAN,
+      }
+      min_acceleration: {
+        type: double,
+        default_value: .NAN,
+      }
+      max_jerk: {
+        type: double,
+        default_value: .NAN,
+      }
+      min_jerk: {
+        type: double,
+        default_value: .NAN,
+      }
+  angular:
+    z:
+      has_velocity_limits: {
+        type: bool,
+        default_value: false,
+      }
+      has_acceleration_limits: {
+        type: bool,
+        default_value: false,
+      }
+      has_jerk_limits: {
+        type: bool,
+        default_value: false,
+      }
+      max_velocity: {
+        type: double,
+        default_value: .NAN,
+      }
+      min_velocity: {
+        type: double,
+        default_value: .NAN,
+      }
+      max_acceleration: {
+        type: double,
+        default_value: .NAN,
+      }
+      min_acceleration: {
+        type: double,
+        default_value: .NAN,
+      }
+      max_jerk: {
+        type: double,
+        default_value: .NAN,
+      }
+      min_jerk: {
+        type: double,
+        default_value: .NAN,
+      }

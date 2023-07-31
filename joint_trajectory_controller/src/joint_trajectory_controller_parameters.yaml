@@ -1,0 +1,130 @@
+joint_trajectory_controller:
+  joints: {
+    type: string_array,
+    default_value: [],
+    description: "Names of joints used by the controller",
+    validation: {
+      unique<>: null,
+    }
+  }
+  command_joints: {
+    type: string_array,
+    default_value: [],
+    description: "Names of the commanding joints used by the controller",
+    validation: {
+      unique<>: null,
+    }
+  }
+  command_interfaces: {
+    type: string_array,
+    default_value: [],
+    description: "Names of command interfaces to claim",
+    validation: {
+      unique<>: null,
+      subset_of<>: [["position", "velocity", "acceleration", "effort",]],
+      "joint_trajectory_controller::command_interface_type_combinations": null,
+    }
+  }
+  state_interfaces: {
+    type: string_array,
+    default_value: [],
+    description: "Names of state interfaces to claim",
+    validation: {
+      unique<>: null,
+      subset_of<>: [["position", "velocity", "acceleration",]],
+      "joint_trajectory_controller::state_interface_type_combinations": null,
+    }
+  }
+  allow_partial_joints_goal: {
+    type: bool,
+    default_value: false,
+    description: "Goals with partial set of joints are allowed",
+  }
+  open_loop_control: {
+    type: bool,
+    default_value: false,
+    description: "Run the controller in open-loop, i.e., read hardware states only when starting controller. This is useful when robot is not exactly following the commanded trajectory.",
+  }
+  allow_integration_in_goal_trajectories: {
+    type: bool,
+    default_value: false,
+    description: "Allow integration in goal trajectories to accept goals without position or velocity specified",
+  }
+  action_monitor_rate: {
+    type: double,
+    default_value: 20.0,
+    description: "Rate status changes will be monitored",
+    validation: {
+      gt_eq: [0.1]
+    }
+  }
+  interpolation_method: {
+    type: string,
+    default_value: "splines",
+    description: "The type of interpolation to use, if any",
+    validation: {
+      one_of<>: [["splines", "none"]],
+    }
+  }
+  allow_nonzero_velocity_at_trajectory_end: {
+    type: bool,
+    default_value: true,
+    description: "If false, the last velocity point has to be zero or the goal will be rejected",
+  }
+  gains:
+    __map_joints:
+      p: {
+        type: double,
+        default_value: 0.0,
+        description: "Proportional gain for PID"
+      }
+      i: {
+        type: double,
+        default_value: 0.0,
+        description: "Intigral gain for PID"
+      }
+      d: {
+        type: double,
+        default_value: 0.0,
+        description: "Derivative gain for PID"
+      }
+      i_clamp: {
+        type: double,
+        default_value: 0.0,
+        description: "Integrale clamp. Symmetrical in both positive and negative direction."
+      }
+      ff_velocity_scale: {
+        type: double,
+        default_value: 0.0,
+        description: "Feed-forward scaling of velocity."
+      }
+      normalize_error: {
+        type: bool,
+        default_value: false,
+        description: "Use position error normalization to -pi to pi."
+      }
+  constraints:
+    stopped_velocity_tolerance: {
+      type: double,
+      default_value: 0.01,
+      description: "Velocity tolerance for at the end of the trajectory that indicates that controlled system is stopped.",
+    }
+    goal_time: {
+      type: double,
+      default_value: 0.0,
+      description: "Time tolerance for achieving trajectory goal before or after commanded time.",
+      validation: {
+        gt_eq: [0.0],
+      }
+    }
+    __map_joints:
+      trajectory: {
+        type: double,
+        default_value: 0.0,
+        description: "Per-joint trajectory offset tolerance during movement.",
+      }
+      goal: {
+        type: double,
+        default_value: 0.0,
+        description: "Per-joint trajectory offset tolerance at the goal position.",
+      }

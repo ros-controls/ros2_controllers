@@ -2,6 +2,74 @@
 Changelog for package ros2_controllers_test_nodes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.12.0 (2023-07-18)
+-------------------
+
+3.11.0 (2023-06-24)
+-------------------
+* Removes deprecated if-branch (`#653 <https://github.com/ros-controls/ros2_controllers/issues/653>`_)
+* Contributors: Christoph Fröhlich
+
+3.10.1 (2023-06-06)
+-------------------
+
+3.10.0 (2023-06-04)
+-------------------
+
+3.9.0 (2023-05-28)
+------------------
+
+3.8.0 (2023-05-14)
+------------------
+
+3.7.0 (2023-05-02)
+------------------
+
+3.6.0 (2023-04-29)
+------------------
+
+3.5.0 (2023-04-14)
+------------------
+
+3.4.0 (2023-04-02)
+------------------
+
+3.3.0 (2023-03-07)
+------------------
+
+3.2.0 (2023-02-10)
+------------------
+
+3.1.0 (2023-01-26)
+------------------
+* add publisher topic parameter to forward_position_controller (`#494 <https://github.com/ros-controls/ros2_controllers/issues/494>`_)
+* Contributors: Manuel Muth
+
+3.0.0 (2023-01-19)
+------------------
+
+2.15.0 (2022-12-06)
+-------------------
+
+2.14.0 (2022-11-18)
+-------------------
+* Remove deprecation warning when parameter without value is set. (`#445 <https://github.com/ros-controls/ros2_controllers/issues/445>`_)
+* Contributors: Denis Štogl
+
+2.13.0 (2022-10-05)
+-------------------
+* Enable definition of all fields in JointTrajectory message when using test node. (`#389 <https://github.com/ros-controls/ros2_controllers/issues/389>`_)
+* Contributors: Denis Štogl
+
+2.12.0 (2022-09-01)
+-------------------
+
+2.11.0 (2022-08-04)
+-------------------
+
+2.10.0 (2022-08-01)
+-------------------
+
 2.9.0 (2022-07-14)
 ------------------
 

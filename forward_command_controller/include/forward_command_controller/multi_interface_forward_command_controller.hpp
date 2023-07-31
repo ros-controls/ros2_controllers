@@ -15,11 +15,13 @@
 #ifndef FORWARD_COMMAND_CONTROLLER__MULTI_INTERFACE_FORWARD_COMMAND_CONTROLLER_HPP_
 #define FORWARD_COMMAND_CONTROLLER__MULTI_INTERFACE_FORWARD_COMMAND_CONTROLLER_HPP_
 
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "forward_command_controller/forward_controllers_base.hpp"
 #include "forward_command_controller/visibility_control.h"
+#include "multi_interface_forward_command_controller_parameters.hpp"
 
 namespace forward_command_controller
 {
@@ -45,8 +47,11 @@ protected:
   void declare_parameters() override;
   controller_interface::CallbackReturn read_parameters() override;
 
-  std::string joint_name_;
-  std::vector<std::string> interface_names_;
+  using Params = multi_interface_forward_command_controller::Params;
+  using ParamListener = multi_interface_forward_command_controller::ParamListener;
+
+  std::shared_ptr<ParamListener> param_listener_;
+  Params params_;
 };
 
 }  // namespace forward_command_controller

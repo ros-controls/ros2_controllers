@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <gtest/gtest.h>
 #include <memory>
+
+#include "gmock/gmock.h"
 
 #include "controller_manager/controller_manager.hpp"
 #include "hardware_interface/resource_manager.hpp"
@@ -34,8 +35,10 @@ TEST(TestLoadJointStateController, load_controller)
       ros2_control_test_assets::minimal_robot_urdf),
     executor, "test_controller_manager");
 
-  ASSERT_NO_THROW(cm.load_controller(
-    "test_joint_trajectory_controller", "joint_trajectory_controller/JointTrajectoryController"));
+  ASSERT_NE(
+    cm.load_controller(
+      "test_joint_trajectory_controller", "joint_trajectory_controller/JointTrajectoryController"),
+    nullptr);
 
   rclcpp::shutdown();
 }

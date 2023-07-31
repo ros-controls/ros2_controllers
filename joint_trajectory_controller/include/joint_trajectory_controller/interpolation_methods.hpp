@@ -15,9 +15,10 @@
 #ifndef JOINT_TRAJECTORY_CONTROLLER__INTERPOLATION_METHODS_HPP_
 #define JOINT_TRAJECTORY_CONTROLLER__INTERPOLATION_METHODS_HPP_
 
-#include <rclcpp/rclcpp.hpp>
 #include <string>
 #include <unordered_map>
+
+#include "rclcpp/rclcpp.hpp"
 
 namespace joint_trajectory_controller
 {
@@ -44,7 +45,7 @@ const std::unordered_map<InterpolationMethod, std::string> InterpolationMethodMa
     return InterpolationMethod::NONE;
   }
   else if (
-    !interpolation_method.compare(
+    interpolation_method.compare(
       InterpolationMethodMap.at(InterpolationMethod::VARIABLE_DEGREE_SPLINE)) == 0)
   {
     return InterpolationMethod::VARIABLE_DEGREE_SPLINE;

@@ -1,0 +1,43 @@
+imu_sensor_broadcaster:
+  sensor_name: {
+    type: string,
+    default_value: "",
+    description: "Defines sensor name used as prefix for its interfaces.
+    Interface names are: ``<sensor_name>/orientation.x, ..., <sensor_name>/angular_velocity.x, ...,
+    <sensor_name>/linear_acceleration.x.``",
+    validation: {
+      not_empty<>: null
+    }
+  }
+  frame_id: {
+    type: string,
+    default_value: "",
+    description: "Sensor's frame_id in which values are published.",
+    validation: {
+      not_empty<>: null
+    }
+  }
+  static_covariance_orientation: {
+    type: double_array,
+    default_value: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    description: "Static orientation covariance. Row major about x, y, z axes",
+    validation: {
+      fixed_size<>: [9],
+    }
+  }
+  static_covariance_angular_velocity: {
+    type: double_array,
+    default_value: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    description: "Static angular velocity covariance. Row major about x, y, z axes",
+    validation: {
+      fixed_size<>: [9],
+    }
+  }
+  static_covariance_linear_acceleration: {
+    type: double_array,
+    default_value: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    description: "Static linear acceleration covariance. Row major about x, y, z axes",
+    validation: {
+      fixed_size<>: [9],
+    }
+  }

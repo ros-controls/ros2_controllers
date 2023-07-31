@@ -28,11 +28,12 @@ template <const char * HardwareInterface>
 void GripperActionController<HardwareInterface>::preempt_active_goal()
 {
   // Cancels the currently active goal
-  if (rt_active_goal_)
+  const auto active_goal = *rt_active_goal_.readFromNonRT();
+  if (active_goal)
   {
     // Marks the current goal as canceled
-    rt_active_goal_->setCanceled(std::make_shared<GripperCommandAction::Result>());
-    rt_active_goal_.reset();
+    active_goal->setCanceled(std::make_shared<GripperCommandAction::Result>());
+    rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
   }
 }
 
@@ -41,14 +42,8 @@ controller_interface::CallbackReturn GripperActionController<HardwareInterface>:
 {
   try
   {
-    // with the lifecycle node being initialized, we can declare parameters
-    auto_declare<double>("action_monitor_rate", 20.0);
-    joint_name_ = auto_declare<std::string>("joint", joint_name_);
-    auto_declare<double>("goal_tolerance", 0.01);
-    auto_declare<double>("max_effort", 0.0);
-    auto_declare<bool>("allow_stalling", false);
-    auto_declare<double>("stall_velocity_threshold", 0.001);
-    auto_declare<double>("stall_timeout", 1.0);
+    param_listener_ = std::make_shared<ParamListener>(get_node());
+    params_ = param_listener_->get_params();
   }
   catch (const std::exception & e)
   {
@@ -92,29 +87,31 @@ template <const char * HardwareInterface>
 void GripperActionController<HardwareInterface>::accepted_callback(
   std::shared_ptr<GoalHandle> goal_handle)  // Try to update goal
 {
-  {
-    auto rt_goal = std::make_shared<RealtimeGoalHandle>(goal_handle);
+  auto rt_goal = std::make_shared<RealtimeGoalHandle>(goal_handle);
 
-    // Accept new goal
-    preempt_active_goal();
+  // Accept new goal
+  preempt_active_goal();
 
-    // This is the non-realtime command_struct
-    // We use command_ for sharing
-    command_struct_.position_ = goal_handle->get_goal()->command.position;
-    command_struct_.max_effort_ = goal_handle->get_goal()->command.max_effort;
-    command_.writeFromNonRT(command_struct_);
+  // This is the non-realtime command_struct
+  // We use command_ for sharing
+  command_struct_.position_ = goal_handle->get_goal()->command.position;
+  command_struct_.max_effort_ = goal_handle->get_goal()->command.max_effort;
+  command_.writeFromNonRT(command_struct_);
 
-    pre_alloc_result_->reached_goal = false;
-    pre_alloc_result_->stalled = false;
+  pre_alloc_result_->reached_goal = false;
+  pre_alloc_result_->stalled = false;
 
-    last_movement_time_ = get_node()->now();
-    rt_active_goal_ = rt_goal;
-    rt_active_goal_->execute();
-  }
+  last_movement_time_ = get_node()->now();
+  rt_goal->execute();
+  rt_active_goal_.writeFromNonRT(rt_goal);
+
+  // Set smartpointer to expire for create_wall_timer to delete previous entry from timer list
+  goal_handle_timer_.reset();
+
   // Setup goal status checking timer
   goal_handle_timer_ = get_node()->create_wall_timer(
-    action_monitor_period_.to_chrono<std::chrono::seconds>(),
-    std::bind(&RealtimeGoalHandle::runNonRealtime, rt_active_goal_));
+    action_monitor_period_.to_chrono<std::chrono::nanoseconds>(),
+    std::bind(&RealtimeGoalHandle::runNonRealtime, rt_goal));
 }
 
 template <const char * HardwareInterface>
@@ -124,7 +121,8 @@ rclcpp_action::CancelResponse GripperActionController<HardwareInterface>::cancel
   RCLCPP_INFO(get_node()->get_logger(), "Got request to cancel goal");
 
   // Check that cancel request refers to currently active goal (if any)
-  if (rt_active_goal_ && rt_active_goal_->gh_ == goal_handle)
+  const auto active_goal = *rt_active_goal_.readFromNonRT();
+  if (active_goal && active_goal->gh_ == goal_handle)
   {
     // Enter hold current position mode
     set_hold_position();
@@ -134,9 +132,9 @@ rclcpp_action::CancelResponse GripperActionController<HardwareInterface>::cancel
 
     // Mark the current goal as canceled
     auto action_res = std::make_shared<GripperCommandAction::Result>();
-    rt_active_goal_->setCanceled(action_res);
+    active_goal->setCanceled(action_res);
     // Reset current goal
-    rt_active_goal_.reset();
+    rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
   }
   return rclcpp_action::CancelResponse::ACCEPT;
 }
@@ -145,7 +143,7 @@ template <const char * HardwareInterface>
 void GripperActionController<HardwareInterface>::set_hold_position()
 {
   command_struct_.position_ = joint_position_state_interface_->get().get_value();
-  command_struct_.max_effort_ = default_max_effort_;
+  command_struct_.max_effort_ = params_.max_effort;
   command_.writeFromNonRT(command_struct_);
 }
 
@@ -154,44 +152,46 @@ void GripperActionController<HardwareInterface>::check_for_success(
   const rclcpp::Time & time, double error_position, double current_position,
   double current_velocity)
 {
-  if (!rt_active_goal_)
+  const auto active_goal = *rt_active_goal_.readFromNonRT();
+  if (!active_goal)
   {
     return;
   }
 
-  if (fabs(error_position) < goal_tolerance_)
+  if (fabs(error_position) < params_.goal_tolerance)
   {
     pre_alloc_result_->effort = computed_command_;
     pre_alloc_result_->position = current_position;
     pre_alloc_result_->reached_goal = true;
     pre_alloc_result_->stalled = false;
     RCLCPP_DEBUG(get_node()->get_logger(), "Successfully moved to goal.");
-    rt_active_goal_->setSucceeded(pre_alloc_result_);
-    rt_active_goal_.reset();
+    active_goal->setSucceeded(pre_alloc_result_);
+    rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
   }
   else
   {
-    if (fabs(current_velocity) > stall_velocity_threshold_)
+    if (fabs(current_velocity) > params_.stall_velocity_threshold)
     {
       last_movement_time_ = time;
     }
-    else if ((time - last_movement_time_).seconds() > stall_timeout_)
+    else if ((time - last_movement_time_).seconds() > params_.stall_timeout)
     {
       pre_alloc_result_->effort = computed_command_;
       pre_alloc_result_->position = current_position;
       pre_alloc_result_->reached_goal = false;
       pre_alloc_result_->stalled = true;
-      if(allow_stalling_)
+
+      if (params_.allow_stalling)
       {
         RCLCPP_DEBUG(get_node()->get_logger(), "Stall detected moving to goal. Returning success.");
-        rt_active_goal_->setSucceeded(pre_alloc_result_);
+        active_goal->setSucceeded(pre_alloc_result_);
       }
       else
       {
         RCLCPP_DEBUG(get_node()->get_logger(), "Stall detected moving to goal. Aborting action!");
-        rt_active_goal_->setAborted(pre_alloc_result_);
+        active_goal->setAborted(pre_alloc_result_);
       }
-      rt_active_goal_.reset();
+      rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
     }
   }
 }
@@ -201,34 +201,24 @@ controller_interface::CallbackReturn GripperActionController<HardwareInterface>:
   const rclcpp_lifecycle::State &)
 {
   const auto logger = get_node()->get_logger();
-
-  // Action status checking update rate
-  const auto action_monitor_rate = get_node()->get_parameter("action_monitor_rate").as_double();
-  action_monitor_period_ = rclcpp::Duration::from_seconds(
-    1.0 / get_node()->get_parameter("action_monitor_rate").as_double());
-  RCLCPP_INFO_STREAM(
-    logger, "Action status changes will be monitored at " << action_monitor_rate << "Hz.");
-
-  // Controlled joint
-  joint_name_ = get_node()->get_parameter("joint").as_string();
-  if (joint_name_.empty())
+  if (!param_listener_)
   {
-    RCLCPP_ERROR(logger, "Could not find joint name on param server");
+    RCLCPP_ERROR(get_node()->get_logger(), "Error encountered during init");
     return controller_interface::CallbackReturn::ERROR;
   }
+  params_ = param_listener_->get_params();
 
-  // Default tolerances
-  goal_tolerance_ = get_node()->get_parameter("goal_tolerance").as_double();
-  goal_tolerance_ = fabs(goal_tolerance_);
-  // Max allowable effort
-  default_max_effort_ = get_node()->get_parameter("max_effort").as_double();
-  default_max_effort_ = fabs(default_max_effort_);
-  // Allow stalling will make the action server return success if the
-  // gripper stalls when moving to the goal
-  allow_stalling_ = get_node()->get_parameter("allow_stalling").as_bool();
-  // Stall - stall velocity threshold, stall timeout
-  stall_velocity_threshold_ = get_node()->get_parameter("stall_velocity_threshold").as_double();
-  stall_timeout_ = get_node()->get_parameter("stall_timeout").as_double();
+  // Action status checking update rate
+  action_monitor_period_ = rclcpp::Duration::from_seconds(1.0 / params_.action_monitor_rate);
+  RCLCPP_INFO_STREAM(
+    logger, "Action status changes will be monitored at " << params_.action_monitor_rate << "Hz.");
+
+  // Controlled joint
+  if (params_.joint.empty())
+  {
+    RCLCPP_ERROR(logger, "Joint name cannot be empty");
+    return controller_interface::CallbackReturn::ERROR;
+  }
 
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -238,56 +228,53 @@ controller_interface::CallbackReturn GripperActionController<HardwareInterface>:
 {
   auto position_command_interface_it = std::find_if(
     command_interfaces_.begin(), command_interfaces_.end(),
-    [](const hardware_interface::LoanedCommandInterface & command_interface) {
-      return command_interface.get_interface_name() == hardware_interface::HW_IF_POSITION;
-    });
+    [](const hardware_interface::LoanedCommandInterface & command_interface)
+    { return command_interface.get_interface_name() == hardware_interface::HW_IF_POSITION; });
   if (position_command_interface_it == command_interfaces_.end())
   {
     RCLCPP_ERROR(get_node()->get_logger(), "Expected 1 position command interface");
     return controller_interface::CallbackReturn::ERROR;
   }
-  if (position_command_interface_it->get_prefix_name() != joint_name_)
+  if (position_command_interface_it->get_prefix_name() != params_.joint)
   {
     RCLCPP_ERROR_STREAM(
       get_node()->get_logger(), "Position command interface is different than joint name `"
                                   << position_command_interface_it->get_prefix_name() << "` != `"
-                                  << joint_name_ << "`");
+                                  << params_.joint << "`");
     return controller_interface::CallbackReturn::ERROR;
   }
   const auto position_state_interface_it = std::find_if(
     state_interfaces_.begin(), state_interfaces_.end(),
-    [](const hardware_interface::LoanedStateInterface & state_interface) {
-      return state_interface.get_interface_name() == hardware_interface::HW_IF_POSITION;
-    });
+    [](const hardware_interface::LoanedStateInterface & state_interface)
+    { return state_interface.get_interface_name() == hardware_interface::HW_IF_POSITION; });
   if (position_state_interface_it == state_interfaces_.end())
   {
     RCLCPP_ERROR(get_node()->get_logger(), "Expected 1 position state interface");
     return controller_interface::CallbackReturn::ERROR;
   }
-  if (position_state_interface_it->get_prefix_name() != joint_name_)
+  if (position_state_interface_it->get_prefix_name() != params_.joint)
   {
     RCLCPP_ERROR_STREAM(
       get_node()->get_logger(), "Position state interface is different than joint name `"
                                   << position_state_interface_it->get_prefix_name() << "` != `"
-                                  << joint_name_ << "`");
+                                  << params_.joint << "`");
     return controller_interface::CallbackReturn::ERROR;
   }
   const auto velocity_state_interface_it = std::find_if(
     state_interfaces_.begin(), state_interfaces_.end(),
-    [](const hardware_interface::LoanedStateInterface & state_interface) {
-      return state_interface.get_interface_name() == hardware_interface::HW_IF_VELOCITY;
-    });
+    [](const hardware_interface::LoanedStateInterface & state_interface)
+    { return state_interface.get_interface_name() == hardware_interface::HW_IF_VELOCITY; });
   if (velocity_state_interface_it == state_interfaces_.end())
   {
     RCLCPP_ERROR(get_node()->get_logger(), "Expected 1 velocity state interface");
     return controller_interface::CallbackReturn::ERROR;
   }
-  if (velocity_state_interface_it->get_prefix_name() != joint_name_)
+  if (velocity_state_interface_it->get_prefix_name() != params_.joint)
   {
     RCLCPP_ERROR_STREAM(
       get_node()->get_logger(), "Velocity command interface is different than joint name `"
                                   << velocity_state_interface_it->get_prefix_name() << "` != `"
-                                  << joint_name_ << "`");
+                                  << params_.joint << "`");
     return controller_interface::CallbackReturn::ERROR;
   }
 
@@ -300,7 +287,8 @@ controller_interface::CallbackReturn GripperActionController<HardwareInterface>:
 
   // Command - non RT version
   command_struct_.position_ = joint_position_state_interface_->get().get_value();
-  command_struct_.max_effort_ = default_max_effort_;
+  command_struct_.max_effort_ = params_.max_effort;
+  command_.initRT(command_struct_);
 
   // Result
   pre_alloc_result_ = std::make_shared<control_msgs::action::GripperCommand::Result>();
@@ -323,9 +311,9 @@ template <const char * HardwareInterface>
 controller_interface::CallbackReturn GripperActionController<HardwareInterface>::on_deactivate(
   const rclcpp_lifecycle::State &)
 {
-  joint_position_command_interface_ = std::experimental::nullopt;
-  joint_position_state_interface_ = std::experimental::nullopt;
-  joint_velocity_state_interface_ = std::experimental::nullopt;
+  joint_position_command_interface_ = std::nullopt;
+  joint_position_state_interface_ = std::nullopt;
+  joint_velocity_state_interface_ = std::nullopt;
   release_interfaces();
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -336,7 +324,7 @@ GripperActionController<HardwareInterface>::command_interface_configuration() co
 {
   return {
     controller_interface::interface_configuration_type::INDIVIDUAL,
-    {joint_name_ + "/" + hardware_interface::HW_IF_POSITION}};
+    {params_.joint + "/" + hardware_interface::HW_IF_POSITION}};
 }
 
 template <const char * HardwareInterface>
@@ -345,8 +333,8 @@ GripperActionController<HardwareInterface>::state_interface_configuration() cons
 {
   return {
     controller_interface::interface_configuration_type::INDIVIDUAL,
-    {joint_name_ + "/" + hardware_interface::HW_IF_POSITION,
-     joint_name_ + "/" + hardware_interface::HW_IF_VELOCITY}};
+    {params_.joint + "/" + hardware_interface::HW_IF_POSITION,
+     params_.joint + "/" + hardware_interface::HW_IF_VELOCITY}};
 }
 
 template <const char * HardwareInterface>

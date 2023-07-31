@@ -1,0 +1,47 @@
+force_torque_sensor_broadcaster:
+  frame_id: {
+    type: string,
+    default_value: "",
+    description: "Sensor's frame_id in which values are published.",
+    validation: {
+      not_empty<>: null
+    }
+  }
+  sensor_name: {
+    type: string,
+    default_value: "",
+    description: "Name of the sensor used as prefix for interfaces if there are no individual interface names defined.",
+  }
+  interface_names:
+    force:
+      x: {
+        type: string,
+        default_value: "",
+        description: "Name of the state interface with force values on 'x' axis.",
+      }
+      y: {
+        type: string,
+        default_value: "",
+        description: "Name of the state interface with force values on 'y' axis.",
+      }
+      z: {
+        type: string,
+        default_value: "",
+        description: "Name of the state interface with force values on 'z' axis.",
+      }
+    torque:
+      x: {
+        type: string,
+        default_value: "",
+        description: "Name of the state interface with torque values around 'x' axis.",
+      }
+      y: {
+        type: string,
+        default_value: "",
+        description: "Name of the state interface with torque values around 'y' axis.",
+      }
+      z: {
+        type: string,
+        default_value: "",
+        description: "Name of the state interface with torque values around 'z' axis.",
+      }
