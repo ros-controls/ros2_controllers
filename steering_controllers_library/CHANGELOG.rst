@@ -2,6 +2,20 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.12.0 (2023-07-18)
+-------------------
+
+3.11.0 (2023-06-24)
+-------------------
+* Added -Wconversion flag and fix warnings (`#667 <https://github.com/ros-controls/ros2_controllers/issues/667>`_)
+* Let sphinx add parameter description to documentation (`#651 <https://github.com/ros-controls/ros2_controllers/issues/651>`_)
+* Contributors: Christoph Fröhlich, gwalck
+
+3.10.1 (2023-06-06)
+-------------------
+* Second round of dependencies fix (`#655 <https://github.com/ros-controls/ros2_controllers/issues/655>`_)
+* Contributors: Bence Magyar
+
 3.10.0 (2023-06-04)
 -------------------
 * Remove unnecessary include (`#645 <https://github.com/ros-controls/ros2_controllers/issues/645>`_)

@@ -5,7 +5,7 @@
 Writing a new controller
 ========================
 
-In this framework controllers are libraries, dynamically loaded by the controller manager using the `pluginlib <ros.org/wiki/pluginlib>`_ interface.
+In this framework controllers are libraries, dynamically loaded by the controller manager using the `pluginlib <https://docs.ros.org/en/{DISTRO}/Tutorials/Beginner-Client-Libraries/Pluginlib.html>`_ interface.
 The following is a step-by-step guide to create source files, basic tests, and compile rules for a new controller.
 
 1. **Preparing package**
@@ -138,4 +138,4 @@ That's it! Enjoy writing great controllers!
 Useful External References
 ---------------------------
 
-- `Templates and scripts for generating controllers shell <https://stoglrobotics.github.io/ros_team_workspace/use-cases/ros2_control/setup_controller.html>`_
+- `Templates and scripts for generating controllers shell <https://rtw.stoglrobotics.de/master/use-cases/ros2_control/setup_controller.html>`_

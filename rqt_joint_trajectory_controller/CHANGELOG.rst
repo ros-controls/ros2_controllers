@@ -2,6 +2,15 @@
 Changelog for package rqt_joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.12.0 (2023-07-18)
+-------------------
+
+3.11.0 (2023-06-24)
+-------------------
+
+3.10.1 (2023-06-06)
+-------------------
+
 3.10.0 (2023-06-04)
 -------------------
 * Adapted rqt_jtc to newest control_msgs for jtc (`#643 <https://github.com/ros-controls/ros2_controllers/issues/643>`_)
