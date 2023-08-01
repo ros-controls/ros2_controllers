@@ -31,8 +31,16 @@ public:
   void TearDown();
 
 protected:
+  // for the sake of the test
+  // defining the parameter names same as in test/range_sensor_broadcaster_params.yaml
   const std::string sensor_name_ = "range_sensor";
   const std::string frame_id_ = "range_sensor_frame";
+
+  const double field_of_view_ = 0.1;
+  const int radiation_type_ = 1;
+  const double min_range_ = 0.1;
+  const double max_range_ = 7.0;
+  const double variance_ = 1.0;
 
   double sensor_range_ = 3.1;
   hardware_interface::StateInterface range_{sensor_name_, "range", &sensor_range_};

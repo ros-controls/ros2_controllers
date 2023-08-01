@@ -58,34 +58,34 @@ controller_interface::CallbackReturn RangeSensorBroadcasterTest::configure_broad
   return range_broadcaster_->on_configure(rclcpp_lifecycle::State());
 }
 
-// void RangeSensorBroadcasterTest::subscribe_and_get_message(sensor_msgs::msg::Range & range_msg)
-// {
-//   // create a new subscriber
-//   rclcpp::Node test_subscription_node("test_subscription_node");
-//   auto subs_callback = [&](const sensor_msgs::msg::Range::SharedPtr) {};
-//   auto subscription = test_subscription_node.create_subscription<sensor_msgs::msg::Range>(
-//     "/test_range_sensor_broadcaster/range", 10, subs_callback);
+void RangeSensorBroadcasterTest::subscribe_and_get_message(sensor_msgs::msg::Range & range_msg)
+{
+  // create a new subscriber
+  rclcpp::Node test_subscription_node("test_subscription_node");
+  auto subs_callback = [&](const sensor_msgs::msg::Range::SharedPtr) {};
+  auto subscription = test_subscription_node.create_subscription<sensor_msgs::msg::Range>(
+    "/test_range_sensor_broadcaster/range", 10, subs_callback);
 
-//   // call update to publish the test value
-//   // since update doesn't guarantee a published message, republish until received
-//   int max_sub_check_loop_count = 5;  // max number of tries for pub/sub loop
-//   rclcpp::WaitSet wait_set;          // block used to wait on message
-//   wait_set.add_subscription(subscription);
-//   while (max_sub_check_loop_count--) {
-//     range_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
-//     // check if message has been received
-//     if (wait_set.wait(std::chrono::milliseconds(2)).kind() == rclcpp::WaitResultKind::Ready) {
-//       break;
-//     }
-//   }
-//   // ASSERT_GE(max_sub_check_loop_count, 0) << "Test was unable to publish a message through "
-//   //                                           "controller/broadcaster update loop";
+  // call update to publish the test value
+  // since update doesn't guarantee a published message, republish until received
+  int max_sub_check_loop_count = 5;  // max number of tries for pub/sub loop
+  rclcpp::WaitSet wait_set;          // block used to wait on message
+  wait_set.add_subscription(subscription);
+  while (max_sub_check_loop_count--) {
+    range_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+    // check if message has been received
+    if (wait_set.wait(std::chrono::milliseconds(2)).kind() == rclcpp::WaitResultKind::Ready) {
+      break;
+    }
+  }
+  ASSERT_GE(max_sub_check_loop_count, 0) << "Test was unable to publish a message through "
+    "controller/broadcaster update loop";
 
-//   // take message from subscription
-//   rclcpp::MessageInfo msg_info;
-//   subscription->take(range_msg, msg_info);
-//   // ASSERT_TRUE(subscription->take(imu_msg, msg_info));
-// }
+  // take message from subscription
+  rclcpp::MessageInfo msg_info;
+  subscription->take(range_msg, msg_info);
+  // ASSERT_TRUE(subscription->take(range_msg, msg_info));
+}
 
 TEST_F(RangeSensorBroadcasterTest, Initialize_RangeBroadcaster_Exception)
 {
@@ -105,7 +105,8 @@ TEST_F(RangeSensorBroadcasterTest, Configure_RangeBroadcaster_Error_1)
   init_broadcaster("test_range_sensor_broadcaster");
 
   std::vector<rclcpp::Parameter> parameters;
-  parameters.emplace_back(rclcpp::Parameter("sensor_name", sensor_name_));
+  // explicitly give an empty sensor name to generate an error
+  parameters.emplace_back(rclcpp::Parameter("sensor_name", ""));
   ASSERT_EQ(configure_broadcaster(parameters), controller_interface::CallbackReturn::ERROR);
 }
 
@@ -115,7 +116,8 @@ TEST_F(RangeSensorBroadcasterTest, Configure_RangeBroadcaster_Error_2)
   init_broadcaster("test_range_sensor_broadcaster");
 
   std::vector<rclcpp::Parameter> parameters;
-  parameters.emplace_back(rclcpp::Parameter("frame_id", frame_id_));
+  // explicitly give an empty frame_id to generate an error
+  parameters.emplace_back(rclcpp::Parameter("frame_id", ""));
   ASSERT_EQ(configure_broadcaster(parameters), controller_interface::CallbackReturn::ERROR);
 }
 
@@ -124,38 +126,27 @@ TEST_F(RangeSensorBroadcasterTest, Configure_RangeBroadcaster_Success)
   // Third Test without sensor_name SUCCESS Expected
   init_broadcaster("test_range_sensor_broadcaster");
 
-  std::vector<rclcpp::Parameter> parameters;
-  parameters.emplace_back(rclcpp::Parameter("sensor_name", sensor_name_));
-  parameters.emplace_back(rclcpp::Parameter("frame_id", frame_id_));
-  ASSERT_EQ(configure_broadcaster(parameters), controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_EQ(
+    range_broadcaster_->on_configure(
+      rclcpp_lifecycle::State()), controller_interface::CallbackReturn::SUCCESS);
 }
 
-// TEST_F(RangeSensorBroadcasterTest, Activate_RangeBroadcaster_Success)
-// {
-//   init_broadcaster("test_range_sensor_broadcaster");
+TEST_F(RangeSensorBroadcasterTest, Activate_RangeBroadcaster_Success)
+{
+  init_broadcaster("test_range_sensor_broadcaster");
 
-//   std::vector<rclcpp::Parameter> parameters;
-//   parameters.emplace_back(rclcpp::Parameter("sensor_name", sensor_name_));
-//   parameters.emplace_back(rclcpp::Parameter("frame_id", frame_id_));
-//   configure_broadcaster(parameters);
+  range_broadcaster_->on_configure(rclcpp_lifecycle::State());
 
-//   ASSERT_EQ(
-//     range_broadcaster_->on_activate(
-//       rclcpp_lifecycle::State()), controller_interface::CallbackReturn::SUCCESS);
-// }
+  ASSERT_EQ(
+    range_broadcaster_->on_activate(
+      rclcpp_lifecycle::State()), controller_interface::CallbackReturn::SUCCESS);
+}
 
 TEST_F(RangeSensorBroadcasterTest, Update_RangeBroadcaster_Success)
 {
   init_broadcaster("test_range_sensor_broadcaster");
 
-  std::vector<rclcpp::Parameter> parameters;
-  parameters.emplace_back(rclcpp::Parameter("sensor_name", sensor_name_));
-  parameters.emplace_back(rclcpp::Parameter("frame_id", frame_id_));
-  configure_broadcaster(parameters);
-
   range_broadcaster_->on_configure(rclcpp_lifecycle::State());
-
-  // range_broadcaster_->on_activate(rclcpp_lifecycle::State());
   ASSERT_EQ(
     range_broadcaster_->on_activate(
       rclcpp_lifecycle::State()), controller_interface::CallbackReturn::SUCCESS);
@@ -167,6 +158,91 @@ TEST_F(RangeSensorBroadcasterTest, Update_RangeBroadcaster_Success)
   ASSERT_EQ(
     result,
     controller_interface::return_type::OK);
+}
+
+TEST_F(RangeSensorBroadcasterTest, Publish_RangeBroadcaster_Success)
+{
+  init_broadcaster("test_range_sensor_broadcaster");
+
+  range_broadcaster_->on_configure(rclcpp_lifecycle::State());
+  range_broadcaster_->on_activate(rclcpp_lifecycle::State());
+
+  sensor_msgs::msg::Range range_msg;
+  subscribe_and_get_message(range_msg);
+
+  EXPECT_EQ(range_msg.header.frame_id, frame_id_);
+  EXPECT_PRED_FORMAT2(::testing::FloatLE, range_msg.range, sensor_range_);
+  EXPECT_EQ(range_msg.radiation_type, radiation_type_);
+  EXPECT_PRED_FORMAT2(::testing::FloatLE, range_msg.field_of_view, field_of_view_);
+  EXPECT_PRED_FORMAT2(::testing::FloatLE, range_msg.min_range, min_range_);
+  EXPECT_PRED_FORMAT2(::testing::FloatLE, range_msg.max_range, max_range_);
+  EXPECT_PRED_FORMAT2(::testing::FloatLE, range_msg.variance, variance_);
+}
+
+TEST_F(RangeSensorBroadcasterTest, Publish_Bandaries_RangeBroadcaster_Success)
+{
+  init_broadcaster("test_range_sensor_broadcaster");
+
+  range_broadcaster_->on_configure(rclcpp_lifecycle::State());
+  range_broadcaster_->on_activate(rclcpp_lifecycle::State());
+
+  sensor_msgs::msg::Range range_msg;
+
+  sensor_range_ = 0.10;
+  subscribe_and_get_message(range_msg);
+
+  EXPECT_EQ(range_msg.header.frame_id, frame_id_);
+  EXPECT_PRED_FORMAT2(::testing::FloatLE, range_msg.range, sensor_range_);
+  EXPECT_EQ(range_msg.radiation_type, radiation_type_);
+  EXPECT_PRED_FORMAT2(::testing::FloatLE, range_msg.field_of_view, field_of_view_);
+  EXPECT_PRED_FORMAT2(::testing::FloatLE, range_msg.min_range, min_range_);
+  EXPECT_PRED_FORMAT2(::testing::FloatLE, range_msg.max_range, max_range_);
+  EXPECT_PRED_FORMAT2(::testing::FloatLE, range_msg.variance, variance_);
+
+  sensor_range_ = 4.0;
+  subscribe_and_get_message(range_msg);
+
+  EXPECT_EQ(range_msg.header.frame_id, frame_id_);
+  EXPECT_PRED_FORMAT2(::testing::FloatLE, range_msg.range, sensor_range_);
+  EXPECT_EQ(range_msg.radiation_type, radiation_type_);
+  EXPECT_PRED_FORMAT2(::testing::FloatLE, range_msg.field_of_view, field_of_view_);
+  EXPECT_PRED_FORMAT2(::testing::FloatLE, range_msg.min_range, min_range_);
+  EXPECT_PRED_FORMAT2(::testing::FloatLE, range_msg.max_range, max_range_);
+  EXPECT_PRED_FORMAT2(::testing::FloatLE, range_msg.variance, variance_);
+}
+
+TEST_F(RangeSensorBroadcasterTest, Publish_OutOfBandaries_RangeBroadcaster_Success)
+{
+  init_broadcaster("test_range_sensor_broadcaster");
+
+  range_broadcaster_->on_configure(rclcpp_lifecycle::State());
+  range_broadcaster_->on_activate(rclcpp_lifecycle::State());
+
+  sensor_msgs::msg::Range range_msg;
+
+  sensor_range_ = 0.0;
+  subscribe_and_get_message(range_msg);
+
+  EXPECT_EQ(range_msg.header.frame_id, frame_id_);
+  // Even out of boundaries you will get the out_of_range range value
+  EXPECT_PRED_FORMAT2(::testing::FloatLE, range_msg.range, sensor_range_);
+  EXPECT_EQ(range_msg.radiation_type, radiation_type_);
+  EXPECT_PRED_FORMAT2(::testing::FloatLE, range_msg.field_of_view, field_of_view_);
+  EXPECT_PRED_FORMAT2(::testing::FloatLE, range_msg.min_range, min_range_);
+  EXPECT_PRED_FORMAT2(::testing::FloatLE, range_msg.max_range, max_range_);
+  EXPECT_PRED_FORMAT2(::testing::FloatLE, range_msg.variance, variance_);
+
+  sensor_range_ = 6.0;
+  subscribe_and_get_message(range_msg);
+
+  EXPECT_EQ(range_msg.header.frame_id, frame_id_);
+  // Even out of boundaries you will get the out_of_range range value
+  EXPECT_PRED_FORMAT2(::testing::FloatLE, range_msg.range, sensor_range_);
+  EXPECT_EQ(range_msg.radiation_type, radiation_type_);
+  EXPECT_PRED_FORMAT2(::testing::FloatLE, range_msg.field_of_view, field_of_view_);
+  EXPECT_PRED_FORMAT2(::testing::FloatLE, range_msg.min_range, min_range_);
+  EXPECT_PRED_FORMAT2(::testing::FloatLE, range_msg.max_range, max_range_);
+  EXPECT_PRED_FORMAT2(::testing::FloatLE, range_msg.variance, variance_);
 }
 
 int main(int argc, char ** argv)
