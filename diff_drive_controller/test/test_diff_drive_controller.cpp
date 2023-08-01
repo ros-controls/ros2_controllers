@@ -74,7 +74,7 @@ public:
   *
   * @return Copy of realtime_odometry_publisher_ object
   */
-  std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>> get_rt_odom_publisher(void){
+  std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>> get_rt_odom_publisher(){
       return realtime_odometry_publisher_;
   }
 
