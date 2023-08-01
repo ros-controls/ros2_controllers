@@ -54,6 +54,11 @@ pluginlib_export_plugin_description_file(
   controller_interface range_sensor_broadcaster.xml)
 
 if(BUILD_TESTING)
+  find_package(ament_cmake_gmock REQUIRED)
+  find_package(ament_cmake_gtest REQUIRED)
+  find_package(controller_manager REQUIRED)
+  find_package(hardware_interface REQUIRED)
+  find_package(ros2_control_test_assets REQUIRED)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights
   # comment the line when a copyright and license is added to all source files
@@ -63,6 +68,19 @@ if(BUILD_TESTING)
   # a copyright and license is added to all source files
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
+
+  add_rostest_with_parameters_gmock(test_range_sensor_broadcaster
+    test/test_range_sensor_broadcaster.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/range_sensor_broadcaster_params.yaml)
+  target_include_directories(test_range_sensor_broadcaster PRIVATE include)
+  target_link_libraries(test_range_sensor_broadcaster
+    range_sensor_broadcaster
+  )
+  ament_target_dependencies(test_range_sensor_broadcaster
+    hardware_interface
+  )
+
+
 endif()
 
 install(

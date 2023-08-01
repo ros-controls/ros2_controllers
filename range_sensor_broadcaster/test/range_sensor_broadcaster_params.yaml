@@ -1,0 +1,8 @@
+test_range_sensor_broadcaster:
+  ros__parameters:
+    # sensor_name: "range_sensor"
+    # frame_id: "range_sensor_frame"
+    radiation_type: 0
+    field_of_view: 0.52
+    min_range: 0.10
+    max_range: 4.0
