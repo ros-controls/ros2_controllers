@@ -25,10 +25,13 @@ namespace range_sensor_broadcaster
 {
 controller_interface::CallbackReturn RangeSensorBroadcaster::on_init()
 {
-  try {
+  try
+  {
     param_listener_ = std::make_shared<ParamListener>(get_node());
     params_ = param_listener_->get_params();
-  } catch (const std::exception & e) {
+  }
+  catch (const std::exception & e)
+  {
     RCLCPP_ERROR(
       get_node()->get_logger(), "Exception thrown during init stage with message: %s \n", e.what());
     return CallbackReturn::ERROR;
@@ -41,24 +44,29 @@ controller_interface::CallbackReturn RangeSensorBroadcaster::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   params_ = param_listener_->get_params();
-  if (params_.sensor_name.empty()) {
+  if (params_.sensor_name.empty())
+  {
     RCLCPP_ERROR(get_node()->get_logger(), "'sensor_name' parameter has to be specified.");
     return CallbackReturn::ERROR;
   }
 
-  if (params_.frame_id.empty()) {
+  if (params_.frame_id.empty())
+  {
     RCLCPP_ERROR(get_node()->get_logger(), "'frame_id' parameter has to be provided.");
     return CallbackReturn::ERROR;
   }
 
   range_sensor_ = std::make_unique<semantic_components::RangeSensor>(
     semantic_components::RangeSensor(params_.sensor_name));
-  try {
+  try
+  {
     // register ft sensor data publisher
     sensor_state_publisher_ =
       get_node()->create_publisher<sensor_msgs::msg::Range>("~/range", rclcpp::SystemDefaultsQoS());
     realtime_publisher_ = std::make_unique<StatePublisher>(sensor_state_publisher_);
-  } catch (const std::exception & e) {
+  }
+  catch (const std::exception & e)
+  {
     fprintf(
       stderr, "Exception thrown during publisher creation at configure stage with message : %s \n",
       e.what());
@@ -87,7 +95,7 @@ RangeSensorBroadcaster::command_interface_configuration() const
 }
 
 controller_interface::InterfaceConfiguration RangeSensorBroadcaster::state_interface_configuration()
-const
+  const
 {
   controller_interface::InterfaceConfiguration state_interfaces_config;
   state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
@@ -112,7 +120,8 @@ controller_interface::CallbackReturn RangeSensorBroadcaster::on_deactivate(
 controller_interface::return_type RangeSensorBroadcaster::update(
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
-  if (realtime_publisher_ && realtime_publisher_->trylock()) {
+  if (realtime_publisher_ && realtime_publisher_->trylock())
+  {
     realtime_publisher_->msg_.header.stamp = time;
     range_sensor_->get_values_as_message(realtime_publisher_->msg_);
     realtime_publisher_->unlockAndPublish();

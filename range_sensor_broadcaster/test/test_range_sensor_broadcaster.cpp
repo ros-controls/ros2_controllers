@@ -24,10 +24,7 @@ void RangeSensorBroadcasterTest::SetUp()
   range_broadcaster_ = std::make_unique<range_sensor_broadcaster::RangeSensorBroadcaster>();
 }
 
-void RangeSensorBroadcasterTest::TearDown()
-{
-  range_broadcaster_.reset(nullptr);
-}
+void RangeSensorBroadcasterTest::TearDown() { range_broadcaster_.reset(nullptr); }
 
 controller_interface::return_type RangeSensorBroadcasterTest::init_broadcaster(
   std::string broadcaster_name)
@@ -36,8 +33,8 @@ controller_interface::return_type RangeSensorBroadcasterTest::init_broadcaster(
   // result = range_broadcaster_->init("test_range_sensor_broadcaster");
   result = range_broadcaster_->init(broadcaster_name);
 
-  if (controller_interface::return_type::OK == result) {
-
+  if (controller_interface::return_type::OK == result)
+  {
     std::vector<hardware_interface::LoanedStateInterface> state_interfaces;
     state_interfaces.emplace_back(range_);
 
@@ -51,7 +48,8 @@ controller_interface::CallbackReturn RangeSensorBroadcasterTest::configure_broad
   std::vector<rclcpp::Parameter> & parameters)
 {
   // Configure the broadcaster
-  for (auto parameter : parameters) {
+  for (auto parameter : parameters)
+  {
     range_broadcaster_->get_node()->set_parameter(parameter);
   }
 
@@ -71,15 +69,17 @@ void RangeSensorBroadcasterTest::subscribe_and_get_message(sensor_msgs::msg::Ran
   int max_sub_check_loop_count = 5;  // max number of tries for pub/sub loop
   rclcpp::WaitSet wait_set;          // block used to wait on message
   wait_set.add_subscription(subscription);
-  while (max_sub_check_loop_count--) {
+  while (max_sub_check_loop_count--)
+  {
     range_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
     // check if message has been received
-    if (wait_set.wait(std::chrono::milliseconds(2)).kind() == rclcpp::WaitResultKind::Ready) {
+    if (wait_set.wait(std::chrono::milliseconds(2)).kind() == rclcpp::WaitResultKind::Ready)
+    {
       break;
     }
   }
   ASSERT_GE(max_sub_check_loop_count, 0) << "Test was unable to publish a message through "
-    "controller/broadcaster update loop";
+                                            "controller/broadcaster update loop";
 
   // take message from subscription
   rclcpp::MessageInfo msg_info;
@@ -95,8 +95,7 @@ TEST_F(RangeSensorBroadcasterTest, Initialize_RangeBroadcaster_Exception)
 TEST_F(RangeSensorBroadcasterTest, Initialize_RangeBroadcaster_Success)
 {
   ASSERT_EQ(
-    init_broadcaster("test_range_sensor_broadcaster"),
-    controller_interface::return_type::OK);
+    init_broadcaster("test_range_sensor_broadcaster"), controller_interface::return_type::OK);
 }
 
 TEST_F(RangeSensorBroadcasterTest, Configure_RangeBroadcaster_Error_1)
@@ -127,8 +126,8 @@ TEST_F(RangeSensorBroadcasterTest, Configure_RangeBroadcaster_Success)
   init_broadcaster("test_range_sensor_broadcaster");
 
   ASSERT_EQ(
-    range_broadcaster_->on_configure(
-      rclcpp_lifecycle::State()), controller_interface::CallbackReturn::SUCCESS);
+    range_broadcaster_->on_configure(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::SUCCESS);
 }
 
 TEST_F(RangeSensorBroadcasterTest, Activate_RangeBroadcaster_Success)
@@ -138,8 +137,8 @@ TEST_F(RangeSensorBroadcasterTest, Activate_RangeBroadcaster_Success)
   range_broadcaster_->on_configure(rclcpp_lifecycle::State());
 
   ASSERT_EQ(
-    range_broadcaster_->on_activate(
-      rclcpp_lifecycle::State()), controller_interface::CallbackReturn::SUCCESS);
+    range_broadcaster_->on_activate(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::SUCCESS);
 }
 
 TEST_F(RangeSensorBroadcasterTest, Update_RangeBroadcaster_Success)
@@ -148,16 +147,15 @@ TEST_F(RangeSensorBroadcasterTest, Update_RangeBroadcaster_Success)
 
   range_broadcaster_->on_configure(rclcpp_lifecycle::State());
   ASSERT_EQ(
-    range_broadcaster_->on_activate(
-      rclcpp_lifecycle::State()), controller_interface::CallbackReturn::SUCCESS);
+    range_broadcaster_->on_activate(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::SUCCESS);
   // range_broadcaster_->get_node()->get_clock()->now();
-  // auto result = range_broadcaster_->update(rclcpp::Time(0.0), rclcpp::Duration::from_seconds(0.01));
+  // auto result = range_broadcaster_->update(rclcpp::Time(0.0),
+  // rclcpp::Duration::from_seconds(0.01));
   auto result = range_broadcaster_->update(
     range_broadcaster_->get_node()->get_clock()->now(), rclcpp::Duration::from_seconds(0.01));
 
-  ASSERT_EQ(
-    result,
-    controller_interface::return_type::OK);
+  ASSERT_EQ(result, controller_interface::return_type::OK);
 }
 
 TEST_F(RangeSensorBroadcasterTest, Publish_RangeBroadcaster_Success)
