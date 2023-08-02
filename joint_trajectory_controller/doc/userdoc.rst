@@ -12,21 +12,7 @@ Trajectories are specified as a set of waypoints to be reached at specific time 
 which the controller attempts to execute as well as the mechanism allows.
 Waypoints consist of positions, and optionally velocities and accelerations.
 
-
-*Parts of this documentation were originally published in the ROS 1 wiki under the* `CC BY 3.0 license <http://creativecommons.org/licenses/by/3.0/>`_. *Citations are given in the respective section, but were adapted for the ROS 2 implementation.* [#f1]_ [#f2]_
-
-Trajectory representation [#f1]_
----------------------------------
-
-Trajectories are represented internally with ``trajectory_msgs/msg/JointTrajectory`` data structure.
-By default, a spline interpolator is provided, but it's possible to support other representations.
-The spline interpolator uses the following interpolation strategies depending on the waypoint specification:
-
-* Linear: Only position is specified. Guarantees continuity at the position level. Discouraged because it yields trajectories with discontinuous velocities at the waypoints.
-
-* Cubic: Position and velocity are specified. Guarantees continuity at the velocity level.
-
-* Quintic: Position, velocity and acceleration are specified: Guarantees continuity at the acceleration level.
+*Parts of this documentation were originally published in the ROS 1 wiki under the* `CC BY 3.0 license <https://creativecommons.org/licenses/by/3.0/>`_. *Citations are given in the respective section, but were adapted for the ROS 2 implementation.* [#f1]_
 
 Hardware interface type [#f1]_
 -------------------------------
@@ -114,140 +100,9 @@ Preemption policy [#f1]_
 
 Only one action goal can be active at any moment, or none if the topic interface is used. Path and goal tolerances are checked only for the trajectory segments of the active goal.
 
-When an active action goal is preempted by another command coming from the action interface, the goal is canceled and the client is notified.
+When an active action goal is preempted by another command coming from the action interface, the goal is canceled and the client is notified. The trajectory is replaced in a defined way, see :ref:`trajectory replacement <joint_trajectory_controller_trajectory_replacement>`.
 
 Sending an empty trajectory message from the topic interface (not the action interface) will override the current action goal and not abort the action.
-
-.. _parameters:
-
-Details about parameters
-^^^^^^^^^^^^^^^^^^^^^^^^
-
-joints (list(string))
-  Joint names to control and listen to.
-
-command_joints (list(string))
-  Joint names to control. This parameters is used if JTC is used in a controller chain where command and state interfaces don't have same names.
-
-command_interface (list(string))
-  Command interfaces provided by the hardware interface for all joints.
-
-  Values: [position | velocity | acceleration] (multiple allowed)
-
-state_interfaces (list(string))
-  State interfaces provided by the hardware for all joints.
-
-  Values: position (mandatory) [velocity, [acceleration]].
-  Acceleration interface can only be used in combination with position and velocity.
-
-action_monitor_rate (double)
-  Rate to monitor status changes when the controller is executing action (control_msgs::action::FollowJointTrajectory).
-
-  Default: 20.0
-
-allow_partial_joints_goal (boolean)
-  Allow joint goals defining trajectory for only some joints.
-
-  Default: false
-
-allow_integration_in_goal_trajectories (boolean)
-  Allow integration in goal trajectories to accept goals without position or velocity specified
-
-  Default: false
-
-interpolation_method (string)
-  The type of interpolation to use, if any. Can be "splines" or "none".
-
-  Default: splines
-
-open_loop_control (boolean)
-  Use controller in open-loop control mode:
-
-  * The controller ignores the states provided by hardware interface but using last commands as states for starting the trajectory interpolation.
-  * It deactivates the feedback control, see the ``gains`` structure.
-
-  This is useful if hardware states are not following commands, i.e., an offset between those (typical for hydraulic manipulators).
-
-  .. Note::
-     If this flag is set, the controller tries to read the values from the command interfaces on activation.
-     If they have real numeric values, those will be used instead of state interfaces.
-     Therefore it is important set command interfaces to NaN (i.e., ``std::numeric_limits<double>::quiet_NaN()``) or state values when the hardware is started.
-
-  Default: false
-
-allow_nonzero_velocity_at_trajectory_end (boolean)
-  If false, the last velocity point has to be zero or the goal will be rejected.
-
-  Default: true
-
-constraints (structure)
-  Default values for tolerances if no explicit values are states in JointTrajectory message.
-
-constraints.stopped_velocity_tolerance (double)
-  Default value for end velocity deviation.
-
-  Default: 0.01
-
-constraints.goal_time (double)
-  Maximally allowed tolerance for not reaching the end of the trajectory in a predefined time.
-
-  Default: 0.0 (not checked)
-
-constraints.<joint_name>.trajectory (double)
-  Maximally allowed deviation from the target trajectory for a given joint.
-
-  Default: 0.0 (tolerance is not enforced)
-
-constraints.<joint_name>.goal (double)
-  Maximally allowed deviation from the goal (end of the trajectory) for a given joint.
-
-  Default: 0.0 (tolerance is not enforced)
-
-gains (structure)
-  Only relevant, if ``open_loop_control`` is not set.
-
-  If ``velocity`` is the only command interface for all joints or an ``effort`` command interface is configured, PID controllers are used for every joint.
-  This structure contains the controller gains for every joint with the control law
-
-  .. math::
-
-     u = k_{ff} v_d + k_p e + k_i \sum e dt + k_d (v_d - v)
-
-  with the desired velocity :math:`v_d`, the measured velocity :math:`v`, the position error :math:`e` (definition see below),
-  the controller period :math:`dt`, and the ``velocity`` or ``effort`` manipulated variable (control variable) :math:`u`, respectively.
-
-gains.<joint_name>.p (double)
-  Proportional gain :math:`k_p` for PID
-
-  Default: 0.0
-
-gains.<joint_name>.i (double)
-  Integral gain :math:`k_i` for PID
-
-  Default: 0.0
-
-gains.<joint_name>.d (double)
-  Derivative gain :math:`k_d` for PID
-
-  Default: 0.0
-
-gains.<joint_name>.i_clamp (double)
-  Integral clamp. Symmetrical in both positive and negative direction.
-
-  Default: 0.0
-
-gains.<joint_name>.ff_velocity_scale (double)
-  Feed-forward scaling :math:`k_{ff}` of velocity
-
-  Default: 0.0
-
-gains.<joint_name>.normalize_error (bool)
-  If true, the position error :math:`e = normalize(s_d - s)` is normalized between :math:`-\pi, \pi`.
-  Otherwise  :math:`e = s_d - s` is used, with the desired position :math:`s_d` and the measured
-  position :math:`s` from the state interface. Use this for revolute joints without end stop,
-  where the shortest rotation to the target position is the desired motion.
-
-  Default: false
 
 
 .. _ROS 2 interface:
@@ -281,7 +136,7 @@ There are two mechanisms for sending trajectories to the controller:
 * via action, see :ref:`actions <Actions>`
 * via topic, see :ref:`subscriber <Subscriber>`
 
-Both use the ``trajectory_msgs/JointTrajectory`` message to specify trajectories, and require specifying values for all the controller joints (as opposed to only a subset) if ``allow_partial_joints_goal`` is not set to ``True``.
+Both use the ``trajectory_msgs/msg/JointTrajectory`` message to specify trajectories, and require specifying values for all the controller joints (as opposed to only a subset) if ``allow_partial_joints_goal`` is not set to ``True``. For further information on the message format, see :ref:`trajectory representation <joint_trajectory_controller_trajectory_representation>`.
 
 .. _Actions:
 
@@ -324,17 +179,27 @@ Services
   Query controller state at any future time
 
 
-Specialized versions of JointTrajectoryController (TBD in ...)
+Specialized versions of JointTrajectoryController
 --------------------------------------------------------------
+(TBD in ...)
 
-The controller types are placed into namespaces according to their command types for the hardware (see `general introduction into controllers <../../index.rst>`_).
+The controller types are placed into namespaces according to their command types for the hardware (see :ref:`controllers`).
 
 The following version of the Joint Trajectory Controller are available mapping the following interfaces:
 
 * position_controllers::JointTrajectoryController
 
 
+Further information
+--------------------------------------------------------------
+
+.. toctree::
+   :titlesonly:
+
+   Trajectory Representation <trajectory.rst>
+   joint_trajectory_controller Parameters <parameters.rst>
+
+
 .. rubric:: Footnote
 
 .. [#f1] Adolfo Rodriguez: `joint_trajectory_controller <http://wiki.ros.org/joint_trajectory_controller>`_
-.. [#f2] Adolfo Rodriguez: `Understanding trajectory replacement <http://wiki.ros.org/joint_trajectory_controller/UnderstandingTrajectoryReplacement>`_
