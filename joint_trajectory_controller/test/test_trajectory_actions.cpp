@@ -72,22 +72,14 @@ protected:
   {
     setup_executor_ = true;
 
-<<<<<<< HEAD
-    executor_ = std::make_unique<rclcpp::executors::MultiThreadedExecutor>();
-
-    SetUpAndActivateTrajectoryController(true, parameters);
-
-    executor_->add_node(traj_controller_->get_node()->get_node_base_interface());
-=======
     SetUpAndActivateTrajectoryController(
       executor_, true, parameters, separate_cmd_and_state_values);
->>>>>>> 7e13d1d ([JTC] Fix time sources and wrong checks in tests (#686))
 
     SetUpActionClient();
 
-    executor_->add_node(node_->get_node_base_interface());
+    executor_.add_node(node_->get_node_base_interface());
 
-    executor_future_handle_ = std::async(std::launch::async, [&]() -> void { executor_->spin(); });
+    executor_future_handle_ = std::async(std::launch::async, [&]() -> void { executor_.spin(); });
   }
 
   void SetUpControllerHardware()
@@ -139,7 +131,7 @@ protected:
     if (setup_executor_)
     {
       setup_executor_ = false;
-      executor_->cancel();
+      executor_.cancel();
       executor_future_handle_.wait();
     }
   }
@@ -176,7 +168,7 @@ protected:
   int common_action_result_code_ = control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL;
 
   bool setup_executor_ = false;
-  rclcpp::executors::MultiThreadedExecutor::UniquePtr executor_;
+  rclcpp::executors::MultiThreadedExecutor executor_;
   std::future<void> executor_future_handle_;
 
   bool setup_controller_hw_ = false;
@@ -461,7 +453,7 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_state_tolerances_fail)
     common_action_result_code_);
 
   // run an update, it should be holding
-  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+  updateController(rclcpp::Duration::from_seconds(0.01));
 
   if (traj_controller_->has_position_command_interface())
   {
@@ -511,13 +503,8 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_goal_tolerances_fail)
     control_msgs::action::FollowJointTrajectory_Result::GOAL_TOLERANCE_VIOLATED,
     common_action_result_code_);
 
-<<<<<<< HEAD
-  // run an update, it should be holding
-  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
-=======
   // run an update, it should be holding the last received goal
   updateController(rclcpp::Duration::from_seconds(0.01));
->>>>>>> 7e13d1d ([JTC] Fix time sources and wrong checks in tests (#686))
 
   if (traj_controller_->has_position_command_interface())
   {
@@ -567,7 +554,7 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_no_time_from_start_state_tol
     common_action_result_code_);
 
   // run an update, it should be holding
-  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+  updateController(rclcpp::Duration::from_seconds(0.01));
 
   if (traj_controller_->has_position_command_interface())
   {
@@ -619,7 +606,7 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_cancel_hold_position)
   const double prev_pos3 = joint_pos_[2];
 
   // run an update, it should be holding
-  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+  updateController(rclcpp::Duration::from_seconds(0.01));
 
   if (traj_controller_->has_position_command_interface())
   {
