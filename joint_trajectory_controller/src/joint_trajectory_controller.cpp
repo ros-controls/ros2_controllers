@@ -1323,8 +1323,12 @@ void JointTrajectoryController::sort_to_local_joint_order(
         get_node()->get_logger(), "Invalid input size (%zu) for sorting", to_remap.size());
       return to_remap;
     }
-    std::vector<double> output;
-    output.resize(mapping.size(), 0.0);
+    static std::vector<double> output(dof_, 0.0);
+    // Only resize if necessary since it's an expensive operation
+    if (output.size() != mapping.size())
+    {
+      output.resize(mapping.size(), 0.0);
+    }
     for (size_t index = 0; index < mapping.size(); ++index)
     {
       auto map_index = mapping[index];
