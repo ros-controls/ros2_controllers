@@ -247,7 +247,7 @@ TEST_F(AdmittanceControllerTest, publish_status_success)
   EXPECT_NEAR(msg.wrench_base.wrench.force.x, 0.0, 0.03);
   EXPECT_NEAR(msg.wrench_base.wrench.force.y, 0.0, 0.03);
   EXPECT_NEAR(msg.wrench_base.wrench.force.z, 23.0, 0.03);
-  EXPECT_NEAR(msg.wrench_base.wrench.torque.x, 0.1*23, 0.03);
+  EXPECT_NEAR(msg.wrench_base.wrench.torque.x, 0.1 * 23, 0.03);
   EXPECT_NEAR(msg.wrench_base.wrench.torque.y, 0.0, 0.03);
   EXPECT_NEAR(msg.wrench_base.wrench.torque.z, 0.0, 0.03);
 
@@ -268,7 +268,7 @@ TEST_F(AdmittanceControllerTest, compensation_success)
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
   // set the force on the force torque sensor to simulate gravity pulling
-  fts_state_values_ = {0.0, 0.0, -23.0, -0.1*23, 0, 0.0};
+  fts_state_values_ = {0.0, 0.0, -23.0, -0.1 * 23, 0, 0.0};
   broadcast_tfs();
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),

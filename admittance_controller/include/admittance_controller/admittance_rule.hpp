@@ -168,7 +168,7 @@ protected:
    * Calculates the admittance rule from given the robot's current joint angles. The admittance
    * controller state input is updated with the new calculated values. A boolean value is returned
    * indicating if any of the kinematics plugin calls failed.
-   * \param[in] admittance_state contains all the information needed to calculate 
+   * \param[in] admittance_state contains all the information needed to calculate
    * the admittance offset
    * \param[in] dt controller period
    * \param[out] success true if no calls to the kinematics interface fail

@@ -70,7 +70,7 @@ test_admittance_controller:
         name: "gravity_compensation"
         params:
           world_frame: "fixed_world_frame"
-          sensor_frame: "ft_mount"  
+          sensor_frame: "ft_mount"
           CoG:
             pos: [0.0, 0.1, 0.0]  # in sensor_frame
             force: [0.0, 0.0, -23.0]  # -gravity_acc * mass  in world_frame
@@ -168,7 +168,7 @@ test_admittance_controller_no_mass:
         name: "gravity_compensation"
         params:
           world_frame: "fixed_world_frame"
-          sensor_frame: "ft_mount"  
+          sensor_frame: "ft_mount"
           CoG:
             pos: [0.0, 0.0, 0.0]  # in sensor_frame
             force: [0.0, 0.0, 0.0]  # -gravity_acc * mass  in world_frame

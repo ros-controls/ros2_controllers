@@ -253,7 +253,7 @@ protected:
     transform_stamped.transform.rotation.y = 0;
     transform_stamped.transform.rotation.z = 0;
     transform_stamped.transform.rotation.w = 1;
-  
+
     transform_stamped.child_frame_id = ik_tip_frame_;
     // world to kinematic tip frame
     br.sendTransform(transform_stamped);
@@ -290,8 +290,8 @@ protected:
     auto subs_callback = [&](const ControllerStateMsg::SharedPtr) {};
     std::string topic = controller_->get_node()->get_name();
     topic += "/status";
-    auto subscription = test_subscription_node_->create_subscription<ControllerStateMsg>(
-      topic, 10, subs_callback);
+    auto subscription =
+      test_subscription_node_->create_subscription<ControllerStateMsg>(topic, 10, subs_callback);
 
     // call update to publish the test value
     ASSERT_EQ(
