@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 project(joint_trajectory_controller LANGUAGES CXX)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
-  add_compile_options(-Wall -Wextra)
+  add_compile_options(-Wall -Wextra -Wconversion)
 endif()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
@@ -80,13 +80,13 @@ if(BUILD_TESTING)
     ros2_control_test_assets
   )
 
-  # TODO(andyz): Disabled due to flakiness
-  # ament_add_gmock(test_trajectory_actions
-  #   test/test_trajectory_actions.cpp
-  # )
-  # target_link_libraries(test_trajectory_actions
-  #   joint_trajectory_controller
-  # )
+  ament_add_gmock(test_trajectory_actions
+    test/test_trajectory_actions.cpp
+  )
+  set_tests_properties(test_trajectory_actions PROPERTIES TIMEOUT 300)
+  target_link_libraries(test_trajectory_actions
+    joint_trajectory_controller
+  )
 endif()
 
 

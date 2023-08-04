@@ -22,7 +22,7 @@ joint_trajectory_controller:
     validation: {
       unique<>: null,
       subset_of<>: [["position", "velocity", "acceleration", "effort",]],
-      command_interface_type_combinations: null,
+      "joint_trajectory_controller::command_interface_type_combinations": null,
     }
   }
   state_interfaces: {
@@ -32,7 +32,7 @@ joint_trajectory_controller:
     validation: {
       unique<>: null,
       subset_of<>: [["position", "velocity", "acceleration",]],
-      state_interface_type_combinations: null,
+      "joint_trajectory_controller::state_interface_type_combinations": null,
     }
   }
   allow_partial_joints_goal: {
@@ -65,6 +65,11 @@ joint_trajectory_controller:
     validation: {
       one_of<>: [["splines", "none"]],
     }
+  }
+  allow_nonzero_velocity_at_trajectory_end: {
+    type: bool,
+    default_value: true,
+    description: "If false, the last velocity point has to be zero or the goal will be rejected",
   }
   gains:
     __map_joints:

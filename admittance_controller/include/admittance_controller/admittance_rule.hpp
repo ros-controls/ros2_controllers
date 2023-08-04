@@ -41,13 +41,16 @@ namespace admittance_controller
 {
 struct AdmittanceTransforms
 {
-  // transformation from FT sensor frame to base frame at ref joint angles
+  // transformation from force torque sensor frame to base link frame at reference joint angles
   Eigen::Isometry3d ref_base_ft_;
-  // transformation from FT sensor frame to base frame at ref + admittance offset joint angles
+  // transformation from force torque sensor frame to base link frame at reference + admittance
+  // offset joint angles
   Eigen::Isometry3d base_ft_;
-  // transformation from control frame to base frame at ref + admittance offset joint angles
+  // transformation from control frame to base link frame at reference + admittance offset joint
+  // angles
   Eigen::Isometry3d base_control_;
-  // transformation from end effector frame to base frame at ref + admittance offset joint angles
+  // transformation from end effector frame to base link frame at reference + admittance offset
+  // joint angles
   Eigen::Isometry3d base_tip_;
 };
 
@@ -109,9 +112,9 @@ public:
   controller_interface::return_type reset(const size_t num_joints);
 
   /**
-   * Calculate all transforms needed for admittance control using the loader kinematics plugin. If the transform does
-   * not exist in the kinematics model, then TF will be used for lookup. The return value is true if all transformation
-   * are calculated without an error
+   * Calculate all transforms needed for admittance control using the loader kinematics plugin. If
+   * the transform does not exist in the kinematics model, then TF will be used for lookup. The
+   * return value is true if all transformation are calculated without an error
    * \param[in] current_joint_state current joint state of the robot
    * \param[in] reference_joint_state input joint state reference
    * \param[out] success true if no calls to the kinematics interface fail
@@ -121,8 +124,9 @@ public:
     const trajectory_msgs::msg::JointTrajectoryPoint & reference_joint_state);
 
   /**
-   * Updates parameter_ struct if any parameters have changed since last update. Parameter dependent Eigen field
-   * members (end_effector_weight_, cog_pos_, mass_, mass_inv_ stiffness, selected_axes, damping_) are also updated
+   * Updates parameter_ struct if any parameters have changed since last update. Parameter dependent
+   * Eigen field members (end_effector_weight_, cog_pos_, mass_, mass_inv_ stiffness, selected_axes,
+   * damping_) are also updated
    */
   void apply_parameters_update();
 
@@ -134,7 +138,8 @@ public:
    * \param[in] measured_wrench most recent measured wrench from force torque sensor
    * \param[in] reference_joint_state input joint state reference
    * \param[in] period time in seconds since last controller update
-   * \param[out] desired_joint_state joint state reference after the admittance offset is applied to the input reference
+   * \param[out] desired_joint_state joint state reference after the admittance offset is applied to
+   * the input reference
    */
   controller_interface::return_type update(
     const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state,
@@ -146,7 +151,8 @@ public:
   /**
    * Set fields of `state_message` from current admittance controller state.
    *
-   * \param[out] state_message message containing target position/vel/accel, wrench, and actual robot state, among other things
+   * \param[out] state_message message containing target position/vel/accel, wrench, and actual
+   * robot state, among other things
    */
   const control_msgs::msg::AdmittanceControllerState & get_controller_state();
 
@@ -159,10 +165,11 @@ public:
 
 protected:
   /**
-   * Calculates the admittance rule from given the robot's current joint angles. The admittance controller state input
-   * is updated with the new calculated values. A boolean value is returned indicating if any of the kinematics plugin
-   * calls failed.
-   * \param[in] admittance_state contains all the information needed to calculate the admittance offset
+   * Calculates the admittance rule from given the robot's current joint angles. The admittance
+   * controller state input is updated with the new calculated values. A boolean value is returned
+   * indicating if any of the kinematics plugin calls failed.
+   * \param[in] admittance_state contains all the information needed to calculate 
+   * the admittance offset
    * \param[in] dt controller period
    * \param[out] success true if no calls to the kinematics interface fail
    */

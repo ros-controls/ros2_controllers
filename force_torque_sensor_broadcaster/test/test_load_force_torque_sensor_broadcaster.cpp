@@ -28,8 +28,6 @@
 
 TEST(TestLoadForceTorqueSensorBroadcaster, load_controller)
 {
-  rclcpp::init(0, nullptr);
-
   std::shared_ptr<rclcpp::Executor> executor =
     std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
 
@@ -38,9 +36,18 @@ TEST(TestLoadForceTorqueSensorBroadcaster, load_controller)
       ros2_control_test_assets::minimal_robot_urdf),
     executor, "test_controller_manager");
 
-  ASSERT_NO_THROW(cm.load_controller(
-    "test_force_torque_sensor_broadcaster",
-    "force_torque_sensor_broadcaster/ForceTorqueSensorBroadcaster"));
+  ASSERT_NE(
+    cm.load_controller(
+      "test_force_torque_sensor_broadcaster",
+      "force_torque_sensor_broadcaster/ForceTorqueSensorBroadcaster"),
+    nullptr);
+}
 
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleMock(&argc, argv);
+  rclcpp::init(argc, argv);
+  int result = RUN_ALL_TESTS();
   rclcpp::shutdown();
+  return result;
 }
