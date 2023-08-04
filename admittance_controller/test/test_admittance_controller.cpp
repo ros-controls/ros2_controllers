@@ -243,12 +243,13 @@ TEST_F(AdmittanceControllerTest, publish_status_success)
 
   //   // Check that wrench command match the compensation for -m*g =-23 and CoG 0.1 x
   ASSERT_EQ(msg.wrench_base.header.frame_id, ik_base_frame_);
-  EXPECT_NEAR(msg.wrench_base.wrench.force.x, -20.713, COMMON_THRESHOLD);
-  EXPECT_NEAR(msg.wrench_base.wrench.force.y, 3.3487, COMMON_THRESHOLD);
-  EXPECT_NEAR(msg.wrench_base.wrench.force.z, -9.42043, COMMON_THRESHOLD);
-  EXPECT_NEAR(msg.wrench_base.wrench.torque.x, 0.7209, COMMON_THRESHOLD);
-  EXPECT_NEAR(msg.wrench_base.wrench.torque.y, -1.001, COMMON_THRESHOLD);
-  EXPECT_NEAR(msg.wrench_base.wrench.torque.z, -1.94115, COMMON_THRESHOLD);
+  // larger tolerance because initial pose does not make link_6 perfectly oriented like world
+  EXPECT_NEAR(msg.wrench_base.wrench.force.x, 0.0, 0.03);
+  EXPECT_NEAR(msg.wrench_base.wrench.force.y, 0.0, 0.03);
+  EXPECT_NEAR(msg.wrench_base.wrench.force.z, 23.0, 0.03);
+  EXPECT_NEAR(msg.wrench_base.wrench.torque.x, 0.1*23, 0.03);
+  EXPECT_NEAR(msg.wrench_base.wrench.torque.y, 0.0, 0.03);
+  EXPECT_NEAR(msg.wrench_base.wrench.torque.z, 0.0, 0.03);
 
   //   // Check joint command message
   //   for (auto i = 0ul; i < joint_names_.size(); i++)
@@ -260,9 +261,44 @@ TEST_F(AdmittanceControllerTest, publish_status_success)
   //   }
 }
 
-TEST_F(AdmittanceControllerTest, receive_message_and_publish_updated_status)
+TEST_F(AdmittanceControllerTest, compensation_success)
 {
   SetUpController();
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  // set the force on the force torque sensor to simulate gravity pulling
+  fts_state_values_ = {0.0, 0.0, -23.0, -0.1*23, 0, 0.0};
+  broadcast_tfs();
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  // after first update, Low-Pass filter output is null
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  // after second update, Low-Pass filter output not yet to 100 % output
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  ControllerStateMsg msg;
+  subscribe_and_get_messages(msg);
+
+  //   // Check that wrench command match the compensation for -m*g =-23 and CoG 0.1 x
+  ASSERT_EQ(msg.wrench_base.header.frame_id, ik_base_frame_);
+  // larger tolerance because initial pose does not make link_6 perfectly oriented like world
+  EXPECT_NEAR(msg.wrench_base.wrench.force.x, 0.0, COMMON_THRESHOLD);
+  EXPECT_NEAR(msg.wrench_base.wrench.force.y, 0.0, COMMON_THRESHOLD);
+  EXPECT_NEAR(msg.wrench_base.wrench.force.z, 0.0, COMMON_THRESHOLD);
+  EXPECT_NEAR(msg.wrench_base.wrench.torque.x, 0.0, COMMON_THRESHOLD);
+  EXPECT_NEAR(msg.wrench_base.wrench.torque.y, 0.0, COMMON_THRESHOLD);
+  EXPECT_NEAR(msg.wrench_base.wrench.torque.z, 0.0, COMMON_THRESHOLD);
+}
+
+TEST_F(AdmittanceControllerTest, receive_message_and_publish_updated_status)
+{
+  SetUpController("test_admittance_controller_no_mass");
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 

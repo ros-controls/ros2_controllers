@@ -145,11 +145,11 @@ public:
     command_publisher_node_ = std::make_shared<rclcpp::Node>("command_publisher");
     force_command_publisher_ =
       command_publisher_node_->create_publisher<ControllerCommandWrenchMsg>(
-        "/test_admittance_controller/force_references", rclcpp::SystemDefaultsQoS());
+        "/test_admittance_controller_no_mass/force_references", rclcpp::SystemDefaultsQoS());
     // pose_command_publisher_ =command_publisher_node_->create_publisher<ControllerCommandPoseMsg>(
     //    "/test_admittance_controller/pose_commands", rclcpp::SystemDefaultsQoS());
     joint_command_publisher_ = command_publisher_node_->create_publisher<ControllerCommandJointMsg>(
-      "/test_admittance_controller/joint_references", rclcpp::SystemDefaultsQoS());
+      "/test_admittance_controller_no_mass/joint_references", rclcpp::SystemDefaultsQoS());
 
     test_subscription_node_ = std::make_shared<rclcpp::Node>("test_subscription_node");
     test_broadcaster_node_ = std::make_shared<rclcpp::Node>("test_broadcaster_node");
@@ -241,17 +241,19 @@ protected:
 
     transform_stamped.header.stamp = test_broadcaster_node_->now();
     transform_stamped.header.frame_id = fixed_world_frame_;
-    transform_stamped.transform.translation.x = 1.3;
-    transform_stamped.transform.translation.y = 0.5;
-    transform_stamped.transform.translation.z = 0.5;
+    // base should be at origin, so no offset
+    transform_stamped.child_frame_id = ik_base_frame_;
+    // world to kinematic base frame
+    br.sendTransform(transform_stamped);
+    // tip should have the same offset as tip at the chosen initial pose  0.613, -0.344, 0.924
+    transform_stamped.transform.translation.x = 0.613;
+    transform_stamped.transform.translation.y = -0.344;
+    transform_stamped.transform.translation.z = 0.924;
     transform_stamped.transform.rotation.x = 0;
     transform_stamped.transform.rotation.y = 0;
     transform_stamped.transform.rotation.z = 0;
     transform_stamped.transform.rotation.w = 1;
-
-    transform_stamped.child_frame_id = ik_base_frame_;
-    // world to kinematic base frame
-    br.sendTransform(transform_stamped);
+  
     transform_stamped.child_frame_id = ik_tip_frame_;
     // world to kinematic tip frame
     br.sendTransform(transform_stamped);
@@ -270,13 +272,13 @@ protected:
     br.sendTransform(transform_stamped);
 
     // no sensor_frame transform, as it must be one kinematic link it is attached to
-
-    transform_stamped.transform.translation.z = 0.05;
+    // the test robot has its last link joint rotation axis along x. so shift along x
+    transform_stamped.transform.translation.x = 0.0;
     transform_stamped.child_frame_id = sensor_meas_frame_;
     // kinematic tip to sensor measurement frame
     br.sendTransform(transform_stamped);
-
-    transform_stamped.transform.translation.z = 0.2;
+    // the test robot has its last tip joint rotation axis along x. so shift along x
+    transform_stamped.transform.translation.x = 0.2;
     transform_stamped.child_frame_id = endeffector_frame_;
     // kinematic tip to end-effector frame
     br.sendTransform(transform_stamped);
@@ -286,8 +288,10 @@ protected:
   {
     // create a new subscriber
     auto subs_callback = [&](const ControllerStateMsg::SharedPtr) {};
+    std::string topic = controller_->get_node()->get_name();
+    topic += "/status";
     auto subscription = test_subscription_node_->create_subscription<ControllerStateMsg>(
-      "/test_admittance_controller/status", 10, subs_callback);
+      topic, 10, subs_callback);
 
     // call update to publish the test value
     ASSERT_EQ(
@@ -400,7 +404,8 @@ protected:
   std::array<double, 6> admittance_stiffness_ = {214.1, 214.2, 214.3, 214.4, 214.5, 214.6};
 
   std::array<double, 6> joint_command_values_ = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-  std::array<double, 6> joint_state_values_ = {1.1, 2.2, 3.3, 4.4, 5.5, 6.6};
+  // pose that leads to link6 being almost oriented like base, at pos 0.613, -0.344, 0.924
+  std::array<double, 6> joint_state_values_ = {0.573, -1.1, 0.9, 1.87, -0.60, -1.93};
   std::array<double, 6> fts_state_values_ = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   std::vector<std::string> fts_state_names_;
 
