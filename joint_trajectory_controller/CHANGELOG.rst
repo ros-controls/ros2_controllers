@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.13.0 (2023-08-04)
+-------------------
 * Small improvement in remapping (`#393 <https://github.com/ros-controls/ros2_controllers/issues/393>`_)
 * [JTC] Update trajectory documentation (`#714 <https://github.com/ros-controls/ros2_controllers/issues/714>`_)
 * [JTC] Reject messages with effort fields (`#699 <https://github.com/ros-controls/ros2_controllers/issues/699>`_) (`#719 <https://github.com/ros-controls/ros2_controllers/issues/719>`_)
