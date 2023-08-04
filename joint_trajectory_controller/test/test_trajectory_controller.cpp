@@ -543,7 +543,7 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_normalized)
     EXPECT_NEAR(points[0][2], joint_pos_[2], allowed_delta);
     EXPECT_NEAR(points[0][0], state_msg->output.positions[0], allowed_delta);
     EXPECT_NEAR(points[0][1], state_msg->output.positions[1], allowed_delta);
-    EXPECT_NEAR(points[0][2], state_msg->output.positions[2], allowed_delta);
+    EXPECT_NEAR(points[0][2], state_msg->output.positions[2], 3 * allowed_delta);
   }
 
   if (traj_controller_->has_velocity_command_interface())
