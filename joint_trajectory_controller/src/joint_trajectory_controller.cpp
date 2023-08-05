@@ -67,6 +67,15 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
     return CallbackReturn::ERROR;
   }
 
+  // TODO(christophfroehlich): remove deprecation warning
+  if (params_.allow_nonzero_velocity_at_trajectory_end)
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "[Deprecated]: \"allow_nonzero_velocity_at_trajectory_end\" is set to "
+      "true. The default behavior will change to false.");
+  }
+
   return CallbackReturn::SUCCESS;
 }
 
@@ -136,7 +145,9 @@ controller_interface::return_type JointTrajectoryController::update(
     {
       error.positions[index] = desired.positions[index] - current.positions[index];
     }
-    if (has_velocity_state_interface_ && has_velocity_command_interface_)
+    if (
+      has_velocity_state_interface_ &&
+      (has_velocity_command_interface_ || has_effort_command_interface_))
     {
       error.velocities[index] = desired.velocities[index] - current.velocities[index];
     }
@@ -234,7 +245,7 @@ controller_interface::return_type JointTrajectoryController::update(
             const rclcpp::Time traj_start = (*traj_point_active_ptr_)->get_trajectory_start_time();
             const rclcpp::Time traj_end = traj_start + start_segment_itr->time_from_start;
 
-            time_difference = get_node()->now().seconds() - traj_end.seconds();
+            time_difference = time.seconds() - traj_end.seconds();
 
             if (time_difference > default_tolerances_.goal_time_tolerance)
             {
@@ -1312,8 +1323,12 @@ void JointTrajectoryController::sort_to_local_joint_order(
         get_node()->get_logger(), "Invalid input size (%zu) for sorting", to_remap.size());
       return to_remap;
     }
-    std::vector<double> output;
-    output.resize(mapping.size(), 0.0);
+    static std::vector<double> output(dof_, 0.0);
+    // Only resize if necessary since it's an expensive operation
+    if (output.size() != mapping.size())
+    {
+      output.resize(mapping.size(), 0.0);
+    }
     for (size_t index = 0; index < mapping.size(); ++index)
     {
       auto map_index = mapping[index];
@@ -1409,6 +1424,20 @@ bool JointTrajectoryController::validate_trajectory_msg(
         get_node()->get_logger(), "Incoming joint %s doesn't match the controller's joints.",
         incoming_joint_name.c_str());
       return false;
+    }
+  }
+
+  if (!params_.allow_nonzero_velocity_at_trajectory_end)
+  {
+    for (size_t i = 0; i < trajectory.points.back().velocities.size(); ++i)
+    {
+      if (trajectory.points.back().velocities.at(i) != 0.)
+      {
+        RCLCPP_ERROR(
+          get_node()->get_logger(), "Velocity of last trajectory point of joint %s is not zero: %f",
+          trajectory.joint_names.at(i).c_str(), trajectory.points.back().velocities.at(i));
+        return false;
+      }
     }
   }
 

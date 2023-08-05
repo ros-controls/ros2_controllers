@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef ROS2_CONTROL_TEST_ASSETS__6D_ROBOT_DESCRIPTION_HPP_
-#define ROS2_CONTROL_TEST_ASSETS__6D_ROBOT_DESCRIPTION_HPP_
+#ifndef TEST_ASSET_6D_ROBOT_DESCRIPTION_HPP_
+#define TEST_ASSET_6D_ROBOT_DESCRIPTION_HPP_
 
 #include <string>
 
@@ -310,4 +310,4 @@ const auto valid_6d_robot_srdf =
 
 }  // namespace ros2_control_test_assets
 
-#endif  // ROS2_CONTROL_TEST_ASSETS__6D_ROBOT_DESCRIPTION_HPP_
+#endif  // TEST_ASSET_6D_ROBOT_DESCRIPTION_HPP_

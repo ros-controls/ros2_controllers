@@ -105,14 +105,23 @@ public:
   {
     return last_commanded_state_;
   }
+  bool has_position_state_interface() { return has_position_state_interface_; }
+
+  bool has_velocity_state_interface() { return has_velocity_state_interface_; }
+
+  bool has_acceleration_state_interface() { return has_acceleration_state_interface_; }
 
   bool has_position_command_interface() { return has_position_command_interface_; }
 
   bool has_velocity_command_interface() { return has_velocity_command_interface_; }
 
+  bool has_acceleration_command_interface() { return has_acceleration_command_interface_; }
+
   bool has_effort_command_interface() { return has_effort_command_interface_; }
 
   bool use_closed_loop_pid_adapter() { return use_closed_loop_pid_adapter_; }
+
+  bool is_open_loop() { return params_.open_loop_control; }
 
   rclcpp::WaitSet joint_cmd_sub_wait_set_;
 };
@@ -316,13 +325,14 @@ public:
   /// Publish trajectory msgs with multiple points
   /**
    *  delay_btwn_points - delay between each points
-   *  points - vector of trajectories. One point per controlled joint
+   *  points_positions - vector of trajectory-positions. One point per controlled joint
    *  joint_names - names of joints, if empty, will use joint_names_ up to the number of provided
    * points
+   *  points - vector of trajectory-velocities. One point per controlled joint
    */
   void publish(
     const builtin_interfaces::msg::Duration & delay_btwn_points,
-    const std::vector<std::vector<double>> & points, rclcpp::Time start_time,
+    const std::vector<std::vector<double>> & points_positions, rclcpp::Time start_time,
     const std::vector<std::string> & joint_names = {},
     const std::vector<std::vector<double>> & points_velocities = {})
   {
@@ -342,14 +352,15 @@ public:
     trajectory_msgs::msg::JointTrajectory traj_msg;
     if (joint_names.empty())
     {
-      traj_msg.joint_names = {joint_names_.begin(), joint_names_.begin() + points[0].size()};
+      traj_msg.joint_names = {
+        joint_names_.begin(), joint_names_.begin() + points_positions[0].size()};
     }
     else
     {
       traj_msg.joint_names = joint_names;
     }
     traj_msg.header.stamp = start_time;
-    traj_msg.points.resize(points.size());
+    traj_msg.points.resize(points_positions.size());
 
     builtin_interfaces::msg::Duration duration_msg;
     duration_msg.sec = delay_btwn_points.sec;
@@ -357,14 +368,14 @@ public:
     rclcpp::Duration duration(duration_msg);
     rclcpp::Duration duration_total(duration_msg);
 
-    for (size_t index = 0; index < points.size(); ++index)
+    for (size_t index = 0; index < points_positions.size(); ++index)
     {
       traj_msg.points[index].time_from_start = duration_total;
 
-      traj_msg.points[index].positions.resize(points[index].size());
-      for (size_t j = 0; j < points[index].size(); ++j)
+      traj_msg.points[index].positions.resize(points_positions[index].size());
+      for (size_t j = 0; j < points_positions[index].size(); ++j)
       {
-        traj_msg.points[index].positions[j] = points[index][j];
+        traj_msg.points[index].positions[j] = points_positions[index][j];
       }
       duration_total = duration_total + duration;
     }
@@ -386,9 +397,13 @@ public:
     auto clock = rclcpp::Clock(RCL_STEADY_TIME);
     const auto start_time = clock.now();
     const auto end_time = start_time + wait_time;
+    auto previous_time = start_time;
+
     while (clock.now() < end_time)
     {
-      traj_controller_->update(clock.now(), clock.now() - start_time);
+      auto now = clock.now();
+      traj_controller_->update(now, now - previous_time);
+      previous_time = now;
     }
   }
 
@@ -413,7 +428,7 @@ public:
       // TODO(anyone): add checking for velocties and accelerations
       if (traj_controller_->has_position_command_interface())
       {
-        EXPECT_NEAR(expected_actual.positions[i], state_msg->actual.positions[i], allowed_delta);
+        EXPECT_NEAR(expected_actual.positions[i], state_msg->feedback.positions[i], allowed_delta);
       }
     }
 
@@ -423,7 +438,8 @@ public:
       // TODO(anyone): add checking for velocties and accelerations
       if (traj_controller_->has_position_command_interface())
       {
-        EXPECT_NEAR(expected_desired.positions[i], state_msg->desired.positions[i], allowed_delta);
+        EXPECT_NEAR(
+          expected_desired.positions[i], state_msg->reference.positions[i], allowed_delta);
       }
     }
   }
