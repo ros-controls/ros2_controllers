@@ -159,6 +159,11 @@ open_loop_control (boolean)
 
   If this flag is set, the controller tries to read the values from the command interfaces on starting. If they have real numeric values, those will be used instead of state interfaces. Therefore it is important set command interfaces to NaN (std::numeric_limits<double>::quiet_NaN()) or state values when the hardware is started.
 
+allow_nonzero_velocity_at_trajectory_end (boolean)
+  If false, the last velocity point has to be zero or the goal will be rejected.
+
+  Default: true
+
 constraints (structure)
   Default values for tolerances if no explicit values are states in JointTrajectory message.
 
