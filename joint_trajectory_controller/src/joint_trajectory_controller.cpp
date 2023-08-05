@@ -67,6 +67,15 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
     return CallbackReturn::ERROR;
   }
 
+  // TODO(christophfroehlich): remove deprecation warning
+  if (params_.allow_nonzero_velocity_at_trajectory_end)
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "[Deprecated]: \"allow_nonzero_velocity_at_trajectory_end\" is set to "
+      "true. The default behavior will change to false.");
+  }
+
   return CallbackReturn::SUCCESS;
 }
 
@@ -136,7 +145,9 @@ controller_interface::return_type JointTrajectoryController::update(
     {
       error.positions[index] = desired.positions[index] - current.positions[index];
     }
-    if (has_velocity_state_interface_ && has_velocity_command_interface_)
+    if (
+      has_velocity_state_interface_ &&
+      (has_velocity_command_interface_ || has_effort_command_interface_))
     {
       error.velocities[index] = desired.velocities[index] - current.velocities[index];
     }
@@ -234,7 +245,7 @@ controller_interface::return_type JointTrajectoryController::update(
             const rclcpp::Time traj_start = (*traj_point_active_ptr_)->get_trajectory_start_time();
             const rclcpp::Time traj_end = traj_start + start_segment_itr->time_from_start;
 
-            time_difference = get_node()->now().seconds() - traj_end.seconds();
+            time_difference = time.seconds() - traj_end.seconds();
 
             if (time_difference > default_tolerances_.goal_time_tolerance)
             {
@@ -1413,6 +1424,20 @@ bool JointTrajectoryController::validate_trajectory_msg(
         get_node()->get_logger(), "Incoming joint %s doesn't match the controller's joints.",
         incoming_joint_name.c_str());
       return false;
+    }
+  }
+
+  if (!params_.allow_nonzero_velocity_at_trajectory_end)
+  {
+    for (size_t i = 0; i < trajectory.points.back().velocities.size(); ++i)
+    {
+      if (trajectory.points.back().velocities.at(i) != 0.)
+      {
+        RCLCPP_ERROR(
+          get_node()->get_logger(), "Velocity of last trajectory point of joint %s is not zero: %f",
+          trajectory.joint_names.at(i).c_str(), trajectory.points.back().velocities.at(i));
+        return false;
+      }
     }
   }
 
