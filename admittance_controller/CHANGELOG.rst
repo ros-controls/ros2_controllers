@@ -2,6 +2,13 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Activate AdmittanceControllerTestParameterizedInvalidParameters (`#711 <https://github.com/ros-controls/ros2_controllers/issues/711>`_) (`#733 <https://github.com/ros-controls/ros2_controllers/issues/733>`_)
+* Fix file name for include guard (backport `#681 <https://github.com/ros-controls/ros2_controllers/issues/681>`_)
+* Fix out of bound access in admittance controller (`#721 <https://github.com/ros-controls/ros2_controllers/issues/721>`_) (`#722 <https://github.com/ros-controls/ros2_controllers/issues/722>`_)
+* Contributors: Christoph Fröhlich
+
 2.23.0 (2023-06-23)
 -------------------
 * Renovate load controller tests (`#569 <https://github.com/ros-controls/ros2_controllers/issues/569>`_) (`#677 <https://github.com/ros-controls/ros2_controllers/issues/677>`_)

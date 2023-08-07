@@ -2,6 +2,14 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* [JTC] Disable use of closed-loop PID adapter if controller is used in open-loop mode. (`#551 <https://github.com/ros-controls/ros2_controllers/issues/551>`_) (`#740 <https://github.com/ros-controls/ros2_controllers/issues/740>`_)
+* [JTC] Reject messages with effort fields (`#699 <https://github.com/ros-controls/ros2_controllers/issues/699>`_) (`#719 <https://github.com/ros-controls/ros2_controllers/issues/719>`_) (`#738 <https://github.com/ros-controls/ros2_controllers/issues/738>`_)
+* [JTC] Re-enabling test, bugfixing and hardening. Adding a parameter to define when trajectories with non-zero velocity at the end are used. (backport `#705 <https://github.com/ros-controls/ros2_controllers/issues/705>`_) (`#706 <https://github.com/ros-controls/ros2_controllers/issues/706>`_)
+* Small improvement in remapping (`#393 <https://github.com/ros-controls/ros2_controllers/issues/393>`_) (`#724 <https://github.com/ros-controls/ros2_controllers/issues/724>`_)
+* Contributors: Christoph Fröhlich, Dr. Denis, Bence Magyar
+
 2.23.0 (2023-06-23)
 -------------------
 * Renovate load controller tests (`#569 <https://github.com/ros-controls/ros2_controllers/issues/569>`_) (`#677 <https://github.com/ros-controls/ros2_controllers/issues/677>`_)
