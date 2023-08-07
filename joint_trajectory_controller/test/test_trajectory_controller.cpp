@@ -1110,13 +1110,10 @@ TEST_P(TrajectoryControllerTestParameterized, invalid_message)
   traj_msg.points[0].accelerations = {1.0, 2.0};
   EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
 
-// Effort is not supported in trajectory message
-#if 0
-  // TODO(christophfroehlich) activate with #730
+  // Effort is not supported in trajectory message
   traj_msg = good_traj_msg;
   traj_msg.points[0].effort = {1.0, 2.0, 3.0};
   EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
-#endif
 
   // Non-strictly increasing waypoint times
   traj_msg = good_traj_msg;
