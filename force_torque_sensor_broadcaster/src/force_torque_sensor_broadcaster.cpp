@@ -43,7 +43,7 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
   }
   catch (const std::exception & e)
   {
-    fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
+    fprintf(stderr, "Exception thrown during configure stage with message: %s \n", e.what());
     return controller_interface::CallbackReturn::ERROR;
   }
 
