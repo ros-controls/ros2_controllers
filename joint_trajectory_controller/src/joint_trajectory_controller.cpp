@@ -289,14 +289,7 @@ controller_interface::return_type JointTrajectoryController::update(
         }
         if (has_effort_command_interface_)
         {
-          if (use_closed_loop_pid_adapter_)
-          {
-            assign_interface_from_point(joint_command_interface_[3], tmp_command_);
-          }
-          else
-          {
-            assign_interface_from_point(joint_command_interface_[3], state_desired_.effort);
-          }
+          assign_interface_from_point(joint_command_interface_[3], tmp_command_);
         }
 
         // store the previous command. Used in open-loop control mode
@@ -1230,8 +1223,12 @@ void JointTrajectoryController::sort_to_local_joint_order(
         get_node()->get_logger(), "Invalid input size (%zu) for sorting", to_remap.size());
       return to_remap;
     }
-    std::vector<double> output;
-    output.resize(mapping.size(), 0.0);
+    static std::vector<double> output(dof_, 0.0);
+    // Only resize if necessary since it's an expensive operation
+    if (output.size() != mapping.size())
+    {
+      output.resize(mapping.size(), 0.0);
+    }
     for (size_t index = 0; index < mapping.size(); ++index)
     {
       auto map_index = mapping[index];
@@ -1267,8 +1264,9 @@ bool JointTrajectoryController::validate_trajectory_point_field(
   if (joint_names_size != vector_field.size())
   {
     RCLCPP_ERROR(
-      get_node()->get_logger(), "Mismatch between joint_names (%zu) and %s (%zu) at point #%zu.",
-      joint_names_size, string_for_vector_field.c_str(), vector_field.size(), i);
+      get_node()->get_logger(),
+      "Mismatch between joint_names size (%zu) and %s (%zu) at point #%zu.", joint_names_size,
+      string_for_vector_field.c_str(), vector_field.size(), i);
     return false;
   }
   return true;
@@ -1384,9 +1382,15 @@ bool JointTrajectoryController::validate_trajectory_msg(
       !validate_trajectory_point_field(joint_count, points[i].positions, "positions", i, false) ||
       !validate_trajectory_point_field(joint_count, points[i].velocities, "velocities", i, true) ||
       !validate_trajectory_point_field(
-        joint_count, points[i].accelerations, "accelerations", i, true) ||
-      !validate_trajectory_point_field(joint_count, points[i].effort, "effort", i, true))
+        joint_count, points[i].accelerations, "accelerations", i, true))
     {
+      return false;
+    }
+    // reject effort entries
+    if (!points[i].effort.empty())
+    {
+      RCLCPP_ERROR(
+        get_node()->get_logger(), "Trajectories with effort fields are currently not supported.");
       return false;
     }
   }
