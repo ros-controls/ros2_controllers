@@ -104,7 +104,6 @@ When an active action goal is preempted by another command coming from the actio
 
 Sending an empty trajectory message from the topic interface (not the action interface) will override the current action goal and not abort the action.
 
-
 .. _ROS 2 interface:
 
 Description of controller's interfaces
@@ -161,7 +160,7 @@ Subscriber [#f1]_
   Topic for commanding the controller
 
 The topic interface is a fire-and-forget alternative. Use this interface if you don't care about execution monitoring.
-The controller's path and goal tolerance specification is not used in this case, as there is no mechanism to notify the sender about tolerance violations.
+The goal tolerance specification is not used in this case, as there is no mechanism to notify the sender about tolerance violations. If state tolerances are violated, the trajectory is aborted and the current position is held.
 Note that although some degree of monitoring is available through the ``~/query_state`` service and ``~/state`` topic it is much more cumbersome to realize than with the action interface.
 
 
@@ -177,17 +176,6 @@ Services
 
 <controller_name>/query_state [control_msgs::srv::QueryTrajectoryState]
   Query controller state at any future time
-
-
-Specialized versions of JointTrajectoryController
---------------------------------------------------------------
-(TBD in ...)
-
-The controller types are placed into namespaces according to their command types for the hardware (see :ref:`controllers`).
-
-The following version of the Joint Trajectory Controller are available mapping the following interfaces:
-
-* position_controllers::JointTrajectoryController
 
 
 Further information

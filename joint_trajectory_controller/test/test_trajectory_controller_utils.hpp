@@ -25,6 +25,7 @@
 
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
+#include "joint_trajectory_controller/trajectory.hpp"
 
 namespace
 {
@@ -122,6 +123,13 @@ public:
   bool use_closed_loop_pid_adapter() { return use_closed_loop_pid_adapter_; }
 
   bool is_open_loop() { return params_.open_loop_control; }
+
+  bool has_active_traj() { return has_active_trajectory(); }
+
+  bool has_trivial_traj()
+  {
+    return has_active_trajectory() && traj_external_point_ptr_->has_nontrivial_msg() == false;
+  }
 
   rclcpp::WaitSet joint_cmd_sub_wait_set_;
 };
@@ -224,7 +232,9 @@ public:
     ActivateTrajectoryController(separate_cmd_and_state_values);
   }
 
-  void ActivateTrajectoryController(bool separate_cmd_and_state_values = false)
+  void ActivateTrajectoryController(
+    bool separate_cmd_and_state_values = false,
+    const std::vector<double> initial_pos_joints = INITIAL_POS_JOINTS)
   {
     std::vector<hardware_interface::LoanedCommandInterface> cmd_interfaces;
     std::vector<hardware_interface::LoanedStateInterface> state_interfaces;
@@ -258,14 +268,14 @@ public:
 
       // Add to export lists and set initial values
       cmd_interfaces.emplace_back(pos_cmd_interfaces_.back());
-      cmd_interfaces.back().set_value(INITIAL_POS_JOINTS[i]);
+      cmd_interfaces.back().set_value(initial_pos_joints[i]);
       cmd_interfaces.emplace_back(vel_cmd_interfaces_.back());
       cmd_interfaces.back().set_value(INITIAL_VEL_JOINTS[i]);
       cmd_interfaces.emplace_back(acc_cmd_interfaces_.back());
       cmd_interfaces.back().set_value(INITIAL_ACC_JOINTS[i]);
       cmd_interfaces.emplace_back(eff_cmd_interfaces_.back());
       cmd_interfaces.back().set_value(INITIAL_EFF_JOINTS[i]);
-      joint_state_pos_[i] = INITIAL_POS_JOINTS[i];
+      joint_state_pos_[i] = initial_pos_joints[i];
       joint_state_vel_[i] = INITIAL_VEL_JOINTS[i];
       joint_state_acc_[i] = INITIAL_ACC_JOINTS[i];
       state_interfaces.emplace_back(pos_state_interfaces_.back());
@@ -424,6 +434,75 @@ public:
   {
     std::lock_guard<std::mutex> guard(state_mutex_);
     return state_msg_;
+  }
+
+  void expectHoldingPoint(std::vector<double> point)
+  {
+    // it should be holding the given point
+    // i.e., active but trivial trajectory (one point only)
+    EXPECT_TRUE(traj_controller_->has_trivial_traj());
+
+    if (traj_controller_->has_position_command_interface())
+    {
+      EXPECT_NEAR(point.at(0), joint_pos_[0], COMMON_THRESHOLD);
+      EXPECT_NEAR(point.at(1), joint_pos_[1], COMMON_THRESHOLD);
+      EXPECT_NEAR(point.at(2), joint_pos_[2], COMMON_THRESHOLD);
+    }
+
+    if (traj_controller_->has_velocity_command_interface())
+    {
+      EXPECT_EQ(0.0, joint_vel_[0]);
+      EXPECT_EQ(0.0, joint_vel_[1]);
+      EXPECT_EQ(0.0, joint_vel_[2]);
+    }
+
+    if (traj_controller_->has_acceleration_command_interface())
+    {
+      EXPECT_EQ(0.0, joint_acc_[0]);
+      EXPECT_EQ(0.0, joint_acc_[1]);
+      EXPECT_EQ(0.0, joint_acc_[2]);
+    }
+
+    if (traj_controller_->has_effort_command_interface())
+    {
+      EXPECT_EQ(0.0, joint_eff_[0]);
+      EXPECT_EQ(0.0, joint_eff_[1]);
+      EXPECT_EQ(0.0, joint_eff_[2]);
+    }
+  }
+
+  void expectHoldingPointDeactivated(std::vector<double> point)
+  {
+    // it should be holding the given point, but no active trajectory
+    EXPECT_FALSE(traj_controller_->has_active_traj());
+
+    if (traj_controller_->has_position_command_interface())
+    {
+      EXPECT_NEAR(point.at(0), joint_pos_[0], COMMON_THRESHOLD);
+      EXPECT_NEAR(point.at(1), joint_pos_[1], COMMON_THRESHOLD);
+      EXPECT_NEAR(point.at(2), joint_pos_[2], COMMON_THRESHOLD);
+    }
+
+    if (traj_controller_->has_velocity_command_interface())
+    {
+      EXPECT_EQ(0.0, joint_vel_[0]);
+      EXPECT_EQ(0.0, joint_vel_[1]);
+      EXPECT_EQ(0.0, joint_vel_[2]);
+    }
+
+    if (traj_controller_->has_acceleration_command_interface())
+    {
+      EXPECT_EQ(0.0, joint_acc_[0]);
+      EXPECT_EQ(0.0, joint_acc_[1]);
+      EXPECT_EQ(0.0, joint_acc_[2]);
+    }
+
+    if (traj_controller_->has_effort_command_interface())
+    {
+      EXPECT_EQ(0.0, joint_eff_[0]);
+      EXPECT_EQ(0.0, joint_eff_[1]);
+      EXPECT_EQ(0.0, joint_eff_[2]);
+    }
   }
 
   std::string controller_name_;
