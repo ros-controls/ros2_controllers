@@ -21,12 +21,12 @@ Parameters
 
 This controller uses the `generate_parameter_library <https://github.com/PickNikRobotics/generate_parameter_library>`_ to handle its parameters.
 
-forward_command_controller
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+   .. tabs::
 
-.. generate_parameter_library_details:: ../src/forward_command_controller_parameters.yaml
+      .. group-tab:: forward_command_controller
 
-multi_interface_forward_command_controller
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        .. generate_parameter_library_details:: ../src/forward_command_controller_parameters.yaml
 
-.. generate_parameter_library_details:: ../src/multi_interface_forward_command_controller_parameters.yaml
+      .. group-tab:: multi_interface_forward_command_controller
+
+        .. generate_parameter_library_details:: ../src/multi_interface_forward_command_controller_parameters.yaml
