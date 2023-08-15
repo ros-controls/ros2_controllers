@@ -1458,17 +1458,18 @@ JointTrajectoryController::set_hold_position()
   current_pose_msg.points[0].effort.clear();
   if (has_velocity_command_interface_)
   {
-    current_pose_msg.points[0].velocities.resize(
-      dof_, 0.0);  // ensure no velocity (PID will fix this)
+    // ensure no velocity (PID will fix this)
+    current_pose_msg.points[0].velocities.resize(dof_, 0.0);
   }
   if (has_acceleration_command_interface_)
   {
-    current_pose_msg.points[0].accelerations.resize(dof_, 0.0);  // ensure no acceleration
+    ensure no acceleration
+    current_pose_msg.points[0].accelerations.resize(dof_, 0.0);
   }
   if (has_effort_command_interface_)
   {
-    current_pose_msg.points[0].effort.resize(
-      dof_, 0.0);  // ensure no explicit effort (PID will fix this)
+    // ensure no explicit effort (PID will fix this)
+    current_pose_msg.points[0].effort.resize(dof_, 0.0);
   }
 
   return std::make_shared<trajectory_msgs::msg::JointTrajectory>(current_pose_msg);
