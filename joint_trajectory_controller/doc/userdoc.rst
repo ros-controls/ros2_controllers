@@ -180,17 +180,6 @@ Services
   Query controller state at any future time
 
 
-Specialized versions of JointTrajectoryController
---------------------------------------------------------------
-(TBD in ...)
-
-The controller types are placed into namespaces according to their command types for the hardware (see :ref:`controllers`).
-
-The following version of the Joint Trajectory Controller are available mapping the following interfaces:
-
-* position_controllers::JointTrajectoryController
-
-
 Further information
 --------------------------------------------------------------
 
