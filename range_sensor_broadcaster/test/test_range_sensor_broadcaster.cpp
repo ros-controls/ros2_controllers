@@ -149,9 +149,6 @@ TEST_F(RangeSensorBroadcasterTest, Update_RangeBroadcaster_Success)
   ASSERT_EQ(
     range_broadcaster_->on_activate(rclcpp_lifecycle::State()),
     controller_interface::CallbackReturn::SUCCESS);
-  // range_broadcaster_->get_node()->get_clock()->now();
-  // auto result = range_broadcaster_->update(rclcpp::Time(0.0),
-  // rclcpp::Duration::from_seconds(0.01));
   auto result = range_broadcaster_->update(
     range_broadcaster_->get_node()->get_clock()->now(), rclcpp::Duration::from_seconds(0.01));
 
