@@ -128,7 +128,7 @@ public:
   {
     return *(active_tolerances_.readFromRT());
   }
-  
+
   bool has_active_traj() { return has_active_trajectory(); }
 
   bool has_trivial_traj()
