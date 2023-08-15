@@ -131,6 +131,9 @@ public:
   bool has_trajectory_msg() const;
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
+  bool has_nontrivial_msg() const;
+
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> get_trajectory_msg() const
   {
     return trajectory_msg_;
