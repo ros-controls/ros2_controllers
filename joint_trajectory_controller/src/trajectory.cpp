@@ -351,4 +351,9 @@ rclcpp::Time Trajectory::time_from_start() const { return trajectory_start_time_
 
 bool Trajectory::has_trajectory_msg() const { return trajectory_msg_.get() != nullptr; }
 
+bool Trajectory::has_nontrivial_msg() const
+{
+  return has_trajectory_msg() && trajectory_msg_->points.size() > 1;
+}
+
 }  // namespace joint_trajectory_controller
