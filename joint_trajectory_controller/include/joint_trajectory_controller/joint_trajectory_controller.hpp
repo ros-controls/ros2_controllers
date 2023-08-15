@@ -176,6 +176,7 @@ protected:
 
   // Timeout to consider commands old
   double cmd_timeout_;
+  realtime_tools::RealtimeBuffer<bool> rt_is_holding_;  ///< are we holding position?
   // TODO(karsten1987): eventually activate and deactivate subscriber directly when its supported
   bool subscriber_is_active_ = false;
   rclcpp::Subscription<trajectory_msgs::msg::JointTrajectory>::SharedPtr joint_command_subscriber_ =
