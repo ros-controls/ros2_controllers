@@ -956,6 +956,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   {
     add_new_trajectory_msg(set_hold_position());
   }
+  rt_is_holding_.writeFromNonRT(true);
 
   return CallbackReturn::SUCCESS;
 }
@@ -1100,6 +1101,7 @@ void JointTrajectoryController::topic_callback(
   if (subscriber_is_active_)
   {
     add_new_trajectory_msg(msg);
+    rt_is_holding_.writeFromNonRT(false);
   }
 };
 
@@ -1162,6 +1164,7 @@ void JointTrajectoryController::goal_accepted_callback(
       std::make_shared<trajectory_msgs::msg::JointTrajectory>(goal_handle->get_goal()->trajectory);
 
     add_new_trajectory_msg(traj_msg);
+    rt_is_holding_.writeFromNonRT(false);
   }
 
   // Update the active goal
@@ -1479,6 +1482,9 @@ JointTrajectoryController::set_hold_position()
     // ensure no explicit effort (PID will fix this)
     current_pose_msg.points[0].effort.resize(dof_, 0.0);
   }
+
+  // set flag, otherwise tolerances will be checked with holding position too
+  rt_is_holding_.writeFromNonRT(true);
 
   return std::make_shared<trajectory_msgs::msg::JointTrajectory>(current_pose_msg);
 }
