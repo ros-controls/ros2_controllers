@@ -57,6 +57,12 @@ open_loop_control (boolean)
 
   Default: false
 
+start_with_holding (bool)
+  If true, start with holding position after activation. Otherwise, no command will be sent until
+  the first trajectory is received.
+
+  Default: true
+
 allow_nonzero_velocity_at_trajectory_end (boolean)
   If false, the last velocity point has to be zero or the goal will be rejected.
 

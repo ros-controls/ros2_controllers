@@ -183,7 +183,6 @@ protected:
 
   rclcpp::Service<control_msgs::srv::QueryTrajectoryState>::SharedPtr query_state_srv_;
 
-  std::shared_ptr<Trajectory> * traj_point_active_ptr_ = nullptr;
   std::shared_ptr<Trajectory> traj_external_point_ptr_ = nullptr;
   std::shared_ptr<Trajectory> traj_home_point_ptr_ = nullptr;
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> traj_msg_home_ptr_ = nullptr;
@@ -203,6 +202,7 @@ protected:
 
   rclcpp_action::Server<FollowJTrajAction>::SharedPtr action_server_;
   RealtimeGoalHandleBuffer rt_active_goal_;  ///< Currently active action goal, if any.
+  realtime_tools::RealtimeBuffer<bool> rt_has_pending_goal_;  ///< Is there a pending action goal?
   rclcpp::TimerBase::SharedPtr goal_handle_timer_;
   rclcpp::Duration action_monitor_period_ = rclcpp::Duration(50ms);
 
@@ -245,7 +245,7 @@ protected:
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   void preempt_active_goal();
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  void set_hold_position();
+  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> set_hold_position();
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   bool reset();
