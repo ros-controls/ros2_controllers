@@ -1463,7 +1463,7 @@ JointTrajectoryController::set_hold_position()
   }
   if (has_acceleration_command_interface_)
   {
-    ensure no acceleration
+    // ensure no acceleration
     current_pose_msg.points[0].accelerations.resize(dof_, 0.0);
   }
   if (has_effort_command_interface_)
