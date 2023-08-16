@@ -285,44 +285,38 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
   // first update
   traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.1));
 
-  // wait so controller process the second point when deactivated
+  // wait for reaching the first point
+  // controller would process the second point when deactivated below
   traj_controller_->update(
     rclcpp::Time(static_cast<uint64_t>(0.25 * 1e9)), rclcpp::Duration::from_seconds(0.15));
-  // deactivated
-  state = traj_controller_->get_node()->deactivate();
-  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
-
-  const auto allowed_delta = 0.05;
+  EXPECT_TRUE(traj_controller_->has_active_traj());
   if (traj_controller_->has_position_command_interface())
   {
-    EXPECT_NEAR(3.3, joint_pos_[0], allowed_delta);
-    EXPECT_NEAR(4.4, joint_pos_[1], allowed_delta);
-    EXPECT_NEAR(5.5, joint_pos_[2], allowed_delta);
+    EXPECT_NEAR(points.at(0).at(0), joint_pos_[0], COMMON_THRESHOLD);
+    EXPECT_NEAR(points.at(0).at(1), joint_pos_[1], COMMON_THRESHOLD);
+    EXPECT_NEAR(points.at(0).at(2), joint_pos_[2], COMMON_THRESHOLD);
   }
 
-  if (traj_controller_->has_velocity_command_interface())
-  {
-    EXPECT_LE(0.0, joint_vel_[0]);
-    EXPECT_LE(0.0, joint_vel_[1]);
-    EXPECT_LE(0.0, joint_vel_[2]);
-  }
+  // deactivate
+  std::vector<double> deactivated_positions{joint_pos_[0], joint_pos_[1], joint_pos_[2]};
+  state = traj_controller_->get_node()->deactivate();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+  // it should be holding the current point
+  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.1));
+  expectHoldingPointDeactivated(deactivated_positions);
 
-  if (traj_controller_->has_effort_command_interface())
-  {
-    EXPECT_LE(0.0, joint_eff_[0]);
-    EXPECT_LE(0.0, joint_eff_[1]);
-    EXPECT_LE(0.0, joint_eff_[2]);
-  }
-
-  // reactivated
-  // wait so controller process the third point when reactivated
+  // reactivate
+  // wait so controller would have processed the third point when reactivated -> but it shouldn't
   std::this_thread::sleep_for(std::chrono::milliseconds(3000));
-  ActivateTrajectoryController();
+
+  ActivateTrajectoryController(false, deactivated_positions);
   state = traj_controller_->get_state();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_ACTIVE);
 
-  // TODO(christophfroehlich) add test if there is no active trajectory after
-  // reactivation once #558 or #609 got merged (needs methods for TestableJointTrajectoryController)
+  // it should still be holding the position at time of deactivation
+  // i.e., active but trivial trajectory (one point only)
+  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.1));
+  expectHoldingPoint(deactivated_positions);
 
   executor.cancel();
 }
@@ -422,6 +416,45 @@ TEST_P(TrajectoryControllerTestParameterized, state_topic_consistency)
   {
     EXPECT_EQ(n_joints, state->output.effort.size());
   }
+}
+
+/**
+ * @brief check if hold on startup is deactivated
+ */
+TEST_P(TrajectoryControllerTestParameterized, no_hold_on_startup)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+
+  rclcpp::Parameter start_with_holding_parameter("start_with_holding", false);
+  SetUpAndActivateTrajectoryController(executor, true, {start_with_holding_parameter});
+
+  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
+  updateController(rclcpp::Duration(FIRST_POINT_TIME));
+  // after startup without start_with_holding being set, we expect no active trajectory
+  ASSERT_FALSE(traj_controller_->has_active_traj());
+
+  executor.cancel();
+}
+
+/**
+ * @brief check if hold on startup
+ */
+TEST_P(TrajectoryControllerTestParameterized, hold_on_startup)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+
+  rclcpp::Parameter start_with_holding_parameter("start_with_holding", true);
+  SetUpAndActivateTrajectoryController(executor, true, {start_with_holding_parameter});
+
+  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
+  updateController(rclcpp::Duration(FIRST_POINT_TIME));
+  // after startup with start_with_holding being set, we expect an active trajectory:
+  ASSERT_TRUE(traj_controller_->has_active_traj());
+  // one point, being the position at startup
+  std::vector<double> initial_positions{INITIAL_POS_JOINT1, INITIAL_POS_JOINT2, INITIAL_POS_JOINT3};
+  expectHoldingPoint(initial_positions);
+
+  executor.cancel();
 }
 
 // Floating-point value comparison threshold
@@ -779,15 +812,6 @@ TEST_P(TrajectoryControllerTestParameterized, test_jumbled_joint_order)
       traj_msg.points[0].velocities[1] = -0.1;
       traj_msg.points[0].velocities[2] = -0.1;
     }
-
-    if (traj_controller_->has_effort_command_interface())
-    {
-      traj_msg.points[0].effort.resize(3);
-      traj_msg.points[0].effort[0] = -0.1;
-      traj_msg.points[0].effort[1] = -0.1;
-      traj_msg.points[0].effort[2] = -0.1;
-    }
-
     trajectory_publisher_->publish(traj_msg);
   }
 
@@ -809,13 +833,6 @@ TEST_P(TrajectoryControllerTestParameterized, test_jumbled_joint_order)
     EXPECT_GT(0.0, joint_vel_[0]);
     EXPECT_GT(0.0, joint_vel_[1]);
     EXPECT_GT(0.0, joint_vel_[2]);
-  }
-
-  if (traj_controller_->has_effort_command_interface())
-  {
-    EXPECT_GT(0.0, joint_eff_[0]);
-    EXPECT_GT(0.0, joint_eff_[1]);
-    EXPECT_GT(0.0, joint_eff_[2]);
   }
   // TODO(anyone): add here checks for acceleration commands
 }
@@ -1027,10 +1044,9 @@ TEST_P(TrajectoryControllerTestParameterized, invalid_message)
   traj_msg.points[0].accelerations = {1.0, 2.0};
   EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
 
-  // Incompatible data sizes, too few efforts
+  // Effort is not supported in trajectory message
   traj_msg = good_traj_msg;
-  traj_msg.points[0].positions.clear();
-  traj_msg.points[0].effort = {1.0, 2.0};
+  traj_msg.points[0].effort = {1.0, 2.0, 3.0};
   EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
 
   // Non-strictly increasing waypoint times
@@ -1173,7 +1189,6 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_old_trajectory)
     rclcpp::Clock(RCL_STEADY_TIME).now() - delay - std::chrono::milliseconds(100);
   expected_actual.positions = {points_old[1].begin(), points_old[1].end()};
   expected_desired = expected_actual;
-  std::cout << "Sending old trajectory" << std::endl;
   publish(time_from_start, points_new, new_traj_start);
   waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
 }

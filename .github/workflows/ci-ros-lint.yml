@@ -5,36 +5,45 @@ on:
 jobs:
   ament_lint:
     name: ament_${{ matrix.linter }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
           linter: [cppcheck, copyright, lint_cmake]
+    env:
+      AMENT_CPPCHECK_ALLOW_SLOW_VERSIONS: true
     steps:
     - uses: actions/checkout@v3
-    - uses: ros-tooling/setup-ros@0.6.2
+    - uses: ros-tooling/setup-ros@0.7.0
     - uses: ros-tooling/action-ros-lint@v0.1
       with:
         distribution: rolling
         linter: ${{ matrix.linter }}
         package-name:
+          ackermann_steering_controller
+          admittance_controller
+          bicycle_steering_controller
           diff_drive_controller
           effort_controllers
           force_torque_sensor_broadcaster
           forward_command_controller
+          gripper_controllers
+          imu_sensor_broadcaster
           joint_state_broadcaster
           joint_trajectory_controller
-          gripper_controllers
           position_controllers
           ros2_controllers
           ros2_controllers_test_nodes
+          rqt_joint_trajectory_controller
+          steering_controllers_library
           tricycle_controller
+          tricycle_steering_controller
           velocity_controllers
 
 
   ament_lint_100:
     name: ament_${{ matrix.linter }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -48,15 +57,22 @@ jobs:
         linter: cpplint
         arguments: "--linelength=100 --filter=-whitespace/newline"
         package-name:
+          ackermann_steering_controller
+          admittance_controller
+          bicycle_steering_controller
           diff_drive_controller
           effort_controllers
           force_torque_sensor_broadcaster
           forward_command_controller
+          gripper_controllers
+          imu_sensor_broadcaster
           joint_state_broadcaster
           joint_trajectory_controller
-          gripper_controllers
           position_controllers
           ros2_controllers
           ros2_controllers_test_nodes
+          rqt_joint_trajectory_controller
+          steering_controllers_library
           tricycle_controller
+          tricycle_steering_controller
           velocity_controllers

@@ -2,6 +2,30 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.13.0 (2023-08-04)
+-------------------
+* Small improvement in remapping (`#393 <https://github.com/ros-controls/ros2_controllers/issues/393>`_)
+* [JTC] Update trajectory documentation (`#714 <https://github.com/ros-controls/ros2_controllers/issues/714>`_)
+* [JTC] Reject messages with effort fields (`#699 <https://github.com/ros-controls/ros2_controllers/issues/699>`_) (`#719 <https://github.com/ros-controls/ros2_controllers/issues/719>`_)
+* [Doc] Fix links (`#715 <https://github.com/ros-controls/ros2_controllers/issues/715>`_)
+* Contributors: Andy Zelenak, Bence Magyar, Christoph Fröhlich
+
+3.12.0 (2023-07-18)
+-------------------
+* Remove reactivation test from ROS 1
+* Don't test update after cleanup
+* Fix namespace for parameter traits(`#703 <https://github.com/ros-controls/ros2_controllers/issues/703>`_)
+* Fixed update period computation in test (`#693 <https://github.com/ros-controls/ros2_controllers/issues/693>`_)
+* [JTC] Reject trajectories with nonzero terminal velocity (`#567 <https://github.com/ros-controls/ros2_controllers/issues/567>`_)
+* Compute velocity errors when using an effort command interface (`#679 <https://github.com/ros-controls/ros2_controllers/issues/679>`_)
+* Add test for velocity error with effort cmd interface (`#690 <https://github.com/ros-controls/ros2_controllers/issues/690>`_)
+* Revert "[JTC] Command final waypoint identically when traj_point_active_ptr\_ is nullptr (`#682 <https://github.com/ros-controls/ros2_controllers/issues/682>`_)"
+* [JTC] Fix time sources and wrong checks in tests (`#686 <https://github.com/ros-controls/ros2_controllers/issues/686>`_)
+* Increase action tests timeout (`#680 <https://github.com/ros-controls/ros2_controllers/issues/680>`_)
+* [JTC] Extend tests (`#612 <https://github.com/ros-controls/ros2_controllers/issues/612>`_)
+* [JTC] Command final waypoint identically when traj_point_active_ptr\_ is nullptr (`#682 <https://github.com/ros-controls/ros2_controllers/issues/682>`_)
+* Contributors: Christoph Fröhlich, Ethan Gordon, Lars Tingelstad, gwalck, Bence Magyar
+
 3.11.0 (2023-06-24)
 -------------------
 * jtc: fix minor typo in traj validation error msg (`#674 <https://github.com/ros-controls/ros2_controllers/issues/674>`_)
