@@ -252,6 +252,12 @@ protected:
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   bool reset();
 
+<<<<<<< HEAD
+=======
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
+  bool has_active_trajectory() const;
+
+>>>>>>> 6b73cf5 ([JTC] Fix typos, implicit cast, const member functions (#748))
   using JointTrajectoryPoint = trajectory_msgs::msg::JointTrajectoryPoint;
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   void publish_state(

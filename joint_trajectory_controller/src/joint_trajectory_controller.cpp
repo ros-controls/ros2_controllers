@@ -1562,6 +1562,14 @@ void JointTrajectoryController::resize_joint_trajectory_point_command(
   }
 }
 
+<<<<<<< HEAD
+=======
+bool JointTrajectoryController::has_active_trajectory() const
+{
+  return traj_external_point_ptr_ != nullptr && traj_external_point_ptr_->has_trajectory_msg();
+}
+
+>>>>>>> 6b73cf5 ([JTC] Fix typos, implicit cast, const member functions (#748))
 }  // namespace joint_trajectory_controller
 
 #include "pluginlib/class_list_macros.hpp"

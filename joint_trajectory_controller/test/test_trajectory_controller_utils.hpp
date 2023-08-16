@@ -101,28 +101,38 @@ public:
 
   void trigger_declare_parameters() { param_listener_->declare_params(); }
 
-  trajectory_msgs::msg::JointTrajectoryPoint get_current_state_when_offset()
+  trajectory_msgs::msg::JointTrajectoryPoint get_current_state_when_offset() const
   {
     return last_commanded_state_;
   }
-  bool has_position_state_interface() { return has_position_state_interface_; }
+  bool has_position_state_interface() const { return has_position_state_interface_; }
 
-  bool has_velocity_state_interface() { return has_velocity_state_interface_; }
+  bool has_velocity_state_interface() const { return has_velocity_state_interface_; }
 
-  bool has_acceleration_state_interface() { return has_acceleration_state_interface_; }
+  bool has_acceleration_state_interface() const { return has_acceleration_state_interface_; }
 
-  bool has_position_command_interface() { return has_position_command_interface_; }
+  bool has_position_command_interface() const { return has_position_command_interface_; }
 
-  bool has_velocity_command_interface() { return has_velocity_command_interface_; }
+  bool has_velocity_command_interface() const { return has_velocity_command_interface_; }
 
-  bool has_acceleration_command_interface() { return has_acceleration_command_interface_; }
+  bool has_acceleration_command_interface() const { return has_acceleration_command_interface_; }
 
-  bool has_effort_command_interface() { return has_effort_command_interface_; }
+  bool has_effort_command_interface() const { return has_effort_command_interface_; }
 
-  bool use_closed_loop_pid_adapter() { return use_closed_loop_pid_adapter_; }
+  bool use_closed_loop_pid_adapter() const { return use_closed_loop_pid_adapter_; }
 
-  bool is_open_loop() { return params_.open_loop_control; }
+  bool is_open_loop() const { return params_.open_loop_control; }
 
+<<<<<<< HEAD
+=======
+  bool has_active_traj() const { return has_active_trajectory(); }
+
+  bool has_trivial_traj() const
+  {
+    return has_active_trajectory() && traj_external_point_ptr_->has_nontrivial_msg() == false;
+  }
+
+>>>>>>> 6b73cf5 ([JTC] Fix typos, implicit cast, const member functions (#748))
   rclcpp::WaitSet joint_cmd_sub_wait_set_;
 };
 
