@@ -1593,36 +1593,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_state_tolerances_fail)
   updateController(rclcpp::Duration(FIRST_POINT_TIME));
 
   // it should have aborted and be holding now
-  // TODO(christophfroehlich): Add has_trajectory check once #609 got merged
-
-  if (traj_controller_->has_position_command_interface())
-  {
-    // should hold at current position
-    EXPECT_NEAR(joint_state_pos_[0], joint_pos_[0], COMMON_THRESHOLD);
-    EXPECT_NEAR(joint_state_pos_[1], joint_pos_[1], COMMON_THRESHOLD);
-    EXPECT_NEAR(joint_state_pos_[2], joint_pos_[2], COMMON_THRESHOLD);
-  }
-
-  if (traj_controller_->has_velocity_command_interface())
-  {
-    EXPECT_NEAR(0.0, joint_vel_[0], COMMON_THRESHOLD);
-    EXPECT_NEAR(0.0, joint_vel_[1], COMMON_THRESHOLD);
-    EXPECT_NEAR(0.0, joint_vel_[2], COMMON_THRESHOLD);
-  }
-
-  if (traj_controller_->has_acceleration_command_interface())
-  {
-    EXPECT_NEAR(0.0, joint_acc_[0], COMMON_THRESHOLD);
-    EXPECT_NEAR(0.0, joint_acc_[1], COMMON_THRESHOLD);
-    EXPECT_NEAR(0.0, joint_acc_[2], COMMON_THRESHOLD);
-  }
-
-  if (traj_controller_->has_effort_command_interface())
-  {
-    EXPECT_NEAR(0.0, joint_eff_[0], COMMON_THRESHOLD);
-    EXPECT_NEAR(0.0, joint_eff_[1], COMMON_THRESHOLD);
-    EXPECT_NEAR(0.0, joint_eff_[2], COMMON_THRESHOLD);
-  }
+  expectHoldingPoint(joint_state_pos_);
 }
 
 TEST_P(TrajectoryControllerTestParameterized, test_goal_tolerances_fail)
@@ -1654,36 +1625,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_goal_tolerances_fail)
   updateController(rclcpp::Duration(4 * FIRST_POINT_TIME));
 
   // it should have aborted and be holding now
-  // TODO(christophfroehlich): Add has_trajectory check once #609 got merged
-
-  if (traj_controller_->has_position_command_interface())
-  {
-    // should hold at current position
-    EXPECT_NEAR(joint_state_pos_[0], joint_pos_[0], COMMON_THRESHOLD);
-    EXPECT_NEAR(joint_state_pos_[1], joint_pos_[1], COMMON_THRESHOLD);
-    EXPECT_NEAR(joint_state_pos_[2], joint_pos_[2], COMMON_THRESHOLD);
-  }
-
-  if (traj_controller_->has_velocity_command_interface())
-  {
-    EXPECT_NEAR(0.0, joint_vel_[0], COMMON_THRESHOLD);
-    EXPECT_NEAR(0.0, joint_vel_[1], COMMON_THRESHOLD);
-    EXPECT_NEAR(0.0, joint_vel_[2], COMMON_THRESHOLD);
-  }
-
-  if (traj_controller_->has_acceleration_command_interface())
-  {
-    EXPECT_NEAR(0.0, joint_acc_[0], COMMON_THRESHOLD);
-    EXPECT_NEAR(0.0, joint_acc_[1], COMMON_THRESHOLD);
-    EXPECT_NEAR(0.0, joint_acc_[2], COMMON_THRESHOLD);
-  }
-
-  if (traj_controller_->has_effort_command_interface())
-  {
-    EXPECT_NEAR(0.0, joint_eff_[0], COMMON_THRESHOLD);
-    EXPECT_NEAR(0.0, joint_eff_[1], COMMON_THRESHOLD);
-    EXPECT_NEAR(0.0, joint_eff_[2], COMMON_THRESHOLD);
-  }
+  expectHoldingPoint(joint_state_pos_);
 }
 
 // position controllers
