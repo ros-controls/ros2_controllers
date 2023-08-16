@@ -86,7 +86,7 @@ joint_trajectory_controller:
       i: {
         type: double,
         default_value: 0.0,
-        description: "Intigral gain for PID"
+        description: "Integral gain for PID"
       }
       d: {
         type: double,
@@ -96,7 +96,7 @@ joint_trajectory_controller:
       i_clamp: {
         type: double,
         default_value: 0.0,
-        description: "Integrale clamp. Symmetrical in both positive and negative direction."
+        description: "Integral clamp. Symmetrical in both positive and negative direction."
       }
       ff_velocity_scale: {
         type: double,
