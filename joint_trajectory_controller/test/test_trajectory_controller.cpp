@@ -1531,9 +1531,9 @@ TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_later_co
   // set command values to NaN
   for (size_t i = 0; i < 3; ++i)
   {
-    joint_pos_[i] = 3.1 + i;
-    joint_vel_[i] = 0.25 + i;
-    joint_acc_[i] = 0.02 + i / 10.0;
+    joint_pos_[i] = 3.1 + static_cast<double>(i);
+    joint_vel_[i] = 0.25 + static_cast<double>(i);
+    joint_acc_[i] = 0.02 + static_cast<double>(i) / 10.0;
   }
   SetUpAndActivateTrajectoryController(executor, true, {is_open_loop_parameters}, true);
 
