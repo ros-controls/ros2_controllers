@@ -376,7 +376,7 @@ controller_interface::return_type JointTrajectoryController::update(
         !before_last_point && !within_goal_time && *(rt_has_pending_goal_.readFromRT()) == false)
       {
         RCLCPP_ERROR(
-          get_node()->get_logger(), "Holding position due goal_time_tolerance exceeding");
+          get_node()->get_logger(), "Exceeded goal_time_tolerance: holding position...");
 
         traj_msg_external_point_ptr_.reset();
         traj_msg_external_point_ptr_.initRT(set_hold_position());
