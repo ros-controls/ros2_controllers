@@ -2,6 +2,14 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.24.0 (2023-08-07)
+-------------------
+
+2.23.0 (2023-06-23)
+-------------------
+* Renovate load controller tests (`#569 <https://github.com/ros-controls/ros2_controllers/issues/569>`_) (`#677 <https://github.com/ros-controls/ros2_controllers/issues/677>`_)
+* Contributors: Bence Magyar
+
 2.22.0 (2023-06-14)
 -------------------
 * Use generate_parameter_library for all params (`#601 <https://github.com/ros-controls/ros2_controllers/issues/601>`_) (`#627 <https://github.com/ros-controls/ros2_controllers/issues/627>`_)

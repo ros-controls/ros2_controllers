@@ -27,7 +27,6 @@
 
 #include "gmock/gmock.h"
 
-#include "6d_robot_description.hpp"
 #include "admittance_controller/admittance_controller.hpp"
 #include "control_msgs/msg/admittance_controller_state.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
@@ -38,6 +37,7 @@
 #include "rclcpp/utilities.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "semantic_components/force_torque_sensor.hpp"
+#include "test_asset_6d_robot_description.hpp"
 #include "tf2_ros/transform_broadcaster.h"
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 
@@ -454,9 +454,15 @@ public:
   static void TearDownTestCase() { AdmittanceControllerTest::TearDownTestCase(); }
 
 protected:
-  void SetUpController()
+  controller_interface::return_type SetUpController()
   {
-    AdmittanceControllerTest::SetUpController("test_admittance_controller");
+    auto param_name = std::get<0>(GetParam());
+    auto param_value = std::get<1>(GetParam());
+    std::vector<rclcpp::Parameter> parameter_overrides;
+    rclcpp::Parameter param(param_name, param_value);
+    parameter_overrides.push_back(param);
+    return AdmittanceControllerTest::SetUpController(
+      "test_admittance_controller", parameter_overrides);
   }
 };
 
