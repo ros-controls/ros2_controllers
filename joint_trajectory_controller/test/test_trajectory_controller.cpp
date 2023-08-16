@@ -1666,6 +1666,67 @@ TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_later_co
   executor.cancel();
 }
 
+TEST_P(TrajectoryControllerTestParameterized, test_state_tolerances_fail)
+{
+  // set joint tolerance parameters
+  const double state_tol = 0.0001;
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("constraints.joint1.trajectory", state_tol),
+    rclcpp::Parameter("constraints.joint2.trajectory", state_tol),
+    rclcpp::Parameter("constraints.joint3.trajectory", state_tol)};
+
+  rclcpp::executors::MultiThreadedExecutor executor;
+  SetUpAndActivateTrajectoryController(executor, false, {params}, true);
+
+  // send msg
+  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(100);
+  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
+  // *INDENT-OFF*
+  std::vector<std::vector<double>> points{
+    {{3.3, 4.4, 5.5}}, {{7.7, 8.8, 9.9}}, {{10.10, 11.11, 12.12}}};
+  std::vector<std::vector<double>> points_velocities{
+    {{0.01, 0.01, 0.01}}, {{0.05, 0.05, 0.05}}, {{0.06, 0.06, 0.06}}};
+  // *INDENT-ON*
+  publish(time_from_start, points, rclcpp::Time(0, 0, RCL_STEADY_TIME), {}, points_velocities);
+  traj_controller_->wait_for_trajectory(executor);
+  updateController(rclcpp::Duration(FIRST_POINT_TIME));
+
+  // it should have aborted and be holding now
+  expectHoldingPoint(joint_state_pos_);
+}
+
+TEST_P(TrajectoryControllerTestParameterized, test_goal_tolerances_fail)
+{
+  // set joint tolerance parameters
+  const double goal_tol = 0.1;
+  // set very small goal_time so that goal_time is violated
+  const double goal_time = 0.000001;
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("constraints.joint1.goal", goal_tol),
+    rclcpp::Parameter("constraints.joint2.goal", goal_tol),
+    rclcpp::Parameter("constraints.joint3.goal", goal_tol),
+    rclcpp::Parameter("constraints.goal_time", goal_time)};
+
+  rclcpp::executors::MultiThreadedExecutor executor;
+  SetUpAndActivateTrajectoryController(executor, false, {params}, true);
+
+  // send msg
+  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(100);
+  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
+  // *INDENT-OFF*
+  std::vector<std::vector<double>> points{
+    {{3.3, 4.4, 5.5}}, {{7.7, 8.8, 9.9}}, {{10.10, 11.11, 12.12}}};
+  std::vector<std::vector<double>> points_velocities{
+    {{0.01, 0.01, 0.01}}, {{0.05, 0.05, 0.05}}, {{0.06, 0.06, 0.06}}};
+  // *INDENT-ON*
+  publish(time_from_start, points, rclcpp::Time(0, 0, RCL_STEADY_TIME), {}, points_velocities);
+  traj_controller_->wait_for_trajectory(executor);
+  updateController(rclcpp::Duration(4 * FIRST_POINT_TIME));
+
+  // it should have aborted and be holding now
+  expectHoldingPoint(joint_state_pos_);
+}
+
 // position controllers
 INSTANTIATE_TEST_SUITE_P(
   PositionTrajectoryControllers, TrajectoryControllerTestParameterized,
