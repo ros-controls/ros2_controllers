@@ -2,6 +2,11 @@
 Changelog for package forward_command_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.14.0 (2023-08-16)
+-------------------
+* Use tabs (`#743 <https://github.com/ros-controls/ros2_controllers/issues/743>`_)
+* Contributors: Christoph Fröhlich
+
 3.13.0 (2023-08-04)
 -------------------
 

@@ -362,19 +362,27 @@ controller_interface::return_type JointTrajectoryController::update(
             traj_msg_external_point_ptr_.reset();
             traj_msg_external_point_ptr_.initRT(set_hold_position());
           }
-          // else, run another cycle while waiting for outside_goal_tolerance
-          // to be satisfied or violated within the goal_time_tolerance
         }
       }
       else if (tolerance_violated_while_moving && *(rt_has_pending_goal_.readFromRT()) == false)
       {
         // we need to ensure that there is no pending goal -> we get a race condition otherwise
-
         RCLCPP_ERROR(get_node()->get_logger(), "Holding position due to state tolerance violation");
 
         traj_msg_external_point_ptr_.reset();
         traj_msg_external_point_ptr_.initRT(set_hold_position());
       }
+      else if (
+        !before_last_point && !within_goal_time && *(rt_has_pending_goal_.readFromRT()) == false)
+      {
+        RCLCPP_ERROR(get_node()->get_logger(), "Exceeded goal_time_tolerance: holding position...");
+
+        traj_msg_external_point_ptr_.reset();
+        traj_msg_external_point_ptr_.initRT(set_hold_position());
+      }
+      // else, run another cycle while waiting for outside_goal_tolerance
+      // to be satisfied (will stay in this state until new message arrives)
+      // or outside_goal_tolerance violated within the goal_time_tolerance
     }
   }
 
@@ -1517,7 +1525,7 @@ void JointTrajectoryController::resize_joint_trajectory_point_command(
   }
 }
 
-bool JointTrajectoryController::has_active_trajectory()
+bool JointTrajectoryController::has_active_trajectory() const
 {
   return traj_external_point_ptr_ != nullptr && traj_external_point_ptr_->has_trajectory_msg();
 }
