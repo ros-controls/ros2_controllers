@@ -59,6 +59,19 @@ if(BUILD_TESTING)
   find_package(hardware_interface REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
 
+  add_rostest_with_parameters_gmock(test_load_range_sensor_broadcaster
+  test/test_load_range_sensor_broadcaster.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/test/range_sensor_broadcaster_params.yaml)
+  target_include_directories(test_load_range_sensor_broadcaster PRIVATE include)
+  target_link_libraries(test_load_range_sensor_broadcaster
+    range_sensor_broadcaster
+  )
+  ament_target_dependencies(test_load_range_sensor_broadcaster
+    controller_manager
+    hardware_interface
+    ros2_control_test_assets
+  )
+
   add_rostest_with_parameters_gmock(test_range_sensor_broadcaster
     test/test_range_sensor_broadcaster.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/range_sensor_broadcaster_params.yaml)
