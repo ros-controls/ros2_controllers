@@ -34,7 +34,6 @@ controller_interface::return_type RangeSensorBroadcasterTest::init_broadcaster(
   std::string broadcaster_name)
 {
   controller_interface::return_type result = controller_interface::return_type::ERROR;
-  // result = range_broadcaster_->init("test_range_sensor_broadcaster");
   result = range_broadcaster_->init(broadcaster_name);
 
   if (controller_interface::return_type::OK == result)
@@ -87,8 +86,7 @@ void RangeSensorBroadcasterTest::subscribe_and_get_message(sensor_msgs::msg::Ran
 
   // take message from subscription
   rclcpp::MessageInfo msg_info;
-  subscription->take(range_msg, msg_info);
-  // ASSERT_TRUE(subscription->take(range_msg, msg_info));
+  ASSERT_TRUE(subscription->take(range_msg, msg_info));
 }
 
 TEST_F(RangeSensorBroadcasterTest, Initialize_RangeBroadcaster_Exception)
