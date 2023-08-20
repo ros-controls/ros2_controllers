@@ -16,6 +16,7 @@
 
 #include <array>
 #include <chrono>
+#include <cmath>
 #include <future>
 #include <limits>
 #include <memory>
@@ -865,9 +866,9 @@ TEST_P(TrajectoryControllerTestParameterized, test_partial_joint_list)
     traj_msg.points[0].positions[1] = 1.0;
     traj_msg.points[0].velocities.resize(2);
     traj_msg.points[0].velocities[0] =
-      copysign(2.0, traj_msg.points[0].positions[0] - initial_joint2_cmd);
+      std::copysign(2.0, traj_msg.points[0].positions[0] - initial_joint2_cmd);
     traj_msg.points[0].velocities[1] =
-      copysign(1.0, traj_msg.points[0].positions[1] - initial_joint1_cmd);
+      std::copysign(1.0, traj_msg.points[0].positions[1] - initial_joint1_cmd);
 
     trajectory_publisher_->publish(traj_msg);
   }
@@ -1146,7 +1147,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_trajectory_replace)
 
   RCLCPP_INFO(traj_controller_->get_node()->get_logger(), "Sending new trajectory");
   points_partial_new_velocities[0][0] =
-    copysign(0.15, points_partial_new[0][0] - joint_state_pos_[0]);
+    std::copysign(0.15, points_partial_new[0][0] - joint_state_pos_[0]);
   publish(time_from_start, points_partial_new, rclcpp::Time(), {}, points_partial_new_velocities);
 
   // Replaced trajectory is a mix of previous and current goal
