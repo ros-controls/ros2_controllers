@@ -2,6 +2,17 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.14.0 (2023-08-16)
+-------------------
+* [JTC] Tolerance tests + Hold on time violation (`#613 <https://github.com/ros-controls/ros2_controllers/issues/613>`_)
+  * Add new test to ensure that controller goes into position holding when tolerances are violated
+  * Hold position if goal_time is exceeded with topic interface
+  * Fix hold on time-violation
+* [JTC] Fix typos, implicit cast, const member functions (`#748 <https://github.com/ros-controls/ros2_controllers/issues/748>`_)
+* Remove wrong description (`#742 <https://github.com/ros-controls/ros2_controllers/issues/742>`_)
+* [JTC] Explicitly set hold position (`#558 <https://github.com/ros-controls/ros2_controllers/issues/558>`_)
+* Contributors: Christoph Fröhlich
+
 3.13.0 (2023-08-04)
 -------------------
 * Small improvement in remapping (`#393 <https://github.com/ros-controls/ros2_controllers/issues/393>`_)

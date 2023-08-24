@@ -11,7 +11,7 @@ The controller implements ``ChainedControllerInterface``, so it is possible to a
 The controller requires an external kinematics plugin to function. The `kinematics_interface <https://github.com/ros-controls/kinematics_interface>`_ repository provides an interface and an implementation that the admittance controller can use.
 
 
-ROS2 interface of the controller
+ROS 2 interface of the controller
 ---------------------------------
 
 Parameters
