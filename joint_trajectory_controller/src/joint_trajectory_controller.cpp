@@ -1469,20 +1469,15 @@ JointTrajectoryController::set_hold_position()
   current_pose_msg.points[0].velocities.clear();
   current_pose_msg.points[0].accelerations.clear();
   current_pose_msg.points[0].effort.clear();
-  if (has_velocity_command_interface_)
+  if (has_velocity_command_interface_ || has_acceleration_command_interface_)
   {
-    // ensure no velocity (PID will fix this)
+    // add velocity, so that trajectory sampling returns velocity points in any case
     current_pose_msg.points[0].velocities.resize(dof_, 0.0);
   }
   if (has_acceleration_command_interface_)
   {
-    // ensure no acceleration
+    // add velocity, so that trajectory sampling returns acceleration points in any case
     current_pose_msg.points[0].accelerations.resize(dof_, 0.0);
-  }
-  if (has_effort_command_interface_)
-  {
-    // ensure no explicit effort (PID will fix this)
-    current_pose_msg.points[0].effort.resize(dof_, 0.0);
   }
 
   // set flag, otherwise tolerances will be checked with holding position too
