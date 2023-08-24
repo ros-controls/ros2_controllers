@@ -658,7 +658,8 @@ TEST_P(TrajectoryControllerTestParameterized, timeout)
   rclcpp::executors::MultiThreadedExecutor executor;
   constexpr double cmd_timeout = 0.1;
   rclcpp::Parameter cmd_timeout_parameter("cmd_timeout", cmd_timeout);
-  SetUpAndActivateTrajectoryController(executor, true, {cmd_timeout_parameter}, false);
+  double kp = 1.0;  // activate feedback control for testing velocity/effort PID
+  SetUpAndActivateTrajectoryController(executor, true, {cmd_timeout_parameter}, false, kp);
   subscribeToState();
 
   // send msg
@@ -695,7 +696,15 @@ TEST_P(TrajectoryControllerTestParameterized, timeout)
   // should be not more than one point now (from hold position)
   EXPECT_FALSE(traj_controller_->has_nontrivial_traj());
   // should hold last position with zero velocity
-  expectHoldingPoint(points.at(2));
+  if (traj_controller_->has_position_command_interface())
+  {
+    expectHoldingPoint(points.at(2));
+  }
+  else
+  {
+    // no integration to position state interface from velocity/acceleration
+    expectHoldingPoint(INITIAL_POS_JOINTS);
+  }
 
   executor.cancel();
 }
