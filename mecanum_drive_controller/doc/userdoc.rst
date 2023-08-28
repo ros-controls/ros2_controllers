@@ -3,7 +3,7 @@
 mecanum_drive_controller
 =========================
 
-Library with shared functionalities for mobile robots controllers with mecanum drive (four wheels).
+Library with shared functionalities for mobile robot controllers with mecanum drive (four wheels).
 The library implements generic odometry and update methods and defines the main interfaces.
 
 Execution logic of the controller
@@ -11,11 +11,15 @@ Execution logic of the controller
 
 The controller uses velocity input, i.e., stamped or unstamped Twist messages where linear ``x``, ``y``, and angular ``z`` components are used.
 Values in other components are ignored.
-In the chain mode the controller provides three reference interfaces, one for linear velocity and one for steering angle position.
+In the chain mode, the controller provides three reference interfaces, one for linear velocity and one for steering angle position.
 Other relevant features are:
 
   - odometry publishing as Odometry and TF message;
   - input command timeout based on a parameter.
+
+Note about odometry calculation:
+In the DiffDRiveController, the velocity is filtered out, but we prefer to return it raw and let the user perform post-processing at will.
+We prefer this way of doing so as filtering introduces delay (which makes it difficult to interpret and compare behavior curves).
 
 
 Description of controller's interfaces
@@ -39,7 +43,7 @@ States
 
 Subscribers
 ,,,,,,,,,,,,
-Used when controller is not in chained mode (``in_chained_mode == false``).
+Used when the controller is not in chained mode (``in_chained_mode == false``).
 
 - <controller_name>/reference  [geometry_msgs/msg/TwistStamped]
 
@@ -52,6 +56,6 @@ Publishers
 Parameters
 ,,,,,,,,,,,
 
-For list of parameters and their meaning, see the YAML file in the ``src`` folder of the controller's package.
+For a list of parameters and their meaning, see the YAML file in the ``src`` folder of the controller's package.
 
-For an exemplary parameterization see the ``test`` folder of the controller's package.
+For an exemplary parameterization, see the ``test`` folder of the controller's package.
