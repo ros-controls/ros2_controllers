@@ -34,8 +34,11 @@ TEST(TestLoadMecanumDriveController, when_loading_controller_expect_no_exception
       ros2_control_test_assets::minimal_robot_urdf),
     executor, "test_controller_manager");
 
-  ASSERT_NO_THROW(cm.load_controller(
-    "test_mecanum_drive_controller", "mecanum_drive_controller/MecanumDriveController"));
+  ASSERT_NE(
+    cm.load_controller(
+      "test_mecanum_drive_controller",
+      "mecanum_drive_controller/MecanumDriveController"),
+    nullptr);
 
   rclcpp::shutdown();
 }
