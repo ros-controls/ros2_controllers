@@ -78,7 +78,7 @@ mecanum_drive_controller:
   enable_odom_tf: {
     type: bool,
     default_value: true,
-    description: "Publishing to tf is enabled or disabled ?.",
+    description: "Publishing to tf is enabled or disabled?",
     read_only: false,
   }
 
