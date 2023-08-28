@@ -53,7 +53,6 @@ bool Odometry::update(
   if (dt < 0.0001) return false;  // Interval too small to integrate with
 
   /// Compute FK (i.e. compute mobile robot's body twist out of its wheels velocities):
-  /// NOTE: we use the IK of the mecanum wheels which we invert using a pseudo-inverse.
   /// NOTE: the mecanum IK gives the body speed at the center frame, we then offset this velocity
   ///       at the base frame.
   /// NOTE: in the diff drive the velocity is filtered out, but we prefer to return it raw and
