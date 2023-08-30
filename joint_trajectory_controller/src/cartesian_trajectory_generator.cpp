@@ -147,7 +147,15 @@ void CartesianTrajectoryGenerator::reference_callback(
     params_.joints.size(), std::numeric_limits<double>::quiet_NaN());
   new_traj_msg->points[0].velocities.resize(
     params_.joints.size(), std::numeric_limits<double>::quiet_NaN());
-  new_traj_msg->points[0].time_from_start = rclcpp::Duration::from_seconds(0.01);
+  if (msg->time_from_start.nanosec == 0)
+  {
+    new_traj_msg->points[0].time_from_start = rclcpp::Duration::from_seconds(0.01);
+  }
+  else
+  {
+    new_traj_msg->points[0].time_from_start = rclcpp::Duration::from_nanoseconds(
+      static_cast<rcl_duration_value_t>(msg->time_from_start.nanosec));
+  }
 
   // just pass input into trajectory message
   auto assign_value_from_input = [&](
