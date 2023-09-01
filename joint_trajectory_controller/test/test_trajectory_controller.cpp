@@ -419,6 +419,28 @@ TEST_P(TrajectoryControllerTestParameterized, state_topic_consistency)
 }
 
 /**
+ * @brief check if dynamic parameters are updated
+ */
+TEST_P(TrajectoryControllerTestParameterized, update_dynamic_parameters)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+
+  rclcpp::Parameter open_loop_control_parameter("open_loop_control", false);
+  SetUpAndActivateTrajectoryController(executor, true, {open_loop_control_parameter});
+
+  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
+  updateController(rclcpp::Duration(FIRST_POINT_TIME));
+  EXPECT_FALSE(traj_controller_->is_open_loop());
+
+  traj_controller_->get_node()->set_parameter(rclcpp::Parameter("open_loop_control", true));
+
+  updateController(rclcpp::Duration(FIRST_POINT_TIME));
+  EXPECT_TRUE(traj_controller_->is_open_loop());
+
+  executor.cancel();
+}
+
+/**
  * @brief check if hold on startup is deactivated
  */
 TEST_P(TrajectoryControllerTestParameterized, no_hold_on_startup)

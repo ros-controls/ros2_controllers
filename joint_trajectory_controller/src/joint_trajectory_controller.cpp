@@ -124,6 +124,11 @@ controller_interface::return_type JointTrajectoryController::update(
   {
     return controller_interface::return_type::OK;
   }
+  // update dynamic parameters
+  if (param_listener_->is_old(params_))
+  {
+    params_ = param_listener_->get_params();
+  }
 
   auto compute_error_for_joint = [&](
                                    JointTrajectoryPoint & error, size_t index,
