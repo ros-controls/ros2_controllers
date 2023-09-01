@@ -1534,16 +1534,17 @@ bool JointTrajectoryController::has_active_trajectory() const
 
 void JointTrajectoryController::update_pids()
 {
-  // Init PID gains from ROS parameters
   for (size_t i = 0; i < dof_; ++i)
   {
     const auto & gains = params_.gains.joints_map.at(params_.joints[i]);
     if (pids_.at(i))
     {
+      // update PIDs with gains from ROS parameters
       pids_[i]->setGains(gains.p, gains.i, gains.d, gains.i_clamp, -gains.i_clamp);
     }
     else
     {
+      // Init PIDs with gains from ROS parameters
       pids_[i] = std::make_shared<control_toolbox::Pid>(
         gains.p, gains.i, gains.d, gains.i_clamp, -gains.i_clamp);
     }
