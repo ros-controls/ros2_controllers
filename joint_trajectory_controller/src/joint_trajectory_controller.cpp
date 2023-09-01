@@ -128,6 +128,11 @@ controller_interface::return_type JointTrajectoryController::update(
   if (param_listener_->is_old(params_))
   {
     params_ = param_listener_->get_params();
+    // use_closed_loop_pid_adapter_ is updated in on_configure only
+    if (use_closed_loop_pid_adapter_)
+    {
+      update_pids();
+    }
   }
 
   auto compute_error_for_joint = [&](
@@ -718,15 +723,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     ff_velocity_scale_.resize(dof_);
     tmp_command_.resize(dof_, 0.0);
 
-    // Init PID gains from ROS parameters
-    for (size_t i = 0; i < dof_; ++i)
-    {
-      const auto & gains = params_.gains.joints_map.at(params_.joints[i]);
-      pids_[i] = std::make_shared<control_toolbox::Pid>(
-        gains.p, gains.i, gains.d, gains.i_clamp, -gains.i_clamp);
-
-      ff_velocity_scale_[i] = gains.ff_velocity_scale;
-    }
+    update_pids();
   }
 
   // Configure joint position error normalization from ROS parameters
@@ -1533,6 +1530,25 @@ void JointTrajectoryController::resize_joint_trajectory_point_command(
 bool JointTrajectoryController::has_active_trajectory() const
 {
   return traj_external_point_ptr_ != nullptr && traj_external_point_ptr_->has_trajectory_msg();
+}
+
+void JointTrajectoryController::update_pids()
+{
+  // Init PID gains from ROS parameters
+  for (size_t i = 0; i < dof_; ++i)
+  {
+    const auto & gains = params_.gains.joints_map.at(params_.joints[i]);
+    if (pids_.at(i))
+    {
+      pids_[i]->setGains(gains.p, gains.i, gains.d, gains.i_clamp, -gains.i_clamp);
+    }
+    else
+    {
+      pids_[i] = std::make_shared<control_toolbox::Pid>(
+        gains.p, gains.i, gains.d, gains.i_clamp, -gains.i_clamp);
+    }
+    ff_velocity_scale_[i] = gains.ff_velocity_scale;
+  }
 }
 
 }  // namespace joint_trajectory_controller

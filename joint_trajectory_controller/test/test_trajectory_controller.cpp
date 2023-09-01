@@ -425,17 +425,31 @@ TEST_P(TrajectoryControllerTestParameterized, update_dynamic_parameters)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
 
-  rclcpp::Parameter open_loop_control_parameter("open_loop_control", false);
-  SetUpAndActivateTrajectoryController(executor, true, {open_loop_control_parameter});
+  SetUpAndActivateTrajectoryController(executor, true);
 
-  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
-  updateController(rclcpp::Duration(FIRST_POINT_TIME));
-  EXPECT_FALSE(traj_controller_->is_open_loop());
+  updateController();
+  auto pids = traj_controller_->get_pids();
 
-  traj_controller_->get_node()->set_parameter(rclcpp::Parameter("open_loop_control", true));
+  if (traj_controller_->use_closed_loop_pid_adapter())
+  {
+    EXPECT_EQ(pids.size(), 3);
+    auto gain_0 = pids.at(0)->getGains();
+    EXPECT_EQ(gain_0.p_gain_, 0.0);
 
-  updateController(rclcpp::Duration(FIRST_POINT_TIME));
-  EXPECT_TRUE(traj_controller_->is_open_loop());
+    double kp = 1.0;
+    SetPidParameters(kp);
+    updateController();
+
+    pids = traj_controller_->get_pids();
+    EXPECT_EQ(pids.size(), 3);
+    gain_0 = pids.at(0)->getGains();
+    EXPECT_EQ(gain_0.p_gain_, kp);
+  }
+  else
+  {
+    // nothing to check here, skip further test
+    EXPECT_EQ(pids.size(), 0);
+  }
 
   executor.cancel();
 }
