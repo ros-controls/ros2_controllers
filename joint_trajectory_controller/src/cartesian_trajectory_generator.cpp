@@ -14,6 +14,7 @@
 
 #include "joint_trajectory_controller/cartesian_trajectory_generator.hpp"
 
+#include "eigen3/Eigen/Eigen"
 #include "tf2/transform_datatypes.h"
 
 #include "controller_interface/helpers.hpp"
@@ -398,12 +399,28 @@ bool CartesianTrajectoryGenerator::read_state_from_hardware(JointTrajectoryPoint
   state.positions[4] = orientation_angles[1];
   state.positions[5] = orientation_angles[2];
 
-  state.velocities[0] = measured_state->twist.twist.linear.x;
-  state.velocities[1] = measured_state->twist.twist.linear.y;
-  state.velocities[2] = measured_state->twist.twist.linear.z;
-  state.velocities[3] = measured_state->twist.twist.angular.x;
-  state.velocities[4] = measured_state->twist.twist.angular.y;
-  state.velocities[5] = measured_state->twist.twist.angular.z;
+  ////// Convert twist in body frame to world frame since CTG/JTC expects state in world frame
+
+  Eigen::Quaterniond q_body_in_world(
+    measured_state->pose.pose.orientation.w, measured_state->pose.pose.orientation.x,
+    measured_state->pose.pose.orientation.y, measured_state->pose.pose.orientation.z);
+
+  Eigen::Vector3d linear_vel_body(
+    measured_state->twist.twist.linear.x, measured_state->twist.twist.linear.y,
+    measured_state->twist.twist.linear.z);
+  auto linear_vel_world = q_body_in_world * linear_vel_body;
+
+  Eigen::Vector3d angular_vel_body(
+    measured_state->twist.twist.angular.x, measured_state->twist.twist.angular.y,
+    measured_state->twist.twist.angular.z);
+  auto angular_vel_world = q_body_in_world * angular_vel_body;
+
+  state.velocities[0] = linear_vel_world[0];
+  state.velocities[1] = linear_vel_world[1];
+  state.velocities[2] = linear_vel_world[2];
+  state.velocities[3] = angular_vel_world[0];
+  state.velocities[4] = angular_vel_world[1];
+  state.velocities[5] = angular_vel_world[2];
 
   state.accelerations.clear();
   return true;
