@@ -399,7 +399,7 @@ bool CartesianTrajectoryGenerator::read_state_from_hardware(JointTrajectoryPoint
   state.positions[4] = orientation_angles[1];
   state.positions[5] = orientation_angles[2];
 
-  ////// Convert twist in body frame to world frame since CTG/JTC expects state in world frame
+  ////// Convert measured twist which is in body frame to world frame since CTG/JTC expects state in world frame
 
   Eigen::Quaterniond q_body_in_world(
     measured_state->pose.pose.orientation.w, measured_state->pose.pose.orientation.x,
