@@ -82,8 +82,6 @@ if(BUILD_TESTING)
   ament_target_dependencies(test_range_sensor_broadcaster
     hardware_interface
   )
-
-
 endif()
 
 install(
