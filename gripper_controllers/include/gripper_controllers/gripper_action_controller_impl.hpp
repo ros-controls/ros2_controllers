@@ -232,7 +232,8 @@ controller_interface::CallbackReturn GripperActionController<HardwareInterface>:
     { return command_interface.get_interface_name() == HardwareInterface; });
   if (command_interface_it == command_interfaces_.end())
   {
-    RCLCPP_ERROR_STREAM(get_node()->get_logger(), "Expected 1 " << HardwareInterface << " command interface");
+    RCLCPP_ERROR_STREAM(
+      get_node()->get_logger(), "Expected 1 " << HardwareInterface << " command interface");
     return controller_interface::CallbackReturn::ERROR;
   }
   if (command_interface_it->get_prefix_name() != params_.joint)
