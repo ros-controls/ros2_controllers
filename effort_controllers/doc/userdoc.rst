@@ -38,10 +38,10 @@ An example parameter file is given here
     ros__parameters:
       update_rate: 100  # Hz
 
-      effort_controllers:
+      effort_controller:
         type: effort_controllers/JointGroupEffortController
 
-  effort_controllers:
+  effort_controller:
     ros__parameters:
       joints:
         - slider_to_cart
