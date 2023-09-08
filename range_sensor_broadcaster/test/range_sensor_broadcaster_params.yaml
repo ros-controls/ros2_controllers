@@ -9,4 +9,3 @@ test_range_sensor_broadcaster:
     field_of_view: 0.1
     min_range: 0.10
     max_range: 7.0
-    variance: 1.0
