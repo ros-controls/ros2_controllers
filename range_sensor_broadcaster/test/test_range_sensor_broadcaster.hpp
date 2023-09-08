@@ -43,7 +43,6 @@ protected:
   const int radiation_type_ = 1;
   const double min_range_ = 0.1;
   const double max_range_ = 7.0;
-  const double variance_ = 1.0;
 
   double sensor_range_ = 3.1;
   hardware_interface::StateInterface range_{sensor_name_, "range", &sensor_range_};

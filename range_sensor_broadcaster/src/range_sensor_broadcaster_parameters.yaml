@@ -13,4 +13,3 @@ range_sensor_broadcaster:
   field_of_view: {type: double, default_value: 0.52, description: "The size of the arc that the distance reading is valid for [rad]",}
   min_range: {type: double, default_value: 0.52, description: "Minimum range value [m]",}
   max_range: {type: double, default_value: 4.0, description: "Maximum range value [m]",}
-  variance: {type: double, default_value: 0.0, description: "Variance of the range value",}

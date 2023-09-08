@@ -79,7 +79,6 @@ controller_interface::CallbackReturn RangeSensorBroadcaster::on_configure(
   realtime_publisher_->msg_.field_of_view = params_.field_of_view;
   realtime_publisher_->msg_.min_range = params_.min_range;
   realtime_publisher_->msg_.max_range = params_.max_range;
-  realtime_publisher_->msg_.variance = params_.variance;
   realtime_publisher_->unlock();
 
   RCLCPP_DEBUG(get_node()->get_logger(), "configure successful");
