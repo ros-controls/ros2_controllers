@@ -3,6 +3,7 @@ joint_trajectory_controller:
     type: string_array,
     default_value: [],
     description: "Names of joints used by the controller",
+    read_only: true,
     validation: {
       unique<>: null,
     }
@@ -11,6 +12,7 @@ joint_trajectory_controller:
     type: string_array,
     default_value: [],
     description: "Names of the commanding joints used by the controller",
+    read_only: true,
     validation: {
       unique<>: null,
     }
@@ -19,6 +21,7 @@ joint_trajectory_controller:
     type: string_array,
     default_value: [],
     description: "Names of command interfaces to claim",
+    read_only: true,
     validation: {
       unique<>: null,
       subset_of<>: [["position", "velocity", "acceleration", "effort",]],
@@ -29,6 +32,7 @@ joint_trajectory_controller:
     type: string_array,
     default_value: [],
     description: "Names of state interfaces to claim",
+    read_only: true,
     validation: {
       unique<>: null,
       subset_of<>: [["position", "velocity", "acceleration",]],
@@ -44,6 +48,7 @@ joint_trajectory_controller:
     type: bool,
     default_value: false,
     description: "Run the controller in open-loop, i.e., read hardware states only when starting controller. This is useful when robot is not exactly following the commanded trajectory.",
+    read_only: true,
   }
   allow_integration_in_goal_trajectories: {
     type: bool,
@@ -54,6 +59,7 @@ joint_trajectory_controller:
     type: double,
     default_value: 20.0,
     description: "Rate status changes will be monitored",
+    read_only: true,
     validation: {
       gt_eq: [0.1]
     }
@@ -62,6 +68,7 @@ joint_trajectory_controller:
     type: string,
     default_value: "splines",
     description: "The type of interpolation to use, if any",
+    read_only: true,
     validation: {
       one_of<>: [["splines", "none"]],
     }
