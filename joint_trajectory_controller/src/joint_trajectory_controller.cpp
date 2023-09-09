@@ -132,6 +132,7 @@ controller_interface::return_type JointTrajectoryController::update(
     if (use_closed_loop_pid_adapter_)
     {
       update_pids();
+      default_tolerances_ = get_segment_tolerances(params_);
     }
   }
 
@@ -798,6 +799,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     get_interface_list(params_.command_interfaces).c_str(),
     get_interface_list(params_.state_interfaces).c_str());
 
+  // parse remaining parameters
   default_tolerances_ = get_segment_tolerances(params_);
 
   const std::string interpolation_string =
