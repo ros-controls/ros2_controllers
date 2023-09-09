@@ -162,32 +162,26 @@ public:
       controller_name_ + "/joint_trajectory", rclcpp::SystemDefaultsQoS());
   }
 
-  void SetUpTrajectoryController(rclcpp::Executor & executor, bool use_local_parameters = true)
+  void SetUpTrajectoryController(
+    rclcpp::Executor & executor, const std::vector<rclcpp::Parameter> & parameters = {})
   {
     traj_controller_ = std::make_shared<TestableJointTrajectoryController>();
 
-    if (use_local_parameters)
-    {
-      traj_controller_->set_joint_names(joint_names_);
-      traj_controller_->set_command_interfaces(command_interface_types_);
-      traj_controller_->set_state_interfaces(state_interface_types_);
-    }
-    auto ret = traj_controller_->init(controller_name_);
+    auto node_options = rclcpp::NodeOptions();
+    std::vector<rclcpp::Parameter> parameter_overrides;
+    parameter_overrides.push_back(rclcpp::Parameter("joints", joint_names_));
+    parameter_overrides.push_back(
+      rclcpp::Parameter("command_interfaces", command_interface_types_));
+    parameter_overrides.push_back(rclcpp::Parameter("state_interfaces", state_interface_types_));
+    parameter_overrides.insert(parameter_overrides.end(), parameters.begin(), parameters.end());
+    node_options.parameter_overrides(parameter_overrides);
+
+    auto ret = traj_controller_->init(controller_name_, "", node_options);
     if (ret != controller_interface::return_type::OK)
     {
       FAIL();
     }
     executor.add_node(traj_controller_->get_node()->get_node_base_interface());
-    SetParameters();
-  }
-
-  void SetParameters()
-  {
-    auto node = traj_controller_->get_node();
-    const rclcpp::Parameter joint_names_param("joints", joint_names_);
-    const rclcpp::Parameter cmd_interfaces_params("command_interfaces", command_interface_types_);
-    const rclcpp::Parameter state_interfaces_params("state_interfaces", state_interface_types_);
-    node->set_parameters({joint_names_param, cmd_interfaces_params, state_interfaces_params});
   }
 
   void SetPidParameters(
@@ -210,12 +204,11 @@ public:
   }
 
   void SetUpAndActivateTrajectoryController(
-    rclcpp::Executor & executor, bool use_local_parameters = true,
-    const std::vector<rclcpp::Parameter> & parameters = {},
+    rclcpp::Executor & executor, const std::vector<rclcpp::Parameter> & parameters = {},
     bool separate_cmd_and_state_values = false, double k_p = 0.0, double ff = 1.0,
     bool normalize_error = false)
   {
-    SetUpTrajectoryController(executor, use_local_parameters);
+    SetUpTrajectoryController(executor);
 
     // set pid parameters before configure
     SetPidParameters(k_p, ff, normalize_error);
