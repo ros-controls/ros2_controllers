@@ -800,8 +800,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     get_interface_list(params_.state_interfaces).c_str());
 
   // parse remaining parameters
-  default_tolerances_ = get_segment_tolerances(params_);
-
   const std::string interpolation_string =
     get_node()->get_parameter("interpolation_method").as_string();
   interpolation_method_ = interpolation_methods::from_string(interpolation_string);
@@ -889,6 +887,15 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
 controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   const rclcpp_lifecycle::State &)
 {
+  // update the dynamic map parameters
+  param_listener_->refresh_dynamic_parameters();
+
+  // get parameters from the listener in case they were updated
+  params_ = param_listener_->get_params();
+
+  // parse remaining parameters
+  default_tolerances_ = get_segment_tolerances(params_);
+
   // order all joints in the storage
   for (const auto & interface : params_.command_interfaces)
   {
