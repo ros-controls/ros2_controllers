@@ -72,8 +72,7 @@ protected:
   {
     setup_executor_ = true;
 
-    SetUpAndActivateTrajectoryController(
-      executor_, true, parameters, separate_cmd_and_state_values);
+    SetUpAndActivateTrajectoryController(executor_, parameters, separate_cmd_and_state_values);
 
     SetUpActionClient();
 
