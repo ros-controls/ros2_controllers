@@ -138,7 +138,8 @@ joint_trajectory_controller:
     goal_time: {
       type: double,
       default_value: 0.0,
-      description: "Time tolerance for achieving trajectory goal before or after commanded time.",
+      description: "Time tolerance for achieving trajectory goal before or after commanded time.
+        If set to zero, the controller will wait a potentially infinite amount of time.",
       validation: {
         gt_eq: [0.0],
       }
