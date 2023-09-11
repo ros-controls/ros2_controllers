@@ -951,7 +951,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
     last_commanded_state_ = state;
   }
 
-  // Should the controller start by holding position after on_configure?
+  // Should the controller start by holding position at the beginning of active state?
   if (params_.start_with_holding)
   {
     add_new_trajectory_msg(set_hold_position());
