@@ -131,7 +131,7 @@ public:
   {
     joint_handle_ = joint_handle;
     // Init PID gains from ROS parameter server
-    const std::string prefix = "gains." + joint_handle_->get().get_name();
+    const std::string prefix = "gains." + joint_handle_->get().get_prefix_name();
     const auto k_p = auto_declare<double>(node, prefix + ".p", 0.0);
     const auto k_i = auto_declare<double>(node, prefix + ".i", 0.0);
     const auto k_d = auto_declare<double>(node, prefix + ".d", 0.0);
