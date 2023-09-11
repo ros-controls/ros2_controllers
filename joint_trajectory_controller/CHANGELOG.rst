@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.15.0 (2023-09-11)
+-------------------
 * [JTC] Make most parameters read-only (`#771 <https://github.com/ros-controls/ros2_controllers/issues/771>`_)
 * Contributors: Christoph Fröhlich
 

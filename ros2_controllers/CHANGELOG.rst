@@ -2,8 +2,8 @@
 Changelog for package ros2_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.15.0 (2023-09-11)
+-------------------
 * add a broadcaster for range sensor (`#725 <https://github.com/ros-controls/ros2_controllers/issues/725>`_)
 * Contributors: flochre
 
