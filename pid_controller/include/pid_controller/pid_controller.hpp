@@ -65,6 +65,10 @@ public:
   controller_interface::InterfaceConfiguration state_interface_configuration() const override;
 
   PID_CONTROLLER__VISIBILITY_PUBLIC
+  controller_interface::CallbackReturn on_cleanup(
+    const rclcpp_lifecycle::State & previous_state) override;
+
+  PID_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::CallbackReturn on_configure(
     const rclcpp_lifecycle::State & previous_state) override;
 
@@ -123,6 +127,7 @@ protected:
   bool on_set_chained_mode(bool chained_mode) override;
 
   // internal methods
+  void update_parameters();
   controller_interface::CallbackReturn configure_parameters();
 
 private:
