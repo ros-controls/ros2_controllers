@@ -74,9 +74,18 @@ controller_interface::CallbackReturn PidController::on_init()
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
+void PidController::update_parameters()
+{
+  if (!param_listener_->is_old(params_))
+  {
+    return;
+  }
+  params_ = param_listener_->get_params();
+}
+
 controller_interface::CallbackReturn PidController::configure_parameters()
 {
-  params_ = param_listener_->get_params();
+  update_parameters();
 
   if (!params_.reference_and_state_dof_names.empty())
   {
@@ -121,6 +130,15 @@ controller_interface::CallbackReturn PidController::configure_parameters()
       return CallbackReturn::FAILURE;
     }
   }
+
+  return CallbackReturn::SUCCESS;
+}
+
+controller_interface::CallbackReturn PidController::on_cleanup(
+  const rclcpp_lifecycle::State & /*previous_state*/)
+{
+  reference_and_state_dof_names_.clear();
+  pids_.clear();
 
   return CallbackReturn::SUCCESS;
 }
@@ -384,6 +402,9 @@ controller_interface::return_type PidController::update_reference_from_subscribe
 controller_interface::return_type PidController::update_and_write_commands(
   const rclcpp::Time & time, const rclcpp::Duration & period)
 {
+  // check for any parameter updates
+  update_parameters();
+
   if (params_.use_external_measured_states)
   {
     const auto measured_state = *(measured_state_.readFromRT());
