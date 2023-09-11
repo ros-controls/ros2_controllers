@@ -63,6 +63,7 @@ Available Broadcasters
 .. toctree::
    :titlesonly:
 
-   Joint State Broadcaster <../joint_state_broadcaster/doc/userdoc.rst>
-   Imu Sensor Broadcaster <../imu_sensor_broadcaster/doc/userdoc.rst>
    Force Torque Sensor Broadcaster <../force_torque_sensor_broadcaster/doc/userdoc.rst>
+   Imu Sensor Broadcaster <../imu_sensor_broadcaster/doc/userdoc.rst>
+   Joint State Broadcaster <../joint_state_broadcaster/doc/userdoc.rst>
+   Range Sensor Broadcaster <../range_sensor_broadcaster/doc/userdoc.rst>
