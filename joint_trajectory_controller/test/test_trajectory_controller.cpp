@@ -777,7 +777,7 @@ TEST_P(TrajectoryControllerTestParameterized, velocity_error)
     || (traj_controller_->has_velocity_state_interface() &&
         traj_controller_->has_velocity_command_interface()))
   {
-    // don't check against a value, because spline intepolation might overshoot depending on
+    // don't check against a value, because spline interpolation might overshoot depending on
     // interface combinations
     EXPECT_GE(state_msg->error.velocities[0], points_velocities[0][0]);
     EXPECT_GE(state_msg->error.velocities[1], points_velocities[0][1]);
@@ -839,8 +839,9 @@ TEST_P(TrajectoryControllerTestParameterized, test_jumbled_joint_order)
 
   if (traj_controller_->has_velocity_command_interface())
   {
-    // use_closed_loop_pid_adapter_=false: we expect desired velocities, because we use PID with
-    // feedforward term only use_closed_loop_pid_adapter_=true: we expect desired velocities
+    // if use_closed_loop_pid_adapter_==false: we expect desired velocities from direct sampling
+    // if use_closed_loop_pid_adapter_==true: we expect desired velocities, because we use PID with
+    // feedforward term only
     EXPECT_GT(0.0, joint_vel_[0]);
     EXPECT_GT(0.0, joint_vel_[1]);
     EXPECT_GT(0.0, joint_vel_[2]);
