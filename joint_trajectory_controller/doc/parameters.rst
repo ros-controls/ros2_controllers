@@ -78,6 +78,7 @@ constraints.stopped_velocity_tolerance (double)
 
 constraints.goal_time (double)
   Maximally allowed tolerance for not reaching the end of the trajectory in a predefined time.
+  If set to zero, the controller will wait a potentially infinite amount of time.
 
   Default: 0.0 (not checked)
 
