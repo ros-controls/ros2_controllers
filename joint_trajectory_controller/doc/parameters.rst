@@ -71,7 +71,8 @@ allow_nonzero_velocity_at_trajectory_end (boolean)
 cmd_timeout (double)
   Timeout after which the input command is considered stale.
   Timeout is counted from the end of the trajectory (the last point).
-  ``cmd_timeout`` must be greater than ``constraints.goal_time``.
+  ``cmd_timeout`` must be greater than ``constraints.goal_time``,
+  otherwise ignored.
 
   If zero, timeout is deactivated"
 
