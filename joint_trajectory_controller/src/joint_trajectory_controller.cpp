@@ -227,7 +227,8 @@ controller_interface::return_type JointTrajectoryController::update(
         if (
           (before_last_point || first_sample) &&
           !check_state_tolerance_per_joint(
-            state_error_, index, default_tolerances_.state_tolerance[index], false))
+            state_error_, index, default_tolerances_.state_tolerance[index], false) &&
+          *(rt_is_holding_.readFromRT()) == false)
         {
           tolerance_violated_while_moving = true;
         }
@@ -235,7 +236,8 @@ controller_interface::return_type JointTrajectoryController::update(
         if (
           !before_last_point &&
           !check_state_tolerance_per_joint(
-            state_error_, index, default_tolerances_.goal_state_tolerance[index], false))
+            state_error_, index, default_tolerances_.goal_state_tolerance[index], false) &&
+          *(rt_is_holding_.readFromRT()) == false)
         {
           outside_goal_tolerance = true;
 
@@ -805,6 +807,10 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     logger, "Using '%s' interpolation method.",
     interpolation_methods::InterpolationMethodMap.at(interpolation_method_).c_str());
 
+  // prepare hold_position_msg
+  init_hold_position_msg();
+
+  // create subscriber and publishers
   joint_command_subscriber_ =
     get_node()->create_subscription<trajectory_msgs::msg::JointTrajectory>(
       "~/joint_trajectory", rclcpp::SystemDefaultsQoS(),
@@ -956,6 +962,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   {
     add_new_trajectory_msg(set_hold_position());
   }
+  rt_is_holding_.writeFromNonRT(true);
 
   return CallbackReturn::SUCCESS;
 }
@@ -1100,6 +1107,7 @@ void JointTrajectoryController::topic_callback(
   if (subscriber_is_active_)
   {
     add_new_trajectory_msg(msg);
+    rt_is_holding_.writeFromNonRT(false);
   }
 };
 
@@ -1162,6 +1170,7 @@ void JointTrajectoryController::goal_accepted_callback(
       std::make_shared<trajectory_msgs::msg::JointTrajectory>(goal_handle->get_goal()->trajectory);
 
     add_new_trajectory_msg(traj_msg);
+    rt_is_holding_.writeFromNonRT(false);
   }
 
   // Update the active goal
@@ -1456,31 +1465,12 @@ std::shared_ptr<trajectory_msgs::msg::JointTrajectory>
 JointTrajectoryController::set_hold_position()
 {
   // Command to stay at current position
-  trajectory_msgs::msg::JointTrajectory current_pose_msg;
-  current_pose_msg.header.stamp =
-    rclcpp::Time(0.0, 0.0, get_node()->get_clock()->get_clock_type());  // start immediately
-  current_pose_msg.joint_names = params_.joints;
-  current_pose_msg.points.push_back(state_current_);
-  current_pose_msg.points[0].velocities.clear();
-  current_pose_msg.points[0].accelerations.clear();
-  current_pose_msg.points[0].effort.clear();
-  if (has_velocity_command_interface_)
-  {
-    // ensure no velocity (PID will fix this)
-    current_pose_msg.points[0].velocities.resize(dof_, 0.0);
-  }
-  if (has_acceleration_command_interface_)
-  {
-    // ensure no acceleration
-    current_pose_msg.points[0].accelerations.resize(dof_, 0.0);
-  }
-  if (has_effort_command_interface_)
-  {
-    // ensure no explicit effort (PID will fix this)
-    current_pose_msg.points[0].effort.resize(dof_, 0.0);
-  }
+  hold_position_msg_ptr_->points[0].positions = state_current_.positions;
 
-  return std::make_shared<trajectory_msgs::msg::JointTrajectory>(current_pose_msg);
+  // set flag, otherwise tolerances will be checked with holding position too
+  rt_is_holding_.writeFromNonRT(true);
+
+  return hold_position_msg_ptr_;
 }
 
 bool JointTrajectoryController::contains_interface_type(
@@ -1528,6 +1518,28 @@ void JointTrajectoryController::resize_joint_trajectory_point_command(
 bool JointTrajectoryController::has_active_trajectory() const
 {
   return traj_external_point_ptr_ != nullptr && traj_external_point_ptr_->has_trajectory_msg();
+}
+
+void JointTrajectoryController::init_hold_position_msg()
+{
+  hold_position_msg_ptr_ = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
+  hold_position_msg_ptr_->header.stamp =
+    rclcpp::Time(0.0, 0.0, get_node()->get_clock()->get_clock_type());  // start immediately
+  hold_position_msg_ptr_->joint_names = params_.joints;
+  hold_position_msg_ptr_->points.resize(1);  // a trivial msg only
+  hold_position_msg_ptr_->points[0].velocities.clear();
+  hold_position_msg_ptr_->points[0].accelerations.clear();
+  hold_position_msg_ptr_->points[0].effort.clear();
+  if (has_velocity_command_interface_ || has_acceleration_command_interface_)
+  {
+    // add velocity, so that trajectory sampling returns velocity points in any case
+    hold_position_msg_ptr_->points[0].velocities.resize(dof_, 0.0);
+  }
+  if (has_acceleration_command_interface_)
+  {
+    // add velocity, so that trajectory sampling returns acceleration points in any case
+    hold_position_msg_ptr_->points[0].accelerations.resize(dof_, 0.0);
+  }
 }
 
 }  // namespace joint_trajectory_controller
