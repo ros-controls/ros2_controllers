@@ -385,16 +385,37 @@ bool CartesianTrajectoryGenerator::read_state_from_hardware(JointTrajectoryPoint
   std::array<double, 3> orientation_angles;
   const auto measured_state = *(feedback_.readFromRT());
   if (!measured_state) return false;
+
   tf2::Quaternion measured_q;
-  tf2::fromMsg(measured_state->pose.pose.orientation, measured_q);
+
+  if (
+    std::isnan(measured_state->pose.pose.orientation.w) ||
+    std::isnan(measured_state->pose.pose.orientation.x) ||
+    std::isnan(measured_state->pose.pose.orientation.y) ||
+    std::isnan(measured_state->pose.pose.orientation.z))
+  {
+    // if any of the orientation is NaN, revert to previous orientation
+    measured_q.setRPY(state.positions[3], state.positions[4], state.positions[5]);
+  }
+  else
+  {
+    tf2::fromMsg(measured_state->pose.pose.orientation, measured_q);
+  }
   tf2::Matrix3x3 m(measured_q);
   m.getRPY(orientation_angles[0], orientation_angles[1], orientation_angles[2]);
 
   // Assign values from the hardware
   // Position states always exist
-  state.positions[0] = measured_state->pose.pose.position.x;
-  state.positions[1] = measured_state->pose.pose.position.y;
-  state.positions[2] = measured_state->pose.pose.position.z;
+  // if any measured position is NaN, keep previous value
+  state.positions[0] = std::isnan(measured_state->pose.pose.position.x)
+                         ? state.positions[0]
+                         : measured_state->pose.pose.position.x;
+  state.positions[1] = std::isnan(measured_state->pose.pose.position.y)
+                         ? state.positions[1]
+                         : measured_state->pose.pose.position.y;
+  state.positions[2] = std::isnan(measured_state->pose.pose.position.z)
+                         ? state.positions[2]
+                         : measured_state->pose.pose.position.z;
   state.positions[3] = orientation_angles[0];
   state.positions[4] = orientation_angles[1];
   state.positions[5] = orientation_angles[2];
@@ -402,17 +423,21 @@ bool CartesianTrajectoryGenerator::read_state_from_hardware(JointTrajectoryPoint
   ////// Convert measured twist which is in body frame to world frame since CTG/JTC expects state in world frame
 
   Eigen::Quaterniond q_body_in_world(
-    measured_state->pose.pose.orientation.w, measured_state->pose.pose.orientation.x,
-    measured_state->pose.pose.orientation.y, measured_state->pose.pose.orientation.z);
+    measured_q.w(), measured_q.x(), measured_q.y(), measured_q.z());
 
+  // if any measured linear velocity is NaN, set to zero
   Eigen::Vector3d linear_vel_body(
-    measured_state->twist.twist.linear.x, measured_state->twist.twist.linear.y,
-    measured_state->twist.twist.linear.z);
+    std::isnan(measured_state->twist.twist.linear.x) ? 0.0 : measured_state->twist.twist.linear.x,
+    std::isnan(measured_state->twist.twist.linear.y) ? 0.0 : measured_state->twist.twist.linear.y,
+    std::isnan(measured_state->twist.twist.linear.z) ? 0.0 : measured_state->twist.twist.linear.z);
   auto linear_vel_world = q_body_in_world * linear_vel_body;
 
+  // if any measured angular velocity is NaN, set to zero
   Eigen::Vector3d angular_vel_body(
-    measured_state->twist.twist.angular.x, measured_state->twist.twist.angular.y,
-    measured_state->twist.twist.angular.z);
+    std::isnan(measured_state->twist.twist.angular.x) ? 0.0 : measured_state->twist.twist.angular.x,
+    std::isnan(measured_state->twist.twist.angular.y) ? 0.0 : measured_state->twist.twist.angular.y,
+    std::isnan(measured_state->twist.twist.angular.z) ? 0.0
+                                                      : measured_state->twist.twist.angular.z);
   auto angular_vel_world = q_body_in_world * angular_vel_body;
 
   state.velocities[0] = linear_vel_world[0];
