@@ -2,6 +2,11 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.15.0 (2023-09-11)
+-------------------
+* [JTC] Make most parameters read-only (`#771 <https://github.com/ros-controls/ros2_controllers/issues/771>`_)
+* Contributors: Christoph Fröhlich
+
 3.14.0 (2023-08-16)
 -------------------
 * [JTC] Tolerance tests + Hold on time violation (`#613 <https://github.com/ros-controls/ros2_controllers/issues/613>`_)
