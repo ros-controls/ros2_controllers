@@ -38,6 +38,12 @@ const std::vector<double> INITIAL_POS_JOINTS = {
 const std::vector<double> INITIAL_VEL_JOINTS = {0.0, 0.0, 0.0};
 const std::vector<double> INITIAL_ACC_JOINTS = {0.0, 0.0, 0.0};
 const std::vector<double> INITIAL_EFF_JOINTS = {0.0, 0.0, 0.0};
+
+bool is_same_sign_or_zero(double val1, double val2)
+{
+  return val1 * val2 > 0.0 || (val1 == 0.0 && val2 == 0.0);
+}
+
 }  // namespace
 
 namespace test_trajectory_controllers
@@ -167,32 +173,26 @@ public:
       controller_name_ + "/joint_trajectory", rclcpp::SystemDefaultsQoS());
   }
 
-  void SetUpTrajectoryController(rclcpp::Executor & executor, bool use_local_parameters = true)
+  void SetUpTrajectoryController(
+    rclcpp::Executor & executor, const std::vector<rclcpp::Parameter> & parameters = {})
   {
     traj_controller_ = std::make_shared<TestableJointTrajectoryController>();
 
-    if (use_local_parameters)
-    {
-      traj_controller_->set_joint_names(joint_names_);
-      traj_controller_->set_command_interfaces(command_interface_types_);
-      traj_controller_->set_state_interfaces(state_interface_types_);
-    }
-    auto ret = traj_controller_->init(controller_name_);
+    auto node_options = rclcpp::NodeOptions();
+    std::vector<rclcpp::Parameter> parameter_overrides;
+    parameter_overrides.push_back(rclcpp::Parameter("joints", joint_names_));
+    parameter_overrides.push_back(
+      rclcpp::Parameter("command_interfaces", command_interface_types_));
+    parameter_overrides.push_back(rclcpp::Parameter("state_interfaces", state_interface_types_));
+    parameter_overrides.insert(parameter_overrides.end(), parameters.begin(), parameters.end());
+    node_options.parameter_overrides(parameter_overrides);
+
+    auto ret = traj_controller_->init(controller_name_, "", node_options);
     if (ret != controller_interface::return_type::OK)
     {
       FAIL();
     }
     executor.add_node(traj_controller_->get_node()->get_node_base_interface());
-    SetParameters();
-  }
-
-  void SetParameters()
-  {
-    auto node = traj_controller_->get_node();
-    const rclcpp::Parameter joint_names_param("joints", joint_names_);
-    const rclcpp::Parameter cmd_interfaces_params("command_interfaces", command_interface_types_);
-    const rclcpp::Parameter state_interfaces_params("state_interfaces", state_interface_types_);
-    node->set_parameters({joint_names_param, cmd_interfaces_params, state_interfaces_params});
   }
 
   void SetPidParameters(
@@ -215,12 +215,11 @@ public:
   }
 
   void SetUpAndActivateTrajectoryController(
-    rclcpp::Executor & executor, bool use_local_parameters = true,
-    const std::vector<rclcpp::Parameter> & parameters = {},
+    rclcpp::Executor & executor, const std::vector<rclcpp::Parameter> & parameters = {},
     bool separate_cmd_and_state_values = false, double k_p = 0.0, double ff = 1.0,
     bool normalize_error = false)
   {
-    SetUpTrajectoryController(executor, use_local_parameters);
+    SetUpTrajectoryController(executor);
 
     // set pid parameters before configure
     SetPidParameters(k_p, ff, normalize_error);
@@ -444,32 +443,65 @@ public:
     // i.e., active but trivial trajectory (one point only)
     EXPECT_TRUE(traj_controller_->has_trivial_traj());
 
-    if (traj_controller_->has_position_command_interface())
+    if (traj_controller_->use_closed_loop_pid_adapter() == false)
     {
-      EXPECT_NEAR(point.at(0), joint_pos_[0], COMMON_THRESHOLD);
-      EXPECT_NEAR(point.at(1), joint_pos_[1], COMMON_THRESHOLD);
-      EXPECT_NEAR(point.at(2), joint_pos_[2], COMMON_THRESHOLD);
-    }
+      if (traj_controller_->has_position_command_interface())
+      {
+        EXPECT_NEAR(point.at(0), joint_pos_[0], COMMON_THRESHOLD);
+        EXPECT_NEAR(point.at(1), joint_pos_[1], COMMON_THRESHOLD);
+        EXPECT_NEAR(point.at(2), joint_pos_[2], COMMON_THRESHOLD);
+      }
 
-    if (traj_controller_->has_velocity_command_interface())
-    {
-      EXPECT_EQ(0.0, joint_vel_[0]);
-      EXPECT_EQ(0.0, joint_vel_[1]);
-      EXPECT_EQ(0.0, joint_vel_[2]);
-    }
+      if (traj_controller_->has_velocity_command_interface())
+      {
+        EXPECT_EQ(0.0, joint_vel_[0]);
+        EXPECT_EQ(0.0, joint_vel_[1]);
+        EXPECT_EQ(0.0, joint_vel_[2]);
+      }
 
-    if (traj_controller_->has_acceleration_command_interface())
-    {
-      EXPECT_EQ(0.0, joint_acc_[0]);
-      EXPECT_EQ(0.0, joint_acc_[1]);
-      EXPECT_EQ(0.0, joint_acc_[2]);
-    }
+      if (traj_controller_->has_acceleration_command_interface())
+      {
+        EXPECT_EQ(0.0, joint_acc_[0]);
+        EXPECT_EQ(0.0, joint_acc_[1]);
+        EXPECT_EQ(0.0, joint_acc_[2]);
+      }
 
-    if (traj_controller_->has_effort_command_interface())
+      if (traj_controller_->has_effort_command_interface())
+      {
+        EXPECT_EQ(0.0, joint_eff_[0]);
+        EXPECT_EQ(0.0, joint_eff_[1]);
+        EXPECT_EQ(0.0, joint_eff_[2]);
+      }
+    }
+    else
     {
-      EXPECT_EQ(0.0, joint_eff_[0]);
-      EXPECT_EQ(0.0, joint_eff_[1]);
-      EXPECT_EQ(0.0, joint_eff_[2]);
+      // velocity or effort PID?
+      // velocity setpoint is always zero -> feedforward term does not have an effect
+      // --> set kp > 0.0 in test
+      if (traj_controller_->has_velocity_command_interface())
+      {
+        EXPECT_TRUE(is_same_sign_or_zero(point.at(0) - joint_state_pos_[0], joint_vel_[0]))
+          << "current error: " << point.at(0) - joint_state_pos_[0] << ", velocity command is "
+          << joint_vel_[0];
+        EXPECT_TRUE(is_same_sign_or_zero(point.at(1) - joint_state_pos_[1], joint_vel_[1]))
+          << "current error: " << point.at(1) - joint_state_pos_[1] << ", velocity command is "
+          << joint_vel_[1];
+        EXPECT_TRUE(is_same_sign_or_zero(point.at(2) - joint_state_pos_[2], joint_vel_[2]))
+          << "current error: " << point.at(2) - joint_state_pos_[2] << ", velocity command is "
+          << joint_vel_[2];
+      }
+      if (traj_controller_->has_effort_command_interface())
+      {
+        EXPECT_TRUE(is_same_sign_or_zero(point.at(0) - joint_state_pos_[0], joint_eff_[0]))
+          << "current error: " << point.at(0) - joint_state_pos_[0] << ", effort command is "
+          << joint_eff_[0];
+        EXPECT_TRUE(is_same_sign_or_zero(point.at(1) - joint_state_pos_[1], joint_eff_[1]))
+          << "current error: " << point.at(1) - joint_state_pos_[1] << ", effort command is "
+          << joint_eff_[1];
+        EXPECT_TRUE(is_same_sign_or_zero(point.at(2) - joint_state_pos_[2], joint_eff_[2]))
+          << "current error: " << point.at(2) - joint_state_pos_[2] << ", effort command is "
+          << joint_eff_[2];
+      }
     }
   }
 

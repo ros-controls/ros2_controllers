@@ -60,8 +60,7 @@ if(BUILD_TESTING)
   target_link_libraries(test_trajectory joint_trajectory_controller)
 
   ament_add_gmock(test_trajectory_controller
-    test/test_trajectory_controller.cpp
-    ENV config_file=${CMAKE_CURRENT_SOURCE_DIR}/test/config/test_joint_trajectory_controller.yaml)
+    test/test_trajectory_controller.cpp)
   set_tests_properties(test_trajectory_controller PROPERTIES TIMEOUT 220)
   target_link_libraries(test_trajectory_controller
     joint_trajectory_controller
