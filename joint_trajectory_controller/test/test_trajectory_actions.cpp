@@ -68,11 +68,11 @@ protected:
 
   void SetUpExecutor(
     const std::vector<rclcpp::Parameter> & parameters = {},
-    bool separate_cmd_and_state_values = false)
+    bool separate_cmd_and_state_values = false, double kp = 0.0)
   {
     setup_executor_ = true;
 
-    SetUpAndActivateTrajectoryController(executor_, parameters, separate_cmd_and_state_values);
+    SetUpAndActivateTrajectoryController(executor_, parameters, separate_cmd_and_state_values, kp);
 
     SetUpActionClient();
 
@@ -247,7 +247,15 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_success_single_point_sendgoa
   // it should be holding the last position goal
   // i.e., active but trivial trajectory (one point only)
   // note: the action goal also is a trivial trajectory
-  expectHoldingPoint(point_positions);
+  if (traj_controller_->has_position_command_interface())
+  {
+    expectHoldingPoint(point_positions);
+  }
+  else
+  {
+    // no integration to position state interface from velocity/acceleration
+    expectHoldingPoint(INITIAL_POS_JOINTS);
+  }
 }
 
 TEST_P(TestTrajectoryActionsTestParameterized, test_success_multi_point_sendgoal)
@@ -294,7 +302,15 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_success_multi_point_sendgoal
 
   // it should be holding the last position goal
   // i.e., active but trivial trajectory (one point only)
-  expectHoldingPoint(points_positions.at(1));
+  if (traj_controller_->has_position_command_interface())
+  {
+    expectHoldingPoint(points_positions.at(1));
+  }
+  else
+  {
+    // no integration to position state interface from velocity/acceleration
+    expectHoldingPoint(INITIAL_POS_JOINTS);
+  }
 }
 
 /**
