@@ -1625,7 +1625,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_goal_tolerances_fail)
   // it should have aborted and be holding now
   expectHoldingPoint(joint_state_pos_);
 
-  // what happens if we wait longer bit it harms the tolerance again?
+  // what happens if we wait longer but it harms the tolerance again?
   auto hold_position = joint_state_pos_;
   joint_state_pos_.at(0) = -3.3;
   updateController(rclcpp::Duration(FIRST_POINT_TIME));
