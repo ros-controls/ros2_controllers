@@ -273,7 +273,7 @@ private:
   bool contains_interface_type(
     const std::vector<std::string> & interface_type_list, const std::string & interface_type);
 
-  void resize_hold_position_msg();
+  void init_hold_position_msg();
   void resize_joint_trajectory_point(
     trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size);
   void resize_joint_trajectory_point_command(
