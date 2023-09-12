@@ -576,7 +576,7 @@ TEST_P(TrajectoryControllerTestParameterized, accept_correct_cmd_timeout)
   rclcpp::Parameter cmd_timeout_parameter("cmd_timeout", cmd_timeout);
   rclcpp::Parameter goal_time_parameter("constraints.goal_time", 2.0);
   SetUpAndActivateTrajectoryController(
-    executor, true, {cmd_timeout_parameter, goal_time_parameter}, false);
+    executor, {cmd_timeout_parameter, goal_time_parameter}, false);
 
   EXPECT_DOUBLE_EQ(cmd_timeout, traj_controller_->get_cmd_timeout());
 }
@@ -591,7 +591,7 @@ TEST_P(TrajectoryControllerTestParameterized, decline_false_cmd_timeout)
   rclcpp::Parameter cmd_timeout_parameter("cmd_timeout", 1.0);
   rclcpp::Parameter goal_time_parameter("constraints.goal_time", 2.0);
   SetUpAndActivateTrajectoryController(
-    executor, true, {cmd_timeout_parameter, goal_time_parameter}, false);
+    executor, {cmd_timeout_parameter, goal_time_parameter}, false);
 
   EXPECT_DOUBLE_EQ(0.0, traj_controller_->get_cmd_timeout());
 }
@@ -604,7 +604,7 @@ TEST_P(TrajectoryControllerTestParameterized, no_timeout)
   rclcpp::executors::MultiThreadedExecutor executor;
   // zero is default value, just for demonstration
   rclcpp::Parameter cmd_timeout_parameter("cmd_timeout", 0.0);
-  SetUpAndActivateTrajectoryController(executor, true, {cmd_timeout_parameter}, false);
+  SetUpAndActivateTrajectoryController(executor, {cmd_timeout_parameter}, false);
   subscribeToState();
 
   size_t n_joints = joint_names_.size();
@@ -656,7 +656,7 @@ TEST_P(TrajectoryControllerTestParameterized, timeout)
   constexpr double cmd_timeout = 0.1;
   rclcpp::Parameter cmd_timeout_parameter("cmd_timeout", cmd_timeout);
   double kp = 1.0;  // activate feedback control for testing velocity/effort PID
-  SetUpAndActivateTrajectoryController(executor, true, {cmd_timeout_parameter}, false, kp);
+  SetUpAndActivateTrajectoryController(executor, {cmd_timeout_parameter}, false, kp);
   subscribeToState();
 
   // send msg
