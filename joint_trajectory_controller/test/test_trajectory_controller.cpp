@@ -1673,7 +1673,8 @@ TEST_P(TrajectoryControllerTestParameterized, test_state_tolerances_fail)
     rclcpp::Parameter("constraints.joint3.trajectory", state_tol)};
 
   rclcpp::executors::MultiThreadedExecutor executor;
-  SetUpAndActivateTrajectoryController(executor, params, true);
+  double kp = 1.0;  // activate feedback control for testing velocity/effort PID
+  SetUpAndActivateTrajectoryController(executor, params, true, kp);
 
   // send msg
   constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(100);
@@ -1705,7 +1706,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_goal_tolerances_fail)
     rclcpp::Parameter("constraints.goal_time", goal_time)};
 
   rclcpp::executors::MultiThreadedExecutor executor;
-  SetUpAndActivateTrajectoryController(executor, params, true);
+  SetUpAndActivateTrajectoryController(executor, params, true, 1.0);
 
   // send msg
   constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(100);
@@ -1722,6 +1723,13 @@ TEST_P(TrajectoryControllerTestParameterized, test_goal_tolerances_fail)
 
   // it should have aborted and be holding now
   expectHoldingPoint(joint_state_pos_);
+
+  // what happens if we wait longer but it harms the tolerance again?
+  auto hold_position = joint_state_pos_;
+  joint_state_pos_.at(0) = -3.3;
+  updateController(rclcpp::Duration(FIRST_POINT_TIME));
+  // it should be still holding the old point
+  expectHoldingPoint(hold_position);
 }
 
 // position controllers
