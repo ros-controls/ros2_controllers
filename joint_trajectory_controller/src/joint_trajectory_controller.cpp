@@ -722,12 +722,21 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     }
   }
 
-  // Configure joint position error normalization from ROS parameters
+  // Configure joint position error normalization from ROS parameters (angle_wraparound)
   normalize_joint_error_.resize(dof_);
   for (size_t i = 0; i < dof_; ++i)
   {
     const auto & gains = params_.gains.joints_map.at(params_.joints[i]);
-    normalize_joint_error_[i] = gains.normalize_error;
+    if (gains.normalize_error)
+    {
+      // TODO(anyone): Remove deprecation warning in the end of 2023
+      RCLCPP_INFO(logger, "`normalize_error` is deprecated, use `angle_wraparound` instead!");
+      normalize_joint_error_[i] = gains.normalize_error;
+    }
+    else
+    {
+      normalize_joint_error_[i] = gains.angle_wraparound;
+    }
   }
 
   if (params_.state_interfaces.empty())
