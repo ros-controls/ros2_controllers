@@ -265,11 +265,6 @@ controller_interface::return_type JointTrajectoryController::update(
           if (active_tol->goal_time_tolerance != 0.0)
           {
             // if we exceed goal_time_tolerance set it to aborted
-            const rclcpp::Time traj_start = traj_external_point_ptr_->get_trajectory_start_time();
-            const rclcpp::Time traj_end = traj_start + start_segment_itr->time_from_start;
-
-            time_difference = time.seconds() - traj_end.seconds();
-
             if (time_difference > active_tol->goal_time_tolerance)
             {
               within_goal_time = false;
