@@ -173,7 +173,10 @@ protected:
   // reserved storage for result of the command when closed loop pid adapter is used
   std::vector<double> tmp_command_;
 
-  realtime_tools::RealtimeBuffer<bool> rt_is_holding_;  ///< are we holding position?
+  // Timeout to consider commands old
+  double cmd_timeout_;
+  // Are we holding position?
+  realtime_tools::RealtimeBuffer<bool> rt_is_holding_;
   // TODO(karsten1987): eventually activate and deactivate subscriber directly when its supported
   bool subscriber_is_active_ = false;
   rclcpp::Subscription<trajectory_msgs::msg::JointTrajectory>::SharedPtr joint_command_subscriber_ =
