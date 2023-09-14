@@ -618,6 +618,147 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_normalized)
 }
 
 /**
+ * @brief cmd_timeout must be greater than constraints.goal_time
+ */
+TEST_P(TrajectoryControllerTestParameterized, accept_correct_cmd_timeout)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+  // zero is default value, just for demonstration
+  double cmd_timeout = 3.0;
+  rclcpp::Parameter cmd_timeout_parameter("cmd_timeout", cmd_timeout);
+  rclcpp::Parameter goal_time_parameter("constraints.goal_time", 2.0);
+  SetUpAndActivateTrajectoryController(
+    executor, {cmd_timeout_parameter, goal_time_parameter}, false);
+
+  EXPECT_DOUBLE_EQ(cmd_timeout, traj_controller_->get_cmd_timeout());
+}
+
+/**
+ * @brief cmd_timeout must be greater than constraints.goal_time
+ */
+TEST_P(TrajectoryControllerTestParameterized, decline_false_cmd_timeout)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+  // zero is default value, just for demonstration
+  rclcpp::Parameter cmd_timeout_parameter("cmd_timeout", 1.0);
+  rclcpp::Parameter goal_time_parameter("constraints.goal_time", 2.0);
+  SetUpAndActivateTrajectoryController(
+    executor, {cmd_timeout_parameter, goal_time_parameter}, false);
+
+  EXPECT_DOUBLE_EQ(0.0, traj_controller_->get_cmd_timeout());
+}
+
+/**
+ * @brief check if no timeout is triggered
+ */
+TEST_P(TrajectoryControllerTestParameterized, no_timeout)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+  // zero is default value, just for demonstration
+  rclcpp::Parameter cmd_timeout_parameter("cmd_timeout", 0.0);
+  SetUpAndActivateTrajectoryController(executor, {cmd_timeout_parameter}, false);
+  subscribeToState();
+
+  size_t n_joints = joint_names_.size();
+
+  // send msg
+  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
+  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
+  // *INDENT-OFF*
+  std::vector<std::vector<double>> points{
+    {{3.3, 4.4, 6.6}}, {{7.7, 8.8, 9.9}}, {{10.10, 11.11, 12.12}}};
+  std::vector<std::vector<double>> points_velocities{
+    {{0.01, 0.01, 0.01}}, {{0.05, 0.05, 0.05}}, {{0.06, 0.06, 0.06}}};
+  // *INDENT-ON*
+  publish(time_from_start, points, rclcpp::Time(0, 0, RCL_STEADY_TIME), {}, points_velocities);
+  traj_controller_->wait_for_trajectory(executor);
+
+  // first update
+  updateController(rclcpp::Duration(FIRST_POINT_TIME) * 4);
+
+  // Spin to receive latest state
+  executor.spin_some();
+  auto state_msg = getState();
+  ASSERT_TRUE(state_msg);
+
+  // has the msg the correct vector sizes?
+  EXPECT_EQ(n_joints, state_msg->reference.positions.size());
+
+  // is the trajectory still active?
+  EXPECT_TRUE(traj_controller_->has_active_traj());
+  // should still hold the points from above
+  EXPECT_TRUE(traj_controller_->has_nontrivial_traj());
+  EXPECT_NEAR(state_msg->reference.positions[0], points.at(2).at(0), 1e-2);
+  EXPECT_NEAR(state_msg->reference.positions[1], points.at(2).at(1), 1e-2);
+  EXPECT_NEAR(state_msg->reference.positions[2], points.at(2).at(2), 1e-2);
+  // value of velocities is different from above due to spline interpolation
+  EXPECT_GT(state_msg->reference.velocities[0], 0.0);
+  EXPECT_GT(state_msg->reference.velocities[1], 0.0);
+  EXPECT_GT(state_msg->reference.velocities[2], 0.0);
+
+  executor.cancel();
+}
+
+/**
+ * @brief check if timeout is triggered
+ */
+TEST_P(TrajectoryControllerTestParameterized, timeout)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+  constexpr double cmd_timeout = 0.1;
+  rclcpp::Parameter cmd_timeout_parameter("cmd_timeout", cmd_timeout);
+  double kp = 1.0;  // activate feedback control for testing velocity/effort PID
+  SetUpAndActivateTrajectoryController(executor, {cmd_timeout_parameter}, false, kp);
+  subscribeToState();
+
+  // send msg
+  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
+  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
+  // *INDENT-OFF*
+  std::vector<std::vector<double>> points{
+    {{3.3, 4.4, 6.6}}, {{7.7, 8.8, 9.9}}, {{10.10, 11.11, 12.12}}};
+  std::vector<std::vector<double>> points_velocities{
+    {{0.01, 0.01, 0.01}}, {{0.05, 0.05, 0.05}}, {{0.06, 0.06, 0.06}}};
+  // *INDENT-ON*
+
+  publish(time_from_start, points, rclcpp::Time(0, 0, RCL_STEADY_TIME), {}, points_velocities);
+  traj_controller_->wait_for_trajectory(executor);
+
+  // update until end of trajectory -> no timeout should have occurred
+  updateController(rclcpp::Duration(FIRST_POINT_TIME) * 3);
+  // is a trajectory active?
+  EXPECT_TRUE(traj_controller_->has_active_traj());
+  // should have the trajectory with three points
+  EXPECT_TRUE(traj_controller_->has_nontrivial_traj());
+
+  // update until timeout should have happened
+  updateController(rclcpp::Duration(FIRST_POINT_TIME));
+
+  // Spin to receive latest state
+  executor.spin_some();
+  auto state_msg = getState();
+  ASSERT_TRUE(state_msg);
+
+  // after timeout, set_hold_position adds a new trajectory
+  // is a trajectory active?
+  EXPECT_TRUE(traj_controller_->has_active_traj());
+  // should be not more than one point now (from hold position)
+  EXPECT_FALSE(traj_controller_->has_nontrivial_traj());
+  // should hold last position with zero velocity
+  if (traj_controller_->has_position_command_interface())
+  {
+    expectHoldingPoint(points.at(2));
+  }
+  else
+  {
+    // no integration to position state interface from velocity/acceleration
+    expectHoldingPoint(INITIAL_POS_JOINTS);
+  }
+
+  executor.cancel();
+}
+
+/**
  * @brief check if position error of revolute joints are normalized if configured so
  */
 TEST_P(TrajectoryControllerTestParameterized, position_error_normalized)

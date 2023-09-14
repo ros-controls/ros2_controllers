@@ -189,7 +189,7 @@ controller_interface::return_type JointTrajectoryController::update(
   state_current_.time_from_start.set__sec(0);
   read_state_from_hardware(state_current_);
 
-  // currently carrying out a trajectory.
+  // currently carrying out a trajectory
   if (has_active_trajectory())
   {
     bool first_sample = false;
@@ -214,11 +214,31 @@ controller_interface::return_type JointTrajectoryController::update(
 
     if (valid_point)
     {
+      const rclcpp::Time traj_start = traj_external_point_ptr_->time_from_start();
+      // this is the time instance
+      // - started with the first segment: when the first point will be reached (in the future)
+      // - later: when the point of the current segment was reached
+      const rclcpp::Time segment_time_from_start = traj_start + start_segment_itr->time_from_start;
+      // time_difference is
+      // - negative until first point is reached
+      // - counting from zero to time_from_start of next point
+      double time_difference = time.seconds() - segment_time_from_start.seconds();
       bool tolerance_violated_while_moving = false;
       bool outside_goal_tolerance = false;
       bool within_goal_time = true;
-      double time_difference = 0.0;
       const bool before_last_point = end_segment_itr != traj_external_point_ptr_->end();
+
+      // have we reached the end, are not holding position, and is a timeout configured?
+      // Check independently of other tolerances
+      if (
+        !before_last_point && *(rt_is_holding_.readFromRT()) == false && cmd_timeout_ > 0.0 &&
+        time_difference > cmd_timeout_)
+      {
+        RCLCPP_WARN(get_node()->get_logger(), "Aborted due to command timeout");
+
+        traj_msg_external_point_ptr_.reset();
+        traj_msg_external_point_ptr_.initRT(set_hold_position());
+      }
 
       // Check state/goal tolerance
       for (size_t index = 0; index < dof_; ++index)
@@ -246,12 +266,6 @@ controller_interface::return_type JointTrajectoryController::update(
 
           if (default_tolerances_.goal_time_tolerance != 0.0)
           {
-            // if we exceed goal_time_tolerance set it to aborted
-            const rclcpp::Time traj_start = traj_external_point_ptr_->get_trajectory_start_time();
-            const rclcpp::Time traj_end = traj_start + start_segment_itr->time_from_start;
-
-            time_difference = time.seconds() - traj_end.seconds();
-
             if (time_difference > default_tolerances_.goal_time_tolerance)
             {
               within_goal_time = false;
@@ -945,6 +959,26 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   query_state_srv_ = get_node()->create_service<control_msgs::srv::QueryTrajectoryState>(
     std::string(get_node()->get_name()) + "/query_state",
     std::bind(&JointTrajectoryController::query_state_service, this, _1, _2));
+
+  if (params_.cmd_timeout > 0.0)
+  {
+    if (params_.cmd_timeout > default_tolerances_.goal_time_tolerance)
+    {
+      cmd_timeout_ = params_.cmd_timeout;
+    }
+    else
+    {
+      // deactivate timeout
+      RCLCPP_WARN(
+        logger, "Command timeout must be higher than goal_time tolerance (%f vs. %f)",
+        params_.cmd_timeout, default_tolerances_.goal_time_tolerance);
+      cmd_timeout_ = 0.0;
+    }
+  }
+  else
+  {
+    cmd_timeout_ = 0.0;
+  }
 
   return CallbackReturn::SUCCESS;
 }
