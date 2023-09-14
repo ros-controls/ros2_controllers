@@ -68,6 +68,16 @@ allow_nonzero_velocity_at_trajectory_end (boolean)
 
   Default: true
 
+cmd_timeout (double)
+  Timeout after which the input command is considered stale.
+  Timeout is counted from the end of the trajectory (the last point).
+  ``cmd_timeout`` must be greater than ``constraints.goal_time``,
+  otherwise ignored.
+
+  If zero, timeout is deactivated"
+
+  Default: 0.0
+
 constraints (structure)
   Default values for tolerances if no explicit values are states in JointTrajectory message.
 
