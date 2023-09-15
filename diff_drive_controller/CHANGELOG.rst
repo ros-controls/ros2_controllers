@@ -2,8 +2,8 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.25.0 (2023-09-15)
+-------------------
 * removed duplicated previous_publish_timestamp\_ increment by publish_period\_ in diff_drive_controller.cpp (`#644 <https://github.com/ros-controls/ros2_controllers/issues/644>`_) (`#777 <https://github.com/ros-controls/ros2_controllers/issues/777>`_)
 * Update docs for diff drive controller (`#751 <https://github.com/ros-controls/ros2_controllers/issues/751>`_) (`#753 <https://github.com/ros-controls/ros2_controllers/issues/753>`_)
 * Contributors: Christoph Fröhlich, Jules CARPENTIER
