@@ -17,7 +17,7 @@ Waypoints consist of positions, and optionally velocities and accelerations.
 Hardware interface types
 -------------------------------
 
-Currently, joints with hardware interface types ``position``, ``velocity``, ``acceleration``, and ``effort`` (defined `here <https://github.com/ros-controls/ros2_control/blob/{REPOS_FILE_BRANCH}/hardware_interface/include/hardware_interface/types/hardware_interface_type_values.hpp>`_) are supported in the following combination:
+Currently, joints with hardware interface types ``position``, ``velocity``, ``acceleration``, and ``effort`` (defined `here <https://github.com/ros-controls/ros2_control/blob/{REPOS_FILE_BRANCH}/hardware_interface/include/hardware_interface/types/hardware_interface_type_values.hpp>`_) are supported in the following combinations:
 
 * ``position``
 * ``position``, ``velocity``
