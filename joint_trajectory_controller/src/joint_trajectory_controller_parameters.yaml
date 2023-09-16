@@ -109,7 +109,13 @@ joint_trajectory_controller:
       normalize_error: {
         type: bool,
         default_value: false,
-        description: "Use position error normalization to -pi to pi."
+        description: "(Deprecated) Use position error normalization to -pi to pi."
+      }
+      angle_wraparound: {
+        type: bool,
+        default_value: false,
+        description: "For joints that wrap around (ie. are continuous).
+          Normalizes position-error to -pi to pi."
       }
   constraints:
     stopped_velocity_tolerance: {
