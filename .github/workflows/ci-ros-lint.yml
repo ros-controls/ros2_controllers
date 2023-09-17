@@ -26,6 +26,7 @@ jobs:
           joint_trajectory_controller
           gripper_controllers
           position_controllers
+          range_sensor_broadcaster
           ros2_controllers
           ros2_controllers_test_nodes
           tricycle_controller
@@ -56,6 +57,7 @@ jobs:
           joint_trajectory_controller
           gripper_controllers
           position_controllers
+          range_sensor_broadcaster
           ros2_controllers
           ros2_controllers_test_nodes
           tricycle_controller
