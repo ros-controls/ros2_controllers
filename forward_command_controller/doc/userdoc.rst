@@ -16,8 +16,18 @@ Hardware interface type
 
 This controller can be used for every type of command interface.
 
+
+ROS 2 interface of the controller
+---------------------------------
+
+Topics
+^^^^^^^
+
+~/commands (input topic) [std_msgs::msg::Float64MultiArray]
+  Target joint commands
+
 Parameters
-------------
+^^^^^^^^^^^^^^
 
 This controller uses the `generate_parameter_library <https://github.com/PickNikRobotics/generate_parameter_library>`_ to handle its parameters.
 
