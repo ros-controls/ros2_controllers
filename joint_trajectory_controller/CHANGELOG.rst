@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.16.0 (2023-09-20)
+-------------------
 * [Docs] Improve interface description of JTC (`#770 <https://github.com/ros-controls/ros2_controllers/issues/770>`_)
 * [JTC] Add time-out for trajectory interfaces (`#609 <https://github.com/ros-controls/ros2_controllers/issues/609>`_)
 * [JTC] Rename parameter: normalize_error to angle_wraparound (`#772 <https://github.com/ros-controls/ros2_controllers/issues/772>`_)
