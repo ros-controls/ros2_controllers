@@ -29,8 +29,8 @@
 #include "control_toolbox/pid.hpp"
 #include "controller_interface/controller_interface.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
-#include "joint_limits/joint_limits.hpp"
 #include "joint_limits/joint_limiter_interface.hpp"
+#include "joint_limits/joint_limits.hpp"
 #include "joint_trajectory_controller/interpolation_methods.hpp"
 #include "joint_trajectory_controller/tolerances.hpp"
 #include "joint_trajectory_controller/visibility_control.h"
@@ -156,6 +156,8 @@ protected:
   // For convenience, for each type the interfaces are ordered so that i-th position
   // matches i-th index in joint_names_
   template <typename T>
+  using JointInterfaceRefs = std::vector<std::reference_wrapper<T>>;
+  template <typename T>
   using InterfaceReferences = std::vector<std::vector<std::reference_wrapper<T>>>;
 
   InterfaceReferences<hardware_interface::LoanedCommandInterface> joint_command_interface_;
@@ -201,18 +203,6 @@ protected:
   realtime_tools::RealtimeBuffer<std::shared_ptr<trajectory_msgs::msg::JointTrajectory>>
     traj_msg_external_point_ptr_;
 
-  using ControllerStateMsg = control_msgs::msg::JointTrajectoryControllerState;
-  using StatePublisher = realtime_tools::RealtimePublisher<ControllerStateMsg>;
-  using StatePublisherPtr = std::unique_ptr<StatePublisher>;
-  rclcpp::Publisher<ControllerStateMsg>::SharedPtr publisher_;
-  StatePublisherPtr state_publisher_;
-  rclcpp::Publisher<ControllerStateMsg>::SharedPtr splines_output_pub_;
-  StatePublisherPtr splines_output_publisher_;
-  rclcpp::Publisher<ControllerStateMsg>::SharedPtr ruckig_input_pub_;
-  StatePublisherPtr ruckig_input_publisher_;
-  rclcpp::Publisher<ControllerStateMsg>::SharedPtr ruckig_input_target_pub_;
-  StatePublisherPtr ruckig_input_target_publisher_;
-
   using FollowJTrajAction = control_msgs::action::FollowJointTrajectory;
   using RealtimeGoalHandle = realtime_tools::RealtimeServerGoalHandle<FollowJTrajAction>;
   using RealtimeGoalHandlePtr = std::shared_ptr<RealtimeGoalHandle>;
@@ -227,6 +217,26 @@ protected:
 
   realtime_tools::RealtimeBuffer<std::vector<bool>> reset_dofs_flags_;
   rclcpp::Service<ControllerResetDofsSrvType>::SharedPtr reset_dofs_service_;
+
+  using ControllerStateMsg = control_msgs::msg::JointTrajectoryControllerState;
+  using StatePublisher = realtime_tools::RealtimePublisher<ControllerStateMsg>;
+  using StatePublisherPtr = std::unique_ptr<StatePublisher>;
+  rclcpp::Publisher<ControllerStateMsg>::SharedPtr publisher_;
+  StatePublisherPtr state_publisher_;
+  rclcpp::Publisher<ControllerStateMsg>::SharedPtr splines_output_pub_;
+  StatePublisherPtr splines_output_publisher_;
+  rclcpp::Publisher<ControllerStateMsg>::SharedPtr ruckig_input_pub_;
+  StatePublisherPtr ruckig_input_publisher_;
+  rclcpp::Publisher<ControllerStateMsg>::SharedPtr ruckig_input_target_pub_;
+  StatePublisherPtr ruckig_input_target_publisher_;
+
+  using JointTrajectoryPoint = trajectory_msgs::msg::JointTrajectoryPoint;
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
+  virtual void publish_state(
+    const rclcpp::Time & time, const JointTrajectoryPoint & desired_state,
+    const JointTrajectoryPoint & current_state, const JointTrajectoryPoint & state_error,
+    const JointTrajectoryPoint & splines_output, const JointTrajectoryPoint & ruckig_input_target,
+    const JointTrajectoryPoint & ruckig_input);
 
   // callback for topic interface
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
@@ -272,14 +282,6 @@ protected:
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   bool reset();
 
-  using JointTrajectoryPoint = trajectory_msgs::msg::JointTrajectoryPoint;
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  void publish_state(
-    const rclcpp::Time & time, const JointTrajectoryPoint & desired_state,
-    const JointTrajectoryPoint & current_state, const JointTrajectoryPoint & state_error,
-    const JointTrajectoryPoint & splines_output, const JointTrajectoryPoint & ruckig_input_target,
-    const JointTrajectoryPoint & ruckig_input);
-
   virtual bool read_state_from_hardware(JointTrajectoryPoint & state);
 
   bool read_state_from_command_interfaces(JointTrajectoryPoint & state);
@@ -290,6 +292,28 @@ protected:
   void query_state_service(
     const std::shared_ptr<control_msgs::srv::QueryTrajectoryState::Request> request,
     std::shared_ptr<control_msgs::srv::QueryTrajectoryState::Response> response);
+
+  // BEGIN: helper methods
+  template <typename T>
+  void assign_point_from_interface(
+    std::vector<double> & trajectory_point_interface, const JointInterfaceRefs<T> & joint_interface)
+  {
+    for (size_t index = 0; index < dof_; ++index)
+    {
+      trajectory_point_interface[index] = joint_interface[index].get().get_value();
+    }
+  };
+
+  template <typename T>
+  void assign_interface_from_point(
+    JointInterfaceRefs<T> & joint_interface, const std::vector<double> & trajectory_point_interface)
+  {
+    for (size_t index = 0; index < dof_; ++index)
+    {
+      joint_interface[index].get().set_value(trajectory_point_interface[index]);
+    }
+  };
+  // END: helper methods
 
 private:
   bool contains_interface_type(

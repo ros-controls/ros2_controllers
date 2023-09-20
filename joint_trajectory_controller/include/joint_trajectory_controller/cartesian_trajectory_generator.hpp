@@ -20,7 +20,10 @@
 #include <unordered_map>
 #include <vector>
 
+#include "control_msgs/msg/cartesian_trajectory_generator_state.hpp"
 #include "control_msgs/srv/set_dof_limits.hpp"
+#include "geometry_msgs/msg/pose.hpp"
+#include "geometry_msgs/msg/transform_stamped.hpp"
 #include "joint_limits/joint_limits.hpp"
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
 #include "nav_msgs/msg/odometry.hpp"
@@ -58,15 +61,25 @@ public:
 protected:
   bool read_state_from_hardware(JointTrajectoryPoint & state) override;
 
+  using JointTrajectoryPoint = trajectory_msgs::msg::JointTrajectoryPoint;
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
+  void publish_state(
+    const rclcpp::Time & time, const JointTrajectoryPoint & desired_state,
+    const JointTrajectoryPoint & current_state, const JointTrajectoryPoint & state_error,
+    const JointTrajectoryPoint & splines_output, const JointTrajectoryPoint & ruckig_input_target,
+    const JointTrajectoryPoint & ruckig_input) override;
+
   // Command subscribers and Controller State publisher
   rclcpp::Subscription<ControllerReferenceMsg>::SharedPtr ref_subscriber_ = nullptr;
   rclcpp::Subscription<ControllerReferenceMsg>::SharedPtr ref_subscriber_reliable_ = nullptr;
-  realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerReferenceMsg>> input_ref_;
+  realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerReferenceMsg>> reference_world_;
 
   rclcpp::Subscription<ControllerFeedbackMsg>::SharedPtr feedback_subscriber_ = nullptr;
   realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerFeedbackMsg>> feedback_;
 
   rclcpp::Service<SetLimitsModeSrvType>::SharedPtr set_joint_limits_service_;
+
+  trajectory_msgs::msg::JointTrajectoryPoint control_output_local_;
 
 private:
   void reference_callback(const std::shared_ptr<ControllerReferenceMsg> msg);
@@ -75,7 +88,16 @@ private:
     const std::shared_ptr<SetLimitsModeSrvType::Request> request,
     std::shared_ptr<SetLimitsModeSrvType::Response> response);
 
+  using CartControllerStateMsg = control_msgs::msg::CartesianTrajectoryGeneratorState;
+  using CartStatePublisher = realtime_tools::RealtimePublisher<CartControllerStateMsg>;
+  using CartStatePublisherPtr = std::unique_ptr<CartStatePublisher>;
+  rclcpp::Publisher<CartControllerStateMsg>::SharedPtr cart_publisher_;
+  CartStatePublisherPtr cart_state_publisher_;
+
   std::vector<joint_limits::JointLimits> configured_joint_limits_;
+
+  // storage of last received measured position to
+  geometry_msgs::msg::Pose last_received_measured_position_;
 };
 
 }  // namespace cartesian_trajectory_generator

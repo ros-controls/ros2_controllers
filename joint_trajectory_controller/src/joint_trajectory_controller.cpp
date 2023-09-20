@@ -398,15 +398,6 @@ controller_interface::return_type JointTrajectoryController::update(
 
 bool JointTrajectoryController::read_state_from_hardware(JointTrajectoryPoint & state)
 {
-  auto assign_point_from_interface =
-    [&](std::vector<double> & trajectory_point_interface, const auto & joint_interface)
-  {
-    for (size_t index = 0; index < dof_; ++index)
-    {
-      trajectory_point_interface[index] = joint_interface[index].get().get_value();
-    }
-  };
-
   // Assign values from the hardware
   // Position states always exist
   assign_point_from_interface(state.positions, joint_state_interface_[0]);
@@ -437,15 +428,6 @@ bool JointTrajectoryController::read_state_from_hardware(JointTrajectoryPoint & 
 bool JointTrajectoryController::read_state_from_command_interfaces(JointTrajectoryPoint & state)
 {
   bool has_values = true;
-
-  auto assign_point_from_interface =
-    [&](std::vector<double> & trajectory_point_interface, const auto & joint_interface)
-  {
-    for (size_t index = 0; index < dof_; ++index)
-    {
-      trajectory_point_interface[index] = joint_interface[index].get().get_value();
-    }
-  };
 
   auto interface_has_values = [](const auto & joint_interface)
   {
@@ -683,15 +665,15 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   if (!params_.joint_limiter_type.empty())
   {
     RCLCPP_INFO(
-      get_node()->get_logger(), "Using joint limiter plugin: '%s'", params_.joint_limiter_type.c_str());
+      get_node()->get_logger(), "Using joint limiter plugin: '%s'",
+      params_.joint_limiter_type.c_str());
     joint_limiter_ = std::unique_ptr<JointLimiter>(
       joint_limiter_loader_->createUnmanagedInstance(params_.joint_limiter_type));
     joint_limiter_->init(command_joint_names_, get_node());
   }
   else
   {
-    RCLCPP_INFO(
-      get_node()->get_logger(), "Not using joint limiter plugin as none defined.");
+    RCLCPP_INFO(get_node()->get_logger(), "Not using joint limiter plugin as none defined.");
   }
 
   if (params_.state_interfaces.empty())

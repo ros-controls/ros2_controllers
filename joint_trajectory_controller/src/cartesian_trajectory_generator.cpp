@@ -14,11 +14,12 @@
 
 #include "joint_trajectory_controller/cartesian_trajectory_generator.hpp"
 
-#include "eigen3/Eigen/Eigen"
-#include "tf2/transform_datatypes.h"
-
 #include "controller_interface/helpers.hpp"
+#include "eigen3/Eigen/Eigen"
+#include "geometry_msgs/msg/quaternion.hpp"
+#include "geometry_msgs/msg/vector3.hpp"
 #include "joint_trajectory_controller/trajectory.hpp"
+#include "tf2/transform_datatypes.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 namespace
@@ -60,6 +61,15 @@ void reset_controller_reference_msg(const std::shared_ptr<ControllerReferenceMsg
 {
   reset_controller_reference_msg(*msg);
 }
+
+void rpy_to_quaternion(
+  std::array<double, 3> & orientation_angles, geometry_msgs::msg::Quaternion & quaternion_msg)
+{
+  // convert quaternion to euler angles
+  tf2::Quaternion quaternion;
+  quaternion.setRPY(orientation_angles[0], orientation_angles[1], orientation_angles[2]);
+  quaternion_msg = tf2::toMsg(quaternion);
+}
 }  // namespace
 
 namespace cartesian_trajectory_generator
@@ -90,30 +100,30 @@ controller_interface::CallbackReturn CartesianTrajectoryGenerator::on_configure(
   configured_joint_limits_ = joint_limits_;
 
   // topics QoS
-  auto subscribers_qos = rclcpp::SystemDefaultsQoS();
-  subscribers_qos.keep_last(1);
-  subscribers_qos.best_effort();
+  auto qos_best_effort_history_depth_one = rclcpp::SystemDefaultsQoS();
+  qos_best_effort_history_depth_one.keep_last(1);
+  qos_best_effort_history_depth_one.best_effort();
   auto subscribers_reliable_qos = rclcpp::SystemDefaultsQoS();
   subscribers_reliable_qos.keep_all();
   subscribers_reliable_qos.reliable();
 
   // Reference Subscribers (reliable channel also for updates not to be missed)
   ref_subscriber_ = get_node()->create_subscription<ControllerReferenceMsg>(
-    "~/reference", subscribers_qos,
+    "~/reference", qos_best_effort_history_depth_one,
     std::bind(&CartesianTrajectoryGenerator::reference_callback, this, std::placeholders::_1));
   ref_subscriber_reliable_ = get_node()->create_subscription<ControllerReferenceMsg>(
-    "~/reference_reliable", subscribers_qos,
+    "~/reference_reliable", subscribers_reliable_qos,
     std::bind(&CartesianTrajectoryGenerator::reference_callback, this, std::placeholders::_1));
 
   std::shared_ptr<ControllerReferenceMsg> msg = std::make_shared<ControllerReferenceMsg>();
   reset_controller_reference_msg(msg);
-  input_ref_.writeFromNonRT(msg);
+  reference_world_.writeFromNonRT(msg);
 
   // Odometry feedback
   auto feedback_callback = [&](const std::shared_ptr<ControllerFeedbackMsg> msg) -> void
   { feedback_.writeFromNonRT(msg); };
   feedback_subscriber_ = get_node()->create_subscription<ControllerFeedbackMsg>(
-    "~/feedback", subscribers_qos, feedback_callback);
+    "~/feedback", qos_best_effort_history_depth_one, feedback_callback);
   // initialize feedback to null pointer since it is used to determine if we have valid data or not
   feedback_.writeFromNonRT(nullptr);
 
@@ -130,6 +140,35 @@ controller_interface::CallbackReturn CartesianTrajectoryGenerator::on_configure(
       std::placeholders::_2),
     services_qos);
 
+  cart_publisher_ = get_node()->create_publisher<CartControllerStateMsg>(
+    "~/controller_state_cartesian", qos_best_effort_history_depth_one);
+  cart_state_publisher_ = std::make_unique<CartStatePublisher>(cart_publisher_);
+
+  cart_state_publisher_->lock();
+  cart_state_publisher_->msg_.dof_names = params_.joints;
+  cart_state_publisher_->msg_.reference_world.transforms.resize(1);
+  cart_state_publisher_->msg_.reference_world.velocities.resize(1);
+  cart_state_publisher_->msg_.reference_world.accelerations.resize(1);
+  cart_state_publisher_->msg_.reference_local.transforms.resize(1);
+  cart_state_publisher_->msg_.reference_local.velocities.resize(1);
+  cart_state_publisher_->msg_.reference_local.accelerations.resize(1);
+  cart_state_publisher_->msg_.feedback.transforms.resize(1);
+  cart_state_publisher_->msg_.feedback.velocities.resize(1);
+  cart_state_publisher_->msg_.feedback.accelerations.resize(1);
+  cart_state_publisher_->msg_.feedback_local.transforms.resize(1);
+  cart_state_publisher_->msg_.feedback_local.velocities.resize(1);
+  cart_state_publisher_->msg_.feedback_local.accelerations.resize(1);
+  cart_state_publisher_->msg_.error.transforms.resize(1);
+  cart_state_publisher_->msg_.error.velocities.resize(1);
+  cart_state_publisher_->msg_.error.accelerations.resize(1);
+  cart_state_publisher_->msg_.output_world.transforms.resize(1);
+  cart_state_publisher_->msg_.output_world.velocities.resize(1);
+  cart_state_publisher_->msg_.output_world.accelerations.resize(1);
+  cart_state_publisher_->msg_.output_local.transforms.resize(1);
+  cart_state_publisher_->msg_.output_local.velocities.resize(1);
+  cart_state_publisher_->msg_.output_local.accelerations.resize(1);
+  cart_state_publisher_->unlock();
+
   return CallbackReturn::SUCCESS;
 }
 
@@ -137,7 +176,7 @@ void CartesianTrajectoryGenerator::reference_callback(
   const std::shared_ptr<ControllerReferenceMsg> msg)
 {
   // store input ref for later use
-  input_ref_.writeFromNonRT(msg);
+  reference_world_.writeFromNonRT(msg);
 
   // assume for now that we are working with trajectories with one point - we don't know exactly
   // where we are in the trajectory before sampling - nevertheless this should work for the use case
@@ -420,7 +459,8 @@ bool CartesianTrajectoryGenerator::read_state_from_hardware(JointTrajectoryPoint
   state.positions[4] = orientation_angles[1];
   state.positions[5] = orientation_angles[2];
 
-  ////// Convert measured twist which is in body frame to world frame since CTG/JTC expects state in world frame
+  // Convert measured twist which is in body frame to world frame since CTG/JTC expects state
+  // in world frame
 
   Eigen::Quaterniond q_body_in_world(
     measured_q.w(), measured_q.x(), measured_q.y(), measured_q.z());
@@ -450,6 +490,78 @@ bool CartesianTrajectoryGenerator::read_state_from_hardware(JointTrajectoryPoint
   state.accelerations.clear();
   return true;
 }
+
+void CartesianTrajectoryGenerator::publish_state(
+  const rclcpp::Time & time, const JointTrajectoryPoint & desired_state,
+  const JointTrajectoryPoint & current_state, const JointTrajectoryPoint & state_error,
+  const JointTrajectoryPoint & splines_output, const JointTrajectoryPoint & ruckig_input_target,
+  const JointTrajectoryPoint & ruckig_input)
+{
+  joint_trajectory_controller::JointTrajectoryController::publish_state(
+    time, desired_state, current_state, state_error, splines_output, ruckig_input_target,
+    ruckig_input);
+
+  if (cart_state_publisher_->trylock())
+  {
+    cart_state_publisher_->msg_.header.stamp = time;
+    cart_state_publisher_->msg_.reference_world = *(*reference_world_.readFromRT());
+
+    auto set_multi_dof_point =
+      [&](
+        trajectory_msgs::msg::MultiDOFJointTrajectoryPoint & multi_dof_point,
+        const JointTrajectoryPoint & traj_point)
+    {
+      if (traj_point.positions.size() == 6)
+      {
+        multi_dof_point.transforms[0].translation.x = traj_point.positions[0];
+        multi_dof_point.transforms[0].translation.y = traj_point.positions[1];
+        multi_dof_point.transforms[0].translation.z = traj_point.positions[2];
+
+        std::array<double, 3> orientation_angles = {
+          traj_point.positions[3], traj_point.positions[4], traj_point.positions[5]};
+        geometry_msgs::msg::Quaternion quaternion;
+        rpy_to_quaternion(orientation_angles, quaternion);
+        multi_dof_point.transforms[0].rotation = quaternion;
+      }
+      if (traj_point.velocities.size() == 6)
+      {
+        multi_dof_point.velocities[0].linear.x = traj_point.velocities[0];
+        multi_dof_point.velocities[0].linear.y = traj_point.velocities[1];
+        multi_dof_point.velocities[0].linear.z = traj_point.velocities[2];
+        multi_dof_point.velocities[0].angular.x = traj_point.velocities[3];
+        multi_dof_point.velocities[0].angular.y = traj_point.velocities[4];
+        multi_dof_point.velocities[0].angular.z = traj_point.velocities[5];
+      }
+      if (traj_point.accelerations.size() == 6)
+      {
+        multi_dof_point.accelerations[0].linear.x = traj_point.accelerations[0];
+        multi_dof_point.accelerations[0].linear.y = traj_point.accelerations[1];
+        multi_dof_point.accelerations[0].linear.z = traj_point.accelerations[2];
+        multi_dof_point.accelerations[0].angular.x = traj_point.accelerations[3];
+        multi_dof_point.accelerations[0].angular.y = traj_point.accelerations[4];
+        multi_dof_point.accelerations[0].angular.z = traj_point.accelerations[5];
+      }
+    };
+
+    set_multi_dof_point(cart_state_publisher_->msg_.feedback_local, current_state);
+    set_multi_dof_point(cart_state_publisher_->msg_.error, state_error);
+    set_multi_dof_point(cart_state_publisher_->msg_.output_world, desired_state);
+
+    const auto measured_state = *(feedback_.readFromRT());
+    cart_state_publisher_->msg_.feedback.transforms[0].translation.x =
+      measured_state->pose.pose.position.x;
+    cart_state_publisher_->msg_.feedback.transforms[0].translation.y =
+      measured_state->pose.pose.position.y;
+    cart_state_publisher_->msg_.feedback.transforms[0].translation.z =
+      measured_state->pose.pose.position.z;
+    cart_state_publisher_->msg_.feedback.transforms[0].rotation =
+      measured_state->pose.pose.orientation;
+    cart_state_publisher_->msg_.feedback.velocities[0] = measured_state->twist.twist;
+
+    cart_state_publisher_->unlockAndPublish();
+  }
+}
+
 }  // namespace cartesian_trajectory_generator
 
 #include "pluginlib/class_list_macros.hpp"
