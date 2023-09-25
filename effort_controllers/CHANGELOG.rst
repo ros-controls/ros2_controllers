@@ -2,6 +2,14 @@
 Changelog for package effort_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.16.0 (2023-09-20)
+-------------------
+* [Doc] Add specific documentation on the available fw cmd controllers (`#765 <https://github.com/ros-controls/ros2_controllers/issues/765>`_)
+* Contributors: Christoph Fröhlich
+
+3.15.0 (2023-09-11)
+-------------------
+
 3.14.0 (2023-08-16)
 -------------------
 

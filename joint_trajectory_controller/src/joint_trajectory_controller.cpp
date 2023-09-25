@@ -186,7 +186,7 @@ controller_interface::return_type JointTrajectoryController::update(
   state_current_.time_from_start.set__sec(0);
   read_state_from_hardware(state_current_);
 
-  // currently carrying out a trajectory.
+  // currently carrying out a trajectory
   if (has_active_trajectory())
   {
     bool first_sample = false;
@@ -211,11 +211,31 @@ controller_interface::return_type JointTrajectoryController::update(
 
     if (valid_point)
     {
+      const rclcpp::Time traj_start = traj_external_point_ptr_->time_from_start();
+      // this is the time instance
+      // - started with the first segment: when the first point will be reached (in the future)
+      // - later: when the point of the current segment was reached
+      const rclcpp::Time segment_time_from_start = traj_start + start_segment_itr->time_from_start;
+      // time_difference is
+      // - negative until first point is reached
+      // - counting from zero to time_from_start of next point
+      double time_difference = time.seconds() - segment_time_from_start.seconds();
       bool tolerance_violated_while_moving = false;
       bool outside_goal_tolerance = false;
       bool within_goal_time = true;
-      double time_difference = 0.0;
       const bool before_last_point = end_segment_itr != traj_external_point_ptr_->end();
+
+      // have we reached the end, are not holding position, and is a timeout configured?
+      // Check independently of other tolerances
+      if (
+        !before_last_point && *(rt_is_holding_.readFromRT()) == false && cmd_timeout_ > 0.0 &&
+        time_difference > cmd_timeout_)
+      {
+        RCLCPP_WARN(get_node()->get_logger(), "Aborted due to command timeout");
+
+        traj_msg_external_point_ptr_.reset();
+        traj_msg_external_point_ptr_.initRT(set_hold_position());
+      }
 
       // Check state/goal tolerance
       for (size_t index = 0; index < dof_; ++index)
@@ -227,7 +247,8 @@ controller_interface::return_type JointTrajectoryController::update(
         if (
           (before_last_point || first_sample) &&
           !check_state_tolerance_per_joint(
-            state_error_, index, default_tolerances_.state_tolerance[index], false))
+            state_error_, index, default_tolerances_.state_tolerance[index], false) &&
+          *(rt_is_holding_.readFromRT()) == false)
         {
           tolerance_violated_while_moving = true;
         }
@@ -235,18 +256,13 @@ controller_interface::return_type JointTrajectoryController::update(
         if (
           !before_last_point &&
           !check_state_tolerance_per_joint(
-            state_error_, index, default_tolerances_.goal_state_tolerance[index], false))
+            state_error_, index, default_tolerances_.goal_state_tolerance[index], false) &&
+          *(rt_is_holding_.readFromRT()) == false)
         {
           outside_goal_tolerance = true;
 
           if (default_tolerances_.goal_time_tolerance != 0.0)
           {
-            // if we exceed goal_time_tolerance set it to aborted
-            const rclcpp::Time traj_start = traj_external_point_ptr_->get_trajectory_start_time();
-            const rclcpp::Time traj_end = traj_start + start_segment_itr->time_from_start;
-
-            time_difference = time.seconds() - traj_end.seconds();
-
             if (time_difference > default_tolerances_.goal_time_tolerance)
             {
               within_goal_time = false;
@@ -724,12 +740,21 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     }
   }
 
-  // Configure joint position error normalization from ROS parameters
+  // Configure joint position error normalization from ROS parameters (angle_wraparound)
   normalize_joint_error_.resize(dof_);
   for (size_t i = 0; i < dof_; ++i)
   {
     const auto & gains = params_.gains.joints_map.at(params_.joints[i]);
-    normalize_joint_error_[i] = gains.normalize_error;
+    if (gains.normalize_error)
+    {
+      // TODO(anyone): Remove deprecation warning in the end of 2023
+      RCLCPP_INFO(logger, "`normalize_error` is deprecated, use `angle_wraparound` instead!");
+      normalize_joint_error_[i] = gains.normalize_error;
+    }
+    else
+    {
+      normalize_joint_error_[i] = gains.angle_wraparound;
+    }
   }
 
   if (params_.state_interfaces.empty())
@@ -805,6 +830,10 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     logger, "Using '%s' interpolation method.",
     interpolation_methods::InterpolationMethodMap.at(interpolation_method_).c_str());
 
+  // prepare hold_position_msg
+  init_hold_position_msg();
+
+  // create subscriber and publishers
   joint_command_subscriber_ =
     get_node()->create_subscription<trajectory_msgs::msg::JointTrajectory>(
       "~/joint_trajectory", rclcpp::SystemDefaultsQoS(),
@@ -879,6 +908,26 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     std::string(get_node()->get_name()) + "/query_state",
     std::bind(&JointTrajectoryController::query_state_service, this, _1, _2));
 
+  if (params_.cmd_timeout > 0.0)
+  {
+    if (params_.cmd_timeout > default_tolerances_.goal_time_tolerance)
+    {
+      cmd_timeout_ = params_.cmd_timeout;
+    }
+    else
+    {
+      // deactivate timeout
+      RCLCPP_WARN(
+        logger, "Command timeout must be higher than goal_time tolerance (%f vs. %f)",
+        params_.cmd_timeout, default_tolerances_.goal_time_tolerance);
+      cmd_timeout_ = 0.0;
+    }
+  }
+  else
+  {
+    cmd_timeout_ = 0.0;
+  }
+
   return CallbackReturn::SUCCESS;
 }
 
@@ -951,11 +1000,12 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
     last_commanded_state_ = state;
   }
 
-  // Should the controller start by holding position after on_configure?
+  // Should the controller start by holding position at the beginning of active state?
   if (params_.start_with_holding)
   {
     add_new_trajectory_msg(set_hold_position());
   }
+  rt_is_holding_.writeFromNonRT(true);
 
   return CallbackReturn::SUCCESS;
 }
@@ -1100,6 +1150,7 @@ void JointTrajectoryController::topic_callback(
   if (subscriber_is_active_)
   {
     add_new_trajectory_msg(msg);
+    rt_is_holding_.writeFromNonRT(false);
   }
 };
 
@@ -1162,6 +1213,7 @@ void JointTrajectoryController::goal_accepted_callback(
       std::make_shared<trajectory_msgs::msg::JointTrajectory>(goal_handle->get_goal()->trajectory);
 
     add_new_trajectory_msg(traj_msg);
+    rt_is_holding_.writeFromNonRT(false);
   }
 
   // Update the active goal
@@ -1456,31 +1508,12 @@ std::shared_ptr<trajectory_msgs::msg::JointTrajectory>
 JointTrajectoryController::set_hold_position()
 {
   // Command to stay at current position
-  trajectory_msgs::msg::JointTrajectory current_pose_msg;
-  current_pose_msg.header.stamp =
-    rclcpp::Time(0.0, 0.0, get_node()->get_clock()->get_clock_type());  // start immediately
-  current_pose_msg.joint_names = params_.joints;
-  current_pose_msg.points.push_back(state_current_);
-  current_pose_msg.points[0].velocities.clear();
-  current_pose_msg.points[0].accelerations.clear();
-  current_pose_msg.points[0].effort.clear();
-  if (has_velocity_command_interface_)
-  {
-    // ensure no velocity (PID will fix this)
-    current_pose_msg.points[0].velocities.resize(dof_, 0.0);
-  }
-  if (has_acceleration_command_interface_)
-  {
-    // ensure no acceleration
-    current_pose_msg.points[0].accelerations.resize(dof_, 0.0);
-  }
-  if (has_effort_command_interface_)
-  {
-    // ensure no explicit effort (PID will fix this)
-    current_pose_msg.points[0].effort.resize(dof_, 0.0);
-  }
+  hold_position_msg_ptr_->points[0].positions = state_current_.positions;
 
-  return std::make_shared<trajectory_msgs::msg::JointTrajectory>(current_pose_msg);
+  // set flag, otherwise tolerances will be checked with holding position too
+  rt_is_holding_.writeFromNonRT(true);
+
+  return hold_position_msg_ptr_;
 }
 
 bool JointTrajectoryController::contains_interface_type(
@@ -1528,6 +1561,28 @@ void JointTrajectoryController::resize_joint_trajectory_point_command(
 bool JointTrajectoryController::has_active_trajectory() const
 {
   return traj_external_point_ptr_ != nullptr && traj_external_point_ptr_->has_trajectory_msg();
+}
+
+void JointTrajectoryController::init_hold_position_msg()
+{
+  hold_position_msg_ptr_ = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
+  hold_position_msg_ptr_->header.stamp =
+    rclcpp::Time(0.0, 0.0, get_node()->get_clock()->get_clock_type());  // start immediately
+  hold_position_msg_ptr_->joint_names = params_.joints;
+  hold_position_msg_ptr_->points.resize(1);  // a trivial msg only
+  hold_position_msg_ptr_->points[0].velocities.clear();
+  hold_position_msg_ptr_->points[0].accelerations.clear();
+  hold_position_msg_ptr_->points[0].effort.clear();
+  if (has_velocity_command_interface_ || has_acceleration_command_interface_)
+  {
+    // add velocity, so that trajectory sampling returns velocity points in any case
+    hold_position_msg_ptr_->points[0].velocities.resize(dof_, 0.0);
+  }
+  if (has_acceleration_command_interface_)
+  {
+    // add velocity, so that trajectory sampling returns acceleration points in any case
+    hold_position_msg_ptr_->points[0].accelerations.resize(dof_, 0.0);
+  }
 }
 
 }  // namespace joint_trajectory_controller

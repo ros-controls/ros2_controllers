@@ -1,12 +1,14 @@
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Changelog for package ros2_controllers_test_nodes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Changelog for package range_sensor_broadcaster
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 3.16.0 (2023-09-20)
 -------------------
 
 3.15.0 (2023-09-11)
 -------------------
+* add a broadcaster for range sensor (`#725 <https://github.com/ros-controls/ros2_controllers/issues/725>`_)
+* Contributors: flochre
 
 3.14.0 (2023-08-16)
 -------------------
@@ -19,8 +21,6 @@ Changelog for package ros2_controllers_test_nodes
 
 3.11.0 (2023-06-24)
 -------------------
-* Removes deprecated if-branch (`#653 <https://github.com/ros-controls/ros2_controllers/issues/653>`_)
-* Contributors: Christoph Fröhlich
 
 3.10.1 (2023-06-06)
 -------------------
@@ -54,8 +54,6 @@ Changelog for package ros2_controllers_test_nodes
 
 3.1.0 (2023-01-26)
 ------------------
-* add publisher topic parameter to forward_position_controller (`#494 <https://github.com/ros-controls/ros2_controllers/issues/494>`_)
-* Contributors: Manuel Muth
 
 3.0.0 (2023-01-19)
 ------------------
@@ -65,13 +63,9 @@ Changelog for package ros2_controllers_test_nodes
 
 2.14.0 (2022-11-18)
 -------------------
-* Remove deprecation warning when parameter without value is set. (`#445 <https://github.com/ros-controls/ros2_controllers/issues/445>`_)
-* Contributors: Denis Štogl
 
 2.13.0 (2022-10-05)
 -------------------
-* Enable definition of all fields in JointTrajectory message when using test node. (`#389 <https://github.com/ros-controls/ros2_controllers/issues/389>`_)
-* Contributors: Denis Štogl
 
 2.12.0 (2022-09-01)
 -------------------
@@ -87,8 +81,6 @@ Changelog for package ros2_controllers_test_nodes
 
 2.8.0 (2022-07-09)
 ------------------
-* Fix deprecation in setup.cfg on Jammy (Humble and Rolling). (`#375 <https://github.com/ros-controls/ros2_controllers/issues/375>`_)
-* Contributors: Denis Štogl
 
 2.7.0 (2022-07-03)
 ------------------
@@ -110,8 +102,6 @@ Changelog for package ros2_controllers_test_nodes
 
 2.1.0 (2022-02-23)
 ------------------
-* Move test nodes from the ros2_control_demos repository. (`#294 <https://github.com/ros-controls/ros2_controllers/issues/294>`_)
-* Contributors: Denis Štogl, Lovro Ivanov
 
 2.0.1 (2022-02-01)
 ------------------

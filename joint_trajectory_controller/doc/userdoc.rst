@@ -14,16 +14,24 @@ Waypoints consist of positions, and optionally velocities and accelerations.
 
 *Parts of this documentation were originally published in the ROS 1 wiki under the* `CC BY 3.0 license <https://creativecommons.org/licenses/by/3.0/>`_. *Citations are given in the respective section, but were adapted for the ROS 2 implementation.* [#f1]_
 
-Hardware interface type [#f1]_
+Hardware interface types
 -------------------------------
 
-Currently joints with position, velocity, acceleration, and effort interfaces are supported. The joints can have one or more command interfaces, where the following control laws are applied at the same time:
+Currently, joints with hardware interface types ``position``, ``velocity``, ``acceleration``, and ``effort`` (defined `here <https://github.com/ros-controls/ros2_control/blob/{REPOS_FILE_BRANCH}/hardware_interface/include/hardware_interface/types/hardware_interface_type_values.hpp>`_) are supported in the following combinations:
+
+* ``position``
+* ``position``, ``velocity``
+* ``position``, ``velocity``, ``acceleration``
+* ``velocity``
+* ``effort``
+
+This means that the joints can have one or more command interfaces, where the following control laws are applied at the same time:
 
 * For command interfaces ``position``, the desired positions are simply forwarded to the joints,
 * For command interfaces ``acceleration``, desired accelerations are simply forwarded to the joints.
-* For ``velocity`` (``effort``) command interfaces, the position+velocity trajectory following error is mapped to ``velocity`` (``effort``) commands through a PID loop (:ref:`parameters`).
+* For ``velocity`` (``effort``) command interfaces, the position+velocity trajectory following error is mapped to ``velocity`` (``effort``) commands through a PID loop if it is configured (:ref:`parameters`).
 
-This leads to the the following allowed combinations of command and state interfaces:
+This leads to the following allowed combinations of command and state interfaces:
 
 * With command interface ``position``, there are no restrictions for state interfaces.
 * With command interface ``velocity``:
@@ -32,11 +40,8 @@ This leads to the the following allowed combinations of command and state interf
   * no restrictions otherwise.
 
 * With command interface ``effort``, state interfaces must include  ``position, velocity``.
-* With command interface ``acceleration``, there are no restrictions for state interfaces.
 
 Example controller configurations can be found :ref:`below <ROS 2 interface>`.
-
-Similarly to the trajectory representation case above, it's possible to support new hardware interfaces, or alternative mappings to an already supported interface (eg. a proxy controller for generating effort commands).
 
 Other features
 --------------
@@ -118,14 +123,8 @@ States
 ,,,,,,,,,,,,,,,,,,
 
 The state interfaces are defined with ``joints`` and ``state_interfaces`` parameters as follows: ``<joint>/<state_interface>``.
-Supported state interfaces are ``position``, ``velocity``, ``acceleration`` and ``effort`` as defined in the `hardware_interface/hardware_interface_type_values.hpp <https://github.com/ros-controls/ros2_control/blob/{REPOS_FILE_BRANCH}/hardware_interface/include/hardware_interface/types/hardware_interface_type_values.hpp>`_.
 
-Legal combinations of state interfaces are:
-
-* ``position``
-* ``position`` and ``velocity``
-* ``position``, ``velocity`` and ``acceleration``
-* ``effort``
+Legal combinations of state interfaces are given in section `Hardware Interface Types`_.
 
 Commands
 ,,,,,,,,,

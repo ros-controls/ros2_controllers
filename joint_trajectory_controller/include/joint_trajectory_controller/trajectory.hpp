@@ -140,9 +140,6 @@ public:
   }
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  rclcpp::Time get_trajectory_start_time() const { return trajectory_start_time_; }
-
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   bool is_sampled_already() const { return sampled_already_; }
 
 private:

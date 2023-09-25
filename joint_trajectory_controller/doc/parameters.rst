@@ -68,6 +68,16 @@ allow_nonzero_velocity_at_trajectory_end (boolean)
 
   Default: true
 
+cmd_timeout (double)
+  Timeout after which the input command is considered stale.
+  Timeout is counted from the end of the trajectory (the last point).
+  ``cmd_timeout`` must be greater than ``constraints.goal_time``,
+  otherwise ignored.
+
+  If zero, timeout is deactivated"
+
+  Default: 0.0
+
 constraints (structure)
   Default values for tolerances if no explicit values are states in JointTrajectory message.
 
@@ -78,6 +88,7 @@ constraints.stopped_velocity_tolerance (double)
 
 constraints.goal_time (double)
   Maximally allowed tolerance for not reaching the end of the trajectory in a predefined time.
+  If set to zero, the controller will wait a potentially infinite amount of time.
 
   Default: 0.0 (not checked)
 
@@ -101,7 +112,7 @@ gains (structure)
 
      u = k_{ff} v_d + k_p e + k_i \sum e dt + k_d (v_d - v)
 
-  with the desired velocity :math:`v_d`, the measured velocity :math:`v`, the position error :math:`e` (definition see below),
+  with the desired velocity :math:`v_d`, the measured velocity :math:`v`, the position error :math:`e` (definition see ``angle_wraparound`` below),
   the controller period :math:`dt`, and the ``velocity`` or ``effort`` manipulated variable (control variable) :math:`u`, respectively.
 
 gains.<joint_name>.p (double)
@@ -129,10 +140,12 @@ gains.<joint_name>.ff_velocity_scale (double)
 
   Default: 0.0
 
-gains.<joint_name>.normalize_error (bool)
+gains.<joint_name>.angle_wraparound (bool)
+  For joints that wrap around (without end stop, ie. are continuous),
+  where the shortest rotation to the target position is the desired motion.
   If true, the position error :math:`e = normalize(s_d - s)` is normalized between :math:`-\pi, \pi`.
   Otherwise  :math:`e = s_d - s` is used, with the desired position :math:`s_d` and the measured
-  position :math:`s` from the state interface. Use this for revolute joints without end stop,
-  where the shortest rotation to the target position is the desired motion.
+  position :math:`s` from the state interface.
+
 
   Default: false
