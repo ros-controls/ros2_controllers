@@ -318,6 +318,7 @@ controller_interface::return_type JointTrajectoryController::update(
 
         // store the previous command. Used in open-loop control mode
         last_commanded_state_ = state_desired_;
+        last_commanded_time_ = time;
       }
 
       if (active_goal)
