@@ -422,7 +422,7 @@ TEST_P(TrajectoryControllerTestParameterized, update_dynamic_parameters)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
 
-  SetUpAndActivateTrajectoryController(executor, true);
+  SetUpAndActivateTrajectoryController(executor);
 
   updateController();
   auto pids = traj_controller_->get_pids();
