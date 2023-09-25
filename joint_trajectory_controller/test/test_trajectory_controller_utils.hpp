@@ -139,6 +139,13 @@ public:
     return has_active_trajectory() && traj_external_point_ptr_->has_nontrivial_msg() == false;
   }
 
+  bool has_nontrivial_traj()
+  {
+    return has_active_trajectory() && traj_external_point_ptr_->has_nontrivial_msg();
+  }
+
+  double get_cmd_timeout() { return cmd_timeout_; }
+
   rclcpp::WaitSet joint_cmd_sub_wait_set_;
 };
 
