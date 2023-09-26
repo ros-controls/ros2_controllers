@@ -1010,8 +1010,8 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
       // deactivate timeout
       RCLCPP_WARN(
         get_node()->get_logger(),
-        "Command timeout must be higher than goal_time tolerance (%f vs. %f)",
-        params_.cmd_timeout, default_tolerances_.goal_time_tolerance);
+        "Command timeout must be higher than goal_time tolerance (%f vs. %f)", params_.cmd_timeout,
+        default_tolerances_.goal_time_tolerance);
       cmd_timeout_ = 0.0;
     }
   }
