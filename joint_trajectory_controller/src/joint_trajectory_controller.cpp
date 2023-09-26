@@ -196,7 +196,12 @@ controller_interface::return_type JointTrajectoryController::update(
       first_sample = true;
       if (params_.open_loop_control)
       {
-        traj_external_point_ptr_->set_point_before_trajectory_msg(time, last_commanded_state_);
+        if (last_commanded_time_.seconds() == 0.0)
+        {
+          last_commanded_time_ = time;
+        }
+        traj_external_point_ptr_->set_point_before_trajectory_msg(
+          last_commanded_time_, last_commanded_state_);
       }
       else
       {
@@ -983,6 +988,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
     state_desired_ = state;
     last_commanded_state_ = state;
   }
+  last_commanded_time_ = rclcpp::Time();
 
   // Should the controller start by holding position at the beginning of active state?
   if (params_.start_with_holding)
