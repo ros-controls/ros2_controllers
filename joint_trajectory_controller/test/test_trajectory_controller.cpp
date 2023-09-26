@@ -58,11 +58,6 @@ using lifecycle_msgs::msg::State;
 using test_trajectory_controllers::TrajectoryControllerTest;
 using test_trajectory_controllers::TrajectoryControllerTestParameterized;
 
-bool is_same_sign_or_zero(double val1, double val2)
-{
-  return val1 * val2 > 0.0 || (val1 == 0.0 && val2 == 0.0);
-}
-
 void spin(rclcpp::executors::MultiThreadedExecutor * exe) { exe->spin(); }
 
 TEST_P(TrajectoryControllerTestParameterized, configure_state_ignores_commands)
