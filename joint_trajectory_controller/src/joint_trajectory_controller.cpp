@@ -211,7 +211,10 @@ controller_interface::return_type JointTrajectoryController::update(
           }
         }
 
-        if (last_commanded_time_.nanoseconds() == 0) last_commanded_time_ = time;
+        if (last_commanded_time_.seconds() == 0.0)
+        {
+          last_commanded_time_ = time;
+        }
         (*traj_point_active_ptr_)
           ->set_point_before_trajectory_msg(last_commanded_time_, last_commanded_state_);
       }
@@ -986,6 +989,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
     state_desired_ = state;
     last_commanded_state_ = state;
   }
+  last_commanded_time_ = rclcpp::Time();
 
   return CallbackReturn::SUCCESS;
 }
