@@ -185,6 +185,7 @@ bool Trajectory::sample(
     if (interpolation_method == interpolation_methods::InterpolationMethod::NONE)
     {
       output_state = state_before_traj_msg_;
+      previous_state_ = state_before_traj_msg_;
     }
     else
     {
@@ -217,15 +218,15 @@ bool Trajectory::sample(
 
       interpolate_between_points(
         time_before_traj_msg_, state_before_traj_msg_, first_point_timestamp, first_point_in_msg,
-        sample_time, do_ruckig_smoothing, false, output_state, period, splines_state,
-        ruckig_state, ruckig_input_state);
+        sample_time, do_ruckig_smoothing, false, output_state, period, splines_state, ruckig_state,
+        ruckig_input_state);
     }
     start_segment_itr = begin();  // no segments before the first
     end_segment_itr = begin();
 
     if (joint_limiter)
     {
-      joint_limiter->enforce(state_before_traj_msg_, output_state, period);
+      joint_limiter->enforce(previous_state_, output_state, period);
     }
     previous_state_ = output_state;
     return true;
@@ -303,21 +304,23 @@ bool Trajectory::sample(
   const rclcpp::Time t0 = trajectory_start_time_ + last_point.time_from_start;
 
   // FIXME(destogl): this is from backport - check if needed
-//   // whole animation has played out
-//   start_segment_itr = --end();
-//   end_segment_itr = end();
-//   expected_state = (*start_segment_itr);
-//
-//   // TODO: Add and test enforceJointLimits? Unsure if needed for end of animation
-//   // Yes, call enforceJointLimits to handle halting in servo, which has time_from_start == 1ns (does not enforce vel/acc limits)
-//   if(last_idx == 0) {
-//     // Enforce limits from current state, not the trajectory's single point, because the point from servo halting violates limits
-//     if (joint_limiter)
-//     {
-//       joint_limiter->enforce(
-//         state_before_traj_msg_, expected_state, (sample_time - time_before_traj_msg_));
-//     }
-//   }
+  //   // whole animation has played out
+  //   start_segment_itr = --end();
+  //   end_segment_itr = end();
+  //   expected_state = (*start_segment_itr);
+  //
+  //   // TODO: Add and test enforceJointLimits? Unsure if needed for end of animation
+  //   // Yes, call enforceJointLimits to handle halting in servo, which has time_from_start ==
+  // 1ns (does not enforce vel/acc limits)
+  //   if(last_idx == 0) {
+  //     // Enforce limits from current state, not the trajectory's single point, because the point
+  // from servo halting violates limits
+  //     if (joint_limiter)
+  //     {
+  //       joint_limiter->enforce(
+  //         state_before_traj_msg_, expected_state, (sample_time - time_before_traj_msg_));
+  //     }
+  //   }
 
   const size_t dim = last_point.positions.size();
 
@@ -671,8 +674,7 @@ bool Trajectory::interpolate_between_points(
 
 void Trajectory::deduce_from_derivatives(
   trajectory_msgs::msg::JointTrajectoryPoint & first_state,
-  trajectory_msgs::msg::JointTrajectoryPoint & second_state, const size_t dim,
-  const double delta_t)
+  trajectory_msgs::msg::JointTrajectoryPoint & second_state, const size_t dim, const double delta_t)
 {
   if (second_state.positions.empty())
   {
