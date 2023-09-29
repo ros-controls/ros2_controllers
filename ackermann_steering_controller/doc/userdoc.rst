@@ -19,4 +19,6 @@ This controller uses the `generate_parameter_library <https://github.com/PickNik
 
 For an exemplary parameterization see the ``test`` folder of the controller's package.
 
+Additionally to the parameters of the :ref:`Steering Controller Library <doc/ros2_controllers/steering_controllers_library/doc/userdoc:parameters>`, this controller adds the following parameters:
+
 .. generate_parameter_library_details:: ../src/ackermann_steering_controller.yaml
