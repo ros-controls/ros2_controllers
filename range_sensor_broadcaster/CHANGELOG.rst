@@ -7,9 +7,6 @@ Forthcoming
 * add a broadcaster for range sensor (backport `#725 <https://github.com/ros-controls/ros2_controllers/issues/725>`_) (`#766 <https://github.com/ros-controls/ros2_controllers/issues/766>`_)
 * Contributors: mergify[bot]
 
-* add a broadcaster for range sensor (backport `#725 <https://github.com/ros-controls/ros2_controllers/issues/725>`_) (`#766 <https://github.com/ros-controls/ros2_controllers/issues/766>`_)
-* Contributors: mergify[bot]
-
 2.25.0 (2023-09-15)
 -------------------
 
