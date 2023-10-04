@@ -16,6 +16,7 @@
 
 #include <chrono>
 #include <functional>
+#include <iostream>
 #include <memory>
 
 #include <string>
@@ -116,12 +117,24 @@ JointTrajectoryController::state_interface_configuration() const
       conf.names.push_back(joint_name + "/" + interface_type);
     }
   }
+  conf.names.push_back(params_.speed_scaling_interface_name);
   return conf;
 }
 
 controller_interface::return_type JointTrajectoryController::update(
   const rclcpp::Time & time, const rclcpp::Duration & period)
 {
+  if (state_interfaces_.back().get_name() == params_.speed_scaling_interface_name)
+  {
+    scaling_factor_ = state_interfaces_.back().get_value();
+  }
+  else
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(), "Speed scaling interface (%s) not found in hardware interface.",
+      params_.speed_scaling_interface_name.c_str());
+  }
+
   if (get_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
   {
     return controller_interface::return_type::OK;
@@ -163,6 +176,16 @@ controller_interface::return_type JointTrajectoryController::update(
   // currently carrying out a trajectory
   if (has_active_trajectory())
   {
+    // Adjust time with scaling factor
+    TimeData time_data;
+    time_data.time = time;
+    rcl_duration_value_t t_period = (time_data.time - time_data_.readFromRT()->time).nanoseconds();
+    time_data.period = rclcpp::Duration::from_nanoseconds(scaling_factor_ * t_period);
+    time_data.uptime = time_data_.readFromRT()->uptime + time_data.period;
+    rclcpp::Time traj_time =
+      time_data_.readFromRT()->uptime + rclcpp::Duration::from_nanoseconds(t_period);
+    time_data_.writeFromNonRT(time_data);
+
     bool first_sample = false;
     // if sampling the first time, set the point before you sample
     if (!traj_external_point_ptr_->is_sampled_already())
@@ -171,19 +194,19 @@ controller_interface::return_type JointTrajectoryController::update(
       if (params_.open_loop_control)
       {
         traj_external_point_ptr_->set_point_before_trajectory_msg(
-          time, last_commanded_state_, joints_angle_wraparound_);
+          traj_time, last_commanded_state_, joints_angle_wraparound_);
       }
       else
       {
         traj_external_point_ptr_->set_point_before_trajectory_msg(
-          time, state_current_, joints_angle_wraparound_);
+          traj_time, state_current_, joints_angle_wraparound_);
       }
     }
 
     // find segment for current timestamp
     TrajectoryPointConstIter start_segment_itr, end_segment_itr;
     const bool valid_point = traj_external_point_ptr_->sample(
-      time, interpolation_method_, state_desired_, start_segment_itr, end_segment_itr);
+      traj_time, interpolation_method_, state_desired_, start_segment_itr, end_segment_itr);
 
     if (valid_point)
     {
@@ -444,7 +467,8 @@ bool JointTrajectoryController::read_state_from_command_interfaces(JointTrajecto
   auto interface_has_values = [](const auto & joint_interface)
   {
     return std::find_if(
-             joint_interface.begin(), joint_interface.end(), [](const auto & interface)
+             joint_interface.begin(), joint_interface.end(),
+             [](const auto & interface)
              { return std::isnan(interface.get().get_value()); }) == joint_interface.end();
   };
 
@@ -514,7 +538,8 @@ bool JointTrajectoryController::read_commands_from_command_interfaces(
   auto interface_has_values = [](const auto & joint_interface)
   {
     return std::find_if(
-             joint_interface.begin(), joint_interface.end(), [](const auto & interface)
+             joint_interface.begin(), joint_interface.end(),
+             [](const auto & interface)
              { return std::isnan(interface.get().get_value()); }) == joint_interface.end();
   };
 
@@ -881,6 +906,12 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
 
   // parse remaining parameters
   default_tolerances_ = get_segment_tolerances(params_);
+  // Setup time_data buffer used for scaling
+  TimeData time_data;
+  time_data.time = get_node()->now();
+  time_data.period = rclcpp::Duration::from_nanoseconds(0);
+  time_data.uptime = get_node()->now();
+  time_data_.initRT(time_data);
 
   // order all joints in the storage
   for (const auto & interface : params_.command_interfaces)

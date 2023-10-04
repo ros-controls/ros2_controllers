@@ -53,6 +53,14 @@ using namespace std::chrono_literals;  // NOLINT
 namespace joint_trajectory_controller
 {
 
+struct TimeData
+{
+  TimeData() : time(0.0), period(rclcpp::Duration::from_nanoseconds(0.0)), uptime(0.0) {}
+  rclcpp::Time time;
+  rclcpp::Duration period;
+  rclcpp::Time uptime;
+};
+
 class JointTrajectoryController : public controller_interface::ControllerInterface
 {
 public:
@@ -161,6 +169,10 @@ protected:
   std::vector<bool> joints_angle_wraparound_;
   // reserved storage for result of the command when closed loop pid adapter is used
   std::vector<double> tmp_command_;
+
+  // Things around speed scaling
+  double scaling_factor_{};
+  realtime_tools::RealtimeBuffer<TimeData> time_data_;
 
   // Timeout to consider commands old
   double cmd_timeout_;
