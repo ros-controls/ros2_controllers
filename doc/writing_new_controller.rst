@@ -36,7 +36,7 @@ The following is a step-by-step guide to create source files, basic tests, and c
    4. Define the class of the controller, extending ``ControllerInterface``, e.g.,
 
       .. code:: c++
-   
+
          class ControllerName : public controller_interface::ControllerInterface
 
    5. Add a constructor without parameters and the following public methods overriding the ``ControllerInterface`` definition: ``init``, ``command_interface_configuration``, ``state_interface_configuration``, ``on_configure``, ``on_activate``, ``on_deactivate``, ``update``.
@@ -109,7 +109,7 @@ The following is a step-by-step guide to create source files, basic tests, and c
    5. Export for pluginlib description file using the following command:
 
       .. code:: cmake
-   
+
          pluginlib_export_plugin_description_file(controller_interface <controller_name>.xml)
 
    6. Add install directives for targets and include directory.
