@@ -39,7 +39,7 @@ The following is a step-by-step guide to create source files, basic tests, and c
 
          class ControllerName : public controller_interface::ControllerInterface
 
-   5. Add a constructor without parameters and the following public methods overriding the ``ControllerInterface`` definition: ``init``, ``command_interface_configuration``, ``state_interface_configuration``, ``on_configure``, ``on_activate``, ``on_deactivate``, ``update``.
+   5. Add a constructor without parameters and the following public methods overriding the ``ControllerInterface`` definition: ``on_init``, ``command_interface_configuration``, ``state_interface_configuration``, ``on_configure``, ``on_activate``, ``on_deactivate``, ``update``.
       For exact definitions check the ``controller_interface/controller_interface.hpp`` header or one of the controllers from `ros2_controllers <https://github.com/ros-controls/ros2_controllers>`_.
 
    6. (optional) Often, controllers accept lists of joint names and interface names as parameters.
@@ -50,9 +50,9 @@ The following is a step-by-step guide to create source files, basic tests, and c
    1. Include the header file of your controller and add a namespace definition to simplify further development.
 
    2. (optional) Implement a constructor if needed. There, you could initialize member variables.
-      This could also be done in the ``init`` method.
+      This could also be done in the ``on_init`` method.
 
-   3. Implement the ``init`` method. The first line usually calls the parent ``init`` method.
+   3. Implement the ``on_init`` method. The first line usually calls the parent ``on_init`` method.
       Here is the best place to initialize the variables, reserve memory, and most importantly, declare node parameters used by the controller. If everything works fine return ``controller_interface::return_type::OK`` or ``controller_interface::return_type::ERROR`` otherwise.
 
    4. Write the ``on_configure`` method. Parameters are usually read here, and everything is prepared so that the controller can be started.
