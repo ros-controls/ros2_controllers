@@ -63,6 +63,11 @@ start_with_holding (bool)
 
   Default: true
 
+holding_position_open_loop: (bool)
+  If true, holding position is set to the last command instead of the current position from the hardware.
+
+  Default: false
+
 allow_nonzero_velocity_at_trajectory_end (boolean)
   If false, the last velocity point has to be zero or the goal will be rejected.
 

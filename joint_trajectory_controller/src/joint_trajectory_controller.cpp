@@ -1508,7 +1508,15 @@ std::shared_ptr<trajectory_msgs::msg::JointTrajectory>
 JointTrajectoryController::set_hold_position()
 {
   // Command to stay at current position
-  hold_position_msg_ptr_->points[0].positions = state_current_.positions;
+  // Position states always exist
+  if (params_.holding_position_open_loop)
+  {
+    hold_position_msg_ptr_->points[0].positions = last_commanded_state_.positions;
+  }
+  else
+  {
+    hold_position_msg_ptr_->points[0].positions = state_current_.positions;
+  }
 
   // set flag, otherwise tolerances will be checked with holding position too
   rt_is_holding_.writeFromNonRT(true);

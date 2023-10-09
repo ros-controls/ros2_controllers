@@ -78,6 +78,11 @@ joint_trajectory_controller:
     default_value: true,
     description: "If true, start with holding position after activation. Otherwise, no command will be sent until the first trajectory is received.",
   }
+  holding_position_open_loop: {
+    type: bool,
+    default_value: false,
+    description: "If true, holding position is set to the last command instead of the current position from the hardware.",
+  }
   allow_nonzero_velocity_at_trajectory_end: {
     type: bool,
     default_value: true,
