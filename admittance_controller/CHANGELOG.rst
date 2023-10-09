@@ -2,6 +2,9 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.16.0 (2023-09-20)
+-------------------
+
 3.15.0 (2023-09-11)
 -------------------
 * Update docs for diff drive controller (`#751 <https://github.com/ros-controls/ros2_controllers/issues/751>`_)

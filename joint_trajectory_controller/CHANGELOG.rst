@@ -2,6 +2,15 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.16.0 (2023-09-20)
+-------------------
+* [Docs] Improve interface description of JTC (`#770 <https://github.com/ros-controls/ros2_controllers/issues/770>`_)
+* [JTC] Add time-out for trajectory interfaces (`#609 <https://github.com/ros-controls/ros2_controllers/issues/609>`_)
+* [JTC] Rename parameter: normalize_error to angle_wraparound (`#772 <https://github.com/ros-controls/ros2_controllers/issues/772>`_)
+* [JTC] Fix hold position mode with goal_time>0 (`#758 <https://github.com/ros-controls/ros2_controllers/issues/758>`_)
+* [JTC] Add note on goal_time=0 in docs (`#773 <https://github.com/ros-controls/ros2_controllers/issues/773>`_)
+* Contributors: Christoph Fröhlich
+
 3.15.0 (2023-09-11)
 -------------------
 * [JTC] Make most parameters read-only (`#771 <https://github.com/ros-controls/ros2_controllers/issues/771>`_)

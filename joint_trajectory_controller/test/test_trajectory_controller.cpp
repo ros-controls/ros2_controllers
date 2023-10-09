@@ -16,6 +16,7 @@
 
 #include <array>
 #include <chrono>
+#include <cmath>
 #include <future>
 #include <limits>
 #include <memory>
@@ -56,8 +57,6 @@
 using lifecycle_msgs::msg::State;
 using test_trajectory_controllers::TrajectoryControllerTest;
 using test_trajectory_controllers::TrajectoryControllerTestParameterized;
-
-bool is_same_sign(double val1, double val2) { return val1 * val2 >= 0.0; }
 
 void spin(rclcpp::executors::MultiThreadedExecutor * exe) { exe->spin(); }
 
@@ -911,7 +910,7 @@ TEST_P(TrajectoryControllerTestParameterized, velocity_error)
     || (traj_controller_->has_velocity_state_interface() &&
         traj_controller_->has_velocity_command_interface()))
   {
-    // don't check against a value, because spline intepolation might overshoot depending on
+    // don't check against a value, because spline interpolation might overshoot depending on
     // interface combinations
     EXPECT_GE(state_msg->error.velocities[0], points_velocities[0][0]);
     EXPECT_GE(state_msg->error.velocities[1], points_velocities[0][1]);
@@ -929,50 +928,82 @@ TEST_P(TrajectoryControllerTestParameterized, test_jumbled_joint_order)
 {
   rclcpp::executors::SingleThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(executor);
+  std::vector<double> points_positions = {1.0, 2.0, 3.0};
+  std::vector<size_t> jumble_map = {1, 2, 0};
   {
     trajectory_msgs::msg::JointTrajectory traj_msg;
     const std::vector<std::string> jumbled_joint_names{
-      joint_names_[1], joint_names_[2], joint_names_[0]};
+      joint_names_[jumble_map[0]], joint_names_[jumble_map[1]], joint_names_[jumble_map[2]]};
+
     traj_msg.joint_names = jumbled_joint_names;
     traj_msg.header.stamp = rclcpp::Time(0);
     traj_msg.points.resize(1);
 
     traj_msg.points[0].time_from_start = rclcpp::Duration::from_seconds(0.25);
     traj_msg.points[0].positions.resize(3);
-    traj_msg.points[0].positions[0] = 2.0;
-    traj_msg.points[0].positions[1] = 3.0;
-    traj_msg.points[0].positions[2] = 1.0;
-
-    if (traj_controller_->has_velocity_command_interface())
+    traj_msg.points[0].positions[0] = points_positions.at(jumble_map[0]);
+    traj_msg.points[0].positions[1] = points_positions.at(jumble_map[1]);
+    traj_msg.points[0].positions[2] = points_positions.at(jumble_map[2]);
+    traj_msg.points[0].velocities.resize(3);
+    for (size_t i = 0; i < 3; i++)
     {
-      traj_msg.points[0].velocities.resize(3);
-      traj_msg.points[0].velocities[0] = -0.1;
-      traj_msg.points[0].velocities[1] = -0.1;
-      traj_msg.points[0].velocities[2] = -0.1;
+      // factor 2 comes from the linear interpolation in the spline trajectory for constant
+      // acceleration
+      traj_msg.points[0].velocities[i] =
+        2 * (traj_msg.points[0].positions[i] - joint_pos_[jumble_map[i]]) / 0.25;
     }
+
     trajectory_publisher_->publish(traj_msg);
   }
 
   traj_controller_->wait_for_trajectory(executor);
-  // update for 0.25 seconds
+  // update just before 0.25 seconds (shorter than the trajectory duration of 0.25 seconds,
+  // otherwise acceleration is zero from the spline trajectory)
   // TODO(destogl): Make this time a bit shorter to increase stability on the CI?
   //                Currently COMMON_THRESHOLD is adjusted.
-  updateController(rclcpp::Duration::from_seconds(0.25));
+  updateController(rclcpp::Duration::from_seconds(0.25 - 1e-3));
 
   if (traj_controller_->has_position_command_interface())
   {
-    EXPECT_NEAR(1.0, joint_pos_[0], COMMON_THRESHOLD);
-    EXPECT_NEAR(2.0, joint_pos_[1], COMMON_THRESHOLD);
-    EXPECT_NEAR(3.0, joint_pos_[2], COMMON_THRESHOLD);
+    EXPECT_NEAR(points_positions.at(0), joint_pos_[0], COMMON_THRESHOLD);
+    EXPECT_NEAR(points_positions.at(1), joint_pos_[1], COMMON_THRESHOLD);
+    EXPECT_NEAR(points_positions.at(2), joint_pos_[2], COMMON_THRESHOLD);
   }
 
   if (traj_controller_->has_velocity_command_interface())
   {
+    // if use_closed_loop_pid_adapter_==false: we expect desired velocities from direct sampling
+    // if use_closed_loop_pid_adapter_==true: we expect desired velocities, because we use PID with
+    // feedforward term only
     EXPECT_GT(0.0, joint_vel_[0]);
     EXPECT_GT(0.0, joint_vel_[1]);
     EXPECT_GT(0.0, joint_vel_[2]);
   }
-  // TODO(anyone): add here checks for acceleration commands
+
+  if (traj_controller_->has_acceleration_command_interface())
+  {
+    if (traj_controller_->has_velocity_state_interface())
+    {
+      EXPECT_GT(0.0, joint_acc_[0]);
+      EXPECT_GT(0.0, joint_acc_[1]);
+      EXPECT_GT(0.0, joint_acc_[2]);
+    }
+    else
+    {
+      // no velocity state interface: no acceleration from trajectory sampling
+      EXPECT_EQ(0.0, joint_acc_[0]);
+      EXPECT_EQ(0.0, joint_acc_[1]);
+      EXPECT_EQ(0.0, joint_acc_[2]);
+    }
+  }
+
+  if (traj_controller_->has_effort_command_interface())
+  {
+    // effort should be nonzero, because we use PID with feedforward term
+    EXPECT_GT(0.0, joint_eff_[0]);
+    EXPECT_GT(0.0, joint_eff_[1]);
+    EXPECT_GT(0.0, joint_eff_[2]);
+  }
 }
 
 /**
@@ -1003,9 +1034,9 @@ TEST_P(TrajectoryControllerTestParameterized, test_partial_joint_list)
     traj_msg.points[0].positions[1] = 1.0;
     traj_msg.points[0].velocities.resize(2);
     traj_msg.points[0].velocities[0] =
-      copysign(2.0, traj_msg.points[0].positions[0] - initial_joint2_cmd);
+      std::copysign(2.0, traj_msg.points[0].positions[0] - initial_joint2_cmd);
     traj_msg.points[0].velocities[1] =
-      copysign(1.0, traj_msg.points[0].positions[1] - initial_joint1_cmd);
+      std::copysign(1.0, traj_msg.points[0].positions[1] - initial_joint1_cmd);
 
     trajectory_publisher_->publish(traj_msg);
   }
@@ -1027,22 +1058,50 @@ TEST_P(TrajectoryControllerTestParameterized, test_partial_joint_list)
   {
     // estimate the sign of the velocity
     // joint rotates forward
-    EXPECT_TRUE(is_same_sign(traj_msg.points[0].positions[0] - initial_joint2_cmd, joint_vel_[0]));
-    EXPECT_TRUE(is_same_sign(traj_msg.points[0].positions[1] - initial_joint1_cmd, joint_vel_[1]));
+    EXPECT_TRUE(
+      is_same_sign_or_zero(traj_msg.points[0].positions[0] - initial_joint2_cmd, joint_vel_[0]));
+    EXPECT_TRUE(
+      is_same_sign_or_zero(traj_msg.points[0].positions[1] - initial_joint1_cmd, joint_vel_[1]));
     EXPECT_NEAR(0.0, joint_vel_[2], threshold)
       << "Joint 3 velocity should be 0.0 since it's not in the goal";
+  }
+
+  if (traj_controller_->has_acceleration_command_interface())
+  {
+    // estimate the sign of the acceleration
+    // joint rotates forward
+    if (traj_controller_->has_velocity_state_interface())
+    {
+      EXPECT_TRUE(
+        is_same_sign_or_zero(traj_msg.points[0].positions[0] - initial_joint2_cmd, joint_acc_[0]))
+        << "Joint1: " << traj_msg.points[0].positions[0] - initial_joint2_cmd << " vs. "
+        << joint_acc_[0];
+      EXPECT_TRUE(
+        is_same_sign_or_zero(traj_msg.points[0].positions[1] - initial_joint1_cmd, joint_acc_[1]))
+        << "Joint2: " << traj_msg.points[0].positions[1] - initial_joint1_cmd << " vs. "
+        << joint_acc_[1];
+    }
+    else
+    {
+      // no velocity state interface: no acceleration from trajectory sampling
+      EXPECT_EQ(0.0, joint_acc_[0]);
+      EXPECT_EQ(0.0, joint_acc_[1]);
+    }
+    EXPECT_NEAR(0.0, joint_acc_[2], threshold)
+      << "Joint 3 acc should be 0.0 since it's not in the goal";
   }
 
   if (traj_controller_->has_effort_command_interface())
   {
     // estimate the sign of the effort
     // joint rotates forward
-    EXPECT_TRUE(is_same_sign(traj_msg.points[0].positions[0] - initial_joint2_cmd, joint_eff_[0]));
-    EXPECT_TRUE(is_same_sign(traj_msg.points[0].positions[1] - initial_joint1_cmd, joint_eff_[1]));
+    EXPECT_TRUE(
+      is_same_sign_or_zero(traj_msg.points[0].positions[0] - initial_joint2_cmd, joint_eff_[0]));
+    EXPECT_TRUE(
+      is_same_sign_or_zero(traj_msg.points[0].positions[1] - initial_joint1_cmd, joint_eff_[1]));
     EXPECT_NEAR(0.0, joint_eff_[2], threshold)
       << "Joint 3 effort should be 0.0 since it's not in the goal";
   }
-  // TODO(anyone): add here checks for acceleration commands
 
   executor.cancel();
 }
@@ -1284,7 +1343,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_trajectory_replace)
 
   RCLCPP_INFO(traj_controller_->get_node()->get_logger(), "Sending new trajectory");
   points_partial_new_velocities[0][0] =
-    copysign(0.15, points_partial_new[0][0] - joint_state_pos_[0]);
+    std::copysign(0.15, points_partial_new[0][0] - joint_state_pos_[0]);
   publish(time_from_start, points_partial_new, rclcpp::Time(), {}, points_partial_new_velocities);
 
   // Replaced trajectory is a mix of previous and current goal
