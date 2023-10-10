@@ -25,6 +25,12 @@ namespace imu_sensor_broadcaster
 {
 controller_interface::CallbackReturn IMUSensorBroadcaster::on_init()
 {
+  return CallbackReturn::SUCCESS;
+}
+
+controller_interface::CallbackReturn IMUSensorBroadcaster::on_configure(
+  const rclcpp_lifecycle::State & /*previous_state*/)
+{
   try
   {
     param_listener_ = std::make_shared<ParamListener>(get_node());
@@ -33,17 +39,9 @@ controller_interface::CallbackReturn IMUSensorBroadcaster::on_init()
   catch (const std::exception & e)
   {
     RCLCPP_ERROR(
-      get_node()->get_logger(), "Exception thrown during init stage with message: %s \n", e.what());
+      get_node()->get_logger(), "Exception thrown during configure stage with message: %s \n", e.what());
     return CallbackReturn::ERROR;
   }
-
-  return CallbackReturn::SUCCESS;
-}
-
-controller_interface::CallbackReturn IMUSensorBroadcaster::on_configure(
-  const rclcpp_lifecycle::State & /*previous_state*/)
-{
-  params_ = param_listener_->get_params();
 
   imu_sensor_ = std::make_unique<semantic_components::IMUSensor>(
     semantic_components::IMUSensor(params_.sensor_name));
