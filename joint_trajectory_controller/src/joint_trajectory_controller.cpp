@@ -184,7 +184,8 @@ controller_interface::return_type JointTrajectoryController::update(
     time_data.uptime = time_data_.readFromRT()->uptime + time_data.period;
     rclcpp::Time traj_time =
       time_data_.readFromRT()->uptime + rclcpp::Duration::from_nanoseconds(t_period);
-    time_data_.writeFromNonRT(time_data);
+    time_data_.reset();
+    time_data_.initRT(time_data);
 
     bool first_sample = false;
     // if sampling the first time, set the point before you sample
