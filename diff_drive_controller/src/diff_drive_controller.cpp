@@ -35,7 +35,30 @@ constexpr auto DEFAULT_COMMAND_UNSTAMPED_TOPIC = "~/cmd_vel_unstamped";
 constexpr auto DEFAULT_COMMAND_OUT_TOPIC = "~/cmd_vel_out";
 constexpr auto DEFAULT_ODOMETRY_TOPIC = "~/odom";
 constexpr auto DEFAULT_TRANSFORM_TOPIC = "/tf";
+
+  using ControllerTwistReferenceMsg = geometry_msgs::msg::TwistStamped;
+
 }  // namespace
+
+namespace
+{  // utility
+
+// called from RT control loop
+void reset_controller_reference_msg(
+  const std::shared_ptr<ControllerTwistReferenceMsg> & msg,
+  const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node)
+{
+  msg->header.stamp = node->now();
+  msg->twist.linear.x = std::numeric_limits<double>::quiet_NaN();
+  msg->twist.linear.y = std::numeric_limits<double>::quiet_NaN();
+  msg->twist.linear.z = std::numeric_limits<double>::quiet_NaN();
+  msg->twist.angular.x = std::numeric_limits<double>::quiet_NaN();
+  msg->twist.angular.y = std::numeric_limits<double>::quiet_NaN();
+  msg->twist.angular.z = std::numeric_limits<double>::quiet_NaN();
+}
+
+}  // namespace
+
 
 namespace diff_drive_controller
 {
@@ -46,7 +69,7 @@ using hardware_interface::HW_IF_POSITION;
 using hardware_interface::HW_IF_VELOCITY;
 using lifecycle_msgs::msg::State;
 
-DiffDriveController::DiffDriveController() : controller_interface::ControllerInterface() {}
+DiffDriveController::DiffDriveController() : controller_interface::ChainableControllerInterface() {}
 
 const char * DiffDriveController::feedback_type() const
 {
@@ -98,42 +121,126 @@ InterfaceConfiguration DiffDriveController::state_interface_configuration() cons
   return {interface_configuration_type::INDIVIDUAL, conf_names};
 }
 
-controller_interface::return_type DiffDriveController::update(
+std::vector<hardware_interface::CommandInterface>
+DiffDriveController::on_export_reference_interfaces()
+{
+  const int nr_ref_itfs = 2;
+  reference_interfaces_.resize(nr_ref_itfs, std::numeric_limits<double>::quiet_NaN());
+  std::vector<hardware_interface::CommandInterface> reference_interfaces;
+  reference_interfaces.reserve(nr_ref_itfs);
+
+  reference_interfaces.push_back(hardware_interface::CommandInterface(
+    get_node()->get_name(), std::string("linear/") + hardware_interface::HW_IF_VELOCITY,
+    &reference_interfaces_[0]));
+
+  reference_interfaces.push_back(hardware_interface::CommandInterface(
+    get_node()->get_name(), std::string("angular/") + hardware_interface::HW_IF_VELOCITY,
+    &reference_interfaces_[1]));
+
+  return reference_interfaces;
+}
+
+void DiffDriveController::reference_callback(
+  const std::shared_ptr<ControllerTwistReferenceMsg> msg)
+{
+  // if no timestamp provided use current time for command timestamp
+  if (msg->header.stamp.sec == 0 && msg->header.stamp.nanosec == 0u)
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "Timestamp in header is missing, using current time as command timestamp.");
+    msg->header.stamp = get_node()->now();
+  }
+  const auto age_of_last_command = get_node()->now() - msg->header.stamp;
+
+  if (ref_timeout_ == rclcpp::Duration::from_seconds(0) || age_of_last_command <= ref_timeout_)
+  {
+    received_velocity_msg_ptr_.writeFromNonRT(msg);
+  }
+  else
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(),
+      "Received message has timestamp %.10f older for %.10f which is more then allowed timeout "
+      "(%.4f).",
+      rclcpp::Time(msg->header.stamp).seconds(), age_of_last_command.seconds(),
+      ref_timeout_.seconds());
+  }
+}
+
+void DiffDriveController::reference_callback_unstamped(
+  const std::shared_ptr<geometry_msgs::msg::Twist> msg)
+{
+  RCLCPP_WARN(
+    get_node()->get_logger(),
+    "Use of Twist message without stamped is deprecated and it will be removed in ROS 2 J-Turtle "
+    "version. Use '~/reference' topic with 'geometry_msgs::msg::TwistStamped' message type in the "
+    "future.");
+  auto twist_stamped = *(received_velocity_msg_ptr_.readFromNonRT());
+  twist_stamped->header.stamp = get_node()->now();
+  // if no timestamp provided use current time for command timestamp
+  if (twist_stamped->header.stamp.sec == 0 && twist_stamped->header.stamp.nanosec == 0u)
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "Timestamp in header is missing, using current time as command timestamp.");
+    twist_stamped->header.stamp = get_node()->now();
+  }
+
+  const auto age_of_last_command = get_node()->now() - twist_stamped->header.stamp;
+
+  if (ref_timeout_ == rclcpp::Duration::from_seconds(0) || age_of_last_command <= ref_timeout_)
+  {
+    twist_stamped->twist = *msg;
+  }
+  else
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(),
+      "Received message has timestamp %.10f older for %.10f which is more then allowed timeout "
+      "(%.4f).",
+      rclcpp::Time(twist_stamped->header.stamp).seconds(), age_of_last_command.seconds(),
+      ref_timeout_.seconds());
+  }
+}
+
+
+controller_interface::return_type DiffDriveController::update_reference_from_subscribers(
+  const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
+{
+  auto current_ref = *(received_velocity_msg_ptr_.readFromRT());
+  const auto age_of_last_command = time - (current_ref)->header.stamp;
+
+  // send message only if there is no timeout
+  if (age_of_last_command <= ref_timeout_ || ref_timeout_ == rclcpp::Duration::from_seconds(0))
+  {
+    if (!std::isnan(current_ref->twist.linear.x) && !std::isnan(current_ref->twist.angular.z))
+    {
+      reference_interfaces_[0] = current_ref->twist.linear.x;
+      reference_interfaces_[1] = current_ref->twist.angular.z;
+    }
+  }
+  else
+  {
+    if (!std::isnan(current_ref->twist.linear.x) && !std::isnan(current_ref->twist.angular.z))
+    {
+      reference_interfaces_[0] = 0.0;
+      reference_interfaces_[1] = 0.0;
+      current_ref->twist.linear.x = std::numeric_limits<double>::quiet_NaN();
+      current_ref->twist.angular.z = std::numeric_limits<double>::quiet_NaN();
+    }
+  }
+
+  return controller_interface::return_type::OK;
+}
+
+controller_interface::return_type DiffDriveController::update_and_write_commands(
   const rclcpp::Time & time, const rclcpp::Duration & period)
 {
-  auto logger = get_node()->get_logger();
-  if (get_state().id() == State::PRIMARY_STATE_INACTIVE)
-  {
-    if (!is_halted)
-    {
-      halt();
-      is_halted = true;
-    }
-    return controller_interface::return_type::OK;
-  }
-
-  std::shared_ptr<Twist> last_command_msg;
-  received_velocity_msg_ptr_.get(last_command_msg);
-
-  if (last_command_msg == nullptr)
-  {
-    RCLCPP_WARN(logger, "Velocity message received was a nullptr.");
-    return controller_interface::return_type::ERROR;
-  }
-
-  const auto age_of_last_command = time - last_command_msg->header.stamp;
-  // Brake if cmd_vel has timeout, override the stored command
-  if (age_of_last_command > cmd_vel_timeout_)
-  {
-    last_command_msg->twist.linear.x = 0.0;
-    last_command_msg->twist.angular.z = 0.0;
-  }
-
   // command may be limited further by SpeedLimit,
   // without affecting the stored twist command
-  Twist command = *last_command_msg;
-  double & linear_command = command.twist.linear.x;
-  double & angular_command = command.twist.angular.z;
+  const double linear_command = reference_interfaces_[0];
+  const double angular_command = reference_interfaces_[1];
 
   previous_update_timestamp_ = time;
 
@@ -159,7 +266,8 @@ controller_interface::return_type DiffDriveController::update(
       if (std::isnan(left_feedback) || std::isnan(right_feedback))
       {
         RCLCPP_ERROR(
-          logger, "Either the left or right wheel %s is invalid for index [%zu]", feedback_type(),
+          get_node()->get_logger(),
+           "Either the left or right wheel %s is invalid for index [%zu]", feedback_type(),
           index);
         return controller_interface::return_type::ERROR;
       }
@@ -232,24 +340,24 @@ controller_interface::return_type DiffDriveController::update(
     }
   }
 
-  auto & last_command = previous_commands_.back().twist;
-  auto & second_to_last_command = previous_commands_.front().twist;
-  limiter_linear_.limit(
-    linear_command, last_command.linear.x, second_to_last_command.linear.x, period.seconds());
-  limiter_angular_.limit(
-    angular_command, last_command.angular.z, second_to_last_command.angular.z, period.seconds());
+  // auto & last_command = previous_commands_.back().twist;
+  // auto & second_to_last_command = previous_commands_.front().twist;
+  // limiter_linear_.limit(
+  //   linear_command, last_command.linear.x, second_to_last_command.linear.x, period.seconds());
+  // limiter_angular_.limit(
+  //   angular_command, last_command.angular.z, second_to_last_command.angular.z, period.seconds());
 
-  previous_commands_.pop();
-  previous_commands_.emplace(command);
+  // previous_commands_.pop();
+  // previous_commands_.emplace(command);
 
-  //    Publish limited velocity
-  if (publish_limited_velocity_ && realtime_limited_velocity_publisher_->trylock())
-  {
-    auto & limited_velocity_command = realtime_limited_velocity_publisher_->msg_;
-    limited_velocity_command.header.stamp = time;
-    limited_velocity_command.twist = command.twist;
-    realtime_limited_velocity_publisher_->unlockAndPublish();
-  }
+  // //    Publish limited velocity
+  // if (publish_limited_velocity_ && realtime_limited_velocity_publisher_->trylock())
+  // {
+  //   auto & limited_velocity_command = realtime_limited_velocity_publisher_->msg_;
+  //   limited_velocity_command.header.stamp = time;
+  //   limited_velocity_command.twist = command.twist;
+  //   realtime_limited_velocity_publisher_->unlockAndPublish();
+  // }
 
   // Compute wheels velocities:
   const double velocity_left =
@@ -300,9 +408,8 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   odometry_.setWheelParams(wheel_separation, left_wheel_radius, right_wheel_radius);
   odometry_.setVelocityRollingWindowSize(params_.velocity_rolling_window_size);
 
-  cmd_vel_timeout_ = std::chrono::milliseconds{static_cast<int>(params_.cmd_vel_timeout * 1000.0)};
+  ref_timeout_ = rclcpp::Duration::from_seconds(params_.cmd_vel_timeout);
   publish_limited_velocity_ = params_.publish_limited_velocity;
-  use_stamped_vel_ = params_.use_stamped_vel;
 
   limiter_linear_ = SpeedLimiter(
     params_.linear.x.has_velocity_limits, params_.linear.x.has_acceleration_limits,
@@ -327,63 +434,42 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   if (publish_limited_velocity_)
   {
     limited_velocity_publisher_ =
-      get_node()->create_publisher<Twist>(DEFAULT_COMMAND_OUT_TOPIC, rclcpp::SystemDefaultsQoS());
+      get_node()->create_publisher<ControllerTwistReferenceMsg>(DEFAULT_COMMAND_OUT_TOPIC, rclcpp::SystemDefaultsQoS());
     realtime_limited_velocity_publisher_ =
-      std::make_shared<realtime_tools::RealtimePublisher<Twist>>(limited_velocity_publisher_);
+      std::make_shared<realtime_tools::RealtimePublisher<ControllerTwistReferenceMsg>>(limited_velocity_publisher_);
   }
 
-  const Twist empty_twist;
-  received_velocity_msg_ptr_.set(std::make_shared<Twist>(empty_twist));
+  received_velocity_msg_ptr_.reset();
 
   // Fill last two commands with default constructed commands
-  previous_commands_.emplace(empty_twist);
-  previous_commands_.emplace(empty_twist);
+  previous_commands_.emplace(ControllerTwistReferenceMsg());
+  previous_commands_.emplace(ControllerTwistReferenceMsg());
 
-  // initialize command subscriber
-  if (use_stamped_vel_)
+  // topics QoS
+  auto subscribers_qos = rclcpp::SystemDefaultsQoS();
+  subscribers_qos.keep_last(1);
+  subscribers_qos.best_effort();
+
+  // Reference Subscriber
+  ref_timeout_ = rclcpp::Duration::from_seconds(params_.cmd_vel_timeout);
+  if (params_.use_stamped_vel)
   {
-    velocity_command_subscriber_ = get_node()->create_subscription<Twist>(
-      DEFAULT_COMMAND_TOPIC, rclcpp::SystemDefaultsQoS(),
-      [this](const std::shared_ptr<Twist> msg) -> void
-      {
-        if (!subscriber_is_active_)
-        {
-          RCLCPP_WARN(
-            get_node()->get_logger(), "Can't accept new commands. subscriber is inactive");
-          return;
-        }
-        if ((msg->header.stamp.sec == 0) && (msg->header.stamp.nanosec == 0))
-        {
-          RCLCPP_WARN_ONCE(
-            get_node()->get_logger(),
-            "Received TwistStamped with zero timestamp, setting it to current "
-            "time, this message will only be shown once");
-          msg->header.stamp = get_node()->get_clock()->now();
-        }
-        received_velocity_msg_ptr_.set(std::move(msg));
-      });
+    velocity_command_subscriber_ = get_node()->create_subscription<ControllerTwistReferenceMsg>(
+      DEFAULT_COMMAND_TOPIC, subscribers_qos,
+      std::bind(&DiffDriveController::reference_callback, this, std::placeholders::_1));
   }
   else
   {
-    velocity_command_unstamped_subscriber_ =
-      get_node()->create_subscription<geometry_msgs::msg::Twist>(
-        DEFAULT_COMMAND_UNSTAMPED_TOPIC, rclcpp::SystemDefaultsQoS(),
-        [this](const std::shared_ptr<geometry_msgs::msg::Twist> msg) -> void
-        {
-          if (!subscriber_is_active_)
-          {
-            RCLCPP_WARN(
-              get_node()->get_logger(), "Can't accept new commands. subscriber is inactive");
-            return;
-          }
-
-          // Write fake header in the stored stamped command
-          std::shared_ptr<Twist> twist_stamped;
-          received_velocity_msg_ptr_.get(twist_stamped);
-          twist_stamped->twist = *msg;
-          twist_stamped->header.stamp = get_node()->get_clock()->now();
-        });
+    velocity_command_unstamped_subscriber_ = get_node()->create_subscription<geometry_msgs::msg::Twist>(
+      DEFAULT_COMMAND_UNSTAMPED_TOPIC, subscribers_qos,
+      std::bind(
+        &DiffDriveController::reference_callback_unstamped, this, std::placeholders::_1));
   }
+
+  std::shared_ptr<ControllerTwistReferenceMsg> msg =
+    std::make_shared<ControllerTwistReferenceMsg>();
+  reset_controller_reference_msg(msg, get_node());
+  received_velocity_msg_ptr_.writeFromNonRT(msg);
 
   // initialize odometry publisher and messasge
   odometry_publisher_ = get_node()->create_publisher<nav_msgs::msg::Odometry>(
@@ -459,6 +545,9 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
 controller_interface::CallbackReturn DiffDriveController::on_activate(
   const rclcpp_lifecycle::State &)
 {
+  // Set default value in command
+  reset_controller_reference_msg(*(received_velocity_msg_ptr_.readFromRT()), get_node());
+
   const auto left_result =
     configure_side("left", params_.left_wheel_names, registered_left_wheel_handles_);
   const auto right_result =
@@ -508,7 +597,7 @@ controller_interface::CallbackReturn DiffDriveController::on_cleanup(
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  received_velocity_msg_ptr_.set(std::make_shared<Twist>());
+  received_velocity_msg_ptr_.reset();
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
@@ -526,7 +615,7 @@ bool DiffDriveController::reset()
   odometry_.resetOdometry();
 
   // release the old queue
-  std::queue<Twist> empty;
+  std::queue<ControllerTwistReferenceMsg> empty;
   std::swap(previous_commands_, empty);
 
   registered_left_wheel_handles_.clear();
@@ -536,7 +625,7 @@ bool DiffDriveController::reset()
   velocity_command_subscriber_.reset();
   velocity_command_unstamped_subscriber_.reset();
 
-  received_velocity_msg_ptr_.set(nullptr);
+  received_velocity_msg_ptr_.reset();
   is_halted = false;
   return true;
 }
@@ -612,9 +701,19 @@ controller_interface::CallbackReturn DiffDriveController::configure_side(
 
   return controller_interface::CallbackReturn::SUCCESS;
 }
+
+
+bool DiffDriveController::on_set_chained_mode(bool chained_mode)
+{
+  // Always accept switch to/from chained mode
+  return true || chained_mode;
+}
+
+
 }  // namespace diff_drive_controller
 
 #include "class_loader/register_macro.hpp"
 
 CLASS_LOADER_REGISTER_CLASS(
-  diff_drive_controller::DiffDriveController, controller_interface::ControllerInterface)
+  diff_drive_controller::DiffDriveController,
+  controller_interface::ChainableControllerInterface)

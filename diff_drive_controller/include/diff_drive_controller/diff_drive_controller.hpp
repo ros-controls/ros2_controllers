@@ -26,7 +26,7 @@
 #include <string>
 #include <vector>
 
-#include "controller_interface/controller_interface.hpp"
+#include "controller_interface/chainable_controller_interface.hpp"
 #include "diff_drive_controller/odometry.hpp"
 #include "diff_drive_controller/speed_limiter.hpp"
 #include "diff_drive_controller/visibility_control.h"
@@ -37,7 +37,6 @@
 #include "odometry.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/state.hpp"
-#include "realtime_tools/realtime_box.h"
 #include "realtime_tools/realtime_buffer.h"
 #include "realtime_tools/realtime_publisher.h"
 #include "tf2_msgs/msg/tf_message.hpp"
@@ -47,7 +46,7 @@
 
 namespace diff_drive_controller
 {
-class DiffDriveController : public controller_interface::ControllerInterface
+class DiffDriveController : public controller_interface::ChainableControllerInterface
 {
   using Twist = geometry_msgs::msg::TwistStamped;
 
@@ -61,9 +60,12 @@ public:
   DIFF_DRIVE_CONTROLLER_PUBLIC
   controller_interface::InterfaceConfiguration state_interface_configuration() const override;
 
-  DIFF_DRIVE_CONTROLLER_PUBLIC
-  controller_interface::return_type update(
+  DIFF_DRIVE_CONTROLLER_PUBLIC controller_interface::return_type
+  update_reference_from_subscribers(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
+
+  DIFF_DRIVE_CONTROLLER_PUBLIC controller_interface::return_type
+  update_and_write_commands(const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
   DIFF_DRIVE_CONTROLLER_PUBLIC
   controller_interface::CallbackReturn on_init() override;
@@ -92,7 +94,15 @@ public:
   controller_interface::CallbackReturn on_shutdown(
     const rclcpp_lifecycle::State & previous_state) override;
 
+  using ControllerTwistReferenceMsg = geometry_msgs::msg::TwistStamped;
+
 protected:
+
+    bool on_set_chained_mode(bool chained_mode) override;
+
+  std::vector<hardware_interface::CommandInterface> on_export_reference_interfaces() override;
+
+
   struct WheelHandle
   {
     std::reference_wrapper<const hardware_interface::LoanedStateInterface> feedback;
@@ -114,7 +124,7 @@ protected:
   Odometry odometry_;
 
   // Timeout to consider cmd_vel commands old
-  std::chrono::milliseconds cmd_vel_timeout_{500};
+  rclcpp::Duration ref_timeout_ = rclcpp::Duration::from_seconds(0.5);
 
   std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::Odometry>> odometry_publisher_ = nullptr;
   std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>>
@@ -130,7 +140,7 @@ protected:
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr
     velocity_command_unstamped_subscriber_ = nullptr;
 
-  realtime_tools::RealtimeBox<std::shared_ptr<Twist>> received_velocity_msg_ptr_{nullptr};
+  realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerTwistReferenceMsg>> received_velocity_msg_ptr_{nullptr};
 
   std::queue<Twist> previous_commands_;  // last two commands
 
@@ -155,6 +165,12 @@ protected:
 
   bool reset();
   void halt();
+
+  private:
+  // callback for topic interface
+  void reference_callback(
+    const std::shared_ptr<ControllerTwistReferenceMsg> msg);
+  void reference_callback_unstamped(const std::shared_ptr<geometry_msgs::msg::Twist> msg);
 };
 }  // namespace diff_drive_controller
 #endif  // DIFF_DRIVE_CONTROLLER__DIFF_DRIVE_CONTROLLER_HPP_
