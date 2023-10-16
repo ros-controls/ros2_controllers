@@ -17,7 +17,7 @@ Waypoints consist of positions, and optionally velocities and accelerations.
 Hardware interface types
 -------------------------------
 
-Currently, joints with hardware interface types ``position``, ``velocity``, ``acceleration``, and ``effort`` (defined `here <https://github.com/ros-controls/ros2_control/blob/{REPOS_FILE_BRANCH}/hardware_interface/include/hardware_interface/types/hardware_interface_type_values.hpp>`_) are supported in the following combinations:
+Currently, joints with hardware interface types ``position``, ``velocity``, ``acceleration``, and ``effort`` (defined `here <https://github.com/ros-controls/ros2_control/blob/{REPOS_FILE_BRANCH}/hardware_interface/include/hardware_interface/types/hardware_interface_type_values.hpp>`_) are supported in the following combinations as command interfaces:
 
 * ``position``
 * ``position``, ``velocity``
@@ -37,9 +37,15 @@ This leads to the following allowed combinations of command and state interfaces
 * With command interface ``velocity``:
 
   * if command interface ``velocity`` is the only one, state interfaces must include  ``position, velocity`` .
-  * no restrictions otherwise.
 
 * With command interface ``effort``, state interfaces must include  ``position, velocity``.
+
+* With command interface ``acceleration``, state interfaces must include  ``position, velocity``.
+
+Further restrictions of state interfaces exist:
+
+* ``velocity`` state interface cannot be used if ``position`` interface  is missing.
+* ``acceleration`` state interface cannot be used if ``position`` and ``velocity`` interfaces are not present."
 
 Example controller configurations can be found :ref:`below <ROS 2 interface>`.
 
