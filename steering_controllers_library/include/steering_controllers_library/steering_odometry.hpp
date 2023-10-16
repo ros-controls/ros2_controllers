@@ -184,7 +184,8 @@ public:
    * \param theta_dot Desired angular velocity [rad/s]
    * \return Tuple of velocity commands and steering commands
    */
-  std::tuple<std::vector<double>, std::vector<double>> get_commands(double Vx, double theta_dot);
+  std::tuple<std::vector<double>, std::vector<double>> get_commands(
+    const double Vx, const double theta_dot);
 
   /**
    *  \brief Reset poses, heading, and accumulators
