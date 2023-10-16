@@ -17,7 +17,19 @@ Waypoints consist of positions, and optionally velocities and accelerations.
 Hardware interface type [#f1]_
 -------------------------------
 
+<<<<<<< HEAD
 Currently joints with position, velocity, acceleration, and effort interfaces are supported. The joints can have one or more command interfaces, where the following control laws are applied at the same time:
+=======
+Currently, joints with hardware interface types ``position``, ``velocity``, ``acceleration``, and ``effort`` (defined `here <https://github.com/ros-controls/ros2_control/blob/{REPOS_FILE_BRANCH}/hardware_interface/include/hardware_interface/types/hardware_interface_type_values.hpp>`_) are supported in the following combinations as command interfaces:
+
+* ``position``
+* ``position``, ``velocity``
+* ``position``, ``velocity``, ``acceleration``
+* ``velocity``
+* ``effort``
+
+This means that the joints can have one or more command interfaces, where the following control laws are applied at the same time:
+>>>>>>> c831b6c (Update requirements of state interfaces (#798))
 
 * For command interfaces ``position``, the desired positions are simply forwarded to the joints,
 * For command interfaces ``acceleration``, desired accelerations are simply forwarded to the joints.
@@ -29,10 +41,16 @@ This leads to the the following allowed combinations of command and state interf
 * With command interface ``velocity``:
 
   * if command interface ``velocity`` is the only one, state interfaces must include  ``position, velocity`` .
-  * no restrictions otherwise.
 
 * With command interface ``effort``, state interfaces must include  ``position, velocity``.
 * With command interface ``acceleration``, there are no restrictions for state interfaces.
+
+* With command interface ``acceleration``, state interfaces must include  ``position, velocity``.
+
+Further restrictions of state interfaces exist:
+
+* ``velocity`` state interface cannot be used if ``position`` interface  is missing.
+* ``acceleration`` state interface cannot be used if ``position`` and ``velocity`` interfaces are not present."
 
 Example controller configurations can be found :ref:`below <ROS 2 interface>`.
 
