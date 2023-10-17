@@ -3,7 +3,6 @@ joint_trajectory_controller:
     type: string_array,
     default_value: [],
     description: "Names of joints used by the controller",
-    read_only: true,
     validation: {
       unique<>: null,
     }
@@ -12,7 +11,6 @@ joint_trajectory_controller:
     type: string_array,
     default_value: [],
     description: "Names of the commanding joints used by the controller",
-    read_only: true,
     validation: {
       unique<>: null,
     }
@@ -21,22 +19,20 @@ joint_trajectory_controller:
     type: string_array,
     default_value: [],
     description: "Names of command interfaces to claim",
-    read_only: true,
     validation: {
       unique<>: null,
       subset_of<>: [["position", "velocity", "acceleration", "effort",]],
-      "joint_trajectory_controller::command_interface_type_combinations": null,
+      command_interface_type_combinations: null,
     }
   }
   state_interfaces: {
     type: string_array,
     default_value: [],
     description: "Names of state interfaces to claim",
-    read_only: true,
     validation: {
       unique<>: null,
       subset_of<>: [["position", "velocity", "acceleration",]],
-      "joint_trajectory_controller::state_interface_type_combinations": null,
+      state_interface_type_combinations: null,
     }
   }
   allow_partial_joints_goal: {
@@ -48,7 +44,6 @@ joint_trajectory_controller:
     type: bool,
     default_value: false,
     description: "Run the controller in open-loop, i.e., read hardware states only when starting controller. This is useful when robot is not exactly following the commanded trajectory.",
-    read_only: true,
   }
   allow_integration_in_goal_trajectories: {
     type: bool,
@@ -59,7 +54,6 @@ joint_trajectory_controller:
     type: double,
     default_value: 20.0,
     description: "Rate status changes will be monitored",
-    read_only: true,
     validation: {
       gt_eq: [0.1]
     }
@@ -68,28 +62,9 @@ joint_trajectory_controller:
     type: string,
     default_value: "splines",
     description: "The type of interpolation to use, if any",
-    read_only: true,
     validation: {
       one_of<>: [["splines", "none"]],
     }
-  }
-  start_with_holding: {
-    type: bool,
-    default_value: true,
-    description: "If true, start with holding position after activation. Otherwise, no command will be sent until the first trajectory is received.",
-  }
-  allow_nonzero_velocity_at_trajectory_end: {
-    type: bool,
-    default_value: true,
-    description: "If false, the last velocity point has to be zero or the goal will be rejected",
-  }
-  cmd_timeout: {
-    type: double,
-    default_value: 0.0, # seconds
-    description: "Timeout after which the input command is considered stale.
-     Timeout is counted from the end of the trajectory (the last point).
-     cmd_timeout must be greater than constraints.goal_time, otherwise ignored.
-     If zero, timeout is deactivated",
   }
   gains:
     __map_joints:
@@ -101,7 +76,7 @@ joint_trajectory_controller:
       i: {
         type: double,
         default_value: 0.0,
-        description: "Integral gain for PID"
+        description: "Intigral gain for PID"
       }
       d: {
         type: double,
@@ -111,7 +86,7 @@ joint_trajectory_controller:
       i_clamp: {
         type: double,
         default_value: 0.0,
-        description: "Integral clamp. Symmetrical in both positive and negative direction."
+        description: "Integrale clamp. Symmetrical in both positive and negative direction."
       }
       ff_velocity_scale: {
         type: double,
@@ -121,13 +96,7 @@ joint_trajectory_controller:
       normalize_error: {
         type: bool,
         default_value: false,
-        description: "(Deprecated) Use position error normalization to -pi to pi."
-      }
-      angle_wraparound: {
-        type: bool,
-        default_value: false,
-        description: "For joints that wrap around (ie. are continuous).
-          Normalizes position-error to -pi to pi."
+        description: "Use position error normalization to -pi to pi."
       }
   constraints:
     stopped_velocity_tolerance: {
@@ -138,8 +107,7 @@ joint_trajectory_controller:
     goal_time: {
       type: double,
       default_value: 0.0,
-      description: "Time tolerance for achieving trajectory goal before or after commanded time.
-        If set to zero, the controller will wait a potentially infinite amount of time.",
+      description: "Time tolerance for achieving trajectory goal before or after commanded time.",
       validation: {
         gt_eq: [0.0],
       }

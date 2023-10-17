@@ -26,7 +26,7 @@
 #include "control_msgs/msg/joint_trajectory_controller_state.hpp"
 #include "control_msgs/srv/query_trajectory_state.hpp"
 #include "control_toolbox/pid.hpp"
-#include "controller_interface/controller_interface.hpp"
+#include "controller_interface/chainable_controller_interface.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "joint_trajectory_controller/interpolation_methods.hpp"
 #include "joint_trajectory_controller/tolerances.hpp"
@@ -64,7 +64,7 @@ namespace joint_trajectory_controller
 {
 class Trajectory;
 
-class JointTrajectoryController : public controller_interface::ControllerInterface
+class JointTrajectoryController : public controller_interface::ChainableControllerInterface
 {
 public:
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
@@ -83,10 +83,6 @@ public:
    */
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   controller_interface::InterfaceConfiguration state_interface_configuration() const override;
-
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  controller_interface::return_type update(
-    const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   controller_interface::CallbackReturn on_init() override;
@@ -116,6 +112,20 @@ public:
     const rclcpp_lifecycle::State & previous_state) override;
 
 protected:
+  // internal reference values
+  std::vector<std::reference_wrapper<double>> position_reference_;
+  std::vector<std::reference_wrapper<double>> velocity_reference_;
+  std::vector<std::reference_wrapper<double>> acceleration_reference_;
+  std::vector<std::reference_wrapper<double>> effort_reference_;
+  std::vector<std::string> joint_names_;
+  std::vector<double> last_references_ = {};
+  bool first_time_ = true;
+  rclcpp::Time last_time_;
+
+  std::vector<hardware_interface::CommandInterface> on_export_reference_interfaces() override;
+
+  controller_interface::return_type update_reference_from_subscribers(
+    const rclcpp::Time & time, const rclcpp::Duration & period) override;
   // To reduce number of variables and to make the code shorter the interfaces are ordered in types
   // as the following constants
   const std::vector<std::string> allowed_interface_types_ = {
@@ -124,6 +134,26 @@ protected:
     hardware_interface::HW_IF_ACCELERATION,
     hardware_interface::HW_IF_EFFORT,
   };
+
+  bool reference_changed();
+
+  template <typename M>
+  void copy_reference_interfaces_values(
+    std::vector<M> & msg_container, std::vector<std::reference_wrapper<M>> & reference_input);
+
+  /**
+   * If controller is in chained mode we create new JointTrajectory msgs
+   * from the reference interface input.
+   * If controller is NOT in chained mode we get the JointTrajectory msg
+   * from topic.
+   * 
+   * For detailed explanation on this have a look at the update_reference_from_subscribers
+   * method which normally would handle such task
+  */
+  void update_joint_trajectory_point_from_input(const rclcpp::Time & time);
+
+  controller_interface::return_type update_and_write_commands(
+    const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
   // Preallocate variables used in the realtime update() function
   trajectory_msgs::msg::JointTrajectoryPoint state_current_;
@@ -174,10 +204,6 @@ protected:
   // reserved storage for result of the command when closed loop pid adapter is used
   std::vector<double> tmp_command_;
 
-  // Timeout to consider commands old
-  double cmd_timeout_;
-  // Are we holding position?
-  realtime_tools::RealtimeBuffer<bool> rt_is_holding_;
   // TODO(karsten1987): eventually activate and deactivate subscriber directly when its supported
   bool subscriber_is_active_ = false;
   rclcpp::Subscription<trajectory_msgs::msg::JointTrajectory>::SharedPtr joint_command_subscriber_ =
@@ -185,13 +211,12 @@ protected:
 
   rclcpp::Service<control_msgs::srv::QueryTrajectoryState>::SharedPtr query_state_srv_;
 
+  std::shared_ptr<Trajectory> * traj_point_active_ptr_ = nullptr;
   std::shared_ptr<Trajectory> traj_external_point_ptr_ = nullptr;
   std::shared_ptr<Trajectory> traj_home_point_ptr_ = nullptr;
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> traj_msg_home_ptr_ = nullptr;
   realtime_tools::RealtimeBuffer<std::shared_ptr<trajectory_msgs::msg::JointTrajectory>>
     traj_msg_external_point_ptr_;
-
-  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> hold_position_msg_ptr_ = nullptr;
 
   using ControllerStateMsg = control_msgs::msg::JointTrajectoryControllerState;
   using StatePublisher = realtime_tools::RealtimePublisher<ControllerStateMsg>;
@@ -206,7 +231,6 @@ protected:
 
   rclcpp_action::Server<FollowJTrajAction>::SharedPtr action_server_;
   RealtimeGoalHandleBuffer rt_active_goal_;  ///< Currently active action goal, if any.
-  realtime_tools::RealtimeBuffer<bool> rt_has_pending_goal_;  ///< Is there a pending action goal?
   rclcpp::TimerBase::SharedPtr goal_handle_timer_;
   rclcpp::Duration action_monitor_period_ = rclcpp::Duration(50ms);
 
@@ -249,13 +273,10 @@ protected:
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   void preempt_active_goal();
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> set_hold_position();
+  void set_hold_position();
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   bool reset();
-
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  bool has_active_trajectory() const;
 
   using JointTrajectoryPoint = trajectory_msgs::msg::JointTrajectoryPoint;
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
@@ -276,7 +297,6 @@ private:
   bool contains_interface_type(
     const std::vector<std::string> & interface_type_list, const std::string & interface_type);
 
-  void init_hold_position_msg();
   void resize_joint_trajectory_point(
     trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size);
   void resize_joint_trajectory_point_command(
