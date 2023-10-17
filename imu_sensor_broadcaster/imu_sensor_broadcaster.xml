@@ -1,8 +1,0 @@
-<library path="imu_sensor_broadcaster">
-  <class name="imu_sensor_broadcaster/IMUSensorBroadcaster"
-         type="imu_sensor_broadcaster::IMUSensorBroadcaster" base_class_type="controller_interface::ControllerInterface">
-  <description>
-	  This controller publishes the readings of an IMU sensor as sensor_msgs/Imu message.
-  </description>
-  </class>
-</library>
