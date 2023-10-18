@@ -195,19 +195,25 @@ controller_interface::return_type JointTrajectoryController::update(
         auto reset_flags = reset_dofs_flags_.readFromRT();
         for (size_t i = 0; i < dof_; ++i)
         {
-          if (reset_flags->at(i))
+          if (reset_flags->at(i).reset)
           {
-            last_commanded_state_.positions[i] = state_current_.positions[i];
+            last_commanded_state_.positions[i] = std::isnan(reset_flags->at(i).position)
+                                                   ? state_current_.positions[i]
+                                                   : reset_flags->at(i).position;
             if (has_velocity_state_interface_)
             {
-              last_commanded_state_.velocities[i] = state_current_.velocities[i];
+              last_commanded_state_.velocities[i] = std::isnan(reset_flags->at(i).velocity)
+                                                      ? state_current_.velocities[i]
+                                                      : reset_flags->at(i).velocity;
             }
             if (has_acceleration_state_interface_)
             {
-              last_commanded_state_.accelerations[i] = state_current_.accelerations[i];
+              last_commanded_state_.accelerations[i] = std::isnan(reset_flags->at(i).acceleration)
+                                                         ? state_current_.accelerations[i]
+                                                         : reset_flags->at(i).acceleration;
             }
 
-            reset_flags->at(i) = false;  // reset flag in the buffer for one-shot execution
+            reset_flags->at(i).reset = false;  // reset flag in the buffer for one-shot execution
           }
         }
 
@@ -875,8 +881,10 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     std::bind(&JointTrajectoryController::query_state_service, this, _1, _2));
 
   // Initialize memory and RT buffer for DoF reset flags
-  std::vector<bool> reset_flags;
-  reset_flags.resize(dof_, false);
+  std::vector<ResetDofsData> reset_flags;
+  reset_flags.resize(
+    dof_, {false, std::numeric_limits<double>::quiet_NaN(),
+           std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN()});
   reset_dofs_flags_.writeFromNonRT(reset_flags);
 
   // Control mode service
@@ -887,8 +895,33 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   {
     response->ok = true;
 
-    std::vector<bool> reset_flags;
-    reset_flags.resize(dof_, false);
+    std::vector<ResetDofsData> reset_flags;
+    reset_flags.resize(
+      dof_, {false, std::numeric_limits<double>::quiet_NaN(),
+             std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN()});
+
+    if (
+      (request->positions.size() != request->velocities.size()) ||
+      (request->velocities.size() != request->accelerations.size()))
+    {
+      RCLCPP_ERROR(
+        get_node()->get_logger(),
+        "Reset dofs service call has different values size for positions %ld, velocities %ld, "
+        "accelerations %ld",
+        request->positions.size(), request->velocities.size(), request->accelerations.size());
+      response->ok = false;
+      return;
+    }
+
+    if ((request->positions.size() > 0) && (request->names.size() != request->positions.size()))
+    {
+      RCLCPP_ERROR(
+        get_node()->get_logger(),
+        "Reset dofs service call has names size %ld different than positions size %ld",
+        request->names.size(), request->positions.size());
+      response->ok = false;
+      return;
+    }
 
     for (size_t i = 0; i < request->names.size(); ++i)
     {
@@ -898,7 +931,14 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
       {
         RCLCPP_INFO(get_node()->get_logger(), "Resetting dof '%s'.", request->names[i].c_str());
         auto cmd_itf_index = std::distance(command_joint_names_.begin(), it);
-        reset_flags[cmd_itf_index] = true;
+        double pos = (request->positions.size() != 0) ? request->positions[i]
+                                                      : std::numeric_limits<double>::quiet_NaN();
+        double vel = (request->velocities.size() != 0) ? request->velocities[i]
+                                                       : std::numeric_limits<double>::quiet_NaN();
+        double accel = (request->accelerations.size() != 0)
+                         ? request->accelerations[i]
+                         : std::numeric_limits<double>::quiet_NaN();
+        reset_flags[cmd_itf_index] = {true, pos, vel, accel};
       }
       else
       {
