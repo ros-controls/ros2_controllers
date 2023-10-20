@@ -202,7 +202,7 @@ controller_interface::return_type JointTrajectoryController::update(
                                                    : reset_flags->at(i).position;
             RCLCPP_INFO_STREAM(
               get_node()->get_logger(), command_joint_names_[i]
-                                          << ": last commanded state position set to "
+                                          << ": last commanded state position reset to "
                                           << last_commanded_state_.positions[i]);
             if (has_velocity_state_interface_)
             {
@@ -927,11 +927,12 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
       dof_, {false, std::numeric_limits<double>::quiet_NaN(),
              std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN()});
 
-    // Here we read current reset dofs flags and clear it. This is done so we can add this request
-    // to the existing reset flags. This logic prevents this request from overwriting any previous request
+    // Here we read current reset dofs flags and clear it. This is done so we can add this new request
+    // to the existing reset flags. This logic prevents this new request from overwriting any previous request
     // that hasn't been processed yet.
-    // The assumption here is that the current reset flags are not going to be processed
-    // between the two calls here to read and reset, which is a highly unlikely scenario.
+    // The one assumption made here is that the current reset flags are not going to be processed
+    // between the two calls here to read and reset, which is a highly unlikely scenario. Even if it was,
+    // the behavior is fairly benign in that the dofs in the previous request will be reset twice.
     auto reset_flags = *reset_dofs_flags_.readFromNonRT();
     reset_dofs_flags_.writeFromNonRT(reset_flags_reset);
 
