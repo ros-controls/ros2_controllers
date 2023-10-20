@@ -200,6 +200,10 @@ controller_interface::return_type JointTrajectoryController::update(
             last_commanded_state_.positions[i] = std::isnan(reset_flags->at(i).position)
                                                    ? state_current_.positions[i]
                                                    : reset_flags->at(i).position;
+            RCLCPP_INFO_STREAM(
+              get_node()->get_logger(), command_joint_names_[i]
+                                          << ": last commanded state position set to "
+                                          << last_commanded_state_.positions[i]);
             if (has_velocity_state_interface_)
             {
               last_commanded_state_.velocities[i] = std::isnan(reset_flags->at(i).velocity)
@@ -895,11 +899,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   {
     response->ok = true;
 
-    std::vector<ResetDofsData> reset_flags;
-    reset_flags.resize(
-      dof_, {false, std::numeric_limits<double>::quiet_NaN(),
-             std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN()});
-
     if (
       (request->positions.size() != request->velocities.size()) ||
       (request->velocities.size() != request->accelerations.size()))
@@ -923,16 +922,40 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
       return;
     }
 
+    std::vector<ResetDofsData> reset_flags_reset;
+    reset_flags_reset.resize(
+      dof_, {false, std::numeric_limits<double>::quiet_NaN(),
+             std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN()});
+
+    // Here we read current reset dofs flags and clear it. This is done so we can add this request
+    // to the existing reset flags. This logic prevents this request from overwriting any previous request
+    // that hasn't been processed yet.
+    // The assumption here is that the current reset flags are not going to be processed
+    // between the two calls here to read and reset, which is a highly unlikely scenario.
+    auto reset_flags = *reset_dofs_flags_.readFromNonRT();
+    reset_dofs_flags_.writeFromNonRT(reset_flags_reset);
+
+    // add/update reset dofs flags from request
     for (size_t i = 0; i < request->names.size(); ++i)
     {
       auto it =
         std::find(command_joint_names_.begin(), command_joint_names_.end(), request->names[i]);
       if (it != command_joint_names_.end())
       {
-        RCLCPP_INFO(get_node()->get_logger(), "Resetting dof '%s'.", request->names[i].c_str());
         auto cmd_itf_index = std::distance(command_joint_names_.begin(), it);
         double pos = (request->positions.size() != 0) ? request->positions[i]
                                                       : std::numeric_limits<double>::quiet_NaN();
+
+        if (request->positions.size() != 0)
+        {
+          RCLCPP_INFO(get_node()->get_logger(), "Resetting dof '%s'", request->names[i].c_str());
+        }
+        else
+        {
+          RCLCPP_INFO(
+            get_node()->get_logger(), "Resetting dof '%s' position to %f",
+            request->names[i].c_str(), pos);
+        }
         double vel = (request->velocities.size() != 0) ? request->velocities[i]
                                                        : std::numeric_limits<double>::quiet_NaN();
         double accel = (request->accelerations.size() != 0)
