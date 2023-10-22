@@ -28,7 +28,7 @@ jobs:
           target-ros2-distro: ${{ env.ROS_DISTRO }}
           import-token: ${{ secrets.GITHUB_TOKEN }}
           # build all packages listed in the meta package
-          package-name:            
+          package-name:
             ackermann_steering_controller
             admittance_controller
             bicycle_steering_controller
