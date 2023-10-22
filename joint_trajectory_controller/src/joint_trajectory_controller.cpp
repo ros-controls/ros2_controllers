@@ -651,17 +651,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   // get parameters from the listener in case they were updated
   params_ = param_listener_->get_params();
 
-  // Check if the DoF has changed
-  if ((dof_ > 0) && (params_.joints.size() != dof_))
-  {
-    RCLCPP_ERROR(
-      logger,
-      "The JointTrajectoryController does not support restarting with a different number of DOF");
-    // TODO(andyz): update vector lengths if num. joints did change and re-initialize them so we
-    // can continue
-    return CallbackReturn::FAILURE;
-  }
-
+  // get degrees of freedom
   dof_ = params_.joints.size();
 
   // TODO(destogl): why is this here? Add comment or move
@@ -690,12 +680,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
       logger, "'command_joints' parameter has to have the same size as 'joints' parameter.");
     return CallbackReturn::FAILURE;
   }
-
-  //  // Specialized, child controllers set interfaces before calling configure function.
-  //  if (command_interface_types_.empty())
-  //  {
-  //   command_interface_types_ = get_node()->get_parameter("command_interfaces").as_string_array();
-  //  }
 
   if (params_.command_interfaces.empty())
   {
