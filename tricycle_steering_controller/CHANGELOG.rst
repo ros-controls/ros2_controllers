@@ -2,8 +2,8 @@
 Changelog for package tricycle_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.17.0 (2023-10-31)
+-------------------
 * Improve docs (`#785 <https://github.com/ros-controls/ros2_controllers/issues/785>`_)
 * Contributors: Christoph Fröhlich
 
