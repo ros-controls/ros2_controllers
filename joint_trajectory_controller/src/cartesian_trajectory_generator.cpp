@@ -133,13 +133,6 @@ controller_interface::CallbackReturn CartesianTrajectoryGenerator::on_configure(
   services_qos.reliable();
   services_qos.durability_volatile();
 
-  set_joint_limits_service_ = get_node()->create_service<SetLimitsModeSrvType>(
-    "~/set_joint_limits",
-    std::bind(
-      &CartesianTrajectoryGenerator::set_joint_limits_service_callback, this, std::placeholders::_1,
-      std::placeholders::_2),
-    services_qos);
-
   cart_publisher_ = get_node()->create_publisher<CartControllerStateMsg>(
     "~/controller_state_cartesian", qos_best_effort_history_depth_one);
   cart_state_publisher_ = std::make_unique<CartStatePublisher>(cart_publisher_);
@@ -225,124 +218,6 @@ void CartesianTrajectoryGenerator::reference_callback(
     msg->transforms[0].rotation.z, msg->velocities[0].angular.z, params_.joints[5], 5);
 
   add_new_trajectory_msg(new_traj_msg);
-}
-
-void CartesianTrajectoryGenerator::set_joint_limits_service_callback(
-  const std::shared_ptr<SetLimitsModeSrvType::Request> request,
-  std::shared_ptr<SetLimitsModeSrvType::Response> response)
-{
-  response->ok = true;
-  if (request->names.size() != request->limits.size())
-  {
-    RCLCPP_WARN(
-      get_node()->get_logger(),
-      "Fields name and limits have size %zu and %zu. Their size should be equal. Ignoring "
-      "service call!",
-      request->names.size(), request->limits.size());
-    response->ok = false;
-  }
-
-  // start with current limits
-  auto new_joint_limits = joint_limits_;
-
-  // lambda for setting new limit
-  auto update_limit_from_request = [](
-                                     double & new_limit_value, bool & new_limit_has_limits,
-                                     const double request_limit_value,
-                                     const double configured_limit_value)
-  {
-    // request is to reset to configured limit
-    if (std::isnan(request_limit_value))
-    {
-      new_limit_value = configured_limit_value;
-    }
-    // new limit is requested
-    else
-    {
-      new_limit_value = request_limit_value;
-    }
-    new_limit_has_limits = !std::isnan(new_limit_value);
-  };
-
-  // lambda for setting new position limits
-  auto update_pos_limits_from_request =
-    [](
-      double & new_min_limit_value, double & new_max_limit_value, bool & new_limit_has_limits,
-      const double request_min_limit_value, const double request_max_limit_value,
-      const double configured_min_limit_value, const double configured_max_limit_value)
-  {
-    // request is to reset to configured min position limit
-    if (std::isnan(request_min_limit_value))
-    {
-      new_min_limit_value = configured_min_limit_value;
-    }
-    // new min position limit is requested
-    else
-    {
-      new_min_limit_value = request_min_limit_value;
-    }
-
-    // request is to reset to configured max position limit
-    if (std::isnan(request_max_limit_value))
-    {
-      new_max_limit_value = configured_max_limit_value;
-    }
-    // new max position limit is requested
-    else
-    {
-      new_max_limit_value = request_max_limit_value;
-    }
-
-    // has limits only if one of the min or max position limits is set
-    new_limit_has_limits = !std::isnan(new_min_limit_value) || !std::isnan(new_max_limit_value);
-  };
-
-  for (size_t i = 0; i < request->names.size(); ++i)
-  {
-    auto it =
-      std::find(command_joint_names_.begin(), command_joint_names_.end(), request->names[i]);
-    if (it != command_joint_names_.end())
-    {
-      auto cmd_itf_index = std::distance(command_joint_names_.begin(), it);
-
-      update_pos_limits_from_request(
-        new_joint_limits[cmd_itf_index].min_position, new_joint_limits[cmd_itf_index].max_position,
-        new_joint_limits[cmd_itf_index].has_position_limits, request->limits[i].min_position,
-        request->limits[i].max_position, configured_joint_limits_[cmd_itf_index].min_position,
-        configured_joint_limits_[cmd_itf_index].max_position);
-      update_limit_from_request(
-        new_joint_limits[cmd_itf_index].max_velocity,
-        new_joint_limits[cmd_itf_index].has_velocity_limits, request->limits[i].max_velocity,
-        configured_joint_limits_[cmd_itf_index].max_velocity);
-      update_limit_from_request(
-        new_joint_limits[cmd_itf_index].max_acceleration,
-        new_joint_limits[cmd_itf_index].has_acceleration_limits,
-        request->limits[i].max_acceleration,
-        configured_joint_limits_[cmd_itf_index].max_acceleration);
-      update_limit_from_request(
-        new_joint_limits[cmd_itf_index].max_jerk, new_joint_limits[cmd_itf_index].has_jerk_limits,
-        request->limits[i].max_jerk, configured_joint_limits_[cmd_itf_index].max_jerk);
-      update_limit_from_request(
-        new_joint_limits[cmd_itf_index].max_effort,
-        new_joint_limits[cmd_itf_index].has_effort_limits, request->limits[i].max_effort,
-        configured_joint_limits_[cmd_itf_index].max_effort);
-
-      RCLCPP_INFO(
-        get_node()->get_logger(), "New limits for joint %zu (%s) are: \n%s", cmd_itf_index,
-        command_joint_names_[cmd_itf_index].c_str(),
-        new_joint_limits[cmd_itf_index].to_string().c_str());
-    }
-    else
-    {
-      RCLCPP_WARN(
-        get_node()->get_logger(), "Name '%s' is not command interface. Ignoring this entry.",
-        request->names[i].c_str());
-      response->ok = false;
-    }
-  }
-
-  // TODO(destogl): use buffers to sync comm between threads
-  joint_limits_ = new_joint_limits;
 }
 
 controller_interface::CallbackReturn CartesianTrajectoryGenerator::on_activate(

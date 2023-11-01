@@ -21,7 +21,6 @@
 #include <vector>
 
 #include "control_msgs/msg/cartesian_trajectory_generator_state.hpp"
-#include "control_msgs/srv/set_dof_limits.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "joint_limits/joint_limits.hpp"
@@ -56,7 +55,6 @@ public:
 
   using ControllerReferenceMsg = trajectory_msgs::msg::MultiDOFJointTrajectoryPoint;
   using ControllerFeedbackMsg = nav_msgs::msg::Odometry;
-  using SetLimitsModeSrvType = control_msgs::srv::SetDOFLimits;
 
 protected:
   bool read_state_from_hardware(JointTrajectoryPoint & state) override;
@@ -77,16 +75,10 @@ protected:
   rclcpp::Subscription<ControllerFeedbackMsg>::SharedPtr feedback_subscriber_ = nullptr;
   realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerFeedbackMsg>> feedback_;
 
-  rclcpp::Service<SetLimitsModeSrvType>::SharedPtr set_joint_limits_service_;
-
   trajectory_msgs::msg::JointTrajectoryPoint control_output_local_;
 
 private:
   void reference_callback(const std::shared_ptr<ControllerReferenceMsg> msg);
-
-  void set_joint_limits_service_callback(
-    const std::shared_ptr<SetLimitsModeSrvType::Request> request,
-    std::shared_ptr<SetLimitsModeSrvType::Response> response);
 
   using CartControllerStateMsg = control_msgs::msg::CartesianTrajectoryGeneratorState;
   using CartStatePublisher = realtime_tools::RealtimePublisher<CartControllerStateMsg>;
