@@ -189,7 +189,7 @@ public:
     parameter_overrides.insert(parameter_overrides.end(), parameters.begin(), parameters.end());
     node_options.parameter_overrides(parameter_overrides);
 
-    auto ret = traj_controller_->init(controller_name_, "", node_options);
+    auto ret = traj_controller_->init(controller_name_, "", "", node_options);
     if (ret != controller_interface::return_type::OK)
     {
       FAIL();
