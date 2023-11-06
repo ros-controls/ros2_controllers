@@ -1,11 +1,11 @@
-name: Humble Source Build
+name: Iron Source Build
 on:
   workflow_dispatch:
     branches:
-      - humble
+      - iron
   push:
     branches:
-      - humble
+      - iron
   schedule:
     # Run every day to detect flakiness and broken dependencies
     - cron: '03 3 * * *'
@@ -14,6 +14,6 @@ jobs:
   source:
     uses: ./.github/workflows/reusable-ros-tooling-source-build.yml
     with:
-      ros_distro: humble
-      ref: humble
-      ros2_repo_branch: humble
+      ros_distro: iron
+      ref: iron
+      ros2_repo_branch: iron

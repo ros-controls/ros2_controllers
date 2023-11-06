@@ -1,17 +1,21 @@
-name: Humble Binary Build - main
+name: Iron Binary Build - main
 # author: Denis Štogl <denis@stoglrobotics.de>
 # description: 'Build & test all dependencies from released (binary) packages.'
 
 on:
   workflow_dispatch:
     branches:
-      - humble
+      - iron
+      - '*feature*'
+      - '*feature/**'
   pull_request:
     branches:
-      - humble
+      - iron
+      - '*feature*'
+      - '*feature/**'
   push:
     branches:
-      - humble
+      - iron
   schedule:
     # Run every morning to detect flakiness and broken dependencies
     - cron: '03 1 * * *'
@@ -20,7 +24,7 @@ jobs:
   binary:
     uses: ./.github/workflows/reusable-industrial-ci-with-cache.yml
     with:
-      ros_distro: humble
+      ros_distro: iron
       ros_repo: main
-      upstream_workspace: ros2_controllers-not-released.humble.repos
-      ref_for_scheduled_build: humble
+      upstream_workspace: ros2_controllers-not-released.iron.repos
+      ref_for_scheduled_build: iron

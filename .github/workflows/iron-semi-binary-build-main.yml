@@ -1,16 +1,20 @@
-name: Humble Semi-Binary Build - testing
+name: Iron Semi-Binary Build - main
 # description: 'Build & test that compiles the main dependencies from source.'
 
 on:
   workflow_dispatch:
     branches:
-      - humble
+      - iron
+      - '*feature*'
+      - '*feature/**'
   pull_request:
     branches:
-      - humble
+      - iron
+      - '*feature*'
+      - '*feature/**'
   push:
     branches:
-      - humble
+      - iron
   schedule:
     # Run every morning to detect flakiness and broken dependencies
     - cron: '33 1 * * *'
@@ -19,7 +23,7 @@ jobs:
   semi_binary:
     uses: ./.github/workflows/reusable-industrial-ci-with-cache.yml
     with:
-      ros_distro: humble
-      ros_repo: testing
-      upstream_workspace: ros2_controllers.humble.repos
-      ref_for_scheduled_build: humble
+      ros_distro: iron
+      ros_repo: main
+      upstream_workspace: ros2_controllers.iron.repos
+      ref_for_scheduled_build: iron
