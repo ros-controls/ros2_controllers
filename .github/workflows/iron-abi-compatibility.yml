@@ -5,7 +5,7 @@ on:
       - iron
   pull_request:
     branches:
-      - master
+      - iron
 
 jobs:
   abi_check:
