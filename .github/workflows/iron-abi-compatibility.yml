@@ -2,7 +2,7 @@ name: Iron - ABI Compatibility Check
 on:
   workflow_dispatch:
     branches:
-      - master
+      - iron
   pull_request:
     branches:
       - master
