@@ -363,7 +363,7 @@ TEST_F(TestDiffDriveController, configure_succeeds_tf_test_prefix_false_set_name
 {
   std::string test_namespace = "/test_namespace";
 
-  const auto ret = controller_->init(controller_name, test_namespace);
+  const auto ret = controller_->init(controller_name, urdf_, test_namespace);
   ASSERT_EQ(ret, controller_interface::return_type::OK);
 
   std::string odom_id = "odom";
@@ -398,7 +398,7 @@ TEST_F(TestDiffDriveController, configure_succeeds_tf_test_prefix_true_set_names
 {
   std::string test_namespace = "/test_namespace";
 
-  const auto ret = controller_->init(controller_name, test_namespace);
+  const auto ret = controller_->init(controller_name, urdf_, test_namespace);
   ASSERT_EQ(ret, controller_interface::return_type::OK);
 
   std::string odom_id = "odom";
@@ -435,7 +435,7 @@ TEST_F(TestDiffDriveController, configure_succeeds_tf_blank_prefix_true_set_name
 {
   std::string test_namespace = "/test_namespace";
 
-  const auto ret = controller_->init(controller_name, test_namespace);
+  const auto ret = controller_->init(controller_name, urdf_, test_namespace);
   ASSERT_EQ(ret, controller_interface::return_type::OK);
 
   std::string odom_id = "odom";
