@@ -212,7 +212,7 @@ double SteeringOdometry::convert_trans_rot_vel_to_steering_angle(double Vx, doub
 }
 
 std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_commands(
-  double Vx, double theta_dot)
+  const double Vx, const double theta_dot)
 {
   // desired velocity and steering angle of the middle of traction and steering axis
   double Ws, alpha;
