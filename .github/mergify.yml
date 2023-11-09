@@ -1,21 +1,22 @@
 pull_request_rules:
-  - name: Backport to galactic at reviewers discretion
+  - name: Backport to humble at reviewers discretion
     conditions:
       - base=master
-      - "label=backport-galactic"
+      - "label=backport-humble"
     actions:
       backport:
         branches:
-          - galactic
+          - humble
 
-  - name: Backport to foxy at reviewers discretion
+
+  - name: Backport to iron at reviewers discretion
     conditions:
       - base=master
-      - "label=backport-foxy"
+      - "label=backport-iron"
     actions:
       backport:
         branches:
-          - foxy
+          - iron
 
   - name: Ask to resolve conflict
     conditions:

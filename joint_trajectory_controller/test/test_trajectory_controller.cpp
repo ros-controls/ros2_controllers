@@ -16,6 +16,7 @@
 
 #include <array>
 #include <chrono>
+#include <cmath>
 #include <future>
 #include <limits>
 #include <memory>
@@ -35,13 +36,13 @@
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/clock.hpp"
 #include "rclcpp/duration.hpp"
+#include "rclcpp/event_handler.hpp"
 #include "rclcpp/executors/multi_threaded_executor.hpp"
 #include "rclcpp/executors/single_threaded_executor.hpp"
 #include "rclcpp/node.hpp"
 #include "rclcpp/parameter.hpp"
 #include "rclcpp/publisher.hpp"
 #include "rclcpp/qos.hpp"
-#include "rclcpp/qos_event.hpp"
 #include "rclcpp/subscription.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp/utilities.hpp"
@@ -56,8 +57,6 @@
 using lifecycle_msgs::msg::State;
 using test_trajectory_controllers::TrajectoryControllerTest;
 using test_trajectory_controllers::TrajectoryControllerTestParameterized;
-
-bool is_same_sign(double val1, double val2) { return val1 * val2 >= 0.0; }
 
 void spin(rclcpp::executors::MultiThreadedExecutor * exe) { exe->spin(); }
 
@@ -138,11 +137,9 @@ TEST_P(TrajectoryControllerTestParameterized, check_interface_names)
 TEST_P(TrajectoryControllerTestParameterized, check_interface_names_with_command_joints)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
-  SetUpTrajectoryController(executor);
-
   // set command_joints parameter
   const rclcpp::Parameter command_joint_names_param("command_joints", command_joint_names_);
-  traj_controller_->get_node()->set_parameter({command_joint_names_param});
+  SetUpTrajectoryController(executor, {command_joint_names_param});
 
   const auto state = traj_controller_->get_node()->configure();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
@@ -206,7 +203,7 @@ TEST_P(TrajectoryControllerTestParameterized, cleanup)
   rclcpp::executors::MultiThreadedExecutor executor;
   std::vector<rclcpp::Parameter> params = {
     rclcpp::Parameter("allow_nonzero_velocity_at_trajectory_end", true)};
-  SetUpAndActivateTrajectoryController(executor, true, params);
+  SetUpAndActivateTrajectoryController(executor, params);
 
   // send msg
   constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
@@ -252,12 +249,11 @@ TEST_P(TrajectoryControllerTestParameterized, cleanup_after_configure)
 TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_parameters)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
-  SetUpTrajectoryController(executor, false);
+  SetUpTrajectoryController(executor);
   traj_controller_->get_node()->set_parameter(
     rclcpp::Parameter("allow_nonzero_velocity_at_trajectory_end", true));
 
   // This call is replacing the way parameters are set via launch
-  SetParameters();
   traj_controller_->configure();
   auto state = traj_controller_->get_state();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
@@ -285,44 +281,38 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
   // first update
   traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.1));
 
-  // wait so controller process the second point when deactivated
+  // wait for reaching the first point
+  // controller would process the second point when deactivated below
   traj_controller_->update(
     rclcpp::Time(static_cast<uint64_t>(0.25 * 1e9)), rclcpp::Duration::from_seconds(0.15));
-  // deactivated
-  state = traj_controller_->get_node()->deactivate();
-  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
-
-  const auto allowed_delta = 0.05;
+  EXPECT_TRUE(traj_controller_->has_active_traj());
   if (traj_controller_->has_position_command_interface())
   {
-    EXPECT_NEAR(3.3, joint_pos_[0], allowed_delta);
-    EXPECT_NEAR(4.4, joint_pos_[1], allowed_delta);
-    EXPECT_NEAR(5.5, joint_pos_[2], allowed_delta);
+    EXPECT_NEAR(points.at(0).at(0), joint_pos_[0], COMMON_THRESHOLD);
+    EXPECT_NEAR(points.at(0).at(1), joint_pos_[1], COMMON_THRESHOLD);
+    EXPECT_NEAR(points.at(0).at(2), joint_pos_[2], COMMON_THRESHOLD);
   }
 
-  if (traj_controller_->has_velocity_command_interface())
-  {
-    EXPECT_LE(0.0, joint_vel_[0]);
-    EXPECT_LE(0.0, joint_vel_[1]);
-    EXPECT_LE(0.0, joint_vel_[2]);
-  }
+  // deactivate
+  std::vector<double> deactivated_positions{joint_pos_[0], joint_pos_[1], joint_pos_[2]};
+  state = traj_controller_->get_node()->deactivate();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+  // it should be holding the current point
+  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.1));
+  expectHoldingPointDeactivated(deactivated_positions);
 
-  if (traj_controller_->has_effort_command_interface())
-  {
-    EXPECT_LE(0.0, joint_eff_[0]);
-    EXPECT_LE(0.0, joint_eff_[1]);
-    EXPECT_LE(0.0, joint_eff_[2]);
-  }
-
-  // reactivated
-  // wait so controller process the third point when reactivated
+  // reactivate
+  // wait so controller would have processed the third point when reactivated -> but it shouldn't
   std::this_thread::sleep_for(std::chrono::milliseconds(3000));
-  ActivateTrajectoryController();
+
+  ActivateTrajectoryController(false, deactivated_positions);
   state = traj_controller_->get_state();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_ACTIVE);
 
-  // TODO(christophfroehlich) add test if there is no active trajectory after
-  // reactivation once #558 or #609 got merged (needs methods for TestableJointTrajectoryController)
+  // it should still be holding the position at time of deactivation
+  // i.e., active but trivial trajectory (one point only)
+  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.1));
+  expectHoldingPoint(deactivated_positions);
 
   executor.cancel();
 }
@@ -330,65 +320,13 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
 TEST_P(TrajectoryControllerTestParameterized, state_topic_legacy_consistency)
 {
   rclcpp::executors::SingleThreadedExecutor executor;
-  SetUpAndActivateTrajectoryController(executor, true, {});
-  subscribeToStateLegacy();
-  updateController();
-
-  // Spin to receive latest state
-  executor.spin_some();
-  auto state = getStateLegacy();
-
-  size_t n_joints = joint_names_.size();
-
-  for (unsigned int i = 0; i < n_joints; ++i)
-  {
-    EXPECT_EQ(joint_names_[i], state->joint_names[i]);
-  }
-
-  // No trajectory by default, no desired state or error
-  EXPECT_TRUE(state->desired.positions.empty() || state->desired.positions == INITIAL_POS_JOINTS);
-  EXPECT_TRUE(state->desired.velocities.empty() || state->desired.velocities == INITIAL_VEL_JOINTS);
-  EXPECT_TRUE(
-    state->desired.accelerations.empty() || state->desired.accelerations == INITIAL_EFF_JOINTS);
-
-  EXPECT_EQ(n_joints, state->actual.positions.size());
-  if (
-    std::find(state_interface_types_.begin(), state_interface_types_.end(), "velocity") ==
-    state_interface_types_.end())
-  {
-    EXPECT_TRUE(state->actual.velocities.empty());
-  }
-  else
-  {
-    EXPECT_EQ(n_joints, state->actual.velocities.size());
-  }
-  if (
-    std::find(state_interface_types_.begin(), state_interface_types_.end(), "acceleration") ==
-    state_interface_types_.end())
-  {
-    EXPECT_TRUE(state->actual.accelerations.empty());
-  }
-  else
-  {
-    EXPECT_EQ(n_joints, state->actual.accelerations.size());
-  }
-
-  std::vector<double> zeros(3, 0);
-  EXPECT_EQ(state->error.positions, zeros);
-  EXPECT_TRUE(state->error.velocities.empty() || state->error.velocities == zeros);
-  EXPECT_TRUE(state->error.accelerations.empty() || state->error.accelerations == zeros);
-}
-
-TEST_P(TrajectoryControllerTestParameterized, state_topic_consistency)
-{
-  rclcpp::executors::SingleThreadedExecutor executor;
-  SetUpAndActivateTrajectoryController(executor, true, {});
+  SetUpAndActivateTrajectoryController(executor, {});
   subscribeToState();
   updateController();
 
   // Spin to receive latest state
   executor.spin_some();
-  auto state = getState();
+  auto state = getStateLegacy();
 
   size_t n_joints = joint_names_.size();
 
@@ -476,6 +414,45 @@ TEST_P(TrajectoryControllerTestParameterized, state_topic_consistency)
   }
 }
 
+/**
+ * @brief check if hold on startup is deactivated
+ */
+TEST_P(TrajectoryControllerTestParameterized, no_hold_on_startup)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+
+  rclcpp::Parameter start_with_holding_parameter("start_with_holding", false);
+  SetUpAndActivateTrajectoryController(executor, {start_with_holding_parameter});
+
+  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
+  updateController(rclcpp::Duration(FIRST_POINT_TIME));
+  // after startup without start_with_holding being set, we expect no active trajectory
+  ASSERT_FALSE(traj_controller_->has_active_traj());
+
+  executor.cancel();
+}
+
+/**
+ * @brief check if hold on startup
+ */
+TEST_P(TrajectoryControllerTestParameterized, hold_on_startup)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+
+  rclcpp::Parameter start_with_holding_parameter("start_with_holding", true);
+  SetUpAndActivateTrajectoryController(executor, {start_with_holding_parameter});
+
+  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
+  updateController(rclcpp::Duration(FIRST_POINT_TIME));
+  // after startup with start_with_holding being set, we expect an active trajectory:
+  ASSERT_TRUE(traj_controller_->has_active_traj());
+  // one point, being the position at startup
+  std::vector<double> initial_positions{INITIAL_POS_JOINT1, INITIAL_POS_JOINT2, INITIAL_POS_JOINT3};
+  expectHoldingPoint(initial_positions);
+
+  executor.cancel();
+}
+
 // Floating-point value comparison threshold
 const double EPS = 1e-6;
 /**
@@ -487,7 +464,7 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_normalized)
   constexpr double k_p = 10.0;
   std::vector<rclcpp::Parameter> params = {
     rclcpp::Parameter("allow_nonzero_velocity_at_trajectory_end", true)};
-  SetUpAndActivateTrajectoryController(executor, true, params, true, k_p, 0.0, false);
+  SetUpAndActivateTrajectoryController(executor, params, true, k_p, 0.0, false);
   subscribeToState();
 
   size_t n_joints = joint_names_.size();
@@ -543,7 +520,7 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_normalized)
     EXPECT_NEAR(points[0][2], joint_pos_[2], allowed_delta);
     EXPECT_NEAR(points[0][0], state_msg->output.positions[0], allowed_delta);
     EXPECT_NEAR(points[0][1], state_msg->output.positions[1], allowed_delta);
-    EXPECT_NEAR(points[0][2], state_msg->output.positions[2], 3 * allowed_delta);
+    EXPECT_NEAR(points[0][2], state_msg->output.positions[2], allowed_delta);
   }
 
   if (traj_controller_->has_velocity_command_interface())
@@ -588,6 +565,147 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_normalized)
 }
 
 /**
+ * @brief cmd_timeout must be greater than constraints.goal_time
+ */
+TEST_P(TrajectoryControllerTestParameterized, accept_correct_cmd_timeout)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+  // zero is default value, just for demonstration
+  double cmd_timeout = 3.0;
+  rclcpp::Parameter cmd_timeout_parameter("cmd_timeout", cmd_timeout);
+  rclcpp::Parameter goal_time_parameter("constraints.goal_time", 2.0);
+  SetUpAndActivateTrajectoryController(
+    executor, {cmd_timeout_parameter, goal_time_parameter}, false);
+
+  EXPECT_DOUBLE_EQ(cmd_timeout, traj_controller_->get_cmd_timeout());
+}
+
+/**
+ * @brief cmd_timeout must be greater than constraints.goal_time
+ */
+TEST_P(TrajectoryControllerTestParameterized, decline_false_cmd_timeout)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+  // zero is default value, just for demonstration
+  rclcpp::Parameter cmd_timeout_parameter("cmd_timeout", 1.0);
+  rclcpp::Parameter goal_time_parameter("constraints.goal_time", 2.0);
+  SetUpAndActivateTrajectoryController(
+    executor, {cmd_timeout_parameter, goal_time_parameter}, false);
+
+  EXPECT_DOUBLE_EQ(0.0, traj_controller_->get_cmd_timeout());
+}
+
+/**
+ * @brief check if no timeout is triggered
+ */
+TEST_P(TrajectoryControllerTestParameterized, no_timeout)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+  // zero is default value, just for demonstration
+  rclcpp::Parameter cmd_timeout_parameter("cmd_timeout", 0.0);
+  SetUpAndActivateTrajectoryController(executor, {cmd_timeout_parameter}, false);
+  subscribeToState();
+
+  size_t n_joints = joint_names_.size();
+
+  // send msg
+  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
+  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
+  // *INDENT-OFF*
+  std::vector<std::vector<double>> points{
+    {{3.3, 4.4, 6.6}}, {{7.7, 8.8, 9.9}}, {{10.10, 11.11, 12.12}}};
+  std::vector<std::vector<double>> points_velocities{
+    {{0.01, 0.01, 0.01}}, {{0.05, 0.05, 0.05}}, {{0.06, 0.06, 0.06}}};
+  // *INDENT-ON*
+  publish(time_from_start, points, rclcpp::Time(0, 0, RCL_STEADY_TIME), {}, points_velocities);
+  traj_controller_->wait_for_trajectory(executor);
+
+  // first update
+  updateController(rclcpp::Duration(FIRST_POINT_TIME) * 4);
+
+  // Spin to receive latest state
+  executor.spin_some();
+  auto state_msg = getState();
+  ASSERT_TRUE(state_msg);
+
+  // has the msg the correct vector sizes?
+  EXPECT_EQ(n_joints, state_msg->reference.positions.size());
+
+  // is the trajectory still active?
+  EXPECT_TRUE(traj_controller_->has_active_traj());
+  // should still hold the points from above
+  EXPECT_TRUE(traj_controller_->has_nontrivial_traj());
+  EXPECT_NEAR(state_msg->reference.positions[0], points.at(2).at(0), 1e-2);
+  EXPECT_NEAR(state_msg->reference.positions[1], points.at(2).at(1), 1e-2);
+  EXPECT_NEAR(state_msg->reference.positions[2], points.at(2).at(2), 1e-2);
+  // value of velocities is different from above due to spline interpolation
+  EXPECT_GT(state_msg->reference.velocities[0], 0.0);
+  EXPECT_GT(state_msg->reference.velocities[1], 0.0);
+  EXPECT_GT(state_msg->reference.velocities[2], 0.0);
+
+  executor.cancel();
+}
+
+/**
+ * @brief check if timeout is triggered
+ */
+TEST_P(TrajectoryControllerTestParameterized, timeout)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+  constexpr double cmd_timeout = 0.1;
+  rclcpp::Parameter cmd_timeout_parameter("cmd_timeout", cmd_timeout);
+  double kp = 1.0;  // activate feedback control for testing velocity/effort PID
+  SetUpAndActivateTrajectoryController(executor, {cmd_timeout_parameter}, false, kp);
+  subscribeToState();
+
+  // send msg
+  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
+  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
+  // *INDENT-OFF*
+  std::vector<std::vector<double>> points{
+    {{3.3, 4.4, 6.6}}, {{7.7, 8.8, 9.9}}, {{10.10, 11.11, 12.12}}};
+  std::vector<std::vector<double>> points_velocities{
+    {{0.01, 0.01, 0.01}}, {{0.05, 0.05, 0.05}}, {{0.06, 0.06, 0.06}}};
+  // *INDENT-ON*
+
+  publish(time_from_start, points, rclcpp::Time(0, 0, RCL_STEADY_TIME), {}, points_velocities);
+  traj_controller_->wait_for_trajectory(executor);
+
+  // update until end of trajectory -> no timeout should have occurred
+  updateController(rclcpp::Duration(FIRST_POINT_TIME) * 3);
+  // is a trajectory active?
+  EXPECT_TRUE(traj_controller_->has_active_traj());
+  // should have the trajectory with three points
+  EXPECT_TRUE(traj_controller_->has_nontrivial_traj());
+
+  // update until timeout should have happened
+  updateController(rclcpp::Duration(FIRST_POINT_TIME));
+
+  // Spin to receive latest state
+  executor.spin_some();
+  auto state_msg = getState();
+  ASSERT_TRUE(state_msg);
+
+  // after timeout, set_hold_position adds a new trajectory
+  // is a trajectory active?
+  EXPECT_TRUE(traj_controller_->has_active_traj());
+  // should be not more than one point now (from hold position)
+  EXPECT_FALSE(traj_controller_->has_nontrivial_traj());
+  // should hold last position with zero velocity
+  if (traj_controller_->has_position_command_interface())
+  {
+    expectHoldingPoint(points.at(2));
+  }
+  else
+  {
+    // no integration to position state interface from velocity/acceleration
+    expectHoldingPoint(INITIAL_POS_JOINTS);
+  }
+
+  executor.cancel();
+}
+
+/**
  * @brief check if position error of revolute joints are normalized if configured so
  */
 TEST_P(TrajectoryControllerTestParameterized, position_error_normalized)
@@ -596,7 +714,7 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_normalized)
   constexpr double k_p = 10.0;
   std::vector<rclcpp::Parameter> params = {
     rclcpp::Parameter("allow_nonzero_velocity_at_trajectory_end", true)};
-  SetUpAndActivateTrajectoryController(executor, true, params, true, k_p, 0.0, true);
+  SetUpAndActivateTrajectoryController(executor, params, true, k_p, 0.0, true);
   subscribeToState();
 
   size_t n_joints = joint_names_.size();
@@ -712,53 +830,6 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_normalized)
   executor.cancel();
 }
 
-void TrajectoryControllerTest::test_state_publish_rate_target(int target_msg_count)
-{
-  rclcpp::Parameter state_publish_rate_param(
-    "state_publish_rate", static_cast<double>(target_msg_count));
-  rclcpp::executors::SingleThreadedExecutor executor;
-  SetUpAndActivateTrajectoryController(executor, true, {state_publish_rate_param});
-
-  auto future_handle = std::async(std::launch::async, [&executor]() -> void { executor.spin(); });
-
-  using control_msgs::msg::JointTrajectoryControllerState;
-
-  const int qos_level = 10;
-  int echo_received_counter = 0;
-  rclcpp::Subscription<JointTrajectoryControllerState>::SharedPtr subs =
-    traj_controller_->get_node()->create_subscription<JointTrajectoryControllerState>(
-      controller_name_ + "/state", qos_level,
-      [&](JointTrajectoryControllerState::UniquePtr) { ++echo_received_counter; });
-
-  // update for 1second
-  auto clock = rclcpp::Clock(RCL_STEADY_TIME);
-  const auto start_time = clock.now();
-  const rclcpp::Duration wait = rclcpp::Duration::from_seconds(1.0);
-  const auto end_time = start_time + wait;
-  while (clock.now() < end_time)
-  {
-    traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
-  }
-
-  // We may miss the last message since time allowed is exactly the time needed
-  EXPECT_NEAR(target_msg_count, echo_received_counter, 1);
-
-  executor.cancel();
-}
-
-/**
- * @brief test_state_publish_rate Test that state publish rate matches configure rate
- */
-TEST_P(TrajectoryControllerTestParameterized, test_state_publish_rate)
-{
-  test_state_publish_rate_target(10);
-}
-
-// TEST_P(TrajectoryControllerTestParameterized, zero_state_publish_rate)
-// {
-//   test_state_publish_rate_target(0);
-// }
-
 /**
  * @brief check if use_closed_loop_pid is active
  */
@@ -786,7 +857,7 @@ TEST_P(TrajectoryControllerTestParameterized, use_closed_loop_pid)
 TEST_P(TrajectoryControllerTestParameterized, velocity_error)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
-  SetUpAndActivateTrajectoryController(executor, true, {}, true);
+  SetUpAndActivateTrajectoryController(executor, {}, true);
   subscribeToState();
 
   size_t n_joints = joint_names_.size();
@@ -839,7 +910,7 @@ TEST_P(TrajectoryControllerTestParameterized, velocity_error)
     || (traj_controller_->has_velocity_state_interface() &&
         traj_controller_->has_velocity_command_interface()))
   {
-    // don't check against a value, because spline intepolation might overshoot depending on
+    // don't check against a value, because spline interpolation might overshoot depending on
     // interface combinations
     EXPECT_GE(state_msg->error.velocities[0], points_velocities[0][0]);
     EXPECT_GE(state_msg->error.velocities[1], points_velocities[0][1]);
@@ -857,50 +928,82 @@ TEST_P(TrajectoryControllerTestParameterized, test_jumbled_joint_order)
 {
   rclcpp::executors::SingleThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(executor);
+  std::vector<double> points_positions = {1.0, 2.0, 3.0};
+  std::vector<size_t> jumble_map = {1, 2, 0};
   {
     trajectory_msgs::msg::JointTrajectory traj_msg;
     const std::vector<std::string> jumbled_joint_names{
-      joint_names_[1], joint_names_[2], joint_names_[0]};
+      joint_names_[jumble_map[0]], joint_names_[jumble_map[1]], joint_names_[jumble_map[2]]};
+
     traj_msg.joint_names = jumbled_joint_names;
     traj_msg.header.stamp = rclcpp::Time(0);
     traj_msg.points.resize(1);
 
     traj_msg.points[0].time_from_start = rclcpp::Duration::from_seconds(0.25);
     traj_msg.points[0].positions.resize(3);
-    traj_msg.points[0].positions[0] = 2.0;
-    traj_msg.points[0].positions[1] = 3.0;
-    traj_msg.points[0].positions[2] = 1.0;
-
-    if (traj_controller_->has_velocity_command_interface())
+    traj_msg.points[0].positions[0] = points_positions.at(jumble_map[0]);
+    traj_msg.points[0].positions[1] = points_positions.at(jumble_map[1]);
+    traj_msg.points[0].positions[2] = points_positions.at(jumble_map[2]);
+    traj_msg.points[0].velocities.resize(3);
+    for (size_t i = 0; i < 3; i++)
     {
-      traj_msg.points[0].velocities.resize(3);
-      traj_msg.points[0].velocities[0] = -0.1;
-      traj_msg.points[0].velocities[1] = -0.1;
-      traj_msg.points[0].velocities[2] = -0.1;
+      // factor 2 comes from the linear interpolation in the spline trajectory for constant
+      // acceleration
+      traj_msg.points[0].velocities[i] =
+        2 * (traj_msg.points[0].positions[i] - joint_pos_[jumble_map[i]]) / 0.25;
     }
+
     trajectory_publisher_->publish(traj_msg);
   }
 
   traj_controller_->wait_for_trajectory(executor);
-  // update for 0.25 seconds
+  // update just before 0.25 seconds (shorter than the trajectory duration of 0.25 seconds,
+  // otherwise acceleration is zero from the spline trajectory)
   // TODO(destogl): Make this time a bit shorter to increase stability on the CI?
   //                Currently COMMON_THRESHOLD is adjusted.
-  updateController(rclcpp::Duration::from_seconds(0.25));
+  updateController(rclcpp::Duration::from_seconds(0.25 - 1e-3));
 
   if (traj_controller_->has_position_command_interface())
   {
-    EXPECT_NEAR(1.0, joint_pos_[0], COMMON_THRESHOLD);
-    EXPECT_NEAR(2.0, joint_pos_[1], COMMON_THRESHOLD);
-    EXPECT_NEAR(3.0, joint_pos_[2], COMMON_THRESHOLD);
+    EXPECT_NEAR(points_positions.at(0), joint_pos_[0], COMMON_THRESHOLD);
+    EXPECT_NEAR(points_positions.at(1), joint_pos_[1], COMMON_THRESHOLD);
+    EXPECT_NEAR(points_positions.at(2), joint_pos_[2], COMMON_THRESHOLD);
   }
 
   if (traj_controller_->has_velocity_command_interface())
   {
+    // if use_closed_loop_pid_adapter_==false: we expect desired velocities from direct sampling
+    // if use_closed_loop_pid_adapter_==true: we expect desired velocities, because we use PID with
+    // feedforward term only
     EXPECT_GT(0.0, joint_vel_[0]);
     EXPECT_GT(0.0, joint_vel_[1]);
     EXPECT_GT(0.0, joint_vel_[2]);
   }
-  // TODO(anyone): add here checks for acceleration commands
+
+  if (traj_controller_->has_acceleration_command_interface())
+  {
+    if (traj_controller_->has_velocity_state_interface())
+    {
+      EXPECT_GT(0.0, joint_acc_[0]);
+      EXPECT_GT(0.0, joint_acc_[1]);
+      EXPECT_GT(0.0, joint_acc_[2]);
+    }
+    else
+    {
+      // no velocity state interface: no acceleration from trajectory sampling
+      EXPECT_EQ(0.0, joint_acc_[0]);
+      EXPECT_EQ(0.0, joint_acc_[1]);
+      EXPECT_EQ(0.0, joint_acc_[2]);
+    }
+  }
+
+  if (traj_controller_->has_effort_command_interface())
+  {
+    // effort should be nonzero, because we use PID with feedforward term
+    EXPECT_GT(0.0, joint_eff_[0]);
+    EXPECT_GT(0.0, joint_eff_[1]);
+    EXPECT_GT(0.0, joint_eff_[2]);
+  }
 }
 
 /**
@@ -912,7 +1015,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_partial_joint_list)
   rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", true);
 
   rclcpp::executors::SingleThreadedExecutor executor;
-  SetUpAndActivateTrajectoryController(executor, true, {partial_joints_parameters});
+  SetUpAndActivateTrajectoryController(executor, {partial_joints_parameters});
 
   const double initial_joint1_cmd = joint_pos_[0];
   const double initial_joint2_cmd = joint_pos_[1];
@@ -931,9 +1034,9 @@ TEST_P(TrajectoryControllerTestParameterized, test_partial_joint_list)
     traj_msg.points[0].positions[1] = 1.0;
     traj_msg.points[0].velocities.resize(2);
     traj_msg.points[0].velocities[0] =
-      copysign(2.0, traj_msg.points[0].positions[0] - initial_joint2_cmd);
+      std::copysign(2.0, traj_msg.points[0].positions[0] - initial_joint2_cmd);
     traj_msg.points[0].velocities[1] =
-      copysign(1.0, traj_msg.points[0].positions[1] - initial_joint1_cmd);
+      std::copysign(1.0, traj_msg.points[0].positions[1] - initial_joint1_cmd);
 
     trajectory_publisher_->publish(traj_msg);
   }
@@ -955,22 +1058,50 @@ TEST_P(TrajectoryControllerTestParameterized, test_partial_joint_list)
   {
     // estimate the sign of the velocity
     // joint rotates forward
-    EXPECT_TRUE(is_same_sign(traj_msg.points[0].positions[0] - initial_joint2_cmd, joint_vel_[0]));
-    EXPECT_TRUE(is_same_sign(traj_msg.points[0].positions[1] - initial_joint1_cmd, joint_vel_[1]));
+    EXPECT_TRUE(
+      is_same_sign_or_zero(traj_msg.points[0].positions[0] - initial_joint2_cmd, joint_vel_[0]));
+    EXPECT_TRUE(
+      is_same_sign_or_zero(traj_msg.points[0].positions[1] - initial_joint1_cmd, joint_vel_[1]));
     EXPECT_NEAR(0.0, joint_vel_[2], threshold)
       << "Joint 3 velocity should be 0.0 since it's not in the goal";
+  }
+
+  if (traj_controller_->has_acceleration_command_interface())
+  {
+    // estimate the sign of the acceleration
+    // joint rotates forward
+    if (traj_controller_->has_velocity_state_interface())
+    {
+      EXPECT_TRUE(
+        is_same_sign_or_zero(traj_msg.points[0].positions[0] - initial_joint2_cmd, joint_acc_[0]))
+        << "Joint1: " << traj_msg.points[0].positions[0] - initial_joint2_cmd << " vs. "
+        << joint_acc_[0];
+      EXPECT_TRUE(
+        is_same_sign_or_zero(traj_msg.points[0].positions[1] - initial_joint1_cmd, joint_acc_[1]))
+        << "Joint2: " << traj_msg.points[0].positions[1] - initial_joint1_cmd << " vs. "
+        << joint_acc_[1];
+    }
+    else
+    {
+      // no velocity state interface: no acceleration from trajectory sampling
+      EXPECT_EQ(0.0, joint_acc_[0]);
+      EXPECT_EQ(0.0, joint_acc_[1]);
+    }
+    EXPECT_NEAR(0.0, joint_acc_[2], threshold)
+      << "Joint 3 acc should be 0.0 since it's not in the goal";
   }
 
   if (traj_controller_->has_effort_command_interface())
   {
     // estimate the sign of the effort
     // joint rotates forward
-    EXPECT_TRUE(is_same_sign(traj_msg.points[0].positions[0] - initial_joint2_cmd, joint_eff_[0]));
-    EXPECT_TRUE(is_same_sign(traj_msg.points[0].positions[1] - initial_joint1_cmd, joint_eff_[1]));
+    EXPECT_TRUE(
+      is_same_sign_or_zero(traj_msg.points[0].positions[0] - initial_joint2_cmd, joint_eff_[0]));
+    EXPECT_TRUE(
+      is_same_sign_or_zero(traj_msg.points[0].positions[1] - initial_joint1_cmd, joint_eff_[1]));
     EXPECT_NEAR(0.0, joint_eff_[2], threshold)
       << "Joint 3 effort should be 0.0 since it's not in the goal";
   }
-  // TODO(anyone): add here checks for acceleration commands
 
   executor.cancel();
 }
@@ -984,7 +1115,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_partial_joint_list_not_allowe
   rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", false);
 
   rclcpp::executors::SingleThreadedExecutor executor;
-  SetUpAndActivateTrajectoryController(executor, true, {partial_joints_parameters});
+  SetUpAndActivateTrajectoryController(executor, {partial_joints_parameters});
 
   const double initial_joint1_cmd = joint_pos_[0];
   const double initial_joint2_cmd = joint_pos_[1];
@@ -1066,7 +1197,7 @@ TEST_P(TrajectoryControllerTestParameterized, invalid_message)
   rclcpp::Parameter allow_integration_parameters("allow_integration_in_goal_trajectories", false);
   rclcpp::executors::SingleThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(
-    executor, true, {partial_joints_parameters, allow_integration_parameters});
+    executor, {partial_joints_parameters, allow_integration_parameters});
 
   trajectory_msgs::msg::JointTrajectory traj_msg, good_traj_msg;
 
@@ -1127,7 +1258,7 @@ TEST_P(TrajectoryControllerTestParameterized, missing_positions_message_accepted
 {
   rclcpp::Parameter allow_integration_parameters("allow_integration_in_goal_trajectories", true);
   rclcpp::executors::SingleThreadedExecutor executor;
-  SetUpAndActivateTrajectoryController(executor, true, {allow_integration_parameters});
+  SetUpAndActivateTrajectoryController(executor, {allow_integration_parameters});
 
   trajectory_msgs::msg::JointTrajectory traj_msg, good_traj_msg;
 
@@ -1189,7 +1320,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_trajectory_replace)
 {
   rclcpp::executors::SingleThreadedExecutor executor;
   rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", true);
-  SetUpAndActivateTrajectoryController(executor, true, {partial_joints_parameters});
+  SetUpAndActivateTrajectoryController(executor, {partial_joints_parameters});
 
   subscribeToState();
 
@@ -1212,7 +1343,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_trajectory_replace)
 
   RCLCPP_INFO(traj_controller_->get_node()->get_logger(), "Sending new trajectory");
   points_partial_new_velocities[0][0] =
-    copysign(0.15, points_partial_new[0][0] - joint_state_pos_[0]);
+    std::copysign(0.15, points_partial_new[0][0] - joint_state_pos_[0]);
   publish(time_from_start, points_partial_new, rclcpp::Time(), {}, points_partial_new_velocities);
 
   // Replaced trajectory is a mix of previous and current goal
@@ -1232,7 +1363,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_trajectory_replace)
 TEST_P(TrajectoryControllerTestParameterized, test_ignore_old_trajectory)
 {
   rclcpp::executors::SingleThreadedExecutor executor;
-  SetUpAndActivateTrajectoryController(executor, true, {});
+  SetUpAndActivateTrajectoryController(executor, {});
   subscribeToState();
 
   // TODO(anyone): add expectations for velocities and accelerations
@@ -1255,7 +1386,6 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_old_trajectory)
     rclcpp::Clock(RCL_STEADY_TIME).now() - delay - std::chrono::milliseconds(100);
   expected_actual.positions = {points_old[1].begin(), points_old[1].end()};
   expected_desired = expected_actual;
-  std::cout << "Sending old trajectory" << std::endl;
   publish(time_from_start, points_new, new_traj_start);
   waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
 }
@@ -1263,7 +1393,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_old_trajectory)
 TEST_P(TrajectoryControllerTestParameterized, test_ignore_partial_old_trajectory)
 {
   rclcpp::executors::SingleThreadedExecutor executor;
-  SetUpAndActivateTrajectoryController(executor, true, {});
+  SetUpAndActivateTrajectoryController(executor, {});
   subscribeToState();
 
   std::vector<std::vector<double>> points_old{{{2., 3., 4.}, {4., 5., 6.}}};
@@ -1296,7 +1426,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_execute_partial_traj_in_futur
 {
   rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", true);
   rclcpp::executors::SingleThreadedExecutor executor;
-  SetUpAndActivateTrajectoryController(executor, true, {partial_joints_parameters});
+  SetUpAndActivateTrajectoryController(executor, {partial_joints_parameters});
   subscribeToState();
 
   RCLCPP_WARN(
@@ -1356,7 +1486,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_erro
   rclcpp::executors::SingleThreadedExecutor executor;
   // default if false so it will not be actually set parameter
   rclcpp::Parameter is_open_loop_parameters("open_loop_control", false);
-  SetUpAndActivateTrajectoryController(executor, true, {is_open_loop_parameters}, true);
+  SetUpAndActivateTrajectoryController(executor,  {is_open_loop_parameters}, true);
 
   // goal setup
   std::vector<double> first_goal = {3.3, 4.4, 5.5};
@@ -1457,7 +1587,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_no_jump_when_state_tracking_e
 {
   rclcpp::executors::SingleThreadedExecutor executor;
   rclcpp::Parameter is_open_loop_parameters("open_loop_control", true);
-  SetUpAndActivateTrajectoryController(executor, true, {is_open_loop_parameters}, true);
+  SetUpAndActivateTrajectoryController(executor,  {is_open_loop_parameters}, true);
 
   // goal setup
   std::vector<double> first_goal = {3.3, 4.4, 5.5};
@@ -1555,7 +1685,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_first_co
     joint_vel_[i] = std::numeric_limits<double>::quiet_NaN();
     joint_acc_[i] = std::numeric_limits<double>::quiet_NaN();
   }
-  SetUpAndActivateTrajectoryController(executor, true, {is_open_loop_parameters}, true);
+  SetUpAndActivateTrajectoryController(executor, {is_open_loop_parameters}, true);
 
   auto current_state_when_offset = traj_controller_->get_current_state_when_offset();
 
@@ -1598,11 +1728,11 @@ TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_later_co
   // set command values to NaN
   for (size_t i = 0; i < 3; ++i)
   {
-    joint_pos_[i] = 3.1 + i;
-    joint_vel_[i] = 0.25 + i;
-    joint_acc_[i] = 0.02 + i / 10.0;
+    joint_pos_[i] = 3.1 + static_cast<double>(i);
+    joint_vel_[i] = 0.25 + static_cast<double>(i);
+    joint_acc_[i] = 0.02 + static_cast<double>(i) / 10.0;
   }
-  SetUpAndActivateTrajectoryController(executor, true, {is_open_loop_parameters}, true);
+  SetUpAndActivateTrajectoryController(executor, {is_open_loop_parameters}, true);
 
   auto current_state_when_offset = traj_controller_->get_current_state_when_offset();
 
@@ -1632,6 +1762,75 @@ TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_later_co
   }
 
   executor.cancel();
+}
+
+TEST_P(TrajectoryControllerTestParameterized, test_state_tolerances_fail)
+{
+  // set joint tolerance parameters
+  const double state_tol = 0.0001;
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("constraints.joint1.trajectory", state_tol),
+    rclcpp::Parameter("constraints.joint2.trajectory", state_tol),
+    rclcpp::Parameter("constraints.joint3.trajectory", state_tol)};
+
+  rclcpp::executors::MultiThreadedExecutor executor;
+  double kp = 1.0;  // activate feedback control for testing velocity/effort PID
+  SetUpAndActivateTrajectoryController(executor, params, true, kp);
+
+  // send msg
+  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(100);
+  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
+  // *INDENT-OFF*
+  std::vector<std::vector<double>> points{
+    {{3.3, 4.4, 5.5}}, {{7.7, 8.8, 9.9}}, {{10.10, 11.11, 12.12}}};
+  std::vector<std::vector<double>> points_velocities{
+    {{0.01, 0.01, 0.01}}, {{0.05, 0.05, 0.05}}, {{0.06, 0.06, 0.06}}};
+  // *INDENT-ON*
+  publish(time_from_start, points, rclcpp::Time(0, 0, RCL_STEADY_TIME), {}, points_velocities);
+  traj_controller_->wait_for_trajectory(executor);
+  updateController(rclcpp::Duration(FIRST_POINT_TIME));
+
+  // it should have aborted and be holding now
+  expectHoldingPoint(joint_state_pos_);
+}
+
+TEST_P(TrajectoryControllerTestParameterized, test_goal_tolerances_fail)
+{
+  // set joint tolerance parameters
+  const double goal_tol = 0.1;
+  // set very small goal_time so that goal_time is violated
+  const double goal_time = 0.000001;
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("constraints.joint1.goal", goal_tol),
+    rclcpp::Parameter("constraints.joint2.goal", goal_tol),
+    rclcpp::Parameter("constraints.joint3.goal", goal_tol),
+    rclcpp::Parameter("constraints.goal_time", goal_time)};
+
+  rclcpp::executors::MultiThreadedExecutor executor;
+  SetUpAndActivateTrajectoryController(executor, params, true, 1.0);
+
+  // send msg
+  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(100);
+  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
+  // *INDENT-OFF*
+  std::vector<std::vector<double>> points{
+    {{3.3, 4.4, 5.5}}, {{7.7, 8.8, 9.9}}, {{10.10, 11.11, 12.12}}};
+  std::vector<std::vector<double>> points_velocities{
+    {{0.01, 0.01, 0.01}}, {{0.05, 0.05, 0.05}}, {{0.06, 0.06, 0.06}}};
+  // *INDENT-ON*
+  publish(time_from_start, points, rclcpp::Time(0, 0, RCL_STEADY_TIME), {}, points_velocities);
+  traj_controller_->wait_for_trajectory(executor);
+  updateController(rclcpp::Duration(4 * FIRST_POINT_TIME));
+
+  // it should have aborted and be holding now
+  expectHoldingPoint(joint_state_pos_);
+
+  // what happens if we wait longer but it harms the tolerance again?
+  auto hold_position = joint_state_pos_;
+  joint_state_pos_.at(0) = -3.3;
+  updateController(rclcpp::Duration(FIRST_POINT_TIME));
+  // it should be still holding the old point
+  expectHoldingPoint(hold_position);
 }
 
 // position controllers

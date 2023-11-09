@@ -24,7 +24,7 @@
 #include "realtime_tools/realtime_buffer.h"
 #include "realtime_tools/realtime_publisher.h"
 
-#include "rcppmath/rolling_mean_accumulator.hpp"
+#include "rcpputils/rolling_mean_accumulator.hpp"
 
 namespace steering_odometry
 {
@@ -184,7 +184,8 @@ public:
    * \param theta_dot Desired angular velocity [rad/s]
    * \return Tuple of velocity commands and steering commands
    */
-  std::tuple<std::vector<double>, std::vector<double>> get_commands(double Vx, double theta_dot);
+  std::tuple<std::vector<double>, std::vector<double>> get_commands(
+    const double Vx, const double theta_dot);
 
   /**
    *  \brief Reset poses, heading, and accumulators
@@ -255,8 +256,8 @@ private:
   double traction_left_wheel_old_pos_;
   /// Rolling mean accumulators for the linear and angular velocities:
   size_t velocity_rolling_window_size_;
-  rcppmath::RollingMeanAccumulator<double> linear_acc_;
-  rcppmath::RollingMeanAccumulator<double> angular_acc_;
+  rcpputils::RollingMeanAccumulator<double> linear_acc_;
+  rcpputils::RollingMeanAccumulator<double> angular_acc_;
 };
 }  // namespace steering_odometry
 

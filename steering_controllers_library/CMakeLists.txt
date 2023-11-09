@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 project(steering_controllers_library LANGUAGES CXX)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
-  add_compile_options(-Wall -Wextra -Wpedantic)
+  add_compile_options(-Wall -Wextra -Wpedantic -Wconversion)
 endif()
 
 # find dependencies

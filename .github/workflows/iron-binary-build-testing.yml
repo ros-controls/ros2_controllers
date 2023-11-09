@@ -1,26 +1,30 @@
-name: Foxy Binary Build - testing
+name: Iron Binary Build - testing
 # author: Denis Štogl <denis@stoglrobotics.de>
 # description: 'Build & test all dependencies from released (binary) packages.'
 
 on:
   workflow_dispatch:
     branches:
-      - foxy
+      - iron
+      - '*feature*'
+      - '*feature/**'
   pull_request:
     branches:
-      - foxy
+      - iron
+      - '*feature*'
+      - '*feature/**'
   push:
     branches:
-      - foxy
+      - iron
   schedule:
     # Run every morning to detect flakiness and broken dependencies
-    - cron: '03 1 * * *'
+    - cron: '03 2 * * *'
 
 jobs:
   binary:
     uses: ./.github/workflows/reusable-industrial-ci-with-cache.yml
     with:
-      ros_distro: foxy
+      ros_distro: iron
       ros_repo: testing
-      upstream_workspace: ros2_controllers-not-released.foxy.repos
-      ref_for_scheduled_build: foxy
+      upstream_workspace: ros2_controllers-not-released.iron.repos
+      ref_for_scheduled_build: iron

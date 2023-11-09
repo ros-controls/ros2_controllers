@@ -401,10 +401,31 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_deactivate(
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::return_type SteeringControllersLibrary::update_reference_from_subscribers()
+controller_interface::return_type SteeringControllersLibrary::update_reference_from_subscribers(
+  const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
-  // Move functionality to the `update_and_write_commands` because of the missing arguments in
-  // humble - otherwise issues with multiple time-sources might happen when working with simulators
+  auto current_ref = *(input_ref_.readFromRT());
+  const auto age_of_last_command = time - (current_ref)->header.stamp;
+
+  // send message only if there is no timeout
+  if (age_of_last_command <= ref_timeout_ || ref_timeout_ == rclcpp::Duration::from_seconds(0))
+  {
+    if (!std::isnan(current_ref->twist.linear.x) && !std::isnan(current_ref->twist.angular.z))
+    {
+      reference_interfaces_[0] = current_ref->twist.linear.x;
+      reference_interfaces_[1] = current_ref->twist.angular.z;
+    }
+  }
+  else
+  {
+    if (!std::isnan(current_ref->twist.linear.x) && !std::isnan(current_ref->twist.angular.z))
+    {
+      reference_interfaces_[0] = 0.0;
+      reference_interfaces_[1] = 0.0;
+      current_ref->twist.linear.x = std::numeric_limits<double>::quiet_NaN();
+      current_ref->twist.angular.z = std::numeric_limits<double>::quiet_NaN();
+    }
+  }
 
   return controller_interface::return_type::OK;
 }
@@ -412,32 +433,6 @@ controller_interface::return_type SteeringControllersLibrary::update_reference_f
 controller_interface::return_type SteeringControllersLibrary::update_and_write_commands(
   const rclcpp::Time & time, const rclcpp::Duration & period)
 {
-  if (!is_in_chained_mode())
-  {
-    auto current_ref = *(input_ref_.readFromRT());
-    const auto age_of_last_command = time - (current_ref)->header.stamp;
-
-    // send message only if there is no timeout
-    if (age_of_last_command <= ref_timeout_ || ref_timeout_ == rclcpp::Duration::from_seconds(0))
-    {
-      if (!std::isnan(current_ref->twist.linear.x) && !std::isnan(current_ref->twist.angular.z))
-      {
-        reference_interfaces_[0] = current_ref->twist.linear.x;
-        reference_interfaces_[1] = current_ref->twist.angular.z;
-      }
-    }
-    else
-    {
-      if (!std::isnan(current_ref->twist.linear.x) && !std::isnan(current_ref->twist.angular.z))
-      {
-        reference_interfaces_[0] = 0.0;
-        reference_interfaces_[1] = 0.0;
-        current_ref->twist.linear.x = std::numeric_limits<double>::quiet_NaN();
-        current_ref->twist.angular.z = std::numeric_limits<double>::quiet_NaN();
-      }
-    }
-  }
-
   update_odometry(period);
 
   // MOVE ROBOT
@@ -448,10 +443,11 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
   if (!std::isnan(reference_interfaces_[0]) && !std::isnan(reference_interfaces_[1]))
   {
     // store and set commands
-    const double linear_command = reference_interfaces_[0];
-    const double angular_command = reference_interfaces_[1];
+    last_linear_velocity_ = reference_interfaces_[0];
+    last_angular_velocity_ = reference_interfaces_[1];
+
     auto [traction_commands, steering_commands] =
-      odometry_.get_commands(linear_command, angular_command);
+      odometry_.get_commands(last_linear_velocity_, last_angular_velocity_);
     if (params_.front_steering)
     {
       for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)

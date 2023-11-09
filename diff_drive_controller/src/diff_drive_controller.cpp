@@ -167,8 +167,8 @@ controller_interface::return_type DiffDriveController::update(
       left_feedback_mean += left_feedback;
       right_feedback_mean += right_feedback;
     }
-    left_feedback_mean /= params_.wheels_per_side;
-    right_feedback_mean /= params_.wheels_per_side;
+    left_feedback_mean /= static_cast<double>(params_.wheels_per_side);
+    right_feedback_mean /= static_cast<double>(params_.wheels_per_side);
 
     if (params_.position_feedback)
     {
@@ -203,8 +203,6 @@ controller_interface::return_type DiffDriveController::update(
 
   if (should_publish)
   {
-    previous_publish_timestamp_ += publish_period_;
-
     if (realtime_odometry_publisher_->trylock())
     {
       auto & odometry_message = realtime_odometry_publisher_->msg_;
@@ -394,19 +392,31 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
     std::make_shared<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>>(
       odometry_publisher_);
 
-  std::string controller_namespace = std::string(get_node()->get_namespace());
-
-  if (controller_namespace == "/")
+  // Append the tf prefix if there is one
+  std::string tf_prefix = "";
+  if (params_.tf_frame_prefix_enable)
   {
-    controller_namespace = "";
-  }
-  else
-  {
-    controller_namespace = controller_namespace.erase(0, 1) + "/";
+    if (params_.tf_frame_prefix != "")
+    {
+      tf_prefix = params_.tf_frame_prefix;
+    }
+    else
+    {
+      tf_prefix = std::string(get_node()->get_namespace());
+    }
+
+    if (tf_prefix == "/")
+    {
+      tf_prefix = "";
+    }
+    else
+    {
+      tf_prefix = tf_prefix + "/";
+    }
   }
 
-  const auto odom_frame_id = controller_namespace + params_.odom_frame_id;
-  const auto base_frame_id = controller_namespace + params_.base_frame_id;
+  const auto odom_frame_id = tf_prefix + params_.odom_frame_id;
+  const auto base_frame_id = tf_prefix + params_.base_frame_id;
 
   auto & odometry_message = realtime_odometry_publisher_->msg_;
   odometry_message.header.frame_id = odom_frame_id;

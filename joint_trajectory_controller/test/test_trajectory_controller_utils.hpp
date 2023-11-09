@@ -25,6 +25,7 @@
 
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
+#include "joint_trajectory_controller/trajectory.hpp"
 
 namespace
 {
@@ -37,6 +38,12 @@ const std::vector<double> INITIAL_POS_JOINTS = {
 const std::vector<double> INITIAL_VEL_JOINTS = {0.0, 0.0, 0.0};
 const std::vector<double> INITIAL_ACC_JOINTS = {0.0, 0.0, 0.0};
 const std::vector<double> INITIAL_EFF_JOINTS = {0.0, 0.0, 0.0};
+
+bool is_same_sign_or_zero(double val1, double val2)
+{
+  return val1 * val2 > 0.0 || (val1 == 0.0 && val2 == 0.0);
+}
+
 }  // namespace
 
 namespace test_trajectory_controllers
@@ -101,23 +108,41 @@ public:
 
   void trigger_declare_parameters() { param_listener_->declare_params(); }
 
-  trajectory_msgs::msg::JointTrajectoryPoint get_current_state_when_offset()
+  trajectory_msgs::msg::JointTrajectoryPoint get_current_state_when_offset() const
   {
     return last_commanded_state_;
   }
-  bool has_position_state_interface() { return has_position_state_interface_; }
+  bool has_position_state_interface() const { return has_position_state_interface_; }
 
-  bool has_velocity_state_interface() { return has_velocity_state_interface_; }
+  bool has_velocity_state_interface() const { return has_velocity_state_interface_; }
 
-  bool has_acceleration_state_interface() { return has_acceleration_state_interface_; }
+  bool has_acceleration_state_interface() const { return has_acceleration_state_interface_; }
 
-  bool has_position_command_interface() { return has_position_command_interface_; }
+  bool has_position_command_interface() const { return has_position_command_interface_; }
 
-  bool has_velocity_command_interface() { return has_velocity_command_interface_; }
+  bool has_velocity_command_interface() const { return has_velocity_command_interface_; }
 
-  bool has_acceleration_command_interface() { return has_acceleration_command_interface_; }
+  bool has_acceleration_command_interface() const { return has_acceleration_command_interface_; }
 
-  bool has_effort_command_interface() { return has_effort_command_interface_; }
+  bool has_effort_command_interface() const { return has_effort_command_interface_; }
+
+  bool use_closed_loop_pid_adapter() const { return use_closed_loop_pid_adapter_; }
+
+  bool is_open_loop() const { return params_.open_loop_control; }
+
+  bool has_active_traj() const { return has_active_trajectory(); }
+
+  bool has_trivial_traj() const
+  {
+    return has_active_trajectory() && traj_external_point_ptr_->has_nontrivial_msg() == false;
+  }
+
+  bool has_nontrivial_traj()
+  {
+    return has_active_trajectory() && traj_external_point_ptr_->has_nontrivial_msg();
+  }
+
+  double get_cmd_timeout() { return cmd_timeout_; }
 
   bool use_closed_loop_pid_adapter() { return use_closed_loop_pid_adapter_; }
 
@@ -154,32 +179,26 @@ public:
       controller_name_ + "/joint_trajectory", rclcpp::SystemDefaultsQoS());
   }
 
-  void SetUpTrajectoryController(rclcpp::Executor & executor, bool use_local_parameters = true)
+  void SetUpTrajectoryController(
+    rclcpp::Executor & executor, const std::vector<rclcpp::Parameter> & parameters = {})
   {
     traj_controller_ = std::make_shared<TestableJointTrajectoryController>();
 
-    if (use_local_parameters)
-    {
-      traj_controller_->set_joint_names(joint_names_);
-      traj_controller_->set_command_interfaces(command_interface_types_);
-      traj_controller_->set_state_interfaces(state_interface_types_);
-    }
-    auto ret = traj_controller_->init(controller_name_);
+    auto node_options = rclcpp::NodeOptions();
+    std::vector<rclcpp::Parameter> parameter_overrides;
+    parameter_overrides.push_back(rclcpp::Parameter("joints", joint_names_));
+    parameter_overrides.push_back(
+      rclcpp::Parameter("command_interfaces", command_interface_types_));
+    parameter_overrides.push_back(rclcpp::Parameter("state_interfaces", state_interface_types_));
+    parameter_overrides.insert(parameter_overrides.end(), parameters.begin(), parameters.end());
+    node_options.parameter_overrides(parameter_overrides);
+
+    auto ret = traj_controller_->init(controller_name_, "", node_options);
     if (ret != controller_interface::return_type::OK)
     {
       FAIL();
     }
     executor.add_node(traj_controller_->get_node()->get_node_base_interface());
-    SetParameters();
-  }
-
-  void SetParameters()
-  {
-    auto node = traj_controller_->get_node();
-    const rclcpp::Parameter joint_names_param("joints", joint_names_);
-    const rclcpp::Parameter cmd_interfaces_params("command_interfaces", command_interface_types_);
-    const rclcpp::Parameter state_interfaces_params("state_interfaces", state_interface_types_);
-    node->set_parameters({joint_names_param, cmd_interfaces_params, state_interfaces_params});
   }
 
   void SetPidParameters(
@@ -202,12 +221,11 @@ public:
   }
 
   void SetUpAndActivateTrajectoryController(
-    rclcpp::Executor & executor, bool use_local_parameters = true,
-    const std::vector<rclcpp::Parameter> & parameters = {},
+    rclcpp::Executor & executor, const std::vector<rclcpp::Parameter> & parameters = {},
     bool separate_cmd_and_state_values = false, double k_p = 0.0, double ff = 1.0,
     bool normalize_error = false)
   {
-    SetUpTrajectoryController(executor, use_local_parameters);
+    SetUpTrajectoryController(executor);
 
     // set pid parameters before configure
     SetPidParameters(k_p, ff, normalize_error);
@@ -224,7 +242,9 @@ public:
     ActivateTrajectoryController(separate_cmd_and_state_values);
   }
 
-  void ActivateTrajectoryController(bool separate_cmd_and_state_values = false)
+  void ActivateTrajectoryController(
+    bool separate_cmd_and_state_values = false,
+    const std::vector<double> initial_pos_joints = INITIAL_POS_JOINTS)
   {
     std::vector<hardware_interface::LoanedCommandInterface> cmd_interfaces;
     std::vector<hardware_interface::LoanedStateInterface> state_interfaces;
@@ -258,14 +278,14 @@ public:
 
       // Add to export lists and set initial values
       cmd_interfaces.emplace_back(pos_cmd_interfaces_.back());
-      cmd_interfaces.back().set_value(INITIAL_POS_JOINTS[i]);
+      cmd_interfaces.back().set_value(initial_pos_joints[i]);
       cmd_interfaces.emplace_back(vel_cmd_interfaces_.back());
       cmd_interfaces.back().set_value(INITIAL_VEL_JOINTS[i]);
       cmd_interfaces.emplace_back(acc_cmd_interfaces_.back());
       cmd_interfaces.back().set_value(INITIAL_ACC_JOINTS[i]);
       cmd_interfaces.emplace_back(eff_cmd_interfaces_.back());
       cmd_interfaces.back().set_value(INITIAL_EFF_JOINTS[i]);
-      joint_state_pos_[i] = INITIAL_POS_JOINTS[i];
+      joint_state_pos_[i] = initial_pos_joints[i];
       joint_state_vel_[i] = INITIAL_VEL_JOINTS[i];
       joint_state_acc_[i] = INITIAL_ACC_JOINTS[i];
       state_interfaces.emplace_back(pos_state_interfaces_.back());
@@ -304,8 +324,6 @@ public:
   void subscribeToState()
   {
     auto traj_lifecycle_node = traj_controller_->get_node();
-    traj_lifecycle_node->set_parameter(
-      rclcpp::Parameter("state_publish_rate", static_cast<double>(100)));
 
     using control_msgs::msg::JointTrajectoryControllerState;
 
@@ -425,7 +443,7 @@ public:
     for (size_t i = 0; i < expected_actual.positions.size(); ++i)
     {
       SCOPED_TRACE("Joint " + std::to_string(i));
-      // TODO(anyone): add checking for velocties and accelerations
+      // TODO(anyone): add checking for velocities and accelerations
       if (traj_controller_->has_position_command_interface())
       {
         EXPECT_NEAR(expected_actual.positions[i], state_msg->feedback.positions[i], allowed_delta);
@@ -435,7 +453,7 @@ public:
     for (size_t i = 0; i < expected_desired.positions.size(); ++i)
     {
       SCOPED_TRACE("Joint " + std::to_string(i));
-      // TODO(anyone): add checking for velocties and accelerations
+      // TODO(anyone): add checking for velocities and accelerations
       if (traj_controller_->has_position_command_interface())
       {
         EXPECT_NEAR(
@@ -454,7 +472,108 @@ public:
     std::lock_guard<std::mutex> guard(state_mutex_);
     return state_msg_;
   }
-  void test_state_publish_rate_target(int target_msg_count);
+
+  void expectHoldingPoint(std::vector<double> point)
+  {
+    // it should be holding the given point
+    // i.e., active but trivial trajectory (one point only)
+    EXPECT_TRUE(traj_controller_->has_trivial_traj());
+
+    if (traj_controller_->use_closed_loop_pid_adapter() == false)
+    {
+      if (traj_controller_->has_position_command_interface())
+      {
+        EXPECT_NEAR(point.at(0), joint_pos_[0], COMMON_THRESHOLD);
+        EXPECT_NEAR(point.at(1), joint_pos_[1], COMMON_THRESHOLD);
+        EXPECT_NEAR(point.at(2), joint_pos_[2], COMMON_THRESHOLD);
+      }
+
+      if (traj_controller_->has_velocity_command_interface())
+      {
+        EXPECT_EQ(0.0, joint_vel_[0]);
+        EXPECT_EQ(0.0, joint_vel_[1]);
+        EXPECT_EQ(0.0, joint_vel_[2]);
+      }
+
+      if (traj_controller_->has_acceleration_command_interface())
+      {
+        EXPECT_EQ(0.0, joint_acc_[0]);
+        EXPECT_EQ(0.0, joint_acc_[1]);
+        EXPECT_EQ(0.0, joint_acc_[2]);
+      }
+
+      if (traj_controller_->has_effort_command_interface())
+      {
+        EXPECT_EQ(0.0, joint_eff_[0]);
+        EXPECT_EQ(0.0, joint_eff_[1]);
+        EXPECT_EQ(0.0, joint_eff_[2]);
+      }
+    }
+    else
+    {
+      // velocity or effort PID?
+      // velocity setpoint is always zero -> feedforward term does not have an effect
+      // --> set kp > 0.0 in test
+      if (traj_controller_->has_velocity_command_interface())
+      {
+        EXPECT_TRUE(is_same_sign_or_zero(point.at(0) - joint_state_pos_[0], joint_vel_[0]))
+          << "current error: " << point.at(0) - joint_state_pos_[0] << ", velocity command is "
+          << joint_vel_[0];
+        EXPECT_TRUE(is_same_sign_or_zero(point.at(1) - joint_state_pos_[1], joint_vel_[1]))
+          << "current error: " << point.at(1) - joint_state_pos_[1] << ", velocity command is "
+          << joint_vel_[1];
+        EXPECT_TRUE(is_same_sign_or_zero(point.at(2) - joint_state_pos_[2], joint_vel_[2]))
+          << "current error: " << point.at(2) - joint_state_pos_[2] << ", velocity command is "
+          << joint_vel_[2];
+      }
+      if (traj_controller_->has_effort_command_interface())
+      {
+        EXPECT_TRUE(is_same_sign_or_zero(point.at(0) - joint_state_pos_[0], joint_eff_[0]))
+          << "current error: " << point.at(0) - joint_state_pos_[0] << ", effort command is "
+          << joint_eff_[0];
+        EXPECT_TRUE(is_same_sign_or_zero(point.at(1) - joint_state_pos_[1], joint_eff_[1]))
+          << "current error: " << point.at(1) - joint_state_pos_[1] << ", effort command is "
+          << joint_eff_[1];
+        EXPECT_TRUE(is_same_sign_or_zero(point.at(2) - joint_state_pos_[2], joint_eff_[2]))
+          << "current error: " << point.at(2) - joint_state_pos_[2] << ", effort command is "
+          << joint_eff_[2];
+      }
+    }
+  }
+
+  void expectHoldingPointDeactivated(std::vector<double> point)
+  {
+    // it should be holding the given point, but no active trajectory
+    EXPECT_FALSE(traj_controller_->has_active_traj());
+
+    if (traj_controller_->has_position_command_interface())
+    {
+      EXPECT_NEAR(point.at(0), joint_pos_[0], COMMON_THRESHOLD);
+      EXPECT_NEAR(point.at(1), joint_pos_[1], COMMON_THRESHOLD);
+      EXPECT_NEAR(point.at(2), joint_pos_[2], COMMON_THRESHOLD);
+    }
+
+    if (traj_controller_->has_velocity_command_interface())
+    {
+      EXPECT_EQ(0.0, joint_vel_[0]);
+      EXPECT_EQ(0.0, joint_vel_[1]);
+      EXPECT_EQ(0.0, joint_vel_[2]);
+    }
+
+    if (traj_controller_->has_acceleration_command_interface())
+    {
+      EXPECT_EQ(0.0, joint_acc_[0]);
+      EXPECT_EQ(0.0, joint_acc_[1]);
+      EXPECT_EQ(0.0, joint_acc_[2]);
+    }
+
+    if (traj_controller_->has_effort_command_interface())
+    {
+      EXPECT_EQ(0.0, joint_eff_[0]);
+      EXPECT_EQ(0.0, joint_eff_[1]);
+      EXPECT_EQ(0.0, joint_eff_[2]);
+    }
+  }
 
   std::string controller_name_;
 

@@ -1,5 +1,8 @@
 # ros2_controllers
 
+[![Licence](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![codecov](https://codecov.io/gh/ros-controls/ros2_controllers/graph/badge.svg?token=KSdY0tsHm6)](https://codecov.io/gh/ros-controls/ros2_controllers)
+
 Commonly used and generalized controllers for ros2-control framework that are ready to use with many robots, MoveIt2 and Navigation2.
 
 ## Build status
@@ -8,8 +11,6 @@ ROS2 Distro | Branch | Build status | Documentation | Released packages
 :---------: | :----: | :----------: | :-----------: | :---------------:
 **Rolling** | [`rolling`](https://github.com/ros-controls/ros2_controllers/tree/rolling) | [![Rolling Binary Build](https://github.com/ros-controls/ros2_controllers/actions/workflows/rolling-binary-build-main.yml/badge.svg?branch=master)](https://github.com/ros-controls/ros2_controllers/actions/workflows/rolling-binary-build-main.yml?branch=master) <br /> [![Rolling Semi-Binary Build](https://github.com/ros-controls/ros2_controllers/actions/workflows/rolling-semi-binary-build-main.yml/badge.svg?branch=master)](https://github.com/ros-controls/ros2_controllers/actions/workflows/rolling-semi-binary-build-main.yml?branch=master) |  | [ros2_controllers](https://index.ros.org/p/ros2_controllers/#rolling)
 **Humble** | [`humble`](https://github.com/ros-controls/ros2_controllers/tree/humble) | [![Humble Binary Build](https://github.com/ros-controls/ros2_controllers/actions/workflows/humble-binary-build-main.yml/badge.svg?branch=master)](https://github.com/ros-controls/ros2_controllers/actions/workflows/humble-binary-build-main.yml?branch=master) <br /> [![Humble Semi-Binary Build](https://github.com/ros-controls/ros2_controllers/actions/workflows/humble-semi-binary-build-main.yml/badge.svg?branch=master)](https://github.com/ros-controls/ros2_controllers/actions/workflows/humble-semi-binary-build-main.yml?branch=master) |  | [ros2_controllers](https://index.ros.org/p/ros2_controllers/#humble)
-**Galactic** | [`galactic`](https://github.com/ros-controls/ros2_controllers/tree/galactic) | [![Galactic Binary Build](https://github.com/ros-controls/ros2_controllers/actions/workflows/galactic-binary-build-main.yml/badge.svg?branch=galactic)](https://github.com/ros-controls/ros2_controllers/actions/workflows/galactic-binary-build-main.yml?branch=galactic) <br /> [![Galactic Semi-Binary Build](https://github.com/ros-controls/ros2_controllers/actions/workflows/galactic-semi-binary-build-main.yml/badge.svg?branch=galactic)](https://github.com/ros-controls/ros2_controllers/actions/workflows/galactic-semi-binary-build-main.yml?branch=galactic) |  | [ros2_controllers](https://index.ros.org/p/ros2_controllers/#galactic)
-**Foxy** | [`foxy`](https://github.com/ros-controls/ros2_controllers/tree/foxy) | [![Foxy Binary Build](https://github.com/ros-controls/ros2_controllers/actions/workflows/foxy-binary-build-main.yml/badge.svg?branch=foxy)](https://github.com/ros-controls/ros2_controllers/actions/workflows/foxy-binary-build-main.yml?branch=foxy) <br /> [![Foxy Semi-Binary Build](https://github.com/ros-controls/ros2_controllers/actions/workflows/foxy-semi-binary-build-main.yml/badge.svg?branch=foxy)](https://github.com/ros-controls/ros2_controllers/actions/workflows/foxy-semi-binary-build-main.yml?branch=foxy) |  | [ros2_controllers](https://index.ros.org/p/ros2_controllers/#foxy)
 
 ### Explanation of different build types
 

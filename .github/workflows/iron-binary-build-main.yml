@@ -1,26 +1,30 @@
-name: Galactic Binary Build - main
+name: Iron Binary Build - main
 # author: Denis Štogl <denis@stoglrobotics.de>
 # description: 'Build & test all dependencies from released (binary) packages.'
 
 on:
   workflow_dispatch:
     branches:
-      - galactic
+      - iron
+      - '*feature*'
+      - '*feature/**'
   pull_request:
     branches:
-      - galactic
+      - iron
+      - '*feature*'
+      - '*feature/**'
   push:
     branches:
-      - galactic
+      - iron
   schedule:
     # Run every morning to detect flakiness and broken dependencies
-    - cron: '03 1 * * *'
+    - cron: '03 2 * * *'
 
 jobs:
   binary:
     uses: ./.github/workflows/reusable-industrial-ci-with-cache.yml
     with:
-      ros_distro: galactic
+      ros_distro: iron
       ros_repo: main
-      upstream_workspace: ros2_controllers-not-released.galactic.repos
-      ref_for_scheduled_build: galactic
+      upstream_workspace: ros2_controllers-not-released.iron.repos
+      ref_for_scheduled_build: iron
