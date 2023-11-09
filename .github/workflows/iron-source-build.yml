@@ -8,7 +8,7 @@ on:
       - iron
   schedule:
     # Run every day to detect flakiness and broken dependencies
-    - cron: '03 4 * * *'
+    - cron: '03 3 * * *'
 
 jobs:
   source:

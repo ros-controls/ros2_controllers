@@ -185,7 +185,6 @@ Services
 
 Further information
 --------------------------------------------------------------
-(TBD in ...)
 
 .. toctree::
    :titlesonly:

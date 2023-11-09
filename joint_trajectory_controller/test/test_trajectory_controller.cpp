@@ -317,7 +317,7 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
   executor.cancel();
 }
 
-TEST_P(TrajectoryControllerTestParameterized, state_topic_legacy_consistency)
+TEST_P(TrajectoryControllerTestParameterized, state_topic_consistency)
 {
   rclcpp::executors::SingleThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(executor, {});
@@ -326,7 +326,7 @@ TEST_P(TrajectoryControllerTestParameterized, state_topic_legacy_consistency)
 
   // Spin to receive latest state
   executor.spin_some();
-  auto state = getStateLegacy();
+  auto state = getState();
 
   size_t n_joints = joint_names_.size();
 

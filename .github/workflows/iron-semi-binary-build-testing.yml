@@ -17,7 +17,7 @@ on:
       - iron
   schedule:
     # Run every morning to detect flakiness and broken dependencies
-    - cron: '33 2 * * *'
+    - cron: '33 1 * * *'
 
 jobs:
   semi_binary:
