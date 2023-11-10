@@ -17,7 +17,7 @@ diff_drive_controller:
   wheels_per_side: {
     type: int,
     default_value: 0,
-    description: "Number of wheels on each wide of the robot. This is important to take the wheels slip into account when multiple wheels on each side are present. If there are more wheels then control signals for each side, you should enter number or control signals. For example, Husky has two wheels on each side, but they use one control signal, in this case '1' is the correct value of the parameter.",
+    description: "Number of wheels on each side of the robot. This is important to take the wheels slip into account when multiple wheels on each side are present. If there are more wheels then control signals for each side, you should enter number for control signals. For example, Husky has two wheels on each side, but they use one control signal, in this case '1' is the correct value of the parameter.",
   }
   wheel_radius: {
     type: double,
@@ -77,7 +77,7 @@ diff_drive_controller:
   cmd_vel_timeout: {
     type: double,
     default_value: 0.5, # seconds
-    description: "Timeout after which input command on ``cmd_vel`` topic is considered staled.",
+    description: "Timeout in seconds, after which input command on ``cmd_vel`` topic is considered staled.",
   }
   publish_limited_velocity: {
     type: bool,
