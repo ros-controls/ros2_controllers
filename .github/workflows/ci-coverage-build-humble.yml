@@ -61,5 +61,5 @@ jobs:
           name: codecov-umbrella
       - uses: actions/upload-artifact@v3.1.3
         with:
-          name: colcon-logs-coverage-rolling
+          name: colcon-logs-coverage-humble
           path: ros_ws/log
