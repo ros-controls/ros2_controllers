@@ -129,8 +129,8 @@ class PublisherJointTrajectory(Node):
         publish_topic = "/" + controller_name + "/" + "joint_trajectory"
 
         self.get_logger().info(
-            f'Publishing {len(goal_names)} goals on topic "{publish_topic}" every '
-            "{wait_sec_between_publish} s"
+            f"Publishing {len(goal_names)} goals on topic '{publish_topic}' every "
+            f"{wait_sec_between_publish} s"
         )
 
         self.publisher_ = self.create_publisher(JointTrajectory, publish_topic, 1)
