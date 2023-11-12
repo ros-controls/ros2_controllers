@@ -37,7 +37,26 @@ jobs:
           target-ros2-distro: ${{ inputs.ros_distro }}
           # build all packages listed in the meta package
           package-name:
+            ackermann_steering_controller
+            admittance_controller
+            bicycle_steering_controller
             diff_drive_controller
+            effort_controllers
+            force_torque_sensor_broadcaster
+            forward_command_controller
+            gripper_controllers
+            imu_sensor_broadcaster
+            joint_state_broadcaster
+            joint_trajectory_controller
+            position_controllers
+            range_sensor_broadcaster
+            ros2_controllers
+            ros2_controllers_test_nodes
+            rqt_joint_trajectory_controller
+            steering_controllers_library
+            tricycle_controller
+            tricycle_steering_controller
+            velocity_controllers
 
           vcs-repo-file-url: |
             https://raw.githubusercontent.com/ros2/ros2/${{ inputs.ros2_repo_branch }}/ros2.repos
