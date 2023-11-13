@@ -411,7 +411,7 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
     }
     else
     {
-      tf_prefix = tf_prefix + "/";
+      tf_prefix = tf_prefix + "_";
     }
   }
 
