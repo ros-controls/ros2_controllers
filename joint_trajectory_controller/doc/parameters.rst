@@ -66,7 +66,7 @@ start_with_holding (bool)
 allow_nonzero_velocity_at_trajectory_end (boolean)
   If false, the last velocity point has to be zero or the goal will be rejected.
 
-  Default: true
+  Default: false
 
 cmd_timeout (double)
   Timeout after which the input command is considered stale.
@@ -146,6 +146,5 @@ gains.<joint_name>.angle_wraparound (bool)
   If true, the position error :math:`e = normalize(s_d - s)` is normalized between :math:`-\pi, \pi`.
   Otherwise  :math:`e = s_d - s` is used, with the desired position :math:`s_d` and the measured
   position :math:`s` from the state interface.
-
 
   Default: false
