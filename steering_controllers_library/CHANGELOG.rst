@@ -2,6 +2,12 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Steering controllers library: fix open loop mode (`#793 <https://github.com/ros-controls/ros2_controllers/issues/793>`_) (`#800 <https://github.com/ros-controls/ros2_controllers/issues/800>`_)
+* Improve docs (`#785 <https://github.com/ros-controls/ros2_controllers/issues/785>`_) (`#786 <https://github.com/ros-controls/ros2_controllers/issues/786>`_)
+* Contributors: mergify[bot]
+
 2.26.0 (2023-10-03)
 -------------------
 
