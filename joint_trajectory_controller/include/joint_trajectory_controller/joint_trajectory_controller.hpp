@@ -71,15 +71,13 @@ public:
   JointTrajectoryController();
 
   /**
-   * @brief command_interface_configuration This controller requires the position command
-   * interfaces for the controlled joints
+   * @brief command_interface_configuration
    */
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   controller_interface::InterfaceConfiguration command_interface_configuration() const override;
 
   /**
-   * @brief command_interface_configuration This controller requires the position and velocity
-   * state interfaces for the controlled joints
+   * @brief command_interface_configuration
    */
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   controller_interface::InterfaceConfiguration state_interface_configuration() const override;
@@ -169,8 +167,8 @@ protected:
   std::vector<PidPtr> pids_;
   // Feed-forward velocity weight factor when calculating closed loop pid adapter's command
   std::vector<double> ff_velocity_scale_;
-  // Configuration for every joint, if position error is normalized
-  std::vector<bool> normalize_joint_error_;
+  // Configuration for every joint, if position error is wrapped around
+  std::vector<bool> joints_angle_wraparound_;
   // reserved storage for result of the command when closed loop pid adapter is used
   std::vector<double> tmp_command_;
 
@@ -266,8 +264,14 @@ protected:
     const rclcpp::Time & time, const JointTrajectoryPoint & desired_state,
     const JointTrajectoryPoint & current_state, const JointTrajectoryPoint & state_error);
 
-  void read_state_from_hardware(JointTrajectoryPoint & state);
+  void read_state_from_state_interfaces(JointTrajectoryPoint & state);
 
+  /** Assign values from the command interfaces as state.
+   * This is only possible if command AND state interfaces exist for the same type,
+   *  therefore needs check for both.
+   * @param[out] state to be filled with values from command interfaces.
+   * @return true if all interfaces exists and contain non-NaN values, false otherwise.
+   */
   bool read_state_from_command_interfaces(JointTrajectoryPoint & state);
   bool read_commands_from_command_interfaces(JointTrajectoryPoint & commands);
 
@@ -276,6 +280,8 @@ protected:
     std::shared_ptr<control_msgs::srv::QueryTrajectoryState::Response> response);
 
 private:
+  void update_pids();
+
   bool contains_interface_type(
     const std::vector<std::string> & interface_type_list, const std::string & interface_type);
 

@@ -1,12 +1,12 @@
-name: Coverage Build
+name: Coverage Build - Iron
 on:
   workflow_dispatch:
   push:
     branches:
-      - master
+      - iron
   pull_request:
     branches:
-      - master
+      - iron
 
 jobs:
   coverage:
@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
     env:
-      ROS_DISTRO: rolling
+      ROS_DISTRO: iron
     steps:
       - uses: ros-tooling/setup-ros@0.7.0
         with:
@@ -61,5 +61,5 @@ jobs:
           name: codecov-umbrella
       - uses: actions/upload-artifact@v3.1.3
         with:
-          name: colcon-logs-coverage-rolling
+          name: colcon-logs-coverage-iron
           path: ros_ws/log

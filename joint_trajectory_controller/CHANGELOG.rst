@@ -2,6 +2,13 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.17.0 (2023-10-31)
+-------------------
+* Cleanup comments and unnecessary checks (`#803 <https://github.com/ros-controls/ros2_controllers/issues/803>`_)
+* Update requirements of state interfaces (`#798 <https://github.com/ros-controls/ros2_controllers/issues/798>`_)
+* [JTC] Add tests for acceleration command interface (`#752 <https://github.com/ros-controls/ros2_controllers/issues/752>`_)
+* Contributors: Christoph Fröhlich
+
 3.16.0 (2023-09-20)
 -------------------
 * [Docs] Improve interface description of JTC (`#770 <https://github.com/ros-controls/ros2_controllers/issues/770>`_)

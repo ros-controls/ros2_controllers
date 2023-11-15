@@ -60,7 +60,7 @@ void GripperControllerTest<T>::TearDown()
 template <typename T>
 void GripperControllerTest<T>::SetUpController()
 {
-  const auto result = controller_->init("gripper_controller");
+  const auto result = controller_->init("gripper_controller", "");
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
   std::vector<LoanedCommandInterface> command_ifs;
