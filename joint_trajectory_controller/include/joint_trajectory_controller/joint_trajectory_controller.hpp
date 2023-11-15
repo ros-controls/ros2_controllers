@@ -261,7 +261,7 @@ protected:
     const rclcpp::Time & time, const JointTrajectoryPoint & desired_state,
     const JointTrajectoryPoint & current_state, const JointTrajectoryPoint & state_error);
 
-  void read_state_from_hardware(JointTrajectoryPoint & state);
+  void read_state_from_state_interfaces(JointTrajectoryPoint & state);
 
   /** Assign values from the command interfaces as state.
    * This is only possible if command AND state interfaces exist for the same type,

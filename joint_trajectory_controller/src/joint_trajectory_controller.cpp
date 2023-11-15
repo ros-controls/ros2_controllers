@@ -175,7 +175,7 @@ controller_interface::return_type JointTrajectoryController::update(
 
   // current state update
   state_current_.time_from_start.set__sec(0);
-  read_state_from_hardware(state_current_);
+  read_state_from_state_interfaces(state_current_);
 
   // currently carrying out a trajectory
   if (has_active_trajectory())
@@ -397,7 +397,7 @@ controller_interface::return_type JointTrajectoryController::update(
   return controller_interface::return_type::OK;
 }
 
-void JointTrajectoryController::read_state_from_hardware(JointTrajectoryPoint & state)
+void JointTrajectoryController::read_state_from_state_interfaces(JointTrajectoryPoint & state)
 {
   auto assign_point_from_interface =
     [&](std::vector<double> & trajectory_point_interface, const auto & joint_interface)
@@ -965,9 +965,9 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   else
   {
     // Initialize current state storage from hardware
-    read_state_from_hardware(state_current_);
-    read_state_from_hardware(state_desired_);
-    read_state_from_hardware(last_commanded_state_);
+    read_state_from_state_interfaces(state_current_);
+    read_state_from_state_interfaces(state_desired_);
+    read_state_from_state_interfaces(last_commanded_state_);
   }
 
   // Should the controller start by holding position at the beginning of active state?
