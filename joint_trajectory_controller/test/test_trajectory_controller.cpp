@@ -1668,21 +1668,23 @@ TEST_P(TrajectoryControllerTestParameterized, test_no_jump_when_state_tracking_e
 #endif
 
 // Testing that values are read from state interfaces when hardware is started for the first
-// time and hardware state has offset --> this is indicated by NaN values in state interfaces
+// time and hardware state has offset --> this is indicated by NaN values in command interfaces
 TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_first_controller_start)
 {
   rclcpp::executors::SingleThreadedExecutor executor;
-  // default if false so it will not be actually set parameter
   rclcpp::Parameter is_open_loop_parameters("open_loop_control", true);
 
   // set command values to NaN
-  for (size_t i = 0; i < 3; ++i)
-  {
-    joint_pos_[i] = std::numeric_limits<double>::quiet_NaN();
-    joint_vel_[i] = std::numeric_limits<double>::quiet_NaN();
-    joint_acc_[i] = std::numeric_limits<double>::quiet_NaN();
-  }
-  SetUpAndActivateTrajectoryController(executor, {is_open_loop_parameters}, true);
+  std::vector<double> initial_pos_cmd{3, std::numeric_limits<double>::quiet_NaN()};
+  std::vector<double> initial_vel_cmd{3, std::numeric_limits<double>::quiet_NaN()};
+  std::vector<double> initial_acc_cmd{3, std::numeric_limits<double>::quiet_NaN()};
+
+  SetUpAndActivateTrajectoryController(
+    executor, {is_open_loop_parameters}, true, 0., 1., false, initial_pos_cmd, initial_vel_cmd,
+    initial_acc_cmd);
+
+  // no call of update method, so the values should be read from state interfaces
+  // (command interface are NaN)
 
   auto current_state_when_offset = traj_controller_->get_current_state_when_offset();
 
@@ -1691,70 +1693,96 @@ TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_first_co
     EXPECT_EQ(current_state_when_offset.positions[i], joint_state_pos_[i]);
 
     // check velocity
-    if (
-      std::find(
-        state_interface_types_.begin(), state_interface_types_.end(),
-        hardware_interface::HW_IF_VELOCITY) != state_interface_types_.end() &&
-      traj_controller_->has_velocity_command_interface())
+    if (traj_controller_->has_velocity_state_interface())
     {
-      EXPECT_EQ(current_state_when_offset.positions[i], joint_state_pos_[i]);
+      EXPECT_EQ(current_state_when_offset.velocities[i], joint_state_vel_[i]);
     }
 
     // check acceleration
-    if (
-      std::find(
-        state_interface_types_.begin(), state_interface_types_.end(),
-        hardware_interface::HW_IF_ACCELERATION) != state_interface_types_.end() &&
-      traj_controller_->has_acceleration_command_interface())
+    if (traj_controller_->has_acceleration_state_interface())
     {
-      EXPECT_EQ(current_state_when_offset.positions[i], joint_state_pos_[i]);
+      EXPECT_EQ(current_state_when_offset.accelerations[i], joint_state_acc_[i]);
     }
   }
 
   executor.cancel();
 }
 
-// Testing that values are read from state interfaces when hardware is started after some values
+// Testing that values are read from command interfaces when hardware is started after some values
 // are set on the hardware commands
 TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_later_controller_start)
 {
   rclcpp::executors::SingleThreadedExecutor executor;
-  // default if false so it will not be actually set parameter
   rclcpp::Parameter is_open_loop_parameters("open_loop_control", true);
 
-  // set command values to NaN
+  // set command values to arbitrary values
+  std::vector<double> initial_pos_cmd, initial_vel_cmd, initial_acc_cmd;
   for (size_t i = 0; i < 3; ++i)
   {
-    joint_pos_[i] = 3.1 + static_cast<double>(i);
-    joint_vel_[i] = 0.25 + static_cast<double>(i);
-    joint_acc_[i] = 0.02 + static_cast<double>(i) / 10.0;
+    initial_pos_cmd.push_back(3.1 + static_cast<double>(i));
+    initial_vel_cmd.push_back(0.25 + static_cast<double>(i));
+    initial_acc_cmd.push_back(0.02 + static_cast<double>(i) / 10.0);
   }
-  SetUpAndActivateTrajectoryController(executor, {is_open_loop_parameters}, true);
+  SetUpAndActivateTrajectoryController(
+    executor, {is_open_loop_parameters}, true, 0., 1., false, initial_pos_cmd, initial_vel_cmd,
+    initial_acc_cmd);
+
+  // no call of update method, so the values should be read from command interfaces
 
   auto current_state_when_offset = traj_controller_->get_current_state_when_offset();
 
   for (size_t i = 0; i < 3; ++i)
   {
-    EXPECT_EQ(current_state_when_offset.positions[i], joint_pos_[i]);
-
-    // check velocity
-    if (
-      std::find(
-        state_interface_types_.begin(), state_interface_types_.end(),
-        hardware_interface::HW_IF_VELOCITY) != state_interface_types_.end() &&
-      traj_controller_->has_velocity_command_interface())
+    // check position
+    if (traj_controller_->has_position_command_interface())
     {
-      EXPECT_EQ(current_state_when_offset.positions[i], joint_pos_[i]);
+      // check velocity
+      if (traj_controller_->has_velocity_state_interface())
+      {
+        if (traj_controller_->has_velocity_command_interface())
+        {
+          // check acceleration
+          if (traj_controller_->has_acceleration_state_interface())
+          {
+            if (traj_controller_->has_acceleration_command_interface())
+            {
+              // should have set it to last position + velocity + acceleration command
+              EXPECT_EQ(current_state_when_offset.positions[i], initial_pos_cmd[i]);
+              EXPECT_EQ(current_state_when_offset.velocities[i], initial_vel_cmd[i]);
+              EXPECT_EQ(current_state_when_offset.accelerations[i], initial_acc_cmd[i]);
+            }
+            else
+            {
+              // should have set it to the state interface instead
+              EXPECT_EQ(current_state_when_offset.positions[i], joint_state_pos_[i]);
+              EXPECT_EQ(current_state_when_offset.velocities[i], joint_state_vel_[i]);
+              EXPECT_EQ(current_state_when_offset.accelerations[i], joint_state_acc_[i]);
+            }
+          }
+          else
+          {
+            // should have set it to last position + velocity command
+            EXPECT_EQ(current_state_when_offset.positions[i], initial_pos_cmd[i]);
+            EXPECT_EQ(current_state_when_offset.velocities[i], initial_vel_cmd[i]);
+          }
+        }
+        else
+        {
+          // should have set it to the state interface instead
+          EXPECT_EQ(current_state_when_offset.positions[i], joint_state_pos_[i]);
+          EXPECT_EQ(current_state_when_offset.velocities[i], joint_state_vel_[i]);
+        }
+      }
+      else
+      {
+        // should have set it to last position command
+        EXPECT_EQ(current_state_when_offset.positions[i], initial_pos_cmd[i]);
+      }
     }
-
-    // check acceleration
-    if (
-      std::find(
-        state_interface_types_.begin(), state_interface_types_.end(),
-        hardware_interface::HW_IF_ACCELERATION) != state_interface_types_.end() &&
-      traj_controller_->has_acceleration_command_interface())
+    else
     {
-      EXPECT_EQ(current_state_when_offset.positions[i], joint_pos_[i]);
+      // should have set it to the state interface instead
+      EXPECT_EQ(current_state_when_offset.positions[i], joint_state_pos_[i]);
     }
   }
 

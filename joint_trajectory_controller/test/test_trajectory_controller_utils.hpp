@@ -220,7 +220,11 @@ public:
   void SetUpAndActivateTrajectoryController(
     rclcpp::Executor & executor, const std::vector<rclcpp::Parameter> & parameters = {},
     bool separate_cmd_and_state_values = false, double k_p = 0.0, double ff = 1.0,
-    bool angle_wraparound = false)
+    bool angle_wraparound = false,
+    const std::vector<double> initial_pos_joints = INITIAL_POS_JOINTS,
+    const std::vector<double> initial_vel_joints = INITIAL_VEL_JOINTS,
+    const std::vector<double> initial_acc_joints = INITIAL_ACC_JOINTS,
+    const std::vector<double> initial_eff_joints = INITIAL_EFF_JOINTS)
   {
     SetUpTrajectoryController(executor);
 
@@ -239,12 +243,17 @@ public:
 
     traj_controller_->get_node()->configure();
 
-    ActivateTrajectoryController(separate_cmd_and_state_values);
+    ActivateTrajectoryController(
+      separate_cmd_and_state_values, initial_pos_joints, initial_vel_joints, initial_acc_joints,
+      initial_eff_joints);
   }
 
   void ActivateTrajectoryController(
     bool separate_cmd_and_state_values = false,
-    const std::vector<double> initial_pos_joints = INITIAL_POS_JOINTS)
+    const std::vector<double> initial_pos_joints = INITIAL_POS_JOINTS,
+    const std::vector<double> initial_vel_joints = INITIAL_VEL_JOINTS,
+    const std::vector<double> initial_acc_joints = INITIAL_ACC_JOINTS,
+    const std::vector<double> initial_eff_joints = INITIAL_EFF_JOINTS)
   {
     std::vector<hardware_interface::LoanedCommandInterface> cmd_interfaces;
     std::vector<hardware_interface::LoanedStateInterface> state_interfaces;
@@ -280,14 +289,17 @@ public:
       cmd_interfaces.emplace_back(pos_cmd_interfaces_.back());
       cmd_interfaces.back().set_value(initial_pos_joints[i]);
       cmd_interfaces.emplace_back(vel_cmd_interfaces_.back());
-      cmd_interfaces.back().set_value(INITIAL_VEL_JOINTS[i]);
+      cmd_interfaces.back().set_value(initial_vel_joints[i]);
       cmd_interfaces.emplace_back(acc_cmd_interfaces_.back());
-      cmd_interfaces.back().set_value(INITIAL_ACC_JOINTS[i]);
+      cmd_interfaces.back().set_value(initial_acc_joints[i]);
       cmd_interfaces.emplace_back(eff_cmd_interfaces_.back());
-      cmd_interfaces.back().set_value(INITIAL_EFF_JOINTS[i]);
-      joint_state_pos_[i] = initial_pos_joints[i];
-      joint_state_vel_[i] = INITIAL_VEL_JOINTS[i];
-      joint_state_acc_[i] = INITIAL_ACC_JOINTS[i];
+      cmd_interfaces.back().set_value(initial_eff_joints[i]);
+      if (separate_cmd_and_state_values)
+      {
+        joint_state_pos_[i] = INITIAL_POS_JOINTS[i];
+        joint_state_vel_[i] = INITIAL_VEL_JOINTS[i];
+        joint_state_acc_[i] = INITIAL_ACC_JOINTS[i];
+      }
       state_interfaces.emplace_back(pos_state_interfaces_.back());
       state_interfaces.emplace_back(vel_state_interfaces_.back());
       state_interfaces.emplace_back(acc_state_interfaces_.back());
@@ -489,27 +501,33 @@ public:
       // --> set kp > 0.0 in test
       if (traj_controller_->has_velocity_command_interface())
       {
-        EXPECT_TRUE(is_same_sign_or_zero(point.at(0) - joint_state_pos_[0], joint_vel_[0]))
-          << "current error: " << point.at(0) - joint_state_pos_[0] << ", velocity command is "
-          << joint_vel_[0];
-        EXPECT_TRUE(is_same_sign_or_zero(point.at(1) - joint_state_pos_[1], joint_vel_[1]))
-          << "current error: " << point.at(1) - joint_state_pos_[1] << ", velocity command is "
-          << joint_vel_[1];
-        EXPECT_TRUE(is_same_sign_or_zero(point.at(2) - joint_state_pos_[2], joint_vel_[2]))
-          << "current error: " << point.at(2) - joint_state_pos_[2] << ", velocity command is "
-          << joint_vel_[2];
+        EXPECT_TRUE(
+          is_same_sign_or_zero(point.at(0) - pos_state_interfaces_[0].get_value(), joint_vel_[0]))
+          << "current error: " << point.at(0) - pos_state_interfaces_[0].get_value()
+          << ", velocity command is " << joint_vel_[0];
+        EXPECT_TRUE(
+          is_same_sign_or_zero(point.at(1) - pos_state_interfaces_[1].get_value(), joint_vel_[1]))
+          << "current error: " << point.at(1) - pos_state_interfaces_[1].get_value()
+          << ", velocity command is " << joint_vel_[1];
+        EXPECT_TRUE(
+          is_same_sign_or_zero(point.at(2) - pos_state_interfaces_[2].get_value(), joint_vel_[2]))
+          << "current error: " << point.at(2) - pos_state_interfaces_[2].get_value()
+          << ", velocity command is " << joint_vel_[2];
       }
       if (traj_controller_->has_effort_command_interface())
       {
-        EXPECT_TRUE(is_same_sign_or_zero(point.at(0) - joint_state_pos_[0], joint_eff_[0]))
-          << "current error: " << point.at(0) - joint_state_pos_[0] << ", effort command is "
-          << joint_eff_[0];
-        EXPECT_TRUE(is_same_sign_or_zero(point.at(1) - joint_state_pos_[1], joint_eff_[1]))
-          << "current error: " << point.at(1) - joint_state_pos_[1] << ", effort command is "
-          << joint_eff_[1];
-        EXPECT_TRUE(is_same_sign_or_zero(point.at(2) - joint_state_pos_[2], joint_eff_[2]))
-          << "current error: " << point.at(2) - joint_state_pos_[2] << ", effort command is "
-          << joint_eff_[2];
+        EXPECT_TRUE(
+          is_same_sign_or_zero(point.at(0) - pos_state_interfaces_[0].get_value(), joint_eff_[0]))
+          << "current error: " << point.at(0) - pos_state_interfaces_[0].get_value()
+          << ", effort command is " << joint_eff_[0];
+        EXPECT_TRUE(
+          is_same_sign_or_zero(point.at(1) - pos_state_interfaces_[1].get_value(), joint_eff_[1]))
+          << "current error: " << point.at(1) - pos_state_interfaces_[1].get_value()
+          << ", effort command is " << joint_eff_[1];
+        EXPECT_TRUE(
+          is_same_sign_or_zero(point.at(2) - pos_state_interfaces_[2].get_value(), joint_eff_[2]))
+          << "current error: " << point.at(2) - pos_state_interfaces_[2].get_value()
+          << ", effort command is " << joint_eff_[2];
       }
     }
   }
