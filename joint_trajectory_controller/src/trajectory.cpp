@@ -16,6 +16,7 @@
 
 #include <memory>
 
+#include "angles/angles.h"
 #include "hardware_interface/macros.hpp"
 #include "rclcpp/duration.hpp"
 #include "rclcpp/time.hpp"
@@ -44,10 +45,31 @@ Trajectory::Trajectory(
 
 void Trajectory::set_point_before_trajectory_msg(
   const rclcpp::Time & current_time,
-  const trajectory_msgs::msg::JointTrajectoryPoint & current_point)
+  const trajectory_msgs::msg::JointTrajectoryPoint & current_point,
+  const std::vector<bool> & normalize_joint_error)
 {
   time_before_traj_msg_ = current_time;
   state_before_traj_msg_ = current_point;
+
+  if (!normalize_joint_error.empty())
+  {
+    for (size_t i = 0; i < current_point.positions.size(); i++)
+    {
+      if (normalize_joint_error[i])
+      {
+        double prev_position = state_before_traj_msg_.positions[i];
+        double next_position = trajectory_msg_->points[0].positions[i];
+        double dist = angles::shortest_angular_distance(prev_position, next_position);
+
+        // Deal with singularity at M_PI shortest distance
+        if (std::abs(std::abs(dist) - M_PI) < 1e-9)
+        {
+          dist = next_position > prev_position ? std::abs(dist) : -std::abs(dist);
+        }
+        state_before_traj_msg_.positions[i] = next_position - dist;
+      }
+    }
+  }
 }
 
 void Trajectory::update(std::shared_ptr<trajectory_msgs::msg::JointTrajectory> joint_trajectory)

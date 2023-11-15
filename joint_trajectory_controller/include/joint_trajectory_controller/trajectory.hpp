@@ -44,14 +44,18 @@ public:
     const trajectory_msgs::msg::JointTrajectoryPoint & current_point,
     std::shared_ptr<trajectory_msgs::msg::JointTrajectory> joint_trajectory);
 
-  /// Set the point before the trajectory message is replaced/appended
-  /// Example: if we receive a new trajectory message and it's first point is 0.5 seconds
-  /// from the current one, we call this function to log the current state, then
-  /// append/replace the current trajectory
+  /* Set the point before the trajectory message is replaced/appended
+   * Example: if we receive a new trajectory message and it's first point is 0.5 seconds
+   * from the current one, we call this function to log the current state, then
+   * append/replace the current trajectory
+   * \param normalize_joint_error Vector of boolean where true value corresponds to a joint that
+   * wrap around (ie. is continuous).
+   */
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   void set_point_before_trajectory_msg(
     const rclcpp::Time & current_time,
-    const trajectory_msgs::msg::JointTrajectoryPoint & current_point);
+    const trajectory_msgs::msg::JointTrajectoryPoint & current_point,
+    const std::vector<bool> & normalize_joint_error = std::vector<bool>());
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   void update(std::shared_ptr<trajectory_msgs::msg::JointTrajectory> joint_trajectory);

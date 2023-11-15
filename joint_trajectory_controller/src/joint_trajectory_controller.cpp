@@ -199,11 +199,13 @@ controller_interface::return_type JointTrajectoryController::update(
       first_sample = true;
       if (params_.open_loop_control)
       {
-        traj_external_point_ptr_->set_point_before_trajectory_msg(time, last_commanded_state_);
+        traj_external_point_ptr_->set_point_before_trajectory_msg(
+          time, last_commanded_state_, normalize_joint_error_);
       }
       else
       {
-        traj_external_point_ptr_->set_point_before_trajectory_msg(time, state_current_);
+        traj_external_point_ptr_->set_point_before_trajectory_msg(
+          time, state_current_, normalize_joint_error_);
       }
     }
 
