@@ -130,6 +130,8 @@ public:
 
   bool is_open_loop() const { return params_.open_loop_control; }
 
+  std::vector<PidPtr> get_pids() const { return pids_; }
+
   bool has_active_traj() const { return has_active_trajectory(); }
 
   bool has_trivial_traj() const
