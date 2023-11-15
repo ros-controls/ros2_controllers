@@ -563,10 +563,8 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_angle_wraparoun
   // *INDENT-OFF*
   std::vector<std::vector<double>> points{
     {{3.3, 4.4, 6.6}}, {{7.7, 8.8, 9.9}}, {{10.10, 11.11, 12.12}}};
-  std::vector<std::vector<double>> points_velocities{
-    {{0.01, 0.01, 0.01}}, {{0.05, 0.05, 0.05}}, {{0.06, 0.06, 0.06}}};
   // *INDENT-ON*
-  publish(time_from_start, points, rclcpp::Time(), {}, {});
+  publish(time_from_start, points, rclcpp::Time());
   traj_controller_->wait_for_trajectory(executor);
 
   // first update
@@ -828,10 +826,8 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_angle_wraparound)
   // *INDENT-OFF*
   std::vector<std::vector<double>> points{
     {{3.3, 4.4, 6.6}}, {{7.7, 8.8, 9.9}}, {{10.10, 11.11, 12.12}}};
-  std::vector<std::vector<double>> points_velocities{
-    {{0.01, 0.01, 0.01}}, {{0.05, 0.05, 0.05}}, {{0.06, 0.06, 0.06}}};
   // *INDENT-ON*
-  publish(time_from_start, points, rclcpp::Time(), {}, {});
+  publish(time_from_start, points, rclcpp::Time());
   traj_controller_->wait_for_trajectory(executor);
 
   // first update
