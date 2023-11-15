@@ -44,18 +44,31 @@ public:
     const trajectory_msgs::msg::JointTrajectoryPoint & current_point,
     std::shared_ptr<trajectory_msgs::msg::JointTrajectory> joint_trajectory);
 
-  /* Set the point before the trajectory message is replaced/appended
+  /**
+   *  Set the point before the trajectory message is replaced/appended
    * Example: if we receive a new trajectory message and it's first point is 0.5 seconds
    * from the current one, we call this function to log the current state, then
    * append/replace the current trajectory
-   * \param normalize_joint_error Vector of boolean where true value corresponds to a joint that
+   * \param joints_angle_wraparound Vector of boolean where true value corresponds to a joint that
    * wrap around (ie. is continuous).
    */
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   void set_point_before_trajectory_msg(
     const rclcpp::Time & current_time,
     const trajectory_msgs::msg::JointTrajectoryPoint & current_point,
-    const std::vector<bool> & normalize_joint_error = std::vector<bool>());
+    const std::vector<bool> & joints_angle_wraparound = std::vector<bool>());
+
+  /**
+   * \param current_position The current position given from the controller, which will be adapted.
+   * \param next_position Next position from which to compute the wraparound offset, i.e.,
+   *      the first trajectory point
+   * \param joints_angle_wraparound Vector of boolean where true value corresponds to a joint that
+   * wrap around (ie. is continuous).
+   */
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
+  void wraparound_joint(
+    std::vector<double> & current_position, const std::vector<double> next_position,
+    const std::vector<bool> & joints_angle_wraparound);
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   void update(std::shared_ptr<trajectory_msgs::msg::JointTrajectory> joint_trajectory);
