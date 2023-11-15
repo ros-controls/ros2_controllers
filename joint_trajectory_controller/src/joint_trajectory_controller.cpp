@@ -959,14 +959,12 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   if (read_state_from_command_interfaces(state))
   {
     state_current_ = state;
-    state_desired_ = state;
     last_commanded_state_ = state;
   }
   else
   {
     // Initialize current state storage from hardware
     read_state_from_state_interfaces(state_current_);
-    read_state_from_state_interfaces(state_desired_);
     read_state_from_state_interfaces(last_commanded_state_);
   }
 
