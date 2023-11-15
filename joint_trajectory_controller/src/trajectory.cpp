@@ -57,7 +57,7 @@ void Trajectory::set_point_before_trajectory_msg(
     joints_angle_wraparound);
 }
 
-void Trajectory::wraparound_joint(
+void wraparound_joint(
   std::vector<double> & current_position, const std::vector<double> next_position,
   const std::vector<bool> & joints_angle_wraparound)
 {
