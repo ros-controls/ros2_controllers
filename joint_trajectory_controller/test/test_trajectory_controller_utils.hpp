@@ -198,7 +198,7 @@ public:
   }
 
   void SetPidParameters(
-    double p_default = 0.0, double ff_default = 1.0, bool normalize_error_default = false)
+    double p_default = 0.0, double ff_default = 1.0, bool angle_wraparound_default = false)
   {
     traj_controller_->trigger_declare_parameters();
     auto node = traj_controller_->get_node();
@@ -211,27 +211,31 @@ public:
       const rclcpp::Parameter k_d(prefix + ".d", 0.0);
       const rclcpp::Parameter i_clamp(prefix + ".i_clamp", 0.0);
       const rclcpp::Parameter ff_velocity_scale(prefix + ".ff_velocity_scale", ff_default);
-      const rclcpp::Parameter normalize_error(prefix + ".normalize_error", normalize_error_default);
-      node->set_parameters({k_p, k_i, k_d, i_clamp, ff_velocity_scale, normalize_error});
+      const rclcpp::Parameter angle_wraparound(
+        prefix + ".angle_wraparound", angle_wraparound_default);
+      node->set_parameters({k_p, k_i, k_d, i_clamp, ff_velocity_scale, angle_wraparound});
     }
   }
 
   void SetUpAndActivateTrajectoryController(
     rclcpp::Executor & executor, const std::vector<rclcpp::Parameter> & parameters = {},
     bool separate_cmd_and_state_values = false, double k_p = 0.0, double ff = 1.0,
-    bool normalize_error = false)
+    bool angle_wraparound = false)
   {
     SetUpTrajectoryController(executor);
 
+    // add this to simplify tests, can be overwritten by parameters
+    rclcpp::Parameter nonzero_vel_parameter("allow_nonzero_velocity_at_trajectory_end", true);
+    traj_controller_->get_node()->set_parameter(nonzero_vel_parameter);
+
     // set pid parameters before configure
-    SetPidParameters(k_p, ff, normalize_error);
+    SetPidParameters(k_p, ff, angle_wraparound);
+
+    // set optional parameters
     for (const auto & param : parameters)
     {
       traj_controller_->get_node()->set_parameter(param);
     }
-    // ignore velocity tolerances for this test since they aren't committed in test_robot->write()
-    rclcpp::Parameter stopped_velocity_parameters("constraints.stopped_velocity_tolerance", 0.0);
-    traj_controller_->get_node()->set_parameter(stopped_velocity_parameters);
 
     traj_controller_->get_node()->configure();
 
