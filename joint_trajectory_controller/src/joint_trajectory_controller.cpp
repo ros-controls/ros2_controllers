@@ -951,12 +951,8 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
 
   subscriber_is_active_ = true;
 
-  // Initialize current state storage if hardware state has tracking offset
-  read_state_from_hardware(state_current_);
-  read_state_from_hardware(state_desired_);
-  read_state_from_hardware(last_commanded_state_);
-  // Handle restart of controller by reading from commands if
-  // those are not nan
+  // Handle restart of controller by reading from commands if those are not nan (a controller was
+  // running already)
   trajectory_msgs::msg::JointTrajectoryPoint state;
   resize_joint_trajectory_point(state, dof_);
   if (read_state_from_command_interfaces(state))
@@ -964,6 +960,13 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
     state_current_ = state;
     state_desired_ = state;
     last_commanded_state_ = state;
+  }
+  else
+  {
+    // Initialize current state storage if hardware state has tracking offset
+    read_state_from_hardware(state_current_);
+    read_state_from_hardware(state_desired_);
+    read_state_from_hardware(last_commanded_state_);
   }
 
   // Should the controller start by holding position at the beginning of active state?
