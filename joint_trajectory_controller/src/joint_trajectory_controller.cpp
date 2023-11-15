@@ -463,9 +463,18 @@ bool JointTrajectoryController::read_state_from_command_interfaces(JointTrajecto
   }
   else
   {
+    if (has_position_command_interface_ == false)
+    {
+      RCLCPP_DEBUG(get_node()->get_logger(), "No position command interface found.");
+    }
+    if (interface_has_values(joint_command_interface_[0]) == false)
+    {
+      RCLCPP_DEBUG(get_node()->get_logger(), "Interface position doesn't have values.");
+    }
     state.positions.clear();
     has_values = false;
   }
+
   // velocity and acceleration states are optional
   if (has_velocity_state_interface_)
   {
@@ -475,6 +484,14 @@ bool JointTrajectoryController::read_state_from_command_interfaces(JointTrajecto
     }
     else
     {
+      if (has_velocity_command_interface_ == false)
+      {
+        RCLCPP_DEBUG(get_node()->get_logger(), "No velocity command interface found.");
+      }
+      if (interface_has_values(joint_command_interface_[1]) == false)
+      {
+        RCLCPP_DEBUG(get_node()->get_logger(), "Interface velocity doesn't have values.");
+      }
       state.velocities.clear();
       has_values = false;
     }
@@ -492,6 +509,14 @@ bool JointTrajectoryController::read_state_from_command_interfaces(JointTrajecto
     }
     else
     {
+      if (has_acceleration_command_interface_ == false)
+      {
+        RCLCPP_DEBUG(get_node()->get_logger(), "No acceleration command interface found.");
+      }
+      if (interface_has_values(joint_command_interface_[2]) == false)
+      {
+        RCLCPP_DEBUG(get_node()->get_logger(), "Interface acceleration doesn't have values.");
+      }
       state.accelerations.clear();
       has_values = false;
     }
@@ -951,7 +976,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
 
   subscriber_is_active_ = true;
 
-  // Handle restart of controller by reading from commands if those are not nan (a controller was
+  // Handle restart of controller by reading from commands if those are not NaN (a controller was
   // running already)
   trajectory_msgs::msg::JointTrajectoryPoint state;
   resize_joint_trajectory_point(state, dof_);
@@ -963,7 +988,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   }
   else
   {
-    // Initialize current state storage if hardware state has tracking offset
+    // Initialize current state storage from hardware
     read_state_from_hardware(state_current_);
     read_state_from_hardware(state_desired_);
     read_state_from_hardware(last_commanded_state_);

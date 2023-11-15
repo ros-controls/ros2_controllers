@@ -263,6 +263,12 @@ protected:
 
   void read_state_from_hardware(JointTrajectoryPoint & state);
 
+  /** Assign values from the command interfaces as state.
+   * This is only possible if command AND state interfaces exist for the same type,
+   *  therefore needs check for both.
+   * @param[out] state to be filled with values from command interfaces.
+   * @return true if all interfaces exists and contain non-NaN values, false otherwise.
+   */
   bool read_state_from_command_interfaces(JointTrajectoryPoint & state);
   bool read_commands_from_command_interfaces(JointTrajectoryPoint & commands);
 
