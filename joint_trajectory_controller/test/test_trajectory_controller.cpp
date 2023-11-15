@@ -1719,12 +1719,9 @@ TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_later_co
   std::vector<double> initial_pos_cmd, initial_vel_cmd, initial_acc_cmd;
   for (size_t i = 0; i < 3; ++i)
   {
-    joint_pos_[i] = 3.1 + static_cast<double>(i);
-    initial_pos_cmd.push_back(joint_pos_[i]);
-    joint_vel_[i] = 0.25 + static_cast<double>(i);
-    initial_vel_cmd.push_back(joint_vel_[i]);
-    joint_acc_[i] = 0.02 + static_cast<double>(i) / 10.0;
-    initial_acc_cmd.push_back(joint_acc_[i]);
+    initial_pos_cmd.push_back(3.1 + static_cast<double>(i));
+    initial_vel_cmd.push_back(0.25 + static_cast<double>(i));
+    initial_acc_cmd.push_back(0.02 + static_cast<double>(i) / 10.0);
   }
   SetUpAndActivateTrajectoryController(
     executor, {is_open_loop_parameters}, true, 0., 1., false, initial_pos_cmd, initial_vel_cmd,
