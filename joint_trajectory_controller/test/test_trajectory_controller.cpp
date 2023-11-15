@@ -1713,7 +1713,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_first_co
   executor.cancel();
 }
 
-// Testing that values are read from state interfaces when hardware is started after some values
+// Testing that values are read from command interfaces when hardware is started after some values
 // are set on the hardware commands
 TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_later_controller_start)
 {
