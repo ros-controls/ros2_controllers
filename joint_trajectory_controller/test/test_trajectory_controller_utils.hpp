@@ -130,6 +130,8 @@ public:
 
   bool is_open_loop() const { return params_.open_loop_control; }
 
+  std::vector<PidPtr> get_pids() const { return pids_; }
+
   bool has_active_traj() const { return has_active_trajectory(); }
 
   bool has_trivial_traj() const
@@ -198,7 +200,7 @@ public:
   }
 
   void SetPidParameters(
-    double p_default = 0.0, double ff_default = 1.0, bool normalize_error_default = false)
+    double p_default = 0.0, double ff_default = 1.0, bool angle_wraparound_default = false)
   {
     traj_controller_->trigger_declare_parameters();
     auto node = traj_controller_->get_node();
@@ -211,36 +213,49 @@ public:
       const rclcpp::Parameter k_d(prefix + ".d", 0.0);
       const rclcpp::Parameter i_clamp(prefix + ".i_clamp", 0.0);
       const rclcpp::Parameter ff_velocity_scale(prefix + ".ff_velocity_scale", ff_default);
-      const rclcpp::Parameter normalize_error(prefix + ".normalize_error", normalize_error_default);
-      node->set_parameters({k_p, k_i, k_d, i_clamp, ff_velocity_scale, normalize_error});
+      const rclcpp::Parameter angle_wraparound(
+        prefix + ".angle_wraparound", angle_wraparound_default);
+      node->set_parameters({k_p, k_i, k_d, i_clamp, ff_velocity_scale, angle_wraparound});
     }
   }
 
   void SetUpAndActivateTrajectoryController(
     rclcpp::Executor & executor, const std::vector<rclcpp::Parameter> & parameters = {},
     bool separate_cmd_and_state_values = false, double k_p = 0.0, double ff = 1.0,
-    bool normalize_error = false)
+    bool angle_wraparound = false,
+    const std::vector<double> initial_pos_joints = INITIAL_POS_JOINTS,
+    const std::vector<double> initial_vel_joints = INITIAL_VEL_JOINTS,
+    const std::vector<double> initial_acc_joints = INITIAL_ACC_JOINTS,
+    const std::vector<double> initial_eff_joints = INITIAL_EFF_JOINTS)
   {
     SetUpTrajectoryController(executor);
 
+    // add this to simplify tests, can be overwritten by parameters
+    rclcpp::Parameter nonzero_vel_parameter("allow_nonzero_velocity_at_trajectory_end", true);
+    traj_controller_->get_node()->set_parameter(nonzero_vel_parameter);
+
     // set pid parameters before configure
-    SetPidParameters(k_p, ff, normalize_error);
+    SetPidParameters(k_p, ff, angle_wraparound);
+
+    // set optional parameters
     for (const auto & param : parameters)
     {
       traj_controller_->get_node()->set_parameter(param);
     }
-    // ignore velocity tolerances for this test since they aren't committed in test_robot->write()
-    rclcpp::Parameter stopped_velocity_parameters("constraints.stopped_velocity_tolerance", 0.0);
-    traj_controller_->get_node()->set_parameter(stopped_velocity_parameters);
 
     traj_controller_->get_node()->configure();
 
-    ActivateTrajectoryController(separate_cmd_and_state_values);
+    ActivateTrajectoryController(
+      separate_cmd_and_state_values, initial_pos_joints, initial_vel_joints, initial_acc_joints,
+      initial_eff_joints);
   }
 
   void ActivateTrajectoryController(
     bool separate_cmd_and_state_values = false,
-    const std::vector<double> initial_pos_joints = INITIAL_POS_JOINTS)
+    const std::vector<double> initial_pos_joints = INITIAL_POS_JOINTS,
+    const std::vector<double> initial_vel_joints = INITIAL_VEL_JOINTS,
+    const std::vector<double> initial_acc_joints = INITIAL_ACC_JOINTS,
+    const std::vector<double> initial_eff_joints = INITIAL_EFF_JOINTS)
   {
     std::vector<hardware_interface::LoanedCommandInterface> cmd_interfaces;
     std::vector<hardware_interface::LoanedStateInterface> state_interfaces;
@@ -276,14 +291,17 @@ public:
       cmd_interfaces.emplace_back(pos_cmd_interfaces_.back());
       cmd_interfaces.back().set_value(initial_pos_joints[i]);
       cmd_interfaces.emplace_back(vel_cmd_interfaces_.back());
-      cmd_interfaces.back().set_value(INITIAL_VEL_JOINTS[i]);
+      cmd_interfaces.back().set_value(initial_vel_joints[i]);
       cmd_interfaces.emplace_back(acc_cmd_interfaces_.back());
-      cmd_interfaces.back().set_value(INITIAL_ACC_JOINTS[i]);
+      cmd_interfaces.back().set_value(initial_acc_joints[i]);
       cmd_interfaces.emplace_back(eff_cmd_interfaces_.back());
-      cmd_interfaces.back().set_value(INITIAL_EFF_JOINTS[i]);
-      joint_state_pos_[i] = initial_pos_joints[i];
-      joint_state_vel_[i] = INITIAL_VEL_JOINTS[i];
-      joint_state_acc_[i] = INITIAL_ACC_JOINTS[i];
+      cmd_interfaces.back().set_value(initial_eff_joints[i]);
+      if (separate_cmd_and_state_values)
+      {
+        joint_state_pos_[i] = INITIAL_POS_JOINTS[i];
+        joint_state_vel_[i] = INITIAL_VEL_JOINTS[i];
+        joint_state_acc_[i] = INITIAL_ACC_JOINTS[i];
+      }
       state_interfaces.emplace_back(pos_state_interfaces_.back());
       state_interfaces.emplace_back(vel_state_interfaces_.back());
       state_interfaces.emplace_back(acc_state_interfaces_.back());
@@ -485,27 +503,33 @@ public:
       // --> set kp > 0.0 in test
       if (traj_controller_->has_velocity_command_interface())
       {
-        EXPECT_TRUE(is_same_sign_or_zero(point.at(0) - joint_state_pos_[0], joint_vel_[0]))
-          << "current error: " << point.at(0) - joint_state_pos_[0] << ", velocity command is "
-          << joint_vel_[0];
-        EXPECT_TRUE(is_same_sign_or_zero(point.at(1) - joint_state_pos_[1], joint_vel_[1]))
-          << "current error: " << point.at(1) - joint_state_pos_[1] << ", velocity command is "
-          << joint_vel_[1];
-        EXPECT_TRUE(is_same_sign_or_zero(point.at(2) - joint_state_pos_[2], joint_vel_[2]))
-          << "current error: " << point.at(2) - joint_state_pos_[2] << ", velocity command is "
-          << joint_vel_[2];
+        EXPECT_TRUE(
+          is_same_sign_or_zero(point.at(0) - pos_state_interfaces_[0].get_value(), joint_vel_[0]))
+          << "current error: " << point.at(0) - pos_state_interfaces_[0].get_value()
+          << ", velocity command is " << joint_vel_[0];
+        EXPECT_TRUE(
+          is_same_sign_or_zero(point.at(1) - pos_state_interfaces_[1].get_value(), joint_vel_[1]))
+          << "current error: " << point.at(1) - pos_state_interfaces_[1].get_value()
+          << ", velocity command is " << joint_vel_[1];
+        EXPECT_TRUE(
+          is_same_sign_or_zero(point.at(2) - pos_state_interfaces_[2].get_value(), joint_vel_[2]))
+          << "current error: " << point.at(2) - pos_state_interfaces_[2].get_value()
+          << ", velocity command is " << joint_vel_[2];
       }
       if (traj_controller_->has_effort_command_interface())
       {
-        EXPECT_TRUE(is_same_sign_or_zero(point.at(0) - joint_state_pos_[0], joint_eff_[0]))
-          << "current error: " << point.at(0) - joint_state_pos_[0] << ", effort command is "
-          << joint_eff_[0];
-        EXPECT_TRUE(is_same_sign_or_zero(point.at(1) - joint_state_pos_[1], joint_eff_[1]))
-          << "current error: " << point.at(1) - joint_state_pos_[1] << ", effort command is "
-          << joint_eff_[1];
-        EXPECT_TRUE(is_same_sign_or_zero(point.at(2) - joint_state_pos_[2], joint_eff_[2]))
-          << "current error: " << point.at(2) - joint_state_pos_[2] << ", effort command is "
-          << joint_eff_[2];
+        EXPECT_TRUE(
+          is_same_sign_or_zero(point.at(0) - pos_state_interfaces_[0].get_value(), joint_eff_[0]))
+          << "current error: " << point.at(0) - pos_state_interfaces_[0].get_value()
+          << ", effort command is " << joint_eff_[0];
+        EXPECT_TRUE(
+          is_same_sign_or_zero(point.at(1) - pos_state_interfaces_[1].get_value(), joint_eff_[1]))
+          << "current error: " << point.at(1) - pos_state_interfaces_[1].get_value()
+          << ", effort command is " << joint_eff_[1];
+        EXPECT_TRUE(
+          is_same_sign_or_zero(point.at(2) - pos_state_interfaces_[2].get_value(), joint_eff_[2]))
+          << "current error: " << point.at(2) - pos_state_interfaces_[2].get_value()
+          << ", effort command is " << joint_eff_[2];
       }
     }
   }
