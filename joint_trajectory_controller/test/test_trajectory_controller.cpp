@@ -551,7 +551,8 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_angle_wraparoun
   rclcpp::executors::MultiThreadedExecutor executor;
   constexpr double k_p = 10.0;
   std::vector<rclcpp::Parameter> params = {};
-  SetUpAndActivateTrajectoryController(executor, params, true, k_p, 0.0, false);
+  bool angle_wraparound = false;
+  SetUpAndActivateTrajectoryController(executor, params, true, k_p, 0.0, angle_wraparound);
   subscribeToState();
 
   size_t n_joints = joint_names_.size();
@@ -565,7 +566,7 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_angle_wraparoun
   std::vector<std::vector<double>> points_velocities{
     {{0.01, 0.01, 0.01}}, {{0.05, 0.05, 0.05}}, {{0.06, 0.06, 0.06}}};
   // *INDENT-ON*
-  publish(time_from_start, points, rclcpp::Time(), {}, points_velocities);
+  publish(time_from_start, points, rclcpp::Time(), {}, {});
   traj_controller_->wait_for_trajectory(executor);
 
   // first update
@@ -605,6 +606,7 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_angle_wraparoun
     EXPECT_NEAR(points[0][0], joint_pos_[0], allowed_delta);
     EXPECT_NEAR(points[0][1], joint_pos_[1], allowed_delta);
     EXPECT_NEAR(points[0][2], joint_pos_[2], allowed_delta);
+    // double check state msg
     EXPECT_NEAR(points[0][0], state_msg->output.positions[0], allowed_delta);
     EXPECT_NEAR(points[0][1], state_msg->output.positions[1], allowed_delta);
     EXPECT_NEAR(points[0][2], state_msg->output.positions[2], allowed_delta);
@@ -612,14 +614,6 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_angle_wraparoun
 
   if (traj_controller_->has_velocity_command_interface())
   {
-    // check command interface
-    EXPECT_LT(0.0, joint_vel_[0]);
-    EXPECT_LT(0.0, joint_vel_[1]);
-    EXPECT_LT(0.0, joint_vel_[2]);
-    EXPECT_LT(0.0, state_msg->output.velocities[0]);
-    EXPECT_LT(0.0, state_msg->output.velocities[1]);
-    EXPECT_LT(0.0, state_msg->output.velocities[2]);
-
     // use_closed_loop_pid_adapter_
     if (traj_controller_->use_closed_loop_pid_adapter())
     {
@@ -635,14 +629,36 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_angle_wraparoun
         k_p * (state_msg->reference.positions[2] - INITIAL_POS_JOINTS[2]), joint_vel_[2],
         k_p * allowed_delta);
     }
+    else
+    {
+      // check command interface
+      EXPECT_LT(0.0, joint_vel_[0]);
+      EXPECT_LT(0.0, joint_vel_[1]);
+      EXPECT_LT(0.0, joint_vel_[2]);
+      // double check state msg
+      EXPECT_LT(0.0, state_msg->output.velocities[0]);
+      EXPECT_LT(0.0, state_msg->output.velocities[1]);
+      EXPECT_LT(0.0, state_msg->output.velocities[2]);
+    }
   }
 
   if (traj_controller_->has_effort_command_interface())
   {
+    // with effort command interface, use_closed_loop_pid_adapter is always true
+
     // check command interface
-    EXPECT_LT(0.0, joint_eff_[0]);
-    EXPECT_LT(0.0, joint_eff_[1]);
-    EXPECT_LT(0.0, joint_eff_[2]);
+    // we expect u = k_p * (s_d-s) for joint0, joint1, joint2
+    EXPECT_NEAR(
+      k_p * (state_msg->reference.positions[0] - INITIAL_POS_JOINTS[0]), joint_eff_[0],
+      k_p * allowed_delta);
+    EXPECT_NEAR(
+      k_p * (state_msg->reference.positions[1] - INITIAL_POS_JOINTS[1]), joint_eff_[1],
+      k_p * allowed_delta);
+    EXPECT_NEAR(
+      k_p * (state_msg->reference.positions[2] - INITIAL_POS_JOINTS[2]), joint_eff_[2],
+      k_p * allowed_delta);
+
+    // double check state msg
     EXPECT_LT(0.0, state_msg->output.effort[0]);
     EXPECT_LT(0.0, state_msg->output.effort[1]);
     EXPECT_LT(0.0, state_msg->output.effort[2]);
@@ -800,7 +816,8 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_angle_wraparound)
   rclcpp::executors::MultiThreadedExecutor executor;
   constexpr double k_p = 10.0;
   std::vector<rclcpp::Parameter> params = {};
-  SetUpAndActivateTrajectoryController(executor, params, true, k_p, 0.0, true);
+  bool angle_wraparound = true;
+  SetUpAndActivateTrajectoryController(executor, params, true, k_p, 0.0, angle_wraparound);
   subscribeToState();
 
   size_t n_joints = joint_names_.size();
@@ -814,7 +831,7 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_angle_wraparound)
   std::vector<std::vector<double>> points_velocities{
     {{0.01, 0.01, 0.01}}, {{0.05, 0.05, 0.05}}, {{0.06, 0.06, 0.06}}};
   // *INDENT-ON*
-  publish(time_from_start, points, rclcpp::Time(), {}, points_velocities);
+  publish(time_from_start, points, rclcpp::Time(), {}, {});
   traj_controller_->wait_for_trajectory(executor);
 
   // first update
@@ -840,7 +857,7 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_angle_wraparound)
   EXPECT_NEAR(points[0][1], state_msg->reference.positions[1], allowed_delta);
   EXPECT_NEAR(points[0][2], state_msg->reference.positions[2], 3 * allowed_delta);
 
-  // is error.positions[2] angle_wraparound?
+  // is error.positions[2] wrapped around?
   EXPECT_NEAR(
     state_msg->error.positions[0], state_msg->reference.positions[0] - INITIAL_POS_JOINTS[0], EPS);
   EXPECT_NEAR(
@@ -869,8 +886,8 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_angle_wraparound)
       EXPECT_NEAR(
         k_p * (state_msg->reference.positions[1] - INITIAL_POS_JOINTS[1]), joint_vel_[1],
         k_p * allowed_delta);
-      // is error of positions[2] angle_wraparound?
-      EXPECT_GT(0.0, joint_vel_[2]);
+      // is error of positions[2] wrapped around?
+      EXPECT_GT(0.0, joint_vel_[2]);  // direction change because of angle wrap
       EXPECT_NEAR(
         k_p * (state_msg->reference.positions[2] - INITIAL_POS_JOINTS[2] - 2 * M_PI), joint_vel_[2],
         k_p * allowed_delta);
@@ -881,36 +898,26 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_angle_wraparound)
       // check command interface
       EXPECT_LT(0.0, joint_vel_[0]);
       EXPECT_LT(0.0, joint_vel_[1]);
-      EXPECT_LT(0.0, joint_vel_[2]);
+      EXPECT_GT(0.0, joint_vel_[2]);  // direction change because of angle wrap
     }
   }
 
   if (traj_controller_->has_effort_command_interface())
   {
-    // use_closed_loop_pid_adapter_
-    if (traj_controller_->use_closed_loop_pid_adapter())
-    {
-      // we expect u = k_p * (s_d-s) for positions[0] and positions[1]
-      EXPECT_NEAR(
-        k_p * (state_msg->reference.positions[0] - INITIAL_POS_JOINTS[0]), joint_eff_[0],
-        k_p * allowed_delta);
-      EXPECT_NEAR(
-        k_p * (state_msg->reference.positions[1] - INITIAL_POS_JOINTS[1]), joint_eff_[1],
-        k_p * allowed_delta);
-      // is error of positions[2] angle_wraparound?
-      EXPECT_GT(0.0, joint_eff_[2]);
-      EXPECT_NEAR(
-        k_p * (state_msg->reference.positions[2] - INITIAL_POS_JOINTS[2] - 2 * M_PI), joint_eff_[2],
-        k_p * allowed_delta);
-    }
-    else
-    {
-      // interpolated points_velocities only
-      // check command interface
-      EXPECT_LT(0.0, joint_eff_[0]);
-      EXPECT_LT(0.0, joint_eff_[1]);
-      EXPECT_LT(0.0, joint_eff_[2]);
-    }
+    // with effort command interface, use_closed_loop_pid_adapter is always true
+
+    // we expect u = k_p * (s_d-s) for joint0 and joint1
+    EXPECT_NEAR(
+      k_p * (state_msg->reference.positions[0] - INITIAL_POS_JOINTS[0]), joint_eff_[0],
+      k_p * allowed_delta);
+    EXPECT_NEAR(
+      k_p * (state_msg->reference.positions[1] - INITIAL_POS_JOINTS[1]), joint_eff_[1],
+      k_p * allowed_delta);
+    // is error of positions[2] wrapped around?
+    EXPECT_GT(0.0, joint_eff_[2]);
+    EXPECT_NEAR(
+      k_p * (state_msg->reference.positions[2] - INITIAL_POS_JOINTS[2] - 2 * M_PI), joint_eff_[2],
+      k_p * allowed_delta);
   }
 
   executor.cancel();
