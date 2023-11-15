@@ -466,7 +466,6 @@ bool JointTrajectoryController::read_state_from_command_interfaces(JointTrajecto
     state.positions.clear();
     has_values = false;
   }
-
   // velocity and acceleration states are optional
   if (has_velocity_state_interface_)
   {
