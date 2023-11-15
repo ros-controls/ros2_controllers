@@ -21,7 +21,7 @@
 #include <utility>
 #include <vector>
 
-#include "gtest/gtest.h"
+#include "gmock/gmock.h"
 
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
@@ -621,6 +621,47 @@ public:
       EXPECT_EQ(0.0, joint_eff_[1]);
       EXPECT_EQ(0.0, joint_eff_[2]);
     }
+  }
+
+  /**
+   * @brief compares the joint names and interface types of the controller with the given ones
+   */
+  void compare_joints(
+    std::vector<std::string> state_joint_names, std::vector<std::string> command_joint_names)
+  {
+    std::vector<std::string> state_interface_names;
+    state_interface_names.reserve(state_joint_names.size() * state_interface_types_.size());
+    for (const auto & joint : state_joint_names)
+    {
+      for (const auto & interface : state_interface_types_)
+      {
+        state_interface_names.push_back(joint + "/" + interface);
+      }
+    }
+    auto state_interfaces = traj_controller_->state_interface_configuration();
+    EXPECT_EQ(
+      state_interfaces.type, controller_interface::interface_configuration_type::INDIVIDUAL);
+    EXPECT_EQ(
+      state_interfaces.names.size(), state_joint_names.size() * state_interface_types_.size());
+    ASSERT_THAT(state_interfaces.names, testing::UnorderedElementsAreArray(state_interface_names));
+
+    std::vector<std::string> command_interface_names;
+    command_interface_names.reserve(command_joint_names.size() * command_interface_types_.size());
+    for (const auto & joint : command_joint_names)
+    {
+      for (const auto & interface : command_interface_types_)
+      {
+        command_interface_names.push_back(joint + "/" + interface);
+      }
+    }
+    auto command_interfaces = traj_controller_->command_interface_configuration();
+    EXPECT_EQ(
+      command_interfaces.type, controller_interface::interface_configuration_type::INDIVIDUAL);
+    EXPECT_EQ(
+      command_interfaces.names.size(),
+      command_joint_names.size() * command_interface_types_.size());
+    ASSERT_THAT(
+      command_interfaces.names, testing::UnorderedElementsAreArray(command_interface_names));
   }
 
   std::string controller_name_;
