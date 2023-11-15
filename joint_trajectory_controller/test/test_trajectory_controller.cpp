@@ -1672,7 +1672,6 @@ TEST_P(TrajectoryControllerTestParameterized, test_no_jump_when_state_tracking_e
 TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_first_controller_start)
 {
   rclcpp::executors::SingleThreadedExecutor executor;
-  // default if false so it will not be actually set parameter
   rclcpp::Parameter is_open_loop_parameters("open_loop_control", true);
 
   // set command values to NaN
@@ -1697,7 +1696,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_first_co
         hardware_interface::HW_IF_VELOCITY) != state_interface_types_.end() &&
       traj_controller_->has_velocity_command_interface())
     {
-      EXPECT_EQ(current_state_when_offset.positions[i], joint_state_pos_[i]);
+      EXPECT_EQ(current_state_when_offset.velocities[i], joint_state_vel_[i]);
     }
 
     // check acceleration
@@ -1707,7 +1706,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_first_co
         hardware_interface::HW_IF_ACCELERATION) != state_interface_types_.end() &&
       traj_controller_->has_acceleration_command_interface())
     {
-      EXPECT_EQ(current_state_when_offset.positions[i], joint_state_pos_[i]);
+      EXPECT_EQ(current_state_when_offset.accelerations[i], joint_state_acc_[i]);
     }
   }
 
@@ -1719,15 +1718,18 @@ TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_first_co
 TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_later_controller_start)
 {
   rclcpp::executors::SingleThreadedExecutor executor;
-  // default if false so it will not be actually set parameter
   rclcpp::Parameter is_open_loop_parameters("open_loop_control", true);
 
-  // set command values to NaN
+  // set command values to arbitrary values
+  std::vector<double> initial_pos_cmd, initial_vel_cmd, initial_acc_cmd;
   for (size_t i = 0; i < 3; ++i)
   {
     joint_pos_[i] = 3.1 + static_cast<double>(i);
+    initial_pos_cmd.push_back(joint_pos_[i]);
     joint_vel_[i] = 0.25 + static_cast<double>(i);
+    initial_vel_cmd.push_back(joint_vel_[i]);
     joint_acc_[i] = 0.02 + static_cast<double>(i) / 10.0;
+    initial_acc_cmd.push_back(joint_acc_[i]);
   }
   SetUpAndActivateTrajectoryController(executor, {is_open_loop_parameters}, true);
 
@@ -1735,7 +1737,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_later_co
 
   for (size_t i = 0; i < 3; ++i)
   {
-    EXPECT_EQ(current_state_when_offset.positions[i], joint_pos_[i]);
+    EXPECT_EQ(current_state_when_offset.positions[i], initial_pos_cmd[i]);
 
     // check velocity
     if (
@@ -1744,7 +1746,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_later_co
         hardware_interface::HW_IF_VELOCITY) != state_interface_types_.end() &&
       traj_controller_->has_velocity_command_interface())
     {
-      EXPECT_EQ(current_state_when_offset.positions[i], joint_pos_[i]);
+      EXPECT_EQ(current_state_when_offset.velocities[i], initial_vel_cmd[i]);
     }
 
     // check acceleration
@@ -1754,7 +1756,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_later_co
         hardware_interface::HW_IF_ACCELERATION) != state_interface_types_.end() &&
       traj_controller_->has_acceleration_command_interface())
     {
-      EXPECT_EQ(current_state_when_offset.positions[i], joint_pos_[i]);
+      EXPECT_EQ(current_state_when_offset.accelerations[i], initial_acc_cmd[i]);
     }
   }
 
