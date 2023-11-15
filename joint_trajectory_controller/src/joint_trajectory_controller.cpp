@@ -64,15 +64,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
     return CallbackReturn::ERROR;
   }
 
-  // TODO(christophfroehlich): remove deprecation warning
-  if (params_.allow_nonzero_velocity_at_trajectory_end)
-  {
-    RCLCPP_WARN(
-      get_node()->get_logger(),
-      "[Deprecated]: \"allow_nonzero_velocity_at_trajectory_end\" is set to "
-      "true. The default behavior will change to false.");
-  }
-
   return CallbackReturn::SUCCESS;
 }
 
@@ -142,7 +133,7 @@ controller_interface::return_type JointTrajectoryController::update(
                                    const JointTrajectoryPoint & desired)
   {
     // error defined as the difference between current and desired
-    if (normalize_joint_error_[index])
+    if (joints_angle_wraparound_[index])
     {
       // if desired, the shortest_angular_distance is calculated, i.e., the error is
       //  normalized between -pi<error<pi
@@ -195,7 +186,7 @@ controller_interface::return_type JointTrajectoryController::update(
 
   // current state update
   state_current_.time_from_start.set__sec(0);
-  read_state_from_hardware(state_current_);
+  read_state_from_state_interfaces(state_current_);
 
   // currently carrying out a trajectory
   if (has_active_trajectory())
@@ -417,7 +408,7 @@ controller_interface::return_type JointTrajectoryController::update(
   return controller_interface::return_type::OK;
 }
 
-void JointTrajectoryController::read_state_from_hardware(JointTrajectoryPoint & state)
+void JointTrajectoryController::read_state_from_state_interfaces(JointTrajectoryPoint & state)
 {
   auto assign_point_from_interface =
     [&](std::vector<double> & trajectory_point_interface, const auto & joint_interface)
@@ -728,20 +719,11 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   }
 
   // Configure joint position error normalization from ROS parameters (angle_wraparound)
-  normalize_joint_error_.resize(dof_);
+  joints_angle_wraparound_.resize(dof_);
   for (size_t i = 0; i < dof_; ++i)
   {
     const auto & gains = params_.gains.joints_map.at(params_.joints[i]);
-    if (gains.normalize_error)
-    {
-      // TODO(anyone): Remove deprecation warning in the end of 2023
-      RCLCPP_INFO(logger, "`normalize_error` is deprecated, use `angle_wraparound` instead!");
-      normalize_joint_error_[i] = gains.normalize_error;
-    }
-    else
-    {
-      normalize_joint_error_[i] = gains.angle_wraparound;
-    }
+    joints_angle_wraparound_[i] = gains.angle_wraparound;
   }
 
   if (params_.state_interfaces.empty())
@@ -960,19 +942,20 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
 
   subscriber_is_active_ = true;
 
-  // Initialize current state storage if hardware state has tracking offset
-  read_state_from_hardware(state_current_);
-  read_state_from_hardware(state_desired_);
-  read_state_from_hardware(last_commanded_state_);
-  // Handle restart of controller by reading from commands if
-  // those are not nan
+  // Handle restart of controller by reading from commands if those are not NaN (a controller was
+  // running already)
   trajectory_msgs::msg::JointTrajectoryPoint state;
   resize_joint_trajectory_point(state, dof_);
   if (read_state_from_command_interfaces(state))
   {
     state_current_ = state;
-    state_desired_ = state;
     last_commanded_state_ = state;
+  }
+  else
+  {
+    // Initialize current state storage from hardware
+    read_state_from_state_interfaces(state_current_);
+    read_state_from_state_interfaces(last_commanded_state_);
   }
 
   // Should the controller start by holding position at the beginning of active state?
