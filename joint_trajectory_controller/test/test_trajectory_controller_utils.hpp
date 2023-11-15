@@ -66,6 +66,8 @@ public:
     return ret;
   }
 
+  rclcpp::NodeOptions get_node_options() const override { return node_options_; }
+
   /**
    * @brief wait_for_trajectory block until a new JointTrajectory is received.
    * Requires that the executor is not spinned elsewhere between the
@@ -150,11 +152,15 @@ public:
 
   double get_cmd_timeout() { return cmd_timeout_; }
 
+  void set_node_options(const rclcpp::NodeOptions & node_options) { node_options_ = node_options; }
+
   trajectory_msgs::msg::JointTrajectoryPoint get_state_feedback() { return state_current_; }
   trajectory_msgs::msg::JointTrajectoryPoint get_state_reference() { return state_desired_; }
   trajectory_msgs::msg::JointTrajectoryPoint get_state_error() { return state_error_; }
 
+
   rclcpp::WaitSet joint_cmd_sub_wait_set_;
+  rclcpp::NodeOptions node_options_;
 };
 
 class TrajectoryControllerTest : public ::testing::Test
@@ -209,8 +215,9 @@ public:
     parameter_overrides.push_back(rclcpp::Parameter("state_interfaces", state_interface_types_));
     parameter_overrides.insert(parameter_overrides.end(), parameters.begin(), parameters.end());
     node_options.parameter_overrides(parameter_overrides);
+    traj_controller_->set_node_options(node_options);
 
-    return traj_controller_->init(controller_name_, "", 0, "", node_options);
+    return traj_controller_->init(controller_name_, "", 0, "");
   }
 
   void SetPidParameters(
