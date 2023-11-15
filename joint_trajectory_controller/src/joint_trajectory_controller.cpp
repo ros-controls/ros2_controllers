@@ -463,14 +463,6 @@ bool JointTrajectoryController::read_state_from_command_interfaces(JointTrajecto
   }
   else
   {
-    if (has_position_command_interface_ == false)
-    {
-      RCLCPP_DEBUG(get_node()->get_logger(), "No position command interface found.");
-    }
-    if (interface_has_values(joint_command_interface_[0]) == false)
-    {
-      RCLCPP_DEBUG(get_node()->get_logger(), "Interface position doesn't have values.");
-    }
     state.positions.clear();
     has_values = false;
   }
@@ -484,14 +476,6 @@ bool JointTrajectoryController::read_state_from_command_interfaces(JointTrajecto
     }
     else
     {
-      if (has_velocity_command_interface_ == false)
-      {
-        RCLCPP_DEBUG(get_node()->get_logger(), "No velocity command interface found.");
-      }
-      if (interface_has_values(joint_command_interface_[1]) == false)
-      {
-        RCLCPP_DEBUG(get_node()->get_logger(), "Interface velocity doesn't have values.");
-      }
       state.velocities.clear();
       has_values = false;
     }
@@ -509,14 +493,6 @@ bool JointTrajectoryController::read_state_from_command_interfaces(JointTrajecto
     }
     else
     {
-      if (has_acceleration_command_interface_ == false)
-      {
-        RCLCPP_DEBUG(get_node()->get_logger(), "No acceleration command interface found.");
-      }
-      if (interface_has_values(joint_command_interface_[2]) == false)
-      {
-        RCLCPP_DEBUG(get_node()->get_logger(), "Interface acceleration doesn't have values.");
-      }
       state.accelerations.clear();
       has_values = false;
     }
