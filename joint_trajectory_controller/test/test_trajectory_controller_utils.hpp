@@ -220,7 +220,7 @@ public:
   void SetUpAndActivateTrajectoryController(
     rclcpp::Executor & executor, const std::vector<rclcpp::Parameter> & parameters = {},
     bool separate_cmd_and_state_values = false, double k_p = 0.0, double ff = 1.0,
-    bool angle_wraparound = false, 
+    bool angle_wraparound = false,
     const std::vector<double> initial_pos_joints = INITIAL_POS_JOINTS,
     const std::vector<double> initial_vel_joints = INITIAL_VEL_JOINTS,
     const std::vector<double> initial_acc_joints = INITIAL_ACC_JOINTS,
