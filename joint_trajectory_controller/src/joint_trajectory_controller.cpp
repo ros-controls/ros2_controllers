@@ -200,12 +200,12 @@ controller_interface::return_type JointTrajectoryController::update(
       if (params_.open_loop_control)
       {
         traj_external_point_ptr_->set_point_before_trajectory_msg(
-          time, last_commanded_state_, normalize_joint_error_);
+          time, last_commanded_state_, joints_angle_wraparound_);
       }
       else
       {
         traj_external_point_ptr_->set_point_before_trajectory_msg(
-          time, state_current_, normalize_joint_error_);
+          time, state_current_, joints_angle_wraparound_);
       }
     }
 
