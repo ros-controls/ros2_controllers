@@ -201,8 +201,7 @@ TEST_P(TrajectoryControllerTestParameterized, activate)
 TEST_P(TrajectoryControllerTestParameterized, cleanup)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
-  std::vector<rclcpp::Parameter> params = {
-    rclcpp::Parameter("allow_nonzero_velocity_at_trajectory_end", true)};
+  std::vector<rclcpp::Parameter> params = {};
   SetUpAndActivateTrajectoryController(executor, params);
 
   // send msg
@@ -508,14 +507,13 @@ TEST_P(TrajectoryControllerTestParameterized, hold_on_startup)
 // Floating-point value comparison threshold
 const double EPS = 1e-6;
 /**
- * @brief check if position error of revolute joints are normalized if not configured so
+ * @brief check if position error of revolute joints are angle_wraparound if not configured so
  */
-TEST_P(TrajectoryControllerTestParameterized, position_error_not_normalized)
+TEST_P(TrajectoryControllerTestParameterized, position_error_not_angle_wraparound)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
   constexpr double k_p = 10.0;
-  std::vector<rclcpp::Parameter> params = {
-    rclcpp::Parameter("allow_nonzero_velocity_at_trajectory_end", true)};
+  std::vector<rclcpp::Parameter> params = {};
   SetUpAndActivateTrajectoryController(executor, params, true, k_p, 0.0, false);
   subscribeToState();
 
@@ -758,14 +756,13 @@ TEST_P(TrajectoryControllerTestParameterized, timeout)
 }
 
 /**
- * @brief check if position error of revolute joints are normalized if configured so
+ * @brief check if position error of revolute joints are angle_wraparound if configured so
  */
-TEST_P(TrajectoryControllerTestParameterized, position_error_normalized)
+TEST_P(TrajectoryControllerTestParameterized, position_error_angle_wraparound)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
   constexpr double k_p = 10.0;
-  std::vector<rclcpp::Parameter> params = {
-    rclcpp::Parameter("allow_nonzero_velocity_at_trajectory_end", true)};
+  std::vector<rclcpp::Parameter> params = {};
   SetUpAndActivateTrajectoryController(executor, params, true, k_p, 0.0, true);
   subscribeToState();
 
@@ -806,7 +803,7 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_normalized)
   EXPECT_NEAR(points[0][1], state_msg->reference.positions[1], allowed_delta);
   EXPECT_NEAR(points[0][2], state_msg->reference.positions[2], 3 * allowed_delta);
 
-  // is error.positions[2] normalized?
+  // is error.positions[2] angle_wraparound?
   EXPECT_NEAR(
     state_msg->error.positions[0], state_msg->reference.positions[0] - INITIAL_POS_JOINTS[0], EPS);
   EXPECT_NEAR(
@@ -835,7 +832,7 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_normalized)
       EXPECT_NEAR(
         k_p * (state_msg->reference.positions[1] - INITIAL_POS_JOINTS[1]), joint_vel_[1],
         k_p * allowed_delta);
-      // is error of positions[2] normalized?
+      // is error of positions[2] angle_wraparound?
       EXPECT_GT(0.0, joint_vel_[2]);
       EXPECT_NEAR(
         k_p * (state_msg->reference.positions[2] - INITIAL_POS_JOINTS[2] - 2 * M_PI), joint_vel_[2],
@@ -863,7 +860,7 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_normalized)
       EXPECT_NEAR(
         k_p * (state_msg->reference.positions[1] - INITIAL_POS_JOINTS[1]), joint_eff_[1],
         k_p * allowed_delta);
-      // is error of positions[2] normalized?
+      // is error of positions[2] angle_wraparound?
       EXPECT_GT(0.0, joint_eff_[2]);
       EXPECT_NEAR(
         k_p * (state_msg->reference.positions[2] - INITIAL_POS_JOINTS[2] - 2 * M_PI), joint_eff_[2],
