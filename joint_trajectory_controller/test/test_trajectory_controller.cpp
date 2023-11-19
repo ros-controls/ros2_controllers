@@ -502,6 +502,59 @@ TEST_P(TrajectoryControllerTestParameterized, update_dynamic_parameters)
 }
 
 /**
+ * @brief check if dynamic tolerances are updated
+ */
+TEST_P(TrajectoryControllerTestParameterized, update_dynamic_tolerances)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+
+  SetUpAndActivateTrajectoryController(executor);
+
+  updateController();
+
+  // test default parameters
+  {
+    auto tols = traj_controller_->get_tolerances();
+    EXPECT_EQ(tols.goal_time_tolerance, 0.0);
+    for (size_t i = 0; i < joint_names_.size(); ++i)
+    {
+      EXPECT_EQ(tols.state_tolerance.at(i).position, 0.0);
+      EXPECT_EQ(tols.goal_state_tolerance.at(i).position, 0.0);
+      EXPECT_EQ(tols.goal_state_tolerance.at(i).velocity, 0.01);
+    }
+  }
+
+  // change parameters, update and see what happens
+  std::vector<rclcpp::Parameter> new_tolerances{
+    rclcpp::Parameter("constraints.goal_time", 1.0),
+    rclcpp::Parameter("constraints.stopped_velocity_tolerance", 0.02),
+    rclcpp::Parameter("constraints.joint1.trajectory", 1.0),
+    rclcpp::Parameter("constraints.joint2.trajectory", 2.0),
+    rclcpp::Parameter("constraints.joint3.trajectory", 3.0),
+    rclcpp::Parameter("constraints.joint1.goal", 10.0),
+    rclcpp::Parameter("constraints.joint2.goal", 20.0),
+    rclcpp::Parameter("constraints.joint3.goal", 30.0)};
+  for (const auto & param : new_tolerances)
+  {
+    traj_controller_->get_node()->set_parameter(param);
+  }
+  updateController();
+
+  {
+    auto tols = traj_controller_->get_tolerances();
+    EXPECT_EQ(tols.goal_time_tolerance, 1.0);
+    for (size_t i = 0; i < joint_names_.size(); ++i)
+    {
+      EXPECT_EQ(tols.state_tolerance.at(i).position, static_cast<double>(i) + 1.0);
+      EXPECT_EQ(tols.goal_state_tolerance.at(i).position, 10.0 * (static_cast<double>(i) + 1.0));
+      EXPECT_EQ(tols.goal_state_tolerance.at(i).velocity, 0.02);
+    }
+  }
+
+  executor.cancel();
+}
+
+/**
  * @brief check if hold on startup is deactivated
  */
 TEST_P(TrajectoryControllerTestParameterized, no_hold_on_startup)
