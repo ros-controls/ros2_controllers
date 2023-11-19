@@ -493,8 +493,8 @@ TEST_P(TrajectoryControllerTestParameterized, update_dynamic_tolerances)
     EXPECT_EQ(tols.goal_time_tolerance, 1.0);
     for (size_t i = 0; i < joint_names_.size(); ++i)
     {
-      EXPECT_EQ(tols.state_tolerance.at(i).position, static_cast<double> i + 1.0);
-      EXPECT_EQ(tols.goal_state_tolerance.at(i).position, 10.0 * (static_cast<double> i + 1.0));
+      EXPECT_EQ(tols.state_tolerance.at(i).position, static_cast<double>(i) + 1.0);
+      EXPECT_EQ(tols.goal_state_tolerance.at(i).position, 10.0 * (static_cast<double>(i) + 1.0));
       EXPECT_EQ(tols.goal_state_tolerance.at(i).velocity, 0.02);
     }
   }
