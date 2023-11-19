@@ -132,6 +132,11 @@ public:
 
   std::vector<PidPtr> get_pids() const { return pids_; }
 
+  joint_trajectory_controller::SegmentTolerances get_tolerances() const
+  {
+    return default_tolerances_;
+  }
+
   bool has_active_traj() const { return has_active_trajectory(); }
 
   bool has_trivial_traj() const
