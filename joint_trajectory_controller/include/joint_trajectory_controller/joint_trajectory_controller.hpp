@@ -182,8 +182,6 @@ protected:
 
   std::shared_ptr<Trajectory> * traj_point_active_ptr_ = nullptr;
   std::shared_ptr<Trajectory> traj_external_point_ptr_ = nullptr;
-  std::shared_ptr<Trajectory> traj_home_point_ptr_ = nullptr;
-  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> traj_msg_home_ptr_ = nullptr;
   realtime_tools::RealtimeBuffer<std::shared_ptr<trajectory_msgs::msg::JointTrajectory>>
     traj_msg_external_point_ptr_;
 
