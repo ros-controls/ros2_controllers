@@ -73,11 +73,6 @@ joint_trajectory_controller:
       one_of<>: [["splines", "none"]],
     }
   }
-  start_with_holding: {
-    type: bool,
-    default_value: true,
-    description: "If true, start with holding position after activation. Otherwise, no command will be sent until the first trajectory is received.",
-  }
   allow_nonzero_velocity_at_trajectory_end: {
     type: bool,
     default_value: false,

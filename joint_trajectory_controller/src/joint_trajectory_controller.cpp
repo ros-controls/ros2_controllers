@@ -944,11 +944,8 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
     read_state_from_state_interfaces(last_commanded_state_);
   }
 
-  // Should the controller start by holding position at the beginning of active state?
-  if (params_.start_with_holding)
-  {
-    add_new_trajectory_msg(set_hold_position());
-  }
+  // The controller should start by holding position at the beginning of active state
+  add_new_trajectory_msg(set_hold_position());
   rt_is_holding_.writeFromNonRT(true);
 
   // parse timeout parameter
