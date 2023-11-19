@@ -119,11 +119,12 @@ controller_interface::return_type JointTrajectoryController::update(
   if (param_listener_->is_old(params_))
   {
     params_ = param_listener_->get_params();
-    // use_closed_loop_pid_adapter_ is updated in on_configure only
+    default_tolerances_ = get_segment_tolerances(params_);
+    // update the PID gains
+    // variable use_closed_loop_pid_adapter_ is updated in on_configure only
     if (use_closed_loop_pid_adapter_)
     {
       update_pids();
-      default_tolerances_ = get_segment_tolerances(params_);
     }
   }
 
