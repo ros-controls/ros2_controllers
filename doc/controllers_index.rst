@@ -72,3 +72,12 @@ In the sense of ros2_control, broadcasters are still controllers using the same 
    IMU Sensor Broadcaster <../imu_sensor_broadcaster/doc/userdoc.rst>
    Joint State Broadcaster <../joint_state_broadcaster/doc/userdoc.rst>
    Range Sensor Broadcaster <../range_sensor_broadcaster/doc/userdoc.rst>
+
+
+Common Controller Parameters
+****************************
+
+Every controller and broadcaster have a few common parameters that are necessary upon initialization. These parameters are `update_rate` and `is_async`.
+
+* `update_rate`: An unsigned integer parameter representing the rate at which every controller/broadcaster runs its update cycle. When unspecified, they run at the same frequency as the controller_manager.
+* `is_async`: A boolean parameter that is needed to specify if the controller update needs to run asynchronously.
