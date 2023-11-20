@@ -53,7 +53,7 @@ void IMUSensorBroadcasterTest::TearDown() { imu_broadcaster_.reset(nullptr); }
 
 void IMUSensorBroadcasterTest::SetUpIMUBroadcaster()
 {
-  const auto result = imu_broadcaster_->init("test_imu_sensor_broadcaster", "");
+  const auto result = imu_broadcaster_->init("test_imu_sensor_broadcaster", "", 0);
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
   std::vector<LoanedStateInterface> state_ifs;
