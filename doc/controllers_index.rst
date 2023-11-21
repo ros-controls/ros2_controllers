@@ -77,7 +77,7 @@ In the sense of ros2_control, broadcasters are still controllers using the same 
 Common Controller Parameters
 ****************************
 
-Every controller and broadcaster has a few common parameters. They are optional, but if needed they have to be set before ``onConfigure`` transition to ``inactive`` state, see `lifecycle documents <https://design.ros2.org/articles/node_lifecycle.html>`__. Once the controllers are already loaded, this transition is done using the `configure_controller` service of the controller_manager.
+Every controller and broadcaster has a few common parameters. They are optional, but if needed they have to be set before ``onConfigure`` transition to ``inactive`` state, see `lifecycle documents <https://design.ros2.org/articles/node_lifecycle.html>`__. Once the controllers are already loaded, this transition is done using the service ``configure_controller`` of the controller_manager.
 
 * ``update_rate``: An unsigned integer parameter representing the rate at which every controller/broadcaster runs its update cycle. When unspecified, they run at the same frequency as the controller_manager.
 * ``is_async``: A boolean parameter that is needed to specify if the controller update needs to run asynchronously.
