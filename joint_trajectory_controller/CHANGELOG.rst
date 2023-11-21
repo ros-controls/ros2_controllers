@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.0.0 (2023-11-21)
+------------------
 * fix tests for API break of passing controller manager update rate in init method (`#854 <https://github.com/ros-controls/ros2_controllers/issues/854>`_)
 * [JTC] Fix dynamic reconfigure of tolerances (`#849 <https://github.com/ros-controls/ros2_controllers/issues/849>`_)
 * [JTC] Remove unused home pose (`#845 <https://github.com/ros-controls/ros2_controllers/issues/845>`_)
