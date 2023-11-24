@@ -33,10 +33,10 @@ using hardware_interface::HW_IF_VELOCITY;
 class FriendJointStateBroadcaster : public joint_state_broadcaster::JointStateBroadcaster
 {
   FRIEND_TEST(JointStateBroadcasterTest, ConfigureErrorTest);
-  FRIEND_TEST(JointStateBroadcasterTest, ActivateTest);
+  FRIEND_TEST(JointStateBroadcasterTest, ActivateEmptyTest);
   FRIEND_TEST(JointStateBroadcasterTest, ActivateTestWithoutJointsParameter);
   FRIEND_TEST(JointStateBroadcasterTest, ActivateTestWithoutInterfacesParameter);
-  FRIEND_TEST(JointStateBroadcasterTest, ActivateTestTwoJointsOneInterface);
+  FRIEND_TEST(JointStateBroadcasterTest, ActivateDeactivateTestTwoJointsOneInterface);
   FRIEND_TEST(JointStateBroadcasterTest, ActivateTestOneJointTwoInterfaces);
   FRIEND_TEST(JointStateBroadcasterTest, ActivateTestTwoJointTwoInterfacesAllMissing);
   FRIEND_TEST(JointStateBroadcasterTest, ActivateTestTwoJointTwoInterfacesOneMissing);
