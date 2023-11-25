@@ -186,7 +186,7 @@ TEST_F(ForwardCommandControllerTest, ActivateSuccess)
   // check interface configuration
   auto cmd_if_conf = controller_->command_interface_configuration();
   EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
-  ASSERT_THAT(cmd_if_conf.names, SizeIs(3lu));
+  ASSERT_THAT(cmd_if_conf.names, SizeIs(joint_names_.size()));
   auto state_if_conf = controller_->state_interface_configuration();
   ASSERT_THAT(state_if_conf.names, IsEmpty());
 
@@ -196,7 +196,7 @@ TEST_F(ForwardCommandControllerTest, ActivateSuccess)
 
   // check interface configuration
   cmd_if_conf = controller_->command_interface_configuration();
-  ASSERT_THAT(cmd_if_conf.names, SizeIs(3lu));
+  ASSERT_THAT(cmd_if_conf.names, SizeIs(joint_names_.size()));
   state_if_conf = controller_->state_interface_configuration();
   ASSERT_THAT(state_if_conf.names, IsEmpty());
 }
@@ -348,7 +348,7 @@ TEST_F(ForwardCommandControllerTest, ActivateDeactivateCommandsResetSuccess)
 
   // check interface configuration
   auto cmd_if_conf = controller_->command_interface_configuration();
-  ASSERT_THAT(cmd_if_conf.names, SizeIs(3lu));
+  ASSERT_THAT(cmd_if_conf.names, SizeIs(joint_names_.size()));
   EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
   auto state_if_conf = controller_->state_interface_configuration();
   ASSERT_THAT(state_if_conf.names, IsEmpty());
@@ -358,7 +358,7 @@ TEST_F(ForwardCommandControllerTest, ActivateDeactivateCommandsResetSuccess)
 
   // check interface configuration
   cmd_if_conf = controller_->command_interface_configuration();
-  ASSERT_THAT(cmd_if_conf.names, SizeIs(3lu));
+  ASSERT_THAT(cmd_if_conf.names, SizeIs(joint_names_.size()));
   state_if_conf = controller_->state_interface_configuration();
   ASSERT_THAT(state_if_conf.names, IsEmpty());
 
@@ -382,7 +382,7 @@ TEST_F(ForwardCommandControllerTest, ActivateDeactivateCommandsResetSuccess)
 
   // check interface configuration
   cmd_if_conf = controller_->command_interface_configuration();
-  ASSERT_THAT(cmd_if_conf.names, SizeIs(3lu));  // did not change
+  ASSERT_THAT(cmd_if_conf.names, SizeIs(joint_names_.size()));  // did not change
   state_if_conf = controller_->state_interface_configuration();
   ASSERT_THAT(state_if_conf.names, IsEmpty());
 
