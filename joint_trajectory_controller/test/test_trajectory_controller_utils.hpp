@@ -261,7 +261,7 @@ public:
       initial_eff_joints);
   }
 
-  void ActivateTrajectoryController(
+  rclcpp_lifecycle::State ActivateTrajectoryController(
     bool separate_cmd_and_state_values = false,
     const std::vector<double> initial_pos_joints = INITIAL_POS_JOINTS,
     const std::vector<double> initial_vel_joints = INITIAL_VEL_JOINTS,
@@ -319,7 +319,7 @@ public:
     }
 
     traj_controller_->assign_interfaces(std::move(cmd_interfaces), std::move(state_interfaces));
-    traj_controller_->get_node()->activate();
+    return traj_controller_->get_node()->activate();
   }
 
   static void TearDownTestCase() { rclcpp::shutdown(); }

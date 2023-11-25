@@ -181,8 +181,8 @@ TEST_P(TrajectoryControllerTestParameterized, activate)
   rclcpp::executors::MultiThreadedExecutor executor;
   SetUpTrajectoryController(executor);
 
-  traj_controller_->get_node()->configure();
-  ASSERT_EQ(traj_controller_->get_state().id(), State::PRIMARY_STATE_INACTIVE);
+  auto state = traj_controller_->get_node()->configure();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
 
   auto cmd_interface_config = traj_controller_->command_interface_configuration();
   ASSERT_EQ(
@@ -192,8 +192,8 @@ TEST_P(TrajectoryControllerTestParameterized, activate)
   ASSERT_EQ(
     state_interface_config.names.size(), joint_names_.size() * state_interface_types_.size());
 
-  ActivateTrajectoryController();
-  ASSERT_EQ(traj_controller_->get_state().id(), State::PRIMARY_STATE_ACTIVE);
+  state = ActivateTrajectoryController();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_ACTIVE);
 
   executor.cancel();
 }
@@ -253,13 +253,10 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
     rclcpp::Parameter("allow_nonzero_velocity_at_trajectory_end", true));
 
   // This call is replacing the way parameters are set via launch
-  traj_controller_->configure();
-  auto state = traj_controller_->get_state();
+  auto state = traj_controller_->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
 
-  ActivateTrajectoryController();
-
-  state = traj_controller_->get_state();
+  state = ActivateTrajectoryController();
   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
   EXPECT_EQ(INITIAL_POS_JOINT1, joint_pos_[0]);
   EXPECT_EQ(INITIAL_POS_JOINT2, joint_pos_[1]);
@@ -304,8 +301,7 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
   // wait so controller would have processed the third point when reactivated -> but it shouldn't
   std::this_thread::sleep_for(std::chrono::milliseconds(3000));
 
-  ActivateTrajectoryController(false, deactivated_positions);
-  state = traj_controller_->get_state();
+  state = ActivateTrajectoryController(false, deactivated_positions);
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_ACTIVE);
 
   // it should still be holding the position at time of deactivation
