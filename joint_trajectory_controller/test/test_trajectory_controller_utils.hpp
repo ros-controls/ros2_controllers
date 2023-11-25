@@ -185,6 +185,17 @@ public:
   void SetUpTrajectoryController(
     rclcpp::Executor & executor, const std::vector<rclcpp::Parameter> & parameters = {})
   {
+    auto ret = SetUpTrajectoryControllerLocal(parameters);
+    if (ret != controller_interface::return_type::OK)
+    {
+      FAIL();
+    }
+    executor.add_node(traj_controller_->get_node()->get_node_base_interface());
+  }
+
+  controller_interface::return_type SetUpTrajectoryControllerLocal(
+    const std::vector<rclcpp::Parameter> & parameters = {})
+  {
     traj_controller_ = std::make_shared<TestableJointTrajectoryController>();
 
     auto node_options = rclcpp::NodeOptions();
@@ -196,12 +207,7 @@ public:
     parameter_overrides.insert(parameter_overrides.end(), parameters.begin(), parameters.end());
     node_options.parameter_overrides(parameter_overrides);
 
-    auto ret = traj_controller_->init(controller_name_, "", 0, "", node_options);
-    if (ret != controller_interface::return_type::OK)
-    {
-      FAIL();
-    }
-    executor.add_node(traj_controller_->get_node()->get_node_base_interface());
+    return traj_controller_->init(controller_name_, "", 0, "", node_options);
   }
 
   void SetPidParameters(
