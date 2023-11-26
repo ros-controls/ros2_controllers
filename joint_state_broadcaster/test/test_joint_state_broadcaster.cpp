@@ -531,37 +531,8 @@ TEST_F(JointStateBroadcasterTest, TestCustomInterfaceMappingUpdate)
   state_broadcaster_->get_node()->set_parameter(
     {std::string("map_interface_to_joint_state.") + HW_IF_POSITION, custom_interface_name_});
 
-  // configure ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-
-  rclcpp::Node test_node("test_node");
-  auto subs_callback = [&](const sensor_msgs::msg::JointState::SharedPtr) {};
-  auto subscription =
-    test_node.create_subscription<sensor_msgs::msg::JointState>("joint_states", 10, subs_callback);
-
-  // call update to publish the test value
-  // since update doesn't guarantee a published message, republish until received
-  int max_sub_check_loop_count = 5;  // max number of tries for pub/sub loop
-  rclcpp::WaitSet wait_set;          // block used to wait on message
-  wait_set.add_subscription(subscription);
-  while (max_sub_check_loop_count--)
-  {
-    state_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
-    // check if message has been received
-    if (wait_set.wait(std::chrono::milliseconds(2)).kind() == rclcpp::WaitResultKind::Ready)
-    {
-      break;
-    }
-  }
-  ASSERT_GE(max_sub_check_loop_count, 0) << "Test was unable to publish a message through "
-                                            "controller/broadcaster update loop";
-
-  // take message from subscription
   sensor_msgs::msg::JointState joint_state_msg;
-  rclcpp::MessageInfo msg_info;
-  ASSERT_TRUE(subscription->take(joint_state_msg, msg_info));
+  activate_and_get_joint_state_message("joint_states", joint_state_msg);
 
   const size_t NUM_JOINTS = JOINT_NAMES.size();
 
@@ -607,7 +578,8 @@ TEST_F(JointStateBroadcasterTest, UpdateTest)
     controller_interface::return_type::OK);
 }
 
-void JointStateBroadcasterTest::test_published_joint_state_message(const std::string & topic)
+void JointStateBroadcasterTest::activate_and_get_joint_state_message(
+  const std::string & topic, sensor_msgs::msg::JointState & joint_state_msg)
 {
   auto node_state = state_broadcaster_->get_node()->configure();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
@@ -638,9 +610,14 @@ void JointStateBroadcasterTest::test_published_joint_state_message(const std::st
                                             "controller/broadcaster update loop";
 
   // take message from subscription
-  sensor_msgs::msg::JointState joint_state_msg;
   rclcpp::MessageInfo msg_info;
   ASSERT_TRUE(subscription->take(joint_state_msg, msg_info));
+}
+
+void JointStateBroadcasterTest::test_published_joint_state_message(const std::string & topic)
+{
+  sensor_msgs::msg::JointState joint_state_msg;
+  activate_and_get_joint_state_message(topic, joint_state_msg);
 
   const size_t NUM_JOINTS = joint_names_.size();
   ASSERT_THAT(joint_state_msg.name, SizeIs(NUM_JOINTS));
