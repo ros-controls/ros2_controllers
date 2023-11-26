@@ -425,7 +425,8 @@ public:
     const auto end_time = start_time + wait_time;
     auto previous_time = start_time;
 
-    while (clock.now() <= end_time)
+    // it will end a time instant before end_time!
+    while (clock.now() < end_time)
     {
       auto now = clock.now();
       traj_controller_->update(now, now - previous_time);
