@@ -483,17 +483,18 @@ public:
     }
     traj_controller_->wait_for_trajectory(executor);
     updateController(controller_wait_time);
-    // Spin to receive latest state
-    executor.spin_some();
-    auto state_msg = getState();
-    ASSERT_TRUE(state_msg);
+
+    // get states from class variables
+    auto state_feedback = traj_controller_->get_state_feedback();
+    auto state_reference = traj_controller_->get_state_reference();
+
     for (size_t i = 0; i < expected_actual.positions.size(); ++i)
     {
       SCOPED_TRACE("Joint " + std::to_string(i));
       // TODO(anyone): add checking for velocities and accelerations
       if (traj_controller_->has_position_command_interface())
       {
-        EXPECT_NEAR(expected_actual.positions[i], state_msg->feedback.positions[i], allowed_delta);
+        EXPECT_NEAR(expected_actual.positions[i], state_feedback.positions[i], allowed_delta);
       }
     }
 
@@ -503,8 +504,7 @@ public:
       // TODO(anyone): add checking for velocities and accelerations
       if (traj_controller_->has_position_command_interface())
       {
-        EXPECT_NEAR(
-          expected_desired.positions[i], state_msg->reference.positions[i], allowed_delta);
+        EXPECT_NEAR(expected_desired.positions[i], state_reference.positions[i], allowed_delta);
       }
     }
   }

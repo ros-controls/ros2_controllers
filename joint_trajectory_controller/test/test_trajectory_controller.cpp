@@ -1014,6 +1014,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_jumbled_joint_order)
   SetUpAndActivateTrajectoryController(executor);
   std::vector<double> points_positions = {1.0, 2.0, 3.0};
   std::vector<size_t> jumble_map = {1, 2, 0};
+  double dt = 0.25;
   {
     trajectory_msgs::msg::JointTrajectory traj_msg;
     const std::vector<std::string> jumbled_joint_names{
@@ -1023,7 +1024,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_jumbled_joint_order)
     traj_msg.header.stamp = rclcpp::Time(0);
     traj_msg.points.resize(1);
 
-    traj_msg.points[0].time_from_start = rclcpp::Duration::from_seconds(0.25);
+    traj_msg.points[0].time_from_start = rclcpp::Duration::from_seconds(dt);
     traj_msg.points[0].positions.resize(3);
     traj_msg.points[0].positions[0] = points_positions.at(jumble_map[0]);
     traj_msg.points[0].positions[1] = points_positions.at(jumble_map[1]);
@@ -1034,19 +1035,19 @@ TEST_P(TrajectoryControllerTestParameterized, test_jumbled_joint_order)
       // factor 2 comes from the linear interpolation in the spline trajectory for constant
       // acceleration
       traj_msg.points[0].velocities[i] =
-        2 * (traj_msg.points[0].positions[i] - joint_pos_[jumble_map[i]]) / 0.25;
+        2 * (traj_msg.points[0].positions[i] - joint_pos_[jumble_map[i]]) / dt;
     }
 
     trajectory_publisher_->publish(traj_msg);
   }
 
   traj_controller_->wait_for_trajectory(executor);
-  // update just before 0.25 seconds (shorter than the trajectory duration of 0.25 seconds,
+  // update just before dt seconds (shorter than the trajectory duration of dt seconds,
   // otherwise acceleration is zero from the spline trajectory)
   // TODO(destogl): Make this time a bit shorter to increase stability on the CI?
   //                Currently COMMON_THRESHOLD is adjusted.
   // TODO(christophfroehlich): make the async update work here, e.g., add acceleration points?
-  updateController(rclcpp::Duration::from_seconds(0.25 - 1e-3));
+  updateController(rclcpp::Duration::from_seconds(dt - 1e-3));
 
   if (traj_controller_->has_position_command_interface())
   {
@@ -1408,8 +1409,6 @@ TEST_P(TrajectoryControllerTestParameterized, test_trajectory_replace)
   rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", true);
   SetUpAndActivateTrajectoryController(executor, {partial_joints_parameters});
 
-  subscribeToState();
-
   std::vector<std::vector<double>> points_old{{{2., 3., 4.}}};
   std::vector<std::vector<double>> points_old_velocities{{{0.2, 0.3, 0.4}}};
   std::vector<std::vector<double>> points_partial_new{{1.5}};
@@ -1425,6 +1424,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_trajectory_replace)
   expected_desired.velocities = {points_old_velocities[0].begin(), points_old_velocities[0].end()};
   //  Check that we reached end of points_old trajectory
   // Denis: delta was 0.1 with 0.2 works for me
+  // TODO(christophfroehlich): change to 0.1 again
   waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.2);
 
   RCLCPP_INFO(traj_controller_->get_node()->get_logger(), "Sending new trajectory");
@@ -1450,7 +1450,6 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_old_trajectory)
 {
   rclcpp::executors::SingleThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(executor, {});
-  subscribeToState();
 
   // TODO(anyone): add expectations for velocities and accelerations
   std::vector<std::vector<double>> points_old{{{2., 3., 4.}, {4., 5., 6.}}};
@@ -1480,7 +1479,6 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_partial_old_trajectory
 {
   rclcpp::executors::SingleThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(executor, {});
-  subscribeToState();
 
   std::vector<std::vector<double>> points_old{{{2., 3., 4.}, {4., 5., 6.}}};
   std::vector<std::vector<double>> points_new{{{-1., -2., -3.}, {-2., -4., -6.}}};
@@ -1513,7 +1511,6 @@ TEST_P(TrajectoryControllerTestParameterized, test_execute_partial_traj_in_futur
   rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", true);
   rclcpp::executors::SingleThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(executor, {partial_joints_parameters});
-  subscribeToState();
 
   RCLCPP_WARN(
     traj_controller_->get_node()->get_logger(),
