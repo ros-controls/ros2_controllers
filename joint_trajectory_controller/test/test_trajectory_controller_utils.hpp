@@ -156,8 +156,6 @@ public:
     return state_publisher_->msg_;
   }
 
-  void unlock_publisher() { state_publisher_->unlock(); }
-
   trajectory_msgs::msg::JointTrajectoryPoint get_state_feedback() { return state_current_; }
   trajectory_msgs::msg::JointTrajectoryPoint get_state_reference() { return state_desired_; }
   trajectory_msgs::msg::JointTrajectoryPoint get_state_error() { return state_error_; }
@@ -431,29 +429,6 @@ public:
       auto now = clock.now();
       traj_controller_->update(now, now - previous_time);
       previous_time = now;
-    }
-  }
-
-  void updateControllerAsyncPublisher(
-    rclcpp::Duration wait_time = rclcpp::Duration::from_seconds(0.2))
-  {
-    auto clock = rclcpp::Clock(RCL_STEADY_TIME);
-    const auto start_time = clock.now();
-    const auto end_time = start_time + wait_time;
-    auto time_counter = start_time;
-    // set 10ms as update rate
-    auto update_rate = rclcpp::Duration::from_seconds(0.01);
-    while (time_counter <= end_time)
-    {
-      std::cerr << "update " << time_counter.seconds() << std::endl;
-
-      // ensure that try_lock has success in the update method
-      traj_controller_->unlock_publisher();
-      // needed for the realtime publisher's thread for publishingLoop
-      std::this_thread::sleep_for(std::chrono::microseconds(500));
-
-      traj_controller_->update(time_counter, update_rate);
-      time_counter += update_rate;
     }
   }
 
