@@ -59,7 +59,7 @@ using test_trajectory_controllers::TrajectoryControllerTest;
 using test_trajectory_controllers::TrajectoryControllerTestParameterized;
 
 void spin(rclcpp::executors::MultiThreadedExecutor * exe) { exe->spin(); }
-#if 0
+
 TEST_P(TrajectoryControllerTestParameterized, configure_state_ignores_commands)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
@@ -1423,9 +1423,8 @@ TEST_P(TrajectoryControllerTestParameterized, test_trajectory_replace)
   expected_actual.velocities = {points_old_velocities[0].begin(), points_old_velocities[0].end()};
   expected_desired.velocities = {points_old_velocities[0].begin(), points_old_velocities[0].end()};
   //  Check that we reached end of points_old trajectory
-  // Denis: delta was 0.1 with 0.2 works for me
-  // TODO(christophfroehlich): change to 0.1 again
-  waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.2);
+  auto end_time =
+    waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
 
   RCLCPP_INFO(traj_controller_->get_node()->get_logger(), "Sending new trajectory");
   points_partial_new_velocities[0][0] =
@@ -1440,7 +1439,8 @@ TEST_P(TrajectoryControllerTestParameterized, test_trajectory_replace)
   expected_desired.velocities[1] = 0.0;
   expected_desired.velocities[2] = 0.0;
   expected_actual = expected_desired;
-  waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
+  waitAndCompareState(
+    expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1, end_time);
 }
 
 /**
@@ -1463,7 +1463,8 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_old_trajectory)
   expected_actual.positions = {points_old[0].begin(), points_old[0].end()};
   expected_desired = expected_actual;
   //  Check that we reached end of points_old[0] trajectory
-  waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
+  auto end_time =
+    waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
 
   RCLCPP_INFO(traj_controller_->get_node()->get_logger(), "Sending new trajectory in the past");
   //  New trajectory will end before current time
@@ -1472,7 +1473,8 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_old_trajectory)
   expected_actual.positions = {points_old[1].begin(), points_old[1].end()};
   expected_desired = expected_actual;
   publish(time_from_start, points_new, new_traj_start);
-  waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
+  waitAndCompareState(
+    expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1, end_time);
 }
 
 TEST_P(TrajectoryControllerTestParameterized, test_ignore_partial_old_trajectory)
@@ -1491,19 +1493,20 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_partial_old_trajectory
   expected_actual.positions = {points_old[0].begin(), points_old[0].end()};
   expected_desired = expected_actual;
   //  Check that we reached end of points_old[0]trajectory
-  waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
+  auto end_time =
+    waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
 
   // send points_new before the old trajectory is finished
   RCLCPP_INFO(
     traj_controller_->get_node()->get_logger(), "Sending new trajectory partially in the past");
   //  New trajectory first point is in the past, second is in the future
-  rclcpp::Time new_traj_start =
-    rclcpp::Clock(RCL_STEADY_TIME).now() - delay - std::chrono::milliseconds(100);
+  rclcpp::Time new_traj_start = end_time - delay - std::chrono::milliseconds(100);
   publish(time_from_start, points_new, new_traj_start);
   // it should not have accepted the new goal but finish the old one
   expected_actual.positions = {points_old[1].begin(), points_old[1].end()};
   expected_desired.positions = {points_old[1].begin(), points_old[1].end()};
-  waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
+  waitAndCompareState(
+    expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1, end_time);
 }
 
 TEST_P(TrajectoryControllerTestParameterized, test_execute_partial_traj_in_future)
@@ -1535,7 +1538,8 @@ TEST_P(TrajectoryControllerTestParameterized, test_execute_partial_traj_in_futur
   expected_actual.positions = {full_traj[0].begin(), full_traj[0].end()};
   expected_desired = expected_actual;
   //  Check that we reached end of points_old[0]trajectory and are starting points_old[1]
-  waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
+  auto end_time =
+    waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
 
   // Send partial trajectory starting after full trajecotry is complete
   RCLCPP_INFO(traj_controller_->get_node()->get_logger(), "Sending new trajectory in the future");
@@ -1548,7 +1552,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_execute_partial_traj_in_futur
   expected_desired = expected_actual;
 
   waitAndCompareState(
-    expected_actual, expected_desired, executor, rclcpp::Duration(delay * (2 + 2)), 0.1);
+    expected_actual, expected_desired, executor, rclcpp::Duration(delay * (2 + 2)), 0.1, end_time);
 }
 
 // TODO(destogl) this test fails with errors
@@ -1905,7 +1909,6 @@ TEST_P(TrajectoryControllerTestParameterized, test_state_tolerances_fail)
   expectHoldingPoint(joint_state_pos_);
 }
 
-#endif
 TEST_P(TrajectoryControllerTestParameterized, test_goal_tolerances_fail)
 {
   // set joint tolerance parameters

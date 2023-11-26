@@ -477,17 +477,18 @@ public:
     return end_time;
   }
 
-  void waitAndCompareState(
+  rclcpp::Time waitAndCompareState(
     trajectory_msgs::msg::JointTrajectoryPoint expected_actual,
     trajectory_msgs::msg::JointTrajectoryPoint expected_desired, rclcpp::Executor & executor,
-    rclcpp::Duration controller_wait_time, double allowed_delta)
+    rclcpp::Duration controller_wait_time, double allowed_delta,
+    rclcpp::Time start_time = rclcpp::Time(0, 0, RCL_STEADY_TIME))
   {
     {
       std::lock_guard<std::mutex> guard(state_mutex_);
       state_msg_.reset();
     }
     traj_controller_->wait_for_trajectory(executor);
-    updateController(controller_wait_time);
+    auto end_time = updateControllerAsync(controller_wait_time, start_time);
 
     // get states from class variables
     auto state_feedback = traj_controller_->get_state_feedback();
@@ -512,6 +513,8 @@ public:
         EXPECT_NEAR(expected_desired.positions[i], state_reference.positions[i], allowed_delta);
       }
     }
+
+    return end_time;
   }
 
   std::shared_ptr<control_msgs::msg::JointTrajectoryControllerState> getState() const
