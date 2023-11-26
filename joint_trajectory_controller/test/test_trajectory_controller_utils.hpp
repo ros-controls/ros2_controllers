@@ -39,6 +39,8 @@ const std::vector<double> INITIAL_VEL_JOINTS = {0.0, 0.0, 0.0};
 const std::vector<double> INITIAL_ACC_JOINTS = {0.0, 0.0, 0.0};
 const std::vector<double> INITIAL_EFF_JOINTS = {0.0, 0.0, 0.0};
 
+const auto update_rate = rclcpp::Duration::from_seconds(0.01);
+
 bool is_same_sign_or_zero(double val1, double val2)
 {
   return val1 * val2 > 0.0 || (val1 == 0.0 && val2 == 0.0);
@@ -150,11 +152,6 @@ public:
   }
 
   double get_cmd_timeout() { return cmd_timeout_; }
-
-  joint_trajectory_controller::JointTrajectoryController::ControllerStateMsg get_state_msg()
-  {
-    return state_publisher_->msg_;
-  }
 
   trajectory_msgs::msg::JointTrajectoryPoint get_state_feedback() { return state_current_; }
   trajectory_msgs::msg::JointTrajectoryPoint get_state_reference() { return state_desired_; }
@@ -423,12 +420,12 @@ public:
     const auto end_time = start_time + wait_time;
     auto previous_time = start_time;
 
-    // it will end a time instant before end_time!
-    while (clock.now() < end_time)
+    while (clock.now() <= end_time)
     {
       auto now = clock.now();
       traj_controller_->update(now, now - previous_time);
       previous_time = now;
+      std::this_thread::sleep_for(update_rate.to_chrono<std::chrono::milliseconds>());
     }
   }
 
@@ -442,8 +439,6 @@ public:
     }
     const auto end_time = start_time + wait_time;
     auto time_counter = start_time;
-    // set 10ms as update rate
-    auto update_rate = rclcpp::Duration::from_seconds(0.01);
     while (time_counter <= end_time)
     {
       traj_controller_->update(time_counter, update_rate);
