@@ -39,8 +39,6 @@ const std::vector<double> INITIAL_VEL_JOINTS = {0.0, 0.0, 0.0};
 const std::vector<double> INITIAL_ACC_JOINTS = {0.0, 0.0, 0.0};
 const std::vector<double> INITIAL_EFF_JOINTS = {0.0, 0.0, 0.0};
 
-const auto update_rate = rclcpp::Duration::from_seconds(0.01);
-
 bool is_same_sign_or_zero(double val1, double val2)
 {
   return val1 * val2 > 0.0 || (val1 == 0.0 && val2 == 0.0);
@@ -413,7 +411,17 @@ public:
     trajectory_publisher_->publish(traj_msg);
   }
 
-  void updateController(rclcpp::Duration wait_time = rclcpp::Duration::from_seconds(0.2))
+  /**
+   * @brief a wrapper for update() method of JTC, running synchronously with the clock
+   * @param wait_time - the time span for updating the controller
+   * @param update_rate - the rate at which the controller is updated
+   *
+   * @note use the faster updateControllerAsync() if no subscriptions etc.
+   * have to be used from the waitSet/executor
+   */
+  void updateController(
+    rclcpp::Duration wait_time = rclcpp::Duration::from_seconds(0.2),
+    const rclcpp::Duration update_rate = rclcpp::Duration::from_seconds(0.01))
   {
     auto clock = rclcpp::Clock(RCL_STEADY_TIME);
     const auto start_time = clock.now();
@@ -429,9 +437,20 @@ public:
     }
   }
 
+  /**
+   * @brief a wrapper for update() method of JTC, running asynchronously from the clock
+   * @return the time at which the update finished
+   * @param wait_time - the time span for updating the controller
+   * @param start_time - the time at which the update should start
+   * @param update_rate - the rate at which the controller is updated
+   *
+   * @note this is faster than updateController() and can be used if no subscriptions etc.
+   * have to be used from the waitSet/executor
+   */
   rclcpp::Time updateControllerAsync(
     rclcpp::Duration wait_time = rclcpp::Duration::from_seconds(0.2),
-    rclcpp::Time start_time = rclcpp::Time(0, 0, RCL_STEADY_TIME))
+    rclcpp::Time start_time = rclcpp::Time(0, 0, RCL_STEADY_TIME),
+    const rclcpp::Duration update_rate = rclcpp::Duration::from_seconds(0.01))
   {
     if (start_time == rclcpp::Time(0, 0, RCL_STEADY_TIME))
     {
