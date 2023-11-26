@@ -457,10 +457,14 @@ public:
     }
   }
 
-  void updateControllerAsync(rclcpp::Duration wait_time = rclcpp::Duration::from_seconds(0.2))
+  rclcpp::Time updateControllerAsync(
+    rclcpp::Duration wait_time = rclcpp::Duration::from_seconds(0.2),
+    rclcpp::Time start_time = rclcpp::Time(0, 0, RCL_STEADY_TIME))
   {
-    auto clock = rclcpp::Clock(RCL_STEADY_TIME);
-    const auto start_time = clock.now();
+    if (start_time == rclcpp::Time(0, 0, RCL_STEADY_TIME))
+    {
+      start_time = rclcpp::Clock(RCL_STEADY_TIME).now();
+    }
     const auto end_time = start_time + wait_time;
     auto time_counter = start_time;
     // set 10ms as update rate
@@ -470,6 +474,7 @@ public:
       traj_controller_->update(time_counter, update_rate);
       time_counter += update_rate;
     }
+    return end_time;
   }
 
   void waitAndCompareState(
