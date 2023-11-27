@@ -531,19 +531,12 @@ TEST_F(JointStateBroadcasterTest, TestCustomInterfaceMappingUpdate)
   state_broadcaster_->get_node()->set_parameter(
     {std::string("map_interface_to_joint_state.") + HW_IF_POSITION, custom_interface_name_});
 
-  // configure ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-
-  ASSERT_EQ(
-    state_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
+  sensor_msgs::msg::JointState joint_state_msg;
+  activate_and_get_joint_state_message("joint_states", joint_state_msg);
 
   const size_t NUM_JOINTS = JOINT_NAMES.size();
 
   // joint state initialized
-  const auto & joint_state_msg = state_broadcaster_->realtime_joint_state_publisher_->msg_;
   ASSERT_THAT(joint_state_msg.name, ElementsAreArray(JOINT_NAMES));
   ASSERT_THAT(joint_state_msg.position, SizeIs(NUM_JOINTS));
   ASSERT_EQ(joint_state_msg.position[0], custom_joint_value_);
@@ -585,7 +578,8 @@ TEST_F(JointStateBroadcasterTest, UpdateTest)
     controller_interface::return_type::OK);
 }
 
-void JointStateBroadcasterTest::test_published_joint_state_message(const std::string & topic)
+void JointStateBroadcasterTest::activate_and_get_joint_state_message(
+  const std::string & topic, sensor_msgs::msg::JointState & joint_state_msg)
 {
   auto node_state = state_broadcaster_->get_node()->configure();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
@@ -616,9 +610,14 @@ void JointStateBroadcasterTest::test_published_joint_state_message(const std::st
                                             "controller/broadcaster update loop";
 
   // take message from subscription
-  sensor_msgs::msg::JointState joint_state_msg;
   rclcpp::MessageInfo msg_info;
   ASSERT_TRUE(subscription->take(joint_state_msg, msg_info));
+}
+
+void JointStateBroadcasterTest::test_published_joint_state_message(const std::string & topic)
+{
+  sensor_msgs::msg::JointState joint_state_msg;
+  activate_and_get_joint_state_message(topic, joint_state_msg);
 
   const size_t NUM_JOINTS = joint_names_.size();
   ASSERT_THAT(joint_state_msg.name, SizeIs(NUM_JOINTS));
