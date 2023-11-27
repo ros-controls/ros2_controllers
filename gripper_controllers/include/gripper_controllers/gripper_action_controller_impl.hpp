@@ -226,20 +226,21 @@ template <const char * HardwareInterface>
 controller_interface::CallbackReturn GripperActionController<HardwareInterface>::on_activate(
   const rclcpp_lifecycle::State &)
 {
-  auto position_command_interface_it = std::find_if(
+  auto command_interface_it = std::find_if(
     command_interfaces_.begin(), command_interfaces_.end(),
     [](const hardware_interface::LoanedCommandInterface & command_interface)
-    { return command_interface.get_interface_name() == hardware_interface::HW_IF_POSITION; });
-  if (position_command_interface_it == command_interfaces_.end())
-  {
-    RCLCPP_ERROR(get_node()->get_logger(), "Expected 1 position command interface");
-    return controller_interface::CallbackReturn::ERROR;
-  }
-  if (position_command_interface_it->get_prefix_name() != params_.joint)
+    { return command_interface.get_interface_name() == HardwareInterface; });
+  if (command_interface_it == command_interfaces_.end())
   {
     RCLCPP_ERROR_STREAM(
-      get_node()->get_logger(), "Position command interface is different than joint name `"
-                                  << position_command_interface_it->get_prefix_name() << "` != `"
+      get_node()->get_logger(), "Expected 1 " << HardwareInterface << " command interface");
+    return controller_interface::CallbackReturn::ERROR;
+  }
+  if (command_interface_it->get_prefix_name() != params_.joint)
+  {
+    RCLCPP_ERROR_STREAM(
+      get_node()->get_logger(), "Command interface is different than joint name `"
+                                  << command_interface_it->get_prefix_name() << "` != `"
                                   << params_.joint << "`");
     return controller_interface::CallbackReturn::ERROR;
   }
@@ -278,12 +279,12 @@ controller_interface::CallbackReturn GripperActionController<HardwareInterface>:
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  joint_position_command_interface_ = *position_command_interface_it;
+  joint_command_interface_ = *command_interface_it;
   joint_position_state_interface_ = *position_state_interface_it;
   joint_velocity_state_interface_ = *velocity_state_interface_it;
 
   // Hardware interface adapter
-  hw_iface_adapter_.init(joint_position_command_interface_, get_node());
+  hw_iface_adapter_.init(joint_command_interface_, get_node());
 
   // Command - non RT version
   command_struct_.position_ = joint_position_state_interface_->get().get_value();
@@ -311,7 +312,7 @@ template <const char * HardwareInterface>
 controller_interface::CallbackReturn GripperActionController<HardwareInterface>::on_deactivate(
   const rclcpp_lifecycle::State &)
 {
-  joint_position_command_interface_ = std::nullopt;
+  joint_command_interface_ = std::nullopt;
   joint_position_state_interface_ = std::nullopt;
   joint_velocity_state_interface_ = std::nullopt;
   release_interfaces();
@@ -324,7 +325,7 @@ GripperActionController<HardwareInterface>::command_interface_configuration() co
 {
   return {
     controller_interface::interface_configuration_type::INDIVIDUAL,
-    {params_.joint + "/" + hardware_interface::HW_IF_POSITION}};
+    {params_.joint + "/" + HardwareInterface}};
 }
 
 template <const char * HardwareInterface>
