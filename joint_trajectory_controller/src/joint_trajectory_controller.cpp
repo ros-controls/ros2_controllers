@@ -64,6 +64,15 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
     return CallbackReturn::ERROR;
   }
 
+  // TODO(christophfroehlich): remove deprecation warning
+  if (params_.allow_nonzero_velocity_at_trajectory_end == false)
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "\"allow_nonzero_velocity_at_trajectory_end\" is set to false."
+      "The default behavior changed to false, and trajectories might get discarded.");
+  }
+
   return CallbackReturn::SUCCESS;
 }
 
