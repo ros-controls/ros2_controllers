@@ -22,6 +22,9 @@
 
 #include "hardware_interface/loaned_state_interface.hpp"
 
+using testing::IsEmpty;
+using testing::SizeIs;
+
 void RangeSensorBroadcasterTest::SetUp()
 {
   // initialize controller
@@ -130,9 +133,15 @@ TEST_F(RangeSensorBroadcasterTest, Configure_RangeBroadcaster_Success)
   ASSERT_EQ(
     range_broadcaster_->on_configure(rclcpp_lifecycle::State()),
     controller_interface::CallbackReturn::SUCCESS);
+
+  // check interface configuration
+  auto cmd_if_conf = range_broadcaster_->command_interface_configuration();
+  ASSERT_THAT(cmd_if_conf.names, IsEmpty());
+  auto state_if_conf = range_broadcaster_->state_interface_configuration();
+  ASSERT_THAT(state_if_conf.names, SizeIs(1lu));
 }
 
-TEST_F(RangeSensorBroadcasterTest, Activate_RangeBroadcaster_Success)
+TEST_F(RangeSensorBroadcasterTest, ActivateDeactivate_RangeBroadcaster_Success)
 {
   init_broadcaster("test_range_sensor_broadcaster");
 
@@ -141,6 +150,22 @@ TEST_F(RangeSensorBroadcasterTest, Activate_RangeBroadcaster_Success)
   ASSERT_EQ(
     range_broadcaster_->on_activate(rclcpp_lifecycle::State()),
     controller_interface::CallbackReturn::SUCCESS);
+
+  // check interface configuration
+  auto cmd_if_conf = range_broadcaster_->command_interface_configuration();
+  ASSERT_THAT(cmd_if_conf.names, IsEmpty());
+  auto state_if_conf = range_broadcaster_->state_interface_configuration();
+  ASSERT_THAT(state_if_conf.names, SizeIs(1lu));
+
+  ASSERT_EQ(
+    range_broadcaster_->on_deactivate(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::SUCCESS);
+
+  // check interface configuration
+  cmd_if_conf = range_broadcaster_->command_interface_configuration();
+  ASSERT_THAT(cmd_if_conf.names, IsEmpty());
+  state_if_conf = range_broadcaster_->state_interface_configuration();
+  ASSERT_THAT(state_if_conf.names, SizeIs(1lu));  // did not change
 }
 
 TEST_F(RangeSensorBroadcasterTest, Update_RangeBroadcaster_Success)
