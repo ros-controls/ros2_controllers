@@ -237,21 +237,24 @@ public:
     const std::vector<double> initial_acc_joints = INITIAL_ACC_JOINTS,
     const std::vector<double> initial_eff_joints = INITIAL_EFF_JOINTS)
   {
-    SetUpTrajectoryController(executor);
+    auto has_nonzero_vel_param =
+      std::find_if(
+        parameters.begin(), parameters.end(),
+        [](const rclcpp::Parameter & param) {
+          return param.get_name() == "allow_nonzero_velocity_at_trajectory_end";
+        }) != parameters.end();
 
-    // add this to simplify tests, can be overwritten by parameters
-    rclcpp::Parameter nonzero_vel_parameter("allow_nonzero_velocity_at_trajectory_end", true);
-    traj_controller_->get_node()->set_parameter(nonzero_vel_parameter);
+    std::vector<rclcpp::Parameter> parameters_local = parameters;
+    if (!has_nonzero_vel_param)
+    {
+      // add this to simplify tests, if not set already
+      parameters_local.emplace_back("allow_nonzero_velocity_at_trajectory_end", true);
+    }
+    // read-only parameters have to be set before init -> won't be read otherwise
+    SetUpTrajectoryController(executor, parameters_local);
 
     // set pid parameters before configure
     SetPidParameters(k_p, ff, angle_wraparound);
-
-    // set optional parameters
-    for (const auto & param : parameters)
-    {
-      traj_controller_->get_node()->set_parameter(param);
-    }
-
     traj_controller_->get_node()->configure();
 
     ActivateTrajectoryController(

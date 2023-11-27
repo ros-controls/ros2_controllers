@@ -1531,25 +1531,18 @@ TEST_P(TrajectoryControllerTestParameterized, test_execute_partial_traj_in_futur
     expected_actual, expected_desired, executor, rclcpp::Duration(delay * (2 + 2)), 0.1, end_time);
 }
 
-// TODO(destogl) this test fails with errors
-// second publish() gives an error, because end time is before current time
-// as well as
-// 2: The difference between joint_state_pos_[0] and joint_pos_[0] is 0.02999799000000003,
-// which exceeds COMMON_THRESHOLD, where
-// 2: joint_state_pos_[0] evaluates to 6.2999999999999998,
-// 2: joint_pos_[0] evaluates to 6.2700020099999998, and
-// 2: COMMON_THRESHOLD evaluates to 0.0011000000000000001.
-// 2: [  FAILED  ] PositionTrajectoryControllers/TrajectoryControllerTestParameterized.
-// test_jump_when_state_tracking_error_updated/0, where GetParam() =
-// ({ "position" }, { "position" }) (3372 ms)
-
-#if 0
 TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_error_updated)
 {
   rclcpp::executors::SingleThreadedExecutor executor;
   // default if false so it will not be actually set parameter
   rclcpp::Parameter is_open_loop_parameters("open_loop_control", false);
-  SetUpAndActivateTrajectoryController(executor,  {is_open_loop_parameters}, true);
+  SetUpAndActivateTrajectoryController(executor, {is_open_loop_parameters}, true);
+
+  if (traj_controller_->has_position_command_interface() == false)
+  {
+    // only makes sense with position command interface
+    return;
+  }
 
   // goal setup
   std::vector<double> first_goal = {3.3, 4.4, 5.5};
@@ -1562,95 +1555,95 @@ TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_erro
   builtin_interfaces::msg::Duration time_from_start;
   time_from_start.sec = 1;
   time_from_start.nanosec = 0;
+  double trajectory_frac = rclcpp::Duration::from_seconds(0.01).seconds() /
+                           (time_from_start.sec + time_from_start.nanosec * 1e-9);
   std::vector<std::vector<double>> points{{first_goal}};
-  publish(time_from_start, points,
-    rclcpp::Time(0.0, 0.0, RCL_STEADY_TIME), {}, first_goal_velocities);
+  publish(
+    time_from_start, points, rclcpp::Time(0.0, 0.0, RCL_STEADY_TIME), {}, first_goal_velocities);
   traj_controller_->wait_for_trajectory(executor);
   updateControllerAsync(rclcpp::Duration::from_seconds(1.1));
 
-  if (traj_controller_->has_position_command_interface())
-  {
-    // JTC is executing trajectory in open-loop therefore:
-    // - internal state does not have to be updated (in this test-case it shouldn't)
-    // - internal command is updated
-    EXPECT_NEAR(INITIAL_POS_JOINT1, joint_state_pos_[0], COMMON_THRESHOLD);
-    EXPECT_NEAR(first_goal[0], joint_pos_[0], COMMON_THRESHOLD);
+  // JTC is executing trajectory in open-loop therefore:
+  // - internal state does not have to be updated (in this test-case it shouldn't)
+  // - internal command is updated
+  EXPECT_NEAR(INITIAL_POS_JOINT1, joint_state_pos_[0], COMMON_THRESHOLD);
+  EXPECT_NEAR(first_goal[0], joint_pos_[0], COMMON_THRESHOLD);
 
-    // State interface should have offset from the command before starting a new trajectory
-    joint_state_pos_[0] = first_goal[0] - state_from_command_offset;
+  // State interface should have offset from the command before starting a new trajectory
+  joint_state_pos_[0] = first_goal[0] - state_from_command_offset;
 
-    // Move joint further in the same direction as before (to the second goal)
-    points = {{second_goal}};
-    publish(time_from_start, points,
-      rclcpp::Time(1.0, 0.0, RCL_STEADY_TIME), {}, second_goal_velocities);
-    traj_controller_->wait_for_trajectory(executor);
+  // Move joint further in the same direction as before (to the second goal)
+  points = {{second_goal}};
+  publish(time_from_start, points, rclcpp::Time(0, 0, RCL_STEADY_TIME), {}, second_goal_velocities);
+  traj_controller_->wait_for_trajectory(executor);
 
-    // One the first update(s) there should be a "jump" in opposite direction from command
-    // (towards the state value)
-    EXPECT_NEAR(first_goal[0], joint_pos_[0], COMMON_THRESHOLD);
-    updateControllerAsync(rclcpp::Duration::from_seconds(0.01));
-    // Expect backward commands at first
-    EXPECT_NEAR(joint_state_pos_[0], joint_pos_[0], state_from_command_offset + COMMON_THRESHOLD);
-    EXPECT_GT(joint_pos_[0], joint_state_pos_[0]);
-    EXPECT_LT(joint_pos_[0], first_goal[0]);
-    updateControllerAsync(rclcpp::Duration::from_seconds(0.01));
-    EXPECT_GT(joint_pos_[0], joint_state_pos_[0]);
-    EXPECT_LT(joint_pos_[0], first_goal[0]);
-    updateControllerAsync(rclcpp::Duration::from_seconds(0.01));
-    EXPECT_GT(joint_pos_[0], joint_state_pos_[0]);
-    EXPECT_LT(joint_pos_[0], first_goal[0]);
+  // One the first update(s) there should be a "jump" in opposite direction from command
+  // (towards the state value)
+  EXPECT_NEAR(first_goal[0], joint_pos_[0], COMMON_THRESHOLD);
+  auto end_time = updateControllerAsync(rclcpp::Duration::from_seconds(0.01));
+  // Expect backward commands at first, consider advancement of the trajectory
+  // exact value is not directly predictable, because of the spline interpolation -> increase
+  // tolerance
+  EXPECT_NEAR(
+    joint_state_pos_[0] + (second_goal[0] - joint_state_pos_[0]) * trajectory_frac, joint_pos_[0],
+    0.1);
+  EXPECT_GT(joint_pos_[0], joint_state_pos_[0]);
+  EXPECT_LT(joint_pos_[0], first_goal[0]);
+  end_time = updateControllerAsync(rclcpp::Duration::from_seconds(0.01), end_time);
+  EXPECT_GT(joint_pos_[0], joint_state_pos_[0]);
+  EXPECT_LT(joint_pos_[0], first_goal[0]);
+  end_time = updateControllerAsync(rclcpp::Duration::from_seconds(0.01), end_time);
+  EXPECT_GT(joint_pos_[0], joint_state_pos_[0]);
+  EXPECT_LT(joint_pos_[0], first_goal[0]);
 
-    // Finally the second goal will be commanded/reached
-    updateControllerAsync(rclcpp::Duration::from_seconds(1.1));
-    EXPECT_NEAR(second_goal[0], joint_pos_[0], COMMON_THRESHOLD);
+  // Finally the second goal will be commanded/reached
+  updateControllerAsync(rclcpp::Duration::from_seconds(1.1), end_time);
+  EXPECT_NEAR(second_goal[0], joint_pos_[0], COMMON_THRESHOLD);
 
-    // State interface should have offset from the command before starting a new trajectory
-    joint_state_pos_[0] = second_goal[0] - state_from_command_offset;
+  // State interface should have offset from the command before starting a new trajectory
+  joint_state_pos_[0] = second_goal[0] - state_from_command_offset;
 
-    // Move joint back to the first goal
-    points = {{first_goal}};
-    publish(time_from_start, points, rclcpp::Time(0.0, 0.0, RCL_STEADY_TIME));
-    traj_controller_->wait_for_trajectory(executor);
+  // Move joint back to the first goal
+  points = {{first_goal}};
+  publish(time_from_start, points, rclcpp::Time(0.0, 0.0, RCL_STEADY_TIME));
+  traj_controller_->wait_for_trajectory(executor);
 
-    // One the first update(s) there should be a "jump" in the goal direction from command
-    // (towards the state value)
-    EXPECT_NEAR(second_goal[0], joint_pos_[0], COMMON_THRESHOLD);
-    updateControllerAsync(rclcpp::Duration::from_seconds(0.01));
-    // Expect backward commands at first
-    EXPECT_NEAR(joint_state_pos_[0], joint_pos_[0], COMMON_THRESHOLD);
-    EXPECT_LT(joint_pos_[0], joint_state_pos_[0]);
-    EXPECT_GT(joint_pos_[0], first_goal[0]);
-    updateControllerAsync(rclcpp::Duration::from_seconds(0.01));
-    EXPECT_LT(joint_pos_[0], joint_state_pos_[0]);
-    EXPECT_GT(joint_pos_[0], first_goal[0]);
-    updateControllerAsync(rclcpp::Duration::from_seconds(0.01));
-    EXPECT_LT(joint_pos_[0], joint_state_pos_[0]);
-    EXPECT_GT(joint_pos_[0], first_goal[0]);
+  // One the first update(s) there should be a "jump" in the goal direction from command
+  // (towards the state value)
+  EXPECT_NEAR(second_goal[0], joint_pos_[0], COMMON_THRESHOLD);
+  end_time = updateControllerAsync(rclcpp::Duration::from_seconds(0.01));
+  // Expect backward commands at first, consider advancement of the trajectory
+  EXPECT_NEAR(
+    joint_state_pos_[0] + (first_goal[0] - joint_state_pos_[0]) * trajectory_frac, joint_pos_[0],
+    COMMON_THRESHOLD);
+  EXPECT_LT(joint_pos_[0], joint_state_pos_[0]);
+  EXPECT_GT(joint_pos_[0], first_goal[0]);
+  end_time = updateControllerAsync(rclcpp::Duration::from_seconds(0.01), end_time);
+  EXPECT_LT(joint_pos_[0], joint_state_pos_[0]);
+  EXPECT_GT(joint_pos_[0], first_goal[0]);
+  end_time = updateControllerAsync(rclcpp::Duration::from_seconds(0.01), end_time);
+  EXPECT_LT(joint_pos_[0], joint_state_pos_[0]);
+  EXPECT_GT(joint_pos_[0], first_goal[0]);
 
-    // Finally the first goal will be commanded/reached
-    updateControllerAsync(rclcpp::Duration::from_seconds(1.1));
-    EXPECT_NEAR(first_goal[0], joint_pos_[0], COMMON_THRESHOLD);
-  }
+  // Finally the first goal will be commanded/reached
+  updateControllerAsync(rclcpp::Duration::from_seconds(1.1), end_time);
+  EXPECT_NEAR(first_goal[0], joint_pos_[0], COMMON_THRESHOLD);
 
   executor.cancel();
 }
-#endif
 
-// TODO(destogl) this test fails
-// 2: The difference between second_goal[0] and joint_pos_[0] is 0.032986635000000319,
-// which exceeds COMMON_THRESHOLD, where
-// 2: second_goal[0] evaluates to 6.5999999999999996,
-// 2: joint_pos_[0] evaluates to 6.5670133649999993, and
-// 2: COMMON_THRESHOLD evaluates to 0.0011000000000000001.
-// 2: [  FAILED  ] PositionTrajectoryControllers/TrajectoryControllerTestParameterized.
-// test_no_jump_when_state_tracking_error_not_updated/1, where GetParam() =
-// ({ "position" }, { "position", "velocity" }) (3374 ms)
-#if 0
 TEST_P(TrajectoryControllerTestParameterized, test_no_jump_when_state_tracking_error_not_updated)
 {
   rclcpp::executors::SingleThreadedExecutor executor;
+  // set open loop to true, this should change behavior from above
   rclcpp::Parameter is_open_loop_parameters("open_loop_control", true);
-  SetUpAndActivateTrajectoryController(executor,  {is_open_loop_parameters}, true);
+  SetUpAndActivateTrajectoryController(executor, {is_open_loop_parameters}, true);
+
+  if (traj_controller_->has_position_command_interface() == false)
+  {
+    // only makes sense with position command interface
+    return;
+  }
 
   // goal setup
   std::vector<double> first_goal = {3.3, 4.4, 5.5};
@@ -1661,77 +1654,79 @@ TEST_P(TrajectoryControllerTestParameterized, test_no_jump_when_state_tracking_e
   builtin_interfaces::msg::Duration time_from_start;
   time_from_start.sec = 1;
   time_from_start.nanosec = 0;
+  double trajectory_frac = rclcpp::Duration::from_seconds(0.01).seconds() /
+                           (time_from_start.sec + time_from_start.nanosec * 1e-9);
   std::vector<std::vector<double>> points{{first_goal}};
   publish(time_from_start, points, rclcpp::Time(0.0, 0.0, RCL_STEADY_TIME));
   traj_controller_->wait_for_trajectory(executor);
   updateControllerAsync(rclcpp::Duration::from_seconds(1.1));
 
-  if (traj_controller_->has_position_command_interface())
-  {
-    // JTC is executing trajectory in open-loop therefore:
-    // - internal state does not have to be updated (in this test-case it shouldn't)
-    // - internal command is updated
-    EXPECT_NEAR(INITIAL_POS_JOINT1, joint_state_pos_[0], COMMON_THRESHOLD);
-    EXPECT_NEAR(first_goal[0], joint_pos_[0], COMMON_THRESHOLD);
+  // JTC is executing trajectory in open-loop therefore:
+  // - internal state does not have to be updated (in this test-case it shouldn't)
+  // - internal command is updated
+  EXPECT_NEAR(INITIAL_POS_JOINT1, joint_state_pos_[0], COMMON_THRESHOLD);
+  EXPECT_NEAR(first_goal[0], joint_pos_[0], COMMON_THRESHOLD);
 
-    // State interface should have offset from the command before starting a new trajectory
-    joint_state_pos_[0] = first_goal[0] - state_from_command_offset;
+  // State interface should have offset from the command before starting a new trajectory
+  joint_state_pos_[0] = first_goal[0] - state_from_command_offset;
 
-    // Move joint further in the same direction as before (to the second goal)
-    points = {{second_goal}};
-    publish(time_from_start, points, rclcpp::Time(0.0, 0.0, RCL_STEADY_TIME));
-    traj_controller_->wait_for_trajectory(executor);
+  // Move joint further in the same direction as before (to the second goal)
+  points = {{second_goal}};
+  publish(time_from_start, points, rclcpp::Time(0.0, 0.0, RCL_STEADY_TIME));
+  traj_controller_->wait_for_trajectory(executor);
 
-    // One the first update(s) there **should not** be a "jump" in opposite direction from
-    // command (towards the state value)
-    EXPECT_NEAR(first_goal[0], joint_pos_[0], COMMON_THRESHOLD);
-    updateControllerAsync(rclcpp::Duration::from_seconds(0.01));
-    // There should not be backward commands
-    EXPECT_NEAR(first_goal[0], joint_pos_[0], COMMON_THRESHOLD);
-    EXPECT_GT(joint_pos_[0], first_goal[0]);
-    EXPECT_LT(joint_pos_[0], second_goal[0]);
-    updateControllerAsync(rclcpp::Duration::from_seconds(0.01));
-    EXPECT_GT(joint_pos_[0], first_goal[0]);
-    EXPECT_LT(joint_pos_[0], second_goal[0]);
-    updateControllerAsync(rclcpp::Duration::from_seconds(0.01));
-    EXPECT_GT(joint_pos_[0], first_goal[0]);
-    EXPECT_LT(joint_pos_[0], second_goal[0]);
+  // One the first update(s) there **should not** be a "jump" in opposite direction from
+  // command (towards the state value)
+  EXPECT_NEAR(first_goal[0], joint_pos_[0], COMMON_THRESHOLD);
+  auto end_time = updateControllerAsync(rclcpp::Duration::from_seconds(0.01));
+  // There should not be backward commands
+  EXPECT_NEAR(
+    first_goal[0] + (second_goal[0] - first_goal[0]) * trajectory_frac, joint_pos_[0],
+    COMMON_THRESHOLD);
+  EXPECT_GT(joint_pos_[0], first_goal[0]);
+  EXPECT_LT(joint_pos_[0], second_goal[0]);
+  end_time = updateControllerAsync(rclcpp::Duration::from_seconds(0.01), end_time);
+  EXPECT_GT(joint_pos_[0], first_goal[0]);
+  EXPECT_LT(joint_pos_[0], second_goal[0]);
+  end_time = updateControllerAsync(rclcpp::Duration::from_seconds(0.01), end_time);
+  EXPECT_GT(joint_pos_[0], first_goal[0]);
+  EXPECT_LT(joint_pos_[0], second_goal[0]);
 
-    // Finally the second goal will be commanded/reached
-    updateControllerAsync(rclcpp::Duration::from_seconds(1.1));
-    EXPECT_NEAR(second_goal[0], joint_pos_[0], COMMON_THRESHOLD);
+  // Finally the second goal will be commanded/reached
+  updateControllerAsync(rclcpp::Duration::from_seconds(1.1), end_time);
+  EXPECT_NEAR(second_goal[0], joint_pos_[0], COMMON_THRESHOLD);
 
-    // State interface should have offset from the command before starting a new trajectory
-    joint_state_pos_[0] = second_goal[0] - state_from_command_offset;
+  // State interface should have offset from the command before starting a new trajectory
+  joint_state_pos_[0] = second_goal[0] - state_from_command_offset;
 
-    // Move joint back to the first goal
-    points = {{first_goal}};
-    publish(time_from_start, points, rclcpp::Time(0.0, 0.0, RCL_STEADY_TIME));
-    traj_controller_->wait_for_trajectory(executor);
+  // Move joint back to the first goal
+  points = {{first_goal}};
+  publish(time_from_start, points, rclcpp::Time(0.0, 0.0, RCL_STEADY_TIME));
+  traj_controller_->wait_for_trajectory(executor);
 
-    // One the first update(s) there **should not** be a "jump" in the goal direction from
-    // command (towards the state value)
-    EXPECT_NEAR(second_goal[0], joint_pos_[0], COMMON_THRESHOLD);
-    updateControllerAsync(rclcpp::Duration::from_seconds(0.01));
-    // There should not be a jump toward commands
-    EXPECT_NEAR(second_goal[0], joint_pos_[0], COMMON_THRESHOLD);
-    EXPECT_LT(joint_pos_[0], second_goal[0]);
-    EXPECT_GT(joint_pos_[0], first_goal[0]);
-    updateControllerAsync(rclcpp::Duration::from_seconds(0.01));
-    EXPECT_GT(joint_pos_[0], first_goal[0]);
-    EXPECT_LT(joint_pos_[0], second_goal[0]);
-    updateControllerAsync(rclcpp::Duration::from_seconds(0.01));
-    EXPECT_GT(joint_pos_[0], first_goal[0]);
-    EXPECT_LT(joint_pos_[0], second_goal[0]);
+  // One the first update(s) there **should not** be a "jump" in the goal direction from
+  // command (towards the state value)
+  EXPECT_NEAR(second_goal[0], joint_pos_[0], COMMON_THRESHOLD);
+  end_time = updateControllerAsync(rclcpp::Duration::from_seconds(0.01), end_time);
+  // There should not be a jump toward commands
+  EXPECT_NEAR(
+    second_goal[0] + (first_goal[0] - second_goal[0]) * trajectory_frac, joint_pos_[0],
+    COMMON_THRESHOLD);
+  EXPECT_LT(joint_pos_[0], second_goal[0]);
+  EXPECT_GT(joint_pos_[0], first_goal[0]);
+  end_time = updateControllerAsync(rclcpp::Duration::from_seconds(0.01), end_time);
+  EXPECT_GT(joint_pos_[0], first_goal[0]);
+  EXPECT_LT(joint_pos_[0], second_goal[0]);
+  end_time = updateControllerAsync(rclcpp::Duration::from_seconds(0.01), end_time);
+  EXPECT_GT(joint_pos_[0], first_goal[0]);
+  EXPECT_LT(joint_pos_[0], second_goal[0]);
 
-    // Finally the first goal will be commanded/reached
-    updateControllerAsync(rclcpp::Duration::from_seconds(1.1));
-    EXPECT_NEAR(first_goal[0], joint_pos_[0], COMMON_THRESHOLD);
-  }
+  // Finally the first goal will be commanded/reached
+  updateControllerAsync(rclcpp::Duration::from_seconds(1.1), end_time);
+  EXPECT_NEAR(first_goal[0], joint_pos_[0], COMMON_THRESHOLD);
 
   executor.cancel();
 }
-#endif
 
 // Testing that values are read from state interfaces when hardware is started for the first
 // time and hardware state has offset --> this is indicated by NaN values in command interfaces
