@@ -415,6 +415,42 @@ TEST_P(TrajectoryControllerTestParameterized, state_topic_consistency)
 }
 
 /**
+ * @brief check if dynamic parameters are updated
+ */
+TEST_P(TrajectoryControllerTestParameterized, update_dynamic_parameters)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+
+  SetUpAndActivateTrajectoryController(executor);
+
+  updateController();
+  auto pids = traj_controller_->get_pids();
+
+  if (traj_controller_->use_closed_loop_pid_adapter())
+  {
+    EXPECT_EQ(pids.size(), 3);
+    auto gain_0 = pids.at(0)->getGains();
+    EXPECT_EQ(gain_0.p_gain_, 0.0);
+
+    double kp = 1.0;
+    SetPidParameters(kp);
+    updateController();
+
+    pids = traj_controller_->get_pids();
+    EXPECT_EQ(pids.size(), 3);
+    gain_0 = pids.at(0)->getGains();
+    EXPECT_EQ(gain_0.p_gain_, kp);
+  }
+  else
+  {
+    // nothing to check here, skip further test
+    EXPECT_EQ(pids.size(), 0);
+  }
+
+  executor.cancel();
+}
+
+/**
  * @brief check if hold on startup is deactivated
  */
 TEST_P(TrajectoryControllerTestParameterized, no_hold_on_startup)

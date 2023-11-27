@@ -2,6 +2,9 @@
 Changelog for package ros2_controllers_test_nodes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.18.0 (2023-11-21)
+-------------------
+
 3.17.0 (2023-10-31)
 -------------------
 * [TestNodes] Optimize output about setup of JTC publisher (`#792 <https://github.com/ros-controls/ros2_controllers/issues/792>`_)
