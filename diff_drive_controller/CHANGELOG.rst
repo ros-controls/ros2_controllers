@@ -2,6 +2,11 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.18.0 (2023-11-21)
+-------------------
+* [diff_drive_controller] Fixed typos in diff_drive_controller_parameter.yaml. (`#822 <https://github.com/ros-controls/ros2_controllers/issues/822>`_) (`#824 <https://github.com/ros-controls/ros2_controllers/issues/824>`_)
+* Contributors: Tony Baltovski
+
 3.17.0 (2023-10-31)
 -------------------
 
