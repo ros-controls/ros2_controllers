@@ -248,7 +248,7 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
   // it should still be holding the position at time of deactivation
   // i.e., active but trivial trajectory (one point only)
   traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.1));
-  expectHoldingPoint(deactivated_positions);
+  expectCommandPoint(deactivated_positions);
 
   executor.cancel();
 }
@@ -478,7 +478,7 @@ TEST_P(TrajectoryControllerTestParameterized, hold_on_startup)
   ASSERT_TRUE(traj_controller_->has_active_traj());
   // one point, being the position at startup
   std::vector<double> initial_positions{INITIAL_POS_JOINT1, INITIAL_POS_JOINT2, INITIAL_POS_JOINT3};
-  expectHoldingPoint(initial_positions);
+  expectCommandPoint(initial_positions);
 
   executor.cancel();
 }
@@ -838,12 +838,12 @@ TEST_P(TrajectoryControllerTestParameterized, timeout)
   // should hold last position with zero velocity
   if (traj_controller_->has_position_command_interface())
   {
-    expectHoldingPoint(points.at(2));
+    expectCommandPoint(points.at(2));
   }
   else
   {
     // no integration to position state interface from velocity/acceleration
-    expectHoldingPoint(INITIAL_POS_JOINTS);
+    expectCommandPoint(INITIAL_POS_JOINTS);
   }
 
   executor.cancel();
@@ -1814,7 +1814,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_state_tolerances_fail)
   updateControllerAsync(rclcpp::Duration(FIRST_POINT_TIME));
 
   // it should have aborted and be holding now
-  expectHoldingPoint(joint_state_pos_);
+  expectCommandPoint(joint_state_pos_);
 }
 
 TEST_P(TrajectoryControllerTestParameterized, test_goal_tolerances_fail)
@@ -1846,14 +1846,14 @@ TEST_P(TrajectoryControllerTestParameterized, test_goal_tolerances_fail)
   auto end_time = updateControllerAsync(rclcpp::Duration(4 * FIRST_POINT_TIME));
 
   // it should have aborted and be holding now
-  expectHoldingPoint(joint_state_pos_);
+  expectCommandPoint(joint_state_pos_);
 
   // what happens if we wait longer but it harms the tolerance again?
   auto hold_position = joint_state_pos_;
   joint_state_pos_.at(0) = -3.3;
   updateControllerAsync(rclcpp::Duration(FIRST_POINT_TIME), end_time);
   // it should be still holding the old point
-  expectHoldingPoint(hold_position);
+  expectCommandPoint(hold_position);
 }
 
 // position controllers
