@@ -282,7 +282,7 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_success_single_point_with_ve
   EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
 
   // run an update
-  updateController(rclcpp::Duration::from_seconds(0.01));
+  updateControllerAsync(rclcpp::Duration::from_seconds(0.01));
 
   // it should be holding the last position goal
   // i.e., active but trivial trajectory (one point only)
@@ -379,7 +379,7 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_success_multi_point_with_vel
   EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
 
   // run an update
-  updateController(rclcpp::Duration::from_seconds(0.01));
+  updateControllerAsync(rclcpp::Duration::from_seconds(0.01));
 
   // it should be holding the last position goal
   // i.e., active but trivial trajectory (one point only)
