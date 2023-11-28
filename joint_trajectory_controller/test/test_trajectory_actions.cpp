@@ -249,15 +249,7 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_success_single_point_sendgoa
   // it should be holding the last position goal
   // i.e., active but trivial trajectory (one point only)
   // note: the action goal also is a trivial trajectory
-  if (traj_controller_->has_position_command_interface())
-  {
-    expectCommandPoint(point_positions);
-  }
-  else
-  {
-    // no integration to position state interface from velocity/acceleration
-    expectCommandPoint(point_positions);
-  }
+  expectCommandPoint(point_positions);
 }
 
 TEST_P(TestTrajectoryActionsTestParameterized, test_success_single_point_with_velocity_sendgoal)
@@ -295,15 +287,7 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_success_single_point_with_ve
   // it should be holding the last position goal
   // i.e., active but trivial trajectory (one point only)
   // note: the action goal also is a trivial trajectory
-  if (traj_controller_->has_position_command_interface())
-  {
-    expectCommandPoint(point_positions, point_velocities);
-  }
-  else
-  {
-    // no integration to position state interface from velocity/acceleration
-    expectCommandPoint(point_positions, point_velocities);
-  }
+  expectCommandPoint(point_positions, point_velocities);
 }
 
 TEST_P(TestTrajectoryActionsTestParameterized, test_success_multi_point_sendgoal)
@@ -349,15 +333,7 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_success_multi_point_sendgoal
 
   // it should be holding the last position goal
   // i.e., active but trivial trajectory (one point only)
-  if (traj_controller_->has_position_command_interface())
-  {
-    expectCommandPoint(points_positions.at(1));
-  }
-  else
-  {
-    // no integration to position state interface from velocity/acceleration
-    expectCommandPoint(points_positions.at(1));
-  }
+  expectCommandPoint(points_positions.at(1));
 }
 
 TEST_P(TestTrajectoryActionsTestParameterized, test_success_multi_point_with_velocity_sendgoal)
@@ -407,15 +383,7 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_success_multi_point_with_vel
 
   // it should be holding the last position goal
   // i.e., active but trivial trajectory (one point only)
-  if (traj_controller_->has_position_command_interface())
-  {
-    expectCommandPoint(points_positions.at(1), points_velocities.at(1));
-  }
-  else
-  {
-    // no integration to position state interface from velocity/acceleration
-    expectCommandPoint(points_positions.at(1), points_velocities.at(1));
-  }
+  expectCommandPoint(points_positions.at(1), points_velocities.at(1));
 }
 
 /**
@@ -569,8 +537,7 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_state_tolerances_fail)
 
   // it should be holding the position (being the initial one)
   // i.e., active but trivial trajectory (one point only)
-  std::vector<double> initial_positions{INITIAL_POS_JOINT1, INITIAL_POS_JOINT2, INITIAL_POS_JOINT3};
-  expectCommandPoint(initial_positions);
+  expectCommandPoint(INITIAL_POS_JOINTS);
 }
 
 TEST_P(TestTrajectoryActionsTestParameterized, test_goal_tolerances_fail)
@@ -618,8 +585,7 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_goal_tolerances_fail)
 
   // it should be holding the position (being the initial one)
   // i.e., active but trivial trajectory (one point only)
-  std::vector<double> initial_positions{INITIAL_POS_JOINT1, INITIAL_POS_JOINT2, INITIAL_POS_JOINT3};
-  expectCommandPoint(initial_positions);
+  expectCommandPoint(INITIAL_POS_JOINTS);
 }
 
 TEST_P(TestTrajectoryActionsTestParameterized, test_no_time_from_start_state_tolerance_fail)
@@ -664,8 +630,7 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_no_time_from_start_state_tol
 
   // it should be holding the position (being the initial one)
   // i.e., active but trivial trajectory (one point only)
-  std::vector<double> initial_positions{INITIAL_POS_JOINT1, INITIAL_POS_JOINT2, INITIAL_POS_JOINT3};
-  expectCommandPoint(initial_positions);
+  expectCommandPoint(INITIAL_POS_JOINTS);
 }
 
 TEST_P(TestTrajectoryActionsTestParameterized, test_cancel_hold_position)
