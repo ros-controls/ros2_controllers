@@ -120,6 +120,9 @@ TEST_P(TrajectoryControllerTestParameterized, check_interface_names_with_command
   compare_joints(joint_names_, command_joint_names_);
 }
 
+/**
+ * \brief same as check_interface_names_with_command_joints but with #command-joints < #dof
+ */
 TEST_P(
   TrajectoryControllerTestParameterized, check_interface_names_with_command_joints_less_than_dof)
 {
@@ -329,7 +332,7 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
 }
 
 /**
- * @brief test if correct topic is received
+ * @brief test if correct topic is received, consistent with parameters
  *
  * this test doesn't use class variables but subscribes to the state topic
  */
@@ -429,6 +432,10 @@ TEST_P(TrajectoryControllerTestParameterized, state_topic_consistency)
     EXPECT_EQ(n_joints, state->output.effort.size());
   }
 }
+
+/**
+ * @brief same as state_topic_consistency but with #command-joints < #dof
+ */
 
 TEST_P(TrajectoryControllerTestParameterized, state_topic_consistency_command_joints_less_than_dof)
 {
@@ -972,7 +979,8 @@ TEST_P(TrajectoryControllerTestParameterized, trajectory_error_command_joints_le
 }
 
 /**
- * @brief check if trajectory error is calculated correctly in case #command-joints < #dof
+ * @brief check if trajectory error is calculated correctly in case #command-joints < #dof, but with
+ * jumbled order of command joints
  */
 TEST_P(TrajectoryControllerTestParameterized, trajectory_error_command_joints_less_than_dof_jumbled)
 {
