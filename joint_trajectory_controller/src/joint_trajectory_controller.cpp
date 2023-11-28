@@ -283,11 +283,12 @@ controller_interface::return_type JointTrajectoryController::update(
           // Update PIDs
           for (auto i = 0ul; i < num_cmd_joints_; ++i)
           {
-            size_t index = map_cmd_to_joints_[i];
-            tmp_command_[index] = (state_desired_.velocities[index] * ff_velocity_scale_[i]) +
-                                  pids_[i]->computeCommand(
-                                    state_error_.positions[index], state_error_.velocities[index],
-                                    (uint64_t)period.nanoseconds());
+            size_t index_cmd_joint = map_cmd_to_joints_[i];
+            tmp_command_[index_cmd_joint] =
+              (state_desired_.velocities[index_cmd_joint] * ff_velocity_scale_[index_cmd_joint]) +
+              pids_[i]->computeCommand(
+                state_error_.positions[index_cmd_joint], state_error_.velocities[index_cmd_joint],
+                (uint64_t)period.nanoseconds());
           }
         }
 
