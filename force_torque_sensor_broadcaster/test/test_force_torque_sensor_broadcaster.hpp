@@ -36,7 +36,7 @@ class FriendForceTorqueSensorBroadcaster
   FRIEND_TEST(ForceTorqueSensorBroadcasterTest, SensorNameParameterIsEmpty);
   FRIEND_TEST(ForceTorqueSensorBroadcasterTest, InterfaceNameParameterIsEmpty);
 
-  FRIEND_TEST(ForceTorqueSensorBroadcasterTest, ActivateSuccess);
+  FRIEND_TEST(ForceTorqueSensorBroadcasterTest, SensorName_ActivateDeactivate_Success);
   FRIEND_TEST(ForceTorqueSensorBroadcasterTest, UpdateTest);
   FRIEND_TEST(ForceTorqueSensorBroadcasterTest, SensorStatePublishTest);
 };
