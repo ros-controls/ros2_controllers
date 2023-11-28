@@ -294,9 +294,9 @@ private:
 
   void init_hold_position_msg();
   void resize_joint_trajectory_point(
-    trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size);
+    trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size, double vale = 0.0);
   void resize_joint_trajectory_point_command(
-    trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size);
+    trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size, double vale = 0.0);
 };
 
 }  // namespace joint_trajectory_controller

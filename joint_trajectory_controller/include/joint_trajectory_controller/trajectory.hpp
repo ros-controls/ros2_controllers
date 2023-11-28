@@ -161,7 +161,7 @@ private:
 /**
  * \return The map between \p t1 indices (implicitly encoded in return vector indices) to \p t2
  * indices. If \p t1 is <tt>"{C, B}"</tt> and \p t2 is <tt>"{A, B, C, D}"</tt>, the associated
- * mapping vector is <tt>"{2, 1}"</tt>.
+ * mapping vector is <tt>"{2, 1}"</tt>. return empty vector if \p t1 is not a subset of \p t2.
  */
 template <class T>
 inline std::vector<size_t> mapping(const T & t1, const T & t2)
@@ -188,17 +188,6 @@ inline std::vector<size_t> mapping(const T & t1, const T & t2)
     }
   }
   return mapping_vector;
-}
-
-/**
- * \return True if \p B is a subset of \p A, false otherwise.
- */
-template <typename T>
-bool is_subset(std::vector<T> A, std::vector<T> B)
-{
-  std::sort(A.begin(), A.end());
-  std::sort(B.begin(), B.end());
-  return std::includes(A.begin(), A.end(), B.begin(), B.end());
 }
 
 }  // namespace joint_trajectory_controller
