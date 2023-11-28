@@ -248,7 +248,7 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_success_single_point_sendgoa
   EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
 
   // run an update
-  updateController(rclcpp::Duration::from_seconds(0.01));
+  updateControllerAsync(rclcpp::Duration::from_seconds(0.01));
 
   // it should be holding the last position goal
   // i.e., active but trivial trajectory (one point only)
@@ -304,7 +304,7 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_success_multi_point_sendgoal
   EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
 
   // run an update
-  updateController(rclcpp::Duration::from_seconds(0.01));
+  updateControllerAsync(rclcpp::Duration::from_seconds(0.01));
 
   // it should be holding the last position goal
   // i.e., active but trivial trajectory (one point only)
@@ -356,7 +356,7 @@ TEST_F(TestTrajectoryActions, test_goal_tolerances_single_point_success)
     control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL, common_action_result_code_);
 
   // run an update
-  updateController(rclcpp::Duration::from_seconds(0.01));
+  updateControllerAsync(rclcpp::Duration::from_seconds(0.01));
 
   // it should be holding the last position goal
   // i.e., active but trivial trajectory (one point only)
@@ -415,7 +415,7 @@ TEST_F(TestTrajectoryActions, test_goal_tolerances_multi_point_success)
     control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL, common_action_result_code_);
 
   // run an update
-  updateController(rclcpp::Duration::from_seconds(0.01));
+  updateControllerAsync(rclcpp::Duration::from_seconds(0.01));
 
   // it should be holding the last position goal
   // i.e., active but trivial trajectory (one point only)
@@ -736,7 +736,7 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_state_tolerances_fail)
     common_action_result_code_);
 
   // run an update
-  updateController(rclcpp::Duration::from_seconds(0.01));
+  updateControllerAsync(rclcpp::Duration::from_seconds(0.01));
 
   // it should be holding the position (being the initial one)
   // i.e., active but trivial trajectory (one point only)
@@ -785,7 +785,7 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_goal_tolerances_fail)
     common_action_result_code_);
 
   // run an update
-  updateController(rclcpp::Duration::from_seconds(0.01));
+  updateControllerAsync(rclcpp::Duration::from_seconds(0.01));
 
   // it should be holding the position (being the initial one)
   // i.e., active but trivial trajectory (one point only)
@@ -831,7 +831,7 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_no_time_from_start_state_tol
     common_action_result_code_);
 
   // run an update
-  updateController(rclcpp::Duration::from_seconds(0.01));
+  updateControllerAsync(rclcpp::Duration::from_seconds(0.01));
 
   // it should be holding the position (being the initial one)
   // i.e., active but trivial trajectory (one point only)
@@ -879,7 +879,7 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_cancel_hold_position)
   std::vector<double> cancelled_position{joint_pos_[0], joint_pos_[1], joint_pos_[2]};
 
   // run an update
-  updateController(rclcpp::Duration::from_seconds(0.01));
+  updateControllerAsync(rclcpp::Duration::from_seconds(0.01));
 
   // it should be holding the last position,
   // i.e., active but trivial trajectory (one point only)
