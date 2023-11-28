@@ -15,7 +15,6 @@
 #ifndef JOINT_TRAJECTORY_CONTROLLER__TRAJECTORY_HPP_
 #define JOINT_TRAJECTORY_CONTROLLER__TRAJECTORY_HPP_
 
-#include <algorithm>
 #include <memory>
 #include <vector>
 
