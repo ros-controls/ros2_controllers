@@ -73,15 +73,6 @@ JointTrajectoryController::command_interface_configuration() const
 {
   controller_interface::InterfaceConfiguration conf;
   conf.type = controller_interface::interface_configuration_type::INDIVIDUAL;
-  if (num_cmd_joints_ == 0)
-  {
-    fprintf(
-      stderr,
-      "During ros2_control interface configuration, number of command interfaces is not valid;"
-      " it should be positive. Actual number is %zu\n",
-      num_cmd_joints_);
-    std::exit(EXIT_FAILURE);
-  }
   conf.names.reserve(num_cmd_joints_ * params_.command_interfaces.size());
   for (const auto & joint_name : command_joint_names_)
   {
