@@ -46,7 +46,7 @@
 namespace joint_trajectory_controller
 {
 JointTrajectoryController::JointTrajectoryController()
-: controller_interface::ControllerInterface(), dof_(0)
+: controller_interface::ControllerInterface(), dof_(0), num_cmd_joints_(0)
 {
 }
 
@@ -72,16 +72,16 @@ JointTrajectoryController::command_interface_configuration() const
 {
   controller_interface::InterfaceConfiguration conf;
   conf.type = controller_interface::interface_configuration_type::INDIVIDUAL;
-  if (dof_ == 0)
+  if (num_cmd_joints_ == 0)
   {
     fprintf(
       stderr,
-      "During ros2_control interface configuration, degrees of freedom is not valid;"
-      " it should be positive. Actual DOF is %zu\n",
-      dof_);
+      "During ros2_control interface configuration, number of command interfaces is not valid;"
+      " it should be positive. Actual number is %zu\n",
+      num_cmd_joints_);
     std::exit(EXIT_FAILURE);
   }
-  conf.names.reserve(dof_ * params_.command_interfaces.size());
+  conf.names.reserve(num_cmd_joints_ * params_.command_interfaces.size());
   for (const auto & joint_name : command_joint_names_)
   {
     for (const auto & interface_type : params_.command_interfaces)
@@ -179,9 +179,9 @@ controller_interface::return_type JointTrajectoryController::update(
   auto assign_interface_from_point =
     [&](auto & joint_interface, const std::vector<double> & trajectory_point_interface)
   {
-    for (size_t index = 0; index < dof_; ++index)
+    for (size_t index = 0; index < num_cmd_joints_; ++index)
     {
-      joint_interface[index].get().set_value(trajectory_point_interface[index]);
+      joint_interface[index].get().set_value(trajectory_point_interface[map_cmd_to_joints_[index]]);
     }
   };
 
@@ -280,12 +280,13 @@ controller_interface::return_type JointTrajectoryController::update(
         if (use_closed_loop_pid_adapter_)
         {
           // Update PIDs
-          for (auto i = 0ul; i < dof_; ++i)
+          for (auto i = 0ul; i < num_cmd_joints_; ++i)
           {
-            tmp_command_[i] = (state_desired_.velocities[i] * ff_velocity_scale_[i]) +
-                              pids_[i]->computeCommand(
-                                state_error_.positions[i], state_error_.velocities[i],
-                                (uint64_t)period.nanoseconds());
+            size_t index = map_cmd_to_joints_[i];
+            tmp_command_[index] = (state_desired_.velocities[index] * ff_velocity_scale_[i]) +
+                                  pids_[i]->computeCommand(
+                                    state_error_.positions[index], state_error_.velocities[index],
+                                    (uint64_t)period.nanoseconds());
           }
         }
 
@@ -453,9 +454,10 @@ bool JointTrajectoryController::read_state_from_command_interfaces(JointTrajecto
   auto assign_point_from_interface =
     [&](std::vector<double> & trajectory_point_interface, const auto & joint_interface)
   {
-    for (size_t index = 0; index < dof_; ++index)
+    for (size_t index = 0; index < num_cmd_joints_; ++index)
     {
-      trajectory_point_interface[index] = joint_interface[index].get().get_value();
+      trajectory_point_interface[map_cmd_to_joints_[index]] =
+        joint_interface[index].get().get_value();
     }
   };
 
@@ -524,7 +526,7 @@ bool JointTrajectoryController::read_commands_from_command_interfaces(
   auto assign_point_from_interface =
     [&](std::vector<double> & trajectory_point_interface, const auto & joint_interface)
   {
-    for (size_t index = 0; index < dof_; ++index)
+    for (size_t index = 0; index < num_cmd_joints_; ++index)
     {
       trajectory_point_interface[index] = joint_interface[index].get().get_value();
     }
@@ -665,8 +667,8 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
 
   if (params_.joints.empty())
   {
-    // TODO(destogl): is this correct? Can we really move-on if no joint names are not provided?
     RCLCPP_WARN(logger, "'joints' parameter is empty.");
+    return CallbackReturn::FAILURE;
   }
 
   command_joint_names_ = params_.command_joints;
@@ -677,11 +679,33 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     RCLCPP_INFO(
       logger, "No specific joint names are used for command interfaces. Using 'joints' parameter.");
   }
-  else if (command_joint_names_.size() != params_.joints.size())
+  num_cmd_joints_ = command_joint_names_.size();
+
+  if (num_cmd_joints_ > dof_)
   {
     RCLCPP_ERROR(
-      logger, "'command_joints' parameter has to have the same size as 'joints' parameter.");
+      logger, "'command_joints' parameter must not have greater size as 'joints' parameter.");
     return CallbackReturn::FAILURE;
+  }
+  else if (num_cmd_joints_ < dof_)
+  {
+    if (is_subset(params_.joints, command_joint_names_) == false)
+    {
+      RCLCPP_ERROR(
+        logger,
+        "'command_joints' parameter must be a subset of 'joints' parameter, if their size is not "
+        "equal.");
+      return CallbackReturn::FAILURE;
+    }
+  }
+  // create a map for the command joints, trivial if they are the same
+  map_cmd_to_joints_ = mapping(command_joint_names_, params_.joints);
+  for (size_t i = 0; i < command_joint_names_.size(); i++)
+  {
+    RCLCPP_INFO(
+      logger, "Command joint %lu: '%s' maps to joint %lu: '%s'.", i,
+      command_joint_names_[i].c_str(), map_cmd_to_joints_[i],
+      params_.joints[map_cmd_to_joints_[i]].c_str());
   }
 
   if (params_.command_interfaces.empty())
@@ -712,9 +736,9 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
 
   if (use_closed_loop_pid_adapter_)
   {
-    pids_.resize(dof_);
-    ff_velocity_scale_.resize(dof_);
-    tmp_command_.resize(dof_, 0.0);
+    pids_.resize(num_cmd_joints_);
+    ff_velocity_scale_.resize(num_cmd_joints_);
+    tmp_command_.resize(dof_, std::numeric_limits<double>::quiet_NaN());
 
     update_pids();
   }
@@ -902,7 +926,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
           command_interfaces_, command_joint_names_, interface, joint_command_interface_[index]))
     {
       RCLCPP_ERROR(
-        get_node()->get_logger(), "Expected %zu '%s' command interfaces, got %zu.", dof_,
+        get_node()->get_logger(), "Expected %zu '%s' command interfaces, got %zu.", num_cmd_joints_,
         interface.c_str(), joint_command_interface_[index].size());
       return CallbackReturn::ERROR;
     }
@@ -976,7 +1000,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
 controller_interface::CallbackReturn JointTrajectoryController::on_deactivate(
   const rclcpp_lifecycle::State &)
 {
-  for (size_t index = 0; index < dof_; ++index)
+  for (size_t index = 0; index < num_cmd_joints_; ++index)
   {
     if (has_position_command_interface_)
     {
@@ -1491,14 +1515,14 @@ bool JointTrajectoryController::contains_interface_type(
 void JointTrajectoryController::resize_joint_trajectory_point(
   trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size)
 {
-  point.positions.resize(size, 0.0);
+  point.positions.resize(size, std::numeric_limits<double>::quiet_NaN());
   if (has_velocity_state_interface_)
   {
-    point.velocities.resize(size, 0.0);
+    point.velocities.resize(size, std::numeric_limits<double>::quiet_NaN());
   }
   if (has_acceleration_state_interface_)
   {
-    point.accelerations.resize(size, 0.0);
+    point.accelerations.resize(size, std::numeric_limits<double>::quiet_NaN());
   }
 }
 
@@ -1530,9 +1554,9 @@ bool JointTrajectoryController::has_active_trajectory() const
 
 void JointTrajectoryController::update_pids()
 {
-  for (size_t i = 0; i < dof_; ++i)
+  for (size_t i = 0; i < num_cmd_joints_; ++i)
   {
-    const auto & gains = params_.gains.joints_map.at(params_.joints[i]);
+    const auto & gains = params_.gains.joints_map.at(command_joint_names_[i]);
     if (pids_[i])
     {
       // update PIDs with gains from ROS parameters

@@ -15,6 +15,7 @@
 #ifndef JOINT_TRAJECTORY_CONTROLLER__TRAJECTORY_HPP_
 #define JOINT_TRAJECTORY_CONTROLLER__TRAJECTORY_HPP_
 
+#include <algorithm>
 #include <memory>
 #include <vector>
 
@@ -187,6 +188,17 @@ inline std::vector<size_t> mapping(const T & t1, const T & t2)
     }
   }
   return mapping_vector;
+}
+
+/**
+ * \return True if \p B is a subset of \p A, false otherwise.
+ */
+template <typename T>
+bool is_subset(std::vector<T> A, std::vector<T> B)
+{
+  std::sort(A.begin(), A.end());
+  std::sort(B.begin(), B.end());
+  return std::includes(A.begin(), A.end(), B.begin(), B.end());
 }
 
 }  // namespace joint_trajectory_controller

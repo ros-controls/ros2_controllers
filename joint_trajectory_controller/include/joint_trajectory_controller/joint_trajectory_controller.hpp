@@ -131,6 +131,8 @@ protected:
 
   // Degrees of freedom
   size_t dof_;
+  size_t num_cmd_joints_;
+  std::vector<size_t> map_cmd_to_joints_;
 
   // Storing command joint names for interfaces
   std::vector<std::string> command_joint_names_;
