@@ -261,6 +261,7 @@ public:
 
     // set pid parameters before configure
     SetPidParameters(k_p, ff, angle_wraparound);
+
     traj_controller_->get_node()->configure();
 
     ActivateTrajectoryController(
