@@ -127,7 +127,7 @@ TEST_P(
   TrajectoryControllerTestParameterized, check_interface_names_with_command_joints_less_than_dof)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
-  // set command_joints parameter
+  // set command_joints parameter to a subset of joint_names_
   std::vector<std::string> command_joint_names{joint_names_[0], joint_names_[1]};
   const rclcpp::Parameter command_joint_names_param("command_joints", command_joint_names);
   SetUpTrajectoryController(executor, {command_joint_names_param});
@@ -135,36 +135,7 @@ TEST_P(
   const auto state = traj_controller_->get_node()->configure();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
 
-  std::vector<std::string> state_interface_names;
-  state_interface_names.reserve(joint_names_.size() * state_interface_types_.size());
-  for (const auto & joint : joint_names_)
-  {
-    for (const auto & interface : state_interface_types_)
-    {
-      state_interface_names.push_back(joint + "/" + interface);
-    }
-  }
-  auto state_interfaces = traj_controller_->state_interface_configuration();
-  EXPECT_EQ(state_interfaces.type, controller_interface::interface_configuration_type::INDIVIDUAL);
-  EXPECT_EQ(state_interfaces.names.size(), joint_names_.size() * state_interface_types_.size());
-  ASSERT_THAT(state_interfaces.names, testing::UnorderedElementsAreArray(state_interface_names));
-
-  std::vector<std::string> command_interface_names;
-  command_interface_names.reserve(command_joint_names.size() * command_interface_types_.size());
-  for (const auto & joint : command_joint_names)
-  {
-    for (const auto & interface : command_interface_types_)
-    {
-      command_interface_names.push_back(joint + "/" + interface);
-    }
-  }
-  auto command_interfaces = traj_controller_->command_interface_configuration();
-  EXPECT_EQ(
-    command_interfaces.type, controller_interface::interface_configuration_type::INDIVIDUAL);
-  EXPECT_EQ(
-    command_interfaces.names.size(), command_joint_names.size() * command_interface_types_.size());
-  ASSERT_THAT(
-    command_interfaces.names, testing::UnorderedElementsAreArray(command_interface_names));
+  compare_joints(joint_names_, command_joint_names);
 }
 
 TEST_P(
