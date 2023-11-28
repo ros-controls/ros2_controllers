@@ -939,22 +939,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
     }
   }
 
-  // Store 'home' pose
-  traj_msg_home_ptr_ = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
-  traj_msg_home_ptr_->header.stamp.sec = 0;
-  traj_msg_home_ptr_->header.stamp.nanosec = 0;
-  traj_msg_home_ptr_->points.resize(1);
-  traj_msg_home_ptr_->points[0].time_from_start.sec = 0;
-  traj_msg_home_ptr_->points[0].time_from_start.nanosec = 50000000;
-  traj_msg_home_ptr_->points[0].positions.resize(joint_state_interface_[0].size());
-  for (size_t index = 0; index < joint_state_interface_[0].size(); ++index)
-  {
-    traj_msg_home_ptr_->points[0].positions[index] =
-      joint_state_interface_[0][index].get().get_value();
-  }
-
   traj_external_point_ptr_ = std::make_shared<Trajectory>();
-  traj_home_point_ptr_ = std::make_shared<Trajectory>();
   traj_msg_external_point_ptr_.writeFromNonRT(
     std::shared_ptr<trajectory_msgs::msg::JointTrajectory>());
 
@@ -1045,8 +1030,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_deactivate(
   subscriber_is_active_ = false;
 
   traj_external_point_ptr_.reset();
-  traj_home_point_ptr_.reset();
-  traj_msg_home_ptr_.reset();
 
   return CallbackReturn::SUCCESS;
 }
@@ -1054,13 +1037,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_deactivate(
 controller_interface::CallbackReturn JointTrajectoryController::on_cleanup(
   const rclcpp_lifecycle::State &)
 {
-  // go home
-  if (traj_home_point_ptr_ != nullptr)
-  {
-    traj_home_point_ptr_->update(traj_msg_home_ptr_);
-    traj_external_point_ptr_ = traj_home_point_ptr_;
-  }
-
   return CallbackReturn::SUCCESS;
 }
 
@@ -1087,11 +1063,7 @@ bool JointTrajectoryController::reset()
     }
   }
 
-  // iterator has no default value
-  // prev_traj_point_ptr_;
   traj_external_point_ptr_.reset();
-  traj_home_point_ptr_.reset();
-  traj_msg_home_ptr_.reset();
 
   return true;
 }
