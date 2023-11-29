@@ -163,7 +163,7 @@ TEST_F(JointStateBroadcasterTest, ConfigureErrorTest)
   ASSERT_FALSE(state_broadcaster_->realtime_dynamic_joint_state_publisher_);
 }
 
-TEST_F(JointStateBroadcasterTest, ActivateTest)
+TEST_F(JointStateBroadcasterTest, ActivateEmptyTest)
 {
   // publishers not initialized yet
   ASSERT_FALSE(state_broadcaster_->joint_state_publisher_);
@@ -176,6 +176,12 @@ TEST_F(JointStateBroadcasterTest, ActivateTest)
   ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   const size_t NUM_JOINTS = joint_names_.size();
+
+  // check interface configuration
+  auto cmd_if_conf = state_broadcaster_->command_interface_configuration();
+  ASSERT_THAT(cmd_if_conf.names, IsEmpty());
+  auto state_if_conf = state_broadcaster_->state_interface_configuration();
+  ASSERT_THAT(state_if_conf.names, IsEmpty());
 
   // publishers initialized
   ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
@@ -218,6 +224,12 @@ TEST_F(JointStateBroadcasterTest, ActivateTestWithoutJointsParameter)
 
   const size_t NUM_JOINTS = joint_names_.size();
 
+  // check interface configuration
+  auto cmd_if_conf = state_broadcaster_->command_interface_configuration();
+  ASSERT_THAT(cmd_if_conf.names, IsEmpty());
+  auto state_if_conf = state_broadcaster_->state_interface_configuration();
+  ASSERT_THAT(state_if_conf.names, IsEmpty());
+
   // publishers initialized
   ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
   ASSERT_TRUE(state_broadcaster_->realtime_dynamic_joint_state_publisher_);
@@ -259,6 +271,12 @@ TEST_F(JointStateBroadcasterTest, ActivateTestWithoutInterfacesParameter)
 
   const size_t NUM_JOINTS = joint_names_.size();
 
+  // check interface configuration
+  auto cmd_if_conf = state_broadcaster_->command_interface_configuration();
+  ASSERT_THAT(cmd_if_conf.names, IsEmpty());
+  auto state_if_conf = state_broadcaster_->state_interface_configuration();
+  ASSERT_THAT(state_if_conf.names, IsEmpty());
+
   // publishers initialized
   ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
   ASSERT_TRUE(state_broadcaster_->realtime_dynamic_joint_state_publisher_);
@@ -287,7 +305,7 @@ TEST_F(JointStateBroadcasterTest, ActivateTestWithoutInterfacesParameter)
     ElementsAreArray(interface_names_));
 }
 
-TEST_F(JointStateBroadcasterTest, ActivateTestTwoJointsOneInterface)
+TEST_F(JointStateBroadcasterTest, ActivateDeactivateTestTwoJointsOneInterface)
 {
   const std::vector<std::string> JOINT_NAMES = {joint_names_[0], joint_names_[1]};
   const std::vector<std::string> IF_NAMES = {interface_names_[0]};
@@ -299,6 +317,12 @@ TEST_F(JointStateBroadcasterTest, ActivateTestTwoJointsOneInterface)
   ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   const size_t NUM_JOINTS = JOINT_NAMES.size();
+
+  // check interface configuration
+  auto cmd_if_conf = state_broadcaster_->command_interface_configuration();
+  ASSERT_THAT(cmd_if_conf.names, IsEmpty());
+  auto state_if_conf = state_broadcaster_->state_interface_configuration();
+  ASSERT_THAT(state_if_conf.names, SizeIs(JOINT_NAMES.size() * IF_NAMES.size()));
 
   // publishers initialized
   ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
@@ -329,6 +353,16 @@ TEST_F(JointStateBroadcasterTest, ActivateTestTwoJointsOneInterface)
     dynamic_joint_state_msg.interface_values[0].interface_names, ElementsAreArray(IF_NAMES));
   ASSERT_THAT(
     dynamic_joint_state_msg.interface_values[1].interface_names, ElementsAreArray(IF_NAMES));
+
+  // deactivate
+  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  // check interface configuration
+  cmd_if_conf = state_broadcaster_->command_interface_configuration();
+  ASSERT_THAT(cmd_if_conf.names, IsEmpty());
+  state_if_conf = state_broadcaster_->state_interface_configuration();
+  ASSERT_THAT(
+    state_if_conf.names, SizeIs(JOINT_NAMES.size() * IF_NAMES.size()));  // does not change
 }
 
 TEST_F(JointStateBroadcasterTest, ActivateTestOneJointTwoInterfaces)
@@ -343,6 +377,12 @@ TEST_F(JointStateBroadcasterTest, ActivateTestOneJointTwoInterfaces)
   ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   const size_t NUM_JOINTS = JOINT_NAMES.size();
+
+  // check interface configuration
+  auto cmd_if_conf = state_broadcaster_->command_interface_configuration();
+  ASSERT_THAT(cmd_if_conf.names, IsEmpty());
+  auto state_if_conf = state_broadcaster_->state_interface_configuration();
+  ASSERT_THAT(state_if_conf.names, SizeIs(JOINT_NAMES.size() * IF_NAMES.size()));
 
   // publishers initialized
   ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
@@ -412,6 +452,12 @@ TEST_F(JointStateBroadcasterTest, ActivateTestTwoJointTwoInterfacesOneMissing)
 
   const size_t NUM_JOINTS = JOINT_NAMES.size();
 
+  // check interface configuration
+  auto cmd_if_conf = state_broadcaster_->command_interface_configuration();
+  ASSERT_THAT(cmd_if_conf.names, IsEmpty());
+  auto state_if_conf = state_broadcaster_->state_interface_configuration();
+  ASSERT_THAT(state_if_conf.names, SizeIs(JOINT_NAMES.size() * IF_NAMES.size()));
+
   // publishers initialized
   ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
   ASSERT_TRUE(state_broadcaster_->realtime_dynamic_joint_state_publisher_);
@@ -455,6 +501,12 @@ TEST_F(JointStateBroadcasterTest, TestCustomInterfaceWithoutMapping)
 
   const size_t NUM_JOINTS = JOINT_NAMES.size();
 
+  // check interface configuration
+  auto cmd_if_conf = state_broadcaster_->command_interface_configuration();
+  ASSERT_THAT(cmd_if_conf.names, IsEmpty());
+  auto state_if_conf = state_broadcaster_->state_interface_configuration();
+  ASSERT_THAT(state_if_conf.names, SizeIs(JOINT_NAMES.size() * IF_NAMES.size()));
+
   // joint state initialized
   const auto & joint_state_msg = state_broadcaster_->realtime_joint_state_publisher_->msg_;
   ASSERT_THAT(joint_state_msg.name, SizeIs(0));
@@ -491,6 +543,12 @@ TEST_F(JointStateBroadcasterTest, TestCustomInterfaceMapping)
   ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   const size_t NUM_JOINTS = JOINT_NAMES.size();
+
+  // check interface configuration
+  auto cmd_if_conf = state_broadcaster_->command_interface_configuration();
+  ASSERT_THAT(cmd_if_conf.names, IsEmpty());
+  auto state_if_conf = state_broadcaster_->state_interface_configuration();
+  ASSERT_THAT(state_if_conf.names, SizeIs(JOINT_NAMES.size() * IF_NAMES.size()));
 
   // joint state initialized
   const auto & joint_state_msg = state_broadcaster_->realtime_joint_state_publisher_->msg_;
