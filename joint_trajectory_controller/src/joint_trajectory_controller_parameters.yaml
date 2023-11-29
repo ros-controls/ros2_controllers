@@ -80,7 +80,7 @@ joint_trajectory_controller:
   }
   allow_nonzero_velocity_at_trajectory_end: {
     type: bool,
-    default_value: true,
+    default_value: false,
     description: "If false, the last velocity point has to be zero or the goal will be rejected",
   }
   cmd_timeout: {

@@ -65,12 +65,12 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
   }
 
   // TODO(christophfroehlich): remove deprecation warning
-  if (params_.allow_nonzero_velocity_at_trajectory_end)
+  if (params_.allow_nonzero_velocity_at_trajectory_end == false)
   {
     RCLCPP_WARN(
       get_node()->get_logger(),
-      "[Deprecated]: \"allow_nonzero_velocity_at_trajectory_end\" is set to "
-      "true. The default behavior will change to false.");
+      "\"allow_nonzero_velocity_at_trajectory_end\" is set to false. (The default behavior changed "
+      "to false, and trajectories might get discarded.)");
   }
 
   return CallbackReturn::SUCCESS;
@@ -142,7 +142,7 @@ controller_interface::return_type JointTrajectoryController::update(
                                    const JointTrajectoryPoint & desired)
   {
     // error defined as the difference between current and desired
-    if (normalize_joint_error_[index])
+    if (joints_angle_wraparound_[index])
     {
       // if desired, the shortest_angular_distance is calculated, i.e., the error is
       //  normalized between -pi<error<pi
@@ -728,7 +728,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   }
 
   // Configure joint position error normalization from ROS parameters (angle_wraparound)
-  normalize_joint_error_.resize(dof_);
+  joints_angle_wraparound_.resize(dof_);
   for (size_t i = 0; i < dof_; ++i)
   {
     const auto & gains = params_.gains.joints_map.at(params_.joints[i]);
@@ -736,11 +736,11 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     {
       // TODO(anyone): Remove deprecation warning in the end of 2023
       RCLCPP_INFO(logger, "`normalize_error` is deprecated, use `angle_wraparound` instead!");
-      normalize_joint_error_[i] = gains.normalize_error;
+      joints_angle_wraparound_[i] = gains.normalize_error;
     }
     else
     {
-      normalize_joint_error_[i] = gains.angle_wraparound;
+      joints_angle_wraparound_[i] = gains.angle_wraparound;
     }
   }
 
