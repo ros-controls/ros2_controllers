@@ -2,6 +2,11 @@
 Changelog for package forward_command_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Rearrange controllers overview page (`#846 <https://github.com/ros-controls/ros2_controllers/issues/846>`_) (`#847 <https://github.com/ros-controls/ros2_controllers/issues/847>`_)
+* Contributors: mergify[bot]
+
 2.27.0 (2023-11-14)
 -------------------
 

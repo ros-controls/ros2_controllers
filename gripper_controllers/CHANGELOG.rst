@@ -2,6 +2,11 @@
 Changelog for package gripper_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fixed implementation so that effort_controllers/GripperActionController works. (`#756 <https://github.com/ros-controls/ros2_controllers/issues/756>`_) (`#868 <https://github.com/ros-controls/ros2_controllers/issues/868>`_)
+* Contributors: mergify[bot]
+
 2.27.0 (2023-11-14)
 -------------------
 
