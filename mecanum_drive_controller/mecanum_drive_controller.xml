@@ -1,0 +1,7 @@
+<library path="mecanum_drive_controller">
+  <class name="mecanum_drive_controller/MecanumDriveController"
+         type="mecanum_drive_controller::MecanumDriveController" base_class_type="controller_interface::ChainableControllerInterface">
+  <description>
+    The mecanum drive controller transforms linear and angular velocity messages into signals for each wheel(s) for a 4 mecanum wheeled robot.</description>
+  </class>
+</library>
