@@ -156,8 +156,20 @@ public:
 
   void SetUpTrajectoryController(rclcpp::Executor & executor, bool use_local_parameters = true)
   {
+    auto ret = SetUpTrajectoryControllerLocal(parameters);
+    if (ret != controller_interface::return_type::OK)
+    {
+      FAIL();
+    }
+    executor.add_node(traj_controller_->get_node()->get_node_base_interface());
+  }
+
+  controller_interface::return_type SetUpTrajectoryControllerLocal(
+    const std::vector<rclcpp::Parameter> & parameters = {})
+  {
     traj_controller_ = std::make_shared<TestableJointTrajectoryController>();
 
+<<<<<<< HEAD
     if (use_local_parameters)
     {
       traj_controller_->set_joint_names(joint_names_);
@@ -180,6 +192,18 @@ public:
     const rclcpp::Parameter cmd_interfaces_params("command_interfaces", command_interface_types_);
     const rclcpp::Parameter state_interfaces_params("state_interfaces", state_interface_types_);
     node->set_parameters({joint_names_param, cmd_interfaces_params, state_interfaces_params});
+=======
+    auto node_options = rclcpp::NodeOptions();
+    std::vector<rclcpp::Parameter> parameter_overrides;
+    parameter_overrides.push_back(rclcpp::Parameter("joints", joint_names_));
+    parameter_overrides.push_back(
+      rclcpp::Parameter("command_interfaces", command_interface_types_));
+    parameter_overrides.push_back(rclcpp::Parameter("state_interfaces", state_interface_types_));
+    parameter_overrides.insert(parameter_overrides.end(), parameters.begin(), parameters.end());
+    node_options.parameter_overrides(parameter_overrides);
+
+    return traj_controller_->init(controller_name_, "", 0, "", node_options);
+>>>>>>> fcc0847 ([JTC] Activate checks for parameter validation (#857))
   }
 
   void SetPidParameters(
@@ -224,7 +248,16 @@ public:
     ActivateTrajectoryController(separate_cmd_and_state_values);
   }
 
+<<<<<<< HEAD
   void ActivateTrajectoryController(bool separate_cmd_and_state_values = false)
+=======
+  rclcpp_lifecycle::State ActivateTrajectoryController(
+    bool separate_cmd_and_state_values = false,
+    const std::vector<double> initial_pos_joints = INITIAL_POS_JOINTS,
+    const std::vector<double> initial_vel_joints = INITIAL_VEL_JOINTS,
+    const std::vector<double> initial_acc_joints = INITIAL_ACC_JOINTS,
+    const std::vector<double> initial_eff_joints = INITIAL_EFF_JOINTS)
+>>>>>>> fcc0847 ([JTC] Activate checks for parameter validation (#857))
   {
     std::vector<hardware_interface::LoanedCommandInterface> cmd_interfaces;
     std::vector<hardware_interface::LoanedStateInterface> state_interfaces;
@@ -274,7 +307,7 @@ public:
     }
 
     traj_controller_->assign_interfaces(std::move(cmd_interfaces), std::move(state_interfaces));
-    traj_controller_->get_node()->activate();
+    return traj_controller_->get_node()->activate();
   }
 
   static void TearDownTestCase() { rclcpp::shutdown(); }
