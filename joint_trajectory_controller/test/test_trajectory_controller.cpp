@@ -445,36 +445,17 @@ TEST_P(TrajectoryControllerTestParameterized, update_dynamic_tolerances)
 }
 
 /**
- * @brief check if hold on startup is deactivated
- */
-TEST_P(TrajectoryControllerTestParameterized, no_hold_on_startup)
-{
-  rclcpp::executors::MultiThreadedExecutor executor;
-
-  rclcpp::Parameter start_with_holding_parameter("start_with_holding", false);
-  SetUpAndActivateTrajectoryController(executor, {start_with_holding_parameter});
-
-  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
-  updateControllerAsync(rclcpp::Duration(FIRST_POINT_TIME));
-  // after startup without start_with_holding being set, we expect no active trajectory
-  ASSERT_FALSE(traj_controller_->has_active_traj());
-
-  executor.cancel();
-}
-
-/**
  * @brief check if hold on startup
  */
 TEST_P(TrajectoryControllerTestParameterized, hold_on_startup)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
 
-  rclcpp::Parameter start_with_holding_parameter("start_with_holding", true);
-  SetUpAndActivateTrajectoryController(executor, {start_with_holding_parameter});
+  SetUpAndActivateTrajectoryController(executor, {});
 
   constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
   updateControllerAsync(rclcpp::Duration(FIRST_POINT_TIME));
-  // after startup with start_with_holding being set, we expect an active trajectory:
+  // after startup, we expect an active trajectory:
   ASSERT_TRUE(traj_controller_->has_active_traj());
   // one point, being the position at startup
   std::vector<double> initial_positions{INITIAL_POS_JOINT1, INITIAL_POS_JOINT2, INITIAL_POS_JOINT3};
