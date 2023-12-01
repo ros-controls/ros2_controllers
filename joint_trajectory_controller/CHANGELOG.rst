@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.19.0 (2023-12-01)
+-------------------
 * [JTC] Activate checks for parameter validation (backport `#857 <https://github.com/ros-controls/ros2_controllers/issues/857>`_) (`#873 <https://github.com/ros-controls/ros2_controllers/issues/873>`_)
 * [JTC] Improve update methods for tests (backport `#858 <https://github.com/ros-controls/ros2_controllers/issues/858>`_)
 * [JTC] Fix dynamic reconfigure of tolerances (backport `#849 <https://github.com/ros-controls/ros2_controllers/issues/849>`_)

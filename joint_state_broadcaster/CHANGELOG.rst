@@ -2,8 +2,8 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.19.0 (2023-12-01)
+-------------------
 * Increase test coverage of interface configuration getters (backport `#856 <https://github.com/ros-controls/ros2_controllers/issues/856>`_)
 * joint_state_broadcaster: Add proper subscription to TestCustomInterfaceMappingUpdate (`#859 <https://github.com/ros-controls/ros2_controllers/issues/859>`_) (`#864 <https://github.com/ros-controls/ros2_controllers/issues/864>`_)
 * Contributors: Christoph Froehlich, mergify[bot]
