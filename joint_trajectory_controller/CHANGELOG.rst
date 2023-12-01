@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.1.0 (2023-12-01)
+------------------
 * [JTC] Continue with last trajectory-point on success (`#842 <https://github.com/ros-controls/ros2_controllers/issues/842>`_)
 * [JTC] Remove start_with_holding option (`#839 <https://github.com/ros-controls/ros2_controllers/issues/839>`_)
 * [JTC] Activate checks for parameter validation (`#857 <https://github.com/ros-controls/ros2_controllers/issues/857>`_)
