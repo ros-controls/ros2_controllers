@@ -150,11 +150,13 @@ Actions  [#f1]_
 <controller_name>/follow_joint_trajectory [control_msgs::action::FollowJointTrajectory]
   Action server for commanding the controller
 
-
 The primary way to send trajectories is through the action interface, and should be favored when execution monitoring is desired.
+
 Action goals allow to specify not only the trajectory to execute, but also (optionally) path and goal tolerances.
 When no tolerances are specified, the defaults given in the parameter interface are used (see :ref:`parameters`).
 If tolerances are violated during trajectory execution, the action goal is aborted, the client is notified, and the current position is held.
+
+The action server returns success to the client and continues with the last commanded point after the target is reached within the specified tolerances.
 
 .. _Subscriber:
 

@@ -174,7 +174,7 @@ protected:
 
   // Timeout to consider commands old
   double cmd_timeout_;
-  // Are we holding position?
+  // True if holding position or repeating last trajectory point in case of success
   realtime_tools::RealtimeBuffer<bool> rt_is_holding_;
   // TODO(karsten1987): eventually activate and deactivate subscriber directly when its supported
   bool subscriber_is_active_ = false;
@@ -244,8 +244,18 @@ protected:
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   void preempt_active_goal();
+
+  /** @brief set the current position with zero velocity and acceleration as new command
+   */
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> set_hold_position();
+
+  /** @brief set last trajectory point to be repeated at success
+   *
+   * no matter if it has nonzero velocity or acceleration
+   */
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
+  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> set_success_trajectory_point();
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   bool reset();
