@@ -2,6 +2,16 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* [JTC] Activate checks for parameter validation (backport `#857 <https://github.com/ros-controls/ros2_controllers/issues/857>`_) (`#873 <https://github.com/ros-controls/ros2_controllers/issues/873>`_)
+* [JTC] Improve update methods for tests (backport `#858 <https://github.com/ros-controls/ros2_controllers/issues/858>`_)
+* [JTC] Fix dynamic reconfigure of tolerances (backport `#849 <https://github.com/ros-controls/ros2_controllers/issues/849>`_)
+* [JTC] Fix tests when state offset is used (backport `#797 <https://github.com/ros-controls/ros2_controllers/issues/797>`_)
+* [JTC] Set `allow_nonzero_velocity_at_trajectory_end` default false and rename class variables (backport `#834 <https://github.com/ros-controls/ros2_controllers/issues/834>`_) (`#843 <https://github.com/ros-controls/ros2_controllers/issues/843>`_)
+* [JTC] Remove unused home pose (`#845 <https://github.com/ros-controls/ros2_controllers/issues/845>`_) (`#852 <https://github.com/ros-controls/ros2_controllers/issues/852>`_)
+* Contributors: Christoph Fröhlich, Dr Denis, Bence Magyar
+
 3.18.0 (2023-11-21)
 -------------------
 * [JTC] Activate update of dynamic parameters (`#761 <https://github.com/ros-controls/ros2_controllers/issues/761>`_) (`#838 <https://github.com/ros-controls/ros2_controllers/issues/838>`_)
