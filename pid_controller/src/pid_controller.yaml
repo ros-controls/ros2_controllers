@@ -79,9 +79,9 @@ pid_controller:
         default_value: 0.0,
         description: "Gain for the feed-forward part."
       }
-
-  runtime_param_update: {
-    type: bool,
-    default_value: false,
-    description: "Enable parameters update when controller is active on each control step. If the parameter is 'false' then reactivation of controller is needed to update parameters."
-  }
+      angle_wraparound: {
+        type: bool,
+        default_value: false,
+        description: "For joints that wrap around (i.e., are continuous).
+          Normalizes position-error to -pi to pi."
+      }

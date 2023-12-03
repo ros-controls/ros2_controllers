@@ -393,6 +393,50 @@ TEST_F(PidControllerTest, test_update_logic_chainable_feedforward_on)
   }
 }
 
+/**
+ * @brief check default calculation with angle_wraparound turned off
+ */
+TEST_F(PidControllerTest, test_update_logic_angle_wraparound_off)
+{
+  SetUpController();
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+  executor.add_node(service_caller_node_->get_node_base_interface());
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  controller_->set_chained_mode(true);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(controller_->is_in_chained_mode());
+
+  // write reference interface so that the values are would be wrapped
+
+  // run update
+
+  // check the result of the commands - the values are not wrapped
+}
+
+/**
+ * @brief check default calculation with angle_wraparound turned off
+ */
+TEST_F(PidControllerTest, test_update_logic_angle_wraparound_on)
+{
+  SetUpController();
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+  executor.add_node(service_caller_node_->get_node_base_interface());
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  controller_->set_chained_mode(true);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(controller_->is_in_chained_mode());
+
+  // write reference interface so that the values are would be wrapped
+
+  // run update
+
+  // check the result of the commands - the values are wrapped
+}
+
 TEST_F(PidControllerTest, subscribe_and_get_messages_success)
 {
   SetUpController();

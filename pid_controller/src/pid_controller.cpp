@@ -367,8 +367,6 @@ controller_interface::CallbackReturn PidController::on_activate(
   measured_state_values_.assign(
     measured_state_values_.size(), std::numeric_limits<double>::quiet_NaN());
 
-  // TODO(destogl): make here parameter update
-
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
@@ -443,6 +441,14 @@ controller_interface::return_type PidController::update_and_write_commands(
         tmp_command = 0.0;
       }
 
+      double error = reference_interfaces_[i] - measured_state_values_[i];
+      if (params_.gains.dof_names_map[params_.dof_names[i]].angle_wraparound)
+      {
+        // for continuous angles the error is normalized between -pi<error<pi
+        error =
+          angles::shortest_angular_distance(reference_interfaces_[i] - measured_state_values_[i]);
+      }
+
       // checking if there are two interfaces
       if (reference_interfaces_.size() == 2 * dof_ && measured_state_values_.size() == 2 * dof_)
       {
@@ -452,21 +458,18 @@ controller_interface::return_type PidController::update_and_write_commands(
         {
           // use calculation with 'error' and 'error_dot'
           tmp_command += pids_[i]->computeCommand(
-            reference_interfaces_[i] - measured_state_values_[i],
-            reference_interfaces_[dof_ + i] - measured_state_values_[dof_ + i], period);
+            error, reference_interfaces_[dof_ + i] - measured_state_values_[dof_ + i], period);
         }
         else
         {
           // Fallback to calculation with 'error' only
-          tmp_command +=
-            pids_[i]->computeCommand(reference_interfaces_[i] - measured_state_values_[i], period);
+          tmp_command += pids_[i]->computeCommand(error, period);
         }
       }
       else
       {
         // use calculation with 'error' only
-        tmp_command +=
-          pids_[i]->computeCommand(reference_interfaces_[i] - measured_state_values_[i], period);
+        tmp_command += pids_[i]->computeCommand(error, period);
       }
 
       // write calculated values
@@ -485,8 +488,7 @@ controller_interface::return_type PidController::update_and_write_commands(
       {
         state_publisher_->msg_.dof_states[i].feedback_dot = measured_state_values_[dof_ + i];
       }
-      state_publisher_->msg_.dof_states[i].error =
-        reference_interfaces_[i] - measured_state_values_[i];
+      state_publisher_->msg_.dof_states[i].error = error;
       if (reference_interfaces_.size() == 2 * dof_ && measured_state_values_.size() == 2 * dof_)
       {
         state_publisher_->msg_.dof_states[i].error_dot =
