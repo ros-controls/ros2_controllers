@@ -22,6 +22,7 @@
 #include <string>
 #include <vector>
 
+#include "angles/angles.h"
 #include "control_msgs/msg/single_dof_state.hpp"
 #include "controller_interface/helpers.hpp"
 
@@ -446,7 +447,7 @@ controller_interface::return_type PidController::update_and_write_commands(
       {
         // for continuous angles the error is normalized between -pi<error<pi
         error =
-          angles::shortest_angular_distance(reference_interfaces_[i] - measured_state_values_[i]);
+          angles::shortest_angular_distance(measured_state_values_[i], reference_interfaces_[i]);
       }
 
       // checking if there are two interfaces
@@ -488,7 +489,14 @@ controller_interface::return_type PidController::update_and_write_commands(
       {
         state_publisher_->msg_.dof_states[i].feedback_dot = measured_state_values_[dof_ + i];
       }
-      state_publisher_->msg_.dof_states[i].error = error;
+      state_publisher_->msg_.dof_states[i].error =
+        reference_interfaces_[i] - measured_state_values_[i];
+      if (params_.gains.dof_names_map[params_.dof_names[i]].angle_wraparound)
+      {
+        // for continuous angles the error is normalized between -pi<error<pi
+        state_publisher_->msg_.dof_states[i].error =
+          angles::shortest_angular_distance(measured_state_values_[i], reference_interfaces_[i]);
+      }
       if (reference_interfaces_.size() == 2 * dof_ && measured_state_values_.size() == 2 * dof_)
       {
         state_publisher_->msg_.dof_states[i].error_dot =
