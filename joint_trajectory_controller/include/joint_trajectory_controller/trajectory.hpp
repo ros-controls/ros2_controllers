@@ -154,7 +154,7 @@ private:
   rclcpp::Time time_before_traj_msg_;
   trajectory_msgs::msg::JointTrajectoryPoint state_before_traj_msg_;
 
-  size_t prev_start_idx_;
+  size_t previous_start_idx_;
   bool sampled_already_ = false;
 };
 

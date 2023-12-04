@@ -62,7 +62,7 @@ void MultiInterfaceForwardCommandControllerTest::TearDown() { controller_.reset(
 
 void MultiInterfaceForwardCommandControllerTest::SetUpController(bool set_params_and_activate)
 {
-  const auto result = controller_->init("multi_interface_forward_command_controller", "", 0);
+  const auto result = controller_->init("multi_interface_forward_command_controller", "", rclcpp::NodeOptions());
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
   std::vector<LoanedCommandInterface> command_ifs;

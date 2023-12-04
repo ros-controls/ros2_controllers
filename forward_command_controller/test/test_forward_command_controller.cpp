@@ -60,7 +60,7 @@ void ForwardCommandControllerTest::TearDown() { controller_.reset(nullptr); }
 
 void ForwardCommandControllerTest::SetUpController()
 {
-  const auto result = controller_->init("forward_command_controller", "", 0);
+  const auto result = controller_->init("forward_command_controller", "", rclcpp::NodeOptions());
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
   std::vector<LoanedCommandInterface> command_ifs;
