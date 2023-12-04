@@ -4,7 +4,9 @@
   <name>pid_controller</name>
   <version>0.0.0</version>
   <description>Controller based on PID implememenation from control_toolbox package.</description>
+  <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
   <maintainer email="denis.stogl@stoglrobotics.de">Denis Štogl</maintainer>
+  <author email="denis.stogl@stoglrobotics.de">Denis Štogl</author>
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
