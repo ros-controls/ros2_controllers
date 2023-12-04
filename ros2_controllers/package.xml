@@ -22,6 +22,7 @@
   <exec_depend>imu_sensor_broadcaster</exec_depend>
   <exec_depend>joint_state_broadcaster</exec_depend>
   <exec_depend>joint_trajectory_controller</exec_depend>
+  <exec_depend>pid_controller</exec_depend>
   <exec_depend>position_controllers</exec_depend>
   <exec_depend>range_sensor_broadcaster</exec_depend>
   <exec_depend>steering_controllers_library</exec_depend>
