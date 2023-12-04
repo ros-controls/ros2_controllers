@@ -1369,10 +1369,11 @@ bool JointTrajectoryController::validate_trajectory_msg(
   {
     for (size_t i = 0; i < trajectory.points.back().velocities.size(); ++i)
     {
-      if (trajectory.points.back().velocities.at(i) != 0.)
+      if (fabs(trajectory.points.back().velocities.at(i)) > std::numeric_limits<float>::epsilon())
       {
         RCLCPP_ERROR(
-          get_node()->get_logger(), "Velocity of last trajectory point of joint %s is not zero: %f",
+          get_node()->get_logger(),
+          "Velocity of last trajectory point of joint %s is not zero: %.15f",
           trajectory.joint_names.at(i).c_str(), trajectory.points.back().velocities.at(i));
         return false;
       }
