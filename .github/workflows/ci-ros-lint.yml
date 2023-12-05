@@ -31,6 +31,7 @@ jobs:
           imu_sensor_broadcaster
           joint_state_broadcaster
           joint_trajectory_controller
+          pid_controller
           position_controllers
           range_sensor_broadcaster
           ros2_controllers
@@ -69,6 +70,7 @@ jobs:
           imu_sensor_broadcaster
           joint_state_broadcaster
           joint_trajectory_controller
+          pid_controller
           position_controllers
           range_sensor_broadcaster
           ros2_controllers
