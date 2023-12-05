@@ -2,6 +2,9 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 3.19.0 (2023-12-01)
 -------------------
 

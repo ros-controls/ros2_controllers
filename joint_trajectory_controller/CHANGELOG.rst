@@ -2,6 +2,11 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix floating point comparison in JTC (`#879 <https://github.com/ros-controls/ros2_controllers/issues/879>`_) (`#880 <https://github.com/ros-controls/ros2_controllers/issues/880>`_)
+* Contributors: mergify[bot]
+
 3.19.0 (2023-12-01)
 -------------------
 * [JTC] Activate checks for parameter validation (backport `#857 <https://github.com/ros-controls/ros2_controllers/issues/857>`_) (`#873 <https://github.com/ros-controls/ros2_controllers/issues/873>`_)
