@@ -2,8 +2,8 @@
 Changelog for package force_torque_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.29.0 (2023-12-05)
+-------------------
 * [ForceTorqueSensorBroadcaster] Create ParamListener and get parameters on configure (backport `#698 <https://github.com/ros-controls/ros2_controllers/issues/698>`_) (`#750 <https://github.com/ros-controls/ros2_controllers/issues/750>`_)
   * [ForceTorqueSensorBroadcaster] Create ParamListener and get parameters on configure (`#698 <https://github.com/ros-controls/ros2_controllers/issues/698>`_)
   * Create ParamListener and get parameters on configure
