@@ -2,6 +2,23 @@
 Changelog for package force_torque_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* [ForceTorqueSensorBroadcaster] Create ParamListener and get parameters on configure (backport `#698 <https://github.com/ros-controls/ros2_controllers/issues/698>`_) (`#750 <https://github.com/ros-controls/ros2_controllers/issues/750>`_)
+  * [ForceTorqueSensorBroadcaster] Create ParamListener and get parameters on configure (`#698 <https://github.com/ros-controls/ros2_controllers/issues/698>`_)
+  * Create ParamListener and get parameters on configure
+  * Declare parameters for test_force_torque_sensor_broadcaster
+  Since the parameters are not declared on init anymore, they cannot be
+  set without declaring them before
+  ---------
+  Co-authored-by: Bence Magyar <bence.magyar.robotics@gmail.com>
+  (cherry picked from commit 32aaef7552638826aba0b3f3a72b1c1453739afa)
+  * Fix "parameter is already declared" error
+  ---------
+  Co-authored-by: Noel Jiménez García <noel.jimenez@pal-robotics.com>
+  Co-authored-by: Christoph Froehlich <christoph.froehlich@ait.ac.at>
+* Contributors: mergify[bot]
+
 2.28.0 (2023-11-30)
 -------------------
 
