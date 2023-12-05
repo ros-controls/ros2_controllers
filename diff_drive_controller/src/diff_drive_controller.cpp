@@ -405,15 +405,6 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
       tf_prefix = std::string(get_node()->get_namespace());
     }
 
-<<<<<<< HEAD
-  if (controller_namespace == "/")
-  {
-    controller_namespace = "";
-  }
-  else
-  {
-    controller_namespace = controller_namespace.erase(0, 1) + "/";
-=======
     if (tf_prefix == "/")
     {
       tf_prefix = "";
@@ -422,7 +413,6 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
     {
       tf_prefix = tf_prefix + "/";
     }
->>>>>>> 5c0327d ([DiffDriveController] Optional tf namespace prefixes instead of using node namespace (#533))
   }
 
   const auto odom_frame_id = tf_prefix + params_.odom_frame_id;
