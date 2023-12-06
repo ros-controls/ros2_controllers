@@ -49,15 +49,15 @@ bool PidTrajectoryPlugin::initialize(rclcpp_lifecycle::LifecycleNode::SharedPtr 
   return true;
 }
 
-bool PidTrajectoryPlugin::computeGains(const trajectory_msgs::msg::JointTrajectory trajectory)
+bool PidTrajectoryPlugin::computeGains(const trajectory_msgs::msg::JointTrajectory /*trajectory*/)
 {
   return true;
 }
 
 void PidTrajectoryPlugin::computeCommands(
-  std::vector<double> & tmp_command, const trajectory_msgs::msg::JointTrajectoryPoint current,
+  std::vector<double> & tmp_command, const trajectory_msgs::msg::JointTrajectoryPoint /*current*/,
   const trajectory_msgs::msg::JointTrajectoryPoint error,
-  const trajectory_msgs::msg::JointTrajectoryPoint desired, const rclcpp::Time & time,
+  const trajectory_msgs::msg::JointTrajectoryPoint desired, const rclcpp::Time & /*time*/,
   const rclcpp::Duration & period)
 {
   // Update PIDs
