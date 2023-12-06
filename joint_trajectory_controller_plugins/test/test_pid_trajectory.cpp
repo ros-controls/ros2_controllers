@@ -31,7 +31,7 @@ TEST_F(PidTrajectoryTest, TestSingleJoint)
   auto joint_names_paramv = rclcpp::ParameterValue(joint_names);
 
   // override read_only parameter
-  node_->declare_parameter("joints", joint_names_paramv);
+  node_->declare_parameter("command_joints", joint_names_paramv);
 
   ASSERT_TRUE(traj_contr->initialize(node_, joint_names));
 
@@ -63,7 +63,7 @@ TEST_F(PidTrajectoryTest, TestMultipleJoints)
   auto joint_names_paramv = rclcpp::ParameterValue(joint_names);
 
   // override read_only parameter
-  node_->declare_parameter("joints", joint_names_paramv);
+  node_->declare_parameter("command_joints", joint_names_paramv);
 
   ASSERT_TRUE(traj_contr->initialize(node_, joint_names));
 

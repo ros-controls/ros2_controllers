@@ -134,6 +134,8 @@ protected:
 
   // Storing command joint names for interfaces
   std::vector<std::string> command_joint_names_;
+  // TODO(anyone) remove this if there is another way to lock command_joints parameter
+  rclcpp_lifecycle::LifecycleNode::PreSetParametersCallbackHandle::SharedPtr lock_cmd_joint_names;
 
   // Parameters from ROS for joint_trajectory_controller
   std::shared_ptr<ParamListener> param_listener_;

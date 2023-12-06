@@ -1,15 +1,15 @@
 joint_trajectory_controller_plugins:
-  joints: {
+  command_joints: {
     type: string_array,
     default_value: [],
-    description: "Names of joints used by the controller",
+    description: "Names of joints used by the controller plugin",
     read_only: true,
     validation: {
       size_gt<>: [0],
     }
   }
   gains:
-    __map_joints:
+    __map_command_joints:
       p: {
         type: double,
         default_value: 0.0,

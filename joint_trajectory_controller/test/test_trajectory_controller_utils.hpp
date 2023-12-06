@@ -86,24 +86,9 @@ public:
     return success;
   }
 
-  void set_joint_names(const std::vector<std::string> & joint_names)
-  {
-    params_.joints = joint_names;
-  }
-
   void set_command_joint_names(const std::vector<std::string> & command_joint_names)
   {
     command_joint_names_ = command_joint_names;
-  }
-
-  void set_command_interfaces(const std::vector<std::string> & command_interfaces)
-  {
-    params_.command_interfaces = command_interfaces;
-  }
-
-  void set_state_interfaces(const std::vector<std::string> & state_interfaces)
-  {
-    params_.state_interfaces = state_interfaces;
   }
 
   void trigger_declare_parameters() { param_listener_->declare_params(); }
@@ -112,6 +97,7 @@ public:
   {
     return last_commanded_state_;
   }
+
   bool has_position_state_interface() const { return has_position_state_interface_; }
 
   bool has_velocity_state_interface() const { return has_velocity_state_interface_; }
@@ -227,12 +213,15 @@ public:
     }
   }
 
+  /**
+   * @brief set PIDs for every entry in joint_names_
+   * be aware to update if PIDs should be configured for different command_joints than joint_names
+   */
   void SetPidParameters(double p_default = 0.0, double ff_default = 1.0)
   {
     traj_controller_->trigger_declare_parameters();
     auto node = traj_controller_->get_node();
 
-    // TODO(christophfroehlich): use command joints instead of joint_names
     for (size_t i = 0; i < joint_names_.size(); ++i)
     {
       const std::string prefix = "gains." + joint_names_[i];

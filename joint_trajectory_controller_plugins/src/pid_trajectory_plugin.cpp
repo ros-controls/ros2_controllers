@@ -75,7 +75,7 @@ void PidTrajectoryPlugin::updateGains()
       node_->get_logger(), "[PidTrajectoryPlugin] command_joint_names_ %lu : %s", i,
       command_joint_names_[i].c_str());
 
-    const auto & gains = params_.gains.joints_map.at(command_joint_names_[i]);
+    const auto & gains = params_.gains.command_joints_map.at(command_joint_names_[i]);
     pids_[i] = std::make_shared<control_toolbox::Pid>(
       gains.p, gains.i, gains.d, gains.i_clamp, -gains.i_clamp);
     ff_velocity_scale_[i] = gains.ff_velocity_scale;
