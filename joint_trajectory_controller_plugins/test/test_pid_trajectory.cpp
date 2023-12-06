@@ -45,11 +45,11 @@ TEST_F(PidTrajectoryTest, TestSingleJoint)
   traj_msg.positions.push_back(0.0);
   traj_msg.velocities.push_back(0.0);
   std::vector<double> tmp_command(1, 0.0);
-  const rclcpp::Time time;
+  const rclcpp::Duration time_since_start(1, 0);
   const rclcpp::Duration period(1, 0);
 
-  ASSERT_NO_THROW(
-    traj_contr->computeCommands(tmp_command, traj_msg, traj_msg, traj_msg, time, period));
+  ASSERT_NO_THROW(traj_contr->computeCommands(
+    tmp_command, traj_msg, traj_msg, traj_msg, time_since_start, period));
 }
 
 TEST_F(PidTrajectoryTest, TestMultipleJoints)
@@ -86,11 +86,11 @@ TEST_F(PidTrajectoryTest, TestMultipleJoints)
   traj_msg.velocities.push_back(0.0);
   traj_msg.velocities.push_back(0.0);
   std::vector<double> tmp_command(3, 0.0);
-  const rclcpp::Time time;
+  const rclcpp::Duration time_since_start(1, 0);
   const rclcpp::Duration period(1, 0);
 
-  ASSERT_NO_THROW(
-    traj_contr->computeCommands(tmp_command, traj_msg, traj_msg, traj_msg, time, period));
+  ASSERT_NO_THROW(traj_contr->computeCommands(
+    tmp_command, traj_msg, traj_msg, traj_msg, time_since_start, period));
 
   EXPECT_EQ(tmp_command[0], 1.0);
   EXPECT_EQ(tmp_command[1], 2.0);

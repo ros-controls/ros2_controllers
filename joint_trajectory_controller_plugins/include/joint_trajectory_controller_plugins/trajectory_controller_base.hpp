@@ -82,22 +82,11 @@ public:
   }
 
   /**
-   * @brief set the time when the current trajectory started
+   * @brief called when the current trajectory started in update loop
    *
-   * (same logic as trajectory class)
+   * use this to implement switching of real-time buffers for updating the control law
    */
-  void start(const rclcpp::Time time, const rclcpp::Time trajectory_start_time)
-  {
-    if (trajectory_start_time.seconds() == 0.0)
-    {
-      trajectory_start_time_ = time;
-    }
-    else
-    {
-      trajectory_start_time_ = trajectory_start_time;
-    }
-    start_trajectory_ = true;
-  }
+  virtual void start(void) = 0;
 
   /**
    * @brief update the gains from a RT thread
@@ -110,14 +99,22 @@ public:
   virtual bool updateGainsRT(void) = 0;
 
   /**
-   * @brief compute the commands with the calculated gains
+   * @brief compute the commands with the precalculated control law
+   *
+   * @param[out] tmp_command the output command
+   * @param[in] current the current state
+   * @param[in] error the error between the current state and the desired state
+   * @param[in] desired the desired state
+   * @param[in] duration_since_start the duration since the start of the trajectory
+   *            can be negative if the trajectory-start is in the future
+   * @param[in] period the period since the last update
    */
   JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
   virtual void computeCommands(
     std::vector<double> & tmp_command, const trajectory_msgs::msg::JointTrajectoryPoint current,
     const trajectory_msgs::msg::JointTrajectoryPoint error,
-    const trajectory_msgs::msg::JointTrajectoryPoint desired, const rclcpp::Time & time,
-    const rclcpp::Duration & period) = 0;
+    const trajectory_msgs::msg::JointTrajectoryPoint desired,
+    const rclcpp::Duration & duration_since_start, const rclcpp::Duration & period) = 0;
 
   /**
    * @brief reset internal states
@@ -136,10 +133,6 @@ protected:
   rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
   // Are we computing the control law or is it valid?
   realtime_tools::RealtimeBuffer<bool> rt_control_law_ready_;
-  // time when the current trajectory started, can be used to interpolate time-varying gains
-  rclcpp::Time trajectory_start_time_;
-  // use this variable to activate new gains from the non-RT thread
-  bool start_trajectory_ = false;
 
   /**
    * @brief compute the control law from the given trajectory

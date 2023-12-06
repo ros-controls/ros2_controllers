@@ -78,13 +78,6 @@ bool PidTrajectoryPlugin::updateGainsRT()
   return true;
 }
 
-bool PidTrajectoryPlugin::computeControlLaw(
-  const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & /*trajectory*/)
-{
-  // nothing to do
-  return true;
-};
-
 void PidTrajectoryPlugin::updateGains()
 {
   for (size_t i = 0; i < num_cmd_joints_; ++i)
@@ -112,8 +105,8 @@ void PidTrajectoryPlugin::updateGains()
 void PidTrajectoryPlugin::computeCommands(
   std::vector<double> & tmp_command, const trajectory_msgs::msg::JointTrajectoryPoint /*current*/,
   const trajectory_msgs::msg::JointTrajectoryPoint error,
-  const trajectory_msgs::msg::JointTrajectoryPoint desired, const rclcpp::Time & /*time*/,
-  const rclcpp::Duration & period)
+  const trajectory_msgs::msg::JointTrajectoryPoint desired,
+  const rclcpp::Duration & /*duration_since_start*/, const rclcpp::Duration & period)
 {
   // Update PIDs
   for (auto i = 0ul; i < num_cmd_joints_; ++i)

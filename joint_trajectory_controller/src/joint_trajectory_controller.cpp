@@ -223,7 +223,7 @@ controller_interface::return_type JointTrajectoryController::update(
       if (traj_contr_)
       {
         // set start time of trajectory to traj_contr_
-        traj_contr_->start(time, traj_external_point_ptr_->time_from_start());
+        traj_contr_->start();
       }
     }
 
@@ -300,7 +300,8 @@ controller_interface::return_type JointTrajectoryController::update(
         if (traj_contr_)
         {
           traj_contr_->computeCommands(
-            tmp_command_, state_current_, state_error_, state_desired_, time, period);
+            tmp_command_, state_current_, state_error_, state_desired_,
+            time - traj_external_point_ptr_->time_from_start(), period);
         }
 
         // set values for next hardware write()

@@ -40,17 +40,26 @@ public:
   bool activate() override;
 
   bool computeControlLaw(
-    const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & /*trajectory*/) override;
+    const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & /*trajectory*/) override
+  {
+    // nothing to do
+    return true;
+  }
 
   bool updateGainsRT() override;
 
   void computeCommands(
     std::vector<double> & tmp_command, const trajectory_msgs::msg::JointTrajectoryPoint current,
     const trajectory_msgs::msg::JointTrajectoryPoint error,
-    const trajectory_msgs::msg::JointTrajectoryPoint desired, const rclcpp::Time & time,
-    const rclcpp::Duration & period) override;
+    const trajectory_msgs::msg::JointTrajectoryPoint desired,
+    const rclcpp::Duration & duration_since_start, const rclcpp::Duration & period) override;
 
   void reset() override;
+
+  void start() override
+  {
+    // nothing to do
+  }
 
 protected:
   /**
