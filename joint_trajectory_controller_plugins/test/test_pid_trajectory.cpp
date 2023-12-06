@@ -19,7 +19,7 @@ TEST_F(PidTrajectoryTest, TestEmptySetup)
   std::shared_ptr<TestableJointTrajectoryControllerPlugin> traj_contr =
     std::make_shared<TestableJointTrajectoryControllerPlugin>();
 
-  ASSERT_FALSE(traj_contr->initialize(node_, std::vector<std::string>()));
+  ASSERT_FALSE(traj_contr->initialize(node_));
 }
 
 TEST_F(PidTrajectoryTest, TestSingleJoint)
@@ -30,17 +30,15 @@ TEST_F(PidTrajectoryTest, TestSingleJoint)
   std::vector<std::string> joint_names = {"joint1"};
   auto joint_names_paramv = rclcpp::ParameterValue(joint_names);
 
-  // override read_only parameter
+  // override parameter
   node_->declare_parameter("command_joints", joint_names_paramv);
 
-  ASSERT_TRUE(traj_contr->initialize(node_, joint_names));
-
-  // set dynamic parameters
-  traj_contr->trigger_declare_parameters();
+  ASSERT_TRUE(traj_contr->initialize(node_));
   node_->set_parameter(rclcpp::Parameter("gains.joint1.p", 1.0));
-
+  ASSERT_TRUE(traj_contr->configure());
+  ASSERT_TRUE(traj_contr->activate());
   ASSERT_TRUE(
-    traj_contr->computeGainsNonRT(std::make_shared<trajectory_msgs::msg::JointTrajectory>()));
+    traj_contr->computeControlLawNonRT(std::make_shared<trajectory_msgs::msg::JointTrajectory>()));
   ASSERT_TRUE(traj_contr->updateGainsRT());
 
   trajectory_msgs::msg::JointTrajectoryPoint traj_msg;
@@ -62,19 +60,22 @@ TEST_F(PidTrajectoryTest, TestMultipleJoints)
   std::vector<std::string> joint_names = {"joint1", "joint2", "joint3"};
   auto joint_names_paramv = rclcpp::ParameterValue(joint_names);
 
-  // override read_only parameter
+  // override parameter
   node_->declare_parameter("command_joints", joint_names_paramv);
 
-  ASSERT_TRUE(traj_contr->initialize(node_, joint_names));
-
+  ASSERT_TRUE(traj_contr->initialize(node_));
   // set dynamic parameters
-  traj_contr->trigger_declare_parameters();
   node_->set_parameter(rclcpp::Parameter("gains.joint1.p", 1.0));
   node_->set_parameter(rclcpp::Parameter("gains.joint2.p", 2.0));
   node_->set_parameter(rclcpp::Parameter("gains.joint3.p", 3.0));
+  ASSERT_TRUE(traj_contr->configure());
+  ASSERT_TRUE(traj_contr->activate());
+  ASSERT_TRUE(
+    traj_contr->computeControlLawNonRT(std::make_shared<trajectory_msgs::msg::JointTrajectory>()));
+  ASSERT_TRUE(traj_contr->updateGainsRT());
 
   ASSERT_TRUE(
-    traj_contr->computeGainsNonRT(std::make_shared<trajectory_msgs::msg::JointTrajectory>()));
+    traj_contr->computeControlLawNonRT(std::make_shared<trajectory_msgs::msg::JointTrajectory>()));
   ASSERT_TRUE(traj_contr->updateGainsRT());
 
   trajectory_msgs::msg::JointTrajectoryPoint traj_msg;

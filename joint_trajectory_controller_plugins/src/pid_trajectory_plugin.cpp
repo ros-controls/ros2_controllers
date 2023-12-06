@@ -17,17 +17,14 @@
 namespace joint_trajectory_controller_plugins
 {
 
-bool PidTrajectoryPlugin::initialize(
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node, std::vector<std::string> command_joint_names)
+bool PidTrajectoryPlugin::initialize(rclcpp_lifecycle::LifecycleNode::SharedPtr node)
 {
   node_ = node;
-  command_joint_names_ = command_joint_names;
 
   try
   {
     // Create the parameter listener and get the parameters
     param_listener_ = std::make_shared<ParamListener>(node_);
-    params_ = param_listener_->get_params();
   }
   catch (const std::exception & e)
   {
@@ -35,8 +32,23 @@ bool PidTrajectoryPlugin::initialize(
     return false;
   }
 
+  return true;
+}
+
+bool PidTrajectoryPlugin::configure()
+{
+  try
+  {
+    params_ = param_listener_->get_params();
+  }
+  catch (const std::exception & e)
+  {
+    fprintf(stderr, "Exception thrown during configure stage with message: %s \n", e.what());
+    return false;
+  }
+
   // parse read-only params
-  num_cmd_joints_ = command_joint_names_.size();
+  num_cmd_joints_ = params_.command_joints.size();
   if (num_cmd_joints_ == 0)
   {
     RCLCPP_ERROR(node_->get_logger(), "[PidTrajectoryPlugin] No command joints specified.");
@@ -46,7 +58,14 @@ bool PidTrajectoryPlugin::initialize(
   ff_velocity_scale_.resize(num_cmd_joints_);
 
   return true;
-}
+};
+
+bool PidTrajectoryPlugin::activate()
+{
+  params_ = param_listener_->get_params();
+  updateGains();
+  return true;
+};
 
 bool PidTrajectoryPlugin::updateGainsRT()
 {
@@ -59,11 +78,10 @@ bool PidTrajectoryPlugin::updateGainsRT()
   return true;
 }
 
-bool PidTrajectoryPlugin::computeGainsNonRT(
+bool PidTrajectoryPlugin::computeControlLaw(
   const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & /*trajectory*/)
 {
-  params_ = param_listener_->get_params();
-  updateGains();
+  // nothing to do
   return true;
 };
 
@@ -72,10 +90,10 @@ void PidTrajectoryPlugin::updateGains()
   for (size_t i = 0; i < num_cmd_joints_; ++i)
   {
     RCLCPP_DEBUG(
-      node_->get_logger(), "[PidTrajectoryPlugin] command_joint_names_ %lu : %s", i,
-      command_joint_names_[i].c_str());
+      node_->get_logger(), "[PidTrajectoryPlugin] params_.command_joints %lu : %s", i,
+      params_.command_joints[i].c_str());
 
-    const auto & gains = params_.gains.command_joints_map.at(command_joint_names_[i]);
+    const auto & gains = params_.gains.command_joints_map.at(params_.command_joints[i]);
     pids_[i] = std::make_shared<control_toolbox::Pid>(
       gains.p, gains.i, gains.d, gains.i_clamp, -gains.i_clamp);
     ff_velocity_scale_[i] = gains.ff_velocity_scale;

@@ -33,11 +33,13 @@ namespace joint_trajectory_controller_plugins
 class PidTrajectoryPlugin : public TrajectoryControllerBase
 {
 public:
-  bool initialize(
-    rclcpp_lifecycle::LifecycleNode::SharedPtr node,
-    std::vector<std::string> command_joint_names) override;
+  bool initialize(rclcpp_lifecycle::LifecycleNode::SharedPtr node) override;
 
-  bool computeGainsNonRT(
+  bool configure() override;
+
+  bool activate() override;
+
+  bool computeControlLaw(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & /*trajectory*/) override;
 
   bool updateGainsRT() override;
@@ -58,8 +60,6 @@ protected:
 
   // number of command joints
   size_t num_cmd_joints_;
-  // name of the command joints
-  std::vector<std::string> command_joint_names_;
   // PID controllers
   std::vector<PidPtr> pids_;
   // Feed-forward velocity weight factor when calculating closed loop pid adapter's command

@@ -22,6 +22,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "realtime_tools/realtime_buffer.h"
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
@@ -40,26 +41,50 @@ public:
 
   /**
    * @brief initialize the controller plugin.
-   * parse read-only parameters and do pre-allocate memory for the controller
+   * declare parameters
    */
   JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
-  virtual bool initialize(
-    rclcpp_lifecycle::LifecycleNode::SharedPtr node,
-    std::vector<std::string> command_joint_names) = 0;
+  virtual bool initialize(rclcpp_lifecycle::LifecycleNode::SharedPtr node) = 0;
 
   /**
-   * @brief compute the gains from the given trajectory from a non-RT thread
+   * @brief configure the controller plugin.
+   * parse read-only parameters, pre-allocate memory for the controller
+   */
+  JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
+  virtual bool configure() = 0;
+
+  /**
+   * @brief activate the controller plugin.
+   * parse parameters
+   */
+  JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
+  virtual bool activate() = 0;
+
+  /**
+   * @brief compute the control law for the given trajectory
+   *
+   * this method can take more time to compute the control law. Hence, it will block the execution
+   * of the trajectory until it finishes
+   *
+   * this method is not virtual, any overrides won't be called by JTC. Instead, override
+   * computeControlLaw for your implementation
+   *
    * @return true if the gains were computed, false otherwise
    */
   JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
-  virtual bool computeGainsNonRT(
-    const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory) = 0;
+  bool computeControlLawNonRT(
+    const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory)
+  {
+    rt_controller_valid_.writeFromNonRT(false);
+    auto ret = computeControlLaw(trajectory);
+    rt_controller_valid_.writeFromNonRT(true);
+    return ret;
+  }
 
   /**
-   * @brief update the gains from the given trajectory from a RT thread
+   * @brief update the gains from a RT thread
    *
-   * this method must finish quickly (within one controller-update rate,
-   * and should not allocate memory
+   * this method must finish quickly (within one controller-update rate)
    *
    * @return true if the gains were updated, false otherwise
    */
@@ -82,9 +107,25 @@ public:
   JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
   virtual void reset() = 0;
 
+  /**
+   * @return true if the control law is valid (updated with the trajectory)
+   */
+  JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
+  bool is_valid() { return rt_controller_valid_.readFromRT(); }
+
 protected:
   // the node handle for parameter handling
   rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
+  // Are we computing the control law or is it valid?
+  realtime_tools::RealtimeBuffer<bool> rt_controller_valid_;
+
+  /**
+   * @brief compute the control law from the given trajectory
+   * @return true if the gains were computed, false otherwise
+   */
+  JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
+  virtual bool computeControlLaw(
+    const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory) = 0;
 };
 
 }  // namespace joint_trajectory_controller_plugins

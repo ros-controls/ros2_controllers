@@ -127,25 +127,18 @@ controller_interface::return_type JointTrajectoryController::update(
   {
     params_ = param_listener_->get_params();
     default_tolerances_ = get_segment_tolerances(params_);
-    // update the PID gains
-    // variable use_closed_loop_pid_adapter_ is updated in on_configure only
-    if (use_closed_loop_pid_adapter_)
+
+    // update gains of controller
+    // variable use_closed_loop_control_law_ is updated in on_configure only
+    if (use_closed_loop_control_law_)
     {
-      update_pids();
+      if (traj_contr_->updateGainsRT() == false)
+      {
+        RCLCPP_ERROR(get_node()->get_logger(), "Could not update gains of controller");
+        return controller_interface::return_type::ERROR;
+      }
     }
   }
-
-  // update gains of controller
-  // TODO(christophfroehlich) activate this
-  // once https://github.com/ros-controls/ros2_controllers/pull/761 is merged
-  // if (use_closed_loop_control_law_)
-  // {
-  //   if(traj_contr_->updateGainsRT() == false)
-  //   {
-  //     RCLCPP_ERROR(get_node()->get_logger(), "Could not update gains of controller");
-  //     return controller_interface::return_type::ERROR;
-  //   }
-  // }
 
   auto compute_error_for_joint = [&](
                                    JointTrajectoryPoint & error, size_t index,
@@ -182,11 +175,13 @@ controller_interface::return_type JointTrajectoryController::update(
   // Check if a new external message has been received from nonRT threads
   auto current_external_msg = traj_external_point_ptr_->get_trajectory_msg();
   auto new_external_msg = traj_msg_external_point_ptr_.readFromRT();
-  // Discard, if a goal is pending but still not active (somewhere stuck in goal_handle_timer_)
-  // TODO(christophfroehlich) wait until gains were computed by the trajectory controller
+  // Discard,
+  //  if a goal is pending but still not active (somewhere stuck in goal_handle_timer_)
+  //  and if use_closed_loop_control_law_: wait until control law is computed by the traj_contr_
   if (
     current_external_msg != *new_external_msg &&
-    (*(rt_has_pending_goal_.readFromRT()) && !active_goal) == false)
+    (*(rt_has_pending_goal_.readFromRT()) && !active_goal) == false &&
+    (use_closed_loop_control_law_ == false || traj_contr_->is_valid()))
   {
     fill_partial_goal(*new_external_msg);
     sort_to_local_joint_order(*new_external_msg);
@@ -768,7 +763,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
         params_.controller_plugin.c_str(), ex.what());
       return CallbackReturn::FAILURE;
     }
-    if (traj_contr_->initialize(get_node(), command_joint_names_) == false)
+    if (traj_contr_->initialize(get_node()) == false)
     {
       RCLCPP_FATAL(
         logger,
@@ -778,9 +773,20 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     }
     else
     {
-      RCLCPP_INFO(
-        logger, "The trajectory controller plugin `%s` was loaded.",
-        params_.controller_plugin.c_str());
+      if (traj_contr_->configure() == false)
+      {
+        RCLCPP_FATAL(
+          logger,
+          "The trajectory controller plugin `%s` failed to initialize for some reason. Aborting.",
+          params_.controller_plugin.c_str());
+        return CallbackReturn::FAILURE;
+      }
+      else
+      {
+        RCLCPP_INFO(
+          logger, "The trajectory controller plugin `%s` was loaded and configured.",
+          params_.controller_plugin.c_str());
+      }
     }
 
     tmp_command_.resize(dof_, 0.0);
@@ -1035,6 +1041,11 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   else
   {
     cmd_timeout_ = 0.0;
+  }
+
+  if (use_closed_loop_control_law_)
+  {
+    traj_contr_->activate();
   }
 
   return CallbackReturn::SUCCESS;
@@ -1507,7 +1518,7 @@ void JointTrajectoryController::add_new_trajectory_msg(
   // compute gains of controller
   if (use_closed_loop_control_law_)
   {
-    if (traj_contr_->computeGainsNonRT(traj_msg) == false)
+    if (traj_contr_->computeControlLawNonRT(traj_msg) == false)
     {
       RCLCPP_ERROR(get_node()->get_logger(), "Failed to compute gains for trajectory.");
     }
