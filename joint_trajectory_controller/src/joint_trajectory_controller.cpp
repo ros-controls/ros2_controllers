@@ -30,7 +30,6 @@
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
-#include "pluginlib/class_loader.hpp"
 #include "rclcpp/event_handler.hpp"
 #include "rclcpp/logging.hpp"
 #include "rclcpp/parameter.hpp"
@@ -48,7 +47,13 @@
 namespace joint_trajectory_controller
 {
 JointTrajectoryController::JointTrajectoryController()
-: controller_interface::ControllerInterface(), dof_(0)
+: controller_interface::ControllerInterface(),
+  dof_(0),
+  traj_controller_loader_(
+    std::make_shared<
+      pluginlib::ClassLoader<joint_trajectory_controller_plugins::TrajectoryControllerBase>>(
+      "joint_trajectory_controller_plugins",
+      "joint_trajectory_controller_plugins::TrajectoryControllerBase"))
 {
 }
 
@@ -708,13 +713,10 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
 
   if (use_closed_loop_pid_adapter_)
   {
-    pluginlib::ClassLoader<joint_trajectory_controller_plugins::TrajectoryControllerBase>
-      traj_controller_loader(
-        "joint_trajectory_controller_plugins",
-        "joint_trajectory_controller_plugins::TrajectoryControllerBase");
     try
     {
-      traj_contr_ = traj_controller_loader.createSharedInstance(params_.controller_plugin.c_str());
+      traj_contr_ =
+        traj_controller_loader_->createSharedInstance(params_.controller_plugin.c_str());
     }
     catch (pluginlib::PluginlibException & ex)
     {
@@ -726,8 +728,16 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     if (!traj_contr_->initialize(get_node()))
     {
       RCLCPP_FATAL(
-        logger, "The trajectory controller plugin failed to initialize for some reason. Aborting.");
+        logger,
+        "The trajectory controller plugin `%s` failed to initialize for some reason. Aborting.",
+        params_.controller_plugin.c_str());
       return CallbackReturn::FAILURE;
+    }
+    else
+    {
+      RCLCPP_INFO(
+        logger, "The trajectory controller plugin `%s` was loaded.",
+        params_.controller_plugin.c_str());
     }
 
     tmp_command_.resize(dof_, 0.0);

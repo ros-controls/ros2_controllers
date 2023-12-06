@@ -27,6 +27,7 @@
 #include "control_msgs/srv/query_trajectory_state.hpp"
 #include "controller_interface/controller_interface.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
+#include "pluginlib/class_loader.hpp"
 #include "rclcpp/duration.hpp"
 #include "rclcpp/subscription.hpp"
 #include "rclcpp/time.hpp"
@@ -162,7 +163,11 @@ protected:
 
   /// If true, a velocity feedforward term plus corrective PID term is used
   bool use_closed_loop_pid_adapter_ = false;
-  // The actual trajectory controller used for closed loop pid adapter
+  // class loader for actual trajectory controller
+  std::shared_ptr<
+    pluginlib::ClassLoader<joint_trajectory_controller_plugins::TrajectoryControllerBase>>
+    traj_controller_loader_;
+  // The actual trajectory controller
   std::shared_ptr<joint_trajectory_controller_plugins::TrajectoryControllerBase> traj_contr_;
   // Configuration for every joint, if position error is wrapped around
   std::vector<bool> joints_angle_wraparound_;
