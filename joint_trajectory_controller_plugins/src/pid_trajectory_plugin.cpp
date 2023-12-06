@@ -17,7 +17,7 @@
 namespace joint_trajectory_controller_plugins
 {
 
-bool PidTrajectoryPlugin::initialize(rclcpp::Node::SharedPtr node)
+bool PidTrajectoryPlugin::initialize(rclcpp_lifecycle::LifecycleNode::SharedPtr node)
 {
   node_ = node;
 

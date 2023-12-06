@@ -46,8 +46,8 @@ public:
   void SetUp() override
   {
     auto testname = ::testing::UnitTest::GetInstance()->current_test_info()->name();
-    node_ = std::make_shared<rclcpp::Node>(testname);
-    executor_->add_node(node_);
+    node_ = std::make_shared<rclcpp_lifecycle::LifecycleNode>(testname);
+    executor_->add_node(node_->get_node_base_interface());
     executor_thread_ = std::thread([this]() { executor_->spin(); });
   }
 
@@ -64,7 +64,7 @@ public:
   }
 
 protected:
-  rclcpp::Node::SharedPtr node_;
+  rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
   rclcpp::Executor::SharedPtr executor_;
   std::thread executor_thread_;
 };

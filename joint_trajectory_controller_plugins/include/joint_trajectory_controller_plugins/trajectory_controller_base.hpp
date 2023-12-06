@@ -39,7 +39,7 @@ public:
   /**
    */
   JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
-  virtual bool initialize(rclcpp::Node::SharedPtr node) = 0;
+  virtual bool initialize(rclcpp_lifecycle::LifecycleNode::SharedPtr node) = 0;
 
   /**
    */
@@ -62,7 +62,7 @@ public:
 
 protected:
   // the node handle for parameter handling
-  rclcpp::Node::SharedPtr node_;
+  rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
 };
 
 }  // namespace joint_trajectory_controller_plugins

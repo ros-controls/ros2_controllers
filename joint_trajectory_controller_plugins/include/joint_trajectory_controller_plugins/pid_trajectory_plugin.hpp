@@ -32,7 +32,7 @@ namespace joint_trajectory_controller_plugins
 class PidTrajectoryPlugin : public TrajectoryControllerBase
 {
 public:
-  bool initialize(rclcpp::Node::SharedPtr node) override;
+  bool initialize(rclcpp_lifecycle::LifecycleNode::SharedPtr node) override;
 
   bool computeGains(const trajectory_msgs::msg::JointTrajectory trajectory) override;
 
