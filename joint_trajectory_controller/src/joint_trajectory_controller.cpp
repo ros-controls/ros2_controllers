@@ -712,16 +712,13 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
       "trajectory_plugins", "trajectory_plugins::TrajectoryControllerBase");
     try
     {
-      RCLCPP_INFO(logger, "Load the library");
-      traj_contr_ =
-        traj_controller_loader.createSharedInstance("trajectory_plugins::PidTrajectoryPlugin");
-      RCLCPP_INFO(logger, "Loaded the library");
+      traj_contr_ = traj_controller_loader.createSharedInstance(params_.controller_plugin.c_str());
     }
     catch (pluginlib::PluginlibException & ex)
     {
       RCLCPP_FATAL(
-        logger, "The trajectory controller plugin failed to load for some reason. Error: %s\n",
-        ex.what());
+        logger, "The trajectory controller plugin `%s` failed to load for some reason. Error: %s\n",
+        params_.controller_plugin.c_str(), ex.what());
       return CallbackReturn::FAILURE;
     }
     if (!traj_contr_->initialize(get_node()))

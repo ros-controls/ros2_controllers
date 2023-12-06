@@ -35,14 +35,3 @@ trajectory_plugins:
         default_value: 0.0,
         description: "Feed-forward scaling of velocity."
       }
-      normalize_error: {
-        type: bool,
-        default_value: false,
-        description: "(Deprecated) Use position error normalization to -pi to pi."
-      }
-      angle_wraparound: {
-        type: bool,
-        default_value: false,
-        description: "For joints that wrap around (ie. are continuous).
-          Normalizes position-error to -pi to pi."
-      }
