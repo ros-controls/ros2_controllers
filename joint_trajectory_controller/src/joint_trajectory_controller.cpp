@@ -220,7 +220,7 @@ controller_interface::return_type JointTrajectoryController::update(
       }
       if (traj_contr_)
       {
-        // set start time of trajectory to traj_contr_
+        // switch RT buffer of traj_contr_
         traj_contr_->start();
       }
     }
@@ -1041,9 +1041,11 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
     cmd_timeout_ = 0.0;
   }
 
-  if (traj_contr_)
+  // activate traj_contr_, e.g., update gains
+  if (traj_contr_ && traj_contr_->activate() == false)
   {
-    traj_contr_->activate();
+    RCLCPP_ERROR(get_node()->get_logger(), "Error during trajectory controller activation.");
+    return CallbackReturn::ERROR;
   }
 
   return CallbackReturn::SUCCESS;
