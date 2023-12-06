@@ -708,8 +708,10 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
 
   if (use_closed_loop_pid_adapter_)
   {
-    pluginlib::ClassLoader<trajectory_plugins::TrajectoryControllerBase> traj_controller_loader(
-      "trajectory_plugins", "trajectory_plugins::TrajectoryControllerBase");
+    pluginlib::ClassLoader<joint_trajectory_controller_plugins::TrajectoryControllerBase>
+      traj_controller_loader(
+        "joint_trajectory_controller_plugins",
+        "joint_trajectory_controller_plugins::TrajectoryControllerBase");
     try
     {
       traj_contr_ = traj_controller_loader.createSharedInstance(params_.controller_plugin.c_str());

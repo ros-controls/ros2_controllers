@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TRAJECTORY_PLUGINS__TRAJECTORY_CONTROLLER_BASE_HPP_
-#define TRAJECTORY_PLUGINS__TRAJECTORY_CONTROLLER_BASE_HPP_
+#ifndef JOINT_TRAJECTORY_CONTROLLER_PLUGINS__TRAJECTORY_CONTROLLER_BASE_HPP_
+#define JOINT_TRAJECTORY_CONTROLLER_PLUGINS__TRAJECTORY_CONTROLLER_BASE_HPP_
 
 #include <vector>
 
@@ -23,32 +23,32 @@
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
-#include "trajectory_plugins/visibility_control.h"
+#include "joint_trajectory_controller_plugins/visibility_control.h"
 
-namespace trajectory_plugins
+namespace joint_trajectory_controller_plugins
 {
 class TrajectoryControllerBase
 {
 public:
-  TRAJECTORY_PLUGINS_PUBLIC
+  JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
   TrajectoryControllerBase() = default;
 
-  TRAJECTORY_PLUGINS_PUBLIC
+  JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
   virtual ~TrajectoryControllerBase() = default;
 
   /**
    */
-  TRAJECTORY_PLUGINS_PUBLIC
+  JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
   virtual bool initialize(rclcpp_lifecycle::LifecycleNode::SharedPtr node) = 0;
 
   /**
    */
-  TRAJECTORY_PLUGINS_PUBLIC
+  JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
   virtual bool computeGains(const trajectory_msgs::msg::JointTrajectory trajectory) = 0;
 
   /**
    */
-  TRAJECTORY_PLUGINS_PUBLIC
+  JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
   virtual void computeCommands(
     std::vector<double> & tmp_command, const trajectory_msgs::msg::JointTrajectoryPoint current,
     const trajectory_msgs::msg::JointTrajectoryPoint error,
@@ -57,7 +57,7 @@ public:
 
   /**
    */
-  TRAJECTORY_PLUGINS_PUBLIC
+  JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
   virtual void reset() = 0;
 
 protected:
@@ -65,6 +65,6 @@ protected:
   rclcpp::Node::SharedPtr node_;
 };
 
-}  // namespace trajectory_plugins
+}  // namespace joint_trajectory_controller_plugins
 
-#endif  // TRAJECTORY_PLUGINS__TRAJECTORY_CONTROLLER_BASE_HPP_
+#endif  // JOINT_TRAJECTORY_CONTROLLER_PLUGINS__TRAJECTORY_CONTROLLER_BASE_HPP_

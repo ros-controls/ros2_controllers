@@ -88,7 +88,7 @@ joint_trajectory_controller:
   }
   controller_plugin : {
     type: string,
-    default_value: "trajectory_plugins::PidTrajectoryPlugin",
+    default_value: "joint_trajectory_controller_plugins::PidTrajectoryPlugin",
     description: "Type of the plugin for the trajectory controller",
   }
   gains:

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(trajectory_plugins LANGUAGES CXX)
+project(joint_trajectory_controller_plugins LANGUAGES CXX)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
   add_compile_options(-Wall -Wextra -Wconversion)
@@ -27,7 +27,7 @@ generate_parameter_library(pid_trajectory_plugin_parameters
 )
 
 add_library(pid_trajectory_plugin SHARED src/pid_trajectory_plugin.cpp)
-add_library(trajectory_plugins::pid_trajectory_plugin ALIAS pid_trajectory_plugin)
+add_library(joint_trajectory_controller_plugins::pid_trajectory_plugin ALIAS pid_trajectory_plugin)
 target_compile_features(pid_trajectory_plugin PUBLIC cxx_std_17)
 target_include_directories(pid_trajectory_plugin PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -36,11 +36,11 @@ ament_target_dependencies(pid_trajectory_plugin PUBLIC ${THIS_PACKAGE_INCLUDE_DE
 target_link_libraries(pid_trajectory_plugin PUBLIC
   pid_trajectory_plugin_parameters
 )
-pluginlib_export_plugin_description_file(trajectory_plugins plugins.xml)
+pluginlib_export_plugin_description_file(joint_trajectory_controller_plugins plugins.xml)
 
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
-target_compile_definitions(pid_trajectory_plugin PRIVATE "TRAJECTORY_PLUGINS_BUILDING_LIBRARY")
+target_compile_definitions(pid_trajectory_plugin PRIVATE "JOINT_TRAJECTORY_CONTROLLER_PLUGINS_BUILDING_LIBRARY")
 
 install(
   DIRECTORY include/

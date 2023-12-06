@@ -19,7 +19,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   rsl
   tl_expected
   trajectory_msgs
-  trajectory_plugins
+  joint_trajectory_controller_plugins
 )
 
 find_package(ament_cmake REQUIRED)

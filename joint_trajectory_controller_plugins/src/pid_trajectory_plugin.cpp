@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "trajectory_plugins/pid_trajectory_plugin.hpp"
+#include "joint_trajectory_controller_plugins/pid_trajectory_plugin.hpp"
 
-namespace trajectory_plugins
+namespace joint_trajectory_controller_plugins
 {
 
 bool PidTrajectoryPlugin::initialize(rclcpp_lifecycle::LifecycleNode::SharedPtr node)
@@ -80,9 +80,10 @@ void PidTrajectoryPlugin::reset()
   }
 }
 
-}  // namespace trajectory_plugins
+}  // namespace joint_trajectory_controller_plugins
 
 #include <pluginlib/class_list_macros.hpp>
 
 PLUGINLIB_EXPORT_CLASS(
-  trajectory_plugins::PidTrajectoryPlugin, trajectory_plugins::TrajectoryControllerBase)
+  joint_trajectory_controller_plugins::PidTrajectoryPlugin,
+  joint_trajectory_controller_plugins::TrajectoryControllerBase)

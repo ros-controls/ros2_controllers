@@ -1,4 +1,4 @@
-trajectory_plugins:
+joint_trajectory_controller_plugins:
   joints: {
     type: string_array,
     default_value: [],
