@@ -75,10 +75,28 @@ public:
   bool computeControlLawNonRT(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory)
   {
-    rt_controller_valid_.writeFromNonRT(false);
+    rt_control_law_ready_.writeFromNonRT(false);
     auto ret = computeControlLaw(trajectory);
-    rt_controller_valid_.writeFromNonRT(true);
+    rt_control_law_ready_.writeFromNonRT(true);
     return ret;
+  }
+
+  /**
+   * @brief set the time when the current trajectory started
+   *
+   * (same logic as trajectory class)
+   */
+  void start(const rclcpp::Time time, const rclcpp::Time trajectory_start_time)
+  {
+    if (trajectory_start_time.seconds() == 0.0)
+    {
+      trajectory_start_time_ = time;
+    }
+    else
+    {
+      trajectory_start_time_ = trajectory_start_time;
+    }
+    start_trajectory_ = true;
   }
 
   /**
@@ -108,16 +126,20 @@ public:
   virtual void reset() = 0;
 
   /**
-   * @return true if the control law is valid (updated with the trajectory)
+   * @return true if the control law is ready (updated with the trajectory)
    */
   JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
-  bool is_valid() { return rt_controller_valid_.readFromRT(); }
+  bool is_ready() { return rt_control_law_ready_.readFromRT(); }
 
 protected:
   // the node handle for parameter handling
   rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
   // Are we computing the control law or is it valid?
-  realtime_tools::RealtimeBuffer<bool> rt_controller_valid_;
+  realtime_tools::RealtimeBuffer<bool> rt_control_law_ready_;
+  // time when the current trajectory started, can be used to interpolate time-varying gains
+  rclcpp::Time trajectory_start_time_;
+  // use this variable to activate new gains from the non-RT thread
+  bool start_trajectory_ = false;
 
   /**
    * @brief compute the control law from the given trajectory
