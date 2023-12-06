@@ -116,7 +116,11 @@ public:
 
   bool is_open_loop() const { return params_.open_loop_control; }
 
-  std::vector<PidPtr> get_pids() const { return pids_; }
+  std::shared_ptr<joint_trajectory_controller_plugins::TrajectoryControllerBase> get_traj_contr()
+    const
+  {
+    return traj_contr_;
+  }
 
   joint_trajectory_controller::SegmentTolerances get_tolerances() const
   {
@@ -208,7 +212,8 @@ public:
     for (size_t i = 0; i < joint_names_.size(); ++i)
     {
       const std::string prefix = "gains." + joint_names_[i];
-      const rclcpp::Parameter angle_wraparound(prefix + ".angle_wraparound", angle_wraparound_default);
+      const rclcpp::Parameter angle_wraparound(
+        prefix + ".angle_wraparound", angle_wraparound_default);
       node->set_parameters({angle_wraparound});
     }
   }

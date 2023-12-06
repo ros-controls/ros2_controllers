@@ -127,10 +127,8 @@ controller_interface::return_type JointTrajectoryController::update(
   {
     params_ = param_listener_->get_params();
     default_tolerances_ = get_segment_tolerances(params_);
-
     // update gains of controller
-    // variable use_closed_loop_control_law_ is updated in on_configure only
-    if (use_external_control_law_)
+    if (traj_contr_)
     {
       if (traj_contr_->updateGainsRT() == false)
       {
