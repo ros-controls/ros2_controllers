@@ -45,37 +45,50 @@ bool PidTrajectoryPlugin::initialize(
   pids_.resize(num_cmd_joints_);
   ff_velocity_scale_.resize(num_cmd_joints_);
 
-  RCLCPP_INFO(
-    node_->get_logger(), "[PidTrajectoryPlugin] Initialized with %lu joints.", num_cmd_joints_);
   return true;
 }
 
-bool PidTrajectoryPlugin::computeGains(
-  const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & /*trajectory*/)
+bool PidTrajectoryPlugin::updateGainsRT()
 {
   if (param_listener_->is_old(params_))
   {
     params_ = param_listener_->get_params();
-    RCLCPP_DEBUG(node_->get_logger(), "[PidTrajectoryPlugin] Updated parameters");
+    updateGains();
   }
 
-  pids_.resize(num_cmd_joints_);
-  ff_velocity_scale_.resize(num_cmd_joints_);
+  return true;
+}
 
-  // Init PID gains from ROS parameters
+bool PidTrajectoryPlugin::computeGainsNonRT(
+  const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & /*trajectory*/)
+{
+  params_ = param_listener_->get_params();
+  updateGains();
+  return true;
+};
+
+void PidTrajectoryPlugin::updateGains()
+{
   for (size_t i = 0; i < num_cmd_joints_; ++i)
   {
+    RCLCPP_DEBUG(
+      node_->get_logger(), "[PidTrajectoryPlugin] command_joint_names_ %lu : %s", i,
+      command_joint_names_[i].c_str());
+
     const auto & gains = params_.gains.joints_map.at(command_joint_names_[i]);
     pids_[i] = std::make_shared<control_toolbox::Pid>(
       gains.p, gains.i, gains.d, gains.i_clamp, -gains.i_clamp);
-
     ff_velocity_scale_[i] = gains.ff_velocity_scale;
+
+    RCLCPP_DEBUG(node_->get_logger(), "[PidTrajectoryPlugin] gains.p: %f", gains.p);
+    RCLCPP_DEBUG(
+      node_->get_logger(), "[PidTrajectoryPlugin] ff_velocity_scale_: %f", ff_velocity_scale_[i]);
   }
 
   RCLCPP_INFO(
     node_->get_logger(),
-    "[PidTrajectoryPlugin] Loaded PID gains from ROS parameters for %lu joints.", num_cmd_joints_);
-  return true;
+    "[PidTrajectoryPlugin] Loaded PID gains from ROS parameters for %lu joint(s).",
+    num_cmd_joints_);
 }
 
 void PidTrajectoryPlugin::computeCommands(

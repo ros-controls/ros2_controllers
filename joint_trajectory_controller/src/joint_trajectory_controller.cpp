@@ -135,6 +135,18 @@ controller_interface::return_type JointTrajectoryController::update(
     }
   }
 
+  // update gains of controller
+  // TODO(christophfroehlich) activate this
+  // once https://github.com/ros-controls/ros2_controllers/pull/761 is merged
+  // if (use_closed_loop_control_law_)
+  // {
+  //   if(traj_contr_->updateGainsRT() == false)
+  //   {
+  //     RCLCPP_ERROR(get_node()->get_logger(), "Could not update gains of controller");
+  //     return controller_interface::return_type::ERROR;
+  //   }
+  // }
+
   auto compute_error_for_joint = [&](
                                    JointTrajectoryPoint & error, size_t index,
                                    const JointTrajectoryPoint & current,
@@ -171,6 +183,7 @@ controller_interface::return_type JointTrajectoryController::update(
   auto current_external_msg = traj_external_point_ptr_->get_trajectory_msg();
   auto new_external_msg = traj_msg_external_point_ptr_.readFromRT();
   // Discard, if a goal is pending but still not active (somewhere stuck in goal_handle_timer_)
+  // TODO(christophfroehlich) wait until gains were computed by the trajectory controller
   if (
     current_external_msg != *new_external_msg &&
     (*(rt_has_pending_goal_.readFromRT()) && !active_goal) == false)
@@ -705,7 +718,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     contains_interface_type(params_.command_interfaces, hardware_interface::HW_IF_EFFORT);
 
   // if there is only velocity or if there is effort command interface
-  // then use also closed loop controller
+  // then use also closed-loop controller
   use_closed_loop_control_law_ =
     (has_velocity_command_interface_ && params_.command_interfaces.size() == 1 &&
      !params_.open_loop_control) ||
@@ -1461,10 +1474,13 @@ void JointTrajectoryController::add_new_trajectory_msg(
 {
   traj_msg_external_point_ptr_.writeFromNonRT(traj_msg);
 
-  // update gains of controller
+  // compute gains of controller
   if (use_closed_loop_control_law_)
   {
-    traj_contr_->computeGains(traj_msg);
+    if (traj_contr_->computeGainsNonRT(traj_msg) == false)
+    {
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to compute gains for trajectory.");
+    }
   }
 }
 

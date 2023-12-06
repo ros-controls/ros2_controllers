@@ -39,6 +39,8 @@ public:
   virtual ~TrajectoryControllerBase() = default;
 
   /**
+   * @brief initialize the controller plugin.
+   * parse read-only parameters and do pre-allocate memory for the controller
    */
   JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
   virtual bool initialize(
@@ -46,12 +48,26 @@ public:
     std::vector<std::string> command_joint_names) = 0;
 
   /**
+   * @brief compute the gains from the given trajectory from a non-RT thread
+   * @return true if the gains were computed, false otherwise
    */
   JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
-  virtual bool computeGains(
+  virtual bool computeGainsNonRT(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory) = 0;
 
   /**
+   * @brief update the gains from the given trajectory from a RT thread
+   *
+   * this method must finish quickly (within one controller-update rate,
+   * and should not allocate memory
+   *
+   * @return true if the gains were updated, false otherwise
+   */
+  JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
+  virtual bool updateGainsRT(void) = 0;
+
+  /**
+   * @brief compute the commands with the calculated gains
    */
   JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
   virtual void computeCommands(
@@ -61,6 +77,7 @@ public:
     const rclcpp::Duration & period) = 0;
 
   /**
+   * @brief reset internal states
    */
   JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
   virtual void reset() = 0;

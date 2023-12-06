@@ -232,6 +232,7 @@ public:
     traj_controller_->trigger_declare_parameters();
     auto node = traj_controller_->get_node();
 
+    // TODO(christophfroehlich): use command joints instead of joint_names
     for (size_t i = 0; i < joint_names_.size(); ++i)
     {
       const std::string prefix = "gains." + joint_names_[i];

@@ -37,8 +37,10 @@ public:
     rclcpp_lifecycle::LifecycleNode::SharedPtr node,
     std::vector<std::string> command_joint_names) override;
 
-  bool computeGains(
-    const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory) override;
+  bool computeGainsNonRT(
+    const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & /*trajectory*/) override;
+
+  bool updateGainsRT() override;
 
   void computeCommands(
     std::vector<double> & tmp_command, const trajectory_msgs::msg::JointTrajectoryPoint current,
@@ -49,6 +51,11 @@ public:
   void reset() override;
 
 protected:
+  /**
+   * @brief parse PID gains from parameter struct
+   */
+  void updateGains();
+
   // number of command joints
   size_t num_cmd_joints_;
   // name of the command joints
