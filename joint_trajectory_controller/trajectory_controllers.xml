@@ -1,0 +1,6 @@
+<library path="joint_trajectory_controller">
+  <class
+  type="joint_trajectory_controller::PidTrajectoryController" base_class_type="joint_trajectory_controller::TrajectoryControllerBase">
+    <description>A trajectory controller consisting of a PID controller per joint.</description>
+  </class>
+</library>

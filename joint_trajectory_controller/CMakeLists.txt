@@ -51,6 +51,26 @@ ament_target_dependencies(joint_trajectory_controller PUBLIC ${THIS_PACKAGE_INCL
 target_compile_definitions(joint_trajectory_controller PRIVATE "JOINT_TRAJECTORY_CONTROLLER_BUILDING_DLL" "_USE_MATH_DEFINES")
 pluginlib_export_plugin_description_file(controller_interface joint_trajectory_plugin.xml)
 
+# trajectory controllers shipped with JTC
+add_library(pid_trajectory SHARED
+  src/pid_trajectory.cpp
+)
+target_compile_features(pid_trajectory PUBLIC cxx_std_17)
+target_include_directories(pid_trajectory PUBLIC
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include/joint_trajectory_controller>
+)
+target_link_libraries(pid_trajectory PUBLIC
+  joint_trajectory_controller_parameters
+)
+ament_target_dependencies(pid_trajectory PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
+
+# Causes the visibility macros to use dllexport rather than dllimport,
+# which is appropriate when building the dll but not consuming it.
+# target_compile_definitions(pid_trajectory PRIVATE "JOINT_TRAJECTORY_CONTROLLER_BUILDING_DLL" "_USE_MATH_DEFINES")
+target_compile_definitions(pid_trajectory PRIVATE "JOINT_TRAJECTORY_CONTROLLER_BUILDING_LIBRARY")
+pluginlib_export_plugin_description_file(joint_trajectory_controller trajectory_controllers.xml)
+
 if(BUILD_TESTING)
   find_package(ament_cmake_gmock REQUIRED)
   find_package(controller_manager REQUIRED)
@@ -86,6 +106,16 @@ if(BUILD_TESTING)
   target_link_libraries(test_trajectory_actions
     joint_trajectory_controller
   )
+
+  ament_add_gmock(test_load_pid_trajectory
+    test/test_load_pid_trajectory.cpp
+  )
+  target_link_libraries(test_load_pid_trajectory
+    joint_trajectory_controller
+  )
+  ament_target_dependencies(test_load_pid_trajectory
+    ${THIS_PACKAGE_INCLUDE_DEPENDS}
+  )
 endif()
 
 
@@ -96,6 +126,7 @@ install(
 install(TARGETS
     joint_trajectory_controller
     joint_trajectory_controller_parameters
+    pid_trajectory
   EXPORT export_joint_trajectory_controller
   RUNTIME DESTINATION bin
   ARCHIVE DESTINATION lib
@@ -104,4 +135,12 @@ install(TARGETS
 
 ament_export_targets(export_joint_trajectory_controller HAS_LIBRARY_TARGET)
 ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
+
+ament_export_libraries(
+  joint_trajectory_controller
+)
+ament_export_libraries(
+  pid_trajectory
+)
+
 ament_package()

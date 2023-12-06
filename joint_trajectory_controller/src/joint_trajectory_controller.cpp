@@ -29,8 +29,8 @@
 #include "controller_interface/helpers.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
-#include "joint_trajectory_controller/trajectory.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
+#include "pluginlib/class_loader.hpp"
 #include "rclcpp/event_handler.hpp"
 #include "rclcpp/logging.hpp"
 #include "rclcpp/parameter.hpp"
@@ -42,6 +42,8 @@
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 #include "std_msgs/msg/header.hpp"
+
+#include "joint_trajectory_controller/trajectory.hpp"
 
 namespace joint_trajectory_controller
 {
@@ -279,14 +281,8 @@ controller_interface::return_type JointTrajectoryController::update(
       {
         if (use_closed_loop_pid_adapter_)
         {
-          // Update PIDs
-          for (auto i = 0ul; i < dof_; ++i)
-          {
-            tmp_command_[i] = (state_desired_.velocities[i] * ff_velocity_scale_[i]) +
-                              pids_[i]->computeCommand(
-                                state_error_.positions[i], state_error_.velocities[i],
-                                (uint64_t)period.nanoseconds());
-          }
+          traj_contr_->computeCommands(
+            tmp_command_, state_current_, state_error_, state_desired_, time, period);
         }
 
         // set values for next hardware write()
@@ -712,11 +708,31 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
 
   if (use_closed_loop_pid_adapter_)
   {
-    pids_.resize(dof_);
-    ff_velocity_scale_.resize(dof_);
-    tmp_command_.resize(dof_, 0.0);
+    pluginlib::ClassLoader<joint_trajectory_controller::TrajectoryControllerBase>
+      traj_controller_loader(
+        "joint_trajectory_controller", "joint_trajectory_controller::TrajectoryControllerBase");
+    try
+    {
+      RCLCPP_INFO(logger, "Load the library");
+      traj_contr_ = traj_controller_loader.createSharedInstance(
+        "joint_trajectory_controller::PidTrajectoryController");
+      RCLCPP_INFO(logger, "Loaded the library");
+    }
+    catch (pluginlib::PluginlibException & ex)
+    {
+      RCLCPP_FATAL(
+        logger, "The trajectory controller plugin failed to load for some reason. Error: %s\n",
+        ex.what());
+      return CallbackReturn::FAILURE;
+    }
+    if (!traj_contr_->initialize(get_node()))
+    {
+      RCLCPP_FATAL(
+        logger, "The trajectory controller plugin failed to initialize for some reason. Aborting.");
+      return CallbackReturn::FAILURE;
+    }
 
-    update_pids();
+    tmp_command_.resize(dof_, 0.0);
   }
 
   // Configure joint position error normalization from ROS parameters (angle_wraparound)
@@ -1036,12 +1052,9 @@ bool JointTrajectoryController::reset()
   subscriber_is_active_ = false;
   joint_command_subscriber_.reset();
 
-  for (const auto & pid : pids_)
+  if (traj_contr_)
   {
-    if (pid)
-    {
-      pid->reset();
-    }
+    traj_contr_->reset();
   }
 
   traj_external_point_ptr_.reset();
@@ -1526,26 +1539,6 @@ void JointTrajectoryController::resize_joint_trajectory_point_command(
 bool JointTrajectoryController::has_active_trajectory() const
 {
   return traj_external_point_ptr_ != nullptr && traj_external_point_ptr_->has_trajectory_msg();
-}
-
-void JointTrajectoryController::update_pids()
-{
-  for (size_t i = 0; i < dof_; ++i)
-  {
-    const auto & gains = params_.gains.joints_map.at(params_.joints[i]);
-    if (pids_[i])
-    {
-      // update PIDs with gains from ROS parameters
-      pids_[i]->setGains(gains.p, gains.i, gains.d, gains.i_clamp, -gains.i_clamp);
-    }
-    else
-    {
-      // Init PIDs with gains from ROS parameters
-      pids_[i] = std::make_shared<control_toolbox::Pid>(
-        gains.p, gains.i, gains.d, gains.i_clamp, -gains.i_clamp);
-    }
-    ff_velocity_scale_[i] = gains.ff_velocity_scale;
-  }
 }
 
 void JointTrajectoryController::init_hold_position_msg()
