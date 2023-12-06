@@ -63,7 +63,7 @@ bool PidTrajectoryPlugin::configure()
 bool PidTrajectoryPlugin::activate()
 {
   params_ = param_listener_->get_params();
-  updateGains();
+  parseGains();
   return true;
 };
 
@@ -72,13 +72,13 @@ bool PidTrajectoryPlugin::updateGainsRT()
   if (param_listener_->is_old(params_))
   {
     params_ = param_listener_->get_params();
-    updateGains();
+    parseGains();
   }
 
   return true;
 }
 
-void PidTrajectoryPlugin::updateGains()
+void PidTrajectoryPlugin::parseGains()
 {
   for (size_t i = 0; i < num_cmd_joints_; ++i)
   {

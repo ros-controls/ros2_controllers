@@ -72,7 +72,7 @@ protected:
   /**
    * @brief parse PID gains from parameter struct
    */
-  void updateGains();
+  void parseGains();
 
   // number of command joints
   size_t num_cmd_joints_;
