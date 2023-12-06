@@ -725,7 +725,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
         params_.controller_plugin.c_str(), ex.what());
       return CallbackReturn::FAILURE;
     }
-    if (!traj_contr_->initialize(get_node()))
+    if (traj_contr_->initialize(get_node()) == false)
     {
       RCLCPP_FATAL(
         logger,
@@ -992,6 +992,14 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   else
   {
     cmd_timeout_ = 0.0;
+  }
+
+  // update gains of PID controller
+  if (use_closed_loop_pid_adapter_)
+  {
+    trajectory_msgs::msg::JointTrajectory traj;
+    traj.points.push_back(state_current_);
+    traj_contr_->computeGains(traj);
   }
 
   return CallbackReturn::SUCCESS;
