@@ -19,7 +19,7 @@ TEST_F(PidTrajectoryTest, TestEmptySetup)
   std::shared_ptr<TestableJointTrajectoryControllerPlugin> traj_contr =
     std::make_shared<TestableJointTrajectoryControllerPlugin>();
 
-  ASSERT_FALSE(traj_contr->initialize(node_));
+  ASSERT_FALSE(traj_contr->initialize(node_, std::vector<std::string>()));
 }
 
 TEST_F(PidTrajectoryTest, TestSingleJoint)
@@ -33,7 +33,7 @@ TEST_F(PidTrajectoryTest, TestSingleJoint)
   // override read_only parameter
   node_->declare_parameter("joints", joint_names_paramv);
 
-  ASSERT_TRUE(traj_contr->initialize(node_));
+  ASSERT_TRUE(traj_contr->initialize(node_, joint_names));
 
   // set dynamic parameters
   traj_contr->trigger_declare_parameters();
@@ -63,7 +63,7 @@ TEST_F(PidTrajectoryTest, TestMultipleJoints)
   // override read_only parameter
   node_->declare_parameter("joints", joint_names_paramv);
 
-  ASSERT_TRUE(traj_contr->initialize(node_));
+  ASSERT_TRUE(traj_contr->initialize(node_, joint_names));
 
   // set dynamic parameters
   traj_contr->trigger_declare_parameters();

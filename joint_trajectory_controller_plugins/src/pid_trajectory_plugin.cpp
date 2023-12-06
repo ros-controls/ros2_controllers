@@ -17,23 +17,36 @@
 namespace joint_trajectory_controller_plugins
 {
 
-bool PidTrajectoryPlugin::initialize(rclcpp_lifecycle::LifecycleNode::SharedPtr node)
+bool PidTrajectoryPlugin::initialize(
+  rclcpp_lifecycle::LifecycleNode::SharedPtr node, std::vector<std::string> command_joint_names)
 {
   node_ = node;
+  command_joint_names_ = command_joint_names;
 
   try
   {
     // Create the parameter listener and get the parameters
     param_listener_ = std::make_shared<ParamListener>(node_);
     params_ = param_listener_->get_params();
-    dof_ = params_.joints.size();
   }
   catch (const std::exception & e)
   {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
     return false;
   }
-  RCLCPP_INFO(node_->get_logger(), "[PidTrajectoryPlugin] Initialized with %lu joints.", dof_);
+
+  // parse read-only params
+  num_cmd_joints_ = command_joint_names_.size();
+  if (num_cmd_joints_ == 0)
+  {
+    RCLCPP_ERROR(node_->get_logger(), "[PidTrajectoryPlugin] No command joints specified.");
+    return false;
+  }
+  pids_.resize(num_cmd_joints_);
+  ff_velocity_scale_.resize(num_cmd_joints_);
+
+  RCLCPP_INFO(
+    node_->get_logger(), "[PidTrajectoryPlugin] Initialized with %lu joints.", num_cmd_joints_);
   return true;
 }
 
@@ -45,13 +58,13 @@ bool PidTrajectoryPlugin::computeGains(const trajectory_msgs::msg::JointTrajecto
     RCLCPP_DEBUG(node_->get_logger(), "[PidTrajectoryPlugin] Updated parameters");
   }
 
-  pids_.resize(dof_);
-  ff_velocity_scale_.resize(dof_);
+  pids_.resize(num_cmd_joints_);
+  ff_velocity_scale_.resize(num_cmd_joints_);
 
   // Init PID gains from ROS parameters
-  for (size_t i = 0; i < dof_; ++i)
+  for (size_t i = 0; i < num_cmd_joints_; ++i)
   {
-    const auto & gains = params_.gains.joints_map.at(params_.joints[i]);
+    const auto & gains = params_.gains.joints_map.at(command_joint_names_[i]);
     pids_[i] = std::make_shared<control_toolbox::Pid>(
       gains.p, gains.i, gains.d, gains.i_clamp, -gains.i_clamp);
 
@@ -60,7 +73,7 @@ bool PidTrajectoryPlugin::computeGains(const trajectory_msgs::msg::JointTrajecto
 
   RCLCPP_INFO(
     node_->get_logger(),
-    "[PidTrajectoryPlugin] Loaded PID gains from ROS parameters for %lu joints.", dof_);
+    "[PidTrajectoryPlugin] Loaded PID gains from ROS parameters for %lu joints.", num_cmd_joints_);
   return true;
 }
 
@@ -71,7 +84,7 @@ void PidTrajectoryPlugin::computeCommands(
   const rclcpp::Duration & period)
 {
   // Update PIDs
-  for (auto i = 0ul; i < dof_; ++i)
+  for (auto i = 0ul; i < num_cmd_joints_; ++i)
   {
     tmp_command[i] = (desired.velocities[i] * ff_velocity_scale_[i]) +
                      pids_[i]->computeCommand(

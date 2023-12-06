@@ -15,6 +15,7 @@
 #ifndef JOINT_TRAJECTORY_CONTROLLER_PLUGINS__TRAJECTORY_CONTROLLER_BASE_HPP_
 #define JOINT_TRAJECTORY_CONTROLLER_PLUGINS__TRAJECTORY_CONTROLLER_BASE_HPP_
 
+#include <string>
 #include <vector>
 
 #include "rclcpp/rclcpp.hpp"
@@ -39,7 +40,9 @@ public:
   /**
    */
   JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
-  virtual bool initialize(rclcpp_lifecycle::LifecycleNode::SharedPtr node) = 0;
+  virtual bool initialize(
+    rclcpp_lifecycle::LifecycleNode::SharedPtr node,
+    std::vector<std::string> command_joint_names) = 0;
 
   /**
    */
