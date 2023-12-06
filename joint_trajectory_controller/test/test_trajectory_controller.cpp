@@ -847,7 +847,7 @@ TEST_P(TrajectoryControllerTestParameterized, use_closed_loop_pid)
      !traj_controller_->is_open_loop()) ||
     traj_controller_->has_effort_command_interface())
   {
-    EXPECT_TRUE(traj_controller_->use_closed_loop_pid_adapter());
+    EXPECT_TRUE(traj_controller_->use_closed_loop_control_law());
   }
 }
 
@@ -904,7 +904,7 @@ TEST_P(TrajectoryControllerTestParameterized, velocity_error)
   }
   // is the velocity error correct?
   if (
-    traj_controller_->use_closed_loop_pid_adapter()  // always needed for PID controller
+    traj_controller_->use_closed_loop_control_law()  // always needed for PID controller
     || (traj_controller_->has_velocity_state_interface() &&
         traj_controller_->has_velocity_command_interface()))
   {
@@ -969,8 +969,8 @@ TEST_P(TrajectoryControllerTestParameterized, test_jumbled_joint_order)
 
   if (traj_controller_->has_velocity_command_interface())
   {
-    // if use_closed_loop_pid_adapter_==false: we expect desired velocities from direct sampling
-    // if use_closed_loop_pid_adapter_==true: we expect desired velocities, because we use PID with
+    // if use_closed_loop_control_law_==false: we expect desired velocities from direct sampling
+    // if use_closed_loop_control_law_==true: we expect desired velocities, because we use PID with
     // feedforward term only
     EXPECT_GT(0.0, joint_vel_[0]);
     EXPECT_GT(0.0, joint_vel_[1]);

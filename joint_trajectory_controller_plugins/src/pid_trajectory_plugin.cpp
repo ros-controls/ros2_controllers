@@ -50,7 +50,8 @@ bool PidTrajectoryPlugin::initialize(
   return true;
 }
 
-bool PidTrajectoryPlugin::computeGains(const trajectory_msgs::msg::JointTrajectory /*trajectory*/)
+bool PidTrajectoryPlugin::computeGains(
+  const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & /*trajectory*/)
 {
   if (param_listener_->is_old(params_))
   {

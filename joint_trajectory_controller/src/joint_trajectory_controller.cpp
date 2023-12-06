@@ -284,7 +284,7 @@ controller_interface::return_type JointTrajectoryController::update(
       // set values for next hardware write() if tolerance is met
       if (!tolerance_violated_while_moving && within_goal_time)
       {
-        if (use_closed_loop_pid_adapter_)
+        if (use_closed_loop_control_law_)
         {
           traj_contr_->computeCommands(
             tmp_command_, state_current_, state_error_, state_desired_, time, period);
@@ -297,7 +297,7 @@ controller_interface::return_type JointTrajectoryController::update(
         }
         if (has_velocity_command_interface_)
         {
-          if (use_closed_loop_pid_adapter_)
+          if (use_closed_loop_control_law_)
           {
             assign_interface_from_point(joint_command_interface_[1], tmp_command_);
           }
@@ -705,13 +705,13 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     contains_interface_type(params_.command_interfaces, hardware_interface::HW_IF_EFFORT);
 
   // if there is only velocity or if there is effort command interface
-  // then use also PID adapter
-  use_closed_loop_pid_adapter_ =
+  // then use also closed loop controller
+  use_closed_loop_control_law_ =
     (has_velocity_command_interface_ && params_.command_interfaces.size() == 1 &&
      !params_.open_loop_control) ||
     has_effort_command_interface_;
 
-  if (use_closed_loop_pid_adapter_)
+  if (use_closed_loop_control_law_)
   {
     try
     {
@@ -992,14 +992,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   else
   {
     cmd_timeout_ = 0.0;
-  }
-
-  // update gains of PID controller
-  if (use_closed_loop_pid_adapter_)
-  {
-    trajectory_msgs::msg::JointTrajectory traj;
-    traj.points.push_back(state_current_);
-    traj_contr_->computeGains(traj);
   }
 
   return CallbackReturn::SUCCESS;
@@ -1468,6 +1460,12 @@ void JointTrajectoryController::add_new_trajectory_msg(
   const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & traj_msg)
 {
   traj_msg_external_point_ptr_.writeFromNonRT(traj_msg);
+
+  // update gains of controller
+  if (use_closed_loop_control_law_)
+  {
+    traj_contr_->computeGains(traj_msg);
+  }
 }
 
 void JointTrajectoryController::preempt_active_goal()

@@ -15,6 +15,7 @@
 #ifndef JOINT_TRAJECTORY_CONTROLLER_PLUGINS__TRAJECTORY_CONTROLLER_BASE_HPP_
 #define JOINT_TRAJECTORY_CONTROLLER_PLUGINS__TRAJECTORY_CONTROLLER_BASE_HPP_
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -47,7 +48,8 @@ public:
   /**
    */
   JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
-  virtual bool computeGains(const trajectory_msgs::msg::JointTrajectory trajectory) = 0;
+  virtual bool computeGains(
+    const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory) = 0;
 
   /**
    */

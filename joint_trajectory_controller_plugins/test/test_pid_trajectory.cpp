@@ -39,7 +39,7 @@ TEST_F(PidTrajectoryTest, TestSingleJoint)
   traj_contr->trigger_declare_parameters();
   node_->set_parameter(rclcpp::Parameter("gains.joint1.p", 1.0));
 
-  ASSERT_TRUE(traj_contr->computeGains(trajectory_msgs::msg::JointTrajectory()));
+  ASSERT_TRUE(traj_contr->computeGains(std::make_shared<trajectory_msgs::msg::JointTrajectory>()));
 
   trajectory_msgs::msg::JointTrajectoryPoint traj_msg;
   traj_msg.positions.push_back(0.0);
@@ -71,7 +71,7 @@ TEST_F(PidTrajectoryTest, TestMultipleJoints)
   node_->set_parameter(rclcpp::Parameter("gains.joint2.p", 1.0));
   node_->set_parameter(rclcpp::Parameter("gains.joint3.p", 1.0));
 
-  ASSERT_TRUE(traj_contr->computeGains(trajectory_msgs::msg::JointTrajectory()));
+  ASSERT_TRUE(traj_contr->computeGains(std::make_shared<trajectory_msgs::msg::JointTrajectory>()));
 
   trajectory_msgs::msg::JointTrajectoryPoint traj_msg;
   traj_msg.positions.push_back(0.0);

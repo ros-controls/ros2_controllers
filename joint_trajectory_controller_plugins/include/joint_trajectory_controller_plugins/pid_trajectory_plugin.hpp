@@ -37,7 +37,8 @@ public:
     rclcpp_lifecycle::LifecycleNode::SharedPtr node,
     std::vector<std::string> command_joint_names) override;
 
-  bool computeGains(const trajectory_msgs::msg::JointTrajectory trajectory) override;
+  bool computeGains(
+    const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory) override;
 
   void computeCommands(
     std::vector<double> & tmp_command, const trajectory_msgs::msg::JointTrajectoryPoint current,
