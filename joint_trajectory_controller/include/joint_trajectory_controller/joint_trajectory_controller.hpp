@@ -164,7 +164,7 @@ protected:
   bool has_effort_command_interface_ = false;
 
   /// If true, a velocity feedforward term plus corrective PID term is used
-  bool use_closed_loop_control_law_ = false;
+  bool use_external_control_law_ = false;
   // class loader for actual trajectory controller
   std::shared_ptr<
     pluginlib::ClassLoader<joint_trajectory_controller_plugins::TrajectoryControllerBase>>

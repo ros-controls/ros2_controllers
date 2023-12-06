@@ -112,7 +112,7 @@ public:
 
   bool has_effort_command_interface() const { return has_effort_command_interface_; }
 
-  bool use_closed_loop_control_law() const { return use_closed_loop_control_law_; }
+  bool use_external_control_law() const { return use_external_control_law_; }
 
   bool is_open_loop() const { return params_.open_loop_control; }
 
@@ -265,7 +265,7 @@ public:
 
     // set pid parameters before activate. The PID plugin has to be loaded already, otherwise
     // parameters are not declared yet
-    if (traj_controller_->use_closed_loop_control_law())
+    if (traj_controller_->use_external_control_law())
     {
       SetPidParameters(k_p, ff);
     }
@@ -535,7 +535,7 @@ public:
     // i.e., active but trivial trajectory (one point only)
     EXPECT_TRUE(traj_controller_->has_trivial_traj());
 
-    if (traj_controller_->use_closed_loop_control_law() == false)
+    if (traj_controller_->use_external_control_law() == false)
     {
       if (traj_controller_->has_position_command_interface())
       {

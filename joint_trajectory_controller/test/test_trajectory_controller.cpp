@@ -367,7 +367,7 @@ TEST_P(TrajectoryControllerTestParameterized, update_dynamic_parameters)
   updateControllerAsync();
   auto pids = traj_controller_->get_pids();
 
-  if (traj_controller_->use_closed_loop_pid_adapter())
+  if (traj_controller_->use_external_control_law())
   {
     EXPECT_EQ(pids.size(), 3);
     auto gain_0 = pids.at(0)->getGains();
@@ -525,8 +525,8 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_angle_wraparoun
 
   if (traj_controller_->has_velocity_command_interface())
   {
-    // use_closed_loop_pid_adapter_
-    if (traj_controller_->use_closed_loop_pid_adapter())
+    // use_external_control_law_
+    if (traj_controller_->use_external_control_law())
     {
       // we expect u = k_p * (s_d-s) for positions
       EXPECT_NEAR(
@@ -551,8 +551,7 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_angle_wraparoun
 
   if (traj_controller_->has_effort_command_interface())
   {
-    // use_closed_loop_pid_adapter_
-    if (traj_controller_->use_closed_loop_pid_adapter())
+    if (traj_controller_->use_external_control_law())
     {
       // we expect u = k_p * (s_d-s) for positions
       EXPECT_NEAR(
@@ -638,8 +637,8 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_angle_wraparound)
 
   if (traj_controller_->has_velocity_command_interface())
   {
-    // use_closed_loop_pid_adapter_
-    if (traj_controller_->use_closed_loop_pid_adapter())
+    // use_external_control_law_
+    if (traj_controller_->use_external_control_law())
     {
       // we expect u = k_p * (s_d-s) for positions[0] and positions[1]
       EXPECT_NEAR(
@@ -666,8 +665,8 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_angle_wraparound)
 
   if (traj_controller_->has_effort_command_interface())
   {
-    // use_closed_loop_pid_adapter_
-    if (traj_controller_->use_closed_loop_pid_adapter())
+    // use_external_control_law_
+    if (traj_controller_->use_external_control_law())
     {
       // we expect u = k_p * (s_d-s) for positions[0] and positions[1]
       EXPECT_NEAR(
@@ -831,9 +830,9 @@ TEST_P(TrajectoryControllerTestParameterized, timeout)
 }
 
 /**
- * @brief check if use_closed_loop_pid is active
+ * @brief check if use_external_control_law is set
  */
-TEST_P(TrajectoryControllerTestParameterized, use_closed_loop_pid)
+TEST_P(TrajectoryControllerTestParameterized, set_external_control_law)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
 
@@ -847,7 +846,7 @@ TEST_P(TrajectoryControllerTestParameterized, use_closed_loop_pid)
      !traj_controller_->is_open_loop()) ||
     traj_controller_->has_effort_command_interface())
   {
-    EXPECT_TRUE(traj_controller_->use_closed_loop_control_law());
+    EXPECT_TRUE(traj_controller_->use_external_control_law());
   }
 }
 
@@ -904,7 +903,7 @@ TEST_P(TrajectoryControllerTestParameterized, velocity_error)
   }
   // is the velocity error correct?
   if (
-    traj_controller_->use_closed_loop_control_law()  // always needed for PID controller
+    traj_controller_->use_external_control_law()  // always needed for PID controller
     || (traj_controller_->has_velocity_state_interface() &&
         traj_controller_->has_velocity_command_interface()))
   {
@@ -969,8 +968,8 @@ TEST_P(TrajectoryControllerTestParameterized, test_jumbled_joint_order)
 
   if (traj_controller_->has_velocity_command_interface())
   {
-    // if use_closed_loop_control_law_==false: we expect desired velocities from direct sampling
-    // if use_closed_loop_control_law_==true: we expect desired velocities, because we use PID with
+    // if use_external_control_law_==false: we expect desired velocities from direct sampling
+    // if use_external_control_law_==true: we expect desired velocities, because we use PID with
     // feedforward term only
     EXPECT_GT(0.0, joint_vel_[0]);
     EXPECT_GT(0.0, joint_vel_[1]);

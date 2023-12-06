@@ -130,7 +130,7 @@ controller_interface::return_type JointTrajectoryController::update(
 
     // update gains of controller
     // variable use_closed_loop_control_law_ is updated in on_configure only
-    if (use_closed_loop_control_law_)
+    if (use_external_control_law_)
     {
       if (traj_contr_->updateGainsRT() == false)
       {
@@ -310,7 +310,7 @@ controller_interface::return_type JointTrajectoryController::update(
         }
         if (has_velocity_command_interface_)
         {
-          if (use_closed_loop_control_law_)
+          if (use_external_control_law_)
           {
             assign_interface_from_point(joint_command_interface_[1], tmp_command_);
           }
@@ -748,13 +748,13 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     contains_interface_type(params_.command_interfaces, hardware_interface::HW_IF_EFFORT);
 
   // if there is only velocity or if there is effort command interface
-  // then use also closed-loop controller
-  use_closed_loop_control_law_ =
+  // then use external control law
+  use_external_control_law_ =
     (has_velocity_command_interface_ && params_.command_interfaces.size() == 1 &&
      !params_.open_loop_control) ||
     has_effort_command_interface_;
 
-  if (use_closed_loop_control_law_)
+  if (use_external_control_law_)
   {
     try
     {
@@ -782,7 +782,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
       {
         RCLCPP_FATAL(
           logger,
-          "The trajectory controller plugin `%s` failed to initialize for some reason. Aborting.",
+          "The trajectory controller plugin `%s` failed to configure for some reason. Aborting.",
           params_.controller_plugin.c_str());
         return CallbackReturn::FAILURE;
       }
