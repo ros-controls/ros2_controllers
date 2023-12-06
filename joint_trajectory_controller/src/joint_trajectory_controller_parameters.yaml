@@ -90,6 +90,7 @@ joint_trajectory_controller:
     type: string,
     default_value: "joint_trajectory_controller_plugins::PidTrajectoryPlugin",
     description: "Type of the plugin for the trajectory controller",
+    read_only: true,
   }
   gains:
     __map_joints:
