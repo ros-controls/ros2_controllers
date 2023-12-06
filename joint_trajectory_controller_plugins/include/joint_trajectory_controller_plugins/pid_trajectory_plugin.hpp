@@ -39,7 +39,14 @@ public:
 
   bool activate() override;
 
-  bool computeControlLaw(
+  bool computeControlLawNonRT_impl(
+    const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & /*trajectory*/) override
+  {
+    // nothing to do
+    return true;
+  }
+
+  bool computeControlLawRT_impl(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & /*trajectory*/) override
   {
     // nothing to do
