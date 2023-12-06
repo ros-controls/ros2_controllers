@@ -708,14 +708,13 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
 
   if (use_closed_loop_pid_adapter_)
   {
-    pluginlib::ClassLoader<joint_trajectory_controller::TrajectoryControllerBase>
-      traj_controller_loader(
-        "joint_trajectory_controller", "joint_trajectory_controller::TrajectoryControllerBase");
+    pluginlib::ClassLoader<trajectory_plugins::TrajectoryControllerBase> traj_controller_loader(
+      "trajectory_plugins", "trajectory_plugins::TrajectoryControllerBase");
     try
     {
       RCLCPP_INFO(logger, "Load the library");
-      traj_contr_ = traj_controller_loader.createSharedInstance(
-        "joint_trajectory_controller::PidTrajectoryController");
+      traj_contr_ =
+        traj_controller_loader.createSharedInstance("trajectory_plugins::PidTrajectoryPlugin");
       RCLCPP_INFO(logger, "Loaded the library");
     }
     catch (pluginlib::PluginlibException & ex)

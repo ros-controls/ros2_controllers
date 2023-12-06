@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef JOINT_TRAJECTORY_CONTROLLER__TRAJECTORY_CONTROLLER_BASE_HPP_
-#define JOINT_TRAJECTORY_CONTROLLER__TRAJECTORY_CONTROLLER_BASE_HPP_
+#ifndef TRAJECTORY_PLUGINS__TRAJECTORY_CONTROLLER_BASE_HPP_
+#define TRAJECTORY_PLUGINS__TRAJECTORY_CONTROLLER_BASE_HPP_
 
 #include <vector>
 
@@ -23,32 +23,32 @@
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
-#include "joint_trajectory_controller/visibility_control.h"
+#include "trajectory_plugins/visibility_control.h"
 
-namespace joint_trajectory_controller
+namespace trajectory_plugins
 {
 class TrajectoryControllerBase
 {
 public:
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
+  TRAJECTORY_PLUGINS_PUBLIC
   TrajectoryControllerBase() = default;
 
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
+  TRAJECTORY_PLUGINS_PUBLIC
   virtual ~TrajectoryControllerBase() = default;
 
   /**
    */
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
+  TRAJECTORY_PLUGINS_PUBLIC
   virtual bool initialize(rclcpp_lifecycle::LifecycleNode::SharedPtr node) = 0;
 
   /**
    */
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
+  TRAJECTORY_PLUGINS_PUBLIC
   virtual bool computeGains(const trajectory_msgs::msg::JointTrajectory trajectory) = 0;
 
   /**
    */
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
+  TRAJECTORY_PLUGINS_PUBLIC
   virtual void computeCommands(
     std::vector<double> & tmp_command, const trajectory_msgs::msg::JointTrajectoryPoint current,
     const trajectory_msgs::msg::JointTrajectoryPoint error,
@@ -57,7 +57,7 @@ public:
 
   /**
    */
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
+  TRAJECTORY_PLUGINS_PUBLIC
   virtual void reset() = 0;
 
 protected:
@@ -65,6 +65,6 @@ protected:
   rclcpp::Node::SharedPtr node_;
 };
 
-}  // namespace joint_trajectory_controller
+}  // namespace trajectory_plugins
 
-#endif  // JOINT_TRAJECTORY_CONTROLLER__TRAJECTORY_CONTROLLER_BASE_HPP_
+#endif  // TRAJECTORY_PLUGINS__TRAJECTORY_CONTROLLER_BASE_HPP_

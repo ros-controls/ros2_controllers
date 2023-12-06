@@ -1,6 +1,6 @@
 <library path="pid_trajectory_plugin">
   <class
-  type="trajectory_plugins::PidTrajectoryPlugin" base_class_type="joint_trajectory_controller::TrajectoryControllerBase">
+  type="trajectory_plugins::PidTrajectoryPlugin" base_class_type="trajectory_plugins::TrajectoryControllerBase">
     <description>A trajectory controller consisting of a PID controller per joint.</description>
   </class>
 </library>

@@ -17,20 +17,19 @@
 
 #include "gmock/gmock.h"
 
-#include "joint_trajectory_controller/trajectory_controller_base.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "trajectory_plugins/trajectory_controller_base.hpp"
 
 TEST(TestLoadPidController, load_controller)
 {
   rclcpp::init(0, nullptr);
 
-  pluginlib::ClassLoader<joint_trajectory_controller::TrajectoryControllerBase>
-    traj_controller_loader(
-      "joint_trajectory_controller", "joint_trajectory_controller::TrajectoryControllerBase");
+  pluginlib::ClassLoader<trajectory_plugins::TrajectoryControllerBase> traj_controller_loader(
+    "trajectory_plugins", "trajectory_plugins::TrajectoryControllerBase");
 
-  std::shared_ptr<joint_trajectory_controller::TrajectoryControllerBase> traj_contr;
+  std::shared_ptr<trajectory_plugins::TrajectoryControllerBase> traj_contr;
 
   auto available_classes = traj_controller_loader.getDeclaredClasses();
 

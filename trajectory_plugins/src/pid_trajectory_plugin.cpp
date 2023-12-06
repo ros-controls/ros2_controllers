@@ -85,4 +85,4 @@ void PidTrajectoryPlugin::reset()
 #include <pluginlib/class_list_macros.hpp>
 
 PLUGINLIB_EXPORT_CLASS(
-  trajectory_plugins::PidTrajectoryPlugin, joint_trajectory_controller::TrajectoryControllerBase)
+  trajectory_plugins::PidTrajectoryPlugin, trajectory_plugins::TrajectoryControllerBase)
