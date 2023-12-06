@@ -1,0 +1,48 @@
+trajectory_plugins:
+  joints: {
+    type: string_array,
+    default_value: [],
+    description: "Names of joints used by the controller",
+    read_only: true,
+    validation: {
+      unique<>: null,
+    }
+  }
+  gains:
+    __map_joints:
+      p: {
+        type: double,
+        default_value: 0.0,
+        description: "Proportional gain for PID"
+      }
+      i: {
+        type: double,
+        default_value: 0.0,
+        description: "Integral gain for PID"
+      }
+      d: {
+        type: double,
+        default_value: 0.0,
+        description: "Derivative gain for PID"
+      }
+      i_clamp: {
+        type: double,
+        default_value: 0.0,
+        description: "Integral clamp. Symmetrical in both positive and negative direction."
+      }
+      ff_velocity_scale: {
+        type: double,
+        default_value: 0.0,
+        description: "Feed-forward scaling of velocity."
+      }
+      normalize_error: {
+        type: bool,
+        default_value: false,
+        description: "(Deprecated) Use position error normalization to -pi to pi."
+      }
+      angle_wraparound: {
+        type: bool,
+        default_value: false,
+        description: "For joints that wrap around (ie. are continuous).
+          Normalizes position-error to -pi to pi."
+      }

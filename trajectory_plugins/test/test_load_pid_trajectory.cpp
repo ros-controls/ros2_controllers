@@ -1,4 +1,4 @@
-// Copyright 2020 PAL Robotics SL.
+// Copyright 2023 AIT Austrian Institute of Technology
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <memory>
+#include <string>
 
 #include "gmock/gmock.h"
 
@@ -32,15 +33,15 @@ TEST(TestLoadPidController, load_controller)
   std::shared_ptr<joint_trajectory_controller::TrajectoryControllerBase> traj_contr;
 
   auto available_classes = traj_controller_loader.getDeclaredClasses();
-  std::stringstream sstr;
-  sstr << "available filters:" << std::endl;
+
+  std::cout << "available filters:" << std::endl;
   for (const auto & available_class : available_classes)
   {
-    sstr << "  " << available_class << std::endl;
+    std::cout << "  " << available_class << std::endl;
   }
 
-  std::string controller_type = "joint_trajectory_controller::PidTrajectoryController";
-  ASSERT_TRUE(traj_controller_loader.isClassAvailable(controller_type)) << sstr.str();
+  std::string controller_type = "trajectory_plugins::PidTrajectoryPlugin";
+  ASSERT_TRUE(traj_controller_loader.isClassAvailable(controller_type));
   ASSERT_NO_THROW(traj_contr = traj_controller_loader.createSharedInstance(controller_type));
 
   rclcpp::shutdown();
