@@ -214,8 +214,20 @@ public:
     return traj_controller_->init(controller_name_, "", 0, "", node_options);
   }
 
-  void SetPidParameters(
-    double p_default = 0.0, double ff_default = 1.0, bool angle_wraparound_default = false)
+  void SetJointParameters(bool angle_wraparound_default = false)
+  {
+    traj_controller_->trigger_declare_parameters();
+    auto node = traj_controller_->get_node();
+
+    for (size_t i = 0; i < joint_names_.size(); ++i)
+    {
+      const std::string prefix = "gains." + joint_names_[i];
+      const rclcpp::Parameter angle_wraparound(prefix + ".angle_wraparound", angle_wraparound_default);
+      node->set_parameters({angle_wraparound});
+    }
+  }
+
+  void SetPidParameters(double p_default = 0.0, double ff_default = 1.0)
   {
     traj_controller_->trigger_declare_parameters();
     auto node = traj_controller_->get_node();
@@ -228,9 +240,7 @@ public:
       const rclcpp::Parameter k_d(prefix + ".d", 0.0);
       const rclcpp::Parameter i_clamp(prefix + ".i_clamp", 0.0);
       const rclcpp::Parameter ff_velocity_scale(prefix + ".ff_velocity_scale", ff_default);
-      const rclcpp::Parameter angle_wraparound(
-        prefix + ".angle_wraparound", angle_wraparound_default);
-      node->set_parameters({k_p, k_i, k_d, i_clamp, ff_velocity_scale, angle_wraparound});
+      node->set_parameters({k_p, k_i, k_d, i_clamp, ff_velocity_scale});
     }
   }
 
@@ -259,9 +269,16 @@ public:
     // read-only parameters have to be set before init -> won't be read otherwise
     SetUpTrajectoryController(executor, parameters_local);
 
-    // set pid parameters before configure
-    SetPidParameters(k_p, ff, angle_wraparound);
+    SetJointParameters(angle_wraparound);
+
     traj_controller_->get_node()->configure();
+
+    // set pid parameters before activate. The PID plugin has to be loaded already, otherwise
+    // parameters are not declared yet
+    if (traj_controller_->use_closed_loop_pid_adapter())
+    {
+      SetPidParameters(k_p, ff);
+    }
 
     ActivateTrajectoryController(
       separate_cmd_and_state_values, initial_pos_joints, initial_vel_joints, initial_acc_joints,
