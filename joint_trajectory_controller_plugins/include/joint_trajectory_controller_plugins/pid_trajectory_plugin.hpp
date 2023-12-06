@@ -32,7 +32,7 @@ namespace joint_trajectory_controller_plugins
 class PidTrajectoryPlugin : public TrajectoryControllerBase
 {
 public:
-  bool initialize(rclcpp_lifecycle::LifecycleNode::SharedPtr node) override;
+  bool initialize(rclcpp::Node::SharedPtr node) override;
 
   bool computeGains(const trajectory_msgs::msg::JointTrajectory trajectory) override;
 
@@ -45,8 +45,8 @@ public:
   void reset() override;
 
 protected:
-  // the node handle for parameter handling
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
+  // degree of freedom
+  size_t dof_;
   // PID controllers
   std::vector<PidPtr> pids_;
   // Feed-forward velocity weight factor when calculating closed loop pid adapter's command

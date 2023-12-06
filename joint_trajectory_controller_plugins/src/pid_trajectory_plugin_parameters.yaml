@@ -5,7 +5,7 @@ joint_trajectory_controller_plugins:
     description: "Names of joints used by the controller",
     read_only: true,
     validation: {
-      unique<>: null,
+      size_gt<>: [0],
     }
   }
   gains:

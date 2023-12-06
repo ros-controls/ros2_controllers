@@ -17,7 +17,7 @@
 namespace joint_trajectory_controller_plugins
 {
 
-bool PidTrajectoryPlugin::initialize(rclcpp_lifecycle::LifecycleNode::SharedPtr node)
+bool PidTrajectoryPlugin::initialize(rclcpp::Node::SharedPtr node)
 {
   node_ = node;
 
@@ -26,14 +26,25 @@ bool PidTrajectoryPlugin::initialize(rclcpp_lifecycle::LifecycleNode::SharedPtr 
     // Create the parameter listener and get the parameters
     param_listener_ = std::make_shared<ParamListener>(node_);
     params_ = param_listener_->get_params();
+    dof_ = params_.joints.size();
   }
   catch (const std::exception & e)
   {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
     return false;
   }
+  RCLCPP_INFO(node_->get_logger(), "[PidTrajectoryPlugin] Initialized with %lu joints.", dof_);
+  return true;
+}
 
-  size_t dof_ = params_.joints.size();
+bool PidTrajectoryPlugin::computeGains(const trajectory_msgs::msg::JointTrajectory /*trajectory*/)
+{
+  if (param_listener_->is_old(params_))
+  {
+    params_ = param_listener_->get_params();
+    RCLCPP_DEBUG(node_->get_logger(), "[PidTrajectoryPlugin] Updated parameters");
+  }
+
   pids_.resize(dof_);
   ff_velocity_scale_.resize(dof_);
 
@@ -46,11 +57,10 @@ bool PidTrajectoryPlugin::initialize(rclcpp_lifecycle::LifecycleNode::SharedPtr 
 
     ff_velocity_scale_[i] = gains.ff_velocity_scale;
   }
-  return true;
-}
 
-bool PidTrajectoryPlugin::computeGains(const trajectory_msgs::msg::JointTrajectory /*trajectory*/)
-{
+  RCLCPP_INFO(
+    node_->get_logger(),
+    "[PidTrajectoryPlugin] Loaded PID gains from ROS parameters for %lu joints.", dof_);
   return true;
 }
 
@@ -61,7 +71,7 @@ void PidTrajectoryPlugin::computeCommands(
   const rclcpp::Duration & period)
 {
   // Update PIDs
-  for (auto i = 0ul; i < tmp_command.size(); ++i)
+  for (auto i = 0ul; i < dof_; ++i)
   {
     tmp_command[i] = (desired.velocities[i] * ff_velocity_scale_[i]) +
                      pids_[i]->computeCommand(
