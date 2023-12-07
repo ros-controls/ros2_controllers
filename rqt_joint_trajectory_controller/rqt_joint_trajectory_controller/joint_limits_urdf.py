@@ -14,6 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Code inspired on the joint_state_publisher package by David Lu!!!
+# https://github.com/ros/robot_model/blob/indigo-devel/
+# joint_state_publisher/joint_state_publisher/joint_state_publisher
+
 # TODO: Use urdf_parser_py.urdf instead. I gave it a try, but got
 #  Exception: Required attribute not set in XML: upper
 # upper is an optional attribute, so I don't understand what's going on
@@ -34,11 +38,6 @@ def callback(msg):
 
 
 def subscribe_robot_description(node, key="robot_description"):
-    global description
-
-    # Code inspired on the joint_state_publisher package by David Lu!!!
-    # https://github.com/ros/robot_model/blob/indigo-devel/
-    # joint_state_publisher/joint_state_publisher/joint_state_publisher
     qos_profile = rclpy.qos.QoSProfile(depth=1)
     qos_profile.durability = rclpy.qos.DurabilityPolicy.TRANSIENT_LOCAL
     qos_profile.reliability = rclpy.qos.ReliabilityPolicy.RELIABLE
