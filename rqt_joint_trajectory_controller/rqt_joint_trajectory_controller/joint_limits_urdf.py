@@ -48,7 +48,7 @@ def get_joint_limits(node, key="robot_description", use_smallest_joint_limits=Tr
     node.create_subscription(String, key, callback, qos_profile)
     count = 0
     while description == "" and count < 10:
-        print(f"Waiting for the robot_description!")
+        print("Waiting for the robot_description!")
         count += 1
         rclpy.spin_once(node, timeout_sec=1.0)
 
@@ -77,13 +77,19 @@ def get_joint_limits(node, key="robot_description", use_smallest_joint_limits=Tr
                             minval = -pi
                             maxval = pi
                         else:
-                            raise Exception(f"Missing lower/upper position limits for the joint : {name} of type : {jtype} in the robot_description!")
+                            raise Exception(
+                                f"Missing lower/upper position limits for the joint : {name} of type : {jtype} in the robot_description!"
+                            )
                     try:
                         maxvel = float(limit.getAttribute("velocity"))
                     except ValueError:
-                        raise Exception(f"Missing velocity limits for the joint : {name} of type : {jtype} in the robot_description!")
+                        raise Exception(
+                            f"Missing velocity limits for the joint : {name} of type : {jtype} in the robot_description!"
+                        )
                 except IndexError:
-                    raise Exception(f"Missing limits tag for the joint : {name} in the robot_description!")
+                    raise Exception(
+                        f"Missing limits tag for the joint : {name} in the robot_description!"
+                    )
                 safety_tags = child.getElementsByTagName("safety_controller")
                 if use_small and len(safety_tags) == 1:
                     tag = safety_tags[0]
