@@ -66,21 +66,21 @@ def get_joint_limits(node, key="robot_description", use_smallest_joint_limits=Tr
                 name = child.getAttribute("name")
                 try:
                     limit = child.getElementsByTagName("limit")[0]
-                except IndexError:
-                    continue
-                if jtype == "continuous":
-                    minval = -pi
-                    maxval = pi
-                else:
                     try:
                         minval = float(limit.getAttribute("lower"))
                         maxval = float(limit.getAttribute("upper"))
                     except ValueError:
-                        continue
-                try:
-                    maxvel = float(limit.getAttribute("velocity"))
-                except ValueError:
-                    continue
+                        if jtype == "continuous":
+                            minval = -pi
+                            maxval = pi
+                        else:
+                            raise Exception(f"Missing lower/upper position limits for the joint : {name} of type : {jtype} in the robot_description!")
+                    try:
+                        maxvel = float(limit.getAttribute("velocity"))
+                    except ValueError:
+                        raise Exception(f"Missing velocity limits for the joint : {name} of type : {jtype} in the robot_description!")
+                except IndexError:
+                    raise Exception(f"Missing limits tag for the joint : {name} in the robot_description!")
                 safety_tags = child.getElementsByTagName("safety_controller")
                 if use_small and len(safety_tags) == 1:
                     tag = safety_tags[0]
