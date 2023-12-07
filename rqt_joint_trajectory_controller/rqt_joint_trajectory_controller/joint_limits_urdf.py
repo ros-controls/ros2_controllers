@@ -41,13 +41,16 @@ def get_joint_limits(node, key="robot_description", use_smallest_joint_limits=Tr
     # Code inspired on the joint_state_publisher package by David Lu!!!
     # https://github.com/ros/robot_model/blob/indigo-devel/
     # joint_state_publisher/joint_state_publisher/joint_state_publisher
-
     qos_profile = rclpy.qos.QoSProfile(depth=1)
     qos_profile.durability = rclpy.qos.DurabilityPolicy.TRANSIENT_LOCAL
     qos_profile.reliability = rclpy.qos.ReliabilityPolicy.RELIABLE
 
-    node.create_subscription(String, "/robot_description", callback, qos_profile)
-    rclpy.spin_once(node)
+    node.create_subscription(String, key, callback, qos_profile)
+    count = 0
+    while description == "" and count < 10:
+        print(f"Waiting for the robot_description!")
+        count += 1
+        rclpy.spin_once(node, timeout_sec=1.0)
 
     free_joints = {}
     dependent_joints = {}
