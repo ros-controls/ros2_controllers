@@ -460,8 +460,9 @@ def _jtc_joint_names(jtc_info):
 
     joint_names = []
     for interface in jtc_info.claimed_interfaces:
-        name = interface.split("/")[0]
-        joint_names.append(name)
+        name = interface.split("/")[-2]
+        if name not in joint_names:
+            joint_names.append(name)
 
     return joint_names
 
