@@ -33,10 +33,8 @@ def callback(msg):
     description = msg.data
 
 
-def get_joint_limits(node, key="robot_description", use_smallest_joint_limits=True):
+def subscribe_robot_description(node, key="robot_description"):
     global description
-    use_small = use_smallest_joint_limits
-    use_mimic = True
 
     # Code inspired on the joint_state_publisher package by David Lu!!!
     # https://github.com/ros/robot_model/blob/indigo-devel/
@@ -46,6 +44,13 @@ def get_joint_limits(node, key="robot_description", use_smallest_joint_limits=Tr
     qos_profile.reliability = rclpy.qos.ReliabilityPolicy.RELIABLE
 
     node.create_subscription(String, key, callback, qos_profile)
+
+
+def get_joint_limits(node, use_smallest_joint_limits=True):
+    global description
+    use_small = use_smallest_joint_limits
+    use_mimic = True
+
     count = 0
     while description == "" and count < 10:
         print("Waiting for the robot_description!")
