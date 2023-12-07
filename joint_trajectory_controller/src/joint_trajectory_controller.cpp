@@ -327,7 +327,7 @@ controller_interface::return_type JointTrajectoryController::update(
           }
           else if (!within_goal_time)
           {
-            std::string error_string = "Aborted due goal_time_tolerance exceeding by " +
+            const std::string error_string = "Aborted due goal_time_tolerance exceeding by " +
                                        std::to_string(time_difference) + " seconds";
 
             auto result = std::make_shared<FollowJTrajAction::Result>();
