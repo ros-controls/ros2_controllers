@@ -29,7 +29,7 @@ from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 from .utils import ControllerLister, ControllerManagerLister
 from .double_editor import DoubleEditor
-from .joint_limits_urdf import get_joint_limits, subscribe_robot_description
+from .joint_limits_urdf import get_joint_limits, subscribe_to_robot_description
 from .update_combo import update_combo
 
 # TODO:
@@ -171,7 +171,7 @@ class JointTrajectoryController(Plugin):
         self._update_jtc_list_timer.start()
 
         # subscriptions
-        subscribe_robot_description(self._node)
+        subscribe_to_robot_description(self._node)
 
         # Signal connections
         w = self._widget

@@ -37,7 +37,7 @@ def callback(msg):
     description = msg.data
 
 
-def subscribe_robot_description(node, key="robot_description"):
+def subscribe_to_robot_description(node, key="robot_description"):
     qos_profile = rclpy.qos.QoSProfile(depth=1)
     qos_profile.durability = rclpy.qos.DurabilityPolicy.TRANSIENT_LOCAL
     qos_profile.reliability = rclpy.qos.ReliabilityPolicy.RELIABLE
