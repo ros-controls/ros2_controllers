@@ -335,7 +335,7 @@ class JointTrajectoryController(Plugin):
 
         # Setup ROS interfaces
         jtc_ns = _resolve_controller_ns(self._cm_ns, self._jtc_name)
-        state_topic = jtc_ns + "/controller_state"
+        state_topic = jtc_ns + "/state"
         cmd_topic = jtc_ns + "/joint_trajectory"
         self._state_sub = self._node.create_subscription(
             JointTrajectoryControllerState, state_topic, self._state_cb, 1
@@ -410,7 +410,7 @@ class JointTrajectoryController(Plugin):
         current_pos = {}
         for i in range(len(msg.joint_names)):
             joint_name = msg.joint_names[i]
-            joint_pos = msg.feedback.positions[i]
+            joint_pos = msg.actual.positions[i]
             current_pos[joint_name] = joint_pos
         self.jointStateChanged.emit(current_pos)
 
