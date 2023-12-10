@@ -120,13 +120,13 @@ TEST_P(TrajectoryControllerTestParameterized, activate)
   auto state = traj_controller_->get_node()->configure();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
 
-  auto cmd_interface_config = traj_controller_->command_interface_configuration();
-  ASSERT_EQ(
-    cmd_interface_config.names.size(), joint_names_.size() * command_interface_types_.size());
+  auto cmd_if_conf = traj_controller_->command_interface_configuration();
+  ASSERT_EQ(cmd_if_conf.names.size(), joint_names_.size() * command_interface_types_.size());
+  EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
-  auto state_interface_config = traj_controller_->state_interface_configuration();
-  ASSERT_EQ(
-    state_interface_config.names.size(), joint_names_.size() * state_interface_types_.size());
+  auto state_if_conf = traj_controller_->state_interface_configuration();
+  ASSERT_EQ(state_if_conf.names.size(), joint_names_.size() * state_interface_types_.size());
+  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
   state = ActivateTrajectoryController();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_ACTIVE);
