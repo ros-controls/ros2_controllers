@@ -1247,23 +1247,21 @@ TEST_P(TrajectoryControllerTestParameterized, invalid_message_nonzero_vel)
   rclcpp::executors::SingleThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(executor, {nonzero_vel_parameters});
 
-  trajectory_msgs::msg::JointTrajectory traj_msg, good_traj_msg;
-
-  good_traj_msg.joint_names = joint_names_;
-  good_traj_msg.header.stamp = rclcpp::Time(0);
-  good_traj_msg.points.resize(1);
-  good_traj_msg.points[0].time_from_start = rclcpp::Duration::from_seconds(0.25);
-  good_traj_msg.points[0].positions.resize(1);
-  good_traj_msg.points[0].positions = {1.0, 2.0, 3.0};
-  good_traj_msg.points[0].velocities.resize(1);
-  good_traj_msg.points[0].velocities = {-1.0, -2.0, -3.0};
-  // Nonzero velocity at trajectory end!
-  EXPECT_FALSE(traj_controller_->validate_trajectory_msg(good_traj_msg));
+  trajectory_msgs::msg::JointTrajectory traj_msg;
+  traj_msg.joint_names = joint_names_;
+  traj_msg.header.stamp = rclcpp::Time(0);
 
   // empty message (no throw!)
-  traj_msg = good_traj_msg;
-  traj_msg.points.clear();
   ASSERT_NO_THROW(traj_controller_->validate_trajectory_msg(traj_msg));
+  EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
+
+  // Nonzero velocity at trajectory end!
+  traj_msg.points.resize(1);
+  traj_msg.points[0].time_from_start = rclcpp::Duration::from_seconds(0.25);
+  traj_msg.points[0].positions.resize(1);
+  traj_msg.points[0].positions = {1.0, 2.0, 3.0};
+  traj_msg.points[0].velocities.resize(1);
+  traj_msg.points[0].velocities = {-1.0, -2.0, -3.0};
   EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
 }
 
