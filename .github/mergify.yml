@@ -21,6 +21,7 @@ pull_request_rules:
     conditions:
       - conflict
       - author!=mergify[bot]
+      - author!=dependabot[bot]
     actions:
         comment:
           message: This pull request is in conflict. Could you fix it @{{author}}?
