@@ -67,6 +67,9 @@ if(BUILD_TESTING)
     controller_interface
     hardware_interface
   )
+  ament_add_gmock(test_steering_odometry test/test_steering_odometry.cpp)
+  target_link_libraries(test_steering_odometry steering_controllers_library)
+
 endif()
 
 install(
