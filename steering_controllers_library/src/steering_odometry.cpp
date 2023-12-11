@@ -272,8 +272,8 @@ std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_comma
       double denominator_first_member = 2 * wheelbase_ * std::cos(alpha);
       double denominator_second_member = wheel_track_ * std::sin(alpha);
 
-      double alpha_r = std::atan2(numerator, denominator_first_member - denominator_second_member);
-      double alpha_l = std::atan2(numerator, denominator_first_member + denominator_second_member);
+      double alpha_r = std::atan2(numerator, denominator_first_member + denominator_second_member);
+      double alpha_l = std::atan2(numerator, denominator_first_member - denominator_second_member);
       steering_commands = {alpha_r, alpha_l};
     }
     return std::make_tuple(traction_commands, steering_commands);
