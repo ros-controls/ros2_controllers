@@ -234,7 +234,7 @@ public:
       const rclcpp::Parameter k_i(prefix + ".i", 0.0);
       const rclcpp::Parameter k_d(prefix + ".d", 0.0);
       const rclcpp::Parameter i_clamp(prefix + ".i_clamp", 0.0);
-      const rclcpp::Parameter ff_velocity_scale(prefix + ".ff_velocity_scale", ff_value;
+      const rclcpp::Parameter ff_velocity_scale(prefix + ".ff_velocity_scale", ff_value);
       node->set_parameters({k_p, k_i, k_d, i_clamp, ff_velocity_scale});
     }
   }
