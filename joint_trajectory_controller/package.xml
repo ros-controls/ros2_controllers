@@ -20,12 +20,9 @@
   <depend>pluginlib</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_lifecycle</depend>
-<<<<<<< HEAD
-=======
   <depend>realtime_tools</depend>
   <depend>rsl</depend>
   <depend>tl_expected</depend>
->>>>>>> 1d0d753 (Cleanup package.xml und clarify tests of JTC. (#889))
   <depend>trajectory_msgs</depend>
   <depend>generate_parameter_library</depend>
 
