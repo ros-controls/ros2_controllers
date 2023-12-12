@@ -2,6 +2,11 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Cleanup package.xml und clarify tests of JTC. (`#889 <https://github.com/ros-controls/ros2_controllers/issues/889>`_) (`#925 <https://github.com/ros-controls/ros2_controllers/issues/925>`_)
+* Contributors: mergify[bot]
+
 3.19.1 (2023-12-05)
 -------------------
 * Fix floating point comparison in JTC (`#879 <https://github.com/ros-controls/ros2_controllers/issues/879>`_) (`#880 <https://github.com/ros-controls/ros2_controllers/issues/880>`_)
