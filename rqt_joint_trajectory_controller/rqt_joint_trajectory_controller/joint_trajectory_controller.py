@@ -29,7 +29,7 @@ from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 from .utils import ControllerLister, ControllerManagerLister
 from .double_editor import DoubleEditor
-from .joint_limits_urdf import get_joint_limits
+from .joint_limits_urdf import get_joint_limits, subscribe_to_robot_description
 from .update_combo import update_combo
 
 # TODO:
@@ -169,6 +169,9 @@ class JointTrajectoryController(Plugin):
         self._update_jtc_list_timer.setInterval(int(1000.0 / self._ctrlrs_update_freq))
         self._update_jtc_list_timer.timeout.connect(self._update_jtc_list)
         self._update_jtc_list_timer.start()
+
+        # subscriptions
+        subscribe_to_robot_description(self._node)
 
         # Signal connections
         w = self._widget
@@ -460,8 +463,9 @@ def _jtc_joint_names(jtc_info):
 
     joint_names = []
     for interface in jtc_info.claimed_interfaces:
-        name = interface.split("/")[0]
-        joint_names.append(name)
+        name = interface.split("/")[-2]
+        if name not in joint_names:
+            joint_names.append(name)
 
     return joint_names
 

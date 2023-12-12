@@ -2,6 +2,27 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.2.0 (2023-12-12)
+------------------
+
+4.1.0 (2023-12-01)
+------------------
+
+4.0.0 (2023-11-21)
+------------------
+* fix tests for API break of passing controller manager update rate in init method (`#854 <https://github.com/ros-controls/ros2_controllers/issues/854>`_)
+* Adjust tests after passing URDF to controllers (`#817 <https://github.com/ros-controls/ros2_controllers/issues/817>`_)
+* Contributors: Bence Magyar, Sai Kishor Kothakota
+
+3.17.0 (2023-10-31)
+-------------------
+* Steering controllers library: fix open loop mode (`#793 <https://github.com/ros-controls/ros2_controllers/issues/793>`_)
+  * set last*velocity variables for open loop odometry
+  * Make function arguments const
+  * Update function in header file too
+* Improve docs (`#785 <https://github.com/ros-controls/ros2_controllers/issues/785>`_)
+* Contributors: Christoph Fröhlich
+
 3.16.0 (2023-09-20)
 -------------------
 

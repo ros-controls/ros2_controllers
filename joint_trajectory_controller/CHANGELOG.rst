@@ -2,6 +2,38 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.2.0 (2023-12-12)
+------------------
+* Cleanup package.xml und clarify tests of JTC. (`#889 <https://github.com/ros-controls/ros2_controllers/issues/889>`_)
+* Fix floating point comparison in JTC (`#879 <https://github.com/ros-controls/ros2_controllers/issues/879>`_)
+* Contributors: Abishalini Sivaraman, Dr. Denis
+
+4.1.0 (2023-12-01)
+------------------
+* [JTC] Continue with last trajectory-point on success (`#842 <https://github.com/ros-controls/ros2_controllers/issues/842>`_)
+* [JTC] Remove start_with_holding option (`#839 <https://github.com/ros-controls/ros2_controllers/issues/839>`_)
+* [JTC] Activate checks for parameter validation (`#857 <https://github.com/ros-controls/ros2_controllers/issues/857>`_)
+* [JTC] Improve update methods for tests (`#858 <https://github.com/ros-controls/ros2_controllers/issues/858>`_)
+* Contributors: Christoph Fröhlich
+
+4.0.0 (2023-11-21)
+------------------
+* fix tests for API break of passing controller manager update rate in init method (`#854 <https://github.com/ros-controls/ros2_controllers/issues/854>`_)
+* [JTC] Fix dynamic reconfigure of tolerances (`#849 <https://github.com/ros-controls/ros2_controllers/issues/849>`_)
+* [JTC] Remove unused home pose (`#845 <https://github.com/ros-controls/ros2_controllers/issues/845>`_)
+* [JTC] Activate update of dynamic parameters (`#761 <https://github.com/ros-controls/ros2_controllers/issues/761>`_)
+* [JTC] Fix tests when state offset is used (`#797 <https://github.com/ros-controls/ros2_controllers/issues/797>`_)
+* [JTC] Remove deprecation warnings, set `allow_nonzero_velocity_at_trajectory_end` default false (`#834 <https://github.com/ros-controls/ros2_controllers/issues/834>`_)
+* Adjust tests after passing URDF to controllers (`#817 <https://github.com/ros-controls/ros2_controllers/issues/817>`_)
+* Contributors: Bence Magyar, Christoph Fröhlich, Sai Kishor Kothakota, Dr Denis
+
+3.17.0 (2023-10-31)
+-------------------
+* Cleanup comments and unnecessary checks (`#803 <https://github.com/ros-controls/ros2_controllers/issues/803>`_)
+* Update requirements of state interfaces (`#798 <https://github.com/ros-controls/ros2_controllers/issues/798>`_)
+* [JTC] Add tests for acceleration command interface (`#752 <https://github.com/ros-controls/ros2_controllers/issues/752>`_)
+* Contributors: Christoph Fröhlich
+
 3.16.0 (2023-09-20)
 -------------------
 * [Docs] Improve interface description of JTC (`#770 <https://github.com/ros-controls/ros2_controllers/issues/770>`_)

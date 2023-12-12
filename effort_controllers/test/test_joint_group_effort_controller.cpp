@@ -54,7 +54,7 @@ void JointGroupEffortControllerTest::TearDown() { controller_.reset(nullptr); }
 
 void JointGroupEffortControllerTest::SetUpController()
 {
-  const auto result = controller_->init("test_joint_group_effort_controller");
+  const auto result = controller_->init("test_joint_group_effort_controller", "", 0);
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
   std::vector<LoanedCommandInterface> command_ifs;

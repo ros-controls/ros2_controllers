@@ -147,7 +147,7 @@ public:
 protected:
   void SetUpController(const std::string controller_name = "test_ackermann_steering_controller")
   {
-    ASSERT_EQ(controller_->init(controller_name), controller_interface::return_type::OK);
+    ASSERT_EQ(controller_->init(controller_name, "", 0), controller_interface::return_type::OK);
 
     if (position_feedback_ == true)
     {

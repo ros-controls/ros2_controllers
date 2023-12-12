@@ -48,9 +48,6 @@ Subscribers
 ~/cmd_vel [geometry_msgs/msg/TwistStamped]
   Velocity command for the controller, if ``use_stamped_vel=true``. The controller extracts the x component of the linear velocity and the z component of the angular velocity. Velocities on other components are ignored.
 
-~/cmd_vel_unstamped [geometry_msgs::msg::Twist]
-  Velocity command for the controller, if ``use_stamped_vel=false``. The controller extracts the x component of the linear velocity and the z component of the angular velocity. Velocities on other components are ignored.
-
 
 Publishers
 ,,,,,,,,,,,
