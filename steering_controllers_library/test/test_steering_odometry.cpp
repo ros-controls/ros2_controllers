@@ -90,7 +90,7 @@ TEST(TestSteeringOdometry, ackermann_back_kin_left)
   EXPECT_GT(cmd0[0], cmd0[1]);   // right (outer) > left (inner)
   EXPECT_GT(cmd0[0], 0);
   auto cmd1 = std::get<1>(cmd);  // steer
-  EXPECT_LT(cmd1[0], cmd1[1]);  // right (outer) < left (inner)
+  EXPECT_LT(cmd1[0], cmd1[1]);   // right (outer) < left (inner)
   EXPECT_GT(cmd1[0], 0);
   // std::cout << "\nsteer right (outer)" << cmd1[0] << std::endl;
   // std::cout << "\nsteer left (inner)" << cmd1[1] << std::endl;
