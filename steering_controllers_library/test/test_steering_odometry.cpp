@@ -18,7 +18,7 @@
 
 TEST(TestSteeringOdometry, initialize)
 {
-  EXPECT_NO_THROW(SteeringOdometry());
+  EXPECT_NO_THROW(steering_odometry::SteeringOdometry());
 
   steering_odometry::SteeringOdometry odom(1);
   odom.set_wheel_params(1., 2., 3.);
