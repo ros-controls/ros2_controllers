@@ -251,7 +251,8 @@ controller_interface::return_type JointTrajectoryController::update(
         if (
           (before_last_point || first_sample) && *(rt_is_holding_.readFromRT()) == false &&
           !check_state_tolerance_per_joint(
-            state_error_, index, default_tolerances_.state_tolerance[index], true /* show_errors*/))
+            state_error_, index, default_tolerances_.state_tolerance[index],
+            true /* show_errors */))
         {
           tolerance_violated_while_moving = true;
         }
@@ -260,7 +261,7 @@ controller_interface::return_type JointTrajectoryController::update(
           !before_last_point && *(rt_is_holding_.readFromRT()) == false &&
           !check_state_tolerance_per_joint(
             state_error_, index, default_tolerances_.goal_state_tolerance[index],
-            false /* show_errors*/))
+            false /* show_errors */))
         {
           outside_goal_tolerance = true;
 
@@ -272,7 +273,7 @@ controller_interface::return_type JointTrajectoryController::update(
               // print once, goal will be aborted afterwards
               check_state_tolerance_per_joint(
                 state_error_, index, default_tolerances_.goal_state_tolerance[index],
-                true /* show_errors*/);
+                true /* show_errors */);
             }
           }
         }
