@@ -120,6 +120,11 @@ joint_trajectory_controller:
           Normalizes position-error to -pi to pi."
       }
   constraints:
+    debug_output: {
+      type: bool,
+      default_value: false,
+      description: "Debug output for constraint checking. Activation may break real-time execution.",
+    }
     stopped_velocity_tolerance: {
       type: double,
       default_value: 0.01,

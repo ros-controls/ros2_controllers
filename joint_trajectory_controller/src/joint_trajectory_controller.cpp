@@ -250,7 +250,8 @@ controller_interface::return_type JointTrajectoryController::update(
         if (
           (before_last_point || first_sample) &&
           !check_state_tolerance_per_joint(
-            state_error_, index, default_tolerances_.state_tolerance[index], false) &&
+            state_error_, index, default_tolerances_.state_tolerance[index],
+            params_.constraints.debug_output) &&
           *(rt_is_holding_.readFromRT()) == false)
         {
           tolerance_violated_while_moving = true;
@@ -259,7 +260,8 @@ controller_interface::return_type JointTrajectoryController::update(
         if (
           !before_last_point &&
           !check_state_tolerance_per_joint(
-            state_error_, index, default_tolerances_.goal_state_tolerance[index], false) &&
+            state_error_, index, default_tolerances_.goal_state_tolerance[index],
+            params_.constraints.debug_output) &&
           *(rt_is_holding_.readFromRT()) == false)
         {
           outside_goal_tolerance = true;
