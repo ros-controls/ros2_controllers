@@ -81,6 +81,11 @@ cmd_timeout (double)
 constraints (structure)
   Default values for tolerances if no explicit values are states in JointTrajectory message.
 
+constraints.debug_output (bool)
+  Debug output for constraint checking. Activation may break real-time execution.
+
+  Default: false
+
 constraints.stopped_velocity_tolerance (double)
   Default value for end velocity deviation.
 
