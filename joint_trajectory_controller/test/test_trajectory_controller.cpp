@@ -1239,9 +1239,9 @@ TEST_P(TrajectoryControllerTestParameterized, invalid_message)
 }
 
 /**
- * @brief invalid_message_nonzero_vel Test invalid velocity at trajectory end
+ * @brief Test invalid velocity at trajectory end with parameter set to false
  */
-TEST_P(TrajectoryControllerTestParameterized, invalid_message_nonzero_vel)
+TEST_P(TrajectoryControllerTestParameterized, expect_invalid_when_message_with_nonzero_end_velocity_and_when_param_false)
 {
   rclcpp::Parameter nonzero_vel_parameters("allow_nonzero_velocity_at_trajectory_end", false);
   rclcpp::executors::SingleThreadedExecutor executor;
