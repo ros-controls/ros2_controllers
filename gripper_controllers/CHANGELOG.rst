@@ -2,6 +2,9 @@
 Changelog for package gripper_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 2.29.0 (2023-12-05)
 -------------------
 * Add test for effort gripper controller (`#769 <https://github.com/ros-controls/ros2_controllers/issues/769>`_) (`#867 <https://github.com/ros-controls/ros2_controllers/issues/867>`_)
