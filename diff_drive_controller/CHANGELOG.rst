@@ -2,8 +2,8 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.30.0 (2023-12-20)
+-------------------
 * [DiffDriveController] Optional tf namespace prefixes instead of using node namespace (backport `#533 <https://github.com/ros-controls/ros2_controllers/issues/533>`_) (`#726 <https://github.com/ros-controls/ros2_controllers/issues/726>`_)
 * Contributors: mergify[bot]
 

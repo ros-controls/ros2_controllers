@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.30.0 (2023-12-20)
+-------------------
 * Fix floating point comparison in JTC (backport `#879 <https://github.com/ros-controls/ros2_controllers/issues/879>`_)
 * [JTC] Continue with last trajectory-point on success (backport `#842 <https://github.com/ros-controls/ros2_controllers/issues/842>`_)
 * [JTC] Remove start_with_holding option (backport `#839 <https://github.com/ros-controls/ros2_controllers/issues/839>`_)
