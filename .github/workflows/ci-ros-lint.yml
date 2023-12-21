@@ -17,7 +17,7 @@ jobs:
     - uses: ros-tooling/setup-ros@0.7.1
     - uses: ros-tooling/action-ros-lint@v0.1
       with:
-        distribution: rolling
+        distribution: iron
         linter: ${{ matrix.linter }}
         package-name:
           ackermann_steering_controller
@@ -54,7 +54,7 @@ jobs:
     - uses: ros-tooling/setup-ros@master
     - uses: ros-tooling/action-ros-lint@master
       with:
-        distribution: rolling
+        distribution: iron
         linter: cpplint
         arguments: "--linelength=100 --filter=-whitespace/newline"
         package-name:
