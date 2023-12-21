@@ -259,20 +259,21 @@ controller_interface::return_type JointTrajectoryController::update(
 
         // Always check the state tolerance on the first sample in case the first sample
         // is the last point
+        // print output per default, goal will be aborted afterwards
         if (
-          (before_last_point || first_sample) &&
+          (before_last_point || first_sample) && *(rt_is_holding_.readFromRT()) == false &&
           !check_state_tolerance_per_joint(
-            state_error_, index, default_tolerances_.state_tolerance[index], false) &&
-          *(rt_is_holding_.readFromRT()) == false)
+            state_error_, index, default_tolerances_.state_tolerance[index],
+            true /* show_errors */))
         {
           tolerance_violated_while_moving = true;
         }
         // past the final point, check that we end up inside goal tolerance
         if (
-          !before_last_point &&
+          !before_last_point && *(rt_is_holding_.readFromRT()) == false &&
           !check_state_tolerance_per_joint(
-            state_error_, index, default_tolerances_.goal_state_tolerance[index], false) &&
-          *(rt_is_holding_.readFromRT()) == false)
+            state_error_, index, default_tolerances_.goal_state_tolerance[index],
+            false /* show_errors */))
         {
           outside_goal_tolerance = true;
 
@@ -281,6 +282,10 @@ controller_interface::return_type JointTrajectoryController::update(
             if (time_difference > default_tolerances_.goal_time_tolerance)
             {
               within_goal_time = false;
+              // print once, goal will be aborted afterwards
+              check_state_tolerance_per_joint(
+                state_error_, index, default_tolerances_.goal_state_tolerance[index],
+                true /* show_errors */);
             }
           }
         }
