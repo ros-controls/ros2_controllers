@@ -16,6 +16,7 @@
 #define JOINT_TRAJECTORY_CONTROLLER__JOINT_TRAJECTORY_CONTROLLER_HPP_
 
 #include <chrono>
+#include <functional>  // for std::reference_wrapper
 #include <memory>
 #include <string>
 #include <vector>
