@@ -261,7 +261,8 @@ controller_interface::return_type JointTrajectoryController::update(
         if (
           !before_last_point && *(rt_is_holding_.readFromRT()) == false &&
           !check_state_tolerance_per_joint(
-            state_error_, index, active_tol->goal_state_tolerance[index], false /* show_errors */) &&
+            state_error_, index, active_tol->goal_state_tolerance[index],
+            false /* show_errors */) &&
           *(rt_is_holding_.readFromRT()) == false)
         {
           outside_goal_tolerance = true;
