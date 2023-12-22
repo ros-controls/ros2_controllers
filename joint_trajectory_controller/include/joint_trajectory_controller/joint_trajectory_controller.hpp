@@ -309,20 +309,17 @@ private:
   void resize_joint_trajectory_point_command(
     trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size);
 
-  // TODO(anyone): can I here also use const on joint_interface since the reference_wrapper is not
-  // changed, but its value only?
-  // TODO(anyone): Use auto in parameter declaration with c++20
-
   /**
    * @brief Assigns the values from a trajectory point interface to a joint interface.
    *
    * @tparam T The type of the joint interface.
    * @param[out] joint_interface The reference_wrapper to assign the values to
    * @param[in] trajectory_point_interface Containing the values to assign.
+   * @todo: Use auto in parameter declaration with c++20
    */
   template <typename T>
   void assign_interface_from_point(
-    T & joint_interface, const std::vector<double> & trajectory_point_interface)
+    const T & joint_interface, const std::vector<double> & trajectory_point_interface)
   {
     for (size_t index = 0; index < dof_; ++index)
     {
