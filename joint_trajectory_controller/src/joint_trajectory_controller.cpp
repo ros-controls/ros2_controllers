@@ -1235,7 +1235,7 @@ void JointTrajectoryController::fill_partial_goal(
 }
 
 void JointTrajectoryController::sort_to_local_joint_order(
-  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg)
+  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg) const
 {
   // rearrange all points in the trajectory message based on mapping
   std::vector<size_t> mapping_vector = mapping(trajectory_msg->joint_names, params_.joints);
