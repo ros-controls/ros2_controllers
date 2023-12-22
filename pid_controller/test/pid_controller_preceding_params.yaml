@@ -1,0 +1,11 @@
+test_pid_controller:
+  ros__parameters:
+    dof_names:
+      - joint1
+
+    command_interface: position
+
+    reference_and_state_interfaces: ["position"]
+
+    reference_and_state_dof_names:
+      - joint1state

@@ -55,6 +55,7 @@ The controllers are using `common hardware interface definitions`_, and may use 
    Forward Command Controller <../forward_command_controller/doc/userdoc.rst>
    Gripper Controller <../gripper_controllers/doc/userdoc.rst>
    Joint Trajectory Controller <../joint_trajectory_controller/doc/userdoc.rst>
+   PID Controller <../pid_controller/doc/userdoc.rst>
    Position Controllers <../position_controllers/doc/userdoc.rst>
    Velocity Controllers <../velocity_controllers/doc/userdoc.rst>
 
@@ -72,3 +73,12 @@ In the sense of ros2_control, broadcasters are still controllers using the same 
    IMU Sensor Broadcaster <../imu_sensor_broadcaster/doc/userdoc.rst>
    Joint State Broadcaster <../joint_state_broadcaster/doc/userdoc.rst>
    Range Sensor Broadcaster <../range_sensor_broadcaster/doc/userdoc.rst>
+
+
+Common Controller Parameters
+****************************
+
+Every controller and broadcaster has a few common parameters. They are optional, but if needed they have to be set before ``onConfigure`` transition to ``inactive`` state, see `lifecycle documents <https://design.ros2.org/articles/node_lifecycle.html>`__. Once the controllers are already loaded, this transition is done using the service ``configure_controller`` of the controller_manager.
+
+* ``update_rate``: An unsigned integer parameter representing the rate at which every controller/broadcaster runs its update cycle. When unspecified, they run at the same frequency as the controller_manager.
+* ``is_async``: A boolean parameter that is needed to specify if the controller update needs to run asynchronously.

@@ -248,19 +248,20 @@ controller_interface::return_type JointTrajectoryController::update(
 
         // Always check the state tolerance on the first sample in case the first sample
         // is the last point
+        // print output per default, goal will be aborted afterwards
         if (
-          (before_last_point || first_sample) &&
+          (before_last_point || first_sample) && *(rt_is_holding_.readFromRT()) == false &&
           !check_state_tolerance_per_joint(
-            state_error_, index, active_tol->state_tolerance[index], false) &&
+            state_error_, index, active_tol->state_tolerance[index], true /* show_errors */) &&
           *(rt_is_holding_.readFromRT()) == false)
         {
           tolerance_violated_while_moving = true;
         }
         // past the final point, check that we end up inside goal tolerance
         if (
-          !before_last_point &&
+          !before_last_point && *(rt_is_holding_.readFromRT()) == false &&
           !check_state_tolerance_per_joint(
-            state_error_, index, active_tol->goal_state_tolerance[index], false) &&
+            state_error_, index, active_tol->goal_state_tolerance[index], false /* show_errors */) &&
           *(rt_is_holding_.readFromRT()) == false)
         {
           outside_goal_tolerance = true;
@@ -271,6 +272,10 @@ controller_interface::return_type JointTrajectoryController::update(
             if (time_difference > active_tol->goal_time_tolerance)
             {
               within_goal_time = false;
+              // print once, goal will be aborted afterwards
+              check_state_tolerance_per_joint(
+                state_error_, index, default_tolerances_.goal_state_tolerance[index],
+                true /* show_errors */);
             }
           }
         }
@@ -364,7 +369,7 @@ controller_interface::return_type JointTrajectoryController::update(
             RCLCPP_INFO(get_node()->get_logger(), "Goal reached, success!");
 
             traj_msg_external_point_ptr_.reset();
-            traj_msg_external_point_ptr_.initRT(set_hold_position());
+            traj_msg_external_point_ptr_.initRT(set_success_trajectory_point());
           }
           else if (!within_goal_time)
           {
@@ -948,11 +953,8 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
     read_state_from_state_interfaces(last_commanded_state_);
   }
 
-  // Should the controller start by holding position at the beginning of active state?
-  if (params_.start_with_holding)
-  {
-    add_new_trajectory_msg(set_hold_position());
-  }
+  // The controller should start by holding position at the beginning of active state
+  add_new_trajectory_msg(set_hold_position());
   rt_is_holding_.writeFromNonRT(true);
 
   // parse timeout parameter
@@ -1380,10 +1382,11 @@ bool JointTrajectoryController::validate_trajectory_msg(
   {
     for (size_t i = 0; i < trajectory.points.back().velocities.size(); ++i)
     {
-      if (trajectory.points.back().velocities.at(i) != 0.)
+      if (fabs(trajectory.points.back().velocities.at(i)) > std::numeric_limits<float>::epsilon())
       {
         RCLCPP_ERROR(
-          get_node()->get_logger(), "Velocity of last trajectory point of joint %s is not zero: %f",
+          get_node()->get_logger(),
+          "Velocity of last trajectory point of joint %s is not zero: %.15f",
           trajectory.joint_names.at(i).c_str(), trajectory.points.back().velocities.at(i));
         return false;
       }
@@ -1472,6 +1475,20 @@ JointTrajectoryController::set_hold_position()
   hold_position_msg_ptr_->points[0].positions = state_current_.positions;
 
   // set flag, otherwise tolerances will be checked with holding position too
+  rt_is_holding_.writeFromNonRT(true);
+
+  return hold_position_msg_ptr_;
+}
+
+std::shared_ptr<trajectory_msgs::msg::JointTrajectory>
+JointTrajectoryController::set_success_trajectory_point()
+{
+  // set last command to be repeated at success, no matter if it has nonzero velocity or
+  // acceleration
+  hold_position_msg_ptr_->points[0] = traj_external_point_ptr_->get_trajectory_msg()->points.back();
+  hold_position_msg_ptr_->points[0].time_from_start = rclcpp::Duration(0, 0);
+
+  // set flag, otherwise tolerances will be checked with success_trajectory_point too
   rt_is_holding_.writeFromNonRT(true);
 
   return hold_position_msg_ptr_;

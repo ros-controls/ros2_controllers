@@ -2,6 +2,20 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.2.0 (2023-12-12)
+------------------
+* Cleanup package.xml und clarify tests of JTC. (`#889 <https://github.com/ros-controls/ros2_controllers/issues/889>`_)
+* Fix floating point comparison in JTC (`#879 <https://github.com/ros-controls/ros2_controllers/issues/879>`_)
+* Contributors: Abishalini Sivaraman, Dr. Denis
+
+4.1.0 (2023-12-01)
+------------------
+* [JTC] Continue with last trajectory-point on success (`#842 <https://github.com/ros-controls/ros2_controllers/issues/842>`_)
+* [JTC] Remove start_with_holding option (`#839 <https://github.com/ros-controls/ros2_controllers/issues/839>`_)
+* [JTC] Activate checks for parameter validation (`#857 <https://github.com/ros-controls/ros2_controllers/issues/857>`_)
+* [JTC] Improve update methods for tests (`#858 <https://github.com/ros-controls/ros2_controllers/issues/858>`_)
+* Contributors: Christoph Fröhlich
+
 4.0.0 (2023-11-21)
 ------------------
 * fix tests for API break of passing controller manager update rate in init method (`#854 <https://github.com/ros-controls/ros2_controllers/issues/854>`_)
