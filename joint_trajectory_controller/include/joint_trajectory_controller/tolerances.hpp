@@ -30,9 +30,6 @@
 #ifndef JOINT_TRAJECTORY_CONTROLLER__TOLERANCES_HPP_
 #define JOINT_TRAJECTORY_CONTROLLER__TOLERANCES_HPP_
 
-#include <cassert>
-#include <cmath>
-#include <string>
 #include <vector>
 
 #include "control_msgs/action/follow_joint_trajectory.hpp"

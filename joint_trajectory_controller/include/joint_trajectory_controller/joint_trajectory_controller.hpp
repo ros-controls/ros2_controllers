@@ -17,9 +17,7 @@
 
 #include <chrono>
 #include <memory>
-#include <mutex>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "control_msgs/action/follow_joint_trajectory.hpp"
@@ -37,8 +35,6 @@
 #include "rclcpp/time.hpp"
 #include "rclcpp/timer.hpp"
 #include "rclcpp_action/server.hpp"
-#include "rclcpp_action/types.hpp"
-#include "rclcpp_lifecycle/lifecycle_publisher.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_buffer.h"
