@@ -189,6 +189,17 @@ public:
   void SetUpTrajectoryController(
     rclcpp::Executor & executor, const std::vector<rclcpp::Parameter> & parameters = {})
   {
+    auto ret = SetUpTrajectoryControllerLocal(parameters);
+    if (ret != controller_interface::return_type::OK)
+    {
+      FAIL();
+    }
+    executor.add_node(traj_controller_->get_node()->get_node_base_interface());
+  }
+
+  controller_interface::return_type SetUpTrajectoryControllerLocal(
+    const std::vector<rclcpp::Parameter> & parameters = {})
+  {
     traj_controller_ = std::make_shared<TestableJointTrajectoryController>();
 
     auto node_options = rclcpp::NodeOptions();
@@ -200,16 +211,11 @@ public:
     parameter_overrides.insert(parameter_overrides.end(), parameters.begin(), parameters.end());
     node_options.parameter_overrides(parameter_overrides);
 
-    auto ret = traj_controller_->init(controller_name_, "", 0, "", node_options);
-    if (ret != controller_interface::return_type::OK)
-    {
-      FAIL();
-    }
-    executor.add_node(traj_controller_->get_node()->get_node_base_interface());
+    return traj_controller_->init(controller_name_, "", 0, "", node_options);
   }
 
   void SetPidParameters(
-    double p_default = 0.0, double ff_default = 1.0, bool angle_wraparound_default = false)
+    double p_value = 0.0, double ff_value = 1.0, bool angle_wraparound_value = false)
   {
     traj_controller_->trigger_declare_parameters();
     auto node = traj_controller_->get_node();
@@ -217,13 +223,13 @@ public:
     for (size_t i = 0; i < joint_names_.size(); ++i)
     {
       const std::string prefix = "gains." + joint_names_[i];
-      const rclcpp::Parameter k_p(prefix + ".p", p_default);
+      const rclcpp::Parameter k_p(prefix + ".p", p_value);
       const rclcpp::Parameter k_i(prefix + ".i", 0.0);
       const rclcpp::Parameter k_d(prefix + ".d", 0.0);
       const rclcpp::Parameter i_clamp(prefix + ".i_clamp", 0.0);
-      const rclcpp::Parameter ff_velocity_scale(prefix + ".ff_velocity_scale", ff_default);
+      const rclcpp::Parameter ff_velocity_scale(prefix + ".ff_velocity_scale", ff_value);
       const rclcpp::Parameter angle_wraparound(
-        prefix + ".angle_wraparound", angle_wraparound_default);
+        prefix + ".angle_wraparound", angle_wraparound_value);
       node->set_parameters({k_p, k_i, k_d, i_clamp, ff_velocity_scale, angle_wraparound});
     }
   }
@@ -262,7 +268,7 @@ public:
       initial_eff_joints);
   }
 
-  void ActivateTrajectoryController(
+  rclcpp_lifecycle::State ActivateTrajectoryController(
     bool separate_cmd_and_state_values = false,
     const std::vector<double> initial_pos_joints = INITIAL_POS_JOINTS,
     const std::vector<double> initial_vel_joints = INITIAL_VEL_JOINTS,
@@ -320,7 +326,7 @@ public:
     }
 
     traj_controller_->assign_interfaces(std::move(cmd_interfaces), std::move(state_interfaces));
-    traj_controller_->get_node()->activate();
+    return traj_controller_->get_node()->activate();
   }
 
   static void TearDownTestCase() { rclcpp::shutdown(); }
@@ -515,7 +521,8 @@ public:
     return state_msg_;
   }
 
-  void expectHoldingPoint(std::vector<double> point)
+  void expectCommandPoint(
+    std::vector<double> position, std::vector<double> velocity = {0.0, 0.0, 0.0})
   {
     // it should be holding the given point
     // i.e., active but trivial trajectory (one point only)
@@ -525,16 +532,16 @@ public:
     {
       if (traj_controller_->has_position_command_interface())
       {
-        EXPECT_NEAR(point.at(0), joint_pos_[0], COMMON_THRESHOLD);
-        EXPECT_NEAR(point.at(1), joint_pos_[1], COMMON_THRESHOLD);
-        EXPECT_NEAR(point.at(2), joint_pos_[2], COMMON_THRESHOLD);
+        EXPECT_NEAR(position.at(0), joint_pos_[0], COMMON_THRESHOLD);
+        EXPECT_NEAR(position.at(1), joint_pos_[1], COMMON_THRESHOLD);
+        EXPECT_NEAR(position.at(2), joint_pos_[2], COMMON_THRESHOLD);
       }
 
       if (traj_controller_->has_velocity_command_interface())
       {
-        EXPECT_EQ(0.0, joint_vel_[0]);
-        EXPECT_EQ(0.0, joint_vel_[1]);
-        EXPECT_EQ(0.0, joint_vel_[2]);
+        EXPECT_EQ(velocity.at(0), joint_vel_[0]);
+        EXPECT_EQ(velocity.at(1), joint_vel_[1]);
+        EXPECT_EQ(velocity.at(2), joint_vel_[2]);
       }
 
       if (traj_controller_->has_acceleration_command_interface())
@@ -551,40 +558,29 @@ public:
         EXPECT_EQ(0.0, joint_eff_[2]);
       }
     }
-    else
+    else  // traj_controller_->use_closed_loop_pid_adapter() == true
     {
       // velocity or effort PID?
-      // velocity setpoint is always zero -> feedforward term does not have an effect
       // --> set kp > 0.0 in test
       if (traj_controller_->has_velocity_command_interface())
       {
-        EXPECT_TRUE(
-          is_same_sign_or_zero(point.at(0) - pos_state_interfaces_[0].get_value(), joint_vel_[0]))
-          << "current error: " << point.at(0) - pos_state_interfaces_[0].get_value()
-          << ", velocity command is " << joint_vel_[0];
-        EXPECT_TRUE(
-          is_same_sign_or_zero(point.at(1) - pos_state_interfaces_[1].get_value(), joint_vel_[1]))
-          << "current error: " << point.at(1) - pos_state_interfaces_[1].get_value()
-          << ", velocity command is " << joint_vel_[1];
-        EXPECT_TRUE(
-          is_same_sign_or_zero(point.at(2) - pos_state_interfaces_[2].get_value(), joint_vel_[2]))
-          << "current error: " << point.at(2) - pos_state_interfaces_[2].get_value()
-          << ", velocity command is " << joint_vel_[2];
+        for (size_t i = 0; i < 3; i++)
+        {
+          EXPECT_TRUE(is_same_sign_or_zero(
+            position.at(i) - pos_state_interfaces_[i].get_value(), joint_vel_[i]))
+            << "test position point " << position.at(i) << ", position state is "
+            << pos_state_interfaces_[i].get_value() << ", velocity command is " << joint_vel_[i];
+        }
       }
       if (traj_controller_->has_effort_command_interface())
       {
-        EXPECT_TRUE(
-          is_same_sign_or_zero(point.at(0) - pos_state_interfaces_[0].get_value(), joint_eff_[0]))
-          << "current error: " << point.at(0) - pos_state_interfaces_[0].get_value()
-          << ", effort command is " << joint_eff_[0];
-        EXPECT_TRUE(
-          is_same_sign_or_zero(point.at(1) - pos_state_interfaces_[1].get_value(), joint_eff_[1]))
-          << "current error: " << point.at(1) - pos_state_interfaces_[1].get_value()
-          << ", effort command is " << joint_eff_[1];
-        EXPECT_TRUE(
-          is_same_sign_or_zero(point.at(2) - pos_state_interfaces_[2].get_value(), joint_eff_[2]))
-          << "current error: " << point.at(2) - pos_state_interfaces_[2].get_value()
-          << ", effort command is " << joint_eff_[2];
+        for (size_t i = 0; i < 3; i++)
+        {
+          EXPECT_TRUE(is_same_sign_or_zero(
+            position.at(i) - pos_state_interfaces_[i].get_value(), joint_eff_[i]))
+            << "test position point " << position.at(i) << ", position state is "
+            << pos_state_interfaces_[i].get_value() << ", effort command is " << joint_eff_[i];
+        }
       }
     }
   }

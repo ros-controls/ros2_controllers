@@ -14,6 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Code inspired on the joint_state_publisher package by David Lu!!!
+# https://github.com/ros/robot_model/blob/indigo-devel/
+# joint_state_publisher/joint_state_publisher/joint_state_publisher
+
 # TODO: Use urdf_parser_py.urdf instead. I gave it a try, but got
 #  Exception: Required attribute not set in XML: upper
 # upper is an optional attribute, so I don't understand what's going on
@@ -33,21 +37,24 @@ def callback(msg):
     description = msg.data
 
 
-def get_joint_limits(node, key="robot_description", use_smallest_joint_limits=True):
-    global description
-    use_small = use_smallest_joint_limits
-    use_mimic = True
-
-    # Code inspired on the joint_state_publisher package by David Lu!!!
-    # https://github.com/ros/robot_model/blob/indigo-devel/
-    # joint_state_publisher/joint_state_publisher/joint_state_publisher
-
+def subscribe_to_robot_description(node, key="robot_description"):
     qos_profile = rclpy.qos.QoSProfile(depth=1)
     qos_profile.durability = rclpy.qos.DurabilityPolicy.TRANSIENT_LOCAL
     qos_profile.reliability = rclpy.qos.ReliabilityPolicy.RELIABLE
 
-    node.create_subscription(String, "/robot_description", callback, qos_profile)
-    rclpy.spin_once(node)
+    node.create_subscription(String, key, callback, qos_profile)
+
+
+def get_joint_limits(node, use_smallest_joint_limits=True):
+    global description
+    use_small = use_smallest_joint_limits
+    use_mimic = True
+
+    count = 0
+    while description == "" and count < 10:
+        print("Waiting for the robot_description!")
+        count += 1
+        rclpy.spin_once(node, timeout_sec=1.0)
 
     free_joints = {}
     dependent_joints = {}
@@ -66,21 +73,27 @@ def get_joint_limits(node, key="robot_description", use_smallest_joint_limits=Tr
                 name = child.getAttribute("name")
                 try:
                     limit = child.getElementsByTagName("limit")[0]
-                except IndexError:
-                    continue
-                if jtype == "continuous":
-                    minval = -pi
-                    maxval = pi
-                else:
                     try:
                         minval = float(limit.getAttribute("lower"))
                         maxval = float(limit.getAttribute("upper"))
                     except ValueError:
-                        continue
-                try:
-                    maxvel = float(limit.getAttribute("velocity"))
-                except ValueError:
-                    continue
+                        if jtype == "continuous":
+                            minval = -pi
+                            maxval = pi
+                        else:
+                            raise Exception(
+                                f"Missing lower/upper position limits for the joint : {name} of type : {jtype} in the robot_description!"
+                            )
+                    try:
+                        maxvel = float(limit.getAttribute("velocity"))
+                    except ValueError:
+                        raise Exception(
+                            f"Missing velocity limits for the joint : {name} of type : {jtype} in the robot_description!"
+                        )
+                except IndexError:
+                    raise Exception(
+                        f"Missing limits tag for the joint : {name} in the robot_description!"
+                    )
                 safety_tags = child.getElementsByTagName("safety_controller")
                 if use_small and len(safety_tags) == 1:
                     tag = safety_tags[0]
