@@ -83,4 +83,13 @@ Parameters
 
 The PID controller uses the `generate_parameter_library <https://github.com/PickNikRobotics/generate_parameter_library>`_ to handle its parameters.
 
+List of parameters
+=========================
 .. generate_parameter_library_details:: ../src/pid_controller.yaml
+
+
+An example parameter file
+=========================
+
+.. generate_parameter_library_default::
+  ../src/pid_controller.yaml
