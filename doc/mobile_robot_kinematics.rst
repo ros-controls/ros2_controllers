@@ -2,16 +2,31 @@
 
 .. _mobile_robot_kinematics:
 
-Mobile Robot Kinematics
+Wheeled Mobile Robot Kinematics
 --------------------------------------------------------------
 
 .. _siciliano: https://link.springer.com/book/10.1007/978-1-84628-642-1
+.. _modern_robotics: http://modernrobotics.org/
 
-This section introduces the kinematics of different mobile robots. The nomenclature is based on `Siciliano et.al - Robotics: Modelling, Planning and Control <siciliano_>`_.
+This page introduces the kinematics of different wheeled mobile robots. For further reference see `Siciliano et.al - Robotics: Modelling, Planning and Control <siciliano_>`_ and `Kevin M. Lynch and Frank C. Park - Modern Robotics: Mechanics, Planning, And Control <modern_robotics_>`_.
 
-.. note::
+Wheeled mobile robots can be classified in two categories:
 
-  The forward integration of the kinematic model using the encoders of the wheel actuators — is referred to as **odometric localization** or **passive localization** or **dead reckoning**. We will call it just **odometry**.
+Omnidirectional robots
+  which can move instantaneously in any direction in the plane, and
+
+Nonholonomic robots
+  which cannot move instantaneously in any direction in the plane.
+
+The forward integration of the kinematic model using the encoders of the wheel actuators — is referred to as **odometric localization** or **passive localization** or **dead reckoning**. We will call it just **odometry**.
+
+Omnidirectional Wheeled Mobile Robots
+.....................................
+
+Robots with omniwheels or mecanum wheels. Section will be updated if controllers for these robots are implemented.
+
+Nonholonomic Wheeled Mobile Robots
+.....................................
 
 Unicycle model
 ,,,,,,,,,,,,,,,,
@@ -37,7 +52,7 @@ In the following, we want to command the robot with a desired body twist
                   \vec{v}_{b}
                 \end{bmatrix},
 
-where :math:`\vec{v}_{b}` is the linear velocity of the robot in its body-frame, and :math:`\vec\omega_{b}` is the angular velocity of the robot in its body-frame. For reference, see, e.g., `Kevin M. Lynch and Frank C. Park - Modern Robotics: Mechanics, Planning, And Control <http://modernrobotics.org/>`__. As we consider steering robots on a flat surface, it is sufficient to give
+where :math:`\vec{v}_{b}` is the linear velocity of the robot in its body-frame, and :math:`\vec\omega_{b}` is the angular velocity of the robot in its body-frame. As we consider steering robots on a flat surface, it is sufficient to give
 
 * :math:`v_{b,x}`, i.e. the linear velocity of the robot in :math:`x_b`-axis direction.
 * :math:`\omega_{b,z}`, i.e. the angular velocity of the robot around :math:`x_z`-axis.

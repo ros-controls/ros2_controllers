@@ -21,8 +21,8 @@ Guidelines and Best Practices
    *
 
 
-Controllers for Mobile Robots
-*****************************
+Controllers for Wheeled Mobile Robots
+*************************************
 
 .. toctree::
    :titlesonly:
