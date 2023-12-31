@@ -9,6 +9,8 @@ Controller for mobile robots with tricycle drive.
 Input for control are robot base_link twist commands which are translated to traction and steering
 commands for the tricycle drive base. Odometry is computed from hardware feedback and published.
 
+For an introduction to mobile robot kinematics and the nomenclature used here, see :ref:`mobile_robot_kinematics`.
+
 Velocity commands
 -----------------
 
