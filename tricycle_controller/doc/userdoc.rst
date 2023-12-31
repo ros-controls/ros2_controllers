@@ -24,3 +24,10 @@ Other features
     Odometry publishing
     Velocity, acceleration and jerk limits
     Automatic stop after command timeout
+
+Parameters
+--------------
+
+This controller uses the `generate_parameter_library <https://github.com/PickNikRobotics/generate_parameter_library>`_ to handle its parameters.
+
+.. generate_parameter_library_details:: ../src/tricycle_controller_parameter.yaml
