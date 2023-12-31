@@ -220,14 +220,16 @@ TEST_F(TestTricycleController, configure_succeeds_when_joints_are_specified)
   auto cmd_if_conf = controller_->command_interface_configuration();
   ASSERT_THAT(cmd_if_conf.names, SizeIs(2lu));
   ASSERT_THAT(
-    cmd_if_conf.names,
-    UnorderedElementsAre(traction_joint_name + "/velocity", steering_joint_name + "/position"));
+    cmd_if_conf.names, UnorderedElementsAre(
+                         std::string(traction_joint_name) + "/velocity",
+                         std::string(steering_joint_name) + "/position"));
   EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
   auto state_if_conf = controller_->state_interface_configuration();
   ASSERT_THAT(state_if_conf.names, SizeIs(2lu));
   ASSERT_THAT(
-    state_if_conf.names,
-    UnorderedElementsAre(traction_joint_name + "/velocity", steering_joint_name + "/position"));
+    state_if_conf.names, UnorderedElementsAre(
+                           std::string(traction_joint_name) + "/velocity",
+                           std::string(steering_joint_name) + "/position"));
   EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 }
 
