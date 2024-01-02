@@ -16,10 +16,9 @@
 #define JOINT_TRAJECTORY_CONTROLLER__JOINT_TRAJECTORY_CONTROLLER_HPP_
 
 #include <chrono>
+#include <functional>  // for std::reference_wrapper
 #include <memory>
-#include <mutex>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "control_msgs/action/follow_joint_trajectory.hpp"
@@ -30,15 +29,15 @@
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "joint_trajectory_controller/interpolation_methods.hpp"
 #include "joint_trajectory_controller/tolerances.hpp"
+#include "joint_trajectory_controller/trajectory.hpp"
 #include "joint_trajectory_controller/visibility_control.h"
 #include "rclcpp/duration.hpp"
 #include "rclcpp/subscription.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp/timer.hpp"
 #include "rclcpp_action/server.hpp"
-#include "rclcpp_action/types.hpp"
-#include "rclcpp_lifecycle/lifecycle_publisher.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
+#include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_buffer.h"
 #include "realtime_tools/realtime_publisher.h"
 #include "realtime_tools/realtime_server_goal_handle.h"
@@ -50,19 +49,8 @@
 
 using namespace std::chrono_literals;  // NOLINT
 
-namespace rclcpp_action
-{
-template <typename ActionT>
-class ServerGoalHandle;
-}  // namespace rclcpp_action
-namespace rclcpp_lifecycle
-{
-class State;
-}  // namespace rclcpp_lifecycle
-
 namespace joint_trajectory_controller
 {
-class Trajectory;
 
 class JointTrajectoryController : public controller_interface::ControllerInterface
 {
