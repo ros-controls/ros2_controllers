@@ -14,12 +14,10 @@
 
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
 
-#include <stddef.h>
 #include <chrono>
 #include <functional>
 #include <memory>
-#include <ostream>
-#include <ratio>
+
 #include <string>
 #include <vector>
 
@@ -33,15 +31,11 @@
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/event_handler.hpp"
 #include "rclcpp/logging.hpp"
-#include "rclcpp/parameter.hpp"
 #include "rclcpp/qos.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp_action/create_server.hpp"
 #include "rclcpp_action/server_goal_handle.hpp"
-#include "rclcpp_lifecycle/lifecycle_node.hpp"
-#include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
-#include "std_msgs/msg/header.hpp"
 
 namespace joint_trajectory_controller
 {
