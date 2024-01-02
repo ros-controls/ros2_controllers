@@ -14,7 +14,6 @@
 
 #include <stddef.h>
 
-#include <array>
 #include <chrono>
 #include <cmath>
 #include <future>
@@ -30,7 +29,6 @@
 #include "builtin_interfaces/msg/time.hpp"
 #include "controller_interface/controller_interface.hpp"
 #include "hardware_interface/resource_manager.hpp"
-#include "joint_trajectory_controller/joint_trajectory_controller.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/clock.hpp"
 #include "rclcpp/duration.hpp"
@@ -44,9 +42,6 @@
 #include "rclcpp/subscription.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp/utilities.hpp"
-#include "rclcpp_lifecycle/lifecycle_node.hpp"
-#include "rclcpp_lifecycle/state.hpp"
-#include "std_msgs/msg/header.hpp"
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 

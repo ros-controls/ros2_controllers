@@ -1,23 +1,20 @@
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Changelog for package tricycle_steering_controller
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Changelog for package pid_controller
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 4.2.0 (2023-12-12)
 ------------------
+* 🚀 Add PID controller 🎉 (`#434 <https://github.com/ros-controls/ros2_controllers/issues/434>`_)
+* Contributors: Dr. Denis
 
 4.1.0 (2023-12-01)
 ------------------
 
 4.0.0 (2023-11-21)
 ------------------
-* fix tests for API break of passing controller manager update rate in init method (`#854 <https://github.com/ros-controls/ros2_controllers/issues/854>`_)
-* Adjust tests after passing URDF to controllers (`#817 <https://github.com/ros-controls/ros2_controllers/issues/817>`_)
-* Contributors: Bence Magyar, Sai Kishor Kothakota
 
 3.17.0 (2023-10-31)
 -------------------
-* Improve docs (`#785 <https://github.com/ros-controls/ros2_controllers/issues/785>`_)
-* Contributors: Christoph Fröhlich
 
 3.16.0 (2023-09-20)
 -------------------
@@ -36,9 +33,6 @@ Changelog for package tricycle_steering_controller
 
 3.11.0 (2023-06-24)
 -------------------
-* Added -Wconversion flag and fix warnings (`#667 <https://github.com/ros-controls/ros2_controllers/issues/667>`_)
-* Let sphinx add parameter description to documentation (`#651 <https://github.com/ros-controls/ros2_controllers/issues/651>`_)
-* Contributors: Christoph Fröhlich, gwalck
 
 3.10.1 (2023-06-06)
 -------------------
@@ -48,9 +42,6 @@ Changelog for package tricycle_steering_controller
 
 3.9.0 (2023-05-28)
 ------------------
-* Fix sphinx for steering odometry library/controllers (`#626 <https://github.com/ros-controls/ros2_controllers/issues/626>`_)
-* Steering odometry library and controllers (`#484 <https://github.com/ros-controls/ros2_controllers/issues/484>`_)
-* Contributors: Bence Magyar, Christoph Fröhlich, Tomislav Petković
 
 3.8.0 (2023-05-14)
 ------------------

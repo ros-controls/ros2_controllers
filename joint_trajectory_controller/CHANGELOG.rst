@@ -2,6 +2,12 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.2.0 (2023-12-12)
+------------------
+* Cleanup package.xml und clarify tests of JTC. (`#889 <https://github.com/ros-controls/ros2_controllers/issues/889>`_)
+* Fix floating point comparison in JTC (`#879 <https://github.com/ros-controls/ros2_controllers/issues/879>`_)
+* Contributors: Abishalini Sivaraman, Dr. Denis
+
 4.1.0 (2023-12-01)
 ------------------
 * [JTC] Continue with last trajectory-point on success (`#842 <https://github.com/ros-controls/ros2_controllers/issues/842>`_)
