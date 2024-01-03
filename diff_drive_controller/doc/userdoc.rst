@@ -64,28 +64,12 @@ Publishers
 Parameters
 ,,,,,,,,,,,,
 
-This controller uses the `generate_parameter_library <https://github.com/PickNikRobotics/generate_parameter_library>`_ to handle its parameters.
+This controller uses the `generate_parameter_library <https://github.com/PickNikRobotics/generate_parameter_library>`_ to handle its parameters. The parameter `definition file located in the src folder <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/diff_drive_controller/src/diff_drive_controller_parameter.yaml>`_ contains descriptions for all the parameters used by the controller.
 
-List of parameters
-=========================
 .. generate_parameter_library_details:: ../src/diff_drive_controller_parameter.yaml
+  parameters_context.yaml
 
+An example parameter file for this controller can be found in `the test directory <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/diff_drive_controller/test/config/test_diff_drive_controller.yaml>`_:
 
-Note that the documentation on parameters for joint limits can be found in `their header file <https://github.com/ros-controls/ros2_control/blob/{REPOS_FILE_BRANCH}/joint_limits/include/joint_limits/joint_limits_rosparam.hpp#L56-L75>`_.
-Those parameters are:
-
-linear.x [JointLimits structure]
-  Joint limits structure for the linear X-axis.
-  The limiter ignores position limits.
-  For details see ``joint_limits`` package from ros2_control repository.
-
-angular.z [JointLimits structure]
-  Joint limits structure for the rotation about Z-axis.
-  The limiter ignores position limits.
-  For details see ``joint_limits`` package from ros2_control repository.
-
-An example parameter file
-=========================
-
-.. generate_parameter_library_default::
-  ../src/diff_drive_controller_parameter.yaml
+.. literalinclude:: ../test/config/test_diff_drive_controller.yaml
+   :language: yaml

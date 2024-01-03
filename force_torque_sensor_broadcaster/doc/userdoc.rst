@@ -12,24 +12,17 @@ The controller is a wrapper around ``ForceTorqueSensor`` semantic component (see
 
 Parameters
 ^^^^^^^^^^^
-This controller uses the `generate_parameter_library <https://github.com/PickNikRobotics/generate_parameter_library>`_ to handle its parameters.
+This controller uses the `generate_parameter_library <https://github.com/PickNikRobotics/generate_parameter_library>`_ to handle its parameters. The parameter `definition file located in the src folder <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/force_torque_sensor_broadcaster/src/force_torque_sensor_broadcaster_parameters.yaml>`_ contains descriptions for all the parameters used by the controller.
 
 The interfaces can be defined in two ways, using ``sensor_name`` or ``interface_names`` parameter:
 Those two parameters cannot be defined at the same time.
 
-interface_names.[force|torque].[x|y|z] (optional)
-  Defines custom, per axis interface names.
-  This is used if different prefixes, i.e., sensor name, or non-standard interface names are used.
-  It is sufficient that only one ``interface_name`` is defined.
-  This enables broadcaster use for force sensing cells with less then six measuring axes.
-  Example definition is:
-
-  .. code-block:: yaml
-
-     interface_names:
-       force:
-         x: example_name/example_interface
-
 Full list of parameters:
 
 .. generate_parameter_library_details:: ../src/force_torque_sensor_broadcaster_parameters.yaml
+  parameters_context.yaml
+
+An example parameter file for this controller can be found in `the test directory <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/force_torque_sensor_broadcaster/test/force_torque_sensor_broadcaster_params.yaml>`_:
+
+.. literalinclude:: ../test/force_torque_sensor_broadcaster_params.yaml
+   :language: yaml

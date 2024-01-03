@@ -22,10 +22,11 @@ If none of the requested interface are not defined, the controller returns error
 
 Parameters
 ----------
-This controller uses the `generate_parameter_library <https://github.com/PickNikRobotics/generate_parameter_library>`_ to handle its parameters.
+This controller uses the `generate_parameter_library <https://github.com/PickNikRobotics/generate_parameter_library>`_ to handle its parameters. The parameter `definition file located in the src folder <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/joint_state_broadcaster/src/joint_state_broadcaster_parameters.yaml>`_ contains descriptions for all the parameters used by the controller.
+
 
 List of parameters
-=========================
+,,,,,,,,,,,,,,,,,,
 
 .. generate_parameter_library_details::
   ../src/joint_state_broadcaster_parameters.yaml
@@ -33,7 +34,7 @@ List of parameters
 
 
 An example parameter file
-=========================
+,,,,,,,,,,,,,,,,,,,,,,,,,
 
 .. generate_parameter_library_default::
   ../src/joint_state_broadcaster_parameters.yaml
