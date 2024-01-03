@@ -2,6 +2,11 @@
 Changelog for package rqt_joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.20.0 (2024-01-03)
+-------------------
+* Add rqt_JTC to docs (`#950 <https://github.com/ros-controls/ros2_controllers/issues/950>`_) (`#953 <https://github.com/ros-controls/ros2_controllers/issues/953>`_)
+* Contributors: mergify[bot]
+
 3.19.2 (2023-12-12)
 -------------------
 * Fix rqt jtc bugs for continuous joints and other minor bugs (`#890 <https://github.com/ros-controls/ros2_controllers/issues/890>`_) (`#892 <https://github.com/ros-controls/ros2_controllers/issues/892>`_)
