@@ -2,6 +2,11 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Changing default int values to double in steering controller's yaml file (`#927 <https://github.com/ros-controls/ros2_controllers/issues/927>`_) (`#929 <https://github.com/ros-controls/ros2_controllers/issues/929>`_)
+* Contributors: mergify[bot]
+
 3.19.2 (2023-12-12)
 -------------------
 
