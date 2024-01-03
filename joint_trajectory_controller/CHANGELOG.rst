@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.20.0 (2024-01-03)
+-------------------
 * [JTC] Cleanup includes (`#943 <https://github.com/ros-controls/ros2_controllers/issues/943>`_) (`#960 <https://github.com/ros-controls/ros2_controllers/issues/960>`_)
 * Add rqt_JTC to docs (`#950 <https://github.com/ros-controls/ros2_controllers/issues/950>`_) (`#953 <https://github.com/ros-controls/ros2_controllers/issues/953>`_)
 * [JTC] Add console output for tolerance checks (`#932 <https://github.com/ros-controls/ros2_controllers/issues/932>`_) (`#939 <https://github.com/ros-controls/ros2_controllers/issues/939>`_)
