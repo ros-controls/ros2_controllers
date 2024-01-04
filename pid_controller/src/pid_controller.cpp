@@ -171,10 +171,10 @@ controller_interface::CallbackReturn PidController::on_configure(
   if (params_.use_external_measured_states)
   {
     auto measured_state_callback =
-      [&](const std::shared_ptr<ControllerMeasuredStateMsg> msg) -> void
+      [&](const std::shared_ptr<ControllerMeasuredStateMsg> state_msg) -> void
     {
       // TODO(destogl): Sort the input values based on joint and interface names
-      measured_state_.writeFromNonRT(msg);
+      measured_state_.writeFromNonRT(state_msg);
     };
     measured_state_subscriber_ = get_node()->create_subscription<ControllerMeasuredStateMsg>(
       "~/measured_state", subscribers_qos, measured_state_callback);
