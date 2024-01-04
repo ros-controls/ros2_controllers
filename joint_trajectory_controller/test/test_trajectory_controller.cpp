@@ -506,7 +506,7 @@ TEST_P(TrajectoryControllerTestParameterized, compute_error_angle_wraparound_tru
     (traj_controller_->has_velocity_command_interface() ||
      traj_controller_->has_effort_command_interface()))
   {
-    // error.velocities[index] = desired.velocities[index] - current.velocities[index];
+    // expect: error.velocities = desired.velocities - current.velocities;
     EXPECT_NEAR(error.velocities[0], 0., EPS);
     EXPECT_NEAR(error.velocities[1], 0., EPS);
     EXPECT_NEAR(error.velocities[2], 0., EPS);
@@ -515,7 +515,7 @@ TEST_P(TrajectoryControllerTestParameterized, compute_error_angle_wraparound_tru
     traj_controller_->has_acceleration_state_interface() &&
     traj_controller_->has_acceleration_command_interface())
   {
-    // error.accelerations[index] = desired.accelerations[index] - current.accelerations[index];
+    // expect: error.accelerations = desired.accelerations - current.accelerations;
     EXPECT_NEAR(error.accelerations[0], 0., EPS);
     EXPECT_NEAR(error.accelerations[1], 0., EPS);
     EXPECT_NEAR(error.accelerations[2], 0., EPS);
@@ -538,7 +538,7 @@ TEST_P(TrajectoryControllerTestParameterized, compute_error_angle_wraparound_tru
     (traj_controller_->has_velocity_command_interface() ||
      traj_controller_->has_effort_command_interface()))
   {
-    // error.velocities[index] = desired.velocities[index] - current.velocities[index];
+    // expect: error.velocities = desired.velocities - current.velocities;
     EXPECT_NEAR(error.velocities[0], desired.velocities[0] - current.velocities[0], EPS);
     EXPECT_NEAR(error.velocities[1], desired.velocities[1] - current.velocities[1], EPS);
     EXPECT_NEAR(error.velocities[2], desired.velocities[2] - current.velocities[2], EPS);
@@ -547,7 +547,7 @@ TEST_P(TrajectoryControllerTestParameterized, compute_error_angle_wraparound_tru
     traj_controller_->has_acceleration_state_interface() &&
     traj_controller_->has_acceleration_command_interface())
   {
-    // error.accelerations[index] = desired.accelerations[index] - current.accelerations[index];
+    // expect: error.accelerations = desired.accelerations - current.accelerations;
     EXPECT_NEAR(error.accelerations[0], desired.accelerations[0] - current.accelerations[0], EPS);
     EXPECT_NEAR(error.accelerations[1], desired.accelerations[1] - current.accelerations[1], EPS);
     EXPECT_NEAR(error.accelerations[2], desired.accelerations[2] - current.accelerations[2], EPS);
@@ -600,7 +600,7 @@ TEST_P(TrajectoryControllerTestParameterized, compute_error_angle_wraparound_fal
     (traj_controller_->has_velocity_command_interface() ||
      traj_controller_->has_effort_command_interface()))
   {
-    // error.velocities[index] = desired.velocities[index] - current.velocities[index];
+    // expect: error.velocities = desired.velocities - current.velocities;
     EXPECT_NEAR(error.velocities[0], 0., EPS);
     EXPECT_NEAR(error.velocities[1], 0., EPS);
     EXPECT_NEAR(error.velocities[2], 0., EPS);
@@ -609,7 +609,7 @@ TEST_P(TrajectoryControllerTestParameterized, compute_error_angle_wraparound_fal
     traj_controller_->has_acceleration_state_interface() &&
     traj_controller_->has_acceleration_command_interface())
   {
-    // error.accelerations[index] = desired.accelerations[index] - current.accelerations[index];
+    // expect: error.accelerations = desired.accelerations - current.accelerations;
     EXPECT_NEAR(error.accelerations[0], 0., EPS);
     EXPECT_NEAR(error.accelerations[1], 0., EPS);
     EXPECT_NEAR(error.accelerations[2], 0., EPS);
@@ -632,7 +632,7 @@ TEST_P(TrajectoryControllerTestParameterized, compute_error_angle_wraparound_fal
     (traj_controller_->has_velocity_command_interface() ||
      traj_controller_->has_effort_command_interface()))
   {
-    // error.velocities[index] = desired.velocities[index] - current.velocities[index];
+    // expect: error.velocities = desired.velocities - current.velocities;
     EXPECT_NEAR(error.velocities[0], desired.velocities[0] - current.velocities[0], EPS);
     EXPECT_NEAR(error.velocities[1], desired.velocities[1] - current.velocities[1], EPS);
     EXPECT_NEAR(error.velocities[2], desired.velocities[2] - current.velocities[2], EPS);
@@ -641,7 +641,7 @@ TEST_P(TrajectoryControllerTestParameterized, compute_error_angle_wraparound_fal
     traj_controller_->has_acceleration_state_interface() &&
     traj_controller_->has_acceleration_command_interface())
   {
-    // error.accelerations[index] = desired.accelerations[index] - current.accelerations[index];
+    // expect: error.accelerations = desired.accelerations - current.accelerations;
     EXPECT_NEAR(error.accelerations[0], desired.accelerations[0] - current.accelerations[0], EPS);
     EXPECT_NEAR(error.accelerations[1], desired.accelerations[1] - current.accelerations[1], EPS);
     EXPECT_NEAR(error.accelerations[2], desired.accelerations[2] - current.accelerations[2], EPS);
