@@ -16,10 +16,9 @@
 #define JOINT_TRAJECTORY_CONTROLLER__JOINT_TRAJECTORY_CONTROLLER_HPP_
 
 #include <chrono>
+#include <functional>  // for std::reference_wrapper
 #include <memory>
-#include <mutex>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "control_msgs/action/follow_joint_trajectory.hpp"
@@ -30,15 +29,15 @@
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "joint_trajectory_controller/interpolation_methods.hpp"
 #include "joint_trajectory_controller/tolerances.hpp"
+#include "joint_trajectory_controller/trajectory.hpp"
 #include "joint_trajectory_controller/visibility_control.h"
 #include "rclcpp/duration.hpp"
 #include "rclcpp/subscription.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp/timer.hpp"
 #include "rclcpp_action/server.hpp"
-#include "rclcpp_action/types.hpp"
-#include "rclcpp_lifecycle/lifecycle_publisher.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
+#include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_buffer.h"
 #include "realtime_tools/realtime_publisher.h"
 #include "realtime_tools/realtime_server_goal_handle.h"
@@ -50,19 +49,8 @@
 
 using namespace std::chrono_literals;  // NOLINT
 
-namespace rclcpp_action
-{
-template <typename ActionT>
-class ServerGoalHandle;
-}  // namespace rclcpp_action
-namespace rclcpp_lifecycle
-{
-class State;
-}  // namespace rclcpp_lifecycle
-
 namespace joint_trajectory_controller
 {
-class Trajectory;
 
 class JointTrajectoryController : public controller_interface::ControllerInterface
 {
@@ -174,7 +162,7 @@ protected:
 
   // Timeout to consider commands old
   double cmd_timeout_;
-  // Are we holding position?
+  // True if holding position or repeating last trajectory point in case of success
   realtime_tools::RealtimeBuffer<bool> rt_is_holding_;
   // TODO(karsten1987): eventually activate and deactivate subscriber directly when its supported
   bool subscriber_is_active_ = false;
@@ -184,8 +172,6 @@ protected:
   rclcpp::Service<control_msgs::srv::QueryTrajectoryState>::SharedPtr query_state_srv_;
 
   std::shared_ptr<Trajectory> traj_external_point_ptr_ = nullptr;
-  std::shared_ptr<Trajectory> traj_home_point_ptr_ = nullptr;
-  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> traj_msg_home_ptr_ = nullptr;
   realtime_tools::RealtimeBuffer<std::shared_ptr<trajectory_msgs::msg::JointTrajectory>>
     traj_msg_external_point_ptr_;
 
@@ -246,8 +232,18 @@ protected:
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   void preempt_active_goal();
+
+  /** @brief set the current position with zero velocity and acceleration as new command
+   */
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> set_hold_position();
+
+  /** @brief set last trajectory point to be repeated at success
+   *
+   * no matter if it has nonzero velocity or acceleration
+   */
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
+  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> set_success_trajectory_point();
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   bool reset();
