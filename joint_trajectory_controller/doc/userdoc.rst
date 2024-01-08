@@ -194,6 +194,7 @@ Further information
 
    Trajectory Representation <trajectory.rst>
    joint_trajectory_controller Parameters <parameters.rst>
+   rqt_joint_trajectory_controller <../../rqt_joint_trajectory_controller/doc/userdoc.rst>
 
 
 .. rubric:: Footnote
