@@ -2,8 +2,8 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.20.1 (2024-01-08)
+-------------------
 * Fix ackermann steering odometry (`#921 <https://github.com/ros-controls/ros2_controllers/issues/921>`_) (`#956 <https://github.com/ros-controls/ros2_controllers/issues/956>`_)
 * Contributors: mergify[bot]
 
