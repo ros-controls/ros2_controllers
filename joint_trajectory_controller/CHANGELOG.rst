@@ -2,6 +2,15 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.3.0 (2024-01-08)
+------------------
+* Update deprecated topic name (`#964 <https://github.com/ros-controls/ros2_controllers/issues/964>`_)
+* Add few warning flags to error (`#961 <https://github.com/ros-controls/ros2_controllers/issues/961>`_)
+* [JTC] Cleanup includes (`#943 <https://github.com/ros-controls/ros2_controllers/issues/943>`_)
+* Add rqt_JTC to docs (`#950 <https://github.com/ros-controls/ros2_controllers/issues/950>`_)
+* [JTC] Add console output for tolerance checks (`#932 <https://github.com/ros-controls/ros2_controllers/issues/932>`_)
+* Contributors: Christoph Fröhlich, Sai Kishor Kothakota, maurice
+
 4.2.0 (2023-12-12)
 ------------------
 * Cleanup package.xml und clarify tests of JTC. (`#889 <https://github.com/ros-controls/ros2_controllers/issues/889>`_)

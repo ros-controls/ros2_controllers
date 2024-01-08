@@ -2,7 +2,8 @@ cmake_minimum_required(VERSION 3.16)
 project(steering_controllers_library LANGUAGES CXX)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
-  add_compile_options(-Wall -Wextra -Wpedantic -Wconversion)
+  add_compile_options(-Wall -Wextra -Wpedantic -Werror=conversion -Werror=unused-but-set-variable
+                      -Werror=return-type -Werror=shadow -Werror=format)
 endif()
 
 # find dependencies
@@ -67,6 +68,9 @@ if(BUILD_TESTING)
     controller_interface
     hardware_interface
   )
+  ament_add_gmock(test_steering_odometry test/test_steering_odometry.cpp)
+  target_link_libraries(test_steering_odometry steering_controllers_library)
+
 endif()
 
 install(
