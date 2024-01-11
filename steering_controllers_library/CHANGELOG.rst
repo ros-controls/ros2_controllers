@@ -2,6 +2,11 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.31.0 (2024-01-11)
+-------------------
+* Fix ackermann steering odometry (`#921 <https://github.com/ros-controls/ros2_controllers/issues/921>`_) (`#955 <https://github.com/ros-controls/ros2_controllers/issues/955>`_)
+* Contributors: mergify[bot]
+
 2.30.0 (2023-12-20)
 -------------------
 * Changing default int values to double in steering controller's yaml file (`#927 <https://github.com/ros-controls/ros2_controllers/issues/927>`_) (`#928 <https://github.com/ros-controls/ros2_controllers/issues/928>`_)

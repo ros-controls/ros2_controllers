@@ -14,12 +14,10 @@
 
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
 
-#include <stddef.h>
 #include <chrono>
 #include <functional>
 #include <memory>
-#include <ostream>
-#include <ratio>
+
 #include <string>
 #include <vector>
 
@@ -32,16 +30,12 @@
 #include "joint_trajectory_controller/trajectory.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/logging.hpp"
-#include "rclcpp/parameter.hpp"
 #include "rclcpp/qos.hpp"
 #include "rclcpp/qos_event.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp_action/create_server.hpp"
 #include "rclcpp_action/server_goal_handle.hpp"
-#include "rclcpp_lifecycle/lifecycle_node.hpp"
-#include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
-#include "std_msgs/msg/header.hpp"
 
 namespace joint_trajectory_controller
 {
@@ -259,20 +253,21 @@ controller_interface::return_type JointTrajectoryController::update(
 
         // Always check the state tolerance on the first sample in case the first sample
         // is the last point
+        // print output per default, goal will be aborted afterwards
         if (
-          (before_last_point || first_sample) &&
+          (before_last_point || first_sample) && *(rt_is_holding_.readFromRT()) == false &&
           !check_state_tolerance_per_joint(
-            state_error_, index, default_tolerances_.state_tolerance[index], false) &&
-          *(rt_is_holding_.readFromRT()) == false)
+            state_error_, index, default_tolerances_.state_tolerance[index],
+            true /* show_errors */))
         {
           tolerance_violated_while_moving = true;
         }
         // past the final point, check that we end up inside goal tolerance
         if (
-          !before_last_point &&
+          !before_last_point && *(rt_is_holding_.readFromRT()) == false &&
           !check_state_tolerance_per_joint(
-            state_error_, index, default_tolerances_.goal_state_tolerance[index], false) &&
-          *(rt_is_holding_.readFromRT()) == false)
+            state_error_, index, default_tolerances_.goal_state_tolerance[index],
+            false /* show_errors */))
         {
           outside_goal_tolerance = true;
 
@@ -281,6 +276,10 @@ controller_interface::return_type JointTrajectoryController::update(
             if (time_difference > default_tolerances_.goal_time_tolerance)
             {
               within_goal_time = false;
+              // print once, goal will be aborted afterwards
+              check_state_tolerance_per_joint(
+                state_error_, index, default_tolerances_.goal_state_tolerance[index],
+                true /* show_errors */);
             }
           }
         }
@@ -1033,6 +1032,17 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
 controller_interface::CallbackReturn JointTrajectoryController::on_deactivate(
   const rclcpp_lifecycle::State &)
 {
+  const auto active_goal = *rt_active_goal_.readFromNonRT();
+  if (active_goal)
+  {
+    rt_has_pending_goal_.writeFromNonRT(false);
+    auto action_res = std::make_shared<FollowJTrajAction::Result>();
+    action_res->set__error_code(FollowJTrajAction::Result::INVALID_GOAL);
+    action_res->set__error_string("Current goal cancelled during deactivate transition.");
+    active_goal->setCanceled(action_res);
+    rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
+  }
+
   for (size_t index = 0; index < dof_; ++index)
   {
     if (has_position_command_interface_)
@@ -1544,7 +1554,6 @@ void JointTrajectoryController::preempt_active_goal()
   const auto active_goal = *rt_active_goal_.readFromNonRT();
   if (active_goal)
   {
-    add_new_trajectory_msg(set_hold_position());
     auto action_res = std::make_shared<FollowJTrajAction::Result>();
     action_res->set__error_code(FollowJTrajAction::Result::INVALID_GOAL);
     action_res->set__error_string("Current goal cancelled due to new incoming action.");
