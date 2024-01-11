@@ -2,7 +2,6 @@ tricycle_controller:
   traction_joint_name: {
     type: string,
     default_value: "",
-    read_only: true,
     description: "Name of the traction joint",
     validation: {
       not_empty<>: []
@@ -11,7 +10,6 @@ tricycle_controller:
   steering_joint_name: {
     type: string,
     default_value: "",
-    read_only: true,
     description: "Name of the steering joint",
     validation: {
       not_empty<>: []
