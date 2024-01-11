@@ -3,7 +3,7 @@ pid_controller:
     type: string_array,
     default_value: [],
     description: "Specifies dof_names or axes used by the controller. If 'reference_and_state_dof_names' parameter is defined, then only command dof names are defined with this parameter.",
-    read_only: true,
+    read_only: false,
     validation: {
       unique<>: null,
       not_empty<>: null,
@@ -13,7 +13,7 @@ pid_controller:
     type: string_array,
     default_value: [],
     description: "(optional) Specifies dof_names or axes for getting reference and reading states. This parameter is only relevant when state dof names are different then command dof names, i.e., when a following controller is used.",
-    read_only: true,
+    read_only: false,
     validation: {
       unique<>: null,
     }
@@ -22,7 +22,7 @@ pid_controller:
     type: string,
     default_value: "",
     description: "Name of the interface used by the controller for writing commands to the hardware.",
-    read_only: true,
+    read_only: false,
     validation: {
       not_empty<>: null,
     }
@@ -31,7 +31,7 @@ pid_controller:
     type: string_array,
     default_value: [],
     description: "Name of the interfaces used by the controller getting hardware states and reference commands. The second interface should be the derivative of the first.",
-    read_only: true,
+    read_only: false,
     validation: {
       not_empty<>: null,
       size_lt<>: 3,

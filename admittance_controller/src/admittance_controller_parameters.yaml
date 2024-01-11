@@ -2,33 +2,33 @@ admittance_controller:
   joints: {
     type: string_array,
     description: "Specifies which joints will be used by the controller. ",
-    read_only: true
+    read_only: false
   }
   command_joints: {
     type: string_array,
     default_value: [],
     description: "(optional) Specifies the joints for writing into another controllers reference. This parameter is only relevant when chaining the output of this controller to the input of another controller.",
-    read_only: true
+    read_only: false
   }
   command_interfaces:
     {
       type: string_array,
       description: "Specifies which command interfaces the controller will claim.",
-      read_only: true
+      read_only: false
     }
 
   state_interfaces:
     {
       type: string_array,
       description: "Specifies which state interfaces the controller will claim.",
-      read_only: true
+      read_only: false
     }
 
   chainable_command_interfaces:
     {
       type: string_array,
       description: "Specifies which reference interfaces the controller will export. Normally, the position and velocity are used.",
-      read_only: true
+      read_only: false
     }
 
   kinematics:
