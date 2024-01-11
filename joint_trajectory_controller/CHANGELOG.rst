@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.31.0 (2024-01-11)
+-------------------
 * [JTC] Remove read_only from 'joints', 'state_interfaces' and 'command_interfaces' parameters (`#967 <https://github.com/ros-controls/ros2_controllers/issues/967>`_) (`#968 <https://github.com/ros-controls/ros2_controllers/issues/968>`_)
 * [JTC] Add console output for tolerance checks (backport `#932 <https://github.com/ros-controls/ros2_controllers/issues/932>`_) (`#938 <https://github.com/ros-controls/ros2_controllers/issues/938>`_)
 * [JTC] Cleanup includes (`#943 <https://github.com/ros-controls/ros2_controllers/issues/943>`_) (`#959 <https://github.com/ros-controls/ros2_controllers/issues/959>`_)
