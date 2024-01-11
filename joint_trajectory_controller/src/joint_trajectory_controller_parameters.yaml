@@ -3,7 +3,6 @@ joint_trajectory_controller:
     type: string_array,
     default_value: [],
     description: "Joint names to control and listen to",
-    read_only: true,
     validation: {
       unique<>: null,
     }
@@ -21,7 +20,6 @@ joint_trajectory_controller:
     type: string_array,
     default_value: [],
     description: "Command interfaces provided by the hardware interface for all joints",
-    read_only: true,
     validation: {
       unique<>: null,
       subset_of<>: [["position", "velocity", "acceleration", "effort",]],
@@ -32,7 +30,6 @@ joint_trajectory_controller:
     type: string_array,
     default_value: [],
     description: "State interfaces provided by the hardware for all joints.",
-    read_only: true,
     validation: {
       unique<>: null,
       subset_of<>: [["position", "velocity", "acceleration",]],

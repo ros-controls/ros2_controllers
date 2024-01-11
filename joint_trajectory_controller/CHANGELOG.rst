@@ -2,6 +2,12 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.4.0 (2024-01-11)
+------------------
+* Cancel goal in on_deactivate (`#962 <https://github.com/ros-controls/ros2_controllers/issues/962>`_)
+* Remove read_only from 'joints', 'state_interfaces' and 'command_interfaces' parameters (`#967 <https://github.com/ros-controls/ros2_controllers/issues/967>`_)
+* Contributors: Christoph Fröhlich, Noel Jiménez García
+
 4.3.0 (2024-01-08)
 ------------------
 * Update deprecated topic name (`#964 <https://github.com/ros-controls/ros2_controllers/issues/964>`_)
