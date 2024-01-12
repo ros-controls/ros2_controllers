@@ -39,6 +39,7 @@ using hardware_interface::LoanedCommandInterface;
 using hardware_interface::LoanedStateInterface;
 using lifecycle_msgs::msg::State;
 using testing::SizeIs;
+using testing::UnorderedElementsAre;
 
 class TestableTricycleController : public tricycle_controller::TricycleController
 {
@@ -207,6 +208,20 @@ TEST_F(TestTricycleController, configure_succeeds_when_joints_are_specified)
     rclcpp::Parameter("steering_joint_name", rclcpp::ParameterValue(steering_joint_name)));
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+
+  // check interface configuration
+  auto cmd_if_conf = controller_->command_interface_configuration();
+  ASSERT_THAT(cmd_if_conf.names, SizeIs(2lu));
+  ASSERT_THAT(
+    cmd_if_conf.names,
+    UnorderedElementsAre(traction_joint_name + "/velocity", steering_joint_name + "/position"));
+  EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
+  auto state_if_conf = controller_->state_interface_configuration();
+  ASSERT_THAT(state_if_conf.names, SizeIs(2lu));
+  ASSERT_THAT(
+    state_if_conf.names,
+    UnorderedElementsAre(traction_joint_name + "/velocity", steering_joint_name + "/position"));
+  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 }
 
 TEST_F(TestTricycleController, activate_fails_without_resources_assigned)
