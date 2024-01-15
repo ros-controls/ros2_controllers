@@ -294,7 +294,7 @@ controller_interface::return_type JointTrajectoryController::update(
         {
           auto result = std::make_shared<FollowJTrajAction::Result>();
           result->set__error_code(FollowJTrajAction::Result::PATH_TOLERANCE_VIOLATED);
-          result->set__error_string("Aborted due to state tolerance violation");
+          result->set__error_string("Aborted due to path tolerance violation");
           active_goal->setAborted(result);
           // TODO(matthew-reynolds): Need a lock-free write here
           // See https://github.com/ros-controls/ros2_controllers/issues/168
@@ -313,7 +313,7 @@ controller_interface::return_type JointTrajectoryController::update(
           {
             auto result = std::make_shared<FollowJTrajAction::Result>();
             result->set__error_code(FollowJTrajAction::Result::SUCCESSFUL);
-            result->set__error_string("Goal reached, success!");
+            result->set__error_string("Goal successfully reached!");
             active_goal->setSucceeded(result);
             // TODO(matthew-reynolds): Need a lock-free write here
             // See https://github.com/ros-controls/ros2_controllers/issues/168
@@ -327,7 +327,7 @@ controller_interface::return_type JointTrajectoryController::update(
           }
           else if (!within_goal_time)
           {
-            const std::string error_string = "Aborted due goal_time_tolerance exceeding by " +
+            const std::string error_string = "Aborted due to goal_time_tolerance exceeding by " +
                                              std::to_string(time_difference) + " seconds";
 
             auto result = std::make_shared<FollowJTrajAction::Result>();
