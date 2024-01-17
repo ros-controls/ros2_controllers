@@ -9,6 +9,8 @@ joint_state_broadcaster:
     default_value: [],
     description: "Parameter to support broadcasting of only specific joints and interfaces.
     It has to be used in combination with the ``interfaces`` parameter.
+    If either ``joints`` or ``interfaces`` is left empty, all available state interfaces will be
+    published.
     Joint state broadcaster asks for access to all defined interfaces on all defined joints."
   }
   extra_joints: {
@@ -20,7 +22,9 @@ joint_state_broadcaster:
     type: string_array,
     default_value: [],
     description: "Parameter to support broadcasting of only specific joints and interfaces.
-    It has to be used in combination with the ``joints`` parameter."
+    It has to be used in combination with the ``joints`` parameter.
+    If either ``joints`` or ``interfaces`` is left empty, all available state interfaces will be
+    published."
   }
   map_interface_to_joint_state:
     position: {
