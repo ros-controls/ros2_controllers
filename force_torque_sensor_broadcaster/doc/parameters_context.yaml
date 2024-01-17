@@ -2,8 +2,8 @@ interface_names: |
   (optional) Defines custom, per axis interface names.
   This is used if different prefixes, i.e., sensor name, or non-standard interface names are used.
   It is sufficient that only one ``interface_name`` is defined.
-  This enables broadcaster use for force sensing cells with less then six measuring axes.
-  Example definition is:
+  This enables the broadcaster to use force sensing cells with less than six measuring axes.
+  An example definition is:
 
   .. code-block:: yaml
 

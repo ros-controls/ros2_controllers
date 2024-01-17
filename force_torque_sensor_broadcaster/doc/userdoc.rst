@@ -14,7 +14,7 @@ Parameters
 ^^^^^^^^^^^
 This controller uses the `generate_parameter_library <https://github.com/PickNikRobotics/generate_parameter_library>`_ to handle its parameters. The parameter `definition file located in the src folder <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/force_torque_sensor_broadcaster/src/force_torque_sensor_broadcaster_parameters.yaml>`_ contains descriptions for all the parameters used by the controller.
 
-The interfaces can be defined in two ways, using ``sensor_name`` or ``interface_names`` parameter:
+The interfaces can be defined in two ways, using the ``sensor_name`` or the ``interface_names`` parameter:
 Those two parameters cannot be defined at the same time.
 
 Full list of parameters:
