@@ -2,6 +2,11 @@
 Changelog for package tricycle_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Increase test coverage of interface configuration getters (`#856 <https://github.com/ros-controls/ros2_controllers/issues/856>`_) (`#865 <https://github.com/ros-controls/ros2_controllers/issues/865>`_)
+* Contributors: mergify[bot]
+
 2.31.0 (2024-01-11)
 -------------------
 
