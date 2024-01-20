@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.21.0 (2024-01-20)
+-------------------
 * [Docs] Update deprecated topic name (`#964 <https://github.com/ros-controls/ros2_controllers/issues/964>`_) (`#965 <https://github.com/ros-controls/ros2_controllers/issues/965>`_)
 * [JTC] Cancel goal in on_deactivate (`#962 <https://github.com/ros-controls/ros2_controllers/issues/962>`_) (`#971 <https://github.com/ros-controls/ros2_controllers/issues/971>`_)
 * Contributors: mergify[bot]
