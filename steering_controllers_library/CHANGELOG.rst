@@ -2,8 +2,8 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.32.0 (2024-01-20)
+-------------------
 * Update ci-ros-lint.yml and copyright format (backport `#720 <https://github.com/ros-controls/ros2_controllers/issues/720>`_) (`#918 <https://github.com/ros-controls/ros2_controllers/issues/918>`_)
 * Contributors: mergify[bot]
 
