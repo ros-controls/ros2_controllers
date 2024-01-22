@@ -497,28 +497,22 @@ TEST_P(TrajectoryControllerTestParameterized, compute_error_angle_wraparound_tru
   for (size_t i = 0; i < n_joints; ++i)
   {
     traj_controller_->testable_compute_error_for_joint(error, i, current, desired);
-  }
-  EXPECT_NEAR(error.positions[0], 0., EPS);
-  EXPECT_NEAR(error.positions[1], 0., EPS);
-  EXPECT_NEAR(error.positions[2], 0., EPS);
-  if (
-    traj_controller_->has_velocity_state_interface() &&
-    (traj_controller_->has_velocity_command_interface() ||
-     traj_controller_->has_effort_command_interface()))
-  {
-    // expect: error.velocities = desired.velocities - current.velocities;
-    EXPECT_NEAR(error.velocities[0], 0., EPS);
-    EXPECT_NEAR(error.velocities[1], 0., EPS);
-    EXPECT_NEAR(error.velocities[2], 0., EPS);
-  }
-  if (
-    traj_controller_->has_acceleration_state_interface() &&
-    traj_controller_->has_acceleration_command_interface())
-  {
-    // expect: error.accelerations = desired.accelerations - current.accelerations;
-    EXPECT_NEAR(error.accelerations[0], 0., EPS);
-    EXPECT_NEAR(error.accelerations[1], 0., EPS);
-    EXPECT_NEAR(error.accelerations[2], 0., EPS);
+    EXPECT_NEAR(error.positions[i], 0., EPS);
+    if (
+      traj_controller_->has_velocity_state_interface() &&
+      (traj_controller_->has_velocity_command_interface() ||
+       traj_controller_->has_effort_command_interface()))
+    {
+      // expect: error.velocities = desired.velocities - current.velocities;
+      EXPECT_NEAR(error.velocities[i], 0., EPS);
+    }
+    if (
+      traj_controller_->has_acceleration_state_interface() &&
+      traj_controller_->has_acceleration_command_interface())
+    {
+      // expect: error.accelerations = desired.accelerations - current.accelerations;
+      EXPECT_NEAR(error.accelerations[i], 0., EPS);
+    }
   }
 
   // angle wraparound of position error
@@ -529,28 +523,31 @@ TEST_P(TrajectoryControllerTestParameterized, compute_error_angle_wraparound_tru
   for (size_t i = 0; i < n_joints; ++i)
   {
     traj_controller_->testable_compute_error_for_joint(error, i, current, desired);
-  }
-  EXPECT_NEAR(error.positions[0], desired.positions[0] - current.positions[0] - 2.0 * M_PI, EPS);
-  EXPECT_NEAR(error.positions[1], desired.positions[1] - current.positions[1], EPS);
-  EXPECT_NEAR(error.positions[2], desired.positions[2] - current.positions[2], EPS);
-  if (
-    traj_controller_->has_velocity_state_interface() &&
-    (traj_controller_->has_velocity_command_interface() ||
-     traj_controller_->has_effort_command_interface()))
-  {
-    // expect: error.velocities = desired.velocities - current.velocities;
-    EXPECT_NEAR(error.velocities[0], desired.velocities[0] - current.velocities[0], EPS);
-    EXPECT_NEAR(error.velocities[1], desired.velocities[1] - current.velocities[1], EPS);
-    EXPECT_NEAR(error.velocities[2], desired.velocities[2] - current.velocities[2], EPS);
-  }
-  if (
-    traj_controller_->has_acceleration_state_interface() &&
-    traj_controller_->has_acceleration_command_interface())
-  {
-    // expect: error.accelerations = desired.accelerations - current.accelerations;
-    EXPECT_NEAR(error.accelerations[0], desired.accelerations[0] - current.accelerations[0], EPS);
-    EXPECT_NEAR(error.accelerations[1], desired.accelerations[1] - current.accelerations[1], EPS);
-    EXPECT_NEAR(error.accelerations[2], desired.accelerations[2] - current.accelerations[2], EPS);
+    if (i == 0)
+    {
+      EXPECT_NEAR(
+        error.positions[i], desired.positions[i] - current.positions[i] - 2.0 * M_PI, EPS);
+    }
+    else
+    {
+      EXPECT_NEAR(error.positions[i], desired.positions[i] - current.positions[i], EPS);
+    }
+
+    if (
+      traj_controller_->has_velocity_state_interface() &&
+      (traj_controller_->has_velocity_command_interface() ||
+       traj_controller_->has_effort_command_interface()))
+    {
+      // expect: error.velocities = desired.velocities - current.velocities;
+      EXPECT_NEAR(error.velocities[i], desired.velocities[i] - current.velocities[i], EPS);
+    }
+    if (
+      traj_controller_->has_acceleration_state_interface() &&
+      traj_controller_->has_acceleration_command_interface())
+    {
+      // expect: error.accelerations = desired.accelerations - current.accelerations;
+      EXPECT_NEAR(error.accelerations[i], desired.accelerations[i] - current.accelerations[i], EPS);
+    }
   }
 
   executor.cancel();
@@ -591,28 +588,22 @@ TEST_P(TrajectoryControllerTestParameterized, compute_error_angle_wraparound_fal
   for (size_t i = 0; i < n_joints; ++i)
   {
     traj_controller_->testable_compute_error_for_joint(error, i, current, desired);
-  }
-  EXPECT_NEAR(error.positions[0], 0., EPS);
-  EXPECT_NEAR(error.positions[1], 0., EPS);
-  EXPECT_NEAR(error.positions[2], 0., EPS);
-  if (
-    traj_controller_->has_velocity_state_interface() &&
-    (traj_controller_->has_velocity_command_interface() ||
-     traj_controller_->has_effort_command_interface()))
-  {
-    // expect: error.velocities = desired.velocities - current.velocities;
-    EXPECT_NEAR(error.velocities[0], 0., EPS);
-    EXPECT_NEAR(error.velocities[1], 0., EPS);
-    EXPECT_NEAR(error.velocities[2], 0., EPS);
-  }
-  if (
-    traj_controller_->has_acceleration_state_interface() &&
-    traj_controller_->has_acceleration_command_interface())
-  {
-    // expect: error.accelerations = desired.accelerations - current.accelerations;
-    EXPECT_NEAR(error.accelerations[0], 0., EPS);
-    EXPECT_NEAR(error.accelerations[1], 0., EPS);
-    EXPECT_NEAR(error.accelerations[2], 0., EPS);
+    EXPECT_NEAR(error.positions[i], 0., EPS);
+    if (
+      traj_controller_->has_velocity_state_interface() &&
+      (traj_controller_->has_velocity_command_interface() ||
+       traj_controller_->has_effort_command_interface()))
+    {
+      // expect: error.velocities = desired.velocities - current.velocities;
+      EXPECT_NEAR(error.velocities[i], 0., EPS);
+    }
+    if (
+      traj_controller_->has_acceleration_state_interface() &&
+      traj_controller_->has_acceleration_command_interface())
+    {
+      // expect: error.accelerations = desired.accelerations - current.accelerations;
+      EXPECT_NEAR(error.accelerations[i], 0., EPS);
+    }
   }
 
   // no normalization of position error
@@ -623,28 +614,22 @@ TEST_P(TrajectoryControllerTestParameterized, compute_error_angle_wraparound_fal
   for (size_t i = 0; i < n_joints; ++i)
   {
     traj_controller_->testable_compute_error_for_joint(error, i, current, desired);
-  }
-  EXPECT_NEAR(error.positions[0], desired.positions[0] - current.positions[0], EPS);
-  EXPECT_NEAR(error.positions[1], desired.positions[1] - current.positions[1], EPS);
-  EXPECT_NEAR(error.positions[2], desired.positions[2] - current.positions[2], EPS);
-  if (
-    traj_controller_->has_velocity_state_interface() &&
-    (traj_controller_->has_velocity_command_interface() ||
-     traj_controller_->has_effort_command_interface()))
-  {
-    // expect: error.velocities = desired.velocities - current.velocities;
-    EXPECT_NEAR(error.velocities[0], desired.velocities[0] - current.velocities[0], EPS);
-    EXPECT_NEAR(error.velocities[1], desired.velocities[1] - current.velocities[1], EPS);
-    EXPECT_NEAR(error.velocities[2], desired.velocities[2] - current.velocities[2], EPS);
-  }
-  if (
-    traj_controller_->has_acceleration_state_interface() &&
-    traj_controller_->has_acceleration_command_interface())
-  {
-    // expect: error.accelerations = desired.accelerations - current.accelerations;
-    EXPECT_NEAR(error.accelerations[0], desired.accelerations[0] - current.accelerations[0], EPS);
-    EXPECT_NEAR(error.accelerations[1], desired.accelerations[1] - current.accelerations[1], EPS);
-    EXPECT_NEAR(error.accelerations[2], desired.accelerations[2] - current.accelerations[2], EPS);
+    EXPECT_NEAR(error.positions[i], desired.positions[i] - current.positions[i], EPS);
+    if (
+      traj_controller_->has_velocity_state_interface() &&
+      (traj_controller_->has_velocity_command_interface() ||
+       traj_controller_->has_effort_command_interface()))
+    {
+      // expect: error.velocities = desired.velocities - current.velocities;
+      EXPECT_NEAR(error.velocities[i], desired.velocities[i] - current.velocities[i], EPS);
+    }
+    if (
+      traj_controller_->has_acceleration_state_interface() &&
+      traj_controller_->has_acceleration_command_interface())
+    {
+      // expect: error.accelerations = desired.accelerations - current.accelerations;
+      EXPECT_NEAR(error.accelerations[i], desired.accelerations[i] - current.accelerations[i], EPS);
+    }
   }
 
   executor.cancel();
