@@ -3,7 +3,6 @@ joint_trajectory_controller:
     type: string_array,
     default_value: [],
     description: "Names of joints used by the controller",
-    read_only: true,
     validation: {
       unique<>: null,
     }
@@ -21,7 +20,6 @@ joint_trajectory_controller:
     type: string_array,
     default_value: [],
     description: "Names of command interfaces to claim",
-    read_only: true,
     validation: {
       unique<>: null,
       subset_of<>: [["position", "velocity", "acceleration", "effort",]],
@@ -32,7 +30,6 @@ joint_trajectory_controller:
     type: string_array,
     default_value: [],
     description: "Names of state interfaces to claim",
-    read_only: true,
     validation: {
       unique<>: null,
       subset_of<>: [["position", "velocity", "acceleration",]],
