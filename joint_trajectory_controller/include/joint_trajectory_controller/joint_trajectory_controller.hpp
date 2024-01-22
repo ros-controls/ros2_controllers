@@ -209,6 +209,20 @@ protected:
   void goal_accepted_callback(
     std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle);
 
+  using JointTrajectoryPoint = trajectory_msgs::msg::JointTrajectoryPoint;
+
+  /**
+   * Computes the error for a specific joint in the trajectory.
+   *
+   * @param[out] error The computed error for the joint.
+   * @param[in] index The index of the joint in the trajectory.
+   * @param[in] current The current state of the joints.
+   * @param[in] desired The desired state of the joints.
+   */
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
+  void compute_error_for_joint(
+    JointTrajectoryPoint & error, const size_t index, const JointTrajectoryPoint & current,
+    const JointTrajectoryPoint & desired) const;
   // fill trajectory_msg so it matches joints controlled by this controller
   // positions set to current position, velocities, accelerations and efforts to 0.0
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
@@ -217,7 +231,7 @@ protected:
   // sorts the joints of the incoming message to our local order
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   void sort_to_local_joint_order(
-    std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg);
+    std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg) const;
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   bool validate_trajectory_msg(const trajectory_msgs::msg::JointTrajectory & trajectory) const;
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
@@ -241,7 +255,6 @@ protected:
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   bool has_active_trajectory() const;
 
-  using JointTrajectoryPoint = trajectory_msgs::msg::JointTrajectoryPoint;
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   void publish_state(
     const rclcpp::Time & time, const JointTrajectoryPoint & desired_state,
@@ -273,6 +286,24 @@ private:
     trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size);
   void resize_joint_trajectory_point_command(
     trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size);
+
+  /**
+   * @brief Assigns the values from a trajectory point interface to a joint interface.
+   *
+   * @tparam T The type of the joint interface.
+   * @param[out] joint_interface The reference_wrapper to assign the values to
+   * @param[in] trajectory_point_interface Containing the values to assign.
+   * @todo: Use auto in parameter declaration with c++20
+   */
+  template <typename T>
+  void assign_interface_from_point(
+    const T & joint_interface, const std::vector<double> & trajectory_point_interface)
+  {
+    for (size_t index = 0; index < dof_; ++index)
+    {
+      joint_interface[index].get().set_value(trajectory_point_interface[index]);
+    }
+  }
 };
 
 }  // namespace joint_trajectory_controller
