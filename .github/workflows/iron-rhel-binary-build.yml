@@ -27,7 +27,6 @@ jobs:
       - name: Build and test
         run: |
           source /opt/ros/${{ env.ROS_DISTRO }}/setup.bash
-          vcs import src < src/ros2_controllers/ros2_controllers-not-released.${{ env.ROS_DISTRO }}.repos
           colcon build --packages-skip rqt_controller_manager rqt_joint_trajectory_controller
           colcon test --packages-skip rqt_controller_manager rqt_joint_trajectory_controller ros2controlcli
           colcon test-result --verbose
