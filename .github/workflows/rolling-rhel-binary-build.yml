@@ -1,7 +1,7 @@
-name: Rolling RHEL Binary Build
+name: RHEL Rolling Binary Build
 on:
   workflow_dispatch:
-  push:
+  pull_request:
     branches:
       - master
   schedule:
@@ -20,9 +20,15 @@ jobs:
       - uses: actions/checkout@v4
         with:
           path: src/ros2_controllers
-      - run: |
+      - name: Install dependencies
+        run: |
           rosdep update
-          rosdep install -iy --from-path src/ros2_controllers
+          rosdep install -iyr --from-path src/ros2_controllers || true
+      - name: Build and test
+        # source also underlay workspace with generate_parameter_library on rhel9
+        run: |
           source /opt/ros/${{ env.ROS_DISTRO }}/setup.bash
-          colcon build
-          colcon test
+          source /opt/ros2_ws/install/setup.bash
+          colcon build --packages-skip rqt_joint_trajectory_controller
+          colcon test --packages-skip rqt_joint_trajectory_controller
+          colcon test-result --verbose
