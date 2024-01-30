@@ -1396,6 +1396,12 @@ bool JointTrajectoryController::validate_trajectory_msg(
     }
   }
 
+  if (trajectory.points.empty())
+  {
+    RCLCPP_ERROR(get_node()->get_logger(), "Empty trajectory received.");
+    return false;
+  }
+
   if (!params_.allow_nonzero_velocity_at_trajectory_end)
   {
     for (size_t i = 0; i < trajectory.points.back().velocities.size(); ++i)
