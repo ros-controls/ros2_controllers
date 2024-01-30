@@ -1366,6 +1366,11 @@ TEST_P(TrajectoryControllerTestParameterized, invalid_message)
   traj_msg.joint_names = {"bad_name"};
   EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
 
+  // empty message
+  traj_msg = good_traj_msg;
+  traj_msg.points.clear();
+  EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
+
   // No position data
   traj_msg = good_traj_msg;
   traj_msg.points[0].positions.clear();
@@ -1402,8 +1407,41 @@ TEST_P(TrajectoryControllerTestParameterized, invalid_message)
   EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
 }
 
-/// With allow_integration_in_goal_trajectories parameter trajectory missing position or
-/// velocities are accepted
+/**
+ * @brief Test invalid velocity at trajectory end with parameter set to false
+ */
+TEST_P(
+  TrajectoryControllerTestParameterized,
+  expect_invalid_when_message_with_nonzero_end_velocity_and_when_param_false)
+{
+  rclcpp::Parameter nonzero_vel_parameters("allow_nonzero_velocity_at_trajectory_end", false);
+  rclcpp::executors::SingleThreadedExecutor executor;
+  SetUpAndActivateTrajectoryController(executor, {nonzero_vel_parameters});
+
+  trajectory_msgs::msg::JointTrajectory traj_msg;
+  traj_msg.joint_names = joint_names_;
+  traj_msg.header.stamp = rclcpp::Time(0);
+
+  // empty message (no throw!)
+  ASSERT_NO_THROW(traj_controller_->validate_trajectory_msg(traj_msg));
+  EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
+
+  // Nonzero velocity at trajectory end!
+  traj_msg.points.resize(1);
+  traj_msg.points[0].time_from_start = rclcpp::Duration::from_seconds(0.25);
+  traj_msg.points[0].positions.resize(1);
+  traj_msg.points[0].positions = {1.0, 2.0, 3.0};
+  traj_msg.points[0].velocities.resize(1);
+  traj_msg.points[0].velocities = {-1.0, -2.0, -3.0};
+  EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
+}
+
+/**
+ * @brief missing_positions_message_accepted Test mismatched joint and reference vector sizes
+ *
+ * @note With allow_integration_in_goal_trajectories parameter trajectory missing position or
+ * velocities are accepted
+ */
 TEST_P(TrajectoryControllerTestParameterized, missing_positions_message_accepted)
 {
   rclcpp::Parameter allow_integration_parameters("allow_integration_in_goal_trajectories", true);
