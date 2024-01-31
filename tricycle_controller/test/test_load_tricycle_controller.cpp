@@ -26,8 +26,6 @@
 
 TEST(TestLoadTricycleController, load_controller)
 {
-  rclcpp::init(0, nullptr);
-
   std::shared_ptr<rclcpp::Executor> executor =
     std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
 
@@ -39,6 +37,13 @@ TEST(TestLoadTricycleController, load_controller)
   ASSERT_NE(
     cm.load_controller("test_tricycle_controller", "tricycle_controller/TricycleController"),
     nullptr);
+}
 
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  rclcpp::init(argc, argv);
+  int result = RUN_ALL_TESTS();
   rclcpp::shutdown();
+  return result;
 }
