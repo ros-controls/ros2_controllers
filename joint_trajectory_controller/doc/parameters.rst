@@ -5,20 +5,20 @@
 Details about parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-joints (list(string))
-  Joint names to control and listen to.
+This controller uses the `generate_parameter_library <https://github.com/PickNikRobotics/generate_parameter_library>`_ to handle its parameters. The parameter `definition file located in the src folder <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/joint_trajectory_controller/src/joint_trajectory_controller_parameters.yaml>`_ contains descriptions for all the parameters used by the controller.
 
-command_joints (list(string))
-  Joint names to control. This parameters is used if JTC is used in a controller chain where command and state interfaces don't have same names.
 
-command_interface (list(string))
-  Command interfaces provided by the hardware interface for all joints.
+List of parameters
+=========================
 
-  Values: [position | velocity | acceleration] (multiple allowed)
+.. generate_parameter_library_details::
+  ../src/joint_trajectory_controller_parameters.yaml
+  parameters_context.yaml
 
-state_interfaces (list(string))
-  State interfaces provided by the hardware for all joints.
+An example parameter file
+=========================
 
+<<<<<<< HEAD
   Values: position (mandatory) [velocity, [acceleration]].
   Acceleration interface can only be used in combination with position and velocity.
 
@@ -154,3 +154,7 @@ gains.<joint_name>.angle_wraparound (bool)
 
 
   Default: false
+=======
+.. generate_parameter_library_default::
+  ../src/joint_trajectory_controller_parameters.yaml
+>>>>>>> f375c69 (Let sphinx add parameter description with nested structures to documentation (#652))
