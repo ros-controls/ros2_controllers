@@ -180,8 +180,10 @@ TEST_F(JointStateBroadcasterTest, ActivateEmptyTest)
   // check interface configuration
   auto cmd_if_conf = state_broadcaster_->command_interface_configuration();
   ASSERT_THAT(cmd_if_conf.names, IsEmpty());
+  EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::NONE);
   auto state_if_conf = state_broadcaster_->state_interface_configuration();
   ASSERT_THAT(state_if_conf.names, IsEmpty());
+  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::ALL);
 
   // publishers initialized
   ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
@@ -227,8 +229,10 @@ TEST_F(JointStateBroadcasterTest, ActivateTestWithoutJointsParameter)
   // check interface configuration
   auto cmd_if_conf = state_broadcaster_->command_interface_configuration();
   ASSERT_THAT(cmd_if_conf.names, IsEmpty());
+  EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::NONE);
   auto state_if_conf = state_broadcaster_->state_interface_configuration();
   ASSERT_THAT(state_if_conf.names, IsEmpty());
+  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::ALL);
 
   // publishers initialized
   ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
@@ -274,8 +278,10 @@ TEST_F(JointStateBroadcasterTest, ActivateTestWithoutInterfacesParameter)
   // check interface configuration
   auto cmd_if_conf = state_broadcaster_->command_interface_configuration();
   ASSERT_THAT(cmd_if_conf.names, IsEmpty());
+  EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::NONE);
   auto state_if_conf = state_broadcaster_->state_interface_configuration();
   ASSERT_THAT(state_if_conf.names, IsEmpty());
+  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::ALL);
 
   // publishers initialized
   ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
@@ -321,8 +327,10 @@ TEST_F(JointStateBroadcasterTest, ActivateDeactivateTestTwoJointsOneInterface)
   // check interface configuration
   auto cmd_if_conf = state_broadcaster_->command_interface_configuration();
   ASSERT_THAT(cmd_if_conf.names, IsEmpty());
+  EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::NONE);
   auto state_if_conf = state_broadcaster_->state_interface_configuration();
   ASSERT_THAT(state_if_conf.names, SizeIs(JOINT_NAMES.size() * IF_NAMES.size()));
+  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
   // publishers initialized
   ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
@@ -360,9 +368,11 @@ TEST_F(JointStateBroadcasterTest, ActivateDeactivateTestTwoJointsOneInterface)
   // check interface configuration
   cmd_if_conf = state_broadcaster_->command_interface_configuration();
   ASSERT_THAT(cmd_if_conf.names, IsEmpty());
+  EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::NONE);
   state_if_conf = state_broadcaster_->state_interface_configuration();
   ASSERT_THAT(
     state_if_conf.names, SizeIs(JOINT_NAMES.size() * IF_NAMES.size()));  // does not change
+  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 }
 
 TEST_F(JointStateBroadcasterTest, ActivateTestOneJointTwoInterfaces)
@@ -381,8 +391,10 @@ TEST_F(JointStateBroadcasterTest, ActivateTestOneJointTwoInterfaces)
   // check interface configuration
   auto cmd_if_conf = state_broadcaster_->command_interface_configuration();
   ASSERT_THAT(cmd_if_conf.names, IsEmpty());
+  EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::NONE);
   auto state_if_conf = state_broadcaster_->state_interface_configuration();
   ASSERT_THAT(state_if_conf.names, SizeIs(JOINT_NAMES.size() * IF_NAMES.size()));
+  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
   // publishers initialized
   ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
@@ -455,8 +467,10 @@ TEST_F(JointStateBroadcasterTest, ActivateTestTwoJointTwoInterfacesOneMissing)
   // check interface configuration
   auto cmd_if_conf = state_broadcaster_->command_interface_configuration();
   ASSERT_THAT(cmd_if_conf.names, IsEmpty());
+  EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::NONE);
   auto state_if_conf = state_broadcaster_->state_interface_configuration();
   ASSERT_THAT(state_if_conf.names, SizeIs(JOINT_NAMES.size() * IF_NAMES.size()));
+  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
   // publishers initialized
   ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
@@ -504,8 +518,10 @@ TEST_F(JointStateBroadcasterTest, TestCustomInterfaceWithoutMapping)
   // check interface configuration
   auto cmd_if_conf = state_broadcaster_->command_interface_configuration();
   ASSERT_THAT(cmd_if_conf.names, IsEmpty());
+  EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::NONE);
   auto state_if_conf = state_broadcaster_->state_interface_configuration();
   ASSERT_THAT(state_if_conf.names, SizeIs(JOINT_NAMES.size() * IF_NAMES.size()));
+  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
   // joint state initialized
   const auto & joint_state_msg = state_broadcaster_->realtime_joint_state_publisher_->msg_;
@@ -547,8 +563,10 @@ TEST_F(JointStateBroadcasterTest, TestCustomInterfaceMapping)
   // check interface configuration
   auto cmd_if_conf = state_broadcaster_->command_interface_configuration();
   ASSERT_THAT(cmd_if_conf.names, IsEmpty());
+  EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::NONE);
   auto state_if_conf = state_broadcaster_->state_interface_configuration();
   ASSERT_THAT(state_if_conf.names, SizeIs(JOINT_NAMES.size() * IF_NAMES.size()));
+  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
   // joint state initialized
   const auto & joint_state_msg = state_broadcaster_->realtime_joint_state_publisher_->msg_;

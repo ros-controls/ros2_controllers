@@ -73,7 +73,7 @@ constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
 class TestableSteeringControllersLibrary
 : public steering_controllers_library::SteeringControllersLibrary
 {
-  FRIEND_TEST(SteeringControllersLibraryTest, check_exported_intefaces);
+  FRIEND_TEST(SteeringControllersLibraryTest, check_exported_interfaces);
   FRIEND_TEST(SteeringControllersLibraryTest, test_both_update_methods_for_ref_timeout);
 
 public:
