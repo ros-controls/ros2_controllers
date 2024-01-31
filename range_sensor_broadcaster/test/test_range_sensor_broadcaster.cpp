@@ -37,7 +37,8 @@ controller_interface::return_type RangeSensorBroadcasterTest::init_broadcaster(
   std::string broadcaster_name)
 {
   controller_interface::return_type result = controller_interface::return_type::ERROR;
-  result = range_broadcaster_->init(broadcaster_name, "", 0);
+  result = range_broadcaster_->init(
+    broadcaster_name, "", 0, "", range_broadcaster_->define_custom_node_options());
 
   if (controller_interface::return_type::OK == result)
   {

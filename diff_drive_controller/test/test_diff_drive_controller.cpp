@@ -218,7 +218,8 @@ protected:
 
 TEST_F(TestDiffDriveController, init_fails_without_parameters)
 {
-  const auto ret = controller_->init(controller_name, urdf_, 0);
+  const auto ret =
+    controller_->init(controller_name, urdf_, 0, "", controller_->define_custom_node_options());
   ASSERT_EQ(ret, controller_interface::return_type::ERROR);
 }
 

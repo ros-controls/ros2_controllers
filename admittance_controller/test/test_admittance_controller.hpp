@@ -122,16 +122,11 @@ public:
     return success;
   }
 
-  rclcpp::NodeOptions get_node_options() const override { return node_options_; }
-
-  void set_node_options(const rclcpp::NodeOptions & node_options) { node_options_ = node_options; }
-
 private:
   rclcpp::WaitSet input_wrench_command_subscriber_wait_set_;
   rclcpp::WaitSet input_pose_command_subscriber_wait_set_;
   const std::string robot_description_ = ros2_control_test_assets::valid_6d_robot_urdf;
   const std::string robot_description_semantic_ = ros2_control_test_assets::valid_6d_robot_srdf;
-  rclcpp::NodeOptions node_options_;
 };
 
 class AdmittanceControllerTest : public ::testing::Test
@@ -190,7 +185,7 @@ protected:
   controller_interface::return_type SetUpControllerCommon(
     const std::string & controller_name, const rclcpp::NodeOptions & options)
   {
-    auto result = controller_->init(controller_name, "", 0, "");
+    auto result = controller_->init(controller_name, "", 0, "", options);
 
     controller_->export_reference_interfaces();
     assign_interfaces();

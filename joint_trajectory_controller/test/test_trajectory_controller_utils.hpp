@@ -66,7 +66,7 @@ public:
     return ret;
   }
 
-  rclcpp::NodeOptions get_node_options() const override { return node_options_; }
+  rclcpp::NodeOptions define_custom_node_options() const override { return node_options_; }
 
   /**
    * @brief wait_for_trajectory block until a new JointTrajectory is received.
@@ -240,7 +240,8 @@ public:
     node_options.parameter_overrides(parameter_overrides);
     traj_controller_->set_node_options(node_options);
 
-    return traj_controller_->init(controller_name_, "", 0, "");
+    return traj_controller_->init(
+      controller_name_, "", 0, "", traj_controller_->define_custom_node_options());
   }
 
   void SetPidParameters(
