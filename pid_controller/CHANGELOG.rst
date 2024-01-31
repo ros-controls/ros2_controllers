@@ -2,6 +2,12 @@
 Changelog for package pid_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.5.0 (2024-01-31)
+------------------
+* Add tests for `interface_configuration_type` consistently (`#899 <https://github.com/ros-controls/ros2_controllers/issues/899>`_)
+* [PID] Remove joint_jog include (`#975 <https://github.com/ros-controls/ros2_controllers/issues/975>`_)
+* Contributors: Christoph Fröhlich
+
 4.4.0 (2024-01-11)
 ------------------
 
