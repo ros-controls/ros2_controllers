@@ -2,6 +2,9 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.4.0 (2024-01-11)
+------------------
+
 4.3.0 (2024-01-08)
 ------------------
 * Remove robot description param from admittance YAML (`#963 <https://github.com/ros-controls/ros2_controllers/issues/963>`_)
