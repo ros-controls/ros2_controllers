@@ -2,6 +2,9 @@
 Changelog for package effort_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 4.4.0 (2024-01-11)
 ------------------
 
