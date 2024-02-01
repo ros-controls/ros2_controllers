@@ -29,23 +29,14 @@
 
 using hardware_interface::LoanedCommandInterface;
 using hardware_interface::LoanedStateInterface;
-using GripperCommandAction = control_msgs::action::GripperCommand;
+using GripperCommandAction = control_msgs::action::AntipodalGripperCommand;
 using GoalHandle = rclcpp_action::ServerGoalHandle<GripperCommandAction>;
 using testing::SizeIs;
 using testing::UnorderedElementsAre;
 
+void GripperControllerTest::SetUpTestCase() { rclcpp::init(0, nullptr); }
 
-void GripperControllerTest::SetUpTestCase()
-{
-  rclcpp::init(0, nullptr);
-}
-
-
-void GripperControllerTest::TearDownTestCase()
-{
-  rclcpp::shutdown();
-}
-
+void GripperControllerTest::TearDownTestCase() { rclcpp::shutdown(); }
 
 void GripperControllerTest::SetUp()
 {
@@ -53,12 +44,7 @@ void GripperControllerTest::SetUp()
   controller_ = std::make_unique<FriendGripperController>();
 }
 
-
-void GripperControllerTest::TearDown()
-{
-  controller_.reset(nullptr);
-}
-
+void GripperControllerTest::TearDown() { controller_.reset(nullptr); }
 
 void GripperControllerTest::SetUpController()
 {
@@ -109,7 +95,9 @@ TEST_F(GripperControllerTest, ConfigureParamsSuccess)
   // check interface configuration
   auto cmd_if_conf = this->controller_->command_interface_configuration();
   ASSERT_THAT(cmd_if_conf.names, SizeIs(1lu));
-  ASSERT_THAT(cmd_if_conf.names, UnorderedElementsAre(std::string("joint_1/") + hardware_interface::HW_IF_POSITION));
+  ASSERT_THAT(
+    cmd_if_conf.names,
+    UnorderedElementsAre(std::string("joint_1/") + hardware_interface::HW_IF_POSITION));
   EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
   auto state_if_conf = this->controller_->state_interface_configuration();
   ASSERT_THAT(state_if_conf.names, SizeIs(2lu));

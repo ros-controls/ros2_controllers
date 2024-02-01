@@ -61,9 +61,7 @@ controller_interface::return_type GripperActionController::update(
 
   const double current_position = joint_position_state_interface_->get().get_value();
   const double current_velocity = joint_velocity_state_interface_->get().get_value();
-
   const double error_position = command_struct_rt_.position_ - current_position;
-  const double error_velocity = command_struct_rt_.target_velocity_ - current_velocity;
 
   check_for_success(get_node()->now(), error_position, current_position, current_velocity);
 
@@ -81,8 +79,20 @@ controller_interface::return_type GripperActionController::update(
 }
 
 rclcpp_action::GoalResponse GripperActionController::goal_callback(
-  const rclcpp_action::GoalUUID &, std::shared_ptr<const GripperCommandAction::Goal>)
+  const rclcpp_action::GoalUUID &, std::shared_ptr<const GripperCommandAction::Goal> goal_handle)
 {
+  if (goal_handle->command.position.size() != 1)
+  {
+    pre_alloc_result_ = std::make_shared<control_msgs::action::AntipodalGripperCommand::Result>();
+    pre_alloc_result_->state.position.resize(1);
+    pre_alloc_result_->state.effort.resize(1);
+    RCLCPP_ERROR(
+      get_node()->get_logger(),
+      "Received action goal with wrong number of position values, expects 1, got %zu",
+      goal_handle->command.position.size());
+    return rclcpp_action::GoalResponse::REJECT;
+  }
+
   RCLCPP_INFO(get_node()->get_logger(), "Received & accepted new action goal");
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
@@ -97,18 +107,18 @@ void GripperActionController::accepted_callback(
 
   // This is the non-realtime command_struct
   // We use command_ for sharing
-  command_struct_.position_ = goal_handle->get_goal()->command.position;
-  if (params_.use_velocity_interface)
+  command_struct_.position_ = goal_handle->get_goal()->command.position[0];
+  if (params_.use_velocity_interface && !goal_handle->get_goal()->command.velocity.empty())
   {
-    command_struct_.target_velocity_ = goal_handle->get_goal()->command.target_velocity;
+    command_struct_.target_velocity_ = goal_handle->get_goal()->command.velocity[0];
   }
   else
   {
     command_struct_.target_velocity_ = 0.0;
   }
-  if (params_.use_effort_interface)
+  if (params_.use_effort_interface && !goal_handle->get_goal()->command.effort.empty())
   {
-    command_struct_.max_effort_ = goal_handle->get_goal()->command.max_effort;
+    command_struct_.max_effort_ = goal_handle->get_goal()->command.effort[0];
   }
   else
   {
@@ -176,8 +186,8 @@ void GripperActionController::check_for_success(
 
   if (fabs(error_position) < params_.goal_tolerance)
   {
-    pre_alloc_result_->effort = computed_command_;
-    pre_alloc_result_->position = current_position;
+    pre_alloc_result_->state.effort[0] = computed_command_;
+    pre_alloc_result_->state.position[0] = current_position;
     pre_alloc_result_->reached_goal = true;
     pre_alloc_result_->stalled = false;
     RCLCPP_DEBUG(get_node()->get_logger(), "Successfully moved to goal.");
@@ -192,8 +202,8 @@ void GripperActionController::check_for_success(
     }
     else if ((time - last_movement_time_).seconds() > params_.stall_timeout)
     {
-      pre_alloc_result_->effort = computed_command_;
-      pre_alloc_result_->position = current_position;
+      pre_alloc_result_->state.effort[0] = computed_command_;
+      pre_alloc_result_->state.position[0] = current_position;
       pre_alloc_result_->reached_goal = false;
       pre_alloc_result_->stalled = true;
 
@@ -322,13 +332,15 @@ controller_interface::CallbackReturn GripperActionController::on_activate(
   command_.initRT(command_struct_);
 
   // Result
-  pre_alloc_result_ = std::make_shared<control_msgs::action::GripperCommand::Result>();
-  pre_alloc_result_->position = command_struct_.position_;
+  pre_alloc_result_ = std::make_shared<control_msgs::action::AntipodalGripperCommand::Result>();
+  pre_alloc_result_->state.position.resize(1);
+  pre_alloc_result_->state.effort.resize(1);
+  pre_alloc_result_->state.position[0] = command_struct_.position_;
   pre_alloc_result_->reached_goal = false;
   pre_alloc_result_->stalled = false;
 
   // Action interface
-  action_server_ = rclcpp_action::create_server<control_msgs::action::GripperCommand>(
+  action_server_ = rclcpp_action::create_server<control_msgs::action::AntipodalGripperCommand>(
     get_node(), "~/gripper_cmd",
     std::bind(
       &GripperActionController::goal_callback, this, std::placeholders::_1, std::placeholders::_2),

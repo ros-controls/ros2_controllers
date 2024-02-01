@@ -20,4 +20,6 @@
 
 #include "pluginlib/class_list_macros.hpp"
 
-PLUGINLIB_EXPORT_CLASS(antipodal_gripper_action_controller::GripperActionController, controller_interface::ControllerInterface)
+PLUGINLIB_EXPORT_CLASS(
+  antipodal_gripper_action_controller::GripperActionController,
+  controller_interface::ControllerInterface)

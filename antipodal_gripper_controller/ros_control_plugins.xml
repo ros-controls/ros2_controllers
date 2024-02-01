@@ -1,7 +1,7 @@
-<library path="gripper_action_controller">
+<library path="antipodal_gripper_action_controller">
 
-  <class name="antipodal_position_controllers/GripperActionController"
-         type="position_controllers::GripperActionController"
+  <class name="antipodal_gripper_action_controller/GripperActionController"
+         type="antipodal_gripper_action_controller::GripperActionController"
          base_class_type="controller_interface::ControllerInterface">
     <description>
     </description>

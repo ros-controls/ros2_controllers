@@ -27,14 +27,14 @@
 #include "rclcpp/rclcpp.hpp"
 
 // ROS messages
-#include "control_msgs/action/gripper_command.hpp"
+#include "control_msgs/action/antipodal_gripper_command.hpp"
 
 // rclcpp_action
 #include "rclcpp_action/create_server.hpp"
 
 // ros_controls
-#include "controller_interface/controller_interface.hpp"
 #include "antipodal_gripper_controller/visibility_control.hpp"
+#include "controller_interface/controller_interface.hpp"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "realtime_tools/realtime_buffer.h"
@@ -108,12 +108,12 @@ public:
   Commands command_struct_, command_struct_rt_;
 
 protected:
-  using GripperCommandAction = control_msgs::action::GripperCommand;
+  using GripperCommandAction = control_msgs::action::AntipodalGripperCommand;
   using ActionServer = rclcpp_action::Server<GripperCommandAction>;
   using ActionServerPtr = ActionServer::SharedPtr;
   using GoalHandle = rclcpp_action::ServerGoalHandle<GripperCommandAction>;
   using RealtimeGoalHandle =
-    realtime_tools::RealtimeServerGoalHandle<control_msgs::action::GripperCommand>;
+    realtime_tools::RealtimeServerGoalHandle<control_msgs::action::AntipodalGripperCommand>;
   using RealtimeGoalHandlePtr = std::shared_ptr<RealtimeGoalHandle>;
   using RealtimeGoalHandleBuffer = realtime_tools::RealtimeBuffer<RealtimeGoalHandlePtr>;
 
@@ -137,7 +137,7 @@ protected:
 
   RealtimeGoalHandleBuffer
     rt_active_goal_;  ///< Container for the currently active action goal, if any.
-  control_msgs::action::GripperCommand::Result::SharedPtr pre_alloc_result_;
+  control_msgs::action::AntipodalGripperCommand::Result::SharedPtr pre_alloc_result_;
 
   rclcpp::Duration action_monitor_period_;
 
