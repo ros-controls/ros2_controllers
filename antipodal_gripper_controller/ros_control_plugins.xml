@@ -1,0 +1,10 @@
+<library path="gripper_action_controller">
+
+  <class name="antipodal_position_controllers/GripperActionController"
+         type="position_controllers::GripperActionController"
+         base_class_type="controller_interface::ControllerInterface">
+    <description>
+    </description>
+  </class>
+
+</library>
