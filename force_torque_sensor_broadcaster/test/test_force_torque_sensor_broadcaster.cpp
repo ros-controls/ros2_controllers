@@ -55,7 +55,9 @@ void ForceTorqueSensorBroadcasterTest::TearDown() { fts_broadcaster_.reset(nullp
 
 void ForceTorqueSensorBroadcasterTest::SetUpFTSBroadcaster()
 {
-  const auto result = fts_broadcaster_->init("test_force_torque_sensor_broadcaster", "", 0);
+  const auto result = fts_broadcaster_->init(
+    "test_force_torque_sensor_broadcaster", "", 0, "",
+    fts_broadcaster_->define_custom_node_options());
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
   std::vector<LoanedStateInterface> state_ifs;

@@ -168,7 +168,9 @@ public:
 protected:
   void SetUpController(const std::string controller_name = "test_steering_controllers_library")
   {
-    ASSERT_EQ(controller_->init(controller_name, "", 0), controller_interface::return_type::OK);
+    ASSERT_EQ(
+      controller_->init(controller_name, "", 0, "", controller_->define_custom_node_options()),
+      controller_interface::return_type::OK);
 
     if (position_feedback_ == true)
     {
