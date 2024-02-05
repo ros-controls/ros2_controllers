@@ -1,16 +1,7 @@
 name: RHEL Rolling Binary Build
 on:
   workflow_dispatch:
-<<<<<<< HEAD
-    branches:
-      - master
   pull_request:
-    branches:
-      - master
-  push:
-=======
-  pull_request:
->>>>>>> 0bcb77b ([CI] debian + RHEL updates (#985))
     branches:
       - master
   schedule:
