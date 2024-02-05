@@ -247,12 +247,12 @@ TEST_F(TestDiffDriveController, configure_succeeds_when_wheels_are_specified)
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
-  ASSERT_THAT(
-    controller_->state_interface_configuration().names,
-    SizeIs(left_wheel_names.size() + right_wheel_names.size()));
-  ASSERT_THAT(
-    controller_->command_interface_configuration().names,
-    SizeIs(left_wheel_names.size() + right_wheel_names.size()));
+  auto state_if_conf = controller_->state_interface_configuration();
+  ASSERT_THAT(state_if_conf.names, SizeIs(left_wheel_names.size() + right_wheel_names.size()));
+  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
+  auto cmd_if_conf = controller_->command_interface_configuration();
+  ASSERT_THAT(cmd_if_conf.names, SizeIs(left_wheel_names.size() + right_wheel_names.size()));
+  EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 }
 
 TEST_F(TestDiffDriveController, configure_succeeds_tf_test_prefix_false_no_namespace)
