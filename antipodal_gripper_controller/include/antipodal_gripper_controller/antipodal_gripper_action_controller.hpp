@@ -46,8 +46,7 @@
 namespace antipodal_gripper_action_controller
 {
 /**
- * \brief Controller for executing a gripper command action for simple
- * single-dof grippers.
+ * \brief Controller for executing a `AntipodalGripperCommand` action.
  *
  * \tparam HardwareInterface Controller hardware interface. Currently \p
  * hardware_interface::HW_IF_POSITION and \p
