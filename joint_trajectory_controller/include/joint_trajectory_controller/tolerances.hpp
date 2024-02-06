@@ -1,4 +1,4 @@
-// Copyright 2013 PAL Robotics S.L.
+ // Copyright 2013 PAL Robotics S.L.
 // All rights reserved.
 //
 // Software License Agreement (BSD License 2.0)
@@ -147,11 +147,7 @@ inline bool check_state_tolerance_per_joint(
   if (show_errors)
   {
     const auto logger = rclcpp::get_logger("tolerances");
-<<<<<<< HEAD
-    RCLCPP_ERROR(logger, "State tolerances failed for joint %d:", joint_idx);
-=======
     RCLCPP_ERROR(logger, "State tolerances failed for joint %lu:", joint_idx);
->>>>>>> 833ed7f ([JTC] Convert lambda to class functions (#945))
 
     if (state_tolerance.position > 0.0 && abs(error_position) > state_tolerance.position)
     {
