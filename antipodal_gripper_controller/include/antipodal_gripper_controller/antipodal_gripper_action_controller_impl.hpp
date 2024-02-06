@@ -61,14 +61,14 @@ controller_interface::return_type GripperActionController::update(
 
   const double current_position = joint_position_state_interface_->get().get_value();
   const double current_velocity = joint_velocity_state_interface_->get().get_value();
-  const double error_position = command_struct_rt_.position_ - current_position;
+  const double error_position = command_struct_rt_.position_cmd_ - current_position;
 
   check_for_success(get_node()->now(), error_position, current_position, current_velocity);
 
-  joint_command_interface_->get().set_value(command_struct_rt_.position_);
+  joint_command_interface_->get().set_value(command_struct_rt_.position_cmd_);
   if (speed_interface_.has_value())
   {
-    speed_interface_->get().set_value(command_struct_rt_.target_velocity_);
+    speed_interface_->get().set_value(command_struct_rt_.max_velocity_);
   }
   if (effort_interface_.has_value())
   {
@@ -107,14 +107,14 @@ void GripperActionController::accepted_callback(
 
   // This is the non-realtime command_struct
   // We use command_ for sharing
-  command_struct_.position_ = goal_handle->get_goal()->command.position[0];
+  command_struct_.position_cmd_ = goal_handle->get_goal()->command.position[0];
   if (params_.use_velocity_interface && !goal_handle->get_goal()->command.velocity.empty())
   {
-    command_struct_.target_velocity_ = goal_handle->get_goal()->command.velocity[0];
+    command_struct_.max_velocity_ = goal_handle->get_goal()->command.velocity[0];
   }
   else
   {
-    command_struct_.target_velocity_ = 0.0;
+    command_struct_.max_velocity_ = 0.0;
   }
   if (params_.use_effort_interface && !goal_handle->get_goal()->command.effort.empty())
   {
@@ -168,8 +168,8 @@ rclcpp_action::CancelResponse GripperActionController::cancel_callback(
 
 void GripperActionController::set_hold_position()
 {
-  command_struct_.position_ = joint_position_state_interface_->get().get_value();
-  command_struct_.target_velocity_ = 0.0;
+  command_struct_.position_cmd_ = joint_position_state_interface_->get().get_value();
+  command_struct_.max_velocity_ = 0.0;
   command_struct_.max_effort_ = params_.max_effort;
   command_.writeFromNonRT(command_struct_);
 }
@@ -326,16 +326,16 @@ controller_interface::CallbackReturn GripperActionController::on_activate(
   //  get_node());
 
   // Command - non RT version
-  command_struct_.position_ = joint_position_state_interface_->get().get_value();
+  command_struct_.position_cmd_ = joint_position_state_interface_->get().get_value();
   command_struct_.max_effort_ = params_.max_effort;
-  command_struct_.target_velocity_ = 0.0;
+  command_struct_.max_velocity_ = 0.0;
   command_.initRT(command_struct_);
 
   // Result
   pre_alloc_result_ = std::make_shared<control_msgs::action::AntipodalGripperCommand::Result>();
   pre_alloc_result_->state.position.resize(1);
   pre_alloc_result_->state.effort.resize(1);
-  pre_alloc_result_->state.position[0] = command_struct_.position_;
+  pre_alloc_result_->state.position[0] = command_struct_.position_cmd_;
   pre_alloc_result_->reached_goal = false;
   pre_alloc_result_->stalled = false;
 
