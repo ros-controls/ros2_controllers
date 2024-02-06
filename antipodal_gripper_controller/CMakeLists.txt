@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 project(antipodal_gripper_controller LANGUAGES CXX)
 
 if(APPLE OR WIN32)
-  message(WARNING "antipodal gripper controllers are not available on OSX or Windows")
+  message(WARNING "Antipodal gripper controllers are not available on OSX or Windows")
   return()
 endif()
 
