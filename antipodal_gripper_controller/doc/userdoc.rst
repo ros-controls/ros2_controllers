@@ -5,7 +5,7 @@
 Antipodal Gripper Action Controller
 --------------------------------
 
-Controller for executing a gripper command action for simple single-dof antipodal grippers.
+Controller for executing a `AntipodalGripperCommand` action for simple antipodal grippers.
 
 Parameters
 ^^^^^^^^^^^
