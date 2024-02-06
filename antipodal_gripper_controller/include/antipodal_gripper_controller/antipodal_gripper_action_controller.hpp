@@ -62,9 +62,9 @@ public:
    */
   struct Commands
   {
-    double position_;         // Last commanded position
-    double target_velocity_;  // Desired gripper velocity
-    double max_effort_;       // Max allowed effort
+    double position_cmd;    // Commanded position
+    double max_velocity_;  // Desired max gripper velocity
+    double max_effort_;      // Desired max allowed effort
   };
 
   GRIPPER_ACTION_CONTROLLER_PUBLIC GripperActionController();
