@@ -1,4 +1,4 @@
- // Copyright 2013 PAL Robotics S.L.
+// Copyright 2013 PAL Robotics S.L.
 // All rights reserved.
 //
 // Software License Agreement (BSD License 2.0)
