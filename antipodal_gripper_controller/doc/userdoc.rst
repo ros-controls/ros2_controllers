@@ -3,7 +3,7 @@
 .. _antipodal_gripper_controller_userdoc:
 
 Antipodal Gripper Action Controller
---------------------------------
+-----------------------------------
 
 Controller for executing a ``AntipodalGripperCommand`` action for simple antipodal grippers.
 
