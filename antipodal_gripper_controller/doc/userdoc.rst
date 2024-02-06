@@ -2,7 +2,7 @@
 
 .. _antipodal_gripper_controller_userdoc:
 
-Gripper Action Controller
+Antipodal Gripper Action Controller
 --------------------------------
 
 Controller for executing a gripper command action for simple single-dof antipodal grippers.
