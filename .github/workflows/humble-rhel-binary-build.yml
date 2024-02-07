@@ -23,18 +23,20 @@ jobs:
           ref: ${{ github.event_name == 'schedule' && 'humble' || '' }}
       - name: Install dependencies
         run: |
+          source /opt/ros/${{ env.ROS_DISTRO }}/setup.bash
+          source /opt/ros2_ws/install/local_setup.bash
           rosdep update
           rosdep install -iyr --from-path src/ros2_controllers || true
       - name: Build workspace
         run: |
           source /opt/ros/${{ env.ROS_DISTRO }}/setup.bash
-          source /opt/ros2_ws/install/setup.bash
+          source /opt/ros2_ws/install/local_setup.bash
           colcon build --packages-up-to $(colcon list --paths src/ros2_controllers/* --names-only) --packages-skip ${{ env.skip-packages }}
       - name: Test workspace
         shell: bash
         continue-on-error: true
         run: |
           source /opt/ros/${{ env.ROS_DISTRO }}/setup.bash
-          source /opt/ros2_ws/install/setup.bash
+          source /opt/ros2_ws/install/local_setup.bash
           colcon test --packages-select $(colcon list --paths src/ros2_controllers/* --names-only) --packages-skip ${{ env.skip-packages }}
           colcon test-result --verbose
