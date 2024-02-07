@@ -14,6 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       ROS_DISTRO: humble
+      skip-packages: rqt_joint_trajectory_controller
     container: ghcr.io/ros-controls/ros:humble-rhel
     steps:
       - uses: actions/checkout@v4
@@ -24,9 +25,15 @@ jobs:
         run: |
           rosdep update
           rosdep install -iyr --from-path src/ros2_controllers || true
-      - name: Build and test
+      - name: Build workspace
         run: |
           source /opt/ros/${{ env.ROS_DISTRO }}/setup.bash
-          colcon build --packages-skip rqt_joint_trajectory_controller
-          colcon test --packages-skip rqt_joint_trajectory_controller
+          source /opt/ros2_ws/install/setup.bash
+          colcon build --packages-up-to $(colcon list --paths src/ros2_controllers/* --names-only) --packages-skip ${{ env.skip-packages }}
+      - name: Test workspace
+        shell: bash
+        run: |
+          source /opt/ros/${{ env.ROS_DISTRO }}/setup.bash
+          source /opt/ros2_ws/install/setup.bash
+          colcon test --packages-select $(colcon list --paths src/ros2_controllers/* --names-only) --packages-skip ${{ env.skip-packages }}
           colcon test-result --verbose

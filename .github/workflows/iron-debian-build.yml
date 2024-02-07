@@ -1,4 +1,4 @@
-name: Debian Iron Build
+name: Debian Iron Source Build
 on:
   workflow_dispatch:
   pull_request:
@@ -15,17 +15,22 @@ jobs:
     runs-on: ubuntu-latest
     env:
       ROS_DISTRO: iron
+      skip-packages: rqt_joint_trajectory_controller
     container: ghcr.io/ros-controls/ros:iron-debian
     steps:
       - uses: actions/checkout@v4
         with:
           path: src/ros2_controllers
           ref: ${{ github.event_name == 'schedule' && 'iron' || '' }}
-      - name: Build and test
+      - name: Build workspace
         shell: bash
         run: |
           source /opt/ros2_ws/install/setup.bash
           vcs import src < src/ros2_controllers/ros2_controllers.${{ env.ROS_DISTRO }}.repos
-          colcon build --packages-skip rqt_controller_manager rqt_joint_trajectory_controller
-          colcon test --packages-skip rqt_controller_manager rqt_joint_trajectory_controller control_msgs controller_manager_msgs
+          colcon build --packages-up-to $(colcon list --paths src/ros2_controllers/* --names-only) --packages-skip ${{ env.skip-packages }}
+      - name: Test workspace
+        shell: bash
+        run: |
+          source /opt/ros2_ws/install/setup.bash
+          colcon test --packages-select $(colcon list --paths src/ros2_controllers/* --names-only) --packages-skip ${{ env.skip-packages }}
           colcon test-result --verbose
