@@ -56,10 +56,10 @@ jobs:
       BASEDIR: ${{ github.workspace }}/${{ inputs.basedir }}
       CACHE_PREFIX: ${{ inputs.ros_distro }}-${{ inputs.upstream_workspace }}-${{ inputs.ros_repo }}-${{ github.job }}
     steps:
-      - name: Checkout ${{ inputs.ref }} when build is not scheduled
+      - name: Checkout default ref when build is not scheduled
         if: ${{ github.event_name != 'schedule' }}
         uses: actions/checkout@v4
-      - name: Checkout ${{ inputs.ref }} on scheduled build
+      - name: Checkout ${{ inputs.ref_for_scheduled_build }} on scheduled build
         if: ${{ github.event_name == 'schedule' }}
         uses: actions/checkout@v4
         with:
