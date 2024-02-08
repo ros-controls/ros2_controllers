@@ -12,27 +12,9 @@ on:
 jobs:
   rolling_debian:
     name: Rolling debian build
-    runs-on: ubuntu-latest
-    env:
-      ROS_DISTRO: rolling
-      skip-packages: rqt_joint_trajectory_controller
-    container: ghcr.io/ros-controls/ros:rolling-debian
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          path: src/ros2_controllers
-          # default behavior is correct on master branch
-          # ref: ${{ github.event_name == 'schedule' && 'master' || '' }}
-      - name: Build workspace
-        shell: bash
-        run: |
-          source /opt/ros2_ws/install/setup.bash
-          vcs import src < src/ros2_controllers/ros2_controllers.${{ env.ROS_DISTRO }}.repos
-          colcon build --packages-up-to $(colcon list --paths src/ros2_controllers/* --names-only) --packages-skip ${{ env.skip-packages }}
-      - name: Test workspace
-        shell: bash
-        continue-on-error: true
-        run: |
-          source /opt/ros2_ws/install/setup.bash
-          colcon test --packages-select $(colcon list --paths src/ros2_controllers/* --names-only) --packages-skip ${{ env.skip-packages }}
-          colcon test-result --verbose
+    uses: ./.github/workflows/reusable-debian-build.yml
+    with:
+      ros_distro: rolling
+      upstream_workspace: ros2_controllers.rolling.repos
+      ref_for_scheduled_build: master
+      skip_packages: rqt_joint_trajectory_controller
