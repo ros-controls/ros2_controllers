@@ -60,6 +60,15 @@ controller_interface::CallbackReturn DiffDriveController::on_init()
     // Create the parameter listener and get the parameters
     param_listener_ = std::make_shared<ParamListener>(get_node());
     params_ = param_listener_->get_params();
+
+    if (params_.left_wheel_names.size() != params_.right_wheel_names.size())
+    {
+      RCLCPP_ERROR(
+        get_node()->get_logger(),
+        "The number of left wheels [%zu] and the number of right wheels [%zu] are different",
+        params_.left_wheel_names.size(), params_.right_wheel_names.size());
+      return controller_interface::CallbackReturn::ERROR;
+    }
   }
   catch (const std::exception & e)
   {
