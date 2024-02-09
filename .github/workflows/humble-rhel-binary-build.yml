@@ -11,22 +11,9 @@ on:
 jobs:
   humble_rhel_binary:
     name: Humble RHEL binary build
-    runs-on: ubuntu-latest
-    env:
-      ROS_DISTRO: humble
-    container: ghcr.io/ros-controls/ros:humble-rhel
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          path: src/ros2_controllers
-          ref: ${{ github.event_name == 'schedule' && 'humble' || '' }}
-      - name: Install dependencies
-        run: |
-          rosdep update
-          rosdep install -iyr --from-path src/ros2_controllers || true
-      - name: Build and test
-        run: |
-          source /opt/ros/${{ env.ROS_DISTRO }}/setup.bash
-          colcon build --packages-skip rqt_joint_trajectory_controller
-          colcon test --packages-skip rqt_joint_trajectory_controller
-          colcon test-result --verbose
+    uses: ./.github/workflows/reusable-rhel-binary-build.yml
+    with:
+      ros_distro: humble
+      upstream_workspace: ros2_controllers.humble.repos
+      ref_for_scheduled_build: humble
+      skip_packages: rqt_joint_trajectory_controller

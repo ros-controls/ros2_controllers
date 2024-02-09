@@ -2,6 +2,30 @@ name: ROS Lint
 on:
   pull_request:
 
+env:
+  package-name:
+    ackermann_steering_controller
+    admittance_controller
+    bicycle_steering_controller
+    diff_drive_controller
+    effort_controllers
+    force_torque_sensor_broadcaster
+    forward_command_controller
+    gripper_controllers
+    imu_sensor_broadcaster
+    joint_state_broadcaster
+    joint_trajectory_controller
+    pid_controller
+    position_controllers
+    range_sensor_broadcaster
+    ros2_controllers
+    ros2_controllers_test_nodes
+    rqt_joint_trajectory_controller
+    steering_controllers_library
+    tricycle_controller
+    tricycle_steering_controller
+    velocity_controllers
+
 jobs:
   ament_lint:
     name: ament_${{ matrix.linter }}
@@ -19,28 +43,7 @@ jobs:
       with:
         distribution: rolling
         linter: ${{ matrix.linter }}
-        package-name:
-          ackermann_steering_controller
-          admittance_controller
-          bicycle_steering_controller
-          diff_drive_controller
-          effort_controllers
-          force_torque_sensor_broadcaster
-          forward_command_controller
-          gripper_controllers
-          imu_sensor_broadcaster
-          joint_state_broadcaster
-          joint_trajectory_controller
-          pid_controller
-          position_controllers
-          range_sensor_broadcaster
-          ros2_controllers
-          ros2_controllers_test_nodes
-          rqt_joint_trajectory_controller
-          steering_controllers_library
-          tricycle_controller
-          tricycle_steering_controller
-          velocity_controllers
+        package-name: ${{ env.package-name }}
 
 
   ament_lint_100:
@@ -58,25 +61,4 @@ jobs:
         distribution: rolling
         linter: cpplint
         arguments: "--linelength=100 --filter=-whitespace/newline"
-        package-name:
-          ackermann_steering_controller
-          admittance_controller
-          bicycle_steering_controller
-          diff_drive_controller
-          effort_controllers
-          force_torque_sensor_broadcaster
-          forward_command_controller
-          gripper_controllers
-          imu_sensor_broadcaster
-          joint_state_broadcaster
-          joint_trajectory_controller
-          pid_controller
-          position_controllers
-          range_sensor_broadcaster
-          ros2_controllers
-          ros2_controllers_test_nodes
-          rqt_joint_trajectory_controller
-          steering_controllers_library
-          tricycle_controller
-          tricycle_steering_controller
-          velocity_controllers
+        package-name: ${{ env.package-name }}
