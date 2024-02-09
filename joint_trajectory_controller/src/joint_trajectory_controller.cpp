@@ -278,8 +278,9 @@ controller_interface::return_type JointTrajectoryController::update(
           assign_interface_from_point(joint_command_interface_[3], tmp_command_);
         }
 
-        // store the previous command. Used in open-loop control mode
+        // store the previous command and time used in open-loop control mode
         last_commanded_state_ = state_desired_;
+        last_commanded_time_ = time;
       }
 
       if (active_goal)
@@ -910,6 +911,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
     read_state_from_state_interfaces(state_current_);
     read_state_from_state_interfaces(last_commanded_state_);
   }
+  last_commanded_time_ = rclcpp::Time(0.0);
 
   // The controller should start by holding position at the beginning of active state
   add_new_trajectory_msg(set_hold_position());
