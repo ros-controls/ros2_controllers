@@ -154,7 +154,8 @@ protected:
   std::vector<PidPtr> pids_;
   // Feed-forward velocity weight factor when calculating closed loop pid adapter's command
   std::vector<double> ff_velocity_scale_;
-  // Configuration for every joint, if position error is wrapped around
+  // Configuration for every joint if it wraps around (ie. is continuous, position error is
+  // normalized)
   std::vector<bool> joints_angle_wraparound_;
   // reserved storage for result of the command when closed loop pid adapter is used
   std::vector<double> tmp_command_;
