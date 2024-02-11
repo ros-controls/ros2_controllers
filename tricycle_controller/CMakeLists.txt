@@ -49,7 +49,7 @@ target_link_libraries(tricycle_controller PUBLIC tricycle_controller_parameters)
 ament_target_dependencies(tricycle_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
-target_compile_definitions(tricycle_controller PRIVATE "TRICYCLE_STEERING_CONTROLLER__VISIBILITY_BUILDING_DLL" "_USE_MATH_DEFINES")
+target_compile_definitions(tricycle_controller PRIVATE "TRICYCLE_CONTROLLER_BUILDING_DLL" "_USE_MATH_DEFINES")
 
 pluginlib_export_plugin_description_file(controller_interface tricycle_controller.xml)
 
