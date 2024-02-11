@@ -12,7 +12,7 @@ on:
 jobs:
   iron_rhel_binary:
     name: Iron RHEL binary build
-    uses: ./.github/workflows/reusable-rhel-binary-build.yml
+    uses: ros-controls/ros2_control_ci/.github/workflows/reusable-rhel-binary-build.yml@master
     with:
       ros_distro: iron
       upstream_workspace: ros2_controllers.iron.repos

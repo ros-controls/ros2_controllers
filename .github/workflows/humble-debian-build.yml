@@ -12,7 +12,7 @@ on:
 jobs:
   humble_debian:
     name: Humble debian build
-    uses: ./.github/workflows/reusable-debian-build.yml
+    uses: ros-controls/ros2_control_ci/.github/workflows/reusable-debian-build.yml@master
     with:
       ros_distro: humble
       upstream_workspace: ros2_controllers.humble.repos
