@@ -2,8 +2,8 @@
 Changelog for package force_torque_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.33.0 (2024-02-12)
+-------------------
 * Add test_depend on `hardware_interface_testing` (backport `#1018 <https://github.com/ros-controls/ros2_controllers/issues/1018>`_) (`#1019 <https://github.com/ros-controls/ros2_controllers/issues/1019>`_)
 * Add tests for `interface_configuration_type` consistently (`#899 <https://github.com/ros-controls/ros2_controllers/issues/899>`_) (`#1011 <https://github.com/ros-controls/ros2_controllers/issues/1011>`_)
 * Revert "[ForceTorqueSensorBroadcaster] Create ParamListener and get parameters on configure (`#698 <https://github.com/ros-controls/ros2_controllers/issues/698>`_)" (`#988 <https://github.com/ros-controls/ros2_controllers/issues/988>`_) (`#1003 <https://github.com/ros-controls/ros2_controllers/issues/1003>`_)
