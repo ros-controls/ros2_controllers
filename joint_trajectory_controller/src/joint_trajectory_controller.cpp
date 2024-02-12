@@ -158,11 +158,12 @@ controller_interface::return_type JointTrajectoryController::update(
           last_commanded_time_ = time;
         }
         current_trajectory_->set_point_before_trajectory_msg(
-          last_commanded_time_, last_commanded_state_);
+          last_commanded_time_, last_commanded_state_, joints_angle_wraparound_);
       }
       else
       {
-        current_trajectory_->set_point_before_trajectory_msg(time, state_current_);
+        current_trajectory_->set_point_before_trajectory_msg(
+          time, state_current_, joints_angle_wraparound_);
       }
     }
 
