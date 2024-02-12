@@ -36,6 +36,7 @@
 #include "rclcpp_action/create_server.hpp"
 #include "rclcpp_action/server_goal_handle.hpp"
 #include "rclcpp_lifecycle/state.hpp"
+#include "urdf/model.h"
 
 namespace joint_trajectory_controller
 {
@@ -46,6 +47,15 @@ JointTrajectoryController::JointTrajectoryController()
 
 controller_interface::CallbackReturn JointTrajectoryController::on_init()
 {
+  if (!model_.initString(urdf_))
+  {
+    RCLCPP_ERROR(get_node()->get_logger(), "Failed to parse urdf file");
+  }
+  else
+  {
+    RCLCPP_INFO(get_node()->get_logger(), "Successfully parsed urdf file");
+  }
+
   try
   {
     // Create the parameter listener and get the parameters
@@ -684,12 +694,26 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     update_pids();
   }
 
-  // Configure joint position error normalization from ROS parameters (angle_wraparound)
+  // Configure joint position error normalization (angle_wraparound)
   joints_angle_wraparound_.resize(dof_);
   for (size_t i = 0; i < dof_; ++i)
   {
     const auto & gains = params_.gains.joints_map.at(params_.joints[i]);
-    joints_angle_wraparound_[i] = gains.angle_wraparound;
+    if (gains.angle_wraparound)
+    {
+      RCLCPP_WARN(
+        logger,
+        "[Deprecated] Parameter 'gains.<joint>.angle_wraparound' is deprecated. The "
+        "angle_wraparound is now used if a continuous joint is configured in the URDF.");
+      joints_angle_wraparound_[i] = true;
+    }
+    if (model_.getJoint(params_.joints[i])->type == urdf::Joint::CONTINUOUS)
+    {
+      RCLCPP_DEBUG(
+        logger, "joint '%s' is of type continuous, use angle_wraparound.",
+        params_.joints[i].c_str());
+      joints_angle_wraparound_[i] = true;
+    }
   }
 
   if (params_.state_interfaces.empty())
