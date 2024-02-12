@@ -58,6 +58,7 @@ if(BUILD_TESTING)
 
   ament_add_gmock(test_trajectory test/test_trajectory.cpp)
   target_link_libraries(test_trajectory joint_trajectory_controller)
+  target_compile_definitions(test_trajectory PRIVATE _USE_MATH_DEFINES)
 
   ament_add_gmock(test_trajectory_controller
     test/test_trajectory_controller.cpp)
@@ -65,6 +66,7 @@ if(BUILD_TESTING)
   target_link_libraries(test_trajectory_controller
     joint_trajectory_controller
   )
+  target_compile_definitions(joint_trajectory_controller PRIVATE _USE_MATH_DEFINES)
 
   ament_add_gmock(test_load_joint_trajectory_controller
     test/test_load_joint_trajectory_controller.cpp
