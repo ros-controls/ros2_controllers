@@ -114,7 +114,7 @@ void GripperActionController::accepted_callback(
   }
   else
   {
-    command_struct_.max_velocity_ = 0.0;
+    command_struct_.max_velocity_  = params_.max_velocity;
   }
   if (params_.use_effort_interface && !goal_handle->get_goal()->command.effort.empty())
   {
@@ -169,8 +169,8 @@ rclcpp_action::CancelResponse GripperActionController::cancel_callback(
 void GripperActionController::set_hold_position()
 {
   command_struct_.position_cmd_ = joint_position_state_interface_->get().get_value();
-  command_struct_.max_velocity_ = 0.0;
   command_struct_.max_effort_ = params_.max_effort;
+  command_struct_.max_velocity_ = params_.max_velocity;
   command_.writeFromNonRT(command_struct_);
 }
 
@@ -328,7 +328,7 @@ controller_interface::CallbackReturn GripperActionController::on_activate(
   // Command - non RT version
   command_struct_.position_cmd_ = joint_position_state_interface_->get().get_value();
   command_struct_.max_effort_ = params_.max_effort;
-  command_struct_.max_velocity_ = 0.0;
+  command_struct_.max_velocity_ = params_.max_velocity;
   command_.initRT(command_struct_);
 
   // Result
