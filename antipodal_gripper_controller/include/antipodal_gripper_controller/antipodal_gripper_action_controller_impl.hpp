@@ -114,7 +114,7 @@ void GripperActionController::accepted_callback(
   }
   else
   {
-    command_struct_.max_velocity_  = params_.max_velocity;
+    command_struct_.max_velocity_ = params_.max_velocity;
   }
   if (params_.use_effort_interface && !goal_handle->get_goal()->command.effort.empty())
   {
@@ -311,11 +311,11 @@ controller_interface::CallbackReturn GripperActionController::on_activate(
 
   for (auto & interface : command_interfaces_)
   {
-    if (interface.get_interface_name() == "gripper_effort")
+    if (interface.get_interface_name() == "set_gripper_max_effort")
     {
       effort_interface_ = interface;
     }
-    else if (interface.get_interface_name() == "gripper_speed")
+    else if (interface.get_interface_name() == "set_gripper_max_velocity")
     {
       speed_interface_ = interface;
     }
@@ -366,11 +366,11 @@ GripperActionController::command_interface_configuration() const
   std::vector<std::string> names = {params_.joint + "/" + hardware_interface::HW_IF_POSITION};
   if (params_.use_effort_interface)
   {
-    names.push_back({params_.joint + "/gripper_effort"});
+    names.push_back({params_.joint + "/set_gripper_max_effort"});
   }
   if (params_.use_velocity_interface)
   {
-    names.push_back({params_.joint + "/gripper_speed"});
+    names.push_back({params_.joint + "/set_gripper_max_velocity"});
   }
 
   return {controller_interface::interface_configuration_type::INDIVIDUAL, names};
