@@ -35,7 +35,7 @@ TEST(TestLoadPidController, load_controller)
 
   auto available_classes = traj_controller_loader.getDeclaredClasses();
 
-  std::cout << "available filters:" << std::endl;
+  std::cout << "available plugins:" << std::endl;
   for (const auto & available_class : available_classes)
   {
     std::cout << "  " << available_class << std::endl;
