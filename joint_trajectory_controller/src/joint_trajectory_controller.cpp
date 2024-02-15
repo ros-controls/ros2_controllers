@@ -47,13 +47,21 @@ JointTrajectoryController::JointTrajectoryController()
 
 controller_interface::CallbackReturn JointTrajectoryController::on_init()
 {
-  if (!model_.initString(urdf_))
+  if (!urdf_.empty())
   {
-    RCLCPP_ERROR(get_node()->get_logger(), "Failed to parse urdf file");
+    if (!model_.initString(urdf_))
+    {
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to parse URDF file");
+    }
+    else
+    {
+      RCLCPP_DEBUG(get_node()->get_logger(), "Successfully parsed URDF file");
+    }
   }
   else
   {
-    RCLCPP_INFO(get_node()->get_logger(), "Successfully parsed urdf file");
+    // empty URDF is used for some tests
+    RCLCPP_DEBUG(get_node()->get_logger(), "No URDF file given");
   }
 
   try
@@ -701,18 +709,25 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     const auto & gains = params_.gains.joints_map.at(params_.joints[i]);
     if (gains.angle_wraparound)
     {
+      // TODO(christophfroehlich): remove this warning in a future release (ROS-J)
       RCLCPP_WARN(
         logger,
         "[Deprecated] Parameter 'gains.<joint>.angle_wraparound' is deprecated. The "
         "angle_wraparound is now used if a continuous joint is configured in the URDF.");
       joints_angle_wraparound_[i] = true;
     }
-    if (model_.getJoint(params_.joints[i])->type == urdf::Joint::CONTINUOUS)
+
+    if (!urdf_.empty())
     {
-      RCLCPP_DEBUG(
-        logger, "joint '%s' is of type continuous, use angle_wraparound.",
-        params_.joints[i].c_str());
-      joints_angle_wraparound_[i] = true;
+      auto urdf_joint = model_.getJoint(params_.joints[i]);
+      if (urdf_joint && urdf_joint->type == urdf::Joint::CONTINUOUS)
+      {
+        RCLCPP_DEBUG(
+          logger, "joint '%s' is of type continuous, use angle_wraparound.",
+          params_.joints[i].c_str());
+        joints_angle_wraparound_[i] = true;
+      }
+      // do nothing if joint is not found in the URDF
     }
   }
 
