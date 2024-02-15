@@ -2,6 +2,12 @@
 Changelog for package tricycle_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.22.0 (2024-02-12)
+-------------------
+* Fix usage of M_PI on Windows (`#1036 <https://github.com/ros-controls/ros2_controllers/issues/1036>`_) (`#1038 <https://github.com/ros-controls/ros2_controllers/issues/1038>`_)
+* Add test_depend on `hardware_interface_testing` (backport `#1018 <https://github.com/ros-controls/ros2_controllers/issues/1018>`_) (`#1020 <https://github.com/ros-controls/ros2_controllers/issues/1020>`_)
+* Contributors: mergify[bot]
+
 3.21.0 (2024-01-20)
 -------------------
 
