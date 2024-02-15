@@ -12,28 +12,9 @@ on:
 jobs:
   rolling_debian:
     name: Rolling debian build
-<<<<<<< HEAD
-    runs-on: ubuntu-latest
-    env:
-      ROS_DISTRO: rolling
-    container: ghcr.io/ros-controls/ros:rolling-debian
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          path: src/ros2_controllers
-      - name: Build and test
-        shell: bash
-        run: |
-          source /opt/ros2_ws/install/setup.bash
-          vcs import src < src/ros2_controllers/ros2_controllers.${{ env.ROS_DISTRO }}.repos
-          colcon build --packages-skip rqt_controller_manager rqt_joint_trajectory_controller
-          colcon test --packages-skip rqt_controller_manager rqt_joint_trajectory_controller
-          colcon test-result --verbose
-=======
     uses: ros-controls/ros2_control_ci/.github/workflows/reusable-debian-build.yml@master
     with:
       ros_distro: rolling
       upstream_workspace: ros2_controllers.rolling.repos
       ref_for_scheduled_build: master
       skip_packages: rqt_joint_trajectory_controller
->>>>>>> cb6884a (Use reusable wfs from ros2_control_ci and use matrix strategy (#1040))
