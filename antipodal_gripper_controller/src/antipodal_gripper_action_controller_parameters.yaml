@@ -49,12 +49,12 @@ antipodal_gripper_action_controller:
     description: "stall timeout",
     default_value: 1.0,
   }
-  use_effort_interface: {
+  configure_max_effort_interface: {
     type: bool,
     description: "Controller will claim the {joint}/gripper_effort interface if true.",
     default_value: false,
   }
-  use_velocity_interface: {
+  configure_max_velocity_interface: {
     type: bool,
     description: "Controller will claim the {joint}/gripper_speed interface if true.",
     default_value: false,

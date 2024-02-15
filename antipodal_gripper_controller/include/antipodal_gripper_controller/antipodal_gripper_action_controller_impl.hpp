@@ -108,7 +108,8 @@ void GripperActionController::accepted_callback(
   // This is the non-realtime command_struct
   // We use command_ for sharing
   command_struct_.position_cmd_ = goal_handle->get_goal()->command.position[0];
-  if (params_.use_velocity_interface && !goal_handle->get_goal()->command.velocity.empty())
+  if (
+    params_.configure_max_velocity_interface && !goal_handle->get_goal()->command.velocity.empty())
   {
     command_struct_.max_velocity_ = goal_handle->get_goal()->command.velocity[0];
   }
@@ -116,7 +117,7 @@ void GripperActionController::accepted_callback(
   {
     command_struct_.max_velocity_ = params_.max_velocity;
   }
-  if (params_.use_effort_interface && !goal_handle->get_goal()->command.effort.empty())
+  if (params_.configure_max_effort_interface && !goal_handle->get_goal()->command.effort.empty())
   {
     command_struct_.max_effort_ = goal_handle->get_goal()->command.effort[0];
   }
@@ -364,11 +365,11 @@ controller_interface::InterfaceConfiguration
 GripperActionController::command_interface_configuration() const
 {
   std::vector<std::string> names = {params_.joint + "/" + hardware_interface::HW_IF_POSITION};
-  if (params_.use_effort_interface)
+  if (params_.configure_max_effort_interface)
   {
     names.push_back({params_.joint + "/set_gripper_max_effort"});
   }
-  if (params_.use_velocity_interface)
+  if (params_.configure_max_velocity_interface)
   {
     names.push_back({params_.joint + "/set_gripper_max_velocity"});
   }
