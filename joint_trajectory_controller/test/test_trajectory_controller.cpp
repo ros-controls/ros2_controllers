@@ -464,7 +464,7 @@ TEST_P(TrajectoryControllerTestParameterized, hold_on_startup)
 const double EPS = 1e-6;
 
 /**
- * @brief check if calculated trajectory error is correct with angle wraparound=true
+ * @brief check if calculated trajectory error is correct (angle wraparound) for continuous joints
  */
 TEST_P(TrajectoryControllerTestParameterized, compute_error_angle_wraparound_true)
 {
@@ -556,7 +556,7 @@ TEST_P(TrajectoryControllerTestParameterized, compute_error_angle_wraparound_tru
 }
 
 /**
- * @brief check if calculated trajectory error is correct with angle wraparound=false
+ * @brief check if calculated trajectory error is correct (no angle wraparound) for revolute joints
  */
 TEST_P(TrajectoryControllerTestParameterized, compute_error_angle_wraparound_false)
 {
@@ -639,7 +639,7 @@ TEST_P(TrajectoryControllerTestParameterized, compute_error_angle_wraparound_fal
 }
 
 /**
- * @brief check if position error of revolute joints are wrapped around if not configured so
+ * @brief check if position error of revolute joints aren't wrapped around (state topic)
  */
 TEST_P(TrajectoryControllerTestParameterized, position_error_not_angle_wraparound)
 {
@@ -741,7 +741,7 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_angle_wraparoun
 }
 
 /**
- * @brief check if position error of continuous joints are wrapped around
+ * @brief check if position error of continuous joints are wrapped around (state topic)
  */
 TEST_P(TrajectoryControllerTestParameterized, position_error_angle_wraparound)
 {
