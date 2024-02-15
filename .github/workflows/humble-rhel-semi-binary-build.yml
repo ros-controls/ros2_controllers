@@ -1,21 +1,21 @@
-name: RHEL Rolling Binary Build
+name: RHEL Humble Binary Build
 on:
   workflow_dispatch:
   pull_request:
     branches:
-      - master
+      - humble
   schedule:
     # Run every day to detect flakiness and broken dependencies
-    - cron: '03 1 * * *'
-
+    - cron: '03 2 * * *'
 
 jobs:
-  rolling_rhel_binary:
-    name: Rolling RHEL binary build
+  humble_rhel_binary:
+    name: Humble RHEL binary build
+<<<<<<< HEAD:.github/workflows/humble-rhel-binary-build.yml
     runs-on: ubuntu-latest
     env:
-      ROS_DISTRO: rolling
-    container: ghcr.io/ros-controls/ros:rolling-rhel
+      ROS_DISTRO: humble
+    container: ghcr.io/ros-controls/ros:humble-rhel
     steps:
       - uses: actions/checkout@v4
         with:
@@ -25,10 +25,17 @@ jobs:
           rosdep update
           rosdep install -iyr --from-path src/ros2_controllers || true
       - name: Build and test
-        # source also underlay workspace with generate_parameter_library on rhel9
         run: |
           source /opt/ros/${{ env.ROS_DISTRO }}/setup.bash
           source /opt/ros2_ws/install/setup.bash
           colcon build --packages-skip rqt_joint_trajectory_controller
           colcon test --packages-skip rqt_joint_trajectory_controller
           colcon test-result --verbose
+=======
+    uses: ros-controls/ros2_control_ci/.github/workflows/reusable-rhel-binary-build.yml@master
+    with:
+      ros_distro: humble
+      upstream_workspace: ros2_controllers.humble.repos
+      ref_for_scheduled_build: humble
+      skip_packages: rqt_joint_trajectory_controller
+>>>>>>> cb6884a (Use reusable wfs from ros2_control_ci and use matrix strategy (#1040)):.github/workflows/humble-rhel-semi-binary-build.yml

@@ -12,6 +12,7 @@ on:
 jobs:
   humble_debian:
     name: Humble debian build
+<<<<<<< HEAD
     runs-on: ubuntu-latest
     env:
       ROS_DISTRO: humble
@@ -28,3 +29,11 @@ jobs:
           colcon build --packages-skip rqt_controller_manager rqt_joint_trajectory_controller
           colcon test --packages-skip rqt_controller_manager rqt_joint_trajectory_controller control_msgs controller_manager_msgs
           colcon test-result --verbose
+=======
+    uses: ros-controls/ros2_control_ci/.github/workflows/reusable-debian-build.yml@master
+    with:
+      ros_distro: humble
+      upstream_workspace: ros2_controllers.humble.repos
+      ref_for_scheduled_build: humble
+      skip_packages: rqt_joint_trajectory_controller
+>>>>>>> cb6884a (Use reusable wfs from ros2_control_ci and use matrix strategy (#1040))
