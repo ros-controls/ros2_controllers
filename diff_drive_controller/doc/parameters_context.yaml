@@ -1,0 +1,9 @@
+linear.x: |
+  Joint limits structure for the linear ``x``-axis.
+  The limiter ignores position limits.
+  For details see ``joint_limits`` package from ros2_control repository.
+
+angular.z: |
+  Joint limits structure for the rotation about ``z``-axis.
+  The limiter ignores position limits.
+  For details see ``joint_limits`` package from ros2_control repository.

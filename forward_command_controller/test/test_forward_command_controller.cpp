@@ -62,7 +62,8 @@ void ForwardCommandControllerTest::TearDown() { controller_.reset(nullptr); }
 
 void ForwardCommandControllerTest::SetUpController()
 {
-  const auto result = controller_->init("forward_command_controller", "", 0);
+  const auto result = controller_->init(
+    "forward_command_controller", "", 0, "", controller_->define_custom_node_options());
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
   std::vector<LoanedCommandInterface> command_ifs;
@@ -137,6 +138,7 @@ TEST_F(ForwardCommandControllerTest, ConfigureParamsSuccess)
   ASSERT_THAT(cmd_if_conf.names, SizeIs(2lu));
   auto state_if_conf = controller_->state_interface_configuration();
   ASSERT_THAT(state_if_conf.names, IsEmpty());
+  ASSERT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::NONE);
 }
 
 TEST_F(ForwardCommandControllerTest, ActivateWithWrongJointsNamesFails)
@@ -189,6 +191,7 @@ TEST_F(ForwardCommandControllerTest, ActivateSuccess)
   ASSERT_THAT(cmd_if_conf.names, SizeIs(joint_names_.size()));
   auto state_if_conf = controller_->state_interface_configuration();
   ASSERT_THAT(state_if_conf.names, IsEmpty());
+  ASSERT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::NONE);
 
   ASSERT_EQ(
     controller_->on_activate(rclcpp_lifecycle::State()),
@@ -197,8 +200,10 @@ TEST_F(ForwardCommandControllerTest, ActivateSuccess)
   // check interface configuration
   cmd_if_conf = controller_->command_interface_configuration();
   ASSERT_THAT(cmd_if_conf.names, SizeIs(joint_names_.size()));
+  EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
   state_if_conf = controller_->state_interface_configuration();
   ASSERT_THAT(state_if_conf.names, IsEmpty());
+  ASSERT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::NONE);
 }
 
 TEST_F(ForwardCommandControllerTest, CommandSuccessTest)
@@ -352,6 +357,7 @@ TEST_F(ForwardCommandControllerTest, ActivateDeactivateCommandsResetSuccess)
   EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
   auto state_if_conf = controller_->state_interface_configuration();
   ASSERT_THAT(state_if_conf.names, IsEmpty());
+  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::NONE);
 
   node_state = controller_->get_node()->activate();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
@@ -359,8 +365,10 @@ TEST_F(ForwardCommandControllerTest, ActivateDeactivateCommandsResetSuccess)
   // check interface configuration
   cmd_if_conf = controller_->command_interface_configuration();
   ASSERT_THAT(cmd_if_conf.names, SizeIs(joint_names_.size()));
+  EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
   state_if_conf = controller_->state_interface_configuration();
   ASSERT_THAT(state_if_conf.names, IsEmpty());
+  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::NONE);
 
   auto command_msg = std::make_shared<std_msgs::msg::Float64MultiArray>();
   command_msg->data = {10.0, 20.0, 30.0};
@@ -383,8 +391,10 @@ TEST_F(ForwardCommandControllerTest, ActivateDeactivateCommandsResetSuccess)
   // check interface configuration
   cmd_if_conf = controller_->command_interface_configuration();
   ASSERT_THAT(cmd_if_conf.names, SizeIs(joint_names_.size()));  // did not change
+  EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
   state_if_conf = controller_->state_interface_configuration();
   ASSERT_THAT(state_if_conf.names, IsEmpty());
+  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::NONE);
 
   // command ptr should be reset (nullptr) after deactivation - same check as in `update`
   ASSERT_FALSE(

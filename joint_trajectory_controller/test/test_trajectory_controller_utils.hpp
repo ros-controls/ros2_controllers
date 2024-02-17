@@ -67,6 +67,8 @@ public:
     return ret;
   }
 
+  rclcpp::NodeOptions define_custom_node_options() const override { return node_options_; }
+
   /**
    * @brief wait_for_trajectory block until a new JointTrajectory is received.
    * Requires that the executor is not spinned elsewhere between the
@@ -107,6 +109,13 @@ public:
   }
 
   void trigger_declare_parameters() { param_listener_->declare_params(); }
+
+  void testable_compute_error_for_joint(
+    JointTrajectoryPoint & error, const size_t index, const JointTrajectoryPoint & current,
+    const JointTrajectoryPoint & desired)
+  {
+    compute_error_for_joint(error, index, current, desired);
+  }
 
   trajectory_msgs::msg::JointTrajectoryPoint get_current_state_when_offset() const
   {
@@ -151,6 +160,8 @@ public:
 
   double get_cmd_timeout() { return cmd_timeout_; }
 
+  void set_node_options(const rclcpp::NodeOptions & node_options) { node_options_ = node_options; }
+
   trajectory_msgs::msg::JointTrajectoryPoint get_state_feedback() { return state_current_; }
   trajectory_msgs::msg::JointTrajectoryPoint get_state_reference() { return state_desired_; }
   trajectory_msgs::msg::JointTrajectoryPoint get_state_error() { return state_error_; }
@@ -161,7 +172,25 @@ public:
     return state_publisher_->msg_;
   }
 
+  /**
+   * a copy of the private member function
+   */
+  void resize_joint_trajectory_point(
+    trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size)
+  {
+    point.positions.resize(size, 0.0);
+    if (has_velocity_state_interface_)
+    {
+      point.velocities.resize(size, 0.0);
+    }
+    if (has_acceleration_state_interface_)
+    {
+      point.accelerations.resize(size, 0.0);
+    }
+  }
+
   rclcpp::WaitSet joint_cmd_sub_wait_set_;
+  rclcpp::NodeOptions node_options_;
 };
 
 class TrajectoryControllerTest : public ::testing::Test
@@ -216,8 +245,10 @@ public:
     parameter_overrides.push_back(rclcpp::Parameter("state_interfaces", state_interface_types_));
     parameter_overrides.insert(parameter_overrides.end(), parameters.begin(), parameters.end());
     node_options.parameter_overrides(parameter_overrides);
+    traj_controller_->set_node_options(node_options);
 
-    return traj_controller_->init(controller_name_, "", 0, "", node_options);
+    return traj_controller_->init(
+      controller_name_, "", 0, "", traj_controller_->define_custom_node_options());
   }
 
   void SetPidParameters(
