@@ -1,21 +1,20 @@
-name: RHEL Iron Binary Build
+name: RHEL Humble Binary Build
 on:
   workflow_dispatch:
   pull_request:
     branches:
-      - iron
+      - humble
   schedule:
     # Run every day to detect flakiness and broken dependencies
     - cron: '03 1 * * *'
 
-
 jobs:
-  iron_rhel_binary:
-    name: Iron RHEL binary build
+  humble_rhel_binary:
+    name: Humble RHEL binary build
     runs-on: ubuntu-latest
     env:
-      ROS_DISTRO: iron
-    container: ghcr.io/ros-controls/ros:iron-rhel
+      ROS_DISTRO: humble
+    container: ghcr.io/ros-controls/ros:humble-rhel
     steps:
       - uses: actions/checkout@v4
         with:
@@ -25,10 +24,8 @@ jobs:
           rosdep update
           rosdep install -iyr --from-path src/ros2_controllers || true
       - name: Build and test
-      # source also underlay workspace with generate_parameter_library on rhel9
         run: |
           source /opt/ros/${{ env.ROS_DISTRO }}/setup.bash
-          source /opt/ros2_ws/install/setup.bash
           colcon build --packages-skip rqt_joint_trajectory_controller
           colcon test --packages-skip rqt_joint_trajectory_controller
           colcon test-result --verbose
