@@ -168,7 +168,7 @@ protected:
     parameter_overrides.insert(parameter_overrides.end(), parameters.begin(), parameters.end());
     node_options.parameter_overrides(parameter_overrides);
 
-    return controller_->init(controller_name, urdf_, 0, "", node_options);
+    return controller_->init(controller_name, "", node_options);
   }
 
   const std::string controller_name = "test_tricycle_controller";
@@ -195,25 +195,14 @@ protected:
 
 TEST_F(TestTricycleController, init_fails_without_parameters)
 {
-<<<<<<< HEAD
   const auto ret = controller_->init(controller_name);
-  ASSERT_EQ(ret, controller_interface::return_type::OK);
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
-=======
-  const auto ret = controller_->init(controller_name, urdf_, 0);
   ASSERT_EQ(ret, controller_interface::return_type::ERROR);
->>>>>>> 8d732f1 ([tricycle_controller] Use generate_parameter_library (#957))
 }
 
 TEST_F(TestTricycleController, init_fails_if_only_traction_or_steering_side_defined)
 {
-<<<<<<< HEAD
-  const auto ret = controller_->init(controller_name);
-  ASSERT_EQ(ret, controller_interface::return_type::OK);
-=======
   ASSERT_EQ(
     InitController(traction_joint_name, std::string()), controller_interface::return_type::ERROR);
->>>>>>> 8d732f1 ([tricycle_controller] Use generate_parameter_library (#957))
 
   ASSERT_EQ(
     InitController(std::string(), steering_joint_name), controller_interface::return_type::ERROR);
@@ -221,17 +210,7 @@ TEST_F(TestTricycleController, init_fails_if_only_traction_or_steering_side_defi
 
 TEST_F(TestTricycleController, configure_succeeds_when_joints_are_specified)
 {
-<<<<<<< HEAD
-  const auto ret = controller_->init(controller_name);
-  ASSERT_EQ(ret, controller_interface::return_type::OK);
-
-  controller_->get_node()->set_parameter(
-    rclcpp::Parameter("traction_joint_name", rclcpp::ParameterValue(traction_joint_name)));
-  controller_->get_node()->set_parameter(
-    rclcpp::Parameter("steering_joint_name", rclcpp::ParameterValue(steering_joint_name)));
-=======
   ASSERT_EQ(InitController(), controller_interface::return_type::OK);
->>>>>>> 8d732f1 ([tricycle_controller] Use generate_parameter_library (#957))
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
@@ -254,17 +233,7 @@ TEST_F(TestTricycleController, configure_succeeds_when_joints_are_specified)
 
 TEST_F(TestTricycleController, activate_fails_without_resources_assigned)
 {
-<<<<<<< HEAD
-  const auto ret = controller_->init(controller_name);
-  ASSERT_EQ(ret, controller_interface::return_type::OK);
-
-  controller_->get_node()->set_parameter(
-    rclcpp::Parameter("traction_joint_name", rclcpp::ParameterValue(traction_joint_name)));
-  controller_->get_node()->set_parameter(
-    rclcpp::Parameter("steering_joint_name", rclcpp::ParameterValue(steering_joint_name)));
-=======
   ASSERT_EQ(InitController(), controller_interface::return_type::OK);
->>>>>>> 8d732f1 ([tricycle_controller] Use generate_parameter_library (#957))
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
@@ -272,12 +241,7 @@ TEST_F(TestTricycleController, activate_fails_without_resources_assigned)
 
 TEST_F(TestTricycleController, activate_succeeds_with_resources_assigned)
 {
-<<<<<<< HEAD
-  const auto ret = controller_->init(controller_name);
-  ASSERT_EQ(ret, controller_interface::return_type::OK);
-=======
   ASSERT_EQ(InitController(), controller_interface::return_type::OK);
->>>>>>> 8d732f1 ([tricycle_controller] Use generate_parameter_library (#957))
 
   // We implicitly test that by default position feedback is required
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
@@ -287,23 +251,11 @@ TEST_F(TestTricycleController, activate_succeeds_with_resources_assigned)
 
 TEST_F(TestTricycleController, cleanup)
 {
-<<<<<<< HEAD
-  const auto ret = controller_->init(controller_name);
-  ASSERT_EQ(ret, controller_interface::return_type::OK);
-
-  controller_->get_node()->set_parameter(
-    rclcpp::Parameter("traction_joint_name", rclcpp::ParameterValue(traction_joint_name)));
-  controller_->get_node()->set_parameter(
-    rclcpp::Parameter("steering_joint_name", rclcpp::ParameterValue(steering_joint_name)));
-  controller_->get_node()->set_parameter(rclcpp::Parameter("wheelbase", 1.2));
-  controller_->get_node()->set_parameter(rclcpp::Parameter("wheel_radius", 0.12));
-=======
   ASSERT_EQ(
     InitController(
       traction_joint_name, steering_joint_name,
       {rclcpp::Parameter("wheelbase", 1.2), rclcpp::Parameter("wheel_radius", 0.12)}),
     controller_interface::return_type::OK);
->>>>>>> 8d732f1 ([tricycle_controller] Use generate_parameter_library (#957))
 
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
@@ -344,23 +296,11 @@ TEST_F(TestTricycleController, cleanup)
 
 TEST_F(TestTricycleController, correct_initialization_using_parameters)
 {
-<<<<<<< HEAD
-  const auto ret = controller_->init(controller_name);
-  ASSERT_EQ(ret, controller_interface::return_type::OK);
-
-  controller_->get_node()->set_parameter(
-    rclcpp::Parameter("traction_joint_name", rclcpp::ParameterValue(traction_joint_name)));
-  controller_->get_node()->set_parameter(
-    rclcpp::Parameter("steering_joint_name", rclcpp::ParameterValue(steering_joint_name)));
-  controller_->get_node()->set_parameter(rclcpp::Parameter("wheelbase", 0.4));
-  controller_->get_node()->set_parameter(rclcpp::Parameter("wheel_radius", 1.0));
-=======
   ASSERT_EQ(
     InitController(
       traction_joint_name, steering_joint_name,
       {rclcpp::Parameter("wheelbase", 0.4), rclcpp::Parameter("wheel_radius", 1.0)}),
     controller_interface::return_type::OK);
->>>>>>> 8d732f1 ([tricycle_controller] Use generate_parameter_library (#957))
 
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
