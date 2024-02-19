@@ -11,7 +11,7 @@ on:
 jobs:
   humble_rhel_binary:
     name: Humble RHEL binary build
-    uses: ./.github/workflows/reusable-rhel-binary-build.yml
+    uses: ros-controls/ros2_control_ci/.github/workflows/reusable-rhel-binary-build.yml@master
     with:
       ros_distro: humble
       upstream_workspace: ros2_controllers.humble.repos
