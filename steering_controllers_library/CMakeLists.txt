@@ -50,7 +50,7 @@ ament_target_dependencies(steering_controllers_library PUBLIC ${THIS_PACKAGE_INC
 
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
-target_compile_definitions(steering_controllers_library PRIVATE "STEERING_CONTROLLERS_BUILDING_DLL")
+target_compile_definitions(steering_controllers_library PRIVATE "STEERING_CONTROLLERS_BUILDING_DLL" "_USE_MATH_DEFINES")
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gmock REQUIRED)

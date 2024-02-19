@@ -2,6 +2,12 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.33.0 (2024-02-12)
+-------------------
+* Fix usage of M_PI on Windows (`#1036 <https://github.com/ros-controls/ros2_controllers/issues/1036>`_) (`#1037 <https://github.com/ros-controls/ros2_controllers/issues/1037>`_)
+* Add tests for `interface_configuration_type` consistently (`#899 <https://github.com/ros-controls/ros2_controllers/issues/899>`_) (`#1011 <https://github.com/ros-controls/ros2_controllers/issues/1011>`_)
+* Contributors: mergify[bot]
+
 2.32.0 (2024-01-20)
 -------------------
 * Update ci-ros-lint.yml and copyright format (backport `#720 <https://github.com/ros-controls/ros2_controllers/issues/720>`_) (`#918 <https://github.com/ros-controls/ros2_controllers/issues/918>`_)
