@@ -40,6 +40,7 @@ target_include_directories(tricycle_controller PUBLIC
   $<INSTALL_INTERFACE:include/tricycle_controller>
 )
 ament_target_dependencies(tricycle_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
+target_compile_definitions(tricycle_controller PRIVATE _USE_MATH_DEFINES)
 
 pluginlib_export_plugin_description_file(controller_interface tricycle_controller.xml)
 

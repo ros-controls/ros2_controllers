@@ -120,8 +120,10 @@ TEST_F(IMUSensorBroadcasterTest, SensorName_Configure_Success)
   // check interface configuration
   auto cmd_if_conf = imu_broadcaster_->command_interface_configuration();
   ASSERT_THAT(cmd_if_conf.names, IsEmpty());
+  EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::NONE);
   auto state_if_conf = imu_broadcaster_->state_interface_configuration();
   ASSERT_THAT(state_if_conf.names, SizeIs(10lu));
+  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 }
 
 TEST_F(IMUSensorBroadcasterTest, SensorName_Activate_Success)
@@ -139,8 +141,10 @@ TEST_F(IMUSensorBroadcasterTest, SensorName_Activate_Success)
   // check interface configuration
   auto cmd_if_conf = imu_broadcaster_->command_interface_configuration();
   ASSERT_THAT(cmd_if_conf.names, IsEmpty());
+  EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::NONE);
   auto state_if_conf = imu_broadcaster_->state_interface_configuration();
   ASSERT_THAT(state_if_conf.names, SizeIs(10lu));
+  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
   // deactivate passed
   ASSERT_EQ(imu_broadcaster_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
@@ -148,8 +152,10 @@ TEST_F(IMUSensorBroadcasterTest, SensorName_Activate_Success)
   // check interface configuration
   cmd_if_conf = imu_broadcaster_->command_interface_configuration();
   ASSERT_THAT(cmd_if_conf.names, IsEmpty());
+  EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::NONE);
   state_if_conf = imu_broadcaster_->state_interface_configuration();
   ASSERT_THAT(state_if_conf.names, SizeIs(10lu));  // did not change
+  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 }
 
 TEST_F(IMUSensorBroadcasterTest, SensorName_Update_Success)

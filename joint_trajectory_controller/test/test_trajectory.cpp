@@ -821,3 +821,59 @@ TEST(TestTrajectory, skip_interpolation)
     }
   }
 }
+
+TEST(TestWrapAroundJoint, no_wraparound)
+{
+  const std::vector<double> initial_position(3, 0.);
+  std::vector<double> next_position(3, M_PI * 3. / 2.);
+
+  std::vector<double> current_position(initial_position);
+  std::vector<bool> joints_angle_wraparound(3, false);
+  joint_trajectory_controller::wraparound_joint(
+    current_position, next_position, joints_angle_wraparound);
+  EXPECT_EQ(current_position[0], initial_position[0]);
+  EXPECT_EQ(current_position[1], initial_position[1]);
+  EXPECT_EQ(current_position[2], initial_position[2]);
+}
+
+TEST(TestWrapAroundJoint, wraparound_single_joint)
+{
+  const std::vector<double> initial_position(3, 0.);
+  std::vector<double> next_position(3, M_PI * 3. / 2.);
+
+  std::vector<double> current_position(initial_position);
+  std::vector<bool> joints_angle_wraparound{true, false, false};
+  joint_trajectory_controller::wraparound_joint(
+    current_position, next_position, joints_angle_wraparound);
+  EXPECT_EQ(current_position[0], initial_position[0] + 2 * M_PI);
+  EXPECT_EQ(current_position[1], initial_position[1]);
+  EXPECT_EQ(current_position[2], initial_position[2]);
+}
+
+TEST(TestWrapAroundJoint, wraparound_all_joints)
+{
+  const std::vector<double> initial_position(3, 0.);
+  std::vector<double> next_position(3, M_PI * 3. / 2.);
+
+  std::vector<double> current_position(initial_position);
+  std::vector<bool> joints_angle_wraparound(3, true);
+  joint_trajectory_controller::wraparound_joint(
+    current_position, next_position, joints_angle_wraparound);
+  EXPECT_EQ(current_position[0], initial_position[0] + 2 * M_PI);
+  EXPECT_EQ(current_position[1], initial_position[1] + 2 * M_PI);
+  EXPECT_EQ(current_position[2], initial_position[2] + 2 * M_PI);
+}
+
+TEST(TestWrapAroundJoint, wraparound_all_joints_no_offset)
+{
+  const std::vector<double> initial_position(3, 0.);
+  std::vector<double> next_position(3, M_PI * 3. / 2.);
+
+  std::vector<double> current_position(next_position);
+  std::vector<bool> joints_angle_wraparound(3, true);
+  joint_trajectory_controller::wraparound_joint(
+    current_position, next_position, joints_angle_wraparound);
+  EXPECT_EQ(current_position[0], next_position[0]);
+  EXPECT_EQ(current_position[1], next_position[1]);
+  EXPECT_EQ(current_position[2], next_position[2]);
+}

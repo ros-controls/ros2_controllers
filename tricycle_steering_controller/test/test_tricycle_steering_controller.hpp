@@ -61,7 +61,7 @@ class TestableTricycleSteeringController
 : public tricycle_steering_controller::TricycleSteeringController
 {
   FRIEND_TEST(TricycleSteeringControllerTest, all_parameters_set_configure_success);
-  FRIEND_TEST(TricycleSteeringControllerTest, check_exported_intefaces);
+  FRIEND_TEST(TricycleSteeringControllerTest, check_exported_interfaces);
   FRIEND_TEST(TricycleSteeringControllerTest, activate_success);
   FRIEND_TEST(TricycleSteeringControllerTest, update_success);
   FRIEND_TEST(TricycleSteeringControllerTest, deactivate_success);

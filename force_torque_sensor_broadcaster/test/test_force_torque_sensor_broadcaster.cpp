@@ -162,8 +162,10 @@ TEST_F(ForceTorqueSensorBroadcasterTest, SensorName_Configure_Success)
   // check interface configuration
   auto cmd_if_conf = fts_broadcaster_->command_interface_configuration();
   ASSERT_THAT(cmd_if_conf.names, IsEmpty());
+  ASSERT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::NONE);
   auto state_if_conf = fts_broadcaster_->state_interface_configuration();
   ASSERT_THAT(state_if_conf.names, SizeIs(6lu));
+  ASSERT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 }
 
 TEST_F(ForceTorqueSensorBroadcasterTest, InterfaceNames_Configure_Success)
@@ -196,8 +198,10 @@ TEST_F(ForceTorqueSensorBroadcasterTest, SensorName_ActivateDeactivate_Success)
   // check interface configuration
   auto cmd_if_conf = fts_broadcaster_->command_interface_configuration();
   ASSERT_THAT(cmd_if_conf.names, IsEmpty());
+  ASSERT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::NONE);
   auto state_if_conf = fts_broadcaster_->state_interface_configuration();
   ASSERT_THAT(state_if_conf.names, SizeIs(6lu));
+  ASSERT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
   // deactivate passed
   ASSERT_EQ(fts_broadcaster_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
@@ -205,8 +209,10 @@ TEST_F(ForceTorqueSensorBroadcasterTest, SensorName_ActivateDeactivate_Success)
   // check interface configuration
   cmd_if_conf = fts_broadcaster_->command_interface_configuration();
   ASSERT_THAT(cmd_if_conf.names, IsEmpty());
+  ASSERT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::NONE);
   state_if_conf = fts_broadcaster_->state_interface_configuration();
   ASSERT_THAT(state_if_conf.names, SizeIs(6lu));  // did not change
+  ASSERT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 }
 
 TEST_F(ForceTorqueSensorBroadcasterTest, SensorName_Update_Success)
