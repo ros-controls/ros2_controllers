@@ -29,6 +29,7 @@
 #include "admittance_controller/visibility_control.h"
 #include "control_msgs/msg/admittance_controller_state.hpp"
 #include "controller_interface/chainable_controller_interface.hpp"
+#include "filters/filter_chain.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "geometry_msgs/msg/wrench_stamped.hpp"
@@ -145,6 +146,9 @@ protected:
 
   // admittance parameters
   std::shared_ptr<admittance_controller::ParamListener> parameter_handler_;
+
+  // filter chain for Wrench data
+  std::shared_ptr<filters::FilterChain<geometry_msgs::msg::WrenchStamped>> filter_chain_;
 
   // ROS messages
   std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint> joint_command_msg_;
