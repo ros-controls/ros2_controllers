@@ -393,7 +393,7 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   {
     joint_name = tf_prefix + joint_name;
   }
-  
+
   auto & odometry_message = realtime_odometry_publisher_->msg_;
   odometry_message.header.frame_id = odom_frame_id;
   odometry_message.child_frame_id = base_frame_id;
