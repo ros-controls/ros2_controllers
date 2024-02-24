@@ -2,7 +2,8 @@ cmake_minimum_required(VERSION 3.16)
 project(steering_controllers_library LANGUAGES CXX)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
-  add_compile_options(-Wall -Wextra -Wpedantic -Wconversion)
+  add_compile_options(-Wall -Wextra -Wpedantic -Werror=conversion -Werror=unused-but-set-variable
+                      -Werror=return-type -Werror=shadow -Werror=format)
 endif()
 
 # find dependencies
@@ -50,7 +51,7 @@ ament_target_dependencies(steering_controllers_library PUBLIC ${THIS_PACKAGE_INC
 
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
-target_compile_definitions(steering_controllers_library PRIVATE "STEERING_CONTROLLERS_BUILDING_DLL")
+target_compile_definitions(steering_controllers_library PRIVATE "STEERING_CONTROLLERS__VISIBILITY_BUILDING_DLL" "_USE_MATH_DEFINES")
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gmock REQUIRED)
@@ -67,6 +68,9 @@ if(BUILD_TESTING)
     controller_interface
     hardware_interface
   )
+  ament_add_gmock(test_steering_odometry test/test_steering_odometry.cpp)
+  target_link_libraries(test_steering_odometry steering_controllers_library)
+
 endif()
 
 install(

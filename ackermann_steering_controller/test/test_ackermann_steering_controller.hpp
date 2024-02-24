@@ -62,7 +62,7 @@ class TestableAckermannSteeringController
 : public ackermann_steering_controller::AckermannSteeringController
 {
   FRIEND_TEST(AckermannSteeringControllerTest, all_parameters_set_configure_success);
-  FRIEND_TEST(AckermannSteeringControllerTest, check_exported_intefaces);
+  FRIEND_TEST(AckermannSteeringControllerTest, check_exported_interfaces);
   FRIEND_TEST(AckermannSteeringControllerTest, activate_success);
   FRIEND_TEST(AckermannSteeringControllerTest, update_success);
   FRIEND_TEST(AckermannSteeringControllerTest, deactivate_success);
@@ -147,7 +147,9 @@ public:
 protected:
   void SetUpController(const std::string controller_name = "test_ackermann_steering_controller")
   {
-    ASSERT_EQ(controller_->init(controller_name, "", 0), controller_interface::return_type::OK);
+    ASSERT_EQ(
+      controller_->init(controller_name, "", 0, "", controller_->define_custom_node_options()),
+      controller_interface::return_type::OK);
 
     if (position_feedback_ == true)
     {
