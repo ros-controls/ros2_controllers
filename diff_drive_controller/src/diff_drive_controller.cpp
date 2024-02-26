@@ -378,7 +378,15 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
     }
     else
     {
-      tf_prefix = tf_prefix + "/";
+      // Make sure prefix does not start with '/' and always ends with '/'
+      if (tf_prefix.front() == '/')
+      {
+        tf_prefix.erase(0,1);
+      }
+      if (tf_prefix.back() != '/')
+      {
+        tf_prefix = tf_prefix + "/";
+      }
     }
   }
 
