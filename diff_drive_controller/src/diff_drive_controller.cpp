@@ -372,21 +372,14 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
       tf_prefix = std::string(get_node()->get_namespace());
     }
 
-    if (tf_prefix == "/")
+    // Make sure prefix does not start with '/' and always ends with '/'
+    if (tf_prefix.back() != '/')
     {
-      tf_prefix = "";
+      tf_prefix = tf_prefix + "/";
     }
-    else
+    if (tf_prefix.front() == '/')
     {
-      // Make sure prefix does not start with '/' and always ends with '/'
-      if (tf_prefix.front() == '/')
-      {
-        tf_prefix.erase(0,1);
-      }
-      if (tf_prefix.back() != '/')
-      {
-        tf_prefix = tf_prefix + "/";
-      }
+      tf_prefix.erase(0,1);
     }
   }
 
