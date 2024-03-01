@@ -10,7 +10,6 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   control_msgs
   control_toolbox
   controller_interface
-  Eigen3
   generate_parameter_library
   geometry_msgs
   hardware_interface
@@ -33,6 +32,7 @@ find_package(backward_ros REQUIRED)
 foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
+find_package(Eigen3 REQUIRED NO_MODULE)
 
 generate_parameter_library(admittance_controller_parameters
   src/admittance_controller_parameters.yaml
@@ -48,6 +48,7 @@ target_include_directories(admittance_controller PUBLIC
 )
 target_link_libraries(admittance_controller PUBLIC
   admittance_controller_parameters
+  Eigen3::Eigen
 )
 ament_target_dependencies(admittance_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
 
