@@ -29,7 +29,6 @@
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "joint_trajectory_controller/trajectory.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
-#include "rclcpp/event_handler.hpp"
 #include "rclcpp/logging.hpp"
 #include "rclcpp/qos.hpp"
 #include "rclcpp/time.hpp"
