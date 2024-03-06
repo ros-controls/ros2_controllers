@@ -4,10 +4,6 @@ name: Rolling Binary Build
 
 on:
   workflow_dispatch:
-    branches:
-      - master
-      - '*feature*'
-      - '*feature/**'
   pull_request:
     branches:
       - master
@@ -24,6 +20,7 @@ jobs:
   binary:
     uses: ros-controls/ros2_control_ci/.github/workflows/reusable-industrial-ci-with-cache.yml@master
     strategy:
+      fail-fast: false
       matrix:
         ROS_REPO: [main, testing]
     with:
