@@ -1,0 +1,37 @@
+joint_trajectory_controller_plugins:
+  command_joints: {
+    type: string_array,
+    default_value: [],
+    description: "Names of joints used by the controller plugin",
+    read_only: true,
+    validation: {
+      size_gt<>: [0],
+    }
+  }
+  gains:
+    __map_command_joints:
+      p: {
+        type: double,
+        default_value: 0.0,
+        description: "Proportional gain for PID"
+      }
+      i: {
+        type: double,
+        default_value: 0.0,
+        description: "Integral gain for PID"
+      }
+      d: {
+        type: double,
+        default_value: 0.0,
+        description: "Derivative gain for PID"
+      }
+      i_clamp: {
+        type: double,
+        default_value: 0.0,
+        description: "Integral clamp. Symmetrical in both positive and negative direction."
+      }
+      ff_velocity_scale: {
+        type: double,
+        default_value: 0.0,
+        description: "Feed-forward scaling of velocity."
+      }
