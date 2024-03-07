@@ -157,12 +157,15 @@ TEST_F(AdmittanceControllerTest, check_interfaces)
 
   auto command_interfaces = controller_->command_interface_configuration();
   ASSERT_EQ(command_interfaces.names.size(), joint_command_values_.size());
+  EXPECT_EQ(
+    command_interfaces.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
   ASSERT_EQ(
     controller_->command_interfaces_.size(), command_interface_types_.size() * joint_names_.size());
 
   auto state_interfaces = controller_->state_interface_configuration();
   ASSERT_EQ(state_interfaces.names.size(), joint_state_values_.size() + fts_state_values_.size());
+  EXPECT_EQ(state_interfaces.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
   ASSERT_EQ(
     controller_->state_interfaces_.size(),

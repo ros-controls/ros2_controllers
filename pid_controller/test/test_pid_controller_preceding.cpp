@@ -49,34 +49,36 @@ TEST_F(PidControllerTest, all_parameters_set_configure_success)
   ASSERT_EQ(controller_->params_.command_interface, command_interface_);
 }
 
-TEST_F(PidControllerTest, check_exported_intefaces)
+TEST_F(PidControllerTest, check_exported_interfaces)
 {
   SetUpController();
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  auto command_intefaces = controller_->command_interface_configuration();
-  ASSERT_EQ(command_intefaces.names.size(), dof_command_values_.size());
-  for (size_t i = 0; i < command_intefaces.names.size(); ++i)
+  auto cmd_if_conf = controller_->command_interface_configuration();
+  ASSERT_EQ(cmd_if_conf.names.size(), dof_command_values_.size());
+  for (size_t i = 0; i < cmd_if_conf.names.size(); ++i)
   {
-    EXPECT_EQ(command_intefaces.names[i], dof_names_[i] + "/" + command_interface_);
+    EXPECT_EQ(cmd_if_conf.names[i], dof_names_[i] + "/" + command_interface_);
   }
+  EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
-  auto state_intefaces = controller_->state_interface_configuration();
-  ASSERT_EQ(state_intefaces.names.size(), dof_state_values_.size());
+  auto state_if_conf = controller_->state_interface_configuration();
+  ASSERT_EQ(state_if_conf.names.size(), dof_state_values_.size());
   size_t si_index = 0;
   for (const auto & interface : state_interfaces_)
   {
     for (const auto & dof_name : reference_and_state_dof_names_)
     {
-      EXPECT_EQ(state_intefaces.names[si_index], dof_name + "/" + interface);
+      EXPECT_EQ(state_if_conf.names[si_index], dof_name + "/" + interface);
       ++si_index;
     }
   }
+  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
   // check ref itfs
-  auto reference_interfaces = controller_->export_reference_interfaces();
-  ASSERT_EQ(reference_interfaces.size(), dof_state_values_.size());
+  auto ref_if_conf = controller_->export_reference_interfaces();
+  ASSERT_EQ(ref_if_conf.size(), dof_state_values_.size());
   size_t ri_index = 0;
   for (const auto & interface : state_interfaces_)
   {
@@ -84,10 +86,9 @@ TEST_F(PidControllerTest, check_exported_intefaces)
     {
       const std::string ref_itf_name =
         std::string(controller_->get_node()->get_name()) + "/" + dof_name + "/" + interface;
-      EXPECT_EQ(reference_interfaces[ri_index].get_name(), ref_itf_name);
-      EXPECT_EQ(
-        reference_interfaces[ri_index].get_prefix_name(), controller_->get_node()->get_name());
-      EXPECT_EQ(reference_interfaces[ri_index].get_interface_name(), dof_name + "/" + interface);
+      EXPECT_EQ(ref_if_conf[ri_index].get_name(), ref_itf_name);
+      EXPECT_EQ(ref_if_conf[ri_index].get_prefix_name(), controller_->get_node()->get_name());
+      EXPECT_EQ(ref_if_conf[ri_index].get_interface_name(), dof_name + "/" + interface);
       ++ri_index;
     }
   }

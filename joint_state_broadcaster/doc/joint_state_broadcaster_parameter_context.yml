@@ -1,0 +1,46 @@
+map_interface_to_joint_state: |
+  Optional parameter (map) providing mapping between custom interface names to standard fields in ``joint_states`` message.
+  Usecases:
+
+    #. Hydraulics robots where feedback and commanded values often have an offset and reliance on open-loop control is common.
+       Typically one would map both values in separate interfaces in the framework.
+       To visualize those data multiple joint_state_broadcaster instances and robot_state_publishers would be used to visualize both values in RViz.
+    #. A robot provides multiple measuring techniques for its joint values which results in slightly different values.
+       Typically one would use separate interface for providing those values in the framework.
+       Using multiple joint_state_broadcaster instances we could publish and show both in RViz.
+
+  Format (each line is optional):
+
+  .. code-block:: yaml
+
+      \tmap_interface_to_joint_state:
+        \t\tposition: <custom_interface>
+        \t\tvelocity: <custom_interface>
+        \t\teffort: <custom_interface>
+
+
+  Examples:
+
+  .. code-block:: yaml
+
+      \tmap_interface_to_joint_state:
+        \t\tposition: kf_estimated_position
+
+
+  .. code-block:: yaml
+
+      \tmap_interface_to_joint_state:
+        \t\tvelocity: derived_velocity
+        \t\teffort: derived_effort
+
+
+  .. code-block:: yaml
+
+      \tmap_interface_to_joint_state:
+        \t\teffort: torque_sensor
+
+
+  .. code-block:: yaml
+
+      \tmap_interface_to_joint_state:
+        \t\teffort: current_sensor

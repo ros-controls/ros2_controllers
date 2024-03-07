@@ -10,7 +10,8 @@ force_torque_sensor_broadcaster:
   sensor_name: {
     type: string,
     default_value: "",
-    description: "Name of the sensor used as prefix for interfaces if there are no individual interface names defined.",
+    description: "Name of the sensor used as prefix for interfaces if there are no individual interface names defined.
+    If used, standard interface names for a 6D FTS will be used: ``<sensor_name>/force.x, ..., <sensor_name>/torque.z``",
   }
   interface_names:
     force:

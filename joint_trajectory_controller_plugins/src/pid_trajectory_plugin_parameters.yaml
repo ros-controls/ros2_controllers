@@ -13,17 +13,17 @@ joint_trajectory_controller_plugins:
       p: {
         type: double,
         default_value: 0.0,
-        description: "Proportional gain for PID"
+        description: "Proportional gain :math:`k_p` for PID"
       }
       i: {
         type: double,
         default_value: 0.0,
-        description: "Integral gain for PID"
+        description: "Integral gain :math:`k_i` for PID"
       }
       d: {
         type: double,
         default_value: 0.0,
-        description: "Derivative gain for PID"
+        description: "Derivative gain :math:`k_d` for PID"
       }
       i_clamp: {
         type: double,
@@ -33,5 +33,5 @@ joint_trajectory_controller_plugins:
       ff_velocity_scale: {
         type: double,
         default_value: 0.0,
-        description: "Feed-forward scaling of velocity."
+        description: "Feed-forward scaling :math:`k_{ff}` of velocity"
       }

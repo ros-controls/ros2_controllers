@@ -21,13 +21,13 @@
 
 #include "controller_manager/controller_manager.hpp"
 #include "hardware_interface/resource_manager.hpp"
+#include "rclcpp/executor.hpp"
 #include "rclcpp/executors/single_threaded_executor.hpp"
+#include "rclcpp/utilities.hpp"
 #include "ros2_control_test_assets/descriptions.hpp"
 
 TEST(TestLoadTricycleController, load_controller)
 {
-  rclcpp::init(0, nullptr);
-
   std::shared_ptr<rclcpp::Executor> executor =
     std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
 
@@ -39,6 +39,13 @@ TEST(TestLoadTricycleController, load_controller)
   ASSERT_NE(
     cm.load_controller("test_tricycle_controller", "tricycle_controller/TricycleController"),
     nullptr);
+}
 
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  rclcpp::init(argc, argv);
+  int result = RUN_ALL_TESTS();
   rclcpp::shutdown();
+  return result;
 }

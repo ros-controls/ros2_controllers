@@ -45,6 +45,10 @@ target_link_libraries(gripper_action_controller PUBLIC
 )
 ament_target_dependencies(gripper_action_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
 
+# Causes the visibility macros to use dllexport rather than dllimport,
+# which is appropriate when building the dll but not consuming it.
+target_compile_definitions(gripper_action_controller PRIVATE "GRIPPER_ACTION_CONTROLLER_BUILDING_DLL")
+
 pluginlib_export_plugin_description_file(controller_interface ros_control_plugins.xml)
 
 if(BUILD_TESTING)

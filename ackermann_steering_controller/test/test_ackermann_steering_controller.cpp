@@ -46,41 +46,43 @@ TEST_F(AckermannSteeringControllerTest, all_parameters_set_configure_success)
   ASSERT_EQ(controller_->ackermann_params_.rear_wheel_track, rear_wheel_track_);
 }
 
-TEST_F(AckermannSteeringControllerTest, check_exported_intefaces)
+TEST_F(AckermannSteeringControllerTest, check_exported_interfaces)
 {
   SetUpController();
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  auto command_intefaces = controller_->command_interface_configuration();
-  ASSERT_EQ(command_intefaces.names.size(), joint_command_values_.size());
+  auto cmd_if_conf = controller_->command_interface_configuration();
+  ASSERT_EQ(cmd_if_conf.names.size(), joint_command_values_.size());
   EXPECT_EQ(
-    command_intefaces.names[CMD_TRACTION_RIGHT_WHEEL],
+    cmd_if_conf.names[CMD_TRACTION_RIGHT_WHEEL],
     rear_wheels_names_[0] + "/" + traction_interface_name_);
   EXPECT_EQ(
-    command_intefaces.names[CMD_TRACTION_LEFT_WHEEL],
+    cmd_if_conf.names[CMD_TRACTION_LEFT_WHEEL],
     rear_wheels_names_[1] + "/" + traction_interface_name_);
   EXPECT_EQ(
-    command_intefaces.names[CMD_STEER_RIGHT_WHEEL],
+    cmd_if_conf.names[CMD_STEER_RIGHT_WHEEL],
     front_wheels_names_[0] + "/" + steering_interface_name_);
   EXPECT_EQ(
-    command_intefaces.names[CMD_STEER_LEFT_WHEEL],
+    cmd_if_conf.names[CMD_STEER_LEFT_WHEEL],
     front_wheels_names_[1] + "/" + steering_interface_name_);
+  EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
-  auto state_intefaces = controller_->state_interface_configuration();
-  ASSERT_EQ(state_intefaces.names.size(), joint_state_values_.size());
+  auto state_if_conf = controller_->state_interface_configuration();
+  ASSERT_EQ(state_if_conf.names.size(), joint_state_values_.size());
   EXPECT_EQ(
-    state_intefaces.names[STATE_TRACTION_RIGHT_WHEEL],
+    state_if_conf.names[STATE_TRACTION_RIGHT_WHEEL],
     controller_->rear_wheels_state_names_[0] + "/" + traction_interface_name_);
   EXPECT_EQ(
-    state_intefaces.names[STATE_TRACTION_LEFT_WHEEL],
+    state_if_conf.names[STATE_TRACTION_LEFT_WHEEL],
     controller_->rear_wheels_state_names_[1] + "/" + traction_interface_name_);
   EXPECT_EQ(
-    state_intefaces.names[STATE_STEER_RIGHT_WHEEL],
+    state_if_conf.names[STATE_STEER_RIGHT_WHEEL],
     controller_->front_wheels_state_names_[0] + "/" + steering_interface_name_);
   EXPECT_EQ(
-    state_intefaces.names[STATE_STEER_LEFT_WHEEL],
+    state_if_conf.names[STATE_STEER_LEFT_WHEEL],
     controller_->front_wheels_state_names_[1] + "/" + steering_interface_name_);
+  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
   // check ref itfsTIME
   auto reference_interfaces = controller_->export_reference_interfaces();

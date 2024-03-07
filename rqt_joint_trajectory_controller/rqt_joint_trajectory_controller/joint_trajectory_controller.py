@@ -214,9 +214,9 @@ class JointTrajectoryController(Plugin):
             try:
                 idx = jtc_list.index(jtc_name)
                 jtc_combo.setCurrentIndex(idx)
-            except (ValueError):
+            except ValueError:
                 pass
-        except (ValueError):
+        except ValueError:
             pass
 
     # def trigger_configuration(self):
@@ -427,7 +427,7 @@ class JointTrajectoryController(Plugin):
             cmd = pos
             try:
                 cmd = self._joint_pos[name]["command"]
-            except (KeyError):
+            except KeyError:
                 pass
             max_vel = self._robot_joint_limits[name]["max_velocity"]
             dur.append(max(abs(cmd - pos) / max_vel, self._min_traj_dur))
@@ -445,7 +445,7 @@ class JointTrajectoryController(Plugin):
             try:
                 joint_pos = self._joint_pos[joint_name]["position"]
                 joint_widgets[id].setValue(joint_pos)
-            except (KeyError):
+            except KeyError:
                 pass  # Can happen when first connected to controller
 
     def _joint_widgets(self):  # TODO: Cache instead of compute every time?

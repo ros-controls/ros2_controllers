@@ -110,6 +110,12 @@ protected:
   // Parameters from ROS for diff_drive_controller
   std::shared_ptr<ParamListener> param_listener_;
   Params params_;
+  /* Number of wheels on each side of the robot. This is important to take the wheels slip into
+   * account when multiple wheels on each side are present. If there are more wheels then control
+   * signals for each side, you should enter number for control signals. For example, Husky has two
+   * wheels on each side, but they use one control signal, in this case '1' is the correct value of
+   * the parameter. */
+  int wheels_per_side_;
 
   Odometry odometry_;
 

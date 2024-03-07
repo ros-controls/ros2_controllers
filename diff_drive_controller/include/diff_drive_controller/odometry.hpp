@@ -25,7 +25,12 @@
 #include <cmath>
 
 #include "rclcpp/time.hpp"
+// \note The versions conditioning is added here to support the source-compatibility with Humble
+#if RCPPUTILS_VERSION_MAJOR >= 2 && RCPPUTILS_VERSION_MINOR >= 6
 #include "rcpputils/rolling_mean_accumulator.hpp"
+#else
+#include "rcppmath/rolling_mean_accumulator.hpp"
+#endif
 
 namespace diff_drive_controller
 {
@@ -50,7 +55,12 @@ public:
   void setVelocityRollingWindowSize(size_t velocity_rolling_window_size);
 
 private:
+// \note The versions conditioning is added here to support the source-compatibility with Humble
+#if RCPPUTILS_VERSION_MAJOR >= 2 && RCPPUTILS_VERSION_MINOR >= 6
   using RollingMeanAccumulator = rcpputils::RollingMeanAccumulator<double>;
+#else
+  using RollingMeanAccumulator = rcppmath::RollingMeanAccumulator<double>;
+#endif
 
   void integrateRungeKutta2(double linear, double angular);
   void integrateExact(double linear, double angular);

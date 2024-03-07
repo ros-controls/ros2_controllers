@@ -12,25 +12,17 @@ The controller is a wrapper around ``ForceTorqueSensor`` semantic component (see
 
 Parameters
 ^^^^^^^^^^^
-The interfaces can be defined in two ways, using ``sensor_name`` or ``interface_names`` parameter.
-Those two parameters can not be defined at the same time
+This controller uses the `generate_parameter_library <https://github.com/PickNikRobotics/generate_parameter_library>`_ to handle its parameters. The parameter `definition file located in the src folder <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/force_torque_sensor_broadcaster/src/force_torque_sensor_broadcaster_parameters.yaml>`_ contains descriptions for all the parameters used by the controller.
 
-frame_id (mandatory)
-  Frame in which the output message will be published.
+The interfaces can be defined in two ways, using the ``sensor_name`` or the ``interface_names`` parameter:
+Those two parameters cannot be defined at the same time.
 
-sensor_name (optional)
-  Defines sensor name used as prefix for its interfaces.
-  If used standard interface names for a 6D FTS will be used: <sensor_name>/force.x, ..., <sensor_name>/torque.z.
+Full list of parameters:
 
-interface_names.[force|torque].[x|y|z] (optional)
-  Defines custom, per axis interface names.
-  This is used if different prefixes, i.e., sensor name, or non-standard interface names are used.
-  It is sufficient that only one ``interface_name`` is defined.
-  This enables broadcaster use for force sensing cells with less then six measuring axes.
-  Example definition is:
+.. generate_parameter_library_details:: ../src/force_torque_sensor_broadcaster_parameters.yaml
+  parameters_context.yaml
 
-  .. code-block:: yaml
+An example parameter file for this controller can be found in `the test directory <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/force_torque_sensor_broadcaster/test/force_torque_sensor_broadcaster_params.yaml>`_:
 
-     interface_names:
-       force:
-         x: example_name/example_interface
+.. literalinclude:: ../test/force_torque_sensor_broadcaster_params.yaml
+   :language: yaml

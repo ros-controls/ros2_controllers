@@ -44,7 +44,7 @@ ament_target_dependencies(tricycle_steering_controller PUBLIC ${THIS_PACKAGE_INC
 
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
-target_compile_definitions(tricycle_steering_controller PRIVATE "ACKERMANN_STEERING_CONTROLLER_BUILDING_DLL")
+target_compile_definitions(tricycle_steering_controller PRIVATE "TRICYCLE_STEERING_CONTROLLER__VISIBILITY_BUILDING_DLL")
 
 pluginlib_export_plugin_description_file(
   controller_interface tricycle_steering_controller.xml)
