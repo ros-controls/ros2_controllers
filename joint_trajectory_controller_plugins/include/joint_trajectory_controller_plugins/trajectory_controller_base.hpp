@@ -42,9 +42,13 @@ public:
   /**
    * @brief initialize the controller plugin.
    * declare parameters
+   * @param node the node handle to use for parameter handling
+   * @param map_cmd_to_joints a mapping from the joint names in the trajectory messages to the
+   * command joints
    */
   JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
-  virtual bool initialize(rclcpp_lifecycle::LifecycleNode::SharedPtr node) = 0;
+  virtual bool initialize(
+    rclcpp_lifecycle::LifecycleNode::SharedPtr node, std::vector<size_t> map_cmd_to_joints) = 0;
 
   /**
    * @brief configure the controller plugin.

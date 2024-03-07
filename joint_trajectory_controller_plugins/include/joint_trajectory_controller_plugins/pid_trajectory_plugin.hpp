@@ -33,7 +33,9 @@ namespace joint_trajectory_controller_plugins
 class PidTrajectoryPlugin : public TrajectoryControllerBase
 {
 public:
-  bool initialize(rclcpp_lifecycle::LifecycleNode::SharedPtr node) override;
+  bool initialize(
+    rclcpp_lifecycle::LifecycleNode::SharedPtr node,
+    std::vector<size_t> map_cmd_to_joints) override;
 
   bool configure() override;
 
@@ -76,6 +78,8 @@ protected:
 
   // number of command joints
   size_t num_cmd_joints_;
+  // map from joints in the message to command joints
+  std::vector<size_t> map_cmd_to_joints_;
   // PID controllers
   std::vector<PidPtr> pids_;
   // Feed-forward velocity weight factor when calculating closed loop pid adapter's command

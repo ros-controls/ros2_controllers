@@ -19,7 +19,8 @@ TEST_F(PidTrajectoryTest, TestEmptySetup)
   std::shared_ptr<TestableJointTrajectoryControllerPlugin> traj_contr =
     std::make_shared<TestableJointTrajectoryControllerPlugin>();
 
-  ASSERT_FALSE(traj_contr->initialize(node_));
+  std::vector<size_t> map_cmd_to_joints{};
+  ASSERT_FALSE(traj_contr->initialize(node_, map_cmd_to_joints));
 }
 
 TEST_F(PidTrajectoryTest, TestSingleJoint)
@@ -33,7 +34,8 @@ TEST_F(PidTrajectoryTest, TestSingleJoint)
   // override parameter
   node_->declare_parameter("command_joints", joint_names_paramv);
 
-  ASSERT_TRUE(traj_contr->initialize(node_));
+  std::vector<size_t> map_cmd_to_joints{0};
+  ASSERT_TRUE(traj_contr->initialize(node_, map_cmd_to_joints));
   node_->set_parameter(rclcpp::Parameter("gains.joint1.p", 1.0));
   ASSERT_TRUE(traj_contr->configure());
   ASSERT_TRUE(traj_contr->activate());
@@ -63,7 +65,8 @@ TEST_F(PidTrajectoryTest, TestMultipleJoints)
   // override parameter
   node_->declare_parameter("command_joints", joint_names_paramv);
 
-  ASSERT_TRUE(traj_contr->initialize(node_));
+  std::vector<size_t> map_cmd_to_joints{0, 1, 2};
+  ASSERT_TRUE(traj_contr->initialize(node_, map_cmd_to_joints));
   // set dynamic parameters
   node_->set_parameter(rclcpp::Parameter("gains.joint1.p", 1.0));
   node_->set_parameter(rclcpp::Parameter("gains.joint2.p", 2.0));

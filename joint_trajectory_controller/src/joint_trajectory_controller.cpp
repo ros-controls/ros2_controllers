@@ -720,7 +720,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
         params_.controller_plugin.c_str(), ex.what());
       return CallbackReturn::FAILURE;
     }
-    if (traj_contr_->initialize(get_node()) == false) {
+    if (traj_contr_->initialize(get_node(), map_cmd_to_joints_) == false) {
       RCLCPP_FATAL(
         logger,
         "The trajectory controller plugin `%s` failed to initialize for some reason. Aborting.",

@@ -17,9 +17,11 @@
 namespace joint_trajectory_controller_plugins
 {
 
-bool PidTrajectoryPlugin::initialize(rclcpp_lifecycle::LifecycleNode::SharedPtr node)
+bool PidTrajectoryPlugin::initialize(
+  rclcpp_lifecycle::LifecycleNode::SharedPtr node, std::vector<size_t> map_cmd_to_joints)
 {
   node_ = node;
+  map_cmd_to_joints_ = map_cmd_to_joints;
 
   try
   {
@@ -52,6 +54,13 @@ bool PidTrajectoryPlugin::configure()
   if (num_cmd_joints_ == 0)
   {
     RCLCPP_ERROR(node_->get_logger(), "[PidTrajectoryPlugin] No command joints specified.");
+    return false;
+  }
+  if (num_cmd_joints_ != map_cmd_to_joints_.size())
+  {
+    RCLCPP_ERROR(
+      node_->get_logger(),
+      "[PidTrajectoryPlugin] map_cmd_to_joints has to be of size num_cmd_joints.");
     return false;
   }
   pids_.resize(num_cmd_joints_);
@@ -111,9 +120,11 @@ void PidTrajectoryPlugin::computeCommands(
   // Update PIDs
   for (auto i = 0ul; i < num_cmd_joints_; ++i)
   {
-    tmp_command[i] = (desired.velocities[i] * ff_velocity_scale_[i]) +
-                     pids_[i]->computeCommand(
-                       error.positions[i], error.velocities[i], (uint64_t)period.nanoseconds());
+    tmp_command[map_cmd_to_joints_[i]] =
+      (desired.velocities[map_cmd_to_joints_[i]] * ff_velocity_scale_[i]) +
+      pids_[i]->computeCommand(
+        error.positions[map_cmd_to_joints_[i]], error.velocities[map_cmd_to_joints_[i]],
+        (uint64_t)period.nanoseconds());
   }
 }
 

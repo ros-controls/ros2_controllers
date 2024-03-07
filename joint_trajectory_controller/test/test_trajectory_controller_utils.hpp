@@ -253,15 +253,15 @@ public:
 
   /**
    * @brief set PIDs for every entry in joint_names_
-   * be aware to update if PIDs should be configured for different command_joints than joint_names
    */
   void SetPidParameters(double p_value = 0.0, double ff_value = 1.0)
   {
     traj_controller_->trigger_declare_parameters();
     auto node = traj_controller_->get_node();
 
-    for (size_t i = 0; i < joint_names_.size(); ++i)
-    {
+    // if command_joints were not set manually, it was done in the on_configure() method
+    auto command_joint_names = node->get_parameter("command_joints").as_string_array();
+    for (size_t i = 0; i < command_joint_names.size(); ++i) {
       const std::string prefix = "gains." + joint_names_[i];
       const rclcpp::Parameter k_p(prefix + ".p", p_value);
       const rclcpp::Parameter k_i(prefix + ".i", 0.0);
