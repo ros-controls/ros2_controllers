@@ -995,6 +995,12 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
     read_state_from_state_interfaces(last_commanded_state_);
   }
 
+  // activate traj_contr_, e.g., update gains
+  if (traj_contr_ && traj_contr_->activate() == false) {
+    RCLCPP_ERROR(get_node()->get_logger(), "Error during trajectory controller activation.");
+    return CallbackReturn::ERROR;
+  }
+
   // The controller should start by holding position at the beginning of active state
   add_new_trajectory_msg_nonRT(set_hold_position());
   rt_is_holding_.writeFromNonRT(true);
@@ -1019,18 +1025,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   else
   {
     cmd_timeout_ = 0.0;
-  }
-
-  // activate traj_contr_, e.g., update gains
-  if (traj_contr_ && traj_contr_->activate() == false) {
-    RCLCPP_ERROR(get_node()->get_logger(), "Error during trajectory controller activation.");
-    return CallbackReturn::ERROR;
-  }
-
-  // activate traj_contr_, e.g., update gains
-  if (traj_contr_ && traj_contr_->activate() == false) {
-    RCLCPP_ERROR(get_node()->get_logger(), "Error during trajectory controller activation.");
-    return CallbackReturn::ERROR;
   }
 
   return CallbackReturn::SUCCESS;
