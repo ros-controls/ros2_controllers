@@ -821,3 +821,68 @@ TEST(TestTrajectory, skip_interpolation)
     }
   }
 }
+
+TEST(TestTrajectory, check_index_increment){
+  auto full_msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
+  full_msg->header.stamp = rclcpp::Time(0);
+
+  trajectory_msgs::msg::JointTrajectoryPoint p1;
+  p1.positions.push_back(1.0);
+  p1.time_from_start = rclcpp::Duration::from_seconds(1.0);
+  full_msg->points.push_back(p1);
+
+  trajectory_msgs::msg::JointTrajectoryPoint p2;
+  p2.positions.push_back(2.0);
+  p2.time_from_start = rclcpp::Duration::from_seconds(2.0);
+  full_msg->points.push_back(p2);
+
+  trajectory_msgs::msg::JointTrajectoryPoint p3;
+  p3.positions.push_back(3.0);
+  p3.time_from_start = rclcpp::Duration::from_seconds(3.0);
+  full_msg->points.push_back(p3);
+
+  trajectory_msgs::msg::JointTrajectoryPoint point_before_msg;
+  point_before_msg.time_from_start = rclcpp::Duration::from_seconds(0.0);
+  point_before_msg.positions.push_back(0.0);
+
+  // set current state before trajectory msg was sent
+  const rclcpp::Time time_now = rclcpp::Clock().now();
+  auto traj = joint_trajectory_controller::Trajectory(time_now, point_before_msg, full_msg);
+
+  trajectory_msgs::msg::JointTrajectoryPoint expected_state;
+  joint_trajectory_controller::TrajectoryPointConstIter start, end;
+
+  double duration_first_seg = 1.0;
+  double velocity = (p1.positions[0] - point_before_msg.positions[0]) / duration_first_seg;
+  // sample trajectory before starting time
+  {
+    bool result = traj.sample(
+      time_now - rclcpp::Duration::from_seconds(0.5), DEFAULT_INTERPOLATION, expected_state, start,
+      end);
+    RCLCPP_INFO_STREAM(rclcpp::get_logger("test"), "ASSERTING");
+    ASSERT_EQ(result, false);
+  }
+  
+  // sample at trajectory starting time
+  {
+    traj.sample(time_now, DEFAULT_INTERPOLATION, expected_state, start, end);
+    ASSERT_EQ(traj.begin(), start);
+    ASSERT_EQ(traj.begin(), end);
+  }
+
+  // sample .5s into trajectory - should increment end iterator
+  {
+    traj.sample(time_now + rclcpp::Duration::from_seconds(0.5), DEFAULT_INTERPOLATION, expected_state, start,
+      end);
+    ASSERT_EQ(traj.begin(), start);
+    ASSERT_EQ(traj.begin() + 1, end);
+  }
+
+  // sample 1.5s into trajectory - should increment both iterators
+  {
+    traj.sample(time_now + rclcpp::Duration::from_seconds(1.5), DEFAULT_INTERPOLATION, expected_state, start,
+      end);
+    ASSERT_EQ(traj.begin() + 1, start);
+    ASSERT_EQ(traj.begin() + 2, end);
+  }
+}
