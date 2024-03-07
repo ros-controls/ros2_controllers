@@ -648,6 +648,35 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     command_joint_names_ = params_.joints;
     RCLCPP_INFO(
       logger, "No specific joint names are used for command interfaces. Using 'joints' parameter.");
+
+    // set the parameter for the controller plugin
+    auto result =
+      get_node()->set_parameter(rclcpp::Parameter("command_joints", command_joint_names_));
+    if (result.successful == false) {
+      RCLCPP_ERROR(logger, "Failed to set 'command_joints' parameter");
+      return CallbackReturn::FAILURE;
+    }
+#if RCLCPP_VERSION_MAJOR >= 17
+    // TODO(christophfroehlich) how to lock the parameter (set read_only to false)?
+    // Setting it to read_only but override is not supported
+    // https://github.com/ros2/rclcpp/issues/1762 get_node()->undeclare_parameter("command_joints");
+    // rcl_interfaces::msg::ParameterDescriptor parameter_descriptor;
+    // parameter_descriptor.read_only = true;
+    // get_node()->declare_parameter("command_joints",
+    //  rclcpp::ParameterValue(command_joint_names_), parameter_descriptor);
+    lock_cmd_joint_names = get_node()->add_pre_set_parameters_callback(
+      [this](std::vector<rclcpp::Parameter> & parameters)
+      {
+        for (auto & parameter : parameters) {
+          if (parameter.get_name() == "command_joints") {
+            RCLCPP_ERROR(
+              get_node()->get_logger(),
+              "The parameter 'command_joints' is read-only. You can't change it.");
+            parameter = rclcpp::Parameter("command_joints", command_joint_names_);
+          }
+        }
+      });
+#endif
   }
   num_cmd_joints_ = command_joint_names_.size();
 
