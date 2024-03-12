@@ -244,10 +244,9 @@ public:
   {
     auto has_nonzero_vel_param =
       std::find_if(
-        parameters.begin(), parameters.end(),
-        [](const rclcpp::Parameter & param) {
-          return param.get_name() == "allow_nonzero_velocity_at_trajectory_end";
-        }) != parameters.end();
+        parameters.begin(), parameters.end(), [](const rclcpp::Parameter & param)
+        { return param.get_name() == "allow_nonzero_velocity_at_trajectory_end"; }) !=
+      parameters.end();
 
     std::vector<rclcpp::Parameter> parameters_local = parameters;
     if (!has_nonzero_vel_param)
