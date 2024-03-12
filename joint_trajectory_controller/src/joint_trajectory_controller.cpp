@@ -477,8 +477,7 @@ bool JointTrajectoryController::read_state_from_command_interfaces(JointTrajecto
   auto interface_has_values = [](const auto & joint_interface)
   {
     return std::find_if(
-             joint_interface.begin(), joint_interface.end(),
-             [](const auto & interface)
+             joint_interface.begin(), joint_interface.end(), [](const auto & interface)
              { return std::isnan(interface.get().get_value()); }) == joint_interface.end();
   };
 
@@ -548,8 +547,7 @@ bool JointTrajectoryController::read_commands_from_command_interfaces(
   auto interface_has_values = [](const auto & joint_interface)
   {
     return std::find_if(
-             joint_interface.begin(), joint_interface.end(),
-             [](const auto & interface)
+             joint_interface.begin(), joint_interface.end(), [](const auto & interface)
              { return std::isnan(interface.get().get_value()); }) == joint_interface.end();
   };
 
