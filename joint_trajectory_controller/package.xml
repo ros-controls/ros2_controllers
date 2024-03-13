@@ -13,14 +13,15 @@
 
   <depend>angles</depend>
   <depend>backward_ros</depend>
-  <depend>controller_interface</depend>
   <depend>control_msgs</depend>
   <depend>control_toolbox</depend>
+  <depend>controller_interface</depend>
   <depend>generate_parameter_library</depend>
   <depend>hardware_interface</depend>
+  <depend>joint_trajectory_controller_plugins</depend>
   <depend>pluginlib</depend>
-  <depend>rclcpp</depend>
   <depend>rclcpp_lifecycle</depend>
+  <depend>rclcpp</depend>
   <depend>realtime_tools</depend>
   <depend>rsl</depend>
   <depend>tl_expected</depend>
