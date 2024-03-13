@@ -30,9 +30,7 @@
 #include "action_msgs/msg/goal_status_array.hpp"
 #include "control_msgs/action/detail/follow_joint_trajectory__struct.hpp"
 #include "controller_interface/controller_interface.hpp"
-#include "gtest/gtest.h"
 #include "hardware_interface/resource_manager.hpp"
-#include "joint_trajectory_controller/joint_trajectory_controller.hpp"
 #include "rclcpp/clock.hpp"
 #include "rclcpp/duration.hpp"
 #include "rclcpp/executors/multi_threaded_executor.hpp"
@@ -45,9 +43,11 @@
 #include "rclcpp_action/client_goal_handle.hpp"
 #include "rclcpp_action/create_client.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
-#include "test_trajectory_controller_utils.hpp"
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
+
+#include "joint_trajectory_controller/joint_trajectory_controller.hpp"
+#include "test_trajectory_controller_utils.hpp"
 
 using std::placeholders::_1;
 using std::placeholders::_2;
