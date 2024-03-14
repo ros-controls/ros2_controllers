@@ -29,13 +29,13 @@
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "joint_trajectory_controller/trajectory.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
-#include "rclcpp/event_handler.hpp"
 #include "rclcpp/logging.hpp"
 #include "rclcpp/qos.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp_action/create_server.hpp"
 #include "rclcpp_action/server_goal_handle.hpp"
 #include "rclcpp_lifecycle/state.hpp"
+#include "urdf/model.h"
 
 namespace joint_trajectory_controller
 {
@@ -46,6 +46,23 @@ JointTrajectoryController::JointTrajectoryController()
 
 controller_interface::CallbackReturn JointTrajectoryController::on_init()
 {
+  if (!urdf_.empty())
+  {
+    if (!model_.initString(urdf_))
+    {
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to parse URDF file");
+    }
+    else
+    {
+      RCLCPP_DEBUG(get_node()->get_logger(), "Successfully parsed URDF file");
+    }
+  }
+  else
+  {
+    // empty URDF is used for some tests
+    RCLCPP_DEBUG(get_node()->get_logger(), "No URDF file given");
+  }
+
   try
   {
     // Create the parameter listener and get the parameters
@@ -122,35 +139,6 @@ controller_interface::return_type JointTrajectoryController::update(
     }
   }
 
-  auto compute_error_for_joint = [&](
-                                   JointTrajectoryPoint & error, size_t index,
-                                   const JointTrajectoryPoint & current,
-                                   const JointTrajectoryPoint & desired)
-  {
-    // error defined as the difference between current and desired
-    if (joints_angle_wraparound_[index])
-    {
-      // if desired, the shortest_angular_distance is calculated, i.e., the error is
-      //  normalized between -pi<error<pi
-      error.positions[index] =
-        angles::shortest_angular_distance(current.positions[index], desired.positions[index]);
-    }
-    else
-    {
-      error.positions[index] = desired.positions[index] - current.positions[index];
-    }
-    if (
-      has_velocity_state_interface_ &&
-      (has_velocity_command_interface_ || has_effort_command_interface_))
-    {
-      error.velocities[index] = desired.velocities[index] - current.velocities[index];
-    }
-    if (has_acceleration_state_interface_ && has_acceleration_command_interface_)
-    {
-      error.accelerations[index] = desired.accelerations[index] - current.accelerations[index];
-    }
-  };
-
   // don't update goal after we sampled the trajectory to avoid any racecondition
   const auto active_goal = *rt_active_goal_.readFromRT();
 
@@ -168,17 +156,6 @@ controller_interface::return_type JointTrajectoryController::update(
     traj_external_point_ptr_->update(*new_external_msg);
   }
 
-  // TODO(anyone): can I here also use const on joint_interface since the reference_wrapper is not
-  // changed, but its value only?
-  auto assign_interface_from_point =
-    [&](auto & joint_interface, const std::vector<double> & trajectory_point_interface)
-  {
-    for (size_t index = 0; index < dof_; ++index)
-    {
-      joint_interface[index].get().set_value(trajectory_point_interface[index]);
-    }
-  };
-
   // current state update
   state_current_.time_from_start.set__sec(0);
   read_state_from_state_interfaces(state_current_);
@@ -193,11 +170,13 @@ controller_interface::return_type JointTrajectoryController::update(
       first_sample = true;
       if (params_.open_loop_control)
       {
-        traj_external_point_ptr_->set_point_before_trajectory_msg(time, last_commanded_state_);
+        traj_external_point_ptr_->set_point_before_trajectory_msg(
+          time, last_commanded_state_, joints_angle_wraparound_);
       }
       else
       {
-        traj_external_point_ptr_->set_point_before_trajectory_msg(time, state_current_);
+        traj_external_point_ptr_->set_point_before_trajectory_msg(
+          time, state_current_, joints_angle_wraparound_);
       }
     }
 
@@ -334,6 +313,7 @@ controller_interface::return_type JointTrajectoryController::update(
         {
           auto result = std::make_shared<FollowJTrajAction::Result>();
           result->set__error_code(FollowJTrajAction::Result::PATH_TOLERANCE_VIOLATED);
+          result->set__error_string("Aborted due to path tolerance violation");
           active_goal->setAborted(result);
           // TODO(matthew-reynolds): Need a lock-free write here
           // See https://github.com/ros-controls/ros2_controllers/issues/168
@@ -350,9 +330,10 @@ controller_interface::return_type JointTrajectoryController::update(
         {
           if (!outside_goal_tolerance)
           {
-            auto res = std::make_shared<FollowJTrajAction::Result>();
-            res->set__error_code(FollowJTrajAction::Result::SUCCESSFUL);
-            active_goal->setSucceeded(res);
+            auto result = std::make_shared<FollowJTrajAction::Result>();
+            result->set__error_code(FollowJTrajAction::Result::SUCCESSFUL);
+            result->set__error_string("Goal successfully reached!");
+            active_goal->setSucceeded(result);
             // TODO(matthew-reynolds): Need a lock-free write here
             // See https://github.com/ros-controls/ros2_controllers/issues/168
             rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
@@ -365,17 +346,19 @@ controller_interface::return_type JointTrajectoryController::update(
           }
           else if (!within_goal_time)
           {
+            const std::string error_string = "Aborted due to goal_time_tolerance exceeding by " +
+                                             std::to_string(time_difference) + " seconds";
+
             auto result = std::make_shared<FollowJTrajAction::Result>();
             result->set__error_code(FollowJTrajAction::Result::GOAL_TOLERANCE_VIOLATED);
+            result->set__error_string(error_string);
             active_goal->setAborted(result);
             // TODO(matthew-reynolds): Need a lock-free write here
             // See https://github.com/ros-controls/ros2_controllers/issues/168
             rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
             rt_has_pending_goal_.writeFromNonRT(false);
 
-            RCLCPP_WARN(
-              get_node()->get_logger(), "Aborted due goal_time_tolerance exceeding by %f seconds",
-              time_difference);
+            RCLCPP_WARN(get_node()->get_logger(), error_string.c_str());
 
             traj_msg_external_point_ptr_.reset();
             traj_msg_external_point_ptr_.initRT(set_hold_position());
@@ -461,8 +444,7 @@ bool JointTrajectoryController::read_state_from_command_interfaces(JointTrajecto
   auto interface_has_values = [](const auto & joint_interface)
   {
     return std::find_if(
-             joint_interface.begin(), joint_interface.end(),
-             [](const auto & interface)
+             joint_interface.begin(), joint_interface.end(), [](const auto & interface)
              { return std::isnan(interface.get().get_value()); }) == joint_interface.end();
   };
 
@@ -532,8 +514,7 @@ bool JointTrajectoryController::read_commands_from_command_interfaces(
   auto interface_has_values = [](const auto & joint_interface)
   {
     return std::find_if(
-             joint_interface.begin(), joint_interface.end(),
-             [](const auto & interface)
+             joint_interface.begin(), joint_interface.end(), [](const auto & interface)
              { return std::isnan(interface.get().get_value()); }) == joint_interface.end();
   };
 
@@ -718,12 +699,33 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     update_pids();
   }
 
-  // Configure joint position error normalization from ROS parameters (angle_wraparound)
+  // Configure joint position error normalization (angle_wraparound)
   joints_angle_wraparound_.resize(dof_);
   for (size_t i = 0; i < dof_; ++i)
   {
     const auto & gains = params_.gains.joints_map.at(params_.joints[i]);
-    joints_angle_wraparound_[i] = gains.angle_wraparound;
+    if (gains.angle_wraparound)
+    {
+      // TODO(christophfroehlich): remove this warning in a future release (ROS-J)
+      RCLCPP_WARN(
+        logger,
+        "[Deprecated] Parameter 'gains.<joint>.angle_wraparound' is deprecated. The "
+        "angle_wraparound is now used if a continuous joint is configured in the URDF.");
+      joints_angle_wraparound_[i] = true;
+    }
+
+    if (!urdf_.empty())
+    {
+      auto urdf_joint = model_.getJoint(params_.joints[i]);
+      if (urdf_joint && urdf_joint->type == urdf::Joint::CONTINUOUS)
+      {
+        RCLCPP_DEBUG(
+          logger, "joint '%s' is of type continuous, use angle_wraparound.",
+          params_.joints[i].c_str());
+        joints_angle_wraparound_[i] = true;
+      }
+      // do nothing if joint is not found in the URDF
+    }
   }
 
   if (params_.state_interfaces.empty())
@@ -975,6 +977,17 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
 controller_interface::CallbackReturn JointTrajectoryController::on_deactivate(
   const rclcpp_lifecycle::State &)
 {
+  const auto active_goal = *rt_active_goal_.readFromNonRT();
+  if (active_goal)
+  {
+    rt_has_pending_goal_.writeFromNonRT(false);
+    auto action_res = std::make_shared<FollowJTrajAction::Result>();
+    action_res->set__error_code(FollowJTrajAction::Result::INVALID_GOAL);
+    action_res->set__error_string("Current goal cancelled during deactivate transition.");
+    active_goal->setCanceled(action_res);
+    rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
+  }
+
   for (size_t index = 0; index < dof_; ++index)
   {
     if (has_position_command_interface_)
@@ -1180,6 +1193,34 @@ void JointTrajectoryController::goal_accepted_callback(
     std::bind(&RealtimeGoalHandle::runNonRealtime, rt_goal));
 }
 
+void JointTrajectoryController::compute_error_for_joint(
+  JointTrajectoryPoint & error, const size_t index, const JointTrajectoryPoint & current,
+  const JointTrajectoryPoint & desired) const
+{
+  // error defined as the difference between current and desired
+  if (joints_angle_wraparound_[index])
+  {
+    // if desired, the shortest_angular_distance is calculated, i.e., the error is
+    //  normalized between -pi<error<pi
+    error.positions[index] =
+      angles::shortest_angular_distance(current.positions[index], desired.positions[index]);
+  }
+  else
+  {
+    error.positions[index] = desired.positions[index] - current.positions[index];
+  }
+  if (
+    has_velocity_state_interface_ &&
+    (has_velocity_command_interface_ || has_effort_command_interface_))
+  {
+    error.velocities[index] = desired.velocities[index] - current.velocities[index];
+  }
+  if (has_acceleration_state_interface_ && has_acceleration_command_interface_)
+  {
+    error.accelerations[index] = desired.accelerations[index] - current.accelerations[index];
+  }
+}
+
 void JointTrajectoryController::fill_partial_goal(
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg) const
 {
@@ -1241,7 +1282,7 @@ void JointTrajectoryController::fill_partial_goal(
 }
 
 void JointTrajectoryController::sort_to_local_joint_order(
-  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg)
+  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg) const
 {
   // rearrange all points in the trajectory message based on mapping
   std::vector<size_t> mapping_vector = mapping(trajectory_msg->joint_names, params_.joints);
@@ -1364,6 +1405,12 @@ bool JointTrajectoryController::validate_trajectory_msg(
     }
   }
 
+  if (trajectory.points.empty())
+  {
+    RCLCPP_ERROR(get_node()->get_logger(), "Empty trajectory received.");
+    return false;
+  }
+
   if (!params_.allow_nonzero_velocity_at_trajectory_end)
   {
     for (size_t i = 0; i < trajectory.points.back().velocities.size(); ++i)
@@ -1445,7 +1492,6 @@ void JointTrajectoryController::preempt_active_goal()
   const auto active_goal = *rt_active_goal_.readFromNonRT();
   if (active_goal)
   {
-    add_new_trajectory_msg(set_hold_position());
     auto action_res = std::make_shared<FollowJTrajAction::Result>();
     action_res->set__error_code(FollowJTrajAction::Result::INVALID_GOAL);
     action_res->set__error_string("Current goal cancelled due to new incoming action.");
