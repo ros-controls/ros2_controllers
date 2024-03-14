@@ -83,4 +83,21 @@ Parameters
 
 The PID controller uses the `generate_parameter_library <https://github.com/PickNikRobotics/generate_parameter_library>`_ to handle its parameters.
 
+List of parameters
+=========================
 .. generate_parameter_library_details:: ../src/pid_controller.yaml
+
+
+An example parameter file
+=========================
+
+
+An example parameter file for this controller can be found in `the test folder (standalone) <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/pid_controller/test/pid_controller_params.yaml>`_:
+
+.. literalinclude:: ../test/pid_controller_params.yaml
+   :language: yaml
+
+or as `preceding controller <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/pid_controller/test/pid_controller_preceding_params.yaml>`_:
+
+.. literalinclude:: ../test/pid_controller_preceding_params.yaml
+   :language: yaml
