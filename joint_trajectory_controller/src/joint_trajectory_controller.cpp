@@ -180,7 +180,7 @@ controller_interface::return_type JointTrajectoryController::update(
     TimeData time_data;
     time_data.time = time;
     rcl_duration_value_t t_period = (time_data.time - time_data_.readFromRT()->time).nanoseconds();
-    time_data.period = rclcpp::Duration::from_nanoseconds(scaling_factor_ * t_period);
+    time_data.period = rclcpp::Duration::from_nanoseconds(t_period) * scaling_factor_;
     time_data.uptime = time_data_.readFromRT()->uptime + time_data.period;
     rclcpp::Time traj_time =
       time_data_.readFromRT()->uptime + rclcpp::Duration::from_nanoseconds(t_period);
