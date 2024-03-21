@@ -1002,8 +1002,24 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
     read_state_from_state_interfaces(last_commanded_state_);
   }
 
+<<<<<<< HEAD
   // The controller should start by holding position at the beginning of active state
   add_new_trajectory_msg(set_hold_position());
+=======
+  // Should the controller start by holding position at the beginning of active state?
+  if (params_.start_with_holding)
+  {
+    add_new_trajectory_msg(set_hold_position());
+  }
+  else
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "Parameter \"start_with_holding\" is deprecated. "
+      "It will be removed in a future release and start with holding position will be the default "
+      "behavior.");
+  }
+>>>>>>> ea66755 (Deprecate start with holding (#1076))
   rt_is_holding_.writeFromNonRT(true);
 
   // parse timeout parameter
