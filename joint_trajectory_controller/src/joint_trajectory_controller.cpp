@@ -930,6 +930,14 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   {
     add_new_trajectory_msg(set_hold_position());
   }
+  else
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "Parameter \"start_with_holding\" is deprecated. "
+      "It will be removed in a future release and start with holding position will be the default "
+      "behavior.");
+  }
   rt_is_holding_.writeFromNonRT(true);
 
   // parse timeout parameter
