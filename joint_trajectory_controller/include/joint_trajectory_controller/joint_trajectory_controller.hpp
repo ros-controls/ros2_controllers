@@ -24,6 +24,7 @@
 #include "control_msgs/action/follow_joint_trajectory.hpp"
 #include "control_msgs/msg/joint_trajectory_controller_state.hpp"
 #include "control_msgs/srv/query_trajectory_state.hpp"
+#include "control_msgs/srv/set_scaling_factor.hpp"
 #include "control_toolbox/pid.hpp"
 #include "controller_interface/controller_interface.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
@@ -311,7 +312,14 @@ private:
   void resize_joint_trajectory_point_command(
     trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size);
 
+  bool set_scaling_factor(
+    control_msgs::srv::SetScalingFactor::Request::SharedPtr req,
+    control_msgs::srv::SetScalingFactor::Response::SharedPtr resp);
+
   urdf::Model model_;
+
+  realtime_tools::RealtimeBuffer<double> scaling_factor_rt_buff_;
+  rclcpp::Service<control_msgs::srv::SetScalingFactor>::SharedPtr set_scaling_factor_srv_;
 
   /**
    * @brief Assigns the values from a trajectory point interface to a joint interface.
