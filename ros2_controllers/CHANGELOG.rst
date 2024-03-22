@@ -2,6 +2,9 @@
 Changelog for package ros2_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 4.6.0 (2024-02-12)
 ------------------
 

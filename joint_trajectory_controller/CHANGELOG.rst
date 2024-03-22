@@ -2,6 +2,14 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Remove action_msg dependency (`#1077 <https://github.com/ros-controls/ros2_controllers/issues/1077>`_)
+* Bump version of pre-commit hooks (`#1073 <https://github.com/ros-controls/ros2_controllers/issues/1073>`_)
+* Added conditioning to have rolling tags compilable in older versions (`#1071 <https://github.com/ros-controls/ros2_controllers/issues/1071>`_)
+* Parse URDF for continuous joints (`#949 <https://github.com/ros-controls/ros2_controllers/issues/949>`_)
+* Contributors: Christoph Fröhlich, Sai Kishor Kothakota, github-actions[bot]
+
 4.6.0 (2024-02-12)
 ------------------
 * Fix usage of M_PI on Windows (`#1036 <https://github.com/ros-controls/ros2_controllers/issues/1036>`_)
