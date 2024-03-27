@@ -39,21 +39,22 @@ joint_trajectory_controller:
       "joint_trajectory_controller::state_interface_type_combinations": null,
     }
   }
-  exchange_scaling_factor_with_hardware: {
-    type: bool,
-    default_value: false,
-    description: "Flag that mark is hardware supports setting and reading of scaling factor.\n
-      If set to 'true' corresponding command and state interfaces are created."
-  }
   scaling_factor_initial_default: {
     type: double,
     default_value: 1.0,
     description: "The initial value of the scaling factor if not exchange with hardware takes place."
   }
-  speed_scaling_interface_name: {
+  speed_scaling_state_interface_name: {
     type: string,
-    default_value: "speed_scaling/speed_scaling_factor",
-    description: "Fully qualified name of the speed scaling interface name"
+    default_value: "",
+    read_only: true,
+    description: "Fully qualified name of the speed scaling state interface name"
+  }
+  speed_scaling_command_interface_name: {
+    type: string,
+    default_value: "",
+    read_only: true,
+    description: "Command interface name used for setting the speed scaling factor on the hardware."
   }
   allow_partial_joints_goal: {
     type: bool,

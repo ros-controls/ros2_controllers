@@ -101,12 +101,17 @@ JointTrajectoryController::command_interface_configuration() const
       conf.names.push_back(joint_name + "/" + interface_type);
     }
   }
+  if (!params_.speed_scaling_command_interface_name.empty())
+  {
+    conf.names.push_back(params_.speed_scaling_command_interface_name);
+  }
   return conf;
 }
 
 controller_interface::InterfaceConfiguration
 JointTrajectoryController::state_interface_configuration() const
 {
+  const auto logger = get_node()->get_logger();
   controller_interface::InterfaceConfiguration conf;
   conf.type = controller_interface::interface_configuration_type::INDIVIDUAL;
   conf.names.reserve(dof_ * params_.state_interfaces.size());
@@ -117,9 +122,12 @@ JointTrajectoryController::state_interface_configuration() const
       conf.names.push_back(joint_name + "/" + interface_type);
     }
   }
-  if (params_.exchange_scaling_factor_with_hardware)
+  if (!params_.speed_scaling_state_interface_name.empty())
   {
-    conf.names.push_back(params_.speed_scaling_interface_name);
+    RCLCPP_INFO(
+      logger, "Using scaling state from the hardware from interface %s.",
+      params_.speed_scaling_state_interface_name.c_str());
+    conf.names.push_back(params_.speed_scaling_state_interface_name);
   }
   return conf;
 }
@@ -127,9 +135,13 @@ JointTrajectoryController::state_interface_configuration() const
 controller_interface::return_type JointTrajectoryController::update(
   const rclcpp::Time & time, const rclcpp::Duration & period)
 {
-  if (params_.exchange_scaling_factor_with_hardware)
+  if (params_.speed_scaling_state_interface_name.empty())
   {
-    if (state_interfaces_.back().get_name() == params_.speed_scaling_interface_name)
+    scaling_factor_ = *(scaling_factor_rt_buff_.readFromRT());
+  }
+  else
+  {
+    if (state_interfaces_.back().get_name() == params_.speed_scaling_state_interface_name)
     {
       scaling_factor_ = state_interfaces_.back().get_value();
     }
@@ -137,12 +149,8 @@ controller_interface::return_type JointTrajectoryController::update(
     {
       RCLCPP_ERROR(
         get_node()->get_logger(), "Speed scaling interface (%s) not found in hardware interface.",
-        params_.speed_scaling_interface_name.c_str());
+        params_.speed_scaling_state_interface_name.c_str());
     }
-  }
-  else
-  {
-    scaling_factor_ = *(scaling_factor_rt_buff_.readFromRT());
   }
 
   if (get_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
@@ -478,7 +486,8 @@ bool JointTrajectoryController::read_state_from_command_interfaces(JointTrajecto
   auto interface_has_values = [](const auto & joint_interface)
   {
     return std::find_if(
-             joint_interface.begin(), joint_interface.end(), [](const auto & interface)
+             joint_interface.begin(), joint_interface.end(),
+             [](const auto & interface)
              { return std::isnan(interface.get().get_value()); }) == joint_interface.end();
   };
 
@@ -548,7 +557,8 @@ bool JointTrajectoryController::read_commands_from_command_interfaces(
   auto interface_has_values = [](const auto & joint_interface)
   {
     return std::find_if(
-             joint_interface.begin(), joint_interface.end(), [](const auto & interface)
+             joint_interface.begin(), joint_interface.end(),
+             [](const auto & interface)
              { return std::isnan(interface.get().get_value()); }) == joint_interface.end();
   };
 
@@ -919,6 +929,8 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
                               std::placeholders::_1, std::placeholders::_2));
 
   // set scaling factor to low value default
+  RCLCPP_INFO(
+    logger, "Setting initial scaling factor to %2f", params_.scaling_factor_initial_default);
   scaling_factor_rt_buff_.writeFromNonRT(params_.scaling_factor_initial_default);
 
   return CallbackReturn::SUCCESS;
@@ -1630,7 +1642,26 @@ bool JointTrajectoryController::set_scaling_factor(
   }
 
   RCLCPP_INFO(get_node()->get_logger(), "New scaling factor will be %f", req->scaling_factor);
-  scaling_factor_rt_buff_.writeFromNonRT(req->scaling_factor);
+  if (params_.speed_scaling_command_interface_name.empty())
+  {
+    if (!params_.speed_scaling_state_interface_name.empty())
+    {
+      RCLCPP_WARN(
+        get_node()->get_logger(),
+        "Setting the scaling factor while only one-way communication with the hardware is setup. "
+        "This will likely get overwritten by the hardware again. If available, please also setup "
+        "the speed_scaling_command_interface_name");
+    }
+    scaling_factor_rt_buff_.writeFromNonRT(req->scaling_factor);
+  }
+  else
+  {
+    if (get_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+    {
+      // TODO(Felix): Use proper adressing here.
+      command_interfaces_.back().set_value(static_cast<double>(req->scaling_factor));
+    }
+  }
   resp->success = true;
   return true;
 }
