@@ -1370,6 +1370,12 @@ bool JointTrajectoryController::validate_trajectory_msg(
     return false;
   }
 
+  if (trajectory.points.empty())
+  {
+    RCLCPP_ERROR(get_node()->get_logger(), "Empty trajectory received.");
+    return false;
+  }
+
   const auto trajectory_start_time = static_cast<rclcpp::Time>(trajectory.header.stamp);
   // If the starting time it set to 0.0, it means the controller should start it now.
   // Otherwise we check if the trajectory ends before the current time,
@@ -1400,12 +1406,6 @@ bool JointTrajectoryController::validate_trajectory_msg(
         incoming_joint_name.c_str());
       return false;
     }
-  }
-
-  if (trajectory.points.empty())
-  {
-    RCLCPP_ERROR(get_node()->get_logger(), "Empty trajectory received.");
-    return false;
   }
 
   if (!params_.allow_nonzero_velocity_at_trajectory_end)
