@@ -138,6 +138,11 @@ public:
 
   bool is_open_loop() const { return params_.open_loop_control; }
 
+  joint_trajectory_controller::SegmentTolerances get_active_tolerances()
+  {
+    return *(active_tolerances_.readFromRT());
+  }
+
   std::vector<PidPtr> get_pids() const { return pids_; }
 
   joint_trajectory_controller::SegmentTolerances get_tolerances() const
