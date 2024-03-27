@@ -21,18 +21,15 @@ Guidelines and Best Practices
    *
 
 
-Controllers for Mobile Robots
-*****************************
+Controllers for Wheeled Mobile Robots
+*************************************
 
 .. toctree::
    :titlesonly:
 
-   Ackermann Steering Controller <../ackermann_steering_controller/doc/userdoc.rst>
-   Bicycle Steering Controller <../bicycle_steering_controller/doc/userdoc.rst>
    Differential Drive Controller <../diff_drive_controller/doc/userdoc.rst>
    Steering Controllers Library <../steering_controllers_library/doc/userdoc.rst>
    Tricycle Controller <../tricycle_controller/doc/userdoc.rst>
-   Tricycle Steering Controller <../tricycle_steering_controller/doc/userdoc.rst>
 
 Controllers for Manipulators and Other Robots
 *********************************************

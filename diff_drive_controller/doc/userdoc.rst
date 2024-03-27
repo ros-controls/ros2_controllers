@@ -11,6 +11,8 @@ As input it takes velocity commands for the robot body, which are translated to 
 
 Odometry is computed from hardware feedback and published.
 
+For an introduction to mobile robot kinematics and the nomenclature used here, see :ref:`mobile_robot_kinematics`.
+
 Other features
 --------------
 
