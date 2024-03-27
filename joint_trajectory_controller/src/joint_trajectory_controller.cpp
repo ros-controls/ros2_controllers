@@ -1376,11 +1376,8 @@ bool JointTrajectoryController::validate_trajectory_msg(
   // in which case it can be ignored.
   if (trajectory_start_time.seconds() != 0.0)
   {
-    auto trajectory_end_time = trajectory_start_time;
-    for (const auto & p : trajectory.points)
-    {
-      trajectory_end_time += p.time_from_start;
-    }
+    auto const trajectory_end_time =
+      trajectory_start_time + trajectory.points.back().time_from_start;
     if (trajectory_end_time < get_node()->now())
     {
       RCLCPP_ERROR(
