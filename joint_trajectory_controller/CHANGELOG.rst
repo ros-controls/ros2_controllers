@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.34.0 (2024-04-01)
+-------------------
 * Remove action_msg dependency (`#1077 <https://github.com/ros-controls/ros2_controllers/issues/1077>`_) (`#1080 <https://github.com/ros-controls/ros2_controllers/issues/1080>`_)
 * [JTC] Angle wraparound for first segment of trajectory (`#796 <https://github.com/ros-controls/ros2_controllers/issues/796>`_) (`#1033 <https://github.com/ros-controls/ros2_controllers/issues/1033>`_)
 * Bump version of pre-commit hooks (`#1073 <https://github.com/ros-controls/ros2_controllers/issues/1073>`_) (`#1074 <https://github.com/ros-controls/ros2_controllers/issues/1074>`_)

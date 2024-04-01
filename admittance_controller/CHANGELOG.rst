@@ -2,8 +2,8 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.34.0 (2024-04-01)
+-------------------
 * Use CMake target for eigen (`#1058 <https://github.com/ros-controls/ros2_controllers/issues/1058>`_) (`#1066 <https://github.com/ros-controls/ros2_controllers/issues/1066>`_)
 * Let sphinx add parameter description with nested structures to documentation (backport `#652 <https://github.com/ros-controls/ros2_controllers/issues/652>`_) (`#1005 <https://github.com/ros-controls/ros2_controllers/issues/1005>`_)
 * Contributors: mergify[bot]
