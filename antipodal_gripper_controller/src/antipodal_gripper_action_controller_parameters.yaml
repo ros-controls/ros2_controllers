@@ -3,6 +3,7 @@ antipodal_gripper_action_controller:
     type: double,
     default_value: 20.0,
     description: "Hz",
+    read_only: true,
     validation: {
       gt_eq: [ 0.1 ]
     },
