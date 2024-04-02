@@ -14,8 +14,8 @@
 
 /// \author Sachin Chitta, Adolfo Rodriguez Tsouroukdissian
 
-#ifndef ANTIPODAL_GRIPPER_CONTROLLER__GRIPPER_ACTION_CONTROLLER_HPP_
-#define ANTIPODAL_GRIPPER_CONTROLLER__GRIPPER_ACTION_CONTROLLER_HPP_
+#ifndef PARALLEL_GRIPPER_CONTROLLER__GRIPPER_ACTION_CONTROLLER_HPP_
+#define PARALLEL_GRIPPER_CONTROLLER__GRIPPER_ACTION_CONTROLLER_HPP_
 
 // C++ standard
 #include <cassert>
@@ -27,13 +27,13 @@
 #include "rclcpp/rclcpp.hpp"
 
 // ROS messages
-#include "control_msgs/action/antipodal_gripper_command.hpp"
+#include "control_msgs/action/parallel_gripper_command.hpp"
 
 // rclcpp_action
 #include "rclcpp_action/create_server.hpp"
 
 // ros_controls
-#include "antipodal_gripper_controller/visibility_control.hpp"
+#include "parallel_gripper_controller/visibility_control.hpp"
 #include "controller_interface/controller_interface.hpp"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
@@ -41,12 +41,12 @@
 #include "realtime_tools/realtime_server_goal_handle.h"
 
 // Project
-#include "antipodal_gripper_action_controller_parameters.hpp"
+#include "parallel_gripper_action_controller_parameters.hpp"
 
-namespace antipodal_gripper_action_controller
+namespace parallel_gripper_action_controller
 {
 /**
- * \brief Controller for executing a `AntipodalGripperCommand` action.
+ * \brief Controller for executing a `ParallelGripperCommand` action.
  *
  * \tparam HardwareInterface Controller hardware interface. Currently \p
  * hardware_interface::HW_IF_POSITION and \p
@@ -107,12 +107,12 @@ public:
   Commands command_struct_, command_struct_rt_;
 
 protected:
-  using GripperCommandAction = control_msgs::action::AntipodalGripperCommand;
+  using GripperCommandAction = control_msgs::action::ParallelGripperCommand;
   using ActionServer = rclcpp_action::Server<GripperCommandAction>;
   using ActionServerPtr = ActionServer::SharedPtr;
   using GoalHandle = rclcpp_action::ServerGoalHandle<GripperCommandAction>;
   using RealtimeGoalHandle =
-    realtime_tools::RealtimeServerGoalHandle<control_msgs::action::AntipodalGripperCommand>;
+    realtime_tools::RealtimeServerGoalHandle<control_msgs::action::ParallelGripperCommand>;
   using RealtimeGoalHandlePtr = std::shared_ptr<RealtimeGoalHandle>;
   using RealtimeGoalHandleBuffer = realtime_tools::RealtimeBuffer<RealtimeGoalHandlePtr>;
 
@@ -136,7 +136,7 @@ protected:
 
   RealtimeGoalHandleBuffer
     rt_active_goal_;  ///< Container for the currently active action goal, if any.
-  control_msgs::action::AntipodalGripperCommand::Result::SharedPtr pre_alloc_result_;
+  control_msgs::action::ParallelGripperCommand::Result::SharedPtr pre_alloc_result_;
 
   rclcpp::Duration action_monitor_period_;
 
@@ -167,8 +167,8 @@ protected:
     double current_velocity);
 };
 
-}  // namespace antipodal_gripper_action_controller
+}  // namespace parallel_gripper_action_controller
 
-#include "antipodal_gripper_controller/antipodal_gripper_action_controller_impl.hpp"
+#include "parallel_gripper_controller/parallel_gripper_action_controller_impl.hpp"
 
-#endif  // ANTIPODAL_GRIPPER_CONTROLLER__GRIPPER_ACTION_CONTROLLER_HPP_
+#endif  // PARALLEL_GRIPPER_CONTROLLER__GRIPPER_ACTION_CONTROLLER_HPP_

@@ -1,4 +1,4 @@
-antipodal_gripper_action_controller:
+parallel_gripper_action_controller:
   action_monitor_rate: {
     type: double,
     default_value: 20.0,

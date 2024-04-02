@@ -44,7 +44,7 @@ controller_interface::CallbackReturn GripperActionController<HardwareInterface>:
     get_node()->get_logger(),
     "[Deprecated]: the `position_controllers/GripperActionController` and "
     "`effort_controllers::GripperActionController` controllers are replaced by "
-    "'antipodal_gripper_controllers/GripperActionController' controller");
+    "'parallel_gripper_controllers/GripperActionController' controller");
   try
   {
     param_listener_ = std::make_shared<ParamListener>(get_node());

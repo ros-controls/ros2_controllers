@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TEST_ANTIPODAL_GRIPPER_CONTROLLER_HPP_
-#define TEST_ANTIPODAL_GRIPPER_CONTROLLER_HPP_
+#ifndef TEST_PARALLEL_GRIPPER_CONTROLLER_HPP_
+#define TEST_PARALLEL_GRIPPER_CONTROLLER_HPP_
 
 #include <memory>
 #include <string>
@@ -21,14 +21,14 @@
 
 #include "gmock/gmock.h"
 
-#include "antipodal_gripper_controller/antipodal_gripper_action_controller.hpp"
+#include "parallel_gripper_controller/parallel_gripper_action_controller.hpp"
 #include "hardware_interface/handle.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 
 namespace
 {
 // subclassing and friending so we can access member variables
-class FriendGripperController : public antipodal_gripper_action_controller::GripperActionController
+class FriendGripperController : public parallel_gripper_action_controller::GripperActionController
 {
   FRIEND_TEST(GripperControllerTest, CommandSuccessTest);
 };
@@ -63,4 +63,4 @@ protected:
 
 }  // anonymous namespace
 
-#endif  // TEST_ANTIPODAL_GRIPPER_CONTROLLER_HPP_
+#endif  // TEST_PARALLEL_GRIPPER_CONTROLLER_HPP_

@@ -20,7 +20,7 @@
 
 #include "gmock/gmock.h"
 
-#include "test_antipodal_gripper_controller.hpp"
+#include "test_parallel_gripper_controller.hpp"
 
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
@@ -29,7 +29,7 @@
 
 using hardware_interface::LoanedCommandInterface;
 using hardware_interface::LoanedStateInterface;
-using GripperCommandAction = control_msgs::action::AntipodalGripperCommand;
+using GripperCommandAction = control_msgs::action::ParallelGripperCommand;
 using GoalHandle = rclcpp_action::ServerGoalHandle<GripperCommandAction>;
 using testing::SizeIs;
 using testing::UnorderedElementsAre;

@@ -1,11 +1,11 @@
-:github_url: https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/antipodal_gripper_controller/doc/userdoc.rst
+:github_url: https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/parallel_gripper_controller/doc/userdoc.rst
 
-.. _antipodal_gripper_controller_userdoc:
+.. _parallel_gripper_controller_userdoc:
 
-Antipodal Gripper Action Controller
+Parallel Gripper Action Controller
 -----------------------------------
 
-Controller for executing a ``AntipodalGripperCommand`` action for simple antipodal grippers.
+Controller for executing a ``ParallelGripperCommand`` action for simple parallel grippers.
 This controller supports grippers that offer position only control as well as grippers that allow configuring the velocity and effort.
 By default, the controller will only claim the `{joint}/position` interface for control.
 The velocity and effort interfaces can be optionally claimed by setting the `max_velocity_interface` and `max_effort_interface` parameter, respectively.

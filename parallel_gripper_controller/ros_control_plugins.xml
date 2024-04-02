@@ -1,0 +1,10 @@
+<library path="parallel_gripper_action_controller">
+
+  <class name="parallel_gripper_action_controller/GripperActionController"
+         type="parallel_gripper_action_controller::GripperActionController"
+         base_class_type="controller_interface::ControllerInterface">
+    <description>
+    </description>
+  </class>
+
+</library>

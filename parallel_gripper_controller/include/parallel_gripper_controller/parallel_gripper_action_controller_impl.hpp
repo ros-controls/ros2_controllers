@@ -14,16 +14,16 @@
 
 /// \author Sachin Chitta, Adolfo Rodriguez Tsouroukdissian, Stu Glaser
 
-#ifndef ANTIPODAL_GRIPPER_CONTROLLER__GRIPPER_ACTION_CONTROLLER_IMPL_HPP_
-#define ANTIPODAL_GRIPPER_CONTROLLER__GRIPPER_ACTION_CONTROLLER_IMPL_HPP_
+#ifndef PARALLEL_GRIPPER_CONTROLLER__GRIPPER_ACTION_CONTROLLER_IMPL_HPP_
+#define PARALLEL_GRIPPER_CONTROLLER__GRIPPER_ACTION_CONTROLLER_IMPL_HPP_
 
-#include "antipodal_gripper_controller/antipodal_gripper_action_controller.hpp"
+#include "parallel_gripper_controller/parallel_gripper_action_controller.hpp"
 
 #include <hardware_interface/types/hardware_interface_type_values.hpp>
 #include <memory>
 #include <string>
 
-namespace antipodal_gripper_action_controller
+namespace parallel_gripper_action_controller
 {
 
 void GripperActionController::preempt_active_goal()
@@ -83,7 +83,7 @@ rclcpp_action::GoalResponse GripperActionController::goal_callback(
 {
   if (goal_handle->command.position.size() != 1)
   {
-    pre_alloc_result_ = std::make_shared<control_msgs::action::AntipodalGripperCommand::Result>();
+    pre_alloc_result_ = std::make_shared<control_msgs::action::ParallelGripperCommand::Result>();
     pre_alloc_result_->state.position.resize(1);
     pre_alloc_result_->state.effort.resize(1);
     RCLCPP_ERROR(
@@ -332,7 +332,7 @@ controller_interface::CallbackReturn GripperActionController::on_activate(
   command_.initRT(command_struct_);
 
   // Result
-  pre_alloc_result_ = std::make_shared<control_msgs::action::AntipodalGripperCommand::Result>();
+  pre_alloc_result_ = std::make_shared<control_msgs::action::ParallelGripperCommand::Result>();
   pre_alloc_result_->state.position.resize(1);
   pre_alloc_result_->state.effort.resize(1);
   pre_alloc_result_->state.position[0] = command_struct_.position_cmd_;
@@ -340,7 +340,7 @@ controller_interface::CallbackReturn GripperActionController::on_activate(
   pre_alloc_result_->stalled = false;
 
   // Action interface
-  action_server_ = rclcpp_action::create_server<control_msgs::action::AntipodalGripperCommand>(
+  action_server_ = rclcpp_action::create_server<control_msgs::action::ParallelGripperCommand>(
     get_node(), "~/gripper_cmd",
     std::bind(
       &GripperActionController::goal_callback, this, std::placeholders::_1, std::placeholders::_2),
@@ -393,6 +393,6 @@ GripperActionController::GripperActionController()
 {
 }
 
-}  // namespace antipodal_gripper_action_controller
+}  // namespace parallel_gripper_action_controller
 
-#endif  // ANTIPODAL_GRIPPER_CONTROLLER__GRIPPER_ACTION_CONTROLLER_IMPL_HPP_
+#endif  // PARALLEL_GRIPPER_CONTROLLER__GRIPPER_ACTION_CONTROLLER_IMPL_HPP_
