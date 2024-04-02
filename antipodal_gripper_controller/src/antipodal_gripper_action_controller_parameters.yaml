@@ -9,7 +9,7 @@ antipodal_gripper_action_controller:
   }
   joint: {
     type: string,
-    default_value: "",
+    read_only: true,
   }
   goal_tolerance: {
     type: double,
