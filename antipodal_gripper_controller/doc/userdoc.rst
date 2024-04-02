@@ -6,6 +6,11 @@ Antipodal Gripper Action Controller
 -----------------------------------
 
 Controller for executing a ``AntipodalGripperCommand`` action for simple antipodal grippers.
+This controller supports grippers that offer position only control as well as grippers that allow configuring the velocity and effort.
+By default, the controller will only claim the `{joint}/position` interface for control.
+The velocity and effort interfaces can be optionally claimed by setting the `max_velocity_interface` and `max_effort_interface` parameter, respectively.
+By default, the controller will try to claim position and velocity state interfaces.
+The claimed state interfaces can be configured by setting the `state_interfaces` parameter.
 
 Parameters
 ^^^^^^^^^^^

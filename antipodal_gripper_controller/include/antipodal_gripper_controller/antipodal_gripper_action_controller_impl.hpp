@@ -108,8 +108,7 @@ void GripperActionController::accepted_callback(
   // This is the non-realtime command_struct
   // We use command_ for sharing
   command_struct_.position_cmd_ = goal_handle->get_goal()->command.position[0];
-  if (
-    !params_.max_velocity_interface.empty() && !goal_handle->get_goal()->command.velocity.empty())
+  if (!params_.max_velocity_interface.empty() && !goal_handle->get_goal()->command.velocity.empty())
   {
     command_struct_.max_velocity_ = goal_handle->get_goal()->command.velocity[0];
   }
@@ -380,10 +379,12 @@ GripperActionController::command_interface_configuration() const
 controller_interface::InterfaceConfiguration
 GripperActionController::state_interface_configuration() const
 {
-  return {
-    controller_interface::interface_configuration_type::INDIVIDUAL,
-    {params_.joint + "/" + hardware_interface::HW_IF_POSITION,
-     params_.joint + "/" + hardware_interface::HW_IF_VELOCITY}};
+  std::vector<std::string> interface_names;
+  for (const auto & interface : params_.state_interfaces)
+  {
+    interface_names.push_back(params_.joint + "/" + interface);
+  }
+  return {controller_interface::interface_configuration_type::INDIVIDUAL, interface_names};
 }
 
 GripperActionController::GripperActionController()

@@ -12,6 +12,10 @@ antipodal_gripper_action_controller:
     type: string,
     read_only: true,
   }
+  state_interfaces: {
+    type: string_array,
+    default_value: [position, velocity],
+  }
   goal_tolerance: {
     type: double,
     default_value: 0.01,
