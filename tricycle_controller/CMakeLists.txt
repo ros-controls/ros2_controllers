@@ -29,6 +29,8 @@ find_package(backward_ros REQUIRED)
 foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
+add_compile_definitions(RCPPUTILS_VERSION_MAJOR=${rcpputils_VERSION_MAJOR})
+add_compile_definitions(RCPPUTILS_VERSION_MINOR=${rcpputils_VERSION_MINOR})
 
 generate_parameter_library(tricycle_controller_parameters
   src/tricycle_controller_parameter.yaml
@@ -47,6 +49,9 @@ target_include_directories(tricycle_controller PUBLIC
 )
 target_link_libraries(tricycle_controller PUBLIC tricycle_controller_parameters)
 ament_target_dependencies(tricycle_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
+# Causes the visibility macros to use dllexport rather than dllimport,
+# which is appropriate when building the dll but not consuming it.
+target_compile_definitions(tricycle_controller PRIVATE "TRICYCLE_CONTROLLER_BUILDING_DLL" "_USE_MATH_DEFINES")
 
 pluginlib_export_plugin_description_file(controller_interface tricycle_controller.xml)
 
