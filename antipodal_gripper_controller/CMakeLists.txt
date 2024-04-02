@@ -1,13 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
 project(antipodal_gripper_controller LANGUAGES CXX)
 
-if(APPLE OR WIN32)
-  message(WARNING "Antipodal gripper controllers are not available on OSX or Windows")
-  return()
-endif()
-
 if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
-  add_compile_options(-Wall -Wextra)
+  add_compile_options(-Wall -Wextra -Wpedantic -Werror=conversion -Werror=unused-but-set-variable
+          -Werror=return-type -Werror=shadow -Werror=format)
 endif()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
