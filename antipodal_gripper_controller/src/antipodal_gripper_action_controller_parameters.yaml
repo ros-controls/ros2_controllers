@@ -18,22 +18,6 @@ antipodal_gripper_action_controller:
       gt_eq: [ 0.0 ]
     },
   }
-  max_effort: {
-    type: double,
-    default_value: 10.0,
-    description: "Default effort used for grasping (Newtons)",
-    validation: {
-      gt_eq: [ 0.0 ]
-    },
-  }
-  max_velocity: {
-    type: double,
-    default_value: 0.1,
-    description: "Default target velocity used for grasping (meters/second)",
-    validation: {
-      gt_eq: [ 0.0 ]
-    },
-  }
   allow_stalling: {
     type: bool,
     description: "Allow stalling will make the action server return success if the gripper stalls when moving to the goal",
@@ -48,17 +32,33 @@ antipodal_gripper_action_controller:
     type: double,
     description: "stall timeout",
     default_value: 1.0,
-    validation: { 
-       gt_eq: [ 0.0 ] 
+    validation: {
+       gt_eq: [ 0.0 ]
      },
   }
-  configure_max_effort_interface: {
-    type: bool,
-    description: "Controller will claim the {joint}/gripper_effort interface if true.",
-    default_value: false,
+  max_effort_interface: {
+    type: string,
+    description: "Controller will claim the specified effort interface, e.g. robotiq_85_left_knuckle_joint/max_effort_interface.",
+    default_value: "",
   }
-  configure_max_velocity_interface: {
-    type: bool,
-    description: "Controller will claim the {joint}/gripper_speed interface if true.",
-    default_value: false,
+  max_effort: {
+    type: double,
+    default_value: 10.0,
+    description: "Default effort used for grasping (Newtons)",
+    validation: {
+      gt_eq: [ 0.0 ]
+    },
+  }
+  max_velocity_interface: {
+    type: string,
+    description: "Controller will claim the speed specified interface, e.g. robotiq_85_left_knuckle_joint/max_effort_interface.",
+    default_value: "",
+  }
+  max_velocity: {
+    type: double,
+    default_value: 0.1,
+    description: "Default target velocity used for grasping (meters/second)",
+    validation: {
+      gt_eq: [ 0.0 ]
+    },
   }
