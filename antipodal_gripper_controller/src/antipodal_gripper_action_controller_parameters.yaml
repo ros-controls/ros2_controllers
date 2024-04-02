@@ -48,6 +48,9 @@ antipodal_gripper_action_controller:
     type: double,
     description: "stall timeout",
     default_value: 1.0,
+    validation: { 
+       gt_eq: [ 0.0 ] 
+     },
   }
   configure_max_effort_interface: {
     type: bool,
