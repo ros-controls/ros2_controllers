@@ -1644,8 +1644,13 @@ bool JointTrajectoryController::set_scaling_factor(
   {
     if (get_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
     {
-      // TODO(Felix): Use proper adressing here.
-      command_interfaces_.back().set_value(static_cast<double>(req->scaling_factor));
+      for (auto & interface : command_interfaces_)
+      {
+        if (interface.get_name() == params_.speed_scaling_command_interface_name)
+        {
+          interface.set_value(static_cast<double>(req->scaling_factor));
+        }
+      }
     }
   }
   resp->success = true;
