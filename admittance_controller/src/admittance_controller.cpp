@@ -279,6 +279,12 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
   force_torque_sensor_ = std::make_unique<semantic_components::ForceTorqueSensor>(
     semantic_components::ForceTorqueSensor(admittance_->parameters_.ft_sensor.name));
 
+  // The AdmittanceRule / kinematics_interface::KinematicsInterfaceKDL requires
+  // the robot_description as a parameter. The controller manager stores the
+  // robot description in the urdf_ variable.
+  get_node()->declare_parameter("robot_description", rclcpp::PARAMETER_STRING);
+  get_node()->set_parameter(rclcpp::Parameter("robot_description", urdf_));
+
   // configure admittance rule
   if (admittance_->configure(get_node(), num_joints_) == controller_interface::return_type::ERROR)
   {
