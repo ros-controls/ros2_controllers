@@ -125,11 +125,8 @@ joint_trajectory_controller:
       angle_wraparound: {
         type: bool,
         default_value: false,
-        description: 'For joints that wrap around (without end stop, ie. are continuous),
-        where the shortest rotation to the target position is the desired motion.
-        If true, the position error :math:`e = normalize(s_d - s)` is normalized between :math:`-\pi, \pi`.
-        Otherwise  :math:`e = s_d - s` is used, with the desired position :math:`s_d` and the measured
-        position :math:`s` from the state interface.'
+        description: "[deprecated] For joints that wrap around (ie. are continuous).
+          Normalizes position-error to -pi to pi."
       }
   constraints:
     stopped_velocity_tolerance: {

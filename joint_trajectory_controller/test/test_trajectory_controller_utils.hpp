@@ -215,9 +215,10 @@ public:
   }
 
   void SetUpTrajectoryController(
-    rclcpp::Executor & executor, const std::vector<rclcpp::Parameter> & parameters = {})
+    rclcpp::Executor & executor, const std::vector<rclcpp::Parameter> & parameters = {},
+    const std::string & urdf = "")
   {
-    auto ret = SetUpTrajectoryControllerLocal(parameters);
+    auto ret = SetUpTrajectoryControllerLocal(parameters, urdf);
     if (ret != controller_interface::return_type::OK)
     {
       FAIL();
@@ -226,7 +227,7 @@ public:
   }
 
   controller_interface::return_type SetUpTrajectoryControllerLocal(
-    const std::vector<rclcpp::Parameter> & parameters = {})
+    const std::vector<rclcpp::Parameter> & parameters = {}, const std::string & urdf = "")
   {
     traj_controller_ = std::make_shared<TestableJointTrajectoryController>();
 
@@ -241,11 +242,10 @@ public:
     traj_controller_->set_node_options(node_options);
 
     return traj_controller_->init(
-      controller_name_, "", 0, "", traj_controller_->define_custom_node_options());
+      controller_name_, urdf, 0, "", traj_controller_->define_custom_node_options());
   }
 
-  void SetPidParameters(
-    double p_value = 0.0, double ff_value = 1.0, bool angle_wraparound_value = false)
+  void SetPidParameters(double p_value = 0.0, double ff_value = 1.0)
   {
     traj_controller_->trigger_declare_parameters();
     auto node = traj_controller_->get_node();
@@ -258,27 +258,24 @@ public:
       const rclcpp::Parameter k_d(prefix + ".d", 0.0);
       const rclcpp::Parameter i_clamp(prefix + ".i_clamp", 0.0);
       const rclcpp::Parameter ff_velocity_scale(prefix + ".ff_velocity_scale", ff_value);
-      const rclcpp::Parameter angle_wraparound(
-        prefix + ".angle_wraparound", angle_wraparound_value);
-      node->set_parameters({k_p, k_i, k_d, i_clamp, ff_velocity_scale, angle_wraparound});
+      node->set_parameters({k_p, k_i, k_d, i_clamp, ff_velocity_scale});
     }
   }
 
   void SetUpAndActivateTrajectoryController(
     rclcpp::Executor & executor, const std::vector<rclcpp::Parameter> & parameters = {},
     bool separate_cmd_and_state_values = false, double k_p = 0.0, double ff = 1.0,
-    bool angle_wraparound = false,
     const std::vector<double> initial_pos_joints = INITIAL_POS_JOINTS,
     const std::vector<double> initial_vel_joints = INITIAL_VEL_JOINTS,
     const std::vector<double> initial_acc_joints = INITIAL_ACC_JOINTS,
-    const std::vector<double> initial_eff_joints = INITIAL_EFF_JOINTS)
+    const std::vector<double> initial_eff_joints = INITIAL_EFF_JOINTS,
+    const std::string & urdf = "")
   {
     auto has_nonzero_vel_param =
       std::find_if(
-        parameters.begin(), parameters.end(),
-        [](const rclcpp::Parameter & param) {
-          return param.get_name() == "allow_nonzero_velocity_at_trajectory_end";
-        }) != parameters.end();
+        parameters.begin(), parameters.end(), [](const rclcpp::Parameter & param)
+        { return param.get_name() == "allow_nonzero_velocity_at_trajectory_end"; }) !=
+      parameters.end();
 
     std::vector<rclcpp::Parameter> parameters_local = parameters;
     if (!has_nonzero_vel_param)
@@ -287,10 +284,10 @@ public:
       parameters_local.emplace_back("allow_nonzero_velocity_at_trajectory_end", true);
     }
     // read-only parameters have to be set before init -> won't be read otherwise
-    SetUpTrajectoryController(executor, parameters_local);
+    SetUpTrajectoryController(executor, parameters_local, urdf);
 
     // set pid parameters before configure
-    SetPidParameters(k_p, ff, angle_wraparound);
+    SetPidParameters(k_p, ff);
     traj_controller_->get_node()->configure();
 
     ActivateTrajectoryController(
