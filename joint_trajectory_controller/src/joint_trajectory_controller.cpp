@@ -910,15 +910,28 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     std::string(get_node()->get_name()) + "/query_state",
     std::bind(&JointTrajectoryController::query_state_service, this, _1, _2));
 
-  set_scaling_factor_srv_ = get_node()->create_service<control_msgs::srv::SetScalingFactor>(
-    "~/set_scaling_factor", std::bind(
-                              &JointTrajectoryController::set_scaling_factor, this,
-                              std::placeholders::_1, std::placeholders::_2));
+  if (
+    !has_velocity_command_interface_ && !has_acceleration_command_interface_ &&
+    !has_effort_command_interface_)
+  {
+    set_scaling_factor_srv_ = get_node()->create_service<control_msgs::srv::SetScalingFactor>(
+      "~/set_scaling_factor", std::bind(
+                                &JointTrajectoryController::set_scaling_factor, this,
+                                std::placeholders::_1, std::placeholders::_2));
+    RCLCPP_INFO(
+      logger, "Setting initial scaling factor to %2f", params_.scaling_factor_initial_default);
+    scaling_factor_rt_buff_.writeFromNonRT(params_.scaling_factor_initial_default);
+  }
+  else
+  {
+    RCLCPP_WARN(
+      logger,
+      "Speed scaling is currently only supported for position interfaces. If you want to make use "
+      "of speed scaling, please only use a position interface when configuring this controller.");
+    scaling_factor_rt_buff_.writeFromNonRT(1.0);
+  }
 
   // set scaling factor to low value default
-  RCLCPP_INFO(
-    logger, "Setting initial scaling factor to %2f", params_.scaling_factor_initial_default);
-  scaling_factor_rt_buff_.writeFromNonRT(params_.scaling_factor_initial_default);
 
   return CallbackReturn::SUCCESS;
 }
