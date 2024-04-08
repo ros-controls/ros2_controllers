@@ -14,14 +14,15 @@
 
 /// \author Sachin Chitta, Adolfo Rodriguez Tsouroukdissian, Stu Glaser
 
-#ifndef PARALLEL_GRIPPER_CONTROLLER__GRIPPER_ACTION_CONTROLLER_IMPL_HPP_
-#define PARALLEL_GRIPPER_CONTROLLER__GRIPPER_ACTION_CONTROLLER_IMPL_HPP_
+#ifndef PARALLEL_GRIPPER_CONTROLLER__PARALLEL_GRIPPER_ACTION_CONTROLLER_IMPL_HPP_
+#define PARALLEL_GRIPPER_CONTROLLER__PARALLEL_GRIPPER_ACTION_CONTROLLER_IMPL_HPP_
 
-#include "parallel_gripper_controller/parallel_gripper_action_controller.hpp"
-
-#include <hardware_interface/types/hardware_interface_type_values.hpp>
 #include <memory>
 #include <string>
+#include <vector>
+
+#include <hardware_interface/types/hardware_interface_type_values.hpp>
+#include "parallel_gripper_controller/parallel_gripper_action_controller.hpp"
 
 namespace parallel_gripper_action_controller
 {
@@ -395,4 +396,4 @@ GripperActionController::GripperActionController()
 
 }  // namespace parallel_gripper_action_controller
 
-#endif  // PARALLEL_GRIPPER_CONTROLLER__GRIPPER_ACTION_CONTROLLER_IMPL_HPP_
+#endif  // PARALLEL_GRIPPER_CONTROLLER__PARALLEL_GRIPPER_ACTION_CONTROLLER_IMPL_HPP_

@@ -9,8 +9,8 @@ repositories:
     version: master
   control_msgs:
     type: git
-    url: https://github.com/ros-controls/control_msgs.git
-    version: master
+    url: https://github.com/pac48/control_msgs.git
+    version: pr-add-gripper-velocity-target-main
   control_toolbox:
     type: git
     url: https://github.com/ros-controls/control_toolbox.git

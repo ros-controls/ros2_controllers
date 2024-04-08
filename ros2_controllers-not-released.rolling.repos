@@ -3,7 +3,3 @@ repositories:
     type: git
     url: https://github.com/picknikrobotics/generate_parameter_library.git
     version: main
-  control_msgs:
-    type: git
-    url: https://github.com/pac48/control_msgs.git
-    version: pr-add-gripper-velocity-target-main

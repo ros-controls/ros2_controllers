@@ -21,9 +21,9 @@
 
 #include "gmock/gmock.h"
 
-#include "parallel_gripper_controller/parallel_gripper_action_controller.hpp"
 #include "hardware_interface/handle.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
+#include "parallel_gripper_controller/parallel_gripper_action_controller.hpp"
 
 namespace
 {

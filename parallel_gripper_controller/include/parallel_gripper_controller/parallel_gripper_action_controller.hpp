@@ -14,8 +14,8 @@
 
 /// \author Sachin Chitta, Adolfo Rodriguez Tsouroukdissian
 
-#ifndef PARALLEL_GRIPPER_CONTROLLER__GRIPPER_ACTION_CONTROLLER_HPP_
-#define PARALLEL_GRIPPER_CONTROLLER__GRIPPER_ACTION_CONTROLLER_HPP_
+#ifndef PARALLEL_GRIPPER_CONTROLLER__PARALLEL_GRIPPER_ACTION_CONTROLLER_HPP_
+#define PARALLEL_GRIPPER_CONTROLLER__PARALLEL_GRIPPER_ACTION_CONTROLLER_HPP_
 
 // C++ standard
 #include <cassert>
@@ -33,10 +33,10 @@
 #include "rclcpp_action/create_server.hpp"
 
 // ros_controls
-#include "parallel_gripper_controller/visibility_control.hpp"
 #include "controller_interface/controller_interface.hpp"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
+#include "parallel_gripper_controller/visibility_control.hpp"
 #include "realtime_tools/realtime_buffer.h"
 #include "realtime_tools/realtime_server_goal_handle.h"
 
@@ -171,4 +171,4 @@ protected:
 
 #include "parallel_gripper_controller/parallel_gripper_action_controller_impl.hpp"
 
-#endif  // PARALLEL_GRIPPER_CONTROLLER__GRIPPER_ACTION_CONTROLLER_HPP_
+#endif  // PARALLEL_GRIPPER_CONTROLLER__PARALLEL_GRIPPER_ACTION_CONTROLLER_HPP_
