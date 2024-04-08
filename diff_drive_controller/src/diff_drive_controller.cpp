@@ -379,7 +379,7 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
     }
     if (tf_prefix.front() == '/')
     {
-      tf_prefix.erase(0,1);
+      tf_prefix.erase(0, 1);
     }
   }
 
