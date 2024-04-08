@@ -25,7 +25,7 @@ foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
 endforeach()
 
 generate_parameter_library(parallel_gripper_action_controller_parameters
-  src/parallel_gripper_action_controller_parameters.yaml
+  src/gripper_action_controller_parameters.yaml
 )
 
 add_library(parallel_gripper_action_controller SHARED
