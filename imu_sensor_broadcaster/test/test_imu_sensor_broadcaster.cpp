@@ -74,7 +74,8 @@ void IMUSensorBroadcasterTest::SetUpIMUBroadcaster(const std::string & ns)
   imu_broadcaster_->assign_interfaces({}, std::move(state_ifs));
 }
 
-void IMUSensorBroadcasterTest::subscribe_and_get_message(sensor_msgs::msg::Imu & imu_msg, const std::string & ns)
+void IMUSensorBroadcasterTest::subscribe_and_get_message(
+  sensor_msgs::msg::Imu & imu_msg, const std::string & ns)
 {
   // create a new subscriber
   rclcpp::Node test_subscription_node("test_subscription_node", ns);
