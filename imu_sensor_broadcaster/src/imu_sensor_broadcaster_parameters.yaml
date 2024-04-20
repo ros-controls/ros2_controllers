@@ -5,17 +5,19 @@ imu_sensor_broadcaster:
     description: "Defines sensor name used as prefix for its interfaces.
     Interface names are: ``<sensor_name>/orientation.x, ..., <sensor_name>/angular_velocity.x, ...,
     <sensor_name>/linear_acceleration.x.``",
-    validation: {
-      not_empty<>: null
-    }
+    # FIXME: Currently does not work with namespace
+    # validation: {
+    #   not_empty<>: null
+    # }
   }
   frame_id: {
     type: string,
     default_value: "",
     description: "Sensor's frame_id in which values are published.",
-    validation: {
-      not_empty<>: null
-    }
+    # FIXME: Currently does not work with namespace
+    # validation: {
+    #   not_empty<>: null
+    # }
   }
   static_covariance_orientation: {
     type: double_array,
@@ -40,4 +42,14 @@ imu_sensor_broadcaster:
     validation: {
       fixed_size<>: [9],
     }
+  }
+  tf_frame_prefix_enable: {
+    type: bool,
+    default_value: true,
+    description:  "Enables or disables appending tf_prefix to tf frame id's.",
+  }
+  tf_frame_prefix: {
+    type: string,
+    default_value: "",
+    description:  "(optional) Prefix to be appended to the tf frames, will be added to odom_id and base_frame_id before publishing. If the parameter is empty, controller's namespace will be used.",
   }

@@ -396,22 +396,18 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   std::string tf_prefix = "";
   if (params_.tf_frame_prefix_enable)
   {
-    if (params_.tf_frame_prefix != "")
+    if (!params_.tf_frame_prefix.empty())
     {
       tf_prefix = params_.tf_frame_prefix;
     }
     else
     {
       tf_prefix = std::string(get_node()->get_namespace());
-    }
-
-    if (tf_prefix == "/")
-    {
-      tf_prefix = "";
-    }
-    else
-    {
-      tf_prefix = tf_prefix + "/";
+      tf_prefix.erase(0, 1);
+      if (!tf_prefix.empty())
+      {
+        tf_prefix = tf_prefix + '/';
+      }
     }
   }
 

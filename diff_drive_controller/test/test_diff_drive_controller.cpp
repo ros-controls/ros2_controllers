@@ -319,8 +319,8 @@ TEST_F(TestDiffDriveController, configure_succeeds_tf_test_prefix_true_no_namesp
 
   /* tf_frame_prefix_enable is true and frame_prefix is not blank so should be appended to the frame
    * id's */
-  ASSERT_EQ(test_odom_frame_id, frame_prefix + "/" + odom_id);
-  ASSERT_EQ(test_base_frame_id, frame_prefix + "/" + base_link_id);
+  ASSERT_EQ(test_odom_frame_id, frame_prefix + odom_id);
+  ASSERT_EQ(test_base_frame_id, frame_prefix + base_link_id);
 }
 
 TEST_F(TestDiffDriveController, configure_succeeds_tf_blank_prefix_true_no_namespace)
@@ -425,13 +425,13 @@ TEST_F(TestDiffDriveController, configure_succeeds_tf_test_prefix_true_set_names
 
   /* tf_frame_prefix_enable is true and frame_prefix is not blank so should be appended to the frame
    * id's instead of the namespace*/
-  ASSERT_EQ(test_odom_frame_id, frame_prefix + "/" + odom_id);
-  ASSERT_EQ(test_base_frame_id, frame_prefix + "/" + base_link_id);
+  ASSERT_EQ(test_odom_frame_id, frame_prefix + odom_id);
+  ASSERT_EQ(test_base_frame_id, frame_prefix + base_link_id);
 }
 
 TEST_F(TestDiffDriveController, configure_succeeds_tf_blank_prefix_true_set_namespace)
 {
-  std::string test_namespace = "/test_namespace";
+  std::string test_namespace = "test_namespace";
 
   const auto ret = controller_->init(controller_name, test_namespace);
   ASSERT_EQ(ret, controller_interface::return_type::OK);

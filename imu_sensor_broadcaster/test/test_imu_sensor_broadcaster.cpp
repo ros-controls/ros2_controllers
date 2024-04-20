@@ -54,9 +54,9 @@ void IMUSensorBroadcasterTest::SetUp()
 
 void IMUSensorBroadcasterTest::TearDown() { imu_broadcaster_.reset(nullptr); }
 
-void IMUSensorBroadcasterTest::SetUpIMUBroadcaster()
+void IMUSensorBroadcasterTest::SetUpIMUBroadcaster(const std::string & ns)
 {
-  const auto result = imu_broadcaster_->init("test_imu_sensor_broadcaster");
+  const auto result = imu_broadcaster_->init("test_imu_sensor_broadcaster", ns);
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
   std::vector<LoanedStateInterface> state_ifs;
@@ -74,13 +74,13 @@ void IMUSensorBroadcasterTest::SetUpIMUBroadcaster()
   imu_broadcaster_->assign_interfaces({}, std::move(state_ifs));
 }
 
-void IMUSensorBroadcasterTest::subscribe_and_get_message(sensor_msgs::msg::Imu & imu_msg)
+void IMUSensorBroadcasterTest::subscribe_and_get_message(sensor_msgs::msg::Imu & imu_msg, const std::string & ns)
 {
   // create a new subscriber
-  rclcpp::Node test_subscription_node("test_subscription_node");
+  rclcpp::Node test_subscription_node("test_subscription_node", ns);
   auto subs_callback = [&](const sensor_msgs::msg::Imu::SharedPtr) {};
   auto subscription = test_subscription_node.create_subscription<sensor_msgs::msg::Imu>(
-    "/test_imu_sensor_broadcaster/imu", 10, subs_callback);
+    "test_imu_sensor_broadcaster/imu", 10, subs_callback);
 
   // call update to publish the test value
   // since update doesn't guarantee a published message, republish until received
@@ -206,6 +206,154 @@ TEST_F(IMUSensorBroadcasterTest, SensorName_Publish_Success)
     EXPECT_EQ(imu_msg.angular_velocity_covariance[i], 0.0);
     EXPECT_EQ(imu_msg.linear_acceleration_covariance[i], 0.0);
   }
+}
+
+TEST_F(IMUSensorBroadcasterTest, NoPrefixNoNamespace)
+{
+  SetUpIMUBroadcaster();
+
+  std::string frame_prefix = "test_prefix";
+
+  // set the params 'sensor_name' and 'frame_id'
+  imu_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
+  imu_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
+
+  imu_broadcaster_->get_node()->set_parameter({"tf_frame_prefix_enable", false});
+  imu_broadcaster_->get_node()->set_parameter({"tf_frame_prefix", frame_prefix});
+
+  ASSERT_EQ(imu_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(imu_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  sensor_msgs::msg::Imu imu_msg;
+  subscribe_and_get_message(imu_msg);
+
+  EXPECT_EQ(imu_msg.header.frame_id, frame_id_);
+}
+
+TEST_F(IMUSensorBroadcasterTest, PrefixNoNamespace)
+{
+  SetUpIMUBroadcaster();
+
+  std::string frame_prefix = "test_prefix";
+
+  // set the params 'sensor_name' and 'frame_id'
+  imu_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
+  imu_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
+
+  imu_broadcaster_->get_node()->set_parameter({"tf_frame_prefix_enable", true});
+  imu_broadcaster_->get_node()->set_parameter({"tf_frame_prefix", frame_prefix});
+
+  ASSERT_EQ(imu_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(imu_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  sensor_msgs::msg::Imu imu_msg;
+  subscribe_and_get_message(imu_msg);
+
+  EXPECT_EQ(imu_msg.header.frame_id, frame_prefix + frame_id_);
+}
+
+TEST_F(IMUSensorBroadcasterTest, BlankPrefixNoNamespace)
+{
+  SetUpIMUBroadcaster();
+
+  std::string frame_prefix = "";
+
+  // set the params 'sensor_name' and 'frame_id'
+  imu_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
+  imu_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
+
+  imu_broadcaster_->get_node()->set_parameter({"tf_frame_prefix_enable", true});
+  imu_broadcaster_->get_node()->set_parameter({"tf_frame_prefix", frame_prefix});
+
+  ASSERT_EQ(imu_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(imu_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  sensor_msgs::msg::Imu imu_msg;
+  subscribe_and_get_message(imu_msg);
+
+  EXPECT_EQ(imu_msg.header.frame_id, frame_id_);
+}
+
+TEST_F(IMUSensorBroadcasterTest, NoPrefixWithNamespace)
+{
+  std::string test_namespace = "test_namespace";
+
+  SetUpIMUBroadcaster(test_namespace);
+
+  std::string frame_prefix = "test_prefix";
+
+  // set the params 'sensor_name' and 'frame_id'
+  imu_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
+  imu_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
+
+  imu_broadcaster_->get_node()->set_parameter({"tf_frame_prefix_enable", false});
+  imu_broadcaster_->get_node()->set_parameter({"tf_frame_prefix", frame_prefix});
+
+  ASSERT_EQ(imu_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(imu_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  sensor_msgs::msg::Imu imu_msg;
+  subscribe_and_get_message(imu_msg, test_namespace);
+
+  EXPECT_EQ(imu_msg.header.frame_id, frame_id_);
+}
+
+TEST_F(IMUSensorBroadcasterTest, PrefixWithNamespace)
+{
+  std::string test_namespace = "test_namespace";
+
+  SetUpIMUBroadcaster(test_namespace);
+
+  std::string frame_prefix = "test_prefix";
+
+  // set the params 'sensor_name' and 'frame_id'
+  imu_broadcaster_->get_node()->set_parameter(
+    rclcpp::Parameter("sensor_name", rclcpp::ParameterValue(sensor_name_)));
+  imu_broadcaster_->get_node()->set_parameter(
+    rclcpp::Parameter("sensor_name", rclcpp::ParameterValue(sensor_name_)));
+  imu_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
+
+  imu_broadcaster_->get_node()->set_parameter(
+    rclcpp::Parameter("tf_frame_prefix_enable", rclcpp::ParameterValue(true)));
+  imu_broadcaster_->get_node()->set_parameter(
+    rclcpp::Parameter("tf_frame_prefix", rclcpp::ParameterValue(frame_prefix)));
+
+  ASSERT_EQ(imu_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(imu_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  sensor_msgs::msg::Imu imu_msg;
+  subscribe_and_get_message(imu_msg, test_namespace);
+
+  EXPECT_EQ(imu_msg.header.frame_id, frame_prefix + frame_id_);
+}
+
+TEST_F(IMUSensorBroadcasterTest, BlankPrefixWithNamespace)
+{
+  std::string test_namespace = "test_namespace";
+
+  SetUpIMUBroadcaster(test_namespace);
+
+  std::string frame_prefix = "";
+
+  // set the params 'sensor_name' and 'frame_id'
+  imu_broadcaster_->get_node()->set_parameter(
+    rclcpp::Parameter("sensor_name", rclcpp::ParameterValue(sensor_name_)));
+  imu_broadcaster_->get_node()->set_parameter(
+    rclcpp::Parameter("sensor_name", rclcpp::ParameterValue(sensor_name_)));
+  imu_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
+
+  imu_broadcaster_->get_node()->set_parameter(
+    rclcpp::Parameter("tf_frame_prefix_enable", rclcpp::ParameterValue(true)));
+  imu_broadcaster_->get_node()->set_parameter(
+    rclcpp::Parameter("tf_frame_prefix", rclcpp::ParameterValue(frame_prefix)));
+
+  ASSERT_EQ(imu_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(imu_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  sensor_msgs::msg::Imu imu_msg;
+  subscribe_and_get_message(imu_msg, test_namespace);
+
+  EXPECT_EQ(imu_msg.header.frame_id, test_namespace + "/" + frame_id_);
 }
 
 int main(int argc, char ** argv)
