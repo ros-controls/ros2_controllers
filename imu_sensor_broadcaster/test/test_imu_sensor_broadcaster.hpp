@@ -82,4 +82,10 @@ protected:
   void subscribe_and_get_message(sensor_msgs::msg::Imu & imu_msg, const std::string & ns = "");
 };
 
+struct TestPrefixParams {
+    std::string tf_prefix;
+    std::string ns;
+    std::string result_prefix;
+};
+
 #endif  // TEST_IMU_SENSOR_BROADCASTER_HPP_
