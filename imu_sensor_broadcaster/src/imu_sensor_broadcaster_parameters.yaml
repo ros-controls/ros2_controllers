@@ -51,5 +51,5 @@ imu_sensor_broadcaster:
   tf_frame_prefix: {
     type: string,
     default_value: "",
-    description:  "(optional) Prefix to be appended to the tf frames, will be added to odom_id and base_frame_id before publishing. If the parameter is empty, controller's namespace will be used.",
+    description:  "(optional) Prefix to be appended to the tf frames, will be added to the sensor's frame_id before publishing. If the parameter is empty, controller's namespace will be used.",
   }
