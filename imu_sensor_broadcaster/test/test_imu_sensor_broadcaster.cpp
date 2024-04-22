@@ -209,7 +209,7 @@ TEST_F(IMUSensorBroadcasterTest, SensorName_Publish_Success)
   }
 }
 
-TEST_F(IMUSensorBroadcasterTest, TfPrefixNamespaceTests) {
+TEST_F(IMUSensorBroadcasterTest, TfPrefixNamespaceParams) {
     const std::vector<TestPrefixParams> test_prefix_matrix = {
         {"", "", ""},
         {"/", "", ""},
@@ -221,17 +221,14 @@ TEST_F(IMUSensorBroadcasterTest, TfPrefixNamespaceTests) {
         {"test_prefix", "test_namespace", "test_prefix"},
     };
 
-    int test_number = 0; // Counter for test number
     for (const auto& params : test_prefix_matrix) {
-        ++test_number; // Increment the test number
-        const std::string& tf_prefix = params.tf_prefix;
         const std::string& test_namespace = params.ns;
 
         SetUpIMUBroadcaster(test_namespace);
 
         imu_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
         imu_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
-        imu_broadcaster_->get_node()->set_parameter({"tf_frame_prefix", tf_prefix});
+        imu_broadcaster_->get_node()->set_parameter({"tf_frame_prefix", params.tf_prefix});
 
         ASSERT_EQ(imu_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
         ASSERT_EQ(imu_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
@@ -239,7 +236,6 @@ TEST_F(IMUSensorBroadcasterTest, TfPrefixNamespaceTests) {
         sensor_msgs::msg::Imu imu_msg;
         subscribe_and_get_message(imu_msg, test_namespace);
 
-        std::cout << "Test number: " << test_number;
         EXPECT_EQ(imu_msg.header.frame_id, params.result_prefix + frame_id_);
     }
 }
