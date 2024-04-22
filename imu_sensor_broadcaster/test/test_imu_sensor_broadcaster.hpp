@@ -77,15 +77,15 @@ protected:
     sensor_name_, "linear_acceleration.z", &sensor_values_[9]};
 
   std::unique_ptr<FriendIMUSensorBroadcaster> imu_broadcaster_;
-  std::string ns_;
 
   void subscribe_and_get_message(sensor_msgs::msg::Imu & imu_msg, const std::string & ns = "");
 };
 
-struct TestPrefixParams {
-    std::string tf_prefix;
-    std::string ns;
-    std::string result_prefix;
+struct TestPrefixParams
+{
+  std::string tf_prefix;
+  std::string ns;
+  std::string result_prefix;
 };
 
 #endif  // TEST_IMU_SENSOR_BROADCASTER_HPP_

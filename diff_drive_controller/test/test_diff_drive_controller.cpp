@@ -257,46 +257,48 @@ TEST_F(TestDiffDriveController, configure_succeeds_when_wheels_are_specified)
   EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 }
 
-TEST_F(TestDiffDriveController, TfPrefixNamespaceParams) {
-    const std::vector<TestPrefixParams> test_prefix_matrix = {
-        {"", "", ""},
-        {"/", "", ""},
-        {"", "/", ""},
-        {"test_prefix", "", "test_prefix"},
-        {"/test_prefix", "", "test_prefix"},
-        {"", "test_namespace", "test_namespace/"},
-        {"", "/test_namespace", "test_namespace/"},
-        {"test_prefix", "test_namespace", "test_prefix"},
-    };
+TEST_F(TestDiffDriveController, TfPrefixNamespaceParams)
+{
+  const std::vector<TestPrefixParams> test_prefix_matrix = {
+    {"", "", ""},
+    {"/", "", ""},
+    {"", "/", ""},
+    {"test_prefix", "", "test_prefix"},
+    {"/test_prefix", "", "test_prefix"},
+    {"", "test_namespace", "test_namespace/"},
+    {"", "/test_namespace", "test_namespace/"},
+    {"test_prefix", "test_namespace", "test_prefix"},
+  };
 
-    for (const auto& params : test_prefix_matrix) {
-        const auto ret = controller_->init(controller_name, params.ns);
-        ASSERT_EQ(ret, controller_interface::return_type::OK);
+  for (const auto & params : test_prefix_matrix)
+  {
+    const auto ret = controller_->init(controller_name, params.ns);
+    ASSERT_EQ(ret, controller_interface::return_type::OK);
 
-        std::string odom_id = "odom";
-        std::string base_link_id = "base_link";
+    std::string odom_id = "odom";
+    std::string base_link_id = "base_link";
 
-        controller_->get_node()->set_parameter(
-          rclcpp::Parameter("left_wheel_names", rclcpp::ParameterValue(left_wheel_names)));
-        controller_->get_node()->set_parameter(
-          rclcpp::Parameter("right_wheel_names", rclcpp::ParameterValue(right_wheel_names)));
+    controller_->get_node()->set_parameter(
+      rclcpp::Parameter("left_wheel_names", rclcpp::ParameterValue(left_wheel_names)));
+    controller_->get_node()->set_parameter(
+      rclcpp::Parameter("right_wheel_names", rclcpp::ParameterValue(right_wheel_names)));
 
-        controller_->get_node()->set_parameter(
-          rclcpp::Parameter("tf_frame_prefix", rclcpp::ParameterValue(params.tf_prefix)));
-        controller_->get_node()->set_parameter(
-          rclcpp::Parameter("odom_frame_id", rclcpp::ParameterValue(odom_id)));
-        controller_->get_node()->set_parameter(
-          rclcpp::Parameter("base_frame_id", rclcpp::ParameterValue(base_link_id)));
+    controller_->get_node()->set_parameter(
+      rclcpp::Parameter("tf_frame_prefix", rclcpp::ParameterValue(params.tf_prefix)));
+    controller_->get_node()->set_parameter(
+      rclcpp::Parameter("odom_frame_id", rclcpp::ParameterValue(odom_id)));
+    controller_->get_node()->set_parameter(
+      rclcpp::Parameter("base_frame_id", rclcpp::ParameterValue(base_link_id)));
 
-        ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+    ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
-        auto odometry_message = controller_->get_rt_odom_publisher()->msg_;
-        std::string test_odom_frame_id = odometry_message.header.frame_id;
-        std::string test_base_frame_id = odometry_message.child_frame_id;
+    auto odometry_message = controller_->get_rt_odom_publisher()->msg_;
+    std::string test_odom_frame_id = odometry_message.header.frame_id;
+    std::string test_base_frame_id = odometry_message.child_frame_id;
 
-        ASSERT_EQ(test_odom_frame_id, params.result_prefix + odom_id);
-        ASSERT_EQ(test_base_frame_id, params.result_prefix + base_link_id);
-    }
+    ASSERT_EQ(test_odom_frame_id, params.result_prefix + odom_id);
+    ASSERT_EQ(test_base_frame_id, params.result_prefix + base_link_id);
+  }
 }
 
 TEST_F(TestDiffDriveController, activate_fails_without_resources_assigned)
