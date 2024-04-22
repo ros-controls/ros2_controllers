@@ -403,11 +403,14 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
     else
     {
       tf_prefix = std::string(get_node()->get_namespace());
-      tf_prefix.erase(0, 1);
-      if (!tf_prefix.empty())
+      if (tf_prefix != "/")
       {
-        tf_prefix = tf_prefix + '/';
+        tf_prefix += '/';
       }
+    }
+    if (tf_prefix.front() == '/')
+    {
+      tf_prefix.erase(0, 1);
     }
   }
 
