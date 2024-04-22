@@ -242,6 +242,56 @@ TEST_F(IMUSensorBroadcasterTest, TfPrefixNamespaceParams)
   }
 }
 
+// TEST_F(IMUSensorBroadcasterTest, SensorNameNamespaced_Configure_Success)
+// {
+//   const std::string & test_namespace = "test_namespace";
+//   SetUpIMUBroadcaster(test_namespace);
+
+//   imu_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
+//   imu_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
+//   imu_broadcaster_->get_node()->set_parameter({"use_namespace_as_sensor_name_prefix", true});
+
+//   ASSERT_EQ(imu_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+//   auto interface_names = imu_broadcaster_->imu_sensor_->get_state_interface_names();
+
+//   EXPECT_EQ(interface_names[0], test_namespace + "/" + imu_orientation_x_.get_name());
+//   EXPECT_EQ(interface_names[1], test_namespace + "/" + imu_orientation_y_.get_name());
+//   EXPECT_EQ(interface_names[2], test_namespace + "/" + imu_orientation_z_.get_name());
+//   EXPECT_EQ(interface_names[3], test_namespace + "/" + imu_orientation_w_.get_name());
+//   EXPECT_EQ(interface_names[4], test_namespace + "/" + imu_angular_velocity_x_.get_name());
+//   EXPECT_EQ(interface_names[5], test_namespace + "/" + imu_angular_velocity_y_.get_name());
+//   EXPECT_EQ(interface_names[6], test_namespace + "/" + imu_angular_velocity_z_.get_name());
+//   EXPECT_EQ(interface_names[7], test_namespace + "/" + imu_linear_acceleration_x_.get_name());
+//   EXPECT_EQ(interface_names[8], test_namespace + "/" + imu_linear_acceleration_y_.get_name());
+//   EXPECT_EQ(interface_names[9], test_namespace + "/" + imu_linear_acceleration_z_.get_name());
+// }
+
+// TEST_F(IMUSensorBroadcasterTest, SensorNameNamespaced_Configure_Fail)
+// {
+//   const std::string & test_namespace = "test_namespace";
+//   SetUpIMUBroadcaster(test_namespace);
+
+//   imu_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
+//   imu_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
+//   imu_broadcaster_->get_node()->set_parameter({"use_namespace_as_sensor_name_prefix", false});
+
+//   ASSERT_EQ(imu_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+//   auto interface_names = imu_broadcaster_->imu_sensor_->get_state_interface_names();
+
+//   EXPECT_EQ(interface_names[0], imu_orientation_x_.get_name());
+//   EXPECT_EQ(interface_names[1], imu_orientation_y_.get_name());
+//   EXPECT_EQ(interface_names[2], imu_orientation_z_.get_name());
+//   EXPECT_EQ(interface_names[3], imu_orientation_w_.get_name());
+//   EXPECT_EQ(interface_names[4], imu_angular_velocity_x_.get_name());
+//   EXPECT_EQ(interface_names[5], imu_angular_velocity_y_.get_name());
+//   EXPECT_EQ(interface_names[6], imu_angular_velocity_z_.get_name());
+//   EXPECT_EQ(interface_names[7], imu_linear_acceleration_x_.get_name());
+//   EXPECT_EQ(interface_names[8], imu_linear_acceleration_y_.get_name());
+//   EXPECT_EQ(interface_names[9], imu_linear_acceleration_z_.get_name());
+// }
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleMock(&argc, argv);
