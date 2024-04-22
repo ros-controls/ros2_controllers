@@ -62,6 +62,24 @@ controller_interface::CallbackReturn IMUSensorBroadcaster::on_configure(
     return CallbackReturn::ERROR;
   }
 
+  std::string tf_prefix = "";
+  if (!params_.tf_frame_prefix.empty())
+  {
+    tf_prefix = params_.tf_frame_prefix;
+  }
+  else
+  {
+    tf_prefix = std::string(get_node()->get_namespace());
+    if (tf_prefix != "/")
+    {
+      tf_prefix += '/';
+    }
+  }
+  if (tf_prefix.front() == '/')
+  {
+    tf_prefix.erase(0, 1);
+  }
+
   realtime_publisher_->lock();
   realtime_publisher_->msg_.header.frame_id = params_.frame_id;
   // convert double vector to fixed-size array in the message

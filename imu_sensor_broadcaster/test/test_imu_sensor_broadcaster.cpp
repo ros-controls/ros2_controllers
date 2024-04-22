@@ -74,7 +74,8 @@ void IMUSensorBroadcasterTest::SetUpIMUBroadcaster()
   imu_broadcaster_->assign_interfaces({}, std::move(state_ifs));
 }
 
-void IMUSensorBroadcasterTest::subscribe_and_get_message(sensor_msgs::msg::Imu & imu_msg)
+void IMUSensorBroadcasterTest::subscribe_and_get_message(
+  sensor_msgs::msg::Imu & imu_msg, const std::string & ns)
 {
   // create a new subscriber
   rclcpp::Node test_subscription_node("test_subscription_node");
@@ -205,6 +206,39 @@ TEST_F(IMUSensorBroadcasterTest, SensorName_Publish_Success)
     EXPECT_EQ(imu_msg.orientation_covariance[i], 0.0);
     EXPECT_EQ(imu_msg.angular_velocity_covariance[i], 0.0);
     EXPECT_EQ(imu_msg.linear_acceleration_covariance[i], 0.0);
+  }
+}
+
+TEST_F(IMUSensorBroadcasterTest, TfPrefixNamespaceParams)
+{
+  const std::vector<TestPrefixParams> test_prefix_matrix = {
+    {"", "", ""},
+    {"/", "", ""},
+    {"", "/", ""},
+    {"test_prefix", "", "test_prefix"},
+    {"/test_prefix", "", "test_prefix"},
+    {"", "test_namespace", "test_namespace/"},
+    {"", "/test_namespace", "test_namespace/"},
+    {"test_prefix", "test_namespace", "test_prefix"},
+  };
+
+  for (const auto & params : test_prefix_matrix)
+  {
+    const std::string & test_namespace = params.ns;
+
+    SetUpIMUBroadcaster(test_namespace);
+
+    imu_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
+    imu_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
+    imu_broadcaster_->get_node()->set_parameter({"tf_frame_prefix", params.tf_prefix});
+
+    ASSERT_EQ(imu_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+    ASSERT_EQ(imu_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+    sensor_msgs::msg::Imu imu_msg;
+    subscribe_and_get_message(imu_msg, test_namespace);
+
+    EXPECT_EQ(imu_msg.header.frame_id, params.result_prefix + frame_id_);
   }
 }
 
