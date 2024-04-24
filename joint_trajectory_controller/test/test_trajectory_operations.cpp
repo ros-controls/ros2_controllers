@@ -101,6 +101,14 @@ TEST_F(TrajectoryOperationsTest, invalid_message)
   traj_msg = good_traj_msg;
   traj_msg.joint_names = {"bad_name"};
   EXPECT_FALSE(validate_trajectory_msg(traj_msg, *logger_, clock_.now(), params_));
+  traj_msg = good_traj_msg;
+  traj_msg.joint_names = {"bad_name1", "bad_name2", "bad_name3"};
+  EXPECT_FALSE(validate_trajectory_msg(traj_msg, *logger_, clock_.now(), params_));
+
+  // Empty joint names
+  traj_msg = good_traj_msg;
+  traj_msg.joint_names.clear();
+  EXPECT_FALSE(validate_trajectory_msg(traj_msg, *logger_, clock_.now(), params_));
 
   // empty message
   traj_msg = good_traj_msg;
