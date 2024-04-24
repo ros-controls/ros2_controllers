@@ -1103,7 +1103,7 @@ void JointTrajectoryController::publish_state(
 void JointTrajectoryController::topic_callback(
   const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg)
 {
-  if (!validate_trajectory_msg(*msg))
+  if (!validate_trajectory_msg(*msg, get_node()->get_logger(), get_node()->now(), params_))
   {
     return;
   }
@@ -1129,7 +1129,8 @@ rclcpp_action::GoalResponse JointTrajectoryController::goal_received_callback(
     return rclcpp_action::GoalResponse::REJECT;
   }
 
-  if (!validate_trajectory_msg(goal->trajectory))
+  if (!validate_trajectory_msg(
+        goal->trajectory, get_node()->get_logger(), get_node()->now(), params_))
   {
     return rclcpp_action::GoalResponse::REJECT;
   }
@@ -1328,157 +1329,6 @@ void JointTrajectoryController::sort_to_local_joint_order(
     trajectory_msg->points[index].effort =
       remap(trajectory_msg->points[index].effort, mapping_vector);
   }
-}
-
-bool JointTrajectoryController::validate_trajectory_point_field(
-  size_t joint_names_size, const std::vector<double> & vector_field,
-  const std::string & string_for_vector_field, size_t i, bool allow_empty) const
-{
-  if (allow_empty && vector_field.empty())
-  {
-    return true;
-  }
-  if (joint_names_size != vector_field.size())
-  {
-    RCLCPP_ERROR(
-      get_node()->get_logger(),
-      "Mismatch between joint_names size (%zu) and %s (%zu) at point #%zu.", joint_names_size,
-      string_for_vector_field.c_str(), vector_field.size(), i);
-    return false;
-  }
-  return true;
-}
-
-bool JointTrajectoryController::validate_trajectory_msg(
-  const trajectory_msgs::msg::JointTrajectory & trajectory) const
-{
-  // If partial joints goals are not allowed, goal should specify all controller joints
-  if (!params_.allow_partial_joints_goal)
-  {
-    if (trajectory.joint_names.size() != dof_)
-    {
-      RCLCPP_ERROR(
-        get_node()->get_logger(),
-        "Joints on incoming trajectory don't match the controller joints.");
-      return false;
-    }
-  }
-
-  if (trajectory.joint_names.empty())
-  {
-    RCLCPP_ERROR(get_node()->get_logger(), "Empty joint names on incoming trajectory.");
-    return false;
-  }
-
-  const auto trajectory_start_time = static_cast<rclcpp::Time>(trajectory.header.stamp);
-  // If the starting time it set to 0.0, it means the controller should start it now.
-  // Otherwise we check if the trajectory ends before the current time,
-  // in which case it can be ignored.
-  if (trajectory_start_time.seconds() != 0.0)
-  {
-    auto trajectory_end_time = trajectory_start_time;
-    for (const auto & p : trajectory.points)
-    {
-      trajectory_end_time += p.time_from_start;
-    }
-    if (trajectory_end_time < get_node()->now())
-    {
-      RCLCPP_ERROR(
-        get_node()->get_logger(),
-        "Received trajectory with non-zero start time (%f) that ends in the past (%f)",
-        trajectory_start_time.seconds(), trajectory_end_time.seconds());
-      return false;
-    }
-  }
-
-  for (size_t i = 0; i < trajectory.joint_names.size(); ++i)
-  {
-    const std::string & incoming_joint_name = trajectory.joint_names[i];
-
-    auto it = std::find(params_.joints.begin(), params_.joints.end(), incoming_joint_name);
-    if (it == params_.joints.end())
-    {
-      RCLCPP_ERROR(
-        get_node()->get_logger(), "Incoming joint %s doesn't match the controller's joints.",
-        incoming_joint_name.c_str());
-      return false;
-    }
-  }
-
-  if (trajectory.points.empty())
-  {
-    RCLCPP_ERROR(get_node()->get_logger(), "Empty trajectory received.");
-    return false;
-  }
-
-  if (!params_.allow_nonzero_velocity_at_trajectory_end)
-  {
-    for (size_t i = 0; i < trajectory.points.back().velocities.size(); ++i)
-    {
-      if (fabs(trajectory.points.back().velocities.at(i)) > std::numeric_limits<float>::epsilon())
-      {
-        RCLCPP_ERROR(
-          get_node()->get_logger(),
-          "Velocity of last trajectory point of joint %s is not zero: %.15f",
-          trajectory.joint_names.at(i).c_str(), trajectory.points.back().velocities.at(i));
-        return false;
-      }
-    }
-  }
-
-  rclcpp::Duration previous_traj_time(0ms);
-  for (size_t i = 0; i < trajectory.points.size(); ++i)
-  {
-    if ((i > 0) && (rclcpp::Duration(trajectory.points[i].time_from_start) <= previous_traj_time))
-    {
-      RCLCPP_ERROR(
-        get_node()->get_logger(),
-        "Time between points %zu and %zu is not strictly increasing, it is %f and %f respectively",
-        i - 1, i, previous_traj_time.seconds(),
-        rclcpp::Duration(trajectory.points[i].time_from_start).seconds());
-      return false;
-    }
-    previous_traj_time = trajectory.points[i].time_from_start;
-
-    const size_t joint_count = trajectory.joint_names.size();
-    const auto & points = trajectory.points;
-    // This currently supports only position, velocity and acceleration inputs
-    if (params_.allow_integration_in_goal_trajectories)
-    {
-      const bool all_empty = points[i].positions.empty() && points[i].velocities.empty() &&
-                             points[i].accelerations.empty();
-      const bool position_error =
-        !points[i].positions.empty() &&
-        !validate_trajectory_point_field(joint_count, points[i].positions, "positions", i, false);
-      const bool velocity_error =
-        !points[i].velocities.empty() &&
-        !validate_trajectory_point_field(joint_count, points[i].velocities, "velocities", i, false);
-      const bool acceleration_error =
-        !points[i].accelerations.empty() &&
-        !validate_trajectory_point_field(
-          joint_count, points[i].accelerations, "accelerations", i, false);
-      if (all_empty || position_error || velocity_error || acceleration_error)
-      {
-        return false;
-      }
-    }
-    else if (
-      !validate_trajectory_point_field(joint_count, points[i].positions, "positions", i, false) ||
-      !validate_trajectory_point_field(joint_count, points[i].velocities, "velocities", i, true) ||
-      !validate_trajectory_point_field(
-        joint_count, points[i].accelerations, "accelerations", i, true))
-    {
-      return false;
-    }
-    // reject effort entries
-    if (!points[i].effort.empty())
-    {
-      RCLCPP_ERROR(
-        get_node()->get_logger(), "Trajectories with effort fields are currently not supported.");
-      return false;
-    }
-  }
-  return true;
 }
 
 void JointTrajectoryController::add_new_trajectory_msg(
