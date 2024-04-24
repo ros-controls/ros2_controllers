@@ -18,6 +18,7 @@
 #include <chrono>
 #include <cmath>
 #include <limits>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -34,15 +35,88 @@ namespace joint_trajectory_controller
 {
 using namespace std::chrono_literals;  // NOLINT
 
-// // fill trajectory_msg so it matches joints controlled by this controller
-// // positions set to current position, velocities, accelerations and efforts to 0.0
-// JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-// void fill_partial_goal(
-//   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg) const;
-// // sorts the joints of the incoming message to our local order
-// JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-// void sort_to_local_joint_order(
-//   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg) const;
+/**
+ * \return The map between \p t1 indices (implicitly encoded in return vector indices) to \p t2
+ * indices. If \p t1 is <tt>"{C, B}"</tt> and \p t2 is <tt>"{A, B, C, D}"</tt>, the associated
+ * mapping vector is <tt>"{2, 1}"</tt>.
+ */
+template <class T>
+inline std::vector<size_t> mapping(const T & t1, const T & t2)
+{
+  // t1 must be a subset of t2
+  if (t1.size() > t2.size())
+  {
+    return std::vector<size_t>();
+  }
+
+  std::vector<size_t> mapping_vector(t1.size());  // Return value
+  for (auto t1_it = t1.begin(); t1_it != t1.end(); ++t1_it)
+  {
+    auto t2_it = std::find(t2.begin(), t2.end(), *t1_it);
+    if (t2.end() == t2_it)
+    {
+      return std::vector<size_t>();
+    }
+    else
+    {
+      const size_t t1_dist = std::distance(t1.begin(), t1_it);
+      const size_t t2_dist = std::distance(t2.begin(), t2_it);
+      mapping_vector[t1_dist] = t2_dist;
+    }
+  }
+  return mapping_vector;
+}
+
+// sorts the joints of the incoming message to our local order
+JOINT_TRAJECTORY_CONTROLLER_PUBLIC
+void sort_to_local_joint_order(
+  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg, rclcpp::Logger logger,
+  const Params & params)
+{
+  // rearrange all points in the trajectory message based on mapping
+  std::vector<size_t> mapping_vector = mapping(trajectory_msg->joint_names, params.joints);
+  auto remap = [logger, params](
+                 const std::vector<double> & to_remap,
+                 const std::vector<size_t> & mapping) -> std::vector<double>
+  {
+    if (to_remap.empty())
+    {
+      return to_remap;
+    }
+    if (to_remap.size() != mapping.size())
+    {
+      RCLCPP_WARN(logger, "Invalid input size (%zu) for sorting", to_remap.size());
+      return to_remap;
+    }
+    static std::vector<double> output(params.joints.size(), 0.0);
+    // Only resize if necessary since it's an expensive operation
+    if (output.size() != mapping.size())
+    {
+      output.resize(mapping.size(), 0.0);
+    }
+    for (size_t index = 0; index < mapping.size(); ++index)
+    {
+      auto map_index = mapping[index];
+      output[map_index] = to_remap[index];
+    }
+    return output;
+  };
+
+  for (size_t index = 0; index < trajectory_msg->points.size(); ++index)
+  {
+    trajectory_msg->points[index].positions =
+      remap(trajectory_msg->points[index].positions, mapping_vector);
+
+    trajectory_msg->points[index].velocities =
+      remap(trajectory_msg->points[index].velocities, mapping_vector);
+
+    trajectory_msg->points[index].accelerations =
+      remap(trajectory_msg->points[index].accelerations, mapping_vector);
+
+    trajectory_msg->points[index].effort =
+      remap(trajectory_msg->points[index].effort, mapping_vector);
+  }
+}
 
 JOINT_TRAJECTORY_CONTROLLER_PUBLIC
 bool validate_trajectory_point_field(
@@ -67,7 +141,7 @@ bool validate_trajectory_point_field(
 JOINT_TRAJECTORY_CONTROLLER_PUBLIC
 bool validate_trajectory_msg(
   const trajectory_msgs::msg::JointTrajectory & trajectory, rclcpp::Logger logger, rclcpp::Time now,
-  const Params params)
+  const Params & params)
 {
   // If partial joints goals are not allowed, goal should specify all controller joints
   if (!params.allow_partial_joints_goal)

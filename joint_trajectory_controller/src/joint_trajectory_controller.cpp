@@ -151,7 +151,7 @@ controller_interface::return_type JointTrajectoryController::update(
     (*(rt_has_pending_goal_.readFromRT()) && !active_goal) == false)
   {
     fill_partial_goal(*new_external_msg);
-    sort_to_local_joint_order(*new_external_msg);
+    sort_to_local_joint_order(*new_external_msg, get_node()->get_logger(), params_);
     // TODO(denis): Add here integration of position and velocity
     traj_external_point_ptr_->update(*new_external_msg);
   }
@@ -1279,55 +1279,6 @@ void JointTrajectoryController::fill_partial_goal(
         }
       }
     }
-  }
-}
-
-void JointTrajectoryController::sort_to_local_joint_order(
-  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg) const
-{
-  // rearrange all points in the trajectory message based on mapping
-  std::vector<size_t> mapping_vector = mapping(trajectory_msg->joint_names, params_.joints);
-  auto remap = [this](
-                 const std::vector<double> & to_remap,
-                 const std::vector<size_t> & mapping) -> std::vector<double>
-  {
-    if (to_remap.empty())
-    {
-      return to_remap;
-    }
-    if (to_remap.size() != mapping.size())
-    {
-      RCLCPP_WARN(
-        get_node()->get_logger(), "Invalid input size (%zu) for sorting", to_remap.size());
-      return to_remap;
-    }
-    static std::vector<double> output(dof_, 0.0);
-    // Only resize if necessary since it's an expensive operation
-    if (output.size() != mapping.size())
-    {
-      output.resize(mapping.size(), 0.0);
-    }
-    for (size_t index = 0; index < mapping.size(); ++index)
-    {
-      auto map_index = mapping[index];
-      output[map_index] = to_remap[index];
-    }
-    return output;
-  };
-
-  for (size_t index = 0; index < trajectory_msg->points.size(); ++index)
-  {
-    trajectory_msg->points[index].positions =
-      remap(trajectory_msg->points[index].positions, mapping_vector);
-
-    trajectory_msg->points[index].velocities =
-      remap(trajectory_msg->points[index].velocities, mapping_vector);
-
-    trajectory_msg->points[index].accelerations =
-      remap(trajectory_msg->points[index].accelerations, mapping_vector);
-
-    trajectory_msg->points[index].effort =
-      remap(trajectory_msg->points[index].effort, mapping_vector);
   }
 }
 

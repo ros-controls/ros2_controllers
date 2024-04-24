@@ -231,10 +231,6 @@ protected:
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   void fill_partial_goal(
     std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg) const;
-  // sorts the joints of the incoming message to our local order
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  void sort_to_local_joint_order(
-    std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg) const;
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   void add_new_trajectory_msg(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & traj_msg);
