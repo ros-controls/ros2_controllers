@@ -102,6 +102,9 @@ void sort_to_local_joint_order(
     return output;
   };
 
+  // might not be used any more, but to get a genuine msg
+  trajectory_msg->joint_names = params.joints;
+
   for (size_t index = 0; index < trajectory_msg->points.size(); ++index)
   {
     trajectory_msg->points[index].positions =
