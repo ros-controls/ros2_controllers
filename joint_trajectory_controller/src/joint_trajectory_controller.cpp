@@ -150,7 +150,29 @@ controller_interface::return_type JointTrajectoryController::update(
     current_external_msg != *new_external_msg &&
     (*(rt_has_pending_goal_.readFromRT()) && !active_goal) == false)
   {
-    fill_partial_goal(*new_external_msg);
+    fill_partial_goal(
+      *new_external_msg,
+      [this](size_t index)
+      {
+        if (
+          has_position_command_interface_ &&
+          !std::isnan(joint_command_interface_[0][index].get().get_value()))
+        {
+          // copy last command if cmd interface exists
+          return joint_command_interface_[0][index].get().get_value();
+        }
+        else if (has_position_state_interface_)
+        {
+          // copy current state if state interface exists
+          return joint_state_interface_[0][index].get().get_value();
+        }
+        else
+        {
+          // this should never happen
+          return std::numeric_limits<double>::quiet_NaN();
+        }
+      },
+      params_);
     sort_to_local_joint_order(*new_external_msg, get_node()->get_logger(), params_);
     // TODO(denis): Add here integration of position and velocity
     traj_external_point_ptr_->update(*new_external_msg);
@@ -1219,66 +1241,6 @@ void JointTrajectoryController::compute_error_for_joint(
   if (has_acceleration_state_interface_ && has_acceleration_command_interface_)
   {
     error.accelerations[index] = desired.accelerations[index] - current.accelerations[index];
-  }
-}
-
-void JointTrajectoryController::fill_partial_goal(
-  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg) const
-{
-  // joint names in the goal are a subset of existing joints, as checked in goal_callback
-  // so if the size matches, the goal contains all controller joints
-  if (dof_ == trajectory_msg->joint_names.size())
-  {
-    return;
-  }
-
-  trajectory_msg->joint_names.reserve(dof_);
-
-  for (size_t index = 0; index < dof_; ++index)
-  {
-    {
-      if (
-        std::find(
-          trajectory_msg->joint_names.begin(), trajectory_msg->joint_names.end(),
-          params_.joints[index]) != trajectory_msg->joint_names.end())
-      {
-        // joint found on msg
-        continue;
-      }
-      trajectory_msg->joint_names.push_back(params_.joints[index]);
-
-      for (auto & it : trajectory_msg->points)
-      {
-        // Assume hold position with 0 velocity and acceleration for missing joints
-        if (!it.positions.empty())
-        {
-          if (
-            has_position_command_interface_ &&
-            !std::isnan(joint_command_interface_[0][index].get().get_value()))
-          {
-            // copy last command if cmd interface exists
-            it.positions.push_back(joint_command_interface_[0][index].get().get_value());
-          }
-          else if (has_position_state_interface_)
-          {
-            // copy current state if state interface exists
-            it.positions.push_back(joint_state_interface_[0][index].get().get_value());
-          }
-        }
-        if (!it.velocities.empty())
-        {
-          it.velocities.push_back(0.0);
-        }
-        if (!it.accelerations.empty())
-        {
-          it.accelerations.push_back(0.0);
-        }
-        if (!it.effort.empty())
-        {
-          it.effort.push_back(0.0);
-        }
-      }
-    }
   }
 }
 

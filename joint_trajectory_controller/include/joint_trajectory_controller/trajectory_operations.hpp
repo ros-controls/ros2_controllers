@@ -118,6 +118,60 @@ void sort_to_local_joint_order(
   }
 }
 
+// fill trajectory_msg so it matches joints controlled by this controller
+// positions set to current position, velocities, accelerations and efforts to 0.0
+JOINT_TRAJECTORY_CONTROLLER_PUBLIC
+void fill_partial_goal(
+  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg,
+  std::function<double(size_t)> get_default_position, const Params & params)
+{
+  const auto dof = params.joints.size();
+  // joint names in the goal are a subset of existing joints, as checked in goal_callback
+  // so if the size matches, the goal contains all controller joints
+  if (dof == trajectory_msg->joint_names.size())
+  {
+    return;
+  }
+
+  trajectory_msg->joint_names.reserve(dof);
+
+  for (size_t index = 0; index < dof; ++index)
+  {
+    {
+      if (
+        std::find(
+          trajectory_msg->joint_names.begin(), trajectory_msg->joint_names.end(),
+          params.joints[index]) != trajectory_msg->joint_names.end())
+      {
+        // joint found on msg
+        continue;
+      }
+      trajectory_msg->joint_names.push_back(params.joints[index]);
+
+      for (auto & it : trajectory_msg->points)
+      {
+        // Assume hold position with 0 velocity and acceleration for missing joints
+        if (!it.positions.empty())
+        {
+          it.positions.push_back(get_default_position(index));
+        }
+        if (!it.velocities.empty())
+        {
+          it.velocities.push_back(0.0);
+        }
+        if (!it.accelerations.empty())
+        {
+          it.accelerations.push_back(0.0);
+        }
+        if (!it.effort.empty())
+        {
+          it.effort.push_back(0.0);
+        }
+      }
+    }
+  }
+}
+
 JOINT_TRAJECTORY_CONTROLLER_PUBLIC
 bool validate_trajectory_point_field(
   size_t joint_names_size, const std::vector<double> & vector_field,

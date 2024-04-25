@@ -226,11 +226,6 @@ protected:
   void compute_error_for_joint(
     JointTrajectoryPoint & error, const size_t index, const JointTrajectoryPoint & current,
     const JointTrajectoryPoint & desired) const;
-  // fill trajectory_msg so it matches joints controlled by this controller
-  // positions set to current position, velocities, accelerations and efforts to 0.0
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  void fill_partial_goal(
-    std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg) const;
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   void add_new_trajectory_msg(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & traj_msg);
