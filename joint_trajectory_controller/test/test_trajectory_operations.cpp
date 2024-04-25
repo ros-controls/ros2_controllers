@@ -32,6 +32,7 @@
 
 #include "test_trajectory_controller_utils.hpp"
 
+using joint_trajectory_controller::fill_partial_goal;
 using joint_trajectory_controller::sort_to_local_joint_order;
 using joint_trajectory_controller::validate_trajectory_msg;
 
@@ -358,4 +359,58 @@ TEST_F(TrajectoryOperationsTest, test_msg_sorting)
   traj_msg.points[0].effort.resize(1);
   ASSERT_NO_THROW(sort_to_local_joint_order(
     std::make_shared<trajectory_msgs::msg::JointTrajectory>(traj_msg), *logger_, params_));
+}
+
+TEST_F(TrajectoryOperationsTest, TestFillPartialGoal)
+{
+  // Create a trajectory message
+  auto vector_val = std::vector<double>{1.0, 2.0, 3.0};
+  trajectory_msgs::msg::JointTrajectory traj_msg_partial;
+  std::vector<size_t> jumble_map = {0, 2};
+  traj_msg_partial.joint_names = get_jumbled_values<std::string>(jumble_map, joint_names_);
+  traj_msg_partial.header.stamp = rclcpp::Time(0);
+  traj_msg_partial.points.resize(1);
+  traj_msg_partial.points[0].time_from_start = rclcpp::Duration::from_seconds(0.25);
+  traj_msg_partial.points[0].positions = get_jumbled_values<double>(jumble_map, vector_val);
+  traj_msg_partial.points[0].velocities = get_jumbled_values<double>(jumble_map, vector_val);
+  traj_msg_partial.points[0].accelerations = get_jumbled_values<double>(jumble_map, vector_val);
+  traj_msg_partial.points[0].effort = get_jumbled_values<double>(jumble_map, vector_val);
+  auto traj_msg_ptr = std::make_shared<trajectory_msgs::msg::JointTrajectory>(traj_msg_partial);
+
+  // Function to return default position for a joint
+  auto get_default_position = [](size_t index) { return 10. + static_cast<double>(index); };
+
+  // Call fill_partial_goal function
+  fill_partial_goal(traj_msg_ptr, get_default_position, params_);
+
+  // Check if the fields are correctly filled (missing joints are added at the end)
+  EXPECT_THAT(
+    traj_msg_ptr->joint_names,
+    testing::ContainerEq(get_jumbled_values<std::string>({0, 2, 1}, joint_names_)));
+  ASSERT_THAT(traj_msg_ptr->points, testing::SizeIs(1));
+  const auto point = traj_msg_ptr->points[0];
+  ASSERT_THAT(point.positions, testing::SizeIs(params_.joints.size()));
+  ASSERT_THAT(point.velocities, testing::SizeIs(params_.joints.size()));
+  ASSERT_THAT(point.accelerations, testing::SizeIs(params_.joints.size()));
+  ASSERT_THAT(point.effort, testing::SizeIs(params_.joints.size()));
+  for (size_t i = 0; i < jumble_map.size(); ++i)
+  {
+    // should be original points
+    EXPECT_EQ(point.positions[i], traj_msg_partial.points[0].positions[i]);
+    EXPECT_EQ(point.velocities[i], traj_msg_partial.points[0].velocities[i]);
+    EXPECT_EQ(point.accelerations[i], traj_msg_partial.points[0].accelerations[i]);
+    EXPECT_EQ(point.effort[i], traj_msg_partial.points[0].effort[i]);
+  }
+  for (size_t i = jumble_map.size(); i < params_.joints.size(); ++i)
+  {
+    // Check if positions are set to default position, and velocities, accelerations, and efforts
+    // are set to 0.0
+    auto it = std::find(params_.joints.begin(), params_.joints.end(), traj_msg_ptr->joint_names[i]);
+    ASSERT_NE(it, params_.joints.end()) << "Joint " << traj_msg_ptr->joint_names[i] << " not found";
+    auto index = std::distance(params_.joints.begin(), it);
+    EXPECT_EQ(point.positions[i], get_default_position(index));
+    EXPECT_EQ(point.velocities[i], 0.0);
+    EXPECT_EQ(point.accelerations[i], 0.0);
+    EXPECT_EQ(point.effort[i], 0.0);
+  }
 }
