@@ -102,16 +102,6 @@ auto get_jumbled_values = [](const std::vector<size_t> & jumble_map, const std::
   }
   return result;
 };
-auto get_jumbled_string =
-  [](const std::vector<size_t> & jumble_map, const testing::internal::Strings & values)
-{
-  testing::internal::Strings result;
-  for (const auto & index : jumble_map)
-  {
-    result.push_back(values[index]);
-  }
-  return result;
-};
 
 // The fixture for testing class.
 class TrajectoryOperationsTest : public testing::Test
@@ -344,7 +334,7 @@ TEST_F(TrajectoryOperationsTest, test_msg_sorting)
 
   // test if the joint order is sorted
   traj_msg = good_traj_msg;
-  traj_msg.joint_names = get_jumbled_string(jumble_map, joint_names_);
+  traj_msg.joint_names = get_jumbled_values<std::string>(jumble_map, joint_names_);
   traj_msg.points[0].positions = get_jumbled_values<double>(jumble_map, vector_val);
   traj_msg.points[0].velocities = get_jumbled_values<double>(jumble_map, vector_val);
   traj_msg.points[0].accelerations = get_jumbled_values<double>(jumble_map, vector_val);
@@ -358,8 +348,7 @@ TEST_F(TrajectoryOperationsTest, test_msg_sorting)
 
   // test if no issue if called with different size (should not happen, because no valid_traj_msg)
   traj_msg = good_traj_msg;
-  traj_msg.joint_names =
-    std::vector<std::string>{joint_names_[jumble_map[0]], joint_names_[jumble_map[1]]};
+  traj_msg.joint_names = get_jumbled_values<std::string>({1, 2}, joint_names_);
   ASSERT_NO_THROW(sort_to_local_joint_order(
     std::make_shared<trajectory_msgs::msg::JointTrajectory>(traj_msg), *logger_, params_));
   traj_msg = good_traj_msg;
