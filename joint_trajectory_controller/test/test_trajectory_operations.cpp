@@ -32,7 +32,87 @@
 
 #include "test_trajectory_controller_utils.hpp"
 
+using joint_trajectory_controller::sort_to_local_joint_order;
 using joint_trajectory_controller::validate_trajectory_msg;
+
+std::string vectorToString(const std::vector<double> & vec)
+{
+  std::ostringstream oss;
+  for (const auto & val : vec)
+  {
+    oss << val << " ";
+  }
+  return oss.str();
+}
+
+// Custom matcher to check if a trajectory matches the expected joint names and values
+MATCHER_P2(IsTrajMsgSorted, joint_names, vector_val, "")
+{
+  if (arg->joint_names != joint_names)
+  {
+    *result_listener << "Joint names mismatch";
+    return false;
+  }
+
+  if (arg->points.size() == 0)
+  {
+    *result_listener << "Trajectory has no points";
+    return false;
+  }
+
+  const auto & point = arg->points[0];
+  if (
+    point.positions != vector_val || point.velocities != vector_val ||
+    point.accelerations != vector_val || point.effort != vector_val)
+  {
+    *result_listener << "Point values mismatch:";
+    if (point.positions != vector_val)
+    {
+      *result_listener << "\npositions: " << vectorToString(point.positions) << " ne "
+                       << vectorToString(vector_val);
+    }
+    if (point.velocities != vector_val)
+    {
+      *result_listener << "\nvelocities: " << vectorToString(point.velocities) << " ne "
+                       << vectorToString(vector_val);
+    }
+    if (point.accelerations != vector_val)
+    {
+      *result_listener << "\naccelerations: " << vectorToString(point.accelerations) << " ne "
+                       << vectorToString(vector_val);
+    }
+    if (point.effort != vector_val)
+    {
+      *result_listener << "\neffort: " << vectorToString(point.effort) << " ne "
+                       << vectorToString(vector_val);
+    }
+    return false;
+  }
+
+  return true;
+}
+
+template <typename T>
+auto get_jumbled_values = [](const std::vector<size_t> & jumble_map, const std::vector<T> & values)
+{
+  std::vector<T> result;
+  for (const auto & index : jumble_map)
+  {
+    result.push_back(values[index]);
+  }
+  return result;
+};
+auto get_jumbled_string =
+  [](const std::vector<size_t> & jumble_map, const testing::internal::Strings & values)
+{
+  testing::internal::Strings result;
+  for (const auto & index : jumble_map)
+  {
+    result.push_back(values[index]);
+  }
+  return result;
+};
+
 // The fixture for testing class.
 class TrajectoryOperationsTest : public testing::Test
 {
@@ -91,9 +171,7 @@ TEST_F(TrajectoryOperationsTest, invalid_message)
   good_traj_msg.header.stamp = rclcpp::Time(0);
   good_traj_msg.points.resize(1);
   good_traj_msg.points[0].time_from_start = rclcpp::Duration::from_seconds(0.25);
-  good_traj_msg.points[0].positions.resize(1);
   good_traj_msg.points[0].positions = {1.0, 2.0, 3.0};
-  good_traj_msg.points[0].velocities.resize(1);
   good_traj_msg.points[0].velocities = {-1.0, -2.0, -3.0};
   EXPECT_TRUE(validate_trajectory_msg(good_traj_msg, *logger_, clock_.now(), params_));
 
@@ -171,9 +249,7 @@ TEST_F(
   // Nonzero velocity at trajectory end!
   traj_msg.points.resize(1);
   traj_msg.points[0].time_from_start = rclcpp::Duration::from_seconds(0.25);
-  traj_msg.points[0].positions.resize(1);
   traj_msg.points[0].positions = {1.0, 2.0, 3.0};
-  traj_msg.points[0].velocities.resize(1);
   traj_msg.points[0].velocities = {-1.0, -2.0, -3.0};
   EXPECT_FALSE(validate_trajectory_msg(traj_msg, *logger_, clock_.now(), params_));
 }
@@ -194,11 +270,8 @@ TEST_F(TrajectoryOperationsTest, missing_positions_message_accepted)
   good_traj_msg.header.stamp = rclcpp::Time(0);
   good_traj_msg.points.resize(1);
   good_traj_msg.points[0].time_from_start = rclcpp::Duration::from_seconds(0.25);
-  good_traj_msg.points[0].positions.resize(1);
   good_traj_msg.points[0].positions = {1.0, 2.0, 3.0};
-  good_traj_msg.points[0].velocities.resize(1);
   good_traj_msg.points[0].velocities = {-1.0, -2.0, -3.0};
-  good_traj_msg.points[0].accelerations.resize(1);
   good_traj_msg.points[0].accelerations = {1.0, 2.0, 3.0};
   EXPECT_TRUE(validate_trajectory_msg(good_traj_msg, *logger_, clock_.now(), params_));
 
@@ -239,4 +312,61 @@ TEST_F(TrajectoryOperationsTest, missing_positions_message_accepted)
   traj_msg = good_traj_msg;
   traj_msg.points[0].accelerations = {2.0};
   EXPECT_FALSE(validate_trajectory_msg(traj_msg, *logger_, clock_.now(), params_));
+}
+
+/**
+ * @brief test_msg_sorting test sort_to_local_joint_order()
+ *
+ */
+TEST_F(TrajectoryOperationsTest, test_msg_sorting)
+{
+  std::vector<size_t> jumble_map = {1, 2, 0};
+  auto vector_val = std::vector<double>{1.0, 2.0, 3.0};
+
+  trajectory_msgs::msg::JointTrajectory good_traj_msg, traj_msg;
+
+  good_traj_msg.joint_names = joint_names_;
+  good_traj_msg.header.stamp = rclcpp::Time(0);
+  good_traj_msg.points.resize(1);
+  good_traj_msg.points[0].time_from_start = rclcpp::Duration::from_seconds(0.25);
+  good_traj_msg.points[0].positions = vector_val;
+  good_traj_msg.points[0].velocities = vector_val;
+  good_traj_msg.points[0].accelerations = vector_val;
+  good_traj_msg.points[0].effort = vector_val;
+
+  // test if the joint order is not changed
+  {
+    auto traj_msg_ptr = std::make_shared<trajectory_msgs::msg::JointTrajectory>(good_traj_msg);
+    EXPECT_THAT(traj_msg_ptr, IsTrajMsgSorted(joint_names_, vector_val));
+    ASSERT_NO_THROW(sort_to_local_joint_order(traj_msg_ptr, *logger_, params_));
+    EXPECT_THAT(traj_msg_ptr, IsTrajMsgSorted(joint_names_, vector_val));
+  }
+
+  // test if the joint order is sorted
+  traj_msg = good_traj_msg;
+  traj_msg.joint_names = get_jumbled_string(jumble_map, joint_names_);
+  traj_msg.points[0].positions = get_jumbled_values<double>(jumble_map, vector_val);
+  traj_msg.points[0].velocities = get_jumbled_values<double>(jumble_map, vector_val);
+  traj_msg.points[0].accelerations = get_jumbled_values<double>(jumble_map, vector_val);
+  traj_msg.points[0].effort = get_jumbled_values<double>(jumble_map, vector_val);
+  {
+    auto traj_msg_ptr = std::make_shared<trajectory_msgs::msg::JointTrajectory>(traj_msg);
+    EXPECT_THAT(traj_msg_ptr, testing::Not(IsTrajMsgSorted(joint_names_, vector_val)));
+    ASSERT_NO_THROW(sort_to_local_joint_order(traj_msg_ptr, *logger_, params_));
+    EXPECT_THAT(traj_msg_ptr, IsTrajMsgSorted(joint_names_, vector_val));
+  }
+
+  // test if no issue if called with different size (should not happen, because no valid_traj_msg)
+  traj_msg = good_traj_msg;
+  traj_msg.joint_names =
+    std::vector<std::string>{joint_names_[jumble_map[0]], joint_names_[jumble_map[1]]};
+  ASSERT_NO_THROW(sort_to_local_joint_order(
+    std::make_shared<trajectory_msgs::msg::JointTrajectory>(traj_msg), *logger_, params_));
+  traj_msg = good_traj_msg;
+  traj_msg.points[0].positions.resize(1);
+  traj_msg.points[0].velocities.resize(1);
+  traj_msg.points[0].accelerations.resize(1);
+  traj_msg.points[0].effort.resize(1);
+  ASSERT_NO_THROW(sort_to_local_joint_order(
+    std::make_shared<trajectory_msgs::msg::JointTrajectory>(traj_msg), *logger_, params_));
 }
