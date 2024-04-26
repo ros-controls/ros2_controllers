@@ -272,12 +272,11 @@ TEST_F(TestDiffDriveController, TfPrefixNamespaceParams)
 
   for (const auto & test_case : test_cases)
   {
-    std::vector<rclcpp::Parameter> params =
-      {
-        rclcpp::Parameter("tf_frame_prefix", rclcpp::ParameterValue(test_case.tf_prefix)),
-        rclcpp::Parameter("odom_frame_id", rclcpp::ParameterValue(odom_id)),
-        rclcpp::Parameter("base_frame_id", rclcpp::ParameterValue(base_link_id)),
-      };
+    std::vector<rclcpp::Parameter> params = {
+      rclcpp::Parameter("tf_frame_prefix", rclcpp::ParameterValue(test_case.tf_prefix)),
+      rclcpp::Parameter("odom_frame_id", rclcpp::ParameterValue(odom_id)),
+      rclcpp::Parameter("base_frame_id", rclcpp::ParameterValue(base_link_id)),
+    };
 
     ASSERT_EQ(
       InitController(left_wheel_names, right_wheel_names, params, test_case.ns),
