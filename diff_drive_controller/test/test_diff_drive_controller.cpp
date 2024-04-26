@@ -268,25 +268,19 @@ TEST_F(TestDiffDriveController, TfPrefixNamespaceParams)
     {"test_prefix", "test_namespace", "test_prefix"},
   };
 
-  for (const auto & params : test_prefix_matrix)
+  for (const auto & test_case : test_prefix_matrix)
   {
-    const auto ret = controller_->init(controller_name, params.ns);
-    ASSERT_EQ(ret, controller_interface::return_type::OK);
-
     std::string odom_id = "odom";
     std::string base_link_id = "base_link";
 
-    controller_->get_node()->set_parameter(
-      rclcpp::Parameter("left_wheel_names", rclcpp::ParameterValue(left_wheel_names)));
-    controller_->get_node()->set_parameter(
-      rclcpp::Parameter("right_wheel_names", rclcpp::ParameterValue(right_wheel_names)));
+    std::vector<rclcpp::Parameter> params =
+      {
+        rclcpp::Parameter("tf_frame_prefix", test_case.tf_prefix),
+        rclcpp::Parameter("odom_frame_id", odom_id),
+        rclcpp::Parameter("base_frame_id", base_link_id),
+      }
 
-    controller_->get_node()->set_parameter(
-      rclcpp::Parameter("tf_frame_prefix", rclcpp::ParameterValue(params.tf_prefix)));
-    controller_->get_node()->set_parameter(
-      rclcpp::Parameter("odom_frame_id", rclcpp::ParameterValue(odom_id)));
-    controller_->get_node()->set_parameter(
-      rclcpp::Parameter("base_frame_id", rclcpp::ParameterValue(base_link_id)));
+    ASSERT_EQ(InitController(parameters = params, ns = test_case.ns), controller_interface::return_type::OK);
 
     ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
@@ -294,8 +288,8 @@ TEST_F(TestDiffDriveController, TfPrefixNamespaceParams)
     std::string test_odom_frame_id = odometry_message.header.frame_id;
     std::string test_base_frame_id = odometry_message.child_frame_id;
 
-    ASSERT_EQ(test_odom_frame_id, params.result_prefix + odom_id);
-    ASSERT_EQ(test_base_frame_id, params.result_prefix + base_link_id);
+    ASSERT_EQ(test_odom_frame_id, test_case.result_prefix + odom_id);
+    ASSERT_EQ(test_base_frame_id, test_case.result_prefix + base_link_id);
   }
 }
 
