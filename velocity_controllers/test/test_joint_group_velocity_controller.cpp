@@ -24,6 +24,7 @@
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/utilities.hpp"
+#include "rclcpp/logging.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "test_joint_group_velocity_controller.hpp"
 
@@ -37,7 +38,9 @@ rclcpp::WaitResultKind wait_for(rclcpp::SubscriptionBase::SharedPtr subscription
   rclcpp::WaitSet wait_set;
   wait_set.add_subscription(subscription);
   const auto timeout = std::chrono::seconds(10);
-  return wait_set.wait(timeout).kind();
+  auto ret = wait_set.wait(timeout).kind();
+  wait_set.remove_subscription(subscription);
+  return ret;
 }
 }  // namespace
 
@@ -205,9 +208,12 @@ TEST_F(JointGroupVelocityControllerTest, CommandCallbackTest)
 
   // wait for command message to be passed
   ASSERT_EQ(wait_for(controller_->joints_command_subscriber_), rclcpp::WaitResultKind::Ready);
+  RCLCPP_INFO(controller_->get_node()->get_logger(), "message ready to be taken from subscription");
 
   // process callbacks
   rclcpp::spin_some(controller_->get_node()->get_node_base_interface());
+    RCLCPP_INFO(controller_->get_node()->get_logger(), "callback(s) processed");
+
 
   // update successful
   ASSERT_EQ(
