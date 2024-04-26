@@ -53,10 +53,10 @@ void IMUSensorBroadcasterTest::SetUp()
 
 void IMUSensorBroadcasterTest::TearDown() { imu_broadcaster_.reset(nullptr); }
 
-void IMUSensorBroadcasterTest::SetUpIMUBroadcaster()
+void IMUSensorBroadcasterTest::SetUpIMUBroadcaster(const std::string & ns)
 {
   const auto result = imu_broadcaster_->init(
-    "test_imu_sensor_broadcaster", "", 0, "", imu_broadcaster_->define_custom_node_options());
+    "test_imu_sensor_broadcaster", ns, 0, "", imu_broadcaster_->define_custom_node_options());
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
   std::vector<LoanedStateInterface> state_ifs;
@@ -78,10 +78,10 @@ void IMUSensorBroadcasterTest::subscribe_and_get_message(
   sensor_msgs::msg::Imu & imu_msg, const std::string & ns)
 {
   // create a new subscriber
-  rclcpp::Node test_subscription_node("test_subscription_node");
+  rclcpp::Node test_subscription_node("test_subscription_node", ns);
   auto subs_callback = [&](const sensor_msgs::msg::Imu::SharedPtr) {};
   auto subscription = test_subscription_node.create_subscription<sensor_msgs::msg::Imu>(
-    "/test_imu_sensor_broadcaster/imu", 10, subs_callback);
+    "test_imu_sensor_broadcaster/imu", 10, subs_callback);
 
   // call update to publish the test value
   // since update doesn't guarantee a published message, republish until received
