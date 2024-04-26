@@ -81,7 +81,7 @@ protected:
   void subscribe_and_get_message(sensor_msgs::msg::Imu & imu_msg, const std::string & ns = "");
 };
 
-struct TestPrefixParams
+struct PrefixTestCase
 {
   std::string tf_prefix;
   std::string ns;

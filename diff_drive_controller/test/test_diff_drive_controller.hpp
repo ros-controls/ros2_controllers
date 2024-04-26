@@ -14,7 +14,7 @@
 
 #include <string>
 
-struct TestPrefixParams
+struct PrefixTestCase
 {
   std::string tf_prefix;
   std::string ns;

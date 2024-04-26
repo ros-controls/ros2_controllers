@@ -257,7 +257,7 @@ TEST_F(TestDiffDriveController, configure_succeeds_when_wheels_are_specified)
 
 TEST_F(TestDiffDriveController, TfPrefixNamespaceParams)
 {
-  const std::vector<TestPrefixParams> test_prefix_matrix = {
+  const std::vector<PrefixTestCase> test_cases = {
     {"", "", ""},
     {"/", "", ""},
     {"", "/", ""},
@@ -268,7 +268,7 @@ TEST_F(TestDiffDriveController, TfPrefixNamespaceParams)
     {"test_prefix", "test_namespace", "test_prefix"},
   };
 
-  for (const auto & test_case : test_prefix_matrix)
+  for (const auto & test_case : test_cases)
   {
     std::string odom_id = "odom";
     std::string base_link_id = "base_link";
@@ -280,7 +280,9 @@ TEST_F(TestDiffDriveController, TfPrefixNamespaceParams)
         rclcpp::Parameter("base_frame_id", base_link_id),
       }
 
-    ASSERT_EQ(InitController(parameters = params, ns = test_case.ns), controller_interface::return_type::OK);
+    ASSERT_EQ(
+      InitController(parameters = params, ns = test_case.ns),
+      controller_interface::return_type::OK);
 
     ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
