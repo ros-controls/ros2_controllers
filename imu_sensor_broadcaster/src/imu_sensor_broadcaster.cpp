@@ -81,7 +81,7 @@ controller_interface::CallbackReturn IMUSensorBroadcaster::on_configure(
   }
 
   realtime_publisher_->lock();
-  realtime_publisher_->msg_.header.frame_id = params_.frame_id;
+  realtime_publisher_->msg_.header.frame_id = tf_prefix + params_.frame_id;
   // convert double vector to fixed-size array in the message
   for (size_t i = 0; i < 9; ++i)
   {
