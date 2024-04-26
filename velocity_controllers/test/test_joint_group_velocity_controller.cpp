@@ -214,7 +214,6 @@ TEST_F(JointGroupVelocityControllerTest, CommandCallbackTest)
   rclcpp::spin_some(controller_->get_node()->get_node_base_interface());
     RCLCPP_INFO(controller_->get_node()->get_logger(), "callback(s) processed");
 
-
   // update successful
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
