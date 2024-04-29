@@ -1,4 +1,4 @@
-name: Coverage Build - Rolling
+name: Coverage Build - Jazzy
 on:
   workflow_dispatch:
   push:
@@ -8,7 +8,7 @@ on:
       - '**.hpp'
       - '**.h'
       - '**.cpp'
-      - '.github/workflows/rolling-coverage-build.yml'
+      - '.github/workflows/jazzy-coverage-build.yml'
   pull_request:
     branches:
       - master
@@ -16,12 +16,12 @@ on:
       - '**.hpp'
       - '**.h'
       - '**.cpp'
-      - '.github/workflows/rolling-coverage-build.yml'
+      - '.github/workflows/jazzy-coverage-build.yml'
 
 jobs:
-  coverage_rolling:
+  coverage_jazzy:
     uses: ros-controls/ros2_control_ci/.github/workflows/reusable-build-coverage.yml@master
     secrets: inherit
     with:
-      ros_distro: rolling
+      ros_distro: jazzy
       container: ubuntu:24.04
