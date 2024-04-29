@@ -9,6 +9,7 @@ on:
       - '**.h'
       - '**.cpp'
       - '.github/workflows/rolling-coverage-build.yml'
+      - 'codecov.yml'
   pull_request:
     branches:
       - master
@@ -17,6 +18,7 @@ on:
       - '**.h'
       - '**.cpp'
       - '.github/workflows/rolling-coverage-build.yml'
+      - 'codecov.yml'
 
 jobs:
   coverage_rolling:

@@ -9,6 +9,7 @@ on:
       - '**.h'
       - '**.cpp'
       - '.github/workflows/humble-coverage-build.yml'
+      - 'codecov.yml'
   pull_request:
     branches:
       - humble
@@ -17,6 +18,7 @@ on:
       - '**.h'
       - '**.cpp'
       - '.github/workflows/humble-coverage-build.yml'
+      - 'codecov.yml'
 
 jobs:
   coverage_humble:
