@@ -361,7 +361,7 @@ TEST_F(TrajectoryOperationsTest, test_msg_sorting)
     std::make_shared<trajectory_msgs::msg::JointTrajectory>(traj_msg), *logger_, params_));
 }
 
-TEST_F(TrajectoryOperationsTest, TestFillPartialGoal)
+TEST_F(TrajectoryOperationsTest, test_fill_partial_goal)
 {
   // Create a trajectory message
   auto vector_val = std::vector<double>{1.0, 2.0, 3.0};
