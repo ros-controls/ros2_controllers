@@ -4,9 +4,19 @@ on:
   push:
     branches:
       - master
+    paths:
+      - '**.hpp'
+      - '**.h'
+      - '**.cpp'
+      - '.github/workflows/rolling-covnerage-build.yml'
   pull_request:
     branches:
       - master
+    paths:
+      - '**.hpp'
+      - '**.h'
+      - '**.cpp'
+      - '.github/workflows/rolling-covnerage-build.yml'
 
 jobs:
   coverage_rolling:
