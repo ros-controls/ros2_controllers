@@ -2,8 +2,8 @@
 Changelog for package tricycle_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.23.0 (2024-04-30)
+-------------------
 * [tricycle_controller] Use generate_parameter_library (backport `#957 <https://github.com/ros-controls/ros2_controllers/issues/957>`_) (`#991 <https://github.com/ros-controls/ros2_controllers/issues/991>`_)
 * Contributors: mergify[bot]
 

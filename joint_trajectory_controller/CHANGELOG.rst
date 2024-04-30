@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.23.0 (2024-04-30)
+-------------------
 * [JTC] Remove unused test code (`#1095 <https://github.com/ros-controls/ros2_controllers/issues/1095>`_) (`#1097 <https://github.com/ros-controls/ros2_controllers/issues/1097>`_)
 * Remove action_msg dependency (`#1077 <https://github.com/ros-controls/ros2_controllers/issues/1077>`_) (`#1081 <https://github.com/ros-controls/ros2_controllers/issues/1081>`_)
 * Deprecate start with holding (`#1076 <https://github.com/ros-controls/ros2_controllers/issues/1076>`_)

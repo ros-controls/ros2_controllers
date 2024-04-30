@@ -2,8 +2,8 @@
 Changelog for package rqt_joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.23.0 (2024-04-30)
+-------------------
 * [CI] Code coverage + pre-commit (`#1057 <https://github.com/ros-controls/ros2_controllers/issues/1057>`_) (`#1065 <https://github.com/ros-controls/ros2_controllers/issues/1065>`_)
 * Contributors: mergify[bot]
 

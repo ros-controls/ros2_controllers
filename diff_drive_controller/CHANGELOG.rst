@@ -2,8 +2,8 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.23.0 (2024-04-30)
+-------------------
 * [diff_drive] Remove unused parameter and add simple validation #abi-breaking (backport `#958 <https://github.com/ros-controls/ros2_controllers/issues/958>`_) (`#1056 <https://github.com/ros-controls/ros2_controllers/issues/1056>`_)
 * Contributors: Christoph Fröhlich
 
