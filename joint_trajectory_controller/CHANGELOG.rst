@@ -2,6 +2,17 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* [JTC] Remove unused test code (`#1095 <https://github.com/ros-controls/ros2_controllers/issues/1095>`_) (`#1097 <https://github.com/ros-controls/ros2_controllers/issues/1097>`_)
+* Remove action_msg dependency (`#1077 <https://github.com/ros-controls/ros2_controllers/issues/1077>`_) (`#1081 <https://github.com/ros-controls/ros2_controllers/issues/1081>`_)
+* Deprecate start with holding (`#1076 <https://github.com/ros-controls/ros2_controllers/issues/1076>`_)
+* [JTC] Convert lambda to class functions (backport `#945 <https://github.com/ros-controls/ros2_controllers/issues/945>`_) (`#1015 <https://github.com/ros-controls/ros2_controllers/issues/1015>`_)
+* [JTC] Continue with last trajectory-point on success (`#842 <https://github.com/ros-controls/ros2_controllers/issues/842>`_) (`#877 <https://github.com/ros-controls/ros2_controllers/issues/877>`_)
+* Bump version of pre-commit hooks (`#1073 <https://github.com/ros-controls/ros2_controllers/issues/1073>`_) (`#1075 <https://github.com/ros-controls/ros2_controllers/issues/1075>`_)
+* [JTC] Angle wraparound for first segment of trajectory (`#796 <https://github.com/ros-controls/ros2_controllers/issues/796>`_) (`#1034 <https://github.com/ros-controls/ros2_controllers/issues/1034>`_)
+* Contributors: Christoph Fröhlich, mergify[bot]
+
 3.22.0 (2024-02-12)
 -------------------
 * Fix usage of M_PI on Windows (`#1036 <https://github.com/ros-controls/ros2_controllers/issues/1036>`_) (`#1038 <https://github.com/ros-controls/ros2_controllers/issues/1038>`_)

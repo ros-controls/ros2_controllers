@@ -2,6 +2,11 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* [diff_drive] Remove unused parameter and add simple validation #abi-breaking (backport `#958 <https://github.com/ros-controls/ros2_controllers/issues/958>`_) (`#1056 <https://github.com/ros-controls/ros2_controllers/issues/1056>`_)
+* Contributors: Christoph Fröhlich
+
 3.22.0 (2024-02-12)
 -------------------
 * Add test_depend on `hardware_interface_testing` (backport `#1018 <https://github.com/ros-controls/ros2_controllers/issues/1018>`_) (`#1020 <https://github.com/ros-controls/ros2_controllers/issues/1020>`_)

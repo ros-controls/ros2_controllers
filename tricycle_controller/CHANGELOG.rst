@@ -2,6 +2,11 @@
 Changelog for package tricycle_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* [tricycle_controller] Use generate_parameter_library (backport `#957 <https://github.com/ros-controls/ros2_controllers/issues/957>`_) (`#991 <https://github.com/ros-controls/ros2_controllers/issues/991>`_)
+* Contributors: mergify[bot]
+
 3.22.0 (2024-02-12)
 -------------------
 * Fix usage of M_PI on Windows (`#1036 <https://github.com/ros-controls/ros2_controllers/issues/1036>`_) (`#1038 <https://github.com/ros-controls/ros2_controllers/issues/1038>`_)
