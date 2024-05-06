@@ -6,8 +6,8 @@ test_steering_controllers_library:
     open_loop: false
     velocity_rolling_window_size: 10
     position_feedback: false
-    rear_wheels_names: [rear_right_wheel_joint, rear_left_wheel_joint]
-    front_wheels_names: [front_right_steering_joint, front_left_steering_joint]
+    wheels_names: [rear_right_wheel_joint, rear_left_wheel_joint]
+    steers_names: [front_right_steering_joint, front_left_steering_joint]
 
     wheelbase: 3.24644
     front_wheel_track: 2.12321
