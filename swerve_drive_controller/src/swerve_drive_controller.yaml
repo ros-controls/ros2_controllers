@@ -1,0 +1,24 @@
+swerve_drive_controller:
+  wheel_track:
+    {
+      type: double,
+      default_value: 0.0,
+      description: "Wheel track length. For details see: https://en.wikipedia.org/wiki/Wheelbase",
+      read_only: false,
+    }
+
+  wheelbase:
+    {
+      type: double,
+      default_value: 0.0,
+      description: "Distance between front and rear wheels. For details see: https://en.wikipedia.org/wiki/Wheelbase",
+      read_only: false,
+    }
+
+  wheels_radius:
+    {
+      type: double,
+      default_value: 0.0,
+      description: "Wheels radius.",
+      read_only: false,
+    }

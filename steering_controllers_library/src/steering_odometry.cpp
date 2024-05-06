@@ -258,6 +258,41 @@ std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_comma
     }
     return std::make_tuple(traction_commands, steering_commands);
   }
+  else if (config_type_ == SWERVE_CONFIG)
+  {
+    std::vector<double> traction_commands;
+    std::vector<double> steering_commands;
+    if (fabs(steer_pos_) < 1e-6)
+    {
+      traction_commands = {Ws, Ws, Ws, Ws};
+      steering_commands = {phi, phi, phi, phi};
+    }
+    else
+    {
+      //TODO: this is a simplifierd swerve drive were 
+      //      instantenous center is alwys in the middle and
+      //      kingping distance is zero.
+      double instantaneous_center = wheelbase_ * 0.5;
+      double turning_radius = instantaneous_center / std::tan(steer_pos_);
+
+      double numerator = 2 * instantaneous_center * std::sin(phi);
+      double denominator_first_member = 2 * instantaneous_center * std::cos(phi);
+      double denominator_second_member = wheel_track_ * std::sin(phi);
+
+      double alpha_r = std::atan2(numerator, denominator_first_member + denominator_second_member);
+      double alpha_l = std::atan2(numerator, denominator_first_member - denominator_second_member);
+      steering_commands = {alpha_r, alpha_l, -alpha_r, -alpha_l};
+
+      double radius_r = instantaneous_center / std::sin(alpha_r);
+      double radius_l = instantaneous_center / std::sin(alpha_l);
+
+      double Wr = Ws * (radius_r / turning_radius);
+      double Wl = Ws * (radius_l / turning_radius);
+      traction_commands = {Wr, Wl, Wr, Wl};
+
+    }
+    return std::make_tuple(traction_commands, steering_commands);
+  }
   else
   {
     throw std::runtime_error("Config not implemented");
