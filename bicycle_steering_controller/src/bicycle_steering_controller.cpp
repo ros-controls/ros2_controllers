@@ -31,19 +31,21 @@ controller_interface::CallbackReturn BicycleSteeringController::configure_odomet
 {
   bicycle_params_ = bicycle_param_listener_->get_params();
 
+  if (bicycle_params_.front_wheel_radius > 0.0)
+  {
+    fprintf(stderr, "DEPRECATED parameter 'front_wheel_radius'\n");
+    return controller_interface::CallbackReturn::ERROR;
+  }
+
+  if (bicycle_params_.rear_wheel_radius > 0.0)
+  {
+    fprintf(stderr, "DEPRECATED parameter 'rear_wheel_radius'\n");
+    return controller_interface::CallbackReturn::ERROR;
+  }
   const double wheelbase = bicycle_params_.wheelbase;
-  const double front_wheel_radius = bicycle_params_.front_wheel_radius;
-  const double rear_wheel_radius = bicycle_params_.rear_wheel_radius;
+  const double traction_wheel_radius = bicycle_params_.traction_wheel_radius;
 
-  if (params_.front_steering)
-  {
-    odometry_.set_wheel_params(rear_wheel_radius, wheelbase);
-  }
-  else
-  {
-    odometry_.set_wheel_params(front_wheel_radius, wheelbase);
-  }
-
+  odometry_.set_wheel_params(traction_wheel_radius, wheelbase);
   odometry_.set_odometry_type(steering_odometry::BICYCLE_CONFIG);
 
   set_interface_numbers(NR_STATE_ITFS, NR_CMD_ITFS, NR_REF_ITFS);
