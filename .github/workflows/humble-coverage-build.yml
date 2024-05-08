@@ -4,9 +4,29 @@ on:
   push:
     branches:
       - humble
+    paths:
+      - '**.hpp'
+      - '**.h'
+      - '**.cpp'
+      - '.github/workflows/humble-coverage-build.yml'
+      - 'codecov.yml'
+      - '**.yaml'
+      - '**/package.xml'
+      - '**/CMakeLists.txt'
+      - 'ros2_controllers.humble.repos'
   pull_request:
     branches:
       - humble
+    paths:
+      - '**.hpp'
+      - '**.h'
+      - '**.cpp'
+      - '.github/workflows/humble-coverage-build.yml'
+      - 'codecov.yml'
+      - '**.yaml'
+      - '**/package.xml'
+      - '**/CMakeLists.txt'
+      - 'ros2_controllers.humble.repos'
 
 jobs:
   coverage_humble:
@@ -14,4 +34,3 @@ jobs:
     secrets: inherit
     with:
       ros_distro: humble
-      os_name: ubuntu-22.04
