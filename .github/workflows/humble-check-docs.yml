@@ -5,6 +5,10 @@ on:
   pull_request:
     branches:
       - humble
+    paths:
+      - '**.rst'
+      - '**.md'
+      - '**.yaml'
 
 jobs:
   check-docs:

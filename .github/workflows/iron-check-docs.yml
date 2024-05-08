@@ -5,6 +5,10 @@ on:
   pull_request:
     branches:
       - iron
+    paths:
+      - '**.rst'
+      - '**.md'
+      - '**.yaml'
 
 jobs:
   check-docs:

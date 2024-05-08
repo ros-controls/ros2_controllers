@@ -5,6 +5,10 @@ on:
   pull_request:
     branches:
       - master
+    paths:
+      - '**.rst'
+      - '**.md'
+      - '**.yaml'
 
 jobs:
   check-docs:
