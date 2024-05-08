@@ -316,6 +316,9 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
   }
   else
   {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "[Deprecated] Using geometry_msgs::msg::Twist instead of TwistStamped is deprecated.");
     velocity_command_unstamped_subscriber_ = get_node()->create_subscription<Twist>(
       DEFAULT_COMMAND_TOPIC, rclcpp::SystemDefaultsQoS(),
       [this](const std::shared_ptr<Twist> msg) -> void
