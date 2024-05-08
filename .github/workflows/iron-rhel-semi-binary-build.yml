@@ -8,7 +8,7 @@ on:
       - '**.hpp'
       - '**.h'
       - '**.cpp'
-      - '.github/workflows/jazzy-debian-build.yml'
+      - '.github/workflows/iron-rhel-semi-binary-build.yml'
   schedule:
     # Run every day to detect flakiness and broken dependencies
     - cron: '03 1 * * *'
