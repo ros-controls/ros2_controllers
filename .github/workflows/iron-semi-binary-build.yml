@@ -8,9 +8,27 @@ on:
       - iron
       - '*feature*'
       - '*feature/**'
+    paths:
+      - '**.hpp'
+      - '**.h'
+      - '**.cpp'
+      - '**.yaml'
+      - '.github/workflows/iron-semi-binary-build.yml'
+      - '**/package.xml'
+      - '**/CMakeLists.txt'
+      - 'ros2_controllers.iron.repos'
   push:
     branches:
       - iron
+    paths:
+      - '**.hpp'
+      - '**.h'
+      - '**.cpp'
+      - '**.yaml'
+      - '.github/workflows/iron-semi-binary-build.yml'
+      - '**/package.xml'
+      - '**/CMakeLists.txt'
+      - 'ros2_controllers.iron.repos'
   schedule:
     # Run every morning to detect flakiness and broken dependencies
     - cron: '33 1 * * *'

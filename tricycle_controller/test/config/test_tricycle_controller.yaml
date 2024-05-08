@@ -5,7 +5,6 @@ test_tricycle_controller:
     steering_joint_name: steering_joint
     wheel_radius: 0.125
     wheelbase: 1.252
-    use_stamped_vel: false
     enable_odom_tf: false
     use_sim_time: false
     pose_covariance_diagonal: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
