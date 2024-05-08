@@ -39,4 +39,3 @@ jobs:
     secrets: inherit
     with:
       ros_distro: jazzy
-      container: ubuntu:24.04
