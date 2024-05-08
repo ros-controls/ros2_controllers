@@ -8,6 +8,7 @@ on:
       - '**.hpp'
       - '**.h'
       - '**.cpp'
+      - '**.yaml'
       - '.github/workflows/rolling-abi-compatibility.yml'
       - '**/package.xml'
       - '**/CMakeLists.txt'

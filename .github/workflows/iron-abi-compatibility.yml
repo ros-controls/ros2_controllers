@@ -9,6 +9,7 @@ on:
       - '**.h'
       - '**.cpp'
       - '.github/workflows/iron-abi-compatibility.yml'
+      - '**.yaml'
       - '**/package.xml'
       - '**/CMakeLists.txt'
       - 'ros2_controllers-not-released.iron.repos'

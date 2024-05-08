@@ -24,6 +24,7 @@ on:
       - '**.hpp'
       - '**.h'
       - '**.cpp'
+      - '**.yaml'
       - '.github/workflows/rolling-binary-build.yml'
       - '**/package.xml'
       - '**/CMakeLists.txt'
