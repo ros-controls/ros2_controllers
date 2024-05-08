@@ -10,6 +10,9 @@ on:
       - '**.cpp'
       - '.github/workflows/humble-coverage-build.yml'
       - 'codecov.yml'
+      - '**/package.xml'
+      - '**/CMakeLists.txt'
+      - 'ros2_controllers.humble.repos'
   pull_request:
     branches:
       - humble
@@ -19,6 +22,9 @@ on:
       - '**.cpp'
       - '.github/workflows/humble-coverage-build.yml'
       - 'codecov.yml'
+      - '**/package.xml'
+      - '**/CMakeLists.txt'
+      - 'ros2_controllers.humble.repos'
 
 jobs:
   coverage_humble:

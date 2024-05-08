@@ -12,6 +12,9 @@ on:
       - '**.h'
       - '**.cpp'
       - '.github/workflows/humble-binary-build.yml'
+      - '**/package.xml'
+      - '**/CMakeLists.txt'
+      - 'ros2_controllers-not-released.humble.repos'
   push:
     branches:
       - humble
@@ -20,6 +23,9 @@ on:
       - '**.h'
       - '**.cpp'
       - '.github/workflows/humble-binary-build.yml'
+      - '**/package.xml'
+      - '**/CMakeLists.txt'
+      - 'ros2_controllers-not-released.humble.repos'
   schedule:
     # Run every morning to detect flakiness and broken dependencies
     - cron: '03 1 * * *'

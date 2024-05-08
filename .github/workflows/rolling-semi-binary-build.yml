@@ -13,6 +13,9 @@ on:
       - '**.h'
       - '**.cpp'
       - '.github/workflows/rolling-semi-binary-build.yml'
+      - '**/package.xml'
+      - '**/CMakeLists.txt'
+      - 'ros2_controllers.rolling.repos'
   push:
     branches:
       - master
@@ -21,6 +24,9 @@ on:
       - '**.h'
       - '**.cpp'
       - '.github/workflows/rolling-semi-binary-build.yml'
+      - '**/package.xml'
+      - '**/CMakeLists.txt'
+      - 'ros2_controllers.rolling.repos'
   schedule:
     # Run every morning to detect flakiness and broken dependencies
     - cron: '33 1 * * *'

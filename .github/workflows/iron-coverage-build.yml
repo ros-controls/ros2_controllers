@@ -10,6 +10,9 @@ on:
       - '**.cpp'
       - '.github/workflows/iron-coverage-build.yml'
       - 'codecov.yml'
+      - '**/package.xml'
+      - '**/CMakeLists.txt'
+      - 'ros2_controllers.iron.repos'
   pull_request:
     branches:
       - iron
@@ -19,6 +22,9 @@ on:
       - '**.cpp'
       - '.github/workflows/iron-coverage-build.yml'
       - 'codecov.yml'
+      - '**/package.xml'
+      - '**/CMakeLists.txt'
+      - 'ros2_controllers.iron.repos'
 
 jobs:
   coverage_iron:
