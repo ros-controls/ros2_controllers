@@ -2,6 +2,105 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.7.0 (2024-03-22)
+------------------
+* Use CMake target for eigen (`#1058 <https://github.com/ros-controls/ros2_controllers/issues/1058>`_)
+* Contributors: Christoph Fröhlich
+
+4.6.0 (2024-02-12)
+------------------
+* Add test_depend on `hardware_interface_testing` (`#1018 <https://github.com/ros-controls/ros2_controllers/issues/1018>`_)
+* Contributors: Christoph Fröhlich
+
+4.5.0 (2024-01-31)
+------------------
+* Add tests for `interface_configuration_type` consistently (`#899 <https://github.com/ros-controls/ros2_controllers/issues/899>`_)
+* Let sphinx add parameter description with nested structures to documentation (`#652 <https://github.com/ros-controls/ros2_controllers/issues/652>`_)
+* Contributors: Christoph Fröhlich
+
+4.4.0 (2024-01-11)
+------------------
+
+4.3.0 (2024-01-08)
+------------------
+* Remove robot description param from admittance YAML (`#963 <https://github.com/ros-controls/ros2_controllers/issues/963>`_)
+* Add few warning flags to error (`#961 <https://github.com/ros-controls/ros2_controllers/issues/961>`_)
+* Contributors: Abishalini Sivaraman, Sai Kishor Kothakota
+
+4.2.0 (2023-12-12)
+------------------
+
+4.1.0 (2023-12-01)
+------------------
+
+4.0.0 (2023-11-21)
+------------------
+* fix tests for API break of passing controller manager update rate in init method (`#854 <https://github.com/ros-controls/ros2_controllers/issues/854>`_)
+* Adjust tests after passing URDF to controllers (`#817 <https://github.com/ros-controls/ros2_controllers/issues/817>`_)
+* Contributors: Bence Magyar, Sai Kishor Kothakota
+
+3.17.0 (2023-10-31)
+-------------------
+
+3.16.0 (2023-09-20)
+-------------------
+
+3.15.0 (2023-09-11)
+-------------------
+* Update docs for diff drive controller (`#751 <https://github.com/ros-controls/ros2_controllers/issues/751>`_)
+* Contributors: Christoph Fröhlich
+
+3.14.0 (2023-08-16)
+-------------------
+
+3.13.0 (2023-08-04)
+-------------------
+* Fix out of bound access in admittance controller (`#721 <https://github.com/ros-controls/ros2_controllers/issues/721>`_)
+* Contributors: Abishalini Sivaraman
+
+3.12.0 (2023-07-18)
+-------------------
+* Activate AdmittanceControllerTestParameterizedInvalidParameters (`#711 <https://github.com/ros-controls/ros2_controllers/issues/711>`_)
+* Contributors: Christoph Fröhlich
+
+3.11.0 (2023-06-24)
+-------------------
+* Fix cpplint (`#681 <https://github.com/ros-controls/ros2_controllers/issues/681>`_)
+* Added -Wconversion flag and fix warnings (`#667 <https://github.com/ros-controls/ros2_controllers/issues/667>`_)
+* Contributors: Christoph Fröhlich, gwalck
+
+3.10.1 (2023-06-06)
+-------------------
+
+3.10.0 (2023-06-04)
+-------------------
+* enable ReflowComments to also use ColumnLimit on comments (`#625 <https://github.com/ros-controls/ros2_controllers/issues/625>`_)
+* Contributors: Sai Kishor Kothakota
+
+3.9.0 (2023-05-28)
+------------------
+* Use branch name substitution for all links (`#618 <https://github.com/ros-controls/ros2_controllers/issues/618>`_)
+* Fix github links on control.ros.org (`#604 <https://github.com/ros-controls/ros2_controllers/issues/604>`_)
+* Contributors: Christoph Fröhlich
+
+3.8.0 (2023-05-14)
+------------------
+
+3.7.0 (2023-05-02)
+------------------
+
+3.6.0 (2023-04-29)
+------------------
+* Renovate load controller tests (`#569 <https://github.com/ros-controls/ros2_controllers/issues/569>`_)
+* Fix docs format (`#589 <https://github.com/ros-controls/ros2_controllers/issues/589>`_)
+* Contributors: Bence Magyar, Christoph Fröhlich
+
+3.5.0 (2023-04-14)
+------------------
+* Misplaced param init in admittance_controller (`#547 <https://github.com/ros-controls/ros2_controllers/issues/547>`_)
+* [Parameters] Use `gt_eq` instead of deprecated `lower_bounds` in validators (`#561 <https://github.com/ros-controls/ros2_controllers/issues/561>`_)
+* Contributors: Dr. Denis, GuiHome
+
 3.4.0 (2023-04-02)
 ------------------
 * [AdmittanceController] Addintional argument in methods of ControllerInterface (`#553 <https://github.com/ros-controls/ros2_controllers/issues/553>`_)

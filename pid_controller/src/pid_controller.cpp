@@ -22,6 +22,7 @@
 #include <string>
 #include <vector>
 
+#include "angles/angles.h"
 #include "control_msgs/msg/single_dof_state.hpp"
 #include "controller_interface/helpers.hpp"
 
@@ -37,17 +38,33 @@
 // reference/state POSITION; command POSITION --> PID CONTROLLER
 // reference/state VELOCITY; command VELOCITY --> PID CONTROLLER
 // reference/state ACCELERATION; command ACCELERATION --> PID CONTROLLER
-// reference/state EFFORT; command EFFORT --> PID CONTROLLER
-//
+// reference/st
+
+#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/version.h"
 
 namespace
 {  // utility
 
 // Changed services history QoS to keep all so we don't lose any client service calls
+// \note The versions conditioning is added here to support the source-compatibility with Humble
+#if RCLCPP_VERSION_MAJOR >= 17
 rclcpp::QoS qos_services =
   rclcpp::QoS(rclcpp::QoSInitialization(RMW_QOS_POLICY_HISTORY_KEEP_ALL, 1))
     .reliable()
     .durability_volatile();
+#else
+static const rmw_qos_profile_t qos_services = {
+  RMW_QOS_POLICY_HISTORY_KEEP_ALL,
+  1,  // message queue depth
+  RMW_QOS_POLICY_RELIABILITY_RELIABLE,
+  RMW_QOS_POLICY_DURABILITY_VOLATILE,
+  RMW_QOS_DEADLINE_DEFAULT,
+  RMW_QOS_LIFESPAN_DEFAULT,
+  RMW_QOS_POLICY_LIVELINESS_SYSTEM_DEFAULT,
+  RMW_QOS_LIVELINESS_LEASE_DURATION_DEFAULT,
+  false};
+#endif
 
 using ControllerCommandMsg = pid_controller::PidController::ControllerReferenceMsg;
 
@@ -185,10 +202,10 @@ controller_interface::CallbackReturn PidController::on_configure(
   if (params_.use_external_measured_states)
   {
     auto measured_state_callback =
-      [&](const std::shared_ptr<ControllerMeasuredStateMsg> msg) -> void
+      [&](const std::shared_ptr<ControllerMeasuredStateMsg> state_msg) -> void
     {
       // TODO(destogl): Sort the input values based on joint and interface names
-      measured_state_.writeFromNonRT(msg);
+      measured_state_.writeFromNonRT(state_msg);
     };
     measured_state_subscriber_ = get_node()->create_subscription<ControllerMeasuredStateMsg>(
       "~/measured_state", subscribers_qos, measured_state_callback);
@@ -463,6 +480,14 @@ controller_interface::return_type PidController::update_and_write_commands(
         tmp_command = 0.0;
       }
 
+      double error = reference_interfaces_[i] - measured_state_values_[i];
+      if (params_.gains.dof_names_map[params_.dof_names[i]].angle_wraparound)
+      {
+        // for continuous angles the error is normalized between -pi<error<pi
+        error =
+          angles::shortest_angular_distance(measured_state_values_[i], reference_interfaces_[i]);
+      }
+
       // checking if there are two interfaces
       if (reference_interfaces_.size() == 2 * dof_ && measured_state_values_.size() == 2 * dof_)
       {
@@ -472,21 +497,18 @@ controller_interface::return_type PidController::update_and_write_commands(
         {
           // use calculation with 'error' and 'error_dot'
           tmp_command += pids_[i]->computeCommand(
-            reference_interfaces_[i] - measured_state_values_[i],
-            reference_interfaces_[dof_ + i] - measured_state_values_[dof_ + i], period);
+            error, reference_interfaces_[dof_ + i] - measured_state_values_[dof_ + i], period);
         }
         else
         {
           // Fallback to calculation with 'error' only
-          tmp_command +=
-            pids_[i]->computeCommand(reference_interfaces_[i] - measured_state_values_[i], period);
+          tmp_command += pids_[i]->computeCommand(error, period);
         }
       }
       else
       {
         // use calculation with 'error' only
-        tmp_command +=
-          pids_[i]->computeCommand(reference_interfaces_[i] - measured_state_values_[i], period);
+        tmp_command += pids_[i]->computeCommand(error, period);
       }
 
       // write calculated values
@@ -507,6 +529,12 @@ controller_interface::return_type PidController::update_and_write_commands(
       }
       state_publisher_->msg_.dof_states[i].error =
         reference_interfaces_[i] - measured_state_values_[i];
+      if (params_.gains.dof_names_map[params_.dof_names[i]].angle_wraparound)
+      {
+        // for continuous angles the error is normalized between -pi<error<pi
+        state_publisher_->msg_.dof_states[i].error =
+          angles::shortest_angular_distance(measured_state_values_[i], reference_interfaces_[i]);
+      }
       if (reference_interfaces_.size() == 2 * dof_ && measured_state_values_.size() == 2 * dof_)
       {
         state_publisher_->msg_.dof_states[i].error_dot =

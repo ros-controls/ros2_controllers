@@ -2,6 +2,82 @@
 Changelog for package rqt_joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.7.0 (2024-03-22)
+------------------
+* [CI] Code coverage + pre-commit (`#1057 <https://github.com/ros-controls/ros2_controllers/issues/1057>`_)
+* Contributors: Christoph Fröhlich
+
+4.6.0 (2024-02-12)
+------------------
+
+4.5.0 (2024-01-31)
+------------------
+
+4.4.0 (2024-01-11)
+------------------
+
+4.3.0 (2024-01-08)
+------------------
+* Add rqt_JTC to docs (`#950 <https://github.com/ros-controls/ros2_controllers/issues/950>`_)
+* Contributors: Christoph Fröhlich
+
+4.2.0 (2023-12-12)
+------------------
+* Fix rqt jtc bugs for continuous joints and other minor bugs (`#890 <https://github.com/ros-controls/ros2_controllers/issues/890>`_)
+* Contributors: Sai Kishor Kothakota
+
+4.1.0 (2023-12-01)
+------------------
+
+4.0.0 (2023-11-21)
+------------------
+
+3.17.0 (2023-10-31)
+-------------------
+
+3.16.0 (2023-09-20)
+-------------------
+
+3.15.0 (2023-09-11)
+-------------------
+
+3.14.0 (2023-08-16)
+-------------------
+
+3.13.0 (2023-08-04)
+-------------------
+
+3.12.0 (2023-07-18)
+-------------------
+
+3.11.0 (2023-06-24)
+-------------------
+
+3.10.1 (2023-06-06)
+-------------------
+
+3.10.0 (2023-06-04)
+-------------------
+* Adapted rqt_jtc to newest control_msgs for jtc (`#643 <https://github.com/ros-controls/ros2_controllers/issues/643>`_)
+* Contributors: gwalck
+
+3.9.0 (2023-05-28)
+------------------
+
+3.8.0 (2023-05-14)
+------------------
+* switch from dash to underscore in setup.cfg (`#595 <https://github.com/ros-controls/ros2_controllers/issues/595>`_)
+* Contributors: Alex Moriarty
+
+3.7.0 (2023-05-02)
+------------------
+
+3.6.0 (2023-04-29)
+------------------
+
+3.5.0 (2023-04-14)
+------------------
+
 3.4.0 (2023-04-02)
 ------------------
 

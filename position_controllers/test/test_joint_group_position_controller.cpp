@@ -54,7 +54,8 @@ void JointGroupPositionControllerTest::TearDown() { controller_.reset(nullptr); 
 
 void JointGroupPositionControllerTest::SetUpController()
 {
-  const auto result = controller_->init("test_joint_group_position_controller");
+  const auto result = controller_->init(
+    "test_joint_group_position_controller", "", 0, "", controller_->define_custom_node_options());
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
   std::vector<LoanedCommandInterface> command_ifs;

@@ -110,6 +110,12 @@ protected:
   // Parameters from ROS for diff_drive_controller
   std::shared_ptr<ParamListener> param_listener_;
   Params params_;
+  /* Number of wheels on each side of the robot. This is important to take the wheels slip into
+   * account when multiple wheels on each side are present. If there are more wheels then control
+   * signals for each side, you should enter number for control signals. For example, Husky has two
+   * wheels on each side, but they use one control signal, in this case '1' is the correct value of
+   * the parameter. */
+  int wheels_per_side_;
 
   Odometry odometry_;
 
@@ -127,8 +133,6 @@ protected:
 
   bool subscriber_is_active_ = false;
   rclcpp::Subscription<Twist>::SharedPtr velocity_command_subscriber_ = nullptr;
-  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr
-    velocity_command_unstamped_subscriber_ = nullptr;
 
   realtime_tools::RealtimeBox<std::shared_ptr<Twist>> received_velocity_msg_ptr_{nullptr};
 
@@ -148,10 +152,9 @@ protected:
   // publish rate limiter
   double publish_rate_ = 50.0;
   rclcpp::Duration publish_period_ = rclcpp::Duration::from_nanoseconds(0);
-  rclcpp::Time previous_publish_timestamp_{0};
+  rclcpp::Time previous_publish_timestamp_{0, 0, RCL_CLOCK_UNINITIALIZED};
 
   bool is_halted = false;
-  bool use_stamped_vel_ = true;
 
   bool reset();
   void halt();

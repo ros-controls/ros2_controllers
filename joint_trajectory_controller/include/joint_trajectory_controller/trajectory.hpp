@@ -48,14 +48,19 @@ public:
     const trajectory_msgs::msg::JointTrajectoryPoint & current_point,
     std::shared_ptr<trajectory_msgs::msg::JointTrajectory> joint_trajectory);
 
-  /// Set the point before the trajectory message is replaced/appended
-  /// Example: if we receive a new trajectory message and it's first point is 0.5 seconds
-  /// from the current one, we call this function to log the current state, then
-  /// append/replace the current trajectory
+  /**
+   *  Set the point before the trajectory message is replaced/appended
+   * Example: if we receive a new trajectory message and it's first point is 0.5 seconds
+   * from the current one, we call this function to log the current state, then
+   * append/replace the current trajectory
+   * \param joints_angle_wraparound Vector of boolean where true value corresponds to a joint that
+   * wrap around (ie. is continuous).
+   */
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   void set_point_before_trajectory_msg(
     const rclcpp::Time & current_time,
-    const trajectory_msgs::msg::JointTrajectoryPoint & current_point);
+    const trajectory_msgs::msg::JointTrajectoryPoint & current_point,
+    const std::vector<bool> & joints_angle_wraparound = std::vector<bool>());
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   void update(
@@ -66,26 +71,29 @@ public:
   /// containing trajectory.
   /**
    * Sampling trajectory at given \p sample_time.
-   * If position in the \p end_segment_itr is missing it will be deduced from provided velocity, or acceleration respectively.
-   * Deduction assumes that the provided velocity or acceleration have to be reached at the time defined in the segment.
+   * If position in the \p end_segment_itr is missing it will be deduced from provided velocity, or
+   * acceleration respectively. Deduction assumes that the provided velocity or acceleration have to
+   * be reached at the time defined in the segment.
    *
    * Specific case returns for start_segment_itr and end_segment_itr:
    * - Sampling before the trajectory start:
    *   start_segment_itr = begin(), end_segment_itr = begin()
    * - Sampling exactly on a point of the trajectory:
-   *    start_segment_itr = iterator where point is, end_segment_itr = iterator after start_segment_itr
+   *    start_segment_itr = iterator where point is, end_segment_itr = iterator after
+   * start_segment_itr
    * - Sampling between points:
-   *    start_segment_itr = iterator before the sampled point, end_segment_itr = iterator after start_segment_itr
+   *    start_segment_itr = iterator before the sampled point, end_segment_itr = iterator after
+   * start_segment_itr
    * - Sampling after entire trajectory:
    *    start_segment_itr = --end(), end_segment_itr = end()
    * - Sampling empty msg or before the time given in set_point_before_trajectory_msg()
    *    return false
    *
    * \param[in] sample_time Time at which trajectory will be sampled.
-   * \param[in] interpolation_method Specify whether splines, another method, or no interpolation at all.
-   * \param[out] expected_state Calculated new at \p sample_time.
-   * \param[out] start_segment_itr Iterator to the start segment for given \p sample_time. See description above.
-   * \param[out] end_segment_itr Iterator to the end segment for given \p sample_time. See description above.
+   * \param[in] interpolation_method Specify whether splines, another method, or no interpolation at
+   * all. \param[out] expected_state Calculated new at \p sample_time. \param[out] start_segment_itr
+   * Iterator to the start segment for given \p sample_time. See description above. \param[out]
+   * end_segment_itr Iterator to the end segment for given \p sample_time. See description above.
    */
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   bool sample(
@@ -102,14 +110,16 @@ public:
   /**
    * Do interpolation between 2 states given a time in between their respective timestamps
    *
-   * The start and end states need not necessarily be specified all the way to the acceleration level:
+   * The start and end states need not necessarily be specified all the way to the acceleration
+   * level:
    * - If only \b positions are specified, linear interpolation will be used.
    * - If \b positions and \b velocities are specified, a cubic spline will be used.
-   * - If \b positions, \b velocities and \b accelerations are specified, a quintic spline will be used.
+   * - If \b positions, \b velocities and \b accelerations are specified, a quintic spline will be
+   * used.
    *
    * If start and end states have different specifications
-   * (eg. start is position-only, end is position-velocity), the lowest common specification will be used
-   * (position-only in the example).
+   * (eg. start is position-only, end is position-velocity), the lowest common specification will be
+   * used (position-only in the example).
    *
    * \param[in] time_a Time at which the segment state equals \p state_a.
    * \param[in] state_a State at \p time_a.
@@ -141,13 +151,13 @@ public:
   bool has_trajectory_msg() const;
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
+  bool has_nontrivial_msg() const;
+
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> get_trajectory_msg() const
   {
     return trajectory_msg_;
   }
-
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  rclcpp::Time get_trajectory_start_time() const { return trajectory_start_time_; }
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   bool is_sampled_already() const { return sampled_already_; }
@@ -180,9 +190,9 @@ private:
 };
 
 /**
- * \return The map between \p t1 indices (implicitly encoded in return vector indices) to \p t2 indices.
- * If \p t1 is <tt>"{C, B}"</tt> and \p t2 is <tt>"{A, B, C, D}"</tt>, the associated mapping vector is
- * <tt>"{2, 1}"</tt>.
+ * \return The map between \p t1 indices (implicitly encoded in return vector indices) to \p t2
+ * indices. If \p t1 is <tt>"{C, B}"</tt> and \p t2 is <tt>"{A, B, C, D}"</tt>, the associated
+ * mapping vector is <tt>"{2, 1}"</tt>.
  */
 template <class T>
 inline std::vector<size_t> mapping(const T & t1, const T & t2)
@@ -210,6 +220,17 @@ inline std::vector<size_t> mapping(const T & t1, const T & t2)
   }
   return mapping_vector;
 }
+
+/**
+ * \param current_position The current position given from the controller, which will be adapted.
+ * \param next_position Next position from which to compute the wraparound offset, i.e.,
+ *      the first trajectory point
+ * \param joints_angle_wraparound Vector of boolean where true value corresponds to a joint that
+ * wrap around (ie. is continuous).
+ */
+void wraparound_joint(
+  std::vector<double> & current_position, const std::vector<double> next_position,
+  const std::vector<bool> & joints_angle_wraparound);
 
 }  // namespace joint_trajectory_controller
 

@@ -1,7 +1,9 @@
+:github_url: https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/pid_controller/doc/userdoc.rst
+
 .. _pid_controller_userdoc:
 
-pid_controller
-=========================
+PID Controller
+--------------------------------
 
 PID Controller implementation that uses PidROS implementation from `control_toolbox <https://github.com/ros-controls/control_toolbox/>`_ package.
 The controller can be used directly by sending references through a topic or in a chain having preceding or following controllers.
@@ -27,20 +29,20 @@ Depending on the reference/state and command interface of the hardware a differe
    PID term of JTC has different purpose - it enables commanding only ``velocity`` or ``effort`` interfaces to hardware.
 
 Execution logic of the controller
-----------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The controller can be also used in "feed-forward" mode where feed-forward gain is used to increase controllers dynamics.
 If one type of the reference and state interfaces is used, only immediate error is used. If there are two, then the second interface type is considered to be the first derivative of the first type.
 For example a valid combination would be ``position`` and ``velocity`` interface types.
 
 Using the controller
-------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Pluginlib-Library: pid_controller
 Plugin name: pid_controller/PidController
 
 Description of controller's interfaces
---------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 References (from a preceding controller)
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
@@ -68,7 +70,7 @@ If controller parameter ``use_external_measured_states`` is true:
 - <controller_name>/measured_state  [control_msgs/msg/MultiDOFCommand]
 
 Services
-`````````
+,,,,,,,,,,,
 
 - <controller_name>/set_feedforward_control  [std_srvs/srv/SetBool]
 
@@ -79,6 +81,6 @@ Publishers
 Parameters
 ,,,,,,,,,,,
 
-For a list of parameters and their meaning see the YAML file in the ``src`` folder of the controller's package.
+The PID controller uses the `generate_parameter_library <https://github.com/PickNikRobotics/generate_parameter_library>`_ to handle its parameters.
 
-For an exemplary parameterization see the ``test`` folder of the controller's package.
+.. generate_parameter_library_details:: ../src/pid_controller.yaml

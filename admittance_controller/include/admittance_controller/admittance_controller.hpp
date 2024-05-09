@@ -166,20 +166,22 @@ protected:
   geometry_msgs::msg::Wrench ft_values_;
 
   /**
-  * @brief Read values from hardware interfaces and set corresponding fields of state_current and ft_values
-  */
+   * @brief Read values from hardware interfaces and set corresponding fields of state_current and
+   * ft_values
+   */
   void read_state_from_hardware(
     trajectory_msgs::msg::JointTrajectoryPoint & state_current,
     geometry_msgs::msg::Wrench & ft_values);
 
   /**
-  * @brief Set fields of state_reference with values from controllers exported position and velocity references
-  */
+   * @brief Set fields of state_reference with values from controllers exported position and
+   * velocity references
+   */
   void read_state_reference_interfaces(trajectory_msgs::msg::JointTrajectoryPoint & state);
 
   /**
-* @brief Write values from state_command to claimed hardware interfaces
-*/
+   * @brief Write values from state_command to claimed hardware interfaces
+   */
   void write_state_to_hardware(const trajectory_msgs::msg::JointTrajectoryPoint & state_command);
 };
 

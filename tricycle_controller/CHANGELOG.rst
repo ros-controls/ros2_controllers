@@ -2,6 +2,97 @@
 Changelog for package tricycle_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.7.0 (2024-03-22)
+------------------
+* added conditioning to have rolling tags compilable in older versions (`#1071 <https://github.com/ros-controls/ros2_controllers/issues/1071>`_)
+* Fix usage of visibility macros (`#1039 <https://github.com/ros-controls/ros2_controllers/issues/1039>`_)
+* Contributors: Sai Kishor Kothakota, Silvio Traversaro
+
+4.6.0 (2024-02-12)
+------------------
+* Fix usage of M_PI on Windows (`#1036 <https://github.com/ros-controls/ros2_controllers/issues/1036>`_)
+* Add test_depend on `hardware_interface_testing` (`#1018 <https://github.com/ros-controls/ros2_controllers/issues/1018>`_)
+* Fix tests for using new `get_node_options` API (`#840 <https://github.com/ros-controls/ros2_controllers/issues/840>`_)
+* Contributors: Christoph Fröhlich, Sai Kishor Kothakota, Silvio Traversaro
+
+4.5.0 (2024-01-31)
+------------------
+* [tricycle_controller] Use generate_parameter_library (`#957 <https://github.com/ros-controls/ros2_controllers/issues/957>`_)
+* Contributors: Christoph Fröhlich
+
+4.4.0 (2024-01-11)
+------------------
+
+4.3.0 (2024-01-08)
+------------------
+* Add few warning flags to error (`#961 <https://github.com/ros-controls/ros2_controllers/issues/961>`_)
+* Contributors: Sai Kishor Kothakota
+
+4.2.0 (2023-12-12)
+------------------
+
+4.1.0 (2023-12-01)
+------------------
+* Increase test coverage of interface configuration getters (`#856 <https://github.com/ros-controls/ros2_controllers/issues/856>`_)
+* Contributors: Christoph Fröhlich
+
+4.0.0 (2023-11-21)
+------------------
+* fix tests for API break of passing controller manager update rate in init method (`#854 <https://github.com/ros-controls/ros2_controllers/issues/854>`_)
+* Adjust tests after passing URDF to controllers (`#817 <https://github.com/ros-controls/ros2_controllers/issues/817>`_)
+* Contributors: Bence Magyar, Sai Kishor Kothakota
+
+3.17.0 (2023-10-31)
+-------------------
+
+3.16.0 (2023-09-20)
+-------------------
+
+3.15.0 (2023-09-11)
+-------------------
+
+3.14.0 (2023-08-16)
+-------------------
+
+3.13.0 (2023-08-04)
+-------------------
+
+3.12.0 (2023-07-18)
+-------------------
+
+3.11.0 (2023-06-24)
+-------------------
+* Added -Wconversion flag and fix warnings (`#667 <https://github.com/ros-controls/ros2_controllers/issues/667>`_)
+* Contributors: gwalck
+
+3.10.1 (2023-06-06)
+-------------------
+
+3.10.0 (2023-06-04)
+-------------------
+* enable ReflowComments to also use ColumnLimit on comments (`#625 <https://github.com/ros-controls/ros2_controllers/issues/625>`_)
+* Contributors: Sai Kishor Kothakota
+
+3.9.0 (2023-05-28)
+------------------
+* Use branch name substitution for all links (`#618 <https://github.com/ros-controls/ros2_controllers/issues/618>`_)
+* Fix github links on control.ros.org (`#604 <https://github.com/ros-controls/ros2_controllers/issues/604>`_)
+* Contributors: Christoph Fröhlich
+
+3.8.0 (2023-05-14)
+------------------
+
+3.7.0 (2023-05-02)
+------------------
+
+3.6.0 (2023-04-29)
+------------------
+* Renovate load controller tests (`#569 <https://github.com/ros-controls/ros2_controllers/issues/569>`_)
+* Contributors: Bence Magyar
+
+3.5.0 (2023-04-14)
+------------------
+
 3.4.0 (2023-04-02)
 ------------------
 

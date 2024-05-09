@@ -64,34 +64,36 @@ TEST_F(PidControllerTest, all_parameters_set_configure_success)
   ASSERT_FALSE(controller_->params_.runtime_param_update);
 }
 
-TEST_F(PidControllerTest, check_exported_intefaces)
+TEST_F(PidControllerTest, check_exported_interfaces)
 {
   SetUpController();
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  auto command_interfaces = controller_->command_interface_configuration();
-  ASSERT_EQ(command_interfaces.names.size(), dof_command_values_.size());
-  for (size_t i = 0; i < command_interfaces.names.size(); ++i)
+  auto cmd_if_conf = controller_->command_interface_configuration();
+  ASSERT_EQ(cmd_if_conf.names.size(), dof_command_values_.size());
+  for (size_t i = 0; i < cmd_if_conf.names.size(); ++i)
   {
-    EXPECT_EQ(command_interfaces.names[i], dof_names_[i] + "/" + command_interface_);
+    EXPECT_EQ(cmd_if_conf.names[i], dof_names_[i] + "/" + command_interface_);
   }
+  EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
-  auto state_intefaces = controller_->state_interface_configuration();
-  ASSERT_EQ(state_intefaces.names.size(), dof_state_values_.size());
+  auto state_if_conf = controller_->state_interface_configuration();
+  ASSERT_EQ(state_if_conf.names.size(), dof_state_values_.size());
   size_t si_index = 0;
   for (const auto & interface : state_interfaces_)
   {
     for (const auto & dof_name : dof_names_)
     {
-      EXPECT_EQ(state_intefaces.names[si_index], dof_name + "/" + interface);
+      EXPECT_EQ(state_if_conf.names[si_index], dof_name + "/" + interface);
       ++si_index;
     }
   }
+  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
   // check ref itfs
-  auto reference_interfaces = controller_->export_reference_interfaces();
-  ASSERT_EQ(reference_interfaces.size(), dof_state_values_.size());
+  auto ref_if_conf = controller_->export_reference_interfaces();
+  ASSERT_EQ(ref_if_conf.size(), dof_state_values_.size());
   size_t ri_index = 0;
   for (const auto & interface : state_interfaces_)
   {
@@ -99,10 +101,9 @@ TEST_F(PidControllerTest, check_exported_intefaces)
     {
       const std::string ref_itf_name =
         std::string(controller_->get_node()->get_name()) + "/" + dof_name + "/" + interface;
-      EXPECT_EQ(reference_interfaces[ri_index].get_name(), ref_itf_name);
-      EXPECT_EQ(
-        reference_interfaces[ri_index].get_prefix_name(), controller_->get_node()->get_name());
-      EXPECT_EQ(reference_interfaces[ri_index].get_interface_name(), dof_name + "/" + interface);
+      EXPECT_EQ(ref_if_conf[ri_index].get_name(), ref_itf_name);
+      EXPECT_EQ(ref_if_conf[ri_index].get_prefix_name(), controller_->get_node()->get_name());
+      EXPECT_EQ(ref_if_conf[ri_index].get_interface_name(), dof_name + "/" + interface);
       ++ri_index;
     }
   }
@@ -162,11 +163,19 @@ TEST_F(PidControllerTest, reactivate_success)
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(std::isnan(controller_->reference_interfaces_[0]));
+  ASSERT_TRUE(std::isnan(controller_->measured_state_values_[0]));
   ASSERT_EQ(controller_->command_interfaces_[0].get_value(), 101.101);
   ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_TRUE(std::isnan(controller_->command_interfaces_[0].get_value()));
+  ASSERT_TRUE(std::isnan(controller_->reference_interfaces_[0]));
+  ASSERT_TRUE(std::isnan(controller_->measured_state_values_[0]));
+  ASSERT_EQ(controller_->command_interfaces_[0].get_value(), 101.101);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_TRUE(std::isnan(controller_->command_interfaces_[0].get_value()));
+  ASSERT_TRUE(std::isnan(controller_->reference_interfaces_[0]));
+  ASSERT_TRUE(std::isnan(controller_->measured_state_values_[0]));
+  ASSERT_EQ(controller_->command_interfaces_[0].get_value(), 101.101);
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
@@ -392,6 +401,50 @@ TEST_F(PidControllerTest, test_update_logic_chainable_feedforward_on)
     EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromRT()))->values[i]));
     EXPECT_EQ((*(controller_->input_ref_.readFromRT()))->values[i], dof_command_values_[i]);
   }
+}
+
+/**
+ * @brief check default calculation with angle_wraparound turned off
+ */
+TEST_F(PidControllerTest, test_update_logic_angle_wraparound_off)
+{
+  SetUpController();
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+  executor.add_node(service_caller_node_->get_node_base_interface());
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  controller_->set_chained_mode(true);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(controller_->is_in_chained_mode());
+
+  // write reference interface so that the values are would be wrapped
+
+  // run update
+
+  // check the result of the commands - the values are not wrapped
+}
+
+/**
+ * @brief check default calculation with angle_wraparound turned off
+ */
+TEST_F(PidControllerTest, test_update_logic_angle_wraparound_on)
+{
+  SetUpController();
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+  executor.add_node(service_caller_node_->get_node_base_interface());
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  controller_->set_chained_mode(true);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(controller_->is_in_chained_mode());
+
+  // write reference interface so that the values are would be wrapped
+
+  // run update
+
+  // check the result of the commands - the values are wrapped
 }
 
 TEST_F(PidControllerTest, subscribe_and_get_messages_success)
