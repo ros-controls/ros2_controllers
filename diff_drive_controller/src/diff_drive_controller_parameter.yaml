@@ -19,6 +19,9 @@ diff_drive_controller:
     type: double,
     default_value: 0.0,
     description: "Shortest distance between the left and right wheels. If this parameter is wrong, the robot will not behave correctly in curves.",
+    validation: {
+      gt<>: [0.0]
+    }
   }
   wheels_per_side: {
     type: int,
@@ -29,6 +32,9 @@ diff_drive_controller:
     type: double,
     default_value: 0.0,
     description: "Radius of a wheel, i.e., wheels size, used for transformation of linear velocity into wheel rotations. If this parameter is wrong the robot will move faster or slower then expected.",
+    validation: {
+      gt<>: [0.0]
+    }
   }
   wheel_separation_multiplier: {
     type: double,

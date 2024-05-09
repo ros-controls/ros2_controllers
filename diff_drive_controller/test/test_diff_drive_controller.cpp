@@ -184,6 +184,10 @@ protected:
       rclcpp::Parameter("left_wheel_names", rclcpp::ParameterValue(left_wheel_joints_init)));
     parameter_overrides.push_back(
       rclcpp::Parameter("right_wheel_names", rclcpp::ParameterValue(right_wheel_joints_init)));
+    // default parameters
+    parameter_overrides.push_back(
+      rclcpp::Parameter("wheel_separation", rclcpp::ParameterValue(1.0)));
+    parameter_overrides.push_back(rclcpp::Parameter("wheel_radius", rclcpp::ParameterValue(0.1)));
 
     parameter_overrides.insert(parameter_overrides.end(), parameters.begin(), parameters.end());
     node_options.parameter_overrides(parameter_overrides);
