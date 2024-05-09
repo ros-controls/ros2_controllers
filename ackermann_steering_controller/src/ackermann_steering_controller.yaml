@@ -5,6 +5,9 @@ ackermann_steering_controller:
       default_value: 0.0,
       description: "Front wheel track length. For details see: https://en.wikipedia.org/wiki/Wheelbase",
       read_only: false,
+      validation: {
+        gt<>: [0.0]
+      }
     }
 
   rear_wheel_track:
@@ -13,6 +16,9 @@ ackermann_steering_controller:
       default_value: 0.0,
       description: "Rear wheel track length. For details see: https://en.wikipedia.org/wiki/Wheelbase",
       read_only: false,
+      validation: {
+        gt<>: [0.0]
+      }
     }
 
   wheelbase:
@@ -21,6 +27,9 @@ ackermann_steering_controller:
       default_value: 0.0,
       description: "Distance between front and rear wheels. For details see: https://en.wikipedia.org/wiki/Wheelbase",
       read_only: false,
+      validation: {
+        gt<>: [0.0]
+      }
     }
 
   front_wheels_radius:
@@ -29,6 +38,9 @@ ackermann_steering_controller:
       default_value: 0.0,
       description: "Front wheels radius.",
       read_only: false,
+      validation: {
+        gt<>: [0.0]
+      }
     }
 
   rear_wheels_radius:
@@ -37,4 +49,7 @@ ackermann_steering_controller:
       default_value: 0.0,
       description: "Rear wheels radius.",
       read_only: false,
+      validation: {
+        gt<>: [0.0]
+      }
     }
