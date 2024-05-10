@@ -27,9 +27,12 @@ import xml.dom.minidom
 from math import pi
 
 import rclpy
+import rclpy.subscription
 from std_msgs.msg import String
 
 description = ""
+robot_description_subscriber_created = False
+subscription = None
 
 
 def callback(msg):
@@ -37,16 +40,34 @@ def callback(msg):
     description = msg.data
 
 
-def subscribe_to_robot_description(node, key="robot_description"):
+def subscribe_to_robot_description(
+    node, key="robot_description"
+) -> rclpy.subscription.Subscription:
+    global robot_description_subscriber_created
+    global subscription
     qos_profile = rclpy.qos.QoSProfile(depth=1)
     qos_profile.durability = rclpy.qos.DurabilityPolicy.TRANSIENT_LOCAL
     qos_profile.reliability = rclpy.qos.ReliabilityPolicy.RELIABLE
 
-    node.create_subscription(String, key, callback, qos_profile)
+    subscription = node.create_subscription(String, key, callback, qos_profile)
+    robot_description_subscriber_created = True
+    return subscription
 
 
-def get_joint_limits(node, use_smallest_joint_limits=True):
+def unsubscribe_to_robot_description(node) -> rclpy.subscription.Subscription:
+    global subscription
+    if subscription is not None:
+        node.destroy_subscription(subscription)
+
+
+def get_joint_limits(node, joints_names, use_smallest_joint_limits=True):
+    global robot_description_subscriber_created
     global description
+
+    if not robot_description_subscriber_created:
+        print("First select robot description topic name!")
+        return
+
     use_small = use_smallest_joint_limits
     use_mimic = True
 
@@ -71,54 +92,56 @@ def get_joint_limits(node, use_smallest_joint_limits=True):
                 if jtype == "fixed":
                     continue
                 name = child.getAttribute("name")
-                try:
-                    limit = child.getElementsByTagName("limit")[0]
+
+                if name in joints_names:
                     try:
-                        minval = float(limit.getAttribute("lower"))
-                        maxval = float(limit.getAttribute("upper"))
-                    except ValueError:
-                        if jtype == "continuous":
-                            minval = -pi
-                            maxval = pi
-                        else:
+                        limit = child.getElementsByTagName("limit")[0]
+                        try:
+                            minval = float(limit.getAttribute("lower"))
+                            maxval = float(limit.getAttribute("upper"))
+                        except ValueError:
+                            if jtype == "continuous":
+                                minval = -pi
+                                maxval = pi
+                            else:
+                                raise Exception(
+                                    f"Missing lower/upper position limits for the joint : {name} of type : {jtype} in the robot_description!"
+                                )
+                        try:
+                            maxvel = float(limit.getAttribute("velocity"))
+                        except ValueError:
                             raise Exception(
-                                f"Missing lower/upper position limits for the joint : {name} of type : {jtype} in the robot_description!"
+                                f"Missing velocity limits for the joint : {name} of type : {jtype} in the robot_description!"
                             )
-                    try:
-                        maxvel = float(limit.getAttribute("velocity"))
-                    except ValueError:
+                    except IndexError:
                         raise Exception(
-                            f"Missing velocity limits for the joint : {name} of type : {jtype} in the robot_description!"
+                            f"Missing limits tag for the joint : {name} in the robot_description!"
                         )
-                except IndexError:
-                    raise Exception(
-                        f"Missing limits tag for the joint : {name} in the robot_description!"
-                    )
-                safety_tags = child.getElementsByTagName("safety_controller")
-                if use_small and len(safety_tags) == 1:
-                    tag = safety_tags[0]
-                    if tag.hasAttribute("soft_lower_limit"):
-                        minval = max(minval, float(tag.getAttribute("soft_lower_limit")))
-                    if tag.hasAttribute("soft_upper_limit"):
-                        maxval = min(maxval, float(tag.getAttribute("soft_upper_limit")))
+                    safety_tags = child.getElementsByTagName("safety_controller")
+                    if use_small and len(safety_tags) == 1:
+                        tag = safety_tags[0]
+                        if tag.hasAttribute("soft_lower_limit"):
+                            minval = max(minval, float(tag.getAttribute("soft_lower_limit")))
+                        if tag.hasAttribute("soft_upper_limit"):
+                            maxval = min(maxval, float(tag.getAttribute("soft_upper_limit")))
 
-                mimic_tags = child.getElementsByTagName("mimic")
-                if use_mimic and len(mimic_tags) == 1:
-                    tag = mimic_tags[0]
-                    entry = {"parent": tag.getAttribute("joint")}
-                    if tag.hasAttribute("multiplier"):
-                        entry["factor"] = float(tag.getAttribute("multiplier"))
-                    if tag.hasAttribute("offset"):
-                        entry["offset"] = float(tag.getAttribute("offset"))
+                    mimic_tags = child.getElementsByTagName("mimic")
+                    if use_mimic and len(mimic_tags) == 1:
+                        tag = mimic_tags[0]
+                        entry = {"parent": tag.getAttribute("joint")}
+                        if tag.hasAttribute("multiplier"):
+                            entry["factor"] = float(tag.getAttribute("multiplier"))
+                        if tag.hasAttribute("offset"):
+                            entry["offset"] = float(tag.getAttribute("offset"))
 
-                    dependent_joints[name] = entry
-                    continue
+                        dependent_joints[name] = entry
+                        continue
 
-                if name in dependent_joints:
-                    continue
+                    if name in dependent_joints:
+                        continue
 
-                joint = {"min_position": minval, "max_position": maxval}
-                joint["has_position_limits"] = jtype != "continuous"
-                joint["max_velocity"] = maxvel
-                free_joints[name] = joint
+                    joint = {"min_position": minval, "max_position": maxval}
+                    joint["has_position_limits"] = jtype != "continuous"
+                    joint["max_velocity"] = maxvel
+                    free_joints[name] = joint
     return free_joints

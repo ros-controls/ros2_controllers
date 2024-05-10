@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>336</width>
-    <height>317</height>
+    <width>616</width>
+    <height>594</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -26,8 +26,11 @@
          <widget class="QComboBox" name="jtc_combo"/>
         </item>
         <item row="1" column="0">
-         <widget class="QComboBox" name="cm_combo"/>
+          <widget class="QComboBox" name="cm_combo"/>
         </item>
+        <item row="1" column="2">
+          <widget class="QComboBox" name="robot_description_combo"/>
+         </item>
         <item row="0" column="0">
          <widget class="QLabel" name="cm_list_label">
           <property name="toolTip">
@@ -49,6 +52,16 @@
           <property name="buddy">
            <cstring>jtc_combo</cstring>
           </property>
+         </widget>
+        </item>
+        <item row="0" column="2">
+         <widget class="QLabel" name="robot_description_list_label">
+          <property name="text">
+           <string>robot description topic</string>
+          </property>
+          <property name="buddy">
+            <cstring>robot_description_combo</cstring>
+           </property>
          </widget>
         </item>
        </layout>
@@ -172,8 +185,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>314</width>
-           <height>109</height>
+           <width>566</width>
+           <height>300</height>
           </rect>
          </property>
         </widget>
@@ -195,6 +208,7 @@
  <tabstops>
   <tabstop>cm_combo</tabstop>
   <tabstop>jtc_combo</tabstop>
+  <tabstop>robot_description_combo</tabstop>
   <tabstop>enable_button</tabstop>
  </tabstops>
  <resources/>
