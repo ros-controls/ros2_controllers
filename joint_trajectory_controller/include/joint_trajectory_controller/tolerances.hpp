@@ -30,9 +30,6 @@
 #ifndef JOINT_TRAJECTORY_CONTROLLER__TOLERANCES_HPP_
 #define JOINT_TRAJECTORY_CONTROLLER__TOLERANCES_HPP_
 
-#include <cassert>
-#include <cmath>
-#include <string>
 #include <vector>
 
 #include "control_msgs/action/follow_joint_trajectory.hpp"
@@ -123,11 +120,11 @@ SegmentTolerances get_segment_tolerances(Params const & params)
  * \param state_error State error to check.
  * \param joint_idx Joint index for the state error
  * \param state_tolerance State tolerance of joint to check \p state_error against.
- * \param show_errors If the joint that violate its tolerance should be output to console. NOT REALTIME if true
- * \return True if \p state_error fulfills \p state_tolerance.
+ * \param show_errors If the joint that violate its tolerance should be output to console. NOT
+ * REALTIME if true \return True if \p state_error fulfills \p state_tolerance.
  */
 inline bool check_state_tolerance_per_joint(
-  const trajectory_msgs::msg::JointTrajectoryPoint & state_error, int joint_idx,
+  const trajectory_msgs::msg::JointTrajectoryPoint & state_error, size_t joint_idx,
   const StateTolerances & state_tolerance, bool show_errors = false)
 {
   using std::abs;
@@ -150,7 +147,7 @@ inline bool check_state_tolerance_per_joint(
   if (show_errors)
   {
     const auto logger = rclcpp::get_logger("tolerances");
-    RCLCPP_ERROR(logger, "Path state tolerances failed:");
+    RCLCPP_ERROR(logger, "State tolerances failed for joint %lu:", joint_idx);
 
     if (state_tolerance.position > 0.0 && abs(error_position) > state_tolerance.position)
     {

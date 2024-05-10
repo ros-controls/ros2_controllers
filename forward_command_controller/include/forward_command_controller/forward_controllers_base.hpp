@@ -87,8 +87,8 @@ protected:
    *
    * It is expected that error handling of exceptions is done.
    *
-   * \returns controller_interface::CallbackReturn::SUCCESS if parameters are successfully read and their values are
-   * allowed, controller_interface::CallbackReturn::ERROR otherwise.
+   * \returns controller_interface::CallbackReturn::SUCCESS if parameters are successfully read and
+   * their values are allowed, controller_interface::CallbackReturn::ERROR otherwise.
    */
   virtual controller_interface::CallbackReturn read_parameters() = 0;
 

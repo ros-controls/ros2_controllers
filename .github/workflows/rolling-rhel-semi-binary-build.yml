@@ -1,0 +1,28 @@
+name: RHEL Rolling Semi-Binary Build
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - '**.hpp'
+      - '**.h'
+      - '**.cpp'
+      - '**.yaml'
+      - '.github/workflows/rolling-rhel-semi-binary-build.yml'
+      - '**/package.xml'
+      - '**/CMakeLists.txt'
+      - 'ros2_controllers.rolling.repos'
+  schedule:
+    # Run every day to detect flakiness and broken dependencies
+    - cron: '03 1 * * *'
+
+
+jobs:
+  rolling_rhel:
+    uses: ros-controls/ros2_control_ci/.github/workflows/reusable-rhel-binary-build.yml@master
+    with:
+      ros_distro: rolling
+      upstream_workspace: ros2_controllers.rolling.repos
+      ref_for_scheduled_build: master
+      skip_packages: rqt_joint_trajectory_controller

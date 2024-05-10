@@ -14,6 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Code inspired on the joint_state_publisher package by David Lu!!!
+# https://github.com/ros/robot_model/blob/indigo-devel/
+# joint_state_publisher/joint_state_publisher/joint_state_publisher
+
 # TODO: Use urdf_parser_py.urdf instead. I gave it a try, but got
 #  Exception: Required attribute not set in XML: upper
 # upper is an optional attribute, so I don't understand what's going on
@@ -67,16 +71,11 @@ def get_joint_limits(node, joints_names, use_smallest_joint_limits=True):
     use_small = use_smallest_joint_limits
     use_mimic = True
 
-    # Code inspired on the joint_state_publisher package by David Lu!!!
-    # https://github.com/ros/robot_model/blob/indigo-devel/
-    # joint_state_publisher/joint_state_publisher/joint_state_publisher
-
-    qos_profile = rclpy.qos.QoSProfile(depth=1)
-    qos_profile.durability = rclpy.qos.DurabilityPolicy.TRANSIENT_LOCAL
-    qos_profile.reliability = rclpy.qos.ReliabilityPolicy.RELIABLE
-
-    node.create_subscription(String, "/robot_description", callback, qos_profile)
-    rclpy.spin_once(node)
+    count = 0
+    while description == "" and count < 10:
+        print("Waiting for the robot_description!")
+        count += 1
+        rclpy.spin_once(node, timeout_sec=1.0)
 
     free_joints = {}
     dependent_joints = {}

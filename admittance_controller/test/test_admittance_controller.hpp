@@ -27,7 +27,6 @@
 
 #include "gmock/gmock.h"
 
-#include "6d_robot_description.hpp"
 #include "admittance_controller/admittance_controller.hpp"
 #include "control_msgs/msg/admittance_controller_state.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
@@ -38,6 +37,7 @@
 #include "rclcpp/utilities.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "semantic_components/force_torque_sensor.hpp"
+#include "test_asset_6d_robot_description.hpp"
 #include "tf2_ros/transform_broadcaster.h"
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 
@@ -53,6 +53,8 @@ const double COMMON_THRESHOLD = 0.001;
 
 constexpr auto NODE_SUCCESS =
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+constexpr auto NODE_FAILURE =
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
 constexpr auto NODE_ERROR =
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
 
@@ -167,7 +169,7 @@ protected:
     auto options = rclcpp::NodeOptions()
                      .allow_undeclared_parameters(false)
                      .parameter_overrides(parameter_overrides)
-                     .automatically_declare_parameters_from_overrides(true);
+                     .automatically_declare_parameters_from_overrides(false);
     return SetUpControllerCommon(controller_name, options);
   }
 
@@ -176,14 +178,14 @@ protected:
   {
     auto options = rclcpp::NodeOptions()
                      .allow_undeclared_parameters(false)
-                     .automatically_declare_parameters_from_overrides(true);
+                     .automatically_declare_parameters_from_overrides(false);
     return SetUpControllerCommon(controller_name, options);
   }
 
   controller_interface::return_type SetUpControllerCommon(
     const std::string & controller_name, const rclcpp::NodeOptions & options)
   {
-    auto result = controller_->init(controller_name, "", options);
+    auto result = controller_->init(controller_name, "", 0, "", options);
 
     controller_->export_reference_interfaces();
     assign_interfaces();
@@ -454,9 +456,15 @@ public:
   static void TearDownTestCase() { AdmittanceControllerTest::TearDownTestCase(); }
 
 protected:
-  void SetUpController()
+  controller_interface::return_type SetUpController()
   {
-    AdmittanceControllerTest::SetUpController("test_admittance_controller");
+    auto param_name = std::get<0>(GetParam());
+    auto param_value = std::get<1>(GetParam());
+    std::vector<rclcpp::Parameter> parameter_overrides;
+    rclcpp::Parameter param(param_name, param_value);
+    parameter_overrides.push_back(param);
+    return AdmittanceControllerTest::SetUpController(
+      "test_admittance_controller", parameter_overrides);
   }
 };
 

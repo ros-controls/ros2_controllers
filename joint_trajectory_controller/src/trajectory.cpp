@@ -16,11 +16,12 @@
 
 #include <memory>
 
+#include "angles/angles.h"
 #include "hardware_interface/macros.hpp"
 #include "rclcpp/duration.hpp"
 #include "rclcpp/time.hpp"
-#include "rcppmath/clamp.hpp"
 #include "std_msgs/msg/header.hpp"
+
 namespace joint_trajectory_controller
 {
 Trajectory::Trajectory() : trajectory_start_time_(0), time_before_traj_msg_(0) {}
@@ -44,10 +45,39 @@ Trajectory::Trajectory(
 
 void Trajectory::set_point_before_trajectory_msg(
   const rclcpp::Time & current_time,
-  const trajectory_msgs::msg::JointTrajectoryPoint & current_point)
+  const trajectory_msgs::msg::JointTrajectoryPoint & current_point,
+  const std::vector<bool> & joints_angle_wraparound)
 {
   time_before_traj_msg_ = current_time;
   state_before_traj_msg_ = current_point;
+
+  // Compute offsets due to wrapping joints
+  wraparound_joint(
+    state_before_traj_msg_.positions, trajectory_msg_->points[0].positions,
+    joints_angle_wraparound);
+}
+
+void wraparound_joint(
+  std::vector<double> & current_position, const std::vector<double> next_position,
+  const std::vector<bool> & joints_angle_wraparound)
+{
+  double dist;
+  // joints_angle_wraparound is even empty, or has the same size as the number of joints
+  for (size_t i = 0; i < joints_angle_wraparound.size(); i++)
+  {
+    if (joints_angle_wraparound[i])
+    {
+      dist = angles::shortest_angular_distance(current_position[i], next_position[i]);
+
+      // Deal with singularity at M_PI shortest distance
+      if (std::abs(std::abs(dist) - M_PI) < 1e-9)
+      {
+        dist = next_position[i] > current_position[i] ? std::abs(dist) : -std::abs(dist);
+      }
+
+      current_position[i] = next_position[i] - dist;
+    }
+  }
 }
 
 void Trajectory::update(std::shared_ptr<trajectory_msgs::msg::JointTrajectory> joint_trajectory)
@@ -64,7 +94,6 @@ bool Trajectory::sample(
   TrajectoryPointConstIter & start_segment_itr, TrajectoryPointConstIter & end_segment_itr)
 {
   THROW_ON_NULLPTR(trajectory_msg_)
-  output_state = trajectory_msgs::msg::JointTrajectoryPoint();
 
   if (trajectory_msg_->points.empty())
   {
@@ -90,6 +119,7 @@ bool Trajectory::sample(
     return false;
   }
 
+  output_state = trajectory_msgs::msg::JointTrajectoryPoint();
   auto & first_point_in_msg = trajectory_msg_->points[0];
   const rclcpp::Time first_point_timestamp =
     trajectory_start_time_ + first_point_in_msg.time_from_start;
@@ -350,5 +380,10 @@ TrajectoryPointConstIter Trajectory::end() const
 rclcpp::Time Trajectory::time_from_start() const { return trajectory_start_time_; }
 
 bool Trajectory::has_trajectory_msg() const { return trajectory_msg_.get() != nullptr; }
+
+bool Trajectory::has_nontrivial_msg() const
+{
+  return has_trajectory_msg() && trajectory_msg_->points.size() > 1;
+}
 
 }  // namespace joint_trajectory_controller

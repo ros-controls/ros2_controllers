@@ -25,14 +25,14 @@ class PublisherForwardPosition(Node):
     def __init__(self):
         super().__init__("publisher_forward_position_controller")
         # Declare all parameters
-        self.declare_parameter("controller_name", "forward_position_controller")
+        self.declare_parameter("publish_topic", "/position_commands")
         self.declare_parameter("wait_sec_between_publish", 5)
         self.declare_parameter("goal_names", ["pos1", "pos2"])
 
         # Read parameters
-        controller_name = self.get_parameter("controller_name").value
         wait_sec_between_publish = self.get_parameter("wait_sec_between_publish").value
         goal_names = self.get_parameter("goal_names").value
+        publish_topic = self.get_parameter("publish_topic").value
 
         # Read all positions from parameters
         self.goals = []
@@ -45,11 +45,9 @@ class PublisherForwardPosition(Node):
             float_goal = [float(value) for value in goal]
             self.goals.append(float_goal)
 
-        publish_topic = "/" + controller_name + "/" + "commands"
-
         self.get_logger().info(
-            f'Publishing {len(goal_names)} goals on topic "{publish_topic}"\
-              every {wait_sec_between_publish} s'
+            f"Publishing {len(goal_names)} goals on topic '{publish_topic}' "
+            f"every {wait_sec_between_publish} s'"
         )
 
         self.publisher_ = self.create_publisher(Float64MultiArray, publish_topic, 1)
