@@ -6,7 +6,7 @@
 ros2_controllers
 #################
 
-Commonly used and generalized controllers for ros2_control framework that are ready to use with many robots, `MoveIt2 <https://moveit.picknik.ai/main/index.html>`_ and `Nav2 <https://navigation.ros.org/>`_.
+Commonly used and generalized controllers for ros2_control framework that are ready to use with many robots, `MoveIt2 <https://moveit.picknik.ai/main/index.html>`_ and `Nav2 <https://nav2.org/>`_.
 
 `Link to GitHub Repository <https://github.com/ros-controls/ros2_controllers>`_
 
