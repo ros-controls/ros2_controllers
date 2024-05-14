@@ -2,8 +2,8 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.24.0 (2024-05-14)
+-------------------
 * Deprecate non-stamped twist for tricycle_controller and steering_controllers (`#1093 <https://github.com/ros-controls/ros2_controllers/issues/1093>`_) (`#1124 <https://github.com/ros-controls/ros2_controllers/issues/1124>`_)
 * Contributors: mergify[bot]
 
