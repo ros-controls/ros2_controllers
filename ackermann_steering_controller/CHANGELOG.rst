@@ -2,6 +2,11 @@
 Changelog for package ackermann_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add parameter check for geometric values (`#1120 <https://github.com/ros-controls/ros2_controllers/issues/1120>`_) (`#1126 <https://github.com/ros-controls/ros2_controllers/issues/1126>`_)
+* Contributors: mergify[bot]
+
 3.23.0 (2024-04-30)
 -------------------
 

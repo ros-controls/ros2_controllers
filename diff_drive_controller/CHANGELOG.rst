@@ -2,6 +2,13 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Remove non-existing parameter (`#1119 <https://github.com/ros-controls/ros2_controllers/issues/1119>`_) (`#1127 <https://github.com/ros-controls/ros2_controllers/issues/1127>`_)
+* Deprecate non-stamped twist for tricycle_controller and steering_controllers (`#1093 <https://github.com/ros-controls/ros2_controllers/issues/1093>`_) (`#1124 <https://github.com/ros-controls/ros2_controllers/issues/1124>`_)
+* Add parameter check for geometric values (`#1120 <https://github.com/ros-controls/ros2_controllers/issues/1120>`_) (`#1126 <https://github.com/ros-controls/ros2_controllers/issues/1126>`_)
+* Contributors: mergify[bot]
+
 3.23.0 (2024-04-30)
 -------------------
 * [diff_drive] Remove unused parameter and add simple validation #abi-breaking (backport `#958 <https://github.com/ros-controls/ros2_controllers/issues/958>`_) (`#1056 <https://github.com/ros-controls/ros2_controllers/issues/1056>`_)
