@@ -30,6 +30,7 @@
 #include "joint_trajectory_controller/interpolation_methods.hpp"
 #include "joint_trajectory_controller/tolerances.hpp"
 #include "joint_trajectory_controller/trajectory.hpp"
+#include "joint_trajectory_controller/trajectory_operations.hpp"
 #include "joint_trajectory_controller/visibility_control.h"
 #include "rclcpp/duration.hpp"
 #include "rclcpp/subscription.hpp"
@@ -225,24 +226,9 @@ protected:
   void compute_error_for_joint(
     JointTrajectoryPoint & error, const size_t index, const JointTrajectoryPoint & current,
     const JointTrajectoryPoint & desired) const;
-  // fill trajectory_msg so it matches joints controlled by this controller
-  // positions set to current position, velocities, accelerations and efforts to 0.0
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  void fill_partial_goal(
-    std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg) const;
-  // sorts the joints of the incoming message to our local order
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  void sort_to_local_joint_order(
-    std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg) const;
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  bool validate_trajectory_msg(const trajectory_msgs::msg::JointTrajectory & trajectory) const;
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   void add_new_trajectory_msg(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & traj_msg);
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  bool validate_trajectory_point_field(
-    size_t joint_names_size, const std::vector<double> & vector_field,
-    const std::string & string_for_vector_field, size_t i, bool allow_empty) const;
 
   SegmentTolerances default_tolerances_;
 

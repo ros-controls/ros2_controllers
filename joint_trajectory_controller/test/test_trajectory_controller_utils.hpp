@@ -52,7 +52,6 @@ class TestableJointTrajectoryController
 {
 public:
   using joint_trajectory_controller::JointTrajectoryController::JointTrajectoryController;
-  using joint_trajectory_controller::JointTrajectoryController::validate_trajectory_msg;
 
   controller_interface::CallbackReturn on_configure(
     const rclcpp_lifecycle::State & previous_state) override

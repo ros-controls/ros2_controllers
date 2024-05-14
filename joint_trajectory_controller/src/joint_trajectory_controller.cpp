@@ -150,8 +150,30 @@ controller_interface::return_type JointTrajectoryController::update(
     current_external_msg != *new_external_msg &&
     (*(rt_has_pending_goal_.readFromRT()) && !active_goal) == false)
   {
-    fill_partial_goal(*new_external_msg);
-    sort_to_local_joint_order(*new_external_msg);
+    fill_partial_goal(
+      *new_external_msg,
+      [this](size_t index)
+      {
+        if (
+          has_position_command_interface_ &&
+          !std::isnan(joint_command_interface_[0][index].get().get_value()))
+        {
+          // copy last command if cmd interface exists
+          return joint_command_interface_[0][index].get().get_value();
+        }
+        else if (has_position_state_interface_)
+        {
+          // copy current state if state interface exists
+          return joint_state_interface_[0][index].get().get_value();
+        }
+        else
+        {
+          // this should never happen
+          return std::numeric_limits<double>::quiet_NaN();
+        }
+      },
+      params_);
+    sort_to_local_joint_order(*new_external_msg, get_node()->get_logger(), params_);
     // TODO(denis): Add here integration of position and velocity
     traj_external_point_ptr_->update(*new_external_msg);
   }
@@ -1103,7 +1125,7 @@ void JointTrajectoryController::publish_state(
 void JointTrajectoryController::topic_callback(
   const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg)
 {
-  if (!validate_trajectory_msg(*msg))
+  if (!validate_trajectory_msg(*msg, get_node()->get_logger(), get_node()->now(), params_))
   {
     return;
   }
@@ -1129,7 +1151,8 @@ rclcpp_action::GoalResponse JointTrajectoryController::goal_received_callback(
     return rclcpp_action::GoalResponse::REJECT;
   }
 
-  if (!validate_trajectory_msg(goal->trajectory))
+  if (!validate_trajectory_msg(
+        goal->trajectory, get_node()->get_logger(), get_node()->now(), params_))
   {
     return rclcpp_action::GoalResponse::REJECT;
   }
@@ -1219,266 +1242,6 @@ void JointTrajectoryController::compute_error_for_joint(
   {
     error.accelerations[index] = desired.accelerations[index] - current.accelerations[index];
   }
-}
-
-void JointTrajectoryController::fill_partial_goal(
-  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg) const
-{
-  // joint names in the goal are a subset of existing joints, as checked in goal_callback
-  // so if the size matches, the goal contains all controller joints
-  if (dof_ == trajectory_msg->joint_names.size())
-  {
-    return;
-  }
-
-  trajectory_msg->joint_names.reserve(dof_);
-
-  for (size_t index = 0; index < dof_; ++index)
-  {
-    {
-      if (
-        std::find(
-          trajectory_msg->joint_names.begin(), trajectory_msg->joint_names.end(),
-          params_.joints[index]) != trajectory_msg->joint_names.end())
-      {
-        // joint found on msg
-        continue;
-      }
-      trajectory_msg->joint_names.push_back(params_.joints[index]);
-
-      for (auto & it : trajectory_msg->points)
-      {
-        // Assume hold position with 0 velocity and acceleration for missing joints
-        if (!it.positions.empty())
-        {
-          if (
-            has_position_command_interface_ &&
-            !std::isnan(joint_command_interface_[0][index].get().get_value()))
-          {
-            // copy last command if cmd interface exists
-            it.positions.push_back(joint_command_interface_[0][index].get().get_value());
-          }
-          else if (has_position_state_interface_)
-          {
-            // copy current state if state interface exists
-            it.positions.push_back(joint_state_interface_[0][index].get().get_value());
-          }
-        }
-        if (!it.velocities.empty())
-        {
-          it.velocities.push_back(0.0);
-        }
-        if (!it.accelerations.empty())
-        {
-          it.accelerations.push_back(0.0);
-        }
-        if (!it.effort.empty())
-        {
-          it.effort.push_back(0.0);
-        }
-      }
-    }
-  }
-}
-
-void JointTrajectoryController::sort_to_local_joint_order(
-  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg) const
-{
-  // rearrange all points in the trajectory message based on mapping
-  std::vector<size_t> mapping_vector = mapping(trajectory_msg->joint_names, params_.joints);
-  auto remap = [this](
-                 const std::vector<double> & to_remap,
-                 const std::vector<size_t> & mapping) -> std::vector<double>
-  {
-    if (to_remap.empty())
-    {
-      return to_remap;
-    }
-    if (to_remap.size() != mapping.size())
-    {
-      RCLCPP_WARN(
-        get_node()->get_logger(), "Invalid input size (%zu) for sorting", to_remap.size());
-      return to_remap;
-    }
-    static std::vector<double> output(dof_, 0.0);
-    // Only resize if necessary since it's an expensive operation
-    if (output.size() != mapping.size())
-    {
-      output.resize(mapping.size(), 0.0);
-    }
-    for (size_t index = 0; index < mapping.size(); ++index)
-    {
-      auto map_index = mapping[index];
-      output[map_index] = to_remap[index];
-    }
-    return output;
-  };
-
-  for (size_t index = 0; index < trajectory_msg->points.size(); ++index)
-  {
-    trajectory_msg->points[index].positions =
-      remap(trajectory_msg->points[index].positions, mapping_vector);
-
-    trajectory_msg->points[index].velocities =
-      remap(trajectory_msg->points[index].velocities, mapping_vector);
-
-    trajectory_msg->points[index].accelerations =
-      remap(trajectory_msg->points[index].accelerations, mapping_vector);
-
-    trajectory_msg->points[index].effort =
-      remap(trajectory_msg->points[index].effort, mapping_vector);
-  }
-}
-
-bool JointTrajectoryController::validate_trajectory_point_field(
-  size_t joint_names_size, const std::vector<double> & vector_field,
-  const std::string & string_for_vector_field, size_t i, bool allow_empty) const
-{
-  if (allow_empty && vector_field.empty())
-  {
-    return true;
-  }
-  if (joint_names_size != vector_field.size())
-  {
-    RCLCPP_ERROR(
-      get_node()->get_logger(),
-      "Mismatch between joint_names size (%zu) and %s (%zu) at point #%zu.", joint_names_size,
-      string_for_vector_field.c_str(), vector_field.size(), i);
-    return false;
-  }
-  return true;
-}
-
-bool JointTrajectoryController::validate_trajectory_msg(
-  const trajectory_msgs::msg::JointTrajectory & trajectory) const
-{
-  // If partial joints goals are not allowed, goal should specify all controller joints
-  if (!params_.allow_partial_joints_goal)
-  {
-    if (trajectory.joint_names.size() != dof_)
-    {
-      RCLCPP_ERROR(
-        get_node()->get_logger(),
-        "Joints on incoming trajectory don't match the controller joints.");
-      return false;
-    }
-  }
-
-  if (trajectory.joint_names.empty())
-  {
-    RCLCPP_ERROR(get_node()->get_logger(), "Empty joint names on incoming trajectory.");
-    return false;
-  }
-
-  const auto trajectory_start_time = static_cast<rclcpp::Time>(trajectory.header.stamp);
-  // If the starting time it set to 0.0, it means the controller should start it now.
-  // Otherwise we check if the trajectory ends before the current time,
-  // in which case it can be ignored.
-  if (trajectory_start_time.seconds() != 0.0)
-  {
-    auto trajectory_end_time = trajectory_start_time;
-    for (const auto & p : trajectory.points)
-    {
-      trajectory_end_time += p.time_from_start;
-    }
-    if (trajectory_end_time < get_node()->now())
-    {
-      RCLCPP_ERROR(
-        get_node()->get_logger(),
-        "Received trajectory with non-zero start time (%f) that ends in the past (%f)",
-        trajectory_start_time.seconds(), trajectory_end_time.seconds());
-      return false;
-    }
-  }
-
-  for (size_t i = 0; i < trajectory.joint_names.size(); ++i)
-  {
-    const std::string & incoming_joint_name = trajectory.joint_names[i];
-
-    auto it = std::find(params_.joints.begin(), params_.joints.end(), incoming_joint_name);
-    if (it == params_.joints.end())
-    {
-      RCLCPP_ERROR(
-        get_node()->get_logger(), "Incoming joint %s doesn't match the controller's joints.",
-        incoming_joint_name.c_str());
-      return false;
-    }
-  }
-
-  if (trajectory.points.empty())
-  {
-    RCLCPP_ERROR(get_node()->get_logger(), "Empty trajectory received.");
-    return false;
-  }
-
-  if (!params_.allow_nonzero_velocity_at_trajectory_end)
-  {
-    for (size_t i = 0; i < trajectory.points.back().velocities.size(); ++i)
-    {
-      if (fabs(trajectory.points.back().velocities.at(i)) > std::numeric_limits<float>::epsilon())
-      {
-        RCLCPP_ERROR(
-          get_node()->get_logger(),
-          "Velocity of last trajectory point of joint %s is not zero: %.15f",
-          trajectory.joint_names.at(i).c_str(), trajectory.points.back().velocities.at(i));
-        return false;
-      }
-    }
-  }
-
-  rclcpp::Duration previous_traj_time(0ms);
-  for (size_t i = 0; i < trajectory.points.size(); ++i)
-  {
-    if ((i > 0) && (rclcpp::Duration(trajectory.points[i].time_from_start) <= previous_traj_time))
-    {
-      RCLCPP_ERROR(
-        get_node()->get_logger(),
-        "Time between points %zu and %zu is not strictly increasing, it is %f and %f respectively",
-        i - 1, i, previous_traj_time.seconds(),
-        rclcpp::Duration(trajectory.points[i].time_from_start).seconds());
-      return false;
-    }
-    previous_traj_time = trajectory.points[i].time_from_start;
-
-    const size_t joint_count = trajectory.joint_names.size();
-    const auto & points = trajectory.points;
-    // This currently supports only position, velocity and acceleration inputs
-    if (params_.allow_integration_in_goal_trajectories)
-    {
-      const bool all_empty = points[i].positions.empty() && points[i].velocities.empty() &&
-                             points[i].accelerations.empty();
-      const bool position_error =
-        !points[i].positions.empty() &&
-        !validate_trajectory_point_field(joint_count, points[i].positions, "positions", i, false);
-      const bool velocity_error =
-        !points[i].velocities.empty() &&
-        !validate_trajectory_point_field(joint_count, points[i].velocities, "velocities", i, false);
-      const bool acceleration_error =
-        !points[i].accelerations.empty() &&
-        !validate_trajectory_point_field(
-          joint_count, points[i].accelerations, "accelerations", i, false);
-      if (all_empty || position_error || velocity_error || acceleration_error)
-      {
-        return false;
-      }
-    }
-    else if (
-      !validate_trajectory_point_field(joint_count, points[i].positions, "positions", i, false) ||
-      !validate_trajectory_point_field(joint_count, points[i].velocities, "velocities", i, true) ||
-      !validate_trajectory_point_field(
-        joint_count, points[i].accelerations, "accelerations", i, true))
-    {
-      return false;
-    }
-    // reject effort entries
-    if (!points[i].effort.empty())
-    {
-      RCLCPP_ERROR(
-        get_node()->get_logger(), "Trajectories with effort fields are currently not supported.");
-      return false;
-    }
-  }
-  return true;
 }
 
 void JointTrajectoryController::add_new_trajectory_msg(
