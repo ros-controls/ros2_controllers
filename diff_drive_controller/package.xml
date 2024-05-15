@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="3">
   <name>diff_drive_controller</name>
-  <version>2.15.0</version>
+  <version>4.8.0</version>
   <description>Controller for a differential drive mobile base.</description>
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
   <maintainer email="jordan.palacios@pal-robotics.com">Jordan Palacios</maintainer>
@@ -16,6 +16,7 @@
   <depend>geometry_msgs</depend>
   <depend>hardware_interface</depend>
   <depend>nav_msgs</depend>
+  <depend>pluginlib</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_lifecycle</depend>
   <depend>rcpputils</depend>
@@ -23,10 +24,9 @@
   <depend>tf2</depend>
   <depend>tf2_msgs</depend>
 
-  <build_depend>pluginlib</build_depend>
-
   <test_depend>ament_cmake_gmock</test_depend>
   <test_depend>controller_manager</test_depend>
+  <test_depend>hardware_interface_testing</test_depend>
   <test_depend>ros2_control_test_assets</test_depend>
 
   <export>
