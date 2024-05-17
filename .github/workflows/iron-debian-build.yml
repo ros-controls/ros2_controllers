@@ -4,6 +4,15 @@ on:
   pull_request:
     branches:
       - iron
+    paths:
+      - '**.hpp'
+      - '**.h'
+      - '**.cpp'
+      - '**.yaml'
+      - '.github/workflows/iron-debian-build.yml'
+      - '**/package.xml'
+      - '**/CMakeLists.txt'
+      - 'ros2_controllers.iron.repos'
   schedule:
     # Run every day to detect flakiness and broken dependencies
     - cron: '03 1 * * *'
