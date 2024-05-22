@@ -1304,6 +1304,17 @@ TEST_P(TrajectoryControllerTestParameterized, invalid_message)
   traj_msg = good_traj_msg;
   traj_msg.points.push_back(traj_msg.points.front());
   EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
+
+  // End time in the past
+  traj_msg = good_traj_msg;
+  traj_msg.header.stamp = rclcpp::Time(1);
+  EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
+
+  // End time in the future
+  traj_msg = good_traj_msg;
+  traj_msg.header.stamp = traj_controller_->get_node()->now();
+  traj_msg.points[0].time_from_start = rclcpp::Duration::from_seconds(10);
+  EXPECT_TRUE(traj_controller_->validate_trajectory_msg(traj_msg));
 }
 
 /**
