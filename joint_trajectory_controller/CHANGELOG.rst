@@ -2,6 +2,11 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* [JTC] Remove unused test code (`#1095 <https://github.com/ros-controls/ros2_controllers/issues/1095>`_) (`#1096 <https://github.com/ros-controls/ros2_controllers/issues/1096>`_)
+* Contributors: mergify[bot]
+
 2.34.0 (2024-04-01)
 -------------------
 * Remove action_msg dependency (`#1077 <https://github.com/ros-controls/ros2_controllers/issues/1077>`_) (`#1080 <https://github.com/ros-controls/ros2_controllers/issues/1080>`_)

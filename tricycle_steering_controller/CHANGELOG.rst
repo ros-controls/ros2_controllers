@@ -2,6 +2,11 @@
 Changelog for package tricycle_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add parameter check for geometric values (backport `#1120 <https://github.com/ros-controls/ros2_controllers/issues/1120>`_) (`#1125 <https://github.com/ros-controls/ros2_controllers/issues/1125>`_)
+* Contributors: mergify[bot]
+
 2.34.0 (2024-04-01)
 -------------------
 

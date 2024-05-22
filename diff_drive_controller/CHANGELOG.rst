@@ -2,6 +2,11 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add parameter check for geometric values (backport `#1120 <https://github.com/ros-controls/ros2_controllers/issues/1120>`_) (`#1125 <https://github.com/ros-controls/ros2_controllers/issues/1125>`_)
+* Contributors: mergify[bot]
+
 2.34.0 (2024-04-01)
 -------------------
 * Let sphinx add parameter description with nested structures to documentation (backport `#652 <https://github.com/ros-controls/ros2_controllers/issues/652>`_) (`#1005 <https://github.com/ros-controls/ros2_controllers/issues/1005>`_)
