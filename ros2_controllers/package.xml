@@ -8,6 +8,8 @@
 
   <license>Apache License 2.0</license>
 
+  <url type="website">https://control.ros.org</url>
+
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <exec_depend>ackermann_steering_controller</exec_depend>
