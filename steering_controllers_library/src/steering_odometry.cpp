@@ -290,41 +290,37 @@ void SteeringOdometry::reset_odometry()
   reset_accumulators();
 }
 
-void SteeringOdometry::integrate_runge_kutta_2(const double v_bx, const double omega_bz)
-{
-  const double direction = heading_ + omega_bz * 0.5;
-
-  /// Runge-Kutta 2nd order integration:
-  x_ += v_bx * cos(direction);
-  y_ += v_bx * sin(direction);
-  heading_ += omega_bz;
-}
 void SteeringOdometry::integrate_runge_kutta_2(
   const double v_bx, const double omega_bz, const double dt)
 {
-  integrate_runge_kutta_2(v_bx * dt, omega_bz * dt);
-}
+  // Compute intermediate value of the heading
+  const double Theta_mid = heading_ + omega_bz * 0.5 * dt;
 
-void SteeringOdometry::integrate_exact(const double v_bx, const double omega_bz)
-{
-  if (fabs(omega_bz) < 1e-6)
-  {
-    integrate_runge_kutta_2(v_bx, omega_bz);
-  }
-  else
-  {
-    /// Exact integration (should solve problems when omega_bz is zero):
-    const double heading_old = heading_;
-    const double r = v_bx / omega_bz;
-    heading_ += omega_bz;
-    x_ += r * (sin(heading_) - sin(heading_old));
-    y_ += -r * (cos(heading_) - cos(heading_old));
-  }
+  // Use the intermediate values to update the state
+  x_ += v_bx * cos(Theta_mid) * dt;
+  y_ += v_bx * sin(Theta_mid) * dt;
+  heading_ += omega_bz * dt;
 }
 
 void SteeringOdometry::integrate_exact(const double v_bx, const double omega_bz, const double dt)
 {
-  integrate_exact(v_bx * dt, omega_bz * dt);
+  const double delta_x_b = v_bx * dt;
+  const double delta_Theta = omega_bz * dt;
+
+  if (fabs(delta_Theta) < 1e-6)
+  {
+    /// Runge-Kutta 2nd Order (should solve problems when omega_bz is zero):
+    integrate_runge_kutta_2(v_bx, omega_bz, dt);
+  }
+  else
+  {
+    /// Exact integration
+    const double heading_old = heading_;
+    const double R = delta_x_b / delta_Theta;
+    heading_ += delta_Theta;
+    x_ += R * (sin(heading_) - sin(heading_old));
+    y_ += -R * (cos(heading_) - cos(heading_old));
+  }
 }
 
 void SteeringOdometry::reset_accumulators()

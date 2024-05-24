@@ -208,32 +208,18 @@ private:
   bool update_odometry(const double v_bx, const double omega_bz, const double dt);
 
   /**
-   * \brief Integrates the displacements (linear and angular) using 2nd order Runge-Kutta
-   * \param v_bx  Linear displacement [m], i.e. m/s * dt computed by encoders
-   * \param omega_bz Angular displaycement [rad], i.e. m/s * dt computed by encoders
-   */
-  void integrate_runge_kutta_2(const double v_bx, const double omega_bz);
-
-  /**
    * \brief Integrates the velocities (linear and angular) using 2nd order Runge-Kutta
-   * \param v_bx  Linear velocity [m/s]
+   * \param v_bx Linear velocity [m/s]
    * \param omega_bz Angular velocity [rad/s]
-   * \param dt      time difference to last call
+   * \param dt time difference to last call
    */
   void integrate_runge_kutta_2(const double v_bx, const double omega_bz, const double dt);
 
   /**
-   * \brief Integrates the discplacements (linear and angular) using exact method
-   * \param v_bx  Linear displacement [m], i.e. m/s * dt computed by encoders
-   * \param omega_bz Angular displaycement [rad], i.e. m/s * dt computed by encoders
-   */
-  void integrate_exact(const double v_bx, const double omega_bz);
-
-  /**
    * \brief Integrates the velocities (linear and angular) using exact method
-   * \param v_bx  Linear velocity [m/s]
+   * \param v_bx Linear velocity [m/s]
    * \param omega_bz Angular velocity [rad/s]
-   * \param dt      time difference to last call
+   * \param dt time difference to last call
    */
   void integrate_exact(const double v_bx, const double omega_bz, const double dt);
 
