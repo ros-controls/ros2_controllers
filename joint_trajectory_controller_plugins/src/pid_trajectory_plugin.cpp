@@ -63,18 +63,23 @@ bool PidTrajectoryPlugin::configure()
       "[PidTrajectoryPlugin] map_cmd_to_joints has to be of size num_cmd_joints.");
     return false;
   }
-  pids_.resize(num_cmd_joints_);
-  ff_velocity_scale_.resize(num_cmd_joints_);
+  pids_.resize(num_cmd_joints_);  // memory for the shared pointers, will be nullptr
+  // create the objects with default values
+  for (size_t i = 0; i < num_cmd_joints_; ++i)
+  {
+    pids_[i] = std::make_shared<control_toolbox::Pid>();
+  }
+  ff_velocity_scale_.resize(num_cmd_joints_, 0.0);
 
   return true;
-};
+}
 
 bool PidTrajectoryPlugin::activate()
 {
   params_ = param_listener_->get_params();
   parseGains();
   return true;
-};
+}
 
 bool PidTrajectoryPlugin::updateGainsRT()
 {
@@ -96,8 +101,7 @@ void PidTrajectoryPlugin::parseGains()
       params_.command_joints[i].c_str());
 
     const auto & gains = params_.gains.command_joints_map.at(params_.command_joints[i]);
-    pids_[i] = std::make_shared<control_toolbox::Pid>(
-      gains.p, gains.i, gains.d, gains.i_clamp, -gains.i_clamp);
+    pids_[i]->setGains(gains.p, gains.i, gains.d, gains.i_clamp, -gains.i_clamp, true);
     ff_velocity_scale_[i] = gains.ff_velocity_scale;
 
     RCLCPP_DEBUG(node_->get_logger(), "[PidTrajectoryPlugin] gains.p: %f", gains.p);

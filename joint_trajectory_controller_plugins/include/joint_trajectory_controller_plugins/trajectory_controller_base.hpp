@@ -143,6 +143,8 @@ public:
 
   /**
    * @brief reset internal states
+   *
+   * is called in on_deactivate() of JTC
    */
   JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
   virtual void reset() = 0;
