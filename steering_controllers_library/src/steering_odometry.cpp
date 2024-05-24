@@ -174,14 +174,14 @@ bool SteeringOdometry::update_from_velocity(
   return update_odometry(linear_velocity, angular_velocity, dt);
 }
 
-void SteeringOdometry::update_open_loop(const double linear, const double angular, const double dt)
+void SteeringOdometry::update_open_loop(const double v_bx, const double omega_bz, const double dt)
 {
   /// Save last linear and angular velocity:
-  linear_ = linear;
-  angular_ = angular;
+  linear_ = v_bx;
+  angular_ = omega_bz;
 
   /// Integrate odometry:
-  integrate_fk(linear, angular, dt);
+  integrate_fk(v_bx, omega_bz, dt);
 }
 
 void SteeringOdometry::set_wheel_params(double wheel_radius, double wheelbase, double wheel_track)

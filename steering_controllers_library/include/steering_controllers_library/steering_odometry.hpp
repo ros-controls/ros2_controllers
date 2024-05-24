@@ -130,11 +130,11 @@ public:
 
   /**
    * \brief Updates the odometry class with latest velocity command
-   * \param linear  Linear velocity [m/s]
-   * \param angular Angular velocity [rad/s]
+   * \param v_bx  Linear velocity   [m/s]
+   * \param omega_bz Angular velocity [rad/s]
    * \param dt      time difference to last call
    */
-  void update_open_loop(const double linear, const double angular, const double dt);
+  void update_open_loop(const double v_bx, const double omega_bz, const double dt);
 
   /**
    * \brief Set odometry type
@@ -186,8 +186,8 @@ public:
 
   /**
    * \brief Calculates inverse kinematics for the desired linear and angular velocities
-   * \param v_bx     Linear velocity of the robot in x_b-axis direction
-   * \param omega_bz Angular velocity of the robot around x_z-axis
+   * \param v_bx     Desired linear velocity of the robot in x_b-axis direction
+   * \param omega_bz Desired angular velocity of the robot around x_z-axis
    * \return Tuple of velocity commands and steering commands
    */
   std::tuple<std::vector<double>, std::vector<double>> get_commands(
