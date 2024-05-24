@@ -221,7 +221,7 @@ private:
    * \param omega_bz Angular velocity [rad/s]
    * \param dt time difference to last call
    */
-  void integrate(const double v_bx, const double omega_bz, const double dt);
+  void integrate_fk(const double v_bx, const double omega_bz, const double dt);
 
   /**
    * \brief Calculates steering angle from the desired translational and rotational velocity
