@@ -132,7 +132,7 @@ public:
    * \brief Updates the odometry class with latest velocity command
    * \param linear  Linear velocity [m/s]
    * \param angular Angular velocity [rad/s]
-   * \param time    Current time
+   * \param dt      time difference to last call
    */
   void update_open_loop(const double linear, const double angular, const double dt);
 
@@ -175,22 +175,23 @@ public:
   /**
    * \brief Sets the wheel parameters: radius, separation and wheelbase
    */
-  void set_wheel_params(double wheel_radius, double wheelbase = 0.0, double wheel_track = 0.0);
+  void set_wheel_params(
+    const double wheel_radius, const double wheelbase = 0.0, const double wheel_track = 0.0);
 
   /**
    * \brief Velocity rolling window size setter
    * \param velocity_rolling_window_size Velocity rolling window size
    */
-  void set_velocity_rolling_window_size(size_t velocity_rolling_window_size);
+  void set_velocity_rolling_window_size(const size_t velocity_rolling_window_size);
 
   /**
    * \brief Calculates inverse kinematics for the desired linear and angular velocities
-   * \param Vx  Desired linear velocity [m/s]
-   * \param theta_dot Desired angular velocity [rad/s]
+   * \param v_bx     Linear velocity of the robot in x_b-axis direction
+   * \param omega_bz Angular velocity of the robot around x_z-axis
    * \return Tuple of velocity commands and steering commands
    */
   std::tuple<std::vector<double>, std::vector<double>> get_commands(
-    const double Vx, const double theta_dot);
+    const double v_bx, const double omega_bz);
 
   /**
    *  \brief Reset poses, heading, and accumulators
@@ -199,35 +200,49 @@ public:
 
 private:
   /**
-   * \brief Uses precomputed linear and angular velocities to compute dometry and update
-   * accumulators \param linear  Linear  velocity   [m] (linear  displacement, i.e. m/s * dt)
-   * computed by previous odometry method \param angular Angular velocity [rad] (angular
-   * displacement, i.e. m/s * dt) computed by previous odometry method
+   * \brief Uses precomputed linear and angular velocities to compute odometry
+   * \param v_bx  Linear  velocity   [m/s]
+   * \param omega_bz Angular velocity [rad/s]
+   * \param dt      time difference to last call
    */
-  bool update_odometry(const double linear_velocity, const double angular, const double dt);
+  bool update_odometry(const double v_bx, const double omega_bz, const double dt);
+
+  /**
+   * \brief Integrates the displacements (linear and angular) using 2nd order Runge-Kutta
+   * \param v_bx  Linear displacement [m], i.e. m/s * dt computed by encoders
+   * \param omega_bz Angular displaycement [rad], i.e. m/s * dt computed by encoders
+   */
+  void integrate_runge_kutta_2(const double v_bx, const double omega_bz);
 
   /**
    * \brief Integrates the velocities (linear and angular) using 2nd order Runge-Kutta
-   * \param linear  Linear  velocity   [m] (linear  displacement, i.e. m/s * dt) computed by
-   * encoders \param angular Angular velocity [rad] (angular displacement, i.e. m/s * dt) computed
-   * by encoders
+   * \param v_bx  Linear velocity [m/s]
+   * \param omega_bz Angular velocity [rad/s]
+   * \param dt      time difference to last call
    */
-  void integrate_runge_kutta_2(double linear, double angular);
+  void integrate_runge_kutta_2(const double v_bx, const double omega_bz, const double dt);
+
+  /**
+   * \brief Integrates the discplacements (linear and angular) using exact method
+   * \param v_bx  Linear displacement [m], i.e. m/s * dt computed by encoders
+   * \param omega_bz Angular displaycement [rad], i.e. m/s * dt computed by encoders
+   */
+  void integrate_exact(const double v_bx, const double omega_bz);
 
   /**
    * \brief Integrates the velocities (linear and angular) using exact method
-   * \param linear  Linear  velocity   [m] (linear  displacement, i.e. m/s * dt) computed by
-   * encoders \param angular Angular velocity [rad] (angular displacement, i.e. m/s * dt) computed
-   * by encoders
+   * \param v_bx  Linear velocity [m/s]
+   * \param omega_bz Angular velocity [rad/s]
+   * \param dt      time difference to last call
    */
-  void integrate_exact(double linear, double angular);
+  void integrate_exact(const double v_bx, const double omega_bz, const double dt);
 
   /**
    * \brief Calculates steering angle from the desired translational and rotational velocity
-   * \param Vx   Linear  velocity   [m]
-   * \param theta_dot Angular velocity [rad]
+   * \param v_bx     Linear velocity of the robot in x_b-axis direction
+   * \param omega_bz Angular velocity of the robot around x_z-axis
    */
-  double convert_trans_rot_vel_to_steering_angle(double Vx, double theta_dot);
+  double convert_trans_rot_vel_to_steering_angle(const double v_bx, const double omega_bz);
 
   /**
    *  \brief Reset linear and angular accumulators
