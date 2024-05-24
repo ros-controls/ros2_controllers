@@ -51,7 +51,7 @@ void SteeringOdometry::init(const rclcpp::Time & time)
 bool SteeringOdometry::update_odometry(const double linear, const double angular, const double dt)
 {
   /// Integrate odometry:
-  integrate_exact(linear, angular, dt);
+  integrate(linear, angular, dt);
 
   /// We cannot estimate the speed with very small time intervals:
   if (dt < 0.0001)
@@ -180,7 +180,7 @@ void SteeringOdometry::update_open_loop(const double linear, const double angula
   angular_ = angular;
 
   /// Integrate odometry:
-  integrate_exact(linear, angular, dt);
+  integrate(linear, angular, dt);
 }
 
 void SteeringOdometry::set_wheel_params(double wheel_radius, double wheelbase, double wheel_track)
@@ -302,7 +302,7 @@ void SteeringOdometry::integrate_runge_kutta_2(
   heading_ += omega_bz * dt;
 }
 
-void SteeringOdometry::integrate_exact(const double v_bx, const double omega_bz, const double dt)
+void SteeringOdometry::integrate(const double v_bx, const double omega_bz, const double dt)
 {
   const double delta_x_b = v_bx * dt;
   const double delta_Theta = omega_bz * dt;

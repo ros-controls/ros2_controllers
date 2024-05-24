@@ -216,12 +216,12 @@ private:
   void integrate_runge_kutta_2(const double v_bx, const double omega_bz, const double dt);
 
   /**
-   * \brief Integrates the velocities (linear and angular) using exact method
+   * \brief Integrates the velocities (linear and angular)
    * \param v_bx Linear velocity [m/s]
    * \param omega_bz Angular velocity [rad/s]
    * \param dt time difference to last call
    */
-  void integrate_exact(const double v_bx, const double omega_bz, const double dt);
+  void integrate(const double v_bx, const double omega_bz, const double dt);
 
   /**
    * \brief Calculates steering angle from the desired translational and rotational velocity
