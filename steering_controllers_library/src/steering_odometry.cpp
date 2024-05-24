@@ -200,7 +200,7 @@ void SteeringOdometry::set_velocity_rolling_window_size(size_t velocity_rolling_
 
 void SteeringOdometry::set_odometry_type(const unsigned int type) { config_type_ = type; }
 
-double SteeringOdometry::convert_trans_rot_vel_to_steering_angle(double v_bx, double omega_bz)
+double SteeringOdometry::convert_twist_to_steering_angle(double v_bx, double omega_bz)
 {
   if (omega_bz == 0 || v_bx == 0)
   {
@@ -223,7 +223,7 @@ std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_comma
   }
   else
   {
-    phi = SteeringOdometry::convert_trans_rot_vel_to_steering_angle(v_bx, omega_bz);
+    phi = SteeringOdometry::convert_twist_to_steering_angle(v_bx, omega_bz);
     Ws = v_bx / (wheel_radius_ * std::cos(steer_pos_));
   }
 

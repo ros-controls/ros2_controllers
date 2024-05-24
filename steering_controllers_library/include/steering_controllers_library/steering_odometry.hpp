@@ -224,11 +224,11 @@ private:
   void integrate_fk(const double v_bx, const double omega_bz, const double dt);
 
   /**
-   * \brief Calculates steering angle from the desired translational and rotational velocity
+   * \brief Calculates steering angle from the desired twist
    * \param v_bx     Linear velocity of the robot in x_b-axis direction
    * \param omega_bz Angular velocity of the robot around x_z-axis
    */
-  double convert_trans_rot_vel_to_steering_angle(const double v_bx, const double omega_bz);
+  double convert_twist_to_steering_angle(const double v_bx, const double omega_bz);
 
   /**
    *  \brief Reset linear and angular accumulators
