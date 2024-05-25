@@ -73,70 +73,47 @@ bool SteeringOdometry::update_odometry(
 bool SteeringOdometry::update_from_position(
   const double traction_wheel_pos, const double steer_pos, const double dt)
 {
-  /// Get current wheel joint positions:
-  const double traction_wheel_cur_pos = traction_wheel_pos * wheel_radius_;
-  const double traction_wheel_est_pos_diff = traction_wheel_cur_pos - traction_wheel_old_pos_;
+  const double traction_wheel_est_pos_diff = traction_wheel_pos - traction_wheel_old_pos_;
 
   /// Update old position with current:
-  traction_wheel_old_pos_ = traction_wheel_cur_pos;
+  traction_wheel_old_pos_ = traction_wheel_pos;
 
-  /// Compute linear and angular diff:
-  const double linear_velocity = traction_wheel_est_pos_diff / dt;
-  steer_pos_ = steer_pos;
-  const double angular_velocity = tan(steer_pos) * linear_velocity / wheelbase_;
-
-  return update_odometry(linear_velocity, angular_velocity, dt);
+  return update_from_velocity(traction_wheel_est_pos_diff / dt, steer_pos, dt);
 }
 
 bool SteeringOdometry::update_from_position(
   const double traction_right_wheel_pos, const double traction_left_wheel_pos,
   const double steer_pos, const double dt)
 {
-  /// Get current wheel joint positions:
-  const double traction_right_wheel_cur_pos = traction_right_wheel_pos * wheel_radius_;
-  const double traction_left_wheel_cur_pos = traction_left_wheel_pos * wheel_radius_;
-
   const double traction_right_wheel_est_pos_diff =
-    traction_right_wheel_cur_pos - traction_right_wheel_old_pos_;
+    traction_right_wheel_pos - traction_right_wheel_old_pos_;
   const double traction_left_wheel_est_pos_diff =
-    traction_left_wheel_cur_pos - traction_left_wheel_old_pos_;
+    traction_left_wheel_pos - traction_left_wheel_old_pos_;
 
   /// Update old position with current:
-  traction_right_wheel_old_pos_ = traction_right_wheel_cur_pos;
-  traction_left_wheel_old_pos_ = traction_left_wheel_cur_pos;
+  traction_right_wheel_old_pos_ = traction_right_wheel_pos;
+  traction_left_wheel_old_pos_ = traction_left_wheel_pos;
 
-  const double linear_velocity =
-    (traction_right_wheel_est_pos_diff + traction_left_wheel_est_pos_diff) * 0.5 / dt;
-  steer_pos_ = steer_pos;
-  const double angular_velocity = tan(steer_pos_) * linear_velocity / wheelbase_;
-
-  return update_odometry(linear_velocity, angular_velocity, dt);
+  return update_from_velocity(
+    traction_right_wheel_est_pos_diff / dt, traction_left_wheel_est_pos_diff / dt, steer_pos, dt);
 }
 
 bool SteeringOdometry::update_from_position(
   const double traction_right_wheel_pos, const double traction_left_wheel_pos,
   const double right_steer_pos, const double left_steer_pos, const double dt)
 {
-  /// Get current wheel joint positions:
-  const double traction_right_wheel_cur_pos = traction_right_wheel_pos * wheel_radius_;
-  const double traction_left_wheel_cur_pos = traction_left_wheel_pos * wheel_radius_;
-
   const double traction_right_wheel_est_pos_diff =
-    traction_right_wheel_cur_pos - traction_right_wheel_old_pos_;
+    traction_right_wheel_pos - traction_right_wheel_old_pos_;
   const double traction_left_wheel_est_pos_diff =
-    traction_left_wheel_cur_pos - traction_left_wheel_old_pos_;
+    traction_left_wheel_pos - traction_left_wheel_old_pos_;
 
   /// Update old position with current:
-  traction_right_wheel_old_pos_ = traction_right_wheel_cur_pos;
-  traction_left_wheel_old_pos_ = traction_left_wheel_cur_pos;
+  traction_right_wheel_old_pos_ = traction_right_wheel_pos;
+  traction_left_wheel_old_pos_ = traction_left_wheel_pos;
 
-  /// Compute linear and angular diff:
-  const double linear_velocity =
-    (traction_right_wheel_est_pos_diff + traction_left_wheel_est_pos_diff) * 0.5 / dt;
-  steer_pos_ = (right_steer_pos + left_steer_pos) * 0.5;
-  const double angular_velocity = tan(steer_pos_) * linear_velocity / wheelbase_;
-
-  return update_odometry(linear_velocity, angular_velocity, dt);
+  return update_from_velocity(
+    traction_right_wheel_est_pos_diff / dt, traction_left_wheel_est_pos_diff / dt, right_steer_pos,
+    left_steer_pos, dt);
 }
 
 bool SteeringOdometry::update_from_velocity(
