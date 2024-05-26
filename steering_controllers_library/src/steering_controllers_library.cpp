@@ -114,22 +114,12 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
 
   // Reference Subscriber
   ref_timeout_ = rclcpp::Duration::from_seconds(params_.reference_timeout);
-  if (params_.use_stamped_vel)
-  {
-    RCLCPP_WARN(
-      get_node()->get_logger(),
-      "[Deprecated] Using geometry_msgs::msg::Twist instead of TwistStamped is deprecated.");
-    ref_subscriber_twist_ = get_node()->create_subscription<ControllerTwistReferenceMsg>(
-      "~/reference", subscribers_qos,
-      std::bind(&SteeringControllersLibrary::reference_callback, this, std::placeholders::_1));
-  }
-  else
-  {
-    ref_subscriber_unstamped_ = get_node()->create_subscription<geometry_msgs::msg::Twist>(
-      "~/reference_unstamped", subscribers_qos,
-      std::bind(
-        &SteeringControllersLibrary::reference_callback_unstamped, this, std::placeholders::_1));
-  }
+  RCLCPP_WARN(
+    get_node()->get_logger(),
+    "[Deprecated] Using geometry_msgs::msg::Twist instead of TwistStamped is deprecated.");
+  ref_subscriber_twist_ = get_node()->create_subscription<ControllerTwistReferenceMsg>(
+    "~/reference", subscribers_qos,
+    std::bind(&SteeringControllersLibrary::reference_callback, this, std::placeholders::_1));
 
   std::shared_ptr<ControllerTwistReferenceMsg> msg =
     std::make_shared<ControllerTwistReferenceMsg>();
