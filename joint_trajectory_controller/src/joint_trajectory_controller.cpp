@@ -703,17 +703,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   joints_angle_wraparound_.resize(dof_);
   for (size_t i = 0; i < dof_; ++i)
   {
-    const auto & gains = params_.gains.joints_map.at(params_.joints[i]);
-    if (gains.angle_wraparound)
-    {
-      // TODO(christophfroehlich): remove this warning in a future release (ROS-J)
-      RCLCPP_WARN(
-        logger,
-        "[Deprecated] Parameter 'gains.<joint>.angle_wraparound' is deprecated. The "
-        "angle_wraparound is now used if a continuous joint is configured in the URDF.");
-      joints_angle_wraparound_[i] = true;
-    }
-
     if (!urdf_.empty())
     {
       auto urdf_joint = model_.getJoint(params_.joints[i]);
