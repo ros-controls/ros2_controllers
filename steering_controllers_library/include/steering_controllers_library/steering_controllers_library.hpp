@@ -142,7 +142,6 @@ private:
   // callback for topic interface
   STEERING_CONTROLLERS__VISIBILITY_LOCAL void reference_callback(
     const std::shared_ptr<ControllerTwistReferenceMsg> msg);
-  void reference_callback_unstamped(const std::shared_ptr<geometry_msgs::msg::Twist> msg);
 };
 
 }  // namespace steering_controllers_library
