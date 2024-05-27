@@ -1,6 +1,6 @@
-<mxfile host="Electron" modified="2023-12-30T16:25:29.309Z" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/22.1.16 Chrome/120.0.6099.109 Electron/28.1.0 Safari/537.36" etag="QLs7QS08K9ZyDAwVz9b4" version="22.1.16" type="device">
+<mxfile host="Electron" modified="2024-05-27T21:55:55.958Z" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/24.4.8 Chrome/124.0.6367.207 Electron/30.0.6 Safari/537.36" etag="RfbfFYuakI-CmlcmD0pO" version="24.4.8" type="device">
   <diagram name="Page-1" id="2wCjeB2BCqXbrsJG6yFQ">
-    <mxGraphModel dx="1434" dy="990" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="1" shadow="0">
+    <mxGraphModel dx="378" dy="268" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="1" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -82,7 +82,7 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="q5q8uRjG3jJ6PqbUAPb0-27" value="$$\Theta$$" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#2980B9;" parent="1" vertex="1">
+        <mxCell id="q5q8uRjG3jJ6PqbUAPb0-27" value="$$\theta$$" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#2980B9;" parent="1" vertex="1">
           <mxGeometry x="430" y="318" width="80" height="30" as="geometry" />
         </mxCell>
         <mxCell id="q5q8uRjG3jJ6PqbUAPb0-30" value="" style="curved=1;endArrow=classic;html=1;rounded=0;strokeColor=#FF1717;" parent="1" edge="1">
