@@ -31,7 +31,7 @@ This section introduces different car-like robot kinematics. The nomenclature is
 Unicycle model
 ,,,,,,,,,,,,,,,,
 
-To define the coordinate systems, consider the following simple unicycle model
+To define the coordinate systems (`ROS coordinate frame conventions <https://www.ros.org/reps/rep-0103.html#id19>`__, the coordinate systems follow the right-hand rule), consider the following simple unicycle model
 
 .. image:: images/unicycle.svg
    :width: 550
@@ -52,7 +52,7 @@ In the following, we want to command the robot with a desired body twist
                   \vec{v}_{b}
                 \end{bmatrix},
 
-where :math:`\vec{v}_{b}` is the linear velocity of the robot in its body-frame, and :math:`\vec\omega_{b}` is the angular velocity of the robot in its body-frame. As we consider steering robots on a flat surface, it is sufficient to give
+where :math:`\vec{v}_{b}` is the linear velocity of the robot in its body-frame, and :math:`\vec\omega_{b}` is the angular velocity of the robot in its body-frame. For reference, see, e.g., `Kevin M. Lynch and Frank C. Park - Modern Robotics: Mechanics, Planning, And Control <http://modernrobotics.org/>`__. As we consider steering robots on a flat surface, it is sufficient to give
 
 * :math:`v_{b,x}`, i.e. the linear velocity of the robot in :math:`x_b`-axis direction.
 * :math:`\omega_{b,z}`, i.e. the angular velocity of the robot around :math:`x_z`-axis.
@@ -188,7 +188,7 @@ To avoid slipping of the front wheels, the steering angle of the front wheels ca
 This is the so-called **Ackermann steering**.
 
 .. note::
-  The Ackermann steering can also be performed by a `mechanical linkage between the two front wheels <https://en.wikipedia.org/wiki/Ackermann_steering_geometry>`__.  In this case the robot has only one steering input, and the steering angle of the two front wheels is mechanically coupled. Then the inverse kinematics of the robot is the same as the car-like model above.
+  The Ackermann steering can also be performed by a `mechanical linkage between the two front wheels <https://en.wikipedia.org/wiki/Ackermann_steering_geometry>`__.  In this case the robot has only one steering input, and the steering angle of the two front wheels is mechanically coupled. Then the inverse kinematics of the robot is the same as that from the car-like model above.
 
 **Forward Kinematics**
 
