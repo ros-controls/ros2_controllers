@@ -75,47 +75,52 @@ As a consequence of the no-slip condition, the velocity of the two wheels have t
 
 **Forward Kinematics**
 
-We have to distinguish between two cases: Rear wheel drive and front wheel drive.
-
-
-For the rear wheel drive, the velocity of the rear wheel is the input of the system.
+The forward kinematics of the car-like model can be calculated with
 
 .. math::
+  \dot{x} &= v_{b,x} \cos(\Theta) \\
+  \dot{y} &= v_{b,x} \sin(\Theta) \\
+  \dot{\Theta} &= \frac{v_{b,x}}{l} \tan(\phi)
 
+
+**Inverse Kinematics**
+
+The steering angle is one command input of the robot:
+
+.. math::
+  \phi = \arctan\left(\frac{l w_{b,z}}{v_{b,x}} \right)
+
+
+For the rear wheel drive, the velocity of the rear wheel is the second input of the robot:
+
+.. math::
+  v_{rear} = v_{b,x}
+
+
+For the front wheel drive, the velocity of the front wheel is the second input of the robot:
+
+.. math::
+  v_{front} = \frac{v_{b,x}}{\cos(\phi)}
+
+**Odometry**
+
+We have to distinguish between two cases: Encoders on the rear or on the front wheel.
+
+For the rear wheel case:
+
+.. math::
   \dot{x} &= v_{rear} \cos(\Theta) \\
   \dot{y} &= v_{rear} \sin(\Theta) \\
   \dot{\Theta} &= \frac{v_{rear}}{l} \tan(\phi)
 
 
-For the front wheel drive, the velocity of the front wheel is the input of the system.
+For the front wheel case:
 
 .. math::
+  \dot{x} &= v_{front} \cos(\Theta) \cos(\phi)\\
+  \dot{y} &= v_{front} \sin(\Theta) \cos(\phi)\\
+  \dot{\Theta} &= \frac{v_{front}}{l} \sin(\phi)
 
-  \dot{x} &= v_{front} \cos(\Theta) cos(\phi)\\
-  \dot{y} &= v_{front} \sin(\Theta) cos(\phi)\\
-  \dot{\Theta} &= \frac{\sin(\phi)}{l}
-
-
-**Inverse Kinematics**
-
-For the rear wheel drive:
-
-.. math::
-
-  \phi &= \arctan\left(\frac{l w_{b,z}}{v_{b,x}} \right)\\
-  v_{rear} &= v_{b,x}
-
-
-For the front wheel drive:
-
-.. math::
-
-  \phi &= \arctan\left(\frac{l w_{b,z}}{v_{b,x}} \right)\\
-  v_{front} &= \frac{v_{b,x}}{\cos(\phi)}
-
-**Odometry**
-
-We can directly use the forward kinematics to calculate the odometry.
 
 Double Traction Axis
 ,,,,,,,,,,,,,,,,,,,,,
@@ -131,45 +136,133 @@ The following picture shows a car-like robot with three wheels, where there are 
 
 **Forward Kinematics**
 
-The forward kinematics is similar to the bicycle rear-wheel drive but with :math:`v_{b,x}`
-
-.. math::
-
-  \dot{x} &= v_{b,x} \cos(\Theta) \\
-  \dot{y} &= v_{b,x} \sin(\Theta) \\
-  \dot{\Theta} &= \frac{v_{b,x}}{l} \tan(\phi)
-
+The forward kinematics is the same as the car-like model above.
 
 **Inverse Kinematics**
 
 The turning radius of the robot is
 
 .. math::
-
   R_b = \frac{l}{\tan(\phi)}
 
 Then the rear wheels' velocity have to fulfil these conditions to avoid slipping
 
 .. math::
-
   v_{rear,left} &= v_{b,x}\frac{R_b - w_r/2}{R_b}\\
   v_{rear,right} &= v_{b,x}\frac{R_b + w_r/2}{R_b}
 
 **Odometry**
 
-The calculation of :math:`v_{b,x}` from two encoder measurements of the traction is overdetermined.
+The calculation of :math:`v_{b,x}` from two encoder measurements of the traction axle is overdetermined.
 If there is no slip and the encoders are ideal,
 
 .. math::
-
    v_{b,x} = v_{rear,left} \frac{R_b}{R_b - w_r/2} =  v_{rear,right} \frac{R_b}{R_b + w_r/2}
 
-holds. In case of measurement errors, we take the average of both to get a more robust solution, yielding
+holds. But to get a more robust solution, we take the average of both , i.e.,
 
 .. math::
+   v_{b,x} = 0.5 \left(v_{rear,left} \frac{R_b}{R_b - w_r/2} + v_{rear,right} \frac{R_b}{R_b + w_r/2}\right).
 
-   v_{b,x} = \frac{v_{rear,left}+v_{rear,right}}{2}
 
+Ackermann steering
+,,,,,,,,,,,,,,,,,,,,,
+
+The following picture shows a car-like robot with four wheels, where there are two independent steering wheels in the front.
+
+.. image:: images/ackermann_steering.svg
+   :width: 550
+   :align: center
+   :alt: A car-like robot with two steering wheels at the front
+
+* :math:`w_f` is the wheel track of the front axle, measured between the two kingpins
+
+To avoid slipping of the front wheels, the steering angle of the front wheels cannot be equal.
+This is the so-called **Ackermann steering**.
+
+.. note::
+  The Ackermann steering can also be performed by a `mechanical linkage between the two front wheels <https://en.wikipedia.org/wiki/Ackermann_steering_geometry>`__.  In this case the robot has only one steering input, and the steering angle of the two front wheels is mechanically coupled. Then the inverse kinematics of the robot is the same as the car-like model above.
+
+**Forward Kinematics**
+
+The forward kinematics is the same as the car-like model above.
+
+**Inverse Kinematics**
+
+The turning radius of the robot is
+
+.. math::
+  R_b = \frac{l}{\tan(\phi)}
+
+Then the front wheels' steering angles have to fulfil these conditions to avoid slipping
+
+.. math::
+  \phi_{left} &= \arctan\left(\frac{l}{R_b - w_f/2}\right) &= \arctan\left(\frac{2l\sin(\phi)}{2l\cos(\phi) - w_f\sin(\phi)}\right)\\
+  \phi_{right} &= \arctan\left(\frac{l}{R_b + w_f/2}\right) &= \arctan\left(\frac{2l\sin(\phi)}{2l\cos(\phi) + w_f\sin(\phi)}\right)
+
+**Odometry**
+
+The calculation of :math:`\phi` from two angle measurements of the steering axle is overdetermined.
+If there is no slip and the measurements are ideal,
+
+.. math::
+    \phi = \arctan\left(\frac{l + w_f/2 \tan(\phi_{left})}{\tan(\phi_{left})}\right) = \arctan\left(\frac{l - w_f/2 \tan(\phi_{right})}{\tan(\phi_{right})}\right)
+
+holds. But to get a more robust solution, we take the average of both , i.e.,
+
+.. math::
+    \phi = 0.5 \left(\arctan\left(\frac{l + w_f/2 \tan(\phi_{left})}{\tan(\phi_{left})}\right) + \arctan\left(\frac{l - w_f/2 \tan(\phi_{right})}{\tan(\phi_{right})}\right)\right).
+
+Ackermann steering with traction
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
+The following picture shows a car-like robot with four wheels, where there are two independent steering wheels in the front which are also independently driven.
+
+.. image:: images/ackermann_steering_traction.svg
+   :width: 550
+   :align: center
+   :alt: A car-like robot with two steering wheels at the front, which are also independently driven.
+
+* :math:`d_{kp}` is the distance from the kingpin to the contact point of the front wheel with the ground
+
+**Forward Kinematics**
+
+The forward kinematics is the same as the car-like model above.
+
+**Inverse Kinematics**
+
+To avoid slipping of the front wheels, the velocity of the front wheels cannot be equal and
+
+.. math::
+  \frac{v_{front,left}}{R_{left}} = \frac{v_{front,right}}{R_{right}} = \frac{v_{b,x}}{R_b}
+
+with turning radius of the robot and the left/right front wheel
+
+.. math::
+  R_b       &= \frac{l}{\tan(\phi)} \\
+  R_{left}  &= \frac{l-d_{kp}\sin(\phi_{left})}{\sin(\phi_{left})}\\
+  R_{right} &= \frac{l+d_{kp}\sin(\phi_{right})}{\sin(\phi_{right})}.
+
+This gives the following inverse kinematics equations
+
+.. math::
+  v_{front,left} &= \frac{v_{b,x}(l-d_{kp}\sin(\phi_{left}))}{R_b\sin(\phi_{left})}\\
+  v_{front,right} &= \frac{v_{b,x}(l+d_{kp}\sin(\phi_{right}))}{R_b\sin(\phi_{right})}
+
+with the steering angles of the front wheels from the Ackermann steering equations above.
+
+**Odometry**
+
+The calculation of :math:`v_{b,x}` from two encoder measurements of the traction axle is again overdetermined.
+If there is no slip and the encoders are ideal,
+
+.. math::
+   v_{b,x} = v_{front,left} \frac{R_b\sin(\phi_{left})}{l-d_{kp}\sin(\phi_{left})} =  v_{front,right} \frac{R_b\sin(\phi_{right})}{l+d_{kp}\sin(\phi_{right})}
+
+holds. But to get a more robust solution, we take the average of both , i.e.,
+
+.. math::
+   v_{b,x} = 0.5 \left( v_{front,left} \frac{R_b\sin(\phi_{left})}{l-d_{kp}\sin(\phi_{left})} +  v_{front,right} \frac{R_b\sin(\phi_{right})}{l+d_{kp}\sin(\phi_{right})}\right).
 
 Execution logic of the controller
 ----------------------------------
@@ -191,7 +284,7 @@ Currently implemented kinematics
 
 * :ref:`Bicycle <bicycle_steering_controller_userdoc>` - with one steering and one drive joints;
 * :ref:`Tricylce <tricycle_steering_controller_userdoc>` - with one steering and two drive joints;
-* :ref:`Ackermann <ackermann_steering_controller_userdoc>` - with two seering and two drive joints.
+* :ref:`Ackermann <ackermann_steering_controller_userdoc>` - with two steering and two drive joints.
 
 .. toctree::
   :hidden:
