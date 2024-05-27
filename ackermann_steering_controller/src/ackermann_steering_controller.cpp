@@ -69,8 +69,8 @@ bool AckermannSteeringController::update_odometry(const rclcpp::Duration & perio
     const double right_steer_position = state_interfaces_[STATE_STEER_RIGHT_WHEEL].get_value();
     const double left_steer_position = state_interfaces_[STATE_STEER_LEFT_WHEEL].get_value();
     if (
-      !std::isnan(traction_right_wheel_value) && !std::isnan(traction_left_wheel_value) &&
-      !std::isnan(right_steer_position) && !std::isnan(left_steer_position))
+      std::isfinite(traction_right_wheel_value) && std::isfinite(traction_left_wheel_value) &&
+      std::isfinite(right_steer_position) && std::isfinite(left_steer_position))
     {
       if (params_.position_feedback)
       {

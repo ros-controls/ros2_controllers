@@ -66,8 +66,8 @@ bool TricycleSteeringController::update_odometry(const rclcpp::Duration & period
       state_interfaces_[STATE_TRACTION_LEFT_WHEEL].get_value();
     const double steer_position = state_interfaces_[STATE_STEER_AXIS].get_value();
     if (
-      !std::isnan(traction_right_wheel_value) && !std::isnan(traction_left_wheel_value) &&
-      !std::isnan(steer_position))
+      std::isfinite(traction_right_wheel_value) && std::isfinite(traction_left_wheel_value) &&
+      std::isfinite(steer_position))
     {
       if (params_.position_feedback)
       {
