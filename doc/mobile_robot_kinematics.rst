@@ -41,7 +41,7 @@ To define the coordinate systems (`ROS coordinate frame conventions <https://www
 * :math:`x_b,y_b` is the robot's body-frame coordinate system, located at the contact point of the wheel on the ground.
 * :math:`x_w,y_w` is the world coordinate system.
 * :math:`x,y` are the robot's Cartesian coordinates in the world coordinate system.
-* :math:`\Theta` is the robot's heading angle, i.e. the orientation of the robot's :math:`x_b`-axis w.r.t. the world's :math:`x_w`-axis.
+* :math:`\theta` is the robot's heading angle, i.e. the orientation of the robot's :math:`x_b`-axis w.r.t. the world's :math:`x_w`-axis.
 
 In the following, we want to command the robot with a desired body twist
 
@@ -60,9 +60,9 @@ where :math:`\vec{v}_{b}` is the linear velocity of the robot in its body-frame,
 as desired system inputs. The forward kinematics of the unicycle can be calculated with
 
 .. math::
-  \dot{x} &= v_{b,x} \cos(\Theta) \\
-  \dot{y} &= v_{b,x} \sin(\Theta) \\
-  \dot{\Theta} &= \omega_{b,z}
+  \dot{x} &= v_{b,x} \cos(\theta) \\
+  \dot{y} &= v_{b,x} \sin(\theta) \\
+  \dot{\theta} &= \omega_{b,z}
 
 We will formulate the inverse kinematics to calculate the desired commands for the robot (wheel speed or steering) from the given body twist.
 
@@ -135,9 +135,9 @@ As a consequence of the no-slip condition, the velocity of the two wheels must s
 The forward kinematics of the car-like model can be calculated with
 
 .. math::
-  \dot{x} &= v_{b,x} \cos(\Theta) \\
-  \dot{y} &= v_{b,x} \sin(\Theta) \\
-  \dot{\Theta} &= \frac{v_{b,x}}{l} \tan(\phi)
+  \dot{x} &= v_{b,x} \cos(\theta) \\
+  \dot{y} &= v_{b,x} \sin(\theta) \\
+  \dot{\theta} &= \frac{v_{b,x}}{l} \tan(\phi)
 
 
 **Inverse Kinematics**
@@ -166,17 +166,17 @@ We have to distinguish between two cases: Encoders on the rear wheel or on the f
 For the rear wheel case:
 
 .. math::
-  \dot{x} &= v_{rear} \cos(\Theta) \\
-  \dot{y} &= v_{rear} \sin(\Theta) \\
-  \dot{\Theta} &= \frac{v_{rear}}{l} \tan(\phi)
+  \dot{x} &= v_{rear} \cos(\theta) \\
+  \dot{y} &= v_{rear} \sin(\theta) \\
+  \dot{\theta} &= \frac{v_{rear}}{l} \tan(\phi)
 
 
 For the front wheel case:
 
 .. math::
-  \dot{x} &= v_{front} \cos(\Theta) \cos(\phi)\\
-  \dot{y} &= v_{front} \sin(\Theta) \cos(\phi)\\
-  \dot{\Theta} &= \frac{v_{front}}{l} \sin(\phi)
+  \dot{x} &= v_{front} \cos(\theta) \cos(\phi)\\
+  \dot{y} &= v_{front} \sin(\theta) \cos(\phi)\\
+  \dot{\theta} &= \frac{v_{front}}{l} \sin(\phi)
 
 
 Double-Traction Axle
