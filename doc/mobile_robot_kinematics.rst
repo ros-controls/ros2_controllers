@@ -5,7 +5,9 @@
 Mobile Robot Kinematics
 --------------------------------------------------------------
 
-This section introduces the kinematics of different mobile robots. The nomenclature is based on `Siciliano et.al - Robotics: Modelling, Planning and Control <https://link.springer.com/book/10.1007/978-1-84628-642-1>`__.
+.. _siciliano: https://link.springer.com/book/10.1007/978-1-84628-642-1
+
+This section introduces the kinematics of different mobile robots. The nomenclature is based on `Siciliano et.al - Robotics: Modelling, Planning and Control <siciliano_>`_.
 
 .. note::
 
@@ -40,9 +42,59 @@ where :math:`\vec{v}_{b}` is the linear velocity of the robot in its body-frame,
 * :math:`v_{b,x}`, i.e. the linear velocity of the robot in :math:`x_b`-axis direction.
 * :math:`\omega_{b,z}`, i.e. the angular velocity of the robot around :math:`x_z`-axis.
 
-as desired system inputs. We will formulate the inverse kinematics to calculated desired commands to the robot from the given body twist.
+as desired system inputs. The forward kinematics of the unicycle can be calculated with
 
-Car-like (bicycle) model
+.. math::
+  \dot{x} &= v_{b,x} \cos(\Theta) \\
+  \dot{y} &= v_{b,x} \sin(\Theta) \\
+  \dot{\Theta} &= \omega_{b,z}
+
+We will formulate the inverse kinematics to calculated desired commands to the robot from the given body twist.
+
+Differential Drive Robot
+,,,,,,,,,,,,,,,,,,,,,,,,
+
+Citing `Siciliano et.al - Robotics: Modelling, Planning and Control <siciliano_>`_:
+
+.. code-block:: text
+
+  A unicycle in the strict sense (i.e., a vehicle equipped with a single wheel)
+  is a robot with a serious problem of balance in static conditions. However,
+  there exist vehicles that are kinematically equivalent to a unicycle but more
+  stable from a mechanical viewpoint.
+
+One of these vehicles is the differential drive robot, which has two wheels, where each wheel is independently driven.
+
+.. image:: images/diff_drive.svg
+   :width: 550
+   :align: center
+   :alt: Differential drive robot
+
+* :math:`w` is the wheel track (the distance between the wheels).
+
+**Forward Kinematics**
+
+The forward kinematics of the differential drive model can be calculated from the unicycle model above, with
+
+.. math::
+  v_{b,x} &= \frac{v_{right} + v_{left}}{2} \\
+  \omega_{b,z} &= \frac{v_{right} - v_{left}}{w}
+
+**Inverse Kinematics**
+
+The necessary wheel speeds to achieve a desired body twist can be calculated with:
+
+.. math::
+
+  v_{left} &= v_{b,x} - \omega_{b,z} w / 2 \\
+  v_{right} &= v_{b,x} + \omega_{b,z} w / 2
+
+
+**Odometry**
+
+We can directly use the forward kinematics equations above to calculate the odometry of the robot from encoder readings.
+
+Car-Like (Bicycle) Model
 ,,,,,,,,,,,,,,,,,,,,,,,,
 
 The following picture shows a car-like robot with two wheels, where the front wheel is steerable. This model is also known as the bicycle model.
@@ -112,7 +164,7 @@ For the front wheel case:
   \dot{\Theta} &= \frac{v_{front}}{l} \sin(\phi)
 
 
-Double-traction axis
+Double-Traction Axle
 ,,,,,,,,,,,,,,,,,,,,,
 
 The following picture shows a car-like robot with three wheels, where there are two independent traction wheels at the rear.
@@ -155,7 +207,7 @@ holds. But to get a more robust solution, we take the average of both , i.e.,
    v_{b,x} = 0.5 \left(v_{rear,left} \frac{R_b}{R_b - w_r/2} + v_{rear,right} \frac{R_b}{R_b + w_r/2}\right).
 
 
-Ackermann steering
+Ackermann Steering
 ,,,,,,,,,,,,,,,,,,,,,
 
 The following picture shows a car-like robot with four wheels, where there are two independent steering wheels in the front.
@@ -203,7 +255,7 @@ holds. But to get a more robust solution, we take the average of both , i.e.,
 .. math::
     \phi = 0.5 \left(\arctan\left(\frac{l\tan(\phi_{left})}{l + w_f/2 \tan(\phi_{left})}\right) + \arctan\left(\frac{l\tan(\phi_{right})}{l - w_f/2 \tan(\phi_{right})}\right)\right).
 
-Ackermann steering with traction
+Ackermann Steering with Traction
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 The following picture shows a car-like robot with four wheels, where there are two independent steering wheels in the front which are also independently driven.
