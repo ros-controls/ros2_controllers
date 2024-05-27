@@ -16,6 +16,9 @@ The library implements generic odometry and update methods and defines the main 
 
 The update methods only use inverse kinematics, it does not implement any feedback control loops like path-tracking controllers etc.
 
+.. contents:: Table of Contents
+    :depth: 3
+
 Car-Like robots basics and nomenclature
 --------------------------------------------------------------
 
@@ -25,7 +28,7 @@ This section introduces different car-like robot kinematics. The nomenclature is
 
   The forward integration of the kinematic model using the encoders of the wheel actuators — is referred to as **odometric localization** or **passive localization** or **dead reckoning**. We will call it just **odometry**.
 
-Unicycle Model
+Unicycle model
 ,,,,,,,,,,,,,,,,
 
 To define the coordinate systems, consider the following simple unicycle model
@@ -44,20 +47,20 @@ In the following, we want to command the robot with a desired body twist
 
 .. math::
 
-  \vec{\nu}_b = \left[ \begin{array}{l}
-                      \vec{\omega}_{b} \\
-                      \vec{v}_{b} \\
-                      \end{array}\right],
+  \vec{\nu}_b = \begin{bmatrix}
+                  \vec{\omega}_{b} \\
+                  \vec{v}_{b}
+                \end{bmatrix},
 
-where :math:`\vec{v}_{b}` is the linear velocity of the robot in its body-frame, and :math:`\omega_{b,z}` is the angular velocity of the robot in its body-frame. As we consider steering robots on a flat surface, it is sufficient to give
+where :math:`\vec{v}_{b}` is the linear velocity of the robot in its body-frame, and :math:`\vec\omega_{b}` is the angular velocity of the robot in its body-frame. As we consider steering robots on a flat surface, it is sufficient to give
 
 * :math:`v_{b,x}`, i.e. the linear velocity of the robot in :math:`x_b`-axis direction.
 * :math:`\omega_{b,z}`, i.e. the angular velocity of the robot around :math:`x_z`-axis.
 
 as desired system inputs. We will formulate the inverse kinematics to calculated desired commands to the robot from the given body twist.
 
-Bicycle Model
-,,,,,,,,,,,,,,,,
+Car-like (bicycle) model
+,,,,,,,,,,,,,,,,,,,,,,,,
 
 The following picture shows a car-like robot with two wheels, where the front wheel is steerable. This model is also known as the bicycle model.
 
@@ -66,9 +69,9 @@ The following picture shows a car-like robot with two wheels, where the front wh
    :align: center
    :alt: Car-like robot
 
-* :math:`\phi` is the steering angle of the front wheel
-* :math:`v_{rear}, v_{front}` is the velocity of the rear and front wheel
-* :math:`l` is the wheelbase
+* :math:`\phi` is the steering angle of the front wheel, counted positive in direction of rotation around :math:`x_z`-axis.
+* :math:`v_{rear}, v_{front}` is the velocity of the rear and front wheel.
+* :math:`l` is the wheelbase.
 
 We assume that the wheels are rolling without slipping. This means that the velocity of the contact point of the wheel with the ground is zero and the wheel's velocity points in the direction perpendicular to the wheel's axis. The **Instantaneous Center of Rotation** (ICR), i.e. the center of the circle around which the robot rotates, is located at the intersection of the lines that are perpendicular to the wheels' axes and go through the contact points of the wheels with the ground.
 
@@ -126,10 +129,10 @@ For the front wheel case:
   \dot{\Theta} &= \frac{v_{front}}{l} \sin(\phi)
 
 
-Double Traction Axis
+Double-traction axis
 ,,,,,,,,,,,,,,,,,,,,,
 
-The following picture shows a car-like robot with three wheels, where there are two traction wheels at the rear.
+The following picture shows a car-like robot with three wheels, where there are two independent traction wheels at the rear.
 
 .. image:: images/double_traction.svg
    :width: 550
