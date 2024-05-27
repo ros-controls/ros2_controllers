@@ -37,7 +37,12 @@ Currently implemented kinematics
 * :ref:`Tricylce <tricycle_steering_controller_userdoc>` - with one steering and two drive joints;
 * :ref:`Ackermann <ackermann_steering_controller_userdoc>` - with two seering and two drive joints.
 
+.. toctree::
+  :hidden:
 
+   Bicycle <../../bicycle_steering_controller/doc/userdoc.rst>
+   Tricylce <../../tricycle_steering_controller/doc/userdoc.rst>
+   Ackermann <../../ackermann_steering_controller/doc/userdoc.rst>
 
 Description of controller's interfaces
 --------------------------------------
