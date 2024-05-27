@@ -213,12 +213,12 @@ The calculation of :math:`\phi` from two angle measurements of the steering axle
 If there is no slip and the measurements are ideal,
 
 .. math::
-    \phi = \arctan\left(\frac{l + w_f/2 \tan(\phi_{left})}{\tan(\phi_{left})}\right) = \arctan\left(\frac{l - w_f/2 \tan(\phi_{right})}{\tan(\phi_{right})}\right)
+    \phi = \arctan\left(\frac{l\tan(\phi_{left})}{l + w_f/2 \tan(\phi_{left})}\right) = \arctan\left(\frac{\tan(l\phi_{right})}{l - w_f/2 \tan(\phi_{right})}\right)
 
 holds. But to get a more robust solution, we take the average of both , i.e.,
 
 .. math::
-    \phi = 0.5 \left(\arctan\left(\frac{l + w_f/2 \tan(\phi_{left})}{\tan(\phi_{left})}\right) + \arctan\left(\frac{l - w_f/2 \tan(\phi_{right})}{\tan(\phi_{right})}\right)\right).
+    \phi = 0.5 \left(\arctan\left(\frac{l\tan(\phi_{left})}{l + w_f/2 \tan(\phi_{left})}\right) + \arctan\left(\frac{\tan(l\phi_{right})}{l - w_f/2 \tan(\phi_{right})}\right)\right).
 
 Ackermann steering with traction
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
