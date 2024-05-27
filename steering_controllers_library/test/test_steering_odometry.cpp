@@ -108,3 +108,39 @@ TEST(TestSteeringOdometry, ackermann_back_kin_right)
   EXPECT_GT(std::abs(cmd1[0]), std::abs(cmd1[1]));  // abs right (inner) > abs left (outer)
   EXPECT_LT(cmd1[0], 0);
 }
+
+TEST(TestSteeringOdometry, bicycle_odometry)
+{
+  steering_odometry::SteeringOdometry odom(1);
+  odom.set_wheel_params(1., 1., 1.);
+  odom.set_odometry_type(steering_odometry::BICYCLE_CONFIG);
+  ASSERT_TRUE(odom.update_from_velocity(1., .1, .1));
+  EXPECT_NEAR(odom.get_linear(), 1.0, 1e-3);
+  EXPECT_NEAR(odom.get_angular(), .1, 1e-3);
+  EXPECT_NEAR(odom.get_x(), .1, 1e-3);
+  EXPECT_NEAR(odom.get_heading(), .01, 1e-3);
+}
+
+TEST(TestSteeringOdometry, tricycle_odometry)
+{
+  steering_odometry::SteeringOdometry odom(1);
+  odom.set_wheel_params(1., 1., 1.);
+  odom.set_odometry_type(steering_odometry::TRICYCLE_CONFIG);
+  ASSERT_TRUE(odom.update_from_velocity(1., 1., .1, .1));
+  EXPECT_NEAR(odom.get_linear(), 1.0, 1e-3);
+  EXPECT_NEAR(odom.get_angular(), .1, 1e-3);
+  EXPECT_NEAR(odom.get_x(), .1, 1e-3);
+  EXPECT_NEAR(odom.get_heading(), .01, 1e-3);
+}
+
+TEST(TestSteeringOdometry, ackermann_odometry)
+{
+  steering_odometry::SteeringOdometry odom(1);
+  odom.set_wheel_params(1., 1., 1.);
+  odom.set_odometry_type(steering_odometry::ACKERMANN_CONFIG);
+  ASSERT_TRUE(odom.update_from_velocity(1., 1., .1, .1, .1));
+  EXPECT_NEAR(odom.get_linear(), 1.0, 1e-3);
+  EXPECT_NEAR(odom.get_angular(), .1, 1e-3);
+  EXPECT_NEAR(odom.get_x(), .1, 1e-3);
+  EXPECT_NEAR(odom.get_heading(), .01, 1e-3);
+}
