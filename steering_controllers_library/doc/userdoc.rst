@@ -19,7 +19,11 @@ The update methods only use inverse kinematics, it does not implement any feedba
 Car-Like robots basics and nomenclature
 --------------------------------------------------------------
 
-The forward integration of the kinematic model using the encoders of the wheel actuators — is referred to as **odometric localization** or **passive localization** or **dead reckoning**. We will call it just **odometry**.
+This section introduces different car-like robot kinematics. The nomenclature is based on `Siciliano et.al - Robotics: Modelling, Planning and Control <https://link.springer.com/book/10.1007/978-1-84628-642-1>`__.
+
+.. note::
+
+  The forward integration of the kinematic model using the encoders of the wheel actuators — is referred to as **odometric localization** or **passive localization** or **dead reckoning**. We will call it just **odometry**.
 
 Unicycle Model
 ,,,,,,,,,,,,,,,,
@@ -31,10 +35,10 @@ To define the coordinate systems, consider the following simple unicycle model
    :align: center
    :alt: Unicycle
 
-* :math:`x_b,y_b` is the body-frame coordinate system of the robot, located in the center of the rear axle.
-* :math:`x_w,y_w` is the world coordinate system
-* :math:`x,y` are the cartesian coordinates of the robot in world coordinates, i.e., the contact point of the rear wheel on the ground
-* :math:`\Theta` is the heading angle of the robot, i.e. the orientation of the robot's :math:`x_b`-axis w.r.t. the world's :math:`x_w`-axis
+* :math:`x_b,y_b` is the body-frame coordinate system of the robot, located in the contact point of the wheel on the ground.
+* :math:`x_w,y_w` is the world coordinate system.
+* :math:`x,y` are the cartesian coordinates of the robot in world coordinates.
+* :math:`\Theta` is the heading angle of the robot, i.e. the orientation of the robot's :math:`x_b`-axis w.r.t. the world's :math:`x_w`-axis.
 
 In the following, we want to command the robot with a desired body twist
 
@@ -47,8 +51,8 @@ In the following, we want to command the robot with a desired body twist
 
 where :math:`\vec{v}_{b}` is the linear velocity of the robot in its body-frame, and :math:`\omega_{b,z}` is the angular velocity of the robot in its body-frame. As we consider steering robots on a flat surface, it is sufficient to give
 
-* :math:`v_{b,x}`, i.e. the linear velocity of the robot in :math:`x_b`-axis direction
-* :math:`\omega_{b,z}`, i.e. the angular velocity of the robot around :math:`x_z`-axis
+* :math:`v_{b,x}`, i.e. the linear velocity of the robot in :math:`x_b`-axis direction.
+* :math:`\omega_{b,z}`, i.e. the angular velocity of the robot around :math:`x_z`-axis.
 
 as desired system inputs. We will formulate the inverse kinematics to calculated desired commands to the robot from the given body twist.
 
@@ -132,7 +136,7 @@ The following picture shows a car-like robot with three wheels, where there are 
    :align: center
    :alt: A car-like robot with two traction wheels at the rear
 
-* :math:`w_r` is the wheel track of the rear axle
+* :math:`w_r` is the wheel track of the rear axle.
 
 **Forward Kinematics**
 
@@ -175,7 +179,7 @@ The following picture shows a car-like robot with four wheels, where there are t
    :align: center
    :alt: A car-like robot with two steering wheels at the front
 
-* :math:`w_f` is the wheel track of the front axle, measured between the two kingpins
+* :math:`w_f` is the wheel track of the front axle, measured between the two kingpins.
 
 To avoid slipping of the front wheels, the steering angle of the front wheels cannot be equal.
 This is the so-called **Ackermann steering**.
@@ -223,7 +227,7 @@ The following picture shows a car-like robot with four wheels, where there are t
    :align: center
    :alt: A car-like robot with two steering wheels at the front, which are also independently driven.
 
-* :math:`d_{kp}` is the distance from the kingpin to the contact point of the front wheel with the ground
+* :math:`d_{kp}` is the distance from the kingpin to the contact point of the front wheel with the ground.
 
 **Forward Kinematics**
 
