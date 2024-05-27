@@ -243,9 +243,9 @@ std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_comma
     }
     else
     {
-      double turning_radius = wheelbase_ / std::tan(steer_pos_);
-      double Wr = Ws * (turning_radius + wheel_track_ * 0.5) / turning_radius;
-      double Wl = Ws * (turning_radius - wheel_track_ * 0.5) / turning_radius;
+      const double turning_radius = wheelbase_ / std::tan(steer_pos_);
+      const double Wr = Ws * (turning_radius + wheel_track_ * 0.5) / turning_radius;
+      const double Wl = Ws * (turning_radius - wheel_track_ * 0.5) / turning_radius;
       traction_commands = {Wr, Wl};
     }
     steering_commands = {phi};
@@ -262,17 +262,19 @@ std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_comma
     }
     else
     {
-      double turning_radius = wheelbase_ / std::tan(steer_pos_);
-      double Wr = Ws * (turning_radius + wheel_track_ * 0.5) / turning_radius;
-      double Wl = Ws * (turning_radius - wheel_track_ * 0.5) / turning_radius;
+      const double turning_radius = wheelbase_ / std::tan(steer_pos_);
+      const double Wr = Ws * (turning_radius + wheel_track_ * 0.5) / turning_radius;
+      const double Wl = Ws * (turning_radius - wheel_track_ * 0.5) / turning_radius;
       traction_commands = {Wr, Wl};
 
-      double numerator = 2 * wheelbase_ * std::sin(phi);
-      double denominator_first_member = 2 * wheelbase_ * std::cos(phi);
-      double denominator_second_member = wheel_track_ * std::sin(phi);
+      const double numerator = 2 * wheelbase_ * std::sin(phi);
+      const double denominator_first_member = 2 * wheelbase_ * std::cos(phi);
+      const double denominator_second_member = wheel_track_ * std::sin(phi);
 
-      double alpha_r = std::atan2(numerator, denominator_first_member + denominator_second_member);
-      double alpha_l = std::atan2(numerator, denominator_first_member - denominator_second_member);
+      const double alpha_r =
+        std::atan2(numerator, denominator_first_member + denominator_second_member);
+      const double alpha_l =
+        std::atan2(numerator, denominator_first_member - denominator_second_member);
       steering_commands = {alpha_r, alpha_l};
     }
     return std::make_tuple(traction_commands, steering_commands);
