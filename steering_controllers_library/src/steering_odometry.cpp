@@ -52,7 +52,7 @@ bool SteeringOdometry::update_odometry(
   const double linear_velocity, const double angular, const double dt)
 {
   /// Integrate odometry:
-  SteeringOdometry::integrate_exact(linear_velocity * dt, angular);
+  SteeringOdometry::integrate_exact(linear_velocity * dt, angular * dt);
 
   /// We cannot estimate the speed with very small time intervals:
   if (dt < 0.0001)
@@ -62,7 +62,7 @@ bool SteeringOdometry::update_odometry(
 
   /// Estimate speeds using a rolling mean to filter them out:
   linear_acc_.accumulate(linear_velocity);
-  angular_acc_.accumulate(angular / dt);
+  angular_acc_.accumulate(angular);
 
   linear_ = linear_acc_.getRollingMean();
   angular_ = angular_acc_.getRollingMean();
