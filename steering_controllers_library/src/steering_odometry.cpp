@@ -21,6 +21,7 @@
 
 #include <cmath>
 #include <iostream>
+#include <limits>
 
 namespace steering_odometry
 {
@@ -181,30 +182,42 @@ void SteeringOdometry::set_odometry_type(const unsigned int type) { config_type_
 
 double SteeringOdometry::convert_twist_to_steering_angle(double v_bx, double omega_bz)
 {
-  if (omega_bz == 0 || v_bx == 0)
+  if (fabs(v_bx) < std::numeric_limits<float>::epsilon())
   {
-    return 0;
+    // avoid division by zero
+    return 0.;
   }
   return std::atan(omega_bz * wheelbase_ / v_bx);
 }
 
 std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_commands(
-  const double v_bx, const double omega_bz)
+  const double v_bx, const double omega_bz, const bool open_loop)
 {
   // desired wheel speed and steering angle of the middle of traction and steering axis
-  double Ws, phi;
+  double Ws, phi, phi_IK = steer_pos_;
 
+#if 0
   if (v_bx == 0 && omega_bz != 0)
   {
-    // TODO(anyone) would be only valid if traction is on the steering axis -> tricycle_controller
+    // TODO(anyone) this would be only possible if traction is on the steering axis
     phi = omega_bz > 0 ? M_PI_2 : -M_PI_2;
     Ws = abs(omega_bz) * wheelbase_ / wheel_radius_;
   }
   else
   {
-    phi = SteeringOdometry::convert_twist_to_steering_angle(v_bx, omega_bz);
-    Ws = v_bx / (wheel_radius_ * std::cos(steer_pos_));
+    // TODO(anyone) this would be valid only if traction is on the steering axis
+    Ws = v_bx / (wheel_radius_ * std::cos(phi_IK));  // using the measured steering angle
   }
+#endif
+  // steering angle
+  phi = SteeringOdometry::convert_twist_to_steering_angle(v_bx, omega_bz);
+  if (open_loop)
+  {
+    phi_IK = phi;
+  }
+  // wheel speed
+  Ws = v_bx / wheel_radius_;
+  std::cout << "Ws: " << Ws << " phi: " << phi << " phi_IK: " << phi_IK << std::endl;
 
   if (config_type_ == BICYCLE_CONFIG)
   {
@@ -216,17 +229,20 @@ std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_comma
   {
     std::vector<double> traction_commands;
     std::vector<double> steering_commands;
-    if (fabs(steer_pos_) < 1e-6)
+    // double-traction axle
+    if (fabs(phi_IK) < 1e-6)
     {
+      // avoid division by zero
       traction_commands = {Ws, Ws};
     }
     else
     {
-      const double turning_radius = wheelbase_ / std::tan(steer_pos_);
+      const double turning_radius = wheelbase_ / std::tan(phi_IK);
       const double Wr = Ws * (turning_radius + wheel_track_ * 0.5) / turning_radius;
       const double Wl = Ws * (turning_radius - wheel_track_ * 0.5) / turning_radius;
       traction_commands = {Wr, Wl};
     }
+    // simple steering
     steering_commands = {phi};
     return std::make_tuple(traction_commands, steering_commands);
   }
@@ -234,14 +250,16 @@ std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_comma
   {
     std::vector<double> traction_commands;
     std::vector<double> steering_commands;
-    if (fabs(steer_pos_) < 1e-6)
+    if (fabs(phi_IK) < 1e-6)
     {
+      // avoid division by zero
       traction_commands = {Ws, Ws};
+      // shortcut, no steering
       steering_commands = {phi, phi};
     }
     else
     {
-      const double turning_radius = wheelbase_ / std::tan(steer_pos_);
+      const double turning_radius = wheelbase_ / std::tan(phi_IK);
       const double Wr = Ws * (turning_radius + wheel_track_ * 0.5) / turning_radius;
       const double Wl = Ws * (turning_radius - wheel_track_ * 0.5) / turning_radius;
       traction_commands = {Wr, Wl};
