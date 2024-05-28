@@ -238,7 +238,6 @@ std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_comma
   }
   // wheel speed
   Ws = v_bx / wheel_radius_;
-  std::cout << "Ws: " << Ws << " phi: " << phi << " phi_IK: " << phi_IK << std::endl;
 
   if (config_type_ == BICYCLE_CONFIG)
   {
