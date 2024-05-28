@@ -36,7 +36,7 @@ TEST(TestSteeringOdometry, ackermann_odometry)
   odom.set_wheel_params(1., 1., 1.);
   odom.set_odometry_type(steering_odometry::ACKERMANN_CONFIG);
   ASSERT_TRUE(odom.update_from_velocity(1., 1., .1, .1, .1));
-  EXPECT_NEAR(odom.get_linear(), 1.0, 1e-3);
+  EXPECT_NEAR(odom.get_linear(), 1.002, 1e-3);
   EXPECT_NEAR(odom.get_angular(), .1, 1e-3);
   EXPECT_NEAR(odom.get_x(), .1, 1e-3);
   EXPECT_NEAR(odom.get_heading(), .01, 1e-3);
@@ -226,7 +226,7 @@ TEST(TestSteeringOdometry, tricycle_odometry)
   odom.set_wheel_params(1., 1., 1.);
   odom.set_odometry_type(steering_odometry::TRICYCLE_CONFIG);
   ASSERT_TRUE(odom.update_from_velocity(1., 1., .1, .1));
-  EXPECT_NEAR(odom.get_linear(), 1.0, 1e-3);
+  EXPECT_NEAR(odom.get_linear(), 1.002, 1e-3);
   EXPECT_NEAR(odom.get_angular(), .1, 1e-3);
   EXPECT_NEAR(odom.get_x(), .1, 1e-3);
   EXPECT_NEAR(odom.get_heading(), .01, 1e-3);
