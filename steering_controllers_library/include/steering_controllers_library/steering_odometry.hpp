@@ -188,10 +188,11 @@ public:
    * \brief Calculates inverse kinematics for the desired linear and angular velocities
    * \param v_bx     Desired linear velocity of the robot in x_b-axis direction
    * \param omega_bz Desired angular velocity of the robot around x_z-axis
+   * \param open_loop If false, the IK will be calculated using measured steering angle
    * \return Tuple of velocity commands and steering commands
    */
   std::tuple<std::vector<double>, std::vector<double>> get_commands(
-    const double v_bx, const double omega_bz);
+    const double v_bx, const double omega_bz, const bool open_loop);
 
   /**
    *  \brief Reset poses, heading, and accumulators
