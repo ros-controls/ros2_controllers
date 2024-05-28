@@ -227,6 +227,16 @@ private:
   double convert_twist_to_steering_angle(const double v_bx, const double omega_bz);
 
   /**
+   * \brief Calculates linear velocity of a robot with double traction axle
+   * \param right_traction_wheel_vel  Right traction wheel velocity [rad/s]
+   * \param left_traction_wheel_vel  Left traction wheel velocity [rad/s]
+   * \param steer_pos Steer wheel position [rad]
+   */
+  double get_lin_velocity_double_traction_axle(
+    const double right_traction_wheel_vel, const double left_traction_wheel_vel,
+    const double steer_pos);
+
+  /**
    *  \brief Reset linear and angular accumulators
    */
   void reset_accumulators();
