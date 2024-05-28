@@ -35,6 +35,8 @@ SteeringOdometry::SteeringOdometry(size_t velocity_rolling_window_size)
   wheelbase_(0.0),
   wheel_radius_(0.0),
   traction_wheel_old_pos_(0.0),
+  traction_right_wheel_old_pos_(0.0),
+  traction_left_wheel_old_pos_(0.0),
   velocity_rolling_window_size_(velocity_rolling_window_size),
   linear_acc_(velocity_rolling_window_size),
   angular_acc_(velocity_rolling_window_size)
