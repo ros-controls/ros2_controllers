@@ -61,7 +61,7 @@ public:
   /**
    * \brief Updates the odometry class with latest wheels position
    * \param traction_wheel_pos  traction wheel position [rad]
-   * \param steer_pos Front Steer position [rad]
+   * \param steer_pos Steer wheel position [rad]
    * \param dt      time difference to last call
    * \return true if the odometry is actually updated
    */
@@ -72,7 +72,7 @@ public:
    * \brief Updates the odometry class with latest wheels position
    * \param right_traction_wheel_pos  Right traction wheel velocity [rad]
    * \param left_traction_wheel_pos  Left traction wheel velocity [rad]
-   * \param front_steer_pos Steer wheel position [rad]
+   * \param steer_pos Steer wheel position [rad]
    * \param dt      time difference to last call
    * \return true if the odometry is actually updated
    */
@@ -96,7 +96,7 @@ public:
   /**
    * \brief Updates the odometry class with latest wheels position
    * \param traction_wheel_vel  Traction wheel velocity [rad/s]
-   * \param front_steer_pos Steer wheel position [rad]
+   * \param steer_pos Steer wheel position [rad]
    * \param dt      time difference to last call
    * \return true if the odometry is actually updated
    */
@@ -107,7 +107,7 @@ public:
    * \brief Updates the odometry class with latest wheels position
    * \param right_traction_wheel_vel  Right traction wheel velocity [rad/s]
    * \param left_traction_wheel_vel  Left traction wheel velocity [rad/s]
-   * \param front_steer_pos Steer wheel position [rad]
+   * \param steer_pos Steer wheel position [rad]
    * \param dt      time difference to last call
    * \return true if the odometry is actually updated
    */
