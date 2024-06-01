@@ -401,7 +401,7 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
       });
   }
 
-  // initialize odometry publisher and messasge
+  // initialize odometry publisher and message
   odometry_publisher_ = get_node()->create_publisher<nav_msgs::msg::Odometry>(
     DEFAULT_ODOMETRY_TOPIC, rclcpp::SystemDefaultsQoS());
   realtime_odometry_publisher_ =
