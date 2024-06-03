@@ -11,8 +11,8 @@ joint_trajectory_controller:
   command_joints: {
     type: string_array,
     default_value: [],
-    description: "Joint names to control. This parameters is used if JTC is used in a controller chain where command and state interfaces don't have same names.",
-    read_only: true,
+    description: "Names of the commanding joints used by the controller.\nThis parameters is used if JTC is used in a controller chain where command and state interfaces don't have same names, or if the controller has less command_joints than DOF.",
+    read_only: false, # should be set to true after configuration of the controller
     validation: {
       unique<>: null,
     }
@@ -95,33 +95,14 @@ joint_trajectory_controller:
      ``cmd_timeout`` must be greater than ``constraints.goal_time``, otherwise ignored.
      If zero, timeout is deactivated",
   }
+  controller_plugin: {
+    type: string,
+    default_value: "joint_trajectory_controller_plugins::PidTrajectoryPlugin",
+    description: "Type of the plugin for the trajectory controller",
+    read_only: true,
+  }
   gains:
     __map_joints:
-      p: {
-        type: double,
-        default_value: 0.0,
-        description: "Proportional gain :math:`k_p` for PID"
-      }
-      i: {
-        type: double,
-        default_value: 0.0,
-        description: "Integral gain :math:`k_i` for PID"
-      }
-      d: {
-        type: double,
-        default_value: 0.0,
-        description: "Derivative gain :math:`k_d` for PID"
-      }
-      i_clamp: {
-        type: double,
-        default_value: 0.0,
-        description: "Integral clamp. Symmetrical in both positive and negative direction."
-      }
-      ff_velocity_scale: {
-        type: double,
-        default_value: 0.0,
-        description: "Feed-forward scaling :math:`k_{ff}` of velocity"
-      }
       angle_wraparound: {
         type: bool,
         default_value: false,

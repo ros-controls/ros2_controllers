@@ -12,6 +12,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   controller_interface
   generate_parameter_library
   hardware_interface
+  joint_trajectory_controller_plugins
   pluginlib
   rclcpp
   rclcpp_lifecycle
@@ -107,4 +108,5 @@ install(TARGETS
 
 ament_export_targets(export_joint_trajectory_controller HAS_LIBRARY_TARGET)
 ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
+
 ament_package()
