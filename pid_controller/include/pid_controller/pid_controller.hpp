@@ -81,10 +81,6 @@ public:
     const rclcpp_lifecycle::State & previous_state) override;
 
   PID_CONTROLLER__VISIBILITY_PUBLIC
-  controller_interface::return_type update_reference_from_subscribers(
-    const rclcpp::Time & time, const rclcpp::Duration & period) override;
-
-  PID_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::return_type update_and_write_commands(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
@@ -94,6 +90,8 @@ public:
   using ControllerStateMsg = control_msgs::msg::MultiDOFStateStamped;
 
 protected:
+  controller_interface::return_type update_reference_from_subscribers() override;
+
   std::shared_ptr<pid_controller::ParamListener> param_listener_;
   pid_controller::Params params_;
 
