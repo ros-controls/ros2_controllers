@@ -60,19 +60,19 @@ bool BicycleSteeringController::update_odometry(const rclcpp::Duration & period)
   }
   else
   {
-    const double rear_wheel_value = state_interfaces_[STATE_TRACTION_WHEEL].get_value();
-    const double steer_position = state_interfaces_[STATE_STEER_AXIS].get_value();
-    if (!std::isnan(rear_wheel_value) && !std::isnan(steer_position))
+    const double traction_wheel_value = state_interfaces_[STATE_TRACTION_WHEEL].get_value();
+    const double steering_position = state_interfaces_[STATE_STEER_AXIS].get_value();
+    if (std::isfinite(traction_wheel_value) && std::isfinite(steering_position))
     {
       if (params_.position_feedback)
       {
         // Estimate linear and angular velocity using joint information
-        odometry_.update_from_position(rear_wheel_value, steer_position, period.seconds());
+        odometry_.update_from_position(traction_wheel_value, steering_position, period.seconds());
       }
       else
       {
         // Estimate linear and angular velocity using joint information
-        odometry_.update_from_velocity(rear_wheel_value, steer_position, period.seconds());
+        odometry_.update_from_velocity(traction_wheel_value, steering_position, period.seconds());
       }
     }
   }
