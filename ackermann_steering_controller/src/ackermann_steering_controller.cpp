@@ -66,25 +66,25 @@ bool AckermannSteeringController::update_odometry(const rclcpp::Duration & perio
       state_interfaces_[STATE_TRACTION_RIGHT_WHEEL].get_value();
     const double traction_left_wheel_value =
       state_interfaces_[STATE_TRACTION_LEFT_WHEEL].get_value();
-    const double right_steer_position = state_interfaces_[STATE_STEER_RIGHT_WHEEL].get_value();
-    const double left_steer_position = state_interfaces_[STATE_STEER_LEFT_WHEEL].get_value();
+    const double steering_right_position = state_interfaces_[STATE_STEER_RIGHT_WHEEL].get_value();
+    const double steering_left_position = state_interfaces_[STATE_STEER_LEFT_WHEEL].get_value();
     if (
       std::isfinite(traction_right_wheel_value) && std::isfinite(traction_left_wheel_value) &&
-      std::isfinite(right_steer_position) && std::isfinite(left_steer_position))
+      std::isfinite(steering_right_position) && std::isfinite(steering_left_position))
     {
       if (params_.position_feedback)
       {
         // Estimate linear and angular velocity using joint information
         odometry_.update_from_position(
-          traction_right_wheel_value, traction_left_wheel_value, right_steer_position,
-          left_steer_position, period.seconds());
+          traction_right_wheel_value, traction_left_wheel_value, steering_right_position,
+          steering_left_position, period.seconds());
       }
       else
       {
         // Estimate linear and angular velocity using joint information
         odometry_.update_from_velocity(
-          traction_right_wheel_value, traction_left_wheel_value, right_steer_position,
-          left_steer_position, period.seconds());
+          traction_right_wheel_value, traction_left_wheel_value, steering_right_position,
+          steering_left_position, period.seconds());
       }
     }
   }
