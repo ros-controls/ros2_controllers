@@ -26,6 +26,8 @@
 #include "control_msgs/msg/single_dof_state.hpp"
 #include "controller_interface/helpers.hpp"
 
+#include "rclcpp/rclcpp.hpp"
+
 namespace
 {  // utility
 
