@@ -124,7 +124,7 @@ bool SteeringOdometry::update_from_velocity(
 {
   steer_pos_ = steer_pos;
   double linear_velocity = traction_wheel_vel * wheel_radius_;
-  const double angular_velocity = tan(steer_pos) * linear_velocity / wheelbase_;
+  const double angular_velocity = std::tan(steer_pos) * linear_velocity / wheelbase_;
 
   return update_odometry(linear_velocity, angular_velocity, dt);
 }
@@ -150,7 +150,7 @@ bool SteeringOdometry::update_from_velocity(
   double linear_velocity = get_lin_velocity_double_traction_axle(
     right_traction_wheel_vel, left_traction_wheel_vel, steer_pos_);
 
-  const double angular_velocity = tan(steer_pos_) * linear_velocity / wheelbase_;
+  const double angular_velocity = std::tan(steer_pos_) * linear_velocity / wheelbase_;
 
   return update_odometry(linear_velocity, angular_velocity, dt);
 }
@@ -317,8 +317,8 @@ void SteeringOdometry::integrate_runge_kutta_2(
   const double theta_mid = heading_ + omega_bz * 0.5 * dt;
 
   // Use the intermediate values to update the state
-  x_ += v_bx * cos(theta_mid) * dt;
-  y_ += v_bx * sin(theta_mid) * dt;
+  x_ += v_bx * std::cos(theta_mid) * dt;
+  y_ += v_bx * std::sin(theta_mid) * dt;
   heading_ += omega_bz * dt;
 }
 
@@ -338,8 +338,8 @@ void SteeringOdometry::integrate_fk(const double v_bx, const double omega_bz, co
     const double heading_old = heading_;
     const double R = delta_x_b / delta_theta;
     heading_ += delta_theta;
-    x_ += R * (sin(heading_) - sin(heading_old));
-    y_ += -R * (cos(heading_) - cos(heading_old));
+    x_ += R * (sin(heading_) - std::sin(heading_old));
+    y_ += -R * (cos(heading_) - std::cos(heading_old));
   }
 }
 
