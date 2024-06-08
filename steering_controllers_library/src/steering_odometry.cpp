@@ -317,8 +317,8 @@ void SteeringOdometry::integrate_runge_kutta_2(
   const double theta_mid = heading_ + omega_bz * 0.5 * dt;
 
   // Use the intermediate values to update the state
-  x_ += v_bx * cos(theta_mid) * dt;
-  y_ += v_bx * sin(theta_mid) * dt;
+  x_ += v_bx * std::cos(theta_mid) * dt;
+  y_ += v_bx * std::sin(theta_mid) * dt;
   heading_ += omega_bz * dt;
 }
 
@@ -338,8 +338,8 @@ void SteeringOdometry::integrate_fk(const double v_bx, const double omega_bz, co
     const double heading_old = heading_;
     const double R = delta_x_b / delta_theta;
     heading_ += delta_theta;
-    x_ += R * (sin(heading_) - sin(heading_old));
-    y_ += -R * (cos(heading_) - cos(heading_old));
+    x_ += R * (sin(heading_) - std::sin(heading_old));
+    y_ += -R * (cos(heading_) - std::cos(heading_old));
   }
 }
 
