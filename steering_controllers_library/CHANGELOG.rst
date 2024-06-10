@@ -2,6 +2,35 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.9.0 (2024-06-05)
+------------------
+* Add mobile robot kinematics 101 and improve steering library docs (`#954 <https://github.com/ros-controls/ros2_controllers/issues/954>`_)
+* Fix correct usage of angular velocity in update_odometry() function (`#1118 <https://github.com/ros-controls/ros2_controllers/issues/1118>`_)
+* Contributors: Christoph Fröhlich, Ferry Schoenmakers
+
+4.8.0 (2024-05-14)
+------------------
+* Deprecate non-stamped twist for tricycle_controller and steering_controllers (`#1093 <https://github.com/ros-controls/ros2_controllers/issues/1093>`_)
+* add missing compiler definitions of RCPPUTILS_VERSION (`#1089 <https://github.com/ros-controls/ros2_controllers/issues/1089>`_)
+* Contributors: Christoph Fröhlich, Sai Kishor Kothakota
+
+4.7.0 (2024-03-22)
+------------------
+* added conditioning to have rolling tags compilable in older versions (`#1071 <https://github.com/ros-controls/ros2_controllers/issues/1071>`_)
+* Fix usage of visibility macros (`#1039 <https://github.com/ros-controls/ros2_controllers/issues/1039>`_)
+* Contributors: Sai Kishor Kothakota, Silvio Traversaro
+
+4.6.0 (2024-02-12)
+------------------
+* Fix usage of M_PI on Windows (`#1036 <https://github.com/ros-controls/ros2_controllers/issues/1036>`_)
+* Fix tests for using new `get_node_options` API (`#840 <https://github.com/ros-controls/ros2_controllers/issues/840>`_)
+* Contributors: Sai Kishor Kothakota, Silvio Traversaro
+
+4.5.0 (2024-01-31)
+------------------
+* Add tests for `interface_configuration_type` consistently (`#899 <https://github.com/ros-controls/ros2_controllers/issues/899>`_)
+* Contributors: Christoph Fröhlich
+
 4.4.0 (2024-01-11)
 ------------------
 

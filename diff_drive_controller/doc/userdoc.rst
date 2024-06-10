@@ -11,6 +11,8 @@ As input it takes velocity commands for the robot body, which are translated to 
 
 Odometry is computed from hardware feedback and published.
 
+For an introduction to mobile robot kinematics and the nomenclature used here, see :ref:`mobile_robot_kinematics`.
+
 Other features
 --------------
 
@@ -46,7 +48,7 @@ Subscribers
 ,,,,,,,,,,,,
 
 ~/cmd_vel [geometry_msgs/msg/TwistStamped]
-  Velocity command for the controller, if ``use_stamped_vel=true``. The controller extracts the x component of the linear velocity and the z component of the angular velocity. Velocities on other components are ignored.
+  Velocity command for the controller. The controller extracts the x component of the linear velocity and the z component of the angular velocity. Velocities on other components are ignored.
 
 
 Publishers
@@ -64,17 +66,12 @@ Publishers
 Parameters
 ,,,,,,,,,,,,
 
-Check `parameter definition file for details <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/diff_drive_controller/src/diff_drive_controller_parameter.yaml>`_.
+This controller uses the `generate_parameter_library <https://github.com/PickNikRobotics/generate_parameter_library>`_ to handle its parameters. The parameter `definition file located in the src folder <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/diff_drive_controller/src/diff_drive_controller_parameter.yaml>`_ contains descriptions for all the parameters used by the controller.
 
-Note that the documentation on parameters for joint limits can be found in `their header file <https://github.com/ros-controls/ros2_control/blob/{REPOS_FILE_BRANCH}/joint_limits/include/joint_limits/joint_limits_rosparam.hpp#L56-L75>`_.
-Those parameters are:
+.. generate_parameter_library_details:: ../src/diff_drive_controller_parameter.yaml
+  parameters_context.yaml
 
-linear.x [JointLimits structure]
-  Joint limits structure for the linear X-axis.
-  The limiter ignores position limits.
-  For details see ``joint_limits`` package from ros2_control repository.
+An example parameter file for this controller can be found in `the test directory <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/diff_drive_controller/test/config/test_diff_drive_controller.yaml>`_:
 
-angular.z [JointLimits structure]
-  Joint limits structure for the rotation about Z-axis.
-  The limiter ignores position limits.
-  For details see ``joint_limits`` package from ros2_control repository.
+.. literalinclude:: ../test/config/test_diff_drive_controller.yaml
+   :language: yaml

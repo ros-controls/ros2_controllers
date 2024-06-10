@@ -2,6 +2,39 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.9.0 (2024-06-05)
+------------------
+* Add mobile robot kinematics 101 and improve steering library docs (`#954 <https://github.com/ros-controls/ros2_controllers/issues/954>`_)
+* Bump version of pre-commit hooks (`#1157 <https://github.com/ros-controls/ros2_controllers/issues/1157>`_)
+* Contributors: Christoph Fröhlich, github-actions[bot]
+
+4.8.0 (2024-05-14)
+------------------
+* Remove non-existing parameter (`#1119 <https://github.com/ros-controls/ros2_controllers/issues/1119>`_)
+* Add parameter check for geometric values (`#1120 <https://github.com/ros-controls/ros2_controllers/issues/1120>`_)
+* Deprecate non-stamped twist for tricycle_controller and steering_controllers (`#1093 <https://github.com/ros-controls/ros2_controllers/issues/1093>`_)
+* add missing compiler definitions of RCPPUTILS_VERSION (`#1089 <https://github.com/ros-controls/ros2_controllers/issues/1089>`_)
+* Contributors: Christoph Fröhlich, Sai Kishor Kothakota
+
+4.7.0 (2024-03-22)
+------------------
+* added conditioning to have rolling tags compilable in older versions (`#1071 <https://github.com/ros-controls/ros2_controllers/issues/1071>`_)
+* Contributors: Sai Kishor Kothakota
+
+4.6.0 (2024-02-12)
+------------------
+* Add test_depend on `hardware_interface_testing` also for diff_drive (`#1021 <https://github.com/ros-controls/ros2_controllers/issues/1021>`_)
+* Add test_depend on `hardware_interface_testing` (`#1018 <https://github.com/ros-controls/ros2_controllers/issues/1018>`_)
+* Fix tests for using new `get_node_options` API (`#840 <https://github.com/ros-controls/ros2_controllers/issues/840>`_)
+* Contributors: Christoph Fröhlich, Sai Kishor Kothakota
+
+4.5.0 (2024-01-31)
+------------------
+* [diff_drive] Remove unused parameter and add simple validation #abi-breaking (`#958 <https://github.com/ros-controls/ros2_controllers/issues/958>`_)
+* Add tests for `interface_configuration_type` consistently (`#899 <https://github.com/ros-controls/ros2_controllers/issues/899>`_)
+* Let sphinx add parameter description with nested structures to documentation (`#652 <https://github.com/ros-controls/ros2_controllers/issues/652>`_)
+* Contributors: Christoph Fröhlich
+
 4.4.0 (2024-01-11)
 ------------------
 

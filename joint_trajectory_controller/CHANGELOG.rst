@@ -2,6 +2,42 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.9.0 (2024-06-05)
+------------------
+* JTC trajectory end time validation fix (`#1090 <https://github.com/ros-controls/ros2_controllers/issues/1090>`_)
+* Contributors: Henry Moore
+
+4.8.0 (2024-05-14)
+------------------
+* [JTC] Remove unused test code (`#1095 <https://github.com/ros-controls/ros2_controllers/issues/1095>`_)
+* Contributors: Bence Magyar
+
+4.7.0 (2024-03-22)
+------------------
+* Remove action_msg dependency (`#1077 <https://github.com/ros-controls/ros2_controllers/issues/1077>`_)
+* Bump version of pre-commit hooks (`#1073 <https://github.com/ros-controls/ros2_controllers/issues/1073>`_)
+* Added conditioning to have rolling tags compilable in older versions (`#1071 <https://github.com/ros-controls/ros2_controllers/issues/1071>`_)
+* Parse URDF for continuous joints (`#949 <https://github.com/ros-controls/ros2_controllers/issues/949>`_)
+* Contributors: Christoph Fröhlich, Sai Kishor Kothakota, github-actions[bot]
+
+4.6.0 (2024-02-12)
+------------------
+* Fix usage of M_PI on Windows (`#1036 <https://github.com/ros-controls/ros2_controllers/issues/1036>`_)
+* [JTC] Angle wraparound for first segment of trajectory (`#796 <https://github.com/ros-controls/ros2_controllers/issues/796>`_)
+* Add test_depend on `hardware_interface_testing` (`#1018 <https://github.com/ros-controls/ros2_controllers/issues/1018>`_)
+* Fix tests for using new `get_node_options` API (`#840 <https://github.com/ros-controls/ros2_controllers/issues/840>`_)
+* Contributors: Christoph Fröhlich, Sai Kishor Kothakota, Silvio Traversaro
+
+4.5.0 (2024-01-31)
+------------------
+* [JTC] Fill action error_strings (`#887 <https://github.com/ros-controls/ros2_controllers/issues/887>`_)
+* Add tests for `interface_configuration_type` consistently (`#899 <https://github.com/ros-controls/ros2_controllers/issues/899>`_)
+* Let sphinx add parameter description with nested structures to documentation (`#652 <https://github.com/ros-controls/ros2_controllers/issues/652>`_)
+* [JTC] Invalidate empty trajectory messages (`#902 <https://github.com/ros-controls/ros2_controllers/issues/902>`_)
+* Revert "[JTC] Remove read_only from 'joints', 'state_interfaces' and 'command_interfaces' parameters (`#967 <https://github.com/ros-controls/ros2_controllers/issues/967>`_)" (`#978 <https://github.com/ros-controls/ros2_controllers/issues/978>`_)
+* [JTC] Convert lambda to class functions (`#945 <https://github.com/ros-controls/ros2_controllers/issues/945>`_)
+* Contributors: Christoph Fröhlich, Noel Jiménez García
+
 4.4.0 (2024-01-11)
 ------------------
 * Cancel goal in on_deactivate (`#962 <https://github.com/ros-controls/ros2_controllers/issues/962>`_)

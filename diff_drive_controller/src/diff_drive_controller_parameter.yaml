@@ -2,27 +2,34 @@ diff_drive_controller:
   left_wheel_names: {
     type: string_array,
     default_value: [],
-    description: "Link names of the left side wheels",
+    description: "Names of the left side wheels' joints",
+    validation: {
+      not_empty<>: []
+    }
   }
   right_wheel_names: {
     type: string_array,
     default_value: [],
-    description: "Link names of the right side wheels",
+    description: "Names of the right side wheels' joints",
+    validation: {
+      not_empty<>: []
+    }
   }
   wheel_separation: {
     type: double,
     default_value: 0.0,
     description: "Shortest distance between the left and right wheels. If this parameter is wrong, the robot will not behave correctly in curves.",
-  }
-  wheels_per_side: {
-    type: int,
-    default_value: 0,
-    description: "Number of wheels on each side of the robot. This is important to take the wheels slip into account when multiple wheels on each side are present. If there are more wheels then control signals for each side, you should enter number for control signals. For example, Husky has two wheels on each side, but they use one control signal, in this case '1' is the correct value of the parameter.",
+    validation: {
+      gt<>: [0.0]
+    }
   }
   wheel_radius: {
     type: double,
     default_value: 0.0,
     description: "Radius of a wheel, i.e., wheels size, used for transformation of linear velocity into wheel rotations. If this parameter is wrong the robot will move faster or slower then expected.",
+    validation: {
+      gt<>: [0.0]
+    }
   }
   wheel_separation_multiplier: {
     type: double,

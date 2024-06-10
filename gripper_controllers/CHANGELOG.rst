@@ -2,6 +2,28 @@
 Changelog for package gripper_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.9.0 (2024-06-05)
+------------------
+
+4.8.0 (2024-05-14)
+------------------
+
+4.7.0 (2024-03-22)
+------------------
+* Fix usage of visibility macros (`#1039 <https://github.com/ros-controls/ros2_controllers/issues/1039>`_)
+* Contributors: Silvio Traversaro
+
+4.6.0 (2024-02-12)
+------------------
+* Add test_depend on `hardware_interface_testing` (`#1018 <https://github.com/ros-controls/ros2_controllers/issues/1018>`_)
+* Fix tests for using new `get_node_options` API (`#840 <https://github.com/ros-controls/ros2_controllers/issues/840>`_)
+* Contributors: Christoph Fröhlich, Sai Kishor Kothakota
+
+4.5.0 (2024-01-31)
+------------------
+* Let sphinx add parameter description with nested structures to documentation (`#652 <https://github.com/ros-controls/ros2_controllers/issues/652>`_)
+* Contributors: Christoph Fröhlich
+
 4.4.0 (2024-01-11)
 ------------------
 

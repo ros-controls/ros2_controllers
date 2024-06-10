@@ -27,7 +27,6 @@
 #include <thread>
 #include <vector>
 
-#include "action_msgs/msg/goal_status_array.hpp"
 #include "control_msgs/action/detail/follow_joint_trajectory__struct.hpp"
 #include "controller_interface/controller_interface.hpp"
 #include "gtest/gtest.h"

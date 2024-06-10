@@ -73,7 +73,7 @@ constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
 class TestableSteeringControllersLibrary
 : public steering_controllers_library::SteeringControllersLibrary
 {
-  FRIEND_TEST(SteeringControllersLibraryTest, check_exported_intefaces);
+  FRIEND_TEST(SteeringControllersLibraryTest, check_exported_interfaces);
   FRIEND_TEST(SteeringControllersLibraryTest, test_both_update_methods_for_ref_timeout);
 
 public:
@@ -168,7 +168,9 @@ public:
 protected:
   void SetUpController(const std::string controller_name = "test_steering_controllers_library")
   {
-    ASSERT_EQ(controller_->init(controller_name, "", 0), controller_interface::return_type::OK);
+    ASSERT_EQ(
+      controller_->init(controller_name, "", 0, "", controller_->define_custom_node_options()),
+      controller_interface::return_type::OK);
 
     if (position_feedback_ == true)
     {
@@ -299,7 +301,6 @@ protected:
   bool open_loop_ = false;
   unsigned int velocity_rolling_window_size_ = 10;
   bool position_feedback_ = false;
-  bool use_stamped_vel_ = true;
   std::vector<std::string> rear_wheels_names_ = {"rear_right_wheel_joint", "rear_left_wheel_joint"};
   std::vector<std::string> front_wheels_names_ = {
     "front_right_steering_joint", "front_left_steering_joint"};

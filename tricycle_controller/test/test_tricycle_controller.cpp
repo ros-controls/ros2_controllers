@@ -164,6 +164,9 @@ protected:
       rclcpp::Parameter("traction_joint_name", rclcpp::ParameterValue(traction_joint_name_init)));
     parameter_overrides.push_back(
       rclcpp::Parameter("steering_joint_name", rclcpp::ParameterValue(steering_joint_name_init)));
+    // default parameters
+    parameter_overrides.push_back(rclcpp::Parameter("wheelbase", rclcpp::ParameterValue(1.)));
+    parameter_overrides.push_back(rclcpp::Parameter("wheel_radius", rclcpp::ParameterValue(0.1)));
 
     parameter_overrides.insert(parameter_overrides.end(), parameters.begin(), parameters.end());
     node_options.parameter_overrides(parameter_overrides);
@@ -197,7 +200,8 @@ protected:
 
 TEST_F(TestTricycleController, init_fails_without_parameters)
 {
-  const auto ret = controller_->init(controller_name, urdf_, 0);
+  const auto ret =
+    controller_->init(controller_name, urdf_, 0, "", controller_->define_custom_node_options());
   ASSERT_EQ(ret, controller_interface::return_type::ERROR);
 }
 

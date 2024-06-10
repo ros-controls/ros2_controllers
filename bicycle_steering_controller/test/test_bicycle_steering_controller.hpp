@@ -60,7 +60,7 @@ class TestableBicycleSteeringController
 : public bicycle_steering_controller::BicycleSteeringController
 {
   FRIEND_TEST(BicycleSteeringControllerTest, all_parameters_set_configure_success);
-  FRIEND_TEST(BicycleSteeringControllerTest, check_exported_intefaces);
+  FRIEND_TEST(BicycleSteeringControllerTest, check_exported_interfaces);
   FRIEND_TEST(BicycleSteeringControllerTest, activate_success);
   FRIEND_TEST(BicycleSteeringControllerTest, update_success);
   FRIEND_TEST(BicycleSteeringControllerTest, deactivate_success);
@@ -144,7 +144,9 @@ public:
 protected:
   void SetUpController(const std::string controller_name = "test_bicycle_steering_controller")
   {
-    ASSERT_EQ(controller_->init(controller_name, "", 0), controller_interface::return_type::OK);
+    ASSERT_EQ(
+      controller_->init(controller_name, "", 0, "", controller_->define_custom_node_options()),
+      controller_interface::return_type::OK);
 
     if (position_feedback_ == true)
     {
@@ -249,7 +251,6 @@ protected:
   bool open_loop_ = false;
   unsigned int velocity_rolling_window_size_ = 10;
   bool position_feedback_ = false;
-  bool use_stamped_vel_ = true;
   std::vector<std::string> rear_wheels_names_ = {"rear_wheel_joint"};
   std::vector<std::string> front_wheels_names_ = {"steering_axis_joint"};
   std::vector<std::string> joint_names_ = {rear_wheels_names_[0], front_wheels_names_[0]};
