@@ -63,6 +63,13 @@ steering_controllers_library:
     read_only: false,
   }
 
+  twist_input: {
+    type: bool,
+    default_value: true,
+    description: "Choose whether a Twist/TwistStamped or a AckermannDriveStamped message is used as input.",
+    read_only: false,
+  }
+
   velocity_rolling_window_size: {
     type: int,
     default_value: 10,

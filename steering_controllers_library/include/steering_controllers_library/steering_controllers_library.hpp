@@ -97,9 +97,10 @@ protected:
 
   // Command subscribers and Controller State publisher
   rclcpp::Subscription<ControllerTwistReferenceMsg>::SharedPtr ref_subscriber_twist_ = nullptr;
-  rclcpp::Subscription<ControllerTwistReferenceMsg>::SharedPtr ref_subscriber_ackermann_ = nullptr;
+  rclcpp::Subscription<ControllerAckermannReferenceMsg>::SharedPtr ref_subscriber_ackermann_ = nullptr;
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr ref_subscriber_unstamped_ = nullptr;
   realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerTwistReferenceMsg>> input_ref_;
+  realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerAckermannReferenceMsg>> input_ackermann_ref_;
   rclcpp::Duration ref_timeout_ = rclcpp::Duration::from_seconds(0.0);  // 0ms
 
   using ControllerStatePublisherOdom = realtime_tools::RealtimePublisher<ControllerStateMsgOdom>;
@@ -134,7 +135,7 @@ protected:
 
   // store last velocity
   double last_linear_velocity_ = 0.0;
-  double last_angular_velocity_ = 0.0;
+  double last_angular_command_ = 0.0;
 
   std::vector<std::string> rear_wheels_state_names_;
   std::vector<std::string> front_wheels_state_names_;
@@ -144,6 +145,7 @@ private:
   STEERING_CONTROLLERS__VISIBILITY_LOCAL void reference_callback(
     const std::shared_ptr<ControllerTwistReferenceMsg> msg);
   void reference_callback_unstamped(const std::shared_ptr<geometry_msgs::msg::Twist> msg);
+  void reference_callback_ackermann(const std::shared_ptr<ControllerAckermannReferenceMsg> msg);
 };
 
 }  // namespace steering_controllers_library

@@ -129,7 +129,7 @@ public:
    * \param omega_bz Angular velocity [rad/s]
    * \param dt      time difference to last call
    */
-  void update_open_loop(const double v_bx, const double omega_bz, const double dt);
+  void update_open_loop(const double v_bx, const double omega_bz, const double dt, const bool twist_input=true);
 
   /**
    * \brief Set odometry type
@@ -184,10 +184,11 @@ public:
    * \param v_bx     Desired linear velocity of the robot in x_b-axis direction
    * \param omega_bz Desired angular velocity of the robot around x_z-axis
    * \param open_loop If false, the IK will be calculated using measured steering angle
+   * \param twist_input If true, then omega_bz will be interpreted as steering angle
    * \return Tuple of velocity commands and steering commands
    */
   std::tuple<std::vector<double>, std::vector<double>> get_commands(
-    const double v_bx, const double omega_bz, const bool open_loop);
+    const double v_bx, const double omega_bz, const bool open_loop, const bool twist_input=true);
 
   /**
    *  \brief Reset poses, heading, and accumulators
@@ -225,6 +226,13 @@ private:
    * \param omega_bz Angular velocity of the robot around x_z-axis
    */
   double convert_twist_to_steering_angle(const double v_bx, const double omega_bz);
+
+  /**
+   * \brief Calculates steering angle from the desired twist
+   * \param v_bx     Linear velocity of the robot in x_b-axis direction
+   * \param phi Steering angle of the robot around x_z-axis
+   */
+  double convert_steering_angle_to_angular_velocity(const double v_bx, const double phi);
 
   /**
    * \brief Calculates linear velocity of a robot with double traction axle
