@@ -2,6 +2,12 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.9.0 (2024-06-05)
+------------------
+* Add mobile robot kinematics 101 and improve steering library docs (`#954 <https://github.com/ros-controls/ros2_controllers/issues/954>`_)
+* Bump version of pre-commit hooks (`#1157 <https://github.com/ros-controls/ros2_controllers/issues/1157>`_)
+* Contributors: Christoph Fröhlich, github-actions[bot]
+
 4.8.0 (2024-05-14)
 ------------------
 * Remove non-existing parameter (`#1119 <https://github.com/ros-controls/ros2_controllers/issues/1119>`_)

@@ -265,7 +265,6 @@ protected:
   bool open_loop_ = false;
   unsigned int velocity_rolling_window_size_ = 10;
   bool position_feedback_ = false;
-  bool use_stamped_vel_ = true;
   std::vector<std::string> rear_wheels_names_ = {"rear_right_wheel_joint", "rear_left_wheel_joint"};
   std::vector<std::string> front_wheels_names_ = {"steering_axis_joint"};
   std::vector<std::string> joint_names_ = {

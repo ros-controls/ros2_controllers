@@ -114,22 +114,9 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
 
   // Reference Subscriber
   ref_timeout_ = rclcpp::Duration::from_seconds(params_.reference_timeout);
-  if (params_.use_stamped_vel)
-  {
-    RCLCPP_WARN(
-      get_node()->get_logger(),
-      "[Deprecated] Using geometry_msgs::msg::Twist instead of TwistStamped is deprecated.");
-    ref_subscriber_twist_ = get_node()->create_subscription<ControllerTwistReferenceMsg>(
-      "~/reference", subscribers_qos,
-      std::bind(&SteeringControllersLibrary::reference_callback, this, std::placeholders::_1));
-  }
-  else
-  {
-    ref_subscriber_unstamped_ = get_node()->create_subscription<geometry_msgs::msg::Twist>(
-      "~/reference_unstamped", subscribers_qos,
-      std::bind(
-        &SteeringControllersLibrary::reference_callback_unstamped, this, std::placeholders::_1));
-  }
+  ref_subscriber_twist_ = get_node()->create_subscription<ControllerTwistReferenceMsg>(
+    "~/reference", subscribers_qos,
+    std::bind(&SteeringControllersLibrary::reference_callback, this, std::placeholders::_1));
 
   std::shared_ptr<ControllerTwistReferenceMsg> msg =
     std::make_shared<ControllerTwistReferenceMsg>();
@@ -240,42 +227,6 @@ void SteeringControllersLibrary::reference_callback(
       "Received message has timestamp %.10f older for %.10f which is more then allowed timeout "
       "(%.4f).",
       rclcpp::Time(msg->header.stamp).seconds(), age_of_last_command.seconds(),
-      ref_timeout_.seconds());
-  }
-}
-
-void SteeringControllersLibrary::reference_callback_unstamped(
-  const std::shared_ptr<geometry_msgs::msg::Twist> msg)
-{
-  RCLCPP_WARN(
-    get_node()->get_logger(),
-    "Use of Twist message without stamped is deprecated and it will be removed in ROS 2 J-Turtle "
-    "version. Use '~/reference' topic with 'geometry_msgs::msg::TwistStamped' message type in the "
-    "future.");
-  auto twist_stamped = *(input_ref_.readFromNonRT());
-  twist_stamped->header.stamp = get_node()->now();
-  // if no timestamp provided use current time for command timestamp
-  if (twist_stamped->header.stamp.sec == 0 && twist_stamped->header.stamp.nanosec == 0u)
-  {
-    RCLCPP_WARN(
-      get_node()->get_logger(),
-      "Timestamp in header is missing, using current time as command timestamp.");
-    twist_stamped->header.stamp = get_node()->now();
-  }
-
-  const auto age_of_last_command = get_node()->now() - twist_stamped->header.stamp;
-
-  if (ref_timeout_ == rclcpp::Duration::from_seconds(0) || age_of_last_command <= ref_timeout_)
-  {
-    twist_stamped->twist = *msg;
-  }
-  else
-  {
-    RCLCPP_ERROR(
-      get_node()->get_logger(),
-      "Received message has timestamp %.10f older for %.10f which is more then allowed timeout "
-      "(%.4f).",
-      rclcpp::Time(twist_stamped->header.stamp).seconds(), age_of_last_command.seconds(),
       ref_timeout_.seconds());
   }
 }

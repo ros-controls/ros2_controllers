@@ -703,17 +703,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   joints_angle_wraparound_.resize(dof_);
   for (size_t i = 0; i < dof_; ++i)
   {
-    const auto & gains = params_.gains.joints_map.at(params_.joints[i]);
-    if (gains.angle_wraparound)
-    {
-      // TODO(christophfroehlich): remove this warning in a future release (ROS-J)
-      RCLCPP_WARN(
-        logger,
-        "[Deprecated] Parameter 'gains.<joint>.angle_wraparound' is deprecated. The "
-        "angle_wraparound is now used if a continuous joint is configured in the URDF.");
-      joints_angle_wraparound_[i] = true;
-    }
-
     if (!urdf_.empty())
     {
       auto urdf_joint = model_.getJoint(params_.joints[i]);
@@ -1370,17 +1359,20 @@ bool JointTrajectoryController::validate_trajectory_msg(
     return false;
   }
 
+  if (trajectory.points.empty())
+  {
+    RCLCPP_ERROR(get_node()->get_logger(), "Empty trajectory received.");
+    return false;
+  }
+
   const auto trajectory_start_time = static_cast<rclcpp::Time>(trajectory.header.stamp);
   // If the starting time it set to 0.0, it means the controller should start it now.
   // Otherwise we check if the trajectory ends before the current time,
   // in which case it can be ignored.
   if (trajectory_start_time.seconds() != 0.0)
   {
-    auto trajectory_end_time = trajectory_start_time;
-    for (const auto & p : trajectory.points)
-    {
-      trajectory_end_time += p.time_from_start;
-    }
+    auto const trajectory_end_time =
+      trajectory_start_time + trajectory.points.back().time_from_start;
     if (trajectory_end_time < get_node()->now())
     {
       RCLCPP_ERROR(
@@ -1403,12 +1395,6 @@ bool JointTrajectoryController::validate_trajectory_msg(
         incoming_joint_name.c_str());
       return false;
     }
-  }
-
-  if (trajectory.points.empty())
-  {
-    RCLCPP_ERROR(get_node()->get_logger(), "Empty trajectory received.");
-    return false;
   }
 
   if (!params_.allow_nonzero_velocity_at_trajectory_end)

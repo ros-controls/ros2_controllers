@@ -254,9 +254,7 @@ class JointTrajectoryController(Plugin):
         running_jtc = self._running_jtc_info()
         if running_jtc and not self._robot_joint_limits:
             for jtc_info in running_jtc:
-                self._robot_joint_limits = get_joint_limits(
-                    self._node, _jtc_joint_names(jtc_info)
-                )  # Lazy evaluation
+                self._robot_joint_limits = get_joint_limits(self._node, _jtc_joint_names(jtc_info))
         valid_jtc = []
         if self._robot_joint_limits:
             for jtc_info in running_jtc:
