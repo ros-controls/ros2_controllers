@@ -176,9 +176,7 @@ class JointTrajectoryController(Plugin):
 
         # Timer for running controller updates
         self._update_robot_description_list_timer = QTimer(self)
-        self._update_robot_description_list_timer.setInterval(
-            int(1.0 / self._ctrlrs_update_freq)
-        )
+        self._update_robot_description_list_timer.setInterval(int(1.0 / self._ctrlrs_update_freq))
         self._update_robot_description_list_timer.timeout.connect(
             self._update_robot_description_list
         )
