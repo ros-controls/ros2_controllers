@@ -6,7 +6,6 @@ test_tricycle_steering_controller:
     open_loop: false
     velocity_rolling_window_size: 10
     position_feedback: false
-    use_stamped_vel: true
     rear_wheels_names: [rear_right_wheel_joint, rear_left_wheel_joint]
     front_wheels_names: [steering_axis_joint]
 

@@ -11,6 +11,8 @@ As input it takes velocity commands for the robot body, which are translated to 
 
 Odometry is computed from hardware feedback and published.
 
+For an introduction to mobile robot kinematics and the nomenclature used here, see :ref:`mobile_robot_kinematics`.
+
 Other features
 --------------
 
@@ -46,7 +48,7 @@ Subscribers
 ,,,,,,,,,,,,
 
 ~/cmd_vel [geometry_msgs/msg/TwistStamped]
-  Velocity command for the controller, if ``use_stamped_vel=true``. The controller extracts the x component of the linear velocity and the z component of the angular velocity. Velocities on other components are ignored.
+  Velocity command for the controller. The controller extracts the x component of the linear velocity and the z component of the angular velocity. Velocities on other components are ignored.
 
 
 Publishers
