@@ -34,19 +34,33 @@ TEST_F(MecanumDriveControllerTest, when_controller_is_configured_expect_all_para
   SetUpController();
 
   ASSERT_EQ(controller_->params_.reference_timeout, 0.0);
-  ASSERT_TRUE(controller_->params_.command_joint_names.empty());
-  ASSERT_TRUE(controller_->params_.state_joint_names.empty());
-  ASSERT_TRUE(controller_->params_.interface_name.empty());
+
+  ASSERT_TRUE(controller_->params_.front_left_wheel_command_joint_name.empty());
+  ASSERT_TRUE(controller_->params_.front_right_wheel_command_joint_name.empty());
+  ASSERT_TRUE(controller_->params_.rear_right_wheel_command_joint_name.empty());
+  ASSERT_TRUE(controller_->params_.rear_left_wheel_command_joint_name.empty());
+  ASSERT_TRUE(controller_->params_.front_left_wheel_state_joint_name.empty());
+  ASSERT_TRUE(controller_->params_.front_right_wheel_state_joint_name.empty());
+  ASSERT_TRUE(controller_->params_.rear_right_wheel_state_joint_name.empty());
+  ASSERT_TRUE(controller_->params_.rear_left_wheel_state_joint_name.empty());
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   ASSERT_EQ(controller_->params_.reference_timeout, 0.1);
+
+  ASSERT_EQ(controller_->params_.front_left_wheel_command_joint_name, TEST_FRONT_LEFT_CMD_JOINT_NAME);
+  ASSERT_EQ(controller_->params_.front_right_wheel_command_joint_name, TEST_FRONT_RIGHT_CMD_JOINT_NAME);
+  ASSERT_EQ(controller_->params_.rear_right_wheel_command_joint_name, TEST_REAR_RIGHT_CMD_JOINT_NAME);
+  ASSERT_EQ(controller_->params_.rear_left_wheel_command_joint_name, TEST_REAR_LEFT_CMD_JOINT_NAME);
   ASSERT_THAT(
-    controller_->params_.command_joint_names, testing::ElementsAreArray(command_joint_names_));
+    controller_->command_joint_names_, testing::ElementsAreArray(command_joint_names_));
+
+  ASSERT_EQ(controller_->params_.front_left_wheel_state_joint_name, TEST_FRONT_LEFT_STATE_JOINT_NAME);
+  ASSERT_EQ(controller_->params_.front_right_wheel_state_joint_name, TEST_FRONT_RIGHT_STATE_JOINT_NAME);
+  ASSERT_EQ(controller_->params_.rear_right_wheel_state_joint_name, TEST_REAR_RIGHT_STATE_JOINT_NAME);
+  ASSERT_EQ(controller_->params_.rear_left_wheel_state_joint_name, TEST_REAR_LEFT_STATE_JOINT_NAME);
   ASSERT_THAT(
-    controller_->params_.state_joint_names, testing::ElementsAreArray(state_joint_names_));
-  ASSERT_THAT(controller_->state_joint_names_, testing::ElementsAreArray(state_joint_names_));
-  ASSERT_EQ(controller_->params_.interface_name, interface_name_);
+    controller_->state_joint_names_, testing::ElementsAreArray(state_joint_names_));
 }
 
 // checking if all interfaces, command and state interfaces are exported as expected

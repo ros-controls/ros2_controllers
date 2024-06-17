@@ -74,24 +74,24 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
 {
   params_ = param_listener_->get_params();
 
-  if (!params_.state_joint_names.empty())
+  auto prepare_lists_with_joint_names = [&command_joints = this->command_joint_names_, &state_joints = this->state_joint_names_](const std::string & command_joint_name, const std::string & state_joint_name)
   {
-    state_joint_names_ = params_.state_joint_names;
-  }
-  else
-  {
-    state_joint_names_ = params_.command_joint_names;
-  }
+    command_joints.push_back(command_joint_name);
+    if (state_joint_name.empty())
+    {
+      state_joints.push_back(command_joint_name);
+    }
+    else
+    {
+      state_joints.push_back(state_joint_name);
+    }
+  };
 
-  if (params_.command_joint_names.size() != state_joint_names_.size())
-  {
-    RCLCPP_FATAL(
-      get_node()->get_logger(),
-      "Size of 'joints' (%ld) and 'state_joint_names' (%ld) parameters has "
-      "to be the same!",
-      params_.command_joint_names.size(), state_joint_names_.size());
-    return CallbackReturn::FAILURE;
-  }
+  // The joint names are sorted accoring to the order documented in the header file!
+  prepare_lists_with_joint_names(params_.front_left_wheel_command_joint_name, params_.front_left_wheel_state_joint_name);
+  prepare_lists_with_joint_names(params_.front_right_wheel_command_joint_name, params_.front_right_wheel_state_joint_name);
+  prepare_lists_with_joint_names(params_.rear_right_wheel_command_joint_name, params_.rear_right_wheel_state_joint_name);
+  prepare_lists_with_joint_names(params_.rear_left_wheel_command_joint_name, params_.rear_left_wheel_state_joint_name);
 
   // Set wheel params for the odometry computation
   odometry_.setWheelsParams(
@@ -229,10 +229,10 @@ MecanumDriveController::command_interface_configuration() const
   controller_interface::InterfaceConfiguration command_interfaces_config;
   command_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
 
-  command_interfaces_config.names.reserve(params_.command_joint_names.size());
-  for (const auto & joint : params_.command_joint_names)
+  command_interfaces_config.names.reserve(command_joint_names_.size());
+  for (const auto & joint : command_joint_names_)
   {
-    command_interfaces_config.names.push_back(joint + "/" + params_.interface_name);
+    command_interfaces_config.names.push_back(joint + "/" + hardware_interface::HW_IF_VELOCITY);
   }
 
   return command_interfaces_config;
@@ -248,7 +248,7 @@ controller_interface::InterfaceConfiguration MecanumDriveController::state_inter
 
   for (const auto & joint : state_joint_names_)
   {
-    state_interfaces_config.names.push_back(joint + "/" + params_.interface_name);
+    state_interfaces_config.names.push_back(joint + "/" + hardware_interface::HW_IF_VELOCITY);
   }
 
   return state_interfaces_config;
@@ -393,32 +393,32 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
       linear_trans_from_base_to_center.x() * reference_interfaces_[2];
     velocity_in_center_frame_angular_z_ = reference_interfaces_[2];
 
-    double w_front_left_vel =
+    const double w_front_left_vel =
       1.0 / params_.kinematics.wheels_radius *
       (velocity_in_center_frame_linear_x_ - velocity_in_center_frame_linear_y_ -
        params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis *
          velocity_in_center_frame_angular_z_);
-    double w_back_left_vel =
+    const double w_front_right_vel =
       1.0 / params_.kinematics.wheels_radius *
-      (velocity_in_center_frame_linear_x_ + velocity_in_center_frame_linear_y_ -
+      (velocity_in_center_frame_linear_x_ + velocity_in_center_frame_linear_y_ +
        params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis *
          velocity_in_center_frame_angular_z_);
-    double w_back_right_vel =
+    const double w_back_right_vel =
       1.0 / params_.kinematics.wheels_radius *
       (velocity_in_center_frame_linear_x_ - velocity_in_center_frame_linear_y_ +
        params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis *
          velocity_in_center_frame_angular_z_);
-    double w_front_right_vel =
+    const double w_back_left_vel =
       1.0 / params_.kinematics.wheels_radius *
-      (velocity_in_center_frame_linear_x_ + velocity_in_center_frame_linear_y_ +
+      (velocity_in_center_frame_linear_x_ + velocity_in_center_frame_linear_y_ -
        params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis *
          velocity_in_center_frame_angular_z_);
 
     // Set wheels velocities:
     command_interfaces_[0].set_value(w_front_left_vel);
-    command_interfaces_[1].set_value(w_back_left_vel);
+    command_interfaces_[1].set_value(w_front_right_vel);
     command_interfaces_[2].set_value(w_back_right_vel);
-    command_interfaces_[3].set_value(w_front_right_vel);
+    command_interfaces_[3].set_value(w_back_left_vel);
   }
   else
   {

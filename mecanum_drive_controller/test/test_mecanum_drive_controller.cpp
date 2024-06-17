@@ -49,9 +49,14 @@ TEST_F(MecanumDriveControllerTest, when_controller_is_configured_expect_all_para
   ASSERT_EQ(controller_->params_.kinematics.base_frame_offset.y, 0.0);
   ASSERT_EQ(controller_->params_.kinematics.base_frame_offset.theta, 0.0);
 
-  ASSERT_TRUE(controller_->params_.command_joint_names.empty());
-  ASSERT_TRUE(controller_->params_.state_joint_names.empty());
-  ASSERT_TRUE(controller_->params_.interface_name.empty());
+  ASSERT_TRUE(controller_->params_.front_left_wheel_command_joint_name.empty());
+  ASSERT_TRUE(controller_->params_.front_right_wheel_command_joint_name.empty());
+  ASSERT_TRUE(controller_->params_.rear_right_wheel_command_joint_name.empty());
+  ASSERT_TRUE(controller_->params_.rear_left_wheel_command_joint_name.empty());
+  ASSERT_TRUE(controller_->params_.front_left_wheel_state_joint_name.empty());
+  ASSERT_TRUE(controller_->params_.front_right_wheel_state_joint_name.empty());
+  ASSERT_TRUE(controller_->params_.rear_right_wheel_state_joint_name.empty());
+  ASSERT_TRUE(controller_->params_.rear_left_wheel_state_joint_name.empty());
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
@@ -63,10 +68,18 @@ TEST_F(MecanumDriveControllerTest, when_controller_is_configured_expect_all_para
   ASSERT_EQ(controller_->params_.kinematics.base_frame_offset.y, 0.0);
   ASSERT_EQ(controller_->params_.kinematics.base_frame_offset.theta, 0.0);
 
-  ASSERT_THAT(
-    controller_->params_.command_joint_names, testing::ElementsAreArray(command_joint_names_));
-  ASSERT_TRUE(controller_->params_.state_joint_names.empty());
-  ASSERT_EQ(controller_->params_.interface_name, interface_name_);
+  ASSERT_EQ(controller_->params_.front_left_wheel_command_joint_name, TEST_FRONT_LEFT_CMD_JOINT_NAME);
+  ASSERT_EQ(controller_->params_.front_right_wheel_command_joint_name, TEST_FRONT_RIGHT_CMD_JOINT_NAME);
+  ASSERT_EQ(controller_->params_.rear_right_wheel_command_joint_name, TEST_REAR_RIGHT_CMD_JOINT_NAME);
+  ASSERT_EQ(controller_->params_.rear_left_wheel_command_joint_name, TEST_REAR_LEFT_CMD_JOINT_NAME);
+  ASSERT_THAT(controller_->command_joint_names_, testing::ElementsAreArray(command_joint_names_));
+
+  // When state joint names are empty they are the same as the command joint names
+  ASSERT_TRUE(controller_->params_.front_left_wheel_state_joint_name.empty());
+  ASSERT_TRUE(controller_->params_.front_right_wheel_state_joint_name.empty());
+  ASSERT_TRUE(controller_->params_.rear_right_wheel_state_joint_name.empty());
+  ASSERT_TRUE(controller_->params_.rear_left_wheel_state_joint_name.empty());
+  ASSERT_THAT(controller_->state_joint_names_, testing::ElementsAreArray(command_joint_names_));
 }
 
 TEST_F(MecanumDriveControllerTest, when_controller_configured_expect_properly_exported_interfaces)
