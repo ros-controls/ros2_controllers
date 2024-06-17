@@ -5,24 +5,73 @@ mecanum_drive_controller:
     description: "Timeout for controller references after which they will be reset. This is especially useful for controllers that can cause unwanted and dangerous behavior if reference is not reset, e.g., velocity controllers. If value is 0 the reference is reset after each run.",
   }
 
-  command_joint_names: {
-    type: string_array,
-    default_value: [],
-    description: "Name of the wheels joints.",
-    read_only: false,
+  # Command joint names
+  front_left_wheel_command_joint_name: {
+    type: string,
+    default_value: "",
+    description: "Name of the joints for commanding front left wheel.",
+    read_only: true,
+    validation: {
+      not_empty<>: null,
+    }
   }
 
-  state_joint_names: {
-    type: string_array,
-    default_value: [],
-    description: "(optional) Specifies joints for reading states. This parameter is only relevant when state joints are different then command joint, i.e., when a following controller is used.",
+  front_right_wheel_command_joint_name: {
+    type: string,
+    default_value: "",
+    description: "Name of the joints for commanding front right wheel.",
+    read_only: true,
+    validation: {
+      not_empty<>: null,
+    }
+  }
+
+  rear_right_wheel_command_joint_name: {
+    type: string,
+    default_value: "",
+    description: "Name of the joints for commanding rear right wheel.",
+    read_only: true,
+    validation: {
+      not_empty<>: null,
+    }
+  }
+
+  rear_left_wheel_command_joint_name: {
+    type: string,
+    default_value: "",
+    description: "Name of the joints for commanding rear left wheel.",
+    read_only: true,
+    validation: {
+      not_empty<>: null,
+    }
+  }
+
+  # State joint names
+  front_left_wheel_state_joint_name: {
+    type: string,
+    default_value: "",
+    description: "(optional) Specifies a joint name for reading states of front left wheel. This parameter is only relevant when state joints are different then command joint, i.e., when a following controller is used.",
     read_only: true,
   }
 
-  interface_name: {
+  front_right_wheel_state_joint_name: {
     type: string,
     default_value: "",
-    description: "Name of the interface used by the controller for sending commands, reading states and getting references.",
+    description: "(optional) Specifies a joint name for reading states of front right wheel. This parameter is only relevant when state joints are different then command joint, i.e., when a following controller is used.",
+    read_only: true,
+  }
+
+  rear_right_wheel_state_joint_name: {
+    type: string,
+    default_value: "",
+    description: "(optional) Specifies a joint name for reading states of rear right wheel. This parameter is only relevant when state joints are different then command joint, i.e., when a following controller is used.",
+    read_only: true,
+  }
+
+  rear_left_wheel_state_joint_name: {
+    type: string,
+    default_value: "",
+    description: "(optional) Specifies a joint name for reading states of rear left wheel. This parameter is only relevant when state joints are different then command joint, i.e., when a following controller is used.",
     read_only: true,
   }
 
@@ -57,8 +106,7 @@ mecanum_drive_controller:
     sum_of_robot_center_projection_on_X_Y_axis: {
       type: double,
       default_value: 0.0,
-      description: "Wheels geometric param used in mecanum wheels' IK. lx and ly represent the distance from the robot's center to the wheels projected on
-      the x and y axis with origin at robots center respectively, sum_of_robot_center_projection_on_X_Y_axis = lx+ly",
+      description: "Wheels geometric param used in mecanum wheels' IK. lx and ly represent the distance from the robot's center to the wheels projected on the x and y axis with origin at robots center respectively, sum_of_robot_center_projection_on_X_Y_axis = lx+ly",
       read_only: false,
     }
 

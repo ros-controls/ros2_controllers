@@ -92,7 +92,23 @@ protected:
   std::shared_ptr<mecanum_drive_controller::ParamListener> param_listener_;
   mecanum_drive_controller::Params params_;
 
-  // used for chained controller
+  /// Internal lists with joint names.
+  /**
+   * The list is sorted in the following order:
+   *  - front left wheel
+   *  - front right wheel
+   *  - back right wheel
+   *  - back left wheel
+   */
+  std::vector<std::string> command_joint_names_;
+  /// Internal lists with joint names.
+  /**
+   * The list is sorted in the following order:
+   *  - front left wheel
+   *  - front right wheel
+   *  - back right wheel
+   *  - back left wheel
+   */
   std::vector<std::string> state_joint_names_;
 
   // Names of the references, ex: high level vel commands from MoveIt, Nav2, etc.

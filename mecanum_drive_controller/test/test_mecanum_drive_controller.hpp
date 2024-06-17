@@ -27,6 +27,7 @@
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
+#include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "mecanum_drive_controller/mecanum_drive_controller.hpp"
 #include "rclcpp/parameter_value.hpp"
 #include "rclcpp/time.hpp"
@@ -259,14 +260,23 @@ protected:
 protected:
   std::vector<std::string> reference_interface_names = {
     "linear/x/velocity", "linear/y/velocity", "angular/z/velocity"};
-  std::vector<std::string> command_joint_names_ = {
-    "front_left_wheel_joint", "back_left_wheel_joint", "back_right_wheel_joint",
-    "front_right_wheel_joint"};
 
+  static constexpr char TEST_FRONT_LEFT_CMD_JOINT_NAME[] = "front_left_wheel_joint";
+  static constexpr char TEST_FRONT_RIGHT_CMD_JOINT_NAME[] = "front_right_wheel_joint";
+  static constexpr char TEST_REAR_RIGHT_CMD_JOINT_NAME[] = "back_right_wheel_joint";
+  static constexpr char TEST_REAR_LEFT_CMD_JOINT_NAME[] = "back_left_wheel_joint";
+  std::vector<std::string> command_joint_names_ = {
+    TEST_FRONT_LEFT_CMD_JOINT_NAME, TEST_FRONT_RIGHT_CMD_JOINT_NAME, TEST_REAR_RIGHT_CMD_JOINT_NAME,
+    TEST_REAR_LEFT_CMD_JOINT_NAME};
+
+  static constexpr char TEST_FRONT_LEFT_STATE_JOINT_NAME[] = "state_front_left_wheel_joint";
+  static constexpr char TEST_FRONT_RIGHT_STATE_JOINT_NAME[] = "state_front_right_wheel_joint";
+  static constexpr char TEST_REAR_RIGHT_STATE_JOINT_NAME[] = "state_back_right_wheel_joint";
+  static constexpr char TEST_REAR_LEFT_STATE_JOINT_NAME[] = "state_back_left_wheel_joint";
   std::vector<std::string> state_joint_names_ = {
-    "state_front_left_wheel_joint", "state_back_left_wheel_joint", "state_back_right_wheel_joint",
-    "state_front_right_wheel_joint"};
-  std::string interface_name_ = "velocity";
+    TEST_FRONT_LEFT_STATE_JOINT_NAME, TEST_FRONT_RIGHT_STATE_JOINT_NAME,
+    TEST_REAR_RIGHT_STATE_JOINT_NAME, TEST_REAR_LEFT_STATE_JOINT_NAME};
+  std::string interface_name_ = hardware_interface::HW_IF_VELOCITY;
 
   // Controller-related parameters
 
