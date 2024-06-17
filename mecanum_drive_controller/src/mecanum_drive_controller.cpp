@@ -74,7 +74,9 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
 {
   params_ = param_listener_->get_params();
 
-  auto prepare_lists_with_joint_names = [&command_joints = this->command_joint_names_, &state_joints = this->state_joint_names_](const std::string & command_joint_name, const std::string & state_joint_name)
+  auto prepare_lists_with_joint_names =
+    [&command_joints = this->command_joint_names_, &state_joints = this->state_joint_names_](
+      const std::string & command_joint_name, const std::string & state_joint_name)
   {
     command_joints.push_back(command_joint_name);
     if (state_joint_name.empty())
@@ -87,11 +89,15 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
     }
   };
 
-  // The joint names are sorted accoring to the order documented in the header file!
-  prepare_lists_with_joint_names(params_.front_left_wheel_command_joint_name, params_.front_left_wheel_state_joint_name);
-  prepare_lists_with_joint_names(params_.front_right_wheel_command_joint_name, params_.front_right_wheel_state_joint_name);
-  prepare_lists_with_joint_names(params_.rear_right_wheel_command_joint_name, params_.rear_right_wheel_state_joint_name);
-  prepare_lists_with_joint_names(params_.rear_left_wheel_command_joint_name, params_.rear_left_wheel_state_joint_name);
+  // The joint names are sorted according to the order documented in the header file!
+  prepare_lists_with_joint_names(
+    params_.front_left_wheel_command_joint_name, params_.front_left_wheel_state_joint_name);
+  prepare_lists_with_joint_names(
+    params_.front_right_wheel_command_joint_name, params_.front_right_wheel_state_joint_name);
+  prepare_lists_with_joint_names(
+    params_.rear_right_wheel_command_joint_name, params_.rear_right_wheel_state_joint_name);
+  prepare_lists_with_joint_names(
+    params_.rear_left_wheel_command_joint_name, params_.rear_left_wheel_state_joint_name);
 
   // Set wheel params for the odometry computation
   odometry_.setWheelsParams(

@@ -36,8 +36,7 @@ TEST(TestLoadMecanumDriveController, when_loading_controller_expect_no_exception
 
   ASSERT_NE(
     cm.load_controller(
-      "test_mecanum_drive_controller",
-      "mecanum_drive_controller/MecanumDriveController"),
+      "test_mecanum_drive_controller", "mecanum_drive_controller/MecanumDriveController"),
     nullptr);
 
   rclcpp::shutdown();

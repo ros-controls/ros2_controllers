@@ -68,9 +68,12 @@ TEST_F(MecanumDriveControllerTest, when_controller_is_configured_expect_all_para
   ASSERT_EQ(controller_->params_.kinematics.base_frame_offset.y, 0.0);
   ASSERT_EQ(controller_->params_.kinematics.base_frame_offset.theta, 0.0);
 
-  ASSERT_EQ(controller_->params_.front_left_wheel_command_joint_name, TEST_FRONT_LEFT_CMD_JOINT_NAME);
-  ASSERT_EQ(controller_->params_.front_right_wheel_command_joint_name, TEST_FRONT_RIGHT_CMD_JOINT_NAME);
-  ASSERT_EQ(controller_->params_.rear_right_wheel_command_joint_name, TEST_REAR_RIGHT_CMD_JOINT_NAME);
+  ASSERT_EQ(
+    controller_->params_.front_left_wheel_command_joint_name, TEST_FRONT_LEFT_CMD_JOINT_NAME);
+  ASSERT_EQ(
+    controller_->params_.front_right_wheel_command_joint_name, TEST_FRONT_RIGHT_CMD_JOINT_NAME);
+  ASSERT_EQ(
+    controller_->params_.rear_right_wheel_command_joint_name, TEST_REAR_RIGHT_CMD_JOINT_NAME);
   ASSERT_EQ(controller_->params_.rear_left_wheel_command_joint_name, TEST_REAR_LEFT_CMD_JOINT_NAME);
   ASSERT_THAT(controller_->command_joint_names_, testing::ElementsAreArray(command_joint_names_));
 
