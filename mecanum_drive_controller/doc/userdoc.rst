@@ -37,7 +37,7 @@ States
 ,,,,,,,
 - <joint_names[i]>/<interface_name>  [double]  # in [rad] or [rad/s]
   ..note ::
-  
+
   ``joint_names[i]`` can be of ``state_joint_names`` parameter (if used), ``command_joint_names`` otherwise.
 
 
