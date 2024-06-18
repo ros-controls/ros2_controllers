@@ -142,10 +142,12 @@ SegmentTolerances get_segment_tolerances(
   RCLCPP_DEBUG(logger, "%s %f", "goal_time", active_tolerances.goal_time_tolerance);
 
   // from
-  // https://github.com/ros-controls/control_msgs/blob/master/control_msgs/msg/JointTolerance.msg #
+  // https://github.com/ros-controls/control_msgs/blob/master/control_msgs/msg/JointTolerance.msg
   // There are two special values for tolerances:
-  // * 0 - The tolerance is unspecified and will remain at whatever the default is 
-  // * -1 - The tolerance is "erased".  If there was a default, the joint will be  allowed to move without restriction.
+  // * 0 - The tolerance is unspecified and will remain at whatever the default is
+  // * -1 - The tolerance is "erased".
+  //        If there was a default, the joint will be  allowed to move without restriction.
+  constexpr double ERASE_VALUE = -1.0;
 
   // State and goal state tolerances
   for (auto joint_tol : goal.path_tolerance)
@@ -165,8 +167,8 @@ SegmentTolerances get_segment_tolerances(
     {
       active_tolerances.state_tolerance[i].position = joint_tol.position;
     }
-    else if (joint_tol.position == -1.0)
-    {  // -1 means erase
+    else if (joint_tol.position == ERASE_VALUE)
+    {
       active_tolerances.state_tolerance[i].position = 0.0;
     }
 
@@ -174,8 +176,8 @@ SegmentTolerances get_segment_tolerances(
     {
       active_tolerances.state_tolerance[i].velocity = joint_tol.velocity;
     }
-    else if (joint_tol.velocity == -1.0)
-    {  // -1 means erase
+    else if (joint_tol.velocity == ERASE_VALUE)
+    {
       active_tolerances.state_tolerance[i].velocity = 0.0;
     }
 
@@ -183,8 +185,8 @@ SegmentTolerances get_segment_tolerances(
     {
       active_tolerances.state_tolerance[i].acceleration = joint_tol.acceleration;
     }
-    else if (joint_tol.acceleration == -1.0)
-    {  // -1 means erase
+    else if (joint_tol.acceleration == ERASE_VALUE)
+    {
       active_tolerances.state_tolerance[i].acceleration = 0.0;
     }
 
@@ -215,8 +217,8 @@ SegmentTolerances get_segment_tolerances(
     {
       active_tolerances.goal_state_tolerance[i].position = goal_tol.position;
     }
-    else if (goal_tol.position == -1.0)
-    {  // -1 means erase
+    else if (goal_tol.position == ERASE_VALUE)
+    {
       active_tolerances.goal_state_tolerance[i].position = 0.0;
     }
 
@@ -224,8 +226,8 @@ SegmentTolerances get_segment_tolerances(
     {
       active_tolerances.goal_state_tolerance[i].velocity = goal_tol.velocity;
     }
-    else if (goal_tol.velocity == -1.0)
-    {  // -1 means erase
+    else if (goal_tol.velocity == ERASE_VALUE)
+    {
       active_tolerances.goal_state_tolerance[i].velocity = 0.0;
     }
 
@@ -233,8 +235,8 @@ SegmentTolerances get_segment_tolerances(
     {
       active_tolerances.goal_state_tolerance[i].acceleration = goal_tol.acceleration;
     }
-    else if (goal_tol.acceleration == -1.0)
-    {  // -1 means erase
+    else if (goal_tol.acceleration == ERASE_VALUE)
+    {
       active_tolerances.goal_state_tolerance[i].acceleration = 0.0;
     }
 
