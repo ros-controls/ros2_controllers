@@ -131,7 +131,7 @@ protected:
   // name constants for reference interfaces
   size_t nr_ref_itfs_;
 
-  // store last velocity
+  // last velocity commands for open loop odometry
   double last_linear_velocity_ = 0.0;
   double last_angular_velocity_ = 0.0;
 
