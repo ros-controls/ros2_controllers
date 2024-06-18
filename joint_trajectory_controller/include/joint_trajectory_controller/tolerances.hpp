@@ -97,7 +97,7 @@ SegmentTolerances get_segment_tolerances(Params const & params)
   SegmentTolerances tolerances;
   tolerances.goal_time_tolerance = constraints.goal_time;
   auto logger = rclcpp::get_logger("tolerance");
-  RCLCPP_DEBUG(logger, "%s %f", "goal_time", constraints.goal_time);
+  RCLCPP_DEBUG(logger, "goal_time %f", constraints.goal_time);
 
   // State and goal state tolerances
   tolerances.state_tolerance.resize(n_joints);
@@ -143,9 +143,9 @@ SegmentTolerances get_segment_tolerances(
 
   // from
   // https://github.com/ros-controls/control_msgs/blob/master/control_msgs/msg/JointTolerance.msg #
-  // There are two special values for tolerances: #  * 0 - The tolerance is unspecified and will
-  // remain at whatever the default is #  * -1 - The tolerance is "erased".  If there was a default,
-  // the joint will be #         allowed to move without restriction.
+  // There are two special values for tolerances:
+  // * 0 - The tolerance is unspecified and will remain at whatever the default is 
+  // * -1 - The tolerance is "erased".  If there was a default, the joint will be  allowed to move without restriction.
 
   // State and goal state tolerances
   for (auto joint_tol : goal.path_tolerance)
