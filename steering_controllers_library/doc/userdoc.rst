@@ -56,7 +56,9 @@ References (from a preceding controller)
 Used when controller is in chained mode (``in_chained_mode == true``).
 
 - ``<controller_name>/linear/velocity``      double, in m/s
-- ``<controller_name>/angular/position``     double, in rad
+- ``<controller_name>/angular/velocity``     double, in rad/s
+
+representing the body twist.
 
 Command interfaces
 ,,,,,,,,,,,,,,,,,,,
