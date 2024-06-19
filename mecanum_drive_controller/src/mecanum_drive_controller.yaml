@@ -101,6 +101,9 @@ mecanum_drive_controller:
       default_value: 0.0,
       description: "Wheel's radius.",
       read_only: false,
+      validation: {
+        gt<>: [0.0]
+      }
     }
 
     sum_of_robot_center_projection_on_X_Y_axis: {
