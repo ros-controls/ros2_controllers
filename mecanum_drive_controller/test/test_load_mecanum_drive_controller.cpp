@@ -22,10 +22,8 @@
 #include "rclcpp/utilities.hpp"
 #include "ros2_control_test_assets/descriptions.hpp"
 
-TEST(TestLoadMecanumDriveController, when_loading_controller_expect_no_exception)
+TEST(TestLoadMecanumDriveController, load_controller)
 {
-  rclcpp::init(0, nullptr);
-
   std::shared_ptr<rclcpp::Executor> executor =
     std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
 
@@ -40,4 +38,13 @@ TEST(TestLoadMecanumDriveController, when_loading_controller_expect_no_exception
     nullptr);
 
   rclcpp::shutdown();
+}
+
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  rclcpp::init(argc, argv);
+  int result = RUN_ALL_TESTS();
+  rclcpp::shutdown();
+  return result;
 }
