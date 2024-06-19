@@ -147,7 +147,7 @@ bool SteeringOdometry::update_from_velocity(
   const double steer_pos, const double dt)
 {
   steer_pos_ = steer_pos;
-  double linear_velocity = get_lin_velocity_double_traction_axle(
+  double linear_velocity = get_linear_velocity_double_traction_axle(
     right_traction_wheel_vel, left_traction_wheel_vel, steer_pos_);
 
   const double angular_velocity = std::tan(steer_pos_) * linear_velocity / wheelbase_;
