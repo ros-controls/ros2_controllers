@@ -123,7 +123,7 @@ bool SteeringOdometry::update_from_velocity(
 {
   steer_pos_ = steer_pos;
   double linear_velocity = traction_wheel_vel * wheel_radius_;
-  const double angular_velocity = tan(steer_pos) * linear_velocity / wheelbase_;
+  const double angular_velocity = std::tan(steer_pos) * linear_velocity / wheelbase_;
 
   return update_odometry(linear_velocity, angular_velocity, dt);
 }
@@ -136,7 +136,7 @@ bool SteeringOdometry::update_from_velocity(
     (right_traction_wheel_vel + left_traction_wheel_vel) * wheel_radius_ * 0.5;
   steer_pos_ = steer_pos;
 
-  const double angular_velocity = tan(steer_pos_) * linear_velocity / wheelbase_;
+  const double angular_velocity = std::tan(steer_pos_) * linear_velocity / wheelbase_;
 
   return update_odometry(linear_velocity, angular_velocity, dt);
 }
@@ -148,7 +148,7 @@ bool SteeringOdometry::update_from_velocity(
   steer_pos_ = (right_steer_pos + left_steer_pos) * 0.5;
   double linear_velocity =
     (right_traction_wheel_vel + left_traction_wheel_vel) * wheel_radius_ * 0.5;
-  const double angular_velocity = steer_pos_ * linear_velocity / wheelbase_;
+  const double angular_velocity = std::tan(steer_pos_) * linear_velocity / wheelbase_;
 
   return update_odometry(linear_velocity, angular_velocity, dt);
 }
