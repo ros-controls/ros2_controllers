@@ -370,7 +370,7 @@ SteeringControllersLibrary::on_export_reference_interfaces()
     &reference_interfaces_[0]));
 
   reference_interfaces.push_back(hardware_interface::CommandInterface(
-    get_node()->get_name(), std::string("angular/") + hardware_interface::HW_IF_POSITION,
+    get_node()->get_name(), std::string("angular/") + hardware_interface::HW_IF_VELOCITY,
     &reference_interfaces_[1]));
 
   return reference_interfaces;
@@ -447,7 +447,7 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
 
   if (!std::isnan(reference_interfaces_[0]) && !std::isnan(reference_interfaces_[1]))
   {
-    // store and set commands
+    // store (for open loop odometry) and set commands
     last_linear_velocity_ = reference_interfaces_[0];
     last_angular_velocity_ = reference_interfaces_[1];
 
