@@ -18,6 +18,7 @@
 #ifndef STEERING_CONTROLLERS_LIBRARY__STEERING_ODOMETRY_HPP_
 #define STEERING_CONTROLLERS_LIBRARY__STEERING_ODOMETRY_HPP_
 
+#include <cmath>
 #include <tuple>
 #include <vector>
 
@@ -31,6 +32,9 @@ namespace steering_odometry
 const unsigned int BICYCLE_CONFIG = 0;
 const unsigned int TRICYCLE_CONFIG = 1;
 const unsigned int ACKERMANN_CONFIG = 2;
+
+inline bool is_close_to_zero(double val) { return std::fabs(val) < 1e-6; }
+
 /**
  * \brief The Odometry class handles odometry readings
  * (2D pose and velocity with related timestamp)

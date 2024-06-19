@@ -260,7 +260,7 @@ std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_comma
     std::vector<double> traction_commands;
     std::vector<double> steering_commands;
     // double-traction axle
-    if (fabs(phi_IK) < 1e-6)
+    if (is_close_to_zero(phi_IK))
     {
       // avoid division by zero
       traction_commands = {Ws, Ws};
@@ -280,7 +280,7 @@ std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_comma
   {
     std::vector<double> traction_commands;
     std::vector<double> steering_commands;
-    if (fabs(phi_IK) < 1e-6)
+    if (is_close_to_zero(phi_IK))
     {
       // avoid division by zero
       traction_commands = {Ws, Ws};
@@ -337,7 +337,7 @@ void SteeringOdometry::integrate_fk(const double v_bx, const double omega_bz, co
   const double delta_x_b = v_bx * dt;
   const double delta_theta = omega_bz * dt;
 
-  if (fabs(delta_theta) < 1e-6)
+  if (is_close_to_zero(delta_theta))
   {
     /// Runge-Kutta 2nd Order (should solve problems when omega_bz is zero):
     integrate_runge_kutta_2(v_bx, omega_bz, dt);
