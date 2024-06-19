@@ -129,7 +129,7 @@ bool SteeringOdometry::update_from_velocity(
   return update_odometry(linear_velocity, angular_velocity, dt);
 }
 
-double SteeringOdometry::get_lin_velocity_double_traction_axle(
+double SteeringOdometry::get_linear_velocity_double_traction_axle(
   const double right_traction_wheel_vel, const double left_traction_wheel_vel,
   const double steer_pos)
 {

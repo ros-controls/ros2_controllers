@@ -237,7 +237,7 @@ private:
    * \param left_traction_wheel_vel  Left traction wheel velocity [rad/s]
    * \param steer_pos Steer wheel position [rad]
    */
-  double get_lin_velocity_double_traction_axle(
+  double get_linear_velocity_double_traction_axle(
     const double right_traction_wheel_vel, const double left_traction_wheel_vel,
     const double steer_pos);
 
