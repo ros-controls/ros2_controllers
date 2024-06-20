@@ -1,0 +1,69 @@
+parallel_gripper_action_controller:
+  action_monitor_rate: {
+    type: double,
+    default_value: 20.0,
+    description: "Hz",
+    read_only: true,
+    validation: {
+      gt_eq: [ 0.1 ]
+    },
+  }
+  joint: {
+    type: string,
+    read_only: true,
+  }
+  state_interfaces: {
+    type: string_array,
+    default_value: [position, velocity],
+  }
+  goal_tolerance: {
+    type: double,
+    default_value: 0.01,
+    validation: {
+      gt_eq: [ 0.0 ]
+    },
+  }
+  allow_stalling: {
+    type: bool,
+    description: "Allow stalling will make the action server return success if the gripper stalls when moving to the goal",
+    default_value: false,
+  }
+  stall_velocity_threshold: {
+    type: double,
+    description: "stall velocity threshold",
+    default_value: 0.001,
+  }
+  stall_timeout: {
+    type: double,
+    description: "stall timeout",
+    default_value: 1.0,
+    validation: {
+       gt_eq: [ 0.0 ]
+     },
+  }
+  max_effort_interface: {
+    type: string,
+    description: "Controller will claim the specified effort interface, e.g. robotiq_85_left_knuckle_joint/max_effort_interface.",
+    default_value: "",
+  }
+  max_effort: {
+    type: double,
+    default_value: 10.0,
+    description: "Default effort used for grasping (Newtons)",
+    validation: {
+      gt_eq: [ 0.0 ]
+    },
+  }
+  max_velocity_interface: {
+    type: string,
+    description: "Controller will claim the speed specified interface, e.g. robotiq_85_left_knuckle_joint/max_effort_interface.",
+    default_value: "",
+  }
+  max_velocity: {
+    type: double,
+    default_value: 0.1,
+    description: "Default target velocity used for grasping (meters/second)",
+    validation: {
+      gt_eq: [ 0.0 ]
+    },
+  }
