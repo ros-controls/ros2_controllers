@@ -739,16 +739,14 @@ TEST_F(TestTrajectoryActions, test_tolerances_via_actions)
       points.push_back(point);
 
       std::vector<control_msgs::msg::JointTolerance> path_tolerance;
-      std::vector<control_msgs::msg::JointTolerance> goal_tolerance;
       control_msgs::msg::JointTolerance tolerance;
-      // add the same tolerance for every joint, give it in correct order
       tolerance.name = "joint1";
       tolerance.position = -123.0;
       tolerance.velocity = 0.0;
       tolerance.acceleration = 0.0;
       path_tolerance.push_back(tolerance);
 
-      gh_future = sendActionGoal(points, 0.0, goal_options_, path_tolerance, goal_tolerance);
+      gh_future = sendActionGoal(points, 0.0, goal_options_, path_tolerance);
     }
     controller_hw_thread_.join();
 
@@ -778,16 +776,14 @@ TEST_F(TestTrajectoryActions, test_tolerances_via_actions)
       points.push_back(point);
 
       std::vector<control_msgs::msg::JointTolerance> path_tolerance;
-      std::vector<control_msgs::msg::JointTolerance> goal_tolerance;
       control_msgs::msg::JointTolerance tolerance;
-      // add the same tolerance for every joint, give it in correct order
       tolerance.name = "joint1";
       tolerance.position = 0.0;
       tolerance.velocity = -123.0;
       tolerance.acceleration = 0.0;
       path_tolerance.push_back(tolerance);
 
-      gh_future = sendActionGoal(points, 0.0, goal_options_, path_tolerance, goal_tolerance);
+      gh_future = sendActionGoal(points, 0.0, goal_options_, path_tolerance);
     }
     controller_hw_thread_.join();
 
@@ -817,16 +813,14 @@ TEST_F(TestTrajectoryActions, test_tolerances_via_actions)
       points.push_back(point);
 
       std::vector<control_msgs::msg::JointTolerance> path_tolerance;
-      std::vector<control_msgs::msg::JointTolerance> goal_tolerance;
       control_msgs::msg::JointTolerance tolerance;
-      // add the same tolerance for every joint, give it in correct order
       tolerance.name = "joint1";
       tolerance.position = 0.0;
       tolerance.velocity = 0.0;
       tolerance.acceleration = -123.0;
       path_tolerance.push_back(tolerance);
 
-      gh_future = sendActionGoal(points, 0.0, goal_options_, path_tolerance, goal_tolerance);
+      gh_future = sendActionGoal(points, 0.0, goal_options_, path_tolerance);
     }
     controller_hw_thread_.join();
 
@@ -855,17 +849,17 @@ TEST_F(TestTrajectoryActions, test_tolerances_via_actions)
       point.positions[2] = 3.0;
       points.push_back(point);
 
-      std::vector<control_msgs::msg::JointTolerance> path_tolerance;
       std::vector<control_msgs::msg::JointTolerance> goal_tolerance;
       control_msgs::msg::JointTolerance tolerance;
-      // add the same tolerance for every joint, give it in correct order
       tolerance.name = "joint1";
       tolerance.position = -123.0;
       tolerance.velocity = 0.0;
       tolerance.acceleration = 0.0;
       goal_tolerance.push_back(tolerance);
 
-      gh_future = sendActionGoal(points, 0.0, goal_options_, path_tolerance, goal_tolerance);
+      gh_future = sendActionGoal(
+        points, 0.0, goal_options_, std::vector<control_msgs::msg::JointTolerance>(),
+        goal_tolerance);
     }
     controller_hw_thread_.join();
 
@@ -894,17 +888,17 @@ TEST_F(TestTrajectoryActions, test_tolerances_via_actions)
       point.positions[2] = 3.0;
       points.push_back(point);
 
-      std::vector<control_msgs::msg::JointTolerance> path_tolerance;
       std::vector<control_msgs::msg::JointTolerance> goal_tolerance;
       control_msgs::msg::JointTolerance tolerance;
-      // add the same tolerance for every joint, give it in correct order
       tolerance.name = "joint1";
       tolerance.position = 0.0;
       tolerance.velocity = -123.0;
       tolerance.acceleration = 0.0;
       goal_tolerance.push_back(tolerance);
 
-      gh_future = sendActionGoal(points, 0.0, goal_options_, path_tolerance, goal_tolerance);
+      gh_future = sendActionGoal(
+        points, 0.0, goal_options_, std::vector<control_msgs::msg::JointTolerance>(),
+        goal_tolerance);
     }
     controller_hw_thread_.join();
 
@@ -933,17 +927,87 @@ TEST_F(TestTrajectoryActions, test_tolerances_via_actions)
       point.positions[2] = 3.0;
       points.push_back(point);
 
-      std::vector<control_msgs::msg::JointTolerance> path_tolerance;
       std::vector<control_msgs::msg::JointTolerance> goal_tolerance;
       control_msgs::msg::JointTolerance tolerance;
-      // add the same tolerance for every joint, give it in correct order
       tolerance.name = "joint1";
       tolerance.position = 0.0;
       tolerance.velocity = 0.0;
       tolerance.acceleration = -123.0;
       goal_tolerance.push_back(tolerance);
 
-      gh_future = sendActionGoal(points, 0.0, goal_options_, path_tolerance, goal_tolerance);
+      gh_future = sendActionGoal(
+        points, 0.0, goal_options_, std::vector<control_msgs::msg::JointTolerance>(),
+        goal_tolerance);
+    }
+    controller_hw_thread_.join();
+
+    EXPECT_TRUE(gh_future.get());
+    EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
+    EXPECT_EQ(
+      control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL, common_action_result_code_);
+
+    auto active_tolerances = traj_controller_->get_active_tolerances();
+    EXPECT_DOUBLE_EQ(active_tolerances.goal_time_tolerance, default_goal_time);
+    expectDefaultTolerances(active_tolerances);
+  }
+  {
+    SCOPED_TRACE("unknown joint in path acceleration tolerance");
+    SetUpControllerHardware();
+
+    std::shared_future<typename GoalHandle::SharedPtr> gh_future;
+    {
+      std::vector<JointTrajectoryPoint> points;
+      JointTrajectoryPoint point;
+      point.time_from_start = rclcpp::Duration::from_seconds(0.5);
+      point.positions.resize(joint_names_.size());
+
+      point.positions[0] = 1.0;
+      point.positions[1] = 2.0;
+      point.positions[2] = 3.0;
+      points.push_back(point);
+
+      std::vector<control_msgs::msg::JointTolerance> path_tolerance;
+      control_msgs::msg::JointTolerance tolerance;
+      tolerance.name = "joint123";
+      path_tolerance.push_back(tolerance);
+
+      gh_future = sendActionGoal(points, 0.0, goal_options_, path_tolerance);
+    }
+    controller_hw_thread_.join();
+
+    EXPECT_TRUE(gh_future.get());
+    EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
+    EXPECT_EQ(
+      control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL, common_action_result_code_);
+
+    auto active_tolerances = traj_controller_->get_active_tolerances();
+    EXPECT_DOUBLE_EQ(active_tolerances.goal_time_tolerance, default_goal_time);
+    expectDefaultTolerances(active_tolerances);
+  }
+  {
+    SCOPED_TRACE("unknown joint in goal position tolerance");
+    SetUpControllerHardware();
+
+    std::shared_future<typename GoalHandle::SharedPtr> gh_future;
+    {
+      std::vector<JointTrajectoryPoint> points;
+      JointTrajectoryPoint point;
+      point.time_from_start = rclcpp::Duration::from_seconds(0.5);
+      point.positions.resize(joint_names_.size());
+
+      point.positions[0] = 1.0;
+      point.positions[1] = 2.0;
+      point.positions[2] = 3.0;
+      points.push_back(point);
+
+      std::vector<control_msgs::msg::JointTolerance> goal_tolerance;
+      control_msgs::msg::JointTolerance tolerance;
+      tolerance.name = "joint123";
+      goal_tolerance.push_back(tolerance);
+
+      gh_future = sendActionGoal(
+        points, 0.0, goal_options_, std::vector<control_msgs::msg::JointTolerance>(),
+        goal_tolerance);
     }
     controller_hw_thread_.join();
 
