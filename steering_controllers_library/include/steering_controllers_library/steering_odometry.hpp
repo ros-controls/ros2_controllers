@@ -196,7 +196,7 @@ public:
    * \return Tuple of velocity commands and steering commands
    */
   std::tuple<std::vector<double>, std::vector<double>> get_commands(
-    const double v_bx, const double omega_bz, const bool open_loop);
+    const double v_bx, const double omega_bz, const bool open_loop = true);
 
   /**
    *  \brief Reset poses, heading, and accumulators
