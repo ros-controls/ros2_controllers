@@ -162,8 +162,8 @@ SegmentTolerances get_segment_tolerances(
     {
       RCLCPP_ERROR(
         logger, "%s",
-        ("joint " + joint + "specified in goal.path_tolerance does not exist").c_str());
-      return active_tolerances;
+        ("joint '" + joint + "' specified in goal.path_tolerance does not exist").c_str());
+      return default_tolerances;
     }
     auto i = std::distance(params.joints.cbegin(), it);
     if (joint_tol.position > 0.0)
@@ -174,6 +174,14 @@ SegmentTolerances get_segment_tolerances(
     {
       active_tolerances.state_tolerance[i].position = 0.0;
     }
+    else if (joint_tol.position < 0.0)
+    {
+      RCLCPP_ERROR(
+        logger, "%s",
+        ("joint '" + joint + "' specified in goal.path_tolerance has a negative position tolerance")
+          .c_str());
+      return default_tolerances;
+    }
 
     if (joint_tol.velocity > 0.0)
     {
@@ -183,6 +191,14 @@ SegmentTolerances get_segment_tolerances(
     {
       active_tolerances.state_tolerance[i].velocity = 0.0;
     }
+    else if (joint_tol.velocity < 0.0)
+    {
+      RCLCPP_ERROR(
+        logger, "%s",
+        ("joint '" + joint + "' specified in goal.path_tolerance has a negative velocity tolerance")
+          .c_str());
+      return default_tolerances;
+    }
 
     if (joint_tol.acceleration > 0.0)
     {
@@ -191,6 +207,15 @@ SegmentTolerances get_segment_tolerances(
     else if (is_erase_value(joint_tol.acceleration))
     {
       active_tolerances.state_tolerance[i].acceleration = 0.0;
+    }
+    else if (joint_tol.acceleration < 0.0)
+    {
+      RCLCPP_ERROR(
+        logger, "%s",
+        ("joint '" + joint +
+         "' specified in goal.path_tolerance has a negative acceleration tolerance")
+          .c_str());
+      return default_tolerances;
     }
 
     RCLCPP_DEBUG(
@@ -212,8 +237,8 @@ SegmentTolerances get_segment_tolerances(
     {
       RCLCPP_ERROR(
         logger, "%s",
-        ("joint " + joint + "specified in goal.goal_tolerance does not exist").c_str());
-      return active_tolerances;
+        ("joint '" + joint + "' specified in goal.goal_tolerance does not exist").c_str());
+      return default_tolerances;
     }
     auto i = std::distance(params.joints.cbegin(), it);
     if (goal_tol.position > 0.0)
@@ -224,6 +249,14 @@ SegmentTolerances get_segment_tolerances(
     {
       active_tolerances.goal_state_tolerance[i].position = 0.0;
     }
+    else if (goal_tol.position < 0.0)
+    {
+      RCLCPP_ERROR(
+        logger, "%s",
+        ("joint '" + joint + "' specified in goal.goal_tolerance has a negative position tolerance")
+          .c_str());
+      return default_tolerances;
+    }
 
     if (goal_tol.velocity > 0.0)
     {
@@ -233,6 +266,14 @@ SegmentTolerances get_segment_tolerances(
     {
       active_tolerances.goal_state_tolerance[i].velocity = 0.0;
     }
+    else if (goal_tol.velocity < 0.0)
+    {
+      RCLCPP_ERROR(
+        logger, "%s",
+        ("joint '" + joint + "' specified in goal.goal_tolerance has a negative velocity tolerance")
+          .c_str());
+      return default_tolerances;
+    }
 
     if (goal_tol.acceleration > 0.0)
     {
@@ -241,6 +282,15 @@ SegmentTolerances get_segment_tolerances(
     else if (is_erase_value(goal_tol.acceleration))
     {
       active_tolerances.goal_state_tolerance[i].acceleration = 0.0;
+    }
+    else if (goal_tol.acceleration < 0.0)
+    {
+      RCLCPP_ERROR(
+        logger, "%s",
+        ("joint '" + joint +
+         "' specified in goal.goal_tolerance has a negative acceleration tolerance")
+          .c_str());
+      return default_tolerances;
     }
 
     RCLCPP_DEBUG(

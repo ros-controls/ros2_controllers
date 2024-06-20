@@ -494,6 +494,33 @@ TEST_F(TestTrajectoryActions, test_goal_tolerances_multi_point_success)
   expectCommandPoint(points_positions.at(1));
 }
 
+void check_default_tolerances(joint_trajectory_controller::SegmentTolerances active_tolerances)
+{
+  EXPECT_EQ(active_tolerances.goal_time_tolerance, 1.0);
+  // acceleration is never set, and goal_state_tolerance.velocity from stopped_velocity_tolerance
+  EXPECT_EQ(active_tolerances.state_tolerance.size(), 3);
+  EXPECT_EQ(active_tolerances.state_tolerance.at(0).position, 0.1);
+  EXPECT_EQ(active_tolerances.state_tolerance.at(0).velocity, 0.0);
+  EXPECT_EQ(active_tolerances.state_tolerance.at(0).acceleration, 0.0);
+  EXPECT_EQ(active_tolerances.state_tolerance.at(1).position, 0.1);
+  EXPECT_EQ(active_tolerances.state_tolerance.at(1).velocity, 0.0);
+  EXPECT_EQ(active_tolerances.state_tolerance.at(1).acceleration, 0.0);
+  EXPECT_EQ(active_tolerances.state_tolerance.at(2).position, 0.1);
+  EXPECT_EQ(active_tolerances.state_tolerance.at(2).velocity, 0.0);
+  EXPECT_EQ(active_tolerances.state_tolerance.at(2).acceleration, 0.0);
+
+  EXPECT_EQ(active_tolerances.goal_state_tolerance.size(), 3);
+  EXPECT_EQ(active_tolerances.goal_state_tolerance.at(0).position, 0.1);
+  EXPECT_EQ(active_tolerances.goal_state_tolerance.at(0).velocity, 0.1);
+  EXPECT_EQ(active_tolerances.goal_state_tolerance.at(0).acceleration, 0.0);
+  EXPECT_EQ(active_tolerances.goal_state_tolerance.at(1).position, 0.1);
+  EXPECT_EQ(active_tolerances.goal_state_tolerance.at(1).velocity, 0.1);
+  EXPECT_EQ(active_tolerances.goal_state_tolerance.at(1).acceleration, 0.0);
+  EXPECT_EQ(active_tolerances.goal_state_tolerance.at(2).position, 0.1);
+  EXPECT_EQ(active_tolerances.goal_state_tolerance.at(2).velocity, 0.1);
+  EXPECT_EQ(active_tolerances.goal_state_tolerance.at(2).acceleration, 0.0);
+}
+
 /**
  * No need for parameterized tests
  */
@@ -536,31 +563,8 @@ TEST_F(TestTrajectoryActions, test_tolerances_via_actions)
     EXPECT_EQ(
       control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL, common_action_result_code_);
 
-    auto active_tolerances_ = traj_controller_->get_active_tolerances();
-
-    EXPECT_EQ(active_tolerances_.goal_time_tolerance, 1.0);
-    // acceleration is never set, and goal_state_tolerance.velocity from stopped_velocity_tolerance
-    EXPECT_EQ(active_tolerances_.state_tolerance.size(), 3);
-    EXPECT_EQ(active_tolerances_.state_tolerance.at(0).position, 0.1);
-    EXPECT_EQ(active_tolerances_.state_tolerance.at(0).velocity, 0.0);
-    EXPECT_EQ(active_tolerances_.state_tolerance.at(0).acceleration, 0.0);
-    EXPECT_EQ(active_tolerances_.state_tolerance.at(1).position, 0.1);
-    EXPECT_EQ(active_tolerances_.state_tolerance.at(1).velocity, 0.0);
-    EXPECT_EQ(active_tolerances_.state_tolerance.at(1).acceleration, 0.0);
-    EXPECT_EQ(active_tolerances_.state_tolerance.at(2).position, 0.1);
-    EXPECT_EQ(active_tolerances_.state_tolerance.at(2).velocity, 0.0);
-    EXPECT_EQ(active_tolerances_.state_tolerance.at(2).acceleration, 0.0);
-
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.size(), 3);
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.at(0).position, 0.1);
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.at(0).velocity, 0.1);
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.at(0).acceleration, 0.0);
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.at(1).position, 0.1);
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.at(1).velocity, 0.1);
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.at(1).acceleration, 0.0);
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.at(2).position, 0.1);
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.at(2).velocity, 0.1);
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.at(2).acceleration, 0.0);
+    auto active_tolerances = traj_controller_->get_active_tolerances();
+    check_default_tolerances(active_tolerances);
   }
 
   // send goal with nonzero tolerances, are they accepted?
@@ -617,30 +621,30 @@ TEST_F(TestTrajectoryActions, test_tolerances_via_actions)
     EXPECT_EQ(
       control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL, common_action_result_code_);
 
-    auto active_tolerances_ = traj_controller_->get_active_tolerances();
-    EXPECT_EQ(active_tolerances_.goal_time_tolerance, 2.0);
+    auto active_tolerances = traj_controller_->get_active_tolerances();
+    EXPECT_EQ(active_tolerances.goal_time_tolerance, 2.0);
 
-    EXPECT_EQ(active_tolerances_.state_tolerance.size(), 3);
-    EXPECT_EQ(active_tolerances_.state_tolerance.at(0).position, 0.2);
-    EXPECT_EQ(active_tolerances_.state_tolerance.at(0).velocity, 0.3);
-    EXPECT_EQ(active_tolerances_.state_tolerance.at(0).acceleration, 0.4);
-    EXPECT_EQ(active_tolerances_.state_tolerance.at(1).position, 0.2);
-    EXPECT_EQ(active_tolerances_.state_tolerance.at(1).velocity, 0.3);
-    EXPECT_EQ(active_tolerances_.state_tolerance.at(1).acceleration, 0.4);
-    EXPECT_EQ(active_tolerances_.state_tolerance.at(2).position, 0.2);
-    EXPECT_EQ(active_tolerances_.state_tolerance.at(2).velocity, 0.3);
-    EXPECT_EQ(active_tolerances_.state_tolerance.at(2).acceleration, 0.4);
+    EXPECT_EQ(active_tolerances.state_tolerance.size(), 3);
+    EXPECT_EQ(active_tolerances.state_tolerance.at(0).position, 0.2);
+    EXPECT_EQ(active_tolerances.state_tolerance.at(0).velocity, 0.3);
+    EXPECT_EQ(active_tolerances.state_tolerance.at(0).acceleration, 0.4);
+    EXPECT_EQ(active_tolerances.state_tolerance.at(1).position, 0.2);
+    EXPECT_EQ(active_tolerances.state_tolerance.at(1).velocity, 0.3);
+    EXPECT_EQ(active_tolerances.state_tolerance.at(1).acceleration, 0.4);
+    EXPECT_EQ(active_tolerances.state_tolerance.at(2).position, 0.2);
+    EXPECT_EQ(active_tolerances.state_tolerance.at(2).velocity, 0.3);
+    EXPECT_EQ(active_tolerances.state_tolerance.at(2).acceleration, 0.4);
 
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.size(), 3);
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.at(0).position, 1.1);
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.at(0).velocity, 2.1);
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.at(0).acceleration, 3.1);
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.at(1).position, 1.2);
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.at(1).velocity, 2.2);
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.at(1).acceleration, 3.2);
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.at(2).position, 1.3);
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.at(2).velocity, 2.3);
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.at(2).acceleration, 3.3);
+    EXPECT_EQ(active_tolerances.goal_state_tolerance.size(), 3);
+    EXPECT_EQ(active_tolerances.goal_state_tolerance.at(0).position, 1.1);
+    EXPECT_EQ(active_tolerances.goal_state_tolerance.at(0).velocity, 2.1);
+    EXPECT_EQ(active_tolerances.goal_state_tolerance.at(0).acceleration, 3.1);
+    EXPECT_EQ(active_tolerances.goal_state_tolerance.at(1).position, 1.2);
+    EXPECT_EQ(active_tolerances.goal_state_tolerance.at(1).velocity, 2.2);
+    EXPECT_EQ(active_tolerances.goal_state_tolerance.at(1).acceleration, 3.2);
+    EXPECT_EQ(active_tolerances.goal_state_tolerance.at(2).position, 1.3);
+    EXPECT_EQ(active_tolerances.goal_state_tolerance.at(2).velocity, 2.3);
+    EXPECT_EQ(active_tolerances.goal_state_tolerance.at(2).acceleration, 3.3);
   }
 
   // send goal without tolerances again, are the default ones used?
@@ -668,32 +672,8 @@ TEST_F(TestTrajectoryActions, test_tolerances_via_actions)
     EXPECT_EQ(
       control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL, common_action_result_code_);
 
-    auto active_tolerances_ = traj_controller_->get_active_tolerances();
-
-    EXPECT_EQ(active_tolerances_.goal_time_tolerance, 1.0);
-
-    // acceleration is never set, and goal_state_tolerance.velocity from stopped_velocity_tolerance
-    EXPECT_EQ(active_tolerances_.state_tolerance.size(), 3);
-    EXPECT_EQ(active_tolerances_.state_tolerance.at(0).position, 0.1);
-    EXPECT_EQ(active_tolerances_.state_tolerance.at(0).velocity, 0.0);
-    EXPECT_EQ(active_tolerances_.state_tolerance.at(0).acceleration, 0.0);
-    EXPECT_EQ(active_tolerances_.state_tolerance.at(1).position, 0.1);
-    EXPECT_EQ(active_tolerances_.state_tolerance.at(1).velocity, 0.0);
-    EXPECT_EQ(active_tolerances_.state_tolerance.at(1).acceleration, 0.0);
-    EXPECT_EQ(active_tolerances_.state_tolerance.at(2).position, 0.1);
-    EXPECT_EQ(active_tolerances_.state_tolerance.at(2).velocity, 0.0);
-    EXPECT_EQ(active_tolerances_.state_tolerance.at(2).acceleration, 0.0);
-
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.size(), 3);
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.at(0).position, 0.1);
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.at(0).velocity, 0.1);
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.at(0).acceleration, 0.0);
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.at(1).position, 0.1);
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.at(1).velocity, 0.1);
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.at(1).acceleration, 0.0);
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.at(2).position, 0.1);
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.at(2).velocity, 0.1);
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.at(2).acceleration, 0.0);
+    auto active_tolerances = traj_controller_->get_active_tolerances();
+    check_default_tolerances(active_tolerances);
   }
 
   // send goal with deactivated tolerances (-1)
@@ -737,30 +717,261 @@ TEST_F(TestTrajectoryActions, test_tolerances_via_actions)
     EXPECT_EQ(
       control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL, common_action_result_code_);
 
-    auto active_tolerances_ = traj_controller_->get_active_tolerances();
-    EXPECT_EQ(active_tolerances_.goal_time_tolerance, 0.0);
+    auto active_tolerances = traj_controller_->get_active_tolerances();
 
-    EXPECT_EQ(active_tolerances_.state_tolerance.size(), 3);
-    EXPECT_EQ(active_tolerances_.state_tolerance.at(0).position, 0.0);
-    EXPECT_EQ(active_tolerances_.state_tolerance.at(0).velocity, 0.0);
-    EXPECT_EQ(active_tolerances_.state_tolerance.at(0).acceleration, 0.0);
-    EXPECT_EQ(active_tolerances_.state_tolerance.at(1).position, 0.0);
-    EXPECT_EQ(active_tolerances_.state_tolerance.at(1).velocity, 0.0);
-    EXPECT_EQ(active_tolerances_.state_tolerance.at(1).acceleration, 0.0);
-    EXPECT_EQ(active_tolerances_.state_tolerance.at(2).position, 0.0);
-    EXPECT_EQ(active_tolerances_.state_tolerance.at(2).velocity, 0.0);
-    EXPECT_EQ(active_tolerances_.state_tolerance.at(2).acceleration, 0.0);
+    EXPECT_EQ(active_tolerances.goal_time_tolerance, 0.0);
 
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.size(), 3);
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.at(0).position, 0.0);
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.at(0).velocity, 0.0);
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.at(0).acceleration, 0.0);
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.at(1).position, 0.0);
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.at(1).velocity, 0.0);
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.at(1).acceleration, 0.0);
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.at(2).position, 0.0);
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.at(2).velocity, 0.0);
-    EXPECT_EQ(active_tolerances_.goal_state_tolerance.at(2).acceleration, 0.0);
+    EXPECT_EQ(active_tolerances.state_tolerance.size(), 3);
+    EXPECT_EQ(active_tolerances.state_tolerance.at(0).position, 0.0);
+    EXPECT_EQ(active_tolerances.state_tolerance.at(0).velocity, 0.0);
+    EXPECT_EQ(active_tolerances.state_tolerance.at(0).acceleration, 0.0);
+    EXPECT_EQ(active_tolerances.state_tolerance.at(1).position, 0.0);
+    EXPECT_EQ(active_tolerances.state_tolerance.at(1).velocity, 0.0);
+    EXPECT_EQ(active_tolerances.state_tolerance.at(1).acceleration, 0.0);
+    EXPECT_EQ(active_tolerances.state_tolerance.at(2).position, 0.0);
+    EXPECT_EQ(active_tolerances.state_tolerance.at(2).velocity, 0.0);
+    EXPECT_EQ(active_tolerances.state_tolerance.at(2).acceleration, 0.0);
+
+    EXPECT_EQ(active_tolerances.goal_state_tolerance.size(), 3);
+    EXPECT_EQ(active_tolerances.goal_state_tolerance.at(0).position, 0.0);
+    EXPECT_EQ(active_tolerances.goal_state_tolerance.at(0).velocity, 0.0);
+    EXPECT_EQ(active_tolerances.goal_state_tolerance.at(0).acceleration, 0.0);
+    EXPECT_EQ(active_tolerances.goal_state_tolerance.at(1).position, 0.0);
+    EXPECT_EQ(active_tolerances.goal_state_tolerance.at(1).velocity, 0.0);
+    EXPECT_EQ(active_tolerances.goal_state_tolerance.at(1).acceleration, 0.0);
+    EXPECT_EQ(active_tolerances.goal_state_tolerance.at(2).position, 0.0);
+    EXPECT_EQ(active_tolerances.goal_state_tolerance.at(2).velocity, 0.0);
+    EXPECT_EQ(active_tolerances.goal_state_tolerance.at(2).acceleration, 0.0);
+  }
+
+  // send goal with invalid tolerances, are the default ones used?
+  // negative path position tolerance
+  {
+    SetUpControllerHardware();
+
+    std::shared_future<typename GoalHandle::SharedPtr> gh_future;
+    {
+      std::vector<JointTrajectoryPoint> points;
+      JointTrajectoryPoint point;
+      point.time_from_start = rclcpp::Duration::from_seconds(0.5);
+      point.positions.resize(joint_names_.size());
+
+      point.positions[0] = 1.0;
+      point.positions[1] = 2.0;
+      point.positions[2] = 3.0;
+      points.push_back(point);
+
+      std::vector<control_msgs::msg::JointTolerance> path_tolerance;
+      std::vector<control_msgs::msg::JointTolerance> goal_tolerance;
+      control_msgs::msg::JointTolerance tolerance;
+      // add the same tolerance for every joint, give it in correct order
+      tolerance.name = "joint1";
+      tolerance.position = -123.0;
+      tolerance.velocity = 0.0;
+      tolerance.acceleration = 0.0;
+      path_tolerance.push_back(tolerance);
+
+      gh_future = sendActionGoal(points, 0.0, goal_options_, path_tolerance, goal_tolerance);
+    }
+    controller_hw_thread_.join();
+
+    EXPECT_TRUE(gh_future.get());
+    EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
+    EXPECT_EQ(
+      control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL, common_action_result_code_);
+
+    auto active_tolerances = traj_controller_->get_active_tolerances();
+    check_default_tolerances(active_tolerances);
+  }
+  // negative path velocity tolerance
+  {
+    SetUpControllerHardware();
+
+    std::shared_future<typename GoalHandle::SharedPtr> gh_future;
+    {
+      std::vector<JointTrajectoryPoint> points;
+      JointTrajectoryPoint point;
+      point.time_from_start = rclcpp::Duration::from_seconds(0.5);
+      point.positions.resize(joint_names_.size());
+
+      point.positions[0] = 1.0;
+      point.positions[1] = 2.0;
+      point.positions[2] = 3.0;
+      points.push_back(point);
+
+      std::vector<control_msgs::msg::JointTolerance> path_tolerance;
+      std::vector<control_msgs::msg::JointTolerance> goal_tolerance;
+      control_msgs::msg::JointTolerance tolerance;
+      // add the same tolerance for every joint, give it in correct order
+      tolerance.name = "joint1";
+      tolerance.position = 0.0;
+      tolerance.velocity = -123.0;
+      tolerance.acceleration = 0.0;
+      path_tolerance.push_back(tolerance);
+
+      gh_future = sendActionGoal(points, 0.0, goal_options_, path_tolerance, goal_tolerance);
+    }
+    controller_hw_thread_.join();
+
+    EXPECT_TRUE(gh_future.get());
+    EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
+    EXPECT_EQ(
+      control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL, common_action_result_code_);
+
+    auto active_tolerances = traj_controller_->get_active_tolerances();
+    check_default_tolerances(active_tolerances);
+  }
+  // negative path acceleration tolerance
+  {
+    SetUpControllerHardware();
+
+    std::shared_future<typename GoalHandle::SharedPtr> gh_future;
+    {
+      std::vector<JointTrajectoryPoint> points;
+      JointTrajectoryPoint point;
+      point.time_from_start = rclcpp::Duration::from_seconds(0.5);
+      point.positions.resize(joint_names_.size());
+
+      point.positions[0] = 1.0;
+      point.positions[1] = 2.0;
+      point.positions[2] = 3.0;
+      points.push_back(point);
+
+      std::vector<control_msgs::msg::JointTolerance> path_tolerance;
+      std::vector<control_msgs::msg::JointTolerance> goal_tolerance;
+      control_msgs::msg::JointTolerance tolerance;
+      // add the same tolerance for every joint, give it in correct order
+      tolerance.name = "joint1";
+      tolerance.position = 0.0;
+      tolerance.velocity = 0.0;
+      tolerance.acceleration = -123.0;
+      path_tolerance.push_back(tolerance);
+
+      gh_future = sendActionGoal(points, 0.0, goal_options_, path_tolerance, goal_tolerance);
+    }
+    controller_hw_thread_.join();
+
+    EXPECT_TRUE(gh_future.get());
+    EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
+    EXPECT_EQ(
+      control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL, common_action_result_code_);
+
+    auto active_tolerances = traj_controller_->get_active_tolerances();
+    check_default_tolerances(active_tolerances);
+  }
+  // negative goal position tolerance
+  {
+    SetUpControllerHardware();
+
+    std::shared_future<typename GoalHandle::SharedPtr> gh_future;
+    {
+      std::vector<JointTrajectoryPoint> points;
+      JointTrajectoryPoint point;
+      point.time_from_start = rclcpp::Duration::from_seconds(0.5);
+      point.positions.resize(joint_names_.size());
+
+      point.positions[0] = 1.0;
+      point.positions[1] = 2.0;
+      point.positions[2] = 3.0;
+      points.push_back(point);
+
+      std::vector<control_msgs::msg::JointTolerance> path_tolerance;
+      std::vector<control_msgs::msg::JointTolerance> goal_tolerance;
+      control_msgs::msg::JointTolerance tolerance;
+      // add the same tolerance for every joint, give it in correct order
+      tolerance.name = "joint1";
+      tolerance.position = -123.0;
+      tolerance.velocity = 0.0;
+      tolerance.acceleration = 0.0;
+      goal_tolerance.push_back(tolerance);
+
+      gh_future = sendActionGoal(points, 0.0, goal_options_, path_tolerance, goal_tolerance);
+    }
+    controller_hw_thread_.join();
+
+    EXPECT_TRUE(gh_future.get());
+    EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
+    EXPECT_EQ(
+      control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL, common_action_result_code_);
+
+    auto active_tolerances = traj_controller_->get_active_tolerances();
+    check_default_tolerances(active_tolerances);
+  }
+  // negative goal velocity tolerance
+  {
+    SetUpControllerHardware();
+
+    std::shared_future<typename GoalHandle::SharedPtr> gh_future;
+    {
+      std::vector<JointTrajectoryPoint> points;
+      JointTrajectoryPoint point;
+      point.time_from_start = rclcpp::Duration::from_seconds(0.5);
+      point.positions.resize(joint_names_.size());
+
+      point.positions[0] = 1.0;
+      point.positions[1] = 2.0;
+      point.positions[2] = 3.0;
+      points.push_back(point);
+
+      std::vector<control_msgs::msg::JointTolerance> path_tolerance;
+      std::vector<control_msgs::msg::JointTolerance> goal_tolerance;
+      control_msgs::msg::JointTolerance tolerance;
+      // add the same tolerance for every joint, give it in correct order
+      tolerance.name = "joint1";
+      tolerance.position = 0.0;
+      tolerance.velocity = -123.0;
+      tolerance.acceleration = 0.0;
+      goal_tolerance.push_back(tolerance);
+
+      gh_future = sendActionGoal(points, 0.0, goal_options_, path_tolerance, goal_tolerance);
+    }
+    controller_hw_thread_.join();
+
+    EXPECT_TRUE(gh_future.get());
+    EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
+    EXPECT_EQ(
+      control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL, common_action_result_code_);
+
+    auto active_tolerances = traj_controller_->get_active_tolerances();
+    check_default_tolerances(active_tolerances);
+  }
+  // negative goal acceleration tolerance
+  {
+    SetUpControllerHardware();
+
+    std::shared_future<typename GoalHandle::SharedPtr> gh_future;
+    {
+      std::vector<JointTrajectoryPoint> points;
+      JointTrajectoryPoint point;
+      point.time_from_start = rclcpp::Duration::from_seconds(0.5);
+      point.positions.resize(joint_names_.size());
+
+      point.positions[0] = 1.0;
+      point.positions[1] = 2.0;
+      point.positions[2] = 3.0;
+      points.push_back(point);
+
+      std::vector<control_msgs::msg::JointTolerance> path_tolerance;
+      std::vector<control_msgs::msg::JointTolerance> goal_tolerance;
+      control_msgs::msg::JointTolerance tolerance;
+      // add the same tolerance for every joint, give it in correct order
+      tolerance.name = "joint1";
+      tolerance.position = 0.0;
+      tolerance.velocity = 0.0;
+      tolerance.acceleration = -123.0;
+      goal_tolerance.push_back(tolerance);
+
+      gh_future = sendActionGoal(points, 0.0, goal_options_, path_tolerance, goal_tolerance);
+    }
+    controller_hw_thread_.join();
+
+    EXPECT_TRUE(gh_future.get());
+    EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
+    EXPECT_EQ(
+      control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL, common_action_result_code_);
+
+    auto active_tolerances = traj_controller_->get_active_tolerances();
+    check_default_tolerances(active_tolerances);
   }
 }
 
