@@ -651,6 +651,32 @@ public:
     }
   }
 
+  void expectDefaultTolerances(joint_trajectory_controller::SegmentTolerances active_tolerances)
+  {
+    // acceleration is never set, and goal_state_tolerance.velocity from stopped_velocity_tolerance
+    ASSERT_EQ(active_tolerances.state_tolerance.size(), 3);
+    EXPECT_DOUBLE_EQ(active_tolerances.state_tolerance.at(0).position, 0.1);
+    EXPECT_DOUBLE_EQ(active_tolerances.state_tolerance.at(0).velocity, 0.0);
+    EXPECT_DOUBLE_EQ(active_tolerances.state_tolerance.at(0).acceleration, 0.0);
+    EXPECT_DOUBLE_EQ(active_tolerances.state_tolerance.at(1).position, 0.1);
+    EXPECT_DOUBLE_EQ(active_tolerances.state_tolerance.at(1).velocity, 0.0);
+    EXPECT_DOUBLE_EQ(active_tolerances.state_tolerance.at(1).acceleration, 0.0);
+    EXPECT_DOUBLE_EQ(active_tolerances.state_tolerance.at(2).position, 0.1);
+    EXPECT_DOUBLE_EQ(active_tolerances.state_tolerance.at(2).velocity, 0.0);
+    EXPECT_DOUBLE_EQ(active_tolerances.state_tolerance.at(2).acceleration, 0.0);
+
+    ASSERT_EQ(active_tolerances.goal_state_tolerance.size(), 3);
+    EXPECT_DOUBLE_EQ(active_tolerances.goal_state_tolerance.at(0).position, 0.1);
+    EXPECT_DOUBLE_EQ(active_tolerances.goal_state_tolerance.at(0).velocity, 0.1);
+    EXPECT_DOUBLE_EQ(active_tolerances.goal_state_tolerance.at(0).acceleration, 0.0);
+    EXPECT_DOUBLE_EQ(active_tolerances.goal_state_tolerance.at(1).position, 0.1);
+    EXPECT_DOUBLE_EQ(active_tolerances.goal_state_tolerance.at(1).velocity, 0.1);
+    EXPECT_DOUBLE_EQ(active_tolerances.goal_state_tolerance.at(1).acceleration, 0.0);
+    EXPECT_DOUBLE_EQ(active_tolerances.goal_state_tolerance.at(2).position, 0.1);
+    EXPECT_DOUBLE_EQ(active_tolerances.goal_state_tolerance.at(2).velocity, 0.1);
+    EXPECT_DOUBLE_EQ(active_tolerances.goal_state_tolerance.at(2).acceleration, 0.0);
+  }
+
   /**
    * @brief compares the joint names and interface types of the controller with the given ones
    */

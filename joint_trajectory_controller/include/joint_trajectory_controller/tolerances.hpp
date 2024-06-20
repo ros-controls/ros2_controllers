@@ -147,7 +147,7 @@ SegmentTolerances get_segment_tolerances(
   // There are two special values for tolerances:
   // * 0 - The tolerance is unspecified and will remain at whatever the default is
   // * -1 - The tolerance is "erased".
-  //        If there was a default, the joint will be  allowed to move without restriction.
+  //        If there was a default, the joint will be allowed to move without restriction.
   constexpr double ERASE_VALUE = -1.0;
   auto is_erase_value = [](double value)
   { return fabs(value - ERASE_VALUE) < std::numeric_limits<float>::epsilon(); };
@@ -162,7 +162,10 @@ SegmentTolerances get_segment_tolerances(
     {
       RCLCPP_ERROR(
         logger, "%s",
-        ("joint '" + joint + "' specified in goal.path_tolerance does not exist").c_str());
+        ("joint '" + joint +
+         "' specified in goal.path_tolerance does not exist. "
+         "Use default tolerances.")
+          .c_str());
       return default_tolerances;
     }
     auto i = std::distance(params.joints.cbegin(), it);
@@ -178,7 +181,9 @@ SegmentTolerances get_segment_tolerances(
     {
       RCLCPP_ERROR(
         logger, "%s",
-        ("joint '" + joint + "' specified in goal.path_tolerance has a negative position tolerance")
+        ("joint '" + joint +
+         "' specified in goal.path_tolerance has a negative position tolerance. "
+         "Use default tolerances.")
           .c_str());
       return default_tolerances;
     }
@@ -195,7 +200,9 @@ SegmentTolerances get_segment_tolerances(
     {
       RCLCPP_ERROR(
         logger, "%s",
-        ("joint '" + joint + "' specified in goal.path_tolerance has a negative velocity tolerance")
+        ("joint '" + joint +
+         "' specified in goal.path_tolerance has a negative velocity tolerance. "
+         "Use default tolerances.")
           .c_str());
       return default_tolerances;
     }
@@ -213,7 +220,8 @@ SegmentTolerances get_segment_tolerances(
       RCLCPP_ERROR(
         logger, "%s",
         ("joint '" + joint +
-         "' specified in goal.path_tolerance has a negative acceleration tolerance")
+         "' specified in goal.path_tolerance has a negative acceleration tolerance. "
+         "Use default tolerances.")
           .c_str());
       return default_tolerances;
     }
@@ -237,7 +245,10 @@ SegmentTolerances get_segment_tolerances(
     {
       RCLCPP_ERROR(
         logger, "%s",
-        ("joint '" + joint + "' specified in goal.goal_tolerance does not exist").c_str());
+        ("joint '" + joint +
+         "' specified in goal.goal_tolerance does not exist. "
+         "Use default tolerances.")
+          .c_str());
       return default_tolerances;
     }
     auto i = std::distance(params.joints.cbegin(), it);
@@ -253,7 +264,9 @@ SegmentTolerances get_segment_tolerances(
     {
       RCLCPP_ERROR(
         logger, "%s",
-        ("joint '" + joint + "' specified in goal.goal_tolerance has a negative position tolerance")
+        ("joint '" + joint +
+         "' specified in goal.goal_tolerance has a negative position tolerance. "
+         "Use default tolerances.")
           .c_str());
       return default_tolerances;
     }
@@ -270,7 +283,9 @@ SegmentTolerances get_segment_tolerances(
     {
       RCLCPP_ERROR(
         logger, "%s",
-        ("joint '" + joint + "' specified in goal.goal_tolerance has a negative velocity tolerance")
+        ("joint '" + joint +
+         "' specified in goal.goal_tolerance has a negative velocity tolerance. "
+         "Use default tolerances.")
           .c_str());
       return default_tolerances;
     }
@@ -288,7 +303,8 @@ SegmentTolerances get_segment_tolerances(
       RCLCPP_ERROR(
         logger, "%s",
         ("joint '" + joint +
-         "' specified in goal.goal_tolerance has a negative acceleration tolerance")
+         "' specified in goal.goal_tolerance has a negative acceleration tolerance. "
+         "Use default tolerances.")
           .c_str());
       return default_tolerances;
     }
