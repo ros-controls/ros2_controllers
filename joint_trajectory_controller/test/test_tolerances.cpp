@@ -20,11 +20,11 @@
 #include "gmock/gmock.h"
 #include "rclcpp/duration.hpp"
 #include "rclcpp/logger.hpp"
-
-#include "joint_trajectory_controller/tolerances.hpp"
-#include "test_tolerances_utils.hpp"
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
+
+#include "joint_trajectory_controller/tolerances.hpp"
+#include "test_trajectory_controller_utils.hpp"
 
 using joint_trajectory_controller::SegmentTolerances;
 using trajectory_msgs::msg::JointTrajectoryPoint;

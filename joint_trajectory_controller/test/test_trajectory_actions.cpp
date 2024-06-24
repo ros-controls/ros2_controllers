@@ -47,7 +47,6 @@
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
-#include "test_tolerances_utils.hpp"
 #include "test_trajectory_controller_utils.hpp"
 
 using std::placeholders::_1;
