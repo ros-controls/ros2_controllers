@@ -88,17 +88,18 @@ struct SegmentTolerances
  *    goal: 0.01
  * \endcode
  *
+ * \param jtc_logger The logger to use for output
  * \param params The ROS Parameters
  * \return Trajectory segment tolerances.
  */
-SegmentTolerances get_segment_tolerances(const Params & params)
+SegmentTolerances get_segment_tolerances(rclcpp::Logger & jtc_logger, const Params & params)
 {
   auto const & constraints = params.constraints;
   auto const n_joints = params.joints.size();
 
   SegmentTolerances tolerances;
   tolerances.goal_time_tolerance = constraints.goal_time;
-  auto logger = rclcpp::get_logger("tolerance");
+  static auto logger = jtc_logger.get_child("tolerance");
   RCLCPP_DEBUG(logger, "goal_time %f", constraints.goal_time);
 
   // State and goal state tolerances
@@ -128,20 +129,21 @@ SegmentTolerances get_segment_tolerances(const Params & params)
 /**
  * \brief Populate trajectory segment tolerances using data from an action goal.
  *
+ * \param jtc_logger The logger to use for output
  * \param default_tolerances The default tolerances to use if the action goal does not specify any.
  * \param goal The new action goal
  * \param joints The joints configured by ROS parameters
  * \return Trajectory segment tolerances.
  */
 SegmentTolerances get_segment_tolerances(
-  const SegmentTolerances & default_tolerances,
+  rclcpp::Logger & jtc_logger, const SegmentTolerances & default_tolerances,
   const control_msgs::action::FollowJointTrajectory::Goal & goal,
   const std::vector<std::string> & joints)
 {
   SegmentTolerances active_tolerances(default_tolerances);
 
   active_tolerances.goal_time_tolerance = rclcpp::Duration(goal.goal_time_tolerance).seconds();
-  auto logger = rclcpp::get_logger("tolerance");
+  static auto logger = jtc_logger.get_child("tolerance");
   RCLCPP_DEBUG(logger, "%s %f", "goal_time", active_tolerances.goal_time_tolerance);
 
   // from

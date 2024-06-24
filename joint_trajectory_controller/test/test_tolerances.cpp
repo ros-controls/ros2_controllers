@@ -19,6 +19,7 @@
 
 #include "gmock/gmock.h"
 #include "rclcpp/duration.hpp"
+#include "rclcpp/logger.hpp"
 
 #include "joint_trajectory_controller/tolerances.hpp"
 #include "test_tolerances_utils.hpp"
@@ -52,6 +53,7 @@ protected:
   SegmentTolerances default_tolerances;
   joint_trajectory_controller::Params params;
   std::vector<std::string> joint_names_;
+  rclcpp::Logger logger = rclcpp::get_logger("TestTolerancesFixture");
 
   void SetUp() override
   {
@@ -124,7 +126,7 @@ TEST_F(TestTolerancesFixture, test_get_segment_tolerances)
 
   auto goal_msg = prepareGoalMsg(points, 2.0, path_tolerance, goal_tolerance);
   auto active_tolerances = joint_trajectory_controller::get_segment_tolerances(
-    default_tolerances, goal_msg, params.joints);
+    logger, default_tolerances, goal_msg, params.joints);
 
   EXPECT_DOUBLE_EQ(active_tolerances.goal_time_tolerance, 2.0);
 
@@ -183,7 +185,7 @@ TEST_F(TestTolerancesFixture, test_deactivate_tolerances)
 
   auto goal_msg = prepareGoalMsg(points, 0.0, path_tolerance, goal_tolerance);
   auto active_tolerances = joint_trajectory_controller::get_segment_tolerances(
-    default_tolerances, goal_msg, params.joints);
+    logger, default_tolerances, goal_msg, params.joints);
 
   EXPECT_DOUBLE_EQ(active_tolerances.goal_time_tolerance, 0.0);
 
@@ -235,7 +237,7 @@ TEST_F(TestTolerancesFixture, test_invalid_tolerances)
 
     auto goal_msg = prepareGoalMsg(points, 3.0, path_tolerance);
     auto active_tolerances = joint_trajectory_controller::get_segment_tolerances(
-      default_tolerances, goal_msg, params.joints);
+      logger, default_tolerances, goal_msg, params.joints);
     EXPECT_DOUBLE_EQ(active_tolerances.goal_time_tolerance, default_goal_time);
     expectDefaultTolerances(active_tolerances);
   }
@@ -261,7 +263,7 @@ TEST_F(TestTolerancesFixture, test_invalid_tolerances)
 
     auto goal_msg = prepareGoalMsg(points, 3.0, path_tolerance);
     auto active_tolerances = joint_trajectory_controller::get_segment_tolerances(
-      default_tolerances, goal_msg, params.joints);
+      logger, default_tolerances, goal_msg, params.joints);
     EXPECT_DOUBLE_EQ(active_tolerances.goal_time_tolerance, default_goal_time);
     expectDefaultTolerances(active_tolerances);
   }
@@ -287,7 +289,7 @@ TEST_F(TestTolerancesFixture, test_invalid_tolerances)
 
     auto goal_msg = prepareGoalMsg(points, 3.0, path_tolerance);
     auto active_tolerances = joint_trajectory_controller::get_segment_tolerances(
-      default_tolerances, goal_msg, params.joints);
+      logger, default_tolerances, goal_msg, params.joints);
     EXPECT_DOUBLE_EQ(active_tolerances.goal_time_tolerance, default_goal_time);
     expectDefaultTolerances(active_tolerances);
   }
@@ -314,7 +316,7 @@ TEST_F(TestTolerancesFixture, test_invalid_tolerances)
     auto goal_msg =
       prepareGoalMsg(points, 3.0, std::vector<control_msgs::msg::JointTolerance>(), goal_tolerance);
     auto active_tolerances = joint_trajectory_controller::get_segment_tolerances(
-      default_tolerances, goal_msg, params.joints);
+      logger, default_tolerances, goal_msg, params.joints);
     EXPECT_DOUBLE_EQ(active_tolerances.goal_time_tolerance, default_goal_time);
     expectDefaultTolerances(active_tolerances);
   }
@@ -341,7 +343,7 @@ TEST_F(TestTolerancesFixture, test_invalid_tolerances)
     auto goal_msg =
       prepareGoalMsg(points, 3.0, std::vector<control_msgs::msg::JointTolerance>(), goal_tolerance);
     auto active_tolerances = joint_trajectory_controller::get_segment_tolerances(
-      default_tolerances, goal_msg, params.joints);
+      logger, default_tolerances, goal_msg, params.joints);
     EXPECT_DOUBLE_EQ(active_tolerances.goal_time_tolerance, default_goal_time);
     expectDefaultTolerances(active_tolerances);
   }
@@ -368,7 +370,7 @@ TEST_F(TestTolerancesFixture, test_invalid_tolerances)
     auto goal_msg =
       prepareGoalMsg(points, 3.0, std::vector<control_msgs::msg::JointTolerance>(), goal_tolerance);
     auto active_tolerances = joint_trajectory_controller::get_segment_tolerances(
-      default_tolerances, goal_msg, params.joints);
+      logger, default_tolerances, goal_msg, params.joints);
     EXPECT_DOUBLE_EQ(active_tolerances.goal_time_tolerance, default_goal_time);
     expectDefaultTolerances(active_tolerances);
   }
@@ -392,7 +394,7 @@ TEST_F(TestTolerancesFixture, test_invalid_joints_path_tolerance)
 
   auto goal_msg = prepareGoalMsg(points, 3.0, path_tolerance);
   auto active_tolerances = joint_trajectory_controller::get_segment_tolerances(
-    default_tolerances, goal_msg, params.joints);
+    logger, default_tolerances, goal_msg, params.joints);
   EXPECT_DOUBLE_EQ(active_tolerances.goal_time_tolerance, default_goal_time);
   expectDefaultTolerances(active_tolerances);
 }
@@ -416,7 +418,7 @@ TEST_F(TestTolerancesFixture, test_invalid_joints_goal_tolerance)
   auto goal_msg =
     prepareGoalMsg(points, 3.0, std::vector<control_msgs::msg::JointTolerance>(), goal_tolerance);
   auto active_tolerances = joint_trajectory_controller::get_segment_tolerances(
-    default_tolerances, goal_msg, params.joints);
+    logger, default_tolerances, goal_msg, params.joints);
   EXPECT_DOUBLE_EQ(active_tolerances.goal_time_tolerance, default_goal_time);
   expectDefaultTolerances(active_tolerances);
 }
