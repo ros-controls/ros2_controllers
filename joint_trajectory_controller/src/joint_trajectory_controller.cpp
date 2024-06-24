@@ -1177,7 +1177,7 @@ void JointTrajectoryController::goal_accepted_callback(
 
   // Update tolerances if specified in the goal
   active_tolerances_.writeFromNonRT(
-    get_segment_tolerances(default_tolerances_, *(goal_handle->get_goal()), params_));
+    get_segment_tolerances(default_tolerances_, *(goal_handle->get_goal()), params_.joints));
 
   // Set smartpointer to expire for create_wall_timer to delete previous entry from timer list
   goal_handle_timer_.reset();

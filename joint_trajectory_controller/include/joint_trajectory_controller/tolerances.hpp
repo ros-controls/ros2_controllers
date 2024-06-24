@@ -31,6 +31,7 @@
 #define JOINT_TRAJECTORY_CONTROLLER__TOLERANCES_HPP_
 
 #include <limits>
+#include <string>
 #include <vector>
 
 #include "control_msgs/action/follow_joint_trajectory.hpp"
@@ -90,7 +91,7 @@ struct SegmentTolerances
  * \param params The ROS Parameters
  * \return Trajectory segment tolerances.
  */
-SegmentTolerances get_segment_tolerances(Params const & params)
+SegmentTolerances get_segment_tolerances(const Params & params)
 {
   auto const & constraints = params.constraints;
   auto const n_joints = params.joints.size();
@@ -129,12 +130,13 @@ SegmentTolerances get_segment_tolerances(Params const & params)
  *
  * \param default_tolerances The default tolerances to use if the action goal does not specify any.
  * \param goal The new action goal
- * \param params The ROS Parameters
+ * \param joints The joints configured by ROS parameters
  * \return Trajectory segment tolerances.
  */
 SegmentTolerances get_segment_tolerances(
   const SegmentTolerances & default_tolerances,
-  const control_msgs::action::FollowJointTrajectory::Goal & goal, const Params & params)
+  const control_msgs::action::FollowJointTrajectory::Goal & goal,
+  const std::vector<std::string> & joints)
 {
   SegmentTolerances active_tolerances(default_tolerances);
 
@@ -157,8 +159,8 @@ SegmentTolerances get_segment_tolerances(
   {
     auto const joint = joint_tol.name;
     // map joint names from goal to active_tolerances
-    auto it = std::find(params.joints.begin(), params.joints.end(), joint);
-    if (it == params.joints.end())
+    auto it = std::find(joints.begin(), joints.end(), joint);
+    if (it == joints.end())
     {
       RCLCPP_ERROR(
         logger, "%s",
@@ -168,7 +170,7 @@ SegmentTolerances get_segment_tolerances(
           .c_str());
       return default_tolerances;
     }
-    auto i = std::distance(params.joints.cbegin(), it);
+    auto i = std::distance(joints.cbegin(), it);
     if (joint_tol.position > 0.0)
     {
       active_tolerances.state_tolerance[i].position = joint_tol.position;
@@ -240,8 +242,8 @@ SegmentTolerances get_segment_tolerances(
   {
     auto const joint = goal_tol.name;
     // map joint names from goal to active_tolerances
-    auto it = std::find(params.joints.begin(), params.joints.end(), joint);
-    if (it == params.joints.end())
+    auto it = std::find(joints.begin(), joints.end(), joint);
+    if (it == joints.end())
     {
       RCLCPP_ERROR(
         logger, "%s",
@@ -251,7 +253,7 @@ SegmentTolerances get_segment_tolerances(
           .c_str());
       return default_tolerances;
     }
-    auto i = std::distance(params.joints.cbegin(), it);
+    auto i = std::distance(joints.cbegin(), it);
     if (goal_tol.position > 0.0)
     {
       active_tolerances.goal_state_tolerance[i].position = goal_tol.position;
