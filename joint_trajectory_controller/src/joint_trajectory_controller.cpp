@@ -1018,6 +1018,10 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     std::string(get_node()->get_name()) + "/query_state",
     std::bind(&JointTrajectoryController::query_state_service, this, _1, _2));
 
+  std::vector<ResetDofsData> reset_flags;
+  reset_flags.resize(dof_, {false, std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN()});
+  reset_dofs_flags_.writeFromNonRT(reset_flags);
+
   // Control mode service
   auto reset_dofs_service_callback =
     [&](
@@ -1060,7 +1064,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     // The one assumption made here is that the current reset flags are not going to be processed
     // between the two calls here to read and reset, which is a highly unlikely scenario. Even if it was,
     // the behavior is fairly benign in that the dofs in the previous request will be reset twice.
-    auto reset_flags = *reset_dofs_flags_.readFromNonRT();
+    auto reset_flags_local = *reset_dofs_flags_.readFromNonRT();
     reset_dofs_flags_.writeFromNonRT(reset_flags_reset);
 
     // add/update reset dofs flags from request
@@ -1089,7 +1093,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
         double accel = (request->accelerations.size() != 0)
                          ? request->accelerations[i]
                          : std::numeric_limits<double>::quiet_NaN();
-        reset_flags[cmd_itf_index] = {true, pos, vel, accel};
+        reset_flags_local[cmd_itf_index] = {true, pos, vel, accel};
       }
       else
       {
@@ -1100,7 +1104,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
       }
     }
 
-    reset_dofs_flags_.writeFromNonRT(reset_flags);
+    reset_dofs_flags_.writeFromNonRT(reset_flags_local);
   };
 
   reset_dofs_service_ = get_node()->create_service<ControllerResetDofsSrvType>(
