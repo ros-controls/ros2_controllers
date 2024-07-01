@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "test_tricycle_steering_controller.hpp"
+#include "test_swerve_drive_controller.hpp"
 
 #include <limits>
 #include <memory>
@@ -20,12 +20,12 @@
 #include <utility>
 #include <vector>
 
-class TricycleSteeringControllerTest
-: public TricycleSteeringControllerFixture<TestableTricycleSteeringController>
+class SwerveDriveControllerTest
+: public SwerveDriveControllerFixture<TestableSwerveDriveController>
 {
 };
 
-TEST_F(TricycleSteeringControllerTest, all_parameters_set_configure_success)
+TEST_F(SwerveDriveControllerTest, all_parameters_set_configure_success)
 {
   SetUpController();
 
@@ -40,12 +40,12 @@ TEST_F(TricycleSteeringControllerTest, all_parameters_set_configure_success)
   ASSERT_EQ(controller_->params_.open_loop, open_loop_);
   ASSERT_EQ(controller_->params_.velocity_rolling_window_size, velocity_rolling_window_size_);
   ASSERT_EQ(controller_->params_.position_feedback, position_feedback_);
-  ASSERT_EQ(controller_->tricycle_params_.wheelbase, wheelbase_);
-  ASSERT_EQ(controller_->tricycle_params_.traction_wheels_radius, traction_wheels_radius_);
-  ASSERT_EQ(controller_->tricycle_params_.wheel_track, wheel_track_);
+  ASSERT_EQ(controller_->swerve_params_.wheelbase, wheelbase_);
+  ASSERT_EQ(controller_->swerve_params_.wheels_radius, wheels_radius_);
+  ASSERT_EQ(controller_->swerve_params_.wheel_track, wheel_track_);
 }
 
-TEST_F(TricycleSteeringControllerTest, check_exported_interfaces)
+TEST_F(SwerveDriveControllerTest, check_exported_interfaces)
 {
   SetUpController();
 
@@ -54,39 +54,72 @@ TEST_F(TricycleSteeringControllerTest, check_exported_interfaces)
   auto cmd_if_conf = controller_->command_interface_configuration();
   ASSERT_EQ(cmd_if_conf.names.size(), joint_command_values_.size());
   EXPECT_EQ(
-    cmd_if_conf.names[CMD_TRACTION_RIGHT_WHEEL],
+    cmd_if_conf.names[CMD_TRACTION_FRONT_RIGHT_WHEEL],
     preceeding_prefix_ + "/" + wheels_names_[0] + "/" + traction_interface_name_);
   EXPECT_EQ(
-    cmd_if_conf.names[CMD_TRACTION_LEFT_WHEEL],
+    cmd_if_conf.names[CMD_TRACTION_FRONT_LEFT_WHEEL],
     preceeding_prefix_ + "/" + wheels_names_[1] + "/" + traction_interface_name_);
   EXPECT_EQ(
-    cmd_if_conf.names[CMD_STEER_WHEEL],
+    cmd_if_conf.names[CMD_TRACTION_REAR_RIGHT_WHEEL],
+    preceeding_prefix_ + "/" + wheels_names_[2] + "/" + traction_interface_name_);
+  EXPECT_EQ(
+    cmd_if_conf.names[CMD_TRACTION_REAR_LEFT_WHEEL],
+    preceeding_prefix_ + "/" + wheels_names_[3] + "/" + traction_interface_name_);
+
+  EXPECT_EQ(
+    cmd_if_conf.names[CMD_STEER_FRONT_RIGHT_WHEEL],
     preceeding_prefix_ + "/" + steers_names_[0] + "/" + steering_interface_name_);
+  EXPECT_EQ(
+    cmd_if_conf.names[CMD_STEER_FRONT_LEFT_WHEEL],
+    preceeding_prefix_ + "/" + steers_names_[1] + "/" + steering_interface_name_);
+  EXPECT_EQ(
+    cmd_if_conf.names[CMD_STEER_REAR_RIGHT_WHEEL],
+    preceeding_prefix_ + "/" + steers_names_[2] + "/" + steering_interface_name_);
+  EXPECT_EQ(
+    cmd_if_conf.names[CMD_STEER_REAR_LEFT_WHEEL],
+    preceeding_prefix_ + "/" + steers_names_[3] + "/" + steering_interface_name_);
+
   EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
   auto state_if_conf = controller_->state_interface_configuration();
   ASSERT_EQ(state_if_conf.names.size(), joint_state_values_.size());
   EXPECT_EQ(
-    state_if_conf.names[STATE_TRACTION_RIGHT_WHEEL],
+    state_if_conf.names[STATE_TRACTION_FRONT_RIGHT_WHEEL],
     controller_->wheels_state_names_[0] + "/" + traction_interface_name_);
   EXPECT_EQ(
-    state_if_conf.names[STATE_TRACTION_LEFT_WHEEL],
+    state_if_conf.names[STATE_TRACTION_FRONT_LEFT_WHEEL],
     controller_->wheels_state_names_[1] + "/" + traction_interface_name_);
   EXPECT_EQ(
-    state_if_conf.names[STATE_STEER_AXIS],
+    state_if_conf.names[STATE_TRACTION_REAR_RIGHT_WHEEL],
+    controller_->wheels_state_names_[2] + "/" + traction_interface_name_);
+  EXPECT_EQ(
+    state_if_conf.names[STATE_TRACTION_REAR_LEFT_WHEEL],
+    controller_->wheels_state_names_[3] + "/" + traction_interface_name_);
+  
+  EXPECT_EQ(
+    state_if_conf.names[STATE_STEER_FRONT_RIGHT_WHEEL],
     controller_->steers_state_names_[0] + "/" + steering_interface_name_);
+  EXPECT_EQ(
+    state_if_conf.names[STATE_STEER_FRONT_LEFT_WHEEL],
+    controller_->steers_state_names_[1] + "/" + steering_interface_name_);
+  EXPECT_EQ(
+    state_if_conf.names[STATE_STEER_REAR_RIGHT_WHEEL],
+    controller_->steers_state_names_[2] + "/" + steering_interface_name_);
+  EXPECT_EQ(
+    state_if_conf.names[STATE_STEER_REAR_LEFT_WHEEL],
+    controller_->steers_state_names_[3] + "/" + steering_interface_name_);
   EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
   // check ref itfs
-  auto ref_if_conf = controller_->export_reference_interfaces();
-  ASSERT_EQ(ref_if_conf.size(), joint_reference_interfaces_.size());
+  auto reference_interfaces = controller_->export_reference_interfaces();
+  ASSERT_EQ(reference_interfaces.size(), joint_reference_interfaces_.size());
   for (size_t i = 0; i < joint_reference_interfaces_.size(); ++i)
   {
     const std::string ref_itf_name =
       std::string(controller_->get_node()->get_name()) + "/" + joint_reference_interfaces_[i];
-    EXPECT_EQ(ref_if_conf[i].get_name(), ref_itf_name);
-    EXPECT_EQ(ref_if_conf[i].get_prefix_name(), controller_->get_node()->get_name());
-    EXPECT_EQ(ref_if_conf[i].get_interface_name(), joint_reference_interfaces_[i]);
+    EXPECT_EQ(reference_interfaces[i].get_name(), ref_itf_name);
+    EXPECT_EQ(reference_interfaces[i].get_prefix_name(), controller_->get_node()->get_name());
+    EXPECT_EQ(reference_interfaces[i].get_interface_name(), joint_reference_interfaces_[i]);
   }
 }
 

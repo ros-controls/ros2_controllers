@@ -1,0 +1,8 @@
+<library path="swerve_drive_controller">
+  <class name="swerve_drive_controller/SwerveDriveController"
+         type="swerve_drive_controller::SwerveDriveController" base_class_type="controller_interface::ChainableControllerInterface">
+  <description>
+    Steering controller for Swerven (car-like) kinematics with two traction and two steering joints.
+  </description>
+  </class>
+</library>

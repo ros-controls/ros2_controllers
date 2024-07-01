@@ -1,0 +1,14 @@
+test_swerve_drive_controller:
+  ros__parameters:
+
+    reference_timeout: 2.0
+    open_loop: false
+    velocity_rolling_window_size: 10
+    position_feedback: false
+    use_stamped_vel: true
+    steers_names: [front_right_steering_joint, front_left_steering_joint, rear_right_steering_joint, rear_left_steering_joint]
+    wheels_names: [front_right_wheel_joint, front_left_wheel_joint, rear_right_wheel_joint, rear_left_wheel_joint]
+
+    wheelbase: 3.24644
+    wheel_track: 2.12321
+    wheels_radius: 0.45

@@ -5,16 +5,9 @@ steering_controllers_library:
     description: "Timeout for controller references after which they will be reset. This is especially useful for controllers that can cause unwanted and dangerous behaviour if reference is not reset, e.g., velocity controllers. If value is 0 the reference is reset after each run.",
   }
 
-  front_steering: {
-    type: bool,
-    default_value: true,
-    description: "Is the steering on the front of the robot?",
-    read_only: true,
-  }
-
-  rear_wheels_names: {
+  wheels_names: {
     type: string_array,
-    description: "Names of rear wheel joints.",
+    description: "Names of wheel joints.",
     read_only: true,
     validation: {
       size_lt<>: [5],
@@ -23,9 +16,9 @@ steering_controllers_library:
     }
   }
 
-  front_wheels_names: {
+  steers_names: {
     type: string_array,
-    description: "Names of front wheel joints.",
+    description: "Names of steering joints.",
     read_only: true,
     validation: {
       size_lt<>: [5],
@@ -34,9 +27,9 @@ steering_controllers_library:
     }
   }
 
-  rear_wheels_state_names: {
+  wheels_state_names: {
     type: string_array,
-    description: "(Optional) Names of rear wheel joints to read states from. If not set joint names from 'rear_wheels_names' will be used.",
+    description: "(Optional) Names of wheel joints to read states from. If not set joint names from 'wheels_names' will be used.",
     default_value: [],
     read_only: true,
     validation: {
@@ -45,9 +38,9 @@ steering_controllers_library:
     }
   }
 
-  front_wheels_state_names: {
+  steers_state_names: {
     type: string_array,
-    description: "(Optional) Names of front wheel joints to read states from. If not set joint names from 'front_wheels_names' will be used.",
+    description: "(Optional) Names of wheel joints to read states from. If not set joint names from 'steer_names' will be used.",
     default_value: [],
     read_only: true,
     validation: {

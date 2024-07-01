@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TEST_STEERING_CONTROLLERS_LIBRARY_HPP_
-#define TEST_STEERING_CONTROLLERS_LIBRARY_HPP_
+#ifndef TEST_SWERVE_DRIVE_CONTROLLER_HPP_
+#define TEST_SWERVE_DRIVE_CONTROLLER_HPP_
 
 #include <chrono>
 #include <limits>
@@ -23,6 +23,7 @@
 #include <utility>
 #include <vector>
 
+#include "swerve_drive_controller/swerve_drive_controller.hpp"
 #include "gmock/gmock.h"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
@@ -31,55 +32,60 @@
 #include "rclcpp/time.hpp"
 #include "rclcpp/utilities.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
-#include "steering_controllers_library/steering_controllers_library.hpp"
 
 using ControllerStateMsg =
   steering_controllers_library::SteeringControllersLibrary::AckermanControllerState;
 using ControllerReferenceMsg =
   steering_controllers_library::SteeringControllersLibrary::ControllerTwistReferenceMsg;
 
-// NOTE: Testing steering_controllers_library for ackermann vehicle configuration only
-
 // name constants for state interfaces
-static constexpr size_t STATE_TRACTION_RIGHT_WHEEL = 0;
-static constexpr size_t STATE_TRACTION_LEFT_WHEEL = 1;
-static constexpr size_t STATE_STEER_RIGHT_WHEEL = 2;
-static constexpr size_t STATE_STEER_LEFT_WHEEL = 3;
+using swerve_drive_controller::STATE_STEER_FRONT_LEFT_WHEEL;
+using swerve_drive_controller::STATE_STEER_FRONT_RIGHT_WHEEL;
+using swerve_drive_controller::STATE_STEER_REAR_LEFT_WHEEL;
+using swerve_drive_controller::STATE_STEER_REAR_RIGHT_WHEEL;
+using swerve_drive_controller::STATE_TRACTION_FRONT_LEFT_WHEEL;
+using swerve_drive_controller::STATE_TRACTION_FRONT_RIGHT_WHEEL;
+using swerve_drive_controller::STATE_TRACTION_REAR_LEFT_WHEEL;
+using swerve_drive_controller::STATE_TRACTION_REAR_RIGHT_WHEEL;
 
 // name constants for command interfaces
-static constexpr size_t CMD_TRACTION_RIGHT_WHEEL = 0;
-static constexpr size_t CMD_TRACTION_LEFT_WHEEL = 1;
-static constexpr size_t CMD_STEER_RIGHT_WHEEL = 2;
-static constexpr size_t CMD_STEER_LEFT_WHEEL = 3;
-
-static constexpr size_t NR_STATE_ITFS = 4;
-static constexpr size_t NR_CMD_ITFS = 4;
-static constexpr size_t NR_REF_ITFS = 2;
-
-static constexpr double WHEELBASE_ = 3.24644;
-static constexpr double WHEELS_TRACK_ = 2.12321;
-static constexpr double WHEELS_RADIUS_ = 0.45;
+using swerve_drive_controller::CMD_STEER_FRONT_LEFT_WHEEL;
+using swerve_drive_controller::CMD_STEER_FRONT_RIGHT_WHEEL;
+using swerve_drive_controller::CMD_STEER_REAR_LEFT_WHEEL;
+using swerve_drive_controller::CMD_STEER_REAR_RIGHT_WHEEL;
+using swerve_drive_controller::CMD_TRACTION_FRONT_LEFT_WHEEL;
+using swerve_drive_controller::CMD_TRACTION_FRONT_RIGHT_WHEEL;
+using swerve_drive_controller::CMD_TRACTION_REAR_LEFT_WHEEL;
+using swerve_drive_controller::CMD_TRACTION_REAR_RIGHT_WHEEL;
 
 namespace
 {
 constexpr auto NODE_SUCCESS = controller_interface::CallbackReturn::SUCCESS;
 constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
+const double COMMON_THRESHOLD = 1e-6;
 }  // namespace
-// namespace
 
 // subclassing and friending so we can access member variables
-class TestableSteeringControllersLibrary
-: public steering_controllers_library::SteeringControllersLibrary
+class TestableSwerveDriveController
+: public swerve_drive_controller::SwerveDriveController
 {
-  FRIEND_TEST(SteeringControllersLibraryTest, check_exported_interfaces);
-  FRIEND_TEST(SteeringControllersLibraryTest, test_both_update_methods_for_ref_timeout);
+  FRIEND_TEST(SwerveDriveControllerTest, all_parameters_set_configure_success);
+  FRIEND_TEST(SwerveDriveControllerTest, check_exported_interfaces);
+  FRIEND_TEST(SwerveDriveControllerTest, activate_success);
+  FRIEND_TEST(SwerveDriveControllerTest, update_success);
+  FRIEND_TEST(SwerveDriveControllerTest, deactivate_success);
+  FRIEND_TEST(SwerveDriveControllerTest, reactivate_success);
+  FRIEND_TEST(SwerveDriveControllerTest, test_update_logic);
+  FRIEND_TEST(SwerveDriveControllerTest, test_update_logic_chained);
+  FRIEND_TEST(SwerveDriveControllerTest, publish_status_success);
+  FRIEND_TEST(SwerveDriveControllerTest, receive_message_and_publish_updated_status);
 
 public:
   controller_interface::CallbackReturn on_configure(
     const rclcpp_lifecycle::State & previous_state) override
   {
     auto ret =
-      steering_controllers_library::SteeringControllersLibrary::on_configure(previous_state);
+      swerve_drive_controller::SwerveDriveController::on_configure(previous_state);
     // Only if on_configure is successful create subscription
     if (ret == CallbackReturn::SUCCESS)
     {
@@ -92,7 +98,7 @@ public:
     const rclcpp_lifecycle::State & previous_state) override
   {
     auto ref_itfs = on_export_reference_interfaces();
-    return steering_controllers_library::SteeringControllersLibrary::on_activate(previous_state);
+    return swerve_drive_controller::SwerveDriveController::on_activate(previous_state);
   }
 
   /**
@@ -121,30 +127,13 @@ public:
     return wait_for_command(executor, ref_subscriber_wait_set_, timeout);
   }
 
-  // implementing methods which are declared virtual in the steering_controllers_library.hpp
-  void initialize_implementation_parameter_listener()
-  {
-    param_listener_ = std::make_shared<steering_controllers_library::ParamListener>(get_node());
-  }
-
-  controller_interface::CallbackReturn configure_odometry()
-  {
-    set_interface_numbers(NR_STATE_ITFS, NR_CMD_ITFS, NR_REF_ITFS);
-    odometry_.set_wheel_params(WHEELS_RADIUS_, WHEELBASE_, WHEELS_TRACK_);
-    odometry_.set_odometry_type(steering_odometry::ACKERMANN_CONFIG);
-
-    return controller_interface::CallbackReturn::SUCCESS;
-  }
-
-  bool update_odometry(const rclcpp::Duration & /*period*/) { return true; }
-
 private:
   rclcpp::WaitSet ref_subscriber_wait_set_;
 };
 
 // We are using template class here for easier reuse of Fixture in specializations of controllers
 template <typename CtrlType>
-class SteeringControllersLibraryFixture : public ::testing::Test
+class SwerveDriveControllerFixture : public ::testing::Test
 {
 public:
   static void SetUpTestCase() {}
@@ -156,7 +145,7 @@ public:
 
     command_publisher_node_ = std::make_shared<rclcpp::Node>("command_publisher");
     command_publisher_ = command_publisher_node_->create_publisher<ControllerReferenceMsg>(
-      "/test_steering_controllers_library/reference", rclcpp::SystemDefaultsQoS());
+      "/test_swerve_drive_controller/reference", rclcpp::SystemDefaultsQoS());
   }
 
   static void TearDownTestCase() {}
@@ -164,7 +153,7 @@ public:
   void TearDown() { controller_.reset(nullptr); }
 
 protected:
-  void SetUpController(const std::string controller_name = "test_steering_controllers_library")
+  void SetUpController(const std::string controller_name = "test_swerve_drive_controller")
   {
     ASSERT_EQ(
       controller_->init(controller_name, "", 0, "", controller_->define_custom_node_options()),
@@ -185,23 +174,44 @@ protected:
 
     command_itfs_.emplace_back(hardware_interface::CommandInterface(
       wheels_names_[0], traction_interface_name_,
-      &joint_command_values_[CMD_TRACTION_RIGHT_WHEEL]));
+      &joint_command_values_[CMD_TRACTION_FRONT_RIGHT_WHEEL]));
     command_ifs.emplace_back(command_itfs_.back());
 
     command_itfs_.emplace_back(hardware_interface::CommandInterface(
       wheels_names_[1], steering_interface_name_,
-      &joint_command_values_[CMD_TRACTION_LEFT_WHEEL]));
+      &joint_command_values_[CMD_TRACTION_FRONT_LEFT_WHEEL]));
+    command_ifs.emplace_back(command_itfs_.back());
+
+    command_itfs_.emplace_back(hardware_interface::CommandInterface(
+      wheels_names_[2], traction_interface_name_,
+      &joint_command_values_[CMD_TRACTION_REAR_RIGHT_WHEEL]));
+    command_ifs.emplace_back(command_itfs_.back());
+
+    command_itfs_.emplace_back(hardware_interface::CommandInterface(
+      wheels_names_[3], steering_interface_name_,
+      &joint_command_values_[CMD_TRACTION_REAR_LEFT_WHEEL]));
     command_ifs.emplace_back(command_itfs_.back());
 
     command_itfs_.emplace_back(hardware_interface::CommandInterface(
       steers_names_[0], steering_interface_name_,
-      &joint_command_values_[CMD_STEER_RIGHT_WHEEL]));
+      &joint_command_values_[CMD_STEER_FRONT_RIGHT_WHEEL]));
     command_ifs.emplace_back(command_itfs_.back());
 
     command_itfs_.emplace_back(hardware_interface::CommandInterface(
       steers_names_[1], steering_interface_name_,
-      &joint_command_values_[CMD_STEER_LEFT_WHEEL]));
+      &joint_command_values_[CMD_STEER_FRONT_LEFT_WHEEL]));
     command_ifs.emplace_back(command_itfs_.back());
+
+    command_itfs_.emplace_back(hardware_interface::CommandInterface(
+      steers_names_[2], steering_interface_name_,
+      &joint_command_values_[CMD_STEER_REAR_RIGHT_WHEEL]));
+    command_ifs.emplace_back(command_itfs_.back());
+
+    command_itfs_.emplace_back(hardware_interface::CommandInterface(
+      steers_names_[3], steering_interface_name_,
+      &joint_command_values_[CMD_STEER_REAR_LEFT_WHEEL]));
+    command_ifs.emplace_back(command_itfs_.back());
+
 
     std::vector<hardware_interface::LoanedStateInterface> state_ifs;
     state_itfs_.reserve(joint_state_values_.size());
@@ -209,23 +219,45 @@ protected:
 
     state_itfs_.emplace_back(hardware_interface::StateInterface(
       wheels_names_[0], traction_interface_name_,
-      &joint_state_values_[STATE_TRACTION_RIGHT_WHEEL]));
+      &joint_state_values_[STATE_TRACTION_FRONT_RIGHT_WHEEL]));
     state_ifs.emplace_back(state_itfs_.back());
 
     state_itfs_.emplace_back(hardware_interface::StateInterface(
       wheels_names_[1], traction_interface_name_,
-      &joint_state_values_[STATE_TRACTION_LEFT_WHEEL]));
+      &joint_state_values_[STATE_TRACTION_FRONT_LEFT_WHEEL]));
     state_ifs.emplace_back(state_itfs_.back());
 
     state_itfs_.emplace_back(hardware_interface::StateInterface(
-      steers_names_[0], steering_interface_name_,
-      &joint_state_values_[STATE_STEER_RIGHT_WHEEL]));
+      wheels_names_[2], traction_interface_name_,
+      &joint_state_values_[STATE_TRACTION_REAR_RIGHT_WHEEL]));
     state_ifs.emplace_back(state_itfs_.back());
 
     state_itfs_.emplace_back(hardware_interface::StateInterface(
-      steers_names_[1], steering_interface_name_,
-      &joint_state_values_[STATE_STEER_LEFT_WHEEL]));
+      wheels_names_[3], traction_interface_name_,
+      &joint_state_values_[STATE_TRACTION_REAR_LEFT_WHEEL]));
     state_ifs.emplace_back(state_itfs_.back());
+
+
+    state_itfs_.emplace_back(hardware_interface::StateInterface(
+      wheels_names_[0], steering_interface_name_,
+      &joint_state_values_[STATE_STEER_FRONT_RIGHT_WHEEL]));
+    state_ifs.emplace_back(state_itfs_.back());
+
+    state_itfs_.emplace_back(hardware_interface::StateInterface(
+      wheels_names_[1], steering_interface_name_,
+      &joint_state_values_[STATE_STEER_FRONT_LEFT_WHEEL]));
+    state_ifs.emplace_back(state_itfs_.back());
+
+    state_itfs_.emplace_back(hardware_interface::StateInterface(
+      wheels_names_[2], steering_interface_name_,
+      &joint_state_values_[STATE_STEER_REAR_RIGHT_WHEEL]));
+    state_ifs.emplace_back(state_itfs_.back());
+
+    state_itfs_.emplace_back(hardware_interface::StateInterface(
+      wheels_names_[3], steering_interface_name_,
+      &joint_state_values_[STATE_STEER_REAR_LEFT_WHEEL]));
+    state_ifs.emplace_back(state_itfs_.back());
+
 
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
   }
@@ -236,7 +268,7 @@ protected:
     rclcpp::Node test_subscription_node("test_subscription_node");
     auto subs_callback = [&](const ControllerStateMsg::SharedPtr) {};
     auto subscription = test_subscription_node.create_subscription<ControllerStateMsg>(
-      "/test_steering_controllers_library/controller_state", 10, subs_callback);
+      "/test_swerve_drive_controller/controller_state", 10, subs_callback);
 
     // call update to publish the test value
     ASSERT_EQ(
@@ -295,27 +327,34 @@ protected:
 protected:
   // Controller-related parameters
   double reference_timeout_ = 2.0;
+  bool front_steering_ = true;
   bool open_loop_ = false;
   unsigned int velocity_rolling_window_size_ = 10;
   bool position_feedback_ = false;
-  std::vector<std::string> wheels_names_ = {"rear_right_wheel_joint", "rear_left_wheel_joint"};
+  bool use_stamped_vel_ = true;
+  std::vector<std::string> wheels_names_ = {"front_right_wheel_joint", "front_left_wheel_joint", "rear_right_wheel_joint", "rear_left_wheel_joint"};
   std::vector<std::string> steers_names_ = {
-    "front_right_steering_joint", "front_left_steering_joint"};
+    "front_right_steering_joint", "front_left_steering_joint", "rear_right_steering_joint", "rear_left_steering_joint"};
   std::vector<std::string> joint_names_ = {
-    wheels_names_[0], wheels_names_[1], steers_names_[0], steers_names_[1]};
+    wheels_names_[0], wheels_names_[1], wheels_names_[2], wheels_names_[3],
+    steers_names_[0], steers_names_[1], steers_names_[2], steers_names_[3],
+  };
 
   std::vector<std::string> wheels_preceeding_names_ = {
-    "pid_controller/rear_right_wheel_joint", "pid_controller/rear_left_wheel_joint"};
+    "pid_controller/front_right_wheel_joint", "pid_controller/front_left_wheel_joint", "pid_controller/rear_right_wheel_joint", "pid_controller/rear_left_wheel_joint"};
   std::vector<std::string> steers_preceeding_names_ = {
-    "pid_controller/front_right_steering_joint", "pid_controller/front_left_steering_joint"};
+    "pid_controller/front_right_steering_joint", "pid_controller/front_left_steering_joint", "pid_controller/rear_right_steering_joint", "pid_controller/rear_left_steering_joint"};
   std::vector<std::string> preceeding_joint_names_ = {
-    wheels_preceeding_names_[0], wheels_preceeding_names_[1],
-    steers_preceeding_names_[0], steers_preceeding_names_[1]};
+    wheels_preceeding_names_[0], wheels_preceeding_names_[1], wheels_preceeding_names_[2], wheels_preceeding_names_[3],
+    steers_preceeding_names_[0], steers_preceeding_names_[1], steers_preceeding_names_[2], steers_preceeding_names_[3]};
 
-  std::array<double, 4> joint_state_values_ = {0.5, 0.5, 0.0, 0.0};
-  std::array<double, 4> joint_command_values_ = {1.1, 3.3, 2.2, 4.4};
+  double wheelbase_ = 3.24644;
+  double wheel_track_ = 2.12321;
+  double wheels_radius_ = 0.45;
 
-  std::array<std::string, 2> joint_reference_interfaces_ = {"linear/velocity", "angular/velocity"};
+  std::array<double, 8> joint_state_values_ = {0.5, 0.5, 0.5, 0.5, 0.0, 0.0, 0.0, 0.0};
+  std::array<double, 8> joint_command_values_ = {1.1, 3.3, 2.2, 4.4, 5.5, 6.6, 7.7, 8.8};
+  std::array<std::string, 2> joint_reference_interfaces_ = {"linear/velocity", "angular/position"};
   std::string steering_interface_name_ = "position";
   // defined in setup
   std::string traction_interface_name_ = "";
@@ -325,9 +364,9 @@ protected:
   std::vector<hardware_interface::CommandInterface> command_itfs_;
 
   // Test related parameters
-  std::unique_ptr<CtrlType> controller_;
+  std::unique_ptr<TestableSwerveDriveController> controller_;
   rclcpp::Node::SharedPtr command_publisher_node_;
   rclcpp::Publisher<ControllerReferenceMsg>::SharedPtr command_publisher_;
 };
 
-#endif  // TEST_STEERING_CONTROLLERS_LIBRARY_HPP_
+#endif  // TEST_SWERVE_DRIVE_CONTROLLER_HPP_
