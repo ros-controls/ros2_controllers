@@ -41,3 +41,13 @@ imu_sensor_broadcaster:
       fixed_size<>: [9],
     }
   }
+  tf_frame_prefix: {
+    type: string,
+    default_value: "",
+    description:  "(optional) Prefix to be appended to the tf frames, will be added to the sensor's frame_id before publishing. If the parameter is empty, controller's namespace will be used.",
+  }
+  use_namespace_as_sensor_name_prefix: {
+    type: bool,
+    default_value: false,
+    description: "If true the '/namespace/' is added to the sensor name which causes changes in interfaces names e. g. /namespace/sensor_name/orientation.x",
+  }

@@ -53,10 +53,10 @@ void IMUSensorBroadcasterTest::SetUp()
 
 void IMUSensorBroadcasterTest::TearDown() { imu_broadcaster_.reset(nullptr); }
 
-void IMUSensorBroadcasterTest::SetUpIMUBroadcaster()
+void IMUSensorBroadcasterTest::SetUpIMUBroadcaster(const std::string & ns)
 {
   const auto result = imu_broadcaster_->init(
-    "test_imu_sensor_broadcaster", "", 0, "", imu_broadcaster_->define_custom_node_options());
+    "test_imu_sensor_broadcaster", "", 0, ns, imu_broadcaster_->define_custom_node_options());
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
   std::vector<LoanedStateInterface> state_ifs;
@@ -74,13 +74,14 @@ void IMUSensorBroadcasterTest::SetUpIMUBroadcaster()
   imu_broadcaster_->assign_interfaces({}, std::move(state_ifs));
 }
 
-void IMUSensorBroadcasterTest::subscribe_and_get_message(sensor_msgs::msg::Imu & imu_msg)
+void IMUSensorBroadcasterTest::subscribe_and_get_message(
+  sensor_msgs::msg::Imu & imu_msg, const std::string & ns)
 {
   // create a new subscriber
-  rclcpp::Node test_subscription_node("test_subscription_node");
+  rclcpp::Node test_subscription_node("test_subscription_node", ns);
   auto subs_callback = [&](const sensor_msgs::msg::Imu::SharedPtr) {};
   auto subscription = test_subscription_node.create_subscription<sensor_msgs::msg::Imu>(
-    "/test_imu_sensor_broadcaster/imu", 10, subs_callback);
+    "test_imu_sensor_broadcaster/imu", 10, subs_callback);
 
   // call update to publish the test value
   // since update doesn't guarantee a published message, republish until received
@@ -205,6 +206,85 @@ TEST_F(IMUSensorBroadcasterTest, SensorName_Publish_Success)
     EXPECT_EQ(imu_msg.orientation_covariance[i], 0.0);
     EXPECT_EQ(imu_msg.angular_velocity_covariance[i], 0.0);
     EXPECT_EQ(imu_msg.linear_acceleration_covariance[i], 0.0);
+  }
+}
+
+TEST_F(IMUSensorBroadcasterTest, TfPrefixNamespaceParams)
+{
+  struct TestCase
+  {
+    std::string tf_prefix;
+    std::string ns;
+    std::string result_prefix;
+  };
+
+  const std::vector<TestCase> test_cases = {
+    {"", "", ""},
+    {"/", "", ""},
+    {"", "/", ""},
+    {"test_prefix", "", "test_prefix"},
+    {"/test_prefix", "", "test_prefix"},
+    {"", "test_namespace", "test_namespace/"},
+    {"", "/test_namespace", "test_namespace/"},
+    {"test_prefix", "test_namespace", "test_prefix"},
+  };
+
+  for (const auto & test_case : test_cases)
+  {
+    const std::string & test_namespace = test_case.ns;
+
+    SetUpIMUBroadcaster(test_namespace);
+
+    imu_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
+    imu_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
+    imu_broadcaster_->get_node()->set_parameter({"tf_frame_prefix", test_case.tf_prefix});
+
+    ASSERT_EQ(imu_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+    ASSERT_EQ(imu_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+    sensor_msgs::msg::Imu imu_msg;
+    subscribe_and_get_message(imu_msg, test_namespace);
+
+    EXPECT_EQ(imu_msg.header.frame_id, test_case.result_prefix + frame_id_);
+  }
+}
+
+TEST_F(IMUSensorBroadcasterTest, SensorNameNamespaced)
+{
+  struct TestCase
+  {
+    bool use_namespace_as_sensor_name_prefix;
+    std::string result;
+  };
+
+  const std::string & test_namespace = "test_namespace";
+  const std::vector<TestCase> test_cases = {
+    {false, ""},
+    {true, test_namespace + "/"},
+  };
+
+  for (const auto & test_case : test_cases)
+  {
+    SetUpIMUBroadcaster(test_namespace);
+
+    imu_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
+    imu_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
+    imu_broadcaster_->get_node()->set_parameter({"use_namespace_as_sensor_name_prefix", test_case.use_namespace_as_sensor_name_prefix});
+
+    ASSERT_EQ(imu_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+    auto interface_names = imu_broadcaster_->imu_sensor_->get_state_interface_names();
+
+    EXPECT_EQ(interface_names[0], test_case.result + imu_orientation_x_.get_name());
+    EXPECT_EQ(interface_names[1], test_case.result + imu_orientation_y_.get_name());
+    EXPECT_EQ(interface_names[2], test_case.result + imu_orientation_z_.get_name());
+    EXPECT_EQ(interface_names[3], test_case.result + imu_orientation_w_.get_name());
+    EXPECT_EQ(interface_names[4], test_case.result + imu_angular_velocity_x_.get_name());
+    EXPECT_EQ(interface_names[5], test_case.result + imu_angular_velocity_y_.get_name());
+    EXPECT_EQ(interface_names[6], test_case.result + imu_angular_velocity_z_.get_name());
+    EXPECT_EQ(interface_names[7], test_case.result + imu_linear_acceleration_x_.get_name());
+    EXPECT_EQ(interface_names[8], test_case.result + imu_linear_acceleration_y_.get_name());
+    EXPECT_EQ(interface_names[9], test_case.result + imu_linear_acceleration_z_.get_name());
   }
 }
 
