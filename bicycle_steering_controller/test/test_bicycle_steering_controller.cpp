@@ -158,7 +158,7 @@ TEST_F(BicycleSteeringControllerTest, test_update_logic)
     controller_interface::return_type::OK);
 
   EXPECT_NEAR(
-    controller_->command_interfaces_[CMD_TRACTION_WHEEL].get_value(), 0.253221, COMMON_THRESHOLD);
+    controller_->command_interfaces_[CMD_TRACTION_WHEEL].get_value(), 0.1 / 0.45, COMMON_THRESHOLD);
   EXPECT_NEAR(
     controller_->command_interfaces_[CMD_STEER_WHEEL].get_value(), 1.4179821977774734,
     COMMON_THRESHOLD);
@@ -190,7 +190,7 @@ TEST_F(BicycleSteeringControllerTest, test_update_logic_chained)
     controller_interface::return_type::OK);
 
   EXPECT_NEAR(
-    controller_->command_interfaces_[CMD_TRACTION_WHEEL].get_value(), 0.253221, COMMON_THRESHOLD);
+    controller_->command_interfaces_[CMD_TRACTION_WHEEL].get_value(), 0.1 / 0.45, COMMON_THRESHOLD);
   EXPECT_NEAR(
     controller_->command_interfaces_[CMD_STEER_WHEEL].get_value(), 1.4179821977774734,
     COMMON_THRESHOLD);
@@ -237,7 +237,7 @@ TEST_F(BicycleSteeringControllerTest, receive_message_and_publish_updated_status
   EXPECT_EQ(msg.linear_velocity_command[0], 1.1);
   EXPECT_EQ(msg.steering_angle_command[0], 2.2);
 
-  publish_commands();
+  publish_commands(0.1, 0.2);
   ASSERT_TRUE(controller_->wait_for_commands(executor));
 
   ASSERT_EQ(
@@ -245,14 +245,14 @@ TEST_F(BicycleSteeringControllerTest, receive_message_and_publish_updated_status
     controller_interface::return_type::OK);
 
   EXPECT_NEAR(
-    controller_->command_interfaces_[CMD_TRACTION_WHEEL].get_value(), 0.253221, COMMON_THRESHOLD);
+    controller_->command_interfaces_[CMD_TRACTION_WHEEL].get_value(), 0.1 / 0.45, COMMON_THRESHOLD);
   EXPECT_NEAR(
     controller_->command_interfaces_[CMD_STEER_WHEEL].get_value(), 1.4179821977774734,
     COMMON_THRESHOLD);
 
   subscribe_and_get_messages(msg);
 
-  EXPECT_NEAR(msg.linear_velocity_command[0], 0.253221, COMMON_THRESHOLD);
+  EXPECT_NEAR(msg.linear_velocity_command[0], 0.1 / 0.45, COMMON_THRESHOLD);
   EXPECT_NEAR(msg.steering_angle_command[0], 1.4179821977774734, COMMON_THRESHOLD);
 }
 

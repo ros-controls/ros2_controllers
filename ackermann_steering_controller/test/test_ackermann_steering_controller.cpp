@@ -173,6 +173,7 @@ TEST_F(AckermannSteeringControllerTest, test_update_logic)
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
+  // we test with open_loop=false, but steering angle was not updated (is zero) -> same commands
   EXPECT_NEAR(
     controller_->command_interfaces_[CMD_TRACTION_RIGHT_WHEEL].get_value(), 0.22222222222222224,
     COMMON_THRESHOLD);
@@ -211,8 +212,9 @@ TEST_F(AckermannSteeringControllerTest, test_update_logic_chained)
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
-  EXPECT_NEAR(
 
+  // we test with open_loop=false, but steering angle was not updated (is zero) -> same commands
+  EXPECT_NEAR(
     controller_->command_interfaces_[STATE_TRACTION_RIGHT_WHEEL].get_value(), 0.22222222222222224,
     COMMON_THRESHOLD);
   EXPECT_NEAR(
@@ -261,6 +263,7 @@ TEST_F(AckermannSteeringControllerTest, receive_message_and_publish_updated_stat
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
+  // we test with open_loop=false, but steering angle was not updated (is zero) -> same commands
   EXPECT_NEAR(
     controller_->command_interfaces_[CMD_TRACTION_RIGHT_WHEEL].get_value(), 0.22222222222222224,
     COMMON_THRESHOLD);
@@ -276,6 +279,7 @@ TEST_F(AckermannSteeringControllerTest, receive_message_and_publish_updated_stat
 
   subscribe_and_get_messages(msg);
 
+  // we test with open_loop=false, but steering angle was not updated (is zero) -> same commands
   EXPECT_NEAR(
     msg.linear_velocity_command[CMD_TRACTION_RIGHT_WHEEL], 0.22222222222222224, COMMON_THRESHOLD);
   EXPECT_NEAR(
