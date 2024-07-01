@@ -52,6 +52,7 @@ The controllers are using `common hardware interface definitions`_, and may use 
    Forward Command Controller <../forward_command_controller/doc/userdoc.rst>
    Gripper Controller <../gripper_controllers/doc/userdoc.rst>
    Joint Trajectory Controller <../joint_trajectory_controller/doc/userdoc.rst>
+   PID Controller <../pid_controller/doc/userdoc.rst>
    Position Controllers <../position_controllers/doc/userdoc.rst>
    Velocity Controllers <../velocity_controllers/doc/userdoc.rst>
 
