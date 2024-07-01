@@ -1,16 +1,13 @@
 test_ackermann_steering_controller:
   ros__parameters:
     reference_timeout: 2.0
-    front_steering: true
     open_loop: false
     velocity_rolling_window_size: 10
     position_feedback: false
-    rear_wheels_names: [pid_controller/rear_right_wheel_joint, pid_controller/rear_left_wheel_joint]
-    front_wheels_names: [pid_controller/front_right_steering_joint, pid_controller/front_left_steering_joint]
-    rear_wheels_state_names: [rear_right_wheel_joint, rear_left_wheel_joint]
-    front_wheels_state_names: [front_right_steering_joint, front_left_steering_joint]
+    traction_joints_names: [pid_controller/rear_right_wheel_joint, pid_controller/rear_left_wheel_joint]
+    steering_joints_names: [pid_controller/front_right_steering_joint, pid_controller/front_left_steering_joint]
+    traction_joints_state_names: [rear_right_wheel_joint, rear_left_wheel_joint]
+    steering_joints_state_names: [front_right_steering_joint, front_left_steering_joint]
     wheelbase: 3.24644
-    front_wheel_track: 2.12321
-    rear_wheel_track: 1.76868
-    front_wheels_radius: 0.45
-    rear_wheels_radius: 0.45
+    traction_wheel_track: 1.76868
+    traction_wheels_radius: 0.45
