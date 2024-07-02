@@ -1,0 +1,148 @@
+mecanum_drive_controller:
+  reference_timeout: {
+    type: double,
+    default_value: 0.0,
+    description: "Timeout for controller references after which they will be reset. This is especially useful for controllers that can cause unwanted and dangerous behavior if reference is not reset, e.g., velocity controllers. If value is 0 the reference is reset after each run.",
+  }
+
+  # Command joint names
+  front_left_wheel_command_joint_name: {
+    type: string,
+    default_value: "",
+    description: "Name of the joints for commanding front left wheel.",
+    read_only: true,
+    validation: {
+      not_empty<>: null,
+    }
+  }
+
+  front_right_wheel_command_joint_name: {
+    type: string,
+    default_value: "",
+    description: "Name of the joints for commanding front right wheel.",
+    read_only: true,
+    validation: {
+      not_empty<>: null,
+    }
+  }
+
+  rear_right_wheel_command_joint_name: {
+    type: string,
+    default_value: "",
+    description: "Name of the joints for commanding rear right wheel.",
+    read_only: true,
+    validation: {
+      not_empty<>: null,
+    }
+  }
+
+  rear_left_wheel_command_joint_name: {
+    type: string,
+    default_value: "",
+    description: "Name of the joints for commanding rear left wheel.",
+    read_only: true,
+    validation: {
+      not_empty<>: null,
+    }
+  }
+
+  # State joint names
+  front_left_wheel_state_joint_name: {
+    type: string,
+    default_value: "",
+    description: "(optional) Specifies a joint name for reading states of front left wheel. This parameter is only relevant when state joints are different then command joint, i.e., when a following controller is used.",
+    read_only: true,
+  }
+
+  front_right_wheel_state_joint_name: {
+    type: string,
+    default_value: "",
+    description: "(optional) Specifies a joint name for reading states of front right wheel. This parameter is only relevant when state joints are different then command joint, i.e., when a following controller is used.",
+    read_only: true,
+  }
+
+  rear_right_wheel_state_joint_name: {
+    type: string,
+    default_value: "",
+    description: "(optional) Specifies a joint name for reading states of rear right wheel. This parameter is only relevant when state joints are different then command joint, i.e., when a following controller is used.",
+    read_only: true,
+  }
+
+  rear_left_wheel_state_joint_name: {
+    type: string,
+    default_value: "",
+    description: "(optional) Specifies a joint name for reading states of rear left wheel. This parameter is only relevant when state joints are different then command joint, i.e., when a following controller is used.",
+    read_only: true,
+  }
+
+  kinematics:
+    base_frame_offset:
+      x: {
+        type: double,
+        default_value: 0.0,
+        description: "Base frame offset along X axis of base_frame (base_link frame)." ,
+        read_only: true,
+      }
+      y: {
+        type: double,
+        default_value: 0.0,
+        description: "Base frame offset along Y axis of base_frame (base_link frame)." ,
+        read_only: true,
+      }
+      theta: {
+        type: double,
+        default_value: 0.0,
+        description: "Base frame offset along Theta axis of base_frame (base_link frame).",
+        read_only: true,
+      }
+
+    wheels_radius: {
+      type: double,
+      default_value: 0.0,
+      description: "Wheel's radius.",
+      read_only: false,
+      validation: {
+        gt<>: [0.0]
+      }
+    }
+
+    sum_of_robot_center_projection_on_X_Y_axis: {
+      type: double,
+      default_value: 0.0,
+      description: "Wheels geometric param used in mecanum wheels' IK. lx and ly represent the distance from the robot's center to the wheels projected on the x and y axis with origin at robots center respectively, sum_of_robot_center_projection_on_X_Y_axis = lx+ly",
+      read_only: false,
+    }
+
+  base_frame_id: {
+    type: string,
+    default_value: "base_link",
+    description: "Base frame_id set to value of base_frame_id.",
+    read_only: false,
+
+  }
+  odom_frame_id: {
+    type: string,
+    default_value: "odom",
+    description: "Odometry frame_id set to value of odom_frame_id.",
+    read_only: false,
+  }
+  enable_odom_tf: {
+    type: bool,
+    default_value: true,
+    description: "Publishing to tf is enabled or disabled?",
+    read_only: false,
+  }
+
+  twist_covariance_diagonal: {
+    type: double_array,
+    default_value: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1],
+    description: "Diagonal values of twist covariance matrix.",
+    read_only: false,
+  }
+
+  pose_covariance_diagonal: {
+    type: double_array,
+    default_value: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1],
+    description: "Diagonal values of pose covariance matrix.",
+    read_only: false,
+  }

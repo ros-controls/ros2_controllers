@@ -28,6 +28,7 @@ Controllers for Wheeled Mobile Robots
    :titlesonly:
 
    Differential Drive Controller <../diff_drive_controller/doc/userdoc.rst>
+   Mecanum Drive Controllers <../mecanum_drive_controller/doc/userdoc.rst>
    Steering Controllers Library <../steering_controllers_library/doc/userdoc.rst>
    Tricycle Controller <../tricycle_controller/doc/userdoc.rst>
 
