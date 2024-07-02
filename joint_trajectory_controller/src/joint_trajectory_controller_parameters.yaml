@@ -95,6 +95,12 @@ joint_trajectory_controller:
      ``cmd_timeout`` must be greater than ``constraints.goal_time``, otherwise ignored.
      If zero, timeout is deactivated",
   }
+  speed_scaling_topic_name: {
+      type: string,
+      default_value: "~/speed_scaling_factor",
+      description: "Topic name for the speed scaling factor - set to an empty string in order to disable it"
+  }
+
   gains:
     __map_joints:
       p: {

@@ -163,6 +163,15 @@ controller_interface::return_type JointTrajectoryController::update(
   // currently carrying out a trajectory
   if (has_active_trajectory())
   {
+    TimeData time_data;
+    time_data.time = time;
+    rcl_duration_value_t t_period = (time_data.time - time_data_.time).nanoseconds();
+    time_data.period = rclcpp::Duration::from_nanoseconds(
+      static_cast<rcutils_duration_value_t>(scaling_factor_ * static_cast<double>(t_period)));
+    time_data.uptime = time_data_.uptime + time_data.period;
+    rclcpp::Time traj_time = time_data_.uptime + rclcpp::Duration::from_nanoseconds(t_period);
+    time_data_ = time_data;
+
     bool first_sample = false;
     // if sampling the first time, set the point before you sample
     if (!traj_external_point_ptr_->is_sampled_already())
@@ -171,19 +180,19 @@ controller_interface::return_type JointTrajectoryController::update(
       if (params_.open_loop_control)
       {
         traj_external_point_ptr_->set_point_before_trajectory_msg(
-          time, last_commanded_state_, joints_angle_wraparound_);
+          traj_time, last_commanded_state_, joints_angle_wraparound_);
       }
       else
       {
         traj_external_point_ptr_->set_point_before_trajectory_msg(
-          time, state_current_, joints_angle_wraparound_);
+          traj_time, state_current_, joints_angle_wraparound_);
       }
     }
 
     // find segment for current timestamp
     TrajectoryPointConstIter start_segment_itr, end_segment_itr;
     const bool valid_point = traj_external_point_ptr_->sample(
-      time, interpolation_method_, state_desired_, start_segment_itr, end_segment_itr);
+      traj_time, interpolation_method_, state_desired_, start_segment_itr, end_segment_itr);
 
     if (valid_point)
     {
@@ -195,7 +204,7 @@ controller_interface::return_type JointTrajectoryController::update(
       // time_difference is
       // - negative until first point is reached
       // - counting from zero to time_from_start of next point
-      double time_difference = time.seconds() - segment_time_from_start.seconds();
+      const double time_difference = time_data.uptime.seconds() - segment_time_from_start.seconds();
       bool tolerance_violated_while_moving = false;
       bool outside_goal_tolerance = false;
       bool within_goal_time = true;
@@ -867,6 +876,16 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     std::string(get_node()->get_name()) + "/query_state",
     std::bind(&JointTrajectoryController::query_state_service, this, _1, _2));
 
+  if (params_.speed_scaling_topic_name != "")
+  {
+    auto qos = rclcpp::QoS(10);
+    qos.transient_local();
+
+    scaling_factor_sub_ = get_node()->create_subscription<ScalingFactorMsg>(
+      params_.speed_scaling_topic_name, qos,
+      // Explicitly allow factors > 1.0 which is really useful for simulation environments
+      [&](const ScalingFactorMsg & msg) { scaling_factor_ = msg.data / 100.0; });
+  }
   return CallbackReturn::SUCCESS;
 }
 
@@ -959,6 +978,13 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   {
     cmd_timeout_ = 0.0;
   }
+
+  // Reset time_data for the trajectory scaling
+  TimeData time_data;
+  time_data.time = get_node()->now();
+  time_data.period = rclcpp::Duration::from_nanoseconds(0);
+  time_data.uptime = get_node()->now();
+  time_data_ = time_data;
 
   return CallbackReturn::SUCCESS;
 }
