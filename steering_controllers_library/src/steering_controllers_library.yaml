@@ -120,6 +120,13 @@ steering_controllers_library:
     read_only: false,
   }
 
+  use_front_wheel_feedback: {
+    type: bool,
+    default_value: false,
+    description: "Choice which wheels to use for feedback, if front_wheel_feedback is false then rear wheels are used for feedback",
+    read_only: false,
+  }
+
   use_stamped_vel: {
     type: bool,
     default_value: false,

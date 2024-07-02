@@ -405,10 +405,21 @@ SteeringControllersLibrary::state_interface_configuration() const
   }
   else
   {
-    for (size_t i = 0; i < front_wheels_state_names_.size(); i++)
+    if(params_.use_front_wheel_feedback)
+    {
+      for (size_t i = 0; i < front_wheels_state_names_.size(); i++)
+      {
+        state_interfaces_config.names.push_back(
+          front_wheels_state_names_[i] + "/" + traction_wheels_feedback);
+      }
+    }
+    else 
+    {
+      for (size_t i = 0; i < front_wheels_state_names_.size(); i++)
     {
       state_interfaces_config.names.push_back(
-        front_wheels_state_names_[i] + "/" + traction_wheels_feedback);
+        rear_wheels_state_names_[i] + "/" + traction_wheels_feedback);
+    }
     }
 
     for (size_t i = 0; i < rear_wheels_state_names_.size(); i++)

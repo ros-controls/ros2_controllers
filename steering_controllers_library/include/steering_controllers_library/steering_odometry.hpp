@@ -232,7 +232,7 @@ private:
   double convert_twist_to_steering_angle(const double v_bx, const double omega_bz);
 
   /**
-   * \brief Calculates steering angle from the desired twist
+   * \brief Calculates angular velocity from the desired steering angle
    * \param v_bx     Linear velocity of the robot in x_b-axis direction
    * \param phi Steering angle of the robot around x_z-axis
    */
@@ -244,7 +244,7 @@ private:
    * \param left_traction_wheel_vel  Left traction wheel velocity [rad/s]
    * \param steer_pos Steer wheel position [rad]
    */
-  double get_lin_velocity_double_traction_axle(
+  double get_linear_velocity_double_traction_axle(
     const double right_traction_wheel_vel, const double left_traction_wheel_vel,
     const double steer_pos);
 
