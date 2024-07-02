@@ -92,7 +92,6 @@ protected:
   std::shared_ptr<mecanum_drive_controller::ParamListener> param_listener_;
   mecanum_drive_controller::Params params_;
 
-  /// Internal lists with joint names.
   /**
    * The list is sorted in the following order:
    *  - front left wheel
@@ -100,14 +99,25 @@ protected:
    *  - back right wheel
    *  - back left wheel
    */
-  std::vector<std::string> command_joint_names_;
+  enum WheelIndex : std::size_t
+  {
+    FRONT_LEFT = 0,
+    FRONT_RIGHT = 1,
+    REAR_RIGHT = 2,
+    REAR_LEFT = 3
+  };
+
   /// Internal lists with joint names.
   /**
-   * The list is sorted in the following order:
-   *  - front left wheel
-   *  - front right wheel
-   *  - back right wheel
-   *  - back left wheel
+   * Internal lists with joint names sorted as in `WheelIndex` enum.
+   */
+  std::vector<std::string> command_joint_names_;
+
+  /// Internal lists with joint names.
+  /**
+   * Internal lists with joint names sorted as in `WheelIndex` enum.
+   * If parameters for state joint names are *not* defined, this list is the same as
+   * `command_joint_names_`.
    */
   std::vector<std::string> state_joint_names_;
 
