@@ -248,6 +248,17 @@ bool AdmittanceRule::calculate_admittance_rule(AdmittanceState & admittance_stat
   D.block<3, 3>(0, 0) = D_pos;
   D.block<3, 3>(3, 3) = D_rot;
 
+  // The same for mass
+  Eigen::Matrix<double, 6, 6> M_inv = Eigen::Matrix<double, 6, 6>::Zero();
+  Eigen::Matrix<double, 3, 3> M_inv_pos = Eigen::Matrix<double, 3, 3>::Zero();
+  Eigen::Matrix<double, 3, 3> M_inv_rot = Eigen::Matrix<double, 3, 3>::Zero();
+  M_inv_pos.diagonal() = admittance_state.mass_inv.block<3, 1>(0, 0);
+  M_inv_rot.diagonal() = admittance_state.mass_inv.block<3, 1>(3, 0);
+  M_inv_pos = rot_base_control * M_inv_pos * rot_base_control.transpose();
+  M_inv_rot = rot_base_control * M_inv_rot * rot_base_control.transpose();
+  M_inv.block<3, 3>(0, 0) = M_inv_pos;
+  M_inv.block<3, 3>(3, 3) = M_inv_rot;
+
   // calculate admittance relative offset in base frame
   Eigen::Isometry3d desired_trans_base_ft;
   kinematics_->calculate_link_transform(
@@ -276,8 +287,7 @@ bool AdmittanceRule::calculate_admittance_rule(AdmittanceState & admittance_stat
   F_base.block<3, 1>(3, 0) = rot_base_control * F_control.block<3, 1>(3, 0);
 
   // Compute admittance control law in the base frame: F = M*x_ddot + D*x_dot + K*x
-  Eigen::Matrix<double, 6, 1> X_ddot =
-    admittance_state.mass_inv.cwiseProduct(F_base - D * X_dot - K * X);
+  Eigen::Matrix<double, 6, 1> X_ddot = M_inv * (F_base - D * X_dot - K * X);
   bool success = kinematics_->convert_cartesian_deltas_to_joint_deltas(
     admittance_state.current_joint_pos, X_ddot, admittance_state.ft_sensor_frame,
     admittance_state.joint_acc);
