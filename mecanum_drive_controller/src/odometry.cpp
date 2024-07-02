@@ -45,8 +45,8 @@ void Odometry::init(
 }
 
 bool Odometry::update(
-  double wheel_front_left_vel, double wheel_back_left_vel, double wheel_back_right_vel,
-  double wheel_front_right_vel, const double dt)
+  const double wheel_front_left_vel, const double wheel_rear_left_vel, const double wheel_rear_right_vel,
+  const double wheel_front_right_vel, const double dt)
 {
   /// We cannot estimate the speed with very small time intervals:
   // const double dt = (time - timestamp_).toSec();
@@ -68,13 +68,13 @@ bool Odometry::update(
 
   double velocity_in_center_frame_linear_x =
     0.25 * wheels_radius_ *
-    (wheel_front_left_vel + wheel_back_left_vel + wheel_back_right_vel + wheel_front_right_vel);
+    (wheel_front_left_vel + wheel_rear_left_vel + wheel_rear_right_vel + wheel_front_right_vel);
   double velocity_in_center_frame_linear_y =
     0.25 * wheels_radius_ *
-    (-wheel_front_left_vel + wheel_back_left_vel - wheel_back_right_vel + wheel_front_right_vel);
+    (-wheel_front_left_vel + wheel_rear_left_vel - wheel_rear_right_vel + wheel_front_right_vel);
   double velocity_in_center_frame_angular_z =
     0.25 * wheels_radius_ / sum_of_robot_center_projection_on_X_Y_axis_ *
-    (-wheel_front_left_vel - wheel_back_left_vel + wheel_back_right_vel + wheel_front_right_vel);
+    (-wheel_front_left_vel - wheel_rear_left_vel + wheel_rear_right_vel + wheel_front_right_vel);
 
   tf2::Quaternion orientation_R_c_b;
   orientation_R_c_b.setRPY(0.0, 0.0, -base_frame_offset_[2]);
@@ -115,7 +115,7 @@ bool Odometry::update(
 }
 
 void Odometry::setWheelsParams(
-  double sum_of_robot_center_projection_on_X_Y_axis, double wheels_radius)
+  const double sum_of_robot_center_projection_on_X_Y_axis, const double wheels_radius)
 {
   sum_of_robot_center_projection_on_X_Y_axis_ = sum_of_robot_center_projection_on_X_Y_axis;
   wheels_radius_ = wheels_radius;
