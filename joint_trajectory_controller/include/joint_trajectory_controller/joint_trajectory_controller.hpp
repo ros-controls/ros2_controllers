@@ -41,6 +41,7 @@
 #include "realtime_tools/realtime_buffer.h"
 #include "realtime_tools/realtime_publisher.h"
 #include "realtime_tools/realtime_server_goal_handle.h"
+#include "std_msgs/msg/float64.hpp"
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 #include "urdf/model.h"
@@ -287,6 +288,15 @@ protected:
     const std::shared_ptr<control_msgs::srv::QueryTrajectoryState::Request> request,
     std::shared_ptr<control_msgs::srv::QueryTrajectoryState::Response> response);
 
+  // TimeData struct used for trajectory scaling information
+  struct TimeData
+  {
+    TimeData() : time(0.0), period(rclcpp::Duration::from_nanoseconds(0.0)), uptime(0.0) {}
+    rclcpp::Time time;
+    rclcpp::Duration period;
+    rclcpp::Time uptime;
+  };
+
 private:
   void update_pids();
 
@@ -300,6 +310,12 @@ private:
     trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size);
 
   urdf::Model model_;
+
+  using ScalingFactorMsg = std_msgs::msg::Float64;
+  double scaling_factor_{1.0};
+  rclcpp::Subscription<ScalingFactorMsg>::SharedPtr scaling_factor_sub_;
+
+  TimeData time_data_;
 
   /**
    * @brief Assigns the values from a trajectory point interface to a joint interface.
