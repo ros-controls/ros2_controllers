@@ -201,8 +201,7 @@ controller_interface::return_type JointTrajectoryController::update(
     rcl_duration_value_t t_period = (time_data.time - time_data_.time).nanoseconds();
     time_data.period = rclcpp::Duration::from_nanoseconds(t_period) * scaling_factor_;
     time_data.uptime = time_data_.uptime + time_data.period;
-    rclcpp::Time traj_time =
-      time_data_.uptime + rclcpp::Duration::from_nanoseconds(t_period);
+    rclcpp::Time traj_time = time_data_.uptime + rclcpp::Duration::from_nanoseconds(t_period);
     time_data_ = time_data;
 
     bool first_sample = false;
@@ -918,7 +917,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   {
     scaling_factor_sub_ = get_node()->create_subscription<SpeedScalingMsg>(
       "~/speed_scaling_input", rclcpp::SystemDefaultsQoS(),
-      [&](const SpeedScalingMsg & msg) { set_scaling_factor(msg.factor);});
+      [&](const SpeedScalingMsg & msg) { set_scaling_factor(msg.factor); });
     RCLCPP_INFO(
       logger, "Setting initial scaling factor to %2f", params_.scaling_factor_initial_default);
     scaling_factor_rt_buff_.writeFromNonRT(params_.scaling_factor_initial_default);
