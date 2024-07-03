@@ -914,10 +914,9 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     !has_velocity_command_interface_ && !has_acceleration_command_interface_ &&
     !has_effort_command_interface_)
   {
-    set_scaling_factor_srv_ = get_node()->create_service<control_msgs::srv::SetScalingFactor>(
-      "~/set_scaling_factor", std::bind(
-                                &JointTrajectoryController::set_scaling_factor, this,
-                                std::placeholders::_1, std::placeholders::_2));
+    scaling_factor_sub_ = get_node()->create_subscription<std_msgs::msg::Float64>(
+      "~/speed_scaling_input", rclcpp::SystemDefaultsQoS(),
+      [&](const std_msgs::msg::Float64 & msg) { set_scaling_factor(msg.data);});
     RCLCPP_INFO(
       logger, "Setting initial scaling factor to %2f", params_.scaling_factor_initial_default);
     scaling_factor_rt_buff_.writeFromNonRT(params_.scaling_factor_initial_default);
@@ -1626,19 +1625,16 @@ void JointTrajectoryController::resize_joint_trajectory_point_command(
   }
 }
 
-bool JointTrajectoryController::set_scaling_factor(
-  control_msgs::srv::SetScalingFactor::Request::SharedPtr req,
-  control_msgs::srv::SetScalingFactor::Response::SharedPtr resp)
+bool JointTrajectoryController::set_scaling_factor(const double scaling_factor)
 {
-  if (req->scaling_factor < 0 && req->scaling_factor > 1)
+  if (scaling_factor < 0 || scaling_factor > 1)
   {
     RCLCPP_WARN(
       get_node()->get_logger(), "Scaling factor has to be in range [0, 1]. Ignoring input!");
-    resp->success = false;
-    return true;
+    return false;
   }
 
-  RCLCPP_INFO(get_node()->get_logger(), "New scaling factor will be %f", req->scaling_factor);
+  RCLCPP_INFO(get_node()->get_logger(), "New scaling factor will be %f", scaling_factor);
   if (params_.speed_scaling_command_interface_name.empty())
   {
     if (!params_.speed_scaling_state_interface_name.empty())
@@ -1649,7 +1645,7 @@ bool JointTrajectoryController::set_scaling_factor(
         "This will likely get overwritten by the hardware again. If available, please also setup "
         "the speed_scaling_command_interface_name");
     }
-    scaling_factor_rt_buff_.writeFromNonRT(req->scaling_factor);
+    scaling_factor_rt_buff_.writeFromNonRT(scaling_factor);
   }
   else
   {
@@ -1659,12 +1655,11 @@ bool JointTrajectoryController::set_scaling_factor(
       {
         if (interface.get_name() == params_.speed_scaling_command_interface_name)
         {
-          interface.set_value(static_cast<double>(req->scaling_factor));
+          interface.set_value(static_cast<double>(scaling_factor));
         }
       }
     }
   }
-  resp->success = true;
   return true;
 }
 
