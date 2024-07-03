@@ -2,6 +2,22 @@
 Changelog for package tricycle_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.10.0 (2024-07-01)
+-------------------
+* [Steering controllers library] Reference interfaces are body twist (`#1168 <https://github.com/ros-controls/ros2_controllers/issues/1168>`_)
+* Fix steering controllers library code documentation and naming (`#1149 <https://github.com/ros-controls/ros2_controllers/issues/1149>`_)
+* Remove unstamped twist subscribers + parameters (`#1151 <https://github.com/ros-controls/ros2_controllers/issues/1151>`_)
+* Contributors: Christoph Fröhlich, Sai Kishor Kothakota, Quique Llorente
+
+4.9.0 (2024-06-05)
+------------------
+
+4.8.0 (2024-05-14)
+------------------
+* Add parameter check for geometric values (`#1120 <https://github.com/ros-controls/ros2_controllers/issues/1120>`_)
+* add missing compiler definitions of RCPPUTILS_VERSION (`#1089 <https://github.com/ros-controls/ros2_controllers/issues/1089>`_)
+* Contributors: Christoph Fröhlich, Sai Kishor Kothakota
+
 4.7.0 (2024-03-22)
 ------------------
 * Fix pid_controller build on ROS 2 Rolling on Ubuntu 24.04 (`#1084 <https://github.com/ros-controls/ros2_controllers/issues/1084>`_)
