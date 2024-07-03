@@ -152,7 +152,21 @@ Actions  [#f1]_
 
 The primary way to send trajectories is through the action interface, and should be favored when execution monitoring is desired.
 
-Action goals allow to specify not only the trajectory to execute, but also (optionally) path and goal tolerances.
+Action goals allow to specify not only the trajectory to execute, but also (optionally) path and goal tolerances. For details, see the `JointTolerance message <https://github.com/ros-controls/control_msgs/blob/master/control_msgs/msg/JointTolerance.msg>`_:
+
+.. code-block:: markdown
+
+  The tolerances specify the amount the position, velocity, and
+  accelerations can vary from the setpoints.  For example, in the case
+  of trajectory control, when the actual position varies beyond
+  (desired position + position tolerance), the trajectory goal may
+  abort.
+
+  There are two special values for tolerances:
+    * 0 - The tolerance is unspecified and will remain at whatever the default is
+    * -1 - The tolerance is "erased".  If there was a default, the joint will be
+          allowed to move without restriction.
+
 When no tolerances are specified, the defaults given in the parameter interface are used (see :ref:`parameters`).
 If tolerances are violated during trajectory execution, the action goal is aborted, the client is notified, and the current position is held.
 
