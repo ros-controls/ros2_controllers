@@ -1157,6 +1157,7 @@ void JointTrajectoryController::publish_state(
     {
       state_publisher_->msg_.output = command_current_;
     }
+    state_publisher_->msg_.speed_scaling_factor = *(scaling_factor_rt_buff_.readFromRT());
 
     state_publisher_->unlockAndPublish();
   }
