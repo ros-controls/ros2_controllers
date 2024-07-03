@@ -173,8 +173,8 @@ protected:
   std::vector<double> tmp_command_;
 
   // Things around speed scaling
-  realtime_tools::RealtimeBuffer<TimeData> time_data_;
   double scaling_factor_{1.0};
+  TimeData time_data_;
 
   // Timeout to consider commands old
   double cmd_timeout_;
