@@ -1634,10 +1634,11 @@ void JointTrajectoryController::resize_joint_trajectory_point_command(
 
 bool JointTrajectoryController::set_scaling_factor(const double scaling_factor)
 {
-  if (scaling_factor < 0 || scaling_factor > 1)
+  if (scaling_factor < 0)
   {
     RCLCPP_WARN(
-      get_node()->get_logger(), "Scaling factor has to be in range [0, 1]. Ignoring input!");
+      get_node()->get_logger(),
+      "Scaling factor has to be greater or equal to 0.0 - Ignoring input!");
     return false;
   }
 
