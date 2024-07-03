@@ -9,7 +9,7 @@ The library implements generic odometry and update methods and defines the main 
 Execution logic of the controller
 ----------------------------------
 
-The controller uses velocity input, i.e., stamped or unstamped Twist messages where linear ``x``, ``y``, and angular ``z`` components are used.
+The controller uses velocity input, i.e., stamped Twist messages where linear ``x``, ``y``, and angular ``z`` components are used.
 Values in other components are ignored.
 In the chain mode, the controller provides three reference interfaces, one for linear velocity and one for steering angle position.
 Other relevant features are:
