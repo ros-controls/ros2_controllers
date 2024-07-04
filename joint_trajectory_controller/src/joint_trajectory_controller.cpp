@@ -916,8 +916,10 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     !has_velocity_command_interface_ && !has_acceleration_command_interface_ &&
     !has_effort_command_interface_)
   {
+    auto qos = rclcpp::SystemDefaultsQoS();
+    qos.transient_local();
     scaling_factor_sub_ = get_node()->create_subscription<SpeedScalingMsg>(
-      "~/speed_scaling_input", rclcpp::SystemDefaultsQoS(),
+      "~/speed_scaling_input", qos,
       [&](const SpeedScalingMsg & msg) { set_scaling_factor(msg.factor); });
     RCLCPP_INFO(
       logger, "Setting initial scaling factor to %2f", params_.scaling_factor_initial_default);

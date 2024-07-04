@@ -61,8 +61,17 @@ generates commands to be sent to the robot that are already scaled down accordin
 directly executed by the robot.
 
 Since the hardware isn't aware of speed scaling, the speed-scaling related command and state
-interfaces should not be specified and the scaling factor will be set by the ``setSpeedScaling``
-service directly.
+interfaces should not be specified and the scaling factor will be set through the
+``~/speed_scaling_input`` topic directly:
+
+.. code:: console
+
+   $ ros2 topic pub --qos-durability transient_local --once \
+     /joint_trajectory_controller/speed_scaling_input control_msgs/msg/SpeedScalingFactor "{factor: 0.5}"
+
+.. note::
+   The ``~/speed_scaling_input`` topic uses the QoS durability profile ``transient_local``. This
+   means you can restart the controller while still having a publisher on that topic active.
 
 .. note::
    The current implementation only works for position-based interfaces.
