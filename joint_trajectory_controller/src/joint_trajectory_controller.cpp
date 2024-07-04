@@ -134,16 +134,11 @@ JointTrajectoryController::state_interface_configuration() const
 controller_interface::return_type JointTrajectoryController::update(
   const rclcpp::Time & time, const rclcpp::Duration & period)
 {
-  if (params_.speed_scaling_state_interface_name.empty())
-  {
-    scaling_factor_ = *(scaling_factor_rt_buff_.readFromRT());
-  }
-  else
+  if (!params_.speed_scaling_state_interface_name.empty())
   {
     if (state_interfaces_.back().get_name() == params_.speed_scaling_state_interface_name)
     {
       scaling_factor_ = state_interfaces_.back().get_value();
-      scaling_factor_rt_buff_.initRT(scaling_factor_);
     }
     else
     {
@@ -926,7 +921,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
       [&](const SpeedScalingMsg & msg) { set_scaling_factor(msg.factor); });
     RCLCPP_INFO(
       logger, "Setting initial scaling factor to %2f", params_.scaling_factor_initial_default);
-    scaling_factor_rt_buff_.writeFromNonRT(params_.scaling_factor_initial_default);
+    scaling_factor_ = params_.scaling_factor_initial_default;
   }
   else
   {
@@ -934,7 +929,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
       logger,
       "Speed scaling is currently only supported for position interfaces. If you want to make use "
       "of speed scaling, please only use a position interface when configuring this controller.");
-    scaling_factor_rt_buff_.writeFromNonRT(1.0);
+    scaling_factor_ = 1.0;
   }
 
   // set scaling factor to low value default
@@ -1162,7 +1157,7 @@ void JointTrajectoryController::publish_state(
     {
       state_publisher_->msg_.output = command_current_;
     }
-    state_publisher_->msg_.speed_scaling_factor = *(scaling_factor_rt_buff_.readFromRT());
+    state_publisher_->msg_.speed_scaling_factor = scaling_factor_;
 
     state_publisher_->unlockAndPublish();
   }
@@ -1659,7 +1654,7 @@ bool JointTrajectoryController::set_scaling_factor(const double scaling_factor)
         "This will likely get overwritten by the hardware again. If available, please also setup "
         "the speed_scaling_command_interface_name");
     }
-    scaling_factor_rt_buff_.writeFromNonRT(scaling_factor);
+    scaling_factor_ = scaling_factor;
   }
   else
   {
