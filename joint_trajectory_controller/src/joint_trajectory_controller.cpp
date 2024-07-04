@@ -195,14 +195,19 @@ controller_interface::return_type JointTrajectoryController::update(
   // currently carrying out a trajectory
   if (has_active_trajectory())
   {
-    // Adjust time with scaling factor
-    TimeData time_data;
-    time_data.time = time;
-    rcl_duration_value_t t_period = (time_data.time - time_data_.time).nanoseconds();
-    time_data.period = rclcpp::Duration::from_nanoseconds(t_period) * scaling_factor_;
-    time_data.uptime = time_data_.uptime + time_data.period;
+    // Time passed since the last update call
+    rcl_duration_value_t t_period = (time - time_data_.time).nanoseconds();
+
+    // scaled time period
+    time_data_.period = rclcpp::Duration::from_nanoseconds(t_period) * scaling_factor_;
+
+    // scaled time spent in the trajectory
+    time_data_.uptime = time_data_.uptime + time_data_.period;
+
+    // time in the trajectory with a non-scaled current step
     rclcpp::Time traj_time = time_data_.uptime + rclcpp::Duration::from_nanoseconds(t_period);
-    time_data_ = time_data;
+
+    time_data_.time = time;
 
     bool first_sample = false;
     // if sampling the first time, set the point before you sample
@@ -236,7 +241,8 @@ controller_interface::return_type JointTrajectoryController::update(
       // time_difference is
       // - negative until first point is reached
       // - counting from zero to time_from_start of next point
-      const double time_difference = time_data.uptime.seconds() - segment_time_from_start.seconds();
+      const double time_difference =
+        time_data_.uptime.seconds() - segment_time_from_start.seconds();
       bool tolerance_violated_while_moving = false;
       bool outside_goal_tolerance = false;
       bool within_goal_time = true;
