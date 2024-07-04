@@ -143,6 +143,7 @@ controller_interface::return_type JointTrajectoryController::update(
     if (state_interfaces_.back().get_name() == params_.speed_scaling_state_interface_name)
     {
       scaling_factor_ = state_interfaces_.back().get_value();
+      scaling_factor_rt_buff_.initRT(scaling_factor_);
     }
     else
     {
