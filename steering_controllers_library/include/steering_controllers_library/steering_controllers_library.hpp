@@ -98,7 +98,6 @@ protected:
   // Command subscribers and Controller State publisher
   rclcpp::Subscription<ControllerTwistReferenceMsg>::SharedPtr ref_subscriber_twist_ = nullptr;
   rclcpp::Subscription<ControllerTwistReferenceMsg>::SharedPtr ref_subscriber_ackermann_ = nullptr;
-  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr ref_subscriber_unstamped_ = nullptr;
   realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerTwistReferenceMsg>> input_ref_;
   rclcpp::Duration ref_timeout_ = rclcpp::Duration::from_seconds(0.0);  // 0ms
 
@@ -132,7 +131,7 @@ protected:
   // name constants for reference interfaces
   size_t nr_ref_itfs_;
 
-  // store last velocity
+  // last velocity commands for open loop odometry
   double last_linear_velocity_ = 0.0;
   double last_angular_velocity_ = 0.0;
 
@@ -143,7 +142,6 @@ private:
   // callback for topic interface
   STEERING_CONTROLLERS__VISIBILITY_LOCAL void reference_callback(
     const std::shared_ptr<ControllerTwistReferenceMsg> msg);
-  void reference_callback_unstamped(const std::shared_ptr<geometry_msgs::msg::Twist> msg);
 };
 
 }  // namespace steering_controllers_library

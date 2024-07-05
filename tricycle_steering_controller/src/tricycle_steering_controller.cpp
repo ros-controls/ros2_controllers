@@ -60,24 +60,28 @@ bool TricycleSteeringController::update_odometry(const rclcpp::Duration & period
   }
   else
   {
-    const double rear_right_wheel_value = state_interfaces_[STATE_TRACTION_RIGHT_WHEEL].get_value();
-    const double rear_left_wheel_value = state_interfaces_[STATE_TRACTION_LEFT_WHEEL].get_value();
-    const double steer_position = state_interfaces_[STATE_STEER_AXIS].get_value();
+    const double traction_right_wheel_value =
+      state_interfaces_[STATE_TRACTION_RIGHT_WHEEL].get_value();
+    const double traction_left_wheel_value =
+      state_interfaces_[STATE_TRACTION_LEFT_WHEEL].get_value();
+    const double steering_position = state_interfaces_[STATE_STEER_AXIS].get_value();
     if (
-      !std::isnan(rear_right_wheel_value) && !std::isnan(rear_left_wheel_value) &&
-      !std::isnan(steer_position))
+      std::isfinite(traction_right_wheel_value) && std::isfinite(traction_left_wheel_value) &&
+      std::isfinite(steering_position))
     {
       if (params_.position_feedback)
       {
         // Estimate linear and angular velocity using joint information
         odometry_.update_from_position(
-          rear_right_wheel_value, rear_left_wheel_value, steer_position, period.seconds());
+          traction_right_wheel_value, traction_left_wheel_value, steering_position,
+          period.seconds());
       }
       else
       {
         // Estimate linear and angular velocity using joint information
         odometry_.update_from_velocity(
-          rear_right_wheel_value, rear_left_wheel_value, steer_position, period.seconds());
+          traction_right_wheel_value, traction_left_wheel_value, steering_position,
+          period.seconds());
       }
     }
   }

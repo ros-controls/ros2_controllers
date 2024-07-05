@@ -2,6 +2,12 @@
 Changelog for package pid_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.10.0 (2024-07-01)
+-------------------
+
+4.9.0 (2024-06-05)
+------------------
+
 4.8.0 (2024-05-14)
 ------------------
 * [PID] Add example yaml to docs (`#951 <https://github.com/ros-controls/ros2_controllers/issues/951>`_)

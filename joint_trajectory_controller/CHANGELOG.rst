@@ -2,6 +2,16 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.10.0 (2024-07-01)
+-------------------
+* Remove manual angle-wraparound parameter (`#1152 <https://github.com/ros-controls/ros2_controllers/issues/1152>`_)
+* Contributors: Christoph Fröhlich
+
+4.9.0 (2024-06-05)
+------------------
+* JTC trajectory end time validation fix (`#1090 <https://github.com/ros-controls/ros2_controllers/issues/1090>`_)
+* Contributors: Henry Moore
+
 4.8.0 (2024-05-14)
 ------------------
 * [JTC] Remove unused test code (`#1095 <https://github.com/ros-controls/ros2_controllers/issues/1095>`_)
