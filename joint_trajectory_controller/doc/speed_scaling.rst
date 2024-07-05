@@ -69,6 +69,7 @@ interfaces should not be specified and the scaling factor will be set through th
    $ ros2 topic pub --qos-durability transient_local --once \
      /joint_trajectory_controller/speed_scaling_input control_msgs/msg/SpeedScalingFactor "{factor: 0.5}"
 
+
 .. note::
    The ``~/speed_scaling_input`` topic uses the QoS durability profile ``transient_local``. This
    means you can restart the controller while still having a publisher on that topic active.
@@ -77,8 +78,20 @@ interfaces should not be specified and the scaling factor will be set through th
    The current implementation only works for position-based interfaces.
 
 
-Goal time tolerances
+Effect on tolerances
 --------------------
 
-.. todo::
-   What happens to goal time tolerances if we scale down a trajectory?
+When speed scaling is used while executing a trajectory, the tolerances configured for execution
+will be scaled, as well.
+
+Since commands are generated from the scaled trajectory time, **path errors** will also be compared to
+the scaled trajectory. However, since the next command is always using the full time step, there
+will obviously always be a small error added by the robot only executing a part of the command.
+
+The **goal time tolerance** also uses the virtual trajectory time. This means that a trajectory
+being executed with a constant scaling factor of 0.5 will take twice as long for execution than the
+``time_from_start`` value of the last trajectory point specifies. As long as the robot doesn't take
+longer than that the goal time tolerance is considered to be met.
+
+If an application relies on the actual execution time as set in the ``time_from_start`` fields, an
+external monitoring has to be wrapped around the trajectory execution action.
