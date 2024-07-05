@@ -50,7 +50,15 @@ The deviation between trajectory interpolation on the ROS side and actual robot 
 minimal and the robot reaches the intermediate setpoint instead of returning "too early" as in the
 example above.
 
-.. todo:: Describe method behind this scaling approach.
+Scaling is done in such a way, that the time in the trajectory is virtually scaled. For example, if
+a controller runs with a cycle time of 100 Hz, each control cycle is 10 ms long. A speed scaling of
+0.5 means that in each time step the trajectory is moved forward by 5 ms instead.
+So, the beginning of the 3rd timestep is 15 ms instead of 30 ms in the trajectory.
+
+Command sampling is performed as in the unscaled case, with the timestep's start plus the **full**
+cycle time of 10 ms. The robot will scale down the motion command by 50% resulting in only half of
+the distance being executed, which is why the next control cycle will be started at the current
+start plus half of the step time.
 
 
 On-Controller speed scaling
