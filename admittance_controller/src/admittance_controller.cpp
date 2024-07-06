@@ -244,6 +244,12 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
   has_acceleration_state_interface_ = contains_interface_type(
     admittance_->parameters_.state_interfaces, hardware_interface::HW_IF_ACCELERATION);
 
+  if (!has_position_state_interface_)
+  {
+    RCLCPP_ERROR(get_node()->get_logger(), "Position state interface is required.");
+    return CallbackReturn::FAILURE;
+  }
+
   auto get_interface_list = [](const std::vector<std::string> & interface_types)
   {
     std::stringstream ss_command_interfaces;
@@ -523,7 +529,7 @@ void AdmittanceController::write_state_to_hardware(
 {
   // if any interface has nan values, assume state_commanded is the last command state
   size_t pos_ind = 0;
-  size_t vel_ind = pos_ind + has_velocity_command_interface_;
+  size_t vel_ind = (has_position_command_interface_) ? has_velocity_command_interface_ : pos_ind;
   size_t acc_ind = vel_ind + has_acceleration_command_interface_;
   for (size_t joint_ind = 0; joint_ind < num_joints_; ++joint_ind)
   {
