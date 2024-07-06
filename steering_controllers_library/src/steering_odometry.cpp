@@ -235,13 +235,8 @@ std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_comma
     Ws = v_bx / (wheel_radius_ * std::cos(phi_IK));  // using the measured steering angle
   }
 #endif
-  // steering angle
-  phi = SteeringOdometry::convert_twist_to_steering_angle(v_bx, omega_bz);
   // interprete twist input as steering angle if twist_input is false
-  if (!twist_input)
-  {
-    phi = omega_bz;
-  }
+  phi = twist_input ? SteeringOdometry::convert_twist_to_steering_angle(v_bx, omega_bz): omega_bz;
   if (open_loop)
   {
     phi_IK = phi;
