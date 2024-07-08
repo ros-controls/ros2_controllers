@@ -27,6 +27,7 @@
 #include "control_msgs/srv/query_trajectory_state.hpp"
 #include "control_toolbox/pid.hpp"
 #include "controller_interface/controller_interface.hpp"
+#include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "joint_trajectory_controller/interpolation_methods.hpp"
 #include "joint_trajectory_controller/tolerances.hpp"
@@ -150,6 +151,10 @@ protected:
 
   InterfaceReferences<hardware_interface::LoanedCommandInterface> joint_command_interface_;
   InterfaceReferences<hardware_interface::LoanedStateInterface> joint_state_interface_;
+  std::optional<std::reference_wrapper<hardware_interface::LoanedStateInterface>>
+    scaling_state_interface_;
+  std::optional<std::reference_wrapper<hardware_interface::LoanedCommandInterface>>
+    scaling_command_interface_;
 
   bool has_position_state_interface_ = false;
   bool has_velocity_state_interface_ = false;

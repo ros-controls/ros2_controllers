@@ -134,24 +134,24 @@ JointTrajectoryController::state_interface_configuration() const
 controller_interface::return_type JointTrajectoryController::update(
   const rclcpp::Time & time, const rclcpp::Duration & period)
 {
-  if (!params_.speed_scaling_state_interface_name.empty())
+  if (scaling_state_interface_.has_value())
   {
-    if (state_interfaces_.back().get_name() == params_.speed_scaling_state_interface_name)
-    {
-      scaling_factor_ = state_interfaces_.back().get_value();
-    }
-    else
-    {
-      RCLCPP_ERROR(
-        get_node()->get_logger(), "Speed scaling interface (%s) not found in hardware interface.",
-        params_.speed_scaling_state_interface_name.c_str());
-    }
+    scaling_factor_ = scaling_state_interface_->get().get_value();
   }
 
   if (get_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
   {
     return controller_interface::return_type::OK;
   }
+
+  if (get_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+  {
+    if (scaling_command_interface_.has_value())
+    {
+      scaling_command_interface_->get().set_value(scaling_factor_);
+    }
+  }
+
   auto logger = this->get_node()->get_logger();
   // update dynamic parameters
   if (param_listener_->is_old(params_))
@@ -934,8 +934,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     scaling_factor_ = 1.0;
   }
 
-  // set scaling factor to low value default
-
   return CallbackReturn::SUCCESS;
 }
 
@@ -957,6 +955,33 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   time_data_.time = get_node()->now();
   time_data_.period = rclcpp::Duration::from_nanoseconds(0);
   time_data_.uptime = get_node()->now();
+
+  // Set scaling interfaces
+  if (!params_.speed_scaling_state_interface_name.empty())
+  {
+    RCLCPP_WARN(logger, "I do have a speed scaling state interface configured");
+    auto it = std::find_if(
+      state_interfaces_.begin(), state_interfaces_.end(), [&](auto & interface)
+      { return (interface.get_name() == params_.speed_scaling_state_interface_name); });
+    if (it != state_interfaces_.end())
+    {
+      scaling_state_interface_ = *it;
+    }
+    else
+    {
+      RCLCPP_ERROR(logger, "Did not find speed scaling interface in state interfaces.");
+    }
+  }
+  if (!params_.speed_scaling_command_interface_name.empty())
+  {
+    auto it = std::find_if(
+      command_interfaces_.begin(), command_interfaces_.end(), [&](auto & interface)
+      { return (interface.get_name() == params_.speed_scaling_command_interface_name); });
+    if (it != command_interfaces_.end())
+    {
+      scaling_command_interface_ = *it;
+    }
+  }
 
   // order all joints in the storage
   for (const auto & interface : params_.command_interfaces)
@@ -1657,19 +1682,6 @@ bool JointTrajectoryController::set_scaling_factor(const double scaling_factor)
         "the speed_scaling_command_interface_name");
     }
     scaling_factor_ = scaling_factor;
-  }
-  else
-  {
-    if (get_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
-    {
-      for (auto & interface : command_interfaces_)
-      {
-        if (interface.get_name() == params_.speed_scaling_command_interface_name)
-        {
-          interface.set_value(static_cast<double>(scaling_factor));
-        }
-      }
-    }
   }
   return true;
 }
