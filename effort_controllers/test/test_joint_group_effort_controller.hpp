@@ -15,11 +15,11 @@
 #ifndef TEST_JOINT_GROUP_EFFORT_CONTROLLER_HPP_
 #define TEST_JOINT_GROUP_EFFORT_CONTROLLER_HPP_
 
+#include <gmock/gmock.h>
+
 #include <memory>
 #include <string>
 #include <vector>
-
-#include "gmock/gmock.h"
 
 #include "effort_controllers/joint_group_effort_controller.hpp"
 #include "hardware_interface/handle.hpp"
