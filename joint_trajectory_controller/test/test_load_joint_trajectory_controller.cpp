@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <memory>
+#include <gmock/gmock.h>
 
-#include "gmock/gmock.h"
+#include <memory>
 
 #include "controller_manager/controller_manager.hpp"
 #include "hardware_interface/resource_manager.hpp"
