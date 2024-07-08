@@ -183,7 +183,7 @@ TEST_F(TestTolerancesFixture, test_deactivate_tolerances)
   path_tolerance.push_back(tolerance);
   goal_tolerance.push_back(tolerance);
 
-  auto goal_msg = prepareGoalMsg(points, 0.0, path_tolerance, goal_tolerance);
+  auto goal_msg = prepareGoalMsg(points, -1.0, path_tolerance, goal_tolerance);
   auto active_tolerances = joint_trajectory_controller::get_segment_tolerances(
     logger, default_tolerances, goal_msg, params.joints);
 
