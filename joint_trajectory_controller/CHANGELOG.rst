@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.11.0 (2024-07-09)
+-------------------
 * [JTC] Make goal_time_tolerance overwrite default value only if explicitly set (`#1192 <https://github.com/ros-controls/ros2_controllers/issues/1192>`_)
 * added changes corresponding to the logger and clock propagation in ResourceManager (`#1184 <https://github.com/ros-controls/ros2_controllers/issues/1184>`_)
 * [JTC] Process tolerances sent with action goal (`#716 <https://github.com/ros-controls/ros2_controllers/issues/716>`_)
