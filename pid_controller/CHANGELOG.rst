@@ -1,9 +1,11 @@
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Changelog for package ros2_controllers_test_nodes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Changelog for package pid_controller
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Forthcoming
 -----------
+* 🚀 Add PID controller 🎉 (backport `#434 <https://github.com/ros-controls/ros2_controllers/issues/434>`_, `#975 <https://github.com/ros-controls/ros2_controllers/issues/975>`_, `#899 <https://github.com/ros-controls/ros2_controllers/issues/899>`_, `#1084 <https://github.com/ros-controls/ros2_controllers/issues/1084>`_, `#951 <https://github.com/ros-controls/ros2_controllers/issues/951>`_) (`#1163 <https://github.com/ros-controls/ros2_controllers/issues/1163>`_)
+* Contributors: mergify[bot]
 
 3.24.0 (2024-05-14)
 -------------------
@@ -40,8 +42,6 @@ Forthcoming
 
 3.17.0 (2023-10-31)
 -------------------
-* [TestNodes] Optimize output about setup of JTC publisher (`#792 <https://github.com/ros-controls/ros2_controllers/issues/792>`_)
-* Contributors: Dr. Denis
 
 3.16.0 (2023-09-20)
 -------------------
@@ -60,8 +60,6 @@ Forthcoming
 
 3.11.0 (2023-06-24)
 -------------------
-* Removes deprecated if-branch (`#653 <https://github.com/ros-controls/ros2_controllers/issues/653>`_)
-* Contributors: Christoph Fröhlich
 
 3.10.1 (2023-06-06)
 -------------------
@@ -95,8 +93,6 @@ Forthcoming
 
 3.1.0 (2023-01-26)
 ------------------
-* add publisher topic parameter to forward_position_controller (`#494 <https://github.com/ros-controls/ros2_controllers/issues/494>`_)
-* Contributors: Manuel Muth
 
 3.0.0 (2023-01-19)
 ------------------
@@ -106,13 +102,9 @@ Forthcoming
 
 2.14.0 (2022-11-18)
 -------------------
-* Remove deprecation warning when parameter without value is set. (`#445 <https://github.com/ros-controls/ros2_controllers/issues/445>`_)
-* Contributors: Denis Štogl
 
 2.13.0 (2022-10-05)
 -------------------
-* Enable definition of all fields in JointTrajectory message when using test node. (`#389 <https://github.com/ros-controls/ros2_controllers/issues/389>`_)
-* Contributors: Denis Štogl
 
 2.12.0 (2022-09-01)
 -------------------
@@ -128,8 +120,6 @@ Forthcoming
 
 2.8.0 (2022-07-09)
 ------------------
-* Fix deprecation in setup.cfg on Jammy (Humble and Rolling). (`#375 <https://github.com/ros-controls/ros2_controllers/issues/375>`_)
-* Contributors: Denis Štogl
 
 2.7.0 (2022-07-03)
 ------------------
@@ -151,8 +141,6 @@ Forthcoming
 
 2.1.0 (2022-02-23)
 ------------------
-* Move test nodes from the ros2_control_demos repository. (`#294 <https://github.com/ros-controls/ros2_controllers/issues/294>`_)
-* Contributors: Denis Štogl, Lovro Ivanov
 
 2.0.1 (2022-02-01)
 ------------------
