@@ -2,6 +2,13 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* [JTC] Make goal_time_tolerance overwrite default value only if explicitly set (`#1192 <https://github.com/ros-controls/ros2_controllers/issues/1192>`_)
+* added changes corresponding to the logger and clock propagation in ResourceManager (`#1184 <https://github.com/ros-controls/ros2_controllers/issues/1184>`_)
+* [JTC] Process tolerances sent with action goal (`#716 <https://github.com/ros-controls/ros2_controllers/issues/716>`_)
+* Contributors: Christoph Fröhlich, Felix Exner (fexner), Sai Kishor Kothakota
+
 4.10.0 (2024-07-01)
 -------------------
 * Remove manual angle-wraparound parameter (`#1152 <https://github.com/ros-controls/ros2_controllers/issues/1152>`_)
