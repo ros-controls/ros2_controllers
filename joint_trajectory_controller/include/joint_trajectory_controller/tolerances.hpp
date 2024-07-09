@@ -31,6 +31,7 @@
 #define JOINT_TRAJECTORY_CONTROLLER__TOLERANCES_HPP_
 
 #include <limits>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -123,6 +124,33 @@ SegmentTolerances get_segment_tolerances(rclcpp::Logger & jtc_logger, const Para
   return tolerances;
 }
 
+double resolve_tolerance_source(const double default_value, const double goal_value)
+{
+  // from
+  // https://github.com/ros-controls/control_msgs/blob/master/control_msgs/msg/JointTolerance.msg
+  // There are two special values for tolerances:
+  // * 0 - The tolerance is unspecified and will remain at whatever the default is
+  // * -1 - The tolerance is "erased".
+  //        If there was a default, the joint will be allowed to move without restriction.
+  constexpr double ERASE_VALUE = -1.0;
+  auto is_erase_value = [](double value)
+  { return fabs(value - ERASE_VALUE) < std::numeric_limits<float>::epsilon(); };
+
+  if (goal_value > 0.0)
+  {
+    return goal_value;
+  }
+  else if (is_erase_value(goal_value))
+  {
+    return 0.0;
+  }
+  else if (goal_value < 0.0)
+  {
+    throw std::runtime_error("Illegal tolerance value.");
+  }
+  return default_value;
+}
+
 /**
  * \brief Populate trajectory segment tolerances using data from an action goal.
  *
@@ -138,20 +166,22 @@ SegmentTolerances get_segment_tolerances(
   const std::vector<std::string> & joints)
 {
   SegmentTolerances active_tolerances(default_tolerances);
-
-  active_tolerances.goal_time_tolerance = rclcpp::Duration(goal.goal_time_tolerance).seconds();
   static auto logger = jtc_logger.get_child("tolerance");
-  RCLCPP_DEBUG(logger, "%s %f", "goal_time", active_tolerances.goal_time_tolerance);
 
-  // from
-  // https://github.com/ros-controls/control_msgs/blob/master/control_msgs/msg/JointTolerance.msg
-  // There are two special values for tolerances:
-  // * 0 - The tolerance is unspecified and will remain at whatever the default is
-  // * -1 - The tolerance is "erased".
-  //        If there was a default, the joint will be allowed to move without restriction.
-  constexpr double ERASE_VALUE = -1.0;
-  auto is_erase_value = [](double value)
-  { return fabs(value - ERASE_VALUE) < std::numeric_limits<float>::epsilon(); };
+  try
+  {
+    active_tolerances.goal_time_tolerance = resolve_tolerance_source(
+      default_tolerances.goal_time_tolerance, rclcpp::Duration(goal.goal_time_tolerance).seconds());
+  }
+  catch (const std::runtime_error & e)
+  {
+    RCLCPP_ERROR_STREAM(
+      logger, "Specified illegal goal_time_tolerance: "
+                << rclcpp::Duration(goal.goal_time_tolerance).seconds()
+                << ". Using default tolerances");
+    return default_tolerances;
+  }
+  RCLCPP_DEBUG(logger, "%s %f", "goal_time", active_tolerances.goal_time_tolerance);
 
   // State and goal state tolerances
   for (auto joint_tol : goal.path_tolerance)
@@ -170,60 +200,24 @@ SegmentTolerances get_segment_tolerances(
       return default_tolerances;
     }
     auto i = std::distance(joints.cbegin(), it);
-    if (joint_tol.position > 0.0)
+    std::string interface = "";
+    try
     {
-      active_tolerances.state_tolerance[i].position = joint_tol.position;
+      interface = "position";
+      active_tolerances.state_tolerance[i].position = resolve_tolerance_source(
+        default_tolerances.state_tolerance[i].position, joint_tol.position);
+      interface = "velocity";
+      active_tolerances.state_tolerance[i].velocity = resolve_tolerance_source(
+        default_tolerances.state_tolerance[i].velocity, joint_tol.velocity);
+      interface = "acceleration";
+      active_tolerances.state_tolerance[i].acceleration = resolve_tolerance_source(
+        default_tolerances.state_tolerance[i].acceleration, joint_tol.acceleration);
     }
-    else if (is_erase_value(joint_tol.position))
+    catch (const std::runtime_error & e)
     {
-      active_tolerances.state_tolerance[i].position = 0.0;
-    }
-    else if (joint_tol.position < 0.0)
-    {
-      RCLCPP_ERROR(
-        logger, "%s",
-        ("joint '" + joint +
-         "' specified in goal.path_tolerance has a invalid position tolerance. "
-         "Using default tolerances.")
-          .c_str());
-      return default_tolerances;
-    }
-
-    if (joint_tol.velocity > 0.0)
-    {
-      active_tolerances.state_tolerance[i].velocity = joint_tol.velocity;
-    }
-    else if (is_erase_value(joint_tol.velocity))
-    {
-      active_tolerances.state_tolerance[i].velocity = 0.0;
-    }
-    else if (joint_tol.velocity < 0.0)
-    {
-      RCLCPP_ERROR(
-        logger, "%s",
-        ("joint '" + joint +
-         "' specified in goal.path_tolerance has a invalid velocity tolerance. "
-         "Using default tolerances.")
-          .c_str());
-      return default_tolerances;
-    }
-
-    if (joint_tol.acceleration > 0.0)
-    {
-      active_tolerances.state_tolerance[i].acceleration = joint_tol.acceleration;
-    }
-    else if (is_erase_value(joint_tol.acceleration))
-    {
-      active_tolerances.state_tolerance[i].acceleration = 0.0;
-    }
-    else if (joint_tol.acceleration < 0.0)
-    {
-      RCLCPP_ERROR(
-        logger, "%s",
-        ("joint '" + joint +
-         "' specified in goal.path_tolerance has a invalid acceleration tolerance. "
-         "Using default tolerances.")
-          .c_str());
+      RCLCPP_ERROR_STREAM(
+        logger, "joint '" << joint << "' specified in goal.path_tolerance has a invalid "
+                          << interface << " tolerance. Using default tolerances.");
       return default_tolerances;
     }
 
@@ -253,60 +247,24 @@ SegmentTolerances get_segment_tolerances(
       return default_tolerances;
     }
     auto i = std::distance(joints.cbegin(), it);
-    if (goal_tol.position > 0.0)
+    std::string interface = "";
+    try
     {
-      active_tolerances.goal_state_tolerance[i].position = goal_tol.position;
+      interface = "position";
+      active_tolerances.goal_state_tolerance[i].position = resolve_tolerance_source(
+        default_tolerances.goal_state_tolerance[i].position, goal_tol.position);
+      interface = "velocity";
+      active_tolerances.goal_state_tolerance[i].velocity = resolve_tolerance_source(
+        default_tolerances.goal_state_tolerance[i].velocity, goal_tol.velocity);
+      interface = "acceleration";
+      active_tolerances.goal_state_tolerance[i].acceleration = resolve_tolerance_source(
+        default_tolerances.goal_state_tolerance[i].acceleration, goal_tol.acceleration);
     }
-    else if (is_erase_value(goal_tol.position))
+    catch (const std::runtime_error & e)
     {
-      active_tolerances.goal_state_tolerance[i].position = 0.0;
-    }
-    else if (goal_tol.position < 0.0)
-    {
-      RCLCPP_ERROR(
-        logger, "%s",
-        ("joint '" + joint +
-         "' specified in goal.goal_tolerance has a invalid position tolerance. "
-         "Using default tolerances.")
-          .c_str());
-      return default_tolerances;
-    }
-
-    if (goal_tol.velocity > 0.0)
-    {
-      active_tolerances.goal_state_tolerance[i].velocity = goal_tol.velocity;
-    }
-    else if (is_erase_value(goal_tol.velocity))
-    {
-      active_tolerances.goal_state_tolerance[i].velocity = 0.0;
-    }
-    else if (goal_tol.velocity < 0.0)
-    {
-      RCLCPP_ERROR(
-        logger, "%s",
-        ("joint '" + joint +
-         "' specified in goal.goal_tolerance has a invalid velocity tolerance. "
-         "Using default tolerances.")
-          .c_str());
-      return default_tolerances;
-    }
-
-    if (goal_tol.acceleration > 0.0)
-    {
-      active_tolerances.goal_state_tolerance[i].acceleration = goal_tol.acceleration;
-    }
-    else if (is_erase_value(goal_tol.acceleration))
-    {
-      active_tolerances.goal_state_tolerance[i].acceleration = 0.0;
-    }
-    else if (goal_tol.acceleration < 0.0)
-    {
-      RCLCPP_ERROR(
-        logger, "%s",
-        ("joint '" + joint +
-         "' specified in goal.goal_tolerance has a invalid acceleration tolerance. "
-         "Using default tolerances.")
-          .c_str());
+      RCLCPP_ERROR_STREAM(
+        logger, "joint '" << joint << "' specified in goal.goal_tolerance has a invalid "
+                          << interface << " tolerance. Using default tolerances.");
       return default_tolerances;
     }
 
