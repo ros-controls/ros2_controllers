@@ -45,6 +45,7 @@ const double stopped_velocity_tolerance = 0.1;
 [[maybe_unused]] void expectDefaultTolerances(
   joint_trajectory_controller::SegmentTolerances active_tolerances)
 {
+  EXPECT_DOUBLE_EQ(active_tolerances.goal_time_tolerance, default_goal_time);
   // acceleration is never set, and goal_state_tolerance.velocity from stopped_velocity_tolerance
 
   ASSERT_EQ(active_tolerances.state_tolerance.size(), 3);
