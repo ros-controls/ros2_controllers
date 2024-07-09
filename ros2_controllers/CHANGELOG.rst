@@ -2,8 +2,8 @@
 Changelog for package ros2_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.25.0 (2024-07-09)
+-------------------
 * 🚀 Add PID controller 🎉 (backport `#434 <https://github.com/ros-controls/ros2_controllers/issues/434>`_, `#975 <https://github.com/ros-controls/ros2_controllers/issues/975>`_, `#899 <https://github.com/ros-controls/ros2_controllers/issues/899>`_, `#1084 <https://github.com/ros-controls/ros2_controllers/issues/1084>`_, `#951 <https://github.com/ros-controls/ros2_controllers/issues/951>`_) (`#1163 <https://github.com/ros-controls/ros2_controllers/issues/1163>`_)
 * Add custom rosdoc2 config for ros2_controllers metapackage (`#1100 <https://github.com/ros-controls/ros2_controllers/issues/1100>`_) (`#1143 <https://github.com/ros-controls/ros2_controllers/issues/1143>`_)
 * Contributors: mergify[bot]
