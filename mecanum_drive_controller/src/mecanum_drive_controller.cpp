@@ -305,6 +305,9 @@ controller_interface::CallbackReturn MecanumDriveController::on_deactivate(
 
 controller_interface::return_type MecanumDriveController::update_reference_from_subscribers()
 {
+  // Move functionality to the `update_and_write_commands` because of the missing arguments in
+  // humble - otherwise issues with multiple time-sources might happen when working with simulators
+
   return controller_interface::return_type::OK;
 }
 
