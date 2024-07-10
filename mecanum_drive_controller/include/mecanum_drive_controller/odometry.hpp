@@ -48,8 +48,8 @@ public:
   /// \param time      Current time
   /// \return true if the odometry is actually updated
   bool update(
-    const double wheel_front_left_vel, const double wheel_rear_left_vel, const double wheel_rear_right_vel,
-    const double wheel_front_right_vel, const double dt);
+    const double wheel_front_left_vel, const double wheel_rear_left_vel,
+    const double wheel_rear_right_vel, const double wheel_front_right_vel, const double dt);
 
   /// \return position (x component) [m]
   double getX() const { return position_x_in_base_frame_; }
@@ -72,7 +72,8 @@ public:
   /// \param sum_of_robot_center_projection_on_X_Y_axis Wheels geometric param
   /// (used in mecanum wheels' ik) [m]
   /// \param wheels_radius  Wheels radius [m]
-  void setWheelsParams(const double sum_of_robot_center_projection_on_X_Y_axis, const double wheels_radius);
+  void setWheelsParams(
+    const double sum_of_robot_center_projection_on_X_Y_axis, const double wheels_radius);
 
 private:
   /// Current timestamp:

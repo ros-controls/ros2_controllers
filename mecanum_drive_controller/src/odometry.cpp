@@ -45,8 +45,8 @@ void Odometry::init(
 }
 
 bool Odometry::update(
-  const double wheel_front_left_vel, const double wheel_rear_left_vel, const double wheel_rear_right_vel,
-  const double wheel_front_right_vel, const double dt)
+  const double wheel_front_left_vel, const double wheel_rear_left_vel,
+  const double wheel_rear_right_vel, const double wheel_front_right_vel, const double dt)
 {
   /// We cannot estimate the speed with very small time intervals:
   // const double dt = (time - timestamp_).toSec();
