@@ -261,10 +261,24 @@ controller_interface::return_type JointTrajectoryController::update(
           // Update PIDs
           for (auto i = 0ul; i < dof_; ++i)
           {
+            // If effort interface only, add desired effort as feed forward
+            // If velocity interface, ignore desired effort
             tmp_command_[i] = (state_desired_.velocities[i] * ff_velocity_scale_[i]) +
+                              (has_effort_command_interface_ ? state_desired_.effort[i] : 0.0) +
                               pids_[i]->computeCommand(
                                 state_error_.positions[i], state_error_.velocities[i],
                                 (uint64_t)period.nanoseconds());
+          }
+        }
+        else
+        {
+          if (has_position_command_interface_ && has_effort_command_interface_)
+          {
+            for (auto i = 0ul; i < dof_; ++i)
+            {
+              // If position and effort command interfaces, only pass desired effort
+              tmp_command_[i] = state_desired_.effort[i];
+            }
           }
         }
 
@@ -427,6 +441,11 @@ void JointTrajectoryController::read_state_from_state_interfaces(JointTrajectory
     state.velocities.clear();
     state.accelerations.clear();
   }
+  // No state interface for now, use command interface
+  if (has_effort_command_interface_)
+  {
+    assign_point_from_interface(state.effort, joint_command_interface_[3]);
+  }
 }
 
 bool JointTrajectoryController::read_state_from_command_interfaces(JointTrajectoryPoint & state)
@@ -493,6 +512,20 @@ bool JointTrajectoryController::read_state_from_command_interfaces(JointTrajecto
   else
   {
     state.accelerations.clear();
+  }
+
+  // Effort state always comes from last command
+  if (has_effort_command_interface_)
+  {
+    if (interface_has_values(joint_command_interface_[3]))
+    {
+      assign_point_from_interface(state.effort, joint_command_interface_[3]);
+    }
+    else
+    {
+      state.effort.clear();
+      has_values = false;
+    }
   }
 
   return has_values;
@@ -689,13 +722,14 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   use_closed_loop_pid_adapter_ =
     (has_velocity_command_interface_ && params_.command_interfaces.size() == 1 &&
      !params_.open_loop_control) ||
-    has_effort_command_interface_;
+    (has_effort_command_interface_ && params_.command_interfaces.size() == 1);
+
+  tmp_command_.resize(dof_, 0.0);
 
   if (use_closed_loop_pid_adapter_)
   {
     pids_.resize(dof_);
     ff_velocity_scale_.resize(dof_);
-    tmp_command_.resize(dof_, 0.0);
 
     update_pids();
   }
@@ -750,15 +784,17 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     return CallbackReturn::FAILURE;
   }
 
-  // effort is always used alone so no need for size check
+  // effort only or effort and position command interfaces require position and velocity state
   if (
-    has_effort_command_interface_ &&
+    has_effort_command_interface_  &&
+    (params_.command_interfaces.size() == 1 ||
+     (params_.command_interfaces.size() == 2 && has_position_command_interface_)) &&
     (!has_velocity_state_interface_ || !has_position_state_interface_))
   {
     RCLCPP_ERROR(
       logger,
-      "'effort' command interface can only be used alone if 'velocity' and "
-      "'position' state interfaces are present");
+      "'effort' command interface can only be used alone or with 'position' command interface "
+      "if 'velocity' and 'position' state interfaces are present");
     return CallbackReturn::FAILURE;
   }
 
@@ -1217,6 +1253,10 @@ void JointTrajectoryController::compute_error_for_joint(
   {
     error.accelerations[index] = desired.accelerations[index] - current.accelerations[index];
   }
+  if (has_effort_command_interface_)
+  {
+    error.effort[index] = desired.effort[index];
+  }
 }
 
 void JointTrajectoryController::fill_partial_goal(
@@ -1466,10 +1506,11 @@ bool JointTrajectoryController::validate_trajectory_msg(
       return false;
     }
     // reject effort entries
-    if (!points[i].effort.empty())
+    if (!has_effort_command_interface_ && !points[i].effort.empty())
     {
       RCLCPP_ERROR(
-        get_node()->get_logger(), "Trajectories with effort fields are currently not supported.");
+        get_node()->get_logger(), "Trajectories with effort fields are only supported for "
+          "controllers using the 'effort' command interface.");
       return false;
     }
   }
@@ -1540,6 +1581,7 @@ void JointTrajectoryController::resize_joint_trajectory_point(
   {
     point.accelerations.resize(size, 0.0);
   }
+  point.effort.resize(size, 0.0);
 }
 
 void JointTrajectoryController::resize_joint_trajectory_point_command(
@@ -1607,6 +1649,10 @@ void JointTrajectoryController::init_hold_position_msg()
   {
     // add velocity, so that trajectory sampling returns acceleration points in any case
     hold_position_msg_ptr_->points[0].accelerations.resize(dof_, 0.0);
+  }
+  if (has_effort_command_interface_)
+  {
+    hold_position_msg_ptr_->points[0].effort.resize(dof_, 0.0);
   }
 }
 
