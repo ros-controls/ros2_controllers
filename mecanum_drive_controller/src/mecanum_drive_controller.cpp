@@ -303,12 +303,17 @@ controller_interface::CallbackReturn MecanumDriveController::on_deactivate(
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::return_type MecanumDriveController::update_reference_from_subscribers(
-  const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
+controller_interface::return_type MecanumDriveController::update_reference_from_subscribers()
 {
+  return controller_interface::return_type::OK;
+}
+
+controller_interface::return_type MecanumDriveController::update_and_write_commands(
+  const rclcpp::Time & time, const rclcpp::Duration & period)
+{
+  // Moved from update_reference_from_subscribers
   auto current_ref = *(input_ref_.readFromRT());
   const auto age_of_last_command = time - (current_ref)->header.stamp;
-
   // send message only if there is no timeout
   if (age_of_last_command <= ref_timeout_ || ref_timeout_ == rclcpp::Duration::from_seconds(0))
   {
@@ -344,12 +349,6 @@ controller_interface::return_type MecanumDriveController::update_reference_from_
     }
   }
 
-  return controller_interface::return_type::OK;
-}
-
-controller_interface::return_type MecanumDriveController::update_and_write_commands(
-  const rclcpp::Time & time, const rclcpp::Duration & period)
-{
   // FORWARD KINEMATICS (odometry).
   const double wheel_front_left_state_vel = state_interfaces_[FRONT_LEFT].get_value();
   const double wheel_front_right_state_vel = state_interfaces_[FRONT_RIGHT].get_value();

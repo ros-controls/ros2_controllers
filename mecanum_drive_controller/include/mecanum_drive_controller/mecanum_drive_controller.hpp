@@ -76,8 +76,7 @@ public:
     const rclcpp_lifecycle::State & previous_state) override;
 
   MECANUM_DRIVE_CONTROLLER__VISIBILITY_PUBLIC
-  controller_interface::return_type update_reference_from_subscribers(
-    const rclcpp::Time & time, const rclcpp::Duration & period) override;
+  controller_interface::return_type update_reference_from_subscribers() override;
 
   MECANUM_DRIVE_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::return_type update_and_write_commands(
