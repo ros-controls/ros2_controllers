@@ -2,6 +2,29 @@
 Changelog for package pid_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.11.0 (2024-07-09)
+-------------------
+* added changes corresponding to the logger and clock propagation in ResourceManager (`#1184 <https://github.com/ros-controls/ros2_controllers/issues/1184>`_)
+* Contributors: Sai Kishor Kothakota
+
+4.10.0 (2024-07-01)
+-------------------
+
+4.9.0 (2024-06-05)
+------------------
+
+4.8.0 (2024-05-14)
+------------------
+* [PID] Add example yaml to docs (`#951 <https://github.com/ros-controls/ros2_controllers/issues/951>`_)
+* Contributors: Christoph Fröhlich
+
+4.7.0 (2024-03-22)
+------------------
+* Fix pid_controller build on ROS 2 Rolling on Ubuntu 24.04 (`#1084 <https://github.com/ros-controls/ros2_controllers/issues/1084>`_)
+* Added conditioning to have rolling tags compilable in older versions (`#1071 <https://github.com/ros-controls/ros2_controllers/issues/1071>`_)
+* Fix usage of visibility macros (`#1039 <https://github.com/ros-controls/ros2_controllers/issues/1039>`_)
+* Contributors: Chris Lalancette, Sai Kishor Kothakota, Silvio Traversaro
+
 4.6.0 (2024-02-12)
 ------------------
 * Add test_depend on `hardware_interface_testing` (`#1018 <https://github.com/ros-controls/ros2_controllers/issues/1018>`_)

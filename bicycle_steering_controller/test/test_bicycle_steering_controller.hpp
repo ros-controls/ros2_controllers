@@ -251,7 +251,6 @@ protected:
   bool open_loop_ = false;
   unsigned int velocity_rolling_window_size_ = 10;
   bool position_feedback_ = false;
-  bool use_stamped_vel_ = true;
   std::vector<std::string> rear_wheels_names_ = {"rear_wheel_joint"};
   std::vector<std::string> front_wheels_names_ = {"steering_axis_joint"};
   std::vector<std::string> joint_names_ = {rear_wheels_names_[0], front_wheels_names_[0]};
@@ -267,7 +266,7 @@ protected:
 
   std::array<double, 2> joint_state_values_ = {3.3, 0.5};
   std::array<double, 2> joint_command_values_ = {1.1, 2.2};
-  std::array<std::string, 2> joint_reference_interfaces_ = {"linear/velocity", "angular/position"};
+  std::array<std::string, 2> joint_reference_interfaces_ = {"linear/velocity", "angular/velocity"};
   std::string steering_interface_name_ = "position";
 
   // defined in setup

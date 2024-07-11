@@ -140,8 +140,6 @@ protected:
 
   bool subscriber_is_active_ = false;
   rclcpp::Subscription<TwistStamped>::SharedPtr velocity_command_subscriber_ = nullptr;
-  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr
-    velocity_command_unstamped_subscriber_ = nullptr;
 
   realtime_tools::RealtimeBox<std::shared_ptr<TwistStamped>> received_velocity_msg_ptr_{nullptr};
 

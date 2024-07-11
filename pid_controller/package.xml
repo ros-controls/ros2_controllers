@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>pid_controller</name>
-  <version>4.6.0</version>
+  <version>4.11.0</version>
   <description>Controller based on PID implememenation from control_toolbox package.</description>
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
   <maintainer email="denis.stogl@stoglrobotics.de">Denis Štogl</maintainer>
@@ -14,6 +14,7 @@
   <build_depend>generate_parameter_library</build_depend>
 
   <depend>angles</depend>
+  <depend>backward_ros</depend>
   <depend>control_msgs</depend>
   <depend>control_toolbox</depend>
   <depend>controller_interface</depend>

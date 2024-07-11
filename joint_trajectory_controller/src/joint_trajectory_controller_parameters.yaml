@@ -105,16 +105,6 @@ joint_trajectory_controller:
       description: "Type of the plugin for the trajectory controller",
       read_only: true,
     }
-  gains:
-    __map_joints:
-      angle_wraparound:
-        {
-          type: bool,
-          default_value: false,
-          description:
-            "[deprecated] For joints that wrap around (ie. are continuous).
-            Normalizes position-error to -pi to pi.",
-        }
   constraints:
     stopped_velocity_tolerance:
       {

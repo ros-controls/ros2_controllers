@@ -62,6 +62,10 @@ if(BUILD_TESTING)
   target_link_libraries(test_trajectory joint_trajectory_controller)
   target_compile_definitions(test_trajectory PRIVATE _USE_MATH_DEFINES)
 
+  ament_add_gmock(test_tolerances test/test_tolerances.cpp)
+  target_link_libraries(test_tolerances joint_trajectory_controller)
+  target_compile_definitions(test_tolerances PRIVATE _USE_MATH_DEFINES)
+
   ament_add_gmock(test_trajectory_controller
     test/test_trajectory_controller.cpp)
   set_tests_properties(test_trajectory_controller PROPERTIES TIMEOUT 220)

@@ -19,11 +19,17 @@ tricycle_controller:
     type: double,
     default_value: 0.0,
     description: "Shortest distance between the front wheel and the rear axle. If this parameter is wrong, the robot will not behave correctly in curves.",
+    validation: {
+      gt<>: [0.0]
+    }
   }
   wheel_radius: {
     type: double,
     default_value: 0.0,
     description: "Radius of a wheel, i.e., wheels size, used for transformation of linear velocity into wheel rotations. If this parameter is wrong the robot will move faster or slower then expected.",
+    validation: {
+      gt<>: [0.0]
+    }
   }
   odom_frame_id: {
     type: string,
@@ -77,11 +83,6 @@ tricycle_controller:
     validation: {
       gt<>: [0]
     }
-  }
-  use_stamped_vel: {
-    type: bool,
-    default_value: true,
-    description: "Use stamp from input velocity message to calculate how old the command actually is.",
   }
   traction:
     # "The positive limit will be applied to both directions. Setting different limits for positive "
