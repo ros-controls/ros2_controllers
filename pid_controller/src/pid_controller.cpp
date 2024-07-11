@@ -190,6 +190,43 @@ controller_interface::CallbackReturn PidController::on_configure(
     auto measured_state_callback =
       [&](const std::shared_ptr<ControllerMeasuredStateMsg> state_msg) -> void
     {
+      if (state_msg->dof_names.size() != reference_and_state_dof_names_.size())
+      {
+        RCLCPP_ERROR(
+          get_node()->get_logger(),
+          "Size of input data names (%zu) is not matching the expected size (%zu).",
+          state_msg->dof_names.size(), reference_and_state_dof_names_.size());
+        return;
+      }
+      if (state_msg->values.size() != reference_and_state_dof_names_.size())
+      {
+        RCLCPP_ERROR(
+          get_node()->get_logger(),
+          "Size of input data values (%zu) is not matching the expected size (%zu).",
+          state_msg->values.size(), reference_and_state_dof_names_.size());
+        return;
+      }
+
+      if (!state_msg->values_dot.empty())
+      {
+        if (params_.reference_and_state_interfaces.size() != 2)
+        {
+          RCLCPP_ERROR(
+            get_node()->get_logger(),
+            "The reference_and_state_interfaces parameter has to have two interfaces [the "
+            "interface and the derivative of the interface], in order to use the values_dot "
+            "field.");
+          return;
+        }
+        if (state_msg->values_dot.size() != reference_and_state_dof_names_.size())
+        {
+          RCLCPP_ERROR(
+            get_node()->get_logger(),
+            "Size of input data values_dot (%zu) is not matching the expected size (%zu).",
+            state_msg->values_dot.size(), reference_and_state_dof_names_.size());
+          return;
+        }
+      }
       // TODO(destogl): Sort the input values based on joint and interface names
       measured_state_.writeFromNonRT(state_msg);
     };
