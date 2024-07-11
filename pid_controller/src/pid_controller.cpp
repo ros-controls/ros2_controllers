@@ -403,7 +403,7 @@ std::vector<hardware_interface::CommandInterface> PidController::on_export_refer
   return reference_interfaces;
 }
 
-std::vector<hardware_interface::CommandInterface> PidController::on_export_state_interfaces()
+std::vector<hardware_interface::StateInterface> PidController::on_export_state_interfaces()
 {
   std::vector<hardware_interface::StateInterface> state_interfaces;
   state_interfaces.reserve(state_interfaces_values_.size());
@@ -497,6 +497,12 @@ controller_interface::return_type PidController::update_and_write_commands(
     {
       measured_state_values_[i] = state_interfaces_[i].get_value();
     }
+  }
+
+  // Fill the information of the exported state interfaces
+  for (size_t i = 0; i < measured_state_values_.size(); ++i)
+  {
+    state_interfaces_values_[i] = measured_state_values_[i];
   }
 
   for (size_t i = 0; i < dof_; ++i)
