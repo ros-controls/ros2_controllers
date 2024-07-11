@@ -322,9 +322,6 @@ controller_interface::CallbackReturn GripperActionController::on_activate(
     }
   }
 
-  // Hardware interface adapter
-  //  hw_iface_adapter_.init(joint_command_interface_, speed_interface_, effort_interface_,
-  //  get_node());
 
   // Command - non RT version
   command_struct_.position_cmd_ = joint_position_state_interface_->get().get_value();
