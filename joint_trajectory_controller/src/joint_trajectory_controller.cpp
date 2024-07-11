@@ -786,7 +786,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
 
   // effort only or effort and position command interfaces require position and velocity state
   if (
-    has_effort_command_interface_  &&
+    has_effort_command_interface_ &&
     (params_.command_interfaces.size() == 1 ||
      (params_.command_interfaces.size() == 2 && has_position_command_interface_)) &&
     (!has_velocity_state_interface_ || !has_position_state_interface_))
@@ -1509,8 +1509,9 @@ bool JointTrajectoryController::validate_trajectory_msg(
     if (!has_effort_command_interface_ && !points[i].effort.empty())
     {
       RCLCPP_ERROR(
-        get_node()->get_logger(), "Trajectories with effort fields are only supported for "
-          "controllers using the 'effort' command interface.");
+        get_node()->get_logger(),
+        "Trajectories with effort fields are only supported for "
+        "controllers using the 'effort' command interface.");
       return false;
     }
   }

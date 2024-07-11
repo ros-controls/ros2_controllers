@@ -658,9 +658,11 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_angle_wraparoun
     {{0.3, 0.4, 0.6}}, {{1.7, 1.8, 1.9}}, {{2.10, 2.11, 2.12}}};
   std::vector<std::vector<double>> empty_effort;
   // *INDENT-ON*
-  bool has_effort_command_interface = std::find(command_interface_types_.begin(),
-    command_interface_types_.end(), "effort") != command_interface_types_.end();
-  publish(time_from_start, points, rclcpp::Time(), {}, {},
+  bool has_effort_command_interface =
+    std::find(command_interface_types_.begin(), command_interface_types_.end(), "effort") !=
+    command_interface_types_.end();
+  publish(
+    time_from_start, points, rclcpp::Time(), {}, {},
     has_effort_command_interface ? effort : empty_effort);
   traj_controller_->wait_for_trajectory(executor);
 
@@ -746,7 +748,7 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_angle_wraparoun
       EXPECT_NEAR(
         k_p * (state_reference.positions[2] - INITIAL_POS_JOINTS[2]) + state_reference.effort[2],
         joint_eff_[2], k_p * COMMON_THRESHOLD);
-      }
+    }
   }
 
   executor.cancel();
@@ -864,7 +866,8 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_angle_wraparound)
       EXPECT_GT(0.0, joint_eff_[2]);
       EXPECT_NEAR(
         k_p * (state_reference.positions[2] - INITIAL_POS_JOINTS[2] - 2 * M_PI) +
-        state_reference.effort[2], joint_eff_[2], k_p * COMMON_THRESHOLD);
+          state_reference.effort[2],
+        joint_eff_[2], k_p * COMMON_THRESHOLD);
     }
   }
 
@@ -1434,8 +1437,9 @@ TEST_P(TrajectoryControllerTestParameterized, invalid_message)
   // Effort is not supported in trajectory message
   traj_msg = good_traj_msg;
   traj_msg.points[0].effort = {1.0, 2.0, 3.0};
-  bool has_effort_command_interface = std::find(command_interface_types_.begin(),
-    command_interface_types_.end(), "effort") != command_interface_types_.end();
+  bool has_effort_command_interface =
+    std::find(command_interface_types_.begin(), command_interface_types_.end(), "effort") !=
+    command_interface_types_.end();
   if (has_effort_command_interface)
   {
     EXPECT_TRUE(traj_controller_->validate_trajectory_msg(traj_msg));
@@ -2087,9 +2091,11 @@ TEST_P(TrajectoryControllerTestParameterized, test_goal_tolerances_fail)
     {{0.0, 0.0, 0.0}}, {{1.0, 1.0, 1.0}}, {{2.0, 2.0, 2.0}}};
   std::vector<std::vector<double>> empty_effort;
   // *INDENT-ON*
-  bool has_effort_command_interface = std::find(command_interface_types_.begin(),
-    command_interface_types_.end(), "effort") != command_interface_types_.end();
-  publish(time_from_start, points, rclcpp::Time(0, 0, RCL_STEADY_TIME), {}, points_velocities,
+  bool has_effort_command_interface =
+    std::find(command_interface_types_.begin(), command_interface_types_.end(), "effort") !=
+    command_interface_types_.end();
+  publish(
+    time_from_start, points, rclcpp::Time(0, 0, RCL_STEADY_TIME), {}, points_velocities,
     has_effort_command_interface ? points_effort : empty_effort);
   traj_controller_->wait_for_trajectory(executor);
   auto end_time = updateControllerAsync(rclcpp::Duration(4 * FIRST_POINT_TIME));
@@ -2168,7 +2174,8 @@ INSTANTIATE_TEST_SUITE_P(
   PositionEffortTrajectoryControllers, TrajectoryControllerTestParameterized,
   ::testing::Values(
     std::make_tuple(
-      std::vector<std::string>({"position", "effort"}), std::vector<std::string>({"position", "velocity"})),
+      std::vector<std::string>({"position", "effort"}),
+      std::vector<std::string>({"position", "velocity"})),
     std::make_tuple(
       std::vector<std::string>({"position", "effort"}),
       std::vector<std::string>({"position", "velocity", "acceleration"}))));
