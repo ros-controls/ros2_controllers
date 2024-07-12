@@ -322,7 +322,6 @@ controller_interface::CallbackReturn GripperActionController::on_activate(
     }
   }
 
-
   // Command - non RT version
   command_struct_.position_cmd_ = joint_position_state_interface_->get().get_value();
   command_struct_.max_effort_ = params_.max_effort;
