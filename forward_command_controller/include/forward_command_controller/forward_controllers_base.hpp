@@ -80,6 +80,11 @@ protected:
    */
   virtual void declare_parameters() = 0;
 
+  virtual rclcpp::CallbackGroup::SharedPtr get_callback_group()
+  {
+    return get_node()->get_node_base_interface()->get_default_callback_group();
+  }
+
   /**
    * Derived controllers have to read parameters in this method and set `command_interface_types_`
    * variable. The variable is then used to propagate the command interface configuration to

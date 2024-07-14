@@ -204,7 +204,25 @@ TEST_F(JointGroupVelocityControllerTest, CommandCallbackTest)
   command_pub->publish(command_msg);
 
   // wait for command message to be passed
-  ASSERT_EQ(wait_for(controller_->joints_command_subscriber_), rclcpp::WaitResultKind::Ready);
+  rclcpp::WaitSet wait_set;
+  wait_set.add_subscription(controller_->joints_command_subscriber_);
+  const auto timeout = std::chrono::seconds(10);
+  const auto wait_result = wait_set.wait(timeout);
+  ASSERT_EQ(wait_result.kind(), rclcpp::WaitResultKind::Ready);
+  if (wait_result.kind() == rclcpp::WaitResultKind::Ready)
+  {
+    if (wait_result.get_wait_set().get_rcl_wait_set().subscriptions[0U])
+    {
+      std_msgs::msg::Float64MultiArray msg;
+      rclcpp::MessageInfo msg_info;
+      if (controller_->joints_command_subscriber_->take(msg, msg_info))
+      {
+        std::shared_ptr<void> type_erased_msg =
+          std::make_shared<std_msgs::msg::Float64MultiArray>(msg);
+        controller_->joints_command_subscriber_->handle_message(type_erased_msg, msg_info);
+      }
+    }
+  }
 
   // process callbacks
   rclcpp::spin_some(controller_->get_node()->get_node_base_interface());

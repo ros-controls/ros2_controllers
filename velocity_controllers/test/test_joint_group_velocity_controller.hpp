@@ -35,6 +35,15 @@ class FriendJointGroupVelocityController : public velocity_controllers::JointGro
   FRIEND_TEST(JointGroupVelocityControllerTest, WrongCommandCheckTest);
   FRIEND_TEST(JointGroupVelocityControllerTest, CommandCallbackTest);
   FRIEND_TEST(JointGroupVelocityControllerTest, StopJointsOnDeactivateTest);
+
+  rclcpp::CallbackGroup::SharedPtr get_callback_group() override
+  {
+    callback_group_ =
+      get_node()->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive, false);
+    return callback_group_;
+  }
+
+  rclcpp::CallbackGroup::SharedPtr callback_group_;
 };
 
 class JointGroupVelocityControllerTest : public ::testing::Test
