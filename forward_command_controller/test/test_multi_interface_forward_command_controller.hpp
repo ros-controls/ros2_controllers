@@ -50,6 +50,11 @@ class FriendMultiInterfaceForwardCommandController
   FRIEND_TEST(MultiInterfaceForwardCommandControllerTest, NoCommandCheckTest);
   FRIEND_TEST(MultiInterfaceForwardCommandControllerTest, CommandCallbackTest);
   FRIEND_TEST(MultiInterfaceForwardCommandControllerTest, ActivateDeactivateCommandsResetSuccess);
+
+  rclcpp::CallbackGroup::SharedPtr get_callback_group() override
+  {
+    return get_node()->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive, false);
+  }
 };
 
 class MultiInterfaceForwardCommandControllerTest : public ::testing::Test
