@@ -2,6 +2,17 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.25.0 (2024-07-09)
+-------------------
+* Fix steering controllers library kinematics (`#1150 <https://github.com/ros-controls/ros2_controllers/issues/1150>`_) (`#1195 <https://github.com/ros-controls/ros2_controllers/issues/1195>`_)
+* [Steering controllers library] Reference interfaces are body twist (`#1168 <https://github.com/ros-controls/ros2_controllers/issues/1168>`_) (`#1174 <https://github.com/ros-controls/ros2_controllers/issues/1174>`_)
+* [STEERING] Add missing `tan` call for ackermann (`#1117 <https://github.com/ros-controls/ros2_controllers/issues/1117>`_) (`#1177 <https://github.com/ros-controls/ros2_controllers/issues/1177>`_)
+* Fix steering controllers library code documentation and naming (`#1149 <https://github.com/ros-controls/ros2_controllers/issues/1149>`_) (`#1165 <https://github.com/ros-controls/ros2_controllers/issues/1165>`_)
+* Add mobile robot kinematics 101 and improve steering library docs (`#954 <https://github.com/ros-controls/ros2_controllers/issues/954>`_) (`#1161 <https://github.com/ros-controls/ros2_controllers/issues/1161>`_)
+* Fix deprecation warning (`#1155 <https://github.com/ros-controls/ros2_controllers/issues/1155>`_)
+* Fix correct usage of angular velocity in update_odometry() function (`#1118 <https://github.com/ros-controls/ros2_controllers/issues/1118>`_) (`#1154 <https://github.com/ros-controls/ros2_controllers/issues/1154>`_)
+* Contributors: Christoph Fröhlich, mergify[bot]
+
 3.24.0 (2024-05-14)
 -------------------
 * Deprecate non-stamped twist for tricycle_controller and steering_controllers (`#1093 <https://github.com/ros-controls/ros2_controllers/issues/1093>`_) (`#1124 <https://github.com/ros-controls/ros2_controllers/issues/1124>`_)

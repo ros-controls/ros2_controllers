@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>ros2_controllers_test_nodes</name>
-  <version>3.24.0</version>
+  <version>3.25.0</version>
   <description>Demo nodes for showing and testing functionalities of the ros2_control framework.</description>
 
   <maintainer email="denis@stoglrobotics.de">Denis Štogl</maintainer>
