@@ -32,12 +32,28 @@ using hardware_interface::LoanedCommandInterface;
 
 namespace
 {
-rclcpp::WaitResultKind wait_for(rclcpp::SubscriptionBase::SharedPtr subscription)
+template <typename T>
+void wait_for_and_process_callback(
+  rclcpp::Subscription<std_msgs::msg::Float64MultiArray>::SharedPtr subscription)
 {
   rclcpp::WaitSet wait_set;
   wait_set.add_subscription(subscription);
   const auto timeout = std::chrono::seconds(10);
-  return wait_set.wait(timeout).kind();
+  const auto wait_result = wait_set.wait(timeout);
+  ASSERT_EQ(wait_result.kind(), rclcpp::WaitResultKind::Ready);
+  if (wait_result.kind() == rclcpp::WaitResultKind::Ready)
+  {
+    if (wait_result.get_wait_set().get_rcl_wait_set().subscriptions[0U])
+    {
+      T msg;
+      rclcpp::MessageInfo msg_info;
+      if (subscription->take(msg, msg_info))
+      {
+        std::shared_ptr<void> type_erased_msg = std::make_shared<T>(msg);
+        subscription->handle_message(type_erased_msg, msg_info);
+      }
+    }
+  }
 }
 }  // namespace
 
@@ -204,25 +220,8 @@ TEST_F(JointGroupVelocityControllerTest, CommandCallbackTest)
   command_pub->publish(command_msg);
 
   // wait for command message to be passed
-  rclcpp::WaitSet wait_set;
-  wait_set.add_subscription(controller_->joints_command_subscriber_);
-  const auto timeout = std::chrono::seconds(10);
-  const auto wait_result = wait_set.wait(timeout);
-  ASSERT_EQ(wait_result.kind(), rclcpp::WaitResultKind::Ready);
-  if (wait_result.kind() == rclcpp::WaitResultKind::Ready)
-  {
-    if (wait_result.get_wait_set().get_rcl_wait_set().subscriptions[0U])
-    {
-      std_msgs::msg::Float64MultiArray msg;
-      rclcpp::MessageInfo msg_info;
-      if (controller_->joints_command_subscriber_->take(msg, msg_info))
-      {
-        std::shared_ptr<void> type_erased_msg =
-          std::make_shared<std_msgs::msg::Float64MultiArray>(msg);
-        controller_->joints_command_subscriber_->handle_message(type_erased_msg, msg_info);
-      }
-    }
-  }
+  wait_for_and_process_callback<std_msgs::msg::Float64MultiArray>(
+    controller_->joints_command_subscriber_);
 
   // process callbacks
   rclcpp::spin_some(controller_->get_node()->get_node_base_interface());

@@ -38,12 +38,8 @@ class FriendJointGroupVelocityController : public velocity_controllers::JointGro
 
   rclcpp::CallbackGroup::SharedPtr get_callback_group() override
   {
-    callback_group_ =
-      get_node()->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive, false);
-    return callback_group_;
+    return get_node()->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive, false);
   }
-
-  rclcpp::CallbackGroup::SharedPtr callback_group_;
 };
 
 class JointGroupVelocityControllerTest : public ::testing::Test
