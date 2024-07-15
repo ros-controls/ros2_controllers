@@ -796,10 +796,12 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   init_hold_position_msg();
 
   // create subscriber and publishers
+  rclcpp::SubscriptionOptions options;
+  options.callback_group = get_callback_group();
   joint_command_subscriber_ =
     get_node()->create_subscription<trajectory_msgs::msg::JointTrajectory>(
       "~/joint_trajectory", rclcpp::SystemDefaultsQoS(),
-      std::bind(&JointTrajectoryController::topic_callback, this, std::placeholders::_1));
+      std::bind(&JointTrajectoryController::topic_callback, this, std::placeholders::_1), options);
 
   publisher_ = get_node()->create_publisher<ControllerStateMsg>(
     "~/controller_state", rclcpp::SystemDefaultsQoS());
