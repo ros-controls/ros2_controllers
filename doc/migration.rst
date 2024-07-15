@@ -1,8 +1,8 @@
 :github_url: https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/doc/migration.rst
 
-Migration Guides: Humble to Iron
+Migration Guides: Galactic to Humble
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-This list summarizes important changes between Humble (previous) and Iron (current) releases, where changes to user code might be necessary.
+This list summarizes important changes between Galactic (previous) and Humble (current) releases, where changes to user code might be necessary.
 
 .. note::
 
