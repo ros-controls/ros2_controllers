@@ -45,6 +45,11 @@ class FriendForwardCommandController : public forward_command_controller::Forwar
   FRIEND_TEST(ForwardCommandControllerTest, NoCommandCheckTest);
   FRIEND_TEST(ForwardCommandControllerTest, CommandCallbackTest);
   FRIEND_TEST(ForwardCommandControllerTest, ActivateDeactivateCommandsResetSuccess);
+
+  rclcpp::CallbackGroup::SharedPtr get_callback_group() override
+  {
+    return get_node()->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive, false);
+  }
 };
 
 class ForwardCommandControllerTest : public ::testing::Test
