@@ -79,8 +79,6 @@ public:
    * @brief wait_for_command blocks until a new ControllerCommandMsg is received.
    * Requires that the executor is not spinned elsewhere between the
    *  message publication and the call to this function.
-   *
-   * @return true if new ControllerCommandMsg msg was received, false if timeout.
    */
   void wait_for_command(
     rclcpp::Executor & executor,

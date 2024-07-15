@@ -102,8 +102,6 @@ public:
    * @brief wait_for_trajectory block until a new JointTrajectory is received.
    * Requires that the executor is not spinned elsewhere between the
    *  message publication and the call to this function
-   *
-   * @return true if new JointTrajectory msg was received, false if timeout
    */
   void wait_for_trajectory(
     rclcpp::Executor & executor,

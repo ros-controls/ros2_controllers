@@ -57,8 +57,6 @@ public:
    * @brief wait_for_twist block until a new twist is received.
    * Requires that the executor is not spinned elsewhere between the
    *  message publication and the call to this function
-   *
-   * @return true if new twist msg was received, false if timeout
    */
   void wait_for_twist(
     rclcpp::Executor & executor,
