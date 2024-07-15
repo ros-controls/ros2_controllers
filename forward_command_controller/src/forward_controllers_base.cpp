@@ -58,12 +58,9 @@ controller_interface::CallbackReturn ForwardControllersBase::on_configure(
     return ret;
   }
 
-  rclcpp::SubscriptionOptions options;
-  options.callback_group = get_callback_group();
-
   joints_command_subscriber_ = get_node()->create_subscription<CmdType>(
     "~/commands", rclcpp::SystemDefaultsQoS(),
-    [this](const CmdType::SharedPtr msg) { rt_command_ptr_.writeFromNonRT(msg); }, options);
+    [this](const CmdType::SharedPtr msg) { rt_command_ptr_.writeFromNonRT(msg); });
 
   RCLCPP_INFO(get_node()->get_logger(), "configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
