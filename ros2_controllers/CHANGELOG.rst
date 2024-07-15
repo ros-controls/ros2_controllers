@@ -2,6 +2,11 @@
 Changelog for package ros2_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.36.0 (2024-07-09)
+-------------------
+* Add custom rosdoc2 config for ros2_controllers metapackage (`#1100 <https://github.com/ros-controls/ros2_controllers/issues/1100>`_) (`#1142 <https://github.com/ros-controls/ros2_controllers/issues/1142>`_)
+* Contributors: mergify[bot]
+
 2.35.0 (2024-05-22)
 -------------------
 

@@ -2,6 +2,12 @@
 Changelog for package tricycle_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.36.0 (2024-07-09)
+-------------------
+* [Steering controllers library] Reference interfaces are body twist (`#1168 <https://github.com/ros-controls/ros2_controllers/issues/1168>`_) (`#1173 <https://github.com/ros-controls/ros2_controllers/issues/1173>`_)
+* Fix steering controllers library code documentation and naming (`#1149 <https://github.com/ros-controls/ros2_controllers/issues/1149>`_) (`#1164 <https://github.com/ros-controls/ros2_controllers/issues/1164>`_)
+* Contributors: mergify[bot]
+
 2.35.0 (2024-05-22)
 -------------------
 * Add parameter check for geometric values (backport `#1120 <https://github.com/ros-controls/ros2_controllers/issues/1120>`_) (`#1125 <https://github.com/ros-controls/ros2_controllers/issues/1125>`_)
