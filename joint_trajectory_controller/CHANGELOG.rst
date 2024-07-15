@@ -2,6 +2,12 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.36.0 (2024-07-09)
+-------------------
+* Still fill desired/actual deprecated fields (`#1172 <https://github.com/ros-controls/ros2_controllers/issues/1172>`_)
+* JTC trajectory end time validation fix (`#1090 <https://github.com/ros-controls/ros2_controllers/issues/1090>`_) (`#1140 <https://github.com/ros-controls/ros2_controllers/issues/1140>`_)
+* Contributors: Bence Magyar, mergify[bot]
+
 2.35.0 (2024-05-22)
 -------------------
 * [JTC] Remove unused test code (`#1095 <https://github.com/ros-controls/ros2_controllers/issues/1095>`_) (`#1096 <https://github.com/ros-controls/ros2_controllers/issues/1096>`_)

@@ -16,9 +16,9 @@ Guidelines and Best Practices
 
 .. toctree::
    :titlesonly:
-   :glob:
 
-   *
+   mobile_robot_kinematics.rst
+   writing_new_controller.rst
 
 
 Controllers for Wheeled Mobile Robots
