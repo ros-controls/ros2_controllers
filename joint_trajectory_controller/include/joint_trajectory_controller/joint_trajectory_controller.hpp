@@ -103,11 +103,6 @@ public:
     const rclcpp_lifecycle::State & previous_state) override;
 
 protected:
-  virtual rclcpp::CallbackGroup::SharedPtr get_callback_group()
-  {
-    return get_node()->get_node_base_interface()->get_default_callback_group();
-  }
-
   // To reduce number of variables and to make the code shorter the interfaces are ordered in types
   // as the following constants
   const std::vector<std::string> allowed_interface_types_ = {

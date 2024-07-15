@@ -89,11 +89,6 @@ public:
   using joint_trajectory_controller::JointTrajectoryController::JointTrajectoryController;
   using joint_trajectory_controller::JointTrajectoryController::validate_trajectory_msg;
 
-  rclcpp::CallbackGroup::SharedPtr get_callback_group() override
-  {
-    return get_node()->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive, false);
-  }
-
   controller_interface::CallbackReturn on_configure(
     const rclcpp_lifecycle::State & previous_state) override
   {
@@ -116,26 +111,13 @@ public:
    * @return true if new JointTrajectory msg was received, false if timeout
    */
   bool wait_for_trajectory(
+    rclcpp::Executor & executor,
     const std::chrono::milliseconds & timeout = std::chrono::milliseconds{500})
   {
-    const auto wait_result = joint_cmd_sub_wait_set_.wait(timeout);
-    bool success = wait_result.kind() == rclcpp::WaitResultKind::Ready;
+    bool success = joint_cmd_sub_wait_set_.wait(timeout).kind() == rclcpp::WaitResultKind::Ready;
     if (success)
     {
-      if (wait_result.kind() == rclcpp::WaitResultKind::Ready)
-      {
-        if (wait_result.get_wait_set().get_rcl_wait_set().subscriptions[0U])
-        {
-          trajectory_msgs::msg::JointTrajectory msg;
-          rclcpp::MessageInfo msg_info;
-          if (joint_command_subscriber_->take(msg, msg_info))
-          {
-            std::shared_ptr<void> type_erased_msg =
-              std::make_shared<trajectory_msgs::msg::JointTrajectory>(msg);
-            joint_command_subscriber_->handle_message(type_erased_msg, msg_info);
-          }
-        }
-      }
+      executor.spin_some();
     }
     return success;
   }
@@ -562,7 +544,7 @@ public:
 
   rclcpp::Time waitAndCompareState(
     trajectory_msgs::msg::JointTrajectoryPoint expected_actual,
-    trajectory_msgs::msg::JointTrajectoryPoint expected_desired,
+    trajectory_msgs::msg::JointTrajectoryPoint expected_desired, rclcpp::Executor & executor,
     rclcpp::Duration controller_wait_time, double allowed_delta,
     rclcpp::Time start_time = rclcpp::Time(0, 0, RCL_STEADY_TIME))
   {
@@ -570,7 +552,7 @@ public:
       std::lock_guard<std::mutex> guard(state_mutex_);
       state_msg_.reset();
     }
-    traj_controller_->wait_for_trajectory();
+    traj_controller_->wait_for_trajectory(executor);
     auto end_time = updateControllerAsync(controller_wait_time, start_time);
 
     // get states from class variables

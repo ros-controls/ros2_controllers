@@ -71,7 +71,7 @@ TEST_P(TrajectoryControllerTestParameterized, configure_state_ignores_commands)
     {{0.01, 0.01, 0.01}}, {{0.05, 0.05, 0.05}}, {{0.06, 0.06, 0.06}}};
   // *INDENT-ON*
   publish(time_from_start, points, rclcpp::Time(), {}, points_velocities);
-  traj_controller_->wait_for_trajectory();
+  traj_controller_->wait_for_trajectory(executor);
 
   traj_controller_->update(
     rclcpp::Time(static_cast<uint64_t>(0.5 * 1e9)), rclcpp::Duration::from_seconds(0.5));
@@ -146,7 +146,7 @@ TEST_P(TrajectoryControllerTestParameterized, cleanup)
     {{0.01, 0.01, 0.01}}, {{0.05, 0.05, 0.05}}, {{0.06, 0.06, 0.06}}};
   // *INDENT-ON*
   publish(time_from_start, points, rclcpp::Time(), {}, points_velocities);
-  traj_controller_->wait_for_trajectory();
+  traj_controller_->wait_for_trajectory(executor);
 
   traj_controller_->update(
     rclcpp::Time(static_cast<uint64_t>(0.5 * 1e9)), rclcpp::Duration::from_seconds(0.5));
@@ -204,7 +204,7 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
     {{0.01, 0.01, 0.01}}, {{0.05, 0.05, 0.05}}, {{0.06, 0.06, 0.06}}};
   // *INDENT-ON*
   publish(time_from_start, points, rclcpp::Time(), {}, points_velocities);
-  traj_controller_->wait_for_trajectory();
+  traj_controller_->wait_for_trajectory(executor);
 
   // first update
   traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.1));
@@ -656,7 +656,7 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_angle_wraparoun
     {{3.3, 4.4, 6.6}}, {{7.7, 8.8, 9.9}}, {{10.10, 11.11, 12.12}}};
   // *INDENT-ON*
   publish(time_from_start, points, rclcpp::Time());
-  traj_controller_->wait_for_trajectory();
+  traj_controller_->wait_for_trajectory(executor);
 
   updateControllerAsync(rclcpp::Duration(FIRST_POINT_TIME));
 
@@ -759,7 +759,7 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_angle_wraparound)
     {{0.01, 0.01, 0.01}}, {{0.05, 0.05, 0.05}}, {{0.06, 0.06, 0.06}}};
   // *INDENT-ON*
   publish(time_from_start, points, rclcpp::Time(), {}, points_velocities);
-  traj_controller_->wait_for_trajectory();
+  traj_controller_->wait_for_trajectory(executor);
 
   updateControllerAsync(rclcpp::Duration(FIRST_POINT_TIME));
 
@@ -897,7 +897,7 @@ TEST_P(TrajectoryControllerTestParameterized, no_timeout)
     {{0.01, 0.01, 0.01}}, {{0.05, 0.05, 0.05}}, {{0.06, 0.06, 0.06}}};
   // *INDENT-ON*
   publish(time_from_start, points, rclcpp::Time(0, 0, RCL_STEADY_TIME), {}, points_velocities);
-  traj_controller_->wait_for_trajectory();
+  traj_controller_->wait_for_trajectory(executor);
 
   updateController(rclcpp::Duration(FIRST_POINT_TIME) * 4);
 
@@ -947,7 +947,7 @@ TEST_P(TrajectoryControllerTestParameterized, timeout)
   // *INDENT-ON*
 
   publish(time_from_start, points, rclcpp::Time(0, 0, RCL_STEADY_TIME), {}, points_velocities);
-  traj_controller_->wait_for_trajectory();
+  traj_controller_->wait_for_trajectory(executor);
 
   // update until end of trajectory -> no timeout should have occurred
   updateController(rclcpp::Duration(FIRST_POINT_TIME) * 3);
@@ -1019,7 +1019,7 @@ TEST_P(TrajectoryControllerTestParameterized, velocity_error)
     {{0.1, 0.1, 0.1}}, {{0.2, 0.2, 0.2}}, {{0.3, 0.3, 0.3}}};
   // *INDENT-ON*
   publish(time_from_start, points_positions, rclcpp::Time(), {}, points_velocities);
-  traj_controller_->wait_for_trajectory();
+  traj_controller_->wait_for_trajectory(executor);
 
   updateControllerAsync(rclcpp::Duration(FIRST_POINT_TIME));
 
@@ -1105,7 +1105,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_jumbled_joint_order)
     trajectory_publisher_->publish(traj_msg);
   }
 
-  traj_controller_->wait_for_trajectory();
+  traj_controller_->wait_for_trajectory(executor);
   updateControllerAsync(rclcpp::Duration::from_seconds(dt));
 
   if (traj_controller_->has_position_command_interface())
@@ -1183,7 +1183,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_partial_joint_list)
     trajectory_publisher_->publish(traj_msg);
   }
 
-  traj_controller_->wait_for_trajectory();
+  traj_controller_->wait_for_trajectory(executor);
   updateControllerAsync(rclcpp::Duration::from_seconds(dt));
 
   if (traj_controller_->has_position_command_interface())
@@ -1270,7 +1270,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_partial_joint_list_not_allowe
     trajectory_publisher_->publish(traj_msg);
   }
 
-  traj_controller_->wait_for_trajectory();
+  traj_controller_->wait_for_trajectory(executor);
   // update for 0.5 seconds
   updateControllerAsync(rclcpp::Duration::from_seconds(0.25));
 
@@ -1515,7 +1515,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_trajectory_replace)
   expected_desired.velocities = {points_old_velocities[0].begin(), points_old_velocities[0].end()};
   //  Check that we reached end of points_old trajectory
   auto end_time =
-    waitAndCompareState(expected_actual, expected_desired, rclcpp::Duration(delay), 0.1);
+    waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
 
   RCLCPP_INFO(traj_controller_->get_node()->get_logger(), "Sending new trajectory");
   points_partial_new_velocities[0][0] =
@@ -1530,7 +1530,8 @@ TEST_P(TrajectoryControllerTestParameterized, test_trajectory_replace)
   expected_desired.velocities[1] = 0.0;
   expected_desired.velocities[2] = 0.0;
   expected_actual = expected_desired;
-  waitAndCompareState(expected_actual, expected_desired, rclcpp::Duration(delay), 0.1, end_time);
+  waitAndCompareState(
+    expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1, end_time);
 }
 
 /**
@@ -1554,7 +1555,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_old_trajectory)
   expected_desired = expected_actual;
   //  Check that we reached end of points_old[0] trajectory
   auto end_time =
-    waitAndCompareState(expected_actual, expected_desired, rclcpp::Duration(delay), 0.1);
+    waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
 
   RCLCPP_INFO(traj_controller_->get_node()->get_logger(), "Sending new trajectory in the past");
   //  New trajectory will end before current time
@@ -1563,7 +1564,8 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_old_trajectory)
   expected_actual.positions = {points_old[1].begin(), points_old[1].end()};
   expected_desired = expected_actual;
   publish(time_from_start, points_new, new_traj_start);
-  waitAndCompareState(expected_actual, expected_desired, rclcpp::Duration(delay), 0.1, end_time);
+  waitAndCompareState(
+    expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1, end_time);
 }
 
 TEST_P(TrajectoryControllerTestParameterized, test_ignore_partial_old_trajectory)
@@ -1583,7 +1585,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_partial_old_trajectory
   expected_desired = expected_actual;
   //  Check that we reached end of points_old[0]trajectory
   auto end_time =
-    waitAndCompareState(expected_actual, expected_desired, rclcpp::Duration(delay), 0.1);
+    waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
 
   // send points_new before the old trajectory is finished
   RCLCPP_INFO(
@@ -1594,7 +1596,8 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_partial_old_trajectory
   // it should not have accepted the new goal but finish the old one
   expected_actual.positions = {points_old[1].begin(), points_old[1].end()};
   expected_desired.positions = {points_old[1].begin(), points_old[1].end()};
-  waitAndCompareState(expected_actual, expected_desired, rclcpp::Duration(delay), 0.1, end_time);
+  waitAndCompareState(
+    expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1, end_time);
 }
 
 TEST_P(TrajectoryControllerTestParameterized, test_execute_partial_traj_in_future)
@@ -1627,7 +1630,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_execute_partial_traj_in_futur
   expected_desired = expected_actual;
   //  Check that we reached end of points_old[0]trajectory and are starting points_old[1]
   auto end_time =
-    waitAndCompareState(expected_actual, expected_desired, rclcpp::Duration(delay), 0.1);
+    waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
 
   // Send partial trajectory starting after full trajecotry is complete
   RCLCPP_INFO(traj_controller_->get_node()->get_logger(), "Sending new trajectory in the future");
@@ -1640,7 +1643,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_execute_partial_traj_in_futur
   expected_desired = expected_actual;
 
   waitAndCompareState(
-    expected_actual, expected_desired, rclcpp::Duration(delay * (2 + 2)), 0.1, end_time);
+    expected_actual, expected_desired, executor, rclcpp::Duration(delay * (2 + 2)), 0.1, end_time);
 }
 
 TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_error_updated)
@@ -1672,7 +1675,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_erro
   std::vector<std::vector<double>> points{{first_goal}};
   publish(
     time_from_start, points, rclcpp::Time(0.0, 0.0, RCL_STEADY_TIME), {}, first_goal_velocities);
-  traj_controller_->wait_for_trajectory();
+  traj_controller_->wait_for_trajectory(executor);
   updateControllerAsync(rclcpp::Duration::from_seconds(1.1));
 
   // JTC is executing trajectory in open-loop therefore:
@@ -1687,7 +1690,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_erro
   // Move joint further in the same direction as before (to the second goal)
   points = {{second_goal}};
   publish(time_from_start, points, rclcpp::Time(0, 0, RCL_STEADY_TIME), {}, second_goal_velocities);
-  traj_controller_->wait_for_trajectory();
+  traj_controller_->wait_for_trajectory(executor);
 
   // One the first update(s) there should be a "jump" in opposite direction from command
   // (towards the state value)
@@ -1718,7 +1721,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_erro
   // Move joint back to the first goal
   points = {{first_goal}};
   publish(time_from_start, points, rclcpp::Time(0.0, 0.0, RCL_STEADY_TIME));
-  traj_controller_->wait_for_trajectory();
+  traj_controller_->wait_for_trajectory(executor);
 
   // One the first update(s) there should be a "jump" in the goal direction from command
   // (towards the state value)
@@ -1770,7 +1773,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_no_jump_when_state_tracking_e
                            (time_from_start.sec + time_from_start.nanosec * 1e-9);
   std::vector<std::vector<double>> points{{first_goal}};
   publish(time_from_start, points, rclcpp::Time(0.0, 0.0, RCL_STEADY_TIME));
-  traj_controller_->wait_for_trajectory();
+  traj_controller_->wait_for_trajectory(executor);
   updateControllerAsync(rclcpp::Duration::from_seconds(1.1));
 
   // JTC is executing trajectory in open-loop therefore:
@@ -1785,7 +1788,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_no_jump_when_state_tracking_e
   // Move joint further in the same direction as before (to the second goal)
   points = {{second_goal}};
   publish(time_from_start, points, rclcpp::Time(0.0, 0.0, RCL_STEADY_TIME));
-  traj_controller_->wait_for_trajectory();
+  traj_controller_->wait_for_trajectory(executor);
 
   // One the first update(s) there **should not** be a "jump" in opposite direction from
   // command (towards the state value)
@@ -1814,7 +1817,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_no_jump_when_state_tracking_e
   // Move joint back to the first goal
   points = {{first_goal}};
   publish(time_from_start, points, rclcpp::Time(0.0, 0.0, RCL_STEADY_TIME));
-  traj_controller_->wait_for_trajectory();
+  traj_controller_->wait_for_trajectory(executor);
 
   // One the first update(s) there **should not** be a "jump" in the goal direction from
   // command (towards the state value)
@@ -1985,7 +1988,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_state_tolerances_fail)
     {{0.01, 0.01, 0.01}}, {{0.05, 0.05, 0.05}}, {{0.06, 0.06, 0.06}}};
   // *INDENT-ON*
   publish(time_from_start, points, rclcpp::Time(0, 0, RCL_STEADY_TIME), {}, points_velocities);
-  traj_controller_->wait_for_trajectory();
+  traj_controller_->wait_for_trajectory(executor);
   updateControllerAsync(rclcpp::Duration(FIRST_POINT_TIME));
 
   // it should have aborted and be holding now
@@ -2017,7 +2020,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_goal_tolerances_fail)
     {{0.01, 0.01, 0.01}}, {{0.05, 0.05, 0.05}}, {{0.06, 0.06, 0.06}}};
   // *INDENT-ON*
   publish(time_from_start, points, rclcpp::Time(0, 0, RCL_STEADY_TIME), {}, points_velocities);
-  traj_controller_->wait_for_trajectory();
+  traj_controller_->wait_for_trajectory(executor);
   auto end_time = updateControllerAsync(rclcpp::Duration(4 * FIRST_POINT_TIME));
 
   // it should have aborted and be holding now
