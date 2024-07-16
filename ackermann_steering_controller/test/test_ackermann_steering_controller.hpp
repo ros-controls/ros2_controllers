@@ -76,14 +76,7 @@ public:
   controller_interface::CallbackReturn on_configure(
     const rclcpp_lifecycle::State & previous_state) override
   {
-    auto ret =
-      ackermann_steering_controller::AckermannSteeringController::on_configure(previous_state);
-    // Only if on_configure is successful create subscription
-    if (ret == CallbackReturn::SUCCESS)
-    {
-      ref_subscriber_wait_set_.add_subscription(ref_subscriber_twist_);
-    }
-    return ret;
+    return ackermann_steering_controller::AckermannSteeringController::on_configure(previous_state);
   }
 
   controller_interface::CallbackReturn on_activate(
@@ -97,30 +90,25 @@ public:
    * @brief wait_for_command blocks until a new ControllerReferenceMsg is received.
    * Requires that the executor is not spinned elsewhere between the
    *  message publication and the call to this function.
-   *
-   * @return true if new ControllerReferenceMsg msg was received, false if timeout.
    */
-  bool wait_for_command(
-    rclcpp::Executor & executor, rclcpp::WaitSet & subscriber_wait_set,
-    const std::chrono::milliseconds & timeout = std::chrono::milliseconds{500})
-  {
-    bool success = subscriber_wait_set.wait(timeout).kind() == rclcpp::WaitResultKind::Ready;
-    if (success)
-    {
-      executor.spin_some();
-    }
-    return success;
-  }
-
-  bool wait_for_commands(
+  void wait_for_command(
     rclcpp::Executor & executor,
     const std::chrono::milliseconds & timeout = std::chrono::milliseconds{500})
   {
-    return wait_for_command(executor, ref_subscriber_wait_set_, timeout);
+    auto until = get_node()->get_clock()->now() + timeout;
+    while (get_node()->get_clock()->now() < until)
+    {
+      executor.spin_some();
+      std::this_thread::sleep_for(std::chrono::microseconds(10));
+    }
   }
 
-private:
-  rclcpp::WaitSet ref_subscriber_wait_set_;
+  void wait_for_commands(
+    rclcpp::Executor & executor,
+    const std::chrono::milliseconds & timeout = std::chrono::milliseconds{500})
+  {
+    wait_for_command(executor, timeout);
+  }
 };
 
 // We are using template class here for easier reuse of Fixture in specializations of controllers
@@ -214,36 +202,43 @@ protected:
   void subscribe_and_get_messages(ControllerStateMsg & msg)
   {
     // create a new subscriber
+    ControllerStateMsg::SharedPtr received_msg;
     rclcpp::Node test_subscription_node("test_subscription_node");
-    auto subs_callback = [&](const ControllerStateMsg::SharedPtr) {};
+    auto subs_callback = [&](const ControllerStateMsg::SharedPtr cb_msg) { received_msg = cb_msg; };
     auto subscription = test_subscription_node.create_subscription<ControllerStateMsg>(
       "/test_ackermann_steering_controller/controller_state", 10, subs_callback);
+    rclcpp::executors::SingleThreadedExecutor executor;
+    executor.add_node(test_subscription_node.get_node_base_interface());
 
     // call update to publish the test value
     ASSERT_EQ(
       controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
       controller_interface::return_type::OK);
-
     // call update to publish the test value
     // since update doesn't guarantee a published message, republish until received
     int max_sub_check_loop_count = 5;  // max number of tries for pub/sub loop
-    rclcpp::WaitSet wait_set;          // block used to wait on message
-    wait_set.add_subscription(subscription);
     while (max_sub_check_loop_count--)
     {
       controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01));
+      const auto timeout = std::chrono::milliseconds{1};
+      const auto until = test_subscription_node.get_clock()->now() + timeout;
+      while (!received_msg && test_subscription_node.get_clock()->now() < until)
+      {
+        executor.spin_some();
+        std::this_thread::sleep_for(std::chrono::microseconds(10));
+      }
       // check if message has been received
-      if (wait_set.wait(std::chrono::milliseconds(2)).kind() == rclcpp::WaitResultKind::Ready)
+      if (received_msg.get())
       {
         break;
       }
     }
     ASSERT_GE(max_sub_check_loop_count, 0) << "Test was unable to publish a message through "
                                               "controller/broadcaster update loop";
+    ASSERT_TRUE(received_msg);
 
     // take message from subscription
-    rclcpp::MessageInfo msg_info;
-    ASSERT_TRUE(subscription->take(msg, msg_info));
+    msg = *received_msg;
   }
 
   void publish_commands(const double linear = 0.1, const double angular = 0.2)
