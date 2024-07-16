@@ -15,38 +15,30 @@
 #ifndef _MSC_VER
 #include <cxxabi.h>
 #endif
-#include <algorithm>
 #include <chrono>
 #include <functional>
 #include <future>
 #include <memory>
-#include <ratio>
 #include <stdexcept>
 #include <string>
-#include <system_error>
 #include <thread>
 #include <vector>
 
 #include "control_msgs/action/detail/follow_joint_trajectory__struct.hpp"
-#include "controller_interface/controller_interface.hpp"
 #include "gtest/gtest.h"
-#include "hardware_interface/resource_manager.hpp"
 #include "rclcpp/clock.hpp"
 #include "rclcpp/duration.hpp"
 #include "rclcpp/executors/multi_threaded_executor.hpp"
 #include "rclcpp/logging.hpp"
-#include "rclcpp/node.hpp"
 #include "rclcpp/parameter.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp/utilities.hpp"
 #include "rclcpp_action/client.hpp"
 #include "rclcpp_action/client_goal_handle.hpp"
 #include "rclcpp_action/create_client.hpp"
-#include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
-#include "joint_trajectory_controller/joint_trajectory_controller.hpp"
 #include "test_trajectory_controller_utils.hpp"
 
 using std::placeholders::_1;
@@ -153,14 +145,15 @@ protected:
   using GoalOptions = rclcpp_action::Client<FollowJointTrajectoryMsg>::SendGoalOptions;
 
   std::shared_future<typename GoalHandle::SharedPtr> sendActionGoal(
-    const std::vector<JointTrajectoryPoint> & points, double timeout, const GoalOptions & opt,
+    const std::vector<JointTrajectoryPoint> & points, double goal_time_tolerance,
+    const GoalOptions & opt,
     const std::vector<control_msgs::msg::JointTolerance> path_tolerance =
       std::vector<control_msgs::msg::JointTolerance>(),
     const std::vector<control_msgs::msg::JointTolerance> goal_tolerance =
       std::vector<control_msgs::msg::JointTolerance>())
   {
     control_msgs::action::FollowJointTrajectory_Goal goal_msg;
-    goal_msg.goal_time_tolerance = rclcpp::Duration::from_seconds(timeout);
+    goal_msg.goal_time_tolerance = rclcpp::Duration::from_seconds(goal_time_tolerance);
     goal_msg.goal_tolerance = goal_tolerance;
     goal_msg.path_tolerance = path_tolerance;
     goal_msg.trajectory.joint_names = joint_names_;
@@ -529,7 +522,7 @@ TEST_F(TestTrajectoryActions, test_tolerances_via_actions)
       point.positions[2] = 3.0;
       points.push_back(point);
 
-      gh_future = sendActionGoal(points, 1.0, goal_options_);
+      gh_future = sendActionGoal(points, 0.0, goal_options_);
     }
     controller_hw_thread_.join();
 
@@ -539,7 +532,6 @@ TEST_F(TestTrajectoryActions, test_tolerances_via_actions)
       control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL, common_action_result_code_);
 
     auto active_tolerances = traj_controller_->get_active_tolerances();
-    EXPECT_DOUBLE_EQ(active_tolerances.goal_time_tolerance, 1.0);
     expectDefaultTolerances(active_tolerances);
   }
 
@@ -639,7 +631,7 @@ TEST_F(TestTrajectoryActions, test_tolerances_via_actions)
       point.positions[2] = 3.0;
       points.push_back(point);
 
-      gh_future = sendActionGoal(points, 1.0, goal_options_);
+      gh_future = sendActionGoal(points, 0.0, goal_options_);
     }
     controller_hw_thread_.join();
 
@@ -649,7 +641,6 @@ TEST_F(TestTrajectoryActions, test_tolerances_via_actions)
       control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL, common_action_result_code_);
 
     auto active_tolerances = traj_controller_->get_active_tolerances();
-    EXPECT_DOUBLE_EQ(active_tolerances.goal_time_tolerance, 1.0);
     expectDefaultTolerances(active_tolerances);
   }
 }

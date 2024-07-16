@@ -28,16 +28,10 @@
 #include "controller_interface/chainable_controller_interface.hpp"
 #include "pid_controller/visibility_control.h"
 #include "pid_controller_parameters.hpp"
-#include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_buffer.h"
 #include "realtime_tools/realtime_publisher.h"
 #include "std_srvs/srv/set_bool.hpp"
-
-#include "control_msgs/msg/joint_controller_state.hpp"
-
-#include "control_msgs/msg/pid_state.hpp"
-#include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
 namespace pid_controller
 {

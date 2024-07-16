@@ -22,8 +22,6 @@
 
 TEST(TestLoadGripperActionControllers, load_controller)
 {
-  rclcpp::init(0, nullptr);
-
   std::shared_ptr<rclcpp::Executor> executor =
     std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
 
@@ -32,12 +30,16 @@ TEST(TestLoadGripperActionControllers, load_controller)
 
   ASSERT_NE(
     cm.load_controller(
-      "test_gripper_action_position_controller", "position_controllers/GripperActionController"),
+      "test_gripper_action_position_controller",
+      "parallel_gripper_action_controller/GripperActionController"),
     nullptr);
-  ASSERT_NE(
-    cm.load_controller(
-      "test_gripper_action_effort_controller", "effort_controllers/GripperActionController"),
-    nullptr);
+}
 
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleMock(&argc, argv);
+  rclcpp::init(argc, argv);
+  int result = RUN_ALL_TESTS();
   rclcpp::shutdown();
+  return result;
 }

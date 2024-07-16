@@ -44,7 +44,6 @@ controller_interface::CallbackReturn GripperActionController::on_init()
   try
   {
     param_listener_ = std::make_shared<ParamListener>(get_node());
-    params_ = param_listener_->get_params();
   }
   catch (const std::exception & e)
   {
@@ -245,6 +244,7 @@ controller_interface::CallbackReturn GripperActionController::on_configure(
     RCLCPP_ERROR(logger, "Joint name cannot be empty");
     return controller_interface::CallbackReturn::ERROR;
   }
+  RCLCPP_INFO(logger, "Joint name is : %s", params_.joint.c_str());
 
   return controller_interface::CallbackReturn::SUCCESS;
 }

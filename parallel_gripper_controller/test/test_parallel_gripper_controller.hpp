@@ -42,7 +42,8 @@ public:
   void SetUp();
   void TearDown();
 
-  void SetUpController();
+  void SetUpController(
+    const std::string & controller_name, controller_interface::return_type expected_result);
   void SetUpHandles();
 
 protected:

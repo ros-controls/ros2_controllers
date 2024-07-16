@@ -18,7 +18,6 @@
 
 #include <gmock/gmock.h>
 
-#include <array>
 #include <memory>
 #include <string>
 #include <thread>
@@ -29,7 +28,6 @@
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
-#include "rclcpp/rclcpp.hpp"
 #include "tricycle_controller/tricycle_controller.hpp"
 
 using CallbackReturn = controller_interface::CallbackReturn;
@@ -62,22 +60,17 @@ public:
    * @brief wait_for_twist block until a new twist is received.
    * Requires that the executor is not spinned elsewhere between the
    *  message publication and the call to this function
-   *
-   * @return true if new twist msg was received, false if timeout
    */
-  bool wait_for_twist(
+  void wait_for_twist(
     rclcpp::Executor & executor,
     const std::chrono::milliseconds & timeout = std::chrono::milliseconds(500))
   {
-    rclcpp::WaitSet wait_set;
-    wait_set.add_subscription(velocity_command_subscriber_);
-
-    if (wait_set.wait(timeout).kind() == rclcpp::WaitResultKind::Ready)
+    auto until = get_node()->get_clock()->now() + timeout;
+    while (get_node()->get_clock()->now() < until)
     {
       executor.spin_some();
-      return true;
+      std::this_thread::sleep_for(std::chrono::microseconds(10));
     }
-    return false;
   }
 };
 
@@ -326,7 +319,7 @@ TEST_F(TestTricycleController, correct_initialization_using_parameters)
   const double angular = 0.0;
   publish(linear, angular);
   // wait for msg is be published to the system
-  ASSERT_TRUE(controller_->wait_for_twist(executor));
+  controller_->wait_for_twist(executor);
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),

@@ -14,21 +14,16 @@
 
 #include "joint_state_broadcaster/joint_state_broadcaster.hpp"
 
-#include <stddef.h>
+#include <cstddef>
 #include <limits>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
-#include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
-#include "rclcpp/clock.hpp"
 #include "rclcpp/qos.hpp"
 #include "rclcpp/time.hpp"
-#include "rclcpp_lifecycle/lifecycle_node.hpp"
-#include "rcpputils/split.hpp"
-#include "rcutils/logging_macros.h"
 #include "std_msgs/msg/header.hpp"
 
 namespace rclcpp_lifecycle

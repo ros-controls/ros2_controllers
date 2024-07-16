@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <stddef.h>
+#include <cstddef>
 
 #include <functional>
 #include <memory>
@@ -23,12 +23,9 @@
 #include "gmock/gmock.h"
 
 #include "hardware_interface/loaned_state_interface.hpp"
-#include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
-#include "joint_state_broadcaster/joint_state_broadcaster.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/utilities.hpp"
-#include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "test_joint_state_broadcaster.hpp"
 
 using hardware_interface::HW_IF_EFFORT;
@@ -664,31 +661,41 @@ void JointStateBroadcasterTest::activate_and_get_joint_state_message(
   node_state = state_broadcaster_->get_node()->activate();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
 
+  sensor_msgs::msg::JointState::SharedPtr received_msg;
   rclcpp::Node test_node("test_node");
-  auto subs_callback = [&](const sensor_msgs::msg::JointState::SharedPtr) {};
+  auto subs_callback = [&](const sensor_msgs::msg::JointState::SharedPtr msg)
+  { received_msg = msg; };
   auto subscription =
     test_node.create_subscription<sensor_msgs::msg::JointState>(topic, 10, subs_callback);
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(test_node.get_node_base_interface());
 
   // call update to publish the test value
   // since update doesn't guarantee a published message, republish until received
   int max_sub_check_loop_count = 5;  // max number of tries for pub/sub loop
-  rclcpp::WaitSet wait_set;          // block used to wait on message
-  wait_set.add_subscription(subscription);
   while (max_sub_check_loop_count--)
   {
     state_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+    const auto timeout = std::chrono::milliseconds{1};
+    const auto until = test_node.get_clock()->now() + timeout;
+    while (!received_msg && test_node.get_clock()->now() < until)
+    {
+      executor.spin_some();
+      std::this_thread::sleep_for(std::chrono::microseconds(10));
+    }
     // check if message has been received
-    if (wait_set.wait(std::chrono::milliseconds(2)).kind() == rclcpp::WaitResultKind::Ready)
+    if (received_msg.get())
     {
       break;
     }
   }
   ASSERT_GE(max_sub_check_loop_count, 0) << "Test was unable to publish a message through "
                                             "controller/broadcaster update loop";
+  ASSERT_TRUE(received_msg);
 
   // take message from subscription
-  rclcpp::MessageInfo msg_info;
-  ASSERT_TRUE(subscription->take(joint_state_msg, msg_info));
+  joint_state_msg = *received_msg;
 }
 
 void JointStateBroadcasterTest::test_published_joint_state_message(const std::string & topic)
@@ -731,51 +738,58 @@ void JointStateBroadcasterTest::test_published_dynamic_joint_state_message(
   node_state = state_broadcaster_->get_node()->activate();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
 
+  control_msgs::msg::DynamicJointState::SharedPtr dynamic_joint_state_msg;
   rclcpp::Node test_node("test_node");
-  auto subs_callback = [&](const control_msgs::msg::DynamicJointState::SharedPtr) {};
+  auto subs_callback = [&](const control_msgs::msg::DynamicJointState::SharedPtr msg)
+  { dynamic_joint_state_msg = msg; };
   auto subscription =
     test_node.create_subscription<control_msgs::msg::DynamicJointState>(topic, 10, subs_callback);
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(test_node.get_node_base_interface());
+  dynamic_joint_state_msg.reset();
+  ASSERT_FALSE(dynamic_joint_state_msg);
 
   // call update to publish the test value
   // since update doesn't guarantee a published message, republish until received
   int max_sub_check_loop_count = 5;  // max number of tries for pub/sub loop
-  rclcpp::WaitSet wait_set;          // block used to wait on message
-  wait_set.add_subscription(subscription);
   while (max_sub_check_loop_count--)
   {
     state_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+    const auto timeout = std::chrono::milliseconds{1};
+    const auto until = test_node.get_clock()->now() + timeout;
+    while (test_node.get_clock()->now() < until)
+    {
+      executor.spin_some();
+      std::this_thread::sleep_for(std::chrono::microseconds(10));
+    }
     // check if message has been received
-    if (wait_set.wait(std::chrono::milliseconds(2)).kind() == rclcpp::WaitResultKind::Ready)
+    if (dynamic_joint_state_msg.get())
     {
       break;
     }
   }
   ASSERT_GE(max_sub_check_loop_count, 0) << "Test was unable to publish a message through "
                                             "controller/broadcaster update loop";
-
-  // take message from subscription
-  control_msgs::msg::DynamicJointState dynamic_joint_state_msg;
-  rclcpp::MessageInfo msg_info;
-  ASSERT_TRUE(subscription->take(dynamic_joint_state_msg, msg_info));
+  ASSERT_TRUE(dynamic_joint_state_msg);
 
   const size_t NUM_JOINTS = 3;
   const std::vector<std::string> INTERFACE_NAMES = {HW_IF_POSITION, HW_IF_VELOCITY, HW_IF_EFFORT};
-  ASSERT_THAT(dynamic_joint_state_msg.joint_names, SizeIs(NUM_JOINTS));
+  ASSERT_THAT(dynamic_joint_state_msg->joint_names, SizeIs(NUM_JOINTS));
   // the order in the message may be different
   // we only check that all values in this test are present in the message
   // and that it is the same across the interfaces
   // for test purposes they are mapped to the same doubles
-  for (size_t i = 0; i < dynamic_joint_state_msg.joint_names.size(); ++i)
+  for (size_t i = 0; i < dynamic_joint_state_msg->joint_names.size(); ++i)
   {
     ASSERT_THAT(
-      dynamic_joint_state_msg.interface_values[i].interface_names,
+      dynamic_joint_state_msg->interface_values[i].interface_names,
       ElementsAreArray(INTERFACE_NAMES));
     const auto index_in_original_order = std::distance(
       joint_names_.cbegin(),
       std::find(
-        joint_names_.cbegin(), joint_names_.cend(), dynamic_joint_state_msg.joint_names[i]));
+        joint_names_.cbegin(), joint_names_.cend(), dynamic_joint_state_msg->joint_names[i]));
     ASSERT_THAT(
-      dynamic_joint_state_msg.interface_values[i].values,
+      dynamic_joint_state_msg->interface_values[i].values,
       Each(joint_values_[index_in_original_order]));
   }
 }
