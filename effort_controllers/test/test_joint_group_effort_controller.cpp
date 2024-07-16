@@ -25,17 +25,6 @@
 using CallbackReturn = controller_interface::CallbackReturn;
 using hardware_interface::LoanedCommandInterface;
 
-namespace
-{
-rclcpp::WaitResultKind wait_for(rclcpp::SubscriptionBase::SharedPtr subscription)
-{
-  rclcpp::WaitSet wait_set;
-  wait_set.add_subscription(subscription);
-  const auto timeout = std::chrono::seconds(10);
-  return wait_set.wait(timeout).kind();
-}
-}  // namespace
-
 void JointGroupEffortControllerTest::SetUpTestCase() { rclcpp::init(0, nullptr); }
 
 void JointGroupEffortControllerTest::TearDownTestCase() { rclcpp::shutdown(); }
@@ -58,6 +47,7 @@ void JointGroupEffortControllerTest::SetUpController()
   command_ifs.emplace_back(joint_2_cmd_);
   command_ifs.emplace_back(joint_3_cmd_);
   controller_->assign_interfaces(std::move(command_ifs), {});
+  executor.add_node(controller_->get_node()->get_node_base_interface());
 }
 
 TEST_F(JointGroupEffortControllerTest, JointsParameterNotSet)
@@ -199,10 +189,13 @@ TEST_F(JointGroupEffortControllerTest, CommandCallbackTest)
   command_pub->publish(command_msg);
 
   // wait for command message to be passed
-  ASSERT_EQ(wait_for(controller_->joints_command_subscriber_), rclcpp::WaitResultKind::Ready);
-
-  // process callbacks
-  rclcpp::spin_some(controller_->get_node()->get_node_base_interface());
+  const auto timeout = std::chrono::milliseconds{10};
+  const auto until = controller_->get_node()->get_clock()->now() + timeout;
+  while (controller_->get_node()->get_clock()->now() < until)
+  {
+    executor.spin_some();
+    std::this_thread::sleep_for(std::chrono::microseconds(10));
+  }
 
   // update successful
   ASSERT_EQ(

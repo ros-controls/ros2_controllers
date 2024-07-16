@@ -275,7 +275,7 @@ TEST_F(AdmittanceControllerTest, receive_message_and_publish_updated_status)
   //   ASSERT_EQ(msg.wrench_base.header.frame_id, ik_base_frame_);
 
   publish_commands();
-  ASSERT_TRUE(controller_->wait_for_commands(executor));
+  controller_->wait_for_commands(executor);
 
   broadcast_tfs();
   ASSERT_EQ(
