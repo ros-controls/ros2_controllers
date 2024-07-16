@@ -14,10 +14,8 @@
 
 #include "test_tricycle_steering_controller.hpp"
 
-#include <limits>
 #include <memory>
 #include <string>
-#include <utility>
 #include <vector>
 
 class TricycleSteeringControllerTest
