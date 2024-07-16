@@ -94,11 +94,6 @@ public:
     const rclcpp_lifecycle::State & previous_state) override
   {
     auto ret = joint_trajectory_controller::JointTrajectoryController::on_configure(previous_state);
-    // this class can still be useful without the wait set
-    if (joint_command_subscriber_)
-    {
-      joint_cmd_sub_wait_set_.add_subscription(joint_command_subscriber_);
-    }
     return ret;
   }
 
@@ -106,19 +101,17 @@ public:
    * @brief wait_for_trajectory block until a new JointTrajectory is received.
    * Requires that the executor is not spinned elsewhere between the
    *  message publication and the call to this function
-   *
-   * @return true if new JointTrajectory msg was received, false if timeout
    */
-  bool wait_for_trajectory(
+  void wait_for_trajectory(
     rclcpp::Executor & executor,
-    const std::chrono::milliseconds & timeout = std::chrono::milliseconds{500})
+    const std::chrono::milliseconds & timeout = std::chrono::milliseconds{10})
   {
-    bool success = joint_cmd_sub_wait_set_.wait(timeout).kind() == rclcpp::WaitResultKind::Ready;
-    if (success)
+    auto until = get_node()->get_clock()->now() + timeout;
+    while (get_node()->get_clock()->now() < until)
     {
       executor.spin_some();
+      std::this_thread::sleep_for(std::chrono::microseconds(10));
     }
-    return success;
   }
 
   void set_joint_names(const std::vector<std::string> & joint_names)
@@ -219,7 +212,11 @@ public:
     }
   }
 
+<<<<<<< HEAD
   rclcpp::WaitSet joint_cmd_sub_wait_set_;
+=======
+  rclcpp::NodeOptions node_options_;
+>>>>>>> 2674f6d (Fix WaitSet issue in tests  (#1206))
 };
 
 class TrajectoryControllerTest : public ::testing::Test
@@ -394,7 +391,7 @@ public:
 
   static void TearDownTestCase() { rclcpp::shutdown(); }
 
-  void subscribeToState()
+  void subscribeToState(rclcpp::Executor & executor)
   {
     auto traj_lifecycle_node = traj_controller_->get_node();
 
@@ -411,6 +408,14 @@ public:
         std::lock_guard<std::mutex> guard(state_mutex_);
         state_msg_ = msg;
       });
+
+    const auto timeout = std::chrono::milliseconds{10};
+    const auto until = traj_lifecycle_node->get_clock()->now() + timeout;
+    while (traj_lifecycle_node->get_clock()->now() < until)
+    {
+      executor.spin_some();
+      std::this_thread::sleep_for(std::chrono::microseconds(10));
+    }
   }
 
   /// Publish trajectory msgs with multiple points

@@ -495,7 +495,7 @@ TEST_F(PidControllerTest, receive_message_and_publish_updated_status)
   }
 
   publish_commands();
-  ASSERT_TRUE(controller_->wait_for_commands(executor));
+  controller_->wait_for_commands(executor);
 
   for (size_t i = 0; i < controller_->reference_interfaces_.size(); ++i)
   {
