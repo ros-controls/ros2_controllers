@@ -362,7 +362,6 @@ public:
 
   static void TearDownTestCase() { rclcpp::shutdown(); }
 
-<<<<<<< HEAD
   void subscribeToStateLegacy()
   {
     auto traj_lifecycle_node = traj_controller_->get_node();
@@ -385,10 +384,7 @@ public:
         });
   }
 
-  void subscribeToState()
-=======
   void subscribeToState(rclcpp::Executor & executor)
->>>>>>> 2674f6d (Fix WaitSet issue in tests  (#1206))
   {
     auto traj_lifecycle_node = traj_controller_->get_node();
     traj_lifecycle_node->set_parameter(
