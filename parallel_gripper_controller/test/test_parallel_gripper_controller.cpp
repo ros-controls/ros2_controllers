@@ -46,12 +46,13 @@ void GripperControllerTest::SetUp()
 
 void GripperControllerTest::TearDown() { controller_.reset(nullptr); }
 
-void GripperControllerTest::SetUpController()
+void GripperControllerTest::SetUpController(
+  const std::string & controller_name = "test_gripper_action_position_controller",
+  controller_interface::return_type expected_result = controller_interface::return_type::OK)
 {
-  const auto result = controller_->init(
-    "test_gripper_action_position_controller", "", 0, "",
-    controller_->define_custom_node_options());
-  ASSERT_EQ(result, controller_interface::return_type::OK);
+  const auto result =
+    controller_->init(controller_name, "", 0, "", controller_->define_custom_node_options());
+  ASSERT_EQ(result, expected_result);
 
   std::vector<LoanedCommandInterface> command_ifs;
   command_ifs.emplace_back(this->joint_1_cmd_);
@@ -59,6 +60,28 @@ void GripperControllerTest::SetUpController()
   state_ifs.emplace_back(this->joint_1_pos_state_);
   state_ifs.emplace_back(this->joint_1_vel_state_);
   controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
+}
+
+TEST_F(GripperControllerTest, ParametersNotSet)
+{
+  this->SetUpController(
+    "test_gripper_action_position_controller_no_parameters",
+    controller_interface::return_type::ERROR);
+
+  // configure failed, 'joints' parameter not set
+  ASSERT_EQ(
+    this->controller_->on_configure(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::ERROR);
+}
+
+TEST_F(GripperControllerTest, JointParameterIsEmpty)
+{
+  this->SetUpController("test_gripper_action_position_controller_empty_joint");
+
+  // configure failed, 'joints' is empty
+  ASSERT_EQ(
+    this->controller_->on_configure(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::ERROR);
 }
 
 TEST_F(GripperControllerTest, ConfigureParamsSuccess)
