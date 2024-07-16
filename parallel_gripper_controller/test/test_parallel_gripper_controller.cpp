@@ -76,7 +76,9 @@ TEST_F(GripperControllerTest, ParametersNotSet)
 
 TEST_F(GripperControllerTest, JointParameterIsEmpty)
 {
-  this->SetUpController("test_gripper_action_position_controller_empty_joint");
+  this->SetUpController(
+    "test_gripper_action_position_controller_empty_joint",
+    controller_interface::return_type::ERROR);
 
   // configure failed, 'joints' is empty
   ASSERT_EQ(
