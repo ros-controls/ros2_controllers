@@ -212,11 +212,6 @@ public:
     }
   }
 
-<<<<<<< HEAD
-  rclcpp::WaitSet joint_cmd_sub_wait_set_;
-=======
-  rclcpp::NodeOptions node_options_;
->>>>>>> 2674f6d (Fix WaitSet issue in tests  (#1206))
 };
 
 class TrajectoryControllerTest : public ::testing::Test
