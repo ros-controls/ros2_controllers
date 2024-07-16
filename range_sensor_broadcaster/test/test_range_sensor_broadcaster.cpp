@@ -65,31 +65,39 @@ controller_interface::CallbackReturn RangeSensorBroadcasterTest::configure_broad
 void RangeSensorBroadcasterTest::subscribe_and_get_message(sensor_msgs::msg::Range & range_msg)
 {
   // create a new subscriber
+  sensor_msgs::msg::Range::SharedPtr received_msg;
   rclcpp::Node test_subscription_node("test_subscription_node");
-  auto subs_callback = [&](const sensor_msgs::msg::Range::SharedPtr) {};
+  auto subs_callback = [&](const sensor_msgs::msg::Range::SharedPtr msg) { received_msg = msg; };
   auto subscription = test_subscription_node.create_subscription<sensor_msgs::msg::Range>(
     "/test_range_sensor_broadcaster/range", 10, subs_callback);
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(test_subscription_node.get_node_base_interface());
 
   // call update to publish the test value
   // since update doesn't guarantee a published message, republish until received
   int max_sub_check_loop_count = 5;  // max number of tries for pub/sub loop
-  rclcpp::WaitSet wait_set;          // block used to wait on message
-  wait_set.add_subscription(subscription);
   while (max_sub_check_loop_count--)
   {
     range_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+    const auto timeout = std::chrono::milliseconds{1};
+    const auto until = test_subscription_node.get_clock()->now() + timeout;
+    while (!received_msg && test_subscription_node.get_clock()->now() < until)
+    {
+      executor.spin_some();
+      std::this_thread::sleep_for(std::chrono::microseconds(10));
+    }
     // check if message has been received
-    if (wait_set.wait(std::chrono::milliseconds(2)).kind() == rclcpp::WaitResultKind::Ready)
+    if (received_msg.get())
     {
       break;
     }
   }
   ASSERT_GE(max_sub_check_loop_count, 0) << "Test was unable to publish a message through "
                                             "controller/broadcaster update loop";
+  ASSERT_TRUE(received_msg);
 
   // take message from subscription
-  rclcpp::MessageInfo msg_info;
-  ASSERT_TRUE(subscription->take(range_msg, msg_info));
+  range_msg = *received_msg;
 }
 
 TEST_F(RangeSensorBroadcasterTest, Initialize_RangeBroadcaster_Exception)
