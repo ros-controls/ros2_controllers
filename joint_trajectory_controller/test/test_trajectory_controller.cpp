@@ -517,16 +517,9 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_angle_wraparoun
   rclcpp::executors::MultiThreadedExecutor executor;
   constexpr double k_p = 10.0;
   std::vector<rclcpp::Parameter> params = {};
-<<<<<<< HEAD
   bool angle_wraparound = false;
   SetUpAndActivateTrajectoryController(executor, params, true, k_p, 0.0, angle_wraparound);
-  subscribeToState();
-=======
-  SetUpAndActivateTrajectoryController(
-    executor, params, true, k_p, 0.0, INITIAL_POS_JOINTS, INITIAL_VEL_JOINTS, INITIAL_ACC_JOINTS,
-    INITIAL_EFF_JOINTS, test_trajectory_controllers::urdf_rrrbot_revolute);
   subscribeToState(executor);
->>>>>>> 2674f6d (Fix WaitSet issue in tests  (#1206))
 
   size_t n_joints = joint_names_.size();
 

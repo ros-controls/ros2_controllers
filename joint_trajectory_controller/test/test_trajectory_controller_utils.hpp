@@ -188,28 +188,6 @@ public:
   trajectory_msgs::msg::JointTrajectoryPoint get_state_reference() { return state_desired_; }
   trajectory_msgs::msg::JointTrajectoryPoint get_state_error() { return state_error_; }
 
-<<<<<<< HEAD
-  rclcpp::WaitSet joint_cmd_sub_wait_set_;
-=======
-  /**
-   * a copy of the private member function
-   */
-  void resize_joint_trajectory_point(
-    trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size)
-  {
-    point.positions.resize(size, 0.0);
-    if (has_velocity_state_interface_)
-    {
-      point.velocities.resize(size, 0.0);
-    }
-    if (has_acceleration_state_interface_)
-    {
-      point.accelerations.resize(size, 0.0);
-    }
-  }
-
-  rclcpp::NodeOptions node_options_;
->>>>>>> 2674f6d (Fix WaitSet issue in tests  (#1206))
 };
 
 class TrajectoryControllerTest : public ::testing::Test
