@@ -19,10 +19,10 @@
 #ifndef TEST_IMU_SENSOR_BROADCASTER_HPP_
 #define TEST_IMU_SENSOR_BROADCASTER_HPP_
 
+#include <gmock/gmock.h>
+
 #include <memory>
 #include <string>
-
-#include "gmock/gmock.h"
 
 #include "imu_sensor_broadcaster/imu_sensor_broadcaster.hpp"
 

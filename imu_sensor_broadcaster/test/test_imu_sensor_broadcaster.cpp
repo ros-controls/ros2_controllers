@@ -23,12 +23,7 @@
 #include <vector>
 
 #include "hardware_interface/loaned_state_interface.hpp"
-#include "hardware_interface/types/hardware_interface_return_values.hpp"
-#include "hardware_interface/types/hardware_interface_type_values.hpp"
-#include "imu_sensor_broadcaster/imu_sensor_broadcaster.hpp"
-#include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/utilities.hpp"
-#include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "sensor_msgs/msg/imu.hpp"
 
 using hardware_interface::LoanedStateInterface;

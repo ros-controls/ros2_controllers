@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <stddef.h>
+#include <cstddef>
 
 #include <functional>
 #include <memory>
@@ -23,12 +23,9 @@
 #include "gmock/gmock.h"
 
 #include "hardware_interface/loaned_state_interface.hpp"
-#include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
-#include "joint_state_broadcaster/joint_state_broadcaster.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/utilities.hpp"
-#include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "test_joint_state_broadcaster.hpp"
 
 using hardware_interface::HW_IF_EFFORT;

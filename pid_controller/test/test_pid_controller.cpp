@@ -20,7 +20,6 @@
 #include <limits>
 #include <memory>
 #include <string>
-#include <utility>
 #include <vector>
 
 using pid_controller::feedforward_mode_type;

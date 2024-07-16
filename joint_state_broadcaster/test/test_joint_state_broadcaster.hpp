@@ -15,11 +15,11 @@
 #ifndef TEST_JOINT_STATE_BROADCASTER_HPP_
 #define TEST_JOINT_STATE_BROADCASTER_HPP_
 
+#include <gmock/gmock.h>
+
 #include <memory>
 #include <string>
 #include <vector>
-
-#include "gmock/gmock.h"
 
 #include "joint_state_broadcaster/joint_state_broadcaster.hpp"
 

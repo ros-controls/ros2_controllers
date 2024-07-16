@@ -15,21 +15,17 @@
 #ifndef TEST_TRICYCLE_STEERING_CONTROLLER_HPP_
 #define TEST_TRICYCLE_STEERING_CONTROLLER_HPP_
 
+#include <gmock/gmock.h>
+
 #include <chrono>
-#include <limits>
 #include <memory>
 #include <string>
-#include <tuple>
 #include <utility>
 #include <vector>
 
-#include "gmock/gmock.h"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
-#include "hardware_interface/types/hardware_interface_return_values.hpp"
-#include "rclcpp/parameter_value.hpp"
 #include "rclcpp/time.hpp"
-#include "rclcpp/utilities.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "tricycle_steering_controller/tricycle_steering_controller.hpp"
 

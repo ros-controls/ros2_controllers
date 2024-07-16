@@ -24,9 +24,13 @@
 
 #include "angles/angles.h"
 #include "control_msgs/msg/single_dof_state.hpp"
+<<<<<<< HEAD
 #include "controller_interface/helpers.hpp"
 
 #include "rclcpp/rclcpp.hpp"
+=======
+#include "rclcpp/version.h"
+>>>>>>> 96a8d57 (Unused header cleanup (#1199))
 
 namespace
 {  // utility

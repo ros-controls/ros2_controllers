@@ -21,7 +21,13 @@
 
 #include <cmath>
 
+<<<<<<< HEAD
 #include "rclcpp/time.hpp"
+=======
+#include <rclcpp/duration.hpp>
+// \note The versions conditioning is added here to support the source-compatibility with Humble
+#if RCPPUTILS_VERSION_MAJOR >= 2 && RCPPUTILS_VERSION_MINOR >= 6
+>>>>>>> 96a8d57 (Unused header cleanup (#1199))
 #include "rcpputils/rolling_mean_accumulator.hpp"
 
 namespace tricycle_controller
