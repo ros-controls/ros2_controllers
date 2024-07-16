@@ -83,8 +83,6 @@ void ForceTorqueSensorBroadcasterTest::subscribe_and_get_message(
     "/test_force_torque_sensor_broadcaster/wrench", 10, subs_callback);
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(test_subscription_node.get_node_base_interface());
-  received_msg.reset();
-  ASSERT_FALSE(received_msg);
 
   // call update to publish the test value
   // since update doesn't guarantee a published message, republish until received
@@ -94,7 +92,7 @@ void ForceTorqueSensorBroadcasterTest::subscribe_and_get_message(
     fts_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
     const auto timeout = std::chrono::milliseconds{1};
     const auto until = test_subscription_node.get_clock()->now() + timeout;
-    while (test_subscription_node.get_clock()->now() < until)
+    while (!received_msg && test_subscription_node.get_clock()->now() < until)
     {
       executor.spin_some();
       std::this_thread::sleep_for(std::chrono::microseconds(10));

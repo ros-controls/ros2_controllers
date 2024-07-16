@@ -106,7 +106,7 @@ public:
    */
   void wait_for_trajectory(
     rclcpp::Executor & executor,
-    const std::chrono::milliseconds & timeout = std::chrono::milliseconds{100})
+    const std::chrono::milliseconds & timeout = std::chrono::milliseconds{10})
   {
     auto until = get_node()->get_clock()->now() + timeout;
     while (get_node()->get_clock()->now() < until)
@@ -409,7 +409,7 @@ public:
         state_msg_ = msg;
       });
 
-    const auto timeout = std::chrono::milliseconds{100};
+    const auto timeout = std::chrono::milliseconds{10};
     const auto until = traj_lifecycle_node->get_clock()->now() + timeout;
     while (traj_lifecycle_node->get_clock()->now() < until)
     {

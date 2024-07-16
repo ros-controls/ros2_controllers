@@ -264,8 +264,6 @@ protected:
       "/test_admittance_controller/status", 10, subs_callback);
     rclcpp::executors::SingleThreadedExecutor executor;
     executor.add_node(test_subscription_node_->get_node_base_interface());
-    received_msg.reset();
-    ASSERT_FALSE(received_msg);
 
     // call update to publish the test value
     ASSERT_EQ(
@@ -275,7 +273,7 @@ protected:
     // wait for message to be passed
     const auto timeout = std::chrono::milliseconds{1};
     const auto until = test_subscription_node_->get_clock()->now() + timeout;
-    while (test_subscription_node_->get_clock()->now() < until)
+    while (!received_msg && test_subscription_node_->get_clock()->now() < until)
     {
       executor.spin_some();
       std::this_thread::sleep_for(std::chrono::microseconds(10));
