@@ -9,10 +9,11 @@
 
   <buildtool_depend>ament_cmake_ros</buildtool_depend>
 
+  <depend>backward_ros</depend>
   <depend>control_toolbox</depend>
+  <depend>generate_parameter_library</depend>
   <depend>pluginlib</depend>
   <depend>trajectory_msgs</depend>
-  <depend>generate_parameter_library</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
