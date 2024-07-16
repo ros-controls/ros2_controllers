@@ -48,17 +48,19 @@ if(BUILD_TESTING)
   find_package(controller_manager REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
 
-  ament_add_gmock(test_load_parallel_gripper_action_controllers
-          test/test_load_parallel_gripper_action_controller.cpp
-  )
+  add_rostest_with_parameters_gmock(test_load_parallel_gripper_action_controllers
+  test/test_load_parallel_gripper_action_controller.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/test/gripper_action_controller_params.yaml)
+  target_include_directories(test_load_parallel_gripper_action_controllers PRIVATE include)
   ament_target_dependencies(test_load_parallel_gripper_action_controllers
     controller_manager
     ros2_control_test_assets
   )
 
-  ament_add_gmock(test_parallel_gripper_controller
-    test/test_parallel_gripper_controller.cpp
-  )
+  add_rostest_with_parameters_gmock(test_parallel_gripper_controller
+  test/test_parallel_gripper_controller.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/test/gripper_action_controller_params.yaml)
+  target_include_directories(test_parallel_gripper_controller PRIVATE include)
   target_link_libraries(test_parallel_gripper_controller
           parallel_gripper_action_controller
   )

@@ -11,6 +11,9 @@ parallel_gripper_action_controller:
   joint: {
     type: string,
     read_only: true,
+    validation: {
+      not_empty<>: null
+    }
   }
   state_interfaces: {
     type: string_array,
