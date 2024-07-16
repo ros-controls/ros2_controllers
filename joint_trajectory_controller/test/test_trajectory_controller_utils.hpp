@@ -25,6 +25,7 @@
 
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
+#include "joint_trajectory_controller/tolerances.hpp"
 
 namespace
 {
@@ -38,11 +39,46 @@ const std::vector<double> INITIAL_VEL_JOINTS = {0.0, 0.0, 0.0};
 const std::vector<double> INITIAL_ACC_JOINTS = {0.0, 0.0, 0.0};
 const std::vector<double> INITIAL_EFF_JOINTS = {0.0, 0.0, 0.0};
 
+const double default_goal_time = 0.1;
+const double stopped_velocity_tolerance = 0.1;
+
+[[maybe_unused]] void expectDefaultTolerances(
+  joint_trajectory_controller::SegmentTolerances active_tolerances)
+{
+  EXPECT_DOUBLE_EQ(active_tolerances.goal_time_tolerance, default_goal_time);
+
+  // acceleration is never set, and goal_state_tolerance.velocity from stopped_velocity_tolerance
+
+  ASSERT_EQ(active_tolerances.state_tolerance.size(), 3);
+  EXPECT_DOUBLE_EQ(active_tolerances.state_tolerance.at(0).position, 0.1);
+  EXPECT_DOUBLE_EQ(active_tolerances.state_tolerance.at(0).velocity, 0.0);
+  EXPECT_DOUBLE_EQ(active_tolerances.state_tolerance.at(0).acceleration, 0.0);
+  EXPECT_DOUBLE_EQ(active_tolerances.state_tolerance.at(1).position, 0.1);
+  EXPECT_DOUBLE_EQ(active_tolerances.state_tolerance.at(1).velocity, 0.0);
+  EXPECT_DOUBLE_EQ(active_tolerances.state_tolerance.at(1).acceleration, 0.0);
+  EXPECT_DOUBLE_EQ(active_tolerances.state_tolerance.at(2).position, 0.1);
+  EXPECT_DOUBLE_EQ(active_tolerances.state_tolerance.at(2).velocity, 0.0);
+  EXPECT_DOUBLE_EQ(active_tolerances.state_tolerance.at(2).acceleration, 0.0);
+
+  ASSERT_EQ(active_tolerances.goal_state_tolerance.size(), 3);
+  EXPECT_DOUBLE_EQ(active_tolerances.goal_state_tolerance.at(0).position, 0.1);
+  EXPECT_DOUBLE_EQ(
+    active_tolerances.goal_state_tolerance.at(0).velocity, stopped_velocity_tolerance);
+  EXPECT_DOUBLE_EQ(active_tolerances.goal_state_tolerance.at(0).acceleration, 0.0);
+  EXPECT_DOUBLE_EQ(active_tolerances.goal_state_tolerance.at(1).position, 0.1);
+  EXPECT_DOUBLE_EQ(
+    active_tolerances.goal_state_tolerance.at(1).velocity, stopped_velocity_tolerance);
+  EXPECT_DOUBLE_EQ(active_tolerances.goal_state_tolerance.at(1).acceleration, 0.0);
+  EXPECT_DOUBLE_EQ(active_tolerances.goal_state_tolerance.at(2).position, 0.1);
+  EXPECT_DOUBLE_EQ(
+    active_tolerances.goal_state_tolerance.at(2).velocity, stopped_velocity_tolerance);
+  EXPECT_DOUBLE_EQ(active_tolerances.goal_state_tolerance.at(2).acceleration, 0.0);
+}
+
 bool is_same_sign_or_zero(double val1, double val2)
 {
   return val1 * val2 > 0.0 || (val1 == 0.0 && val2 == 0.0);
 }
-
 }  // namespace
 
 namespace test_trajectory_controllers
@@ -58,11 +94,6 @@ public:
     const rclcpp_lifecycle::State & previous_state) override
   {
     auto ret = joint_trajectory_controller::JointTrajectoryController::on_configure(previous_state);
-    // this class can still be useful without the wait set
-    if (joint_command_subscriber_)
-    {
-      joint_cmd_sub_wait_set_.add_subscription(joint_command_subscriber_);
-    }
     return ret;
   }
 
@@ -72,19 +103,17 @@ public:
    * @brief wait_for_trajectory block until a new JointTrajectory is received.
    * Requires that the executor is not spinned elsewhere between the
    *  message publication and the call to this function
-   *
-   * @return true if new JointTrajectory msg was received, false if timeout
    */
-  bool wait_for_trajectory(
+  void wait_for_trajectory(
     rclcpp::Executor & executor,
-    const std::chrono::milliseconds & timeout = std::chrono::milliseconds{500})
+    const std::chrono::milliseconds & timeout = std::chrono::milliseconds{10})
   {
-    bool success = joint_cmd_sub_wait_set_.wait(timeout).kind() == rclcpp::WaitResultKind::Ready;
-    if (success)
+    auto until = get_node()->get_clock()->now() + timeout;
+    while (get_node()->get_clock()->now() < until)
     {
       executor.spin_some();
+      std::this_thread::sleep_for(std::chrono::microseconds(10));
     }
-    return success;
   }
 
   void set_joint_names(const std::vector<std::string> & joint_names)
@@ -138,6 +167,11 @@ public:
 
   bool is_open_loop() const { return params_.open_loop_control; }
 
+  joint_trajectory_controller::SegmentTolerances get_active_tolerances()
+  {
+    return *(active_tolerances_.readFromRT());
+  }
+
   std::vector<PidPtr> get_pids() const { return pids_; }
 
   joint_trajectory_controller::SegmentTolerances get_tolerances() const
@@ -182,7 +216,6 @@ public:
     }
   }
 
-  rclcpp::WaitSet joint_cmd_sub_wait_set_;
   rclcpp::NodeOptions node_options_;
 };
 
@@ -358,7 +391,7 @@ public:
 
   static void TearDownTestCase() { rclcpp::shutdown(); }
 
-  void subscribeToState()
+  void subscribeToState(rclcpp::Executor & executor)
   {
     auto traj_lifecycle_node = traj_controller_->get_node();
 
@@ -375,6 +408,14 @@ public:
         std::lock_guard<std::mutex> guard(state_mutex_);
         state_msg_ = msg;
       });
+
+    const auto timeout = std::chrono::milliseconds{10};
+    const auto until = traj_lifecycle_node->get_clock()->now() + timeout;
+    while (traj_lifecycle_node->get_clock()->now() < until)
+    {
+      executor.spin_some();
+      std::this_thread::sleep_for(std::chrono::microseconds(10));
+    }
   }
 
   /// Publish trajectory msgs with multiple points

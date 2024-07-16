@@ -17,6 +17,8 @@
 #ifndef TEST_ADMITTANCE_CONTROLLER_HPP_
 #define TEST_ADMITTANCE_CONTROLLER_HPP_
 
+#include <gmock/gmock.h>
+
 #include <chrono>
 #include <map>
 #include <memory>
@@ -25,21 +27,18 @@
 #include <utility>
 #include <vector>
 
-#include "gmock/gmock.h"
+#include "geometry_msgs/msg/pose_stamped.hpp"
 
 #include "admittance_controller/admittance_controller.hpp"
 #include "control_msgs/msg/admittance_controller_state.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
-#include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "rclcpp/parameter_value.hpp"
-#include "rclcpp/utilities.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "semantic_components/force_torque_sensor.hpp"
 #include "test_asset_6d_robot_description.hpp"
 #include "tf2_ros/transform_broadcaster.h"
-#include "trajectory_msgs/msg/joint_trajectory.hpp"
 
 // TODO(anyone): replace the state and command message types
 using ControllerCommandWrenchMsg = geometry_msgs::msg::WrenchStamped;
@@ -57,15 +56,6 @@ constexpr auto NODE_FAILURE =
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
 constexpr auto NODE_ERROR =
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
-
-rclcpp::WaitResultKind wait_for(rclcpp::SubscriptionBase::SharedPtr subscription)
-{
-  rclcpp::WaitSet wait_set;
-  wait_set.add_subscription(subscription);
-  const auto timeout = std::chrono::seconds(10);
-  return wait_set.wait(timeout).kind();
-}
-
 }  // namespace
 
 // subclassing and friending so we can access member variables
@@ -92,39 +82,27 @@ public:
 
   CallbackReturn on_configure(const rclcpp_lifecycle::State & previous_state) override
   {
-    auto ret = admittance_controller::AdmittanceController::on_configure(previous_state);
-    // Only if on_configure is successful create subscription
-    if (ret == CallbackReturn::SUCCESS)
-    {
-      input_pose_command_subscriber_wait_set_.add_subscription(input_joint_command_subscriber_);
-    }
-    return ret;
+    return admittance_controller::AdmittanceController::on_configure(previous_state);
   }
 
   /**
    * @brief wait_for_commands blocks until a new ControllerCommandMsg is received.
    * Requires that the executor is not spinned elsewhere between the
    *  message publication and the call to this function.
-   *
-   * @return true if new ControllerCommandMsg msg was received, false if timeout.
    */
-  bool wait_for_commands(
+  void wait_for_commands(
     rclcpp::Executor & executor,
     const std::chrono::milliseconds & timeout = std::chrono::milliseconds{500})
   {
-    bool success =
-      input_pose_command_subscriber_wait_set_.wait(timeout).kind() == rclcpp::WaitResultKind::Ready;
-
-    if (success)
+    auto until = get_node()->get_clock()->now() + timeout;
+    while (get_node()->get_clock()->now() < until)
     {
       executor.spin_some();
+      std::this_thread::sleep_for(std::chrono::microseconds(10));
     }
-    return success;
   }
 
 private:
-  rclcpp::WaitSet input_wrench_command_subscriber_wait_set_;
-  rclcpp::WaitSet input_pose_command_subscriber_wait_set_;
   const std::string robot_description_ = ros2_control_test_assets::valid_6d_robot_urdf;
   const std::string robot_description_semantic_ = ros2_control_test_assets::valid_6d_robot_srdf;
 };
@@ -279,9 +257,12 @@ protected:
   void subscribe_and_get_messages(ControllerStateMsg & msg)
   {
     // create a new subscriber
-    auto subs_callback = [&](const ControllerStateMsg::SharedPtr) {};
+    ControllerStateMsg::SharedPtr received_msg;
+    auto subs_callback = [&](const ControllerStateMsg::SharedPtr cb_msg) { received_msg = cb_msg; };
     auto subscription = test_subscription_node_->create_subscription<ControllerStateMsg>(
       "/test_admittance_controller/status", 10, subs_callback);
+    rclcpp::executors::SingleThreadedExecutor executor;
+    executor.add_node(test_subscription_node_->get_node_base_interface());
 
     // call update to publish the test value
     ASSERT_EQ(
@@ -289,11 +270,18 @@ protected:
       controller_interface::return_type::OK);
 
     // wait for message to be passed
-    ASSERT_EQ(wait_for(subscription), rclcpp::WaitResultKind::Ready);
+    const auto timeout = std::chrono::milliseconds{1};
+    const auto until = test_subscription_node_->get_clock()->now() + timeout;
+    while (!received_msg && test_subscription_node_->get_clock()->now() < until)
+    {
+      executor.spin_some();
+      std::this_thread::sleep_for(std::chrono::microseconds(10));
+    }
+
+    ASSERT_TRUE(received_msg);
 
     // take message from subscription
-    rclcpp::MessageInfo msg_info;
-    ASSERT_TRUE(subscription->take(msg, msg_info));
+    msg = *received_msg;
   }
 
   void publish_commands()
