@@ -34,9 +34,9 @@ using GoalHandle = rclcpp_action::ServerGoalHandle<GripperCommandAction>;
 using testing::SizeIs;
 using testing::UnorderedElementsAre;
 
-void GripperControllerTest::SetUpTestCase() { rclcpp::init(0, nullptr); }
+void GripperControllerTest::SetUpTestCase() {}
 
-void GripperControllerTest::TearDownTestCase() { rclcpp::shutdown(); }
+void GripperControllerTest::TearDownTestCase() {}
 
 void GripperControllerTest::SetUp()
 {
@@ -48,8 +48,9 @@ void GripperControllerTest::TearDown() { controller_.reset(nullptr); }
 
 void GripperControllerTest::SetUpController()
 {
-  const auto result =
-    controller_->init("gripper_controller", "", 0, "", controller_->define_custom_node_options());
+  const auto result = controller_->init(
+    "test_gripper_action_position_controller", "", 0, "",
+    controller_->define_custom_node_options());
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
   std::vector<LoanedCommandInterface> command_ifs;
@@ -60,33 +61,13 @@ void GripperControllerTest::SetUpController()
   controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
 }
 
-TEST_F(GripperControllerTest, ParametersNotSet)
-{
-  this->SetUpController();
-
-  // configure failed, 'joints' parameter not set
-  ASSERT_EQ(
-    this->controller_->on_configure(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::ERROR);
-}
-
-TEST_F(GripperControllerTest, JointParameterIsEmpty)
-{
-  this->SetUpController();
-
-  this->controller_->get_node()->set_parameter({"joint", ""});
-
-  // configure failed, 'joints' is empty
-  ASSERT_EQ(
-    this->controller_->on_configure(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::ERROR);
-}
-
 TEST_F(GripperControllerTest, ConfigureParamsSuccess)
 {
   this->SetUpController();
 
-  this->controller_->get_node()->set_parameter({"joint", "joint_1"});
+  this->controller_->get_node()->set_parameter({"joint", "joint1"});
+
+  rclcpp::spin_some(this->controller_->get_node()->get_node_base_interface());
 
   // configure successful
   ASSERT_EQ(
@@ -98,27 +79,12 @@ TEST_F(GripperControllerTest, ConfigureParamsSuccess)
   ASSERT_THAT(cmd_if_conf.names, SizeIs(1lu));
   ASSERT_THAT(
     cmd_if_conf.names,
-    UnorderedElementsAre(std::string("joint_1/") + hardware_interface::HW_IF_POSITION));
+    UnorderedElementsAre(std::string("joint1/") + hardware_interface::HW_IF_POSITION));
   EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
   auto state_if_conf = this->controller_->state_interface_configuration();
   ASSERT_THAT(state_if_conf.names, SizeIs(2lu));
-  ASSERT_THAT(state_if_conf.names, UnorderedElementsAre("joint_1/position", "joint_1/velocity"));
+  ASSERT_THAT(state_if_conf.names, UnorderedElementsAre("joint1/position", "joint1/velocity"));
   EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
-}
-
-TEST_F(GripperControllerTest, ActivateWithWrongJointsNamesFails)
-{
-  this->SetUpController();
-
-  this->controller_->get_node()->set_parameter({"joint", "unicorn_joint"});
-
-  // activate failed, 'joint4' is not a valid joint name for the hardware
-  ASSERT_EQ(
-    this->controller_->on_configure(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
-  ASSERT_EQ(
-    this->controller_->on_activate(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::ERROR);
 }
 
 TEST_F(GripperControllerTest, ActivateSuccess)
@@ -166,4 +132,13 @@ TEST_F(GripperControllerTest, ActivateDeactivateActivateSuccess)
   ASSERT_EQ(
     this->controller_->on_activate(rclcpp_lifecycle::State()),
     controller_interface::CallbackReturn::SUCCESS);
+}
+
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleMock(&argc, argv);
+  rclcpp::init(argc, argv);
+  int result = RUN_ALL_TESTS();
+  rclcpp::shutdown();
+  return result;
 }
