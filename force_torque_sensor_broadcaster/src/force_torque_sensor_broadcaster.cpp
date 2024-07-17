@@ -144,16 +144,31 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_deactivate
 controller_interface::return_type ForceTorqueSensorBroadcaster::update(
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
+  if (param_listener_->is_old(params_))
+  {
+    params_ = param_listener_->get_params();
+  }
   if (realtime_publisher_ && realtime_publisher_->trylock())
   {
     realtime_publisher_->msg_.header.stamp = time;
     force_torque_sensor_->get_values_as_message(realtime_publisher_->msg_.wrench);
+    this->apply_sensor_offset(params_, realtime_publisher_->msg_);
     realtime_publisher_->unlockAndPublish();
   }
 
   return controller_interface::return_type::OK;
 }
 
+void ForceTorqueSensorBroadcaster::apply_sensor_offset(
+  const Params & params, geometry_msgs::msg::WrenchStamped & msg)
+{
+  msg.wrench.force.x -= params.offset.force.x;
+  msg.wrench.force.y -= params.offset.force.y;
+  msg.wrench.force.z -= params.offset.force.z;
+  msg.wrench.torque.x -= params.offset.torque.x;
+  msg.wrench.torque.y -= params.offset.torque.y;
+  msg.wrench.torque.z -= params.offset.torque.z;
+}
 }  // namespace force_torque_sensor_broadcaster
 
 #include "pluginlib/class_list_macros.hpp"
