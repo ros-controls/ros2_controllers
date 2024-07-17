@@ -22,14 +22,9 @@
 #include <utility>
 #include <vector>
 
-#include "force_torque_sensor_broadcaster/force_torque_sensor_broadcaster.hpp"
 #include "geometry_msgs/msg/wrench_stamped.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
-#include "hardware_interface/types/hardware_interface_return_values.hpp"
-#include "hardware_interface/types/hardware_interface_type_values.hpp"
-#include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/utilities.hpp"
-#include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 
 using hardware_interface::LoanedStateInterface;
 using testing::IsEmpty;

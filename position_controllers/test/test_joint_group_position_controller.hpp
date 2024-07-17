@@ -15,11 +15,11 @@
 #ifndef TEST_JOINT_GROUP_POSITION_CONTROLLER_HPP_
 #define TEST_JOINT_GROUP_POSITION_CONTROLLER_HPP_
 
+#include <gmock/gmock.h>
+
 #include <memory>
 #include <string>
 #include <vector>
-
-#include "gmock/gmock.h"
 
 #include "hardware_interface/handle.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"

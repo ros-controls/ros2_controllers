@@ -22,8 +22,7 @@
 #include <tuple>
 #include <vector>
 
-#include "realtime_tools/realtime_buffer.h"
-#include "realtime_tools/realtime_publisher.h"
+#include <rclcpp/time.hpp>
 
 // \note The versions conditioning is added here to support the source-compatibility with Humble
 #if RCPPUTILS_VERSION_MAJOR >= 2 && RCPPUTILS_VERSION_MINOR >= 6

@@ -18,23 +18,16 @@
 #define ADMITTANCE_CONTROLLER__ADMITTANCE_RULE_HPP_
 
 #include <Eigen/Core>
-#include <Eigen/Geometry>
-#include <map>
+
 #include <memory>
 #include <string>
 #include <vector>
 
+#include "admittance_controller_parameters.hpp"
 #include "control_msgs/msg/admittance_controller_state.hpp"
-#include "control_toolbox/filters.hpp"
-#include "controller_interface/controller_interface.hpp"
-#include "geometry_msgs/msg/wrench_stamped.hpp"
+#include "controller_interface/controller_interface_base.hpp"
 #include "kinematics_interface/kinematics_interface.hpp"
 #include "pluginlib/class_loader.hpp"
-#include "tf2_eigen/tf2_eigen.hpp"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
-#include "tf2_kdl/tf2_kdl.hpp"
-#include "tf2_ros/buffer.h"
-#include "tf2_ros/transform_listener.h"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
 namespace admittance_controller
