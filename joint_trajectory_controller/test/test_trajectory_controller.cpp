@@ -305,7 +305,7 @@ TEST_P(TrajectoryControllerTestParameterized, state_topic_consistency)
 {
   rclcpp::executors::SingleThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(executor, {});
-  subscribeToState();
+  subscribeToState(executor);
   updateController();
 
   // Spin to receive latest state
@@ -519,7 +519,7 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_angle_wraparoun
   std::vector<rclcpp::Parameter> params = {};
   bool angle_wraparound = false;
   SetUpAndActivateTrajectoryController(executor, params, true, k_p, 0.0, angle_wraparound);
-  subscribeToState();
+  subscribeToState(executor);
 
   size_t n_joints = joint_names_.size();
 
