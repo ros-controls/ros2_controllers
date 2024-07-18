@@ -43,9 +43,10 @@ JointTrajectoryController::JointTrajectoryController()
 
 controller_interface::CallbackReturn JointTrajectoryController::on_init()
 {
-  if (!urdf_.empty())
+  const std::string & urdf = get_robot_description();
+  if (!urdf.empty())
   {
-    if (!model_.initString(urdf_))
+    if (!model_.initString(urdf))
     {
       RCLCPP_ERROR(get_node()->get_logger(), "Failed to parse URDF file");
     }
@@ -701,7 +702,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   joints_angle_wraparound_.resize(dof_);
   for (size_t i = 0; i < dof_; ++i)
   {
-    if (!urdf_.empty())
+    if (!get_robot_description().empty())
     {
       auto urdf_joint = model_.getJoint(params_.joints[i]);
       if (urdf_joint && urdf_joint->type == urdf::Joint::CONTINUOUS)
