@@ -2,6 +2,11 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.25.0 (2024-07-09)
+-------------------
+* JTC trajectory end time validation fix (`#1090 <https://github.com/ros-controls/ros2_controllers/issues/1090>`_) (`#1141 <https://github.com/ros-controls/ros2_controllers/issues/1141>`_)
+* Contributors: mergify[bot]
+
 3.24.0 (2024-05-14)
 -------------------
 

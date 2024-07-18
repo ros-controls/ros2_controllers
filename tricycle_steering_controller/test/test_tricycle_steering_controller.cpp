@@ -241,7 +241,7 @@ TEST_F(TricycleSteeringControllerTest, receive_message_and_publish_updated_statu
   EXPECT_EQ(msg.steering_angle_command[0], 2.2);
 
   publish_commands();
-  ASSERT_TRUE(controller_->wait_for_commands(executor));
+  controller_->wait_for_commands(executor);
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),

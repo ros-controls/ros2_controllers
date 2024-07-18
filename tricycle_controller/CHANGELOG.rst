@@ -2,6 +2,12 @@
 Changelog for package tricycle_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.25.0 (2024-07-09)
+-------------------
+* Add mobile robot kinematics 101 and improve steering library docs (`#954 <https://github.com/ros-controls/ros2_controllers/issues/954>`_) (`#1161 <https://github.com/ros-controls/ros2_controllers/issues/1161>`_)
+* Bump version of pre-commit hooks (`#1157 <https://github.com/ros-controls/ros2_controllers/issues/1157>`_) (`#1159 <https://github.com/ros-controls/ros2_controllers/issues/1159>`_)
+* Contributors: mergify[bot]
+
 3.24.0 (2024-05-14)
 -------------------
 * Deprecate non-stamped twist for tricycle_controller and steering_controllers (`#1093 <https://github.com/ros-controls/ros2_controllers/issues/1093>`_) (`#1124 <https://github.com/ros-controls/ros2_controllers/issues/1124>`_)
