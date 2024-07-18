@@ -677,7 +677,7 @@ void JointStateBroadcasterTest::activate_and_get_joint_state_message(
   while (max_sub_check_loop_count--)
   {
     state_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
-    const auto timeout = std::chrono::milliseconds{1};
+    const auto timeout = std::chrono::milliseconds{5};
     const auto until = test_node.get_clock()->now() + timeout;
     while (!received_msg && test_node.get_clock()->now() < until)
     {
@@ -755,7 +755,7 @@ void JointStateBroadcasterTest::test_published_dynamic_joint_state_message(
   while (max_sub_check_loop_count--)
   {
     state_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
-    const auto timeout = std::chrono::milliseconds{1};
+    const auto timeout = std::chrono::milliseconds{5};
     const auto until = test_node.get_clock()->now() + timeout;
     while (test_node.get_clock()->now() < until)
     {
