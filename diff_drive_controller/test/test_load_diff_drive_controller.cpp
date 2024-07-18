@@ -41,6 +41,5 @@ int main(int argc, char ** argv)
   rclcpp::init(argc, argv);
   int result = RUN_ALL_TESTS();
   rclcpp::shutdown();
-  rclcpp::shutdown();
   return result;
 }
