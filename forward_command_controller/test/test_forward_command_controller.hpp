@@ -24,11 +24,12 @@
 #include "forward_command_controller/forward_command_controller.hpp"
 #include "hardware_interface/handle.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
+#include "rclcpp/executors/single_threaded_executor.hpp"
 
-using hardware_interface::HW_IF_POSITION;
 using hardware_interface::CommandInterface;
+using hardware_interface::HW_IF_POSITION;
 
-// subclassing and friending so we can access member varibles
+// subclassing and friending so we can access member variables
 class FriendForwardCommandController : public forward_command_controller::ForwardCommandController
 {
   FRIEND_TEST(ForwardCommandControllerTest, JointsParameterNotSet);
@@ -44,6 +45,7 @@ class FriendForwardCommandController : public forward_command_controller::Forwar
   FRIEND_TEST(ForwardCommandControllerTest, WrongCommandCheckTest);
   FRIEND_TEST(ForwardCommandControllerTest, NoCommandCheckTest);
   FRIEND_TEST(ForwardCommandControllerTest, CommandCallbackTest);
+  FRIEND_TEST(ForwardCommandControllerTest, ActivateDeactivateCommandsResetSuccess);
 };
 
 class ForwardCommandControllerTest : public ::testing::Test
@@ -68,6 +70,7 @@ protected:
   CommandInterface joint_1_pos_cmd_{joint_names_[0], HW_IF_POSITION, &joint_commands_[0]};
   CommandInterface joint_2_pos_cmd_{joint_names_[1], HW_IF_POSITION, &joint_commands_[1]};
   CommandInterface joint_3_pos_cmd_{joint_names_[2], HW_IF_POSITION, &joint_commands_[2]};
+  rclcpp::executors::SingleThreadedExecutor executor;
 };
 
 #endif  // TEST_FORWARD_COMMAND_CONTROLLER_HPP_

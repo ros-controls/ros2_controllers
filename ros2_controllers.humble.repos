@@ -1,0 +1,21 @@
+repositories:
+  ros2_control:
+    type: git
+    url: https://github.com/ros-controls/ros2_control.git
+    version: humble
+  realtime_tools:
+    type: git
+    url: https://github.com/ros-controls/realtime_tools.git
+    version: master
+  kinematics_interface:
+    type: git
+    url: https://github.com/ros-controls/kinematics_interface.git
+    version: master
+  control_msgs:
+    type: git
+    url: https://github.com/ros-controls/control_msgs.git
+    version: humble
+  control_toolbox:
+    type: git
+    url: https://github.com/ros-controls/control_toolbox.git
+    version: ros2-master

@@ -26,31 +26,31 @@
 //     https://gcc.gnu.org/wiki/Visibility
 
 #if defined _WIN32 || defined __CYGWIN__
-  #ifdef __GNUC__
-    #define VELOCITY_CONTROLLERS_EXPORT __attribute__ ((dllexport))
-    #define VELOCITY_CONTROLLERS_IMPORT __attribute__ ((dllimport))
-  #else
-    #define VELOCITY_CONTROLLERS_EXPORT __declspec(dllexport)
-    #define VELOCITY_CONTROLLERS_IMPORT __declspec(dllimport)
-  #endif
-  #ifdef VELOCITY_CONTROLLERS_BUILDING_DLL
-    #define VELOCITY_CONTROLLERS_PUBLIC VELOCITY_CONTROLLERS_EXPORT
-  #else
-    #define VELOCITY_CONTROLLERS_PUBLIC VELOCITY_CONTROLLERS_IMPORT
-  #endif
-  #define VELOCITY_CONTROLLERS_PUBLIC_TYPE VELOCITY_CONTROLLERS_PUBLIC
-  #define VELOCITY_CONTROLLERS_LOCAL
+#ifdef __GNUC__
+#define VELOCITY_CONTROLLERS_EXPORT __attribute__((dllexport))
+#define VELOCITY_CONTROLLERS_IMPORT __attribute__((dllimport))
 #else
-  #define VELOCITY_CONTROLLERS_EXPORT __attribute__ ((visibility("default")))
-  #define VELOCITY_CONTROLLERS_IMPORT
-  #if __GNUC__ >= 4
-    #define VELOCITY_CONTROLLERS_PUBLIC __attribute__ ((visibility("default")))
-    #define VELOCITY_CONTROLLERS_LOCAL  __attribute__ ((visibility("hidden")))
-  #else
-    #define VELOCITY_CONTROLLERS_PUBLIC
-    #define VELOCITY_CONTROLLERS_LOCAL
-  #endif
-  #define VELOCITY_CONTROLLERS_PUBLIC_TYPE
+#define VELOCITY_CONTROLLERS_EXPORT __declspec(dllexport)
+#define VELOCITY_CONTROLLERS_IMPORT __declspec(dllimport)
+#endif
+#ifdef VELOCITY_CONTROLLERS_BUILDING_DLL
+#define VELOCITY_CONTROLLERS_PUBLIC VELOCITY_CONTROLLERS_EXPORT
+#else
+#define VELOCITY_CONTROLLERS_PUBLIC VELOCITY_CONTROLLERS_IMPORT
+#endif
+#define VELOCITY_CONTROLLERS_PUBLIC_TYPE VELOCITY_CONTROLLERS_PUBLIC
+#define VELOCITY_CONTROLLERS_LOCAL
+#else
+#define VELOCITY_CONTROLLERS_EXPORT __attribute__((visibility("default")))
+#define VELOCITY_CONTROLLERS_IMPORT
+#if __GNUC__ >= 4
+#define VELOCITY_CONTROLLERS_PUBLIC __attribute__((visibility("default")))
+#define VELOCITY_CONTROLLERS_LOCAL __attribute__((visibility("hidden")))
+#else
+#define VELOCITY_CONTROLLERS_PUBLIC
+#define VELOCITY_CONTROLLERS_LOCAL
+#endif
+#define VELOCITY_CONTROLLERS_PUBLIC_TYPE
 #endif
 
 #endif  // VELOCITY_CONTROLLERS__VISIBILITY_CONTROL_H_

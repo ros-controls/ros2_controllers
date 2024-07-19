@@ -15,14 +15,11 @@
 #ifndef POSITION_CONTROLLERS__JOINT_GROUP_POSITION_CONTROLLER_HPP_
 #define POSITION_CONTROLLERS__JOINT_GROUP_POSITION_CONTROLLER_HPP_
 
-#include <string>
-
 #include "forward_command_controller/forward_command_controller.hpp"
 #include "position_controllers/visibility_control.h"
 
 namespace position_controllers
 {
-
 /**
  * \brief Forward command controller for a set of position controlled joints (linear or angular).
  *
@@ -39,8 +36,7 @@ public:
   POSITION_CONTROLLERS_PUBLIC
   JointGroupPositionController();
 
-  POSITION_CONTROLLERS_PUBLIC controller_interface::return_type
-  init(const std::string & controller_name) override;
+  POSITION_CONTROLLERS_PUBLIC controller_interface::CallbackReturn on_init() override;
 };
 
 }  // namespace position_controllers

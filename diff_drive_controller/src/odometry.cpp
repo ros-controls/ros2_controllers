@@ -49,8 +49,9 @@ bool Odometry::update(double left_pos, double right_pos, const rclcpp::Time & ti
 {
   // We cannot estimate the speed with very small time intervals:
   const double dt = time.seconds() - timestamp_.seconds();
-  if (dt < 0.0001) {
-    return false;    // Interval too small to integrate with
+  if (dt < 0.0001)
+  {
+    return false;  // Interval too small to integrate with
   }
 
   // Get current wheel joint positions:
@@ -65,10 +66,19 @@ bool Odometry::update(double left_pos, double right_pos, const rclcpp::Time & ti
   left_wheel_old_pos_ = left_wheel_cur_pos;
   right_wheel_old_pos_ = right_wheel_cur_pos;
 
+  updateFromVelocity(left_wheel_est_vel, right_wheel_est_vel, time);
+
+  return true;
+}
+
+bool Odometry::updateFromVelocity(double left_vel, double right_vel, const rclcpp::Time & time)
+{
+  const double dt = time.seconds() - timestamp_.seconds();
+
   // Compute linear and angular diff:
-  const double linear = (right_wheel_est_vel + left_wheel_est_vel) * 0.5;
+  const double linear = (left_vel + right_vel) * 0.5;
   // Now there is a bug about scout angular velocity
-  const double angular = (right_wheel_est_vel - left_wheel_est_vel) / wheel_separation_;
+  const double angular = (right_vel - left_vel) / wheel_separation_;
 
   // Integrate odometry:
   integrateExact(linear, angular);
@@ -105,8 +115,7 @@ void Odometry::resetOdometry()
 }
 
 void Odometry::setWheelParams(
-  double wheel_separation, double left_wheel_radius,
-  double right_wheel_radius)
+  double wheel_separation, double left_wheel_radius, double right_wheel_radius)
 {
   wheel_separation_ = wheel_separation;
   left_wheel_radius_ = left_wheel_radius;
@@ -132,9 +141,12 @@ void Odometry::integrateRungeKutta2(double linear, double angular)
 
 void Odometry::integrateExact(double linear, double angular)
 {
-  if (fabs(angular) < 1e-6) {
+  if (fabs(angular) < 1e-6)
+  {
     integrateRungeKutta2(linear, angular);
-  } else {
+  }
+  else
+  {
     /// Exact integration (should solve problems when angular is zero):
     const double heading_old = heading_;
     const double r = linear / angular;

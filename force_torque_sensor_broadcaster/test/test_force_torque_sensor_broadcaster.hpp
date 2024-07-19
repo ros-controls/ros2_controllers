@@ -19,16 +19,16 @@
 #ifndef TEST_FORCE_TORQUE_SENSOR_BROADCASTER_HPP_
 #define TEST_FORCE_TORQUE_SENSOR_BROADCASTER_HPP_
 
+#include <gmock/gmock.h>
+
 #include <memory>
 #include <string>
 
-#include "gmock/gmock.h"
-
 #include "force_torque_sensor_broadcaster/force_torque_sensor_broadcaster.hpp"
 
-// subclassing and friending so we can access member varibles
-class FriendForceTorqueSensorBroadcaster : public force_torque_sensor_broadcaster::
-  ForceTorqueSensorBroadcaster
+// subclassing and friending so we can access member variables
+class FriendForceTorqueSensorBroadcaster
+: public force_torque_sensor_broadcaster::ForceTorqueSensorBroadcaster
 {
   FRIEND_TEST(ForceTorqueSensorBroadcasterTest, SensorNameParameterNotSet);
   FRIEND_TEST(ForceTorqueSensorBroadcasterTest, InterfaceNamesParameterNotSet);
@@ -36,7 +36,7 @@ class FriendForceTorqueSensorBroadcaster : public force_torque_sensor_broadcaste
   FRIEND_TEST(ForceTorqueSensorBroadcasterTest, SensorNameParameterIsEmpty);
   FRIEND_TEST(ForceTorqueSensorBroadcasterTest, InterfaceNameParameterIsEmpty);
 
-  FRIEND_TEST(ForceTorqueSensorBroadcasterTest, ActivateSuccess);
+  FRIEND_TEST(ForceTorqueSensorBroadcasterTest, SensorName_ActivateDeactivate_Success);
   FRIEND_TEST(ForceTorqueSensorBroadcasterTest, UpdateTest);
   FRIEND_TEST(ForceTorqueSensorBroadcasterTest, SensorStatePublishTest);
 };

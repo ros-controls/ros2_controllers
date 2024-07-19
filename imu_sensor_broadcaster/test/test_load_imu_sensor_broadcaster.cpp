@@ -28,19 +28,23 @@
 
 TEST(TestLoadIMUSensorBroadcaster, load_controller)
 {
-  rclcpp::init(0, nullptr);
-
   std::shared_ptr<rclcpp::Executor> executor =
     std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
 
   controller_manager::ControllerManager cm(
-    std::make_unique<hardware_interface::ResourceManager>(
-      ros2_control_test_assets::minimal_robot_urdf), executor, "test_controller_manager");
+    executor, ros2_control_test_assets::minimal_robot_urdf, true, "test_controller_manager");
 
-  ASSERT_NO_THROW(
+  ASSERT_NE(
     cm.load_controller(
-      "test_imu_sensor_broadcaster",
-      "imu_sensor_broadcaster/IMUSensorBroadcaster"));
+      "test_imu_sensor_broadcaster", "imu_sensor_broadcaster/IMUSensorBroadcaster"),
+    nullptr);
+}
 
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleMock(&argc, argv);
+  rclcpp::init(argc, argv);
+  int result = RUN_ALL_TESTS();
   rclcpp::shutdown();
+  return result;
 }

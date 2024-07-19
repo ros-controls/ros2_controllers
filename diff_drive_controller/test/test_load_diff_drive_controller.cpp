@@ -16,23 +16,30 @@
 #include <memory>
 
 #include "controller_manager/controller_manager.hpp"
+#include "hardware_interface/resource_manager.hpp"
+#include "rclcpp/executor.hpp"
+#include "rclcpp/executors/single_threaded_executor.hpp"
 #include "rclcpp/utilities.hpp"
-#include "test_common.hpp"
+#include "ros2_control_test_assets/descriptions.hpp"
 
 TEST(TestLoadDiffDriveController, load_controller)
 {
-  rclcpp::init(0, nullptr);
-
   std::shared_ptr<rclcpp::Executor> executor =
     std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
 
-  controller_manager::ControllerManager cm(std::make_unique<hardware_interface::ResourceManager>(
-      diff_drive_controller_testing::diffbot_urdf), executor, "test_controller_manager");
+  controller_manager::ControllerManager cm(
+    executor, ros2_control_test_assets::diffbot_urdf, true, "test_controller_manager");
 
-  ASSERT_NO_THROW(
-    cm.load_controller(
-      "test_diff_drive_controller",
-      "diff_drive_controller/DiffDriveController"));
+  ASSERT_NE(
+    cm.load_controller("test_diff_drive_controller", "diff_drive_controller/DiffDriveController"),
+    nullptr);
+}
 
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  rclcpp::init(argc, argv);
+  int result = RUN_ALL_TESTS();
   rclcpp::shutdown();
+  return result;
 }

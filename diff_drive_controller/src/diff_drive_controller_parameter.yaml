@@ -1,0 +1,189 @@
+diff_drive_controller:
+  left_wheel_names: {
+    type: string_array,
+    default_value: [],
+    description: "Names of the left side wheels' joints",
+    validation: {
+      not_empty<>: []
+    }
+  }
+  right_wheel_names: {
+    type: string_array,
+    default_value: [],
+    description: "Names of the right side wheels' joints",
+    validation: {
+      not_empty<>: []
+    }
+  }
+  wheel_separation: {
+    type: double,
+    default_value: 0.0,
+    description: "Shortest distance between the left and right wheels. If this parameter is wrong, the robot will not behave correctly in curves.",
+    validation: {
+      gt<>: [0.0]
+    }
+  }
+  wheel_radius: {
+    type: double,
+    default_value: 0.0,
+    description: "Radius of a wheel, i.e., wheels size, used for transformation of linear velocity into wheel rotations. If this parameter is wrong the robot will move faster or slower then expected.",
+    validation: {
+      gt<>: [0.0]
+    }
+  }
+  wheel_separation_multiplier: {
+    type: double,
+    default_value: 1.0,
+    description: "Correction factor for wheel separation (TODO(destogl): Please help me describe this correctly)",
+  }
+  left_wheel_radius_multiplier: {
+    type: double,
+    default_value: 1.0,
+    description: "Correction factor when radius of left wheels differs from the nominal value in ``wheel_radius`` parameter.",
+  }
+  right_wheel_radius_multiplier: {
+    type: double,
+    default_value: 1.0,
+    description: "Correction factor when radius of right wheels differs from the nominal value in ``wheel_radius`` parameter.",
+  }
+  tf_frame_prefix_enable: {
+    type: bool,
+    default_value: true,
+    description:  "Enables or disables appending tf_prefix to tf frame id's.",
+  }
+  tf_frame_prefix: {
+    type: string,
+    default_value: "",
+    description:  "(optional) Prefix to be appended to the tf frames, will be added to odom_id and base_frame_id before publishing. If the parameter is empty, controller's namespace will be used.",
+  }
+  odom_frame_id: {
+    type: string,
+    default_value: "odom",
+    description:  "Name of the frame for odometry. This frame is parent of ``base_frame_id`` when controller publishes odometry.",
+  }
+  base_frame_id: {
+    type: string,
+    default_value: "base_link",
+    description: "Name of the robot's base frame that is child of the odometry frame.",
+  }
+  pose_covariance_diagonal: {
+    type: double_array,
+    default_value: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    description: "Odometry covariance for the encoder output of the robot for the pose. These values should be tuned to your robot's sample odometry data, but these values are a good place to start: ``[0.001, 0.001, 0.001, 0.001, 0.001, 0.01]``.",
+  }
+  twist_covariance_diagonal: {
+    type: double_array,
+    default_value: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    description: "Odometry covariance for the encoder output of the robot for the speed. These values should be tuned to your robot's sample odometry data, but these values are a good place to start: ``[0.001, 0.001, 0.001, 0.001, 0.001, 0.01]``.",
+  }
+  open_loop: {
+    type: bool,
+    default_value: false,
+    description: "If set to true the odometry of the robot will be calculated from the commanded values and not from feedback.",
+  }
+  position_feedback: {
+    type: bool,
+    default_value: true,
+    description: "Is there position feedback from hardware.",
+  }
+  enable_odom_tf: {
+    type: bool,
+    default_value: true,
+    description: "Publish transformation between ``odom_frame_id`` and ``base_frame_id``.",
+  }
+  cmd_vel_timeout: {
+    type: double,
+    default_value: 0.5, # seconds
+    description: "Timeout in seconds, after which input command on ``cmd_vel`` topic is considered staled.",
+  }
+  publish_limited_velocity: {
+    type: bool,
+    default_value: false,
+    description: "Publish limited velocity value.",
+  }
+  velocity_rolling_window_size: {
+    type: int,
+    default_value: 10,
+    description: "Size of the rolling window for calculation of mean velocity use in odometry.",
+  }
+  publish_rate: {
+    type: double,
+    default_value: 50.0, # Hz
+    description: "Publishing rate (Hz) of the odometry and TF messages.",
+  }
+  linear:
+    x:
+      has_velocity_limits: {
+        type: bool,
+        default_value: false,
+      }
+      has_acceleration_limits: {
+        type: bool,
+        default_value: false,
+      }
+      has_jerk_limits: {
+        type: bool,
+        default_value: false,
+      }
+      max_velocity: {
+        type: double,
+        default_value: .NAN,
+      }
+      min_velocity: {
+        type: double,
+        default_value: .NAN,
+      }
+      max_acceleration: {
+        type: double,
+        default_value: .NAN,
+      }
+      min_acceleration: {
+        type: double,
+        default_value: .NAN,
+      }
+      max_jerk: {
+        type: double,
+        default_value: .NAN,
+      }
+      min_jerk: {
+        type: double,
+        default_value: .NAN,
+      }
+  angular:
+    z:
+      has_velocity_limits: {
+        type: bool,
+        default_value: false,
+      }
+      has_acceleration_limits: {
+        type: bool,
+        default_value: false,
+      }
+      has_jerk_limits: {
+        type: bool,
+        default_value: false,
+      }
+      max_velocity: {
+        type: double,
+        default_value: .NAN,
+      }
+      min_velocity: {
+        type: double,
+        default_value: .NAN,
+      }
+      max_acceleration: {
+        type: double,
+        default_value: .NAN,
+      }
+      min_acceleration: {
+        type: double,
+        default_value: .NAN,
+      }
+      max_jerk: {
+        type: double,
+        default_value: .NAN,
+      }
+      min_jerk: {
+        type: double,
+        default_value: .NAN,
+      }

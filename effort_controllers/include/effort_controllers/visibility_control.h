@@ -26,31 +26,31 @@
 //     https://gcc.gnu.org/wiki/Visibility
 
 #if defined _WIN32 || defined __CYGWIN__
-  #ifdef __GNUC__
-    #define EFFORT_CONTROLLERS_EXPORT __attribute__ ((dllexport))
-    #define EFFORT_CONTROLLERS_IMPORT __attribute__ ((dllimport))
-  #else
-    #define EFFORT_CONTROLLERS_EXPORT __declspec(dllexport)
-    #define EFFORT_CONTROLLERS_IMPORT __declspec(dllimport)
-  #endif
-  #ifdef EFFORT_CONTROLLERS_BUILDING_DLL
-    #define EFFORT_CONTROLLERS_PUBLIC EFFORT_CONTROLLERS_EXPORT
-  #else
-    #define EFFORT_CONTROLLERS_PUBLIC EFFORT_CONTROLLERS_IMPORT
-  #endif
-  #define EFFORT_CONTROLLERS_PUBLIC_TYPE EFFORT_CONTROLLERS_PUBLIC
-  #define EFFORT_CONTROLLERS_LOCAL
+#ifdef __GNUC__
+#define EFFORT_CONTROLLERS_EXPORT __attribute__((dllexport))
+#define EFFORT_CONTROLLERS_IMPORT __attribute__((dllimport))
 #else
-  #define EFFORT_CONTROLLERS_EXPORT __attribute__ ((visibility("default")))
-  #define EFFORT_CONTROLLERS_IMPORT
-  #if __GNUC__ >= 4
-    #define EFFORT_CONTROLLERS_PUBLIC __attribute__ ((visibility("default")))
-    #define EFFORT_CONTROLLERS_LOCAL  __attribute__ ((visibility("hidden")))
-  #else
-    #define EFFORT_CONTROLLERS_PUBLIC
-    #define EFFORT_CONTROLLERS_LOCAL
-  #endif
-  #define EFFORT_CONTROLLERS_PUBLIC_TYPE
+#define EFFORT_CONTROLLERS_EXPORT __declspec(dllexport)
+#define EFFORT_CONTROLLERS_IMPORT __declspec(dllimport)
+#endif
+#ifdef EFFORT_CONTROLLERS_BUILDING_DLL
+#define EFFORT_CONTROLLERS_PUBLIC EFFORT_CONTROLLERS_EXPORT
+#else
+#define EFFORT_CONTROLLERS_PUBLIC EFFORT_CONTROLLERS_IMPORT
+#endif
+#define EFFORT_CONTROLLERS_PUBLIC_TYPE EFFORT_CONTROLLERS_PUBLIC
+#define EFFORT_CONTROLLERS_LOCAL
+#else
+#define EFFORT_CONTROLLERS_EXPORT __attribute__((visibility("default")))
+#define EFFORT_CONTROLLERS_IMPORT
+#if __GNUC__ >= 4
+#define EFFORT_CONTROLLERS_PUBLIC __attribute__((visibility("default")))
+#define EFFORT_CONTROLLERS_LOCAL __attribute__((visibility("hidden")))
+#else
+#define EFFORT_CONTROLLERS_PUBLIC
+#define EFFORT_CONTROLLERS_LOCAL
+#endif
+#define EFFORT_CONTROLLERS_PUBLIC_TYPE
 #endif
 
 #endif  // EFFORT_CONTROLLERS__VISIBILITY_CONTROL_H_

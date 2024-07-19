@@ -15,20 +15,21 @@
 #ifndef TEST_JOINT_GROUP_POSITION_CONTROLLER_HPP_
 #define TEST_JOINT_GROUP_POSITION_CONTROLLER_HPP_
 
+#include <gmock/gmock.h>
+
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "gmock/gmock.h"
-
 #include "hardware_interface/handle.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "position_controllers/joint_group_position_controller.hpp"
+#include "rclcpp/executors/single_threaded_executor.hpp"
 
-using hardware_interface::HW_IF_POSITION;
 using hardware_interface::CommandInterface;
+using hardware_interface::HW_IF_POSITION;
 
-// subclassing and friending so we can access member varibles
+// subclassing and friending so we can access member variables
 class FriendJointGroupPositionController : public position_controllers::JointGroupPositionController
 {
   FRIEND_TEST(JointGroupPositionControllerTest, CommandSuccessTest);
@@ -58,6 +59,7 @@ protected:
   CommandInterface joint_1_pos_cmd_{joint_names_[0], HW_IF_POSITION, &joint_commands_[0]};
   CommandInterface joint_2_pos_cmd_{joint_names_[1], HW_IF_POSITION, &joint_commands_[1]};
   CommandInterface joint_3_pos_cmd_{joint_names_[2], HW_IF_POSITION, &joint_commands_[2]};
+  rclcpp::executors::SingleThreadedExecutor executor;
 };
 
 #endif  // TEST_JOINT_GROUP_POSITION_CONTROLLER_HPP_

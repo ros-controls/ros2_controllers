@@ -1,0 +1,150 @@
+joint_trajectory_controller:
+  joints: {
+    type: string_array,
+    default_value: [],
+    description: "Joint names to control and listen to",
+    read_only: true,
+    validation: {
+      unique<>: null,
+    }
+  }
+  command_joints: {
+    type: string_array,
+    default_value: [],
+    description: "Joint names to control. This parameters is used if JTC is used in a controller chain where command and state interfaces don't have same names.",
+    read_only: true,
+    validation: {
+      unique<>: null,
+    }
+  }
+  command_interfaces: {
+    type: string_array,
+    default_value: [],
+    description: "Command interfaces provided by the hardware interface for all joints",
+    read_only: true,
+    validation: {
+      unique<>: null,
+      subset_of<>: [["position", "velocity", "acceleration", "effort",]],
+      "joint_trajectory_controller::command_interface_type_combinations": null,
+    }
+  }
+  state_interfaces: {
+    type: string_array,
+    default_value: [],
+    description: "State interfaces provided by the hardware for all joints.",
+    read_only: true,
+    validation: {
+      unique<>: null,
+      subset_of<>: [["position", "velocity", "acceleration",]],
+      "joint_trajectory_controller::state_interface_type_combinations": null,
+    }
+  }
+  allow_partial_joints_goal: {
+    type: bool,
+    default_value: false,
+    description: "Allow joint goals defining trajectory for only some joints.",
+  }
+  open_loop_control: {
+    type: bool,
+    default_value: false,
+    description: "Use controller in open-loop control mode
+      \n\n
+      * The controller ignores the states provided by hardware interface but using last commands as states for starting the trajectory interpolation.\n
+      * It deactivates the feedback control, see the ``gains`` structure.
+      \n\n
+      This is useful if hardware states are not following commands, i.e., an offset between those (typical for hydraulic manipulators).
+      \n\n
+      If this flag is set, the controller tries to read the values from the command interfaces on activation.
+      If they have real numeric values, those will be used instead of state interfaces.
+      Therefore it is important set command interfaces to NaN (i.e., ``std::numeric_limits<double>::quiet_NaN()``) or state values when the hardware is started.\n",
+    read_only: true,
+  }
+  allow_integration_in_goal_trajectories: {
+    type: bool,
+    default_value: false,
+    description: "Allow integration in goal trajectories to accept goals without position or velocity specified",
+  }
+  action_monitor_rate: {
+    type: double,
+    default_value: 20.0,
+    description: "Rate to monitor status changes when the controller is executing action (control_msgs::action::FollowJointTrajectory)",
+    read_only: true,
+    validation: {
+      gt_eq: [0.1]
+    }
+  }
+  interpolation_method: {
+    type: string,
+    default_value: "splines",
+    description: "The type of interpolation to use, if any",
+    read_only: true,
+    validation: {
+      one_of<>: [["splines", "none"]],
+    }
+  }
+  allow_nonzero_velocity_at_trajectory_end: {
+    type: bool,
+    default_value: false,
+    description: "If false, the last velocity point has to be zero or the goal will be rejected",
+  }
+  cmd_timeout: {
+    type: double,
+    default_value: 0.0, # seconds
+    description: "Timeout after which the input command is considered stale.
+     Timeout is counted from the end of the trajectory (the last point).
+     ``cmd_timeout`` must be greater than ``constraints.goal_time``, otherwise ignored.
+     If zero, timeout is deactivated",
+  }
+  gains:
+    __map_joints:
+      p: {
+        type: double,
+        default_value: 0.0,
+        description: "Proportional gain :math:`k_p` for PID"
+      }
+      i: {
+        type: double,
+        default_value: 0.0,
+        description: "Integral gain :math:`k_i` for PID"
+      }
+      d: {
+        type: double,
+        default_value: 0.0,
+        description: "Derivative gain :math:`k_d` for PID"
+      }
+      i_clamp: {
+        type: double,
+        default_value: 0.0,
+        description: "Integral clamp. Symmetrical in both positive and negative direction."
+      }
+      ff_velocity_scale: {
+        type: double,
+        default_value: 0.0,
+        description: "Feed-forward scaling :math:`k_{ff}` of velocity"
+      }
+  constraints:
+    stopped_velocity_tolerance: {
+      type: double,
+      default_value: 0.01,
+      description: "Velocity tolerance for at the end of the trajectory that indicates that controlled system is stopped.",
+    }
+    goal_time: {
+      type: double,
+      default_value: 0.0,
+      description: "Time tolerance for achieving trajectory goal before or after commanded time.
+        If set to zero, the controller will wait a potentially infinite amount of time.",
+      validation: {
+        gt_eq: [0.0],
+      }
+    }
+    __map_joints:
+      trajectory: {
+        type: double,
+        default_value: 0.0,
+        description: "Per-joint trajectory offset tolerance during movement.",
+      }
+      goal: {
+        type: double,
+        default_value: 0.0,
+        description: "Per-joint trajectory offset tolerance at the goal position.",
+      }

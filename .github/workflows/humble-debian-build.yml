@@ -1,0 +1,29 @@
+name: Debian Humble Source Build
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - humble
+    paths:
+      - '**.hpp'
+      - '**.h'
+      - '**.cpp'
+      - '.github/workflows/humble-debian-build.yml'
+      - '**.yaml'
+      - '**/package.xml'
+      - '**/CMakeLists.txt'
+      - 'ros2_controllers.humble.repos'
+  schedule:
+    # Run every day to detect flakiness and broken dependencies
+    - cron: '03 1 * * *'
+
+
+jobs:
+  humble_debian:
+    name: Humble debian build
+    uses: ros-controls/ros2_control_ci/.github/workflows/reusable-debian-build.yml@master
+    with:
+      ros_distro: humble
+      upstream_workspace: ros2_controllers.humble.repos
+      ref_for_scheduled_build: humble
+      skip_packages: rqt_joint_trajectory_controller

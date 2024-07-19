@@ -1,11 +1,9 @@
-diff_drive_controller:
+test_diff_drive_controller:
   ros__parameters:
     left_wheel_names: ["left_wheels"]
     right_wheel_names: ["right_wheels"]
-    write_op_modes: ["motor_controller"]
 
     wheel_separation: 0.40
-    wheels_per_side: 1  # actually 2, but both are controlled by 1 signal
     wheel_radius: 0.02
 
     wheel_separation_multiplier: 1.0
@@ -17,10 +15,11 @@ diff_drive_controller:
     pose_covariance_diagonal: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
     twist_covariance_diagonal: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
+    position_feedback: false
     open_loop: true
     enable_odom_tf: true
 
-    cmd_vel_timeout: 500 # milliseconds
+    cmd_vel_timeout: 0.5 # seconds
     publish_limited_velocity: true
     velocity_rolling_window_size: 10
 

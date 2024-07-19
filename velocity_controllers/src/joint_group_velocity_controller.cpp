@@ -14,49 +14,51 @@
 
 #include <string>
 
+#include "controller_interface/controller_interface.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
-#include "velocity_controllers/joint_group_velocity_controller.hpp"
-#include "rclcpp/logging.hpp"
 #include "rclcpp/parameter.hpp"
+#include "velocity_controllers/joint_group_velocity_controller.hpp"
 
 namespace velocity_controllers
 {
-using CallbackReturn = JointGroupVelocityController::CallbackReturn;
-
 JointGroupVelocityController::JointGroupVelocityController()
 : forward_command_controller::ForwardCommandController()
 {
-  logger_name_ = "joint velocity controller";
   interface_name_ = hardware_interface::HW_IF_VELOCITY;
 }
 
-controller_interface::return_type
-JointGroupVelocityController::init(
-  const std::string & controller_name)
+controller_interface::CallbackReturn JointGroupVelocityController::on_init()
 {
-  auto ret = ForwardCommandController::init(controller_name);
-  if (ret != controller_interface::return_type::OK) {
+  auto ret = ForwardCommandController::on_init();
+  if (ret != CallbackReturn::SUCCESS)
+  {
     return ret;
   }
 
-  try {
-    // undeclare interface parameter used in the general forward_command_controller
-    get_node()->undeclare_parameter("interface_name");
-  } catch (const std::exception & e) {
+  try
+  {
+    // Explicitly set the interface parameter declared by the forward_command_controller
+    // to match the value set in the JointGroupVelocityController constructor.
+    get_node()->set_parameter(
+      rclcpp::Parameter("interface_name", hardware_interface::HW_IF_VELOCITY));
+  }
+  catch (const std::exception & e)
+  {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
-    return controller_interface::return_type::ERROR;
+    return CallbackReturn::ERROR;
   }
 
-  return controller_interface::return_type::OK;
+  return CallbackReturn::SUCCESS;
 }
 
-CallbackReturn JointGroupVelocityController::on_deactivate(
+controller_interface::CallbackReturn JointGroupVelocityController::on_deactivate(
   const rclcpp_lifecycle::State & previous_state)
 {
   auto ret = ForwardCommandController::on_deactivate(previous_state);
 
   // stop all joints
-  for (auto & command_interface : command_interfaces_) {
+  for (auto & command_interface : command_interfaces_)
+  {
     command_interface.set_value(0.0);
   }
 

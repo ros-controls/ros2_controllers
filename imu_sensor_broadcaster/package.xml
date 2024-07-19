@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>imu_sensor_broadcaster</name>
-  <version>0.4.0</version>
+  <version>4.11.0</version>
   <description>Controller to publish readings of IMU sensors.</description>
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
   <maintainer email="denis@stogl.de">Denis Štogl</maintainer>
@@ -11,7 +11,9 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <depend>backward_ros</depend>
   <depend>controller_interface</depend>
+  <depend>generate_parameter_library</depend>
   <depend>hardware_interface</depend>
   <depend>pluginlib</depend>
   <depend>rclcpp</depend>
@@ -23,7 +25,7 @@
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
   <test_depend>controller_manager</test_depend>
-  <test_depend>hardware_interface</test_depend>
+  <test_depend>hardware_interface_testing</test_depend>
   <test_depend>ros2_control_test_assets</test_depend>
 
   <export>

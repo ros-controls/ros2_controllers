@@ -30,13 +30,12 @@ TEST(TestLoadForwardCommandController, load_controller)
     std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
 
   controller_manager::ControllerManager cm(
-    std::make_unique<hardware_interface::ResourceManager>(
-      ros2_control_test_assets::minimal_robot_urdf), executor, "test_controller_manager");
+    executor, ros2_control_test_assets::minimal_robot_urdf, "test_controller_manager");
 
-  ASSERT_NO_THROW(
+  ASSERT_NE(
     cm.load_controller(
-      "test_forward_command_controller",
-      "forward_command_controller/ForwardCommandController"));
+      "test_forward_command_controller", "forward_command_controller/ForwardCommandController"),
+    nullptr);
 
   rclcpp::shutdown();
 }

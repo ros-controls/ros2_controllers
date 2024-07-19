@@ -20,15 +20,14 @@
 #include <stdexcept>
 
 #include "diff_drive_controller/speed_limiter.hpp"
-#include "rcppmath/clamp.hpp"
 
 namespace diff_drive_controller
 {
 SpeedLimiter::SpeedLimiter(
-  bool has_velocity_limits, bool has_acceleration_limits, bool has_jerk_limits,
-  double min_velocity, double max_velocity, double min_acceleration, double max_acceleration,
-  double min_jerk, double max_jerk)
-:  has_velocity_limits_(has_velocity_limits),
+  bool has_velocity_limits, bool has_acceleration_limits, bool has_jerk_limits, double min_velocity,
+  double max_velocity, double min_acceleration, double max_acceleration, double min_jerk,
+  double max_jerk)
+: has_velocity_limits_(has_velocity_limits),
   has_acceleration_limits_(has_acceleration_limits),
   has_jerk_limits_(has_jerk_limits),
   min_velocity_(min_velocity),
@@ -39,28 +38,37 @@ SpeedLimiter::SpeedLimiter(
   max_jerk_(max_jerk)
 {
   // Check if limits are valid, max must be specified, min defaults to -max if unspecified
-  if (has_velocity_limits_) {
-    if (std::isnan(max_velocity_)) {
+  if (has_velocity_limits_)
+  {
+    if (std::isnan(max_velocity_))
+    {
       throw std::runtime_error("Cannot apply velocity limits if max_velocity is not specified");
     }
-    if (std::isnan(min_velocity_)) {
+    if (std::isnan(min_velocity_))
+    {
       min_velocity_ = -max_velocity_;
     }
   }
-  if (has_acceleration_limits_) {
-    if (std::isnan(max_acceleration_)) {
+  if (has_acceleration_limits_)
+  {
+    if (std::isnan(max_acceleration_))
+    {
       throw std::runtime_error(
-              "Cannot apply acceleration limits if max_acceleration is not specified");
+        "Cannot apply acceleration limits if max_acceleration is not specified");
     }
-    if (std::isnan(min_acceleration_)) {
+    if (std::isnan(min_acceleration_))
+    {
       min_acceleration_ = -max_acceleration_;
     }
   }
-  if (has_jerk_limits_) {
-    if (std::isnan(max_jerk_)) {
+  if (has_jerk_limits_)
+  {
+    if (std::isnan(max_jerk_))
+    {
       throw std::runtime_error("Cannot apply jerk limits if max_jerk is not specified");
     }
-    if (std::isnan(min_jerk_)) {
+    if (std::isnan(min_jerk_))
+    {
       min_jerk_ = -max_jerk_;
     }
   }
@@ -81,8 +89,9 @@ double SpeedLimiter::limit_velocity(double & v)
 {
   const double tmp = v;
 
-  if (has_velocity_limits_) {
-    v = rcppmath::clamp(v, min_velocity_, max_velocity_);
+  if (has_velocity_limits_)
+  {
+    v = std::clamp(v, min_velocity_, max_velocity_);
   }
 
   return tmp != 0.0 ? v / tmp : 1.0;
@@ -92,11 +101,12 @@ double SpeedLimiter::limit_acceleration(double & v, double v0, double dt)
 {
   const double tmp = v;
 
-  if (has_acceleration_limits_) {
+  if (has_acceleration_limits_)
+  {
     const double dv_min = min_acceleration_ * dt;
     const double dv_max = max_acceleration_ * dt;
 
-    const double dv = rcppmath::clamp(v - v0, dv_min, dv_max);
+    const double dv = std::clamp(v - v0, dv_min, dv_max);
 
     v = v0 + dv;
   }
@@ -108,7 +118,8 @@ double SpeedLimiter::limit_jerk(double & v, double v0, double v1, double dt)
 {
   const double tmp = v;
 
-  if (has_jerk_limits_) {
+  if (has_jerk_limits_)
+  {
     const double dv = v - v0;
     const double dv0 = v0 - v1;
 
@@ -117,7 +128,7 @@ double SpeedLimiter::limit_jerk(double & v, double v0, double v1, double dt)
     const double da_min = min_jerk_ * dt2;
     const double da_max = max_jerk_ * dt2;
 
-    const double da = rcppmath::clamp(dv - dv0, da_min, da_max);
+    const double da = std::clamp(dv - dv0, da_min, da_max);
 
     v = v0 + dv0 + da;
   }

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="3">
   <name>forward_command_controller</name>
-  <version>0.4.0</version>
+  <version>4.11.0</version>
   <description>Generic controller for forwarding commands.</description>
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
   <maintainer email="jordan.palacios@pal-robotics.com">Jordan Palacios</maintainer>
@@ -10,19 +10,19 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <depend>backward_ros</depend>
   <depend>controller_interface</depend>
+  <depend>generate_parameter_library</depend>
   <depend>hardware_interface</depend>
+  <depend>pluginlib</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_lifecycle</depend>
   <depend>realtime_tools</depend>
   <depend>std_msgs</depend>
 
-  <build_depend>pluginlib</build_depend>
-
   <test_depend>ament_cmake_gmock</test_depend>
-  <test_depend>ament_lint_auto</test_depend>
-  <test_depend>ament_lint_common</test_depend>
   <test_depend>controller_manager</test_depend>
+  <test_depend>hardware_interface_testing</test_depend>
   <test_depend>ros2_control_test_assets</test_depend>
 
   <export>
