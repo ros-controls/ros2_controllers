@@ -39,6 +39,13 @@ using lifecycle_msgs::msg::State;
 using test_trajectory_controllers::TrajectoryControllerTest;
 using test_trajectory_controllers::TrajectoryControllerTestParameterized;
 
+TEST_P(TrajectoryControllerTestParameterized, invalid_robot_description)
+{
+  ASSERT_EQ(
+    controller_interface::return_type::ERROR,
+    SetUpTrajectoryControllerLocal({}, "<invalid_robot_description/>"));
+}
+
 TEST_P(TrajectoryControllerTestParameterized, configure_state_ignores_commands)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
