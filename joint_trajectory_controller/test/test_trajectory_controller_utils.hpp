@@ -26,6 +26,7 @@
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
 #include "joint_trajectory_controller/tolerances.hpp"
+#include "ros2_control_test_assets/descriptions.hpp"
 
 namespace
 {
@@ -249,7 +250,7 @@ public:
 
   void SetUpTrajectoryController(
     rclcpp::Executor & executor, const std::vector<rclcpp::Parameter> & parameters = {},
-    const std::string & urdf = "")
+    const std::string & urdf = ros2_control_test_assets::minimal_robot_urdf)
   {
     auto ret = SetUpTrajectoryControllerLocal(parameters, urdf);
     if (ret != controller_interface::return_type::OK)
@@ -260,7 +261,8 @@ public:
   }
 
   controller_interface::return_type SetUpTrajectoryControllerLocal(
-    const std::vector<rclcpp::Parameter> & parameters = {}, const std::string & urdf = "")
+    const std::vector<rclcpp::Parameter> & parameters = {},
+    const std::string & urdf = ros2_control_test_assets::minimal_robot_urdf)
   {
     traj_controller_ = std::make_shared<TestableJointTrajectoryController>();
 
@@ -302,7 +304,7 @@ public:
     const std::vector<double> initial_vel_joints = INITIAL_VEL_JOINTS,
     const std::vector<double> initial_acc_joints = INITIAL_ACC_JOINTS,
     const std::vector<double> initial_eff_joints = INITIAL_EFF_JOINTS,
-    const std::string & urdf = "")
+    const std::string & urdf = ros2_control_test_assets::minimal_robot_urdf)
   {
     auto has_nonzero_vel_param =
       std::find_if(
