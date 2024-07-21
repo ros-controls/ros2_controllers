@@ -23,6 +23,8 @@
 #include <vector>
 
 #include "hardware_interface/loaned_state_interface.hpp"
+#include "rclcpp/executor.hpp"
+#include "rclcpp/executors.hpp"
 #include "rclcpp/utilities.hpp"
 #include "sensor_msgs/msg/imu.hpp"
 
