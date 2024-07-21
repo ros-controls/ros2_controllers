@@ -24,6 +24,8 @@
 
 #include "geometry_msgs/msg/wrench_stamped.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
+#include "rclcpp/executor.hpp"
+#include "rclcpp/executors.hpp"
 #include "rclcpp/utilities.hpp"
 
 using hardware_interface::LoanedStateInterface;
