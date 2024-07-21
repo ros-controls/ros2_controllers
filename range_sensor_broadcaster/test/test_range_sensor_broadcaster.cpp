@@ -21,6 +21,8 @@
 #include "test_range_sensor_broadcaster.hpp"
 
 #include "hardware_interface/loaned_state_interface.hpp"
+#include "rclcpp/executor.hpp"
+#include "rclcpp/executors.hpp"
 
 using testing::IsEmpty;
 using testing::SizeIs;
