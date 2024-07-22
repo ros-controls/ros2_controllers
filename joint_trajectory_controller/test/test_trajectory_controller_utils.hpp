@@ -27,6 +27,7 @@
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
 #include "joint_trajectory_controller/tolerances.hpp"
+#include "ros2_control_test_assets/descriptions.hpp"
 
 namespace
 {
@@ -47,6 +48,7 @@ const double stopped_velocity_tolerance = 0.1;
   joint_trajectory_controller::SegmentTolerances active_tolerances)
 {
   EXPECT_DOUBLE_EQ(active_tolerances.goal_time_tolerance, default_goal_time);
+
   // acceleration is never set, and goal_state_tolerance.velocity from stopped_velocity_tolerance
 
   ASSERT_EQ(active_tolerances.state_tolerance.size(), 3);
@@ -94,11 +96,6 @@ public:
     const rclcpp_lifecycle::State & previous_state) override
   {
     auto ret = joint_trajectory_controller::JointTrajectoryController::on_configure(previous_state);
-    // this class can still be useful without the wait set
-    if (joint_command_subscriber_)
-    {
-      joint_cmd_sub_wait_set_.add_subscription(joint_command_subscriber_);
-    }
     return ret;
   }
 
@@ -108,19 +105,17 @@ public:
    * @brief wait_for_trajectory block until a new JointTrajectory is received.
    * Requires that the executor is not spinned elsewhere between the
    *  message publication and the call to this function
-   *
-   * @return true if new JointTrajectory msg was received, false if timeout
    */
-  bool wait_for_trajectory(
+  void wait_for_trajectory(
     rclcpp::Executor & executor,
-    const std::chrono::milliseconds & timeout = std::chrono::milliseconds{500})
+    const std::chrono::milliseconds & timeout = std::chrono::milliseconds{10})
   {
-    bool success = joint_cmd_sub_wait_set_.wait(timeout).kind() == rclcpp::WaitResultKind::Ready;
-    if (success)
+    auto until = get_node()->get_clock()->now() + timeout;
+    while (get_node()->get_clock()->now() < until)
     {
       executor.spin_some();
+      std::this_thread::sleep_for(std::chrono::microseconds(10));
     }
-    return success;
   }
 
   void set_command_joint_names(const std::vector<std::string> & command_joint_names)
@@ -138,7 +133,7 @@ public:
     params_.state_interfaces = state_interfaces;
   }
 
-  void trigger_declare_parameters() {param_listener_->declare_params();}
+  void trigger_declare_parameters() { param_listener_->declare_params(); }
 
   void testable_compute_error_for_joint(
     JointTrajectoryPoint & error, const size_t index, const JointTrajectoryPoint & current,
@@ -165,12 +160,12 @@ public:
 
   bool has_effort_command_interface() const { return has_effort_command_interface_; }
 
-  bool use_external_control_law() const {return use_external_control_law_;}
+  bool use_external_control_law() const { return use_external_control_law_; }
 
   bool is_open_loop() const { return params_.open_loop_control; }
 
   std::shared_ptr<joint_trajectory_controller_plugins::TrajectoryControllerBase> get_traj_contr()
-  const
+    const
   {
     return traj_contr_;
   }
@@ -179,7 +174,7 @@ public:
   {
     return *(active_tolerances_.readFromRT());
   }
-  
+
   joint_trajectory_controller::SegmentTolerances get_tolerances() const
   {
     return default_tolerances_;
@@ -228,7 +223,6 @@ public:
     }
   }
 
-  rclcpp::WaitSet joint_cmd_sub_wait_set_;
   rclcpp::NodeOptions node_options_;
 };
 
@@ -262,7 +256,7 @@ public:
 
   void SetUpTrajectoryController(
     rclcpp::Executor & executor, const std::vector<rclcpp::Parameter> & parameters = {},
-    const std::string & urdf = "")
+    const std::string & urdf = ros2_control_test_assets::minimal_robot_urdf)
   {
     auto ret = SetUpTrajectoryControllerLocal(parameters, urdf);
     if (ret != controller_interface::return_type::OK)
@@ -273,7 +267,8 @@ public:
   }
 
   controller_interface::return_type SetUpTrajectoryControllerLocal(
-    const std::vector<rclcpp::Parameter> & parameters = {}, const std::string & urdf = "")
+    const std::vector<rclcpp::Parameter> & parameters = {},
+    const std::string & urdf = ros2_control_test_assets::minimal_robot_urdf)
   {
     traj_controller_ = std::make_shared<TestableJointTrajectoryController>();
 
@@ -301,7 +296,8 @@ public:
 
     // if command_joints were not set manually, it was done in the on_configure() method
     auto command_joint_names = node->get_parameter("command_joints").as_string_array();
-    for (size_t i = 0; i < command_joint_names.size(); ++i) {
+    for (size_t i = 0; i < command_joint_names.size(); ++i)
+    {
       const std::string prefix = "gains." + joint_names_[i];
       const rclcpp::Parameter k_p(prefix + ".p", p_value);
       const rclcpp::Parameter k_i(prefix + ".i", 0.0);
@@ -319,7 +315,7 @@ public:
     const std::vector<double> initial_vel_joints = INITIAL_VEL_JOINTS,
     const std::vector<double> initial_acc_joints = INITIAL_ACC_JOINTS,
     const std::vector<double> initial_eff_joints = INITIAL_EFF_JOINTS,
-    const std::string & urdf = "")
+    const std::string & urdf = ros2_control_test_assets::minimal_robot_urdf)
   {
     auto has_nonzero_vel_param =
       std::find_if(
@@ -340,7 +336,8 @@ public:
 
     // set pid parameters before activate. The PID plugin has to be loaded already, otherwise
     // parameters are not declared yet
-    if (traj_controller_->use_external_control_law()) {
+    if (traj_controller_->use_external_control_law())
+    {
       SetPidParameters(k_p, ff);
     }
 
@@ -412,7 +409,7 @@ public:
 
   static void TearDownTestCase() { rclcpp::shutdown(); }
 
-  void subscribeToState()
+  void subscribeToState(rclcpp::Executor & executor)
   {
     auto traj_lifecycle_node = traj_controller_->get_node();
 
@@ -429,6 +426,14 @@ public:
         std::lock_guard<std::mutex> guard(state_mutex_);
         state_msg_ = msg;
       });
+
+    const auto timeout = std::chrono::milliseconds{10};
+    const auto until = traj_lifecycle_node->get_clock()->now() + timeout;
+    while (traj_lifecycle_node->get_clock()->now() < until)
+    {
+      executor.spin_some();
+      std::this_thread::sleep_for(std::chrono::microseconds(10));
+    }
   }
 
   /// Publish trajectory msgs with multiple points
@@ -609,8 +614,10 @@ public:
     // i.e., active but trivial trajectory (one point only)
     EXPECT_TRUE(traj_controller_->has_trivial_traj());
 
-    if (traj_controller_->use_external_control_law() == false) {
-      if (traj_controller_->has_position_command_interface()) {
+    if (traj_controller_->use_external_control_law() == false)
+    {
+      if (traj_controller_->has_position_command_interface())
+      {
         EXPECT_NEAR(position.at(0), joint_pos_[0], COMMON_THRESHOLD);
         EXPECT_NEAR(position.at(1), joint_pos_[1], COMMON_THRESHOLD);
         EXPECT_NEAR(position.at(2), joint_pos_[2], COMMON_THRESHOLD);

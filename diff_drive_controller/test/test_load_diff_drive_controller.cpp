@@ -28,7 +28,7 @@ TEST(TestLoadDiffDriveController, load_controller)
     std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
 
   controller_manager::ControllerManager cm(
-    executor, ros2_control_test_assets::diffbot_urdf, "test_controller_manager");
+    executor, ros2_control_test_assets::diffbot_urdf, true, "test_controller_manager");
 
   ASSERT_NE(
     cm.load_controller("test_diff_drive_controller", "diff_drive_controller/DiffDriveController"),
@@ -40,7 +40,6 @@ int main(int argc, char ** argv)
   ::testing::InitGoogleTest(&argc, argv);
   rclcpp::init(argc, argv);
   int result = RUN_ALL_TESTS();
-  rclcpp::shutdown();
   rclcpp::shutdown();
   return result;
 }

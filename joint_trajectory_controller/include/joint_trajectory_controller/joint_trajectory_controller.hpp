@@ -15,7 +15,6 @@
 #ifndef JOINT_TRAJECTORY_CONTROLLER__JOINT_TRAJECTORY_CONTROLLER_HPP_
 #define JOINT_TRAJECTORY_CONTROLLER__JOINT_TRAJECTORY_CONTROLLER_HPP_
 
-#include <chrono>
 #include <functional>  // for std::reference_wrapper
 #include <memory>
 #include <string>
@@ -32,14 +31,12 @@
 #include "rclcpp/time.hpp"
 #include "rclcpp/timer.hpp"
 #include "rclcpp_action/server.hpp"
-#include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_buffer.h"
 #include "realtime_tools/realtime_publisher.h"
 #include "realtime_tools/realtime_server_goal_handle.h"
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
-#include "urdf/model.h"
 
 #include "joint_trajectory_controller/interpolation_methods.hpp"
 #include "joint_trajectory_controller/tolerances.hpp"
@@ -160,7 +157,7 @@ protected:
   // class loader for actual trajectory controller
   std::shared_ptr<
     pluginlib::ClassLoader<joint_trajectory_controller_plugins::TrajectoryControllerBase>>
-  traj_controller_loader_;
+    traj_controller_loader_;
   // The actual trajectory controller
   std::shared_ptr<joint_trajectory_controller_plugins::TrajectoryControllerBase> traj_contr_;
   // Configuration for every joint if it wraps around (ie. is continuous, position error is
@@ -309,8 +306,6 @@ private:
     trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size, double value = 0.0);
   void resize_joint_trajectory_point_command(
     trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size, double value = 0.0);
-
-  urdf::Model model_;
 
   /**
    * @brief Assigns the values from a trajectory point interface to a joint interface.

@@ -15,10 +15,7 @@
 #ifndef VELOCITY_CONTROLLERS__JOINT_GROUP_VELOCITY_CONTROLLER_HPP_
 #define VELOCITY_CONTROLLERS__JOINT_GROUP_VELOCITY_CONTROLLER_HPP_
 
-#include <string>
-
 #include "forward_command_controller/forward_command_controller.hpp"
-#include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "velocity_controllers/visibility_control.h"
 
 namespace velocity_controllers
