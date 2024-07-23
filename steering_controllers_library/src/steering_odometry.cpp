@@ -20,7 +20,6 @@
 #include "steering_controllers_library/steering_odometry.hpp"
 
 #include <cmath>
-#include <iostream>
 #include <limits>
 
 namespace steering_odometry
