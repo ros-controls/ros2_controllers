@@ -2,8 +2,8 @@
 Changelog for package parallel_gripper_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.12.0 (2024-07-23)
+-------------------
 * [GripperController] Fix failing tests (`#1210 <https://github.com/ros-controls/ros2_controllers/issues/1210>`_)
 * Fix parallel gripper controller CI (`#1202 <https://github.com/ros-controls/ros2_controllers/issues/1202>`_)
 * Add parallel_gripper_controller, configure gripper speed and effort with hardware interface (`#1002 <https://github.com/ros-controls/ros2_controllers/issues/1002>`_)

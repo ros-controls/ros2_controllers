@@ -2,8 +2,8 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.12.0 (2024-07-23)
+-------------------
 * Add missing includes (`#1226 <https://github.com/ros-controls/ros2_controllers/issues/1226>`_)
 * Remove duplicated call to rclcpp::shutdown in test (`#1220 <https://github.com/ros-controls/ros2_controllers/issues/1220>`_)
 * Unused header cleanup (`#1199 <https://github.com/ros-controls/ros2_controllers/issues/1199>`_)

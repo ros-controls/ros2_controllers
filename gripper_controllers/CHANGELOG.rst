@@ -2,8 +2,8 @@
 Changelog for package gripper_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.12.0 (2024-07-23)
+-------------------
 * Unused header cleanup (`#1199 <https://github.com/ros-controls/ros2_controllers/issues/1199>`_)
 * Fix parallel gripper controller CI (`#1202 <https://github.com/ros-controls/ros2_controllers/issues/1202>`_)
 * Add parallel_gripper_controller, configure gripper speed and effort with hardware interface (`#1002 <https://github.com/ros-controls/ros2_controllers/issues/1002>`_)
