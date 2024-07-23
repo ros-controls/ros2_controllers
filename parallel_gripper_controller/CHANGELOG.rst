@@ -1,9 +1,13 @@
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Changelog for package rqt_joint_trajectory_controller
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Changelog for package parallel_gripper_controller
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Forthcoming
 -----------
+* [GripperController] Fix failing tests (`#1210 <https://github.com/ros-controls/ros2_controllers/issues/1210>`_)
+* Fix parallel gripper controller CI (`#1202 <https://github.com/ros-controls/ros2_controllers/issues/1202>`_)
+* Add parallel_gripper_controller, configure gripper speed and effort with hardware interface (`#1002 <https://github.com/ros-controls/ros2_controllers/issues/1002>`_)
+* Contributors: Paul Gesel, Sai Kishor Kothakota
 
 4.11.0 (2024-07-09)
 -------------------
@@ -13,16 +17,12 @@ Forthcoming
 
 4.9.0 (2024-06-05)
 ------------------
-* [RQT-JTC] limits from jtc controlled joints (`#1146 <https://github.com/ros-controls/ros2_controllers/issues/1146>`_)
-* Contributors: Jakub Delicat
 
 4.8.0 (2024-05-14)
 ------------------
 
 4.7.0 (2024-03-22)
 ------------------
-* [CI] Code coverage + pre-commit (`#1057 <https://github.com/ros-controls/ros2_controllers/issues/1057>`_)
-* Contributors: Christoph Fröhlich
 
 4.6.0 (2024-02-12)
 ------------------
@@ -35,13 +35,9 @@ Forthcoming
 
 4.3.0 (2024-01-08)
 ------------------
-* Add rqt_JTC to docs (`#950 <https://github.com/ros-controls/ros2_controllers/issues/950>`_)
-* Contributors: Christoph Fröhlich
 
 4.2.0 (2023-12-12)
 ------------------
-* Fix rqt jtc bugs for continuous joints and other minor bugs (`#890 <https://github.com/ros-controls/ros2_controllers/issues/890>`_)
-* Contributors: Sai Kishor Kothakota
 
 4.1.0 (2023-12-01)
 ------------------
@@ -75,16 +71,12 @@ Forthcoming
 
 3.10.0 (2023-06-04)
 -------------------
-* Adapted rqt_jtc to newest control_msgs for jtc (`#643 <https://github.com/ros-controls/ros2_controllers/issues/643>`_)
-* Contributors: gwalck
 
 3.9.0 (2023-05-28)
 ------------------
 
 3.8.0 (2023-05-14)
 ------------------
-* switch from dash to underscore in setup.cfg (`#595 <https://github.com/ros-controls/ros2_controllers/issues/595>`_)
-* Contributors: Alex Moriarty
 
 3.7.0 (2023-05-02)
 ------------------
@@ -109,8 +101,6 @@ Forthcoming
 
 3.0.0 (2023-01-19)
 ------------------
-* 🔧 Fixes and updated on pre-commit hooks and their action (`#492 <https://github.com/ros-controls/ros2_controllers/issues/492>`_)
-* Contributors: Denis Štogl
 
 2.15.0 (2022-12-06)
 -------------------
@@ -123,18 +113,12 @@ Forthcoming
 
 2.12.0 (2022-09-01)
 -------------------
-* fix: :bug: make bare exceptions more narrow (`#422 <https://github.com/ros-controls/ros2_controllers/issues/422>`_)
-* Fix formatting because pre-commit was not running on CI for some time. (`#409 <https://github.com/ros-controls/ros2_controllers/issues/409>`_)
-* Contributors: Denis Štogl, Jaron Lundwall
 
 2.11.0 (2022-08-04)
 -------------------
 
 2.10.0 (2022-08-01)
 -------------------
-* Formatting changes from pre-commit (`#400 <https://github.com/ros-controls/ros2_controllers/issues/400>`_)
-* port rqt_joint_trajectory_controller to ros2 (`#356 <https://github.com/ros-controls/ros2_controllers/issues/356>`_)
-* Contributors: Bence Magyar, Noel Jiménez García, Tyler Weaver
 
 2.9.0 (2022-07-14)
 ------------------
