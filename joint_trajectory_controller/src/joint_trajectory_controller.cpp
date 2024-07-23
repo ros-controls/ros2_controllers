@@ -205,19 +205,16 @@ controller_interface::return_type JointTrajectoryController::update(
   // currently carrying out a trajectory
   if (has_active_trajectory())
   {
-    // Time passed since the last update call
-    rcl_duration_value_t t_period = (time - time_data_.time).nanoseconds();
-
     // scaled time period
-    time_data_.period = rclcpp::Duration::from_nanoseconds(t_period) * scaling_factor_;
+    time_data_.period = period * scaling_factor_;
 
     // scaled time spent in the trajectory
     time_data_.uptime = time_data_.uptime + time_data_.period;
 
     // time in the trajectory with a non-scaled current step
-    rclcpp::Time traj_time = time_data_.uptime + rclcpp::Duration::from_nanoseconds(t_period);
+    rclcpp::Time traj_time = time_data_.uptime + period;
 
-    time_data_.time = time;
+    // time_data_.time = time;
 
     bool first_sample = false;
     // if sampling the first time, set the point before you sample
@@ -948,7 +945,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   // parse remaining parameters
   default_tolerances_ = get_segment_tolerances(logger, params_);
   // Setup time_data buffer used for scaling
-  TimeData time_data;
   time_data_.time = get_node()->now();
   time_data_.period = rclcpp::Duration::from_nanoseconds(0);
   time_data_.uptime = get_node()->now();
