@@ -2,6 +2,9 @@
 Changelog for package gripper_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 3.25.0 (2024-07-09)
 -------------------
 
