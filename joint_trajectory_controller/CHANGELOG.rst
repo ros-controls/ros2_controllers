@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.37.0 (2024-07-24)
+-------------------
 * Fix WaitSet issue in tests  (backport `#1206 <https://github.com/ros-controls/ros2_controllers/issues/1206>`_) (`#1211 <https://github.com/ros-controls/ros2_controllers/issues/1211>`_)
 * [JTC] Make goal_time_tolerance overwrite default value only if explicitly set (backport `#1192 <https://github.com/ros-controls/ros2_controllers/issues/1192>`_ + `#1209 <https://github.com/ros-controls/ros2_controllers/issues/1209>`_) (`#1208 <https://github.com/ros-controls/ros2_controllers/issues/1208>`_)
 * [JTC] Process tolerances sent with action goal (backport `#716 <https://github.com/ros-controls/ros2_controllers/issues/716>`_) (`#1189 <https://github.com/ros-controls/ros2_controllers/issues/1189>`_)
