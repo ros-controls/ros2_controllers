@@ -121,7 +121,7 @@ protected:
   bool verbose_ = false;  ///< Hard coded verbose flag to help in debugging
   std::string name_;      ///< Controller name.
   std::optional<std::reference_wrapper<hardware_interface::LoanedCommandInterface>>
-    joint_command_interface_;
+    joint_position_command_interface_;
   std::optional<std::reference_wrapper<hardware_interface::LoanedCommandInterface>>
     effort_interface_;
   std::optional<std::reference_wrapper<hardware_interface::LoanedCommandInterface>>
