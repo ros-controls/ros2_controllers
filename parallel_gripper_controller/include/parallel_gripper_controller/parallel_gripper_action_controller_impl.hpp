@@ -70,8 +70,6 @@ controller_interface::return_type GripperActionController::update(
   {
     speed_interface_->get().set_value(command_struct_rt_.max_velocity_);
   }
-
-
   if (effort_interface_.has_value())
   {
     effort_interface_->get().set_value(command_struct_rt_.max_effort_);
@@ -118,7 +116,6 @@ void GripperActionController::accepted_callback(
   {
     command_struct_.max_velocity_ = params_.max_velocity;
   }
-
   if (!goal_handle->get_goal()->command.effort.empty())
   {
     command_struct_.max_effort_ = goal_handle->get_goal()->command.effort[0];
@@ -173,7 +170,7 @@ rclcpp_action::CancelResponse GripperActionController::cancel_callback(
 void GripperActionController::set_hold_position()
 {
   command_struct_.position_cmd_ = joint_position_state_interface_->get().get_value();
-  // Bren: why not, command_struct_.max_effort_ 
+  // TODO:Bren Why is this set to the current values and not, command_struct_.max_effort_ 
   command_struct_.max_effort_ = params_.max_effort;
   command_struct_.max_velocity_ = params_.max_velocity;
   command_.writeFromNonRT(command_struct_);
