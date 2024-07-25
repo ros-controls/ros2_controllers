@@ -110,7 +110,13 @@ void GripperActionController::accepted_callback(
   command_struct_.position_cmd_ = goal_handle->get_goal()->command.position[0];
   if (!goal_handle->get_goal()->command.velocity.empty())
   {
-    command_struct_.max_velocity_ = goal_handle->get_goal()->command.velocity[0];
+    if (goal_handle->get_goal()->command.velocity[0] > params_.max_velocity) {
+      command_struct_.max_velocity_ = params_.max_velocity;
+    }
+    else
+    {
+      command_struct_.max_velocity_ = goal_handle->get_goal()->command.velocity[0];
+    }
   }
   else
   {
@@ -118,7 +124,14 @@ void GripperActionController::accepted_callback(
   }
   if (!goal_handle->get_goal()->command.effort.empty())
   {
-    command_struct_.max_effort_ = goal_handle->get_goal()->command.effort[0];
+    if (goal_handle->get_goal()->command.effort[0] > params_.max_effort) {
+      command_struct_.max_effort_ = params_.max_effort;
+    }
+    else
+    {
+      command_struct_.max_effort_ = goal_handle->get_goal()->command.effort[0];
+    }    
+
   }
   else
   {
