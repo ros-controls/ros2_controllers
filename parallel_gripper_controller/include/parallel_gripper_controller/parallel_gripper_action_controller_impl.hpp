@@ -65,8 +65,6 @@ controller_interface::return_type GripperActionController::update(
 
   check_for_success(get_node()->now(), error_position, current_position, current_velocity);
 
-
-  // Bren
   joint_position_command_interface_->get().set_value(command_struct_rt_.position_cmd_);
   if (speed_interface_.has_value())
   {
@@ -76,7 +74,6 @@ controller_interface::return_type GripperActionController::update(
 
   if (effort_interface_.has_value())
   {
-    //std::cout << "effort_interface_.has_value(): "<< command_struct_rt_.max_effort_ << std::endl;
     effort_interface_->get().set_value(command_struct_rt_.max_effort_);
   }
 
@@ -122,8 +119,6 @@ void GripperActionController::accepted_callback(
     command_struct_.max_velocity_ = params_.max_velocity;
   }
 
-  //Bren
-
   if (!goal_handle->get_goal()->command.effort.empty())
   {
     command_struct_.max_effort_ = goal_handle->get_goal()->command.effort[0];
@@ -132,8 +127,6 @@ void GripperActionController::accepted_callback(
   {
     command_struct_.max_effort_ = params_.max_effort;
   }
-
-  std::cout << "effort: " << command_struct_.max_effort_ << " Vel: " <<  command_struct_.max_velocity_ << std::endl;
 
   command_.writeFromNonRT(command_struct_);
 
@@ -302,13 +295,10 @@ controller_interface::CallbackReturn GripperActionController::on_activate(
   {
     RCLCPP_ERROR_STREAM(
       get_node()->get_logger(), "Command interface is different than joint name `"
-                                  << position_command_interface_it->get_prefix_name() << "` != `"
+                                  << effort_command_interface_it->get_prefix_name() << "` != `"
                                   << params_.joint << "`");
     return controller_interface::CallbackReturn::ERROR;
   }
-
-
-
 
   const auto position_state_interface_it = std::find_if(
     state_interfaces_.begin(), state_interfaces_.end(),
