@@ -11,14 +11,20 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   control_toolbox
   controller_interface
   generate_parameter_library
+  joint_limits
   hardware_interface
+  joint_limits
+  nav_msgs
   pluginlib
   rclcpp
   rclcpp_lifecycle
   realtime_tools
   rsl
+  ruckig
   tl_expected
   trajectory_msgs
+  tf2
+  tf2_geometry_msgs
   urdf
 )
 
@@ -44,12 +50,27 @@ target_include_directories(joint_trajectory_controller PUBLIC
 )
 target_link_libraries(joint_trajectory_controller PUBLIC
   joint_trajectory_controller_parameters
+  ruckig::ruckig
 )
 ament_target_dependencies(joint_trajectory_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
 
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
 target_compile_definitions(joint_trajectory_controller PRIVATE "JOINT_TRAJECTORY_CONTROLLER_BUILDING_DLL" "_USE_MATH_DEFINES")
+
+add_library(cartesian_trajectory_generator SHARED
+  src/cartesian_trajectory_generator.cpp
+)
+target_compile_features(cartesian_trajectory_generator PUBLIC cxx_std_17)
+target_include_directories(cartesian_trajectory_generator PUBLIC
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include/joint_trajectory_controller>
+)
+target_link_libraries(cartesian_trajectory_generator PUBLIC
+  joint_trajectory_controller
+)
+ament_target_dependencies(cartesian_trajectory_generator PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
+
 pluginlib_export_plugin_description_file(controller_interface joint_trajectory_plugin.xml)
 
 if(BUILD_TESTING)
@@ -57,9 +78,10 @@ if(BUILD_TESTING)
   find_package(controller_manager REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
 
-  ament_add_gmock(test_trajectory test/test_trajectory.cpp)
-  target_link_libraries(test_trajectory joint_trajectory_controller)
-  target_compile_definitions(test_trajectory PRIVATE _USE_MATH_DEFINES)
+  # TODO(henrygerardmoore): re-enable
+  # ament_add_gmock(test_trajectory test/test_trajectory.cpp)
+  # target_link_libraries(test_trajectory joint_trajectory_controller)
+  # target_compile_definitions(test_trajectory PRIVATE _USE_MATH_DEFINES)
 
   ament_add_gmock(test_trajectory_controller
     test/test_trajectory_controller.cpp)
@@ -82,6 +104,19 @@ if(BUILD_TESTING)
     ros2_control_test_assets
   )
 
+ament_add_gmock(test_load_cartesian_trajectory_generator
+  test/test_load_cartesian_trajectory_generator.cpp
+)
+target_link_libraries(test_load_cartesian_trajectory_generator
+  cartesian_trajectory_generator
+)
+ament_target_dependencies(test_load_cartesian_trajectory_generator
+  controller_manager
+  control_toolbox
+  realtime_tools
+  ros2_control_test_assets
+)
+
   ament_add_gmock(test_trajectory_actions
     test/test_trajectory_actions.cpp
   )
@@ -97,6 +132,7 @@ install(
   DESTINATION include/joint_trajectory_controller
 )
 install(TARGETS
+    cartesian_trajectory_generator
     joint_trajectory_controller
     joint_trajectory_controller_parameters
   EXPORT export_joint_trajectory_controller

@@ -26,6 +26,20 @@
 #include "control_msgs/msg/single_dof_state.hpp"
 #include "controller_interface/helpers.hpp"
 
+// The main knowledge could be with regard to the input (reference/state) and output (command)
+// interfaces and their physical meaning, for example:
+//
+// reference/state POSITION; command VELOCITY --> PI CONTROLLER
+// reference/state VELOCITY; command ACCELERATION --> PI CONTROLLER
+//
+// reference/state VELOCITY; command POSITION --> PD CONTROLLER
+// reference/state ACCELERATION; command VELOCITY --> PD CONTROLLER
+//
+// reference/state POSITION; command POSITION --> PID CONTROLLER
+// reference/state VELOCITY; command VELOCITY --> PID CONTROLLER
+// reference/state ACCELERATION; command ACCELERATION --> PID CONTROLLER
+// reference/st
+
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/version.h"
 
@@ -385,12 +399,19 @@ controller_interface::CallbackReturn PidController::on_activate(
   measured_state_values_.assign(
     measured_state_values_.size(), std::numeric_limits<double>::quiet_NaN());
 
+  // TODO(destogl): make here parameter update
+
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
 controller_interface::CallbackReturn PidController::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
+  // instead of a loop
+  for (size_t i = 0; i < dof_; ++i)
+  {
+    command_interfaces_[i].set_value(std::numeric_limits<double>::quiet_NaN());
+  }
   return controller_interface::CallbackReturn::SUCCESS;
 }
 

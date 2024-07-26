@@ -154,3 +154,11 @@ joint_trajectory_controller:
         default_value: 0.0,
         description: "Per-joint trajectory offset tolerance at the goal position.",
       }
+
+  joint_limiter_type: {
+    type: string,
+    default_value: "",
+    description: "The type of joint limiter to use. If empty, no joint limiter will be used.
+      Per default, the simple joint limiter implementation from 'joint_limits' package is used.
+      For other official implementations see 'joint_limiters' package in 'ros2_control' repository.",
+  }

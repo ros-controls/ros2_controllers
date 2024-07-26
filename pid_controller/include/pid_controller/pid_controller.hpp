@@ -35,6 +35,7 @@
 #include "std_srvs/srv/set_bool.hpp"
 
 #include "control_msgs/msg/joint_controller_state.hpp"
+#include "control_msgs/msg/joint_jog.hpp"
 
 #include "control_msgs/msg/pid_state.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"

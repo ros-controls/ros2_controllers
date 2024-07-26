@@ -27,8 +27,10 @@
 #include "controller_interface/helpers.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
+#include "joint_limits/joint_limits_rosparam.hpp"
 #include "joint_trajectory_controller/trajectory.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
+#include "rclcpp/event_handler.hpp"
 #include "rclcpp/logging.hpp"
 #include "rclcpp/qos.hpp"
 #include "rclcpp/time.hpp"
@@ -68,6 +70,14 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
     // Create the parameter listener and get the parameters
     param_listener_ = std::make_shared<ParamListener>(get_node());
     params_ = param_listener_->get_params();
+
+    joint_limiter_loader_ = std::make_shared<pluginlib::ClassLoader<JointLimiter>>(
+      "joint_limits", "joint_limits::JointLimiterInterface<joint_limits::JointLimits>");
+    RCLCPP_DEBUG(get_node()->get_logger(), "Available joint limiter classes:");
+    for (const auto & available_class : joint_limiter_loader_->getDeclaredClasses())
+    {
+      RCLCPP_DEBUG(get_node()->get_logger(), "  %s", available_class.c_str());
+    }
   }
   catch (const std::exception & e)
   {
@@ -153,12 +163,23 @@ controller_interface::return_type JointTrajectoryController::update(
     fill_partial_goal(*new_external_msg);
     sort_to_local_joint_order(*new_external_msg);
     // TODO(denis): Add here integration of position and velocity
-    traj_external_point_ptr_->update(*new_external_msg);
+    traj_external_point_ptr_->update(*new_external_msg, joint_limits_, period);
   }
 
-  // current state update
+  // TODO(anyone): can I here also use const on joint_interface since the reference_wrapper is not
+  // changed, but its value only?
+  auto assign_interface_from_point =
+    [&](auto & joint_interface, const std::vector<double> & trajectory_point_interface)
+  {
+    for (size_t index = 0; index < dof_; ++index)
+    {
+      joint_interface[index].get().set_value(trajectory_point_interface[index]);
+    }
+  };
+
+  // current state update - bail if can't read hardware state
   state_current_.time_from_start.set__sec(0);
-  read_state_from_state_interfaces(state_current_);
+  if (!read_state_from_hardware(state_current_)) return controller_interface::return_type::OK;
 
   // currently carrying out a trajectory
   if (has_active_trajectory())
@@ -168,8 +189,45 @@ controller_interface::return_type JointTrajectoryController::update(
     if (!traj_external_point_ptr_->is_sampled_already())
     {
       first_sample = true;
+
+      // Reset Ruckig vel/accel/jerk smoothing
+      //       (*traj_point_active_ptr_)->reset_ruckig_smoothing();
+
       if (params_.open_loop_control)
       {
+        auto reset_flags = reset_dofs_flags_.readFromRT();
+        for (size_t i = 0; i < dof_; ++i)
+        {
+          if (reset_flags->at(i).reset)
+          {
+            last_commanded_state_.positions[i] = std::isnan(reset_flags->at(i).position)
+                                                   ? state_current_.positions[i]
+                                                   : reset_flags->at(i).position;
+            RCLCPP_INFO_STREAM(
+              get_node()->get_logger(), command_joint_names_[i]
+                                          << ": last commanded state position reset to "
+                                          << last_commanded_state_.positions[i]);
+            if (has_velocity_state_interface_)
+            {
+              last_commanded_state_.velocities[i] = std::isnan(reset_flags->at(i).velocity)
+                                                      ? state_current_.velocities[i]
+                                                      : reset_flags->at(i).velocity;
+            }
+            if (has_acceleration_state_interface_)
+            {
+              last_commanded_state_.accelerations[i] = std::isnan(reset_flags->at(i).acceleration)
+                                                         ? state_current_.accelerations[i]
+                                                         : reset_flags->at(i).acceleration;
+            }
+
+            reset_flags->at(i).reset = false;  // reset flag in the buffer for one-shot execution
+          }
+        }
+
+        if (last_commanded_time_.seconds() == 0.0)
+        {
+          last_commanded_time_ = time;
+        }
         traj_external_point_ptr_->set_point_before_trajectory_msg(
           time, last_commanded_state_, joints_angle_wraparound_);
       }
@@ -182,8 +240,11 @@ controller_interface::return_type JointTrajectoryController::update(
 
     // find segment for current timestamp
     TrajectoryPointConstIter start_segment_itr, end_segment_itr;
-    const bool valid_point = traj_external_point_ptr_->sample(
-      time, interpolation_method_, state_desired_, start_segment_itr, end_segment_itr);
+    const bool valid_point = traj_external_point_ptr_
+                          ->sample(
+                            time, interpolation_method_,
+                            state_desired_, start_segment_itr, end_segment_itr, period,
+                            joint_limiter_, splines_state_, ruckig_state_, ruckig_input_state_);
 
     if (valid_point)
     {
@@ -294,6 +355,7 @@ controller_interface::return_type JointTrajectoryController::update(
 
         // store the previous command. Used in open-loop control mode
         last_commanded_state_ = state_desired_;
+        last_commanded_time_ = time;
       }
 
       if (active_goal)
@@ -387,21 +449,14 @@ controller_interface::return_type JointTrajectoryController::update(
     }
   }
 
-  publish_state(time, state_desired_, state_current_, state_error_);
+  publish_state(
+    time, state_desired_, state_current_, state_error_, splines_state_, ruckig_state_,
+    ruckig_input_state_);
   return controller_interface::return_type::OK;
 }
 
-void JointTrajectoryController::read_state_from_state_interfaces(JointTrajectoryPoint & state)
+bool JointTrajectoryController::read_state_from_hardware(JointTrajectoryPoint & state)
 {
-  auto assign_point_from_interface =
-    [&](std::vector<double> & trajectory_point_interface, const auto & joint_interface)
-  {
-    for (size_t index = 0; index < dof_; ++index)
-    {
-      trajectory_point_interface[index] = joint_interface[index].get().get_value();
-    }
-  };
-
   // Assign values from the hardware
   // Position states always exist
   assign_point_from_interface(state.positions, joint_state_interface_[0]);
@@ -426,20 +481,12 @@ void JointTrajectoryController::read_state_from_state_interfaces(JointTrajectory
     state.velocities.clear();
     state.accelerations.clear();
   }
+  return true;
 }
 
 bool JointTrajectoryController::read_state_from_command_interfaces(JointTrajectoryPoint & state)
 {
   bool has_values = true;
-
-  auto assign_point_from_interface =
-    [&](std::vector<double> & trajectory_point_interface, const auto & joint_interface)
-  {
-    for (size_t index = 0; index < dof_; ++index)
-    {
-      trajectory_point_interface[index] = joint_interface[index].get().get_value();
-    }
-  };
 
   auto interface_has_values = [](const auto & joint_interface)
   {
@@ -589,9 +636,12 @@ void JointTrajectoryController::query_state_service(
   if (has_active_trajectory())
   {
     TrajectoryPointConstIter start_segment_itr, end_segment_itr;
-    response->success = traj_external_point_ptr_->sample(
-      static_cast<rclcpp::Time>(request->time), interpolation_method_, state_requested,
-      start_segment_itr, end_segment_itr);
+    const rclcpp::Duration period = rclcpp::Duration::from_seconds(0.01);
+    response->success = traj_external_point_ptr_
+                          ->sample(
+                            static_cast<rclcpp::Time>(request->time), interpolation_method_,
+                            state_requested, start_segment_itr, end_segment_itr, period,
+                            joint_limiter_, splines_state_, ruckig_state_, ruckig_input_state_);
     // If the requested sample time precedes the trajectory finish time respond as failure
     if (response->success)
     {
@@ -683,7 +733,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   has_effort_command_interface_ =
     contains_interface_type(params_.command_interfaces, hardware_interface::HW_IF_EFFORT);
 
-  // if there is only velocity or if there is effort command interface
   // then use also PID adapter
   use_closed_loop_pid_adapter_ =
     (has_velocity_command_interface_ && params_.command_interfaces.size() == 1 &&
@@ -728,6 +777,34 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     }
   }
 
+  // Initialize joint limits
+  joint_limits_.resize(dof_);
+  // for (size_t i = 0; i < joint_limits_.size(); ++i)
+  // {
+  //   if (joint_limits::declare_parameters(command_joint_names_[i], get_node()))
+  //   {
+  //     joint_limits::get_joint_limits(command_joint_names_[i], get_node(), joint_limits_[i]);
+  //     RCLCPP_INFO(
+  //       get_node()->get_logger(), "Limits for joint %zu (%s) are: \n%s", i,
+  //       command_joint_names_[i].c_str(), joint_limits_[i].to_string().c_str());
+  //   }
+  // }
+
+  // Initialize joint limits
+  if (!params_.joint_limiter_type.empty())
+  {
+    RCLCPP_INFO(
+      get_node()->get_logger(), "Using joint limiter plugin: '%s'",
+      params_.joint_limiter_type.c_str());
+    joint_limiter_ = std::unique_ptr<JointLimiter>(
+      joint_limiter_loader_->createUnmanagedInstance(params_.joint_limiter_type));
+    joint_limiter_->init(command_joint_names_, get_node());
+  }
+  else
+  {
+    RCLCPP_INFO(get_node()->get_logger(), "Not using joint limiter plugin as none defined.");
+  }
+
   if (params_.state_interfaces.empty())
   {
     RCLCPP_ERROR(logger, "'state_interfaces' parameter is empty.");
@@ -757,6 +834,16 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
       logger,
       "'velocity' command interface can only be used alone if 'velocity' and "
       "'position' state interfaces are present");
+    return CallbackReturn::FAILURE;
+  }
+  if (
+    has_acceleration_command_interface_ &&
+    (!has_velocity_command_interface_ || !has_position_command_interface_))
+  {
+    RCLCPP_ERROR(
+      logger,
+      "'acceleration' command interface can only be used if 'velocity' and "
+      "'position' command interfaces are present");
     return CallbackReturn::FAILURE;
   }
 
@@ -849,6 +936,59 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
 
   state_publisher_->unlock();
 
+  ////////////////////// BEGIN
+  splines_output_pub_ = get_node()->create_publisher<ControllerStateMsg>(
+    "~/splines_output", rclcpp::SystemDefaultsQoS());
+  splines_output_publisher_ = std::make_unique<StatePublisher>(splines_output_pub_);
+
+  splines_output_publisher_->lock();
+  splines_output_publisher_->msg_.joint_names = command_joint_names_;
+  splines_output_publisher_->msg_.reference.positions.resize(dof_);
+  splines_output_publisher_->msg_.reference.velocities.resize(dof_);
+  splines_output_publisher_->msg_.reference.accelerations.resize(dof_);
+  splines_output_publisher_->msg_.reference.positions.resize(dof_);
+  splines_output_publisher_->msg_.error.positions.resize(dof_);
+  splines_output_publisher_->msg_.reference.velocities.resize(dof_);
+  splines_output_publisher_->msg_.error.velocities.resize(dof_);
+  splines_output_publisher_->msg_.reference.accelerations.resize(dof_);
+  splines_output_publisher_->msg_.error.accelerations.resize(dof_);
+  splines_output_publisher_->unlock();
+
+  ruckig_input_pub_ = get_node()->create_publisher<ControllerStateMsg>(
+    "~/ruckig_input_current", rclcpp::SystemDefaultsQoS());
+  ruckig_input_publisher_ = std::make_unique<StatePublisher>(ruckig_input_pub_);
+
+  ruckig_input_publisher_->lock();
+  ruckig_input_publisher_->msg_.joint_names = command_joint_names_;
+  ruckig_input_publisher_->msg_.reference.positions.resize(dof_);
+  ruckig_input_publisher_->msg_.reference.velocities.resize(dof_);
+  ruckig_input_publisher_->msg_.reference.accelerations.resize(dof_);
+  ruckig_input_publisher_->msg_.reference.positions.resize(dof_);
+  ruckig_input_publisher_->msg_.error.positions.resize(dof_);
+  ruckig_input_publisher_->msg_.reference.velocities.resize(dof_);
+  ruckig_input_publisher_->msg_.error.velocities.resize(dof_);
+  ruckig_input_publisher_->msg_.reference.accelerations.resize(dof_);
+  ruckig_input_publisher_->msg_.error.accelerations.resize(dof_);
+  ruckig_input_publisher_->unlock();
+
+  ruckig_input_target_pub_ = get_node()->create_publisher<ControllerStateMsg>(
+    "~/ruckig_input_target", rclcpp::SystemDefaultsQoS());
+  ruckig_input_target_publisher_ = std::make_unique<StatePublisher>(ruckig_input_target_pub_);
+
+  ruckig_input_target_publisher_->lock();
+  ruckig_input_target_publisher_->msg_.joint_names = command_joint_names_;
+  ruckig_input_target_publisher_->msg_.reference.positions.resize(dof_);
+  ruckig_input_target_publisher_->msg_.reference.velocities.resize(dof_);
+  ruckig_input_target_publisher_->msg_.reference.accelerations.resize(dof_);
+  ruckig_input_target_publisher_->msg_.reference.positions.resize(dof_);
+  ruckig_input_target_publisher_->msg_.error.positions.resize(dof_);
+  ruckig_input_target_publisher_->msg_.reference.velocities.resize(dof_);
+  ruckig_input_target_publisher_->msg_.error.velocities.resize(dof_);
+  ruckig_input_target_publisher_->msg_.reference.accelerations.resize(dof_);
+  ruckig_input_target_publisher_->msg_.error.accelerations.resize(dof_);
+  ruckig_input_target_publisher_->unlock();
+  /////////// END
+
   // action server configuration
   if (params_.allow_partial_joints_goal)
   {
@@ -877,6 +1017,98 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   query_state_srv_ = get_node()->create_service<control_msgs::srv::QueryTrajectoryState>(
     std::string(get_node()->get_name()) + "/query_state",
     std::bind(&JointTrajectoryController::query_state_service, this, _1, _2));
+
+  std::vector<ResetDofsData> reset_flags;
+  reset_flags.resize(dof_, {false, std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN()});
+  reset_dofs_flags_.writeFromNonRT(reset_flags);
+
+  // Control mode service
+  auto reset_dofs_service_callback =
+    [&](
+      const std::shared_ptr<ControllerResetDofsSrvType::Request> request,
+      std::shared_ptr<ControllerResetDofsSrvType::Response> response)
+  {
+    response->ok = true;
+
+    if (
+      (request->positions.size() != request->velocities.size()) ||
+      (request->velocities.size() != request->accelerations.size()))
+    {
+      RCLCPP_ERROR(
+        get_node()->get_logger(),
+        "Reset dofs service call has different values size for positions %ld, velocities %ld, "
+        "accelerations %ld",
+        request->positions.size(), request->velocities.size(), request->accelerations.size());
+      response->ok = false;
+      return;
+    }
+
+    if ((request->positions.size() > 0) && (request->names.size() != request->positions.size()))
+    {
+      RCLCPP_ERROR(
+        get_node()->get_logger(),
+        "Reset dofs service call has names size %ld different than positions size %ld",
+        request->names.size(), request->positions.size());
+      response->ok = false;
+      return;
+    }
+
+    std::vector<ResetDofsData> reset_flags_reset;
+    reset_flags_reset.resize(
+      dof_, {false, std::numeric_limits<double>::quiet_NaN(),
+             std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN()});
+
+    // Here we read current reset dofs flags and clear it. This is done so we can add this new request
+    // to the existing reset flags. This logic prevents this new request from overwriting any previous request
+    // that hasn't been processed yet.
+    // The one assumption made here is that the current reset flags are not going to be processed
+    // between the two calls here to read and reset, which is a highly unlikely scenario. Even if it was,
+    // the behavior is fairly benign in that the dofs in the previous request will be reset twice.
+    auto reset_flags_local = *reset_dofs_flags_.readFromNonRT();
+    reset_dofs_flags_.writeFromNonRT(reset_flags_reset);
+
+    // add/update reset dofs flags from request
+    for (size_t i = 0; i < request->names.size(); ++i)
+    {
+      auto it =
+        std::find(command_joint_names_.begin(), command_joint_names_.end(), request->names[i]);
+      if (it != command_joint_names_.end())
+      {
+        auto cmd_itf_index = std::distance(command_joint_names_.begin(), it);
+        double pos = (request->positions.size() != 0) ? request->positions[i]
+                                                      : std::numeric_limits<double>::quiet_NaN();
+
+        if (request->positions.size() != 0)
+        {
+          RCLCPP_INFO(get_node()->get_logger(), "Resetting dof '%s'", request->names[i].c_str());
+        }
+        else
+        {
+          RCLCPP_INFO(
+            get_node()->get_logger(), "Resetting dof '%s' position to %f",
+            request->names[i].c_str(), pos);
+        }
+        double vel = (request->velocities.size() != 0) ? request->velocities[i]
+                                                       : std::numeric_limits<double>::quiet_NaN();
+        double accel = (request->accelerations.size() != 0)
+                         ? request->accelerations[i]
+                         : std::numeric_limits<double>::quiet_NaN();
+        reset_flags_local[cmd_itf_index] = {true, pos, vel, accel};
+      }
+      else
+      {
+        RCLCPP_WARN(
+          get_node()->get_logger(), "Name '%s' is not command interface. Ignoring this entry.",
+          request->names[i].c_str());
+        response->ok = false;
+      }
+    }
+
+    reset_dofs_flags_.writeFromNonRT(reset_flags_local);
+  };
+
+  reset_dofs_service_ = get_node()->create_service<ControllerResetDofsSrvType>(
+    "~/reset_dofs", reset_dofs_service_callback);
 
   return CallbackReturn::SUCCESS;
 }
@@ -929,10 +1161,18 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
 
   subscriber_is_active_ = true;
 
+  // Initialize current state storage if hardware state has tracking offset
   // Handle restart of controller by reading from commands if those are not NaN (a controller was
   // running already)
   trajectory_msgs::msg::JointTrajectoryPoint state;
   resize_joint_trajectory_point(state, dof_);
+  if (!read_state_from_hardware(state)) return CallbackReturn::ERROR;
+  state_current_ = state;
+  state_desired_ = state;
+  last_commanded_state_ = state;
+
+  // Handle restart of controller by reading from commands if
+  // those are not nan
   if (read_state_from_command_interfaces(state))
   {
     state_current_ = state;
@@ -941,9 +1181,10 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   else
   {
     // Initialize current state storage from hardware
-    read_state_from_state_interfaces(state_current_);
-    read_state_from_state_interfaces(last_commanded_state_);
+    read_state_from_hardware(state_current_);
+    read_state_from_hardware(last_commanded_state_);
   }
+  last_commanded_time_ = rclcpp::Time();
 
   // The controller should start by holding position at the beginning of active state
   add_new_trajectory_msg(set_hold_position());
@@ -1071,7 +1312,9 @@ controller_interface::CallbackReturn JointTrajectoryController::on_shutdown(
 
 void JointTrajectoryController::publish_state(
   const rclcpp::Time & time, const JointTrajectoryPoint & desired_state,
-  const JointTrajectoryPoint & current_state, const JointTrajectoryPoint & state_error)
+  const JointTrajectoryPoint & current_state, const JointTrajectoryPoint & state_error,
+  const JointTrajectoryPoint & splines_output, const JointTrajectoryPoint & ruckig_input_target,
+  const JointTrajectoryPoint & ruckig_input)
 {
   if (state_publisher_->trylock())
   {
@@ -1097,6 +1340,39 @@ void JointTrajectoryController::publish_state(
     }
 
     state_publisher_->unlockAndPublish();
+  }
+
+  if (splines_output_publisher_ && splines_output_publisher_->trylock())
+  {
+    splines_output_publisher_->msg_.header.stamp = state_publisher_->msg_.header.stamp;
+    splines_output_publisher_->msg_.reference.positions = splines_output.positions;
+    splines_output_publisher_->msg_.reference.velocities = splines_output.velocities;
+    splines_output_publisher_->msg_.reference.accelerations = splines_output.accelerations;
+    splines_output_publisher_->msg_.reference.effort = splines_output.effort;
+
+    splines_output_publisher_->unlockAndPublish();
+  }
+
+  if (ruckig_input_publisher_ && ruckig_input_publisher_->trylock())
+  {
+    ruckig_input_publisher_->msg_.header.stamp = state_publisher_->msg_.header.stamp;
+    ruckig_input_publisher_->msg_.reference.positions = ruckig_input.positions;
+    ruckig_input_publisher_->msg_.reference.velocities = ruckig_input.velocities;
+    ruckig_input_publisher_->msg_.reference.accelerations = ruckig_input.accelerations;
+    ruckig_input_publisher_->msg_.reference.effort = ruckig_input.effort;
+
+    ruckig_input_publisher_->unlockAndPublish();
+  }
+
+  if (ruckig_input_target_publisher_ && ruckig_input_target_publisher_->trylock())
+  {
+    ruckig_input_target_publisher_->msg_.header.stamp = state_publisher_->msg_.header.stamp;
+    ruckig_input_target_publisher_->msg_.reference.positions = ruckig_input_target.positions;
+    ruckig_input_target_publisher_->msg_.reference.velocities = ruckig_input_target.velocities;
+    ruckig_input_target_publisher_->msg_.reference.accelerations = ruckig_input_target.accelerations;
+    ruckig_input_target_publisher_->msg_.reference.effort = ruckig_input_target.effort;
+
+    ruckig_input_target_publisher_->unlockAndPublish();
   }
 }
 
@@ -1297,7 +1573,9 @@ void JointTrajectoryController::sort_to_local_joint_order(
     if (to_remap.size() != mapping.size())
     {
       RCLCPP_WARN(
-        get_node()->get_logger(), "Invalid input size (%zu) for sorting", to_remap.size());
+        get_node()->get_logger(),
+        "Invalid input size for sorting. Values have size %zu and mapping size %zu",
+        to_remap.size(), mapping.size());
       return to_remap;
     }
     static std::vector<double> output(dof_, 0.0);
