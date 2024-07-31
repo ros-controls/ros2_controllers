@@ -25,6 +25,7 @@
 #include "rclcpp/qos.hpp"
 #include "rclcpp/time.hpp"
 #include "std_msgs/msg/header.hpp"
+#include "urdf/model.h"
 
 namespace rclcpp_lifecycle
 {
@@ -242,14 +243,27 @@ bool JointStateBroadcaster::init_joint_data()
     name_if_value_mapping_[si->get_prefix_name()][interface_name] = kUninitializedValue;
   }
 
-  // filter state interfaces that have at least one of the joint_states fields,
-  // the rest will be ignored for this message
-  for (const auto & name_ifv : name_if_value_mapping_)
+  const std::string & urdf = get_robot_description();
+  if (!urdf.empty())
   {
-    const auto & interfaces_and_values = name_ifv.second;
-    if (has_any_key(interfaces_and_values, {HW_IF_POSITION, HW_IF_VELOCITY, HW_IF_EFFORT}))
+    urdf::Model model;
+    if (!model.initString(urdf))
     {
-      joint_names_.push_back(name_ifv.first);
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to parse robot description!");
+      return false;
+    }
+    // filter state interfaces that have at least one of the joint_states fields,
+    // the rest will be ignored for this message
+    for (const auto & name_ifv : name_if_value_mapping_)
+    {
+      const auto & interfaces_and_values = name_ifv.second;
+      if (has_any_key(interfaces_and_values, {HW_IF_POSITION, HW_IF_VELOCITY, HW_IF_EFFORT}))
+      {
+        if (model.getJoint(name_ifv.first))
+        {
+          joint_names_.push_back(name_ifv.first);
+        }
+      }
     }
   }
 
