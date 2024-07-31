@@ -244,25 +244,30 @@ bool JointStateBroadcaster::init_joint_data()
   }
 
   const std::string & urdf = get_robot_description();
-  if (!urdf.empty())
+
+  urdf::Model model;
+  const bool is_model_loaded = !urdf.empty() && model.initString(urdf);
+  if (!is_model_loaded)
   {
-    urdf::Model model;
-    if (!model.initString(urdf))
+    RCLCPP_ERROR(
+      get_node()->get_logger(),
+      "Failed to parse robot description. Will publish all the interfaces with '%s', '%s' and '%s'",
+      HW_IF_POSITION, HW_IF_VELOCITY, HW_IF_EFFORT);
+  }
+  // filter state interfaces that have at least one of the joint_states fields,
+  // the rest will be ignored for this message
+  for (const auto & name_ifv : name_if_value_mapping_)
+  {
+    const auto & interfaces_and_values = name_ifv.second;
+    if (has_any_key(interfaces_and_values, {HW_IF_POSITION, HW_IF_VELOCITY, HW_IF_EFFORT}))
     {
-      RCLCPP_ERROR(get_node()->get_logger(), "Failed to parse robot description!");
-      return false;
-    }
-    // filter state interfaces that have at least one of the joint_states fields,
-    // the rest will be ignored for this message
-    for (const auto & name_ifv : name_if_value_mapping_)
-    {
-      const auto & interfaces_and_values = name_ifv.second;
-      if (has_any_key(interfaces_and_values, {HW_IF_POSITION, HW_IF_VELOCITY, HW_IF_EFFORT}))
+      if (urdf.empty() || !is_model_loaded)
       {
-        if (model.getJoint(name_ifv.first))
-        {
-          joint_names_.push_back(name_ifv.first);
-        }
+        joint_names_.push_back(name_ifv.first);
+      }
+      else if (model.getJoint(name_ifv.first))
+      {
+        joint_names_.push_back(name_ifv.first);
       }
     }
   }
