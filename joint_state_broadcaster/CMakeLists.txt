@@ -73,6 +73,7 @@ if(BUILD_TESTING)
   )
   ament_target_dependencies(test_joint_state_broadcaster
     hardware_interface
+    ros2_control_test_assets
   )
 endif()
 
