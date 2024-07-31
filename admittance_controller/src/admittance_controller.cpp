@@ -531,12 +531,12 @@ void AdmittanceController::write_state_to_hardware(
     else if (has_velocity_command_interface_)
     {
       command_interfaces_[vel_ind * num_joints_ + joint_ind].set_value(
-        state_commanded.positions[joint_ind]);
+        state_commanded.velocities[joint_ind]);
     }
     else if (has_acceleration_command_interface_)
     {
       command_interfaces_[acc_ind * num_joints_ + joint_ind].set_value(
-        state_commanded.positions[joint_ind]);
+        state_commanded.accelerations[joint_ind]);
     }
   }
   last_commanded_ = state_commanded;
