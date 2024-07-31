@@ -187,7 +187,6 @@ public:
   trajectory_msgs::msg::JointTrajectoryPoint get_state_feedback() { return state_current_; }
   trajectory_msgs::msg::JointTrajectoryPoint get_state_reference() { return state_desired_; }
   trajectory_msgs::msg::JointTrajectoryPoint get_state_error() { return state_error_; }
-
 };
 
 class TrajectoryControllerTest : public ::testing::Test
