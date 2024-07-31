@@ -37,6 +37,8 @@ class FriendJointStateBroadcaster : public joint_state_broadcaster::JointStateBr
   FRIEND_TEST(JointStateBroadcasterTest, ActivateTestWithoutJointsParameter);
   FRIEND_TEST(JointStateBroadcasterTest, ActivateTestWithoutJointsParameterInvalidURDF);
   FRIEND_TEST(JointStateBroadcasterTest, ActivateTestWithoutJointsParameterWithRobotDescription);
+  FRIEND_TEST(JointStateBroadcasterTest, ActivateTestWithJointsAndNoInterfaces);
+  FRIEND_TEST(JointStateBroadcasterTest, ActivateTestWithJointsAndInterfaces);
   FRIEND_TEST(JointStateBroadcasterTest, ActivateTestWithoutInterfacesParameter);
   FRIEND_TEST(JointStateBroadcasterTest, ActivateDeactivateTestTwoJointsOneInterface);
   FRIEND_TEST(JointStateBroadcasterTest, ActivateTestOneJointTwoInterfaces);
