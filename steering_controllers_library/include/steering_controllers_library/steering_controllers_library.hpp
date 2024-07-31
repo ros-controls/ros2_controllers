@@ -15,21 +15,16 @@
 #ifndef STEERING_CONTROLLERS_LIBRARY__STEERING_CONTROLLERS_LIBRARY_HPP_
 #define STEERING_CONTROLLERS_LIBRARY__STEERING_CONTROLLERS_LIBRARY_HPP_
 
-#include <chrono>
 #include <cmath>
 #include <memory>
-#include <queue>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "controller_interface/chainable_controller_interface.hpp"
 #include "hardware_interface/handle.hpp"
-#include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_buffer.h"
 #include "realtime_tools/realtime_publisher.h"
-#include "std_srvs/srv/set_bool.hpp"
 #include "steering_controllers_library/steering_odometry.hpp"
 #include "steering_controllers_library/visibility_control.h"
 #include "steering_controllers_library_parameters.hpp"
@@ -37,7 +32,6 @@
 // TODO(anyone): Replace with controller specific messages
 #include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"
 #include "control_msgs/msg/steering_controller_status.hpp"
-#include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"
@@ -131,7 +125,7 @@ protected:
   // name constants for reference interfaces
   size_t nr_ref_itfs_;
 
-  // store last velocity
+  // last velocity commands for open loop odometry
   double last_linear_velocity_ = 0.0;
   double last_angular_velocity_ = 0.0;
 

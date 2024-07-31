@@ -1,6 +1,6 @@
-:github_url: https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/doc/release_notes/Jazzy.rst
+:github_url: https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/doc/release_notes.rst
 
-Iron to Jazzy
+Release Notes: Iron to Jazzy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 This list summarizes the changes between Iron (previous) and Jazzy (current) releases.
 
@@ -33,6 +33,20 @@ joint_trajectory_controller
 * Action field ``error_string`` is now filled with meaningful strings (`#887 <https://github.com/ros-controls/ros2_controllers/pull/887>`_).
 * Angle wraparound behavior (continuous joints) was added from the current state to the first segment of the incoming trajectory (`#796 <https://github.com/ros-controls/ros2_controllers/pull/796>`_).
 * The URDF is now parsed for continuous joints and angle wraparound is automatically activated now (`#949 <https://github.com/ros-controls/ros2_controllers/pull/949>`_). ``angle_wraparound`` parameter was completely removed.
+* Tolerances sent with the action goal are now processed and used for the action. (`#716 <https://github.com/ros-controls/ros2_controllers/pull/716>`_). For details, see the `JointTolerance message <https://github.com/ros-controls/control_msgs/blob/master/control_msgs/msg/JointTolerance.msg>`_:
+
+  .. code-block:: markdown
+
+    The tolerances specify the amount the position, velocity, and
+    accelerations can vary from the setpoints.  For example, in the case
+    of trajectory control, when the actual position varies beyond
+    (desired position + position tolerance), the trajectory goal may
+    abort.
+
+    There are two special values for tolerances:
+     * 0 - The tolerance is unspecified and will remain at whatever the default is
+     * -1 - The tolerance is "erased".  If there was a default, the joint will be
+            allowed to move without restriction.
 
 pid_controller
 ************************

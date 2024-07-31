@@ -16,15 +16,11 @@
 
 #include <limits>
 #include <memory>
-#include <queue>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "controller_interface/helpers.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
-#include "lifecycle_msgs/msg/state.hpp"
-#include "tf2/transform_datatypes.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 namespace
@@ -324,7 +320,7 @@ SteeringControllersLibrary::on_export_reference_interfaces()
     &reference_interfaces_[0]));
 
   reference_interfaces.push_back(hardware_interface::CommandInterface(
-    get_node()->get_name(), std::string("angular/") + hardware_interface::HW_IF_POSITION,
+    get_node()->get_name(), std::string("angular/") + hardware_interface::HW_IF_VELOCITY,
     &reference_interfaces_[1]));
 
   return reference_interfaces;
@@ -396,12 +392,12 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
 
   if (!std::isnan(reference_interfaces_[0]) && !std::isnan(reference_interfaces_[1]))
   {
-    // store and set commands
+    // store (for open loop odometry) and set commands
     last_linear_velocity_ = reference_interfaces_[0];
     last_angular_velocity_ = reference_interfaces_[1];
 
     auto [traction_commands, steering_commands] =
-      odometry_.get_commands(last_linear_velocity_, last_angular_velocity_);
+      odometry_.get_commands(last_linear_velocity_, last_angular_velocity_, params_.open_loop);
     if (params_.front_steering)
     {
       for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)

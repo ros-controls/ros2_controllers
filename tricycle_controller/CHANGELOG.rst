@@ -2,6 +2,24 @@
 Changelog for package tricycle_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.12.0 (2024-07-23)
+-------------------
+* Add missing includes (`#1226 <https://github.com/ros-controls/ros2_controllers/issues/1226>`_)
+* Unused header cleanup (`#1199 <https://github.com/ros-controls/ros2_controllers/issues/1199>`_)
+* Fix WaitSet issue in tests  (`#1206 <https://github.com/ros-controls/ros2_controllers/issues/1206>`_)
+* Fix parallel gripper controller CI (`#1202 <https://github.com/ros-controls/ros2_controllers/issues/1202>`_)
+* Contributors: Christoph Fröhlich, Henry Moore, Sai Kishor Kothakota
+
+4.11.0 (2024-07-09)
+-------------------
+* added changes corresponding to the logger and clock propagation in ResourceManager (`#1184 <https://github.com/ros-controls/ros2_controllers/issues/1184>`_)
+* Contributors: Sai Kishor Kothakota
+
+4.10.0 (2024-07-01)
+-------------------
+* Remove unstamped twist subscribers + parameters (`#1151 <https://github.com/ros-controls/ros2_controllers/issues/1151>`_)
+* Contributors: Christoph Fröhlich
+
 4.9.0 (2024-06-05)
 ------------------
 * Add mobile robot kinematics 101 and improve steering library docs (`#954 <https://github.com/ros-controls/ros2_controllers/issues/954>`_)

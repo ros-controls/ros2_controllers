@@ -17,7 +17,6 @@
 #include "controller_interface/controller_interface.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "position_controllers/joint_group_position_controller.hpp"
-#include "rclcpp/logging.hpp"
 #include "rclcpp/parameter.hpp"
 
 namespace position_controllers

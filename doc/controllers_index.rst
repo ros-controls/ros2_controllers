@@ -16,9 +16,9 @@ Guidelines and Best Practices
 
 .. toctree::
    :titlesonly:
-   :glob:
 
-   *
+   mobile_robot_kinematics.rst
+   writing_new_controller.rst
 
 
 Controllers for Wheeled Mobile Robots
@@ -53,6 +53,7 @@ The controllers are using `common hardware interface definitions`_, and may use 
    Forward Command Controller <../forward_command_controller/doc/userdoc.rst>
    Gripper Controller <../gripper_controllers/doc/userdoc.rst>
    Joint Trajectory Controller <../joint_trajectory_controller/doc/userdoc.rst>
+   Parallel Gripper Controller <../parallel_gripper_controller/doc/userdoc.rst>
    PID Controller <../pid_controller/doc/userdoc.rst>
    Position Controllers <../position_controllers/doc/userdoc.rst>
    Velocity Controllers <../velocity_controllers/doc/userdoc.rst>
