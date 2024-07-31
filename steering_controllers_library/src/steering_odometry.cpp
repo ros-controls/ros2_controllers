@@ -237,6 +237,7 @@ std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_comma
 #endif
   // interprete twist input as steering angle if twist_input is false
   phi = twist_input ? SteeringOdometry::convert_twist_to_steering_angle(v_bx, omega_bz): omega_bz;
+  phi_IK = phi;
   if (open_loop)
   {
     phi_IK = phi;
