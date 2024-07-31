@@ -61,15 +61,17 @@ void JointStateBroadcasterTest::TearDown() { state_broadcaster_.reset(nullptr); 
 void JointStateBroadcasterTest::SetUpStateBroadcaster(
   const std::vector<std::string> & joint_names, const std::vector<std::string> & interfaces)
 {
-  init_broadcaster_and_set_parameters(joint_names, interfaces);
+  init_broadcaster_and_set_parameters("", joint_names, interfaces);
   assign_state_interfaces(joint_names, interfaces);
 }
 
 void JointStateBroadcasterTest::init_broadcaster_and_set_parameters(
-  const std::vector<std::string> & joint_names, const std::vector<std::string> & interfaces)
+  const std::string & robot_description, const std::vector<std::string> & joint_names,
+  const std::vector<std::string> & interfaces)
 {
   const auto result = state_broadcaster_->init(
-    "joint_state_broadcaster", "", 0, "", state_broadcaster_->define_custom_node_options());
+    "joint_state_broadcaster", robot_description, 0, "",
+    state_broadcaster_->define_custom_node_options());
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
   state_broadcaster_->get_node()->set_parameter({"joints", joint_names});
@@ -426,7 +428,7 @@ TEST_F(JointStateBroadcasterTest, ActivateTestTwoJointTwoInterfacesAllMissing)
   const std::vector<std::string> JOINT_NAMES = {joint_names_[0], joint_names_[1]};
   const std::vector<std::string> IF_NAMES = {interface_names_[0], interface_names_[1]};
 
-  init_broadcaster_and_set_parameters(JOINT_NAMES, {interface_names_[0], interface_names_[1]});
+  init_broadcaster_and_set_parameters("", JOINT_NAMES, {interface_names_[0], interface_names_[1]});
 
   // assign state with interfaces which are not set in parameters --> We should actually not assign
   // anything because CM will also not do that
@@ -444,7 +446,7 @@ TEST_F(JointStateBroadcasterTest, ActivateTestTwoJointTwoInterfacesOneMissing)
   const std::vector<std::string> JOINT_NAMES = {joint_names_[0], joint_names_[1]};
   const std::vector<std::string> IF_NAMES = {interface_names_[0], interface_names_[1]};
 
-  init_broadcaster_and_set_parameters(JOINT_NAMES, {interface_names_[0], interface_names_[1]});
+  init_broadcaster_and_set_parameters("", JOINT_NAMES, {interface_names_[0], interface_names_[1]});
 
   // Manually assign existing interfaces --> one we need is missing
   std::vector<LoanedStateInterface> state_ifs;

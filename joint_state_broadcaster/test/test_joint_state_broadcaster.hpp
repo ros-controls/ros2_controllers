@@ -60,8 +60,8 @@ public:
     const std::vector<std::string> & interfaces = {});
 
   void init_broadcaster_and_set_parameters(
-    const std::vector<std::string> & joint_names = {},
-    const std::vector<std::string> & interfaces = {});
+    const std::string & robot_description, const std::vector<std::string> & joint_names,
+    const std::vector<std::string> & interfaces);
 
   void assign_state_interfaces(
     const std::vector<std::string> & joint_names = {},
