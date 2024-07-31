@@ -211,7 +211,6 @@ public:
       point.accelerations.resize(size, 0.0);
     }
   }
-
 };
 
 class TrajectoryControllerTest : public ::testing::Test
