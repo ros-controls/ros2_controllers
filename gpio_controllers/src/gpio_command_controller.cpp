@@ -187,7 +187,7 @@ CallbackReturn GpioCommandController::on_deactivate(
 controller_interface::return_type GpioCommandController::update(
   const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
-  //publish gpio state msg
+  // publish gpio state msg
   if (realtime_gpio_state_publisher_ && realtime_gpio_state_publisher_->trylock())
   {
     auto & gpio_state_msg = realtime_gpio_state_publisher_->msg_;
