@@ -101,7 +101,7 @@ bool Odometry::update(
   orientation_z_in_base_frame_ += velocity_in_base_frame_angular_z * dt;
 
   tf2::Quaternion orientation_R_b_odom;
-  orientation_R_b_odom.setRPY(0.0, 0.0, -base_frame_offset_[2]);
+  orientation_R_b_odom.setRPY(0.0, 0.0, orientation_z_in_base_frame_);
 
   tf2::Matrix3x3 angular_transformation_from_base_2_odom = tf2::Matrix3x3((orientation_R_b_odom));
   tf2::Vector3 velocity_in_base_frame_w_r_t_odom_frame_ =
