@@ -57,7 +57,8 @@ void GpioCommandControllerTest::TearDown() { controller_.reset(nullptr); }
 
 void GpioCommandControllerTest::SetUpController()
 {
-  const auto result = controller_->init("test_gpio_command_controller");
+  const auto result = controller_->init(
+    "test_gpio_command_controller", "", 0, "", controller_->define_custom_node_options());
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
   std::vector<LoanedCommandInterface> command_ifs;
