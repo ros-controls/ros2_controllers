@@ -25,6 +25,8 @@
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
+#include "rclcpp/executor.hpp"
+#include "rclcpp/executors.hpp"
 #include "rclcpp/utilities.hpp"
 #include "test_joint_state_broadcaster.hpp"
 
@@ -677,7 +679,7 @@ void JointStateBroadcasterTest::activate_and_get_joint_state_message(
   while (max_sub_check_loop_count--)
   {
     state_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
-    const auto timeout = std::chrono::milliseconds{1};
+    const auto timeout = std::chrono::milliseconds{5};
     const auto until = test_node.get_clock()->now() + timeout;
     while (!received_msg && test_node.get_clock()->now() < until)
     {
@@ -755,7 +757,7 @@ void JointStateBroadcasterTest::test_published_dynamic_joint_state_message(
   while (max_sub_check_loop_count--)
   {
     state_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
-    const auto timeout = std::chrono::milliseconds{1};
+    const auto timeout = std::chrono::milliseconds{5};
     const auto until = test_node.get_clock()->now() + timeout;
     while (test_node.get_clock()->now() < until)
     {
