@@ -7,12 +7,13 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
 endif()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
+  angles
+  control_toolbox
   forward_command_controller
   pluginlib
   rclcpp
 )
 
-find_package(ament_cmake REQUIRED)
 find_package(backward_ros REQUIRED)
 foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
@@ -20,7 +21,9 @@ endforeach()
 
 add_library(effort_controllers SHARED
   src/joint_group_effort_controller.cpp
+  src/joint_group_position_controller.cpp
 )
+
 target_compile_features(effort_controllers PUBLIC cxx_std_17)
 target_include_directories(effort_controllers PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
