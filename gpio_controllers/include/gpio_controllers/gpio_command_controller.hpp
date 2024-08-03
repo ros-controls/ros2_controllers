@@ -22,6 +22,7 @@
 
 #include "control_msgs/msg/dynamic_joint_state.hpp"
 #include "controller_interface/controller_interface.hpp"
+#include "gpio_command_controller_parameters.hpp"
 #include "gpio_controllers/visibility_control.h"
 #include "rclcpp/subscription.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
@@ -76,6 +77,8 @@ protected:
   std::shared_ptr<realtime_tools::RealtimePublisher<StateType>> realtime_gpio_state_publisher_;
 
   std::string logger_name_;
+  std::shared_ptr<gpio_command_controller_parameters::ParamListener> param_listener_;
+  gpio_command_controller_parameters::Params params_;
 };
 
 }  // namespace gpio_controllers

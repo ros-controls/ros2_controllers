@@ -19,13 +19,20 @@ find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(realtime_tools REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(generate_parameter_library REQUIRED)
+
+
+generate_parameter_library(gpio_command_controller_parameters
+  src/gpio_command_controller_parameters.yaml
+)
 
 add_library(gpio_controllers
   SHARED
   src/gpio_command_controller.cpp
 )
 target_include_directories(gpio_controllers PRIVATE include)
-ament_target_dependencies(gpio_controllers
+target_link_libraries(gpio_controllers PUBLIC gpio_command_controller_parameters)
+ament_target_dependencies(gpio_controllers PUBLIC
   builtin_interfaces
   controller_interface
   hardware_interface

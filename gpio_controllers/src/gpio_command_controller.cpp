@@ -38,45 +38,23 @@ GpioCommandController::GpioCommandController()
 }
 
 CallbackReturn GpioCommandController::on_init()
+try
 {
-  try
-  {
-    auto_declare<std::vector<std::string>>("gpios", std::vector<std::string>());
-    gpio_names_ = get_node()->get_parameter("gpios").as_string_array();
-    for (std::string & gpio : gpio_names_)
-      auto_declare<std::vector<std::string>>(
-        "command_interfaces." + gpio, std::vector<std::string>());
-  }
-  catch (const std::exception & e)
-  {
-    fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
-    return CallbackReturn::ERROR;
-  }
-
+  param_listener_ = std::make_shared<gpio_command_controller_parameters::ParamListener>(get_node());
+  params_ = param_listener_->get_params();
   return CallbackReturn::SUCCESS;
 }
-
-CallbackReturn GpioCommandController::on_configure(
-  const rclcpp_lifecycle::State & /*previous_state*/)
+catch (const std::exception & e)
 {
-  gpio_names_ = get_node()->get_parameter("gpios").as_string_array();
+  fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
+  return CallbackReturn::ERROR;
+}
 
-  if (gpio_names_.empty())
+CallbackReturn GpioCommandController::on_configure(const rclcpp_lifecycle::State &)
+{
+  for (const auto & [gpio, ports] : params_.command_interfaces.gpios_map)
   {
-    RCLCPP_ERROR(get_node()->get_logger(), "'gpios' parameter was empty");
-    return CallbackReturn::ERROR;
-  }
-
-  for (std::string & gpio : gpio_names_)
-  {
-    auto interfaces = get_node()->get_parameter("command_interfaces." + gpio).as_string_array();
-    if (interfaces.empty())
-    {
-      RCLCPP_ERROR(
-        get_node()->get_logger(), "'command_interfaces.%s' parameter was empty", gpio.c_str());
-      return CallbackReturn::ERROR;
-    }
-    if (!interface_names_.insert(std::make_pair(gpio, interfaces)).second)
+    if (!interface_names_.insert(std::make_pair(gpio, ports.ports)).second)
     {
       RCLCPP_ERROR(
         get_node()->get_logger(),
@@ -85,7 +63,7 @@ CallbackReturn GpioCommandController::on_configure(
     }
   }
 
-  for (const auto & gpio : gpio_names_)
+  for (const auto & gpio : params_.gpios)
   {
     for (const auto & interface_name : interface_names_[gpio])
     {
@@ -157,12 +135,12 @@ CallbackReturn GpioCommandController::on_activate(
   // initialize gpio state msg
   auto & gpio_state_msg = realtime_gpio_state_publisher_->msg_;
   gpio_state_msg.header.stamp = get_node()->now();
-  gpio_state_msg.joint_names.resize(gpio_names_.size());
-  gpio_state_msg.interface_values.resize(gpio_names_.size());
-  for (auto g = 0ul; g < gpio_names_.size(); g++)
+  gpio_state_msg.joint_names.resize(params_.gpios.size());
+  gpio_state_msg.interface_values.resize(params_.gpios.size());
+  for (auto g = 0ul; g < params_.gpios.size(); g++)
   {
-    gpio_state_msg.joint_names[g] = gpio_names_[g];
-    for (const auto & interface_name : interface_names_[gpio_names_[g]])
+    gpio_state_msg.joint_names[g] = params_.gpios[g];
+    for (const auto & interface_name : interface_names_[params_.gpios[g]])
     {
       gpio_state_msg.interface_values[g].interface_names.push_back(interface_name);
       gpio_state_msg.interface_values[g].values.push_back(std::numeric_limits<double>::quiet_NaN());
@@ -195,9 +173,9 @@ controller_interface::return_type GpioCommandController::update(
     gpio_state_msg.header.stamp = get_node()->now();
 
     auto sindex = 0ul;
-    for (auto g = 0ul; g < gpio_names_.size(); g++)
+    for (auto g = 0ul; g < params_.gpios.size(); g++)
     {
-      for (auto i = 0ul; i < interface_names_[gpio_names_[g]].size(); i++)
+      for (auto i = 0ul; i < interface_names_[params_.gpios[g]].size(); i++)
       {
         gpio_state_msg.interface_values[g].values[i] = state_interfaces_[sindex].get_value();
         sindex++;
