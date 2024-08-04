@@ -94,6 +94,19 @@ controller_interface::InterfaceConfiguration GpioCommandController::state_interf
 
 CallbackReturn GpioCommandController::on_activate(const rclcpp_lifecycle::State &)
 {
+  if (validate_configured_interfaces() != CallbackReturn::SUCCESS)
+  {
+    return CallbackReturn::ERROR;
+  }
+
+  initialize_gpio_state_msg();
+  rt_command_ptr_.reset();
+  RCLCPP_INFO(get_node()->get_logger(), "activate successful");
+  return CallbackReturn::SUCCESS;
+}
+
+CallbackReturn GpioCommandController::validate_configured_interfaces()
+{
   std::vector<std::reference_wrapper<LoanedCommandInterface>> ordered_interfaces;
   if (
     !controller_interface::get_ordered_interfaces(
@@ -109,23 +122,28 @@ CallbackReturn GpioCommandController::on_activate(const rclcpp_lifecycle::State 
     return CallbackReturn::ERROR;
   }
 
+  return CallbackReturn::SUCCESS;
+}
+
+void GpioCommandController::initialize_gpio_state_msg()
+{
   auto & gpio_state_msg = realtime_gpio_state_publisher_->msg_;
   gpio_state_msg.header.stamp = get_node()->now();
   gpio_state_msg.joint_names.resize(params_.gpios.size());
   gpio_state_msg.interface_values.resize(params_.gpios.size());
 
-  for (auto g = 0ul; g < params_.gpios.size(); g++)
+  for (std::size_t gpio_index = 0; gpio_index < params_.gpios.size(); ++gpio_index)
   {
-    gpio_state_msg.joint_names[g] = params_.gpios[g];
-    for (const auto & interface_name : params_.command_interfaces.gpios_map[params_.gpios[g]].ports)
-    {
-      gpio_state_msg.interface_values[g].interface_names.push_back(interface_name);
-      gpio_state_msg.interface_values[g].values.push_back(std::numeric_limits<double>::quiet_NaN());
-    }
+    const auto gpio_name = params_.gpios[gpio_index];
+    gpio_state_msg.joint_names[gpio_index] = gpio_name;
+    std::copy(
+      params_.command_interfaces.gpios_map[gpio_name].ports.begin(),
+      params_.command_interfaces.gpios_map[gpio_name].ports.end(),
+      std::back_insert_iterator(gpio_state_msg.interface_values[gpio_index].interface_names));
+    gpio_state_msg.interface_values[gpio_index].values = std::vector<double>(
+      params_.command_interfaces.gpios_map[gpio_name].ports.size(),
+      std::numeric_limits<double>::quiet_NaN());
   }
-  rt_command_ptr_.reset();
-  RCLCPP_INFO(get_node()->get_logger(), "activate successful");
-  return CallbackReturn::SUCCESS;
 }
 
 CallbackReturn GpioCommandController::on_deactivate(const rclcpp_lifecycle::State &)

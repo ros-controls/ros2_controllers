@@ -65,6 +65,8 @@ public:
 
 private:
   void store_interface_types();
+  void initialize_gpio_state_msg();
+  CallbackReturn validate_configured_interfaces();
 
 protected:
   std::vector<std::string> interface_types_;
