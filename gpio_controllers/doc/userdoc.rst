@@ -31,9 +31,11 @@ A yaml file for using it could be:
                 - Gpio2
             command_interfaces:
                 Gpio1:
-                    - dig.1
-                    - dig.2
-                    - dig.3
+                    - ports:
+                        - dig.1
+                        - dig.2
+                        - dig.3
                 Gpio2:
-                    - ana.1
-                    - ana.2
+                    -ports:
+                        - ana.1
+                        - ana.2

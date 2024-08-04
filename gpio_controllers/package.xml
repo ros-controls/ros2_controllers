@@ -5,6 +5,7 @@
   <version>0.0.0</version>
   <description>Controllers to interact with gpios.</description>
   <maintainer email="macbednarczyk@gmail.com">Maciej Bednarczyk</maintainer>
+  <maintainer email="wiktorbajor1@gmail.com">Wiktor Bajor</maintainer>
   <license>Apache License 2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
