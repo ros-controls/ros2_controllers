@@ -17,7 +17,6 @@
 
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include "control_msgs/msg/dynamic_joint_state.hpp"
@@ -64,6 +63,9 @@ public:
   GPIO_COMMAND_CONTROLLER_PUBLIC
   controller_interface::return_type update(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
+
+private:
+  void store_interface_types();
 
 protected:
   std::vector<std::string> interface_types_;

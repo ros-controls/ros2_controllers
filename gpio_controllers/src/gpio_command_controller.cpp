@@ -46,34 +46,35 @@ catch (const std::exception & e)
 }
 
 CallbackReturn GpioCommandController::on_configure(const rclcpp_lifecycle::State &)
+try
 {
-  for (const auto & [gpio, ports] : params_.command_interfaces.gpios_map)
-  {
-    for (const auto & port : ports.ports)
-    {
-      interface_types_.push_back(gpio + "/" + port);
-    }
-  }
-  try
-  {
-    gpios_command_subscriber_ = get_node()->create_subscription<CmdType>(
-      "~/commands", rclcpp::SystemDefaultsQoS(),
-      [this](const CmdType::SharedPtr msg) { rt_command_ptr_.writeFromNonRT(msg); });
+  store_interface_types();
+  gpios_command_subscriber_ = get_node()->create_subscription<CmdType>(
+    "~/commands", rclcpp::SystemDefaultsQoS(),
+    [this](const CmdType::SharedPtr msg) { rt_command_ptr_.writeFromNonRT(msg); });
 
-    gpio_state_publisher_ =
-      get_node()->create_publisher<StateType>("~/gpio_states", rclcpp::SystemDefaultsQoS());
+  gpio_state_publisher_ =
+    get_node()->create_publisher<StateType>("~/gpio_states", rclcpp::SystemDefaultsQoS());
 
-    realtime_gpio_state_publisher_ =
-      std::make_shared<realtime_tools::RealtimePublisher<StateType>>(gpio_state_publisher_);
-  }
-  catch (const std::exception & e)
-  {
-    fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
-    return CallbackReturn::ERROR;
-  }
-
+  realtime_gpio_state_publisher_ =
+    std::make_shared<realtime_tools::RealtimePublisher<StateType>>(gpio_state_publisher_);
   RCLCPP_INFO(get_node()->get_logger(), "configure successful");
   return CallbackReturn::SUCCESS;
+}
+catch (const std::exception & e)
+{
+  fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
+  return CallbackReturn::ERROR;
+}
+
+void GpioCommandController::store_interface_types()
+{
+  for (const auto & [gpio_name, ports] : params_.command_interfaces.gpios_map)
+  {
+    std::transform(
+      ports.ports.begin(), ports.ports.end(), std::back_inserter(interface_types_),
+      [&](const auto & interface_name) { return gpio_name + "/" + interface_name; });
+  }
 }
 
 controller_interface::InterfaceConfiguration
@@ -113,7 +114,6 @@ CallbackReturn GpioCommandController::on_activate(const rclcpp_lifecycle::State 
     return CallbackReturn::ERROR;
   }
 
-  // initialize gpio state msg
   auto & gpio_state_msg = realtime_gpio_state_publisher_->msg_;
   gpio_state_msg.header.stamp = get_node()->now();
   gpio_state_msg.joint_names.resize(params_.gpios.size());
