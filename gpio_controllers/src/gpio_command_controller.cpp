@@ -24,6 +24,7 @@
 namespace gpio_controllers
 {
 using hardware_interface::LoanedCommandInterface;
+using hardware_interface::LoanedStateInterface;
 
 GpioCommandController::GpioCommandController() : controller_interface::ControllerInterface() {}
 
@@ -115,6 +116,21 @@ CallbackReturn GpioCommandController::validate_configured_interfaces()
   {
     RCLCPP_ERROR(
       get_node()->get_logger(), "Expected %zu command interfaces, got %zu", interface_types_.size(),
+      ordered_interfaces.size());
+
+    for (const auto & interface : interface_types_)
+      RCLCPP_ERROR(get_node()->get_logger(), "Got %s", interface.c_str());
+    return CallbackReturn::ERROR;
+  }
+
+  std::vector<std::reference_wrapper<LoanedStateInterface>> state_interface_order;
+  if (
+    !controller_interface::get_ordered_interfaces(
+      state_interfaces_, interface_types_, std::string(""), state_interface_order) ||
+    state_interfaces_.size() != state_interface_order.size())
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(), "Expected %zu state interfaces, got %zu", interface_types_.size(),
       ordered_interfaces.size());
 
     for (const auto & interface : interface_types_)
