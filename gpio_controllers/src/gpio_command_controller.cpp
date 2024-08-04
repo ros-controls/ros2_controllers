@@ -15,16 +15,11 @@
 #include "gpio_controllers/gpio_command_controller.hpp"
 
 #include <algorithm>
-#include <memory>
-#include <string>
-#include <utility>
-#include <vector>
 
 #include "controller_interface/helpers.hpp"
 #include "rclcpp/logging.hpp"
 #include "rclcpp/qos.hpp"
-
-#include "hardware_interface/loaned_command_interface.hpp"
+#include "rclcpp/subscription.hpp"
 
 namespace gpio_controllers
 {
