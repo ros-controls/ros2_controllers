@@ -66,18 +66,14 @@ public:
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
 protected:
-  std::vector<std::string> gpio_names_;
-  std::unordered_map<std::string, std::vector<std::string>> interface_names_;
   std::vector<std::string> interface_types_;
+  realtime_tools::RealtimeBuffer<std::shared_ptr<CmdType>> rt_command_ptr_{};
+  rclcpp::Subscription<CmdType>::SharedPtr gpios_command_subscriber_{};
 
-  realtime_tools::RealtimeBuffer<std::shared_ptr<CmdType>> rt_command_ptr_;
-  rclcpp::Subscription<CmdType>::SharedPtr gpios_command_subscriber_;
+  std::shared_ptr<rclcpp::Publisher<StateType>> gpio_state_publisher_{};
+  std::shared_ptr<realtime_tools::RealtimePublisher<StateType>> realtime_gpio_state_publisher_{};
 
-  std::shared_ptr<rclcpp::Publisher<StateType>> gpio_state_publisher_;
-  std::shared_ptr<realtime_tools::RealtimePublisher<StateType>> realtime_gpio_state_publisher_;
-
-  std::string logger_name_;
-  std::shared_ptr<gpio_command_controller_parameters::ParamListener> param_listener_;
+  std::shared_ptr<gpio_command_controller_parameters::ParamListener> param_listener_{};
   gpio_command_controller_parameters::Params params_;
 };
 

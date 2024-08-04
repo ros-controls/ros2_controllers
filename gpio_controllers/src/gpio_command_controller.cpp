@@ -30,12 +30,7 @@ namespace gpio_controllers
 {
 using hardware_interface::LoanedCommandInterface;
 
-GpioCommandController::GpioCommandController()
-: controller_interface::ControllerInterface(),
-  rt_command_ptr_(nullptr),
-  gpios_command_subscriber_(nullptr)
-{
-}
+GpioCommandController::GpioCommandController() : controller_interface::ControllerInterface() {}
 
 CallbackReturn GpioCommandController::on_init()
 try
@@ -54,23 +49,11 @@ CallbackReturn GpioCommandController::on_configure(const rclcpp_lifecycle::State
 {
   for (const auto & [gpio, ports] : params_.command_interfaces.gpios_map)
   {
-    if (!interface_names_.insert(std::make_pair(gpio, ports.ports)).second)
+    for (const auto & port : ports.ports)
     {
-      RCLCPP_ERROR(
-        get_node()->get_logger(),
-        "Trying to override existing gpio setup. Wrong controller parameters.");
-      return CallbackReturn::ERROR;
+      interface_types_.push_back(gpio + "/" + port);
     }
   }
-
-  for (const auto & gpio : params_.gpios)
-  {
-    for (const auto & interface_name : interface_names_[gpio])
-    {
-      interface_types_.push_back(gpio + "/" + interface_name);
-    }
-  }
-
   try
   {
     gpios_command_subscriber_ = get_node()->create_subscription<CmdType>(
@@ -85,7 +68,6 @@ CallbackReturn GpioCommandController::on_configure(const rclcpp_lifecycle::State
   }
   catch (const std::exception & e)
   {
-    // get_node() may throw, logging raw here
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
     return CallbackReturn::ERROR;
   }
@@ -114,8 +96,7 @@ controller_interface::InterfaceConfiguration GpioCommandController::state_interf
   return state_interfaces_config;
 }
 
-CallbackReturn GpioCommandController::on_activate(
-  const rclcpp_lifecycle::State & /*previous_state*/)
+CallbackReturn GpioCommandController::on_activate(const rclcpp_lifecycle::State &)
 {
   std::vector<std::reference_wrapper<LoanedCommandInterface>> ordered_interfaces;
   if (
@@ -137,45 +118,40 @@ CallbackReturn GpioCommandController::on_activate(
   gpio_state_msg.header.stamp = get_node()->now();
   gpio_state_msg.joint_names.resize(params_.gpios.size());
   gpio_state_msg.interface_values.resize(params_.gpios.size());
+
   for (auto g = 0ul; g < params_.gpios.size(); g++)
   {
     gpio_state_msg.joint_names[g] = params_.gpios[g];
-    for (const auto & interface_name : interface_names_[params_.gpios[g]])
+    for (const auto & interface_name : params_.command_interfaces.gpios_map[params_.gpios[g]].ports)
     {
       gpio_state_msg.interface_values[g].interface_names.push_back(interface_name);
       gpio_state_msg.interface_values[g].values.push_back(std::numeric_limits<double>::quiet_NaN());
     }
   }
-
-  // reset command buffer if a command came through callback when controller was inactive
   rt_command_ptr_.reset();
-
   RCLCPP_INFO(get_node()->get_logger(), "activate successful");
   return CallbackReturn::SUCCESS;
 }
 
-CallbackReturn GpioCommandController::on_deactivate(
-  const rclcpp_lifecycle::State & /*previous_state*/)
+CallbackReturn GpioCommandController::on_deactivate(const rclcpp_lifecycle::State &)
 {
-  // reset command buffer
   rt_command_ptr_.reset();
   return CallbackReturn::SUCCESS;
 }
 
 controller_interface::return_type GpioCommandController::update(
-  const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
+  const rclcpp::Time &, const rclcpp::Duration &)
 {
-  // publish gpio state msg
   if (realtime_gpio_state_publisher_ && realtime_gpio_state_publisher_->trylock())
   {
     auto & gpio_state_msg = realtime_gpio_state_publisher_->msg_;
-
     gpio_state_msg.header.stamp = get_node()->now();
 
     auto sindex = 0ul;
     for (auto g = 0ul; g < params_.gpios.size(); g++)
     {
-      for (auto i = 0ul; i < interface_names_[params_.gpios[g]].size(); i++)
+      for (auto i = 0ul; i < params_.command_interfaces.gpios_map[params_.gpios[g]].ports.size();
+           i++)
       {
         gpio_state_msg.interface_values[g].values[i] = state_interfaces_[sindex].get_value();
         sindex++;
@@ -187,7 +163,6 @@ controller_interface::return_type GpioCommandController::update(
 
   auto gpio_commands = rt_command_ptr_.readFromRT();
 
-  // no command received yet
   if (!gpio_commands || !(*gpio_commands))
   {
     return controller_interface::return_type::OK;
