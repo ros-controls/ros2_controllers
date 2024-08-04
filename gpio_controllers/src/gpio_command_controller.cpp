@@ -155,27 +155,13 @@ CallbackReturn GpioCommandController::on_deactivate(const rclcpp_lifecycle::Stat
 controller_interface::return_type GpioCommandController::update(
   const rclcpp::Time &, const rclcpp::Duration &)
 {
-  if (realtime_gpio_state_publisher_ && realtime_gpio_state_publisher_->trylock())
-  {
-    auto & gpio_state_msg = realtime_gpio_state_publisher_->msg_;
-    gpio_state_msg.header.stamp = get_node()->now();
+  update_gpios_states();
+  return update_gpios_commands();
+}
 
-    auto sindex = 0ul;
-    for (auto g = 0ul; g < params_.gpios.size(); g++)
-    {
-      for (auto i = 0ul; i < params_.command_interfaces.gpios_map[params_.gpios[g]].ports.size();
-           i++)
-      {
-        gpio_state_msg.interface_values[g].values[i] = state_interfaces_[sindex].get_value();
-        sindex++;
-      }
-    }
-
-    realtime_gpio_state_publisher_->unlockAndPublish();
-  }
-
+controller_interface::return_type GpioCommandController::update_gpios_commands()
+{
   auto gpio_commands = rt_command_ptr_.readFromRT();
-
   if (!gpio_commands || !(*gpio_commands))
   {
     return controller_interface::return_type::OK;
@@ -190,12 +176,31 @@ controller_interface::return_type GpioCommandController::update(
     return controller_interface::return_type::ERROR;
   }
 
-  for (size_t cindex = 0; cindex < command_interfaces_.size(); ++cindex)
+  for (std::size_t command_index = 0; command_index < command_interfaces_.size(); ++command_index)
   {
-    command_interfaces_[cindex].set_value((*gpio_commands)->data[cindex]);
+    command_interfaces_[command_index].set_value((*gpio_commands)->data[command_index]);
   }
-
   return controller_interface::return_type::OK;
+}
+
+void GpioCommandController::update_gpios_states()
+{
+  if (realtime_gpio_state_publisher_ && realtime_gpio_state_publisher_->trylock())
+  {
+    auto & gpio_state_msg = realtime_gpio_state_publisher_->msg_;
+    gpio_state_msg.header.stamp = get_node()->now();
+
+    std::size_t sindex = 0;
+    for (std::size_t g = 0; g < params_.gpios.size(); g++)
+    {
+      for (auto & interface_value : gpio_state_msg.interface_values[g].values)
+      {
+        interface_value = state_interfaces_[sindex].get_value();
+        sindex++;
+      }
+    }
+    realtime_gpio_state_publisher_->unlockAndPublish();
+  }
 }
 
 }  // namespace gpio_controllers

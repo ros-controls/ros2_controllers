@@ -67,6 +67,8 @@ private:
   void store_interface_types();
   void initialize_gpio_state_msg();
   CallbackReturn validate_configured_interfaces();
+  void update_gpios_states();
+  controller_interface::return_type update_gpios_commands();
 
 protected:
   std::vector<std::string> interface_types_;
