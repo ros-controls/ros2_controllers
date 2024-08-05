@@ -46,3 +46,36 @@ force_torque_sensor_broadcaster:
         default_value: "",
         description: "Name of the state interface with torque values around 'z' axis.",
       }
+  offset:
+    force:
+      x: {
+        type: double,
+        default_value: 0.0,
+        description: "The offset of force values on 'x' axis.",
+      }
+      y: {
+        type: double,
+        default_value: 0.0,
+        description: "The offset of force values on 'y' axis.",
+      }
+      z: {
+        type: double,
+        default_value: 0.0,
+        description: "The offset of force values on 'z' axis.",
+      }
+    torque:
+      x: {
+        type: double,
+        default_value: 0.0,
+        description: "The offset of torque values around 'x' axis.",
+      }
+      y: {
+        type: double,
+        default_value: 0.0,
+        description: "The offset of torque values around 'y' axis.",
+      }
+      z: {
+        type: double,
+        default_value: 0.0,
+        description: "The offset of torque values around 'z' axis.",
+      }
