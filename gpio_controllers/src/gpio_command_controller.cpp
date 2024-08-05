@@ -23,8 +23,6 @@
 
 namespace gpio_controllers
 {
-using hardware_interface::LoanedCommandInterface;
-using hardware_interface::LoanedStateInterface;
 
 GpioCommandController::GpioCommandController() : controller_interface::ControllerInterface() {}
 
@@ -95,7 +93,14 @@ controller_interface::InterfaceConfiguration GpioCommandController::state_interf
 
 CallbackReturn GpioCommandController::on_activate(const rclcpp_lifecycle::State &)
 {
-  if (validate_configured_interfaces() != CallbackReturn::SUCCESS)
+  command_interfaces_map_ =
+    create_map_of_references_to_interfaces(interface_types_, command_interfaces_);
+  state_interfaces_map_ =
+    create_map_of_references_to_interfaces(interface_types_, state_interfaces_);
+
+  if (
+    !check_if_configured_interfaces_matches_received(interface_types_, command_interfaces_map_) ||
+    !check_if_configured_interfaces_matches_received(interface_types_, state_interfaces_map_))
   {
     return CallbackReturn::ERROR;
   }
@@ -106,39 +111,49 @@ CallbackReturn GpioCommandController::on_activate(const rclcpp_lifecycle::State 
   return CallbackReturn::SUCCESS;
 }
 
-CallbackReturn GpioCommandController::validate_configured_interfaces()
+template <typename T>
+MapOfReferencesToInterfaces<T> GpioCommandController::create_map_of_references_to_interfaces(
+  const InterfacesNames & interfaces_from_params, LoanedInterfaces<T> & configured_interfaces)
 {
-  std::vector<std::reference_wrapper<LoanedCommandInterface>> ordered_interfaces;
-  if (
-    !controller_interface::get_ordered_interfaces(
-      command_interfaces_, interface_types_, std::string(""), ordered_interfaces) ||
-    command_interfaces_.size() != ordered_interfaces.size())
+  MapOfReferencesToInterfaces<T> map;
+  for (const auto & interface_name : interfaces_from_params)
   {
-    RCLCPP_ERROR(
-      get_node()->get_logger(), "Expected %zu command interfaces, got %zu", interface_types_.size(),
-      ordered_interfaces.size());
-
-    for (const auto & interface : interface_types_)
-      RCLCPP_ERROR(get_node()->get_logger(), "Got %s", interface.c_str());
-    return CallbackReturn::ERROR;
+    auto interface = std::find_if(
+      configured_interfaces.begin(), configured_interfaces.end(),
+      [&](const auto & configured_interface)
+      {
+        const auto full_name_interface_name = configured_interface.get_name();
+        return full_name_interface_name == interface_name;
+      });
+    if (interface != configured_interfaces.end())
+    {
+      map.emplace(interface_name, std::ref(*interface));
+    }
   }
+  return map;
+}
 
-  std::vector<std::reference_wrapper<LoanedStateInterface>> state_interface_order;
-  if (
-    !controller_interface::get_ordered_interfaces(
-      state_interfaces_, interface_types_, std::string(""), state_interface_order) ||
-    state_interfaces_.size() != state_interface_order.size())
+template <typename T>
+bool GpioCommandController::check_if_configured_interfaces_matches_received(
+  const InterfacesNames & interfaces_from_params,
+  const MapOfReferencesToInterfaces<T> & interfaces_map)
+{
+  if (!(interfaces_map.size() == interfaces_from_params.size()))
   {
-    RCLCPP_ERROR(
-      get_node()->get_logger(), "Expected %zu state interfaces, got %zu", interface_types_.size(),
-      ordered_interfaces.size());
-
-    for (const auto & interface : interface_types_)
-      RCLCPP_ERROR(get_node()->get_logger(), "Got %s", interface.c_str());
-    return CallbackReturn::ERROR;
+    RCLCPP_ERROR_STREAM(
+      get_node()->get_logger(),
+      "Expected " << interfaces_from_params.size() << " interfaces, got " << interfaces_map.size());
+    for (const auto & interface : interfaces_from_params)
+    {
+      RCLCPP_ERROR_STREAM(get_node()->get_logger(), "Expected " << interface);
+    }
+    for (const auto & [interface, value] : interfaces_map)
+    {
+      RCLCPP_ERROR_STREAM(get_node()->get_logger(), "Got " << interface);
+    }
+    return false;
   }
-
-  return CallbackReturn::SUCCESS;
+  return true;
 }
 
 void GpioCommandController::initialize_gpio_state_msg()

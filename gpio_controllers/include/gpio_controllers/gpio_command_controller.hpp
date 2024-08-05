@@ -17,6 +17,7 @@
 
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "control_msgs/msg/dynamic_joint_state.hpp"
@@ -34,6 +35,11 @@ namespace gpio_controllers
 using CmdType = std_msgs::msg::Float64MultiArray;
 using StateType = control_msgs::msg::DynamicJointState;
 using CallbackReturn = controller_interface::CallbackReturn;
+using InterfacesNames = std::vector<std::string>;
+template <typename T>
+using MapOfReferencesToInterfaces = std::unordered_map<std::string, std::reference_wrapper<T>>;
+template <typename T>
+using LoanedInterfaces = std::vector<T>;
 
 class GpioCommandController : public controller_interface::ControllerInterface
 {
@@ -66,12 +72,21 @@ public:
 private:
   void store_interface_types();
   void initialize_gpio_state_msg();
-  CallbackReturn validate_configured_interfaces();
   void update_gpios_states();
   controller_interface::return_type update_gpios_commands();
+  template <typename T>
+  MapOfReferencesToInterfaces<T> create_map_of_references_to_interfaces(
+    const InterfacesNames & interfaces_from_params, LoanedInterfaces<T> & configured_interfaces);
+  template <typename T>
+  bool check_if_configured_interfaces_matches_received(
+    const InterfacesNames & interfaces_from_params,
+    const MapOfReferencesToInterfaces<T> & interfaces_map);
 
 protected:
   std::vector<std::string> interface_types_;
+  MapOfReferencesToInterfaces<hardware_interface::LoanedCommandInterface> command_interfaces_map_;
+  MapOfReferencesToInterfaces<hardware_interface::LoanedStateInterface> state_interfaces_map_;
+
   realtime_tools::RealtimeBuffer<std::shared_ptr<CmdType>> rt_command_ptr_{};
   rclcpp::Subscription<CmdType>::SharedPtr gpios_command_subscriber_{};
 
