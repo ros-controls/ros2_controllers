@@ -33,7 +33,7 @@
 using CallbackReturn = controller_interface::CallbackReturn;
 using hardware_interface::LoanedCommandInterface;
 using hardware_interface::LoanedStateInterface;
-using CmdType = std_msgs::msg::Float64MultiArray;
+using CmdType = control_msgs::msg::DynamicJointState;
 using StateType = control_msgs::msg::DynamicJointState;
 using hardware_interface::CommandInterface;
 using hardware_interface::StateInterface;
@@ -41,7 +41,7 @@ using hardware_interface::StateInterface;
 class FriendGpioCommandController : public gpio_controllers::GpioCommandController
 {
   FRIEND_TEST(GpioCommandControllerTest, CommandSuccessTest);
-  FRIEND_TEST(GpioCommandControllerTest, WrongCommandCheckTest);
+  FRIEND_TEST(GpioCommandControllerTest, CommandSuccessTestWithOnlyOneGpio);
   FRIEND_TEST(GpioCommandControllerTest, CommandCallbackTest);
 };
 
@@ -207,7 +207,15 @@ TEST_F(GpioCommandControllerTest, CommandSuccessTest)
   ASSERT_EQ(gpio_2_ana_cmd_.get_value(), 3.1);
 
   auto command_ptr = std::make_shared<CmdType>();
-  command_ptr->data = {0.0, 1.0, 30.0};
+  control_msgs::msg::InterfaceValue inteface_value_gpio1;
+  inteface_value_gpio1.interface_names = {"dig.1", "dig.2"};
+  inteface_value_gpio1.values = {0.0, 1.0};
+  control_msgs::msg::InterfaceValue inteface_value_gpio2;
+  inteface_value_gpio2.interface_names = {"ana.1"};
+  inteface_value_gpio2.values = {30.0};
+
+  command_ptr->joint_names = {"gpio1", "gpio2"};
+  command_ptr->interface_values = {inteface_value_gpio1, inteface_value_gpio2};
   controller_->rt_command_ptr_.writeFromNonRT(command_ptr);
 
   ASSERT_EQ(
@@ -219,7 +227,7 @@ TEST_F(GpioCommandControllerTest, CommandSuccessTest)
   ASSERT_EQ(gpio_2_ana_cmd_.get_value(), 30.0);
 }
 
-TEST_F(GpioCommandControllerTest, WrongCommandCheckTest)
+TEST_F(GpioCommandControllerTest, CommandSuccessTestWithOnlyOneGpio)
 {
   std::vector<rclcpp::Parameter> parameters;
   parameters.emplace_back("gpios", std::vector<std::string>{"gpio1", "gpio2"});
@@ -246,15 +254,20 @@ TEST_F(GpioCommandControllerTest, WrongCommandCheckTest)
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
   auto command_ptr = std::make_shared<CmdType>();
-  command_ptr->data = {0.0, 20.0};
+  control_msgs::msg::InterfaceValue inteface_value_gpio1;
+  inteface_value_gpio1.interface_names = {"dig.1", "dig.2"};
+  inteface_value_gpio1.values = {0.0, 1.0};
+
+  command_ptr->joint_names = {"gpio1"};
+  command_ptr->interface_values = {inteface_value_gpio1};
   controller_->rt_command_ptr_.writeFromNonRT(command_ptr);
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::ERROR);
+    controller_interface::return_type::OK);
 
-  ASSERT_EQ(gpio_1_1_dig_cmd_.get_value(), 1.0);
-  ASSERT_EQ(gpio_1_2_dig_cmd_.get_value(), 0.0);
+  ASSERT_EQ(gpio_1_1_dig_cmd_.get_value(), 0.0);
+  ASSERT_EQ(gpio_1_2_dig_cmd_.get_value(), 1.0);
   ASSERT_EQ(gpio_2_ana_cmd_.get_value(), 3.1);
 }
 
@@ -337,7 +350,16 @@ TEST_F(GpioCommandControllerTest, CommandCallbackTest)
   auto command_pub = test_node.create_publisher<CmdType>(
     std::string(controller_->get_node()->get_name()) + "/commands", rclcpp::SystemDefaultsQoS());
   CmdType command_msg;
-  command_msg.data = {0.0, 1.0, 30.0};
+  control_msgs::msg::InterfaceValue inteface_value_gpio1;
+  inteface_value_gpio1.interface_names = {"dig.1", "dig.2"};
+  inteface_value_gpio1.values = {0.0, 1.0};
+  control_msgs::msg::InterfaceValue inteface_value_gpio2;
+  inteface_value_gpio2.interface_names = {"ana.1"};
+  inteface_value_gpio2.values = {30.0};
+
+  command_msg.joint_names = {"gpio1", "gpio2"};
+  command_msg.interface_values = {inteface_value_gpio1, inteface_value_gpio2};
+
   command_pub->publish(command_msg);
 
   rclcpp::executors::SingleThreadedExecutor executor;

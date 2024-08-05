@@ -28,11 +28,10 @@
 #include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_buffer.h"
 #include "realtime_tools/realtime_publisher.h"
-#include "std_msgs/msg/float64_multi_array.hpp"
 
 namespace gpio_controllers
 {
-using CmdType = std_msgs::msg::Float64MultiArray;
+using CmdType = control_msgs::msg::DynamicJointState;
 using StateType = control_msgs::msg::DynamicJointState;
 using CallbackReturn = controller_interface::CallbackReturn;
 using InterfacesNames = std::vector<std::string>;

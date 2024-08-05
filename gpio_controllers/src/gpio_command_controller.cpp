@@ -192,24 +192,35 @@ controller_interface::return_type GpioCommandController::update(
 
 controller_interface::return_type GpioCommandController::update_gpios_commands()
 {
-  auto gpio_commands = rt_command_ptr_.readFromRT();
-  if (!gpio_commands || !(*gpio_commands))
+  auto gpio_commands_ptr = rt_command_ptr_.readFromRT();
+  if (!gpio_commands_ptr || !(*gpio_commands_ptr))
   {
     return controller_interface::return_type::OK;
   }
 
-  if ((*gpio_commands)->data.size() != command_interfaces_.size())
+  const auto gpio_commands = *(*gpio_commands_ptr);
+  for (std::size_t gpio_index = 0; gpio_index < gpio_commands.joint_names.size(); ++gpio_index)
   {
-    RCLCPP_ERROR_THROTTLE(
-      get_node()->get_logger(), *get_node()->get_clock(), 1000,
-      "command size (%zu) does not match number of interfaces (%zu)", (*gpio_commands)->data.size(),
-      command_interfaces_.size());
-    return controller_interface::return_type::ERROR;
-  }
-
-  for (std::size_t command_index = 0; command_index < command_interfaces_.size(); ++command_index)
-  {
-    command_interfaces_[command_index].set_value((*gpio_commands)->data[command_index]);
+    const auto & gpio_name = gpio_commands.joint_names[gpio_index];
+    for (std::size_t command_interface_index = 0;
+         command_interface_index < gpio_commands.interface_values[gpio_index].values.size();
+         ++command_interface_index)
+    {
+      const auto & full_command_interface_name =
+        gpio_name + '/' +
+        gpio_commands.interface_values[gpio_index].interface_names[command_interface_index];
+      try
+      {
+        command_interfaces_map_.at(full_command_interface_name)
+          .get()
+          .set_value(gpio_commands.interface_values[gpio_index].values[command_interface_index]);
+      }
+      catch (const std::exception & e)
+      {
+        fprintf(
+          stderr, "Exception thrown during applying command stage with message: %s \n", e.what());
+      }
+    }
   }
   return controller_interface::return_type::OK;
 }
@@ -221,13 +232,18 @@ void GpioCommandController::update_gpios_states()
     auto & gpio_state_msg = realtime_gpio_state_publisher_->msg_;
     gpio_state_msg.header.stamp = get_node()->now();
 
-    std::size_t sindex = 0;
-    for (std::size_t g = 0; g < params_.gpios.size(); g++)
+    for (std::size_t gpio_index = 0; gpio_index < gpio_state_msg.joint_names.size(); ++gpio_index)
     {
-      for (auto & interface_value : gpio_state_msg.interface_values[g].values)
+      const auto & gpio_name = gpio_state_msg.joint_names[gpio_index];
+      for (std::size_t interface_index = 0;
+           interface_index < gpio_state_msg.interface_values[gpio_index].interface_names.size();
+           ++interface_index)
       {
-        interface_value = state_interfaces_[sindex].get_value();
-        sindex++;
+        const auto & full_state_interface_name =
+          gpio_name + '/' +
+          gpio_state_msg.interface_values[gpio_index].interface_names[interface_index];
+        gpio_state_msg.interface_values[gpio_index].values[interface_index] =
+          state_interfaces_map_.at(full_state_interface_name).get().get_value();
       }
     }
     realtime_gpio_state_publisher_->unlockAndPublish();
