@@ -1,0 +1,7 @@
+<library path="gpio_controllers">
+  <class name="gpio_controllers/GpioCommandController" type="gpio_controllers::GpioCommandController" base_class_type="controller_interface::ControllerInterface">
+  <description>
+    The gpio command controller commands a group of gpios using multiple interfaces.
+  </description>
+  </class>
+</library>
