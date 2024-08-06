@@ -280,7 +280,9 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
     semantic_components::ForceTorqueSensor(admittance_->parameters_.ft_sensor.name));
 
   // configure admittance rule
-  if (admittance_->configure(get_node(), num_joints_) == controller_interface::return_type::ERROR)
+  if (
+    admittance_->configure(get_node(), num_joints_, urdf_) ==
+    controller_interface::return_type::ERROR)
   {
     return controller_interface::CallbackReturn::ERROR;
   }
@@ -388,6 +390,12 @@ controller_interface::return_type AdmittanceController::update_and_write_command
   if (!admittance_)
   {
     return controller_interface::return_type::ERROR;
+  }
+
+  if (period.seconds() > 5.0) {
+    RCLCPP_WARN(
+        get_node()->get_logger(), "Large dt, skipping!");
+    return controller_interface::return_type::OK;
   }
 
   // update input reference from chainable interfaces
