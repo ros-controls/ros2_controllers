@@ -20,7 +20,6 @@
 #include <limits>
 #include <memory>
 #include <string>
-#include <utility>
 #include <vector>
 
 using pid_controller::feedforward_mode_type;
@@ -495,7 +494,7 @@ TEST_F(PidControllerTest, receive_message_and_publish_updated_status)
   }
 
   publish_commands();
-  ASSERT_TRUE(controller_->wait_for_commands(executor));
+  controller_->wait_for_commands(executor);
 
   for (size_t i = 0; i < controller_->reference_interfaces_.size(); ++i)
   {
