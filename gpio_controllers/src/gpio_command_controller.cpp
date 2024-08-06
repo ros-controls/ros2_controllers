@@ -28,7 +28,7 @@ void print_interface(
 {
   for (const auto & interface : state_interfaces)
   {
-    RCLCPP_ERROR_STREAM(logger, "Got " << interface.get().get_name());
+    RCLCPP_ERROR(logger, "Got %s", interface.get().get_name().c_str());
   }
 }
 void print_interface(
@@ -37,7 +37,7 @@ void print_interface(
 {
   for (const auto & [interface_name, value] : command_interfaces)
   {
-    RCLCPP_ERROR_STREAM(logger, "Got " << interface_name);
+    RCLCPP_ERROR(logger, "Got %s", interface_name.c_str());
   }
 }
 }  // namespace
@@ -158,12 +158,12 @@ bool GpioCommandController::check_if_configured_interfaces_matches_received(
 {
   if (!(configured_interfaces.size() == interfaces_from_params.size()))
   {
-    RCLCPP_ERROR_STREAM(
-      get_node()->get_logger(), "Expected " << interfaces_from_params.size() << " interfaces, got "
-                                            << configured_interfaces.size());
+    RCLCPP_ERROR(
+      get_node()->get_logger(), "Expected %ld interfaces, got %ld", interfaces_from_params.size(),
+      configured_interfaces.size());
     for (const auto & interface : interfaces_from_params)
     {
-      RCLCPP_ERROR_STREAM(get_node()->get_logger(), "Expected " << interface);
+      RCLCPP_ERROR(get_node()->get_logger(), "Expected %s", interface.c_str());
     }
     print_interface(get_node()->get_logger(), configured_interfaces);
     return false;
