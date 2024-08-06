@@ -16,13 +16,10 @@
 #define JOINT_TRAJECTORY_CONTROLLER__CARTESIAN_TRAJECTORY_GENERATOR_HPP_
 
 #include <memory>
-#include <string>
-#include <unordered_map>
 #include <vector>
 
 #include "control_msgs/msg/cartesian_trajectory_generator_state.hpp"
 #include "geometry_msgs/msg/pose.hpp"
-#include "geometry_msgs/msg/transform_stamped.hpp"
 #include "joint_limits/joint_limits.hpp"
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
 #include "nav_msgs/msg/odometry.hpp"

@@ -22,15 +22,10 @@
 #include <vector>
 
 #include "angles/angles.h"
-#include "builtin_interfaces/msg/duration.hpp"
-#include "builtin_interfaces/msg/time.hpp"
 #include "controller_interface/helpers.hpp"
-#include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
-#include "joint_limits/joint_limits_rosparam.hpp"
 #include "joint_trajectory_controller/trajectory.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
-#include "rclcpp/event_handler.hpp"
 #include "rclcpp/logging.hpp"
 #include "rclcpp/qos.hpp"
 #include "rclcpp/time.hpp"
@@ -240,11 +235,9 @@ controller_interface::return_type JointTrajectoryController::update(
 
     // find segment for current timestamp
     TrajectoryPointConstIter start_segment_itr, end_segment_itr;
-    const bool valid_point = traj_external_point_ptr_
-                          ->sample(
-                            time, interpolation_method_,
-                            state_desired_, start_segment_itr, end_segment_itr, period,
-                            joint_limiter_, splines_state_, ruckig_state_, ruckig_input_state_);
+    const bool valid_point = traj_external_point_ptr_->sample(
+      time, interpolation_method_, state_desired_, start_segment_itr, end_segment_itr, period,
+      joint_limiter_, splines_state_, ruckig_state_, ruckig_input_state_);
 
     if (valid_point)
     {
@@ -637,11 +630,10 @@ void JointTrajectoryController::query_state_service(
   {
     TrajectoryPointConstIter start_segment_itr, end_segment_itr;
     const rclcpp::Duration period = rclcpp::Duration::from_seconds(0.01);
-    response->success = traj_external_point_ptr_
-                          ->sample(
-                            static_cast<rclcpp::Time>(request->time), interpolation_method_,
-                            state_requested, start_segment_itr, end_segment_itr, period,
-                            joint_limiter_, splines_state_, ruckig_state_, ruckig_input_state_);
+    response->success = traj_external_point_ptr_->sample(
+      static_cast<rclcpp::Time>(request->time), interpolation_method_, state_requested,
+      start_segment_itr, end_segment_itr, period, joint_limiter_, splines_state_, ruckig_state_,
+      ruckig_input_state_);
     // If the requested sample time precedes the trajectory finish time respond as failure
     if (response->success)
     {
@@ -1019,7 +1011,9 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     std::bind(&JointTrajectoryController::query_state_service, this, _1, _2));
 
   std::vector<ResetDofsData> reset_flags;
-  reset_flags.resize(dof_, {false, std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN()});
+  reset_flags.resize(
+    dof_, {false, std::numeric_limits<double>::quiet_NaN(),
+           std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN()});
   reset_dofs_flags_.writeFromNonRT(reset_flags);
 
   // Control mode service
@@ -1058,12 +1052,12 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
       dof_, {false, std::numeric_limits<double>::quiet_NaN(),
              std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN()});
 
-    // Here we read current reset dofs flags and clear it. This is done so we can add this new request
-    // to the existing reset flags. This logic prevents this new request from overwriting any previous request
-    // that hasn't been processed yet.
-    // The one assumption made here is that the current reset flags are not going to be processed
-    // between the two calls here to read and reset, which is a highly unlikely scenario. Even if it was,
-    // the behavior is fairly benign in that the dofs in the previous request will be reset twice.
+    // Here we read current reset dofs flags and clear it. This is done so we can add this new
+    // request to the existing reset flags. This logic prevents this new request from overwriting
+    // any previous request that hasn't been processed yet. The one assumption made here is that the
+    // current reset flags are not going to be processed between the two calls here to read and
+    // reset, which is a highly unlikely scenario. Even if it was, the behavior is fairly benign in
+    // that the dofs in the previous request will be reset twice.
     auto reset_flags_local = *reset_dofs_flags_.readFromNonRT();
     reset_dofs_flags_.writeFromNonRT(reset_flags_reset);
 
@@ -1369,7 +1363,8 @@ void JointTrajectoryController::publish_state(
     ruckig_input_target_publisher_->msg_.header.stamp = state_publisher_->msg_.header.stamp;
     ruckig_input_target_publisher_->msg_.reference.positions = ruckig_input_target.positions;
     ruckig_input_target_publisher_->msg_.reference.velocities = ruckig_input_target.velocities;
-    ruckig_input_target_publisher_->msg_.reference.accelerations = ruckig_input_target.accelerations;
+    ruckig_input_target_publisher_->msg_.reference.accelerations =
+      ruckig_input_target.accelerations;
     ruckig_input_target_publisher_->msg_.reference.effort = ruckig_input_target.effort;
 
     ruckig_input_target_publisher_->unlockAndPublish();
