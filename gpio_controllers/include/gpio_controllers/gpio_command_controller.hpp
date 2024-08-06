@@ -82,9 +82,10 @@ private:
     const MapOfReferencesToInterfaces<T> & interfaces_map);
 
 protected:
-  std::vector<std::string> interface_types_;
+  InterfacesNames interface_types_;
   MapOfReferencesToInterfaces<hardware_interface::LoanedCommandInterface> command_interfaces_map_;
-  MapOfReferencesToInterfaces<hardware_interface::LoanedStateInterface> state_interfaces_map_;
+  std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>>
+    ordered_state_interfaces_;
 
   realtime_tools::RealtimeBuffer<std::shared_ptr<CmdType>> rt_command_ptr_{};
   rclcpp::Subscription<CmdType>::SharedPtr gpios_command_subscriber_{};
