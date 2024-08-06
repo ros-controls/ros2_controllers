@@ -21,6 +21,27 @@
 #include "rclcpp/qos.hpp"
 #include "rclcpp/subscription.hpp"
 
+namespace
+{
+void print_interface(
+  const rclcpp::Logger & logger, const gpio_controllers::StateInterfaces & state_interfaces)
+{
+  for (const auto & interface : state_interfaces)
+  {
+    RCLCPP_ERROR_STREAM(logger, "Got " << interface.get().get_name());
+  }
+}
+void print_interface(
+  const rclcpp::Logger & logger,
+  const gpio_controllers::MapOfReferencesToCommandInterfaces & command_interfaces)
+{
+  for (const auto & [interface_name, value] : command_interfaces)
+  {
+    RCLCPP_ERROR_STREAM(logger, "Got " << interface_name);
+  }
+}
+}  // namespace
+
 namespace gpio_controllers
 {
 
@@ -93,12 +114,13 @@ controller_interface::InterfaceConfiguration GpioCommandController::state_interf
 
 CallbackReturn GpioCommandController::on_activate(const rclcpp_lifecycle::State &)
 {
-  command_interfaces_map_ =
-    create_map_of_references_to_interfaces(interface_types_, command_interfaces_);
+  command_interfaces_map_ = create_map_of_references_to_interfaces(interface_types_);
   controller_interface::get_ordered_interfaces(
     state_interfaces_, interface_types_, "", ordered_state_interfaces_);
 
-  if (!check_if_configured_interfaces_matches_received(interface_types_, command_interfaces_map_))
+  if (
+    !check_if_configured_interfaces_matches_received(interface_types_, command_interfaces_map_) ||
+    !check_if_configured_interfaces_matches_received(interface_types_, ordered_state_interfaces_))
   {
     return CallbackReturn::ERROR;
   }
@@ -109,21 +131,20 @@ CallbackReturn GpioCommandController::on_activate(const rclcpp_lifecycle::State 
   return CallbackReturn::SUCCESS;
 }
 
-template <typename T>
-MapOfReferencesToInterfaces<T> GpioCommandController::create_map_of_references_to_interfaces(
-  const InterfacesNames & interfaces_from_params, LoanedInterfaces<T> & configured_interfaces)
+MapOfReferencesToCommandInterfaces GpioCommandController::create_map_of_references_to_interfaces(
+  const InterfacesNames & interfaces_from_params)
 {
-  MapOfReferencesToInterfaces<T> map;
+  MapOfReferencesToCommandInterfaces map;
   for (const auto & interface_name : interfaces_from_params)
   {
     auto interface = std::find_if(
-      configured_interfaces.begin(), configured_interfaces.end(),
+      command_interfaces_.begin(), command_interfaces_.end(),
       [&](const auto & configured_interface)
       {
         const auto full_name_interface_name = configured_interface.get_name();
         return full_name_interface_name == interface_name;
       });
-    if (interface != configured_interfaces.end())
+    if (interface != command_interfaces_.end())
     {
       map.emplace(interface_name, std::ref(*interface));
     }
@@ -133,22 +154,18 @@ MapOfReferencesToInterfaces<T> GpioCommandController::create_map_of_references_t
 
 template <typename T>
 bool GpioCommandController::check_if_configured_interfaces_matches_received(
-  const InterfacesNames & interfaces_from_params,
-  const MapOfReferencesToInterfaces<T> & interfaces_map)
+  const InterfacesNames & interfaces_from_params, const T & configured_interfaces)
 {
-  if (!(interfaces_map.size() == interfaces_from_params.size()))
+  if (!(configured_interfaces.size() == interfaces_from_params.size()))
   {
     RCLCPP_ERROR_STREAM(
-      get_node()->get_logger(),
-      "Expected " << interfaces_from_params.size() << " interfaces, got " << interfaces_map.size());
+      get_node()->get_logger(), "Expected " << interfaces_from_params.size() << " interfaces, got "
+                                            << configured_interfaces.size());
     for (const auto & interface : interfaces_from_params)
     {
       RCLCPP_ERROR_STREAM(get_node()->get_logger(), "Expected " << interface);
     }
-    for (const auto & [interface, value] : interfaces_map)
-    {
-      RCLCPP_ERROR_STREAM(get_node()->get_logger(), "Got " << interface);
-    }
+    print_interface(get_node()->get_logger(), configured_interfaces);
     return false;
   }
   return true;
@@ -233,7 +250,6 @@ void GpioCommandController::update_gpios_states()
     std::size_t state_index{};
     for (std::size_t gpio_index = 0; gpio_index < gpio_state_msg.joint_names.size(); ++gpio_index)
     {
-      const auto & gpio_name = gpio_state_msg.joint_names[gpio_index];
       for (std::size_t interface_index = 0;
            interface_index < gpio_state_msg.interface_values[gpio_index].interface_names.size();
            ++interface_index)
