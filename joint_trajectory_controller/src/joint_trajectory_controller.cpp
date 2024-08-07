@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "angles/angles.h"
+#include "control_msgs/msg/multi_time_joint_trajectory.hpp"
 #include "controller_interface/helpers.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "joint_trajectory_controller/trajectory.hpp"
@@ -413,7 +414,7 @@ controller_interface::return_type JointTrajectoryController::update(
             rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
             rt_has_pending_goal_.writeFromNonRT(false);
 
-            RCLCPP_WARN(get_node()->get_logger(), error_string.c_str());
+            RCLCPP_WARN(get_node()->get_logger(), "%s", error_string.c_str());
 
             traj_msg_external_point_ptr_.reset();
             traj_msg_external_point_ptr_.initRT(set_hold_position());
@@ -1758,6 +1759,12 @@ void JointTrajectoryController::add_new_trajectory_msg(
   const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & traj_msg)
 {
   traj_msg_external_point_ptr_.writeFromNonRT(traj_msg);
+}
+
+void JointTrajectoryController::add_new_trajectory_msg(
+  const std::shared_ptr<control_msgs::msg::MultiTimeJointTrajectory> & traj_msg)
+{
+  multi_time_traj_msg_external_point_ptr_.writeFromNonRT(traj_msg);
 }
 
 void JointTrajectoryController::preempt_active_goal()
