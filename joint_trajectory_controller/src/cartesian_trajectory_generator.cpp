@@ -169,6 +169,9 @@ void CartesianTrajectoryGenerator::reference_callback(
   // store input ref for later use
   reference_world_.writeFromNonRT(msg);
 
+  //TODO(henrygerardmoore): replace the below with multiple JTCs
+  
+
   // assume for now that we are working with trajectories with one point - we don't know exactly
   // where we are in the trajectory before sampling - nevertheless this should work for the use case
   auto new_traj_msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>();

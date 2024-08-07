@@ -25,6 +25,7 @@
 #include "control_msgs/srv/query_trajectory_state.hpp"
 #include "control_msgs/srv/reset_dofs.hpp"
 #include "control_toolbox/pid.hpp"
+#include "control_msgs/msg/multi_dof_multi_time_joint_trajectory_point.hpp"
 #include "controller_interface/controller_interface.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "joint_limits/joint_limiter_interface.hpp"
