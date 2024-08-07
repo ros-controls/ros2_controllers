@@ -82,16 +82,6 @@ catch (const std::exception & e)
   return CallbackReturn::ERROR;
 }
 
-void GpioCommandController::store_interface_types()
-{
-  for (const auto & [gpio_name, ports] : params_.command_interfaces.gpios_map)
-  {
-    std::transform(
-      ports.ports.begin(), ports.ports.end(), std::back_inserter(interface_types_),
-      [&](const auto & interface_name) { return gpio_name + "/" + interface_name; });
-  }
-}
-
 controller_interface::InterfaceConfiguration
 GpioCommandController::command_interface_configuration() const
 {
@@ -129,6 +119,50 @@ CallbackReturn GpioCommandController::on_activate(const rclcpp_lifecycle::State 
   rt_command_ptr_.reset();
   RCLCPP_INFO(get_node()->get_logger(), "activate successful");
   return CallbackReturn::SUCCESS;
+}
+
+CallbackReturn GpioCommandController::on_deactivate(const rclcpp_lifecycle::State &)
+{
+  rt_command_ptr_.reset();
+  return CallbackReturn::SUCCESS;
+}
+
+controller_interface::return_type GpioCommandController::update(
+  const rclcpp::Time &, const rclcpp::Duration &)
+{
+  update_gpios_states();
+  return update_gpios_commands();
+}
+
+void GpioCommandController::store_interface_types()
+{
+  for (const auto & [gpio_name, ports] : params_.command_interfaces.gpios_map)
+  {
+    std::transform(
+      ports.ports.begin(), ports.ports.end(), std::back_inserter(interface_types_),
+      [&](const auto & interface_name) { return gpio_name + "/" + interface_name; });
+  }
+}
+
+void GpioCommandController::initialize_gpio_state_msg()
+{
+  auto & gpio_state_msg = realtime_gpio_state_publisher_->msg_;
+  gpio_state_msg.header.stamp = get_node()->now();
+  gpio_state_msg.joint_names.resize(params_.gpios.size());
+  gpio_state_msg.interface_values.resize(params_.gpios.size());
+
+  for (std::size_t gpio_index = 0; gpio_index < params_.gpios.size(); ++gpio_index)
+  {
+    const auto gpio_name = params_.gpios[gpio_index];
+    gpio_state_msg.joint_names[gpio_index] = gpio_name;
+    std::copy(
+      params_.command_interfaces.gpios_map[gpio_name].ports.begin(),
+      params_.command_interfaces.gpios_map[gpio_name].ports.end(),
+      std::back_insert_iterator(gpio_state_msg.interface_values[gpio_index].interface_names));
+    gpio_state_msg.interface_values[gpio_index].values = std::vector<double>(
+      params_.command_interfaces.gpios_map[gpio_name].ports.size(),
+      std::numeric_limits<double>::quiet_NaN());
+  }
 }
 
 MapOfReferencesToCommandInterfaces GpioCommandController::create_map_of_references_to_interfaces(
@@ -169,40 +203,6 @@ bool GpioCommandController::check_if_configured_interfaces_matches_received(
     return false;
   }
   return true;
-}
-
-void GpioCommandController::initialize_gpio_state_msg()
-{
-  auto & gpio_state_msg = realtime_gpio_state_publisher_->msg_;
-  gpio_state_msg.header.stamp = get_node()->now();
-  gpio_state_msg.joint_names.resize(params_.gpios.size());
-  gpio_state_msg.interface_values.resize(params_.gpios.size());
-
-  for (std::size_t gpio_index = 0; gpio_index < params_.gpios.size(); ++gpio_index)
-  {
-    const auto gpio_name = params_.gpios[gpio_index];
-    gpio_state_msg.joint_names[gpio_index] = gpio_name;
-    std::copy(
-      params_.command_interfaces.gpios_map[gpio_name].ports.begin(),
-      params_.command_interfaces.gpios_map[gpio_name].ports.end(),
-      std::back_insert_iterator(gpio_state_msg.interface_values[gpio_index].interface_names));
-    gpio_state_msg.interface_values[gpio_index].values = std::vector<double>(
-      params_.command_interfaces.gpios_map[gpio_name].ports.size(),
-      std::numeric_limits<double>::quiet_NaN());
-  }
-}
-
-CallbackReturn GpioCommandController::on_deactivate(const rclcpp_lifecycle::State &)
-{
-  rt_command_ptr_.reset();
-  return CallbackReturn::SUCCESS;
-}
-
-controller_interface::return_type GpioCommandController::update(
-  const rclcpp::Time &, const rclcpp::Duration &)
-{
-  update_gpios_states();
-  return update_gpios_commands();
 }
 
 controller_interface::return_type GpioCommandController::update_gpios_commands()
