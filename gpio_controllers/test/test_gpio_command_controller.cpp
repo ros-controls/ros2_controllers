@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <stddef.h>
-
 #include <functional>
 #include <memory>
 #include <string>
@@ -40,22 +38,24 @@ using hardware_interface::StateInterface;
 
 class FriendGpioCommandController : public gpio_controllers::GpioCommandController
 {
-  FRIEND_TEST(GpioCommandControllerTest, CommandSuccessTest);
-  FRIEND_TEST(GpioCommandControllerTest, CommandSuccessTestWithOnlyOneGpio);
-  FRIEND_TEST(GpioCommandControllerTest, CommandCallbackTest);
+  FRIEND_TEST(GpioCommandControllerTestSuite, CommandSuccessTest);
+  FRIEND_TEST(GpioCommandControllerTestSuite, CommandSuccessTestWithOnlyOneGpio);
+  FRIEND_TEST(GpioCommandControllerTestSuite, CommandCallbackTest);
 };
 
-class GpioCommandControllerTest : public ::testing::Test
+class GpioCommandControllerTestSuite : public ::testing::Test
 {
 public:
-  static void SetUpTestCase();
-  static void TearDownTestCase();
-
-  void SetUp();
-  void TearDown();
-
-  void SetUpController();
-  void SetUpHandles();
+  GpioCommandControllerTestSuite()
+  {
+    controller_ = std::make_unique<FriendGpioCommandController>();
+    rclcpp::init(0, nullptr);
+  }
+  ~GpioCommandControllerTestSuite()
+  {
+    rclcpp::shutdown();
+    controller_.reset(nullptr);
+  }
 
 protected:
   std::unique_ptr<FriendGpioCommandController> controller_;
@@ -73,25 +73,14 @@ protected:
   StateInterface gpio_2_ana_state_{gpio_names_[1], "ana.1", &gpio_states_[2]};
 };
 
-void GpioCommandControllerTest::SetUpTestCase() { rclcpp::init(0, nullptr); }
-
-void GpioCommandControllerTest::TearDownTestCase() { rclcpp::shutdown(); }
-
-void GpioCommandControllerTest::SetUp()
-{
-  controller_ = std::make_unique<FriendGpioCommandController>();
-}
-
-void GpioCommandControllerTest::TearDown() { controller_.reset(nullptr); }
-
-TEST_F(GpioCommandControllerTest, GpiosParameterNotSet)
+TEST_F(GpioCommandControllerTestSuite, GpiosParameterNotSet)
 {
   const auto result = controller_->init(
     "test_gpio_command_controller", "", 0, "", controller_->define_custom_node_options());
   ASSERT_EQ(result, controller_interface::return_type::ERROR);
 }
 
-TEST_F(GpioCommandControllerTest, GpiosParameterIsEmpty)
+TEST_F(GpioCommandControllerTestSuite, GpiosParameterIsEmpty)
 {
   std::vector<rclcpp::Parameter> parameters;
   parameters.emplace_back("gpios", std::vector<std::string>{});
@@ -102,7 +91,7 @@ TEST_F(GpioCommandControllerTest, GpiosParameterIsEmpty)
   ASSERT_EQ(result, controller_interface::return_type::ERROR);
 }
 
-TEST_F(GpioCommandControllerTest, GpioWithMissingGpioParams)
+TEST_F(GpioCommandControllerTestSuite, GpioWithMissingGpioParams)
 {
   std::vector<rclcpp::Parameter> parameters;
   parameters.emplace_back("gpios", std::vector<std::string>{"gpio1", "gpio2"});
@@ -116,7 +105,7 @@ TEST_F(GpioCommandControllerTest, GpioWithMissingGpioParams)
   ASSERT_EQ(result, controller_interface::return_type::ERROR);
 }
 
-TEST_F(GpioCommandControllerTest, ConfigureAndActivateParamsSuccess)
+TEST_F(GpioCommandControllerTestSuite, ConfigureAndActivateParamsSuccess)
 {
   std::vector<rclcpp::Parameter> parameters;
   parameters.emplace_back("gpios", gpio_names_);
@@ -144,7 +133,7 @@ TEST_F(GpioCommandControllerTest, ConfigureAndActivateParamsSuccess)
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 }
 
-TEST_F(GpioCommandControllerTest, ActivateWithWrongGpiosNamesFails)
+TEST_F(GpioCommandControllerTestSuite, ActivateWithWrongGpiosNamesFails)
 {
   std::vector<rclcpp::Parameter> parameters;
   parameters.emplace_back("gpios", std::vector<std::string>{"gpio1", "gpio4"});
@@ -172,7 +161,7 @@ TEST_F(GpioCommandControllerTest, ActivateWithWrongGpiosNamesFails)
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
 }
 
-TEST_F(GpioCommandControllerTest, CommandSuccessTest)
+TEST_F(GpioCommandControllerTestSuite, CommandSuccessTest)
 {
   std::vector<rclcpp::Parameter> parameters;
   parameters.emplace_back("gpios", std::vector<std::string>{"gpio1", "gpio2"});
@@ -227,7 +216,7 @@ TEST_F(GpioCommandControllerTest, CommandSuccessTest)
   ASSERT_EQ(gpio_2_ana_cmd_.get_value(), 30.0);
 }
 
-TEST_F(GpioCommandControllerTest, CommandSuccessTestWithOnlyOneGpio)
+TEST_F(GpioCommandControllerTestSuite, CommandSuccessTestWithOnlyOneGpio)
 {
   std::vector<rclcpp::Parameter> parameters;
   parameters.emplace_back("gpios", std::vector<std::string>{"gpio1", "gpio2"});
@@ -271,7 +260,7 @@ TEST_F(GpioCommandControllerTest, CommandSuccessTestWithOnlyOneGpio)
   ASSERT_EQ(gpio_2_ana_cmd_.get_value(), 3.1);
 }
 
-TEST_F(GpioCommandControllerTest, NoCommandCheckTest)
+TEST_F(GpioCommandControllerTestSuite, NoCommandCheckTest)
 {
   std::vector<rclcpp::Parameter> parameters;
   parameters.emplace_back("gpios", std::vector<std::string>{"gpio1", "gpio2"});
@@ -307,7 +296,7 @@ TEST_F(GpioCommandControllerTest, NoCommandCheckTest)
   ASSERT_EQ(gpio_2_ana_cmd_.get_value(), 3.1);
 }
 
-TEST_F(GpioCommandControllerTest, CommandCallbackTest)
+TEST_F(GpioCommandControllerTestSuite, CommandCallbackTest)
 {
   std::vector<rclcpp::Parameter> parameters;
   parameters.emplace_back("gpios", std::vector<std::string>{"gpio1", "gpio2"});
@@ -381,7 +370,7 @@ TEST_F(GpioCommandControllerTest, CommandCallbackTest)
   ASSERT_EQ(gpio_2_ana_cmd_.get_value(), 30.0);
 }
 
-TEST_F(GpioCommandControllerTest, StateCallbackTest)
+TEST_F(GpioCommandControllerTestSuite, StateCallbackTest)
 {
   std::vector<rclcpp::Parameter> parameters;
   parameters.emplace_back("gpios", std::vector<std::string>{"gpio1", "gpio2"});
