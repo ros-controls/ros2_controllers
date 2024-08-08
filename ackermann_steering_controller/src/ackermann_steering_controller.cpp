@@ -31,21 +31,35 @@ controller_interface::CallbackReturn AckermannSteeringController::configure_odom
 {
   ackermann_params_ = ackermann_param_listener_->get_params();
 
-  const double front_wheels_radius = ackermann_params_.front_wheels_radius;
-  const double rear_wheels_radius = ackermann_params_.rear_wheels_radius;
-  const double front_wheel_track = ackermann_params_.front_wheel_track;
-  const double rear_wheel_track = ackermann_params_.rear_wheel_track;
+  if (ackermann_params_.front_wheels_radius > 0.0)
+  {
+    fprintf(stderr, "DEPRECATED parameter 'front_wheels_radius'\n");
+    return controller_interface::CallbackReturn::ERROR;
+  }
+
+  if (ackermann_params_.rear_wheels_radius > 0.0)
+  {
+    fprintf(stderr, "DEPRECATED parameter 'rear_wheels_radius'\n");
+    return controller_interface::CallbackReturn::ERROR;
+  }
+
+  if (ackermann_params_.front_wheel_track > 0.0)
+  {
+    fprintf(stderr, "DEPRECATED parameter 'front_wheel_track'\n");
+    return controller_interface::CallbackReturn::ERROR;
+  }
+
+  if (ackermann_params_.rear_wheel_track > 0.0)
+  {
+    fprintf(stderr, "DEPRECATED parameter 'rear_wheel_track'\n");
+    return controller_interface::CallbackReturn::ERROR;
+  }
+
+  const double traction_wheels_radius = ackermann_params_.traction_wheels_radius;
+  const double traction_wheel_track = ackermann_params_.traction_wheel_track;
   const double wheelbase = ackermann_params_.wheelbase;
 
-  if (params_.front_steering)
-  {
-    odometry_.set_wheel_params(rear_wheels_radius, wheelbase, rear_wheel_track);
-  }
-  else
-  {
-    odometry_.set_wheel_params(front_wheels_radius, wheelbase, front_wheel_track);
-  }
-
+  odometry_.set_wheel_params(traction_wheels_radius, wheelbase, traction_wheel_track);
   odometry_.set_odometry_type(steering_odometry::ACKERMANN_CONFIG);
 
   set_interface_numbers(NR_STATE_ITFS, NR_CMD_ITFS, NR_REF_ITFS);

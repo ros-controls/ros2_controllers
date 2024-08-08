@@ -65,13 +65,13 @@ Command interfaces
 
 If parameter ``front_steering == true``
 
-- ``<front_wheels_names[i]>/position``     double, in rad
-- ``<rear_wheels_names[i]>/velocity``      double, in m/s
+- ``<front_traction_joints_names[i]>/position``     double, in rad
+- ``<rear_traction_joints_names[i]>/velocity``      double, in m/s
 
 If parameter ``front_steering == false``
 
-- ``<front_wheels_names[i]>/velocity``     double, in m/s
-- ``<rear_wheels_names[i]>/position``      double, in rad
+- ``<front_traction_joints_names[i]>/velocity``     double, in m/s
+- ``<rear_traction_joints_names[i]>/position``      double, in rad
 
 State interfaces
 ,,,,,,,,,,,,,,,,,
@@ -83,13 +83,13 @@ Depending on the ``position_feedback``, different feedback types are expected
 
 If parameter ``front_steering == true``
 
-- ``<front_wheels_names[i]>/position``                  double, in rad
-- ``<rear_wheels_names[i]>/<TRACTION_FEEDBACK_TYPE>``   double, in m or m/s
+- ``<front_traction_joints_names[i]>/position``                  double, in rad
+- ``<rear_traction_joints_names[i]>/<TRACTION_FEEDBACK_TYPE>``   double, in m or m/s
 
 If parameter ``front_steering == false``
 
-- ``<front_wheels_names[i]>/<TRACTION_FEEDBACK_TYPE>``  double, in m or m/s
-- ``<rear_wheels_names[i]>/position``                   double, in rad
+- ``<front_traction_joints_names[i]>/<TRACTION_FEEDBACK_TYPE>``  double, in m or m/s
+- ``<rear_traction_joints_names[i]>/position``                   double, in rad
 
 Subscribers
 ,,,,,,,,,,,,
