@@ -13,7 +13,6 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   generate_parameter_library
   joint_limits
   hardware_interface
-  joint_limits
   nav_msgs
   pluginlib
   rclcpp
