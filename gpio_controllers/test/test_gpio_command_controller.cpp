@@ -48,6 +48,20 @@ class GpioCommandControllerTestSuite : public ::testing::Test
 public:
   GpioCommandControllerTestSuite() { rclcpp::init(0, nullptr); }
   ~GpioCommandControllerTestSuite() { rclcpp::shutdown(); }
+  void setup_command_and_state_interfaces()
+  {
+    std::vector<LoanedCommandInterface> command_ifs;
+    command_ifs.emplace_back(gpio_1_1_dig_cmd);
+    command_ifs.emplace_back(gpio_1_2_dig_cmd);
+    command_ifs.emplace_back(gpio_2_ana_cmd);
+
+    std::vector<LoanedStateInterface> state_ifs;
+    state_ifs.emplace_back(gpio_1_1_dig_state);
+    state_ifs.emplace_back(gpio_1_2_dig_state);
+    state_ifs.emplace_back(gpio_2_ana_state);
+
+    controller.assign_interfaces(std::move(command_ifs), std::move(state_ifs));
+  }
 
   FriendGpioCommandController controller;
 
@@ -129,19 +143,7 @@ TEST_F(GpioCommandControllerTestSuite, ConfigureAndActivateParamsSuccess)
   auto node_options = rclcpp::NodeOptions();
   node_options.parameter_overrides(parameters);
   const auto result = controller.init("test_gpio_command_controller", "", 0, "", node_options);
-
-  std::vector<LoanedCommandInterface> command_ifs;
-  command_ifs.emplace_back(gpio_1_1_dig_cmd);
-  command_ifs.emplace_back(gpio_1_2_dig_cmd);
-  command_ifs.emplace_back(gpio_2_ana_cmd);
-
-  std::vector<LoanedStateInterface> state_ifs;
-  state_ifs.emplace_back(gpio_1_1_dig_state);
-  state_ifs.emplace_back(gpio_1_2_dig_state);
-  state_ifs.emplace_back(gpio_2_ana_state);
-
-  controller.assign_interfaces(std::move(command_ifs), std::move(state_ifs));
-
+  setup_command_and_state_interfaces();
   ASSERT_EQ(result, controller_interface::return_type::OK);
   ASSERT_EQ(controller.on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
   ASSERT_EQ(controller.on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
@@ -158,17 +160,7 @@ TEST_F(GpioCommandControllerTestSuite, ActivateWithWrongGpiosNamesFails)
   node_options.parameter_overrides(parameters);
   const auto result = controller.init("test_gpio_command_controller", "", 0, "", node_options);
 
-  std::vector<LoanedCommandInterface> command_ifs;
-  command_ifs.emplace_back(gpio_1_1_dig_cmd);
-  command_ifs.emplace_back(gpio_1_2_dig_cmd);
-  command_ifs.emplace_back(gpio_2_ana_cmd);
-
-  std::vector<LoanedStateInterface> state_ifs;
-  state_ifs.emplace_back(gpio_1_1_dig_state);
-  state_ifs.emplace_back(gpio_1_2_dig_state);
-  state_ifs.emplace_back(gpio_2_ana_state);
-
-  controller.assign_interfaces(std::move(command_ifs), std::move(state_ifs));
+  setup_command_and_state_interfaces();
 
   ASSERT_EQ(result, controller_interface::return_type::OK);
   ASSERT_EQ(controller.on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
@@ -186,17 +178,7 @@ TEST_F(GpioCommandControllerTestSuite, CommandSuccessTest)
   node_options.parameter_overrides(parameters);
   const auto result = controller.init("test_gpio_command_controller", "", 0, "", node_options);
 
-  std::vector<LoanedCommandInterface> command_ifs;
-  command_ifs.emplace_back(gpio_1_1_dig_cmd);
-  command_ifs.emplace_back(gpio_1_2_dig_cmd);
-  command_ifs.emplace_back(gpio_2_ana_cmd);
-
-  std::vector<LoanedStateInterface> state_ifs;
-  state_ifs.emplace_back(gpio_1_1_dig_state);
-  state_ifs.emplace_back(gpio_1_2_dig_state);
-  state_ifs.emplace_back(gpio_2_ana_state);
-
-  controller.assign_interfaces(std::move(command_ifs), std::move(state_ifs));
+  setup_command_and_state_interfaces();
   ASSERT_EQ(result, controller_interface::return_type::OK);
   ASSERT_EQ(controller.on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
   ASSERT_EQ(controller.on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
@@ -241,17 +223,7 @@ TEST_F(GpioCommandControllerTestSuite, CommandSuccessTestWithOnlyOneGpio)
   node_options.parameter_overrides(parameters);
   const auto result = controller.init("test_gpio_command_controller", "", 0, "", node_options);
 
-  std::vector<LoanedCommandInterface> command_ifs;
-  command_ifs.emplace_back(gpio_1_1_dig_cmd);
-  command_ifs.emplace_back(gpio_1_2_dig_cmd);
-  command_ifs.emplace_back(gpio_2_ana_cmd);
-
-  std::vector<LoanedStateInterface> state_ifs;
-  state_ifs.emplace_back(gpio_1_1_dig_state);
-  state_ifs.emplace_back(gpio_1_2_dig_state);
-  state_ifs.emplace_back(gpio_2_ana_state);
-
-  controller.assign_interfaces(std::move(command_ifs), std::move(state_ifs));
+  setup_command_and_state_interfaces();
   ASSERT_EQ(result, controller_interface::return_type::OK);
   ASSERT_EQ(controller.on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
   ASSERT_EQ(controller.on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
@@ -285,18 +257,7 @@ TEST_F(GpioCommandControllerTestSuite, NoCommandCheckTest)
   node_options.parameter_overrides(parameters);
   const auto result = controller.init("test_gpio_command_controller", "", 0, "", node_options);
 
-  std::vector<LoanedCommandInterface> command_ifs;
-  command_ifs.emplace_back(gpio_1_1_dig_cmd);
-  command_ifs.emplace_back(gpio_1_2_dig_cmd);
-  command_ifs.emplace_back(gpio_2_ana_cmd);
-
-  std::vector<LoanedStateInterface> state_ifs;
-  state_ifs.emplace_back(gpio_1_1_dig_state);
-  state_ifs.emplace_back(gpio_1_2_dig_state);
-  state_ifs.emplace_back(gpio_2_ana_state);
-
-  controller.assign_interfaces(std::move(command_ifs), std::move(state_ifs));
-
+  setup_command_and_state_interfaces();
   ASSERT_EQ(result, controller_interface::return_type::OK);
   ASSERT_EQ(controller.on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
   ASSERT_EQ(controller.on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
@@ -321,18 +282,7 @@ TEST_F(GpioCommandControllerTestSuite, CommandCallbackTest)
   node_options.parameter_overrides(parameters);
   const auto result = controller.init("test_gpio_command_controller", "", 0, "", node_options);
 
-  std::vector<LoanedCommandInterface> command_ifs;
-  command_ifs.emplace_back(gpio_1_1_dig_cmd);
-  command_ifs.emplace_back(gpio_1_2_dig_cmd);
-  command_ifs.emplace_back(gpio_2_ana_cmd);
-
-  std::vector<LoanedStateInterface> state_ifs;
-  state_ifs.emplace_back(gpio_1_1_dig_state);
-  state_ifs.emplace_back(gpio_1_2_dig_state);
-  state_ifs.emplace_back(gpio_2_ana_state);
-
-  controller.assign_interfaces(std::move(command_ifs), std::move(state_ifs));
-
+  setup_command_and_state_interfaces();
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
   ASSERT_EQ(gpio_1_1_dig_cmd.get_value(), 1.0);
@@ -395,17 +345,7 @@ TEST_F(GpioCommandControllerTestSuite, StateCallbackTest)
   node_options.parameter_overrides(parameters);
   const auto result = controller.init("test_gpio_command_controller", "", 0, "", node_options);
 
-  std::vector<LoanedCommandInterface> command_ifs;
-  command_ifs.emplace_back(gpio_1_1_dig_cmd);
-  command_ifs.emplace_back(gpio_1_2_dig_cmd);
-  command_ifs.emplace_back(gpio_2_ana_cmd);
-
-  std::vector<LoanedStateInterface> state_ifs;
-  state_ifs.emplace_back(gpio_1_1_dig_state);
-  state_ifs.emplace_back(gpio_1_2_dig_state);
-  state_ifs.emplace_back(gpio_2_ana_state);
-
-  controller.assign_interfaces(std::move(command_ifs), std::move(state_ifs));
+  setup_command_and_state_interfaces();
 
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
