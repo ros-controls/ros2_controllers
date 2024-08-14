@@ -261,11 +261,9 @@ bool JointStateBroadcaster::init_joint_data()
     const auto & interfaces_and_values = name_ifv.second;
     if (has_any_key(interfaces_and_values, {HW_IF_POSITION, HW_IF_VELOCITY, HW_IF_EFFORT}))
     {
-      if (urdf.empty() || !is_model_loaded || !params_.joints.empty())
-      {
-        joint_names_.push_back(name_ifv.first);
-      }
-      else if (model.getJoint(name_ifv.first))
+      if (
+        !params_.use_urdf_to_filter || !params_.joints.empty() || !is_model_loaded ||
+        model.getJoint(name_ifv.first))
       {
         joint_names_.push_back(name_ifv.first);
       }
