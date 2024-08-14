@@ -2,6 +2,9 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 4.12.0 (2024-07-23)
 -------------------
 * Add missing includes (`#1226 <https://github.com/ros-controls/ros2_controllers/issues/1226>`_)
