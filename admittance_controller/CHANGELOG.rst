@@ -2,6 +2,11 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix admittance controller interface read/write logic (backport `#1232 <https://github.com/ros-controls/ros2_controllers/issues/1232>`_) (`#1234 <https://github.com/ros-controls/ros2_controllers/issues/1234>`_)
+* Contributors: mergify[bot]
+
 2.37.0 (2024-07-24)
 -------------------
 * Fix WaitSet issue in tests  (backport `#1206 <https://github.com/ros-controls/ros2_controllers/issues/1206>`_) (`#1211 <https://github.com/ros-controls/ros2_controllers/issues/1211>`_)
