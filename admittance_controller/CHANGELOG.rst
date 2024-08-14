@@ -2,8 +2,8 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.12.1 (2024-08-14)
+-------------------
 * Fix admittance controller interface read/write logic (`#1232 <https://github.com/ros-controls/ros2_controllers/issues/1232>`_)
 * Contributors: Nikola Banović
 
