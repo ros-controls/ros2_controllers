@@ -27,6 +27,22 @@
 
 namespace admittance_controller
 {
+
+
+static geometry_msgs::msg::Wrench add_wrenches(const geometry_msgs::msg::Wrench& a, const geometry_msgs::msg::Wrench& b){
+  geometry_msgs::msg::Wrench res;
+
+  res.force.x = a.force.x + b.force.x;
+  res.force.y = a.force.y + b.force.y;
+  res.force.z = a.force.z + b.force.z;
+
+  res.torque.x = a.torque.x + b.torque.x;
+  res.torque.y = a.torque.y + b.torque.y;
+  res.torque.z = a.torque.z + b.torque.z;
+
+  return res;
+}
+
 controller_interface::CallbackReturn AdmittanceController::on_init()
 {
   // initialize controller config
@@ -116,6 +132,7 @@ AdmittanceController::on_export_reference_interfaces()
   reference_interfaces_.resize(num_chainable_interfaces, std::numeric_limits<double>::quiet_NaN());
   position_reference_ = {};
   velocity_reference_ = {};
+  input_wrench_command_.reset();
 
   // assign reference interfaces
   auto index = 0ul;
@@ -265,6 +282,14 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
   input_joint_command_subscriber_ =
     get_node()->create_subscription<trajectory_msgs::msg::JointTrajectoryPoint>(
       "~/joint_references", rclcpp::SystemDefaultsQoS(), joint_command_callback);
+  
+  input_wrench_command_subscriber_ = get_node()->create_subscription<geometry_msgs::msg::WrenchStamped>("~/wrench_reference", rclcpp::SystemDefaultsQoS(), [&](const geometry_msgs::msg::WrenchStamped& msg){
+    if(msg.header.frame_id != admittance_->parameters_.ft_sensor.frame.id){
+      RCLCPP_ERROR_STREAM(get_node()->get_logger(), "Ignoring wrench reference as it is on the wrong frame");
+      return;
+    }
+    input_wrench_command_.writeFromNonRT(msg);
+  });
   s_publisher_ = get_node()->create_publisher<control_msgs::msg::AdmittanceControllerState>(
     "~/status", rclcpp::SystemDefaultsQoS());
   state_publisher_ =
@@ -396,8 +421,11 @@ controller_interface::return_type AdmittanceController::update_and_write_command
   // get all controller inputs
   read_state_from_hardware(joint_state_, ft_values_);
 
+
+  auto offsetted_ft_values = add_wrenches(ft_values_, input_wrench_command_.readFromRT()->wrench);
+
   // apply admittance control to reference to determine desired state
-  admittance_->update(joint_state_, ft_values_, reference_, period, reference_admittance_);
+  admittance_->update(joint_state_, offsetted_ft_values, reference_, period, reference_admittance_);
 
   // write calculated values to joint interfaces
   write_state_to_hardware(reference_admittance_);

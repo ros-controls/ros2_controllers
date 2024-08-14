@@ -133,6 +133,7 @@ protected:
   // ROS subscribers
   rclcpp::Subscription<trajectory_msgs::msg::JointTrajectoryPoint>::SharedPtr
     input_joint_command_subscriber_;
+  rclcpp::Subscription<geometry_msgs::msg::WrenchStamped>::SharedPtr input_wrench_command_subscriber_;
   rclcpp::Publisher<control_msgs::msg::AdmittanceControllerState>::SharedPtr s_publisher_;
 
   // admittance parameters
@@ -144,6 +145,8 @@ protected:
   // real-time buffer
   realtime_tools::RealtimeBuffer<std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint>>
     input_joint_command_;
+  realtime_tools::RealtimeBuffer<geometry_msgs::msg::WrenchStamped>
+    input_wrench_command_;
   std::unique_ptr<realtime_tools::RealtimePublisher<ControllerStateMsg>> state_publisher_;
 
   trajectory_msgs::msg::JointTrajectoryPoint last_commanded_;
