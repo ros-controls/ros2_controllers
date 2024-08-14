@@ -392,12 +392,6 @@ controller_interface::return_type AdmittanceController::update_and_write_command
     return controller_interface::return_type::ERROR;
   }
 
-  if (period.seconds() > 5.0) {
-    RCLCPP_WARN(
-        get_node()->get_logger(), "Large dt, skipping!");
-    return controller_interface::return_type::OK;
-  }
-
   // update input reference from chainable interfaces
   read_state_reference_interfaces(reference_);
 
