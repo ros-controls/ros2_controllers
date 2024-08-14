@@ -42,7 +42,7 @@ The following is a step-by-step guide to create source files, basic tests, and c
    5. Add a constructor without parameters and the following public methods overriding the ``ControllerInterface`` definition: ``on_init``, ``command_interface_configuration``, ``state_interface_configuration``, ``on_configure``, ``on_activate``, ``on_deactivate``, ``update``.
       For exact definitions check the ``controller_interface/controller_interface.hpp`` header or one of the controllers from `ros2_controllers <https://github.com/ros-controls/ros2_controllers>`_.
 
-   6. (Optional) The NodeOptions of the LifecycleNode can be personalized by overriding the default method ``get_node_options``.
+   6. (Optional) The NodeOptions of the LifecycleNode can be personalized by overriding the default method ``define_custom_node_options``.
 
    7. (Optional) Often, controllers accept lists of joint names and interface names as parameters.
       If so, you can add two protected string vectors to store those values.
