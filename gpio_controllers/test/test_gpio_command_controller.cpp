@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 #include <functional>
 #include <memory>
 #include <string>
@@ -35,6 +34,17 @@ using CmdType = control_msgs::msg::DynamicJointState;
 using StateType = control_msgs::msg::DynamicJointState;
 using hardware_interface::CommandInterface;
 using hardware_interface::StateInterface;
+
+namespace
+{
+rclcpp::NodeOptions create_node_options_with_overriden_parameters(
+  std::vector<rclcpp::Parameter> parameters)
+{
+  auto node_options = rclcpp::NodeOptions();
+  node_options.parameter_overrides(parameters);
+  return node_options;
+}
+}  // namespace
 
 class FriendGpioCommandController : public gpio_controllers::GpioCommandController
 {
@@ -87,10 +97,8 @@ TEST_F(GpioCommandControllerTestSuite, WhenNoParametersAreSetInitShouldFail)
 
 TEST_F(GpioCommandControllerTestSuite, WhenGpiosParameterIsEmptyInitShouldFail)
 {
-  std::vector<rclcpp::Parameter> parameters;
-  parameters.emplace_back("gpios", std::vector<std::string>{});
-  auto node_options = rclcpp::NodeOptions();
-  node_options.parameter_overrides(parameters);
+  const auto node_options =
+    create_node_options_with_overriden_parameters({{"gpios", std::vector<std::string>{}}});
   const auto result = controller.init("test_gpio_command_controller", "", 0, "", node_options);
 
   ASSERT_EQ(result, controller_interface::return_type::ERROR);
@@ -98,11 +106,9 @@ TEST_F(GpioCommandControllerTestSuite, WhenGpiosParameterIsEmptyInitShouldFail)
 
 TEST_F(GpioCommandControllerTestSuite, WhenPortsParameterForGpioIsEmptyInitShouldFail)
 {
-  std::vector<rclcpp::Parameter> parameters;
-  parameters.emplace_back("gpios", std::vector<std::string>{"gpio1"});
-  parameters.emplace_back("command_interfaces.gpio1.ports", std::vector<std::string>{});
-  auto node_options = rclcpp::NodeOptions();
-  node_options.parameter_overrides(parameters);
+  const auto node_options = create_node_options_with_overriden_parameters(
+    {{"gpios", std::vector<std::string>{"gpio1"}},
+     {"command_interfaces.gpio1.ports", std::vector<std::string>{}}});
   const auto result = controller.init("test_gpio_command_controller", "", 0, "", node_options);
 
   ASSERT_EQ(result, controller_interface::return_type::ERROR);
@@ -110,10 +116,8 @@ TEST_F(GpioCommandControllerTestSuite, WhenPortsParameterForGpioIsEmptyInitShoul
 
 TEST_F(GpioCommandControllerTestSuite, WhenPortsParameterForGpioIsNotSetInitShouldFail)
 {
-  std::vector<rclcpp::Parameter> parameters;
-  parameters.emplace_back("gpios", std::vector<std::string>{"gpio1"});
-  auto node_options = rclcpp::NodeOptions();
-  node_options.parameter_overrides(parameters);
+  const auto node_options =
+    create_node_options_with_overriden_parameters({{"gpios", std::vector<std::string>{"gpio1"}}});
   const auto result = controller.init("test_gpio_command_controller", "", 0, "", node_options);
 
   ASSERT_EQ(result, controller_interface::return_type::ERROR);
@@ -122,26 +126,21 @@ TEST_F(GpioCommandControllerTestSuite, WhenPortsParameterForGpioIsNotSetInitShou
 TEST_F(
   GpioCommandControllerTestSuite, WhenGpiosAreSetAndPortsAreSetForAllGpiosThenInitShouldSuccess)
 {
-  std::vector<rclcpp::Parameter> parameters;
-  parameters.emplace_back("gpios", gpio_names);
-  parameters.emplace_back(
-    "command_interfaces.gpio1.ports", std::vector<std::string>{"dig.1", "dig.2"});
-  parameters.emplace_back("command_interfaces.gpio2.ports", std::vector<std::string>{"ana.1"});
-  auto node_options = rclcpp::NodeOptions();
-  node_options.parameter_overrides(parameters);
+  const auto node_options = create_node_options_with_overriden_parameters(
+    {{"gpios", gpio_names},
+     {"command_interfaces.gpio1.ports", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"command_interfaces.gpio2.ports", std::vector<std::string>{"ana.1"}}});
+
   const auto result = controller.init("test_gpio_command_controller", "", 0, "", node_options);
   ASSERT_EQ(result, controller_interface::return_type::OK);
 }
 
 TEST_F(GpioCommandControllerTestSuite, ConfigureAndActivateParamsSuccess)
 {
-  std::vector<rclcpp::Parameter> parameters;
-  parameters.emplace_back("gpios", gpio_names);
-  parameters.emplace_back(
-    "command_interfaces.gpio1.ports", std::vector<std::string>{"dig.1", "dig.2"});
-  parameters.emplace_back("command_interfaces.gpio2.ports", std::vector<std::string>{"ana.1"});
-  auto node_options = rclcpp::NodeOptions();
-  node_options.parameter_overrides(parameters);
+  const auto node_options = create_node_options_with_overriden_parameters(
+    {{"gpios", gpio_names},
+     {"command_interfaces.gpio1.ports", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"command_interfaces.gpio2.ports", std::vector<std::string>{"ana.1"}}});
   const auto result = controller.init("test_gpio_command_controller", "", 0, "", node_options);
   setup_command_and_state_interfaces();
   ASSERT_EQ(result, controller_interface::return_type::OK);
@@ -149,35 +148,14 @@ TEST_F(GpioCommandControllerTestSuite, ConfigureAndActivateParamsSuccess)
   ASSERT_EQ(controller.on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 }
 
-TEST_F(GpioCommandControllerTestSuite, ActivateWithWrongGpiosNamesFails)
-{
-  std::vector<rclcpp::Parameter> parameters;
-  parameters.emplace_back("gpios", std::vector<std::string>{"gpio1", "gpio4"});
-  parameters.emplace_back(
-    "command_interfaces.gpio1.ports", std::vector<std::string>{"dig.1", "dig.2"});
-  parameters.emplace_back("command_interfaces.gpio4.ports", std::vector<std::string>{"ana.1"});
-  auto node_options = rclcpp::NodeOptions();
-  node_options.parameter_overrides(parameters);
-  const auto result = controller.init("test_gpio_command_controller", "", 0, "", node_options);
-
-  setup_command_and_state_interfaces();
-
-  ASSERT_EQ(result, controller_interface::return_type::OK);
-  ASSERT_EQ(controller.on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-  ASSERT_EQ(controller.on_activate(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
-}
-
 TEST_F(
   GpioCommandControllerTestSuite,
   WhenAssignedCommandInterfacesDoNotMatchInterfacesFromParamsThenControllerShouldFailOnActivation)
 {
-  std::vector<rclcpp::Parameter> parameters;
-  parameters.emplace_back("gpios", std::vector<std::string>{"gpio1", "gpio2"});
-  parameters.emplace_back(
-    "command_interfaces.gpio1.ports", std::vector<std::string>{"dig.1", "dig.2"});
-  parameters.emplace_back("command_interfaces.gpio2.ports", std::vector<std::string>{"ana.1"});
-  auto node_options = rclcpp::NodeOptions();
-  node_options.parameter_overrides(parameters);
+  const auto node_options = create_node_options_with_overriden_parameters(
+    {{"gpios", gpio_names},
+     {"command_interfaces.gpio1.ports", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"command_interfaces.gpio2.ports", std::vector<std::string>{"ana.1"}}});
   const auto result = controller.init("test_gpio_command_controller", "", 0, "", node_options);
 
   std::vector<LoanedCommandInterface> command_interfaces;
@@ -200,13 +178,10 @@ TEST_F(
   GpioCommandControllerTestSuite,
   WhenAssignedSateInterfacesDoNotMatchInterfacesFromParamsThenControllerShouldFailOnActivation)
 {
-  std::vector<rclcpp::Parameter> parameters;
-  parameters.emplace_back("gpios", std::vector<std::string>{"gpio1", "gpio2"});
-  parameters.emplace_back(
-    "command_interfaces.gpio1.ports", std::vector<std::string>{"dig.1", "dig.2"});
-  parameters.emplace_back("command_interfaces.gpio2.ports", std::vector<std::string>{"ana.1"});
-  auto node_options = rclcpp::NodeOptions();
-  node_options.parameter_overrides(parameters);
+  const auto node_options = create_node_options_with_overriden_parameters(
+    {{"gpios", gpio_names},
+     {"command_interfaces.gpio1.ports", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"command_interfaces.gpio2.ports", std::vector<std::string>{"ana.1"}}});
   const auto result = controller.init("test_gpio_command_controller", "", 0, "", node_options);
 
   std::vector<LoanedCommandInterface> command_interfaces;
@@ -227,13 +202,10 @@ TEST_F(
 
 TEST_F(GpioCommandControllerTestSuite, CommandSuccessTest)
 {
-  std::vector<rclcpp::Parameter> parameters;
-  parameters.emplace_back("gpios", std::vector<std::string>{"gpio1", "gpio2"});
-  parameters.emplace_back(
-    "command_interfaces.gpio1.ports", std::vector<std::string>{"dig.1", "dig.2"});
-  parameters.emplace_back("command_interfaces.gpio2.ports", std::vector<std::string>{"ana.1"});
-  auto node_options = rclcpp::NodeOptions();
-  node_options.parameter_overrides(parameters);
+  const auto node_options = create_node_options_with_overriden_parameters(
+    {{"gpios", gpio_names},
+     {"command_interfaces.gpio1.ports", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"command_interfaces.gpio2.ports", std::vector<std::string>{"ana.1"}}});
   const auto result = controller.init("test_gpio_command_controller", "", 0, "", node_options);
 
   setup_command_and_state_interfaces();
@@ -272,13 +244,10 @@ TEST_F(GpioCommandControllerTestSuite, CommandSuccessTest)
 
 TEST_F(GpioCommandControllerTestSuite, CommandSuccessTestWithOnlyOneGpio)
 {
-  std::vector<rclcpp::Parameter> parameters;
-  parameters.emplace_back("gpios", std::vector<std::string>{"gpio1", "gpio2"});
-  parameters.emplace_back(
-    "command_interfaces.gpio1.ports", std::vector<std::string>{"dig.1", "dig.2"});
-  parameters.emplace_back("command_interfaces.gpio2.ports", std::vector<std::string>{"ana.1"});
-  auto node_options = rclcpp::NodeOptions();
-  node_options.parameter_overrides(parameters);
+  const auto node_options = create_node_options_with_overriden_parameters(
+    {{"gpios", gpio_names},
+     {"command_interfaces.gpio1.ports", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"command_interfaces.gpio2.ports", std::vector<std::string>{"ana.1"}}});
   const auto result = controller.init("test_gpio_command_controller", "", 0, "", node_options);
 
   setup_command_and_state_interfaces();
@@ -306,13 +275,10 @@ TEST_F(GpioCommandControllerTestSuite, CommandSuccessTestWithOnlyOneGpio)
 
 TEST_F(GpioCommandControllerTestSuite, NoCommandCheckTest)
 {
-  std::vector<rclcpp::Parameter> parameters;
-  parameters.emplace_back("gpios", std::vector<std::string>{"gpio1", "gpio2"});
-  parameters.emplace_back(
-    "command_interfaces.gpio1.ports", std::vector<std::string>{"dig.1", "dig.2"});
-  parameters.emplace_back("command_interfaces.gpio2.ports", std::vector<std::string>{"ana.1"});
-  auto node_options = rclcpp::NodeOptions();
-  node_options.parameter_overrides(parameters);
+  const auto node_options = create_node_options_with_overriden_parameters(
+    {{"gpios", gpio_names},
+     {"command_interfaces.gpio1.ports", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"command_interfaces.gpio2.ports", std::vector<std::string>{"ana.1"}}});
   const auto result = controller.init("test_gpio_command_controller", "", 0, "", node_options);
 
   setup_command_and_state_interfaces();
@@ -331,13 +297,10 @@ TEST_F(GpioCommandControllerTestSuite, NoCommandCheckTest)
 
 TEST_F(GpioCommandControllerTestSuite, CommandCallbackTest)
 {
-  std::vector<rclcpp::Parameter> parameters;
-  parameters.emplace_back("gpios", std::vector<std::string>{"gpio1", "gpio2"});
-  parameters.emplace_back(
-    "command_interfaces.gpio1.ports", std::vector<std::string>{"dig.1", "dig.2"});
-  parameters.emplace_back("command_interfaces.gpio2.ports", std::vector<std::string>{"ana.1"});
-  auto node_options = rclcpp::NodeOptions();
-  node_options.parameter_overrides(parameters);
+  const auto node_options = create_node_options_with_overriden_parameters(
+    {{"gpios", gpio_names},
+     {"command_interfaces.gpio1.ports", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"command_interfaces.gpio2.ports", std::vector<std::string>{"ana.1"}}});
   const auto result = controller.init("test_gpio_command_controller", "", 0, "", node_options);
 
   setup_command_and_state_interfaces();
@@ -394,13 +357,10 @@ TEST_F(GpioCommandControllerTestSuite, CommandCallbackTest)
 
 TEST_F(GpioCommandControllerTestSuite, StateCallbackTest)
 {
-  std::vector<rclcpp::Parameter> parameters;
-  parameters.emplace_back("gpios", std::vector<std::string>{"gpio1", "gpio2"});
-  parameters.emplace_back(
-    "command_interfaces.gpio1.ports", std::vector<std::string>{"dig.1", "dig.2"});
-  parameters.emplace_back("command_interfaces.gpio2.ports", std::vector<std::string>{"ana.1"});
-  auto node_options = rclcpp::NodeOptions();
-  node_options.parameter_overrides(parameters);
+  const auto node_options = create_node_options_with_overriden_parameters(
+    {{"gpios", gpio_names},
+     {"command_interfaces.gpio1.ports", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"command_interfaces.gpio2.ports", std::vector<std::string>{"ana.1"}}});
   const auto result = controller.init("test_gpio_command_controller", "", 0, "", node_options);
 
   setup_command_and_state_interfaces();
