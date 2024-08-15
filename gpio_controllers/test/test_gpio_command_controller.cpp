@@ -73,6 +73,36 @@ public:
     controller.assign_interfaces(std::move(command_interfaces), std::move(state_interfaces));
   }
 
+  void move_to_activate_state(controller_interface::return_type result_of_initialization)
+  {
+    ASSERT_EQ(result_of_initialization, controller_interface::return_type::OK);
+    ASSERT_EQ(controller.on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+    ASSERT_EQ(controller.on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  }
+
+  void move_to_activate_state()
+  {
+    ASSERT_EQ(controller.configure().id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
+    ASSERT_EQ(
+      controller.get_node()->activate().id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
+  }
+
+  void stop_test_when_message_cannot_be_published(int max_sub_check_loop_count)
+  {
+    ASSERT_GE(max_sub_check_loop_count, 0)
+      << "Test was unable to publish a message through controller/broadcaster update loop";
+  }
+
+  void assert_default_command_and_state_values()
+  {
+    ASSERT_EQ(gpio_1_1_dig_cmd.get_value(), 1.0);
+    ASSERT_EQ(gpio_1_2_dig_cmd.get_value(), 0.0);
+    ASSERT_EQ(gpio_2_ana_cmd.get_value(), 3.1);
+    ASSERT_EQ(gpio_1_1_dig_state.get_value(), 1.0);
+    ASSERT_EQ(gpio_1_2_dig_state.get_value(), 0.0);
+    ASSERT_EQ(gpio_2_ana_state.get_value(), 3.1);
+  }
+
   FriendGpioCommandController controller;
 
   const std::vector<std::string> gpio_names{"gpio1", "gpio2"};
@@ -209,17 +239,13 @@ TEST_F(GpioCommandControllerTestSuite, CommandSuccessTest)
   const auto result = controller.init("test_gpio_command_controller", "", 0, "", node_options);
 
   setup_command_and_state_interfaces();
-  ASSERT_EQ(result, controller_interface::return_type::OK);
-  ASSERT_EQ(controller.on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-  ASSERT_EQ(controller.on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  move_to_activate_state(result);
 
   ASSERT_EQ(
     controller.update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  ASSERT_EQ(gpio_1_1_dig_cmd.get_value(), 1.0);
-  ASSERT_EQ(gpio_1_2_dig_cmd.get_value(), 0.0);
-  ASSERT_EQ(gpio_2_ana_cmd.get_value(), 3.1);
+  assert_default_command_and_state_values();
 
   auto command_ptr = std::make_shared<CmdType>();
   control_msgs::msg::InterfaceValue inteface_value_gpio1;
@@ -249,11 +275,8 @@ TEST_F(GpioCommandControllerTestSuite, CommandSuccessTestWithOnlyOneGpio)
      {"command_interfaces.gpio1.ports", std::vector<std::string>{"dig.1", "dig.2"}},
      {"command_interfaces.gpio2.ports", std::vector<std::string>{"ana.1"}}});
   const auto result = controller.init("test_gpio_command_controller", "", 0, "", node_options);
-
   setup_command_and_state_interfaces();
-  ASSERT_EQ(result, controller_interface::return_type::OK);
-  ASSERT_EQ(controller.on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-  ASSERT_EQ(controller.on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  move_to_activate_state(result);
 
   auto command_ptr = std::make_shared<CmdType>();
   control_msgs::msg::InterfaceValue inteface_value_gpio1;
@@ -282,17 +305,13 @@ TEST_F(GpioCommandControllerTestSuite, NoCommandCheckTest)
   const auto result = controller.init("test_gpio_command_controller", "", 0, "", node_options);
 
   setup_command_and_state_interfaces();
-  ASSERT_EQ(result, controller_interface::return_type::OK);
-  ASSERT_EQ(controller.on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-  ASSERT_EQ(controller.on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  move_to_activate_state(result);
 
   ASSERT_EQ(
     controller.update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  ASSERT_EQ(gpio_1_1_dig_cmd.get_value(), 1.0);
-  ASSERT_EQ(gpio_1_2_dig_cmd.get_value(), 0.0);
-  ASSERT_EQ(gpio_2_ana_cmd.get_value(), 3.1);
+  assert_default_command_and_state_values();
 }
 
 TEST_F(GpioCommandControllerTestSuite, CommandCallbackTest)
@@ -306,19 +325,8 @@ TEST_F(GpioCommandControllerTestSuite, CommandCallbackTest)
   setup_command_and_state_interfaces();
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
-  ASSERT_EQ(gpio_1_1_dig_cmd.get_value(), 1.0);
-  ASSERT_EQ(gpio_1_2_dig_cmd.get_value(), 0.0);
-  ASSERT_EQ(gpio_2_ana_cmd.get_value(), 3.1);
-
-  ASSERT_EQ(gpio_1_1_dig_state.get_value(), 1.0);
-  ASSERT_EQ(gpio_1_2_dig_state.get_value(), 0.0);
-  ASSERT_EQ(gpio_2_ana_state.get_value(), 3.1);
-
-  auto node_state = controller.configure();
-  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
-
-  node_state = controller.get_node()->activate();
-  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
+  assert_default_command_and_state_values();
+  move_to_activate_state();
 
   rclcpp::Node test_node("test_node");
   auto command_pub = test_node.create_publisher<CmdType>(
@@ -361,25 +369,13 @@ TEST_F(GpioCommandControllerTestSuite, StateCallbackTest)
     {{"gpios", gpio_names},
      {"command_interfaces.gpio1.ports", std::vector<std::string>{"dig.1", "dig.2"}},
      {"command_interfaces.gpio2.ports", std::vector<std::string>{"ana.1"}}});
-  const auto result = controller.init("test_gpio_command_controller", "", 0, "", node_options);
-
   setup_command_and_state_interfaces();
+  ASSERT_EQ(
+    controller.init("test_gpio_command_controller", "", 0, "", node_options),
+    controller_interface::return_type::OK);
 
-  ASSERT_EQ(result, controller_interface::return_type::OK);
-
-  ASSERT_EQ(gpio_1_1_dig_cmd.get_value(), 1.0);
-  ASSERT_EQ(gpio_1_2_dig_cmd.get_value(), 0.0);
-  ASSERT_EQ(gpio_2_ana_cmd.get_value(), 3.1);
-
-  ASSERT_EQ(gpio_1_1_dig_state.get_value(), 1.0);
-  ASSERT_EQ(gpio_1_2_dig_state.get_value(), 0.0);
-  ASSERT_EQ(gpio_2_ana_state.get_value(), 3.1);
-
-  auto node_state = controller.configure();
-  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
-
-  node_state = controller.get_node()->activate();
-  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
+  assert_default_command_and_state_values();
+  move_to_activate_state();
 
   rclcpp::Node test_node("test_node");
   auto subs_callback = [&](const StateType::SharedPtr) {};
@@ -397,8 +393,7 @@ TEST_F(GpioCommandControllerTestSuite, StateCallbackTest)
       break;
     }
   }
-  ASSERT_GE(max_sub_check_loop_count, 0) << "Test was unable to publish a message through "
-                                            "controller/broadcaster update loop";
+  stop_test_when_message_cannot_be_published(max_sub_check_loop_count);
 
   StateType gpio_state_msg;
   rclcpp::MessageInfo msg_info;
