@@ -46,11 +46,14 @@ controller_interface::return_type AdmittanceRule::configure(
   {
     try
     {
-      kinematics_loader_ =
-        std::make_shared<pluginlib::ClassLoader<kinematics_interface::KinematicsInterface>>(
-          parameters_.kinematics.plugin_package, "kinematics_interface::KinematicsInterface");
-      kinematics_ = std::unique_ptr<kinematics_interface::KinematicsInterface>(
-        kinematics_loader_->createUnmanagedInstance(parameters_.kinematics.plugin_name));
+      //Do not create a new instance in case of a reinit
+      if(!kinematics_loader_ ){
+        kinematics_loader_ =
+          std::make_shared<pluginlib::ClassLoader<kinematics_interface::KinematicsInterface>>(
+            parameters_.kinematics.plugin_package, "kinematics_interface::KinematicsInterface");
+        kinematics_ = std::unique_ptr<kinematics_interface::KinematicsInterface>(
+          kinematics_loader_->createUnmanagedInstance(parameters_.kinematics.plugin_name));
+      }
       if (!kinematics_->initialize(
             node->get_node_parameters_interface(), parameters_.kinematics.tip))
       {
