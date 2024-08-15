@@ -221,12 +221,12 @@ ForceTorqueSensorBroadcaster::on_export_state_interfaces()
 void ForceTorqueSensorBroadcaster::apply_sensor_offset(
   const Params & params, geometry_msgs::msg::WrenchStamped & msg)
 {
-  msg.wrench.force.x -= params.offset.force.x;
-  msg.wrench.force.y -= params.offset.force.y;
-  msg.wrench.force.z -= params.offset.force.z;
-  msg.wrench.torque.x -= params.offset.torque.x;
-  msg.wrench.torque.y -= params.offset.torque.y;
-  msg.wrench.torque.z -= params.offset.torque.z;
+  msg.wrench.force.x += params.offset.force.x;
+  msg.wrench.force.y += params.offset.force.y;
+  msg.wrench.force.z += params.offset.force.z;
+  msg.wrench.torque.x += params.offset.torque.x;
+  msg.wrench.torque.y += params.offset.torque.y;
+  msg.wrench.torque.z += params.offset.torque.z;
 }
 }  // namespace force_torque_sensor_broadcaster
 

@@ -301,12 +301,12 @@ TEST_F(ForceTorqueSensorBroadcasterTest, SensorName_Publish_Success_with_Offsets
   subscribe_and_get_message(wrench_msg);
 
   ASSERT_EQ(wrench_msg.header.frame_id, frame_id_);
-  ASSERT_EQ(wrench_msg.wrench.force.x, sensor_values_[0] - force_offsets[0]);
-  ASSERT_EQ(wrench_msg.wrench.force.y, sensor_values_[1] - force_offsets[1]);
-  ASSERT_EQ(wrench_msg.wrench.force.z, sensor_values_[2] - force_offsets[2]);
-  ASSERT_EQ(wrench_msg.wrench.torque.x, sensor_values_[3] - torque_offsets[0]);
-  ASSERT_EQ(wrench_msg.wrench.torque.y, sensor_values_[4] - torque_offsets[1]);
-  ASSERT_EQ(wrench_msg.wrench.torque.z, sensor_values_[5] - torque_offsets[2]);
+  ASSERT_EQ(wrench_msg.wrench.force.x, sensor_values_[0] + force_offsets[0]);
+  ASSERT_EQ(wrench_msg.wrench.force.y, sensor_values_[1] + force_offsets[1]);
+  ASSERT_EQ(wrench_msg.wrench.force.z, sensor_values_[2] + force_offsets[2]);
+  ASSERT_EQ(wrench_msg.wrench.torque.x, sensor_values_[3] + torque_offsets[0]);
+  ASSERT_EQ(wrench_msg.wrench.torque.y, sensor_values_[4] + torque_offsets[1]);
+  ASSERT_EQ(wrench_msg.wrench.torque.z, sensor_values_[5] + torque_offsets[2]);
 
   // Check the exported state interfaces
   const auto exported_state_interfaces = fts_broadcaster_->export_state_interfaces();
@@ -328,7 +328,7 @@ TEST_F(ForceTorqueSensorBroadcasterTest, SensorName_Publish_Success_with_Offsets
   {
     ASSERT_EQ(
       exported_state_interfaces[i].get_value(),
-      sensor_values_[i] - (i < 3 ? force_offsets[i] : torque_offsets[i - 3]));
+      sensor_values_[i] + (i < 3 ? force_offsets[i] : torque_offsets[i - 3]));
   }
 }
 
