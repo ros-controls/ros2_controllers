@@ -51,6 +51,12 @@ class FriendGpioCommandController : public gpio_controllers::GpioCommandControll
   FRIEND_TEST(GpioCommandControllerTestSuite, CommandSuccessTest);
   FRIEND_TEST(GpioCommandControllerTestSuite, CommandSuccessTestWithOnlyOneGpio);
   FRIEND_TEST(GpioCommandControllerTestSuite, CommandCallbackTest);
+  FRIEND_TEST(
+    GpioCommandControllerTestSuite,
+    WhenCommandContainsMoreValuesThenInterfacesNameForGpioUpdateShouldReturnFalse);
+  FRIEND_TEST(
+    GpioCommandControllerTestSuite,
+    WhenCommandContainsMoreInterfacesNameThenValuesForGpioUpdateShouldReturnFalse);
 };
 
 class GpioCommandControllerTestSuite : public ::testing::Test
@@ -305,6 +311,48 @@ TEST_F(
   assert_default_command_and_state_values();
   update_controller_loop();
   assert_default_command_and_state_values();
+}
+
+TEST_F(
+  GpioCommandControllerTestSuite,
+  WhenCommandContainsMoreValuesThenInterfacesNameForGpioUpdateShouldReturnFalse)
+{
+  const auto node_options = create_node_options_with_overriden_parameters(
+    {{"gpios", gpio_names},
+     {"command_interfaces.gpio1.ports", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"command_interfaces.gpio2.ports", std::vector<std::string>{"ana.1"}}});
+
+  setup_command_and_state_interfaces();
+  move_to_activate_state(controller.init("test_gpio_command_controller", "", 0, "", node_options));
+
+  const auto command = createGpioCommand(
+    {"gpio1", "gpio2"}, {createInterfaceValue({"dig.1", "dig.2"}, {0.0, 1.0, 1.0}),
+                         createInterfaceValue({"ana.1"}, {30.0})});
+  controller.rt_command_ptr_.writeFromNonRT(std::make_shared<CmdType>(command));
+  ASSERT_EQ(
+    controller.update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::ERROR);
+}
+
+TEST_F(
+  GpioCommandControllerTestSuite,
+  WhenCommandContainsMoreInterfacesNameThenValuesForGpioUpdateShouldReturnFalse)
+{
+  const auto node_options = create_node_options_with_overriden_parameters(
+    {{"gpios", gpio_names},
+     {"command_interfaces.gpio1.ports", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"command_interfaces.gpio2.ports", std::vector<std::string>{"ana.1"}}});
+
+  setup_command_and_state_interfaces();
+  move_to_activate_state(controller.init("test_gpio_command_controller", "", 0, "", node_options));
+
+  const auto command = createGpioCommand(
+    {"gpio1", "gpio2"},
+    {createInterfaceValue({"dig.1", "dig.2"}, {0.0}), createInterfaceValue({"ana.1"}, {30.0})});
+  controller.rt_command_ptr_.writeFromNonRT(std::make_shared<CmdType>(command));
+  ASSERT_EQ(
+    controller.update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::ERROR);
 }
 
 TEST_F(GpioCommandControllerTestSuite, CommandSuccessTest)

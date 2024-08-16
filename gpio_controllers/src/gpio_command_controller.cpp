@@ -217,6 +217,16 @@ controller_interface::return_type GpioCommandController::update_gpios_commands()
   for (std::size_t gpio_index = 0; gpio_index < gpio_commands.joint_names.size(); ++gpio_index)
   {
     const auto & gpio_name = gpio_commands.joint_names[gpio_index];
+    if (
+      gpio_commands.interface_values[gpio_index].values.size() !=
+      gpio_commands.interface_values[gpio_index].interface_names.size())
+    {
+      RCLCPP_ERROR(
+        get_node()->get_logger(), "For gpio %s interfaces_names do not match values",
+        gpio_name.c_str());
+      return controller_interface::return_type::ERROR;
+    }
+
     for (std::size_t command_interface_index = 0;
          command_interface_index < gpio_commands.interface_values[gpio_index].values.size();
          ++command_interface_index)
