@@ -56,7 +56,11 @@ class FriendGpioCommandController : public gpio_controllers::GpioCommandControll
 class GpioCommandControllerTestSuite : public ::testing::Test
 {
 public:
-  GpioCommandControllerTestSuite() { rclcpp::init(0, nullptr); }
+  GpioCommandControllerTestSuite()
+  {
+    rclcpp::init(0, nullptr);
+    node = std::make_unique<rclcpp::Node>("node");
+  }
   ~GpioCommandControllerTestSuite() { rclcpp::shutdown(); }
   void setup_command_and_state_interfaces()
   {
@@ -95,12 +99,68 @@ public:
 
   void assert_default_command_and_state_values()
   {
-    ASSERT_EQ(gpio_1_1_dig_cmd.get_value(), 1.0);
-    ASSERT_EQ(gpio_1_2_dig_cmd.get_value(), 0.0);
-    ASSERT_EQ(gpio_2_ana_cmd.get_value(), 3.1);
-    ASSERT_EQ(gpio_1_1_dig_state.get_value(), 1.0);
-    ASSERT_EQ(gpio_1_2_dig_state.get_value(), 0.0);
-    ASSERT_EQ(gpio_2_ana_state.get_value(), 3.1);
+    ASSERT_EQ(gpio_1_1_dig_cmd.get_value(), gpio_commands[0]);
+    ASSERT_EQ(gpio_1_2_dig_cmd.get_value(), gpio_commands[1]);
+    ASSERT_EQ(gpio_2_ana_cmd.get_value(), gpio_commands[2]);
+    ASSERT_EQ(gpio_1_1_dig_state.get_value(), gpio_states[0]);
+    ASSERT_EQ(gpio_1_2_dig_state.get_value(), gpio_states[1]);
+    ASSERT_EQ(gpio_2_ana_state.get_value(), gpio_states[2]);
+  }
+
+  void update_controller_loop()
+  {
+    ASSERT_EQ(
+      controller.update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+      controller_interface::return_type::OK);
+  }
+
+  CmdType createGpioCommand(
+    const std::vector<std::string> & gpios_names,
+    const std::vector<control_msgs::msg::InterfaceValue> & interface_values)
+  {
+    CmdType command;
+    command.joint_names = gpios_names;
+    command.interface_values = interface_values;
+    return command;
+  }
+
+  control_msgs::msg::InterfaceValue createInterfaceValue(
+    const std::vector<std::string> & interfaces_names,
+    const std::vector<double> & interfaces_values)
+  {
+    control_msgs::msg::InterfaceValue output;
+    output.interface_names = interfaces_names;
+    output.values = interfaces_values;
+    return output;
+  }
+
+  void wait_one_miliseconds_for_timeout()
+  {
+    rclcpp::executors::SingleThreadedExecutor executor;
+    executor.add_node(controller.get_node()->get_node_base_interface());
+    const auto timeout = std::chrono::milliseconds{1};
+    const auto until = controller.get_node()->get_clock()->now() + timeout;
+    while (controller.get_node()->get_clock()->now() < until)
+    {
+      executor.spin_some();
+      std::this_thread::sleep_for(std::chrono::microseconds(10));
+    }
+  }
+
+  int wait_for_subscription(
+    std::shared_ptr<rclcpp::SubscriptionBase> subscription, int max_sub_check_loop_count = 5)
+  {
+    rclcpp::WaitSet wait_set;
+    wait_set.add_subscription(subscription);
+    while (max_sub_check_loop_count--)
+    {
+      controller.update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+      if (wait_set.wait(std::chrono::milliseconds(2)).kind() == rclcpp::WaitResultKind::Ready)
+      {
+        break;
+      }
+    }
+    return max_sub_check_loop_count;
   }
 
   FriendGpioCommandController controller;
@@ -116,6 +176,7 @@ public:
   StateInterface gpio_1_1_dig_state{gpio_names[0], "dig.1", &gpio_states[0]};
   StateInterface gpio_1_2_dig_state{gpio_names[0], "dig.2", &gpio_states[1]};
   StateInterface gpio_2_ana_state{gpio_names[1], "ana.1", &gpio_states[2]};
+  std::unique_ptr<rclcpp::Node> node;
 };
 
 TEST_F(GpioCommandControllerTestSuite, WhenNoParametersAreSetInitShouldFail)
@@ -230,38 +291,37 @@ TEST_F(
   ASSERT_EQ(controller.on_activate(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
 }
 
+TEST_F(
+  GpioCommandControllerTestSuite,
+  WhenThereWasNoCommandForGpiosThenCommandInterfacesShouldHaveDefaultValues)
+{
+  const auto node_options = create_node_options_with_overriden_parameters(
+    {{"gpios", gpio_names},
+     {"command_interfaces.gpio1.ports", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"command_interfaces.gpio2.ports", std::vector<std::string>{"ana.1"}}});
+
+  setup_command_and_state_interfaces();
+  move_to_activate_state(controller.init("test_gpio_command_controller", "", 0, "", node_options));
+  assert_default_command_and_state_values();
+  update_controller_loop();
+  assert_default_command_and_state_values();
+}
+
 TEST_F(GpioCommandControllerTestSuite, CommandSuccessTest)
 {
   const auto node_options = create_node_options_with_overriden_parameters(
     {{"gpios", gpio_names},
      {"command_interfaces.gpio1.ports", std::vector<std::string>{"dig.1", "dig.2"}},
      {"command_interfaces.gpio2.ports", std::vector<std::string>{"ana.1"}}});
-  const auto result = controller.init("test_gpio_command_controller", "", 0, "", node_options);
 
   setup_command_and_state_interfaces();
-  move_to_activate_state(result);
+  move_to_activate_state(controller.init("test_gpio_command_controller", "", 0, "", node_options));
 
-  ASSERT_EQ(
-    controller.update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
-
-  assert_default_command_and_state_values();
-
-  auto command_ptr = std::make_shared<CmdType>();
-  control_msgs::msg::InterfaceValue inteface_value_gpio1;
-  inteface_value_gpio1.interface_names = {"dig.1", "dig.2"};
-  inteface_value_gpio1.values = {0.0, 1.0};
-  control_msgs::msg::InterfaceValue inteface_value_gpio2;
-  inteface_value_gpio2.interface_names = {"ana.1"};
-  inteface_value_gpio2.values = {30.0};
-
-  command_ptr->joint_names = {"gpio1", "gpio2"};
-  command_ptr->interface_values = {inteface_value_gpio1, inteface_value_gpio2};
-  controller.rt_command_ptr_.writeFromNonRT(command_ptr);
-
-  ASSERT_EQ(
-    controller.update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
+  const auto command = createGpioCommand(
+    {"gpio1", "gpio2"}, {createInterfaceValue({"dig.1", "dig.2"}, {0.0, 1.0}),
+                         createInterfaceValue({"ana.1"}, {30.0})});
+  controller.rt_command_ptr_.writeFromNonRT(std::make_shared<CmdType>(command));
+  update_controller_loop();
 
   ASSERT_EQ(gpio_1_1_dig_cmd.get_value(), 0.0);
   ASSERT_EQ(gpio_1_2_dig_cmd.get_value(), 1.0);
@@ -278,40 +338,15 @@ TEST_F(GpioCommandControllerTestSuite, CommandSuccessTestWithOnlyOneGpio)
   setup_command_and_state_interfaces();
   move_to_activate_state(result);
 
-  auto command_ptr = std::make_shared<CmdType>();
-  control_msgs::msg::InterfaceValue inteface_value_gpio1;
-  inteface_value_gpio1.interface_names = {"dig.1", "dig.2"};
-  inteface_value_gpio1.values = {0.0, 1.0};
+  const auto command =
+    createGpioCommand({"gpio1"}, {createInterfaceValue({"dig.1", "dig.2"}, {0.0, 1.0})});
 
-  command_ptr->joint_names = {"gpio1"};
-  command_ptr->interface_values = {inteface_value_gpio1};
-  controller.rt_command_ptr_.writeFromNonRT(command_ptr);
-
-  ASSERT_EQ(
-    controller.update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
+  controller.rt_command_ptr_.writeFromNonRT(std::make_shared<CmdType>(command));
+  update_controller_loop();
 
   ASSERT_EQ(gpio_1_1_dig_cmd.get_value(), 0.0);
   ASSERT_EQ(gpio_1_2_dig_cmd.get_value(), 1.0);
-  ASSERT_EQ(gpio_2_ana_cmd.get_value(), 3.1);
-}
-
-TEST_F(GpioCommandControllerTestSuite, NoCommandCheckTest)
-{
-  const auto node_options = create_node_options_with_overriden_parameters(
-    {{"gpios", gpio_names},
-     {"command_interfaces.gpio1.ports", std::vector<std::string>{"dig.1", "dig.2"}},
-     {"command_interfaces.gpio2.ports", std::vector<std::string>{"ana.1"}}});
-  const auto result = controller.init("test_gpio_command_controller", "", 0, "", node_options);
-
-  setup_command_and_state_interfaces();
-  move_to_activate_state(result);
-
-  ASSERT_EQ(
-    controller.update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
-
-  assert_default_command_and_state_values();
+  ASSERT_EQ(gpio_2_ana_cmd.get_value(), gpio_commands[2]);
 }
 
 TEST_F(GpioCommandControllerTestSuite, CommandCallbackTest)
@@ -320,43 +355,17 @@ TEST_F(GpioCommandControllerTestSuite, CommandCallbackTest)
     {{"gpios", gpio_names},
      {"command_interfaces.gpio1.ports", std::vector<std::string>{"dig.1", "dig.2"}},
      {"command_interfaces.gpio2.ports", std::vector<std::string>{"ana.1"}}});
-  const auto result = controller.init("test_gpio_command_controller", "", 0, "", node_options);
-
   setup_command_and_state_interfaces();
-  ASSERT_EQ(result, controller_interface::return_type::OK);
+  move_to_activate_state(controller.init("test_gpio_command_controller", "", 0, "", node_options));
 
-  assert_default_command_and_state_values();
-  move_to_activate_state();
-
-  rclcpp::Node test_node("test_node");
-  auto command_pub = test_node.create_publisher<CmdType>(
+  auto command_pub = node->create_publisher<CmdType>(
     std::string(controller.get_node()->get_name()) + "/commands", rclcpp::SystemDefaultsQoS());
-  CmdType command_msg;
-  control_msgs::msg::InterfaceValue inteface_value_gpio1;
-  inteface_value_gpio1.interface_names = {"dig.1", "dig.2"};
-  inteface_value_gpio1.values = {0.0, 1.0};
-  control_msgs::msg::InterfaceValue inteface_value_gpio2;
-  inteface_value_gpio2.interface_names = {"ana.1"};
-  inteface_value_gpio2.values = {30.0};
-
-  command_msg.joint_names = {"gpio1", "gpio2"};
-  command_msg.interface_values = {inteface_value_gpio1, inteface_value_gpio2};
-
-  command_pub->publish(command_msg);
-
-  rclcpp::executors::SingleThreadedExecutor executor;
-  executor.add_node(controller.get_node()->get_node_base_interface());
-  const auto timeout = std::chrono::milliseconds{1};
-  const auto until = controller.get_node()->get_clock()->now() + timeout;
-  while (controller.get_node()->get_clock()->now() < until)
-  {
-    executor.spin_some();
-    std::this_thread::sleep_for(std::chrono::microseconds(10));
-  }
-
-  ASSERT_EQ(
-    controller.update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
+  const auto command = createGpioCommand(
+    {"gpio1", "gpio2"}, {createInterfaceValue({"dig.1", "dig.2"}, {0.0, 1.0}),
+                         createInterfaceValue({"ana.1"}, {30.0})});
+  command_pub->publish(command);
+  wait_one_miliseconds_for_timeout();
+  update_controller_loop();
 
   ASSERT_EQ(gpio_1_1_dig_cmd.get_value(), 0.0);
   ASSERT_EQ(gpio_1_2_dig_cmd.get_value(), 1.0);
@@ -370,30 +379,13 @@ TEST_F(GpioCommandControllerTestSuite, StateCallbackTest)
      {"command_interfaces.gpio1.ports", std::vector<std::string>{"dig.1", "dig.2"}},
      {"command_interfaces.gpio2.ports", std::vector<std::string>{"ana.1"}}});
   setup_command_and_state_interfaces();
-  ASSERT_EQ(
-    controller.init("test_gpio_command_controller", "", 0, "", node_options),
-    controller_interface::return_type::OK);
+  move_to_activate_state(controller.init("test_gpio_command_controller", "", 0, "", node_options));
 
-  assert_default_command_and_state_values();
-  move_to_activate_state();
+  auto subscription = node->create_subscription<StateType>(
+    std::string(controller.get_node()->get_name()) + "/gpio_states", 10,
+    [&](const StateType::SharedPtr) {});
 
-  rclcpp::Node test_node("test_node");
-  auto subs_callback = [&](const StateType::SharedPtr) {};
-  auto subscription = test_node.create_subscription<StateType>(
-    std::string(controller.get_node()->get_name()) + "/gpio_states", 10, subs_callback);
-
-  int max_sub_check_loop_count = 5;
-  rclcpp::WaitSet wait_set;
-  wait_set.add_subscription(subscription);
-  while (max_sub_check_loop_count--)
-  {
-    controller.update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
-    if (wait_set.wait(std::chrono::milliseconds(2)).kind() == rclcpp::WaitResultKind::Ready)
-    {
-      break;
-    }
-  }
-  stop_test_when_message_cannot_be_published(max_sub_check_loop_count);
+  stop_test_when_message_cannot_be_published(wait_for_subscription(subscription));
 
   StateType gpio_state_msg;
   rclcpp::MessageInfo msg_info;
