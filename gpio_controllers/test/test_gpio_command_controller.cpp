@@ -48,15 +48,21 @@ rclcpp::NodeOptions create_node_options_with_overriden_parameters(
 
 class FriendGpioCommandController : public gpio_controllers::GpioCommandController
 {
-  FRIEND_TEST(GpioCommandControllerTestSuite, CommandSuccessTest);
-  FRIEND_TEST(GpioCommandControllerTestSuite, CommandSuccessTestWithOnlyOneGpio);
-  FRIEND_TEST(GpioCommandControllerTestSuite, CommandCallbackTest);
+  FRIEND_TEST(
+    GpioCommandControllerTestSuite,
+    WhenGivenCommandWithValuesForAllInterfacesThenValueOfInterfacesShouldBeUpdated);
+  FRIEND_TEST(
+    GpioCommandControllerTestSuite,
+    WhenGivenCommandWithOnlyOneGpioThenInterfacesValuesShouldBeUpdated);
   FRIEND_TEST(
     GpioCommandControllerTestSuite,
     WhenCommandContainsMoreValuesThenInterfacesNameForGpioUpdateShouldReturnFalse);
   FRIEND_TEST(
     GpioCommandControllerTestSuite,
     WhenCommandContainsMoreInterfacesNameThenValuesForGpioUpdateShouldReturnFalse);
+  FRIEND_TEST(
+    GpioCommandControllerTestSuite,
+    WhenGivenCommandPortsInDifferentOrderThenValueOfInterfacesShouldBeUpdated);
 };
 
 class GpioCommandControllerTestSuite : public ::testing::Test
@@ -105,12 +111,12 @@ public:
 
   void assert_default_command_and_state_values()
   {
-    ASSERT_EQ(gpio_1_1_dig_cmd.get_value(), gpio_commands[0]);
-    ASSERT_EQ(gpio_1_2_dig_cmd.get_value(), gpio_commands[1]);
-    ASSERT_EQ(gpio_2_ana_cmd.get_value(), gpio_commands[2]);
-    ASSERT_EQ(gpio_1_1_dig_state.get_value(), gpio_states[0]);
-    ASSERT_EQ(gpio_1_2_dig_state.get_value(), gpio_states[1]);
-    ASSERT_EQ(gpio_2_ana_state.get_value(), gpio_states[2]);
+    ASSERT_EQ(gpio_1_1_dig_cmd.get_value(), gpio_commands.at(0));
+    ASSERT_EQ(gpio_1_2_dig_cmd.get_value(), gpio_commands.at(1));
+    ASSERT_EQ(gpio_2_ana_cmd.get_value(), gpio_commands.at(2));
+    ASSERT_EQ(gpio_1_1_dig_state.get_value(), gpio_states.at(0));
+    ASSERT_EQ(gpio_1_2_dig_state.get_value(), gpio_states.at(1));
+    ASSERT_EQ(gpio_2_ana_state.get_value(), gpio_states.at(2));
   }
 
   void update_controller_loop()
@@ -355,7 +361,9 @@ TEST_F(
     controller_interface::return_type::ERROR);
 }
 
-TEST_F(GpioCommandControllerTestSuite, CommandSuccessTest)
+TEST_F(
+  GpioCommandControllerTestSuite,
+  WhenGivenCommandWithValuesForAllInterfacesThenValueOfInterfacesShouldBeUpdated)
 {
   const auto node_options = create_node_options_with_overriden_parameters(
     {{"gpios", gpio_names},
@@ -376,7 +384,32 @@ TEST_F(GpioCommandControllerTestSuite, CommandSuccessTest)
   ASSERT_EQ(gpio_2_ana_cmd.get_value(), 30.0);
 }
 
-TEST_F(GpioCommandControllerTestSuite, CommandSuccessTestWithOnlyOneGpio)
+TEST_F(
+  GpioCommandControllerTestSuite,
+  WhenGivenCommandPortsInDifferentOrderThenValueOfInterfacesShouldBeUpdated)
+{
+  const auto node_options = create_node_options_with_overriden_parameters(
+    {{"gpios", gpio_names},
+     {"command_interfaces.gpio1.ports", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"command_interfaces.gpio2.ports", std::vector<std::string>{"ana.1"}}});
+
+  setup_command_and_state_interfaces();
+  move_to_activate_state(controller.init("test_gpio_command_controller", "", 0, "", node_options));
+
+  const auto command = createGpioCommand(
+    {"gpio2", "gpio1"}, {createInterfaceValue({"ana.1"}, {30.0}),
+                         createInterfaceValue({"dig.2", "dig.1"}, {1.0, 0.0})});
+  controller.rt_command_ptr_.writeFromNonRT(std::make_shared<CmdType>(command));
+  update_controller_loop();
+
+  ASSERT_EQ(gpio_1_1_dig_cmd.get_value(), 0.0);
+  ASSERT_EQ(gpio_1_2_dig_cmd.get_value(), 1.0);
+  ASSERT_EQ(gpio_2_ana_cmd.get_value(), 30.0);
+}
+
+TEST_F(
+  GpioCommandControllerTestSuite,
+  WhenGivenCommandWithOnlyOneGpioThenInterfacesValuesShouldBeUpdated)
 {
   const auto node_options = create_node_options_with_overriden_parameters(
     {{"gpios", gpio_names},
@@ -397,7 +430,9 @@ TEST_F(GpioCommandControllerTestSuite, CommandSuccessTestWithOnlyOneGpio)
   ASSERT_EQ(gpio_2_ana_cmd.get_value(), gpio_commands[2]);
 }
 
-TEST_F(GpioCommandControllerTestSuite, CommandCallbackTest)
+TEST_F(
+  GpioCommandControllerTestSuite,
+  WhenGivenCommandWithValuesForAllInterfacesViaTopicThenValueOfInterfacesShouldBeUpdated)
 {
   const auto node_options = create_node_options_with_overriden_parameters(
     {{"gpios", gpio_names},
@@ -420,7 +455,7 @@ TEST_F(GpioCommandControllerTestSuite, CommandCallbackTest)
   ASSERT_EQ(gpio_2_ana_cmd.get_value(), 30.0);
 }
 
-TEST_F(GpioCommandControllerTestSuite, StateCallbackTest)
+TEST_F(GpioCommandControllerTestSuite, ControllerShouldPublishGpioStatesWithCurrentValues)
 {
   const auto node_options = create_node_options_with_overriden_parameters(
     {{"gpios", gpio_names},
@@ -440,12 +475,12 @@ TEST_F(GpioCommandControllerTestSuite, StateCallbackTest)
   ASSERT_TRUE(subscription->take(gpio_state_msg, msg_info));
 
   ASSERT_EQ(gpio_state_msg.joint_names.size(), gpio_names.size());
-  ASSERT_EQ(gpio_state_msg.joint_names[0], "gpio1");
-  ASSERT_EQ(gpio_state_msg.joint_names[1], "gpio2");
-  ASSERT_EQ(gpio_state_msg.interface_values[0].interface_names[0], "dig.1");
-  ASSERT_EQ(gpio_state_msg.interface_values[0].interface_names[1], "dig.2");
-  ASSERT_EQ(gpio_state_msg.interface_values[1].interface_names[0], "ana.1");
-  ASSERT_EQ(gpio_state_msg.interface_values[0].values[0], 1.0);
-  ASSERT_EQ(gpio_state_msg.interface_values[0].values[1], 0.0);
-  ASSERT_EQ(gpio_state_msg.interface_values[1].values[0], 3.1);
+  ASSERT_EQ(gpio_state_msg.joint_names.at(0), "gpio1");
+  ASSERT_EQ(gpio_state_msg.joint_names.at(1), "gpio2");
+  ASSERT_EQ(gpio_state_msg.interface_values.at(0).interface_names.at(0), "dig.1");
+  ASSERT_EQ(gpio_state_msg.interface_values.at(0).interface_names.at(1), "dig.2");
+  ASSERT_EQ(gpio_state_msg.interface_values.at(1).interface_names.at(0), "ana.1");
+  ASSERT_EQ(gpio_state_msg.interface_values.at(0).values.at(0), 1.0);
+  ASSERT_EQ(gpio_state_msg.interface_values.at(0).values.at(1), 0.0);
+  ASSERT_EQ(gpio_state_msg.interface_values.at(1).values.at(0), 3.1);
 }
