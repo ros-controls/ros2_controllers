@@ -11,10 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <functional>
 #include <memory>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "gmock/gmock.h"
@@ -63,6 +61,9 @@ class FriendGpioCommandController : public gpio_controllers::GpioCommandControll
   FRIEND_TEST(
     GpioCommandControllerTestSuite,
     WhenGivenCommandPortsInDifferentOrderThenValueOfInterfacesShouldBeUpdated);
+  FRIEND_TEST(
+    GpioCommandControllerTestSuite,
+    WhenGivenCommandContainsWrongGpioPortsOrWrongGpioNameThenCommandInterfacesShouldNotBeUpdated);
 };
 
 class GpioCommandControllerTestSuite : public ::testing::Test
@@ -181,13 +182,13 @@ public:
   std::vector<double> gpio_commands{1.0, 0.0, 3.1};
   std::vector<double> gpio_states{1.0, 0.0, 3.1};
 
-  CommandInterface gpio_1_1_dig_cmd{gpio_names[0], "dig.1", &gpio_commands[0]};
-  CommandInterface gpio_1_2_dig_cmd{gpio_names[0], "dig.2", &gpio_commands[1]};
-  CommandInterface gpio_2_ana_cmd{gpio_names[1], "ana.1", &gpio_commands[2]};
+  CommandInterface gpio_1_1_dig_cmd{gpio_names.at(0), "dig.1", &gpio_commands.at(0)};
+  CommandInterface gpio_1_2_dig_cmd{gpio_names.at(0), "dig.2", &gpio_commands.at(1)};
+  CommandInterface gpio_2_ana_cmd{gpio_names.at(1), "ana.1", &gpio_commands.at(2)};
 
-  StateInterface gpio_1_1_dig_state{gpio_names[0], "dig.1", &gpio_states[0]};
-  StateInterface gpio_1_2_dig_state{gpio_names[0], "dig.2", &gpio_states[1]};
-  StateInterface gpio_2_ana_state{gpio_names[1], "ana.1", &gpio_states[2]};
+  StateInterface gpio_1_1_dig_state{gpio_names.at(0), "dig.1", &gpio_states.at(0)};
+  StateInterface gpio_1_2_dig_state{gpio_names.at(0), "dig.2", &gpio_states.at(1)};
+  StateInterface gpio_2_ana_state{gpio_names.at(1), "ana.1", &gpio_states.at(2)};
   std::unique_ptr<rclcpp::Node> node;
 };
 
@@ -428,6 +429,30 @@ TEST_F(
   ASSERT_EQ(gpio_1_1_dig_cmd.get_value(), 0.0);
   ASSERT_EQ(gpio_1_2_dig_cmd.get_value(), 1.0);
   ASSERT_EQ(gpio_2_ana_cmd.get_value(), gpio_commands[2]);
+}
+
+TEST_F(
+  GpioCommandControllerTestSuite,
+  WhenGivenCommandContainsWrongGpioPortsOrWrongGpioNameThenCommandInterfacesShouldNotBeUpdated)
+{
+  const auto node_options = create_node_options_with_overriden_parameters(
+    {{"gpios", gpio_names},
+     {"command_interfaces.gpio1.ports", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"command_interfaces.gpio2.ports", std::vector<std::string>{"ana.1"}}});
+  const auto result = controller.init("test_gpio_command_controller", "", 0, "", node_options);
+  setup_command_and_state_interfaces();
+  move_to_activate_state(result);
+
+  const auto command = createGpioCommand(
+    {"gpio1", "gpio3"}, {createInterfaceValue({"dig.3", "dig.4"}, {20.0, 25.0}),
+                         createInterfaceValue({"ana.1"}, {21.0})});
+
+  controller.rt_command_ptr_.writeFromNonRT(std::make_shared<CmdType>(command));
+  update_controller_loop();
+
+  ASSERT_EQ(gpio_1_1_dig_cmd.get_value(), gpio_commands.at(0));
+  ASSERT_EQ(gpio_1_2_dig_cmd.get_value(), gpio_commands.at(1));
+  ASSERT_EQ(gpio_2_ana_cmd.get_value(), gpio_commands.at(2));
 }
 
 TEST_F(
