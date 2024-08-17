@@ -39,3 +39,10 @@ joint_state_broadcaster:
       type: string,
       default_value: "effort",
     }
+  use_urdf_to_filter: {
+    type: bool,
+    default_value: true,
+    description: "Uses the robot_description to filter the ``joint_states`` topic.
+    If true, the broadcaster will publish the data of the joints present in the URDF alone.
+    If false, the broadcaster will publish the data of any interface that has type ``position``, ``velocity``, or ``effort``."
+  }
