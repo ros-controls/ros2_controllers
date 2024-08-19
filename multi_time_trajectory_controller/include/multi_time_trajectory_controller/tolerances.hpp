@@ -1,4 +1,4 @@
-// Copyright 2013 PAL Robotics S.L.
+// Copyright (c) 2024 ros2_control Development Team
 // All rights reserved.
 //
 // Software License Agreement (BSD License 2.0)
