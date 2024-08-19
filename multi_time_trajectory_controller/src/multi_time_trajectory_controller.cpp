@@ -1803,7 +1803,10 @@ MultiTimeTrajectoryController::set_success_trajectory_point()
   // set last command to be repeated at success, no matter if it has nonzero velocity or
   // acceleration
   hold_position_msg_ptr_->points[0] = traj_external_point_ptr_->get_trajectory_msg()->points.back();
-  hold_position_msg_ptr_->points[0].time_from_start = rclcpp::Duration(0, 0);
+  for (std::size_t i = 0; i < num_axes_; ++i)
+  {
+    hold_position_msg_ptr_->points[0].times_from_start[i] = rclcpp::Duration(0, 0);
+  }
 
   // set flag, otherwise tolerances will be checked with success_trajectory_point too
   rt_is_holding_.writeFromNonRT(true);
