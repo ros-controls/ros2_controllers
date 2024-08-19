@@ -12,6 +12,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   controller_interface
   generate_parameter_library
   joint_limits
+  joint_trajectory_controller
   hardware_interface
   nav_msgs
   pluginlib
@@ -33,6 +34,11 @@ foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
 
+generate_parameter_library(multi_time_trajectory_controller_parameters
+  src/multi_time_trajectory_controller_parameters.yaml
+  include/multi_time_trajectory_controller/validate_mttc_parameters.hpp
+)
+
 add_library(multi_time_trajectory_controller SHARED
   src/multi_time_trajectory_controller.cpp
 )
@@ -42,6 +48,7 @@ target_include_directories(multi_time_trajectory_controller PUBLIC
   $<INSTALL_INTERFACE:include/multi_time_trajectory_controller>
 )
 target_link_libraries(multi_time_trajectory_controller PUBLIC
+  multi_time_trajectory_controller_parameters
   ruckig::ruckig
 )
 ament_target_dependencies(multi_time_trajectory_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
@@ -51,13 +58,14 @@ install(
   DESTINATION include/multi_time_trajectory_controller
 )
 install(TARGETS
-multi_time_trajectory_controller
-  EXPORT multi_time_trajectory_controller
+    multi_time_trajectory_controller
+    multi_time_trajectory_controller_parameters
+  EXPORT export_multi_time_trajectory_controller
   RUNTIME DESTINATION bin
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
 )
 
-ament_export_targets(multi_time_trajectory_controller HAS_LIBRARY_TARGET)
+# ament_export_targets(multi_time_trajectory_controller HAS_LIBRARY_TARGET)
 ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
 ament_package()
