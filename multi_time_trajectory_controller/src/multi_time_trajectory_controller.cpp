@@ -12,4 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "multi_time_joint_trajectory_controller/multi_time_joint_trajectory_controller.hpp"
+#include "multi_time_trajectory_controller/multi_time_trajectory_controller.hpp"

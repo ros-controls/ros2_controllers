@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="3">
-  <name>multi_time_joint_trajectory_controller</name>
+  <name>multi_time_trajectory_controller</name>
   <version>4.7.0</version>
   <description>Controller for executing joint-space trajectories on a group of joints</description>
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>

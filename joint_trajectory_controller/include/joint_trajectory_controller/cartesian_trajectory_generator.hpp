@@ -16,14 +16,17 @@
 #define JOINT_TRAJECTORY_CONTROLLER__CARTESIAN_TRAJECTORY_GENERATOR_HPP_
 
 #include <memory>
+#include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "control_msgs/msg/cartesian_trajectory_generator_state.hpp"
-#include "control_msgs/msg/multi_dof_multi_time_joint_trajectory_point.hpp"
 #include "geometry_msgs/msg/pose.hpp"
+#include "geometry_msgs/msg/transform_stamped.hpp"
 #include "joint_limits/joint_limits.hpp"
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
 #include "nav_msgs/msg/odometry.hpp"
+#include "trajectory_msgs/msg/multi_dof_joint_trajectory_point.hpp"
 
 using namespace std::chrono_literals;  // NOLINT
 
@@ -50,7 +53,7 @@ public:
   controller_interface::CallbackReturn on_activate(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  using ControllerReferenceMsg = control_msgs::msg::MultiDOFMultiTimeJointTrajectoryPoint;
+  using ControllerReferenceMsg = trajectory_msgs::msg::MultiDOFJointTrajectoryPoint;
   using ControllerFeedbackMsg = nav_msgs::msg::Odometry;
 
 protected:

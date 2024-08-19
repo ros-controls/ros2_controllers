@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef MULTI_TIME_JOINT_TRAJECTORY_CONTROLLER__MULTI_TIME_JOINT_TRAJECTORY_CONTROLLER_HPP_
-#define MULTI_TIME_JOINT_TRAJECTORY_CONTROLLER__MULTI_TIME_JOINT_TRAJECTORY_CONTROLLER_HPP_
+#ifndef MULTI_TIME_TRAJECTORY_CONTROLLER__MULTI_TIME_TRAJECTORY_CONTROLLER_HPP_
+#define MULTI_TIME_TRAJECTORY_CONTROLLER__MULTI_TIME_TRAJECTORY_CONTROLLER_HPP_
 
 #include "controller_interface/controller_interface.hpp"
 
-namespace joint_trajectory_controller
+namespace multi_time_trajectory_controller
 {
 
-class JointTrajectoryController : public controller_interface::ControllerInterface
+class MultiTimeController : public controller_interface::ControllerInterface
 {
 };
-}  // namespace joint_trajectory_controller
-#endif  // MULTI_TIME_JOINT_TRAJECTORY_CONTROLLER__MULTI_TIME_JOINT_TRAJECTORY_CONTROLLER_HPP_
+}  // namespace multi_time_trajectory_controller
+#endif  // MULTI_TIME_TRAJECTORY_CONTROLLER__MULTI_TIME_TRAJECTORY_CONTROLLER_HPP_

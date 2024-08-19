@@ -14,12 +14,12 @@
 
 #include "joint_trajectory_controller/cartesian_trajectory_generator.hpp"
 
-#include "control_msgs/msg/multi_dof_multi_time_joint_trajectory_point.hpp"
-#include "control_msgs/msg/multi_time_joint_trajectory.hpp"
 #include "controller_interface/helpers.hpp"
 #include "eigen3/Eigen/Eigen"
 #include "geometry_msgs/msg/quaternion.hpp"
+#include "geometry_msgs/msg/vector3.hpp"
 #include "joint_trajectory_controller/trajectory.hpp"
+#include "tf2/transform_datatypes.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 namespace
@@ -171,29 +171,23 @@ void CartesianTrajectoryGenerator::reference_callback(
   // store input ref for later use
   reference_world_.writeFromNonRT(msg);
 
-  //TODO(henrygerardmoore): replace the below with multiple JTCs
-  
-
   // assume for now that we are working with trajectories with one point - we don't know exactly
   // where we are in the trajectory before sampling - nevertheless this should work for the use case
-  auto new_traj_msg = std::make_shared<control_msgs::msg::MultiTimeJointTrajectory>();
+  auto new_traj_msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
   new_traj_msg->joint_names = params_.joints;
   new_traj_msg->points.resize(1);
   new_traj_msg->points[0].positions.resize(
     params_.joints.size(), std::numeric_limits<double>::quiet_NaN());
   new_traj_msg->points[0].velocities.resize(
     params_.joints.size(), std::numeric_limits<double>::quiet_NaN());
-  
-  for (std::size_t i = 0; i < 6; ++i) {
-    if (msg->times_from_start[i].nanosec == 0)
-    {
-      new_traj_msg->points[0].times_from_start[i] = rclcpp::Duration::from_seconds(0.01);
-    }
-    else
-    {
-      new_traj_msg->points[0].times_from_start[i] = rclcpp::Duration::from_nanoseconds(
-        static_cast<rcl_duration_value_t>(msg->times_from_start[i].nanosec));
-    }
+  if (msg->time_from_start.nanosec == 0)
+  {
+    new_traj_msg->points[0].time_from_start = rclcpp::Duration::from_seconds(0.01);
+  }
+  else
+  {
+    new_traj_msg->points[0].time_from_start = rclcpp::Duration::from_nanoseconds(
+      static_cast<rcl_duration_value_t>(msg->time_from_start.nanosec));
   }
 
   // just pass input into trajectory message
@@ -373,7 +367,7 @@ void CartesianTrajectoryGenerator::publish_state(
 
     auto set_multi_dof_point =
       [&](
-        control_msgs::msg::MultiDOFMultiTimeJointTrajectoryPoint & multi_dof_point,
+        trajectory_msgs::msg::MultiDOFJointTrajectoryPoint & multi_dof_point,
         const JointTrajectoryPoint & traj_point)
     {
       if (traj_point.positions.size() == 6)
