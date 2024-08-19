@@ -46,10 +46,10 @@ using namespace std::chrono_literals;  // NOLINT
 namespace multi_time_trajectory_controller
 {
 
-class MultiTimeController : public controller_interface::ControllerInterface
+class MultiTimeTrajectoryController : public controller_interface::ControllerInterface
 {
 public:
-  MultiTimeController();
+  MultiTimeTrajectoryController();
 
   /**
    * @brief command_interface_configuration
@@ -173,8 +173,6 @@ protected:
   std::shared_ptr<Trajectory> traj_external_point_ptr_ = nullptr;
   realtime_tools::RealtimeBuffer<std::shared_ptr<control_msgs::msg::MultiTimeTrajectory>>
     traj_msg_external_point_ptr_;
-  realtime_tools::RealtimeBuffer<std::shared_ptr<control_msgs::msg::MultiTimeTrajectory>>
-    multi_time_traj_msg_external_point_ptr_;
 
   std::shared_ptr<control_msgs::msg::MultiTimeTrajectory> hold_position_msg_ptr_ = nullptr;
 
@@ -213,13 +211,13 @@ protected:
   rclcpp::Publisher<ControllerStateMsg>::SharedPtr ruckig_input_target_pub_;
   StatePublisherPtr ruckig_input_target_publisher_;
 
-  using JointTrajectoryPoint = trajectory_msgs::msg::JointTrajectoryPoint;
+  using TrajectoryPoint = control_msgs::msg::MultiTimeTrajectoryPoint;
 
   virtual void publish_state(
-    const rclcpp::Time & time, const JointTrajectoryPoint & desired_state,
-    const JointTrajectoryPoint & current_state, const JointTrajectoryPoint & state_error,
-    const JointTrajectoryPoint & splines_output, const JointTrajectoryPoint & ruckig_input_target,
-    const JointTrajectoryPoint & ruckig_input);
+    const rclcpp::Time & time, const TrajectoryPoint & desired_state,
+    const TrajectoryPoint & current_state, const TrajectoryPoint & state_error,
+    const TrajectoryPoint & splines_output, const TrajectoryPoint & ruckig_input_target,
+    const TrajectoryPoint & ruckig_input);
 
   // callback for topic interface
 
@@ -246,8 +244,8 @@ protected:
    */
 
   void compute_error_for_joint(
-    JointTrajectoryPoint & error, const size_t index, const JointTrajectoryPoint & current,
-    const JointTrajectoryPoint & desired) const;
+    TrajectoryPoint & error, const size_t index, const TrajectoryPoint & current,
+    const TrajectoryPoint & desired) const;
   // fill trajectory_msg so it matches joints controlled by this controller
   // positions set to current position, velocities, accelerations and efforts to 0.0
 
@@ -288,10 +286,10 @@ protected:
   bool has_active_trajectory() const;
 
   void publish_state(
-    const rclcpp::Time & time, const JointTrajectoryPoint & desired_state,
-    const JointTrajectoryPoint & current_state, const JointTrajectoryPoint & state_error);
+    const rclcpp::Time & time, const TrajectoryPoint & desired_state,
+    const TrajectoryPoint & current_state, const TrajectoryPoint & state_error);
 
-  virtual bool read_state_from_hardware(JointTrajectoryPoint & state);
+  virtual bool read_state_from_hardware(TrajectoryPoint & state);
 
   /** Assign values from the command interfaces as state.
    * This is only possible if command AND state interfaces exist for the same type,
@@ -299,11 +297,11 @@ protected:
    * @param[out] state to be filled with values from command interfaces.
    * @return true if all interfaces exists and contain non-NaN values, false otherwise.
    */
-  bool read_state_from_command_interfaces(JointTrajectoryPoint & state);
-  bool read_commands_from_command_interfaces(JointTrajectoryPoint & commands);
+  bool read_state_from_command_interfaces(TrajectoryPoint & state);
+  bool read_commands_from_command_interfaces(TrajectoryPoint & commands);
 
   void resize_joint_trajectory_point(
-    trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size);
+    control_msgs::msg::MultiTimeTrajectoryPoint & point, size_t size);
 
   void query_state_service(
     const std::shared_ptr<control_msgs::srv::QueryTrajectoryState::Request> request,
@@ -339,9 +337,10 @@ private:
 
   void init_hold_position_msg();
   void resize_joint_trajectory_point_command(
-    trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size);
+    control_msgs::msg::MultiTimeTrajectoryPoint & point, size_t size);
 
   urdf::Model model_;
+  std::size_t num_axes_ = 6;
 
   /**
    * @brief Assigns the values from a trajectory point interface to a joint interface.
