@@ -76,10 +76,8 @@ if(BUILD_TESTING)
     tf2_msgs
   )
 
-  add_rostest_with_parameters_gmock(test_load_tricycle_controller
-    test/test_load_tricycle_controller.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/config/test_tricycle_controller.yaml
-  )
+  add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
+  ament_add_gmock(test_load_tricycle_controller test/test_load_tricycle_controller.cpp)
   target_link_libraries(test_load_tricycle_controller
     tricycle_controller
   )
