@@ -16,8 +16,14 @@
 
 #include <angles/angles.h>
 
+#include <algorithm>
+#include <cmath>
+#include <limits>
 #include <stdexcept>
 
+#include "control_msgs/msg/axis_trajectory.hpp"
+#include "control_msgs/msg/axis_trajectory_point.hpp"
+#include "control_msgs/msg/multi_axis_trajectory.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp_action/create_server.hpp"
 
@@ -87,11 +93,11 @@ MultiTimeTrajectoryController::command_interface_configuration() const
     std::exit(EXIT_FAILURE);
   }
   conf.names.reserve(dof_ * params_.command_interfaces.size());
-  for (const auto & joint_name : command_joint_names_)
+  for (const auto & axis_name : command_axis_names_)
   {
     for (const auto & interface_type : params_.command_interfaces)
     {
-      conf.names.push_back(joint_name + "/" + interface_type);
+      conf.names.push_back(axis_name + "/" + interface_type);
     }
   }
   return conf;
@@ -103,11 +109,11 @@ MultiTimeTrajectoryController::state_interface_configuration() const
   controller_interface::InterfaceConfiguration conf;
   conf.type = controller_interface::interface_configuration_type::INDIVIDUAL;
   conf.names.reserve(dof_ * params_.state_interfaces.size());
-  for (const auto & joint_name : params_.joints)
+  for (const auto & axis_name : params_.axes)
   {
     for (const auto & interface_type : params_.state_interfaces)
     {
-      conf.names.push_back(joint_name + "/" + interface_type);
+      conf.names.push_back(axis_name + "/" + interface_type);
     }
   }
   return conf;
@@ -145,26 +151,15 @@ controller_interface::return_type MultiTimeTrajectoryController::update(
     (*(rt_has_pending_goal_.readFromRT()) && !active_goal) == false)
   {
     fill_partial_goal(*new_external_msg);
-    sort_to_local_joint_order(*new_external_msg);
+    sort_to_local_axis_order(*new_external_msg);
     // TODO(denis): Add here integration of position and velocity
     traj_external_point_ptr_->update(*new_external_msg, joint_limits_, period);
   }
 
-  // TODO(anyone): can I here also use const on joint_interface since the reference_wrapper is not
-  // changed, but its value only?
-  auto assign_interface_from_point =
-    [&](auto & joint_interface, const std::vector<double> & trajectory_point_interface)
-  {
-    for (size_t index = 0; index < dof_; ++index)
-    {
-      joint_interface[index].get().set_value(trajectory_point_interface[index]);
-    }
-  };
-
   // current state update - bail if can't read hardware state
-  for (std::size_t i = 0; i < num_axes_; ++i)
+  for (std::size_t i = 0; i < dof_; ++i)
   {
-    state_current_.times_from_start[i].set__sec(0);
+    state_current_[i].time_from_start.set__sec(0);
   }
   if (!read_state_from_hardware(state_current_)) return controller_interface::return_type::OK;
 
@@ -187,24 +182,24 @@ controller_interface::return_type MultiTimeTrajectoryController::update(
         {
           if (reset_flags->at(i).reset)
           {
-            last_commanded_state_.positions[i] = std::isnan(reset_flags->at(i).position)
-                                                   ? state_current_.positions[i]
-                                                   : reset_flags->at(i).position;
+            last_commanded_state_[i].position = std::isnan(reset_flags->at(i).position)
+                                                  ? state_current_[i].position
+                                                  : reset_flags->at(i).position;
             RCLCPP_INFO_STREAM(
-              get_node()->get_logger(), command_joint_names_[i]
+              get_node()->get_logger(), command_axis_names_[i]
                                           << ": last commanded state position reset to "
-                                          << last_commanded_state_.positions[i]);
+                                          << last_commanded_state_[i].position);
             if (has_velocity_state_interface_)
             {
-              last_commanded_state_.velocities[i] = std::isnan(reset_flags->at(i).velocity)
-                                                      ? state_current_.velocities[i]
-                                                      : reset_flags->at(i).velocity;
+              last_commanded_state_[i].velocity = std::isnan(reset_flags->at(i).velocity)
+                                                    ? state_current_[i].velocity
+                                                    : reset_flags->at(i).velocity;
             }
             if (has_acceleration_state_interface_)
             {
-              last_commanded_state_.accelerations[i] = std::isnan(reset_flags->at(i).acceleration)
-                                                         ? state_current_.accelerations[i]
-                                                         : reset_flags->at(i).acceleration;
+              last_commanded_state_[i].acceleration = std::isnan(reset_flags->at(i).acceleration)
+                                                        ? state_current_[i].acceleration
+                                                        : reset_flags->at(i).acceleration;
             }
 
             reset_flags->at(i).reset = false;  // reset flag in the buffer for one-shot execution
@@ -216,12 +211,12 @@ controller_interface::return_type MultiTimeTrajectoryController::update(
           last_commanded_time_ = time;
         }
         traj_external_point_ptr_->set_point_before_trajectory_msg(
-          time, last_commanded_state_, joints_angle_wraparound_);
+          time, last_commanded_state_, axis_angle_wraparound_);
       }
       else
       {
         traj_external_point_ptr_->set_point_before_trajectory_msg(
-          time, state_current_, joints_angle_wraparound_);
+          time, state_current_, axis_angle_wraparound_);
       }
     }
 
@@ -237,9 +232,7 @@ controller_interface::return_type MultiTimeTrajectoryController::update(
       // this is the time instance
       // - started with the first segment: when the first point will be reached (in the future)
       // - later: when the point of the current segment was reached
-      // TODO(@henrygerardmoore): determine proper logic for below line
-      const rclcpp::Time segment_time_from_start =
-        traj_start + start_segment_itr->times_from_start[0];
+      const rclcpp::Time segment_time_from_start = traj_start + start_segment_itr->time_from_start;
       // time_difference is
       // - negative until first point is reached
       // - counting from zero to time_from_start of next point
@@ -247,7 +240,17 @@ controller_interface::return_type MultiTimeTrajectoryController::update(
       bool tolerance_violated_while_moving = false;
       bool outside_goal_tolerance = false;
       bool within_goal_time = true;
-      const bool before_last_point = end_segment_itr != traj_external_point_ptr_->end();
+
+      // TODO(henrygerardmoore): make this a vector and handle per axis
+      bool before_last_point = true;
+
+      for (std::size_t i = 0; i < dof_; ++i)
+      {
+        if (end_segment_itr == traj_external_point_ptr_->end(i))
+        {
+          before_last_point = false;
+        }
+      }
 
       // have we reached the end, are not holding position, and is a timeout configured?
       // Check independently of other tolerances
@@ -264,7 +267,7 @@ controller_interface::return_type MultiTimeTrajectoryController::update(
       // Check state/goal tolerance
       for (size_t index = 0; index < dof_; ++index)
       {
-        compute_error_for_joint(state_error_, index, state_current_, state_desired_);
+        compute_error_for_axis(state_error_, index, state_current_, state_desired_);
 
         // Always check the state tolerance on the first sample in case the first sample
         // is the last point
@@ -308,36 +311,36 @@ controller_interface::return_type MultiTimeTrajectoryController::update(
           // Update PIDs
           for (auto i = 0ul; i < dof_; ++i)
           {
-            tmp_command_[i] = (state_desired_.velocities[i] * ff_velocity_scale_[i]) +
-                              pids_[i]->computeCommand(
-                                state_error_.positions[i], state_error_.velocities[i],
-                                (uint64_t)period.nanoseconds());
+            tmp_command_[i] =
+              (state_desired_[i].velocity * ff_velocity_scale_[i]) +
+              pids_[i]->computeCommand(
+                state_error_[i].position, state_error_[i].velocity, (uint64_t)period.nanoseconds());
           }
         }
 
         // set values for next hardware write()
         if (has_position_command_interface_)
         {
-          assign_interface_from_point(joint_command_interface_[0], state_desired_.positions);
+          assign_interface_from_position(axis_command_interface_[0], state_desired_);
         }
         if (has_velocity_command_interface_)
         {
           if (use_closed_loop_pid_adapter_)
           {
-            assign_interface_from_point(joint_command_interface_[1], tmp_command_);
+            assign_interface_from_point(axis_command_interface_[1], tmp_command_);
           }
           else
           {
-            assign_interface_from_point(joint_command_interface_[1], state_desired_.velocities);
+            assign_interface_from_velocity(axis_command_interface_[1], state_desired_);
           }
         }
         if (has_acceleration_command_interface_)
         {
-          assign_interface_from_point(joint_command_interface_[2], state_desired_.accelerations);
+          assign_interface_from_acceleration(axis_command_interface_[2], state_desired_);
         }
         if (has_effort_command_interface_)
         {
-          assign_interface_from_point(joint_command_interface_[3], tmp_command_);
+          assign_interface_from_point(axis_command_interface_[3], tmp_command_);
         }
 
         // store the previous command. Used in open-loop control mode
@@ -350,11 +353,11 @@ controller_interface::return_type MultiTimeTrajectoryController::update(
         // send feedback
         auto feedback = std::make_shared<FollowJTrajAction::Feedback>();
         feedback->header.stamp = time;
-        feedback->joint_names = params_.joints;
+        feedback->axis_names = params_.axes;
 
-        feedback->actual = state_current_;
-        feedback->desired = state_desired_;
-        feedback->error = state_error_;
+        feedback->actual_points = state_current_;
+        feedback->desired_points = state_desired_;
+        feedback->errors = state_error_;
         active_goal->setFeedback(feedback);
 
         // check abort
@@ -442,36 +445,42 @@ controller_interface::return_type MultiTimeTrajectoryController::update(
   return controller_interface::return_type::OK;
 }
 
-bool MultiTimeTrajectoryController::read_state_from_hardware(TrajectoryPoint & state)
+bool MultiTimeTrajectoryController::read_state_from_hardware(std::vector<TrajectoryPoint> & states)
 {
   // Assign values from the hardware
   // Position states always exist
-  assign_point_from_interface(state.positions, joint_state_interface_[0]);
+  assign_positions_from_interface(states, axis_state_interface_[0]);
   // velocity and acceleration states are optional
   if (has_velocity_state_interface_)
   {
-    assign_point_from_interface(state.velocities, joint_state_interface_[1]);
+    assign_velocities_from_interface(states, axis_state_interface_[1]);
     // Acceleration is used only in combination with velocity
     if (has_acceleration_state_interface_)
     {
-      assign_point_from_interface(state.accelerations, joint_state_interface_[2]);
+      assign_accelerations_from_interface(states, axis_state_interface_[2]);
     }
     else
     {
-      // Make empty so the property is ignored during interpolation
-      state.accelerations.clear();
+      for (auto & state : states)
+      {
+        state.acceleration = std::numeric_limits<double>::quiet_NaN();
+      }
     }
   }
   else
   {
     // Make empty so the property is ignored during interpolation
-    state.velocities.clear();
-    state.accelerations.clear();
+    for (auto & state : states)
+    {
+      state.velocity = std::numeric_limits<double>::quiet_NaN();
+      state.acceleration = std::numeric_limits<double>::quiet_NaN();
+    }
   }
   return true;
 }
 
-bool MultiTimeTrajectoryController::read_state_from_command_interfaces(TrajectoryPoint & state)
+bool MultiTimeTrajectoryController::read_state_from_command_interfaces(
+  std::vector<TrajectoryPoint> & states)
 {
   bool has_values = true;
 
@@ -484,66 +493,72 @@ bool MultiTimeTrajectoryController::read_state_from_command_interfaces(Trajector
 
   // Assign values from the command interfaces as state. Therefore needs check for both.
   // Position state interface has to exist always
-  if (has_position_command_interface_ && interface_has_values(joint_command_interface_[0]))
+  if (has_position_command_interface_ && interface_has_values(axis_command_interface_[0]))
   {
-    assign_point_from_interface(state.positions, joint_command_interface_[0]);
+    assign_positions_from_interface(states, axis_command_interface_[0]);
   }
   else
   {
-    state.positions.clear();
+    for (auto & state : states)
+    {
+      state.position = std::numeric_limits<double>::quiet_NaN();
+    }
     has_values = false;
   }
   // velocity and acceleration states are optional
   if (has_velocity_state_interface_)
   {
-    if (has_velocity_command_interface_ && interface_has_values(joint_command_interface_[1]))
+    if (has_velocity_command_interface_ && interface_has_values(axis_command_interface_[1]))
     {
-      assign_point_from_interface(state.velocities, joint_command_interface_[1]);
+      assign_velocities_from_interface(states, axis_command_interface_[1]);
     }
     else
     {
-      state.velocities.clear();
+      for (auto & state : states)
+      {
+        state.velocity = std::numeric_limits<double>::quiet_NaN();
+      }
       has_values = false;
     }
   }
   else
   {
-    state.velocities.clear();
+    for (auto & state : states)
+    {
+      state.velocity = std::numeric_limits<double>::quiet_NaN();
+    }
   }
   // Acceleration is used only in combination with velocity
   if (has_acceleration_state_interface_)
   {
-    if (has_acceleration_command_interface_ && interface_has_values(joint_command_interface_[2]))
+    if (has_acceleration_command_interface_ && interface_has_values(axis_command_interface_[2]))
     {
-      assign_point_from_interface(state.accelerations, joint_command_interface_[2]);
+      assign_accelerations_from_interface(states, axis_command_interface_[2]);
     }
     else
     {
-      state.accelerations.clear();
+      for (auto & state : states)
+      {
+        state.acceleration = std::numeric_limits<double>::quiet_NaN();
+      }
       has_values = false;
     }
   }
   else
   {
-    state.accelerations.clear();
+    for (auto & state : states)
+    {
+      state.acceleration = std::numeric_limits<double>::quiet_NaN();
+    }
   }
 
   return has_values;
 }
 
 bool MultiTimeTrajectoryController::read_commands_from_command_interfaces(
-  TrajectoryPoint & commands)
+  std::vector<TrajectoryPoint> & commands)
 {
   bool has_values = true;
-
-  auto assign_point_from_interface =
-    [&](std::vector<double> & trajectory_point_interface, const auto & joint_interface)
-  {
-    for (size_t index = 0; index < dof_; ++index)
-    {
-      trajectory_point_interface[index] = joint_interface[index].get().get_value();
-    }
-  };
 
   auto interface_has_values = [](const auto & joint_interface)
   {
@@ -555,49 +570,61 @@ bool MultiTimeTrajectoryController::read_commands_from_command_interfaces(
   // Assign values from the command interfaces as command.
   if (has_position_command_interface_)
   {
-    if (interface_has_values(joint_command_interface_[0]))
+    if (interface_has_values(axis_command_interface_[0]))
     {
-      assign_point_from_interface(commands.positions, joint_command_interface_[0]);
+      assign_positions_from_interface(commands, axis_command_interface_[0]);
     }
     else
     {
-      commands.positions.clear();
+      for (auto & command : commands)
+      {
+        command.position = std::numeric_limits<double>::quiet_NaN();
+      }
       has_values = false;
     }
   }
   if (has_velocity_command_interface_)
   {
-    if (interface_has_values(joint_command_interface_[1]))
+    if (interface_has_values(axis_command_interface_[1]))
     {
-      assign_point_from_interface(commands.velocities, joint_command_interface_[1]);
+      assign_velocities_from_interface(commands, axis_command_interface_[1]);
     }
     else
     {
-      commands.velocities.clear();
+      for (auto & command : commands)
+      {
+        command.velocity = std::numeric_limits<double>::quiet_NaN();
+      }
       has_values = false;
     }
   }
   if (has_acceleration_command_interface_)
   {
-    if (interface_has_values(joint_command_interface_[2]))
+    if (interface_has_values(axis_command_interface_[2]))
     {
-      assign_point_from_interface(commands.accelerations, joint_command_interface_[2]);
+      assign_accelerations_from_interface(commands, axis_command_interface_[2]);
     }
     else
     {
-      commands.accelerations.clear();
+      for (auto & command : commands)
+      {
+        command.acceleration = std::numeric_limits<double>::quiet_NaN();
+      }
       has_values = false;
     }
   }
   if (has_effort_command_interface_)
   {
-    if (interface_has_values(joint_command_interface_[3]))
+    if (interface_has_values(axis_command_interface_[3]))
     {
-      assign_point_from_interface(commands.effort, joint_command_interface_[3]);
+      assign_effort_from_interface(commands, axis_command_interface_[3]);
     }
     else
     {
-      commands.effort.clear();
+      for (auto & command : commands)
+      {
+        command.effort = std::numeric_limits<double>::quiet_NaN();
+      }
       has_values = false;
     }
   }
@@ -618,8 +645,8 @@ void MultiTimeTrajectoryController::query_state_service(
     return;
   }
   const auto active_goal = *rt_active_goal_.readFromRT();
-  response->name = params_.joints;
-  control_msgs::msg::MultiTimeTrajectoryPoint state_requested = state_current_;
+  response->name = params_.axes;
+  std::vector<control_msgs::msg::AxisTrajectoryPoint> state_requested = state_current_;
   if (has_active_trajectory())
   {
     TrajectoryPointConstIter start_segment_itr, end_segment_itr;
@@ -631,10 +658,19 @@ void MultiTimeTrajectoryController::query_state_service(
     // If the requested sample time precedes the trajectory finish time respond as failure
     if (response->success)
     {
-      if (end_segment_itr == traj_external_point_ptr_->end())
+      bool any_is_end = false;
+      for (std::size_t i = 0; i < dof_; ++i)
+      {
+        if (end_segment_itr == traj_external_point_ptr_->end(i))
+        {
+          any_is_end = true;
+        }
+      }
+      if (any_is_end)
       {
         RCLCPP_ERROR(logger, "Requested sample time precedes the current trajectory end time.");
         response->success = false;
+        return;
       }
     }
     else
@@ -647,10 +683,17 @@ void MultiTimeTrajectoryController::query_state_service(
   {
     RCLCPP_ERROR(logger, "Currently there is no valid trajectory instance.");
     response->success = false;
+    return;
   }
-  response->position = state_requested.positions;
-  response->velocity = state_requested.velocities;
-  response->acceleration = state_requested.accelerations;
+  response->position.clear();
+  response->velocity.clear();
+  response->acceleration.clear();
+  for (std::size_t i = 0; i < dof_; ++i)
+  {
+    response->position.push_back(state_requested[i].position);
+    response->velocity.push_back(state_requested[i].velocity);
+    response->acceleration.push_back(state_requested[i].acceleration);
+  }
 }
 
 controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure(
@@ -671,7 +714,7 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
   params_ = param_listener_->get_params();
 
   // get degrees of freedom
-  dof_ = params_.joints.size();
+  dof_ = params_.axes.size();
 
   // TODO(destogl): why is this here? Add comment or move
   if (!reset())
@@ -679,21 +722,21 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
     return CallbackReturn::FAILURE;
   }
 
-  if (params_.joints.empty())
+  if (params_.axes.empty())
   {
     // TODO(destogl): is this correct? Can we really move-on if no joint names are not provided?
     RCLCPP_WARN(logger, "'joints' parameter is empty.");
   }
 
-  command_joint_names_ = params_.command_joints;
+  command_axis_names_ = params_.command_axes;
 
-  if (command_joint_names_.empty())
+  if (command_axis_names_.empty())
   {
-    command_joint_names_ = params_.joints;
+    command_axis_names_ = params_.axes;
     RCLCPP_INFO(
-      logger, "No specific joint names are used for command interfaces. Using 'joints' parameter.");
+      logger, "No specific joint names are used for command interfaces. Using 'axes' parameter.");
   }
-  else if (command_joint_names_.size() != params_.joints.size())
+  else if (command_axis_names_.size() != params_.axes.size())
   {
     RCLCPP_ERROR(
       logger, "'command_joints' parameter has to have the same size as 'joints' parameter.");
@@ -708,7 +751,7 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
 
   // Check if only allowed interface types are used and initialize storage to avoid memory
   // allocation during activation
-  joint_command_interface_.resize(allowed_interface_types_.size());
+  axis_command_interface_.resize(allowed_interface_types_.size());
 
   has_position_command_interface_ =
     contains_interface_type(params_.command_interfaces, hardware_interface::HW_IF_POSITION);
@@ -735,10 +778,10 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
   }
 
   // Configure joint position error normalization (angle_wraparound)
-  joints_angle_wraparound_.resize(dof_);
+  axis_angle_wraparound_.resize(dof_);
   for (size_t i = 0; i < dof_; ++i)
   {
-    const auto & gains = params_.gains.joints_map.at(params_.joints[i]);
+    const auto & gains = params_.gains.axes_map.at(params_.axes[i]);
     if (gains.angle_wraparound)
     {
       // TODO(christophfroehlich): remove this warning in a future release (ROS-J)
@@ -746,18 +789,18 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
         logger,
         "[Deprecated] Parameter 'gains.<joint>.angle_wraparound' is deprecated. The "
         "angle_wraparound is now used if a continuous joint is configured in the URDF.");
-      joints_angle_wraparound_[i] = true;
+      axis_angle_wraparound_[i] = true;
     }
 
     if (!urdf_.empty())
     {
-      auto urdf_joint = model_.getJoint(params_.joints[i]);
+      auto urdf_joint = model_.getJoint(params_.axes[i]);
       if (urdf_joint && urdf_joint->type == urdf::Joint::CONTINUOUS)
       {
         RCLCPP_DEBUG(
           logger, "joint '%s' is of type continuous, use angle_wraparound.",
-          params_.joints[i].c_str());
-        joints_angle_wraparound_[i] = true;
+          params_.axes[i].c_str());
+        axis_angle_wraparound_[i] = true;
       }
       // do nothing if joint is not found in the URDF
     }
@@ -767,12 +810,12 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
   joint_limits_.resize(dof_);
   // for (size_t i = 0; i < joint_limits_.size(); ++i)
   // {
-  //   if (joint_limits::declare_parameters(command_joint_names_[i], get_node()))
+  //   if (joint_limits::declare_parameters(command_axis_names_[i], get_node()))
   //   {
-  //     joint_limits::get_joint_limits(command_joint_names_[i], get_node(), joint_limits_[i]);
+  //     joint_limits::get_joint_limits(command_axis_names_[i], get_node(), joint_limits_[i]);
   //     RCLCPP_INFO(
   //       get_node()->get_logger(), "Limits for joint %zu (%s) are: \n%s", i,
-  //       command_joint_names_[i].c_str(), joint_limits_[i].to_string().c_str());
+  //       command_axis_names_[i].c_str(), joint_limits_[i].to_string().c_str());
   //   }
   // }
 
@@ -784,7 +827,7 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
       params_.joint_limiter_type.c_str());
     joint_limiter_ = std::unique_ptr<JointLimiter>(
       joint_limiter_loader_->createUnmanagedInstance(params_.joint_limiter_type));
-    joint_limiter_->init(command_joint_names_, get_node());
+    joint_limiter_->init(command_axis_names_, get_node());
   }
   else
   {
@@ -800,7 +843,7 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
   // Check if only allowed interface types are used and initialize storage to avoid memory
   // allocation during activation
   // Note: 'effort' storage is also here, but never used. Still, for this is OK.
-  joint_state_interface_.resize(allowed_interface_types_.size());
+  axis_state_interface_.resize(allowed_interface_types_.size());
 
   has_position_state_interface_ =
     contains_interface_type(params_.state_interfaces, hardware_interface::HW_IF_POSITION);
@@ -880,8 +923,8 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
   init_hold_position_msg();
 
   // create subscriber and publishers
-  joint_command_subscriber_ =
-    get_node()->create_subscription<control_msgs::msg::MultiTimeTrajectory>(
+  axis_command_subscriber_ =
+    get_node()->create_subscription<control_msgs::msg::MultiAxisTrajectory>(
       "~/joint_trajectory", rclcpp::SystemDefaultsQoS(),
       std::bind(&MultiTimeTrajectoryController::topic_callback, this, std::placeholders::_1));
 
@@ -890,38 +933,11 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
   state_publisher_ = std::make_unique<StatePublisher>(publisher_);
 
   state_publisher_->lock();
-  state_publisher_->msg_.joint_names = params_.joints;
-  state_publisher_->msg_.reference.positions.resize(dof_);
-  state_publisher_->msg_.reference.velocities.resize(dof_);
-  state_publisher_->msg_.reference.accelerations.resize(dof_);
-  state_publisher_->msg_.feedback.positions.resize(dof_);
-  state_publisher_->msg_.error.positions.resize(dof_);
-  if (has_velocity_state_interface_)
-  {
-    state_publisher_->msg_.feedback.velocities.resize(dof_);
-    state_publisher_->msg_.error.velocities.resize(dof_);
-  }
-  if (has_acceleration_state_interface_)
-  {
-    state_publisher_->msg_.feedback.accelerations.resize(dof_);
-    state_publisher_->msg_.error.accelerations.resize(dof_);
-  }
-  if (has_position_command_interface_)
-  {
-    state_publisher_->msg_.output.positions.resize(dof_);
-  }
-  if (has_velocity_command_interface_)
-  {
-    state_publisher_->msg_.output.velocities.resize(dof_);
-  }
-  if (has_acceleration_command_interface_)
-  {
-    state_publisher_->msg_.output.accelerations.resize(dof_);
-  }
-  if (has_effort_command_interface_)
-  {
-    state_publisher_->msg_.output.effort.resize(dof_);
-  }
+  state_publisher_->msg_.axis_names = params_.axes;
+  state_publisher_->msg_.references.resize(dof_);
+  state_publisher_->msg_.feedbacks.resize(dof_);
+  state_publisher_->msg_.errors.resize(dof_);
+  state_publisher_->msg_.outputs.resize(dof_);
 
   state_publisher_->unlock();
 
@@ -931,16 +947,11 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
   splines_output_publisher_ = std::make_unique<StatePublisher>(splines_output_pub_);
 
   splines_output_publisher_->lock();
-  splines_output_publisher_->msg_.joint_names = command_joint_names_;
-  splines_output_publisher_->msg_.reference.positions.resize(dof_);
-  splines_output_publisher_->msg_.reference.velocities.resize(dof_);
-  splines_output_publisher_->msg_.reference.accelerations.resize(dof_);
-  splines_output_publisher_->msg_.reference.positions.resize(dof_);
-  splines_output_publisher_->msg_.error.positions.resize(dof_);
-  splines_output_publisher_->msg_.reference.velocities.resize(dof_);
-  splines_output_publisher_->msg_.error.velocities.resize(dof_);
-  splines_output_publisher_->msg_.reference.accelerations.resize(dof_);
-  splines_output_publisher_->msg_.error.accelerations.resize(dof_);
+  splines_output_publisher_->msg_.axis_names = command_axis_names_;
+  splines_output_publisher_->msg_.references.resize(dof_);
+  splines_output_publisher_->msg_.feedbacks.resize(dof_);
+  splines_output_publisher_->msg_.errors.resize(dof_);
+  splines_output_publisher_->msg_.outputs.resize(dof_);
   splines_output_publisher_->unlock();
 
   ruckig_input_pub_ = get_node()->create_publisher<ControllerStateMsg>(
@@ -948,16 +959,11 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
   ruckig_input_publisher_ = std::make_unique<StatePublisher>(ruckig_input_pub_);
 
   ruckig_input_publisher_->lock();
-  ruckig_input_publisher_->msg_.joint_names = command_joint_names_;
-  ruckig_input_publisher_->msg_.reference.positions.resize(dof_);
-  ruckig_input_publisher_->msg_.reference.velocities.resize(dof_);
-  ruckig_input_publisher_->msg_.reference.accelerations.resize(dof_);
-  ruckig_input_publisher_->msg_.reference.positions.resize(dof_);
-  ruckig_input_publisher_->msg_.error.positions.resize(dof_);
-  ruckig_input_publisher_->msg_.reference.velocities.resize(dof_);
-  ruckig_input_publisher_->msg_.error.velocities.resize(dof_);
-  ruckig_input_publisher_->msg_.reference.accelerations.resize(dof_);
-  ruckig_input_publisher_->msg_.error.accelerations.resize(dof_);
+  ruckig_input_publisher_->msg_.axis_names = command_axis_names_;
+  ruckig_input_publisher_->msg_.references.resize(dof_);
+  ruckig_input_publisher_->msg_.feedbacks.resize(dof_);
+  ruckig_input_publisher_->msg_.errors.resize(dof_);
+  ruckig_input_publisher_->msg_.outputs.resize(dof_);
   ruckig_input_publisher_->unlock();
 
   ruckig_input_target_pub_ = get_node()->create_publisher<ControllerStateMsg>(
@@ -965,24 +971,13 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
   ruckig_input_target_publisher_ = std::make_unique<StatePublisher>(ruckig_input_target_pub_);
 
   ruckig_input_target_publisher_->lock();
-  ruckig_input_target_publisher_->msg_.joint_names = command_joint_names_;
-  ruckig_input_target_publisher_->msg_.reference.positions.resize(dof_);
-  ruckig_input_target_publisher_->msg_.reference.velocities.resize(dof_);
-  ruckig_input_target_publisher_->msg_.reference.accelerations.resize(dof_);
-  ruckig_input_target_publisher_->msg_.reference.positions.resize(dof_);
-  ruckig_input_target_publisher_->msg_.error.positions.resize(dof_);
-  ruckig_input_target_publisher_->msg_.reference.velocities.resize(dof_);
-  ruckig_input_target_publisher_->msg_.error.velocities.resize(dof_);
-  ruckig_input_target_publisher_->msg_.reference.accelerations.resize(dof_);
-  ruckig_input_target_publisher_->msg_.error.accelerations.resize(dof_);
+  ruckig_input_target_publisher_->msg_.axis_names = command_axis_names_;
+  ruckig_input_target_publisher_->msg_.references.resize(dof_);
+  ruckig_input_target_publisher_->msg_.feedbacks.resize(dof_);
+  ruckig_input_target_publisher_->msg_.errors.resize(dof_);
+  ruckig_input_target_publisher_->msg_.outputs.resize(dof_);
   ruckig_input_target_publisher_->unlock();
   /////////// END
-
-  // action server configuration
-  if (params_.allow_partial_joints_goal)
-  {
-    RCLCPP_INFO(logger, "Goals with partial set of joints are allowed");
-  }
 
   RCLCPP_INFO(
     logger, "Action status changes will be monitored at %.2f Hz.", params_.action_monitor_rate);
@@ -996,12 +991,6 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
     std::bind(&MultiTimeTrajectoryController::goal_received_callback, this, _1, _2),
     std::bind(&MultiTimeTrajectoryController::goal_cancelled_callback, this, _1),
     std::bind(&MultiTimeTrajectoryController::goal_accepted_callback, this, _1));
-
-  resize_joint_trajectory_point(state_current_, dof_);
-  resize_joint_trajectory_point_command(command_current_, dof_);
-  resize_joint_trajectory_point(state_desired_, dof_);
-  resize_joint_trajectory_point(state_error_, dof_);
-  resize_joint_trajectory_point(last_commanded_state_, dof_);
 
   query_state_srv_ = get_node()->create_service<control_msgs::srv::QueryTrajectoryState>(
     std::string(get_node()->get_name()) + "/query_state",
@@ -1062,10 +1051,10 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
     for (size_t i = 0; i < request->names.size(); ++i)
     {
       auto it =
-        std::find(command_joint_names_.begin(), command_joint_names_.end(), request->names[i]);
-      if (it != command_joint_names_.end())
+        std::find(command_axis_names_.begin(), command_axis_names_.end(), request->names[i]);
+      if (it != command_axis_names_.end())
       {
-        auto dist = std::distance(command_joint_names_.begin(), it);
+        auto dist = std::distance(command_axis_names_.begin(), it);
         std::size_t cmd_itf_index =
           dist > 0 ? static_cast<std::size_t>(dist)
                    : throw std::runtime_error("Joint not found in command joint names");
@@ -1129,11 +1118,11 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_activate(
       dist > 0 ? static_cast<std::size_t>(dist)
                : throw std::runtime_error("Interface not found in allowed interface types");
     if (!controller_interface::get_ordered_interfaces(
-          command_interfaces_, command_joint_names_, interface, joint_command_interface_[index]))
+          command_interfaces_, command_axis_names_, interface, axis_command_interface_[index]))
     {
       RCLCPP_ERROR(
         get_node()->get_logger(), "Expected %zu '%s' command interfaces, got %zu.", dof_,
-        interface.c_str(), joint_command_interface_[index].size());
+        interface.c_str(), axis_command_interface_[index].size());
       return CallbackReturn::ERROR;
     }
   }
@@ -1146,26 +1135,26 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_activate(
       dist > 0 ? static_cast<std::size_t>(dist)
                : throw std::runtime_error("Interface not found in allowed interface types");
     if (!controller_interface::get_ordered_interfaces(
-          state_interfaces_, params_.joints, interface, joint_state_interface_[index]))
+          state_interfaces_, params_.axes, interface, axis_state_interface_[index]))
     {
       RCLCPP_ERROR(
         get_node()->get_logger(), "Expected %zu '%s' state interfaces, got %zu.", dof_,
-        interface.c_str(), joint_state_interface_[index].size());
+        interface.c_str(), axis_state_interface_[index].size());
       return CallbackReturn::ERROR;
     }
   }
 
   traj_external_point_ptr_ = std::make_shared<Trajectory>();
   traj_msg_external_point_ptr_.writeFromNonRT(
-    std::shared_ptr<control_msgs::msg::MultiTimeTrajectory>());
+    std::shared_ptr<control_msgs::msg::MultiAxisTrajectory>());
 
   subscriber_is_active_ = true;
 
   // Initialize current state storage if hardware state has tracking offset
   // Handle restart of controller by reading from commands if those are not NaN (a controller was
   // running already)
-  control_msgs::msg::MultiTimeTrajectoryPoint state;
-  resize_joint_trajectory_point(state, dof_);
+  std::vector<control_msgs::msg::AxisTrajectoryPoint> state;
+  state.resize(dof_);
   if (!read_state_from_hardware(state)) return CallbackReturn::ERROR;
   state_current_ = state;
   state_desired_ = state;
@@ -1233,31 +1222,31 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_deactivat
   {
     if (has_position_command_interface_)
     {
-      joint_command_interface_[0][index].get().set_value(
-        joint_command_interface_[0][index].get().get_value());
+      axis_command_interface_[0][index].get().set_value(
+        axis_command_interface_[0][index].get().get_value());
     }
 
     if (has_velocity_command_interface_)
     {
-      joint_command_interface_[1][index].get().set_value(0.0);
+      axis_command_interface_[1][index].get().set_value(0.0);
     }
 
     if (has_acceleration_command_interface_)
     {
-      joint_command_interface_[2][index].get().set_value(0.0);
+      axis_command_interface_[2][index].get().set_value(0.0);
     }
 
     // TODO(anyone): How to halt when using effort commands?
     if (has_effort_command_interface_)
     {
-      joint_command_interface_[3][index].get().set_value(0.0);
+      axis_command_interface_[3][index].get().set_value(0.0);
     }
   }
 
   for (size_t index = 0; index < allowed_interface_types_.size(); ++index)
   {
-    joint_command_interface_[index].clear();
-    joint_state_interface_[index].clear();
+    axis_command_interface_[index].clear();
+    axis_state_interface_[index].clear();
   }
   release_interfaces();
 
@@ -1287,7 +1276,7 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_error(
 bool MultiTimeTrajectoryController::reset()
 {
   subscriber_is_active_ = false;
-  joint_command_subscriber_.reset();
+  axis_command_subscriber_.reset();
 
   for (const auto & pid : pids_)
   {
@@ -1311,32 +1300,22 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_shutdown(
 }
 
 void MultiTimeTrajectoryController::publish_state(
-  const rclcpp::Time & time, const TrajectoryPoint & desired_state,
-  const TrajectoryPoint & current_state, const TrajectoryPoint & state_error,
-  const TrajectoryPoint & splines_output, const TrajectoryPoint & ruckig_input_target,
-  const TrajectoryPoint & ruckig_input)
+  const rclcpp::Time & time, const std::vector<TrajectoryPoint> & desired_state,
+  const std::vector<TrajectoryPoint> & current_state,
+  const std::vector<TrajectoryPoint> & state_error,
+  const std::vector<TrajectoryPoint> & splines_output,
+  const std::vector<TrajectoryPoint> & ruckig_input_target,
+  const std::vector<TrajectoryPoint> & ruckig_input)
 {
   if (state_publisher_->trylock())
   {
     state_publisher_->msg_.header.stamp = time;
-    state_publisher_->msg_.reference.positions = desired_state.positions;
-    state_publisher_->msg_.reference.velocities = desired_state.velocities;
-    state_publisher_->msg_.reference.accelerations = desired_state.accelerations;
-    state_publisher_->msg_.feedback.positions = current_state.positions;
-    state_publisher_->msg_.error.positions = state_error.positions;
-    if (has_velocity_state_interface_)
-    {
-      state_publisher_->msg_.feedback.velocities = current_state.velocities;
-      state_publisher_->msg_.error.velocities = state_error.velocities;
-    }
-    if (has_acceleration_state_interface_)
-    {
-      state_publisher_->msg_.feedback.accelerations = current_state.accelerations;
-      state_publisher_->msg_.error.accelerations = state_error.accelerations;
-    }
+    state_publisher_->msg_.references = desired_state;
+    state_publisher_->msg_.feedbacks = current_state;
+    state_publisher_->msg_.errors = state_error;
     if (read_commands_from_command_interfaces(command_current_))
     {
-      state_publisher_->msg_.output = command_current_;
+      state_publisher_->msg_.outputs = command_current_;
     }
 
     state_publisher_->unlockAndPublish();
@@ -1345,10 +1324,7 @@ void MultiTimeTrajectoryController::publish_state(
   if (splines_output_publisher_ && splines_output_publisher_->trylock())
   {
     splines_output_publisher_->msg_.header.stamp = state_publisher_->msg_.header.stamp;
-    splines_output_publisher_->msg_.reference.positions = splines_output.positions;
-    splines_output_publisher_->msg_.reference.velocities = splines_output.velocities;
-    splines_output_publisher_->msg_.reference.accelerations = splines_output.accelerations;
-    splines_output_publisher_->msg_.reference.effort = splines_output.effort;
+    splines_output_publisher_->msg_.references = splines_output;
 
     splines_output_publisher_->unlockAndPublish();
   }
@@ -1356,10 +1332,7 @@ void MultiTimeTrajectoryController::publish_state(
   if (ruckig_input_publisher_ && ruckig_input_publisher_->trylock())
   {
     ruckig_input_publisher_->msg_.header.stamp = state_publisher_->msg_.header.stamp;
-    ruckig_input_publisher_->msg_.reference.positions = ruckig_input.positions;
-    ruckig_input_publisher_->msg_.reference.velocities = ruckig_input.velocities;
-    ruckig_input_publisher_->msg_.reference.accelerations = ruckig_input.accelerations;
-    ruckig_input_publisher_->msg_.reference.effort = ruckig_input.effort;
+    ruckig_input_publisher_->msg_.references = ruckig_input;
 
     ruckig_input_publisher_->unlockAndPublish();
   }
@@ -1367,18 +1340,13 @@ void MultiTimeTrajectoryController::publish_state(
   if (ruckig_input_target_publisher_ && ruckig_input_target_publisher_->trylock())
   {
     ruckig_input_target_publisher_->msg_.header.stamp = state_publisher_->msg_.header.stamp;
-    ruckig_input_target_publisher_->msg_.reference.positions = ruckig_input_target.positions;
-    ruckig_input_target_publisher_->msg_.reference.velocities = ruckig_input_target.velocities;
-    ruckig_input_target_publisher_->msg_.reference.accelerations =
-      ruckig_input_target.accelerations;
-    ruckig_input_target_publisher_->msg_.reference.effort = ruckig_input_target.effort;
-
+    ruckig_input_target_publisher_->msg_.references = ruckig_input_target;
     ruckig_input_target_publisher_->unlockAndPublish();
   }
 }
 
 void MultiTimeTrajectoryController::topic_callback(
-  const std::shared_ptr<control_msgs::msg::MultiTimeTrajectory> msg)
+  const std::shared_ptr<control_msgs::msg::MultiAxisTrajectory> msg)
 {
   if (!validate_trajectory_msg(*msg))
   {
@@ -1449,7 +1417,7 @@ void MultiTimeTrajectoryController::goal_accepted_callback(
   {
     preempt_active_goal();
     auto traj_msg =
-      std::make_shared<control_msgs::msg::MultiTimeTrajectory>(goal_handle->get_goal()->trajectory);
+      std::make_shared<control_msgs::msg::MultiAxisTrajectory>(goal_handle->get_goal()->trajectory);
 
     add_new_trajectory_msg(traj_msg);
     rt_is_holding_.writeFromNonRT(false);
@@ -1457,7 +1425,7 @@ void MultiTimeTrajectoryController::goal_accepted_callback(
 
   // Update the active goal
   RealtimeGoalHandlePtr rt_goal = std::make_shared<RealtimeGoalHandle>(goal_handle);
-  rt_goal->preallocated_feedback_->joint_names = params_.joints;
+  rt_goal->preallocated_feedback_->axis_names = params_.axes;
   rt_goal->execute();
   rt_active_goal_.writeFromNonRT(rt_goal);
 
@@ -1470,296 +1438,142 @@ void MultiTimeTrajectoryController::goal_accepted_callback(
     std::bind(&RealtimeGoalHandle::runNonRealtime, rt_goal));
 }
 
-void MultiTimeTrajectoryController::compute_error_for_joint(
-  TrajectoryPoint & error, const size_t index, const TrajectoryPoint & current,
-  const TrajectoryPoint & desired) const
+void MultiTimeTrajectoryController::compute_error_for_axis(
+  std::vector<TrajectoryPoint> & error, const size_t index,
+  const std::vector<TrajectoryPoint> & current, const std::vector<TrajectoryPoint> & desired) const
 {
   // error defined as the difference between current and desired
-  if (joints_angle_wraparound_[index])
+  if (axis_angle_wraparound_[index])
   {
     // if desired, the shortest_angular_distance is calculated, i.e., the error is
     //  normalized between -pi<error<pi
-    error.positions[index] =
-      angles::shortest_angular_distance(current.positions[index], desired.positions[index]);
+    error[index].position =
+      angles::shortest_angular_distance(current[index].position, desired[index].position);
   }
   else
   {
-    error.positions[index] = desired.positions[index] - current.positions[index];
+    error[index].position = desired[index].position - current[index].position;
   }
   if (
     has_velocity_state_interface_ &&
     (has_velocity_command_interface_ || has_effort_command_interface_))
   {
-    error.velocities[index] = desired.velocities[index] - current.velocities[index];
+    error[index].velocity = desired[index].velocity - current[index].velocity;
   }
   if (has_acceleration_state_interface_ && has_acceleration_command_interface_)
   {
-    error.accelerations[index] = desired.accelerations[index] - current.accelerations[index];
+    error[index].acceleration = desired[index].acceleration - current[index].acceleration;
   }
 }
 
-void MultiTimeTrajectoryController::fill_partial_goal(
-  std::shared_ptr<control_msgs::msg::MultiTimeTrajectory> trajectory_msg) const
-{
-  // joint names in the goal are a subset of existing joints, as checked in goal_callback
-  // so if the size matches, the goal contains all controller joints
-  if (dof_ == trajectory_msg->joint_names.size())
-  {
-    return;
-  }
-
-  trajectory_msg->joint_names.reserve(dof_);
-
-  for (size_t index = 0; index < dof_; ++index)
-  {
-    {
-      if (
-        std::find(
-          trajectory_msg->joint_names.begin(), trajectory_msg->joint_names.end(),
-          params_.joints[index]) != trajectory_msg->joint_names.end())
-      {
-        // joint found on msg
-        continue;
-      }
-      trajectory_msg->joint_names.push_back(params_.joints[index]);
-
-      for (auto & it : trajectory_msg->points)
-      {
-        // Assume hold position with 0 velocity and acceleration for missing joints
-        if (!it.positions.empty())
-        {
-          if (
-            has_position_command_interface_ &&
-            !std::isnan(joint_command_interface_[0][index].get().get_value()))
-          {
-            // copy last command if cmd interface exists
-            it.positions.push_back(joint_command_interface_[0][index].get().get_value());
-          }
-          else if (has_position_state_interface_)
-          {
-            // copy current state if state interface exists
-            it.positions.push_back(joint_state_interface_[0][index].get().get_value());
-          }
-        }
-        if (!it.velocities.empty())
-        {
-          it.velocities.push_back(0.0);
-        }
-        if (!it.accelerations.empty())
-        {
-          it.accelerations.push_back(0.0);
-        }
-        if (!it.effort.empty())
-        {
-          it.effort.push_back(0.0);
-        }
-      }
-    }
-  }
-}
-
-void MultiTimeTrajectoryController::sort_to_local_joint_order(
-  std::shared_ptr<control_msgs::msg::MultiTimeTrajectory> trajectory_msg) const
+void MultiTimeTrajectoryController::sort_to_local_axis_order(
+  std::shared_ptr<control_msgs::msg::MultiAxisTrajectory> trajectory_msg) const
 {
   // rearrange all points in the trajectory message based on mapping
-  std::vector<size_t> mapping_vector = mapping(trajectory_msg->joint_names, params_.joints);
-  auto remap = [this](
-                 const std::vector<double> & to_remap,
-                 const std::vector<size_t> & mapping) -> std::vector<double>
+  std::vector<size_t> mapping_vector = mapping(trajectory_msg->axis_names, params_.axes);
+  std::vector<control_msgs::msg::AxisTrajectory> to_return(dof_);
+  std::size_t message_index = 0;
+  for (auto const internal_index : mapping_vector)
   {
-    if (to_remap.empty())
-    {
-      return to_remap;
-    }
-    if (to_remap.size() != mapping.size())
-    {
-      RCLCPP_WARN(
-        get_node()->get_logger(),
-        "Invalid input size for sorting. Values have size %zu and mapping size %zu",
-        to_remap.size(), mapping.size());
-      return to_remap;
-    }
-    static std::vector<double> output(dof_, 0.0);
-    // Only resize if necessary since it's an expensive operation
-    if (output.size() != mapping.size())
-    {
-      output.resize(mapping.size(), 0.0);
-    }
-    for (size_t index = 0; index < mapping.size(); ++index)
-    {
-      auto map_index = mapping[index];
-      output[map_index] = to_remap[index];
-    }
-    return output;
-  };
-
-  for (size_t index = 0; index < trajectory_msg->points.size(); ++index)
-  {
-    trajectory_msg->points[index].positions =
-      remap(trajectory_msg->points[index].positions, mapping_vector);
-
-    trajectory_msg->points[index].velocities =
-      remap(trajectory_msg->points[index].velocities, mapping_vector);
-
-    trajectory_msg->points[index].accelerations =
-      remap(trajectory_msg->points[index].accelerations, mapping_vector);
-
-    trajectory_msg->points[index].effort =
-      remap(trajectory_msg->points[index].effort, mapping_vector);
+    to_return[internal_index] = trajectory_msg->axis_trajectories[message_index];
   }
-}
-
-bool MultiTimeTrajectoryController::validate_trajectory_point_field(
-  size_t joint_names_size, const std::vector<double> & vector_field,
-  const std::string & string_for_vector_field, size_t i, bool allow_empty) const
-{
-  if (allow_empty && vector_field.empty())
-  {
-    return true;
-  }
-  if (joint_names_size != vector_field.size())
-  {
-    RCLCPP_ERROR(
-      get_node()->get_logger(),
-      "Mismatch between joint_names size (%zu) and %s (%zu) at point #%zu.", joint_names_size,
-      string_for_vector_field.c_str(), vector_field.size(), i);
-    return false;
-  }
-  return true;
+  trajectory_msg->axis_trajectories = to_return;
 }
 
 bool MultiTimeTrajectoryController::validate_trajectory_msg(
-  const control_msgs::msg::MultiTimeTrajectory & trajectory) const
+  const control_msgs::msg::MultiAxisTrajectory & trajectories) const
 {
-  // If partial joints goals are not allowed, goal should specify all controller joints
-  if (!params_.allow_partial_joints_goal)
-  {
-    if (trajectory.joint_names.size() != dof_)
-    {
-      RCLCPP_ERROR(
-        get_node()->get_logger(),
-        "Joints on incoming trajectory don't match the controller joints.");
-      return false;
-    }
-  }
+  const auto trajectory_start_time = static_cast<rclcpp::Time>(trajectories.header.stamp);
 
-  if (trajectory.joint_names.empty())
+  if (trajectories.axis_names.empty())
   {
     RCLCPP_ERROR(get_node()->get_logger(), "Empty joint names on incoming trajectory.");
     return false;
   }
 
-  if (trajectory.points.empty())
+  if (trajectories.axis_trajectories.empty())
   {
     RCLCPP_ERROR(get_node()->get_logger(), "Empty trajectory received.");
     return false;
   }
 
-  const auto trajectory_start_time = static_cast<rclcpp::Time>(trajectory.header.stamp);
-  // If the starting time it set to 0.0, it means the controller should start it now.
-  // Otherwise we check if the trajectory ends before the current time,
-  // in which case it can be ignored.
-  if (trajectory_start_time.seconds() != 0.0)
+  for (std::size_t axis_index = 0; axis_index < trajectories.axis_names.size(); ++axis_index)
   {
-    // TODO(@henrygerardmoore): determine proper logic below for trajectory end time
-    auto const trajectory_end_time =
-      trajectory_start_time + trajectory.points.back().times_from_start[0];
-    if (trajectory_end_time < get_node()->now())
-    {
-      RCLCPP_ERROR(
-        get_node()->get_logger(),
-        "Received trajectory with non-zero start time (%f) that ends in the past (%f)",
-        trajectory_start_time.seconds(), trajectory_end_time.seconds());
-      return false;
-    }
-  }
+    auto const & trajectory = trajectories.axis_trajectories[axis_index];
+    const std::string & incoming_axis_name = trajectories.axis_names[axis_index];
+    // If partial joints goals are not allowed, goal should specify all controller joints
 
-  for (size_t i = 0; i < trajectory.joint_names.size(); ++i)
-  {
-    const std::string & incoming_joint_name = trajectory.joint_names[i];
-
-    auto it = std::find(params_.joints.begin(), params_.joints.end(), incoming_joint_name);
-    if (it == params_.joints.end())
+    // If the starting time it set to 0.0, it means the controller should start it now.
+    // Otherwise we check if the trajectory ends before the current time,
+    // in which case it can be ignored.
+    if (trajectory_start_time.seconds() != 0.0)
     {
-      RCLCPP_ERROR(
-        get_node()->get_logger(), "Incoming joint %s doesn't match the controller's joints.",
-        incoming_joint_name.c_str());
-      return false;
-    }
-  }
-
-  if (!params_.allow_nonzero_velocity_at_trajectory_end)
-  {
-    for (size_t i = 0; i < trajectory.points.back().velocities.size(); ++i)
-    {
-      if (fabs(trajectory.points.back().velocities.at(i)) > std::numeric_limits<float>::epsilon())
+      auto const trajectory_end_time =
+        trajectory_start_time + trajectory.axis_points.back().time_from_start;
+      if (trajectory_end_time < get_node()->now())
       {
         RCLCPP_ERROR(
           get_node()->get_logger(),
-          "Velocity of last trajectory point of joint %s is not zero: %.15f",
-          trajectory.joint_names.at(i).c_str(), trajectory.points.back().velocities.at(i));
+          "Received trajectory for axis %zu with non-zero start time (%f) that ends in the past "
+          "(%f)",
+          axis_index, trajectory_start_time.seconds(), trajectory_end_time.seconds());
         return false;
       }
     }
-  }
 
-  rclcpp::Duration previous_traj_time(0ms);
-  for (size_t i = 0; i < trajectory.points.size(); ++i)
-  {
-    // TODO(@henrygerardmoore): determine if below logic is correct
-    for (std::size_t j = 0; j < num_axes_; ++j)
+    auto it = std::find(params_.axes.begin(), params_.axes.end(), incoming_axis_name);
+    if (it == params_.axes.end())
     {
-      if (
-        (i > 0) &&
-        (rclcpp::Duration(trajectory.points[i].times_from_start[j]) <= previous_traj_time))
+      RCLCPP_ERROR(
+        get_node()->get_logger(), "Incoming axis %s doesn't match the controller's axes.",
+        incoming_axis_name.c_str());
+      return false;
+    }
+
+    if (!params_.allow_nonzero_velocity_at_trajectory_end)
+    {
+      auto const final_vel = trajectory.axis_points.back().velocity;
+      if (fabs(final_vel) > std::numeric_limits<float>::epsilon())
       {
         RCLCPP_ERROR(
           get_node()->get_logger(),
-          "Time between points %zu and %zu is not strictly increasing, it is %f and %f "
-          "respectively",
-          i - 1, i, previous_traj_time.seconds(),
-          rclcpp::Duration(trajectory.points[i].times_from_start[j]).seconds());
+          "Velocity of last trajectory point of axis %s is not zero: %.15f",
+          incoming_axis_name.c_str(), final_vel);
         return false;
       }
-      previous_traj_time = trajectory.points[i].times_from_start[j];
+    }
 
-      const size_t joint_count = trajectory.joint_names.size();
-      const auto & points = trajectory.points;
-      // This currently supports only position, velocity and acceleration inputs
-      if (params_.allow_integration_in_goal_trajectories)
+    rclcpp::Duration previous_traj_time(0ms);
+    for (size_t i = 0; i < trajectory.axis_points.size(); ++i)
+    {
+      for (std::size_t j = 0; j < dof_; ++j)
       {
-        const bool all_empty = points[i].positions.empty() && points[i].velocities.empty() &&
-                               points[i].accelerations.empty();
-        const bool position_error =
-          !points[i].positions.empty() &&
-          !validate_trajectory_point_field(joint_count, points[i].positions, "positions", i, false);
-        const bool velocity_error = !points[i].velocities.empty() &&
-                                    !validate_trajectory_point_field(
-                                      joint_count, points[i].velocities, "velocities", i, false);
-        const bool acceleration_error =
-          !points[i].accelerations.empty() &&
-          !validate_trajectory_point_field(
-            joint_count, points[i].accelerations, "accelerations", i, false);
-        if (all_empty || position_error || velocity_error || acceleration_error)
+        if (
+          (i > 0) &&
+          (rclcpp::Duration(trajectory.axis_points[i].time_from_start) <= previous_traj_time))
         {
+          RCLCPP_ERROR(
+            get_node()->get_logger(),
+            "Time between points %zu and %zu is not strictly increasing, it is %f and %f "
+            "respectively",
+            i - 1, i, previous_traj_time.seconds(),
+            rclcpp::Duration(trajectory.axis_points[i].time_from_start).seconds());
           return false;
         }
-      }
-      else if (
-        !validate_trajectory_point_field(joint_count, points[i].positions, "positions", i, false) ||
-        !validate_trajectory_point_field(
-          joint_count, points[i].velocities, "velocities", i, true) ||
-        !validate_trajectory_point_field(
-          joint_count, points[i].accelerations, "accelerations", i, true))
-      {
-        return false;
-      }
-      // reject effort entries
-      if (!points[i].effort.empty())
-      {
-        RCLCPP_ERROR(
-          get_node()->get_logger(), "Trajectories with effort fields are currently not supported.");
-        return false;
+        previous_traj_time = trajectory.axis_points[i].time_from_start;
+
+        const auto & points = trajectory.axis_points;
+        // TODO(henrygerardmoore): check here if points that are nan should be and that points that
+        // aren't nan shouldn't be
+
+        // reject effort entries
+        if (points[i].effort != std::numeric_limits<double>::quiet_NaN())
+        {
+          RCLCPP_ERROR(
+            get_node()->get_logger(),
+            "Trajectories with effort fields are currently not supported.");
+          return false;
+        }
       }
     }
   }
@@ -1767,7 +1581,7 @@ bool MultiTimeTrajectoryController::validate_trajectory_msg(
 }
 
 void MultiTimeTrajectoryController::add_new_trajectory_msg(
-  const std::shared_ptr<control_msgs::msg::MultiTimeTrajectory> & traj_msg)
+  const std::shared_ptr<control_msgs::msg::MultiAxisTrajectory> & traj_msg)
 {
   traj_msg_external_point_ptr_.writeFromNonRT(traj_msg);
 }
@@ -1785,11 +1599,14 @@ void MultiTimeTrajectoryController::preempt_active_goal()
   }
 }
 
-std::shared_ptr<control_msgs::msg::MultiTimeTrajectory>
+std::shared_ptr<control_msgs::msg::MultiAxisTrajectory>
 MultiTimeTrajectoryController::set_hold_position()
 {
   // Command to stay at current position
-  hold_position_msg_ptr_->points[0].positions = state_current_.positions;
+  for (std::size_t i = 0; i < dof_; ++i)
+  {
+    hold_position_msg_ptr_->axis_trajectories[i].axis_points = {state_current_[i]};
+  }
 
   // set flag, otherwise tolerances will be checked with holding position too
   rt_is_holding_.writeFromNonRT(true);
@@ -1797,15 +1614,18 @@ MultiTimeTrajectoryController::set_hold_position()
   return hold_position_msg_ptr_;
 }
 
-std::shared_ptr<control_msgs::msg::MultiTimeTrajectory>
+std::shared_ptr<control_msgs::msg::MultiAxisTrajectory>
 MultiTimeTrajectoryController::set_success_trajectory_point()
 {
   // set last command to be repeated at success, no matter if it has nonzero velocity or
   // acceleration
-  hold_position_msg_ptr_->points[0] = traj_external_point_ptr_->get_trajectory_msg()->points.back();
-  for (std::size_t i = 0; i < num_axes_; ++i)
+
+  for (std::size_t i = 0; i < dof_; ++i)
   {
-    hold_position_msg_ptr_->points[0].times_from_start[i] = rclcpp::Duration(0, 0);
+    hold_position_msg_ptr_->axis_trajectories[i].axis_points = {
+      traj_external_point_ptr_->get_trajectory_msg()->axis_trajectories[i].axis_points.back()};
+    hold_position_msg_ptr_->axis_trajectories[i].axis_points[0].time_from_start =
+      rclcpp::Duration(0, 0);
   }
 
   // set flag, otherwise tolerances will be checked with success_trajectory_point too
@@ -1821,41 +1641,6 @@ bool MultiTimeTrajectoryController::contains_interface_type(
          interface_type_list.end();
 }
 
-void MultiTimeTrajectoryController::resize_joint_trajectory_point(
-  control_msgs::msg::MultiTimeTrajectoryPoint & point, size_t size)
-{
-  point.positions.resize(size, 0.0);
-  if (has_velocity_state_interface_)
-  {
-    point.velocities.resize(size, 0.0);
-  }
-  if (has_acceleration_state_interface_)
-  {
-    point.accelerations.resize(size, 0.0);
-  }
-}
-
-void MultiTimeTrajectoryController::resize_joint_trajectory_point_command(
-  control_msgs::msg::MultiTimeTrajectoryPoint & point, size_t size)
-{
-  if (has_position_command_interface_)
-  {
-    point.positions.resize(size, 0.0);
-  }
-  if (has_velocity_command_interface_)
-  {
-    point.velocities.resize(size, 0.0);
-  }
-  if (has_acceleration_command_interface_)
-  {
-    point.accelerations.resize(size, 0.0);
-  }
-  if (has_effort_command_interface_)
-  {
-    point.effort.resize(size, 0.0);
-  }
-}
-
 bool MultiTimeTrajectoryController::has_active_trajectory() const
 {
   return traj_external_point_ptr_ != nullptr && traj_external_point_ptr_->has_trajectory_msg();
@@ -1865,7 +1650,7 @@ void MultiTimeTrajectoryController::update_pids()
 {
   for (size_t i = 0; i < dof_; ++i)
   {
-    const auto & gains = params_.gains.joints_map.at(params_.joints[i]);
+    const auto & gains = params_.gains.axes_map.at(params_.axes[i]);
     if (pids_[i])
     {
       // update PIDs with gains from ROS parameters
@@ -1883,23 +1668,35 @@ void MultiTimeTrajectoryController::update_pids()
 
 void MultiTimeTrajectoryController::init_hold_position_msg()
 {
-  hold_position_msg_ptr_ = std::make_shared<control_msgs::msg::MultiTimeTrajectory>();
+  hold_position_msg_ptr_ = std::make_shared<control_msgs::msg::MultiAxisTrajectory>();
   hold_position_msg_ptr_->header.stamp =
     rclcpp::Time(0.0, 0.0, get_node()->get_clock()->get_clock_type());  // start immediately
-  hold_position_msg_ptr_->joint_names = params_.joints;
-  hold_position_msg_ptr_->points.resize(1);  // a trivial msg only
-  hold_position_msg_ptr_->points[0].velocities.clear();
-  hold_position_msg_ptr_->points[0].accelerations.clear();
-  hold_position_msg_ptr_->points[0].effort.clear();
+  hold_position_msg_ptr_->axis_names = params_.axes;
+  for (std::size_t i = 0; i < dof_; ++i)
+  {
+    hold_position_msg_ptr_->axis_trajectories[i].axis_points.resize(1);  // a trivial msg only
+    hold_position_msg_ptr_->axis_trajectories[i].axis_points[0].velocity =
+      std::numeric_limits<double>::quiet_NaN();
+    hold_position_msg_ptr_->axis_trajectories[i].axis_points[0].acceleration =
+      std::numeric_limits<double>::quiet_NaN();
+    hold_position_msg_ptr_->axis_trajectories[i].axis_points[0].effort =
+      std::numeric_limits<double>::quiet_NaN();
+  }
   if (has_velocity_command_interface_ || has_acceleration_command_interface_)
   {
     // add velocity, so that trajectory sampling returns velocity points in any case
-    hold_position_msg_ptr_->points[0].velocities.resize(dof_, 0.0);
+    for (std::size_t i = 0; i < dof_; ++i)
+    {
+      hold_position_msg_ptr_->axis_trajectories[i].axis_points[0].velocity = 0;
+    }
   }
   if (has_acceleration_command_interface_)
   {
-    // add velocity, so that trajectory sampling returns acceleration points in any case
-    hold_position_msg_ptr_->points[0].accelerations.resize(dof_, 0.0);
+    // add acceleration, so that trajectory sampling returns acceleration points in any case
+    for (std::size_t i = 0; i < dof_; ++i)
+    {
+      hold_position_msg_ptr_->axis_trajectories[i].axis_points[0].acceleration = 0;
+    }
   }
 }
 

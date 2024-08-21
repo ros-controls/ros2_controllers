@@ -22,7 +22,6 @@
 #include <vector>
 
 #include "angles/angles.h"
-#include "control_msgs/msg/multi_time_trajectory.hpp"
 #include "controller_interface/helpers.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "joint_trajectory_controller/trajectory.hpp"
@@ -1759,12 +1758,6 @@ void JointTrajectoryController::add_new_trajectory_msg(
   const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & traj_msg)
 {
   traj_msg_external_point_ptr_.writeFromNonRT(traj_msg);
-}
-
-void JointTrajectoryController::add_new_trajectory_msg(
-  const std::shared_ptr<control_msgs::msg::MultiTimeTrajectory> & traj_msg)
-{
-  multi_time_traj_msg_external_point_ptr_.writeFromNonRT(traj_msg);
 }
 
 void JointTrajectoryController::preempt_active_goal()

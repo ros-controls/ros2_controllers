@@ -32,7 +32,7 @@
 
 #include <vector>
 
-#include "control_msgs/msg/multi_time_trajectory_point.hpp"
+#include "control_msgs/msg/axis_trajectory_point.hpp"
 #include "multi_time_trajectory_controller_parameters.hpp"
 
 namespace multi_time_trajectory_controller
@@ -89,7 +89,7 @@ struct SegmentTolerances
 SegmentTolerances get_segment_tolerances(Params const & params)
 {
   auto const & constraints = params.constraints;
-  auto const n_joints = params.joints.size();
+  auto const n_joints = params.axes.size();
 
   SegmentTolerances tolerances;
   tolerances.goal_time_tolerance = constraints.goal_time;
@@ -99,9 +99,9 @@ SegmentTolerances get_segment_tolerances(Params const & params)
   tolerances.goal_state_tolerance.resize(n_joints);
   for (size_t i = 0; i < n_joints; ++i)
   {
-    auto const joint = params.joints[i];
-    tolerances.state_tolerance[i].position = constraints.joints_map.at(joint).trajectory;
-    tolerances.goal_state_tolerance[i].position = constraints.joints_map.at(joint).goal;
+    auto const joint = params.axes[i];
+    tolerances.state_tolerance[i].position = constraints.axes_map.at(joint).trajectory;
+    tolerances.goal_state_tolerance[i].position = constraints.axes_map.at(joint).goal;
     tolerances.goal_state_tolerance[i].velocity = constraints.stopped_velocity_tolerance;
 
     auto logger = rclcpp::get_logger("tolerance");
@@ -122,20 +122,18 @@ SegmentTolerances get_segment_tolerances(Params const & params)
  * REALTIME if true \return True if \p state_error fulfills \p state_tolerance.
  */
 inline bool check_state_tolerance_per_joint(
-  const control_msgs::msg::MultiTimeTrajectoryPoint & state_error, size_t joint_idx,
+  const std::vector<control_msgs::msg::AxisTrajectoryPoint> & state_error, size_t joint_idx,
   const StateTolerances & state_tolerance, bool show_errors = false)
 {
   using std::abs;
-  const double error_position = state_error.positions[joint_idx];
-  const double error_velocity =
-    state_error.velocities.empty() ? 0.0 : state_error.velocities[joint_idx];
-  const double error_acceleration =
-    state_error.accelerations.empty() ? 0.0 : state_error.accelerations[joint_idx];
+  const double error_position = state_error[joint_idx].position;
+  const double error_velocity = state_error[joint_idx].velocity;
+  const double error_acceleration = state_error[joint_idx].acceleration;
 
-  const bool is_valid =
-    !(state_tolerance.position > 0.0 && abs(error_position) > state_tolerance.position) &&
-    !(state_tolerance.velocity > 0.0 && abs(error_velocity) > state_tolerance.velocity) &&
-    !(state_tolerance.acceleration > 0.0 && abs(error_acceleration) > state_tolerance.acceleration);
+  const bool is_valid = !(
+    (state_tolerance.position > 0.0 && abs(error_position) > state_tolerance.position) ||
+    (state_tolerance.velocity > 0.0 && abs(error_velocity) > state_tolerance.velocity) ||
+    (state_tolerance.acceleration > 0.0 && abs(error_acceleration) > state_tolerance.acceleration));
 
   if (is_valid)
   {

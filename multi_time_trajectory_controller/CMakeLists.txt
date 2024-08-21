@@ -41,6 +41,7 @@ generate_parameter_library(multi_time_trajectory_controller_parameters
 
 add_library(multi_time_trajectory_controller SHARED
   src/multi_time_trajectory_controller.cpp
+  src/trajectory.cpp
 )
 target_compile_features(multi_time_trajectory_controller PUBLIC cxx_std_17)
 target_include_directories(multi_time_trajectory_controller PUBLIC

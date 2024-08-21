@@ -18,8 +18,8 @@
 #include <memory>
 #include <vector>
 
-#include "control_msgs/msg/multi_time_trajectory.hpp"
-#include "control_msgs/msg/multi_time_trajectory_point.hpp"
+#include "control_msgs/msg/axis_trajectory_point.hpp"
+#include "control_msgs/msg/multi_axis_trajectory.hpp"
 #include "joint_limits/joint_limiter_interface.hpp"
 #include "joint_limits/joint_limits.hpp"
 #include "joint_trajectory_controller/interpolation_methods.hpp"
@@ -28,21 +28,21 @@
 
 namespace multi_time_trajectory_controller
 {
-using TrajectoryPointIter = std::vector<control_msgs::msg::MultiTimeTrajectoryPoint>::iterator;
+using TrajectoryPointIter = std::vector<control_msgs::msg::AxisTrajectoryPoint>::iterator;
 using TrajectoryPointConstIter =
-  std::vector<control_msgs::msg::MultiTimeTrajectoryPoint>::const_iterator;
+  std::vector<control_msgs::msg::AxisTrajectoryPoint>::const_iterator;
 
 class Trajectory
 {
 public:
   Trajectory();
 
-  explicit Trajectory(std::shared_ptr<control_msgs::msg::MultiTimeTrajectory> trajectory);
+  explicit Trajectory(std::shared_ptr<control_msgs::msg::MultiAxisTrajectory> trajectory);
 
   explicit Trajectory(
     const rclcpp::Time & current_time,
-    const control_msgs::msg::MultiTimeTrajectoryPoint & current_point,
-    std::shared_ptr<control_msgs::msg::MultiTimeTrajectory> trajectory);
+    const std::vector<control_msgs::msg::AxisTrajectoryPoint> & current_point,
+    std::shared_ptr<control_msgs::msg::MultiAxisTrajectory> trajectory);
 
   /**
    *  Set the point before the trajectory message is replaced/appended
@@ -55,11 +55,11 @@ public:
 
   void set_point_before_trajectory_msg(
     const rclcpp::Time & current_time,
-    const control_msgs::msg::MultiTimeTrajectoryPoint & current_point,
+    const std::vector<control_msgs::msg::AxisTrajectoryPoint> & current_point,
     const std::vector<bool> & joints_angle_wraparound = std::vector<bool>());
 
   void update(
-    std::shared_ptr<control_msgs::msg::MultiTimeTrajectory> joint_trajectory,
+    std::shared_ptr<control_msgs::msg::MultiAxisTrajectory> joint_trajectory,
     const std::vector<joint_limits::JointLimits> & joint_limits, const rclcpp::Duration & period);
 
   /// Find the segment (made up of 2 points) and its expected state from the
@@ -95,13 +95,13 @@ public:
     const rclcpp::Time & sample_time,
     const joint_trajectory_controller::interpolation_methods::InterpolationMethod
       interpolation_method,
-    control_msgs::msg::MultiTimeTrajectoryPoint & output_state,
+    std::vector<control_msgs::msg::AxisTrajectoryPoint> & output_state,
     TrajectoryPointConstIter & start_segment_itr, TrajectoryPointConstIter & end_segment_itr,
     const rclcpp::Duration & period,
     std::unique_ptr<joint_limits::JointLimiterInterface<joint_limits::JointLimits>> & joint_limiter,
-    control_msgs::msg::MultiTimeTrajectoryPoint & splines_state,
-    control_msgs::msg::MultiTimeTrajectoryPoint & ruckig_state,
-    control_msgs::msg::MultiTimeTrajectoryPoint & ruckig_input_state);
+    std::vector<control_msgs::msg::AxisTrajectoryPoint> & splines_state,
+    std::vector<control_msgs::msg::AxisTrajectoryPoint> & ruckig_state,
+    std::vector<control_msgs::msg::AxisTrajectoryPoint> & ruckig_input_state);
 
   /**
    * Do interpolation between 2 states given a time in between their respective timestamps
@@ -126,25 +126,25 @@ public:
    */
 
   bool interpolate_between_points(
-    const rclcpp::Time & time_a, const control_msgs::msg::MultiTimeTrajectoryPoint & state_a,
-    const rclcpp::Time & time_b, const control_msgs::msg::MultiTimeTrajectoryPoint & state_b,
+    const rclcpp::Time & time_a, const control_msgs::msg::AxisTrajectoryPoint & state_a,
+    const rclcpp::Time & time_b, const control_msgs::msg::AxisTrajectoryPoint & state_b,
     const rclcpp::Time & sample_time, const bool do_ruckig_smoothing, const bool skip_splines,
-    control_msgs::msg::MultiTimeTrajectoryPoint & output, const rclcpp::Duration & period,
-    control_msgs::msg::MultiTimeTrajectoryPoint & splines_state,
-    control_msgs::msg::MultiTimeTrajectoryPoint & ruckig_state,
-    control_msgs::msg::MultiTimeTrajectoryPoint & ruckig_input_state);
+    control_msgs::msg::AxisTrajectoryPoint & output, const rclcpp::Duration & period,
+    control_msgs::msg::AxisTrajectoryPoint & splines_state,
+    control_msgs::msg::AxisTrajectoryPoint & ruckig_state,
+    control_msgs::msg::AxisTrajectoryPoint & ruckig_input_state, std::size_t axis_index);
 
-  TrajectoryPointConstIter begin() const;
+  TrajectoryPointConstIter begin(std::size_t) const;
 
-  TrajectoryPointConstIter end() const;
+  TrajectoryPointConstIter end(std::size_t) const;
 
   rclcpp::Time time_from_start() const;
 
   bool has_trajectory_msg() const;
 
-  bool has_nontrivial_msg() const;
+  bool has_nontrivial_msg(std::size_t) const;
 
-  std::shared_ptr<control_msgs::msg::MultiTimeTrajectory> get_trajectory_msg() const
+  std::shared_ptr<control_msgs::msg::MultiAxisTrajectory> get_trajectory_msg() const
   {
     return trajectory_msg_;
   }
@@ -153,15 +153,14 @@ public:
 
 private:
   void deduce_from_derivatives(
-    control_msgs::msg::MultiTimeTrajectoryPoint & first_state,
-    control_msgs::msg::MultiTimeTrajectoryPoint & second_state, const size_t dim,
-    const double delta_t);
+    control_msgs::msg::AxisTrajectoryPoint & first_state,
+    control_msgs::msg::AxisTrajectoryPoint & second_state, const double delta_t);
 
-  std::shared_ptr<control_msgs::msg::MultiTimeTrajectory> trajectory_msg_;
+  std::shared_ptr<control_msgs::msg::MultiAxisTrajectory> trajectory_msg_;
   rclcpp::Time trajectory_start_time_;
 
   rclcpp::Time time_before_traj_msg_;
-  control_msgs::msg::MultiTimeTrajectoryPoint state_before_traj_msg_;
+  std::vector<control_msgs::msg::AxisTrajectoryPoint> state_before_traj_msg_;
 
   bool sampled_already_ = false;
 
@@ -175,7 +174,7 @@ private:
   // Ruckig output.
   bool have_previous_ruckig_output_ = false;
 
-  control_msgs::msg::MultiTimeTrajectoryPoint previous_state_;
+  std::vector<control_msgs::msg::AxisTrajectoryPoint> previous_state_;
 };
 
 /**
@@ -218,7 +217,8 @@ inline std::vector<size_t> mapping(const T & t1, const T & t2)
  * wrap around (ie. is continuous).
  */
 void wraparound_joint(
-  std::vector<double> & current_position, const std::vector<double> next_position,
+  std::vector<control_msgs::msg::AxisTrajectoryPoint> & current_position,
+  const std::vector<control_msgs::msg::AxisTrajectoryPoint> next_position,
   const std::vector<bool> & joints_angle_wraparound);
 
 }  // namespace multi_time_trajectory_controller

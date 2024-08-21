@@ -1,17 +1,17 @@
 multi_time_trajectory_controller:
-  joints: {
+  axes: {
     type: string_array,
     default_value: [],
-    description: "Joint names to control and listen to",
+    description: "Axis names to control and listen to",
     read_only: true,
     validation: {
       unique<>: null,
     }
   }
-  command_joints: {
+  command_axes: {
     type: string_array,
     default_value: [],
-    description: "Joint names to control. This parameters is used if JTC is used in a controller chain where command and state interfaces don't have same names.",
+    description: "Axis names to control. This parameters is used if JTC is used in a controller chain where command and state interfaces don't have same names.",
     read_only: true,
     validation: {
       unique<>: null,
@@ -20,7 +20,7 @@ multi_time_trajectory_controller:
   command_interfaces: {
     type: string_array,
     default_value: [],
-    description: "Command interfaces provided by the hardware interface for all joints",
+    description: "Command interfaces provided by the hardware interface for all axes",
     read_only: true,
     validation: {
       unique<>: null,
@@ -31,18 +31,13 @@ multi_time_trajectory_controller:
   state_interfaces: {
     type: string_array,
     default_value: [],
-    description: "State interfaces provided by the hardware for all joints.",
+    description: "State interfaces provided by the hardware for all axes.",
     read_only: true,
     validation: {
       unique<>: null,
       subset_of<>: [["position", "velocity", "acceleration",]],
       "multi_time_trajectory_controller::state_interface_type_combinations": null,
     }
-  }
-  allow_partial_joints_goal: {
-    type: bool,
-    default_value: false,
-    description: "Allow joint goals defining trajectory for only some joints.",
   }
   open_loop_control: {
     type: bool,
@@ -67,7 +62,7 @@ multi_time_trajectory_controller:
   action_monitor_rate: {
     type: double,
     default_value: 20.0,
-    description: "Rate to monitor status changes when the controller is executing action (control_msgs::action::FollowJointTrajectory)",
+    description: "Rate to monitor status changes when the controller is executing action (control_msgs::action::FollowAxisTrajectory)",
     read_only: true,
     validation: {
       gt_eq: [0.1]
@@ -96,7 +91,7 @@ multi_time_trajectory_controller:
      If zero, timeout is deactivated",
   }
   gains:
-    __map_joints:
+    __map_axes:
       p: {
         type: double,
         default_value: 0.0,
@@ -125,7 +120,7 @@ multi_time_trajectory_controller:
       angle_wraparound: {
         type: bool,
         default_value: false,
-        description: "[deprecated] For joints that wrap around (ie. are continuous).
+        description: "[deprecated] For axes that wrap around (ie. are continuous).
           Normalizes position-error to -pi to pi."
       }
   constraints:
@@ -143,16 +138,16 @@ multi_time_trajectory_controller:
         gt_eq: [0.0],
       }
     }
-    __map_joints:
+    __map_axes:
       trajectory: {
         type: double,
         default_value: 0.0,
-        description: "Per-joint trajectory offset tolerance during movement.",
+        description: "Per-axis trajectory offset tolerance during movement.",
       }
       goal: {
         type: double,
         default_value: 0.0,
-        description: "Per-joint trajectory offset tolerance at the goal position.",
+        description: "Per-axis trajectory offset tolerance at the goal position.",
       }
 
   joint_limiter_type: {

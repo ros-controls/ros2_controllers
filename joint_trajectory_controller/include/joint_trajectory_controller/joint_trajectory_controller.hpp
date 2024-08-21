@@ -22,7 +22,6 @@
 
 #include "control_msgs/action/follow_joint_trajectory.hpp"
 #include "control_msgs/msg/joint_trajectory_controller_state.hpp"
-#include "control_msgs/msg/multi_time_trajectory.hpp"
 #include "control_msgs/srv/query_trajectory_state.hpp"
 #include "control_msgs/srv/reset_dofs.hpp"
 #include "control_toolbox/pid.hpp"
@@ -192,8 +191,6 @@ protected:
   std::shared_ptr<Trajectory> traj_external_point_ptr_ = nullptr;
   realtime_tools::RealtimeBuffer<std::shared_ptr<trajectory_msgs::msg::JointTrajectory>>
     traj_msg_external_point_ptr_;
-  realtime_tools::RealtimeBuffer<std::shared_ptr<control_msgs::msg::MultiTimeTrajectory>>
-    multi_time_traj_msg_external_point_ptr_;
 
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> hold_position_msg_ptr_ = nullptr;
 
@@ -281,9 +278,6 @@ protected:
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   virtual void add_new_trajectory_msg(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & traj_msg);
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  virtual void add_new_trajectory_msg(
-    const std::shared_ptr<control_msgs::msg::MultiTimeTrajectory> & traj_msg);
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   bool validate_trajectory_point_field(
     size_t joint_names_size, const std::vector<double> & vector_field,
