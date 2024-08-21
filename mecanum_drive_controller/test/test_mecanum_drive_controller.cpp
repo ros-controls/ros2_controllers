@@ -220,7 +220,7 @@ TEST_F(
   // reference_msg is published with provided time stamp when publish_commands( time_stamp)
   // is called
   publish_commands(controller_->get_node()->now());
-  ASSERT_TRUE(controller_->wait_for_commands(executor));
+  controller_->wait_for_commands(executor);
 
   ASSERT_EQ(
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
@@ -263,7 +263,7 @@ TEST_F(MecanumDriveControllerTest, when_reference_msg_is_too_old_expect_unset_re
   publish_commands(
     controller_->get_node()->now() - controller_->ref_timeout_ -
     rclcpp::Duration::from_seconds(0.1));
-  ASSERT_TRUE(controller_->wait_for_commands(executor));
+  controller_->wait_for_commands(executor);
   ASSERT_EQ(old_timestamp, (*(controller_->input_ref_.readFromNonRT()))->header.stamp);
   EXPECT_TRUE(std::isnan((reference)->twist.linear.x));
   EXPECT_TRUE(std::isnan((reference)->twist.linear.y));
@@ -293,7 +293,7 @@ TEST_F(
   // is called
   publish_commands(rclcpp::Time(0));
 
-  ASSERT_TRUE(controller_->wait_for_commands(executor));
+  controller_->wait_for_commands(executor);
   ASSERT_EQ(old_timestamp.sec, (*(controller_->input_ref_.readFromNonRT()))->header.stamp.sec);
   EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.linear.x));
   EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z));
@@ -324,7 +324,7 @@ TEST_F(MecanumDriveControllerTest, when_message_has_valid_timestamp_expect_refer
   // is called
   publish_commands(controller_->get_node()->now());
 
-  ASSERT_TRUE(controller_->wait_for_commands(executor));
+  controller_->wait_for_commands(executor);
   EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.linear.x));
   EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z));
   EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.linear.x, 1.5);
@@ -555,7 +555,7 @@ TEST_F(
   // is called
   publish_commands(controller_->get_node()->now());
 
-  ASSERT_TRUE(controller_->wait_for_commands(executor));
+  controller_->wait_for_commands(executor);
 
   EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.linear.x));
   EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.linear.y));

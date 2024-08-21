@@ -74,7 +74,10 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
 {
   params_ = param_listener_->get_params();
 
-  auto prepare_lists_with_joint_names = [&command_joints = this->command_joint_names_, &state_joints = this->state_joint_names_](const std::size_t index, const std::string & command_joint_name, const std::string & state_joint_name)
+  auto prepare_lists_with_joint_names =
+    [&command_joints = this->command_joint_names_, &state_joints = this->state_joint_names_](
+      const std::size_t index, const std::string & command_joint_name,
+      const std::string & state_joint_name)
   {
     command_joints[index] = command_joint_name;
     if (state_joint_name.empty())
@@ -91,10 +94,18 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
   state_joint_names_.resize(4);
 
   // The joint names are sorted according to the order documented in the header file!
-  prepare_lists_with_joint_names(FRONT_LEFT, params_.front_left_wheel_command_joint_name, params_.front_left_wheel_state_joint_name);
-  prepare_lists_with_joint_names(FRONT_RIGHT, params_.front_right_wheel_command_joint_name, params_.front_right_wheel_state_joint_name);
-  prepare_lists_with_joint_names(REAR_RIGHT, params_.rear_right_wheel_command_joint_name, params_.rear_right_wheel_state_joint_name);
-  prepare_lists_with_joint_names(REAR_LEFT, params_.rear_left_wheel_command_joint_name, params_.rear_left_wheel_state_joint_name);
+  prepare_lists_with_joint_names(
+    FRONT_LEFT, params_.front_left_wheel_command_joint_name,
+    params_.front_left_wheel_state_joint_name);
+  prepare_lists_with_joint_names(
+    FRONT_RIGHT, params_.front_right_wheel_command_joint_name,
+    params_.front_right_wheel_state_joint_name);
+  prepare_lists_with_joint_names(
+    REAR_RIGHT, params_.rear_right_wheel_command_joint_name,
+    params_.rear_right_wheel_state_joint_name);
+  prepare_lists_with_joint_names(
+    REAR_LEFT, params_.rear_left_wheel_command_joint_name,
+    params_.rear_left_wheel_state_joint_name);
 
   // Set wheel params for the odometry computation
   odometry_.setWheelsParams(
@@ -362,8 +373,8 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
   {
     // Estimate twist (using joint information) and integrate
     odometry_.update(
-      wheel_front_left_state_vel, wheel_rear_left_state_vel, wheel_rear_right_state_vel, wheel_front_right_state_vel,
-      period.seconds());
+      wheel_front_left_state_vel, wheel_rear_left_state_vel, wheel_rear_right_state_vel,
+      wheel_front_right_state_vel, period.seconds());
   }
 
   // INVERSE KINEMATICS (move robot).
@@ -417,11 +428,12 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
        params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis *
          velocity_in_center_frame_angular_z_);
 
-      // Set wheels velocities - The joint names are sorted accoring to the order documented in the header file!
-      command_interfaces_[FRONT_LEFT].set_value(wheel_front_left_vel);
-      command_interfaces_[FRONT_RIGHT].set_value(wheel_front_right_vel);
-      command_interfaces_[REAR_RIGHT].set_value(wheel_rear_right_vel);
-      command_interfaces_[REAR_LEFT].set_value(wheel_rear_left_vel);
+    // Set wheels velocities - The joint names are sorted according to the order documented in the
+    // header file!
+    command_interfaces_[FRONT_LEFT].set_value(wheel_front_left_vel);
+    command_interfaces_[FRONT_RIGHT].set_value(wheel_front_right_vel);
+    command_interfaces_[REAR_RIGHT].set_value(wheel_rear_right_vel);
+    command_interfaces_[REAR_LEFT].set_value(wheel_rear_left_vel);
   }
   else
   {
@@ -463,10 +475,14 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
   if (controller_state_publisher_->trylock())
   {
     controller_state_publisher_->msg_.header.stamp = get_node()->now();
-    controller_state_publisher_->msg_.front_left_wheel_velocity = state_interfaces_[FRONT_LEFT].get_value();
-    controller_state_publisher_->msg_.front_right_wheel_velocity = state_interfaces_[FRONT_RIGHT].get_value();
-    controller_state_publisher_->msg_.back_right_wheel_velocity = state_interfaces_[REAR_RIGHT].get_value();
-    controller_state_publisher_->msg_.back_left_wheel_velocity = state_interfaces_[REAR_LEFT].get_value();
+    controller_state_publisher_->msg_.front_left_wheel_velocity =
+      state_interfaces_[FRONT_LEFT].get_value();
+    controller_state_publisher_->msg_.front_right_wheel_velocity =
+      state_interfaces_[FRONT_RIGHT].get_value();
+    controller_state_publisher_->msg_.back_right_wheel_velocity =
+      state_interfaces_[REAR_RIGHT].get_value();
+    controller_state_publisher_->msg_.back_left_wheel_velocity =
+      state_interfaces_[REAR_LEFT].get_value();
     controller_state_publisher_->msg_.reference_velocity.linear.x = reference_interfaces_[0];
     controller_state_publisher_->msg_.reference_velocity.linear.y = reference_interfaces_[1];
     controller_state_publisher_->msg_.reference_velocity.angular.z = reference_interfaces_[2];
