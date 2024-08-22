@@ -2,6 +2,11 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix segfault at reconfigure of AdmittanceController (`#1248 <https://github.com/ros-controls/ros2_controllers/issues/1248>`_) (`#1266 <https://github.com/ros-controls/ros2_controllers/issues/1266>`_)
+* Contributors: mergify[bot]
+
 3.26.1 (2024-08-14)
 -------------------
 * Fix admittance controller interface read/write logic (backport `#1232 <https://github.com/ros-controls/ros2_controllers/issues/1232>`_) (`#1235 <https://github.com/ros-controls/ros2_controllers/issues/1235>`_)
