@@ -24,6 +24,9 @@
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/utilities.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
+#include "rclcpp/executors/single_threaded_executor.hpp"
+#include "rclcpp/wait_set.hpp"
+#include "rclcpp/wait_result.hpp"
 
 using CallbackReturn = controller_interface::CallbackReturn;
 using hardware_interface::LoanedCommandInterface;
