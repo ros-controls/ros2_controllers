@@ -241,7 +241,8 @@ class JointTrajectoryController(Plugin):
             self._robot_joint_limits = {}
             for jtc_info in running_jtc:
                 self._robot_joint_limits.update(
-                    get_joint_limits(self._node, _jtc_joint_names(jtc_info)))
+                    get_joint_limits(self._node, _jtc_joint_names(jtc_info))
+                )
         valid_jtc = []
         if self._robot_joint_limits:
             for jtc_info in running_jtc:
