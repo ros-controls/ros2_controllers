@@ -2,8 +2,8 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.13.0 (2024-08-22)
+-------------------
 * [Joint State Broadcaster] Publish the joint_states of joints present in the URDF (`#1233 <https://github.com/ros-controls/ros2_controllers/issues/1233>`_)
 * Contributors: Sai Kishor Kothakota
 
