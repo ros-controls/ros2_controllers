@@ -339,8 +339,8 @@ bool Trajectory::sample(
             return false;
           }
         }
-        start_segment_itr = begin(axis_index) + i;
-        end_segment_itr = begin(axis_index) + (i + 1);
+        start_segment_itr = begin(axis_index) + static_cast<long>(i);
+        end_segment_itr = begin(axis_index) + static_cast<long>(i + 1);
 
         if (joint_limiter)
         {
