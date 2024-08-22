@@ -8,6 +8,7 @@ on:
       - '**.hpp'
       - '**.h'
       - '**.cpp'
+      - '**.py'
       - '**.yaml'
       - '.github/workflows/rolling-rhel-semi-binary-build.yml'
       - '**/package.xml'

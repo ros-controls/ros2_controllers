@@ -29,12 +29,15 @@ TEST(TestLoadTricycleSteeringController, load_controller)
 
   controller_manager::ControllerManager cm(
     executor, ros2_control_test_assets::minimal_robot_urdf, true, "test_controller_manager");
+  const std::string test_file_path =
+    std::string(TEST_FILES_DIRECTORY) + "/tricycle_steering_controller_params.yaml";
 
-  ASSERT_NE(
-    cm.load_controller(
-      "test_tricycle_steering_controller",
-      "tricycle_steering_controller/TricycleSteeringController"),
-    nullptr);
+  cm.set_parameter({"test_tricycle_steering_controller.params_file", test_file_path});
+  cm.set_parameter(
+    {"test_tricycle_steering_controller.type",
+     "tricycle_steering_controller/TricycleSteeringController"});
+
+  ASSERT_NE(cm.load_controller("test_tricycle_steering_controller"), nullptr);
 }
 
 int main(int argc, char ** argv)
