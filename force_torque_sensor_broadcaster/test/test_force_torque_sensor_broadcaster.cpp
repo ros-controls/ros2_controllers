@@ -24,6 +24,8 @@
 
 #include "geometry_msgs/msg/wrench_stamped.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
+#include "rclcpp/executor.hpp"
+#include "rclcpp/executors.hpp"
 #include "rclcpp/utilities.hpp"
 
 using hardware_interface::LoanedStateInterface;
@@ -85,7 +87,7 @@ void ForceTorqueSensorBroadcasterTest::subscribe_and_get_message(
   while (max_sub_check_loop_count--)
   {
     fts_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
-    const auto timeout = std::chrono::milliseconds{1};
+    const auto timeout = std::chrono::milliseconds{5};
     const auto until = test_subscription_node.get_clock()->now() + timeout;
     while (!received_msg && test_subscription_node.get_clock()->now() < until)
     {

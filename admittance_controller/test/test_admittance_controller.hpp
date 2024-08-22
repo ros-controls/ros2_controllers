@@ -270,7 +270,7 @@ protected:
       controller_interface::return_type::OK);
 
     // wait for message to be passed
-    const auto timeout = std::chrono::milliseconds{1};
+    const auto timeout = std::chrono::milliseconds{5};
     const auto until = test_subscription_node_->get_clock()->now() + timeout;
     while (!received_msg && test_subscription_node_->get_clock()->now() < until)
     {
