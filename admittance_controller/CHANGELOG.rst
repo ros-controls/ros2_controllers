@@ -2,8 +2,8 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.37.2 (2024-08-22)
+-------------------
 * Fix segfault at reconfigure of AdmittanceController (`#1248 <https://github.com/ros-controls/ros2_controllers/issues/1248>`_) (`#1265 <https://github.com/ros-controls/ros2_controllers/issues/1265>`_)
 * Contributors: mergify[bot]
 
