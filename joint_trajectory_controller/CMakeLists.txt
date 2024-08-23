@@ -77,7 +77,7 @@ if(BUILD_TESTING)
   find_package(controller_manager REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
 
-  # TODO(henrygerardmoore): re-enable
+  # TODO(henrygerardmoore): re-enable when ros2_controllers is synced with main
   # ament_add_gmock(test_trajectory test/test_trajectory.cpp)
   # target_link_libraries(test_trajectory joint_trajectory_controller)
   # target_compile_definitions(test_trajectory PRIVATE _USE_MATH_DEFINES)

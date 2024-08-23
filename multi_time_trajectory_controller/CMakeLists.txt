@@ -56,6 +56,20 @@ ament_target_dependencies(multi_time_trajectory_controller PUBLIC ${THIS_PACKAGE
 
 pluginlib_export_plugin_description_file(controller_interface multi_time_plugin.xml)
 
+if(BUILD_TESTING)
+  find_package(ament_cmake_gmock REQUIRED)
+  find_package(controller_manager REQUIRED)
+  find_package(ros2_control_test_assets REQUIRED)
+
+  ament_add_gmock(test_mttc
+    test/test_mttc.cpp)
+  set_tests_properties(test_mttc PROPERTIES TIMEOUT 220)
+  target_link_libraries(test_mttc
+    multi_time_trajectory_controller
+  )
+  target_compile_definitions(multi_time_trajectory_controller PRIVATE _USE_MATH_DEFINES)
+endif()
+
 install(
   DIRECTORY include/
   DESTINATION include/multi_time_trajectory_controller
