@@ -54,6 +54,8 @@ target_link_libraries(multi_time_trajectory_controller PUBLIC
 )
 ament_target_dependencies(multi_time_trajectory_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
 
+pluginlib_export_plugin_description_file(controller_interface multi_time_plugin.xml)
+
 install(
   DIRECTORY include/
   DESTINATION include/multi_time_trajectory_controller
@@ -67,6 +69,6 @@ install(TARGETS
   LIBRARY DESTINATION lib
 )
 
-# ament_export_targets(multi_time_trajectory_controller HAS_LIBRARY_TARGET)
+ament_export_targets(export_multi_time_trajectory_controller HAS_LIBRARY_TARGET)
 ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
 ament_package()

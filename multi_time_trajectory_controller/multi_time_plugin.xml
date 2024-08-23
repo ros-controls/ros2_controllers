@@ -1,0 +1,7 @@
+<library path="multi_time_trajectory_controller">
+  <class name="multi_time_trajectory_controller/MultiTimeTrajectoryController" type="multi_time_trajectory_controller::MultiTimeTrajectoryController" base_class_type="controller_interface::ControllerInterface">
+    <description>
+      The multi-time trajectory controller executes axis-space or cartesian trajectories on a set of axes.
+    </description>
+  </class>
+</library>
