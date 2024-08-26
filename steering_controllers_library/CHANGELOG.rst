@@ -2,6 +2,12 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.13.0 (2024-08-22)
+-------------------
+
+4.12.1 (2024-08-14)
+-------------------
+
 4.12.0 (2024-07-23)
 -------------------
 * Add missing includes (`#1226 <https://github.com/ros-controls/ros2_controllers/issues/1226>`_)
