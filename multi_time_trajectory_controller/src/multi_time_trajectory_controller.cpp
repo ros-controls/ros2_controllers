@@ -264,11 +264,10 @@ controller_interface::return_type MultiTimeTrajectoryController::update(
         traj_msg_external_point_ptr_.initRT(set_hold_position());
       }
 
+      compute_error(state_error_, state_current_, state_desired_);
       // Check state/goal tolerance
       for (size_t index = 0; index < dof_; ++index)
       {
-        compute_error_for_axis(state_error_, index, state_current_, state_desired_);
-
         // Always check the state tolerance on the first sample in case the first sample
         // is the last point
         // print output per default, goal will be aborted afterwards
@@ -1438,10 +1437,11 @@ void MultiTimeTrajectoryController::goal_accepted_callback(
     std::bind(&RealtimeGoalHandle::runNonRealtime, rt_goal));
 }
 
-void MultiTimeTrajectoryController::compute_error_for_axis(
-  std::vector<TrajectoryPoint> & error, const size_t index,
+void MultiTimeTrajectoryController::compute_error(
+  std::vector<TrajectoryPoint> & error,
   const std::vector<TrajectoryPoint> & current, const std::vector<TrajectoryPoint> & desired) const
 {
+  for (std::size_t index = 0; index < current.size(); ++index) {
   // error defined as the difference between current and desired
   if (axis_angle_wraparound_[index])
   {
@@ -1463,6 +1463,7 @@ void MultiTimeTrajectoryController::compute_error_for_axis(
   if (has_acceleration_state_interface_ && has_acceleration_command_interface_)
   {
     error[index].acceleration = desired[index].acceleration - current[index].acceleration;
+  }
   }
 }
 

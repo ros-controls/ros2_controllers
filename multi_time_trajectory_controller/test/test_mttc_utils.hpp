@@ -112,12 +112,12 @@ public:
 
   void trigger_declare_parameters() { param_listener_->declare_params(); }
 
-  void testable_compute_error_for_joint(
-    std::vector<control_msgs::msg::AxisTrajectoryPoint> & error, const size_t index,
+  void testable_compute_error(
+    std::vector<control_msgs::msg::AxisTrajectoryPoint> & error,
     const std::vector<control_msgs::msg::AxisTrajectoryPoint> & current,
     const std::vector<control_msgs::msg::AxisTrajectoryPoint> & desired)
   {
-    compute_error_for_axis(error, index, current, desired);
+    compute_error(error, current, desired);
   }
 
   std::vector<control_msgs::msg::AxisTrajectoryPoint> get_current_state_when_offset() const

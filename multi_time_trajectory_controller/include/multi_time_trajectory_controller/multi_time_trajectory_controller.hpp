@@ -245,8 +245,8 @@ protected:
    * @param[in] desired The desired state of the axes.
    */
 
-  void compute_error_for_axis(
-    std::vector<TrajectoryPoint> & error, const size_t index,
+  void compute_error(
+    std::vector<TrajectoryPoint> & error,
     const std::vector<TrajectoryPoint> & current,
     const std::vector<TrajectoryPoint> & desired) const;
   // fill trajectory_msg so it matches axes controlled by this controller

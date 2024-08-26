@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <vector>
+#include "control_msgs/msg/axis_trajectory_point.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "test_mttc_utils.hpp"
 
@@ -435,7 +437,7 @@ TEST_P(TrajectoryControllerTestParameterized, compute_error_angle_wraparound_tru
     executor, params, true, 0.0, 1.0, INITIAL_POS_JOINTS, INITIAL_VEL_JOINTS, INITIAL_ACC_JOINTS,
     INITIAL_EFF_JOINTS, test_mttc::urdf_rrrbot_continuous);
 
-  size_t n_joints = axis_names_.size();
+  size_t n_axes = axis_names_.size();
 
   // send msg
   constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
@@ -449,70 +451,77 @@ TEST_P(TrajectoryControllerTestParameterized, compute_error_angle_wraparound_tru
     {{0.1, 0.1, 0.1}}, {{0.5, 0.5, 0.5}}, {{0.6, 0.6, 0.6}}};
   // *INDENT-ON*
 
-  trajectory_msgs::msg::JointTrajectoryPoint error, current, desired;
-  current.positions = {points[0].begin(), points[0].end()};
-  current.velocities = {points_velocities[0].begin(), points_velocities[0].end()};
-  current.accelerations = {points_accelerations[0].begin(), points_accelerations[0].end()};
-  traj_controller_->resize_joint_trajectory_point(error, n_joints);
+  size_t n_points = points.size();
 
-  // zero error
-  desired = current;
-  for (size_t i = 0; i < n_joints; ++i)
+  for (size_t point_num = 0; point_num < n_points; ++point_num)
   {
-    traj_controller_->testable_compute_error_for_joint(error, i, current, desired);
-    EXPECT_NEAR(error.positions[i], 0., EPS);
-    if (
-      traj_controller_->has_velocity_state_interface() &&
-      (traj_controller_->has_velocity_command_interface() ||
-       traj_controller_->has_effort_command_interface()))
-    {
-      // expect: error.velocities = desired.velocities - current.velocities;
-      EXPECT_NEAR(error.velocities[i], 0., EPS);
+    std::vector<control_msgs::msg::AxisTrajectoryPoint> error, current, desired;
+    for (size_t axis = 0; axis < n_axes; ++axis) {
+      control_msgs::msg::AxisTrajectoryPoint point;
+      point.position = points[point_num][axis];
+      point.position = points_velocities[point_num][axis];
+      point.position = points_accelerations[point_num][axis];
+      current.push_back(point);
     }
-    if (
-      traj_controller_->has_acceleration_state_interface() &&
-      traj_controller_->has_acceleration_command_interface())
+
+    // zero error
+    desired = current;
+    traj_controller_->testable_compute_error(error, current, desired);
+    for (size_t i = 0; i < n_axes; ++i)
     {
-      // expect: error.accelerations = desired.accelerations - current.accelerations;
-      EXPECT_NEAR(error.accelerations[i], 0., EPS);
+      EXPECT_NEAR(error[i].position, 0., EPS);
+      if (
+        traj_controller_->has_velocity_state_interface() &&
+        (traj_controller_->has_velocity_command_interface() ||
+         traj_controller_->has_effort_command_interface()))
+      {
+        // expect: error.velocities = desired.velocities - current.velocities;
+        EXPECT_NEAR(error[i].velocity, 0., EPS);
+      }
+      if (
+        traj_controller_->has_acceleration_state_interface() &&
+        traj_controller_->has_acceleration_command_interface())
+      {
+        // expect: error.accelerations = desired.accelerations - current.accelerations;
+        EXPECT_NEAR(error[i].acceleration, 0., EPS);
+      }
+    }
+
+    // angle wraparound of position error
+    desired[0].position += 3.0 * M_PI_2;
+    desired[0].velocity += 1.0;
+    desired[0].acceleration += 1.0;
+    traj_controller_->testable_compute_error(error, current, desired);
+    for (size_t i = 0; i < n_axes; ++i)
+    {
+      if (i == 0)
+      {
+        EXPECT_NEAR(
+          error[i].position, desired[i].position - current[i].position - 2.0 * M_PI, EPS);
+      }
+      else
+      {
+        EXPECT_NEAR(error[i].position, desired[i].position - current[i].position, EPS);
+      }
+
+      if (
+        traj_controller_->has_velocity_state_interface() &&
+        (traj_controller_->has_velocity_command_interface() ||
+         traj_controller_->has_effort_command_interface()))
+      {
+        // expect: error.velocities = desired.velocities - current.velocities;
+        EXPECT_NEAR(error[i].velocity, desired[i].velocity - current[i].velocity, EPS);
+      }
+      if (
+        traj_controller_->has_acceleration_state_interface() &&
+        traj_controller_->has_acceleration_command_interface())
+      {
+        // expect: error.accelerations = desired.accelerations - current.accelerations;
+        EXPECT_NEAR(
+          error[i].acceleration, desired[i].acceleration - current[i].acceleration, EPS);
+      }
     }
   }
-
-  // angle wraparound of position error
-  desired.positions[0] += 3.0 * M_PI_2;
-  desired.velocities[0] += 1.0;
-  desired.accelerations[0] += 1.0;
-  traj_controller_->resize_joint_trajectory_point(error, n_joints);
-  for (size_t i = 0; i < n_joints; ++i)
-  {
-    traj_controller_->testable_compute_error_for_joint(error, i, current, desired);
-    if (i == 0)
-    {
-      EXPECT_NEAR(
-        error.positions[i], desired.positions[i] - current.positions[i] - 2.0 * M_PI, EPS);
-    }
-    else
-    {
-      EXPECT_NEAR(error.positions[i], desired.positions[i] - current.positions[i], EPS);
-    }
-
-    if (
-      traj_controller_->has_velocity_state_interface() &&
-      (traj_controller_->has_velocity_command_interface() ||
-       traj_controller_->has_effort_command_interface()))
-    {
-      // expect: error.velocities = desired.velocities - current.velocities;
-      EXPECT_NEAR(error.velocities[i], desired.velocities[i] - current.velocities[i], EPS);
-    }
-    if (
-      traj_controller_->has_acceleration_state_interface() &&
-      traj_controller_->has_acceleration_command_interface())
-    {
-      // expect: error.accelerations = desired.accelerations - current.accelerations;
-      EXPECT_NEAR(error.accelerations[i], desired.accelerations[i] - current.accelerations[i], EPS);
-    }
-  }
-
   executor.cancel();
 }
 
@@ -545,7 +554,6 @@ TEST_P(TrajectoryControllerTestParameterized, compute_error_angle_wraparound_fal
   current.positions = {points[0].begin(), points[0].end()};
   current.velocities = {points_velocities[0].begin(), points_velocities[0].end()};
   current.accelerations = {points_accelerations[0].begin(), points_accelerations[0].end()};
-  traj_controller_->resize_joint_trajectory_point(error, n_joints);
 
   // zero error
   desired = current;
@@ -574,7 +582,6 @@ TEST_P(TrajectoryControllerTestParameterized, compute_error_angle_wraparound_fal
   desired.positions[0] += 3.0 * M_PI_4;
   desired.velocities[0] += 1.0;
   desired.accelerations[0] += 1.0;
-  traj_controller_->resize_joint_trajectory_point(error, n_joints);
   for (size_t i = 0; i < n_joints; ++i)
   {
     traj_controller_->testable_compute_error_for_joint(error, i, current, desired);
