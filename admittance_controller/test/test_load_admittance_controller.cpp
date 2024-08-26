@@ -30,10 +30,13 @@ TEST(TestLoadAdmittanceController, load_controller)
 
   controller_manager::ControllerManager cm(
     executor, ros2_control_test_assets::minimal_robot_urdf, true, "test_controller_manager");
+  const std::string test_file_path = std::string(TEST_FILES_DIRECTORY) + "/test_params.yaml";
 
-  ASSERT_EQ(
-    cm.load_controller("load_admittance_controller", "admittance_controller/AdmittanceController"),
-    nullptr);
+  cm.set_parameter({"load_admittance_controller.params_file", test_file_path});
+  cm.set_parameter(
+    {"load_admittance_controller.type", "admittance_controller/AdmittanceController"});
+
+  ASSERT_EQ(cm.load_controller("load_admittance_controller"), nullptr);
 }
 
 int main(int argc, char ** argv)
