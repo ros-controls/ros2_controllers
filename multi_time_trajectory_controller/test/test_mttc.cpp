@@ -534,9 +534,6 @@ TEST_P(TrajectoryControllerTestParameterized, compute_error_angle_wraparound_fal
 
   size_t n_axes = axis_names_.size();
 
-  // send msg
-  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
-  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
   // *INDENT-OFF*
   std::vector<std::vector<double>> points{
     {{3.3, 4.4, 6.6}}, {{7.7, 8.8, 9.9}}, {{10.10, 11.11, 12.12}}};
@@ -627,7 +624,7 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_angle_wraparoun
     INITIAL_EFF_JOINTS, test_mttc::urdf_rrrbot_revolute);
   subscribeToState();
 
-  size_t n_joints = axis_names_.size();
+  size_t n_axes = axis_names_.size();
 
   // send msg
   constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
@@ -646,23 +643,25 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_angle_wraparoun
   auto state_reference = traj_controller_->get_state_reference();
   auto state_error = traj_controller_->get_state_error();
 
-  // no update of state_interface
-  EXPECT_EQ(state_feedback.position, INITIAL_POS_JOINTS);
-
   // has the msg the correct vector sizes?
-  EXPECT_EQ(n_joints, state_reference.position.size());
-  EXPECT_EQ(n_joints, state_feedback.position.size());
-  EXPECT_EQ(n_joints, state_error.position.size());
+  EXPECT_EQ(n_axes, state_reference);
+  EXPECT_EQ(n_axes, state_feedback);
+  EXPECT_EQ(n_axes, state_error);
+
+  for (std::size_t i = 0; i < n_axes; ++i) {
+    // no update of state_interface
+    EXPECT_EQ(state_feedback[i].position, INITIAL_POS_JOINTS[i]);
+  }
 
   // are the correct reference position used?
-  EXPECT_NEAR(points[0][0], state_reference.position[0], COMMON_THRESHOLD);
-  EXPECT_NEAR(points[0][1], state_reference.position[1], COMMON_THRESHOLD);
-  EXPECT_NEAR(points[0][2], state_reference.position[2], COMMON_THRESHOLD);
+  EXPECT_NEAR(points[0][0], state_reference[0].position, COMMON_THRESHOLD);
+  EXPECT_NEAR(points[0][1], state_reference[1].position, COMMON_THRESHOLD);
+  EXPECT_NEAR(points[0][2], state_reference[2].position, COMMON_THRESHOLD);
 
   // no normalization of position error
-  EXPECT_NEAR(state_error.position[0], state_reference.position[0] - INITIAL_POS_JOINTS[0], EPS);
-  EXPECT_NEAR(state_error.position[1], state_reference.position[1] - INITIAL_POS_JOINTS[1], EPS);
-  EXPECT_NEAR(state_error.position[2], state_reference.position[2] - INITIAL_POS_JOINTS[2], EPS);
+  EXPECT_NEAR(state_error[0].position, state_reference[0].position - INITIAL_POS_JOINTS[0], EPS);
+  EXPECT_NEAR(state_error[1].position, state_reference[1].position - INITIAL_POS_JOINTS[1], EPS);
+  EXPECT_NEAR(state_error[2].position, state_reference[2].position - INITIAL_POS_JOINTS[2], EPS);
 
   if (traj_controller_->has_position_command_interface())
   {
@@ -679,13 +678,13 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_angle_wraparoun
     {
       // we expect u = k_p * (s_d-s) for position
       EXPECT_NEAR(
-        k_p * (state_reference.position[0] - INITIAL_POS_JOINTS[0]), joint_vel_[0],
+        k_p * (state_reference[0].position - INITIAL_POS_JOINTS[0]), joint_vel_[0],
         k_p * COMMON_THRESHOLD);
       EXPECT_NEAR(
-        k_p * (state_reference.position[1] - INITIAL_POS_JOINTS[1]), joint_vel_[1],
+        k_p * (state_reference[1].position - INITIAL_POS_JOINTS[1]), joint_vel_[1],
         k_p * COMMON_THRESHOLD);
       EXPECT_NEAR(
-        k_p * (state_reference.position[2] - INITIAL_POS_JOINTS[2]), joint_vel_[2],
+        k_p * (state_reference[2].position - INITIAL_POS_JOINTS[2]), joint_vel_[2],
         k_p * COMMON_THRESHOLD);
     }
     else
@@ -703,13 +702,13 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_angle_wraparoun
     // with effort command interface, use_closed_loop_pid_adapter is always true
     // we expect u = k_p * (s_d-s) for position
     EXPECT_NEAR(
-      k_p * (state_reference.position[0] - INITIAL_POS_JOINTS[0]), joint_eff_[0],
+      k_p * (state_reference[0].position - INITIAL_POS_JOINTS[0]), joint_eff_[0],
       k_p * COMMON_THRESHOLD);
     EXPECT_NEAR(
-      k_p * (state_reference.position[1] - INITIAL_POS_JOINTS[1]), joint_eff_[1],
+      k_p * (state_reference[0].position - INITIAL_POS_JOINTS[1]), joint_eff_[1],
       k_p * COMMON_THRESHOLD);
     EXPECT_NEAR(
-      k_p * (state_reference.position[2] - INITIAL_POS_JOINTS[2]), joint_eff_[2],
+      k_p * (state_reference[0].position - INITIAL_POS_JOINTS[2]), joint_eff_[2],
       k_p * COMMON_THRESHOLD);
   }
 
