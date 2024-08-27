@@ -235,7 +235,7 @@ TEST_P(TrajectoryControllerTestParameterized, state_topic_consistency)
   executor.spin_some();
   auto state = getState();
 
-  size_t n_axes = axis_names_.size();
+  std::size_t n_axes = axis_names_.size();
 
   for (unsigned int i = 0; i < n_axes; ++i)
   {
@@ -361,7 +361,7 @@ TEST_P(TrajectoryControllerTestParameterized, update_dynamic_tolerances)
   {
     auto tols = traj_controller_->get_tolerances();
     EXPECT_EQ(tols.goal_time_tolerance, 0.0);
-    for (size_t i = 0; i < axis_names_.size(); ++i)
+    for (std::size_t i = 0; i < axis_names_.size(); ++i)
     {
       EXPECT_EQ(tols.state_tolerance.at(i).position, 0.0);
       EXPECT_EQ(tols.goal_state_tolerance.at(i).position, 0.0);
@@ -384,11 +384,11 @@ TEST_P(TrajectoryControllerTestParameterized, update_dynamic_tolerances)
     traj_controller_->get_node()->set_parameter(param);
   }
   updateControllerAsync();
-
+  size_t yeow = 0;
   {
     auto tols = traj_controller_->get_tolerances();
     EXPECT_EQ(tols.goal_time_tolerance, 1.0);
-    for (size_t i = 0; i < axis_names_.size(); ++i)
+    for (std::size_t i = 0; i < axis_names_.size(); ++i)
     {
       EXPECT_EQ(tols.state_tolerance.at(i).position, static_cast<double>(i) + 1.0);
       EXPECT_EQ(tols.goal_state_tolerance.at(i).position, 10.0 * (static_cast<double>(i) + 1.0));
@@ -437,7 +437,7 @@ TEST_P(TrajectoryControllerTestParameterized, compute_error_angle_wraparound_tru
     executor, params, true, 0.0, 1.0, INITIAL_POS_JOINTS, INITIAL_VEL_JOINTS, INITIAL_ACC_JOINTS,
     INITIAL_EFF_JOINTS, test_mttc::urdf_rrrbot_continuous);
 
-  size_t n_axes = axis_names_.size();
+  std::size_t n_axes = axis_names_.size();
 
   // *INDENT-OFF*
   std::vector<std::vector<double>> points{
@@ -448,12 +448,12 @@ TEST_P(TrajectoryControllerTestParameterized, compute_error_angle_wraparound_tru
     {{0.1, 0.1, 0.1}}, {{0.5, 0.5, 0.5}}, {{0.6, 0.6, 0.6}}};
   // *INDENT-ON*
 
-  size_t n_points = points.size();
+  std::size_t n_points = points.size();
 
-  for (size_t point_num = 0; point_num < n_points; ++point_num)
+  for (std::size_t point_num = 0; point_num < n_points; ++point_num)
   {
     std::vector<control_msgs::msg::AxisTrajectoryPoint> error, current, desired;
-    for (size_t axis = 0; axis < n_axes; ++axis)
+    for (std::size_t axis = 0; axis < n_axes; ++axis)
     {
       control_msgs::msg::AxisTrajectoryPoint point;
       point.position = points[point_num][axis];
@@ -465,7 +465,7 @@ TEST_P(TrajectoryControllerTestParameterized, compute_error_angle_wraparound_tru
     // zero error
     desired = current;
     traj_controller_->testable_compute_error(error, current, desired);
-    for (size_t i = 0; i < n_axes; ++i)
+    for (std::size_t i = 0; i < n_axes; ++i)
     {
       EXPECT_NEAR(error[i].position, 0., EPS);
       if (
@@ -490,7 +490,7 @@ TEST_P(TrajectoryControllerTestParameterized, compute_error_angle_wraparound_tru
     desired[0].velocity += 1.0;
     desired[0].acceleration += 1.0;
     traj_controller_->testable_compute_error(error, current, desired);
-    for (size_t i = 0; i < n_axes; ++i)
+    for (std::size_t i = 0; i < n_axes; ++i)
     {
       if (i == 0)
       {
@@ -532,7 +532,7 @@ TEST_P(TrajectoryControllerTestParameterized, compute_error_angle_wraparound_fal
     executor, params, true, 0.0, 1.0, INITIAL_POS_JOINTS, INITIAL_VEL_JOINTS, INITIAL_ACC_JOINTS,
     INITIAL_EFF_JOINTS, test_mttc::urdf_rrrbot_revolute);
 
-  size_t n_axes = axis_names_.size();
+  std::size_t n_axes = axis_names_.size();
 
   // *INDENT-OFF*
   std::vector<std::vector<double>> points{
@@ -543,12 +543,12 @@ TEST_P(TrajectoryControllerTestParameterized, compute_error_angle_wraparound_fal
     {{0.1, 0.1, 0.1}}, {{0.5, 0.5, 0.5}}, {{0.6, 0.6, 0.6}}};
   // *INDENT-ON*
 
-  size_t n_points = points.size();
+  std::size_t n_points = points.size();
 
-  for (size_t point_num = 0; point_num < n_points; ++point_num)
+  for (std::size_t point_num = 0; point_num < n_points; ++point_num)
   {
     std::vector<control_msgs::msg::AxisTrajectoryPoint> error, current, desired;
-    for (size_t axis = 0; axis < n_axes; ++axis)
+    for (std::size_t axis = 0; axis < n_axes; ++axis)
     {
       control_msgs::msg::AxisTrajectoryPoint point;
       point.position = points[point_num][axis];
@@ -560,7 +560,7 @@ TEST_P(TrajectoryControllerTestParameterized, compute_error_angle_wraparound_fal
     // zero error
     desired = current;
     traj_controller_->testable_compute_error(error, current, desired);
-    for (size_t i = 0; i < n_axes; ++i)
+    for (std::size_t i = 0; i < n_axes; ++i)
     {
       EXPECT_NEAR(error[i].position, 0., EPS);
       if (
@@ -586,7 +586,7 @@ TEST_P(TrajectoryControllerTestParameterized, compute_error_angle_wraparound_fal
     desired[0].acceleration += 1.0;
 
     traj_controller_->testable_compute_error(error, current, desired);
-    for (size_t i = 0; i < n_axes; ++i)
+    for (std::size_t i = 0; i < n_axes; ++i)
     {
       EXPECT_NEAR(error[i].position, desired[i].position - current[i].position, EPS);
       if (
@@ -623,7 +623,7 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_angle_wraparoun
     INITIAL_EFF_JOINTS, test_mttc::urdf_rrrbot_revolute);
   subscribeToState();
 
-  size_t n_axes = axis_names_.size();
+  std::size_t n_axes = axis_names_.size();
 
   // send msg
   constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
@@ -727,7 +727,7 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_angle_wraparound)
     executor, params, true, k_p, 0.0, INITIAL_POS_JOINTS, INITIAL_VEL_JOINTS, INITIAL_ACC_JOINTS,
     INITIAL_EFF_JOINTS, test_mttc::urdf_rrrbot_continuous);
 
-  size_t n_axes = axis_names_.size();
+  std::size_t n_axes = axis_names_.size();
 
   // send msg
   constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
@@ -868,7 +868,7 @@ TEST_P(TrajectoryControllerTestParameterized, no_timeout)
   rclcpp::Parameter cmd_timeout_parameter("cmd_timeout", 0.0);
   SetUpAndActivateTrajectoryController(executor, {cmd_timeout_parameter}, false);
 
-  size_t n_axes = axis_names_.size();
+  std::size_t n_axes = axis_names_.size();
 
   // send msg
   constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
@@ -941,7 +941,7 @@ TEST_P(TrajectoryControllerTestParameterized, timeout)
   // is a trajectory active?
   EXPECT_TRUE(traj_controller_->has_active_traj());
   // should have the trajectory with three points
-  size_t n_axes = axis_names_.size();
+  std::size_t n_axes = axis_names_.size();
   for (std::size_t i = 0; i < n_axes; ++i)
   {
     EXPECT_TRUE(traj_controller_->has_nontrivial_traj(i));
@@ -1001,7 +1001,7 @@ TEST_P(TrajectoryControllerTestParameterized, velocity_error)
   rclcpp::executors::MultiThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(executor, {}, true);
 
-  size_t n_axes = axis_names_.size();
+  std::size_t n_axes = axis_names_.size();
 
   // send msg
   constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
@@ -1023,26 +1023,23 @@ TEST_P(TrajectoryControllerTestParameterized, velocity_error)
   auto state_error = traj_controller_->get_state_error();
 
   // has the msg the correct vector sizes?
-  EXPECT_EQ(n_axes, state_reference.position.size());
-  EXPECT_EQ(n_axes, state_feedback.position.size());
-  EXPECT_EQ(n_axes, state_error.position.size());
+  EXPECT_EQ(n_axes, state_reference.size());
+  EXPECT_EQ(n_axes, state_feedback.size());
+  EXPECT_EQ(n_axes, state_error.size());
   if (traj_controller_->has_velocity_state_interface())
   {
-    EXPECT_EQ(n_axes, state_reference.velocity.size());
-    EXPECT_EQ(n_axes, state_feedback.velocity.size());
-    EXPECT_EQ(n_axes, state_error.velocity.size());
-  }
-  if (traj_controller_->has_acceleration_state_interface())
-  {
-    EXPECT_EQ(n_axes, state_reference.acceleration.size());
-    EXPECT_EQ(n_axes, state_feedback.acceleration.size());
-    EXPECT_EQ(n_axes, state_error.acceleration.size());
+    EXPECT_EQ(n_axes, state_reference.size());
+    EXPECT_EQ(n_axes, state_feedback.size());
+    EXPECT_EQ(n_axes, state_error.size());
   }
 
   // no change in state interface should happen
   if (traj_controller_->has_velocity_state_interface())
   {
-    EXPECT_EQ(state_feedback.velocity, INITIAL_VEL_JOINTS);
+    for (std::size_t i = 0; i < n_axes; ++i)
+    {
+      EXPECT_EQ(state_feedback[i].velocity, INITIAL_VEL_JOINTS);
+    }
   }
   // is the velocity error correct?
   if (
@@ -1052,9 +1049,9 @@ TEST_P(TrajectoryControllerTestParameterized, velocity_error)
   {
     // don't check against a value, because spline interpolation might overshoot depending on
     // interface combinations
-    EXPECT_GE(state_error.velocity[0], points_velocity[0][0]);
-    EXPECT_GE(state_error.velocity[1], points_velocity[0][1]);
-    EXPECT_GE(state_error.velocity[2], points_velocity[0][2]);
+    EXPECT_GE(state_error[0].velocity, points_velocity[0][0]);
+    EXPECT_GE(state_error[1].velocity, points_velocity[0][1]);
+    EXPECT_GE(state_error[2].velocity, points_velocity[0][2]);
   }
 
   executor.cancel();
@@ -1069,7 +1066,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_jumbled_joint_order)
   rclcpp::executors::SingleThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(executor);
   std::vector<double> points_position = {1.0, 2.0, 3.0};
-  std::vector<size_t> jumble_map = {1, 2, 0};
+  std::vector<std::size_t> jumble_map = {1, 2, 0};
   double dt = 0.25;
   {
     trajectory_msgs::msg::JointTrajectory traj_msg;
@@ -1088,7 +1085,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_jumbled_joint_order)
     traj_msg.points[0].velocity.resize(3);
     traj_msg.points[0].acceleration.resize(3);
 
-    for (size_t dof = 0; dof < 3; dof++)
+    for (std::size_t dof = 0; dof < 3; dof++)
     {
       traj_msg.points[0].velocity[dof] =
         (traj_msg.points[0].position[dof] - joint_pos_[jumble_map[dof]]) / dt;
@@ -1153,7 +1150,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_partial_joint_list)
   trajectory_msgs::msg::JointTrajectory traj_msg;
 
   {
-    std::vector<size_t> jumble_map = {1, 0};
+    std::vector<std::size_t> jumble_map = {1, 0};
     std::vector<std::string> partial_joint_names{
       axis_names_[jumble_map[0]], axis_names_[jumble_map[1]]};
     traj_msg.joint_names = partial_joint_names;
@@ -1166,7 +1163,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_partial_joint_list)
     traj_msg.points[0].position[1] = 1.0;
     traj_msg.points[0].velocity.resize(2);
     traj_msg.points[0].acceleration.resize(2);
-    for (size_t dof = 0; dof < 2; dof++)
+    for (std::size_t dof = 0; dof < 2; dof++)
     {
       traj_msg.points[0].velocity[dof] =
         (traj_msg.points[0].position[dof] - joint_pos_[jumble_map[dof]]) / dt;
@@ -1847,7 +1844,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_first_co
 
   auto current_state_when_offset = traj_controller_->get_current_state_when_offset();
 
-  for (size_t i = 0; i < 3; ++i)
+  for (std::size_t i = 0; i < 3; ++i)
   {
     EXPECT_EQ(current_state_when_offset.position[i], joint_state_pos_[i]);
 
@@ -1876,7 +1873,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_later_co
 
   // set command values to arbitrary values
   std::vector<double> initial_pos_cmd, initial_vel_cmd, initial_acc_cmd;
-  for (size_t i = 0; i < 3; ++i)
+  for (std::size_t i = 0; i < 3; ++i)
   {
     initial_pos_cmd.push_back(3.1 + static_cast<double>(i));
     initial_vel_cmd.push_back(0.25 + static_cast<double>(i));
@@ -1890,7 +1887,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_later_co
 
   auto current_state_when_offset = traj_controller_->get_current_state_when_offset();
 
-  for (size_t i = 0; i < 3; ++i)
+  for (std::size_t i = 0; i < 3; ++i)
   {
     // check position
     if (traj_controller_->has_position_command_interface())
