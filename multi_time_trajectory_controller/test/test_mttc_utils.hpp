@@ -17,12 +17,15 @@
 
 #include <gmock/gmock.h>
 
+#include <chrono>
 #include <memory>
 #include <string>
+#include <thread>
 #include <tuple>
 #include <utility>
 #include <vector>
 
+#include <rclcpp/executor.hpp>
 #include "control_msgs/msg/axis_trajectory_point.hpp"
 #include "control_msgs/msg/multi_axis_trajectory.hpp"
 #include "control_msgs/msg/multi_time_trajectory_controller_state.hpp"
@@ -64,11 +67,6 @@ public:
   {
     auto ret =
       multi_time_trajectory_controller::MultiTimeTrajectoryController::on_configure(previous_state);
-    // this class can still be useful without the wait set
-    if (axis_command_subscriber_)
-    {
-      axis_cmd_sub_wait_set_.add_subscription(axis_command_subscriber_);
-    }
     return ret;
   }
 
@@ -78,24 +76,22 @@ public:
    * @brief wait_for_trajectory block until a new JointTrajectory is received.
    * Requires that the executor is not spinned elsewhere between the
    *  message publication and the call to this function
-   *
-   * @return true if new JointTrajectory msg was received, false if timeout
    */
-  bool wait_for_trajectory(
+  void wait_for_trajectory(
     rclcpp::Executor & executor,
-    const std::chrono::milliseconds & timeout = std::chrono::milliseconds{500})
+    const std::chrono::milliseconds & timeout = std::chrono::milliseconds{10})
   {
-    bool success = axis_cmd_sub_wait_set_.wait(timeout).kind() == rclcpp::WaitResultKind::Ready;
-    if (success)
+    auto until = get_node()->get_clock()->now() + timeout;
+    while (get_node()->get_clock()->now() < until)
     {
       executor.spin_some();
+      std::this_thread::sleep_for(std::chrono::microseconds(10));
     }
-    return success;
   }
 
-  void set_joint_names(const std::vector<std::string> & axis_names) { params_.axes = axis_names; }
+  void set_axis_names(const std::vector<std::string> & axis_names) { params_.axes = axis_names; }
 
-  void set_command_joint_names(const std::vector<std::string> & command_axis_names)
+  void set_command_axis_names(const std::vector<std::string> & command_axis_names)
   {
     command_axis_names_ = command_axis_names;
   }
@@ -175,7 +171,6 @@ public:
   }
   std::vector<control_msgs::msg::AxisTrajectoryPoint> get_state_error() { return state_error_; }
 
-  rclcpp::WaitSet axis_cmd_sub_wait_set_;
   rclcpp::NodeOptions node_options_;
 };
 
@@ -226,7 +221,7 @@ public:
 
     auto node_options = rclcpp::NodeOptions();
     std::vector<rclcpp::Parameter> parameter_overrides;
-    parameter_overrides.push_back(rclcpp::Parameter("joints", axis_names_));
+    parameter_overrides.push_back(rclcpp::Parameter("axes", axis_names_));
     parameter_overrides.push_back(
       rclcpp::Parameter("command_interfaces", command_interface_types_));
     parameter_overrides.push_back(rclcpp::Parameter("state_interfaces", state_interface_types_));
@@ -351,7 +346,7 @@ public:
 
   static void TearDownTestCase() { rclcpp::shutdown(); }
 
-  void subscribeToState()
+  void subscribeToState(rclcpp::Executor & executor)
   {
     auto traj_lifecycle_node = traj_controller_->get_node();
 
@@ -369,6 +364,13 @@ public:
           std::lock_guard<std::mutex> guard(state_mutex_);
           state_msg_ = msg;
         });
+    const auto timeout = std::chrono::milliseconds{10};
+    const auto until = traj_lifecycle_node->get_clock()->now() + timeout;
+    while (traj_lifecycle_node->get_clock()->now() < until)
+    {
+      executor.spin_some();
+      std::this_thread::sleep_for(std::chrono::microseconds(10));
+    }
   }
 
   /// Publish trajectory msgs with multiple points
@@ -399,6 +401,8 @@ public:
     }
 
     control_msgs::msg::MultiAxisTrajectory multi_traj_msg;
+    std::size_t num_axes = axis_names_.size();
+    multi_traj_msg.axis_trajectories.resize(num_axes);
     if (joint_names.empty())
     {
       multi_traj_msg.axis_names = {
@@ -411,7 +415,7 @@ public:
     }
     multi_traj_msg.header.stamp = start_time;
 
-    for (std::size_t i = 0; i < axis_names_.size(); ++i)
+    for (std::size_t i = 0; i < num_axes; ++i)
     {
       auto & traj_msg = multi_traj_msg.axis_trajectories[i];
       traj_msg.axis_points.resize(points_positions.size());

@@ -714,6 +714,15 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
   // get degrees of freedom
   dof_ = params_.axes.size();
 
+  // size all state vectors appropriately
+  state_current_.resize(dof_);
+  command_current_.resize(dof_);
+  state_desired_.resize(dof_);
+  state_error_.resize(dof_);
+  splines_state_.resize(dof_);
+  ruckig_state_.resize(dof_);
+  ruckig_input_state_.resize(dof_);
+
   // TODO(destogl): why is this here? Add comment or move
   if (!reset())
   {
@@ -723,7 +732,7 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
   if (params_.axes.empty())
   {
     // TODO(destogl): is this correct? Can we really move-on if no joint names are not provided?
-    RCLCPP_WARN(logger, "'joints' parameter is empty.");
+    RCLCPP_WARN(logger, "'axes' parameter is empty.");
   }
 
   command_axis_names_ = params_.command_axes;
@@ -732,12 +741,12 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
   {
     command_axis_names_ = params_.axes;
     RCLCPP_INFO(
-      logger, "No specific joint names are used for command interfaces. Using 'axes' parameter.");
+      logger, "No specific axis names are used for command interfaces. Using 'axes' parameter.");
   }
   else if (command_axis_names_.size() != params_.axes.size())
   {
     RCLCPP_ERROR(
-      logger, "'command_joints' parameter has to have the same size as 'joints' parameter.");
+      logger, "'command_axis_names' parameter has to have the same size as 'axes' parameter.");
     return CallbackReturn::FAILURE;
   }
 
@@ -775,7 +784,7 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
     update_pids();
   }
 
-  // Configure joint position error normalization (angle_wraparound)
+  // Configure axis position error normalization (angle_wraparound)
   axis_angle_wraparound_.resize(dof_);
   for (size_t i = 0; i < dof_; ++i)
   {
@@ -785,8 +794,8 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
       // TODO(christophfroehlich): remove this warning in a future release (ROS-J)
       RCLCPP_WARN(
         logger,
-        "[Deprecated] Parameter 'gains.<joint>.angle_wraparound' is deprecated. The "
-        "angle_wraparound is now used if a continuous joint is configured in the URDF.");
+        "[Deprecated] Parameter 'gains.<axis>.angle_wraparound' is deprecated. The "
+        "angle_wraparound is now used if a continuous axis is configured in the URDF.");
       axis_angle_wraparound_[i] = true;
     }
 
@@ -1113,8 +1122,8 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_activate(
       std::find(allowed_interface_types_.begin(), allowed_interface_types_.end(), interface);
     auto dist = std::distance(allowed_interface_types_.begin(), it);
     std::size_t index =
-      dist > 0 ? static_cast<std::size_t>(dist)
-               : throw std::runtime_error("Interface not found in allowed interface types");
+      dist >= 0 ? static_cast<std::size_t>(dist)
+                : throw std::runtime_error("Interface not found in allowed interface types");
     if (!controller_interface::get_ordered_interfaces(
           command_interfaces_, command_axis_names_, interface, axis_command_interface_[index]))
     {
@@ -1130,8 +1139,8 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_activate(
       std::find(allowed_interface_types_.begin(), allowed_interface_types_.end(), interface);
     auto dist = std::distance(allowed_interface_types_.begin(), it);
     std::size_t index =
-      dist > 0 ? static_cast<std::size_t>(dist)
-               : throw std::runtime_error("Interface not found in allowed interface types");
+      dist >= 0 ? static_cast<std::size_t>(dist)
+                : throw std::runtime_error("Interface not found in allowed interface types");
     if (!controller_interface::get_ordered_interfaces(
           state_interfaces_, params_.axes, interface, axis_state_interface_[index]))
     {
@@ -1440,6 +1449,7 @@ void MultiTimeTrajectoryController::compute_error(
   std::vector<TrajectoryPoint> & error, const std::vector<TrajectoryPoint> & current,
   const std::vector<TrajectoryPoint> & desired) const
 {
+  error.resize(current.size());
   for (std::size_t index = 0; index < current.size(); ++index)
   {
     // error defined as the difference between current and desired
@@ -1673,6 +1683,7 @@ void MultiTimeTrajectoryController::init_hold_position_msg()
   hold_position_msg_ptr_->header.stamp =
     rclcpp::Time(0.0, 0.0, get_node()->get_clock()->get_clock_type());  // start immediately
   hold_position_msg_ptr_->axis_names = params_.axes;
+  hold_position_msg_ptr_->axis_trajectories.resize(dof_);
   for (std::size_t i = 0; i < dof_; ++i)
   {
     hold_position_msg_ptr_->axis_trajectories[i].axis_points.resize(1);  // a trivial msg only

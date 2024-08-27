@@ -220,8 +220,26 @@ bool Trajectory::sample(
     interpolation_method ==
     joint_trajectory_controller::interpolation_methods::InterpolationMethod::RUCKIG;
 
-  for (std::size_t axis_index = 0; axis_index < trajectory_msg_->axis_trajectories.size();
-       ++axis_index)
+  std::size_t num_axes = trajectory_msg_->axis_trajectories.size();
+  // output_state splines_state ruckig_state ruckig_input_state
+  if (output_state.size() < num_axes)
+  {
+    output_state.resize(num_axes);
+  }
+  if (splines_state.size() < num_axes)
+  {
+    splines_state.resize(num_axes);
+  }
+  if (ruckig_state.size() < num_axes)
+  {
+    ruckig_state.resize(num_axes);
+  }
+  if (ruckig_input_state.size() < num_axes)
+  {
+    ruckig_input_state.resize(num_axes);
+  }
+
+  for (std::size_t axis_index = 0; axis_index < num_axes; ++axis_index)
   {
     auto & trajectory = trajectory_msg_->axis_trajectories[axis_index];
     auto & first_point_in_msg = trajectory.axis_points[0];
