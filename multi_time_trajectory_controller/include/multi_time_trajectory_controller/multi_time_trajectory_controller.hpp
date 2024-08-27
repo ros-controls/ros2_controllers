@@ -246,14 +246,9 @@ protected:
    */
 
   void compute_error(
-    std::vector<TrajectoryPoint> & error,
-    const std::vector<TrajectoryPoint> & current,
+    std::vector<TrajectoryPoint> & error, const std::vector<TrajectoryPoint> & current,
     const std::vector<TrajectoryPoint> & desired) const;
-  // fill trajectory_msg so it matches axes controlled by this controller
-  // positions set to current position, velocities, accelerations and efforts to 0.0
 
-  void fill_partial_goal(
-    std::shared_ptr<control_msgs::msg::MultiAxisTrajectory> trajectory_msg) const;
   // sorts the axes of the incoming message to our local order
 
   void sort_to_local_axis_order(

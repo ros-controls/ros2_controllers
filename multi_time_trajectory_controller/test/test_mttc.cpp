@@ -644,9 +644,9 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_angle_wraparoun
   auto state_error = traj_controller_->get_state_error();
 
   // has the msg the correct vector sizes?
-  EXPECT_EQ(n_axes, state_reference);
-  EXPECT_EQ(n_axes, state_feedback);
-  EXPECT_EQ(n_axes, state_error);
+  EXPECT_EQ(n_axes, state_reference.size());
+  EXPECT_EQ(n_axes, state_feedback.size());
+  EXPECT_EQ(n_axes, state_error.size());
 
   for (std::size_t i = 0; i < n_axes; ++i)
   {
@@ -1039,7 +1039,7 @@ TEST_P(TrajectoryControllerTestParameterized, velocity_error)
   {
     for (std::size_t i = 0; i < n_axes; ++i)
     {
-      EXPECT_EQ(state_feedback[i].velocity, INITIAL_VEL_JOINTS);
+      EXPECT_EQ(state_feedback[i].velocity, INITIAL_VEL_JOINTS[i]);
     }
   }
   // is the velocity error correct?

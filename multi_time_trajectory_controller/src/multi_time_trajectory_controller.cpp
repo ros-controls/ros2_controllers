@@ -150,7 +150,6 @@ controller_interface::return_type MultiTimeTrajectoryController::update(
     current_external_msg != *new_external_msg &&
     (*(rt_has_pending_goal_.readFromRT()) && !active_goal) == false)
   {
-    fill_partial_goal(*new_external_msg);
     sort_to_local_axis_order(*new_external_msg);
     // TODO(denis): Add here integration of position and velocity
     traj_external_point_ptr_->update(*new_external_msg, joint_limits_, period);
@@ -1438,32 +1437,33 @@ void MultiTimeTrajectoryController::goal_accepted_callback(
 }
 
 void MultiTimeTrajectoryController::compute_error(
-  std::vector<TrajectoryPoint> & error,
-  const std::vector<TrajectoryPoint> & current, const std::vector<TrajectoryPoint> & desired) const
+  std::vector<TrajectoryPoint> & error, const std::vector<TrajectoryPoint> & current,
+  const std::vector<TrajectoryPoint> & desired) const
 {
-  for (std::size_t index = 0; index < current.size(); ++index) {
-  // error defined as the difference between current and desired
-  if (axis_angle_wraparound_[index])
+  for (std::size_t index = 0; index < current.size(); ++index)
   {
-    // if desired, the shortest_angular_distance is calculated, i.e., the error is
-    //  normalized between -pi<error<pi
-    error[index].position =
-      angles::shortest_angular_distance(current[index].position, desired[index].position);
-  }
-  else
-  {
-    error[index].position = desired[index].position - current[index].position;
-  }
-  if (
-    has_velocity_state_interface_ &&
-    (has_velocity_command_interface_ || has_effort_command_interface_))
-  {
-    error[index].velocity = desired[index].velocity - current[index].velocity;
-  }
-  if (has_acceleration_state_interface_ && has_acceleration_command_interface_)
-  {
-    error[index].acceleration = desired[index].acceleration - current[index].acceleration;
-  }
+    // error defined as the difference between current and desired
+    if (axis_angle_wraparound_[index])
+    {
+      // if desired, the shortest_angular_distance is calculated, i.e., the error is
+      //  normalized between -pi<error<pi
+      error[index].position =
+        angles::shortest_angular_distance(current[index].position, desired[index].position);
+    }
+    else
+    {
+      error[index].position = desired[index].position - current[index].position;
+    }
+    if (
+      has_velocity_state_interface_ &&
+      (has_velocity_command_interface_ || has_effort_command_interface_))
+    {
+      error[index].velocity = desired[index].velocity - current[index].velocity;
+    }
+    if (has_acceleration_state_interface_ && has_acceleration_command_interface_)
+    {
+      error[index].acceleration = desired[index].acceleration - current[index].acceleration;
+    }
   }
 }
 
