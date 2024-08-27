@@ -1145,28 +1145,31 @@ TEST_P(TrajectoryControllerTestParameterized, test_partial_joint_list)
   const double initial_joint2_cmd = joint_pos_[1];
   const double initial_joint3_cmd = joint_pos_[2];
   const double dt = 0.25;
-  trajectory_msgs::msg::JointTrajectory traj_msg;
+  control_msgs::msg::MultiAxisTrajectory traj_msg;
 
   {
     std::vector<std::size_t> jumble_map = {1, 0};
     std::vector<std::string> partial_joint_names{
       axis_names_[jumble_map[0]], axis_names_[jumble_map[1]]};
-    traj_msg.joint_names = partial_joint_names;
+    traj_msg.axis_names = partial_joint_names;
     traj_msg.header.stamp = rclcpp::Time(0);
-    traj_msg.points.resize(1);
-
-    traj_msg.points[0].time_from_start = rclcpp::Duration::from_seconds(dt);
-    traj_msg.points[0].position.resize(2);
-    traj_msg.points[0].position[0] = 2.0;
-    traj_msg.points[0].position[1] = 1.0;
-    traj_msg.points[0].velocity.resize(2);
-    traj_msg.points[0].acceleration.resize(2);
-    for (std::size_t dof = 0; dof < 2; dof++)
+    std::size_t n_axes = jumble_map.size();
+    traj_msg.axis_trajectories.resize(n_axes);
+    for (std::size_t i = 0; i < n_axes; ++i)
     {
-      traj_msg.points[0].velocity[dof] =
-        (traj_msg.points[0].position[dof] - joint_pos_[jumble_map[dof]]) / dt;
-      traj_msg.points[0].acceleration[dof] =
-        (traj_msg.points[0].velocity[dof] - joint_vel_[jumble_map[dof]]) / dt;
+      traj_msg.axis_trajectories[i].axis_points.resize(1);
+      traj_msg.axis_trajectories[i].axis_points[0].time_from_start =
+        rclcpp::Duration::from_seconds(dt);
+    }
+
+    traj_msg.axis_trajectories[0].axis_points[0].position = 2.0;
+    traj_msg.axis_trajectories[1].axis_points[0].position = 1.0;
+    for (std::size_t i = 0; i < n_axes; i++)
+    {
+      traj_msg.axis_trajectories[i].axis_points[0].velocity =
+        (traj_msg.axis_trajectories[i].axis_points[0].position - joint_pos_[jumble_map[i]]) / dt;
+      traj_msg.axis_trajectories[i].axis_points[0].acceleration =
+        (traj_msg.axis_trajectories[i].axis_points[0].velocity - joint_vel_[jumble_map[i]]) / dt;
     }
 
     trajectory_publisher_->publish(traj_msg);
@@ -1177,8 +1180,10 @@ TEST_P(TrajectoryControllerTestParameterized, test_partial_joint_list)
 
   if (traj_controller_->has_position_command_interface())
   {
-    EXPECT_NEAR(traj_msg.points[0].position[1], joint_pos_[0], COMMON_THRESHOLD);
-    EXPECT_NEAR(traj_msg.points[0].position[0], joint_pos_[1], COMMON_THRESHOLD);
+    EXPECT_NEAR(
+      traj_msg.axis_trajectories[1].axis_points[0].position, joint_pos_[0], COMMON_THRESHOLD);
+    EXPECT_NEAR(
+      traj_msg.axis_trajectories[0].axis_points[0].position, joint_pos_[1], COMMON_THRESHOLD);
     EXPECT_NEAR(initial_joint3_cmd, joint_pos_[2], COMMON_THRESHOLD)
       << "Joint 3 command should be current position";
   }
@@ -1187,10 +1192,10 @@ TEST_P(TrajectoryControllerTestParameterized, test_partial_joint_list)
   {
     // estimate the sign of the velocity
     // joint rotates forward
-    EXPECT_TRUE(
-      is_same_sign_or_zero(traj_msg.points[0].position[0] - initial_joint2_cmd, joint_vel_[0]));
-    EXPECT_TRUE(
-      is_same_sign_or_zero(traj_msg.points[0].position[1] - initial_joint1_cmd, joint_vel_[1]));
+    EXPECT_TRUE(is_same_sign_or_zero(
+      traj_msg.axis_trajectories[0].axis_points[0].position - initial_joint2_cmd, joint_vel_[0]));
+    EXPECT_TRUE(is_same_sign_or_zero(
+      traj_msg.axis_trajectories[1].axis_points[0].position - initial_joint1_cmd, joint_vel_[1]));
     EXPECT_NEAR(0.0, joint_vel_[2], COMMON_THRESHOLD)
       << "Joint 3 velocity should be 0.0 since it's not in the goal";
   }
@@ -1199,14 +1204,14 @@ TEST_P(TrajectoryControllerTestParameterized, test_partial_joint_list)
   {
     // estimate the sign of the acceleration
     // joint rotates forward
-    EXPECT_TRUE(
-      is_same_sign_or_zero(traj_msg.points[0].position[0] - initial_joint2_cmd, joint_acc_[0]))
-      << "Joint1: " << traj_msg.points[0].position[0] - initial_joint2_cmd << " vs. "
-      << joint_acc_[0];
-    EXPECT_TRUE(
-      is_same_sign_or_zero(traj_msg.points[0].position[1] - initial_joint1_cmd, joint_acc_[1]))
-      << "Joint2: " << traj_msg.points[0].position[1] - initial_joint1_cmd << " vs. "
-      << joint_acc_[1];
+    EXPECT_TRUE(is_same_sign_or_zero(
+      traj_msg.axis_trajectories[0].axis_points[0].position - initial_joint2_cmd, joint_acc_[0]))
+      << "Joint1: " << traj_msg.axis_trajectories[0].axis_points[0].position - initial_joint2_cmd
+      << " vs. " << joint_acc_[0];
+    EXPECT_TRUE(is_same_sign_or_zero(
+      traj_msg.axis_trajectories[1].axis_points[0].position - initial_joint1_cmd, joint_acc_[1]))
+      << "Joint2: " << traj_msg.axis_trajectories[1].axis_points[0].position - initial_joint1_cmd
+      << " vs. " << joint_acc_[1];
     EXPECT_NEAR(0.0, joint_acc_[2], COMMON_THRESHOLD)
       << "Joint 3 acc should be 0.0 since it's not in the goal";
   }
@@ -1215,10 +1220,10 @@ TEST_P(TrajectoryControllerTestParameterized, test_partial_joint_list)
   {
     // estimate the sign of the effort
     // joint rotates forward
-    EXPECT_TRUE(
-      is_same_sign_or_zero(traj_msg.points[0].position[0] - initial_joint2_cmd, joint_eff_[0]));
-    EXPECT_TRUE(
-      is_same_sign_or_zero(traj_msg.points[0].position[1] - initial_joint1_cmd, joint_eff_[1]));
+    EXPECT_TRUE(is_same_sign_or_zero(
+      traj_msg.axis_trajectories[0].axis_points[0].position - initial_joint2_cmd, joint_eff_[0]));
+    EXPECT_TRUE(is_same_sign_or_zero(
+      traj_msg.axis_trajectories[1].axis_points[0].position - initial_joint1_cmd, joint_eff_[1]));
     EXPECT_NEAR(0.0, joint_eff_[2], COMMON_THRESHOLD)
       << "Joint 3 effort should be 0.0 since it's not in the goal";
   }
