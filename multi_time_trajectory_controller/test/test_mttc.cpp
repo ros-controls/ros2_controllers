@@ -602,8 +602,7 @@ TEST_P(TrajectoryControllerTestParameterized, compute_error_angle_wraparound_fal
         traj_controller_->has_acceleration_command_interface())
       {
         // expect: error.acceleration = desired.acceleration - current.acceleration;
-        EXPECT_NEAR(
-          error[i].acceleration, desired[i].acceleration - current[i].acceleration, EPS);
+        EXPECT_NEAR(error[i].acceleration, desired[i].acceleration - current[i].acceleration, EPS);
       }
     }
   }
@@ -648,7 +647,8 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_angle_wraparoun
   EXPECT_EQ(n_axes, state_feedback);
   EXPECT_EQ(n_axes, state_error);
 
-  for (std::size_t i = 0; i < n_axes; ++i) {
+  for (std::size_t i = 0; i < n_axes; ++i)
+  {
     // no update of state_interface
     EXPECT_EQ(state_feedback[i].position, INITIAL_POS_JOINTS[i]);
   }
@@ -749,7 +749,8 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_angle_wraparound)
   auto state_error = traj_controller_->get_state_error();
 
   // no update of state_interface
-  for (std::size_t axis = 0; axis < n_axes; ++axis) {
+  for (std::size_t axis = 0; axis < n_axes; ++axis)
+  {
     EXPECT_EQ(state_feedback[axis].position, INITIAL_POS_JOINTS[axis]);
   }
 
@@ -889,19 +890,23 @@ TEST_P(TrajectoryControllerTestParameterized, no_timeout)
   auto state_error = traj_controller_->get_state_error();
 
   // has the msg the correct vector sizes?
-  EXPECT_EQ(n_axes, state_reference.position.size());
+  EXPECT_EQ(n_axes, state_reference.size());
 
   // is the trajectory still active?
   EXPECT_TRUE(traj_controller_->has_active_traj());
   // should still hold the points from above
-  EXPECT_TRUE(traj_controller_->has_nontrivial_traj());
-  EXPECT_NEAR(state_reference.position[0], points.at(2).at(0), 1e-2);
-  EXPECT_NEAR(state_reference.position[1], points.at(2).at(1), 1e-2);
-  EXPECT_NEAR(state_reference.position[2], points.at(2).at(2), 1e-2);
+  for (std::size_t i = 0; i < n_axes; ++i)
+  {
+    EXPECT_TRUE(traj_controller_->has_nontrivial_traj(i));
+  }
+
+  EXPECT_NEAR(state_reference[0].position, points.at(2).at(0), 1e-2);
+  EXPECT_NEAR(state_reference[1].position, points.at(2).at(1), 1e-2);
+  EXPECT_NEAR(state_reference[2].position, points.at(2).at(2), 1e-2);
   // value of velocity is different from above due to spline interpolation
-  EXPECT_GT(state_reference.velocity[0], 0.0);
-  EXPECT_GT(state_reference.velocity[1], 0.0);
-  EXPECT_GT(state_reference.velocity[2], 0.0);
+  EXPECT_GT(state_reference[0].velocity, 0.0);
+  EXPECT_GT(state_reference[1].velocity, 0.0);
+  EXPECT_GT(state_reference[2].velocity, 0.0);
 
   executor.cancel();
 }
@@ -936,7 +941,11 @@ TEST_P(TrajectoryControllerTestParameterized, timeout)
   // is a trajectory active?
   EXPECT_TRUE(traj_controller_->has_active_traj());
   // should have the trajectory with three points
-  EXPECT_TRUE(traj_controller_->has_nontrivial_traj());
+  size_t n_axes = axis_names_.size();
+  for (std::size_t i = 0; i < n_axes; ++i)
+  {
+    EXPECT_TRUE(traj_controller_->has_nontrivial_traj(i));
+  }
 
   // update until timeout should have happened
   updateController(rclcpp::Duration(FIRST_POINT_TIME));
@@ -945,16 +954,19 @@ TEST_P(TrajectoryControllerTestParameterized, timeout)
   // is a trajectory active?
   EXPECT_TRUE(traj_controller_->has_active_traj());
   // should be not more than one point now (from hold position)
-  EXPECT_FALSE(traj_controller_->has_nontrivial_traj());
-  // should hold last position with zero velocity
-  if (traj_controller_->has_position_command_interface())
+  for (std::size_t i = 0; i < n_axes; ++i)
   {
-    expectCommandPoint(points.at(2));
-  }
-  else
-  {
-    // no integration to position state interface from velocity/acceleration
-    expectCommandPoint(INITIAL_POS_JOINTS);
+    EXPECT_FALSE(traj_controller_->has_nontrivial_traj(i));
+    // should hold last position with zero velocity
+    if (traj_controller_->has_position_command_interface())
+    {
+      expectCommandPoint(points.at(2), i);
+    }
+    else
+    {
+      // no integration to position state interface from velocity/acceleration
+      expectCommandPoint(INITIAL_POS_JOINTS, i);
+    }
   }
 
   executor.cancel();
