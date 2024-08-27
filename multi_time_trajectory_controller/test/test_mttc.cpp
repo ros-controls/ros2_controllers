@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <limits>
 #include <vector>
 #include "control_msgs/msg/axis_trajectory_point.hpp"
 #include "control_msgs/msg/multi_axis_trajectory.hpp"
@@ -1327,61 +1328,51 @@ TEST_P(TrajectoryControllerTestParameterized, invalid_message)
   SetUpAndActivateTrajectoryController(
     executor, {partial_joints_parameters, allow_integration_parameters});
 
-  trajectory_msgs::msg::JointTrajectory traj_msg, good_traj_msg;
+  control_msgs::msg::MultiAxisTrajectory traj_msg, good_traj_msg;
 
-  good_traj_msg.joint_names = joint_names_;
+  good_traj_msg.axis_names = axis_names_;
   good_traj_msg.header.stamp = rclcpp::Time(0);
-  good_traj_msg.points.resize(1);
-  good_traj_msg.points[0].time_from_start = rclcpp::Duration::from_seconds(0.25);
-  good_traj_msg.points[0].position.resize(1);
-  good_traj_msg.points[0].position = {1.0, 2.0, 3.0};
-  good_traj_msg.points[0].velocity.resize(1);
-  good_traj_msg.points[0].velocity = {-1.0, -2.0, -3.0};
+  std::size_t const num_axes = 3;
+  good_traj_msg.axis_trajectories.resize(num_axes);
+
+  std::vector<double> const positions = {1.0, 2.0, 3.0};
+  std::vector<double> const velocities = {-1.0, -2.0, -3.0};
+  for (std::size_t i = 0; i < num_axes; ++i)
+  {
+    good_traj_msg.axis_trajectories[i].axis_points.resize(1);
+    good_traj_msg.axis_trajectories[i].axis_points[0].time_from_start =
+      rclcpp::Duration::from_seconds(0.25);
+    good_traj_msg.axis_trajectories[i].axis_points[0].position = positions[i];
+    good_traj_msg.axis_trajectories[i].axis_points[0].velocity = velocities[i];
+  }
   EXPECT_TRUE(traj_controller_->validate_trajectory_msg(good_traj_msg));
 
   // Incompatible joint names
   traj_msg = good_traj_msg;
-  traj_msg.joint_names = {"bad_name"};
+  traj_msg.axis_names = {"bad_name"};
   EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
 
   // empty message
   traj_msg = good_traj_msg;
-  traj_msg.points.clear();
+  traj_msg.axis_trajectories.clear();
   EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
 
   // No position data
   traj_msg = good_traj_msg;
-  traj_msg.points[0].position.clear();
+  for (std::size_t i = 0; i < num_axes; ++i)
+  {
+    traj_msg.axis_trajectories[i].axis_points[0].position =
+      std::numeric_limits<double>::quiet_NaN();
+  }
   EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
 
-  // Incompatible data sizes, too few position
+  // Non-monotonically increasing waypoint times
   traj_msg = good_traj_msg;
-  traj_msg.points[0].position = {1.0, 2.0};
-  EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
-
-  // Incompatible data sizes, too many position
-  traj_msg = good_traj_msg;
-  traj_msg.points[0].position = {1.0, 2.0, 3.0, 4.0};
-  EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
-
-  // Incompatible data sizes, too few velocity
-  traj_msg = good_traj_msg;
-  traj_msg.points[0].velocity = {1.0, 2.0};
-  EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
-
-  // Incompatible data sizes, too few acceleration
-  traj_msg = good_traj_msg;
-  traj_msg.points[0].acceleration = {1.0, 2.0};
-  EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
-
-  // Effort is not supported in trajectory message
-  traj_msg = good_traj_msg;
-  traj_msg.points[0].effort = {1.0, 2.0, 3.0};
-  EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
-
-  // Non-strictly increasing waypoint times
-  traj_msg = good_traj_msg;
-  traj_msg.points.push_back(traj_msg.points.front());
+  for (std::size_t i = 0; i < num_axes; ++i)
+  {
+    traj_msg.axis_trajectories[i].axis_points.push_back(
+      traj_msg.axis_trajectories[i].axis_points.front());
+  }
   EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
 }
 
