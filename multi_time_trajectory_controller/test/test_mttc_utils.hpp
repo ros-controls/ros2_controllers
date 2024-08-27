@@ -1,4 +1,4 @@
-// Copyright 2020 Open Source Robotics Foundation, Inc.
+// Copyright 2024 ros2_control Development Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TEST_TRAJECTORY_CONTROLLER_UTILS_HPP_
-#define TEST_TRAJECTORY_CONTROLLER_UTILS_HPP_
+#ifndef TEST_MTTC_UTILS_HPP_
+#define TEST_MTTC_UTILS_HPP_
+
+#include <gmock/gmock.h>
 
 #include <memory>
 #include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
-
-#include <gmock/gmock.h>
 
 #include "control_msgs/msg/axis_trajectory_point.hpp"
 #include "control_msgs/msg/multi_axis_trajectory.hpp"
@@ -402,7 +402,8 @@ public:
     if (joint_names.empty())
     {
       multi_traj_msg.axis_names = {
-        axis_names_.begin(), axis_names_.begin() + static_cast<long>(points_positions[0].size())};
+        axis_names_.begin(),
+        axis_names_.begin() + static_cast<int64_t>(points_positions[0].size())};
     }
     else
     {
@@ -730,4 +731,4 @@ public:
 
 }  // namespace test_mttc
 
-#endif  // TEST_TRAJECTORY_CONTROLLER_UTILS_HPP_
+#endif  // TEST_MTTC_UTILS_HPP_

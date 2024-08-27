@@ -1,4 +1,4 @@
-// Copyright 2017 Open Source Robotics Foundation, Inc.
+// Copyright 2024 ros2_control Development Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <memory>
 
 #include "angles/angles.h"
@@ -339,8 +340,8 @@ bool Trajectory::sample(
             return false;
           }
         }
-        start_segment_itr = begin(axis_index) + static_cast<long>(i);
-        end_segment_itr = begin(axis_index) + static_cast<long>(i + 1);
+        start_segment_itr = begin(axis_index) + static_cast<int64_t>(i);
+        end_segment_itr = begin(axis_index) + static_cast<int64_t>(i + 1);
 
         if (joint_limiter)
         {

@@ -1,4 +1,4 @@
-// Copyright 2023 ros2_control Development Team
+// Copyright 2024 ros2_control Development Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -271,6 +271,6 @@ const auto urdf_rrrbot_continuous =
 </robot>
 )";
 
-}  // namespace test_trajectory_controllers
+}  // namespace test_mttc
 
 #endif  // TEST_ASSETS_HPP_
