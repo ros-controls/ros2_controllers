@@ -1423,56 +1423,55 @@ TEST_P(TrajectoryControllerTestParameterized, missing_position_message_accepted)
   rclcpp::executors::SingleThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(executor, {allow_integration_parameters});
 
-  trajectory_msgs::msg::JointTrajectory traj_msg, good_traj_msg;
+  control_msgs::msg::MultiAxisTrajectory traj_msg, good_traj_msg;
 
-  good_traj_msg.joint_names = joint_names_;
+  good_traj_msg.axis_names = axis_names_;
   good_traj_msg.header.stamp = rclcpp::Time(0);
-  good_traj_msg.points.resize(1);
-  good_traj_msg.points[0].time_from_start = rclcpp::Duration::from_seconds(0.25);
-  good_traj_msg.points[0].position.resize(1);
-  good_traj_msg.points[0].position = {1.0, 2.0, 3.0};
-  good_traj_msg.points[0].velocity.resize(1);
-  good_traj_msg.points[0].velocity = {-1.0, -2.0, -3.0};
-  good_traj_msg.points[0].acceleration.resize(1);
-  good_traj_msg.points[0].acceleration = {1.0, 2.0, 3.0};
+  std::size_t const num_axes = axis_names_.size();
+  good_traj_msg.axis_trajectories.resize(num_axes);
+  std::vector<double> const positions = {1.0, 2.0, 3.0};
+  std::vector<double> const velocities = {-1.0, -2.0, -3.0};
+  for (std::size_t i = 0; i < num_axes; ++i)
+  {
+    good_traj_msg.axis_trajectories[i].axis_points.resize(1);
+    good_traj_msg.axis_trajectories[i].axis_points[0].time_from_start =
+      rclcpp::Duration::from_seconds(0.25);
+    good_traj_msg.axis_trajectories[i].axis_points[0].position = positions[i];
+    good_traj_msg.axis_trajectories[i].axis_points[0].velocity = velocities[i];
+  }
   EXPECT_TRUE(traj_controller_->validate_trajectory_msg(good_traj_msg));
 
   // No position data
   traj_msg = good_traj_msg;
-  traj_msg.points[0].position.clear();
+  for (std::size_t i = 0; i < num_axes; ++i)
+  {
+    traj_msg.axis_trajectories[i].axis_points[0].position =
+      std::numeric_limits<double>::quiet_NaN();
+  }
   EXPECT_TRUE(traj_controller_->validate_trajectory_msg(traj_msg));
 
   // No position and velocity data
   traj_msg = good_traj_msg;
-  traj_msg.points[0].position.clear();
-  traj_msg.points[0].velocity.clear();
+  for (std::size_t i = 0; i < num_axes; ++i)
+  {
+    traj_msg.axis_trajectories[i].axis_points[0].position =
+      std::numeric_limits<double>::quiet_NaN();
+    traj_msg.axis_trajectories[i].axis_points[0].velocity =
+      std::numeric_limits<double>::quiet_NaN();
+  }
   EXPECT_TRUE(traj_controller_->validate_trajectory_msg(traj_msg));
 
   // All empty
   traj_msg = good_traj_msg;
-  traj_msg.points[0].position.clear();
-  traj_msg.points[0].velocity.clear();
-  traj_msg.points[0].acceleration.clear();
-  EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
-
-  // Incompatible data sizes, too few position
-  traj_msg = good_traj_msg;
-  traj_msg.points[0].position = {1.0, 2.0};
-  EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
-
-  // Incompatible data sizes, too many position
-  traj_msg = good_traj_msg;
-  traj_msg.points[0].position = {1.0, 2.0, 3.0, 4.0};
-  EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
-
-  // Incompatible data sizes, too few velocity
-  traj_msg = good_traj_msg;
-  traj_msg.points[0].velocity = {1.0};
-  EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
-
-  // Incompatible data sizes, too few acceleration
-  traj_msg = good_traj_msg;
-  traj_msg.points[0].acceleration = {2.0};
+  for (std::size_t i = 0; i < num_axes; ++i)
+  {
+    traj_msg.axis_trajectories[i].axis_points[0].position =
+      std::numeric_limits<double>::quiet_NaN();
+    traj_msg.axis_trajectories[i].axis_points[0].velocity =
+      std::numeric_limits<double>::quiet_NaN();
+    traj_msg.axis_trajectories[i].axis_points[0].acceleration =
+      std::numeric_limits<double>::quiet_NaN();
+  }
   EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
 }
 
