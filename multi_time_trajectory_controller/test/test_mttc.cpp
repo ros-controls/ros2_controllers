@@ -1484,35 +1484,40 @@ TEST_P(TrajectoryControllerTestParameterized, test_trajectory_replace)
   rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", true);
   SetUpAndActivateTrajectoryController(executor, {partial_joints_parameters});
 
-  std::vector<std::vector<double>> points_old{{{2., 3., 4.}}};
-  std::vector<std::vector<double>> points_old_velocity{{{0.2, 0.3, 0.4}}};
-  std::vector<std::vector<double>> points_partial_new{{1.5}};
-  std::vector<std::vector<double>> points_partial_new_velocity{{0.15}};
+  std::vector<std::vector<double>> positions_old{{2., 3., 4.}};
+  std::vector<std::vector<double>> velocities_old{{0.2, 0.3, 0.4}};
+  std::vector<std::vector<double>> positions_new_partial{{1.5}};
+  std::vector<std::vector<double>> velocities_new_partial{{0.15}};
 
   const auto delay = std::chrono::milliseconds(500);
   builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(delay)};
-  publish(time_from_start, points_old, rclcpp::Time(), {}, points_old_velocity);
-  trajectory_msgs::msg::JointTrajectoryPoint expected_actual, expected_desired;
-  expected_actual.position = {points_old[0].begin(), points_old[0].end()};
-  expected_desired.position = {points_old[0].begin(), points_old[0].end()};
-  expected_actual.velocity = {points_old_velocity[0].begin(), points_old_velocity[0].end()};
-  expected_desired.velocity = {points_old_velocity[0].begin(), points_old_velocity[0].end()};
+  publish(time_from_start, positions_old, rclcpp::Time(), {}, velocities_old);
+  std::vector<control_msgs::msg::AxisTrajectoryPoint> expected_actual, expected_desired;
+  expected_actual.resize(positions_old.size());
+  expected_desired.resize(positions_old.size());
+  for (std::size_t i = 0; i < positions_old.size(); ++i)
+  {
+    expected_actual[i].position = positions_old[0][i];
+    expected_desired[i].position = positions_old[0][i];
+    expected_actual[i].velocity = velocities_old[0][i];
+    expected_desired[i].velocity = velocities_old[0][i];
+  }
   //  Check that we reached end of points_old trajectory
   auto end_time =
     waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
 
   RCLCPP_INFO(traj_controller_->get_node()->get_logger(), "Sending new trajectory");
-  points_partial_new_velocity[0][0] =
-    std::copysign(0.15, points_partial_new[0][0] - joint_state_pos_[0]);
-  publish(time_from_start, points_partial_new, rclcpp::Time(), {}, points_partial_new_velocity);
+  velocities_new_partial[0][0] =
+    std::copysign(0.15, positions_new_partial[0][0] - joint_state_pos_[0]);
+  publish(time_from_start, positions_new_partial, rclcpp::Time(), {}, velocities_new_partial);
 
   // Replaced trajectory is a mix of previous and current goal
-  expected_desired.position[0] = points_partial_new[0][0];
-  expected_desired.position[1] = points_old[0][1];
-  expected_desired.position[2] = points_old[0][2];
-  expected_desired.velocity[0] = points_partial_new_velocity[0][0];
-  expected_desired.velocity[1] = 0.0;
-  expected_desired.velocity[2] = 0.0;
+  expected_desired[0].position = positions_new_partial[0][0];
+  expected_desired[1].position = positions_old[0][1];
+  expected_desired[2].position = positions_old[0][2];
+  expected_desired[0].velocity = velocities_new_partial[0][0];
+  expected_desired[1].velocity = 0.0;
+  expected_desired[2].velocity = 0.0;
   expected_actual = expected_desired;
   waitAndCompareState(
     expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1, end_time);
