@@ -1539,22 +1539,32 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_old_trajectory)
   const auto delay = std::chrono::milliseconds(500);
   builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(delay)};
   publish(time_from_start, points_old, rclcpp::Time());
-  trajectory_msgs::msg::JointTrajectoryPoint expected_actual, expected_desired;
-  expected_actual.position = {points_old[0].begin(), points_old[0].end()};
-  expected_desired = expected_actual;
+
+  // a vector of axis states at each time
+  std::vector<control_msgs::msg::AxisTrajectoryPoint> expected_actuals, expected_desireds;
+  std::size_t num_axes = points_old[0].size();
+  expected_actuals.resize(num_axes);
+  for (std::size_t i = 0; i < num_axes; ++i)
+  {
+    expected_actuals[i].position = points_old[0][i];
+  }
+  expected_desireds = expected_actuals;
   //  Check that we reached end of points_old[0] trajectory
-  auto end_time =
-    waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
+  auto end_time = waitAndCompareState(
+    expected_actuals, expected_desireds, executor, rclcpp::Duration(delay), 0.1);
 
   RCLCPP_INFO(traj_controller_->get_node()->get_logger(), "Sending new trajectory in the past");
   //  New trajectory will end before current time
   rclcpp::Time new_traj_start =
     rclcpp::Clock(RCL_STEADY_TIME).now() - delay - std::chrono::milliseconds(100);
-  expected_actual.position = {points_old[1].begin(), points_old[1].end()};
-  expected_desired = expected_actual;
+  for (std::size_t i = 0; i < num_axes; ++i)
+  {
+    expected_actuals[i].position = points_old[0][i];
+  }
+  expected_desireds = expected_actuals;
   publish(time_from_start, points_new, new_traj_start);
   waitAndCompareState(
-    expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1, end_time);
+    expected_actuals, expected_desireds, executor, rclcpp::Duration(delay), 0.1, end_time);
 }
 
 TEST_P(TrajectoryControllerTestParameterized, test_ignore_partial_old_trajectory)
