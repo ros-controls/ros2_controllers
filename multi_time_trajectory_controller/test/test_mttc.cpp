@@ -2007,7 +2007,11 @@ TEST_P(TrajectoryControllerTestParameterized, test_state_tolerances_fail)
   updateControllerAsync(rclcpp::Duration(FIRST_POINT_TIME));
 
   // it should have aborted and be holding now
-  expectCommandPoint(joint_state_pos_);
+  std::size_t num_axes = points[0].size();
+  for (std::size_t i = 0; i < num_axes; ++i)
+  {
+    expectCommandPoint(joint_state_pos_, i);
+  }
 }
 
 TEST_P(TrajectoryControllerTestParameterized, test_goal_tolerances_fail)
@@ -2039,14 +2043,21 @@ TEST_P(TrajectoryControllerTestParameterized, test_goal_tolerances_fail)
   auto end_time = updateControllerAsync(rclcpp::Duration(4 * FIRST_POINT_TIME));
 
   // it should have aborted and be holding now
-  expectCommandPoint(joint_state_pos_);
+  std::size_t num_axes = points[0].size();
+  for (std::size_t i = 0; i < num_axes; ++i)
+  {
+    expectCommandPoint(joint_state_pos_, i);
+  }
 
   // what happens if we wait longer but it harms the tolerance again?
   auto hold_position = joint_state_pos_;
   joint_state_pos_.at(0) = -3.3;
   updateControllerAsync(rclcpp::Duration(FIRST_POINT_TIME), end_time);
   // it should be still holding the old point
-  expectCommandPoint(hold_position);
+  for (std::size_t i = 0; i < num_axes; ++i)
+  {
+    expectCommandPoint(hold_position, i);
+  }
 }
 
 // position controllers
