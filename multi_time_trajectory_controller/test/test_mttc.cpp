@@ -14,6 +14,7 @@
 
 #include <vector>
 #include "control_msgs/msg/axis_trajectory_point.hpp"
+#include "control_msgs/msg/multi_axis_trajectory.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "test_mttc_utils.hpp"
 
@@ -1069,28 +1070,25 @@ TEST_P(TrajectoryControllerTestParameterized, test_jumbled_joint_order)
   std::vector<std::size_t> jumble_map = {1, 2, 0};
   double dt = 0.25;
   {
-    trajectory_msgs::msg::JointTrajectory traj_msg;
+    control_msgs::msg::MultiAxisTrajectory traj_msg;
     const std::vector<std::string> jumbled_joint_names{
       axis_names_[jumble_map[0]], axis_names_[jumble_map[1]], axis_names_[jumble_map[2]]};
 
-    traj_msg.joint_names = jumbled_joint_names;
+    traj_msg.axis_names = jumbled_joint_names;
     traj_msg.header.stamp = rclcpp::Time(0);
-    traj_msg.points.resize(1);
 
-    traj_msg.points[0].time_from_start = rclcpp::Duration::from_seconds(dt);
-    traj_msg.points[0].position.resize(3);
-    traj_msg.points[0].position[0] = points_position.at(jumble_map[0]);
-    traj_msg.points[0].position[1] = points_position.at(jumble_map[1]);
-    traj_msg.points[0].position[2] = points_position.at(jumble_map[2]);
-    traj_msg.points[0].velocity.resize(3);
-    traj_msg.points[0].acceleration.resize(3);
-
-    for (std::size_t dof = 0; dof < 3; dof++)
+    std::size_t n_axes = axis_names_.size();
+    traj_msg.axis_trajectories.resize(n_axes);
+    for (std::size_t i = 0; i < n_axes; ++i)
     {
-      traj_msg.points[0].velocity[dof] =
-        (traj_msg.points[0].position[dof] - joint_pos_[jumble_map[dof]]) / dt;
-      traj_msg.points[0].acceleration[dof] =
-        (traj_msg.points[0].velocity[dof] - joint_vel_[jumble_map[dof]]) / dt;
+      traj_msg.axis_trajectories[i].axis_points.resize(1);
+      traj_msg.axis_trajectories[i].axis_points[0].time_from_start =
+        rclcpp::Duration::from_seconds(dt);
+      traj_msg.axis_trajectories[i].axis_points[0].position = points_position.at(jumble_map[i]);
+      traj_msg.axis_trajectories[i].axis_points[0].velocity =
+        (traj_msg.axis_trajectories[i].axis_points[0].position - joint_pos_[jumble_map[i]]) / dt;
+      traj_msg.axis_trajectories[i].axis_points[0].acceleration =
+        (traj_msg.axis_trajectories[i].axis_points[0].velocity - joint_vel_[jumble_map[i]]) / dt;
     }
 
     trajectory_publisher_->publish(traj_msg);
