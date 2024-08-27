@@ -1908,7 +1908,8 @@ TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_later_co
 
   // set command values to arbitrary values
   std::vector<double> initial_pos_cmd, initial_vel_cmd, initial_acc_cmd;
-  for (std::size_t i = 0; i < 3; ++i)
+  std::size_t num_axes = 3;
+  for (std::size_t i = 0; i < num_axes; ++i)
   {
     initial_pos_cmd.push_back(3.1 + static_cast<double>(i));
     initial_vel_cmd.push_back(0.25 + static_cast<double>(i));
@@ -1921,8 +1922,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_later_co
   // no call of update method, so the values should be read from command interfaces
 
   auto current_state_when_offset = traj_controller_->get_current_state_when_offset();
-
-  for (std::size_t i = 0; i < 3; ++i)
+  for (std::size_t i = 0; i < num_axes; ++i)
   {
     // check position
     if (traj_controller_->has_position_command_interface())
@@ -1938,42 +1938,42 @@ TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_later_co
             if (traj_controller_->has_acceleration_command_interface())
             {
               // should have set it to last position + velocity + acceleration command
-              EXPECT_EQ(current_state_when_offset.position[i], initial_pos_cmd[i]);
-              EXPECT_EQ(current_state_when_offset.velocity[i], initial_vel_cmd[i]);
-              EXPECT_EQ(current_state_when_offset.acceleration[i], initial_acc_cmd[i]);
+              EXPECT_EQ(current_state_when_offset[i].position, initial_pos_cmd[i]);
+              EXPECT_EQ(current_state_when_offset[i].velocity, initial_vel_cmd[i]);
+              EXPECT_EQ(current_state_when_offset[i].acceleration, initial_acc_cmd[i]);
             }
             else
             {
               // should have set it to the state interface instead
-              EXPECT_EQ(current_state_when_offset.position[i], joint_state_pos_[i]);
-              EXPECT_EQ(current_state_when_offset.velocity[i], joint_state_vel_[i]);
-              EXPECT_EQ(current_state_when_offset.acceleration[i], joint_state_acc_[i]);
+              EXPECT_EQ(current_state_when_offset[i].position, joint_state_pos_[i]);
+              EXPECT_EQ(current_state_when_offset[i].velocity, joint_state_vel_[i]);
+              EXPECT_EQ(current_state_when_offset[i].acceleration, joint_state_acc_[i]);
             }
           }
           else
           {
             // should have set it to last position + velocity command
-            EXPECT_EQ(current_state_when_offset.position[i], initial_pos_cmd[i]);
-            EXPECT_EQ(current_state_when_offset.velocity[i], initial_vel_cmd[i]);
+            EXPECT_EQ(current_state_when_offset[i].position, initial_pos_cmd[i]);
+            EXPECT_EQ(current_state_when_offset[i].velocity, initial_vel_cmd[i]);
           }
         }
         else
         {
           // should have set it to the state interface instead
-          EXPECT_EQ(current_state_when_offset.position[i], joint_state_pos_[i]);
-          EXPECT_EQ(current_state_when_offset.velocity[i], joint_state_vel_[i]);
+          EXPECT_EQ(current_state_when_offset[i].position, joint_state_pos_[i]);
+          EXPECT_EQ(current_state_when_offset[i].velocity, joint_state_vel_[i]);
         }
       }
       else
       {
         // should have set it to last position command
-        EXPECT_EQ(current_state_when_offset.position[i], initial_pos_cmd[i]);
+        EXPECT_EQ(current_state_when_offset[i].position, initial_pos_cmd[i]);
       }
     }
     else
     {
       // should have set it to the state interface instead
-      EXPECT_EQ(current_state_when_offset.position[i], joint_state_pos_[i]);
+      EXPECT_EQ(current_state_when_offset[i].position, joint_state_pos_[i]);
     }
   }
 
