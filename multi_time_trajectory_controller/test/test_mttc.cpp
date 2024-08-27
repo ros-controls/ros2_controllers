@@ -386,7 +386,6 @@ TEST_P(TrajectoryControllerTestParameterized, update_dynamic_tolerances)
     traj_controller_->get_node()->set_parameter(param);
   }
   updateControllerAsync();
-  size_t yeow = 0;
   {
     auto tols = traj_controller_->get_tolerances();
     EXPECT_EQ(tols.goal_time_tolerance, 1.0);
