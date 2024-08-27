@@ -1574,13 +1574,18 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_partial_old_trajectory
 
   std::vector<std::vector<double>> points_old{{{2., 3., 4.}, {4., 5., 6.}}};
   std::vector<std::vector<double>> points_new{{{-1., -2., -3.}, {-2., -4., -6.}}};
-  trajectory_msgs::msg::JointTrajectoryPoint expected_actual, expected_desired;
+  std::vector<control_msgs::msg::AxisTrajectoryPoint> expected_actual, expected_desired;
   const auto delay = std::chrono::milliseconds(500);
   builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(delay)};
 
   // send points_old and wait to reach first point
   publish(time_from_start, points_old, rclcpp::Time());
-  expected_actual.position = {points_old[0].begin(), points_old[0].end()};
+  std::size_t num_axes = points_old.size();
+  expected_actual.resize(num_axes);
+  for (std::size_t i = 0; i < num_axes; ++i)
+  {
+    expected_actual[i].position = points_old[0][i];
+  }
   expected_desired = expected_actual;
   //  Check that we reached end of points_old[0]trajectory
   auto end_time =
@@ -1593,8 +1598,11 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_partial_old_trajectory
   rclcpp::Time new_traj_start = end_time - delay - std::chrono::milliseconds(100);
   publish(time_from_start, points_new, new_traj_start);
   // it should not have accepted the new goal but finish the old one
-  expected_actual.position = {points_old[1].begin(), points_old[1].end()};
-  expected_desired.position = {points_old[1].begin(), points_old[1].end()};
+  for (std::size_t i = 0; i < num_axes; ++i)
+  {
+    expected_actual[i].position = points_old[1][i];
+  }
+  expected_desired = expected_actual;
   waitAndCompareState(
     expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1, end_time);
 }
@@ -1624,8 +1632,13 @@ TEST_P(TrajectoryControllerTestParameterized, test_execute_partial_traj_in_futur
   publish(points_delay, full_traj, rclcpp::Time(), {}, full_traj_velocity);
   // Sleep until first waypoint of full trajectory
 
-  trajectory_msgs::msg::JointTrajectoryPoint expected_actual, expected_desired;
-  expected_actual.position = {full_traj[0].begin(), full_traj[0].end()};
+  std::vector<control_msgs::msg::AxisTrajectoryPoint> expected_actual, expected_desired;
+  std::size_t num_axes = full_traj[0].size();
+  expected_actual.resize(num_axes);
+  for (std::size_t i = 0; i < num_axes; ++i)
+  {
+    expected_actual[i].position = full_traj[0][i];
+  }
   expected_desired = expected_actual;
   //  Check that we reached end of points_old[0]trajectory and are starting points_old[1]
   auto end_time =
@@ -1638,7 +1651,10 @@ TEST_P(TrajectoryControllerTestParameterized, test_execute_partial_traj_in_futur
     partial_traj_velocity);
   // Wait until the end start and end of partial traj
 
-  expected_actual.position = {partial_traj.back()[0], partial_traj.back()[1], full_traj.back()[2]};
+  for (std::size_t i = 0; i < num_axes; ++i)
+  {
+    expected_actual[i].position = partial_traj.back()[i];
+  }
   expected_desired = expected_actual;
 
   waitAndCompareState(
