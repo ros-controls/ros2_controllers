@@ -1245,21 +1245,26 @@ TEST_P(TrajectoryControllerTestParameterized, test_partial_joint_list_not_allowe
   const double initial_joint1_cmd = joint_pos_[0];
   const double initial_joint2_cmd = joint_pos_[1];
   const double initial_joint3_cmd = joint_pos_[2];
-  trajectory_msgs::msg::JointTrajectory traj_msg;
+  control_msgs::msg::MultiAxisTrajectory traj_msg;
 
   {
     std::vector<std::string> partial_joint_names{axis_names_[1], axis_names_[0]};
-    traj_msg.joint_names = partial_joint_names;
+    traj_msg.axis_names = partial_joint_names;
     traj_msg.header.stamp = rclcpp::Time(0);
-    traj_msg.points.resize(1);
 
-    traj_msg.points[0].time_from_start = rclcpp::Duration::from_seconds(0.25);
-    traj_msg.points[0].position.resize(2);
-    traj_msg.points[0].position[0] = 2.0;
-    traj_msg.points[0].position[1] = 1.0;
-    traj_msg.points[0].velocity.resize(2);
-    traj_msg.points[0].velocity[0] = 2.0;
-    traj_msg.points[0].velocity[1] = 1.0;
+    std::size_t num_axes = 2;
+    traj_msg.axis_trajectories.resize(num_axes);
+    for (std::size_t i = 0; i < num_axes; ++i)
+    {
+      traj_msg.axis_trajectories[i].axis_points.resize(1);
+      traj_msg.axis_trajectories[i].axis_points[0].time_from_start =
+        rclcpp::Duration::from_seconds(0.25);
+    }
+
+    traj_msg.axis_trajectories[0].axis_points[0].position = 2.0;
+    traj_msg.axis_trajectories[1].axis_points[0].position = 1.0;
+    traj_msg.axis_trajectories[0].axis_points[0].velocity = 2.0;
+    traj_msg.axis_trajectories[1].axis_points[0].velocity = 1.0;
 
     trajectory_publisher_->publish(traj_msg);
   }
