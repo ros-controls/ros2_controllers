@@ -1877,21 +1877,22 @@ TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_first_co
   // (command interface are NaN)
 
   auto current_state_when_offset = traj_controller_->get_current_state_when_offset();
+  std::size_t num_axes = initial_pos_cmd.size();
 
-  for (std::size_t i = 0; i < 3; ++i)
+  for (std::size_t i = 0; i < num_axes; ++i)
   {
-    EXPECT_EQ(current_state_when_offset.position[i], joint_state_pos_[i]);
+    EXPECT_EQ(current_state_when_offset[i].position, joint_state_pos_[i]);
 
     // check velocity
     if (traj_controller_->has_velocity_state_interface())
     {
-      EXPECT_EQ(current_state_when_offset.velocity[i], joint_state_vel_[i]);
+      EXPECT_EQ(current_state_when_offset[i].velocity, joint_state_vel_[i]);
     }
 
     // check acceleration
     if (traj_controller_->has_acceleration_state_interface())
     {
-      EXPECT_EQ(current_state_when_offset.acceleration[i], joint_state_acc_[i]);
+      EXPECT_EQ(current_state_when_offset[i].acceleration, joint_state_acc_[i]);
     }
   }
 
