@@ -1387,8 +1387,8 @@ TEST_P(
   rclcpp::executors::SingleThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(executor, {nonzero_vel_parameters});
 
-  trajectory_msgs::msg::JointTrajectory traj_msg;
-  traj_msg.joint_names = axis_names_;
+  control_msgs::msg::MultiAxisTrajectory traj_msg;
+  traj_msg.axis_names = axis_names_;
   traj_msg.header.stamp = rclcpp::Time(0);
 
   // empty message (no throw!)
@@ -1396,12 +1396,18 @@ TEST_P(
   EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
 
   // Nonzero velocity at trajectory end!
-  traj_msg.points.resize(1);
-  traj_msg.points[0].time_from_start = rclcpp::Duration::from_seconds(0.25);
-  traj_msg.points[0].position.resize(1);
-  traj_msg.points[0].position = {1.0, 2.0, 3.0};
-  traj_msg.points[0].velocity.resize(1);
-  traj_msg.points[0].velocity = {-1.0, -2.0, -3.0};
+  std::size_t num_axes = axis_names_.size();
+  traj_msg.axis_trajectories.resize(num_axes);
+  std::vector<double> const positions = {1.0, 2.0, 3.0};
+  std::vector<double> const velocities = {-1.0, -2.0, -3.0};
+  for (std::size_t i = 0; i < num_axes; ++i)
+  {
+    traj_msg.axis_trajectories[i].axis_points.resize(1);
+    traj_msg.axis_trajectories[i].axis_points[0].time_from_start =
+      rclcpp::Duration::from_seconds(0.25);
+    traj_msg.axis_trajectories[i].axis_points[0].position = positions[i];
+    traj_msg.axis_trajectories[i].axis_points[0].velocity = velocities[i];
+  }
   EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
 }
 
