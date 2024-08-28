@@ -24,23 +24,6 @@
 
 #include "angles/angles.h"
 #include "control_msgs/msg/single_dof_state.hpp"
-#include "controller_interface/helpers.hpp"
-
-// The main knowledge could be with regard to the input (reference/state) and output (command)
-// interfaces and their physical meaning, for example:
-//
-// reference/state POSITION; command VELOCITY --> PI CONTROLLER
-// reference/state VELOCITY; command ACCELERATION --> PI CONTROLLER
-//
-// reference/state VELOCITY; command POSITION --> PD CONTROLLER
-// reference/state ACCELERATION; command VELOCITY --> PD CONTROLLER
-//
-// reference/state POSITION; command POSITION --> PID CONTROLLER
-// reference/state VELOCITY; command VELOCITY --> PID CONTROLLER
-// reference/state ACCELERATION; command ACCELERATION --> PID CONTROLLER
-// reference/st
-
-#include "rclcpp/rclcpp.hpp"
 #include "rclcpp/version.h"
 
 namespace

@@ -22,9 +22,10 @@
 #include <memory>
 #include <vector>
 
+#include <control_toolbox/filters.hpp>
+#include <tf2_eigen/tf2_eigen.hpp>
+
 #include "rclcpp/duration.hpp"
-#include "rclcpp/utilities.hpp"
-#include "tf2_ros/transform_listener.h"
 
 namespace admittance_controller
 {
@@ -45,11 +46,17 @@ controller_interface::return_type AdmittanceRule::configure(
   {
     try
     {
+      // Make sure we destroy the interface first. Otherwise we might run into a segfault
+      if (kinematics_loader_)
+      {
+        kinematics_.reset();
+      }
       kinematics_loader_ =
         std::make_shared<pluginlib::ClassLoader<kinematics_interface::KinematicsInterface>>(
           parameters_.kinematics.plugin_package, "kinematics_interface::KinematicsInterface");
       kinematics_ = std::unique_ptr<kinematics_interface::KinematicsInterface>(
         kinematics_loader_->createUnmanagedInstance(parameters_.kinematics.plugin_name));
+
       if (!kinematics_->initialize(
             node->get_node_parameters_interface(), parameters_.kinematics.tip))
       {
