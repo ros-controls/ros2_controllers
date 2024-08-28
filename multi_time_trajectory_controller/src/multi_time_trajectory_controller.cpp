@@ -735,6 +735,7 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
   splines_state_.resize(dof_);
   ruckig_state_.resize(dof_);
   ruckig_input_state_.resize(dof_);
+  axis_angle_wraparound_.resize(dof_);
 
   // TODO(destogl): why is this here? Add comment or move
   if (!reset())
