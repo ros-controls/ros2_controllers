@@ -38,14 +38,44 @@ MultiTimeTrajectoryController::MultiTimeTrajectoryController()
 
 controller_interface::CallbackReturn MultiTimeTrajectoryController::on_init()
 {
-  if (!urdf_.empty())
+  try
   {
-    if (!model_.initString(urdf_))
+    // Create the parameter listener and get the parameters
+    param_listener_ = std::make_shared<ParamListener>(get_node());
+    params_ = param_listener_->get_params();
+  }
+  catch (const std::exception & e)
+  {
+    fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
+    return CallbackReturn::ERROR;
+  }
+
+  const std::string & urdf = get_robot_description();
+  if (!urdf.empty())
+  {
+    urdf::Model model;
+    if (!model.initString(urdf))
     {
-      RCLCPP_ERROR(get_node()->get_logger(), "Failed to parse URDF file");
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to parse robot description!");
+      return CallbackReturn::ERROR;
     }
     else
     {
+      /// initialize the URDF model and update the joint angles wraparound vector
+      // Configure joint position error normalization (angle_wraparound)
+      axis_angle_wraparound_.resize(params_.axes.size(), false);
+      for (size_t i = 0; i < params_.axes.size(); ++i)
+      {
+        auto urdf_joint = model.getJoint(params_.axes[i]);
+        if (urdf_joint && urdf_joint->type == urdf::Joint::CONTINUOUS)
+        {
+          RCLCPP_DEBUG(
+            get_node()->get_logger(), "joint '%s' is of type continuous, use angle_wraparound.",
+            params_.axes[i].c_str());
+          axis_angle_wraparound_[i] = true;
+        }
+        // do nothing if joint is not found in the URDF
+      }
       RCLCPP_DEBUG(get_node()->get_logger(), "Successfully parsed URDF file");
     }
   }
@@ -55,25 +85,8 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_init()
     RCLCPP_DEBUG(get_node()->get_logger(), "No URDF file given");
   }
 
-  try
-  {
-    // Create the parameter listener and get the parameters
-    param_listener_ = std::make_shared<ParamListener>(get_node());
-    params_ = param_listener_->get_params();
-
-    joint_limiter_loader_ = std::make_shared<pluginlib::ClassLoader<JointLimiter>>(
-      "joint_limits", "joint_limits::JointLimiterInterface<joint_limits::JointLimits>");
-    RCLCPP_DEBUG(get_node()->get_logger(), "Available joint limiter classes:");
-    for (const auto & available_class : joint_limiter_loader_->getDeclaredClasses())
-    {
-      RCLCPP_DEBUG(get_node()->get_logger(), "  %s", available_class.c_str());
-    }
-  }
-  catch (const std::exception & e)
-  {
-    fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
-    return CallbackReturn::ERROR;
-  }
+  // Initialize joint limits
+  joint_limits_.resize(params_.axes.size());
 
   return CallbackReturn::SUCCESS;
 }
@@ -122,7 +135,7 @@ MultiTimeTrajectoryController::state_interface_configuration() const
 controller_interface::return_type MultiTimeTrajectoryController::update(
   const rclcpp::Time & time, const rclcpp::Duration & period)
 {
-  if (get_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
+  if (get_lifecycle_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
   {
     return controller_interface::return_type::OK;
   }
@@ -636,7 +649,7 @@ void MultiTimeTrajectoryController::query_state_service(
 {
   const auto logger = get_node()->get_logger();
   // Preconditions
-  if (get_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+  if (get_lifecycle_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
   {
     RCLCPP_ERROR(logger, "Can't sample trajectory. Controller is not active.");
     response->success = false;
@@ -783,48 +796,6 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
 
     update_pids();
   }
-
-  // Configure axis position error normalization (angle_wraparound)
-  axis_angle_wraparound_.resize(dof_);
-  for (size_t i = 0; i < dof_; ++i)
-  {
-    const auto & gains = params_.gains.axes_map.at(params_.axes[i]);
-    if (gains.angle_wraparound)
-    {
-      // TODO(christophfroehlich): remove this warning in a future release (ROS-J)
-      RCLCPP_WARN(
-        logger,
-        "[Deprecated] Parameter 'gains.<axis>.angle_wraparound' is deprecated. The "
-        "angle_wraparound is now used if a continuous axis is configured in the URDF.");
-      axis_angle_wraparound_[i] = true;
-    }
-
-    if (!urdf_.empty())
-    {
-      auto urdf_joint = model_.getJoint(params_.axes[i]);
-      if (urdf_joint && urdf_joint->type == urdf::Joint::CONTINUOUS)
-      {
-        RCLCPP_DEBUG(
-          logger, "joint '%s' is of type continuous, use angle_wraparound.",
-          params_.axes[i].c_str());
-        axis_angle_wraparound_[i] = true;
-      }
-      // do nothing if joint is not found in the URDF
-    }
-  }
-
-  // Initialize joint limits
-  joint_limits_.resize(dof_);
-  // for (size_t i = 0; i < joint_limits_.size(); ++i)
-  // {
-  //   if (joint_limits::declare_parameters(command_axis_names_[i], get_node()))
-  //   {
-  //     joint_limits::get_joint_limits(command_axis_names_[i], get_node(), joint_limits_[i]);
-  //     RCLCPP_INFO(
-  //       get_node()->get_logger(), "Limits for joint %zu (%s) are: \n%s", i,
-  //       command_axis_names_[i].c_str(), joint_limits_[i].to_string().c_str());
-  //   }
-  // }
 
   // Initialize joint limits
   if (!params_.joint_limiter_type.empty())
@@ -1374,7 +1345,7 @@ rclcpp_action::GoalResponse MultiTimeTrajectoryController::goal_received_callbac
   RCLCPP_INFO(get_node()->get_logger(), "Received new action goal");
 
   // Precondition: Running controller
-  if (get_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
+  if (get_lifecycle_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
   {
     RCLCPP_ERROR(
       get_node()->get_logger(), "Can't accept new action goals. Controller is not running.");

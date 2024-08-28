@@ -53,11 +53,6 @@ const std::unordered_map<InterpolationMethod, std::string> InterpolationMethodMa
   {
     return InterpolationMethod::VARIABLE_DEGREE_SPLINE;
   }
-  else if (
-    interpolation_method.compare(InterpolationMethodMap.at(InterpolationMethod::RUCKIG)) == 0)
-  {
-    return InterpolationMethod::RUCKIG;
-  }
   // Default
   else
   {

@@ -12,35 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <stddef.h>
+#include <cstddef>
 
 #include <chrono>
 #include <cmath>
-#include <future>
 #include <limits>
-#include <memory>
-#include <stdexcept>
 #include <string>
-#include <system_error>
 #include <thread>
 #include <vector>
 
 #include "builtin_interfaces/msg/duration.hpp"
-#include "builtin_interfaces/msg/time.hpp"
-#include "controller_interface/controller_interface.hpp"
-#include "hardware_interface/resource_manager.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/clock.hpp"
 #include "rclcpp/duration.hpp"
 #include "rclcpp/executors/multi_threaded_executor.hpp"
 #include "rclcpp/executors/single_threaded_executor.hpp"
-#include "rclcpp/node.hpp"
 #include "rclcpp/parameter.hpp"
-#include "rclcpp/publisher.hpp"
-#include "rclcpp/qos.hpp"
-#include "rclcpp/subscription.hpp"
 #include "rclcpp/time.hpp"
-#include "rclcpp/utilities.hpp"
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
@@ -50,6 +38,13 @@
 using lifecycle_msgs::msg::State;
 using test_trajectory_controllers::TrajectoryControllerTest;
 using test_trajectory_controllers::TrajectoryControllerTestParameterized;
+
+TEST_P(TrajectoryControllerTestParameterized, invalid_robot_description)
+{
+  ASSERT_EQ(
+    controller_interface::return_type::ERROR,
+    SetUpTrajectoryControllerLocal({}, "<invalid_robot_description/>"));
+}
 
 TEST_P(TrajectoryControllerTestParameterized, configure_state_ignores_commands)
 {
@@ -253,7 +248,7 @@ TEST_P(TrajectoryControllerTestParameterized, state_topic_consistency)
 {
   rclcpp::executors::SingleThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(executor, {});
-  subscribeToState();
+  subscribeToState(executor);
   updateController();
 
   // Spin to receive latest state
@@ -644,7 +639,7 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_angle_wraparoun
   SetUpAndActivateTrajectoryController(
     executor, params, true, k_p, 0.0, INITIAL_POS_JOINTS, INITIAL_VEL_JOINTS, INITIAL_ACC_JOINTS,
     INITIAL_EFF_JOINTS, test_trajectory_controllers::urdf_rrrbot_revolute);
-  subscribeToState();
+  subscribeToState(executor);
 
   size_t n_joints = joint_names_.size();
 
@@ -1384,6 +1379,17 @@ TEST_P(TrajectoryControllerTestParameterized, invalid_message)
   traj_msg = good_traj_msg;
   traj_msg.points.push_back(traj_msg.points.front());
   EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
+
+  // End time in the past
+  traj_msg = good_traj_msg;
+  traj_msg.header.stamp = rclcpp::Time(1);
+  EXPECT_FALSE(traj_controller_->validate_trajectory_msg(traj_msg));
+
+  // End time in the future
+  traj_msg = good_traj_msg;
+  traj_msg.header.stamp = traj_controller_->get_node()->now();
+  traj_msg.points[0].time_from_start = rclcpp::Duration::from_seconds(10);
+  EXPECT_TRUE(traj_controller_->validate_trajectory_msg(traj_msg));
 }
 
 /**

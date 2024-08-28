@@ -2,6 +2,44 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.13.0 (2024-08-22)
+-------------------
+
+4.12.1 (2024-08-14)
+-------------------
+
+4.12.0 (2024-07-23)
+-------------------
+* [JTC] Refactor URDF Model parsing  (`#1227 <https://github.com/ros-controls/ros2_controllers/issues/1227>`_)
+* Use the internal methods instead of using the variables directly (`#1221 <https://github.com/ros-controls/ros2_controllers/issues/1221>`_)
+* Unused header cleanup (`#1199 <https://github.com/ros-controls/ros2_controllers/issues/1199>`_)
+* Fix WaitSet issue in tests  (`#1206 <https://github.com/ros-controls/ros2_controllers/issues/1206>`_)
+* [JTC] Fix test_tolerances_via_actions (`#1209 <https://github.com/ros-controls/ros2_controllers/issues/1209>`_)
+* Fix parallel gripper controller CI (`#1202 <https://github.com/ros-controls/ros2_controllers/issues/1202>`_)
+* Contributors: Christoph Fröhlich, Henry Moore, Sai Kishor Kothakota
+
+4.11.0 (2024-07-09)
+-------------------
+* [JTC] Make goal_time_tolerance overwrite default value only if explicitly set (`#1192 <https://github.com/ros-controls/ros2_controllers/issues/1192>`_)
+* added changes corresponding to the logger and clock propagation in ResourceManager (`#1184 <https://github.com/ros-controls/ros2_controllers/issues/1184>`_)
+* [JTC] Process tolerances sent with action goal (`#716 <https://github.com/ros-controls/ros2_controllers/issues/716>`_)
+* Contributors: Christoph Fröhlich, Felix Exner (fexner), Sai Kishor Kothakota
+
+4.10.0 (2024-07-01)
+-------------------
+* Remove manual angle-wraparound parameter (`#1152 <https://github.com/ros-controls/ros2_controllers/issues/1152>`_)
+* Contributors: Christoph Fröhlich
+
+4.9.0 (2024-06-05)
+------------------
+* JTC trajectory end time validation fix (`#1090 <https://github.com/ros-controls/ros2_controllers/issues/1090>`_)
+* Contributors: Henry Moore
+
+4.8.0 (2024-05-14)
+------------------
+* [JTC] Remove unused test code (`#1095 <https://github.com/ros-controls/ros2_controllers/issues/1095>`_)
+* Contributors: Bence Magyar
+
 4.7.0 (2024-03-22)
 ------------------
 * Remove action_msg dependency (`#1077 <https://github.com/ros-controls/ros2_controllers/issues/1077>`_)
