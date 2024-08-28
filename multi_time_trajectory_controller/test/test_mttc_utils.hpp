@@ -253,10 +253,10 @@ public:
   void SetUpAndActivateTrajectoryController(
     rclcpp::Executor & executor, const std::vector<rclcpp::Parameter> & parameters = {},
     bool separate_cmd_and_state_values = false, double k_p = 0.0, double ff = 1.0,
-    const std::vector<double> initial_pos_joints = INITIAL_POS_JOINTS,
-    const std::vector<double> initial_vel_joints = INITIAL_VEL_JOINTS,
-    const std::vector<double> initial_acc_joints = INITIAL_ACC_JOINTS,
-    const std::vector<double> initial_eff_joints = INITIAL_EFF_JOINTS,
+    const std::vector<double> & initial_pos_joints = INITIAL_POS_JOINTS,
+    const std::vector<double> & initial_vel_joints = INITIAL_VEL_JOINTS,
+    const std::vector<double> & initial_acc_joints = INITIAL_ACC_JOINTS,
+    const std::vector<double> & initial_eff_joints = INITIAL_EFF_JOINTS,
     const std::string & urdf = "")
   {
     auto has_nonzero_vel_param =
@@ -285,10 +285,10 @@ public:
 
   rclcpp_lifecycle::State ActivateTrajectoryController(
     bool separate_cmd_and_state_values = false,
-    const std::vector<double> initial_pos_joints = INITIAL_POS_JOINTS,
-    const std::vector<double> initial_vel_joints = INITIAL_VEL_JOINTS,
-    const std::vector<double> initial_acc_joints = INITIAL_ACC_JOINTS,
-    const std::vector<double> initial_eff_joints = INITIAL_EFF_JOINTS)
+    const std::vector<double> & initial_pos_joints = INITIAL_POS_JOINTS,
+    const std::vector<double> & initial_vel_joints = INITIAL_VEL_JOINTS,
+    const std::vector<double> & initial_acc_joints = INITIAL_ACC_JOINTS,
+    const std::vector<double> & initial_eff_joints = INITIAL_EFF_JOINTS)
   {
     std::vector<hardware_interface::LoanedCommandInterface> cmd_interfaces;
     std::vector<hardware_interface::LoanedStateInterface> state_interfaces;
@@ -548,7 +548,8 @@ public:
   }
 
   void expectCommandPoint(
-    std::vector<double> position, std::size_t axis, std::vector<double> velocity = {0.0, 0.0, 0.0})
+    std::vector<double> const & position, std::size_t axis,
+    std::vector<double> const & velocity = {0.0, 0.0, 0.0})
   {
     // it should be holding the given point
     // i.e., active but trivial trajectory (one point only)
@@ -611,7 +612,7 @@ public:
     }
   }
 
-  void expectHoldingPointDeactivated(std::vector<double> point)
+  void expectHoldingPointDeactivated(std::vector<double> const & point)
   {
     // it should be holding the given point, but no active trajectory
     EXPECT_FALSE(traj_controller_->has_active_traj());
@@ -649,7 +650,8 @@ public:
    * @brief compares the joint names and interface types of the controller with the given ones
    */
   void compare_joints(
-    std::vector<std::string> state_joint_names, std::vector<std::string> command_joint_names)
+    std::vector<std::string> const & state_joint_names,
+    std::vector<std::string> const & command_joint_names)
   {
     std::vector<std::string> state_interface_names;
     state_interface_names.reserve(state_joint_names.size() * state_interface_types_.size());
