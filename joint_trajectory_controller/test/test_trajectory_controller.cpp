@@ -53,7 +53,7 @@ TEST_P(TrajectoryControllerTestParameterized, configure_state_ignores_commands)
   traj_controller_->get_node()->set_parameter(
     rclcpp::Parameter("allow_nonzero_velocity_at_trajectory_end", true));
 
-  const auto state = traj_controller_->get_node()->configure();
+  const auto state = traj_controller_->configure();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
 
   // send msg
@@ -84,7 +84,7 @@ TEST_P(TrajectoryControllerTestParameterized, check_interface_names)
   rclcpp::executors::MultiThreadedExecutor executor;
   SetUpTrajectoryController(executor);
 
-  const auto state = traj_controller_->get_node()->configure();
+  const auto state = traj_controller_->configure();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
 
   compare_joints(joint_names_, joint_names_);
@@ -97,7 +97,7 @@ TEST_P(TrajectoryControllerTestParameterized, check_interface_names_with_command
   const rclcpp::Parameter command_joint_names_param("command_joints", command_joint_names_);
   SetUpTrajectoryController(executor, {command_joint_names_param});
 
-  const auto state = traj_controller_->get_node()->configure();
+  const auto state = traj_controller_->configure();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
 
   compare_joints(joint_names_, command_joint_names_);
@@ -108,7 +108,7 @@ TEST_P(TrajectoryControllerTestParameterized, activate)
   rclcpp::executors::MultiThreadedExecutor executor;
   SetUpTrajectoryController(executor);
 
-  auto state = traj_controller_->get_node()->configure();
+  auto state = traj_controller_->configure();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
 
   auto cmd_if_conf = traj_controller_->command_interface_configuration();
@@ -162,7 +162,7 @@ TEST_P(TrajectoryControllerTestParameterized, cleanup_after_configure)
   SetUpTrajectoryController(executor);
 
   // configure controller
-  auto state = traj_controller_->get_node()->configure();
+  auto state = traj_controller_->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
 
   // cleanup controller
@@ -2098,7 +2098,7 @@ TEST_F(TrajectoryControllerTest, incorrect_initialization_using_interface_parame
   // command interfaces: empty
   command_interface_types_ = {};
   EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::OK);
-  auto state = traj_controller_->get_node()->configure();
+  auto state = traj_controller_->configure();
   EXPECT_EQ(state.id(), State::PRIMARY_STATE_UNCONFIGURED);
 
   // command interfaces: bad_name
@@ -2143,7 +2143,7 @@ TEST_F(TrajectoryControllerTest, incorrect_initialization_using_interface_parame
   command_interface_types_ = {"velocity"};
   state_interface_types_ = {"position"};
   EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::OK);
-  state = traj_controller_->get_node()->configure();
+  state = traj_controller_->configure();
   EXPECT_EQ(state.id(), State::PRIMARY_STATE_UNCONFIGURED);
   state_interface_types_ = {"velocity"};
   EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::ERROR);
@@ -2152,7 +2152,7 @@ TEST_F(TrajectoryControllerTest, incorrect_initialization_using_interface_parame
   command_interface_types_ = {"effort"};
   state_interface_types_ = {"position"};
   EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::OK);
-  state = traj_controller_->get_node()->configure();
+  state = traj_controller_->configure();
   EXPECT_EQ(state.id(), State::PRIMARY_STATE_UNCONFIGURED);
   state_interface_types_ = {"velocity"};
   EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::ERROR);
