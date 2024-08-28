@@ -31,6 +31,18 @@
 
 namespace multi_time_trajectory_controller
 {
+
+control_msgs::msg::AxisTrajectoryPoint emptyTrajectoryPoint()
+{
+  control_msgs::msg::AxisTrajectoryPoint atp;
+  atp.position = std::numeric_limits<double>::quiet_NaN();
+  atp.velocity = std::numeric_limits<double>::quiet_NaN();
+  atp.acceleration = std::numeric_limits<double>::quiet_NaN();
+  atp.effort = std::numeric_limits<double>::quiet_NaN();
+  atp.time_from_start = rclcpp::Duration(0, 0);
+  return atp;
+}
+
 MultiTimeTrajectoryController::MultiTimeTrajectoryController()
 : controller_interface::ControllerInterface(), dof_(0)
 {
@@ -458,6 +470,9 @@ controller_interface::return_type MultiTimeTrajectoryController::update(
 
 bool MultiTimeTrajectoryController::read_state_from_hardware(std::vector<TrajectoryPoint> & states)
 {
+  // start by emptying all states
+  std::fill(states.begin(), states.end(), emptyTrajectoryPoint());
+
   // Assign values from the hardware
   // Position states always exist
   assign_positions_from_interface(states, axis_state_interface_[0]);
@@ -470,22 +485,6 @@ bool MultiTimeTrajectoryController::read_state_from_hardware(std::vector<Traject
     {
       assign_accelerations_from_interface(states, axis_state_interface_[2]);
     }
-    else
-    {
-      for (auto & state : states)
-      {
-        state.acceleration = std::numeric_limits<double>::quiet_NaN();
-      }
-    }
-  }
-  else
-  {
-    // Make empty so the property is ignored during interpolation
-    for (auto & state : states)
-    {
-      state.velocity = std::numeric_limits<double>::quiet_NaN();
-      state.acceleration = std::numeric_limits<double>::quiet_NaN();
-    }
   }
   return true;
 }
@@ -493,6 +492,8 @@ bool MultiTimeTrajectoryController::read_state_from_hardware(std::vector<Traject
 bool MultiTimeTrajectoryController::read_state_from_command_interfaces(
   std::vector<TrajectoryPoint> & states)
 {
+  // start by emptying all states
+  std::fill(states.begin(), states.end(), emptyTrajectoryPoint());
   bool has_values = true;
 
   auto interface_has_values = [](const auto & joint_interface)
@@ -510,10 +511,6 @@ bool MultiTimeTrajectoryController::read_state_from_command_interfaces(
   }
   else
   {
-    for (auto & state : states)
-    {
-      state.position = std::numeric_limits<double>::quiet_NaN();
-    }
     has_values = false;
   }
   // velocity and acceleration states are optional
@@ -525,18 +522,7 @@ bool MultiTimeTrajectoryController::read_state_from_command_interfaces(
     }
     else
     {
-      for (auto & state : states)
-      {
-        state.velocity = std::numeric_limits<double>::quiet_NaN();
-      }
       has_values = false;
-    }
-  }
-  else
-  {
-    for (auto & state : states)
-    {
-      state.velocity = std::numeric_limits<double>::quiet_NaN();
     }
   }
   // Acceleration is used only in combination with velocity
@@ -548,18 +534,7 @@ bool MultiTimeTrajectoryController::read_state_from_command_interfaces(
     }
     else
     {
-      for (auto & state : states)
-      {
-        state.acceleration = std::numeric_limits<double>::quiet_NaN();
-      }
       has_values = false;
-    }
-  }
-  else
-  {
-    for (auto & state : states)
-    {
-      state.acceleration = std::numeric_limits<double>::quiet_NaN();
     }
   }
 
@@ -569,6 +544,9 @@ bool MultiTimeTrajectoryController::read_state_from_command_interfaces(
 bool MultiTimeTrajectoryController::read_commands_from_command_interfaces(
   std::vector<TrajectoryPoint> & commands)
 {
+  // start by emptying all commands
+  std::fill(commands.begin(), commands.end(), emptyTrajectoryPoint());
+
   bool has_values = true;
 
   auto interface_has_values = [](const auto & joint_interface)
@@ -587,10 +565,6 @@ bool MultiTimeTrajectoryController::read_commands_from_command_interfaces(
     }
     else
     {
-      for (auto & command : commands)
-      {
-        command.position = std::numeric_limits<double>::quiet_NaN();
-      }
       has_values = false;
     }
   }
@@ -602,10 +576,6 @@ bool MultiTimeTrajectoryController::read_commands_from_command_interfaces(
     }
     else
     {
-      for (auto & command : commands)
-      {
-        command.velocity = std::numeric_limits<double>::quiet_NaN();
-      }
       has_values = false;
     }
   }
@@ -617,25 +587,6 @@ bool MultiTimeTrajectoryController::read_commands_from_command_interfaces(
     }
     else
     {
-      for (auto & command : commands)
-      {
-        command.acceleration = std::numeric_limits<double>::quiet_NaN();
-      }
-      has_values = false;
-    }
-  }
-  if (has_effort_command_interface_)
-  {
-    if (interface_has_values(axis_command_interface_[3]))
-    {
-      assign_effort_from_interface(commands, axis_command_interface_[3]);
-    }
-    else
-    {
-      for (auto & command : commands)
-      {
-        command.effort = std::numeric_limits<double>::quiet_NaN();
-      }
       has_values = false;
     }
   }
@@ -1529,35 +1480,24 @@ bool MultiTimeTrajectoryController::validate_trajectory_msg(
     rclcpp::Duration previous_traj_time(0ms);
     for (size_t i = 0; i < trajectory.axis_points.size(); ++i)
     {
-      for (std::size_t j = 0; j < dof_; ++j)
+      if (
+        (i > 0) &&
+        (rclcpp::Duration(trajectory.axis_points[i].time_from_start) <= previous_traj_time))
       {
-        if (
-          (i > 0) &&
-          (rclcpp::Duration(trajectory.axis_points[i].time_from_start) <= previous_traj_time))
-        {
-          RCLCPP_ERROR(
-            get_node()->get_logger(),
-            "Time between points %zu and %zu is not strictly increasing, it is %f and %f "
-            "respectively",
-            i - 1, i, previous_traj_time.seconds(),
-            rclcpp::Duration(trajectory.axis_points[i].time_from_start).seconds());
-          return false;
-        }
-        previous_traj_time = trajectory.axis_points[i].time_from_start;
-
-        const auto & points = trajectory.axis_points;
-        // TODO(henrygerardmoore): check here if points that are nan should be and that points that
-        // aren't nan shouldn't be
-
-        // reject effort entries
-        if (points[i].effort != std::numeric_limits<double>::quiet_NaN())
-        {
-          RCLCPP_ERROR(
-            get_node()->get_logger(),
-            "Trajectories with effort fields are currently not supported.");
-          return false;
-        }
+        RCLCPP_ERROR(
+          get_node()->get_logger(),
+          "Time between points %zu and %zu is not strictly increasing, it is %f and %f "
+          "respectively",
+          i - 1, i, previous_traj_time.seconds(),
+          rclcpp::Duration(trajectory.axis_points[i].time_from_start).seconds());
+        return false;
       }
+      previous_traj_time = trajectory.axis_points[i].time_from_start;
+
+      // TODO(henrygerardmoore): check here if points that are nan should be and that points that
+      // aren't nan shouldn't be
+      // const auto & points = trajectory.axis_points;
+      // check points...
     }
   }
   return true;
@@ -1658,7 +1598,8 @@ void MultiTimeTrajectoryController::init_hold_position_msg()
   hold_position_msg_ptr_->axis_trajectories.resize(dof_);
   for (std::size_t i = 0; i < dof_; ++i)
   {
-    hold_position_msg_ptr_->axis_trajectories[i].axis_points.resize(1);  // a trivial msg only
+    hold_position_msg_ptr_->axis_trajectories[i].axis_points.resize(
+      1, emptyTrajectoryPoint());  // a trivial msg only
     hold_position_msg_ptr_->axis_trajectories[i].axis_points[0].velocity =
       std::numeric_limits<double>::quiet_NaN();
     hold_position_msg_ptr_->axis_trajectories[i].axis_points[0].acceleration =

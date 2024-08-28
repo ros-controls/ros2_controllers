@@ -646,10 +646,10 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_angle_wraparoun
   auto state_reference = traj_controller_->get_state_reference();
   auto state_error = traj_controller_->get_state_error();
 
-  // has the msg the correct vector sizes?
-  EXPECT_EQ(n_axes, state_reference.size());
-  EXPECT_EQ(n_axes, state_feedback.size());
-  EXPECT_EQ(n_axes, state_error.size());
+  // does the message have the correct sizes?
+  ASSERT_EQ(n_axes, state_reference.size());
+  ASSERT_EQ(n_axes, state_feedback.size());
+  ASSERT_EQ(n_axes, state_error.size());
 
   for (std::size_t i = 0; i < n_axes; ++i)
   {
@@ -759,9 +759,9 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_angle_wraparound)
   }
 
   // has the msg the correct vector sizes?
-  EXPECT_EQ(n_axes, state_reference.size());
-  EXPECT_EQ(n_axes, state_feedback.size());
-  EXPECT_EQ(n_axes, state_error.size());
+  ASSERT_EQ(n_axes, state_reference.size());
+  ASSERT_EQ(n_axes, state_feedback.size());
+  ASSERT_EQ(n_axes, state_error.size());
 
   // are the correct reference position used?
   EXPECT_NEAR(points[0][0], state_reference[0].position, COMMON_THRESHOLD);

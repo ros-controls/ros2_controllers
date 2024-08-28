@@ -46,6 +46,8 @@ using namespace std::chrono_literals;  // NOLINT
 namespace multi_time_trajectory_controller
 {
 
+control_msgs::msg::AxisTrajectoryPoint emptyTrajectoryPoint();
+
 class MultiTimeTrajectoryController : public controller_interface::ControllerInterface
 {
 public:
@@ -331,16 +333,6 @@ protected:
     for (size_t index = 0; index < dof_; ++index)
     {
       trajectory_point_interface[index].acceleration = axis_interface[index].get().get_value();
-    }
-  };
-  template <typename T>
-  void assign_effort_from_interface(
-    std::vector<TrajectoryPoint> & trajectory_point_interface,
-    const AxisInterfaceRefs<T> & axis_interface)
-  {
-    for (size_t index = 0; index < dof_; ++index)
-    {
-      trajectory_point_interface[index].effort = axis_interface[index].get().get_value();
     }
   };
 

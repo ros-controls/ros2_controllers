@@ -418,7 +418,9 @@ public:
     for (std::size_t i = 0; i < num_axes; ++i)
     {
       auto & traj_msg = multi_traj_msg.axis_trajectories[i];
-      traj_msg.axis_points.resize(points_positions.size());
+
+      traj_msg.axis_points.resize(
+        points_positions.size(), multi_time_trajectory_controller::emptyTrajectoryPoint());
 
       builtin_interfaces::msg::Duration duration_msg;
       duration_msg.sec = delay_btwn_points.sec;
@@ -431,7 +433,8 @@ public:
         traj_msg.axis_points[index].time_from_start = duration_total;
 
         traj_msg.axis_points[index].position = points_positions[index][i];
-        duration_total = duration_total + duration;
+        traj_msg.axis_points[index].time_from_start = duration_total;
+        duration_total += duration;
       }
 
       for (size_t index = 0; index < points_velocities.size(); ++index)
