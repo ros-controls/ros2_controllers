@@ -43,6 +43,7 @@
 
 using namespace std::chrono_literals;  // NOLINT
 
+// TODO(henrygerardmoore): add ~/reference and ~/reference_reliable usage as in CTG
 namespace multi_time_trajectory_controller
 {
 
