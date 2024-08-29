@@ -59,7 +59,7 @@ public:
     const std::vector<bool> & joints_angle_wraparound = std::vector<bool>());
 
   void update(
-    std::shared_ptr<control_msgs::msg::MultiAxisTrajectory> joint_trajectory,
+    std::shared_ptr<control_msgs::msg::MultiAxisTrajectory> axis_trajectory,
     const std::vector<joint_limits::JointLimits> & joint_limits, const rclcpp::Duration & period);
 
   /// Find the segment (made up of 2 points) and its expected state from the

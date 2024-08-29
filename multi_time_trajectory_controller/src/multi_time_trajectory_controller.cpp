@@ -73,8 +73,8 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_init()
     }
     else
     {
-      /// initialize the URDF model and update the joint angles wraparound vector
-      // Configure joint position error normalization (angle_wraparound)
+      /// initialize the URDF model and update the axis angles wraparound vector
+      // Configure axis position error normalization (angle_wraparound)
       axis_angle_wraparound_.resize(params_.axes.size(), false);
       for (size_t i = 0; i < params_.axes.size(); ++i)
       {
@@ -855,7 +855,7 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
   // create subscriber and publishers
   axis_command_subscriber_ =
     get_node()->create_subscription<control_msgs::msg::MultiAxisTrajectory>(
-      "~/joint_trajectory", rclcpp::SystemDefaultsQoS(),
+      "~/axis_trajectory", rclcpp::SystemDefaultsQoS(),
       std::bind(&MultiTimeTrajectoryController::topic_callback, this, std::placeholders::_1));
 
   publisher_ = get_node()->create_publisher<ControllerStateMsg>(
@@ -1038,7 +1038,7 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_activate(
   // parse remaining parameters
   default_tolerances_ = get_segment_tolerances(params_);
 
-  // order all joints in the storage
+  // order all axes in the storage
   for (const auto & interface : params_.command_interfaces)
   {
     auto it =
@@ -1435,7 +1435,7 @@ bool MultiTimeTrajectoryController::validate_trajectory_msg(
   {
     auto const & trajectory = trajectories.axis_trajectories[axis_index];
     const std::string & incoming_axis_name = trajectories.axis_names[axis_index];
-    // If partial joints goals are not allowed, goal should specify all controller joints
+    // If partial axes goals are not allowed, goal should specify all controller axes
 
     // If the starting time it set to 0.0, it means the controller should start it now.
     // Otherwise we check if the trajectory ends before the current time,
