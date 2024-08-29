@@ -121,6 +121,8 @@ protected:
   // override methods from ChainableControllerInterface
   std::vector<hardware_interface::CommandInterface> on_export_reference_interfaces() override;
 
+  std::vector<hardware_interface::StateInterface> on_export_state_interfaces() override;
+
   bool on_set_chained_mode(bool chained_mode) override;
 
   // internal methods
