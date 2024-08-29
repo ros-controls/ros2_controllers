@@ -27,12 +27,15 @@ TEST(TestLoadGripperActionControllers, load_controller)
 
   controller_manager::ControllerManager cm(
     executor, ros2_control_test_assets::minimal_robot_urdf, true, "test_controller_manager");
+  const std::string test_file_path =
+    std::string(TEST_FILES_DIRECTORY) + "/gripper_action_controller_params.yaml";
 
-  ASSERT_NE(
-    cm.load_controller(
-      "test_gripper_action_position_controller",
-      "parallel_gripper_action_controller/GripperActionController"),
-    nullptr);
+  cm.set_parameter({"test_gripper_action_position_controller.params_file", test_file_path});
+  cm.set_parameter(
+    {"test_gripper_action_position_controller.type",
+     "parallel_gripper_action_controller/GripperActionController"});
+
+  ASSERT_NE(cm.load_controller("test_gripper_action_position_controller"), nullptr);
 }
 
 int main(int argc, char ** argv)
