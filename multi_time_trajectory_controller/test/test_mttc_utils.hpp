@@ -406,7 +406,7 @@ public:
     {
       multi_traj_msg.axis_names = {
         axis_names_.begin(),
-        axis_names_.begin() + static_cast<int64_t>(points_positions[0].size())};
+        axis_names_.begin() + static_cast<int64_t>(points_positions.at(0).size())};
     }
     else
     {
@@ -416,7 +416,7 @@ public:
 
     for (std::size_t i = 0; i < num_axes; ++i)
     {
-      auto & traj_msg = multi_traj_msg.axis_trajectories[i];
+      auto & traj_msg = multi_traj_msg.axis_trajectories.at(i);
 
       traj_msg.axis_points.resize(
         points_positions.size(), multi_time_trajectory_controller::emptyTrajectoryPoint());
@@ -429,16 +429,16 @@ public:
 
       for (size_t index = 0; index < points_positions.size(); ++index)
       {
-        traj_msg.axis_points[index].time_from_start = duration_total;
+        traj_msg.axis_points.at(index).time_from_start = duration_total;
 
-        traj_msg.axis_points[index].position = points_positions[index][i];
-        traj_msg.axis_points[index].time_from_start = duration_total;
+        traj_msg.axis_points.at(index).position = points_positions.at(index).at(i);
+        traj_msg.axis_points.at(index).time_from_start = duration_total;
         duration_total += duration;
       }
 
       for (size_t index = 0; index < points_velocities.size(); ++index)
       {
-        traj_msg.axis_points[index].velocity = points_velocities[index][i];
+        traj_msg.axis_points.at(index).velocity = points_velocities.at(index).at(i);
       }
     }
 

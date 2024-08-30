@@ -213,9 +213,6 @@ bool Trajectory::sample(
     return false;
   }
 
-  // TODO(anyone): this shouldn't be initialized at runtime
-  output_state = {};
-
   auto do_ruckig_smoothing =
     interpolation_method ==
     joint_trajectory_controller::interpolation_methods::InterpolationMethod::RUCKIG;
@@ -312,9 +309,6 @@ bool Trajectory::sample(
 
       if (sample_time >= t0 && sample_time < t1)
       {
-        // TODO(anyone): this shouldn't be initialized at runtime
-        output_state = {};
-
         // If interpolation is disabled, just forward the next waypoint
         if (
           interpolation_method ==

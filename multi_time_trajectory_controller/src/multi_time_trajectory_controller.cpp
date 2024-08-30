@@ -679,14 +679,14 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
   dof_ = params_.axes.size();
 
   // size all state vectors appropriately
-  state_current_.resize(dof_);
-  command_current_.resize(dof_);
-  state_desired_.resize(dof_);
-  state_error_.resize(dof_);
-  splines_state_.resize(dof_);
-  ruckig_state_.resize(dof_);
-  ruckig_input_state_.resize(dof_);
-  axis_angle_wraparound_.resize(dof_);
+  state_current_.resize(dof_, emptyTrajectoryPoint());
+  command_current_.resize(dof_, emptyTrajectoryPoint());
+  state_desired_.resize(dof_, emptyTrajectoryPoint());
+  state_error_.resize(dof_, emptyTrajectoryPoint());
+  splines_state_.resize(dof_, emptyTrajectoryPoint());
+  ruckig_state_.resize(dof_, emptyTrajectoryPoint());
+  ruckig_input_state_.resize(dof_, emptyTrajectoryPoint());
+  axis_angle_wraparound_.resize(dof_, false);
 
   // TODO(destogl): why is this here? Add comment or move
   if (!reset())

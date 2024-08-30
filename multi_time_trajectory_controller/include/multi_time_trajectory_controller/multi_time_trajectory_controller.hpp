@@ -336,6 +336,7 @@ protected:
       trajectory_point_interface[index].acceleration = axis_interface[index].get().get_value();
     }
   };
+  // TODO(henrygerardmoore): add effort stuff back as used in JTC
 
   template <typename T>
   void assign_interface_from_position(
@@ -398,8 +399,6 @@ private:
     const std::vector<std::string> & interface_type_list, const std::string & interface_type);
 
   void init_hold_position_msg();
-
-  urdf::Model model_;
 };
 }  // namespace multi_time_trajectory_controller
 #endif  // MULTI_TIME_TRAJECTORY_CONTROLLER__MULTI_TIME_TRAJECTORY_CONTROLLER_HPP_
