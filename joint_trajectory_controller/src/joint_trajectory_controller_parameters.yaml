@@ -67,7 +67,7 @@ joint_trajectory_controller:
   set_last_command_interface_value_as_state_on_activation: {
     type: bool,
     default_value: true,
-    description: "If enabled, set the last command interface value as both the current state and the last commanded state upon activation.",
+    description: "When set to true, the last command interface value is used as both the current state and the last commanded state upon activation. When set to false, the current state is used for both.",
   }
   action_monitor_rate: {
     type: double,
