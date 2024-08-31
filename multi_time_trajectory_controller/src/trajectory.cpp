@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <limits>
 #include <memory>
 
 #include "angles/angles.h"
@@ -170,19 +171,21 @@ void Trajectory::update(
   }
 }
 
-bool Trajectory::sample(
+std::vector<bool> Trajectory::sample(
   const rclcpp::Time & sample_time,
   const joint_trajectory_controller::interpolation_methods::InterpolationMethod
     interpolation_method,
   std::vector<control_msgs::msg::AxisTrajectoryPoint> & output_state,
-  TrajectoryPointConstIter & start_segment_itr, TrajectoryPointConstIter & end_segment_itr,
-  const rclcpp::Duration & period,
+  std::vector<TrajectoryPointConstIter> & start_segment_itr,
+  std::vector<TrajectoryPointConstIter> & end_segment_itr, const rclcpp::Duration & period,
   std::unique_ptr<joint_limits::JointLimiterInterface<joint_limits::JointLimits>> & joint_limiter,
   std::vector<control_msgs::msg::AxisTrajectoryPoint> & splines_state,
   std::vector<control_msgs::msg::AxisTrajectoryPoint> & ruckig_state,
   std::vector<control_msgs::msg::AxisTrajectoryPoint> & ruckig_input_state)
 {
   THROW_ON_NULLPTR(trajectory_msg_)
+  std::size_t num_axes = trajectory_msg_->axis_trajectories.size();
+  std::vector<bool> is_valid(num_axes, false);
 
   if (
     trajectory_msg_->axis_trajectories.empty() ||
@@ -193,7 +196,7 @@ bool Trajectory::sample(
     // TODO(henrygerardmoore): how should we handle this case?
     // start_segment_itr = end();
     // end_segment_itr = end();
-    return false;
+    return is_valid;
   }
 
   // first sampling of this trajectory
@@ -210,14 +213,13 @@ bool Trajectory::sample(
   // sampling before the current point
   if (sample_time < time_before_traj_msg_)
   {
-    return false;
+    return is_valid;
   }
 
   auto do_ruckig_smoothing =
     interpolation_method ==
     joint_trajectory_controller::interpolation_methods::InterpolationMethod::RUCKIG;
 
-  std::size_t num_axes = trajectory_msg_->axis_trajectories.size();
   // output_state splines_state ruckig_state ruckig_input_state
   if (output_state.size() < num_axes)
   {
@@ -256,29 +258,6 @@ bool Trajectory::sample(
       }
       else
       {
-        // const size_t dim = first_point_in_msg.velocities.size();
-        //
-        // double max_vel_ratio = 1.0;
-        // for (size_t dim_i = 0; dim_i < dim; ++dim_i)
-        // {
-        //   if (std::fabs(first_point_in_msg.velocities[dim_i]) > joint_limits[dim_i].max_velocity)
-        //   {
-        //     const double ratio =
-        //     std::fabs(first_point_in_msg.velocities[dim_i] / joint_limits[dim_i].max_velocity);
-        //     if (ratio > max_vel_ratio)
-        //     {
-        //       max_vel_ratio = ratio;
-        //     }
-        //   }
-        // }
-        //
-        // for (size_t dim_i = 0; dim_i < dim; ++dim_i)
-        // {
-        //   // Set the target velocities to follow the joint limits
-        // first_point_in_msg.velocities[dim_i] = first_point_in_msg.velocities[dim_i] /
-        // max_vel_ratio
-        // }
-
         // it changes points only if position and velocity do not exist, but their derivatives
         deduce_from_derivatives(
           state_before_traj_msg_[axis_index], first_point_in_msg,
@@ -290,15 +269,17 @@ bool Trajectory::sample(
           period, splines_state[axis_index], ruckig_state[axis_index],
           ruckig_input_state[axis_index], axis_index);
       }
-      start_segment_itr = begin(axis_index);  // no segments before the first
-      end_segment_itr = begin(axis_index);
+      start_segment_itr[axis_index] = begin(axis_index);  // no segments before the first
+      end_segment_itr[axis_index] = begin(axis_index);
 
       previous_state_ = output_state;
-      return true;
+      is_valid[axis_index] = true;
+      continue;
     }
 
     // time_from_start + trajectory time is the expected arrival time of trajectory
     const auto point_before_last_idx = trajectory.axis_points.size() - 1;
+    bool should_continue = false;
     for (size_t i = 0; i < point_before_last_idx; ++i)
     {
       auto & point = trajectory.axis_points[i];
@@ -319,28 +300,6 @@ bool Trajectory::sample(
         // Do interpolation
         else
         {
-          // const size_t dim = next_point.velocities.size();
-          //
-          // double max_vel_ratio = 1.0;
-          // for (size_t dim_i = 0; dim_i < dim; ++dim_i)
-          // {
-          //   if (std::fabs(next_point.velocities[dim_i]) > joint_limits[dim_i].max_velocity)
-          //   {
-          //     const double ratio =
-          //       std::fabs(next_point.velocities[dim_i] / joint_limits[dim_i].max_velocity);
-          //     if (ratio > max_vel_ratio)
-          //     {
-          //       max_vel_ratio = ratio;
-          //     }
-          //   }
-          // }
-          //
-          // for (size_t dim_i = 0; dim_i < dim; ++dim_i)
-          // {
-          //   // Set the target velocities to follow the joint limits
-          //   next_point.velocities[dim_i] = next_point.velocities[dim_i] / max_vel_ratio;
-          // }
-
           // it changes points only if position and velocity do not exist, but their derivatives
           deduce_from_derivatives(point, next_point, (t1 - t0).seconds());
 
@@ -349,31 +308,39 @@ bool Trajectory::sample(
                 output_state[axis_index], period, splines_state[axis_index],
                 ruckig_state[axis_index], ruckig_input_state[axis_index], axis_index))
           {
-            return false;
+            is_valid[axis_index] = false;
+            should_continue = true;
+            break;
           }
         }
-        start_segment_itr = begin(axis_index) + static_cast<int64_t>(i);
-        end_segment_itr = begin(axis_index) + static_cast<int64_t>(i + 1);
+        start_segment_itr[axis_index] = begin(axis_index) + static_cast<int64_t>(i);
+        end_segment_itr[axis_index] = begin(axis_index) + static_cast<int64_t>(i + 1);
 
         if (joint_limiter)
         {
           // TODO(henrygerardmoore): what should we do with this?
         }
         previous_state_ = output_state;
-        return true;
+        is_valid[axis_index] = true;
+        should_continue = true;
+        break;
       }
+    }
+    if (should_continue)
+    {
+      continue;
     }
 
     // whole animation has played out - but still continue s interpolating and smoothing
     auto & last_point = trajectory.axis_points[trajectory.axis_points.size() - 1];
     const rclcpp::Time t0 = trajectory_start_time_ + last_point.time_from_start;
 
-    if (last_point.acceleration != 0)
+    if (last_point.acceleration != 0 && !std::isnan(last_point.acceleration))
     {
       last_point.velocity += last_point.acceleration * period.seconds();
       // remember velocity over multiple calls
     }
-    if (last_point.velocity != 0)
+    if (last_point.velocity != 0 && !std::isnan(last_point.velocity))
     {
       last_point.position += last_point.velocity * period.seconds();
       // remember velocity over multiple calls
@@ -385,7 +352,8 @@ bool Trajectory::sample(
           output_state[axis_index], period, splines_state[axis_index], ruckig_state[axis_index],
           ruckig_input_state[axis_index], axis_index))
     {
-      return false;
+      is_valid[axis_index] = false;
+      continue;
     }
 
     if (joint_limiter)
@@ -394,11 +362,11 @@ bool Trajectory::sample(
     }
     previous_state_ = output_state;
 
-    start_segment_itr = --end(axis_index);
-    end_segment_itr = end(axis_index);
+    start_segment_itr[axis_index] = --end(axis_index);
+    end_segment_itr[axis_index] = end(axis_index);
+    is_valid[axis_index] = true;
   }
-
-  return true;
+  return is_valid;
 }
 
 bool Trajectory::interpolate_between_points(
@@ -415,9 +383,12 @@ bool Trajectory::interpolate_between_points(
   rclcpp::Duration duration_so_far = sample_time - time_a;
   rclcpp::Duration duration_btwn_points = time_b - time_a;
 
-  output.position = 0;
-  output.velocity = 0;
-  output.acceleration = 0;
+  output.position = std::numeric_limits<double>::quiet_NaN();
+  output.velocity = std::numeric_limits<double>::quiet_NaN();
+  output.acceleration = std::numeric_limits<double>::quiet_NaN();
+  output.effort = std::numeric_limits<double>::quiet_NaN();
+  output.time_from_start.sec = 0;
+  output.time_from_start.nanosec = 0;
 
   bool has_velocity = !std::isnan(state_a.velocity) && !std::isnan(state_b.velocity);
   bool has_accel = !std::isnan(state_a.acceleration) && !std::isnan(state_b.acceleration);
@@ -554,10 +525,6 @@ bool Trajectory::interpolate_between_points(
     output.position = state_b.position;
     output.velocity = state_b.velocity;
     output.acceleration = state_b.acceleration;
-
-    output.position = 0.0;
-    output.velocity = 0.0;
-    output.acceleration = 0.0;
   }
 
   splines_state.position = output.position;
@@ -604,6 +571,30 @@ bool Trajectory::interpolate_between_points(
     }
     // Target state comes from the polynomial interpolation
     ruckig_input_.target_position[axis_index] = output.position;
+
+    // double max_vel_ratio = 1.0;
+    // for (size_t i = 0; i < dim; ++i)
+    // {
+    //   if (std::fabs(output.velocities[i]) > joint_limits[i].max_velocity)
+    //   {
+    //     const double ratio = std::fabs(output.velocities[i] / joint_limits[i].max_velocity);
+    //     if (ratio > max_vel_ratio)
+    //     {
+    //       max_vel_ratio = ratio;
+    //     }
+    //   }
+    // }
+
+    // for (size_t i = 0; i < dim; ++i)
+    // {
+    //   // Set the target velocities to follow the joint limits
+    //   ruckig_input_.target_velocity[i] = output.velocities[i] / max_vel_ratio;
+    //
+    //   // Set the target accelerations to follow the joint limits
+    //   ruckig_input_.target_acceleration[i] = std::clamp(
+    //     output.accelerations[i], -1.0 * joint_limits[i].max_acceleration,
+    //     joint_limits[i].max_acceleration);
+    // }
 
     // double max_vel_ratio = 1.0;
     // for (size_t i = 0; i < dim; ++i)
@@ -688,43 +679,20 @@ void Trajectory::deduce_from_derivatives(
   {
     if (std::isnan(first_state.velocity))
     {
-      first_state.velocity = 0.0;
+      first_state.velocity = 0;
     }
     if (std::isnan(second_state.velocity))
     {
       if (std::isnan(first_state.acceleration))
       {
-        first_state.acceleration = 0.0;
+        first_state.acceleration = 0;
       }
       second_state.velocity =
         first_state.velocity +
         (first_state.acceleration + second_state.acceleration) * 0.5 * delta_t;
     }
-    // second state velocity should be reached on the end of the segment, so use middle
     second_state.position =
       first_state.position + (first_state.velocity + second_state.velocity) * 0.5 * delta_t;
-  }
-  else
-  {
-    if (std::isnan(second_state.position))
-    {
-      double first_state_velocity = std::isnan(first_state.velocity) ? 0.0 : first_state.velocity;
-      if (std::isnan(first_state_velocity))
-      {
-        first_state.velocity = 0.0;
-        first_state_velocity = 0.0;
-      }
-      double second_state_velocity =
-        std::isnan(second_state.velocity) ? 0.0 : second_state.velocity;
-      if (std::isnan(second_state_velocity))
-      {
-        second_state.velocity = 0.0;
-        second_state_velocity = 0.0;
-      }
-
-      second_state.position =
-        first_state.position + (first_state_velocity + second_state_velocity) * 0.5 * delta_t;
-    }
   }
 }
 

@@ -91,13 +91,13 @@ public:
    * end_segment_itr Iterator to the end segment for given \p sample_time. See description above.
    */
 
-  bool sample(
+  std::vector<bool> sample(
     const rclcpp::Time & sample_time,
     const joint_trajectory_controller::interpolation_methods::InterpolationMethod
       interpolation_method,
     std::vector<control_msgs::msg::AxisTrajectoryPoint> & output_state,
-    TrajectoryPointConstIter & start_segment_itr, TrajectoryPointConstIter & end_segment_itr,
-    const rclcpp::Duration & period,
+    std::vector<TrajectoryPointConstIter> & start_segment_itr,
+    std::vector<TrajectoryPointConstIter> & end_segment_itr, const rclcpp::Duration & period,
     std::unique_ptr<joint_limits::JointLimiterInterface<joint_limits::JointLimits>> & joint_limiter,
     std::vector<control_msgs::msg::AxisTrajectoryPoint> & splines_state,
     std::vector<control_msgs::msg::AxisTrajectoryPoint> & ruckig_state,
