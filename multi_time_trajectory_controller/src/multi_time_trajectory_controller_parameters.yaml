@@ -11,7 +11,7 @@ multi_time_trajectory_controller:
   command_axes: {
     type: string_array,
     default_value: [],
-    description: "Axis names to control. This parameters is used if JTC is used in a controller chain where command and state interfaces don't have same names.",
+    description: "Axis names to control. This parameters is used if MAC is used in a controller chain where command and state interfaces don't have same names.",
     read_only: true,
     validation: {
       unique<>: null,
