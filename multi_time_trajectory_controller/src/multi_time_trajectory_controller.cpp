@@ -705,7 +705,8 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
   if (params_.axes.empty())
   {
     // TODO(destogl): is this correct? Can we really move-on if no joint names are not provided?
-    RCLCPP_WARN(logger, "'axes' parameter is empty.");
+    RCLCPP_ERROR(logger, "'axes' parameter is empty.");
+    return CallbackReturn::FAILURE;
   }
 
   command_axis_names_ = params_.command_axes;
