@@ -72,6 +72,19 @@ if(BUILD_TESTING)
     multi_time_trajectory_controller
   )
   target_compile_definitions(multi_time_trajectory_controller PRIVATE _USE_MATH_DEFINES)
+
+  ament_add_gmock(test_load_mttc
+    test/test_load_mttc.cpp
+  )
+  target_link_libraries(test_load_mttc
+    multi_time_trajectory_controller
+  )
+  ament_target_dependencies(test_load_mttc
+    controller_manager
+    control_toolbox
+    realtime_tools
+    ros2_control_test_assets
+  )
 endif()
 
 install(
