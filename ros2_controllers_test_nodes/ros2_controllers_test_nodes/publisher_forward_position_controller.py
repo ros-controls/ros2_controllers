@@ -17,7 +17,6 @@
 
 import rclpy
 from rclpy.node import Node
-from rcl_interfaces.msg import ParameterDescriptor
 
 from std_msgs.msg import Float64MultiArray
 
@@ -38,7 +37,7 @@ class PublisherForwardPosition(Node):
         # Read all positions from parameters
         self.goals = []
         for name in goal_names:
-            self.declare_parameter(name, descriptor=ParameterDescriptor(dynamic_typing=True))
+            self.declare_parameter(name, rclpy.Parameter.Type.DOUBLE_ARRAY)
             goal = self.get_parameter(name).value
             if goal is None or len(goal) == 0:
                 raise Exception(f'Values for goal "{name}" not set!')
