@@ -50,7 +50,7 @@ const auto urdf_rrrbot_revolute =
       </geometry>
     </collision>
   </link>
-  <joint name="joint1" type="revolute">
+  <joint name="axis1" type="revolute">
     <origin rpy="-1.57079632679 0 0" xyz="0 0 0.2"/>
     <parent link="base_link"/>
     <child link="link1"/>
@@ -78,7 +78,7 @@ const auto urdf_rrrbot_revolute =
       </geometry>
     </collision>
   </link>
-  <joint name="joint2" type="revolute">
+  <joint name="axis2" type="revolute">
     <origin rpy="1.57079632679 0 0" xyz="0 0 0.9"/>
     <parent link="link1"/>
     <child link="link2"/>
@@ -106,7 +106,7 @@ const auto urdf_rrrbot_revolute =
       </geometry>
     </collision>
   </link>
-  <joint name="joint3" type="revolute">
+  <joint name="axis3" type="revolute">
     <origin rpy="1.57079632679 0 0" xyz="0 0 0.9"/>
     <parent link="link2"/>
     <child link="link3"/>
@@ -177,7 +177,7 @@ const auto urdf_rrrbot_continuous =
       </geometry>
     </collision>
   </link>
-  <joint name="joint1" type="continuous">
+  <joint name="axis1" type="continuous">
     <origin rpy="-1.57079632679 0 0" xyz="0 0 0.2"/>
     <parent link="base_link"/>
     <child link="link1"/>
@@ -205,7 +205,7 @@ const auto urdf_rrrbot_continuous =
       </geometry>
     </collision>
   </link>
-  <joint name="joint2" type="continuous">
+  <joint name="axis2" type="continuous">
     <origin rpy="1.57079632679 0 0" xyz="0 0 0.9"/>
     <parent link="link1"/>
     <child link="link2"/>
@@ -233,7 +233,7 @@ const auto urdf_rrrbot_continuous =
       </geometry>
     </collision>
   </link>
-  <joint name="joint3" type="continuous">
+  <joint name="axis3" type="continuous">
     <origin rpy="1.57079632679 0 0" xyz="0 0 0.9"/>
     <parent link="link2"/>
     <child link="link3"/>
