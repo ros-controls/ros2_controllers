@@ -39,6 +39,11 @@ multi_time_trajectory_controller:
       "multi_time_trajectory_controller::state_interface_type_combinations": null,
     }
   }
+  hold_last_velocity: {
+    type: bool,
+    default_value: true,
+    read_only: true,
+  }
   open_loop_control: {
     type: bool,
     default_value: false,

@@ -181,7 +181,7 @@ std::vector<bool> Trajectory::sample(
   std::unique_ptr<joint_limits::JointLimiterInterface<joint_limits::JointLimits>> & joint_limiter,
   std::vector<control_msgs::msg::AxisTrajectoryPoint> & splines_state,
   std::vector<control_msgs::msg::AxisTrajectoryPoint> & ruckig_state,
-  std::vector<control_msgs::msg::AxisTrajectoryPoint> & ruckig_input_state)
+  std::vector<control_msgs::msg::AxisTrajectoryPoint> & ruckig_input_state, bool hold_last_velocity)
 {
   THROW_ON_NULLPTR(trajectory_msg_)
   std::size_t num_axes = trajectory_msg_->axis_trajectories.size();
@@ -279,6 +279,9 @@ std::vector<bool> Trajectory::sample(
 
     // time_from_start + trajectory time is the expected arrival time of trajectory
     const auto point_before_last_idx = trajectory.axis_points.size() - 1;
+
+    // if the segment is within the trajectory, we will continue after finding it, as the rest of
+    // the loop is for if we've finished the trajectory
     bool should_continue = false;
     for (size_t i = 0; i < point_before_last_idx; ++i)
     {
@@ -331,7 +334,16 @@ std::vector<bool> Trajectory::sample(
       continue;
     }
 
-    // whole animation has played out - but still continue s interpolating and smoothing
+    if (!hold_last_velocity)
+    {
+      start_segment_itr[axis_index] = --end(axis_index);
+      end_segment_itr[axis_index] = end(axis_index);
+      output_state[axis_index] = (*start_segment_itr[axis_index]);
+      is_valid[axis_index] = true;
+      continue;
+    }
+
+    // we have finished this trajectory, but keep interpolating and smoothing
     auto & last_point = trajectory.axis_points[trajectory.axis_points.size() - 1];
     const rclcpp::Time t0 = trajectory_start_time_ + last_point.time_from_start;
 
@@ -358,7 +370,7 @@ std::vector<bool> Trajectory::sample(
 
     if (joint_limiter)
     {
-      // TODO(henrygerardmoore): what should we do with this?
+      // TODO(henrygerardmoore): how do we implement joint limits?
     }
     previous_state_ = output_state;
 

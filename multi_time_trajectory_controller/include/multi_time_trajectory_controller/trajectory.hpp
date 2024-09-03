@@ -101,7 +101,8 @@ public:
     std::unique_ptr<joint_limits::JointLimiterInterface<joint_limits::JointLimits>> & joint_limiter,
     std::vector<control_msgs::msg::AxisTrajectoryPoint> & splines_state,
     std::vector<control_msgs::msg::AxisTrajectoryPoint> & ruckig_state,
-    std::vector<control_msgs::msg::AxisTrajectoryPoint> & ruckig_input_state);
+    std::vector<control_msgs::msg::AxisTrajectoryPoint> & ruckig_input_state,
+    bool hold_last_velocity);
 
   /**
    * Do interpolation between 2 states given a time in between their respective timestamps

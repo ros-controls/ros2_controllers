@@ -252,7 +252,7 @@ TEST_P(TrajectoryControllerTestParameterized, state_topic_consistency)
     // No trajectory by default, no reference state or error
     EXPECT_TRUE(
       std::isnan(state->references[i].position) ||
-      state->references[0].position == INITIAL_POS_AXES[i]);
+      state->references[i].position == INITIAL_POS_AXES[i]);
     EXPECT_TRUE(
       std::isnan(state->references[i].velocity) ||
       state->references[i].velocity == INITIAL_VEL_AXES[i]);

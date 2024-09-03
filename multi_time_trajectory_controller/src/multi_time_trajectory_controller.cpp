@@ -246,7 +246,8 @@ controller_interface::return_type MultiTimeTrajectoryController::update(
     end_segment_itrs.resize(dof_);
     auto const valid_points = traj_external_point_ptr_->sample(
       time, interpolation_method_, state_desired_, start_segment_itrs, end_segment_itrs, period,
-      joint_limiter_, splines_state_, ruckig_state_, ruckig_input_state_);
+      joint_limiter_, splines_state_, ruckig_state_, ruckig_input_state_,
+      params_.hold_last_velocity);
 
     compute_error(state_error_, state_current_, state_desired_);
 
@@ -622,7 +623,7 @@ void MultiTimeTrajectoryController::query_state_service(
     auto const valid_points = traj_external_point_ptr_->sample(
       static_cast<rclcpp::Time>(request->time), interpolation_method_, state_requested,
       start_segment_itrs, end_segment_itrs, period, joint_limiter_, splines_state_, ruckig_state_,
-      ruckig_input_state_);
+      ruckig_input_state_, params_.hold_last_velocity);
     response->success =
       std::all_of(valid_points.begin(), valid_points.end(), [](bool b) { return b; });
     // If the requested sample time precedes the trajectory finish time respond as failure

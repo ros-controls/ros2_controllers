@@ -264,11 +264,22 @@ public:
         { return param.get_name() == "allow_nonzero_velocity_at_trajectory_end"; }) !=
       parameters.end();
 
+    auto has_hold_vel_param =
+      std::find_if(
+        parameters.begin(), parameters.end(), [](const rclcpp::Parameter & param)
+        { return param.get_name() == "hold_last_velocity"; }) != parameters.end();
+
     std::vector<rclcpp::Parameter> parameters_local = parameters;
     if (!has_nonzero_vel_param)
     {
       // add this to simplify tests, if not set already
       parameters_local.emplace_back("allow_nonzero_velocity_at_trajectory_end", true);
+    }
+    if (!has_hold_vel_param)
+    {
+      // The MAC's default behavior differs from the JTC in terms of holding the final velocity
+      // instead of position This parameter allows disabling that so the JTC tests can be reused
+      parameters_local.emplace_back("hold_last_velocity", false);
     }
     // read-only parameters have to be set before init -> won't be read otherwise
     SetUpTrajectoryController(executor, parameters_local, urdf);
