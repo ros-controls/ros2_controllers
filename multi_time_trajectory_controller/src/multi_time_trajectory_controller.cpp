@@ -17,6 +17,7 @@
 #include <angles/angles.h>
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <limits>
 #include <stdexcept>
@@ -674,7 +675,7 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
 
   if (!param_listener_)
   {
-    RCLCPP_ERROR(get_node()->get_logger(), "Error encountered during init");
+    RCLCPP_ERROR(get_node()->get_logger(), "Could not get param listener during configure");
     return controller_interface::CallbackReturn::ERROR;
   }
 
@@ -760,19 +761,20 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
   }
 
   // Initialize joint limits
-  if (!params_.joint_limiter_type.empty())
-  {
-    RCLCPP_INFO(
-      get_node()->get_logger(), "Using joint limiter plugin: '%s'",
-      params_.joint_limiter_type.c_str());
-    joint_limiter_ = std::unique_ptr<JointLimiter>(
-      joint_limiter_loader_->createUnmanagedInstance(params_.joint_limiter_type));
-    joint_limiter_->init(command_axis_names_, get_node());
-  }
-  else
-  {
-    RCLCPP_INFO(get_node()->get_logger(), "Not using joint limiter plugin as none defined.");
-  }
+  // TODO(henrygerardmoore): add this back
+  // if (!params_.joint_limiter_type.empty())
+  // {
+  //   RCLCPP_INFO(
+  //     get_node()->get_logger(), "Using joint limiter plugin: '%s'",
+  //     params_.joint_limiter_type.c_str());
+  //   joint_limiter_ = std::unique_ptr<JointLimiter>(
+  //     joint_limiter_loader_->createUnmanagedInstance(params_.joint_limiter_type));
+  //   joint_limiter_->init(command_axis_names_, get_node());
+  // }
+  // else
+  // {
+  //   RCLCPP_INFO(get_node()->get_logger(), "Not using joint limiter plugin as none defined.");
+  // }
 
   if (params_.state_interfaces.empty())
   {
