@@ -133,6 +133,11 @@ controller_interface::InterfaceConfiguration
 MultiTimeTrajectoryController::state_interface_configuration() const
 {
   controller_interface::InterfaceConfiguration conf;
+  if (params_.state_interfaces.size() == 0)
+  {
+    conf.type = controller_interface::interface_configuration_type::NONE;
+    return conf;
+  }
   conf.type = controller_interface::interface_configuration_type::INDIVIDUAL;
   conf.names.reserve(dof_ * params_.state_interfaces.size());
   for (const auto & axis_name : params_.axes)
@@ -479,17 +484,27 @@ bool MultiTimeTrajectoryController::read_state_from_hardware(std::vector<Traject
   // start by emptying all states
   std::fill(states.begin(), states.end(), emptyTrajectoryPoint());
 
-  // Assign values from the hardware
-  // Position states always exist
-  assign_positions_from_interface(states, axis_state_interface_[0]);
-  // velocity and acceleration states are optional
-  if (has_velocity_state_interface_)
+  if (params_.use_feedback)
   {
-    assign_velocities_from_interface(states, axis_state_interface_[1]);
-    // Acceleration is used only in combination with velocity
-    if (has_acceleration_state_interface_)
+    // TODO(henrygerardmoore): implement
+    return true;
+  }
+  else
+  {
+    // Assign values from the hardware
+    if (has_position_state_interface_)
     {
-      assign_accelerations_from_interface(states, axis_state_interface_[2]);
+      assign_positions_from_interface(states, axis_state_interface_[0]);
+      // velocity and acceleration states are optional
+      if (has_velocity_state_interface_)
+      {
+        assign_velocities_from_interface(states, axis_state_interface_[1]);
+        // Acceleration is used only in combination with velocity
+        if (has_acceleration_state_interface_)
+        {
+          assign_accelerations_from_interface(states, axis_state_interface_[2]);
+        }
+      }
     }
   }
   return true;
@@ -509,8 +524,7 @@ bool MultiTimeTrajectoryController::read_state_from_command_interfaces(
              { return std::isnan(interface.get().get_value()); }) == joint_interface.end();
   };
 
-  // Assign values from the command interfaces as state. Therefore needs check for both.
-  // Position state interface has to exist always
+  // Assign values from the command interfaces as state
   if (has_position_command_interface_ && interface_has_values(axis_command_interface_[0]))
   {
     assign_positions_from_interface(states, axis_command_interface_[0]);
@@ -706,7 +720,6 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
 
   if (params_.axes.empty())
   {
-    // TODO(destogl): is this correct? Can we really move-on if no joint names are not provided?
     RCLCPP_ERROR(logger, "'axes' parameter is empty.");
     return CallbackReturn::FAILURE;
   }
@@ -776,9 +789,9 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
   //   RCLCPP_INFO(get_node()->get_logger(), "Not using joint limiter plugin as none defined.");
   // }
 
-  if (params_.state_interfaces.empty())
+  if (params_.state_interfaces.empty() && !params_.use_feedback)
   {
-    RCLCPP_ERROR(logger, "'state_interfaces' parameter is empty.");
+    RCLCPP_ERROR(logger, "'state_interfaces' parameter is empty and not using feedback.");
     return CallbackReturn::FAILURE;
   }
 
@@ -1143,6 +1156,7 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_activate(
     cmd_timeout_ = 0.0;
   }
 
+  RCLCPP_INFO(get_node()->get_logger(), "MAC successfully activated");
   return CallbackReturn::SUCCESS;
 }
 
@@ -1507,10 +1521,17 @@ bool MultiTimeTrajectoryController::validate_trajectory_msg(
       }
       previous_traj_time = trajectory.axis_points[i].time_from_start;
 
-      // TODO(henrygerardmoore): check here if points that are nan should be and that points that
-      // aren't nan shouldn't be
-      // const auto & points = trajectory.axis_points;
-      // check points...
+      // TODO(henrygerardmoore): ensure this is the correct validation for the axis points
+      const auto & points = trajectory.axis_points;
+      if (std::any_of(
+            points.begin(), points.end(), [](control_msgs::msg::AxisTrajectoryPoint point)
+            { return std::isnan(point.position); }))
+      {
+        RCLCPP_ERROR(
+          get_node()->get_logger(), "Incoming trajectory for axis %s has NaN position values.",
+          incoming_axis_name.c_str());
+        return false;
+      }
     }
   }
   return true;

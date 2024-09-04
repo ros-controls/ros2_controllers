@@ -44,6 +44,11 @@ multi_time_trajectory_controller:
     default_value: true,
     read_only: true,
   }
+  use_feedback: {
+    type: bool,
+    default_value: true,
+    read_only: true,
+  }
   open_loop_control: {
     type: bool,
     default_value: false,
