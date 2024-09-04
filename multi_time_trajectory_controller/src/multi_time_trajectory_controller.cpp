@@ -1523,14 +1523,29 @@ bool MultiTimeTrajectoryController::validate_trajectory_msg(
       }
       previous_traj_time = trajectory.axis_points[i].time_from_start;
 
-      // TODO(henrygerardmoore): ensure this is the correct validation for the axis points
       const auto & points = trajectory.axis_points;
-      if (std::any_of(
-            points.begin(), points.end(), [](control_msgs::msg::AxisTrajectoryPoint point)
-            { return std::isnan(point.position); }))
+      bool traj_has_position = !std::any_of(
+        points.begin(), points.end(),
+        [](control_msgs::msg::AxisTrajectoryPoint point) { return std::isnan(point.position); });
+      bool traj_has_velocity = !std::any_of(
+        points.begin(), points.end(),
+        [](control_msgs::msg::AxisTrajectoryPoint point) { return std::isnan(point.velocity); });
+      bool traj_has_acceleration = !std::any_of(
+        points.begin(), points.end(), [](control_msgs::msg::AxisTrajectoryPoint point)
+        { return std::isnan(point.acceleration); });
+
+      if (!(traj_has_position || traj_has_velocity || traj_has_acceleration))
       {
         RCLCPP_ERROR(
-          get_node()->get_logger(), "Incoming trajectory for axis %s has NaN position values.",
+          get_node()->get_logger(), "Empty trajectory for axis %s", incoming_axis_name.c_str());
+        return false;
+      }
+
+      if (!params_.allow_integration_in_goal_trajectories && !traj_has_position)
+      {
+        RCLCPP_ERROR(
+          get_node()->get_logger(),
+          "No position in trajectory for axis %s and integration of goal trajectories is disabled",
           incoming_axis_name.c_str());
         return false;
       }
