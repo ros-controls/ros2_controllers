@@ -206,7 +206,27 @@ public:
     rclcpp::Executor & executor, const std::vector<rclcpp::Parameter> & parameters = {},
     const std::string & urdf = "")
   {
-    auto ret = SetUpTrajectoryControllerLocal(parameters, urdf);
+    std::vector<rclcpp::Parameter> parameters_local = parameters;
+    auto has_hold_vel_param =
+      std::find_if(
+        parameters.begin(), parameters.end(), [](const rclcpp::Parameter & param)
+        { return param.get_name() == "hold_last_velocity"; }) != parameters.end();
+    auto has_use_feedback_param =
+      std::find_if(
+        parameters.begin(), parameters.end(), [](const rclcpp::Parameter & param)
+        { return param.get_name() == "use_feedback"; }) != parameters.end();
+    if (!has_hold_vel_param)
+    {
+      // The MAC's default behavior differs from the JTC in terms of holding the final velocity
+      // instead of position This parameter allows disabling that so the JTC tests can be reused
+      parameters_local.emplace_back("hold_last_velocity", false);
+    }
+    if (!has_use_feedback_param)
+    {
+      // The MAC can use state interfaces or feedback from a topic
+      parameters_local.emplace_back("use_feedback", false);
+    }
+    auto ret = SetUpTrajectoryControllerLocal(parameters_local, urdf);
     if (ret != controller_interface::return_type::OK)
     {
       FAIL();
@@ -264,6 +284,7 @@ public:
         { return param.get_name() == "allow_nonzero_velocity_at_trajectory_end"; }) !=
       parameters.end();
 
+    std::vector<rclcpp::Parameter> parameters_local = parameters;
     auto has_hold_vel_param =
       std::find_if(
         parameters.begin(), parameters.end(), [](const rclcpp::Parameter & param)
@@ -273,13 +294,6 @@ public:
       std::find_if(
         parameters.begin(), parameters.end(), [](const rclcpp::Parameter & param)
         { return param.get_name() == "use_feedback"; }) != parameters.end();
-
-    std::vector<rclcpp::Parameter> parameters_local = parameters;
-    if (!has_nonzero_vel_param)
-    {
-      // add this to simplify tests, if not set already
-      parameters_local.emplace_back("allow_nonzero_velocity_at_trajectory_end", true);
-    }
     if (!has_hold_vel_param)
     {
       // The MAC's default behavior differs from the JTC in terms of holding the final velocity
@@ -290,6 +304,12 @@ public:
     {
       // The MAC can use state interfaces or feedback from a topic
       parameters_local.emplace_back("use_feedback", false);
+    }
+
+    if (!has_nonzero_vel_param)
+    {
+      // add this to simplify tests, if not set already
+      parameters_local.emplace_back("allow_nonzero_velocity_at_trajectory_end", true);
     }
     // read-only parameters have to be set before init -> won't be read otherwise
     SetUpTrajectoryController(executor, parameters_local, urdf);

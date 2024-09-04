@@ -1054,6 +1054,8 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
 controller_interface::CallbackReturn MultiTimeTrajectoryController::on_activate(
   const rclcpp_lifecycle::State &)
 {
+  RCLCPP_DEBUG(get_node()->get_logger(), "MAC activating...");
+
   // update the dynamic map parameters
   param_listener_->refresh_dynamic_parameters();
 
@@ -1156,7 +1158,7 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_activate(
     cmd_timeout_ = 0.0;
   }
 
-  RCLCPP_INFO(get_node()->get_logger(), "MAC successfully activated");
+  RCLCPP_DEBUG(get_node()->get_logger(), "MAC successfully activated");
   return CallbackReturn::SUCCESS;
 }
 
