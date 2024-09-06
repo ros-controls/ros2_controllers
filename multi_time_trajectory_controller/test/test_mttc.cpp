@@ -1373,7 +1373,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_old_trajectory)
     rclcpp::Clock(RCL_STEADY_TIME).now() - delay - std::chrono::milliseconds(100);
   for (std::size_t i = 0; i < num_axes; ++i)
   {
-    expected_actuals[i].position = points_old[0][i];
+    expected_actuals[i].position = points_old[1][i];
   }
   expected_desireds = expected_actuals;
   publish(time_from_start, points_new, new_traj_start);
