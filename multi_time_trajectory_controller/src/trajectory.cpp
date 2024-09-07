@@ -334,12 +334,23 @@ std::vector<bool> Trajectory::sample(
       continue;
     }
 
+    // this trajectory is valid, set the start and end segment iterators
+    start_segment_itr[axis_index] = --end(axis_index);
+    end_segment_itr[axis_index] = end(axis_index);
+    is_valid[axis_index] = true;
+
+    // perform the existing JTC functionality if we don't want to hold the last velocity
     if (!hold_last_velocity)
     {
-      start_segment_itr[axis_index] = --end(axis_index);
-      end_segment_itr[axis_index] = end(axis_index);
       output_state[axis_index] = (*start_segment_itr[axis_index]);
-      is_valid[axis_index] = true;
+      if (std::isnan(output_state[axis_index].velocity))
+      {
+        output_state[axis_index].velocity = 0.0;
+      }
+      if (std::isnan(output_state[axis_index].acceleration))
+      {
+        output_state[axis_index].acceleration = 0.0;
+      }
       continue;
     }
 
@@ -372,12 +383,8 @@ std::vector<bool> Trajectory::sample(
     {
       // TODO(henrygerardmoore): how do we implement joint limits?
     }
-    previous_state_ = output_state;
-
-    start_segment_itr[axis_index] = --end(axis_index);
-    end_segment_itr[axis_index] = end(axis_index);
-    is_valid[axis_index] = true;
   }
+  previous_state_ = output_state;
   return is_valid;
 }
 
