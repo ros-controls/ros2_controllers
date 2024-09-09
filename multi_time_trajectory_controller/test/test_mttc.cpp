@@ -703,10 +703,10 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_angle_wraparoun
       k_p * (state_reference[0].position - INITIAL_POS_AXES[0]), axis_eff_[0],
       k_p * COMMON_THRESHOLD);
     EXPECT_NEAR(
-      k_p * (state_reference[0].position - INITIAL_POS_AXES[1]), axis_eff_[1],
+      k_p * (state_reference[1].position - INITIAL_POS_AXES[1]), axis_eff_[1],
       k_p * COMMON_THRESHOLD);
     EXPECT_NEAR(
-      k_p * (state_reference[0].position - INITIAL_POS_AXES[2]), axis_eff_[2],
+      k_p * (state_reference[2].position - INITIAL_POS_AXES[2]), axis_eff_[2],
       k_p * COMMON_THRESHOLD);
   }
 
