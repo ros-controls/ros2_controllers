@@ -152,8 +152,6 @@ protected:
   // Configuration for every axis if it wraps around (ie. is continuous, position error is
   // normalized)
   std::vector<bool> axis_angle_wraparound_;
-  // reserved storage for result of the command when closed loop pid adapter is used
-  std::vector<double> tmp_command_;
 
   // joint limiter configuration for JTC
   std::vector<joint_limits::JointLimits> joint_limits_;
@@ -337,60 +335,6 @@ protected:
     }
   };
   // TODO(henrygerardmoore): add effort stuff back as used in JTC
-
-  template <typename T>
-  void assign_interface_from_position(
-    AxisInterfaceRefs<T> & axis_interface, const std::vector<double> & trajectory_point_interface)
-  {
-    for (size_t index = 0; index < dof_; ++index)
-    {
-      axis_interface[index].get().set_value(trajectory_point_interface[index]);
-    }
-  };
-
-  template <typename T>
-  void assign_interface_from_point(
-    const T & axis_interface, const std::vector<double> & trajectory_point_interface)
-  {
-    for (size_t index = 0; index < dof_; ++index)
-    {
-      axis_interface[index].get().set_value(trajectory_point_interface[index]);
-    }
-  }
-
-  template <typename T>
-  void assign_interface_from_position(
-    AxisInterfaceRefs<T> & axis_interface,
-    const std::vector<TrajectoryPoint> & trajectory_point_interface)
-  {
-    for (size_t index = 0; index < dof_; ++index)
-    {
-      axis_interface[index].get().set_value(trajectory_point_interface[index].position);
-    }
-  };
-
-  template <typename T>
-  void assign_interface_from_velocity(
-    AxisInterfaceRefs<T> & axis_interface,
-    const std::vector<TrajectoryPoint> & trajectory_point_interface)
-  {
-    for (size_t index = 0; index < dof_; ++index)
-    {
-      axis_interface[index].get().set_value(trajectory_point_interface[index].velocity);
-    }
-  };
-
-  template <typename T>
-  void assign_interface_from_acceleration(
-    AxisInterfaceRefs<T> & axis_interface,
-    const std::vector<TrajectoryPoint> & trajectory_point_interface)
-  {
-    for (size_t index = 0; index < dof_; ++index)
-    {
-      axis_interface[index].get().set_value(trajectory_point_interface[index].acceleration);
-    }
-  };
-  // END: helper methods
 
 private:
   void update_pids();

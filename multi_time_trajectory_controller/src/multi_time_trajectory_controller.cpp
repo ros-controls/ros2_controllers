@@ -329,41 +329,42 @@ controller_interface::return_type MultiTimeTrajectoryController::update(
         // set values for next hardware write() if tolerance is met
         if (!tolerance_violated_while_moving && within_goal_time)
         {
+          double tmp_command = 0;
           if (use_closed_loop_pid_adapter_)
           {
-            // Update PIDs
-            for (auto i = 0ul; i < dof_; ++i)
-            {
-              tmp_command_[i] = (state_desired_[i].velocity * ff_velocity_scale_[i]) +
-                                pids_[i]->computeCommand(
-                                  state_error_[i].position, state_error_[i].velocity,
-                                  (uint64_t)period.nanoseconds());
-            }
+            // Update PID
+            tmp_command = (state_desired_[axis_index].velocity * ff_velocity_scale_[axis_index]) +
+                          pids_[axis_index]->computeCommand(
+                            state_error_[axis_index].position, state_error_[axis_index].velocity,
+                            (uint64_t)period.nanoseconds());
           }
 
           // set values for next hardware write()
           if (has_position_command_interface_)
           {
-            assign_interface_from_position(axis_command_interface_[0], state_desired_);
+            axis_command_interface_[0][axis_index].get().set_value(
+              state_desired_[axis_index].position);
           }
           if (has_velocity_command_interface_)
           {
             if (use_closed_loop_pid_adapter_)
             {
-              assign_interface_from_point(axis_command_interface_[1], tmp_command_);
+              axis_command_interface_[1][axis_index].get().set_value(tmp_command);
             }
             else
             {
-              assign_interface_from_velocity(axis_command_interface_[1], state_desired_);
+              axis_command_interface_[1][axis_index].get().set_value(
+                state_desired_[axis_index].velocity);
             }
           }
           if (has_acceleration_command_interface_)
           {
-            assign_interface_from_acceleration(axis_command_interface_[2], state_desired_);
+            axis_command_interface_[2][axis_index].get().set_value(
+              state_desired_[axis_index].acceleration);
           }
           if (has_effort_command_interface_)
           {
-            assign_interface_from_point(axis_command_interface_[3], tmp_command_);
+            axis_command_interface_[3][axis_index].get().set_value(tmp_command);
           }
 
           // store the previous command. Used in open-loop control mode
@@ -760,7 +761,6 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
   {
     pids_.resize(dof_);
     ff_velocity_scale_.resize(dof_);
-    tmp_command_.resize(dof_, 0.0);
 
     update_pids();
   }
