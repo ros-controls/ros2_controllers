@@ -277,16 +277,8 @@ controller_interface::return_type MultiTimeTrajectoryController::update(
         bool outside_goal_tolerance = false;
         bool within_goal_time = true;
 
-        // TODO(henrygerardmoore): make this a vector and handle per axis
-        bool before_last_point = true;
-
-        for (std::size_t i = 0; i < dof_; ++i)
-        {
-          if (end_segment_itr == traj_external_point_ptr_->end(i))
-          {
-            before_last_point = false;
-          }
-        }
+        // whether we are before the last point for the trajectory associated with axis_index
+        bool const before_last_point = end_segment_itr != traj_external_point_ptr_->end(axis_index);
 
         // have we reached the end, are not holding position, and is a timeout configured?
         // Check independently of other tolerances

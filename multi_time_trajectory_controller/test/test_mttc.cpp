@@ -214,10 +214,7 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
   // it should still be holding the position at time of deactivation
   // i.e., active but trivial trajectory (one point only)
   traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.1));
-  for (std::size_t i = 0; i < 3; ++i)
-  {
-    expectCommandPoint(deactivated_positions, i);
-  }
+  expectCommandPoint(deactivated_positions);
 
   executor.cancel();
 }
@@ -419,10 +416,7 @@ TEST_P(TrajectoryControllerTestParameterized, hold_on_startup)
   // one point, being the position at startup
   std::vector<double> initial_position{INITIAL_POS_AXIS1, INITIAL_POS_AXIS2, INITIAL_POS_AXIS3};
 
-  for (std::size_t i = 0; i < DOF; ++i)
-  {
-    expectCommandPoint(initial_position, i);
-  }
+  expectCommandPoint(initial_position);
 
   executor.cancel();
 }
@@ -961,16 +955,16 @@ TEST_P(TrajectoryControllerTestParameterized, timeout)
   for (std::size_t i = 0; i < n_axes; ++i)
   {
     EXPECT_FALSE(traj_controller_->has_nontrivial_traj(i));
-    // should hold last position with zero velocity
-    if (traj_controller_->has_position_command_interface())
-    {
-      expectCommandPoint(points.at(2), i);
-    }
-    else
-    {
-      // no integration to position state interface from velocity/acceleration
-      expectCommandPoint(INITIAL_POS_AXES, i);
-    }
+  }
+  // should hold last position with zero velocity
+  if (traj_controller_->has_position_command_interface())
+  {
+    expectCommandPoint(points.at(2));
+  }
+  else
+  {
+    // no integration to position state interface from velocity/acceleration
+    expectCommandPoint(INITIAL_POS_AXES);
   }
 
   executor.cancel();
@@ -1822,11 +1816,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_state_tolerances_fail)
   updateControllerAsync(rclcpp::Duration(FIRST_POINT_TIME));
 
   // it should have aborted and be holding now
-  std::size_t num_axes = points[0].size();
-  for (std::size_t i = 0; i < num_axes; ++i)
-  {
-    expectCommandPoint(axis_state_pos_, i);
-  }
+  expectCommandPoint(axis_state_pos_);
 }
 
 TEST_P(TrajectoryControllerTestParameterized, test_goal_tolerances_fail)
@@ -1858,21 +1848,14 @@ TEST_P(TrajectoryControllerTestParameterized, test_goal_tolerances_fail)
   auto end_time = updateControllerAsync(rclcpp::Duration(4 * FIRST_POINT_TIME));
 
   // it should have aborted and be holding now
-  std::size_t num_axes = points[0].size();
-  for (std::size_t i = 0; i < num_axes; ++i)
-  {
-    expectCommandPoint(axis_state_pos_, i);
-  }
+  expectCommandPoint(axis_state_pos_);
 
   // what happens if we wait longer but it harms the tolerance again?
   auto hold_position = axis_state_pos_;
   axis_state_pos_.at(0) = -3.3;
   updateControllerAsync(rclcpp::Duration(FIRST_POINT_TIME), end_time);
   // it should be still holding the old point
-  for (std::size_t i = 0; i < num_axes; ++i)
-  {
-    expectCommandPoint(hold_position, i);
-  }
+  expectCommandPoint(hold_position);
 }
 
 // position controllers

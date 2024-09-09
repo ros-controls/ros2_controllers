@@ -588,12 +588,14 @@ public:
   }
 
   void expectCommandPoint(
-    std::vector<double> const & position, std::size_t axis,
-    std::vector<double> const & velocity = {0.0, 0.0, 0.0})
+    std::vector<double> const & position, std::vector<double> const & velocity = {0.0, 0.0, 0.0})
   {
     // it should be holding the given point
     // i.e., active but trivial trajectory (one point only)
-    EXPECT_TRUE(traj_controller_->has_trivial_traj(axis));
+    for (std::size_t i = 0; i < 3; ++i)
+    {
+      EXPECT_TRUE(traj_controller_->has_trivial_traj(i));
+    }
 
     if (traj_controller_->use_closed_loop_pid_adapter() == false)
     {
