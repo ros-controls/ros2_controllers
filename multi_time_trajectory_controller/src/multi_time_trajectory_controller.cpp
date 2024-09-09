@@ -1572,6 +1572,8 @@ MultiTimeTrajectoryController::set_hold_position()
   for (std::size_t i = 0; i < dof_; ++i)
   {
     hold_position_msg_ptr_->axis_trajectories[i].axis_points = {state_current_[i]};
+    hold_position_msg_ptr_->axis_trajectories[i].axis_points[0].velocity = 0;
+    hold_position_msg_ptr_->axis_trajectories[i].axis_points[0].acceleration = 0;
   }
 
   // set flag, otherwise tolerances will be checked with holding position too
