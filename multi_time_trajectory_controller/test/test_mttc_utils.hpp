@@ -441,13 +441,12 @@ public:
     }
 
     control_msgs::msg::MultiAxisTrajectory multi_traj_msg;
-    std::size_t num_axes = axis_names_.size();
+    std::size_t num_axes = points_positions.at(0).size();
     multi_traj_msg.axis_trajectories.resize(num_axes);
     if (axis_names.empty())
     {
       multi_traj_msg.axis_names = {
-        axis_names_.begin(),
-        axis_names_.begin() + static_cast<int64_t>(points_positions.at(0).size())};
+        axis_names_.begin(), axis_names_.begin() + static_cast<int64_t>(num_axes)};
     }
     else
     {

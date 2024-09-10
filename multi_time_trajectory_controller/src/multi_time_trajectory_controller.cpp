@@ -15,20 +15,60 @@
 #include "multi_time_trajectory_controller/multi_time_trajectory_controller.hpp"
 
 #include <angles/angles.h>
+#include <tf2/LinearMath/Matrix3x3.h>
+#include <tf2/LinearMath/Quaternion.h>
 
 #include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <limits>
 #include <stdexcept>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 #include "control_msgs/msg/axis_trajectory.hpp"
 #include "control_msgs/msg/axis_trajectory_point.hpp"
 #include "control_msgs/msg/multi_axis_trajectory.hpp"
+#include "eigen3/Eigen/Eigen"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp_action/create_server.hpp"
 
 #include "controller_interface/helpers.hpp"
+
+namespace
+{
+
+void reset_twist_msg(geometry_msgs::msg::Twist & msg)
+{
+  msg.linear.x = std::numeric_limits<double>::quiet_NaN();
+  msg.linear.y = std::numeric_limits<double>::quiet_NaN();
+  msg.linear.z = std::numeric_limits<double>::quiet_NaN();
+  msg.angular.x = std::numeric_limits<double>::quiet_NaN();
+  msg.angular.y = std::numeric_limits<double>::quiet_NaN();
+  msg.angular.z = std::numeric_limits<double>::quiet_NaN();
+}
+using ControllerReferenceMsg =
+  multi_time_trajectory_controller::MultiTimeTrajectoryController::ControllerReferenceMsg;
+// called from RT control loop
+void reset_controller_reference_msg(ControllerReferenceMsg & point)
+{
+  point.transform.translation.x = std::numeric_limits<double>::quiet_NaN();
+  point.transform.translation.y = std::numeric_limits<double>::quiet_NaN();
+  point.transform.translation.z = std::numeric_limits<double>::quiet_NaN();
+  point.transform.rotation.x = std::numeric_limits<double>::quiet_NaN();
+  point.transform.rotation.y = std::numeric_limits<double>::quiet_NaN();
+  point.transform.rotation.z = std::numeric_limits<double>::quiet_NaN();
+  point.transform.rotation.w = std::numeric_limits<double>::quiet_NaN();
+
+  reset_twist_msg(point.velocity);
+
+  reset_twist_msg(point.acceleration);
+}
+
+void reset_controller_reference_msg(const std::shared_ptr<ControllerReferenceMsg> & msg)
+{
+  reset_controller_reference_msg(*msg);
+}
+}  // namespace
 
 namespace multi_time_trajectory_controller
 {
@@ -479,7 +519,79 @@ bool MultiTimeTrajectoryController::read_state_from_hardware(std::vector<Traject
 
   if (params_.use_feedback)
   {
-    // TODO(henrygerardmoore): implement
+    std::array<double, 3> orientation_angles;
+    const auto measured_state = *(feedback_.readFromRT());
+    if (!measured_state) return false;
+
+    tf2::Quaternion measured_q;
+
+    if (
+      std::isnan(measured_state->pose.pose.orientation.w) ||
+      std::isnan(measured_state->pose.pose.orientation.x) ||
+      std::isnan(measured_state->pose.pose.orientation.y) ||
+      std::isnan(measured_state->pose.pose.orientation.z))
+    {
+      // if any of the orientation is NaN, revert to previous orientation
+      measured_q.setRPY(states[3].position, states[4].position, states[5].position);
+    }
+    else
+    {
+      tf2::fromMsg(measured_state->pose.pose.orientation, measured_q);
+    }
+    tf2::Matrix3x3 m(measured_q);
+    m.getRPY(orientation_angles[0], orientation_angles[1], orientation_angles[2]);
+
+    // Assign values from the hardware
+    // Position states always exist
+    // if any measured position is NaN, keep previous value
+    states[0].position = std::isnan(measured_state->pose.pose.position.x)
+                           ? states[0].position
+                           : measured_state->pose.pose.position.x;
+    states[1].position = std::isnan(measured_state->pose.pose.position.y)
+                           ? states[1].position
+                           : measured_state->pose.pose.position.y;
+    states[2].position = std::isnan(measured_state->pose.pose.position.z)
+                           ? states[2].position
+                           : measured_state->pose.pose.position.z;
+    states[3].position = orientation_angles[0];
+    states[4].position = orientation_angles[1];
+    states[5].position = orientation_angles[2];
+
+    // Convert measured twist which is in body frame to world frame since CTG/JTC expects state
+    // in world frame
+
+    Eigen::Quaterniond q_body_in_world(
+      measured_q.w(), measured_q.x(), measured_q.y(), measured_q.z());
+
+    // if any measured linear velocity is NaN, set to zero
+    Eigen::Vector3d linear_vel_body(
+      std::isnan(measured_state->twist.twist.linear.x) ? 0.0 : measured_state->twist.twist.linear.x,
+      std::isnan(measured_state->twist.twist.linear.y) ? 0.0 : measured_state->twist.twist.linear.y,
+      std::isnan(measured_state->twist.twist.linear.z) ? 0.0
+                                                       : measured_state->twist.twist.linear.z);
+    auto linear_vel_world = q_body_in_world * linear_vel_body;
+
+    // if any measured angular velocity is NaN, set to zero
+    Eigen::Vector3d angular_vel_body(
+      std::isnan(measured_state->twist.twist.angular.x) ? 0.0
+                                                        : measured_state->twist.twist.angular.x,
+      std::isnan(measured_state->twist.twist.angular.y) ? 0.0
+                                                        : measured_state->twist.twist.angular.y,
+      std::isnan(measured_state->twist.twist.angular.z) ? 0.0
+                                                        : measured_state->twist.twist.angular.z);
+    auto angular_vel_world = q_body_in_world * angular_vel_body;
+
+    states[0].velocity = linear_vel_world[0];
+    states[1].velocity = linear_vel_world[1];
+    states[2].velocity = linear_vel_world[2];
+    states[3].velocity = angular_vel_world[0];
+    states[4].velocity = angular_vel_world[1];
+    states[5].velocity = angular_vel_world[2];
+
+    for (std::size_t i = 0; i < 6; ++i)
+    {
+      states[i].acceleration = std::numeric_limits<double>::quiet_NaN();
+    }
     return true;
   }
   else
@@ -888,7 +1000,6 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
 
   state_publisher_->unlock();
 
-  ////////////////////// BEGIN
   splines_output_pub_ = get_node()->create_publisher<ControllerStateMsg>(
     "~/splines_output", rclcpp::SystemDefaultsQoS());
   splines_output_publisher_ = std::make_unique<StatePublisher>(splines_output_pub_);
@@ -924,7 +1035,6 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
   ruckig_input_target_publisher_->msg_.errors.resize(dof_);
   ruckig_input_target_publisher_->msg_.outputs.resize(dof_);
   ruckig_input_target_publisher_->unlock();
-  /////////// END
 
   RCLCPP_INFO(
     logger, "Action status changes will be monitored at %.2f Hz.", params_.action_monitor_rate);
@@ -948,6 +1058,38 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
     dof_, {false, std::numeric_limits<double>::quiet_NaN(),
            std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN()});
   reset_dofs_flags_.writeFromNonRT(reset_flags);
+
+  // topics QoS
+  auto qos_best_effort_history_depth_one = rclcpp::SystemDefaultsQoS();
+  qos_best_effort_history_depth_one.keep_last(1);
+  qos_best_effort_history_depth_one.best_effort();
+  auto subscribers_reliable_qos = rclcpp::SystemDefaultsQoS();
+  subscribers_reliable_qos.keep_all();
+  subscribers_reliable_qos.reliable();
+
+  // Reference Subscribers (reliable channel also for updates not to be missed)
+  ref_subscriber_ = get_node()->create_subscription<ControllerReferenceMsg>(
+    "~/reference", qos_best_effort_history_depth_one,
+    std::bind(&MultiTimeTrajectoryController::reference_callback, this, std::placeholders::_1));
+  ref_subscriber_reliable_ = get_node()->create_subscription<ControllerReferenceMsg>(
+    "~/reference_reliable", subscribers_reliable_qos,
+    std::bind(&MultiTimeTrajectoryController::reference_callback, this, std::placeholders::_1));
+
+  std::shared_ptr<ControllerReferenceMsg> msg = std::make_shared<ControllerReferenceMsg>();
+  reset_controller_reference_msg(msg);
+  reference_world_.writeFromNonRT(msg);
+
+  // Odometry feedback
+  auto feedback_callback = [&](const std::shared_ptr<ControllerFeedbackMsg> feedback_msg) -> void
+  { feedback_.writeFromNonRT(feedback_msg); };
+  feedback_subscriber_ = get_node()->create_subscription<ControllerFeedbackMsg>(
+    "~/feedback", qos_best_effort_history_depth_one, feedback_callback);
+  // initialize feedback to null pointer since it is used to determine if we have valid data or not
+  feedback_.writeFromNonRT(nullptr);
+
+  mac_publisher_ = get_node()->create_publisher<MacStateMsg>(
+    "~/controller_state_cartesian", qos_best_effort_history_depth_one);
+  mac_state_publisher_ = std::make_unique<MacStatePublisher>(mac_publisher_);
 
   // Control mode service
   auto reset_dofs_service_callback =
@@ -1041,6 +1183,57 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
     "~/reset_dofs", reset_dofs_service_callback);
 
   return CallbackReturn::SUCCESS;
+}
+
+void MultiTimeTrajectoryController::reference_callback(
+  const std::shared_ptr<ControllerReferenceMsg> msg)
+{
+  // store input ref for later use
+  reference_world_.writeFromNonRT(msg);
+
+  // assume for now that we are working with trajectories with one point - we don't know exactly
+  // where we are in the trajectory before sampling - nevertheless this should work for the use case
+  auto new_traj_msg = std::make_shared<control_msgs::msg::MultiAxisTrajectory>();
+  new_traj_msg->axis_names = params_.axes;
+  new_traj_msg->axis_trajectories.resize(dof_);
+  for (std::size_t axis_index = 0; axis_index < dof_; ++axis_index)
+  {
+    auto & trajectory = new_traj_msg->axis_trajectories[axis_index];
+
+    trajectory.axis_points.resize(1, emptyTrajectoryPoint());
+    if (msg->time_from_start.nanosec == 0)
+    {
+      trajectory.axis_points[0].time_from_start = rclcpp::Duration::from_seconds(0.01);
+    }
+    else
+    {
+      trajectory.axis_points[0].time_from_start = rclcpp::Duration::from_nanoseconds(
+        static_cast<rcl_duration_value_t>(msg->time_from_start.nanosec));
+    }
+  }
+
+  // just pass input into trajectory message
+  auto assign_value_from_input = [&](
+                                   const double pos_from_msg, const double vel_from_msg,
+                                   const std::string & joint_name, const size_t index)
+  {
+    new_traj_msg->axis_trajectories[index].axis_points[0].position = pos_from_msg;
+    new_traj_msg->axis_trajectories[index].axis_points[0].velocity = vel_from_msg;
+    if (std::isnan(pos_from_msg) && std::isnan(vel_from_msg))
+    {
+      RCLCPP_DEBUG(
+        get_node()->get_logger(), "Input position and velocity for %s is NaN", joint_name.c_str());
+    }
+  };
+
+  assign_value_from_input(msg->transform.translation.x, msg->velocity.linear.x, params_.axes[0], 0);
+  assign_value_from_input(msg->transform.translation.y, msg->velocity.linear.y, params_.axes[1], 1);
+  assign_value_from_input(msg->transform.translation.z, msg->velocity.linear.z, params_.axes[2], 2);
+  assign_value_from_input(msg->transform.rotation.x, msg->velocity.angular.x, params_.axes[3], 3);
+  assign_value_from_input(msg->transform.rotation.y, msg->velocity.angular.y, params_.axes[4], 4);
+  assign_value_from_input(msg->transform.rotation.z, msg->velocity.angular.z, params_.axes[5], 5);
+
+  add_new_trajectory_msg(new_traj_msg);
 }
 
 controller_interface::CallbackReturn MultiTimeTrajectoryController::on_activate(

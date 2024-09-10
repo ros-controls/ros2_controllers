@@ -1286,9 +1286,8 @@ TEST_P(TrajectoryControllerTestParameterized, missing_position_message_accepted)
 /**
  * @brief test_trajectory_replace Test replacing an existing trajectory
  */
-TEST_P(TrajectoryControllerTestParameterized, DISABLED_test_trajectory_replace)
+TEST_P(TrajectoryControllerTestParameterized, test_trajectory_replace)
 {
-  // TODO(henrygerardmoore): figure out how to make this test work
   rclcpp::executors::SingleThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(executor, {});
 
@@ -1301,9 +1300,10 @@ TEST_P(TrajectoryControllerTestParameterized, DISABLED_test_trajectory_replace)
   builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(delay)};
   publish(time_from_start, positions_old, rclcpp::Time(), {}, velocities_old);
   std::vector<control_msgs::msg::AxisTrajectoryPoint> expected_actual, expected_desired;
-  expected_actual.resize(positions_old.size());
-  expected_desired.resize(positions_old.size());
-  for (std::size_t i = 0; i < positions_old.size(); ++i)
+  std::size_t num_axes = positions_old[0].size();
+  expected_actual.resize(num_axes);
+  expected_desired.resize(num_axes);
+  for (std::size_t i = 0; i < num_axes; ++i)
   {
     expected_actual[i].position = positions_old[0][i];
     expected_desired[i].position = positions_old[0][i];

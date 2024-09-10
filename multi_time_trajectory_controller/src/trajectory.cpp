@@ -21,6 +21,8 @@
 #include <memory>
 
 #include "angles/angles.h"
+#include "control_msgs/msg/axis_trajectory.hpp"
+#include "control_msgs/msg/axis_trajectory_point.hpp"
 #include "control_msgs/msg/multi_axis_trajectory.hpp"
 #include "hardware_interface/macros.hpp"
 #include "rclcpp/duration.hpp"
@@ -105,18 +107,46 @@ void wraparound_joint(
 }
 
 void Trajectory::update(
-  std::shared_ptr<control_msgs::msg::MultiAxisTrajectory> joint_trajectory,
+  std::shared_ptr<control_msgs::msg::MultiAxisTrajectory> multi_axis_trajectory,
   const std::vector<joint_limits::JointLimits> & joint_limits, const rclcpp::Duration & period)
 {
-  trajectory_msg_ = joint_trajectory;
-  trajectory_start_time_ = static_cast<rclcpp::Time>(joint_trajectory->header.stamp);
+  // first, see if we need to do anything other than just replace the whole trajectory_msg_
+  bool const replace_subset = std::any_of(
+    multi_axis_trajectory->axis_trajectories.begin(),
+    multi_axis_trajectory->axis_trajectories.end(),
+    [](control_msgs::msg::AxisTrajectory traj) { return traj.axis_points.empty(); });
+
+  if (replace_subset)
+  {
+    // logic to replace only certain axes with the updated trajectory
+    // first, calculate the time offset to apply to the old axis trajectories (since we have one
+    // time_from_start)
+    auto const time_offset = static_cast<rclcpp::Time>(multi_axis_trajectory->header.stamp) -
+                             static_cast<rclcpp::Time>(trajectory_msg_->header.stamp);
+    for (std::size_t i = 0; i < multi_axis_trajectory->axis_trajectories.size(); ++i)
+    {
+      auto & traj = multi_axis_trajectory->axis_trajectories[i].axis_points;
+      if (traj.empty())
+      {
+        // copy the old one into the new message (which will replace ours)
+        traj = trajectory_msg_->axis_trajectories[i].axis_points;
+        for (auto & point : traj)
+        {
+          // update time of the old trajectory
+          point.time_from_start = rclcpp::Duration(point.time_from_start) - time_offset;
+        }
+      }
+    }
+  }
+
+  // replace the old message with the new one
+  trajectory_msg_ = multi_axis_trajectory;
+
+  trajectory_start_time_ = static_cast<rclcpp::Time>(multi_axis_trajectory->header.stamp);
   sampled_already_ = false;
 
   // Initialize Ruckig-smoothing-related stuff
-  size_t dim = joint_trajectory->axis_names.size();
-  // TODO(andyz): update only the Ruckig::delta_time member of the smoother.
-  // dim should not update since it doesn't change with every new trajectory
-  // See https://github.com/pantor/ruckig/issues/118
+  size_t dim = multi_axis_trajectory->axis_names.size();
   smoother_ = std::make_unique<ruckig::Ruckig<ruckig::DynamicDOFs>>(dim, period.seconds());
   ruckig_input_ = ruckig::InputParameter<ruckig::DynamicDOFs>(dim);
   ruckig_output_ = ruckig::OutputParameter<ruckig::DynamicDOFs>(dim);
@@ -193,9 +223,14 @@ std::vector<bool> Trajectory::sample(
       trajectory_msg_->axis_trajectories.begin(), trajectory_msg_->axis_trajectories.end(),
       [](control_msgs::msg::AxisTrajectory traj) { return traj.axis_points.empty(); }))
   {
-    // TODO(henrygerardmoore): how should we handle this case?
-    // start_segment_itr = end();
-    // end_segment_itr = end();
+    // empty axis trajectories or empty axis points (invalid)
+    start_segment_itr.resize(trajectory_msg_->axis_trajectories.size());
+    end_segment_itr.resize(trajectory_msg_->axis_trajectories.size());
+    for (std::size_t i = 0; i < trajectory_msg_->axis_trajectories.size(); ++i)
+    {
+      start_segment_itr[i] = end(i);
+      end_segment_itr[i] = end(i);
+    }
     return is_valid;
   }
 

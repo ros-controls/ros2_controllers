@@ -28,12 +28,14 @@
 #include <joint_limits/joint_limits.hpp>
 #include <pluginlib/class_loader.hpp>
 #include "control_msgs/action/follow_axis_trajectory.hpp"
+#include "control_msgs/msg/axis_cartesian_trajectory_point.hpp"
 #include "control_msgs/msg/axis_trajectory_point.hpp"
 #include "control_msgs/msg/multi_axis_trajectory.hpp"
 #include "control_msgs/msg/multi_time_trajectory_controller_state.hpp"
 #include "control_msgs/srv/query_trajectory_state.hpp"
 #include "control_msgs/srv/reset_dofs.hpp"
 #include "controller_interface/controller_interface.hpp"
+#include "nav_msgs/msg/odometry.hpp"
 #include "rclcpp_action/server.hpp"
 #include "tolerances.hpp"
 #include "trajectory.hpp"
@@ -43,7 +45,6 @@
 
 using namespace std::chrono_literals;  // NOLINT
 
-// TODO(henrygerardmoore): add ~/reference and ~/reference_reliable usage as in CTG
 namespace multi_time_trajectory_controller
 {
 
@@ -88,6 +89,8 @@ public:
 
   controller_interface::CallbackReturn on_shutdown(
     const rclcpp_lifecycle::State & previous_state) override;
+  using ControllerReferenceMsg = control_msgs::msg::AxisCartesianTrajectoryPoint;
+  using ControllerFeedbackMsg = nav_msgs::msg::Odometry;
 
 protected:
   // To reduce number of variables and to make the code shorter the interfaces are ordered in types
@@ -284,10 +287,6 @@ protected:
 
   bool has_active_trajectory() const;
 
-  void publish_state(
-    const rclcpp::Time & time, const TrajectoryPoint & desired_state,
-    const TrajectoryPoint & current_state, const TrajectoryPoint & state_error);
-
   virtual bool read_state_from_hardware(std::vector<TrajectoryPoint> & state);
 
   /** Assign values from the command interfaces as state.
@@ -334,9 +333,24 @@ protected:
       trajectory_point_interface[index].acceleration = axis_interface[index].get().get_value();
     }
   };
-  // TODO(henrygerardmoore): add effort stuff back as used in JTC
 
 private:
+  rclcpp::Subscription<ControllerFeedbackMsg>::SharedPtr feedback_subscriber_ = nullptr;
+  realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerFeedbackMsg>> feedback_;
+  void reference_callback(const std::shared_ptr<ControllerReferenceMsg> msg);
+  using JointTrajectoryPoint = control_msgs::msg::AxisTrajectoryPoint;
+
+  // Command subscribers and Controller State publisher
+  rclcpp::Subscription<ControllerReferenceMsg>::SharedPtr ref_subscriber_ = nullptr;
+  rclcpp::Subscription<ControllerReferenceMsg>::SharedPtr ref_subscriber_reliable_ = nullptr;
+  realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerReferenceMsg>> reference_world_;
+
+  using MacStateMsg = control_msgs::msg::MultiTimeTrajectoryControllerState;
+  using MacStatePublisher = realtime_tools::RealtimePublisher<MacStateMsg>;
+  using MacStatePublisherPtr = std::unique_ptr<MacStatePublisher>;
+  rclcpp::Publisher<MacStateMsg>::SharedPtr mac_publisher_;
+  MacStatePublisherPtr mac_state_publisher_;
+
   void update_pids();
 
   bool contains_interface_type(
