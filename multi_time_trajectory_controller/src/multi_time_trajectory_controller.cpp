@@ -25,6 +25,7 @@
 #include <stdexcept>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
+#include "control_msgs/msg/axis_cartesian_trajectory_point.hpp"
 #include "control_msgs/msg/axis_trajectory.hpp"
 #include "control_msgs/msg/axis_trajectory_point.hpp"
 #include "control_msgs/msg/multi_axis_trajectory.hpp"
@@ -67,6 +68,15 @@ void reset_controller_reference_msg(ControllerReferenceMsg & point)
 void reset_controller_reference_msg(const std::shared_ptr<ControllerReferenceMsg> & msg)
 {
   reset_controller_reference_msg(*msg);
+}
+
+void rpy_to_quaternion(
+  std::array<double, 3> & orientation_angles, geometry_msgs::msg::Quaternion & quaternion_msg)
+{
+  // convert quaternion to euler angles
+  tf2::Quaternion quaternion;
+  quaternion.setRPY(orientation_angles[0], orientation_angles[1], orientation_angles[2]);
+  quaternion_msg = tf2::toMsg(quaternion);
 }
 }  // namespace
 
@@ -1485,6 +1495,64 @@ void MultiTimeTrajectoryController::publish_state(
     ruckig_input_target_publisher_->msg_.header.stamp = state_publisher_->msg_.header.stamp;
     ruckig_input_target_publisher_->msg_.references = ruckig_input_target;
     ruckig_input_target_publisher_->unlockAndPublish();
+  }
+
+  // TODO(henrygerardmoore): test below
+  if (mac_state_publisher_->trylock())
+  {
+    mac_state_publisher_->msg_.header.stamp = time;
+    mac_state_publisher_->msg_.cartesian_reference_world = *(*reference_world_.readFromRT());
+
+    auto set_multi_dof_point =
+      [&](
+        control_msgs::msg::AxisCartesianTrajectoryPoint & multi_dof_point,
+        const std::vector<control_msgs::msg::AxisTrajectoryPoint> & traj_points)
+    {
+      if (traj_points.size() == 6)
+      {
+        multi_dof_point.transform.translation.x = traj_points[0].position;
+        multi_dof_point.transform.translation.y = traj_points[1].position;
+        multi_dof_point.transform.translation.z = traj_points[2].position;
+
+        std::array<double, 3> orientation_angles = {
+          traj_points[3].position, traj_points[4].position, traj_points[5].position};
+        geometry_msgs::msg::Quaternion quaternion;
+        rpy_to_quaternion(orientation_angles, quaternion);
+        multi_dof_point.transform.rotation = quaternion;
+        // velocities
+        multi_dof_point.velocity.linear.x = traj_points[0].velocity;
+        multi_dof_point.velocity.linear.y = traj_points[1].velocity;
+        multi_dof_point.velocity.linear.z = traj_points[2].velocity;
+        multi_dof_point.velocity.angular.x = traj_points[3].velocity;
+        multi_dof_point.velocity.angular.y = traj_points[4].velocity;
+        multi_dof_point.velocity.angular.z = traj_points[5].velocity;
+
+        // accelerations
+        multi_dof_point.acceleration.linear.x = traj_points[0].acceleration;
+        multi_dof_point.acceleration.linear.y = traj_points[1].acceleration;
+        multi_dof_point.acceleration.linear.z = traj_points[2].acceleration;
+        multi_dof_point.acceleration.angular.x = traj_points[3].acceleration;
+        multi_dof_point.acceleration.angular.y = traj_points[4].acceleration;
+        multi_dof_point.acceleration.angular.z = traj_points[5].acceleration;
+      }
+    };
+
+    set_multi_dof_point(mac_state_publisher_->msg_.cartesian_feedback_local, current_state);
+    set_multi_dof_point(mac_state_publisher_->msg_.cartesian_error, state_error);
+    set_multi_dof_point(mac_state_publisher_->msg_.cartesian_output_world, desired_state);
+
+    const auto measured_state = *(feedback_.readFromRT());
+    mac_state_publisher_->msg_.cartesian_feedback_world.transform.translation.x =
+      measured_state->pose.pose.position.x;
+    mac_state_publisher_->msg_.cartesian_feedback_world.transform.translation.y =
+      measured_state->pose.pose.position.y;
+    mac_state_publisher_->msg_.cartesian_feedback_world.transform.translation.z =
+      measured_state->pose.pose.position.z;
+    mac_state_publisher_->msg_.cartesian_feedback_world.transform.rotation =
+      measured_state->pose.pose.orientation;
+    mac_state_publisher_->msg_.cartesian_feedback_world.velocity = measured_state->twist.twist;
+
+    mac_state_publisher_->unlockAndPublish();
   }
 }
 
