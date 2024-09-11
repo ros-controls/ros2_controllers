@@ -1686,6 +1686,9 @@ void MultiTimeTrajectoryController::sort_to_local_axis_order(
 {
   // rearrange all points in the trajectory message based on mapping
   std::vector<size_t> mapping_vector = mapping(trajectory_msg->axis_names, params_.axes);
+
+  // this will create an empty AxisTrajectory for any unfilled axes, but that is handled in
+  // `Trajectory::update`
   std::vector<control_msgs::msg::AxisTrajectory> to_return(dof_);
   std::size_t message_index = 0;
   for (auto const internal_index : mapping_vector)
