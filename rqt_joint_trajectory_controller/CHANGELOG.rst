@@ -2,8 +2,8 @@
 Changelog for package rqt_joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.14.0 (2024-09-11)
+-------------------
 * Fix bug for displaying all controllers (`#1259 <https://github.com/ros-controls/ros2_controllers/issues/1259>`_)
 * Contributors: Francisco Martín Rico
 

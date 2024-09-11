@@ -2,8 +2,8 @@
 Changelog for package pid_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.14.0 (2024-09-11)
+-------------------
 * [PID Controller] Export state interfaces for easier chaining with other controllers (`#1214 <https://github.com/ros-controls/ros2_controllers/issues/1214>`_)
 * Contributors: Sai Kishor Kothakota
 

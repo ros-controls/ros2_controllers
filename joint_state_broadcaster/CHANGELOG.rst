@@ -2,8 +2,8 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.14.0 (2024-09-11)
+-------------------
 * [JSB] Move the initialize of urdf::Model from on_activate to on_configure to improve real-time performance (`#1269 <https://github.com/ros-controls/ros2_controllers/issues/1269>`_)
 * Contributors: Takashi Sato
 
