@@ -142,8 +142,8 @@ double SteeringOdometry::get_linear_velocity_double_traction_axle(
   }
 
   // overdetermined, we take the average
-  double vel_r = vel_wheel_r * turning_radius / (turning_radius + wheel_track_ * 0.5);
-  double vel_l = vel_wheel_l * turning_radius / (turning_radius - wheel_track_ * 0.5);
+  const double vel_r = vel_wheel_r * turning_radius / (turning_radius + wheel_track_ * 0.5);
+  const double vel_l = vel_wheel_l * turning_radius / (turning_radius - wheel_track_ * 0.5);
   return (vel_r + vel_l) * 0.5;
 }
 
