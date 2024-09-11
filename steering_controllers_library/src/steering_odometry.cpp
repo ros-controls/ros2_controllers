@@ -133,8 +133,8 @@ double SteeringOdometry::get_linear_velocity_double_traction_axle(
   const double steer_pos)
 {
   double turning_radius = wheelbase_ / std::tan(steer_pos);
-  double vel_wheel_r = right_traction_wheel_vel * wheel_radius_;
-  double vel_wheel_l = left_traction_wheel_vel * wheel_radius_;
+  const double vel_wheel_r = right_traction_wheel_vel * wheel_radius_;
+  const double vel_wheel_l = left_traction_wheel_vel * wheel_radius_;
 
   if (std::isinf(turning_radius))
   {
