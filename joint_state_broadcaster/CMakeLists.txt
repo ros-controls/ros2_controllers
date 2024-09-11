@@ -16,6 +16,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   rcutils
   realtime_tools
   sensor_msgs
+  urdf
 )
 
 find_package(ament_cmake REQUIRED)
@@ -72,6 +73,7 @@ if(BUILD_TESTING)
   )
   ament_target_dependencies(test_joint_state_broadcaster
     hardware_interface
+    ros2_control_test_assets
   )
 endif()
 

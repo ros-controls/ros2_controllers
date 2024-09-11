@@ -2,6 +2,15 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.14.0 (2024-09-11)
+-------------------
+
+4.13.0 (2024-08-22)
+-------------------
+* Fix segfault at reconfigure of AdmittanceController (`#1248 <https://github.com/ros-controls/ros2_controllers/issues/1248>`_)
+* Fixes tests to work with use_global_arguments NodeOptions parameter  (`#1256 <https://github.com/ros-controls/ros2_controllers/issues/1256>`_)
+* Contributors: Lennart Nachtigall, Sai Kishor Kothakota
+
 4.12.1 (2024-08-14)
 -------------------
 * Fix admittance controller interface read/write logic (`#1232 <https://github.com/ros-controls/ros2_controllers/issues/1232>`_)
