@@ -28,7 +28,6 @@
 #include <joint_limits/joint_limits.hpp>
 #include <pluginlib/class_loader.hpp>
 #include "control_msgs/action/follow_axis_trajectory.hpp"
-#include "control_msgs/msg/axis_cartesian_trajectory_point.hpp"
 #include "control_msgs/msg/axis_trajectory_point.hpp"
 #include "control_msgs/msg/multi_axis_trajectory.hpp"
 #include "control_msgs/msg/multi_time_trajectory_controller_state.hpp"
@@ -89,7 +88,7 @@ public:
 
   controller_interface::CallbackReturn on_shutdown(
     const rclcpp_lifecycle::State & previous_state) override;
-  using ControllerReferenceMsg = control_msgs::msg::AxisCartesianTrajectoryPoint;
+  using ControllerReferenceMsg = control_msgs::msg::MultiAxisTrajectory;
   using ControllerFeedbackMsg = nav_msgs::msg::Odometry;
 
 protected:
@@ -344,12 +343,6 @@ private:
   rclcpp::Subscription<ControllerReferenceMsg>::SharedPtr ref_subscriber_ = nullptr;
   rclcpp::Subscription<ControllerReferenceMsg>::SharedPtr ref_subscriber_reliable_ = nullptr;
   realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerReferenceMsg>> reference_world_;
-
-  using MacStateMsg = control_msgs::msg::MultiTimeTrajectoryControllerState;
-  using MacStatePublisher = realtime_tools::RealtimePublisher<MacStateMsg>;
-  using MacStatePublisherPtr = std::unique_ptr<MacStatePublisher>;
-  rclcpp::Publisher<MacStateMsg>::SharedPtr mac_publisher_;
-  MacStatePublisherPtr mac_state_publisher_;
 
   void update_pids();
 

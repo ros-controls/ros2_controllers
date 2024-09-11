@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
 project(multi_time_trajectory_controller LANGUAGES CXX)
 
-# add_compile_options(-fsanitize=address)
-# add_link_options(-fsanitize=address)
+# add_compile_options(-fsanitize=address -fsanitize=undefined)
+# add_link_options(-fsanitize=address -fsanitize=undefined)
 # add_compile_options(-fno-omit-frame-pointer)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")

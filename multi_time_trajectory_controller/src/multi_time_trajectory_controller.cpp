@@ -25,7 +25,6 @@
 #include <stdexcept>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
-#include "control_msgs/msg/axis_cartesian_trajectory_point.hpp"
 #include "control_msgs/msg/axis_trajectory.hpp"
 #include "control_msgs/msg/axis_trajectory_point.hpp"
 #include "control_msgs/msg/multi_axis_trajectory.hpp"
@@ -34,51 +33,6 @@
 #include "rclcpp_action/create_server.hpp"
 
 #include "controller_interface/helpers.hpp"
-
-namespace
-{
-
-void reset_twist_msg(geometry_msgs::msg::Twist & msg)
-{
-  msg.linear.x = std::numeric_limits<double>::quiet_NaN();
-  msg.linear.y = std::numeric_limits<double>::quiet_NaN();
-  msg.linear.z = std::numeric_limits<double>::quiet_NaN();
-  msg.angular.x = std::numeric_limits<double>::quiet_NaN();
-  msg.angular.y = std::numeric_limits<double>::quiet_NaN();
-  msg.angular.z = std::numeric_limits<double>::quiet_NaN();
-}
-using ControllerReferenceMsg =
-  multi_time_trajectory_controller::MultiTimeTrajectoryController::ControllerReferenceMsg;
-// called from RT control loop
-void reset_controller_reference_msg(ControllerReferenceMsg & point)
-{
-  point.transform.translation.x = std::numeric_limits<double>::quiet_NaN();
-  point.transform.translation.y = std::numeric_limits<double>::quiet_NaN();
-  point.transform.translation.z = std::numeric_limits<double>::quiet_NaN();
-  point.transform.rotation.x = std::numeric_limits<double>::quiet_NaN();
-  point.transform.rotation.y = std::numeric_limits<double>::quiet_NaN();
-  point.transform.rotation.z = std::numeric_limits<double>::quiet_NaN();
-  point.transform.rotation.w = std::numeric_limits<double>::quiet_NaN();
-
-  reset_twist_msg(point.velocity);
-
-  reset_twist_msg(point.acceleration);
-}
-
-void reset_controller_reference_msg(const std::shared_ptr<ControllerReferenceMsg> & msg)
-{
-  reset_controller_reference_msg(*msg);
-}
-
-void rpy_to_quaternion(
-  std::array<double, 3> & orientation_angles, geometry_msgs::msg::Quaternion & quaternion_msg)
-{
-  // convert quaternion to euler angles
-  tf2::Quaternion quaternion;
-  quaternion.setRPY(orientation_angles[0], orientation_angles[1], orientation_angles[2]);
-  quaternion_msg = tf2::toMsg(quaternion);
-}
-}  // namespace
 
 namespace multi_time_trajectory_controller
 {
@@ -1086,7 +1040,12 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
     std::bind(&MultiTimeTrajectoryController::reference_callback, this, std::placeholders::_1));
 
   std::shared_ptr<ControllerReferenceMsg> msg = std::make_shared<ControllerReferenceMsg>();
-  reset_controller_reference_msg(msg);
+  msg->axis_names = params_.axes;
+  msg->axis_trajectories.resize(dof_);
+  for (std::size_t i = 0; i < dof_; ++i)
+  {
+    msg->axis_trajectories[i].axis_points.resize(1, emptyTrajectoryPoint());
+  }
   reference_world_.writeFromNonRT(msg);
 
   // Odometry feedback
@@ -1096,10 +1055,6 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
     "~/feedback", qos_best_effort_history_depth_one, feedback_callback);
   // initialize feedback to null pointer since it is used to determine if we have valid data or not
   feedback_.writeFromNonRT(nullptr);
-
-  mac_publisher_ = get_node()->create_publisher<MacStateMsg>(
-    "~/controller_state_cartesian", qos_best_effort_history_depth_one);
-  mac_state_publisher_ = std::make_unique<MacStatePublisher>(mac_publisher_);
 
   // Control mode service
   auto reset_dofs_service_callback =
@@ -1201,49 +1156,7 @@ void MultiTimeTrajectoryController::reference_callback(
   // store input ref for later use
   reference_world_.writeFromNonRT(msg);
 
-  // assume for now that we are working with trajectories with one point - we don't know exactly
-  // where we are in the trajectory before sampling - nevertheless this should work for the use case
-  auto new_traj_msg = std::make_shared<control_msgs::msg::MultiAxisTrajectory>();
-  new_traj_msg->axis_names = params_.axes;
-  new_traj_msg->axis_trajectories.resize(dof_);
-  for (std::size_t axis_index = 0; axis_index < dof_; ++axis_index)
-  {
-    auto & trajectory = new_traj_msg->axis_trajectories[axis_index];
-
-    trajectory.axis_points.resize(1, emptyTrajectoryPoint());
-    if (msg->time_from_start.nanosec == 0)
-    {
-      trajectory.axis_points[0].time_from_start = rclcpp::Duration::from_seconds(0.01);
-    }
-    else
-    {
-      trajectory.axis_points[0].time_from_start = rclcpp::Duration::from_nanoseconds(
-        static_cast<rcl_duration_value_t>(msg->time_from_start.nanosec));
-    }
-  }
-
-  // just pass input into trajectory message
-  auto assign_value_from_input = [&](
-                                   const double pos_from_msg, const double vel_from_msg,
-                                   const std::string & joint_name, const size_t index)
-  {
-    new_traj_msg->axis_trajectories[index].axis_points[0].position = pos_from_msg;
-    new_traj_msg->axis_trajectories[index].axis_points[0].velocity = vel_from_msg;
-    if (std::isnan(pos_from_msg) && std::isnan(vel_from_msg))
-    {
-      RCLCPP_DEBUG(
-        get_node()->get_logger(), "Input position and velocity for %s is NaN", joint_name.c_str());
-    }
-  };
-
-  assign_value_from_input(msg->transform.translation.x, msg->velocity.linear.x, params_.axes[0], 0);
-  assign_value_from_input(msg->transform.translation.y, msg->velocity.linear.y, params_.axes[1], 1);
-  assign_value_from_input(msg->transform.translation.z, msg->velocity.linear.z, params_.axes[2], 2);
-  assign_value_from_input(msg->transform.rotation.x, msg->velocity.angular.x, params_.axes[3], 3);
-  assign_value_from_input(msg->transform.rotation.y, msg->velocity.angular.y, params_.axes[4], 4);
-  assign_value_from_input(msg->transform.rotation.z, msg->velocity.angular.z, params_.axes[5], 5);
-
-  add_new_trajectory_msg(new_traj_msg);
+  add_new_trajectory_msg(msg);
 }
 
 controller_interface::CallbackReturn MultiTimeTrajectoryController::on_activate(
@@ -1495,67 +1408,6 @@ void MultiTimeTrajectoryController::publish_state(
     ruckig_input_target_publisher_->msg_.header.stamp = state_publisher_->msg_.header.stamp;
     ruckig_input_target_publisher_->msg_.references = ruckig_input_target;
     ruckig_input_target_publisher_->unlockAndPublish();
-  }
-
-  // TODO(henrygerardmoore): test below
-  if (mac_state_publisher_->trylock())
-  {
-    mac_state_publisher_->msg_.header.stamp = time;
-    mac_state_publisher_->msg_.cartesian_reference_world = *(*reference_world_.readFromRT());
-
-    auto set_multi_dof_point =
-      [&](
-        control_msgs::msg::AxisCartesianTrajectoryPoint & multi_dof_point,
-        const std::vector<control_msgs::msg::AxisTrajectoryPoint> & traj_points)
-    {
-      if (traj_points.size() == 6)
-      {
-        multi_dof_point.transform.translation.x = traj_points[0].position;
-        multi_dof_point.transform.translation.y = traj_points[1].position;
-        multi_dof_point.transform.translation.z = traj_points[2].position;
-
-        std::array<double, 3> orientation_angles = {
-          traj_points[3].position, traj_points[4].position, traj_points[5].position};
-        geometry_msgs::msg::Quaternion quaternion;
-        rpy_to_quaternion(orientation_angles, quaternion);
-        multi_dof_point.transform.rotation = quaternion;
-        // velocities
-        multi_dof_point.velocity.linear.x = traj_points[0].velocity;
-        multi_dof_point.velocity.linear.y = traj_points[1].velocity;
-        multi_dof_point.velocity.linear.z = traj_points[2].velocity;
-        multi_dof_point.velocity.angular.x = traj_points[3].velocity;
-        multi_dof_point.velocity.angular.y = traj_points[4].velocity;
-        multi_dof_point.velocity.angular.z = traj_points[5].velocity;
-
-        // accelerations
-        multi_dof_point.acceleration.linear.x = traj_points[0].acceleration;
-        multi_dof_point.acceleration.linear.y = traj_points[1].acceleration;
-        multi_dof_point.acceleration.linear.z = traj_points[2].acceleration;
-        multi_dof_point.acceleration.angular.x = traj_points[3].acceleration;
-        multi_dof_point.acceleration.angular.y = traj_points[4].acceleration;
-        multi_dof_point.acceleration.angular.z = traj_points[5].acceleration;
-      }
-    };
-
-    set_multi_dof_point(mac_state_publisher_->msg_.cartesian_feedback_local, current_state);
-    set_multi_dof_point(mac_state_publisher_->msg_.cartesian_error, state_error);
-    set_multi_dof_point(mac_state_publisher_->msg_.cartesian_output_world, desired_state);
-
-    const auto measured_state = *(feedback_.readFromRT());
-    if (measured_state)
-    {
-      mac_state_publisher_->msg_.cartesian_feedback_world.transform.translation.x =
-        measured_state->pose.pose.position.x;
-      mac_state_publisher_->msg_.cartesian_feedback_world.transform.translation.y =
-        measured_state->pose.pose.position.y;
-      mac_state_publisher_->msg_.cartesian_feedback_world.transform.translation.z =
-        measured_state->pose.pose.position.z;
-      mac_state_publisher_->msg_.cartesian_feedback_world.transform.rotation =
-        measured_state->pose.pose.orientation;
-      mac_state_publisher_->msg_.cartesian_feedback_world.velocity = measured_state->twist.twist;
-    }
-
-    mac_state_publisher_->unlockAndPublish();
   }
 }
 
