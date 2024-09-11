@@ -2,6 +2,12 @@
 Changelog for package rqt_joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix bug for displaying all controllers (`#1259 <https://github.com/ros-controls/ros2_controllers/issues/1259>`_) (`#1272 <https://github.com/ros-controls/ros2_controllers/issues/1272>`_)
+* [RQT-JTC] limits from jtc controlled joints (`#1146 <https://github.com/ros-controls/ros2_controllers/issues/1146>`_) (`#1273 <https://github.com/ros-controls/ros2_controllers/issues/1273>`_)
+* Contributors: mergify[bot]
+
 3.26.2 (2024-08-22)
 -------------------
 
