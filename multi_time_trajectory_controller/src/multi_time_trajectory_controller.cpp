@@ -1542,15 +1542,18 @@ void MultiTimeTrajectoryController::publish_state(
     set_multi_dof_point(mac_state_publisher_->msg_.cartesian_output_world, desired_state);
 
     const auto measured_state = *(feedback_.readFromRT());
-    mac_state_publisher_->msg_.cartesian_feedback_world.transform.translation.x =
-      measured_state->pose.pose.position.x;
-    mac_state_publisher_->msg_.cartesian_feedback_world.transform.translation.y =
-      measured_state->pose.pose.position.y;
-    mac_state_publisher_->msg_.cartesian_feedback_world.transform.translation.z =
-      measured_state->pose.pose.position.z;
-    mac_state_publisher_->msg_.cartesian_feedback_world.transform.rotation =
-      measured_state->pose.pose.orientation;
-    mac_state_publisher_->msg_.cartesian_feedback_world.velocity = measured_state->twist.twist;
+    if (measured_state)
+    {
+      mac_state_publisher_->msg_.cartesian_feedback_world.transform.translation.x =
+        measured_state->pose.pose.position.x;
+      mac_state_publisher_->msg_.cartesian_feedback_world.transform.translation.y =
+        measured_state->pose.pose.position.y;
+      mac_state_publisher_->msg_.cartesian_feedback_world.transform.translation.z =
+        measured_state->pose.pose.position.z;
+      mac_state_publisher_->msg_.cartesian_feedback_world.transform.rotation =
+        measured_state->pose.pose.orientation;
+      mac_state_publisher_->msg_.cartesian_feedback_world.velocity = measured_state->twist.twist;
+    }
 
     mac_state_publisher_->unlockAndPublish();
   }
