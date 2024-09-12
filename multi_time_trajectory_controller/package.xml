@@ -37,6 +37,7 @@
   <test_depend>controller_manager</test_depend>
   <test_depend>hardware_interface_testing</test_depend>
   <test_depend>ros2_control_test_assets</test_depend>
+  <test_depend>data_tamer_cpp</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

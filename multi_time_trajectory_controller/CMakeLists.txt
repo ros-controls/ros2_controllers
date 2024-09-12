@@ -4,7 +4,6 @@ project(multi_time_trajectory_controller LANGUAGES CXX)
 # add_compile_options(-fsanitize=address -fsanitize=undefined)
 # add_link_options(-fsanitize=address -fsanitize=undefined)
 # add_compile_options(-fno-omit-frame-pointer)
-
 if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
   add_compile_options(-Wall -Wextra -Werror=conversion -Werror=unused-but-set-variable -Werror=return-type -Werror=shadow -Werror=format)
 endif()
@@ -34,6 +33,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
 
 find_package(ament_cmake REQUIRED)
 find_package(backward_ros REQUIRED)
+
 foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
@@ -85,6 +85,21 @@ if(BUILD_TESTING)
     realtime_tools
     ros2_control_test_assets
   )
+
+  set(BUILD_VISUAL_TESTS ON)
+  if(BUILD_VISUAL_TESTS)
+    message("YEOWWWWW")
+    find_package(data_tamer_cpp REQUIRED)
+    ament_add_gmock(mac_visual_test
+      test/mac_visual_test.cpp)
+    set_tests_properties(mac_visual_test PROPERTIES TIMEOUT 220)
+    target_link_libraries(mac_visual_test
+      multi_time_trajectory_controller
+      data_tamer_cpp::data_tamer
+    )
+    ament_target_dependencies(mac_visual_test
+    data_tamer_cpp)
+  endif()
 endif()
 
 install(
@@ -92,8 +107,8 @@ install(
   DESTINATION include/multi_time_trajectory_controller
 )
 install(TARGETS
-    multi_time_trajectory_controller
-    multi_time_trajectory_controller_parameters
+  multi_time_trajectory_controller
+  multi_time_trajectory_controller_parameters
   EXPORT export_multi_time_trajectory_controller
   RUNTIME DESTINATION bin
   ARCHIVE DESTINATION lib
