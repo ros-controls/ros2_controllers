@@ -14,8 +14,6 @@
 
 #include <gmock/gmock.h>
 
-#include "control_msgs/msg/axis_trajectory_point.hpp"
-#include "control_msgs/msg/multi_axis_trajectory.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "test_mttc_utils.hpp"
 
