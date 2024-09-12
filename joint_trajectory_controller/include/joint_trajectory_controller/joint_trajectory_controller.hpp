@@ -124,6 +124,7 @@ protected:
   // Parameters from ROS for joint_trajectory_controller
   std::shared_ptr<ParamListener> param_listener_;
   Params params_;
+  rclcpp::Duration update_period_{0, 0};
 
   trajectory_msgs::msg::JointTrajectoryPoint last_commanded_state_;
   /// Specify interpolation method. Default to splines.
