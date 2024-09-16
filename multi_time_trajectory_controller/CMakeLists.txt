@@ -88,7 +88,6 @@ if(BUILD_TESTING)
 
   set(BUILD_VISUAL_TESTS ON)
   if(BUILD_VISUAL_TESTS)
-    message("YEOWWWWW")
     find_package(data_tamer_cpp REQUIRED)
     ament_add_gmock(mac_visual_test
       test/mac_visual_test.cpp)
