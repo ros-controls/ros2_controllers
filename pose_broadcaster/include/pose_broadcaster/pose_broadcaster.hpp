@@ -19,9 +19,13 @@
 #include <string>
 
 #include "controller_interface/controller_interface.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "geometry_msgs/msg/quaternion.hpp"
 #include "pose_broadcaster/visibility_control.h"
 #include "pose_broadcaster_parameters.hpp"
+#include "rclcpp/publisher.hpp"
 #include "rclcpp_lifecycle/state.hpp"
+#include "realtime_tools/realtime_publisher.h"
 
 namespace pose_broadcaster
 {
@@ -50,10 +54,16 @@ public:
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
 private:
+  void setRPY(double r, double p, double y, geometry_msgs::msg::Quaternion & q) const;
+
   std::shared_ptr<ParamListener> param_listener_;
   Params params_;
 
   std::array<std::string, 6> interface_names_;
+
+  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pose_publisher_;
+  std::unique_ptr<realtime_tools::RealtimePublisher<geometry_msgs::msg::PoseStamped>>
+    realtime_publisher_;
 };
 
 }  // namespace pose_broadcaster

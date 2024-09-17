@@ -91,6 +91,26 @@ controller_interface::CallbackReturn PoseBroadcaster::on_configure(
                         params_.pose_name + "/orientation.p", params_.pose_name + "/orientation.y"};
   }
 
+  try
+  {
+    pose_publisher_ = get_node()->create_publisher<geometry_msgs::msg::PoseStamped>(
+      "~/pose", rclcpp::SystemDefaultsQoS());
+    realtime_publisher_ =
+      std::make_unique<realtime_tools::RealtimePublisher<geometry_msgs::msg::PoseStamped>>(
+        pose_publisher_);
+  }
+  catch (const std::exception & ex)
+  {
+    fprintf(
+      stderr, "Exception thrown during publisher creation at configure stage with message: %s\n",
+      ex.what());
+    return controller_interface::CallbackReturn::ERROR;
+  }
+
+  realtime_publisher_->lock();
+  realtime_publisher_->msg_.header.frame_id = params_.frame_id;
+  realtime_publisher_->unlock();
+
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
@@ -107,9 +127,38 @@ controller_interface::CallbackReturn PoseBroadcaster::on_deactivate(
 }
 
 controller_interface::return_type PoseBroadcaster::update(
-  const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
+  const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
+  if (realtime_publisher_ && realtime_publisher_->trylock())
+  {
+    realtime_publisher_->msg_.header.stamp = time;
+    realtime_publisher_->msg_.pose.position.x = state_interfaces_[0].get_value();
+    realtime_publisher_->msg_.pose.position.y = state_interfaces_[1].get_value();
+    realtime_publisher_->msg_.pose.position.z = state_interfaces_[2].get_value();
+
+    setRPY(
+      state_interfaces_[3].get_value(), state_interfaces_[4].get_value(),
+      state_interfaces_[5].get_value(), realtime_publisher_->msg_.pose.orientation);
+
+    realtime_publisher_->unlockAndPublish();
+  }
+
   return controller_interface::return_type::OK;
+}
+
+void PoseBroadcaster::setRPY(double r, double p, double y, geometry_msgs::msg::Quaternion & q) const
+{
+  const double sr = std::sin(r / 2);
+  const double cr = std::cos(r / 2);
+  const double sp = std::sin(p / 2);
+  const double cp = std::cos(p / 2);
+  const double sy = std::sin(y / 2);
+  const double cy = std::cos(y / 2);
+
+  q.x = sr * cp * cy - cr * sp * sy;
+  q.y = cr * sp * cy + sr * cp * sy;
+  q.z = cr * cp * sy - sr * sp * cy;
+  q.w = cr * cp * cy + sr * sp * sy;
 }
 
 }  // namespace pose_broadcaster
