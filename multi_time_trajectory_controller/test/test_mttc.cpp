@@ -12,12 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <gtest/gtest.h>
+#include <chrono>
 #include <cstddef>
 #include <limits>
 #include <vector>
+
+#include <rclcpp/parameter.hpp>
 #include "control_msgs/msg/axis_trajectory_point.hpp"
 #include "control_msgs/msg/multi_axis_trajectory.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
+#include "multi_time_trajectory_controller/multi_time_trajectory_controller.hpp"
 #include "test_mttc_utils.hpp"
 
 #include "test_assets.hpp"
@@ -1301,7 +1306,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_trajectory_replace)
   publish(time_from_start, positions_old, rclcpp::Time(), {}, velocities_old);
   std::vector<control_msgs::msg::AxisTrajectoryPoint> expected_actual, expected_desired;
   std::size_t num_axes = positions_old[0].size();
-  expected_actual.resize(num_axes);
+  expected_actual.resize(num_axes, multi_time_trajectory_controller::emptyTrajectoryPoint());
   expected_desired.resize(num_axes);
   for (std::size_t i = 0; i < num_axes; ++i)
   {
@@ -1389,7 +1394,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_partial_old_trajectory
   // send points_old and wait to reach first point
   publish(time_from_start, points_old, rclcpp::Time());
   std::size_t num_axes = points_old.size();
-  expected_actual.resize(num_axes);
+  expected_actual.resize(num_axes, multi_time_trajectory_controller::emptyTrajectoryPoint());
   for (std::size_t i = 0; i < num_axes; ++i)
   {
     expected_actual[i].position = points_old[0][i];
@@ -1439,7 +1444,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_execute_partial_traj_in_futur
 
   std::vector<control_msgs::msg::AxisTrajectoryPoint> expected_actual, expected_desired;
   std::size_t num_axes = full_traj[0].size();
-  expected_actual.resize(num_axes);
+  expected_actual.resize(num_axes, multi_time_trajectory_controller::emptyTrajectoryPoint());
   for (std::size_t i = 0; i < num_axes; ++i)
   {
     expected_actual[i].position = full_traj[0][i];
@@ -1856,6 +1861,144 @@ TEST_P(TrajectoryControllerTestParameterized, test_goal_tolerances_fail)
   updateControllerAsync(rclcpp::Duration(FIRST_POINT_TIME), end_time);
   // it should be still holding the old point
   expectCommandPoint(hold_position);
+}
+
+TEST_P(TrajectoryControllerTestParameterized, open_closed_enable_disable)
+{
+  // set up controller into open loop mode
+  rclcpp::executors::SingleThreadedExecutor executor;
+  std::vector<rclcpp::Parameter> params = {{"open_loop_control", true}, {"use_feedback", true}};
+  SetUpAndActivateTrajectoryController(executor, params, true);
+
+  // [axis-mult] At 20 Hz, sends a 'reference' command with all zeros and time from start of 50ms
+  // (i.e. positions are NaN, velocities are zero and accelerations are NaN)
+
+  constexpr std::size_t freq_Hz = 20;
+  std::size_t const num_axes = 3;
+  std::size_t const ns_dur = 1000000000 / freq_Hz;
+  auto const chrono_duration = std::chrono::nanoseconds(ns_dur);
+  rclcpp::Duration const dur(0, ns_dur);
+  double nan = std::numeric_limits<double>::quiet_NaN();
+  std::vector<double> point_nan = {nan, nan, nan};
+  std::vector<double> point_zero = {0, 0, 0};
+
+  // start with zero vels and nan positions for 1 second
+  std::vector<std::vector<double>> positions(freq_Hz, point_nan);
+  std::vector<std::vector<double>> velocities(freq_Hz, point_zero);
+
+  std::vector<control_msgs::msg::AxisTrajectoryPoint> expected_actual, expected_desired;
+  expected_actual.resize(num_axes, multi_time_trajectory_controller::emptyTrajectoryPoint());
+
+  for (std::size_t i = 0; i < num_axes; ++i)
+  {
+    expected_actual[i].position = 0;
+    expected_actual[i].velocity = 0;
+  }
+
+  expected_desired = expected_actual;
+
+  publish(dur, positions, rclcpp::Time(0, 0, RCL_STEADY_TIME), {}, velocities);
+  positions.clear();
+  velocities.clear();
+  traj_controller_->wait_for_trajectory(executor);
+
+  // now test that we haven't moved
+  waitAndCompareState(expected_actual, expected_desired, executor, chrono_duration * freq_Hz, 0.1);
+  expected_actual.clear();
+  expected_desired.clear();
+
+  // [axis-mult] When joystick is moved, it sends 'reference' command with non-zero velocities for
+  // axes moved in joystick. As we are in open-loop teleoperation, this command works
+
+  positions = {freq_Hz, point_nan};
+
+  // 0.5 second of constant accel
+  for (std::size_t i = 0; i < freq_Hz / 2; ++i)
+  {
+    double target_vel_current = static_cast<double>(i) * static_cast<double>(i);
+    // each axis's target velocity is proportional to time ^ 2, which should give a constant accel
+    velocities.push_back(
+      {0.01 * target_vel_current, 0.02 * target_vel_current, 0.03 * target_vel_current});
+  }
+
+  // then 0.5 seconds of constant vel
+  auto const final_vel = velocities.back();
+  for (std::size_t i = 0; i < freq_Hz / 2; ++i)
+  {
+    velocities.push_back(final_vel);
+  }
+
+  expected_actual.resize(num_axes, multi_time_trajectory_controller::emptyTrajectoryPoint());
+
+  for (std::size_t i = 0; i < num_axes; ++i)
+  {
+    // the final position should be the integral of the velocity profile we gave
+    // for constant accel portion, that is 0.5 * (0.5 seconds) * final_vel
+    // for constant vel portion, that is just 0.5 seconds * final_vel
+    expected_actual[i].position = 0.5 * 0.5 * final_vel[i] + 0.5 * final_vel[i];
+    expected_actual[i].velocity = final_vel[i];
+  }
+
+  expected_desired = expected_actual;
+
+  publish(dur, positions, rclcpp::Time(0, 0, RCL_STEADY_TIME), {}, velocities);
+  positions.clear();
+  velocities.clear();
+  traj_controller_->wait_for_trajectory(executor);
+
+  waitAndCompareState(expected_actual, expected_desired, executor, chrono_duration * freq_Hz, 0.1);
+  expected_actual.clear();
+  expected_desired.clear();
+
+  // [axis-mult] Joystick is released and it continually sends a 'reference' command with all zeros
+  // and time from start of 50ms(i.e. positions are NaN, velocities are zero and accelerations are
+  // NaN)
+
+  positions = {freq_Hz, point_nan};
+  velocities = {freq_Hz, point_zero};
+
+  publish(dur, positions, rclcpp::Time(0, 0, RCL_STEADY_TIME), {}, velocities);
+
+  // store the final position
+  auto final_pos = axis_pos_;
+
+  expected_actual.resize(num_axes, multi_time_trajectory_controller::emptyTrajectoryPoint());
+
+  for (std::size_t i = 0; i < num_axes; ++i)
+  {
+    expected_actual[i].position = final_pos[i];
+    expected_actual[i].velocity = 0;
+  }
+
+  positions.clear();
+  velocities.clear();
+  traj_controller_->wait_for_trajectory(executor);
+
+  waitAndCompareState(expected_actual, expected_desired, executor, chrono_duration * freq_Hz, 0.1);
+  expected_actual.clear();
+  expected_desired.clear();
+
+  // store the new final position
+  final_pos = axis_pos_;
+
+  // [external] Closed-loop control is enabled on X-Y i.e. on position and velocity controllers
+  // [axis-mult] Detects closed loop control is enabled for x-y axes
+  // [axis-mult] Sends a 'reset dofs' service call to CTG/MAC to reset x-y position to values
+  // specified in service call(values are current x-y state estimate)
+
+  // [axis-mult] When service request is completed, sends a 'reference_reliable' command to CTG/MAC
+  // with current x-y state estimate with 'time from start' set to 10ms (essentially a command to
+  // hold current position to be sent to closed-loop position controller). The velocities are set to
+  // zero and the accelerations to NaN in this command.
+
+  // [axis-mult] At 20 Hz, continues sending 'reference' command of zeroes at 50ms
+
+  // [axis-mult] When joystick is moved in X-Y to perform closed-loop teleoperation, it sends
+  // 'reference' command with non-zero velocities for axes moved in joystick. This command doesn't
+  // work on MAC but does on CTG. If I disable closed-loop control for X-Y, and try to move X-Y in
+  // open-loop with joystick again on MAC, it doesn't move. If I move the joystick in a different
+  // axes e.g. heading, it works fine. I have to confirm again but Z doesn't work anymore though
+  // either on MAC.
 }
 
 // position controllers
