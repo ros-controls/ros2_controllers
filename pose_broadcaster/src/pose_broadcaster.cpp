@@ -24,17 +24,73 @@ controller_interface::InterfaceConfiguration PoseBroadcaster::command_interface_
 
 controller_interface::InterfaceConfiguration PoseBroadcaster::state_interface_configuration() const
 {
-  return controller_interface::InterfaceConfiguration{};
+  controller_interface::InterfaceConfiguration state_interfaces_config;
+  state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
+  std::copy(
+    interface_names_.cbegin(), interface_names_.cend(),
+    std::back_inserter(state_interfaces_config.names));
+
+  return state_interfaces_config;
 }
 
 controller_interface::CallbackReturn PoseBroadcaster::on_init()
 {
+  try
+  {
+    param_listener_ = std::make_shared<ParamListener>(get_node());
+    params_ = param_listener_->get_params();
+  }
+  catch (const std::exception & ex)
+  {
+    fprintf(stderr, "Exception thrown during init stage with message: %s\n", ex.what());
+    return controller_interface::CallbackReturn::ERROR;
+  }
+
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
 controller_interface::CallbackReturn PoseBroadcaster::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
+  params_ = param_listener_->get_params();
+
+  const bool no_interface_names_defined =
+    params_.interface_names.position.x.empty() && params_.interface_names.position.y.empty() &&
+    params_.interface_names.position.z.empty() && params_.interface_names.orientation.r.empty() &&
+    params_.interface_names.orientation.p.empty() && params_.interface_names.orientation.y.empty();
+
+  if (params_.pose_name.empty() && no_interface_names_defined)
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(),
+      "'pose_name' or 'interface_names.[position.[x|y|z]|orientation.[r|p|y]]' parameter has to be "
+      "specified.");
+    return controller_interface::CallbackReturn::ERROR;
+  }
+
+  if (!params_.pose_name.empty() && !no_interface_names_defined)
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(),
+      "'pose_name' and 'interface_names.[position.[x|y|z]|orientation.[r|p|y]]' parameters can not "
+      "be specified together.");
+    return controller_interface::CallbackReturn::ERROR;
+  }
+
+  if (params_.pose_name.empty())
+  {
+    interface_names_ = {
+      params_.interface_names.position.x,    params_.interface_names.position.y,
+      params_.interface_names.position.z,    params_.interface_names.orientation.r,
+      params_.interface_names.orientation.p, params_.interface_names.orientation.y};
+  }
+  else
+  {
+    interface_names_ = {params_.pose_name + "/position.x",    params_.pose_name + "/position.y",
+                        params_.pose_name + "/position.z",    params_.pose_name + "/orientation.r",
+                        params_.pose_name + "/orientation.p", params_.pose_name + "/orientation.y"};
+  }
+
   return controller_interface::CallbackReturn::SUCCESS;
 }
 

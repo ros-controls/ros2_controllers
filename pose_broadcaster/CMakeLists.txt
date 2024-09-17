@@ -26,6 +26,10 @@ foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
 
+generate_parameter_library(pose_broadcaster_parameters
+  src/pose_broadcaster_parameters.yaml
+)
+
 add_library(pose_broadcaster SHARED
   src/pose_broadcaster.cpp
 )
@@ -35,6 +39,9 @@ target_compile_features(pose_broadcaster PUBLIC
 target_include_directories(pose_broadcaster PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
+)
+target_link_libraries(pose_broadcaster PUBLIC
+  pose_broadcaster_parameters
 )
 ament_target_dependencies(pose_broadcaster PUBLIC
     ${THIS_PACKAGE_INCLUDE_DEPENDS}
@@ -61,6 +68,7 @@ install(
 install(
   TARGETS
     pose_broadcaster
+    pose_broadcaster_parameters
   EXPORT export_${PROJECT_NAME}
   RUNTIME DESTINATION bin
   ARCHIVE DESTINATION lib

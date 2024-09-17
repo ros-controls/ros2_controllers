@@ -1,0 +1,39 @@
+pose_broadcaster:
+  frame_id:
+    type: string
+    default_value: ""
+    description: "frame_id in which values are published"
+    validation:
+      not_empty<>: null
+  pose_name:
+    type: string
+    default_value: ""
+    description: "Name of the published pose used as prefix for interfaces if there are no individual interface names defined.
+      If used, standard interface names will be used: ``<pose_name>/position.x, ..., <pose_name>/orientation.y``"
+  interface_names:
+    position:
+      x:
+        type: string
+        default_value: ""
+        description: "Name of the state interface with position values along the 'x' axis"
+      y:
+        type: string
+        default_value: ""
+        description: "Name of the state interface with position values along the 'y' axis"
+      z:
+        type: string
+        default_value: ""
+        description: "Name of the state interface with position values along the 'z' axis"
+    orientation:
+      r:
+        type: string
+        default_value: ""
+        description: "Name of the state interface with roll values around 'x' axis"
+      p:
+        type: string
+        default_value: ""
+        description: "Name of the state interface with pitch values around 'y' axis"
+      y:
+        type: string
+        default_value: ""
+        description: "Name of the state interface with yaw values around 'z' axis"

@@ -14,8 +14,13 @@
 #ifndef POSE_BROADCASTER__POSE_BROADCASTER_HPP_
 #define POSE_BROADCASTER__POSE_BROADCASTER_HPP_
 
+#include <array>
+#include <memory>
+#include <string>
+
 #include "controller_interface/controller_interface.hpp"
 #include "pose_broadcaster/visibility_control.h"
+#include "pose_broadcaster_parameters.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 
 namespace pose_broadcaster
@@ -45,6 +50,10 @@ public:
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
 private:
+  std::shared_ptr<ParamListener> param_listener_;
+  Params params_;
+
+  std::array<std::string, 6> interface_names_;
 };
 
 }  // namespace pose_broadcaster
