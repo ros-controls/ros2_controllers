@@ -888,16 +888,6 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
       "'position' state interfaces are present");
     return CallbackReturn::FAILURE;
   }
-  if (
-    has_acceleration_command_interface_ &&
-    (!has_velocity_command_interface_ || !has_position_command_interface_))
-  {
-    RCLCPP_ERROR(
-      logger,
-      "'acceleration' command interface can only be used if 'velocity' and "
-      "'position' command interfaces are present");
-    return CallbackReturn::FAILURE;
-  }
 
   // effort is always used alone so no need for size check
   if (
