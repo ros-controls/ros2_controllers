@@ -1110,8 +1110,8 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
       {
         auto dist = std::distance(command_axis_names_.begin(), it);
         std::size_t cmd_itf_index =
-          dist > 0 ? static_cast<std::size_t>(dist)
-                   : throw std::runtime_error("Joint not found in command joint names");
+          dist >= 0 ? static_cast<std::size_t>(dist)
+                    : throw std::runtime_error("Joint not found in command joint names");
         double pos = (request->positions.size() != 0) ? request->positions[i]
                                                       : std::numeric_limits<double>::quiet_NaN();
 
