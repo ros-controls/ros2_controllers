@@ -13,12 +13,14 @@
 // limitations under the License.
 
 #include "multi_time_trajectory_controller/trajectory.hpp"
+#include <fmt/format.h>
 
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <limits>
 #include <memory>
+#include <stdexcept>
 
 #include "angles/angles.h"
 #include "control_msgs/msg/axis_trajectory.hpp"
@@ -110,30 +112,44 @@ void Trajectory::update(
   std::shared_ptr<control_msgs::msg::MultiAxisTrajectory> multi_axis_trajectory,
   const std::vector<joint_limits::JointLimits> & joint_limits, const rclcpp::Duration & period)
 {
-  // first, see if we need to do anything other than just replace the whole trajectory_msg_
-  bool const replace_subset = std::any_of(
-    multi_axis_trajectory->axis_trajectories.begin(),
-    multi_axis_trajectory->axis_trajectories.end(),
-    [](control_msgs::msg::AxisTrajectory traj) { return traj.axis_points.empty(); });
-
-  if (replace_subset)
+  // if we don't already have a trajectory message, skip the below block
+  if (trajectory_msg_)
   {
-    // logic to replace only certain axes with the updated trajectory
-    // first, calculate the time offset to apply to the old axis trajectories (since we have one
-    // time_from_start)
-    auto const time_offset = static_cast<rclcpp::Time>(multi_axis_trajectory->header.stamp) -
-                             static_cast<rclcpp::Time>(trajectory_msg_->header.stamp);
-    for (std::size_t i = 0; i < multi_axis_trajectory->axis_trajectories.size(); ++i)
+    // ensure previous and current trajectories are same size
+    if (
+      multi_axis_trajectory->axis_trajectories.size() != trajectory_msg_->axis_trajectories.size())
     {
-      auto & traj = multi_axis_trajectory->axis_trajectories[i].axis_points;
-      if (traj.empty())
+      throw std::runtime_error(fmt::format(
+        "Previous and newly received trajectory are of different sizes, {} and {}",
+        trajectory_msg_->axis_trajectories.size(),
+        multi_axis_trajectory->axis_trajectories.size()));
+    }
+
+    // first, see if we need to do anything other than just replace the whole trajectory_msg_
+    bool const replace_subset = std::any_of(
+      multi_axis_trajectory->axis_trajectories.begin(),
+      multi_axis_trajectory->axis_trajectories.end(),
+      [](control_msgs::msg::AxisTrajectory traj) { return traj.axis_points.empty(); });
+
+    if (replace_subset)
+    {
+      // logic to replace only certain axes with the updated trajectory
+      // first, calculate the time offset to apply to the old axis trajectories (since we have one
+      // time_from_start)
+      auto const time_offset = static_cast<rclcpp::Time>(multi_axis_trajectory->header.stamp) -
+                               static_cast<rclcpp::Time>(trajectory_msg_->header.stamp);
+      for (std::size_t i = 0; i < multi_axis_trajectory->axis_trajectories.size(); ++i)
       {
-        // copy the old one into the new message (which will replace ours)
-        traj = trajectory_msg_->axis_trajectories[i].axis_points;
-        for (auto & point : traj)
+        auto & traj = multi_axis_trajectory->axis_trajectories[i].axis_points;
+        if (traj.empty())
         {
-          // update time of the old trajectory
-          point.time_from_start = rclcpp::Duration(point.time_from_start) - time_offset;
+          // copy the old one into the new message (which will replace ours)
+          traj = trajectory_msg_->axis_trajectories[i].axis_points;
+          for (auto & point : traj)
+          {
+            // update time of the old trajectory
+            point.time_from_start = rclcpp::Duration(point.time_from_start) - time_offset;
+          }
         }
       }
     }

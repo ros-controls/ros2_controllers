@@ -16,6 +16,8 @@
 #define TEST_MTTC_UTILS_HPP_
 
 #include <gmock/gmock.h>
+#include <eigen3/Eigen/Core>
+#include <eigen3/Eigen/Geometry>
 
 #include <chrono>
 #include <memory>
@@ -200,12 +202,20 @@ public:
     node_ = std::make_shared<rclcpp::Node>("trajectory_publisher_");
     trajectory_publisher_ = node_->create_publisher<control_msgs::msg::MultiAxisTrajectory>(
       controller_name_ + "/axis_trajectory", rclcpp::SystemDefaultsQoS());
+    feedback_publisher_ = node_->create_publisher<
+      multi_time_trajectory_controller::MultiTimeTrajectoryController::ControllerFeedbackMsg>(
+      controller_name_ + "/feedback", rclcpp::SystemDefaultsQoS());
   }
 
   void SetUpTrajectoryController(
     rclcpp::Executor & executor, const std::vector<rclcpp::Parameter> & parameters = {},
     const std::string & urdf = "")
   {
+    auto has_nonzero_vel_param =
+      std::find_if(
+        parameters.begin(), parameters.end(), [](const rclcpp::Parameter & param)
+        { return param.get_name() == "allow_nonzero_velocity_at_trajectory_end"; }) !=
+      parameters.end();
     std::vector<rclcpp::Parameter> parameters_local = parameters;
     auto has_hold_vel_param =
       std::find_if(
@@ -225,6 +235,11 @@ public:
     {
       // The MAC can use state interfaces or feedback from a topic
       parameters_local.emplace_back("use_feedback", false);
+    }
+    if (!has_nonzero_vel_param)
+    {
+      // add this to simplify tests, if not set already
+      parameters_local.emplace_back("allow_nonzero_velocity_at_trajectory_end", true);
     }
     auto ret = SetUpTrajectoryControllerLocal(parameters_local, urdf);
     if (ret != controller_interface::return_type::OK)
@@ -371,9 +386,9 @@ public:
       cmd_interfaces.back().set_value(initial_eff_axes[i]);
       if (separate_cmd_and_state_values)
       {
-        axis_state_pos_[i] = INITIAL_POS_AXES[i];
-        axis_state_vel_[i] = INITIAL_VEL_AXES[i];
-        axis_state_acc_[i] = INITIAL_ACC_AXES[i];
+        axis_state_pos_[i] = initial_pos_axes[i];
+        axis_state_vel_[i] = initial_vel_axes[i];
+        axis_state_acc_[i] = initial_acc_axes[i];
       }
       state_interfaces.emplace_back(pos_state_interfaces_.back());
       state_interfaces.emplace_back(vel_state_interfaces_.back());
@@ -483,6 +498,31 @@ public:
     }
 
     trajectory_publisher_->publish(multi_traj_msg);
+  }
+
+  void publish_feedback(
+    Eigen::Vector3d position, Eigen::Quaterniond orientation, Eigen::Vector3d v_linear,
+    Eigen::Vector3d v_angular)
+  {
+    multi_time_trajectory_controller::MultiTimeTrajectoryController::ControllerFeedbackMsg message;
+    message.pose.pose.position.x = position[0];
+    message.pose.pose.position.y = position[1];
+    message.pose.pose.position.z = position[2];
+
+    message.pose.pose.orientation.w = orientation.w();
+    message.pose.pose.orientation.x = orientation.x();
+    message.pose.pose.orientation.y = orientation.y();
+    message.pose.pose.orientation.z = orientation.z();
+
+    message.twist.twist.linear.x = v_linear[0];
+    message.twist.twist.linear.y = v_linear[1];
+    message.twist.twist.linear.z = v_linear[2];
+
+    message.twist.twist.angular.x = v_angular[0];
+    message.twist.twist.angular.y = v_angular[1];
+    message.twist.twist.angular.z = v_angular[2];
+
+    feedback_publisher_->publish(message);
   }
 
   /**
@@ -737,6 +777,8 @@ public:
 
   rclcpp::Node::SharedPtr node_;
   rclcpp::Publisher<control_msgs::msg::MultiAxisTrajectory>::SharedPtr trajectory_publisher_;
+  rclcpp::Publisher<multi_time_trajectory_controller::MultiTimeTrajectoryController::
+                      ControllerFeedbackMsg>::SharedPtr feedback_publisher_;
 
   std::shared_ptr<TestableMultiTimeTrajectoryController> traj_controller_;
   rclcpp::Subscription<control_msgs::msg::MultiTimeTrajectoryControllerState>::SharedPtr

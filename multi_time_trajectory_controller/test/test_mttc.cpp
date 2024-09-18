@@ -13,11 +13,16 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+#include <eigen3/Eigen/Core>
+#include <eigen3/Eigen/Geometry>
+
 #include <chrono>
 #include <cstddef>
 #include <limits>
+#include <thread>
 #include <vector>
 
+#include <rclcpp/node.hpp>
 #include <rclcpp/parameter.hpp>
 #include "control_msgs/msg/axis_trajectory_point.hpp"
 #include "control_msgs/msg/multi_axis_trajectory.hpp"
@@ -1994,32 +1999,61 @@ TEST_F(TrajectoryControllerTest, incorrect_initialization_using_interface_parame
 
 TEST_F(TrajectoryControllerTest, open_closed_enable_disable)
 {
+  axis_names_ = {"x", "y", "z", "roll", "pitch", "yaw"};
+  command_axis_names_ = {"command_x",    "command_y",     "command_z",
+                         "command_roll", "command_pitch", "command_yaw"};
   command_interface_types_ = {"position", "velocity"};
   state_interface_types_ = {};
+  axis_pos_.resize(axis_names_.size(), 0.0);
+  axis_state_pos_.resize(axis_names_.size(), 0.0);
+  axis_vel_.resize(axis_names_.size(), 0.0);
+  axis_state_vel_.resize(axis_names_.size(), 0.0);
+  axis_acc_.resize(axis_names_.size(), 0.0);
+  axis_state_acc_.resize(axis_names_.size(), 0.0);
+  axis_eff_.resize(axis_names_.size(), 0.0);
+  std::size_t const num_axes = 6;
 
   // set up controller into open loop mode
   rclcpp::executors::SingleThreadedExecutor executor;
-  std::vector<rclcpp::Parameter> params = {{"open_loop_control", true}, {"use_feedback", true}};
-  SetUpAndActivateTrajectoryController(executor, params, true);
+
+  std::vector<rclcpp::Parameter> params = {
+    {"open_loop_control", true},
+    {"use_feedback", true},
+    {"allow_integration_in_goal_trajectories", true}};
+
+  SetUpTrajectoryController(executor, params);
+  traj_controller_->get_node()->configure();
+  for (std::size_t i = 0; i < 3; ++i)
+  {
+    publish_feedback({0, 0, 0}, {1, 0, 0, 0}, {0, 0, 0}, {0, 0, 0});
+    executor.spin_some(std::chrono::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+
+  // set all initial states to 6-vector of zeros
+  std::vector<double> zeros(6, 0);
+  ActivateTrajectoryController(true, zeros, zeros, zeros, zeros);
 
   // [axis-mult] At 20 Hz, sends a 'reference' command with all zeros and time from start of 50ms
   // (i.e. positions are NaN, velocities are zero and accelerations are NaN)
 
   constexpr std::size_t freq_Hz = 20;
-  std::size_t const num_axes = 3;
   std::size_t const ns_dur = 1000000000 / freq_Hz;
   auto const chrono_duration = std::chrono::nanoseconds(ns_dur);
   rclcpp::Duration const dur(0, ns_dur);
   double nan = std::numeric_limits<double>::quiet_NaN();
-  std::vector<double> point_nan = {nan, nan, nan};
-  std::vector<double> point_zero = {0, 0, 0};
+  std::vector<double> point_nan(num_axes, nan);
+  std::vector<double> point_zero(num_axes, 0);
 
   // start with zero vels and nan positions for 1 second
   std::vector<std::vector<double>> positions(freq_Hz, point_nan);
   std::vector<std::vector<double>> velocities(freq_Hz, point_zero);
 
-  std::vector<control_msgs::msg::AxisTrajectoryPoint> expected_actual, expected_desired;
+  std::vector<control_msgs::msg::AxisTrajectoryPoint> expected_actual;
   expected_actual.resize(num_axes, multi_time_trajectory_controller::emptyTrajectoryPoint());
+
+  std::vector<control_msgs::msg::AxisTrajectoryPoint> expected_desired;
+  expected_desired.resize(num_axes, multi_time_trajectory_controller::emptyTrajectoryPoint());
 
   for (std::size_t i = 0; i < num_axes; ++i)
   {

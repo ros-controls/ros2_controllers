@@ -483,6 +483,10 @@ bool MultiTimeTrajectoryController::read_state_from_hardware(std::vector<Traject
 
   if (params_.use_feedback)
   {
+    if (dof_ != 6)
+    {
+      throw std::runtime_error("must have 6 degrees of freedom to use feedback");
+    }
     std::array<double, 3> orientation_angles;
     const auto measured_state = *(feedback_.readFromRT());
     if (!measured_state) return false;
