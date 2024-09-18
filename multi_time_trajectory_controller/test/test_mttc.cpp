@@ -1863,8 +1863,140 @@ TEST_P(TrajectoryControllerTestParameterized, test_goal_tolerances_fail)
   expectCommandPoint(hold_position);
 }
 
-TEST_P(TrajectoryControllerTestParameterized, open_closed_enable_disable)
+// position controllers
+INSTANTIATE_TEST_SUITE_P(
+  PositionTrajectoryControllers, TrajectoryControllerTestParameterized,
+  ::testing::Values(
+    std::make_tuple(std::vector<std::string>({"position"}), std::vector<std::string>({"position"})),
+    std::make_tuple(
+      std::vector<std::string>({"position"}), std::vector<std::string>({"position", "velocity"})),
+    std::make_tuple(
+      std::vector<std::string>({"position"}),
+      std::vector<std::string>({"position", "velocity", "acceleration"}))));
+
+// position_velocity controllers
+INSTANTIATE_TEST_SUITE_P(
+  PositionVelocityTrajectoryControllers, TrajectoryControllerTestParameterized,
+  ::testing::Values(
+    std::make_tuple(
+      std::vector<std::string>({"position", "velocity"}), std::vector<std::string>({"position"})),
+    std::make_tuple(
+      std::vector<std::string>({"position", "velocity"}),
+      std::vector<std::string>({"position", "velocity"})),
+    std::make_tuple(
+      std::vector<std::string>({"position", "velocity"}),
+      std::vector<std::string>({"position", "velocity", "acceleration"}))));
+
+// position_velocity_acceleration controllers
+INSTANTIATE_TEST_SUITE_P(
+  PositionVelocityAccelerationTrajectoryControllers, TrajectoryControllerTestParameterized,
+  ::testing::Values(
+    std::make_tuple(
+      std::vector<std::string>({"position", "velocity", "acceleration"}),
+      std::vector<std::string>({"position"})),
+    std::make_tuple(
+      std::vector<std::string>({"position", "velocity", "acceleration"}),
+      std::vector<std::string>({"position", "velocity"})),
+    std::make_tuple(
+      std::vector<std::string>({"position", "velocity", "acceleration"}),
+      std::vector<std::string>({"position", "velocity", "acceleration"}))));
+
+// only velocity controller
+INSTANTIATE_TEST_SUITE_P(
+  OnlyVelocityTrajectoryControllers, TrajectoryControllerTestParameterized,
+  ::testing::Values(
+    std::make_tuple(
+      std::vector<std::string>({"velocity"}), std::vector<std::string>({"position", "velocity"})),
+    std::make_tuple(
+      std::vector<std::string>({"velocity"}),
+      std::vector<std::string>({"position", "velocity", "acceleration"}))));
+
+// only effort controller
+INSTANTIATE_TEST_SUITE_P(
+  OnlyEffortTrajectoryControllers, TrajectoryControllerTestParameterized,
+  ::testing::Values(
+    std::make_tuple(
+      std::vector<std::string>({"effort"}), std::vector<std::string>({"position", "velocity"})),
+    std::make_tuple(
+      std::vector<std::string>({"effort"}),
+      std::vector<std::string>({"position", "velocity", "acceleration"}))));
+
+/**
+ * @brief see if parameter validation is correct
+ *
+ * Note: generate_parameter_library validates parameters itself during on_init() method, but
+ * combinations of parameters are checked from JTC during on_configure()
+ */
+TEST_F(TrajectoryControllerTest, incorrect_initialization_using_interface_parameters)
 {
+  // command interfaces: empty
+  command_interface_types_ = {};
+  EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::OK);
+  auto state = traj_controller_->get_node()->configure();
+  EXPECT_EQ(state.id(), State::PRIMARY_STATE_UNCONFIGURED);
+
+  // command interfaces: bad_name
+  command_interface_types_ = {"bad_name"};
+  EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::ERROR);
+
+  // command interfaces: effort has to be only
+  command_interface_types_ = {"effort", "position"};
+  EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::ERROR);
+
+  // command interfaces: velocity - position not present
+  command_interface_types_ = {"velocity", "acceleration"};
+  EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::ERROR);
+
+  // command interfaces: acceleration without position and velocity
+  command_interface_types_ = {"acceleration"};
+  EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::ERROR);
+
+  // state interfaces: empty
+  state_interface_types_ = {};
+  EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::ERROR);
+
+  // state interfaces: cannot not be effort
+  state_interface_types_ = {"effort"};
+  EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::ERROR);
+
+  // state interfaces: bad name
+  state_interface_types_ = {"bad_name"};
+  EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::ERROR);
+
+  // state interfaces: velocity - position not present
+  state_interface_types_ = {"velocity"};
+  EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::ERROR);
+  state_interface_types_ = {"velocity", "acceleration"};
+  EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::ERROR);
+
+  // state interfaces: acceleration without position and velocity
+  state_interface_types_ = {"acceleration"};
+  EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::ERROR);
+
+  // velocity-only command interface: position - velocity not present
+  command_interface_types_ = {"velocity"};
+  state_interface_types_ = {"position"};
+  EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::OK);
+  state = traj_controller_->get_node()->configure();
+  EXPECT_EQ(state.id(), State::PRIMARY_STATE_UNCONFIGURED);
+  state_interface_types_ = {"velocity"};
+  EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::ERROR);
+
+  // effort-only command interface: position - velocity not present
+  command_interface_types_ = {"effort"};
+  state_interface_types_ = {"position"};
+  EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::OK);
+  state = traj_controller_->get_node()->configure();
+  EXPECT_EQ(state.id(), State::PRIMARY_STATE_UNCONFIGURED);
+  state_interface_types_ = {"velocity"};
+  EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::ERROR);
+}
+
+TEST_F(TrajectoryControllerTest, open_closed_enable_disable)
+{
+  command_interface_types_ = {"position", "velocity"};
+  state_interface_types_ = {};
+
   // set up controller into open loop mode
   rclcpp::executors::SingleThreadedExecutor executor;
   std::vector<rclcpp::Parameter> params = {{"open_loop_control", true}, {"use_feedback", true}};
@@ -1999,133 +2131,4 @@ TEST_P(TrajectoryControllerTestParameterized, open_closed_enable_disable)
   // open-loop with joystick again on MAC, it doesn't move. If I move the joystick in a different
   // axes e.g. heading, it works fine. I have to confirm again but Z doesn't work anymore though
   // either on MAC.
-}
-
-// position controllers
-INSTANTIATE_TEST_SUITE_P(
-  PositionTrajectoryControllers, TrajectoryControllerTestParameterized,
-  ::testing::Values(
-    std::make_tuple(std::vector<std::string>({"position"}), std::vector<std::string>({"position"})),
-    std::make_tuple(
-      std::vector<std::string>({"position"}), std::vector<std::string>({"position", "velocity"})),
-    std::make_tuple(
-      std::vector<std::string>({"position"}),
-      std::vector<std::string>({"position", "velocity", "acceleration"}))));
-
-// position_velocity controllers
-INSTANTIATE_TEST_SUITE_P(
-  PositionVelocityTrajectoryControllers, TrajectoryControllerTestParameterized,
-  ::testing::Values(
-    std::make_tuple(
-      std::vector<std::string>({"position", "velocity"}), std::vector<std::string>({"position"})),
-    std::make_tuple(
-      std::vector<std::string>({"position", "velocity"}),
-      std::vector<std::string>({"position", "velocity"})),
-    std::make_tuple(
-      std::vector<std::string>({"position", "velocity"}),
-      std::vector<std::string>({"position", "velocity", "acceleration"}))));
-
-// position_velocity_acceleration controllers
-INSTANTIATE_TEST_SUITE_P(
-  PositionVelocityAccelerationTrajectoryControllers, TrajectoryControllerTestParameterized,
-  ::testing::Values(
-    std::make_tuple(
-      std::vector<std::string>({"position", "velocity", "acceleration"}),
-      std::vector<std::string>({"position"})),
-    std::make_tuple(
-      std::vector<std::string>({"position", "velocity", "acceleration"}),
-      std::vector<std::string>({"position", "velocity"})),
-    std::make_tuple(
-      std::vector<std::string>({"position", "velocity", "acceleration"}),
-      std::vector<std::string>({"position", "velocity", "acceleration"}))));
-
-// only velocity controller
-INSTANTIATE_TEST_SUITE_P(
-  OnlyVelocityTrajectoryControllers, TrajectoryControllerTestParameterized,
-  ::testing::Values(
-    std::make_tuple(
-      std::vector<std::string>({"velocity"}), std::vector<std::string>({"position", "velocity"})),
-    std::make_tuple(
-      std::vector<std::string>({"velocity"}),
-      std::vector<std::string>({"position", "velocity", "acceleration"}))));
-
-// only effort controller
-INSTANTIATE_TEST_SUITE_P(
-  OnlyEffortTrajectoryControllers, TrajectoryControllerTestParameterized,
-  ::testing::Values(
-    std::make_tuple(
-      std::vector<std::string>({"effort"}), std::vector<std::string>({"position", "velocity"})),
-    std::make_tuple(
-      std::vector<std::string>({"effort"}),
-      std::vector<std::string>({"position", "velocity", "acceleration"}))));
-
-/**
- * @brief see if parameter validation is correct
- *
- * Note: generate_parameter_library validates parameters itself during on_init() method, but
- * combinations of parameters are checked from JTC during on_configure()
- */
-TEST_F(TrajectoryControllerTest, incorrect_initialization_using_interface_parameters)
-{
-  // command interfaces: empty
-  command_interface_types_ = {};
-  EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::OK);
-  auto state = traj_controller_->get_node()->configure();
-  EXPECT_EQ(state.id(), State::PRIMARY_STATE_UNCONFIGURED);
-
-  // command interfaces: bad_name
-  command_interface_types_ = {"bad_name"};
-  EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::ERROR);
-
-  // command interfaces: effort has to be only
-  command_interface_types_ = {"effort", "position"};
-  EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::ERROR);
-
-  // command interfaces: velocity - position not present
-  command_interface_types_ = {"velocity", "acceleration"};
-  EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::ERROR);
-
-  // command interfaces: acceleration without position and velocity
-  command_interface_types_ = {"acceleration"};
-  EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::ERROR);
-
-  // state interfaces: empty
-  state_interface_types_ = {};
-  EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::ERROR);
-
-  // state interfaces: cannot not be effort
-  state_interface_types_ = {"effort"};
-  EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::ERROR);
-
-  // state interfaces: bad name
-  state_interface_types_ = {"bad_name"};
-  EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::ERROR);
-
-  // state interfaces: velocity - position not present
-  state_interface_types_ = {"velocity"};
-  EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::ERROR);
-  state_interface_types_ = {"velocity", "acceleration"};
-  EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::ERROR);
-
-  // state interfaces: acceleration without position and velocity
-  state_interface_types_ = {"acceleration"};
-  EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::ERROR);
-
-  // velocity-only command interface: position - velocity not present
-  command_interface_types_ = {"velocity"};
-  state_interface_types_ = {"position"};
-  EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::OK);
-  state = traj_controller_->get_node()->configure();
-  EXPECT_EQ(state.id(), State::PRIMARY_STATE_UNCONFIGURED);
-  state_interface_types_ = {"velocity"};
-  EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::ERROR);
-
-  // effort-only command interface: position - velocity not present
-  command_interface_types_ = {"effort"};
-  state_interface_types_ = {"position"};
-  EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::OK);
-  state = traj_controller_->get_node()->configure();
-  EXPECT_EQ(state.id(), State::PRIMARY_STATE_UNCONFIGURED);
-  state_interface_types_ = {"velocity"};
-  EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::ERROR);
 }
