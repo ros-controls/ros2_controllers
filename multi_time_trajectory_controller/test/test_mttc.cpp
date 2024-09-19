@@ -2019,7 +2019,8 @@ TEST_F(TrajectoryControllerTest, open_closed_enable_disable)
   std::vector<rclcpp::Parameter> params = {
     {"open_loop_control", true},
     {"use_feedback", true},
-    {"allow_integration_in_goal_trajectories", true}};
+    {"allow_integration_in_goal_trajectories", true},
+    {"hold_last_velocity", true}};
 
   SetUpTrajectoryController(executor, params);
   traj_controller_->get_node()->configure();
@@ -2037,7 +2038,7 @@ TEST_F(TrajectoryControllerTest, open_closed_enable_disable)
   // [axis-mult] At 20 Hz, sends a 'reference' command with all zeros and time from start of 50ms
   // (i.e. positions are NaN, velocities are zero and accelerations are NaN)
 
-  constexpr std::size_t freq_Hz = 20;
+  constexpr std::size_t freq_Hz = 100;
   std::size_t const ns_dur = 1000000000 / freq_Hz;
   auto const chrono_duration = std::chrono::nanoseconds(ns_dur);
   rclcpp::Duration const dur(0, ns_dur);
@@ -2064,12 +2065,12 @@ TEST_F(TrajectoryControllerTest, open_closed_enable_disable)
   expected_desired = expected_actual;
 
   publish(dur, positions, rclcpp::Time(0, 0, RCL_STEADY_TIME), {}, velocities);
-  positions.clear();
-  velocities.clear();
   traj_controller_->wait_for_trajectory(executor);
 
   // now test that we haven't moved
   waitAndCompareState(expected_actual, expected_desired, executor, chrono_duration * freq_Hz, 0.1);
+  positions.clear();
+  velocities.clear();
   expected_actual.clear();
   expected_desired.clear();
 
@@ -2078,13 +2079,13 @@ TEST_F(TrajectoryControllerTest, open_closed_enable_disable)
 
   positions = {freq_Hz, point_nan};
 
-  // 0.5 second of constant accel
+  // 0.5 seconds of constant accel
   for (std::size_t i = 0; i < freq_Hz / 2; ++i)
   {
-    double target_vel_current = static_cast<double>(i) * static_cast<double>(i);
-    // each axis's target velocity is proportional to time ^ 2, which should give a constant accel
+    double target_vel_current = static_cast<double>(i);
+    // each axis's target velocity is proportional to time, which should give a constant accel
     velocities.push_back(
-      {0.01 * target_vel_current, 0.02 * target_vel_current, 0.03 * target_vel_current});
+      {0.01 * target_vel_current, 0.02 * target_vel_current, 0.03 * target_vel_current, 0.04 * target_vel_current, 0.05 * target_vel_current, 0.06 * target_vel_current});
   }
 
   // then 0.5 seconds of constant vel
@@ -2108,11 +2109,11 @@ TEST_F(TrajectoryControllerTest, open_closed_enable_disable)
   expected_desired = expected_actual;
 
   publish(dur, positions, rclcpp::Time(0, 0, RCL_STEADY_TIME), {}, velocities);
-  positions.clear();
-  velocities.clear();
   traj_controller_->wait_for_trajectory(executor);
 
   waitAndCompareState(expected_actual, expected_desired, executor, chrono_duration * freq_Hz, 0.1);
+  positions.clear();
+  velocities.clear();
   expected_actual.clear();
   expected_desired.clear();
 
@@ -2136,11 +2137,11 @@ TEST_F(TrajectoryControllerTest, open_closed_enable_disable)
     expected_actual[i].velocity = 0;
   }
 
-  positions.clear();
-  velocities.clear();
   traj_controller_->wait_for_trajectory(executor);
 
   waitAndCompareState(expected_actual, expected_desired, executor, chrono_duration * freq_Hz, 0.1);
+  positions.clear();
+  velocities.clear();
   expected_actual.clear();
   expected_desired.clear();
 
