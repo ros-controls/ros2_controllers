@@ -19,7 +19,9 @@ namespace pose_broadcaster
 controller_interface::InterfaceConfiguration PoseBroadcaster::command_interface_configuration()
   const
 {
-  return controller_interface::InterfaceConfiguration{};
+  controller_interface::InterfaceConfiguration command_interfaces_config;
+  command_interfaces_config.type = controller_interface::interface_configuration_type::NONE;
+  return command_interfaces_config;
 }
 
 controller_interface::InterfaceConfiguration PoseBroadcaster::state_interface_configuration() const
