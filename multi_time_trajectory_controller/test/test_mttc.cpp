@@ -2024,11 +2024,10 @@ TEST_F(TrajectoryControllerTest, open_closed_enable_disable)
 
   SetUpTrajectoryController(executor, params);
   traj_controller_->get_node()->configure();
-  for (std::size_t i = 0; i < 3; ++i)
+  for (std::size_t i = 0; i < 2; ++i)
   {
     publish_feedback({0, 0, 0}, {1, 0, 0, 0}, {0, 0, 0}, {0, 0, 0});
-    executor.spin_some(std::chrono::milliseconds(10));
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    executor.spin_some();
   }
 
   // set all initial states to 6-vector of zeros
