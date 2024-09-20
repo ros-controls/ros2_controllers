@@ -564,7 +564,8 @@ public:
   rclcpp::Time updateControllerAsync(
     rclcpp::Duration wait_time = rclcpp::Duration::from_seconds(0.2),
     rclcpp::Time start_time = rclcpp::Time(0, 0, RCL_STEADY_TIME),
-    const rclcpp::Duration update_rate = rclcpp::Duration::from_seconds(0.01))
+    const rclcpp::Duration update_rate = rclcpp::Duration::from_seconds(0.01),
+    rclcpp::Executor * executor = nullptr)
   {
     if (start_time == rclcpp::Time(0, 0, RCL_STEADY_TIME))
     {
@@ -576,6 +577,23 @@ public:
     {
       traj_controller_->update(time_counter, update_rate);
       time_counter += update_rate;
+      if (executor != nullptr)
+      {
+        // publish commanded state as feedback (assume perfect control)
+        Eigen::Vector3d position = {axis_pos_[0], axis_pos_[1], axis_pos_[2]};
+        double roll = axis_pos_[3];
+        double pitch = axis_pos_[4];
+        double yaw = axis_pos_[5];
+        Eigen::Quaterniond orientation = Eigen::AngleAxisd(roll, Eigen::Vector3d::UnitX()) *
+                                         Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY()) *
+                                         Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ());
+
+        Eigen::Vector3d v_linear = {axis_vel_[0], axis_vel_[1], axis_vel_[2]};
+        Eigen::Vector3d v_angular = {axis_vel_[3], axis_vel_[4], axis_vel_[5]};
+
+        publish_feedback(position, orientation, v_linear, v_angular);
+        executor->spin_some();
+      }
     }
     return end_time;
   }
@@ -584,14 +602,24 @@ public:
     std::vector<control_msgs::msg::AxisTrajectoryPoint> const & expected_actual,
     std::vector<control_msgs::msg::AxisTrajectoryPoint> const & expected_desired,
     rclcpp::Executor & executor, rclcpp::Duration controller_wait_time, double allowed_delta,
-    rclcpp::Time start_time = rclcpp::Time(0, 0, RCL_STEADY_TIME))
+    rclcpp::Time start_time = rclcpp::Time(0, 0, RCL_STEADY_TIME),
+    bool should_publish_feedback = false)
   {
     {
       std::lock_guard<std::mutex> guard(state_mutex_);
       state_msg_.reset();
     }
     traj_controller_->wait_for_trajectory(executor);
-    auto end_time = updateControllerAsync(controller_wait_time, start_time);
+    rclcpp::Time end_time;
+    if (should_publish_feedback)
+    {
+      end_time = updateControllerAsync(
+        controller_wait_time, start_time, rclcpp::Duration::from_seconds(0.01), &executor);
+    }
+    else
+    {
+      end_time = updateControllerAsync(controller_wait_time, start_time);
+    }
 
     // get states from class variables
     auto state_feedback = traj_controller_->get_state_feedback();

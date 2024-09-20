@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+#include <rcl/time.h>
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Geometry>
 
@@ -2067,7 +2068,9 @@ TEST_F(TrajectoryControllerTest, open_closed_enable_disable)
   traj_controller_->wait_for_trajectory(executor);
 
   // now test that we haven't moved
-  waitAndCompareState(expected_actual, expected_desired, executor, chrono_duration * freq_Hz, 0.1);
+  waitAndCompareState(
+    expected_actual, expected_desired, executor, chrono_duration * freq_Hz, 0.1,
+    rclcpp::Time(0, 0, RCL_STEADY_TIME), true);
   positions.clear();
   velocities.clear();
   expected_actual.clear();
@@ -2083,8 +2086,9 @@ TEST_F(TrajectoryControllerTest, open_closed_enable_disable)
   {
     double target_vel_current = static_cast<double>(i);
     // each axis's target velocity is proportional to time, which should give a constant accel
+    // set angular velocity target to 0 to avoid having to deal with rotating frame in this test
     velocities.push_back(
-      {0.01 * target_vel_current, 0.02 * target_vel_current, 0.03 * target_vel_current, 0.04 * target_vel_current, 0.05 * target_vel_current, 0.06 * target_vel_current});
+      {0.01 * target_vel_current, 0.02 * target_vel_current, 0.03 * target_vel_current, 0, 0, 0});
   }
 
   // then 0.5 seconds of constant vel
@@ -2110,7 +2114,9 @@ TEST_F(TrajectoryControllerTest, open_closed_enable_disable)
   publish(dur, positions, rclcpp::Time(0, 0, RCL_STEADY_TIME), {}, velocities);
   traj_controller_->wait_for_trajectory(executor);
 
-  waitAndCompareState(expected_actual, expected_desired, executor, chrono_duration * freq_Hz, 0.1);
+  waitAndCompareState(
+    expected_actual, expected_desired, executor, chrono_duration * freq_Hz, 0.1,
+    rclcpp::Time(0, 0, RCL_STEADY_TIME), true);
   positions.clear();
   velocities.clear();
   expected_actual.clear();
@@ -2138,7 +2144,9 @@ TEST_F(TrajectoryControllerTest, open_closed_enable_disable)
 
   traj_controller_->wait_for_trajectory(executor);
 
-  waitAndCompareState(expected_actual, expected_desired, executor, chrono_duration * freq_Hz, 0.1);
+  waitAndCompareState(
+    expected_actual, expected_desired, executor, chrono_duration * freq_Hz, 0.1,
+    rclcpp::Time(0, 0, RCL_STEADY_TIME), true);
   positions.clear();
   velocities.clear();
   expected_actual.clear();
