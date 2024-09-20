@@ -21,6 +21,7 @@
 
 #include <chrono>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <thread>
 #include <tuple>
@@ -28,6 +29,7 @@
 #include <vector>
 
 #include <rclcpp/executor.hpp>
+#include <rclcpp/future_return_code.hpp>
 #include "control_msgs/msg/axis_trajectory_point.hpp"
 #include "control_msgs/msg/multi_axis_trajectory.hpp"
 #include "control_msgs/msg/multi_time_trajectory_controller_state.hpp"
@@ -205,6 +207,14 @@ public:
     feedback_publisher_ = node_->create_publisher<
       multi_time_trajectory_controller::MultiTimeTrajectoryController::ControllerFeedbackMsg>(
       controller_name_ + "/feedback", rclcpp::SystemDefaultsQoS());
+
+    trajectory_generator_publisher_ =
+      node_->create_publisher<control_msgs::msg::MultiAxisTrajectory>(
+        controller_name_ + "/reference", rclcpp::QoS(1).best_effort());
+    trajectory_generator_publisher_reliable_ =
+      node_->create_publisher<control_msgs::msg::MultiAxisTrajectory>(
+        controller_name_ + "/reference_reliable", rclcpp::QoS(1).reliable());
+    create_reset_dofs_service_client();
   }
 
   void SetUpTrajectoryController(
@@ -440,7 +450,8 @@ public:
     const builtin_interfaces::msg::Duration & delay_btwn_points,
     const std::vector<std::vector<double>> & points_positions, rclcpp::Time start_time,
     const std::vector<std::string> & axis_names = {},
-    const std::vector<std::vector<double>> & points_velocities = {})
+    const std::vector<std::vector<double>> & points_velocities = {}, bool use_traj_gen = false,
+    bool reliable = false)
   {
     int wait_count = 0;
     const auto topic = trajectory_publisher_->get_topic_name();
@@ -497,7 +508,21 @@ public:
       }
     }
 
-    trajectory_publisher_->publish(multi_traj_msg);
+    if (use_traj_gen)
+    {
+      if (reliable)
+      {
+        trajectory_generator_publisher_reliable_->publish(multi_traj_msg);
+      }
+      else
+      {
+        trajectory_generator_publisher_->publish(multi_traj_msg);
+      }
+    }
+    else
+    {
+      trajectory_publisher_->publish(multi_traj_msg);
+    }
   }
 
   void publish_feedback(
@@ -808,6 +833,53 @@ public:
   rclcpp::Publisher<multi_time_trajectory_controller::MultiTimeTrajectoryController::
                       ControllerFeedbackMsg>::SharedPtr feedback_publisher_;
 
+  bool shutdown_{false};
+  bool traj_gen_available_{false};
+  std::thread traj_gen_sync_thread_;
+  rclcpp::Time traj_gen_sync_start_time_;
+  rclcpp::Client<control_msgs::srv::ResetDofs>::SharedPtr traj_gen_reset_dofs_client_;
+  rclcpp::Publisher<control_msgs::msg::MultiAxisTrajectory>::SharedPtr
+    trajectory_generator_publisher_;
+  rclcpp::Publisher<control_msgs::msg::MultiAxisTrajectory>::SharedPtr
+    trajectory_generator_publisher_reliable_;
+
+  struct ResetDofsData
+  {
+    std::size_t motion_axis;
+    bool closed_loop_position_enabled;
+  };
+
+  bool send_reset_request(
+    std::shared_ptr<control_msgs::srv::ResetDofs::Request> request, rclcpp::Executor & executor)
+  {
+    auto result = traj_gen_reset_dofs_client_->async_send_request(request);
+    auto retval = executor.spin_until_future_complete(result, std::chrono::milliseconds(100));
+
+    return retval == rclcpp::FutureReturnCode::SUCCESS;
+  }
+  void create_reset_dofs_service_client()
+  {
+    traj_gen_sync_thread_ = std::thread(
+      [this]()
+      {
+        const auto clk = node_->get_clock();
+        traj_gen_sync_start_time_ = clk->now();
+
+        // Create a service client for resetting dofs in trajectory generator
+        const std::string service_name = controller_name_ + "/reset_dofs";
+        traj_gen_reset_dofs_client_ =
+          node_->create_client<control_msgs::srv::ResetDofs>(service_name);
+        while (!traj_gen_reset_dofs_client_->wait_for_service(1s))
+        {
+          if (shutdown_) break;
+        }
+
+        if (!shutdown_)
+        {
+          traj_gen_available_ = true;
+        }
+      });
+  }
   std::shared_ptr<TestableMultiTimeTrajectoryController> traj_controller_;
   rclcpp::Subscription<control_msgs::msg::MultiTimeTrajectoryControllerState>::SharedPtr
     state_subscriber_;

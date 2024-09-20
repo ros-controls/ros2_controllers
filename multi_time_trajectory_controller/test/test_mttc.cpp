@@ -2038,7 +2038,7 @@ TEST_F(TrajectoryControllerTest, open_closed_enable_disable)
   // [axis-mult] At 20 Hz, sends a 'reference' command with all zeros and time from start of 50ms
   // (i.e. positions are NaN, velocities are zero and accelerations are NaN)
 
-  constexpr std::size_t freq_Hz = 100;
+  constexpr std::size_t freq_Hz = 20;
   std::size_t const ns_dur = 1000000000 / freq_Hz;
   auto const chrono_duration = std::chrono::nanoseconds(ns_dur);
   rclcpp::Duration const dur(0, ns_dur);
@@ -2088,11 +2088,11 @@ TEST_F(TrajectoryControllerTest, open_closed_enable_disable)
     // each axis's target velocity is proportional to time, which should give a constant accel
     // set angular velocity target to 0 to avoid having to deal with rotating frame in this test
     velocities.push_back(
-      {0.01 * target_vel_current, 0.02 * target_vel_current, 0.03 * target_vel_current, 0, 0, 0});
+      {0.1 * target_vel_current, 0.2 * target_vel_current, 0.3 * target_vel_current, 0, 0, 0});
   }
 
   // then 0.5 seconds of constant vel
-  auto const final_vel = velocities.back();
+  auto final_vel = velocities.back();
   for (std::size_t i = 0; i < freq_Hz / 2; ++i)
   {
     velocities.push_back(final_vel);
@@ -2160,6 +2160,15 @@ TEST_F(TrajectoryControllerTest, open_closed_enable_disable)
   // [axis-mult] Sends a 'reset dofs' service call to CTG/MAC to reset x-y position to values
   // specified in service call(values are current x-y state estimate)
 
+  auto request = std::make_shared<control_msgs::srv::ResetDofs::Request>();
+
+  // reset x and y axes
+  request->names = {axis_names_[0], axis_names_[1]};
+  request->positions = {final_pos[0], final_pos[1]};
+  request->velocities = {0, 0};
+  request->accelerations = {0, 0};
+  send_reset_request(request, executor);
+
   // [axis-mult] When service request is completed, sends a 'reference_reliable' command to CTG/MAC
   // with current x-y state estimate with 'time from start' set to 10ms (essentially a command to
   // hold current position to be sent to closed-loop position controller). The velocities are set to
@@ -2167,9 +2176,85 @@ TEST_F(TrajectoryControllerTest, open_closed_enable_disable)
 
   // [axis-mult] At 20 Hz, continues sending 'reference' command of zeroes at 50ms
 
+  positions = {freq_Hz, final_pos};
+  velocities = {freq_Hz, zeros};
+  publish(dur, positions, rclcpp::Time(0, 0, RCL_STEADY_TIME), {}, velocities, true, true);
+
+  for (std::size_t i = 0; i < freq_Hz / 2; ++i)
+  {
+    double target_vel_current = static_cast<double>(i);
+    velocities.push_back({target_vel_current, -target_vel_current, 0, 0, 0, 0});
+  }
+
+  // then 0.5 seconds of constant vel
+  final_vel = velocities.back();
+  for (std::size_t i = 0; i < freq_Hz / 2; ++i)
+  {
+    velocities.push_back(final_vel);
+  }
+
+  // then 0.5 seconds of decel
+  final_vel = velocities.back();
+  for (std::size_t i = freq_Hz / 2; i > 0; --i)
+  {
+    double target_vel_current = static_cast<double>(i);
+    velocities.push_back({target_vel_current, -target_vel_current, 0, 0, 0, 0});
+  }
+
+  expected_actual.resize(num_axes, multi_time_trajectory_controller::emptyTrajectoryPoint());
+  for (std::size_t i = 0; i < num_axes; ++i)
+  {
+    expected_actual[i].position = final_pos[i];
+    expected_actual[i].velocity = 0;
+  }
+
+  traj_controller_->wait_for_trajectory(executor);
+
+  waitAndCompareState(
+    expected_actual, expected_desired, executor, chrono_duration * (3 * freq_Hz / 2), 0.1,
+    rclcpp::Time(0, 0, RCL_STEADY_TIME), true);
+  positions.clear();
+  velocities.clear();
+  expected_actual.clear();
+  expected_desired.clear();
+
   // [axis-mult] When joystick is moved in X-Y to perform closed-loop teleoperation, it sends
   // 'reference' command with non-zero velocities for axes moved in joystick. This command doesn't
-  // work on MAC but does on CTG. If I disable closed-loop control for X-Y, and try to move X-Y in
+  // work on MAC but does on CTG.
+
+  positions = {freq_Hz, point_nan};
+  double const target_x_vel = 0.3142;
+  double const target_y_vel = -0.2718;
+  for (std::size_t i = 0; i < freq_Hz; ++i)
+  {
+    velocities.push_back({target_x_vel, target_y_vel, 0, 0, 0, 0});
+  }
+  publish(dur, positions, rclcpp::Time(0, 0, RCL_STEADY_TIME), {}, velocities, true, false);
+
+  expected_actual.resize(num_axes, multi_time_trajectory_controller::emptyTrajectoryPoint());
+  for (std::size_t i = 0; i < num_axes; ++i)
+  {
+    expected_actual[i].position = final_pos[i];
+    expected_actual[i].velocity = 0;
+  }
+
+  expected_actual[0].position += target_x_vel;
+  expected_actual[1].position += target_y_vel;
+
+  expected_actual[0].velocity = target_x_vel;
+  expected_actual[1].velocity = target_y_vel;
+
+  traj_controller_->wait_for_trajectory(executor);
+
+  waitAndCompareState(
+    expected_actual, expected_desired, executor, chrono_duration * freq_Hz, 0.1,
+    rclcpp::Time(0, 0, RCL_STEADY_TIME), true);
+  positions.clear();
+  velocities.clear();
+  expected_actual.clear();
+  expected_desired.clear();
+
+  // If I disable closed-loop control for X-Y, and try to move X-Y in
   // open-loop with joystick again on MAC, it doesn't move. If I move the joystick in a different
   // axes e.g. heading, it works fine. I have to confirm again but Z doesn't work anymore though
   // either on MAC.
