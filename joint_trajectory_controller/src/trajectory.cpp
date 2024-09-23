@@ -119,37 +119,10 @@ bool Trajectory::sample(
   }
 
   output_state = trajectory_msgs::msg::JointTrajectoryPoint();
-  auto & first_point_in_msg = trajectory_msg_->points[0];
-  const rclcpp::Time first_point_timestamp =
-    trajectory_start_time_ + first_point_in_msg.time_from_start;
-
-  // current time hasn't reached traj time of the first point in the msg yet
-  if (sample_time < first_point_timestamp)
-  {
-    // If interpolation is disabled, just forward the next waypoint
-    if (interpolation_method == interpolation_methods::InterpolationMethod::NONE)
-    {
-      output_state = state_before_traj_msg_;
-    }
-    else
-    {
-      // it changes points only if position and velocity do not exist, but their derivatives
-      deduce_from_derivatives(
-        state_before_traj_msg_, first_point_in_msg, state_before_traj_msg_.positions.size(),
-        (first_point_timestamp - time_before_traj_msg_).seconds());
-
-      interpolate_between_points(
-        time_before_traj_msg_, state_before_traj_msg_, first_point_timestamp, first_point_in_msg,
-        sample_time, output_state);
-    }
-    start_segment_itr = begin();  // no segments before the first
-    end_segment_itr = begin();
-    return true;
-  }
 
   // Find the first trajectory point later than the current sample_time
   const auto next_traj_point_it = std::upper_bound(
-    std::next(trajectory_msg_->points.begin()), trajectory_msg_->points.end(), sample_time,
+    trajectory_msg_->points.begin(), trajectory_msg_->points.end(), sample_time,
     [this](const rclcpp::Time & t, const auto & point)
     {
       // time_from_start + trajectory time is the expected arrival time of trajectory
@@ -159,35 +132,63 @@ bool Trajectory::sample(
   if (next_traj_point_it != trajectory_msg_->points.end())
   {
     auto & next_traj_point = *next_traj_point_it;
-    const auto t1 = trajectory_start_time_ + next_traj_point.time_from_start;
+    const auto next_traj_point_timestamp = trajectory_start_time_ + next_traj_point.time_from_start;
 
-    auto last_traj_point_it = std::prev(next_traj_point_it);
-    auto & last_traj_point = *last_traj_point_it;
-    const auto t0 = trajectory_start_time_ + last_traj_point.time_from_start;
-
-    // If interpolation is disabled, just forward the next waypoint
-    if (interpolation_method == interpolation_methods::InterpolationMethod::NONE)
+    // current time hasn't reached traj time of the first point in the msg yet
+    if (next_traj_point_it == trajectory_msg_->points.begin())
     {
-      output_state = next_traj_point;
+      // If interpolation is disabled, just forward the next waypoint
+      if (interpolation_method == interpolation_methods::InterpolationMethod::NONE)
+      {
+        output_state = state_before_traj_msg_;
+      }
+      else
+      {
+        // it changes points only if position and velocity do not exist, but their derivatives
+        deduce_from_derivatives(
+          state_before_traj_msg_, next_traj_point, state_before_traj_msg_.positions.size(),
+          (next_traj_point_timestamp - time_before_traj_msg_).seconds());
+
+        interpolate_between_points(
+          time_before_traj_msg_, state_before_traj_msg_, next_traj_point_timestamp, next_traj_point,
+          sample_time, output_state);
+      }
+      start_segment_itr = begin();  // no segments before the first
+      end_segment_itr = begin();
+      return true;
     }
-    // Do interpolation
+    // Current time is between two trajectory points and interpolation needs to be performed
     else
     {
-      // it changes points only if position and velocity do not exist, but their derivatives
-      deduce_from_derivatives(
-        last_traj_point, next_traj_point, state_before_traj_msg_.positions.size(),
-        (t1 - t0).seconds());
+      auto last_traj_point_it = std::prev(next_traj_point_it);
+      auto & last_traj_point = *last_traj_point_it;
+      const auto t0 = trajectory_start_time_ + last_traj_point.time_from_start;
 
-      interpolate_between_points(
-        t0, last_traj_point, t1, next_traj_point, sample_time, output_state);
+      // If interpolation is disabled, just forward the next waypoint
+      if (interpolation_method == interpolation_methods::InterpolationMethod::NONE)
+      {
+        output_state = next_traj_point;
+      }
+      // Do interpolation
+      else
+      {
+        // it changes points only if position and velocity do not exist, but their derivatives
+        deduce_from_derivatives(
+          last_traj_point, next_traj_point, state_before_traj_msg_.positions.size(),
+          (next_traj_point_timestamp - t0).seconds());
+
+        interpolate_between_points(
+          t0, last_traj_point, next_traj_point_timestamp, next_traj_point, sample_time,
+          output_state);
+      }
+      start_segment_itr = last_traj_point_it;
+      end_segment_itr = next_traj_point_it;
+      return true;
     }
-    start_segment_itr = last_traj_point_it;
-    end_segment_itr = next_traj_point_it;
-    return true;
   }
+  // whole animation has played out
   else
   {
-    // whole animation has played out
     start_segment_itr = --end();
     end_segment_itr = end();
     output_state = (*start_segment_itr);
