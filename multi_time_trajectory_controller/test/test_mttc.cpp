@@ -2163,6 +2163,10 @@ TEST_F(TrajectoryControllerTest, open_closed_enable_disable)
   auto request = std::make_shared<control_msgs::srv::ResetDofs::Request>();
 
   // reset x and y axes
+  // test that we can reset to different values
+  final_pos[0] = 3;
+  final_pos[1] = -1;
+
   request->names = {axis_names_[0], axis_names_[1]};
   request->positions = {final_pos[0], final_pos[1]};
   request->velocities = {0, 0};
@@ -2180,33 +2184,13 @@ TEST_F(TrajectoryControllerTest, open_closed_enable_disable)
   velocities = {freq_Hz, zeros};
   publish(dur, positions, rclcpp::Time(0, 0, RCL_STEADY_TIME), {}, velocities, true, true);
 
-  for (std::size_t i = 0; i < freq_Hz / 2; ++i)
-  {
-    double target_vel_current = static_cast<double>(i);
-    velocities.push_back({target_vel_current, -target_vel_current, 0, 0, 0, 0});
-  }
-
-  // then 0.5 seconds of constant vel
-  final_vel = velocities.back();
-  for (std::size_t i = 0; i < freq_Hz / 2; ++i)
-  {
-    velocities.push_back(final_vel);
-  }
-
-  // then 0.5 seconds of decel
-  final_vel = velocities.back();
-  for (std::size_t i = freq_Hz / 2; i > 0; --i)
-  {
-    double target_vel_current = static_cast<double>(i);
-    velocities.push_back({target_vel_current, -target_vel_current, 0, 0, 0, 0});
-  }
-
   expected_actual.resize(num_axes, multi_time_trajectory_controller::emptyTrajectoryPoint());
   for (std::size_t i = 0; i < num_axes; ++i)
   {
     expected_actual[i].position = final_pos[i];
     expected_actual[i].velocity = 0;
   }
+  expected_desired = expected_actual;
 
   traj_controller_->wait_for_trajectory(executor);
 
@@ -2243,6 +2227,8 @@ TEST_F(TrajectoryControllerTest, open_closed_enable_disable)
 
   expected_actual[0].velocity = target_x_vel;
   expected_actual[1].velocity = target_y_vel;
+
+  expected_desired = expected_actual;
 
   traj_controller_->wait_for_trajectory(executor);
 
