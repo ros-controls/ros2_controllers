@@ -147,52 +147,61 @@ bool Trajectory::sample(
     return true;
   }
 
-  // time_from_start + trajectory time is the expected arrival time of trajectory
-  const auto last_idx = trajectory_msg_->points.size() - 1;
-  for (size_t i = 0; i < last_idx; ++i)
-  {
-    auto & point = trajectory_msg_->points[i];
-    auto & next_point = trajectory_msg_->points[i + 1];
-
-    const rclcpp::Time t0 = trajectory_start_time_ + point.time_from_start;
-    const rclcpp::Time t1 = trajectory_start_time_ + next_point.time_from_start;
-
-    if (sample_time >= t0 && sample_time < t1)
+  // Find the first trajectory point later than the current sample_time
+  const auto next_traj_point_it = std::upper_bound(
+    std::next(trajectory_msg_->points.begin()), trajectory_msg_->points.end(), sample_time,
+    [this](const rclcpp::Time & t, const auto & point)
     {
-      // If interpolation is disabled, just forward the next waypoint
-      if (interpolation_method == interpolation_methods::InterpolationMethod::NONE)
-      {
-        output_state = next_point;
-      }
-      // Do interpolation
-      else
-      {
-        // it changes points only if position and velocity do not exist, but their derivatives
-        deduce_from_derivatives(
-          point, next_point, state_before_traj_msg_.positions.size(), (t1 - t0).seconds());
+      // time_from_start + trajectory time is the expected arrival time of trajectory
+      return t < (trajectory_start_time_ + point.time_from_start);
+    });
 
-        interpolate_between_points(t0, point, t1, next_point, sample_time, output_state);
-      }
-      start_segment_itr = begin() + i;
-      end_segment_itr = begin() + (i + 1);
-      return true;
+  if (next_traj_point_it != trajectory_msg_->points.end())
+  {
+    auto & next_traj_point = *next_traj_point_it;
+    const auto t1 = trajectory_start_time_ + next_traj_point.time_from_start;
+
+    auto last_traj_point_it = std::prev(next_traj_point_it);
+    auto & last_traj_point = *last_traj_point_it;
+    const auto t0 = trajectory_start_time_ + last_traj_point.time_from_start;
+
+    // If interpolation is disabled, just forward the next waypoint
+    if (interpolation_method == interpolation_methods::InterpolationMethod::NONE)
+    {
+      output_state = next_traj_point;
     }
-  }
+    // Do interpolation
+    else
+    {
+      // it changes points only if position and velocity do not exist, but their derivatives
+      deduce_from_derivatives(
+        last_traj_point, next_traj_point, state_before_traj_msg_.positions.size(),
+        (t1 - t0).seconds());
 
-  // whole animation has played out
-  start_segment_itr = --end();
-  end_segment_itr = end();
-  output_state = (*start_segment_itr);
-  // the trajectories in msg may have empty velocities/accel, so resize them
-  if (output_state.velocities.empty())
-  {
-    output_state.velocities.resize(output_state.positions.size(), 0.0);
+      interpolate_between_points(
+        t0, last_traj_point, t1, next_traj_point, sample_time, output_state);
+    }
+    start_segment_itr = last_traj_point_it;
+    end_segment_itr = next_traj_point_it;
+    return true;
   }
-  if (output_state.accelerations.empty())
+  else
   {
-    output_state.accelerations.resize(output_state.positions.size(), 0.0);
+    // whole animation has played out
+    start_segment_itr = --end();
+    end_segment_itr = end();
+    output_state = (*start_segment_itr);
+    // the trajectories in msg may have empty velocities/accel, so resize them
+    if (output_state.velocities.empty())
+    {
+      output_state.velocities.resize(output_state.positions.size(), 0.0);
+    }
+    if (output_state.accelerations.empty())
+    {
+      output_state.accelerations.resize(output_state.positions.size(), 0.0);
+    }
+    return true;
   }
-  return true;
 }
 
 void Trajectory::interpolate_between_points(
