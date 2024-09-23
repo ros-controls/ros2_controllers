@@ -337,12 +337,12 @@ private:
   rclcpp::Subscription<ControllerFeedbackMsg>::SharedPtr feedback_subscriber_ = nullptr;
   realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerFeedbackMsg>> feedback_;
   void reference_callback(const std::shared_ptr<ControllerReferenceMsg> msg);
+  ControllerFeedbackMsg last_odom_feedback_;
   using JointTrajectoryPoint = control_msgs::msg::AxisTrajectoryPoint;
 
   // Command subscribers and Controller State publisher
   rclcpp::Subscription<ControllerReferenceMsg>::SharedPtr ref_subscriber_ = nullptr;
   rclcpp::Subscription<ControllerReferenceMsg>::SharedPtr ref_subscriber_reliable_ = nullptr;
-  realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerReferenceMsg>> reference_world_;
 
   void update_pids();
 

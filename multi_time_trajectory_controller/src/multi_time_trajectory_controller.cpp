@@ -490,6 +490,7 @@ bool MultiTimeTrajectoryController::read_state_from_hardware(std::vector<Traject
     std::array<double, 3> orientation_angles;
     const auto measured_state = *(feedback_.readFromRT());
     if (!measured_state) return false;
+    last_odom_feedback_ = *measured_state;
 
     tf2::Quaternion measured_q;
 
@@ -1040,7 +1041,6 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
   {
     msg->axis_trajectories[i].axis_points.resize(1, emptyTrajectoryPoint());
   }
-  reference_world_.writeFromNonRT(msg);
 
   // Odometry feedback
   auto feedback_callback = [&](const std::shared_ptr<ControllerFeedbackMsg> feedback_msg) -> void
@@ -1147,9 +1147,6 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
 void MultiTimeTrajectoryController::reference_callback(
   const std::shared_ptr<ControllerReferenceMsg> msg)
 {
-  // store input ref for later use
-  reference_world_.writeFromNonRT(msg);
-
   add_new_trajectory_msg(msg);
 }
 
@@ -1367,12 +1364,18 @@ void MultiTimeTrajectoryController::publish_state(
   const std::vector<TrajectoryPoint> & ruckig_input_target,
   const std::vector<TrajectoryPoint> & ruckig_input)
 {
+  // TODO(henrygerardmoore): add any useful debug/state info to this publish
+  // active state? goals and tolerances, internal state, etc.
   if (state_publisher_->trylock())
   {
     state_publisher_->msg_.header.stamp = time;
     state_publisher_->msg_.references = desired_state;
     state_publisher_->msg_.feedbacks = current_state;
     state_publisher_->msg_.errors = state_error;
+    state_publisher_->msg_.using_odometry_feedback = params_.use_feedback;
+    state_publisher_->msg_.trajectory_active = has_active_trajectory();
+    state_publisher_->msg_.last_odom_feedback = last_odom_feedback_;
+    state_publisher_->msg_.goal = *traj_external_point_ptr_->get_trajectory_msg();
     if (read_commands_from_command_interfaces(command_current_))
     {
       state_publisher_->msg_.outputs = command_current_;
