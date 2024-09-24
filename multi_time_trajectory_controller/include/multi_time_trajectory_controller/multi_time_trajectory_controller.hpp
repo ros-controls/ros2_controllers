@@ -338,6 +338,7 @@ private:
   realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerFeedbackMsg>> feedback_;
   void reference_callback(const std::shared_ptr<ControllerReferenceMsg> msg);
   ControllerFeedbackMsg last_odom_feedback_;
+  ControllerReferenceMsg last_reference_;
   using JointTrajectoryPoint = control_msgs::msg::AxisTrajectoryPoint;
 
   // Command subscribers and Controller State publisher

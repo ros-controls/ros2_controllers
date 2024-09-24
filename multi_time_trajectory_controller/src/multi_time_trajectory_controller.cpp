@@ -1147,6 +1147,7 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
 void MultiTimeTrajectoryController::reference_callback(
   const std::shared_ptr<ControllerReferenceMsg> msg)
 {
+  last_reference_ = *msg;
   add_new_trajectory_msg(msg);
 }
 
@@ -1376,6 +1377,7 @@ void MultiTimeTrajectoryController::publish_state(
     state_publisher_->msg_.trajectory_active = has_active_trajectory();
     state_publisher_->msg_.last_odom_feedback = last_odom_feedback_;
     state_publisher_->msg_.goal = *traj_external_point_ptr_->get_trajectory_msg();
+    state_publisher_->msg_.last_reference = last_reference_;
     if (read_commands_from_command_interfaces(command_current_))
     {
       state_publisher_->msg_.outputs = command_current_;
