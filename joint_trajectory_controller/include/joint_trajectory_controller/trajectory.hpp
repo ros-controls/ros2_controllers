@@ -153,6 +153,14 @@ public:
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   bool is_sampled_already() const { return sampled_already_; }
 
+  /// Get the index of the segment start returned by the last \p sample() operation.
+  /**
+   * As the trajectory is only accessed at monotonically increasing sampling times, this index is
+   * used to speed up the selection of relevant trajectory points.
+   */
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
+  size_t last_sample_index() const { return last_sample_idx_; }
+
 private:
   void deduce_from_derivatives(
     trajectory_msgs::msg::JointTrajectoryPoint & first_state,
