@@ -85,9 +85,12 @@ public:
    *
    * \param[in] sample_time Time at which trajectory will be sampled.
    * \param[in] interpolation_method Specify whether splines, another method, or no interpolation at
-   * all. \param[out] expected_state Calculated new at \p sample_time. \param[out] start_segment_itr
-   * Iterator to the start segment for given \p sample_time. See description above. \param[out]
-   * end_segment_itr Iterator to the end segment for given \p sample_time. See description above.
+   *      all.
+   * \param[out] output_state Calculated new at \p sample_time.
+   * \param[out] start_segment_itr Iterator to the start segment for given \p sample_time. See
+   *      description above.
+   * \param[out] end_segment_itr Iterator to the end segment for given \p sample_time. See
+   *      description above.
    */
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   bool sample(
