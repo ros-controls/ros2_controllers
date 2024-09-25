@@ -25,6 +25,8 @@
 
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
+#include "rclcpp/executor.hpp"
+#include "rclcpp/executors.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "tricycle_steering_controller/tricycle_steering_controller.hpp"
@@ -203,7 +205,7 @@ protected:
     while (max_sub_check_loop_count--)
     {
       controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01));
-      const auto timeout = std::chrono::milliseconds{1};
+      const auto timeout = std::chrono::milliseconds{5};
       const auto until = test_subscription_node.get_clock()->now() + timeout;
       while (!received_msg && test_subscription_node.get_clock()->now() < until)
       {

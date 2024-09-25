@@ -2,6 +2,28 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.14.0 (2024-09-11)
+-------------------
+* rename get/set_state to get/set_lifecylce_state (`#1250 <https://github.com/ros-controls/ros2_controllers/issues/1250>`_)
+* Contributors: Manuel Muth
+
+4.13.0 (2024-08-22)
+-------------------
+* Fixes tests to work with use_global_arguments NodeOptions parameter  (`#1256 <https://github.com/ros-controls/ros2_controllers/issues/1256>`_)
+* Contributors: Sai Kishor Kothakota
+
+4.12.1 (2024-08-14)
+-------------------
+
+4.12.0 (2024-07-23)
+-------------------
+* Add missing includes (`#1226 <https://github.com/ros-controls/ros2_controllers/issues/1226>`_)
+* Remove duplicated call to rclcpp::shutdown in test (`#1220 <https://github.com/ros-controls/ros2_controllers/issues/1220>`_)
+* Unused header cleanup (`#1199 <https://github.com/ros-controls/ros2_controllers/issues/1199>`_)
+* Fix WaitSet issue in tests  (`#1206 <https://github.com/ros-controls/ros2_controllers/issues/1206>`_)
+* Fix parallel gripper controller CI (`#1202 <https://github.com/ros-controls/ros2_controllers/issues/1202>`_)
+* Contributors: Christoph Fröhlich, Henry Moore, Noel Jiménez García, Sai Kishor Kothakota
+
 4.11.0 (2024-07-09)
 -------------------
 * added changes corresponding to the logger and clock propagation in ResourceManager (`#1184 <https://github.com/ros-controls/ros2_controllers/issues/1184>`_)

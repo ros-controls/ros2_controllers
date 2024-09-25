@@ -2,6 +2,27 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.14.0 (2024-09-11)
+-------------------
+* rename get/set_state to get/set_lifecylce_state (`#1250 <https://github.com/ros-controls/ros2_controllers/issues/1250>`_)
+* Contributors: Manuel Muth
+
+4.13.0 (2024-08-22)
+-------------------
+
+4.12.1 (2024-08-14)
+-------------------
+
+4.12.0 (2024-07-23)
+-------------------
+* [JTC] Refactor URDF Model parsing  (`#1227 <https://github.com/ros-controls/ros2_controllers/issues/1227>`_)
+* Use the internal methods instead of using the variables directly (`#1221 <https://github.com/ros-controls/ros2_controllers/issues/1221>`_)
+* Unused header cleanup (`#1199 <https://github.com/ros-controls/ros2_controllers/issues/1199>`_)
+* Fix WaitSet issue in tests  (`#1206 <https://github.com/ros-controls/ros2_controllers/issues/1206>`_)
+* [JTC] Fix test_tolerances_via_actions (`#1209 <https://github.com/ros-controls/ros2_controllers/issues/1209>`_)
+* Fix parallel gripper controller CI (`#1202 <https://github.com/ros-controls/ros2_controllers/issues/1202>`_)
+* Contributors: Christoph Fröhlich, Henry Moore, Sai Kishor Kothakota
+
 4.11.0 (2024-07-09)
 -------------------
 * [JTC] Make goal_time_tolerance overwrite default value only if explicitly set (`#1192 <https://github.com/ros-controls/ros2_controllers/issues/1192>`_)

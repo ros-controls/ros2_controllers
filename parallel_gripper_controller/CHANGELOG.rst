@@ -1,31 +1,27 @@
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Changelog for package pid_controller
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Changelog for package parallel_gripper_controller
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 4.14.0 (2024-09-11)
 -------------------
-* [PID Controller] Export state interfaces for easier chaining with other controllers (`#1214 <https://github.com/ros-controls/ros2_controllers/issues/1214>`_)
-* Contributors: Sai Kishor Kothakota
 
 4.13.0 (2024-08-22)
 -------------------
+* Fixes tests to work with use_global_arguments NodeOptions parameter  (`#1256 <https://github.com/ros-controls/ros2_controllers/issues/1256>`_)
+* Contributors: Sai Kishor Kothakota
 
 4.12.1 (2024-08-14)
 -------------------
 
 4.12.0 (2024-07-23)
 -------------------
-* Add missing includes (`#1226 <https://github.com/ros-controls/ros2_controllers/issues/1226>`_)
-* Change the subscription timeout in the tests to 5ms (`#1219 <https://github.com/ros-controls/ros2_controllers/issues/1219>`_)
-* Unused header cleanup (`#1199 <https://github.com/ros-controls/ros2_controllers/issues/1199>`_)
-* Fix WaitSet issue in tests  (`#1206 <https://github.com/ros-controls/ros2_controllers/issues/1206>`_)
+* [GripperController] Fix failing tests (`#1210 <https://github.com/ros-controls/ros2_controllers/issues/1210>`_)
 * Fix parallel gripper controller CI (`#1202 <https://github.com/ros-controls/ros2_controllers/issues/1202>`_)
-* Contributors: Christoph Fröhlich, Henry Moore, Sai Kishor Kothakota
+* Add parallel_gripper_controller, configure gripper speed and effort with hardware interface (`#1002 <https://github.com/ros-controls/ros2_controllers/issues/1002>`_)
+* Contributors: Paul Gesel, Sai Kishor Kothakota
 
 4.11.0 (2024-07-09)
 -------------------
-* added changes corresponding to the logger and clock propagation in ResourceManager (`#1184 <https://github.com/ros-controls/ros2_controllers/issues/1184>`_)
-* Contributors: Sai Kishor Kothakota
 
 4.10.0 (2024-07-01)
 -------------------
@@ -35,40 +31,24 @@ Changelog for package pid_controller
 
 4.8.0 (2024-05-14)
 ------------------
-* [PID] Add example yaml to docs (`#951 <https://github.com/ros-controls/ros2_controllers/issues/951>`_)
-* Contributors: Christoph Fröhlich
 
 4.7.0 (2024-03-22)
 ------------------
-* Fix pid_controller build on ROS 2 Rolling on Ubuntu 24.04 (`#1084 <https://github.com/ros-controls/ros2_controllers/issues/1084>`_)
-* Added conditioning to have rolling tags compilable in older versions (`#1071 <https://github.com/ros-controls/ros2_controllers/issues/1071>`_)
-* Fix usage of visibility macros (`#1039 <https://github.com/ros-controls/ros2_controllers/issues/1039>`_)
-* Contributors: Chris Lalancette, Sai Kishor Kothakota, Silvio Traversaro
 
 4.6.0 (2024-02-12)
 ------------------
-* Add test_depend on `hardware_interface_testing` (`#1018 <https://github.com/ros-controls/ros2_controllers/issues/1018>`_)
-* Fix tests for using new `get_node_options` API (`#840 <https://github.com/ros-controls/ros2_controllers/issues/840>`_)
-* Contributors: Christoph Fröhlich, Sai Kishor Kothakota
 
 4.5.0 (2024-01-31)
 ------------------
-* Add tests for `interface_configuration_type` consistently (`#899 <https://github.com/ros-controls/ros2_controllers/issues/899>`_)
-* [PID] Remove joint_jog include (`#975 <https://github.com/ros-controls/ros2_controllers/issues/975>`_)
-* Contributors: Christoph Fröhlich
 
 4.4.0 (2024-01-11)
 ------------------
 
 4.3.0 (2024-01-08)
 ------------------
-* Add few warning flags to error (`#961 <https://github.com/ros-controls/ros2_controllers/issues/961>`_)
-* Contributors: Sai Kishor Kothakota
 
 4.2.0 (2023-12-12)
 ------------------
-* 🚀 Add PID controller 🎉 (`#434 <https://github.com/ros-controls/ros2_controllers/issues/434>`_)
-* Contributors: Dr. Denis
 
 4.1.0 (2023-12-01)
 ------------------
