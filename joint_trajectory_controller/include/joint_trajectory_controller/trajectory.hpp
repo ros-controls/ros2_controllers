@@ -69,6 +69,9 @@ public:
    * acceleration respectively. Deduction assumes that the provided velocity or acceleration have to
    * be reached at the time defined in the segment.
    *
+   * This function assumes that sampling is only done at monotonically increasing \p sample_time
+   * for any trajectory.
+   *
    * Specific case returns for start_segment_itr and end_segment_itr:
    * - Sampling before the trajectory start:
    *   start_segment_itr = begin(), end_segment_itr = begin()
@@ -163,6 +166,7 @@ private:
   trajectory_msgs::msg::JointTrajectoryPoint state_before_traj_msg_;
 
   bool sampled_already_ = false;
+  size_t last_sample_idx_ = 0;
 };
 
 /**
