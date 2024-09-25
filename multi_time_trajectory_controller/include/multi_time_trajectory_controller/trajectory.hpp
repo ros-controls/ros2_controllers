@@ -60,7 +60,8 @@ public:
 
   void update(
     std::shared_ptr<control_msgs::msg::MultiAxisTrajectory> axis_trajectory,
-    const std::vector<joint_limits::JointLimits> & joint_limits, const rclcpp::Duration & period);
+    const std::vector<joint_limits::JointLimits> & joint_limits, const rclcpp::Duration & period,
+    rclcpp::Time const & time);
 
   /// Find the segment (made up of 2 points) and its expected state from the
   /// containing trajectory.

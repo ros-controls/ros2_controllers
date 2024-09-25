@@ -110,8 +110,21 @@ void wraparound_joint(
 
 void Trajectory::update(
   std::shared_ptr<control_msgs::msg::MultiAxisTrajectory> multi_axis_trajectory,
-  const std::vector<joint_limits::JointLimits> & joint_limits, const rclcpp::Duration & period)
+  const std::vector<joint_limits::JointLimits> & joint_limits, const rclcpp::Duration & period,
+  rclcpp::Time const & time)
 {
+  // start by setting the start time of the trajectory if we're supposed to start it right away
+  if (rclcpp::Time(multi_axis_trajectory->header.stamp).seconds() == 0.0)
+  {
+    multi_axis_trajectory->header.stamp = time;
+    trajectory_start_time_ = time;
+  }
+  else
+  {
+    trajectory_start_time_ =
+      rclcpp::Time(multi_axis_trajectory->header.stamp, time.get_clock_type());
+  }
+
   // if we don't already have a trajectory message, skip the below block
   if (trajectory_msg_)
   {
@@ -158,7 +171,6 @@ void Trajectory::update(
   // replace the old message with the new one
   trajectory_msg_ = multi_axis_trajectory;
 
-  trajectory_start_time_ = static_cast<rclcpp::Time>(multi_axis_trajectory->header.stamp);
   sampled_already_ = false;
 
   // Initialize Ruckig-smoothing-related stuff
@@ -256,6 +268,8 @@ std::vector<bool> Trajectory::sample(
     if (trajectory_start_time_.seconds() == 0.0)
     {
       trajectory_start_time_ = sample_time;
+      // set this so we can know when the trajectory started later
+      trajectory_msg_->header.stamp = sample_time;
     }
 
     sampled_already_ = true;
@@ -295,6 +309,13 @@ std::vector<bool> Trajectory::sample(
     auto & first_point_in_msg = trajectory.axis_points[0];
     const rclcpp::Time first_point_timestamp =
       trajectory_start_time_ + first_point_in_msg.time_from_start;
+
+    auto const tst_ct = trajectory_start_time_.get_clock_type();
+    auto const fpt_ct = first_point_timestamp.get_clock_type();
+    auto const st_ct = sample_time.get_clock_type();
+    (void)tst_ct;
+    (void)fpt_ct;
+    (void)st_ct;
 
     // current time hasn't reached traj time of the first point in the msg yet
     if (sample_time < first_point_timestamp)
@@ -385,6 +406,18 @@ std::vector<bool> Trajectory::sample(
       continue;
     }
 
+    // logic for if we have a set point _after_ the end of this axis's trajectory
+    rclcpp::Time t0 = trajectory_start_time_ +
+                      trajectory.axis_points[trajectory.axis_points.size() - 1].time_from_start;
+    if (time_before_traj_msg_ > t0)
+    {
+      trajectory.axis_points.push_back(state_before_traj_msg_[axis_index]);
+      trajectory.axis_points.back().time_from_start =
+        time_before_traj_msg_ - trajectory_start_time_;
+      t0 = time_before_traj_msg_;
+    }
+    auto & last_point = trajectory.axis_points[trajectory.axis_points.size() - 1];
+
     // this trajectory is valid, set the start and end segment iterators
     start_segment_itr[axis_index] = --end(axis_index);
     end_segment_itr[axis_index] = end(axis_index);
@@ -406,9 +439,6 @@ std::vector<bool> Trajectory::sample(
     }
 
     // we have finished this trajectory, but keep interpolating and smoothing
-    auto & last_point = trajectory.axis_points[trajectory.axis_points.size() - 1];
-    const rclcpp::Time t0 = trajectory_start_time_ + last_point.time_from_start;
-
     if (last_point.acceleration != 0 && !std::isnan(last_point.acceleration))
     {
       last_point.velocity += last_point.acceleration * period.seconds();

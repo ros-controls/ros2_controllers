@@ -23,6 +23,8 @@
 #include <cmath>
 #include <limits>
 #include <stdexcept>
+
+#include <controller_interface/controller_interface_base.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 #include "control_msgs/msg/axis_trajectory.hpp"
@@ -187,7 +189,7 @@ controller_interface::return_type MultiTimeTrajectoryController::update(
   {
     sort_to_local_axis_order(*new_external_msg);
     // TODO(denis): Add here integration of position and velocity
-    traj_external_point_ptr_->update(*new_external_msg, joint_limits_, period);
+    traj_external_point_ptr_->update(*new_external_msg, joint_limits_, period, time);
   }
 
   // current state update - bail if can't read hardware state
@@ -1212,24 +1214,20 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_activate(
   // running already)
   std::vector<control_msgs::msg::AxisTrajectoryPoint> state;
   state.resize(dof_);
-  if (!read_state_from_hardware(state)) return CallbackReturn::ERROR;
-  state_current_ = state;
-  state_desired_ = state;
-  last_commanded_state_ = state;
 
   // Handle restart of controller by reading from commands if
   // those are not nan
-  if (read_state_from_command_interfaces(state))
-  {
-    state_current_ = state;
-    last_commanded_state_ = state;
-  }
-  else
+  if (!read_state_from_command_interfaces(state))
   {
     // Initialize current state storage from hardware
-    read_state_from_hardware(state_current_);
-    read_state_from_hardware(last_commanded_state_);
+    if (!read_state_from_hardware(state))
+    {
+      return CallbackReturn::ERROR;
+    };
   }
+  state_current_ = state;
+  state_desired_ = state;
+  last_commanded_state_ = state;
   last_commanded_time_ = rclcpp::Time();
 
   // The controller should start by holding position at the beginning of active state
@@ -1535,6 +1533,20 @@ void MultiTimeTrajectoryController::compute_error(
   }
 }
 
+bool isEmpty(std::vector<control_msgs::msg::AxisTrajectoryPoint> traj)
+{
+  bool position_empty = std::any_of(
+    traj.begin(), traj.end(),
+    [](control_msgs::msg::AxisTrajectoryPoint point) { return std::isnan(point.position); });
+  bool velocity_empty = std::any_of(
+    traj.begin(), traj.end(),
+    [](control_msgs::msg::AxisTrajectoryPoint point) { return std::isnan(point.velocity); });
+  bool acceleration_empty = std::any_of(
+    traj.begin(), traj.end(),
+    [](control_msgs::msg::AxisTrajectoryPoint point) { return std::isnan(point.acceleration); });
+  return position_empty && velocity_empty && acceleration_empty;
+}
+
 void MultiTimeTrajectoryController::sort_to_local_axis_order(
   std::shared_ptr<control_msgs::msg::MultiAxisTrajectory> trajectory_msg) const
 {
@@ -1547,7 +1559,10 @@ void MultiTimeTrajectoryController::sort_to_local_axis_order(
   std::size_t message_index = 0;
   for (auto const internal_index : mapping_vector)
   {
-    to_return[internal_index] = trajectory_msg->axis_trajectories[message_index];
+    if (!isEmpty(trajectory_msg->axis_trajectories[message_index].axis_points))
+    {
+      to_return[internal_index] = trajectory_msg->axis_trajectories[message_index];
+    }
     ++message_index;
   }
   trajectory_msg->axis_trajectories = to_return;

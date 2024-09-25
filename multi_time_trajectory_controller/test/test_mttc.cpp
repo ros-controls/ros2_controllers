@@ -2031,6 +2031,8 @@ TEST_F(TrajectoryControllerTest, open_closed_enable_disable)
     executor.spin_some();
   }
 
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
   // set all initial states to 6-vector of zeros
   std::vector<double> zeros(6, 0);
   ActivateTrajectoryController(true, zeros, zeros, zeros, zeros);
@@ -2172,6 +2174,38 @@ TEST_F(TrajectoryControllerTest, open_closed_enable_disable)
   request->velocities = {0, 0};
   request->accelerations = {0, 0};
   send_reset_request(request, executor);
+
+  // now axis_multiplexer sends all nans for x and y
+  positions = {freq_Hz, final_pos};
+  velocities = {freq_Hz, zeros};
+
+  for (std::size_t i = 0; i < freq_Hz; ++i)
+  {
+    positions[i][0] = std::numeric_limits<double>::quiet_NaN();
+    positions[i][1] = std::numeric_limits<double>::quiet_NaN();
+    velocities[i][0] = std::numeric_limits<double>::quiet_NaN();
+    velocities[i][1] = std::numeric_limits<double>::quiet_NaN();
+  }
+  publish(dur, positions, rclcpp::Time(0, 0, RCL_STEADY_TIME), {}, velocities, true);
+
+  // expect that we haven't moved from final_pos and that we still aren't moving
+  expected_actual.resize(num_axes, multi_time_trajectory_controller::emptyTrajectoryPoint());
+  for (std::size_t i = 0; i < num_axes; ++i)
+  {
+    expected_actual[i].position = final_pos[i];
+    expected_actual[i].velocity = 0;
+  }
+  expected_desired = expected_actual;
+
+  traj_controller_->wait_for_trajectory(executor);
+
+  waitAndCompareState(
+    expected_actual, expected_desired, executor, chrono_duration * (3 * freq_Hz / 2), 0.1,
+    rclcpp::Time(0, 0, RCL_STEADY_TIME), true);
+  positions.clear();
+  velocities.clear();
+  expected_actual.clear();
+  expected_desired.clear();
 
   // [axis-mult] When service request is completed, sends a 'reference_reliable' command to CTG/MAC
   // with current x-y state estimate with 'time from start' set to 10ms (essentially a command to

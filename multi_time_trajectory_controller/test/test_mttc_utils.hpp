@@ -61,6 +61,7 @@ namespace test_mttc
 class TestableMultiTimeTrajectoryController
 : public multi_time_trajectory_controller::MultiTimeTrajectoryController
 {
+private:
 public:
   using multi_time_trajectory_controller::MultiTimeTrajectoryController::
     MultiTimeTrajectoryController;
@@ -215,6 +216,13 @@ public:
       node_->create_publisher<control_msgs::msg::MultiAxisTrajectory>(
         controller_name_ + "/reference_reliable", rclcpp::QoS(1).reliable());
     create_reset_dofs_service_client();
+  }
+
+  virtual void TearDown()
+  {
+    shutdown_ = true;
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    traj_gen_sync_thread_.join();
   }
 
   void SetUpTrajectoryController(
@@ -396,9 +404,9 @@ public:
       cmd_interfaces.back().set_value(initial_eff_axes[i]);
       if (separate_cmd_and_state_values)
       {
-        axis_state_pos_[i] = initial_pos_axes[i];
-        axis_state_vel_[i] = initial_vel_axes[i];
-        axis_state_acc_[i] = initial_acc_axes[i];
+        axis_state_pos_[i] = INITIAL_POS_AXES[i];
+        axis_state_vel_[i] = INITIAL_VEL_AXES[i];
+        axis_state_acc_[i] = INITIAL_ACC_AXES[i];
       }
       state_interfaces.emplace_back(pos_state_interfaces_.back());
       state_interfaces.emplace_back(vel_state_interfaces_.back());
@@ -852,8 +860,12 @@ public:
   bool send_reset_request(
     std::shared_ptr<control_msgs::srv::ResetDofs::Request> request, rclcpp::Executor & executor)
   {
+    if (!traj_gen_available_)
+    {
+      throw std::runtime_error("Reset dofs service not yet available.");
+    }
     auto result = traj_gen_reset_dofs_client_->async_send_request(request);
-    auto retval = executor.spin_until_future_complete(result, std::chrono::milliseconds(100));
+    auto retval = executor.spin_until_future_complete(result, std::chrono::seconds(1));
 
     return retval == rclcpp::FutureReturnCode::SUCCESS;
   }
@@ -869,7 +881,7 @@ public:
         const std::string service_name = controller_name_ + "/reset_dofs";
         traj_gen_reset_dofs_client_ =
           node_->create_client<control_msgs::srv::ResetDofs>(service_name);
-        while (!traj_gen_reset_dofs_client_->wait_for_service(1s))
+        while (!traj_gen_reset_dofs_client_->wait_for_service(std::chrono::milliseconds(10)))
         {
           if (shutdown_) break;
         }
