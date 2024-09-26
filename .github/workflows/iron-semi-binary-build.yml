@@ -12,6 +12,7 @@ on:
       - '**.hpp'
       - '**.h'
       - '**.cpp'
+      - '**.py'
       - '**.yaml'
       - '.github/workflows/iron-semi-binary-build.yml'
       - '**/package.xml'
