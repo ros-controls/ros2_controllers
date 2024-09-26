@@ -133,8 +133,8 @@ TEST_F(SteeringControllersLibraryTest, test_both_update_methods_for_ref_timeout)
   {
     EXPECT_TRUE(std::isnan(interface));
   }
-  EXPECT_TRUE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.linear.x));
-  EXPECT_TRUE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z));
+  ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
+  ASSERT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z, TEST_ANGULAR_VELOCITY_Z);
 
   EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[0]));
   for (const auto & interface : controller_->reference_interfaces_)
@@ -142,10 +142,13 @@ TEST_F(SteeringControllersLibraryTest, test_both_update_methods_for_ref_timeout)
     EXPECT_TRUE(std::isnan(interface));
   }
 
-  for (size_t i = 0; i < controller_->command_interfaces_.size(); ++i)
-  {
-    EXPECT_EQ(controller_->command_interfaces_[i].get_value(), 0);
-  }
+  // Wheel velocities should reset to 0
+  EXPECT_EQ(controller_->command_interfaces_[0].get_value(), 0);
+  EXPECT_EQ(controller_->command_interfaces_[1].get_value(), 0);
+
+  // Steer angles should not reset
+  EXPECT_NEAR(controller_->command_interfaces_[2].get_value(), 0.575875, 1e-6);
+  EXPECT_NEAR(controller_->command_interfaces_[3].get_value(), 0.575875, 1e-6);
 
   // case 2 position_feedback = true
   controller_->params_.position_feedback = true;
@@ -174,8 +177,8 @@ TEST_F(SteeringControllersLibraryTest, test_both_update_methods_for_ref_timeout)
   {
     EXPECT_TRUE(std::isnan(interface));
   }
-  EXPECT_TRUE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.linear.x));
-  EXPECT_TRUE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z));
+  ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
+  ASSERT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z, TEST_ANGULAR_VELOCITY_Z);
 
   EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[0]));
   for (const auto & interface : controller_->reference_interfaces_)
@@ -183,10 +186,13 @@ TEST_F(SteeringControllersLibraryTest, test_both_update_methods_for_ref_timeout)
     EXPECT_TRUE(std::isnan(interface));
   }
 
-  for (size_t i = 0; i < controller_->command_interfaces_.size(); ++i)
-  {
-    EXPECT_EQ(controller_->command_interfaces_[i].get_value(), 0);
-  }
+  // Wheel velocities should reset to 0
+  EXPECT_EQ(controller_->command_interfaces_[0].get_value(), 0);
+  EXPECT_EQ(controller_->command_interfaces_[1].get_value(), 0);
+
+  // Steer angles should not reset
+  EXPECT_NEAR(controller_->command_interfaces_[2].get_value(), 0.575875, 1e-6);
+  EXPECT_NEAR(controller_->command_interfaces_[3].get_value(), 0.575875, 1e-6);
 }
 
 int main(int argc, char ** argv)
