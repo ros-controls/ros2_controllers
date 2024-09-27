@@ -849,8 +849,8 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
   }
 
   // Initialize joint limits
-  // TODO(henrygerardmoore): add this back
-  // if (!params_.joint_limiter_type.empty())
+  // TODO(bijoua29): add this back and change to vector of joint limiters if that's what we're going
+  // to do if (!params_.joint_limiter_type.empty())
   // {
   //   RCLCPP_INFO(
   //     get_node()->get_logger(), "Using joint limiter plugin: '%s'",

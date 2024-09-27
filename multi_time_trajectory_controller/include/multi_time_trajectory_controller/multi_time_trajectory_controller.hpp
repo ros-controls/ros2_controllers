@@ -160,6 +160,7 @@ protected:
 
   using JointLimiter = joint_limits::JointLimiterInterface<joint_limits::JointLimits>;
   std::shared_ptr<pluginlib::ClassLoader<JointLimiter>> joint_limiter_loader_;
+  // TODO(bijoua29): change below to std::vector of the same
   std::unique_ptr<JointLimiter> joint_limiter_;
 
   // Timeout to consider commands old

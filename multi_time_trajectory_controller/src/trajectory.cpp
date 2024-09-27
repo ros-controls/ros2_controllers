@@ -344,6 +344,12 @@ std::vector<bool> Trajectory::sample(
       start_segment_itr[axis_index] = begin(axis_index);  // no segments before the first
       end_segment_itr[axis_index] = begin(axis_index);
 
+      if (joint_limiter)
+      {
+        // TODO(bijoua29): implement joint limiter
+        // joint_limiters[axis_index]->enforce(previous_state_, output_state, period);
+      }
+
       previous_state_ = output_state;
       is_valid[axis_index] = true;
       continue;
@@ -393,7 +399,8 @@ std::vector<bool> Trajectory::sample(
 
         if (joint_limiter)
         {
-          // TODO(henrygerardmoore): what should we do with this?
+          // TODO(bijoua29): implement joint limiter
+          // joint_limiters[axis_index]->enforce(previous_state_, output_state, period);
         }
         previous_state_ = output_state;
         is_valid[axis_index] = true;
@@ -462,7 +469,8 @@ std::vector<bool> Trajectory::sample(
 
     if (joint_limiter)
     {
-      // TODO(henrygerardmoore): how do we implement joint limits?
+      // TODO(bijoua29): implement joint limiter
+      // joint_limiters[axis_index]->enforce(previous_state_, output_state, period);
     }
   }
   previous_state_ = output_state;
