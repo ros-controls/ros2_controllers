@@ -35,7 +35,6 @@
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"
-
 namespace steering_controllers_library
 {
 class SteeringControllersLibrary : public controller_interface::ChainableControllerInterface
@@ -129,8 +128,8 @@ protected:
   double last_linear_velocity_ = 0.0;
   double last_angular_velocity_ = 0.0;
 
-  std::vector<std::string> rear_wheels_state_names_;
-  std::vector<std::string> front_wheels_state_names_;
+  std::vector<std::string> traction_joints_state_names_;
+  std::vector<std::string> steering_joints_state_names_;
 
 private:
   // callback for topic interface
