@@ -133,7 +133,7 @@ TEST_F(SteeringControllersLibraryTest, test_both_update_methods_for_ref_timeout)
   {
     EXPECT_TRUE(std::isnan(interface));
   }
-  ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
+  ASSERT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
   ASSERT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z, TEST_ANGULAR_VELOCITY_Z);
 
   EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[0]));
