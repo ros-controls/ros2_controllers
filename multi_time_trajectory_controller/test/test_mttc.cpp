@@ -2086,7 +2086,7 @@ TEST_F(TrajectoryControllerTest, open_closed_enable_disable)
   // 0.5 seconds of constant accel
   for (std::size_t i = 0; i < freq_Hz / 2; ++i)
   {
-    double target_vel_current = static_cast<double>(i);
+    double target_vel_current = static_cast<double>(i+1);
     // each axis's target velocity is proportional to time, which should give a constant accel
     // set angular velocity target to 0 to avoid having to deal with rotating frame in this test
     velocities.push_back(
