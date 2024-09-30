@@ -345,13 +345,6 @@ std::vector<bool> Trajectory::sample(
     const rclcpp::Time first_point_timestamp =
       trajectory_start_time_ + first_point_in_msg.time_from_start;
 
-    auto const tst_ct = trajectory_start_time_.get_clock_type();
-    auto const fpt_ct = first_point_timestamp.get_clock_type();
-    auto const st_ct = sample_time.get_clock_type();
-    (void)tst_ct;
-    (void)fpt_ct;
-    (void)st_ct;
-
     // current time hasn't reached traj time of the first point in the msg yet
     if (sample_time < first_point_timestamp)
     {
@@ -381,13 +374,17 @@ std::vector<bool> Trajectory::sample(
 
       if (joint_limiter)
       {
-        trajectory_msgs::msg::JointTrajectoryPoint prev_state_joint_traj_pt, output_state_joint_traj_pt;
-        convert_to_joint_trajectory_point_for_joint_limiting(previous_state_, prev_state_joint_traj_pt);
-        convert_to_joint_trajectory_point_for_joint_limiting(output_state, output_state_joint_traj_pt);
+        trajectory_msgs::msg::JointTrajectoryPoint prev_state_joint_traj_pt,
+          output_state_joint_traj_pt;
+        convert_to_joint_trajectory_point_for_joint_limiting(
+          previous_state_, prev_state_joint_traj_pt);
+        convert_to_joint_trajectory_point_for_joint_limiting(
+          output_state, output_state_joint_traj_pt);
 
         joint_limiter->enforce(prev_state_joint_traj_pt, output_state_joint_traj_pt, period);
 
-        convert_to_axis_trajectory_points_for_joint_limiting(output_state_joint_traj_pt, output_state);
+        convert_to_axis_trajectory_points_for_joint_limiting(
+          output_state_joint_traj_pt, output_state);
       }
 
       previous_state_ = output_state;
@@ -439,13 +436,17 @@ std::vector<bool> Trajectory::sample(
 
         if (joint_limiter)
         {
-          trajectory_msgs::msg::JointTrajectoryPoint prev_state_joint_traj_pt, output_state_joint_traj_pt;
-          convert_to_joint_trajectory_point_for_joint_limiting(previous_state_, prev_state_joint_traj_pt);
-          convert_to_joint_trajectory_point_for_joint_limiting(output_state, output_state_joint_traj_pt);
+          trajectory_msgs::msg::JointTrajectoryPoint prev_state_joint_traj_pt,
+            output_state_joint_traj_pt;
+          convert_to_joint_trajectory_point_for_joint_limiting(
+            previous_state_, prev_state_joint_traj_pt);
+          convert_to_joint_trajectory_point_for_joint_limiting(
+            output_state, output_state_joint_traj_pt);
 
           joint_limiter->enforce(prev_state_joint_traj_pt, output_state_joint_traj_pt, period);
 
-          convert_to_axis_trajectory_points_for_joint_limiting(output_state_joint_traj_pt, output_state);
+          convert_to_axis_trajectory_points_for_joint_limiting(
+            output_state_joint_traj_pt, output_state);
         }
         previous_state_ = output_state;
         is_valid[axis_index] = true;
@@ -514,13 +515,17 @@ std::vector<bool> Trajectory::sample(
 
     if (joint_limiter)
     {
-      trajectory_msgs::msg::JointTrajectoryPoint prev_state_joint_traj_pt, output_state_joint_traj_pt;
-      convert_to_joint_trajectory_point_for_joint_limiting(previous_state_, prev_state_joint_traj_pt);
-      convert_to_joint_trajectory_point_for_joint_limiting(output_state, output_state_joint_traj_pt);
+      trajectory_msgs::msg::JointTrajectoryPoint prev_state_joint_traj_pt,
+        output_state_joint_traj_pt;
+      convert_to_joint_trajectory_point_for_joint_limiting(
+        previous_state_, prev_state_joint_traj_pt);
+      convert_to_joint_trajectory_point_for_joint_limiting(
+        output_state, output_state_joint_traj_pt);
 
       joint_limiter->enforce(prev_state_joint_traj_pt, output_state_joint_traj_pt, period);
 
-      convert_to_axis_trajectory_points_for_joint_limiting(output_state_joint_traj_pt, output_state);
+      convert_to_axis_trajectory_points_for_joint_limiting(
+        output_state_joint_traj_pt, output_state);
     }
   }
   previous_state_ = output_state;
