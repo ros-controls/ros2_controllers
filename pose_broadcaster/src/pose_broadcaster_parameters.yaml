@@ -9,7 +9,7 @@ pose_broadcaster:
     type: string
     default_value: ""
     description: "Name of the published pose used as prefix for interfaces if there are no individual interface names defined.
-      If used, standard interface names will be used: ``<pose_name>/position.x, ..., <pose_name>/orientation.y``"
+      If used, standard interface names will be used: ``<pose_name>/position.x, ..., <pose_name>/orientation.w``"
   interface_names:
     position:
       x:
@@ -25,15 +25,19 @@ pose_broadcaster:
         default_value: ""
         description: "Name of the state interface with position values along the 'z' axis"
     orientation:
-      r:
+      x:
         type: string
         default_value: ""
-        description: "Name of the state interface with roll values around 'x' axis"
-      p:
-        type: string
-        default_value: ""
-        description: "Name of the state interface with pitch values around 'y' axis"
+        description: "Name of the state interface with the quaternion orientation x component"
       y:
         type: string
         default_value: ""
-        description: "Name of the state interface with yaw values around 'z' axis"
+        description: "Name of the state interface with the quaternion orientation y component"
+      z:
+        type: string
+        default_value: ""
+        description: "Name of the state interface with the quaternion orientation z component"
+      w:
+        type: string
+        default_value: ""
+        description: "Name of the state interface with the quaternion orientation w component"

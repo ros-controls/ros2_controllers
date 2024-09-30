@@ -54,12 +54,10 @@ public:
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
 private:
-  void setRPY(double r, double p, double y, geometry_msgs::msg::Quaternion & q) const;
-
   std::shared_ptr<ParamListener> param_listener_;
   Params params_;
 
-  std::array<std::string, 6> interface_names_;
+  std::array<std::string, 7> interface_names_;
 
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pose_publisher_;
   std::unique_ptr<realtime_tools::RealtimePublisher<geometry_msgs::msg::PoseStamped>>
