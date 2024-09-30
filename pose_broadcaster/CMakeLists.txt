@@ -56,8 +56,21 @@ pluginlib_export_plugin_description_file(
 )
 
 if(BUILD_TESTING)
-  #  find_package(ament_lint_auto REQUIRED)
-  #  ament_lint_auto_find_test_dependencies()
+  find_package(ament_cmake_gmock REQUIRED)
+  find_package(controller_manager REQUIRED)
+  find_package(ros2_control_test_assets REQUIRED)
+
+  add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
+  ament_add_gmock(test_load_pose_broadcaster
+    test/test_load_pose_broadcaster.cpp
+  )
+  target_link_libraries(test_load_pose_broadcaster
+    pose_broadcaster
+  )
+  ament_target_dependencies(test_load_pose_broadcaster
+    controller_manager
+    ros2_control_test_assets
+  )
 endif()
 
 install(

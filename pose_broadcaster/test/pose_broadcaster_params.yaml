@@ -1,0 +1,3 @@
+test_pose_broadcaster:
+  ros__parameters:
+    frame_id: "pose_frame"
