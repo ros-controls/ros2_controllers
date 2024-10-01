@@ -63,6 +63,13 @@ steering_controllers_library:
     read_only: false,
   }
 
+  twist_input: {
+    type: bool,
+    default_value: true,
+    description: "Choose whether a Twist/TwistStamped or a AckermannDriveStamped message is used as input.",
+    read_only: false,
+  }
+
   velocity_rolling_window_size: {
     type: int,
     default_value: 10,
@@ -110,6 +117,13 @@ steering_controllers_library:
     default_value: false,
     description: "Choice of feedback type, if position_feedback is false then ``HW_IF_VELOCITY`` is taken as interface type, if
     position_feedback is true then ``HW_IF_POSITION`` is taken as interface type",
+    read_only: false,
+  }
+
+  use_front_wheel_feedback: {
+    type: bool,
+    default_value: false,
+    description: "Choice which wheels to use for feedback, if front_wheel_feedback is false then rear wheels are used for feedback",
     read_only: false,
   }
 
