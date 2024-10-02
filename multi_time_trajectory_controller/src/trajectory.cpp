@@ -17,6 +17,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <memory>
@@ -42,16 +43,27 @@ constexpr double DEFAULT_MAX_ACCELERATION = 5.0;  // rad/s^2
 constexpr double DEFAULT_MAX_JERK = 200.0;        // rad/s^3
 
 // convert JointTrajectoryPoint to vector of AxisTrajectoryPoint
-void convert_to_axis_trajectory_points_for_joint_limiting(
+bool convert_to_axis_trajectory_points_for_joint_limiting(
   const trajectory_msgs::msg::JointTrajectoryPoint & joint_trajectory_point,
   std::vector<control_msgs::msg::AxisTrajectoryPoint> & axis_trajectory_points)
 {
-  for (size_t i = 0; i < joint_trajectory_point.positions.size(); ++i)
+  if ((axis_trajectory_points.size() != joint_trajectory_point.positions.size()) ||
+      (axis_trajectory_points.size() != joint_trajectory_point.velocities.size()))
+  {
+    return false;
+  }
+
+  for (size_t i = 0; i < axis_trajectory_points.size(); ++i)
   {
     axis_trajectory_points[i].position = joint_trajectory_point.positions[i];
     axis_trajectory_points[i].velocity = joint_trajectory_point.velocities[i];
-    axis_trajectory_points[i].acceleration = joint_trajectory_point.accelerations[i];
+    if (joint_trajectory_point.accelerations.size() > i)
+    {
+      axis_trajectory_points[i].acceleration = joint_trajectory_point.accelerations[i];
+    }
   }
+
+  return true;
 }
 
 // convert vector of AxisTrajectoryPoint to JointTrajectoryPoint
@@ -65,15 +77,22 @@ void convert_to_joint_trajectory_point_for_joint_limiting(
 
   for (size_t i = 0; i < axis_trajectory_points.size(); ++i)
   {
-    joint_trajectory_point.positions.push_back(axis_trajectory_points[i].position);
-    joint_trajectory_point.velocities.push_back(axis_trajectory_points[i].velocity);
-    if (axis_trajectory_points.size() > i)
+    if (!std::isnan(axis_trajectory_points[i].position))
+    {
+      joint_trajectory_point.positions.push_back(axis_trajectory_points[i].position);
+    }
+
+    if (!std::isnan(axis_trajectory_points[i].velocity))
+    {
+      joint_trajectory_point.velocities.push_back(axis_trajectory_points[i].velocity);
+    }
+
+    if (!std::isnan(axis_trajectory_points[i].acceleration))
     {
       joint_trajectory_point.accelerations.push_back(axis_trajectory_points[i].acceleration);
     }
   }
 }
-
 }  // namespace
 
 Trajectory::Trajectory()
@@ -338,6 +357,7 @@ std::vector<bool> Trajectory::sample(
     ruckig_input_state.resize(num_axes);
   }
 
+  bool enforce_joint_limits = false;
   for (std::size_t axis_index = 0; axis_index < num_axes; ++axis_index)
   {
     auto & trajectory = trajectory_msg_->axis_trajectories[axis_index];
@@ -372,22 +392,7 @@ std::vector<bool> Trajectory::sample(
       start_segment_itr[axis_index] = begin(axis_index);  // no segments before the first
       end_segment_itr[axis_index] = begin(axis_index);
 
-      if (joint_limiter)
-      {
-        trajectory_msgs::msg::JointTrajectoryPoint prev_state_joint_traj_pt,
-          output_state_joint_traj_pt;
-        convert_to_joint_trajectory_point_for_joint_limiting(
-          previous_state_, prev_state_joint_traj_pt);
-        convert_to_joint_trajectory_point_for_joint_limiting(
-          output_state, output_state_joint_traj_pt);
-
-        joint_limiter->enforce(prev_state_joint_traj_pt, output_state_joint_traj_pt, period);
-
-        convert_to_axis_trajectory_points_for_joint_limiting(
-          output_state_joint_traj_pt, output_state);
-      }
-
-      previous_state_ = output_state;
+      enforce_joint_limits = true;
       is_valid[axis_index] = true;
       continue;
     }
@@ -434,21 +439,7 @@ std::vector<bool> Trajectory::sample(
         start_segment_itr[axis_index] = begin(axis_index) + static_cast<int64_t>(i);
         end_segment_itr[axis_index] = begin(axis_index) + static_cast<int64_t>(i + 1);
 
-        if (joint_limiter)
-        {
-          trajectory_msgs::msg::JointTrajectoryPoint prev_state_joint_traj_pt,
-            output_state_joint_traj_pt;
-          convert_to_joint_trajectory_point_for_joint_limiting(
-            previous_state_, prev_state_joint_traj_pt);
-          convert_to_joint_trajectory_point_for_joint_limiting(
-            output_state, output_state_joint_traj_pt);
-
-          joint_limiter->enforce(prev_state_joint_traj_pt, output_state_joint_traj_pt, period);
-
-          convert_to_axis_trajectory_points_for_joint_limiting(
-            output_state_joint_traj_pt, output_state);
-        }
-        previous_state_ = output_state;
+        enforce_joint_limits = true;
         is_valid[axis_index] = true;
         should_continue = true;
         break;
@@ -513,21 +504,21 @@ std::vector<bool> Trajectory::sample(
       continue;
     }
 
-    if (joint_limiter)
-    {
-      trajectory_msgs::msg::JointTrajectoryPoint prev_state_joint_traj_pt,
-        output_state_joint_traj_pt;
-      convert_to_joint_trajectory_point_for_joint_limiting(
-        previous_state_, prev_state_joint_traj_pt);
-      convert_to_joint_trajectory_point_for_joint_limiting(
-        output_state, output_state_joint_traj_pt);
-
-      joint_limiter->enforce(prev_state_joint_traj_pt, output_state_joint_traj_pt, period);
-
-      convert_to_axis_trajectory_points_for_joint_limiting(
-        output_state_joint_traj_pt, output_state);
-    }
+    enforce_joint_limits = true;
   }
+
+  if (enforce_joint_limits && joint_limiter)
+  {
+    trajectory_msgs::msg::JointTrajectoryPoint prev_state_joint_traj_pt,
+      output_state_joint_traj_pt;
+    convert_to_joint_trajectory_point_for_joint_limiting(previous_state_, prev_state_joint_traj_pt);
+    convert_to_joint_trajectory_point_for_joint_limiting(output_state, output_state_joint_traj_pt);
+
+    joint_limiter->enforce(prev_state_joint_traj_pt, output_state_joint_traj_pt, period);
+
+    convert_to_axis_trajectory_points_for_joint_limiting(output_state_joint_traj_pt, output_state);
+  }
+
   previous_state_ = output_state;
   return is_valid;
 }
