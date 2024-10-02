@@ -2279,3 +2279,304 @@ TEST_F(TrajectoryControllerTest, open_closed_enable_disable)
   // axes e.g. heading, it works fine. I have to confirm again but Z doesn't work anymore though
   // either on MAC.
 }
+
+TEST_F(TrajectoryControllerTest, test_joint_limiter_active_but_no_joint_limiting)
+{
+  axis_names_ = {"x", "y", "z", "roll", "pitch", "yaw"};
+  command_axis_names_ = {"command_x",    "command_y",     "command_z",
+                         "command_roll", "command_pitch", "command_yaw"};
+  command_interface_types_ = {"position", "velocity"};
+  state_interface_types_ = {};
+  axis_pos_.resize(axis_names_.size(), 0.0);
+  axis_state_pos_.resize(axis_names_.size(), 0.0);
+  axis_vel_.resize(axis_names_.size(), 0.0);
+  axis_state_vel_.resize(axis_names_.size(), 0.0);
+  axis_acc_.resize(axis_names_.size(), 0.0);
+  axis_state_acc_.resize(axis_names_.size(), 0.0);
+  axis_eff_.resize(axis_names_.size(), 0.0);
+  std::size_t const num_axes = 6;
+
+  // set up controller into open loop mode
+  rclcpp::executors::SingleThreadedExecutor executor;
+
+  std::vector<rclcpp::Parameter> params = {
+    {"open_loop_control", true},
+    {"use_feedback", true},
+    {"allow_integration_in_goal_trajectories", true},
+    {"hold_last_velocity", true},
+    {"joint_limiter_type", "joint_limits/JointSaturationLimiter"},
+    // joint limits for x
+    {"joint_limits.x.has_position_limits", false},
+    {"joint_limits.x.has_velocity_limits", true},
+    {"joint_limits.x.max_velocity", 1.0},
+    {"joint_limits.x.has_acceleration_limits", true},
+    {"joint_limits.x.max_acceleration", 1.0},
+    {"joint_limits.x.has_deceleration_limits", true},
+    {"joint_limits.x.max_deceleration", 1.0},
+    // joint limits for y
+    {"joint_limits.y.has_position_limits", false},
+    {"joint_limits.y.has_velocity_limits", true},
+    {"joint_limits.y.max_velocity", 2.0},
+    {"joint_limits.y.has_acceleration_limits", true},
+    {"joint_limits.y.max_acceleration", 2.0},
+    {"joint_limits.y.has_deceleration_limits", true},
+    {"joint_limits.y.max_deceleration", 1.0},
+    };
+  std::vector<double> vel_limits = {1.0, 2.0, 1.0, 1.0, 1.0, 1.0}; // these should match limits above
+  std::vector<double> acc_limits = {1.0, 2.0, 1.0, 1.0, 1.0, 1.0}; // these should match limits above
+
+  SetUpTrajectoryController(executor, params);
+  traj_controller_->get_node()->configure();
+  for (std::size_t i = 0; i < 2; ++i)
+  {
+    publish_feedback({0, 0, 0}, {1, 0, 0, 0}, {0, 0, 0}, {0, 0, 0});
+    executor.spin_some();
+  }
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+  // set all initial states to 6-vector of zeros
+  std::vector<double> zeros(6, 0);
+  ActivateTrajectoryController(true, zeros, zeros, zeros, zeros);
+
+  // [axis-mult] At 20 Hz, sends a 'reference' command with all zeros and time from start of 50ms
+  // (i.e. positions are NaN, velocities are zero and accelerations are NaN)
+
+  constexpr std::size_t freq_Hz = 20;
+  std::size_t const ns_dur = 1000000000 / freq_Hz;
+  auto const chrono_duration = std::chrono::nanoseconds(ns_dur);
+  rclcpp::Duration const dur(0, ns_dur);
+  double nan = std::numeric_limits<double>::quiet_NaN();
+  std::vector<double> point_nan(num_axes, nan);
+  std::vector<double> point_zero(num_axes, 0);
+
+  // start with zero vels and nan positions for 1 second
+  std::vector<std::vector<double>> positions(freq_Hz, point_nan);
+  std::vector<std::vector<double>> velocities(freq_Hz, point_zero);
+
+  std::vector<control_msgs::msg::AxisTrajectoryPoint> expected_actual;
+  expected_actual.resize(num_axes, multi_time_trajectory_controller::emptyTrajectoryPoint());
+
+  std::vector<control_msgs::msg::AxisTrajectoryPoint> expected_desired;
+  expected_desired.resize(num_axes, multi_time_trajectory_controller::emptyTrajectoryPoint());
+
+  for (std::size_t i = 0; i < num_axes; ++i)
+  {
+    expected_actual[i].position = 0;
+    expected_actual[i].velocity = 0;
+  }
+
+  expected_desired = expected_actual;
+
+  publish(dur, positions, rclcpp::Time(0, 0, RCL_STEADY_TIME), {}, velocities);
+  traj_controller_->wait_for_trajectory(executor);
+
+  // now test that we haven't moved
+  waitAndCompareState(
+    expected_actual, expected_desired, executor, chrono_duration * freq_Hz, 0.1,
+    rclcpp::Time(0, 0, RCL_STEADY_TIME), true);
+  positions.clear();
+  velocities.clear();
+  expected_actual.clear();
+  expected_desired.clear();
+
+
+  // send 'reference' command with velocities that don't exceed limits and verify output is not limited
+
+  positions = {freq_Hz, point_nan};
+
+  // 0.5 seconds of constant accel
+  for (std::size_t i = 0; i < freq_Hz / 2; ++i)
+  {
+    double target_vel_current = static_cast<double>(i+1);
+    // each axis's target velocity is proportional to time, which should give a constant accel
+    // set angular velocity target to 0 to avoid having to deal with rotating frame in this test
+    // Here we set the final velocity to be 0.1 for x and 0.2 for y (which is less than the limits)
+    velocities.push_back(
+      {0.1 * 2 * target_vel_current/freq_Hz, 0.2 * 2 * target_vel_current/freq_Hz, 0, 0, 0, 0});
+  }
+
+  // then 0.5 seconds of constant vel
+  auto final_vel = velocities.back();
+  for (std::size_t i = 0; i < freq_Hz / 2; ++i)
+  {
+    velocities.push_back(final_vel);
+  }
+
+  expected_actual.resize(num_axes, multi_time_trajectory_controller::emptyTrajectoryPoint());
+
+  for (std::size_t i = 0; i < num_axes; ++i)
+  {
+    // the final position should be the integral of the velocity profile we gave
+    // for constant accel portion, that is 0.5 * (0.5 seconds) * final_vel
+    // for constant vel portion, that is just 0.5 seconds * final_vel
+    expected_actual[i].position = 0.5 * 0.5 * final_vel[i] + 0.5 * final_vel[i];
+    expected_actual[i].velocity = final_vel[i];
+  }
+
+  expected_desired = expected_actual;
+
+  publish(dur, positions, rclcpp::Time(0, 0, RCL_STEADY_TIME), {}, velocities);
+  traj_controller_->wait_for_trajectory(executor);
+
+  waitAndCompareState(
+    expected_actual, expected_desired, executor, chrono_duration * freq_Hz, 0.1,
+    rclcpp::Time(0, 0, RCL_STEADY_TIME), true);
+  positions.clear();
+  velocities.clear();
+  expected_actual.clear();
+  expected_desired.clear();
+}
+
+TEST_F(TrajectoryControllerTest, test_joint_limiter_active_and_joint_limiting)
+{
+  axis_names_ = {"x", "y", "z", "roll", "pitch", "yaw"};
+  command_axis_names_ = {"command_x",    "command_y",     "command_z",
+                         "command_roll", "command_pitch", "command_yaw"};
+  command_interface_types_ = {"position", "velocity"};
+  state_interface_types_ = {};
+  axis_pos_.resize(axis_names_.size(), 0.0);
+  axis_state_pos_.resize(axis_names_.size(), 0.0);
+  axis_vel_.resize(axis_names_.size(), 0.0);
+  axis_state_vel_.resize(axis_names_.size(), 0.0);
+  axis_acc_.resize(axis_names_.size(), 0.0);
+  axis_state_acc_.resize(axis_names_.size(), 0.0);
+  axis_eff_.resize(axis_names_.size(), 0.0);
+  std::size_t const num_axes = 6;
+
+  // set up controller into open loop mode
+  rclcpp::executors::SingleThreadedExecutor executor;
+
+  std::vector<rclcpp::Parameter> params = {
+    {"open_loop_control", true},
+    {"use_feedback", true},
+    {"allow_integration_in_goal_trajectories", true},
+    {"hold_last_velocity", true},
+    {"joint_limiter_type", "joint_limits/JointSaturationLimiter"},
+    // joint limits for x
+    {"joint_limits.x.has_position_limits", false},
+    {"joint_limits.x.has_velocity_limits", true},
+    {"joint_limits.x.max_velocity", 1.0},
+    {"joint_limits.x.has_acceleration_limits", true},
+    {"joint_limits.x.max_acceleration", 1.0},
+    {"joint_limits.x.has_deceleration_limits", true},
+    {"joint_limits.x.max_deceleration", 1.0},
+    // joint limits for y
+    {"joint_limits.y.has_position_limits", false},
+    {"joint_limits.y.has_velocity_limits", true},
+    {"joint_limits.y.max_velocity", 2.0},
+    {"joint_limits.y.has_acceleration_limits", true},
+    {"joint_limits.y.max_acceleration", 2.0},
+    {"joint_limits.y.has_deceleration_limits", true},
+    {"joint_limits.y.max_deceleration", 1.0},
+    };
+  std::vector<double> vel_limits = {1.0, 2.0, 1.0, 1.0, 1.0, 1.0}; // these should match limits above
+  std::vector<double> acc_limits = {1.0, 2.0, 1.0, 1.0, 1.0, 1.0}; // these should match limits above
+
+  SetUpTrajectoryController(executor, params);
+  traj_controller_->get_node()->configure();
+  for (std::size_t i = 0; i < 2; ++i)
+  {
+    publish_feedback({0, 0, 0}, {1, 0, 0, 0}, {0, 0, 0}, {0, 0, 0});
+    executor.spin_some();
+  }
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+  // set all initial states to 6-vector of zeros
+  std::vector<double> zeros(6, 0);
+  ActivateTrajectoryController(true, zeros, zeros, zeros, zeros);
+
+  // [axis-mult] At 20 Hz, sends a 'reference' command with all zeros and time from start of 50ms
+  // (i.e. positions are NaN, velocities are zero and accelerations are NaN)
+
+  constexpr std::size_t freq_Hz = 20;
+  std::size_t const ns_dur = 1000000000 / freq_Hz;
+  auto const chrono_duration = std::chrono::nanoseconds(ns_dur);
+  rclcpp::Duration const dur(0, ns_dur);
+  double nan = std::numeric_limits<double>::quiet_NaN();
+  std::vector<double> point_nan(num_axes, nan);
+  std::vector<double> point_zero(num_axes, 0);
+
+  // start with zero vels and nan positions for 1 second
+  std::vector<std::vector<double>> positions(freq_Hz, point_nan);
+  std::vector<std::vector<double>> velocities(freq_Hz, point_zero);
+
+  std::vector<control_msgs::msg::AxisTrajectoryPoint> expected_actual;
+  expected_actual.resize(num_axes, multi_time_trajectory_controller::emptyTrajectoryPoint());
+
+  std::vector<control_msgs::msg::AxisTrajectoryPoint> expected_desired;
+  expected_desired.resize(num_axes, multi_time_trajectory_controller::emptyTrajectoryPoint());
+
+  for (std::size_t i = 0; i < num_axes; ++i)
+  {
+    expected_actual[i].position = 0;
+    expected_actual[i].velocity = 0;
+  }
+
+  expected_desired = expected_actual;
+
+  publish(dur, positions, rclcpp::Time(0, 0, RCL_STEADY_TIME), {}, velocities);
+  traj_controller_->wait_for_trajectory(executor);
+
+  // now test that we haven't moved
+  waitAndCompareState(
+    expected_actual, expected_desired, executor, chrono_duration * freq_Hz, 0.1,
+    rclcpp::Time(0, 0, RCL_STEADY_TIME), true);
+  positions.clear();
+  velocities.clear();
+  expected_actual.clear();
+  expected_desired.clear();
+
+  // send 'reference' command with single velocity point that exceed acceleration limits and verify output is limited
+  // send velocity of 1.0 for x and 2.0 for y over 1 second
+
+  std::vector<double> desired_vel = {2.0, 4.0, 0, 0, 0, 0}; // desired velocity for x and y exceed limits
+  double duration_s = 1.0;
+  rclcpp::Duration const dur_joint_limit = rclcpp::Duration::from_seconds(duration_s);
+
+  positions = {1, point_nan};
+  velocities.push_back(desired_vel);
+
+  expected_actual.resize(num_axes, multi_time_trajectory_controller::emptyTrajectoryPoint());
+
+  for (std::size_t i = 0; i < num_axes; ++i)
+  {
+    if ((i == 0) || (i == 1)) 
+    {
+      auto desired_acc = desired_vel[i] / duration_s;
+      
+      // First calculate, final position and velocity for the constant acceleration portion
+      // for only constant acceleration i.e. p = 0.5 * a * t^2 where t = duration_s
+      // the final velocity shoud be for constant acceleration i.e. v1 = a * t where t = duration_s
+      expected_actual[i].position = 0.5 * acc_limits[i] * duration_s * duration_s;
+      expected_actual[i].velocity = acc_limits[i] * duration_s;
+
+      // If the desired acceleration is less than the acceleration limits, then add constant velocity portion
+      if (desired_acc < acc_limits[i])
+      {
+        auto accel_time = desired_vel[i] / acc_limits[i];
+        expected_actual[i].position += desired_vel[i] * (duration_s - accel_time);
+        expected_actual[i].velocity = desired_vel[i];
+      }
+    }
+    else
+    {
+      expected_actual[i].position = 0;
+      expected_actual[i].velocity = 0;
+    }
+  }
+
+  expected_desired = expected_actual;
+
+  publish(dur_joint_limit, positions, rclcpp::Time(0, 0, RCL_STEADY_TIME), {}, velocities);
+  traj_controller_->wait_for_trajectory(executor);
+
+  waitAndCompareState(
+    expected_actual, expected_desired, executor, chrono_duration * freq_Hz, 0.1,
+    rclcpp::Time(0, 0, RCL_STEADY_TIME), true);
+  positions.clear();
+  velocities.clear();
+  expected_actual.clear();
+  expected_desired.clear();
+  }

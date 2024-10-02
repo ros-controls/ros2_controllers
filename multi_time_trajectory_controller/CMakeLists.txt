@@ -67,7 +67,7 @@ if(BUILD_TESTING)
 
   ament_add_gmock(test_mttc
     test/test_mttc.cpp)
-  set_tests_properties(test_mttc PROPERTIES TIMEOUT 220)
+  set_tests_properties(test_mttc PROPERTIES TIMEOUT 260)
   target_link_libraries(test_mttc
     multi_time_trajectory_controller
   )
