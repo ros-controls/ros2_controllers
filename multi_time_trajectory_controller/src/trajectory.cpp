@@ -145,7 +145,8 @@ void Trajectory::set_point_before_trajectory_msg(
       auto iter = trajectory_msg_->axis_trajectories[axis_index].axis_points.begin();
       auto const traj_start_time =
         rclcpp::Time(trajectory_msg_->header.stamp, current_time.get_clock_type());
-      while (iter->time_from_start + traj_start_time < time_before_traj_msg_)
+      auto const end = trajectory_msg_->axis_trajectories[axis_index].axis_points.end();
+      while (iter != end && iter->time_from_start + traj_start_time < time_before_traj_msg_)
       {
         ++iter;
       }
@@ -154,7 +155,7 @@ void Trajectory::set_point_before_trajectory_msg(
         // we don't need to get rid of any points, so skip the copy operation (O(n))
         continue;
       }
-      if (iter == trajectory_msg_->axis_trajectories[axis_index].axis_points.end())
+      if (iter == end)
       {
         trajectory_msg_->axis_trajectories[axis_index].axis_points = {
           state_before_traj_msg_[axis_index]};
