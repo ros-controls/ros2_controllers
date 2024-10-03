@@ -154,12 +154,7 @@ void Trajectory::set_point_before_trajectory_msg(
         // we don't need to get rid of any points, so skip the copy operation (O(n))
         continue;
       }
-      std::vector<control_msgs::msg::AxisTrajectoryPoint> axis_traj{
-        iter, trajectory_msg_->axis_trajectories[axis_index].axis_points.end()};
-      trajectory_msg_->axis_trajectories[axis_index].axis_points = axis_traj;
-
-      // if all the points were before
-      if (trajectory_msg_->axis_trajectories[axis_index].axis_points.empty())
+      if (iter == trajectory_msg_->axis_trajectories[axis_index].axis_points.end())
       {
         trajectory_msg_->axis_trajectories[axis_index].axis_points = {
           state_before_traj_msg_[axis_index]};
@@ -168,7 +163,13 @@ void Trajectory::set_point_before_trajectory_msg(
         trajectory_msg_->axis_trajectories[axis_index].axis_points.back().velocity = 0;
         trajectory_msg_->axis_trajectories[axis_index].axis_points.back().time_from_start =
           rclcpp::Duration(0, 0);
+        // we replaced the whole trajectory, no need to copy below
+        continue;
       }
+
+      std::vector<control_msgs::msg::AxisTrajectoryPoint> axis_traj{
+        iter, trajectory_msg_->axis_trajectories[axis_index].axis_points.end()};
+      trajectory_msg_->axis_trajectories[axis_index].axis_points = axis_traj;
     }
   }
 }
