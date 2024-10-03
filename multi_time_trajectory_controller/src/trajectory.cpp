@@ -14,6 +14,7 @@
 
 #include "multi_time_trajectory_controller/trajectory.hpp"
 #include <fmt/format.h>
+#include <rcl/time.h>
 
 #include <algorithm>
 #include <cmath>
@@ -47,8 +48,9 @@ bool convert_to_axis_trajectory_points_for_joint_limiting(
   const trajectory_msgs::msg::JointTrajectoryPoint & joint_trajectory_point,
   std::vector<control_msgs::msg::AxisTrajectoryPoint> & axis_trajectory_points)
 {
-  if ((axis_trajectory_points.size() != joint_trajectory_point.positions.size()) ||
-      (axis_trajectory_points.size() != joint_trajectory_point.velocities.size()))
+  if (
+    (axis_trajectory_points.size() != joint_trajectory_point.positions.size()) ||
+    (axis_trajectory_points.size() != joint_trajectory_point.velocities.size()))
   {
     return false;
   }
@@ -134,6 +136,41 @@ void Trajectory::set_point_before_trajectory_msg(
   wraparound_joint(
     state_before_traj_msg_, trajectory_msg_->axis_trajectories[0].axis_points,
     joints_angle_wraparound);
+
+  if (trajectory_msg_)
+  {
+    std::size_t const num_axes = state_before_traj_msg_.size();
+    for (std::size_t axis_index = 0; axis_index < num_axes; ++axis_index)
+    {
+      auto iter = trajectory_msg_->axis_trajectories[axis_index].axis_points.begin();
+      auto const traj_start_time =
+        rclcpp::Time(trajectory_msg_->header.stamp, current_time.get_clock_type());
+      while (iter->time_from_start + traj_start_time < time_before_traj_msg_)
+      {
+        ++iter;
+      }
+      if (iter == trajectory_msg_->axis_trajectories[axis_index].axis_points.begin())
+      {
+        // we don't need to get rid of any points, so skip the copy operation (O(n))
+        continue;
+      }
+      std::vector<control_msgs::msg::AxisTrajectoryPoint> axis_traj{
+        iter, trajectory_msg_->axis_trajectories[axis_index].axis_points.end()};
+      trajectory_msg_->axis_trajectories[axis_index].axis_points = axis_traj;
+
+      // if all the points were before
+      if (trajectory_msg_->axis_trajectories[axis_index].axis_points.empty())
+      {
+        trajectory_msg_->axis_trajectories[axis_index].axis_points = {
+          state_before_traj_msg_[axis_index]};
+
+        // TODO(bijoua29): remove the below line when set point is sent with zero vel
+        trajectory_msg_->axis_trajectories[axis_index].axis_points.back().velocity = 0;
+        trajectory_msg_->axis_trajectories[axis_index].axis_points.back().time_from_start =
+          rclcpp::Duration(0, 0);
+      }
+    }
+  }
 }
 
 void wraparound_joint(
@@ -450,18 +487,6 @@ std::vector<bool> Trajectory::sample(
       continue;
     }
 
-    // logic for if we have a set point _after_ the end of this axis's trajectory
-    rclcpp::Time t0 = trajectory_start_time_ +
-                      trajectory.axis_points[trajectory.axis_points.size() - 1].time_from_start;
-    if (time_before_traj_msg_ > t0)
-    {
-      trajectory.axis_points.push_back(state_before_traj_msg_[axis_index]);
-      trajectory.axis_points.back().time_from_start =
-        time_before_traj_msg_ - trajectory_start_time_;
-      t0 = time_before_traj_msg_;
-    }
-    auto & last_point = trajectory.axis_points[trajectory.axis_points.size() - 1];
-
     // this trajectory is valid, set the start and end segment iterators
     start_segment_itr[axis_index] = --end(axis_index);
     end_segment_itr[axis_index] = end(axis_index);
@@ -482,7 +507,10 @@ std::vector<bool> Trajectory::sample(
       continue;
     }
 
-    // we have finished this trajectory, but keep interpolating and smoothing
+    // hold the last velocity, so we extrapolate from the last point's vel and accel
+    auto & last_point = trajectory.axis_points.back();
+    rclcpp::Time t0 = trajectory_start_time_ + last_point.time_from_start;
+
     if (last_point.acceleration != 0 && !std::isnan(last_point.acceleration))
     {
       last_point.velocity += last_point.acceleration * period.seconds();
@@ -509,8 +537,7 @@ std::vector<bool> Trajectory::sample(
 
   if (enforce_joint_limits && joint_limiter)
   {
-    trajectory_msgs::msg::JointTrajectoryPoint prev_state_joint_traj_pt,
-      output_state_joint_traj_pt;
+    trajectory_msgs::msg::JointTrajectoryPoint prev_state_joint_traj_pt, output_state_joint_traj_pt;
     convert_to_joint_trajectory_point_for_joint_limiting(previous_state_, prev_state_joint_traj_pt);
     convert_to_joint_trajectory_point_for_joint_limiting(output_state, output_state_joint_traj_pt);
 
