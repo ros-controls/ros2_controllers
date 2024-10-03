@@ -16,7 +16,6 @@
 #define MULTI_TIME_TRAJECTORY_CONTROLLER__MULTI_TIME_TRAJECTORY_CONTROLLER_HPP_
 
 #include <realtime_tools/realtime_server_goal_handle.h>
-#include <urdf/model.h>
 
 #include <memory>
 #include <string>
@@ -27,6 +26,8 @@
 #include <joint_limits/joint_limiter_interface.hpp>
 #include <joint_limits/joint_limits.hpp>
 #include <pluginlib/class_loader.hpp>
+#include <urdf/model.hpp>
+
 #include "control_msgs/action/follow_axis_trajectory.hpp"
 #include "control_msgs/msg/axis_trajectory_point.hpp"
 #include "control_msgs/msg/multi_axis_trajectory.hpp"
