@@ -160,10 +160,13 @@ void Trajectory::set_point_before_trajectory_msg(
         trajectory_msg_->axis_trajectories[axis_index].axis_points = {
           state_before_traj_msg_[axis_index]};
 
-        // TODO(bijoua29): remove the below line when set point is sent with zero vel
+        // TODO(bijoua29): remove the below 2 lines when set point is sent with zero vel
         trajectory_msg_->axis_trajectories[axis_index].axis_points.back().velocity = 0;
+        trajectory_msg_->axis_trajectories[axis_index].axis_points.back().acceleration = 0;
+
+        // set the new trajectory to just be the single reset point
         trajectory_msg_->axis_trajectories[axis_index].axis_points.back().time_from_start =
-          rclcpp::Duration(0, 0);
+          time_before_traj_msg_ - traj_start_time;
         // we replaced the whole trajectory, no need to copy below
         continue;
       }
