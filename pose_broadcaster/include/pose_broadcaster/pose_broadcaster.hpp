@@ -20,12 +20,12 @@
 
 #include "controller_interface/controller_interface.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "geometry_msgs/msg/quaternion.hpp"
 #include "pose_broadcaster/visibility_control.h"
 #include "pose_broadcaster_parameters.hpp"
 #include "rclcpp/publisher.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_publisher.h"
+#include "semantic_components/pose_sensor.hpp"
 
 namespace pose_broadcaster
 {
@@ -57,7 +57,7 @@ private:
   std::shared_ptr<ParamListener> param_listener_;
   Params params_;
 
-  std::array<std::string, 7> interface_names_;
+  std::unique_ptr<semantic_components::PoseSensor> pose_sensor_;
 
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pose_publisher_;
   std::unique_ptr<realtime_tools::RealtimePublisher<geometry_msgs::msg::PoseStamped>>

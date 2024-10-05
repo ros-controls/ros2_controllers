@@ -28,9 +28,7 @@ controller_interface::InterfaceConfiguration PoseBroadcaster::state_interface_co
 {
   controller_interface::InterfaceConfiguration state_interfaces_config;
   state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
-  std::copy(
-    interface_names_.cbegin(), interface_names_.cend(),
-    std::back_inserter(state_interfaces_config.names));
+  state_interfaces_config.names = pose_sensor_->get_state_interface_names();
 
   return state_interfaces_config;
 }
@@ -56,47 +54,7 @@ controller_interface::CallbackReturn PoseBroadcaster::on_configure(
 {
   params_ = param_listener_->get_params();
 
-  const bool no_interface_names_defined =
-    params_.interface_names.position.x.empty() && params_.interface_names.position.y.empty() &&
-    params_.interface_names.position.z.empty() && params_.interface_names.orientation.x.empty() &&
-    params_.interface_names.orientation.y.empty() &&
-    params_.interface_names.orientation.z.empty() && params_.interface_names.orientation.w.empty();
-
-  if (params_.pose_name.empty() && no_interface_names_defined)
-  {
-    RCLCPP_ERROR(
-      get_node()->get_logger(),
-      "'pose_name' or 'interface_names.[position.[x|y|z]|orientation.[x|y|z|w]]' parameter has to "
-      "be "
-      "specified.");
-    return controller_interface::CallbackReturn::ERROR;
-  }
-
-  if (!params_.pose_name.empty() && !no_interface_names_defined)
-  {
-    RCLCPP_ERROR(
-      get_node()->get_logger(),
-      "'pose_name' and 'interface_names.[position.[x|y|z]|orientation.[x|y|z|w]]' parameters can "
-      "not "
-      "be specified together.");
-    return controller_interface::CallbackReturn::ERROR;
-  }
-
-  if (params_.pose_name.empty())
-  {
-    interface_names_ = {
-      params_.interface_names.position.x,    params_.interface_names.position.y,
-      params_.interface_names.position.z,    params_.interface_names.orientation.x,
-      params_.interface_names.orientation.y, params_.interface_names.orientation.z,
-      params_.interface_names.orientation.w};
-  }
-  else
-  {
-    interface_names_ = {params_.pose_name + "/position.x",    params_.pose_name + "/position.y",
-                        params_.pose_name + "/position.z",    params_.pose_name + "/orientation.x",
-                        params_.pose_name + "/orientation.y", params_.pose_name + "/orientation.z",
-                        params_.pose_name + "/orientation.w"};
-  }
+  pose_sensor_ = std::make_unique<semantic_components::PoseSensor>(params_.pose_name);
 
   try
   {
@@ -124,12 +82,14 @@ controller_interface::CallbackReturn PoseBroadcaster::on_configure(
 controller_interface::CallbackReturn PoseBroadcaster::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
+  pose_sensor_->assign_loaned_state_interfaces(state_interfaces_);
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
 controller_interface::CallbackReturn PoseBroadcaster::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
+  pose_sensor_->release_interfaces();
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
@@ -139,16 +99,7 @@ controller_interface::return_type PoseBroadcaster::update(
   if (realtime_publisher_ && realtime_publisher_->trylock())
   {
     realtime_publisher_->msg_.header.stamp = time;
-
-    realtime_publisher_->msg_.pose.position.x = state_interfaces_[0].get_value();
-    realtime_publisher_->msg_.pose.position.y = state_interfaces_[1].get_value();
-    realtime_publisher_->msg_.pose.position.z = state_interfaces_[2].get_value();
-
-    realtime_publisher_->msg_.pose.orientation.x = state_interfaces_[3].get_value();
-    realtime_publisher_->msg_.pose.orientation.y = state_interfaces_[4].get_value();
-    realtime_publisher_->msg_.pose.orientation.z = state_interfaces_[5].get_value();
-    realtime_publisher_->msg_.pose.orientation.w = state_interfaces_[6].get_value();
-
+    pose_sensor_->get_values_as_message(realtime_publisher_->msg_.pose);
     realtime_publisher_->unlockAndPublish();
   }
 
