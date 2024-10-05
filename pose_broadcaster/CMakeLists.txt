@@ -58,6 +58,7 @@ pluginlib_export_plugin_description_file(
 if(BUILD_TESTING)
   find_package(ament_cmake_gmock REQUIRED)
   find_package(controller_manager REQUIRED)
+  find_package(hardware_interface REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
 
   add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
@@ -70,6 +71,17 @@ if(BUILD_TESTING)
   ament_target_dependencies(test_load_pose_broadcaster
     controller_manager
     ros2_control_test_assets
+  )
+
+  add_rostest_with_parameters_gmock(test_pose_broadcaster
+    test/test_pose_broadcaster.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/pose_broadcaster_params.yaml
+  )
+  target_link_libraries(test_pose_broadcaster
+    pose_broadcaster
+  )
+  ament_target_dependencies(test_pose_broadcaster
+    hardware_interface
   )
 endif()
 
