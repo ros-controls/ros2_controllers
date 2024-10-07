@@ -280,7 +280,9 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
     semantic_components::ForceTorqueSensor(admittance_->parameters_.ft_sensor.name));
 
   // configure admittance rule
-  if (admittance_->configure(get_node(), num_joints_) == controller_interface::return_type::ERROR)
+  if (
+    admittance_->configure(get_node(), num_joints_, this->get_robot_description()) ==
+    controller_interface::return_type::ERROR)
   {
     return controller_interface::CallbackReturn::ERROR;
   }
