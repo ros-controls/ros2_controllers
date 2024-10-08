@@ -18,6 +18,7 @@
 #include <functional>
 #include <memory>
 
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -180,6 +181,7 @@ controller_interface::return_type JointTrajectoryController::update(
   if (has_active_trajectory())
   {
     bool first_sample = false;
+    TrajectoryPointConstIter start_segment_itr, end_segment_itr;
     // if sampling the first time, set the point before you sample
     if (!traj_external_point_ptr_->is_sampled_already())
     {
@@ -194,12 +196,15 @@ controller_interface::return_type JointTrajectoryController::update(
         traj_external_point_ptr_->set_point_before_trajectory_msg(
           time, state_current_, joints_angle_wraparound_);
       }
+      traj_external_point_ptr_->sample(
+        // Sample once at the beginning to establish the start time if none was given
+        time, interpolation_method_, state_desired_, start_segment_itr, end_segment_itr);
     }
 
-    // find segment for current timestamp
-    TrajectoryPointConstIter start_segment_itr, end_segment_itr;
+    // Sample setpoint for next control cycle
     const bool valid_point = traj_external_point_ptr_->sample(
-      time, interpolation_method_, state_desired_, start_segment_itr, end_segment_itr);
+      time + update_period_, interpolation_method_, state_desired_, start_segment_itr,
+      end_segment_itr);
 
     if (valid_point)
     {
@@ -279,7 +284,7 @@ controller_interface::return_type JointTrajectoryController::update(
             tmp_command_[i] = (state_desired_.velocities[i] * ff_velocity_scale_[i]) +
                               pids_[i]->computeCommand(
                                 state_error_.positions[i], state_error_.velocities[i],
-                                (uint64_t)period.nanoseconds());
+                                (uint64_t)update_period_.nanoseconds());
           }
         }
 
@@ -959,6 +964,15 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   else
   {
     cmd_timeout_ = 0.0;
+  }
+
+  {
+    if (get_update_rate() == 0)
+    {
+      throw std::runtime_error("Controller's update rate is set to 0. This should not happen!");
+    }
+    update_period_ =
+      rclcpp::Duration(0.0, static_cast<uint32_t>(1.0e9 / static_cast<double>(get_update_rate())));
   }
 
   return CallbackReturn::SUCCESS;
