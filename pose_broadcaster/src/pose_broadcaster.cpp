@@ -74,15 +74,6 @@ controller_interface::CallbackReturn PoseBroadcaster::on_configure(
 
     if (params_.tf.enable)
     {
-      if (params_.tf.child_frame_id.empty())
-      {
-        fprintf(
-          stderr,
-          "Parameter tf.child_frame_id needs to be set to a non-empty value if tf publishing is "
-          "enabled");
-        return controller_interface::CallbackReturn::ERROR;
-      }
-
       tf_publisher_ = get_node()->create_publisher<tf2_msgs::msg::TFMessage>(
         DEFAULT_TF_TOPIC, rclcpp::SystemDefaultsQoS());
       realtime_tf_publisher_ =
@@ -111,7 +102,14 @@ controller_interface::CallbackReturn PoseBroadcaster::on_configure(
     realtime_tf_publisher_->msg_.transforms.resize(1);
     auto & tf_transform = realtime_tf_publisher_->msg_.transforms.front();
     tf_transform.header.frame_id = params_.frame_id;
-    tf_transform.child_frame_id = params_.tf.child_frame_id;
+    if (params_.tf.child_frame_id.empty())
+    {
+      tf_transform.child_frame_id = params_.pose_name;
+    }
+    else
+    {
+      tf_transform.child_frame_id = params_.tf.child_frame_id;
+    }
 
     realtime_tf_publisher_->unlock();
   }

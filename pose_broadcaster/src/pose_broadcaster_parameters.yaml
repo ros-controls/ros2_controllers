@@ -16,10 +16,10 @@ pose_broadcaster:
   tf:
     enable:
       type: bool
-      default_value: false
+      default_value: true
       description: "Whether to publish the pose as a tf transform"
     child_frame_id:
       type: string
       default_value: ""
-      description: "Child frame id of published tf transforms. This needs to be set if tf publishing is
-      enabled."
+      description: "Child frame id of published tf transforms. Defaults to ``pose_name`` if left
+      empty."

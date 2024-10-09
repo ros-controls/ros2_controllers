@@ -66,23 +66,6 @@ TEST_F(PoseBroadcasterTest, Configure_Success)
   ASSERT_EQ(state_interface_conf.names.size(), 7lu);
 }
 
-TEST_F(PoseBroadcasterTest, Configure_TF_ChildFrameId_NotSet)
-{
-  SetUpPoseBroadcaster();
-
-  // Set 'pose_name' and 'frame_id' parameters
-  pose_broadcaster_->get_node()->set_parameter({"pose_name", pose_name_});
-  pose_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
-
-  // Set 'tf.enable' parameter, but don't set 'tf.child_frame_id'
-  pose_broadcaster_->get_node()->set_parameter({"tf.enable", true});
-
-  // Verify that controller cannot be configured
-  ASSERT_EQ(
-    pose_broadcaster_->on_configure(rclcpp_lifecycle::State{}),
-    controller_interface::CallbackReturn::ERROR);
-}
-
 TEST_F(PoseBroadcasterTest, Activate_Success)
 {
   SetUpPoseBroadcaster();
