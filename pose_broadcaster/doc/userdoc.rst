@@ -5,7 +5,7 @@
 Pose Broadcaster
 --------------------------------
 Broadcaster for poses measured by a robot or a sensor.
-The published message type is ``geometry_msgs/msg/PoseStamped``.
+Poses are published as ``geometry_msgs/msg/PoseStamped`` messages and optionally as tf transforms.
 
 The controller is a wrapper around the ``PoseSensor`` semantic component (see ``controller_interface`` package).
 
