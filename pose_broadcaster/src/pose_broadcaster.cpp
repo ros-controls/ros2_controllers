@@ -156,7 +156,7 @@ controller_interface::return_type PoseBroadcaster::update(
     {
       do_publish = true;
     }
-    else if (!tf_publish_period_ || (tf_last_publish_time_ + *tf_publish_period_ < time))
+    else if (!tf_publish_period_ || (tf_last_publish_time_ + *tf_publish_period_ <= time))
     {
       do_publish = true;
     }
