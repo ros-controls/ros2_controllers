@@ -1,0 +1,32 @@
+pose_broadcaster:
+  frame_id:
+    type: string
+    default_value: ""
+    description: "frame_id in which values are published"
+    validation:
+      not_empty<>: null
+  pose_name:
+    type: string
+    default_value: ""
+    description: "Base name used as prefix for controller interfaces.
+    The state interface names are: ``<pose_name>/position.x, ..., <pose_name>/position.z,
+    <pose_name>/orientation.x, ..., <pose_name>/orientation.w``"
+    validation:
+      not_empty<>: null
+  tf:
+    enable:
+      type: bool
+      default_value: true
+      description: "Whether to publish the pose as a tf transform"
+    child_frame_id:
+      type: string
+      default_value: ""
+      description: "Child frame id of published tf transforms. Defaults to ``pose_name`` if left
+      empty."
+    publish_rate:
+      type: double
+      default_value: 0.0
+      description: "Rate to limit publishing of tf transforms to (Hz). If set to 0, no limiting is
+      performed."
+      validation:
+        gt_eq<>: 0.0

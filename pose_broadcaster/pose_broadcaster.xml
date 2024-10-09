@@ -1,0 +1,9 @@
+<library path="pose_broadcaster">
+  <class name="pose_broadcaster/PoseBroadcaster"
+         type="pose_broadcaster::PoseBroadcaster"
+         base_class_type="controller_interface::ControllerInterface">
+    <description>
+      This controller publishes a Cartesian state as a geometry_msgs/PoseStamped message and optionally as a tf transform.
+    </description>
+  </class>
+</library>
