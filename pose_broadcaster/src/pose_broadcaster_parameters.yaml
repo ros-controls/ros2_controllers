@@ -13,3 +13,13 @@ pose_broadcaster:
     <pose_name>/orientation.x, ..., <pose_name>/orientation.w``"
     validation:
       not_empty<>: null
+  tf:
+    enable:
+      type: bool
+      default_value: false
+      description: "Whether to publish the pose as a tf transform"
+    child_frame_id:
+      type: string
+      default_value: ""
+      description: "Child frame id of published tf transforms. This needs to be set if tf publishing is
+      enabled."

@@ -26,6 +26,7 @@
 #include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_publisher.h"
 #include "semantic_components/pose_sensor.hpp"
+#include "tf2_msgs/msg/tf_message.hpp"
 
 namespace pose_broadcaster
 {
@@ -62,6 +63,10 @@ private:
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pose_publisher_;
   std::unique_ptr<realtime_tools::RealtimePublisher<geometry_msgs::msg::PoseStamped>>
     realtime_publisher_;
+
+  rclcpp::Publisher<tf2_msgs::msg::TFMessage>::SharedPtr tf_publisher_;
+  std::unique_ptr<realtime_tools::RealtimePublisher<tf2_msgs::msg::TFMessage>>
+    realtime_tf_publisher_;
 };
 
 }  // namespace pose_broadcaster

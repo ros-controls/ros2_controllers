@@ -20,6 +20,8 @@
 #include <memory>
 #include <string>
 
+#include "rclcpp/executors.hpp"
+
 #include "pose_broadcaster/pose_broadcaster.hpp"
 
 using pose_broadcaster::PoseBroadcaster;
@@ -34,7 +36,8 @@ public:
 
 protected:
   const std::string pose_name_ = "test_pose";
-  const std::string frame_id_ = "pose_frame";
+  const std::string frame_id_ = "pose_base_frame";
+  const std::string tf_child_frame_id_ = "pose_frame";
 
   std::array<double, 7> pose_values_ = {1.1, 2.2, 3.3, 4.4, 5.5, 6.6, 7.7};
 
@@ -52,7 +55,42 @@ protected:
 
   std::unique_ptr<PoseBroadcaster> pose_broadcaster_;
 
-  void subscribe_and_get_message(geometry_msgs::msg::PoseStamped & pose_msg);
+  template <typename T>
+  void subscribe_and_get_message(const std::string & topic, T & msg);
 };
+
+template <typename T>
+void PoseBroadcasterTest::subscribe_and_get_message(const std::string & topic, T & msg)
+{
+  // Create node for subscribing
+  rclcpp::Node node{"test_subscription_node"};
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node.get_node_base_interface());
+
+  // Create subscription
+  typename T::SharedPtr received_msg;
+  const auto msg_callback = [&](const typename T::SharedPtr sub_msg) { received_msg = sub_msg; };
+  const auto subscription = node.create_subscription<T>(topic, 10, msg_callback);
+
+  // Update controller and spin until a message is received
+  // Since update doesn't guarantee a published message, republish until received
+  constexpr size_t max_sub_check_loop_count = 5;
+  for (size_t i = 0; !received_msg; ++i)
+  {
+    ASSERT_LT(i, max_sub_check_loop_count);
+
+    pose_broadcaster_->update(rclcpp::Time{0}, rclcpp::Duration::from_seconds(0.01));
+
+    const auto timeout = std::chrono::milliseconds{5};
+    const auto until = node.get_clock()->now() + timeout;
+    while (!received_msg && node.get_clock()->now() < until)
+    {
+      executor.spin_some();
+      std::this_thread::sleep_for(std::chrono::microseconds{10});
+    }
+  }
+
+  msg = *received_msg;
+}
 
 #endif  // TEST_POSE_BROADCASTER_HPP_

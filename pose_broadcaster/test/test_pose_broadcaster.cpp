@@ -16,8 +16,6 @@
 #include <utility>
 #include <vector>
 
-#include "rclcpp/executors.hpp"
-
 using hardware_interface::LoanedStateInterface;
 
 void PoseBroadcasterTest::SetUp() { pose_broadcaster_ = std::make_unique<PoseBroadcaster>(); }
@@ -43,41 +41,6 @@ void PoseBroadcasterTest::SetUpPoseBroadcaster()
   pose_broadcaster_->assign_interfaces({}, std::move(state_interfaces));
 }
 
-void PoseBroadcasterTest::subscribe_and_get_message(geometry_msgs::msg::PoseStamped & pose_msg)
-{
-  // Create node for subscribing
-  rclcpp::Node node{"test_subscription_node"};
-  rclcpp::executors::SingleThreadedExecutor executor;
-  executor.add_node(node.get_node_base_interface());
-
-  // Create subscription
-  geometry_msgs::msg::PoseStamped::SharedPtr received_msg;
-  const auto msg_callback = [&](const geometry_msgs::msg::PoseStamped::SharedPtr msg)
-  { received_msg = msg; };
-  const auto subscription = node.create_subscription<geometry_msgs::msg::PoseStamped>(
-    "/test_pose_broadcaster/pose", 10, msg_callback);
-
-  // Update controller and spin until a message is received
-  // Since update doesn't guarantee a published message, republish until received
-  constexpr size_t max_sub_check_loop_count = 5;
-  for (size_t i = 0; !received_msg; ++i)
-  {
-    ASSERT_LT(i, max_sub_check_loop_count);
-
-    pose_broadcaster_->update(rclcpp::Time{0}, rclcpp::Duration::from_seconds(0.01));
-
-    const auto timeout = std::chrono::milliseconds{5};
-    const auto until = node.get_clock()->now() + timeout;
-    while (!received_msg && node.get_clock()->now() < until)
-    {
-      executor.spin_some();
-      std::this_thread::sleep_for(std::chrono::microseconds{10});
-    }
-  }
-
-  pose_msg = *received_msg;
-}
-
 TEST_F(PoseBroadcasterTest, Configure_Success)
 {
   SetUpPoseBroadcaster();
@@ -101,6 +64,23 @@ TEST_F(PoseBroadcasterTest, Configure_Success)
   EXPECT_EQ(
     state_interface_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
   ASSERT_EQ(state_interface_conf.names.size(), 7lu);
+}
+
+TEST_F(PoseBroadcasterTest, Configure_TF_ChildFrameId_NotSet)
+{
+  SetUpPoseBroadcaster();
+
+  // Set 'pose_name' and 'frame_id' parameters
+  pose_broadcaster_->get_node()->set_parameter({"pose_name", pose_name_});
+  pose_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
+
+  // Set 'tf.enable' parameter, but don't set 'tf.child_frame_id'
+  pose_broadcaster_->get_node()->set_parameter({"tf.enable", true});
+
+  // Verify that controller cannot be configured
+  ASSERT_EQ(
+    pose_broadcaster_->on_configure(rclcpp_lifecycle::State{}),
+    controller_interface::CallbackReturn::ERROR);
 }
 
 TEST_F(PoseBroadcasterTest, Activate_Success)
@@ -180,6 +160,10 @@ TEST_F(PoseBroadcasterTest, PublishSuccess)
   pose_broadcaster_->get_node()->set_parameter({"pose_name", pose_name_});
   pose_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
 
+  // Set 'tf.enable' and 'tf.child_frame_id' parameters
+  pose_broadcaster_->get_node()->set_parameter({"tf.enable", true});
+  pose_broadcaster_->get_node()->set_parameter({"tf.child_frame_id", tf_child_frame_id_});
+
   // Configure and activate controller
   ASSERT_EQ(
     pose_broadcaster_->on_configure(rclcpp_lifecycle::State{}),
@@ -190,7 +174,7 @@ TEST_F(PoseBroadcasterTest, PublishSuccess)
 
   // Subscribe to pose topic
   geometry_msgs::msg::PoseStamped pose_msg;
-  subscribe_and_get_message(pose_msg);
+  subscribe_and_get_message("/test_pose_broadcaster/pose", pose_msg);
 
   // Verify content of pose message
   EXPECT_EQ(pose_msg.header.frame_id, frame_id_);
@@ -201,6 +185,22 @@ TEST_F(PoseBroadcasterTest, PublishSuccess)
   EXPECT_EQ(pose_msg.pose.orientation.y, pose_values_[4]);
   EXPECT_EQ(pose_msg.pose.orientation.z, pose_values_[5]);
   EXPECT_EQ(pose_msg.pose.orientation.w, pose_values_[6]);
+
+  // Subscribe to tf topic
+  tf2_msgs::msg::TFMessage tf_msg;
+  subscribe_and_get_message("/tf", tf_msg);
+
+  // Verify content of tf message
+  ASSERT_EQ(tf_msg.transforms.size(), 1lu);
+  EXPECT_EQ(tf_msg.transforms[0].header.frame_id, frame_id_);
+  EXPECT_EQ(tf_msg.transforms[0].child_frame_id, tf_child_frame_id_);
+  EXPECT_EQ(tf_msg.transforms[0].transform.translation.x, pose_values_[0]);
+  EXPECT_EQ(tf_msg.transforms[0].transform.translation.y, pose_values_[1]);
+  EXPECT_EQ(tf_msg.transforms[0].transform.translation.z, pose_values_[2]);
+  EXPECT_EQ(tf_msg.transforms[0].transform.rotation.x, pose_values_[3]);
+  EXPECT_EQ(tf_msg.transforms[0].transform.rotation.y, pose_values_[4]);
+  EXPECT_EQ(tf_msg.transforms[0].transform.rotation.z, pose_values_[5]);
+  EXPECT_EQ(tf_msg.transforms[0].transform.rotation.w, pose_values_[6]);
 }
 
 int main(int argc, char * argv[])
