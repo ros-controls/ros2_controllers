@@ -224,6 +224,8 @@ controller_interface::return_type MultiTimeTrajectoryController::update(
         {
           if (reset_flags->at(i).reset)
           {
+            // if we reset, treat it as the last command
+            last_commanded_time_ = time;
             last_commanded_state_[i].position = std::isnan(reset_flags->at(i).position)
                                                   ? state_current_[i].position
                                                   : reset_flags->at(i).position;
@@ -246,6 +248,18 @@ controller_interface::return_type MultiTimeTrajectoryController::update(
 
             reset_flags->at(i).reset = false;  // reset flag in the buffer for one-shot execution
           }
+        }
+
+        // TODO(bijoua29): change below implementation
+        // if all of the velocities at the last commanded state are zero, then we should have held
+        // that position the whole time so set the last commanded time to now so we don't
+        // interpolate from whenever the last trajectory ended
+        if (std::all_of(
+              last_commanded_state_.begin(), last_commanded_state_.end(),
+              [](control_msgs::msg::AxisTrajectoryPoint const & p)
+              { return p.velocity == 0 || std::isnan(p.velocity); }))
+        {
+          last_commanded_time_ = time;
         }
 
         if (last_commanded_time_.seconds() == 0.0)
