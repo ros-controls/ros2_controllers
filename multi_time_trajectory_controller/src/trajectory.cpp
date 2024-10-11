@@ -323,6 +323,8 @@ void Trajectory::update(
     previous_state_[i].velocity = std::numeric_limits<double>::quiet_NaN();
     previous_state_[i].acceleration = std::numeric_limits<double>::quiet_NaN();
   }
+  output_state_after_interp_ = previous_state_;
+  output_state_after_joint_limit_ = previous_state_;
 }
 
 std::vector<bool> Trajectory::sample(
@@ -417,6 +419,8 @@ std::vector<bool> Trajectory::sample(
       {
         output_state = state_before_traj_msg_;
         previous_state_ = state_before_traj_msg_;
+        output_state_after_interp_ = state_before_traj_msg_;
+        output_state_after_joint_limit_ = state_before_traj_msg_;
       }
       else
       {
@@ -430,6 +434,8 @@ std::vector<bool> Trajectory::sample(
           first_point_in_msg, sample_time, do_ruckig_smoothing, false, output_state[axis_index],
           period, splines_state[axis_index], ruckig_state[axis_index],
           ruckig_input_state[axis_index], axis_index);
+
+        output_state_after_interp_[axis_index] = output_state[axis_index];
       }
       start_segment_itr[axis_index] = begin(axis_index);  // no segments before the first
       end_segment_itr[axis_index] = begin(axis_index);
@@ -489,6 +495,7 @@ std::vector<bool> Trajectory::sample(
     }
     if (should_continue)
     {
+      output_state_after_interp_[axis_index] = output_state[axis_index];
       continue;
     }
 
@@ -501,6 +508,7 @@ std::vector<bool> Trajectory::sample(
     if (!hold_last_velocity)
     {
       output_state[axis_index] = (*start_segment_itr[axis_index]);
+      output_state_after_interp_[axis_index] = output_state[axis_index];
       if (std::isnan(output_state[axis_index].velocity))
       {
         output_state[axis_index].velocity = 0.0;
@@ -534,10 +542,13 @@ std::vector<bool> Trajectory::sample(
           ruckig_input_state[axis_index], axis_index))
     {
       is_valid[axis_index] = false;
-      continue;
+    }
+    else
+    {
+      enforce_joint_limits = true;
     }
 
-    enforce_joint_limits = true;
+    output_state_after_interp_[axis_index] = output_state[axis_index];
   }
 
   if (enforce_joint_limits && joint_limiter)
@@ -550,6 +561,7 @@ std::vector<bool> Trajectory::sample(
 
     convert_to_axis_trajectory_points_for_joint_limiting(output_state_joint_traj_pt, output_state);
   }
+  output_state_after_joint_limit_ = output_state;
 
   previous_state_ = output_state;
   return is_valid;
@@ -896,7 +908,7 @@ TrajectoryPointConstIter Trajectory::end(std::size_t axis_index) const
   return trajectory_msg_->axis_trajectories[axis_index].axis_points.end();
 }
 
-rclcpp::Time Trajectory::time_from_start() const { return trajectory_start_time_; }
+rclcpp::Time Trajectory::start_time() const { return trajectory_start_time_; }
 
 bool Trajectory::has_trajectory_msg() const { return trajectory_msg_.get() != nullptr; }
 

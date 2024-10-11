@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <iterator>
 #include <limits>
 #include <stdexcept>
 
@@ -203,10 +204,11 @@ controller_interface::return_type MultiTimeTrajectoryController::update(
   // current state update - bail if can't read hardware state
   if (!read_state_from_hardware(state_current_)) return controller_interface::return_type::OK;
 
+  bool first_sample = false;
+  std::vector<int> segment_start(dof_, -1);
   // currently carrying out a trajectory
   if (has_active_trajectory())
   {
-    bool first_sample = false;
     // if sampling the first time, set the point before you sample
     if (!traj_external_point_ptr_->is_sampled_already())
     {
@@ -277,7 +279,20 @@ controller_interface::return_type MultiTimeTrajectoryController::update(
       {
         auto const & start_segment_itr = start_segment_itrs[axis_index];
         auto const & end_segment_itr = end_segment_itrs[axis_index];
-        const rclcpp::Time traj_start = traj_external_point_ptr_->time_from_start();
+        const rclcpp::Time traj_start = traj_external_point_ptr_->start_time();
+
+        if (
+          (start_segment_itr == end_segment_itr) &&
+          (std::distance(traj_external_point_ptr_->begin(axis_index), start_segment_itr) == 0))
+        {
+          segment_start[axis_index] = -1;
+        }
+        else
+        {
+          segment_start[axis_index] =
+            (int)(std::distance(traj_external_point_ptr_->begin(axis_index), start_segment_itr));
+        }
+
         // this is the time instance
         // - started with the first segment: when the first point will be reached (in the future)
         // - later: when the point of the current segment was reached
@@ -480,9 +495,7 @@ controller_interface::return_type MultiTimeTrajectoryController::update(
     }
   }
 
-  publish_state(
-    time, state_desired_, state_current_, state_error_, splines_state_, ruckig_state_,
-    ruckig_input_state_);
+  publish_state(time, first_sample, segment_start);
   return controller_interface::return_type::OK;
 }
 
@@ -1363,26 +1376,33 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_shutdown(
 }
 
 void MultiTimeTrajectoryController::publish_state(
-  const rclcpp::Time & time, const std::vector<TrajectoryPoint> & desired_state,
-  const std::vector<TrajectoryPoint> & current_state,
-  const std::vector<TrajectoryPoint> & state_error,
-  const std::vector<TrajectoryPoint> & splines_output,
-  const std::vector<TrajectoryPoint> & ruckig_input_target,
-  const std::vector<TrajectoryPoint> & ruckig_input)
+  const rclcpp::Time & time, const bool first_sample, const std::vector<int> & segment_start)
 {
   // TODO(henrygerardmoore): add any useful debug/state info to this publish
   // active state? goals and tolerances, internal state, etc.
   if (state_publisher_->trylock())
   {
     state_publisher_->msg_.header.stamp = time;
-    state_publisher_->msg_.references = desired_state;
-    state_publisher_->msg_.feedbacks = current_state;
-    state_publisher_->msg_.errors = state_error;
+    state_publisher_->msg_.references = state_desired_;
+    state_publisher_->msg_.feedbacks = state_current_;
+    state_publisher_->msg_.errors = state_error_;
     state_publisher_->msg_.using_odometry_feedback = params_.use_feedback;
     state_publisher_->msg_.trajectory_active = has_active_trajectory();
     state_publisher_->msg_.last_odom_feedback = last_odom_feedback_;
     state_publisher_->msg_.goal = *traj_external_point_ptr_->get_trajectory_msg();
     state_publisher_->msg_.last_reference = last_reference_;
+    state_publisher_->msg_.first_sample_in_trajectory = first_sample;
+    state_publisher_->msg_.trajectory_start_time = traj_external_point_ptr_->start_time();
+    state_publisher_->msg_.time_before_trajectory =
+      traj_external_point_ptr_->time_before_trajectory();
+    state_publisher_->msg_.state_before_trajectory =
+      traj_external_point_ptr_->state_before_trajectory();
+    state_publisher_->msg_.state_after_interpolation =
+      traj_external_point_ptr_->state_after_interp();
+    state_publisher_->msg_.state_after_joint_limit =
+      traj_external_point_ptr_->state_after_joint_limit();
+    state_publisher_->msg_.segment_start = segment_start;
+
     if (read_commands_from_command_interfaces(command_current_))
     {
       state_publisher_->msg_.outputs = command_current_;
@@ -1394,7 +1414,7 @@ void MultiTimeTrajectoryController::publish_state(
   if (splines_output_publisher_ && splines_output_publisher_->trylock())
   {
     splines_output_publisher_->msg_.header.stamp = state_publisher_->msg_.header.stamp;
-    splines_output_publisher_->msg_.references = splines_output;
+    splines_output_publisher_->msg_.references = splines_state_;
 
     splines_output_publisher_->unlockAndPublish();
   }
@@ -1402,7 +1422,7 @@ void MultiTimeTrajectoryController::publish_state(
   if (ruckig_input_publisher_ && ruckig_input_publisher_->trylock())
   {
     ruckig_input_publisher_->msg_.header.stamp = state_publisher_->msg_.header.stamp;
-    ruckig_input_publisher_->msg_.references = ruckig_input;
+    ruckig_input_publisher_->msg_.references = ruckig_input_state_;
 
     ruckig_input_publisher_->unlockAndPublish();
   }
@@ -1410,7 +1430,7 @@ void MultiTimeTrajectoryController::publish_state(
   if (ruckig_input_target_publisher_ && ruckig_input_target_publisher_->trylock())
   {
     ruckig_input_target_publisher_->msg_.header.stamp = state_publisher_->msg_.header.stamp;
-    ruckig_input_target_publisher_->msg_.references = ruckig_input_target;
+    ruckig_input_target_publisher_->msg_.references = ruckig_state_;
     ruckig_input_target_publisher_->unlockAndPublish();
   }
 }

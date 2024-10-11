@@ -218,12 +218,7 @@ protected:
   using TrajectoryPoint = control_msgs::msg::AxisTrajectoryPoint;
 
   virtual void publish_state(
-    const rclcpp::Time & time, const std::vector<TrajectoryPoint> & desired_state,
-    const std::vector<TrajectoryPoint> & current_state,
-    const std::vector<TrajectoryPoint> & state_error,
-    const std::vector<TrajectoryPoint> & splines_output,
-    const std::vector<TrajectoryPoint> & ruckig_input_target,
-    const std::vector<TrajectoryPoint> & ruckig_input);
+    const rclcpp::Time & time, const bool first_sample, const std::vector<int> & segment_start);
 
   // callback for topic interface
 

@@ -140,7 +140,23 @@ public:
 
   TrajectoryPointConstIter end(std::size_t) const;
 
-  rclcpp::Time time_from_start() const;
+  rclcpp::Time start_time() const;
+
+  rclcpp::Time time_before_trajectory() const { return time_before_traj_msg_; }
+  const std::vector<control_msgs::msg::AxisTrajectoryPoint> & state_before_trajectory() const
+  {
+    return state_before_traj_msg_;
+  }
+
+  const std::vector<control_msgs::msg::AxisTrajectoryPoint> & state_after_interp() const
+  {
+    return output_state_after_interp_;
+  }
+
+  const std::vector<control_msgs::msg::AxisTrajectoryPoint> & state_after_joint_limit() const
+  {
+    return output_state_after_joint_limit_;
+  }
 
   bool has_trajectory_msg() const;
 
@@ -177,6 +193,9 @@ private:
   bool have_previous_ruckig_output_ = false;
 
   std::vector<control_msgs::msg::AxisTrajectoryPoint> previous_state_;
+
+  std::vector<control_msgs::msg::AxisTrajectoryPoint> output_state_after_interp_;
+  std::vector<control_msgs::msg::AxisTrajectoryPoint> output_state_after_joint_limit_;
 };
 
 /**
