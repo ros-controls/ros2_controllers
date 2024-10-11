@@ -658,57 +658,25 @@ bool MultiTimeTrajectoryController::read_state_from_command_interfaces(
   return has_values;
 }
 
-bool MultiTimeTrajectoryController::read_commands_from_command_interfaces(
+void MultiTimeTrajectoryController::read_commands_from_command_interfaces(
   std::vector<TrajectoryPoint> & commands)
 {
   // start by emptying all commands
   std::fill(commands.begin(), commands.end(), emptyTrajectoryPoint());
 
-  bool has_values = true;
-
-  auto interface_has_values = [](const auto & joint_interface)
-  {
-    return std::find_if(
-             joint_interface.begin(), joint_interface.end(), [](const auto & interface)
-             { return std::isnan(interface.get().get_value()); }) == joint_interface.end();
-  };
-
   // Assign values from the command interfaces as command.
   if (has_position_command_interface_)
   {
-    if (interface_has_values(axis_command_interface_[0]))
-    {
-      assign_positions_from_interface(commands, axis_command_interface_[0]);
-    }
-    else
-    {
-      has_values = false;
-    }
+    assign_positions_from_interface(commands, axis_command_interface_[0]);
   }
   if (has_velocity_command_interface_)
   {
-    if (interface_has_values(axis_command_interface_[1]))
-    {
-      assign_velocities_from_interface(commands, axis_command_interface_[1]);
-    }
-    else
-    {
-      has_values = false;
-    }
+    assign_velocities_from_interface(commands, axis_command_interface_[1]);
   }
   if (has_acceleration_command_interface_)
   {
-    if (interface_has_values(axis_command_interface_[2]))
-    {
-      assign_accelerations_from_interface(commands, axis_command_interface_[2]);
-    }
-    else
-    {
-      has_values = false;
-    }
+    assign_accelerations_from_interface(commands, axis_command_interface_[2]);
   }
-
-  return has_values;
 }
 
 void MultiTimeTrajectoryController::query_state_service(
@@ -974,10 +942,13 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
 
   state_publisher_->lock();
   state_publisher_->msg_.axis_names = params_.axes;
-  state_publisher_->msg_.references.resize(dof_);
-  state_publisher_->msg_.feedbacks.resize(dof_);
-  state_publisher_->msg_.errors.resize(dof_);
-  state_publisher_->msg_.outputs.resize(dof_);
+  state_publisher_->msg_.feedback.resize(dof_);
+  state_publisher_->msg_.error.resize(dof_);
+  state_publisher_->msg_.output.resize(dof_);
+  state_publisher_->msg_.state_before_trajectory.resize(dof_);
+  state_publisher_->msg_.state_after_interpolation.resize(dof_);
+  state_publisher_->msg_.state_after_joint_limit.resize(dof_);
+  state_publisher_->msg_.segment_start.resize(dof_);
 
   state_publisher_->unlock();
 
@@ -987,10 +958,13 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
 
   splines_output_publisher_->lock();
   splines_output_publisher_->msg_.axis_names = command_axis_names_;
-  splines_output_publisher_->msg_.references.resize(dof_);
-  splines_output_publisher_->msg_.feedbacks.resize(dof_);
-  splines_output_publisher_->msg_.errors.resize(dof_);
-  splines_output_publisher_->msg_.outputs.resize(dof_);
+  splines_output_publisher_->msg_.feedback.resize(dof_);
+  splines_output_publisher_->msg_.error.resize(dof_);
+  splines_output_publisher_->msg_.output.resize(dof_);
+  splines_output_publisher_->msg_.state_before_trajectory.resize(dof_);
+  splines_output_publisher_->msg_.state_after_interpolation.resize(dof_);
+  splines_output_publisher_->msg_.state_after_joint_limit.resize(dof_);
+  splines_output_publisher_->msg_.segment_start.resize(dof_);
   splines_output_publisher_->unlock();
 
   ruckig_input_pub_ = get_node()->create_publisher<ControllerStateMsg>(
@@ -999,10 +973,14 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
 
   ruckig_input_publisher_->lock();
   ruckig_input_publisher_->msg_.axis_names = command_axis_names_;
-  ruckig_input_publisher_->msg_.references.resize(dof_);
-  ruckig_input_publisher_->msg_.feedbacks.resize(dof_);
-  ruckig_input_publisher_->msg_.errors.resize(dof_);
-  ruckig_input_publisher_->msg_.outputs.resize(dof_);
+  ruckig_input_publisher_->msg_.feedback.resize(dof_);
+  ruckig_input_publisher_->msg_.error.resize(dof_);
+  ruckig_input_publisher_->msg_.output.resize(dof_);
+  ruckig_input_publisher_->msg_.state_before_trajectory.resize(dof_);
+  ruckig_input_publisher_->msg_.state_after_interpolation.resize(dof_);
+  ruckig_input_publisher_->msg_.state_after_joint_limit.resize(dof_);
+  ruckig_input_publisher_->msg_.segment_start.resize(dof_);
+
   ruckig_input_publisher_->unlock();
 
   ruckig_input_target_pub_ = get_node()->create_publisher<ControllerStateMsg>(
@@ -1011,10 +989,13 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
 
   ruckig_input_target_publisher_->lock();
   ruckig_input_target_publisher_->msg_.axis_names = command_axis_names_;
-  ruckig_input_target_publisher_->msg_.references.resize(dof_);
-  ruckig_input_target_publisher_->msg_.feedbacks.resize(dof_);
-  ruckig_input_target_publisher_->msg_.errors.resize(dof_);
-  ruckig_input_target_publisher_->msg_.outputs.resize(dof_);
+  ruckig_input_target_publisher_->msg_.feedback.resize(dof_);
+  ruckig_input_target_publisher_->msg_.error.resize(dof_);
+  ruckig_input_target_publisher_->msg_.output.resize(dof_);
+  ruckig_input_target_publisher_->msg_.state_before_trajectory.resize(dof_);
+  ruckig_input_target_publisher_->msg_.state_after_interpolation.resize(dof_);
+  ruckig_input_target_publisher_->msg_.state_after_joint_limit.resize(dof_);
+  ruckig_input_target_publisher_->msg_.segment_start.resize(dof_);
   ruckig_input_target_publisher_->unlock();
 
   RCLCPP_INFO(
@@ -1049,12 +1030,16 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
   subscribers_reliable_qos.reliable();
 
   // Reference Subscribers (reliable channel also for updates not to be missed)
+  // see https://answers.ros.org/question/308386/ros2-add-arguments-to-callback/ for why we create a
+  // bound function when we need to pass in additional arguments
+  std::function<void(const ControllerReferenceMsg::SharedPtr msg)> bound_ref_func = std::bind(
+    &MultiTimeTrajectoryController::reference_callback, this, std::placeholders::_1, false);
   ref_subscriber_ = get_node()->create_subscription<ControllerReferenceMsg>(
-    "~/reference", qos_best_effort_history_depth_one,
-    std::bind(&MultiTimeTrajectoryController::reference_callback, this, std::placeholders::_1));
+    "~/reference", qos_best_effort_history_depth_one, bound_ref_func);
+  std::function<void(const ControllerReferenceMsg::SharedPtr msg)> bound_ref_rel_func = std::bind(
+    &MultiTimeTrajectoryController::reference_callback, this, std::placeholders::_1, true);
   ref_subscriber_reliable_ = get_node()->create_subscription<ControllerReferenceMsg>(
-    "~/reference_reliable", subscribers_reliable_qos,
-    std::bind(&MultiTimeTrajectoryController::reference_callback, this, std::placeholders::_1));
+    "~/reference_reliable", subscribers_reliable_qos, bound_ref_rel_func);
 
   std::shared_ptr<ControllerReferenceMsg> msg = std::make_shared<ControllerReferenceMsg>();
   msg->axis_names = params_.axes;
@@ -1167,9 +1152,13 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
 }
 
 void MultiTimeTrajectoryController::reference_callback(
-  const std::shared_ptr<ControllerReferenceMsg> msg)
+  const std::shared_ptr<ControllerReferenceMsg> msg, const bool reliable)
 {
   last_reference_ = *msg;
+  if (reliable)
+  {
+    last_reliable_reference_ = *msg;
+  }
   add_new_trajectory_msg(msg);
 }
 
@@ -1383,14 +1372,14 @@ void MultiTimeTrajectoryController::publish_state(
   if (state_publisher_->trylock())
   {
     state_publisher_->msg_.header.stamp = time;
-    state_publisher_->msg_.references = state_desired_;
-    state_publisher_->msg_.feedbacks = state_current_;
-    state_publisher_->msg_.errors = state_error_;
+    state_publisher_->msg_.reference = last_reference_;
+    state_publisher_->msg_.reference_reliable = last_reliable_reference_;
+    state_publisher_->msg_.feedback = state_current_;
+    state_publisher_->msg_.error = state_error_;
     state_publisher_->msg_.using_odometry_feedback = params_.use_feedback;
     state_publisher_->msg_.trajectory_active = has_active_trajectory();
     state_publisher_->msg_.last_odom_feedback = last_odom_feedback_;
     state_publisher_->msg_.goal = *traj_external_point_ptr_->get_trajectory_msg();
-    state_publisher_->msg_.last_reference = last_reference_;
     state_publisher_->msg_.first_sample_in_trajectory = first_sample;
     state_publisher_->msg_.trajectory_start_time = traj_external_point_ptr_->start_time();
     state_publisher_->msg_.time_before_trajectory =
@@ -1403,10 +1392,8 @@ void MultiTimeTrajectoryController::publish_state(
       traj_external_point_ptr_->state_after_joint_limit();
     state_publisher_->msg_.segment_start = segment_start;
 
-    if (read_commands_from_command_interfaces(command_current_))
-    {
-      state_publisher_->msg_.outputs = command_current_;
-    }
+    read_commands_from_command_interfaces(command_current_);
+    state_publisher_->msg_.output = command_current_;
 
     state_publisher_->unlockAndPublish();
   }
@@ -1414,7 +1401,7 @@ void MultiTimeTrajectoryController::publish_state(
   if (splines_output_publisher_ && splines_output_publisher_->trylock())
   {
     splines_output_publisher_->msg_.header.stamp = state_publisher_->msg_.header.stamp;
-    splines_output_publisher_->msg_.references = splines_state_;
+    splines_output_publisher_->msg_.state_after_interpolation = splines_state_;
 
     splines_output_publisher_->unlockAndPublish();
   }
@@ -1422,7 +1409,7 @@ void MultiTimeTrajectoryController::publish_state(
   if (ruckig_input_publisher_ && ruckig_input_publisher_->trylock())
   {
     ruckig_input_publisher_->msg_.header.stamp = state_publisher_->msg_.header.stamp;
-    ruckig_input_publisher_->msg_.references = ruckig_input_state_;
+    ruckig_input_publisher_->msg_.state_after_interpolation = ruckig_input_state_;
 
     ruckig_input_publisher_->unlockAndPublish();
   }
@@ -1430,7 +1417,7 @@ void MultiTimeTrajectoryController::publish_state(
   if (ruckig_input_target_publisher_ && ruckig_input_target_publisher_->trylock())
   {
     ruckig_input_target_publisher_->msg_.header.stamp = state_publisher_->msg_.header.stamp;
-    ruckig_input_target_publisher_->msg_.references = ruckig_state_;
+    ruckig_input_target_publisher_->msg_.state_after_interpolation = ruckig_state_;
     ruckig_input_target_publisher_->unlockAndPublish();
   }
 }

@@ -291,7 +291,7 @@ protected:
    * @return true if all interfaces exists and contain non-NaN values, false otherwise.
    */
   bool read_state_from_command_interfaces(std::vector<TrajectoryPoint> & state);
-  bool read_commands_from_command_interfaces(std::vector<TrajectoryPoint> & commands);
+  void read_commands_from_command_interfaces(std::vector<TrajectoryPoint> & commands);
 
   void query_state_service(
     const std::shared_ptr<control_msgs::srv::QueryTrajectoryState::Request> request,
@@ -332,9 +332,10 @@ protected:
 private:
   rclcpp::Subscription<ControllerFeedbackMsg>::SharedPtr feedback_subscriber_ = nullptr;
   realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerFeedbackMsg>> feedback_;
-  void reference_callback(const std::shared_ptr<ControllerReferenceMsg> msg);
+  void reference_callback(const std::shared_ptr<ControllerReferenceMsg> msg, const bool reliable);
   ControllerFeedbackMsg last_odom_feedback_;
   ControllerReferenceMsg last_reference_;
+  ControllerReferenceMsg last_reliable_reference_;
   using JointTrajectoryPoint = control_msgs::msg::AxisTrajectoryPoint;
 
   // Command subscribers and Controller State publisher

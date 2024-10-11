@@ -255,70 +255,60 @@ TEST_P(TrajectoryControllerTestParameterized, state_topic_consistency)
     EXPECT_EQ(axis_names_[i], state->axis_names[i]);
   }
 
-  for (std::size_t i = 0; i < 3; ++i)
-  {
-    // No trajectory by default, no reference state or error
-    EXPECT_TRUE(
-      std::isnan(state->references[i].position) ||
-      state->references[i].position == INITIAL_POS_AXES[i]);
-    EXPECT_TRUE(
-      std::isnan(state->references[i].velocity) ||
-      state->references[i].velocity == INITIAL_VEL_AXES[i]);
-    EXPECT_TRUE(
-      std::isnan(state->references[i].acceleration) ||
-      state->references[i].acceleration == INITIAL_EFF_AXES[i]);
-  }
+  // No trajectory by default
+  EXPECT_TRUE(
+    (state->reference.axis_names.size() == 0) && (state->reference.axis_trajectories.size() == 0));
 
   for (std::size_t i = 0; i < DOF; ++i)
   {
-    EXPECT_EQ(state->errors[i].position, 0);
-    EXPECT_TRUE(std::isnan(state->errors[i].velocity) || state->errors[i].velocity == 0);
-    EXPECT_TRUE(std::isnan(state->errors[i].acceleration) || state->errors[i].acceleration == 0);
+    EXPECT_EQ(state->error[i].position, 0);
+    EXPECT_TRUE(std::isnan(state->error[i].velocity) || state->error[i].velocity == 0);
+    EXPECT_TRUE(std::isnan(state->error[i].acceleration) || state->error[i].acceleration == 0);
 
     // expect feedback including all state_interfaces
-    EXPECT_EQ(n_axes, state->feedbacks.size());
+    EXPECT_EQ(n_axes, state->feedback.size());
     if (
       std::find(state_interface_types_.begin(), state_interface_types_.end(), "velocity") ==
       state_interface_types_.end())
     {
-      EXPECT_TRUE(std::isnan(state->feedbacks[i].velocity));
+      EXPECT_TRUE(std::isnan(state->feedback[i].velocity));
     }
     if (
       std::find(state_interface_types_.begin(), state_interface_types_.end(), "acceleration") ==
       state_interface_types_.end())
     {
-      EXPECT_TRUE(std::isnan(state->feedbacks[i].acceleration));
+      EXPECT_TRUE(std::isnan(state->feedback[i].acceleration));
     }
 
-    EXPECT_EQ(n_axes, state->outputs.size());
+    EXPECT_EQ(n_axes, state->output.size());
 
     // expect output including all command_interfaces
     if (
       std::find(command_interface_types_.begin(), command_interface_types_.end(), "position") ==
       command_interface_types_.end())
     {
-      EXPECT_TRUE(std::isnan(state->outputs[i].position));
+      EXPECT_TRUE(std::isnan(state->output[i].position));
     }
 
     if (
       std::find(command_interface_types_.begin(), command_interface_types_.end(), "velocity") ==
       command_interface_types_.end())
     {
-      EXPECT_TRUE(std::isnan(state->outputs[i].velocity));
+      EXPECT_TRUE(std::isnan(state->output[i].velocity));
     }
 
     if (
       std::find(command_interface_types_.begin(), command_interface_types_.end(), "acceleration") ==
       command_interface_types_.end())
     {
-      EXPECT_TRUE(std::isnan(state->outputs[i].acceleration));
+      EXPECT_TRUE(std::isnan(state->output[i].acceleration));
     }
 
     if (
       std::find(command_interface_types_.begin(), command_interface_types_.end(), "effort") ==
       command_interface_types_.end())
     {
-      EXPECT_TRUE(std::isnan(state->outputs[i].effort));
+      EXPECT_TRUE(std::isnan(state->output[i].effort));
     }
   }
 }
@@ -2086,7 +2076,7 @@ TEST_F(TrajectoryControllerTest, open_closed_enable_disable)
   // 0.5 seconds of constant accel
   for (std::size_t i = 0; i < freq_Hz / 2; ++i)
   {
-    double target_vel_current = static_cast<double>(i+1);
+    double target_vel_current = static_cast<double>(i + 1);
     // each axis's target velocity is proportional to time, which should give a constant accel
     // set angular velocity target to 0 to avoid having to deal with rotating frame in this test
     velocities.push_back(
@@ -2321,9 +2311,11 @@ TEST_F(TrajectoryControllerTest, test_joint_limiter_active_but_no_joint_limiting
     {"joint_limits.y.max_acceleration", 2.0},
     {"joint_limits.y.has_deceleration_limits", true},
     {"joint_limits.y.max_deceleration", 1.0},
-    };
-  std::vector<double> vel_limits = {1.0, 2.0, 1.0, 1.0, 1.0, 1.0}; // these should match limits above
-  std::vector<double> acc_limits = {1.0, 2.0, 1.0, 1.0, 1.0, 1.0}; // these should match limits above
+  };
+  std::vector<double> vel_limits = {1.0, 2.0, 1.0,
+                                    1.0, 1.0, 1.0};  // these should match limits above
+  std::vector<double> acc_limits = {1.0, 2.0, 1.0,
+                                    1.0, 1.0, 1.0};  // these should match limits above
 
   SetUpTrajectoryController(executor, params);
   traj_controller_->get_node()->configure();
@@ -2380,20 +2372,20 @@ TEST_F(TrajectoryControllerTest, test_joint_limiter_active_but_no_joint_limiting
   expected_actual.clear();
   expected_desired.clear();
 
-
-  // send 'reference' command with velocities that don't exceed limits and verify output is not limited
+  // send 'reference' command with velocities that don't exceed limits and verify output is not
+  // limited
 
   positions = {freq_Hz, point_nan};
 
   // 0.5 seconds of constant accel
   for (std::size_t i = 0; i < freq_Hz / 2; ++i)
   {
-    double target_vel_current = static_cast<double>(i+1);
+    double target_vel_current = static_cast<double>(i + 1);
     // each axis's target velocity is proportional to time, which should give a constant accel
     // set angular velocity target to 0 to avoid having to deal with rotating frame in this test
     // Here we set the final velocity to be 0.1 for x and 0.2 for y (which is less than the limits)
     velocities.push_back(
-      {0.1 * 2 * target_vel_current/freq_Hz, 0.2 * 2 * target_vel_current/freq_Hz, 0, 0, 0, 0});
+      {0.1 * 2 * target_vel_current / freq_Hz, 0.2 * 2 * target_vel_current / freq_Hz, 0, 0, 0, 0});
   }
 
   // then 0.5 seconds of constant vel
@@ -2469,9 +2461,11 @@ TEST_F(TrajectoryControllerTest, test_joint_limiter_active_and_joint_limiting)
     {"joint_limits.y.max_acceleration", 2.0},
     {"joint_limits.y.has_deceleration_limits", true},
     {"joint_limits.y.max_deceleration", 1.0},
-    };
-  std::vector<double> vel_limits = {1.0, 2.0, 1.0, 1.0, 1.0, 1.0}; // these should match limits above
-  std::vector<double> acc_limits = {1.0, 2.0, 1.0, 1.0, 1.0, 1.0}; // these should match limits above
+  };
+  std::vector<double> vel_limits = {1.0, 2.0, 1.0,
+                                    1.0, 1.0, 1.0};  // these should match limits above
+  std::vector<double> acc_limits = {1.0, 2.0, 1.0,
+                                    1.0, 1.0, 1.0};  // these should match limits above
 
   SetUpTrajectoryController(executor, params);
   traj_controller_->get_node()->configure();
@@ -2528,10 +2522,11 @@ TEST_F(TrajectoryControllerTest, test_joint_limiter_active_and_joint_limiting)
   expected_actual.clear();
   expected_desired.clear();
 
-  // send 'reference' command with single velocity point that exceed acceleration limits and verify output is limited
-  // send velocity of 1.0 for x and 2.0 for y over 1 second
+  // send 'reference' command with single velocity point that exceed acceleration limits and verify
+  // output is limited send velocity of 1.0 for x and 2.0 for y over 1 second
 
-  std::vector<double> desired_vel = {2.0, 4.0, 0, 0, 0, 0}; // desired velocity for x and y exceed limits
+  std::vector<double> desired_vel = {2.0, 4.0, 0,
+                                     0,   0,   0};  // desired velocity for x and y exceed limits
   double duration_s = 1.0;
   rclcpp::Duration const dur_joint_limit = rclcpp::Duration::from_seconds(duration_s);
 
@@ -2542,17 +2537,18 @@ TEST_F(TrajectoryControllerTest, test_joint_limiter_active_and_joint_limiting)
 
   for (std::size_t i = 0; i < num_axes; ++i)
   {
-    if ((i == 0) || (i == 1)) 
+    if ((i == 0) || (i == 1))
     {
       auto desired_acc = desired_vel[i] / duration_s;
-      
+
       // First calculate, final position and velocity for the constant acceleration portion
       // for only constant acceleration i.e. p = 0.5 * a * t^2 where t = duration_s
       // the final velocity shoud be for constant acceleration i.e. v1 = a * t where t = duration_s
       expected_actual[i].position = 0.5 * acc_limits[i] * duration_s * duration_s;
       expected_actual[i].velocity = acc_limits[i] * duration_s;
 
-      // If the desired acceleration is less than the acceleration limits, then add constant velocity portion
+      // If the desired acceleration is less than the acceleration limits, then add constant
+      // velocity portion
       if (desired_acc < acc_limits[i])
       {
         auto accel_time = desired_vel[i] / acc_limits[i];
@@ -2579,4 +2575,4 @@ TEST_F(TrajectoryControllerTest, test_joint_limiter_active_and_joint_limiting)
   velocities.clear();
   expected_actual.clear();
   expected_desired.clear();
-  }
+}
