@@ -316,12 +316,16 @@ void Trajectory::update(
         joint_limits[i].max_jerk);
     }
   }
-  previous_state_.resize(dim);
-  for (std::size_t i = 0; i < dim; ++i)
+
+  if (previous_state_.size() != dim)
   {
-    previous_state_[i].position = std::numeric_limits<double>::quiet_NaN();
-    previous_state_[i].velocity = std::numeric_limits<double>::quiet_NaN();
-    previous_state_[i].acceleration = std::numeric_limits<double>::quiet_NaN();
+    previous_state_.resize(dim);
+    for (std::size_t i = 0; i < dim; ++i)
+    {
+      previous_state_[i].position = std::numeric_limits<double>::quiet_NaN();
+      previous_state_[i].velocity = std::numeric_limits<double>::quiet_NaN();
+      previous_state_[i].acceleration = std::numeric_limits<double>::quiet_NaN();
+    }
   }
   output_state_after_interp_ = previous_state_;
   output_state_after_joint_limit_ = previous_state_;
