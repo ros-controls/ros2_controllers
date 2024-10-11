@@ -250,10 +250,10 @@ controller_interface::return_type MultiTimeTrajectoryController::update(
 
         if (last_commanded_time_.seconds() == 0.0)
         {
-          last_commanded_time_ = time;
+          last_commanded_time_ = time - period;
         }
         traj_external_point_ptr_->set_point_before_trajectory_msg(
-          time, last_commanded_state_, axis_angle_wraparound_);
+          last_commanded_time_, last_commanded_state_, axis_angle_wraparound_);
       }
       else
       {
