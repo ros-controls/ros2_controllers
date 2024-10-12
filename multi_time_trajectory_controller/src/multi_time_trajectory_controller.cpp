@@ -247,6 +247,13 @@ controller_interface::return_type MultiTimeTrajectoryController::update(
             }
 
             reset_flags->at(i).reset = false;  // reset flag in the buffer for one-shot execution
+
+            // reset previous state for the trajectory to new internal state
+            // position is set from reset command and we reset velocity/accel here
+            // time is not used so we don't need to set it
+            auto prev_state = last_commanded_state_[i];
+            prev_state.velocity = prev_state.acceleration = 0;
+            traj_external_point_ptr_->reset_previous_state(i, prev_state);
           }
         }
 

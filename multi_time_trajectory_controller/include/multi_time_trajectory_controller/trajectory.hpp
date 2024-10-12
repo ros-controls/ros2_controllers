@@ -136,6 +136,12 @@ public:
     control_msgs::msg::AxisTrajectoryPoint & ruckig_state,
     control_msgs::msg::AxisTrajectoryPoint & ruckig_input_state, std::size_t axis_index);
 
+  void reset_previous_state(
+    const size_t axis_index, const control_msgs::msg::AxisTrajectoryPoint & state)
+  {
+    previous_state_[axis_index] = state;
+  }
+
   TrajectoryPointConstIter begin(std::size_t) const;
 
   TrajectoryPointConstIter end(std::size_t) const;
