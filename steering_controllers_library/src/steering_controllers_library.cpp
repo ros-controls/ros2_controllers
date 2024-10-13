@@ -352,7 +352,7 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_deactivate(
 }
 
 controller_interface::return_type SteeringControllersLibrary::update_reference_from_subscribers(
-  const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
+  const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
   auto current_ref = *(input_ref_.readFromRT());
 
