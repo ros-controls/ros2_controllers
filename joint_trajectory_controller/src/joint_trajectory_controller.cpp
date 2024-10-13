@@ -196,15 +196,20 @@ controller_interface::return_type JointTrajectoryController::update(
         traj_external_point_ptr_->set_point_before_trajectory_msg(
           time, state_current_, joints_angle_wraparound_);
       }
+      traj_time_ = time;
+    }
+    else
+    {
+      traj_time_ += period;
     }
 
     // Sample expected state from the trajectory
     traj_external_point_ptr_->sample(
-      time, interpolation_method_, state_desired_, start_segment_itr, end_segment_itr);
+      traj_time_, interpolation_method_, state_desired_, start_segment_itr, end_segment_itr);
 
     // Sample setpoint for next control cycle
     const bool valid_point = traj_external_point_ptr_->sample(
-      time + update_period_, interpolation_method_, command_next_, start_segment_itr,
+      traj_time_ + update_period_, interpolation_method_, command_next_, start_segment_itr,
       end_segment_itr, false);
 
     if (valid_point)
@@ -217,7 +222,7 @@ controller_interface::return_type JointTrajectoryController::update(
       // time_difference is
       // - negative until first point is reached
       // - counting from zero to time_from_start of next point
-      double time_difference = time.seconds() - segment_time_from_start.seconds();
+      double time_difference = traj_time_.seconds() - segment_time_from_start.seconds();
       bool tolerance_violated_while_moving = false;
       bool outside_goal_tolerance = false;
       bool within_goal_time = true;
