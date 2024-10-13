@@ -52,14 +52,6 @@ using namespace std::chrono_literals;  // NOLINT
 namespace joint_trajectory_controller
 {
 
-struct TimeData
-{
-  TimeData() : time(0.0), period(rclcpp::Duration::from_nanoseconds(0.0)), uptime(0.0) {}
-  rclcpp::Time time;
-  rclcpp::Duration period;
-  rclcpp::Time uptime;
-};
-
 class JointTrajectoryController : public controller_interface::ControllerInterface
 {
 public:
@@ -134,6 +126,9 @@ protected:
   // Parameters from ROS for joint_trajectory_controller
   std::shared_ptr<ParamListener> param_listener_;
   Params params_;
+  rclcpp::Duration update_period_{0, 0};
+
+  rclcpp::Time traj_time_;
 
   trajectory_msgs::msg::JointTrajectoryPoint last_commanded_state_;
   /// Specify interpolation method. Default to splines.
@@ -175,7 +170,6 @@ protected:
 
   // Things around speed scaling
   std::atomic<double> scaling_factor_{1.0};
-  TimeData time_data_;
 
   // Timeout to consider commands old
   double cmd_timeout_;

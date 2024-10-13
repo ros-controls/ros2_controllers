@@ -18,6 +18,7 @@
 #include <functional>
 #include <memory>
 
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -154,12 +155,12 @@ controller_interface::return_type JointTrajectoryController::update(
     scaling_factor_ = scaling_state_interface_->get().get_value();
   }
 
-  if (get_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
+  if (get_lifecycle_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
   {
     return controller_interface::return_type::OK;
   }
 
-  if (get_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+  if (get_lifecycle_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
   {
     if (scaling_command_interface_.has_value())
     {
@@ -205,18 +206,8 @@ controller_interface::return_type JointTrajectoryController::update(
   // currently carrying out a trajectory
   if (has_active_trajectory())
   {
-    // scaled time period
-    time_data_.period = period * scaling_factor_;
-
-    // scaled time spent in the trajectory
-    time_data_.uptime = time_data_.uptime + time_data_.period;
-
-    // time in the trajectory with a non-scaled current step
-    rclcpp::Time traj_time = time_data_.uptime + period;
-
-    // time_data_.time = time;
-
     bool first_sample = false;
+    TrajectoryPointConstIter start_segment_itr, end_segment_itr;
     // if sampling the first time, set the point before you sample
     if (!traj_external_point_ptr_->is_sampled_already())
     {
@@ -224,19 +215,27 @@ controller_interface::return_type JointTrajectoryController::update(
       if (params_.open_loop_control)
       {
         traj_external_point_ptr_->set_point_before_trajectory_msg(
-          traj_time, last_commanded_state_, joints_angle_wraparound_);
+          time, last_commanded_state_, joints_angle_wraparound_);
       }
       else
       {
         traj_external_point_ptr_->set_point_before_trajectory_msg(
-          traj_time, state_current_, joints_angle_wraparound_);
+          time, state_current_, joints_angle_wraparound_);
       }
+      traj_external_point_ptr_->sample(
+        // Sample once at the beginning to establish the start time if none was given
+        time, interpolation_method_, state_desired_, start_segment_itr, end_segment_itr);
+      traj_time_ = time;
+    }
+    else
+    {
+      traj_time_ += period * scaling_factor_;
     }
 
-    // find segment for current timestamp
-    TrajectoryPointConstIter start_segment_itr, end_segment_itr;
+    // Sample setpoint for next control cycle
     const bool valid_point = traj_external_point_ptr_->sample(
-      traj_time, interpolation_method_, state_desired_, start_segment_itr, end_segment_itr);
+      traj_time_ + update_period_, interpolation_method_, state_desired_, start_segment_itr,
+      end_segment_itr);
 
     if (valid_point)
     {
@@ -248,8 +247,7 @@ controller_interface::return_type JointTrajectoryController::update(
       // time_difference is
       // - negative until first point is reached
       // - counting from zero to time_from_start of next point
-      const double time_difference =
-        time_data_.uptime.seconds() - segment_time_from_start.seconds();
+      double time_difference = traj_time_.seconds() - segment_time_from_start.seconds();
       bool tolerance_violated_while_moving = false;
       bool outside_goal_tolerance = false;
       bool within_goal_time = true;
@@ -317,7 +315,7 @@ controller_interface::return_type JointTrajectoryController::update(
             tmp_command_[i] = (state_desired_.velocities[i] * ff_velocity_scale_[i]) +
                               pids_[i]->computeCommand(
                                 state_error_.positions[i], state_error_.velocities[i],
-                                (uint64_t)period.nanoseconds());
+                                (uint64_t)update_period_.nanoseconds());
           }
         }
 
@@ -631,7 +629,7 @@ void JointTrajectoryController::query_state_service(
 {
   const auto logger = get_node()->get_logger();
   // Preconditions
-  if (get_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+  if (get_lifecycle_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
   {
     RCLCPP_ERROR(logger, "Can't sample trajectory. Controller is not active.");
     response->success = false;
@@ -944,10 +942,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
 
   // parse remaining parameters
   default_tolerances_ = get_segment_tolerances(logger, params_);
-  // Setup time_data buffer used for scaling
-  time_data_.time = get_node()->now();
-  time_data_.period = rclcpp::Duration::from_nanoseconds(0);
-  time_data_.uptime = get_node()->now();
 
   // Set scaling interfaces
   if (!params_.speed_scaling_state_interface_name.empty())
@@ -1051,6 +1045,15 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   else
   {
     cmd_timeout_ = 0.0;
+  }
+
+  {
+    if (get_update_rate() == 0)
+    {
+      throw std::runtime_error("Controller's update rate is set to 0. This should not happen!");
+    }
+    update_period_ =
+      rclcpp::Duration(0.0, static_cast<uint32_t>(1.0e9 / static_cast<double>(get_update_rate())));
   }
 
   return CallbackReturn::SUCCESS;
@@ -1205,7 +1208,7 @@ rclcpp_action::GoalResponse JointTrajectoryController::goal_received_callback(
   RCLCPP_INFO(get_node()->get_logger(), "Received new action goal");
 
   // Precondition: Running controller
-  if (get_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
+  if (get_lifecycle_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
   {
     RCLCPP_ERROR(
       get_node()->get_logger(), "Can't accept new action goals. Controller is not running.");

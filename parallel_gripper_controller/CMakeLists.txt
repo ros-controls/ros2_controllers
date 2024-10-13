@@ -48,9 +48,8 @@ if(BUILD_TESTING)
   find_package(controller_manager REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
 
-  add_rostest_with_parameters_gmock(test_load_parallel_gripper_action_controllers
-  test/test_load_parallel_gripper_action_controller.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/test/gripper_action_controller_params.yaml)
+  add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
+  ament_add_gmock(test_load_parallel_gripper_action_controllers test/test_load_parallel_gripper_action_controller.cpp)
   target_include_directories(test_load_parallel_gripper_action_controllers PRIVATE include)
   ament_target_dependencies(test_load_parallel_gripper_action_controllers
     controller_manager

@@ -27,6 +27,7 @@
 #include "joint_state_broadcaster_parameters.hpp"
 #include "realtime_tools/realtime_publisher.h"
 #include "sensor_msgs/msg/joint_state.hpp"
+#include "urdf/model.h"
 
 namespace joint_state_broadcaster
 {
@@ -111,6 +112,9 @@ protected:
     dynamic_joint_state_publisher_;
   std::shared_ptr<realtime_tools::RealtimePublisher<control_msgs::msg::DynamicJointState>>
     realtime_dynamic_joint_state_publisher_;
+
+  urdf::Model model_;
+  bool is_model_loaded_ = false;
 };
 
 }  // namespace joint_state_broadcaster
