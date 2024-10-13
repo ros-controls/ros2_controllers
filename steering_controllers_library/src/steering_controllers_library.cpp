@@ -385,8 +385,10 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
     const auto timeout =
       age_of_last_command > ref_timeout_ && ref_timeout_ != rclcpp::Duration::from_seconds(0);
 
-    auto [traction_commands, steering_commands] =
-      odometry_.get_commands(last_linear_velocity_, last_angular_velocity_, params_.open_loop);
+    auto [traction_commands, steering_commands] = odometry_.get_commands(
+      last_linear_velocity_, last_angular_velocity_, params_.open_loop,
+      params_.reduce_wheel_speed_until_steering_reached);
+
     if (params_.front_steering)
     {
       for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
