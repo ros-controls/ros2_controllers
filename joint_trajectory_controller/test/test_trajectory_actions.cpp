@@ -83,12 +83,16 @@ protected:
       {
         // controller hardware cycle update loop
         auto clock = rclcpp::Clock(RCL_STEADY_TIME);
-        auto start_time = clock.now();
+        auto now_time = clock.now();
+        auto start_time = now_time;
+        auto last_time = start_time;
         rclcpp::Duration wait = rclcpp::Duration::from_seconds(2.0);
         auto end_time = start_time + wait;
         while (clock.now() < end_time)
         {
-          traj_controller_->update(clock.now(), clock.now() - start_time);
+          now_time = clock.now();
+          traj_controller_->update(now_time, now_time - last_time);
+          last_time = now_time;
         }
       });
 
