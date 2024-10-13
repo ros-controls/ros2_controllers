@@ -126,6 +126,8 @@ protected:
   Params params_;
   rclcpp::Duration update_period_{0, 0};
 
+  rclcpp::Time traj_time_;
+
   trajectory_msgs::msg::JointTrajectoryPoint last_commanded_state_;
   /// Specify interpolation method. Default to splines.
   interpolation_methods::InterpolationMethod interpolation_method_{
