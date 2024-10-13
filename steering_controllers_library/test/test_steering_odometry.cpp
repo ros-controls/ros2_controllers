@@ -235,15 +235,31 @@ TEST(TestSteeringOdometry, bicycle_IK_right_steering_limited)
     EXPECT_LT(cmd1[0], 0);
   }
 
+  std::vector<double> vel_cmd_not_steered_limited;
   {
     odom.update_from_position(0., -0.1, 1.);  // not fully steered
     auto cmd = odom.get_commands(1., -0.5, false, true);
+    vel_cmd_not_steered_limited = std::get<0>(cmd);  // vel
+    EXPECT_GT(vel_cmd_not_steered_limited[0], 0);
+    // vel should be less than vel_cmd_not_steered now
+    for (size_t i = 0; i < vel_cmd_not_steered_limited.size(); ++i)
+    {
+      EXPECT_LT(vel_cmd_not_steered_limited[i], vel_cmd_not_steered[i]);
+    }
+    auto cmd1 = std::get<1>(cmd);  // steer
+    EXPECT_LT(cmd1[0], 0);
+  }
+
+  {
+    // larger error -> check min of scale
+    odom.update_from_position(0., M_PI, 1.);  // not fully steered
+    auto cmd = odom.get_commands(1., -0.5, false, true);
     auto cmd0 = std::get<0>(cmd);  // vel
     EXPECT_GT(cmd0[0], 0);
-    // vel should be less than vel_cmd_not_steered now
+    // vel should be less than vel_cmd_not_steered_limited now
     for (size_t i = 0; i < cmd0.size(); ++i)
     {
-      EXPECT_LT(cmd0[i], vel_cmd_not_steered[i]);
+      EXPECT_LT(cmd0[i], vel_cmd_not_steered_limited[i]);
     }
     auto cmd1 = std::get<1>(cmd);  // steer
     EXPECT_LT(cmd1[0], 0);
