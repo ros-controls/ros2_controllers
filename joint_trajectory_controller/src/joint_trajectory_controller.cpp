@@ -139,9 +139,6 @@ JointTrajectoryController::state_interface_configuration() const
   }
   if (!params_.speed_scaling_state_interface_name.empty())
   {
-    RCLCPP_INFO(
-      logger, "Using scaling state from the hardware from interface %s.",
-      params_.speed_scaling_state_interface_name.c_str());
     conf.names.push_back(params_.speed_scaling_state_interface_name);
   }
   return conf;
@@ -925,6 +922,18 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
       "of speed scaling, please only use a position interface when configuring this controller.");
     scaling_factor_ = 1.0;
   }
+  if (!params_.speed_scaling_state_interface_name.empty())
+  {
+    RCLCPP_INFO(
+      logger, "Using scaling state from the hardware from interface %s.",
+      params_.speed_scaling_state_interface_name.c_str());
+  }
+  else
+  {
+    RCLCPP_INFO(
+      get_node()->get_logger(),
+      "No scaling interface set. This controller will not use speed scaling.");
+  }
 
   return CallbackReturn::SUCCESS;
 }
@@ -946,7 +955,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   // Set scaling interfaces
   if (!params_.speed_scaling_state_interface_name.empty())
   {
-    RCLCPP_WARN(logger, "I do have a speed scaling state interface configured");
     auto it = std::find_if(
       state_interfaces_.begin(), state_interfaces_.end(), [&](auto & interface)
       { return (interface.get_name() == params_.speed_scaling_state_interface_name); });
@@ -956,7 +964,9 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
     }
     else
     {
-      RCLCPP_ERROR(logger, "Did not find speed scaling interface in state interfaces.");
+      RCLCPP_ERROR(
+        logger, "Did not find speed scaling interface '%s' in state interfaces.",
+        params_.speed_scaling_state_interface_name.c_str());
     }
   }
   if (!params_.speed_scaling_command_interface_name.empty())
