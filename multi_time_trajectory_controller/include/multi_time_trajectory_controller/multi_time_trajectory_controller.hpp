@@ -177,6 +177,8 @@ protected:
   std::shared_ptr<Trajectory> traj_external_point_ptr_ = nullptr;
   realtime_tools::RealtimeBuffer<std::shared_ptr<control_msgs::msg::MultiAxisTrajectory>>
     traj_msg_external_point_ptr_;
+  control_msgs::msg::MultiAxisTrajectory trajectory_msg_recvd_;
+  std::vector<double> reset_dofs_positions_;
   bool is_reliable_update_pending_ = false;
 
   std::shared_ptr<control_msgs::msg::MultiAxisTrajectory> hold_position_msg_ptr_ = nullptr;

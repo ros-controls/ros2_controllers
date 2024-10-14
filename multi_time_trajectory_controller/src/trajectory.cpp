@@ -406,6 +406,7 @@ std::vector<bool> Trajectory::sample(
   }
 
   bool enforce_joint_limits = false;
+  previous_state_cached_ = previous_state_;
   for (std::size_t axis_index = 0; axis_index < num_axes; ++axis_index)
   {
     auto & trajectory = trajectory_msg_->axis_trajectories[axis_index];

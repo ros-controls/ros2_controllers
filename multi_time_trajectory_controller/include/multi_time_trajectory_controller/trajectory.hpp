@@ -164,6 +164,11 @@ public:
     return output_state_after_joint_limit_;
   }
 
+  const std::vector<control_msgs::msg::AxisTrajectoryPoint> & previous_state() const
+  {
+    return previous_state_cached_;
+  }
+
   bool has_trajectory_msg() const;
 
   bool has_nontrivial_msg(std::size_t) const;
@@ -199,6 +204,7 @@ private:
   bool have_previous_ruckig_output_ = false;
 
   std::vector<control_msgs::msg::AxisTrajectoryPoint> previous_state_;
+  std::vector<control_msgs::msg::AxisTrajectoryPoint> previous_state_cached_;  // for logging
 
   std::vector<control_msgs::msg::AxisTrajectoryPoint> output_state_after_interp_;
   std::vector<control_msgs::msg::AxisTrajectoryPoint> output_state_after_joint_limit_;

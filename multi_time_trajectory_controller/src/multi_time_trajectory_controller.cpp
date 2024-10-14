@@ -207,6 +207,10 @@ controller_interface::return_type MultiTimeTrajectoryController::update(
 
   bool first_sample = false;
   std::vector<int> segment_start(dof_, -1);
+  std::fill(
+    reset_dofs_positions_.begin(), reset_dofs_positions_.end(),
+    std::numeric_limits<double>::quiet_NaN());
+
   // currently carrying out a trajectory
   if (has_active_trajectory())
   {
@@ -230,6 +234,7 @@ controller_interface::return_type MultiTimeTrajectoryController::update(
             last_commanded_state_[i].position = std::isnan(reset_flags->at(i).position)
                                                   ? state_current_[i].position
                                                   : reset_flags->at(i).position;
+            reset_dofs_positions_[i] = last_commanded_state_[i].position;
             RCLCPP_INFO_STREAM(
               get_node()->get_logger(), command_axis_names_[i]
                                           << ": last commanded state position reset to "
@@ -798,6 +803,7 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
   ruckig_state_.resize(dof_, emptyTrajectoryPoint());
   ruckig_input_state_.resize(dof_, emptyTrajectoryPoint());
   axis_angle_wraparound_.resize(dof_, false);
+  reset_dofs_positions_.resize(dof_, std::numeric_limits<double>::quiet_NaN());
 
   // TODO(destogl): why is this here? Add comment or move
   if (!reset())
@@ -971,7 +977,7 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
   state_publisher_->msg_.state_after_interpolation.resize(dof_);
   state_publisher_->msg_.state_after_joint_limit.resize(dof_);
   state_publisher_->msg_.segment_start.resize(dof_);
-
+  state_publisher_->msg_.reset_dofs_position.resize(dof_);
   state_publisher_->unlock();
 
   splines_output_pub_ = get_node()->create_publisher<ControllerStateMsg>(
@@ -987,6 +993,7 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
   splines_output_publisher_->msg_.state_after_interpolation.resize(dof_);
   splines_output_publisher_->msg_.state_after_joint_limit.resize(dof_);
   splines_output_publisher_->msg_.segment_start.resize(dof_);
+  splines_output_publisher_->msg_.reset_dofs_position.resize(dof_);
   splines_output_publisher_->unlock();
 
   ruckig_input_pub_ = get_node()->create_publisher<ControllerStateMsg>(
@@ -1002,7 +1009,7 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
   ruckig_input_publisher_->msg_.state_after_interpolation.resize(dof_);
   ruckig_input_publisher_->msg_.state_after_joint_limit.resize(dof_);
   ruckig_input_publisher_->msg_.segment_start.resize(dof_);
-
+  ruckig_input_publisher_->msg_.reset_dofs_position.resize(dof_);
   ruckig_input_publisher_->unlock();
 
   ruckig_input_target_pub_ = get_node()->create_publisher<ControllerStateMsg>(
@@ -1018,6 +1025,7 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
   ruckig_input_target_publisher_->msg_.state_after_interpolation.resize(dof_);
   ruckig_input_target_publisher_->msg_.state_after_joint_limit.resize(dof_);
   ruckig_input_target_publisher_->msg_.segment_start.resize(dof_);
+  ruckig_input_target_publisher_->msg_.reset_dofs_position.resize(dof_);
   ruckig_input_target_publisher_->unlock();
 
   RCLCPP_INFO(
@@ -1410,8 +1418,10 @@ void MultiTimeTrajectoryController::publish_state(
     state_publisher_->msg_.using_odometry_feedback = params_.use_feedback;
     state_publisher_->msg_.trajectory_active = has_active_trajectory();
     state_publisher_->msg_.last_odom_feedback = last_odom_feedback_;
+    state_publisher_->msg_.goal_recvd = trajectory_msg_recvd_;
     state_publisher_->msg_.goal = *traj_external_point_ptr_->get_trajectory_msg();
     state_publisher_->msg_.first_sample_in_trajectory = first_sample;
+    state_publisher_->msg_.reset_dofs_position = reset_dofs_positions_;
     state_publisher_->msg_.trajectory_start_time = traj_external_point_ptr_->start_time();
     state_publisher_->msg_.time_before_trajectory =
       traj_external_point_ptr_->time_before_trajectory();
@@ -1421,6 +1431,7 @@ void MultiTimeTrajectoryController::publish_state(
       traj_external_point_ptr_->state_after_interp();
     state_publisher_->msg_.state_after_joint_limit =
       traj_external_point_ptr_->state_after_joint_limit();
+    state_publisher_->msg_.state_previous = traj_external_point_ptr_->previous_state();
     state_publisher_->msg_.segment_start = segment_start;
 
     read_commands_from_command_interfaces(command_current_);
