@@ -177,6 +177,7 @@ protected:
   std::shared_ptr<Trajectory> traj_external_point_ptr_ = nullptr;
   realtime_tools::RealtimeBuffer<std::shared_ptr<control_msgs::msg::MultiAxisTrajectory>>
     traj_msg_external_point_ptr_;
+  bool is_reliable_update_pending_ = false;
 
   std::shared_ptr<control_msgs::msg::MultiAxisTrajectory> hold_position_msg_ptr_ = nullptr;
 

@@ -184,6 +184,7 @@ controller_interface::return_type MultiTimeTrajectoryController::update(
       update_pids();
     }
   }
+  if (is_reliable_update_pending_) is_reliable_update_pending_ = false;
 
   // don't update goal after we sampled the trajectory to avoid any racecondition
   const auto active_goal = *rt_active_goal_.readFromRT();
@@ -1175,12 +1176,21 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
 void MultiTimeTrajectoryController::reference_callback(
   const std::shared_ptr<ControllerReferenceMsg> msg, const bool reliable)
 {
-  last_reference_ = *msg;
   if (reliable)
   {
     last_reliable_reference_ = *msg;
+    is_reliable_update_pending_ = true;
+    add_new_trajectory_msg(msg);
   }
-  add_new_trajectory_msg(msg);
+  else
+  {
+    // drop the message if we have a reliable update pending
+    if (!is_reliable_update_pending_)
+    {
+      last_reference_ = *msg;
+      add_new_trajectory_msg(msg);
+    }
+  }
 }
 
 controller_interface::CallbackReturn MultiTimeTrajectoryController::on_activate(
