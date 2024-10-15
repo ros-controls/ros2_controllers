@@ -159,6 +159,14 @@ public:
     return output_state_after_interp_;
   }
 
+  auto interpolation_state_a() const { return interpolation_state_a_; }
+
+  auto interpolation_state_b() const { return interpolation_state_b_; }
+
+  auto interpoland_time() const { return interpoland_time_; }
+
+  auto inter_point_time() const { return inter_point_time_; }
+
   const std::vector<control_msgs::msg::AxisTrajectoryPoint> & state_after_joint_limit() const
   {
     return output_state_after_joint_limit_;
@@ -203,11 +211,15 @@ private:
   // Ruckig output.
   bool have_previous_ruckig_output_ = false;
 
+  // for logging
   std::vector<control_msgs::msg::AxisTrajectoryPoint> previous_state_;
-  std::vector<control_msgs::msg::AxisTrajectoryPoint> previous_state_cached_;  // for logging
-
+  std::vector<control_msgs::msg::AxisTrajectoryPoint> previous_state_cached_;
+  std::vector<double> inter_point_time_;
+  std::vector<double> interpoland_time_;
   std::vector<control_msgs::msg::AxisTrajectoryPoint> output_state_after_interp_;
   std::vector<control_msgs::msg::AxisTrajectoryPoint> output_state_after_joint_limit_;
+  std::vector<control_msgs::msg::AxisTrajectoryPoint> interpolation_state_a_;
+  std::vector<control_msgs::msg::AxisTrajectoryPoint> interpolation_state_b_;
 };
 
 /**

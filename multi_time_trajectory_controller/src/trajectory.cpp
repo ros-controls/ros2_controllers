@@ -438,6 +438,12 @@ std::vector<bool> Trajectory::sample(
           state_before_traj_msg_[axis_index], first_point_in_msg,
           (first_point_timestamp - time_before_traj_msg_[axis_index]).seconds());
 
+        interpolation_state_a_[axis_index] = state_before_traj_msg_[axis_index];
+        interpolation_state_b_[axis_index] = first_point_in_msg;
+        inter_point_time_[axis_index] =
+          (first_point_timestamp - time_before_traj_msg_[axis_index]).seconds();
+        interpoland_time_[axis_index] = (sample_time - time_before_traj_msg_[axis_index]).seconds();
+
         interpolate_between_points(
           time_before_traj_msg_[axis_index], state_before_traj_msg_[axis_index],
           first_point_timestamp, first_point_in_msg, sample_time, do_ruckig_smoothing, false,
@@ -482,6 +488,11 @@ std::vector<bool> Trajectory::sample(
         {
           // it changes points only if position and velocity do not exist, but their derivatives
           deduce_from_derivatives(point, next_point, (t1 - t0).seconds());
+
+          inter_point_time_[axis_index] = (t1 - t0).seconds();
+          interpoland_time_[axis_index] = (sample_time - t0).seconds();
+          interpolation_state_a_[axis_index] = point;
+          interpolation_state_b_[axis_index] = next_point;
 
           if (!interpolate_between_points(
                 t0, point, t1, next_point, sample_time, do_ruckig_smoothing, false,
@@ -545,6 +556,10 @@ std::vector<bool> Trajectory::sample(
     }
 
     // do not do splines when trajectory has finished because the time is achieved
+    inter_point_time_[axis_index] = (t0 - t0).seconds();
+    interpoland_time_[axis_index] = (sample_time - t0).seconds();
+    interpolation_state_a_[axis_index] = last_point;
+    interpolation_state_b_[axis_index] = last_point;
     if (!interpolate_between_points(
           t0, last_point, t0, last_point, sample_time, do_ruckig_smoothing, true,
           output_state[axis_index], period, splines_state[axis_index], ruckig_state[axis_index],
