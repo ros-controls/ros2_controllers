@@ -122,7 +122,7 @@ protected:
   Params params_;
 
   std::vector<control_msgs::msg::AxisTrajectoryPoint> last_commanded_state_;
-  rclcpp::Time last_commanded_time_;
+  std::vector<rclcpp::Time> last_commanded_time_;
   /// Specify interpolation method. Default to splines.
   joint_trajectory_controller::interpolation_methods::InterpolationMethod interpolation_method_{
     joint_trajectory_controller::interpolation_methods::DEFAULT_INTERPOLATION};

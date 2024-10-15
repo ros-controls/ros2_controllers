@@ -120,12 +120,13 @@ Trajectory::Trajectory(
 : trajectory_msg_(joint_trajectory),
   trajectory_start_time_(static_cast<rclcpp::Time>(joint_trajectory->header.stamp))
 {
-  set_point_before_trajectory_msg(current_time, current_point);
+  set_point_before_trajectory_msg(
+    std::vector<rclcpp::Time>{current_point.size(), current_time}, current_point);
   //   update(joint_trajectory);
 }
 
 void Trajectory::set_point_before_trajectory_msg(
-  const rclcpp::Time & current_time,
+  const std::vector<rclcpp::Time> & current_time,
   const std::vector<control_msgs::msg::AxisTrajectoryPoint> & current_point,
   const std::vector<bool> & joints_angle_wraparound)
 {
@@ -144,9 +145,10 @@ void Trajectory::set_point_before_trajectory_msg(
     {
       auto iter = trajectory_msg_->axis_trajectories[axis_index].axis_points.begin();
       auto const traj_start_time =
-        rclcpp::Time(trajectory_msg_->header.stamp, current_time.get_clock_type());
+        rclcpp::Time(trajectory_msg_->header.stamp, current_time[axis_index].get_clock_type());
       auto const end = trajectory_msg_->axis_trajectories[axis_index].axis_points.end();
-      while (iter != end && iter->time_from_start + traj_start_time < time_before_traj_msg_)
+      while (iter != end &&
+             iter->time_from_start + traj_start_time < time_before_traj_msg_[axis_index])
       {
         ++iter;
       }
@@ -166,7 +168,7 @@ void Trajectory::set_point_before_trajectory_msg(
 
         // set the new trajectory to just be the single reset point
         trajectory_msg_->axis_trajectories[axis_index].axis_points.back().time_from_start =
-          time_before_traj_msg_ - traj_start_time;
+          time_before_traj_msg_[axis_index] - traj_start_time;
         // we replaced the whole trajectory, no need to copy below
         continue;
       }
@@ -378,7 +380,9 @@ std::vector<bool> Trajectory::sample(
   }
 
   // sampling before the current point
-  if (sample_time < time_before_traj_msg_)
+  if (std::any_of(
+        time_before_traj_msg_.begin(), time_before_traj_msg_.end(),
+        [&](rclcpp::Time time) { return sample_time < time; }))
   {
     return is_valid;
   }
@@ -432,12 +436,12 @@ std::vector<bool> Trajectory::sample(
         // it changes points only if position and velocity do not exist, but their derivatives
         deduce_from_derivatives(
           state_before_traj_msg_[axis_index], first_point_in_msg,
-          (first_point_timestamp - time_before_traj_msg_).seconds());
+          (first_point_timestamp - time_before_traj_msg_[axis_index]).seconds());
 
         interpolate_between_points(
-          time_before_traj_msg_, state_before_traj_msg_[axis_index], first_point_timestamp,
-          first_point_in_msg, sample_time, do_ruckig_smoothing, false, output_state[axis_index],
-          period, splines_state[axis_index], ruckig_state[axis_index],
+          time_before_traj_msg_[axis_index], state_before_traj_msg_[axis_index],
+          first_point_timestamp, first_point_in_msg, sample_time, do_ruckig_smoothing, false,
+          output_state[axis_index], period, splines_state[axis_index], ruckig_state[axis_index],
           ruckig_input_state[axis_index], axis_index);
 
         output_state_after_interp_[axis_index] = output_state[axis_index];

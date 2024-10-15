@@ -54,7 +54,7 @@ public:
    */
 
   void set_point_before_trajectory_msg(
-    const rclcpp::Time & current_time,
+    const std::vector<rclcpp::Time> & current_time,
     const std::vector<control_msgs::msg::AxisTrajectoryPoint> & current_point,
     const std::vector<bool> & joints_angle_wraparound = std::vector<bool>());
 
@@ -148,7 +148,7 @@ public:
 
   rclcpp::Time start_time() const;
 
-  rclcpp::Time time_before_trajectory() const { return time_before_traj_msg_; }
+  std::vector<rclcpp::Time> const & time_before_trajectory() const { return time_before_traj_msg_; }
   const std::vector<control_msgs::msg::AxisTrajectoryPoint> & state_before_trajectory() const
   {
     return state_before_traj_msg_;
@@ -188,7 +188,7 @@ private:
   std::shared_ptr<control_msgs::msg::MultiAxisTrajectory> trajectory_msg_;
   rclcpp::Time trajectory_start_time_;
 
-  rclcpp::Time time_before_traj_msg_;
+  std::vector<rclcpp::Time> time_before_traj_msg_;
   std::vector<control_msgs::msg::AxisTrajectoryPoint> state_before_traj_msg_;
 
   bool sampled_already_ = false;

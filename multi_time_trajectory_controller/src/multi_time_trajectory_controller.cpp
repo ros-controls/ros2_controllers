@@ -24,6 +24,7 @@
 #include <iterator>
 #include <limits>
 #include <stdexcept>
+#include <vector>
 
 #include <controller_interface/controller_interface_base.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
@@ -230,7 +231,7 @@ controller_interface::return_type MultiTimeTrajectoryController::update(
           if (reset_flags->at(i).reset)
           {
             // if we reset, treat it as the last command
-            last_commanded_time_ = time;
+            last_commanded_time_[i] = time;
             last_commanded_state_[i].position = std::isnan(reset_flags->at(i).position)
                                                   ? state_current_[i].position
                                                   : reset_flags->at(i).position;
@@ -267,17 +268,18 @@ controller_interface::return_type MultiTimeTrajectoryController::update(
         // if all of the velocities at the last commanded state are zero, then we should have held
         // that position the whole time so set the last commanded time to now so we don't
         // interpolate from whenever the last trajectory ended
-        if (std::all_of(
-              last_commanded_state_.begin(), last_commanded_state_.end(),
-              [](control_msgs::msg::AxisTrajectoryPoint const & p)
-              { return p.velocity == 0 || std::isnan(p.velocity); }))
+        for (std::size_t axis_index = 0; axis_index < dof_; ++axis_index)
         {
-          last_commanded_time_ = time;
-        }
+          auto const & vel = last_commanded_state_[axis_index].velocity;
+          if (vel == 0 || std::isnan(vel))
+          {
+            last_commanded_time_[axis_index] = time;
+          }
 
-        if (last_commanded_time_.seconds() == 0.0)
-        {
-          last_commanded_time_ = time - period;
+          if (last_commanded_time_[axis_index].seconds() == 0.0)
+          {
+            last_commanded_time_[axis_index] = time - period;
+          }
         }
         traj_external_point_ptr_->set_point_before_trajectory_msg(
           last_commanded_time_, last_commanded_state_, axis_angle_wraparound_);
@@ -285,7 +287,7 @@ controller_interface::return_type MultiTimeTrajectoryController::update(
       else
       {
         traj_external_point_ptr_->set_point_before_trajectory_msg(
-          time, state_current_, axis_angle_wraparound_);
+          std::vector<rclcpp::Time>{dof_, time}, state_current_, axis_angle_wraparound_);
       }
     }
 
@@ -316,8 +318,8 @@ controller_interface::return_type MultiTimeTrajectoryController::update(
         }
         else
         {
-          segment_start[axis_index] =
-            (int)(std::distance(traj_external_point_ptr_->begin(axis_index), start_segment_itr));
+          segment_start[axis_index] = static_cast<int>(
+            std::distance(traj_external_point_ptr_->begin(axis_index), start_segment_itr));
         }
 
         // this is the time instance
@@ -424,8 +426,8 @@ controller_interface::return_type MultiTimeTrajectoryController::update(
           }
 
           // store the previous command. Used in open-loop control mode
-          last_commanded_state_ = state_desired_;
-          last_commanded_time_ = time;
+          last_commanded_state_[axis_index] = state_desired_[axis_index];
+          last_commanded_time_[axis_index] = time;
         }
 
         if (active_goal)
@@ -1276,7 +1278,7 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_activate(
   state_current_ = state;
   state_desired_ = state;
   last_commanded_state_ = state;
-  last_commanded_time_ = rclcpp::Time();
+  last_commanded_time_ = std::vector<rclcpp::Time>{dof_, rclcpp::Time()};
 
   // The controller should start by holding position at the beginning of active state
   add_new_trajectory_msg(set_hold_position());
@@ -1423,8 +1425,12 @@ void MultiTimeTrajectoryController::publish_state(
     state_publisher_->msg_.first_sample_in_trajectory = first_sample;
     state_publisher_->msg_.reset_dofs_position = reset_dofs_positions_;
     state_publisher_->msg_.trajectory_start_time = traj_external_point_ptr_->start_time();
-    state_publisher_->msg_.time_before_trajectory =
-      traj_external_point_ptr_->time_before_trajectory();
+    auto const times_before_traj = traj_external_point_ptr_->time_before_trajectory();
+    state_publisher_->msg_.time_before_trajectory.clear();
+    for (auto const & time_before_traj : times_before_traj)
+    {
+      state_publisher_->msg_.time_before_trajectory.push_back(time_before_traj);
+    }
     state_publisher_->msg_.state_before_trajectory =
       traj_external_point_ptr_->state_before_trajectory();
     state_publisher_->msg_.state_after_interpolation =
