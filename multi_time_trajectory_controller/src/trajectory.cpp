@@ -133,12 +133,6 @@ void Trajectory::set_point_before_trajectory_msg(
   time_before_traj_msg_ = current_time;
   state_before_traj_msg_ = current_point;
   std::size_t const num_axes = state_before_traj_msg_.size();
-  for (std::size_t axis_index = 0; axis_index < num_axes; ++axis_index)
-  {
-    // TODO(bijoua29): remove the below 2 lines when set point is sent with zero vel
-    state_before_traj_msg_[axis_index].velocity = 0;
-    state_before_traj_msg_[axis_index].acceleration = 0;
-  }
 
   // Compute offsets due to wrapping joints
   wraparound_joint(
