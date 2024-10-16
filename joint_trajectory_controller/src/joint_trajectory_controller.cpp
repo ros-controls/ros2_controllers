@@ -284,7 +284,7 @@ controller_interface::return_type JointTrajectoryController::update(
             tmp_command_[i] = (state_desired_.velocities[i] * ff_velocity_scale_[i]) +
                               pids_[i]->computeCommand(
                                 state_error_.positions[i], state_error_.velocities[i],
-                                (uint64_t)update_period_.nanoseconds());
+                                (uint64_t)period.nanoseconds());
           }
         }
 
