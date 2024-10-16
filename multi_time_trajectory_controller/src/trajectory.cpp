@@ -132,6 +132,13 @@ void Trajectory::set_point_before_trajectory_msg(
 {
   time_before_traj_msg_ = current_time;
   state_before_traj_msg_ = current_point;
+  std::size_t const num_axes = state_before_traj_msg_.size();
+  for (std::size_t axis_index = 0; axis_index < num_axes; ++axis_index)
+  {
+    // TODO(bijoua29): remove the below 2 lines when set point is sent with zero vel
+    state_before_traj_msg_[axis_index].velocity = 0;
+    state_before_traj_msg_[axis_index].acceleration = 0;
+  }
 
   // Compute offsets due to wrapping joints
   wraparound_joint(
@@ -140,7 +147,6 @@ void Trajectory::set_point_before_trajectory_msg(
 
   if (trajectory_msg_)
   {
-    std::size_t const num_axes = state_before_traj_msg_.size();
     for (std::size_t axis_index = 0; axis_index < num_axes; ++axis_index)
     {
       auto iter = trajectory_msg_->axis_trajectories[axis_index].axis_points.begin();
@@ -161,10 +167,6 @@ void Trajectory::set_point_before_trajectory_msg(
       {
         trajectory_msg_->axis_trajectories[axis_index].axis_points = {
           state_before_traj_msg_[axis_index]};
-
-        // TODO(bijoua29): remove the below 2 lines when set point is sent with zero vel
-        trajectory_msg_->axis_trajectories[axis_index].axis_points.back().velocity = 0;
-        trajectory_msg_->axis_trajectories[axis_index].axis_points.back().acceleration = 0;
 
         // set the new trajectory to just be the single reset point
         trajectory_msg_->axis_trajectories[axis_index].axis_points.back().time_from_start =
