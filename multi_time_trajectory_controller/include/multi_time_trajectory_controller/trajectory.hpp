@@ -163,9 +163,9 @@ public:
 
   auto interpolation_state_b() const { return interpolation_state_b_; }
 
-  auto interpoland_time() const { return interpoland_time_; }
+  auto interpoland_time_ns() const { return interpoland_time_ns_; }
 
-  auto inter_point_time() const { return inter_point_time_; }
+  auto inter_point_time_ns() const { return inter_point_time_ns_; }
 
   const std::vector<control_msgs::msg::AxisTrajectoryPoint> & state_after_joint_limit() const
   {
@@ -214,8 +214,8 @@ private:
   // for logging
   std::vector<control_msgs::msg::AxisTrajectoryPoint> previous_state_;
   std::vector<control_msgs::msg::AxisTrajectoryPoint> previous_state_cached_;
-  std::vector<double> inter_point_time_;
-  std::vector<double> interpoland_time_;
+  std::vector<int64_t> inter_point_time_ns_;
+  std::vector<int64_t> interpoland_time_ns_;
   std::vector<control_msgs::msg::AxisTrajectoryPoint> output_state_after_interp_;
   std::vector<control_msgs::msg::AxisTrajectoryPoint> output_state_after_joint_limit_;
   std::vector<control_msgs::msg::AxisTrajectoryPoint> interpolation_state_a_;

@@ -331,8 +331,8 @@ void Trajectory::update(
   }
   output_state_after_interp_ = previous_state_;
   output_state_after_joint_limit_ = previous_state_;
-  inter_point_time_.resize(dim);
-  interpoland_time_.resize(dim);
+  inter_point_time_ns_.resize(dim);
+  interpoland_time_ns_.resize(dim);
   interpolation_state_a_.resize(dim);
   interpolation_state_b_.resize(dim);
 }
@@ -444,9 +444,10 @@ std::vector<bool> Trajectory::sample(
 
         interpolation_state_a_[axis_index] = state_before_traj_msg_[axis_index];
         interpolation_state_b_[axis_index] = first_point_in_msg;
-        inter_point_time_[axis_index] =
-          (first_point_timestamp - time_before_traj_msg_[axis_index]).seconds();
-        interpoland_time_[axis_index] = (sample_time - time_before_traj_msg_[axis_index]).seconds();
+        inter_point_time_ns_[axis_index] =
+          (first_point_timestamp - time_before_traj_msg_[axis_index]).nanoseconds();
+        interpoland_time_ns_[axis_index] =
+          (sample_time - time_before_traj_msg_[axis_index]).nanoseconds();
 
         interpolate_between_points(
           time_before_traj_msg_[axis_index], state_before_traj_msg_[axis_index],
@@ -493,8 +494,8 @@ std::vector<bool> Trajectory::sample(
           // it changes points only if position and velocity do not exist, but their derivatives
           deduce_from_derivatives(point, next_point, (t1 - t0).seconds());
 
-          inter_point_time_[axis_index] = (t1 - t0).seconds();
-          interpoland_time_[axis_index] = (sample_time - t0).seconds();
+          inter_point_time_ns_[axis_index] = (t1 - t0).nanoseconds();
+          interpoland_time_ns_[axis_index] = (sample_time - t0).nanoseconds();
           interpolation_state_a_[axis_index] = point;
           interpolation_state_b_[axis_index] = next_point;
 
@@ -560,8 +561,8 @@ std::vector<bool> Trajectory::sample(
     }
 
     // do not do splines when trajectory has finished because the time is achieved
-    inter_point_time_[axis_index] = (t0 - t0).seconds();
-    interpoland_time_[axis_index] = (sample_time - t0).seconds();
+    inter_point_time_ns_[axis_index] = (t0 - t0).nanoseconds();
+    interpoland_time_ns_[axis_index] = (sample_time - t0).nanoseconds();
     interpolation_state_a_[axis_index] = last_point;
     interpolation_state_b_[axis_index] = last_point;
     if (!interpolate_between_points(

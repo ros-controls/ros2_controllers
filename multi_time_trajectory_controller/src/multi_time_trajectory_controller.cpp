@@ -1431,8 +1431,8 @@ void MultiTimeTrajectoryController::publish_state(
     {
       state_publisher_->msg_.time_before_trajectory.push_back(time_before_traj);
     }
-    state_publisher_->msg_.interpoland_times = traj_external_point_ptr_->interpoland_time();
-    state_publisher_->msg_.interpoint_times = traj_external_point_ptr_->inter_point_time();
+    state_publisher_->msg_.interpoland_times_ns = traj_external_point_ptr_->interpoland_time_ns();
+    state_publisher_->msg_.interpoint_times_ns = traj_external_point_ptr_->inter_point_time_ns();
     state_publisher_->msg_.interpolation_state_a =
       traj_external_point_ptr_->interpolation_state_a();
     state_publisher_->msg_.interpolation_state_b =
