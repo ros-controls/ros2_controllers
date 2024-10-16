@@ -178,6 +178,7 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
   SetUpTrajectoryController(executor);
   traj_controller_->get_node()->set_parameter(
     rclcpp::Parameter("allow_nonzero_velocity_at_trajectory_end", true));
+  traj_controller_->get_node()->set_parameter(rclcpp::Parameter("update_rate", 10));
 
   // This call is replacing the way parameters are set via launch
   auto state = traj_controller_->configure();
@@ -1678,9 +1679,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_erro
   rclcpp::executors::SingleThreadedExecutor executor;
   // default if false so it will not be actually set parameter
   rclcpp::Parameter is_open_loop_parameters("open_loop_control", false);
-  rclcpp::Parameter update_rate_param("update_rate", 100);
-  SetUpAndActivateTrajectoryController(
-    executor, {is_open_loop_parameters, update_rate_param}, true);
+  SetUpAndActivateTrajectoryController(executor, {is_open_loop_parameters}, true);
 
   if (traj_controller_->has_position_command_interface() == false)
   {
