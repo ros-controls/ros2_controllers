@@ -1599,7 +1599,6 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_partial_old_trajectory
   // send points_old and wait to reach first point
   publish(time_from_start, points_old, rclcpp::Time());
   expected_actual.positions = {points_old[0].begin(), points_old[0].end()};
-  expected_desired = expected_actual;
   traj_controller_->wait_for_trajectory(executor);
   auto end_time = updateControllerAsync(
     rclcpp::Duration(delay), rclcpp::Time(0, 0, RCL_STEADY_TIME),
