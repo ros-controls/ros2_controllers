@@ -331,6 +331,10 @@ void Trajectory::update(
   }
   output_state_after_interp_ = previous_state_;
   output_state_after_joint_limit_ = previous_state_;
+  inter_point_time_.resize(dim);
+  interpoland_time_.resize(dim);
+  interpolation_state_a_.resize(dim);
+  interpolation_state_b_.resize(dim);
 }
 
 std::vector<bool> Trajectory::sample(
