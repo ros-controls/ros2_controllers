@@ -22,10 +22,7 @@
 #include <vector>
 
 #include "angles/angles.h"
-#include "builtin_interfaces/msg/duration.hpp"
-#include "builtin_interfaces/msg/time.hpp"
 #include "controller_interface/helpers.hpp"
-#include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "joint_trajectory_controller/trajectory.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
@@ -46,23 +43,6 @@ JointTrajectoryController::JointTrajectoryController()
 
 controller_interface::CallbackReturn JointTrajectoryController::on_init()
 {
-  if (!urdf_.empty())
-  {
-    if (!model_.initString(urdf_))
-    {
-      RCLCPP_ERROR(get_node()->get_logger(), "Failed to parse URDF file");
-    }
-    else
-    {
-      RCLCPP_DEBUG(get_node()->get_logger(), "Successfully parsed URDF file");
-    }
-  }
-  else
-  {
-    // empty URDF is used for some tests
-    RCLCPP_DEBUG(get_node()->get_logger(), "No URDF file given");
-  }
-
   try
   {
     // Create the parameter listener and get the parameters
@@ -73,6 +53,41 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
   {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
     return CallbackReturn::ERROR;
+  }
+
+  const std::string & urdf = get_robot_description();
+  if (!urdf.empty())
+  {
+    urdf::Model model;
+    if (!model.initString(urdf))
+    {
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to parse robot description!");
+      return CallbackReturn::ERROR;
+    }
+    else
+    {
+      /// initialize the URDF model and update the joint angles wraparound vector
+      // Configure joint position error normalization (angle_wraparound)
+      joints_angle_wraparound_.resize(params_.joints.size(), false);
+      for (size_t i = 0; i < params_.joints.size(); ++i)
+      {
+        auto urdf_joint = model.getJoint(params_.joints[i]);
+        if (urdf_joint && urdf_joint->type == urdf::Joint::CONTINUOUS)
+        {
+          RCLCPP_DEBUG(
+            get_node()->get_logger(), "joint '%s' is of type continuous, use angle_wraparound.",
+            params_.joints[i].c_str());
+          joints_angle_wraparound_[i] = true;
+        }
+        // do nothing if joint is not found in the URDF
+      }
+      RCLCPP_DEBUG(get_node()->get_logger(), "Successfully parsed URDF file");
+    }
+  }
+  else
+  {
+    // empty URDF is used for some tests
+    RCLCPP_DEBUG(get_node()->get_logger(), "No URDF file given");
   }
 
   return CallbackReturn::SUCCESS;
@@ -122,7 +137,7 @@ JointTrajectoryController::state_interface_configuration() const
 controller_interface::return_type JointTrajectoryController::update(
   const rclcpp::Time & time, const rclcpp::Duration & period)
 {
-  if (get_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
+  if (get_lifecycle_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
   {
     return controller_interface::return_type::OK;
   }
@@ -577,7 +592,7 @@ void JointTrajectoryController::query_state_service(
 {
   const auto logger = get_node()->get_logger();
   // Preconditions
-  if (get_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+  if (get_lifecycle_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
   {
     RCLCPP_ERROR(logger, "Can't sample trajectory. Controller is not active.");
     response->success = false;
@@ -697,24 +712,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     tmp_command_.resize(dof_, 0.0);
 
     update_pids();
-  }
-
-  // Configure joint position error normalization (angle_wraparound)
-  joints_angle_wraparound_.resize(dof_);
-  for (size_t i = 0; i < dof_; ++i)
-  {
-    if (!urdf_.empty())
-    {
-      auto urdf_joint = model_.getJoint(params_.joints[i]);
-      if (urdf_joint && urdf_joint->type == urdf::Joint::CONTINUOUS)
-      {
-        RCLCPP_DEBUG(
-          logger, "joint '%s' is of type continuous, use angle_wraparound.",
-          params_.joints[i].c_str());
-        joints_angle_wraparound_[i] = true;
-      }
-      // do nothing if joint is not found in the URDF
-    }
   }
 
   if (params_.state_interfaces.empty())
@@ -1114,7 +1111,7 @@ rclcpp_action::GoalResponse JointTrajectoryController::goal_received_callback(
   RCLCPP_INFO(get_node()->get_logger(), "Received new action goal");
 
   // Precondition: Running controller
-  if (get_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
+  if (get_lifecycle_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
   {
     RCLCPP_ERROR(
       get_node()->get_logger(), "Can't accept new action goals. Controller is not running.");

@@ -14,10 +14,8 @@
 
 #include "test_bicycle_steering_controller.hpp"
 
-#include <limits>
 #include <memory>
 #include <string>
-#include <utility>
 #include <vector>
 
 class BicycleSteeringControllerTest
@@ -75,9 +73,9 @@ TEST_F(BicycleSteeringControllerTest, check_exported_interfaces)
   {
     const std::string ref_itf_name =
       std::string(controller_->get_node()->get_name()) + "/" + joint_reference_interfaces_[i];
-    EXPECT_EQ(reference_interfaces[i].get_name(), ref_itf_name);
-    EXPECT_EQ(reference_interfaces[i].get_prefix_name(), controller_->get_node()->get_name());
-    EXPECT_EQ(reference_interfaces[i].get_interface_name(), joint_reference_interfaces_[i]);
+    EXPECT_EQ(reference_interfaces[i]->get_name(), ref_itf_name);
+    EXPECT_EQ(reference_interfaces[i]->get_prefix_name(), controller_->get_node()->get_name());
+    EXPECT_EQ(reference_interfaces[i]->get_interface_name(), joint_reference_interfaces_[i]);
   }
 }
 
@@ -238,7 +236,7 @@ TEST_F(BicycleSteeringControllerTest, receive_message_and_publish_updated_status
   EXPECT_EQ(msg.steering_angle_command[0], 2.2);
 
   publish_commands(0.1, 0.2);
-  ASSERT_TRUE(controller_->wait_for_commands(executor));
+  controller_->wait_for_commands(executor);
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),

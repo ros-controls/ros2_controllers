@@ -1,6 +1,6 @@
-:github_url: https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/doc/release_notes/Jazzy.rst
+:github_url: https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/doc/release_notes.rst
 
-Iron to Jazzy
+Release Notes: Iron to Jazzy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 This list summarizes the changes between Iron (previous) and Jazzy (current) releases.
 
@@ -56,6 +56,7 @@ steering_controllers_library
 ********************************
 * Changing default int values to double in steering controller's yaml file. The controllers should now initialize successfully without specifying these parameters (`#927 <https://github.com/ros-controls/ros2_controllers/pull/927>`_).
 * A fix for Ackermann steering odometry was added (`#921 <https://github.com/ros-controls/ros2_controllers/pull/921>`_).
+* Do not reset the steering wheels to ``0.0`` on timeout (`#1289 <https://github.com/ros-controls/ros2_controllers/pull/1289>`_).
 
 tricycle_controller
 ************************

@@ -15,11 +15,11 @@
 #ifndef TEST_JOINT_STATE_BROADCASTER_HPP_
 #define TEST_JOINT_STATE_BROADCASTER_HPP_
 
+#include <gmock/gmock.h>
+
 #include <memory>
 #include <string>
 #include <vector>
-
-#include "gmock/gmock.h"
 
 #include "joint_state_broadcaster/joint_state_broadcaster.hpp"
 
@@ -35,6 +35,10 @@ class FriendJointStateBroadcaster : public joint_state_broadcaster::JointStateBr
   FRIEND_TEST(JointStateBroadcasterTest, ConfigureErrorTest);
   FRIEND_TEST(JointStateBroadcasterTest, ActivateEmptyTest);
   FRIEND_TEST(JointStateBroadcasterTest, ActivateTestWithoutJointsParameter);
+  FRIEND_TEST(JointStateBroadcasterTest, ActivateTestWithoutJointsParameterInvalidURDF);
+  FRIEND_TEST(JointStateBroadcasterTest, ActivateTestWithoutJointsParameterWithRobotDescription);
+  FRIEND_TEST(JointStateBroadcasterTest, ActivateTestWithJointsAndNoInterfaces);
+  FRIEND_TEST(JointStateBroadcasterTest, ActivateTestWithJointsAndInterfaces);
   FRIEND_TEST(JointStateBroadcasterTest, ActivateTestWithoutInterfacesParameter);
   FRIEND_TEST(JointStateBroadcasterTest, ActivateDeactivateTestTwoJointsOneInterface);
   FRIEND_TEST(JointStateBroadcasterTest, ActivateTestOneJointTwoInterfaces);
@@ -60,8 +64,8 @@ public:
     const std::vector<std::string> & interfaces = {});
 
   void init_broadcaster_and_set_parameters(
-    const std::vector<std::string> & joint_names = {},
-    const std::vector<std::string> & interfaces = {});
+    const std::string & robot_description, const std::vector<std::string> & joint_names,
+    const std::vector<std::string> & interfaces);
 
   void assign_state_interfaces(
     const std::vector<std::string> & joint_names = {},

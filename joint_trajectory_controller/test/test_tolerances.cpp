@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <chrono>
+#include <gmock/gmock.h>
+
 #include <cmath>
-#include <memory>
 #include <vector>
 
-#include "gmock/gmock.h"
 #include "rclcpp/duration.hpp"
 #include "rclcpp/logger.hpp"
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
@@ -32,14 +31,14 @@ using trajectory_msgs::msg::JointTrajectoryPoint;
 std::vector<std::string> joint_names_ = {"joint1", "joint2", "joint3"};
 
 control_msgs::action::FollowJointTrajectory_Goal prepareGoalMsg(
-  const std::vector<JointTrajectoryPoint> & points, double timeout,
+  const std::vector<JointTrajectoryPoint> & points, double goal_time_tolerance,
   const std::vector<control_msgs::msg::JointTolerance> path_tolerance =
     std::vector<control_msgs::msg::JointTolerance>(),
   const std::vector<control_msgs::msg::JointTolerance> goal_tolerance =
     std::vector<control_msgs::msg::JointTolerance>())
 {
   control_msgs::action::FollowJointTrajectory_Goal goal_msg;
-  goal_msg.goal_time_tolerance = rclcpp::Duration::from_seconds(timeout);
+  goal_msg.goal_time_tolerance = rclcpp::Duration::from_seconds(goal_time_tolerance);
   goal_msg.goal_tolerance = goal_tolerance;
   goal_msg.path_tolerance = path_tolerance;
   goal_msg.trajectory.joint_names = joint_names_;

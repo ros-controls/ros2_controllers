@@ -15,11 +15,11 @@
 #ifndef TEST_GRIPPER_CONTROLLERS_HPP_
 #define TEST_GRIPPER_CONTROLLERS_HPP_
 
+#include <gmock/gmock.h>
+
 #include <memory>
 #include <string>
 #include <vector>
-
-#include "gmock/gmock.h"
 
 #include "gripper_controllers/gripper_action_controller.hpp"
 #include "hardware_interface/handle.hpp"

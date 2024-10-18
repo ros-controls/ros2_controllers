@@ -20,7 +20,6 @@
 #include "steering_controllers_library/steering_odometry.hpp"
 
 #include <cmath>
-#include <iostream>
 #include <limits>
 
 namespace steering_odometry
@@ -134,11 +133,17 @@ double SteeringOdometry::get_linear_velocity_double_traction_axle(
   const double steer_pos)
 {
   double turning_radius = wheelbase_ / std::tan(steer_pos);
+  const double vel_wheel_r = right_traction_wheel_vel * wheel_radius_;
+  const double vel_wheel_l = left_traction_wheel_vel * wheel_radius_;
+
+  if (std::isinf(turning_radius))
+  {
+    return (vel_wheel_r + vel_wheel_l) * 0.5;
+  }
+
   // overdetermined, we take the average
-  double vel_r = right_traction_wheel_vel * wheel_radius_ * turning_radius /
-                 (turning_radius + wheel_track_ * 0.5);
-  double vel_l = left_traction_wheel_vel * wheel_radius_ * turning_radius /
-                 (turning_radius - wheel_track_ * 0.5);
+  const double vel_r = vel_wheel_r * turning_radius / (turning_radius + wheel_track_ * 0.5);
+  const double vel_l = vel_wheel_l * turning_radius / (turning_radius - wheel_track_ * 0.5);
   return (vel_r + vel_l) * 0.5;
 }
 
@@ -203,12 +208,9 @@ void SteeringOdometry::set_odometry_type(const unsigned int type) { config_type_
 
 double SteeringOdometry::convert_twist_to_steering_angle(double v_bx, double omega_bz)
 {
-  if (fabs(v_bx) < std::numeric_limits<float>::epsilon())
-  {
-    // avoid division by zero
-    return 0.;
-  }
-  return std::atan(omega_bz * wheelbase_ / v_bx);
+  // phi can be nan if both v_bx and omega_bz are zero
+  const auto phi = std::atan(omega_bz * wheelbase_ / v_bx);
+  return std::isfinite(phi) ? phi : 0.0;
 }
 
 std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_commands(
