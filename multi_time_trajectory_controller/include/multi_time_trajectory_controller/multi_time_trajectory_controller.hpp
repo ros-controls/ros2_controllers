@@ -259,7 +259,8 @@ protected:
   bool validate_trajectory_msg(const control_msgs::msg::MultiAxisTrajectory & trajectory) const;
 
   virtual void add_new_trajectory_msg(
-    const std::shared_ptr<control_msgs::msg::MultiAxisTrajectory> & traj_msg);
+    const std::shared_ptr<control_msgs::msg::MultiAxisTrajectory> & traj_msg,
+    const bool reliable = false);
 
   bool validate_trajectory_point_field(
     size_t axis_names_size, const std::vector<double> & vector_field,
@@ -344,6 +345,9 @@ private:
   // Command subscribers and Controller State publisher
   rclcpp::Subscription<ControllerReferenceMsg>::SharedPtr ref_subscriber_ = nullptr;
   rclcpp::Subscription<ControllerReferenceMsg>::SharedPtr ref_subscriber_reliable_ = nullptr;
+
+  // for mutual exclusion of the reference callback and the update function
+  std::mutex mutex_;
 
   void update_pids();
 

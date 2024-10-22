@@ -191,16 +191,19 @@ controller_interface::return_type MultiTimeTrajectoryController::update(
   const auto active_goal = *rt_active_goal_.readFromRT();
 
   // Check if a new external message has been received from nonRT threads
-  auto current_external_msg = traj_external_point_ptr_->get_trajectory_msg();
-  auto new_external_msg = traj_msg_external_point_ptr_.readFromRT();
-  // Discard, if a goal is pending but still not active (somewhere stuck in goal_handle_timer_)
-  if (
-    current_external_msg != *new_external_msg &&
-    (*(rt_has_pending_goal_.readFromRT()) && !active_goal) == false)
   {
-    sort_to_local_axis_order(*new_external_msg);
-    // TODO(denis): Add here integration of position and velocity
-    traj_external_point_ptr_->update(*new_external_msg, joint_limits_, period, time);
+    std::lock_guard<std::mutex> guard(mutex_);
+    auto current_external_msg = traj_external_point_ptr_->get_trajectory_msg();
+    auto new_external_msg = traj_msg_external_point_ptr_.readFromRT();
+    // Discard, if a goal is pending but still not active (somewhere stuck in goal_handle_timer_)
+    if (
+      current_external_msg != *new_external_msg &&
+      (*(rt_has_pending_goal_.readFromRT()) && !active_goal) == false)
+    {
+      sort_to_local_axis_order(*new_external_msg);
+      // TODO(denis): Add here integration of position and velocity
+      traj_external_point_ptr_->update(*new_external_msg, joint_limits_, period, time);
+    }
   }
 
   // current state update - bail if can't read hardware state
@@ -1190,7 +1193,7 @@ void MultiTimeTrajectoryController::reference_callback(
   {
     last_reliable_reference_ = *msg;
     is_reliable_update_pending_ = true;
-    add_new_trajectory_msg(msg);
+    add_new_trajectory_msg(msg, true);
   }
   else
   {
@@ -1748,9 +1751,83 @@ bool MultiTimeTrajectoryController::validate_trajectory_msg(
 }
 
 void MultiTimeTrajectoryController::add_new_trajectory_msg(
-  const std::shared_ptr<control_msgs::msg::MultiAxisTrajectory> & traj_msg)
+  const std::shared_ptr<control_msgs::msg::MultiAxisTrajectory> & traj_msg, const bool reliable)
 {
-  traj_msg_external_point_ptr_.writeFromNonRT(traj_msg);
+  if (reliable)
+  {
+    std::lock_guard<std::mutex> guard(mutex_);
+
+    // merge reliable message if previous mesage not yet processed
+
+    // Check if a new external message has already been received before from nonRT threads
+    auto current_external_msg = traj_external_point_ptr_->get_trajectory_msg();
+    auto new_external_msg = traj_msg_external_point_ptr_.readFromNonRT();
+
+    // previous reliable message not yet processed
+    if ((current_external_msg != *new_external_msg) && (*new_external_msg))
+    {
+      // replace external message with new message for the same axes
+      for (std::size_t i = 0; i < (*new_external_msg)->axis_names.size(); ++i)
+      {
+        auto iter = std::find(
+          traj_msg->axis_names.begin(), traj_msg->axis_names.end(),
+          (*new_external_msg)->axis_names[i]);
+        if (iter == traj_msg->axis_names.end()) continue;
+
+        auto index = std::distance(traj_msg->axis_names.begin(), iter);
+
+        // if new message has only nan values, skip
+        if (std::all_of(
+              traj_msg->axis_trajectories[static_cast<size_t>(index)].axis_points.cbegin(),
+              traj_msg->axis_trajectories[static_cast<size_t>(index)].axis_points.cend(),
+              [](const control_msgs::msg::AxisTrajectoryPoint & point)
+              {
+                return std::isnan(point.position) && std::isnan(point.velocity) &&
+                       std::isnan(point.acceleration);
+              }))
+        {
+          continue;
+        }
+
+        (*new_external_msg)->axis_trajectories[i].axis_points =
+          traj_msg->axis_trajectories[static_cast<size_t>(index)].axis_points;
+      }
+
+      // merge axes from new message to external message, that are not in external message
+      for (std::size_t i = 0; i < traj_msg->axis_names.size(); ++i)
+      {
+        // if new message has only nan values, skip
+        if (std::all_of(
+              traj_msg->axis_trajectories[i].axis_points.cbegin(),
+              traj_msg->axis_trajectories[i].axis_points.cend(),
+              [](const control_msgs::msg::AxisTrajectoryPoint & point)
+              {
+                return std::isnan(point.position) && std::isnan(point.velocity) &&
+                       std::isnan(point.acceleration);
+              }))
+        {
+          continue;
+        }
+
+        auto iter = std::find(
+          (*new_external_msg)->axis_names.begin(), (*new_external_msg)->axis_names.end(),
+          traj_msg->axis_names[i]);
+        if (iter == (*new_external_msg)->axis_names.end())
+        {
+          (*new_external_msg)->axis_names.push_back(traj_msg->axis_names[i]);
+          (*new_external_msg)->axis_trajectories.push_back(traj_msg->axis_trajectories[i]);
+        }
+      }
+    }
+    else
+    {
+      traj_msg_external_point_ptr_.writeFromNonRT(traj_msg);
+    }
+  }
+  else
+  {
+    traj_msg_external_point_ptr_.writeFromNonRT(traj_msg);
+  }
 }
 
 void MultiTimeTrajectoryController::preempt_active_goal()
