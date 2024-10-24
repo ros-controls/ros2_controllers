@@ -262,8 +262,8 @@ inline std::vector<size_t> mapping(const T & t1, const T & t2)
  * wrap around (ie. is continuous).
  */
 void wraparound_joint(
-  std::vector<control_msgs::msg::AxisTrajectoryPoint> & current_position,
-  const std::vector<control_msgs::msg::AxisTrajectory> next_position,
+  const std::vector<control_msgs::msg::AxisTrajectoryPoint> & current_position,
+  std::vector<control_msgs::msg::AxisTrajectory> & next_position,
   const std::vector<bool> & joints_angle_wraparound);
 
 }  // namespace multi_time_trajectory_controller

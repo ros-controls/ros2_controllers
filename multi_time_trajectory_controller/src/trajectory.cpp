@@ -176,45 +176,45 @@ void Trajectory::set_point_before_trajectory_msg(
 }
 
 void wraparound_joint(
-  std::vector<control_msgs::msg::AxisTrajectoryPoint> & current_position,
-  const std::vector<control_msgs::msg::AxisTrajectory> trajectory,
+  const std::vector<control_msgs::msg::AxisTrajectoryPoint> & current_position,
+  std::vector<control_msgs::msg::AxisTrajectory> & trajectory,
   const std::vector<bool> & joints_angle_wraparound)
 {
   double dist;
+
   // joints_angle_wraparound is even empty, or has the same size as the number of joints
   for (size_t i = 0; i < joints_angle_wraparound.size(); i++)
   {
-    if (joints_angle_wraparound[i])
+    if (!joints_angle_wraparound[i])
     {
-      if (trajectory[i].axis_points.empty())
-      {
-        continue;
-      }
+      continue;
+    }
 
+    auto curr_pos = current_position[i].position;
+    for (size_t j = 0; j < trajectory[i].axis_points.size(); j++)
+    {
       // skip if current or next position is NaN
-      if (
-        std::isnan(current_position[i].position) ||
-        std::isnan(trajectory[i].axis_points[0].position))
+      if (std::isnan(curr_pos) || std::isnan(trajectory[i].axis_points[j].position))
       {
         continue;
       }
 
-      dist = angles::shortest_angular_distance(
-        current_position[i].position, trajectory[i].axis_points[0].position);
+      dist = angles::shortest_angular_distance(trajectory[i].axis_points[0].position, curr_pos);
 
       // Deal with singularity at M_PI shortest distance
       if (std::abs(std::abs(dist) - M_PI) < 1e-9)
       {
-        dist = trajectory[i].axis_points[0].position > current_position[i].position
-                 ? std::abs(dist)
-                 : -std::abs(dist);
+        dist = curr_pos > trajectory[i].axis_points[j].position ? std::abs(dist) : -std::abs(dist);
       }
 
-      auto old_current_pos = current_position[i].position;
-      current_position[i].position = trajectory[i].axis_points[0].position - dist;
+      auto old_traj_pos = trajectory[i].axis_points[j].position;
+      trajectory[i].axis_points[j].position = curr_pos - dist;
       RCLCPP_DEBUG(
-        rclcpp::get_logger("trajectory"), "Wraparound Axis %zu: CurrPos: %f -> %f, Tgt: %f", i,
-        old_current_pos, current_position[i].position, trajectory[i].axis_points[0].position);
+        rclcpp::get_logger("trajectory"), "Wraparound Axis %zu: TrajPos[%zu]: %f -> %f, Prev: %f",
+        i, j, old_traj_pos, trajectory[i].axis_points[0].position, curr_pos);
+
+      // set this trajectory point as the new current position for next trajectory point
+      curr_pos = trajectory[i].axis_points[j].position;
     }
   }
 }
