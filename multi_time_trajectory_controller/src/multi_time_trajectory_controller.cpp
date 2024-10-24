@@ -79,6 +79,8 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_init()
     return CallbackReturn::ERROR;
   }
 
+  axis_angle_wraparound_ = params_.axes_is_angular;
+
   const std::string & urdf = get_robot_description();
   if (!urdf.empty())
   {
@@ -90,28 +92,13 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_init()
     }
     else
     {
-      /// initialize the URDF model and update the axis angles wraparound vector
-      // Configure axis position error normalization (angle_wraparound)
-      axis_angle_wraparound_.resize(params_.axes.size(), false);
-      for (size_t i = 0; i < params_.axes.size(); ++i)
-      {
-        auto urdf_joint = model.getJoint(params_.axes[i]);
-        if (urdf_joint && urdf_joint->type == urdf::Joint::CONTINUOUS)
-        {
-          RCLCPP_DEBUG(
-            get_node()->get_logger(), "joint '%s' is of type continuous, use angle_wraparound.",
-            params_.axes[i].c_str());
-          axis_angle_wraparound_[i] = true;
-        }
-        // do nothing if joint is not found in the URDF
-      }
       RCLCPP_DEBUG(get_node()->get_logger(), "Successfully parsed URDF file");
     }
   }
   else
   {
     // empty URDF is used for some tests
-    RCLCPP_DEBUG(get_node()->get_logger(), "No URDF file given");
+    RCLCPP_ERROR(get_node()->get_logger(), "No URDF file given");
   }
 
   // Initialize joint limits
@@ -834,6 +821,13 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
   {
     RCLCPP_ERROR(
       logger, "'command_axis_names' parameter has to have the same size as 'axes' parameter.");
+    return CallbackReturn::FAILURE;
+  }
+
+  if (params_.axes_is_angular.size() != dof_)
+  {
+    RCLCPP_ERROR(
+      logger, "'axes_is_angular' parameter has to have the same size as 'axes' parameter.");
     return CallbackReturn::FAILURE;
   }
 

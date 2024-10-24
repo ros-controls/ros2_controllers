@@ -8,6 +8,12 @@ multi_time_trajectory_controller:
       unique<>: null,
     }
   }
+  axes_is_angular: {
+    type: bool_array,
+    default_value: [],
+    description: "Axis is angular or linear. Should be same size as axes.",
+    read_only: true,
+  }
   command_axes: {
     type: string_array,
     default_value: [],
