@@ -71,6 +71,7 @@ joint_trajectory_controller:
     validation: {
       gt_eq: [0.1]
     }
+  }
   set_last_command_interface_value_as_state_on_activation: {
     type: bool,
     default_value: true,
