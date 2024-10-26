@@ -103,7 +103,7 @@ double TractionLimiter::limit_acceleration(double & v, double v0, double dt)
 
   double dv_min;
   double dv_max;
-  if (abs(v) >= abs(v0))
+  if (std::fabs(v) >= std::fabs(v0))
   {
     dv_min = min_acceleration_ * dt;
     dv_max = max_acceleration_ * dt;

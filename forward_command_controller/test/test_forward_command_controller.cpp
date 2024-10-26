@@ -222,7 +222,7 @@ TEST_F(ForwardCommandControllerTest, CommandSuccessTest)
 
   // update successful, command received
   ASSERT_EQ(
-    controller_->update(rclcpp::Time(0.1), rclcpp::Duration::from_seconds(0.01)),
+    controller_->update(rclcpp::Time(100000000), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
   // check joint commands have been modified
