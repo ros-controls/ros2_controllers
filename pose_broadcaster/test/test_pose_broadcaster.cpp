@@ -25,9 +25,7 @@ void PoseBroadcasterTest::TearDown() { pose_broadcaster_.reset(nullptr); }
 void PoseBroadcasterTest::SetUpPoseBroadcaster()
 {
   ASSERT_EQ(
-    pose_broadcaster_->init(
-      "test_pose_broadcaster", "", 0, "", pose_broadcaster_->define_custom_node_options()),
-    controller_interface::return_type::OK);
+    pose_broadcaster_->init("test_pose_broadcaster"), controller_interface::return_type::OK);
 
   std::vector<LoanedStateInterface> state_interfaces;
   state_interfaces.emplace_back(pose_position_x_);
