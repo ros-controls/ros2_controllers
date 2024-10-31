@@ -5,6 +5,16 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
   add_compile_options(-Wall -Wextra)
 endif()
 
+if(WIN32)
+  add_compile_definitions(
+    # For math constants
+    _USE_MATH_DEFINES
+    # Minimize Windows namespace collision
+    NOMINMAX
+    WIN32_LEAN_AND_MEAN
+  )
+endif()
+
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   angles
   control_msgs
