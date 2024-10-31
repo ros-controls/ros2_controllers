@@ -26,8 +26,10 @@ TEST(TestLoadPoseBroadcaster, load_controller)
   std::shared_ptr<rclcpp::Executor> executor =
     std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
 
-  controller_manager::ControllerManager cm{
-    executor, ros2_control_test_assets::minimal_robot_urdf, true, "test_controller_manager"};
+  controller_manager::ControllerManager cm(
+    std::make_unique<hardware_interface::ResourceManager>(
+      ros2_control_test_assets::minimal_robot_urdf),
+    executor, "test_controller_manager");
 
   const std::string test_file_path =
     std::string{TEST_FILES_DIRECTORY} + "/pose_broadcaster_params.yaml";
