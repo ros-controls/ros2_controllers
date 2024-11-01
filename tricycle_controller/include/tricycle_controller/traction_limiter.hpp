@@ -34,8 +34,8 @@ public:
    * \param [in] max_acceleration Maximum acceleration [m/s^2] or [rad/s^2]
    * \param [in] min_deceleration Minimum deceleration [m/s^2] or [rad/s^2]
    * \param [in] max_deceleration Maximum deceleration [m/s^2] or [rad/s^2]
-   * \param [in] min_jerk Minimum jerk [m/s^3], usually <= 0
-   * \param [in] max_jerk Maximum jerk [m/s^3], usually >= 0
+   * \param [in] min_jerk Minimum jerk [m/s^3] (applied for both signs of jerk)
+   * \param [in] max_jerk Maximum jerk [m/s^3] (applied for both signs of jerk)
    */
   TractionLimiter(
     double min_velocity = NAN, double max_velocity = NAN, double min_acceleration = NAN,
