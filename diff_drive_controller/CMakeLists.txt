@@ -25,6 +25,8 @@ find_package(backward_ros REQUIRED)
 foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
+add_compile_definitions(RCPPUTILS_VERSION_MAJOR=${rcpputils_VERSION_MAJOR})
+add_compile_definitions(RCPPUTILS_VERSION_MINOR=${rcpputils_VERSION_MINOR})
 
 generate_parameter_library(diff_drive_controller_parameters
   src/diff_drive_controller_parameter.yaml
@@ -68,10 +70,8 @@ if(BUILD_TESTING)
     tf2_msgs
   )
 
-  add_rostest_with_parameters_gmock(test_load_diff_drive_controller
-    test/test_load_diff_drive_controller.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/config/test_diff_drive_controller.yaml
-  )
+  add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
+  ament_add_gmock(test_load_diff_drive_controller test/test_load_diff_drive_controller.cpp)
   ament_target_dependencies(test_load_diff_drive_controller
     controller_manager
     ros2_control_test_assets

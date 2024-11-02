@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="3">
   <name>joint_trajectory_controller</name>
-  <version>4.6.0</version>
+  <version>4.15.0</version>
   <description>Controller for executing joint-space trajectories on a group of joints</description>
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
   <maintainer email="denis.stogl@stoglrobotics.de">Dr. Denis Štogl</maintainer>
@@ -25,6 +25,7 @@
   <depend>rsl</depend>
   <depend>tl_expected</depend>
   <depend>trajectory_msgs</depend>
+  <depend>urdf</depend>
 
   <test_depend>ament_cmake_gmock</test_depend>
   <test_depend>controller_manager</test_depend>

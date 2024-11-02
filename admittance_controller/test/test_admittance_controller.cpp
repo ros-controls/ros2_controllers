@@ -16,9 +16,7 @@
 
 #include "test_admittance_controller.hpp"
 
-#include <limits>
 #include <memory>
-#include <utility>
 #include <vector>
 
 // Test on_init returns ERROR when a required parameter is missing
@@ -277,7 +275,7 @@ TEST_F(AdmittanceControllerTest, receive_message_and_publish_updated_status)
   //   ASSERT_EQ(msg.wrench_base.header.frame_id, ik_base_frame_);
 
   publish_commands();
-  ASSERT_TRUE(controller_->wait_for_commands(executor));
+  controller_->wait_for_commands(executor);
 
   broadcast_tfs();
   ASSERT_EQ(

@@ -16,8 +16,6 @@
 #define FORWARD_COMMAND_CONTROLLER__FORWARD_COMMAND_CONTROLLER_HPP_
 
 #include <memory>
-#include <string>
-#include <vector>
 
 #include "forward_command_controller/forward_controllers_base.hpp"
 #include "forward_command_controller/visibility_control.h"

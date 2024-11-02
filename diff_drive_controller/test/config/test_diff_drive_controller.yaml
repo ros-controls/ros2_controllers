@@ -4,7 +4,6 @@ test_diff_drive_controller:
     right_wheel_names: ["right_wheels"]
 
     wheel_separation: 0.40
-    wheels_per_side: 1  # actually 2, but both are controlled by 1 signal
     wheel_radius: 0.02
 
     wheel_separation_multiplier: 1.0

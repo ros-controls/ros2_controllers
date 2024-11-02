@@ -24,16 +24,30 @@
 
 #include "angles/angles.h"
 #include "control_msgs/msg/single_dof_state.hpp"
-#include "controller_interface/helpers.hpp"
+#include "rclcpp/version.h"
 
 namespace
 {  // utility
 
 // Changed services history QoS to keep all so we don't lose any client service calls
+// \note The versions conditioning is added here to support the source-compatibility with Humble
+#if RCLCPP_VERSION_MAJOR >= 17
 rclcpp::QoS qos_services =
   rclcpp::QoS(rclcpp::QoSInitialization(RMW_QOS_POLICY_HISTORY_KEEP_ALL, 1))
     .reliable()
     .durability_volatile();
+#else
+static const rmw_qos_profile_t qos_services = {
+  RMW_QOS_POLICY_HISTORY_KEEP_ALL,
+  1,  // message queue depth
+  RMW_QOS_POLICY_RELIABILITY_RELIABLE,
+  RMW_QOS_POLICY_DURABILITY_VOLATILE,
+  RMW_QOS_DEADLINE_DEFAULT,
+  RMW_QOS_LIFESPAN_DEFAULT,
+  RMW_QOS_POLICY_LIVELINESS_SYSTEM_DEFAULT,
+  RMW_QOS_LIVELINESS_LEASE_DURATION_DEFAULT,
+  false};
+#endif
 
 using ControllerCommandMsg = pid_controller::PidController::ControllerReferenceMsg;
 
@@ -173,6 +187,43 @@ controller_interface::CallbackReturn PidController::on_configure(
     auto measured_state_callback =
       [&](const std::shared_ptr<ControllerMeasuredStateMsg> state_msg) -> void
     {
+      if (state_msg->dof_names.size() != reference_and_state_dof_names_.size())
+      {
+        RCLCPP_ERROR(
+          get_node()->get_logger(),
+          "Size of input data names (%zu) is not matching the expected size (%zu).",
+          state_msg->dof_names.size(), reference_and_state_dof_names_.size());
+        return;
+      }
+      if (state_msg->values.size() != reference_and_state_dof_names_.size())
+      {
+        RCLCPP_ERROR(
+          get_node()->get_logger(),
+          "Size of input data values (%zu) is not matching the expected size (%zu).",
+          state_msg->values.size(), reference_and_state_dof_names_.size());
+        return;
+      }
+
+      if (!state_msg->values_dot.empty())
+      {
+        if (params_.reference_and_state_interfaces.size() != 2)
+        {
+          RCLCPP_ERROR(
+            get_node()->get_logger(),
+            "The reference_and_state_interfaces parameter has to have two interfaces [the "
+            "interface and the derivative of the interface], in order to use the values_dot "
+            "field.");
+          return;
+        }
+        if (state_msg->values_dot.size() != reference_and_state_dof_names_.size())
+        {
+          RCLCPP_ERROR(
+            get_node()->get_logger(),
+            "Size of input data values_dot (%zu) is not matching the expected size (%zu).",
+            state_msg->values_dot.size(), reference_and_state_dof_names_.size());
+          return;
+        }
+      }
       // TODO(destogl): Sort the input values based on joint and interface names
       measured_state_.writeFromNonRT(state_msg);
     };
@@ -349,6 +400,27 @@ std::vector<hardware_interface::CommandInterface> PidController::on_export_refer
   return reference_interfaces;
 }
 
+std::vector<hardware_interface::StateInterface> PidController::on_export_state_interfaces()
+{
+  std::vector<hardware_interface::StateInterface> state_interfaces;
+  state_interfaces.reserve(state_interfaces_values_.size());
+
+  state_interfaces_values_.resize(
+    reference_and_state_dof_names_.size() * params_.reference_and_state_interfaces.size(),
+    std::numeric_limits<double>::quiet_NaN());
+  size_t index = 0;
+  for (const auto & interface : params_.reference_and_state_interfaces)
+  {
+    for (const auto & dof_name : reference_and_state_dof_names_)
+    {
+      state_interfaces.push_back(hardware_interface::StateInterface(
+        get_node()->get_name(), dof_name + "/" + interface, &state_interfaces_values_[index]));
+      ++index;
+    }
+  }
+  return state_interfaces;
+}
+
 bool PidController::on_set_chained_mode(bool chained_mode)
 {
   // Always accept switch to/from chained mode
@@ -422,6 +494,12 @@ controller_interface::return_type PidController::update_and_write_commands(
     {
       measured_state_values_[i] = state_interfaces_[i].get_value();
     }
+  }
+
+  // Fill the information of the exported state interfaces
+  for (size_t i = 0; i < measured_state_values_.size(); ++i)
+  {
+    state_interfaces_values_[i] = measured_state_values_[i];
   }
 
   for (size_t i = 0; i < dof_; ++i)
