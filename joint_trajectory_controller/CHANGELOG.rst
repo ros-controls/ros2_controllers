@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.27.0 (2024-11-02)
+-------------------
 * fixes for windows compilation (`#1330 <https://github.com/ros-controls/ros2_controllers/issues/1330>`_) (`#1333 <https://github.com/ros-controls/ros2_controllers/issues/1333>`_)
   Co-authored-by: SENAI-GilmarCorreia <gilmar.correia@sp.senai.br>
   (cherry picked from commit fa42b5ec97b0af5420060844b7027b8e8912c05d)

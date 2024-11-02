@@ -2,8 +2,8 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.27.0 (2024-11-02)
+-------------------
 * fix(steering-odometry): convert twist to steering angle (`#1288 <https://github.com/ros-controls/ros2_controllers/issues/1288>`_) (`#1296 <https://github.com/ros-controls/ros2_controllers/issues/1296>`_)
   (cherry picked from commit 50036e109d6a03e41bb9b43a4f67411887b48640)
   Co-authored-by: Rein Appeldoorn <rein.appeldoorn@nobleo.nl>

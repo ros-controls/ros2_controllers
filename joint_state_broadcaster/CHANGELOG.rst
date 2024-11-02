@@ -2,8 +2,8 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.27.0 (2024-11-02)
+-------------------
 * [JSB] Fix the behaviour of publishing unavailable state interfaces when they are previously available (`#1331 <https://github.com/ros-controls/ros2_controllers/issues/1331>`_) (`#1340 <https://github.com/ros-controls/ros2_controllers/issues/1340>`_)
   * Add test to reproduce the behaviour of https://github.com/ros-controls/ros2_control_demos/pull/417#discussion_r1823443110
   * Add fix to solve the issue of the publishing non-existing joint_states
