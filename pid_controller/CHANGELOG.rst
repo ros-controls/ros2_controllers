@@ -2,6 +2,14 @@
 Changelog for package pid_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* fixes for windows compilation (`#1330 <https://github.com/ros-controls/ros2_controllers/issues/1330>`_) (`#1333 <https://github.com/ros-controls/ros2_controllers/issues/1333>`_)
+  Co-authored-by: SENAI-GilmarCorreia <gilmar.correia@sp.senai.br>
+  (cherry picked from commit fa42b5ec97b0af5420060844b7027b8e8912c05d)
+  Co-authored-by: Gilmar Correia <gilmar.jeronimo@sp.senai.br>
+* Contributors: mergify[bot]
+
 3.26.3 (2024-09-11)
 -------------------
 

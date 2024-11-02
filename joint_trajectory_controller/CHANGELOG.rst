@@ -2,6 +2,22 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* fixes for windows compilation (`#1330 <https://github.com/ros-controls/ros2_controllers/issues/1330>`_) (`#1333 <https://github.com/ros-controls/ros2_controllers/issues/1333>`_)
+  Co-authored-by: SENAI-GilmarCorreia <gilmar.correia@sp.senai.br>
+  (cherry picked from commit fa42b5ec97b0af5420060844b7027b8e8912c05d)
+  Co-authored-by: Gilmar Correia <gilmar.jeronimo@sp.senai.br>
+* [JTC] Add Parameter to Toggle State Setting on Activation (`#1231 <https://github.com/ros-controls/ros2_controllers/issues/1231>`_) (`#1319 <https://github.com/ros-controls/ros2_controllers/issues/1319>`_)
+  * [JTC] Add param to setting last command interface value as state on activation
+  * [JTC] add a note about set_last_command_interface_value_as_state_on_activation to release_notes. Updated the parameters.yaml description to match the same wording.
+  ---------
+  Co-authored-by: Bence Magyar <bence.magyar.robotics@gmail.com>
+  Co-authored-by: Christoph Fröhlich <christophfroehlich@users.noreply.github.com>
+  (cherry picked from commit f96d2fc0fbf94537f769cffcf844858f7a085671)
+  Co-authored-by: Kenta Kato <kenta.kato.4321@gmail.com>
+* Contributors: mergify[bot]
+
 3.26.3 (2024-09-11)
 -------------------
 
