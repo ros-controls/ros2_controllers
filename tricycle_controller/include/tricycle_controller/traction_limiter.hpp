@@ -37,8 +37,6 @@ public:
    *
    * - Setting min_deceleration/min_acceleration: the robot can't move with constant velocity
    *
-   * - Setting min_deceleration/min_acceleration: the robot can't move with constant velocity
-   *
    * - Setting min_jerk: the robot can't move with constant acceleration
    *
    * \param [in] min_velocity Minimum velocity [m/s] or [rad/s]
