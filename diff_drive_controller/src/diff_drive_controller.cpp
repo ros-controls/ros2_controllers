@@ -101,7 +101,7 @@ controller_interface::return_type DiffDriveController::update(
   const rclcpp::Time & time, const rclcpp::Duration & period)
 {
   auto logger = get_node()->get_logger();
-  if (get_state().id() == State::PRIMARY_STATE_INACTIVE)
+  if (get_lifecycle_state().id() == State::PRIMARY_STATE_INACTIVE)
   {
     if (!is_halted)
     {
@@ -149,7 +149,7 @@ controller_interface::return_type DiffDriveController::update(
   {
     double left_feedback_mean = 0.0;
     double right_feedback_mean = 0.0;
-    for (size_t index = 0; index < static_cast<size_t>(params_.wheels_per_side); ++index)
+    for (size_t index = 0; index < static_cast<size_t>(wheels_per_side_); ++index)
     {
       const double left_feedback = registered_left_wheel_handles_[index].feedback.get().get_value();
       const double right_feedback =
@@ -166,8 +166,8 @@ controller_interface::return_type DiffDriveController::update(
       left_feedback_mean += left_feedback;
       right_feedback_mean += right_feedback;
     }
-    left_feedback_mean /= static_cast<double>(params_.wheels_per_side);
-    right_feedback_mean /= static_cast<double>(params_.wheels_per_side);
+    left_feedback_mean /= static_cast<double>(wheels_per_side_);
+    right_feedback_mean /= static_cast<double>(wheels_per_side_);
 
     if (params_.position_feedback)
     {
@@ -257,7 +257,7 @@ controller_interface::return_type DiffDriveController::update(
     (linear_command + angular_command * wheel_separation / 2.0) / right_wheel_radius;
 
   // Set wheels velocities:
-  for (size_t index = 0; index < static_cast<size_t>(params_.wheels_per_side); ++index)
+  for (size_t index = 0; index < static_cast<size_t>(wheels_per_side_); ++index)
   {
     registered_left_wheel_handles_[index].velocity.get().set_value(velocity_left);
     registered_right_wheel_handles_[index].velocity.get().set_value(velocity_right);
@@ -283,12 +283,6 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
     RCLCPP_ERROR(
       logger, "The number of left wheels [%zu] and the number of right wheels [%zu] are different",
       params_.left_wheel_names.size(), params_.right_wheel_names.size());
-    return controller_interface::CallbackReturn::ERROR;
-  }
-
-  if (params_.left_wheel_names.empty())
-  {
-    RCLCPP_ERROR(logger, "Wheel names parameters are empty!");
     return controller_interface::CallbackReturn::ERROR;
   }
 
@@ -320,7 +314,7 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   }
 
   // left and right sides are both equal at this point
-  params_.wheels_per_side = params_.left_wheel_names.size();
+  wheels_per_side_ = static_cast<int>(params_.left_wheel_names.size());
 
   if (publish_limited_velocity_)
   {
@@ -358,7 +352,7 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
       received_velocity_msg_ptr_.set(std::move(msg));
     });
 
-  // initialize odometry publisher and messasge
+  // initialize odometry publisher and message
   odometry_publisher_ = get_node()->create_publisher<nav_msgs::msg::Odometry>(
     DEFAULT_ODOMETRY_TOPIC, rclcpp::SystemDefaultsQoS());
   realtime_odometry_publisher_ =

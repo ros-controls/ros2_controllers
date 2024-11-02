@@ -16,9 +16,7 @@
 
 #include "test_admittance_controller.hpp"
 
-#include <limits>
 #include <memory>
-#include <utility>
 #include <vector>
 
 // Test on_init returns ERROR when a required parameter is missing
@@ -157,12 +155,15 @@ TEST_F(AdmittanceControllerTest, check_interfaces)
 
   auto command_interfaces = controller_->command_interface_configuration();
   ASSERT_EQ(command_interfaces.names.size(), joint_command_values_.size());
+  EXPECT_EQ(
+    command_interfaces.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
   ASSERT_EQ(
     controller_->command_interfaces_.size(), command_interface_types_.size() * joint_names_.size());
 
   auto state_interfaces = controller_->state_interface_configuration();
   ASSERT_EQ(state_interfaces.names.size(), joint_state_values_.size() + fts_state_values_.size());
+  EXPECT_EQ(state_interfaces.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
   ASSERT_EQ(
     controller_->state_interfaces_.size(),
@@ -274,7 +275,7 @@ TEST_F(AdmittanceControllerTest, receive_message_and_publish_updated_status)
   //   ASSERT_EQ(msg.wrench_base.header.frame_id, ik_base_frame_);
 
   publish_commands();
-  ASSERT_TRUE(controller_->wait_for_commands(executor));
+  controller_->wait_for_commands(executor);
 
   broadcast_tfs();
   ASSERT_EQ(

@@ -2,7 +2,8 @@ cmake_minimum_required(VERSION 3.16)
 project(tricycle_steering_controller LANGUAGES CXX)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
-  add_compile_options(-Wall -Wextra -Wpedantic -Wconversion)
+  add_compile_options(-Wall -Wextra -Wpedantic -Werror=conversion -Werror=unused-but-set-variable
+                      -Werror=return-type -Werror=shadow -Werror=format)
 endif()
 
 # find dependencies
@@ -23,6 +24,8 @@ find_package(backward_ros REQUIRED)
 foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
+add_compile_definitions(RCPPUTILS_VERSION_MAJOR=${rcpputils_VERSION_MAJOR})
+add_compile_definitions(RCPPUTILS_VERSION_MINOR=${rcpputils_VERSION_MINOR})
 
 generate_parameter_library(tricycle_steering_controller_parameters
   src/tricycle_steering_controller.yaml
@@ -43,7 +46,7 @@ ament_target_dependencies(tricycle_steering_controller PUBLIC ${THIS_PACKAGE_INC
 
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
-target_compile_definitions(tricycle_steering_controller PRIVATE "ACKERMANN_STEERING_CONTROLLER_BUILDING_DLL")
+target_compile_definitions(tricycle_steering_controller PRIVATE "TRICYCLE_STEERING_CONTROLLER__VISIBILITY_BUILDING_DLL")
 
 pluginlib_export_plugin_description_file(
   controller_interface tricycle_steering_controller.xml)
@@ -54,10 +57,8 @@ if(BUILD_TESTING)
   find_package(hardware_interface REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
 
-  add_rostest_with_parameters_gmock(test_load_tricycle_steering_controller
-    test/test_load_tricycle_steering_controller.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/tricycle_steering_controller_params.yaml
-  )
+  add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
+  ament_add_gmock(test_load_tricycle_steering_controller test/test_load_tricycle_steering_controller.cpp)
   ament_target_dependencies(test_load_tricycle_steering_controller
     controller_manager
     hardware_interface

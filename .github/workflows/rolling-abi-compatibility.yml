@@ -1,11 +1,18 @@
 name: Rolling - ABI Compatibility Check
 on:
   workflow_dispatch:
-    branches:
-      - master
   pull_request:
     branches:
       - master
+    paths:
+      - '**.hpp'
+      - '**.h'
+      - '**.cpp'
+      - '**.yaml'
+      - '.github/workflows/rolling-abi-compatibility.yml'
+      - '**/package.xml'
+      - '**/CMakeLists.txt'
+      - 'ros2_controllers-not-released.rolling.repos'
 
 jobs:
   abi_check:
@@ -15,6 +22,6 @@ jobs:
       - uses: ros-industrial/industrial_ci@master
         env:
           ROS_DISTRO: rolling
-          ROS_REPO: main
+          ROS_REPO: testing
           ABICHECK_URL: github:${{ github.repository }}#${{ github.base_ref }}
           NOT_TEST_BUILD: true

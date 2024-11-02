@@ -1,11 +1,18 @@
 name: Iron - ABI Compatibility Check
 on:
   workflow_dispatch:
-    branches:
-      - iron
   pull_request:
     branches:
       - iron
+    paths:
+      - '**.hpp'
+      - '**.h'
+      - '**.cpp'
+      - '.github/workflows/iron-abi-compatibility.yml'
+      - '**.yaml'
+      - '**/package.xml'
+      - '**/CMakeLists.txt'
+      - 'ros2_controllers-not-released.iron.repos'
 
 jobs:
   abi_check:
@@ -15,6 +22,6 @@ jobs:
       - uses: ros-industrial/industrial_ci@master
         env:
           ROS_DISTRO: iron
-          ROS_REPO: main
+          ROS_REPO: testing
           ABICHECK_URL: github:${{ github.repository }}#${{ github.base_ref }}
           NOT_TEST_BUILD: true

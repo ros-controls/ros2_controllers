@@ -1,0 +1,30 @@
+name: Debian Rolling Source Build
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - '**.hpp'
+      - '**.h'
+      - '**.cpp'
+      - '**.py'
+      - '**.yaml'
+      - '.github/workflows/jazzy-debian-build.yml'
+      - '**/package.xml'
+      - '**/CMakeLists.txt'
+      - 'ros2_controllers.jazzy.repos'
+  schedule:
+    # Run every day to detect flakiness and broken dependencies
+    - cron: '03 1 * * *'
+
+
+jobs:
+  jazzy_debian:
+    name: Rolling debian build
+    uses: ros-controls/ros2_control_ci/.github/workflows/reusable-debian-build.yml@master
+    with:
+      ros_distro: jazzy
+      upstream_workspace: ros2_controllers.jazzy.repos
+      ref_for_scheduled_build: master
+      skip_packages: rqt_joint_trajectory_controller

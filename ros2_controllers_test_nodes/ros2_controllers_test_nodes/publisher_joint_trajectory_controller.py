@@ -18,7 +18,6 @@
 import rclpy
 from rclpy.node import Node
 from builtin_interfaces.msg import Duration
-from rcl_interfaces.msg import ParameterDescriptor
 
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from sensor_msgs.msg import JointState
@@ -67,8 +66,7 @@ class PublisherJointTrajectory(Node):
         # Read all positions from parameters
         self.goals = []  # List of JointTrajectoryPoint
         for name in goal_names:
-            self.declare_parameter(name, descriptor=ParameterDescriptor(dynamic_typing=True))
-
+            self.declare_parameter(name, rclpy.Parameter.Type.DOUBLE_ARRAY)
             point = JointTrajectoryPoint()
 
             def get_sub_param(sub_param):

@@ -1,0 +1,38 @@
+name: Coverage Build - Iron
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - iron
+    paths:
+      - '**.hpp'
+      - '**.h'
+      - '**.cpp'
+      - '**.py'
+      - '**.yaml'
+      - '.github/workflows/iron-coverage-build.yml'
+      - 'codecov.yml'
+      - '**/package.xml'
+      - '**/CMakeLists.txt'
+      - 'ros2_controllers.iron.repos'
+  pull_request:
+    branches:
+      - iron
+    paths:
+      - '**.hpp'
+      - '**.h'
+      - '**.cpp'
+      - '**.py'
+      - '**.yaml'
+      - '.github/workflows/iron-coverage-build.yml'
+      - 'codecov.yml'
+      - '**/package.xml'
+      - '**/CMakeLists.txt'
+      - 'ros2_controllers.iron.repos'
+
+jobs:
+  coverage_iron:
+    uses: ros-controls/ros2_control_ci/.github/workflows/reusable-build-coverage.yml@master
+    secrets: inherit
+    with:
+      ros_distro: iron

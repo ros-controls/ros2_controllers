@@ -1,12 +1,14 @@
 <?xml version="1.0"?>
 <package format="3">
   <name>ros2_controllers</name>
-  <version>3.17.0</version>
+  <version>4.15.0</version>
   <description>Metapackage for ROS2 controllers related packages</description>
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
   <maintainer email="jordan.palacios@pal-robotics.com">Jordan Palacios</maintainer>
 
   <license>Apache License 2.0</license>
+
+  <url type="website">https://control.ros.org</url>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
@@ -20,6 +22,7 @@
   <exec_depend>imu_sensor_broadcaster</exec_depend>
   <exec_depend>joint_state_broadcaster</exec_depend>
   <exec_depend>joint_trajectory_controller</exec_depend>
+  <exec_depend>pid_controller</exec_depend>
   <exec_depend>position_controllers</exec_depend>
   <exec_depend>range_sensor_broadcaster</exec_depend>
   <exec_depend>steering_controllers_library</exec_depend>

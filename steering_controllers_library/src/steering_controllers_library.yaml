@@ -1,7 +1,7 @@
 steering_controllers_library:
   reference_timeout: {
     type: double,
-    default_value: 1,
+    default_value: 1.0,
     description: "Timeout for controller references after which they will be reset. This is especially useful for controllers that can cause unwanted and dangerous behaviour if reference is not reset, e.g., velocity controllers. If value is 0 the reference is reset after each run.",
   }
 
@@ -93,14 +93,14 @@ steering_controllers_library:
 
   twist_covariance_diagonal: {
     type: double_array,
-    default_value: [0, 7, 14, 21, 28, 35],
+    default_value: [0.0, 7.0, 14.0, 21.0, 28.0, 35.0],
     description: "diagonal values of twist covariance matrix.",
     read_only: false,
   }
 
   pose_covariance_diagonal: {
     type: double_array,
-    default_value: [0, 7, 14, 21, 28, 35],
+    default_value: [0.0, 7.0, 14.0, 21.0, 28.0, 35.0],
     description: "diagonal values of pose covariance matrix.",
     read_only: false,
   }
@@ -110,13 +110,5 @@ steering_controllers_library:
     default_value: false,
     description: "Choice of feedback type, if position_feedback is false then ``HW_IF_VELOCITY`` is taken as interface type, if
     position_feedback is true then ``HW_IF_POSITION`` is taken as interface type",
-    read_only: false,
-  }
-
-  use_stamped_vel: {
-    type: bool,
-    default_value: false,
-    description: "Choice of vel type, if use_stamped_vel is false then ``geometry_msgs::msg::Twist`` is taken as vel msg type, if
-    use_stamped_vel is true then ``geometry_msgs::msg::TwistStamped`` is taken as vel msg type",
     read_only: false,
   }

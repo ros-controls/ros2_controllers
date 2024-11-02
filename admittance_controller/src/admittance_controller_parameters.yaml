@@ -147,11 +147,6 @@ admittance_controller:
     }
 
   # general settings
-  robot_description: {
-    type: string,
-    description: "Contains robot description in URDF format. The description is used for forward and inverse kinematics.",
-    read_only: true
-  }
   enable_parameter_update_without_reactivation: {
     type: bool,
     default_value: true,
