@@ -1381,24 +1381,6 @@ bool JointTrajectoryController::validate_trajectory_msg(
     return false;
   }
 
-  const auto trajectory_start_time = static_cast<rclcpp::Time>(trajectory.header.stamp);
-  // If the starting time it set to 0.0, it means the controller should start it now.
-  // Otherwise we check if the trajectory ends before the current time,
-  // in which case it can be ignored.
-  if (trajectory_start_time.seconds() != 0.0)
-  {
-    auto const trajectory_end_time =
-      trajectory_start_time + trajectory.points.back().time_from_start;
-    if (trajectory_end_time < get_node()->now())
-    {
-      RCLCPP_ERROR(
-        get_node()->get_logger(),
-        "Received trajectory with non-zero start time (%f) that ends in the past (%f)",
-        trajectory_start_time.seconds(), trajectory_end_time.seconds());
-      return false;
-    }
-  }
-
   // CHECK: If joint names are matching the joints defined for the controller
   for (size_t i = 0; i < trajectory.joint_names.size(); ++i)
   {
@@ -1437,11 +1419,8 @@ bool JointTrajectoryController::validate_trajectory_msg(
   // in which case it can be ignored.
   if (trajectory_start_time.seconds() != 0.0)
   {
-    auto trajectory_end_time = trajectory_start_time;
-    for (const auto & p : trajectory.points)
-    {
-      trajectory_end_time += p.time_from_start;
-    }
+    auto const trajectory_end_time =
+      trajectory_start_time + trajectory.points.back().time_from_start;
     if (trajectory_end_time < get_node()->now())
     {
       RCLCPP_ERROR(
