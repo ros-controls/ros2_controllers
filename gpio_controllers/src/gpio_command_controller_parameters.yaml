@@ -10,9 +10,9 @@ gpio_command_controller_parameters:
 
   command_interfaces:
     __map_gpios:
-      ports: {
+      interfaces: {
         type: string_array,
-        description: "List of ports: for each gpio",
+        description: "List of interfaces for each gpio",
         validation: {
           size_gt<>: [0],
           unique<>: null
