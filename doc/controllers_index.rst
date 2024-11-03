@@ -72,6 +72,7 @@ In the sense of ros2_control, broadcasters are still controllers using the same 
    IMU Sensor Broadcaster <../imu_sensor_broadcaster/doc/userdoc.rst>
    Joint State Broadcaster <../joint_state_broadcaster/doc/userdoc.rst>
    Range Sensor Broadcaster <../range_sensor_broadcaster/doc/userdoc.rst>
+   Pose Broadcaster <../pose_broadcaster/doc/userdoc.rst>
 
 
 Common Controller Parameters
