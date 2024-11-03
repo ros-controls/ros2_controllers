@@ -7,7 +7,7 @@ This is a collection of controllers for hardware interfaces of type GPIO (``<gpi
 
 gpio_command_controller
 -----------------------------
-gpio_command_controller publishes all state interfaces of given GPIO interfaces and let the user expose command interfaces.
+gpio_command_controller let the user expose command interfaces of given GPIO interfaces and publishes state interfaces of the configured command interfaces.
 
 Description of controller's interfaces
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

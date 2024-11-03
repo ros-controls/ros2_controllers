@@ -258,7 +258,8 @@ controller_interface::return_type GpioCommandController::update_gpios_commands()
       catch (const std::exception & e)
       {
         fprintf(
-          stderr, "Exception thrown during applying command stage with message: %s \n", e.what());
+          stderr, "Exception thrown during applying command stage of %s with message: %s \n",
+          full_command_interface_name, e.what());
       }
     }
   }
