@@ -37,6 +37,8 @@ using CallbackReturn = controller_interface::CallbackReturn;
 using InterfacesNames = std::vector<std::string>;
 using MapOfReferencesToCommandInterfaces = std::unordered_map<
   std::string, std::reference_wrapper<hardware_interface::LoanedCommandInterface>>;
+using MapOfReferencesToStateInterfaces =
+  std::unordered_map<std::string, std::reference_wrapper<hardware_interface::LoanedStateInterface>>;
 using StateInterfaces =
   std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>>;
 
@@ -69,20 +71,32 @@ public:
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
 private:
-  void store_interface_types();
+  void store_command_interface_types();
+  void store_state_interface_types();
   void initialize_gpio_state_msg();
   void update_gpios_states();
   controller_interface::return_type update_gpios_commands();
-  MapOfReferencesToCommandInterfaces create_map_of_references_to_interfaces(
-    const InterfacesNames & interfaces_from_params);
+  template <typename T>
+  std::unordered_map<std::string, std::reference_wrapper<T>> create_map_of_references_to_interfaces(
+    const InterfacesNames & interfaces_from_params, std::vector<T> & configured_interfaces);
   template <typename T>
   bool check_if_configured_interfaces_matches_received(
-    const InterfacesNames & interfaces_from_params, const T & interfaces_map);
+    const InterfacesNames & interfaces_from_params, const T & configured_interfaces);
+  void apply_state_value(
+    StateType & state_msg, std::size_t gpio_index, std::size_t interface_index) const;
+  void apply_command(
+    const CmdType & gpio_commands, std::size_t gpio_index,
+    std::size_t command_interface_index) const;
+  bool should_broadcast_all_interfaces_of_configured_gpios() const;
+  void set_all_state_interfaces_of_configured_gpios();
+  InterfacesNames get_gpios_state_interfaces_names(const std::string & gpio_name) const;
+  bool update_dynamic_map_parameters();
 
 protected:
-  InterfacesNames interface_types_;
+  InterfacesNames command_interface_types_;
+  InterfacesNames state_interface_types_;
   MapOfReferencesToCommandInterfaces command_interfaces_map_;
-  StateInterfaces ordered_state_interfaces_;
+  MapOfReferencesToStateInterfaces state_interfaces_map_;
 
   realtime_tools::RealtimeBuffer<std::shared_ptr<CmdType>> rt_command_ptr_{};
   rclcpp::Subscription<CmdType>::SharedPtr gpios_command_subscriber_{};

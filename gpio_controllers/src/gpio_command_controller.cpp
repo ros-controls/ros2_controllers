@@ -23,17 +23,8 @@
 
 namespace
 {
-void print_interface(
-  const rclcpp::Logger & logger, const gpio_controllers::StateInterfaces & state_interfaces)
-{
-  for (const auto & interface : state_interfaces)
-  {
-    RCLCPP_ERROR(logger, "Got %s", interface.get().get_name().c_str());
-  }
-}
-void print_interface(
-  const rclcpp::Logger & logger,
-  const gpio_controllers::MapOfReferencesToCommandInterfaces & command_interfaces)
+template <typename T>
+void print_interface(const rclcpp::Logger & logger, const T & command_interfaces)
 {
   for (const auto & [interface_name, value] : command_interfaces)
   {
@@ -63,21 +54,12 @@ catch (const std::exception & e)
 CallbackReturn GpioCommandController::on_configure(const rclcpp_lifecycle::State &)
 try
 {
-  auto logger = get_node()->get_logger();
-
-  if (!param_listener_)
+  if (!update_dynamic_map_parameters())
   {
-    RCLCPP_ERROR(logger, "Error encountered during init");
     return controller_interface::CallbackReturn::ERROR;
   }
-
-  // update the dynamic map parameters
-  param_listener_->refresh_dynamic_parameters();
-
-  // get parameters from the listener in case they were updated
-  params_ = param_listener_->get_params();
-
-  store_interface_types();
+  store_command_interface_types();
+  store_state_interface_types();
   gpios_command_subscriber_ = get_node()->create_subscription<CmdType>(
     "~/commands", rclcpp::SystemDefaultsQoS(),
     [this](const CmdType::SharedPtr msg) { rt_command_ptr_.writeFromNonRT(msg); });
@@ -101,7 +83,7 @@ GpioCommandController::command_interface_configuration() const
 {
   controller_interface::InterfaceConfiguration command_interfaces_config;
   command_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
-  command_interfaces_config.names = interface_types_;
+  command_interfaces_config.names = command_interface_types_;
 
   return command_interfaces_config;
 }
@@ -111,20 +93,21 @@ controller_interface::InterfaceConfiguration GpioCommandController::state_interf
 {
   controller_interface::InterfaceConfiguration state_interfaces_config;
   state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
-  state_interfaces_config.names = interface_types_;
+  state_interfaces_config.names = state_interface_types_;
 
   return state_interfaces_config;
 }
 
 CallbackReturn GpioCommandController::on_activate(const rclcpp_lifecycle::State &)
 {
-  command_interfaces_map_ = create_map_of_references_to_interfaces(interface_types_);
-  controller_interface::get_ordered_interfaces(
-    state_interfaces_, interface_types_, "", ordered_state_interfaces_);
-
+  command_interfaces_map_ =
+    create_map_of_references_to_interfaces(command_interface_types_, command_interfaces_);
+  state_interfaces_map_ =
+    create_map_of_references_to_interfaces(state_interface_types_, state_interfaces_);
   if (
-    !check_if_configured_interfaces_matches_received(interface_types_, command_interfaces_map_) ||
-    !check_if_configured_interfaces_matches_received(interface_types_, ordered_state_interfaces_))
+    !check_if_configured_interfaces_matches_received(
+      command_interface_types_, command_interfaces_map_) ||
+    !check_if_configured_interfaces_matches_received(state_interface_types_, state_interfaces_map_))
   {
     return CallbackReturn::ERROR;
   }
@@ -148,13 +131,72 @@ controller_interface::return_type GpioCommandController::update(
   return update_gpios_commands();
 }
 
-void GpioCommandController::store_interface_types()
+bool GpioCommandController::update_dynamic_map_parameters()
+{
+  auto logger = get_node()->get_logger();
+  if (!param_listener_)
+  {
+    RCLCPP_ERROR(logger, "Error encountered during init");
+    return false;
+  }
+  // update the dynamic map parameters
+  param_listener_->refresh_dynamic_parameters();
+  // get parameters from the listener in case they were updated
+  params_ = param_listener_->get_params();
+  return true;
+}
+
+void GpioCommandController::store_command_interface_types()
 {
   for (const auto & [gpio_name, interfaces] : params_.command_interfaces.gpios_map)
   {
     std::transform(
-      interfaces.interfaces.begin(), interfaces.interfaces.end(),
-      std::back_inserter(interface_types_),
+      interfaces.interfaces.cbegin(), interfaces.interfaces.cend(),
+      std::back_inserter(command_interface_types_),
+      [&](const auto & interface_name) { return gpio_name + "/" + interface_name; });
+  }
+}
+
+bool GpioCommandController::should_broadcast_all_interfaces_of_configured_gpios() const
+{
+  auto are_interfaces_not_empty = [](const auto & interfaces)
+  { return !interfaces.second.interfaces.empty(); };
+  return std::none_of(
+    params_.state_interfaces.gpios_map.cbegin(), params_.state_interfaces.gpios_map.cend(),
+    are_interfaces_not_empty);
+}
+
+void GpioCommandController::set_all_state_interfaces_of_configured_gpios()
+{
+  for (const auto & gpio : params_.gpios)
+  {
+    for (auto & interface : state_interfaces_)
+    {
+      if (gpio == interface.get_prefix_name())
+      {
+        state_interface_types_.push_back(interface.get_name());
+      }
+    }
+  }
+}
+
+void GpioCommandController::store_state_interface_types()
+{
+  if (should_broadcast_all_interfaces_of_configured_gpios())
+  {
+    RCLCPP_INFO(
+      get_node()->get_logger(),
+      "State interfaces are not configured. All available interfaces of configured GPIOs will be "
+      "broadcasted.");
+    set_all_state_interfaces_of_configured_gpios();
+    return;
+  }
+
+  for (const auto & [gpio_name, interfaces] : params_.state_interfaces.gpios_map)
+  {
+    std::transform(
+      interfaces.interfaces.cbegin(), interfaces.interfaces.cend(),
+      std::back_inserter(state_interface_types_),
       [&](const auto & interface_name) { return gpio_name + "/" + interface_name; });
   }
 }
@@ -170,30 +212,45 @@ void GpioCommandController::initialize_gpio_state_msg()
   {
     const auto gpio_name = params_.gpios[gpio_index];
     gpio_state_msg.joint_names[gpio_index] = gpio_name;
-    std::copy(
-      params_.command_interfaces.gpios_map[gpio_name].interfaces.begin(),
-      params_.command_interfaces.gpios_map[gpio_name].interfaces.end(),
-      std::back_insert_iterator(gpio_state_msg.interface_values[gpio_index].interface_names));
+    gpio_state_msg.interface_values[gpio_index].interface_names =
+      get_gpios_state_interfaces_names(gpio_name);
     gpio_state_msg.interface_values[gpio_index].values = std::vector<double>(
-      params_.command_interfaces.gpios_map[gpio_name].interfaces.size(),
+      gpio_state_msg.interface_values[gpio_index].interface_names.size(),
       std::numeric_limits<double>::quiet_NaN());
   }
 }
 
-MapOfReferencesToCommandInterfaces GpioCommandController::create_map_of_references_to_interfaces(
-  const InterfacesNames & interfaces_from_params)
+InterfacesNames GpioCommandController::get_gpios_state_interfaces_names(
+  const std::string & gpio_name) const
 {
-  MapOfReferencesToCommandInterfaces map;
+  InterfacesNames result;
+  for (const auto & interface_name : state_interface_types_)
+  {
+    const auto it = state_interfaces_map_.find(interface_name);
+    if (it != state_interfaces_map_.cend() && it->second.get().get_prefix_name() == gpio_name)
+    {
+      result.emplace_back(it->second.get().get_interface_name());
+    }
+  }
+  return result;
+}
+
+template <typename T>
+std::unordered_map<std::string, std::reference_wrapper<T>>
+GpioCommandController::create_map_of_references_to_interfaces(
+  const InterfacesNames & interfaces_from_params, std::vector<T> & configured_interfaces)
+{
+  std::unordered_map<std::string, std::reference_wrapper<T>> map;
   for (const auto & interface_name : interfaces_from_params)
   {
     auto interface = std::find_if(
-      command_interfaces_.begin(), command_interfaces_.end(),
+      configured_interfaces.begin(), configured_interfaces.end(),
       [&](const auto & configured_interface)
       {
         const auto full_name_interface_name = configured_interface.get_name();
         return full_name_interface_name == interface_name;
       });
-    if (interface != command_interfaces_.end())
+    if (interface != configured_interfaces.end())
     {
       map.emplace(interface_name, std::ref(*interface));
     }
@@ -241,51 +298,71 @@ controller_interface::return_type GpioCommandController::update_gpios_commands()
         gpio_name.c_str());
       return controller_interface::return_type::ERROR;
     }
-
     for (std::size_t command_interface_index = 0;
          command_interface_index < gpio_commands.interface_values[gpio_index].values.size();
          ++command_interface_index)
     {
-      const auto & full_command_interface_name =
-        gpio_name + '/' +
-        gpio_commands.interface_values[gpio_index].interface_names[command_interface_index];
-      try
-      {
-        command_interfaces_map_.at(full_command_interface_name)
-          .get()
-          .set_value(gpio_commands.interface_values[gpio_index].values[command_interface_index]);
-      }
-      catch (const std::exception & e)
-      {
-        fprintf(
-          stderr, "Exception thrown during applying command stage of %s with message: %s \n",
-          full_command_interface_name.c_str(), e.what());
-      }
+      apply_command(gpio_commands, gpio_index, command_interface_index);
     }
   }
   return controller_interface::return_type::OK;
 }
 
+void GpioCommandController::apply_command(
+  const CmdType & gpio_commands, std::size_t gpio_index, std::size_t command_interface_index) const
+{
+  const auto full_command_interface_name =
+    gpio_commands.joint_names[gpio_index] + '/' +
+    gpio_commands.interface_values[gpio_index].interface_names[command_interface_index];
+  try
+  {
+    command_interfaces_map_.at(full_command_interface_name)
+      .get()
+      .set_value(gpio_commands.interface_values[gpio_index].values[command_interface_index]);
+  }
+  catch (const std::exception & e)
+  {
+    fprintf(
+      stderr, "Exception thrown during applying command stage of %s with message: %s \n",
+      full_command_interface_name.c_str(), e.what());
+  }
+}
+
 void GpioCommandController::update_gpios_states()
 {
-  if (realtime_gpio_state_publisher_ && realtime_gpio_state_publisher_->trylock())
+  if (!realtime_gpio_state_publisher_ || !realtime_gpio_state_publisher_->trylock())
   {
-    auto & gpio_state_msg = realtime_gpio_state_publisher_->msg_;
-    gpio_state_msg.header.stamp = get_node()->now();
+    return;
+  }
 
-    std::size_t state_index{};
-    for (std::size_t gpio_index = 0; gpio_index < gpio_state_msg.joint_names.size(); ++gpio_index)
+  auto & gpio_state_msg = realtime_gpio_state_publisher_->msg_;
+  gpio_state_msg.header.stamp = get_node()->now();
+  for (std::size_t gpio_index = 0; gpio_index < gpio_state_msg.joint_names.size(); ++gpio_index)
+  {
+    for (std::size_t interface_index = 0;
+         interface_index < gpio_state_msg.interface_values[gpio_index].interface_names.size();
+         ++interface_index)
     {
-      for (std::size_t interface_index = 0;
-           interface_index < gpio_state_msg.interface_values[gpio_index].interface_names.size();
-           ++interface_index)
-      {
-        gpio_state_msg.interface_values[gpio_index].values[interface_index] =
-          ordered_state_interfaces_[state_index].get().get_value();
-        ++state_index;
-      }
+      apply_state_value(gpio_state_msg, gpio_index, interface_index);
     }
-    realtime_gpio_state_publisher_->unlockAndPublish();
+  }
+  realtime_gpio_state_publisher_->unlockAndPublish();
+}
+
+void GpioCommandController::apply_state_value(
+  StateType & state_msg, std::size_t gpio_index, std::size_t interface_index) const
+{
+  const auto interface_name =
+    state_msg.joint_names[gpio_index] + '/' +
+    state_msg.interface_values[gpio_index].interface_names[interface_index];
+  try
+  {
+    state_msg.interface_values[gpio_index].values[interface_index] =
+      state_interfaces_map_.at(interface_name).get().get_value();
+  }
+  catch (const std::exception & e)
+  {
+    fprintf(stderr, "Exception thrown during reading state of: %s \n", interface_name.c_str());
   }
 }
 

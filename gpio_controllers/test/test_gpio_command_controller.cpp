@@ -237,7 +237,9 @@ TEST_F(
   const auto node_options = create_node_options_with_overriden_parameters(
     {{"gpios", gpio_names},
      {"command_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
-     {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
+     {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}},
+     {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"state_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
 
   const auto result = controller.init("test_gpio_command_controller", "", 0, "", node_options);
   ASSERT_EQ(result, controller_interface::return_type::OK);
@@ -248,7 +250,9 @@ TEST_F(GpioCommandControllerTestSuite, ConfigureAndActivateParamsSuccess)
   const auto node_options = create_node_options_with_overriden_parameters(
     {{"gpios", gpio_names},
      {"command_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
-     {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
+     {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}},
+     {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"state_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
   const auto result = controller.init("test_gpio_command_controller", "", 0, "", node_options);
   setup_command_and_state_interfaces();
   ASSERT_EQ(result, controller_interface::return_type::OK);
@@ -263,7 +267,9 @@ TEST_F(
   const auto node_options = create_node_options_with_overriden_parameters(
     {{"gpios", gpio_names},
      {"command_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
-     {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
+     {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}},
+     {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"state_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
   const auto result = controller.init("test_gpio_command_controller", "", 0, "", node_options);
 
   std::vector<LoanedCommandInterface> command_interfaces;
@@ -284,12 +290,14 @@ TEST_F(
 
 TEST_F(
   GpioCommandControllerTestSuite,
-  WhenAssignedSateInterfacesDoNotMatchInterfacesFromParamsThenControllerShouldFailOnActivation)
+  WhenAssignedStateInterfacesDoNotMatchInterfacesFromParamsThenControllerShouldFailOnActivation)
 {
   const auto node_options = create_node_options_with_overriden_parameters(
     {{"gpios", gpio_names},
      {"command_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
-     {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
+     {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}},
+     {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"state_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
   const auto result = controller.init("test_gpio_command_controller", "", 0, "", node_options);
 
   std::vector<LoanedCommandInterface> command_interfaces;
@@ -310,12 +318,42 @@ TEST_F(
 
 TEST_F(
   GpioCommandControllerTestSuite,
+  WhenCommandInterfacesDontMatchStatesButBothMatchAssignedOnesThenOnActivationShouldSucceed)
+{
+  const auto node_options = create_node_options_with_overriden_parameters(
+    {{"gpios", gpio_names},
+     {"command_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}},
+     {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1"}},
+     {"state_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
+  const auto result = controller.init("test_gpio_command_controller", "", 0, "", node_options);
+
+  std::vector<LoanedCommandInterface> command_interfaces;
+  command_interfaces.emplace_back(gpio_1_1_dig_cmd);
+  command_interfaces.emplace_back(gpio_1_2_dig_cmd);
+  command_interfaces.emplace_back(gpio_2_ana_cmd);
+
+  std::vector<LoanedStateInterface> state_interfaces;
+  state_interfaces.emplace_back(gpio_1_1_dig_state);
+  state_interfaces.emplace_back(gpio_2_ana_state);
+
+  controller.assign_interfaces(std::move(command_interfaces), std::move(state_interfaces));
+
+  ASSERT_EQ(result, controller_interface::return_type::OK);
+  ASSERT_EQ(controller.on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  ASSERT_EQ(controller.on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+}
+
+TEST_F(
+  GpioCommandControllerTestSuite,
   WhenThereWasNoCommandForGpiosThenCommandInterfacesShouldHaveDefaultValues)
 {
   const auto node_options = create_node_options_with_overriden_parameters(
     {{"gpios", gpio_names},
      {"command_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
-     {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
+     {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}},
+     {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"state_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
 
   setup_command_and_state_interfaces();
   move_to_activate_state(controller.init("test_gpio_command_controller", "", 0, "", node_options));
@@ -331,7 +369,9 @@ TEST_F(
   const auto node_options = create_node_options_with_overriden_parameters(
     {{"gpios", gpio_names},
      {"command_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
-     {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
+     {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}},
+     {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"state_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
 
   setup_command_and_state_interfaces();
   move_to_activate_state(controller.init("test_gpio_command_controller", "", 0, "", node_options));
@@ -352,7 +392,9 @@ TEST_F(
   const auto node_options = create_node_options_with_overriden_parameters(
     {{"gpios", gpio_names},
      {"command_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
-     {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
+     {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}},
+     {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"state_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
 
   setup_command_and_state_interfaces();
   move_to_activate_state(controller.init("test_gpio_command_controller", "", 0, "", node_options));
@@ -373,7 +415,9 @@ TEST_F(
   const auto node_options = create_node_options_with_overriden_parameters(
     {{"gpios", gpio_names},
      {"command_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
-     {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
+     {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}},
+     {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"state_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
 
   setup_command_and_state_interfaces();
   move_to_activate_state(controller.init("test_gpio_command_controller", "", 0, "", node_options));
@@ -396,7 +440,9 @@ TEST_F(
   const auto node_options = create_node_options_with_overriden_parameters(
     {{"gpios", gpio_names},
      {"command_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
-     {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
+     {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}},
+     {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"state_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
 
   setup_command_and_state_interfaces();
   move_to_activate_state(controller.init("test_gpio_command_controller", "", 0, "", node_options));
@@ -419,7 +465,9 @@ TEST_F(
   const auto node_options = create_node_options_with_overriden_parameters(
     {{"gpios", gpio_names},
      {"command_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
-     {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
+     {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}},
+     {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"state_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
   const auto result = controller.init("test_gpio_command_controller", "", 0, "", node_options);
   setup_command_and_state_interfaces();
   move_to_activate_state(result);
@@ -442,7 +490,9 @@ TEST_F(
   const auto node_options = create_node_options_with_overriden_parameters(
     {{"gpios", gpio_names},
      {"command_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
-     {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
+     {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}},
+     {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"state_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
   const auto result = controller.init("test_gpio_command_controller", "", 0, "", node_options);
   setup_command_and_state_interfaces();
   move_to_activate_state(result);
@@ -466,7 +516,9 @@ TEST_F(
   const auto node_options = create_node_options_with_overriden_parameters(
     {{"gpios", gpio_names},
      {"command_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
-     {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
+     {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}},
+     {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"state_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
   setup_command_and_state_interfaces();
   move_to_activate_state(controller.init("test_gpio_command_controller", "", 0, "", node_options));
 
@@ -489,7 +541,9 @@ TEST_F(GpioCommandControllerTestSuite, ControllerShouldPublishGpioStatesWithCurr
   const auto node_options = create_node_options_with_overriden_parameters(
     {{"gpios", gpio_names},
      {"command_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
-     {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
+     {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}},
+     {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"state_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
   setup_command_and_state_interfaces();
   move_to_activate_state(controller.init("test_gpio_command_controller", "", 0, "", node_options));
 
