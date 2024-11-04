@@ -3,39 +3,44 @@
 gpio_controllers
 =====================
 
-This is a collection of controllers for gpios that work with multiple interfaces.
+This is a collection of controllers for hardware interfaces of type GPIO (``<gpio>`` tag in the URDF).
 
-Hardware interface type
------------------------
-
-These controllers work with gpios using user defined command interfaces.
-
-Using GPIO Command Controller
+gpio_command_controller
 -----------------------------
-The controller expects at least one gpio interface abd the corresponding command interface names.
+gpio_command_controller let the user expose command interfaces of given GPIO interfaces and publishes state interfaces of the configured command interfaces.
+
+Description of controller's interfaces
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+- ``/<controller_name>/gpio_states`` [``control_msgs/msg/DynamicJointState``]: Publishes all state interfaces of the given GPIO interfaces.
+- ``/<controller_name>/commands`` [``control_msgs/msg/DynamicJointState``]:  A subscriber for configured command interfaces.
+
+
+Parameters
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+This controller uses the `generate_parameter_library <https://github.com/PickNikRobotics/generate_parameter_library>`_ to handle its parameters. The parameter `definition file located in the src folder <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/gpio_controllers_/src/gpio_command_controller_parameters.yaml>`_ contains descriptions for all the parameters used by the controller.
+
+.. generate_parameter_library_details::
+  ../src/gpio_command_controller_parameters.yaml
+
+The controller expects at least one gpio interface and the corresponding command interface names.
 A yaml file for using it could be:
+
 .. code-block:: yaml
 
-    controller_manager:
-        ros__parameters:
-            update_rate: 100  # Hz
-            joint_state_broadcaster:
-            type: joint_state_broadcaster/JointStateBroadcaster
-            gpio_command_controller:
-            type: gpio_controllers/GpioCommandController
-
     gpio_command_controller:
-        ros__parameters:
-            gpios:
-                - Gpio1
-                - Gpio2
-            command_interfaces:
-                Gpio1:
-                    - ports:
-                        - dig.1
-                        - dig.2
-                        - dig.3
-                Gpio2:
-                    -ports:
-                        - ana.1
-                        - ana.2
+      ros__parameters:
+        type: gpio_controllers/GpioCommandController
+        gpios:
+          - Gpio1
+          - Gpio2
+        command_interfaces:
+          Gpio1:
+            - interfaces:
+              - dig.1
+              - dig.2
+              - dig.3
+          Gpio2:
+            - interfaces:
+              - ana.1
+              - ana.2

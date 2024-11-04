@@ -2,6 +2,7 @@ gpio_command_controller_parameters:
   gpios: {
     type: string_array,
     description: "List of gpios",
+    read_only: true,
     validation: {
       size_gt<>: [0],
       unique<>: null
@@ -10,9 +11,10 @@ gpio_command_controller_parameters:
 
   command_interfaces:
     __map_gpios:
-      ports: {
+      interfaces: {
         type: string_array,
-        description: "List of ports: for each gpio",
+        description: "List of interfaces for each gpio",
+        read_only: true,
         validation: {
           size_gt<>: [0],
           unique<>: null

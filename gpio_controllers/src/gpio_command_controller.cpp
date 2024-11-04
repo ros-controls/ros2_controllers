@@ -63,6 +63,20 @@ catch (const std::exception & e)
 CallbackReturn GpioCommandController::on_configure(const rclcpp_lifecycle::State &)
 try
 {
+  auto logger = get_node()->get_logger();
+
+  if (!param_listener_)
+  {
+    RCLCPP_ERROR(logger, "Error encountered during init");
+    return controller_interface::CallbackReturn::ERROR;
+  }
+
+  // update the dynamic map parameters
+  param_listener_->refresh_dynamic_parameters();
+
+  // get parameters from the listener in case they were updated
+  params_ = param_listener_->get_params();
+
   store_interface_types();
   gpios_command_subscriber_ = get_node()->create_subscription<CmdType>(
     "~/commands", rclcpp::SystemDefaultsQoS(),
@@ -136,10 +150,11 @@ controller_interface::return_type GpioCommandController::update(
 
 void GpioCommandController::store_interface_types()
 {
-  for (const auto & [gpio_name, ports] : params_.command_interfaces.gpios_map)
+  for (const auto & [gpio_name, interfaces] : params_.command_interfaces.gpios_map)
   {
     std::transform(
-      ports.ports.begin(), ports.ports.end(), std::back_inserter(interface_types_),
+      interfaces.interfaces.begin(), interfaces.interfaces.end(),
+      std::back_inserter(interface_types_),
       [&](const auto & interface_name) { return gpio_name + "/" + interface_name; });
   }
 }
@@ -156,11 +171,11 @@ void GpioCommandController::initialize_gpio_state_msg()
     const auto gpio_name = params_.gpios[gpio_index];
     gpio_state_msg.joint_names[gpio_index] = gpio_name;
     std::copy(
-      params_.command_interfaces.gpios_map[gpio_name].ports.begin(),
-      params_.command_interfaces.gpios_map[gpio_name].ports.end(),
+      params_.command_interfaces.gpios_map[gpio_name].interfaces.begin(),
+      params_.command_interfaces.gpios_map[gpio_name].interfaces.end(),
       std::back_insert_iterator(gpio_state_msg.interface_values[gpio_index].interface_names));
     gpio_state_msg.interface_values[gpio_index].values = std::vector<double>(
-      params_.command_interfaces.gpios_map[gpio_name].ports.size(),
+      params_.command_interfaces.gpios_map[gpio_name].interfaces.size(),
       std::numeric_limits<double>::quiet_NaN());
   }
 }
@@ -243,7 +258,8 @@ controller_interface::return_type GpioCommandController::update_gpios_commands()
       catch (const std::exception & e)
       {
         fprintf(
-          stderr, "Exception thrown during applying command stage with message: %s \n", e.what());
+          stderr, "Exception thrown during applying command stage of %s with message: %s \n",
+          full_command_interface_name.c_str(), e.what());
       }
     }
   }
