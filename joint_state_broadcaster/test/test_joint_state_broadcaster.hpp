@@ -34,6 +34,7 @@ class FriendJointStateBroadcaster : public joint_state_broadcaster::JointStateBr
 {
   FRIEND_TEST(JointStateBroadcasterTest, ConfigureErrorTest);
   FRIEND_TEST(JointStateBroadcasterTest, ActivateEmptyTest);
+  FRIEND_TEST(JointStateBroadcasterTest, ReactivateTheControllerWithDifferentInterfacesTest);
   FRIEND_TEST(JointStateBroadcasterTest, ActivateTestWithoutJointsParameter);
   FRIEND_TEST(JointStateBroadcasterTest, ActivateTestWithoutJointsParameterInvalidURDF);
   FRIEND_TEST(JointStateBroadcasterTest, ActivateTestWithoutJointsParameterWithRobotDescription);
