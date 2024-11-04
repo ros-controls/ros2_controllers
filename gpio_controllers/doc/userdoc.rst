@@ -23,7 +23,9 @@ This controller uses the `generate_parameter_library <https://github.com/PickNik
 .. generate_parameter_library_details::
   ../src/gpio_command_controller_parameters.yaml
 
-The controller expects at least one gpio interface and the corresponding command interface names.
+The controller expects at least one gpio interface and the corresponding command interface names or state interface.
+Command and state interfaces are optional. When no state interface is provided in the param file then controller will try use state_interfaces from ros2_control's config placed in the URDF for configured gpio interfaces.
+Command interfaces will not be configured based on available URDF setup.
 A yaml file for using it could be:
 
 .. code-block:: yaml
@@ -44,3 +46,10 @@ A yaml file for using it could be:
             - interfaces:
               - ana.1
               - ana.2
+        state_interfaces:
+          Gpio2:
+            - interfaces:
+              - ana.1
+              - ana.2
+
+With such configuration controller will accept commands for all gpios' interfaces and will publish state only of Gpio2.

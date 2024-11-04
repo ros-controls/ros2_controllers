@@ -28,6 +28,7 @@
 #include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_buffer.h"
 #include "realtime_tools/realtime_publisher.h"
+#include "urdf/model.hpp"
 
 namespace gpio_controllers
 {
@@ -91,6 +92,7 @@ private:
   void set_all_state_interfaces_of_configured_gpios();
   InterfacesNames get_gpios_state_interfaces_names(const std::string & gpio_name) const;
   bool update_dynamic_map_parameters();
+  std::vector<hardware_interface::ComponentInfo> get_gpios_from_urdf() const;
 
 protected:
   InterfacesNames command_interface_types_;
@@ -106,6 +108,7 @@ protected:
 
   std::shared_ptr<gpio_command_controller_parameters::ParamListener> param_listener_{};
   gpio_command_controller_parameters::Params params_;
+  urdf::Model model_;
 };
 
 }  // namespace gpio_controllers

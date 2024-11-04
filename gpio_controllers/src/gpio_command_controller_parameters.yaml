@@ -15,8 +15,8 @@ gpio_command_controller_parameters:
         type: string_array,
         description: "List of command interfaces for each gpio.",
         read_only: true,
+        default_value: [],
         validation: {
-          size_gt<>: [0],
           unique<>: null
         }
       }

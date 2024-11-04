@@ -17,6 +17,7 @@
 #include <algorithm>
 
 #include "controller_interface/helpers.hpp"
+#include "hardware_interface/component_parser.hpp"
 #include "rclcpp/logging.hpp"
 #include "rclcpp/qos.hpp"
 #include "rclcpp/subscription.hpp"
@@ -30,6 +31,18 @@ void print_interface(const rclcpp::Logger & logger, const T & command_interfaces
   {
     RCLCPP_ERROR(logger, "Got %s", interface_name.c_str());
   }
+}
+
+std::vector<hardware_interface::ComponentInfo> extract_gpios_from_hardware_info(
+  const std::vector<hardware_interface::HardwareInfo> & hardware_infos)
+{
+  std::vector<hardware_interface::ComponentInfo> result;
+  for (const auto & hardware_info : hardware_infos)
+  {
+    std::copy(
+      hardware_info.gpios.begin(), hardware_info.gpios.end(), std::back_insert_iterator(result));
+  }
+  return result;
 }
 }  // namespace
 
@@ -58,8 +71,16 @@ try
   {
     return controller_interface::CallbackReturn::ERROR;
   }
+
   store_command_interface_types();
   store_state_interface_types();
+
+  if (command_interface_types_.empty() && state_interface_types_.empty())
+  {
+    RCLCPP_ERROR(get_node()->get_logger(), "No command or state interfaces are configured");
+    return CallbackReturn::ERROR;
+  }
+
   gpios_command_subscriber_ = get_node()->create_subscription<CmdType>(
     "~/commands", rclcpp::SystemDefaultsQoS(),
     [this](const CmdType::SharedPtr msg) { rt_command_ptr_.writeFromNonRT(msg); });
@@ -159,22 +180,39 @@ void GpioCommandController::store_command_interface_types()
 
 bool GpioCommandController::should_broadcast_all_interfaces_of_configured_gpios() const
 {
-  auto are_interfaces_not_empty = [](const auto & interfaces)
-  { return !interfaces.second.interfaces.empty(); };
-  return std::none_of(
+  auto are_interfaces_empty = [](const auto & interfaces)
+  { return interfaces.second.interfaces.empty(); };
+  return std::all_of(
     params_.state_interfaces.gpios_map.cbegin(), params_.state_interfaces.gpios_map.cend(),
-    are_interfaces_not_empty);
+    are_interfaces_empty);
+}
+
+std::vector<hardware_interface::ComponentInfo> GpioCommandController::get_gpios_from_urdf() const
+try
+{
+  return extract_gpios_from_hardware_info(
+    hardware_interface::parse_control_resources_from_urdf(get_robot_description()));
+}
+catch (const std::exception & e)
+{
+  fprintf(stderr, "Exception thrown during extracting gpios info from urdf %s \n", e.what());
+  return {};
 }
 
 void GpioCommandController::set_all_state_interfaces_of_configured_gpios()
 {
-  for (const auto & gpio : params_.gpios)
+  const auto gpios{get_gpios_from_urdf()};
+  for (const auto & gpio_name : params_.gpios)
   {
-    for (auto & interface : state_interfaces_)
+    for (const auto & gpio : gpios)
     {
-      if (gpio == interface.get_prefix_name())
+      if (gpio_name == gpio.name)
       {
-        state_interface_types_.push_back(interface.get_name());
+        std::transform(
+          gpio.state_interfaces.begin(), gpio.state_interfaces.end(),
+          std::back_insert_iterator(state_interface_types_),
+          [&gpio_name](const auto & interface_name)
+          { return gpio_name + '/' + interface_name.name; });
       }
     }
   }
