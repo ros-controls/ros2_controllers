@@ -20,7 +20,6 @@ find_package(rclcpp_lifecycle REQUIRED)
 find_package(realtime_tools REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(generate_parameter_library REQUIRED)
-find_package(urdf REQUIRED)
 
 
 generate_parameter_library(gpio_command_controller_parameters
@@ -42,7 +41,6 @@ ament_target_dependencies(gpio_controllers PUBLIC
   rcutils
   realtime_tools
   std_msgs
-  urdf
 )
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.

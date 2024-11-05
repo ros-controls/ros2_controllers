@@ -28,7 +28,6 @@
 #include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_buffer.h"
 #include "realtime_tools/realtime_publisher.h"
-#include "urdf/model.hpp"
 
 namespace gpio_controllers
 {
@@ -108,7 +107,6 @@ protected:
 
   std::shared_ptr<gpio_command_controller_parameters::ParamListener> param_listener_{};
   gpio_command_controller_parameters::Params params_;
-  urdf::Model model_;
 };
 
 }  // namespace gpio_controllers
