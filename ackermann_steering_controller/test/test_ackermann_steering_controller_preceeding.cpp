@@ -91,9 +91,9 @@ TEST_F(AckermannSteeringControllerTest, check_exported_interfaces)
   {
     const std::string ref_itf_name =
       std::string(controller_->get_node()->get_name()) + "/" + joint_reference_interfaces_[i];
-    EXPECT_EQ(reference_interfaces[i].get_name(), ref_itf_name);
-    EXPECT_EQ(reference_interfaces[i].get_prefix_name(), controller_->get_node()->get_name());
-    EXPECT_EQ(reference_interfaces[i].get_interface_name(), joint_reference_interfaces_[i]);
+    EXPECT_EQ(reference_interfaces[i]->get_name(), ref_itf_name);
+    EXPECT_EQ(reference_interfaces[i]->get_prefix_name(), controller_->get_node()->get_name());
+    EXPECT_EQ(reference_interfaces[i]->get_interface_name(), joint_reference_interfaces_[i]);
   }
 }
 
