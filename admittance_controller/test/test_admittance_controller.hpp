@@ -160,13 +160,8 @@ protected:
   controller_interface::return_type SetUpControllerCommon(
     const std::string & controller_name, const rclcpp::NodeOptions & options)
   {
-<<<<<<< HEAD
+    // robot_description is received from node's parameter
     auto result = controller_->init(controller_name, "", options);
-=======
-    auto result =
-      controller_->init(controller_name, controller_->robot_description_, 0, "", options);
->>>>>>> 9439764 (Adding use of robot description parameter in the Admittance Controller (#1247))
-
     controller_->export_reference_interfaces();
     assign_interfaces();
 
