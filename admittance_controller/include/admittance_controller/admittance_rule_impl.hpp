@@ -60,9 +60,7 @@ controller_interface::return_type AdmittanceRule::configure(
         kinematics_loader_->createUnmanagedInstance(parameters_.kinematics.plugin_name));
 
       if (!kinematics_->initialize(
-            robot_description,
-            node->get_node_parameters_interface(),
-            "kinematics"))
+            robot_description, node->get_node_parameters_interface(), "kinematics"))
       {
         return controller_interface::return_type::ERROR;
       }
