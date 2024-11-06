@@ -285,8 +285,7 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
 
   // configure admittance rule
   if (
-    admittance_->configure(get_node(), num_joints_, this->get_robot_description()) ==
-    controller_interface::return_type::ERROR)
+    admittance_->configure(get_node(), num_joints_, "") == controller_interface::return_type::ERROR)
   {
     return controller_interface::CallbackReturn::ERROR;
   }
