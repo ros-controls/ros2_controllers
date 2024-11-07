@@ -209,6 +209,7 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   joint_names_.clear();
+  name_if_value_mapping_.clear();
 
   return CallbackReturn::SUCCESS;
 }
@@ -309,6 +310,8 @@ void JointStateBroadcaster::init_joint_state_msg()
 void JointStateBroadcaster::init_dynamic_joint_state_msg()
 {
   auto & dynamic_joint_state_msg = realtime_dynamic_joint_state_publisher_->msg_;
+  dynamic_joint_state_msg.joint_names.clear();
+  dynamic_joint_state_msg.interface_values.clear();
   for (const auto & name_ifv : name_if_value_mapping_)
   {
     const auto & name = name_ifv.first;
