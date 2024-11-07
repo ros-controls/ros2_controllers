@@ -391,6 +391,22 @@ public:
     return traj_controller_->get_node()->activate();
   }
 
+  rclcpp_lifecycle::State DeactivateTrajectoryController()
+  {
+    if (traj_controller_)
+    {
+      if (
+        traj_controller_->get_lifecycle_state().id() ==
+        lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+      {
+        const auto new_state = traj_controller_->get_node()->deactivate();
+        EXPECT_EQ(new_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
+        return new_state;
+      }
+    }
+    return traj_controller_->get_lifecycle_state();
+  }
+
   static void TearDownTestCase() { rclcpp::shutdown(); }
 
   void subscribeToState(rclcpp::Executor & executor)
@@ -775,6 +791,8 @@ public:
     command_interface_types_ = std::get<0>(GetParam());
     state_interface_types_ = std::get<1>(GetParam());
   }
+
+  virtual void TearDown() { TrajectoryControllerTest::DeactivateTrajectoryController(); }
 
   static void TearDownTestCase() { TrajectoryControllerTest::TearDownTestCase(); }
 };
