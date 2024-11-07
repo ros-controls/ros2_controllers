@@ -81,9 +81,12 @@ try
     return CallbackReturn::ERROR;
   }
 
-  gpios_command_subscriber_ = get_node()->create_subscription<CmdType>(
-    "~/commands", rclcpp::SystemDefaultsQoS(),
-    [this](const CmdType::SharedPtr msg) { rt_command_ptr_.writeFromNonRT(msg); });
+  if (!command_interface_types_.empty())
+  {
+    gpios_command_subscriber_ = get_node()->create_subscription<CmdType>(
+      "~/commands", rclcpp::SystemDefaultsQoS(),
+      [this](const CmdType::SharedPtr msg) { rt_command_ptr_.writeFromNonRT(msg); });
+  }
 
   gpio_state_publisher_ =
     get_node()->create_publisher<StateType>("~/gpio_states", rclcpp::SystemDefaultsQoS());

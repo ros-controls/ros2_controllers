@@ -23,8 +23,7 @@ This controller uses the `generate_parameter_library <https://github.com/PickNik
 .. generate_parameter_library_details::
   ../src/gpio_command_controller_parameters.yaml
 
-The controller expects at least one GPIO interface and the corresponding command interface names or state interface.
-Command and state interfaces are optional.
+The controller expects at least one GPIO interface and the corresponding command interface names or state interface. However, these Command and State interfaces are optional. The controller behaves as a broadcaster when no Command Interface is present, thereby publishing the configured GPIO state interfaces if set, else the one present in the URDF.
 
 .. note::
 
