@@ -26,11 +26,7 @@
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
 #include "joint_trajectory_controller/tolerances.hpp"
-<<<<<<< HEAD
-=======
 #include "lifecycle_msgs/msg/state.hpp"
-#include "ros2_control_test_assets/descriptions.hpp"
->>>>>>> 7ed1a0e ([JTC] Fix the JTC length_error exceptions in the tests (#1360))
 
 namespace
 {
