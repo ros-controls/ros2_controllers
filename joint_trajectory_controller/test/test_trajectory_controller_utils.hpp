@@ -26,6 +26,11 @@
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
 #include "joint_trajectory_controller/tolerances.hpp"
+<<<<<<< HEAD
+=======
+#include "lifecycle_msgs/msg/state.hpp"
+#include "ros2_control_test_assets/descriptions.hpp"
+>>>>>>> 7ed1a0e ([JTC] Fix the JTC length_error exceptions in the tests (#1360))
 
 namespace
 {
@@ -381,6 +386,21 @@ public:
 
     traj_controller_->assign_interfaces(std::move(cmd_interfaces), std::move(state_interfaces));
     return traj_controller_->get_node()->activate();
+  }
+
+  void DeactivateTrajectoryController()
+  {
+    if (traj_controller_)
+    {
+      if (
+        traj_controller_->get_lifecycle_state().id() ==
+        lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+      {
+        EXPECT_EQ(
+          traj_controller_->get_node()->deactivate().id(),
+          lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
+      }
+    }
   }
 
   static void TearDownTestCase() { rclcpp::shutdown(); }
@@ -767,6 +787,8 @@ public:
     command_interface_types_ = std::get<0>(GetParam());
     state_interface_types_ = std::get<1>(GetParam());
   }
+
+  virtual void TearDown() { TrajectoryControllerTest::DeactivateTrajectoryController(); }
 
   static void TearDownTestCase() { TrajectoryControllerTest::TearDownTestCase(); }
 };
