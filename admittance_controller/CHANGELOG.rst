@@ -2,8 +2,8 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.16.0 (2024-11-08)
+-------------------
 * Adding use of robot description parameter in the Admittance Controller (`#1247 <https://github.com/ros-controls/ros2_controllers/issues/1247>`_)
 * Contributors: Dr. Denis, Kevin DeMarco, Nikola Banovic, Bence Magyar, Christoph Fröhlich
 
