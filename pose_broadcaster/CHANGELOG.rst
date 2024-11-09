@@ -1,9 +1,11 @@
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Changelog for package ros2_controllers_test_nodes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Changelog for package pose_broadcaster
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Forthcoming
 -----------
+* Implement new PoseBroadcaster controller (backport `#1311 <https://github.com/ros-controls/ros2_controllers/issues/1311>`_) (`#1326 <https://github.com/ros-controls/ros2_controllers/issues/1326>`_)
+* Contributors: mergify[bot]
 
 2.37.3 (2024-09-11)
 -------------------
@@ -97,13 +99,9 @@ Forthcoming
 
 2.14.0 (2022-11-18)
 -------------------
-* Remove deprecation warning when parameter without value is set. (`#445 <https://github.com/ros-controls/ros2_controllers/issues/445>`_)
-* Contributors: Denis Štogl
 
 2.13.0 (2022-10-05)
 -------------------
-* Enable definition of all fields in JointTrajectory message when using test node. (`#389 <https://github.com/ros-controls/ros2_controllers/issues/389>`_)
-* Contributors: Denis Štogl
 
 2.12.0 (2022-09-01)
 -------------------
@@ -119,8 +117,6 @@ Forthcoming
 
 2.8.0 (2022-07-09)
 ------------------
-* Fix deprecation in setup.cfg on Jammy (Humble and Rolling). (`#375 <https://github.com/ros-controls/ros2_controllers/issues/375>`_)
-* Contributors: Denis Štogl
 
 2.7.0 (2022-07-03)
 ------------------
@@ -142,8 +138,6 @@ Forthcoming
 
 2.1.0 (2022-02-23)
 ------------------
-* Move test nodes from the ros2_control_demos repository. (`#294 <https://github.com/ros-controls/ros2_controllers/issues/294>`_)
-* Contributors: Denis Štogl, Lovro Ivanov
 
 2.0.1 (2022-02-01)
 ------------------
