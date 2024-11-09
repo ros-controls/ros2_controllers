@@ -2,8 +2,8 @@
 Changelog for package pose_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.38.0 (2024-11-09)
+-------------------
 * Implement new PoseBroadcaster controller (backport `#1311 <https://github.com/ros-controls/ros2_controllers/issues/1311>`_) (`#1326 <https://github.com/ros-controls/ros2_controllers/issues/1326>`_)
 * Contributors: mergify[bot]
 
