@@ -201,9 +201,13 @@ controller_interface::return_type JointTrajectoryController::update(
         time, interpolation_method_, state_desired_, start_segment_itr, end_segment_itr);
     }
 
+    // Sample expected state from the trajectory
+    traj_external_point_ptr_->sample(
+      time, interpolation_method_, state_desired_, start_segment_itr, end_segment_itr);
+
     // Sample setpoint for next control cycle
     const bool valid_point = traj_external_point_ptr_->sample(
-      time + update_period_, interpolation_method_, state_desired_, start_segment_itr,
+      time + update_period_, interpolation_method_, command_next_, start_segment_itr,
       end_segment_itr);
 
     if (valid_point)
@@ -281,7 +285,7 @@ controller_interface::return_type JointTrajectoryController::update(
           // Update PIDs
           for (auto i = 0ul; i < dof_; ++i)
           {
-            tmp_command_[i] = (state_desired_.velocities[i] * ff_velocity_scale_[i]) +
+            tmp_command_[i] = (command_next_.velocities[i] * ff_velocity_scale_[i]) +
                               pids_[i]->computeCommand(
                                 state_error_.positions[i], state_error_.velocities[i],
                                 (uint64_t)period.nanoseconds());
@@ -291,7 +295,7 @@ controller_interface::return_type JointTrajectoryController::update(
         // set values for next hardware write()
         if (has_position_command_interface_)
         {
-          assign_interface_from_point(joint_command_interface_[0], state_desired_.positions);
+          assign_interface_from_point(joint_command_interface_[0], command_next_.positions);
         }
         if (has_velocity_command_interface_)
         {
@@ -301,12 +305,12 @@ controller_interface::return_type JointTrajectoryController::update(
           }
           else
           {
-            assign_interface_from_point(joint_command_interface_[1], state_desired_.velocities);
+            assign_interface_from_point(joint_command_interface_[1], command_next_.velocities);
           }
         }
         if (has_acceleration_command_interface_)
         {
-          assign_interface_from_point(joint_command_interface_[2], state_desired_.accelerations);
+          assign_interface_from_point(joint_command_interface_[2], command_next_.accelerations);
         }
         if (has_effort_command_interface_)
         {
@@ -314,7 +318,7 @@ controller_interface::return_type JointTrajectoryController::update(
         }
 
         // store the previous command. Used in open-loop control mode
-        last_commanded_state_ = state_desired_;
+        last_commanded_state_ = command_next_;
       }
 
       if (active_goal)
