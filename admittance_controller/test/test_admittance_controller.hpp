@@ -103,7 +103,6 @@ public:
     }
   }
 
-private:
   const std::string robot_description_ = ros2_control_test_assets::valid_6d_robot_urdf;
   const std::string robot_description_semantic_ = ros2_control_test_assets::valid_6d_robot_srdf;
 };
@@ -111,10 +110,7 @@ private:
 class AdmittanceControllerTest : public ::testing::Test
 {
 public:
-  static void SetUpTestCase()
-  {
-    //    rclcpp::init(0, nullptr);
-  }
+  static void SetUpTestCase() {}
 
   void SetUp()
   {
@@ -164,8 +160,8 @@ protected:
   controller_interface::return_type SetUpControllerCommon(
     const std::string & controller_name, const rclcpp::NodeOptions & options)
   {
+    // robot_description is received from node's parameter
     auto result = controller_->init(controller_name, "", options);
-
     controller_->export_reference_interfaces();
     assign_interfaces();
 
