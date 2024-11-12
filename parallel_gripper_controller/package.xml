@@ -1,9 +1,11 @@
 <?xml version="1.0"?>
-<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<?xml-model
+  href="http://download.ros.org/schema/package_format3.xsd"
+  schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>bicycle_steering_controller</name>
-  <version>3.27.0</version>
-  <description>Steering controller with bicycle kinematics. Rear fixed wheel is powering the vehicle and front wheel is steering.</description>
+  <name>parallel_gripper_controller</name>
+  <version>4.16.0</version>
+  <description>The parallel_gripper_controller package</description>
 
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
   <maintainer email="denis@stoglrobotics.de">Denis Štogl</maintainer>
@@ -16,27 +18,24 @@
   <url type="bugtracker">https://github.com/ros-controls/ros2_controllers/issues</url>
   <url type="repository">https://github.com/ros-controls/ros2_controllers/</url>
 
-  <author email="denis.stogl@stoglrobotics.de">Dr.-Ing. Denis Štogl</author>
-  <author email="tomislav.petkovic.fer@gmail.com">dr. sc. Tomislav Petkovic</author>
+  <author email="robot.moveit@gmail.com">Sachin Chitta</author>
+  <author email="paulgesel@gmail.com">Paul Gesel</author>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <build_depend>generate_parameter_library</build_depend>
-
   <depend>backward_ros</depend>
   <depend>control_msgs</depend>
+  <depend>control_toolbox</depend>
   <depend>controller_interface</depend>
+  <depend>generate_parameter_library</depend>
   <depend>hardware_interface</depend>
   <depend>pluginlib</depend>
   <depend>rclcpp</depend>
-  <depend>rclcpp_lifecycle</depend>
-  <depend>std_srvs</depend>
-  <depend>steering_controllers_library</depend>
+  <depend>rclcpp_action</depend>
+  <depend>realtime_tools</depend>
 
   <test_depend>ament_cmake_gmock</test_depend>
   <test_depend>controller_manager</test_depend>
-  <test_depend>hardware_interface</test_depend>
-  <test_depend>hardware_interface_testing</test_depend>
   <test_depend>ros2_control_test_assets</test_depend>
 
   <export>
