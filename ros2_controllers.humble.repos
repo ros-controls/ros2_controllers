@@ -10,7 +10,7 @@ repositories:
   kinematics_interface:
     type: git
     url: https://github.com/ros-controls/kinematics_interface.git
-    version: master
+    version: humble
   control_msgs:
     type: git
     url: https://github.com/ros-controls/control_msgs.git
