@@ -4,17 +4,11 @@
   <name>pose_broadcaster</name>
   <version>3.27.0</version>
   <description>Broadcaster to publish cartesian states.</description>
-<<<<<<< HEAD
-  <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
-  <maintainer email="denis@stogl.de">Denis Stogl</maintainer>
-  <author email="wilbrandt@fzi.de">Robert Wilbrandt</author>
-=======
 
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
   <maintainer email="denis@stoglrobotics.de">Denis Štogl</maintainer>
   <maintainer email="christoph.froehlich@ait.ac.at">Christoph Froehlich</maintainer>
   <maintainer email="sai.kishor@pal-robotics.com">Sai Kishor Kothakota</maintainer>
->>>>>>> de77fd0 (Update maintainers and add url tags (#1363))
 
   <license>Apache License 2.0</license>
 
