@@ -2,14 +2,9 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>range_sensor_broadcaster</name>
-<<<<<<< HEAD
   <version>3.27.0</version>
-  <description>Controller to publish readings of Range sensors.</description>
-=======
-  <version>4.16.0</version>
   <description>Controller to publish readings of range sensors.</description>
 
->>>>>>> de77fd0 (Update maintainers and add url tags (#1363))
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
   <maintainer email="denis@stoglrobotics.de">Denis Štogl</maintainer>
   <maintainer email="christoph.froehlich@ait.ac.at">Christoph Froehlich</maintainer>
