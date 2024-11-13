@@ -208,7 +208,7 @@ controller_interface::return_type JointTrajectoryController::update(
     // Sample setpoint for next control cycle
     const bool valid_point = traj_external_point_ptr_->sample(
       time + update_period_, interpolation_method_, command_next_, start_segment_itr,
-      end_segment_itr);
+      end_segment_itr, false);
 
     if (valid_point)
     {

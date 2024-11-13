@@ -91,7 +91,8 @@ bool Trajectory::sample(
   const rclcpp::Time & sample_time,
   const interpolation_methods::InterpolationMethod interpolation_method,
   trajectory_msgs::msg::JointTrajectoryPoint & output_state,
-  TrajectoryPointConstIter & start_segment_itr, TrajectoryPointConstIter & end_segment_itr)
+  TrajectoryPointConstIter & start_segment_itr, TrajectoryPointConstIter & end_segment_itr,
+  const bool progress_search_start_index)
 {
   THROW_ON_NULLPTR(trajectory_msg_)
 
@@ -176,7 +177,10 @@ bool Trajectory::sample(
       }
       start_segment_itr = begin() + i;
       end_segment_itr = begin() + (i + 1);
-      last_sample_idx_ = i;
+      if (progress_search_start_index)
+      {
+        last_sample_idx_ = i;
+      }
       return true;
     }
   }
