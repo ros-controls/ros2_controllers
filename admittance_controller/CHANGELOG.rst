@@ -2,8 +2,8 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.28.0 (2024-11-13)
+-------------------
 * Update maintainers and add url tags (backport `#1363 <https://github.com/ros-controls/ros2_controllers/issues/1363>`_) (`#1365 <https://github.com/ros-controls/ros2_controllers/issues/1365>`_)
 * Adding use of robot description parameter in the Admittance Controller (backport `#1247 <https://github.com/ros-controls/ros2_controllers/issues/1247>`_) (`#1354 <https://github.com/ros-controls/ros2_controllers/issues/1354>`_)
 * Contributors: mergify[bot]
