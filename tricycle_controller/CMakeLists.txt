@@ -76,6 +76,12 @@ if(BUILD_TESTING)
     controller_manager
     ros2_control_test_assets
   )
+
+  ament_add_gmock(test_traction_limiter
+    test/test_traction_limiter.cpp)
+  target_link_libraries(test_traction_limiter
+    tricycle_controller
+  )
 endif()
 
 install(
