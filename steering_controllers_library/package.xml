@@ -4,9 +4,17 @@
   <name>steering_controllers_library</name>
   <version>2.38.0</version>
   <description>Package for steering robot configurations including odometry and interfaces.</description>
-  <license>Apache License 2.0</license>
+
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
-  <maintainer email="denis.stogl@stoglrobotics.de">Dr.-Ing. Denis Štogl</maintainer>
+  <maintainer email="denis@stoglrobotics.de">Denis Štogl</maintainer>
+  <maintainer email="christoph.froehlich@ait.ac.at">Christoph Froehlich</maintainer>
+  <maintainer email="sai.kishor@pal-robotics.com">Sai Kishor Kothakota</maintainer>
+
+  <license>Apache License 2.0</license>
+
+  <url type="website">https://control.ros.org</url>
+  <url type="bugtracker">https://github.com/ros-controls/ros2_controllers/issues</url>
+  <url type="repository">https://github.com/ros-controls/ros2_controllers/</url>
 
   <author email="denis.stogl@stoglrobotics.de">Dr.-Ing. Denis Štogl</author>
   <author email="tomislav.petkovic.fer@gmail.com">dr. sc. Tomislav Petkovic</author>
