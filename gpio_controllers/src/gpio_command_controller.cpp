@@ -246,13 +246,13 @@ void GpioCommandController::initialize_gpio_state_msg()
 {
   auto & gpio_state_msg = realtime_gpio_state_publisher_->msg_;
   gpio_state_msg.header.stamp = get_node()->now();
-  gpio_state_msg.joint_names.resize(params_.gpios.size());
+  gpio_state_msg.interface_groups.resize(params_.gpios.size());
   gpio_state_msg.interface_values.resize(params_.gpios.size());
 
   for (std::size_t gpio_index = 0; gpio_index < params_.gpios.size(); ++gpio_index)
   {
     const auto gpio_name = params_.gpios[gpio_index];
-    gpio_state_msg.joint_names[gpio_index] = gpio_name;
+    gpio_state_msg.interface_groups[gpio_index] = gpio_name;
     gpio_state_msg.interface_values[gpio_index].interface_names =
       get_gpios_state_interfaces_names(gpio_name);
     gpio_state_msg.interface_values[gpio_index].values = std::vector<double>(
@@ -327,9 +327,9 @@ controller_interface::return_type GpioCommandController::update_gpios_commands()
   }
 
   const auto gpio_commands = *(*gpio_commands_ptr);
-  for (std::size_t gpio_index = 0; gpio_index < gpio_commands.joint_names.size(); ++gpio_index)
+  for (std::size_t gpio_index = 0; gpio_index < gpio_commands.interface_groups.size(); ++gpio_index)
   {
-    const auto & gpio_name = gpio_commands.joint_names[gpio_index];
+    const auto & gpio_name = gpio_commands.interface_groups[gpio_index];
     if (
       gpio_commands.interface_values[gpio_index].values.size() !=
       gpio_commands.interface_values[gpio_index].interface_names.size())
@@ -353,7 +353,7 @@ void GpioCommandController::apply_command(
   const CmdType & gpio_commands, std::size_t gpio_index, std::size_t command_interface_index) const
 {
   const auto full_command_interface_name =
-    gpio_commands.joint_names[gpio_index] + '/' +
+    gpio_commands.interface_groups[gpio_index] + '/' +
     gpio_commands.interface_values[gpio_index].interface_names[command_interface_index];
   try
   {
@@ -378,7 +378,8 @@ void GpioCommandController::update_gpios_states()
 
   auto & gpio_state_msg = realtime_gpio_state_publisher_->msg_;
   gpio_state_msg.header.stamp = get_node()->now();
-  for (std::size_t gpio_index = 0; gpio_index < gpio_state_msg.joint_names.size(); ++gpio_index)
+  for (std::size_t gpio_index = 0; gpio_index < gpio_state_msg.interface_groups.size();
+       ++gpio_index)
   {
     for (std::size_t interface_index = 0;
          interface_index < gpio_state_msg.interface_values[gpio_index].interface_names.size();
@@ -394,7 +395,7 @@ void GpioCommandController::apply_state_value(
   StateType & state_msg, std::size_t gpio_index, std::size_t interface_index) const
 {
   const auto interface_name =
-    state_msg.joint_names[gpio_index] + '/' +
+    state_msg.interface_groups[gpio_index] + '/' +
     state_msg.interface_values[gpio_index].interface_names[interface_index];
   try
   {

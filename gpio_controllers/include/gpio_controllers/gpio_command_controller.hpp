@@ -20,7 +20,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "control_msgs/msg/dynamic_joint_state.hpp"
+#include "control_msgs/msg/dynamic_interface_group_values.hpp"
 #include "controller_interface/controller_interface.hpp"
 #include "gpio_command_controller_parameters.hpp"
 #include "gpio_controllers/visibility_control.h"
@@ -31,8 +31,8 @@
 
 namespace gpio_controllers
 {
-using CmdType = control_msgs::msg::DynamicJointState;
-using StateType = control_msgs::msg::DynamicJointState;
+using CmdType = control_msgs::msg::DynamicInterfaceGroupValues;
+using StateType = control_msgs::msg::DynamicInterfaceGroupValues;
 using CallbackReturn = controller_interface::CallbackReturn;
 using InterfacesNames = std::vector<std::string>;
 using MapOfReferencesToCommandInterfaces = std::unordered_map<

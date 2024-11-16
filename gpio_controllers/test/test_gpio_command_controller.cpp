@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "control_msgs/msg/dynamic_interface_group_values.hpp"
 #include "gmock/gmock.h"
 #include "gpio_controllers/gpio_command_controller.hpp"
 #include "hardware_interface/handle.hpp"
@@ -48,8 +49,8 @@ const auto minimal_robot_urdf_with_gpio = std::string(ros2_control_test_assets::
 using CallbackReturn = controller_interface::CallbackReturn;
 using hardware_interface::LoanedCommandInterface;
 using hardware_interface::LoanedStateInterface;
-using CmdType = control_msgs::msg::DynamicJointState;
-using StateType = control_msgs::msg::DynamicJointState;
+using CmdType = control_msgs::msg::DynamicInterfaceGroupValues;
+using StateType = control_msgs::msg::DynamicInterfaceGroupValues;
 using hardware_interface::CommandInterface;
 using hardware_interface::StateInterface;
 
@@ -146,7 +147,7 @@ public:
     const std::vector<control_msgs::msg::InterfaceValue> & interface_values)
   {
     CmdType command;
-    command.joint_names = gpios_names;
+    command.interface_groups = gpios_names;
     command.interface_values = interface_values;
     return command;
   }
@@ -602,9 +603,9 @@ TEST_F(GpioCommandControllerTestSuite, ControllerShouldPublishGpioStatesWithCurr
   rclcpp::MessageInfo msg_info;
   ASSERT_TRUE(subscription->take(gpio_state_msg, msg_info));
 
-  ASSERT_EQ(gpio_state_msg.joint_names.size(), gpio_names.size());
-  ASSERT_EQ(gpio_state_msg.joint_names.at(0), "gpio1");
-  ASSERT_EQ(gpio_state_msg.joint_names.at(1), "gpio2");
+  ASSERT_EQ(gpio_state_msg.interface_groups.size(), gpio_names.size());
+  ASSERT_EQ(gpio_state_msg.interface_groups.at(0), "gpio1");
+  ASSERT_EQ(gpio_state_msg.interface_groups.at(1), "gpio2");
   ASSERT_EQ(gpio_state_msg.interface_values.at(0).interface_names.at(0), "dig.1");
   ASSERT_EQ(gpio_state_msg.interface_values.at(0).interface_names.at(1), "dig.2");
   ASSERT_EQ(gpio_state_msg.interface_values.at(1).interface_names.at(0), "ana.1");
@@ -646,8 +647,8 @@ TEST_F(
   rclcpp::MessageInfo msg_info;
   ASSERT_TRUE(subscription->take(gpio_state_msg, msg_info));
 
-  ASSERT_EQ(gpio_state_msg.joint_names.size(), single_gpio.size());
-  ASSERT_EQ(gpio_state_msg.joint_names.at(0), "gpio1");
+  ASSERT_EQ(gpio_state_msg.interface_groups.size(), single_gpio.size());
+  ASSERT_EQ(gpio_state_msg.interface_groups.at(0), "gpio1");
   ASSERT_EQ(gpio_state_msg.interface_values.at(0).interface_names.at(0), "dig.1");
   ASSERT_EQ(gpio_state_msg.interface_values.at(0).values.at(0), 1.0);
 }
@@ -682,9 +683,9 @@ TEST_F(
   rclcpp::MessageInfo msg_info;
   ASSERT_TRUE(subscription->take(gpio_state_msg, msg_info));
 
-  ASSERT_EQ(gpio_state_msg.joint_names.size(), gpio_names.size());
-  ASSERT_EQ(gpio_state_msg.joint_names.at(0), "gpio1");
-  ASSERT_EQ(gpio_state_msg.joint_names.at(1), "gpio2");
+  ASSERT_EQ(gpio_state_msg.interface_groups.size(), gpio_names.size());
+  ASSERT_EQ(gpio_state_msg.interface_groups.at(0), "gpio1");
+  ASSERT_EQ(gpio_state_msg.interface_groups.at(1), "gpio2");
   ASSERT_EQ(gpio_state_msg.interface_values.at(0).interface_names.at(0), "dig.1");
   ASSERT_EQ(gpio_state_msg.interface_values.at(1).interface_names.at(0), "ana.1");
   ASSERT_EQ(gpio_state_msg.interface_values.at(0).values.at(0), 1.0);

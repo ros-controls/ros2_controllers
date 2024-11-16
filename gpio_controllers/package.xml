@@ -16,6 +16,7 @@
   <depend>rclcpp_lifecycle</depend>
   <depend>control_msgs</depend>
   <depend>realtime_tools</depend>
+  <depend>generate_parameter_library</depend>
 
   <build_depend>pluginlib</build_depend>
 
