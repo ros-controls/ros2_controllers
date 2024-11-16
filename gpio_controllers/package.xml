@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>gpio_controllers</name>
-  <version>4.12.1</version>
+  <version>4.15.0</version>
   <description>Controllers to interact with gpios.</description>
   <maintainer email="macbednarczyk@gmail.com">Maciej Bednarczyk</maintainer>
   <maintainer email="wiktorbajor1@gmail.com">Wiktor Bajor</maintainer>
@@ -14,8 +14,8 @@
   <depend>hardware_interface</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_lifecycle</depend>
+  <depend>control_msgs</depend>
   <depend>realtime_tools</depend>
-  <depend>std_msgs</depend>
 
   <build_depend>pluginlib</build_depend>
 
