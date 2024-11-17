@@ -81,9 +81,9 @@ class TestFixture(unittest.TestCase):
         start = time.time()
         found = False
         while time.time() - start < 2.0 and not found:
-            found = "/publisher_position_trajectory_controller" in self.node.get_node_names()
+            found = "publisher_position_trajectory_controller" in self.node.get_node_names()
             time.sleep(0.1)
-        assert found, "/publisher_position_trajectory_controller not found!"
+        assert found, "publisher_position_trajectory_controller not found!"
 
 
 @launch_testing.post_shutdown_test()
