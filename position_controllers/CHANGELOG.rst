@@ -2,6 +2,28 @@
 Changelog for package position_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.28.0 (2024-11-13)
+-------------------
+* Update maintainers and add url tags (backport `#1363 <https://github.com/ros-controls/ros2_controllers/issues/1363>`_) (`#1365 <https://github.com/ros-controls/ros2_controllers/issues/1365>`_)
+* Contributors: mergify[bot]
+
+3.27.0 (2024-11-02)
+-------------------
+
+3.26.3 (2024-09-11)
+-------------------
+
+3.26.2 (2024-08-22)
+-------------------
+
+3.26.1 (2024-08-14)
+-------------------
+
+3.26.0 (2024-07-24)
+-------------------
+* Fix WaitSet issue in tests  (backport `#1206 <https://github.com/ros-controls/ros2_controllers/issues/1206>`_) (`#1212 <https://github.com/ros-controls/ros2_controllers/issues/1212>`_)
+* Contributors: mergify[bot]
+
 3.25.0 (2024-07-09)
 -------------------
 

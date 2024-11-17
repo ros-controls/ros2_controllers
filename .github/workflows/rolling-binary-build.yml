@@ -4,10 +4,6 @@ name: Rolling Binary Build
 
 on:
   workflow_dispatch:
-    branches:
-      - master
-      - '*feature*'
-      - '*feature/**'
   pull_request:
     branches:
       - master
@@ -17,6 +13,8 @@ on:
       - '**.hpp'
       - '**.h'
       - '**.cpp'
+      - '**.py'
+      - '**.yaml'
       - '.github/workflows/rolling-binary-build.yml'
       - '**/package.xml'
       - '**/CMakeLists.txt'
@@ -28,6 +26,7 @@ on:
       - '**.hpp'
       - '**.h'
       - '**.cpp'
+      - '**.py'
       - '**.yaml'
       - '.github/workflows/rolling-binary-build.yml'
       - '**/package.xml'

@@ -2,6 +2,33 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.28.0 (2024-11-13)
+-------------------
+* Update maintainers and add url tags (backport `#1363 <https://github.com/ros-controls/ros2_controllers/issues/1363>`_) (`#1365 <https://github.com/ros-controls/ros2_controllers/issues/1365>`_)
+* Adding use of robot description parameter in the Admittance Controller (backport `#1247 <https://github.com/ros-controls/ros2_controllers/issues/1247>`_) (`#1354 <https://github.com/ros-controls/ros2_controllers/issues/1354>`_)
+* Contributors: mergify[bot]
+
+3.27.0 (2024-11-02)
+-------------------
+
+3.26.3 (2024-09-11)
+-------------------
+
+3.26.2 (2024-08-22)
+-------------------
+* Fix segfault at reconfigure of AdmittanceController (`#1248 <https://github.com/ros-controls/ros2_controllers/issues/1248>`_) (`#1266 <https://github.com/ros-controls/ros2_controllers/issues/1266>`_)
+* Contributors: mergify[bot]
+
+3.26.1 (2024-08-14)
+-------------------
+* Fix admittance controller interface read/write logic (backport `#1232 <https://github.com/ros-controls/ros2_controllers/issues/1232>`_) (`#1235 <https://github.com/ros-controls/ros2_controllers/issues/1235>`_)
+* Contributors: mergify[bot]
+
+3.26.0 (2024-07-24)
+-------------------
+* Fix WaitSet issue in tests  (backport `#1206 <https://github.com/ros-controls/ros2_controllers/issues/1206>`_) (`#1212 <https://github.com/ros-controls/ros2_controllers/issues/1212>`_)
+* Contributors: mergify[bot]
+
 3.25.0 (2024-07-09)
 -------------------
 

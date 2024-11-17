@@ -2,6 +2,33 @@
 Changelog for package pid_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.28.0 (2024-11-13)
+-------------------
+* Update maintainers and add url tags (backport `#1363 <https://github.com/ros-controls/ros2_controllers/issues/1363>`_) (`#1365 <https://github.com/ros-controls/ros2_controllers/issues/1365>`_)
+* Contributors: mergify[bot]
+
+3.27.0 (2024-11-02)
+-------------------
+* fixes for windows compilation (`#1330 <https://github.com/ros-controls/ros2_controllers/issues/1330>`_) (`#1333 <https://github.com/ros-controls/ros2_controllers/issues/1333>`_)
+  Co-authored-by: SENAI-GilmarCorreia <gilmar.correia@sp.senai.br>
+  (cherry picked from commit fa42b5ec97b0af5420060844b7027b8e8912c05d)
+  Co-authored-by: Gilmar Correia <gilmar.jeronimo@sp.senai.br>
+* Contributors: mergify[bot]
+
+3.26.3 (2024-09-11)
+-------------------
+
+3.26.2 (2024-08-22)
+-------------------
+
+3.26.1 (2024-08-14)
+-------------------
+
+3.26.0 (2024-07-24)
+-------------------
+* Fix WaitSet issue in tests  (backport `#1206 <https://github.com/ros-controls/ros2_controllers/issues/1206>`_) (`#1212 <https://github.com/ros-controls/ros2_controllers/issues/1212>`_)
+* Contributors: mergify[bot]
+
 3.25.0 (2024-07-09)
 -------------------
 * 🚀 Add PID controller 🎉 (backport `#434 <https://github.com/ros-controls/ros2_controllers/issues/434>`_, `#975 <https://github.com/ros-controls/ros2_controllers/issues/975>`_, `#899 <https://github.com/ros-controls/ros2_controllers/issues/899>`_, `#1084 <https://github.com/ros-controls/ros2_controllers/issues/1084>`_, `#951 <https://github.com/ros-controls/ros2_controllers/issues/951>`_) (`#1163 <https://github.com/ros-controls/ros2_controllers/issues/1163>`_)

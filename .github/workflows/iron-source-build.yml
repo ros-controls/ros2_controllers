@@ -1,8 +1,6 @@
 name: Iron Source Build
 on:
   workflow_dispatch:
-    branches:
-      - iron
   push:
     branches:
       - iron
@@ -10,6 +8,7 @@ on:
       - '**.hpp'
       - '**.h'
       - '**.cpp'
+      - '**.py'
       - '**.yaml'
       - '.github/workflows/iron-source-build.yml'
       - '**/package.xml'

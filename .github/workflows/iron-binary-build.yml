@@ -4,10 +4,6 @@ name: Iron Binary Build
 
 on:
   workflow_dispatch:
-    branches:
-      - iron
-      - '*feature*'
-      - '*feature/**'
   pull_request:
     branches:
       - iron
@@ -17,8 +13,9 @@ on:
       - '**.hpp'
       - '**.h'
       - '**.cpp'
-      - '.github/workflows/iron-binary-build.yml'
+      - '**.py'
       - '**.yaml'
+      - '.github/workflows/iron-binary-build.yml'
       - '**/package.xml'
       - '**/CMakeLists.txt'
       - 'ros2_controllers-not-released.iron.repos'
@@ -29,8 +26,9 @@ on:
       - '**.hpp'
       - '**.h'
       - '**.cpp'
-      - '.github/workflows/iron-binary-build.yml'
+      - '**.py'
       - '**.yaml'
+      - '.github/workflows/iron-binary-build.yml'
       - '**/package.xml'
       - '**/CMakeLists.txt'
       - 'ros2_controllers-not-released.iron.repos'

@@ -2,6 +2,47 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.28.0 (2024-11-13)
+-------------------
+* Update maintainers and add url tags (backport `#1363 <https://github.com/ros-controls/ros2_controllers/issues/1363>`_) (`#1365 <https://github.com/ros-controls/ros2_controllers/issues/1365>`_)
+* [jtc] Improve trajectory sampling efficiency (`#1297 <https://github.com/ros-controls/ros2_controllers/issues/1297>`_) (`#1358 <https://github.com/ros-controls/ros2_controllers/issues/1358>`_)
+* [JTC] Fix the JTC length_error exceptions in the tests (backport `#1360 <https://github.com/ros-controls/ros2_controllers/issues/1360>`_) (`#1362 <https://github.com/ros-controls/ros2_controllers/issues/1362>`_)
+* Contributors: mergify[bot]
+
+3.27.0 (2024-11-02)
+-------------------
+* fixes for windows compilation (`#1330 <https://github.com/ros-controls/ros2_controllers/issues/1330>`_) (`#1333 <https://github.com/ros-controls/ros2_controllers/issues/1333>`_)
+  Co-authored-by: SENAI-GilmarCorreia <gilmar.correia@sp.senai.br>
+  (cherry picked from commit fa42b5ec97b0af5420060844b7027b8e8912c05d)
+  Co-authored-by: Gilmar Correia <gilmar.jeronimo@sp.senai.br>
+* [JTC] Add Parameter to Toggle State Setting on Activation (`#1231 <https://github.com/ros-controls/ros2_controllers/issues/1231>`_) (`#1319 <https://github.com/ros-controls/ros2_controllers/issues/1319>`_)
+  * [JTC] Add param to setting last command interface value as state on activation
+  * [JTC] add a note about set_last_command_interface_value_as_state_on_activation to release_notes. Updated the parameters.yaml description to match the same wording.
+  ---------
+  Co-authored-by: Bence Magyar <bence.magyar.robotics@gmail.com>
+  Co-authored-by: Christoph Fröhlich <christophfroehlich@users.noreply.github.com>
+  (cherry picked from commit f96d2fc0fbf94537f769cffcf844858f7a085671)
+  Co-authored-by: Kenta Kato <kenta.kato.4321@gmail.com>
+* Contributors: mergify[bot]
+
+3.26.3 (2024-09-11)
+-------------------
+
+3.26.2 (2024-08-22)
+-------------------
+
+3.26.1 (2024-08-14)
+-------------------
+* Fix admittance controller interface read/write logic (backport `#1232 <https://github.com/ros-controls/ros2_controllers/issues/1232>`_) (`#1235 <https://github.com/ros-controls/ros2_controllers/issues/1235>`_)
+* Contributors: mergify[bot]
+
+3.26.0 (2024-07-24)
+-------------------
+* Fix WaitSet issue in tests  (backport `#1206 <https://github.com/ros-controls/ros2_controllers/issues/1206>`_) (`#1212 <https://github.com/ros-controls/ros2_controllers/issues/1212>`_)
+* [JTC] Make goal_time_tolerance overwrite default value only if explicitly set (backport `#1192 <https://github.com/ros-controls/ros2_controllers/issues/1192>`_ + `#1209 <https://github.com/ros-controls/ros2_controllers/issues/1209>`_) (`#1207 <https://github.com/ros-controls/ros2_controllers/issues/1207>`_)
+* [JTC] Process tolerances sent with action goal (backport `#716 <https://github.com/ros-controls/ros2_controllers/issues/716>`_) (`#1190 <https://github.com/ros-controls/ros2_controllers/issues/1190>`_)
+* Contributors: mergify[bot]
+
 3.25.0 (2024-07-09)
 -------------------
 * JTC trajectory end time validation fix (`#1090 <https://github.com/ros-controls/ros2_controllers/issues/1090>`_) (`#1141 <https://github.com/ros-controls/ros2_controllers/issues/1141>`_)

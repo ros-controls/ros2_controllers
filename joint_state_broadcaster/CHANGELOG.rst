@@ -2,6 +2,34 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.28.0 (2024-11-13)
+-------------------
+* Update maintainers and add url tags (backport `#1363 <https://github.com/ros-controls/ros2_controllers/issues/1363>`_) (`#1365 <https://github.com/ros-controls/ros2_controllers/issues/1365>`_)
+* Contributors: mergify[bot]
+
+3.27.0 (2024-11-02)
+-------------------
+* [JSB] Fix the behaviour of publishing unavailable state interfaces when they are previously available (`#1331 <https://github.com/ros-controls/ros2_controllers/issues/1331>`_) (`#1340 <https://github.com/ros-controls/ros2_controllers/issues/1340>`_)
+  * Add test to reproduce the behaviour of https://github.com/ros-controls/ros2_control_demos/pull/417#discussion_r1823443110
+  * Add fix to solve the issue of the publishing non-existing joint_states
+  (cherry picked from commit 87f21b39c5e81327eb8adf8ed16e5fde1101bd97)
+  Co-authored-by: Sai Kishor Kothakota <sai.kishor@pal-robotics.com>
+* Contributors: mergify[bot]
+
+3.26.3 (2024-09-11)
+-------------------
+
+3.26.2 (2024-08-22)
+-------------------
+
+3.26.1 (2024-08-14)
+-------------------
+
+3.26.0 (2024-07-24)
+-------------------
+* Fix WaitSet issue in tests  (backport `#1206 <https://github.com/ros-controls/ros2_controllers/issues/1206>`_) (`#1212 <https://github.com/ros-controls/ros2_controllers/issues/1212>`_)
+* Contributors: mergify[bot]
+
 3.25.0 (2024-07-09)
 -------------------
 

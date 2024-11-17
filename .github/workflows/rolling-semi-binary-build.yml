@@ -3,10 +3,6 @@ name: Rolling Semi-Binary Build
 
 on:
   workflow_dispatch:
-    branches:
-      - master
-      - '*feature*'
-      - '*feature/**'
   pull_request:
     branches:
       - master
@@ -16,6 +12,7 @@ on:
       - '**.hpp'
       - '**.h'
       - '**.cpp'
+      - '**.py'
       - '**.yaml'
       - '.github/workflows/rolling-semi-binary-build.yml'
       - '**/package.xml'
@@ -28,6 +25,7 @@ on:
       - '**.hpp'
       - '**.h'
       - '**.cpp'
+      - '**.py'
       - '**.yaml'
       - '.github/workflows/rolling-semi-binary-build.yml'
       - '**/package.xml'

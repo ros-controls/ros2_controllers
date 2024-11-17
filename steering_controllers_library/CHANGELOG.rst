@@ -2,6 +2,35 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.28.0 (2024-11-13)
+-------------------
+* Update maintainers and add url tags (backport `#1363 <https://github.com/ros-controls/ros2_controllers/issues/1363>`_) (`#1365 <https://github.com/ros-controls/ros2_controllers/issues/1365>`_)
+* Contributors: mergify[bot]
+
+3.27.0 (2024-11-02)
+-------------------
+* fix(steering-odometry): convert twist to steering angle (`#1288 <https://github.com/ros-controls/ros2_controllers/issues/1288>`_) (`#1296 <https://github.com/ros-controls/ros2_controllers/issues/1296>`_)
+  (cherry picked from commit 50036e109d6a03e41bb9b43a4f67411887b48640)
+  Co-authored-by: Rein Appeldoorn <rein.appeldoorn@nobleo.nl>
+* fix(steering-odometry): handle infinite turning radius properly (`#1285 <https://github.com/ros-controls/ros2_controllers/issues/1285>`_) (`#1287 <https://github.com/ros-controls/ros2_controllers/issues/1287>`_)
+  (cherry picked from commit 1dc3d2aa47bb7746f5a414d016e9566c9eef4060)
+  Co-authored-by: Rein Appeldoorn <reinzor@gmail.com>
+* Contributors: mergify[bot]
+
+3.26.3 (2024-09-11)
+-------------------
+
+3.26.2 (2024-08-22)
+-------------------
+
+3.26.1 (2024-08-14)
+-------------------
+
+3.26.0 (2024-07-24)
+-------------------
+* Fix WaitSet issue in tests  (backport `#1206 <https://github.com/ros-controls/ros2_controllers/issues/1206>`_) (`#1212 <https://github.com/ros-controls/ros2_controllers/issues/1212>`_)
+* Contributors: mergify[bot]
+
 3.25.0 (2024-07-09)
 -------------------
 * Fix steering controllers library kinematics (`#1150 <https://github.com/ros-controls/ros2_controllers/issues/1150>`_) (`#1195 <https://github.com/ros-controls/ros2_controllers/issues/1195>`_)
