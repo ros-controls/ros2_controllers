@@ -55,6 +55,7 @@ The controllers are using `common hardware interface definitions`_, and may use 
    PID Controller <../pid_controller/doc/userdoc.rst>
    Position Controllers <../position_controllers/doc/userdoc.rst>
    Velocity Controllers <../velocity_controllers/doc/userdoc.rst>
+   Gpio Command Controller <../gpio_controllers/doc/userdoc.rst>
 
 
 Broadcasters
