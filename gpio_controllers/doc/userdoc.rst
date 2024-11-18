@@ -18,7 +18,7 @@ Description of controller's interfaces
 Parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-This controller uses the `generate_parameter_library <https://github.com/PickNikRobotics/generate_parameter_library>`_ to handle its parameters. The parameter `definition file located in the src folder <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/gpio_controllers_/src/gpio_command_controller_parameters.yaml>`_ contains descriptions for all the parameters used by the controller.
+This controller uses the `generate_parameter_library <https://github.com/PickNikRobotics/generate_parameter_library>`_ to handle its parameters. The parameter `definition file located in the src folder <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/gpio_controllers/src/gpio_command_controller_parameters.yaml>`_ contains descriptions for all the parameters used by the controller.
 
 .. generate_parameter_library_details::
   ../src/gpio_command_controller_parameters.yaml
@@ -28,7 +28,7 @@ The controller expects at least one GPIO interface and the corresponding command
 .. note::
 
   When no state interface is provided in the param file, the controller will try to use state_interfaces from ros2_control's config placed in the URDF for configured gpio interfaces.
-  However, Command interfaces will not be configured based on the available URDF setup.
+  However, command interfaces will not be configured based on the available URDF setup.
 
 .. code-block:: yaml
 

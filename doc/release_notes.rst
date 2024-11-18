@@ -63,3 +63,7 @@ steering_controllers_library
 tricycle_controller
 ************************
 * tricycle_controller now uses generate_parameter_library (`#957 <https://github.com/ros-controls/ros2_controllers/pull/957>`_).
+
+gpio_controllers
+************************
+* The GPIO command controller was added 🎉 (`#1251 <https://github.com/ros-controls/ros2_controllers/pull/1251>`_).
