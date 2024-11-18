@@ -36,11 +36,14 @@ from launch import LaunchDescription
 from launch.substitutions import PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
 from launch_testing.actions import ReadyToTest
+from launch_testing_ros import WaitForTopics
 
 import launch_testing.markers
 import rclpy
 import launch_ros.actions
 from rclpy.node import Node
+
+from std_msgs.msg import Float64MultiArray
 
 
 # Executes the given launch file and checks if all nodes can be started
@@ -85,10 +88,19 @@ class TestFixture(unittest.TestCase):
             time.sleep(0.1)
         assert found, "publisher_forward_position_controller not found!"
 
+    def test_check_if_topic_published(self):
+        topic = "/forward_position_controller/commands"
+        wait_for_topics = WaitForTopics([(topic, Float64MultiArray)], timeout=20.0)
+        assert wait_for_topics.wait(), f"Topic '{topic}' not found!"
+        msgs = wait_for_topics.received_messages(topic)
+        msg = msgs[0]
+        assert len(msg.data) == 2, "Wrong number of joints in message"
+        wait_for_topics.shutdown()
+
 
 @launch_testing.post_shutdown_test()
-# These tests are run after the processes in generate_test_description() have shutdown.
-class TestDescriptionCraneShutdown(unittest.TestCase):
+# These tests are run after the processes in generate_test_description() have shut down.
+class TestPublisherShutdown(unittest.TestCase):
 
     def test_exit_codes(self, proc_info):
         """Check if the processes exited normally."""
