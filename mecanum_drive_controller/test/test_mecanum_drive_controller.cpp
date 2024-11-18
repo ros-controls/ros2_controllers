@@ -60,7 +60,7 @@ TEST_F(MecanumDriveControllerTest, when_controller_is_configured_expect_all_para
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  ASSERT_EQ(controller_->params_.reference_timeout, 0.1);
+  ASSERT_EQ(controller_->params_.reference_timeout, 0.9);
   ASSERT_EQ(controller_->params_.kinematics.wheels_radius, 0.5);
   ASSERT_EQ(controller_->params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis, 1.0);
 
@@ -212,7 +212,7 @@ TEST_F(
     controller_interface::return_type::OK);
   ControllerStateMsg msg;
   subscribe_to_controller_status_execute_update_and_get_messages(msg);
-  joint_command_values_[1] = command_lin_x;
+  joint_command_values_[controller_->get_rear_left_wheel_index()] = command_lin_x;
 
   EXPECT_TRUE(std::isnan(msg.reference_velocity.linear.x));
 
@@ -226,13 +226,13 @@ TEST_F(
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  // w_back_left_vel =
+  // REAR LEFT vel =
   // 1.0 / params_.kinematics.wheels_radius *
   // (velocity_in_center_frame_linear_x_ + velocity_in_center_frame_linear_y_ -
   // params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis *
   // velocity_in_center_frame_angular_z_);
-  //  joint_command_values_[1] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0)
-  EXPECT_EQ(joint_command_values_[1], 3.0);
+  //  joint_command_values_[REAR_LEFT] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0)
+  EXPECT_EQ(joint_command_values_[controller_->get_rear_left_wheel_index()], 3.0);
 
   subscribe_to_controller_status_execute_update_and_get_messages(msg);
 
@@ -356,7 +356,7 @@ TEST_F(
   }
 
   // set command statically
-  joint_command_values_[1] = command_lin_x;
+  joint_command_values_[controller_->get_rear_left_wheel_index()] = command_lin_x;
 
   std::shared_ptr<ControllerReferenceMsg> msg = std::make_shared<ControllerReferenceMsg>();
 
@@ -380,7 +380,7 @@ TEST_F(
     controller_interface::return_type::OK);
   EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[0]));
 
-  EXPECT_EQ(joint_command_values_[1], 0);
+  EXPECT_EQ(joint_command_values_[controller_->get_rear_left_wheel_index()], 0);
   for (const auto & interface : controller_->reference_interfaces_)
   {
     EXPECT_TRUE(std::isnan(interface));
@@ -409,14 +409,15 @@ TEST_F(
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  EXPECT_NE(joint_command_values_[1], command_lin_x);
-  // w_back_left_vel =
+  EXPECT_NE(joint_command_values_[controller_->get_rear_left_wheel_index()], command_lin_x);
+  // BACK Left vel =
   // 1.0 / params_.kinematics.wheels_radius *
   // (velocity_in_center_frame_linear_x_ + velocity_in_center_frame_linear_y_ -
   // params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis *
   // velocity_in_center_frame_angular_z_);
-  //  joint_command_values_[1] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0)
-  EXPECT_EQ(joint_command_values_[1], 3.0);
+  //  joint_command_values_[controller_->get_rear_left_wheel_index()] = 1.0 / 0.5 * (1.5 - 0.0 - 1 *
+  //  0.0)
+  EXPECT_EQ(joint_command_values_[controller_->get_rear_left_wheel_index()], 3.0);
   ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
   for (const auto & interface : controller_->reference_interfaces_)
   {
@@ -452,7 +453,7 @@ TEST_F(
   }
 
   // set command statically
-  joint_command_values_[1] = command_lin_x;
+  joint_command_values_[controller_->get_rear_left_wheel_index()] = command_lin_x;
   // imitating preceding controllers command_interfaces setting reference_interfaces of chained
   // controller.
   controller_->reference_interfaces_[0] = 3.0;
@@ -468,16 +469,16 @@ TEST_F(
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  EXPECT_NE(joint_command_values_[1], command_lin_x);
+  EXPECT_NE(joint_command_values_[controller_->get_rear_left_wheel_index()], command_lin_x);
 
-  // w_back_left_vel =
+  // REAR LEFT vel =
   // 1.0 / params_.kinematics.wheels_radius *
   // (velocity_in_center_frame_linear_x_ + velocity_in_center_frame_linear_y_ -
   // params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis *
   // velocity_in_center_frame_angular_z_);
 
-  //  joint_command_values_[1] = 1.0 / 0.5 * (3.0 - 0.0 - 1 * 0.0)
-  EXPECT_EQ(joint_command_values_[1], 6.0);
+  //  joint_command_values_[REAR_LEFT] = 1.0 / 0.5 * (3.0 - 0.0 - 1 * 0.0)
+  EXPECT_EQ(joint_command_values_[controller_->get_rear_left_wheel_index()], 6.0);
   for (const auto & interface : controller_->reference_interfaces_)
   {
     EXPECT_TRUE(std::isnan(interface));
@@ -501,7 +502,7 @@ TEST_F(
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   // set command statically
-  joint_command_values_[1] = command_lin_x;
+  joint_command_values_[controller_->get_rear_left_wheel_index()] = command_lin_x;
 
   controller_->ref_timeout_ = rclcpp::Duration::from_seconds(0.0);
   std::shared_ptr<ControllerReferenceMsg> msg = std::make_shared<ControllerReferenceMsg>();
@@ -524,14 +525,14 @@ TEST_F(
     controller_interface::return_type::OK);
 
   EXPECT_FALSE(std::isnan(joint_command_values_[1]));
-  EXPECT_NE(joint_command_values_[1], command_lin_x);
-  // w_back_left_vel =
+  EXPECT_NE(joint_command_values_[controller_->get_rear_left_wheel_index()], command_lin_x);
+  // REAR LEFT vel =
   // 1.0 / params_.kinematics.wheels_radius *
   // (velocity_in_center_frame_linear_x_ + velocity_in_center_frame_linear_y_ -
   // params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis *
   // velocity_in_center_frame_angular_z_);
-  //  joint_command_values_[1] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0)
-  EXPECT_EQ(joint_command_values_[1], 3.0);
+  //  joint_command_values_[REAR_LEFT] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0)
+  EXPECT_EQ(joint_command_values_[controller_->get_rear_left_wheel_index()], 3.0);
   ASSERT_TRUE(std::isnan((*(controller_->input_ref_.readFromRT()))->twist.linear.x));
 }
 

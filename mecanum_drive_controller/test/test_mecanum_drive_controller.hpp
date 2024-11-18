@@ -120,6 +120,14 @@ public:
   {
     wait_for_command(executor, timeout);
   }
+
+  size_t get_front_left_wheel_index() { return WheelIndex::FRONT_LEFT; }
+
+  size_t get_front_right_wheel_index() { return WheelIndex::FRONT_RIGHT; }
+
+  size_t get_rear_right_wheel_index() { return WheelIndex::REAR_RIGHT; }
+
+  size_t get_rear_left_wheel_index() { return WheelIndex::REAR_LEFT; }
 };
 
 // We are using template class here for easier reuse of Fixture in specializations of controllers
@@ -241,7 +249,7 @@ protected:
             std::string("publishing to ") + topic_name + " but no node subscribes to it";
           throw std::runtime_error(error_msg);
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
         ++wait_count;
       }
     };

@@ -30,10 +30,14 @@ TEST(TestLoadMecanumDriveController, load_controller)
   controller_manager::ControllerManager cm(
     executor, ros2_control_test_assets::minimal_robot_urdf, true, "test_controller_manager");
 
-  ASSERT_NE(
-    cm.load_controller(
-      "test_mecanum_drive_controller", "mecanum_drive_controller/MecanumDriveController"),
-    nullptr);
+  const std::string test_file_path =
+    std::string(TEST_FILES_DIRECTORY) + "/mecanum_drive_controller_params.yaml";
+
+  cm.set_parameter({"test_mecanum_drive_controller.params_file", test_file_path});
+  cm.set_parameter(
+    {"test_mecanum_drive_controller.type", "mecanum_drive_controller/MecanumDriveController"});
+
+  ASSERT_NE(cm.load_controller("test_mecanum_drive_controller"), nullptr);
 
   rclcpp::shutdown();
 }

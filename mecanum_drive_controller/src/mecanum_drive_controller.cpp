@@ -204,23 +204,25 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
   controller_state_publisher_->msg_.header.frame_id = params_.odom_frame_id;
   controller_state_publisher_->unlock();
 
-  RCLCPP_INFO(get_node()->get_logger(), "configure successful");
+  RCLCPP_INFO(get_node()->get_logger(), "MecanumDriveController configured successfully");
+
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
 void MecanumDriveController::reference_callback(const std::shared_ptr<ControllerReferenceMsg> msg)
 {
-  // if no timestamp provided use current time for command timestamp
+  // If no timestamp provided, use current time for command timestamp
   if (msg->header.stamp.sec == 0 && msg->header.stamp.nanosec == 0u)
   {
     RCLCPP_WARN(
       get_node()->get_logger(),
-      "Timestamp in header is missing, using current time as command "
-      "timestamp.");
+      "Timestamp in header is missing, using current time as command timestamp.");
     msg->header.stamp = get_node()->now();
   }
+
   const auto age_of_last_command = get_node()->now() - msg->header.stamp;
 
+  // Check the timeout condition
   if (ref_timeout_ == rclcpp::Duration::from_seconds(0) || age_of_last_command <= ref_timeout_)
   {
     input_ref_.writeFromNonRT(msg);
@@ -229,10 +231,10 @@ void MecanumDriveController::reference_callback(const std::shared_ptr<Controller
   {
     RCLCPP_ERROR(
       get_node()->get_logger(),
-      "Received message has timestamp %.10f older for %.10f which is more then allowed timeout "
-      "(%.4f).",
+      "Received message has timestamp %.10f older by %.10f than allowed timeout (%.4f).",
       rclcpp::Time(msg->header.stamp).seconds(), age_of_last_command.seconds(),
       ref_timeout_.seconds());
+
     reset_controller_reference_msg(msg, get_node());
   }
 }
@@ -307,10 +309,21 @@ controller_interface::CallbackReturn MecanumDriveController::on_activate(
 controller_interface::CallbackReturn MecanumDriveController::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
+  bool value_set_no_error = true;
   for (size_t i = 0; i < NR_CMD_ITFS; ++i)
   {
-    command_interfaces_[i].set_value(std::numeric_limits<double>::quiet_NaN());
+    value_set_no_error &=
+      command_interfaces_[i].set_value(std::numeric_limits<double>::quiet_NaN());
   }
+  if (!value_set_no_error)
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(),
+      "Setting values to command interfaces has failed! "
+      "This means that you are maybe blocking the interface in your hardware for too long.");
+    return controller_interface::CallbackReturn::FAILURE;
+  }
+
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
@@ -430,17 +443,26 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
 
     // Set wheels velocities - The joint names are sorted according to the order documented in the
     // header file!
-    command_interfaces_[FRONT_LEFT].set_value(wheel_front_left_vel);
-    command_interfaces_[FRONT_RIGHT].set_value(wheel_front_right_vel);
-    command_interfaces_[REAR_RIGHT].set_value(wheel_rear_right_vel);
-    command_interfaces_[REAR_LEFT].set_value(wheel_rear_left_vel);
+    const bool value_set_error =
+      command_interfaces_[FRONT_LEFT].set_value(wheel_front_left_vel) &&
+      command_interfaces_[FRONT_RIGHT].set_value(wheel_front_right_vel) &&
+      command_interfaces_[REAR_RIGHT].set_value(wheel_rear_right_vel) &&
+      command_interfaces_[REAR_LEFT].set_value(wheel_rear_left_vel);
+    RCLCPP_ERROR_EXPRESSION(
+      get_node()->get_logger(), !value_set_error,
+      "Setting values to command interfaces has failed! "
+      "This means that you are maybe blocking the interface in your hardware for too long.");
   }
   else
   {
-    command_interfaces_[FRONT_LEFT].set_value(0.0);
-    command_interfaces_[FRONT_RIGHT].set_value(0.0);
-    command_interfaces_[REAR_RIGHT].set_value(0.0);
-    command_interfaces_[REAR_LEFT].set_value(0.0);
+    const bool value_set_error = command_interfaces_[FRONT_LEFT].set_value(0.0) &&
+                                 command_interfaces_[FRONT_RIGHT].set_value(0.0) &&
+                                 command_interfaces_[REAR_RIGHT].set_value(0.0) &&
+                                 command_interfaces_[REAR_LEFT].set_value(0.0);
+    RCLCPP_ERROR_EXPRESSION(
+      get_node()->get_logger(), !value_set_error,
+      "Setting values to command interfaces has failed! "
+      "This means that you are maybe blocking the interface in your hardware for too long.");
   }
 
   // Publish odometry message
