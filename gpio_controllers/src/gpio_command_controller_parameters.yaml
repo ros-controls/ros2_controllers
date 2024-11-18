@@ -1,0 +1,34 @@
+gpio_command_controller_parameters:
+  gpios: {
+    type: string_array,
+    description: "List of gpios",
+    read_only: true,
+    validation: {
+      size_gt<>: [0],
+      unique<>: null
+    }
+  }
+
+  command_interfaces:
+    __map_gpios:
+      interfaces: {
+        type: string_array,
+        description: "List of command interfaces for each gpio.",
+        read_only: true,
+        default_value: [],
+        validation: {
+          unique<>: null
+        }
+      }
+
+  state_interfaces:
+    __map_gpios:
+      interfaces: {
+        type: string_array,
+        description: "List of state interfaces for each gpio. If empty all available gpios' states are used.",
+        read_only: true,
+        default_value: [],
+        validation: {
+          unique<>: null
+        }
+      }
