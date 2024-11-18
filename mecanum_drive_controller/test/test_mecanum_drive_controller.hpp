@@ -291,8 +291,8 @@ protected:
 
   // Controller-related parameters
 
-  std::array<double, 4> joint_state_values_ = {0.1, 0.1, 0.1, 0.1};
-  std::array<double, 4> joint_command_values_ = {101.101, 101.101, 101.101, 101.101};
+  std::array<double, 4> joint_state_values_ = {{0.1, 0.1, 0.1, 0.1}};
+  std::array<double, 4> joint_command_values_ = {{101.101, 101.101, 101.101, 101.101}};
 
   static constexpr double TEST_LINEAR_VELOCITY_X = 1.5;
   static constexpr double TEST_LINEAR_VELOCITY_y = 0.0;
