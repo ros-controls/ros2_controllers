@@ -88,7 +88,7 @@ class TestFixture(unittest.TestCase):
         assert found, "publisher_position_trajectory_controller not found!"
 
     def test_check_if_topic_published(self):
-        topic = "/position_trajectory_controller/joint_trajectory"
+        topic = "/joint_trajectory_position_controller/joint_trajectory"
         wait_for_topics = WaitForTopics([(topic, JointTrajectory)], timeout=20.0)
         assert wait_for_topics.wait(), f"Topic '{topic}' not found!"
         msgs = wait_for_topics.received_messages(topic)

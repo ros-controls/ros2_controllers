@@ -1,4 +1,4 @@
-publisher_joint_trajectory_controller:
+publisher_position_trajectory_controller:
   ros__parameters:
 
     controller_name: "joint_trajectory_position_controller"
