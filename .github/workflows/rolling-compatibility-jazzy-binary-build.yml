@@ -1,5 +1,6 @@
-name: Jazzy Semi-Binary Build
-# description: 'Build & test that compiles the main dependencies from source.'
+name: Check Rolling Compatibility on Jazzy
+# author: Christoph Froehlich <christoph.froehlich@ait.ac.at>
+# description: 'Build & test the rolling version on Jazzy distro.'
 
 on:
   workflow_dispatch:
@@ -14,10 +15,10 @@ on:
       - '**.cpp'
       - '**.py'
       - '**.yaml'
-      - '.github/workflows/jazzy-semi-binary-build.yml'
+      - '.github/workflows/rolling-compatibility-jazzy-binary-build.yml'
       - '**/package.xml'
       - '**/CMakeLists.txt'
-      - 'ros2_controllers.jazzy.repos'
+      - 'ros2_controllers.rolling.repos'
   push:
     branches:
       - master
@@ -27,23 +28,21 @@ on:
       - '**.cpp'
       - '**.py'
       - '**.yaml'
-      - '.github/workflows/jazzy-semi-binary-build.yml'
+      - '.github/workflows/rolling-compatibility-jazzy-binary-build.yml'
       - '**/package.xml'
       - '**/CMakeLists.txt'
-      - 'ros2_controllers.jazzy.repos'
-  schedule:
-    # Run every morning to detect flakiness and broken dependencies
-    - cron: '33 1 * * *'
+      - 'ros2_controllers.rolling.repos'
 
 jobs:
-  semi_binary:
+  build-on-jazzy:
     uses: ros-controls/ros2_control_ci/.github/workflows/reusable-industrial-ci-with-cache.yml@master
     strategy:
       fail-fast: false
       matrix:
+        ROS_DISTRO: [jazzy]
         ROS_REPO: [testing]
     with:
-      ros_distro: jazzy
+      ros_distro: ${{ matrix.ROS_DISTRO }}
       ros_repo: ${{ matrix.ROS_REPO }}
-      upstream_workspace: ros2_controllers.jazzy.repos
+      upstream_workspace: ros2_controllers.rolling.repos
       ref_for_scheduled_build: master
