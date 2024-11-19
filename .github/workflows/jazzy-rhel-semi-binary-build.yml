@@ -8,6 +8,7 @@ on:
       - '**.hpp'
       - '**.h'
       - '**.cpp'
+      - '**.py'
       - '**.yaml'
       - '.github/workflows/jazzy-rhel-semi-binary-build.yml'
       - '**/package.xml'

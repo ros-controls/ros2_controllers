@@ -37,7 +37,7 @@ class PublisherForwardPosition(Node):
         # Read all positions from parameters
         self.goals = []
         for name in goal_names:
-            self.declare_parameter(name)
+            self.declare_parameter(name, rclpy.Parameter.Type.DOUBLE_ARRAY)
             goal = self.get_parameter(name).value
             if goal is None or len(goal) == 0:
                 raise Exception(f'Values for goal "{name}" not set!')
@@ -68,9 +68,16 @@ def main(args=None):
 
     publisher_forward_position = PublisherForwardPosition()
 
-    rclpy.spin(publisher_forward_position)
-    publisher_forward_position.destroy_node()
-    rclpy.shutdown()
+    try:
+        rclpy.spin(publisher_forward_position)
+    except KeyboardInterrupt:
+        print("Keyboard interrupt received. Shutting down node.")
+    except Exception as e:
+        print(f"Unhandled exception: {e}")
+    finally:
+        if rclpy.ok():
+            publisher_forward_position.destroy_node()
+            rclpy.shutdown()
 
 
 if __name__ == "__main__":

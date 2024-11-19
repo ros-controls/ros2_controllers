@@ -2,7 +2,9 @@ cmake_minimum_required(VERSION 3.16)
 project(diff_drive_controller LANGUAGES CXX)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
-  add_compile_options(-Wall -Wextra -Werror=conversion -Werror=unused-but-set-variable -Werror=return-type -Werror=shadow -Werror=format)
+  add_compile_options(-Wall -Wextra -Werror=conversion -Werror=unused-but-set-variable
+                      -Werror=return-type -Werror=shadow -Werror=format -Werror=range-loop-construct
+                      -Werror=missing-braces)
 endif()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
@@ -70,10 +72,8 @@ if(BUILD_TESTING)
     tf2_msgs
   )
 
-  add_rostest_with_parameters_gmock(test_load_diff_drive_controller
-    test/test_load_diff_drive_controller.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/config/test_diff_drive_controller.yaml
-  )
+  add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
+  ament_add_gmock(test_load_diff_drive_controller test/test_load_diff_drive_controller.cpp)
   ament_target_dependencies(test_load_diff_drive_controller
     controller_manager
     ros2_control_test_assets

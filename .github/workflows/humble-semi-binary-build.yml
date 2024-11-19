@@ -10,8 +10,9 @@ on:
       - '**.hpp'
       - '**.h'
       - '**.cpp'
-      - '.github/workflows/humble-semi-binary-build.yml'
+      - '**.py'
       - '**.yaml'
+      - '.github/workflows/humble-semi-binary-build.yml'
       - '**/package.xml'
       - '**/CMakeLists.txt'
       - 'ros2_controllers.humble.repos'
@@ -22,8 +23,9 @@ on:
       - '**.hpp'
       - '**.h'
       - '**.cpp'
-      - '.github/workflows/humble-semi-binary-build.yml'
+      - '**.py'
       - '**.yaml'
+      - '.github/workflows/humble-semi-binary-build.yml'
       - '**/package.xml'
       - '**/CMakeLists.txt'
       - 'ros2_controllers.humble.repos'
@@ -37,7 +39,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ROS_REPO: [main, testing]
+        ROS_REPO: [testing]
     with:
       ros_distro: humble
       ros_repo: ${{ matrix.ROS_REPO }}
