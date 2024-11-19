@@ -107,13 +107,11 @@ protected:
     REAR_LEFT = 3
   };
 
-  /// Internal lists with joint names.
   /**
    * Internal lists with joint names sorted as in `WheelIndex` enum.
    */
   std::vector<std::string> command_joint_names_;
 
-  /// Internal lists with joint names.
   /**
    * Internal lists with joint names sorted as in `WheelIndex` enum.
    * If parameters for state joint names are *not* defined, this list is the same as
