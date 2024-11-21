@@ -39,7 +39,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ROS_REPO: [main, testing]
+        ROS_REPO: [testing]
     with:
       ros_distro: humble
       ros_repo: ${{ matrix.ROS_REPO }}

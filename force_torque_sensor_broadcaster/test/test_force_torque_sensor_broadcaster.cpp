@@ -282,8 +282,8 @@ TEST_F(ForceTorqueSensorBroadcasterTest, SensorName_Publish_Success_with_Offsets
 {
   SetUpFTSBroadcaster();
 
-  std::array<double, 3> force_offsets = {10.0, 30.0, -50.0};
-  std::array<double, 3> torque_offsets = {1.0, -1.2, -5.2};
+  std::array<double, 3> force_offsets = {{10.0, 30.0, -50.0}};
+  std::array<double, 3> torque_offsets = {{1.0, -1.2, -5.2}};
   // set the params 'sensor_name' and 'frame_id'
   fts_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
   fts_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
