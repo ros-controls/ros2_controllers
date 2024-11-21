@@ -72,7 +72,7 @@ public:
    * This function by default assumes that sampling is only done at monotonically increasing \p
    * sample_time for any trajectory. That means, it will only search for a point matching the sample
    * time after the point it has been called before. If this isn't desired, set \p
-   * progress_search_start_index to false.
+   * search_monotonically_increasing to false.
    *
    * Specific case returns for start_segment_itr and end_segment_itr:
    * - Sampling before the trajectory start:
@@ -96,7 +96,7 @@ public:
    *      description above.
    * \param[out] end_segment_itr Iterator to the end segment for given \p sample_time. See
    *      description above.
-   * \param[in] progress_search_start_index If set to true, the next sample call will start
+   * \param[in] search_monotonically_increasing If set to true, the next sample call will start
    *      searching in the trajectory at the index of this call's result.
    */
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
@@ -105,7 +105,7 @@ public:
     const interpolation_methods::InterpolationMethod interpolation_method,
     trajectory_msgs::msg::JointTrajectoryPoint & output_state,
     TrajectoryPointConstIter & start_segment_itr, TrajectoryPointConstIter & end_segment_itr,
-    const bool progress_search_start_index = true);
+    const bool search_monotonically_increasing = true);
 
   /**
    * Do interpolation between 2 states given a time in between their respective timestamps
