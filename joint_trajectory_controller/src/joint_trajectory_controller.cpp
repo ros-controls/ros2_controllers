@@ -196,9 +196,6 @@ controller_interface::return_type JointTrajectoryController::update(
         traj_external_point_ptr_->set_point_before_trajectory_msg(
           time, state_current_, joints_angle_wraparound_);
       }
-      // Sample once at the beginning to establish the start time if none was given
-      traj_external_point_ptr_->sample(
-        time, interpolation_method_, state_desired_, start_segment_itr, end_segment_itr);
     }
 
     // Sample expected state from the trajectory
