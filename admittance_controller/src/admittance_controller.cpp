@@ -289,10 +289,14 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
       "~/wrench_reference", rclcpp::SystemDefaultsQoS(),
       [&](const geometry_msgs::msg::WrenchStamped & msg)
       {
-        if (msg.header.frame_id != admittance_->parameters_.ft_sensor.frame.id && !msg.header.frame_id.empty())
+        if (
+          msg.header.frame_id != admittance_->parameters_.ft_sensor.frame.id &&
+          !msg.header.frame_id.empty())
         {
           RCLCPP_ERROR_STREAM(
-            get_node()->get_logger(), "Ignoring wrench reference as it is on the wrong frame: " << msg.header.frame_id << ". Expected reference frame: " << admittance_->parameters_.ft_sensor.frame_id);
+            get_node()->get_logger(), "Ignoring wrench reference as it is on the wrong frame: "
+                                        << msg.header.frame_id << ". Expected reference frame: "
+                                        << admittance_->parameters_.ft_sensor.frame.id);
           return;
         }
         input_wrench_command_.writeFromNonRT(msg);
@@ -312,9 +316,7 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
     semantic_components::ForceTorqueSensor(admittance_->parameters_.ft_sensor.name));
 
   // configure admittance rule
-  if (
-    admittance_->configure(get_node(), num_joints_, this->get_robot_description()) ==
-    controller_interface::return_type::ERROR)
+  if (admittance_->configure(get_node(), num_joints_) == controller_interface::return_type::ERROR)
   {
     return controller_interface::CallbackReturn::ERROR;
   }

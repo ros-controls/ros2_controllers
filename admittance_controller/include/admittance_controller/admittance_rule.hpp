@@ -102,8 +102,7 @@ public:
 
   /// Configure admittance rule memory using number of joints.
   controller_interface::return_type configure(
-    const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node, const size_t num_joint,
-    const std::string & robot_description);
+    const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node, const size_t num_joint);
 
   /// Reset all values back to default
   controller_interface::return_type reset(const size_t num_joints);
