@@ -17,6 +17,7 @@
   <url type="repository">https://github.com/ros-controls/ros2_controllers/</url>
 
   <depend>rclpy</depend>
+  <depend>sensor_msgs</depend>
   <depend>std_msgs</depend>
   <depend>trajectory_msgs</depend>
 
