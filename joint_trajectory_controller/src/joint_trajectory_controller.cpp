@@ -18,6 +18,7 @@
 #include <functional>
 #include <memory>
 
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -180,6 +181,7 @@ controller_interface::return_type JointTrajectoryController::update(
   if (has_active_trajectory())
   {
     bool first_sample = false;
+    TrajectoryPointConstIter start_segment_itr, end_segment_itr;
     // if sampling the first time, set the point before you sample
     if (!traj_external_point_ptr_->is_sampled_already())
     {
@@ -196,10 +198,14 @@ controller_interface::return_type JointTrajectoryController::update(
       }
     }
 
-    // find segment for current timestamp
-    TrajectoryPointConstIter start_segment_itr, end_segment_itr;
-    const bool valid_point = traj_external_point_ptr_->sample(
+    // Sample expected state from the trajectory
+    traj_external_point_ptr_->sample(
       time, interpolation_method_, state_desired_, start_segment_itr, end_segment_itr);
+
+    // Sample setpoint for next control cycle
+    const bool valid_point = traj_external_point_ptr_->sample(
+      time + update_period_, interpolation_method_, command_next_, start_segment_itr,
+      end_segment_itr, false);
 
     if (valid_point)
     {
@@ -276,7 +282,7 @@ controller_interface::return_type JointTrajectoryController::update(
           // Update PIDs
           for (auto i = 0ul; i < dof_; ++i)
           {
-            tmp_command_[i] = (state_desired_.velocities[i] * ff_velocity_scale_[i]) +
+            tmp_command_[i] = (command_next_.velocities[i] * ff_velocity_scale_[i]) +
                               pids_[i]->computeCommand(
                                 state_error_.positions[i], state_error_.velocities[i],
                                 (uint64_t)period.nanoseconds());
@@ -286,7 +292,7 @@ controller_interface::return_type JointTrajectoryController::update(
         // set values for next hardware write()
         if (has_position_command_interface_)
         {
-          assign_interface_from_point(joint_command_interface_[0], state_desired_.positions);
+          assign_interface_from_point(joint_command_interface_[0], command_next_.positions);
         }
         if (has_velocity_command_interface_)
         {
@@ -296,12 +302,12 @@ controller_interface::return_type JointTrajectoryController::update(
           }
           else
           {
-            assign_interface_from_point(joint_command_interface_[1], state_desired_.velocities);
+            assign_interface_from_point(joint_command_interface_[1], command_next_.velocities);
           }
         }
         if (has_acceleration_command_interface_)
         {
-          assign_interface_from_point(joint_command_interface_[2], state_desired_.accelerations);
+          assign_interface_from_point(joint_command_interface_[2], command_next_.accelerations);
         }
         if (has_effort_command_interface_)
         {
@@ -309,7 +315,7 @@ controller_interface::return_type JointTrajectoryController::update(
         }
 
         // store the previous command. Used in open-loop control mode
-        last_commanded_state_ = state_desired_;
+        last_commanded_state_ = command_next_;
       }
 
       if (active_goal)
@@ -867,6 +873,13 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     std::string(get_node()->get_name()) + "/query_state",
     std::bind(&JointTrajectoryController::query_state_service, this, _1, _2));
 
+  if (get_update_rate() == 0)
+  {
+    throw std::runtime_error("Controller's update rate is set to 0. This should not happen!");
+  }
+  update_period_ =
+    rclcpp::Duration(0.0, static_cast<uint32_t>(1.0e9 / static_cast<double>(get_update_rate())));
+
   return CallbackReturn::SUCCESS;
 }
 
@@ -924,7 +937,9 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   // running already)
   trajectory_msgs::msg::JointTrajectoryPoint state;
   resize_joint_trajectory_point(state, dof_);
-  if (read_state_from_command_interfaces(state))
+  if (
+    params_.set_last_command_interface_value_as_state_on_activation &&
+    read_state_from_command_interfaces(state))
   {
     state_current_ = state;
     last_commanded_state_ = state;

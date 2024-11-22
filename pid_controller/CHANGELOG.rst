@@ -2,6 +2,11 @@
 Changelog for package pid_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.16.0 (2024-11-08)
+-------------------
+* fixes for windows compilation (`#1330 <https://github.com/ros-controls/ros2_controllers/issues/1330>`_)
+* Contributors: Gilmar Correia
+
 4.15.0 (2024-10-07)
 -------------------
 * Adapt test to new way of exporting reference interfaces (Related to `#1240 <https://github.com/ros-controls/ros2_controllers/issues/1240>`_ in ros2_control) (`#1103 <https://github.com/ros-controls/ros2_controllers/issues/1103>`_)
