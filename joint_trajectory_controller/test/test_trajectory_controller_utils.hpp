@@ -278,7 +278,7 @@ public:
     traj_controller_->set_node_options(node_options);
 
     return traj_controller_->init(
-      controller_name_, urdf, 0, "", traj_controller_->define_custom_node_options());
+      controller_name_, urdf, 100, "", traj_controller_->define_custom_node_options());
   }
 
   void SetPidParameters(double p_value = 0.0, double ff_value = 1.0)
@@ -324,7 +324,7 @@ public:
 
     // set pid parameters before configure
     SetPidParameters(k_p, ff);
-    traj_controller_->get_node()->configure();
+    traj_controller_->configure();
 
     ActivateTrajectoryController(
       separate_cmd_and_state_values, initial_pos_joints, initial_vel_joints, initial_acc_joints,
