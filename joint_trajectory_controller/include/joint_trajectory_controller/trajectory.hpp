@@ -69,8 +69,10 @@ public:
    * acceleration respectively. Deduction assumes that the provided velocity or acceleration have to
    * be reached at the time defined in the segment.
    *
-   * This function assumes that sampling is only done at monotonically increasing \p sample_time
-   * for any trajectory.
+   * This function by default assumes that sampling is only done at monotonically increasing \p
+   * sample_time for any trajectory. That means, it will only search for a point matching the sample
+   * time after the point it has been called before. If this isn't desired, set \p
+   * search_monotonically_increasing to false.
    *
    * Specific case returns for start_segment_itr and end_segment_itr:
    * - Sampling before the trajectory start:
@@ -94,13 +96,16 @@ public:
    *      description above.
    * \param[out] end_segment_itr Iterator to the end segment for given \p sample_time. See
    *      description above.
+   * \param[in] search_monotonically_increasing If set to true, the next sample call will start
+   *      searching in the trajectory at the index of this call's result.
    */
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   bool sample(
     const rclcpp::Time & sample_time,
     const interpolation_methods::InterpolationMethod interpolation_method,
     trajectory_msgs::msg::JointTrajectoryPoint & output_state,
-    TrajectoryPointConstIter & start_segment_itr, TrajectoryPointConstIter & end_segment_itr);
+    TrajectoryPointConstIter & start_segment_itr, TrajectoryPointConstIter & end_segment_itr,
+    const bool search_monotonically_increasing = true);
 
   /**
    * Do interpolation between 2 states given a time in between their respective timestamps
