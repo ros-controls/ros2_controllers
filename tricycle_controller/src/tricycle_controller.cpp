@@ -96,7 +96,8 @@ controller_interface::return_type TricycleController::update(
     return controller_interface::return_type::OK;
   }
   std::shared_ptr<TwistStamped> last_command_msg;
-  received_velocity_msg_ptr_.get(last_command_msg);
+  received_velocity_msg_ptr_.try_get([&last_command_msg](const std::shared_ptr<TwistStamped> & msg)
+                                     { last_command_msg = msg; });
   if (last_command_msg == nullptr)
   {
     RCLCPP_WARN(get_node()->get_logger(), "Velocity message received was a nullptr.");
@@ -272,8 +273,8 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
   }
 
   const TwistStamped empty_twist;
-  received_velocity_msg_ptr_.set(std::make_shared<TwistStamped>(empty_twist));
-
+  received_velocity_msg_ptr_.set([empty_twist](std::shared_ptr<TwistStamped> & stored_value)
+                                 { stored_value = std::make_shared<TwistStamped>(empty_twist); });
   // Fill last two commands with default constructed commands
   const AckermannDrive empty_ackermann_drive;
   previous_commands_.emplace(empty_ackermann_drive);
@@ -307,7 +308,8 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
           "time, this message will only be shown once");
         msg->header.stamp = get_node()->get_clock()->now();
       }
-      received_velocity_msg_ptr_.set(std::move(msg));
+      received_velocity_msg_ptr_.set([msg](std::shared_ptr<TwistStamped> & stored_value)
+                                     { stored_value = std::move(msg); });
     });
 
   // initialize odometry publisher and message
@@ -397,7 +399,6 @@ CallbackReturn TricycleController::on_cleanup(const rclcpp_lifecycle::State &)
     return CallbackReturn::ERROR;
   }
 
-  received_velocity_msg_ptr_.set(std::make_shared<TwistStamped>());
   return CallbackReturn::SUCCESS;
 }
 
@@ -433,7 +434,8 @@ bool TricycleController::reset()
   subscriber_is_active_ = false;
   velocity_command_subscriber_.reset();
 
-  received_velocity_msg_ptr_.set(nullptr);
+  received_velocity_msg_ptr_.set([](std::shared_ptr<TwistStamped> & stored_value)
+                                 { stored_value = nullptr; });
   is_halted = false;
   return true;
 }
