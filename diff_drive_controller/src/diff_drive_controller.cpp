@@ -112,7 +112,8 @@ controller_interface::return_type DiffDriveController::update(
   }
 
   std::shared_ptr<Twist> last_command_msg;
-  received_velocity_msg_ptr_.get(last_command_msg);
+  received_velocity_msg_ptr_.try_get([&last_command_msg](const std::shared_ptr<Twist> & msg)
+                                     { last_command_msg = msg; });
 
   if (last_command_msg == nullptr)
   {
@@ -325,8 +326,8 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   }
 
   const Twist empty_twist;
-  received_velocity_msg_ptr_.set(std::make_shared<Twist>(empty_twist));
-
+  received_velocity_msg_ptr_.set([empty_twist](std::shared_ptr<Twist> & stored_value)
+                                 { stored_value = std::make_shared<Twist>(empty_twist); });
   // Fill last two commands with default constructed commands
   previous_commands_.emplace(empty_twist);
   previous_commands_.emplace(empty_twist);
@@ -349,7 +350,8 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
           "time, this message will only be shown once");
         msg->header.stamp = get_node()->get_clock()->now();
       }
-      received_velocity_msg_ptr_.set(std::move(msg));
+      received_velocity_msg_ptr_.set([msg](std::shared_ptr<Twist> & stored_value)
+                                     { stored_value = std::move(msg); });
     });
 
   // initialize odometry publisher and message
@@ -475,7 +477,6 @@ controller_interface::CallbackReturn DiffDriveController::on_cleanup(
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  received_velocity_msg_ptr_.set(std::make_shared<Twist>());
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
@@ -502,7 +503,8 @@ bool DiffDriveController::reset()
   subscriber_is_active_ = false;
   velocity_command_subscriber_.reset();
 
-  received_velocity_msg_ptr_.set(nullptr);
+  received_velocity_msg_ptr_.set([](std::shared_ptr<Twist> & stored_value)
+                                 { stored_value = nullptr; });
   is_halted = false;
   return true;
 }
