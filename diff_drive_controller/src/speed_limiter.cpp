@@ -123,7 +123,7 @@ double SpeedLimiter::limit_jerk(double & v, double v0, double v1, double dt)
     const double dv = v - v0;
     const double dv0 = v0 - v1;
 
-    const double dt2 = 2. * dt * dt;
+    const double dt2 = dt * dt;
 
     const double da_min = min_jerk_ * dt2;
     const double da_max = max_jerk_ * dt2;
