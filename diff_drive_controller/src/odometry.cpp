@@ -45,10 +45,9 @@ void Odometry::init(const rclcpp::Time & time)
   timestamp_ = time;
 }
 
-bool Odometry::update(double left_pos, double right_pos, const rclcpp::Time & time)
+bool Odometry::updateFromPosition(double left_pos, double right_pos, const rclcpp::Time & time, const double dt)
 {
   // We cannot estimate the speed with very small time intervals:
-  const double dt = time.seconds() - timestamp_.seconds();
   if (dt < 0.0001)
   {
     return false;  // Interval too small to integrate with
@@ -59,35 +58,33 @@ bool Odometry::update(double left_pos, double right_pos, const rclcpp::Time & ti
   const double right_wheel_cur_pos = right_pos * right_wheel_radius_;
 
   // Estimate velocity of wheels using old and current position:
-  const double left_wheel_est_vel = left_wheel_cur_pos - left_wheel_old_pos_;
-  const double right_wheel_est_vel = right_wheel_cur_pos - right_wheel_old_pos_;
+  const double left_wheel_est_vel = (left_wheel_cur_pos - left_wheel_old_pos_)/dt;
+  const double right_wheel_est_vel = (right_wheel_cur_pos - right_wheel_old_pos_)/dt;
 
   // Update old position with current:
   left_wheel_old_pos_ = left_wheel_cur_pos;
   right_wheel_old_pos_ = right_wheel_cur_pos;
 
-  updateFromVelocity(left_wheel_est_vel, right_wheel_est_vel, time);
+  updateFromVelocity(left_wheel_est_vel, right_wheel_est_vel, time, dt);
 
   return true;
 }
 
-bool Odometry::updateFromVelocity(double left_vel, double right_vel, const rclcpp::Time & time)
+bool Odometry::updateFromVelocity(double left_vel, double right_vel, const rclcpp::Time & time, const double dt)
 {
-  const double dt = time.seconds() - timestamp_.seconds();
-
   // Compute linear and angular diff:
   const double linear = (left_vel + right_vel) * 0.5;
   // Now there is a bug about scout angular velocity
   const double angular = (right_vel - left_vel) / wheel_separation_;
 
   // Integrate odometry:
-  integrateExact(linear, angular);
+  integrateExact(linear, angular, dt);
 
   timestamp_ = time;
 
   // Estimate speeds using a rolling mean to filter them out:
-  linear_accumulator_.accumulate(linear / dt);
-  angular_accumulator_.accumulate(angular / dt);
+  linear_accumulator_.accumulate(linear);
+  angular_accumulator_.accumulate(angular);
 
   linear_ = linear_accumulator_.getRollingMean();
   angular_ = angular_accumulator_.getRollingMean();
@@ -95,16 +92,15 @@ bool Odometry::updateFromVelocity(double left_vel, double right_vel, const rclcp
   return true;
 }
 
-void Odometry::updateOpenLoop(double linear, double angular, const rclcpp::Time & time)
+void Odometry::updateFromVelocityOpenLoop(double linear, double angular, const rclcpp::Time & time, const double dt)
 {
   /// Save last linear and angular velocity:
   linear_ = linear;
   angular_ = angular;
 
   /// Integrate odometry:
-  const double dt = time.seconds() - timestamp_.seconds();
   timestamp_ = time;
-  integrateExact(linear * dt, angular * dt);
+  integrateExact(linear, angular, dt);
 }
 
 void Odometry::resetOdometry()
@@ -129,28 +125,28 @@ void Odometry::setVelocityRollingWindowSize(size_t velocity_rolling_window_size)
   resetAccumulators();
 }
 
-void Odometry::integrateRungeKutta2(double linear, double angular)
+void Odometry::integrateRungeKutta2(double linear, double angular, const double dt)
 {
-  const double direction = heading_ + angular * 0.5;
+  const double direction = heading_ + angular * 0.5 * dt;
 
   /// Runge-Kutta 2nd order integration:
-  x_ += linear * cos(direction);
-  y_ += linear * sin(direction);
-  heading_ += angular;
+  x_ += linear * cos(direction) * dt;
+  y_ += linear * sin(direction) * dt;
+  heading_ += angular * dt;
 }
 
-void Odometry::integrateExact(double linear, double angular)
+void Odometry::integrateExact(double linear, double angular, const double dt)
 {
-  if (fabs(angular) < 1e-6)
+  if (fabs(angular*dt) < 1e-6)
   {
-    integrateRungeKutta2(linear, angular);
+    integrateRungeKutta2(linear, angular, dt);
   }
   else
   {
     /// Exact integration (should solve problems when angular is zero):
     const double heading_old = heading_;
-    const double r = linear / angular;
-    heading_ += angular;
+    const double r = linear / angular * dt;
+    heading_ += angular * dt;
     x_ += r * (sin(heading_) - sin(heading_old));
     y_ += -r * (cos(heading_) - cos(heading_old));
   }

@@ -141,9 +141,10 @@ controller_interface::return_type DiffDriveController::update(
   const double left_wheel_radius = params_.left_wheel_radius_multiplier * params_.wheel_radius;
   const double right_wheel_radius = params_.right_wheel_radius_multiplier * params_.wheel_radius;
 
+
   if (params_.open_loop)
   {
-    odometry_.updateOpenLoop(linear_command, angular_command, time);
+    odometry_.updateFromVelocityOpenLoop(linear_command, angular_command, time, period.seconds());
   }
   else
   {
@@ -171,13 +172,28 @@ controller_interface::return_type DiffDriveController::update(
 
     if (params_.position_feedback)
     {
-      odometry_.update(left_feedback_mean, right_feedback_mean, time);
+      // Warn if actual timestep doesn't match period, 
+      // since 
+      const double measured_period = (
+        get_node()->get_clock()->now() - previous_update_timestamp_).seconds();
+      
+      // +/- 20% of nominal loop time as a starting point to warn wheel encoder
+      // users that the real update rate doesn't match the requested update period
+      if ( std::fabs(period.seconds()-measured_period) > period.seconds()/5.0 ) {
+        RCLCPP_WARN_THROTTLE(
+          get_node()->get_logger(), *(get_node()->get_clock()), 1000,
+          "Integrating odometry at measured delta of %.3fs, but desired update period is %.3fs",
+          measured_period, period.seconds());
+      }
+
+      // update odometry 
+      odometry_.updateFromPosition(left_feedback_mean, right_feedback_mean, time, measured_period);
     }
     else
     {
       odometry_.updateFromVelocity(
-        left_feedback_mean * left_wheel_radius * period.seconds(),
-        right_feedback_mean * right_wheel_radius * period.seconds(), time);
+        left_feedback_mean * left_wheel_radius,
+        right_feedback_mean * right_wheel_radius, time, period.seconds());
     }
   }
 
