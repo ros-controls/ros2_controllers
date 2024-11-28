@@ -84,10 +84,9 @@ protected:
         // controller hardware cycle update loop
         auto clock = rclcpp::Clock(RCL_STEADY_TIME);
         auto now_time = clock.now();
-        auto start_time = now_time;
-        auto last_time = start_time;
+        auto last_time = now_time;
         rclcpp::Duration wait = rclcpp::Duration::from_seconds(2.0);
-        auto end_time = start_time + wait;
+        auto end_time = last_time + wait;
         while (clock.now() < end_time)
         {
           now_time = clock.now();
