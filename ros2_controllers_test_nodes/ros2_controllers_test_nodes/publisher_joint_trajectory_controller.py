@@ -193,7 +193,6 @@ def main(args=None):
     finally:
         if rclpy.ok():
             publisher_joint_trajectory.destroy_node()
-            rclpy.shutdown()
 
 
 if __name__ == "__main__":
