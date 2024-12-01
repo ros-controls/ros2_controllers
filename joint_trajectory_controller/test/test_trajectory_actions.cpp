@@ -219,6 +219,15 @@ public:
   static void TearDownTestCase() { TrajectoryControllerTest::TearDownTestCase(); }
 };
 
+class TestTrajectoryActionsTestScalingFactor : public TestTrajectoryActions,
+                                               public ::testing::WithParamInterface<double>
+{
+public:
+  virtual void SetUp() { TestTrajectoryActions::SetUp(); }
+
+  static void TearDownTestCase() { TrajectoryControllerTest::TearDownTestCase(); }
+};
+
 TEST_P(TestTrajectoryActionsTestParameterized, test_success_single_point_sendgoal)
 {
   // deactivate velocity tolerance
@@ -1012,3 +1021,74 @@ INSTANTIATE_TEST_SUITE_P(
     std::make_tuple(
       std::vector<std::string>({"effort"}),
       std::vector<std::string>({"position", "velocity", "acceleration"}))));
+
+TEST_P(TestTrajectoryActionsTestScalingFactor, test_scaling_execution_time_succeeds)
+{
+  double scaling_factor = GetParam();
+  const double state_tol = 0.3;  // Since we use a common buffer for cmd and state in these tests,
+  // the error will be whatever the command diff is.
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("open_loop_control", false),
+    rclcpp::Parameter("constraints.stopped_velocity_tolerance", 0.0),
+    rclcpp::Parameter("scaling_factor_initial_default", scaling_factor),
+    rclcpp::Parameter("constraints.joint1.trajectory", state_tol),
+    rclcpp::Parameter("constraints.joint2.trajectory", state_tol),
+    rclcpp::Parameter("constraints.joint3.trajectory", state_tol),
+  };
+  SetUpExecutor({params}, false, 1.0, 0.0);
+  SetUpControllerHardware();
+
+  // add feedback
+  goal_options_.feedback_callback =
+    [&](
+      rclcpp_action::ClientGoalHandle<FollowJointTrajectoryMsg>::SharedPtr,
+      const std::shared_ptr<const FollowJointTrajectoryMsg::Feedback> feedback_msg)
+  {
+    auto time_diff_sec = [](const builtin_interfaces::msg::Duration & msg)
+    { return static_cast<double>(msg.sec) + static_cast<double>(msg.nanosec) * 1e-9; };
+
+    // Since we are summing up scaled periods, the scale of the period sum will not be the same
+    // due to numerical errors.
+    EXPECT_NEAR(
+      time_diff_sec(feedback_msg->desired.time_from_start),
+      time_diff_sec(feedback_msg->actual.time_from_start) * scaling_factor,
+      1e-3 * time_diff_sec(feedback_msg->actual.time_from_start));
+  };
+
+  std::shared_future<typename GoalHandle::SharedPtr> gh_future;
+  // send goal
+  std::vector<std::vector<double>> points_positions{{{4.0, 5.0, 6.0}}, {{7.0, 8.0, 9.0}}};
+  {
+    std::vector<JointTrajectoryPoint> points;
+    JointTrajectoryPoint point1;
+    point1.time_from_start = rclcpp::Duration::from_seconds(0.1);
+    point1.positions.resize(joint_names_.size());
+
+    point1.positions = points_positions.at(0);
+    points.push_back(point1);
+
+    JointTrajectoryPoint point2;
+    point2.time_from_start = rclcpp::Duration::from_seconds(0.2);
+    point2.positions.resize(joint_names_.size());
+
+    point2.positions = points_positions.at(1);
+    points.push_back(point2);
+
+    gh_future = sendActionGoal(points, 1.0, goal_options_);
+  }
+  controller_hw_thread_.join();
+
+  EXPECT_TRUE(gh_future.get());
+  EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
+
+  // run an update
+  updateControllerAsync(rclcpp::Duration::from_seconds(0.01));
+
+  // it should be holding the last position goal
+  // i.e., active but trivial trajectory (one point only)
+  // note: the action goal also is a trivial trajectory
+  expectCommandPoint(points_positions[1]);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+  ScaledJTCTests, TestTrajectoryActionsTestScalingFactor, ::testing::Values(0.25, 0.87, 1.0, 2.0));

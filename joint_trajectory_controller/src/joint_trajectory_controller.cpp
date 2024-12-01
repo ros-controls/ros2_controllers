@@ -161,7 +161,12 @@ controller_interface::return_type JointTrajectoryController::update(
   {
     if (scaling_command_interface_.has_value())
     {
-      scaling_command_interface_->get().set_value(scaling_factor_.load());
+      if (!scaling_command_interface_->get().set_value(scaling_factor_.load()))
+      {
+        RCLCPP_ERROR(
+          get_node()->get_logger(),
+          "Could not set speed scaling factor through command interfaces.");
+      }
     }
   }
 
@@ -229,11 +234,14 @@ controller_interface::return_type JointTrajectoryController::update(
     // Sample expected state from the trajectory
     traj_external_point_ptr_->sample(
       traj_time_, interpolation_method_, state_desired_, start_segment_itr, end_segment_itr);
+    state_desired_.time_from_start = traj_time_ - traj_external_point_ptr_->time_from_start();
 
     // Sample setpoint for next control cycle
     const bool valid_point = traj_external_point_ptr_->sample(
       traj_time_ + update_period_, interpolation_method_, command_next_, start_segment_itr,
       end_segment_itr, false);
+
+    state_current_.time_from_start = time - traj_external_point_ptr_->time_from_start();
 
     if (valid_point)
     {
@@ -352,7 +360,6 @@ controller_interface::return_type JointTrajectoryController::update(
         auto feedback = std::make_shared<FollowJTrajAction::Feedback>();
         feedback->header.stamp = time;
         feedback->joint_names = params_.joints;
-
         feedback->actual = state_current_;
         feedback->desired = state_desired_;
         feedback->error = state_error_;
@@ -933,7 +940,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   {
     RCLCPP_INFO(
       get_node()->get_logger(),
-      "No scaling interface set. This controller will not use speed scaling.");
+      "No scaling interface set. This controller will not read speed scaling from the hardware.");
   }
 
   if (get_update_rate() == 0)
