@@ -8,6 +8,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
 endif()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
+  control_toolbox
   controller_interface
   generate_parameter_library
   geometry_msgs
@@ -37,7 +38,6 @@ generate_parameter_library(diff_drive_controller_parameters
 add_library(diff_drive_controller SHARED
   src/diff_drive_controller.cpp
   src/odometry.cpp
-  src/speed_limiter.cpp
 )
 target_compile_features(diff_drive_controller PUBLIC cxx_std_17)
 target_include_directories(diff_drive_controller PUBLIC
