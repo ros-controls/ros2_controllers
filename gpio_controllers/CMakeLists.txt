@@ -8,8 +8,7 @@ endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic -Werror=conversion -Werror=unused-but-set-variable
-  -Werror=return-type -Werror=format  -Werror=range-loop-construct
-  -Werror=missing-braces)
+  -Werror=return-type -Werror=format -Werror=missing-braces)
 endif()
 
 # find dependencies
