@@ -35,37 +35,67 @@ public:
    * \param [in] has_jerk_limits         if true, applies jerk limits
    * \param [in] min_velocity Minimum velocity [m/s], usually <= 0
    * \param [in] max_velocity Maximum velocity [m/s], usually >= 0
-   * \param [in] min_acceleration Minimum acceleration [m/s^2], usually <= 0
+   * \param [in] max_deceleration Maximum deceleration [m/s^2], usually <= 0
    * \param [in] max_acceleration Maximum acceleration [m/s^2], usually >= 0
    * \param [in] min_jerk Minimum jerk [m/s^3], usually <= 0
    * \param [in] max_jerk Maximum jerk [m/s^3], usually >= 0
    */
-  SpeedLimiter(
+  [[deprecated]] SpeedLimiter(
     bool has_velocity_limits = true, bool has_acceleration_limits = true,
     bool has_jerk_limits = true, double min_velocity = std::numeric_limits<double>::quiet_NaN(),
     double max_velocity = std::numeric_limits<double>::quiet_NaN(),
-    double min_acceleration = std::numeric_limits<double>::quiet_NaN(),
+    double max_deceleration = std::numeric_limits<double>::quiet_NaN(),
     double max_acceleration = std::numeric_limits<double>::quiet_NaN(),
     double min_jerk = std::numeric_limits<double>::quiet_NaN(),
     double max_jerk = std::numeric_limits<double>::quiet_NaN())
   {
-    // START DEPRECATED
     if (!has_velocity_limits)
     {
       min_velocity = max_velocity = std::numeric_limits<double>::quiet_NaN();
     }
     if (!has_acceleration_limits)
     {
-      min_acceleration = max_acceleration = std::numeric_limits<double>::quiet_NaN();
+      max_deceleration = max_acceleration = std::numeric_limits<double>::quiet_NaN();
     }
     if (!has_jerk_limits)
     {
       min_jerk = max_jerk = std::numeric_limits<double>::quiet_NaN();
     }
-    // END DEPRECATED
     speed_limiter_ = control_toolbox::RateLimiter<double>(
-      min_velocity, max_velocity, min_acceleration, max_acceleration, min_acceleration,
-      max_acceleration, min_jerk, max_jerk);
+      min_velocity, max_velocity, max_deceleration, max_acceleration,
+      std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(), min_jerk,
+      max_jerk);
+  }
+
+  /**
+   * \brief Constructor
+   * \param [in] has_velocity_limits     if true, applies velocity limits
+   * \param [in] has_acceleration_limits if true, applies acceleration limits
+   * \param [in] has_jerk_limits         if true, applies jerk limits
+   * \param [in] min_velocity Minimum velocity [m/s], usually <= 0
+   * \param [in] max_velocity Maximum velocity [m/s], usually >= 0
+   * \param [in] max_acceleration_reverse Maximum acceleration in reverse direction [m/s^2], usually
+   * <= 0
+   * \param [in] max_acceleration Maximum acceleration [m/s^2], usually >= 0
+   * \param [in] max_deceleration Maximum deceleration [m/s^2], usually <= 0
+   * \param [in] max_deceleration_reverse Maximum deceleration in reverse direction [m/s^2], usually
+   * >= 0
+   * \param [in] min_jerk Minimum jerk [m/s^3], usually <= 0
+   * \param [in] max_jerk Maximum jerk [m/s^3], usually >= 0
+   */
+  SpeedLimiter(
+    double min_velocity = std::numeric_limits<double>::quiet_NaN(),
+    double max_velocity = std::numeric_limits<double>::quiet_NaN(),
+    double max_acceleration_reverse = std::numeric_limits<double>::quiet_NaN(),
+    double max_acceleration = std::numeric_limits<double>::quiet_NaN(),
+    double max_deceleration = std::numeric_limits<double>::quiet_NaN(),
+    double max_deceleration_reverse = std::numeric_limits<double>::quiet_NaN(),
+    double min_jerk = std::numeric_limits<double>::quiet_NaN(),
+    double max_jerk = std::numeric_limits<double>::quiet_NaN())
+  {
+    speed_limiter_ = control_toolbox::RateLimiter<double>(
+      min_velocity, max_velocity, max_acceleration_reverse, max_acceleration, max_deceleration,
+      max_deceleration_reverse, min_jerk, max_jerk);
   }
 
   /**

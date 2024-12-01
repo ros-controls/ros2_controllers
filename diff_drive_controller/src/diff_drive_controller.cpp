@@ -45,7 +45,14 @@ using hardware_interface::HW_IF_POSITION;
 using hardware_interface::HW_IF_VELOCITY;
 using lifecycle_msgs::msg::State;
 
-DiffDriveController::DiffDriveController() : controller_interface::ControllerInterface() {}
+DiffDriveController::DiffDriveController()
+: controller_interface::ControllerInterface(),
+  // dummy limiter, will be created in on_configure
+  // could be done with shared_ptr instead -> but will break ABI
+  limiter_angular_(std::numeric_limits<double>::quiet_NaN()),
+  limiter_linear_(std::numeric_limits<double>::quiet_NaN())
+{
+}
 
 const char * DiffDriveController::feedback_type() const
 {
@@ -303,6 +310,8 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
     RCLCPP_WARN(
       logger,
       "[deprecated] has_velocity_limits parameter is deprecated. Set the respective limits to NAN");
+    params_.linear.x.min_velocity = params_.linear.x.max_velocity =
+      std::numeric_limits<double>::quiet_NaN();
   }
   if (!params_.linear.x.has_acceleration_limits)
   {
@@ -310,18 +319,25 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
       logger,
       "[deprecated] has_acceleration_limits parameter is deprecated. Set the respective limits to "
       "NAN");
+    params_.linear.x.max_deceleration = params_.linear.x.max_acceleration =
+      params_.linear.x.max_deceleration_reverse = params_.linear.x.max_acceleration_reverse =
+        std::numeric_limits<double>::quiet_NaN();
   }
   if (!params_.linear.x.has_jerk_limits)
   {
     RCLCPP_WARN(
       logger,
       "[deprecated] has_jerk_limits parameter is deprecated. Set the respective limits to NAN");
+    params_.linear.x.min_jerk = params_.linear.x.max_jerk =
+      std::numeric_limits<double>::quiet_NaN();
   }
   if (!params_.angular.z.has_velocity_limits)
   {
     RCLCPP_WARN(
       logger,
       "[deprecated] has_velocity_limits parameter is deprecated. Set the respective limits to NAN");
+    params_.angular.z.min_velocity = params_.angular.z.max_velocity =
+      std::numeric_limits<double>::quiet_NaN();
   }
   if (!params_.angular.z.has_acceleration_limits)
   {
@@ -329,25 +345,30 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
       logger,
       "[deprecated] has_acceleration_limits parameter is deprecated. Set the respective limits to "
       "NAN");
+    params_.angular.z.max_deceleration = params_.angular.z.max_acceleration =
+      params_.angular.z.max_deceleration_reverse = params_.angular.z.max_acceleration_reverse =
+        std::numeric_limits<double>::quiet_NaN();
   }
   if (!params_.angular.z.has_jerk_limits)
   {
     RCLCPP_WARN(
       logger,
       "[deprecated] has_jerk_limits parameter is deprecated. Set the respective limits to NAN");
+    params_.angular.z.min_jerk = params_.angular.z.max_jerk =
+      std::numeric_limits<double>::quiet_NaN();
   }
   // END DEPRECATED
   limiter_linear_ = SpeedLimiter(
-    params_.linear.x.has_velocity_limits, params_.linear.x.has_acceleration_limits,
-    params_.linear.x.has_jerk_limits, params_.linear.x.min_velocity, params_.linear.x.max_velocity,
-    params_.linear.x.min_acceleration, params_.linear.x.max_acceleration, params_.linear.x.min_jerk,
-    params_.linear.x.max_jerk);
+    params_.linear.x.min_velocity, params_.linear.x.max_velocity,
+    params_.linear.x.max_acceleration_reverse, params_.linear.x.max_acceleration,
+    params_.linear.x.max_deceleration, params_.linear.x.max_deceleration_reverse,
+    params_.linear.x.min_jerk, params_.linear.x.max_jerk);
 
   limiter_angular_ = SpeedLimiter(
-    params_.angular.z.has_velocity_limits, params_.angular.z.has_acceleration_limits,
-    params_.angular.z.has_jerk_limits, params_.angular.z.min_velocity,
-    params_.angular.z.max_velocity, params_.angular.z.min_acceleration,
-    params_.angular.z.max_acceleration, params_.angular.z.min_jerk, params_.angular.z.max_jerk);
+    params_.angular.z.min_velocity, params_.angular.z.max_velocity,
+    params_.angular.z.max_acceleration_reverse, params_.angular.z.max_acceleration,
+    params_.angular.z.max_deceleration, params_.angular.z.max_deceleration_reverse,
+    params_.angular.z.min_jerk, params_.angular.z.max_jerk);
 
   if (!reset())
   {
