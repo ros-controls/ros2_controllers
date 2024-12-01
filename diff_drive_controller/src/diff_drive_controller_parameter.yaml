@@ -116,17 +116,17 @@ diff_drive_controller:
       has_velocity_limits: {
         type: bool,
         default_value: true,
-        description: "deprecated, set the respective limits to NAN for deactivation"
+        description: "deprecated, set the respective limits to ``.NAN`` for deactivation"
       }
       has_acceleration_limits: {
         type: bool,
         default_value: true,
-        description: "deprecated, set the respective limits to NAN for deactivation"
+        description: "deprecated, set the respective limits to ``.NAN`` for deactivation"
       }
       has_jerk_limits: {
         type: bool,
         default_value: true,
-        description: "deprecated, set the respective limits to NAN for deactivation"
+        description: "deprecated, set the respective limits to ``.NAN`` for deactivation"
       }
       max_velocity: {
         type: double,
@@ -198,17 +198,17 @@ diff_drive_controller:
       has_velocity_limits: {
         type: bool,
         default_value: true,
-        description: "deprecated, set the respective limits to NAN for deactivation"
+        description: "deprecated, set the respective limits to ``.NAN`` for deactivation"
       }
       has_acceleration_limits: {
         type: bool,
         default_value: true,
-        description: "deprecated, set the respective limits to NAN for deactivation"
+        description: "deprecated, set the respective limits to ``.NAN`` for deactivation"
       }
       has_jerk_limits: {
         type: bool,
         default_value: true,
-        description: "deprecated, set the respective limits to NAN for deactivation"
+        description: "deprecated, set the respective limits to ``.NAN`` for deactivation"
       }
       max_velocity: {
         type: double,
