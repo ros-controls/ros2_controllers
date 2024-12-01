@@ -24,6 +24,7 @@
 #include "controller_interface/controller_interface.hpp"
 #include "gpio_command_controller_parameters.hpp"
 #include "gpio_controllers/visibility_control.h"
+#include "hardware_interface/hardware_info.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_buffer.h"
@@ -87,8 +88,6 @@ private:
   void apply_command(
     const CmdType & gpio_commands, std::size_t gpio_index,
     std::size_t command_interface_index) const;
-  bool should_broadcast_all_interfaces_of_configured_gpios() const;
-  void set_all_state_interfaces_of_configured_gpios();
   InterfacesNames get_gpios_state_interfaces_names(const std::string & gpio_name) const;
   bool update_dynamic_map_parameters();
   std::vector<hardware_interface::ComponentInfo> get_gpios_from_urdf() const;
