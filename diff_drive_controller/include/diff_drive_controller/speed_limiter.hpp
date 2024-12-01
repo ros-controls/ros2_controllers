@@ -19,8 +19,6 @@
 #ifndef DIFF_DRIVE_CONTROLLER__SPEED_LIMITER_HPP_
 #define DIFF_DRIVE_CONTROLLER__SPEED_LIMITER_HPP_
 
-// TODO(christophfroehlich) remove this file after the next release
-
 #include "control_toolbox/rate_limiter.hpp"
 
 namespace diff_drive_controller
