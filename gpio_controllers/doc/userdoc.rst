@@ -23,12 +23,11 @@ This controller uses the `generate_parameter_library <https://github.com/PickNik
 .. generate_parameter_library_details::
   ../src/gpio_command_controller_parameters.yaml
 
-The controller expects at least one GPIO interface and the corresponding command interface names or state interface. However, these Command and State interfaces are optional. The controller behaves as a broadcaster when no Command Interface is present, thereby publishing the configured GPIO state interfaces if set, else the one present in the URDF.
+The controller expects at least one GPIO interface and the corresponding command interface names or state interface. However, these Command and State interfaces are optional. The controller behaves as a broadcaster when no Command Interface is present, thereby publishing the configured GPIO state interfaces if set.
 
 .. note::
 
-  When no state interface is provided in the param file, the controller will try to use state_interfaces from ros2_control's config placed in the URDF for configured gpio interfaces.
-  However, command interfaces will not be configured based on the available URDF setup.
+  When no state or command interface is provided in the param file, the controller will fail during initialization.
 
 .. code-block:: yaml
 
