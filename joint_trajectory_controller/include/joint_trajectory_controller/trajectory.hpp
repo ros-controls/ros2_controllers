@@ -69,6 +69,11 @@ public:
    * acceleration respectively. Deduction assumes that the provided velocity or acceleration have to
    * be reached at the time defined in the segment.
    *
+   * This function by default assumes that sampling is only done at monotonically increasing \p
+   * sample_time for any trajectory. That means, it will only search for a point matching the sample
+   * time after the point it has been called before. If this isn't desired, set \p
+   * search_monotonically_increasing to false.
+   *
    * Specific case returns for start_segment_itr and end_segment_itr:
    * - Sampling before the trajectory start:
    *   start_segment_itr = begin(), end_segment_itr = begin()
@@ -85,16 +90,22 @@ public:
    *
    * \param[in] sample_time Time at which trajectory will be sampled.
    * \param[in] interpolation_method Specify whether splines, another method, or no interpolation at
-   * all. \param[out] expected_state Calculated new at \p sample_time. \param[out] start_segment_itr
-   * Iterator to the start segment for given \p sample_time. See description above. \param[out]
-   * end_segment_itr Iterator to the end segment for given \p sample_time. See description above.
+   *      all.
+   * \param[out] output_state Calculated new at \p sample_time.
+   * \param[out] start_segment_itr Iterator to the start segment for given \p sample_time. See
+   *      description above.
+   * \param[out] end_segment_itr Iterator to the end segment for given \p sample_time. See
+   *      description above.
+   * \param[in] search_monotonically_increasing If set to true, the next sample call will start
+   *      searching in the trajectory at the index of this call's result.
    */
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   bool sample(
     const rclcpp::Time & sample_time,
     const interpolation_methods::InterpolationMethod interpolation_method,
     trajectory_msgs::msg::JointTrajectoryPoint & output_state,
-    TrajectoryPointConstIter & start_segment_itr, TrajectoryPointConstIter & end_segment_itr);
+    TrajectoryPointConstIter & start_segment_itr, TrajectoryPointConstIter & end_segment_itr,
+    const bool search_monotonically_increasing = true);
 
   /**
    * Do interpolation between 2 states given a time in between their respective timestamps
@@ -147,6 +158,14 @@ public:
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   bool is_sampled_already() const { return sampled_already_; }
 
+  /// Get the index of the segment start returned by the last \p sample() operation.
+  /**
+   * As the trajectory is only accessed at monotonically increasing sampling times, this index is
+   * used to speed up the selection of relevant trajectory points.
+   */
+  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
+  size_t last_sample_index() const { return last_sample_idx_; }
+
 private:
   void deduce_from_derivatives(
     trajectory_msgs::msg::JointTrajectoryPoint & first_state,
@@ -160,6 +179,7 @@ private:
   trajectory_msgs::msg::JointTrajectoryPoint state_before_traj_msg_;
 
   bool sampled_already_ = false;
+  size_t last_sample_idx_ = 0;
 };
 
 /**

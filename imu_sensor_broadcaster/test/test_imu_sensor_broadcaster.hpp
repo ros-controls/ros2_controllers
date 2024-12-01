@@ -54,7 +54,7 @@ public:
 protected:
   const std::string sensor_name_ = "imu_sensor";
   const std::string frame_id_ = "imu_sensor_frame";
-  std::array<double, 10> sensor_values_ = {1.1, 2.2, 3.3, 4.4, 5.5, 6.6, 7.7, 8.8, 9.9, 10.10};
+  std::array<double, 10> sensor_values_ = {{1.1, 2.2, 3.3, 4.4, 5.5, 6.6, 7.7, 8.8, 9.9, 10.10}};
   hardware_interface::StateInterface imu_orientation_x_{
     sensor_name_, "orientation.x", &sensor_values_[0]};
   hardware_interface::StateInterface imu_orientation_y_{

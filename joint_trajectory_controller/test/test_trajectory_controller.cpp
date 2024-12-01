@@ -178,6 +178,7 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
   SetUpTrajectoryController(executor);
   traj_controller_->get_node()->set_parameter(
     rclcpp::Parameter("allow_nonzero_velocity_at_trajectory_end", true));
+  traj_controller_->get_node()->set_parameter(rclcpp::Parameter("update_rate", 10));
 
   // This call is replacing the way parameters are set via launch
   auto state = traj_controller_->configure();
@@ -658,9 +659,20 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_angle_wraparoun
   const rclcpp::Duration controller_period =
     rclcpp::Duration::from_seconds(1.0 / traj_controller_->get_update_rate());
 
-  updateControllerAsync(
+  auto end_time = updateControllerAsync(
     rclcpp::Duration(FIRST_POINT_TIME) - controller_period, rclcpp::Time(0, 0, RCL_STEADY_TIME),
     controller_period);
+  if (traj_controller_->has_position_command_interface())
+  {
+    // check command interface
+    // One step before the first point, the target should hit the setpoint
+    EXPECT_NEAR(points[0][0], joint_pos_[0], COMMON_THRESHOLD);
+    EXPECT_NEAR(points[0][1], joint_pos_[1], COMMON_THRESHOLD);
+    EXPECT_NEAR(points[0][2], joint_pos_[2], COMMON_THRESHOLD);
+  }
+
+  // Propagate to actual setpoint time
+  traj_controller_->update(end_time + controller_period, controller_period);
 
   // get states from class variables
   auto state_feedback = traj_controller_->get_state_feedback();
@@ -684,14 +696,6 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_angle_wraparoun
   EXPECT_NEAR(state_error.positions[0], state_reference.positions[0] - INITIAL_POS_JOINTS[0], EPS);
   EXPECT_NEAR(state_error.positions[1], state_reference.positions[1] - INITIAL_POS_JOINTS[1], EPS);
   EXPECT_NEAR(state_error.positions[2], state_reference.positions[2] - INITIAL_POS_JOINTS[2], EPS);
-
-  if (traj_controller_->has_position_command_interface())
-  {
-    // check command interface
-    EXPECT_NEAR(points[0][0], joint_pos_[0], COMMON_THRESHOLD);
-    EXPECT_NEAR(points[0][1], joint_pos_[1], COMMON_THRESHOLD);
-    EXPECT_NEAR(points[0][2], joint_pos_[2], COMMON_THRESHOLD);
-  }
 
   if (traj_controller_->has_velocity_command_interface())
   {
@@ -765,9 +769,21 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_angle_wraparound)
 
   const rclcpp::Duration controller_period =
     rclcpp::Duration::from_seconds(1.0 / traj_controller_->get_update_rate());
-  updateControllerAsync(
+  auto end_time = updateControllerAsync(
     rclcpp::Duration(FIRST_POINT_TIME) - controller_period, rclcpp::Time(0, 0, RCL_STEADY_TIME),
     controller_period);
+
+  if (traj_controller_->has_position_command_interface())
+  {
+    // check command interface
+    // One step before the first point, the target should hit the setpoint
+    EXPECT_NEAR(points[0][0], joint_pos_[0], COMMON_THRESHOLD);
+    EXPECT_NEAR(points[0][1], joint_pos_[1], COMMON_THRESHOLD);
+    EXPECT_NEAR(points[0][2], joint_pos_[2], COMMON_THRESHOLD);
+  }
+
+  // Propagate to actual setpoint time
+  traj_controller_->update(end_time + controller_period, controller_period);
 
   // get states from class variables
   auto state_feedback = traj_controller_->get_state_feedback();
@@ -792,14 +808,6 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_angle_wraparound)
   EXPECT_NEAR(state_error.positions[1], state_reference.positions[1] - INITIAL_POS_JOINTS[1], EPS);
   EXPECT_NEAR(
     state_error.positions[2], state_reference.positions[2] - INITIAL_POS_JOINTS[2] - 2 * M_PI, EPS);
-
-  if (traj_controller_->has_position_command_interface())
-  {
-    // check command interface
-    EXPECT_NEAR(points[0][0], joint_pos_[0], COMMON_THRESHOLD);
-    EXPECT_NEAR(points[0][1], joint_pos_[1], COMMON_THRESHOLD);
-    EXPECT_NEAR(points[0][2], joint_pos_[2], COMMON_THRESHOLD);
-  }
 
   if (traj_controller_->has_velocity_command_interface())
   {
@@ -1599,7 +1607,6 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_partial_old_trajectory
   // send points_old and wait to reach first point
   publish(time_from_start, points_old, rclcpp::Time());
   expected_actual.positions = {points_old[0].begin(), points_old[0].end()};
-  expected_desired = expected_actual;
   traj_controller_->wait_for_trajectory(executor);
   auto end_time = updateControllerAsync(
     rclcpp::Duration(delay), rclcpp::Time(0, 0, RCL_STEADY_TIME),
