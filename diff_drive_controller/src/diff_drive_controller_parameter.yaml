@@ -115,75 +115,163 @@ diff_drive_controller:
     x:
       has_velocity_limits: {
         type: bool,
-        default_value: false,
+        default_value: true,
+        description: "deprecated, set the respective limits to NAN for deactivation"
       }
       has_acceleration_limits: {
         type: bool,
-        default_value: false,
+        default_value: true,
+        description: "deprecated, set the respective limits to NAN for deactivation"
       }
       has_jerk_limits: {
         type: bool,
-        default_value: false,
+        default_value: true,
+        description: "deprecated, set the respective limits to NAN for deactivation"
       }
       max_velocity: {
         type: double,
         default_value: .NAN,
+        validation: {
+          "diff_drive_controller::gt_eq_or_nan<>": [0.0]
+        }
       }
       min_velocity: {
         type: double,
         default_value: .NAN,
+        validation: {
+          "diff_drive_controller::lt_eq_or_nan<>": [0.0]
+        }
       }
       max_acceleration: {
         type: double,
         default_value: .NAN,
+        description: "Maximum acceleration in forward direction.",
+        validation: {
+          "diff_drive_controller::gt_eq_or_nan<>": [0.0]
+        }
+      }
+      max_deceleration: {
+        type: double,
+        default_value: .NAN,
+        description: "Maximum deceleration in forward direction.",
+        validation: {
+          "diff_drive_controller::lt_eq_or_nan<>": [0.0]
+        }
       }
       min_acceleration: {
         type: double,
         default_value: .NAN,
+        description: "deprecated, use max_deceleration"
+      }
+      max_acceleration_reverse: {
+        type: double,
+        default_value: .NAN,
+        description: "Maximum acceleration in reverse direction. If not set, -max_acceleration will be used.",
+        validation: {
+          "diff_drive_controller::lt_eq_or_nan<>": [0.0]
+        }
+      }
+      max_deceleration_reverse: {
+        type: double,
+        default_value: .NAN,
+        description: "Maximum deceleration in reverse direction. If not set, -max_deceleration will be used.",
+        validation: {
+          "diff_drive_controller::gt_eq_or_nan<>": [0.0]
+        }
       }
       max_jerk: {
         type: double,
         default_value: .NAN,
+        validation: {
+          "diff_drive_controller::gt_eq_or_nan<>": [0.0]
+        }
       }
       min_jerk: {
         type: double,
         default_value: .NAN,
+        validation: {
+          "diff_drive_controller::lt_eq_or_nan<>": [0.0]
+        }
       }
   angular:
     z:
       has_velocity_limits: {
         type: bool,
-        default_value: false,
+        default_value: true,
+        description: "deprecated, set the respective limits to NAN for deactivation"
       }
       has_acceleration_limits: {
         type: bool,
-        default_value: false,
+        default_value: true,
+        description: "deprecated, set the respective limits to NAN for deactivation"
       }
       has_jerk_limits: {
         type: bool,
-        default_value: false,
+        default_value: true,
+        description: "deprecated, set the respective limits to NAN for deactivation"
       }
       max_velocity: {
         type: double,
         default_value: .NAN,
+        validation: {
+          "diff_drive_controller::gt_eq_or_nan<>": [0.0]
+        }
       }
       min_velocity: {
         type: double,
         default_value: .NAN,
+        validation: {
+          "diff_drive_controller::lt_eq_or_nan<>": [0.0]
+        }
       }
       max_acceleration: {
         type: double,
         default_value: .NAN,
+        description: "Maximum acceleration in positive direction.",
+        validation: {
+          "diff_drive_controller::gt_eq_or_nan<>": [0.0]
+        }
+      }
+      max_deceleration: {
+        type: double,
+        default_value: .NAN,
+        description: "Maximum deceleration in positive direction.",
+        validation: {
+          "diff_drive_controller::lt_eq_or_nan<>": [0.0]
+        }
       }
       min_acceleration: {
         type: double,
         default_value: .NAN,
+        description: "deprecated, use max_deceleration"
+      }
+      max_acceleration_reverse: {
+        type: double,
+        default_value: .NAN,
+        description: "Maximum acceleration in negative direction. If not set, -max_acceleration will be used.",
+        validation: {
+          "diff_drive_controller::lt_eq_or_nan<>": [0.0]
+        }
+      }
+      max_deceleration_reverse: {
+        type: double,
+        default_value: .NAN,
+        description: "Maximum deceleration in negative direction. If not set, -max_deceleration will be used.",
+        validation: {
+          "diff_drive_controller::gt_eq_or_nan<>": [0.0]
+        }
       }
       max_jerk: {
         type: double,
         default_value: .NAN,
+        validation: {
+          "diff_drive_controller::gt_eq_or_nan<>": [0.0]
+        }
       }
       min_jerk: {
         type: double,
         default_value: .NAN,
+        validation: {
+          "diff_drive_controller::lt_eq_or_nan<>": [0.0]
+        }
       }

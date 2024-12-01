@@ -21,11 +21,11 @@
 
 // TODO(christophfroehlich) remove this file after the next release
 
-#include "control_toolbox/speed_limiter.hpp"
+#include "control_toolbox/rate_limiter.hpp"
 
 namespace diff_drive_controller
 {
-class [[deprecated("Use control_toolbox/speed_limiter instead")]] SpeedLimiter
+class SpeedLimiter
 {
 public:
   /**
@@ -41,14 +41,28 @@ public:
    * \param [in] max_jerk Maximum jerk [m/s^3], usually >= 0
    */
   SpeedLimiter(
-    bool has_velocity_limits = false, bool has_acceleration_limits = false,
-    bool has_jerk_limits = false, double min_velocity = NAN, double max_velocity = NAN,
+    bool has_velocity_limits = true, bool has_acceleration_limits = true,
+    bool has_jerk_limits = true, double min_velocity = NAN, double max_velocity = NAN,
     double min_acceleration = NAN, double max_acceleration = NAN, double min_jerk = NAN,
     double max_jerk = NAN)
-  : speed_limiter_(
-      has_velocity_limits, has_acceleration_limits, has_jerk_limits, min_velocity, max_velocity,
-      min_acceleration, max_acceleration, min_jerk, max_jerk)
   {
+    // START DEPRECATED
+    if (!has_velocity_limits)
+    {
+      min_velocity = max_velocity = NAN;
+    }
+    if (!has_acceleration_limits)
+    {
+      min_acceleration = max_acceleration = NAN;
+    }
+    if (!has_jerk_limits)
+    {
+      min_jerk = max_jerk = NAN;
+    }
+    // END DEPRECATED
+    speed_limiter_ = control_toolbox::RateLimiter<double>(
+      min_velocity, max_velocity, min_acceleration, max_acceleration, min_acceleration,
+      max_acceleration, min_jerk, max_jerk);
   }
 
   /**
@@ -69,7 +83,7 @@ public:
    * \param [in, out] v Velocity [m/s]
    * \return Limiting factor (1.0 if none)
    */
-  double limit_velocity(double & v) { return speed_limiter_.limit_velocity(v); }
+  double limit_velocity(double & v) { return speed_limiter_.limit_value(v); }
 
   /**
    * \brief Limit the acceleration
@@ -80,7 +94,7 @@ public:
    */
   double limit_acceleration(double & v, double v0, double dt)
   {
-    return speed_limiter_.limit_acceleration(v, v0, dt);
+    return speed_limiter_.limit_first_derivative(v, v0, dt);
   }
 
   /**
@@ -94,11 +108,11 @@ public:
    */
   double limit_jerk(double & v, double v0, double v1, double dt)
   {
-    return speed_limiter_.limit_jerk(v, v0, v1, dt);
+    return speed_limiter_.limit_second_derivative(v, v0, v1, dt);
   }
 
 private:
-  control_toolbox::SpeedLimiter speed_limiter_;  // Instance of the new SpeedLimiter
+  control_toolbox::RateLimiter<double> speed_limiter_;  // Instance of the new RateLimiter
 };
 
 }  // namespace diff_drive_controller

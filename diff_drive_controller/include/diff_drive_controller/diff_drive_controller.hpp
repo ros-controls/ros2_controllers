@@ -26,9 +26,9 @@
 #include <string>
 #include <vector>
 
-#include "control_toolbox/speed_limiter.hpp"
 #include "controller_interface/controller_interface.hpp"
 #include "diff_drive_controller/odometry.hpp"
+#include "diff_drive_controller/speed_limiter.hpp"
 #include "diff_drive_controller/visibility_control.h"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
@@ -135,8 +135,8 @@ protected:
   std::queue<TwistStamped> previous_commands_;  // last two commands
 
   // speed limiters
-  control_toolbox::SpeedLimiter limiter_linear_;
-  control_toolbox::SpeedLimiter limiter_angular_;
+  SpeedLimiter limiter_linear_;
+  SpeedLimiter limiter_angular_;
 
   bool publish_limited_velocity_ = false;
   std::shared_ptr<rclcpp::Publisher<TwistStamped>> limited_velocity_publisher_ = nullptr;

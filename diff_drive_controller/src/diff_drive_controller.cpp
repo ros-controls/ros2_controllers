@@ -296,13 +296,54 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   cmd_vel_timeout_ = std::chrono::milliseconds{static_cast<int>(params_.cmd_vel_timeout * 1000.0)};
   publish_limited_velocity_ = params_.publish_limited_velocity;
 
-  limiter_linear_ = control_toolbox::SpeedLimiter(
+  // TODO(christophfroehlich) remove deprecated parameters
+  // START DEPRECATED
+  if (!params_.linear.x.has_velocity_limits)
+  {
+    RCLCPP_WARN(
+      logger,
+      "[deprecated] has_velocity_limits parameter is deprecated. Set the respective limits to NAN");
+  }
+  if (!params_.linear.x.has_acceleration_limits)
+  {
+    RCLCPP_WARN(
+      logger,
+      "[deprecated] has_acceleration_limits parameter is deprecated. Set the respective limits to "
+      "NAN");
+  }
+  if (!params_.linear.x.has_jerk_limits)
+  {
+    RCLCPP_WARN(
+      logger,
+      "[deprecated] has_jerk_limits parameter is deprecated. Set the respective limits to NAN");
+  }
+  if (!params_.angular.z.has_velocity_limits)
+  {
+    RCLCPP_WARN(
+      logger,
+      "[deprecated] has_velocity_limits parameter is deprecated. Set the respective limits to NAN");
+  }
+  if (!params_.angular.z.has_acceleration_limits)
+  {
+    RCLCPP_WARN(
+      logger,
+      "[deprecated] has_acceleration_limits parameter is deprecated. Set the respective limits to "
+      "NAN");
+  }
+  if (!params_.angular.z.has_jerk_limits)
+  {
+    RCLCPP_WARN(
+      logger,
+      "[deprecated] has_jerk_limits parameter is deprecated. Set the respective limits to NAN");
+  }
+  // END DEPRECATED
+  limiter_linear_ = SpeedLimiter(
     params_.linear.x.has_velocity_limits, params_.linear.x.has_acceleration_limits,
     params_.linear.x.has_jerk_limits, params_.linear.x.min_velocity, params_.linear.x.max_velocity,
     params_.linear.x.min_acceleration, params_.linear.x.max_acceleration, params_.linear.x.min_jerk,
     params_.linear.x.max_jerk);
 
-  limiter_angular_ = control_toolbox::SpeedLimiter(
+  limiter_angular_ = SpeedLimiter(
     params_.angular.z.has_velocity_limits, params_.angular.z.has_acceleration_limits,
     params_.angular.z.has_jerk_limits, params_.angular.z.min_velocity,
     params_.angular.z.max_velocity, params_.angular.z.min_acceleration,

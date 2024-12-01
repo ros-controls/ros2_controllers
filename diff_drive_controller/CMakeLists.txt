@@ -33,6 +33,7 @@ add_compile_definitions(RCPPUTILS_VERSION_MINOR=${rcpputils_VERSION_MINOR})
 
 generate_parameter_library(diff_drive_controller_parameters
   src/diff_drive_controller_parameter.yaml
+  include/diff_drive_controller/custom_validators.hpp
 )
 
 add_library(diff_drive_controller SHARED
@@ -44,7 +45,9 @@ target_include_directories(diff_drive_controller PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/diff_drive_controller>
 )
-target_link_libraries(diff_drive_controller PUBLIC diff_drive_controller_parameters)
+target_link_libraries(diff_drive_controller
+  PUBLIC
+    diff_drive_controller_parameters)
 ament_target_dependencies(diff_drive_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
