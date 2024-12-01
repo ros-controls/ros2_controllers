@@ -8,7 +8,7 @@ endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic -Werror=conversion -Werror=unused-but-set-variable
-  -Werror=return-type -Werror=shadow -Werror=format  -Werror=range-loop-construct
+  -Werror=return-type -Werror=format  -Werror=range-loop-construct
   -Werror=missing-braces)
 endif()
 
@@ -76,7 +76,6 @@ if(BUILD_TESTING)
   target_include_directories(test_load_gpio_command_controller PRIVATE include)
   ament_target_dependencies(test_load_gpio_command_controller
     controller_manager
-    hardware_interface
     ros2_control_test_assets
   )
 

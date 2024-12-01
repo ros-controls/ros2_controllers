@@ -32,18 +32,6 @@ void print_interface(const rclcpp::Logger & logger, const T & command_interfaces
     RCLCPP_ERROR(logger, "Got %s", interface_name.c_str());
   }
 }
-
-std::vector<hardware_interface::ComponentInfo> extract_gpios_from_hardware_info(
-  const std::vector<hardware_interface::HardwareInfo> & hardware_infos)
-{
-  std::vector<hardware_interface::ComponentInfo> result;
-  for (const auto & hardware_info : hardware_infos)
-  {
-    std::copy(
-      hardware_info.gpios.begin(), hardware_info.gpios.end(), std::back_insert_iterator(result));
-  }
-  return result;
-}
 }  // namespace
 
 namespace gpio_controllers
@@ -181,58 +169,8 @@ void GpioCommandController::store_command_interface_types()
   }
 }
 
-bool GpioCommandController::should_broadcast_all_interfaces_of_configured_gpios() const
-{
-  auto are_interfaces_empty = [](const auto & interfaces)
-  { return interfaces.second.interfaces.empty(); };
-  return std::all_of(
-    params_.state_interfaces.gpios_map.cbegin(), params_.state_interfaces.gpios_map.cend(),
-    are_interfaces_empty);
-}
-
-std::vector<hardware_interface::ComponentInfo> GpioCommandController::get_gpios_from_urdf() const
-try
-{
-  return extract_gpios_from_hardware_info(
-    hardware_interface::parse_control_resources_from_urdf(get_robot_description()));
-}
-catch (const std::exception & e)
-{
-  fprintf(stderr, "Exception thrown during extracting gpios info from urdf %s \n", e.what());
-  return {};
-}
-
-void GpioCommandController::set_all_state_interfaces_of_configured_gpios()
-{
-  const auto gpios{get_gpios_from_urdf()};
-  for (const auto & gpio_name : params_.gpios)
-  {
-    for (const auto & gpio : gpios)
-    {
-      if (gpio_name == gpio.name)
-      {
-        std::transform(
-          gpio.state_interfaces.begin(), gpio.state_interfaces.end(),
-          std::back_insert_iterator(state_interface_types_),
-          [&gpio_name](const auto & interface_name)
-          { return gpio_name + '/' + interface_name.name; });
-      }
-    }
-  }
-}
-
 void GpioCommandController::store_state_interface_types()
 {
-  if (should_broadcast_all_interfaces_of_configured_gpios())
-  {
-    RCLCPP_INFO(
-      get_node()->get_logger(),
-      "State interfaces are not configured. All available interfaces of configured GPIOs will be "
-      "broadcasted.");
-    set_all_state_interfaces_of_configured_gpios();
-    return;
-  }
-
   for (const auto & [gpio_name, interfaces] : params_.state_interfaces.gpios_map)
   {
     std::transform(
