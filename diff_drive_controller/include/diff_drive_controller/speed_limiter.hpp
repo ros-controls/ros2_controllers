@@ -19,6 +19,8 @@
 #ifndef DIFF_DRIVE_CONTROLLER__SPEED_LIMITER_HPP_
 #define DIFF_DRIVE_CONTROLLER__SPEED_LIMITER_HPP_
 
+#include <limits>
+
 #include "control_toolbox/rate_limiter.hpp"
 
 namespace diff_drive_controller
@@ -40,22 +42,25 @@ public:
    */
   SpeedLimiter(
     bool has_velocity_limits = true, bool has_acceleration_limits = true,
-    bool has_jerk_limits = true, double min_velocity = NAN, double max_velocity = NAN,
-    double min_acceleration = NAN, double max_acceleration = NAN, double min_jerk = NAN,
-    double max_jerk = NAN)
+    bool has_jerk_limits = true, double min_velocity = std::numeric_limits<double>::quiet_NaN(),
+    double max_velocity = std::numeric_limits<double>::quiet_NaN(),
+    double min_acceleration = std::numeric_limits<double>::quiet_NaN(),
+    double max_acceleration = std::numeric_limits<double>::quiet_NaN(),
+    double min_jerk = std::numeric_limits<double>::quiet_NaN(),
+    double max_jerk = std::numeric_limits<double>::quiet_NaN())
   {
     // START DEPRECATED
     if (!has_velocity_limits)
     {
-      min_velocity = max_velocity = NAN;
+      min_velocity = max_velocity = std::numeric_limits<double>::quiet_NaN();
     }
     if (!has_acceleration_limits)
     {
-      min_acceleration = max_acceleration = NAN;
+      min_acceleration = max_acceleration = std::numeric_limits<double>::quiet_NaN();
     }
     if (!has_jerk_limits)
     {
-      min_jerk = max_jerk = NAN;
+      min_jerk = max_jerk = std::numeric_limits<double>::quiet_NaN();
     }
     // END DEPRECATED
     speed_limiter_ = control_toolbox::RateLimiter<double>(
