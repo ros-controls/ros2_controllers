@@ -23,14 +23,14 @@ test_diff_drive_controller:
     publish_limited_velocity: true
     velocity_rolling_window_size: 10
 
-    linear.x.max_velocity: .NAN
-    linear.x.min_velocity: .NAN
-    linear.x.max_acceleration: .NAN
-    linear.x.max_deceleration: .NAN
-    linear.x.max_acceleration_reverse: .NAN
-    linear.x.max_deceleration_reverse: .NAN
-    linear.x.max_jerk: .NAN
-    linear.x.min_jerk: .NAN
+    linear.x.max_velocity: 10.0
+    linear.x.min_velocity: -10.0
+    linear.x.max_acceleration: 10.0
+    linear.x.max_deceleration: -20.0
+    linear.x.max_acceleration_reverse: -10.0
+    linear.x.max_deceleration_reverse: 20.0
+    linear.x.max_jerk: 50.0
+    linear.x.min_jerk: -50.0
 
     angular.z.max_velocity: .NAN
     angular.z.min_velocity: .NAN

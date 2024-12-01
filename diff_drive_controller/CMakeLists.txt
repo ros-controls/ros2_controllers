@@ -81,6 +81,11 @@ if(BUILD_TESTING)
     controller_manager
     ros2_control_test_assets
   )
+  ament_add_gmock(test_configure_diff_drive_controller test/test_configure_diff_drive_controller.cpp)
+  ament_target_dependencies(test_configure_diff_drive_controller
+    controller_manager
+    ros2_control_test_assets
+  )
 endif()
 
 install(
