@@ -34,13 +34,12 @@ import time
 
 from launch import LaunchDescription
 from launch.substitutions import PathJoinSubstitution
+import launch_ros.actions
 from launch_ros.substitutions import FindPackageShare
 from launch_testing.actions import ReadyToTest
-from launch_testing_ros import WaitForTopics
-
 import launch_testing.markers
+from launch_testing_ros import WaitForTopics
 import rclpy
-import launch_ros.actions
 from rclpy.node import Node
 from trajectory_msgs.msg import JointTrajectory
 
