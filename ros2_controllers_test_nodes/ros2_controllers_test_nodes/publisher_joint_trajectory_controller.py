@@ -184,9 +184,16 @@ def main(args=None):
 
     publisher_joint_trajectory = PublisherJointTrajectory()
 
-    rclpy.spin(publisher_joint_trajectory)
-    publisher_joint_trajectory.destroy_node()
-    rclpy.shutdown()
+    try:
+        rclpy.spin(publisher_joint_trajectory)
+    except KeyboardInterrupt:
+        print("Keyboard interrupt received. Shutting down node.")
+    except Exception as e:
+        print(f"Unhandled exception: {e}")
+    finally:
+        if rclpy.ok():
+            publisher_joint_trajectory.destroy_node()
+            rclpy.shutdown()
 
 
 if __name__ == "__main__":

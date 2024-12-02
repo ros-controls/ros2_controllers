@@ -3,7 +3,8 @@ project(steering_controllers_library LANGUAGES CXX)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
   add_compile_options(-Wall -Wextra -Wpedantic -Werror=conversion -Werror=unused-but-set-variable
-                      -Werror=return-type -Werror=shadow -Werror=format)
+                      -Werror=return-type -Werror=shadow -Werror=format -Werror=range-loop-construct
+                      -Werror=missing-braces)
 endif()
 
 # find dependencies
