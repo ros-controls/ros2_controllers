@@ -504,8 +504,7 @@ bool DiffDriveController::reset()
   subscriber_is_active_ = false;
   velocity_command_subscriber_.reset();
 
-  received_velocity_msg_ptr_.set([](std::shared_ptr<TwistStamped> & stored_value)
-                                 { stored_value = nullptr; });
+  received_velocity_msg_ptr_.set(nullptr);
   is_halted = false;
   return true;
 }
