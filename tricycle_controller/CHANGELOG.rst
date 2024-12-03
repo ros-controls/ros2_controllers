@@ -2,8 +2,8 @@
 Changelog for package tricycle_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.39.0 (2024-12-03)
+-------------------
 * TractionLimiter: Fix wrong input checks (`#1341 <https://github.com/ros-controls/ros2_controllers/issues/1341>`_) (`#1366 <https://github.com/ros-controls/ros2_controllers/issues/1366>`_)
 * Update maintainers and add url tags (`#1363 <https://github.com/ros-controls/ros2_controllers/issues/1363>`_) (`#1364 <https://github.com/ros-controls/ros2_controllers/issues/1364>`_)
 * Contributors: mergify[bot]
