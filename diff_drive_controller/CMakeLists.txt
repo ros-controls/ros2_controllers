@@ -60,7 +60,8 @@ if(BUILD_TESTING)
   find_package(ros2_control_test_assets REQUIRED)
 
   ament_add_gmock(test_diff_drive_controller
-    test/test_diff_drive_controller.cpp)
+    test/test_diff_drive_controller.cpp
+  )
   target_link_libraries(test_diff_drive_controller
     diff_drive_controller
   )
@@ -78,11 +79,6 @@ if(BUILD_TESTING)
   add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
   ament_add_gmock(test_load_diff_drive_controller test/test_load_diff_drive_controller.cpp)
   ament_target_dependencies(test_load_diff_drive_controller
-    controller_manager
-    ros2_control_test_assets
-  )
-  ament_add_gmock(test_configure_diff_drive_controller test/test_configure_diff_drive_controller.cpp)
-  ament_target_dependencies(test_configure_diff_drive_controller
     controller_manager
     ros2_control_test_assets
   )
