@@ -111,27 +111,27 @@ controller_interface::return_type DiffDriveController::update(
     return controller_interface::return_type::OK;
   }
 
-  std::shared_ptr<TwistStamped> last_command_msg;
-  received_velocity_msg_ptr_.try_get([&last_command_msg](const std::shared_ptr<TwistStamped> & msg)
-                                     { last_command_msg = msg; });
+  // if the mutex is unable to lock, last_command_msg_ won't be updated
+  received_velocity_msg_ptr_.try_get([this](const std::shared_ptr<TwistStamped> & msg)
+                                     { last_command_msg_ = msg; });
 
-  if (last_command_msg == nullptr)
+  if (last_command_msg_ == nullptr)
   {
     RCLCPP_WARN(logger, "Velocity message received was a nullptr.");
     return controller_interface::return_type::ERROR;
   }
 
-  const auto age_of_last_command = time - last_command_msg->header.stamp;
+  const auto age_of_last_command = time - last_command_msg_->header.stamp;
   // Brake if cmd_vel has timeout, override the stored command
   if (age_of_last_command > cmd_vel_timeout_)
   {
-    last_command_msg->twist.linear.x = 0.0;
-    last_command_msg->twist.angular.z = 0.0;
+    last_command_msg_->twist.linear.x = 0.0;
+    last_command_msg_->twist.angular.z = 0.0;
   }
 
   // command may be limited further by SpeedLimit,
   // without affecting the stored twist command
-  TwistStamped command = *last_command_msg;
+  TwistStamped command = *last_command_msg_;
   double & linear_command = command.twist.linear.x;
   double & angular_command = command.twist.angular.z;
 
