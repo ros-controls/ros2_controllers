@@ -2,6 +2,11 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Update maintainers and add url tags (`#1363 <https://github.com/ros-controls/ros2_controllers/issues/1363>`_) (`#1364 <https://github.com/ros-controls/ros2_controllers/issues/1364>`_)
+* Contributors: mergify[bot]
+
 2.38.0 (2024-11-09)
 -------------------
 * [JTC] Fix the JTC length_error exceptions in the tests (backport `#1360 <https://github.com/ros-controls/ros2_controllers/issues/1360>`_) (`#1361 <https://github.com/ros-controls/ros2_controllers/issues/1361>`_)

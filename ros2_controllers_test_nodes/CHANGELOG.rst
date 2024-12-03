@@ -2,6 +2,14 @@
 Changelog for package ros2_controllers_test_nodes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add another dependency (`#1382 <https://github.com/ros-controls/ros2_controllers/issues/1382>`_) (`#1384 <https://github.com/ros-controls/ros2_controllers/issues/1384>`_)
+* Add missing deps for test_nodes (`#1378 <https://github.com/ros-controls/ros2_controllers/issues/1378>`_) (`#1381 <https://github.com/ros-controls/ros2_controllers/issues/1381>`_)
+* test_nodes: catch keyboard interrupt and add simple launch tests (`#1369 <https://github.com/ros-controls/ros2_controllers/issues/1369>`_) (`#1371 <https://github.com/ros-controls/ros2_controllers/issues/1371>`_)
+* Update maintainers and add url tags (`#1363 <https://github.com/ros-controls/ros2_controllers/issues/1363>`_) (`#1364 <https://github.com/ros-controls/ros2_controllers/issues/1364>`_)
+* Contributors: mergify[bot]
+
 2.38.0 (2024-11-09)
 -------------------
 
