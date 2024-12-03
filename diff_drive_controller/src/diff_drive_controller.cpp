@@ -326,12 +326,12 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
         limited_velocity_publisher_);
   }
 
-  const TwistStamped empty_twist;
-  received_velocity_msg_ptr_.set([empty_twist](std::shared_ptr<TwistStamped> & stored_value)
-                                 { stored_value = std::make_shared<TwistStamped>(empty_twist); });
+  last_command_msg_ = std::make_shared<TwistStamped>();
+  received_velocity_msg_ptr_.set([this](std::shared_ptr<TwistStamped> & stored_value)
+                                 { stored_value = last_command_msg_; });
   // Fill last two commands with default constructed commands
-  previous_commands_.emplace(empty_twist);
-  previous_commands_.emplace(empty_twist);
+  previous_commands_.emplace(*last_command_msg_);
+  previous_commands_.emplace(*last_command_msg_);
 
   // initialize command subscriber
   velocity_command_subscriber_ = get_node()->create_subscription<TwistStamped>(

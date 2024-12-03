@@ -273,9 +273,9 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
     return CallbackReturn::ERROR;
   }
 
-  const TwistStamped empty_twist;
-  received_velocity_msg_ptr_.set([empty_twist](std::shared_ptr<TwistStamped> & stored_value)
-                                 { stored_value = std::make_shared<TwistStamped>(empty_twist); });
+  last_command_msg_ = std::make_shared<TwistStamped>();
+  received_velocity_msg_ptr_.set([this](std::shared_ptr<TwistStamped> & stored_value)
+                                 { stored_value = last_command_msg_; });
   // Fill last two commands with default constructed commands
   const AckermannDrive empty_ackermann_drive;
   previous_commands_.emplace(empty_ackermann_drive);
