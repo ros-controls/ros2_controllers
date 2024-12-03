@@ -3,8 +3,3 @@ repositories:
     type: git
     url: https://github.com/picknikrobotics/generate_parameter_library.git
     version: main
-
-  control_msgs:
-    type: git
-    url: https://github.com/fmauch/control_msgs.git
-    version: scaled_jtc
