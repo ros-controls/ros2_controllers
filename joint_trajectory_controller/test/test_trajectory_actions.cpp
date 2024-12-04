@@ -1029,11 +1029,14 @@ TEST_P(TestTrajectoryActionsTestScalingFactor, test_scaling_execution_time_succe
   // the error will be whatever the command diff is.
   std::vector<rclcpp::Parameter> params = {
     rclcpp::Parameter("open_loop_control", false),
-    rclcpp::Parameter("constraints.stopped_velocity_tolerance", 0.0),
+    rclcpp::Parameter("constraints.goal_time", 1e-10),
+    rclcpp::Parameter("constraints.goal", 1e-10),
     rclcpp::Parameter("scaling_factor_initial_default", scaling_factor),
     rclcpp::Parameter("constraints.joint1.trajectory", state_tol),
     rclcpp::Parameter("constraints.joint2.trajectory", state_tol),
     rclcpp::Parameter("constraints.joint3.trajectory", state_tol),
+    // the test hw does not report velocity, so this constraint will not do anything
+    rclcpp::Parameter("constraints.stopped_velocity_tolerance", 0.01),
   };
   SetUpExecutor({params}, false, 1.0, 0.0);
   SetUpControllerHardware();
@@ -1058,24 +1061,22 @@ TEST_P(TestTrajectoryActionsTestScalingFactor, test_scaling_execution_time_succe
   std::shared_future<typename GoalHandle::SharedPtr> gh_future;
   // send goal
   std::vector<std::vector<double>> points_positions{{{4.0, 5.0, 6.0}}, {{7.0, 8.0, 9.0}}};
-  {
-    std::vector<JointTrajectoryPoint> points;
-    JointTrajectoryPoint point1;
-    point1.time_from_start = rclcpp::Duration::from_seconds(0.1);
-    point1.positions.resize(joint_names_.size());
+  std::vector<JointTrajectoryPoint> points;
+  JointTrajectoryPoint point1;
+  point1.time_from_start = rclcpp::Duration::from_seconds(0.1);
+  point1.positions.resize(joint_names_.size());
 
-    point1.positions = points_positions.at(0);
-    points.push_back(point1);
+  point1.positions = points_positions.at(0);
+  points.push_back(point1);
 
-    JointTrajectoryPoint point2;
-    point2.time_from_start = rclcpp::Duration::from_seconds(0.2);
-    point2.positions.resize(joint_names_.size());
+  JointTrajectoryPoint point2;
+  point2.time_from_start = rclcpp::Duration::from_seconds(0.2);
+  point2.positions.resize(joint_names_.size());
 
-    point2.positions = points_positions.at(1);
-    points.push_back(point2);
+  point2.positions = points_positions.at(1);
+  points.push_back(point2);
 
-    gh_future = sendActionGoal(points, 1.0, goal_options_);
-  }
+  gh_future = sendActionGoal(points, 1.0, goal_options_);
   controller_hw_thread_.join();
 
   EXPECT_TRUE(gh_future.get());
@@ -1088,6 +1089,16 @@ TEST_P(TestTrajectoryActionsTestScalingFactor, test_scaling_execution_time_succe
   // i.e., active but trivial trajectory (one point only)
   // note: the action goal also is a trivial trajectory
   expectCommandPoint(points_positions[1]);
+
+  // Run a second trajectory
+  SetUpControllerHardware();
+  gh_future = sendActionGoal(points, 1.0, goal_options_);
+  std::cout << "Waiting for another trajectory to finish" << std::endl;
+  controller_hw_thread_.join();
+  std::cout << "trajectory_done" << std::endl;
+
+  EXPECT_TRUE(gh_future.get());
+  EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
 }
 
 INSTANTIATE_TEST_SUITE_P(
