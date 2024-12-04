@@ -1074,15 +1074,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
     cmd_timeout_ = 0.0;
   }
 
-  {
-    if (get_update_rate() == 0)
-    {
-      throw std::runtime_error("Controller's update rate is set to 0. This should not happen!");
-    }
-    update_period_ =
-      rclcpp::Duration(0.0, static_cast<uint32_t>(1.0e9 / static_cast<double>(get_update_rate())));
-  }
-
   return CallbackReturn::SUCCESS;
 }
 
