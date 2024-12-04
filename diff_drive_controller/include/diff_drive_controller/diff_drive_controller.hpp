@@ -130,6 +130,7 @@ protected:
   rclcpp::Subscription<TwistStamped>::SharedPtr velocity_command_subscriber_ = nullptr;
 
   realtime_tools::RealtimeBox<std::shared_ptr<TwistStamped>> received_velocity_msg_ptr_{nullptr};
+  std::shared_ptr<TwistStamped> last_command_msg_;
 
   std::queue<TwistStamped> previous_commands_;  // last two commands
 
