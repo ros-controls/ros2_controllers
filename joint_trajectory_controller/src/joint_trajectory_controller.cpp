@@ -1693,7 +1693,12 @@ bool JointTrajectoryController::set_scaling_factor(const double scaling_factor)
     return false;
   }
 
-  RCLCPP_INFO(get_node()->get_logger(), "New scaling factor will be %f", scaling_factor);
+  if (scaling_factor_ != scaling_factor_)
+  {
+    RCLCPP_INFO(
+      get_node()->get_logger().get_child("speed_scaling"), "New scaling factor will be %f",
+      scaling_factor);
+  }
   if (params_.speed_scaling_command_interface_name.empty())
   {
     if (!params_.speed_scaling_state_interface_name.empty())
