@@ -42,7 +42,8 @@ joint_trajectory_controller:
   scaling_factor_initial_default: {
     type: double,
     default_value: 1.0,
-    description: "The initial value of the scaling factor if not exchange with hardware takes place.",
+    read_only: true,
+    description: "The initial value of the scaling factor if no exchange with hardware takes place.",
     validation: {
       gt_eq<>: 0.0,
     }
