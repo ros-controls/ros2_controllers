@@ -236,7 +236,7 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
   }
 
   odometry_.setWheelParams(params_.wheelbase, params_.wheel_radius);
-  odometry_.setVelocityRollingWindowSize(params_.velocity_rolling_window_size);
+  odometry_.setVelocityRollingWindowSize(static_cast<size_t>(params_.velocity_rolling_window_size));
 
   cmd_vel_timeout_ = std::chrono::milliseconds{params_.cmd_vel_timeout};
   params_.publish_ackermann_command =
