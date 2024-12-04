@@ -7,6 +7,7 @@ This list summarizes the changes between Iron (previous) and Jazzy (current) rel
 admittance_controller
 ************************
 * Remove ``robot_description`` parameter from parameter YAML, because it is not used at all (`#963 <https://github.com/ros-controls/ros2_controllers/pull/963>`_).
+* Added ``~/wrench_reference`` input topic which allows to provide a force-torque offset as WrenchStamped (`#1249 <https://github.com/ros-controls/ros2_controllers/pull/1249>`_).
 
 diff_drive_controller
 *****************************
