@@ -92,9 +92,8 @@ Effect on tolerances
 When speed scaling is used while executing a trajectory, the tolerances configured for execution
 will be scaled, as well.
 
-Since commands are generated from the scaled trajectory time, **path errors** will also be compared to
-the scaled trajectory. However, since the next command is always using the full time step, there
-will obviously always be a small error added by the robot only executing a part of the command.
+Since commands are generated from the scaled trajectory time, **path errors** will also be compared
+to the scaled trajectory.
 
 The **goal time tolerance** also uses the virtual trajectory time. This means that a trajectory
 being executed with a constant scaling factor of 0.5 will take twice as long for execution than the
