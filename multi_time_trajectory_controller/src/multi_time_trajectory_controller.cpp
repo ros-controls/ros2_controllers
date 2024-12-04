@@ -32,11 +32,10 @@
 #include "control_msgs/msg/axis_trajectory.hpp"
 #include "control_msgs/msg/axis_trajectory_point.hpp"
 #include "control_msgs/msg/multi_axis_trajectory.hpp"
+#include "controller_interface/helpers.hpp"
 #include "eigen3/Eigen/Eigen"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp_action/create_server.hpp"
-
-#include "controller_interface/helpers.hpp"
 
 namespace multi_time_trajectory_controller
 {
@@ -390,29 +389,51 @@ controller_interface::return_type MultiTimeTrajectoryController::update(
           // set values for next hardware write()
           if (has_position_command_interface_)
           {
-            axis_command_interface_[0][axis_index].get().set_value(
-              state_desired_[axis_index].position);
+            if (!axis_command_interface_[0][axis_index].get().set_value(
+                  state_desired_[axis_index].position))
+            {
+              RCLCPP_WARN_STREAM(
+                get_node()->get_logger(),
+                "Failed to set position command for " << command_axis_names_[axis_index]);
+            }
           }
           if (has_velocity_command_interface_)
           {
+            bool ret_status;
             if (use_closed_loop_pid_adapter_)
             {
-              axis_command_interface_[1][axis_index].get().set_value(tmp_command);
+              ret_status = axis_command_interface_[1][axis_index].get().set_value(tmp_command);
             }
             else
             {
-              axis_command_interface_[1][axis_index].get().set_value(
+              ret_status = axis_command_interface_[1][axis_index].get().set_value(
                 state_desired_[axis_index].velocity);
+            }
+            if (!ret_status)
+            {
+              RCLCPP_WARN_STREAM(
+                get_node()->get_logger(),
+                "Failed to set velocity command for " << command_axis_names_[axis_index]);
             }
           }
           if (has_acceleration_command_interface_)
           {
-            axis_command_interface_[2][axis_index].get().set_value(
-              state_desired_[axis_index].acceleration);
+            if (!axis_command_interface_[2][axis_index].get().set_value(
+                  state_desired_[axis_index].acceleration))
+            {
+              RCLCPP_WARN_STREAM(
+                get_node()->get_logger(),
+                "Failed to set acceleration command for " << command_axis_names_[axis_index]);
+            }
           }
           if (has_effort_command_interface_)
           {
-            axis_command_interface_[3][axis_index].get().set_value(tmp_command);
+            if (!axis_command_interface_[3][axis_index].get().set_value(tmp_command))
+            {
+              RCLCPP_WARN_STREAM(
+                get_node()->get_logger(),
+                "Failed to set effort command for " << command_axis_names_[axis_index]);
+            }
           }
 
           // store the previous command. Used in open-loop control mode
@@ -1325,24 +1346,44 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_deactivat
   {
     if (has_position_command_interface_)
     {
-      axis_command_interface_[0][index].get().set_value(
-        axis_command_interface_[0][index].get().get_value());
+      if (!axis_command_interface_[0][index].get().set_value(
+            axis_command_interface_[0][index].get().get_value()))
+      {
+        RCLCPP_WARN_STREAM(
+          get_node()->get_logger(), "Failed to set position command interface to current value for "
+                                      << command_axis_names_[index]);
+      }
     }
 
     if (has_velocity_command_interface_)
     {
-      axis_command_interface_[1][index].get().set_value(0.0);
+      if (!axis_command_interface_[1][index].get().set_value(0.0))
+      {
+        RCLCPP_WARN_STREAM(
+          get_node()->get_logger(),
+          "Failed to set velocity command interface to 0 for " << command_axis_names_[index]);
+      }
     }
 
     if (has_acceleration_command_interface_)
     {
-      axis_command_interface_[2][index].get().set_value(0.0);
+      if (!axis_command_interface_[2][index].get().set_value(0.0))
+      {
+        RCLCPP_WARN_STREAM(
+          get_node()->get_logger(),
+          "Failed to set acceleration command interface to 0 for " << command_axis_names_[index]);
+      }
     }
 
     // TODO(anyone): How to halt when using effort commands?
     if (has_effort_command_interface_)
     {
-      axis_command_interface_[3][index].get().set_value(0.0);
+      if (!axis_command_interface_[3][index].get().set_value(0.0))
+      {
+        RCLCPP_WARN_STREAM(
+          get_node()->get_logger(),
+          "Failed to set effort command interface to 0 for " << command_axis_names_[index]);
+      }
     }
   }
 

@@ -395,13 +395,26 @@ public:
 
       // Add to export lists and set initial values
       cmd_interfaces.emplace_back(pos_cmd_interfaces_.back());
-      cmd_interfaces.back().set_value(initial_pos_axes[i]);
+      if (!cmd_interfaces.back().set_value(initial_pos_axes[i]))
+      {
+        throw std::runtime_error("Failed to set initial position value for axis " + axis_names_[i]);
+      }
       cmd_interfaces.emplace_back(vel_cmd_interfaces_.back());
-      cmd_interfaces.back().set_value(initial_vel_axes[i]);
+      if (!cmd_interfaces.back().set_value(initial_vel_axes[i]))
+      {
+        throw std::runtime_error("Failed to set initial velocity value for axis " + axis_names_[i]);
+      }
       cmd_interfaces.emplace_back(acc_cmd_interfaces_.back());
-      cmd_interfaces.back().set_value(initial_acc_axes[i]);
+      if (!cmd_interfaces.back().set_value(initial_acc_axes[i]))
+      {
+        throw std::runtime_error(
+          "Failed to set initial acceleration value for axis " + axis_names_[i]);
+      }
       cmd_interfaces.emplace_back(eff_cmd_interfaces_.back());
-      cmd_interfaces.back().set_value(initial_eff_axes[i]);
+      if (!cmd_interfaces.back().set_value(initial_eff_axes[i]))
+      {
+        throw std::runtime_error("Failed to set initial effort value for axis " + axis_names_[i]);
+      }
       if (separate_cmd_and_state_values)
       {
         axis_state_pos_[i] = INITIAL_POS_AXES[i];
@@ -735,20 +748,24 @@ public:
       {
         for (size_t i = 0; i < 3; i++)
         {
-          EXPECT_TRUE(is_same_sign_or_zero(
-            position.at(i) - pos_state_interfaces_[i].get_value(), axis_vel_[i]))
-            << "test position point " << position.at(i) << ", position state is "
-            << pos_state_interfaces_[i].get_value() << ", velocity command is " << axis_vel_[i];
+          double val;
+          EXPECT_TRUE(
+            pos_state_interfaces_[i].get_value(val) &&
+            is_same_sign_or_zero(position.at(i) - val, axis_vel_[i]))
+            << "test position point " << position.at(i) << ", position state is " << val
+            << ", velocity command is " << axis_vel_[i];
         }
       }
       if (traj_controller_->has_effort_command_interface())
       {
         for (size_t i = 0; i < 3; i++)
         {
-          EXPECT_TRUE(is_same_sign_or_zero(
-            position.at(i) - pos_state_interfaces_[i].get_value(), axis_eff_[i]))
-            << "test position point " << position.at(i) << ", position state is "
-            << pos_state_interfaces_[i].get_value() << ", effort command is " << axis_eff_[i];
+          double val;
+          EXPECT_TRUE(
+            pos_state_interfaces_[i].get_value(val) &&
+            is_same_sign_or_zero(position.at(i) - val, axis_eff_[i]))
+            << "test position point " << position.at(i) << ", position state is " << val
+            << ", effort command is " << axis_eff_[i];
         }
       }
     }
