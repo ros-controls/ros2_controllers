@@ -16,8 +16,8 @@
 #define MECANUM_DRIVE_CONTROLLER__ODOMETRY_HPP_
 
 #include "geometry_msgs/msg/twist.hpp"
-#include "realtime_tools/realtime_buffer.h"
-#include "realtime_tools/realtime_publisher.h"
+#include "realtime_tools/realtime_buffer.hpp"
+#include "realtime_tools/realtime_publisher.hpp"
 
 #define PLANAR_POINT_DIM 3
 
