@@ -2,6 +2,14 @@
 Changelog for package force_torque_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.16.0 (2024-11-08)
+-------------------
+* [ForceTorqueSensorBroadcaster] added force and torque offsets to the parameters + export state interfaces (`#1215 <https://github.com/ros-controls/ros2_controllers/issues/1215>`_)
+* Contributors: Sai Kishor Kothakota
+
+4.15.0 (2024-10-07)
+-------------------
+
 4.14.0 (2024-09-11)
 -------------------
 

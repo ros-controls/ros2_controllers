@@ -48,6 +48,12 @@ joint_trajectory_controller
      * -1 - The tolerance is "erased".  If there was a default, the joint will be
             allowed to move without restriction.
 
+* Add the boolean parameter ``set_last_command_interface_value_as_state_on_activation``. When set to ``true``, the last command interface value is used as both the current state and the last commanded state upon activation. When set to ``false``, the current state is used for both (`#1231 <https://github.com/ros-controls/ros2_controllers/pull/1231>`_).
+
+mecanum_drive_controller
+************************
+* 🚀 The mecanum_drive_controller was added 🎉 (`#512 <https://github.com/ros-controls/ros2_controllers/pull/512>`_).
+
 pid_controller
 ************************
 * 🚀 The PID controller was added 🎉 (`#434 <https://github.com/ros-controls/ros2_controllers/pull/434>`_).
@@ -56,7 +62,12 @@ steering_controllers_library
 ********************************
 * Changing default int values to double in steering controller's yaml file. The controllers should now initialize successfully without specifying these parameters (`#927 <https://github.com/ros-controls/ros2_controllers/pull/927>`_).
 * A fix for Ackermann steering odometry was added (`#921 <https://github.com/ros-controls/ros2_controllers/pull/921>`_).
+* Do not reset the steering wheels to ``0.0`` on timeout (`#1289 <https://github.com/ros-controls/ros2_controllers/pull/1289>`_).
 
 tricycle_controller
 ************************
 * tricycle_controller now uses generate_parameter_library (`#957 <https://github.com/ros-controls/ros2_controllers/pull/957>`_).
+
+gpio_controllers
+************************
+* The GPIO command controller was added 🎉 (`#1251 <https://github.com/ros-controls/ros2_controllers/pull/1251>`_).

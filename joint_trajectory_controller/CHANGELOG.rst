@@ -2,6 +2,17 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.16.0 (2024-11-08)
+-------------------
+* [JTC] Fix the JTC length_error exceptions in the tests (`#1360 <https://github.com/ros-controls/ros2_controllers/issues/1360>`_)
+* [jtc] Improve trajectory sampling efficiency (`#1297 <https://github.com/ros-controls/ros2_controllers/issues/1297>`_)
+* fixes for windows compilation (`#1330 <https://github.com/ros-controls/ros2_controllers/issues/1330>`_)
+* [JTC] Add Parameter to Toggle State Setting on Activation (`#1231 <https://github.com/ros-controls/ros2_controllers/issues/1231>`_)
+* Contributors: Gilmar Correia, Kenta Kato, RobertWilbrandt, Sai Kishor Kothakota
+
+4.15.0 (2024-10-07)
+-------------------
+
 4.14.0 (2024-09-11)
 -------------------
 * rename get/set_state to get/set_lifecylce_state (`#1250 <https://github.com/ros-controls/ros2_controllers/issues/1250>`_)

@@ -28,14 +28,25 @@ class TractionLimiter
 public:
   /**
    * \brief Constructor
+   *
+   * Parameters are applied symmetrically for both directions, i.e., are applied
+   * to the absolute value of the corresponding quantity.
+   *
+   * \warning
+   * - Setting min_velocity: the robot can't stand still
+   *
+   * - Setting min_deceleration/min_acceleration: the robot can't move with constant velocity
+   *
+   * - Setting min_jerk: the robot can't move with constant acceleration
+   *
    * \param [in] min_velocity Minimum velocity [m/s] or [rad/s]
    * \param [in] max_velocity Maximum velocity [m/s] or [rad/s]
    * \param [in] min_acceleration Minimum acceleration [m/s^2] or [rad/s^2]
    * \param [in] max_acceleration Maximum acceleration [m/s^2] or [rad/s^2]
    * \param [in] min_deceleration Minimum deceleration [m/s^2] or [rad/s^2]
    * \param [in] max_deceleration Maximum deceleration [m/s^2] or [rad/s^2]
-   * \param [in] min_jerk Minimum jerk [m/s^3], usually <= 0
-   * \param [in] max_jerk Maximum jerk [m/s^3], usually >= 0
+   * \param [in] min_jerk Minimum jerk [m/s^3]
+   * \param [in] max_jerk Maximum jerk [m/s^3]
    */
   TractionLimiter(
     double min_velocity = NAN, double max_velocity = NAN, double min_acceleration = NAN,
