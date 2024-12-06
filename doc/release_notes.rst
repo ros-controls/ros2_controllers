@@ -49,6 +49,7 @@ joint_trajectory_controller
             allowed to move without restriction.
 
 * Add the boolean parameter ``set_last_command_interface_value_as_state_on_activation``. When set to ``true``, the last command interface value is used as both the current state and the last commanded state upon activation. When set to ``false``, the current state is used for both (`#1231 <https://github.com/ros-controls/ros2_controllers/pull/1231>`_).
+* Feed-forward effort trajectories are supported now (`#1200 <https://github.com/ros-controls/ros2_controllers/pull/1200>`_).
 
 mecanum_drive_controller
 ************************
