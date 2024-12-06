@@ -1270,10 +1270,6 @@ void JointTrajectoryController::compute_error_for_joint(
   {
     error.accelerations[index] = desired.accelerations[index] - current.accelerations[index];
   }
-  if (has_effort_command_interface_)
-  {
-    error.effort[index] = desired.effort[index];
-  }
 }
 
 void JointTrajectoryController::fill_partial_goal(
