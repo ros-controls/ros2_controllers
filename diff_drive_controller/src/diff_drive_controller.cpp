@@ -310,7 +310,8 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   {
     RCLCPP_WARN(
       logger,
-      "[deprecated] has_velocity_limits parameter is deprecated, instead set the respective limits to NAN");
+      "[deprecated] has_velocity_limits parameter is deprecated, instead set the respective limits "
+      "to NAN");
     params_.linear.x.min_velocity = params_.linear.x.max_velocity =
       std::numeric_limits<double>::quiet_NaN();
   }
@@ -318,7 +319,8 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   {
     RCLCPP_WARN(
       logger,
-      "[deprecated] has_acceleration_limits parameter is deprecated, instead set the respective limits to "
+      "[deprecated] has_acceleration_limits parameter is deprecated, instead set the respective "
+      "limits to "
       "NAN");
     params_.linear.x.max_deceleration = params_.linear.x.max_acceleration =
       params_.linear.x.max_deceleration_reverse = params_.linear.x.max_acceleration_reverse =
@@ -328,7 +330,8 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   {
     RCLCPP_WARN(
       logger,
-      "[deprecated] has_jerk_limits parameter is deprecated, instead set the respective limits to NAN");
+      "[deprecated] has_jerk_limits parameter is deprecated, instead set the respective limits to "
+      "NAN");
     params_.linear.x.min_jerk = params_.linear.x.max_jerk =
       std::numeric_limits<double>::quiet_NaN();
   }
@@ -336,7 +339,8 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   {
     RCLCPP_WARN(
       logger,
-      "[deprecated] has_velocity_limits parameter is deprecated, instead set the respective limits to NAN");
+      "[deprecated] has_velocity_limits parameter is deprecated, instead set the respective limits "
+      "to NAN");
     params_.angular.z.min_velocity = params_.angular.z.max_velocity =
       std::numeric_limits<double>::quiet_NaN();
   }
@@ -344,7 +348,8 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   {
     RCLCPP_WARN(
       logger,
-      "[deprecated] has_acceleration_limits parameter is deprecated, instead set the respective limits to "
+      "[deprecated] has_acceleration_limits parameter is deprecated, instead set the respective "
+      "limits to "
       "NAN");
     params_.angular.z.max_deceleration = params_.angular.z.max_acceleration =
       params_.angular.z.max_deceleration_reverse = params_.angular.z.max_acceleration_reverse =
@@ -354,7 +359,8 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   {
     RCLCPP_WARN(
       logger,
-      "[deprecated] has_jerk_limits parameter is deprecated, instead set the respective limits to NAN");
+      "[deprecated] has_jerk_limits parameter is deprecated, instead set the respective limits to "
+      "NAN");
     params_.angular.z.min_jerk = params_.angular.z.max_jerk =
       std::numeric_limits<double>::quiet_NaN();
   }
