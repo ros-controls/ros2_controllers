@@ -69,9 +69,6 @@ public:
 
   /**
    * \brief Constructor
-   * \param [in] has_velocity_limits     if true, applies velocity limits
-   * \param [in] has_acceleration_limits if true, applies acceleration limits
-   * \param [in] has_jerk_limits         if true, applies jerk limits
    * \param [in] min_velocity Minimum velocity [m/s], usually <= 0
    * \param [in] max_velocity Maximum velocity [m/s], usually >= 0
    * \param [in] max_acceleration_reverse Maximum acceleration in reverse direction [m/s^2], usually
