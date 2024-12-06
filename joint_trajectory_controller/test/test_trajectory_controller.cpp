@@ -642,7 +642,6 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_angle_wraparoun
   SetUpAndActivateTrajectoryController(
     executor, params, true, k_p, 0.0, INITIAL_POS_JOINTS, INITIAL_VEL_JOINTS, INITIAL_ACC_JOINTS,
     INITIAL_EFF_JOINTS, test_trajectory_controllers::urdf_rrrbot_revolute);
-  subscribeToState(executor);
 
   size_t n_joints = joint_names_.size();
 
@@ -656,20 +655,17 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_angle_wraparoun
     {{0.3, 0.4, 0.6}}, {{1.7, 1.8, 1.9}}, {{2.10, 2.11, 2.12}}};
   std::vector<std::vector<double>> empty_effort;
   // *INDENT-ON*
-  bool has_effort_command_interface =
-    std::find(command_interface_types_.begin(), command_interface_types_.end(), "effort") !=
-    command_interface_types_.end();
   publish(
     time_from_start, points, rclcpp::Time(), {}, {},
-    has_effort_command_interface ? effort : empty_effort);
+    traj_controller_->has_effort_command_interface() ? effort : empty_effort);
   traj_controller_->wait_for_trajectory(executor);
 
   const rclcpp::Duration controller_period =
     rclcpp::Duration::from_seconds(1.0 / traj_controller_->get_update_rate());
-
   auto end_time = updateControllerAsync(
     rclcpp::Duration(FIRST_POINT_TIME) - controller_period, rclcpp::Time(0, 0, RCL_STEADY_TIME),
     controller_period);
+
   if (traj_controller_->has_position_command_interface())
   {
     // check command interface
@@ -685,6 +681,7 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_angle_wraparoun
   // get states from class variables
   auto state_feedback = traj_controller_->get_state_feedback();
   auto state_reference = traj_controller_->get_state_reference();
+  auto command_next = traj_controller_->get_command_next();
   auto state_error = traj_controller_->get_state_error();
 
   // no update of state_interface
@@ -746,13 +743,13 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_angle_wraparoun
       // with effort command interface, use_closed_loop_pid_adapter is always true
       // we expect u = k_p * (s_d-s) + ff for positions and feed forward effort
       EXPECT_NEAR(
-        k_p * (state_reference.positions[0] - INITIAL_POS_JOINTS[0]) + state_reference.effort[0],
+        k_p * (state_reference.positions[0] - INITIAL_POS_JOINTS[0]) + command_next.effort[0],
         joint_eff_[0], k_p * COMMON_THRESHOLD);
       EXPECT_NEAR(
-        k_p * (state_reference.positions[1] - INITIAL_POS_JOINTS[1]) + state_reference.effort[1],
+        k_p * (state_reference.positions[1] - INITIAL_POS_JOINTS[1]) + command_next.effort[1],
         joint_eff_[1], k_p * COMMON_THRESHOLD);
       EXPECT_NEAR(
-        k_p * (state_reference.positions[2] - INITIAL_POS_JOINTS[2]) + state_reference.effort[2],
+        k_p * (state_reference.positions[2] - INITIAL_POS_JOINTS[2]) + command_next.effort[2],
         joint_eff_[2], k_p * COMMON_THRESHOLD);
     }
   }
@@ -780,10 +777,13 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_angle_wraparound)
   // *INDENT-OFF*
   std::vector<std::vector<double>> points{
     {{3.3, 4.4, 6.6}}, {{7.7, 8.8, 9.9}}, {{10.10, 11.11, 12.12}}};
-  std::vector<std::vector<double>> points_velocities{
-    {{0.01, 0.01, 0.01}}, {{0.05, 0.05, 0.05}}, {{0.06, 0.06, 0.06}}};
+  std::vector<std::vector<double>> effort{
+    {{0.3, 0.4, 0.6}}, {{1.7, 1.8, 1.9}}, {{2.10, 2.11, 2.12}}};
+  std::vector<std::vector<double>> empty_effort;
   // *INDENT-ON*
-  publish(time_from_start, points, rclcpp::Time(), {}, points_velocities);
+  publish(
+    time_from_start, points, rclcpp::Time(), {}, {},
+    traj_controller_->has_effort_command_interface() ? effort : empty_effort);
   traj_controller_->wait_for_trajectory(executor);
 
   const rclcpp::Duration controller_period =
@@ -807,6 +807,7 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_angle_wraparound)
   // get states from class variables
   auto state_feedback = traj_controller_->get_state_feedback();
   auto state_reference = traj_controller_->get_state_reference();
+  auto command_next = traj_controller_->get_command_next();
   auto state_error = traj_controller_->get_state_error();
 
   // no update of state_interface
@@ -871,16 +872,16 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_angle_wraparound)
       // with effort command interface, use_closed_loop_pid_adapter is always true
       // we expect u = k_p * (s_d-s) + ff for positions and feed forward effort
       EXPECT_NEAR(
-        k_p * (state_reference.positions[0] - INITIAL_POS_JOINTS[0]) + state_reference.effort[0],
+        k_p * (state_reference.positions[0] - INITIAL_POS_JOINTS[0]) + command_next.effort[0],
         joint_eff_[0], k_p * COMMON_THRESHOLD);
       EXPECT_NEAR(
-        k_p * (state_reference.positions[1] - INITIAL_POS_JOINTS[1]) + state_reference.effort[1],
+        k_p * (state_reference.positions[1] - INITIAL_POS_JOINTS[1]) + command_next.effort[1],
         joint_eff_[1], k_p * COMMON_THRESHOLD);
       // is error of positions[2] wrapped around?
       EXPECT_GT(0.0, joint_eff_[2]);
       EXPECT_NEAR(
         k_p * (state_reference.positions[2] - INITIAL_POS_JOINTS[2] - 2 * M_PI) +
-          state_reference.effort[2],
+          command_next.effort[2],
         joint_eff_[2], k_p * COMMON_THRESHOLD);
     }
   }

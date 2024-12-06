@@ -199,6 +199,7 @@ public:
 
   trajectory_msgs::msg::JointTrajectoryPoint get_state_feedback() { return state_current_; }
   trajectory_msgs::msg::JointTrajectoryPoint get_state_reference() { return state_desired_; }
+  trajectory_msgs::msg::JointTrajectoryPoint get_command_next() { return command_next_; }
   trajectory_msgs::msg::JointTrajectoryPoint get_state_error() { return state_error_; }
 
   /**
