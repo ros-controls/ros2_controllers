@@ -53,3 +53,7 @@ pid_controller
 steering_controllers_library
 ********************************
 * Changing default int values to double in steering controller's yaml file. The controllers should now initialize successfully without specifying these parameters (`#927 <https://github.com/ros-controls/ros2_controllers/pull/927>`_).
+
+gpio_controllers
+************************
+* The GPIO command controller was added 🎉 (`#1251 <https://github.com/ros-controls/ros2_controllers/pull/1251>`_).
