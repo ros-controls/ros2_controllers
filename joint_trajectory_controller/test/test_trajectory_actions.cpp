@@ -1025,15 +1025,17 @@ TEST_P(TestTrajectoryActionsTestScalingFactor, test_scaling_execution_time_succe
 {
   double scaling_factor = GetParam();
   const double state_tol = 0.3;  // Since we use a common buffer for cmd and state in these tests,
+  const double goal_tol = 1e-10;
   // the error will be whatever the command diff is.
   std::vector<rclcpp::Parameter> params = {
     rclcpp::Parameter("open_loop_control", false),
-    rclcpp::Parameter("constraints.goal_time", 1e-10),
-    rclcpp::Parameter("constraints.goal", 1e-10),
     rclcpp::Parameter("scaling_factor_initial_default", scaling_factor),
     rclcpp::Parameter("constraints.joint1.trajectory", state_tol),
     rclcpp::Parameter("constraints.joint2.trajectory", state_tol),
     rclcpp::Parameter("constraints.joint3.trajectory", state_tol),
+    rclcpp::Parameter("constraints.joint1.goal", goal_tol),
+    rclcpp::Parameter("constraints.joint2.goal", goal_tol),
+    rclcpp::Parameter("constraints.joint3.goal", goal_tol),
     // the test hw does not report velocity, so this constraint will not do anything
     rclcpp::Parameter("constraints.stopped_velocity_tolerance", 0.01),
   };
@@ -1075,7 +1077,7 @@ TEST_P(TestTrajectoryActionsTestScalingFactor, test_scaling_execution_time_succe
   point2.positions = points_positions.at(1);
   points.push_back(point2);
 
-  gh_future = sendActionGoal(points, 1.0, goal_options_);
+  gh_future = sendActionGoal(points, 0.1, goal_options_);
   controller_hw_thread_.join();
 
   EXPECT_TRUE(gh_future.get());
