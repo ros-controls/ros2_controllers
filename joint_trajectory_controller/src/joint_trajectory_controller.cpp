@@ -288,23 +288,26 @@ controller_interface::return_type JointTrajectoryController::update(
           tolerance_violated_while_moving = true;
         }
         // past the final point, check that we end up inside goal tolerance
-        if (
-          !before_last_point && *(rt_is_holding_.readFromRT()) == false &&
-          !check_state_tolerance_per_joint(
-            state_error_, index, active_tol->goal_state_tolerance[index], false /* show_errors */))
+        if (!before_last_point && *(rt_is_holding_.readFromRT()) == false)
         {
-          outside_goal_tolerance = true;
-
-          if (active_tol->goal_time_tolerance != 0.0)
+          compute_error_for_joint(goal_error_, index, state_current_, command_next_);
+          if (!check_state_tolerance_per_joint(
+                goal_error_, index, active_tol->goal_state_tolerance[index],
+                false /* show_errors */))
           {
-            // if we exceed goal_time_tolerance set it to aborted
-            if (time_difference > active_tol->goal_time_tolerance)
+            outside_goal_tolerance = true;
+
+            if (active_tol->goal_time_tolerance != 0.0)
             {
-              within_goal_time = false;
-              // print once, goal will be aborted afterwards
-              check_state_tolerance_per_joint(
-                state_error_, index, default_tolerances_.goal_state_tolerance[index],
-                true /* show_errors */);
+              // if we exceed goal_time_tolerance set it to aborted
+              if (time_difference > active_tol->goal_time_tolerance)
+              {
+                within_goal_time = false;
+                // print once, goal will be aborted afterwards
+                check_state_tolerance_per_joint(
+                  goal_error_, index, default_tolerances_.goal_state_tolerance[index],
+                  true /* show_errors */);
+              }
             }
           }
         }
@@ -902,6 +905,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   resize_joint_trajectory_point_command(command_current_, dof_);
   resize_joint_trajectory_point(state_desired_, dof_);
   resize_joint_trajectory_point(state_error_, dof_);
+  resize_joint_trajectory_point(goal_error_, dof_);
   resize_joint_trajectory_point(last_commanded_state_, dof_);
 
   // create services
