@@ -440,7 +440,6 @@ TEST_F(TestTrajectoryActions, test_goal_tolerances_single_point_success)
   // i.e., active but trivial trajectory (one point only)
   expectCommandPoint(points_positions.at(0));
 }
-
 /**
  * Makes sense with position command interface only,
  * because no integration to position state interface is implemented
@@ -1099,6 +1098,83 @@ TEST_P(TestTrajectoryActionsTestScalingFactor, test_scaling_execution_time_succe
 
   EXPECT_TRUE(gh_future.get());
   EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
+}
+
+TEST_P(TestTrajectoryActionsTestScalingFactor, test_scaling_sampling_is_correct)
+{
+  double scaling_factor = GetParam();
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("scaling_factor_initial_default", scaling_factor),
+    rclcpp::Parameter("constraints.joint1.goal", 1e-3),
+    rclcpp::Parameter("constraints.joint2.goal", 1e-3),
+    rclcpp::Parameter("constraints.joint3.goal", 1e-3),
+    rclcpp::Parameter("constraints.goal_time", 0.1),
+  };
+  SetUpExecutor(params, true, 1.0, 0.0);
+  // SetUpControllerHardware();
+
+  std::vector<std::vector<double>> points_positions{{{4.0, 5.0, 6.0}}, {{7.0, 8.0, 9.0}}};
+  std::vector<JointTrajectoryPoint> points;
+  JointTrajectoryPoint point1;
+  point1.time_from_start = rclcpp::Duration::from_seconds(0.1);
+  point1.positions.resize(joint_names_.size());
+
+  point1.positions = points_positions.at(0);
+  points.push_back(point1);
+
+  JointTrajectoryPoint point2;
+  point2.time_from_start = rclcpp::Duration::from_seconds(0.2);
+  point2.positions.resize(joint_names_.size());
+
+  point2.positions = points_positions.at(1);
+  points.push_back(point2);
+
+  std::shared_future<typename GoalHandle::SharedPtr> gh_future =
+    sendActionGoal(points, 1.0, goal_options_);
+  // sometimes doesn't receive calls when we don't sleep
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+
+  auto trajectory_msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
+  trajectory_msg->joint_names = joint_names_;
+  trajectory_msg->points = points;
+
+  joint_trajectory_controller::Trajectory trajectory(trajectory_msg);
+
+  auto clock = rclcpp::Clock(RCL_STEADY_TIME);
+  rclcpp::Time sample_time = clock.now();
+  rclcpp::Time scaled_sample_time = sample_time;
+  const rclcpp::Duration controller_period =
+    rclcpp::Duration::from_seconds(1.0 / traj_controller_->get_update_rate());
+
+  trajectory_msgs::msg::JointTrajectoryPoint initial_pt;
+  initial_pt.positions = INITIAL_POS_JOINTS;
+  trajectory.set_point_before_trajectory_msg(sample_time, initial_pt, {false, false, false});
+
+  const auto end_time = sample_time + points.back().time_from_start;
+
+  // Stop earlier, as we will set the
+  // final joint value once we reached the last segment. The assumption that the reference is the
+  // same as the sampled scaled trajectory isn't true anymore
+  while (scaled_sample_time + controller_period <= end_time)
+  {
+    traj_controller_->update(sample_time, controller_period);
+    for (size_t i = 0; i < joint_state_pos_.size(); ++i)
+    {
+      joint_state_pos_[i] += (joint_pos_[i] - joint_state_pos_[i]) * scaling_factor;
+    }
+    trajectory_msgs::msg::JointTrajectoryPoint sampled_point;
+    joint_trajectory_controller::TrajectoryPointConstIter start_segment_itr, end_segment_itr;
+    trajectory.sample(
+      scaled_sample_time, joint_trajectory_controller::interpolation_methods::DEFAULT_INTERPOLATION,
+      sampled_point, start_segment_itr, end_segment_itr);
+
+    auto state_reference = traj_controller_->get_state_reference();
+
+    EXPECT_EQ(sampled_point.positions, state_reference.positions);
+
+    sample_time += controller_period;
+    scaled_sample_time += controller_period * scaling_factor;
+  }
 }
 
 INSTANTIATE_TEST_SUITE_P(
