@@ -2,6 +2,15 @@
 Changelog for package ros2_controllers_test_nodes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Don't call shutdown() after an exception (`#1400 <https://github.com/ros-controls/ros2_controllers/issues/1400>`_)
+* Add another dependency (`#1382 <https://github.com/ros-controls/ros2_controllers/issues/1382>`_)
+* Add missing deps for test_nodes (`#1378 <https://github.com/ros-controls/ros2_controllers/issues/1378>`_)
+* test_nodes: catch keyboard interrupt and add simple launch tests (`#1369 <https://github.com/ros-controls/ros2_controllers/issues/1369>`_)
+* Update maintainers and add url tags (`#1363 <https://github.com/ros-controls/ros2_controllers/issues/1363>`_)
+* Contributors: Christoph Fröhlich
+
 4.16.0 (2024-11-08)
 -------------------
 
