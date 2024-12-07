@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.17.0 (2024-12-07)
+-------------------
 * Use the .hpp headers from `realtime_tools` package (`#1406 <https://github.com/ros-controls/ros2_controllers/issues/1406>`_)
 * JTC: sum periods (`#1395 <https://github.com/ros-controls/ros2_controllers/issues/1395>`_)
 * [JTC] Sample at t + dT instead of the beginning of the control cycle (`#1306 <https://github.com/ros-controls/ros2_controllers/issues/1306>`_)

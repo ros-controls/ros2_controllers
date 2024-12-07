@@ -2,8 +2,8 @@
 Changelog for package gpio_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.17.0 (2024-12-07)
+-------------------
 * Add missing dependency to gpio_controllers (`#1410 <https://github.com/ros-controls/ros2_controllers/issues/1410>`_)
 * Use the .hpp headers from `realtime_tools` package (`#1406 <https://github.com/ros-controls/ros2_controllers/issues/1406>`_)
 * Gpio command controller (`#1251 <https://github.com/ros-controls/ros2_controllers/issues/1251>`_)

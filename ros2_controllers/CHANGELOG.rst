@@ -2,8 +2,8 @@
 Changelog for package ros2_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.17.0 (2024-12-07)
+-------------------
 * Add Mecanum Drive Controller (`#512 <https://github.com/ros-controls/ros2_controllers/issues/512>`_)
 * Gpio command controller (`#1251 <https://github.com/ros-controls/ros2_controllers/issues/1251>`_)
 * Update maintainers and add url tags (`#1363 <https://github.com/ros-controls/ros2_controllers/issues/1363>`_)
