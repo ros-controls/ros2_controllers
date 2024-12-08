@@ -467,7 +467,8 @@ public:
     if (joint_names.empty())
     {
       traj_msg.joint_names = {
-        joint_names_.begin(), joint_names_.begin() + points_positions[0].size()};
+        joint_names_.begin(),
+        joint_names_.begin() + static_cast<std::ptrdiff_t>(points_positions[0].size())};
     }
     else
     {
