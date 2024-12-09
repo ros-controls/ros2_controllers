@@ -25,11 +25,14 @@
   <exec_depend>force_torque_sensor_broadcaster</exec_depend>
   <exec_depend>forward_command_controller</exec_depend>
   <exec_depend>gpio_controllers</exec_depend>
+  <exec_depend>gripper_controllers</exec_depend>
   <exec_depend>imu_sensor_broadcaster</exec_depend>
   <exec_depend>joint_state_broadcaster</exec_depend>
   <exec_depend>joint_trajectory_controller</exec_depend>
   <exec_depend>mecanum_drive_controller</exec_depend>
+  <exec_depend>parallel_gripper_controller</exec_depend>
   <exec_depend>pid_controller</exec_depend>
+  <exec_depend>pose_broadcaster</exec_depend>
   <exec_depend>position_controllers</exec_depend>
   <exec_depend>range_sensor_broadcaster</exec_depend>
   <exec_depend>steering_controllers_library</exec_depend>
