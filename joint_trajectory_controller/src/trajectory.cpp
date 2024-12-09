@@ -175,8 +175,8 @@ bool Trajectory::sample(
 
         interpolate_between_points(t0, point, t1, next_point, sample_time, output_state);
       }
-      start_segment_itr = begin() + static_cast<std::ptrdiff_t>(i);
-      end_segment_itr = begin() + static_cast<std::ptrdiff_t>(i + 1);
+      start_segment_itr = begin() + static_cast<TrajectoryPointConstIter::difference_type>(i);
+      end_segment_itr = begin() + static_cast<TrajectoryPointConstIter::difference_type>(i + 1);
       if (search_monotonically_increasing)
       {
         last_sample_idx_ = i;

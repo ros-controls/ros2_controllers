@@ -468,7 +468,8 @@ public:
     {
       traj_msg.joint_names = {
         joint_names_.begin(),
-        joint_names_.begin() + static_cast<std::ptrdiff_t>(points_positions[0].size())};
+        joint_names_.begin() +
+          static_cast<std::vector<std::string>::difference_type>(points_positions[0].size())};
     }
     else
     {
