@@ -272,8 +272,13 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
     return CallbackReturn::ERROR;
   }
 
+<<<<<<< HEAD
   wheel_params_.wheelbase = get_node()->get_parameter("wheelbase").as_double();
   wheel_params_.radius = get_node()->get_parameter("wheel_radius").as_double();
+=======
+  odometry_.setWheelParams(params_.wheelbase, params_.wheel_radius);
+  odometry_.setVelocityRollingWindowSize(static_cast<size_t>(params_.velocity_rolling_window_size));
+>>>>>>> 66d160c ([CI] Add clang job and setup concurrency (#1407))
 
   odometry_.setWheelParams(wheel_params_.wheelbase, wheel_params_.radius);
   odometry_.setVelocityRollingWindowSize(
