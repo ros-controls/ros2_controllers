@@ -111,26 +111,27 @@ controller_interface::return_type DiffDriveController::update(
     return controller_interface::return_type::OK;
   }
 
-  std::shared_ptr<TwistStamped> last_command_msg;
-  received_velocity_msg_ptr_.get(last_command_msg);
+  // if the mutex is unable to lock, last_command_msg_ won't be updated
+  received_velocity_msg_ptr_.try_get([this](const std::shared_ptr<TwistStamped> & msg)
+                                     { last_command_msg_ = msg; });
 
-  if (last_command_msg == nullptr)
+  if (last_command_msg_ == nullptr)
   {
     RCLCPP_WARN(logger, "Velocity message received was a nullptr.");
     return controller_interface::return_type::ERROR;
   }
 
-  const auto age_of_last_command = time - last_command_msg->header.stamp;
+  const auto age_of_last_command = time - last_command_msg_->header.stamp;
   // Brake if cmd_vel has timeout, override the stored command
   if (age_of_last_command > cmd_vel_timeout_)
   {
-    last_command_msg->twist.linear.x = 0.0;
-    last_command_msg->twist.angular.z = 0.0;
+    last_command_msg_->twist.linear.x = 0.0;
+    last_command_msg_->twist.angular.z = 0.0;
   }
 
   // command may be limited further by SpeedLimit,
   // without affecting the stored twist command
-  TwistStamped command = *last_command_msg;
+  TwistStamped command = *last_command_msg_;
   double & linear_command = command.twist.linear.x;
   double & angular_command = command.twist.angular.z;
 
@@ -325,12 +326,12 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
         limited_velocity_publisher_);
   }
 
-  const TwistStamped empty_twist;
-  received_velocity_msg_ptr_.set(std::make_shared<TwistStamped>(empty_twist));
-
+  last_command_msg_ = std::make_shared<TwistStamped>();
+  received_velocity_msg_ptr_.set([this](std::shared_ptr<TwistStamped> & stored_value)
+                                 { stored_value = last_command_msg_; });
   // Fill last two commands with default constructed commands
-  previous_commands_.emplace(empty_twist);
-  previous_commands_.emplace(empty_twist);
+  previous_commands_.emplace(*last_command_msg_);
+  previous_commands_.emplace(*last_command_msg_);
 
   // initialize command subscriber
   velocity_command_subscriber_ = get_node()->create_subscription<TwistStamped>(
@@ -350,7 +351,8 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
           "time, this message will only be shown once");
         msg->header.stamp = get_node()->get_clock()->now();
       }
-      received_velocity_msg_ptr_.set(std::move(msg));
+      received_velocity_msg_ptr_.set([msg](std::shared_ptr<TwistStamped> & stored_value)
+                                     { stored_value = std::move(msg); });
     });
 
   // initialize odometry publisher and message
@@ -476,7 +478,6 @@ controller_interface::CallbackReturn DiffDriveController::on_cleanup(
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  received_velocity_msg_ptr_.set(std::make_shared<TwistStamped>());
   return controller_interface::CallbackReturn::SUCCESS;
 }
 

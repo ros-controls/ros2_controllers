@@ -49,7 +49,8 @@ public:
   std::shared_ptr<geometry_msgs::msg::TwistStamped> getLastReceivedTwist()
   {
     std::shared_ptr<geometry_msgs::msg::TwistStamped> ret;
-    received_velocity_msg_ptr_.get(ret);
+    received_velocity_msg_ptr_.get(
+      [&ret](const std::shared_ptr<geometry_msgs::msg::TwistStamped> & msg) { ret = msg; });
     return ret;
   }
 
