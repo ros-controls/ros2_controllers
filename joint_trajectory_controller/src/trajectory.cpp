@@ -175,9 +175,18 @@ bool Trajectory::sample(
 
         interpolate_between_points(t0, point, t1, next_point, sample_time, output_state);
       }
+<<<<<<< HEAD
       start_segment_itr = begin() + i;
       end_segment_itr = begin() + (i + 1);
       last_sample_idx_ = i;
+=======
+      start_segment_itr = begin() + static_cast<TrajectoryPointConstIter::difference_type>(i);
+      end_segment_itr = begin() + static_cast<TrajectoryPointConstIter::difference_type>(i + 1);
+      if (search_monotonically_increasing)
+      {
+        last_sample_idx_ = i;
+      }
+>>>>>>> 66d160c ([CI] Add clang job and setup concurrency (#1407))
       return true;
     }
   }

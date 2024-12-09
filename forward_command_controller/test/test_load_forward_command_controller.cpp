@@ -30,9 +30,13 @@ TEST(TestLoadForwardCommandController, load_controller)
     std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
 
   controller_manager::ControllerManager cm(
+<<<<<<< HEAD
     std::make_unique<hardware_interface::ResourceManager>(
       ros2_control_test_assets::minimal_robot_urdf),
     executor, "test_controller_manager");
+=======
+    executor, ros2_control_test_assets::minimal_robot_urdf, true, "test_controller_manager");
+>>>>>>> 66d160c ([CI] Add clang job and setup concurrency (#1407))
 
   ASSERT_NE(
     cm.load_controller(
