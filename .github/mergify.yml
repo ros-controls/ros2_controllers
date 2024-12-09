@@ -7,8 +7,6 @@ pull_request_rules:
     actions:
         comment:
           message: This pull request is in conflict. Could you fix it @{{author}}?
-<<<<<<< HEAD
-=======
 
   - name: Ask to resolve conflict for backports
     conditions:
@@ -33,4 +31,3 @@ pull_request_rules:
             @{{author}}, all pull requests must be targeted towards the `master` development branch.
             Once merged into `master`, it is possible to backport to `{{base}}`, but it must be in `master`
             to have these changes reflected into new distributions.
->>>>>>> 330b9e4 (Add sai (#1416))
