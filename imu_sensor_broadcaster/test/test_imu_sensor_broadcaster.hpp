@@ -49,7 +49,7 @@ public:
   void SetUp();
   void TearDown();
 
-  void SetUpIMUBroadcaster();
+  void SetUpIMUBroadcaster(const std::string & ns = "");
 
 protected:
   const std::string sensor_name_ = "imu_sensor";
@@ -78,7 +78,7 @@ protected:
 
   std::unique_ptr<FriendIMUSensorBroadcaster> imu_broadcaster_;
 
-  void subscribe_and_get_message(sensor_msgs::msg::Imu & imu_msg);
+  void subscribe_and_get_message(sensor_msgs::msg::Imu & imu_msg, const std::string & ns = "");
 };
 
 #endif  // TEST_IMU_SENSOR_BROADCASTER_HPP_
