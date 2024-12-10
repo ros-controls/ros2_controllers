@@ -277,7 +277,7 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
 
   odometry_.setWheelParams(wheel_params_.wheelbase, wheel_params_.radius);
   odometry_.setVelocityRollingWindowSize(
-    get_node()->get_parameter("velocity_rolling_window_size").as_int());
+    static_cast<size_t>(get_node()->get_parameter("velocity_rolling_window_size").as_int()));
 
   odom_params_.odom_frame_id = get_node()->get_parameter("odom_frame_id").as_string();
   odom_params_.base_frame_id = get_node()->get_parameter("base_frame_id").as_string();

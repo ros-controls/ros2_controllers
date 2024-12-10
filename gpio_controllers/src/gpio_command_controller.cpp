@@ -160,23 +160,29 @@ bool GpioCommandController::update_dynamic_map_parameters()
 
 void GpioCommandController::store_command_interface_types()
 {
-  for (const auto & [gpio_name, interfaces] : params_.command_interfaces.gpios_map)
+  for (const auto & entry : params_.command_interfaces.gpios_map)
   {
+    const auto & gpio_name = entry.first;
+    const auto & interfaces = entry.second;
+
     std::transform(
       interfaces.interfaces.cbegin(), interfaces.interfaces.cend(),
       std::back_inserter(command_interface_types_),
-      [&](const auto & interface_name) { return gpio_name + "/" + interface_name; });
+      [gpio_name](const auto & interface_name) { return gpio_name + "/" + interface_name; });
   }
 }
 
 void GpioCommandController::store_state_interface_types()
 {
-  for (const auto & [gpio_name, interfaces] : params_.state_interfaces.gpios_map)
+  for (const auto & entry : params_.state_interfaces.gpios_map)
   {
+    const auto & gpio_name = entry.first;
+    const auto & interfaces = entry.second;
+
     std::transform(
       interfaces.interfaces.cbegin(), interfaces.interfaces.cend(),
       std::back_inserter(state_interface_types_),
-      [&](const auto & interface_name) { return gpio_name + "/" + interface_name; });
+      [gpio_name](const auto & interface_name) { return gpio_name + "/" + interface_name; });
   }
 }
 
