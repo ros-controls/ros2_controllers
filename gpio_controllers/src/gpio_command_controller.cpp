@@ -174,7 +174,7 @@ void GpioCommandController::store_command_interface_types()
 
 void GpioCommandController::store_state_interface_types()
 {
-  for (const auto & entry : params_.command_interfaces.gpios_map)
+  for (const auto & entry : params_.state_interfaces.gpios_map)
   {
     const auto & gpio_name = entry.first;
     const auto & interfaces = entry.second;
