@@ -15,11 +15,8 @@
 #ifndef POSITION_CONTROLLERS__JOINT_GROUP_POSITION_CONTROLLER_HPP_
 #define POSITION_CONTROLLERS__JOINT_GROUP_POSITION_CONTROLLER_HPP_
 
-#include <string>
-
 #include "forward_command_controller/forward_command_controller.hpp"
 #include "position_controllers/visibility_control.h"
-#include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 
 namespace position_controllers
 {

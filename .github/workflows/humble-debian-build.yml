@@ -8,8 +8,9 @@ on:
       - '**.hpp'
       - '**.h'
       - '**.cpp'
-      - '.github/workflows/humble-debian-build.yml'
+      - '**.py'
       - '**.yaml'
+      - '.github/workflows/humble-debian-build.yml'
       - '**/package.xml'
       - '**/CMakeLists.txt'
       - 'ros2_controllers.humble.repos'
@@ -17,6 +18,10 @@ on:
     # Run every day to detect flakiness and broken dependencies
     - cron: '03 1 * * *'
 
+concurrency:
+  # cancel previous runs of the same workflow, except for pushes on humble branch
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, '/refs/heads') }}
 
 jobs:
   humble_debian:

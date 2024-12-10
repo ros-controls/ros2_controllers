@@ -17,7 +17,6 @@
 #ifndef ADMITTANCE_CONTROLLER__ADMITTANCE_CONTROLLER_HPP_
 #define ADMITTANCE_CONTROLLER__ADMITTANCE_CONTROLLER_HPP_
 
-#include <chrono>
 #include <memory>
 #include <string>
 #include <vector>
@@ -29,20 +28,13 @@
 #include "admittance_controller/visibility_control.h"
 #include "control_msgs/msg/admittance_controller_state.hpp"
 #include "controller_interface/chainable_controller_interface.hpp"
-#include "geometry_msgs/msg/pose_stamped.hpp"
-#include "geometry_msgs/msg/transform_stamped.hpp"
-#include "geometry_msgs/msg/wrench_stamped.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
-#include "pluginlib/class_loader.hpp"
 #include "rclcpp/duration.hpp"
 #include "rclcpp/time.hpp"
-#include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
-#include "realtime_tools/realtime_buffer.h"
-#include "realtime_tools/realtime_publisher.h"
+#include "realtime_tools/realtime_buffer.hpp"
+#include "realtime_tools/realtime_publisher.hpp"
 #include "semantic_components/force_torque_sensor.hpp"
-
-#include "trajectory_msgs/msg/joint_trajectory.hpp"
 
 namespace admittance_controller
 {
@@ -141,6 +133,8 @@ protected:
   // ROS subscribers
   rclcpp::Subscription<trajectory_msgs::msg::JointTrajectoryPoint>::SharedPtr
     input_joint_command_subscriber_;
+  rclcpp::Subscription<geometry_msgs::msg::WrenchStamped>::SharedPtr
+    input_wrench_command_subscriber_;
   rclcpp::Publisher<control_msgs::msg::AdmittanceControllerState>::SharedPtr s_publisher_;
 
   // admittance parameters
@@ -152,6 +146,7 @@ protected:
   // real-time buffer
   realtime_tools::RealtimeBuffer<std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint>>
     input_joint_command_;
+  realtime_tools::RealtimeBuffer<geometry_msgs::msg::WrenchStamped> input_wrench_command_;
   std::unique_ptr<realtime_tools::RealtimePublisher<ControllerStateMsg>> state_publisher_;
 
   trajectory_msgs::msg::JointTrajectoryPoint last_commanded_;

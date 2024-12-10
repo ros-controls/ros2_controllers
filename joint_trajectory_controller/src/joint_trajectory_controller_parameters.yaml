@@ -64,6 +64,11 @@ joint_trajectory_controller:
     default_value: false,
     description: "Allow integration in goal trajectories to accept goals without position or velocity specified",
   }
+  set_last_command_interface_value_as_state_on_activation: {
+    type: bool,
+    default_value: true,
+    description: "When set to true, the last command interface value is used as both the current state and the last commanded state upon activation. When set to false, the current state is used for both.",
+  }
   action_monitor_rate: {
     type: double,
     default_value: 20.0,
@@ -121,12 +126,6 @@ joint_trajectory_controller:
         type: double,
         default_value: 0.0,
         description: "Feed-forward scaling :math:`k_{ff}` of velocity"
-      }
-      angle_wraparound: {
-        type: bool,
-        default_value: false,
-        description: "[deprecated] For joints that wrap around (ie. are continuous).
-          Normalizes position-error to -pi to pi."
       }
   constraints:
     stopped_velocity_tolerance: {

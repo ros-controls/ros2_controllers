@@ -15,11 +15,8 @@
 #ifndef EFFORT_CONTROLLERS__JOINT_GROUP_EFFORT_CONTROLLER_HPP_
 #define EFFORT_CONTROLLERS__JOINT_GROUP_EFFORT_CONTROLLER_HPP_
 
-#include <string>
-
 #include "effort_controllers/visibility_control.h"
 #include "forward_command_controller/forward_command_controller.hpp"
-#include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 
 namespace effort_controllers
 {

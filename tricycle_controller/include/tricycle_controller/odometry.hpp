@@ -21,7 +21,7 @@
 
 #include <cmath>
 
-#include "rclcpp/time.hpp"
+#include <rclcpp/duration.hpp>
 // \note The versions conditioning is added here to support the source-compatibility with Humble
 #if RCPPUTILS_VERSION_MAJOR >= 2 && RCPPUTILS_VERSION_MINOR >= 6
 #include "rcpputils/rolling_mean_accumulator.hpp"

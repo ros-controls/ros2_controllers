@@ -3,7 +3,8 @@ project(tricycle_steering_controller LANGUAGES CXX)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
   add_compile_options(-Wall -Wextra -Wpedantic -Werror=conversion -Werror=unused-but-set-variable
-                      -Werror=return-type -Werror=shadow -Werror=format)
+                      -Werror=return-type -Werror=shadow -Werror=format -Werror=range-loop-construct
+                      -Werror=missing-braces)
 endif()
 
 # find dependencies
@@ -57,10 +58,8 @@ if(BUILD_TESTING)
   find_package(hardware_interface REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
 
-  add_rostest_with_parameters_gmock(test_load_tricycle_steering_controller
-    test/test_load_tricycle_steering_controller.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/tricycle_steering_controller_params.yaml
-  )
+  add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
+  ament_add_gmock(test_load_tricycle_steering_controller test/test_load_tricycle_steering_controller.cpp)
   ament_target_dependencies(test_load_tricycle_steering_controller
     controller_manager
     hardware_interface

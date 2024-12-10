@@ -15,8 +15,6 @@
 #ifndef TEST_ASSET_6D_ROBOT_DESCRIPTION_HPP_
 #define TEST_ASSET_6D_ROBOT_DESCRIPTION_HPP_
 
-#include <string>
-
 namespace ros2_control_test_assets
 {
 const auto valid_6d_robot_urdf =
