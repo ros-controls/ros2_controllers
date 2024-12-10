@@ -39,7 +39,7 @@ protected:
   const std::string frame_id_ = "pose_base_frame";
   const std::string tf_child_frame_id_ = "pose_frame";
 
-  std::array<double, 7> pose_values_ = {1.1, 2.2, 3.3, 4.4, 5.5, 6.6, 7.7};
+  std::array<double, 7> pose_values_ = {{1.1, 2.2, 3.3, 4.4, 5.5, 6.6, 7.7}};
 
   hardware_interface::StateInterface pose_position_x_{pose_name_, "position.x", &pose_values_[0]};
   hardware_interface::StateInterface pose_position_y_{pose_name_, "position.x", &pose_values_[1]};

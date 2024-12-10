@@ -37,8 +37,8 @@
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "parallel_gripper_controller/visibility_control.hpp"
-#include "realtime_tools/realtime_buffer.h"
-#include "realtime_tools/realtime_server_goal_handle.h"
+#include "realtime_tools/realtime_buffer.hpp"
+#include "realtime_tools/realtime_server_goal_handle.hpp"
 
 // Project
 #include "parallel_gripper_action_controller_parameters.hpp"
