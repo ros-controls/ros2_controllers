@@ -29,7 +29,6 @@ jobs:
       ros_distro: jazzy
       ros_repo: testing
       ref_for_scheduled_build: master
-      not_test_build: true
       upstream_workspace: ros2_controllers.jazzy.repos
-      downstream_workspace: ros_controls.jazzy.repos
+      target_workspace: ros_controls.jazzy.repos
       not_test_downstream: true
