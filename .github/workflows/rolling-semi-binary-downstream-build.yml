@@ -33,7 +33,6 @@ jobs:
       ros_distro: ${{ matrix.ROS_DISTRO }}
       ros_repo: testing
       ref_for_scheduled_build: master
-      not_test_build: true
       upstream_workspace: ros2_controllers.${{ matrix.ROS_DISTRO }}.repos
       target_workspace: ros_controls.${{ matrix.ROS_DISTRO }}.repos
       not_test_downstream: true
