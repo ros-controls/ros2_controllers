@@ -53,7 +53,5 @@ jobs:
       # we don't test this repository, we just build it
       not_test_build: true
       # we don't test the downstream packages, which are outside of our organization
-      downstream_workspace: |
-        ros_controls.${{ matrix.ROS_DISTRO }}.repos
-        downstream.${{ matrix.ROS_DISTRO }}.repos
+      downstream_workspace: downstream.${{ matrix.ROS_DISTRO }}.repos
       not_test_downstream: true
