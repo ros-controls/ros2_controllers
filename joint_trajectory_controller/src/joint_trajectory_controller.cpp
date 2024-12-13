@@ -1457,9 +1457,9 @@ bool JointTrajectoryController::validate_trajectory_msg(
     // This currently supports only position, velocity and acceleration inputs
     if (params_.allow_integration_in_goal_trajectories)
     {
-      const bool all_empty = points[i].positions.empty() && points[i].velocities.empty() &&
-                             points[i].accelerations.empty();
-      if (all_empty)
+      if (
+        points[i].positions.empty() && points[i].velocities.empty() &&
+        points[i].accelerations.empty())
       {
         RCLCPP_ERROR(
           get_node()->get_logger(),
