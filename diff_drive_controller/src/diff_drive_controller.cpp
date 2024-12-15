@@ -299,7 +299,7 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   const double right_wheel_radius = params_.right_wheel_radius_multiplier * params_.wheel_radius;
 
   odometry_.setWheelParams(wheel_separation, left_wheel_radius, right_wheel_radius);
-  odometry_.setVelocityRollingWindowSize(params_.velocity_rolling_window_size);
+  odometry_.setVelocityRollingWindowSize(static_cast<size_t>(params_.velocity_rolling_window_size));
 
   cmd_vel_timeout_ = std::chrono::milliseconds{static_cast<int>(params_.cmd_vel_timeout * 1000.0)};
   publish_limited_velocity_ = params_.publish_limited_velocity;
@@ -443,13 +443,14 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
       tf_prefix = std::string(get_node()->get_namespace());
     }
 
-    if (tf_prefix == "/")
-    {
-      tf_prefix = "";
-    }
-    else
+    // Make sure prefix does not start with '/' and always ends with '/'
+    if (tf_prefix.back() != '/')
     {
       tf_prefix = tf_prefix + "/";
+    }
+    if (tf_prefix.front() == '/')
+    {
+      tf_prefix.erase(0, 1);
     }
   }
 

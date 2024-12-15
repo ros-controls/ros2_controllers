@@ -392,7 +392,6 @@ TEST_F(TestDiffDriveController, configure_succeeds_tf_test_prefix_true_set_names
 TEST_F(TestDiffDriveController, configure_succeeds_tf_blank_prefix_true_set_namespace)
 {
   std::string test_namespace = "/test_namespace";
-
   std::string odom_id = "odom";
   std::string base_link_id = "base_link";
   std::string frame_prefix = "";
@@ -412,10 +411,11 @@ TEST_F(TestDiffDriveController, configure_succeeds_tf_blank_prefix_true_set_name
   auto odometry_message = controller_->get_rt_odom_publisher()->msg_;
   std::string test_odom_frame_id = odometry_message.header.frame_id;
   std::string test_base_frame_id = odometry_message.child_frame_id;
+  std::string ns_prefix = test_namespace.erase(0, 1) + "/";
   /* tf_frame_prefix_enable is true but frame_prefix is blank so namespace should be appended to the
    * frame id's */
-  ASSERT_EQ(test_odom_frame_id, test_namespace + "/" + odom_id);
-  ASSERT_EQ(test_base_frame_id, test_namespace + "/" + base_link_id);
+  ASSERT_EQ(test_odom_frame_id, ns_prefix + odom_id);
+  ASSERT_EQ(test_base_frame_id, ns_prefix + base_link_id);
 }
 
 TEST_F(TestDiffDriveController, activate_fails_without_resources_assigned)
