@@ -25,7 +25,7 @@
 #include "pose_broadcaster_parameters.hpp"
 #include "rclcpp/publisher.hpp"
 #include "rclcpp_lifecycle/state.hpp"
-#include "realtime_tools/realtime_publisher.h"
+#include "realtime_tools/realtime_publisher.hpp"
 #include "semantic_components/pose_sensor.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"
 

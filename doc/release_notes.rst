@@ -7,11 +7,14 @@ This list summarizes the changes between Iron (previous) and Jazzy (current) rel
 admittance_controller
 ************************
 * Remove ``robot_description`` parameter from parameter YAML, because it is not used at all (`#963 <https://github.com/ros-controls/ros2_controllers/pull/963>`_).
+* Added ``~/wrench_reference`` input topic which allows to provide a force-torque offset as WrenchStamped (`#1249 <https://github.com/ros-controls/ros2_controllers/pull/1249>`_).
 
 diff_drive_controller
 *****************************
 * The twist message on ``~/cmd_vel`` is now required to be of stamped type (`#812 <https://github.com/ros-controls/ros2_controllers/pull/812>`_).
 * Remove unused parameter ``wheels_per_side`` (`#958 <https://github.com/ros-controls/ros2_controllers/pull/958>`_).
+* Parameters ``has_velocity_limits``, ``has_acceleration_limits``, and ``has_jerk_limits`` are removed. Instead, set the respective limits to ``.NAN``. (`#1315 <https://github.com/ros-controls/ros2_controllers/pull/1315>`_).
+* Parameters ``max_acceleration_reverse`` and ``max_deceleration_reverse`` were added to configure asymmetric acceleration/deceleration behavior. (`#1315 <https://github.com/ros-controls/ros2_controllers/pull/1315>`_).
 
 joint_trajectory_controller
 *****************************
@@ -50,6 +53,10 @@ joint_trajectory_controller
 
 * Add the boolean parameter ``set_last_command_interface_value_as_state_on_activation``. When set to ``true``, the last command interface value is used as both the current state and the last commanded state upon activation. When set to ``false``, the current state is used for both (`#1231 <https://github.com/ros-controls/ros2_controllers/pull/1231>`_).
 
+mecanum_drive_controller
+************************
+* 🚀 The mecanum_drive_controller was added 🎉 (`#512 <https://github.com/ros-controls/ros2_controllers/pull/512>`_).
+
 pid_controller
 ************************
 * 🚀 The PID controller was added 🎉 (`#434 <https://github.com/ros-controls/ros2_controllers/pull/434>`_).
@@ -63,3 +70,7 @@ steering_controllers_library
 tricycle_controller
 ************************
 * tricycle_controller now uses generate_parameter_library (`#957 <https://github.com/ros-controls/ros2_controllers/pull/957>`_).
+
+gpio_controllers
+************************
+* The GPIO command controller was added 🎉 (`#1251 <https://github.com/ros-controls/ros2_controllers/pull/1251>`_).

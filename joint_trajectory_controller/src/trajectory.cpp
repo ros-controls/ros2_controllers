@@ -91,7 +91,8 @@ bool Trajectory::sample(
   const rclcpp::Time & sample_time,
   const interpolation_methods::InterpolationMethod interpolation_method,
   trajectory_msgs::msg::JointTrajectoryPoint & output_state,
-  TrajectoryPointConstIter & start_segment_itr, TrajectoryPointConstIter & end_segment_itr)
+  TrajectoryPointConstIter & start_segment_itr, TrajectoryPointConstIter & end_segment_itr,
+  const bool search_monotonically_increasing)
 {
   THROW_ON_NULLPTR(trajectory_msg_)
 
@@ -174,9 +175,12 @@ bool Trajectory::sample(
 
         interpolate_between_points(t0, point, t1, next_point, sample_time, output_state);
       }
-      start_segment_itr = begin() + i;
-      end_segment_itr = begin() + (i + 1);
-      last_sample_idx_ = i;
+      start_segment_itr = begin() + static_cast<TrajectoryPointConstIter::difference_type>(i);
+      end_segment_itr = begin() + static_cast<TrajectoryPointConstIter::difference_type>(i + 1);
+      if (search_monotonically_increasing)
+      {
+        last_sample_idx_ = i;
+      }
       return true;
     }
   }

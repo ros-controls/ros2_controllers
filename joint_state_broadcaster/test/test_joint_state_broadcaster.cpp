@@ -1091,10 +1091,10 @@ void JointStateBroadcasterTest::test_published_dynamic_joint_state_message(
     ASSERT_THAT(
       dynamic_joint_state_msg->interface_values[i].interface_names,
       ElementsAreArray(INTERFACE_NAMES));
-    const auto index_in_original_order = std::distance(
+    const auto index_in_original_order = static_cast<size_t>(std::distance(
       joint_names_.cbegin(),
       std::find(
-        joint_names_.cbegin(), joint_names_.cend(), dynamic_joint_state_msg->joint_names[i]));
+        joint_names_.cbegin(), joint_names_.cend(), dynamic_joint_state_msg->joint_names[i])));
     ASSERT_THAT(
       dynamic_joint_state_msg->interface_values[i].values,
       Each(joint_values_[index_in_original_order]));
