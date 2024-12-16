@@ -23,21 +23,20 @@ test_diff_drive_controller:
     publish_limited_velocity: true
     velocity_rolling_window_size: 10
 
-    linear.x.has_velocity_limits: false
-    linear.x.has_acceleration_limits: false
-    linear.x.has_jerk_limits: false
-    linear.x.max_velocity: 0.0
-    linear.x.min_velocity: 0.0
-    linear.x.max_acceleration: 0.0
-    linear.x.max_jerk: 0.0
-    linear.x.min_jerk: 0.0
+    linear.x.max_velocity: .NAN
+    linear.x.min_velocity: .NAN
+    linear.x.max_acceleration: .NAN
+    linear.x.max_deceleration: .NAN
+    linear.x.max_acceleration_reverse: .NAN
+    linear.x.max_deceleration_reverse: .NAN
+    linear.x.max_jerk: .NAN
+    linear.x.min_jerk: .NAN
 
-    angular.z.has_velocity_limits: false
-    angular.z.has_acceleration_limits: false
-    angular.z.has_jerk_limits: false
-    angular.z.max_velocity: 0.0
-    angular.z.min_velocity: 0.0
-    angular.z.max_acceleration: 0.0
-    angular.z.min_acceleration: 0.0
-    angular.z.max_jerk: 0.0
-    angular.z.min_jerk: 0.0
+    angular.z.max_velocity: .NAN
+    angular.z.min_velocity: .NAN
+    angular.z.max_acceleration: .NAN
+    angular.z.max_deceleration: .NAN
+    angular.z.max_acceleration_reverse: .NAN
+    angular.z.max_deceleration_reverse: .NAN
+    angular.z.max_jerk: .NAN
+    angular.z.min_jerk: .NAN
