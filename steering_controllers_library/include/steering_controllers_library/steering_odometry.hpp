@@ -22,6 +22,7 @@
 #include <tuple>
 #include <vector>
 
+#include <rclcpp/time.hpp>
 #include "rcppmath/rolling_mean_accumulator.hpp"
 
 namespace steering_odometry
