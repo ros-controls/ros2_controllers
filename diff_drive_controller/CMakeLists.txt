@@ -8,6 +8,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
 endif()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
+  control_toolbox
   controller_interface
   generate_parameter_library
   geometry_msgs
@@ -32,19 +33,21 @@ add_compile_definitions(RCPPUTILS_VERSION_MINOR=${rcpputils_VERSION_MINOR})
 
 generate_parameter_library(diff_drive_controller_parameters
   src/diff_drive_controller_parameter.yaml
+  include/diff_drive_controller/custom_validators.hpp
 )
 
 add_library(diff_drive_controller SHARED
   src/diff_drive_controller.cpp
   src/odometry.cpp
-  src/speed_limiter.cpp
 )
 target_compile_features(diff_drive_controller PUBLIC cxx_std_17)
 target_include_directories(diff_drive_controller PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/diff_drive_controller>
 )
-target_link_libraries(diff_drive_controller PUBLIC diff_drive_controller_parameters)
+target_link_libraries(diff_drive_controller
+  PUBLIC
+    diff_drive_controller_parameters)
 ament_target_dependencies(diff_drive_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
@@ -57,7 +60,8 @@ if(BUILD_TESTING)
   find_package(ros2_control_test_assets REQUIRED)
 
   ament_add_gmock(test_diff_drive_controller
-    test/test_diff_drive_controller.cpp)
+    test/test_diff_drive_controller.cpp
+  )
   target_link_libraries(test_diff_drive_controller
     diff_drive_controller
   )
