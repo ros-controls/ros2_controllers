@@ -8,6 +8,7 @@ This list summarizes important changes between Iron (previous) and Jazzy (curren
 diff_drive_controller
 *****************************
 * The twist message on ``~/cmd_vel`` is now required to be of stamped type (`#812 <https://github.com/ros-controls/ros2_controllers/pull/812>`_).
+* Parameters ``has_velocity_limits``, ``has_acceleration_limits``, and ``has_jerk_limits`` are removed. Instead, set the respective limits to ``.NAN``. (`#1315 <https://github.com/ros-controls/ros2_controllers/pull/1315>`_).
 
 joint_trajectory_controller
 *****************************

@@ -45,7 +45,14 @@ using hardware_interface::HW_IF_POSITION;
 using hardware_interface::HW_IF_VELOCITY;
 using lifecycle_msgs::msg::State;
 
-DiffDriveController::DiffDriveController() : controller_interface::ControllerInterface() {}
+DiffDriveController::DiffDriveController()
+: controller_interface::ControllerInterface(),
+  // dummy limiter, will be created in on_configure
+  // could be done with shared_ptr instead -> but will break ABI
+  limiter_angular_(std::numeric_limits<double>::quiet_NaN()),
+  limiter_linear_(std::numeric_limits<double>::quiet_NaN())
+{
+}
 
 const char * DiffDriveController::feedback_type() const
 {
@@ -111,26 +118,27 @@ controller_interface::return_type DiffDriveController::update(
     return controller_interface::return_type::OK;
   }
 
-  std::shared_ptr<Twist> last_command_msg;
-  received_velocity_msg_ptr_.get(last_command_msg);
+  // if the mutex is unable to lock, last_command_msg_ won't be updated
+  received_velocity_msg_ptr_.try_get([this](const std::shared_ptr<TwistStamped> & msg)
+                                     { last_command_msg_ = msg; });
 
-  if (last_command_msg == nullptr)
+  if (last_command_msg_ == nullptr)
   {
     RCLCPP_WARN(logger, "Velocity message received was a nullptr.");
     return controller_interface::return_type::ERROR;
   }
 
-  const auto age_of_last_command = time - last_command_msg->header.stamp;
+  const auto age_of_last_command = time - last_command_msg_->header.stamp;
   // Brake if cmd_vel has timeout, override the stored command
   if (age_of_last_command > cmd_vel_timeout_)
   {
-    last_command_msg->twist.linear.x = 0.0;
-    last_command_msg->twist.angular.z = 0.0;
+    last_command_msg_->twist.linear.x = 0.0;
+    last_command_msg_->twist.angular.z = 0.0;
   }
 
   // command may be limited further by SpeedLimit,
   // without affecting the stored twist command
-  Twist command = *last_command_msg;
+  TwistStamped command = *last_command_msg_;
   double & linear_command = command.twist.linear.x;
   double & angular_command = command.twist.angular.z;
 
@@ -291,22 +299,83 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   const double right_wheel_radius = params_.right_wheel_radius_multiplier * params_.wheel_radius;
 
   odometry_.setWheelParams(wheel_separation, left_wheel_radius, right_wheel_radius);
-  odometry_.setVelocityRollingWindowSize(params_.velocity_rolling_window_size);
+  odometry_.setVelocityRollingWindowSize(static_cast<size_t>(params_.velocity_rolling_window_size));
 
   cmd_vel_timeout_ = std::chrono::milliseconds{static_cast<int>(params_.cmd_vel_timeout * 1000.0)};
   publish_limited_velocity_ = params_.publish_limited_velocity;
 
+  // TODO(christophfroehlich) remove deprecated parameters
+  // START DEPRECATED
+  if (!params_.linear.x.has_velocity_limits)
+  {
+    RCLCPP_WARN(
+      logger,
+      "[deprecated] has_velocity_limits parameter is deprecated, instead set the respective limits "
+      "to NAN");
+    params_.linear.x.min_velocity = params_.linear.x.max_velocity =
+      std::numeric_limits<double>::quiet_NaN();
+  }
+  if (!params_.linear.x.has_acceleration_limits)
+  {
+    RCLCPP_WARN(
+      logger,
+      "[deprecated] has_acceleration_limits parameter is deprecated, instead set the respective "
+      "limits to "
+      "NAN");
+    params_.linear.x.max_deceleration = params_.linear.x.max_acceleration =
+      params_.linear.x.max_deceleration_reverse = params_.linear.x.max_acceleration_reverse =
+        std::numeric_limits<double>::quiet_NaN();
+  }
+  if (!params_.linear.x.has_jerk_limits)
+  {
+    RCLCPP_WARN(
+      logger,
+      "[deprecated] has_jerk_limits parameter is deprecated, instead set the respective limits to "
+      "NAN");
+    params_.linear.x.min_jerk = params_.linear.x.max_jerk =
+      std::numeric_limits<double>::quiet_NaN();
+  }
+  if (!params_.angular.z.has_velocity_limits)
+  {
+    RCLCPP_WARN(
+      logger,
+      "[deprecated] has_velocity_limits parameter is deprecated, instead set the respective limits "
+      "to NAN");
+    params_.angular.z.min_velocity = params_.angular.z.max_velocity =
+      std::numeric_limits<double>::quiet_NaN();
+  }
+  if (!params_.angular.z.has_acceleration_limits)
+  {
+    RCLCPP_WARN(
+      logger,
+      "[deprecated] has_acceleration_limits parameter is deprecated, instead set the respective "
+      "limits to "
+      "NAN");
+    params_.angular.z.max_deceleration = params_.angular.z.max_acceleration =
+      params_.angular.z.max_deceleration_reverse = params_.angular.z.max_acceleration_reverse =
+        std::numeric_limits<double>::quiet_NaN();
+  }
+  if (!params_.angular.z.has_jerk_limits)
+  {
+    RCLCPP_WARN(
+      logger,
+      "[deprecated] has_jerk_limits parameter is deprecated, instead set the respective limits to "
+      "NAN");
+    params_.angular.z.min_jerk = params_.angular.z.max_jerk =
+      std::numeric_limits<double>::quiet_NaN();
+  }
+  // END DEPRECATED
   limiter_linear_ = SpeedLimiter(
-    params_.linear.x.has_velocity_limits, params_.linear.x.has_acceleration_limits,
-    params_.linear.x.has_jerk_limits, params_.linear.x.min_velocity, params_.linear.x.max_velocity,
-    params_.linear.x.min_acceleration, params_.linear.x.max_acceleration, params_.linear.x.min_jerk,
-    params_.linear.x.max_jerk);
+    params_.linear.x.min_velocity, params_.linear.x.max_velocity,
+    params_.linear.x.max_acceleration_reverse, params_.linear.x.max_acceleration,
+    params_.linear.x.max_deceleration, params_.linear.x.max_deceleration_reverse,
+    params_.linear.x.min_jerk, params_.linear.x.max_jerk);
 
   limiter_angular_ = SpeedLimiter(
-    params_.angular.z.has_velocity_limits, params_.angular.z.has_acceleration_limits,
-    params_.angular.z.has_jerk_limits, params_.angular.z.min_velocity,
-    params_.angular.z.max_velocity, params_.angular.z.min_acceleration,
-    params_.angular.z.max_acceleration, params_.angular.z.min_jerk, params_.angular.z.max_jerk);
+    params_.angular.z.min_velocity, params_.angular.z.max_velocity,
+    params_.angular.z.max_acceleration_reverse, params_.angular.z.max_acceleration,
+    params_.angular.z.max_deceleration, params_.angular.z.max_deceleration_reverse,
+    params_.angular.z.min_jerk, params_.angular.z.max_jerk);
 
   if (!reset())
   {
@@ -318,23 +387,24 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
 
   if (publish_limited_velocity_)
   {
-    limited_velocity_publisher_ =
-      get_node()->create_publisher<Twist>(DEFAULT_COMMAND_OUT_TOPIC, rclcpp::SystemDefaultsQoS());
+    limited_velocity_publisher_ = get_node()->create_publisher<TwistStamped>(
+      DEFAULT_COMMAND_OUT_TOPIC, rclcpp::SystemDefaultsQoS());
     realtime_limited_velocity_publisher_ =
-      std::make_shared<realtime_tools::RealtimePublisher<Twist>>(limited_velocity_publisher_);
+      std::make_shared<realtime_tools::RealtimePublisher<TwistStamped>>(
+        limited_velocity_publisher_);
   }
 
-  const Twist empty_twist;
-  received_velocity_msg_ptr_.set(std::make_shared<Twist>(empty_twist));
-
+  last_command_msg_ = std::make_shared<TwistStamped>();
+  received_velocity_msg_ptr_.set([this](std::shared_ptr<TwistStamped> & stored_value)
+                                 { stored_value = last_command_msg_; });
   // Fill last two commands with default constructed commands
-  previous_commands_.emplace(empty_twist);
-  previous_commands_.emplace(empty_twist);
+  previous_commands_.emplace(*last_command_msg_);
+  previous_commands_.emplace(*last_command_msg_);
 
   // initialize command subscriber
-  velocity_command_subscriber_ = get_node()->create_subscription<Twist>(
+  velocity_command_subscriber_ = get_node()->create_subscription<TwistStamped>(
     DEFAULT_COMMAND_TOPIC, rclcpp::SystemDefaultsQoS(),
-    [this](const std::shared_ptr<Twist> msg) -> void
+    [this](const std::shared_ptr<TwistStamped> msg) -> void
     {
       if (!subscriber_is_active_)
       {
@@ -349,7 +419,8 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
           "time, this message will only be shown once");
         msg->header.stamp = get_node()->get_clock()->now();
       }
-      received_velocity_msg_ptr_.set(std::move(msg));
+      received_velocity_msg_ptr_.set([msg](std::shared_ptr<TwistStamped> & stored_value)
+                                     { stored_value = std::move(msg); });
     });
 
   // initialize odometry publisher and message
@@ -372,13 +443,14 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
       tf_prefix = std::string(get_node()->get_namespace());
     }
 
-    if (tf_prefix == "/")
-    {
-      tf_prefix = "";
-    }
-    else
+    // Make sure prefix does not start with '/' and always ends with '/'
+    if (tf_prefix.back() != '/')
     {
       tf_prefix = tf_prefix + "/";
+    }
+    if (tf_prefix.front() == '/')
+    {
+      tf_prefix.erase(0, 1);
     }
   }
 
@@ -475,7 +547,6 @@ controller_interface::CallbackReturn DiffDriveController::on_cleanup(
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  received_velocity_msg_ptr_.set(std::make_shared<Twist>());
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
@@ -493,7 +564,7 @@ bool DiffDriveController::reset()
   odometry_.resetOdometry();
 
   // release the old queue
-  std::queue<Twist> empty;
+  std::queue<TwistStamped> empty;
   std::swap(previous_commands_, empty);
 
   registered_left_wheel_handles_.clear();

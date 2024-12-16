@@ -36,9 +36,9 @@
 #include "rclcpp/timer.hpp"
 #include "rclcpp_action/server.hpp"
 #include "rclcpp_lifecycle/state.hpp"
-#include "realtime_tools/realtime_buffer.h"
-#include "realtime_tools/realtime_publisher.h"
-#include "realtime_tools/realtime_server_goal_handle.h"
+#include "realtime_tools/realtime_buffer.hpp"
+#include "realtime_tools/realtime_publisher.hpp"
+#include "realtime_tools/realtime_server_goal_handle.hpp"
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
@@ -126,6 +126,8 @@ protected:
   std::shared_ptr<ParamListener> param_listener_;
   Params params_;
   rclcpp::Duration update_period_{0, 0};
+
+  rclcpp::Time traj_time_;
 
   trajectory_msgs::msg::JointTrajectoryPoint last_commanded_state_;
   /// Specify interpolation method. Default to splines.
