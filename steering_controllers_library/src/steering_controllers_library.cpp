@@ -452,8 +452,9 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
     last_linear_velocity_ = reference_interfaces_[0];
     last_angular_velocity_ = reference_interfaces_[1];
 
-    auto [traction_commands, steering_commands] =
-      odometry_.get_commands(last_linear_velocity_, last_angular_velocity_, params_.open_loop);
+    auto [traction_commands, steering_commands] = odometry_.get_commands(
+      last_linear_velocity_, last_angular_velocity_, params_.open_loop,
+      params_.reduce_wheel_speed_until_steering_reached);
     if (params_.front_steering)
     {
       for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
