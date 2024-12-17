@@ -16,6 +16,7 @@
 #define MULTI_TIME_TRAJECTORY_CONTROLLER__MULTI_TIME_TRAJECTORY_CONTROLLER_HPP_
 
 #include <realtime_tools/realtime_server_goal_handle.h>
+#include <realtime_tools/realtime_publisher.hpp>
 
 #include <memory>
 #include <string>
