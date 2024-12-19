@@ -1686,7 +1686,9 @@ TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_erro
   rclcpp::executors::SingleThreadedExecutor executor;
   // default if false so it will not be actually set parameter
   rclcpp::Parameter is_open_loop_parameters("open_loop_control", false);
-  SetUpAndActivateTrajectoryController(executor, {is_open_loop_parameters}, true);
+  rclcpp::Parameter update_rate_param("update_rate", 100);
+  SetUpAndActivateTrajectoryController(
+    executor, {is_open_loop_parameters, update_rate_param}, true);
 
   if (traj_controller_->has_position_command_interface() == false)
   {
