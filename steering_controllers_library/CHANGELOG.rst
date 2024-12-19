@@ -2,8 +2,8 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.18.0 (2024-12-19)
+-------------------
 * steering_controllers_library: Add `reduce_wheel_speed_until_steering_reached` parameter (`#1314 <https://github.com/ros-controls/ros2_controllers/issues/1314>`_)
 * [CI] Add clang job and setup concurrency (`#1407 <https://github.com/ros-controls/ros2_controllers/issues/1407>`_)
 * Contributors: Christoph Fröhlich

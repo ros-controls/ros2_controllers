@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.18.0 (2024-12-19)
+-------------------
 * Add an error msg if empty message is received (`#1424 <https://github.com/ros-controls/ros2_controllers/issues/1424>`_)
 * [CI] Add clang job and setup concurrency (`#1407 <https://github.com/ros-controls/ros2_controllers/issues/1407>`_)
 * Contributors: Christoph Fröhlich

@@ -2,8 +2,8 @@
 Changelog for package pid_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.18.0 (2024-12-19)
+-------------------
 * [CI] Add clang job and setup concurrency (`#1407 <https://github.com/ros-controls/ros2_controllers/issues/1407>`_)
 * Contributors: Christoph Fröhlich
 
