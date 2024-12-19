@@ -2,6 +2,9 @@
 Changelog for package gpio_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 4.17.0 (2024-12-07)
 -------------------
 * Add missing dependency to gpio_controllers (`#1410 <https://github.com/ros-controls/ros2_controllers/issues/1410>`_)

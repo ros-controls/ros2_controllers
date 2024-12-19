@@ -2,6 +2,11 @@
 Changelog for package ros2_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add missing plugins to ros2_controllers dependencies (`#1413 <https://github.com/ros-controls/ros2_controllers/issues/1413>`_)
+* Contributors: Sai Kishor Kothakota
+
 4.17.0 (2024-12-07)
 -------------------
 * Add Mecanum Drive Controller (`#512 <https://github.com/ros-controls/ros2_controllers/issues/512>`_)

@@ -2,6 +2,9 @@
 Changelog for package ros2_controllers_test_nodes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 4.17.0 (2024-12-07)
 -------------------
 * Don't call shutdown() after an exception (`#1400 <https://github.com/ros-controls/ros2_controllers/issues/1400>`_)
