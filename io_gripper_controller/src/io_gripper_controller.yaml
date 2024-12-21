@@ -1,0 +1,258 @@
+# Copyright (c) 20224 Stogl Robotics Consulting UG (haftungsbeschränkt)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+#
+# Source of this file are templates in
+# [RosTeamWorkspace](https://github.com/StoglRobotics/ros_team_workspace) repository.
+#
+
+io_gripper_controller:
+  use_action: {
+    type: bool,
+    default_value: false,
+    description: "True for using action server and false service server for the gripper",
+  }
+  open_close_joints: {
+    type: string_array,
+    default_value: [],
+    description: "List of joint names that should change values according to open or close state of the gripper",
+    validation: {
+      unique<>: null,
+    }
+  }
+  open:
+    joint_states: {
+      type: double_array,
+      default_value: [],
+      description: "List of joint values when gripper is open. The order of the values should match the order of the joint names in open_close_joints",
+      validation: {
+        unique<>: null,
+      }
+    }
+    set_before_command:
+      high: {
+        type: string_array,
+        default_value: [""],
+        description: "(optional) list of command interfaces that have to be set to high (1.0) before opening the gripper",
+        validation: {
+          unique<>: null,
+        }
+      }
+      low: {
+        type: string_array,
+        default_value: [""],
+        description: "(optional) list of command interfaces that have to be set to low (0.0) before opening the gripper",
+        validation: {
+          unique<>: null,
+        }
+      }
+    command:
+      high: {
+        type: string_array,
+        default_value: [],
+        description: "(optional) list of command interfaces that have to be set to high (1.0) to open the gripper.",
+        validation: {
+          unique<>: null,
+        }
+      }
+      low: {
+        type: string_array,
+        default_value: [],
+        description: "(optional) list of command interface names that have to be see to low (0.0) to open the gripper.",
+        validation: {
+          unique<>: null,
+        }
+      }
+    state:
+      high: {
+        type: string_array,
+        default_value: [],
+        description: "(optional) list of state interfaces that have to equal high (1.0) to represent the gripper is open.",
+        validation: {
+          unique<>: null,
+        }
+      }
+      low: {
+        type: string_array,
+        default_value: [],
+        description: "(optional) list of state interfaces that have to equal low (0.0) to represent the gripper is open.",
+        validation: {
+          unique<>: null,
+        }
+      }
+    set_after_command:
+      high: {
+        type: string_array,
+        default_value: [""],
+        description: "(optional) list of command interfaces that have to be set to high (1.0) after opening the gripper",
+        validation: {
+          unique<>: null,
+        }
+      }
+      low: {
+        type: string_array,
+        default_value: [""],
+        description: "(optional) list of command interface names that have to be set to low (0.0) after opening the gripper.",
+        validation: {
+          unique<>: null,
+        }
+      }
+  possible_closed_states: {
+    type: string_array,
+    default_value: [""],
+    description: "List of possible closed states e.g. empty_close and full close",
+    validation: {
+      unique<>: null,
+    }
+  }
+  close:
+    set_before_command:
+      high: {
+        type: string_array,
+        default_value: [""],
+        description: "(optional) list of command interfaces that have to be set to high (1.0) before closing the gripper",
+        validation: {
+          unique<>: null,
+        }
+      }
+      low: {
+        type: string_array,
+        default_value: [""],
+        description: "(optional) list of command interfaces that have to be set to low (0.0) before closing the gripper",
+        validation: {
+          unique<>: null,
+        }
+      }
+    command:
+      high: {
+        type: string_array,
+        default_value: [""],
+        description: "(optional) list of command interfaces that have to be set to high (1.0) to close the gripper",
+        validation: {
+          unique<>: null,
+        }
+      }
+      low: {
+        type: string_array,
+        default_value: [""],
+        description: "(optional) list of command interfaces that have to be set to low (0.0) to close the gripper",
+        validation: {
+          unique<>: null,
+        }
+      }
+    state:
+      __map_possible_closed_states:
+        joint_states: {
+          type: double_array,
+          default_value: [],
+          description: "List of joint values when gripper is closed. The order of the values should match the order of the joint names in open_close_joints",
+          validation: {
+            unique<>: null,
+          }
+        }
+        high: {
+          type: string_array,
+          default_value: [""],
+          description: "(optional) list of state interfaces that have to equal high (1.0) to represent the gripper is closed",
+          validation: {
+            unique<>: null,
+          }
+        }
+        low: {
+          type: string_array,
+          default_value: [""],
+          description: "(optional) list of state interfaces that have to equal low (0.0) to represent the gripper is closed",
+          validation: {
+            unique<>: null,
+          }
+        }
+        set_after_command_high: {
+          type: string_array,
+          default_value: [""],
+          description: "(optional) list of command interfaces that have to be set to high (1.0) after closing the gripper",
+          validation: {
+            unique<>: null,
+          }
+        }
+        set_after_command_low: {
+          type: string_array,
+          default_value: [""],
+          description: "(optional) list of command interface names that have to be set to low (0.0) after closing the gripper.",
+          validation: {
+            unique<>: null,
+          }
+      }
+  configuration_joints: {
+    type: string_array,
+    default_value: [],
+    description: "List of joint names that are used to switch between different configurations of the gripper",
+    validation: {
+      unique<>: null,
+    }
+  }
+  
+  configurations: {
+    type: string_array,
+    default_value: [],
+    description: "Configuration names that can be used to switch between different configurations of the gripper",
+    validation: {
+      unique<>: null,
+    }
+  }
+  configuration_setup:
+    __map_configurations:
+      joint_states: {
+        type: double_array,
+        default_value: [],
+        description: "List of joint states that open the gripper",
+        validation: {
+          unique<>: null,
+        }
+      }
+      command_high: {
+        type: string_array,
+        default_value: [],
+        description: "(optional) list of command interfaces that have to be set to high (1.0) for this configuration.",
+      }
+      command_low: {
+        type: string_array,
+        default_value: [],
+        description: "(optional) list of command interfaces that have to be set to low (0.0) for this configuration.",
+      }
+      state_high: {
+        type: string_array,
+        default_value: [],
+        description: "(optional) list of state interfaces that have to be high (1.0) to represent this configuration.",
+      }
+      state_low: {
+        type: string_array,
+        default_value: [],
+        description: "(optional) list of state interfaces that have to be low (0.0) to represent this configuration.",
+      }
+
+  gripper_specific_sensors: {
+    type: string_array,
+    default_value: [],
+    description: "List of sensor names that are specific to the gripper",
+    validation: {
+      unique<>: null,
+    }
+  }
+  sensors_interfaces:
+    __map_gripper_specific_sensors:
+      input: {
+        type: string,
+        default_value: "",
+        description: "Name of the input interface that is specific to the gripper",
+      }
