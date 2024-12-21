@@ -81,7 +81,8 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   params_ = param_listener_->get_params();
-  odometry_.set_velocity_rolling_window_size(params_.velocity_rolling_window_size);
+  odometry_.set_velocity_rolling_window_size(
+    static_cast<size_t>(params_.velocity_rolling_window_size));
 
   configure_odometry();
 
@@ -352,7 +353,7 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_deactivate(
 }
 
 controller_interface::return_type SteeringControllersLibrary::update_reference_from_subscribers(
-  const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
+  const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
   auto current_ref = *(input_ref_.readFromRT());
 
@@ -385,8 +386,10 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
     const auto timeout =
       age_of_last_command > ref_timeout_ && ref_timeout_ != rclcpp::Duration::from_seconds(0);
 
-    auto [traction_commands, steering_commands] =
-      odometry_.get_commands(last_linear_velocity_, last_angular_velocity_, params_.open_loop);
+    auto [traction_commands, steering_commands] = odometry_.get_commands(
+      last_linear_velocity_, last_angular_velocity_, params_.open_loop,
+      params_.reduce_wheel_speed_until_steering_reached);
+
     if (params_.front_steering)
     {
       for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)

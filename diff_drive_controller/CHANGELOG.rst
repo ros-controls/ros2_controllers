@@ -2,6 +2,22 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.18.0 (2024-12-19)
+-------------------
+* Update command limiter of diff_drive_controller (`#1315 <https://github.com/ros-controls/ros2_controllers/issues/1315>`_)
+* Improve tf_prefix based on namespace (`#1420 <https://github.com/ros-controls/ros2_controllers/issues/1420>`_)
+* [CI] Add clang job and setup concurrency (`#1407 <https://github.com/ros-controls/ros2_controllers/issues/1407>`_)
+* Contributors: Christoph Fröhlich, Rafal Gorecki
+
+4.17.0 (2024-12-07)
+-------------------
+* Use the .hpp headers from `realtime_tools` package (`#1406 <https://github.com/ros-controls/ros2_controllers/issues/1406>`_)
+* Fix RealtimeBox API changes (`#1385 <https://github.com/ros-controls/ros2_controllers/issues/1385>`_)
+* Rename Twist->TwistStamped (`#1393 <https://github.com/ros-controls/ros2_controllers/issues/1393>`_)
+* Add few warning flags to error in all ros2_controllers packages and fix tests (`#1370 <https://github.com/ros-controls/ros2_controllers/issues/1370>`_)
+* Update maintainers and add url tags (`#1363 <https://github.com/ros-controls/ros2_controllers/issues/1363>`_)
+* Contributors: Christoph Fröhlich, Sai Kishor Kothakota
+
 4.16.0 (2024-11-08)
 -------------------
 
