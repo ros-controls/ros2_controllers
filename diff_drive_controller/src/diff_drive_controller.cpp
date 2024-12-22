@@ -159,9 +159,28 @@ controller_interface::return_type DiffDriveController::update(
     double right_feedback_mean = 0.0;
     for (size_t index = 0; index < static_cast<size_t>(wheels_per_side_); ++index)
     {
-      const double left_feedback = registered_left_wheel_handles_[index].feedback.get().get_value();
-      const double right_feedback =
-        registered_right_wheel_handles_[index].feedback.get().get_value();
+      bool left_success = false;
+      const double left_feedback = [&]()
+      {
+        double temp{};
+        left_success = registered_left_wheel_handles_[index].feedback.get().get_value(temp);
+        return temp;
+      }();
+
+      bool right_success = false;
+      const double right_feedback = [&]()
+      {
+        double temp{};
+        right_success = registered_right_wheel_handles_[index].feedback.get().get_value(temp);
+        return temp;
+      }();
+
+      if (!left_success || !right_success)
+      {
+        RCLCPP_WARN(
+          get_node()->get_logger(), "Error while fetching information from the state interfaces");
+        return controller_interface::return_type::OK;
+      }
 
       if (std::isnan(left_feedback) || std::isnan(right_feedback))
       {
@@ -267,8 +286,17 @@ controller_interface::return_type DiffDriveController::update(
   // Set wheels velocities:
   for (size_t index = 0; index < static_cast<size_t>(wheels_per_side_); ++index)
   {
-    registered_left_wheel_handles_[index].velocity.get().set_value(velocity_left);
-    registered_right_wheel_handles_[index].velocity.get().set_value(velocity_right);
+    if (
+      !registered_left_wheel_handles_[index].velocity.get().set_value(velocity_left) ||
+      !registered_right_wheel_handles_[index].velocity.get().set_value(velocity_right))
+    {
+      RCLCPP_WARN(
+        get_node()->get_logger(),
+        "Error while setting the velocity_left : %f "
+        "and velocity_right : %f to the command handles",
+        velocity_left, velocity_right);
+      return controller_interface::return_type::OK;
+    }
   }
 
   return controller_interface::return_type::OK;
@@ -590,7 +618,12 @@ void DiffDriveController::halt()
   {
     for (const auto & wheel_handle : wheel_handles)
     {
-      wheel_handle.velocity.get().set_value(0.0);
+      if (!wheel_handle.velocity.get().set_value(0.0))
+      {
+        RCLCPP_WARN(
+          rclcpp::get_logger("DiffDriveController"),
+          "Error while setting the wheel velocity to 0.0");
+      }
     }
   };
 
