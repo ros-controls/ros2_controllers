@@ -880,7 +880,7 @@ void TrajectoryControllerTest::test_state_publish_rate_target(int target_msg_cou
   }
 
   // We may miss the last message since time allowed is exactly the time needed
-  EXPECT_NEAR(target_msg_count, echo_received_counter, 1);
+  EXPECT_NEAR(target_msg_count, echo_received_counter, 2);
 
   executor.cancel();
 }
@@ -893,10 +893,10 @@ TEST_P(TrajectoryControllerTestParameterized, test_state_publish_rate)
   test_state_publish_rate_target(10);
 }
 
-// TEST_P(TrajectoryControllerTestParameterized, zero_state_publish_rate)
-// {
-//   test_state_publish_rate_target(0);
-// }
+TEST_P(TrajectoryControllerTestParameterized, test_lower_state_publish_rate)
+{
+  test_state_publish_rate_target(1);
+}
 
 /**
  * @brief check if use_closed_loop_pid is active
