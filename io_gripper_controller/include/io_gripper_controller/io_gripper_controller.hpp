@@ -37,7 +37,6 @@
 #include "std_srvs/srv/set_bool.hpp"
 #include "std_srvs/srv/trigger.hpp"
 
-// TODO(anyone): Replace with controller specific messages
 #include <sensor_msgs/msg/joint_state.hpp>
 
 #include "control_msgs/srv/set_config.hpp"
@@ -51,13 +50,6 @@
 namespace io_gripper_controller
 {
 
-// TODO(anyone: example setup for control mode (usually you will use some enums defined in messages)
-enum class control_mode_type : std::uint8_t
-{
-  FAST = 0,
-  SLOW = 1,
-};
-
 enum class service_mode_type : std::uint8_t
 {
   IDLE = 0,
@@ -65,29 +57,24 @@ enum class service_mode_type : std::uint8_t
   CLOSE = 2,
 };
 
-// TODO : rearrange it later
 enum class gripper_state_type : std::uint8_t
 {
   IDLE = 0,
-  STORE_ORIGINAL_STATE = 1,
-  SET_BEFORE_COMMAND = 2,
-  CLOSE_GRIPPER = 3,
-  CHECK_GRIPPER_STATE = 4,
-  RESTORE_ORIGINAL_STATE = 5,
-  CHECK_RESTORE_STATE = 6,
-  OPEN_GRIPPER = 7,
-  START_CLOSE_GRIPPER = 8,
-  SET_AFTER_COMMAND = 9,
-  HALTED = 10,
+  SET_BEFORE_COMMAND = 1,
+  CLOSE_GRIPPER = 2,
+  CHECK_GRIPPER_STATE = 3,
+  OPEN_GRIPPER = 4,
+  START_CLOSE_GRIPPER = 5,
+  SET_AFTER_COMMAND = 6,
+  HALTED = 7,
 };
 
 enum class reconfigure_state_type : std::uint8_t
 {
   IDLE = 0,
-  RECONFIGURE = 1,
-  FIND_CONFIG = 2,
-  SET_COMMAND = 3,
-  CHECK_STATE = 4,
+  FIND_CONFIG = 1,
+  SET_COMMAND = 2,
+  CHECK_STATE = 3,
 };
 
 class IOGripperController : public controller_interface::ControllerInterface
@@ -153,7 +140,6 @@ public:
 protected:
   std::shared_ptr<io_gripper_controller::ParamListener> param_listener_;
 
-  rclcpp::Service<ControllerModeSrvType>::SharedPtr set_slow_control_mode_service_;
   rclcpp::Service<OpenSrvType>::SharedPtr open_service_;
   rclcpp::Service<OpenSrvType>::SharedPtr close_service_;
   rclcpp::Service<ConfigSrvType>::SharedPtr configure_gripper_service_;
@@ -161,7 +147,6 @@ protected:
   rclcpp_action::Server<GripperAction>::SharedPtr gripper_action_server_;
   rclcpp_action::Server<GripperConfigAction>::SharedPtr gripper_config_action_server_;
 
-  realtime_tools::RealtimeBuffer<control_mode_type> control_mode_;
   realtime_tools::RealtimeBuffer<service_mode_type> service_buffer_;
   realtime_tools::RealtimeBuffer<std::string> configure_gripper_buffer_;
   realtime_tools::RealtimeBuffer<gripper_state_type> gripper_state_buffer_;
@@ -186,13 +171,11 @@ protected:
   std::unique_ptr<EventPublisher> event_publisher_;
 
   std::atomic<bool> reconfigureFlag_{false}, openFlag_{false}, closeFlag_{false};
-  // std::atomic<bool> reconfigFlag{false};
 
 private:
   bool find_and_set_command(const std::string & name, const double value);
   bool find_and_get_state(const std::string & name, double& value);
   bool find_and_get_command(const std::string & name, double& value);
-  void init_msgs();
   void handle_gripper_state_transition_open(const gripper_state_type & state);
   void handle_gripper_state_transition_close(const gripper_state_type & state);
   void handle_reconfigure_state_transition(const reconfigure_state_type & state);
@@ -219,14 +202,11 @@ private:
 
   rclcpp::CallbackGroup::SharedPtr open_service_callback_group_, close_service_callback_group_, reconfigure_service_callback_group_;
 
-
   std::shared_ptr<control_msgs::action::Gripper_Feedback> gripper_feedback_;
   std::shared_ptr<control_msgs::action::Gripper_Result> gripper_result_;
   std::shared_ptr<control_msgs::action::SetGripperConfig_Feedback> gripper_config_feedback_;
   std::shared_ptr<control_msgs::action::SetGripperConfig_Result> gripper_config_result_;
-
-
-
+  
   rclcpp_action::GoalResponse handle_goal(
     const rclcpp_action::GoalUUID & uuid,
     std::shared_ptr<const GripperAction::Goal> goal);
@@ -247,12 +227,6 @@ private:
 
   void config_handle_accepted(const std::shared_ptr<GoalHandleGripperConfig> goal_handle);
   void config_execute(const std::shared_ptr<GoalHandleGripperConfig> goal_handle);
-  
-
-
-
-
-
 };
 
 }  // namespace io_gripper_controller
