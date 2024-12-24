@@ -31,11 +31,11 @@ class MecanumDriveControllerTest
 {
 };
 
-namespace
-{
-// Floating-point value comparison threshold
-const double EPS = 1e-3;
-}  // namespace
+// namespace
+// {
+// // Floating-point value comparison threshold
+// const double EPS = 1e-3;
+// }  // namespace
 
 TEST_F(MecanumDriveControllerTest, when_controller_is_configured_expect_all_parameters_set)
 {
