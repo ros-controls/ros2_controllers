@@ -54,7 +54,7 @@ jobs:
       ros_distro: rolling
       ros_repo: testing
       upstream_workspace: ros2_controllers.rolling.repos
-      ref_for_scheduled_build: rolling
+      ref_for_scheduled_build: master
       additional_debs: clang
       c_compiler: clang
       cxx_compiler: clang++
