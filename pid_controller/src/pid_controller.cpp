@@ -277,7 +277,7 @@ void PidController::reference_callback(const std::shared_ptr<ControllerReference
         break;
       }
 
-      auto position = std::distance(ref_msg->dof_names.begin(), found_it);
+      auto position = static_cast<size_t>(std::distance(ref_msg->dof_names.begin(), found_it));
       ref_msg->values[position] = msg->values[i];
       ref_msg->values_dot[position] = msg->values_dot[i];
     }
