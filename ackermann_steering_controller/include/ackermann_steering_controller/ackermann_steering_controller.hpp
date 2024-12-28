@@ -20,7 +20,6 @@
 
 #include <memory>
 
-#include "ackermann_steering_controller/visibility_control.h"
 #include "ackermann_steering_controller_parameters.hpp"
 #include "steering_controllers_library/steering_controllers_library.hpp"
 
@@ -47,14 +46,11 @@ class AckermannSteeringController : public steering_controllers_library::Steerin
 public:
   AckermannSteeringController();
 
-  ACKERMANN_STEERING_CONTROLLER__VISIBILITY_PUBLIC controller_interface::CallbackReturn
-  configure_odometry() override;
+  controller_interface::CallbackReturn configure_odometry() override;
 
-  ACKERMANN_STEERING_CONTROLLER__VISIBILITY_PUBLIC bool update_odometry(
-    const rclcpp::Duration & period) override;
+  bool update_odometry(const rclcpp::Duration & period) override;
 
-  ACKERMANN_STEERING_CONTROLLER__VISIBILITY_PUBLIC void
-  initialize_implementation_parameter_listener() override;
+  void initialize_implementation_parameter_listener() override;
 
 protected:
   std::shared_ptr<ackermann_steering_controller::ParamListener> ackermann_param_listener_;
