@@ -416,26 +416,10 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
   if (!is_in_chained_mode())
   {
     auto current_ref = *(input_ref_.readFromRT());
-    const auto age_of_last_command = time - (current_ref)->header.stamp;
-
-    // send message only if there is no timeout
-    if (age_of_last_command <= ref_timeout_ || ref_timeout_ == rclcpp::Duration::from_seconds(0))
+    if (!std::isnan(current_ref->twist.linear.x) && !std::isnan(current_ref->twist.angular.z))
     {
-      if (!std::isnan(current_ref->twist.linear.x) && !std::isnan(current_ref->twist.angular.z))
-      {
-        reference_interfaces_[0] = current_ref->twist.linear.x;
-        reference_interfaces_[1] = current_ref->twist.angular.z;
-      }
-    }
-    else
-    {
-      if (!std::isnan(current_ref->twist.linear.x) && !std::isnan(current_ref->twist.angular.z))
-      {
-        reference_interfaces_[0] = 0.0;
-        reference_interfaces_[1] = 0.0;
-        current_ref->twist.linear.x = std::numeric_limits<double>::quiet_NaN();
-        current_ref->twist.angular.z = std::numeric_limits<double>::quiet_NaN();
-      }
+      reference_interfaces_[0] = current_ref->twist.linear.x;
+      reference_interfaces_[1] = current_ref->twist.angular.z;
     }
   }
 
@@ -452,6 +436,10 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
     last_linear_velocity_ = reference_interfaces_[0];
     last_angular_velocity_ = reference_interfaces_[1];
 
+    const auto age_of_last_command = time - (*(input_ref_.readFromRT()))->header.stamp;
+    const auto timeout =
+      age_of_last_command > ref_timeout_ && ref_timeout_ != rclcpp::Duration::from_seconds(0);
+
     auto [traction_commands, steering_commands] = odometry_.get_commands(
       last_linear_velocity_, last_angular_velocity_, params_.open_loop,
       params_.reduce_wheel_speed_until_steering_reached);
@@ -459,7 +447,7 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
     {
       for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
       {
-        command_interfaces_[i].set_value(traction_commands[i]);
+        command_interfaces_[i].set_value(timeout ? 0. : traction_commands[i]);
       }
       for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
       {
@@ -471,7 +459,7 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
       {
         for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
         {
-          command_interfaces_[i].set_value(traction_commands[i]);
+          command_interfaces_[i].set_value(timeout ? 0. : traction_commands[i]);
         }
         for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
         {
