@@ -25,7 +25,6 @@
 
 #include "controller_interface/chainable_controller_interface.hpp"
 #include "mecanum_drive_controller/odometry.hpp"
-#include "mecanum_drive_controller/visibility_control.h"
 #include "mecanum_drive_controller_parameters.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
@@ -51,35 +50,26 @@ static constexpr size_t NR_REF_ITFS = 3;
 class MecanumDriveController : public controller_interface::ChainableControllerInterface
 {
 public:
-  MECANUM_DRIVE_CONTROLLER__VISIBILITY_PUBLIC
   MecanumDriveController();
 
-  MECANUM_DRIVE_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::CallbackReturn on_init() override;
 
-  MECANUM_DRIVE_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::InterfaceConfiguration command_interface_configuration() const override;
 
-  MECANUM_DRIVE_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::InterfaceConfiguration state_interface_configuration() const override;
 
-  MECANUM_DRIVE_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::CallbackReturn on_configure(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  MECANUM_DRIVE_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::CallbackReturn on_activate(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  MECANUM_DRIVE_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::CallbackReturn on_deactivate(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  MECANUM_DRIVE_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::return_type update_reference_from_subscribers(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
-  MECANUM_DRIVE_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::return_type update_and_write_commands(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
@@ -149,7 +139,6 @@ protected:
 
 private:
   // callback for topic interface
-  MECANUM_DRIVE_CONTROLLER__VISIBILITY_LOCAL
   void reference_callback(const std::shared_ptr<ControllerReferenceMsg> msg);
 
   double velocity_in_center_frame_linear_x_;   // [m/s]

@@ -28,7 +28,6 @@
 #include "controller_interface/controller_interface.hpp"
 #include "diff_drive_controller/odometry.hpp"
 #include "diff_drive_controller/speed_limiter.hpp"
-#include "diff_drive_controller/visibility_control.h"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "odometry.hpp"
@@ -47,43 +46,32 @@ class DiffDriveController : public controller_interface::ControllerInterface
   using TwistStamped = geometry_msgs::msg::TwistStamped;
 
 public:
-  DIFF_DRIVE_CONTROLLER_PUBLIC
   DiffDriveController();
 
-  DIFF_DRIVE_CONTROLLER_PUBLIC
   controller_interface::InterfaceConfiguration command_interface_configuration() const override;
 
-  DIFF_DRIVE_CONTROLLER_PUBLIC
   controller_interface::InterfaceConfiguration state_interface_configuration() const override;
 
-  DIFF_DRIVE_CONTROLLER_PUBLIC
   controller_interface::return_type update(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
-  DIFF_DRIVE_CONTROLLER_PUBLIC
   controller_interface::CallbackReturn on_init() override;
 
-  DIFF_DRIVE_CONTROLLER_PUBLIC
   controller_interface::CallbackReturn on_configure(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  DIFF_DRIVE_CONTROLLER_PUBLIC
   controller_interface::CallbackReturn on_activate(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  DIFF_DRIVE_CONTROLLER_PUBLIC
   controller_interface::CallbackReturn on_deactivate(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  DIFF_DRIVE_CONTROLLER_PUBLIC
   controller_interface::CallbackReturn on_cleanup(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  DIFF_DRIVE_CONTROLLER_PUBLIC
   controller_interface::CallbackReturn on_error(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  DIFF_DRIVE_CONTROLLER_PUBLIC
   controller_interface::CallbackReturn on_shutdown(
     const rclcpp_lifecycle::State & previous_state) override;
 
