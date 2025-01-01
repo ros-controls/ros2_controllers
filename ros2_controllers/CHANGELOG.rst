@@ -2,6 +2,12 @@
 Changelog for package ros2_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add missing plugins to ros2_controllers dependencies (`#1413 <https://github.com/ros-controls/ros2_controllers/issues/1413>`_) (`#1415 <https://github.com/ros-controls/ros2_controllers/issues/1415>`_)
+* Gpio command controller (backport `#1251 <https://github.com/ros-controls/ros2_controllers/issues/1251>`_) (`#1372 <https://github.com/ros-controls/ros2_controllers/issues/1372>`_)
+* Contributors: Sai Kishor Kothakota, mergify[bot]
+
 2.39.0 (2024-12-03)
 -------------------
 * Update maintainers and add url tags (`#1363 <https://github.com/ros-controls/ros2_controllers/issues/1363>`_) (`#1364 <https://github.com/ros-controls/ros2_controllers/issues/1364>`_)
