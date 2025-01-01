@@ -394,7 +394,7 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
     {
       for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
       {
-        command_interfaces_[i].set_value(timeout ? 0. : traction_commands[i]);
+        command_interfaces_[i].set_value(timeout ? 0.0 : traction_commands[i]);
       }
       for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
       {
@@ -406,7 +406,7 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
       {
         for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
         {
-          command_interfaces_[i].set_value(timeout ? 0. : traction_commands[i]);
+          command_interfaces_[i].set_value(timeout ? 0.0 : traction_commands[i]);
         }
         for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
         {
