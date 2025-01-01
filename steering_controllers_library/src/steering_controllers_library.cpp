@@ -383,8 +383,8 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
       age_of_last_command > ref_timeout_ && ref_timeout_ != rclcpp::Duration::from_seconds(0);
 
     // store (for open loop odometry) and set commands
-    last_linear_velocity_ = timeout ? 0. : reference_interfaces_[0];
-    last_angular_velocity_ = timeout ? 0. : reference_interfaces_[1];
+    last_linear_velocity_ = timeout ? 0.0 : reference_interfaces_[0];
+    last_angular_velocity_ = timeout ? 0.0 : reference_interfaces_[1];
 
     auto [traction_commands, steering_commands] = odometry_.get_commands(
       reference_interfaces_[0], reference_interfaces_[1], params_.open_loop,
