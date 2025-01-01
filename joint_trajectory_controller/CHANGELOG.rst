@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.40.0 (2025-01-01)
+-------------------
 * Increase margin for state_publish_rate  (`#1430 <https://github.com/ros-controls/ros2_controllers/issues/1430>`_)
 * Add an error msg if empty message is received (backport `#1424 <https://github.com/ros-controls/ros2_controllers/issues/1424>`_) (`#1428 <https://github.com/ros-controls/ros2_controllers/issues/1428>`_)
 * Use the .hpp headers from `realtime_tools` package (backport `#1406 <https://github.com/ros-controls/ros2_controllers/issues/1406>`_) (`#1427 <https://github.com/ros-controls/ros2_controllers/issues/1427>`_)

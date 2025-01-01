@@ -2,8 +2,8 @@
 Changelog for package position_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.40.0 (2025-01-01)
+-------------------
 * Update position controller package.xml (backport `#1431 <https://github.com/ros-controls/ros2_controllers/issues/1431>`_) (`#1432 <https://github.com/ros-controls/ros2_controllers/issues/1432>`_)
 * Contributors: mergify[bot]
 
