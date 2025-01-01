@@ -34,7 +34,6 @@
 
 // ros_controls
 #include "controller_interface/controller_interface.hpp"
-#include "gripper_controllers/visibility_control.hpp"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "realtime_tools/realtime_buffer.hpp"
@@ -69,39 +68,31 @@ public:
     double position_;    // Last commanded position
     double max_effort_;  // Max allowed effort
   };
-
-  GRIPPER_ACTION_CONTROLLER_PUBLIC GripperActionController();
+  GripperActionController();
 
   /**
    * @brief command_interface_configuration This controller requires the
    * position command interfaces for the controlled joints
    */
-  GRIPPER_ACTION_CONTROLLER_PUBLIC
   controller_interface::InterfaceConfiguration command_interface_configuration() const override;
 
   /**
    * @brief command_interface_configuration This controller requires the
    * position and velocity state interfaces for the controlled joints
    */
-  GRIPPER_ACTION_CONTROLLER_PUBLIC
   controller_interface::InterfaceConfiguration state_interface_configuration() const override;
 
-  GRIPPER_ACTION_CONTROLLER_PUBLIC
   controller_interface::return_type update(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
-  GRIPPER_ACTION_CONTROLLER_PUBLIC
   controller_interface::CallbackReturn on_init() override;
 
-  GRIPPER_ACTION_CONTROLLER_PUBLIC
   controller_interface::CallbackReturn on_configure(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  GRIPPER_ACTION_CONTROLLER_PUBLIC
   controller_interface::CallbackReturn on_activate(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  GRIPPER_ACTION_CONTROLLER_PUBLIC
   controller_interface::CallbackReturn on_deactivate(
     const rclcpp_lifecycle::State & previous_state) override;
 
