@@ -218,16 +218,12 @@ protected:
   realtime_tools::RealtimeBuffer<reconfigure_state_type> reconfigure_state_buffer_;
 
   using ControllerStatePublisher = realtime_tools::RealtimePublisher<JointStateMsg>;
-  using EventPublisher = realtime_tools::RealtimePublisher<EventStateMsg>;
-  using ConfigPublisher = realtime_tools::RealtimePublisher<ConfigJointMsg>;
   using InterfacePublisher = realtime_tools::RealtimePublisher<DynInterfaceMsg>;
   rclcpp::Publisher<JointStateMsg>::SharedPtr g_j_s_publisher_;
   std::unique_ptr<ControllerStatePublisher> gripper_joint_state_publisher_;
   std::vector<double> joint_state_values_;
   rclcpp::Publisher<DynInterfaceMsg>::SharedPtr if_publisher_;
   std::unique_ptr<InterfacePublisher> interface_publisher_;
-  rclcpp::Publisher<EventStateMsg>::SharedPtr e_publisher_;
-  std::unique_ptr<EventPublisher> event_publisher_;
   std::atomic<bool> reconfigureFlag_{false};
   std::atomic<bool> openFlag_{false};
   std::atomic<bool> closeFlag_{false};
