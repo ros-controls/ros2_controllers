@@ -21,11 +21,15 @@
   <depend>control_msgs</depend>
   <depend>controller_interface</depend>
   <depend>controller_manager</depend>
+  <depend>generate_parameter_library</depend>
   <depend>hardware_interface</depend>
   <depend>pluginlib</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_lifecycle</depend>
   <depend>realtime_tools</depend>
+  <depend>ros2_control_test_assets</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_msgs</depend>
   <depend>std_srvs</depend>
 
   <test_depend>ament_cmake_gmock</test_depend>
