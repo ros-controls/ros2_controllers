@@ -50,7 +50,7 @@ IOGripperController::IOGripperController() : controller_interface::ControllerInt
 
 controller_interface::CallbackReturn IOGripperController::on_init()
 {
-  service_buffer_.initRT(service_mode_type::IDLE);
+  gripper_service_buffer_.initRT(service_mode_type::IDLE);
   configuration_key_ = "";
   configure_gripper_buffer_.initRT(configuration_key_);
   gripper_state_buffer_.initRT(gripper_state_type::IDLE);
@@ -141,7 +141,7 @@ controller_interface::return_type IOGripperController::update(
     handle_reconfigure_state_transition(*(reconfigure_state_buffer_.readFromRT()));
   }
 
-  switch (*(service_buffer_.readFromRT()))
+  switch (*(gripper_service_buffer_.readFromRT()))
   {
   case service_mode_type::IDLE:
     // do nothing
@@ -326,7 +326,7 @@ void IOGripperController::handle_gripper_state_transition_close(const gripper_st
         }
         gripper_state_buffer_.writeFromNonRT(gripper_state_type::IDLE);
         closeFlag_.store(false);
-        service_buffer_.writeFromNonRT(service_mode_type::IDLE);
+        gripper_service_buffer_.writeFromNonRT(service_mode_type::IDLE);
         break;
       default:
         break;
@@ -410,7 +410,7 @@ void IOGripperController::handle_gripper_state_transition_open(const gripper_sta
         }
         gripper_state_buffer_.writeFromNonRT(gripper_state_type::IDLE);
         openFlag_.store(false);
-        service_buffer_.writeFromNonRT(service_mode_type::IDLE);
+        gripper_service_buffer_.writeFromNonRT(service_mode_type::IDLE);
         break;
       default:
         break;
@@ -818,7 +818,7 @@ controller_interface::CallbackReturn IOGripperController::prepare_publishers_and
   reconfigureFlag_.store(false);
 
   // reset service buffer
-  service_buffer_.writeFromNonRT(service_mode_type::IDLE);
+  gripper_service_buffer_.writeFromNonRT(service_mode_type::IDLE);
 
   // reset gripper state buffer
   gripper_state_buffer_.writeFromNonRT(gripper_state_type::IDLE);
@@ -854,7 +854,7 @@ controller_interface::CallbackReturn IOGripperController::prepare_publishers_and
           closeFlag_.store(false);
         }
         openFlag_.store(true);
-        service_buffer_.writeFromNonRT(service_mode_type::OPEN);
+        gripper_service_buffer_.writeFromNonRT(service_mode_type::OPEN);
         gripper_state_buffer_.writeFromNonRT(gripper_state_type::SET_BEFORE_COMMAND);
         while(openFlag_.load())
         {
@@ -893,7 +893,7 @@ controller_interface::CallbackReturn IOGripperController::prepare_publishers_and
           response->success = false;
           return;
         }
-        service_buffer_.writeFromNonRT(service_mode_type::CLOSE);
+        gripper_service_buffer_.writeFromNonRT(service_mode_type::CLOSE);
         gripper_state_buffer_.writeFromNonRT(gripper_state_type::SET_BEFORE_COMMAND);
         if (openFlag_.load())
         {
@@ -1079,7 +1079,7 @@ rclcpp_action::GoalResponse IOGripperController::handle_goal(
         RCLCPP_ERROR(get_node()->get_logger(), "Cannot close the gripper while reconfiguring");
         return rclcpp_action::GoalResponse::REJECT;
       }
-      service_buffer_.writeFromNonRT((goal->open) ? service_mode_type::OPEN : service_mode_type::CLOSE);
+      gripper_service_buffer_.writeFromNonRT((goal->open) ? service_mode_type::OPEN : service_mode_type::CLOSE);
       gripper_state_buffer_.writeFromNonRT(gripper_state_type::SET_BEFORE_COMMAND);
     }
     catch (const std::exception & e)
@@ -1095,7 +1095,7 @@ rclcpp_action::CancelResponse IOGripperController::handle_cancel(
   const std::shared_ptr<GoalHandleGripper> goal_handle)
   {
   (void)goal_handle;
-    service_buffer_.writeFromNonRT(service_mode_type::IDLE);
+    gripper_service_buffer_.writeFromNonRT(service_mode_type::IDLE);
     gripper_state_buffer_.writeFromNonRT(gripper_state_type::IDLE);
     return rclcpp_action::CancelResponse::ACCEPT;
   }

@@ -63,28 +63,28 @@ TEST_F(IOGripperControllerTest, OpenCloseGripperAction)
   controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
   controller_interface::return_type::OK); 
 
-  ASSERT_EQ(*(controller_->service_buffer_.readFromRT()), io_gripper_controller::service_mode_type::OPEN);
+  ASSERT_EQ(*(controller_->gripper_service_buffer_.readFromRT()), io_gripper_controller::service_mode_type::OPEN);
   ASSERT_EQ(*(controller_->gripper_state_buffer_.readFromRT()), io_gripper_controller::gripper_state_type::OPEN_GRIPPER);
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK); 
 
-  ASSERT_EQ(*(controller_->service_buffer_.readFromRT()), io_gripper_controller::service_mode_type::OPEN);
+  ASSERT_EQ(*(controller_->gripper_service_buffer_.readFromRT()), io_gripper_controller::service_mode_type::OPEN);
   ASSERT_EQ(*(controller_->gripper_state_buffer_.readFromRT()), io_gripper_controller::gripper_state_type::CHECK_GRIPPER_STATE);
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK); 
 
-  ASSERT_EQ(*(controller_->service_buffer_.readFromRT()), io_gripper_controller::service_mode_type::OPEN);
+  ASSERT_EQ(*(controller_->gripper_service_buffer_.readFromRT()), io_gripper_controller::service_mode_type::OPEN);
   ASSERT_EQ(*(controller_->gripper_state_buffer_.readFromRT()), io_gripper_controller::gripper_state_type::SET_AFTER_COMMAND);
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK); 
 
-  ASSERT_EQ(*(controller_->service_buffer_.readFromRT()), io_gripper_controller::service_mode_type::IDLE);
+  ASSERT_EQ(*(controller_->gripper_service_buffer_.readFromRT()), io_gripper_controller::service_mode_type::IDLE);
   ASSERT_EQ(*(controller_->gripper_state_buffer_.readFromRT()), io_gripper_controller::gripper_state_type::IDLE);
 
   // update to make sure the publisher value is updated
@@ -131,28 +131,28 @@ TEST_F(IOGripperControllerTest, OpenCloseGripperAction)
   controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
   controller_interface::return_type::OK); 
 
-  ASSERT_EQ(*(controller_->service_buffer_.readFromRT()), io_gripper_controller::service_mode_type::CLOSE);
+  ASSERT_EQ(*(controller_->gripper_service_buffer_.readFromRT()), io_gripper_controller::service_mode_type::CLOSE);
   ASSERT_EQ(*(controller_->gripper_state_buffer_.readFromRT()), io_gripper_controller::gripper_state_type::CLOSE_GRIPPER);
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK); 
 
-  ASSERT_EQ(*(controller_->service_buffer_.readFromRT()), io_gripper_controller::service_mode_type::CLOSE);
+  ASSERT_EQ(*(controller_->gripper_service_buffer_.readFromRT()), io_gripper_controller::service_mode_type::CLOSE);
   ASSERT_EQ(*(controller_->gripper_state_buffer_.readFromRT()), io_gripper_controller::gripper_state_type::CHECK_GRIPPER_STATE);
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK); 
 
-  ASSERT_EQ(*(controller_->service_buffer_.readFromRT()), io_gripper_controller::service_mode_type::CLOSE);
+  ASSERT_EQ(*(controller_->gripper_service_buffer_.readFromRT()), io_gripper_controller::service_mode_type::CLOSE);
   ASSERT_EQ(*(controller_->gripper_state_buffer_.readFromRT()), io_gripper_controller::gripper_state_type::SET_AFTER_COMMAND);
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK); 
 
-  ASSERT_EQ(*(controller_->service_buffer_.readFromRT()), io_gripper_controller::service_mode_type::IDLE);
+  ASSERT_EQ(*(controller_->gripper_service_buffer_.readFromRT()), io_gripper_controller::service_mode_type::IDLE);
   ASSERT_EQ(*(controller_->gripper_state_buffer_.readFromRT()), io_gripper_controller::gripper_state_type::IDLE);
   // update to make sure the publisher value is updated
   ASSERT_EQ(

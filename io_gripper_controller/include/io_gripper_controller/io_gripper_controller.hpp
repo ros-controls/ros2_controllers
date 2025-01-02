@@ -207,10 +207,16 @@ protected:
   rclcpp::Service<ConfigSrvType>::SharedPtr configure_gripper_service_;
   rclcpp_action::Server<GripperAction>::SharedPtr gripper_action_server_;
   rclcpp_action::Server<GripperConfigAction>::SharedPtr gripper_config_action_server_;
-  realtime_tools::RealtimeBuffer<service_mode_type> service_buffer_;
-  realtime_tools::RealtimeBuffer<std::string> configure_gripper_buffer_;
+  
+  // Realtime buffer to store the state for outer gripper_service (e.g. idel, open, close)
+  realtime_tools::RealtimeBuffer<service_mode_type> gripper_service_buffer_;
+  // Realtime buffer to store the state for switching the gripper state (e.g. idle, set_before_command, close_gripper, check_gripper_state, open_gripper, set_after_command, halted)
   realtime_tools::RealtimeBuffer<gripper_state_type> gripper_state_buffer_;
+  // Realtime buffer to store the name of the configuration which needs to be set
+  realtime_tools::RealtimeBuffer<std::string> configure_gripper_buffer_;
+  // Realtime buffer to store the state for switching the reconfigure state (e.g. idle, find_config, set_command, check_state)
   realtime_tools::RealtimeBuffer<reconfigure_state_type> reconfigure_state_buffer_;
+
   using ControllerStatePublisher = realtime_tools::RealtimePublisher<JointStateMsg>;
   using EventPublisher = realtime_tools::RealtimePublisher<EventStateMsg>;
   using ConfigPublisher = realtime_tools::RealtimePublisher<ConfigJointMsg>;
