@@ -11,21 +11,21 @@ set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 # find dependencies
 set(THIS_PACKAGE_INCLUDE_DEPENDS
-  sensor_msgs
-  controller_manager
-  ros2_control_test_assets
+  ament_cmake
+  ament_cmake_gmock
+  control_msgs
   controller_interface
+  controller_manager
+  generate_parameter_library
   hardware_interface
   pluginlib
   rclcpp
   rclcpp_lifecycle
   realtime_tools
-  std_srvs
-  ament_cmake
-  generate_parameter_library
-  ament_cmake_gmock
+  ros2_control_test_assets
+  sensor_msgs
   std_msgs
-  control_msgs
+  std_srvs
 )
 
 foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
