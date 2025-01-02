@@ -192,7 +192,7 @@ public:
   bool setResult;
 
   using ControllerModeSrvType = std_srvs::srv::SetBool;
-  using OpenSrvType = std_srvs::srv::Trigger;
+  using OpenCloseSrvType = std_srvs::srv::Trigger;
   using ConfigSrvType = control_msgs::srv::SetConfig;
   using ControllerStateMsg = sensor_msgs::msg::JointState;
   using EventStateMsg = sensor_msgs::msg::JointState;
