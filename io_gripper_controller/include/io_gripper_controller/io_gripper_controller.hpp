@@ -197,7 +197,7 @@ public:
   using JointStateMsg = sensor_msgs::msg::JointState;
   using EventStateMsg = sensor_msgs::msg::JointState;
   using ConfigJointMsg = sensor_msgs::msg::JointState;
-  using InterfaceMsg = control_msgs::msg::DynamicInterfaceValues;
+  using DynInterfaceMsg = control_msgs::msg::DynamicInterfaceValues;
   using GripperAction = control_msgs::action::Gripper;
   using GoalHandleGripper = rclcpp_action::ServerGoalHandle<GripperAction>;
   using GripperConfigAction = control_msgs::action::SetGripperConfig;
