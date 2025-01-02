@@ -32,7 +32,6 @@ foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
 
-# Add io_gripper_controller library related compile commands
 generate_parameter_library(io_gripper_controller_parameters
   src/io_gripper_controller.yaml
 )
