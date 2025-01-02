@@ -1011,7 +1011,7 @@ controller_interface::CallbackReturn IOGripperController::prepare_publishers_and
   try
   {
     // interface publisher
-    if_publisher_ = get_node()->create_publisher<InterfaceMsg>(
+    if_publisher_ = get_node()->create_publisher<DynInterfaceMsg>(
       "~/dynamic_interface", rclcpp::SystemDefaultsQoS());
     interface_publisher_ = std::make_unique<InterfacePublisher>(if_publisher_);
   }
