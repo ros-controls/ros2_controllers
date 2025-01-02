@@ -21,7 +21,6 @@
   <depend>control_msgs</depend>
   <depend>controller_interface</depend>
   <depend>controller_manager</depend>
-  <depend>generate_parameter_library</depend>
   <depend>hardware_interface</depend>
   <depend>pluginlib</depend>
   <depend>rclcpp</depend>
