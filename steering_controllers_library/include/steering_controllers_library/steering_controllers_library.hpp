@@ -73,7 +73,7 @@ public:
   using ControllerTwistReferenceMsg = geometry_msgs::msg::TwistStamped;
   using ControllerStateMsgOdom = nav_msgs::msg::Odometry;
   using ControllerStateMsgTf = tf2_msgs::msg::TFMessage;
-  using AckermanControllerState = control_msgs::msg::SteeringControllerStatus;
+  using AckermannControllerState = control_msgs::msg::SteeringControllerStatus;
 
 protected:
   controller_interface::CallbackReturn set_interface_numbers(
@@ -105,10 +105,10 @@ protected:
   /// Odometry:
   steering_odometry::SteeringOdometry odometry_;
 
-  AckermanControllerState published_state_;
+  AckermannControllerState published_state_;
 
-  using ControllerStatePublisher = realtime_tools::RealtimePublisher<AckermanControllerState>;
-  rclcpp::Publisher<AckermanControllerState>::SharedPtr controller_s_publisher_;
+  using ControllerStatePublisher = realtime_tools::RealtimePublisher<AckermannControllerState>;
+  rclcpp::Publisher<AckermannControllerState>::SharedPtr controller_s_publisher_;
   std::unique_ptr<ControllerStatePublisher> controller_state_publisher_;
 
   // name constants for state interfaces
