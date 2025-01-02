@@ -74,7 +74,15 @@ if(BUILD_TESTING)
     ros2_control_test_assets
   )
 
-  ament_add_gmock(test_io_gripper_controller test/test_io_gripper_controller.cpp test/test_io_gripper_controller_open.cpp test/test_io_gripper_controller_close.cpp test/test_io_gripper_controller_all_param_set.cpp test/test_io_gripper_controller_open_close_action.cpp test/test_io_gripper_controller_reconfigure.cpp test/test_io_gripper_controller_reconfigure_action.cpp)
+  ament_add_gmock(test_io_gripper_controller 
+    test/test_io_gripper_controller.cpp
+    test/test_io_gripper_controller_open.cpp
+    test/test_io_gripper_controller_close.cpp
+    test/test_io_gripper_controller_all_param_set.cpp
+    test/test_io_gripper_controller_open_close_action.cpp
+    test/test_io_gripper_controller_reconfigure.cpp
+    test/test_io_gripper_controller_reconfigure_action.cpp
+  )
   target_include_directories(test_io_gripper_controller PRIVATE include)
   target_link_libraries(test_io_gripper_controller io_gripper_controller)
   ament_target_dependencies(
