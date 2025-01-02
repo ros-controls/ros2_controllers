@@ -44,7 +44,7 @@ using JointStateMsg = io_gripper_controller::IOGripperController::JointStateMsg;
 using OpenCloseSrvType = io_gripper_controller::IOGripperController::OpenCloseSrvType;
 using ControllerModeSrvType = io_gripper_controller::IOGripperController::ControllerModeSrvType;
 using EventStateMsg = io_gripper_controller::IOGripperController::EventStateMsg;
-using ConfigSrvType = control_msgs::srv::SetConfig;
+using ConfigSrvType = io_gripper_controller::IOGripperController::ConfigSrvType; //  control_msgs::srv::SetIOGripperConfig;
 
 using GripperAction = io_gripper_controller::IOGripperController::GripperAction;
 using GoalHandleGripperAction = rclcpp_action::ClientGoalHandle<GripperAction>;
