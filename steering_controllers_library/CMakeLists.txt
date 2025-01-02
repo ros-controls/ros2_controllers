@@ -15,7 +15,6 @@ set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   control_msgs
   controller_interface
-  generate_parameter_library
   geometry_msgs
   hardware_interface
   nav_msgs
@@ -32,6 +31,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
 
 find_package(ament_cmake REQUIRED)
 find_package(backward_ros REQUIRED)
+find_package(generate_parameter_library)
 foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
