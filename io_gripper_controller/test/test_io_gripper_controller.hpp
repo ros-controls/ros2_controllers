@@ -41,7 +41,7 @@
 
 // TODO(anyone): replace the state and command message types
 using ControllerStateMsg = io_gripper_controller::IOGripperController::ControllerStateMsg;
-using OpenSrvType = io_gripper_controller::IOGripperController::OpenSrvType;
+using OpenCloseSrvType = io_gripper_controller::IOGripperController::OpenCloseSrvType;
 using ControllerModeSrvType = io_gripper_controller::IOGripperController::ControllerModeSrvType;
 using EventStateMsg = io_gripper_controller::IOGripperController::EventStateMsg;
 using ConfigSrvType = control_msgs::srv::SetConfig;
@@ -111,9 +111,9 @@ public:
 
 
     service_caller_node_ = std::make_shared<rclcpp::Node>("service_caller");
-    close_gripper_service_client_ = service_caller_node_->create_client<OpenSrvType>(
+    close_gripper_service_client_ = service_caller_node_->create_client<OpenCloseSrvType>(
       "/test_io_gripper_controller/gripper_close");
-    open_gripper_service_client_ = service_caller_node_->create_client<OpenSrvType>(
+    open_gripper_service_client_ = service_caller_node_->create_client<OpenCloseSrvType>(
       "/test_io_gripper_controller/gripper_open");
 
     configure_gripper_service_client_ = service_caller_node_->create_client<ConfigSrvType>(
@@ -183,9 +183,9 @@ protected:
     // EXPECT_EQ(executor.spin_until_future_complete(future), rclcpp::FutureReturnCode::SUCCESS);
   }
 
-  std::shared_ptr<OpenSrvType::Response> call_close_service(rclcpp::Executor & executor)
+  std::shared_ptr<OpenCloseSrvType::Response> call_close_service(rclcpp::Executor & executor)
   {
-    auto request = std::make_shared<OpenSrvType::Request>();
+    auto request = std::make_shared<OpenCloseSrvType::Request>();
 
     bool wait_for_service_ret =
       close_gripper_service_client_->wait_for_service(std::chrono::milliseconds(500));
@@ -200,9 +200,9 @@ protected:
     return result.get();
   }
 
-    std::shared_ptr<OpenSrvType::Response> call_open_service(rclcpp::Executor & executor)
+    std::shared_ptr<OpenCloseSrvType::Response> call_open_service(rclcpp::Executor & executor)
   {
-    auto request = std::make_shared<OpenSrvType::Request>();
+    auto request = std::make_shared<OpenCloseSrvType::Request>();
 
     bool wait_for_service_ret =
       open_gripper_service_client_->wait_for_service(std::chrono::milliseconds(500));
@@ -382,8 +382,8 @@ protected:
   // Test related parameters
   std::unique_ptr<TestableIOGripperController> controller_;
   rclcpp::Subscription<JointStateMsg>::SharedPtr joint_state_sub_;
-  rclcpp::Client<OpenSrvType>::SharedPtr close_gripper_service_client_;
-  rclcpp::Client<OpenSrvType>::SharedPtr open_gripper_service_client_;
+  rclcpp::Client<OpenCloseSrvType>::SharedPtr close_gripper_service_client_;
+  rclcpp::Client<OpenCloseSrvType>::SharedPtr open_gripper_service_client_;
   rclcpp::Client<ConfigSrvType>::SharedPtr configure_gripper_service_client_;
   rclcpp_action::Client<GripperAction>::SharedPtr gripper_action_client_;
   rclcpp_action::Client<GripperConfigAction>::SharedPtr gripper_config_action_client_;

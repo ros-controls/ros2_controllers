@@ -42,7 +42,7 @@ TEST_F(IOGripperControllerTest, CloseGripperService)
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  auto request = std::make_shared<OpenSrvType::Request>();
+  auto request = std::make_shared<OpenCloseSrvType::Request>();
 
   bool wait_for_service_ret =
     close_gripper_service_client_->wait_for_service(std::chrono::milliseconds(500));

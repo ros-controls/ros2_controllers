@@ -838,8 +838,8 @@ controller_interface::CallbackReturn IOGripperController::prepare_publishers_and
     // open service
     auto open_service_callback =
       [&](
-        const std::shared_ptr<OpenSrvType::Request> /*request*/,
-        std::shared_ptr<OpenSrvType::Response> response)
+        const std::shared_ptr<OpenCloseSrvType::Request> /*request*/,
+        std::shared_ptr<OpenCloseSrvType::Response> response)
     {
       try
       {
@@ -875,15 +875,15 @@ controller_interface::CallbackReturn IOGripperController::prepare_publishers_and
       }
     };
 
-    open_service_ = get_node()->create_service<OpenSrvType>(
+    open_service_ = get_node()->create_service<OpenCloseSrvType>(
       "~/gripper_open", open_service_callback,
       rmw_qos_profile_services_hist_keep_all, open_service_callback_group_);
 
     // close service
     auto close_service_callback =
       [&](
-        const std::shared_ptr<OpenSrvType::Request> /*request*/,
-        std::shared_ptr<OpenSrvType::Response> response)
+        const std::shared_ptr<OpenCloseSrvType::Request> /*request*/,
+        std::shared_ptr<OpenCloseSrvType::Response> response)
     {
       try
       {
@@ -919,7 +919,7 @@ controller_interface::CallbackReturn IOGripperController::prepare_publishers_and
       }
     };
 
-    close_service_ = get_node()->create_service<OpenSrvType>(
+    close_service_ = get_node()->create_service<OpenCloseSrvType>(
       "~/gripper_close", close_service_callback,
       rmw_qos_profile_services_hist_keep_all, close_service_callback_group_);
 

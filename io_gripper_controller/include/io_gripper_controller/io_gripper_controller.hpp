@@ -205,8 +205,8 @@ public:
 
 protected:
   std::shared_ptr<io_gripper_controller::ParamListener> param_listener_;
-  rclcpp::Service<OpenSrvType>::SharedPtr open_service_;
-  rclcpp::Service<OpenSrvType>::SharedPtr close_service_;
+  rclcpp::Service<OpenCloseSrvType>::SharedPtr open_service_;
+  rclcpp::Service<OpenCloseSrvType>::SharedPtr close_service_;
   rclcpp::Service<ConfigSrvType>::SharedPtr configure_gripper_service_;
   rclcpp_action::Server<GripperAction>::SharedPtr gripper_action_server_;
   rclcpp_action::Server<GripperConfigAction>::SharedPtr gripper_config_action_server_;
