@@ -100,26 +100,65 @@ enum class reconfigure_state_type : std::uint8_t
 };
 
 class IOGripperController : public controller_interface::ControllerInterface
+/**
+ * @brief IOGripperController class handles the control of an IO-based gripper.
+ */
 {
 public:
+  /**
+   * @brief Constructor for IOGripperController.
+   */
   IOGripperController();
   io_gripper_controller::Params params_;
 
+  /**
+   * @brief Initializes the controller.
+   * @return CallbackReturn indicating success or failure.
+   */
   controller_interface::CallbackReturn on_init() override;
 
+  /**
+   * @brief Configures the command interfaces.
+   * @return InterfaceConfiguration for command interfaces.
+   */
   controller_interface::InterfaceConfiguration command_interface_configuration() const override;
 
+  /**
+   * @brief Configures the state interfaces.
+   * @return InterfaceConfiguration for state interfaces.
+   */
   controller_interface::InterfaceConfiguration state_interface_configuration() const override;
 
+  /**
+   * @brief Configures the controller.
+   * @param previous_state The previous state of the lifecycle.
+   * @return CallbackReturn indicating success or failure.
+   */
   controller_interface::CallbackReturn on_configure(
     const rclcpp_lifecycle::State & previous_state) override;
 
+  /**
+   * @brief Activates the controller.
+   * @param previous_state The previous state of the lifecycle.
+   * @return CallbackReturn indicating success or failure.
+   */
   controller_interface::CallbackReturn on_activate(
     const rclcpp_lifecycle::State & previous_state) override;
 
+  /**
+   * @brief Deactivates the controller.
+   * @param previous_state The previous state of the lifecycle.
+   * @return CallbackReturn indicating success or failure.
+   */
   controller_interface::CallbackReturn on_deactivate(
     const rclcpp_lifecycle::State & previous_state) override;
 
+  /**
+   * @brief Updates the controller state.
+   * @param time The current time.
+   * @param period The time since the last update.
+   * @return return_type indicating success or failure.
+   */
   controller_interface::return_type update(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
@@ -191,19 +230,85 @@ protected:
   std::atomic<bool> closeFlag_{false};
 
 private:
+  /**
+   * @brief Finds and sets a command value.
+   * @param name The name of the command.
+   * @param value The value to set.
+   * @return True if the command was found and set, false otherwise.
+   */
   bool find_and_set_command(const std::string & name, const double value);
+
+  /**
+   * @brief Finds and gets a state value.
+   * @param name The name of the state.
+   * @param value The value to get.
+   * @return True if the state was found and retrieved, false otherwise.
+   */
   bool find_and_get_state(const std::string & name, double& value);
+
+  /**
+   * @brief Finds and gets a command value.
+   * @param name The name of the command.
+   * @param value The value to get.
+   * @return True if the command was found and retrieved, false otherwise.
+   */
   bool find_and_get_command(const std::string & name, double& value);
+
+  /**
+   * @brief Handles the state transition when opening the gripper.
+   * @param state The current state of the gripper.
+   */
   void handle_gripper_state_transition_open(const gripper_state_type & state);
+
+  /**
+   * @brief Handles the state transition when closing the gripper.
+   * @param state The current state of the gripper.
+   */
   void handle_gripper_state_transition_close(const gripper_state_type & state);
+
+  /**
+   * @brief Handles the state transition for reconfiguration.
+   * @param state The current reconfiguration state.
+   */
   void handle_reconfigure_state_transition(const reconfigure_state_type & state);
+
+  /**
+   * @brief Checks the parameters of the controller.
+   * @return CallbackReturn indicating success or failure.
+   */
   controller_interface::CallbackReturn check_parameters();
+
+  /**
+   * @brief Prepares the command and state IOs.
+   */
   void prepare_command_and_state_ios();
+
+  /**
+   * @brief Prepares the publishers and services.
+   * @return CallbackReturn indicating success or failure.
+   */
   controller_interface::CallbackReturn prepare_publishers_and_services();
+
+  /**
+   * @brief Publishes the gripper joint states.
+   */
   void publish_gripper_joint_states();
+
+  /**
+   * @brief Publishes the dynamic interface values.
+   */
   void publish_dynamic_interface_values();
+
+  /**
+   * @brief Publishes the reconfigure gripper joint states.
+   */
   void publish_reconfigure_gripper_joint_states();
+
+  /**
+   * @brief Checks the gripper and reconfigure state.
+   */
   void check_gripper_and_reconfigure_state();
+
   std::vector<std::string> configurations_list_;
   std::vector<io_gripper_controller::Params::ConfigurationSetup::MapConfigurations> config_map_;
   std::vector<io_gripper_controller::Params::SensorsInterfaces::MapGripperSpecificSensors> sensors_map_;
@@ -221,19 +326,65 @@ private:
   std::shared_ptr<control_msgs::action::Gripper_Result> gripper_result_;
   std::shared_ptr<control_msgs::action::SetGripperConfig_Feedback> gripper_config_feedback_;
   std::shared_ptr<control_msgs::action::SetGripperConfig_Result> gripper_config_result_;
+  
+  /**
+   * @brief Handles the goal for the gripper action.
+   * @param uuid The UUID of the goal.
+   * @param goal The goal to handle.
+   * @return GoalResponse indicating acceptance or rejection of the goal.
+   */
   rclcpp_action::GoalResponse handle_goal(
     const rclcpp_action::GoalUUID & uuid,
     std::shared_ptr<const GripperAction::Goal> goal);
+
+  /**
+   * @brief Handles the cancellation of the gripper action.
+   * @param goal_handle The handle of the goal to cancel.
+   * @return CancelResponse indicating acceptance or rejection of the cancellation.
+   */
   rclcpp_action::CancelResponse handle_cancel(
     const std::shared_ptr<GoalHandleGripper> goal_handle);
+
+  /**
+   * @brief Handles the acceptance of the gripper action.
+   * @param goal_handle The handle of the accepted goal.
+   */
   void handle_accepted(const std::shared_ptr<GoalHandleGripper> goal_handle);
+
+  /**
+   * @brief Executes the gripper action.
+   * @param goal_handle The handle of the goal to execute.
+   */
   void execute(const std::shared_ptr<GoalHandleGripper> goal_handle);
+
+  /**
+   * @brief Handles the goal for the gripper configuration action.
+   * @param uuid The UUID of the goal.
+   * @param goal The goal to handle.
+   * @return GoalResponse indicating acceptance or rejection of the goal.
+   */
   rclcpp_action::GoalResponse config_handle_goal(
     const rclcpp_action::GoalUUID & uuid,
     std::shared_ptr<const GripperConfigAction::Goal> goal);
+
+  /**
+   * @brief Handles the cancellation of the gripper configuration action.
+   * @param goal_handle The handle of the goal to cancel.
+   * @return CancelResponse indicating acceptance or rejection of the cancellation.
+   */
   rclcpp_action::CancelResponse config_handle_cancel(
     const std::shared_ptr<GoalHandleGripperConfig> goal_handle);
+
+  /**
+   * @brief Handles the acceptance of the gripper configuration action.
+   * @param goal_handle The handle of the accepted goal.
+   */
   void config_handle_accepted(const std::shared_ptr<GoalHandleGripperConfig> goal_handle);
+
+  /**
+   * @brief Executes the gripper configuration action.
+   * @param goal_handle The handle of the goal to execute.
+   */
   void config_execute(const std::shared_ptr<GoalHandleGripperConfig> goal_handle);
 };
 
