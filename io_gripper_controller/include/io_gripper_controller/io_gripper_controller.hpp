@@ -194,7 +194,7 @@ public:
   using ControllerModeSrvType = std_srvs::srv::SetBool;
   using OpenCloseSrvType = std_srvs::srv::Trigger;
   using ConfigSrvType = control_msgs::srv::SetConfig;
-  using ControllerStateMsg = sensor_msgs::msg::JointState;
+  using JointStateMsg = sensor_msgs::msg::JointState;
   using EventStateMsg = sensor_msgs::msg::JointState;
   using ConfigJointMsg = sensor_msgs::msg::JointState;
   using InterfaceMsg = control_msgs::msg::DynamicInterfaceValues;
