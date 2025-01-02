@@ -27,6 +27,7 @@
   <depend>backward_ros</depend>
   <depend>control_msgs</depend>
   <depend>controller_interface</depend>
+  <depend>generate_parameter_library</depend>
   <depend>geometry_msgs</depend>
   <depend>hardware_interface</depend>
   <depend>nav_msgs</depend>
