@@ -65,21 +65,21 @@ TEST_F(IOGripperControllerTest, OpenGripperService)
   controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
   controller_interface::return_type::OK); 
 
-  ASSERT_EQ(*(controller_->service_buffer_.readFromRT()), io_gripper_controller::service_mode_type::OPEN);
+  ASSERT_EQ(*(controller_->gripper_service_buffer_.readFromRT()), io_gripper_controller::service_mode_type::OPEN);
   ASSERT_EQ(*(controller_->gripper_state_buffer_.readFromRT()), io_gripper_controller::gripper_state_type::OPEN_GRIPPER);
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK); 
 
-  ASSERT_EQ(*(controller_->service_buffer_.readFromRT()), io_gripper_controller::service_mode_type::OPEN);
+  ASSERT_EQ(*(controller_->gripper_service_buffer_.readFromRT()), io_gripper_controller::service_mode_type::OPEN);
   ASSERT_EQ(*(controller_->gripper_state_buffer_.readFromRT()), io_gripper_controller::gripper_state_type::CHECK_GRIPPER_STATE);
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK); 
 
-  ASSERT_EQ(*(controller_->service_buffer_.readFromRT()), io_gripper_controller::service_mode_type::OPEN);
+  ASSERT_EQ(*(controller_->gripper_service_buffer_.readFromRT()), io_gripper_controller::service_mode_type::OPEN);
   ASSERT_EQ(*(controller_->gripper_state_buffer_.readFromRT()), io_gripper_controller::gripper_state_type::SET_AFTER_COMMAND);
 
   ASSERT_EQ(
@@ -114,6 +114,6 @@ TEST_F(IOGripperControllerTest, OpenGripperService)
   ASSERT_EQ(joint_state_sub_msg_->position.size(), 2);
   ASSERT_EQ(joint_state_sub_msg_->position[0], 0.0);
   
-  ASSERT_EQ(*(controller_->service_buffer_.readFromRT()), io_gripper_controller::service_mode_type::IDLE);
+  ASSERT_EQ(*(controller_->gripper_service_buffer_.readFromRT()), io_gripper_controller::service_mode_type::IDLE);
   ASSERT_EQ(*(controller_->gripper_state_buffer_.readFromRT()), io_gripper_controller::gripper_state_type::IDLE);
 }
