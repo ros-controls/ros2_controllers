@@ -32,7 +32,7 @@
 #include "tricycle_steering_controller/tricycle_steering_controller.hpp"
 
 using ControllerStateMsg =
-  steering_controllers_library::SteeringControllersLibrary::AckermanControllerState;
+  steering_controllers_library::SteeringControllersLibrary::AckermannControllerState;
 using ControllerReferenceMsg =
   steering_controllers_library::SteeringControllersLibrary::ControllerTwistReferenceMsg;
 
