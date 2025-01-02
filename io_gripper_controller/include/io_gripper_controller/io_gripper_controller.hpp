@@ -217,11 +217,11 @@ protected:
   using ControllerStatePublisher = realtime_tools::RealtimePublisher<JointStateMsg>;
   using EventPublisher = realtime_tools::RealtimePublisher<EventStateMsg>;
   using ConfigPublisher = realtime_tools::RealtimePublisher<ConfigJointMsg>;
-  using InterfacePublisher = realtime_tools::RealtimePublisher<InterfaceMsg>;
+  using InterfacePublisher = realtime_tools::RealtimePublisher<DynInterfaceMsg>;
   rclcpp::Publisher<JointStateMsg>::SharedPtr g_j_s_publisher_;
   std::unique_ptr<ControllerStatePublisher> gripper_joint_state_publisher_;
   std::vector<double> joint_state_values_;
-  rclcpp::Publisher<InterfaceMsg>::SharedPtr if_publisher_;
+  rclcpp::Publisher<DynInterfaceMsg>::SharedPtr if_publisher_;
   std::unique_ptr<InterfacePublisher> interface_publisher_;
   rclcpp::Publisher<EventStateMsg>::SharedPtr e_publisher_;
   std::unique_ptr<EventPublisher> event_publisher_;
