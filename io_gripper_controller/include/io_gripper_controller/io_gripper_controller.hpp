@@ -33,12 +33,11 @@
 
 #include <sensor_msgs/msg/joint_state.hpp>
 
-#include "control_msgs/srv/set_config.hpp"
-#include "control_msgs/msg/io_gripper_sensor.hpp"
+#include "control_msgs/srv/set_io_gripper_config.hpp"
 #include "control_msgs/msg/interface_value.hpp"
 #include "control_msgs/msg/dynamic_interface_values.hpp"
-#include "control_msgs/action/gripper.hpp"
-#include "control_msgs/action/set_gripper_config.hpp"
+#include "control_msgs/action/io_gripper_command.hpp"
+#include "control_msgs/action/set_io_gripper_config.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 
 namespace io_gripper_controller
@@ -193,14 +192,14 @@ public:
 
   using ControllerModeSrvType = std_srvs::srv::SetBool;
   using OpenCloseSrvType = std_srvs::srv::Trigger;
-  using ConfigSrvType = control_msgs::srv::SetConfig;
+  using ConfigSrvType = control_msgs::srv::SetIOGripperConfig;
   using JointStateMsg = sensor_msgs::msg::JointState;
   using EventStateMsg = sensor_msgs::msg::JointState;
   using ConfigJointMsg = sensor_msgs::msg::JointState;
   using DynInterfaceMsg = control_msgs::msg::DynamicInterfaceValues;
-  using GripperAction = control_msgs::action::Gripper;
+  using GripperAction = control_msgs::action::IOGripperCommand;
   using GoalHandleGripper = rclcpp_action::ServerGoalHandle<GripperAction>;
-  using GripperConfigAction = control_msgs::action::SetGripperConfig;
+  using GripperConfigAction = control_msgs::action::SetIOGripperConfig;
   using GoalHandleGripperConfig = rclcpp_action::ServerGoalHandle<GripperConfigAction>;
 
 protected:
@@ -322,10 +321,10 @@ private:
   rclcpp::CallbackGroup::SharedPtr open_service_callback_group_;
   rclcpp::CallbackGroup::SharedPtr close_service_callback_group_;
   rclcpp::CallbackGroup::SharedPtr reconfigure_service_callback_group_;
-  std::shared_ptr<control_msgs::action::Gripper_Feedback> gripper_feedback_;
-  std::shared_ptr<control_msgs::action::Gripper_Result> gripper_result_;
-  std::shared_ptr<control_msgs::action::SetGripperConfig_Feedback> gripper_config_feedback_;
-  std::shared_ptr<control_msgs::action::SetGripperConfig_Result> gripper_config_result_;
+  std::shared_ptr<control_msgs::action::IOGripperCommand_Feedback> gripper_feedback_;
+  std::shared_ptr<control_msgs::action::IOGripperCommand_Result> gripper_result_;
+  std::shared_ptr<control_msgs::action::SetIOGripperConfig_Feedback> gripper_config_feedback_;
+  std::shared_ptr<control_msgs::action::SetIOGripperConfig_Result> gripper_config_result_;
   
   /**
    * @brief Handles the goal for the gripper action.
