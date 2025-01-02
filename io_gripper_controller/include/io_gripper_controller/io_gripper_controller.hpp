@@ -214,11 +214,11 @@ protected:
   realtime_tools::RealtimeBuffer<std::string> configure_gripper_buffer_;
   realtime_tools::RealtimeBuffer<gripper_state_type> gripper_state_buffer_;
   realtime_tools::RealtimeBuffer<reconfigure_state_type> reconfigure_state_buffer_;
-  using ControllerStatePublisher = realtime_tools::RealtimePublisher<ControllerStateMsg>;
+  using ControllerStatePublisher = realtime_tools::RealtimePublisher<JointStateMsg>;
   using EventPublisher = realtime_tools::RealtimePublisher<EventStateMsg>;
   using ConfigPublisher = realtime_tools::RealtimePublisher<ConfigJointMsg>;
   using InterfacePublisher = realtime_tools::RealtimePublisher<InterfaceMsg>;
-  rclcpp::Publisher<ControllerStateMsg>::SharedPtr g_j_s_publisher_;
+  rclcpp::Publisher<JointStateMsg>::SharedPtr g_j_s_publisher_;
   std::unique_ptr<ControllerStatePublisher> gripper_joint_state_publisher_;
   std::vector<double> joint_state_values_;
   rclcpp::Publisher<InterfaceMsg>::SharedPtr if_publisher_;
