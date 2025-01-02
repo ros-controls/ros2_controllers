@@ -194,8 +194,6 @@ public:
   using OpenCloseSrvType = std_srvs::srv::Trigger;
   using ConfigSrvType = control_msgs::srv::SetIOGripperConfig;
   using JointStateMsg = sensor_msgs::msg::JointState;
-  using EventStateMsg = sensor_msgs::msg::JointState;
-  using ConfigJointMsg = sensor_msgs::msg::JointState;
   using DynInterfaceMsg = control_msgs::msg::DynamicInterfaceValues;
   using GripperAction = control_msgs::action::IOGripperCommand;
   using GoalHandleGripper = rclcpp_action::ServerGoalHandle<GripperAction>;
