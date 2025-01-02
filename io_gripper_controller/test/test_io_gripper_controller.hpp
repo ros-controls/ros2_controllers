@@ -40,7 +40,7 @@
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 
 // TODO(anyone): replace the state and command message types
-using ControllerStateMsg = io_gripper_controller::IOGripperController::ControllerStateMsg;
+using JointStateMsg = io_gripper_controller::IOGripperController::JointStateMsg;
 using OpenCloseSrvType = io_gripper_controller::IOGripperController::OpenCloseSrvType;
 using ControllerModeSrvType = io_gripper_controller::IOGripperController::ControllerModeSrvType;
 using EventStateMsg = io_gripper_controller::IOGripperController::EventStateMsg;

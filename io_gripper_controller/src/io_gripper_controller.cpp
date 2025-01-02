@@ -979,7 +979,7 @@ controller_interface::CallbackReturn IOGripperController::prepare_publishers_and
   {
     // Gripper Joint State publisher
     g_j_s_publisher_ =
-      get_node()->create_publisher<ControllerStateMsg>("/joint_states", rclcpp::SystemDefaultsQoS());
+      get_node()->create_publisher<JointStateMsg>("/joint_states", rclcpp::SystemDefaultsQoS());
     gripper_joint_state_publisher_ = std::make_unique<ControllerStatePublisher>(g_j_s_publisher_);
 
     auto final_joint_size = params_.open_close_joints.size() + params_.configuration_joints.size();
