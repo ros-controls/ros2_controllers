@@ -33,8 +33,7 @@ TEST(TestLoadIOGripperController, load_controller)
     executor, ros2_control_test_assets::minimal_robot_urdf, true, "test_controller_manager");
 
   ASSERT_NE(
-    cm.load_controller(
-      "test_io_gripper_controller", "io_gripper_controller/IOGripperController"),
+    cm.load_controller("test_io_gripper_controller", "io_gripper_controller/IOGripperController"),
     nullptr);
 
   rclcpp::shutdown();

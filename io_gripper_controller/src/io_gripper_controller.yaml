@@ -201,7 +201,7 @@ io_gripper_controller:
       unique<>: null,
     }
   }
-  
+
   configurations: {
     type: string_array,
     default_value: [],

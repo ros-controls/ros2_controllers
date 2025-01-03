@@ -26,8 +26,7 @@
 #include <utility>
 #include <vector>
 
-
-// joint 
+// joint
 // joint states
 // dynamic state msg to status
 // action server
@@ -35,7 +34,7 @@
 // open gripper error when not expected behavior
 // set_before and set_after commands
 // add test for action and service open/close
-// 
+//
 
 int main(int argc, char ** argv)
 {
@@ -45,4 +44,3 @@ int main(int argc, char ** argv)
   rclcpp::shutdown();
   return result;
 }
-

@@ -90,7 +90,8 @@ controller_interface::CallbackReturn IOGripperController::on_configure(
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::InterfaceConfiguration IOGripperController::command_interface_configuration() const
+controller_interface::InterfaceConfiguration IOGripperController::command_interface_configuration()
+  const
 {
   controller_interface::InterfaceConfiguration command_interfaces_config;
   command_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
@@ -104,7 +105,8 @@ controller_interface::InterfaceConfiguration IOGripperController::command_interf
   return command_interfaces_config;
 }
 
-controller_interface::InterfaceConfiguration IOGripperController::state_interface_configuration() const
+controller_interface::InterfaceConfiguration IOGripperController::state_interface_configuration()
+  const
 {
   controller_interface::InterfaceConfiguration state_interfaces_config;
   state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
@@ -114,7 +116,7 @@ controller_interface::InterfaceConfiguration IOGripperController::state_interfac
   {
     state_interfaces_config.names.push_back(state_io);
   }
-  
+
   return state_interfaces_config;
 }
 
@@ -128,7 +130,9 @@ controller_interface::CallbackReturn IOGripperController::on_activate(
 controller_interface::CallbackReturn IOGripperController::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  joint_state_values_.resize(params_.open_close_joints.size() + params_.configuration_joints.size(), std::numeric_limits<double>::quiet_NaN()); 
+  joint_state_values_.resize(
+    params_.open_close_joints.size() + params_.configuration_joints.size(),
+    std::numeric_limits<double>::quiet_NaN());
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
@@ -143,20 +147,20 @@ controller_interface::return_type IOGripperController::update(
 
   switch (*(gripper_service_buffer_.readFromRT()))
   {
-  case service_mode_type::IDLE:
-    // do nothing
-    break;
-  case service_mode_type::OPEN:
-    handle_gripper_state_transition_open(*(gripper_state_buffer_.readFromRT()));
-    break;
-  case service_mode_type::CLOSE:
-    handle_gripper_state_transition_close(*(gripper_state_buffer_.readFromRT()));
-    break;
-  
-  default:
-    break;
+    case service_mode_type::IDLE:
+      // do nothing
+      break;
+    case service_mode_type::OPEN:
+      handle_gripper_state_transition_open(*(gripper_state_buffer_.readFromRT()));
+      break;
+    case service_mode_type::CLOSE:
+      handle_gripper_state_transition_close(*(gripper_state_buffer_.readFromRT()));
+      break;
+
+    default:
+      break;
   }
-  
+
   publish_gripper_joint_states();
   publish_dynamic_interface_values();
 
@@ -168,9 +172,7 @@ bool IOGripperController::find_and_set_command(const std::string & name, const d
   auto it = std::find_if(
     command_interfaces_.begin(), command_interfaces_.end(),
     [&](const hardware_interface::LoanedCommandInterface & command_interface)
-    {
-      return command_interface.get_name() == name;
-    });
+    { return command_interface.get_name() == name; });
 
   if (it != command_interfaces_.end())
   {
@@ -179,14 +181,12 @@ bool IOGripperController::find_and_set_command(const std::string & name, const d
   return false;
 }
 
-bool IOGripperController::find_and_get_state(const std::string & name, double& value)
+bool IOGripperController::find_and_get_state(const std::string & name, double & value)
 {
   auto it = std::find_if(
     state_interfaces_.begin(), state_interfaces_.end(),
     [&](const hardware_interface::LoanedStateInterface & state_interface)
-    {
-      return state_interface.get_name() == name;
-    });
+    { return state_interface.get_name() == name; });
 
   if (it != state_interfaces_.end())
   {
@@ -197,14 +197,12 @@ bool IOGripperController::find_and_get_state(const std::string & name, double& v
   return false;
 }
 
-bool IOGripperController::find_and_get_command(const std::string & name, double& value)
+bool IOGripperController::find_and_get_command(const std::string & name, double & value)
 {
   auto it = std::find_if(
     command_interfaces_.begin(), command_interfaces_.end(),
     [&](const hardware_interface::LoanedCommandInterface & command_interface)
-    {
-      return command_interface.get_name() == name;
-    });
+    { return command_interface.get_name() == name; });
 
   if (it != command_interfaces_.end())
   {
@@ -217,215 +215,233 @@ bool IOGripperController::find_and_get_command(const std::string & name, double&
 
 void IOGripperController::handle_gripper_state_transition_close(const gripper_state_type & state)
 {
-      switch (state)
+  switch (state)
+  {
+    case gripper_state_type::IDLE:
+      // do nothing
+      break;
+    case gripper_state_type::SET_BEFORE_COMMAND:
+      for (size_t i = 0; i < set_before_command_close.size(); ++i)
       {
-      case gripper_state_type::IDLE:
-        // do nothing
-        break;
-      case gripper_state_type::SET_BEFORE_COMMAND:
-        for (size_t i = 0; i < set_before_command_close.size(); ++i)
+        setResult =
+          find_and_set_command(set_before_command_close[i], set_before_command_close_values[i]);
+        if (!setResult)
         {
-          setResult = find_and_set_command(set_before_command_close[i], set_before_command_close_values[i]);
-          if (!setResult)
-          {
-            RCLCPP_ERROR(
-              get_node()->get_logger(), "Failed to set the command state for %s", set_before_command_close[i].c_str());
-          }
+          RCLCPP_ERROR(
+            get_node()->get_logger(), "Failed to set the command state for %s",
+            set_before_command_close[i].c_str());
         }
-
-        gripper_state_buffer_.writeFromNonRT(gripper_state_type::CLOSE_GRIPPER);
-        break;
-      case gripper_state_type::CLOSE_GRIPPER:
-        for (size_t i = 0; i < command_ios_close.size(); ++i)
-        {
-          setResult = find_and_set_command(command_ios_close[i], command_ios_close_values[i]);
-          if (!setResult)
-          {
-            RCLCPP_ERROR(
-              get_node()->get_logger(), "Failed to set the command state for %s", command_ios_close[i].c_str());
-          }
-        }
-        
-        gripper_state_buffer_.writeFromNonRT(gripper_state_type::CHECK_GRIPPER_STATE);
-        break;
-      case gripper_state_type::CHECK_GRIPPER_STATE:
-        for (const auto & [state_name, state_params] : params_.close.state.possible_closed_states_map)
-        {
-          check_state_ios_ = false;
-          for (const auto & high_val : state_params.high)
-          {
-            setResult = find_and_get_state(high_val, state_value_);
-            if (!setResult)
-            {
-              RCLCPP_ERROR(
-                get_node()->get_logger(), "Failed to get the state for %s", high_val.c_str());
-            }
-            else {
-              if (abs(state_value_ - 1.0) < std::numeric_limits<double>::epsilon())
-              {
-                check_state_ios_ = true;
-              }
-              else {
-                check_state_ios_ = false;
-                break;
-              }
-            }
-          }
-          for (const auto & low_val : state_params.low)
-          {
-            setResult = find_and_get_state(low_val, state_value_);
-            if (!setResult)
-            {
-              RCLCPP_ERROR(
-                get_node()->get_logger(), "Failed to get the state for %s", low_val.c_str());
-            }
-            else {
-              if (abs(state_value_ - 0.0) < std::numeric_limits<double>::epsilon())
-              {
-                check_state_ios_ = true;
-              }
-              else {
-                check_state_ios_ = false;
-                break;
-              }
-            }
-          }
-          if (check_state_ios_)
-          {
-            closed_state_name_ = state_name; 
-            gripper_state_buffer_.writeFromNonRT(gripper_state_type::SET_AFTER_COMMAND);
-            break;
-          }
-        }
-        break;
-      case gripper_state_type::SET_AFTER_COMMAND:
-        closed_state_values_ = params_.close.state.possible_closed_states_map.at(closed_state_name_);
-
-        for (const auto & high_val : closed_state_values_.set_after_command_high)
-        {
-          setResult = find_and_set_command(high_val, 1.0);
-          if (!setResult)
-          {
-            RCLCPP_ERROR(
-              get_node()->get_logger(), "Failed to set the command state for %s", high_val.c_str());
-          }
-        }
-
-        for (const auto & low_val : closed_state_values_.set_after_command_low)
-        {
-          setResult = find_and_set_command(low_val, 0.0);
-          if (!setResult)
-          {
-            RCLCPP_ERROR(
-              get_node()->get_logger(), "Failed to set the command state for %s", low_val.c_str());
-          }
-        }
-        for (size_t i = 0; i < params_.close.state.possible_closed_states_map.at(closed_state_name_).joint_states.size(); ++i)
-        {
-          joint_state_values_[i] = params_.close.state.possible_closed_states_map.at(closed_state_name_).joint_states[i];
-        }
-        gripper_state_buffer_.writeFromNonRT(gripper_state_type::IDLE);
-        closeFlag_.store(false);
-        gripper_service_buffer_.writeFromNonRT(service_mode_type::IDLE);
-        break;
-      default:
-        break;
       }
-}
 
-void IOGripperController::handle_gripper_state_transition_open(const gripper_state_type & state)
-{
-      switch (state)
+      gripper_state_buffer_.writeFromNonRT(gripper_state_type::CLOSE_GRIPPER);
+      break;
+    case gripper_state_type::CLOSE_GRIPPER:
+      for (size_t i = 0; i < command_ios_close.size(); ++i)
       {
-      case gripper_state_type::IDLE:
-        // do nothing
-        break;
-      case gripper_state_type::SET_BEFORE_COMMAND:
-        for (size_t i = 0; i < set_before_command_open.size(); ++i)
+        setResult = find_and_set_command(command_ios_close[i], command_ios_close_values[i]);
+        if (!setResult)
         {
-          setResult = find_and_set_command(set_before_command_open[i], set_before_command_open_values[i]);
-          if (!setResult)
-          {
-            RCLCPP_ERROR(
-              get_node()->get_logger(), "Failed to set the command state for %s", set_before_command_open[i].c_str());
-          }
+          RCLCPP_ERROR(
+            get_node()->get_logger(), "Failed to set the command state for %s",
+            command_ios_close[i].c_str());
         }
-        
-        gripper_state_buffer_.writeFromNonRT(gripper_state_type::OPEN_GRIPPER); 
-        break;
-      case gripper_state_type::OPEN_GRIPPER:
-        // now open the gripper
-        for (size_t i = 0; i < command_ios_open.size(); ++i)
-        {
-          setResult = find_and_set_command(command_ios_open[i], command_ios_open_values[i]);
-          if (!setResult)
-          {
-            RCLCPP_ERROR(
-              get_node()->get_logger(), "Failed to set the command state for %s", command_ios_open[i].c_str());
-          }
-        }
-        
-        gripper_state_buffer_.writeFromNonRT(gripper_state_type::CHECK_GRIPPER_STATE);
-        break;
-      case gripper_state_type::CHECK_GRIPPER_STATE:
-        // check the state of the gripper
+      }
+
+      gripper_state_buffer_.writeFromNonRT(gripper_state_type::CHECK_GRIPPER_STATE);
+      break;
+    case gripper_state_type::CHECK_GRIPPER_STATE:
+      for (const auto & [state_name, state_params] : params_.close.state.possible_closed_states_map)
+      {
         check_state_ios_ = false;
-        for (size_t i = 0; i < state_ios_open.size(); ++i)
+        for (const auto & high_val : state_params.high)
         {
-          setResult = find_and_get_state(state_ios_open[i], state_value_);
+          setResult = find_and_get_state(high_val, state_value_);
           if (!setResult)
           {
             RCLCPP_ERROR(
-              get_node()->get_logger(), "Failed to get the state for %s", state_ios_open[i].c_str());
+              get_node()->get_logger(), "Failed to get the state for %s", high_val.c_str());
           }
-          else {
-            if (abs(state_value_ - state_ios_open_values[i]) < std::numeric_limits<double>::epsilon())
+          else
+          {
+            if (abs(state_value_ - 1.0) < std::numeric_limits<double>::epsilon())
             {
               check_state_ios_ = true;
             }
-            else {
+            else
+            {
               check_state_ios_ = false;
               break;
             }
           }
         }
-        if(check_state_ios_)
+        for (const auto & low_val : state_params.low)
         {
-          gripper_state_buffer_.writeFromNonRT(gripper_state_type::SET_AFTER_COMMAND);
-        }
-        break;
-      case gripper_state_type::SET_AFTER_COMMAND:
-        for (size_t i = 0; i < set_after_command_open.size(); ++i)
-        {
-          setResult = find_and_set_command(set_after_command_open[i], set_after_command_open_values[i]);
+          setResult = find_and_get_state(low_val, state_value_);
           if (!setResult)
           {
             RCLCPP_ERROR(
-              get_node()->get_logger(), "Failed to set the command state for %s", set_after_command_open[i].c_str());
+              get_node()->get_logger(), "Failed to get the state for %s", low_val.c_str());
+          }
+          else
+          {
+            if (abs(state_value_ - 0.0) < std::numeric_limits<double>::epsilon())
+            {
+              check_state_ios_ = true;
+            }
+            else
+            {
+              check_state_ios_ = false;
+              break;
+            }
           }
         }
-        for (size_t i = 0; i < params_.open.joint_states.size(); ++i)
+        if (check_state_ios_)
         {
-          joint_state_values_[i] = params_.open.joint_states[i];
+          closed_state_name_ = state_name;
+          gripper_state_buffer_.writeFromNonRT(gripper_state_type::SET_AFTER_COMMAND);
+          break;
         }
-        gripper_state_buffer_.writeFromNonRT(gripper_state_type::IDLE);
-        openFlag_.store(false);
-        gripper_service_buffer_.writeFromNonRT(service_mode_type::IDLE);
-        break;
-      default:
-        break;
       }
+      break;
+    case gripper_state_type::SET_AFTER_COMMAND:
+      closed_state_values_ = params_.close.state.possible_closed_states_map.at(closed_state_name_);
+
+      for (const auto & high_val : closed_state_values_.set_after_command_high)
+      {
+        setResult = find_and_set_command(high_val, 1.0);
+        if (!setResult)
+        {
+          RCLCPP_ERROR(
+            get_node()->get_logger(), "Failed to set the command state for %s", high_val.c_str());
+        }
+      }
+
+      for (const auto & low_val : closed_state_values_.set_after_command_low)
+      {
+        setResult = find_and_set_command(low_val, 0.0);
+        if (!setResult)
+        {
+          RCLCPP_ERROR(
+            get_node()->get_logger(), "Failed to set the command state for %s", low_val.c_str());
+        }
+      }
+      for (size_t i = 0; i < params_.close.state.possible_closed_states_map.at(closed_state_name_)
+                               .joint_states.size();
+           ++i)
+      {
+        joint_state_values_[i] =
+          params_.close.state.possible_closed_states_map.at(closed_state_name_).joint_states[i];
+      }
+      gripper_state_buffer_.writeFromNonRT(gripper_state_type::IDLE);
+      closeFlag_.store(false);
+      gripper_service_buffer_.writeFromNonRT(service_mode_type::IDLE);
+      break;
+    default:
+      break;
+  }
+}
+
+void IOGripperController::handle_gripper_state_transition_open(const gripper_state_type & state)
+{
+  switch (state)
+  {
+    case gripper_state_type::IDLE:
+      // do nothing
+      break;
+    case gripper_state_type::SET_BEFORE_COMMAND:
+      for (size_t i = 0; i < set_before_command_open.size(); ++i)
+      {
+        setResult =
+          find_and_set_command(set_before_command_open[i], set_before_command_open_values[i]);
+        if (!setResult)
+        {
+          RCLCPP_ERROR(
+            get_node()->get_logger(), "Failed to set the command state for %s",
+            set_before_command_open[i].c_str());
+        }
+      }
+
+      gripper_state_buffer_.writeFromNonRT(gripper_state_type::OPEN_GRIPPER);
+      break;
+    case gripper_state_type::OPEN_GRIPPER:
+      // now open the gripper
+      for (size_t i = 0; i < command_ios_open.size(); ++i)
+      {
+        setResult = find_and_set_command(command_ios_open[i], command_ios_open_values[i]);
+        if (!setResult)
+        {
+          RCLCPP_ERROR(
+            get_node()->get_logger(), "Failed to set the command state for %s",
+            command_ios_open[i].c_str());
+        }
+      }
+
+      gripper_state_buffer_.writeFromNonRT(gripper_state_type::CHECK_GRIPPER_STATE);
+      break;
+    case gripper_state_type::CHECK_GRIPPER_STATE:
+      // check the state of the gripper
+      check_state_ios_ = false;
+      for (size_t i = 0; i < state_ios_open.size(); ++i)
+      {
+        setResult = find_and_get_state(state_ios_open[i], state_value_);
+        if (!setResult)
+        {
+          RCLCPP_ERROR(
+            get_node()->get_logger(), "Failed to get the state for %s", state_ios_open[i].c_str());
+        }
+        else
+        {
+          if (abs(state_value_ - state_ios_open_values[i]) < std::numeric_limits<double>::epsilon())
+          {
+            check_state_ios_ = true;
+          }
+          else
+          {
+            check_state_ios_ = false;
+            break;
+          }
+        }
+      }
+      if (check_state_ios_)
+      {
+        gripper_state_buffer_.writeFromNonRT(gripper_state_type::SET_AFTER_COMMAND);
+      }
+      break;
+    case gripper_state_type::SET_AFTER_COMMAND:
+      for (size_t i = 0; i < set_after_command_open.size(); ++i)
+      {
+        setResult =
+          find_and_set_command(set_after_command_open[i], set_after_command_open_values[i]);
+        if (!setResult)
+        {
+          RCLCPP_ERROR(
+            get_node()->get_logger(), "Failed to set the command state for %s",
+            set_after_command_open[i].c_str());
+        }
+      }
+      for (size_t i = 0; i < params_.open.joint_states.size(); ++i)
+      {
+        joint_state_values_[i] = params_.open.joint_states[i];
+      }
+      gripper_state_buffer_.writeFromNonRT(gripper_state_type::IDLE);
+      openFlag_.store(false);
+      gripper_service_buffer_.writeFromNonRT(service_mode_type::IDLE);
+      break;
+    default:
+      break;
+  }
 }
 
 void IOGripperController::handle_reconfigure_state_transition(const reconfigure_state_type & state)
 {
   switch (state)
-    {
+  {
     case reconfigure_state_type::IDLE:
       // do nothing
       break;
     case reconfigure_state_type::FIND_CONFIG:
-      config_index_ = std::find(configurations_list_.begin(), configurations_list_.end(), configuration_key_);
+      config_index_ =
+        std::find(configurations_list_.begin(), configurations_list_.end(), configuration_key_);
       if (config_index_ == configurations_list_.end())
       {
         RCLCPP_ERROR(get_node()->get_logger(), "Configuration not found");
@@ -469,19 +485,18 @@ void IOGripperController::handle_reconfigure_state_transition(const reconfigure_
         if (!setResult)
         {
           check_state_ios_ = false;
-          RCLCPP_ERROR(
-            get_node()->get_logger(), "Failed to get the state for %s", io.c_str());
+          RCLCPP_ERROR(get_node()->get_logger(), "Failed to get the state for %s", io.c_str());
         }
-        else 
+        else
         {
-            if (!(std::abs(state_value_ - 1.0) < std::numeric_limits<double>::epsilon()))
+          if (!(std::abs(state_value_ - 1.0) < std::numeric_limits<double>::epsilon()))
           {
             check_state_ios_ = false;
-            RCLCPP_ERROR(
-              get_node()->get_logger(), "value for state doesn't match %s", io.c_str());
+            RCLCPP_ERROR(get_node()->get_logger(), "value for state doesn't match %s", io.c_str());
             break;
           }
-          else {
+          else
+          {
             check_state_ios_ = true;
           }
         }
@@ -492,19 +507,17 @@ void IOGripperController::handle_reconfigure_state_transition(const reconfigure_
         setResult = find_and_get_state(io, state_value_);
         if (!setResult)
         {
-          RCLCPP_ERROR(
-            get_node()->get_logger(), "Failed to get the state for %s", io.c_str());
+          RCLCPP_ERROR(get_node()->get_logger(), "Failed to get the state for %s", io.c_str());
         }
         else
-        { 
+        {
           if (!(std::abs(state_value_ - 0.0) < std::numeric_limits<double>::epsilon()))
           {
-            RCLCPP_ERROR(
-              get_node()->get_logger(), "value doesn't match %s", io.c_str());
+            RCLCPP_ERROR(get_node()->get_logger(), "value doesn't match %s", io.c_str());
             check_state_ios_ = false;
             break;
           }
-          else 
+          else
           {
             check_state_ios_ = true;
           }
@@ -515,7 +528,7 @@ void IOGripperController::handle_reconfigure_state_transition(const reconfigure_
       {
         for (size_t i = 0; i < conf_it_.joint_states.size(); ++i)
         {
-            joint_state_values_[i + params_.open_close_joints.size()] = conf_it_.joint_states[i];
+          joint_state_values_[i + params_.open_close_joints.size()] = conf_it_.joint_states[i];
         }
         reconfigure_state_buffer_.writeFromNonRT(reconfigure_state_type::IDLE);
         configure_gripper_buffer_.writeFromNonRT("");
@@ -524,44 +537,39 @@ void IOGripperController::handle_reconfigure_state_transition(const reconfigure_
       break;
     default:
       break;
-    }
+  }
 }
 
 controller_interface::CallbackReturn IOGripperController::check_parameters()
 {
   if (params_.open_close_joints.empty())
   {
-    RCLCPP_FATAL(
-      get_node()->get_logger(),
-      "Size of open close joints parameter cannot be zero.");
+    RCLCPP_FATAL(get_node()->get_logger(), "Size of open close joints parameter cannot be zero.");
     return CallbackReturn::FAILURE;
   }
 
   if (params_.open.joint_states.empty())
   {
-    RCLCPP_FATAL(
-      get_node()->get_logger(),
-      "Size of joint states parameters cannot be zero.");
+    RCLCPP_FATAL(get_node()->get_logger(), "Size of joint states parameters cannot be zero.");
     return CallbackReturn::FAILURE;
   }
 
   if (params_.open.command.high.empty() and params_.open.command.low.empty())
   {
     RCLCPP_FATAL(
-      get_node()->get_logger(),
-      "Size of open command high and low parameters cannot be zero.");
+      get_node()->get_logger(), "Size of open command high and low parameters cannot be zero.");
     return CallbackReturn::FAILURE;
   }
 
   if (params_.open.state.high.empty() and params_.open.state.low.empty())
   {
     RCLCPP_FATAL(
-      get_node()->get_logger(),
-      "Size of open state high and low parameters cannot be zero.");
+      get_node()->get_logger(), "Size of open state high and low parameters cannot be zero.");
     return CallbackReturn::FAILURE;
   }
 
-  if (params_.close.set_before_command.high.empty() and params_.close.set_before_command.low.empty())
+  if (
+    params_.close.set_before_command.high.empty() and params_.close.set_before_command.low.empty())
   {
     RCLCPP_FATAL(
       get_node()->get_logger(),
@@ -572,17 +580,14 @@ controller_interface::CallbackReturn IOGripperController::check_parameters()
   if (params_.close.command.high.empty() and params_.close.command.low.empty())
   {
     RCLCPP_FATAL(
-      get_node()->get_logger(),
-      "Size of close command high and low parameters cannot be zero.");
+      get_node()->get_logger(), "Size of close command high and low parameters cannot be zero.");
     return CallbackReturn::FAILURE;
   }
 
   // configurations parameter
   if (params_.configurations.empty())
   {
-    RCLCPP_FATAL(
-      get_node()->get_logger(),
-      "Size of configurations parameter cannot be zero.");
+    RCLCPP_FATAL(get_node()->get_logger(), "Size of configurations parameter cannot be zero.");
     return CallbackReturn::FAILURE;
   }
 
@@ -590,17 +595,14 @@ controller_interface::CallbackReturn IOGripperController::check_parameters()
   if (params_.configuration_joints.empty())
   {
     RCLCPP_FATAL(
-      get_node()->get_logger(),
-      "Size of configuration joints parameter cannot be zero.");
+      get_node()->get_logger(), "Size of configuration joints parameter cannot be zero.");
     return CallbackReturn::FAILURE;
   }
 
   // configuration setup parameter
   if (params_.configuration_setup.configurations_map.empty())
   {
-    RCLCPP_FATAL(
-      get_node()->get_logger(),
-      "Size of configuration map parameter cannot be zero.");
+    RCLCPP_FATAL(get_node()->get_logger(), "Size of configuration map parameter cannot be zero.");
     return CallbackReturn::FAILURE;
   }
 
@@ -608,28 +610,26 @@ controller_interface::CallbackReturn IOGripperController::check_parameters()
   if (params_.gripper_specific_sensors.empty())
   {
     RCLCPP_FATAL(
-      get_node()->get_logger(),
-      "Size of gripper specific sensors parameter cannot be zero.");
+      get_node()->get_logger(), "Size of gripper specific sensors parameter cannot be zero.");
     return CallbackReturn::FAILURE;
   }
 
   // sensors interfaces parameter
   if (params_.sensors_interfaces.gripper_specific_sensors_map.empty())
   {
-    RCLCPP_FATAL(
-      get_node()->get_logger(),
-      "Size of sensors interfaces parameter cannot be zero.");
+    RCLCPP_FATAL(get_node()->get_logger(), "Size of sensors interfaces parameter cannot be zero.");
     return CallbackReturn::FAILURE;
   }
 
   // if sensor input string is empty then return failure
-  for (const auto& [key, val] : params_.sensors_interfaces.gripper_specific_sensors_map)
+  for (const auto & [key, val] : params_.sensors_interfaces.gripper_specific_sensors_map)
   {
     if (val.input == "")
     {
       RCLCPP_FATAL(
         get_node()->get_logger(),
-        "Size of sensor input string parameter cannot be empty ("").");
+        "Size of sensor input string parameter cannot be empty ("
+        ").");
       return CallbackReturn::FAILURE;
     }
   }
@@ -639,8 +639,9 @@ controller_interface::CallbackReturn IOGripperController::check_parameters()
 void IOGripperController::prepare_command_and_state_ios()
 {
   // make full command ios lists -- just once
-  for (const auto& key : params_.open.set_before_command.high) {
-    if(!key.empty())
+  for (const auto & key : params_.open.set_before_command.high)
+  {
+    if (!key.empty())
     {
       set_before_command_open.push_back(key);
       set_before_command_open_values.push_back(1.0);
@@ -648,15 +649,17 @@ void IOGripperController::prepare_command_and_state_ios()
     }
   }
 
-  for (const auto& key : params_.open.set_before_command.low) {
-    if(!key.empty())
+  for (const auto & key : params_.open.set_before_command.low)
+  {
+    if (!key.empty())
     {
       set_before_command_open.push_back(key);
       set_before_command_open_values.push_back(0.0);
       command_if_ios.insert(key);
     }
-  } 
-  for (const auto& key : params_.open.command.high) {
+  }
+  for (const auto & key : params_.open.command.high)
+  {
     if (!key.empty())
     {
       command_ios_open.push_back(key);
@@ -665,7 +668,8 @@ void IOGripperController::prepare_command_and_state_ios()
     }
   }
 
-  for (const auto& key : params_.open.command.low) {
+  for (const auto & key : params_.open.command.low)
+  {
     if (!key.empty())
     {
       command_ios_open.push_back(key);
@@ -674,8 +678,9 @@ void IOGripperController::prepare_command_and_state_ios()
     }
   }
 
-  for (const auto& key : params_.open.set_after_command.high) {
-    if(!key.empty())
+  for (const auto & key : params_.open.set_after_command.high)
+  {
+    if (!key.empty())
     {
       set_after_command_open.push_back(key);
       set_after_command_open_values.push_back(1.0);
@@ -683,8 +688,9 @@ void IOGripperController::prepare_command_and_state_ios()
     }
   }
 
-  for (const auto& key : params_.open.set_after_command.low) {
-    if(!key.empty())
+  for (const auto & key : params_.open.set_after_command.low)
+  {
+    if (!key.empty())
     {
       set_after_command_open.push_back(key);
       set_after_command_open_values.push_back(0.0);
@@ -692,8 +698,9 @@ void IOGripperController::prepare_command_and_state_ios()
     }
   }
 
-  for (const auto& key : params_.close.set_before_command.high) {
-    if(!key.empty())
+  for (const auto & key : params_.close.set_before_command.high)
+  {
+    if (!key.empty())
     {
       set_before_command_close.push_back(key);
       set_before_command_close_values.push_back(1.0);
@@ -701,8 +708,9 @@ void IOGripperController::prepare_command_and_state_ios()
     }
   }
 
-  for (const auto& key : params_.close.set_before_command.low) {
-    if(!key.empty())
+  for (const auto & key : params_.close.set_before_command.low)
+  {
+    if (!key.empty())
     {
       set_before_command_close.push_back(key);
       set_before_command_close_values.push_back(0.0);
@@ -710,14 +718,16 @@ void IOGripperController::prepare_command_and_state_ios()
     }
   }
 
-  for (const auto& key : params_.close.command.high) {
+  for (const auto & key : params_.close.command.high)
+  {
     command_ios_close.push_back(key);
     command_ios_close_values.push_back(1.0);
     command_if_ios.insert(key);
   }
 
-  for (const auto& key : params_.close.command.low) {
-    if(!key.empty())
+  for (const auto & key : params_.close.command.low)
+  {
+    if (!key.empty())
     {
       command_ios_close.push_back(key);
       command_ios_close_values.push_back(0.0);
@@ -726,8 +736,9 @@ void IOGripperController::prepare_command_and_state_ios()
   }
 
   // make full state ios lists -- just once
-  for (const auto& key : params_.open.state.high) {
-    if(!key.empty())
+  for (const auto & key : params_.open.state.high)
+  {
+    if (!key.empty())
     {
       state_ios_open.push_back(key);
       state_ios_open_values.push_back(1.0);
@@ -735,8 +746,9 @@ void IOGripperController::prepare_command_and_state_ios()
     }
   }
 
-  for (const auto& key : params_.open.state.low) {
-    if(!key.empty())
+  for (const auto & key : params_.open.state.low)
+  {
+    if (!key.empty())
     {
       state_ios_open.push_back(key);
       state_ios_open_values.push_back(0.0);
@@ -748,28 +760,28 @@ void IOGripperController::prepare_command_and_state_ios()
   {
     for (const auto & key : value.high)
     {
-      if(!key.empty())
+      if (!key.empty())
       {
         state_if_ios.insert(key);
       }
     }
     for (const auto & key : value.low)
     {
-      if(!key.empty())
+      if (!key.empty())
       {
         state_if_ios.insert(key);
       }
     }
-    for (const auto & key: value.set_after_command_high)
+    for (const auto & key : value.set_after_command_high)
     {
-      if(!key.empty())
+      if (!key.empty())
       {
         command_if_ios.insert(key);
       }
     }
-    for (const auto & key: value.set_after_command_low)
+    for (const auto & key : value.set_after_command_low)
     {
-      if(!key.empty())
+      if (!key.empty())
       {
         command_if_ios.insert(key);
       }
@@ -809,7 +821,9 @@ void IOGripperController::prepare_command_and_state_ios()
 
   for (size_t i = 0; i < params_.gripper_specific_sensors.size(); ++i)
   {
-    state_if_ios.insert(params_.sensors_interfaces.gripper_specific_sensors_map.at(params_.gripper_specific_sensors[i]).input);
+    state_if_ios.insert(params_.sensors_interfaces.gripper_specific_sensors_map
+                          .at(params_.gripper_specific_sensors[i])
+                          .input);
   }
 }
 
@@ -826,20 +840,19 @@ controller_interface::CallbackReturn IOGripperController::prepare_publishers_and
   if (!params_.use_action)
   {
     // callback groups for each service
-    open_service_callback_group_ = get_node()->create_callback_group(
-      rclcpp::CallbackGroupType::MutuallyExclusive);
+    open_service_callback_group_ =
+      get_node()->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 
-    close_service_callback_group_ = get_node()->create_callback_group(
-      rclcpp::CallbackGroupType::MutuallyExclusive);
+    close_service_callback_group_ =
+      get_node()->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 
-    reconfigure_service_callback_group_ = get_node()->create_callback_group(
-      rclcpp::CallbackGroupType::MutuallyExclusive);
+    reconfigure_service_callback_group_ =
+      get_node()->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 
     // open service
-    auto open_service_callback =
-      [&](
-        const std::shared_ptr<OpenCloseSrvType::Request> /*request*/,
-        std::shared_ptr<OpenCloseSrvType::Response> response)
+    auto open_service_callback = [&](
+                                   const std::shared_ptr<OpenCloseSrvType::Request> /*request*/,
+                                   std::shared_ptr<OpenCloseSrvType::Response> response)
     {
       try
       {
@@ -856,7 +869,7 @@ controller_interface::CallbackReturn IOGripperController::prepare_publishers_and
         openFlag_.store(true);
         gripper_service_buffer_.writeFromNonRT(service_mode_type::OPEN);
         gripper_state_buffer_.writeFromNonRT(gripper_state_type::SET_BEFORE_COMMAND);
-        while(openFlag_.load())
+        while (openFlag_.load())
         {
           std::this_thread::sleep_for(std::chrono::milliseconds(100));
           if ((*(gripper_state_buffer_.readFromRT()) == gripper_state_type::HALTED))
@@ -864,7 +877,8 @@ controller_interface::CallbackReturn IOGripperController::prepare_publishers_and
             response->success = false;
             break;
           }
-          else {
+          else
+          {
             response->success = true;
           }
         }
@@ -876,14 +890,13 @@ controller_interface::CallbackReturn IOGripperController::prepare_publishers_and
     };
 
     open_service_ = get_node()->create_service<OpenCloseSrvType>(
-      "~/gripper_open", open_service_callback,
-      rmw_qos_profile_services_hist_keep_all, open_service_callback_group_);
+      "~/gripper_open", open_service_callback, rmw_qos_profile_services_hist_keep_all,
+      open_service_callback_group_);
 
     // close service
-    auto close_service_callback =
-      [&](
-        const std::shared_ptr<OpenCloseSrvType::Request> /*request*/,
-        std::shared_ptr<OpenCloseSrvType::Response> response)
+    auto close_service_callback = [&](
+                                    const std::shared_ptr<OpenCloseSrvType::Request> /*request*/,
+                                    std::shared_ptr<OpenCloseSrvType::Response> response)
     {
       try
       {
@@ -900,7 +913,7 @@ controller_interface::CallbackReturn IOGripperController::prepare_publishers_and
           openFlag_.store(false);
         }
         closeFlag_.store(true);
-        while(closeFlag_.load())
+        while (closeFlag_.load())
         {
           std::this_thread::sleep_for(std::chrono::milliseconds(100));
           if ((*(gripper_state_buffer_.readFromRT()) == gripper_state_type::HALTED))
@@ -908,7 +921,8 @@ controller_interface::CallbackReturn IOGripperController::prepare_publishers_and
             response->success = false;
             break;
           }
-          else {
+          else
+          {
             response->success = true;
           }
         }
@@ -920,8 +934,8 @@ controller_interface::CallbackReturn IOGripperController::prepare_publishers_and
     };
 
     close_service_ = get_node()->create_service<OpenCloseSrvType>(
-      "~/gripper_close", close_service_callback,
-      rmw_qos_profile_services_hist_keep_all, close_service_callback_group_);
+      "~/gripper_close", close_service_callback, rmw_qos_profile_services_hist_keep_all,
+      close_service_callback_group_);
 
     // configure gripper service
     auto configure_gripper_service_callback =
@@ -935,7 +949,7 @@ controller_interface::CallbackReturn IOGripperController::prepare_publishers_and
         configure_gripper_buffer_.writeFromNonRT(conf.c_str());
         reconfigure_state_buffer_.writeFromNonRT(reconfigure_state_type::FIND_CONFIG);
         reconfigureFlag_.store(true);
-        while(reconfigureFlag_.load())
+        while (reconfigureFlag_.load())
         {
           std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
@@ -952,7 +966,6 @@ controller_interface::CallbackReturn IOGripperController::prepare_publishers_and
     configure_gripper_service_ = get_node()->create_service<ConfigSrvType>(
       "~/reconfigure_to", configure_gripper_service_callback,
       rmw_qos_profile_services_hist_keep_all, reconfigure_service_callback_group_);
-
   }
   else
   {
@@ -961,7 +974,8 @@ controller_interface::CallbackReturn IOGripperController::prepare_publishers_and
     gripper_result_ = std::make_shared<GripperAction::Result>();
     gripper_action_server_ = rclcpp_action::create_server<GripperAction>(
       get_node(), "~/gripper_action",
-      std::bind(&IOGripperController::handle_goal, this, std::placeholders::_1, std::placeholders::_2),
+      std::bind(
+        &IOGripperController::handle_goal, this, std::placeholders::_1, std::placeholders::_2),
       std::bind(&IOGripperController::handle_cancel, this, std::placeholders::_1),
       std::bind(&IOGripperController::handle_accepted, this, std::placeholders::_1));
 
@@ -970,7 +984,9 @@ controller_interface::CallbackReturn IOGripperController::prepare_publishers_and
     gripper_config_result_ = std::make_shared<GripperConfigAction::Result>();
     gripper_config_action_server_ = rclcpp_action::create_server<GripperConfigAction>(
       get_node(), "~/reconfigure_gripper_action",
-      std::bind(&IOGripperController::config_handle_goal, this, std::placeholders::_1, std::placeholders::_2),
+      std::bind(
+        &IOGripperController::config_handle_goal, this, std::placeholders::_1,
+        std::placeholders::_2),
       std::bind(&IOGripperController::config_handle_cancel, this, std::placeholders::_1),
       std::bind(&IOGripperController::config_handle_accepted, this, std::placeholders::_1));
   }
@@ -983,7 +999,7 @@ controller_interface::CallbackReturn IOGripperController::prepare_publishers_and
     gripper_joint_state_publisher_ = std::make_unique<ControllerStatePublisher>(g_j_s_publisher_);
 
     auto final_joint_size = params_.open_close_joints.size() + params_.configuration_joints.size();
-    
+
     gripper_joint_state_publisher_->msg_.name.resize(final_joint_size);
     gripper_joint_state_publisher_->msg_.position.resize(final_joint_size);
 
@@ -996,8 +1012,10 @@ controller_interface::CallbackReturn IOGripperController::prepare_publishers_and
     }
     for (size_t i = 0; i < params_.configuration_joints.size(); ++i)
     {
-      gripper_joint_state_publisher_->msg_.name[i + params_.open_close_joints.size()] = params_.configuration_joints[i];
-      gripper_joint_state_publisher_->msg_.position[i + params_.open_close_joints.size()] = joint_state_values_[i + params_.open_close_joints.size()];
+      gripper_joint_state_publisher_->msg_.name[i + params_.open_close_joints.size()] =
+        params_.configuration_joints[i];
+      gripper_joint_state_publisher_->msg_.position[i + params_.open_close_joints.size()] =
+        joint_state_values_[i + params_.open_close_joints.size()];
     }
   }
   catch (const std::exception & e)
@@ -1015,7 +1033,7 @@ controller_interface::CallbackReturn IOGripperController::prepare_publishers_and
       "~/dynamic_interface", rclcpp::SystemDefaultsQoS());
     interface_publisher_ = std::make_unique<InterfacePublisher>(if_publisher_);
   }
-  catch(const std::exception& e)
+  catch (const std::exception & e)
   {
     fprintf(
       stderr, "Exception thrown during publisher creation at configure stage with message : %s \n",
@@ -1037,23 +1055,26 @@ void IOGripperController::publish_gripper_joint_states()
     {
       gripper_joint_state_publisher_->msg_.position[i] = joint_state_values_[i];
     }
-   }
+  }
   gripper_joint_state_publisher_->unlockAndPublish();
-
 }
 
 void IOGripperController::publish_dynamic_interface_values()
 {
   if (interface_publisher_ && interface_publisher_->trylock())
   {
-    interface_publisher_->msg_.header.stamp = get_node()->get_clock()->now(); // Make sure it works and discuss with Dr. Denis
+    interface_publisher_->msg_.header.stamp =
+      get_node()->get_clock()->now();  // Make sure it works and discuss with Dr. Denis
     interface_publisher_->msg_.states.interface_names.clear();
     interface_publisher_->msg_.states.values.clear();
     interface_publisher_->msg_.states.values.resize(state_interfaces_.size());
     for (size_t i = 0; i < state_interfaces_.size(); ++i)
     {
-      interface_publisher_->msg_.states.interface_names.push_back(state_interfaces_.at(i).get_name()); // this can be done in a separate function one time. Change it later TODO (Sachin) :
-      interface_publisher_->msg_.states.values.at(i) = static_cast<float>(state_interfaces_.at(i).get_value());
+      interface_publisher_->msg_.states.interface_names.push_back(
+        state_interfaces_.at(i).get_name());  // this can be done in a separate function one time.
+                                              // Change it later TODO (Sachin) :
+      interface_publisher_->msg_.states.values.at(i) =
+        static_cast<float>(state_interfaces_.at(i).get_value());
     }
 
     interface_publisher_->msg_.commands.interface_names.clear();
@@ -1061,49 +1082,54 @@ void IOGripperController::publish_dynamic_interface_values()
     interface_publisher_->msg_.commands.values.resize(command_interfaces_.size());
     for (size_t i = 0; i < command_interfaces_.size(); ++i)
     {
-      interface_publisher_->msg_.commands.interface_names.push_back(command_interfaces_.at(i).get_name()); // this can be done in a separate function one time. Change it later TODO (Sachin) :
-      interface_publisher_->msg_.commands.values.at(i) = static_cast<float>(command_interfaces_.at(i).get_value());
+      interface_publisher_->msg_.commands.interface_names.push_back(
+        command_interfaces_.at(i).get_name());  // this can be done in a separate function one time.
+                                                // Change it later TODO (Sachin) :
+      interface_publisher_->msg_.commands.values.at(i) =
+        static_cast<float>(command_interfaces_.at(i).get_value());
     }
     interface_publisher_->unlockAndPublish();
   }
 }
 
 rclcpp_action::GoalResponse IOGripperController::handle_goal(
-  const rclcpp_action::GoalUUID & uuid,
-  std::shared_ptr<const GripperAction::Goal> goal)
+  const rclcpp_action::GoalUUID & uuid, std::shared_ptr<const GripperAction::Goal> goal)
+{
+  try
   {
-    try
+    if (reconfigureFlag_.load())
     {
-      if (reconfigureFlag_.load())
-      {
-        RCLCPP_ERROR(get_node()->get_logger(), "Cannot close the gripper while reconfiguring");
-        return rclcpp_action::GoalResponse::REJECT;
-      }
-      gripper_service_buffer_.writeFromNonRT((goal->open) ? service_mode_type::OPEN : service_mode_type::CLOSE);
-      gripper_state_buffer_.writeFromNonRT(gripper_state_type::SET_BEFORE_COMMAND);
-    }
-    catch (const std::exception & e)
-    {
-      RCLCPP_ERROR(get_node()->get_logger(), "Exception thrown during action handle goal with message: %s", e.what());
+      RCLCPP_ERROR(get_node()->get_logger(), "Cannot close the gripper while reconfiguring");
       return rclcpp_action::GoalResponse::REJECT;
     }
-    (void)uuid;
-    return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
+    gripper_service_buffer_.writeFromNonRT(
+      (goal->open) ? service_mode_type::OPEN : service_mode_type::CLOSE);
+    gripper_state_buffer_.writeFromNonRT(gripper_state_type::SET_BEFORE_COMMAND);
   }
+  catch (const std::exception & e)
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(), "Exception thrown during action handle goal with message: %s",
+      e.what());
+    return rclcpp_action::GoalResponse::REJECT;
+  }
+  (void)uuid;
+  return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
+}
 
 rclcpp_action::CancelResponse IOGripperController::handle_cancel(
   const std::shared_ptr<GoalHandleGripper> goal_handle)
-  {
+{
   (void)goal_handle;
-    gripper_service_buffer_.writeFromNonRT(service_mode_type::IDLE);
-    gripper_state_buffer_.writeFromNonRT(gripper_state_type::IDLE);
-    return rclcpp_action::CancelResponse::ACCEPT;
-  }
+  gripper_service_buffer_.writeFromNonRT(service_mode_type::IDLE);
+  gripper_state_buffer_.writeFromNonRT(gripper_state_type::IDLE);
+  return rclcpp_action::CancelResponse::ACCEPT;
+}
 
 void IOGripperController::handle_accepted(const std::shared_ptr<GoalHandleGripper> goal_handle)
 {
-  std::thread{std::bind(&IOGripperController::execute, this, std::placeholders::_1), goal_handle}.detach();
-  
+  std::thread{std::bind(&IOGripperController::execute, this, std::placeholders::_1), goal_handle}
+    .detach();
 }
 
 void IOGripperController::execute(std::shared_ptr<GoalHandleGripper> goal_handle)
@@ -1126,50 +1152,51 @@ void IOGripperController::execute(std::shared_ptr<GoalHandleGripper> goal_handle
       goal_handle->abort(result);
       break;
     }
-    else 
+    else
     {
-      feedback->state = static_cast<uint8_t> (*(gripper_state_buffer_.readFromRT()));
+      feedback->state = static_cast<uint8_t>(*(gripper_state_buffer_.readFromRT()));
       goal_handle->publish_feedback(feedback);
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(100)); 
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
 }
 
 rclcpp_action::GoalResponse IOGripperController::config_handle_goal(
-  const rclcpp_action::GoalUUID & uuid,
-  std::shared_ptr<const GripperConfigAction::Goal> goal)
-  {
-    try
+  const rclcpp_action::GoalUUID & uuid, std::shared_ptr<const GripperConfigAction::Goal> goal)
+{
+  try
   {
     std::string conf = goal->config_name;
     configure_gripper_buffer_.writeFromNonRT(conf.c_str());
     reconfigure_state_buffer_.writeFromNonRT(reconfigure_state_type::FIND_CONFIG);
     reconfigureFlag_.store(true);
-    
   }
   catch (const std::exception & e)
   {
-    RCLCPP_ERROR(get_node()->get_logger(), "Exception thrown during action handle goal with message: %s", e.what());
+    RCLCPP_ERROR(
+      get_node()->get_logger(), "Exception thrown during action handle goal with message: %s",
+      e.what());
     return rclcpp_action::GoalResponse::REJECT;
-    
   }
   (void)uuid;
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
-  }
+}
 
 rclcpp_action::CancelResponse IOGripperController::config_handle_cancel(
   const std::shared_ptr<GoalHandleGripperConfig> goal_handle)
-  {
+{
   (void)goal_handle;
   configure_gripper_buffer_.writeFromNonRT("");
   reconfigure_state_buffer_.writeFromNonRT(reconfigure_state_type::FIND_CONFIG);
   return rclcpp_action::CancelResponse::ACCEPT;
+}
 
-  }
-
-void IOGripperController::config_handle_accepted(const std::shared_ptr<GoalHandleGripperConfig> goal_handle)
+void IOGripperController::config_handle_accepted(
+  const std::shared_ptr<GoalHandleGripperConfig> goal_handle)
 {
-std::thread{std::bind(&IOGripperController::config_execute, this, std::placeholders::_1), goal_handle}.detach();
+  std::thread{
+    std::bind(&IOGripperController::config_execute, this, std::placeholders::_1), goal_handle}
+    .detach();
 }
 
 void IOGripperController::config_execute(std::shared_ptr<GoalHandleGripperConfig> goal_handle)
@@ -1178,21 +1205,20 @@ void IOGripperController::config_execute(std::shared_ptr<GoalHandleGripperConfig
   auto feedback = std::make_shared<GripperConfigAction::Feedback>();
   while (true)
   {
-    if(*(reconfigure_state_buffer_.readFromRT()) == reconfigure_state_type::IDLE)
+    if (*(reconfigure_state_buffer_.readFromRT()) == reconfigure_state_type::IDLE)
     {
       result->result = true;
       result->status = "Gripper reconfigured";
       goal_handle->succeed(result);
       break;
     }
-    else 
+    else
     {
-      feedback->state = static_cast<uint8_t> (*(reconfigure_state_buffer_.readFromRT()));
+      feedback->state = static_cast<uint8_t>(*(reconfigure_state_buffer_.readFromRT()));
       goal_handle->publish_feedback(feedback);
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
-
 }
 
 void IOGripperController::check_gripper_and_reconfigure_state()
@@ -1207,13 +1233,15 @@ void IOGripperController::check_gripper_and_reconfigure_state()
       RCLCPP_ERROR(
         get_node()->get_logger(), "Failed to get the state for %s", state_ios_open[i].c_str());
     }
-    else {
+    else
+    {
       if (abs(state_value_ - state_ios_open_values[i]) < std::numeric_limits<double>::epsilon())
       {
         gripper_state_found = true;
       }
-      else {
-        gripper_state_found  = false;
+      else
+      {
+        gripper_state_found = false;
       }
     }
   }
@@ -1237,12 +1265,14 @@ void IOGripperController::check_gripper_and_reconfigure_state()
           RCLCPP_ERROR(
             get_node()->get_logger(), "Failed to get the state for %s", high_val.c_str());
         }
-        else {
+        else
+        {
           if (abs(state_value_ - 1.0) < std::numeric_limits<double>::epsilon())
           {
             gripper_state_found = true;
           }
-          else {
+          else
+          {
             gripper_state_found = false;
             break;
           }
@@ -1253,15 +1283,16 @@ void IOGripperController::check_gripper_and_reconfigure_state()
         setResult = find_and_get_state(low_val, state_value_);
         if (!setResult)
         {
-          RCLCPP_ERROR(
-            get_node()->get_logger(), "Failed to get the state for %s", low_val.c_str());
+          RCLCPP_ERROR(get_node()->get_logger(), "Failed to get the state for %s", low_val.c_str());
         }
-        else {
+        else
+        {
           if (abs(state_value_ - 0.0) < std::numeric_limits<double>::epsilon())
           {
             gripper_state_found = true;
           }
-          else {
+          else
+          {
             gripper_state_found = false;
             break;
           }
@@ -1270,9 +1301,12 @@ void IOGripperController::check_gripper_and_reconfigure_state()
 
       if (gripper_state_found)
       {
-        for (size_t i = 0; i < params_.close.state.possible_closed_states_map.at(state_name).joint_states.size(); ++i)
+        for (size_t i = 0;
+             i < params_.close.state.possible_closed_states_map.at(state_name).joint_states.size();
+             ++i)
         {
-          joint_state_values_[i] = params_.close.state.possible_closed_states_map.at(state_name).joint_states[i];
+          joint_state_values_[i] =
+            params_.close.state.possible_closed_states_map.at(state_name).joint_states[i];
         }
         break;
       }
@@ -1289,19 +1323,18 @@ void IOGripperController::check_gripper_and_reconfigure_state()
       if (!setResult)
       {
         reconfigure_state_found = false;
-        RCLCPP_ERROR(
-          get_node()->get_logger(), "Failed to get the state for %s", io.c_str());
+        RCLCPP_ERROR(get_node()->get_logger(), "Failed to get the state for %s", io.c_str());
       }
-      else 
+      else
       {
-          if (!(std::abs(state_value_ - 1.0) < std::numeric_limits<double>::epsilon()))
+        if (!(std::abs(state_value_ - 1.0) < std::numeric_limits<double>::epsilon()))
         {
           reconfigure_state_found = false;
-          RCLCPP_ERROR(
-            get_node()->get_logger(), "value for state doesn't match %s", io.c_str());
+          RCLCPP_ERROR(get_node()->get_logger(), "value for state doesn't match %s", io.c_str());
           break;
         }
-        else {
+        else
+        {
           reconfigure_state_found = true;
         }
       }
@@ -1312,19 +1345,17 @@ void IOGripperController::check_gripper_and_reconfigure_state()
       setResult = find_and_get_state(io, state_value_);
       if (!setResult)
       {
-        RCLCPP_ERROR(
-          get_node()->get_logger(), "Failed to get the state for %s", io.c_str());
+        RCLCPP_ERROR(get_node()->get_logger(), "Failed to get the state for %s", io.c_str());
       }
       else
-      { 
+      {
         if (!(std::abs(state_value_ - 0.0) < std::numeric_limits<double>::epsilon()))
         {
-          RCLCPP_ERROR(
-            get_node()->get_logger(), "value doesn't match %s", io.c_str());
+          RCLCPP_ERROR(get_node()->get_logger(), "value doesn't match %s", io.c_str());
           reconfigure_state_found = false;
           break;
         }
-        else 
+        else
         {
           reconfigure_state_found = true;
         }
@@ -1334,7 +1365,7 @@ void IOGripperController::check_gripper_and_reconfigure_state()
     {
       for (size_t i = 0; i < val.joint_states.size(); ++i)
       {
-          joint_state_values_[i + params_.open_close_joints.size()] = val.joint_states[i];
+        joint_state_values_[i + params_.open_close_joints.size()] = val.joint_states[i];
       }
       break;
     }
