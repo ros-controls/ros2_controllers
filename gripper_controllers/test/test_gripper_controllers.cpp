@@ -52,7 +52,8 @@ void GripperControllerTest<T>::SetUp()
 template <typename T>
 void GripperControllerTest<T>::TearDown()
 {
-  controller_.reset(nullptr);
+  controller_->get_node()->shutdown();
+  controller_.reset(nullptr);  // this calls the dtor, but does not call shutdown transition
 }
 
 template <typename T>

@@ -48,7 +48,11 @@ void MultiInterfaceForwardCommandControllerTest::SetUp()
   controller_ = std::make_unique<FriendMultiInterfaceForwardCommandController>();
 }
 
-void MultiInterfaceForwardCommandControllerTest::TearDown() { controller_.reset(nullptr); }
+void MultiInterfaceForwardCommandControllerTest::TearDown()
+{
+  controller_->get_node()->shutdown();
+  controller_.reset(nullptr);  // this calls the dtor, but does not call shutdown transition
+}
 
 void MultiInterfaceForwardCommandControllerTest::SetUpController(bool set_params_and_activate)
 {

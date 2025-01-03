@@ -34,7 +34,11 @@ void JointGroupPositionControllerTest::SetUp()
   controller_ = std::make_unique<FriendJointGroupPositionController>();
 }
 
-void JointGroupPositionControllerTest::TearDown() { controller_.reset(nullptr); }
+void JointGroupPositionControllerTest::TearDown()
+{
+  controller_->get_node()->shutdown();
+  controller_.reset(nullptr);  // this calls the dtor, but does not call shutdown transition
+}
 
 void JointGroupPositionControllerTest::SetUpController()
 {

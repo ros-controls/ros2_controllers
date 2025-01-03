@@ -46,7 +46,11 @@ void ForwardCommandControllerTest::SetUp()
   controller_ = std::make_unique<FriendForwardCommandController>();
 }
 
-void ForwardCommandControllerTest::TearDown() { controller_.reset(nullptr); }
+void ForwardCommandControllerTest::TearDown()
+{
+  controller_->get_node()->shutdown();
+  controller_.reset(nullptr);  // this calls the dtor, but does not call shutdown transition
+}
 
 void ForwardCommandControllerTest::SetUpController()
 {
