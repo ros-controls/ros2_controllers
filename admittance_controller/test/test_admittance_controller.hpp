@@ -129,12 +129,13 @@ public:
     test_broadcaster_node_ = std::make_shared<rclcpp::Node>("test_broadcaster_node");
   }
 
-  static void TearDownTestCase()
-  {
-    //    rclcpp::shutdown();
-  }
+  static void TearDownTestCase() {}
 
-  void TearDown() { controller_.reset(nullptr); }
+  void TearDown()
+  {
+    controller_->get_node()->shutdown();
+    controller_.reset(nullptr);  // this calls the dtor, but does not call shutdown transition
+  }
 
 protected:
   controller_interface::return_type SetUpController(
