@@ -64,7 +64,7 @@ controller_interface::CallbackReturn AckermannSteeringController::configure_odom
 
   set_interface_numbers(NR_STATE_ITFS, NR_CMD_ITFS, NR_REF_ITFS);
 
-  RCLCPP_INFO(get_node()->get_logger(), "ackermann odom configure successful");
+  RCLCPP_INFO(get_node()->get_logger(), "Ackermann odom configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
 }
 

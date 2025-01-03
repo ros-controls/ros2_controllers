@@ -76,6 +76,13 @@ steering_controllers_library:
     read_only: false,
   }
 
+  reduce_wheel_speed_until_steering_reached: {
+    type: bool,
+    default_value: false,
+    description: "Reduce wheel speed until the steering angle has been reached.",
+    read_only: false,
+  }
+
   velocity_rolling_window_size: {
     type: int,
     default_value: 10,

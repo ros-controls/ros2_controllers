@@ -63,10 +63,11 @@ struct AdmittanceState
     mass_inv.setZero();
     stiffness.setZero();
     selected_axes.setZero();
-    current_joint_pos = Eigen::VectorXd::Zero(num_joints);
-    joint_pos = Eigen::VectorXd::Zero(num_joints);
-    joint_vel = Eigen::VectorXd::Zero(num_joints);
-    joint_acc = Eigen::VectorXd::Zero(num_joints);
+    auto idx = static_cast<Eigen::Index>(num_joints);
+    current_joint_pos = Eigen::VectorXd::Zero(idx);
+    joint_pos = Eigen::VectorXd::Zero(idx);
+    joint_vel = Eigen::VectorXd::Zero(idx);
+    joint_acc = Eigen::VectorXd::Zero(idx);
   }
 
   Eigen::VectorXd current_joint_pos;
@@ -102,7 +103,8 @@ public:
 
   /// Configure admittance rule memory using number of joints.
   controller_interface::return_type configure(
-    const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node, const size_t num_joint);
+    const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node, const size_t num_joint,
+    const std::string & robot_description);
 
   /// Reset all values back to default
   controller_interface::return_type reset(const size_t num_joints);

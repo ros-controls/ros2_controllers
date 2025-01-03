@@ -2,6 +2,35 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.18.0 (2024-12-19)
+-------------------
+* steering_controllers_library: Add `reduce_wheel_speed_until_steering_reached` parameter (`#1314 <https://github.com/ros-controls/ros2_controllers/issues/1314>`_)
+* [CI] Add clang job and setup concurrency (`#1407 <https://github.com/ros-controls/ros2_controllers/issues/1407>`_)
+* Contributors: Christoph Fröhlich
+
+4.17.0 (2024-12-07)
+-------------------
+* Use the .hpp headers from `realtime_tools` package (`#1406 <https://github.com/ros-controls/ros2_controllers/issues/1406>`_)
+* Add Mecanum Drive Controller (`#512 <https://github.com/ros-controls/ros2_controllers/issues/512>`_)
+* Add few warning flags to error in all ros2_controllers packages and fix tests (`#1370 <https://github.com/ros-controls/ros2_controllers/issues/1370>`_)
+* Update maintainers and add url tags (`#1363 <https://github.com/ros-controls/ros2_controllers/issues/1363>`_)
+* Contributors: Christoph Fröhlich, Dr. Denis, Sai Kishor Kothakota
+
+4.16.0 (2024-11-08)
+-------------------
+
+4.15.0 (2024-10-07)
+-------------------
+* Adapt test to new way of exporting reference interfaces (Related to `#1240 <https://github.com/ros-controls/ros2_controllers/issues/1240>`_ in ros2_control) (`#1103 <https://github.com/ros-controls/ros2_controllers/issues/1103>`_)
+* fix(timeout): do not reset steer wheels to 0. on timeout (`#1289 <https://github.com/ros-controls/ros2_controllers/issues/1289>`_)
+* fix(steering-odometry): convert twist to steering angle (`#1288 <https://github.com/ros-controls/ros2_controllers/issues/1288>`_)
+* Contributors: Manuel Muth, Rein Appeldoorn
+
+4.14.0 (2024-09-11)
+-------------------
+* fix(steering-odometry): handle infinite turning radius properly (`#1285 <https://github.com/ros-controls/ros2_controllers/issues/1285>`_)
+* Contributors: Rein Appeldoorn
+
 4.13.0 (2024-08-22)
 -------------------
 

@@ -2,6 +2,31 @@
 Changelog for package tricycle_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.18.0 (2024-12-19)
+-------------------
+* [CI] Add clang job and setup concurrency (`#1407 <https://github.com/ros-controls/ros2_controllers/issues/1407>`_)
+* Contributors: Christoph Fröhlich
+
+4.17.0 (2024-12-07)
+-------------------
+* Use the .hpp headers from `realtime_tools` package (`#1406 <https://github.com/ros-controls/ros2_controllers/issues/1406>`_)
+* Fix RealtimeBox API changes (`#1385 <https://github.com/ros-controls/ros2_controllers/issues/1385>`_)
+* Add few warning flags to error in all ros2_controllers packages and fix tests (`#1370 <https://github.com/ros-controls/ros2_controllers/issues/1370>`_)
+* TractionLimiter: Fix wrong input checks (`#1341 <https://github.com/ros-controls/ros2_controllers/issues/1341>`_)
+* Update maintainers and add url tags (`#1363 <https://github.com/ros-controls/ros2_controllers/issues/1363>`_)
+* Contributors: Christoph Fröhlich, Sai Kishor Kothakota
+
+4.16.0 (2024-11-08)
+-------------------
+
+4.15.0 (2024-10-07)
+-------------------
+
+4.14.0 (2024-09-11)
+-------------------
+* rename get/set_state to get/set_lifecylce_state (`#1250 <https://github.com/ros-controls/ros2_controllers/issues/1250>`_)
+* Contributors: Manuel Muth
+
 4.13.0 (2024-08-22)
 -------------------
 * Fixes tests to work with use_global_arguments NodeOptions parameter  (`#1256 <https://github.com/ros-controls/ros2_controllers/issues/1256>`_)

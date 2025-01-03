@@ -32,7 +32,7 @@
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 
 using ControllerStateMsg =
-  steering_controllers_library::SteeringControllersLibrary::AckermanControllerState;
+  steering_controllers_library::SteeringControllersLibrary::AckermannControllerState;
 using ControllerReferenceMsg =
   steering_controllers_library::SteeringControllersLibrary::ControllerTwistReferenceMsg;
 
@@ -250,21 +250,22 @@ protected:
   bool open_loop_ = false;
   unsigned int velocity_rolling_window_size_ = 10;
   bool position_feedback_ = false;
-  std::vector<std::string> traction_joints_names_ = {"rear_wheel_joint"};
-  std::vector<std::string> steering_joints_names_ = {"steering_axis_joint"};
-  std::vector<std::string> joint_names_ = {traction_joints_names_[0], steering_joints_names_[0]};
+  std::vector<std::string> traction_joints_names_ = {{"rear_wheel_joint"}};
+  std::vector<std::string> steering_joints_names_ = {{"steering_axis_joint"}};
+  std::vector<std::string> joint_names_ = {{traction_joints_names_[0], steering_joints_names_[0]}};
 
-  std::vector<std::string> wheels_preceeding_names_ = {"pid_controller/rear_wheel_joint"};
-  std::vector<std::string> steers_preceeding_names_ = {"pid_controller/steering_axis_joint"};
+  std::vector<std::string> wheels_preceeding_names_ = {{"pid_controller/rear_wheel_joint"}};
+  std::vector<std::string> steers_preceeding_names_ = {{"pid_controller/steering_axis_joint"}};
   std::vector<std::string> preceeding_joint_names_ = {
-    wheels_preceeding_names_[0], steers_preceeding_names_[0]};
+    {wheels_preceeding_names_[0], steers_preceeding_names_[0]}};
 
   double wheelbase_ = 3.24644;
   double traction_wheel_radius_ = 0.45;
 
-  std::array<double, 2> joint_state_values_ = {3.3, 0.5};
-  std::array<double, 2> joint_command_values_ = {1.1, 2.2};
-  std::array<std::string, 2> joint_reference_interfaces_ = {"linear/velocity", "angular/velocity"};
+  std::array<double, 2> joint_state_values_ = {{3.3, 0.5}};
+  std::array<double, 2> joint_command_values_ = {{1.1, 2.2}};
+  std::array<std::string, 2> joint_reference_interfaces_ = {
+    {"linear/velocity", "angular/velocity"}};
   std::string steering_interface_name_ = "position";
 
   // defined in setup

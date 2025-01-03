@@ -2,6 +2,33 @@
 Changelog for package pid_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.18.0 (2024-12-19)
+-------------------
+* [CI] Add clang job and setup concurrency (`#1407 <https://github.com/ros-controls/ros2_controllers/issues/1407>`_)
+* Contributors: Christoph Fröhlich
+
+4.17.0 (2024-12-07)
+-------------------
+* Use the .hpp headers from `realtime_tools` package (`#1406 <https://github.com/ros-controls/ros2_controllers/issues/1406>`_)
+* Add few warning flags to error in all ros2_controllers packages and fix tests (`#1370 <https://github.com/ros-controls/ros2_controllers/issues/1370>`_)
+* Update maintainers and add url tags (`#1363 <https://github.com/ros-controls/ros2_controllers/issues/1363>`_)
+* Contributors: Christoph Fröhlich, Sai Kishor Kothakota
+
+4.16.0 (2024-11-08)
+-------------------
+* fixes for windows compilation (`#1330 <https://github.com/ros-controls/ros2_controllers/issues/1330>`_)
+* Contributors: Gilmar Correia
+
+4.15.0 (2024-10-07)
+-------------------
+* Adapt test to new way of exporting reference interfaces (Related to `#1240 <https://github.com/ros-controls/ros2_controllers/issues/1240>`_ in ros2_control) (`#1103 <https://github.com/ros-controls/ros2_controllers/issues/1103>`_)
+* Contributors: Manuel Muth
+
+4.14.0 (2024-09-11)
+-------------------
+* [PID Controller] Export state interfaces for easier chaining with other controllers (`#1214 <https://github.com/ros-controls/ros2_controllers/issues/1214>`_)
+* Contributors: Sai Kishor Kothakota
+
 4.13.0 (2024-08-22)
 -------------------
 

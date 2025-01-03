@@ -29,16 +29,15 @@
 #include "joint_trajectory_controller/interpolation_methods.hpp"
 #include "joint_trajectory_controller/tolerances.hpp"
 #include "joint_trajectory_controller/trajectory.hpp"
-#include "joint_trajectory_controller/visibility_control.h"
 #include "rclcpp/duration.hpp"
 #include "rclcpp/subscription.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp/timer.hpp"
 #include "rclcpp_action/server.hpp"
 #include "rclcpp_lifecycle/state.hpp"
-#include "realtime_tools/realtime_buffer.h"
-#include "realtime_tools/realtime_publisher.h"
-#include "realtime_tools/realtime_server_goal_handle.h"
+#include "realtime_tools/realtime_buffer.hpp"
+#include "realtime_tools/realtime_publisher.hpp"
+#include "realtime_tools/realtime_server_goal_handle.hpp"
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
@@ -53,49 +52,38 @@ namespace joint_trajectory_controller
 class JointTrajectoryController : public controller_interface::ControllerInterface
 {
 public:
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   JointTrajectoryController();
 
   /**
    * @brief command_interface_configuration
    */
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   controller_interface::InterfaceConfiguration command_interface_configuration() const override;
 
   /**
    * @brief command_interface_configuration
    */
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   controller_interface::InterfaceConfiguration state_interface_configuration() const override;
 
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   controller_interface::return_type update(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   controller_interface::CallbackReturn on_init() override;
 
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   controller_interface::CallbackReturn on_configure(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   controller_interface::CallbackReturn on_activate(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   controller_interface::CallbackReturn on_deactivate(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   controller_interface::CallbackReturn on_cleanup(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   controller_interface::CallbackReturn on_error(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   controller_interface::CallbackReturn on_shutdown(
     const rclcpp_lifecycle::State & previous_state) override;
 
@@ -112,6 +100,7 @@ protected:
   // Preallocate variables used in the realtime update() function
   trajectory_msgs::msg::JointTrajectoryPoint state_current_;
   trajectory_msgs::msg::JointTrajectoryPoint command_current_;
+  trajectory_msgs::msg::JointTrajectoryPoint command_next_;
   trajectory_msgs::msg::JointTrajectoryPoint state_desired_;
   trajectory_msgs::msg::JointTrajectoryPoint state_error_;
 
@@ -124,6 +113,9 @@ protected:
   // Parameters from ROS for joint_trajectory_controller
   std::shared_ptr<ParamListener> param_listener_;
   Params params_;
+  rclcpp::Duration update_period_{0, 0};
+
+  rclcpp::Time traj_time_;
 
   trajectory_msgs::msg::JointTrajectoryPoint last_commanded_state_;
   /// Specify interpolation method. Default to splines.
@@ -194,17 +186,13 @@ protected:
   rclcpp::Duration action_monitor_period_ = rclcpp::Duration(50ms);
 
   // callback for topic interface
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   void topic_callback(const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg);
 
   // callbacks for action_server_
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   rclcpp_action::GoalResponse goal_received_callback(
     const rclcpp_action::GoalUUID & uuid, std::shared_ptr<const FollowJTrajAction::Goal> goal);
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   rclcpp_action::CancelResponse goal_cancelled_callback(
     const std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle);
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   void goal_accepted_callback(
     std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle);
 
@@ -218,25 +206,19 @@ protected:
    * @param[in] current The current state of the joints.
    * @param[in] desired The desired state of the joints.
    */
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   void compute_error_for_joint(
     JointTrajectoryPoint & error, const size_t index, const JointTrajectoryPoint & current,
     const JointTrajectoryPoint & desired) const;
   // fill trajectory_msg so it matches joints controlled by this controller
   // positions set to current position, velocities, accelerations and efforts to 0.0
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   void fill_partial_goal(
     std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg) const;
   // sorts the joints of the incoming message to our local order
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   void sort_to_local_joint_order(
     std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg) const;
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   bool validate_trajectory_msg(const trajectory_msgs::msg::JointTrajectory & trajectory) const;
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   void add_new_trajectory_msg(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & traj_msg);
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   bool validate_trajectory_point_field(
     size_t joint_names_size, const std::vector<double> & vector_field,
     const std::string & string_for_vector_field, size_t i, bool allow_empty) const;
@@ -246,28 +228,22 @@ protected:
   // the tolerances used for the current goal
   realtime_tools::RealtimeBuffer<SegmentTolerances> active_tolerances_;
 
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   void preempt_active_goal();
 
   /** @brief set the current position with zero velocity and acceleration as new command
    */
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> set_hold_position();
 
   /** @brief set last trajectory point to be repeated at success
    *
    * no matter if it has nonzero velocity or acceleration
    */
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> set_success_trajectory_point();
 
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   bool reset();
 
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   bool has_active_trajectory() const;
 
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   void publish_state(
     const rclcpp::Time & time, const JointTrajectoryPoint & desired_state,
     const JointTrajectoryPoint & current_state, const JointTrajectoryPoint & state_error);
