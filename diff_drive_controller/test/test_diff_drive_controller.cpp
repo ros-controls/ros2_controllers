@@ -85,7 +85,9 @@ public:
 class TestDiffDriveController : public ::testing::Test
 {
 protected:
-  void SetUp() override
+  static void SetUpTestCase() {}
+
+  void SetUp()
   {
     // use the name of the test as the controller name (i.e, the node name) to be able to set
     // parameters from yaml for each test
@@ -97,7 +99,13 @@ protected:
       controller_name + "/cmd_vel", rclcpp::SystemDefaultsQoS());
   }
 
-  static void TearDownTestCase() { rclcpp::shutdown(); }
+  void TearDown()
+  {
+    controller_->get_node()->shutdown();
+    controller_.reset(nullptr);  // this calls the dtor, but does not call shutdown transition
+  }
+
+  static void TearDownTestCase() {}
 
   /// Publish velocity msgs
   /**

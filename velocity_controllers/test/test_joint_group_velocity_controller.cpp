@@ -34,7 +34,11 @@ void JointGroupVelocityControllerTest::SetUp()
   controller_ = std::make_unique<FriendJointGroupVelocityController>();
 }
 
-void JointGroupVelocityControllerTest::TearDown() { controller_.reset(nullptr); }
+void JointGroupVelocityControllerTest::TearDown()
+{
+  controller_->get_node()->shutdown();
+  controller_.reset(nullptr);  // this calls the dtor, but does not call shutdown transition
+}
 
 void JointGroupVelocityControllerTest::SetUpController()
 {

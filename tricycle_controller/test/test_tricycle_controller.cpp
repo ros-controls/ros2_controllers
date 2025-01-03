@@ -82,12 +82,18 @@ class TestTricycleController : public ::testing::Test
 protected:
   static void SetUpTestCase() { rclcpp::init(0, nullptr); }
 
-  void SetUp() override
+  void SetUp()
   {
     controller_ = std::make_unique<TestableTricycleController>();
     pub_node = std::make_shared<rclcpp::Node>("velocity_publisher");
     velocity_publisher = pub_node->create_publisher<geometry_msgs::msg::TwistStamped>(
       controller_name + "/cmd_vel", rclcpp::SystemDefaultsQoS());
+  }
+
+  void TearDown()
+  {
+    controller_->get_node()->shutdown();
+    controller_.reset(nullptr);  // this calls the dtor, but does not call shutdown transition
   }
 
   static void TearDownTestCase() { rclcpp::shutdown(); }

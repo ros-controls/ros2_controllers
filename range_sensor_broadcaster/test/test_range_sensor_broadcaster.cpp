@@ -33,7 +33,11 @@ void RangeSensorBroadcasterTest::SetUp()
   range_broadcaster_ = std::make_unique<range_sensor_broadcaster::RangeSensorBroadcaster>();
 }
 
-void RangeSensorBroadcasterTest::TearDown() { range_broadcaster_.reset(nullptr); }
+void RangeSensorBroadcasterTest::TearDown()
+{
+  range_broadcaster_->get_node()->shutdown();
+  range_broadcaster_.reset(nullptr);  // this calls the dtor, but does not call shutdown transition
+}
 
 controller_interface::return_type RangeSensorBroadcasterTest::init_broadcaster(
   std::string broadcaster_name)

@@ -34,7 +34,11 @@ void JointGroupEffortControllerTest::SetUp()
   controller_ = std::make_unique<FriendJointGroupEffortController>();
 }
 
-void JointGroupEffortControllerTest::TearDown() { controller_.reset(nullptr); }
+void JointGroupEffortControllerTest::TearDown()
+{
+  controller_->get_node()->shutdown();
+  controller_.reset(nullptr);  // this calls the dtor, but does not call shutdown transition
+}
 
 void JointGroupEffortControllerTest::SetUpController()
 {

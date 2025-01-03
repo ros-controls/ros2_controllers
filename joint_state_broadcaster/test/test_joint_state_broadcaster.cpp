@@ -57,7 +57,11 @@ void JointStateBroadcasterTest::SetUp()
   state_broadcaster_ = std::make_unique<FriendJointStateBroadcaster>();
 }
 
-void JointStateBroadcasterTest::TearDown() { state_broadcaster_.reset(nullptr); }
+void JointStateBroadcasterTest::TearDown()
+{
+  state_broadcaster_->get_node()->shutdown();
+  state_broadcaster_.reset(nullptr);  // this calls the dtor, but does not call shutdown transition
+}
 
 void JointStateBroadcasterTest::SetUpStateBroadcaster(
   const std::vector<std::string> & joint_names, const std::vector<std::string> & interfaces)

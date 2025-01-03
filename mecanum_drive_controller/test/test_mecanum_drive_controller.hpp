@@ -154,10 +154,13 @@ public:
     tf_odom_s_publisher_ = tf_odom_s_publisher_node_->create_publisher<TfStateMsg>(
       "/test_mecanum_drive_controller/tf_odometry", rclcpp::SystemDefaultsQoS());
   }
+  void TearDown()
+  {
+    controller_->get_node()->shutdown();
+    controller_.reset(nullptr);  // this calls the dtor, but does not call shutdown transition
+  }
 
   static void TearDownTestCase() {}
-
-  void TearDown() { controller_.reset(nullptr); }
 
 protected:
   void SetUpController(const std::string controller_name = "test_mecanum_drive_controller")

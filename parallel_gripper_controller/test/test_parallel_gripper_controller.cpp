@@ -44,7 +44,11 @@ void GripperControllerTest::SetUp()
   controller_ = std::make_unique<FriendGripperController>();
 }
 
-void GripperControllerTest::TearDown() { controller_.reset(nullptr); }
+void GripperControllerTest::TearDown()
+{
+  controller_->get_node()->shutdown();
+  controller_.reset(nullptr);  // this calls the dtor, but does not call shutdown transition
+}
 
 void GripperControllerTest::SetUpController(
   const std::string & controller_name = "test_gripper_action_position_controller",

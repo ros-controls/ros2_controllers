@@ -48,7 +48,11 @@ void ForceTorqueSensorBroadcasterTest::SetUp()
   fts_broadcaster_ = std::make_unique<FriendForceTorqueSensorBroadcaster>();
 }
 
-void ForceTorqueSensorBroadcasterTest::TearDown() { fts_broadcaster_.reset(nullptr); }
+void ForceTorqueSensorBroadcasterTest::TearDown()
+{
+  fts_broadcaster_->get_node()->shutdown();
+  fts_broadcaster_.reset(nullptr);  // this calls the dtor, but does not call shutdown transition
+}
 
 void ForceTorqueSensorBroadcasterTest::SetUpFTSBroadcaster()
 {
