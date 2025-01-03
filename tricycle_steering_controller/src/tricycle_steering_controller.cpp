@@ -30,20 +30,20 @@ controller_interface::CallbackReturn TricycleSteeringController::configure_odome
 {
   tricycle_params_ = tricycle_param_listener_->get_params();
 
-  if (tricycle_params_.front_wheel_radius > 0.0)
+  if (tricycle_params_.front_wheels_radius > 0.0)
   {
     RCLCPP_WARN(
       get_node()->get_logger(),
       "DEPRECATED parameter 'front_wheel_radius', set 'traction_wheels_radius' instead");
-    tricycle_params_.traction_wheels_radius = tricycle_params_.front_wheel_radius;
+    tricycle_params_.traction_wheels_radius = tricycle_params_.front_wheels_radius;
   }
 
-  if (tricycle_params_.rear_wheel_radius > 0.0)
+  if (tricycle_params_.rear_wheels_radius > 0.0)
   {
     RCLCPP_WARN(
       get_node()->get_logger(),
       "DEPRECATED parameter 'rear_wheel_radius', set 'traction_wheels_radius' instead");
-    tricycle_params_.traction_wheels_radius = tricycle_params_.rear_wheel_radius;
+    tricycle_params_.traction_wheels_radius = tricycle_params_.rear_wheels_radius;
   }
 
   const double traction_wheels_radius = tricycle_params_.traction_wheels_radius;

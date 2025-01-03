@@ -33,7 +33,7 @@ tricycle_steering_controller:
       # }
     }
 
-  front_wheel_radius:
+  front_wheels_radius:
     {
       type: double,
       default_value: 0.0,
@@ -41,7 +41,7 @@ tricycle_steering_controller:
       read_only: false,
     }
 
-  rear_wheel_radius:
+  rear_wheels_radius:
     {
       type: double,
       default_value: 0.0,
