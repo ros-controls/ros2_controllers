@@ -4,6 +4,7 @@ steering_controllers_library:
     default_value: 1.0,
     description: "Timeout for controller references after which they will be reset. This is especially useful for controllers that can cause unwanted and dangerous behavior if reference is not reset, e.g., velocity controllers. If value is 0 the reference is reset after each run.",
   }
+
   front_steering: {
     type: bool,
     read_only: true,
@@ -11,23 +12,20 @@ steering_controllers_library:
     description: "DEPRECATED: Use 'traction_joint_names' or 'steering_joint_names' instead"
   }
 
-  front_wheels_names: {
-    type: string_array,
-    read_only: true,
-    default_value: [],
-    description: "DEPRECATED: Use 'traction_joint_names' or 'steering_joint_names'"
-  }
-
   rear_wheels_names: {
     type: string_array,
+    description: "DEPRECATED: Use 'traction_joint_names' or 'steering_joint_names'",
     read_only: true,
     default_value: [],
-    description: "DEPRECATED: Use 'traction_joint_names' or 'steering_joint_names'"
+    validation: {
+      size_lt<>: [5],
+      unique<>: null,
+    }
   }
 
   traction_joints_names: {
     type: string_array,
-    description: "Names of wheel joints.",
+    description: "Names of traction wheel joints.",
     default_value: [],
     read_only: true,
     validation: {
@@ -35,6 +33,17 @@ steering_controllers_library:
       unique<>: null,
       # TODO(anyone): activate validation if front/rear wheel radius is removed
       # not_empty<>: null,
+    }
+  }
+
+  front_wheels_names: {
+    type: string_array,
+    description: "DEPRECATED: Use 'traction_joint_names' or 'steering_joint_names'",
+    read_only: true,
+    default_value: [],
+    validation: {
+      size_lt<>: [5],
+      unique<>: null,
     }
   }
 
