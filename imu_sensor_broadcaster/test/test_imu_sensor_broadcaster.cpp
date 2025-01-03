@@ -48,7 +48,11 @@ void IMUSensorBroadcasterTest::SetUp()
   imu_broadcaster_ = std::make_unique<FriendIMUSensorBroadcaster>();
 }
 
-void IMUSensorBroadcasterTest::TearDown() { imu_broadcaster_.reset(nullptr); }
+void IMUSensorBroadcasterTest::TearDown()
+{
+  imu_broadcaster_->get_node()->shutdown();
+  imu_broadcaster_.reset(nullptr);  // this calls the dtor, but does not call shutdown transition
+}
 
 void IMUSensorBroadcasterTest::SetUpIMUBroadcaster()
 {

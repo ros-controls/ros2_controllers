@@ -20,7 +20,11 @@ using hardware_interface::LoanedStateInterface;
 
 void PoseBroadcasterTest::SetUp() { pose_broadcaster_ = std::make_unique<PoseBroadcaster>(); }
 
-void PoseBroadcasterTest::TearDown() { pose_broadcaster_.reset(nullptr); }
+void PoseBroadcasterTest::TearDown()
+{
+  pose_broadcaster_->get_node()->shutdown();
+  pose_broadcaster_.reset(nullptr);  // this calls the dtor, but does not call shutdown transition
+}
 
 void PoseBroadcasterTest::SetUpPoseBroadcaster()
 {
