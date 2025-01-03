@@ -1,4 +1,21 @@
 ackermann_steering_controller:
+
+  front_wheel_track:
+    {
+      type: double,
+      default_value: 0.0,
+      description: "DEPRECATED: use 'traction_wheel_track' or 'steering_wheel_track'",
+      read_only: false,
+    }
+
+  steering_wheel_track:
+    {
+      type: double,
+      default_value: 0.0,
+      description: "(Optional) Steering wheel track length. If not set, 'traction_wheel_track' will be used.",
+      read_only: false,
+    }
+
   traction_wheel_track:
     {
       type: double,
@@ -10,18 +27,12 @@ ackermann_steering_controller:
       #   gt<>: [0.0]
       # }
     }
-  front_wheel_track:
-    {
-      type: double,
-      default_value: 0.0,
-      description: "DEPRECATED: use 'traction_wheel_track'",
-      read_only: false,
-    }
+
   rear_wheel_track:
     {
       type: double,
       default_value: 0.0,
-      description: "DEPRECATED: use 'traction_wheel_track'",
+      description: "DEPRECATED: use 'traction_wheel_track' or 'steering_wheel_track'",
       read_only: false,
     }
 

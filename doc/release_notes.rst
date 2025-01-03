@@ -67,6 +67,7 @@ steering_controllers_library
 * A fix for Ackermann steering odometry was added (`#921 <https://github.com/ros-controls/ros2_controllers/pull/921>`_).
 * Do not reset the steering wheels to ``0.0`` on timeout (`#1289 <https://github.com/ros-controls/ros2_controllers/pull/1289>`_).
 * New parameter ``reduce_wheel_speed_until_steering_reached`` was added. If set to true, then the wheel speed(s) is reduced until the steering angle has been reached. Only considered if ``open_loop = false`` (`#1314 <https://github.com/ros-controls/ros2_controllers/pull/1314>`_).
+* Ackermann kinematics now supports different wheel tracks for traction and steering axle (`#1166 <https://github.com/ros-controls/ros2_controllers/pull/1166>`_).
 
 tricycle_controller
 ************************

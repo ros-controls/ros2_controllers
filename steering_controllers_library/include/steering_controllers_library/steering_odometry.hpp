@@ -176,10 +176,17 @@ public:
   double get_angular() const { return angular_; }
 
   /**
-   * \brief Sets the wheel parameters: radius, separation and wheelbase
+   * \brief Sets the wheel parameters: radius, wheel_base, and wheel_track
    */
   void set_wheel_params(
-    const double wheel_radius, const double wheelbase = 0.0, const double wheel_track = 0.0);
+    const double wheel_radius, const double wheel_base = 0.0, const double wheel_track = 0.0);
+
+  /**
+   * \brief Sets the wheel parameters: radius, wheel_base, and wheel_track for steering and traction
+   */
+  void set_wheel_params(
+    const double wheel_radius, const double wheel_base, const double wheel_track_steering,
+    const double wheel_track_traction);
 
   /**
    * \brief Velocity rolling window size setter
@@ -273,9 +280,10 @@ private:
   double angular_;  // [rad/s]
 
   /// Kinematic parameters
-  double wheel_track_;   // [m]
-  double wheelbase_;     // [m]
-  double wheel_radius_;  // [m]
+  double wheel_track_traction_;  // [m]
+  double wheel_track_steering_;  // [m]
+  double wheel_base_;            // [m]
+  double wheel_radius_;          // [m]
 
   /// Configuration type used for the forward kinematics
   int config_type_ = -1;
