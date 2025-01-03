@@ -124,9 +124,13 @@ public:
       "/test_bicycle_steering_controller/reference", rclcpp::SystemDefaultsQoS());
   }
 
-  static void TearDownTestCase() {}
+  void TearDown()
+  {
+    controller_->get_node()->shutdown();
+    controller_.reset(nullptr);  // this calls the dtor, but does not call shutdown transition
+  }
 
-  void TearDown() { controller_.reset(nullptr); }
+  static void TearDownTestCase() {}
 
 protected:
   void SetUpController(const std::string controller_name = "test_bicycle_steering_controller")
