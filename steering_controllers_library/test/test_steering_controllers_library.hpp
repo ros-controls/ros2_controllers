@@ -111,12 +111,12 @@ public:
   }
 
   // implementing methods which are declared virtual in the steering_controllers_library.hpp
-  void initialize_implementation_parameter_listener()
+  void initialize_implementation_parameter_listener() override
   {
     param_listener_ = std::make_shared<steering_controllers_library::ParamListener>(get_node());
   }
 
-  controller_interface::CallbackReturn configure_odometry()
+  controller_interface::CallbackReturn configure_odometry() override
   {
     set_interface_numbers(NR_STATE_ITFS, NR_CMD_ITFS, NR_REF_ITFS);
     odometry_.set_wheel_params(WHEELS_RADIUS_, WHEELBASE_, WHEELS_TRACK_);
@@ -125,7 +125,7 @@ public:
     return controller_interface::CallbackReturn::SUCCESS;
   }
 
-  bool update_odometry(const rclcpp::Duration & /*period*/) { return true; }
+  bool update_odometry(const rclcpp::Duration & /*period*/) override { return true; }
 };
 
 // We are using template class here for easier reuse of Fixture in specializations of controllers
