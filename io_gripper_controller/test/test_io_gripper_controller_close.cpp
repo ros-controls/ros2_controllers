@@ -17,15 +17,14 @@
 // [RosTeamWorkspace](https://github.com/StoglRobotics/ros_team_workspace) repository.
 //
 
-#include "test_io_gripper_controller.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "test_io_gripper_controller.hpp"
 
 #include <limits>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
-
 
 // Test open gripper service sets command its as expected and publishes msg
 TEST_F(IOGripperControllerTest, CloseGripperService)
@@ -53,44 +52,55 @@ TEST_F(IOGripperControllerTest, CloseGripperService)
   }
   auto future = close_gripper_service_client_->async_send_request(request);
 
-  std::thread spinner([&executor, &future]() {
-    executor.spin_until_future_complete(future);
-  });
+  std::thread spinner([&executor, &future]() { executor.spin_until_future_complete(future); });
   spinner.detach();
 
   std::this_thread::sleep_for(std::chrono::milliseconds(5000));
   ASSERT_EQ(
-  controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-  controller_interface::return_type::OK); 
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
 
-  ASSERT_EQ(*(controller_->gripper_service_buffer_.readFromRT()), io_gripper_controller::service_mode_type::CLOSE);
-  ASSERT_EQ(*(controller_->gripper_state_buffer_.readFromRT()), io_gripper_controller::gripper_state_type::CLOSE_GRIPPER);
+  ASSERT_EQ(
+    *(controller_->gripper_service_buffer_.readFromRT()),
+    io_gripper_controller::service_mode_type::CLOSE);
+  ASSERT_EQ(
+    *(controller_->gripper_state_buffer_.readFromRT()),
+    io_gripper_controller::gripper_state_type::CLOSE_GRIPPER);
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK); 
+    controller_interface::return_type::OK);
 
-  ASSERT_EQ(*(controller_->gripper_service_buffer_.readFromRT()), io_gripper_controller::service_mode_type::CLOSE);
-  ASSERT_EQ(*(controller_->gripper_state_buffer_.readFromRT()), io_gripper_controller::gripper_state_type::CHECK_GRIPPER_STATE);
+  ASSERT_EQ(
+    *(controller_->gripper_service_buffer_.readFromRT()),
+    io_gripper_controller::service_mode_type::CLOSE);
+  ASSERT_EQ(
+    *(controller_->gripper_state_buffer_.readFromRT()),
+    io_gripper_controller::gripper_state_type::CHECK_GRIPPER_STATE);
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK); 
+    controller_interface::return_type::OK);
 
-  ASSERT_EQ(*(controller_->gripper_service_buffer_.readFromRT()), io_gripper_controller::service_mode_type::CLOSE);
-  ASSERT_EQ(*(controller_->gripper_state_buffer_.readFromRT()), io_gripper_controller::gripper_state_type::SET_AFTER_COMMAND);
+  ASSERT_EQ(
+    *(controller_->gripper_service_buffer_.readFromRT()),
+    io_gripper_controller::service_mode_type::CLOSE);
+  ASSERT_EQ(
+    *(controller_->gripper_state_buffer_.readFromRT()),
+    io_gripper_controller::gripper_state_type::SET_AFTER_COMMAND);
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK); 
+    controller_interface::return_type::OK);
 
   ASSERT_EQ(future.get()->success, true);
   // update to make sure the publisher value is updated
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK); 
+    controller_interface::return_type::OK);
 
-  executor.spin_some(std::chrono::milliseconds(2000)); // this solve the issue related to subscriber not able to get the message
+  executor.spin_some(std::chrono::milliseconds(
+    2000));  // this solve the issue related to subscriber not able to get the message
   std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 
   // since update doesn't guarantee a published message, republish until received
@@ -111,7 +121,8 @@ TEST_F(IOGripperControllerTest, CloseGripperService)
       break;
     }
   }
-  executor.spin_some(std::chrono::milliseconds(2000)); // this solve the issue related to subscriber not able to get the message
+  executor.spin_some(std::chrono::milliseconds(
+    2000));  // this solve the issue related to subscriber not able to get the message
   std::this_thread::sleep_for(std::chrono::milliseconds(2000));
   ASSERT_GE(max_sub_check_loop_count, 0) << "Test was unable to publish a message through "
                                             "controller/broadcaster update loop";
@@ -120,6 +131,10 @@ TEST_F(IOGripperControllerTest, CloseGripperService)
   EXPECT_EQ(joint_state_sub_msg_->position.size(), 2);
   EXPECT_EQ(joint_state_sub_msg_->position[0], 0.08);
 
-  ASSERT_EQ(*(controller_->gripper_service_buffer_.readFromRT()), io_gripper_controller::service_mode_type::IDLE);
-  ASSERT_EQ(*(controller_->gripper_state_buffer_.readFromRT()), io_gripper_controller::gripper_state_type::IDLE);
+  ASSERT_EQ(
+    *(controller_->gripper_service_buffer_.readFromRT()),
+    io_gripper_controller::service_mode_type::IDLE);
+  ASSERT_EQ(
+    *(controller_->gripper_state_buffer_.readFromRT()),
+    io_gripper_controller::gripper_state_type::IDLE);
 }

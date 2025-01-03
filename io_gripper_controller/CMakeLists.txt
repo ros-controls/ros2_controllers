@@ -74,7 +74,7 @@ if(BUILD_TESTING)
     ros2_control_test_assets
   )
 
-  ament_add_gmock(test_io_gripper_controller 
+  ament_add_gmock(test_io_gripper_controller
     test/test_io_gripper_controller.cpp
     test/test_io_gripper_controller_open.cpp
     test/test_io_gripper_controller_close.cpp

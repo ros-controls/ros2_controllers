@@ -17,15 +17,14 @@
 // [RosTeamWorkspace](https://github.com/StoglRobotics/ros_team_workspace) repository.
 //
 
-#include "test_io_gripper_controller.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "test_io_gripper_controller.hpp"
 
 #include <limits>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
-
 
 // Test open gripper service sets command its as expected and publishes msg
 TEST_F(IOGripperControllerTest, ReconfigureGripperService)
@@ -53,34 +52,38 @@ TEST_F(IOGripperControllerTest, ReconfigureGripperService)
   }
   auto future = configure_gripper_service_client_->async_send_request(request);
 
-  std::thread spinner([&executor, &future]() {
-    executor.spin_until_future_complete(future);
-  });
+  std::thread spinner([&executor, &future]() { executor.spin_until_future_complete(future); });
   spinner.detach();
 
   std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 
   ASSERT_EQ(
-  controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-  controller_interface::return_type::OK); 
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
 
-  ASSERT_EQ(*(controller_->reconfigure_state_buffer_.readFromRT()), io_gripper_controller::reconfigure_state_type::SET_COMMAND);
+  ASSERT_EQ(
+    *(controller_->reconfigure_state_buffer_.readFromRT()),
+    io_gripper_controller::reconfigure_state_type::SET_COMMAND);
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  ASSERT_EQ(*(controller_->reconfigure_state_buffer_.readFromRT()), io_gripper_controller::reconfigure_state_type::CHECK_STATE);
+  ASSERT_EQ(
+    *(controller_->reconfigure_state_buffer_.readFromRT()),
+    io_gripper_controller::reconfigure_state_type::CHECK_STATE);
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK); 
+    controller_interface::return_type::OK);
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK); 
+    controller_interface::return_type::OK);
 
-  ASSERT_EQ(*(controller_->reconfigure_state_buffer_.readFromRT()), io_gripper_controller::reconfigure_state_type::IDLE);
+  ASSERT_EQ(
+    *(controller_->reconfigure_state_buffer_.readFromRT()),
+    io_gripper_controller::reconfigure_state_type::IDLE);
 
   ASSERT_EQ(future.get()->result, true);
 
@@ -108,5 +111,4 @@ TEST_F(IOGripperControllerTest, ReconfigureGripperService)
 
   ASSERT_EQ(joint_state_sub_msg_->position.size(), 2);
   ASSERT_EQ(joint_state_sub_msg_->position[1], 0.125);
-
 }

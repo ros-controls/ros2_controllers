@@ -15,12 +15,12 @@
 #ifndef GRIPPER_IO_CONTROLLER__GRIPPER_IO_CONTROLLER_HPP_
 #define GRIPPER_IO_CONTROLLER__GRIPPER_IO_CONTROLLER_HPP_
 
+#include <atomic>
+#include <functional>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
-#include <functional>
-#include <set>
-#include <atomic>
 
 #include "controller_interface/controller_interface.hpp"
 #include "io_gripper_controller_parameters.hpp"
@@ -33,11 +33,11 @@
 
 #include <sensor_msgs/msg/joint_state.hpp>
 
-#include "control_msgs/srv/set_io_gripper_config.hpp"
-#include "control_msgs/msg/interface_value.hpp"
-#include "control_msgs/msg/dynamic_interface_values.hpp"
 #include "control_msgs/action/io_gripper_command.hpp"
 #include "control_msgs/action/set_io_gripper_config.hpp"
+#include "control_msgs/msg/dynamic_interface_values.hpp"
+#include "control_msgs/msg/interface_value.hpp"
+#include "control_msgs/srv/set_io_gripper_config.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 
 namespace io_gripper_controller
@@ -45,7 +45,8 @@ namespace io_gripper_controller
 
 /**
  * @enum service_mode_type
- * @brief Represents the various service modes of the gripper. These modes represents the high level states of the gripper.
+ * @brief Represents the various service modes of the gripper. These modes represents the high level
+ * states of the gripper.
  *
  * - IDLE: The gripper is in an idle state, not performing any action.
  * - OPEN: The gripper is in the process of opening.
@@ -63,7 +64,8 @@ enum class service_mode_type : std::uint8_t
  * @brief Represents the various states of the gripper.
  *
  * - IDLE: The gripper is in an idle state, not performing any action.
- * - SET_BEFORE_COMMAND: Executing commands for io defined in the yaml which are required before opening the gripper.
+ * - SET_BEFORE_COMMAND: Executing commands for io defined in the yaml which are required before
+ * opening the gripper.
  * - CLOSE_GRIPPER: Executing commands to close the gripper.
  * - CHECK_GRIPPER_STATE: Checking the state of the gripper to make sure the gripper is closed.
  * - OPEN_GRIPPER: Executing commands to open the gripper.
@@ -83,7 +85,8 @@ enum class gripper_state_type : std::uint8_t
 
 /**
  * @enum reconfigure_state_type
- * @brief Represents the various states of the reconfiguration process, which means that the gripper is reconfiguring to new state based on the configuration defined in the yaml params.
+ * @brief Represents the various states of the reconfiguration process, which means that the gripper
+ * is reconfiguring to new state based on the configuration defined in the yaml params.
  *
  * - IDLE: The reconfiguration process is idle, not performing any action.
  * - FIND_CONFIG: Finding the configuration settings.
@@ -207,14 +210,17 @@ protected:
   rclcpp::Service<ConfigSrvType>::SharedPtr configure_gripper_service_;
   rclcpp_action::Server<GripperAction>::SharedPtr gripper_action_server_;
   rclcpp_action::Server<GripperConfigAction>::SharedPtr gripper_config_action_server_;
-  
-  // Realtime buffer to store the state for outer gripper_service (e.g. idel, open, close)
+
+  // Realtime buffer to store the state for outer gripper_service (e.g. idle, open, close)
   realtime_tools::RealtimeBuffer<service_mode_type> gripper_service_buffer_;
-  // Realtime buffer to store the state for switching the gripper state (e.g. idle, set_before_command, close_gripper, check_gripper_state, open_gripper, set_after_command, halted)
+  // Realtime buffer to store the state for switching the gripper state (e.g. idle,
+  // set_before_command, close_gripper, check_gripper_state, open_gripper, set_after_command,
+  // halted)
   realtime_tools::RealtimeBuffer<gripper_state_type> gripper_state_buffer_;
   // Realtime buffer to store the name of the configuration which needs to be set
   realtime_tools::RealtimeBuffer<std::string> configure_gripper_buffer_;
-  // Realtime buffer to store the state for switching the reconfigure state (e.g. idle, find_config, set_command, check_state)
+  // Realtime buffer to store the state for switching the reconfigure state (e.g. idle, find_config,
+  // set_command, check_state)
   realtime_tools::RealtimeBuffer<reconfigure_state_type> reconfigure_state_buffer_;
 
   using ControllerStatePublisher = realtime_tools::RealtimePublisher<JointStateMsg>;
@@ -243,7 +249,7 @@ private:
    * @param value The value to get.
    * @return True if the state was found and retrieved, false otherwise.
    */
-  bool find_and_get_state(const std::string & name, double& value);
+  bool find_and_get_state(const std::string & name, double & value);
 
   /**
    * @brief Finds and gets a command value.
@@ -251,7 +257,7 @@ private:
    * @param value The value to get.
    * @return True if the command was found and retrieved, false otherwise.
    */
-  bool find_and_get_command(const std::string & name, double& value);
+  bool find_and_get_command(const std::string & name, double & value);
 
   /**
    * @brief Handles the state transition when opening the gripper.
@@ -310,7 +316,8 @@ private:
 
   std::vector<std::string> configurations_list_;
   std::vector<io_gripper_controller::Params::ConfigurationSetup::MapConfigurations> config_map_;
-  std::vector<io_gripper_controller::Params::SensorsInterfaces::MapGripperSpecificSensors> sensors_map_;
+  std::vector<io_gripper_controller::Params::SensorsInterfaces::MapGripperSpecificSensors>
+    sensors_map_;
   double state_value_;
   std::string configuration_key_;
   bool check_state_ios_;
@@ -325,7 +332,7 @@ private:
   std::shared_ptr<control_msgs::action::IOGripperCommand_Result> gripper_result_;
   std::shared_ptr<control_msgs::action::SetIOGripperConfig_Feedback> gripper_config_feedback_;
   std::shared_ptr<control_msgs::action::SetIOGripperConfig_Result> gripper_config_result_;
-  
+
   /**
    * @brief Handles the goal for the gripper action.
    * @param uuid The UUID of the goal.
@@ -333,16 +340,14 @@ private:
    * @return GoalResponse indicating acceptance or rejection of the goal.
    */
   rclcpp_action::GoalResponse handle_goal(
-    const rclcpp_action::GoalUUID & uuid,
-    std::shared_ptr<const GripperAction::Goal> goal);
+    const rclcpp_action::GoalUUID & uuid, std::shared_ptr<const GripperAction::Goal> goal);
 
   /**
    * @brief Handles the cancellation of the gripper action.
    * @param goal_handle The handle of the goal to cancel.
    * @return CancelResponse indicating acceptance or rejection of the cancellation.
    */
-  rclcpp_action::CancelResponse handle_cancel(
-    const std::shared_ptr<GoalHandleGripper> goal_handle);
+  rclcpp_action::CancelResponse handle_cancel(const std::shared_ptr<GoalHandleGripper> goal_handle);
 
   /**
    * @brief Handles the acceptance of the gripper action.
@@ -363,8 +368,7 @@ private:
    * @return GoalResponse indicating acceptance or rejection of the goal.
    */
   rclcpp_action::GoalResponse config_handle_goal(
-    const rclcpp_action::GoalUUID & uuid,
-    std::shared_ptr<const GripperConfigAction::Goal> goal);
+    const rclcpp_action::GoalUUID & uuid, std::shared_ptr<const GripperConfigAction::Goal> goal);
 
   /**
    * @brief Handles the cancellation of the gripper configuration action.

@@ -17,16 +17,14 @@
 // [RosTeamWorkspace](https://github.com/StoglRobotics/ros_team_workspace) repository.
 //
 
-#include "test_io_gripper_controller.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "test_io_gripper_controller.hpp"
 
 #include <limits>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
-
-
 
 // Test setting all params and getting success
 TEST_F(IOGripperControllerTest, AllParamsSetSuccess)
@@ -40,7 +38,6 @@ TEST_F(IOGripperControllerTest, AllParamsSetSuccess)
     controller_->on_configure(rclcpp_lifecycle::State()),
     controller_interface::CallbackReturn::SUCCESS);
 }
-
 
 // Test not setting the one param and getting failure
 TEST_F(IOGripperControllerTest, AllParamNotSetFailure)

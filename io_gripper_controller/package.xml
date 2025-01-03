@@ -6,12 +6,12 @@
   <description>gripper io controller used to control the gripper using IOs</description>
   <author email="yara.shahin@b-robotized.com">Yara Shahin</author>
   <author email="sachin.kumar@b-robotized.com">Sachin Kumar</author>
-  
+
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
   <maintainer email="denis@stoglrobotics.de">Denis Štogl</maintainer>
   <maintainer email="christoph.froehlich@ait.ac.at">Christoph Froehlich</maintainer>
   <maintainer email="sai.kishor@pal-robotics.com">Sai Kishor Kothakota</maintainer>
-  
+
   <license>Apache License 2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
