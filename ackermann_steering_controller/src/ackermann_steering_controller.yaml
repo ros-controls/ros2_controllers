@@ -16,6 +16,14 @@ ackermann_steering_controller:
       read_only: false,
     }
 
+  rear_wheel_track:
+    {
+      type: double,
+      default_value: 0.0,
+      description: "DEPRECATED: use 'traction_wheel_track' or 'steering_wheel_track'",
+      read_only: false,
+    }
+
   traction_wheel_track:
     {
       type: double,
@@ -26,14 +34,6 @@ ackermann_steering_controller:
       # validation: {
       #   gt<>: [0.0]
       # }
-    }
-
-  rear_wheel_track:
-    {
-      type: double,
-      default_value: 0.0,
-      description: "DEPRECATED: use 'traction_wheel_track' or 'steering_wheel_track'",
-      read_only: false,
     }
 
   wheelbase:
