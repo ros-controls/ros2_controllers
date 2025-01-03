@@ -82,17 +82,80 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
 {
   params_ = param_listener_->get_params();
 
+  // TODO(anyone): Remove deprecated parameters
+  // START OF DEPRECATED
+  if (!params_.front_steering)
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "DEPRECATED parameter 'front_steering', set 'traction_joint_names' or 'steering_joint_names' "
+      "instead");
+  }
+
   if (params_.front_wheels_names.size() > 0)
   {
-    fprintf(stderr, "DEPRECATED parameter 'front_wheels_names'\n");
-    return controller_interface::CallbackReturn::ERROR;
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "DEPRECATED parameter 'front_wheels_names', set 'traction_joint_names' or "
+      "'steering_joint_names' instead");
+    if (params_.front_steering)
+    {
+      params_.steering_joints_names = params_.front_wheels_names;
+    }
+    else
+    {
+      params_.traction_joints_names = params_.front_wheels_names;
+    }
   }
 
   if (params_.rear_wheels_names.size() > 0)
   {
-    fprintf(stderr, "DEPRECATED parameter 'rear_wheels_names'\n");
-    return controller_interface::CallbackReturn::ERROR;
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "DEPRECATED parameter 'rear_wheels_names', set 'traction_joint_names' or "
+      "'steering_joint_names' instead");
+    if (params_.front_steering)
+    {
+      params_.traction_joints_names = params_.rear_wheels_names;
+    }
+    else
+    {
+      params_.steering_joints_names = params_.rear_wheels_names;
+    }
   }
+
+  if (params_.front_wheels_state_names.size() > 0)
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "DEPRECATED parameter 'front_wheels_state_names', set 'traction_joints_state_names' or "
+      "'steering_joints_state_names' instead");
+    if (params_.front_steering)
+    {
+      params_.steering_joints_state_names = params_.front_wheels_state_names;
+    }
+    else
+    {
+      params_.traction_joints_state_names = params_.front_wheels_state_names;
+    }
+  }
+
+  if (params_.rear_wheels_state_names.size() > 0)
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "DEPRECATED parameter 'rear_wheels_state_names', set 'traction_joints_state_names' or "
+      "'steering_joints_state_names' instead");
+    if (params_.front_steering)
+    {
+      params_.traction_joints_state_names = params_.rear_wheels_state_names;
+    }
+    else
+    {
+      params_.steering_joints_state_names = params_.rear_wheels_state_names;
+    }
+  }
+  // END OF DEPRECATED
 
   odometry_.set_velocity_rolling_window_size(
     static_cast<size_t>(params_.velocity_rolling_window_size));

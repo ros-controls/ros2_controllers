@@ -2,13 +2,13 @@ steering_controllers_library:
   reference_timeout: {
     type: double,
     default_value: 1.0,
-    description: "Timeout for controller references after which they will be reset. This is especially useful for controllers that can cause unwanted and dangerous behaviour if reference is not reset, e.g., velocity controllers. If value is 0 the reference is reset after each run.",
+    description: "Timeout for controller references after which they will be reset. This is especially useful for controllers that can cause unwanted and dangerous behavior if reference is not reset, e.g., velocity controllers. If value is 0 the reference is reset after each run.",
   }
   front_steering: {
     type: bool,
     read_only: true,
-    default_value: false,
-    description: "DEPRECATED: Use 'traction_joint_names' or 'steering_joint_names'"
+    default_value: true,
+    description: "DEPRECATED: Use 'traction_joint_names' or 'steering_joint_names' instead"
   }
 
   front_wheels_names: {
@@ -28,22 +28,26 @@ steering_controllers_library:
   traction_joints_names: {
     type: string_array,
     description: "Names of wheel joints.",
+    default_value: [],
     read_only: true,
     validation: {
       size_lt<>: [5],
       unique<>: null,
-      not_empty<>: null,
+      # TODO(anyone): activate validation if front/rear wheel radius is removed
+      # not_empty<>: null,
     }
   }
 
   steering_joints_names: {
     type: string_array,
     description: "Names of steering joints.",
+    default_value: [],
     read_only: true,
     validation: {
       size_lt<>: [5],
       unique<>: null,
-      not_empty<>: null,
+      # TODO(anyone): activate validation if front/rear wheel radius is removed
+      # not_empty<>: null,
     }
   }
 
@@ -58,9 +62,31 @@ steering_controllers_library:
     }
   }
 
+  rear_wheels_state_names: {
+    type: string_array,
+    description: "DEPRECATED: Use 'traction_joints_state_names' or 'steering_joints_state_names'",
+    default_value: [],
+    read_only: true,
+    validation: {
+      size_lt<>: [5],
+      unique<>: null,
+    }
+  }
+
   steering_joints_state_names: {
     type: string_array,
     description: "(Optional) Names of steering joints to read states from. If not set joint names from 'steering_joints_names' will be used.",
+    default_value: [],
+    read_only: true,
+    validation: {
+      size_lt<>: [5],
+      unique<>: null,
+    }
+  }
+
+  front_wheels_state_names: {
+    type: string_array,
+    description: "DEPRECATED: Use 'traction_joints_state_names' or 'steering_joints_state_names'",
     default_value: [],
     read_only: true,
     validation: {

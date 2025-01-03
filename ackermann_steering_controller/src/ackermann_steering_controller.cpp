@@ -33,26 +33,34 @@ controller_interface::CallbackReturn AckermannSteeringController::configure_odom
 
   if (ackermann_params_.front_wheels_radius > 0.0)
   {
-    fprintf(stderr, "DEPRECATED parameter 'front_wheels_radius'\n");
-    return controller_interface::CallbackReturn::ERROR;
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "DEPRECATED parameter 'front_wheel_radius', set 'traction_wheels_radius' instead");
+    ackermann_params_.traction_wheels_radius = ackermann_params_.front_wheels_radius;
   }
 
   if (ackermann_params_.rear_wheels_radius > 0.0)
   {
-    fprintf(stderr, "DEPRECATED parameter 'rear_wheels_radius'\n");
-    return controller_interface::CallbackReturn::ERROR;
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "DEPRECATED parameter 'rear_wheel_radius', set 'traction_wheels_radius' instead");
+    ackermann_params_.traction_wheels_radius = ackermann_params_.rear_wheels_radius;
   }
 
   if (ackermann_params_.front_wheel_track > 0.0)
   {
-    fprintf(stderr, "DEPRECATED parameter 'front_wheel_track'\n");
-    return controller_interface::CallbackReturn::ERROR;
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "DEPRECATED parameter 'front_wheel_track', set 'traction_wheel_track' instead");
+    ackermann_params_.traction_wheel_track = ackermann_params_.front_wheel_track;
   }
 
   if (ackermann_params_.rear_wheel_track > 0.0)
   {
-    fprintf(stderr, "DEPRECATED parameter 'rear_wheel_track'\n");
-    return controller_interface::CallbackReturn::ERROR;
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "DEPRECATED parameter 'rear_wheel_track', set 'traction_wheel_track' instead");
+    ackermann_params_.traction_wheel_track = ackermann_params_.rear_wheel_track;
   }
 
   const double traction_wheels_radius = ackermann_params_.traction_wheels_radius;
