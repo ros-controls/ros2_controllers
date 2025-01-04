@@ -1,11 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 project(gripper_controllers)
 
-if(APPLE OR WIN32)
-  message(WARNING "gripper controllers are not available on OSX or Windows")
-  return()
-endif()
-
 if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
   add_compile_options(-Wall -Wextra -Wpedantic -Werror=conversion -Werror=unused-but-set-variable
                       -Werror=return-type -Werror=shadow -Werror=format -Werror=range-loop-construct
