@@ -50,7 +50,14 @@ void IMUSensorBroadcasterTest::SetUp()
 
 void IMUSensorBroadcasterTest::TearDown()
 {
-  imu_broadcaster_->get_node()->shutdown();
+  try
+  {
+    imu_broadcaster_->get_node()->shutdown();
+  }
+  catch (...)
+  {
+    // ignore case where node is not initialized
+  }
   imu_broadcaster_.reset(nullptr);  // this calls the dtor, but does not call shutdown transition
 }
 

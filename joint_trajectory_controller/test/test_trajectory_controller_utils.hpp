@@ -404,7 +404,14 @@ public:
           traj_controller_->get_node()->deactivate().id(),
           lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
       }
-      traj_controller_->get_node()->shutdown();
+      try
+      {
+        traj_controller_->get_node()->shutdown();
+      }
+      catch (...)
+      {
+        // ignore case where node is not initialized
+      }
     }
   }
 

@@ -128,7 +128,14 @@ public:
 
   void TearDown()
   {
-    controller_->get_node()->shutdown();
+    try
+    {
+      controller_->get_node()->shutdown();
+    }
+    catch (...)
+    {
+      // ignore case where node is not initialized
+    }
     controller_.reset(nullptr);  // this calls the dtor, but does not call shutdown transition
   }
 

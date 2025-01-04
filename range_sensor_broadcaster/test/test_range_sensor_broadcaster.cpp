@@ -35,7 +35,14 @@ void RangeSensorBroadcasterTest::SetUp()
 
 void RangeSensorBroadcasterTest::TearDown()
 {
-  range_broadcaster_->get_node()->shutdown();
+  try
+  {
+    range_broadcaster_->get_node()->shutdown();
+  }
+  catch (...)
+  {
+    // ignore case where node is not initialized
+  }
   range_broadcaster_.reset(nullptr);  // this calls the dtor, but does not call shutdown transition
 }
 

@@ -50,7 +50,14 @@ void ForceTorqueSensorBroadcasterTest::SetUp()
 
 void ForceTorqueSensorBroadcasterTest::TearDown()
 {
-  fts_broadcaster_->get_node()->shutdown();
+  try
+  {
+    fts_broadcaster_->get_node()->shutdown();
+  }
+  catch (...)
+  {
+    // ignore case where node is not initialized
+  }
   fts_broadcaster_.reset(nullptr);  // this calls the dtor, but does not call shutdown transition
 }
 
