@@ -5,7 +5,7 @@ project(gripper_controllers)
 # S1 from https://github.com/ros-controls/ros2_controllers/issues/1053
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
- if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
+if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
   add_compile_options(-Wall -Wextra -Wpedantic -Werror=conversion -Werror=unused-but-set-variable
                       -Werror=return-type -Werror=shadow -Werror=format -Werror=range-loop-construct
                       -Werror=missing-braces)
