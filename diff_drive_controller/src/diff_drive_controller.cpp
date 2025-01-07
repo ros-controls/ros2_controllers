@@ -41,7 +41,7 @@ namespace
 
 // called from RT control loop
 void reset_controller_reference_msg(
-  const std::shared_ptr<ControllerTwistReferenceMsg> & msg,
+  const std::shared_ptr<geometry_msgs::msg::TwistStamped> & msg,
   const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node)
 {
   msg->header.stamp = node->now();
@@ -431,9 +431,9 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
 
   last_command_msg_ = std::make_shared<TwistStamped>();
   received_velocity_msg_ptr_.reset();
-  std::shared_ptr<TwistStamped> msg = std::make_shared<TwistStamped>();
-  reset_controller_reference_msg(msg, get_node());
-  received_velocity_msg_ptr_.writeFromNonRT(msg);
+  std::shared_ptr<TwistStamped> empty_msg_ptr = std::make_shared<TwistStamped>();
+  reset_controller_reference_msg(empty_msg_ptr, get_node());
+  received_velocity_msg_ptr_.writeFromNonRT(empty_msg_ptr);
 
   // Fill last two commands with default constructed commands
   previous_commands_.emplace(*last_command_msg_);
@@ -470,7 +470,7 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
         "Ignoring the received message (timestamp %.10f) because it is older than "
         "the current time by %.10f seconds, which exceeds the allowed timeout (%.4f)",
         rclcpp::Time(msg->header.stamp).seconds(),
-        rclcpp::Time(current_time_diff).seconds(),
+        current_time_diff.seconds(),
         cmd_vel_timeout_.seconds());
       }
     });
