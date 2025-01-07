@@ -25,14 +25,14 @@
 #include <string>
 #include <vector>
 
-#include "controller_interface/controller_interface.hpp"
+#include "controller_interface/chainable_controller_interface.hpp"
 #include "diff_drive_controller/odometry.hpp"
 #include "diff_drive_controller/speed_limiter.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "odometry.hpp"
 #include "rclcpp_lifecycle/state.hpp"
-#include "realtime_tools/realtime_box.hpp"
+#include "realtime_tools/realtime_buffer.hpp"
 #include "realtime_tools/realtime_publisher.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"
 
@@ -41,7 +41,7 @@
 
 namespace diff_drive_controller
 {
-class DiffDriveController : public controller_interface::ControllerInterface
+class DiffDriveController : public controller_interface::ChainableControllerInterface
 {
   using TwistStamped = geometry_msgs::msg::TwistStamped;
 
@@ -52,7 +52,11 @@ public:
 
   controller_interface::InterfaceConfiguration state_interface_configuration() const override;
 
-  controller_interface::return_type update(
+  // Chainable controller replaces update() with the following two functions
+  controller_interface::return_type update_reference_from_subscribers(
+    const rclcpp::Time & time, const rclcpp::Duration & period) override;
+
+  controller_interface::return_type update_and_write_commands(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
   controller_interface::CallbackReturn on_init() override;
@@ -76,6 +80,10 @@ public:
     const rclcpp_lifecycle::State & previous_state) override;
 
 protected:
+  bool on_set_chained_mode(bool chained_mode) override;
+
+  std::vector<hardware_interface::CommandInterface> on_export_reference_interfaces() override;
+
   struct WheelHandle
   {
     std::reference_wrapper<const hardware_interface::LoanedStateInterface> feedback;
@@ -117,7 +125,7 @@ protected:
   bool subscriber_is_active_ = false;
   rclcpp::Subscription<TwistStamped>::SharedPtr velocity_command_subscriber_ = nullptr;
 
-  realtime_tools::RealtimeBox<std::shared_ptr<TwistStamped>> received_velocity_msg_ptr_{nullptr};
+  realtime_tools::RealtimeBuffer<std::shared_ptr<TwistStamped>> received_velocity_msg_ptr_{nullptr};
   std::shared_ptr<TwistStamped> last_command_msg_;
 
   std::queue<TwistStamped> previous_commands_;  // last two commands
