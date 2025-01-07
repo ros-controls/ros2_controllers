@@ -36,6 +36,25 @@ constexpr auto DEFAULT_ODOMETRY_TOPIC = "~/odom";
 constexpr auto DEFAULT_TRANSFORM_TOPIC = "/tf";
 }  // namespace
 
+namespace
+{  // utility
+
+// called from RT control loop
+void reset_controller_reference_msg(
+  const std::shared_ptr<ControllerTwistReferenceMsg> & msg,
+  const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node)
+{
+  msg->header.stamp = node->now();
+  msg->twist.linear.x = std::numeric_limits<double>::quiet_NaN();
+  msg->twist.linear.y = std::numeric_limits<double>::quiet_NaN();
+  msg->twist.linear.z = std::numeric_limits<double>::quiet_NaN();
+  msg->twist.angular.x = std::numeric_limits<double>::quiet_NaN();
+  msg->twist.angular.y = std::numeric_limits<double>::quiet_NaN();
+  msg->twist.angular.z = std::numeric_limits<double>::quiet_NaN();
+}
+
+}  // namespace
+
 namespace diff_drive_controller
 {
 using namespace std::chrono_literals;
@@ -46,7 +65,7 @@ using hardware_interface::HW_IF_VELOCITY;
 using lifecycle_msgs::msg::State;
 
 DiffDriveController::DiffDriveController()
-: controller_interface::ControllerInterface(),
+: controller_interface::ChainableControllerInterface(),
   // dummy limiter, will be created in on_configure
   // could be done with shared_ptr instead -> but will break ABI
   limiter_angular_(std::numeric_limits<double>::quiet_NaN()),
@@ -104,8 +123,8 @@ InterfaceConfiguration DiffDriveController::state_interface_configuration() cons
   return {interface_configuration_type::INDIVIDUAL, conf_names};
 }
 
-controller_interface::return_type DiffDriveController::update(
-  const rclcpp::Time & time, const rclcpp::Duration & period)
+controller_interface::return_type DiffDriveController::update_reference_from_subscribers(
+  const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
   auto logger = get_node()->get_logger();
   if (get_lifecycle_state().id() == State::PRIMARY_STATE_INACTIVE)
@@ -118,9 +137,7 @@ controller_interface::return_type DiffDriveController::update(
     return controller_interface::return_type::OK;
   }
 
-  // if the mutex is unable to lock, last_command_msg_ won't be updated
-  received_velocity_msg_ptr_.try_get([this](const std::shared_ptr<TwistStamped> & msg)
-                                     { last_command_msg_ = msg; });
+  last_command_msg_ = *(received_velocity_msg_ptr_.readFromRT());
 
   if (last_command_msg_ == nullptr)
   {
@@ -136,13 +153,31 @@ controller_interface::return_type DiffDriveController::update(
     last_command_msg_->twist.angular.z = 0.0;
   }
 
+  if (!std::isnan(last_command_msg_->twist.linear.x) && !std::isnan(last_command_msg_->twist.angular.z))
+  {
+    reference_interfaces_[0] = last_command_msg_->twist.linear.x;
+    reference_interfaces_[1] = last_command_msg_->twist.angular.z;
+  }
+  else 
+  {
+    RCLCPP_WARN(logger, "Command message contains NaNs. Not updating reference interfaces.");
+  }
+
+  previous_update_timestamp_ = time;
+
+  return controller_interface::return_type::OK;
+}
+
+controller_interface::return_type DiffDriveController::update_and_write_commands(
+  const rclcpp::Time & time, const rclcpp::Duration & period)
+{
+  auto logger = get_node()->get_logger();
+
   // command may be limited further by SpeedLimit,
   // without affecting the stored twist command
   TwistStamped command = *last_command_msg_;
-  double & linear_command = command.twist.linear.x;
-  double & angular_command = command.twist.angular.z;
-
-  previous_update_timestamp_ = time;
+  double linear_command = reference_interfaces_[0];
+  double angular_command = reference_interfaces_[1];
 
   // Apply (possibly new) multipliers:
   const double wheel_separation = params_.wheel_separation_multiplier * params_.wheel_separation;
@@ -301,7 +336,7 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   odometry_.setWheelParams(wheel_separation, left_wheel_radius, right_wheel_radius);
   odometry_.setVelocityRollingWindowSize(static_cast<size_t>(params_.velocity_rolling_window_size));
 
-  cmd_vel_timeout_ = std::chrono::milliseconds{static_cast<int>(params_.cmd_vel_timeout * 1000.0)};
+  cmd_vel_timeout_ = rclcpp::Duration::from_seconds(params_.cmd_vel_timeout);
   publish_limited_velocity_ = params_.publish_limited_velocity;
 
   // TODO(christophfroehlich) remove deprecated parameters
@@ -395,8 +430,11 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   }
 
   last_command_msg_ = std::make_shared<TwistStamped>();
-  received_velocity_msg_ptr_.set([this](std::shared_ptr<TwistStamped> & stored_value)
-                                 { stored_value = last_command_msg_; });
+  received_velocity_msg_ptr_.reset();
+  std::shared_ptr<TwistStamped> msg = std::make_shared<TwistStamped>();
+  reset_controller_reference_msg(msg, get_node());
+  received_velocity_msg_ptr_.writeFromNonRT(msg);
+
   // Fill last two commands with default constructed commands
   previous_commands_.emplace(*last_command_msg_);
   previous_commands_.emplace(*last_command_msg_);
@@ -419,8 +457,22 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
           "time, this message will only be shown once");
         msg->header.stamp = get_node()->get_clock()->now();
       }
-      received_velocity_msg_ptr_.set([msg](std::shared_ptr<TwistStamped> & stored_value)
-                                     { stored_value = std::move(msg); });
+
+      const auto current_time_diff = get_node()->now() - msg->header.stamp;
+
+      if (cmd_vel_timeout_ == rclcpp::Duration::from_seconds(0.0) || current_time_diff < cmd_vel_timeout_)
+      {
+        received_velocity_msg_ptr_.writeFromNonRT(msg);
+      }
+      else
+      {
+        RCLCPP_WARN(get_node()->get_logger(), 
+        "Ignoring the received message (timestamp %.10f) because it is older than "
+        "the current time by %.10f seconds, which exceeds the allowed timeout (%.4f)",
+        rclcpp::Time(msg->header.stamp).seconds(),
+        rclcpp::Time(current_time_diff).seconds(),
+        cmd_vel_timeout_.seconds());
+      }
     });
 
   // initialize odometry publisher and message
@@ -498,6 +550,9 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
 controller_interface::CallbackReturn DiffDriveController::on_activate(
   const rclcpp_lifecycle::State &)
 {
+    // Set default value in command
+  reset_controller_reference_msg(*(received_velocity_msg_ptr_.readFromRT()), get_node());
+
   const auto left_result =
     configure_side("left", params_.left_wheel_names, registered_left_wheel_handles_);
   const auto right_result =
@@ -546,6 +601,7 @@ controller_interface::CallbackReturn DiffDriveController::on_cleanup(
   {
     return controller_interface::CallbackReturn::ERROR;
   }
+  received_velocity_msg_ptr_.reset();
 
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -573,7 +629,7 @@ bool DiffDriveController::reset()
   subscriber_is_active_ = false;
   velocity_command_subscriber_.reset();
 
-  received_velocity_msg_ptr_.set(nullptr);
+  received_velocity_msg_ptr_.reset();
   is_halted = false;
   return true;
 }
@@ -649,9 +705,35 @@ controller_interface::CallbackReturn DiffDriveController::configure_side(
 
   return controller_interface::CallbackReturn::SUCCESS;
 }
+
+bool DiffDriveController::on_set_chained_mode(bool chained_mode)
+{
+  // Always accept switch to/from chained mode
+  return true || chained_mode;
+}
+
+std::vector<hardware_interface::CommandInterface>
+DiffDriveController::on_export_reference_interfaces()
+{
+  const int nr_ref_itfs = 2;
+  reference_interfaces_.resize(nr_ref_itfs, std::numeric_limits<double>::quiet_NaN());
+  std::vector<hardware_interface::CommandInterface> reference_interfaces;
+  reference_interfaces.reserve(nr_ref_itfs);
+
+  reference_interfaces.push_back(hardware_interface::CommandInterface(
+    get_node()->get_name(), std::string("linear/") + hardware_interface::HW_IF_VELOCITY,
+    &reference_interfaces_[0]));
+
+  reference_interfaces.push_back(hardware_interface::CommandInterface(
+    get_node()->get_name(), std::string("angular/") + hardware_interface::HW_IF_VELOCITY,
+    &reference_interfaces_[1]));
+
+  return reference_interfaces;
+}
+
 }  // namespace diff_drive_controller
 
 #include "class_loader/register_macro.hpp"
 
 CLASS_LOADER_REGISTER_CLASS(
-  diff_drive_controller::DiffDriveController, controller_interface::ControllerInterface)
+  diff_drive_controller::DiffDriveController, controller_interface::ChainableControllerInterface)
