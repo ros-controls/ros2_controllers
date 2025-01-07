@@ -111,7 +111,7 @@ protected:
   Odometry odometry_;
 
   // Timeout to consider cmd_vel commands old
-  std::chrono::milliseconds cmd_vel_timeout_{500};
+  rclcpp::Duration cmd_vel_timeout_ = rclcpp::Duration::from_seconds(0.5);
 
   std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::Odometry>> odometry_publisher_ = nullptr;
   std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>>
