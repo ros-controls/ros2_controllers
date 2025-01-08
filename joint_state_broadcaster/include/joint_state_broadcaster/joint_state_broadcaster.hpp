@@ -26,7 +26,13 @@
 #include "joint_state_broadcaster_parameters.hpp"
 #include "realtime_tools/realtime_publisher.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
+
+#include "rclcpp/version.h"
+#if RCLCPP_VERSION_GTE(29, 0, 0)
+#include "urdf/model.hpp"
+#else
 #include "urdf/model.h"
+#endif
 
 namespace joint_state_broadcaster
 {
