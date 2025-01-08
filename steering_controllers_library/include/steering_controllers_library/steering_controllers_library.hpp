@@ -21,7 +21,9 @@
 #include <vector>
 
 #include "controller_interface/chainable_controller_interface.hpp"
+#include "forward_kinematics.hpp"
 #include "hardware_interface/handle.hpp"
+#include "inverse_kinematics.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_buffer.hpp"
 #include "realtime_tools/realtime_publisher.hpp"
@@ -124,6 +126,9 @@ protected:
 
   std::vector<std::string> rear_wheels_state_names_;
   std::vector<std::string> front_wheels_state_names_;
+
+  ForwardKinematics forward_kinematics_;
+  InverseKinematics inverse_kinematics_;
 
 private:
   // callback for topic interface
