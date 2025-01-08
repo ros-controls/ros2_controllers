@@ -26,12 +26,7 @@
 #include "rclcpp/time.hpp"
 #include "std_msgs/msg/header.hpp"
 
-#include "rclcpp/version.h"
-#if RCLCPP_VERSION_GTE(29, 0, 0)
-#include "urdf/model.hpp"
-#else
 #include "urdf/model.h"
-#endif
 
 namespace rclcpp_lifecycle
 {
