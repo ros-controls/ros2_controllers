@@ -429,13 +429,16 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
         limited_velocity_publisher_);
   }
 
-  last_command_msg_ = std::make_shared<TwistStamped>();
-  received_velocity_msg_ptr_.reset();
+  const int nr_ref_itfs = 2;
+  reference_interfaces_.resize(nr_ref_itfs, std::numeric_limits<double>::quiet_NaN());
+
   std::shared_ptr<TwistStamped> empty_msg_ptr = std::make_shared<TwistStamped>();
   reset_controller_reference_msg(empty_msg_ptr, get_node());
+  received_velocity_msg_ptr_.reset();
   received_velocity_msg_ptr_.writeFromNonRT(empty_msg_ptr);
 
   // Fill last two commands with default constructed commands
+  last_command_msg_ = std::make_shared<TwistStamped>();
   previous_commands_.emplace(*last_command_msg_);
   previous_commands_.emplace(*last_command_msg_);
 
