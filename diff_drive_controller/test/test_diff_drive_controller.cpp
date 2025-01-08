@@ -762,6 +762,77 @@ TEST_F(TestDiffDriveController, correct_initialization_using_parameters)
   executor.cancel();
 }
 
+TEST_F(TestDiffDriveController, chainable_controller_unchained)
+{
+  // Make sure the controller is configurable and handles commands in non-chained mode  
+  ASSERT_EQ(
+    InitController(left_wheel_names, right_wheel_names,
+    {rclcpp::Parameter("wheel_separation", 0.4), rclcpp::Parameter("wheel_radius", 1.0)}),
+    controller_interface::return_type::OK);
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+
+  ASSERT_TRUE(controller_->is_chainable());
+  ASSERT_TRUE(controller_->set_chained_mode(false));
+  ASSERT_FALSE(controller_->is_in_chained_mode());
+
+  auto state = controller_->get_node()->configure();
+  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  assignResourcesPosFeedback(); // use position feedback to easily check the commands
+
+  state = controller_->get_node()->activate();
+  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+
+  waitForSetup();
+
+  // send msg
+  const double linear = 1.0;
+  publish(linear, 0.0);
+  // wait for msg is be published to the system
+  controller_->wait_for_twist(executor);
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  EXPECT_EQ(linear, left_wheel_vel_cmd_.get_value());
+  EXPECT_EQ(linear, right_wheel_vel_cmd_.get_value());
+
+  // wait so controller process the second point when deactivated
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
+  state = controller_->get_node()->deactivate();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  EXPECT_EQ(0.0, left_wheel_vel_cmd_.get_value()) << "Wheels should be halted on deactivate()";
+  EXPECT_EQ(0.0, right_wheel_vel_cmd_.get_value()) << "Wheels should be halted on deactivate()";
+
+  // cleanup
+  state = controller_->get_node()->cleanup();
+  ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
+  EXPECT_EQ(0.0, left_wheel_vel_cmd_.get_value()) << "Wheels should be halted on cleanup()";
+  EXPECT_EQ(0.0, right_wheel_vel_cmd_.get_value()) << "Wheels should be halted on cleanup()";
+
+  state = controller_->get_node()->configure();
+  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  executor.cancel();
+}
+
+TEST_F(TestDiffDriveController, chainable_controller_chained_mode)
+{
+  // Make sure the controller is configurable and handles commands in chained mode  
+  ASSERT_EQ(
+    InitController(left_wheel_names, right_wheel_names),
+    controller_interface::return_type::OK);
+  ASSERT_TRUE(controller_->is_chainable());
+  ASSERT_TRUE(controller_->set_chained_mode(true));
+  ASSERT_TRUE(controller_->is_in_chained_mode());
+
+  // TODO: Get command without publishing
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
