@@ -32,11 +32,11 @@
 #include "steering_controllers_library/steering_controllers_library.hpp"
 
 using ControllerStateMsg =
-  steering_controllers_library::SteeringControllersLibrary::AckermanControllerState;
+  steering_controllers_library::SteeringControllersLibrary::AckermannControllerState;
 using ControllerReferenceMsg =
   steering_controllers_library::SteeringControllersLibrary::ControllerTwistReferenceMsg;
 
-// NOTE: Testing steering_controllers_library for ackermann vehicle configuration only
+// NOTE: Testing steering_controllers_library for Ackermann vehicle configuration only
 
 // name constants for state interfaces
 static constexpr size_t STATE_TRACTION_RIGHT_WHEEL = 0;

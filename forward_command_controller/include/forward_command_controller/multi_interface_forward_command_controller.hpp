@@ -18,7 +18,6 @@
 #include <memory>
 
 #include "forward_command_controller/forward_controllers_base.hpp"
-#include "forward_command_controller/visibility_control.h"
 #include "multi_interface_forward_command_controller_parameters.hpp"
 
 namespace forward_command_controller
@@ -38,7 +37,6 @@ class MultiInterfaceForwardCommandController
 : public forward_command_controller::ForwardControllersBase
 {
 public:
-  FORWARD_COMMAND_CONTROLLER_PUBLIC
   MultiInterfaceForwardCommandController();
 
 protected:
