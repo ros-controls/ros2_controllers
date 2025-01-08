@@ -172,6 +172,15 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
   const rclcpp::Time & time, const rclcpp::Duration & period)
 {
   auto logger = get_node()->get_logger();
+  if (get_lifecycle_state().id() == State::PRIMARY_STATE_INACTIVE)
+  {
+    if (!is_halted)
+    {
+      halt();
+      is_halted = true;
+    }
+    return controller_interface::return_type::OK;
+  }
 
   // command may be limited further by SpeedLimit,
   // without affecting the stored twist command
