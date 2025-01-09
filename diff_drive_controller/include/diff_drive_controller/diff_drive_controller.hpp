@@ -123,8 +123,8 @@ protected:
   std::queue<TwistStamped> previous_commands_;  // last two commands
 
   // speed limiters
-  SpeedLimiter limiter_linear_;
-  SpeedLimiter limiter_angular_;
+  std::unique_ptr<SpeedLimiter> limiter_linear_;
+  std::unique_ptr<SpeedLimiter> limiter_angular_;
 
   bool publish_limited_velocity_ = false;
   std::shared_ptr<rclcpp::Publisher<TwistStamped>> limited_velocity_publisher_ = nullptr;

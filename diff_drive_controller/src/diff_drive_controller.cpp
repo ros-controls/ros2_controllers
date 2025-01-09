@@ -45,14 +45,7 @@ using hardware_interface::HW_IF_POSITION;
 using hardware_interface::HW_IF_VELOCITY;
 using lifecycle_msgs::msg::State;
 
-DiffDriveController::DiffDriveController()
-: controller_interface::ControllerInterface(),
-  // dummy limiter, will be created in on_configure
-  // could be done with shared_ptr instead -> but will break ABI
-  limiter_angular_(std::numeric_limits<double>::quiet_NaN()),
-  limiter_linear_(std::numeric_limits<double>::quiet_NaN())
-{
-}
+DiffDriveController::DiffDriveController() : controller_interface::ControllerInterface() {}
 
 const char * DiffDriveController::feedback_type() const
 {
@@ -241,9 +234,9 @@ controller_interface::return_type DiffDriveController::update(
 
   auto & last_command = previous_commands_.back().twist;
   auto & second_to_last_command = previous_commands_.front().twist;
-  limiter_linear_.limit(
+  limiter_linear_->limit(
     linear_command, last_command.linear.x, second_to_last_command.linear.x, period.seconds());
-  limiter_angular_.limit(
+  limiter_angular_->limit(
     angular_command, last_command.angular.z, second_to_last_command.angular.z, period.seconds());
 
   previous_commands_.pop();
@@ -365,13 +358,13 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
       std::numeric_limits<double>::quiet_NaN();
   }
   // END DEPRECATED
-  limiter_linear_ = SpeedLimiter(
+  limiter_linear_ = std::make_unique<SpeedLimiter>(
     params_.linear.x.min_velocity, params_.linear.x.max_velocity,
     params_.linear.x.max_acceleration_reverse, params_.linear.x.max_acceleration,
     params_.linear.x.max_deceleration, params_.linear.x.max_deceleration_reverse,
     params_.linear.x.min_jerk, params_.linear.x.max_jerk);
 
-  limiter_angular_ = SpeedLimiter(
+  limiter_angular_ = std::make_unique<SpeedLimiter>(
     params_.angular.z.min_velocity, params_.angular.z.max_velocity,
     params_.angular.z.max_acceleration_reverse, params_.angular.z.max_acceleration,
     params_.angular.z.max_deceleration, params_.angular.z.max_deceleration_reverse,
