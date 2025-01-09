@@ -13,6 +13,7 @@
 // limitations under the License.
 #include "test_pose_broadcaster.hpp"
 
+#include <cmath>
 #include <utility>
 #include <vector>
 
@@ -184,6 +185,87 @@ TEST_F(PoseBroadcasterTest, PublishSuccess)
   EXPECT_EQ(tf_msg.transforms[0].transform.rotation.y, pose_values_[4]);
   EXPECT_EQ(tf_msg.transforms[0].transform.rotation.z, pose_values_[5]);
   EXPECT_EQ(tf_msg.transforms[0].transform.rotation.w, pose_values_[6]);
+}
+
+TEST_F(PoseBroadcasterTest, invalid_pose_deactivates_controller)
+{
+  SetUpPoseBroadcaster();
+
+  // Set 'pose_name' and 'frame_id' parameters
+  pose_broadcaster_->get_node()->set_parameter({"pose_name", pose_name_});
+  pose_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
+
+  // Set 'tf.enable' and 'tf.child_frame_id' parameters
+  pose_broadcaster_->get_node()->set_parameter({"tf.enable", true});
+  pose_broadcaster_->get_node()->set_parameter({"tf.child_frame_id", tf_child_frame_id_});
+
+  // Configure and activate controller
+  ASSERT_EQ(
+    pose_broadcaster_->on_configure(rclcpp_lifecycle::State{}),
+    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_EQ(
+    pose_broadcaster_->on_activate(rclcpp_lifecycle::State{}),
+    controller_interface::CallbackReturn::SUCCESS);
+
+  double temp = 0;
+  ASSERT_TRUE(pose_position_x_.get_value(temp));
+  ASSERT_TRUE(pose_position_x_.set_value(std::numeric_limits<double>::quiet_NaN()));
+  ASSERT_EQ(
+    pose_broadcaster_->update(rclcpp::Time{0}, rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::ERROR);
+  ASSERT_TRUE(pose_position_x_.set_value(temp));
+
+  ASSERT_TRUE(pose_position_y_.get_value(temp));
+  ASSERT_TRUE(pose_position_y_.set_value(std::numeric_limits<double>::quiet_NaN()));
+  ASSERT_EQ(
+    pose_broadcaster_->update(rclcpp::Time{0}, rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::ERROR);
+  ASSERT_TRUE(pose_position_y_.set_value(temp));
+
+  ASSERT_TRUE(pose_position_z_.get_value(temp));
+  ASSERT_TRUE(pose_position_z_.set_value(std::numeric_limits<double>::quiet_NaN()));
+  ASSERT_EQ(
+    pose_broadcaster_->update(rclcpp::Time{0}, rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::ERROR);
+  ASSERT_TRUE(pose_position_z_.set_value(temp));
+
+  ASSERT_TRUE(pose_orientation_x_.get_value(temp));
+  ASSERT_TRUE(pose_orientation_x_.set_value(std::numeric_limits<double>::quiet_NaN()));
+  ASSERT_EQ(
+    pose_broadcaster_->update(rclcpp::Time{0}, rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::ERROR);
+  ASSERT_TRUE(pose_orientation_x_.set_value(temp));
+
+  ASSERT_TRUE(pose_orientation_y_.get_value(temp));
+  ASSERT_TRUE(pose_orientation_y_.set_value(std::numeric_limits<double>::quiet_NaN()));
+  ASSERT_EQ(
+    pose_broadcaster_->update(rclcpp::Time{0}, rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::ERROR);
+  ASSERT_TRUE(pose_orientation_y_.set_value(temp));
+
+  ASSERT_TRUE(pose_orientation_z_.get_value(temp));
+  ASSERT_TRUE(pose_orientation_z_.set_value(std::numeric_limits<double>::quiet_NaN()));
+  ASSERT_EQ(
+    pose_broadcaster_->update(rclcpp::Time{0}, rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::ERROR);
+  ASSERT_TRUE(pose_orientation_z_.set_value(temp));
+
+  ASSERT_TRUE(pose_orientation_w_.get_value(temp));
+  ASSERT_TRUE(pose_orientation_w_.set_value(std::numeric_limits<double>::quiet_NaN()));
+  ASSERT_EQ(
+    pose_broadcaster_->update(rclcpp::Time{0}, rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::ERROR);
+  ASSERT_TRUE(pose_orientation_w_.set_value(temp));
+
+  ASSERT_TRUE(pose_orientation_x_.set_value(0));
+  ASSERT_TRUE(pose_orientation_y_.set_value(0));
+  ASSERT_TRUE(pose_orientation_z_.set_value(0));
+  ASSERT_TRUE(pose_orientation_w_.set_value(0));
+
+  ASSERT_EQ(
+    pose_broadcaster_->update(rclcpp::Time{0}, rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::ERROR);
+
 }
 
 int main(int argc, char * argv[])
