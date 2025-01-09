@@ -26,7 +26,6 @@
 #include "rclcpp/time.hpp"
 #include "std_msgs/msg/header.hpp"
 
-#include "urdf/model.h"
 
 namespace rclcpp_lifecycle
 {
