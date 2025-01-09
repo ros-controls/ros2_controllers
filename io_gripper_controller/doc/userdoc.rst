@@ -12,7 +12,7 @@ This is often the case for pneumatic gripper in the industy, that can range from
 Description of controller's interfaces
 ---------------------------------------
 
-- ``joint_states`` [``sensor_msgs::msg::JointState``]: Publishes the state of gripper joint and configuration joint
+- ``joint_states`` [``sensor_msgs::msg::JointState``]: Publishes the state of gripper's open/close joint if any and configuration joints that might influece the geometry and kinematics of the gripper.
 - ``dynamic_interfaces`` [``control_msgs::msg::DynamicInterfaceValues``]: Publishes all command and state interface of the IOs and sensors of gripper.
 
 
