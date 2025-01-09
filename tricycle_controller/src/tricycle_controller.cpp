@@ -440,11 +440,6 @@ bool TricycleController::reset()
   return true;
 }
 
-CallbackReturn TricycleController::on_shutdown(const rclcpp_lifecycle::State &)
-{
-  return CallbackReturn::SUCCESS;
-}
-
 void TricycleController::halt()
 {
   traction_joint_[0].velocity_command.get().set_value(0.0);
