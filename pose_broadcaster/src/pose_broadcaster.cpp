@@ -164,6 +164,10 @@ controller_interface::return_type PoseBroadcaster::update(
   {
     if (!is_pose_valid(pose))
     {
+      RCLCPP_ERROR(
+        get_node()->get_logger(), "Invalid pose [%f, %f, %f], [%f, %f, %f, %f]", pose.position.x,
+        pose.position.y, pose.position.z, pose.orientation.x, pose.orientation.y,
+        pose.orientation.z, pose.orientation.w);
       realtime_tf_publisher_->unlock();
       return controller_interface::return_type::ERROR;
     }
