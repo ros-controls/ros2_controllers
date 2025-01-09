@@ -13,6 +13,8 @@
 // limitations under the License.
 #include "test_pose_broadcaster.hpp"
 
+#include <cmath>
+#include <limits>
 #include <utility>
 #include <vector>
 
@@ -182,6 +184,60 @@ TEST_F(PoseBroadcasterTest, PublishSuccess)
   EXPECT_EQ(tf_msg.transforms[0].transform.rotation.y, pose_values_[4]);
   EXPECT_EQ(tf_msg.transforms[0].transform.rotation.z, pose_values_[5]);
   EXPECT_EQ(tf_msg.transforms[0].transform.rotation.w, pose_values_[6]);
+}
+
+TEST_F(PoseBroadcasterTest, invalid_pose_no_tf_published)
+{
+  SetUpPoseBroadcaster();
+
+  // Set 'pose_name' and 'frame_id' parameters
+  pose_broadcaster_->get_node()->set_parameter({"pose_name", pose_name_});
+  pose_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
+
+  // Set 'tf.enable' and 'tf.child_frame_id' parameters
+  pose_broadcaster_->get_node()->set_parameter({"tf.enable", true});
+  pose_broadcaster_->get_node()->set_parameter({"tf.child_frame_id", tf_child_frame_id_});
+
+  // Configure and activate controller
+  ASSERT_EQ(
+    pose_broadcaster_->on_configure(rclcpp_lifecycle::State{}),
+    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_EQ(
+    pose_broadcaster_->on_activate(rclcpp_lifecycle::State{}),
+    controller_interface::CallbackReturn::SUCCESS);
+
+  ASSERT_TRUE(pose_position_x_.set_value(std::numeric_limits<double>::quiet_NaN()));
+
+  // Subscribe to pose topic
+  geometry_msgs::msg::PoseStamped pose_msg;
+  subscribe_and_get_message("/test_pose_broadcaster/pose", pose_msg);
+
+  // Verify content of pose message
+  EXPECT_EQ(pose_msg.header.frame_id, frame_id_);
+  EXPECT_TRUE(std::isnan(pose_msg.pose.position.x));  // We set that to NaN above
+  EXPECT_EQ(pose_msg.pose.position.y, pose_values_[1]);
+  EXPECT_EQ(pose_msg.pose.position.z, pose_values_[2]);
+  EXPECT_EQ(pose_msg.pose.orientation.x, pose_values_[3]);
+  EXPECT_EQ(pose_msg.pose.orientation.y, pose_values_[4]);
+  EXPECT_EQ(pose_msg.pose.orientation.z, pose_values_[5]);
+  EXPECT_EQ(pose_msg.pose.orientation.w, pose_values_[6]);
+
+  // Subscribe to tf topic
+  tf2_msgs::msg::TFMessage tf_msg;
+  EXPECT_THROW(subscribe_and_get_message("/tf", tf_msg), std::runtime_error);
+  // Verify that no tf message was sent
+  ASSERT_EQ(tf_msg.transforms.size(), 0lu);
+
+  // Set valid position but invalid quaternion
+  ASSERT_TRUE(pose_position_x_.set_value(0.0));
+  ASSERT_TRUE(pose_orientation_x_.set_value(0.0));
+  ASSERT_TRUE(pose_orientation_y_.set_value(0.0));
+  ASSERT_TRUE(pose_orientation_z_.set_value(0.0));
+  ASSERT_TRUE(pose_orientation_w_.set_value(0.0));
+
+  EXPECT_THROW(subscribe_and_get_message("/tf", tf_msg), std::runtime_error);
+  // Verify that no tf message was sent
+  ASSERT_EQ(tf_msg.transforms.size(), 0lu);
 }
 
 int main(int argc, char * argv[])
