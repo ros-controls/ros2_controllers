@@ -30,9 +30,7 @@
 #include "realtime_tools/realtime_publisher.h"
 #include "std_srvs/srv/set_bool.hpp"
 #include "std_srvs/srv/trigger.hpp"
-
-#include <sensor_msgs/msg/joint_state.hpp>
-
+#include sensor_msgs/msg/joint_state.hpp
 #include "control_msgs/action/io_gripper_command.hpp"
 #include "control_msgs/action/set_io_gripper_config.hpp"
 #include "control_msgs/msg/dynamic_interface_values.hpp"
