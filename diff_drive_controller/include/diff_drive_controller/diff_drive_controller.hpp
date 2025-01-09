@@ -126,10 +126,8 @@ protected:
   rclcpp::Subscription<TwistStamped>::SharedPtr velocity_command_subscriber_ = nullptr;
 
   realtime_tools::RealtimeBuffer<std::shared_ptr<TwistStamped>> received_velocity_msg_ptr_{nullptr};
-  std::shared_ptr<TwistStamped> last_command_msg_;
 
-  std::queue<TwistStamped> previous_commands_;  // last two commands
-
+  std::queue<std::array<double, 2>> previous_two_commands_;
   // speed limiters
   SpeedLimiter limiter_linear_;
   SpeedLimiter limiter_angular_;

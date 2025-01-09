@@ -68,8 +68,8 @@ DiffDriveController::DiffDriveController()
 : controller_interface::ChainableControllerInterface(),
   // dummy limiter, will be created in on_configure
   // could be done with shared_ptr instead -> but will break ABI
-  limiter_angular_(std::numeric_limits<double>::quiet_NaN()),
-  limiter_linear_(std::numeric_limits<double>::quiet_NaN())
+  limiter_linear_(std::numeric_limits<double>::quiet_NaN()),
+  limiter_angular_(std::numeric_limits<double>::quiet_NaN())
 {
 }
 
@@ -137,26 +137,25 @@ controller_interface::return_type DiffDriveController::update_reference_from_sub
     return controller_interface::return_type::OK;
   }
 
-  last_command_msg_ = *(received_velocity_msg_ptr_.readFromRT());
+  const std::shared_ptr<TwistStamped> command_msg_ptr = *(received_velocity_msg_ptr_.readFromRT());
 
-  if (last_command_msg_ == nullptr)
+  if (command_msg_ptr == nullptr)
   {
     RCLCPP_WARN(logger, "Velocity message received was a nullptr.");
     return controller_interface::return_type::ERROR;
   }
 
-  const auto age_of_last_command = time - last_command_msg_->header.stamp;
+  const auto age_of_last_command = time - command_msg_ptr->header.stamp;
   // Brake if cmd_vel has timeout, override the stored command
   if (age_of_last_command > cmd_vel_timeout_)
   {
-    last_command_msg_->twist.linear.x = 0.0;
-    last_command_msg_->twist.angular.z = 0.0;
+    reference_interfaces_[0] = 0.0;
+    reference_interfaces_[1] = 0.0;
   }
-
-  if (!std::isnan(last_command_msg_->twist.linear.x) && !std::isnan(last_command_msg_->twist.angular.z))
+  else if (!std::isnan(command_msg_ptr->twist.linear.x) && !std::isnan(command_msg_ptr->twist.angular.z))
   {
-    reference_interfaces_[0] = last_command_msg_->twist.linear.x;
-    reference_interfaces_[1] = last_command_msg_->twist.angular.z;
+    reference_interfaces_[0] = command_msg_ptr->twist.linear.x;
+    reference_interfaces_[1] = command_msg_ptr->twist.angular.z;
   }
   else 
   {
@@ -184,7 +183,6 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
 
   // command may be limited further by SpeedLimit,
   // without affecting the stored twist command
-  TwistStamped command = *last_command_msg_;
   double linear_command = reference_interfaces_[0];
   double angular_command = reference_interfaces_[1];
 
@@ -283,22 +281,29 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
     }
   }
 
-  auto & last_command = previous_commands_.back().twist;
-  auto & second_to_last_command = previous_commands_.front().twist;
-  limiter_linear_.limit(
-    linear_command, last_command.linear.x, second_to_last_command.linear.x, period.seconds());
-  limiter_angular_.limit(
-    angular_command, last_command.angular.z, second_to_last_command.angular.z, period.seconds());
+  double & last_linear = previous_two_commands_.back()[0];
+  double & second_to_last_linear = previous_two_commands_.front()[0];
+  double & last_angular = previous_two_commands_.back()[1];
+  double & second_to_last_angular = previous_two_commands_.front()[1];
 
-  previous_commands_.pop();
-  previous_commands_.emplace(command);
+  limiter_linear_.limit(
+    linear_command, last_linear, second_to_last_linear, period.seconds());
+  limiter_angular_.limit(
+    angular_command, last_angular, second_to_last_angular, period.seconds());
+  previous_two_commands_.pop();
+  previous_two_commands_.push({{linear_command, angular_command}});
 
   //    Publish limited velocity
   if (publish_limited_velocity_ && realtime_limited_velocity_publisher_->trylock())
   {
     auto & limited_velocity_command = realtime_limited_velocity_publisher_->msg_;
     limited_velocity_command.header.stamp = time;
-    limited_velocity_command.twist = command.twist;
+    limited_velocity_command.twist.linear.x = linear_command;
+    limited_velocity_command.twist.linear.y = 0.0;
+    limited_velocity_command.twist.linear.z = 0.0;
+    limited_velocity_command.twist.angular.x = 0.0;
+    limited_velocity_command.twist.angular.y = 0.0;
+    limited_velocity_command.twist.angular.z = angular_command;
     realtime_limited_velocity_publisher_->unlockAndPublish();
   }
 
@@ -440,16 +445,13 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
 
   const int nr_ref_itfs = 2;
   reference_interfaces_.resize(nr_ref_itfs, std::numeric_limits<double>::quiet_NaN());
+  previous_two_commands_.push({{0.0, 0.0}}); //needs zeros (not NaN) to catch early accelerations
+  previous_two_commands_.push({{0.0, 0.0}});
 
   std::shared_ptr<TwistStamped> empty_msg_ptr = std::make_shared<TwistStamped>();
   reset_controller_reference_msg(empty_msg_ptr, get_node());
   received_velocity_msg_ptr_.reset();
   received_velocity_msg_ptr_.writeFromNonRT(empty_msg_ptr);
-
-  // Fill last two commands with default constructed commands
-  last_command_msg_ = std::make_shared<TwistStamped>();
-  previous_commands_.emplace(*last_command_msg_);
-  previous_commands_.emplace(*last_command_msg_);
 
   // initialize command subscriber
   velocity_command_subscriber_ = get_node()->create_subscription<TwistStamped>(
@@ -632,8 +634,8 @@ bool DiffDriveController::reset()
   odometry_.resetOdometry();
 
   // release the old queue
-  std::queue<TwistStamped> empty;
-  std::swap(previous_commands_, empty);
+  std::queue<std::array<double, 2>> empty;
+  std::swap(previous_two_commands_, empty);
 
   registered_left_wheel_handles_.clear();
   registered_right_wheel_handles_.clear();
