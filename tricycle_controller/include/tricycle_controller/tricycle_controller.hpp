@@ -86,9 +86,12 @@ public:
   TRICYCLE_CONTROLLER_PUBLIC
   CallbackReturn on_error(const rclcpp_lifecycle::State & previous_state) override;
 
+<<<<<<< HEAD
   TRICYCLE_CONTROLLER_PUBLIC
   CallbackReturn on_shutdown(const rclcpp_lifecycle::State & previous_state) override;
 
+=======
+>>>>>>> abf3172 ( Remove empty on_shutdown() callbacks (#1477))
 protected:
   struct TractionHandle
   {
