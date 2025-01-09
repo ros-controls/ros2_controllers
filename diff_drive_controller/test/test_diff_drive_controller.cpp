@@ -448,14 +448,26 @@ TEST_F(TestDiffDriveController, activate_succeeds_with_vel_resources_assigned)
 
 TEST_F(TestDiffDriveController, test_speed_limiter)
 {
+  // If you send a linear velocity command without acceleration limits,
+  // then the wheel velocity command (rotations/s) will be:
+  // ideal_wheel_velocity_command (rotations/s) = linear_velocity_command (m/s) / wheel_radius (m). 
+  // (The velocity command looks like a step function). 
+  // However, if there are acceleration limits, then the actual wheel velocity command
+  // should always be less than the ideal velocity, and should only become 
+  // equal at time = linear_velocity_command (m/s) / acceleration_limit (m/s^2)
+  
+  const double max_acceleration = 2.0;
+  const double max_deceleration = -4.0;
+  const double max_acceleration_reverse = -8.0;
+  const double max_deceleration_reverse = 10.0;
   ASSERT_EQ(
     InitController(
       left_wheel_names, right_wheel_names,
       {
-        rclcpp::Parameter("linear.x.max_acceleration", rclcpp::ParameterValue(2.0)),
-        rclcpp::Parameter("linear.x.max_deceleration", rclcpp::ParameterValue(-4.0)),
-        rclcpp::Parameter("linear.x.max_acceleration_reverse", rclcpp::ParameterValue(-8.0)),
-        rclcpp::Parameter("linear.x.max_deceleration_reverse", rclcpp::ParameterValue(10.0)),
+        rclcpp::Parameter("linear.x.max_acceleration", rclcpp::ParameterValue(max_acceleration)),
+        rclcpp::Parameter("linear.x.max_deceleration", rclcpp::ParameterValue(max_deceleration)),
+        rclcpp::Parameter("linear.x.max_acceleration_reverse", rclcpp::ParameterValue(max_acceleration_reverse)),
+        rclcpp::Parameter("linear.x.max_deceleration_reverse", rclcpp::ParameterValue(max_deceleration_reverse)),
       }),
     controller_interface::return_type::OK);
 
@@ -496,17 +508,16 @@ TEST_F(TestDiffDriveController, test_speed_limiter)
     // wait for msg is be published to the system
     controller_->wait_for_twist(executor);
 
-    // should be in acceleration limit
-    const double time_acc = linear / 2.0;
+    const double time_acc = linear / max_acceleration;
     for (int i = 0; i < floor(time_acc / dt) - 1; ++i)
     {
       ASSERT_EQ(
         controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
         controller_interface::return_type::OK);
       EXPECT_GT(linear / wheel_radius, left_wheel_vel_cmd_.get_value())
-        << "at t: " << i * dt << "s, but should be t: " << time_acc;
+        << "at t: " << i * dt << "s, but this angular velocity should only be achieved at t: " << time_acc;
       EXPECT_GT(linear / wheel_radius, right_wheel_vel_cmd_.get_value())
-        << "at t: " << i * dt << "s, but should be t: " << time_acc;
+        << "at t: " << i * dt << "s, but this angular velocity should only be achieved at t: " << time_acc;
     }
     ASSERT_EQ(
       controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
@@ -532,17 +543,16 @@ TEST_F(TestDiffDriveController, test_speed_limiter)
     // wait for msg is be published to the system
     controller_->wait_for_twist(executor);
 
-    // should be in acceleration limit
-    const double time_acc = -1.0 / (-4.0);
+    const double time_acc = -1.0 / max_deceleration;
     for (int i = 0; i < floor(time_acc / dt) - 1; ++i)
     {
       ASSERT_EQ(
         controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
         controller_interface::return_type::OK);
       EXPECT_LT(linear / wheel_radius, left_wheel_vel_cmd_.get_value())
-        << "at t: " << i * dt << "s, but should be t: " << time_acc;
+        << "at t: " << i * dt << "s, but this angular velocity should only be achieved at t: " << time_acc;
       EXPECT_LT(linear / wheel_radius, right_wheel_vel_cmd_.get_value())
-        << "at t: " << i * dt << "s, but should be t: " << time_acc;
+        << "at t: " << i * dt << "s, but this angular velocity should only be achieved at t: " << time_acc;
     }
     ASSERT_EQ(
       controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
@@ -568,17 +578,16 @@ TEST_F(TestDiffDriveController, test_speed_limiter)
     // wait for msg is be published to the system
     controller_->wait_for_twist(executor);
 
-    // should be in acceleration limit
-    const double time_acc = -1.0 / (-8.0);
+    const double time_acc = -1.0 / max_acceleration_reverse;
     for (int i = 0; i < floor(time_acc / dt) - 1; ++i)
     {
       ASSERT_EQ(
         controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
         controller_interface::return_type::OK);
       EXPECT_LT(linear / wheel_radius, left_wheel_vel_cmd_.get_value())
-        << "at t: " << i * dt << "s, but should be t: " << time_acc;
+        << "at t: " << i * dt << "s, but this angular velocity should only be achieved at t: " << time_acc;
       EXPECT_LT(linear / wheel_radius, right_wheel_vel_cmd_.get_value())
-        << "at t: " << i * dt << "s, but should be t: " << time_acc;
+        << "at t: " << i * dt << "s, but this angular velocity should only be achieved at t: " << time_acc;
     }
     ASSERT_EQ(
       controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
@@ -604,17 +613,16 @@ TEST_F(TestDiffDriveController, test_speed_limiter)
     // wait for msg is be published to the system
     controller_->wait_for_twist(executor);
 
-    // should be in acceleration limit
-    const double time_acc = 1.0 / (10.0);
+    const double time_acc = 1.0 / max_deceleration_reverse;
     for (int i = 0; i < floor(time_acc / dt) - 1; ++i)
     {
       ASSERT_EQ(
         controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
         controller_interface::return_type::OK);
       EXPECT_GT(linear / wheel_radius, left_wheel_vel_cmd_.get_value())
-        << "at t: " << i * dt << "s, but should be t: " << time_acc;
+        << "at t: " << i * dt << "s, but this angular velocity should only be achieved at t: " << time_acc;
       EXPECT_GT(linear / wheel_radius, right_wheel_vel_cmd_.get_value())
-        << "at t: " << i * dt << "s, but should be t: " << time_acc;
+        << "at t: " << i * dt << "s, but this angular velocity should only be achieved at t: " << time_acc;
     }
     ASSERT_EQ(
       controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
