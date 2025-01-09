@@ -5,7 +5,9 @@
 io_gripper_controller
 =============================
 
-The IO Gripper Controller provides implementation to control the gripper using IOs. It provides functionalities like open, close and reconfigure which can be used either though action server or service server and also publishes ``joint_states`` of gripper and also ``dynamic_interfaces`` for all command and state interfaces.
+The IO Gripper Controller provides implementation to control the grippers that are commanded using IOs.
+This is often the case for pneumatic gripper in the industy, that can range from simple parallel gripper up to custom, multi-dof grippers for manipulating specific parts.
+ It provides functionalities like open, close and reconfigure which can be used either though action server or service server and also publishes gripper's joint values if any and provides output for all gripper's command and state interfaces.
 
 Description of controller's interfaces
 ---------------------------------------
