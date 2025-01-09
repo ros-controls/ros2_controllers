@@ -14,6 +14,7 @@
 #include "test_pose_broadcaster.hpp"
 
 #include <cmath>
+#include <limits>
 #include <utility>
 #include <vector>
 
@@ -265,7 +266,6 @@ TEST_F(PoseBroadcasterTest, invalid_pose_deactivates_controller)
   ASSERT_EQ(
     pose_broadcaster_->update(rclcpp::Time{0}, rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::ERROR);
-
 }
 
 int main(int argc, char * argv[])
