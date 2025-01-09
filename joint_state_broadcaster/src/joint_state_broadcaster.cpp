@@ -26,7 +26,6 @@
 #include "rclcpp/time.hpp"
 #include "std_msgs/msg/header.hpp"
 
-
 namespace rclcpp_lifecycle
 {
 class State;
