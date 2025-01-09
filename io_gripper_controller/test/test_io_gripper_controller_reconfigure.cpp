@@ -63,14 +63,6 @@ TEST_F(IOGripperControllerTest, ReconfigureGripperService)
 
   ASSERT_EQ(
     *(controller_->reconfigure_state_buffer_.readFromRT()),
-    io_gripper_controller::reconfigure_state_type::SET_COMMAND);
-
-  ASSERT_EQ(
-    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
-
-  ASSERT_EQ(
-    *(controller_->reconfigure_state_buffer_.readFromRT()),
     io_gripper_controller::reconfigure_state_type::CHECK_STATE);
 
   ASSERT_EQ(
