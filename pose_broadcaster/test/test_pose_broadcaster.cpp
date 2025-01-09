@@ -213,12 +213,6 @@ TEST_F(PoseBroadcasterTest, invalid_pose_no_tf_published)
 
   // Subscribe to pose topic
   geometry_msgs::msg::PoseStamped pose_msg;
-  pose_msg.pose.position.x = 0.0;
-  pose_msg.pose.position.y = 0.0;
-  pose_msg.pose.position.z = 0.0;
-  pose_msg.pose.orientation.x = 0.0;
-  pose_msg.pose.orientation.y = 0.0;
-  pose_msg.pose.orientation.z = 0.0;
   pose_msg.pose.orientation.w = 1.0;
   subscribe_and_get_message("/test_pose_broadcaster/pose", pose_msg);
 

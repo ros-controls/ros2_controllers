@@ -28,13 +28,8 @@ namespace pose_broadcaster
 
 bool is_pose_valid(const geometry_msgs::msg::Pose & pose)
 {
-  return std::isfinite(pose.position.x) && std::isfinite(pose.position.y) &&
-         std::isfinite(pose.position.z) && std::isfinite(pose.orientation.x) &&
-         std::isfinite(pose.orientation.y) && std::isfinite(pose.orientation.z) &&
-         std::isfinite(pose.orientation.w) &&
-
-         (pose.orientation.x * pose.orientation.x + pose.orientation.y * pose.orientation.y +
-          pose.orientation.z * pose.orientation.z + pose.orientation.w * pose.orientation.w -
+         std::abs((pose.orientation.x * pose.orientation.x + pose.orientation.y * pose.orientation.y +
+          pose.orientation.z * pose.orientation.z + pose.orientation.w * pose.orientation.w) -
           1.0) <= 10e-3;
 }
 
