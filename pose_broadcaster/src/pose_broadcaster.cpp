@@ -13,6 +13,7 @@
 // limitations under the License.
 #include "pose_broadcaster/pose_broadcaster.hpp"
 #include <cmath>
+#include <rclcpp/logging.hpp>
 
 namespace
 {
@@ -27,13 +28,14 @@ namespace pose_broadcaster
 
 bool is_pose_valid(const geometry_msgs::msg::Pose & pose)
 {
-  return !std::isnan(pose.position.x) && !std::isnan(pose.position.y) &&
-         !std::isnan(pose.position.z) && !std::isnan(pose.orientation.x) &&
-         !std::isnan(pose.orientation.y) && !std::isnan(pose.orientation.z) &&
-         !std::isnan(pose.orientation.w) &&
-         sqrt(
-           pow(pose.orientation.x, 2) + pow(pose.orientation.y, 2) + pow(pose.orientation.z, 2) +
-           pow(pose.orientation.w, 2)) > 0.0;
+  return std::isfinite(pose.position.x) && std::isfinite(pose.position.y) &&
+         std::isfinite(pose.position.z) && std::isfinite(pose.orientation.x) &&
+         std::isfinite(pose.orientation.y) && std::isfinite(pose.orientation.z) &&
+         std::isfinite(pose.orientation.w) &&
+
+         (pose.orientation.x * pose.orientation.x + pose.orientation.y * pose.orientation.y +
+          pose.orientation.z * pose.orientation.z + pose.orientation.w * pose.orientation.w -
+          1.0) <= 10e-3;
 }
 
 controller_interface::InterfaceConfiguration PoseBroadcaster::command_interface_configuration()
@@ -159,54 +161,48 @@ controller_interface::return_type PoseBroadcaster::update(
     realtime_publisher_->msg_.pose = pose;
     realtime_publisher_->unlockAndPublish();
   }
-
-  if (realtime_tf_publisher_)
+  if (!is_pose_valid(pose))
   {
-    if (!is_pose_valid(pose))
+    RCLCPP_ERROR_THROTTLE(
+      get_node()->get_logger(), *get_node()->get_clock(), 1000,
+      "Invalid pose [%f, %f, %f], [%f, %f, %f, %f]", pose.position.x, pose.position.y,
+      pose.position.z, pose.orientation.x, pose.orientation.y, pose.orientation.z,
+      pose.orientation.w);
+  }
+  else if (realtime_tf_publisher_ && realtime_tf_publisher_->trylock())
+  {
+    bool do_publish = false;
+    // rlcpp::Time comparisons throw if clock types are not the same
+    if (tf_last_publish_time_.get_clock_type() != time.get_clock_type())
     {
-      RCLCPP_ERROR(
-        get_node()->get_logger(), "Invalid pose [%f, %f, %f], [%f, %f, %f, %f]", pose.position.x,
-        pose.position.y, pose.position.z, pose.orientation.x, pose.orientation.y,
-        pose.orientation.z, pose.orientation.w);
-      realtime_tf_publisher_->unlock();
-      return controller_interface::return_type::ERROR;
+      do_publish = true;
+    }
+    else if (!tf_publish_period_ || (tf_last_publish_time_ + *tf_publish_period_ <= time))
+    {
+      do_publish = true;
     }
 
-    if (realtime_tf_publisher_->trylock())
+    if (do_publish)
     {
-      bool do_publish = false;
-      // rlcpp::Time comparisons throw if clock types are not the same
-      if (tf_last_publish_time_.get_clock_type() != time.get_clock_type())
-      {
-        do_publish = true;
-      }
-      else if (!tf_publish_period_ || (tf_last_publish_time_ + *tf_publish_period_ <= time))
-      {
-        do_publish = true;
-      }
+      auto & tf_transform = realtime_tf_publisher_->msg_.transforms[0];
+      tf_transform.header.stamp = time;
 
-      if (do_publish)
-      {
-        auto & tf_transform = realtime_tf_publisher_->msg_.transforms[0];
-        tf_transform.header.stamp = time;
+      tf_transform.transform.translation.x = pose.position.x;
+      tf_transform.transform.translation.y = pose.position.y;
+      tf_transform.transform.translation.z = pose.position.z;
 
-        tf_transform.transform.translation.x = pose.position.x;
-        tf_transform.transform.translation.y = pose.position.y;
-        tf_transform.transform.translation.z = pose.position.z;
+      tf_transform.transform.rotation.x = pose.orientation.x;
+      tf_transform.transform.rotation.y = pose.orientation.y;
+      tf_transform.transform.rotation.z = pose.orientation.z;
+      tf_transform.transform.rotation.w = pose.orientation.w;
 
-        tf_transform.transform.rotation.x = pose.orientation.x;
-        tf_transform.transform.rotation.y = pose.orientation.y;
-        tf_transform.transform.rotation.z = pose.orientation.z;
-        tf_transform.transform.rotation.w = pose.orientation.w;
+      realtime_tf_publisher_->unlockAndPublish();
 
-        realtime_tf_publisher_->unlockAndPublish();
-
-        tf_last_publish_time_ = time;
-      }
-      else
-      {
-        realtime_tf_publisher_->unlock();
-      }
+      tf_last_publish_time_ = time;
+    }
+    else
+    {
+      realtime_tf_publisher_->unlock();
     }
   }
 

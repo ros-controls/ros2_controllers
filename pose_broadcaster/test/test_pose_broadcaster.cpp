@@ -17,6 +17,7 @@
 #include <limits>
 #include <utility>
 #include <vector>
+#include "gtest/gtest.h"
 
 using hardware_interface::LoanedStateInterface;
 
@@ -188,7 +189,7 @@ TEST_F(PoseBroadcasterTest, PublishSuccess)
   EXPECT_EQ(tf_msg.transforms[0].transform.rotation.w, pose_values_[6]);
 }
 
-TEST_F(PoseBroadcasterTest, invalid_pose_deactivates_controller)
+TEST_F(PoseBroadcasterTest, invalid_pose_no_tf_published)
 {
   SetUpPoseBroadcaster();
 
@@ -208,64 +209,41 @@ TEST_F(PoseBroadcasterTest, invalid_pose_deactivates_controller)
     pose_broadcaster_->on_activate(rclcpp_lifecycle::State{}),
     controller_interface::CallbackReturn::SUCCESS);
 
-  double temp = 0;
-  ASSERT_TRUE(pose_position_x_.get_value(temp));
   ASSERT_TRUE(pose_position_x_.set_value(std::numeric_limits<double>::quiet_NaN()));
-  ASSERT_EQ(
-    pose_broadcaster_->update(rclcpp::Time{0}, rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::ERROR);
-  ASSERT_TRUE(pose_position_x_.set_value(temp));
 
-  ASSERT_TRUE(pose_position_y_.get_value(temp));
-  ASSERT_TRUE(pose_position_y_.set_value(std::numeric_limits<double>::quiet_NaN()));
-  ASSERT_EQ(
-    pose_broadcaster_->update(rclcpp::Time{0}, rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::ERROR);
-  ASSERT_TRUE(pose_position_y_.set_value(temp));
+  // Subscribe to pose topic
+  geometry_msgs::msg::PoseStamped pose_msg;
+  pose_msg.pose.position.x = 0.0;
+  pose_msg.pose.position.y = 0.0;
+  pose_msg.pose.position.z = 0.0;
+  pose_msg.pose.orientation.x = 0.0;
+  pose_msg.pose.orientation.y = 0.0;
+  pose_msg.pose.orientation.z = 0.0;
+  pose_msg.pose.orientation.w = 1.0;
+  subscribe_and_get_message("/test_pose_broadcaster/pose", pose_msg);
 
-  ASSERT_TRUE(pose_position_z_.get_value(temp));
-  ASSERT_TRUE(pose_position_z_.set_value(std::numeric_limits<double>::quiet_NaN()));
-  ASSERT_EQ(
-    pose_broadcaster_->update(rclcpp::Time{0}, rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::ERROR);
-  ASSERT_TRUE(pose_position_z_.set_value(temp));
+  // Verify content of pose message
+  EXPECT_EQ(pose_msg.header.frame_id, frame_id_);
+  EXPECT_TRUE(std::isnan(pose_msg.pose.position.x));  // We set that to NaN above
+  EXPECT_EQ(pose_msg.pose.position.y, pose_values_[1]);
+  EXPECT_EQ(pose_msg.pose.position.z, pose_values_[2]);
+  EXPECT_EQ(pose_msg.pose.orientation.x, pose_values_[3]);
+  EXPECT_EQ(pose_msg.pose.orientation.y, pose_values_[4]);
+  EXPECT_EQ(pose_msg.pose.orientation.z, pose_values_[5]);
+  EXPECT_EQ(pose_msg.pose.orientation.w, pose_values_[6]);
 
-  ASSERT_TRUE(pose_orientation_x_.get_value(temp));
-  ASSERT_TRUE(pose_orientation_x_.set_value(std::numeric_limits<double>::quiet_NaN()));
-  ASSERT_EQ(
-    pose_broadcaster_->update(rclcpp::Time{0}, rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::ERROR);
-  ASSERT_TRUE(pose_orientation_x_.set_value(temp));
+  // Subscribe to tf topic
+  tf2_msgs::msg::TFMessage tf_msg;
+  EXPECT_THROW(subscribe_and_get_message("/tf", tf_msg), std::runtime_error);
+  // Verify that no tf message was sent
+  ASSERT_EQ(tf_msg.transforms.size(), 0lu);
 
-  ASSERT_TRUE(pose_orientation_y_.get_value(temp));
-  ASSERT_TRUE(pose_orientation_y_.set_value(std::numeric_limits<double>::quiet_NaN()));
-  ASSERT_EQ(
-    pose_broadcaster_->update(rclcpp::Time{0}, rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::ERROR);
-  ASSERT_TRUE(pose_orientation_y_.set_value(temp));
-
-  ASSERT_TRUE(pose_orientation_z_.get_value(temp));
-  ASSERT_TRUE(pose_orientation_z_.set_value(std::numeric_limits<double>::quiet_NaN()));
-  ASSERT_EQ(
-    pose_broadcaster_->update(rclcpp::Time{0}, rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::ERROR);
-  ASSERT_TRUE(pose_orientation_z_.set_value(temp));
-
-  ASSERT_TRUE(pose_orientation_w_.get_value(temp));
-  ASSERT_TRUE(pose_orientation_w_.set_value(std::numeric_limits<double>::quiet_NaN()));
-  ASSERT_EQ(
-    pose_broadcaster_->update(rclcpp::Time{0}, rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::ERROR);
-  ASSERT_TRUE(pose_orientation_w_.set_value(temp));
-
-  ASSERT_TRUE(pose_orientation_x_.set_value(0));
-  ASSERT_TRUE(pose_orientation_y_.set_value(0));
-  ASSERT_TRUE(pose_orientation_z_.set_value(0));
-  ASSERT_TRUE(pose_orientation_w_.set_value(0));
-
-  ASSERT_EQ(
-    pose_broadcaster_->update(rclcpp::Time{0}, rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::ERROR);
+  // Set valid position but invalid quaternion
+  ASSERT_TRUE(pose_position_x_.set_value(0.0));
+  ASSERT_TRUE(pose_orientation_x_.set_value(0.0));
+  ASSERT_TRUE(pose_orientation_y_.set_value(0.0));
+  ASSERT_TRUE(pose_orientation_z_.set_value(0.0));
+  ASSERT_TRUE(pose_orientation_w_.set_value(0.0));
 }
 
 int main(int argc, char * argv[])
