@@ -42,61 +42,61 @@ Example parameters
       open:
         joint_states: [0.0]
         set_before_command:
-          high: [EL2008/Bremse_WQG7]
+          high: [Release_Break_valve]
           low: []
         command:
-          high: [EL2008/Greiferteil_Oeffnen_WQG1]
-          low: [EL2008/Greiferteil_Schliessen_WQG2]
+          high: [Open_valve]
+          low: [Close_valve]
         state:
-          high: [EL1008/Greifer_Geoeffnet_BG01]
-          low: [EL1008/Greifer_Geschloschen_BG02]
+          high: [Opened_signal]
+          low: [Closed_signal]
         set_after_command:
           high: []
-          low: [EL2008/Bremse_WQG7]
+          low: [Release_Break_valve]
 
       possible_closed_states: ['empty_close', 'full_close']
 
       close:
         set_before_command:
-          high: [EL2008/Bremse_WQG7]
-          low: [EL2008/Greiferteil_Oeffnen_WQG1]
+          high: [Release_Break_valve]
+          low: []
         command:
-          high: [EL2008/Greiferteil_Schliessen_WQG2]
-          low: [EL2008/Greiferteil_Oeffnen_WQG1]
+          high: [Close_valve]
+          low: [Open_valve]
         state:
           empty_close:
-            joint_states: [0.08]
-            high: [EL1008/Greifer_Geschloschen_BG02]
-            low: [EL1008/Bauteilabfrage_BG06]
-            set_after_command_high: [EL2008/Bremse_WQG7]
-            set_after_command_low: [EL2008/Bremse_WQG7]
+            joint_states: [0.16]
+            high: [Closed_signal]
+            low: [Part_Grasped_signal]
+            set_after_command_high: []
+            set_after_command_low: [Release_Break_valve]
           full_close:
             joint_states: [0.08]
-            high: [EL1008/Bauteilabfrage_BG06]
-            low: [EL1008/Greifer_Geschloschen_BG02]
-            set_after_command_high: [EL2008/Bremse_WQG7]
-            set_after_command_low: [EL2008/Bremse_WQG7]
+            high: [Part_Grasped_signal]
+            low: [Closed_signal]
+            set_after_command_high: []
+            set_after_command_low: [Release_Break_valve]
 
-      configurations: ["stichmass_125", "stichmass_250"]
+      configurations: ["narrow_objects", "wide_objects"]
       configuration_joints: [gripper_gripper_distance_joint]
 
       configuration_setup:
-        stichmass_125:
-          joint_states: [0.125]
-          command_high: [EL2008/Stichmass_125_WQG5]
-          command_low: [EL2008/Stichmass_250_WQG6]
-          state_high: [EL1008/Stichmass_125mm_BG03]
-          state_low: [EL1008/Stichmass_250mm_BG04]
-        stichmass_250:
-          joint_states: [0.250]
-          command_high: [EL2008/Stichmass_250_WQG6]
-          command_low: [EL2008/Stichmass_125_WQG5]
-          state_high: [EL1008/Stichmass_250mm_BG04]
-          state_low: [EL1008/Stichmass_125mm_BG03]
+        narrow_objects:
+          joint_states: [0.1]
+          command_high: [Narrow_Configuration_Cmd]
+          command_low: [Wide_Configuration_Cmd]
+          state_high: [Narrow_Configuraiton_Signal]
+          state_low: [Wide_Configuration_Signal]
+        wide_objects:
+          joint_states: [0.2]
+          command_high: [Wide_Configuration_Cmd]
+          command_low: [Narrow_Configuration_Cmd]
+          state_high: [Wide_Configuration_Signal]
+          state_low: [Narrow_Configuraiton_Signal]
 
-      gripper_specific_sensors: ["hohenabfrage", "bauteilabfrage"]
+      gripper_specific_sensors: ["part_sensor_top", "part_sensor"]
       sensors_interfaces:
-        hohenabfrage:
-          input: "EL1008/Hohenabfrage_BG5"
-        bauteilabfrage:
-          input: "EL1008/Bauteilabfrage_BG06"
+        part_sensor_top:
+          input: "Part_Sensor_Top_signal"
+        part_sensor:
+          input: "Part_Grasped_signal"
