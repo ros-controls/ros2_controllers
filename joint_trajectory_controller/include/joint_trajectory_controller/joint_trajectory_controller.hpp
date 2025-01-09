@@ -96,13 +96,6 @@ public:
   controller_interface::CallbackReturn on_error(
     const rclcpp_lifecycle::State & previous_state) override;
 
-<<<<<<< HEAD
-  JOINT_TRAJECTORY_CONTROLLER_PUBLIC
-  controller_interface::CallbackReturn on_shutdown(
-    const rclcpp_lifecycle::State & previous_state) override;
-
-=======
->>>>>>> abf3172 ( Remove empty on_shutdown() callbacks (#1477))
 protected:
   // To reduce number of variables and to make the code shorter the interfaces are ordered in types
   // as the following constants
