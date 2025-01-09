@@ -17,7 +17,6 @@
 #include <limits>
 #include <utility>
 #include <vector>
-#include "gtest/gtest.h"
 
 using hardware_interface::LoanedStateInterface;
 
@@ -213,7 +212,6 @@ TEST_F(PoseBroadcasterTest, invalid_pose_no_tf_published)
 
   // Subscribe to pose topic
   geometry_msgs::msg::PoseStamped pose_msg;
-  pose_msg.pose.orientation.w = 1.0;
   subscribe_and_get_message("/test_pose_broadcaster/pose", pose_msg);
 
   // Verify content of pose message
@@ -238,6 +236,10 @@ TEST_F(PoseBroadcasterTest, invalid_pose_no_tf_published)
   ASSERT_TRUE(pose_orientation_y_.set_value(0.0));
   ASSERT_TRUE(pose_orientation_z_.set_value(0.0));
   ASSERT_TRUE(pose_orientation_w_.set_value(0.0));
+
+  EXPECT_THROW(subscribe_and_get_message("/tf", tf_msg), std::runtime_error);
+  // Verify that no tf message was sent
+  ASSERT_EQ(tf_msg.transforms.size(), 0lu);
 }
 
 int main(int argc, char * argv[])
