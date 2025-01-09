@@ -22,25 +22,24 @@
 #include <string>
 #include <vector>
 
-#include "controller_interface/controller_interface.hpp"
-#include "io_gripper_controller_parameters.hpp"
-#include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
-#include "rclcpp_lifecycle/state.hpp"
-#include "realtime_tools/realtime_buffer.h"
-#include "realtime_tools/realtime_publisher.h"
-#include "std_srvs/srv/set_bool.hpp"
-#include "std_srvs/srv/trigger.hpp"
-#include sensor_msgs/msg/joint_state.hpp
 #include "control_msgs/action/io_gripper_command.hpp"
 #include "control_msgs/action/set_io_gripper_config.hpp"
 #include "control_msgs/msg/dynamic_interface_values.hpp"
 #include "control_msgs/msg/interface_value.hpp"
 #include "control_msgs/srv/set_io_gripper_config.hpp"
+#include "controller_interface/controller_interface.hpp"
+#include "io_gripper_controller_parameters.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
+#include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
+#include "rclcpp_lifecycle/state.hpp"
+#include "realtime_tools/realtime_buffer.h"
+#include "realtime_tools/realtime_publisher.h"
+#include "sensor_msgs/msg/joint_state.hpp"
+#include "std_srvs/srv/set_bool.hpp"
+#include "std_srvs/srv/trigger.hpp"
 
 namespace io_gripper_controller
 {
-
 /**
  * @enum service_mode_type
  * @brief Represents the various service modes of the gripper. These modes represents the high level
@@ -87,16 +86,14 @@ enum class gripper_state_type : std::uint8_t
  * is reconfiguring to new state based on the configuration defined in the yaml params.
  *
  * - IDLE: The reconfiguration process is idle, not performing any action.
- * - FIND_CONFIG: Finding the configuration settings.
  * - SET_COMMAND: Setting the command based on the configuration.
  * - CHECK_STATE: Checking the state after setting the command.
  */
 enum class reconfigure_state_type : std::uint8_t
 {
   IDLE = 0,
-  FIND_CONFIG = 1,
-  SET_COMMAND = 2,
-  CHECK_STATE = 3,
+  SET_COMMAND = 1,
+  CHECK_STATE = 2,
 };
 
 class IOGripperController : public controller_interface::ControllerInterface
@@ -217,7 +214,7 @@ protected:
   realtime_tools::RealtimeBuffer<gripper_state_type> gripper_state_buffer_;
   // Realtime buffer to store the name of the configuration which needs to be set
   realtime_tools::RealtimeBuffer<std::string> configure_gripper_buffer_;
-  // Realtime buffer to store the state for switching the reconfigure state (e.g. idle, find_config,
+  // Realtime buffer to store the state for switching the reconfigure state (e.g. idle,
   // set_command, check_state)
   realtime_tools::RealtimeBuffer<reconfigure_state_type> reconfigure_state_buffer_;
 

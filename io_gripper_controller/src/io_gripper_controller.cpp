@@ -439,22 +439,20 @@ void IOGripperController::handle_reconfigure_state_transition(const reconfigure_
     case reconfigure_state_type::IDLE:
       // do nothing
       break;
-    case reconfigure_state_type::FIND_CONFIG:
+    case reconfigure_state_type::SET_COMMAND:
       config_index_ =
         std::find(configurations_list_.begin(), configurations_list_.end(), configuration_key_);
       if (config_index_ == configurations_list_.end())
       {
         RCLCPP_ERROR(get_node()->get_logger(), "Configuration not found");
         reconfigure_state_buffer_.writeFromNonRT(reconfigure_state_type::IDLE);
+        break;
       }
       else
       {
         conf_it_ = config_map_[std::distance(configurations_list_.begin(), config_index_)];
         reconfigure_state_buffer_.writeFromNonRT(reconfigure_state_type::SET_COMMAND);
       }
-      break;
-
-    case reconfigure_state_type::SET_COMMAND:
       setResult = false;
       for (const auto & io : conf_it_.command_high)
       {
@@ -947,7 +945,7 @@ controller_interface::CallbackReturn IOGripperController::prepare_publishers_and
       {
         std::string conf = request->config_name;
         configure_gripper_buffer_.writeFromNonRT(conf.c_str());
-        reconfigure_state_buffer_.writeFromNonRT(reconfigure_state_type::FIND_CONFIG);
+        reconfigure_state_buffer_.writeFromNonRT(reconfigure_state_type::SET_COMMAND);
         reconfigureFlag_.store(true);
         while (reconfigureFlag_.load())
         {
@@ -1168,7 +1166,7 @@ rclcpp_action::GoalResponse IOGripperController::config_handle_goal(
   {
     std::string conf = goal->config_name;
     configure_gripper_buffer_.writeFromNonRT(conf.c_str());
-    reconfigure_state_buffer_.writeFromNonRT(reconfigure_state_type::FIND_CONFIG);
+    reconfigure_state_buffer_.writeFromNonRT(reconfigure_state_type::SET_COMMAND);
     reconfigureFlag_.store(true);
   }
   catch (const std::exception & e)
@@ -1187,7 +1185,7 @@ rclcpp_action::CancelResponse IOGripperController::config_handle_cancel(
 {
   (void)goal_handle;
   configure_gripper_buffer_.writeFromNonRT("");
-  reconfigure_state_buffer_.writeFromNonRT(reconfigure_state_type::FIND_CONFIG);
+  reconfigure_state_buffer_.writeFromNonRT(reconfigure_state_type::SET_COMMAND);
   return rclcpp_action::CancelResponse::ACCEPT;
 }
 
