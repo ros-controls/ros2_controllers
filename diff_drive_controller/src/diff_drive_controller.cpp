@@ -186,6 +186,12 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
   double linear_command = reference_interfaces_[0];
   double angular_command = reference_interfaces_[1];
 
+  if(std::isnan(linear_command) || std::isnan(angular_command))
+  {
+    // NaNs occur when the controller is first initialized and the reference interfaces are not yet set
+    return controller_interface::return_type::OK;
+  }
+
   // Apply (possibly new) multipliers:
   const double wheel_separation = params_.wheel_separation_multiplier * params_.wheel_separation;
   const double left_wheel_radius = params_.left_wheel_radius_multiplier * params_.wheel_radius;
