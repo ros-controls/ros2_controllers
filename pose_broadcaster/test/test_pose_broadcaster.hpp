@@ -39,12 +39,8 @@ protected:
   const std::string frame_id_ = "pose_base_frame";
   const std::string tf_child_frame_id_ = "pose_frame";
 
-<<<<<<< HEAD
-  std::array<double, 7> pose_values_ = {1.1, 2.2, 3.3, 4.4, 5.5, 6.6, 7.7};
-=======
   std::array<double, 7> pose_values_ = {
     {1.1, 2.2, 3.3, 0.39190382, 0.20056212, 0.53197575, 0.72331744}};
->>>>>>> 67096bd ([pose_broadcaster] Check for valid pose before attempting to publish a tf for it (#1479))
 
   hardware_interface::StateInterface pose_position_x_{pose_name_, "position.x", &pose_values_[0]};
   hardware_interface::StateInterface pose_position_y_{pose_name_, "position.x", &pose_values_[1]};
