@@ -648,12 +648,6 @@ bool DiffDriveController::reset()
   return true;
 }
 
-controller_interface::CallbackReturn DiffDriveController::on_shutdown(
-  const rclcpp_lifecycle::State &)
-{
-  return controller_interface::CallbackReturn::SUCCESS;
-}
-
 void DiffDriveController::halt()
 {
   const auto halt_wheels = [](auto & wheel_handles)
