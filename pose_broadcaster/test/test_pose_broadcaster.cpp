@@ -206,7 +206,7 @@ TEST_F(PoseBroadcasterTest, invalid_pose_no_tf_published)
     pose_broadcaster_->on_activate(rclcpp_lifecycle::State{}),
     controller_interface::CallbackReturn::SUCCESS);
 
-  ASSERT_TRUE(pose_position_x_.set_value(std::numeric_limits<double>::quiet_NaN()));
+  pose_values_[0] = std::numeric_limits<double>::quiet_NaN();
 
   // Subscribe to pose topic
   geometry_msgs::msg::PoseStamped pose_msg;
@@ -228,12 +228,13 @@ TEST_F(PoseBroadcasterTest, invalid_pose_no_tf_published)
   // Verify that no tf message was sent
   ASSERT_EQ(tf_msg.transforms.size(), 0lu);
 
-  // Set valid position but invalid quaternion
-  ASSERT_TRUE(pose_position_x_.set_value(0.0));
-  ASSERT_TRUE(pose_orientation_x_.set_value(0.0));
-  ASSERT_TRUE(pose_orientation_y_.set_value(0.0));
-  ASSERT_TRUE(pose_orientation_z_.set_value(0.0));
-  ASSERT_TRUE(pose_orientation_w_.set_value(0.0));
+  // Set valid position
+  pose_values_[0] = 0.0;
+  // but invalid quaternion
+  pose_values_[3] = 0.0;
+  pose_values_[4] = 0.0;
+  pose_values_[5] = 0.0;
+  pose_values_[6] = 0.0;
 
   EXPECT_THROW(subscribe_and_get_message("/tf", tf_msg), std::runtime_error);
   // Verify that no tf message was sent
