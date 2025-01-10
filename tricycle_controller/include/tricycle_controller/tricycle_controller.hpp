@@ -86,9 +86,6 @@ public:
   TRICYCLE_CONTROLLER_PUBLIC
   CallbackReturn on_error(const rclcpp_lifecycle::State & previous_state) override;
 
-  TRICYCLE_CONTROLLER_PUBLIC
-  CallbackReturn on_shutdown(const rclcpp_lifecycle::State & previous_state) override;
-
 protected:
   struct TractionHandle
   {

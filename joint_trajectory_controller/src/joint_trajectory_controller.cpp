@@ -1126,14 +1126,6 @@ bool JointTrajectoryController::reset()
   return true;
 }
 
-controller_interface::CallbackReturn JointTrajectoryController::on_shutdown(
-  const rclcpp_lifecycle::State &)
-{
-  // TODO(karsten1987): what to do?
-
-  return CallbackReturn::SUCCESS;
-}
-
 void JointTrajectoryController::publish_state(
   const JointTrajectoryPoint & desired_state, const JointTrajectoryPoint & current_state,
   const JointTrajectoryPoint & state_error)

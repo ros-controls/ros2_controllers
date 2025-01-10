@@ -86,10 +86,6 @@ public:
   controller_interface::CallbackReturn on_error(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  DIFF_DRIVE_CONTROLLER_PUBLIC
-  controller_interface::CallbackReturn on_shutdown(
-    const rclcpp_lifecycle::State & previous_state) override;
-
 protected:
   struct WheelHandle
   {
