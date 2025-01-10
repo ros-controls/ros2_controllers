@@ -76,7 +76,10 @@ bool Odometry::update(double left_pos, double right_pos, const rclcpp::Time & ti
 bool Odometry::updateFromVelocity(double left_vel, double right_vel, const rclcpp::Time & time)
 {
   const double dt = time.seconds() - timestamp_.seconds();
-
+  if (dt < 0.0001)
+  {
+    return false;  // Interval too small to integrate with
+  }
   // Compute linear and angular diff:
   const double linear = (left_vel + right_vel) * 0.5;
   // Now there is a bug about scout angular velocity
