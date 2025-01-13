@@ -21,24 +21,30 @@ tricycle_steering_controller:
       }
     }
 
+  traction_wheels_radius:
+    {
+      type: double,
+      default_value: 0.0,
+      description: "Traction wheels radius.",
+      read_only: false,
+      # TODO(anyone): activate validation if front/rear wheel radius is removed
+      # validation: {
+      #   gt<>: [0.0]
+      # }
+    }
+
   front_wheels_radius:
     {
       type: double,
       default_value: 0.0,
-      description: "Front wheels radius.",
+      description: "DEPRECATED: Use 'traction_wheels_radius'",
       read_only: false,
-      validation: {
-        gt<>: [0.0]
-      }
     }
 
   rear_wheels_radius:
     {
       type: double,
       default_value: 0.0,
-      description: "Rear wheels radius.",
+      description: "DEPRECATED: Use 'traction_wheels_radius'",
       read_only: false,
-      validation: {
-        gt<>: [0.0]
-      }
     }
