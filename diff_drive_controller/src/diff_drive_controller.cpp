@@ -49,8 +49,8 @@ DiffDriveController::DiffDriveController()
 : controller_interface::ControllerInterface(),
   // dummy limiter, will be created in on_configure
   // could be done with shared_ptr instead -> but will break ABI
-  limiter_angular_(std::numeric_limits<double>::quiet_NaN()),
-  limiter_linear_(std::numeric_limits<double>::quiet_NaN())
+  limiter_linear_(std::numeric_limits<double>::quiet_NaN()),
+  limiter_angular_(std::numeric_limits<double>::quiet_NaN())
 {
 }
 
@@ -118,10 +118,8 @@ controller_interface::return_type DiffDriveController::update(
     return controller_interface::return_type::OK;
   }
 
-  // if the mutex is unable to lock, last_command_msg_ won't be updated
-  received_velocity_msg_ptr_.try_get([this](const std::shared_ptr<TwistStamped> & msg)
-                                     { last_command_msg_ = msg; });
-
+  // last_command_msg_ won't be updated if the queue is empty
+  (void)received_velocity_msg_ptr_.get_latest(last_command_msg_);
   if (last_command_msg_ == nullptr)
   {
     RCLCPP_WARN(logger, "Velocity message received was a nullptr.");
@@ -395,8 +393,11 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   }
 
   last_command_msg_ = std::make_shared<TwistStamped>();
-  received_velocity_msg_ptr_.set([this](std::shared_ptr<TwistStamped> & stored_value)
-                                 { stored_value = last_command_msg_; });
+  if (!received_velocity_msg_ptr_.bounded_push(last_command_msg_))
+  {
+    RCLCPP_ERROR(logger, "Failed to push anything to the command queue");
+    return controller_interface::CallbackReturn::ERROR;
+  }
   // Fill last two commands with default constructed commands
   previous_commands_.emplace(*last_command_msg_);
   previous_commands_.emplace(*last_command_msg_);
@@ -419,8 +420,17 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
           "time, this message will only be shown once");
         msg->header.stamp = get_node()->get_clock()->now();
       }
-      received_velocity_msg_ptr_.set([msg](std::shared_ptr<TwistStamped> & stored_value)
-                                     { stored_value = std::move(msg); });
+      for (size_t i = 0; i < 5; ++i)
+      {
+        if (received_velocity_msg_ptr_.bounded_push(msg))
+        {
+          break;
+        }
+        RCLCPP_WARN(
+          get_node()->get_logger(),
+          "Velocity command could not be stored in the queue, trying again");
+        std::this_thread::sleep_for(100us);
+      }
     });
 
   // initialize odometry publisher and message
@@ -573,7 +583,8 @@ bool DiffDriveController::reset()
   subscriber_is_active_ = false;
   velocity_command_subscriber_.reset();
 
-  received_velocity_msg_ptr_.set(nullptr);
+  std::shared_ptr<TwistStamped> dummy;
+  (void)received_velocity_msg_ptr_.get_latest(dummy);
   is_halted = false;
   return true;
 }

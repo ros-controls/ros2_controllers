@@ -32,7 +32,7 @@
 #include "nav_msgs/msg/odometry.hpp"
 #include "odometry.hpp"
 #include "rclcpp_lifecycle/state.hpp"
-#include "realtime_tools/realtime_box.hpp"
+#include "realtime_tools/lock_free_queue.hpp"
 #include "realtime_tools/realtime_publisher.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"
 
@@ -41,6 +41,7 @@
 
 namespace diff_drive_controller
 {
+using realtime_tools::LockFreeSPSCQueue;
 class DiffDriveController : public controller_interface::ControllerInterface
 {
   using TwistStamped = geometry_msgs::msg::TwistStamped;
@@ -114,7 +115,7 @@ protected:
   bool subscriber_is_active_ = false;
   rclcpp::Subscription<TwistStamped>::SharedPtr velocity_command_subscriber_ = nullptr;
 
-  realtime_tools::RealtimeBox<std::shared_ptr<TwistStamped>> received_velocity_msg_ptr_{nullptr};
+  LockFreeSPSCQueue<std::shared_ptr<TwistStamped>, 10> received_velocity_msg_ptr_;
   std::shared_ptr<TwistStamped> last_command_msg_;
 
   std::queue<TwistStamped> previous_commands_;  // last two commands
