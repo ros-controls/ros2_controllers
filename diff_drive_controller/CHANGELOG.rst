@@ -2,8 +2,8 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.41.0 (2025-01-13)
+-------------------
 * Check dt in updateFromVelocity (backport `#1481 <https://github.com/ros-controls/ros2_controllers/issues/1481>`_) (`#1486 <https://github.com/ros-controls/ros2_controllers/issues/1486>`_)
 * Remove empty on_shutdown() callbacks (backport `#1477 <https://github.com/ros-controls/ros2_controllers/issues/1477>`_) (`#1482 <https://github.com/ros-controls/ros2_controllers/issues/1482>`_)
 * Contributors: mergify[bot]
