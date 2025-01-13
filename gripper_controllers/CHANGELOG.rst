@@ -2,6 +2,12 @@
 Changelog for package gripper_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.19.0 (2025-01-13)
+-------------------
+* Remove custom logic to skip configuration of gripper_controllers on Windows or macOS (`#1471 <https://github.com/ros-controls/ros2_controllers/issues/1471>`_)
+* Remove visibility macros (`#1451 <https://github.com/ros-controls/ros2_controllers/issues/1451>`_)
+* Contributors: Bence Magyar, Silvio Traversaro
+
 4.18.0 (2024-12-19)
 -------------------
 

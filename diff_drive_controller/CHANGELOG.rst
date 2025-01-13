@@ -2,6 +2,13 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.19.0 (2025-01-13)
+-------------------
+* Check dt in updateFromVelocity (`#1481 <https://github.com/ros-controls/ros2_controllers/issues/1481>`_)
+* Remove empty on_shutdown() callbacks (`#1477 <https://github.com/ros-controls/ros2_controllers/issues/1477>`_)
+* Remove visibility macros (`#1451 <https://github.com/ros-controls/ros2_controllers/issues/1451>`_)
+* Contributors: Bence Magyar, Julia Jia, Tony Najjar
+
 4.18.0 (2024-12-19)
 -------------------
 * Update command limiter of diff_drive_controller (`#1315 <https://github.com/ros-controls/ros2_controllers/issues/1315>`_)
