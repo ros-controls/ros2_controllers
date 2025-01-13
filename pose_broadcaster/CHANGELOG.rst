@@ -2,6 +2,11 @@
 Changelog for package pose_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* [pose_broadcaster] Check for valid pose before attempting to publish a tf for it (backport `#1479 <https://github.com/ros-controls/ros2_controllers/issues/1479>`_) (`#1483 <https://github.com/ros-controls/ros2_controllers/issues/1483>`_)
+* Contributors: mergify[bot]
+
 2.40.0 (2025-01-01)
 -------------------
 * Use the .hpp headers from `realtime_tools` package (backport `#1406 <https://github.com/ros-controls/ros2_controllers/issues/1406>`_) (`#1427 <https://github.com/ros-controls/ros2_controllers/issues/1427>`_)

@@ -2,6 +2,11 @@
 Changelog for package tricycle_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Remove empty on_shutdown() callbacks (backport `#1477 <https://github.com/ros-controls/ros2_controllers/issues/1477>`_) (`#1482 <https://github.com/ros-controls/ros2_controllers/issues/1482>`_)
+* Contributors: mergify[bot]
+
 2.40.0 (2025-01-01)
 -------------------
 * Use the .hpp headers from `realtime_tools` package (backport `#1406 <https://github.com/ros-controls/ros2_controllers/issues/1406>`_) (`#1427 <https://github.com/ros-controls/ros2_controllers/issues/1427>`_)

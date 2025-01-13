@@ -2,6 +2,11 @@
 Changelog for package bicycle_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix typos in steering_controllers_lib (backport `#1464 <https://github.com/ros-controls/ros2_controllers/issues/1464>`_) (`#1466 <https://github.com/ros-controls/ros2_controllers/issues/1466>`_)
+* Contributors: mergify[bot]
+
 2.40.0 (2025-01-01)
 -------------------
 

@@ -2,6 +2,11 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Remove empty on_shutdown() callbacks (backport `#1477 <https://github.com/ros-controls/ros2_controllers/issues/1477>`_) (`#1482 <https://github.com/ros-controls/ros2_controllers/issues/1482>`_)
+* Contributors: mergify[bot]
+
 2.40.0 (2025-01-01)
 -------------------
 * Increase margin for state_publish_rate  (`#1430 <https://github.com/ros-controls/ros2_controllers/issues/1430>`_)

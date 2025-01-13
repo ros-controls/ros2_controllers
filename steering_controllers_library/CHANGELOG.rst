@@ -2,6 +2,12 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Update generate_parameter_library dependency in steering_controllers_library (backport `#1465 <https://github.com/ros-controls/ros2_controllers/issues/1465>`_) (`#1468 <https://github.com/ros-controls/ros2_controllers/issues/1468>`_)
+* Fix typos in steering_controllers_lib (backport `#1464 <https://github.com/ros-controls/ros2_controllers/issues/1464>`_) (`#1466 <https://github.com/ros-controls/ros2_controllers/issues/1466>`_)
+* Contributors: mergify[bot]
+
 2.40.0 (2025-01-01)
 -------------------
 * fix(timeout): do not reset steer wheels to 0. on timeout (backport `#1289 <https://github.com/ros-controls/ros2_controllers/issues/1289>`_) (`#1452 <https://github.com/ros-controls/ros2_controllers/issues/1452>`_)

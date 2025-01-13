@@ -2,6 +2,9 @@
 Changelog for package ros2_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 2.40.0 (2025-01-01)
 -------------------
 * Add missing plugins to ros2_controllers dependencies (`#1413 <https://github.com/ros-controls/ros2_controllers/issues/1413>`_) (`#1415 <https://github.com/ros-controls/ros2_controllers/issues/1415>`_)
