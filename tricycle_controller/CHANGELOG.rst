@@ -2,6 +2,12 @@
 Changelog for package tricycle_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Remove empty on_shutdown() callbacks (`#1477 <https://github.com/ros-controls/ros2_controllers/issues/1477>`_)
+* Remove visibility macros (`#1451 <https://github.com/ros-controls/ros2_controllers/issues/1451>`_)
+* Contributors: Bence Magyar, Julia Jia
+
 4.18.0 (2024-12-19)
 -------------------
 * [CI] Add clang job and setup concurrency (`#1407 <https://github.com/ros-controls/ros2_controllers/issues/1407>`_)

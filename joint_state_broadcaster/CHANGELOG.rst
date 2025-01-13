@@ -2,6 +2,13 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Use urdf/model.hpp for rolling (`#1476 <https://github.com/ros-controls/ros2_controllers/issues/1476>`_)
+* Use urdf/model.hpp for rolling (`#1473 <https://github.com/ros-controls/ros2_controllers/issues/1473>`_)
+* Remove visibility macros (`#1451 <https://github.com/ros-controls/ros2_controllers/issues/1451>`_)
+* Contributors: Bence Magyar, verma nakul
+
 4.18.0 (2024-12-19)
 -------------------
 * [CI] Add clang job and setup concurrency (`#1407 <https://github.com/ros-controls/ros2_controllers/issues/1407>`_)

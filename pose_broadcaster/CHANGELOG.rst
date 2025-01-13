@@ -2,6 +2,12 @@
 Changelog for package pose_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* [pose_broadcaster] Check for valid pose before attempting to publish a tf for it (`#1479 <https://github.com/ros-controls/ros2_controllers/issues/1479>`_)
+* Remove visibility macros (`#1451 <https://github.com/ros-controls/ros2_controllers/issues/1451>`_)
+* Contributors: Bence Magyar, Felix Exner
+
 4.18.0 (2024-12-19)
 -------------------
 
