@@ -81,6 +81,7 @@ public:
   // Declare these tests as friends so we can access controller_->reference_interfaces_
   FRIEND_TEST(TestDiffDriveController, chainable_controller_unchained_mode);
   FRIEND_TEST(TestDiffDriveController, chainable_controller_chained_mode);
+  FRIEND_TEST(TestDiffDriveController, deactivate_then_activate);
 };
 
 class TestDiffDriveController : public ::testing::Test
@@ -982,6 +983,106 @@ TEST_F(TestDiffDriveController, reference_interfaces_are_properly_exported)
   EXPECT_EQ(reference_interfaces[0]->get_interface_name(), expected_linear_interface_name);
   EXPECT_EQ(reference_interfaces[1]->get_prefix_name(), expected_prefix_name);
   EXPECT_EQ(reference_interfaces[1]->get_interface_name(), expected_angular_interface_name);
+}
+
+// Make sure that the controller is properly reset when deactivated
+// and accepts new commands as expected when it is activated again.
+TEST_F(TestDiffDriveController, deactivate_then_activate)
+{
+  ASSERT_EQ(
+    InitController(
+      left_wheel_names, right_wheel_names,
+      {rclcpp::Parameter("wheel_separation", 0.4), rclcpp::Parameter("wheel_radius", 1.0)}),
+    controller_interface::return_type::OK);
+  // choose radius = 1 so that the command values (rev/s) are the same as the linear velocity (m/s)
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+
+  ASSERT_TRUE(controller_->set_chained_mode(false));
+
+  auto state = controller_->get_node()->configure();
+  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  assignResourcesPosFeedback();
+
+  state = controller_->get_node()->activate();
+  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+
+  waitForSetup();
+
+  // Reference interfaces should be NaN on initialization
+  // (Note: reference_interfaces_ is protected, but this is
+  // a FRIEND_TEST so we can use it)
+  for (const auto & interface : controller_->reference_interfaces_)
+  {
+    EXPECT_TRUE(std::isnan(interface));
+  }
+  // But NaNs should not propagate to command interfaces
+  // (these are set to 0.1 and 0.2 in InitController)
+  ASSERT_FALSE(std::isnan(left_wheel_vel_cmd_.get_value()));
+  ASSERT_FALSE(std::isnan(right_wheel_vel_cmd_.get_value()));
+
+  // published command message sets the command interfaces to the correct values
+  const double linear = 1.0;
+  publish(linear, 0.0);
+  // wait for msg is be published to the system
+  controller_->wait_for_twist(executor);
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  EXPECT_EQ(linear, left_wheel_vel_cmd_.get_value());
+  EXPECT_EQ(linear, right_wheel_vel_cmd_.get_value());
+
+  // Now check that the command interfaces are set to 0.0 on deactivation
+  // (despite calls to update())
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  state = controller_->get_node()->deactivate();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  EXPECT_EQ(0.0, left_wheel_vel_cmd_.get_value()) << "Wheels should be halted on deactivate()";
+  EXPECT_EQ(0.0, right_wheel_vel_cmd_.get_value()) << "Wheels should be halted on deactivate()";
+
+  // Activate again
+  state = controller_->get_node()->activate();
+  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+  state = controller_->get_node()->activate();
+  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+
+  waitForSetup();
+
+  // (Note: reference_interfaces_ is protected, but this is
+  // a FRIEND_TEST so we can use it)
+  for (const auto & interface : controller_->reference_interfaces_)
+  {
+    EXPECT_TRUE(std::isnan(interface))
+      << "Reference interfaces should initially be NaN on activation";
+  }
+  EXPECT_EQ(0.0, left_wheel_vel_cmd_.get_value())
+    << "Wheels should still have the same command as when they were last set (on deactivation)";
+  EXPECT_EQ(0.0, right_wheel_vel_cmd_.get_value())
+    << "Wheels should still have the same command as when they were last set (on deactivation)";
+
+  // A new command should work as expected
+  publish(linear, 0.0);
+  controller_->wait_for_twist(executor);
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  EXPECT_EQ(linear, left_wheel_vel_cmd_.get_value());
+  EXPECT_EQ(linear, right_wheel_vel_cmd_.get_value());
+
+  // Deactivate again and cleanup
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  state = controller_->get_node()->deactivate();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+  state = controller_->get_node()->cleanup();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_UNCONFIGURED);
+  executor.cancel();
 }
 
 int main(int argc, char ** argv)
