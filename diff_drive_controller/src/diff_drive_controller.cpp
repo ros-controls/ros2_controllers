@@ -36,25 +36,6 @@ constexpr auto DEFAULT_ODOMETRY_TOPIC = "~/odom";
 constexpr auto DEFAULT_TRANSFORM_TOPIC = "/tf";
 }  // namespace
 
-namespace
-{  // utility
-
-// called from RT control loop
-void reset_controller_reference_msg(
-  const std::shared_ptr<geometry_msgs::msg::TwistStamped> & msg,
-  const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node)
-{
-  msg->header.stamp = node->now();
-  msg->twist.linear.x = std::numeric_limits<double>::quiet_NaN();
-  msg->twist.linear.y = std::numeric_limits<double>::quiet_NaN();
-  msg->twist.linear.z = std::numeric_limits<double>::quiet_NaN();
-  msg->twist.angular.x = std::numeric_limits<double>::quiet_NaN();
-  msg->twist.angular.y = std::numeric_limits<double>::quiet_NaN();
-  msg->twist.angular.z = std::numeric_limits<double>::quiet_NaN();
-}
-
-}  // namespace
-
 namespace diff_drive_controller
 {
 using namespace std::chrono_literals;
@@ -448,16 +429,6 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
         limited_velocity_publisher_);
   }
 
-  const int nr_ref_itfs = 2;
-  reference_interfaces_.resize(nr_ref_itfs, std::numeric_limits<double>::quiet_NaN());
-  previous_two_commands_.push({{0.0, 0.0}});  // needs zeros (not NaN) to catch early accelerations
-  previous_two_commands_.push({{0.0, 0.0}});
-
-  std::shared_ptr<TwistStamped> empty_msg_ptr = std::make_shared<TwistStamped>();
-  reset_controller_reference_msg(empty_msg_ptr, get_node());
-  received_velocity_msg_ptr_.reset();
-  received_velocity_msg_ptr_.writeFromNonRT(empty_msg_ptr);
-
   // initialize command subscriber
   velocity_command_subscriber_ = get_node()->create_subscription<TwistStamped>(
     DEFAULT_COMMAND_TOPIC, rclcpp::SystemDefaultsQoS(),
@@ -571,9 +542,6 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
 controller_interface::CallbackReturn DiffDriveController::on_activate(
   const rclcpp_lifecycle::State &)
 {
-  // Set default value in command
-  reset_controller_reference_msg(*(received_velocity_msg_ptr_.readFromRT()), get_node());
-
   const auto left_result =
     configure_side("left", params_.left_wheel_names, registered_left_wheel_handles_);
   const auto right_result =
@@ -610,6 +578,7 @@ controller_interface::CallbackReturn DiffDriveController::on_deactivate(
     halt();
     is_halted = true;
   }
+  reset_buffers();
   registered_left_wheel_handles_.clear();
   registered_right_wheel_handles_.clear();
   return controller_interface::CallbackReturn::SUCCESS;
@@ -622,7 +591,6 @@ controller_interface::CallbackReturn DiffDriveController::on_cleanup(
   {
     return controller_interface::CallbackReturn::ERROR;
   }
-  received_velocity_msg_ptr_.reset();
 
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -640,9 +608,7 @@ bool DiffDriveController::reset()
 {
   odometry_.resetOdometry();
 
-  // release the old queue
-  std::queue<std::array<double, 2>> empty;
-  std::swap(previous_two_commands_, empty);
+  reset_buffers();
 
   registered_left_wheel_handles_.clear();
   registered_right_wheel_handles_.clear();
@@ -650,10 +616,33 @@ bool DiffDriveController::reset()
   subscriber_is_active_ = false;
   velocity_command_subscriber_.reset();
 
-  received_velocity_msg_ptr_.reset();
   is_halted = false;
   return true;
 }
+
+void DiffDriveController::reset_buffers()
+{
+  reference_interfaces_ = std::vector<double>(2, std::numeric_limits<double>::quiet_NaN());
+    // Empty out the old queue. Fill with zeros (not NaN) to catch early accelerations.
+  std::queue<std::array<double, 2>> empty;
+  std::swap(previous_two_commands_, empty);
+  previous_two_commands_.push({{0.0, 0.0}});
+  previous_two_commands_.push({{0.0, 0.0}});
+
+  // Fill RealtimeBuffer with NaNs so it will contain a known value 
+  // but still indicate that no command has yet been sent.
+  received_velocity_msg_ptr_.reset();
+  std::shared_ptr<TwistStamped> empty_msg_ptr = std::make_shared<TwistStamped>();
+  empty_msg_ptr->header.stamp = get_node()->now();
+  empty_msg_ptr->twist.linear.x = std::numeric_limits<double>::quiet_NaN();
+  empty_msg_ptr->twist.linear.y = std::numeric_limits<double>::quiet_NaN();
+  empty_msg_ptr->twist.linear.z = std::numeric_limits<double>::quiet_NaN();
+  empty_msg_ptr->twist.angular.x = std::numeric_limits<double>::quiet_NaN();
+  empty_msg_ptr->twist.angular.y = std::numeric_limits<double>::quiet_NaN();
+  empty_msg_ptr->twist.angular.z = std::numeric_limits<double>::quiet_NaN();
+  received_velocity_msg_ptr_.writeFromNonRT(empty_msg_ptr);
+}
+
 
 void DiffDriveController::halt()
 {

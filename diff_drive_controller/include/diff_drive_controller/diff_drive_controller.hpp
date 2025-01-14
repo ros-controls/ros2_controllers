@@ -145,6 +145,9 @@ protected:
 
   bool reset();
   void halt();
+
+private:
+  void reset_buffers();
 };
 }  // namespace diff_drive_controller
 #endif  // DIFF_DRIVE_CONTROLLER__DIFF_DRIVE_CONTROLLER_HPP_
