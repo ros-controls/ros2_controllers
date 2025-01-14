@@ -108,6 +108,11 @@ protected:
    */
   void publish(double linear, double angular)
   {
+    publish_timestamped(linear, angular, pub_node->get_clock()->now());
+  }
+
+  void publish_timestamped(double linear, double angular, rclcpp::Time timestamp)
+  {
     int wait_count = 0;
     auto topic = velocity_publisher->get_topic_name();
     while (pub_node->count_subscribers(topic) == 0)
@@ -122,7 +127,7 @@ protected:
     }
 
     geometry_msgs::msg::TwistStamped velocity_message;
-    velocity_message.header.stamp = pub_node->get_clock()->now();
+    velocity_message.header.stamp = timestamp;
     velocity_message.twist.linear.x = linear;
     velocity_message.twist.angular.z = angular;
     velocity_publisher->publish(velocity_message);
@@ -1077,6 +1082,50 @@ TEST_F(TestDiffDriveController, deactivate_then_activate)
   EXPECT_EQ(linear, right_wheel_vel_cmd_.get_value());
 
   // Deactivate again and cleanup
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  state = controller_->get_node()->deactivate();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+  state = controller_->get_node()->cleanup();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_UNCONFIGURED);
+  executor.cancel();
+}
+
+TEST_F(TestDiffDriveController, command_with_zero_timestamp_is_accepted_with_warning)
+{
+  ASSERT_EQ(
+    InitController(
+      left_wheel_names, right_wheel_names,
+      {rclcpp::Parameter("wheel_separation", 0.4), rclcpp::Parameter("wheel_radius", 1.0)}),
+    controller_interface::return_type::OK);
+  // choose radius = 1 so that the command values (rev/s) are the same as the linear velocity (m/s)
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+
+  ASSERT_TRUE(controller_->set_chained_mode(false));
+
+  auto state = controller_->get_node()->configure();
+  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  assignResourcesPosFeedback();
+
+  state = controller_->get_node()->activate();
+  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+
+  waitForSetup();
+
+  // published command message with zero timestamp sets the command interfaces to the correct values
+  const double linear = 1.0;
+  publish_timestamped(linear, 0.0, rclcpp::Time(0, 0, RCL_ROS_TIME));
+  // wait for msg is be published to the system
+  controller_->wait_for_twist(executor);
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  EXPECT_EQ(linear, left_wheel_vel_cmd_.get_value());
+  EXPECT_EQ(linear, right_wheel_vel_cmd_.get_value());
+
+  // Deactivate and cleanup
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
   state = controller_->get_node()->deactivate();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
