@@ -1054,8 +1054,6 @@ TEST_F(TestDiffDriveController, deactivate_then_activate)
   // Activate again
   state = controller_->get_node()->activate();
   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
-  state = controller_->get_node()->activate();
-  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
 
   waitForSetup();
 
