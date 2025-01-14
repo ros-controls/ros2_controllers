@@ -153,7 +153,7 @@ controller_interface::return_type DiffDriveController::update_reference_from_sub
     reference_interfaces_[1] = 0.0;
   }
   else if (
-    !std::isnan(command_msg_ptr->twist.linear.x) && !std::isnan(command_msg_ptr->twist.angular.z))
+    std::isfinite(command_msg_ptr->twist.linear.x) && std::isfinite(command_msg_ptr->twist.angular.z))
   {
     reference_interfaces_[0] = command_msg_ptr->twist.linear.x;
     reference_interfaces_[1] = command_msg_ptr->twist.angular.z;
@@ -187,7 +187,7 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
   double linear_command = reference_interfaces_[0];
   double angular_command = reference_interfaces_[1];
 
-  if (std::isnan(linear_command) || std::isnan(angular_command))
+  if (!std::isfinite(linear_command) || !std::isfinite(angular_command))
   {
     // NaNs occur on initialization when the reference interfaces are not yet set
     return controller_interface::return_type::OK;
@@ -721,10 +721,10 @@ controller_interface::CallbackReturn DiffDriveController::configure_side(
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-bool DiffDriveController::on_set_chained_mode(bool chained_mode)
+bool DiffDriveController::on_set_chained_mode(bool /*chained_mode*/)
 {
   // Always accept switch to/from chained mode
-  return true || chained_mode;
+  return true;
 }
 
 std::vector<hardware_interface::CommandInterface>
