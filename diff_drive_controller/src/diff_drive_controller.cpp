@@ -134,7 +134,8 @@ controller_interface::return_type DiffDriveController::update_reference_from_sub
     reference_interfaces_[1] = 0.0;
   }
   else if (
-    std::isfinite(command_msg_ptr->twist.linear.x) && std::isfinite(command_msg_ptr->twist.angular.z))
+    std::isfinite(command_msg_ptr->twist.linear.x) &&
+    std::isfinite(command_msg_ptr->twist.angular.z))
   {
     reference_interfaces_[0] = command_msg_ptr->twist.linear.x;
     reference_interfaces_[1] = command_msg_ptr->twist.angular.z;
@@ -623,13 +624,13 @@ bool DiffDriveController::reset()
 void DiffDriveController::reset_buffers()
 {
   reference_interfaces_ = std::vector<double>(2, std::numeric_limits<double>::quiet_NaN());
-    // Empty out the old queue. Fill with zeros (not NaN) to catch early accelerations.
+  // Empty out the old queue. Fill with zeros (not NaN) to catch early accelerations.
   std::queue<std::array<double, 2>> empty;
   std::swap(previous_two_commands_, empty);
   previous_two_commands_.push({{0.0, 0.0}});
   previous_two_commands_.push({{0.0, 0.0}});
 
-  // Fill RealtimeBuffer with NaNs so it will contain a known value 
+  // Fill RealtimeBuffer with NaNs so it will contain a known value
   // but still indicate that no command has yet been sent.
   received_velocity_msg_ptr_.reset();
   std::shared_ptr<TwistStamped> empty_msg_ptr = std::make_shared<TwistStamped>();
@@ -642,7 +643,6 @@ void DiffDriveController::reset_buffers()
   empty_msg_ptr->twist.angular.z = std::numeric_limits<double>::quiet_NaN();
   received_velocity_msg_ptr_.writeFromNonRT(empty_msg_ptr);
 }
-
 
 void DiffDriveController::halt()
 {
