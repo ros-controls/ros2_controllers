@@ -2209,3 +2209,62 @@ TEST_F(TrajectoryControllerTest, incorrect_initialization_using_interface_parame
   state_interface_types_ = {"velocity"};
   EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::ERROR);
 }
+
+TEST_F(TrajectoryControllerTest, setting_scaling_factor_works_correctly)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+  std::vector<rclcpp::Parameter> params = {};
+  SetUpAndActivateTrajectoryController(executor, params);
+  auto speed_scaling_pub = node_->create_publisher<control_msgs::msg::SpeedScalingFactor>(
+    controller_name_ + "/speed_scaling_input", rclcpp::SystemDefaultsQoS());
+  subscribeToState(executor);
+
+  control_msgs::msg::SpeedScalingFactor msg;
+  msg.factor = 0.765;
+  speed_scaling_pub->publish(msg);
+  traj_controller_->wait_for_trajectory(executor);
+
+  updateController();
+
+  // Spin to receive latest state
+  executor.spin_some();
+  auto state = getState();
+  EXPECT_EQ(state->speed_scaling_factor, 0.765);
+
+  // 0.0 should work as an edge case
+  msg.factor = 0.0;
+  speed_scaling_pub->publish(msg);
+  traj_controller_->wait_for_trajectory(executor);
+  updateController();
+  executor.spin_some();
+  state = getState();
+  EXPECT_EQ(state->speed_scaling_factor, 0.0);
+
+  // Sending a negative value will be ignored
+  msg.factor = 0.45;
+  speed_scaling_pub->publish(msg);
+  traj_controller_->wait_for_trajectory(executor);
+  msg.factor = -0.12;
+  speed_scaling_pub->publish(msg);
+  traj_controller_->wait_for_trajectory(executor);
+  updateController();
+  executor.spin_some();
+  state = getState();
+  EXPECT_EQ(state->speed_scaling_factor, 0.45);
+}
+
+TEST_F(TrajectoryControllerTest, scaling_factor_from_param)
+{
+  double initial_factor = 0.123;
+  rclcpp::executors::MultiThreadedExecutor executor;
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("scaling_factor_initial_default", initial_factor),
+  };
+  SetUpAndActivateTrajectoryController(executor, params);
+  subscribeToState(executor);
+  updateController();
+  // Spin to receive latest state
+  executor.spin_some();
+  auto state = getState();
+  EXPECT_EQ(state->speed_scaling_factor, initial_factor);
+}
