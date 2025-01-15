@@ -703,9 +703,10 @@ controller_interface::CallbackReturn DiffDriveController::configure_side(
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-bool DiffDriveController::on_set_chained_mode(bool /*chained_mode*/)
+bool DiffDriveController::on_set_chained_mode(bool chained_mode)
 {
   // Always accept switch to/from chained mode
+  (void)chained_mode;
   return true;
 }
 
