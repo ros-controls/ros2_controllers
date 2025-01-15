@@ -204,7 +204,10 @@ void SteeringOdometry::set_velocity_rolling_window_size(size_t velocity_rolling_
   reset_accumulators();
 }
 
-void SteeringOdometry::set_odometry_type(const unsigned int type) { config_type_ = type; }
+void SteeringOdometry::set_odometry_type(const unsigned int type)
+{
+  config_type_ = static_cast<int>(type);
+}
 
 double SteeringOdometry::convert_twist_to_steering_angle(double v_bx, double omega_bz)
 {
@@ -214,7 +217,8 @@ double SteeringOdometry::convert_twist_to_steering_angle(double v_bx, double ome
 }
 
 std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_commands(
-  const double v_bx, const double omega_bz, const bool open_loop)
+  const double v_bx, const double omega_bz, const bool open_loop,
+  const bool reduce_wheel_speed_until_steering_reached)
 {
   // desired wheel speed and steering angle of the middle of traction and steering axis
   double Ws, phi, phi_IK = steer_pos_;
@@ -240,6 +244,29 @@ std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_comma
   }
   // wheel speed
   Ws = v_bx / wheel_radius_;
+
+  if (!open_loop && reduce_wheel_speed_until_steering_reached)
+  {
+    // Reduce wheel speed until the target angle has been reached
+    double phi_delta = abs(steer_pos_ - phi);
+    double scale;
+    const double min_phi_delta = M_PI / 6.;
+    if (phi_delta < min_phi_delta)
+    {
+      scale = 1;
+    }
+    else if (phi_delta >= 1.5608)
+    {
+      // cos(1.5608) = 0.01
+      scale = 0.01 / cos(min_phi_delta);
+    }
+    else
+    {
+      // TODO(anyone): find the best function, e.g convex power functions
+      scale = cos(phi_delta) / cos(min_phi_delta);
+    }
+    Ws *= scale;
+  }
 
   if (config_type_ == BICYCLE_CONFIG)
   {

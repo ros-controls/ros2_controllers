@@ -1,11 +1,15 @@
 cmake_minimum_required(VERSION 3.16)
-project(tricycle_controller LANGUAGES CXX)
+project(tricycle_controller)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
   add_compile_options(-Wall -Wextra -Wpedantic -Werror=conversion -Werror=unused-but-set-variable
                       -Werror=return-type -Werror=shadow -Werror=format -Werror=range-loop-construct
                       -Werror=missing-braces)
 endif()
+
+# using this instead of visibility macros
+# S1 from https://github.com/ros-controls/ros2_controllers/issues/1053
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   ackermann_msgs
@@ -50,9 +54,6 @@ target_include_directories(tricycle_controller PUBLIC
 )
 target_link_libraries(tricycle_controller PUBLIC tricycle_controller_parameters)
 ament_target_dependencies(tricycle_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
-# Causes the visibility macros to use dllexport rather than dllimport,
-# which is appropriate when building the dll but not consuming it.
-target_compile_definitions(tricycle_controller PRIVATE "TRICYCLE_CONTROLLER_BUILDING_DLL" "_USE_MATH_DEFINES")
 
 pluginlib_export_plugin_description_file(controller_interface tricycle_controller.xml)
 

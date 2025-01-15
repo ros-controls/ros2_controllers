@@ -16,6 +16,8 @@
  * Author: Enrique Fernández
  */
 
+#include <cmath>
+
 #include "diff_drive_controller/odometry.hpp"
 
 namespace diff_drive_controller
@@ -74,7 +76,10 @@ bool Odometry::update(double left_pos, double right_pos, const rclcpp::Time & ti
 bool Odometry::updateFromVelocity(double left_vel, double right_vel, const rclcpp::Time & time)
 {
   const double dt = time.seconds() - timestamp_.seconds();
-
+  if (dt < 0.0001)
+  {
+    return false;  // Interval too small to integrate with
+  }
   // Compute linear and angular diff:
   const double linear = (left_vel + right_vel) * 0.5;
   // Now there is a bug about scout angular velocity
@@ -134,8 +139,8 @@ void Odometry::integrateRungeKutta2(double linear, double angular)
   const double direction = heading_ + angular * 0.5;
 
   /// Runge-Kutta 2nd order integration:
-  x_ += linear * cos(direction);
-  y_ += linear * sin(direction);
+  x_ += linear * std::cos(direction);
+  y_ += linear * std::sin(direction);
   heading_ += angular;
 }
 
@@ -151,8 +156,8 @@ void Odometry::integrateExact(double linear, double angular)
     const double heading_old = heading_;
     const double r = linear / angular;
     heading_ += angular;
-    x_ += r * (sin(heading_) - sin(heading_old));
-    y_ += -r * (cos(heading_) - cos(heading_old));
+    x_ += r * (std::sin(heading_) - std::sin(heading_old));
+    y_ += -r * (std::cos(heading_) - std::cos(heading_old));
   }
 }
 

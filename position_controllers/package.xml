@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="3">
   <name>position_controllers</name>
-  <version>4.16.0</version>
-  <description>Generic controller for forwarding commands.</description>
+  <version>4.19.0</version>
+  <description>Generic position controller for forwarding position commands.</description>
 
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
   <maintainer email="denis@stoglrobotics.de">Denis Štogl</maintainer>

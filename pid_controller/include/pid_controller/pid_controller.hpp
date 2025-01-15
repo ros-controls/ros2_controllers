@@ -26,11 +26,10 @@
 #include "control_msgs/msg/multi_dof_state_stamped.hpp"
 #include "control_toolbox/pid_ros.hpp"
 #include "controller_interface/chainable_controller_interface.hpp"
-#include "pid_controller/visibility_control.h"
 #include "pid_controller_parameters.hpp"
 #include "rclcpp_lifecycle/state.hpp"
-#include "realtime_tools/realtime_buffer.h"
-#include "realtime_tools/realtime_publisher.h"
+#include "realtime_tools/realtime_buffer.hpp"
+#include "realtime_tools/realtime_publisher.hpp"
 #include "std_srvs/srv/set_bool.hpp"
 
 namespace pid_controller
@@ -45,39 +44,29 @@ enum class feedforward_mode_type : std::uint8_t
 class PidController : public controller_interface::ChainableControllerInterface
 {
 public:
-  PID_CONTROLLER__VISIBILITY_PUBLIC
   PidController();
 
-  PID_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::CallbackReturn on_init() override;
 
-  PID_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::InterfaceConfiguration command_interface_configuration() const override;
 
-  PID_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::InterfaceConfiguration state_interface_configuration() const override;
 
-  PID_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::CallbackReturn on_cleanup(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  PID_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::CallbackReturn on_configure(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  PID_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::CallbackReturn on_activate(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  PID_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::CallbackReturn on_deactivate(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  PID_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::return_type update_reference_from_subscribers(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
-  PID_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::return_type update_and_write_commands(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
@@ -127,7 +116,6 @@ protected:
 
 private:
   // callback for topic interface
-  PID_CONTROLLER__VISIBILITY_LOCAL
   void reference_callback(const std::shared_ptr<ControllerReferenceMsg> msg);
 };
 

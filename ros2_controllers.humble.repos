@@ -6,7 +6,7 @@ repositories:
   realtime_tools:
     type: git
     url: https://github.com/ros-controls/realtime_tools.git
-    version: master
+    version: humble
   kinematics_interface:
     type: git
     url: https://github.com/ros-controls/kinematics_interface.git

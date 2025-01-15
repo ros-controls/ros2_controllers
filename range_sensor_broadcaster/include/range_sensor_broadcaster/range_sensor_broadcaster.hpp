@@ -22,10 +22,9 @@
 #include <memory>
 
 #include "controller_interface/controller_interface.hpp"
-#include "range_sensor_broadcaster/visibility_control.h"
 #include "range_sensor_broadcaster_parameters.hpp"
 #include "rclcpp_lifecycle/state.hpp"
-#include "realtime_tools/realtime_publisher.h"
+#include "realtime_tools/realtime_publisher.hpp"
 #include "semantic_components/range_sensor.hpp"
 #include "sensor_msgs/msg/range.hpp"
 
@@ -34,27 +33,20 @@ namespace range_sensor_broadcaster
 class RangeSensorBroadcaster : public controller_interface::ControllerInterface
 {
 public:
-  RANGE_SENSOR_BROADCASTER_PUBLIC
   controller_interface::InterfaceConfiguration command_interface_configuration() const override;
 
-  RANGE_SENSOR_BROADCASTER_PUBLIC
   controller_interface::InterfaceConfiguration state_interface_configuration() const override;
+  controller_interface::CallbackReturn on_init() override;
 
-  RANGE_SENSOR_BROADCASTER_PUBLIC controller_interface::CallbackReturn on_init() override;
-
-  RANGE_SENSOR_BROADCASTER_PUBLIC
   controller_interface::CallbackReturn on_configure(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  RANGE_SENSOR_BROADCASTER_PUBLIC
   controller_interface::CallbackReturn on_activate(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  RANGE_SENSOR_BROADCASTER_PUBLIC
   controller_interface::CallbackReturn on_deactivate(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  RANGE_SENSOR_BROADCASTER_PUBLIC
   controller_interface::return_type update(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 

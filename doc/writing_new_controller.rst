@@ -22,14 +22,12 @@ The following is a step-by-step guide to create source files, basic tests, and c
    After creating the package, you should have at least ``CMakeLists.txt`` and ``package.xml`` files in it.
    Create also ``include/<PACKAGE_NAME>/`` and ``src`` folders if they do not already exist.
    In ``include/<PACKAGE_NAME>/`` folder add ``<controller_name>.hpp`` and ``<controller_name>.cpp`` in the ``src`` folder.
-   Optionally add ``visibility_control.h`` with the definition of export rules for Windows.
-   You can copy this file from an existing controller package and change the name prefix to the ``<PACKAGE_NAME>``.
 
 3. **Adding declarations into header file (.hpp)**
 
    1. Take care that you use header guards. ROS 2-style is using ``#ifndef`` and ``#define`` preprocessor directives. (For more information on this, a search engine is your friend :) ).
 
-   2. include ``"controller_interface/controller_interface.hpp"`` and ``visibility_control.h`` if you are using one.
+   2. include ``"controller_interface/controller_interface.hpp"``.
 
    3. Define a unique namespace for your controller. This is usually a package name written in ``snake_case``.
 
