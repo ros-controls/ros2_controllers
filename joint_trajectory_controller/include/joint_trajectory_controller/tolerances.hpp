@@ -36,7 +36,7 @@
 #include <vector>
 
 #include "control_msgs/action/follow_joint_trajectory.hpp"
-#include "joint_trajectory_controller_parameters.hpp"
+#include "joint_trajectory_controller/joint_trajectory_controller_parameters.hpp"
 
 #include "rclcpp/node.hpp"
 #include "rclcpp/time.hpp"

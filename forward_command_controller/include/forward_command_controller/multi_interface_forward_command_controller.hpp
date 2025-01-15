@@ -20,8 +20,8 @@
 #include <vector>
 
 #include "forward_command_controller/forward_controllers_base.hpp"
+#include "forward_command_controller/multi_interface_forward_command_controller_parameters.hpp"
 #include "forward_command_controller/visibility_control.h"
-#include "multi_interface_forward_command_controller_parameters.hpp"
 
 namespace forward_command_controller
 {
