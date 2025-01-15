@@ -29,6 +29,7 @@ io_gripper_controller:
     description: "List of joint names that should change values according to open or close state of the gripper",
     validation: {
       unique<>: null,
+      not_empty<>: null,
     }
   }
   open:
