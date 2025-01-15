@@ -39,6 +39,7 @@ io_gripper_controller:
       description: "List of joint values when gripper is open. The order of the values should match the order of the joint names in open_close_joints",
       validation: {
         unique<>: null,
+        not_empty<>: null,
       }
     }
     set_before_command:
