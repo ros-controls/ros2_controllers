@@ -705,9 +705,8 @@ controller_interface::CallbackReturn DiffDriveController::configure_side(
 
 bool DiffDriveController::on_set_chained_mode(bool chained_mode)
 {
-  // Always accept switch to/from chained mode
-  (void)chained_mode;
-  return true;
+  // Always accept switch to/from chained mode (without linting type-cast error)
+  return true || chained_mode;
 }
 
 std::vector<hardware_interface::CommandInterface>
