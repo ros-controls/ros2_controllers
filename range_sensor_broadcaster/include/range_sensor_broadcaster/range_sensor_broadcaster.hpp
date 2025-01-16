@@ -25,12 +25,13 @@
 
 #include "controller_interface/controller_interface.hpp"
 #include "range_sensor_broadcaster/visibility_control.h"
-#include "range_sensor_broadcaster_parameters.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_publisher.hpp"
 #include "semantic_components/range_sensor.hpp"
 #include "sensor_msgs/msg/range.hpp"
+
+#include "range_sensor_broadcaster/range_sensor_broadcaster_parameters.hpp"
 
 namespace range_sensor_broadcaster
 {
