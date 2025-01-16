@@ -25,7 +25,6 @@ io_gripper_controller:
   }
   open_close_joints: {
     type: string_array,
-    default_value: [],
     description: "List of joint names that should change values according to open or close state of the gripper",
     validation: {
       unique<>: null,
@@ -35,7 +34,6 @@ io_gripper_controller:
   open:
     joint_states: {
       type: double_array,
-      default_value: [],
       description: "List of joint values when gripper is open. The order of the values should match the order of the joint names in open_close_joints",
       validation: {
         unique<>: null,
@@ -45,7 +43,7 @@ io_gripper_controller:
     set_before_command:
       high: {
         type: string_array,
-        default_value: [""],
+        default_value: [],
         description: "(optional) list of command interfaces that have to be set to high (1.0) before opening the gripper",
         validation: {
           unique<>: null,
@@ -53,7 +51,7 @@ io_gripper_controller:
       }
       low: {
         type: string_array,
-        default_value: [""],
+        default_value: [],
         description: "(optional) list of command interfaces that have to be set to low (0.0) before opening the gripper",
         validation: {
           unique<>: null,
@@ -96,7 +94,7 @@ io_gripper_controller:
     set_after_command:
       high: {
         type: string_array,
-        default_value: [""],
+        default_value: [],
         description: "(optional) list of command interfaces that have to be set to high (1.0) after opening the gripper",
         validation: {
           unique<>: null,
@@ -104,7 +102,7 @@ io_gripper_controller:
       }
       low: {
         type: string_array,
-        default_value: [""],
+        default_value: [],
         description: "(optional) list of command interface names that have to be set to low (0.0) after opening the gripper.",
         validation: {
           unique<>: null,
@@ -112,7 +110,7 @@ io_gripper_controller:
       }
   possible_closed_states: {
     type: string_array,
-    default_value: [""],
+    default_value: [],
     description: "List of possible closed states e.g. empty_close and full close",
     validation: {
       unique<>: null,
@@ -122,7 +120,7 @@ io_gripper_controller:
     set_before_command:
       high: {
         type: string_array,
-        default_value: [""],
+        default_value: [],
         description: "(optional) list of command interfaces that have to be set to high (1.0) before closing the gripper",
         validation: {
           unique<>: null,
@@ -130,7 +128,7 @@ io_gripper_controller:
       }
       low: {
         type: string_array,
-        default_value: [""],
+        default_value: [],
         description: "(optional) list of command interfaces that have to be set to low (0.0) before closing the gripper",
         validation: {
           unique<>: null,
@@ -139,7 +137,7 @@ io_gripper_controller:
     command:
       high: {
         type: string_array,
-        default_value: [""],
+        default_value: [],
         description: "(optional) list of command interfaces that have to be set to high (1.0) to close the gripper",
         validation: {
           unique<>: null,
@@ -147,7 +145,7 @@ io_gripper_controller:
       }
       low: {
         type: string_array,
-        default_value: [""],
+        default_value: [],
         description: "(optional) list of command interfaces that have to be set to low (0.0) to close the gripper",
         validation: {
           unique<>: null,
@@ -165,7 +163,7 @@ io_gripper_controller:
         }
         high: {
           type: string_array,
-          default_value: [""],
+          default_value: [],
           description: "(optional) list of state interfaces that have to equal high (1.0) to represent the gripper is closed",
           validation: {
             unique<>: null,
@@ -173,7 +171,7 @@ io_gripper_controller:
         }
         low: {
           type: string_array,
-          default_value: [""],
+          default_value: [],
           description: "(optional) list of state interfaces that have to equal low (0.0) to represent the gripper is closed",
           validation: {
             unique<>: null,
@@ -181,7 +179,7 @@ io_gripper_controller:
         }
         set_after_command_high: {
           type: string_array,
-          default_value: [""],
+          default_value: [],
           description: "(optional) list of command interfaces that have to be set to high (1.0) after closing the gripper",
           validation: {
             unique<>: null,
@@ -189,7 +187,7 @@ io_gripper_controller:
         }
         set_after_command_low: {
           type: string_array,
-          default_value: [""],
+          default_value: [],
           description: "(optional) list of command interface names that have to be set to low (0.0) after closing the gripper.",
           validation: {
             unique<>: null,
