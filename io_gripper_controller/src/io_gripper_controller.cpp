@@ -1312,7 +1312,6 @@ void IOGripperController::check_gripper_and_reconfigure_state()
   }
 
   bool reconfigure_state_found = false;
-
   for (const auto & [key, val] : params_.configuration_setup.configurations_map)
   {
     for (const auto & io : val.state_high)
@@ -1328,7 +1327,7 @@ void IOGripperController::check_gripper_and_reconfigure_state()
         if (!(std::abs(state_value_ - 1.0) < std::numeric_limits<double>::epsilon()))
         {
           reconfigure_state_found = false;
-          RCLCPP_ERROR(get_node()->get_logger(), "value for state doesn't match %s", io.c_str());
+          RCLCPP_DEBUG(get_node()->get_logger(), "value for state doesn't match %s", io.c_str());
           break;
         }
         else
@@ -1349,8 +1348,8 @@ void IOGripperController::check_gripper_and_reconfigure_state()
       {
         if (!(std::abs(state_value_ - 0.0) < std::numeric_limits<double>::epsilon()))
         {
-          RCLCPP_ERROR(get_node()->get_logger(), "value doesn't match %s", io.c_str());
           reconfigure_state_found = false;
+          RCLCPP_DEBUG(get_node()->get_logger(), "value for state doesn't match %s", io.c_str());
           break;
         }
         else
