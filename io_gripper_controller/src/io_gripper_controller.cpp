@@ -493,7 +493,6 @@ void IOGripperController::handle_reconfigure_state_transition(const reconfigure_
           if (!(std::abs(state_value_ - 1.0) < std::numeric_limits<double>::epsilon()))
           {
             check_state_ios_ = false;
-            RCLCPP_ERROR(get_node()->get_logger(), "value for state doesn't match %s", io.c_str());
             break;
           }
           else
@@ -514,7 +513,6 @@ void IOGripperController::handle_reconfigure_state_transition(const reconfigure_
         {
           if (!(std::abs(state_value_ - 0.0) < std::numeric_limits<double>::epsilon()))
           {
-            RCLCPP_ERROR(get_node()->get_logger(), "value doesn't match %s", io.c_str());
             check_state_ios_ = false;
             break;
           }
