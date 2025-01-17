@@ -19,6 +19,7 @@ on:
       - '**/package.xml'
       - '**/CMakeLists.txt'
       - 'ros2_controllers-not-released.rolling.repos'
+      - '**.xml'
   push:
     branches:
       - master
@@ -32,6 +33,7 @@ on:
       - '**/package.xml'
       - '**/CMakeLists.txt'
       - 'ros2_controllers-not-released.rolling.repos'
+      - '**.xml'
   schedule:
     # Run every morning to detect flakiness and broken dependencies
     - cron: '03 1 * * *'
