@@ -21,7 +21,19 @@ io_gripper_controller:
   use_action: {
     type: bool,
     default_value: false,
+<<<<<<< Updated upstream
     description: "True for using action server and false service server for the gripper",
+=======
+    description: "True for using action server and false service server for the gripper"
+  }
+  timeout: {
+    type: double,
+    default_value: 5.0,
+    description: "Timeout for the waiting on signals from gripper about reached state.",
+    validation: {
+      gt<>: [0.0],
+    }
+>>>>>>> Stashed changes
   }
   open_close_joints: {
     type: string_array,

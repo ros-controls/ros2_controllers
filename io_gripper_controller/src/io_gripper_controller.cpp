@@ -154,9 +154,18 @@ controller_interface::return_type IOGripperController::update(
       // do nothing
       break;
     case service_mode_type::OPEN:
+<<<<<<< Updated upstream
       handle_gripper_state_transition_open(*(gripper_state_buffer_.readFromRT()));
+=======
+      handle_gripper_state_transition(
+        time, open_ios_, *(gripper_state_buffer_.readFromRT()), "open", params_.open.joint_states);
+>>>>>>> Stashed changes
       break;
     case service_mode_type::CLOSE:
+      // handle_gripper_state_transition(
+      //   time, close_ios_, *(gripper_state_buffer_.readFromRT()), "close",
+      //   []);  // here joint states should be empty as we have multiple
+      //   states
       handle_gripper_state_transition_close(*(gripper_state_buffer_.readFromRT()));
       break;
 
@@ -352,13 +361,67 @@ void IOGripperController::handle_gripper_state_transition_close(const gripper_st
   }
 }
 
+<<<<<<< Updated upstream
 void IOGripperController::handle_gripper_state_transition_open(const gripper_state_type & state)
 {
+=======
+bool IOGripperController::set_commands(
+  const std::map<std::string, double> & command_states, const std::string & transition_name)
+{
+  bool all_successful = true;
+  for (const auto & [command_name, command_value] : command_states)
+  {
+    if (!find_and_set_command(command_name, command_value))
+    {
+      RCLCPP_ERROR(
+        get_node()->get_logger(), "%s: Failed to set the command state for %s",
+        transition_name.c_str(), command_name.c_str());
+      all_successful = false;
+    }
+  }
+  return all_successful;
+}
+
+bool IOGripperController::check_states(
+  const std::map<std::string, double> & state_ios, const std::string & transition_name)
+{
+  bool all_correct = true;
+  for (const auto & [state_name, expected_state_value] : state_ios)
+  {
+    double current_state_value;
+    if (!find_and_get_state(state_name, current_state_value))
+    {
+      RCLCPP_ERROR(
+        get_node()->get_logger(), "%s: Failed to get the state for %s", transition_name.c_str(),
+        state_name.c_str());
+      all_correct = false;
+    }
+    else
+    {
+      if (abs(current_state_value - expected_state_value) > std::numeric_limits<double>::epsilon())
+      {
+        RCLCPP_DEBUG(
+          get_node()->get_logger(), "%s: State value for %s doesn't match", transition_name.c_str(),
+          state_name.c_str());
+        all_correct = false;
+      }
+    }
+  }
+  return all_correct;
+}
+
+void IOGripperController::handle_gripper_state_transition(
+  const rclcpp::Time & current_time, const GripperTransitionIOs & ios, const uint & state,
+  const std::string & transition_name, std::vector<double> after_joint_states)
+{
+  using control_msgs::msg::IOGripperState;
+>>>>>>> Stashed changes
   switch (state)
   {
     case gripper_state_type::IDLE:
       // do nothing
       break;
+<<<<<<< Updated upstream
     case gripper_state_type::SET_BEFORE_COMMAND:
       for (size_t i = 0; i < set_before_command_open.size(); ++i)
       {
@@ -389,9 +452,24 @@ void IOGripperController::handle_gripper_state_transition_open(const gripper_sta
       }
 
       gripper_state_buffer_.writeFromNonRT(gripper_state_type::CHECK_GRIPPER_STATE);
+=======
+    case IOGripperState::SET_BEFORE_COMMAND:
+      set_commands(ios.set_before_command_ios, transition_name + " - SET_BEFORE_COMMAND");
+      // TODO(destogl): check to use other Realtime sync object to have write from RT
+      gripper_open_state_buffer_.writeFromNonRT(IOGripperState::SET_COMMAND);
+      last_transition_time_ = current_time;
+      break;
+    case IOGripperState::SET_COMMAND:
+      // now execute the command on the gripper
+      set_commands(ios.command_ios, transition_name + " - SET_COMMAND");
+      // TODO(destogl): check to use other Realtime sync object to have write from RT
+      gripper_open_state_buffer_.writeFromNonRT(IOGripperState::CHECK_COMMAND);
+      last_transition_time_ = current_time;
+>>>>>>> Stashed changes
       break;
     case gripper_state_type::CHECK_GRIPPER_STATE:
       // check the state of the gripper
+<<<<<<< Updated upstream
       check_state_ios_ = false;
       for (size_t i = 0; i < state_ios_open.size(); ++i)
       {
@@ -411,14 +489,40 @@ void IOGripperController::handle_gripper_state_transition_open(const gripper_sta
           else
           {
             check_state_ios_ = false;
+=======
+      bool check_state_ios = true;
+      if (ios.has_multiple_end_states)
+      {
+        for (const auto & possible_end_state : ios.possible_states)
+        {
+          if (check_states(
+                ios.multiple_states_ios.at(possible_end_state),
+                transition_name + " - CHECK_COMMAND");)
+          {
+            check_state_ios = true;
+            after_joint_states =
+              params_.close.sate.possible_closed_states_map.at(possible_end_state).joint_states;
+            // TODO: store possible_end_state in a variable to publish on status topic
+>>>>>>> Stashed changes
             break;
           }
+          check_state_ios = false;
         }
       }
+<<<<<<< Updated upstream
       if (check_state_ios_)
+=======
+      else  // only single end state
+      {
+        check_state_ios = check_states(ios.state_ios, transition_name + " - CHECK_COMMAND");
+      }
+
+      if (check_state_ios)
+>>>>>>> Stashed changes
       {
         gripper_state_buffer_.writeFromNonRT(gripper_state_type::SET_AFTER_COMMAND);
       }
+<<<<<<< Updated upstream
       break;
     case gripper_state_type::SET_AFTER_COMMAND:
       for (size_t i = 0; i < set_after_command_open.size(); ++i)
@@ -434,12 +538,38 @@ void IOGripperController::handle_gripper_state_transition_open(const gripper_sta
         }
       }
       for (size_t i = 0; i < params_.open.joint_states.size(); ++i)
+=======
+      else if ((current_time - last_transition_time_).seconds() > params_.timeout)
+      {
+        RCLCPP_ERROR(
+          get_node()->get_logger(),
+          "%s - CHECK_COMMAND: Gripper didin't reached target state within %.2f seconds.",
+          transition_name.c_str(), params_.timeout);
+        gripper_open_state_buffer_.writeFromNonRT(IOGripperState::HALTED);
+      }
+      break;
+    case IOGripperState::SET_AFTER_COMMAND:
+      set_commands(ios.set_after_command_ios, transition_name + " - SET_AFTER_COMMAND");
+
+      // set joint states
+      for (size_t i = 0; i < after_joint_states.size(); ++i)
+>>>>>>> Stashed changes
       {
         joint_state_values_[i] = params_.open.joint_states[i];
       }
+<<<<<<< Updated upstream
       gripper_state_buffer_.writeFromNonRT(gripper_state_type::IDLE);
       openFlag_.store(false);
       gripper_service_buffer_.writeFromNonRT(service_mode_type::IDLE);
+=======
+
+      // Finish up the transition
+      gripper_open_state_buffer_.writeFromNonRT(IOGripperState::IDLE);
+      openFlag_.store(false);
+      gripper_service_buffer_.writeFromNonRT(service_mode_type::IDLE);
+      last_transition_time_ = current_time;
+
+>>>>>>> Stashed changes
       break;
     default:
       break;
@@ -631,11 +761,15 @@ controller_interface::CallbackReturn IOGripperController::check_parameters()
 
 void IOGripperController::prepare_command_and_state_ios()
 {
-  // make full command ios lists -- just once
-  for (const auto & key : params_.open.set_before_command.high)
+  auto parse_interfaces_from_params = [](
+                                        const std::vector<std::string> & parameter_values,
+                                        const double & value,
+                                        std::unordered_map<std::string, double> & ios,
+                                        std::unordered_set<std::string> & interface_list)
   {
-    if (!key.empty())
+    for (const auto & itf : parameter_values)
     {
+<<<<<<< Updated upstream
       set_before_command_open.push_back(key);
       set_before_command_open_values.push_back(1.0);
       command_if_ios.insert(key);
@@ -658,9 +792,17 @@ void IOGripperController::prepare_command_and_state_ios()
       command_ios_open.push_back(key);
       command_ios_open_values.push_back(1.0);
       command_if_ios.insert(key);
+=======
+      if (!itf.empty())
+      {
+        ios[itf] = value;
+        interface_list.insert(itf);
+      }
+>>>>>>> Stashed changes
     }
-  }
+  };
 
+<<<<<<< Updated upstream
   for (const auto & key : params_.open.command.low)
   {
     if (!key.empty())
@@ -690,6 +832,23 @@ void IOGripperController::prepare_command_and_state_ios()
       command_if_ios.insert(key);
     }
   }
+=======
+  // make full command ios lists -- just once
+  parse_interfaces_from_params(
+    params_.open.set_before_command.high, 1.0, open_ios_.set_before_command_ios, command_if_ios);
+  parse_interfaces_from_params(
+    params_.open.set_before_command.low, 0.0, open_ios_.set_before_command_ios, command_if_ios);
+
+  parse_interfaces_from_params(
+    params_.open.command.high, 1.0, open_ios_.command_ios, command_if_ios);
+  parse_interfaces_from_params(
+    params_.open.command.low, 0.0, open_ios_.command_ios, command_if_ios);
+
+  parse_interfaces_from_params(
+    params_.open.set_after_command.high, 1.0, open_ios_.set_after_command_ios, command_if_ios);
+  parse_interfaces_from_params(
+    params_.open.set_after_command.low, 0.0, open_ios_.set_after_command_ios, command_if_ios);
+>>>>>>> Stashed changes
 
   for (const auto & key : params_.close.set_before_command.high)
   {
@@ -729,25 +888,8 @@ void IOGripperController::prepare_command_and_state_ios()
   }
 
   // make full state ios lists -- just once
-  for (const auto & key : params_.open.state.high)
-  {
-    if (!key.empty())
-    {
-      state_ios_open.push_back(key);
-      state_ios_open_values.push_back(1.0);
-      state_if_ios.insert(key);
-    }
-  }
-
-  for (const auto & key : params_.open.state.low)
-  {
-    if (!key.empty())
-    {
-      state_ios_open.push_back(key);
-      state_ios_open_values.push_back(0.0);
-      state_if_ios.insert(key);
-    }
-  }
+  parse_interfaces_from_params(params_.open.state.high, 1.0, open_ios_.state_ios, state_if_ios);
+  parse_interfaces_from_params(params_.open.state.low, 0.0, open_ios_.state_ios, state_if_ios);
 
   for (const auto & [name, value] : params_.close.state.possible_closed_states_map)
   {
@@ -1145,7 +1287,7 @@ void IOGripperController::execute(std::shared_ptr<GoalHandleGripper> goal_handle
     }
     else
     {
-      feedback->state = static_cast<uint8_t>(*(gripper_state_buffer_.readFromRT()));
+      feedback->transition.state = static_cast<uint8_t>(*(gripper_state_buffer_.readFromRT()));
       goal_handle->publish_feedback(feedback);
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -1205,7 +1347,7 @@ void IOGripperController::config_execute(std::shared_ptr<GoalHandleGripperConfig
     }
     else
     {
-      feedback->state = static_cast<uint8_t>(*(reconfigure_state_buffer_.readFromRT()));
+      feedback->transition.state = static_cast<uint8_t>(*(reconfigure_state_buffer_.readFromRT()));
       goal_handle->publish_feedback(feedback);
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
