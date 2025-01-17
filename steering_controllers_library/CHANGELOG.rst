@@ -2,6 +2,20 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.19.0 (2025-01-13)
+-------------------
+* Update generate_parameter_library dependency in steering_controllers_library (`#1465 <https://github.com/ros-controls/ros2_controllers/issues/1465>`_)
+* Fix typos in steering_controllers_lib (`#1464 <https://github.com/ros-controls/ros2_controllers/issues/1464>`_)
+* Fix open-loop odometry in case of ref timeout (`#1454 <https://github.com/ros-controls/ros2_controllers/issues/1454>`_)
+* Remove visibility macros (`#1451 <https://github.com/ros-controls/ros2_controllers/issues/1451>`_)
+* Contributors: Bence Magyar, Christoph Fröhlich, Silvio Traversaro
+
+4.18.0 (2024-12-19)
+-------------------
+* steering_controllers_library: Add `reduce_wheel_speed_until_steering_reached` parameter (`#1314 <https://github.com/ros-controls/ros2_controllers/issues/1314>`_)
+* [CI] Add clang job and setup concurrency (`#1407 <https://github.com/ros-controls/ros2_controllers/issues/1407>`_)
+* Contributors: Christoph Fröhlich
+
 4.17.0 (2024-12-07)
 -------------------
 * Use the .hpp headers from `realtime_tools` package (`#1406 <https://github.com/ros-controls/ros2_controllers/issues/1406>`_)
