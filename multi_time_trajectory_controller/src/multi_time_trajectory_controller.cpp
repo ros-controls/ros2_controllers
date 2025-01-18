@@ -15,8 +15,8 @@
 #include "multi_time_trajectory_controller/multi_time_trajectory_controller.hpp"
 
 #include <angles/angles.h>
-#include <tf2/LinearMath/Matrix3x3.h>
-#include <tf2/LinearMath/Quaternion.h>
+#include <tf2/LinearMath/Matrix3x3.hpp>
+#include <tf2/LinearMath/Quaternion.hpp>
 
 #include <algorithm>
 #include <chrono>
