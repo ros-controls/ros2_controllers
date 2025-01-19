@@ -2,6 +2,14 @@
 Changelog for package imu_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.19.0 (2025-01-13)
+-------------------
+* Remove visibility macros (`#1451 <https://github.com/ros-controls/ros2_controllers/issues/1451>`_)
+* Contributors: Bence Magyar
+
+4.18.0 (2024-12-19)
+-------------------
+
 4.17.0 (2024-12-07)
 -------------------
 * Use the .hpp headers from `realtime_tools` package (`#1406 <https://github.com/ros-controls/ros2_controllers/issues/1406>`_)

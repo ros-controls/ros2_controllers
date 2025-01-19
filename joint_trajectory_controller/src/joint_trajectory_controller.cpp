@@ -33,7 +33,13 @@
 #include "rclcpp_action/create_server.hpp"
 #include "rclcpp_action/server_goal_handle.hpp"
 #include "rclcpp_lifecycle/state.hpp"
+
+#include "rclcpp/version.h"
+#if RCLCPP_VERSION_GTE(29, 0, 0)
+#include "urdf/model.hpp"
+#else
 #include "urdf/model.h"
+#endif
 
 namespace joint_trajectory_controller
 {
@@ -1071,14 +1077,6 @@ bool JointTrajectoryController::reset()
   return true;
 }
 
-controller_interface::CallbackReturn JointTrajectoryController::on_shutdown(
-  const rclcpp_lifecycle::State &)
-{
-  // TODO(karsten1987): what to do?
-
-  return CallbackReturn::SUCCESS;
-}
-
 void JointTrajectoryController::publish_state(
   const rclcpp::Time & time, const JointTrajectoryPoint & desired_state,
   const JointTrajectoryPoint & current_state, const JointTrajectoryPoint & state_error)
@@ -1457,8 +1455,15 @@ bool JointTrajectoryController::validate_trajectory_msg(
     // This currently supports only position, velocity and acceleration inputs
     if (params_.allow_integration_in_goal_trajectories)
     {
-      const bool all_empty = points[i].positions.empty() && points[i].velocities.empty() &&
-                             points[i].accelerations.empty();
+      if (
+        points[i].positions.empty() && points[i].velocities.empty() &&
+        points[i].accelerations.empty())
+      {
+        RCLCPP_ERROR(
+          get_node()->get_logger(),
+          "The given trajectory has no position, velocity, or acceleration points.");
+        return false;
+      }
       const bool position_error =
         !points[i].positions.empty() &&
         !validate_trajectory_point_field(joint_count, points[i].positions, "positions", i, false);
@@ -1469,7 +1474,7 @@ bool JointTrajectoryController::validate_trajectory_msg(
         !points[i].accelerations.empty() &&
         !validate_trajectory_point_field(
           joint_count, points[i].accelerations, "accelerations", i, false);
-      if (all_empty || position_error || velocity_error || acceleration_error)
+      if (position_error || velocity_error || acceleration_error)
       {
         return false;
       }

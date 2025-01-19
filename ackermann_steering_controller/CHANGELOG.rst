@@ -2,6 +2,15 @@
 Changelog for package ackermann_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.19.0 (2025-01-13)
+-------------------
+* Fix typos in steering_controllers_lib (`#1464 <https://github.com/ros-controls/ros2_controllers/issues/1464>`_)
+* Remove visibility macros (`#1451 <https://github.com/ros-controls/ros2_controllers/issues/1451>`_)
+* Contributors: Bence Magyar, Christoph Fröhlich
+
+4.18.0 (2024-12-19)
+-------------------
+
 4.17.0 (2024-12-07)
 -------------------
 * Add few warning flags to error in all ros2_controllers packages and fix tests (`#1370 <https://github.com/ros-controls/ros2_controllers/issues/1370>`_)

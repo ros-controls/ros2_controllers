@@ -33,7 +33,7 @@
 #include <vector>
 
 #include "control_msgs/msg/axis_trajectory_point.hpp"
-#include "multi_time_trajectory_controller_parameters.hpp"
+#include "multi_time_trajectory_controller/multi_time_trajectory_controller_parameters.hpp"
 
 namespace multi_time_trajectory_controller
 {
@@ -86,7 +86,7 @@ struct SegmentTolerances
  * \param params The ROS Parameters
  * \return Trajectory segment tolerances.
  */
-SegmentTolerances get_segment_tolerances(Params const & params)
+inline SegmentTolerances get_segment_tolerances(Params const & params)
 {
   auto const & constraints = params.constraints;
   auto const n_joints = params.axes.size();

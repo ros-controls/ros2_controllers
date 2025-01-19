@@ -15,7 +15,6 @@
 #ifndef EFFORT_CONTROLLERS__JOINT_GROUP_EFFORT_CONTROLLER_HPP_
 #define EFFORT_CONTROLLERS__JOINT_GROUP_EFFORT_CONTROLLER_HPP_
 
-#include "effort_controllers/visibility_control.h"
 #include "forward_command_controller/forward_command_controller.hpp"
 
 namespace effort_controllers
@@ -33,13 +32,10 @@ namespace effort_controllers
 class JointGroupEffortController : public forward_command_controller::ForwardCommandController
 {
 public:
-  EFFORT_CONTROLLERS_PUBLIC
   JointGroupEffortController();
 
-  EFFORT_CONTROLLERS_PUBLIC
   controller_interface::CallbackReturn on_init() override;
 
-  EFFORT_CONTROLLERS_PUBLIC
   controller_interface::CallbackReturn on_deactivate(
     const rclcpp_lifecycle::State & previous_state) override;
 };
