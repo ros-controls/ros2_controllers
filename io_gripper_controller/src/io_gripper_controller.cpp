@@ -937,12 +937,10 @@ void IOGripperController::prepare_command_and_state_ios()
     for (const auto & io : config.command_high)
     {
       command_if_ios.insert(io);
-      state_if_ios.insert(io);
     }
     for (const auto & io : config.command_low)
     {
       command_if_ios.insert(io);
-      state_if_ios.insert(io);
     }
     for (const auto & io : config.state_high)
     {
