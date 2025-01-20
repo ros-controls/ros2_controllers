@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRIPPER_IO_CONTROLLER__GRIPPER_IO_CONTROLLER_HPP_
-#define GRIPPER_IO_CONTROLLER__GRIPPER_IO_CONTROLLER_HPP_
+#ifndef IO_GRIPPER_CONTROLLER__IO_GRIPPER_CONTROLLER_HPP_
+#define IO_GRIPPER_CONTROLLER__IO_GRIPPER_CONTROLLER_HPP_
 
 #include <atomic>
 #include <functional>
@@ -22,15 +22,14 @@
 #include <string>
 #include <vector>
 
+#include <unordered_map>
+#include <unordered_set>
 #include "control_msgs/action/io_gripper_command.hpp"
 #include "control_msgs/action/set_io_gripper_config.hpp"
 #include "control_msgs/msg/dynamic_interface_values.hpp"
 #include "control_msgs/msg/interface_value.hpp"
-<<<<<<< Updated upstream
-=======
 #include "control_msgs/msg/io_gripper_controller_state.hpp"
 #include "control_msgs/msg/io_gripper_state.hpp"
->>>>>>> Stashed changes
 #include "control_msgs/srv/set_io_gripper_config.hpp"
 #include "controller_interface/controller_interface.hpp"
 #include "io_gripper_controller_parameters.hpp"
@@ -164,8 +163,6 @@ public:
   controller_interface::return_type update(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
-<<<<<<< Updated upstream
-=======
   struct GripperTransitionIOs
   {
     std::unordered_map<std::string, double> command_ios;
@@ -187,7 +184,6 @@ public:
 
   rclcpp::Time last_transition_time_;
 
->>>>>>> Stashed changes
   std::vector<std::string> command_ios_open;
   std::vector<std::string> command_ios_close;
   std::vector<std::string> set_before_command_open;
@@ -241,10 +237,7 @@ protected:
   // set_before_command, close_gripper, check_gripper_state, open_gripper, set_after_command,
   // halted)
   realtime_tools::RealtimeBuffer<gripper_state_type> gripper_state_buffer_;
-<<<<<<< Updated upstream
-=======
   realtime_tools::RealtimeBuffer<control_msgs::msg::IOGripperState> gripper_open_state_buffer_;
->>>>>>> Stashed changes
   // Realtime buffer to store the name of the configuration which needs to be set
   realtime_tools::RealtimeBuffer<std::string> configure_gripper_buffer_;
   // Realtime buffer to store the state for switching the reconfigure state (e.g. idle,
@@ -258,13 +251,10 @@ protected:
   using InterfacePublisher = realtime_tools::RealtimePublisher<DynInterfaceMsg>;
   rclcpp::Publisher<DynInterfaceMsg>::SharedPtr if_publisher_;
   std::unique_ptr<InterfacePublisher> interface_publisher_;
-<<<<<<< Updated upstream
-=======
   using GripperStatePublisher =
     realtime_tools::RealtimePublisher<control_msgs::msg::IOGripperControllerState>;
   rclcpp::Publisher<control_msgs::msg::IOGripperControllerState>::SharedPtr g_s_publisher_;
   std::unique_ptr<GripperStatePublisher> gripper_state_publisher_;
->>>>>>> Stashed changes
   std::atomic<bool> reconfigureFlag_{false};
   std::atomic<bool> openFlag_{false};
   std::atomic<bool> closeFlag_{false};
@@ -298,13 +288,9 @@ private:
    * @brief Handles the state transition when opening the gripper.
    * @param state The current state of the gripper.
    */
-<<<<<<< Updated upstream
-  void handle_gripper_state_transition_open(const gripper_state_type & state);
-=======
   void handle_gripper_state_transition(
     const rclcpp::Time & current_time, const GripperTransitionIOs & ios, const uint & state,
     const std::string & transition_name, std::vector<double> after_joint_states);
->>>>>>> Stashed changes
 
   /**
    * @brief Handles the state transition when closing the gripper.
@@ -434,4 +420,4 @@ private:
 
 }  // namespace io_gripper_controller
 
-#endif  // GRIPPER_IO_CONTROLLER__GRIPPER_IO_CONTROLLER_HPP_
+#endif  // IO_GRIPPER_CONTROLLER__IO_GRIPPER_CONTROLLER_HPP_
