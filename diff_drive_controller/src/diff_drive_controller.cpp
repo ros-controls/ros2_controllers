@@ -439,7 +439,7 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
           get_node()->get_logger(),
           "Received TwistStamped with zero timestamp, setting it to current "
           "time, this message will only be shown once");
-        msg->header.stamp = get_node()->get_clock()->now();
+        msg->header.stamp = get_node()->now();
       }
 
       const auto current_time_diff = get_node()->now() - msg->header.stamp;
