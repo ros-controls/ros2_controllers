@@ -18,6 +18,7 @@ on:
       - '**/package.xml'
       - '**/CMakeLists.txt'
       - 'ros2_controllers.jazzy.repos'
+      - '**.xml'
   push:
     branches:
       - master
@@ -31,6 +32,7 @@ on:
       - '**/package.xml'
       - '**/CMakeLists.txt'
       - 'ros2_controllers.jazzy.repos'
+      - '**.xml'
   schedule:
     # Run every morning to detect flakiness and broken dependencies
     - cron: '33 1 * * *'
