@@ -135,7 +135,9 @@ controller_interface::return_type DiffDriveController::update_reference_from_sub
   }
   else
   {
-    RCLCPP_WARN(logger, "Command message contains NaNs. Not updating reference interfaces.");
+    RCLCPP_WARN_SKIPFIRST_THROTTLE(
+      logger, *get_node()->get_clock(), cmd_vel_timeout_.seconds() * 1000,
+      "Command message contains NaNs. Not updating reference interfaces.");
   }
 
   previous_update_timestamp_ = time;
