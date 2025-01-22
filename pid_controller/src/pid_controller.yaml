@@ -62,17 +62,20 @@ pid_controller:
       antiwindup: {
         type: bool,
         default_value: false,
-        description: "Antiwindup functionality."
+        description: "Antiwindup functionality. When set to true, limits
+        the integral error to prevent windup; otherwise, constrains the
+        integral contribution to the control output. i_clamp_max and
+        i_clamp_min are applied in both scenarios."
       }
       i_clamp_max: {
         type: double,
         default_value: 0.0,
-        description: "Upper integral clamp. Only used if antiwindup is activated."
+        description: "Upper integral clamp."
       }
       i_clamp_min: {
         type: double,
         default_value: 0.0,
-        description: "Lower integral clamp. Only used if antiwindup is activated."
+        description: "Lower integral clamp."
       }
       feedforward_gain: {
         type: double,
