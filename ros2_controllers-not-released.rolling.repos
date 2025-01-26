@@ -1,5 +1,6 @@
 repositories:
-  generate_parameter_library:
-    type: git
-    url: https://github.com/picknikrobotics/generate_parameter_library.git
-    version: main
+  ## EXAMPLE DEPENDENCY
+#   <some_ros_package>:
+#     type: git
+#     url: git@github.com:<some_github_namespace>/<some_ros_package>.git
+#     version: master

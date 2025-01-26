@@ -1140,12 +1140,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_deactivate(
   return CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn JointTrajectoryController::on_cleanup(
-  const rclcpp_lifecycle::State &)
-{
-  return CallbackReturn::SUCCESS;
-}
-
 controller_interface::CallbackReturn JointTrajectoryController::on_error(
   const rclcpp_lifecycle::State &)
 {

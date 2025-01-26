@@ -26,11 +26,12 @@
 #include "control_msgs/msg/multi_dof_state_stamped.hpp"
 #include "control_toolbox/pid_ros.hpp"
 #include "controller_interface/chainable_controller_interface.hpp"
-#include "pid_controller_parameters.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_buffer.hpp"
 #include "realtime_tools/realtime_publisher.hpp"
 #include "std_srvs/srv/set_bool.hpp"
+
+#include "pid_controller/pid_controller_parameters.hpp"
 
 namespace pid_controller
 {
@@ -59,9 +60,6 @@ public:
     const rclcpp_lifecycle::State & previous_state) override;
 
   controller_interface::CallbackReturn on_activate(
-    const rclcpp_lifecycle::State & previous_state) override;
-
-  controller_interface::CallbackReturn on_deactivate(
     const rclcpp_lifecycle::State & previous_state) override;
 
   controller_interface::return_type update_reference_from_subscribers(

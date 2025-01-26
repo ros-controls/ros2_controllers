@@ -17,6 +17,7 @@ on:
       - '**/package.xml'
       - '**/CMakeLists.txt'
       - 'ros_controls.humble.repos'
+      - '**.xml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
