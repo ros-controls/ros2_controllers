@@ -167,7 +167,7 @@ controller_interface::return_type JointTrajectoryController::update(
   {
     if (scaling_command_interface_.has_value())
     {
-      if (!scaling_command_interface_->get().set_value(scaling_factor_.load()))
+      if (!scaling_command_interface_->get().set_value(scaling_factor_cmd_.load()))
       {
         RCLCPP_ERROR(
           get_node()->get_logger(),
@@ -234,7 +234,7 @@ controller_interface::return_type JointTrajectoryController::update(
     }
     else
     {
-      traj_time_ += period * scaling_factor_;
+      traj_time_ += period * scaling_factor_.load();
     }
 
     // Sample expected state from the trajectory
@@ -952,6 +952,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
       get_node()->get_logger(),
       "No scaling interface set. This controller will not read speed scaling from the hardware.");
   }
+  scaling_factor_cmd_.store(scaling_factor_.load());
 
   if (get_update_rate() == 0)
   {
@@ -992,6 +993,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
       RCLCPP_ERROR(
         logger, "Did not find speed scaling interface '%s' in state interfaces.",
         params_.speed_scaling_state_interface_name.c_str());
+      return CallbackReturn::ERROR;
     }
   }
   if (!params_.speed_scaling_command_interface_name.empty())
@@ -1002,6 +1004,13 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
     if (it != command_interfaces_.end())
     {
       scaling_command_interface_ = *it;
+    }
+    else
+    {
+      RCLCPP_ERROR(
+        logger, "Did not find speed scaling interface '%s' in command interfaces.",
+        params_.speed_scaling_command_interface_name.c_str());
+      return CallbackReturn::ERROR;
     }
   }
 
@@ -1687,12 +1696,13 @@ bool JointTrajectoryController::set_scaling_factor(const double scaling_factor)
     return false;
   }
 
-  if (scaling_factor != scaling_factor_)
+  if (scaling_factor != scaling_factor_.load())
   {
     RCLCPP_INFO(
       get_node()->get_logger().get_child("speed_scaling"), "New scaling factor will be %f",
       scaling_factor);
   }
+  scaling_factor_.store(scaling_factor);
   if (params_.speed_scaling_command_interface_name.empty())
   {
     if (!params_.speed_scaling_state_interface_name.empty())
@@ -1703,7 +1713,10 @@ bool JointTrajectoryController::set_scaling_factor(const double scaling_factor)
         "This will likely get overwritten by the hardware again. If available, please also setup "
         "the speed_scaling_command_interface_name");
     }
-    scaling_factor_ = scaling_factor;
+  }
+  else
+  {
+    scaling_factor_cmd_.store(scaling_factor);
   }
   return true;
 }

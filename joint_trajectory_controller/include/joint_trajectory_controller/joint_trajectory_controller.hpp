@@ -154,6 +154,7 @@ protected:
 
   // Things around speed scaling
   std::atomic<double> scaling_factor_{1.0};
+  std::atomic<double> scaling_factor_cmd_{1.0};
 
   // Timeout to consider commands old
   double cmd_timeout_;
