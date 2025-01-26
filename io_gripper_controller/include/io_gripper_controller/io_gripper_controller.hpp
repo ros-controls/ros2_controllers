@@ -237,7 +237,7 @@ protected:
   // set_before_command, close_gripper, check_gripper_state, open_gripper, set_after_command,
   // halted)
   realtime_tools::RealtimeBuffer<gripper_state_type> gripper_state_buffer_;
-  realtime_tools::RealtimeBuffer<control_msgs::msg::IOGripperState> gripper_open_state_buffer_;
+  realtime_tools::RealtimeBuffer<uint8_t> gripper_open_state_buffer_;
   // Realtime buffer to store the name of the configuration which needs to be set
   realtime_tools::RealtimeBuffer<std::string> configure_gripper_buffer_;
   // Realtime buffer to store the state for switching the reconfigure state (e.g. idle,
@@ -258,6 +258,8 @@ protected:
   std::atomic<bool> reconfigureFlag_{false};
   std::atomic<bool> openFlag_{false};
   std::atomic<bool> closeFlag_{false};
+
+  bool check_state_ios{false};
 
 private:
   /**
@@ -340,6 +342,12 @@ private:
    * @brief Checks the gripper and reconfigure state.
    */
   void check_gripper_and_reconfigure_state();
+
+  bool set_commands(
+    const std::unordered_map<std::string, double> & command_states,
+    const std::string & transition_name);
+  bool check_states(
+    const std::unordered_map<std::string, double> & state_ios, const std::string & transition_name);
 
   std::vector<std::string> configurations_list_;
   std::vector<io_gripper_controller::Params::ConfigurationSetup::MapConfigurations> config_map_;

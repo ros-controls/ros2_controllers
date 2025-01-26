@@ -359,7 +359,8 @@ void IOGripperController::handle_gripper_state_transition_close(const gripper_st
 }
 
 bool IOGripperController::set_commands(
-  const std::map<std::string, double> & command_states, const std::string & transition_name)
+  const std::unordered_map<std::string, double> & command_states,
+  const std::string & transition_name)
 {
   bool all_successful = true;
   for (const auto & [command_name, command_value] : command_states)
@@ -376,7 +377,7 @@ bool IOGripperController::set_commands(
 }
 
 bool IOGripperController::check_states(
-  const std::map<std::string, double> & state_ios, const std::string & transition_name)
+  const std::unordered_map<std::string, double> & state_ios, const std::string & transition_name)
 {
   bool all_correct = true;
   for (const auto & [state_name, expected_state_value] : state_ios)
@@ -410,13 +411,13 @@ void IOGripperController::handle_gripper_state_transition(
   using control_msgs::msg::IOGripperState;
   switch (state)
   {
-    case gripper_state_type::IDLE:
+    case IOGripperState::IDLE:
       // do nothing
       break;
     case IOGripperState::SET_BEFORE_COMMAND:
       set_commands(ios.set_before_command_ios, transition_name + " - SET_BEFORE_COMMAND");
       // TODO(destogl): check to use other Realtime sync object to have write from RT
-      gripper_open_state_buffer_.writeFromNonRT(IOGripperState::SET_COMMAND);
+      gripper_open_state_buffer_.writeFromNonRT(IOGripperState::CHECK_AFTER_COMMAND);
       last_transition_time_ = current_time;
       break;
     case IOGripperState::SET_COMMAND:
@@ -426,16 +427,16 @@ void IOGripperController::handle_gripper_state_transition(
       gripper_open_state_buffer_.writeFromNonRT(IOGripperState::CHECK_COMMAND);
       last_transition_time_ = current_time;
       break;
-    case gripper_state_type::CHECK_GRIPPER_STATE:
+    case IOGripperState::CHECK_COMMAND:
       // check the state of the gripper
-      bool check_state_ios = true;
+      check_state_ios = true;
       if (ios.has_multiple_end_states)
       {
         for (const auto & possible_end_state : ios.possible_states)
         {
           if (check_states(
                 ios.multiple_states_ios.at(possible_end_state),
-                transition_name + " - CHECK_COMMAND");)
+                transition_name + " - CHECK_COMMAND"))
           {
             check_state_ios = true;
             after_joint_states =
