@@ -61,30 +61,6 @@ enum class service_mode_type : std::uint8_t
 };
 
 /**
- * @enum gripper_state_type
- * @brief Represents the various states of the gripper.
- *
- * - IDLE: The gripper is in an idle state, not performing any action.
- * - SET_BEFORE_COMMAND: Executing commands for io defined in the yaml which are required before
- * opening the gripper.
- * - CLOSE_GRIPPER: Executing commands to close the gripper.
- * - CHECK_GRIPPER_STATE: Checking the state of the gripper to make sure the gripper is closed.
- * - OPEN_GRIPPER: Executing commands to open the gripper.
- * - SET_AFTER_COMMAND: Setting the gripper state after executing a command.
- * - HALTED: The gripper operation is halted.
- */
-enum class gripper_state_type : std::uint8_t
-{
-  IDLE = 0,
-  SET_BEFORE_COMMAND = 1,
-  CLOSE_GRIPPER = 2,
-  CHECK_GRIPPER_STATE = 3,
-  OPEN_GRIPPER = 4,
-  SET_AFTER_COMMAND = 5,
-  HALTED = 6,
-};
-
-/**
  * @enum reconfigure_state_type
  * @brief Represents the various states of the reconfiguration process, which means that the gripper
  * is reconfiguring to new state based on the configuration defined in the yaml params.
@@ -180,7 +156,7 @@ public:
   };
 
   GripperTransitionIOs open_ios_;
-  GripperTransitionIOs closeios_;
+  GripperTransitionIOs close_ios_;
 
   rclcpp::Time last_transition_time_;
 
@@ -222,6 +198,7 @@ public:
   using GoalHandleGripper = rclcpp_action::ServerGoalHandle<GripperAction>;
   using GripperConfigAction = control_msgs::action::SetIOGripperConfig;
   using GoalHandleGripperConfig = rclcpp_action::ServerGoalHandle<GripperConfigAction>;
+  using IOGripperState = control_msgs::msg::IOGripperState;
 
 protected:
   std::shared_ptr<io_gripper_controller::ParamListener> param_listener_;
@@ -236,7 +213,7 @@ protected:
   // Realtime buffer to store the state for switching the gripper state (e.g. idle,
   // set_before_command, close_gripper, check_gripper_state, open_gripper, set_after_command,
   // halted)
-  realtime_tools::RealtimeBuffer<gripper_state_type> gripper_state_buffer_;
+  realtime_tools::RealtimeBuffer<uint8_t> gripper_state_buffer_;
   realtime_tools::RealtimeBuffer<uint8_t> gripper_open_state_buffer_;
   // Realtime buffer to store the name of the configuration which needs to be set
   realtime_tools::RealtimeBuffer<std::string> configure_gripper_buffer_;
@@ -298,7 +275,7 @@ private:
    * @brief Handles the state transition when closing the gripper.
    * @param state The current state of the gripper.
    */
-  void handle_gripper_state_transition_close(const gripper_state_type & state);
+  // void handle_gripper_state_transition_close(const gripper_state_type & state);
 
   /**
    * @brief Handles the state transition for reconfiguration.
