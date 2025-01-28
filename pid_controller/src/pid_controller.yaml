@@ -89,3 +89,8 @@ pid_controller:
         description: "For joints that wrap around (i.e., are continuous).
           Normalizes position-error to -pi to pi."
       }
+      save_iterm: {
+        type: bool,
+        default_value: true,
+        description: "Indicating if integral term is retained after re-activation"
+      }
