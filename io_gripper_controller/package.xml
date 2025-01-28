@@ -26,7 +26,6 @@
   <depend>rclcpp</depend>
   <depend>rclcpp_lifecycle</depend>
   <depend>realtime_tools</depend>
-  <depend>ros2_control_test_assets</depend>
   <depend>sensor_msgs</depend>
   <depend>std_msgs</depend>
   <depend>std_srvs</depend>
@@ -36,6 +35,7 @@
   <test_depend>ament_lint_common</test_depend>
   <test_depend>controller_interface</test_depend>
   <test_depend>hardware_interface</test_depend>
+  <test_depend>ros2_control_test_assets</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>
