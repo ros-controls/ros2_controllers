@@ -2,6 +2,13 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Make diff_drive_controller a ChainableControllerInterface (`#1485 <https://github.com/ros-controls/ros2_controllers/issues/1485>`_)
+* Update paths of GPL includes (`#1487 <https://github.com/ros-controls/ros2_controllers/issues/1487>`_)
+* Fix SpeedLimiter Constructor regression (`#1478 <https://github.com/ros-controls/ros2_controllers/issues/1478>`_)
+* Contributors: Arthur Lovekin, Christoph Fröhlich, Sai Kishor Kothakota
+
 4.19.0 (2025-01-13)
 -------------------
 * Check dt in updateFromVelocity (`#1481 <https://github.com/ros-controls/ros2_controllers/issues/1481>`_)

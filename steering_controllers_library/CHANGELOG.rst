@@ -2,6 +2,11 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Update paths of GPL includes (`#1487 <https://github.com/ros-controls/ros2_controllers/issues/1487>`_)
+* Contributors: Christoph Fröhlich
+
 4.19.0 (2025-01-13)
 -------------------
 * Update generate_parameter_library dependency in steering_controllers_library (`#1465 <https://github.com/ros-controls/ros2_controllers/issues/1465>`_)

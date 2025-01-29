@@ -2,6 +2,11 @@
 Changelog for package tricycle_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Update paths of GPL includes (`#1487 <https://github.com/ros-controls/ros2_controllers/issues/1487>`_)
+* Contributors: Christoph Fröhlich
+
 4.19.0 (2025-01-13)
 -------------------
 * Remove empty on_shutdown() callbacks (`#1477 <https://github.com/ros-controls/ros2_controllers/issues/1477>`_)
