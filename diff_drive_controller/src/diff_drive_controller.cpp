@@ -673,28 +673,37 @@ controller_interface::CallbackReturn DiffDriveController::configure_side(
     const auto state_handle = std::find_if(
       state_interfaces_.cbegin(), state_interfaces_.cend(),
       [&wheel_name, &interface_name](const auto & interface)
-      {
-        return interface.get_prefix_name() == wheel_name &&
-               interface.get_interface_name() == interface_name;
-      });
+      { return interface.get_name() == wheel_name + "/" + interface_name; });
 
     if (state_handle == state_interfaces_.cend())
     {
-      RCLCPP_ERROR(logger, "Unable to obtain joint state handle for %s", wheel_name.c_str());
+      auto full_name = wheel_name + "/" + interface_name;
+      RCLCPP_ERROR(logger, "Unable to obtain joint state handle for %s", full_name.c_str());
+      RCLCPP_ERROR(logger, "Available state interfaces:");
+      for (const auto & interface : state_interfaces_)
+      {
+        RCLCPP_ERROR(
+          logger, " - %s: %s", interface.get_prefix_name().c_str(),
+          interface.get_interface_name().c_str());
+      }
       return controller_interface::CallbackReturn::ERROR;
     }
 
     const auto command_handle = std::find_if(
-      command_interfaces_.begin(), command_interfaces_.end(),
-      [&wheel_name](const auto & interface)
-      {
-        return interface.get_prefix_name() == wheel_name &&
-               interface.get_interface_name() == HW_IF_VELOCITY;
-      });
+      command_interfaces_.begin(), command_interfaces_.end(), [&wheel_name](const auto & interface)
+      { return interface.get_name() == wheel_name + "/" + HW_IF_VELOCITY; });
 
     if (command_handle == command_interfaces_.end())
     {
-      RCLCPP_ERROR(logger, "Unable to obtain joint command handle for %s", wheel_name.c_str());
+      auto full_name = wheel_name + "/" + HW_IF_VELOCITY;
+      RCLCPP_ERROR(logger, "Unable to obtain joint command handle for %s", full_name.c_str());
+      RCLCPP_ERROR(logger, "Available command interfaces:");
+      for (const auto & interface : command_interfaces_)
+      {
+        RCLCPP_ERROR(
+          logger, " - %s: %s", interface.get_prefix_name().c_str(),
+          interface.get_interface_name().c_str());
+      }
       return controller_interface::CallbackReturn::ERROR;
     }
 
