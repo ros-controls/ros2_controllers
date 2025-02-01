@@ -97,7 +97,7 @@ public:
     const rclcpp_lifecycle::State & previous_state) override;
 
   realtime_tools::RealtimeBuffer<Commands> command_;
-  // pre-allocated memory that is re-used to set the realtime buffer
+  // pre-allocated memory that is reused to set the realtime buffer
   Commands command_struct_, command_struct_rt_;
 
 protected:
