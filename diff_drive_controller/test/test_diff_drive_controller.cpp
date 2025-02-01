@@ -47,7 +47,9 @@ public:
   using DiffDriveController::DiffDriveController;
   std::shared_ptr<geometry_msgs::msg::TwistStamped> getLastReceivedTwist()
   {
-    return *(received_velocity_msg_ptr_.readFromNonRT());
+    std::shared_ptr<geometry_msgs::msg::TwistStamped> ret;
+    (void)received_velocity_msg_ptr_.get_latest(ret);
+    return ret;
   }
 
   /**
