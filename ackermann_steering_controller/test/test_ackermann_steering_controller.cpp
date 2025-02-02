@@ -175,16 +175,62 @@ TEST_F(AckermannSteeringControllerTest, test_update_logic)
 
   // we test with open_loop=false, but steering angle was not updated (is zero) -> same commands
   EXPECT_NEAR(
-    controller_->command_interfaces_[CMD_TRACTION_RIGHT_WHEEL].get_value(), 0.22222222222222224,
+    controller_->command_interfaces_[STATE_TRACTION_RIGHT_WHEEL].get_value(), 0.22222222222222224,
     COMMON_THRESHOLD);
   EXPECT_NEAR(
-    controller_->command_interfaces_[CMD_TRACTION_LEFT_WHEEL].get_value(), 0.22222222222222224,
+    controller_->command_interfaces_[STATE_TRACTION_LEFT_WHEEL].get_value(), 0.22222222222222224,
     COMMON_THRESHOLD);
   EXPECT_NEAR(
-    controller_->command_interfaces_[CMD_STEER_RIGHT_WHEEL].get_value(), 1.4179821977774734,
+    controller_->command_interfaces_[STATE_STEER_RIGHT_WHEEL].get_value(), 1.4179821977774734,
     COMMON_THRESHOLD);
   EXPECT_NEAR(
-    controller_->command_interfaces_[CMD_STEER_LEFT_WHEEL].get_value(), 1.4179821977774734,
+    controller_->command_interfaces_[STATE_STEER_LEFT_WHEEL].get_value(), 1.4179821977774734,
+    COMMON_THRESHOLD);
+
+  EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromRT()))->twist.linear.x));
+  EXPECT_EQ(controller_->reference_interfaces_.size(), joint_reference_interfaces_.size());
+  for (const auto & interface : controller_->reference_interfaces_)
+  {
+    EXPECT_TRUE(std::isnan(interface));
+  }
+}
+
+TEST_F(AckermannSteeringControllerTest, test_update_logic_ackermann)
+{
+  SetUpController();
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  controller_->set_chained_mode(false);
+  controller_->get_node()->set_parameter(
+    rclcpp::Parameter("twist_input", false));
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_FALSE(controller_->is_in_chained_mode());
+
+  // set command statically
+  std::shared_ptr<ControllerAckermannReferenceMsg> msg = std::make_shared<ControllerAckermannReferenceMsg>();
+  msg->header.stamp = controller_->get_node()->now();
+  msg->drive.speed = 0.1;
+  msg->drive.steering_angle = 0.2;
+  controller_->input_ackermann_ref_.writeFromNonRT(msg);
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  // we test with open_loop=false, but steering angle was not updated (is zero) -> same commands
+  EXPECT_NEAR(
+    controller_->command_interfaces_[CMD_TRACTION_RIGHT_WHEEL].get_value(), 0.1055,
+    COMMON_THRESHOLD);
+  EXPECT_NEAR(
+    controller_->command_interfaces_[CMD_TRACTION_LEFT_WHEEL].get_value(), 0.0944,
+    COMMON_THRESHOLD);
+  EXPECT_NEAR(
+    controller_->command_interfaces_[CMD_STEER_RIGHT_WHEEL].get_value(), 0.188,
+    COMMON_THRESHOLD);
+  EXPECT_NEAR(
+    controller_->command_interfaces_[CMD_STEER_LEFT_WHEEL].get_value(), 0.215,
     COMMON_THRESHOLD);
 
   EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromRT()))->twist.linear.x));
@@ -234,6 +280,8 @@ TEST_F(AckermannSteeringControllerTest, test_update_logic_chained)
     EXPECT_TRUE(std::isnan(interface));
   }
 }
+
+
 
 TEST_F(AckermannSteeringControllerTest, receive_message_and_publish_updated_status)
 {
