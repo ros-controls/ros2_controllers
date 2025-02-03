@@ -2,6 +2,64 @@
 Changelog for package position_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.20.0 (2025-01-29)
+-------------------
+
+4.19.0 (2025-01-13)
+-------------------
+* Remove visibility macros (`#1451 <https://github.com/ros-controls/ros2_controllers/issues/1451>`_)
+* Contributors: Bence Magyar
+
+4.18.0 (2024-12-19)
+-------------------
+* Update position controller package.xml (`#1431 <https://github.com/ros-controls/ros2_controllers/issues/1431>`_)
+* Contributors: Jakub "Deli" Delicat
+
+4.17.0 (2024-12-07)
+-------------------
+* Add few warning flags to error in all ros2_controllers packages and fix tests (`#1370 <https://github.com/ros-controls/ros2_controllers/issues/1370>`_)
+* Update maintainers and add url tags (`#1363 <https://github.com/ros-controls/ros2_controllers/issues/1363>`_)
+* Contributors: Christoph Fröhlich, Sai Kishor Kothakota
+
+4.16.0 (2024-11-08)
+-------------------
+
+4.15.0 (2024-10-07)
+-------------------
+
+4.14.0 (2024-09-11)
+-------------------
+
+4.13.0 (2024-08-22)
+-------------------
+
+4.12.1 (2024-08-14)
+-------------------
+
+4.12.0 (2024-07-23)
+-------------------
+* Unused header cleanup (`#1199 <https://github.com/ros-controls/ros2_controllers/issues/1199>`_)
+* Fix WaitSet issue in tests  (`#1206 <https://github.com/ros-controls/ros2_controllers/issues/1206>`_)
+* Fix parallel gripper controller CI (`#1202 <https://github.com/ros-controls/ros2_controllers/issues/1202>`_)
+* Contributors: Henry Moore, Sai Kishor Kothakota
+
+4.11.0 (2024-07-09)
+-------------------
+* added changes corresponding to the logger and clock propagation in ResourceManager (`#1184 <https://github.com/ros-controls/ros2_controllers/issues/1184>`_)
+* Contributors: Sai Kishor Kothakota
+
+4.10.0 (2024-07-01)
+-------------------
+
+4.9.0 (2024-06-05)
+------------------
+
+4.8.0 (2024-05-14)
+------------------
+
+4.7.0 (2024-03-22)
+------------------
+
 4.6.0 (2024-02-12)
 ------------------
 * Add test_depend on `hardware_interface_testing` (`#1018 <https://github.com/ros-controls/ros2_controllers/issues/1018>`_)

@@ -5,6 +5,9 @@ bicycle_steering_controller:
       default_value: 0.0,
       description: "Distance between front and rear wheel. For details see: https://en.wikipedia.org/wiki/Wheelbase",
       read_only: false,
+      validation: {
+        gt<>: [0.0]
+      }
     }
 
   front_wheel_radius:
@@ -13,6 +16,9 @@ bicycle_steering_controller:
       default_value: 0.0,
       description: "Front wheel radius.",
       read_only: false,
+      validation: {
+        gt<>: [0.0]
+      }
     }
 
   rear_wheel_radius:
@@ -21,4 +27,7 @@ bicycle_steering_controller:
       default_value: 0.0,
       description: "Rear wheel radius.",
       read_only: false,
+      validation: {
+        gt<>: [0.0]
+      }
     }

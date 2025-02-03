@@ -4,10 +4,25 @@ on:
   pull_request:
     branches:
       - master
+    paths:
+      - '**.hpp'
+      - '**.h'
+      - '**.cpp'
+      - '**.py'
+      - '**.yaml'
+      - '.github/workflows/rolling-debian-build.yml'
+      - '**/package.xml'
+      - '**/CMakeLists.txt'
+      - 'ros2_controllers.rolling.repos'
+      - '**.xml'
   schedule:
     # Run every day to detect flakiness and broken dependencies
     - cron: '03 1 * * *'
 
+concurrency:
+  # cancel previous runs of the same workflow, except for pushes on master branch
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, '/refs/heads') }}
 
 jobs:
   rolling_debian:

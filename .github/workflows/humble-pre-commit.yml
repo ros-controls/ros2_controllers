@@ -6,9 +6,12 @@ on:
     branches:
       - humble
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   pre-commit:
     uses: ros-controls/ros2_control_ci/.github/workflows/reusable-pre-commit.yml@master
     with:
       ros_distro: humble
-      os_name: ubuntu-22.04

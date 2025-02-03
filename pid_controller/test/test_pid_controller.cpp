@@ -20,7 +20,6 @@
 #include <limits>
 #include <memory>
 #include <string>
-#include <utility>
 #include <vector>
 
 using pid_controller::feedforward_mode_type;
@@ -98,9 +97,9 @@ TEST_F(PidControllerTest, check_exported_interfaces)
     {
       const std::string ref_itf_name =
         std::string(controller_->get_node()->get_name()) + "/" + dof_name + "/" + interface;
-      EXPECT_EQ(ref_if_conf[ri_index].get_name(), ref_itf_name);
-      EXPECT_EQ(ref_if_conf[ri_index].get_prefix_name(), controller_->get_node()->get_name());
-      EXPECT_EQ(ref_if_conf[ri_index].get_interface_name(), dof_name + "/" + interface);
+      EXPECT_EQ(ref_if_conf[ri_index]->get_name(), ref_itf_name);
+      EXPECT_EQ(ref_if_conf[ri_index]->get_prefix_name(), controller_->get_node()->get_name());
+      EXPECT_EQ(ref_if_conf[ri_index]->get_interface_name(), dof_name + "/" + interface);
       ++ri_index;
     }
   }
@@ -495,7 +494,7 @@ TEST_F(PidControllerTest, receive_message_and_publish_updated_status)
   }
 
   publish_commands();
-  ASSERT_TRUE(controller_->wait_for_commands(executor));
+  controller_->wait_for_commands(executor);
 
   for (size_t i = 0; i < controller_->reference_interfaces_.size(); ++i)
   {

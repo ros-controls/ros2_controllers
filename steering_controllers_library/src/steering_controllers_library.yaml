@@ -63,6 +63,13 @@ steering_controllers_library:
     read_only: false,
   }
 
+  reduce_wheel_speed_until_steering_reached: {
+    type: bool,
+    default_value: false,
+    description: "Reduce wheel speed until the steering angle has been reached.",
+    read_only: false,
+  }
+
   velocity_rolling_window_size: {
     type: int,
     default_value: 10,
@@ -110,13 +117,5 @@ steering_controllers_library:
     default_value: false,
     description: "Choice of feedback type, if position_feedback is false then ``HW_IF_VELOCITY`` is taken as interface type, if
     position_feedback is true then ``HW_IF_POSITION`` is taken as interface type",
-    read_only: false,
-  }
-
-  use_stamped_vel: {
-    type: bool,
-    default_value: false,
-    description: "Choice of vel type, if use_stamped_vel is false then ``geometry_msgs::msg::Twist`` is taken as vel msg type, if
-    use_stamped_vel is true then ``geometry_msgs::msg::TwistStamped`` is taken as vel msg type",
     read_only: false,
   }

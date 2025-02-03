@@ -15,8 +15,6 @@
 #ifndef TEST_ASSETS_HPP_
 #define TEST_ASSETS_HPP_
 
-#include <string>
-
 namespace test_trajectory_controllers
 {
 const auto urdf_rrrbot_revolute =

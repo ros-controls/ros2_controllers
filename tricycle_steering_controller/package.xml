@@ -2,13 +2,19 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>tricycle_steering_controller</name>
-  <version>4.6.0</version>
+  <version>4.20.0</version>
   <description>Steering controller with tricycle kinematics. Rear fixed wheels are powering the vehicle and front wheel is steering.</description>
-  <license>Apache License 2.0</license>
+
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
-  <maintainer email="denis.stogl@stoglrobotics.de">Dr.-Ing. Denis Štogl</maintainer>
-  <maintainer email="tomislav.petkovic.fer@gmail.com">dr. sc. Tomislav Petkovic</maintainer>
-  <maintainer email="tony.najjar@logivations.com">Tony Najjar</maintainer>
+  <maintainer email="denis@stoglrobotics.de">Denis Štogl</maintainer>
+  <maintainer email="christoph.froehlich@ait.ac.at">Christoph Froehlich</maintainer>
+  <maintainer email="sai.kishor@pal-robotics.com">Sai Kishor Kothakota</maintainer>
+
+  <license>Apache License 2.0</license>
+
+  <url type="website">https://control.ros.org</url>
+  <url type="bugtracker">https://github.com/ros-controls/ros2_controllers/issues</url>
+  <url type="repository">https://github.com/ros-controls/ros2_controllers/</url>
 
   <author email="denis.stogl@stoglrobotics.de">Dr.-Ing. Denis Štogl</author>
   <author email="tomislav.petkovic.fer@gmail.com">dr. sc. Tomislav Petkovic</author>
@@ -18,6 +24,7 @@
 
   <build_depend>generate_parameter_library</build_depend>
 
+  <depend>backward_ros</depend>
   <depend>control_msgs</depend>
   <depend>controller_interface</depend>
   <depend>hardware_interface</depend>
