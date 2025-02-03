@@ -1014,7 +1014,8 @@ TEST_P(TestTrajectoryActionsTestParameterized, deactivate_controller_aborts_acti
   controller_thread.join();
 
   EXPECT_TRUE(gh_future.get());
-  EXPECT_EQ(rclcpp_action::ResultCode::CANCELED, common_resultcode_);
+  EXPECT_EQ(rclcpp_action::ResultCode::ABORTED, common_resultcode_);
+
   auto state = traj_controller_->get_state_reference();
 
   // run an update
