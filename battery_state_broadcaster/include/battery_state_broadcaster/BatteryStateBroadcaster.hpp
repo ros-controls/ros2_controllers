@@ -2,7 +2,7 @@
 
 #include <controller_interface/controller_interface.hpp>
 #include <rclcpp/publisher.hpp>
-#include <realtime_tools/realtime_publisher.h>
+#include <realtime_tools/realtime_publisher.hpp>
 #include <sensor_msgs/msg/battery_state.hpp>
 
 #include "BatterySensor.hpp"
