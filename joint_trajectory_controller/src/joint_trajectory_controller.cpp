@@ -943,8 +943,8 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
           command_interfaces_, command_joint_names_, interface, joint_command_interface_[index]))
     {
       RCLCPP_ERROR(
-        logge, "Expected %zu '%s' command interfaces, got %zu.", num_cmd_joints_,
-        interface.c_str(), joint_command_interface_[index].size());
+        logge, "Expected %zu '%s' command interfaces, got %zu.", num_cmd_joints_, interface.c_str(),
+        joint_command_interface_[index].size());
       return CallbackReturn::ERROR;
     }
   }
@@ -978,8 +978,8 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   // if no open_loop control, state_current_ is then used for `set_point_before_trajectory_msg` and
   // future trajectory sampling will always give NaN for these joints
   if (
-    params_.set_last_command_interface_value_as_state_on_activation &&
-    dof_ == num_cmd_joints_ && read_state_from_command_interfaces(state))
+    params_.set_last_command_interface_value_as_state_on_activation && dof_ == num_cmd_joints_ &&
+    read_state_from_command_interfaces(state))
   {
     state_current_ = state;
     last_commanded_state_ = state;
