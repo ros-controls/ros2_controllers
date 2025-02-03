@@ -986,11 +986,12 @@ TEST_P(TestTrajectoryActionsTestParameterized, deactivate_controller_aborts_acti
       auto last_time = now_time;
       rclcpp::Duration wait = rclcpp::Duration::from_seconds(0.5);
       auto end_time = last_time + wait;
-      while (clock.now() < end_time)
+      while (now_time < end_time)
       {
-        now_time = clock.now();
+        now_time = now_time + rclcpp::Duration::from_seconds(0.01);
         traj_controller_->update(now_time, now_time - last_time);
         last_time = now_time;
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
       }
       RCLCPP_INFO(node_->get_logger(), "Controller hardware thread finished");
       traj_controller_->get_node()->deactivate();
@@ -1016,67 +1017,40 @@ TEST_P(TestTrajectoryActionsTestParameterized, deactivate_controller_aborts_acti
   EXPECT_TRUE(gh_future.get());
   EXPECT_EQ(rclcpp_action::ResultCode::ABORTED, common_resultcode_);
 
-  auto state = traj_controller_->get_state_reference();
+  auto state_ref = traj_controller_->get_state_reference();
+  auto state = traj_controller_->get_state_feedback();
 
   // run an update
   updateControllerAsync(rclcpp::Duration::from_seconds(0.01));
 
   // There will be no active trajectory upon deactivation, so we can't use the expectCommandPoint
   // method.
-  if (traj_controller_->use_closed_loop_pid_adapter() == false)
+  if (traj_controller_->has_position_command_interface())
   {
-    if (traj_controller_->has_position_command_interface())
-    {
-      EXPECT_NEAR(state.positions.at(0), joint_pos_[0], COMMON_THRESHOLD);
-      EXPECT_NEAR(state.positions.at(1), joint_pos_[1], COMMON_THRESHOLD);
-      EXPECT_NEAR(state.positions.at(2), joint_pos_[2], COMMON_THRESHOLD);
-    }
-
-    if (traj_controller_->has_velocity_command_interface())
-    {
-      EXPECT_EQ(state.velocities.at(0), joint_vel_[0]);
-      EXPECT_EQ(state.velocities.at(1), joint_vel_[1]);
-      EXPECT_EQ(state.velocities.at(2), joint_vel_[2]);
-    }
-
-    if (traj_controller_->has_acceleration_command_interface())
-    {
-      EXPECT_EQ(0.0, joint_acc_[0]);
-      EXPECT_EQ(0.0, joint_acc_[1]);
-      EXPECT_EQ(0.0, joint_acc_[2]);
-    }
-
-    if (traj_controller_->has_effort_command_interface())
-    {
-      EXPECT_EQ(0.0, joint_eff_[0]);
-      EXPECT_EQ(0.0, joint_eff_[1]);
-      EXPECT_EQ(0.0, joint_eff_[2]);
-    }
+    EXPECT_NEAR(state_ref.positions.at(0), joint_pos_[0], COMMON_THRESHOLD);
+    EXPECT_NEAR(state_ref.positions.at(1), joint_pos_[1], COMMON_THRESHOLD);
+    EXPECT_NEAR(state_ref.positions.at(2), joint_pos_[2], COMMON_THRESHOLD);
   }
-  else  // traj_controller_->use_closed_loop_pid_adapter() == true
+
+  if (traj_controller_->has_velocity_command_interface())
   {
-    // velocity or effort PID?
-    // --> set kp > 0.0 in test
-    if (traj_controller_->has_velocity_command_interface())
-    {
-      for (size_t i = 0; i < 3; i++)
-      {
-        EXPECT_TRUE(is_same_sign_or_zero(
-          state.positions.at(i) - pos_state_interfaces_[i].get_value(), joint_vel_[i]))
-          << "test position point " << state.positions.at(i) << ", position state is "
-          << pos_state_interfaces_[i].get_value() << ", velocity command is " << joint_vel_[i];
-      }
-    }
-    if (traj_controller_->has_effort_command_interface())
-    {
-      for (size_t i = 0; i < 3; i++)
-      {
-        EXPECT_TRUE(is_same_sign_or_zero(
-          state.positions.at(i) - pos_state_interfaces_[i].get_value(), joint_eff_[i]))
-          << "test position point " << state.positions.at(i) << ", position state is "
-          << pos_state_interfaces_[i].get_value() << ", effort command is " << joint_eff_[i];
-      }
-    }
+    EXPECT_EQ(0.0, joint_vel_[0]);
+    EXPECT_EQ(0.0, joint_vel_[1]);
+    EXPECT_EQ(0.0, joint_vel_[2]);
+  }
+
+  if (traj_controller_->has_acceleration_command_interface())
+  {
+    EXPECT_EQ(0.0, joint_acc_[0]);
+    EXPECT_EQ(0.0, joint_acc_[1]);
+    EXPECT_EQ(0.0, joint_acc_[2]);
+  }
+
+  if (traj_controller_->has_effort_command_interface())
+  {
+    EXPECT_EQ(0.0, joint_eff_[0]);
+    EXPECT_EQ(0.0, joint_eff_[1]);
+    EXPECT_EQ(0.0, joint_eff_[2]);
   }
 }
 
