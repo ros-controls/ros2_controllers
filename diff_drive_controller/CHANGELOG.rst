@@ -2,6 +2,27 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.20.0 (2025-01-29)
+-------------------
+* Make diff_drive_controller a ChainableControllerInterface (`#1485 <https://github.com/ros-controls/ros2_controllers/issues/1485>`_)
+* Update paths of GPL includes (`#1487 <https://github.com/ros-controls/ros2_controllers/issues/1487>`_)
+* Fix SpeedLimiter Constructor regression (`#1478 <https://github.com/ros-controls/ros2_controllers/issues/1478>`_)
+* Contributors: Arthur Lovekin, Christoph Fröhlich, Sai Kishor Kothakota
+
+4.19.0 (2025-01-13)
+-------------------
+* Check dt in updateFromVelocity (`#1481 <https://github.com/ros-controls/ros2_controllers/issues/1481>`_)
+* Remove empty on_shutdown() callbacks (`#1477 <https://github.com/ros-controls/ros2_controllers/issues/1477>`_)
+* Remove visibility macros (`#1451 <https://github.com/ros-controls/ros2_controllers/issues/1451>`_)
+* Contributors: Bence Magyar, Julia Jia, Tony Najjar
+
+4.18.0 (2024-12-19)
+-------------------
+* Update command limiter of diff_drive_controller (`#1315 <https://github.com/ros-controls/ros2_controllers/issues/1315>`_)
+* Improve tf_prefix based on namespace (`#1420 <https://github.com/ros-controls/ros2_controllers/issues/1420>`_)
+* [CI] Add clang job and setup concurrency (`#1407 <https://github.com/ros-controls/ros2_controllers/issues/1407>`_)
+* Contributors: Christoph Fröhlich, Rafal Gorecki
+
 4.17.0 (2024-12-07)
 -------------------
 * Use the .hpp headers from `realtime_tools` package (`#1406 <https://github.com/ros-controls/ros2_controllers/issues/1406>`_)

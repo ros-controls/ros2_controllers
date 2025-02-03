@@ -2,6 +2,20 @@
 Changelog for package mecanum_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.20.0 (2025-01-29)
+-------------------
+* Update paths of GPL includes (`#1487 <https://github.com/ros-controls/ros2_controllers/issues/1487>`_)
+* Contributors: Christoph Fröhlich
+
+4.19.0 (2025-01-13)
+-------------------
+* Remove visibility macros (`#1451 <https://github.com/ros-controls/ros2_controllers/issues/1451>`_)
+* Clean up unused variable EPS in mecanum_drive_controller (`#1444 <https://github.com/ros-controls/ros2_controllers/issues/1444>`_)
+* Contributors: Bence Magyar, Shankar-Balajee
+
+4.18.0 (2024-12-19)
+-------------------
+
 4.17.0 (2024-12-07)
 -------------------
 * Use the .hpp headers from `realtime_tools` package (`#1406 <https://github.com/ros-controls/ros2_controllers/issues/1406>`_)

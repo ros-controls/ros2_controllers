@@ -443,12 +443,6 @@ controller_interface::CallbackReturn PidController::on_activate(
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn PidController::on_deactivate(
-  const rclcpp_lifecycle::State & /*previous_state*/)
-{
-  return controller_interface::CallbackReturn::SUCCESS;
-}
-
 controller_interface::return_type PidController::update_reference_from_subscribers(
   const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {

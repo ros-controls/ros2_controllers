@@ -1,11 +1,15 @@
 cmake_minimum_required(VERSION 3.16)
-project(steering_controllers_library LANGUAGES CXX)
+project(steering_controllers_library)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
   add_compile_options(-Wall -Wextra -Wpedantic -Werror=conversion -Werror=unused-but-set-variable
                       -Werror=return-type -Werror=shadow -Werror=format -Werror=range-loop-construct
                       -Werror=missing-braces)
 endif()
+
+# using this instead of visibility macros
+# S1 from https://github.com/ros-controls/ros2_controllers/issues/1053
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 # find dependencies
 set(THIS_PACKAGE_INCLUDE_DEPENDS
@@ -51,10 +55,6 @@ target_include_directories(steering_controllers_library PUBLIC
 target_link_libraries(steering_controllers_library PUBLIC
   steering_controllers_library_parameters)
 ament_target_dependencies(steering_controllers_library PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
-
-# Causes the visibility macros to use dllexport rather than dllimport,
-# which is appropriate when building the dll but not consuming it.
-target_compile_definitions(steering_controllers_library PRIVATE "STEERING_CONTROLLERS__VISIBILITY_BUILDING_DLL" "_USE_MATH_DEFINES")
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gmock REQUIRED)

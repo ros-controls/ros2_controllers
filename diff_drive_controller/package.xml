@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="3">
   <name>diff_drive_controller</name>
-  <version>4.17.0</version>
+  <version>4.20.0</version>
   <description>Controller for a differential-drive mobile base.</description>
 
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
@@ -24,6 +24,7 @@
   <build_depend>generate_parameter_library</build_depend>
 
   <depend>backward_ros</depend>
+  <depend>control_toolbox</depend>
   <depend>controller_interface</depend>
   <depend>geometry_msgs</depend>
   <depend>hardware_interface</depend>
