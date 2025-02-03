@@ -8,12 +8,14 @@ on:
       - '**.hpp'
       - '**.h'
       - '**.cpp'
+      - '**.py'
+      - '**.yaml'
       - '.github/workflows/humble-coverage-build.yml'
       - 'codecov.yml'
-      - '**.yaml'
       - '**/package.xml'
       - '**/CMakeLists.txt'
       - 'ros2_controllers.humble.repos'
+      - '**.xml'
   pull_request:
     branches:
       - humble
@@ -21,12 +23,19 @@ on:
       - '**.hpp'
       - '**.h'
       - '**.cpp'
+      - '**.py'
+      - '**.yaml'
       - '.github/workflows/humble-coverage-build.yml'
       - 'codecov.yml'
-      - '**.yaml'
       - '**/package.xml'
       - '**/CMakeLists.txt'
       - 'ros2_controllers.humble.repos'
+      - '**.xml'
+
+concurrency:
+  # cancel previous runs of the same workflow, except for pushes on humble branch
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, '/refs/heads') }}
 
 jobs:
   coverage_humble:

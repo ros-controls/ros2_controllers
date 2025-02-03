@@ -22,7 +22,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
-#include "realtime_tools/realtime_buffer.h"
+#include "realtime_tools/realtime_buffer.hpp"
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 

@@ -40,34 +40,37 @@ joint_trajectory_controller:
           "joint_trajectory_controller::state_interface_type_combinations": null,
         },
     }
-  allow_partial_joints_goal:
-    {
-      type: bool,
-      default_value: false,
-      description: "Allow joint goals defining trajectory for only some joints.",
-    }
-  open_loop_control:
-    {
-      type: bool,
-      default_value: false,
-      description: "Use controller in open-loop control mode
-        \n\n
-        * The controller ignores the states provided by hardware interface but using last commands as states for starting the trajectory interpolation.\n
-        * It deactivates the feedback control, see the ``gains`` structure.
-        \n\n
-        This is useful if hardware states are not following commands, i.e., an offset between those (typical for hydraulic manipulators).
-        \n\n
-        If this flag is set, the controller tries to read the values from the command interfaces on activation.
-        If they have real numeric values, those will be used instead of state interfaces.
-        Therefore it is important set command interfaces to NaN (i.e., ``std::numeric_limits<double>::quiet_NaN()``) or state values when the hardware is started.\n",
-      read_only: true,
-    }
+  allow_partial_joints_goal: {
+    type: bool,
+    default_value: false,
+    description: "Allow joint goals defining trajectory for only some joints.",
+  }
+  open_loop_control: {
+    type: bool,
+    default_value: false,
+    description: "Use controller in open-loop control mode
+      \n\n
+      * The controller ignores the states provided by hardware interface but using last commands as states for starting the trajectory interpolation.\n
+      * It deactivates the feedback control, see the ``gains`` structure.
+      \n\n
+      This is useful if hardware states are not following commands, i.e., an offset between those (typical for hydraulic manipulators).
+      \n\n
+      If this flag is set, the controller tries to read the values from the command interfaces on activation.
+      If they have real numeric values, those will be used instead of state interfaces.
+      Therefore it is important set command interfaces to NaN (i.e., ``std::numeric_limits<double>::quiet_NaN()``) or state values when the hardware is started.\n",
+    read_only: true,
+  }
   allow_integration_in_goal_trajectories:
     {
       type: bool,
       default_value: false,
       description: "Allow integration in goal trajectories to accept goals without position or velocity specified",
     }
+  set_last_command_interface_value_as_state_on_activation: {
+    type: bool,
+    default_value: true,
+    description: "When set to true, the last command interface value is used as both the current state and the last commanded state upon activation. When set to false, the current state is used for both.",
+  }
   action_monitor_rate:
     {
       type: double,

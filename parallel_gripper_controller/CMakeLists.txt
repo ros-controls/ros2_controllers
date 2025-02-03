@@ -1,9 +1,10 @@
 cmake_minimum_required(VERSION 3.16)
-project(parallel_gripper_controller LANGUAGES CXX)
+project(parallel_gripper_controller)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
   add_compile_options(-Wall -Wextra -Wpedantic -Werror=conversion -Werror=unused-but-set-variable
-          -Werror=return-type -Werror=shadow -Werror=format)
+          -Werror=return-type -Werror=shadow -Werror=format -Werror=range-loop-construct
+          -Werror=missing-braces)
 endif()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
@@ -48,9 +49,8 @@ if(BUILD_TESTING)
   find_package(controller_manager REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
 
-  add_rostest_with_parameters_gmock(test_load_parallel_gripper_action_controllers
-  test/test_load_parallel_gripper_action_controller.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/test/gripper_action_controller_params.yaml)
+  add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
+  ament_add_gmock(test_load_parallel_gripper_action_controllers test/test_load_parallel_gripper_action_controller.cpp)
   target_include_directories(test_load_parallel_gripper_action_controllers PRIVATE include)
   ament_target_dependencies(test_load_parallel_gripper_action_controllers
     controller_manager

@@ -38,6 +38,7 @@ protected:
   // defining the parameter names same as in test/range_sensor_broadcaster_params.yaml
   const std::string sensor_name_ = "range_sensor";
   const std::string frame_id_ = "range_sensor_frame";
+  const std::string interface_name_ = "range";
 
   const double field_of_view_ = 0.1;
   const int radiation_type_ = 1;

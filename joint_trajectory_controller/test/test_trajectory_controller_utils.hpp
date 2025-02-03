@@ -27,6 +27,7 @@
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
 #include "joint_trajectory_controller/tolerances.hpp"
+#include "lifecycle_msgs/msg/state.hpp"
 #include "ros2_control_test_assets/descriptions.hpp"
 
 namespace
@@ -283,7 +284,7 @@ public:
     traj_controller_->set_node_options(node_options);
 
     return traj_controller_->init(
-      controller_name_, urdf, 0, "", traj_controller_->define_custom_node_options());
+      controller_name_, urdf, 100, "", traj_controller_->define_custom_node_options());
   }
 
   /**
@@ -332,7 +333,7 @@ public:
     // read-only parameters have to be set before init -> won't be read otherwise
     SetUpTrajectoryController(executor, parameters_local, urdf);
 
-    traj_controller_->get_node()->configure();
+    traj_controller_->configure();
 
     // set pid parameters before activate. The PID plugin has to be loaded already, otherwise
     // parameters are not declared yet
@@ -407,6 +408,21 @@ public:
     return traj_controller_->get_node()->activate();
   }
 
+  void DeactivateTrajectoryController()
+  {
+    if (traj_controller_)
+    {
+      if (
+        traj_controller_->get_lifecycle_state().id() ==
+        lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+      {
+        EXPECT_EQ(
+          traj_controller_->get_node()->deactivate().id(),
+          lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
+      }
+    }
+  }
+
   static void TearDownTestCase() { rclcpp::shutdown(); }
 
   void subscribeToState(rclcpp::Executor & executor)
@@ -467,7 +483,9 @@ public:
     if (joint_names.empty())
     {
       traj_msg.joint_names = {
-        joint_names_.begin(), joint_names_.begin() + points_positions[0].size()};
+        joint_names_.begin(),
+        joint_names_.begin() +
+          static_cast<std::vector<std::string>::difference_type>(points_positions[0].size())};
     }
     else
     {
@@ -791,6 +809,8 @@ public:
     command_interface_types_ = std::get<0>(GetParam());
     state_interface_types_ = std::get<1>(GetParam());
   }
+
+  virtual void TearDown() { TrajectoryControllerTest::DeactivateTrajectoryController(); }
 
   static void TearDownTestCase() { TrajectoryControllerTest::TearDownTestCase(); }
 };
