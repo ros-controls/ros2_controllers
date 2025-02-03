@@ -1032,8 +1032,23 @@ TEST_P(TrajectoryControllerTestParameterized, trajectory_error_command_joints_le
   publish(time_from_start, points, rclcpp::Time(), {}, points_velocities);
   traj_controller_->wait_for_trajectory(executor);
 
-  // trylock() has to succeed at least once to have current_command set
-  updateControllerAsync(rclcpp::Duration(FIRST_POINT_TIME));
+  const rclcpp::Duration controller_period =
+    rclcpp::Duration::from_seconds(1.0 / traj_controller_->get_update_rate());
+  auto end_time = updateControllerAsync(
+    rclcpp::Duration(FIRST_POINT_TIME) - controller_period, rclcpp::Time(0, 0, RCL_STEADY_TIME),
+    controller_period);
+
+  if (traj_controller_->has_position_command_interface())
+  {
+    // check command interface
+    // One step before the first point, the target should hit the setpoint
+    EXPECT_NEAR(points[0][0], joint_pos_[0], COMMON_THRESHOLD);
+    EXPECT_NEAR(points[0][1], joint_pos_[1], COMMON_THRESHOLD);
+    EXPECT_TRUE(std::isnan(traj_controller_->get_current_command().positions[2]));
+  }
+
+  // Propagate to actual setpoint time
+  traj_controller_->update(end_time + controller_period, controller_period);
 
   // get states from class variables
   auto state_feedback = traj_controller_->get_state_feedback();
@@ -1058,14 +1073,6 @@ TEST_P(TrajectoryControllerTestParameterized, trajectory_error_command_joints_le
   EXPECT_NEAR(state_error.positions[0], state_reference.positions[0] - INITIAL_POS_JOINTS[0], EPS);
   EXPECT_NEAR(state_error.positions[1], state_reference.positions[1] - INITIAL_POS_JOINTS[1], EPS);
   EXPECT_NEAR(state_error.positions[2], state_reference.positions[2] - INITIAL_POS_JOINTS[2], EPS);
-
-  if (traj_controller_->has_position_command_interface())
-  {
-    // check command interface
-    EXPECT_NEAR(points[0][0], joint_pos_[0], COMMON_THRESHOLD);
-    EXPECT_NEAR(points[0][1], joint_pos_[1], COMMON_THRESHOLD);
-    EXPECT_TRUE(std::isnan(current_command.positions[2]));
-  }
 
   if (traj_controller_->has_velocity_command_interface())
   {
@@ -1125,8 +1132,23 @@ TEST_P(TrajectoryControllerTestParameterized, trajectory_error_command_joints_le
   publish(time_from_start, points, rclcpp::Time(), {}, points_velocities);
   traj_controller_->wait_for_trajectory(executor);
 
-  // trylock() has to succeed at least once to have current_command set
-  updateControllerAsync(rclcpp::Duration(FIRST_POINT_TIME));
+  const rclcpp::Duration controller_period =
+    rclcpp::Duration::from_seconds(1.0 / traj_controller_->get_update_rate());
+  auto end_time = updateControllerAsync(
+    rclcpp::Duration(FIRST_POINT_TIME) - controller_period, rclcpp::Time(0, 0, RCL_STEADY_TIME),
+    controller_period);
+
+  if (traj_controller_->has_position_command_interface())
+  {
+    // check command interface
+    // One step before the first point, the target should hit the setpoint
+    EXPECT_NEAR(points[0][0], joint_pos_[0], COMMON_THRESHOLD);
+    EXPECT_NEAR(points[0][1], joint_pos_[1], COMMON_THRESHOLD);
+    EXPECT_TRUE(std::isnan(traj_controller_->get_current_command().positions[2]));
+  }
+
+  // Propagate to actual setpoint time
+  traj_controller_->update(end_time + controller_period, controller_period);
 
   // get states from class variables
   auto state_feedback = traj_controller_->get_state_feedback();
@@ -1151,14 +1173,6 @@ TEST_P(TrajectoryControllerTestParameterized, trajectory_error_command_joints_le
   EXPECT_NEAR(state_error.positions[0], state_reference.positions[0] - INITIAL_POS_JOINTS[0], EPS);
   EXPECT_NEAR(state_error.positions[1], state_reference.positions[1] - INITIAL_POS_JOINTS[1], EPS);
   EXPECT_NEAR(state_error.positions[2], state_reference.positions[2] - INITIAL_POS_JOINTS[2], EPS);
-
-  if (traj_controller_->has_position_command_interface())
-  {
-    // check command interface
-    EXPECT_NEAR(points[0][0], joint_pos_[0], COMMON_THRESHOLD);
-    EXPECT_NEAR(points[0][1], joint_pos_[1], COMMON_THRESHOLD);
-    EXPECT_TRUE(std::isnan(current_command.positions[2]));
-  }
 
   if (traj_controller_->has_velocity_command_interface())
   {
