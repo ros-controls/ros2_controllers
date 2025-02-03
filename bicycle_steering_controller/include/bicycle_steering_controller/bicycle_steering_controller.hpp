@@ -20,7 +20,7 @@
 
 #include <memory>
 
-#include "bicycle_steering_controller_parameters.hpp"
+#include "bicycle_steering_controller/bicycle_steering_controller_parameters.hpp"
 #include "steering_controllers_library/steering_controllers_library.hpp"
 
 namespace bicycle_steering_controller
