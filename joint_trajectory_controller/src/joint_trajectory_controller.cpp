@@ -943,8 +943,8 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
           command_interfaces_, command_joint_names_, interface, joint_command_interface_[index]))
     {
       RCLCPP_ERROR(
-        logge, "Expected %zu '%s' command interfaces, got %zu.", num_cmd_joints_, interface.c_str(),
-        joint_command_interface_[index].size());
+        logger, "Expected %zu '%s' command interfaces, got %zu.", num_cmd_joints_,
+        interface.c_str(), joint_command_interface_[index].size());
       return CallbackReturn::ERROR;
     }
   }

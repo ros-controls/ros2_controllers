@@ -403,7 +403,7 @@ TEST_P(TrajectoryControllerTestParameterized, state_topic_consistency_command_jo
   std::vector<std::string> command_joint_names{joint_names_[0], joint_names_[1]};
   const rclcpp::Parameter command_joint_names_param("command_joints", command_joint_names);
   SetUpAndActivateTrajectoryController(executor, {command_joint_names_param});
-  subscribeToState();
+  subscribeToState(executor);
   updateController();
 
   // Spin to receive latest state
