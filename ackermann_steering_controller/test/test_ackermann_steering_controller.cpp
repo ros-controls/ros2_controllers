@@ -14,10 +14,8 @@
 
 #include "test_ackermann_steering_controller.hpp"
 
-#include <limits>
 #include <memory>
 #include <string>
-#include <utility>
 #include <vector>
 
 class AckermannSteeringControllerTest
@@ -91,9 +89,9 @@ TEST_F(AckermannSteeringControllerTest, check_exported_interfaces)
   {
     const std::string ref_itf_name =
       std::string(controller_->get_node()->get_name()) + "/" + joint_reference_interfaces_[i];
-    EXPECT_EQ(reference_interfaces[i].get_name(), ref_itf_name);
-    EXPECT_EQ(reference_interfaces[i].get_prefix_name(), controller_->get_node()->get_name());
-    EXPECT_EQ(reference_interfaces[i].get_interface_name(), joint_reference_interfaces_[i]);
+    EXPECT_EQ(reference_interfaces[i]->get_name(), ref_itf_name);
+    EXPECT_EQ(reference_interfaces[i]->get_prefix_name(), controller_->get_node()->get_name());
+    EXPECT_EQ(reference_interfaces[i]->get_interface_name(), joint_reference_interfaces_[i]);
   }
 }
 
@@ -257,7 +255,7 @@ TEST_F(AckermannSteeringControllerTest, receive_message_and_publish_updated_stat
   EXPECT_EQ(msg.steering_angle_command[1], 4.4);
 
   publish_commands();
-  ASSERT_TRUE(controller_->wait_for_commands(executor));
+  controller_->wait_for_commands(executor);
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),

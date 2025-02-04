@@ -40,6 +40,11 @@ void GripperActionController<HardwareInterface>::preempt_active_goal()
 template <const char * HardwareInterface>
 controller_interface::CallbackReturn GripperActionController<HardwareInterface>::on_init()
 {
+  RCLCPP_WARN(
+    get_node()->get_logger(),
+    "[Deprecated]: the `position_controllers/GripperActionController` and "
+    "`effort_controllers::GripperActionController` controllers are replaced by "
+    "'parallel_gripper_controllers/GripperActionController' controller");
   try
   {
     param_listener_ = std::make_shared<ParamListener>(get_node());

@@ -22,7 +22,6 @@
 #include <cassert>
 #include <memory>
 #include <string>
-#include <vector>
 
 #include "control_toolbox/pid.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
@@ -166,7 +165,8 @@ public:
     // Time since the last call to update
     const auto period = std::chrono::steady_clock::now() - last_update_time_;
     // Update PIDs
-    double command = pid_->computeCommand(error_position, error_velocity, period.count());
+    double command =
+      pid_->computeCommand(error_position, error_velocity, static_cast<uint64_t>(period.count()));
     command = std::min<double>(
       fabs(max_allowed_effort), std::max<double>(-fabs(max_allowed_effort), command));
     joint_handle_->get().set_value(command);

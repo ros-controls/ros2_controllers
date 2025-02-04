@@ -16,9 +16,9 @@ Guidelines and Best Practices
 
 .. toctree::
    :titlesonly:
-   :glob:
 
-   *
+   mobile_robot_kinematics.rst
+   writing_new_controller.rst
 
 
 Controllers for Wheeled Mobile Robots
@@ -28,6 +28,7 @@ Controllers for Wheeled Mobile Robots
    :titlesonly:
 
    Differential Drive Controller <../diff_drive_controller/doc/userdoc.rst>
+   Mecanum Drive Controllers <../mecanum_drive_controller/doc/userdoc.rst>
    Steering Controllers Library <../steering_controllers_library/doc/userdoc.rst>
    Tricycle Controller <../tricycle_controller/doc/userdoc.rst>
 
@@ -52,9 +53,11 @@ The controllers are using `common hardware interface definitions`_, and may use 
    Forward Command Controller <../forward_command_controller/doc/userdoc.rst>
    Gripper Controller <../gripper_controllers/doc/userdoc.rst>
    Joint Trajectory Controller <../joint_trajectory_controller/doc/userdoc.rst>
+   Parallel Gripper Controller <../parallel_gripper_controller/doc/userdoc.rst>
    PID Controller <../pid_controller/doc/userdoc.rst>
    Position Controllers <../position_controllers/doc/userdoc.rst>
    Velocity Controllers <../velocity_controllers/doc/userdoc.rst>
+   Gpio Command Controller <../gpio_controllers/doc/userdoc.rst>
 
 
 Broadcasters
@@ -70,6 +73,7 @@ In the sense of ros2_control, broadcasters are still controllers using the same 
    IMU Sensor Broadcaster <../imu_sensor_broadcaster/doc/userdoc.rst>
    Joint State Broadcaster <../joint_state_broadcaster/doc/userdoc.rst>
    Range Sensor Broadcaster <../range_sensor_broadcaster/doc/userdoc.rst>
+   Pose Broadcaster <../pose_broadcaster/doc/userdoc.rst>
 
 
 Common Controller Parameters

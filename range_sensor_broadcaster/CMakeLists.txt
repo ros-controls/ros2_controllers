@@ -8,8 +8,14 @@ if(NOT CMAKE_CXX_STANDARD)
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic -Werror=unused-but-set-variable -Werror=return-type -Werror=shadow -Werror=format)
+  add_compile_options(-Wall -Wextra -Wpedantic -Werror=conversion -Werror=unused-but-set-variable
+                      -Werror=return-type -Werror=shadow -Werror=format -Werror=range-loop-construct
+                      -Werror=missing-braces)
 endif()
+
+# using this instead of visibility macros
+# S1 from https://github.com/ros-controls/ros2_controllers/issues/1053
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   controller_interface
@@ -43,9 +49,6 @@ target_include_directories(range_sensor_broadcaster
   PRIVATE $<INSTALL_INTERFACE:include>
 )
 ament_target_dependencies(range_sensor_broadcaster ${THIS_PACKAGE_INCLUDE_DEPENDS})
-# Causes the visibility macros to use dllexport rather than dllimport,
-# which is appropriate when building the dll but not consuming it.
-target_compile_definitions(range_sensor_broadcaster PRIVATE "RANGE_SENSOR_BROADCASTER_BUILDING_DLL")
 target_link_libraries(range_sensor_broadcaster
   range_sensor_broadcaster_parameters
 )
@@ -59,9 +62,8 @@ if(BUILD_TESTING)
   find_package(hardware_interface REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
 
-  add_rostest_with_parameters_gmock(test_load_range_sensor_broadcaster
-  test/test_load_range_sensor_broadcaster.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/test/range_sensor_broadcaster_params.yaml)
+  add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
+  ament_add_gmock(test_load_range_sensor_broadcaster test/test_load_range_sensor_broadcaster.cpp)
   target_include_directories(test_load_range_sensor_broadcaster PRIVATE include)
   target_link_libraries(test_load_range_sensor_broadcaster
     range_sensor_broadcaster
