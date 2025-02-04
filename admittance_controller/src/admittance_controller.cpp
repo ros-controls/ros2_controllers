@@ -559,7 +559,8 @@ void AdmittanceController::write_state_to_hardware(
 {
   // if any interface has nan values, assume state_commanded is the last command state
   size_t pos_ind = 0;
-  size_t vel_ind = (has_position_command_interface_) ? has_velocity_command_interface_ : pos_ind;
+  size_t vel_ind =
+    (has_position_command_interface_) ? pos_ind + has_velocity_command_interface_ : pos_ind;
   size_t acc_ind = vel_ind + has_acceleration_command_interface_;
   for (size_t joint_ind = 0; joint_ind < num_joints_; ++joint_ind)
   {
