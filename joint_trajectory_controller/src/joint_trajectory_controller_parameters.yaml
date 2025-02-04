@@ -44,15 +44,15 @@ joint_trajectory_controller:
     default_value: false,
     description: "Allow joint goals defining trajectory for only some joints.",
   }
-  open_loop_control: {
+  interpolate_from_desired_state: {
     type: bool,
-    default_value: false,
-    description: "Use controller in open-loop control mode
+    default_value: true,
+    description: "Interpolate from the current desired state when receiving a new trajectory.
       \n\n
       * The controller ignores the states provided by hardware interface but using last commands as states for starting the trajectory interpolation.\n
-      * It deactivates the feedback control, see the ``gains`` structure.
       \n\n
       This is useful if hardware states are not following commands, i.e., an offset between those (typical for hydraulic manipulators).
+      Furthermore, it is necessary if you have a reference trajectory that you send over multiple messages (e.g. for MPC-style trajectory planning).
       \n\n
       If this flag is set, the controller tries to read the values from the command interfaces on activation.
       If they have real numeric values, those will be used instead of state interfaces.
