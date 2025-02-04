@@ -1005,8 +1005,7 @@ TEST_P(TrajectoryControllerTestParameterized, use_closed_loop_pid)
     (traj_controller_->has_velocity_command_interface() &&
      !traj_controller_->has_position_command_interface() &&
      !traj_controller_->has_effort_command_interface() &&
-     !traj_controller_->has_acceleration_command_interface() &&
-     !traj_controller_->is_open_loop()) ||
+     !traj_controller_->has_acceleration_command_interface()) ||
     traj_controller_->has_effort_command_interface())
   {
     EXPECT_TRUE(traj_controller_->use_closed_loop_pid_adapter());
@@ -1685,8 +1684,8 @@ TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_erro
 {
   rclcpp::executors::SingleThreadedExecutor executor;
   // default if false so it will not be actually set parameter
-  rclcpp::Parameter is_open_loop_parameters("open_loop_control", false);
-  SetUpAndActivateTrajectoryController(executor, {is_open_loop_parameters}, true);
+  rclcpp::Parameter interp_desired_state_parameter("interpolate_from_desired_state", false);
+  SetUpAndActivateTrajectoryController(executor, {interp_desired_state_parameter}, true);
 
   if (traj_controller_->has_position_command_interface() == false)
   {
@@ -1790,10 +1789,10 @@ TEST_P(TrajectoryControllerTestParameterized, test_no_jump_when_state_tracking_e
 {
   rclcpp::executors::SingleThreadedExecutor executor;
   // set open loop to true, this should change behavior from above
-  rclcpp::Parameter is_open_loop_parameters("open_loop_control", true);
+  rclcpp::Parameter interp_desired_state_parameter("interpolate_from_desired_state", true);
   rclcpp::Parameter update_rate_param("update_rate", 100);
   SetUpAndActivateTrajectoryController(
-    executor, {is_open_loop_parameters, update_rate_param}, true);
+    executor, {interp_desired_state_parameter, update_rate_param}, true);
 
   if (traj_controller_->has_position_command_interface() == false)
   {
@@ -1893,7 +1892,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_no_jump_when_state_tracking_e
 TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_first_controller_start)
 {
   rclcpp::executors::SingleThreadedExecutor executor;
-  rclcpp::Parameter is_open_loop_parameters("open_loop_control", true);
+  rclcpp::Parameter interp_desired_state_parameter("interpolate_from_desired_state", true);
 
   // set command values to NaN
   std::vector<double> initial_pos_cmd{3, std::numeric_limits<double>::quiet_NaN()};
@@ -1901,7 +1900,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_first_co
   std::vector<double> initial_acc_cmd{3, std::numeric_limits<double>::quiet_NaN()};
 
   SetUpAndActivateTrajectoryController(
-    executor, {is_open_loop_parameters}, true, 0., 1., initial_pos_cmd, initial_vel_cmd,
+    executor, {interp_desired_state_parameter}, true, 0., 1., initial_pos_cmd, initial_vel_cmd,
     initial_acc_cmd);
 
   // no call of update method, so the values should be read from state interfaces
@@ -1934,7 +1933,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_first_co
 TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_later_controller_start)
 {
   rclcpp::executors::SingleThreadedExecutor executor;
-  rclcpp::Parameter is_open_loop_parameters("open_loop_control", true);
+  rclcpp::Parameter interp_desired_state_parameter("interpolate_from_desired_state", true);
 
   // set command values to arbitrary values
   std::vector<double> initial_pos_cmd, initial_vel_cmd, initial_acc_cmd;
@@ -1945,7 +1944,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_later_co
     initial_acc_cmd.push_back(0.02 + static_cast<double>(i) / 10.0);
   }
   SetUpAndActivateTrajectoryController(
-    executor, {is_open_loop_parameters}, true, 0., 1., initial_pos_cmd, initial_vel_cmd,
+    executor, {interp_desired_state_parameter}, true, 0., 1., initial_pos_cmd, initial_vel_cmd,
     initial_acc_cmd);
 
   // no call of update method, so the values should be read from command interfaces

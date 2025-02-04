@@ -2,8 +2,6 @@ constraints:
     Default values for tolerances if no explicit values are set in the ``JointTrajectory`` message.
 
 gains: |
-  Only relevant, if ``open_loop_control`` is not set.
-
   If ``velocity`` is the only command interface for all joints or an ``effort`` command interface is configured, PID controllers are used for every joint.
   This structure contains the controller gains for every joint with the control law
 
@@ -16,3 +14,6 @@ gains: |
   i.e., the shortest rotation to the target position is the desired motion.
   Otherwise  :math:`e = s_d - s` is used, with the desired position :math:`s_d` and the measured
   position :math:`s` from the state interface.
+
+  If you want to turn of the PIDs (open loop control), set the gains to zero.
+
