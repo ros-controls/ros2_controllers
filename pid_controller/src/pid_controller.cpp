@@ -509,14 +509,15 @@ controller_interface::return_type PidController::update_and_write_commands(
         // two interfaces
         if (reference_interfaces_.size() == 2 * dof_ && measured_state_values_.size() == 2 * dof_)
         {
-          if (!std::isnan(reference_interfaces_[dof_ + i]) &&
-              !std::isnan(measured_state_values_[dof_ + i]))
+          if (
+            !std::isnan(reference_interfaces_[dof_ + i]) &&
+            !std::isnan(measured_state_values_[dof_ + i]))
           {
             tmp_command = reference_interfaces_[dof_ + i] *
                           params_.gains.dof_names_map[params_.dof_names[i]].feedforward_gain;
           }
         }
-        else // one interface
+        else  // one interface
         {
           tmp_command = reference_interfaces_[i] *
                         params_.gains.dof_names_map[params_.dof_names[i]].feedforward_gain;
