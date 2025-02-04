@@ -498,7 +498,7 @@ controller_interface::return_type PidController::update_and_write_commands(
 
   for (size_t i = 0; i < dof_; ++i)
   {
-    double tmp_command = std::numeric_limits<double>::quiet_NaN();
+    double tmp_command = 0.0;
 
     // Using feedforward
     if (!std::isnan(reference_interfaces_[i]) && !std::isnan(measured_state_values_[i]))
@@ -506,12 +506,21 @@ controller_interface::return_type PidController::update_and_write_commands(
       // calculate feed-forward
       if (*(control_mode_.readFromRT()) == feedforward_mode_type::ON)
       {
-        tmp_command = reference_interfaces_[dof_ + i] *
-                      params_.gains.dof_names_map[params_.dof_names[i]].feedforward_gain;
-      }
-      else
-      {
-        tmp_command = 0.0;
+        // two interfaces
+        if (reference_interfaces_.size() == 2 * dof_ && measured_state_values_.size() == 2 * dof_)
+        {
+          if (!std::isnan(reference_interfaces_[dof_ + i]) &&
+              !std::isnan(measured_state_values_[dof_ + i]))
+          {
+            tmp_command = reference_interfaces_[dof_ + i] *
+                          params_.gains.dof_names_map[params_.dof_names[i]].feedforward_gain;
+          }
+        }
+        else // one interface
+        {
+          tmp_command = reference_interfaces_[i] *
+                        params_.gains.dof_names_map[params_.dof_names[i]].feedforward_gain;
+        }
       }
 
       double error = reference_interfaces_[i] - measured_state_values_[i];
