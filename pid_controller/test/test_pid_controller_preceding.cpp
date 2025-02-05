@@ -85,8 +85,10 @@ TEST_F(PidControllerTest, check_exported_interfaces)
       const std::string ref_itf_name =
         std::string(controller_->get_node()->get_name()) + "/" + dof_name + "/" + interface;
       EXPECT_EQ(ref_if_conf[ri_index]->get_name(), ref_itf_name);
-      EXPECT_EQ(ref_if_conf[ri_index]->get_prefix_name(), controller_->get_node()->get_name());
-      EXPECT_EQ(ref_if_conf[ri_index]->get_interface_name(), dof_name + "/" + interface);
+      EXPECT_EQ(
+        ref_if_conf[ri_index]->get_prefix_name(),
+        std::string(controller_->get_node()->get_name()) + "/" + dof_name);
+      EXPECT_EQ(ref_if_conf[ri_index]->get_interface_name(), interface);
       ++ri_index;
     }
   }

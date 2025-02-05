@@ -392,7 +392,8 @@ std::vector<hardware_interface::CommandInterface> PidController::on_export_refer
     for (const auto & dof_name : reference_and_state_dof_names_)
     {
       reference_interfaces.push_back(hardware_interface::CommandInterface(
-        get_node()->get_name(), dof_name + "/" + interface, &reference_interfaces_[index]));
+        std::string(get_node()->get_name()) + "/" + dof_name, interface,
+        &reference_interfaces_[index]));
       ++index;
     }
   }
