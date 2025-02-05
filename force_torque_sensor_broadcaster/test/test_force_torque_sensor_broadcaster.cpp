@@ -324,8 +324,16 @@ TEST_F(ForceTorqueSensorBroadcasterTest, SensorName_Publish_Success_with_Offsets
     exported_state_interfaces[4]->get_name(), controller_name + "/" + sensor_name_ + "/torque.y");
   ASSERT_EQ(
     exported_state_interfaces[5]->get_name(), controller_name + "/" + sensor_name_ + "/torque.z");
+  ASSERT_EQ(exported_state_interfaces[0]->get_interface_name(), "force.x");
+  ASSERT_EQ(exported_state_interfaces[1]->get_interface_name(), "force.y");
+  ASSERT_EQ(exported_state_interfaces[2]->get_interface_name(), "force.z");
+  ASSERT_EQ(exported_state_interfaces[3]->get_interface_name(), "torque.x");
+  ASSERT_EQ(exported_state_interfaces[4]->get_interface_name(), "torque.y");
+  ASSERT_EQ(exported_state_interfaces[5]->get_interface_name(), "torque.z");
   for (size_t i = 0; i < 6; ++i)
   {
+    ASSERT_EQ(
+      exported_state_interfaces[i]->get_prefix_name(), controller_name + "/" + sensor_name_);
     ASSERT_EQ(
       exported_state_interfaces[i]->get_value(),
       sensor_values_[i] + (i < 3 ? force_offsets[i] : torque_offsets[i - 3]));
@@ -361,6 +369,10 @@ TEST_F(ForceTorqueSensorBroadcasterTest, InterfaceNames_Publish_Success)
   const std::string controller_name = fts_broadcaster_->get_node()->get_name();
   ASSERT_EQ(exported_state_interfaces[0]->get_name(), controller_name + "/fts_sensor/force.x");
   ASSERT_EQ(exported_state_interfaces[1]->get_name(), controller_name + "/fts_sensor/torque.z");
+  ASSERT_EQ(exported_state_interfaces[0]->get_prefix_name(), controller_name);
+  ASSERT_EQ(exported_state_interfaces[1]->get_prefix_name(), controller_name);
+  ASSERT_EQ(exported_state_interfaces[0]->get_interface_name(), "fts_sensor/force.x");
+  ASSERT_EQ(exported_state_interfaces[1]->get_interface_name(), "fts_sensor/torque.z");
   ASSERT_EQ(exported_state_interfaces[0]->get_value(), sensor_values_[0]);
   ASSERT_EQ(exported_state_interfaces[1]->get_value(), sensor_values_[5]);
 }
@@ -402,8 +414,15 @@ TEST_F(ForceTorqueSensorBroadcasterTest, All_InterfaceNames_Publish_Success)
   ASSERT_EQ(exported_state_interfaces[3]->get_name(), controller_name + "/fts_sensor/torque.x");
   ASSERT_EQ(exported_state_interfaces[4]->get_name(), controller_name + "/fts_sensor/torque.y");
   ASSERT_EQ(exported_state_interfaces[5]->get_name(), controller_name + "/fts_sensor/torque.z");
+  ASSERT_EQ(exported_state_interfaces[0]->get_interface_name(), "fts_sensor/force.x");
+  ASSERT_EQ(exported_state_interfaces[1]->get_interface_name(), "fts_sensor/force.y");
+  ASSERT_EQ(exported_state_interfaces[2]->get_interface_name(), "fts_sensor/force.z");
+  ASSERT_EQ(exported_state_interfaces[3]->get_interface_name(), "fts_sensor/torque.x");
+  ASSERT_EQ(exported_state_interfaces[4]->get_interface_name(), "fts_sensor/torque.y");
+  ASSERT_EQ(exported_state_interfaces[5]->get_interface_name(), "fts_sensor/torque.z");
   for (size_t i = 0; i < 6; ++i)
   {
+    ASSERT_EQ(exported_state_interfaces[0]->get_prefix_name(), controller_name);
     ASSERT_EQ(exported_state_interfaces[i]->get_value(), sensor_values_[i]);
   }
 }

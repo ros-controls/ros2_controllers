@@ -98,9 +98,30 @@ TEST_F(PidControllerTest, check_exported_interfaces)
       const std::string ref_itf_name =
         std::string(controller_->get_node()->get_name()) + "/" + dof_name + "/" + interface;
       EXPECT_EQ(ref_if_conf[ri_index]->get_name(), ref_itf_name);
-      EXPECT_EQ(ref_if_conf[ri_index]->get_prefix_name(), controller_->get_node()->get_name());
-      EXPECT_EQ(ref_if_conf[ri_index]->get_interface_name(), dof_name + "/" + interface);
+      EXPECT_EQ(
+        ref_if_conf[ri_index]->get_prefix_name(),
+        std::string(controller_->get_node()->get_name()) + "/" + dof_name);
+      EXPECT_EQ(ref_if_conf[ri_index]->get_interface_name(), interface);
       ++ri_index;
+    }
+  }
+
+  // check exported state interfaces
+  auto state_ifs = controller_->export_state_interfaces();
+  ASSERT_EQ(state_ifs.size(), dof_state_values_.size());
+  size_t s_index = 0;
+  for (const auto & interface : state_interfaces_)
+  {
+    for (const auto & dof_name : dof_names_)
+    {
+      const std::string state_itf_name =
+        std::string(controller_->get_node()->get_name()) + "/" + dof_name + "/" + interface;
+      EXPECT_EQ(state_ifs[s_index]->get_name(), state_itf_name);
+      EXPECT_EQ(
+        state_ifs[s_index]->get_prefix_name(),
+        std::string(controller_->get_node()->get_name()) + "/" + dof_name);
+      EXPECT_EQ(state_ifs[s_index]->get_interface_name(), interface);
+      ++s_index;
     }
   }
 }
