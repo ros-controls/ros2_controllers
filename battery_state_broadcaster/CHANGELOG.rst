@@ -2,8 +2,8 @@
 Changelog for package battery_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.1 (2025-02-06)
+------------------
 * fix realtime_tools include
 * Contributors: Jonas Otto
 
