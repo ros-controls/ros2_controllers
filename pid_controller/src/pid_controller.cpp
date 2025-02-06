@@ -500,7 +500,6 @@ controller_interface::return_type PidController::update_and_write_commands(
   {
     double tmp_command = 0.0;
 
-    // Using feedforward
     if (!std::isnan(reference_interfaces_[i]) && !std::isnan(measured_state_values_[i]))
     {
       // calculate feed-forward
@@ -509,9 +508,7 @@ controller_interface::return_type PidController::update_and_write_commands(
         // two interfaces
         if (reference_interfaces_.size() == 2 * dof_ && measured_state_values_.size() == 2 * dof_)
         {
-          if (
-            std::isfinite(reference_interfaces_[dof_ + i]) &&
-            std::isfinite(measured_state_values_[dof_ + i]))
+          if (std::isfinite(reference_interfaces_[dof_ + i]))
           {
             tmp_command = reference_interfaces_[dof_ + i] *
                           params_.gains.dof_names_map[params_.dof_names[i]].feedforward_gain;
