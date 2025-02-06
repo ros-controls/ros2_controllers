@@ -618,7 +618,9 @@ bool DiffDriveController::reset()
 
 void DiffDriveController::reset_buffers()
 {
-  reference_interfaces_ = std::vector<double>(2, std::numeric_limits<double>::quiet_NaN());
+  std::fill(
+    reference_interfaces_.begin(), reference_interfaces_.end(),
+    std::numeric_limits<double>::quiet_NaN());
   // Empty out the old queue. Fill with zeros (not NaN) to catch early accelerations.
   std::queue<std::array<double, 2>> empty;
   std::swap(previous_two_commands_, empty);
