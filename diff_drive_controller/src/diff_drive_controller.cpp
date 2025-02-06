@@ -335,6 +335,10 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   cmd_vel_timeout_ = rclcpp::Duration::from_seconds(params_.cmd_vel_timeout);
   publish_limited_velocity_ = params_.publish_limited_velocity;
 
+  // Allocate reference interfaces if needed
+  const int nr_ref_itfs = 2;
+  reference_interfaces_.resize(nr_ref_itfs, std::numeric_limits<double>::quiet_NaN());
+
   // TODO(christophfroehlich) remove deprecated parameters
   // START DEPRECATED
   if (!params_.linear.x.has_velocity_limits)
@@ -716,10 +720,8 @@ bool DiffDriveController::on_set_chained_mode(bool chained_mode)
 std::vector<hardware_interface::CommandInterface>
 DiffDriveController::on_export_reference_interfaces()
 {
-  const int nr_ref_itfs = 2;
-  reference_interfaces_.resize(nr_ref_itfs, std::numeric_limits<double>::quiet_NaN());
   std::vector<hardware_interface::CommandInterface> reference_interfaces;
-  reference_interfaces.reserve(nr_ref_itfs);
+  reference_interfaces.reserve(reference_interfaces_.size());
 
   reference_interfaces.push_back(hardware_interface::CommandInterface(
     get_node()->get_name(), std::string("linear/") + hardware_interface::HW_IF_VELOCITY,
