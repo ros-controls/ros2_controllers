@@ -46,7 +46,7 @@ joint_trajectory_controller:
   }
   interpolate_from_desired_state: {
     type: bool,
-    default_value: true,
+    default_value: false,
     description: "Interpolate from the current desired state when receiving a new trajectory.
       \n\n
       * The controller ignores the states provided by hardware interface but using last commands as states for starting the trajectory interpolation.\n
