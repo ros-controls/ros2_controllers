@@ -192,7 +192,7 @@ controller_interface::return_type JointTrajectoryController::update(
     if (!traj_external_point_ptr_->is_sampled_already())
     {
       first_sample = true;
-      if (params_.interpolate_from_desired_state)
+      if (params_.interpolate_from_desired_state || params_.open_loop_control)
       {
         traj_external_point_ptr_->set_point_before_trajectory_msg(
           time, last_commanded_state_, joints_angle_wraparound_);
@@ -661,6 +661,17 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     return controller_interface::CallbackReturn::ERROR;
   }
 
+  // START DEPRECATE
+  if (params_.open_loop_control)
+  {
+    RCLCPP_WARN(
+      logger,
+      "[deprecated] open_loop_control parameter is deprecated, instead set the feedback gains to zero and use interpolate_from_desired_state parameter"
+      "NAN");
+
+  }
+  // END DEPRECATE
+
   // update the dynamic map parameters
   param_listener_->refresh_dynamic_parameters();
 
@@ -719,7 +730,8 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   // if there is only velocity or if there is effort command interface
   // then use also PID adapter
   use_closed_loop_pid_adapter_ =
-    (has_velocity_command_interface_ && params_.command_interfaces.size() == 1) ||
+    (has_velocity_command_interface_ && params_.command_interfaces.size() == 1 &&
+     !params_.open_loop_control) ||
     has_effort_command_interface_;
 
   if (use_closed_loop_pid_adapter_)
