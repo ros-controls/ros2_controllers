@@ -15,5 +15,5 @@ gains: |
   Otherwise  :math:`e = s_d - s` is used, with the desired position :math:`s_d` and the measured
   position :math:`s` from the state interface.
 
-  If you want to turn of the PIDs (open loop control), set the gains to zero.
+  If you want to turn off the PIDs (open loop control), set the feedback gains to zero.
 
