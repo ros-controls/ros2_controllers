@@ -199,6 +199,30 @@ TEST_F(AdmittanceControllerTest, only_vel_command_interface)
     controller_interface::return_type::OK);
 }
 
+TEST_F(AdmittanceControllerTest, only_pos_reference_interface)
+{
+  auto overrides = {
+    rclcpp::Parameter("chainable_command_interfaces", std::vector<std::string>{"position"})};
+  SetUpController("test_admittance_controller", overrides);
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+}
+
+TEST_F(AdmittanceControllerTest, only_vel_reference_interface)
+{
+  auto overrides = {
+    rclcpp::Parameter("chainable_command_interfaces", std::vector<std::string>{"velocity"})};
+  SetUpController("test_admittance_controller", overrides);
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+}
+
+TEST_F(AdmittanceControllerTest, invalid_reference_interface)
+{
+  auto overrides = {rclcpp::Parameter(
+    "chainable_command_interfaces", std::vector<std::string>{"invalid_interface"})};
+  SetUpController("test_admittance_controller", overrides);
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
+}
+
 TEST_F(AdmittanceControllerTest, update_success)
 {
   SetUpController();

@@ -56,9 +56,6 @@ constexpr auto NODE_FAILURE =
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
 constexpr auto NODE_ERROR =
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
-
-constexpr auto NODE_CONFIGURE =
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
 }  // namespace
 
 // subclassing and friending so we can access member variables
