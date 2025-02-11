@@ -1010,7 +1010,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_deactivate(
     auto action_res = std::make_shared<FollowJTrajAction::Result>();
     action_res->set__error_code(FollowJTrajAction::Result::INVALID_GOAL);
     action_res->set__error_string("Current goal cancelled during deactivate transition.");
-    active_goal->setCanceled(action_res);
+    active_goal->setAborted(action_res);
     rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
   }
 
