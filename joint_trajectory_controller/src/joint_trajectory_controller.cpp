@@ -666,9 +666,8 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   {
     RCLCPP_WARN(
       logger,
-      "[deprecated] open_loop_control parameter is deprecated, instead set the feedback gains to zero and use interpolate_from_desired_state parameter"
-      "NAN");
-
+      "[deprecated] 'open_loop_control' parameter is deprecated. Instead, set the feedback gains "
+      "to zero and use 'interpolate_from_desired_state' parameter");
   }
   // END DEPRECATE
 

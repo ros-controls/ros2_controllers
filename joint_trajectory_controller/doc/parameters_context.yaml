@@ -16,4 +16,3 @@ gains: |
   position :math:`s` from the state interface.
 
   If you want to turn off the PIDs (open loop control), set the feedback gains to zero.
-

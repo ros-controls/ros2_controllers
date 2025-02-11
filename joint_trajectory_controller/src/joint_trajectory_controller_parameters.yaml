@@ -47,7 +47,7 @@ joint_trajectory_controller:
   open_loop_control: {
     type: bool,
     default_value: false,
-    description: "depcrecated: use interpolate_from_desired_state and set feedback gains to zero instead",
+    description: "deprecated: use interpolate_from_desired_state and set feedback gains to zero instead",
     read_only: true,
   }
   interpolate_from_desired_state: {
