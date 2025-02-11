@@ -56,6 +56,9 @@ constexpr auto NODE_FAILURE =
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
 constexpr auto NODE_ERROR =
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
+
+constexpr auto NODE_CONFIGURE =
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
 }  // namespace
 
 // subclassing and friending so we can access member variables
@@ -354,7 +357,7 @@ protected:
   // Controller-related parameters
   const std::vector<std::string> joint_names_ = {"joint1", "joint2", "joint3",
                                                  "joint4", "joint5", "joint6"};
-  const std::vector<std::string> command_interface_types_ = {"position"};
+  std::vector<std::string> command_interface_types_ = {"position"};
   const std::vector<std::string> state_interface_types_ = {"position"};
   const std::string ft_sensor_name_ = "ft_sensor_name";
 

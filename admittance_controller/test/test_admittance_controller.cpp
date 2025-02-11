@@ -180,6 +180,25 @@ TEST_F(AdmittanceControllerTest, activate_success)
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 }
 
+TEST_F(AdmittanceControllerTest, missing_pos_state_interface)
+{
+  auto overrides = {rclcpp::Parameter("state_interfaces", std::vector<std::string>{"velocity"})};
+  SetUpController("test_admittance_controller", overrides);
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_FAILURE);
+}
+
+TEST_F(AdmittanceControllerTest, only_vel_command_interface)
+{
+  command_interface_types_ = {"velocity"};
+  auto overrides = {rclcpp::Parameter("command_interfaces", std::vector<std::string>{"velocity"})};
+  SetUpController("test_admittance_controller", overrides);
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(
+    controller_->update_and_write_commands(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+}
+
 TEST_F(AdmittanceControllerTest, update_success)
 {
   SetUpController();
