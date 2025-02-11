@@ -586,6 +586,72 @@ TEST_F(PidControllerTest, test_update_chained_feedforward_with_gain)
   ASSERT_EQ(controller_->command_interfaces_[0].get_value(), exepected_command_value);
 }
 
+/**
+ * @brief check chained pid controller with feedforward OFF and gain as non-zero, single interface
+ */
+TEST_F(PidControllerTest, test_update_chained_feedforward_off_with_gain)
+{
+  // state interface value is 1.1 as defined in test fixture
+  // given target value 5.0
+  // with p gain 0.5, the command value should be 0.5 * (5.0 - 1.1) = 1.95
+  // with feedforward off, the command value should be still 1.95 even though feedforward gain
+  // is 1.0
+  auto target_value = 5.0;
+  auto exepected_command_value = 1.95;
+
+  SetUpController("test_pid_controller_with_feedforward_gain");
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  // check on interfaces & pid gain parameters
+  for (const auto & dof_name : dof_names_)
+  {
+    ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].p, 0.5);
+    ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].feedforward_gain, 1.0);
+  }
+  ASSERT_EQ(controller_->params_.command_interface, command_interface_);
+  EXPECT_THAT(
+    controller_->params_.reference_and_state_interfaces,
+    testing::ElementsAreArray(state_interfaces_));
+  ASSERT_FALSE(controller_->params_.use_external_measured_states);
+
+  // setup executor
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+  executor.add_node(service_caller_node_->get_node_base_interface());
+
+  controller_->set_chained_mode(true);
+
+  // activate controller
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(controller_->is_in_chained_mode());
+
+  // feedforward by default is OFF
+  ASSERT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::OFF);
+
+  // send a message to update reference interface
+  std::shared_ptr<ControllerCommandMsg> msg = std::make_shared<ControllerCommandMsg>();
+  msg->dof_names = controller_->params_.dof_names;
+  msg->values.resize(msg->dof_names.size(), 0.0);
+  for (size_t i = 0; i < msg->dof_names.size(); ++i)
+  {
+    msg->values[i] = target_value;
+  }
+  msg->values_dot.resize(msg->dof_names.size(), std::numeric_limits<double>::quiet_NaN());
+  controller_->input_ref_.writeFromNonRT(msg);
+  ASSERT_EQ(
+    controller_->update_reference_from_subscribers(
+      rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  // run update
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  // check on result from update
+  ASSERT_EQ(controller_->command_interfaces_[0].get_value(), exepected_command_value);
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
