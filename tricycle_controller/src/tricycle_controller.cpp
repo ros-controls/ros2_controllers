@@ -86,16 +86,6 @@ InterfaceConfiguration TricycleController::state_interface_configuration() const
 controller_interface::return_type TricycleController::update(
   const rclcpp::Time & time, const rclcpp::Duration & period)
 {
-  if (get_lifecycle_state().id() == State::PRIMARY_STATE_INACTIVE)
-  {
-    if (!is_halted)
-    {
-      halt();
-      is_halted = true;
-    }
-    return controller_interface::return_type::OK;
-  }
-
   // if the mutex is unable to lock, last_command_msg_ won't be updated
   received_velocity_msg_ptr_.try_get([this](const std::shared_ptr<TwistStamped> & msg)
                                      { last_command_msg_ = msg; });
@@ -390,6 +380,11 @@ CallbackReturn TricycleController::on_activate(const rclcpp_lifecycle::State &)
 CallbackReturn TricycleController::on_deactivate(const rclcpp_lifecycle::State &)
 {
   subscriber_is_active_ = false;
+  if (!is_halted)
+  {
+    halt();
+    is_halted = true;
+  }
   return CallbackReturn::SUCCESS;
 }
 
