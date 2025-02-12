@@ -388,6 +388,17 @@ public:
       state_interfaces.emplace_back(acc_state_interfaces_.back());
     }
 
+    speed_scaling_factor_ = 1.0;
+    target_speed_scaling_factor_ = 1.0;
+    gpio_state_interfaces.emplace_back(hardware_interface::StateInterface(
+      "speed_scaling", "speed_scaling_factor",
+      separate_cmd_and_state_values ? &speed_scaling_factor_ : &target_speed_scaling_factor_));
+    state_interfaces.emplace_back(gpio_state_interfaces.back());
+
+    gpio_command_interfaces_.emplace_back(hardware_interface::CommandInterface(
+      "speed_scaling", "target_speed_fraction_cmd", &target_speed_scaling_factor_));
+    cmd_interfaces.emplace_back(gpio_command_interfaces_.back());
+
     traj_controller_->assign_interfaces(std::move(cmd_interfaces), std::move(state_interfaces));
     return traj_controller_->get_node()->activate();
   }
@@ -771,13 +782,17 @@ public:
   std::vector<double> joint_state_pos_;
   std::vector<double> joint_state_vel_;
   std::vector<double> joint_state_acc_;
+  double speed_scaling_factor_;
+  double target_speed_scaling_factor_;
   std::vector<hardware_interface::CommandInterface> pos_cmd_interfaces_;
   std::vector<hardware_interface::CommandInterface> vel_cmd_interfaces_;
   std::vector<hardware_interface::CommandInterface> acc_cmd_interfaces_;
   std::vector<hardware_interface::CommandInterface> eff_cmd_interfaces_;
+  std::vector<hardware_interface::CommandInterface> gpio_command_interfaces_;
   std::vector<hardware_interface::StateInterface> pos_state_interfaces_;
   std::vector<hardware_interface::StateInterface> vel_state_interfaces_;
   std::vector<hardware_interface::StateInterface> acc_state_interfaces_;
+  std::vector<hardware_interface::StateInterface> gpio_state_interfaces;
 };
 
 // From the tutorial: https://www.sandordargo.com/blog/2019/04/24/parameterized-testing-with-gtest
