@@ -22,9 +22,9 @@
   <depend>tf2</depend>
   <depend>tf2_msgs</depend>
 
+  <test_depend>ament_cmake_gmock</test_depend>
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
-  <test_depend>ament_add_gmock</test_depend>
   <test_depend>controller_manager</test_depend>
   <test_depend>hardware_interface</test_depend>
   <test_depend>ros2_control_test_assets</test_depend>
