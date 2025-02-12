@@ -59,7 +59,7 @@ mecanum_drive_controller
 
 multi_omni_wheel_drive_controller
 *********************************
-* 🚀 The multi_omni_wheel_drive_controller was added 🎉 (`#512 <https://github.com/ros-controls/ros2_controllers/pull/1535>`_).
+* 🚀 The multi_omni_wheel_drive_controller was added 🎉 (`#1535 <https://github.com/ros-controls/ros2_controllers/pull/1535>`_).
 
 pid_controller
 ************************
