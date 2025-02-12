@@ -1020,9 +1020,6 @@ TEST_P(TestTrajectoryActionsTestParameterized, deactivate_controller_aborts_acti
   auto state_ref = traj_controller_->get_state_reference();
   auto state = traj_controller_->get_state_feedback();
 
-  // run an update
-  updateControllerAsync(rclcpp::Duration::from_seconds(0.01));
-
   // There will be no active trajectory upon deactivation, so we can't use the expectCommandPoint
   // method.
   if (traj_controller_->has_position_command_interface())
