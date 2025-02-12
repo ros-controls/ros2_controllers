@@ -1,10 +1,15 @@
 cmake_minimum_required(VERSION 3.16)
-project(ackermann_steering_controller LANGUAGES CXX)
+project(ackermann_steering_controller)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
   add_compile_options(-Wall -Wextra -Wpedantic -Werror=conversion -Werror=unused-but-set-variable
-                      -Werror=return-type -Werror=shadow -Werror=format)
+                      -Werror=return-type -Werror=shadow -Werror=format  -Werror=range-loop-construct
+                      -Werror=missing-braces)
 endif()
+
+# using this instead of visibility macros
+# S1 from https://github.com/ros-controls/ros2_controllers/issues/1053
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 # find dependencies
 set(THIS_PACKAGE_INCLUDE_DEPENDS
@@ -43,10 +48,6 @@ target_include_directories(ackermann_steering_controller PUBLIC
 target_link_libraries(ackermann_steering_controller PUBLIC
   ackermann_steering_controller_parameters)
 ament_target_dependencies(ackermann_steering_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
-
-# Causes the visibility macros to use dllexport rather than dllimport,
-# which is appropriate when building the dll but not consuming it.
-target_compile_definitions(ackermann_steering_controller PRIVATE "ACKERMANN_STEERING_CONTROLLER__VISIBILITY_BUILDING_DLL")
 
 pluginlib_export_plugin_description_file(
   controller_interface ackermann_steering_controller.xml)

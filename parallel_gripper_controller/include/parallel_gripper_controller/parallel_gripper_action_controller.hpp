@@ -36,12 +36,11 @@
 #include "controller_interface/controller_interface.hpp"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
-#include "parallel_gripper_controller/visibility_control.hpp"
-#include "realtime_tools/realtime_buffer.h"
-#include "realtime_tools/realtime_server_goal_handle.h"
+#include "realtime_tools/realtime_buffer.hpp"
+#include "realtime_tools/realtime_server_goal_handle.hpp"
 
 // Project
-#include "parallel_gripper_action_controller_parameters.hpp"
+#include "parallel_gripper_controller/parallel_gripper_action_controller_parameters.hpp"
 
 namespace parallel_gripper_action_controller
 {
@@ -66,44 +65,36 @@ public:
     double max_velocity_;  // Desired max gripper velocity
     double max_effort_;    // Desired max allowed effort
   };
-
-  GRIPPER_ACTION_CONTROLLER_PUBLIC GripperActionController();
+  GripperActionController();
 
   /**
    * @brief command_interface_configuration This controller requires the
    * position command interfaces for the controlled joints
    */
-  GRIPPER_ACTION_CONTROLLER_PUBLIC
   controller_interface::InterfaceConfiguration command_interface_configuration() const override;
 
   /**
    * @brief command_interface_configuration This controller requires the
    * position and velocity state interfaces for the controlled joints
    */
-  GRIPPER_ACTION_CONTROLLER_PUBLIC
   controller_interface::InterfaceConfiguration state_interface_configuration() const override;
 
-  GRIPPER_ACTION_CONTROLLER_PUBLIC
   controller_interface::return_type update(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
-  GRIPPER_ACTION_CONTROLLER_PUBLIC
   controller_interface::CallbackReturn on_init() override;
 
-  GRIPPER_ACTION_CONTROLLER_PUBLIC
   controller_interface::CallbackReturn on_configure(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  GRIPPER_ACTION_CONTROLLER_PUBLIC
   controller_interface::CallbackReturn on_activate(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  GRIPPER_ACTION_CONTROLLER_PUBLIC
   controller_interface::CallbackReturn on_deactivate(
     const rclcpp_lifecycle::State & previous_state) override;
 
   realtime_tools::RealtimeBuffer<Commands> command_;
-  // pre-allocated memory that is re-used to set the realtime buffer
+  // pre-allocated memory that is reused to set the realtime buffer
   Commands command_struct_, command_struct_rt_;
 
 protected:

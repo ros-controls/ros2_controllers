@@ -320,7 +320,7 @@ void PidController::reference_callback(const std::shared_ptr<ControllerReference
         break;
       }
 
-      auto position = std::distance(ref_msg->dof_names.begin(), found_it);
+      auto position = static_cast<size_t>(std::distance(ref_msg->dof_names.begin(), found_it));
       ref_msg->values[position] = msg->values[i];
       ref_msg->values_dot[position] = msg->values_dot[i];
     }
@@ -440,12 +440,6 @@ controller_interface::CallbackReturn PidController::on_activate(
   measured_state_values_.assign(
     measured_state_values_.size(), std::numeric_limits<double>::quiet_NaN());
 
-  return controller_interface::CallbackReturn::SUCCESS;
-}
-
-controller_interface::CallbackReturn PidController::on_deactivate(
-  const rclcpp_lifecycle::State & /*previous_state*/)
-{
   return controller_interface::CallbackReturn::SUCCESS;
 }
 

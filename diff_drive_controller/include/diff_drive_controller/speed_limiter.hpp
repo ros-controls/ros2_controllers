@@ -19,7 +19,9 @@
 #ifndef DIFF_DRIVE_CONTROLLER__SPEED_LIMITER_HPP_
 #define DIFF_DRIVE_CONTROLLER__SPEED_LIMITER_HPP_
 
-#include <cmath>
+#include <limits>
+
+#include "control_toolbox/rate_limiter.hpp"
 
 namespace diff_drive_controller
 {
@@ -33,16 +35,65 @@ public:
    * \param [in] has_jerk_limits         if true, applies jerk limits
    * \param [in] min_velocity Minimum velocity [m/s], usually <= 0
    * \param [in] max_velocity Maximum velocity [m/s], usually >= 0
-   * \param [in] min_acceleration Minimum acceleration [m/s^2], usually <= 0
+   * \param [in] max_deceleration Maximum deceleration [m/s^2], usually <= 0
    * \param [in] max_acceleration Maximum acceleration [m/s^2], usually >= 0
    * \param [in] min_jerk Minimum jerk [m/s^3], usually <= 0
    * \param [in] max_jerk Maximum jerk [m/s^3], usually >= 0
    */
-  SpeedLimiter(
-    bool has_velocity_limits = false, bool has_acceleration_limits = false,
-    bool has_jerk_limits = false, double min_velocity = NAN, double max_velocity = NAN,
-    double min_acceleration = NAN, double max_acceleration = NAN, double min_jerk = NAN,
-    double max_jerk = NAN);
+  [[deprecated]] explicit SpeedLimiter(
+    bool has_velocity_limits = true, bool has_acceleration_limits = true,
+    bool has_jerk_limits = true, double min_velocity = std::numeric_limits<double>::quiet_NaN(),
+    double max_velocity = std::numeric_limits<double>::quiet_NaN(),
+    double max_deceleration = std::numeric_limits<double>::quiet_NaN(),
+    double max_acceleration = std::numeric_limits<double>::quiet_NaN(),
+    double min_jerk = std::numeric_limits<double>::quiet_NaN(),
+    double max_jerk = std::numeric_limits<double>::quiet_NaN())
+  {
+    if (!has_velocity_limits)
+    {
+      min_velocity = max_velocity = std::numeric_limits<double>::quiet_NaN();
+    }
+    if (!has_acceleration_limits)
+    {
+      max_deceleration = max_acceleration = std::numeric_limits<double>::quiet_NaN();
+    }
+    if (!has_jerk_limits)
+    {
+      min_jerk = max_jerk = std::numeric_limits<double>::quiet_NaN();
+    }
+    speed_limiter_ = control_toolbox::RateLimiter<double>(
+      min_velocity, max_velocity, max_deceleration, max_acceleration,
+      std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(), min_jerk,
+      max_jerk);
+  }
+
+  /**
+   * \brief Constructor
+   * \param [in] min_velocity Minimum velocity [m/s], usually <= 0
+   * \param [in] max_velocity Maximum velocity [m/s], usually >= 0
+   * \param [in] max_acceleration_reverse Maximum acceleration in reverse direction [m/s^2], usually
+   * <= 0
+   * \param [in] max_acceleration Maximum acceleration [m/s^2], usually >= 0
+   * \param [in] max_deceleration Maximum deceleration [m/s^2], usually <= 0
+   * \param [in] max_deceleration_reverse Maximum deceleration in reverse direction [m/s^2], usually
+   * >= 0
+   * \param [in] min_jerk Minimum jerk [m/s^3], usually <= 0
+   * \param [in] max_jerk Maximum jerk [m/s^3], usually >= 0
+   *
+   * \note
+   * If max_* values are NAN, the respective limit is deactivated
+   * If min_* values are NAN (unspecified), defaults to -max
+   * If min_first_derivative_pos/max_first_derivative_neg values are NAN, symmetric limits are used
+   */
+  explicit SpeedLimiter(
+    double min_velocity, double max_velocity, double max_acceleration_reverse,
+    double max_acceleration, double max_deceleration, double max_deceleration_reverse,
+    double min_jerk, double max_jerk)
+  {
+    speed_limiter_ = control_toolbox::RateLimiter<double>(
+      min_velocity, max_velocity, max_acceleration_reverse, max_acceleration, max_deceleration,
+      max_deceleration_reverse, min_jerk, max_jerk);
+  }
 
   /**
    * \brief Limit the velocity and acceleration
@@ -52,14 +103,17 @@ public:
    * \param [in]      dt Time step [s]
    * \return Limiting factor (1.0 if none)
    */
-  double limit(double & v, double v0, double v1, double dt);
+  double limit(double & v, double v0, double v1, double dt)
+  {
+    return speed_limiter_.limit(v, v0, v1, dt);
+  }
 
   /**
    * \brief Limit the velocity
    * \param [in, out] v Velocity [m/s]
    * \return Limiting factor (1.0 if none)
    */
-  double limit_velocity(double & v);
+  double limit_velocity(double & v) { return speed_limiter_.limit_value(v); }
 
   /**
    * \brief Limit the acceleration
@@ -68,7 +122,10 @@ public:
    * \param [in]      dt Time step [s]
    * \return Limiting factor (1.0 if none)
    */
-  double limit_acceleration(double & v, double v0, double dt);
+  double limit_acceleration(double & v, double v0, double dt)
+  {
+    return speed_limiter_.limit_first_derivative(v, v0, dt);
+  }
 
   /**
    * \brief Limit the jerk
@@ -79,25 +136,13 @@ public:
    * \return Limiting factor (1.0 if none)
    * \see http://en.wikipedia.org/wiki/Jerk_%28physics%29#Motion_control
    */
-  double limit_jerk(double & v, double v0, double v1, double dt);
+  double limit_jerk(double & v, double v0, double v1, double dt)
+  {
+    return speed_limiter_.limit_second_derivative(v, v0, v1, dt);
+  }
 
 private:
-  // Enable/Disable velocity/acceleration/jerk limits:
-  bool has_velocity_limits_;
-  bool has_acceleration_limits_;
-  bool has_jerk_limits_;
-
-  // Velocity limits:
-  double min_velocity_;
-  double max_velocity_;
-
-  // Acceleration limits:
-  double min_acceleration_;
-  double max_acceleration_;
-
-  // Jerk limits:
-  double min_jerk_;
-  double max_jerk_;
+  control_toolbox::RateLimiter<double> speed_limiter_;  // Instance of the new RateLimiter
 };
 
 }  // namespace diff_drive_controller

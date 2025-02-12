@@ -28,6 +28,7 @@ Controllers for Wheeled Mobile Robots
    :titlesonly:
 
    Differential Drive Controller <../diff_drive_controller/doc/userdoc.rst>
+   Mecanum Drive Controllers <../mecanum_drive_controller/doc/userdoc.rst>
    Steering Controllers Library <../steering_controllers_library/doc/userdoc.rst>
    Tricycle Controller <../tricycle_controller/doc/userdoc.rst>
 
@@ -56,6 +57,7 @@ The controllers are using `common hardware interface definitions`_, and may use 
    PID Controller <../pid_controller/doc/userdoc.rst>
    Position Controllers <../position_controllers/doc/userdoc.rst>
    Velocity Controllers <../velocity_controllers/doc/userdoc.rst>
+   Gpio Command Controller <../gpio_controllers/doc/userdoc.rst>
 
 
 Broadcasters
