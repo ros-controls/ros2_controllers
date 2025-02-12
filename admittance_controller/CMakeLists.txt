@@ -13,7 +13,6 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   generate_parameter_library
   geometry_msgs
   hardware_interface
-  joint_trajectory_controller
   kinematics_interface
   pluginlib
   rclcpp
