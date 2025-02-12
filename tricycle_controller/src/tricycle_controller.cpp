@@ -372,7 +372,6 @@ CallbackReturn TricycleController::on_activate(const rclcpp_lifecycle::State &)
     return CallbackReturn::ERROR;
   }
 
-  is_halted = false;
   subscriber_is_active_ = true;
 
   RCLCPP_DEBUG(get_node()->get_logger(), "Subscriber and publisher are now active.");
@@ -382,11 +381,7 @@ CallbackReturn TricycleController::on_activate(const rclcpp_lifecycle::State &)
 CallbackReturn TricycleController::on_deactivate(const rclcpp_lifecycle::State &)
 {
   subscriber_is_active_ = false;
-  if (!is_halted)
-  {
-    halt();
-    is_halted = true;
-  }
+  halt();
   return CallbackReturn::SUCCESS;
 }
 
@@ -433,7 +428,6 @@ bool TricycleController::reset()
   velocity_command_subscriber_.reset();
 
   received_velocity_msg_ptr_.set(nullptr);
-  is_halted = false;
   return true;
 }
 

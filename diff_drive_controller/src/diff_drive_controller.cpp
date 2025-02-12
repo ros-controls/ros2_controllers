@@ -544,7 +544,6 @@ controller_interface::CallbackReturn DiffDriveController::on_activate(
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  is_halted = false;
   subscriber_is_active_ = true;
 
   RCLCPP_DEBUG(get_node()->get_logger(), "Subscriber and publisher are now active.");
@@ -555,11 +554,7 @@ controller_interface::CallbackReturn DiffDriveController::on_deactivate(
   const rclcpp_lifecycle::State &)
 {
   subscriber_is_active_ = false;
-  if (!is_halted)
-  {
-    halt();
-    is_halted = true;
-  }
+  halt();
   reset_buffers();
   registered_left_wheel_handles_.clear();
   registered_right_wheel_handles_.clear();
@@ -598,7 +593,6 @@ bool DiffDriveController::reset()
   subscriber_is_active_ = false;
   velocity_command_subscriber_.reset();
 
-  is_halted = false;
   return true;
 }
 
