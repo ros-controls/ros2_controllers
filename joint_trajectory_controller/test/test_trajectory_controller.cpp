@@ -1713,9 +1713,9 @@ TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_erro
   publish(
     time_from_start, points, rclcpp::Time(0.0, 0.0, RCL_STEADY_TIME), {}, first_goal_velocities);
   traj_controller_->wait_for_trajectory(executor);
-  updateControllerAsync(rclcpp::Duration::from_seconds(1.1));
+  auto end_time = updateControllerAsync(rclcpp::Duration::from_seconds(1.1));
 
-  // JTC is executing trajectory in open-loop therefore:
+  // JTC is NOT executing trajectory in open-loop therefore:
   // - internal state does not have to be updated (in this test-case it shouldn't)
   // - internal command is updated
   EXPECT_NEAR(INITIAL_POS_JOINT1, joint_state_pos_[0], COMMON_THRESHOLD);
@@ -1732,7 +1732,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_erro
   // One the first update(s) there should be a "jump" in opposite direction from command
   // (towards the state value)
   EXPECT_NEAR(first_goal[0], joint_pos_[0], COMMON_THRESHOLD);
-  auto end_time = updateControllerAsync(controller_period);
+  end_time = updateControllerAsync(controller_period, end_time);
   // Expect backward commands at first, consider advancement of the trajectory
   // exact value is not directly predictable, because of the spline interpolation -> increase
   // tolerance
@@ -1749,7 +1749,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_erro
   EXPECT_LT(joint_pos_[0], first_goal[0]);
 
   // Finally the second goal will be commanded/reached
-  updateControllerAsync(rclcpp::Duration::from_seconds(1.1), end_time);
+  end_time = updateControllerAsync(rclcpp::Duration::from_seconds(1.1), end_time);
   EXPECT_NEAR(second_goal[0], joint_pos_[0], COMMON_THRESHOLD);
 
   // State interface should have offset from the command before starting a new trajectory
@@ -1817,7 +1817,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_no_jump_when_state_tracking_e
   std::vector<std::vector<double>> points{{first_goal}};
   publish(time_from_start, points, rclcpp::Time(0.0, 0.0, RCL_STEADY_TIME));
   traj_controller_->wait_for_trajectory(executor);
-  updateControllerAsync(rclcpp::Duration::from_seconds(1.1));
+  auto end_time = updateControllerAsync(rclcpp::Duration::from_seconds(1.1));
 
   // JTC is executing trajectory in open-loop therefore:
   // - internal state does not have to be updated (in this test-case it shouldn't)
@@ -1836,7 +1836,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_no_jump_when_state_tracking_e
   // One the first update(s) there **should not** be a "jump" in opposite direction from
   // command (towards the state value)
   EXPECT_NEAR(first_goal[0], joint_pos_[0], COMMON_THRESHOLD);
-  auto end_time = updateControllerAsync(controller_period);
+  end_time = updateControllerAsync(controller_period, end_time);
   // There should not be backward commands
   // exact value is not directly predictable, because of the spline interpolation -> increase
   // tolerance
@@ -1852,7 +1852,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_no_jump_when_state_tracking_e
   EXPECT_LT(joint_pos_[0], second_goal[0]);
 
   // Finally the second goal will be commanded/reached
-  updateControllerAsync(rclcpp::Duration::from_seconds(1.1), end_time);
+  end_time = updateControllerAsync(rclcpp::Duration::from_seconds(1.1), end_time);
   EXPECT_NEAR(second_goal[0], joint_pos_[0], COMMON_THRESHOLD);
 
   // State interface should have offset from the command before starting a new trajectory
