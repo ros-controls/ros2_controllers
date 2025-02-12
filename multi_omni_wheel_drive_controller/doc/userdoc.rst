@@ -8,7 +8,7 @@ multi_omni_wheel_drive_controller
 Controller for mobile robots with omnidirectional drive.
 
 Supports using 3 or more omni wheels spaced at an equal angle from each other in a circular formation.
-The positive direction of the axis of rotation for each wheel should be facing outwards from the center of the robot.
+To better understand this, have a look at :ref:`mobile_robot_kinematics`.
 
 As input it takes velocity commands for the robot body, which are translated to wheel commands.
 
@@ -67,9 +67,9 @@ Publishers
 Parameters
 ,,,,,,,,,,
 
-This controller uses the `generate_parameter_library <https://github.com/PickNikRobotics/generate_parameter_library>`_ to handle its parameters. The parameter `definition file located in the src folder <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/multi_omni_wheel_drive_controller/src/multi_omni_wheel_drive_controller_parameter.yaml>`_ contains descriptions for all the parameters used by the controller.
+This controller uses the `generate_parameter_library <https://github.com/PickNikRobotics/generate_parameter_library>`_ to handle its parameters. The parameter `definition file located in the src folder <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/multi_omni_wheel_drive_controller/src/multi_omni_wheel_drive_controller_parameters.yaml>`_ contains descriptions for all the parameters used by the controller.
 
-.. generate_parameter_library_details:: ../src/multi_omni_wheel_drive_controller_parameter.yaml
+.. generate_parameter_library_details:: ../src/multi_omni_wheel_drive_controller_parameters.yaml
 
 An example parameter file for this controller can be found in `the test directory <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/multi_omni_wheel_drive_controller/test/config/test_multi_omni_wheel_drive_controller.yaml>`_:
 
