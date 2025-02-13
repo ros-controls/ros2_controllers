@@ -279,7 +279,7 @@ TEST_F(PidControllerTest, test_update_logic_feedforward_off)
   // error = ref - state = 100.001, error_dot = error/ds = 10000.1,
   // p_term = 100.001 * 1, i_term = 1.00001 * 2 = 2.00002, d_term = error/ds = 10000.1 * 3
   // feedforward OFF -> cmd = p_term + i_term + d_term = 30102.3
-  auto expected_command_value = 30102.30102;
+  const double expected_command_value = 30102.30102;
 
   double actual_value = std::round(controller_->command_interfaces_[0].get_value() * 1e5) / 1e5;
   EXPECT_NEAR(actual_value, expected_command_value, 1e-5);
@@ -346,7 +346,7 @@ TEST_F(PidControllerTest, test_update_logic_feedforward_on_with_zero_feedforward
     // p_term = 100.001 * 1, i_term = 1.00001 * 2 = 2.00002, d_term = error/ds = 10000.1 * 3
     // feedforward ON, feedforward_gain = 0
     // -> cmd = p_term + i_term + d_term + feedforward_gain * ref = 30102.3 + 0 * 101.101 = 30102.3
-    auto expected_command_value = 30102.301020;
+    const double expected_command_value = 30102.301020;
 
     double actual_value = std::round(controller_->command_interfaces_[0].get_value() * 1e5) / 1e5;
     EXPECT_NEAR(actual_value, expected_command_value, 1e-5);
@@ -375,7 +375,7 @@ TEST_F(PidControllerTest, test_update_logic_chainable_not_use_subscriber_update)
   EXPECT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::OFF);
 
   // update reference interface which will be used for calculation
-  auto ref_interface_value = 5.0;
+  const double ref_interface_value = 5.0;
   controller_->reference_interfaces_[0] = ref_interface_value;
 
   // publish a command message which should be ignored as chain mode is on
@@ -403,7 +403,7 @@ TEST_F(PidControllerTest, test_update_logic_chainable_not_use_subscriber_update)
   // i_term = error * ds * i_gain = 3.9 * 0.01 * 2.0 = 0.078,
   // d_term = error_dot * d_gain = 390.0 * 3.0 = 1170.0
   // feedforward OFF -> cmd = p_term + i_term + d_term = 3.9 + 0.078 + 1170.0 = 1173.978
-  auto expected_command_value = 1173.978;
+  const double expected_command_value = 1173.978;
 
   EXPECT_EQ(controller_->command_interfaces_[0].get_value(), expected_command_value);
 }
@@ -431,7 +431,7 @@ TEST_F(PidControllerTest, test_update_logic_angle_wraparound_off)
     controller_interface::return_type::OK);
 
   // check the result of the commands - the values are not wrapped
-  auto expected_command_value = 2679.078;
+  const double expected_command_value = 2679.078;
   EXPECT_NEAR(controller_->command_interfaces_[0].get_value(), expected_command_value, 1e-5);
 }
 
@@ -462,7 +462,7 @@ TEST_F(PidControllerTest, test_update_logic_angle_wraparound_on)
     controller_interface::return_type::OK);
 
   // Check the command value
-  auto expected_command_value = 787.713559;
+  const double expected_command_value = 787.713559;
   EXPECT_NEAR(controller_->command_interfaces_[0].get_value(), expected_command_value, 1e-5);
 }
 
