@@ -17,6 +17,8 @@
  * Author: Dr. Ing. Denis Stogl
  */
 
+#define _USE_MATH_DEFINES
+
 #include "steering_controllers_library/steering_odometry.hpp"
 
 #include <cmath>

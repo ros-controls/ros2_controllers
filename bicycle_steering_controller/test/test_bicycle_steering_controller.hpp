@@ -264,8 +264,7 @@ protected:
 
   std::array<double, 2> joint_state_values_ = {{3.3, 0.5}};
   std::array<double, 2> joint_command_values_ = {{1.1, 2.2}};
-  std::array<std::string, 2> joint_reference_interfaces_ = {
-    {"linear/velocity", "angular/velocity"}};
+  std::array<std::string, 2> joint_reference_interfaces_ = {{"linear", "angular"}};
   std::string steering_interface_name_ = "position";
 
   // defined in setup

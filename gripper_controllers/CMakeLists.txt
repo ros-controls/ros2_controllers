@@ -1,10 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
 project(gripper_controllers)
 
-if(APPLE OR WIN32)
-  message(WARNING "gripper controllers are not available on OSX or Windows")
-  return()
-endif()
+# using this instead of visibility macros
+# S1 from https://github.com/ros-controls/ros2_controllers/issues/1053
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
   add_compile_options(-Wall -Wextra -Wpedantic -Werror=conversion -Werror=unused-but-set-variable

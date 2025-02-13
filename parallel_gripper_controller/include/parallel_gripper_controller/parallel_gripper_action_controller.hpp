@@ -40,7 +40,7 @@
 #include "realtime_tools/realtime_server_goal_handle.hpp"
 
 // Project
-#include "parallel_gripper_action_controller_parameters.hpp"
+#include "parallel_gripper_controller/parallel_gripper_action_controller_parameters.hpp"
 
 namespace parallel_gripper_action_controller
 {
@@ -94,7 +94,7 @@ public:
     const rclcpp_lifecycle::State & previous_state) override;
 
   realtime_tools::RealtimeBuffer<Commands> command_;
-  // pre-allocated memory that is re-used to set the realtime buffer
+  // pre-allocated memory that is reused to set the realtime buffer
   Commands command_struct_, command_struct_rt_;
 
 protected:
