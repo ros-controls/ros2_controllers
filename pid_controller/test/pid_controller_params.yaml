@@ -8,4 +8,42 @@ test_pid_controller:
     reference_and_state_interfaces: ["position"]
 
     gains:
-      joint1: {p: 1.0, i: 2.0, d: 10.0, i_clamp_max: 5.0, i_clamp_min: -5.0}
+      joint1: {p: 1.0, i: 2.0, d: 3.0, i_clamp_max: 5.0, i_clamp_min: -5.0}
+
+test_pid_controller_angle_wraparound_on:
+  ros__parameters:
+    dof_names:
+      - joint1
+
+    command_interface: position
+
+    reference_and_state_interfaces: ["position"]
+
+    gains:
+      joint1: {p: 1.0, i: 2.0, d: 3.0, i_clamp_max: 5.0, i_clamp_min: -5.0, angle_wraparound: true}
+
+test_pid_controller_with_feedforward_gain:
+  ros__parameters:
+    dof_names:
+      - joint1
+
+    command_interface: position
+
+    reference_and_state_interfaces: ["position"]
+
+    gains:
+      joint1: {p: 0.5, i: 0.0, d: 0.0, i_clamp_max: 5.0, i_clamp_min: -5.0, feedforward_gain: 1.0}
+
+test_pid_controller_with_feedforward_gain_dual_interface:
+  ros__parameters:
+    dof_names:
+      - joint1
+      - joint2
+
+    command_interface: velocity
+
+    reference_and_state_interfaces: ["position", "velocity"]
+
+    gains:
+      joint1: {p: 0.5, i: 0.3, d: 0.4, i_clamp_max: 5.0, i_clamp_min: -5.0, feedforward_gain: 1.0}
+      joint2: {p: 0.5, i: 0.3, d: 0.4, i_clamp_max: 5.0, i_clamp_min: -5.0, feedforward_gain: 1.0}

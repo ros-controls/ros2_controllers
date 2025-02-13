@@ -54,11 +54,13 @@ class TestablePidController : public pid_controller::PidController
   FRIEND_TEST(PidControllerTest, reactivate_success);
   FRIEND_TEST(PidControllerTest, test_feedforward_mode_service);
   FRIEND_TEST(PidControllerTest, test_update_logic_feedforward_off);
-  FRIEND_TEST(PidControllerTest, test_update_logic_feedforward_on);
-  FRIEND_TEST(PidControllerTest, test_update_logic_chainable_feedforward_off);
-  FRIEND_TEST(PidControllerTest, test_update_logic_chainable_feedforward_on);
+  FRIEND_TEST(PidControllerTest, test_update_logic_feedforward_on_with_zero_feedforward_gain);
+  FRIEND_TEST(PidControllerTest, test_update_logic_chainable_not_use_subscriber_update);
+  FRIEND_TEST(PidControllerTest, test_update_logic_angle_wraparound_off);
+  FRIEND_TEST(PidControllerTest, test_update_logic_angle_wraparound_on);
   FRIEND_TEST(PidControllerTest, subscribe_and_get_messages_success);
   FRIEND_TEST(PidControllerTest, receive_message_and_publish_updated_status);
+  FRIEND_TEST(PidControllerDualInterfaceTest, test_chained_feedforward_with_gain_dual_interface);
 
 public:
   controller_interface::CallbackReturn on_configure(
