@@ -101,15 +101,6 @@ controller_interface::return_type DiffDriveController::update_reference_from_sub
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
   auto logger = get_node()->get_logger();
-  if (get_lifecycle_state().id() == State::PRIMARY_STATE_INACTIVE)
-  {
-    if (!is_halted)
-    {
-      halt();
-      is_halted = true;
-    }
-    return controller_interface::return_type::OK;
-  }
 
   const std::shared_ptr<TwistStamped> command_msg_ptr = *(received_velocity_msg_ptr_.readFromRT());
 
@@ -149,15 +140,6 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
   const rclcpp::Time & time, const rclcpp::Duration & period)
 {
   auto logger = get_node()->get_logger();
-  if (get_lifecycle_state().id() == State::PRIMARY_STATE_INACTIVE)
-  {
-    if (!is_halted)
-    {
-      halt();
-      is_halted = true;
-    }
-    return controller_interface::return_type::OK;
-  }
 
   // command may be limited further by SpeedLimit,
   // without affecting the stored twist command
@@ -562,7 +544,6 @@ controller_interface::CallbackReturn DiffDriveController::on_activate(
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  is_halted = false;
   subscriber_is_active_ = true;
 
   RCLCPP_DEBUG(get_node()->get_logger(), "Subscriber and publisher are now active.");
@@ -573,11 +554,7 @@ controller_interface::CallbackReturn DiffDriveController::on_deactivate(
   const rclcpp_lifecycle::State &)
 {
   subscriber_is_active_ = false;
-  if (!is_halted)
-  {
-    halt();
-    is_halted = true;
-  }
+  halt();
   reset_buffers();
   registered_left_wheel_handles_.clear();
   registered_right_wheel_handles_.clear();
@@ -616,7 +593,6 @@ bool DiffDriveController::reset()
   subscriber_is_active_ = false;
   velocity_command_subscriber_.reset();
 
-  is_halted = false;
   return true;
 }
 
