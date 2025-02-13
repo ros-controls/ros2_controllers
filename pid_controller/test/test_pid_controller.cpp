@@ -550,8 +550,8 @@ TEST_F(PidControllerTest, test_update_chained_feedforward_with_gain)
   // state interface value is 1.1 as defined in test fixture
   // with p gain 0.5, the command value should be 0.5 * (5.0 - 1.1) = 1.95
   // with feedforward gain 1.0, the command value should be 1.95 + 1.0 * 5.0 = 6.95
-  auto target_value = 5.0;
-  auto exepected_command_value = 6.95;
+  const double target_value = 5.0;
+  const double expected_command_value = 6.95;
 
   SetUpController("test_pid_controller_with_feedforward_gain");
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
@@ -604,7 +604,7 @@ TEST_F(PidControllerTest, test_update_chained_feedforward_with_gain)
     controller_interface::return_type::OK);
 
   // check on result from update
-  ASSERT_EQ(controller_->command_interfaces_[0].get_value(), exepected_command_value);
+  ASSERT_EQ(controller_->command_interfaces_[0].get_value(), expected_command_value);
 }
 
 /**
@@ -617,8 +617,8 @@ TEST_F(PidControllerTest, test_update_chained_feedforward_off_with_gain)
   // with p gain 0.5, the command value should be 0.5 * (5.0 - 1.1) = 1.95
   // with feedforward off, the command value should be still 1.95 even though feedforward gain
   // is 1.0
-  auto target_value = 5.0;
-  auto exepected_command_value = 1.95;
+  const double target_value = 5.0;
+  const double expected_command_value = 1.95;
 
   SetUpController("test_pid_controller_with_feedforward_gain");
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
@@ -670,7 +670,7 @@ TEST_F(PidControllerTest, test_update_chained_feedforward_off_with_gain)
     controller_interface::return_type::OK);
 
   // check on result from update
-  ASSERT_EQ(controller_->command_interfaces_[0].get_value(), exepected_command_value);
+  ASSERT_EQ(controller_->command_interfaces_[0].get_value(), expected_command_value);
 }
 
 int main(int argc, char ** argv)
