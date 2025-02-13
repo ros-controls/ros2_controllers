@@ -90,11 +90,6 @@ controller_interface::InterfaceConfiguration JointStateBroadcaster::state_interf
 controller_interface::CallbackReturn JointStateBroadcaster::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  if (!param_listener_)
-  {
-    RCLCPP_ERROR(get_node()->get_logger(), "Error encountered during init");
-    return controller_interface::CallbackReturn::ERROR;
-  }
   params_ = param_listener_->get_params();
 
   if (use_all_available_interfaces())
