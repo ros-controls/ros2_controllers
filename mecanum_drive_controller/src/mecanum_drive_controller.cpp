@@ -279,13 +279,13 @@ MecanumDriveController::on_export_reference_interfaces()
 
   reference_interfaces.reserve(reference_interfaces_.size());
 
-  std::vector<std::string> reference_interface_names = {
-    "linear/x/velocity", "linear/y/velocity", "angular/z/velocity"};
+  std::vector<std::string> reference_interface_names = {"/linear/x", "/linear/y", "/angular/z"};
 
   for (size_t i = 0; i < reference_interfaces_.size(); ++i)
   {
     reference_interfaces.push_back(hardware_interface::CommandInterface(
-      get_node()->get_name(), reference_interface_names[i], &reference_interfaces_[i]));
+      get_node()->get_name() + reference_interface_names[i], hardware_interface::HW_IF_VELOCITY,
+      &reference_interfaces_[i]));
   }
 
   return reference_interfaces;
