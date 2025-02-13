@@ -16,7 +16,6 @@
 //
 
 #include "test_pid_controller.hpp"
-#include "angles/angles.h"
 
 #include <limits>
 #include <memory>
