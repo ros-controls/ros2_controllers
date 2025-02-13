@@ -167,6 +167,27 @@ TEST_F(AdmittanceControllerTest, check_interfaces)
   ASSERT_EQ(
     controller_->state_interfaces_.size(),
     state_interface_types_.size() * joint_names_.size() + fts_state_values_.size());
+
+  const auto reference_interfaces = controller_->ordered_exported_reference_interfaces_;
+  ASSERT_EQ(reference_interfaces.size(), 2 * joint_names_.size());
+  for (auto i = 0ul; i < joint_names_.size(); i++)
+  {
+    const std::string ref_itf_prefix_name =
+      std::string(controller_->get_node()->get_name()) + "/" + joint_names_[i];
+    EXPECT_EQ(reference_interfaces[i]->get_prefix_name(), ref_itf_prefix_name);
+    EXPECT_EQ(
+      reference_interfaces[i]->get_name(),
+      ref_itf_prefix_name + "/" + hardware_interface::HW_IF_POSITION);
+    EXPECT_EQ(reference_interfaces[i]->get_interface_name(), hardware_interface::HW_IF_POSITION);
+    EXPECT_EQ(
+      reference_interfaces[i + joint_names_.size()]->get_prefix_name(), ref_itf_prefix_name);
+    EXPECT_EQ(
+      reference_interfaces[i + joint_names_.size()]->get_name(),
+      ref_itf_prefix_name + "/" + hardware_interface::HW_IF_VELOCITY);
+    EXPECT_EQ(
+      reference_interfaces[i + joint_names_.size()]->get_interface_name(),
+      hardware_interface::HW_IF_VELOCITY);
+  }
 }
 
 TEST_F(AdmittanceControllerTest, activate_success)

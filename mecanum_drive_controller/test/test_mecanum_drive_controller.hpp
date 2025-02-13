@@ -269,8 +269,7 @@ protected:
   }
 
 protected:
-  std::vector<std::string> reference_interface_names = {
-    "linear/x/velocity", "linear/y/velocity", "angular/z/velocity"};
+  std::vector<std::string> reference_interface_names = {"linear/x", "linear/y", "angular/z"};
 
   static constexpr char TEST_FRONT_LEFT_CMD_JOINT_NAME[] = "front_left_wheel_joint";
   static constexpr char TEST_FRONT_RIGHT_CMD_JOINT_NAME[] = "front_right_wheel_joint";

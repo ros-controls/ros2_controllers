@@ -147,9 +147,9 @@ AdmittanceController::on_export_reference_interfaces()
       {
         velocity_reference_.emplace_back(reference_interfaces_[index]);
       }
-      const auto full_name = joint + "/" + interface;
+      const auto exported_prefix = std::string(get_node()->get_name()) + "/" + joint;
       chainable_command_interfaces.emplace_back(hardware_interface::CommandInterface(
-        std::string(get_node()->get_name()), full_name, reference_interfaces_.data() + index));
+        exported_prefix, interface, reference_interfaces_.data() + index));
 
       index++;
     }
