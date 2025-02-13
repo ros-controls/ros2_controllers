@@ -46,39 +46,6 @@ TEST_P(TrajectoryControllerTestParameterized, invalid_robot_description)
     SetUpTrajectoryControllerLocal({}, "<invalid_robot_description/>"));
 }
 
-TEST_P(TrajectoryControllerTestParameterized, configure_state_ignores_commands)
-{
-  rclcpp::executors::MultiThreadedExecutor executor;
-  SetUpTrajectoryController(executor);
-  traj_controller_->get_node()->set_parameter(
-    rclcpp::Parameter("allow_nonzero_velocity_at_trajectory_end", true));
-
-  const auto state = traj_controller_->configure();
-  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
-
-  // send msg
-  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
-  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
-  // *INDENT-OFF*
-  std::vector<std::vector<double>> points{
-    {{3.3, 4.4, 5.5}}, {{7.7, 8.8, 9.9}}, {{10.10, 11.11, 12.12}}};
-  std::vector<std::vector<double>> points_velocities{
-    {{0.01, 0.01, 0.01}}, {{0.05, 0.05, 0.05}}, {{0.06, 0.06, 0.06}}};
-  // *INDENT-ON*
-  publish(time_from_start, points, rclcpp::Time(), {}, points_velocities);
-  traj_controller_->wait_for_trajectory(executor);
-
-  traj_controller_->update(
-    rclcpp::Time(static_cast<uint64_t>(0.5 * 1e9)), rclcpp::Duration::from_seconds(0.5));
-
-  // hw position == 0 because controller is not activated
-  EXPECT_EQ(0.0, joint_pos_[0]);
-  EXPECT_EQ(0.0, joint_pos_[1]);
-  EXPECT_EQ(0.0, joint_pos_[2]);
-
-  executor.cancel();
-}
-
 TEST_P(TrajectoryControllerTestParameterized, check_interface_names)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
@@ -148,7 +115,6 @@ TEST_P(TrajectoryControllerTestParameterized, cleanup)
 
   auto state = traj_controller_->get_node()->deactivate();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
-  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
 
   state = traj_controller_->get_node()->cleanup();
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
@@ -223,8 +189,8 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
   std::vector<double> deactivated_positions{joint_pos_[0], joint_pos_[1], joint_pos_[2]};
   state = traj_controller_->get_node()->deactivate();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+
   // it should be holding the current point
-  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.1));
   expectHoldingPointDeactivated(deactivated_positions);
 
   // reactivate

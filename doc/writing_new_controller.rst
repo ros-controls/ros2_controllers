@@ -141,4 +141,7 @@ That's it! Enjoy writing great controllers!
 Useful External References
 ---------------------------
 
-- `Templates and scripts for generating controllers shell <https://rtw.stoglrobotics.de/master/use-cases/ros2_control/setup_controller.html>`_
+- `Templates and scripts for generating controllers shell <https://rtw.b-robotized.com/master/use-cases/ros2_control/setup_controller.html>`_
+
+
+  .. NOTE:: The script is currently only recommended to use with Humble, not compatible with the API from Jazzy and onwards.

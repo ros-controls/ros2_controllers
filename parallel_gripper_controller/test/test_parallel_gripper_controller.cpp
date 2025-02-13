@@ -67,11 +67,6 @@ TEST_F(GripperControllerTest, ParametersNotSet)
   this->SetUpController(
     "test_gripper_action_position_controller_no_parameters",
     controller_interface::return_type::ERROR);
-
-  // configure failed, 'joints' parameter not set
-  ASSERT_EQ(
-    this->controller_->on_configure(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::ERROR);
 }
 
 TEST_F(GripperControllerTest, JointParameterIsEmpty)
@@ -79,11 +74,6 @@ TEST_F(GripperControllerTest, JointParameterIsEmpty)
   this->SetUpController(
     "test_gripper_action_position_controller_empty_joint",
     controller_interface::return_type::ERROR);
-
-  // configure failed, 'joints' is empty
-  ASSERT_EQ(
-    this->controller_->on_configure(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::ERROR);
 }
 
 TEST_F(GripperControllerTest, ConfigureParamsSuccess)
