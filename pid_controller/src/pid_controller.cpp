@@ -392,7 +392,8 @@ std::vector<hardware_interface::CommandInterface> PidController::on_export_refer
     for (const auto & dof_name : reference_and_state_dof_names_)
     {
       reference_interfaces.push_back(hardware_interface::CommandInterface(
-        get_node()->get_name(), dof_name + "/" + interface, &reference_interfaces_[index]));
+        std::string(get_node()->get_name()) + "/" + dof_name, interface,
+        &reference_interfaces_[index]));
       ++index;
     }
   }
@@ -414,7 +415,8 @@ std::vector<hardware_interface::StateInterface> PidController::on_export_state_i
     for (const auto & dof_name : reference_and_state_dof_names_)
     {
       state_interfaces.push_back(hardware_interface::StateInterface(
-        get_node()->get_name(), dof_name + "/" + interface, &state_interfaces_values_[index]));
+        std::string(get_node()->get_name()) + "/" + dof_name, interface,
+        &state_interfaces_values_[index]));
       ++index;
     }
   }
@@ -501,6 +503,7 @@ controller_interface::return_type PidController::update_and_write_commands(
   for (size_t i = 0; i < dof_; ++i)
   {
     double tmp_command = 0.0;
+    double tmp_command = 0.0;
 
     if (std::isfinite(reference_interfaces_[i]) && std::isfinite(measured_state_values_[i]))
     {
@@ -540,10 +543,13 @@ controller_interface::return_type PidController::update_and_write_commands(
         {
           // use calculation with 'error' and 'error_dot'
           tmp_command += pids_[i]->compute_command(
+          tmp_command += pids_[i]->compute_command(
             error, reference_interfaces_[dof_ + i] - measured_state_values_[dof_ + i], period);
         }
         else
         {
+          // Fallback to calculation with 'error' only
+          tmp_command += pids_[i]->compute_command(error, period);
           RCLCPP_WARN(
             get_node()->get_logger(), "Two interfaces, fallback to calculation with 'error' only");
           tmp_command += pids_[i]->compute_command(error, period);
@@ -552,6 +558,7 @@ controller_interface::return_type PidController::update_and_write_commands(
       else
       {
         // use calculation with 'error' only
+        tmp_command += pids_[i]->compute_command(error, period);
         tmp_command += pids_[i]->compute_command(error, period);
       }
 

@@ -141,8 +141,6 @@ protected:
   rclcpp::Duration publish_period_ = rclcpp::Duration::from_nanoseconds(0);
   rclcpp::Time previous_publish_timestamp_{0, 0, RCL_CLOCK_UNINITIALIZED};
 
-  bool is_halted = false;
-
   bool reset();
   void halt();
 
