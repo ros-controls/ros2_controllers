@@ -31,11 +31,6 @@ void ForwardCommandController::declare_parameters()
 
 controller_interface::CallbackReturn ForwardCommandController::read_parameters()
 {
-  if (!param_listener_)
-  {
-    RCLCPP_ERROR(get_node()->get_logger(), "Error encountered during init");
-    return controller_interface::CallbackReturn::ERROR;
-  }
   params_ = param_listener_->get_params();
 
   if (params_.joints.empty())

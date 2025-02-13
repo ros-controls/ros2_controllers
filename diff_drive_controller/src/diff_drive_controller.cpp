@@ -101,15 +101,6 @@ controller_interface::return_type DiffDriveController::update_reference_from_sub
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
   auto logger = get_node()->get_logger();
-  if (get_lifecycle_state().id() == State::PRIMARY_STATE_INACTIVE)
-  {
-    if (!is_halted)
-    {
-      halt();
-      is_halted = true;
-    }
-    return controller_interface::return_type::OK;
-  }
 
   const std::shared_ptr<TwistStamped> command_msg_ptr = *(received_velocity_msg_ptr_.readFromRT());
 
@@ -149,15 +140,6 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
   const rclcpp::Time & time, const rclcpp::Duration & period)
 {
   auto logger = get_node()->get_logger();
-  if (get_lifecycle_state().id() == State::PRIMARY_STATE_INACTIVE)
-  {
-    if (!is_halted)
-    {
-      halt();
-      is_halted = true;
-    }
-    return controller_interface::return_type::OK;
-  }
 
   // command may be limited further by SpeedLimit,
   // without affecting the stored twist command
@@ -334,6 +316,10 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
 
   cmd_vel_timeout_ = rclcpp::Duration::from_seconds(params_.cmd_vel_timeout);
   publish_limited_velocity_ = params_.publish_limited_velocity;
+
+  // Allocate reference interfaces if needed
+  const int nr_ref_itfs = 2;
+  reference_interfaces_.resize(nr_ref_itfs, std::numeric_limits<double>::quiet_NaN());
 
   // TODO(christophfroehlich) remove deprecated parameters
   // START DEPRECATED
@@ -558,7 +544,6 @@ controller_interface::CallbackReturn DiffDriveController::on_activate(
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  is_halted = false;
   subscriber_is_active_ = true;
 
   RCLCPP_DEBUG(get_node()->get_logger(), "Subscriber and publisher are now active.");
@@ -569,11 +554,7 @@ controller_interface::CallbackReturn DiffDriveController::on_deactivate(
   const rclcpp_lifecycle::State &)
 {
   subscriber_is_active_ = false;
-  if (!is_halted)
-  {
-    halt();
-    is_halted = true;
-  }
+  halt();
   reset_buffers();
   registered_left_wheel_handles_.clear();
   registered_right_wheel_handles_.clear();
@@ -612,13 +593,14 @@ bool DiffDriveController::reset()
   subscriber_is_active_ = false;
   velocity_command_subscriber_.reset();
 
-  is_halted = false;
   return true;
 }
 
 void DiffDriveController::reset_buffers()
 {
-  reference_interfaces_ = std::vector<double>(2, std::numeric_limits<double>::quiet_NaN());
+  std::fill(
+    reference_interfaces_.begin(), reference_interfaces_.end(),
+    std::numeric_limits<double>::quiet_NaN());
   // Empty out the old queue. Fill with zeros (not NaN) to catch early accelerations.
   std::queue<std::array<double, 2>> empty;
   std::swap(previous_two_commands_, empty);
@@ -714,10 +696,8 @@ bool DiffDriveController::on_set_chained_mode(bool chained_mode)
 std::vector<hardware_interface::CommandInterface>
 DiffDriveController::on_export_reference_interfaces()
 {
-  const int nr_ref_itfs = 2;
-  reference_interfaces_.resize(nr_ref_itfs, std::numeric_limits<double>::quiet_NaN());
   std::vector<hardware_interface::CommandInterface> reference_interfaces;
-  reference_interfaces.reserve(nr_ref_itfs);
+  reference_interfaces.reserve(reference_interfaces_.size());
 
   reference_interfaces.push_back(hardware_interface::CommandInterface(
     get_node()->get_name() + std::string("/linear"), hardware_interface::HW_IF_VELOCITY,

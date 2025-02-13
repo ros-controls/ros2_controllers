@@ -719,11 +719,16 @@ TEST_F(TestDiffDriveController, cleanup)
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
+  // should be moving
+  EXPECT_LT(0.0, left_wheel_vel_cmd_.get_value());
+  EXPECT_LT(0.0, right_wheel_vel_cmd_.get_value());
+
   state = controller_->get_node()->deactivate();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
-  ASSERT_EQ(
-    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
+
+  // should be stopped
+  EXPECT_EQ(0.0, left_wheel_vel_cmd_.get_value()) << "Wheels should be halted on deactivate()";
+  EXPECT_EQ(0.0, right_wheel_vel_cmd_.get_value()) << "Wheels should be halted on deactivate()";
 
   state = controller_->get_node()->cleanup();
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
