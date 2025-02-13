@@ -63,7 +63,7 @@ class TestablePidController : public pid_controller::PidController
   FRIEND_TEST(PidControllerTest, test_update_chained_feedforward_with_gain);
   FRIEND_TEST(PidControllerTest, test_update_chained_feedforward_off_with_gain);
   FRIEND_TEST(PidControllerDualInterfaceTest, test_chained_feedforward_with_gain_dual_interface);
-  
+
 public:
   controller_interface::CallbackReturn on_configure(
     const rclcpp_lifecycle::State & previous_state) override
