@@ -290,9 +290,8 @@ controller_interface::return_type JointTrajectoryController::update(
           for (auto i = 0ul; i < dof_; ++i)
           {
             tmp_command_[i] = (command_next_.velocities[i] * ff_velocity_scale_[i]) +
-                              pids_[i]->computeCommand(
-                                state_error_.positions[i], state_error_.velocities[i],
-                                (uint64_t)period.nanoseconds());
+                              pids_[i]->compute_command(
+                                state_error_.positions[i], state_error_.velocities[i], period);
           }
         }
 
@@ -1582,7 +1581,7 @@ void JointTrajectoryController::update_pids()
     if (pids_[i])
     {
       // update PIDs with gains from ROS parameters
-      pids_[i]->setGains(gains.p, gains.i, gains.d, gains.i_clamp, -gains.i_clamp);
+      pids_[i]->set_gains(gains.p, gains.i, gains.d, gains.i_clamp, -gains.i_clamp);
     }
     else
     {

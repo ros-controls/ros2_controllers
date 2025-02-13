@@ -140,7 +140,7 @@ controller_interface::CallbackReturn PidController::configure_parameters()
     // prefix should be interpreted as parameters prefix
     pids_[i] =
       std::make_shared<control_toolbox::PidROS>(get_node(), "gains." + params_.dof_names[i], true);
-    if (!pids_[i]->initPid())
+    if (!pids_[i]->initialize_from_ros_parameters())
     {
       return CallbackReturn::FAILURE;
     }
@@ -539,19 +539,19 @@ controller_interface::return_type PidController::update_and_write_commands(
           !std::isnan(measured_state_values_[dof_ + i]))
         {
           // use calculation with 'error' and 'error_dot'
-          tmp_command += pids_[i]->computeCommand(
+          tmp_command += pids_[i]->compute_command(
             error, reference_interfaces_[dof_ + i] - measured_state_values_[dof_ + i], period);
         }
         else
         {
           // Fallback to calculation with 'error' only
-          tmp_command += pids_[i]->computeCommand(error, period);
+          tmp_command += pids_[i]->compute_command(error, period);
         }
       }
       else
       {
         // use calculation with 'error' only
-        tmp_command += pids_[i]->computeCommand(error, period);
+        tmp_command += pids_[i]->compute_command(error, period);
       }
 
       // write calculated values
