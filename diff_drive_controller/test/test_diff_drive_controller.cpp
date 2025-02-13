@@ -976,23 +976,22 @@ TEST_F(TestDiffDriveController, reference_interfaces_are_properly_exported)
   ASSERT_EQ(reference_interfaces.size(), 2)
     << "Expected exactly 2 reference interfaces: linear and angular";
 
-  const std::string expected_prefix_name = std::string(controller_->get_node()->get_name());
-  const std::string expected_linear_interface_name =
-    std::string("linear/") + hardware_interface::HW_IF_VELOCITY;
-  const std::string expected_angular_interface_name =
-    std::string("angular/") + hardware_interface::HW_IF_VELOCITY;
+  const std::string expected_linear_prefix_name =
+    std::string(controller_->get_node()->get_name()) + std::string("/linear");
+  const std::string expected_angular_prefix_name =
+    std::string(controller_->get_node()->get_name()) + std::string("/angular");
   const std::string expected_linear_name =
-    expected_prefix_name + std::string("/") + expected_linear_interface_name;
+    expected_linear_prefix_name + std::string("/") + hardware_interface::HW_IF_VELOCITY;
   const std::string expected_angular_name =
-    expected_prefix_name + std::string("/") + expected_angular_interface_name;
+    expected_angular_prefix_name + std::string("/") + hardware_interface::HW_IF_VELOCITY;
 
   ASSERT_EQ(reference_interfaces[0]->get_name(), expected_linear_name);
   ASSERT_EQ(reference_interfaces[1]->get_name(), expected_angular_name);
 
-  EXPECT_EQ(reference_interfaces[0]->get_prefix_name(), expected_prefix_name);
-  EXPECT_EQ(reference_interfaces[0]->get_interface_name(), expected_linear_interface_name);
-  EXPECT_EQ(reference_interfaces[1]->get_prefix_name(), expected_prefix_name);
-  EXPECT_EQ(reference_interfaces[1]->get_interface_name(), expected_angular_interface_name);
+  EXPECT_EQ(reference_interfaces[0]->get_prefix_name(), expected_linear_prefix_name);
+  EXPECT_EQ(reference_interfaces[0]->get_interface_name(), hardware_interface::HW_IF_VELOCITY);
+  EXPECT_EQ(reference_interfaces[1]->get_prefix_name(), expected_angular_prefix_name);
+  EXPECT_EQ(reference_interfaces[1]->get_interface_name(), hardware_interface::HW_IF_VELOCITY);
 }
 
 // Make sure that the controller is properly reset when deactivated
