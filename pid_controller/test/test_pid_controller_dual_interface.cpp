@@ -22,24 +22,21 @@
 
 using pid_controller::feedforward_mode_type;
 
-class PidControllerDualInterfaceTest: public PidControllerFixture<TestablePidController> 
+class PidControllerDualInterfaceTest : public PidControllerFixture<TestablePidController>
 {
 public:
   void SetUp()
   {
     PidControllerFixture::SetUp();
-    
+
     dof_names_ = {"joint1", "joint2"};
 
     // set up interfaces
     command_interface_ = "velocity";
     state_interfaces_ = {"position", "velocity"};
     dof_state_values_ = {
-      get_joint1_state_position(),
-      get_joint2_state_position(),
-      get_joint1_state_velocity(),
-      get_joint2_state_velocity()
-    };
+      get_joint1_state_position(), get_joint2_state_position(), get_joint1_state_velocity(),
+      get_joint2_state_velocity()};
   }
 
   double get_joint1_state_position() const { return 10.0; }
@@ -86,13 +83,10 @@ TEST_F(PidControllerDualInterfaceTest, test_chained_feedforward_with_gain_dual_i
   controller_->control_mode_.writeFromNonRT(feedforward_mode_type::ON);
   ASSERT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::ON);
 
-  // set up the reference interface, 
+  // set up the reference interface,
   controller_->reference_interfaces_ = {
-    get_joint1_reference_position(), 
-    get_joint2_reference_position(), 
-    get_joint1_reference_velocity(), 
-    get_joint2_reference_velocity()
-  };
+    get_joint1_reference_position(), get_joint2_reference_position(),
+    get_joint1_reference_velocity(), get_joint2_reference_velocity()};
 
   // run update
   ASSERT_EQ(
