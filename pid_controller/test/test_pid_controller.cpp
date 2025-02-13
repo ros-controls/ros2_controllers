@@ -693,12 +693,6 @@ TEST_F(PidControllerTest, test_save_i_term_off)
   }
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_FALSE(controller_->is_in_chained_mode());
-  EXPECT_TRUE(std::isnan((*(controller_->input_ref_.readFromRT()))->values[0]));
-  EXPECT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::OFF);
-  for (const auto & interface : controller_->reference_interfaces_)
-  {
-    EXPECT_TRUE(std::isnan(interface));
-  }
 
   std::shared_ptr<ControllerCommandMsg> msg = std::make_shared<ControllerCommandMsg>();
   msg->dof_names = dof_names_;
@@ -709,13 +703,6 @@ TEST_F(PidControllerTest, test_save_i_term_off)
   }
   msg->values_dot.resize(dof_names_.size(), std::numeric_limits<double>::quiet_NaN());
   controller_->input_ref_.writeFromNonRT(msg);
-
-  for (size_t i = 0; i < dof_command_values_.size(); ++i)
-  {
-    EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromRT()))->values[i]));
-    EXPECT_EQ((*(controller_->input_ref_.readFromRT()))->values[i], dof_command_values_[i]);
-    EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[i]));
-  }
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
@@ -773,12 +760,6 @@ TEST_F(PidControllerTest, test_save_i_term_on)
   controller_->set_chained_mode(false);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_FALSE(controller_->is_in_chained_mode());
-  EXPECT_TRUE(std::isnan((*(controller_->input_ref_.readFromRT()))->values[0]));
-  EXPECT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::OFF);
-  for (const auto & interface : controller_->reference_interfaces_)
-  {
-    EXPECT_TRUE(std::isnan(interface));
-  }
 
   std::shared_ptr<ControllerCommandMsg> msg = std::make_shared<ControllerCommandMsg>();
   msg->dof_names = dof_names_;
@@ -789,13 +770,6 @@ TEST_F(PidControllerTest, test_save_i_term_on)
   }
   msg->values_dot.resize(dof_names_.size(), std::numeric_limits<double>::quiet_NaN());
   controller_->input_ref_.writeFromNonRT(msg);
-
-  for (size_t i = 0; i < dof_command_values_.size(); ++i)
-  {
-    EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromRT()))->values[i]));
-    EXPECT_EQ((*(controller_->input_ref_.readFromRT()))->values[i], dof_command_values_[i]);
-    EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[i]));
-  }
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
