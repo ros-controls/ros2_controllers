@@ -574,9 +574,7 @@ TEST_F(PidControllerTest, test_update_chained_feedforward_with_gain)
   msg->values_dot.resize(msg->dof_names.size(), std::numeric_limits<double>::quiet_NaN());
   controller_->input_ref_.writeFromNonRT(msg);
   ASSERT_EQ(
-    controller_->update_reference_from_subscribers(
-      rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
+    controller_->update_reference_from_subscribers(), controller_interface::return_type::OK);
 
   // run update
   ASSERT_EQ(
@@ -640,9 +638,7 @@ TEST_F(PidControllerTest, test_update_chained_feedforward_off_with_gain)
   msg->values_dot.resize(msg->dof_names.size(), std::numeric_limits<double>::quiet_NaN());
   controller_->input_ref_.writeFromNonRT(msg);
   ASSERT_EQ(
-    controller_->update_reference_from_subscribers(
-      rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
+    controller_->update_reference_from_subscribers(), controller_interface::return_type::OK);
 
   // run update
   ASSERT_EQ(
