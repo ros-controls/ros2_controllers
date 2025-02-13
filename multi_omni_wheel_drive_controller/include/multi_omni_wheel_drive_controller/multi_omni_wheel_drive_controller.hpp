@@ -91,8 +91,6 @@ protected:
   // Timeout to consider cmd_vel commands old
   rclcpp::Duration cmd_vel_timeout_ = rclcpp::Duration::from_seconds(0.5);
 
-  bool is_halted_ = false;
-
   bool subscriber_is_active_ = false;
   rclcpp::Subscription<TwistStamped>::SharedPtr velocity_command_subscriber_ = nullptr;
   realtime_tools::RealtimeBuffer<std::shared_ptr<TwistStamped>> received_velocity_msg_ptr_{nullptr};

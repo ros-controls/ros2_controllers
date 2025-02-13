@@ -235,7 +235,6 @@ controller_interface::CallbackReturn MultiOmniWheelDriveController::on_activate(
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  is_halted_ = false;
   subscriber_is_active_ = true;
 
   RCLCPP_DEBUG(get_node()->get_logger(), "Subscriber and publisher are now active.");
@@ -246,11 +245,7 @@ controller_interface::CallbackReturn MultiOmniWheelDriveController::on_deactivat
   const rclcpp_lifecycle::State &)
 {
   subscriber_is_active_ = false;
-  if (!is_halted_)
-  {
-    halt();
-    is_halted_ = true;
-  }
+  halt();
   reset_buffers();
   registered_wheel_handles_.clear();
   return controller_interface::CallbackReturn::SUCCESS;
@@ -265,15 +260,6 @@ controller_interface::return_type MultiOmniWheelDriveController::update_referenc
   const rclcpp::Time & time, const rclcpp::Duration &)
 {
   auto logger = get_node()->get_logger();
-  if (get_lifecycle_state().id() == State::PRIMARY_STATE_INACTIVE)
-  {
-    if (!is_halted_)
-    {
-      halt();
-      is_halted_ = true;
-    }
-    return controller_interface::return_type::OK;
-  }
 
   const std::shared_ptr<TwistStamped> command_msg_ptr = *(received_velocity_msg_ptr_.readFromRT());
 
@@ -315,15 +301,6 @@ controller_interface::return_type MultiOmniWheelDriveController::update_and_writ
   const rclcpp::Time & time, const rclcpp::Duration &)
 {
   auto logger = get_node()->get_logger();
-  if (get_lifecycle_state().id() == State::PRIMARY_STATE_INACTIVE)
-  {
-    if (!is_halted_)
-    {
-      halt();
-      is_halted_ = true;
-    }
-    return controller_interface::return_type::OK;
-  }
 
   if (
     !std::isfinite(reference_interfaces_[0]) || !std::isfinite(reference_interfaces_[1]) ||
@@ -466,7 +443,6 @@ bool MultiOmniWheelDriveController::reset()
   subscriber_is_active_ = false;
   velocity_command_subscriber_.reset();
 
-  is_halted_ = false;
   return true;
 }
 

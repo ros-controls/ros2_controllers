@@ -295,50 +295,6 @@ TEST_F(MultiOmniWheelDriveControllerTest, activate_fails_with_wrong_resources_as
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_ERROR);
 }
 
-TEST_F(MultiOmniWheelDriveControllerTest, cleanup)
-{
-  ASSERT_EQ(InitController(), controller_interface::return_type::OK);
-
-  rclcpp::executors::SingleThreadedExecutor executor;
-  executor.add_node(controller_->get_node()->get_node_base_interface());
-  auto state = controller_->get_node()->configure();
-  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
-  assignResourcesPosFeedback();
-
-  state = controller_->get_node()->activate();
-  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
-
-  waitForSetup();
-
-  publish_twist();
-  controller_->wait_for_twist(executor);
-
-  ASSERT_EQ(
-    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
-
-  state = controller_->get_node()->deactivate();
-  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
-  ASSERT_EQ(
-    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
-
-  state = controller_->get_node()->cleanup();
-  ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
-
-  // Wheels should be stopped
-  double value;
-  for (size_t i = 0; i < command_itfs_.size(); i++)
-  {
-    if (command_itfs_[i].get_value(value))
-    {
-      EXPECT_EQ(value, 0.0);
-    }
-  }
-
-  executor.cancel();
-}
-
 // When not in chained mode, we want to test that
 // 1. The controller is configurable and all lifecycle functions work properly
 // 2. command_interfaces are set to 0.0 when cmd_vel_timeout_ is exceeded and on deactivation
@@ -417,14 +373,9 @@ TEST_F(MultiOmniWheelDriveControllerTest, chainable_controller_unchained_mode)
   }
 
   // Now check that the command interfaces are set to 0.0 on deactivation
-  // (despite calls to update())
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
   state = controller_->get_node()->deactivate();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
-  ASSERT_EQ(
-    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
-
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
     if (command_itfs_[i].get_value(value))
@@ -506,14 +457,9 @@ TEST_F(MultiOmniWheelDriveControllerTest, chainable_controller_chained_mode)
   }
 
   // Now check that the command interfaces are set to 0.0 on deactivation
-  // (despite calls to update())
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
   state = controller_->get_node()->deactivate();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
-  ASSERT_EQ(
-    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
-
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
     if (command_itfs_[i].get_value(value))
