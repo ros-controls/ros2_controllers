@@ -503,7 +503,6 @@ controller_interface::return_type PidController::update_and_write_commands(
   for (size_t i = 0; i < dof_; ++i)
   {
     double tmp_command = 0.0;
-    double tmp_command = 0.0;
 
     if (std::isfinite(reference_interfaces_[i]) && std::isfinite(measured_state_values_[i]))
     {
@@ -543,22 +542,17 @@ controller_interface::return_type PidController::update_and_write_commands(
         {
           // use calculation with 'error' and 'error_dot'
           tmp_command += pids_[i]->compute_command(
-          tmp_command += pids_[i]->compute_command(
             error, reference_interfaces_[dof_ + i] - measured_state_values_[dof_ + i], period);
         }
         else
         {
           // Fallback to calculation with 'error' only
           tmp_command += pids_[i]->compute_command(error, period);
-          RCLCPP_WARN(
-            get_node()->get_logger(), "Two interfaces, fallback to calculation with 'error' only");
-          tmp_command += pids_[i]->compute_command(error, period);
         }
       }
       else
       {
         // use calculation with 'error' only
-        tmp_command += pids_[i]->compute_command(error, period);
         tmp_command += pids_[i]->compute_command(error, period);
       }
 
