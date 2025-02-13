@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#define _USE_MATH_DEFINES
+
 #include <gmock/gmock.h>
 
 #include "steering_controllers_library/steering_odometry.hpp"
