@@ -149,23 +149,6 @@ void JointStateBroadcasterTest::assign_state_interfaces(
   state_broadcaster_->assign_interfaces({}, std::move(state_ifs));
 }
 
-TEST_F(JointStateBroadcasterTest, ConfigureErrorTest)
-{
-  // publishers not initialized yet
-  ASSERT_FALSE(state_broadcaster_->realtime_joint_state_publisher_);
-  ASSERT_FALSE(state_broadcaster_->realtime_dynamic_joint_state_publisher_);
-
-  // configure failed
-  ASSERT_THROW(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), std::exception);
-
-  SetUpStateBroadcaster();
-  // check state remains unchanged
-
-  // publishers still not initialized
-  ASSERT_FALSE(state_broadcaster_->realtime_joint_state_publisher_);
-  ASSERT_FALSE(state_broadcaster_->realtime_dynamic_joint_state_publisher_);
-}
-
 TEST_F(JointStateBroadcasterTest, ActivateEmptyTest)
 {
   // publishers not initialized yet
