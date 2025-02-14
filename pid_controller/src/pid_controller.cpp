@@ -442,6 +442,11 @@ controller_interface::CallbackReturn PidController::on_activate(
   measured_state_values_.assign(
     measured_state_values_.size(), std::numeric_limits<double>::quiet_NaN());
 
+  // prefixed save_i_term parameter is read from ROS parameters
+  for (auto & pid : pids_)
+  {
+    pid->reset();
+  }
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
