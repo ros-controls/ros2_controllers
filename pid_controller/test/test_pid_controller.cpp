@@ -677,6 +677,141 @@ TEST_F(PidControllerTest, test_update_chained_feedforward_off_with_gain)
   ASSERT_EQ(controller_->command_interfaces_[0].get_value(), expected_command_value);
 }
 
+/**
+ * @brief Test if retention of the integral state is deactivated
+ *
+ */
+
+TEST_F(PidControllerTest, test_save_i_term_off)
+{
+  SetUpController("test_save_i_term_off");
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+  executor.add_node(service_caller_node_->get_node_base_interface());
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  controller_->set_chained_mode(false);
+  for (const auto & dof_name : dof_names_)
+  {
+    ASSERT_FALSE(controller_->params_.gains.dof_names_map[dof_name].save_i_term);
+  }
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_FALSE(controller_->is_in_chained_mode());
+
+  std::shared_ptr<ControllerCommandMsg> msg = std::make_shared<ControllerCommandMsg>();
+  msg->dof_names = dof_names_;
+  msg->values.resize(dof_names_.size(), 0.0);
+  for (size_t i = 0; i < dof_command_values_.size(); ++i)
+  {
+    msg->values[i] = dof_command_values_[i];
+  }
+  msg->values_dot.resize(dof_names_.size(), std::numeric_limits<double>::quiet_NaN());
+  controller_->input_ref_.writeFromNonRT(msg);
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  // check the command value
+  // error = ref - state = 100.001, error_dot = error/ds = 10000.1,
+  // p_term = 100.001 * 1, i_term = 1.00001 * 2 = 2.00002, d_term = error/ds = 10000.1 * 3
+  // feedforward OFF -> cmd = p_term + i_term + d_term = 30102.3
+  auto expected_command_value = 30102.30102;
+
+  double actual_value = std::round(controller_->command_interfaces_[0].get_value() * 1e5) / 1e5;
+  EXPECT_NEAR(actual_value, expected_command_value, 1e-5);
+
+  // deactivate the controller and set command=state
+  ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  msg = std::make_shared<ControllerCommandMsg>();
+  msg->dof_names = dof_names_;
+  msg->values.resize(dof_names_.size(), 0.0);
+  for (size_t i = 0; i < dof_command_values_.size(); ++i)
+  {
+    msg->values[i] = dof_state_values_[i];
+  }
+  msg->values_dot.resize(dof_names_.size(), std::numeric_limits<double>::quiet_NaN());
+  controller_->input_ref_.writeFromNonRT(msg);
+
+  // reactivate the controller, the integral term should NOT be saved
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  actual_value = std::round(controller_->command_interfaces_[0].get_value() * 1e5) / 1e5;
+  EXPECT_NEAR(actual_value, 0.0, 1e-5);
+}
+
+/**
+ * @brief Test if retention of the integral state is working
+ *
+ */
+
+TEST_F(PidControllerTest, test_save_i_term_on)
+{
+  SetUpController("test_save_i_term_on");
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+  executor.add_node(service_caller_node_->get_node_base_interface());
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  for (const auto & dof_name : dof_names_)
+  {
+    ASSERT_TRUE(controller_->params_.gains.dof_names_map[dof_name].save_i_term);
+  }
+  controller_->set_chained_mode(false);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_FALSE(controller_->is_in_chained_mode());
+
+  std::shared_ptr<ControllerCommandMsg> msg = std::make_shared<ControllerCommandMsg>();
+  msg->dof_names = dof_names_;
+  msg->values.resize(dof_names_.size(), 0.0);
+  for (size_t i = 0; i < dof_command_values_.size(); ++i)
+  {
+    msg->values[i] = dof_command_values_[i];
+  }
+  msg->values_dot.resize(dof_names_.size(), std::numeric_limits<double>::quiet_NaN());
+  controller_->input_ref_.writeFromNonRT(msg);
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  // check the command value
+  // error = ref - state = 100.001, error_dot = error/ds = 10000.1,
+  // p_term = 100.001 * 1, i_term = 1.00001 * 2 = 2.00002, d_term = error/ds = 10000.1 * 3
+  // feedforward OFF -> cmd = p_term + i_term + d_term = 30102.3
+  auto expected_command_value = 30102.30102;
+
+  double actual_value = std::round(controller_->command_interfaces_[0].get_value() * 1e5) / 1e5;
+  EXPECT_NEAR(actual_value, expected_command_value, 1e-5);
+
+  // deactivate the controller and set command=state
+  ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  msg = std::make_shared<ControllerCommandMsg>();
+  msg->dof_names = dof_names_;
+  msg->values.resize(dof_names_.size(), 0.0);
+  for (size_t i = 0; i < dof_command_values_.size(); ++i)
+  {
+    msg->values[i] = dof_state_values_[i];
+  }
+  msg->values_dot.resize(dof_names_.size(), std::numeric_limits<double>::quiet_NaN());
+  controller_->input_ref_.writeFromNonRT(msg);
+
+  // reactivate the controller, the integral term should be saved
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  expected_command_value = 2.00002;  // i_term from above
+  actual_value = std::round(controller_->command_interfaces_[0].get_value() * 1e5) / 1e5;
+  EXPECT_NEAR(actual_value, expected_command_value, 1e-5);
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
