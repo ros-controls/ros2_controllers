@@ -358,7 +358,7 @@ protected:
   // Controller-related parameters
   const std::vector<std::string> joint_names_ = {"joint1", "joint2", "joint3",
                                                  "joint4", "joint5", "joint6"};
-  const std::vector<std::string> command_interface_types_ = {"position"};
+  std::vector<std::string> command_interface_types_ = {"position"};
   const std::vector<std::string> state_interface_types_ = {"position"};
   const std::string ft_sensor_name_ = "ft_sensor_name";
 
