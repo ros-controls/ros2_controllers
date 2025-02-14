@@ -149,7 +149,7 @@ public:
    * \brief Get odometry type
    * \return odometry type
    */
-  unsigned int get_odometry_type() const { return config_type_; }
+  unsigned int get_odometry_type() const { return static_cast<unsigned int>(config_type_); }
 
   /**
    * \brief heading getter
