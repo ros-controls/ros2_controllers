@@ -146,6 +146,12 @@ public:
   void set_odometry_type(const unsigned int type);
 
   /**
+   * \brief Get odometry type
+   * \return odometry type
+   */
+  unsigned int get_odometry_type() const { return config_type_; }
+
+  /**
    * \brief heading getter
    * \return heading [rad]
    */
