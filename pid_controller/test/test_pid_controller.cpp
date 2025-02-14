@@ -675,7 +675,7 @@ TEST_F(PidControllerTest, test_save_i_term_off)
   // error = ref - state = 100.001, error_dot = error/ds = 10000.1,
   // p_term = 100.001 * 1, i_term = 1.00001 * 2 = 2.00002, d_term = error/ds = 10000.1 * 3
   // feedforward OFF -> cmd = p_term + i_term + d_term = 30102.3
-  auto expected_command_value = 30102.30102;
+  const double expected_command_value = 30102.30102;
 
   double actual_value = std::round(controller_->command_interfaces_[0].get_value() * 1e5) / 1e5;
   EXPECT_NEAR(actual_value, expected_command_value, 1e-5);
@@ -725,7 +725,7 @@ TEST_F(PidControllerTest, test_save_i_term_on)
   // error = ref - state = 100.001, error_dot = error/ds = 10000.1,
   // p_term = 100.001 * 1, i_term = 1.00001 * 2 = 2.00002, d_term = error/ds = 10000.1 * 3
   // feedforward OFF -> cmd = p_term + i_term + d_term = 30102.3
-  auto expected_command_value = 30102.30102;
+  const double expected_command_value = 30102.30102;
 
   double actual_value = std::round(controller_->command_interfaces_[0].get_value() * 1e5) / 1e5;
   EXPECT_NEAR(actual_value, expected_command_value, 1e-5);
@@ -740,9 +740,8 @@ TEST_F(PidControllerTest, test_save_i_term_on)
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
-  expected_command_value = 2.00002;  // i_term from above
   actual_value = std::round(controller_->command_interfaces_[0].get_value() * 1e5) / 1e5;
-  EXPECT_NEAR(actual_value, expected_command_value, 1e-5);
+  EXPECT_NEAR(actual_value, 2.00002, 1e-5);  // i_term from above
 }
 
 int main(int argc, char ** argv)
