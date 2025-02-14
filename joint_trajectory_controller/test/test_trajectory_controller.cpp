@@ -1649,7 +1649,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_execute_partial_traj_in_futur
 TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_error_updated)
 {
   rclcpp::executors::SingleThreadedExecutor executor;
-  // default if false so it will not be actually set parameter
+  // default is false so it will not be actually set parameter
   rclcpp::Parameter interp_desired_state_parameter("interpolate_from_desired_state", false);
   SetUpAndActivateTrajectoryController(executor, {interp_desired_state_parameter}, true);
 
@@ -1680,7 +1680,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_erro
   traj_controller_->wait_for_trajectory(executor);
   updateControllerAsync(rclcpp::Duration::from_seconds(1.1));
 
-  // JTC is executing trajectory in open-loop therefore:
+  // JTC is executing trajectory with interpolate_from_desired_state, therefore:
   // - internal state does not have to be updated (in this test-case it shouldn't)
   // - internal command is updated
   EXPECT_NEAR(INITIAL_POS_JOINT1, joint_state_pos_[0], COMMON_THRESHOLD);
@@ -1754,7 +1754,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_erro
 TEST_P(TrajectoryControllerTestParameterized, test_no_jump_when_state_tracking_error_not_updated)
 {
   rclcpp::executors::SingleThreadedExecutor executor;
-  // set open loop to true, this should change behavior from above
+  // set interpolate_from_desired_state to true, this should change behavior from above
   rclcpp::Parameter interp_desired_state_parameter("interpolate_from_desired_state", true);
   rclcpp::Parameter update_rate_param("update_rate", 100);
   SetUpAndActivateTrajectoryController(
@@ -1784,7 +1784,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_no_jump_when_state_tracking_e
   traj_controller_->wait_for_trajectory(executor);
   updateControllerAsync(rclcpp::Duration::from_seconds(1.1));
 
-  // JTC is executing trajectory in open-loop therefore:
+  // JTC is executing trajectory with interpolate_from_desired_state therefore:
   // - internal state does not have to be updated (in this test-case it shouldn't)
   // - internal command is updated
   EXPECT_NEAR(INITIAL_POS_JOINT1, joint_state_pos_[0], COMMON_THRESHOLD);
