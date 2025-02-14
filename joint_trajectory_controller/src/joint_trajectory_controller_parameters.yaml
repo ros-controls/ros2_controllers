@@ -47,7 +47,7 @@ joint_trajectory_controller:
   open_loop_control: {
     type: bool,
     default_value: false,
-    description: "deprecated: use interpolate_from_desired_state and set feedback gains to zero instead",
+    description: "deprecated: use ``interpolate_from_desired_state`` and set feedback gains to zero instead",
     read_only: true,
   }
   interpolate_from_desired_state: {
@@ -78,7 +78,7 @@ joint_trajectory_controller:
   action_monitor_rate: {
     type: double,
     default_value: 20.0,
-    description: "Rate to monitor status changes when the controller is executing action (control_msgs::action::FollowJointTrajectory)",
+    description: "Rate to monitor status changes when the controller is executing action (``control_msgs::action::FollowJointTrajectory``)",
     read_only: true,
     validation: {
       gt_eq: [0.1]
