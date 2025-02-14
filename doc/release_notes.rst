@@ -61,6 +61,7 @@ mecanum_drive_controller
 pid_controller
 ************************
 * 🚀 The PID controller was added 🎉 (`#434 <https://github.com/ros-controls/ros2_controllers/pull/434>`_).
+* Add ``save_i_term`` parameter to control retention of integral state after re-activation (`#1507 <https://github.com/ros-controls/ros2_controllers/pull/1507>`_).
 
 steering_controllers_library
 ********************************

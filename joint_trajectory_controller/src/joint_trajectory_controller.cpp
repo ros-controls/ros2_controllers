@@ -190,8 +190,12 @@ controller_interface::return_type JointTrajectoryController::update(
       first_sample = true;
       if (params_.interpolate_from_desired_state || params_.open_loop_control)
       {
+        if (last_commanded_time_.seconds() == 0.0)
+        {
+          last_commanded_time_ = time;
+        }
         traj_external_point_ptr_->set_point_before_trajectory_msg(
-          time, last_commanded_state_, joints_angle_wraparound_);
+          last_commanded_time_, last_commanded_state_, joints_angle_wraparound_);
       }
       else
       {
@@ -290,9 +294,8 @@ controller_interface::return_type JointTrajectoryController::update(
           for (auto i = 0ul; i < dof_; ++i)
           {
             tmp_command_[i] = (command_next_.velocities[i] * ff_velocity_scale_[i]) +
-                              pids_[i]->computeCommand(
-                                state_error_.positions[i], state_error_.velocities[i],
-                                (uint64_t)period.nanoseconds());
+                              pids_[i]->compute_command(
+                                state_error_.positions[i], state_error_.velocities[i], period);
           }
         }
 
@@ -323,6 +326,7 @@ controller_interface::return_type JointTrajectoryController::update(
 
         // store the previous command. Used in open-loop control mode
         last_commanded_state_ = command_next_;
+        last_commanded_time_ = time;
       }
 
       if (active_goal)
@@ -961,6 +965,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
     read_state_from_state_interfaces(state_current_);
     read_state_from_state_interfaces(last_commanded_state_);
   }
+  last_commanded_time_ = rclcpp::Time();
 
   // The controller should start by holding position at the beginning of active state
   add_new_trajectory_msg(set_hold_position());
@@ -1592,7 +1597,7 @@ void JointTrajectoryController::update_pids()
     if (pids_[i])
     {
       // update PIDs with gains from ROS parameters
-      pids_[i]->setGains(gains.p, gains.i, gains.d, gains.i_clamp, -gains.i_clamp);
+      pids_[i]->set_gains(gains.p, gains.i, gains.d, gains.i_clamp, -gains.i_clamp);
     }
     else
     {
