@@ -17,7 +17,6 @@
 
 #include "test_pid_controller.hpp"
 
-#include <limits>
 #include <memory>
 #include <string>
 #include <vector>
@@ -246,15 +245,7 @@ TEST_F(PidControllerTest, test_update_logic_feedforward_off)
     EXPECT_TRUE(std::isnan(interface));
   }
 
-  std::shared_ptr<ControllerCommandMsg> msg = std::make_shared<ControllerCommandMsg>();
-  msg->dof_names = dof_names_;
-  msg->values.resize(dof_names_.size(), 0.0);
-  for (size_t i = 0; i < dof_command_values_.size(); ++i)
-  {
-    msg->values[i] = dof_command_values_[i];
-  }
-  msg->values_dot.resize(dof_names_.size(), std::numeric_limits<double>::quiet_NaN());
-  controller_->input_ref_.writeFromNonRT(msg);
+  controller_->set_reference(dof_command_values_);
 
   for (size_t i = 0; i < dof_command_values_.size(); ++i)
   {
@@ -308,15 +299,7 @@ TEST_F(PidControllerTest, test_update_logic_feedforward_on_with_zero_feedforward
     EXPECT_TRUE(std::isnan(interface));
   }
 
-  std::shared_ptr<ControllerCommandMsg> msg = std::make_shared<ControllerCommandMsg>();
-  msg->dof_names = dof_names_;
-  msg->values.resize(dof_names_.size(), 0.0);
-  for (size_t i = 0; i < dof_command_values_.size(); ++i)
-  {
-    msg->values[i] = dof_command_values_[i];
-  }
-  msg->values_dot.resize(dof_names_.size(), std::numeric_limits<double>::quiet_NaN());
-  controller_->input_ref_.writeFromNonRT(msg);
+  controller_->set_reference(dof_command_values_);
 
   controller_->control_mode_.writeFromNonRT(feedforward_mode_type::ON);
   EXPECT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::ON);
@@ -588,15 +571,7 @@ TEST_F(PidControllerTest, test_update_chained_feedforward_with_gain)
   ASSERT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::ON);
 
   // send a message to update reference interface
-  std::shared_ptr<ControllerCommandMsg> msg = std::make_shared<ControllerCommandMsg>();
-  msg->dof_names = controller_->params_.dof_names;
-  msg->values.resize(msg->dof_names.size(), 0.0);
-  for (size_t i = 0; i < msg->dof_names.size(); ++i)
-  {
-    msg->values[i] = target_value;
-  }
-  msg->values_dot.resize(msg->dof_names.size(), std::numeric_limits<double>::quiet_NaN());
-  controller_->input_ref_.writeFromNonRT(msg);
+  controller_->set_reference({target_value});
   ASSERT_EQ(
     controller_->update_reference_from_subscribers(
       rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
@@ -654,15 +629,7 @@ TEST_F(PidControllerTest, test_update_chained_feedforward_off_with_gain)
   ASSERT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::OFF);
 
   // send a message to update reference interface
-  std::shared_ptr<ControllerCommandMsg> msg = std::make_shared<ControllerCommandMsg>();
-  msg->dof_names = controller_->params_.dof_names;
-  msg->values.resize(msg->dof_names.size(), 0.0);
-  for (size_t i = 0; i < msg->dof_names.size(); ++i)
-  {
-    msg->values[i] = target_value;
-  }
-  msg->values_dot.resize(msg->dof_names.size(), std::numeric_limits<double>::quiet_NaN());
-  controller_->input_ref_.writeFromNonRT(msg);
+  controller_->set_reference({target_value});
   ASSERT_EQ(
     controller_->update_reference_from_subscribers(
       rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
@@ -698,15 +665,7 @@ TEST_F(PidControllerTest, test_save_i_term_off)
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_FALSE(controller_->is_in_chained_mode());
 
-  std::shared_ptr<ControllerCommandMsg> msg = std::make_shared<ControllerCommandMsg>();
-  msg->dof_names = dof_names_;
-  msg->values.resize(dof_names_.size(), 0.0);
-  for (size_t i = 0; i < dof_command_values_.size(); ++i)
-  {
-    msg->values[i] = dof_command_values_[i];
-  }
-  msg->values_dot.resize(dof_names_.size(), std::numeric_limits<double>::quiet_NaN());
-  controller_->input_ref_.writeFromNonRT(msg);
+  controller_->set_reference(dof_command_values_);
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
@@ -723,16 +682,7 @@ TEST_F(PidControllerTest, test_save_i_term_off)
 
   // deactivate the controller and set command=state
   ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-
-  msg = std::make_shared<ControllerCommandMsg>();
-  msg->dof_names = dof_names_;
-  msg->values.resize(dof_names_.size(), 0.0);
-  for (size_t i = 0; i < dof_command_values_.size(); ++i)
-  {
-    msg->values[i] = dof_state_values_[i];
-  }
-  msg->values_dot.resize(dof_names_.size(), std::numeric_limits<double>::quiet_NaN());
-  controller_->input_ref_.writeFromNonRT(msg);
+  controller_->set_reference(dof_state_values_);
 
   // reactivate the controller, the integral term should NOT be saved
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
@@ -765,15 +715,7 @@ TEST_F(PidControllerTest, test_save_i_term_on)
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_FALSE(controller_->is_in_chained_mode());
 
-  std::shared_ptr<ControllerCommandMsg> msg = std::make_shared<ControllerCommandMsg>();
-  msg->dof_names = dof_names_;
-  msg->values.resize(dof_names_.size(), 0.0);
-  for (size_t i = 0; i < dof_command_values_.size(); ++i)
-  {
-    msg->values[i] = dof_command_values_[i];
-  }
-  msg->values_dot.resize(dof_names_.size(), std::numeric_limits<double>::quiet_NaN());
-  controller_->input_ref_.writeFromNonRT(msg);
+  controller_->set_reference(dof_command_values_);
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
@@ -790,16 +732,7 @@ TEST_F(PidControllerTest, test_save_i_term_on)
 
   // deactivate the controller and set command=state
   ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-
-  msg = std::make_shared<ControllerCommandMsg>();
-  msg->dof_names = dof_names_;
-  msg->values.resize(dof_names_.size(), 0.0);
-  for (size_t i = 0; i < dof_command_values_.size(); ++i)
-  {
-    msg->values[i] = dof_state_values_[i];
-  }
-  msg->values_dot.resize(dof_names_.size(), std::numeric_limits<double>::quiet_NaN());
-  controller_->input_ref_.writeFromNonRT(msg);
+  controller_->set_reference(dof_state_values_);
 
   // reactivate the controller, the integral term should be saved
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);

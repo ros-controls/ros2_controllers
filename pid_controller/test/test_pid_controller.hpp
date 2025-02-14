@@ -21,6 +21,7 @@
 #include <gmock/gmock.h>
 
 #include <chrono>
+#include <limits>
 #include <memory>
 #include <string>
 #include <utility>
@@ -103,6 +104,19 @@ public:
     const std::chrono::milliseconds & timeout = std::chrono::milliseconds{500})
   {
     wait_for_command(executor, timeout);
+  }
+
+  void set_reference(const std::vector<double> & target_value)
+  {
+    std::shared_ptr<ControllerCommandMsg> msg = std::make_shared<ControllerCommandMsg>();
+    msg->dof_names = params_.dof_names;
+    msg->values.resize(msg->dof_names.size(), 0.0);
+    for (size_t i = 0; i < msg->dof_names.size(); ++i)
+    {
+      msg->values[i] = target_value[i];
+    }
+    msg->values_dot.resize(msg->dof_names.size(), std::numeric_limits<double>::quiet_NaN());
+    input_ref_.writeFromNonRT(msg);
   }
 };
 
