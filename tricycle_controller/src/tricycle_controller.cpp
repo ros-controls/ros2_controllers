@@ -16,6 +16,8 @@
  * Author: Tony Najjar
  */
 
+#define _USE_MATH_DEFINES
+
 #include <memory>
 #include <queue>
 #include <string>
@@ -86,34 +88,26 @@ InterfaceConfiguration TricycleController::state_interface_configuration() const
 controller_interface::return_type TricycleController::update(
   const rclcpp::Time & time, const rclcpp::Duration & period)
 {
-  if (get_lifecycle_state().id() == State::PRIMARY_STATE_INACTIVE)
-  {
-    if (!is_halted)
-    {
-      halt();
-      is_halted = true;
-    }
-    return controller_interface::return_type::OK;
-  }
-  std::shared_ptr<TwistStamped> last_command_msg;
-  received_velocity_msg_ptr_.get(last_command_msg);
-  if (last_command_msg == nullptr)
+  // if the mutex is unable to lock, last_command_msg_ won't be updated
+  received_velocity_msg_ptr_.try_get([this](const std::shared_ptr<TwistStamped> & msg)
+                                     { last_command_msg_ = msg; });
+  if (last_command_msg_ == nullptr)
   {
     RCLCPP_WARN(get_node()->get_logger(), "Velocity message received was a nullptr.");
     return controller_interface::return_type::ERROR;
   }
 
-  const auto age_of_last_command = time - last_command_msg->header.stamp;
+  const auto age_of_last_command = time - last_command_msg_->header.stamp;
   // Brake if cmd_vel has timeout, override the stored command
   if (age_of_last_command > cmd_vel_timeout_)
   {
-    last_command_msg->twist.linear.x = 0.0;
-    last_command_msg->twist.angular.z = 0.0;
+    last_command_msg_->twist.linear.x = 0.0;
+    last_command_msg_->twist.angular.z = 0.0;
   }
 
   // command may be limited further by Limiters,
   // without affecting the stored twist command
-  TwistStamped command = *last_command_msg;
+  TwistStamped command = *last_command_msg_;
   double & linear_command = command.twist.linear.x;
   double & angular_command = command.twist.angular.z;
   double Ws_read = traction_joint_[0].velocity_state.get().get_value();     // in radians/s
@@ -234,7 +228,7 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
   }
 
   odometry_.setWheelParams(params_.wheelbase, params_.wheel_radius);
-  odometry_.setVelocityRollingWindowSize(params_.velocity_rolling_window_size);
+  odometry_.setVelocityRollingWindowSize(static_cast<size_t>(params_.velocity_rolling_window_size));
 
   cmd_vel_timeout_ = std::chrono::milliseconds{params_.cmd_vel_timeout};
   params_.publish_ackermann_command =
@@ -271,9 +265,9 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
     return CallbackReturn::ERROR;
   }
 
-  const TwistStamped empty_twist;
-  received_velocity_msg_ptr_.set(std::make_shared<TwistStamped>(empty_twist));
-
+  last_command_msg_ = std::make_shared<TwistStamped>();
+  received_velocity_msg_ptr_.set([this](std::shared_ptr<TwistStamped> & stored_value)
+                                 { stored_value = last_command_msg_; });
   // Fill last two commands with default constructed commands
   const AckermannDrive empty_ackermann_drive;
   previous_commands_.emplace(empty_ackermann_drive);
@@ -307,7 +301,8 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
           "time, this message will only be shown once");
         msg->header.stamp = get_node()->get_clock()->now();
       }
-      received_velocity_msg_ptr_.set(std::move(msg));
+      received_velocity_msg_ptr_.set([msg](std::shared_ptr<TwistStamped> & stored_value)
+                                     { stored_value = std::move(msg); });
     });
 
   // initialize odometry publisher and message
@@ -377,7 +372,6 @@ CallbackReturn TricycleController::on_activate(const rclcpp_lifecycle::State &)
     return CallbackReturn::ERROR;
   }
 
-  is_halted = false;
   subscriber_is_active_ = true;
 
   RCLCPP_DEBUG(get_node()->get_logger(), "Subscriber and publisher are now active.");
@@ -387,6 +381,7 @@ CallbackReturn TricycleController::on_activate(const rclcpp_lifecycle::State &)
 CallbackReturn TricycleController::on_deactivate(const rclcpp_lifecycle::State &)
 {
   subscriber_is_active_ = false;
+  halt();
   return CallbackReturn::SUCCESS;
 }
 
@@ -397,7 +392,6 @@ CallbackReturn TricycleController::on_cleanup(const rclcpp_lifecycle::State &)
     return CallbackReturn::ERROR;
   }
 
-  received_velocity_msg_ptr_.set(std::make_shared<TwistStamped>());
   return CallbackReturn::SUCCESS;
 }
 
@@ -434,13 +428,7 @@ bool TricycleController::reset()
   velocity_command_subscriber_.reset();
 
   received_velocity_msg_ptr_.set(nullptr);
-  is_halted = false;
   return true;
-}
-
-CallbackReturn TricycleController::on_shutdown(const rclcpp_lifecycle::State &)
-{
-  return CallbackReturn::SUCCESS;
 }
 
 void TricycleController::halt()

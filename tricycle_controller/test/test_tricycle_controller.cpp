@@ -54,7 +54,8 @@ public:
   std::shared_ptr<geometry_msgs::msg::TwistStamped> getLastReceivedTwist()
   {
     std::shared_ptr<geometry_msgs::msg::TwistStamped> ret;
-    received_velocity_msg_ptr_.get(ret);
+    received_velocity_msg_ptr_.get(
+      [&ret](const std::shared_ptr<geometry_msgs::msg::TwistStamped> & msg) { ret = msg; });
     return ret;
   }
 
@@ -281,9 +282,10 @@ TEST_F(TestTricycleController, cleanup)
 
   state = controller_->get_node()->deactivate();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
-  ASSERT_EQ(
-    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
+
+  // should be stopped
+  EXPECT_EQ(0.0, steering_joint_pos_cmd_.get_value());
+  EXPECT_EQ(0.0, traction_joint_vel_cmd_.get_value());
 
   state = controller_->get_node()->cleanup();
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
@@ -332,11 +334,11 @@ TEST_F(TestTricycleController, correct_initialization_using_parameters)
   // deactivated
   // wait so controller process the second point when deactivated
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
-  state = controller_->get_node()->deactivate();
-  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
+  state = controller_->get_node()->deactivate();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
 
   EXPECT_EQ(0.0, steering_joint_pos_cmd_.get_value()) << "Wheels are halted on deactivate()";
   EXPECT_EQ(0.0, traction_joint_vel_cmd_.get_value()) << "Wheels are halted on deactivate()";

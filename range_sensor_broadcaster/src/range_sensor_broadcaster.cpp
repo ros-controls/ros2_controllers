@@ -75,10 +75,10 @@ controller_interface::CallbackReturn RangeSensorBroadcaster::on_configure(
 
   realtime_publisher_->lock();
   realtime_publisher_->msg_.header.frame_id = params_.frame_id;
-  realtime_publisher_->msg_.radiation_type = params_.radiation_type;
-  realtime_publisher_->msg_.field_of_view = params_.field_of_view;
-  realtime_publisher_->msg_.min_range = params_.min_range;
-  realtime_publisher_->msg_.max_range = params_.max_range;
+  realtime_publisher_->msg_.radiation_type = static_cast<uint8_t>(params_.radiation_type);
+  realtime_publisher_->msg_.field_of_view = static_cast<float>(params_.field_of_view);
+  realtime_publisher_->msg_.min_range = static_cast<float>(params_.min_range);
+  realtime_publisher_->msg_.max_range = static_cast<float>(params_.max_range);
 // \note The versions conditioning is added here to support the source-compatibility with Humble
 #if SENSOR_MSGS_VERSION_MAJOR >= 5
   realtime_publisher_->msg_.variance = params_.variance;

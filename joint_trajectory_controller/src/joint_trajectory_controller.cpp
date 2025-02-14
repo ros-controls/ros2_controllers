@@ -18,6 +18,7 @@
 #include <functional>
 #include <memory>
 
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -32,7 +33,13 @@
 #include "rclcpp_action/create_server.hpp"
 #include "rclcpp_action/server_goal_handle.hpp"
 #include "rclcpp_lifecycle/state.hpp"
+
+#include "rclcpp/version.h"
+#if RCLCPP_VERSION_GTE(29, 0, 0)
+#include "urdf/model.hpp"
+#else
 #include "urdf/model.h"
+#endif
 
 namespace joint_trajectory_controller
 {
@@ -137,10 +144,6 @@ JointTrajectoryController::state_interface_configuration() const
 controller_interface::return_type JointTrajectoryController::update(
   const rclcpp::Time & time, const rclcpp::Duration & period)
 {
-  if (get_lifecycle_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
-  {
-    return controller_interface::return_type::OK;
-  }
   auto logger = this->get_node()->get_logger();
   // update dynamic parameters
   if (param_listener_->is_old(params_))
@@ -180,6 +183,7 @@ controller_interface::return_type JointTrajectoryController::update(
   if (has_active_trajectory())
   {
     bool first_sample = false;
+    TrajectoryPointConstIter start_segment_itr, end_segment_itr;
     // if sampling the first time, set the point before you sample
     if (!current_trajectory_->is_sampled_already())
     {
@@ -198,12 +202,21 @@ controller_interface::return_type JointTrajectoryController::update(
         current_trajectory_->set_point_before_trajectory_msg(
           time, state_current_, joints_angle_wraparound_);
       }
+      traj_time_ = time;
+    }
+    else
+    {
+      traj_time_ += period;
     }
 
-    // find segment for current timestamp
-    TrajectoryPointConstIter start_segment_itr, end_segment_itr;
+    // Sample expected state from the trajectory
+    current_trajectory_->sample(
+      traj_time_, interpolation_method_, state_desired_, start_segment_itr, end_segment_itr);
+
+    // Sample setpoint for next control cycle
     const bool valid_point = current_trajectory_->sample(
-      time, interpolation_method_, state_desired_, start_segment_itr, end_segment_itr);
+      traj_time_ + update_period_, interpolation_method_, command_next_, start_segment_itr,
+      end_segment_itr, false);
 
     if (valid_point)
     {
@@ -215,7 +228,7 @@ controller_interface::return_type JointTrajectoryController::update(
       // time_difference is
       // - negative until first point is reached
       // - counting from zero to time_from_start of next point
-      double time_difference = time.seconds() - segment_time_from_start.seconds();
+      double time_difference = traj_time_.seconds() - segment_time_from_start.seconds();
       bool tolerance_violated_while_moving = false;
       bool outside_goal_tolerance = false;
       bool within_goal_time = true;
@@ -280,17 +293,16 @@ controller_interface::return_type JointTrajectoryController::update(
           // Update PIDs
           for (auto i = 0ul; i < dof_; ++i)
           {
-            tmp_command_[i] = (state_desired_.velocities[i] * ff_velocity_scale_[i]) +
-                              pids_[i]->computeCommand(
-                                state_error_.positions[i], state_error_.velocities[i],
-                                (uint64_t)period.nanoseconds());
+            tmp_command_[i] = (command_next_.velocities[i] * ff_velocity_scale_[i]) +
+                              pids_[i]->compute_command(
+                                state_error_.positions[i], state_error_.velocities[i], period);
           }
         }
 
         // set values for next hardware write()
         if (has_position_command_interface_)
         {
-          assign_interface_from_point(joint_command_interface_[0], state_desired_.positions);
+          assign_interface_from_point(joint_command_interface_[0], command_next_.positions);
         }
         if (has_velocity_command_interface_)
         {
@@ -300,12 +312,12 @@ controller_interface::return_type JointTrajectoryController::update(
           }
           else
           {
-            assign_interface_from_point(joint_command_interface_[1], state_desired_.velocities);
+            assign_interface_from_point(joint_command_interface_[1], command_next_.velocities);
           }
         }
         if (has_acceleration_command_interface_)
         {
-          assign_interface_from_point(joint_command_interface_[2], state_desired_.accelerations);
+          assign_interface_from_point(joint_command_interface_[2], command_next_.accelerations);
         }
         if (has_effort_command_interface_)
         {
@@ -313,7 +325,7 @@ controller_interface::return_type JointTrajectoryController::update(
         }
 
         // store the previous command and time used in open-loop control mode
-        last_commanded_state_ = state_desired_;
+        last_commanded_state_ = command_next_;
         last_commanded_time_ = time;
       }
 
@@ -379,7 +391,7 @@ controller_interface::return_type JointTrajectoryController::update(
             rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
             rt_has_pending_goal_.writeFromNonRT(false);
 
-            RCLCPP_WARN(logger, error_string.c_str());
+            RCLCPP_WARN(logger, "%s", error_string.c_str());
 
             new_trajectory_msg_.reset();
             new_trajectory_msg_.initRT(set_hold_position());
@@ -643,12 +655,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
 {
   auto logger = get_node()->get_logger();
 
-  if (!param_listener_)
-  {
-    RCLCPP_ERROR(logger, "Error encountered during init");
-    return controller_interface::CallbackReturn::ERROR;
-  }
-
   // update the dynamic map parameters
   param_listener_->refresh_dynamic_parameters();
 
@@ -872,6 +878,13 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     std::string(get_node()->get_name()) + "/query_state",
     std::bind(&JointTrajectoryController::query_state_service, this, _1, _2));
 
+  if (get_update_rate() == 0)
+  {
+    throw std::runtime_error("Controller's update rate is set to 0. This should not happen!");
+  }
+  update_period_ =
+    rclcpp::Duration(0.0, static_cast<uint32_t>(1.0e9 / static_cast<double>(get_update_rate())));
+
   return CallbackReturn::SUCCESS;
 }
 
@@ -894,7 +907,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   {
     auto it =
       std::find(allowed_interface_types_.begin(), allowed_interface_types_.end(), interface);
-    auto index = std::distance(allowed_interface_types_.begin(), it);
+    auto index = static_cast<size_t>(std::distance(allowed_interface_types_.begin(), it));
     if (!controller_interface::get_ordered_interfaces(
           command_interfaces_, command_joint_names_, interface, joint_command_interface_[index]))
     {
@@ -908,7 +921,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   {
     auto it =
       std::find(allowed_interface_types_.begin(), allowed_interface_types_.end(), interface);
-    auto index = std::distance(allowed_interface_types_.begin(), it);
+    auto index = static_cast<size_t>(std::distance(allowed_interface_types_.begin(), it));
     if (!controller_interface::get_ordered_interfaces(
           state_interfaces_, params_.joints, interface, joint_state_interface_[index]))
     {
@@ -941,7 +954,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
     read_state_from_state_interfaces(state_current_);
     read_state_from_state_interfaces(last_commanded_state_);
   }
-  last_commanded_time_ = rclcpp::Time(0.0);
+  last_commanded_time_ = rclcpp::Time();
 
   // The controller should start by holding position at the beginning of active state
   add_new_trajectory_msg(set_hold_position());
@@ -981,7 +994,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_deactivate(
     auto action_res = std::make_shared<FollowJTrajAction::Result>();
     action_res->set__error_code(FollowJTrajAction::Result::INVALID_GOAL);
     action_res->set__error_string("Current goal cancelled during deactivate transition.");
-    active_goal->setCanceled(action_res);
+    active_goal->setAborted(action_res);
     rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
   }
 
@@ -1024,12 +1037,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_deactivate(
   return CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn JointTrajectoryController::on_cleanup(
-  const rclcpp_lifecycle::State &)
-{
-  return CallbackReturn::SUCCESS;
-}
-
 controller_interface::CallbackReturn JointTrajectoryController::on_error(
   const rclcpp_lifecycle::State &)
 {
@@ -1056,14 +1063,6 @@ bool JointTrajectoryController::reset()
   current_trajectory_.reset();
 
   return true;
-}
-
-controller_interface::CallbackReturn JointTrajectoryController::on_shutdown(
-  const rclcpp_lifecycle::State &)
-{
-  // TODO(karsten1987): what to do?
-
-  return CallbackReturn::SUCCESS;
 }
 
 void JointTrajectoryController::publish_state(
@@ -1453,8 +1452,15 @@ bool JointTrajectoryController::validate_trajectory_msg(
     // This currently supports only position, velocity and acceleration inputs
     if (params_.allow_integration_in_goal_trajectories)
     {
-      const bool all_empty = points[i].positions.empty() && points[i].velocities.empty() &&
-                             points[i].accelerations.empty();
+      if (
+        points[i].positions.empty() && points[i].velocities.empty() &&
+        points[i].accelerations.empty())
+      {
+        RCLCPP_ERROR(
+          get_node()->get_logger(),
+          "The given trajectory has no position, velocity, or acceleration points.");
+        return false;
+      }
       const bool position_error =
         !points[i].positions.empty() &&
         !validate_trajectory_point_field(joint_count, points[i].positions, "positions", i, false);
@@ -1465,7 +1471,7 @@ bool JointTrajectoryController::validate_trajectory_msg(
         !points[i].accelerations.empty() &&
         !validate_trajectory_point_field(
           joint_count, points[i].accelerations, "accelerations", i, false);
-      if (all_empty || position_error || velocity_error || acceleration_error)
+      if (position_error || velocity_error || acceleration_error)
       {
         return false;
       }
@@ -1589,7 +1595,7 @@ void JointTrajectoryController::update_pids()
     if (pids_[i])
     {
       // update PIDs with gains from ROS parameters
-      pids_[i]->setGains(gains.p, gains.i, gains.d, gains.i_clamp, -gains.i_clamp);
+      pids_[i]->set_gains(gains.p, gains.i, gains.d, gains.i_clamp, -gains.i_clamp);
     }
     else
     {

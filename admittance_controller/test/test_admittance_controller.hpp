@@ -102,7 +102,6 @@ public:
     }
   }
 
-private:
   const std::string robot_description_ = ros2_control_test_assets::valid_6d_robot_urdf;
   const std::string robot_description_semantic_ = ros2_control_test_assets::valid_6d_robot_srdf;
 };
@@ -110,10 +109,7 @@ private:
 class AdmittanceControllerTest : public ::testing::Test
 {
 public:
-  static void SetUpTestCase()
-  {
-    //    rclcpp::init(0, nullptr);
-  }
+  static void SetUpTestCase() {}
 
   void SetUp()
   {
@@ -163,7 +159,8 @@ protected:
   controller_interface::return_type SetUpControllerCommon(
     const std::string & controller_name, const rclcpp::NodeOptions & options)
   {
-    auto result = controller_->init(controller_name, "", 0, "", options);
+    auto result =
+      controller_->init(controller_name, controller_->robot_description_, 0, "", options);
 
     controller_->export_reference_interfaces();
     assign_interfaces();
@@ -374,15 +371,15 @@ protected:
   const std::string fixed_world_frame_ = "fixed_world_frame";
   const std::string sensor_frame_ = "link_6";
 
-  std::array<bool, 6> admittance_selected_axes_ = {true, true, true, true, true, true};
-  std::array<double, 6> admittance_mass_ = {5.5, 6.6, 7.7, 8.8, 9.9, 10.10};
-  std::array<double, 6> admittance_damping_ratio_ = {2.828427, 2.828427, 2.828427,
-                                                     2.828427, 2.828427, 2.828427};
-  std::array<double, 6> admittance_stiffness_ = {214.1, 214.2, 214.3, 214.4, 214.5, 214.6};
+  std::array<bool, 6> admittance_selected_axes_ = {{true, true, true, true, true, true}};
+  std::array<double, 6> admittance_mass_ = {{5.5, 6.6, 7.7, 8.8, 9.9, 10.10}};
+  std::array<double, 6> admittance_damping_ratio_ = {
+    {2.828427, 2.828427, 2.828427, 2.828427, 2.828427, 2.828427}};
+  std::array<double, 6> admittance_stiffness_ = {{214.1, 214.2, 214.3, 214.4, 214.5, 214.6}};
 
-  std::array<double, 6> joint_command_values_ = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-  std::array<double, 6> joint_state_values_ = {1.1, 2.2, 3.3, 4.4, 5.5, 6.6};
-  std::array<double, 6> fts_state_values_ = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+  std::array<double, 6> joint_command_values_ = {{0.0, 0.0, 0.0, 0.0, 0.0, 0.0}};
+  std::array<double, 6> joint_state_values_ = {{1.1, 2.2, 3.3, 4.4, 5.5, 6.6}};
+  std::array<double, 6> fts_state_values_ = {{0.0, 0.0, 0.0, 0.0, 0.0, 0.0}};
   std::vector<std::string> fts_state_names_;
 
   std::vector<hardware_interface::StateInterface> state_itfs_;

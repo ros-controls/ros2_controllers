@@ -39,7 +39,8 @@ protected:
   const std::string frame_id_ = "pose_base_frame";
   const std::string tf_child_frame_id_ = "pose_frame";
 
-  std::array<double, 7> pose_values_ = {1.1, 2.2, 3.3, 4.4, 5.5, 6.6, 7.7};
+  std::array<double, 7> pose_values_ = {
+    {1.1, 2.2, 3.3, 0.39190382, 0.20056212, 0.53197575, 0.72331744}};
 
   hardware_interface::StateInterface pose_position_x_{pose_name_, "position.x", &pose_values_[0]};
   hardware_interface::StateInterface pose_position_y_{pose_name_, "position.x", &pose_values_[1]};
@@ -77,7 +78,10 @@ void PoseBroadcasterTest::subscribe_and_get_message(const std::string & topic, T
   constexpr size_t max_sub_check_loop_count = 5;
   for (size_t i = 0; !received_msg; ++i)
   {
-    ASSERT_LT(i, max_sub_check_loop_count);
+    if (i >= max_sub_check_loop_count)
+    {
+      throw std::runtime_error("Failed to receive message on topic: " + topic);
+    }
 
     pose_broadcaster_->update(rclcpp::Time{0}, rclcpp::Duration::from_seconds(0.01));
 
