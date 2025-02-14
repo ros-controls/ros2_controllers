@@ -9,12 +9,12 @@ steering_controllers_library:
     type: bool,
     read_only: true,
     default_value: true,
-    description: "DEPRECATED: Use 'traction_joint_names' or 'steering_joint_names' instead"
+    description: "DEPRECATED: Use 'traction_joints_names' or 'steering_joints_names' instead"
   }
 
   rear_wheels_names: {
     type: string_array,
-    description: "DEPRECATED: Use 'traction_joint_names' or 'steering_joint_names'",
+    description: "DEPRECATED: Use 'traction_joints_names' or 'steering_joints_names' instead",
     read_only: true,
     default_value: [],
     validation: {
@@ -38,7 +38,7 @@ steering_controllers_library:
 
   front_wheels_names: {
     type: string_array,
-    description: "DEPRECATED: Use 'traction_joint_names' or 'steering_joint_names'",
+    description: "DEPRECATED: Use 'traction_joints_names' or 'steering_joints_names'' instead",
     read_only: true,
     default_value: [],
     validation: {
@@ -73,7 +73,7 @@ steering_controllers_library:
 
   rear_wheels_state_names: {
     type: string_array,
-    description: "DEPRECATED: Use 'traction_joints_state_names' or 'steering_joints_state_names'",
+    description: "DEPRECATED: Use 'traction_joints_state_names' or 'steering_joints_state_names' instead",
     default_value: [],
     read_only: true,
     validation: {
@@ -95,7 +95,7 @@ steering_controllers_library:
 
   front_wheels_state_names: {
     type: string_array,
-    description: "DEPRECATED: Use 'traction_joints_state_names' or 'steering_joints_state_names'",
+    description: "DEPRECATED: Use 'traction_joints_state_names' or 'steering_joints_state_names' instead",
     default_value: [],
     read_only: true,
     validation: {
