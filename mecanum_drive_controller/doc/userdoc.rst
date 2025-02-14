@@ -27,19 +27,23 @@ Description of controller's interfaces
 
 References (from a preceding controller)
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-- ``<reference_names[i]>/<interface_name>``  [double], in [rad] or [rad/s]
+When controller is in chained mode, it exposes the following references which can be commanded by the preceding controller:
+
+- ``<controller_name>/linear/x/velocity``, in m/s
+- ``<controller_name>/linear/y/velocity``, in m/s
+- ``<controller_name>/angular/z/velocity``, in rad/s
 
 Commands
 ,,,,,,,,,
-- ``<command_joint_names[i]>/<interface_name>``  [double], in [rad] or [rad/s]
+- ``<*_wheel_command_joint_name>/velocity``, in rad/s
 
 States
 ,,,,,,,
-- ``<joint_names[i]>/<interface_name>``  [double], in [rad] or [rad/s]
+- ``<joint_name>/velocity``, in rad/s
 
 .. note::
 
-  ``joint_names[i]`` can be of ``state_joint_names`` parameter (if used), ``command_joint_names`` otherwise.
+  ``joint_name`` can be of ``*_wheel_state_joint_name`` parameter (if used), ``*_wheel_command_joint_name`` otherwise.
 
 
 Subscribers
