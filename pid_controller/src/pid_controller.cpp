@@ -411,6 +411,7 @@ controller_interface::return_type PidController::update_and_write_commands(
   // check for any parameter updates
   update_parameters();
 
+  // Update feedback either from external measured state or from state interfaces
   if (params_.use_external_measured_states)
   {
     const auto measured_state = *(measured_state_.readFromRT());
@@ -435,13 +436,13 @@ controller_interface::return_type PidController::update_and_write_commands(
   {
     double tmp_command = 0.0;
 
-    if (!std::isnan(reference_interfaces_[i]) && !std::isnan(measured_state_values_[i]))
+    if (std::isfinite(reference_interfaces_[i]) && std::isfinite(measured_state_values_[i]))
     {
       // calculate feed-forward
       if (*(control_mode_.readFromRT()) == feedforward_mode_type::ON)
       {
         // two interfaces
-        if (reference_interfaces_.size() == 2 * dof_ && measured_state_values_.size() == 2 * dof_)
+        if (reference_interfaces_.size() == 2 * dof_)
         {
           if (std::isfinite(reference_interfaces_[dof_ + i]))
           {
@@ -468,8 +469,8 @@ controller_interface::return_type PidController::update_and_write_commands(
       if (reference_interfaces_.size() == 2 * dof_ && measured_state_values_.size() == 2 * dof_)
       {
         if (
-          !std::isnan(reference_interfaces_[dof_ + i]) &&
-          !std::isnan(measured_state_values_[dof_ + i]))
+          std::isfinite(reference_interfaces_[dof_ + i]) &&
+          std::isfinite(measured_state_values_[dof_ + i]))
         {
           // use calculation with 'error' and 'error_dot'
           tmp_command += pids_[i]->computeCommand(
