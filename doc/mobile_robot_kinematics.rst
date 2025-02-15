@@ -82,7 +82,7 @@ The necessary angular velocity of the wheels to achieve a desired body twist can
     \omega_{b,z}\\
   \end{bmatrix}
 
-Here :math:`w_1,\ldots,w_n` are the angular velocities of the wheels and :math:`r` is the radius of the wheels.
+Here :math:`\omega_1,\ldots,\omega_n` are the angular velocities of the wheels and :math:`r` is the radius of the wheels.
 These equations can be written in algebraic form for any wheel :math:`i` like this:
 
 .. math::
