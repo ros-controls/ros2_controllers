@@ -38,9 +38,9 @@ It follows the coordinate conventions defined in `ROS REP 103 <https://www.ros.o
 * :math:`x_w,y_w` is the world coordinate system.
 * :math:`v_{b,x},` is the robot's linear velocity on the x-axis.
 * :math:`v_{b,y}` is the robot's linear velocity on the y-axis.
-* :math:`w_{b,z}` is the robot's angular velocity on the z-axis.
+* :math:`\omega_{b,z}` is the robot's angular velocity on the z-axis.
 * :math:`R` is the robot's radius / the distance between the robot's center and the wheels.
-* Red arrows on the wheels signify the positive direction of their rotation.
+* Red arrows on the wheel :math:`i` signify the positive direction of their rotation :math:`\omega_i`
 * :math:`\gamma` is the angular offset of the first wheel from :math:`x_b`.
 * :math:`\theta` is the angle between each wheel which can be calculated using the below equation where :math:`n` is the number of wheels.
 
@@ -56,37 +56,37 @@ The necessary angular velocity of the wheels to achieve a desired body twist can
 
   A =
   \begin{bmatrix}
-    sin(\gamma) & -cos(\gamma) & -R  \\
-    sin(\theta + \gamma) & -cos(\theta + \gamma) & -R\\
-    sin(2\theta + \gamma) & -cos(2\theta + \gamma) & -R\\
-    sin(3\theta + \gamma) & -cos(3\theta + \gamma) & -R\\
+    \sin(\gamma) & -\cos(\gamma) & -R  \\
+    \sin(\theta + \gamma) & -\cos(\theta + \gamma) & -R\\
+    \sin(2\theta + \gamma) & -\cos(2\theta + \gamma) & -R\\
+    \sin(3\theta + \gamma) & -\cos(3\theta + \gamma) & -R\\
     \vdots & \vdots & \vdots\\
-    sin((n-1)\theta + \gamma) & -cos((n-1)\theta + \gamma) & -R\\
+    \sin((n-1)\theta + \gamma) & -\cos((n-1)\theta + \gamma) & -R\\
   \end{bmatrix}
 
 .. math::
 
   \begin{bmatrix}
-    w_1\\
-    w_2\\
-    w_3\\
-    w_4\\
+    \omega_1\\
+    \omega_2\\
+    \omega_3\\
+    \omega_4\\
     \vdots\\
-    w_n
+    \omega_n
   \end{bmatrix} =
   \frac{1}{r}
   A
   \begin{bmatrix}
     v_{b,x}\\
     v_{b,y}\\
-    w_{b,z}\\
+    \omega_{b,z}\\
   \end{bmatrix}
 
-Here :math:`w_1..w_n` are the angular velocities of the wheels and :math:`r` is the radius of the wheels.
+Here :math:`w_1,\ldots,w_n` are the angular velocities of the wheels and :math:`r` is the radius of the wheels.
 These equations can be written in algebraic form for any wheel :math:`i` like this:
 
 .. math::
-  \omega_i = \frac{\sin((i-1)\theta + \gamma) v_{b,x} - \cos((i-1)\theta + \gamma) v_{b,y} - R w_{b,z}}{r}
+  \omega_i = \frac{\sin((i-1)\theta + \gamma) v_{b,x} - \cos((i-1)\theta + \gamma) v_{b,y} - R \omega_{b,z}}{r}
 
 **Forward Kinematics**
 
@@ -97,18 +97,17 @@ The body twist of the robot can be obtained from the wheel velocities by using t
   \begin{bmatrix}
     v_{b,x}\\
     v_{b,y}\\
-    w_{b,z}\\
+    \omega_{b,z}\\
   \end{bmatrix} =
-  A^+
-  (r
+  rA^\dagger
   \begin{bmatrix}
-    w_1\\
-    w_2\\
-    w_3\\
-    w_4\\
+    \omega_1\\
+    \omega_2\\
+    \omega_3\\
+    \omega_4\\
     \vdots\\
-    w_n
-  \end{bmatrix})
+    \omega_n
+  \end{bmatrix}
 
 Nonholonomic Wheeled Mobile Robots
 .....................................
