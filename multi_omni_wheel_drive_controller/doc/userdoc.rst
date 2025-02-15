@@ -10,7 +10,8 @@ Controller for mobile robots with omnidirectional drive.
 Supports using 3 or more omni wheels spaced at an equal angle from each other in a circular formation.
 To better understand this, have a look at :ref:`mobile_robot_kinematics`.
 
-As input it takes velocity commands for the robot body, which are translated to wheel commands.
+The controller uses velocity input, i.e., stamped Twist messages where linear ``x``, ``y``, and angular ``z`` components are used.
+Values in other components are ignored.
 
 Odometry is computed from hardware feedback and published.
 
@@ -35,13 +36,13 @@ When controller is in chained mode, it exposes the following references which ca
 
 Together, these represent the body twist (which in unchained-mode would be obtained from ~/cmd_vel).
 
-Feedback
-,,,,,,,,
+State interfaces
+,,,,,,,,,,,,,,,,
 
-As feedback interface type the joints' position (``hardware_interface::HW_IF_POSITION``) or velocity (``hardware_interface::HW_IF_VELOCITY``,if parameter ``position_feedback=false``) are used.
+As feedback interface type the joints' position (``hardware_interface::HW_IF_POSITION``) or velocity (``hardware_interface::HW_IF_VELOCITY``, if parameter ``position_feedback=false``) are used.
 
-Output
-,,,,,,
+Command interfaces
+,,,,,,,,,,,,,,,,,,,,,,
 
 Joints' velocity (``hardware_interface::HW_IF_VELOCITY``) are used.
 
