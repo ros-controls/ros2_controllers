@@ -27,9 +27,8 @@ class Odometry
 public:
   Odometry();
 
-  void init(const rclcpp::Time & time);
-  bool update(const std::vector<double> & wheels_pos, const rclcpp::Time & time);
-  bool updateFromVelocity(const std::vector<double> & wheels_vel, const rclcpp::Time & time);
+  bool updateFromPos(const std::vector<double> & wheels_pos, const rclcpp::Time & time);
+  bool updateFromVel(const std::vector<double> & wheels_vel, const rclcpp::Time & time);
   bool updateOpenLoop(
     const double & linear_x_vel, const double & linear_y_vel, const double & angular_vel,
     const rclcpp::Time & time);

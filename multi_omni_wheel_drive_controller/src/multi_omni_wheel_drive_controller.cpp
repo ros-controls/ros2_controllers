@@ -334,11 +334,11 @@ controller_interface::return_type MultiOmniWheelDriveController::update_and_writ
     }
     if (params_.position_feedback)
     {
-      odometry_updated = odometry_.update(wheels_feedback, time);
+      odometry_updated = odometry_.updateFromPos(wheels_feedback, time);
     }
     else
     {
-      odometry_updated = odometry_.updateFromVelocity(wheels_feedback, time);
+      odometry_updated = odometry_.updateFromVel(wheels_feedback, time);
     }
   }
 

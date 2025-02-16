@@ -15,8 +15,6 @@
 #include "multi_omni_wheel_drive_controller/odometry.hpp"
 
 #include <cmath>
-#include "tf2/LinearMath/Matrix3x3.hpp"
-#include "tf2/LinearMath/Quaternion.hpp"
 
 namespace multi_omni_wheel_drive_controller
 {
@@ -34,13 +32,7 @@ Odometry::Odometry()
 {
 }
 
-void Odometry::init(const rclcpp::Time & time)
-{
-  // Reset timestamp:
-  timestamp_ = time;
-}
-
-bool Odometry::update(const std::vector<double> & wheels_pos, const rclcpp::Time & time)
+bool Odometry::updateFromPos(const std::vector<double> & wheels_pos, const rclcpp::Time & time)
 {
   // We cannot estimate the speed with very small time intervals:
   const double dt = time.seconds() - timestamp_.seconds();
@@ -57,17 +49,16 @@ bool Odometry::update(const std::vector<double> & wheels_pos, const rclcpp::Time
     wheels_old_pos_[i] = wheels_pos[i];
   }
 
-  updateFromVelocity(wheels_vel, time);
-  return true;
+  if (updateFromVel(wheels_vel, time))
+  {
+    return true;
+  }
+  return false;
 }
 
-bool Odometry::updateFromVelocity(const std::vector<double> & wheels_vel, const rclcpp::Time & time)
+bool Odometry::updateFromVel(const std::vector<double> & wheels_vel, const rclcpp::Time & time)
 {
   const double dt = time.seconds() - timestamp_.seconds();
-  if (dt < 0.0001)
-  {
-    return false;  // Interval too small to integrate with
-  }
 
   // Compute linear and angular velocities of the robot:
   const Eigen::Vector3d robot_velocity = compute_robot_velocity(wheels_vel);
@@ -115,10 +106,6 @@ bool Odometry::updateOpenLoop(
   const rclcpp::Time & time)
 {
   const double dt = time.seconds() - timestamp_.seconds();
-  if (dt < 0.0001)
-  {
-    return false;  // Interval too small to integrate with
-  }
 
   // Integrate odometry:
   integrate(linear_x_vel * dt, linear_y_vel * dt, angular_vel * dt);
@@ -152,21 +139,22 @@ void Odometry::setParams(
 
 void Odometry::integrate(const double & dx, const double & dy, const double & dheading)
 {
-  heading_ = heading_ + dheading;
-
-  // Create a quaternion representing the rotation from the base frame to the odom frame
-  tf2::Quaternion q_base_to_odom;
-  q_base_to_odom.setRPY(0.0, 0.0, heading_);
-  // Create a rotation matrix from the quaternion
-  const tf2::Matrix3x3 rot_base_to_odom = tf2::Matrix3x3(q_base_to_odom);
-
-  // Define the displacement vector in the base frame
-  const tf2::Vector3 displacement_base(dx, dy, 0.0);
-  // Rotate the displacement in the base frame into the odom frame
-  const tf2::Vector3 displacement_odom = rot_base_to_odom * displacement_base;
-
-  x_ = x_ + displacement_odom.x();
-  y_ = y_ + displacement_odom.y();
+  if (std::fabs(dheading) < 1e-6)
+  {
+    // For very small dheading, approximate to linear motion
+    x_ = x_ + ((dx * std::cos(heading_)) - (dy * std::sin(heading_)));
+    y_ = y_ + ((dx * std::sin(heading_)) + (dy * std::cos(heading_)));
+    heading_ = heading_ + dheading;
+  }
+  else
+  {
+    const double heading_old = heading_;
+    heading_ = heading_ + dheading;
+    x_ = x_ + ((dx / dheading) * (std::sin(heading_) - std::sin(heading_old))) +
+         ((dy / dheading) * (std::cos(heading_) - std::cos(heading_old)));
+    y_ = y_ - (dx / dheading) * (std::cos(heading_) - std::cos(heading_old)) +
+         (dy / dheading) * (std::sin(heading_) - std::sin(heading_old));
+  }
 }
 
 }  // namespace multi_omni_wheel_drive_controller
