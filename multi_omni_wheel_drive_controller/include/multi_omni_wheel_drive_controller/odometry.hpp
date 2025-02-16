@@ -56,19 +56,19 @@ private:
   // Current pose:
   double x_;        // [m]
   double y_;        // [m]
-  double heading_;  // [rad]
+  double heading_;  // [rads]
 
   // Current velocity:
   double linear_x_vel_;  // [m/s]
   double linear_y_vel_;  // [m/s]
-  double angular_vel_;   // [rad/s]
+  double angular_vel_;   // [rads/s]
 
   // Robot kinematic parameters:
   double robot_radius_;  // [m]
   double wheel_radius_;  // [m]
-  double wheel_offset_;  // [rad]
+  double wheel_offset_;  // [rads]
 
-  // Previous wheel positions/states [m]:
+  // Previous wheel positions/states [rads]:
   std::vector<double> wheels_old_pos_;
 };
 
