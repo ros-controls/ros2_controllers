@@ -3,7 +3,7 @@
 mecanum_drive_controller
 =========================
 
-Library with shared functionalities for mobile robot controllers with mecanum drive (four wheels).
+Library with shared functionalities for mobile robot controllers with mecanum drive (four mecanum wheels).
 The library implements generic odometry and update methods and defines the main interfaces.
 
 Execution logic of the controller
@@ -27,39 +27,54 @@ Description of controller's interfaces
 
 References (from a preceding controller)
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-- <reference_names[i]>/<interface_name>  [double]  # in [rad] or [rad/s]
+When controller is in chained mode, it exposes the following references which can be commanded by the preceding controller:
+
+- ``<controller_name>/linear/x/velocity``, in m/s
+- ``<controller_name>/linear/y/velocity``, in m/s
+- ``<controller_name>/angular/z/velocity``, in rad/s
 
 Commands
 ,,,,,,,,,
-- <command_joint_names[i]>/<interface_name>  [double]  # in [rad] or [rad/s]
+- ``<*_wheel_command_joint_name>/velocity``, in rad/s
 
 States
 ,,,,,,,
-- <joint_names[i]>/<interface_name>  [double]  # in [rad] or [rad/s]
-  ..note ::
+- ``<joint_name>/velocity``, in rad/s
 
-  ``joint_names[i]`` can be of ``state_joint_names`` parameter (if used), ``command_joint_names`` otherwise.
+.. note::
+
+  ``joint_name`` can be of ``*_wheel_state_joint_name`` parameter (if used), ``*_wheel_command_joint_name`` otherwise.
 
 
 Subscribers
 ,,,,,,,,,,,,
 Used when the controller is not in chained mode (``in_chained_mode == false``).
 
+<<<<<<< HEAD
 - <controller_name>/reference  [geometry_msgs/msg/TwistStamped]
   Velocity command for the controller, if ``use_stamped_vel=true``. 
 
 - <controller_name>/reference_unstamped  [geometry_msgs/msg/Twist]
   Velocity command for the controller, if ``use_stamped_vel=false``.
+=======
+- ``<controller_name>/reference``  [``geometry_msgs/msg/TwistStamped``]
+>>>>>>> d67c2f3 (Fix mecanum_drive_controller documentation (#1547))
 
 Publishers
 ,,,,,,,,,,,
-- <controller_name>/odometry          [nav_msgs/msg/Odometry]
-- <controller_name>/tf_odometry       [tf2_msgs/msg/TFMessage]
-- <controller_name>/controller_state  [control_msgs/msg/MecanumDriveControllerState]
+- ``<controller_name>/odometry``          [``nav_msgs/msg/Odometry``]
+- ``<controller_name>/tf_odometry``       [``tf2_msgs/msg/TFMessage``]
+- ``<controller_name>/controller_state``  [``control_msgs/msg/MecanumDriveControllerState``]
 
 Parameters
 ,,,,,,,,,,,
 
-For a list of parameters and their meaning, see the YAML file in the ``src`` folder of the controller's package.
 
-For an exemplary parameterization, see the ``test`` folder of the controller's package.
+This controller uses the `generate_parameter_library <https://github.com/PickNikRobotics/generate_parameter_library>`_ to handle its parameters. The parameter `definition file located in the src folder <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/mecanum_drive_controller/src/mecanum_drive_controller.yaml>`_ contains descriptions for all the parameters used by the controller.
+
+.. generate_parameter_library_details:: ../src/mecanum_drive_controller.yaml
+
+An example parameter file for this controller can be found in `the test directory <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/mecanum_drive_controller/test/mecanum_drive_controller_params.yaml>`_:
+
+.. literalinclude:: ../test/mecanum_drive_controller_params.yaml
+   :language: yaml
