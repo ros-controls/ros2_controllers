@@ -110,8 +110,7 @@ protected:
 
   rclcpp::Time previous_update_timestamp_{0};
 
-  // publish rate limiter
-  double publish_rate_ = 50.0;
+  // Variables to help limit the publish rate of odometry as described using params_.publish_rate
   rclcpp::Duration publish_period_ = rclcpp::Duration::from_nanoseconds(0);
   rclcpp::Time previous_publish_timestamp_{0, 0, RCL_CLOCK_UNINITIALIZED};
 

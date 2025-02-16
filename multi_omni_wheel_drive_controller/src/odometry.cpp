@@ -29,6 +29,7 @@ Odometry::Odometry()
   linear_y_vel_(0.0),
   angular_vel_(0.0),
   robot_radius_(0.0),
+  wheel_radius_(0.0),
   wheels_old_pos_(0.0)
 {
 }
@@ -48,7 +49,7 @@ bool Odometry::update(const std::vector<double> & wheels_pos, const rclcpp::Time
     return false;  // Interval too small to integrate with
   }
 
-  // Estimate velocity of wheels using old and current position [m/s]:
+  // Estimate angular velocity of wheels using old and current position [rads/s]:
   std::vector<double> wheels_vel(wheels_pos.size());
   for (size_t i = 0; i < static_cast<size_t>(wheels_pos.size()); ++i)
   {
@@ -86,7 +87,7 @@ bool Odometry::updateFromVelocity(const std::vector<double> & wheels_vel, const 
 Eigen::Vector3d Odometry::compute_robot_velocity(const std::vector<double> & wheels_vel) const
 {
   Eigen::MatrixXd A(wheels_vel.size(), 3);   // Transformation Matrix
-  Eigen::VectorXd omega(wheels_vel.size());  // Wheel velocities vector
+  Eigen::VectorXd omega(wheels_vel.size());  // Wheel angular velocities vector
 
   const double angle_bw_wheels = (2 * M_PI) / static_cast<double>(wheels_vel.size());
 
@@ -98,29 +99,38 @@ Eigen::Vector3d Odometry::compute_robot_velocity(const std::vector<double> & whe
     A(static_cast<int>(i), 1) = -std::cos(theta);
     A(static_cast<int>(i), 2) = -robot_radius_;
 
-    // Define the wheel velocities vector
+    // Define the wheel angular velocities vector
     omega(static_cast<int>(i)) = wheels_vel[i];
   }
 
   // Compute the robot velocities using SVD decomposition
-  const Eigen::Vector3d V = A.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(omega);
+  const Eigen::Vector3d V =
+    A.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(omega * wheel_radius_);
 
   return V;
 }
 
-void Odometry::updateOpenLoop(
+bool Odometry::updateOpenLoop(
   const double & linear_x_vel, const double & linear_y_vel, const double & angular_vel,
   const rclcpp::Time & time)
 {
+  const double dt = time.seconds() - timestamp_.seconds();
+  if (dt < 0.0001)
+  {
+    return false;  // Interval too small to integrate with
+  }
+
+  // Integrate odometry:
+  integrate(linear_x_vel * dt, linear_y_vel * dt, angular_vel * dt);
+
+  timestamp_ = time;
+
   // Save last linear and angular velocity:
   linear_x_vel_ = linear_x_vel;
   linear_y_vel_ = linear_y_vel;
   angular_vel_ = angular_vel;
 
-  // Integrate odometry:
-  const double dt = time.seconds() - timestamp_.seconds();
-  timestamp_ = time;
-  integrate(linear_x_vel * dt, linear_y_vel * dt, angular_vel * dt);
+  return true;
 }
 
 void Odometry::resetOdometry()
@@ -131,9 +141,11 @@ void Odometry::resetOdometry()
 }
 
 void Odometry::setParams(
-  const double & robot_radius, const double & wheel_offset, const size_t & wheel_count)
+  const double & robot_radius, const double & wheel_radius, const double & wheel_offset,
+  const size_t & wheel_count)
 {
   robot_radius_ = robot_radius;
+  wheel_radius_ = wheel_radius;
   wheel_offset_ = wheel_offset;
   wheels_old_pos_.resize(wheel_count, 0.0);
 }

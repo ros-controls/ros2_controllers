@@ -30,7 +30,7 @@ public:
   void init(const rclcpp::Time & time);
   bool update(const std::vector<double> & wheels_pos, const rclcpp::Time & time);
   bool updateFromVelocity(const std::vector<double> & wheels_vel, const rclcpp::Time & time);
-  void updateOpenLoop(
+  bool updateOpenLoop(
     const double & linear_x_vel, const double & linear_y_vel, const double & angular_vel,
     const rclcpp::Time & time);
   void resetOdometry();
@@ -43,7 +43,8 @@ public:
   double getAngularVel() const { return angular_vel_; }
 
   void setParams(
-    const double & robot_radius, const double & wheel_offset, const size_t & wheel_count);
+    const double & robot_radius, const double & wheel_radius, const double & wheel_offset,
+    const size_t & wheel_count);
 
 private:
   Eigen::Vector3d compute_robot_velocity(const std::vector<double> & wheels_vel) const;
@@ -64,6 +65,7 @@ private:
 
   // Robot kinematic parameters:
   double robot_radius_;  // [m]
+  double wheel_radius_;  // [m]
   double wheel_offset_;  // [rad]
 
   // Previous wheel positions/states [m]:

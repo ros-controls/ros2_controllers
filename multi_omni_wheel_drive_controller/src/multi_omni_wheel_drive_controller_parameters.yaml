@@ -80,12 +80,14 @@ multi_omni_wheel_drive_controller:
       default_value: true,
       description: "Publish transformation between ``odom_frame_id`` and ``base_frame_id``.",
     }
-  cmd_vel_timeout: {
+  cmd_vel_timeout:
+    {
       type: double,
       default_value: 0.5, # seconds
-      description: "Timeout in seconds, after which input command on ``cmd_vel`` topic is considered staled.",
+      description: "Timeout in seconds, after which input command on ``~/cmd_vel`` topic is considered staled.",
     }
-  publish_rate: {
+  publish_rate:
+    {
       type: double,
       default_value: 50.0, # Hz
       description: "Publishing rate (Hz) of the odometry and TF messages.",
