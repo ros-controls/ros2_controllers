@@ -3,7 +3,7 @@
 mecanum_drive_controller
 =========================
 
-Library with shared functionalities for mobile robot controllers with mecanum drive (four wheels).
+Library with shared functionalities for mobile robot controllers with mecanum drive (four mecanum wheels).
 The library implements generic odometry and update methods and defines the main interfaces.
 
 Execution logic of the controller
