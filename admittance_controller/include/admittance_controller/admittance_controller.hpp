@@ -126,8 +126,6 @@ protected:
     hardware_interface::HW_IF_ACCELERATION};
 
   // internal reference values
-  const std::vector<std::string> allowed_reference_interfaces_types_ = {
-    hardware_interface::HW_IF_POSITION, hardware_interface::HW_IF_VELOCITY};
   std::vector<std::reference_wrapper<double>> position_reference_;
   std::vector<std::reference_wrapper<double>> velocity_reference_;
 
