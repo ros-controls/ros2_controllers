@@ -190,7 +190,7 @@ controller_interface::return_type JointTrajectoryController::update(
       first_sample = true;
       if (params_.open_loop_control)
       {
-        if (fabs(last_commanded_time_.seconds()) < std::numeric_limits<float>::epsilon())
+        if (std::abs(last_commanded_time_.seconds()) < std::numeric_limits<float>::epsilon())
         {
           last_commanded_time_ = time;
         }
@@ -1412,7 +1412,7 @@ bool JointTrajectoryController::validate_trajectory_msg(
   }
 
   // CHECK: if trajectory end time is in the past (if start time defined)
-  const auto trajectory_start_time = static_cast<rclcpp::Time>(trajectory.header.stamp);
+  const rclcpp::Time trajectory_start_time = trajectory.header.stamp;
   // If the starting time it set to 0.0, it means the controller should start it now.
   // Otherwise we check if the trajectory ends before the current time,
   // in which case it can be ignored.
