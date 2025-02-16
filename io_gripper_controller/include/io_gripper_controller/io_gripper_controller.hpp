@@ -144,7 +144,7 @@ public:
     std::unordered_map<std::string, double> command_ios;
     std::unordered_map<std::string, double> state_ios;
 
-    bool has_multiple_end_states;
+    bool has_multiple_end_states = false;
     std::vector<std::string> possible_states;
     std::unordered_map<std::string, std::unordered_map<std::string, double>> multiple_states_ios;
 

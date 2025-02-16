@@ -422,16 +422,52 @@ void IOGripperController::handle_gripper_state_transition(
       // do nothing
       break;
     case IOGripperState::SET_BEFORE_COMMAND:
-      set_commands(ios.set_before_command_ios, transition_name + " - SET_BEFORE_COMMAND");
-      // TODO(destogl): check to use other Realtime sync object to have write from RT
-      gripper_open_state_buffer_.writeFromNonRT(IOGripperState::CHECK_AFTER_COMMAND);
+      if (set_commands(ios.set_before_command_ios, transition_name + " - SET_BEFORE_COMMAND"))
+      {
+        // TODO(destogl): check to use other Realtime sync object to have write from RT
+        gripper_open_state_buffer_.writeFromNonRT(IOGripperState::CHECK_BEFORE_COMMAND);
+      }
+      else if ((current_time - last_transition_time_).seconds() > params_.timeout)
+      {
+        RCLCPP_ERROR(
+          get_node()->get_logger(),
+          "%s - CHECK_AFTER_COMMAND: Gripper didin't reached target state within %.2f seconds.",
+          transition_name.c_str(), params_.timeout);
+        gripper_open_state_buffer_.writeFromNonRT(IOGripperState::HALTED);
+      }
+      last_transition_time_ = current_time;
+      break;
+    case IOGripperState::CHECK_BEFORE_COMMAND:
+      // check the state of the gripper
+      if (check_states(ios.set_before_state_ios, transition_name + " - CHECK_BEFORE_COMMAND"))
+      {
+        gripper_open_state_buffer_.writeFromNonRT(IOGripperState::SET_COMMAND);
+      }
+      else if ((current_time - last_transition_time_).seconds() > params_.timeout)
+      {
+        RCLCPP_ERROR(
+          get_node()->get_logger(),
+          "%s - CHECK_AFTER_COMMAND: Gripper didin't reached target state within %.2f seconds.",
+          transition_name.c_str(), params_.timeout);
+        gripper_open_state_buffer_.writeFromNonRT(IOGripperState::HALTED);
+      }
       last_transition_time_ = current_time;
       break;
     case IOGripperState::SET_COMMAND:
       // now execute the command on the gripper
-      set_commands(ios.command_ios, transition_name + " - SET_COMMAND");
-      // TODO(destogl): check to use other Realtime sync object to have write from RT
-      gripper_open_state_buffer_.writeFromNonRT(IOGripperState::CHECK_COMMAND);
+      if (set_commands(ios.command_ios, transition_name + " - SET_COMMAND"))
+      {
+        // TODO(destogl): check to use other Realtime sync object to have write from RT
+        gripper_open_state_buffer_.writeFromNonRT(IOGripperState::CHECK_COMMAND);
+      }
+      else if ((current_time - last_transition_time_).seconds() > params_.timeout)
+      {
+        RCLCPP_ERROR(
+          get_node()->get_logger(),
+          "%s - SET_COMMAND: Gripper didin't reached target state within %.2f seconds.",
+          transition_name.c_str(), params_.timeout);
+        gripper_open_state_buffer_.writeFromNonRT(IOGripperState::HALTED);
+      }
       last_transition_time_ = current_time;
       break;
     case IOGripperState::CHECK_COMMAND:
@@ -451,7 +487,10 @@ void IOGripperController::handle_gripper_state_transition(
             // TODO(Sachin): store possible_end_state in a variable to publish on status topic
             break;
           }
-          check_state_ios = false;
+          else
+          {
+            check_state_ios = false;
+          }
         }
       }
       else  // only single end state
@@ -471,23 +510,48 @@ void IOGripperController::handle_gripper_state_transition(
           transition_name.c_str(), params_.timeout);
         gripper_open_state_buffer_.writeFromNonRT(IOGripperState::HALTED);
       }
+      last_transition_time_ = current_time;
       break;
     case IOGripperState::SET_AFTER_COMMAND:
-      set_commands(ios.set_after_command_ios, transition_name + " - SET_AFTER_COMMAND");
-
-      // set joint states
-      for (size_t i = 0; i < after_joint_states.size(); ++i)
+      if (set_commands(ios.set_after_command_ios, transition_name + " - SET_AFTER_COMMAND"))
       {
-        joint_state_values_[i] = params_.open.joint_states[i];
+        gripper_open_state_buffer_.writeFromNonRT(IOGripperState::CHECK_AFTER_COMMAND);
       }
-
-      // Finish up the transition
-      gripper_open_state_buffer_.writeFromNonRT(IOGripperState::IDLE);
-      openFlag_.store(false);
-      gripper_service_buffer_.writeFromNonRT(service_mode_type::IDLE);
+      else if ((current_time - last_transition_time_).seconds() > params_.timeout)
+      {
+        RCLCPP_ERROR(
+          get_node()->get_logger(),
+          "%s - SET_AFTER_COMMAND: Gripper didin't reached target state within %.2f seconds.",
+          transition_name.c_str(), params_.timeout);
+        gripper_open_state_buffer_.writeFromNonRT(IOGripperState::HALTED);
+      }
       last_transition_time_ = current_time;
-
       break;
+
+    case IOGripperState::CHECK_AFTER_COMMAND:
+      if (check_states(ios.set_after_state_ios, transition_name + " - CHECK_AFTER_COMMAND"))
+      {
+        // set joint states
+        for (size_t i = 0; i < after_joint_states.size(); ++i)
+        {
+          joint_state_values_[i] = params_.open.joint_states[i];
+        }
+        // Finish up the transition
+        gripper_open_state_buffer_.writeFromNonRT(IOGripperState::IDLE);
+        openFlag_.store(false);
+        gripper_service_buffer_.writeFromNonRT(service_mode_type::IDLE);
+      }
+      else if ((current_time - last_transition_time_).seconds() > params_.timeout)
+      {
+        RCLCPP_ERROR(
+          get_node()->get_logger(),
+          "%s - CHECK_AFTER_COMMAND: Gripper didin't reached target state within %.2f seconds.",
+          transition_name.c_str(), params_.timeout);
+        gripper_open_state_buffer_.writeFromNonRT(IOGripperState::HALTED);
+      }
+      last_transition_time_ = current_time;
+      break;
+
     default:
       break;
   }
@@ -694,6 +758,15 @@ void IOGripperController::prepare_command_and_state_ios()
     }
   };
 
+  auto parse_possible_states = [&](const std::string & name, const auto & value)
+  {
+    close_ios_.possible_states.push_back(name);
+    parse_interfaces_from_params(
+      value.high, 1.0, close_ios_.multiple_states_ios[name], state_if_ios);
+    parse_interfaces_from_params(
+      value.low, 0.0, close_ios_.multiple_states_ios[name], state_if_ios);
+  };
+
   // make full command ios lists -- just once
   parse_interfaces_from_params(
     params_.open.set_before_command.high, 1.0, open_ios_.set_before_command_ios, command_if_ios);
@@ -709,6 +782,32 @@ void IOGripperController::prepare_command_and_state_ios()
     params_.open.set_after_command.high, 1.0, open_ios_.set_after_command_ios, command_if_ios);
   parse_interfaces_from_params(
     params_.open.set_after_command.low, 0.0, open_ios_.set_after_command_ios, command_if_ios);
+
+  // make full command ios lists for close -- just once
+  parse_interfaces_from_params(
+    params_.close.set_before_command.high, 1.0, close_ios_.set_before_command_ios, command_if_ios);
+  parse_interfaces_from_params(
+    params_.close.set_before_command.low, 0.0, close_ios_.set_before_command_ios, command_if_ios);
+
+  parse_interfaces_from_params(
+    params_.close.command.high, 1.0, close_ios_.command_ios, command_if_ios);
+  parse_interfaces_from_params(
+    params_.close.command.low, 0.0, close_ios_.command_ios, command_if_ios);
+
+  if (params_.possible_closed_states.size() > 0)
+  {
+    close_ios_.has_multiple_end_states = true;
+    close_ios_.possible_states = params_.possible_closed_states;
+    for (const auto & [name, value] : params_.close.state.possible_closed_states_map)
+    {
+      parse_possible_states(name, value);
+    }
+  }
+
+  // parse_interfaces_from_params(
+  //   params_.close.set_after_command_high, 1.0, close_ios_.set_after_command_ios, command_if_ios);
+  // parse_interfaces_from_params(
+  //   params_.close.set_after_command_low, 0.0, close_ios_.set_after_command_ios, command_if_ios);
 
   for (const auto & key : params_.close.set_before_command.high)
   {
@@ -750,6 +849,9 @@ void IOGripperController::prepare_command_and_state_ios()
   // make full state ios lists -- just once
   parse_interfaces_from_params(params_.open.state.high, 1.0, open_ios_.state_ios, state_if_ios);
   parse_interfaces_from_params(params_.open.state.low, 0.0, open_ios_.state_ios, state_if_ios);
+
+  // parse_interfaces_from_params(params_.close.state.high, 1.0, close_ios_.state_ios,
+  // state_if_ios);
 
   for (const auto & [name, value] : params_.close.state.possible_closed_states_map)
   {
