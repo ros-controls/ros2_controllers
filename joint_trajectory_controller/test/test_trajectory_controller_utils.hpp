@@ -187,12 +187,12 @@ public:
 
   bool has_trivial_traj() const
   {
-    return has_active_trajectory() && traj_external_point_ptr_->has_nontrivial_msg() == false;
+    return has_active_trajectory() && current_trajectory_->has_nontrivial_msg() == false;
   }
 
   bool has_nontrivial_traj()
   {
-    return has_active_trajectory() && traj_external_point_ptr_->has_nontrivial_msg();
+    return has_active_trajectory() && current_trajectory_->has_nontrivial_msg();
   }
 
   double get_cmd_timeout() { return cmd_timeout_; }
