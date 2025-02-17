@@ -88,16 +88,16 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
   {
     RCLCPP_WARN(
       get_node()->get_logger(),
-      "DEPRECATED parameter 'front_steering', set 'traction_joint_names' or 'steering_joint_names' "
-      "instead");
+      "DEPRECATED parameter 'front_steering'. Instead, set 'traction_joints_names' or "
+      "'steering_joints_names'");
   }
 
   if (params_.front_wheels_names.size() > 0)
   {
     RCLCPP_WARN(
       get_node()->get_logger(),
-      "DEPRECATED parameter 'front_wheels_names', set 'traction_joint_names' or "
-      "'steering_joint_names' instead");
+      "DEPRECATED parameter 'front_wheels_names', set 'traction_joints_names' or "
+      "'steering_joints_names' instead");
     if (params_.front_steering)
     {
       params_.steering_joints_names = params_.front_wheels_names;
@@ -112,8 +112,8 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
   {
     RCLCPP_WARN(
       get_node()->get_logger(),
-      "DEPRECATED parameter 'rear_wheels_names', set 'traction_joint_names' or "
-      "'steering_joint_names' instead");
+      "DEPRECATED parameter 'rear_wheels_names', set 'traction_joints_names' or "
+      "'steering_joints_names' instead");
     if (params_.front_steering)
     {
       params_.traction_joints_names = params_.rear_wheels_names;
