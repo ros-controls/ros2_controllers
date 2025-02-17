@@ -2,6 +2,11 @@
 Changelog for package pose_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Update paths of GPL includes (backport `#1487 <https://github.com/ros-controls/ros2_controllers/issues/1487>`_) (`#1493 <https://github.com/ros-controls/ros2_controllers/issues/1493>`_)
+* Contributors: Christoph Fröhlich
+
 2.41.0 (2025-01-13)
 -------------------
 * [pose_broadcaster] Check for valid pose before attempting to publish a tf for it (backport `#1479 <https://github.com/ros-controls/ros2_controllers/issues/1479>`_) (`#1483 <https://github.com/ros-controls/ros2_controllers/issues/1483>`_)

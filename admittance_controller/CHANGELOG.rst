@@ -2,6 +2,13 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* [Admittance] multiple state/command interfaces (backport `#547 <https://github.com/ros-controls/ros2_controllers/issues/547>`_, `#1196 <https://github.com/ros-controls/ros2_controllers/issues/1196>`_) (`#1548 <https://github.com/ros-controls/ros2_controllers/issues/1548>`_)
+* Remove dependency of admittance controller on JTC (backport `#1532 <https://github.com/ros-controls/ros2_controllers/issues/1532>`_) (`#1537 <https://github.com/ros-controls/ros2_controllers/issues/1537>`_)
+* Update paths of GPL includes (backport `#1487 <https://github.com/ros-controls/ros2_controllers/issues/1487>`_) (`#1493 <https://github.com/ros-controls/ros2_controllers/issues/1493>`_)
+* Contributors: Christoph Fröhlich, Marco Magri, Sai Kishor Kothakota
+
 2.41.0 (2025-01-13)
 -------------------
 
