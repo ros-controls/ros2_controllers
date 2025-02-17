@@ -36,7 +36,7 @@
 #include <vector>
 
 #include "control_msgs/action/follow_joint_trajectory.hpp"
-#include "joint_trajectory_controller_parameters.hpp"
+#include "joint_trajectory_controller/joint_trajectory_controller_parameters.hpp"
 
 namespace joint_trajectory_controller
 {
@@ -199,7 +199,7 @@ SegmentTolerances get_segment_tolerances(
           .c_str());
       return default_tolerances;
     }
-    auto i = std::distance(joints.cbegin(), it);
+    auto i = static_cast<size_t>(std::distance(joints.cbegin(), it));
     std::string interface = "";
     try
     {
@@ -246,7 +246,7 @@ SegmentTolerances get_segment_tolerances(
           .c_str());
       return default_tolerances;
     }
-    auto i = std::distance(joints.cbegin(), it);
+    auto i = static_cast<size_t>(std::distance(joints.cbegin(), it));
     std::string interface = "";
     try
     {

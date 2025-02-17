@@ -185,12 +185,12 @@ public:
 
   bool has_trivial_traj() const
   {
-    return has_active_trajectory() && traj_external_point_ptr_->has_nontrivial_msg() == false;
+    return has_active_trajectory() && current_trajectory_->has_nontrivial_msg() == false;
   }
 
   bool has_nontrivial_traj()
   {
-    return has_active_trajectory() && traj_external_point_ptr_->has_nontrivial_msg();
+    return has_active_trajectory() && current_trajectory_->has_nontrivial_msg();
   }
 
   double get_cmd_timeout() { return cmd_timeout_; }
@@ -469,7 +469,9 @@ public:
     if (joint_names.empty())
     {
       traj_msg.joint_names = {
-        joint_names_.begin(), joint_names_.begin() + points_positions[0].size()};
+        joint_names_.begin(),
+        joint_names_.begin() +
+          static_cast<std::vector<std::string>::difference_type>(points_positions[0].size())};
     }
     else
     {

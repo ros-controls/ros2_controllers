@@ -32,7 +32,7 @@
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 
 using ControllerStateMsg =
-  steering_controllers_library::SteeringControllersLibrary::AckermanControllerState;
+  steering_controllers_library::SteeringControllersLibrary::AckermannControllerState;
 using ControllerReferenceMsg =
   steering_controllers_library::SteeringControllersLibrary::ControllerTwistReferenceMsg;
 
@@ -295,8 +295,7 @@ protected:
 
   std::array<double, 4> joint_state_values_ = {{0.5, 0.5, 0.0, 0.0}};
   std::array<double, 4> joint_command_values_ = {{1.1, 3.3, 2.2, 4.4}};
-  std::array<std::string, 2> joint_reference_interfaces_ = {
-    {"linear/velocity", "angular/velocity"}};
+  std::array<std::string, 2> joint_reference_interfaces_ = {{"linear", "angular"}};
   std::string steering_interface_name_ = "position";
   // defined in setup
   std::string traction_interface_name_ = "";

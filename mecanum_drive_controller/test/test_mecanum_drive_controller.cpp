@@ -31,12 +31,6 @@ class MecanumDriveControllerTest
 {
 };
 
-namespace
-{
-// Floating-point value comparison threshold
-const double EPS = 1e-3;
-}  // namespace
-
 TEST_F(MecanumDriveControllerTest, when_controller_is_configured_expect_all_parameters_set)
 {
   SetUpController();
@@ -114,11 +108,13 @@ TEST_F(MecanumDriveControllerTest, when_controller_configured_expect_properly_ex
 
   for (size_t i = 0; i < reference_interface_names.size(); ++i)
   {
-    const std::string ref_itf_name = std::string(controller_->get_node()->get_name()) +
-                                     std::string("/") + reference_interface_names[i];
-    EXPECT_EQ(reference_interfaces[i]->get_name(), ref_itf_name);
-    EXPECT_EQ(reference_interfaces[i]->get_prefix_name(), controller_->get_node()->get_name());
-    EXPECT_EQ(reference_interfaces[i]->get_interface_name(), reference_interface_names[i]);
+    const std::string ref_itf_prefix_name =
+      std::string(controller_->get_node()->get_name()) + "/" + reference_interface_names[i];
+    EXPECT_EQ(reference_interfaces[i]->get_prefix_name(), ref_itf_prefix_name);
+    EXPECT_EQ(
+      reference_interfaces[i]->get_name(),
+      ref_itf_prefix_name + "/" + hardware_interface::HW_IF_VELOCITY);
+    EXPECT_EQ(reference_interfaces[i]->get_interface_name(), hardware_interface::HW_IF_VELOCITY);
   }
 }
 

@@ -226,11 +226,6 @@ controller_interface::CallbackReturn GripperActionController::on_configure(
   const rclcpp_lifecycle::State &)
 {
   const auto logger = get_node()->get_logger();
-  if (!param_listener_)
-  {
-    RCLCPP_ERROR(get_node()->get_logger(), "Error encountered during init");
-    return controller_interface::CallbackReturn::ERROR;
-  }
   params_ = param_listener_->get_params();
 
   // Action status checking update rate

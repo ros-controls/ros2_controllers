@@ -136,9 +136,11 @@ void AdmittanceRule::apply_parameters_update()
 
   for (size_t i = 0; i < NUM_CARTESIAN_DOF; ++i)
   {
-    admittance_state_.mass_inv[i] = 1.0 / parameters_.admittance.mass[i];
-    admittance_state_.damping[i] = parameters_.admittance.damping_ratio[i] * 2 *
-                                   sqrt(admittance_state_.mass[i] * admittance_state_.stiffness[i]);
+    auto idx = static_cast<Eigen::Index>(i);
+    admittance_state_.mass_inv[idx] = 1.0 / parameters_.admittance.mass[i];
+    admittance_state_.damping[idx] =
+      parameters_.admittance.damping_ratio[i] * 2 *
+      sqrt(admittance_state_.mass[idx] * admittance_state_.stiffness[idx]);
   }
 }
 
@@ -216,12 +218,13 @@ controller_interface::return_type AdmittanceRule::update(
   // update joint desired joint state
   for (size_t i = 0; i < num_joints_; ++i)
   {
+    auto idx = static_cast<Eigen::Index>(i);
     desired_joint_state.positions[i] =
-      reference_joint_state.positions[i] + admittance_state_.joint_pos[i];
+      reference_joint_state.positions[i] + admittance_state_.joint_pos[idx];
     desired_joint_state.velocities[i] =
-      reference_joint_state.velocities[i] + admittance_state_.joint_vel[i];
+      reference_joint_state.velocities[i] + admittance_state_.joint_vel[idx];
     desired_joint_state.accelerations[i] =
-      reference_joint_state.accelerations[i] + admittance_state_.joint_acc[i];
+      reference_joint_state.accelerations[i] + admittance_state_.joint_acc[idx];
   }
 
   return controller_interface::return_type::OK;
@@ -334,7 +337,7 @@ void AdmittanceRule::process_wrench_measurements(
   new_wrench_base.block<3, 1>(0, 1) -= (cog_world_rot * cog_pos_).cross(end_effector_weight_);
 
   // apply smoothing filter
-  for (size_t i = 0; i < 6; ++i)
+  for (Eigen::Index i = 0; i < 6; ++i)
   {
     wrench_world_(i) = filters::exponentialSmoothing(
       new_wrench_base(i), wrench_world_(i), parameters_.ft_sensor.filter_coefficient);
@@ -345,18 +348,20 @@ const control_msgs::msg::AdmittanceControllerState & AdmittanceRule::get_control
 {
   for (size_t i = 0; i < NUM_CARTESIAN_DOF; ++i)
   {
-    state_message_.stiffness.data[i] = admittance_state_.stiffness[i];
-    state_message_.damping.data[i] = admittance_state_.damping[i];
-    state_message_.selected_axes.data[i] = static_cast<bool>(admittance_state_.selected_axes[i]);
-    state_message_.mass.data[i] = admittance_state_.mass[i];
+    auto idx = static_cast<Eigen::Index>(i);
+    state_message_.stiffness.data[i] = admittance_state_.stiffness[idx];
+    state_message_.damping.data[i] = admittance_state_.damping[idx];
+    state_message_.selected_axes.data[i] = static_cast<bool>(admittance_state_.selected_axes[idx]);
+    state_message_.mass.data[i] = admittance_state_.mass[idx];
   }
 
   for (size_t i = 0; i < parameters_.joints.size(); ++i)
   {
+    auto idx = static_cast<Eigen::Index>(i);
     state_message_.joint_state.name[i] = parameters_.joints[i];
-    state_message_.joint_state.position[i] = admittance_state_.joint_pos[i];
-    state_message_.joint_state.velocity[i] = admittance_state_.joint_vel[i];
-    state_message_.joint_state.effort[i] = admittance_state_.joint_acc[i];
+    state_message_.joint_state.position[i] = admittance_state_.joint_pos[idx];
+    state_message_.joint_state.velocity[i] = admittance_state_.joint_vel[idx];
+    state_message_.joint_state.effort[i] = admittance_state_.joint_acc[idx];
   }
 
   state_message_.wrench_base.wrench.force.x = admittance_state_.wrench_base[0];
@@ -411,7 +416,7 @@ void AdmittanceRule::vec_to_eigen(const std::vector<T1> & data, T2 & matrix)
   {
     for (auto row = 0; row < matrix.rows(); row++)
     {
-      matrix(row, col) = data[row + col * matrix.rows()];
+      matrix(row, col) = data[static_cast<size_t>(row + col * matrix.rows())];
     }
   }
 }

@@ -16,6 +16,8 @@
  * Author: Tony Najjar
  */
 
+#define _USE_MATH_DEFINES
+
 #include <memory>
 #include <queue>
 #include <string>
@@ -86,16 +88,6 @@ InterfaceConfiguration TricycleController::state_interface_configuration() const
 controller_interface::return_type TricycleController::update(
   const rclcpp::Time & time, const rclcpp::Duration & period)
 {
-  if (get_lifecycle_state().id() == State::PRIMARY_STATE_INACTIVE)
-  {
-    if (!is_halted)
-    {
-      halt();
-      is_halted = true;
-    }
-    return controller_interface::return_type::OK;
-  }
-
   // if the mutex is unable to lock, last_command_msg_ won't be updated
   received_velocity_msg_ptr_.try_get([this](const std::shared_ptr<TwistStamped> & msg)
                                      { last_command_msg_ = msg; });
@@ -236,7 +228,7 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
   }
 
   odometry_.setWheelParams(params_.wheelbase, params_.wheel_radius);
-  odometry_.setVelocityRollingWindowSize(params_.velocity_rolling_window_size);
+  odometry_.setVelocityRollingWindowSize(static_cast<size_t>(params_.velocity_rolling_window_size));
 
   cmd_vel_timeout_ = std::chrono::milliseconds{params_.cmd_vel_timeout};
   params_.publish_ackermann_command =
@@ -380,7 +372,6 @@ CallbackReturn TricycleController::on_activate(const rclcpp_lifecycle::State &)
     return CallbackReturn::ERROR;
   }
 
-  is_halted = false;
   subscriber_is_active_ = true;
 
   RCLCPP_DEBUG(get_node()->get_logger(), "Subscriber and publisher are now active.");
@@ -390,6 +381,7 @@ CallbackReturn TricycleController::on_activate(const rclcpp_lifecycle::State &)
 CallbackReturn TricycleController::on_deactivate(const rclcpp_lifecycle::State &)
 {
   subscriber_is_active_ = false;
+  halt();
   return CallbackReturn::SUCCESS;
 }
 
@@ -436,13 +428,7 @@ bool TricycleController::reset()
   velocity_command_subscriber_.reset();
 
   received_velocity_msg_ptr_.set(nullptr);
-  is_halted = false;
   return true;
-}
-
-CallbackReturn TricycleController::on_shutdown(const rclcpp_lifecycle::State &)
-{
-  return CallbackReturn::SUCCESS;
 }
 
 void TricycleController::halt()
