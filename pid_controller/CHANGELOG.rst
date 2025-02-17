@@ -2,8 +2,8 @@
 Changelog for package pid_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.42.0 (2025-02-17)
+-------------------
 * [pid_controller] Update tests (backport `#1538 <https://github.com/ros-controls/ros2_controllers/issues/1538>`_) (`#1545 <https://github.com/ros-controls/ros2_controllers/issues/1545>`_)
 * [pid_controller] Fix logic for feedforward_mode with single reference interface (backport `#1520 <https://github.com/ros-controls/ros2_controllers/issues/1520>`_) (`#1539 <https://github.com/ros-controls/ros2_controllers/issues/1539>`_)
 * Improve antiwindup description (backport `#1502 <https://github.com/ros-controls/ros2_controllers/issues/1502>`_) (`#1503 <https://github.com/ros-controls/ros2_controllers/issues/1503>`_)
