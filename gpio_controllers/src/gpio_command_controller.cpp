@@ -158,11 +158,6 @@ controller_interface::return_type GpioCommandController::update(
 bool GpioCommandController::update_dynamic_map_parameters()
 {
   auto logger = get_node()->get_logger();
-  if (!param_listener_)
-  {
-    RCLCPP_ERROR(logger, "Error encountered during init");
-    return false;
-  }
   // update the dynamic map parameters
   param_listener_->refresh_dynamic_parameters();
   // get parameters from the listener in case they were updated
