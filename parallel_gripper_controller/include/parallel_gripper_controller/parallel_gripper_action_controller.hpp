@@ -40,7 +40,7 @@
 #include "realtime_tools/realtime_server_goal_handle.hpp"
 
 // Project
-#include "parallel_gripper_action_controller_parameters.hpp"
+#include "parallel_gripper_controller/parallel_gripper_action_controller_parameters.hpp"
 
 namespace parallel_gripper_action_controller
 {
