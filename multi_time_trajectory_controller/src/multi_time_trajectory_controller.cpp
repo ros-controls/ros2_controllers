@@ -380,10 +380,10 @@ controller_interface::return_type MultiTimeTrajectoryController::update(
           if (use_closed_loop_pid_adapter_)
           {
             // Update PID
-            tmp_command = (state_desired_[axis_index].velocity * ff_velocity_scale_[axis_index]) +
-                          pids_[axis_index]->computeCommand(
-                            state_error_[axis_index].position, state_error_[axis_index].velocity,
-                            (uint64_t)period.nanoseconds());
+            tmp_command =
+              (state_desired_[axis_index].velocity * ff_velocity_scale_[axis_index]) +
+              pids_[axis_index]->compute_command(
+                state_error_[axis_index].position, state_error_[axis_index].velocity, period);
           }
 
           // set values for next hardware write()
@@ -1935,7 +1935,7 @@ void MultiTimeTrajectoryController::update_pids()
     if (pids_[i])
     {
       // update PIDs with gains from ROS parameters
-      pids_[i]->setGains(gains.p, gains.i, gains.d, gains.i_clamp, -gains.i_clamp);
+      pids_[i]->set_gains(gains.p, gains.i, gains.d, gains.i_clamp, -gains.i_clamp);
     }
     else
     {

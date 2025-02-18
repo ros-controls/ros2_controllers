@@ -328,7 +328,7 @@ TEST_P(TrajectoryControllerTestParameterized, update_dynamic_parameters)
   if (traj_controller_->use_closed_loop_pid_adapter())
   {
     EXPECT_EQ(pids.size(), 3);
-    auto gain_0 = pids.at(0)->getGains();
+    auto gain_0 = pids.at(0)->get_gains();
     EXPECT_EQ(gain_0.p_gain_, 0.0);
 
     double kp = 1.0;
@@ -337,7 +337,7 @@ TEST_P(TrajectoryControllerTestParameterized, update_dynamic_parameters)
 
     pids = traj_controller_->get_pids();
     EXPECT_EQ(pids.size(), 3);
-    gain_0 = pids.at(0)->getGains();
+    gain_0 = pids.at(0)->get_gains();
     EXPECT_EQ(gain_0.p_gain_, kp);
   }
   else
