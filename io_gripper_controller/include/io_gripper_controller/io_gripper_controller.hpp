@@ -159,7 +159,7 @@ public:
   GripperTransitionIOs close_ios_;
 
   rclcpp::Time last_transition_time_;
-
+  std::vector<double> after_joint_states_;
   std::vector<std::string> command_ios_open;
   std::vector<std::string> command_ios_close;
   std::vector<std::string> set_before_command_open;
@@ -269,7 +269,7 @@ private:
    */
   void handle_gripper_state_transition(
     const rclcpp::Time & current_time, const GripperTransitionIOs & ios, const uint & state,
-    const std::string & transition_name, std::vector<double> after_joint_states);
+    const std::string & transition_name);
 
   /**
    * @brief Handles the state transition when closing the gripper.
