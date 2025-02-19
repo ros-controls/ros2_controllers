@@ -155,19 +155,12 @@ controller_interface::return_type IOGripperController::update(
       break;
     case service_mode_type::OPEN:
       handle_gripper_state_transition(
-        time, open_ios_, static_cast<uint>(*(gripper_state_buffer_.readFromRT())), "open",
-        params_.open.joint_states);
+        time, open_ios_, static_cast<uint>(*(gripper_state_buffer_.readFromRT())), "open");
       break;
     case service_mode_type::CLOSE:
-      // handle_gripper_state_transition(
-      //   time, close_ios_, *(gripper_state_buffer_.readFromRT()), "close",
-      //   []);  // here joint states should be empty as we have multiple
-      //   states
-      // handle_gripper_state_transition_close(*(gripper_state_buffer_.readFromRT()));
       RCLCPP_INFO(get_node()->get_logger(), "CLOSE state is triggered");
       handle_gripper_state_transition(
-        time, close_ios_, static_cast<uint>(*(gripper_state_buffer_.readFromRT())), "close",
-        params_.close.state.possible_closed_states_map.at(closed_state_name_).joint_states);
+        time, close_ios_, static_cast<uint>(*(gripper_state_buffer_.readFromRT())), "close");
       break;
 
     default:
@@ -227,147 +220,6 @@ bool IOGripperController::find_and_get_command(const std::string & name, double 
   return false;
 }
 
-// void IOGripperController::handle_gripper_state_transition_close(const gripper_state_type & state)
-// {
-//   switch (state)
-//   {
-//     case gripper_state_type::IDLE:
-//       // do nothing
-//       break;
-//     case gripper_state_type::SET_BEFORE_COMMAND:
-//       for (size_t i = 0; i < set_before_command_close.size(); ++i)
-//       {
-//         setResult =
-//           find_and_set_command(set_before_command_close[i], set_before_command_close_values[i]);
-//         if (!setResult)
-//         {
-//           RCLCPP_ERROR(
-//             get_node()->get_logger(),
-//             "CLOSE - SET_BEFORE_COMMAND: Failed to set the command state for %s",
-//             set_before_command_close[i].c_str());
-//         }
-//       }
-
-//       gripper_state_buffer_.writeFromNonRT(gripper_state_type::CLOSE_GRIPPER);
-//       break;
-//     case gripper_state_type::CLOSE_GRIPPER:
-//       for (size_t i = 0; i < command_ios_close.size(); ++i)
-//       {
-//         setResult = find_and_set_command(command_ios_close[i], command_ios_close_values[i]);
-//         if (!setResult)
-//         {
-//           RCLCPP_ERROR(
-//             get_node()->get_logger(), "CLOSE_GRIPPER: Failed to set the command state for %s",
-//             command_ios_close[i].c_str());
-//         }
-//       }
-
-//       gripper_state_buffer_.writeFromNonRT(gripper_state_type::CHECK_GRIPPER_STATE);
-//       break;
-//     case gripper_state_type::CHECK_GRIPPER_STATE:
-//       for (const auto & [state_name, state_params] :
-//       params_.close.state.possible_closed_states_map)
-//       {
-//         check_state_ios_ = false;
-//         for (const auto & high_val : state_params.high)
-//         {
-//           setResult = find_and_get_state(high_val, state_value_);
-//           if (!setResult)
-//           {
-//             RCLCPP_ERROR(
-//               get_node()->get_logger(),
-//               "CLOSE - CHECK_GRIPPER_STATE: Failed to get the state for %s", high_val.c_str());
-//           }
-//           else
-//           {
-//             if (abs(state_value_ - 1.0) < std::numeric_limits<double>::epsilon())
-//             {
-//               check_state_ios_ = true;
-//             }
-//             else
-//             {
-//               check_state_ios_ = false;
-//               break;
-//             }
-//           }
-//         }
-//         for (const auto & low_val : state_params.low)
-//         {
-//           setResult = find_and_get_state(low_val, state_value_);
-//           if (!setResult)
-//           {
-//             RCLCPP_ERROR(
-//               get_node()->get_logger(),
-//               "CLOSE - CHECK_GRIPPER_STATE: Failed to get the state for %s", low_val.c_str());
-//           }
-//           else
-//           {
-//             if (abs(state_value_ - 0.0) < std::numeric_limits<double>::epsilon())
-//             {
-//               check_state_ios_ = true;
-//             }
-//             else
-//             {
-//               check_state_ios_ = false;
-//               break;
-//             }
-//           }
-//         }
-//         if (check_state_ios_)
-//         {
-//           closed_state_name_ = state_name;
-//           gripper_state_buffer_.writeFromNonRT(gripper_state_type::SET_AFTER_COMMAND);
-//           break;
-//         }
-//       }
-//       break;
-//     case gripper_state_type::SET_AFTER_COMMAND:
-//       closed_state_values_ =
-//       params_.close.state.possible_closed_states_map.at(closed_state_name_);
-
-//       for (const auto & high_val : closed_state_values_.set_after_command_high)
-//       {
-//         setResult = find_and_set_command(high_val, 1.0);
-//         if (!setResult)
-//         {
-//           RCLCPP_ERROR(
-//             get_node()->get_logger(),
-//             "CLOSE - SET_AFTER_COMMAND: Failed to set the command state for %s",
-//             high_val.c_str());
-//         }
-//       }
-
-//       for (const auto & low_val : closed_state_values_.set_after_command_low)
-//       {
-//         RCLCPP_DEBUG(
-//           get_node()->get_logger(), "CLOSE - SET_AFTER_COMMAND: set low after command %s",
-//           low_val.c_str());
-//         setResult = find_and_set_command(low_val, 0.0);
-//         if (!setResult)
-//         {
-//           RCLCPP_ERROR(
-//             get_node()->get_logger(),
-//             "CLOSE - SET_AFTER_COMMAND: Failed to set the command state for %s",
-//             low_val.c_str());
-//         }
-//       }
-//       for (size_t i = 0; i <
-//       params_.close.state.possible_closed_states_map.at(closed_state_name_)
-//                                .joint_states.size();
-//            ++i)
-//       {
-//         joint_state_values_[i] =
-//           params_.close.state.possible_closed_states_map.at(closed_state_name_).joint_states[i];
-//       }
-//       gripper_state_buffer_.writeFromNonRT(gripper_state_type::IDLE);
-//       closeFlag_.store(false);
-//       gripper_service_buffer_.writeFromNonRT(service_mode_type::IDLE);
-//       break;
-//     default:
-//       break;
-//   }
-// }
-
 bool IOGripperController::set_commands(
   const std::unordered_map<std::string, double> & command_states,
   const std::string & transition_name)
@@ -416,7 +268,7 @@ bool IOGripperController::check_states(
 
 void IOGripperController::handle_gripper_state_transition(
   const rclcpp::Time & current_time, const GripperTransitionIOs & ios, const uint & state,
-  const std::string & transition_name, std::vector<double> after_joint_states)
+  const std::string & transition_name)
 {
   switch (state)
   {
@@ -432,8 +284,6 @@ void IOGripperController::handle_gripper_state_transition(
       break;
 
     case IOGripperState::SET_BEFORE_COMMAND:
-      // RCLCPP_INFO(get_node()->get_logger(), "%s - SET_BEFORE_COMMAND: Setting the command
-      // states", transition_name.c_str());
       if (set_commands(ios.set_before_command_ios, transition_name + " - SET_BEFORE_COMMAND"))
       {
         // TODO(destogl): check to use other Realtime sync object to have write from RT
@@ -450,8 +300,6 @@ void IOGripperController::handle_gripper_state_transition(
       // last_transition_time_ = current_time;
       break;
     case IOGripperState::CHECK_BEFORE_COMMAND:
-      // RCLCPP_INFO(get_node()->get_logger(), "%s - CHECK_BEFORE_COMMAND: Checking the state of the
-      // gripper", transition_name.c_str());
       gripper_state_buffer_.writeFromNonRT(IOGripperState::SET_COMMAND);
       // check the state of the gripper
       if (check_states(ios.set_before_state_ios, transition_name + " - CHECK_BEFORE_COMMAND"))
@@ -504,7 +352,7 @@ void IOGripperController::handle_gripper_state_transition(
                 transition_name + " - CHECK_COMMAND"))
           {
             check_state_ios = true;
-            after_joint_states =
+            after_joint_states_ =
               params_.close.state.possible_closed_states_map.at(possible_end_state).joint_states;
             // TODO(Sachin): store possible_end_state in a variable to publish on status topic
             break;
@@ -517,6 +365,7 @@ void IOGripperController::handle_gripper_state_transition(
       }
       else  // only single end state
       {
+        after_joint_states_ = params_.open.joint_states;
         check_state_ios = check_states(ios.state_ios, transition_name + " - CHECK_COMMAND");
       }
 
@@ -554,9 +403,9 @@ void IOGripperController::handle_gripper_state_transition(
       if (check_states(ios.set_after_state_ios, transition_name + " - CHECK_AFTER_COMMAND"))
       {
         // set joint states
-        for (size_t i = 0; i < after_joint_states.size(); ++i)
+        for (size_t i = 0; i < after_joint_states_.size(); ++i)
         {
-          joint_state_values_[i] = params_.open.joint_states[i];
+          joint_state_values_[i] = after_joint_states_[i];
         }
         // Finish up the transition
         gripper_state_buffer_.writeFromNonRT(IOGripperState::IDLE);
