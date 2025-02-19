@@ -135,8 +135,6 @@ protected:
   TractionLimiter limiter_traction_;
   SteeringLimiter limiter_steering_;
 
-  bool is_halted = false;
-
   void reset_odometry(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<std_srvs::srv::Empty::Request> req,
