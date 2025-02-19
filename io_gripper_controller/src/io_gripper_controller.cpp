@@ -284,23 +284,23 @@ void IOGripperController::handle_gripper_state_transition(
       break;
 
     case IOGripperState::SET_BEFORE_COMMAND:
+
+      last_transition_time_ = current_time;
       if (set_commands(ios.set_before_command_ios, transition_name + " - SET_BEFORE_COMMAND"))
       {
         // TODO(destogl): check to use other Realtime sync object to have write from RT
         gripper_state_buffer_.writeFromNonRT(IOGripperState::CHECK_BEFORE_COMMAND);
       }
-      // if ((current_time - last_transition_time_).seconds() > params_.timeout)
-      // {
-      //   RCLCPP_ERROR(
-      //     get_node()->get_logger(),
-      //     "%s - CHECK_AFTER_COMMAND: Gripper didin't reached target state within %.2f seconds.",
-      //     transition_name.c_str(), params_.timeout);
-      //   gripper_state_buffer_.writeFromNonRT(IOGripperState::HALTED);
-      // }
-      // last_transition_time_ = current_time;
+      if ((current_time - last_transition_time_).seconds() > params_.timeout)
+      {
+        RCLCPP_ERROR(
+          get_node()->get_logger(),
+          "%s - CHECK_AFTER_COMMAND: Gripper didin't reached target state within %.2f seconds.",
+          transition_name.c_str(), params_.timeout);
+        gripper_state_buffer_.writeFromNonRT(IOGripperState::HALTED);
+      }
       break;
     case IOGripperState::CHECK_BEFORE_COMMAND:
-      gripper_state_buffer_.writeFromNonRT(IOGripperState::SET_COMMAND);
       // check the state of the gripper
       if (check_states(ios.set_before_state_ios, transition_name + " - CHECK_BEFORE_COMMAND"))
       {
@@ -330,15 +330,14 @@ void IOGripperController::handle_gripper_state_transition(
       {
         RCLCPP_ERROR(get_node()->get_logger(), "failed");
       }
-      // else if ((current_time - last_transition_time_).seconds() > params_.timeout)
-      // {
-      //   RCLCPP_ERROR(
-      //     get_node()->get_logger(),
-      //     "%s - SET_COMMAND: Gripper didin't reached target state within %.2f seconds.",
-      //     transition_name.c_str(), params_.timeout);
-      //   gripper_state_buffer_.writeFromNonRT(IOGripperState::HALTED);
-      // }
-      last_transition_time_ = current_time;
+      if ((current_time - last_transition_time_).seconds() > params_.timeout)
+      {
+        RCLCPP_ERROR(
+          get_node()->get_logger(),
+          "%s - SET_COMMAND: Gripper didin't reached target state within %.2f seconds.",
+          transition_name.c_str(), params_.timeout);
+        gripper_state_buffer_.writeFromNonRT(IOGripperState::HALTED);
+      }
       break;
     case IOGripperState::CHECK_COMMAND:
       // check the state of the gripper
@@ -381,7 +380,6 @@ void IOGripperController::handle_gripper_state_transition(
           transition_name.c_str(), params_.timeout);
         gripper_state_buffer_.writeFromNonRT(IOGripperState::HALTED);
       }
-      last_transition_time_ = current_time;
       break;
     case IOGripperState::SET_AFTER_COMMAND:
       if (set_commands(ios.set_after_command_ios, transition_name + " - SET_AFTER_COMMAND"))
@@ -396,7 +394,6 @@ void IOGripperController::handle_gripper_state_transition(
           transition_name.c_str(), params_.timeout);
         gripper_state_buffer_.writeFromNonRT(IOGripperState::HALTED);
       }
-      last_transition_time_ = current_time;
       break;
 
     case IOGripperState::CHECK_AFTER_COMMAND:
@@ -423,7 +420,6 @@ void IOGripperController::handle_gripper_state_transition(
           transition_name.c_str(), params_.timeout);
         gripper_state_buffer_.writeFromNonRT(IOGripperState::HALTED);
       }
-      last_transition_time_ = current_time;
       break;
 
     default:
