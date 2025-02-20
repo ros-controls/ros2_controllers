@@ -24,7 +24,6 @@
 #include "joint_limits/joint_limits.hpp"
 #include "joint_trajectory_controller/interpolation_methods.hpp"
 #include "rclcpp/time.hpp"
-#include "ruckig/ruckig.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
 namespace multi_time_trajectory_controller
@@ -103,10 +102,7 @@ public:
     std::unique_ptr<
       joint_limits::JointLimiterInterface<trajectory_msgs::msg::JointTrajectoryPoint>> &
       joint_limiter,
-    std::vector<control_msgs::msg::AxisTrajectoryPoint> & splines_state,
-    std::vector<control_msgs::msg::AxisTrajectoryPoint> & ruckig_state,
-    std::vector<control_msgs::msg::AxisTrajectoryPoint> & ruckig_input_state,
-    bool hold_last_velocity);
+    std::vector<control_msgs::msg::AxisTrajectoryPoint> & splines_state, bool hold_last_velocity);
 
   /**
    * Do interpolation between 2 states given a time in between their respective timestamps
@@ -133,11 +129,9 @@ public:
   bool interpolate_between_points(
     const rclcpp::Time & time_a, const control_msgs::msg::AxisTrajectoryPoint & state_a,
     const rclcpp::Time & time_b, const control_msgs::msg::AxisTrajectoryPoint & state_b,
-    const rclcpp::Time & sample_time, const bool do_ruckig_smoothing, const bool skip_splines,
+    const rclcpp::Time & sample_time, const bool skip_splines,
     control_msgs::msg::AxisTrajectoryPoint & output, const rclcpp::Duration & period,
-    control_msgs::msg::AxisTrajectoryPoint & splines_state,
-    control_msgs::msg::AxisTrajectoryPoint & ruckig_state,
-    control_msgs::msg::AxisTrajectoryPoint & ruckig_input_state, std::size_t axis_index);
+    control_msgs::msg::AxisTrajectoryPoint & splines_state, std::size_t axis_index);
 
   void reset_previous_state(
     const size_t axis_index, const control_msgs::msg::AxisTrajectoryPoint & state)
@@ -203,16 +197,6 @@ private:
   std::vector<control_msgs::msg::AxisTrajectoryPoint> state_before_traj_msg_;
 
   bool sampled_already_ = false;
-
-  // For Ruckig jerk-limited smoothing
-  std::unique_ptr<ruckig::Ruckig<ruckig::DynamicDOFs>> smoother_;
-  ruckig::InputParameter<ruckig::DynamicDOFs> ruckig_input_{0};
-  ruckig::OutputParameter<ruckig::DynamicDOFs> ruckig_output_{0};
-  // To avoid instability, Ruckig runs in a closed-loop fashion:
-  // Ruckig output at cycle i is used as the initial state for cycle i+1.
-  // This flag determines whether we need to initialize the state or use the previous
-  // Ruckig output.
-  bool have_previous_ruckig_output_ = false;
 
   // for logging
   std::vector<control_msgs::msg::AxisTrajectoryPoint> previous_state_;

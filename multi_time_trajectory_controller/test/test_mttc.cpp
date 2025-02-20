@@ -2543,7 +2543,7 @@ TEST_F(TrajectoryControllerTest, test_joint_limiter_active_and_joint_limiting)
 
       // First calculate, final position and velocity for the constant acceleration portion
       // for only constant acceleration i.e. p = 0.5 * a * t^2 where t = duration_s
-      // the final velocity shoud be for constant acceleration i.e. v1 = a * t where t = duration_s
+      // the final velocity should be for constant acceleration i.e. v1 = a * t where t = duration_s
       expected_actual[i].position = 0.5 * acc_limits[i] * duration_s * duration_s;
       expected_actual[i].velocity = acc_limits[i] * duration_s;
 

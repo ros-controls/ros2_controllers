@@ -15,8 +15,6 @@
 #include "multi_time_trajectory_controller/multi_time_trajectory_controller.hpp"
 
 #include <angles/angles.h>
-#include <tf2/LinearMath/Matrix3x3.hpp>
-#include <tf2/LinearMath/Quaternion.hpp>
 
 #include <algorithm>
 #include <chrono>
@@ -25,6 +23,9 @@
 #include <limits>
 #include <stdexcept>
 #include <vector>
+
+#include <tf2/LinearMath/Matrix3x3.hpp>
+#include <tf2/LinearMath/Quaternion.hpp>
 
 #include <controller_interface/controller_interface_base.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
@@ -209,9 +210,6 @@ controller_interface::return_type MultiTimeTrajectoryController::update(
     {
       first_sample = true;
 
-      // Reset Ruckig vel/accel/jerk smoothing
-      //       (*traj_point_active_ptr_)->reset_ruckig_smoothing();
-
       if (params_.open_loop_control)
       {
         auto reset_flags = reset_dofs_flags_.readFromRT();
@@ -286,8 +284,7 @@ controller_interface::return_type MultiTimeTrajectoryController::update(
     end_segment_itrs.resize(dof_);
     auto const valid_points = traj_external_point_ptr_->sample(
       time, interpolation_method_, state_desired_, start_segment_itrs, end_segment_itrs, period,
-      joint_limiter_, splines_state_, ruckig_state_, ruckig_input_state_,
-      params_.hold_last_velocity);
+      joint_limiter_, splines_state_, params_.hold_last_velocity);
 
     compute_error(state_error_, state_current_, state_desired_);
 
@@ -742,8 +739,8 @@ void MultiTimeTrajectoryController::query_state_service(
     const rclcpp::Duration period = rclcpp::Duration::from_seconds(0.01);
     auto const valid_points = traj_external_point_ptr_->sample(
       static_cast<rclcpp::Time>(request->time), interpolation_method_, state_requested,
-      start_segment_itrs, end_segment_itrs, period, joint_limiter_, splines_state_, ruckig_state_,
-      ruckig_input_state_, params_.hold_last_velocity);
+      start_segment_itrs, end_segment_itrs, period, joint_limiter_, splines_state_,
+      params_.hold_last_velocity);
     response->success =
       std::all_of(valid_points.begin(), valid_points.end(), [](bool b) { return b; });
     // If the requested sample time precedes the trajectory finish time respond as failure
@@ -813,8 +810,6 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
   state_desired_.resize(dof_, emptyTrajectoryPoint());
   state_error_.resize(dof_, emptyTrajectoryPoint());
   splines_state_.resize(dof_, emptyTrajectoryPoint());
-  ruckig_state_.resize(dof_, emptyTrajectoryPoint());
-  ruckig_input_state_.resize(dof_, emptyTrajectoryPoint());
   axis_angle_wraparound_.resize(dof_, false);
   reset_dofs_positions_.resize(dof_, std::numeric_limits<double>::quiet_NaN());
 
@@ -1015,38 +1010,6 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_configure
   splines_output_publisher_->msg_.segment_start.resize(dof_);
   splines_output_publisher_->msg_.reset_dofs_position.resize(dof_);
   splines_output_publisher_->unlock();
-
-  ruckig_input_pub_ = get_node()->create_publisher<ControllerStateMsg>(
-    "~/ruckig_input_current", rclcpp::SystemDefaultsQoS());
-  ruckig_input_publisher_ = std::make_unique<StatePublisher>(ruckig_input_pub_);
-
-  ruckig_input_publisher_->lock();
-  ruckig_input_publisher_->msg_.axis_names = command_axis_names_;
-  ruckig_input_publisher_->msg_.feedback.resize(dof_);
-  ruckig_input_publisher_->msg_.error.resize(dof_);
-  ruckig_input_publisher_->msg_.output.resize(dof_);
-  ruckig_input_publisher_->msg_.state_before_trajectory.resize(dof_);
-  ruckig_input_publisher_->msg_.state_after_interpolation.resize(dof_);
-  ruckig_input_publisher_->msg_.state_after_joint_limit.resize(dof_);
-  ruckig_input_publisher_->msg_.segment_start.resize(dof_);
-  ruckig_input_publisher_->msg_.reset_dofs_position.resize(dof_);
-  ruckig_input_publisher_->unlock();
-
-  ruckig_input_target_pub_ = get_node()->create_publisher<ControllerStateMsg>(
-    "~/ruckig_input_target", rclcpp::SystemDefaultsQoS());
-  ruckig_input_target_publisher_ = std::make_unique<StatePublisher>(ruckig_input_target_pub_);
-
-  ruckig_input_target_publisher_->lock();
-  ruckig_input_target_publisher_->msg_.axis_names = command_axis_names_;
-  ruckig_input_target_publisher_->msg_.feedback.resize(dof_);
-  ruckig_input_target_publisher_->msg_.error.resize(dof_);
-  ruckig_input_target_publisher_->msg_.output.resize(dof_);
-  ruckig_input_target_publisher_->msg_.state_before_trajectory.resize(dof_);
-  ruckig_input_target_publisher_->msg_.state_after_interpolation.resize(dof_);
-  ruckig_input_target_publisher_->msg_.state_after_joint_limit.resize(dof_);
-  ruckig_input_target_publisher_->msg_.segment_start.resize(dof_);
-  ruckig_input_target_publisher_->msg_.reset_dofs_position.resize(dof_);
-  ruckig_input_target_publisher_->unlock();
 
   RCLCPP_INFO(
     logger, "Action status changes will be monitored at %.2f Hz.", params_.action_monitor_rate);
@@ -1497,21 +1460,6 @@ void MultiTimeTrajectoryController::publish_state(
 
     splines_output_publisher_->unlockAndPublish();
   }
-
-  if (ruckig_input_publisher_ && ruckig_input_publisher_->trylock())
-  {
-    ruckig_input_publisher_->msg_.header.stamp = state_publisher_->msg_.header.stamp;
-    ruckig_input_publisher_->msg_.state_after_interpolation = ruckig_input_state_;
-
-    ruckig_input_publisher_->unlockAndPublish();
-  }
-
-  if (ruckig_input_target_publisher_ && ruckig_input_target_publisher_->trylock())
-  {
-    ruckig_input_target_publisher_->msg_.header.stamp = state_publisher_->msg_.header.stamp;
-    ruckig_input_target_publisher_->msg_.state_after_interpolation = ruckig_state_;
-    ruckig_input_target_publisher_->unlockAndPublish();
-  }
 }
 
 void MultiTimeTrajectoryController::topic_callback(
@@ -1792,7 +1740,7 @@ void MultiTimeTrajectoryController::add_new_trajectory_msg(
   {
     std::lock_guard<std::mutex> guard(mutex_);
 
-    // merge reliable message if previous mesage not yet processed
+    // merge reliable message if previous message not yet processed
 
     // Check if a new external message has already been received before from nonRT threads
     auto current_external_msg = traj_external_point_ptr_->get_trajectory_msg();

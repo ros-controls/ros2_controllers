@@ -26,7 +26,6 @@
   <depend>rclcpp_lifecycle</depend>
   <depend>realtime_tools</depend>
   <depend>rsl</depend>
-  <depend>ruckig</depend>
   <depend>tl_expected</depend>
   <depend>trajectory_msgs</depend>
   <depend>tf2</depend>

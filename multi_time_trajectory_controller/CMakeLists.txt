@@ -23,7 +23,6 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   rclcpp_lifecycle
   realtime_tools
   rsl
-  ruckig
   tl_expected
   trajectory_msgs
   tf2
@@ -54,7 +53,6 @@ target_include_directories(multi_time_trajectory_controller PUBLIC
 )
 target_link_libraries(multi_time_trajectory_controller PUBLIC
   multi_time_trajectory_controller_parameters
-  ruckig::ruckig
 )
 ament_target_dependencies(multi_time_trajectory_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
 
