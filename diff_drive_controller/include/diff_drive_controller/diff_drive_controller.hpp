@@ -32,7 +32,7 @@
 #include "nav_msgs/msg/odometry.hpp"
 #include "odometry.hpp"
 #include "rclcpp_lifecycle/state.hpp"
-#include "realtime_tools/realtime_buffer.hpp"
+#include "realtime_tools/lock_free_queue.hpp"
 #include "realtime_tools/realtime_publisher.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"
 
@@ -122,8 +122,8 @@ protected:
   bool subscriber_is_active_ = false;
   rclcpp::Subscription<TwistStamped>::SharedPtr velocity_command_subscriber_ = nullptr;
 
-  realtime_tools::RealtimeBuffer<std::shared_ptr<TwistStamped>> received_velocity_msg_ptr_{nullptr};
-
+  realtime_tools::LockFreeSPSCQueue<std::shared_ptr<TwistStamped>, 10> received_velocity_msg_ptr_;
+  std::shared_ptr<TwistStamped> last_command_msg_;
   std::queue<std::array<double, 2>> previous_two_commands_;
   // speed limiters
   std::unique_ptr<SpeedLimiter> limiter_linear_;
