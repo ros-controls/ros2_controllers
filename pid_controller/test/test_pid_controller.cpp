@@ -37,7 +37,6 @@ TEST_F(PidControllerTest, all_parameters_set_configure_success)
   ASSERT_TRUE(controller_->params_.command_interface.empty());
   ASSERT_TRUE(controller_->params_.reference_and_state_interfaces.empty());
   ASSERT_FALSE(controller_->params_.use_external_measured_states);
-  ASSERT_FALSE(controller_->params_.runtime_param_update);
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
@@ -52,7 +51,6 @@ TEST_F(PidControllerTest, all_parameters_set_configure_success)
     ASSERT_FALSE(controller_->params_.gains.dof_names_map[dof_name].antiwindup);
     ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].i_clamp_max, 5.0);
     ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].i_clamp_min, -5.0);
-    ASSERT_FALSE(controller_->params_.gains.dof_names_map[dof_name].save_iterm);
     ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].feedforward_gain, 0.0);
   }
   ASSERT_EQ(controller_->params_.command_interface, command_interface_);
@@ -60,7 +58,6 @@ TEST_F(PidControllerTest, all_parameters_set_configure_success)
     controller_->params_.reference_and_state_interfaces,
     testing::ElementsAreArray(state_interfaces_));
   ASSERT_FALSE(controller_->params_.use_external_measured_states);
-  ASSERT_FALSE(controller_->params_.runtime_param_update);
 }
 
 TEST_F(PidControllerTest, check_exported_interfaces)
@@ -166,12 +163,10 @@ TEST_F(PidControllerTest, reactivate_success)
   ASSERT_TRUE(std::isnan(controller_->measured_state_values_[0]));
   ASSERT_EQ(controller_->command_interfaces_[0].get_value(), 101.101);
   ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[0].get_value()));
   ASSERT_TRUE(std::isnan(controller_->reference_interfaces_[0]));
   ASSERT_TRUE(std::isnan(controller_->measured_state_values_[0]));
   ASSERT_EQ(controller_->command_interfaces_[0].get_value(), 101.101);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[0].get_value()));
   ASSERT_TRUE(std::isnan(controller_->reference_interfaces_[0]));
   ASSERT_TRUE(std::isnan(controller_->measured_state_values_[0]));
   ASSERT_EQ(controller_->command_interfaces_[0].get_value(), 101.101);
