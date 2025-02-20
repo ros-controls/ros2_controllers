@@ -98,18 +98,14 @@ void convert_to_joint_trajectory_point_for_joint_limiting(
 }  // namespace
 
 Trajectory::Trajectory()
-: trajectory_start_time_(0),
-  time_before_traj_msg_(0),
-  sampled_already_(false),
-  have_previous_ruckig_output_(false)
+: trajectory_start_time_(0), time_before_traj_msg_(0), sampled_already_(false)
 {
 }
 
 Trajectory::Trajectory(std::shared_ptr<control_msgs::msg::MultiAxisTrajectory> joint_trajectory)
 : trajectory_msg_(joint_trajectory),
   trajectory_start_time_(static_cast<rclcpp::Time>(joint_trajectory->header.stamp)),
-  sampled_already_(false),
-  have_previous_ruckig_output_(false)
+  sampled_already_(false)
 {
 }
 
@@ -284,53 +280,7 @@ void Trajectory::update(
 
   sampled_already_ = false;
 
-  // Initialize Ruckig-smoothing-related stuff
   size_t dim = multi_axis_trajectory->axis_names.size();
-  smoother_ = std::make_unique<ruckig::Ruckig<ruckig::DynamicDOFs>>(dim, period.seconds());
-  ruckig_input_ = ruckig::InputParameter<ruckig::DynamicDOFs>(dim);
-  ruckig_output_ = ruckig::OutputParameter<ruckig::DynamicDOFs>(dim);
-  have_previous_ruckig_output_ = false;
-
-  ruckig_input_.max_velocity.clear();
-  ruckig_input_.max_velocity.resize(dim, DEFAULT_MAX_VELOCITY);
-  ruckig_input_.max_acceleration.clear();
-  ruckig_input_.max_acceleration.resize(dim, DEFAULT_MAX_ACCELERATION);
-  ruckig_input_.max_jerk.clear();
-  ruckig_input_.max_jerk.resize(dim, DEFAULT_MAX_JERK);
-
-  for (size_t i = 0; i < dim; ++i)
-  {
-    RCLCPP_DEBUG(
-      rclcpp::get_logger("trajectory"), "max vel for joint %zu is %f", i,
-      ruckig_input_.max_velocity[i]);
-    RCLCPP_DEBUG(
-      rclcpp::get_logger("trajectory"), "max acc for joint %zu is %f", i,
-      ruckig_input_.max_acceleration[i]);
-    RCLCPP_DEBUG(
-      rclcpp::get_logger("trajectory"), "max jerk for joint %zu is %f", i,
-      ruckig_input_.max_jerk[i]);
-    if (joint_limits[i].has_velocity_limits)
-    {
-      ruckig_input_.max_velocity[i] = joint_limits[i].max_velocity;
-      RCLCPP_DEBUG(
-        rclcpp::get_logger("trajectory"), "Setting max vel for joint %zu to %f", i,
-        joint_limits[i].max_velocity);
-    }
-    if (joint_limits[i].has_acceleration_limits)
-    {
-      ruckig_input_.max_acceleration[i] = joint_limits[i].max_acceleration;
-      RCLCPP_DEBUG(
-        rclcpp::get_logger("trajectory"), "Setting max acc for joint %zu to %f", i,
-        joint_limits[i].max_acceleration);
-    }
-    if (joint_limits[i].has_jerk_limits)
-    {
-      ruckig_input_.max_jerk[i] = joint_limits[i].max_jerk;
-      RCLCPP_DEBUG(
-        rclcpp::get_logger("trajectory"), "Setting max jerk for joint %zu to %f", i,
-        joint_limits[i].max_jerk);
-    }
-  }
 
   if (previous_state_.size() != dim)
   {
@@ -359,9 +309,7 @@ std::vector<bool> Trajectory::sample(
   std::vector<TrajectoryPointConstIter> & end_segment_itr, const rclcpp::Duration & period,
   std::unique_ptr<joint_limits::JointLimiterInterface<trajectory_msgs::msg::JointTrajectoryPoint>> &
     joint_limiter,
-  std::vector<control_msgs::msg::AxisTrajectoryPoint> & splines_state,
-  std::vector<control_msgs::msg::AxisTrajectoryPoint> & ruckig_state,
-  std::vector<control_msgs::msg::AxisTrajectoryPoint> & ruckig_input_state, bool hold_last_velocity)
+  std::vector<control_msgs::msg::AxisTrajectoryPoint> & splines_state, bool hold_last_velocity)
 {
   THROW_ON_NULLPTR(trajectory_msg_)
   std::size_t num_axes = trajectory_msg_->axis_trajectories.size();
@@ -405,11 +353,7 @@ std::vector<bool> Trajectory::sample(
     return is_valid;
   }
 
-  auto do_ruckig_smoothing =
-    interpolation_method ==
-    joint_trajectory_controller::interpolation_methods::InterpolationMethod::RUCKIG;
-
-  // output_state splines_state ruckig_state ruckig_input_state
+  // output_state splines_state
   if (output_state.size() < num_axes)
   {
     output_state.resize(num_axes);
@@ -417,14 +361,6 @@ std::vector<bool> Trajectory::sample(
   if (splines_state.size() < num_axes)
   {
     splines_state.resize(num_axes);
-  }
-  if (ruckig_state.size() < num_axes)
-  {
-    ruckig_state.resize(num_axes);
-  }
-  if (ruckig_input_state.size() < num_axes)
-  {
-    ruckig_input_state.resize(num_axes);
   }
 
   bool enforce_joint_limits = false;
@@ -465,9 +401,8 @@ std::vector<bool> Trajectory::sample(
 
         interpolate_between_points(
           time_before_traj_msg_[axis_index], state_before_traj_msg_[axis_index],
-          first_point_timestamp, first_point_in_msg, sample_time, do_ruckig_smoothing, false,
-          output_state[axis_index], period, splines_state[axis_index], ruckig_state[axis_index],
-          ruckig_input_state[axis_index], axis_index);
+          first_point_timestamp, first_point_in_msg, sample_time, false, output_state[axis_index],
+          period, splines_state[axis_index], axis_index);
 
         output_state_after_interp_[axis_index] = output_state[axis_index];
       }
@@ -514,9 +449,8 @@ std::vector<bool> Trajectory::sample(
           interpolation_state_b_[axis_index] = next_point;
 
           if (!interpolate_between_points(
-                t0, point, t1, next_point, sample_time, do_ruckig_smoothing, false,
-                output_state[axis_index], period, splines_state[axis_index],
-                ruckig_state[axis_index], ruckig_input_state[axis_index], axis_index))
+                t0, point, t1, next_point, sample_time, false, output_state[axis_index], period,
+                splines_state[axis_index], axis_index))
           {
             is_valid[axis_index] = false;
             should_continue = true;
@@ -580,9 +514,8 @@ std::vector<bool> Trajectory::sample(
     interpolation_state_a_[axis_index] = last_point;
     interpolation_state_b_[axis_index] = last_point;
     if (!interpolate_between_points(
-          t0, last_point, t0, last_point, sample_time, do_ruckig_smoothing, true,
-          output_state[axis_index], period, splines_state[axis_index], ruckig_state[axis_index],
-          ruckig_input_state[axis_index], axis_index))
+          t0, last_point, t0, last_point, sample_time, true, output_state[axis_index], period,
+          splines_state[axis_index], axis_index))
     {
       is_valid[axis_index] = false;
     }
@@ -613,11 +546,9 @@ std::vector<bool> Trajectory::sample(
 bool Trajectory::interpolate_between_points(
   const rclcpp::Time & time_a, const control_msgs::msg::AxisTrajectoryPoint & state_a,
   const rclcpp::Time & time_b, const control_msgs::msg::AxisTrajectoryPoint & state_b,
-  const rclcpp::Time & sample_time, const bool do_ruckig_smoothing, const bool skip_splines,
+  const rclcpp::Time & sample_time, const bool skip_splines,
   control_msgs::msg::AxisTrajectoryPoint & output, const rclcpp::Duration & period,
-  control_msgs::msg::AxisTrajectoryPoint & splines_state,
-  control_msgs::msg::AxisTrajectoryPoint & ruckig_state,
-  control_msgs::msg::AxisTrajectoryPoint & ruckig_input_state, std::size_t axis_index)
+  control_msgs::msg::AxisTrajectoryPoint & splines_state, std::size_t axis_index)
 {
   //   RCLCPP_WARN(rclcpp::get_logger("trajectory"), "New iteration");
 
@@ -638,14 +569,6 @@ bool Trajectory::interpolate_between_points(
   splines_state.velocity = std::numeric_limits<double>::quiet_NaN();
   splines_state.acceleration = std::numeric_limits<double>::quiet_NaN();
   splines_state.effort = std::numeric_limits<double>::quiet_NaN();
-  ruckig_state.position = std::numeric_limits<double>::quiet_NaN();
-  ruckig_state.velocity = std::numeric_limits<double>::quiet_NaN();
-  ruckig_state.acceleration = std::numeric_limits<double>::quiet_NaN();
-  ruckig_state.effort = std::numeric_limits<double>::quiet_NaN();
-  ruckig_input_state.position = std::numeric_limits<double>::quiet_NaN();
-  ruckig_input_state.velocity = std::numeric_limits<double>::quiet_NaN();
-  ruckig_input_state.acceleration = std::numeric_limits<double>::quiet_NaN();
-  ruckig_input_state.effort = std::numeric_limits<double>::quiet_NaN();
 
   if (!skip_splines)
   {
@@ -772,142 +695,6 @@ bool Trajectory::interpolate_between_points(
   splines_state.velocity = output.velocity;
   splines_state.acceleration = output.acceleration;
   splines_state.effort = output.effort;
-
-  // Optionally apply velocity, acceleration, and jerk limits with Ruckig
-  //   if ((duration_so_far.seconds() > 0 || skip_splines) && do_ruckig_smoothing)
-  if (do_ruckig_smoothing)
-  {
-    // If Ruckig has run previously on this trajectory, use the output as input for the next cycle
-    if (have_previous_ruckig_output_)
-    {
-      //       RCLCPP_WARN(rclcpp::get_logger("trajectory"), "Applying previous Ruckig input");
-      ruckig_input_state.effort = 1;
-
-      ruckig_input_.current_position = ruckig_output_.new_position;
-      ruckig_input_.current_velocity = ruckig_output_.new_velocity;
-      ruckig_input_.current_acceleration = ruckig_output_.new_acceleration;
-    }
-    // else, need to initialize to robot state
-    else
-    {
-      ruckig_input_state.effort = -1;
-
-      ruckig_input_.current_position[axis_index] = state_a.position;
-      if (!std::isnan(state_a.velocity))
-      {
-        ruckig_input_.current_velocity[axis_index] = state_a.velocity;
-      }
-      else
-      {
-        ruckig_input_.current_velocity[axis_index] = 0;
-      }
-      if (!std::isnan(state_a.acceleration))
-      {
-        ruckig_input_.current_acceleration[axis_index] = state_a.acceleration;
-      }
-      else
-      {
-        ruckig_input_.current_acceleration[axis_index] = 0;
-      }
-    }
-    // Target state comes from the polynomial interpolation
-    ruckig_input_.target_position[axis_index] = output.position;
-
-    // double max_vel_ratio = 1.0;
-    // for (size_t i = 0; i < dim; ++i)
-    // {
-    //   if (std::fabs(output.velocities[i]) > joint_limits[i].max_velocity)
-    //   {
-    //     const double ratio = std::fabs(output.velocities[i] / joint_limits[i].max_velocity);
-    //     if (ratio > max_vel_ratio)
-    //     {
-    //       max_vel_ratio = ratio;
-    //     }
-    //   }
-    // }
-
-    // for (size_t i = 0; i < dim; ++i)
-    // {
-    //   // Set the target velocities to follow the joint limits
-    //   ruckig_input_.target_velocity[i] = output.velocities[i] / max_vel_ratio;
-    //
-    //   // Set the target accelerations to follow the joint limits
-    //   ruckig_input_.target_acceleration[i] = std::clamp(
-    //     output.accelerations[i], -1.0 * joint_limits[i].max_acceleration,
-    //     joint_limits[i].max_acceleration);
-    // }
-
-    // double max_vel_ratio = 1.0;
-    // for (size_t i = 0; i < dim; ++i)
-    // {
-    //   if (std::fabs(output.velocities[i]) > joint_limits[i].max_velocity)
-    //   {
-    //     const double ratio = std::fabs(output.velocities[i] / joint_limits[i].max_velocity);
-    //     if (ratio > max_vel_ratio)
-    //     {
-    //       max_vel_ratio = ratio;
-    //     }
-    //   }
-    // }
-
-    // for (size_t i = 0; i < dim; ++i)
-    // {
-    //   // Set the target velocities to follow the joint limits
-    //   ruckig_input_.target_velocity[i] = output.velocities[i] / max_vel_ratio;
-    //
-    //   // Set the target accelerations to follow the joint limits
-    //   ruckig_input_.target_acceleration[i] = std::clamp(
-    //     output.accelerations[i], -1.0 * joint_limits[i].max_acceleration,
-    //     joint_limits[i].max_acceleration);
-    // }
-
-    ruckig_input_state.position = ruckig_input_.current_position[axis_index];
-    ruckig_input_state.velocity = ruckig_input_.current_velocity[axis_index];
-    ruckig_input_state.acceleration = ruckig_input_.current_acceleration[axis_index];
-
-    ruckig_state.position = ruckig_input_.target_position[axis_index];
-    ruckig_state.velocity = ruckig_input_.target_velocity[axis_index];
-    ruckig_state.acceleration = ruckig_input_.target_acceleration[axis_index];
-
-    ruckig_state.effort = ruckig_input_.target_acceleration[axis_index] / period.seconds();
-
-    ruckig::Result result = smoother_->update(ruckig_input_, ruckig_output_);
-
-    // If Ruckig was successful, update the output state
-    // Else, just pass the output from the polynomial interpolation
-    if (result == ruckig::Result::Working || result == ruckig::Result::Finished)
-    {
-      ruckig_input_state.effort = 1.1;
-      have_previous_ruckig_output_ = true;
-      output.position = ruckig_output_.new_position[axis_index];
-      output.velocity = ruckig_output_.new_velocity[axis_index];
-      output.acceleration = ruckig_output_.new_acceleration[axis_index];
-    }
-    else
-    {
-      ruckig_input_state.effort = -1.1;
-      if (result == ruckig::Result::ErrorInvalidInput)
-      {
-        RCLCPP_WARN(rclcpp::get_logger("trajectory"), "Ruckig got invalid input");
-        RCLCPP_WARN(
-          rclcpp::get_logger("trajectory"),
-          "Ruckig NOK input CURRENT pos: %.10f; vel: %.10f; acc: %.10f",
-          ruckig_input_.current_position[axis_index], ruckig_input_.current_velocity[axis_index],
-          ruckig_input_.current_acceleration[axis_index]);
-        RCLCPP_WARN(
-          rclcpp::get_logger("trajectory"),
-          "Ruckig NOK input TARGET pos: %.10f; vel: %.10f; acc: %.10f",
-          ruckig_input_.target_position[axis_index], ruckig_input_.target_velocity[axis_index],
-          ruckig_input_.target_acceleration[axis_index]);
-      }
-      RCLCPP_WARN(rclcpp::get_logger("trajectory"), "Ruckig NOK!");
-      return false;
-    }
-  }
-  else
-  {
-    //     RCLCPP_WARN(rclcpp::get_logger("trajectory"), "Skipping Ruckig");
-  }
 
   return true;
 }

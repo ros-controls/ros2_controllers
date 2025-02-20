@@ -30,16 +30,13 @@ namespace interpolation_methods
 enum class InterpolationMethod
 {
   NONE,
-  VARIABLE_DEGREE_SPLINE,
-  RUCKIG
+  VARIABLE_DEGREE_SPLINE
 };
 
 const InterpolationMethod DEFAULT_INTERPOLATION = InterpolationMethod::VARIABLE_DEGREE_SPLINE;
 
 const std::unordered_map<InterpolationMethod, std::string> InterpolationMethodMap(
-  {{InterpolationMethod::NONE, "none"},
-   {InterpolationMethod::VARIABLE_DEGREE_SPLINE, "splines"},
-   {InterpolationMethod::RUCKIG, "ruckig"}});
+  {{InterpolationMethod::NONE, "none"}, {InterpolationMethod::VARIABLE_DEGREE_SPLINE, "splines"}});
 
 [[nodiscard]] inline InterpolationMethod from_string(const std::string & interpolation_method)
 {

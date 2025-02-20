@@ -63,22 +63,20 @@ pid_controller:
       antiwindup: {
         type: bool,
         default_value: false,
-        description: "Antiwindup functionality."
+        description: "Antiwindup functionality. When set to true, limits
+        the integral error to prevent windup; otherwise, constrains the
+        integral contribution to the control output. i_clamp_max and
+        i_clamp_min are applied in both scenarios."
       }
       i_clamp_max: {
         type: double,
         default_value: 0.0,
-        description: "Upper integral clamp. Only used if antiwindup is activated."
+        description: "Upper integral clamp."
       }
       i_clamp_min: {
         type: double,
         default_value: 0.0,
-        description: "Lower integral clamp. Only used if antiwindup is activated."
-      }
-      save_iterm: {
-        type: bool,
-        default_value: false,
-        description: "Enables save of integral term on pid reset. Integrator error will not be set to 0.  This is useful for pid loops that are enabled/disabled with constant steady-state external disturbance."
+        description: "Lower integral clamp."
       }
       feedforward_gain: {
         type: double,
@@ -91,9 +89,3 @@ pid_controller:
         description: "For joints that wrap around (i.e., are continuous).
           Normalizes position-error to -pi to pi."
       }
-
-  runtime_param_update: {
-    type: bool,
-    default_value: false,
-    description: "Enable parameters update when controller is active on each control step. If the parameter is 'false' then reactivation of controller is needed to update parameters."
-  }

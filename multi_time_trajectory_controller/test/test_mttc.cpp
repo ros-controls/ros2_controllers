@@ -328,7 +328,7 @@ TEST_P(TrajectoryControllerTestParameterized, update_dynamic_parameters)
   if (traj_controller_->use_closed_loop_pid_adapter())
   {
     EXPECT_EQ(pids.size(), 3);
-    auto gain_0 = pids.at(0)->getGains();
+    auto gain_0 = pids.at(0)->get_gains();
     EXPECT_EQ(gain_0.p_gain_, 0.0);
 
     double kp = 1.0;
@@ -337,7 +337,7 @@ TEST_P(TrajectoryControllerTestParameterized, update_dynamic_parameters)
 
     pids = traj_controller_->get_pids();
     EXPECT_EQ(pids.size(), 3);
-    gain_0 = pids.at(0)->getGains();
+    gain_0 = pids.at(0)->get_gains();
     EXPECT_EQ(gain_0.p_gain_, kp);
   }
   else
@@ -2543,7 +2543,7 @@ TEST_F(TrajectoryControllerTest, test_joint_limiter_active_and_joint_limiting)
 
       // First calculate, final position and velocity for the constant acceleration portion
       // for only constant acceleration i.e. p = 0.5 * a * t^2 where t = duration_s
-      // the final velocity shoud be for constant acceleration i.e. v1 = a * t where t = duration_s
+      // the final velocity should be for constant acceleration i.e. v1 = a * t where t = duration_s
       expected_actual[i].position = 0.5 * acc_limits[i] * duration_s * duration_s;
       expected_actual[i].velocity = acc_limits[i] * duration_s;
 

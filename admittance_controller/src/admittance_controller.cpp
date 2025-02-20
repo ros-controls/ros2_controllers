@@ -479,12 +479,6 @@ controller_interface::CallbackReturn AdmittanceController::on_deactivate(
   return CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn AdmittanceController::on_cleanup(
-  const rclcpp_lifecycle::State & /*previous_state*/)
-{
-  return controller_interface::CallbackReturn::SUCCESS;
-}
-
 controller_interface::CallbackReturn AdmittanceController::on_error(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {

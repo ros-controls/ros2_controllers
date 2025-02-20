@@ -25,8 +25,6 @@
 #include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_buffer.hpp"
 #include "realtime_tools/realtime_publisher.hpp"
-#include "steering_controllers_library/steering_odometry.hpp"
-#include "steering_controllers_library_parameters.hpp"
 
 // TODO(anyone): Replace with controller specific messages
 #include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"
@@ -34,6 +32,9 @@
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"
+
+#include "steering_controllers_library/steering_controllers_library_parameters.hpp"
+#include "steering_controllers_library/steering_odometry.hpp"
 
 namespace steering_controllers_library
 {

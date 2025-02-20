@@ -16,7 +16,6 @@
 #
 
 import rclpy
-from rclpy.duration import Duration
 from rclpy.node import Node
 from builtin_interfaces.msg import Duration
 
@@ -29,9 +28,7 @@ class PublisherJointTrajectory(Node):
         super().__init__("publisher_position_trajectory_controller")
         # Declare all parameters
         self.declare_parameter("controller_name", "position_trajectory_controller")
-        self.declare_parameter("wait_sec_between_publish", 6.0)
-        self.declare_parameter("repeat_the_same_goal", 1)
-        self.declare_parameter("goal_time_from_start", 4.0)
+        self.declare_parameter("wait_sec_between_publish", 6)
         self.declare_parameter("goal_names", ["pos1", "pos2"])
         self.declare_parameter("joints", [""])
         self.declare_parameter("check_starting_point", False)
@@ -39,8 +36,6 @@ class PublisherJointTrajectory(Node):
         # Read parameters
         controller_name = self.get_parameter("controller_name").value
         wait_sec_between_publish = self.get_parameter("wait_sec_between_publish").value
-        self.repeat_the_same_goal = self.get_parameter("repeat_the_same_goal").value
-        goal_time_from_start = Duration(seconds=self.get_parameter("goal_time_from_start").value)
         goal_names = self.get_parameter("goal_names").value
         self.joints = self.get_parameter("joints").value
         self.check_starting_point = self.get_parameter("check_starting_point").value
@@ -138,26 +133,21 @@ class PublisherJointTrajectory(Node):
 
         self.publisher_ = self.create_publisher(JointTrajectory, publish_topic, 1)
         self.timer = self.create_timer(wait_sec_between_publish, self.timer_callback)
-        self.current_goal = 0
-        self.repetition = 0
+        self.i = 0
 
     def timer_callback(self):
 
         if self.starting_point_ok:
 
-            self.get_logger().info(f"Sending goal {self.goals[self.current_goal]}.")
+            self.get_logger().info(f"Sending goal {self.goals[self.i]}.")
 
             traj = JointTrajectory()
             traj.joint_names = self.joints
-            traj.points.append(self.goals[self.current_goal])
+            traj.points.append(self.goals[self.i])
             self.publisher_.publish(traj)
 
-            self.repetition += 1
-            self.repetition %= self.repeat_the_same_goal
-
-            if self.repetition == 0:
-                self.current_goal += 1
-                self.current_goal %= len(self.goals)
+            self.i += 1
+            self.i %= len(self.goals)
 
         elif self.check_starting_point and not self.joint_state_msg_received:
             self.get_logger().warn(

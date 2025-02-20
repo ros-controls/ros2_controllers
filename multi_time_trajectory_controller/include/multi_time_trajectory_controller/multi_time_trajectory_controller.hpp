@@ -15,12 +15,12 @@
 #ifndef MULTI_TIME_TRAJECTORY_CONTROLLER__MULTI_TIME_TRAJECTORY_CONTROLLER_HPP_
 #define MULTI_TIME_TRAJECTORY_CONTROLLER__MULTI_TIME_TRAJECTORY_CONTROLLER_HPP_
 
-#include <realtime_tools/realtime_publisher.hpp>
-#include <realtime_tools/realtime_server_goal_handle.hpp>
-
 #include <memory>
 #include <string>
 #include <vector>
+
+#include <realtime_tools/realtime_publisher.hpp>
+#include <realtime_tools/realtime_server_goal_handle.hpp>
 
 #include <control_toolbox/pid.hpp>
 #include <hardware_interface/types/hardware_interface_type_values.hpp>
@@ -109,8 +109,6 @@ protected:
   std::vector<control_msgs::msg::AxisTrajectoryPoint> state_desired_;
   std::vector<control_msgs::msg::AxisTrajectoryPoint> state_error_;
   std::vector<control_msgs::msg::AxisTrajectoryPoint> splines_state_;
-  std::vector<control_msgs::msg::AxisTrajectoryPoint> ruckig_state_;
-  std::vector<control_msgs::msg::AxisTrajectoryPoint> ruckig_input_state_;
 
   // Degrees of freedom
   size_t dof_;
@@ -215,10 +213,6 @@ protected:
   StatePublisherPtr state_publisher_;
   rclcpp::Publisher<ControllerStateMsg>::SharedPtr splines_output_pub_;
   StatePublisherPtr splines_output_publisher_;
-  rclcpp::Publisher<ControllerStateMsg>::SharedPtr ruckig_input_pub_;
-  StatePublisherPtr ruckig_input_publisher_;
-  rclcpp::Publisher<ControllerStateMsg>::SharedPtr ruckig_input_target_pub_;
-  StatePublisherPtr ruckig_input_target_publisher_;
 
   using TrajectoryPoint = control_msgs::msg::AxisTrajectoryPoint;
 
