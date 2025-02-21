@@ -222,6 +222,22 @@ TEST_F(PidControllerTest, test_feedforward_mode_service)
   ASSERT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::OFF);
 }
 
+TEST_F(PidControllerTest, test_feedforward_mode_parameter)
+{
+  SetUpController();
+
+  // initially set to OFF
+  ASSERT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::OFF);
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::OFF);
+
+  // Reconfigure after setting parameter to true
+  ASSERT_EQ(controller_->on_cleanup(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  EXPECT_TRUE(controller_->get_node()->set_parameter({"enable_feedforward", true}).successful);
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::ON);
+}
+
 /**
  * @brief Check the update logic in non chained mode with feedforward OFF
  *
