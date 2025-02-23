@@ -17,8 +17,8 @@
 // [RosTeamWorkspace](https://github.com/StoglRobotics/ros_team_workspace) repository.
 //
 
-#ifndef TEMPLATES__ROS2_CONTROL__CONTROLLER__TEST_GRIPPER_IO_CONTROLLER_HPP_
-#define TEMPLATES__ROS2_CONTROL__CONTROLLER__TEST_GRIPPER_IO_CONTROLLER_HPP_
+#ifndef TEST_IO_GRIPPER_CONTROLLER_HPP_
+#define TEST_IO_GRIPPER_CONTROLLER_HPP_
 
 #include <chrono>
 #include <limits>
@@ -140,7 +140,7 @@ protected:
 
     // setting the command state interfaces manually
     std::vector<hardware_interface::LoanedCommandInterface> command_itfs;
-    command_itfs.reserve(3);  // TODO (Sachin) : change this some variable later
+    command_itfs.reserve(3);  // TODO(Sachin) : change this some variable later
 
     command_itfs.emplace_back(greif_oeffen_wqg1_cmd_);
     command_itfs.emplace_back(greif_schliess_wqg2_cmd_);
@@ -220,6 +220,7 @@ protected:
   void setup_parameters()
   {
     controller_->get_node()->set_parameter({"use_action", false});
+    controller_->get_node()->set_parameter({"timeout", 5.0});
     controller_->get_node()->set_parameter({"open_close_joints", open_close_joints});
     controller_->get_node()->set_parameter({"open.joint_states", open_joint_states});
     controller_->get_node()->set_parameter(
@@ -433,4 +434,4 @@ protected:
 class IOGripperControllerTest : public IOGripperControllerFixture<TestableIOGripperController>
 {
 };
-#endif  // TEMPLATES__ROS2_CONTROL__CONTROLLER__TEST_GRIPPER_IO_CONTROLLER_HPP_
+#endif  // TEST_IO_GRIPPER_CONTROLLER_HPP_

@@ -277,21 +277,26 @@ void IOGripperController::handle_gripper_state_transition(
       break;
 
     case IOGripperState::HALTED:
-      // do nothing
+      gripper_state_buffer_.writeFromNonRT(IOGripperState::IDLE);
       RCLCPP_ERROR(
         get_node()->get_logger(), "%s - HALTED: Gripper is in HALTED state",
         transition_name.c_str());
+      transition_time_updated_.store(false);
       break;
 
     case IOGripperState::SET_BEFORE_COMMAND:
 
-      last_transition_time_ = current_time;
+      if (!transition_time_updated_.load())
+      {
+        last_transition_time_ = current_time;
+        transition_time_updated_.store(true);
+      }
       if (set_commands(ios.set_before_command_ios, transition_name + " - SET_BEFORE_COMMAND"))
       {
         // TODO(destogl): check to use other Realtime sync object to have write from RT
         gripper_state_buffer_.writeFromNonRT(IOGripperState::CHECK_BEFORE_COMMAND);
       }
-      if ((current_time - last_transition_time_).seconds() > params_.timeout)
+      else if ((current_time - last_transition_time_).seconds() > params_.timeout)
       {
         RCLCPP_ERROR(
           get_node()->get_logger(),
@@ -314,7 +319,6 @@ void IOGripperController::handle_gripper_state_transition(
           transition_name.c_str(), params_.timeout);
         gripper_state_buffer_.writeFromNonRT(IOGripperState::HALTED);
       }
-      last_transition_time_ = current_time;
       break;
     case IOGripperState::SET_COMMAND:
       RCLCPP_INFO(
@@ -326,11 +330,7 @@ void IOGripperController::handle_gripper_state_transition(
         // TODO(destogl): check to use other Realtime sync object to have write from RT
         gripper_state_buffer_.writeFromNonRT(IOGripperState::CHECK_COMMAND);
       }
-      else
-      {
-        RCLCPP_ERROR(get_node()->get_logger(), "failed");
-      }
-      if ((current_time - last_transition_time_).seconds() > params_.timeout)
+      else if ((current_time - last_transition_time_).seconds() > params_.timeout)
       {
         RCLCPP_ERROR(
           get_node()->get_logger(),
@@ -341,7 +341,7 @@ void IOGripperController::handle_gripper_state_transition(
       break;
     case IOGripperState::CHECK_COMMAND:
       // check the state of the gripper
-      check_state_ios = true;
+      check_gripper_state_ios_.store(true);
       if (ios.has_multiple_end_states)
       {
         for (const auto & possible_end_state : ios.possible_states)
@@ -350,7 +350,7 @@ void IOGripperController::handle_gripper_state_transition(
                 ios.multiple_states_ios.at(possible_end_state),
                 transition_name + " - CHECK_COMMAND"))
           {
-            check_state_ios = true;
+            check_gripper_state_ios_.store(true);
             after_joint_states_ =
               params_.close.state.possible_closed_states_map.at(possible_end_state).joint_states;
             // TODO(Sachin): store possible_end_state in a variable to publish on status topic
@@ -358,17 +358,18 @@ void IOGripperController::handle_gripper_state_transition(
           }
           else
           {
-            check_state_ios = false;
+            check_gripper_state_ios_.store(false);
           }
         }
       }
       else  // only single end state
       {
         after_joint_states_ = params_.open.joint_states;
-        check_state_ios = check_states(ios.state_ios, transition_name + " - CHECK_COMMAND");
+        check_gripper_state_ios_.store(
+          check_states(ios.state_ios, transition_name + " - CHECK_COMMAND"));
       }
 
-      if (check_state_ios)
+      if (check_gripper_state_ios_.load())
       {
         gripper_state_buffer_.writeFromNonRT(IOGripperState::SET_AFTER_COMMAND);
       }
@@ -411,6 +412,7 @@ void IOGripperController::handle_gripper_state_transition(
         RCLCPP_INFO(
           get_node()->get_logger(), "%s - CHECK_AFTER_COMMAND: Gripper reached target state",
           transition_name.c_str());
+        transition_time_updated_.store(false);  // resetting the flag
       }
       else if ((current_time - last_transition_time_).seconds() > params_.timeout)
       {
