@@ -236,7 +236,8 @@ protected:
   std::atomic<bool> openFlag_{false};
   std::atomic<bool> closeFlag_{false};
 
-  bool check_state_ios{false};
+  std::atomic<bool> check_gripper_state_ios_{false};
+  std::atomic<bool> transition_time_updated_{false};
 
 private:
   /**
