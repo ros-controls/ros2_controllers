@@ -37,16 +37,18 @@ namespace gps_sensor_broadcaster
 {
 
 callback_return_type GPSSensorBroadcaster::on_init()
-try
 {
-  param_listener_ = std::make_shared<gps_sensor_broadcaster::ParamListener>(get_node());
-  params_ = param_listener_->get_params();
-  return CallbackReturn::SUCCESS;
-}
-catch (const std::exception & e)
-{
-  fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
-  return CallbackReturn::ERROR;
+  try
+  {
+    param_listener_ = std::make_shared<gps_sensor_broadcaster::ParamListener>(get_node());
+    params_ = param_listener_->get_params();
+    return CallbackReturn::SUCCESS;
+  }
+  catch (const std::exception & e)
+  {
+    fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
+    return CallbackReturn::ERROR;
+  }
 }
 
 callback_return_type GPSSensorBroadcaster::on_configure(const rclcpp_lifecycle::State &)
@@ -62,7 +64,7 @@ callback_return_type GPSSensorBroadcaster::on_configure(const rclcpp_lifecycle::
           semantic_components::GPSSensor<GPSSensorOption::WithoutCovariance>(params_.sensor_name)};
   std::visit(
     Visitor{
-      [this](auto & sensor) { state_names = sensor.get_state_interface_names(); },
+      [this](auto & sensor) { state_names_ = sensor.get_state_interface_names(); },
       [](std::monostate &) {}},
     gps_sensor_);
 
@@ -70,24 +72,26 @@ callback_return_type GPSSensorBroadcaster::on_configure(const rclcpp_lifecycle::
 }
 
 callback_return_type GPSSensorBroadcaster::setup_publisher()
-try
 {
-  sensor_state_publisher_ = get_node()->create_publisher<sensor_msgs::msg::NavSatFix>(
-    "~/gps/fix", rclcpp::SystemDefaultsQoS());
-  realtime_publisher_ = std::make_unique<StatePublisher>(sensor_state_publisher_);
-  realtime_publisher_->lock();
-  realtime_publisher_->msg_.header.frame_id = params_.frame_id;
-  setup_covariance();
-  realtime_publisher_->unlock();
+  try
+  {
+    sensor_state_publisher_ = get_node()->create_publisher<sensor_msgs::msg::NavSatFix>(
+      "~/gps/fix", rclcpp::SystemDefaultsQoS());
+    realtime_publisher_ = std::make_unique<StatePublisher>(sensor_state_publisher_);
+    realtime_publisher_->lock();
+    realtime_publisher_->msg_.header.frame_id = params_.frame_id;
+    setup_covariance();
+    realtime_publisher_->unlock();
 
-  return callback_return_type::SUCCESS;
-}
-catch (const std::exception & e)
-{
-  fprintf(
-    stderr, "Exception thrown during publisher creation at configure stage with message: %s \n",
-    e.what());
-  return callback_return_type::ERROR;
+    return callback_return_type::SUCCESS;
+  }
+  catch (const std::exception & e)
+  {
+    fprintf(
+      stderr, "Exception thrown during publisher creation at configure stage with message: %s \n",
+      e.what());
+    return callback_return_type::ERROR;
+  }
 }
 
 void GPSSensorBroadcaster::setup_covariance()
@@ -118,7 +122,7 @@ controller_interface::InterfaceConfiguration GPSSensorBroadcaster::state_interfa
 {
   controller_interface::InterfaceConfiguration state_interfaces_config;
   state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
-  state_interfaces_config.names = state_names;
+  state_interfaces_config.names = state_names_;
 
   return state_interfaces_config;
 }

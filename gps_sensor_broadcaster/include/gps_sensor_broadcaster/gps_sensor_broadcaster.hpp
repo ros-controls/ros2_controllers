@@ -61,7 +61,7 @@ protected:
   std::unique_ptr<StatePublisher> realtime_publisher_;
   std::shared_ptr<gps_sensor_broadcaster::ParamListener> param_listener_{};
   gps_sensor_broadcaster::Params params_;
-  std::vector<std::string> state_names;
+  std::vector<std::string> state_names_;
 };
 
 }  // namespace gps_sensor_broadcaster
