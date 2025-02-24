@@ -2,6 +2,11 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Cleanup dependencies (add `angles`, rm `filters`) (backport `#1555 <https://github.com/ros-controls/ros2_controllers/issues/1555>`_) (`#1556 <https://github.com/ros-controls/ros2_controllers/issues/1556>`_)
+* Contributors: mergify[bot]
+
 2.42.0 (2025-02-17)
 -------------------
 * [Admittance] multiple state/command interfaces (backport `#547 <https://github.com/ros-controls/ros2_controllers/issues/547>`_, `#1196 <https://github.com/ros-controls/ros2_controllers/issues/1196>`_) (`#1548 <https://github.com/ros-controls/ros2_controllers/issues/1548>`_)

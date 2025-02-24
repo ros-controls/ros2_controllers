@@ -2,6 +2,9 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 2.42.0 (2025-02-17)
 -------------------
 * [JTC]: Abort goal on deactivate (backport `#1517 <https://github.com/ros-controls/ros2_controllers/issues/1517>`_) (`#1521 <https://github.com/ros-controls/ros2_controllers/issues/1521>`_)

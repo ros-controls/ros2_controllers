@@ -2,6 +2,9 @@
 Changelog for package gripper_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 2.42.0 (2025-02-17)
 -------------------
 * Bump version of pre-commit hooks (backport `#1514 <https://github.com/ros-controls/ros2_controllers/issues/1514>`_) (`#1515 <https://github.com/ros-controls/ros2_controllers/issues/1515>`_)
