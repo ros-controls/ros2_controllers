@@ -2,8 +2,8 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.42.1 (2025-02-24)
+-------------------
 * Cleanup dependencies (add `angles`, rm `filters`) (backport `#1555 <https://github.com/ros-controls/ros2_controllers/issues/1555>`_) (`#1556 <https://github.com/ros-controls/ros2_controllers/issues/1556>`_)
 * Contributors: mergify[bot]
 
