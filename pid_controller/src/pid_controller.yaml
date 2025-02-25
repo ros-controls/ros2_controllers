@@ -43,6 +43,11 @@ pid_controller:
     default_value: false,
     description: "Use external states from a topic instead from state interfaces."
   }
+  enable_feedforward: {
+    type: bool,
+    default_value: false,
+    description: "Enables feedforward gain on start."
+  }
   gains:
     __map_dof_names:
       p: {
