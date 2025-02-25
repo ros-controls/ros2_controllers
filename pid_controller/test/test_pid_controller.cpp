@@ -226,6 +226,8 @@ TEST_F(PidControllerTest, test_feedforward_mode_parameter)
 {
   SetUpController();
 
+  // Check updating mode during on_configure
+
   // initially set to OFF
   ASSERT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::OFF);
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
@@ -236,6 +238,35 @@ TEST_F(PidControllerTest, test_feedforward_mode_parameter)
   EXPECT_TRUE(controller_->get_node()->set_parameter({"enable_feedforward", true}).successful);
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::ON);
+  ASSERT_EQ(controller_->on_cleanup(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  EXPECT_TRUE(controller_->get_node()->set_parameter({"enable_feedforward", false}).successful);
+
+  // initially set to ON
+  ASSERT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::ON);
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::OFF);
+
+  // Check updating mode during update_and_write_commands
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::OFF);
+
+  // Switch to ON
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  ASSERT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::OFF);
+  EXPECT_TRUE(controller_->get_node()->set_parameter({"enable_feedforward", true}).successful);
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  ASSERT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::ON);
+
+  // Switch to OFF
+  EXPECT_TRUE(controller_->get_node()->set_parameter({"enable_feedforward", false}).successful);
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  ASSERT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::OFF);
 }
 
 /**

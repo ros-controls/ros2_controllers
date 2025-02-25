@@ -96,6 +96,15 @@ void PidController::update_parameters()
     return;
   }
   params_ = param_listener_->get_params();
+
+  if (params_.enable_feedforward)
+  {
+    control_mode_.writeFromNonRT(feedforward_mode_type::ON);
+  }
+  else
+  {
+    control_mode_.writeFromNonRT(feedforward_mode_type::OFF);
+  }
 }
 
 controller_interface::CallbackReturn PidController::configure_parameters()
@@ -229,15 +238,6 @@ controller_interface::CallbackReturn PidController::on_configure(
     };
     measured_state_subscriber_ = get_node()->create_subscription<ControllerMeasuredStateMsg>(
       "~/measured_state", subscribers_qos, measured_state_callback);
-  }
-
-  if (params_.enable_feedforward)
-  {
-    control_mode_.writeFromNonRT(feedforward_mode_type::ON);
-  }
-  else
-  {
-    control_mode_.writeFromNonRT(feedforward_mode_type::OFF);
   }
 
   std::shared_ptr<ControllerMeasuredStateMsg> measured_state_msg =
