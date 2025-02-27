@@ -46,7 +46,7 @@ pid_controller:
   enable_feedforward: {
     type: bool,
     default_value: false,
-    description: "Enables feedforward gain on start."
+    description: "Enables feedforward gain."
   }
   gains:
     __map_dof_names:
