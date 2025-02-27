@@ -249,7 +249,7 @@ controller_interface::CallbackReturn PidController::on_configure(
     control_mode_.writeFromNonRT(request->data);
 
     RCLCPP_ERROR(
-      get_logger(),
+      get_node()->get_logger(),
       "This service will be deprecated in favour of the 'enable_feedforward' parameter.");
 
     response->success = true;
