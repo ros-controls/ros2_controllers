@@ -336,6 +336,7 @@ private:
   ControllerFeedbackMsg last_odom_feedback_;
   ControllerReferenceMsg last_reference_;
   ControllerReferenceMsg last_reliable_reference_;
+  bool current_state_initialized_{false};
   using JointTrajectoryPoint = control_msgs::msg::AxisTrajectoryPoint;
 
   // Command subscribers and Controller State publisher
@@ -349,6 +350,8 @@ private:
 
   bool contains_interface_type(
     const std::vector<std::string> & interface_type_list, const std::string & interface_type);
+
+  bool initialize_current_state();
 
   void init_hold_position_msg();
 };

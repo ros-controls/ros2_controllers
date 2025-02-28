@@ -160,6 +160,13 @@ controller_interface::return_type MultiTimeTrajectoryController::update(
   {
     return controller_interface::return_type::OK;
   }
+
+  // bail if haven't initialized current state and still can't
+  if (!current_state_initialized_ && !initialize_current_state())
+  {
+    return controller_interface::return_type::OK;
+  }
+
   // update dynamic parameters
   if (param_listener_->is_old(params_))
   {
@@ -1240,31 +1247,6 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_activate(
 
   subscriber_is_active_ = true;
 
-  // Initialize current state storage if hardware state has tracking offset
-  // Handle restart of controller by reading from commands if those are not NaN (a controller was
-  // running already)
-  std::vector<control_msgs::msg::AxisTrajectoryPoint> state;
-  state.resize(dof_);
-
-  // Handle restart of controller by reading from commands if
-  // those are not nan
-  if (!read_state_from_command_interfaces(state))
-  {
-    // Initialize current state storage from hardware
-    if (!read_state_from_hardware(state))
-    {
-      return CallbackReturn::ERROR;
-    };
-  }
-  state_current_ = state;
-  state_desired_ = state;
-  last_commanded_state_ = state;
-  last_commanded_time_ = std::vector<rclcpp::Time>{dof_, rclcpp::Time()};
-
-  // The controller should start by holding position at the beginning of active state
-  add_new_trajectory_msg(set_hold_position());
-  rt_is_holding_.writeFromNonRT(true);
-
   // parse timeout parameter
   if (params_.cmd_timeout > 0.0)
   {
@@ -1286,6 +1268,8 @@ controller_interface::CallbackReturn MultiTimeTrajectoryController::on_activate(
   {
     cmd_timeout_ = 0.0;
   }
+
+  initialize_current_state();
 
   RCLCPP_DEBUG(get_node()->get_logger(), "MAC successfully activated");
   return CallbackReturn::SUCCESS;
@@ -1893,6 +1877,39 @@ void MultiTimeTrajectoryController::update_pids()
     }
     ff_velocity_scale_[i] = gains.ff_velocity_scale;
   }
+}
+
+bool MultiTimeTrajectoryController::initialize_current_state()
+{
+  // Initialize current state storage if hardware state has tracking offset
+  // Handle restart of controller by reading from commands if those are not NaN (a controller was
+  // running already)
+  std::vector<control_msgs::msg::AxisTrajectoryPoint> state;
+  state.resize(dof_);
+
+  // Handle restart of controller by reading from commands if
+  // those are not nan
+  if (!read_state_from_command_interfaces(state))
+  {
+    // Initialize current state storage from hardware
+    if (!read_state_from_hardware(state))
+    {
+      RCLCPP_WARN(get_node()->get_logger(), "Failed to read feedback state from hardware");
+      return false;
+    };
+  }
+  state_current_ = state;
+  state_desired_ = state;
+  last_commanded_state_ = state;
+  last_commanded_time_ = std::vector<rclcpp::Time>{dof_, rclcpp::Time()};
+
+  // The controller should start by holding position at the beginning of active state
+  add_new_trajectory_msg(set_hold_position());
+  rt_is_holding_.writeFromNonRT(true);
+
+  current_state_initialized_ = true;
+
+  return true;
 }
 
 void MultiTimeTrajectoryController::init_hold_position_msg()
