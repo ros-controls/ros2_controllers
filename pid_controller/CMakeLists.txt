@@ -86,6 +86,19 @@ if(BUILD_TESTING)
     hardware_interface
   )
 
+  add_rostest_with_parameters_gmock(
+    test_pid_controller_dual_interface
+    test/test_pid_controller_dual_interface.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/pid_controller_params.yaml
+  )
+  target_include_directories(test_pid_controller_dual_interface PRIVATE include)
+  target_link_libraries(test_pid_controller_dual_interface pid_controller)
+  ament_target_dependencies(
+    test_pid_controller_dual_interface
+    controller_interface
+    hardware_interface
+  )
+
   ament_add_gmock(test_load_pid_controller test/test_load_pid_controller.cpp)
   target_include_directories(test_load_pid_controller PRIVATE include)
   ament_target_dependencies(
