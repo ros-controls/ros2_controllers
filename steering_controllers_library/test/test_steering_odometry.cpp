@@ -78,7 +78,7 @@ TEST(TestSteeringOdometry, ackermann_odometry_openloop_angular_right)
   EXPECT_DOUBLE_EQ(odom.get_angular(), -1.);
 
   EXPECT_GT(odom.get_x(), 0);  // pos x
-  EXPECT_LT(odom.get_y(), 0);  // neg y, ie. left
+  EXPECT_LT(odom.get_y(), 0);  // neg y, ie. right
 }
 
 TEST(TestSteeringOdometry, ackermann_odometry_openloop_ackermanndrive_angular_left)
