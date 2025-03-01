@@ -53,12 +53,12 @@ void SteeringOdometry::init(const rclcpp::Time & time)
 }
 
 bool SteeringOdometry::update_odometry(
-  const double linear_velocity, const double angular_velocity, const double dt, const bool twist_input)
+  const double linear_velocity, const double angular_velocity, const double dt)
 {
   /// Integrate odometry:
   integrate_fk(
     linear_velocity, 
-    twist_input ? angular_velocity : convert_steering_angle_to_angular_velocity(linear_velocity, angular_velocity),
+    angular_velocity,
     dt
   );
 

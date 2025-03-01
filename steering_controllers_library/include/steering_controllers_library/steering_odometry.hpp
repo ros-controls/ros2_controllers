@@ -215,7 +215,7 @@ private:
    * \param omega_bz Angular velocity [rad/s]
    * \param dt      time difference to last call
    */
-  bool update_odometry(const double v_bx, const double omega_bz, const double dt, const bool twist_input = true);
+  bool update_odometry(const double v_bx, const double omega_bz, const double dt);
 
   /**
    * \brief Integrates the velocities (linear and angular) using 2nd order Runge-Kutta
