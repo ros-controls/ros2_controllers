@@ -253,6 +253,29 @@ void SteeringControllersLibrary::reference_callback_twist(
 void SteeringControllersLibrary::reference_callback_ackermann(
   const std::shared_ptr<ControllerAckermannReferenceMsg> msg)
 {
+    // if no timestamp provided use current time for command timestamp
+  if (msg->header.stamp.sec == 0 && msg->header.stamp.nanosec == 0u)
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "Timestamp in header is missing, using current time as command timestamp.");
+    msg->header.stamp = get_node()->now();
+  }
+  const auto age_of_last_command = get_node()->now() - msg->header.stamp;
+
+  if (ref_timeout_ == rclcpp::Duration::from_seconds(0) || age_of_last_command <= ref_timeout_)
+  {
+    input_ref_ackermann_.writeFromNonRT(msg);
+  }
+  else
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(),
+      "Received message has timestamp %.10f older for %.10f which is more then allowed timeout "
+      "(%.4f).",
+      rclcpp::Time(msg->header.stamp).seconds(), age_of_last_command.seconds(),
+      ref_timeout_.seconds());
+  }
 }
 
 controller_interface::InterfaceConfiguration
