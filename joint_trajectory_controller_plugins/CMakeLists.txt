@@ -38,10 +38,6 @@ target_link_libraries(pid_trajectory_plugin PUBLIC
 )
 pluginlib_export_plugin_description_file(joint_trajectory_controller_plugins plugins.xml)
 
-# Causes the visibility macros to use dllexport rather than dllimport,
-# which is appropriate when building the dll but not consuming it.
-target_compile_definitions(pid_trajectory_plugin PRIVATE "JOINT_TRAJECTORY_CONTROLLER_PLUGINS_BUILDING_LIBRARY")
-
 install(
   DIRECTORY include/
   DESTINATION include/${PROJECT_NAME}

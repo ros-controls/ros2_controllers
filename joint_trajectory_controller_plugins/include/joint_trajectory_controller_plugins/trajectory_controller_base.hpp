@@ -26,17 +26,13 @@
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
-#include "joint_trajectory_controller_plugins/visibility_control.h"
-
 namespace joint_trajectory_controller_plugins
 {
 class TrajectoryControllerBase
 {
 public:
-  JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
   TrajectoryControllerBase() = default;
 
-  JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
   virtual ~TrajectoryControllerBase() = default;
 
   /**
@@ -46,7 +42,6 @@ public:
    * @param map_cmd_to_joints a mapping from the joint names in the trajectory messages to the
    * command joints
    */
-  JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
   virtual bool initialize(
     rclcpp_lifecycle::LifecycleNode::SharedPtr node, std::vector<size_t> map_cmd_to_joints) = 0;
 
@@ -54,14 +49,12 @@ public:
    * @brief configure the controller plugin.
    * parse read-only parameters, pre-allocate memory for the controller
    */
-  JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
   virtual bool configure() = 0;
 
   /**
    * @brief activate the controller plugin.
    * parse parameters
    */
-  JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
   virtual bool activate() = 0;
 
   /**
@@ -75,7 +68,6 @@ public:
    *
    * @return true if the gains were computed, false otherwise
    */
-  JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
   bool compute_control_law_non_rt(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory)
   {
@@ -95,7 +87,6 @@ public:
    *
    * @return true if the gains were computed, false otherwise
    */
-  JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
   bool compute_control_law_rt(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory)
   {
@@ -120,7 +111,6 @@ public:
    *
    * @return true if the gains were updated, false otherwise
    */
-  JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
   virtual bool update_gains_rt(void) = 0;
 
   /**
@@ -134,7 +124,6 @@ public:
    *            can be negative if the trajectory-start is in the future
    * @param[in] period the period since the last update
    */
-  JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
   virtual void compute_commands(
     std::vector<double> & tmp_command, const trajectory_msgs::msg::JointTrajectoryPoint current,
     const trajectory_msgs::msg::JointTrajectoryPoint error,
@@ -146,13 +135,11 @@ public:
    *
    * is called in on_deactivate() of JTC
    */
-  JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
   virtual void reset() = 0;
 
   /**
    * @return true if the control law is ready (updated with the trajectory)
    */
-  JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
   bool is_ready() { return rt_control_law_ready_.readFromRT(); }
 
 protected:
@@ -165,7 +152,6 @@ protected:
    * @brief compute the control law from the given trajectory (in the non-RT loop)
    * @return true if the gains were computed, false otherwise
    */
-  JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
   virtual bool compute_control_law_non_rt_impl(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory) = 0;
 
@@ -173,7 +159,6 @@ protected:
    * @brief compute the control law for a single point (in the RT loop)
    * @return true if the gains were computed, false otherwise
    */
-  JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
   virtual bool compute_control_law_rt_impl(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory) = 0;
 };
