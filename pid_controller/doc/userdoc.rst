@@ -74,6 +74,9 @@ Services
 
 - <controller_name>/set_feedforward_control  [std_srvs/srv/SetBool]
 
+.. warning::
+   This service is being deprecated in favour of the ``enable_feedforward`` parameter.
+
 Publishers
 ,,,,,,,,,,,
 - <controller_name>/controller_state  [control_msgs/msg/MultiDOFStateStamped]

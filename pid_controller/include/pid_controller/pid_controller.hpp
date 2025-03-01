@@ -36,12 +36,6 @@
 namespace pid_controller
 {
 
-enum class feedforward_mode_type : std::uint8_t
-{
-  OFF = 0,
-  ON = 1,
-};
-
 class PidController : public controller_interface::ChainableControllerInterface
 {
 public:
@@ -94,7 +88,7 @@ protected:
   realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerMeasuredStateMsg>> measured_state_;
 
   rclcpp::Service<ControllerModeSrvType>::SharedPtr set_feedforward_control_service_;
-  realtime_tools::RealtimeBuffer<feedforward_mode_type> control_mode_;
+  realtime_tools::RealtimeBuffer<bool> control_mode_;
 
   using ControllerStatePublisher = realtime_tools::RealtimePublisher<ControllerStateMsg>;
 

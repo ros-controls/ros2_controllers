@@ -20,8 +20,6 @@
 #include <string>
 #include <vector>
 
-using pid_controller::feedforward_mode_type;
-
 class PidControllerDualInterfaceTest : public PidControllerFixture<TestablePidController>
 {
 public:
@@ -80,8 +78,8 @@ TEST_F(PidControllerDualInterfaceTest, test_chained_feedforward_with_gain_dual_i
   ASSERT_TRUE(controller_->is_in_chained_mode());
 
   // turn on feedforward
-  controller_->control_mode_.writeFromNonRT(feedforward_mode_type::ON);
-  ASSERT_EQ(*(controller_->control_mode_.readFromRT()), feedforward_mode_type::ON);
+  controller_->control_mode_.writeFromNonRT(true);
+  ASSERT_EQ(*(controller_->control_mode_.readFromRT()), true);
 
   // set up the reference interface,
   controller_->reference_interfaces_ = {
