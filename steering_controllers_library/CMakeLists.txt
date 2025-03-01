@@ -71,6 +71,16 @@ if(BUILD_TESTING)
     controller_interface
     hardware_interface
   )
+  add_rostest_with_parameters_gmock(
+    test_steering_controllers_library_ackermann test/test_steering_controllers_library_ackermann.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/steering_controllers_library_ackermann_params.yaml)
+  target_include_directories(test_steering_controllers_library_ackermann PRIVATE include)
+  target_link_libraries(test_steering_controllers_library_ackermann steering_controllers_library)
+  ament_target_dependencies(
+    test_steering_controllers_library_ackermann
+    controller_interface
+    hardware_interface
+  )
   ament_add_gmock(test_steering_odometry test/test_steering_odometry.cpp)
   target_link_libraries(test_steering_odometry steering_controllers_library)
 

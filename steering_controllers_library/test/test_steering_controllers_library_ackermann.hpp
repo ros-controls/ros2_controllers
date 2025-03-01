@@ -33,8 +33,6 @@
 
 using ControllerStateMsg =
   steering_controllers_library::SteeringControllersLibrary::AckermannControllerState;
-using ControllerTwistReferenceMsg =
-  steering_controllers_library::SteeringControllersLibrary::ControllerTwistReferenceMsg;
 using ControllerAckermannReferenceMsg =
   steering_controllers_library::SteeringControllersLibrary::ControllerAckermannReferenceMsg;
 
@@ -91,7 +89,7 @@ public:
   }
 
   /**
-   * @brief wait_for_command blocks until a new ControllerTwistReferenceMsg is received.
+   * @brief wait_for_command blocks until a new ControllerAckermannReferenceMsg is received.
    * Requires that the executor is not spinned elsewhere between the
    *  message publication and the call to this function.
    */
@@ -145,7 +143,7 @@ public:
     controller_ = std::make_unique<CtrlType>();
 
     command_publisher_node_ = std::make_shared<rclcpp::Node>("command_publisher");
-    command_publisher_ = command_publisher_node_->create_publisher<ControllerTwistReferenceMsg>(
+    command_publisher_ = command_publisher_node_->create_publisher<ControllerAckermannReferenceMsg>(
       "/test_steering_controllers_library/reference", rclcpp::SystemDefaultsQoS());
   }
 
@@ -282,9 +280,9 @@ protected:
 
     wait_for_topic(command_publisher_->get_topic_name());
 
-    ControllerTwistReferenceMsg msg;
-    msg.twist.linear.x = linear;
-    msg.twist.angular.z = angular;
+    ControllerAckermannReferenceMsg msg;
+    msg.drive.speed = linear;
+    msg.drive.steering_angle = angular;
 
     command_publisher_->publish(msg);
   }
@@ -332,7 +330,7 @@ protected:
   // Test related parameters
   std::unique_ptr<CtrlType> controller_;
   rclcpp::Node::SharedPtr command_publisher_node_;
-  rclcpp::Publisher<ControllerTwistReferenceMsg>::SharedPtr command_publisher_;
+  rclcpp::Publisher<ControllerAckermannReferenceMsg>::SharedPtr command_publisher_;
 };
 
 #endif  // TEST_STEERING_CONTROLLERS_LIBRARY_HPP_

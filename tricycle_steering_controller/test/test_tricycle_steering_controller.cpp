@@ -95,7 +95,7 @@ TEST_F(TricycleSteeringControllerTest, activate_success)
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   // check that the message is reset
-  auto msg = controller_->input_ref_.readFromNonRT();
+  auto msg = controller_->input_ref_twist_.readFromNonRT();
   EXPECT_TRUE(std::isnan((*msg)->twist.linear.x));
   EXPECT_TRUE(std::isnan((*msg)->twist.linear.y));
   EXPECT_TRUE(std::isnan((*msg)->twist.linear.z));
@@ -157,7 +157,7 @@ TEST_F(TricycleSteeringControllerTest, test_update_logic)
   msg->header.stamp = controller_->get_node()->now();
   msg->twist.linear.x = 0.1;
   msg->twist.angular.z = 0.2;
-  controller_->input_ref_.writeFromNonRT(msg);
+  controller_->input_ref_twist_.writeFromNonRT(msg);
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
@@ -173,7 +173,7 @@ TEST_F(TricycleSteeringControllerTest, test_update_logic)
     controller_->command_interfaces_[CMD_STEER_WHEEL].get_value(), 1.4179821977774734,
     COMMON_THRESHOLD);
 
-  EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromRT()))->twist.linear.x));
+  EXPECT_FALSE(std::isnan((*(controller_->input_ref_twist_.readFromRT()))->twist.linear.x));
   EXPECT_EQ(controller_->reference_interfaces_.size(), joint_reference_interfaces_.size());
   for (const auto & interface : controller_->reference_interfaces_)
   {
@@ -210,7 +210,7 @@ TEST_F(TricycleSteeringControllerTest, test_update_logic_chained)
     controller_->command_interfaces_[CMD_STEER_WHEEL].get_value(), 1.4179821977774734,
     COMMON_THRESHOLD);
 
-  EXPECT_TRUE(std::isnan((*(controller_->input_ref_.readFromRT()))->twist.linear.x));
+  EXPECT_TRUE(std::isnan((*(controller_->input_ref_twist_.readFromRT()))->twist.linear.x));
   EXPECT_EQ(controller_->reference_interfaces_.size(), joint_reference_interfaces_.size());
   for (const auto & interface : controller_->reference_interfaces_)
   {
