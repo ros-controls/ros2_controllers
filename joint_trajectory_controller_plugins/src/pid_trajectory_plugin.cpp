@@ -77,7 +77,7 @@ bool PidTrajectoryPlugin::configure()
 bool PidTrajectoryPlugin::activate()
 {
   params_ = param_listener_->get_params();
-  parseGains();
+  parse_gains();
   return true;
 }
 
@@ -86,13 +86,13 @@ bool PidTrajectoryPlugin::update_gains_rt()
   if (param_listener_->is_old(params_))
   {
     params_ = param_listener_->get_params();
-    parseGains();
+    parse_gains();
   }
 
   return true;
 }
 
-void PidTrajectoryPlugin::parseGains()
+void PidTrajectoryPlugin::parse_gains()
 {
   for (size_t i = 0; i < num_cmd_joints_; ++i)
   {
@@ -101,7 +101,7 @@ void PidTrajectoryPlugin::parseGains()
       params_.command_joints[i].c_str());
 
     const auto & gains = params_.gains.command_joints_map.at(params_.command_joints[i]);
-    pids_[i]->setGains(gains.p, gains.i, gains.d, gains.i_clamp, -gains.i_clamp, true);
+    pids_[i]->set_gains(gains.p, gains.i, gains.d, gains.i_clamp, -gains.i_clamp, true);
     ff_velocity_scale_[i] = gains.ff_velocity_scale;
 
     RCLCPP_DEBUG(node_->get_logger(), "[PidTrajectoryPlugin] gains.p: %f", gains.p);
@@ -126,9 +126,8 @@ void PidTrajectoryPlugin::compute_commands(
   {
     tmp_command[map_cmd_to_joints_[i]] =
       (desired.velocities[map_cmd_to_joints_[i]] * ff_velocity_scale_[i]) +
-      pids_[i]->computeCommand(
-        error.positions[map_cmd_to_joints_[i]], error.velocities[map_cmd_to_joints_[i]],
-        (uint64_t)period.nanoseconds());
+      pids_[i]->compute_command(
+        error.positions[map_cmd_to_joints_[i]], error.velocities[map_cmd_to_joints_[i]], period);
   }
 }
 
