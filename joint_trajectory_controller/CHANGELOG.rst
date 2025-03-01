@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.21.0 (2025-03-01)
+-------------------
 * [JTC] Renaming variables, reordering trajectory checks (`#1032 <https://github.com/ros-controls/ros2_controllers/issues/1032>`_)
 * [JTC] Use time of the last command for set_point_before_trajectory_msg in open-loop mode (`#780 <https://github.com/ros-controls/ros2_controllers/issues/780>`_)
 * Update API of PID class (`#1437 <https://github.com/ros-controls/ros2_controllers/issues/1437>`_)

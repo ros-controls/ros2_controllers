@@ -2,8 +2,8 @@
 Changelog for package parallel_gripper_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.21.0 (2025-03-01)
+-------------------
 * Cleanup wrong lifecycle transitions in tests and unnecessary checks (`#1534 <https://github.com/ros-controls/ros2_controllers/issues/1534>`_)
 * Bump version of pre-commit hooks (`#1514 <https://github.com/ros-controls/ros2_controllers/issues/1514>`_)
 * Contributors: Christoph Fröhlich, github-actions[bot]
