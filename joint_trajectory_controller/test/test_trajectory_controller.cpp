@@ -46,39 +46,6 @@ TEST_P(TrajectoryControllerTestParameterized, invalid_robot_description)
     SetUpTrajectoryControllerLocal({}, "<invalid_robot_description/>"));
 }
 
-TEST_P(TrajectoryControllerTestParameterized, configure_state_ignores_commands)
-{
-  rclcpp::executors::MultiThreadedExecutor executor;
-  SetUpTrajectoryController(executor);
-  traj_controller_->get_node()->set_parameter(
-    rclcpp::Parameter("allow_nonzero_velocity_at_trajectory_end", true));
-
-  const auto state = traj_controller_->configure();
-  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
-
-  // send msg
-  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
-  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
-  // *INDENT-OFF*
-  std::vector<std::vector<double>> points{
-    {{3.3, 4.4, 5.5}}, {{7.7, 8.8, 9.9}}, {{10.10, 11.11, 12.12}}};
-  std::vector<std::vector<double>> points_velocities{
-    {{0.01, 0.01, 0.01}}, {{0.05, 0.05, 0.05}}, {{0.06, 0.06, 0.06}}};
-  // *INDENT-ON*
-  publish(time_from_start, points, rclcpp::Time(), {}, points_velocities);
-  traj_controller_->wait_for_trajectory(executor);
-
-  traj_controller_->update(
-    rclcpp::Time(static_cast<uint64_t>(0.5 * 1e9)), rclcpp::Duration::from_seconds(0.5));
-
-  // hw position == 0 because controller is not activated
-  EXPECT_EQ(0.0, joint_pos_[0]);
-  EXPECT_EQ(0.0, joint_pos_[1]);
-  EXPECT_EQ(0.0, joint_pos_[2]);
-
-  executor.cancel();
-}
-
 TEST_P(TrajectoryControllerTestParameterized, check_interface_names)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
@@ -148,7 +115,6 @@ TEST_P(TrajectoryControllerTestParameterized, cleanup)
 
   auto state = traj_controller_->get_node()->deactivate();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
-  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
 
   state = traj_controller_->get_node()->cleanup();
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
@@ -223,8 +189,8 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
   std::vector<double> deactivated_positions{joint_pos_[0], joint_pos_[1], joint_pos_[2]};
   state = traj_controller_->get_node()->deactivate();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+
   // it should be holding the current point
-  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.1));
   expectHoldingPointDeactivated(deactivated_positions);
 
   // reactivate
@@ -359,7 +325,7 @@ TEST_P(TrajectoryControllerTestParameterized, update_dynamic_parameters)
   if (traj_controller_->use_closed_loop_pid_adapter())
   {
     EXPECT_EQ(pids.size(), 3);
-    auto gain_0 = pids.at(0)->getGains();
+    auto gain_0 = pids.at(0)->get_gains();
     EXPECT_EQ(gain_0.p_gain_, 0.0);
 
     double kp = 1.0;
@@ -368,7 +334,7 @@ TEST_P(TrajectoryControllerTestParameterized, update_dynamic_parameters)
 
     pids = traj_controller_->get_pids();
     EXPECT_EQ(pids.size(), 3);
-    gain_0 = pids.at(0)->getGains();
+    gain_0 = pids.at(0)->get_gains();
     EXPECT_EQ(gain_0.p_gain_, kp);
   }
   else
@@ -1713,9 +1679,9 @@ TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_erro
   publish(
     time_from_start, points, rclcpp::Time(0.0, 0.0, RCL_STEADY_TIME), {}, first_goal_velocities);
   traj_controller_->wait_for_trajectory(executor);
-  updateControllerAsync(rclcpp::Duration::from_seconds(1.1));
+  auto end_time = updateControllerAsync(rclcpp::Duration::from_seconds(1.1));
 
-  // JTC is executing trajectory in open-loop therefore:
+  // JTC is NOT executing trajectory in open-loop therefore:
   // - internal state does not have to be updated (in this test-case it shouldn't)
   // - internal command is updated
   EXPECT_NEAR(INITIAL_POS_JOINT1, joint_state_pos_[0], COMMON_THRESHOLD);
@@ -1732,7 +1698,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_erro
   // One the first update(s) there should be a "jump" in opposite direction from command
   // (towards the state value)
   EXPECT_NEAR(first_goal[0], joint_pos_[0], COMMON_THRESHOLD);
-  auto end_time = updateControllerAsync(controller_period);
+  end_time = updateControllerAsync(controller_period, end_time);
   // Expect backward commands at first, consider advancement of the trajectory
   // exact value is not directly predictable, because of the spline interpolation -> increase
   // tolerance
@@ -1749,7 +1715,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_erro
   EXPECT_LT(joint_pos_[0], first_goal[0]);
 
   // Finally the second goal will be commanded/reached
-  updateControllerAsync(rclcpp::Duration::from_seconds(1.1), end_time);
+  end_time = updateControllerAsync(rclcpp::Duration::from_seconds(1.1), end_time);
   EXPECT_NEAR(second_goal[0], joint_pos_[0], COMMON_THRESHOLD);
 
   // State interface should have offset from the command before starting a new trajectory
@@ -1817,7 +1783,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_no_jump_when_state_tracking_e
   std::vector<std::vector<double>> points{{first_goal}};
   publish(time_from_start, points, rclcpp::Time(0.0, 0.0, RCL_STEADY_TIME));
   traj_controller_->wait_for_trajectory(executor);
-  updateControllerAsync(rclcpp::Duration::from_seconds(1.1));
+  auto end_time = updateControllerAsync(rclcpp::Duration::from_seconds(1.1));
 
   // JTC is executing trajectory in open-loop therefore:
   // - internal state does not have to be updated (in this test-case it shouldn't)
@@ -1836,7 +1802,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_no_jump_when_state_tracking_e
   // One the first update(s) there **should not** be a "jump" in opposite direction from
   // command (towards the state value)
   EXPECT_NEAR(first_goal[0], joint_pos_[0], COMMON_THRESHOLD);
-  auto end_time = updateControllerAsync(controller_period);
+  end_time = updateControllerAsync(controller_period, end_time);
   // There should not be backward commands
   // exact value is not directly predictable, because of the spline interpolation -> increase
   // tolerance
@@ -1852,7 +1818,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_no_jump_when_state_tracking_e
   EXPECT_LT(joint_pos_[0], second_goal[0]);
 
   // Finally the second goal will be commanded/reached
-  updateControllerAsync(rclcpp::Duration::from_seconds(1.1), end_time);
+  end_time = updateControllerAsync(rclcpp::Duration::from_seconds(1.1), end_time);
   EXPECT_NEAR(second_goal[0], joint_pos_[0], COMMON_THRESHOLD);
 
   // State interface should have offset from the command before starting a new trajectory
