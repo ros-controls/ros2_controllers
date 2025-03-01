@@ -81,7 +81,7 @@ bool PidTrajectoryPlugin::activate()
   return true;
 }
 
-bool PidTrajectoryPlugin::updateGainsRT()
+bool PidTrajectoryPlugin::update_gains_rt()
 {
   if (param_listener_->is_old(params_))
   {
@@ -115,7 +115,7 @@ void PidTrajectoryPlugin::parseGains()
     num_cmd_joints_);
 }
 
-void PidTrajectoryPlugin::computeCommands(
+void PidTrajectoryPlugin::compute_commands(
   std::vector<double> & tmp_command, const trajectory_msgs::msg::JointTrajectoryPoint /*current*/,
   const trajectory_msgs::msg::JointTrajectoryPoint error,
   const trajectory_msgs::msg::JointTrajectoryPoint desired,

@@ -71,16 +71,16 @@ public:
    * of the trajectory until it finishes
    *
    * this method is not virtual, any overrides won't be called by JTC. Instead, override
-   * computeControlLawNonRT_impl for your implementation
+   * compute_control_law_non_rt_impl for your implementation
    *
    * @return true if the gains were computed, false otherwise
    */
   JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
-  bool computeControlLawNonRT(
+  bool compute_control_law_non_rt(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory)
   {
     rt_control_law_ready_.writeFromNonRT(false);
-    auto ret = computeControlLawNonRT_impl(trajectory);
+    auto ret = compute_control_law_non_rt_impl(trajectory);
     rt_control_law_ready_.writeFromNonRT(true);
     return ret;
   }
@@ -91,17 +91,17 @@ public:
    * this method must finish quickly (within one controller-update rate)
    *
    * this method is not virtual, any overrides won't be called by JTC. Instead, override
-   * computeControlLawRT_impl for your implementation
+   * compute_control_law_rt_impl for your implementation
    *
    * @return true if the gains were computed, false otherwise
    */
   JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
-  bool computeControlLawRT(
+  bool compute_control_law_rt(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory)
   {
     // TODO(christophfroehlich): Need a lock-free write here
     rt_control_law_ready_.writeFromNonRT(false);
-    auto ret = computeControlLawRT_impl(trajectory);
+    auto ret = compute_control_law_rt_impl(trajectory);
     rt_control_law_ready_.writeFromNonRT(true);
     return ret;
   }
@@ -121,7 +121,7 @@ public:
    * @return true if the gains were updated, false otherwise
    */
   JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
-  virtual bool updateGainsRT(void) = 0;
+  virtual bool update_gains_rt(void) = 0;
 
   /**
    * @brief compute the commands with the precalculated control law
@@ -135,7 +135,7 @@ public:
    * @param[in] period the period since the last update
    */
   JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
-  virtual void computeCommands(
+  virtual void compute_commands(
     std::vector<double> & tmp_command, const trajectory_msgs::msg::JointTrajectoryPoint current,
     const trajectory_msgs::msg::JointTrajectoryPoint error,
     const trajectory_msgs::msg::JointTrajectoryPoint desired,
@@ -166,7 +166,7 @@ protected:
    * @return true if the gains were computed, false otherwise
    */
   JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
-  virtual bool computeControlLawNonRT_impl(
+  virtual bool compute_control_law_non_rt_impl(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory) = 0;
 
   /**
@@ -174,7 +174,7 @@ protected:
    * @return true if the gains were computed, false otherwise
    */
   JOINT_TRAJECTORY_CONTROLLER_PLUGINS_PUBLIC
-  virtual bool computeControlLawRT_impl(
+  virtual bool compute_control_law_rt_impl(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory) = 0;
 };
 

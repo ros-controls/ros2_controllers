@@ -156,7 +156,7 @@ controller_interface::return_type JointTrajectoryController::update(
     // update gains of controller
     if (traj_contr_)
     {
-      if (traj_contr_->updateGainsRT() == false)
+      if (traj_contr_->update_gains_rt() == false)
       {
         RCLCPP_ERROR(get_node()->get_logger(), "Could not update gains of controller");
         return controller_interface::return_type::ERROR;
@@ -299,7 +299,7 @@ controller_interface::return_type JointTrajectoryController::update(
       {
         if (traj_contr_)
         {
-          traj_contr_->computeCommands(
+          traj_contr_->compute_commands(
             tmp_command_, state_current_, state_error_, command_next_,
             time - traj_external_point_ptr_->time_from_start(), period);
         }
@@ -1607,7 +1607,7 @@ void JointTrajectoryController::add_new_trajectory_msg_nonRT(
   if (traj_contr_)
   {
     // this can take some time; trajectory won't start until control law is computed
-    if (traj_contr_->computeControlLawNonRT(traj_msg) == false)
+    if (traj_contr_->compute_control_law_non_rt(traj_msg) == false)
     {
       RCLCPP_ERROR(get_node()->get_logger(), "Failed to compute gains for trajectory.");
     }
@@ -1626,7 +1626,7 @@ void JointTrajectoryController::add_new_trajectory_msg_RT(
   if (traj_contr_)
   {
     // this is used for set_hold_position() only -> this should (and must) not take a long time
-    if (traj_contr_->computeControlLawRT(traj_msg) == false)
+    if (traj_contr_->compute_control_law_rt(traj_msg) == false)
     {
       RCLCPP_ERROR(get_node()->get_logger(), "Failed to compute gains for trajectory.");
     }

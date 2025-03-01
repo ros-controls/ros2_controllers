@@ -39,9 +39,9 @@ TEST_F(PidTrajectoryTest, TestSingleJoint)
   node_->set_parameter(rclcpp::Parameter("gains.joint1.p", 1.0));
   ASSERT_TRUE(traj_contr->configure());
   ASSERT_TRUE(traj_contr->activate());
-  ASSERT_TRUE(
-    traj_contr->computeControlLawNonRT(std::make_shared<trajectory_msgs::msg::JointTrajectory>()));
-  ASSERT_TRUE(traj_contr->updateGainsRT());
+  ASSERT_TRUE(traj_contr->compute_control_law_non_rt(
+    std::make_shared<trajectory_msgs::msg::JointTrajectory>()));
+  ASSERT_TRUE(traj_contr->update_gains_rt());
 
   trajectory_msgs::msg::JointTrajectoryPoint traj_msg;
   traj_msg.positions.push_back(0.0);
@@ -50,7 +50,7 @@ TEST_F(PidTrajectoryTest, TestSingleJoint)
   const rclcpp::Duration time_since_start(1, 0);
   const rclcpp::Duration period(1, 0);
 
-  ASSERT_NO_THROW(traj_contr->computeCommands(
+  ASSERT_NO_THROW(traj_contr->compute_commands(
     tmp_command, traj_msg, traj_msg, traj_msg, time_since_start, period));
 }
 
@@ -73,13 +73,13 @@ TEST_F(PidTrajectoryTest, TestMultipleJoints)
   node_->set_parameter(rclcpp::Parameter("gains.joint3.p", 3.0));
   ASSERT_TRUE(traj_contr->configure());
   ASSERT_TRUE(traj_contr->activate());
-  ASSERT_TRUE(
-    traj_contr->computeControlLawNonRT(std::make_shared<trajectory_msgs::msg::JointTrajectory>()));
-  ASSERT_TRUE(traj_contr->updateGainsRT());
+  ASSERT_TRUE(traj_contr->compute_control_law_non_rt(
+    std::make_shared<trajectory_msgs::msg::JointTrajectory>()));
+  ASSERT_TRUE(traj_contr->update_gains_rt());
 
-  ASSERT_TRUE(
-    traj_contr->computeControlLawNonRT(std::make_shared<trajectory_msgs::msg::JointTrajectory>()));
-  ASSERT_TRUE(traj_contr->updateGainsRT());
+  ASSERT_TRUE(traj_contr->compute_control_law_non_rt(
+    std::make_shared<trajectory_msgs::msg::JointTrajectory>()));
+  ASSERT_TRUE(traj_contr->update_gains_rt());
 
   trajectory_msgs::msg::JointTrajectoryPoint traj_msg;
   traj_msg.positions.push_back(1.0);
@@ -92,7 +92,7 @@ TEST_F(PidTrajectoryTest, TestMultipleJoints)
   const rclcpp::Duration time_since_start(1, 0);
   const rclcpp::Duration period(1, 0);
 
-  ASSERT_NO_THROW(traj_contr->computeCommands(
+  ASSERT_NO_THROW(traj_contr->compute_commands(
     tmp_command, traj_msg, traj_msg, traj_msg, time_since_start, period));
 
   EXPECT_EQ(tmp_command[0], 1.0);

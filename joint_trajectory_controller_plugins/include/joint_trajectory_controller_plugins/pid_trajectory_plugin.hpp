@@ -41,23 +41,23 @@ public:
 
   bool activate() override;
 
-  bool computeControlLawNonRT_impl(
+  bool compute_control_law_non_rt_impl(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & /*trajectory*/) override
   {
     // nothing to do
     return true;
   }
 
-  bool computeControlLawRT_impl(
+  bool compute_control_law_rt_impl(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & /*trajectory*/) override
   {
     // nothing to do
     return true;
   }
 
-  bool updateGainsRT() override;
+  bool update_gains_rt() override;
 
-  void computeCommands(
+  void compute_commands(
     std::vector<double> & tmp_command, const trajectory_msgs::msg::JointTrajectoryPoint current,
     const trajectory_msgs::msg::JointTrajectoryPoint error,
     const trajectory_msgs::msg::JointTrajectoryPoint desired,
