@@ -2,6 +2,15 @@
 Changelog for package pid_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* [pid_controller] Update tests (`#1538 <https://github.com/ros-controls/ros2_controllers/issues/1538>`_)
+* Reset PID controllers on activation and add `save_i_term` parameter (`#1507 <https://github.com/ros-controls/ros2_controllers/issues/1507>`_)
+* Update API of PID class (`#1437 <https://github.com/ros-controls/ros2_controllers/issues/1437>`_)
+* [pid_controller] Fix logic for feedforward_mode with single reference interface (`#1520 <https://github.com/ros-controls/ros2_controllers/issues/1520>`_)
+* Fix the exported interface naming in the chainable controllers (`#1528 <https://github.com/ros-controls/ros2_controllers/issues/1528>`_)
+* Contributors: Christoph Fröhlich, Julia Jia, Sai Kishor Kothakota
+
 4.20.0 (2025-01-29)
 -------------------
 * Improve antiwindup description (`#1502 <https://github.com/ros-controls/ros2_controllers/issues/1502>`_)
