@@ -162,17 +162,8 @@ controller_interface::return_type TricycleController::update(
     realtime_odometry_transform_publisher_->unlockAndPublish();
   }
 
-  double alpha_write;
-  double Ws_write;
   // Compute wheel velocity and angle
-  if (use_twist_as_ackermann_msg_) {
-    alpha_write = angular_command;
-    Ws_write = linear_command / wheel_params_.radius;
-  }
-  else {
-    std::tie(alpha_write, Ws_write) = twist_to_ackermann(linear_command, angular_command);
-  }
-
+  auto [alpha_write, Ws_write] = twist_to_ackermann(linear_command, angular_command);
 
   double alpha_delta = abs(alpha_write - alpha_read);
   double scale;
@@ -251,8 +242,6 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
   cmd_vel_timeout_ = std::chrono::milliseconds{params_.cmd_vel_timeout};
   params_.publish_ackermann_command =
     get_node()->get_parameter("publish_ackermann_command").as_bool();
- use_twist_as_ackermann_msg_ = get_node()->get_parameter("use_twist_as_ackermann_msg").as_bool();
-  use_exact_mode_ = get_node()->get_parameter("use_exact_mode").as_bool();
   exact_mode_threshold_ = get_node()->get_parameter("exact_mode_threshold").as_double();
 
   try

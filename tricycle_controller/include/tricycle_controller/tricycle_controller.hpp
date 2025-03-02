@@ -137,7 +137,6 @@ protected:
   TractionLimiter limiter_traction_;
   SteeringLimiter limiter_steering_;
 
-  bool use_twist_as_ackermann_msg_ = false;
   bool use_exact_mode_ = false;
   double exact_mode_threshold_ = M_PI / 6;
 
