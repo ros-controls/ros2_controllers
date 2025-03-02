@@ -2,6 +2,163 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.21.0 (2025-03-01)
+-------------------
+* [JTC] Renaming variables, reordering trajectory checks (`#1032 <https://github.com/ros-controls/ros2_controllers/issues/1032>`_)
+* [JTC] Use time of the last command for set_point_before_trajectory_msg in open-loop mode (`#780 <https://github.com/ros-controls/ros2_controllers/issues/780>`_)
+* Update API of PID class (`#1437 <https://github.com/ros-controls/ros2_controllers/issues/1437>`_)
+* Cleanup wrong lifecycle transitions in tests and unnecessary checks (`#1534 <https://github.com/ros-controls/ros2_controllers/issues/1534>`_)
+* [JTC]: Abort goal on deactivate (`#1517 <https://github.com/ros-controls/ros2_controllers/issues/1517>`_)
+* Contributors: Christoph Fröhlich, Dr. Denis, Felix Exner
+
+4.20.0 (2025-01-29)
+-------------------
+* Remove empty callbacks (`#1488 <https://github.com/ros-controls/ros2_controllers/issues/1488>`_)
+* Update paths of GPL includes (`#1487 <https://github.com/ros-controls/ros2_controllers/issues/1487>`_)
+* Contributors: Christoph Fröhlich, Julia Jia
+
+4.19.0 (2025-01-13)
+-------------------
+* Remove empty on_shutdown() callbacks (`#1477 <https://github.com/ros-controls/ros2_controllers/issues/1477>`_)
+* Use urdf/model.hpp for rolling (`#1473 <https://github.com/ros-controls/ros2_controllers/issues/1473>`_)
+* Remove visibility macros (`#1451 <https://github.com/ros-controls/ros2_controllers/issues/1451>`_)
+* Contributors: Bence Magyar, Julia Jia, verma nakul
+
+4.18.0 (2024-12-19)
+-------------------
+* Add an error msg if empty message is received (`#1424 <https://github.com/ros-controls/ros2_controllers/issues/1424>`_)
+* [CI] Add clang job and setup concurrency (`#1407 <https://github.com/ros-controls/ros2_controllers/issues/1407>`_)
+* Contributors: Christoph Fröhlich
+
+4.17.0 (2024-12-07)
+-------------------
+* Use the .hpp headers from `realtime_tools` package (`#1406 <https://github.com/ros-controls/ros2_controllers/issues/1406>`_)
+* JTC: sum periods (`#1395 <https://github.com/ros-controls/ros2_controllers/issues/1395>`_)
+* [JTC] Sample at t + dT instead of the beginning of the control cycle (`#1306 <https://github.com/ros-controls/ros2_controllers/issues/1306>`_)
+* Add few warning flags to error in all ros2_controllers packages and fix tests (`#1370 <https://github.com/ros-controls/ros2_controllers/issues/1370>`_)
+* Update maintainers and add url tags (`#1363 <https://github.com/ros-controls/ros2_controllers/issues/1363>`_)
+* Contributors: Christoph Fröhlich, Felix Exner (fexner), Sai Kishor Kothakota
+
+4.16.0 (2024-11-08)
+-------------------
+* [JTC] Fix the JTC length_error exceptions in the tests (`#1360 <https://github.com/ros-controls/ros2_controllers/issues/1360>`_)
+* [jtc] Improve trajectory sampling efficiency (`#1297 <https://github.com/ros-controls/ros2_controllers/issues/1297>`_)
+* fixes for windows compilation (`#1330 <https://github.com/ros-controls/ros2_controllers/issues/1330>`_)
+* [JTC] Add Parameter to Toggle State Setting on Activation (`#1231 <https://github.com/ros-controls/ros2_controllers/issues/1231>`_)
+* Contributors: Gilmar Correia, Kenta Kato, RobertWilbrandt, Sai Kishor Kothakota
+
+4.15.0 (2024-10-07)
+-------------------
+
+4.14.0 (2024-09-11)
+-------------------
+* rename get/set_state to get/set_lifecylce_state (`#1250 <https://github.com/ros-controls/ros2_controllers/issues/1250>`_)
+* Contributors: Manuel Muth
+
+4.13.0 (2024-08-22)
+-------------------
+
+4.12.1 (2024-08-14)
+-------------------
+
+4.12.0 (2024-07-23)
+-------------------
+* [JTC] Refactor URDF Model parsing  (`#1227 <https://github.com/ros-controls/ros2_controllers/issues/1227>`_)
+* Use the internal methods instead of using the variables directly (`#1221 <https://github.com/ros-controls/ros2_controllers/issues/1221>`_)
+* Unused header cleanup (`#1199 <https://github.com/ros-controls/ros2_controllers/issues/1199>`_)
+* Fix WaitSet issue in tests  (`#1206 <https://github.com/ros-controls/ros2_controllers/issues/1206>`_)
+* [JTC] Fix test_tolerances_via_actions (`#1209 <https://github.com/ros-controls/ros2_controllers/issues/1209>`_)
+* Fix parallel gripper controller CI (`#1202 <https://github.com/ros-controls/ros2_controllers/issues/1202>`_)
+* Contributors: Christoph Fröhlich, Henry Moore, Sai Kishor Kothakota
+
+4.11.0 (2024-07-09)
+-------------------
+* [JTC] Make goal_time_tolerance overwrite default value only if explicitly set (`#1192 <https://github.com/ros-controls/ros2_controllers/issues/1192>`_)
+* added changes corresponding to the logger and clock propagation in ResourceManager (`#1184 <https://github.com/ros-controls/ros2_controllers/issues/1184>`_)
+* [JTC] Process tolerances sent with action goal (`#716 <https://github.com/ros-controls/ros2_controllers/issues/716>`_)
+* Contributors: Christoph Fröhlich, Felix Exner (fexner), Sai Kishor Kothakota
+
+4.10.0 (2024-07-01)
+-------------------
+* Remove manual angle-wraparound parameter (`#1152 <https://github.com/ros-controls/ros2_controllers/issues/1152>`_)
+* Contributors: Christoph Fröhlich
+
+4.9.0 (2024-06-05)
+------------------
+* JTC trajectory end time validation fix (`#1090 <https://github.com/ros-controls/ros2_controllers/issues/1090>`_)
+* Contributors: Henry Moore
+
+4.8.0 (2024-05-14)
+------------------
+* [JTC] Remove unused test code (`#1095 <https://github.com/ros-controls/ros2_controllers/issues/1095>`_)
+* Contributors: Bence Magyar
+
+4.7.0 (2024-03-22)
+------------------
+* Remove action_msg dependency (`#1077 <https://github.com/ros-controls/ros2_controllers/issues/1077>`_)
+* Bump version of pre-commit hooks (`#1073 <https://github.com/ros-controls/ros2_controllers/issues/1073>`_)
+* Added conditioning to have rolling tags compilable in older versions (`#1071 <https://github.com/ros-controls/ros2_controllers/issues/1071>`_)
+* Parse URDF for continuous joints (`#949 <https://github.com/ros-controls/ros2_controllers/issues/949>`_)
+* Contributors: Christoph Fröhlich, Sai Kishor Kothakota, github-actions[bot]
+
+4.6.0 (2024-02-12)
+------------------
+* Fix usage of M_PI on Windows (`#1036 <https://github.com/ros-controls/ros2_controllers/issues/1036>`_)
+* [JTC] Angle wraparound for first segment of trajectory (`#796 <https://github.com/ros-controls/ros2_controllers/issues/796>`_)
+* Add test_depend on `hardware_interface_testing` (`#1018 <https://github.com/ros-controls/ros2_controllers/issues/1018>`_)
+* Fix tests for using new `get_node_options` API (`#840 <https://github.com/ros-controls/ros2_controllers/issues/840>`_)
+* Contributors: Christoph Fröhlich, Sai Kishor Kothakota, Silvio Traversaro
+
+4.5.0 (2024-01-31)
+------------------
+* [JTC] Fill action error_strings (`#887 <https://github.com/ros-controls/ros2_controllers/issues/887>`_)
+* Add tests for `interface_configuration_type` consistently (`#899 <https://github.com/ros-controls/ros2_controllers/issues/899>`_)
+* Let sphinx add parameter description with nested structures to documentation (`#652 <https://github.com/ros-controls/ros2_controllers/issues/652>`_)
+* [JTC] Invalidate empty trajectory messages (`#902 <https://github.com/ros-controls/ros2_controllers/issues/902>`_)
+* Revert "[JTC] Remove read_only from 'joints', 'state_interfaces' and 'command_interfaces' parameters (`#967 <https://github.com/ros-controls/ros2_controllers/issues/967>`_)" (`#978 <https://github.com/ros-controls/ros2_controllers/issues/978>`_)
+* [JTC] Convert lambda to class functions (`#945 <https://github.com/ros-controls/ros2_controllers/issues/945>`_)
+* Contributors: Christoph Fröhlich, Noel Jiménez García
+
+4.4.0 (2024-01-11)
+------------------
+* Cancel goal in on_deactivate (`#962 <https://github.com/ros-controls/ros2_controllers/issues/962>`_)
+* Remove read_only from 'joints', 'state_interfaces' and 'command_interfaces' parameters (`#967 <https://github.com/ros-controls/ros2_controllers/issues/967>`_)
+* Contributors: Christoph Fröhlich, Noel Jiménez García
+
+4.3.0 (2024-01-08)
+------------------
+* Update deprecated topic name (`#964 <https://github.com/ros-controls/ros2_controllers/issues/964>`_)
+* Add few warning flags to error (`#961 <https://github.com/ros-controls/ros2_controllers/issues/961>`_)
+* [JTC] Cleanup includes (`#943 <https://github.com/ros-controls/ros2_controllers/issues/943>`_)
+* Add rqt_JTC to docs (`#950 <https://github.com/ros-controls/ros2_controllers/issues/950>`_)
+* [JTC] Add console output for tolerance checks (`#932 <https://github.com/ros-controls/ros2_controllers/issues/932>`_)
+* Contributors: Christoph Fröhlich, Sai Kishor Kothakota, maurice
+
+4.2.0 (2023-12-12)
+------------------
+* Cleanup package.xml und clarify tests of JTC. (`#889 <https://github.com/ros-controls/ros2_controllers/issues/889>`_)
+* Fix floating point comparison in JTC (`#879 <https://github.com/ros-controls/ros2_controllers/issues/879>`_)
+* Contributors: Abishalini Sivaraman, Dr. Denis
+
+4.1.0 (2023-12-01)
+------------------
+* [JTC] Continue with last trajectory-point on success (`#842 <https://github.com/ros-controls/ros2_controllers/issues/842>`_)
+* [JTC] Remove start_with_holding option (`#839 <https://github.com/ros-controls/ros2_controllers/issues/839>`_)
+* [JTC] Activate checks for parameter validation (`#857 <https://github.com/ros-controls/ros2_controllers/issues/857>`_)
+* [JTC] Improve update methods for tests (`#858 <https://github.com/ros-controls/ros2_controllers/issues/858>`_)
+* Contributors: Christoph Fröhlich
+
+4.0.0 (2023-11-21)
+------------------
+* fix tests for API break of passing controller manager update rate in init method (`#854 <https://github.com/ros-controls/ros2_controllers/issues/854>`_)
+* [JTC] Fix dynamic reconfigure of tolerances (`#849 <https://github.com/ros-controls/ros2_controllers/issues/849>`_)
+* [JTC] Remove unused home pose (`#845 <https://github.com/ros-controls/ros2_controllers/issues/845>`_)
+* [JTC] Activate update of dynamic parameters (`#761 <https://github.com/ros-controls/ros2_controllers/issues/761>`_)
+* [JTC] Fix tests when state offset is used (`#797 <https://github.com/ros-controls/ros2_controllers/issues/797>`_)
+* [JTC] Remove deprecation warnings, set `allow_nonzero_velocity_at_trajectory_end` default false (`#834 <https://github.com/ros-controls/ros2_controllers/issues/834>`_)
+* Adjust tests after passing URDF to controllers (`#817 <https://github.com/ros-controls/ros2_controllers/issues/817>`_)
+* Contributors: Bence Magyar, Christoph Fröhlich, Sai Kishor Kothakota, Dr Denis
+
 3.17.0 (2023-10-31)
 -------------------
 * Cleanup comments and unnecessary checks (`#803 <https://github.com/ros-controls/ros2_controllers/issues/803>`_)

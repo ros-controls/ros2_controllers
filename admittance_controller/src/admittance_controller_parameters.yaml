@@ -27,6 +27,7 @@ admittance_controller:
   chainable_command_interfaces:
     {
       type: string_array,
+      default_value: ["position", "velocity"],
       description: "Specifies which reference interfaces the controller will export. Normally, the position and velocity are used.",
       read_only: true
     }
@@ -147,11 +148,6 @@ admittance_controller:
     }
 
   # general settings
-  robot_description: {
-    type: string,
-    description: "Contains robot description in URDF format. The description is used for forward and inverse kinematics.",
-    read_only: true
-  }
   enable_parameter_update_without_reactivation: {
     type: bool,
     default_value: true,

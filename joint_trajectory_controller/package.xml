@@ -1,38 +1,41 @@
 <?xml version="1.0"?>
 <package format="3">
   <name>joint_trajectory_controller</name>
-  <version>3.17.0</version>
+  <version>4.21.0</version>
   <description>Controller for executing joint-space trajectories on a group of joints</description>
+
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
-  <maintainer email="jordan.palacios@pal-robotics.com">Jordan Palacios</maintainer>
-  <maintainer email="karsten@openrobotics.org">Karsten Knese</maintainer>
+  <maintainer email="denis@stoglrobotics.de">Denis Štogl</maintainer>
+  <maintainer email="christoph.froehlich@ait.ac.at">Christoph Froehlich</maintainer>
+  <maintainer email="sai.kishor@pal-robotics.com">Sai Kishor Kothakota</maintainer>
 
   <license>Apache License 2.0</license>
 
+  <url type="website">https://control.ros.org</url>
+  <url type="bugtracker">https://github.com/ros-controls/ros2_controllers/issues</url>
+  <url type="repository">https://github.com/ros-controls/ros2_controllers/</url>
+
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <build_depend>angles</build_depend>
-  <build_depend>pluginlib</build_depend>
-  <build_depend>realtime_tools</build_depend>
-
-  <exec_depend>angles</exec_depend>
-  <exec_depend>pluginlib</exec_depend>
-  <exec_depend>realtime_tools</exec_depend>
-
+  <depend>angles</depend>
   <depend>backward_ros</depend>
   <depend>controller_interface</depend>
   <depend>control_msgs</depend>
   <depend>control_toolbox</depend>
   <depend>generate_parameter_library</depend>
   <depend>hardware_interface</depend>
+  <depend>pluginlib</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_lifecycle</depend>
+  <depend>realtime_tools</depend>
   <depend>rsl</depend>
   <depend>tl_expected</depend>
   <depend>trajectory_msgs</depend>
+  <depend>urdf</depend>
 
   <test_depend>ament_cmake_gmock</test_depend>
   <test_depend>controller_manager</test_depend>
+  <test_depend>hardware_interface_testing</test_depend>
   <test_depend>ros2_control_test_assets</test_depend>
 
   <export>

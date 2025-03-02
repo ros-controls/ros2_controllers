@@ -5,7 +5,7 @@
 forward_command_controller
 ==========================
 
-This is a base class implementing a feedforward controller. Specific implementations can be found in:
+This is a base class implementing a feedforward controller. Specific implementations of this base class can be found in:
 
 * :ref:`position_controllers_userdoc`
 * :ref:`velocity_controllers_userdoc`

@@ -1,9 +1,15 @@
 cmake_minimum_required(VERSION 3.16)
-project(bicycle_steering_controller LANGUAGES CXX)
+project(bicycle_steering_controller)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
-  add_compile_options(-Wall -Wextra -Wpedantic -Wconversion)
+  add_compile_options(-Wall -Wextra -Wpedantic -Werror=conversion -Werror=unused-but-set-variable
+                      -Werror=return-type -Werror=shadow -Werror=format -Werror=range-loop-construct
+                      -Werror=missing-braces)
 endif()
+
+# using this instead of visibility macros
+# S1 from https://github.com/ros-controls/ros2_controllers/issues/1053
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 # find dependencies
 set(THIS_PACKAGE_INCLUDE_DEPENDS
@@ -23,6 +29,8 @@ find_package(backward_ros REQUIRED)
 foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
+add_compile_definitions(RCPPUTILS_VERSION_MAJOR=${rcpputils_VERSION_MAJOR})
+add_compile_definitions(RCPPUTILS_VERSION_MINOR=${rcpputils_VERSION_MINOR})
 
 generate_parameter_library(bicycle_steering_controller_parameters
   src/bicycle_steering_controller.yaml
@@ -41,10 +49,6 @@ target_link_libraries(bicycle_steering_controller PUBLIC
   bicycle_steering_controller_parameters)
 ament_target_dependencies(bicycle_steering_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
 
-# Causes the visibility macros to use dllexport rather than dllimport,
-# which is appropriate when building the dll but not consuming it.
-target_compile_definitions(bicycle_steering_controller PRIVATE "ACKERMANN_STEERING_CONTROLLER_BUILDING_DLL")
-
 pluginlib_export_plugin_description_file(
   controller_interface bicycle_steering_controller.xml)
 
@@ -54,10 +58,8 @@ if(BUILD_TESTING)
   find_package(hardware_interface REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
 
-  add_rostest_with_parameters_gmock(test_load_bicycle_steering_controller
-    test/test_load_bicycle_steering_controller.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/bicycle_steering_controller_params.yaml
-  )
+  add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
+  ament_add_gmock(test_load_bicycle_steering_controller test/test_load_bicycle_steering_controller.cpp)
   ament_target_dependencies(test_load_bicycle_steering_controller
     controller_manager
     hardware_interface

@@ -16,10 +16,10 @@
 
 #include <memory>
 
+#include "angles/angles.h"
 #include "hardware_interface/macros.hpp"
 #include "rclcpp/duration.hpp"
 #include "rclcpp/time.hpp"
-#include "std_msgs/msg/header.hpp"
 
 namespace joint_trajectory_controller
 {
@@ -44,10 +44,39 @@ Trajectory::Trajectory(
 
 void Trajectory::set_point_before_trajectory_msg(
   const rclcpp::Time & current_time,
-  const trajectory_msgs::msg::JointTrajectoryPoint & current_point)
+  const trajectory_msgs::msg::JointTrajectoryPoint & current_point,
+  const std::vector<bool> & joints_angle_wraparound)
 {
   time_before_traj_msg_ = current_time;
   state_before_traj_msg_ = current_point;
+
+  // Compute offsets due to wrapping joints
+  wraparound_joint(
+    state_before_traj_msg_.positions, trajectory_msg_->points[0].positions,
+    joints_angle_wraparound);
+}
+
+void wraparound_joint(
+  std::vector<double> & current_position, const std::vector<double> next_position,
+  const std::vector<bool> & joints_angle_wraparound)
+{
+  double dist;
+  // joints_angle_wraparound is even empty, or has the same size as the number of joints
+  for (size_t i = 0; i < joints_angle_wraparound.size(); i++)
+  {
+    if (joints_angle_wraparound[i])
+    {
+      dist = angles::shortest_angular_distance(current_position[i], next_position[i]);
+
+      // Deal with singularity at M_PI shortest distance
+      if (std::abs(std::abs(dist) - M_PI) < 1e-9)
+      {
+        dist = next_position[i] > current_position[i] ? std::abs(dist) : -std::abs(dist);
+      }
+
+      current_position[i] = next_position[i] - dist;
+    }
+  }
 }
 
 void Trajectory::update(std::shared_ptr<trajectory_msgs::msg::JointTrajectory> joint_trajectory)
@@ -55,13 +84,15 @@ void Trajectory::update(std::shared_ptr<trajectory_msgs::msg::JointTrajectory> j
   trajectory_msg_ = joint_trajectory;
   trajectory_start_time_ = static_cast<rclcpp::Time>(joint_trajectory->header.stamp);
   sampled_already_ = false;
+  last_sample_idx_ = 0;
 }
 
 bool Trajectory::sample(
   const rclcpp::Time & sample_time,
   const interpolation_methods::InterpolationMethod interpolation_method,
   trajectory_msgs::msg::JointTrajectoryPoint & output_state,
-  TrajectoryPointConstIter & start_segment_itr, TrajectoryPointConstIter & end_segment_itr)
+  TrajectoryPointConstIter & start_segment_itr, TrajectoryPointConstIter & end_segment_itr,
+  const bool search_monotonically_increasing)
 {
   THROW_ON_NULLPTR(trajectory_msg_)
 
@@ -120,7 +151,7 @@ bool Trajectory::sample(
 
   // time_from_start + trajectory time is the expected arrival time of trajectory
   const auto last_idx = trajectory_msg_->points.size() - 1;
-  for (size_t i = 0; i < last_idx; ++i)
+  for (size_t i = last_sample_idx_; i < last_idx; ++i)
   {
     auto & point = trajectory_msg_->points[i];
     auto & next_point = trajectory_msg_->points[i + 1];
@@ -144,8 +175,12 @@ bool Trajectory::sample(
 
         interpolate_between_points(t0, point, t1, next_point, sample_time, output_state);
       }
-      start_segment_itr = begin() + i;
-      end_segment_itr = begin() + (i + 1);
+      start_segment_itr = begin() + static_cast<TrajectoryPointConstIter::difference_type>(i);
+      end_segment_itr = begin() + static_cast<TrajectoryPointConstIter::difference_type>(i + 1);
+      if (search_monotonically_increasing)
+      {
+        last_sample_idx_ = i;
+      }
       return true;
     }
   }
@@ -153,6 +188,7 @@ bool Trajectory::sample(
   // whole animation has played out
   start_segment_itr = --end();
   end_segment_itr = end();
+  last_sample_idx_ = last_idx;
   output_state = (*start_segment_itr);
   // the trajectories in msg may have empty velocities/accel, so resize them
   if (output_state.velocities.empty())

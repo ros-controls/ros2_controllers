@@ -28,15 +28,16 @@ TEST(TestLoadAckermannSteeringController, load_controller)
     std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
 
   controller_manager::ControllerManager cm(
-    std::make_unique<hardware_interface::ResourceManager>(
-      ros2_control_test_assets::minimal_robot_urdf),
-    executor, "test_controller_manager");
+    executor, ros2_control_test_assets::minimal_robot_urdf, true, "test_controller_manager");
+  const std::string test_file_path =
+    std::string(TEST_FILES_DIRECTORY) + "/ackermann_steering_controller_params.yaml";
 
-  ASSERT_NE(
-    cm.load_controller(
-      "test_ackermann_steering_controller",
-      "ackermann_steering_controller/AckermannSteeringController"),
-    nullptr);
+  cm.set_parameter({"test_ackermann_steering_controller.params_file", test_file_path});
+  cm.set_parameter(
+    {"test_ackermann_steering_controller.type",
+     "ackermann_steering_controller/AckermannSteeringController"});
+
+  ASSERT_NE(cm.load_controller("test_ackermann_steering_controller"), nullptr);
 }
 
 int main(int argc, char ** argv)

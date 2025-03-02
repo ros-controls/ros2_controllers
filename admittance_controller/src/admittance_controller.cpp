@@ -16,21 +16,34 @@
 
 #include "admittance_controller/admittance_controller.hpp"
 
-#include <chrono>
 #include <cmath>
-#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "admittance_controller/admittance_rule_impl.hpp"
 #include "geometry_msgs/msg/wrench.hpp"
-#include "rcutils/logging_macros.h"
-#include "tf2_ros/buffer.h"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
 namespace admittance_controller
 {
+
+geometry_msgs::msg::Wrench add_wrenches(
+  const geometry_msgs::msg::Wrench & a, const geometry_msgs::msg::Wrench & b)
+{
+  geometry_msgs::msg::Wrench res;
+
+  res.force.x = a.force.x + b.force.x;
+  res.force.y = a.force.y + b.force.y;
+  res.force.z = a.force.z + b.force.z;
+
+  res.torque.x = a.torque.x + b.torque.x;
+  res.torque.y = a.torque.y + b.torque.y;
+  res.torque.z = a.torque.z + b.torque.z;
+
+  return res;
+}
+
 controller_interface::CallbackReturn AdmittanceController::on_init()
 {
   // initialize controller config
@@ -120,10 +133,11 @@ AdmittanceController::on_export_reference_interfaces()
   reference_interfaces_.resize(num_chainable_interfaces, std::numeric_limits<double>::quiet_NaN());
   position_reference_ = {};
   velocity_reference_ = {};
+  input_wrench_command_.reset();
 
   // assign reference interfaces
   auto index = 0ul;
-  for (const auto & interface : allowed_reference_interfaces_types_)
+  for (const auto & interface : admittance_->parameters_.chainable_command_interfaces)
   {
     for (const auto & joint : admittance_->parameters_.joints)
     {
@@ -133,9 +147,9 @@ AdmittanceController::on_export_reference_interfaces()
       {
         velocity_reference_.emplace_back(reference_interfaces_[index]);
       }
-      const auto full_name = joint + "/" + interface;
+      const auto exported_prefix = std::string(get_node()->get_name()) + "/" + joint;
       chainable_command_interfaces.emplace_back(hardware_interface::CommandInterface(
-        std::string(get_node()->get_name()), full_name, reference_interfaces_.data() + index));
+        exported_prefix, interface, reference_interfaces_.data() + index));
 
       index++;
     }
@@ -244,6 +258,12 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
   has_acceleration_state_interface_ = contains_interface_type(
     admittance_->parameters_.state_interfaces, hardware_interface::HW_IF_ACCELERATION);
 
+  if (!has_position_state_interface_)
+  {
+    RCLCPP_ERROR(get_node()->get_logger(), "Position state interface is required.");
+    return CallbackReturn::FAILURE;
+  }
+
   auto get_interface_list = [](const std::vector<std::string> & interface_types)
   {
     std::stringstream ss_command_interfaces;
@@ -269,6 +289,24 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
   input_joint_command_subscriber_ =
     get_node()->create_subscription<trajectory_msgs::msg::JointTrajectoryPoint>(
       "~/joint_references", rclcpp::SystemDefaultsQoS(), joint_command_callback);
+
+  input_wrench_command_subscriber_ =
+    get_node()->create_subscription<geometry_msgs::msg::WrenchStamped>(
+      "~/wrench_reference", rclcpp::SystemDefaultsQoS(),
+      [&](const geometry_msgs::msg::WrenchStamped & msg)
+      {
+        if (
+          msg.header.frame_id != admittance_->parameters_.ft_sensor.frame.id &&
+          !msg.header.frame_id.empty())
+        {
+          RCLCPP_ERROR_STREAM(
+            get_node()->get_logger(), "Ignoring wrench reference as it is on the wrong frame: "
+                                        << msg.header.frame_id << ". Expected reference frame: "
+                                        << admittance_->parameters_.ft_sensor.frame.id);
+          return;
+        }
+        input_wrench_command_.writeFromNonRT(msg);
+      });
   s_publisher_ = get_node()->create_publisher<control_msgs::msg::AdmittanceControllerState>(
     "~/status", rclcpp::SystemDefaultsQoS());
   state_publisher_ =
@@ -284,7 +322,9 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
     semantic_components::ForceTorqueSensor(admittance_->parameters_.ft_sensor.name));
 
   // configure admittance rule
-  if (admittance_->configure(get_node(), num_joints_) == controller_interface::return_type::ERROR)
+  if (
+    admittance_->configure(get_node(), num_joints_, this->get_robot_description()) ==
+    controller_interface::return_type::ERROR)
   {
     return controller_interface::CallbackReturn::ERROR;
   }
@@ -306,7 +346,7 @@ controller_interface::CallbackReturn AdmittanceController::on_activate(
   {
     auto it =
       std::find(allowed_interface_types_.begin(), allowed_interface_types_.end(), interface);
-    auto index = std::distance(allowed_interface_types_.begin(), it);
+    auto index = static_cast<size_t>(std::distance(allowed_interface_types_.begin(), it));
     if (!controller_interface::get_ordered_interfaces(
           state_interfaces_, admittance_->parameters_.joints, interface,
           joint_state_interface_[index]))
@@ -321,7 +361,7 @@ controller_interface::CallbackReturn AdmittanceController::on_activate(
   {
     auto it =
       std::find(allowed_interface_types_.begin(), allowed_interface_types_.end(), interface);
-    auto index = std::distance(allowed_interface_types_.begin(), it);
+    auto index = static_cast<size_t>(std::distance(allowed_interface_types_.begin(), it));
     if (!controller_interface::get_ordered_interfaces(
           command_interfaces_, command_joint_names_, interface, joint_command_interface_[index]))
     {
@@ -372,13 +412,22 @@ controller_interface::return_type AdmittanceController::update_reference_from_su
   // if message exists, load values into references
   if (joint_command_msg_.get())
   {
-    for (size_t i = 0; i < joint_command_msg_->positions.size(); ++i)
+    for (const auto & interface : admittance_->parameters_.chainable_command_interfaces)
     {
-      position_reference_[i].get() = joint_command_msg_->positions[i];
-    }
-    for (size_t i = 0; i < joint_command_msg_->velocities.size(); ++i)
-    {
-      velocity_reference_[i].get() = joint_command_msg_->velocities[i];
+      if (interface == hardware_interface::HW_IF_POSITION)
+      {
+        for (size_t i = 0; i < joint_command_msg_->positions.size(); ++i)
+        {
+          position_reference_[i].get() = joint_command_msg_->positions[i];
+        }
+      }
+      else if (interface == hardware_interface::HW_IF_VELOCITY)
+      {
+        for (size_t i = 0; i < joint_command_msg_->velocities.size(); ++i)
+        {
+          velocity_reference_[i].get() = joint_command_msg_->velocities[i];
+        }
+      }
     }
   }
 
@@ -400,8 +449,10 @@ controller_interface::return_type AdmittanceController::update_and_write_command
   // get all controller inputs
   read_state_from_hardware(joint_state_, ft_values_);
 
+  auto offsetted_ft_values = add_wrenches(ft_values_, input_wrench_command_.readFromRT()->wrench);
+
   // apply admittance control to reference to determine desired state
-  admittance_->update(joint_state_, ft_values_, reference_, period, reference_admittance_);
+  admittance_->update(joint_state_, offsetted_ft_values, reference_, period, reference_admittance_);
 
   // write calculated values to joint interfaces
   write_state_to_hardware(reference_admittance_);
@@ -428,8 +479,13 @@ controller_interface::CallbackReturn AdmittanceController::on_deactivate(
   // reset to prevent stale references
   for (size_t i = 0; i < num_joints_; i++)
   {
-    position_reference_[i].get() = std::numeric_limits<double>::quiet_NaN();
-    velocity_reference_[i].get() = std::numeric_limits<double>::quiet_NaN();
+    for (const auto & interface : admittance_->parameters_.chainable_command_interfaces)
+    {
+      if (interface == hardware_interface::HW_IF_POSITION)
+        position_reference_[i].get() = std::numeric_limits<double>::quiet_NaN();
+      else if (interface == hardware_interface::HW_IF_VELOCITY)
+        velocity_reference_[i].get() = std::numeric_limits<double>::quiet_NaN();
+    }
   }
 
   for (size_t index = 0; index < allowed_interface_types_.size(); ++index)
@@ -441,12 +497,6 @@ controller_interface::CallbackReturn AdmittanceController::on_deactivate(
   admittance_->reset(num_joints_);
 
   return CallbackReturn::SUCCESS;
-}
-
-controller_interface::CallbackReturn AdmittanceController::on_cleanup(
-  const rclcpp_lifecycle::State & /*previous_state*/)
-{
-  return controller_interface::CallbackReturn::SUCCESS;
 }
 
 controller_interface::CallbackReturn AdmittanceController::on_error(
@@ -470,7 +520,7 @@ void AdmittanceController::read_state_from_hardware(
   bool nan_acceleration = false;
 
   size_t pos_ind = 0;
-  size_t vel_ind = pos_ind + has_velocity_command_interface_;
+  size_t vel_ind = pos_ind + has_velocity_state_interface_;
   size_t acc_ind = vel_ind + has_acceleration_state_interface_;
   for (size_t joint_ind = 0; joint_ind < num_joints_; ++joint_ind)
   {
@@ -480,13 +530,13 @@ void AdmittanceController::read_state_from_hardware(
         state_interfaces_[pos_ind * num_joints_ + joint_ind].get_value();
       nan_position |= std::isnan(state_current.positions[joint_ind]);
     }
-    else if (has_velocity_state_interface_)
+    if (has_velocity_state_interface_)
     {
       state_current.velocities[joint_ind] =
         state_interfaces_[vel_ind * num_joints_ + joint_ind].get_value();
       nan_velocity |= std::isnan(state_current.velocities[joint_ind]);
     }
-    else if (has_acceleration_state_interface_)
+    if (has_acceleration_state_interface_)
     {
       state_current.accelerations[joint_ind] =
         state_interfaces_[acc_ind * num_joints_ + joint_ind].get_value();
@@ -523,8 +573,9 @@ void AdmittanceController::write_state_to_hardware(
 {
   // if any interface has nan values, assume state_commanded is the last command state
   size_t pos_ind = 0;
-  size_t vel_ind = pos_ind + has_velocity_command_interface_;
-  size_t acc_ind = vel_ind + has_acceleration_state_interface_;
+  size_t vel_ind =
+    (has_position_command_interface_) ? pos_ind + has_velocity_command_interface_ : pos_ind;
+  size_t acc_ind = vel_ind + has_acceleration_command_interface_;
   for (size_t joint_ind = 0; joint_ind < num_joints_; ++joint_ind)
   {
     if (has_position_command_interface_)
@@ -532,15 +583,15 @@ void AdmittanceController::write_state_to_hardware(
       command_interfaces_[pos_ind * num_joints_ + joint_ind].set_value(
         state_commanded.positions[joint_ind]);
     }
-    else if (has_velocity_command_interface_)
+    if (has_velocity_command_interface_)
     {
       command_interfaces_[vel_ind * num_joints_ + joint_ind].set_value(
-        state_commanded.positions[joint_ind]);
+        state_commanded.velocities[joint_ind]);
     }
-    else if (has_acceleration_command_interface_)
+    if (has_acceleration_command_interface_)
     {
       command_interfaces_[acc_ind * num_joints_ + joint_ind].set_value(
-        state_commanded.positions[joint_ind]);
+        state_commanded.accelerations[joint_ind]);
     }
   }
   last_commanded_ = state_commanded;
@@ -554,19 +605,28 @@ void AdmittanceController::read_state_reference_interfaces(
   // if any interface has nan values, assume state_reference is the last set reference
   for (size_t i = 0; i < num_joints_; ++i)
   {
-    // update position
-    if (std::isnan(position_reference_[i]))
+    for (const auto & interface : admittance_->parameters_.chainable_command_interfaces)
     {
-      position_reference_[i].get() = last_reference_.positions[i];
-    }
-    state_reference.positions[i] = position_reference_[i];
+      // update position
+      if (interface == hardware_interface::HW_IF_POSITION)
+      {
+        if (std::isnan(position_reference_[i]))
+        {
+          position_reference_[i].get() = last_reference_.positions[i];
+        }
+        state_reference.positions[i] = position_reference_[i];
+      }
 
-    // update velocity
-    if (std::isnan(velocity_reference_[i]))
-    {
-      velocity_reference_[i].get() = last_reference_.velocities[i];
+      // update velocity
+      if (interface == hardware_interface::HW_IF_VELOCITY)
+      {
+        if (std::isnan(velocity_reference_[i]))
+        {
+          velocity_reference_[i].get() = last_reference_.velocities[i];
+        }
+        state_reference.velocities[i] = velocity_reference_[i];
+      }
     }
-    state_reference.velocities[i] = velocity_reference_[i];
   }
 
   last_reference_.positions = state_reference.positions;

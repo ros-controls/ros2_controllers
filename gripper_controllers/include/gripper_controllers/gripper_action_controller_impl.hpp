@@ -40,6 +40,11 @@ void GripperActionController<HardwareInterface>::preempt_active_goal()
 template <const char * HardwareInterface>
 controller_interface::CallbackReturn GripperActionController<HardwareInterface>::on_init()
 {
+  RCLCPP_WARN(
+    get_node()->get_logger(),
+    "[Deprecated]: the `position_controllers/GripperActionController` and "
+    "`effort_controllers::GripperActionController` controllers are replaced by "
+    "'parallel_gripper_controllers/GripperActionController' controller");
   try
   {
     param_listener_ = std::make_shared<ParamListener>(get_node());
@@ -201,11 +206,6 @@ controller_interface::CallbackReturn GripperActionController<HardwareInterface>:
   const rclcpp_lifecycle::State &)
 {
   const auto logger = get_node()->get_logger();
-  if (!param_listener_)
-  {
-    RCLCPP_ERROR(get_node()->get_logger(), "Error encountered during init");
-    return controller_interface::CallbackReturn::ERROR;
-  }
   params_ = param_listener_->get_params();
 
   // Action status checking update rate
