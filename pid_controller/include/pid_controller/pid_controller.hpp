@@ -88,7 +88,7 @@ protected:
   realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerMeasuredStateMsg>> measured_state_;
 
   rclcpp::Service<ControllerModeSrvType>::SharedPtr set_feedforward_control_service_;
-  realtime_tools::RealtimeBuffer<bool> control_mode_;
+  realtime_tools::RealtimeBuffer<bool> feedforward_mode_enabled_;
 
   using ControllerStatePublisher = realtime_tools::RealtimePublisher<ControllerStateMsg>;
 

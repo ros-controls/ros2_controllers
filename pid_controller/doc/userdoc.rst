@@ -75,7 +75,7 @@ Services
 - <controller_name>/set_feedforward_control  [std_srvs/srv/SetBool]
 
 .. warning::
-   This service is being deprecated in favour of the ``enable_feedforward`` parameter.
+   This service is being deprecated in favour of setting the ``feedforward_gain`` parameter to a non-zero value.
 
 Publishers
 ,,,,,,,,,,,
@@ -90,6 +90,9 @@ List of parameters
 =========================
 .. generate_parameter_library_details:: ../src/pid_controller.yaml
 
+.. warning::
+   The parameter ``enable_feedforward`` is being deprecated in favour of setting the ``feedforward_gain`` parameter to a non-zero value.
+   This might cause different behaviour if currently the ``feedforward_gain`` is set to a non-zero value and not activated.
 
 An example parameter file
 =========================
