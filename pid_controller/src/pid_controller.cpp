@@ -250,7 +250,8 @@ controller_interface::CallbackReturn PidController::on_configure(
 
     RCLCPP_ERROR(
       get_node()->get_logger(),
-      "This service will be deprecated in favour of the 'enable_feedforward' parameter.");
+      "This service will be deprecated in favour of setting the ``feedforward_gain`` parameter to "
+      "a non-zero value.");
 
     response->success = true;
   };
