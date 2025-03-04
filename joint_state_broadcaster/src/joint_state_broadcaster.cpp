@@ -170,6 +170,17 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_configure(
       HW_IF_POSITION, HW_IF_VELOCITY, HW_IF_EFFORT);
   }
 
+  // joint_names reserve space for all joints
+  const auto max_joints_size =
+    (params_.joints.empty() ? model_.joints_.size() : params_.joints.size()) +
+    params_.extra_joints.size();
+  joint_names_.reserve(max_joints_size);
+  auto & joint_state_msg = realtime_joint_state_publisher_->msg_;
+  joint_state_msg.name.reserve(max_joints_size);
+  joint_state_msg.position.reserve(max_joints_size);
+  joint_state_msg.velocity.reserve(max_joints_size);
+  joint_state_msg.effort.reserve(max_joints_size);
+
   return CallbackReturn::SUCCESS;
 }
 
