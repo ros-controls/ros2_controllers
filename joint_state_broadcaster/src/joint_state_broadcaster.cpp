@@ -208,23 +208,6 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_deactivate(
   return CallbackReturn::SUCCESS;
 }
 
-template <typename T>
-bool has_any_key(
-  const std::unordered_map<std::string, T> & map, const std::vector<std::string> & keys)
-{
-  bool found_key = false;
-  for (const auto & key_item : map)
-  {
-    const auto & key = key_item.first;
-    if (std::find(keys.cbegin(), keys.cend(), key) != keys.cend())
-    {
-      found_key = true;
-      break;
-    }
-  }
-  return found_key;
-}
-
 bool JointStateBroadcaster::init_joint_data()
 {
   joint_names_.clear();
