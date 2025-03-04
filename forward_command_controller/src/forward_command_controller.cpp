@@ -53,6 +53,7 @@ controller_interface::CallbackReturn ForwardCommandController::read_parameters()
     return controller_interface::CallbackReturn::ERROR;
   }
 
+  command_interface_types_.clear();
   for (const auto & joint : params_.joints)
   {
     command_interface_types_.push_back(joint + "/" + params_.interface_name);
