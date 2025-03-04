@@ -52,11 +52,11 @@ install(
 
 if(BUILD_TESTING)
   ament_add_gmock(test_load_pid_trajectory test/test_load_pid_trajectory.cpp)
-  target_link_libraries(test_load_pid_trajectory pid_trajectory_plugin pid_trajectory_plugin_parameters)
+  target_link_libraries(test_load_pid_trajectory pid_trajectory_plugin)
   ament_target_dependencies(test_load_pid_trajectory ${THIS_PACKAGE_INCLUDE_DEPENDS})
 
   ament_add_gmock(test_pid_trajectory test/test_pid_trajectory.cpp)
-  target_link_libraries(test_pid_trajectory pid_trajectory_plugin pid_trajectory_plugin_parameters)
+  target_link_libraries(test_pid_trajectory pid_trajectory_plugin)
   ament_target_dependencies(test_pid_trajectory ${THIS_PACKAGE_INCLUDE_DEPENDS})
 endif()
 
