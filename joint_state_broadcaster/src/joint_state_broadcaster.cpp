@@ -234,12 +234,15 @@ bool JointStateBroadcaster::init_joint_data()
   }
 
   // loop in reverse order, this maintains the order of values at retrieval time
+  const std::vector<std::string> joint_state_interfaces = {
+    HW_IF_POSITION, HW_IF_VELOCITY, HW_IF_EFFORT};
   for (auto si = state_interfaces_.crbegin(); si != state_interfaces_.crend(); si++)
   {
+    const std::string prefix_name = si->get_prefix_name();
     // initialize map if name is new
-    if (name_if_value_mapping_.count(si->get_prefix_name()) == 0)
+    if (name_if_value_mapping_.count(prefix_name) == 0)
     {
-      name_if_value_mapping_[si->get_prefix_name()] = {};
+      name_if_value_mapping_[prefix_name] = {};
     }
     // add interface name
     std::string interface_name = si->get_interface_name();
@@ -247,39 +250,32 @@ bool JointStateBroadcaster::init_joint_data()
     {
       interface_name = map_interface_to_joint_state_[interface_name];
     }
-    name_if_value_mapping_[si->get_prefix_name()][interface_name] = kUninitializedValue;
-  }
+    name_if_value_mapping_[prefix_name][interface_name] = kUninitializedValue;
 
-  // filter state interfaces that have at least one of the joint_states fields,
-  // the rest will be ignored for this message
-  for (const auto & name_ifv : name_if_value_mapping_)
-  {
-    const auto & interfaces_and_values = name_ifv.second;
-    if (has_any_key(interfaces_and_values, {HW_IF_POSITION, HW_IF_VELOCITY, HW_IF_EFFORT}))
+    // filter state interfaces that have at least one of the joint_states fields,
+    // the rest will be ignored for this message
+    if (
+      std::find(joint_state_interfaces.begin(), joint_state_interfaces.end(), interface_name) !=
+      joint_state_interfaces.end())
     {
       if (
         !params_.use_urdf_to_filter || !params_.joints.empty() || !is_model_loaded_ ||
-        model_.getJoint(name_ifv.first))
+        model_.getJoint(prefix_name))
       {
-        joint_names_.push_back(name_ifv.first);
+        joint_names_.push_back(prefix_name);
       }
     }
   }
 
   // Add extra joints from parameters, each joint will be added to joint_names_ and
   // name_if_value_mapping_ if it is not already there
-  rclcpp::Parameter extra_joints;
-  if (get_node()->get_parameter("extra_joints", extra_joints))
+  for (const auto & extra_joint_name : params_.extra_joints)
   {
-    const std::vector<std::string> & extra_joints_names = extra_joints.as_string_array();
-    for (const auto & extra_joint_name : extra_joints_names)
+    if (name_if_value_mapping_.count(extra_joint_name) == 0)
     {
-      if (name_if_value_mapping_.count(extra_joint_name) == 0)
-      {
-        name_if_value_mapping_[extra_joint_name] = {
-          {HW_IF_POSITION, 0.0}, {HW_IF_VELOCITY, 0.0}, {HW_IF_EFFORT, 0.0}};
-        joint_names_.push_back(extra_joint_name);
-      }
+      name_if_value_mapping_[extra_joint_name] = {
+        {HW_IF_POSITION, 0.0}, {HW_IF_VELOCITY, 0.0}, {HW_IF_EFFORT, 0.0}};
+      joint_names_.push_back(extra_joint_name);
     }
   }
 
