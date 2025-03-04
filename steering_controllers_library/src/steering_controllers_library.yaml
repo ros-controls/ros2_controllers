@@ -119,3 +119,10 @@ steering_controllers_library:
     position_feedback is true then ``HW_IF_POSITION`` is taken as interface type",
     read_only: false,
   }
+
+  twist_input: {
+    type: bool,
+    default_value: true,
+    description: "Choose whether a Twist/TwistStamped or a AckermannDriveStamped message is used as input.",
+    read_only: false,
+  }
