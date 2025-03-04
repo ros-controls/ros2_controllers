@@ -256,7 +256,10 @@ bool JointStateBroadcaster::init_joint_data()
         !params_.use_urdf_to_filter || !params_.joints.empty() || !is_model_loaded_ ||
         model_.getJoint(prefix_name))
       {
-        joint_names_.push_back(prefix_name);
+        if (std::find(joint_names_.begin(), joint_names_.end(), prefix_name) == joint_names_.end())
+        {
+          joint_names_.push_back(prefix_name);
+        }
       }
     }
   }
