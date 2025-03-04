@@ -263,6 +263,7 @@ bool JointStateBroadcaster::init_joint_data()
       }
     }
   }
+  std::reverse(joint_names_.begin(), joint_names_.end());
 
   // Add extra joints from parameters, each joint will be added to joint_names_ and
   // name_if_value_mapping_ if it is not already there
