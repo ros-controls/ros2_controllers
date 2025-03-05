@@ -137,11 +137,16 @@ controller_interface::return_type ForwardControllersBase::update(
     return controller_interface::return_type::ERROR;
   }
 
+  const auto & data = (*joint_commands)->data;
+
   for (auto index = 0ul; index < command_interfaces_.size(); ++index)
   {
-    if (!command_interfaces_[index].set_value((*joint_commands)->data[index]))
+    if (!command_interfaces_[index].set_value(data[index]))
     {
-      RCLCPP_WARN(logger, "Error while setting the command interface value");
+      RCLCPP_WARN(
+        logger, "Error while setting command interface value at index %zu: value = %f", index,
+        data[index]);
+      return controller_interface::return_type::OK;
     }
 
     return controller_interface::return_type::OK;
