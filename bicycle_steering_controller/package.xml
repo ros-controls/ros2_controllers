@@ -22,6 +22,7 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <build_depend>generate_parameter_library</build_depend>
+  <build_depend>ros2_control_cmake</build_depend>
 
   <depend>backward_ros</depend>
   <depend>control_msgs</depend>
@@ -35,7 +36,6 @@
 
   <test_depend>ament_cmake_gmock</test_depend>
   <test_depend>controller_manager</test_depend>
-  <test_depend>hardware_interface</test_depend>
   <test_depend>hardware_interface_testing</test_depend>
   <test_depend>ros2_control_test_assets</test_depend>
 
