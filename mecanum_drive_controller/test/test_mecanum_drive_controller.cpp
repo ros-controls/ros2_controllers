@@ -562,7 +562,7 @@ TEST_F(
   EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z, 0.0);
 }
 
-TEST_F(MecanumDriveControllerTest, SideBySideAndRotationOdometryTest)
+TEST_F(MecanumDriveControllerTest, SideToSideAndRotationOdometryTest)
 {
   // Initialize controller
   SetUpController("test_mecanum_drive_controller_with_rotation");
@@ -575,7 +575,7 @@ TEST_F(MecanumDriveControllerTest, SideBySideAndRotationOdometryTest)
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(controller_->is_in_chained_mode(), true);
 
-  // create closure to set side by side motion, linear_y should be a parameter
+  // Setup reference interfaces for side to side motion
   auto side_by_side_motion = [this](double linear_y)
   {
     controller_->reference_interfaces_[0] = 0;         // linear x
@@ -583,15 +583,13 @@ TEST_F(MecanumDriveControllerTest, SideBySideAndRotationOdometryTest)
     controller_->reference_interfaces_[2] = 0;         // angular z
   };
 
-  // create rotation
+  // Setup reference interfaces for rotation
   auto rotation_motion = [this](double rotation_velocity)
   {
     controller_->reference_interfaces_[0] = 0;                  // linear x
     controller_->reference_interfaces_[1] = 0;                  // linear y
     controller_->reference_interfaces_[2] = rotation_velocity;  // angular z
   };
-
-  // check the odometry
 
   const double update_rate = 50.0;  // 50 Hz
   const double dt = 1.0 / update_rate;
@@ -604,23 +602,19 @@ TEST_F(MecanumDriveControllerTest, SideBySideAndRotationOdometryTest)
     switch (count % 4)
     {
       case 0:
-        // create side to side motion
         side_by_side_motion(2.0);
         break;
       case 1:
-        // rotation motion
         rotation_motion(-0.5);
         break;
       case 2:
-        // side to side motion
         side_by_side_motion(-2.0);
         break;
       case 3:
-        // rotation motion
         rotation_motion(0.5);
     }
 
-    // update method
+    // Call update method
     ASSERT_EQ(
       controller_->update(current_time, rclcpp::Duration::from_seconds(dt)),
       controller_interface::return_type::OK);
@@ -628,7 +622,7 @@ TEST_F(MecanumDriveControllerTest, SideBySideAndRotationOdometryTest)
     current_time += rclcpp::Duration::from_seconds(dt);
     count++;
 
-    // update the state of the wheels
+    // Update the state of the wheels for subsequent loop
     size_t fl_index = controller_->get_front_left_wheel_index();
     size_t fr_index = controller_->get_front_right_wheel_index();
     size_t rl_index = controller_->get_rear_left_wheel_index();

@@ -82,7 +82,7 @@ class TestableMecanumDriveController : public mecanum_drive_controller::MecanumD
   FRIEND_TEST(
     MecanumDriveControllerTest,
     when_ref_timeout_zero_for_reference_callback_expect_reference_msg_being_used_only_once);
-  FRIEND_TEST(MecanumDriveControllerTest, SideBySideAndRotationOdometryTest);
+  FRIEND_TEST(MecanumDriveControllerTest, SideToSideAndRotationOdometryTest);
 
 public:
   controller_interface::CallbackReturn on_configure(
