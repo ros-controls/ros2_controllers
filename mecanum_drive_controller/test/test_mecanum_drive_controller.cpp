@@ -161,13 +161,11 @@ TEST_F(
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_value<double>().value(), 101.101);
+  ASSERT_EQ(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_value(), 101.101);
   ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_TRUE(
-    std::isnan(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_value<double>().value()));
+  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_value()));
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_TRUE(
-    std::isnan(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_value<double>().value()));
+  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_value()));
 
   ASSERT_EQ(
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
@@ -385,7 +383,7 @@ TEST_F(
   }
   for (size_t i = 0; i < controller_->command_interfaces_.size(); ++i)
   {
-    EXPECT_EQ(controller_->command_interfaces_[i].get_value<double>().value(), 0.0);
+    EXPECT_EQ(controller_->command_interfaces_[i].get_value(), 0.0);
   }
 
   std::shared_ptr<ControllerReferenceMsg> msg_2 = std::make_shared<ControllerReferenceMsg>();
@@ -424,7 +422,7 @@ TEST_F(
 
   for (size_t i = 0; i < controller_->command_interfaces_.size(); ++i)
   {
-    EXPECT_EQ(controller_->command_interfaces_[i].get_value<double>().value(), 3.0);
+    EXPECT_EQ(controller_->command_interfaces_[i].get_value(), 3.0);
   }
 }
 
@@ -483,7 +481,7 @@ TEST_F(
   }
   for (size_t i = 0; i < controller_->command_interfaces_.size(); ++i)
   {
-    EXPECT_EQ(controller_->command_interfaces_[i].get_value<double>().value(), 6.0);
+    EXPECT_EQ(controller_->command_interfaces_[i].get_value(), 6.0);
   }
 }
 
@@ -635,14 +633,10 @@ TEST_F(MecanumDriveControllerTest, SideBySideAndRotationOdometryTest)
     size_t fr_index = controller_->get_front_right_wheel_index();
     size_t rl_index = controller_->get_rear_left_wheel_index();
     size_t rr_index = controller_->get_rear_right_wheel_index();
-    joint_state_values_[fl_index] =
-      controller_->command_interfaces_[fl_index].get_value<double>().value();
-    joint_state_values_[fr_index] =
-      controller_->command_interfaces_[fr_index].get_value<double>().value();
-    joint_state_values_[rl_index] =
-      controller_->command_interfaces_[rl_index].get_value<double>().value();
-    joint_state_values_[rr_index] =
-      controller_->command_interfaces_[rr_index].get_value<double>().value();
+    joint_state_values_[fl_index] = controller_->command_interfaces_[fl_index].get_value();
+    joint_state_values_[fr_index] = controller_->command_interfaces_[fr_index].get_value();
+    joint_state_values_[rl_index] = controller_->command_interfaces_[rl_index].get_value();
+    joint_state_values_[rr_index] = controller_->command_interfaces_[rr_index].get_value();
   }
 
   RCLCPP_INFO(
