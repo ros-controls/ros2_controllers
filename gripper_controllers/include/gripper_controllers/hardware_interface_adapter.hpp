@@ -69,9 +69,10 @@ class HardwareInterfaceAdapter<hardware_interface::HW_IF_POSITION>
 public:
   bool init(
     std::optional<std::reference_wrapper<hardware_interface::LoanedCommandInterface>> joint_handle,
-    const rclcpp_lifecycle::LifecycleNode::SharedPtr & /* node */)
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr & node)
   {
     joint_handle_ = joint_handle;
+    node_ = node;
     return true;
   }
 
@@ -83,12 +84,18 @@ public:
     double /* error_velocity */, double max_allowed_effort)
   {
     // Forward desired position to command
-    joint_handle_->get().set_value(desired_position);
+    if (!joint_handle_->get().set_value(desired_position))
+    {
+      RCLCPP_WARN(
+        node_->get_logger(), "Error while setting desired position to value = %lf",
+        desired_position);
+    }
     return max_allowed_effort;
   }
 
 private:
   std::optional<std::reference_wrapper<hardware_interface::LoanedCommandInterface>> joint_handle_;
+  std::shared_ptr<rclcpp_lifecycle::LifecycleNode> node_;
 };
 
 /**
@@ -129,6 +136,7 @@ public:
     const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node)
   {
     joint_handle_ = joint_handle;
+    node_ = node;
     // Init PID gains from ROS parameter server
     const std::string prefix = "gains." + joint_handle_->get().get_prefix_name();
     const auto k_p = auto_declare<double>(node, prefix + ".p", 0.0);
@@ -148,7 +156,10 @@ public:
     }
     // Reset PIDs, zero effort commands
     pid_->reset();
-    joint_handle_->get().set_value(0.0);
+    if (!joint_handle_->get().set_value(0.0))
+    {
+      RCLCPP_WARN(node_->get_logger(), "Error while setting joint handle to value 0.0");
+    }
   }
 
   void stopping(const rclcpp::Time & /* time */) {}
@@ -168,7 +179,10 @@ public:
     double command = pid_->compute_command(error_position, error_velocity, period);
     command = std::min<double>(
       fabs(max_allowed_effort), std::max<double>(-fabs(max_allowed_effort), command));
-    joint_handle_->get().set_value(command);
+    if (!joint_handle_->get().set_value(command))
+    {
+      RCLCPP_WARN(node_->get_logger(), "Error while setting command value = %lf", command);
+    }
     last_update_time_ = std::chrono::steady_clock::now();
     return command;
   }
@@ -178,6 +192,7 @@ private:
   PidPtr pid_;
   std::optional<std::reference_wrapper<hardware_interface::LoanedCommandInterface>> joint_handle_;
   std::chrono::steady_clock::time_point last_update_time_;
+  std::shared_ptr<rclcpp_lifecycle::LifecycleNode> node_;
 };
 
 #endif  // GRIPPER_CONTROLLERS__HARDWARE_INTERFACE_ADAPTER_HPP_
