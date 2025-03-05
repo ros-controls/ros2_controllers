@@ -526,21 +526,37 @@ void AdmittanceController::read_state_from_hardware(
   {
     if (has_position_state_interface_)
     {
-      state_current.positions[joint_ind] =
-        state_interfaces_[pos_ind * num_joints_ + joint_ind].get_value();
-      nan_position |= std::isnan(state_current.positions[joint_ind]);
+      auto state_current_position_op =
+        state_interfaces_[pos_ind * num_joints_ + joint_ind].get_optional();
+      nan_position |=
+        !state_current_position_op.has_value() || std::isnan(state_current_position_op.has_value());
+      if (state_current_position_op.has_value())
+      {
+        state_current.positions[joint_ind] = state_current_position_op.value();
+      }
     }
     if (has_velocity_state_interface_)
     {
-      state_current.velocities[joint_ind] =
-        state_interfaces_[vel_ind * num_joints_ + joint_ind].get_value();
-      nan_velocity |= std::isnan(state_current.velocities[joint_ind]);
+      auto state_current_velocity_op =
+        state_interfaces_[vel_ind * num_joints_ + joint_ind].get_optional();
+      nan_velocity |=
+        !state_current_velocity_op.has_value() || std::isnan(state_current_velocity_op.value());
+
+      if (state_current_velocity_op.has_value())
+      {
+        state_current.velocities[joint_ind] = state_current_velocity_op.value();
+      }
     }
     if (has_acceleration_state_interface_)
     {
-      state_current.accelerations[joint_ind] =
-        state_interfaces_[acc_ind * num_joints_ + joint_ind].get_value();
-      nan_acceleration |= std::isnan(state_current.accelerations[joint_ind]);
+      auto state_current_acceleration_op =
+        state_interfaces_[acc_ind * num_joints_ + joint_ind].get_optional();
+      nan_acceleration |= !state_current_acceleration_op.has_value() ||
+                          std::isnan(state_current_acceleration_op.has_value());
+      if (state_current_acceleration_op.has_value())
+      {
+        state_current.accelerations[joint_ind] = state_current_acceleration_op.value();
+      }
     }
   }
 
@@ -576,22 +592,30 @@ void AdmittanceController::write_state_to_hardware(
   size_t vel_ind =
     (has_position_command_interface_) ? pos_ind + has_velocity_command_interface_ : pos_ind;
   size_t acc_ind = vel_ind + has_acceleration_command_interface_;
+
+  auto logger = get_node()->get_logger();
+
   for (size_t joint_ind = 0; joint_ind < num_joints_; ++joint_ind)
   {
+    bool success = true;
     if (has_position_command_interface_)
     {
-      command_interfaces_[pos_ind * num_joints_ + joint_ind].set_value(
+      success &= command_interfaces_[pos_ind * num_joints_ + joint_ind].set_value(
         state_commanded.positions[joint_ind]);
     }
     if (has_velocity_command_interface_)
     {
-      command_interfaces_[vel_ind * num_joints_ + joint_ind].set_value(
+      success &= command_interfaces_[vel_ind * num_joints_ + joint_ind].set_value(
         state_commanded.velocities[joint_ind]);
     }
     if (has_acceleration_command_interface_)
     {
-      command_interfaces_[acc_ind * num_joints_ + joint_ind].set_value(
+      success &= command_interfaces_[acc_ind * num_joints_ + joint_ind].set_value(
         state_commanded.accelerations[joint_ind]);
+    }
+    if (!success)
+    {
+      RCLCPP_WARN(logger, "Error while setting command for joint %zu.", joint_ind);
     }
   }
   last_commanded_ = state_commanded;
