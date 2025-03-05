@@ -161,11 +161,11 @@ TEST_F(
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_value(), 101.101);
+  ASSERT_EQ(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_optional().value(), 101.101);
   ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_value()));
+  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_optional().value()));
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_value()));
+  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_optional().value()));
 
   ASSERT_EQ(
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
@@ -383,7 +383,7 @@ TEST_F(
   }
   for (size_t i = 0; i < controller_->command_interfaces_.size(); ++i)
   {
-    EXPECT_EQ(controller_->command_interfaces_[i].get_value(), 0.0);
+    EXPECT_EQ(controller_->command_interfaces_[i].get_optional().value(), 0.0);
   }
 
   std::shared_ptr<ControllerReferenceMsg> msg_2 = std::make_shared<ControllerReferenceMsg>();
@@ -422,7 +422,7 @@ TEST_F(
 
   for (size_t i = 0; i < controller_->command_interfaces_.size(); ++i)
   {
-    EXPECT_EQ(controller_->command_interfaces_[i].get_value(), 3.0);
+    EXPECT_EQ(controller_->command_interfaces_[i].get_optional().value(), 3.0);
   }
 }
 
@@ -481,7 +481,7 @@ TEST_F(
   }
   for (size_t i = 0; i < controller_->command_interfaces_.size(); ++i)
   {
-    EXPECT_EQ(controller_->command_interfaces_[i].get_value(), 6.0);
+    EXPECT_EQ(controller_->command_interfaces_[i].get_optional().value(), 6.0);
   }
 }
 
