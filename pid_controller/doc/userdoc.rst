@@ -88,11 +88,12 @@ The PID controller uses the `generate_parameter_library <https://github.com/Pick
 
 List of parameters
 =========================
+.. warning::
+   The parameter ``enable_feedforward`` is being deprecated in favor of setting the ``feedforward_gain`` parameter to a non-zero value.
+   This might cause different behavior if currently the ``feedforward_gain`` is set to a non-zero value and not activated.
+
 .. generate_parameter_library_details:: ../src/pid_controller.yaml
 
-.. warning::
-   The parameter ``enable_feedforward`` is being deprecated in favour of setting the ``feedforward_gain`` parameter to a non-zero value.
-   This might cause different behaviour if currently the ``feedforward_gain`` is set to a non-zero value and not activated.
 
 An example parameter file
 =========================
