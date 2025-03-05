@@ -107,7 +107,13 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
     REAR_LEFT, params_.rear_left_wheel_command_joint_name,
     params_.rear_left_wheel_state_joint_name);
 
-  // Set wheel params for the odometry computation
+  // initialize odometry
+  std::array<double, PLANAR_POINT_DIM> base_frame_offset = {
+    {params_.kinematics.base_frame_offset.x, params_.kinematics.base_frame_offset.y,
+     params_.kinematics.base_frame_offset.theta}};
+  odometry_.init(get_node()->now(), base_frame_offset);
+
+  // Set wheels params for the odometry computation
   odometry_.setWheelsParams(
     params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis,
     params_.kinematics.wheels_radius);
@@ -375,10 +381,13 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
   const rclcpp::Time & time, const rclcpp::Duration & period)
 {
   // FORWARD KINEMATICS (odometry).
-  const double wheel_front_left_state_vel = state_interfaces_[FRONT_LEFT].get_value();
-  const double wheel_front_right_state_vel = state_interfaces_[FRONT_RIGHT].get_value();
-  const double wheel_rear_right_state_vel = state_interfaces_[REAR_RIGHT].get_value();
-  const double wheel_rear_left_state_vel = state_interfaces_[REAR_LEFT].get_value();
+  const double wheel_front_left_state_vel =
+    state_interfaces_[FRONT_LEFT].get_value<double>().value();
+  const double wheel_front_right_state_vel =
+    state_interfaces_[FRONT_RIGHT].get_value<double>().value();
+  const double wheel_rear_right_state_vel =
+    state_interfaces_[REAR_RIGHT].get_value<double>().value();
+  const double wheel_rear_left_state_vel = state_interfaces_[REAR_LEFT].get_value<double>().value();
 
   if (
     !std::isnan(wheel_front_left_state_vel) && !std::isnan(wheel_rear_left_state_vel) &&
@@ -498,13 +507,13 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
   {
     controller_state_publisher_->msg_.header.stamp = get_node()->now();
     controller_state_publisher_->msg_.front_left_wheel_velocity =
-      state_interfaces_[FRONT_LEFT].get_value();
+      state_interfaces_[FRONT_LEFT].get_value<double>().value();
     controller_state_publisher_->msg_.front_right_wheel_velocity =
-      state_interfaces_[FRONT_RIGHT].get_value();
+      state_interfaces_[FRONT_RIGHT].get_value<double>().value();
     controller_state_publisher_->msg_.back_right_wheel_velocity =
-      state_interfaces_[REAR_RIGHT].get_value();
+      state_interfaces_[REAR_RIGHT].get_value<double>().value();
     controller_state_publisher_->msg_.back_left_wheel_velocity =
-      state_interfaces_[REAR_LEFT].get_value();
+      state_interfaces_[REAR_LEFT].get_value<double>().value();
     controller_state_publisher_->msg_.reference_velocity.linear.x = reference_interfaces_[0];
     controller_state_publisher_->msg_.reference_velocity.linear.y = reference_interfaces_[1];
     controller_state_publisher_->msg_.reference_velocity.angular.z = reference_interfaces_[2];

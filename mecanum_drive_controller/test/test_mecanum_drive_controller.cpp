@@ -161,11 +161,13 @@ TEST_F(
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_value(), 101.101);
+  ASSERT_EQ(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_value<double>().value(), 101.101);
   ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_value()));
+  ASSERT_TRUE(
+    std::isnan(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_value<double>().value()));
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_value()));
+  ASSERT_TRUE(
+    std::isnan(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_value<double>().value()));
 
   ASSERT_EQ(
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
@@ -383,7 +385,7 @@ TEST_F(
   }
   for (size_t i = 0; i < controller_->command_interfaces_.size(); ++i)
   {
-    EXPECT_EQ(controller_->command_interfaces_[i].get_value(), 0.0);
+    EXPECT_EQ(controller_->command_interfaces_[i].get_value<double>().value(), 0.0);
   }
 
   std::shared_ptr<ControllerReferenceMsg> msg_2 = std::make_shared<ControllerReferenceMsg>();
@@ -422,7 +424,7 @@ TEST_F(
 
   for (size_t i = 0; i < controller_->command_interfaces_.size(); ++i)
   {
-    EXPECT_EQ(controller_->command_interfaces_[i].get_value(), 3.0);
+    EXPECT_EQ(controller_->command_interfaces_[i].get_value<double>().value(), 3.0);
   }
 }
 
@@ -481,7 +483,7 @@ TEST_F(
   }
   for (size_t i = 0; i < controller_->command_interfaces_.size(); ++i)
   {
-    EXPECT_EQ(controller_->command_interfaces_[i].get_value(), 6.0);
+    EXPECT_EQ(controller_->command_interfaces_[i].get_value<double>().value(), 6.0);
   }
 }
 
@@ -560,6 +562,97 @@ TEST_F(
   EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.linear.x, 1.5);
   EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.linear.y, 0.0);
   EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z, 0.0);
+}
+
+TEST_F(MecanumDriveControllerTest, SideBySideAndRotationOdometryTest)
+{
+  // Initialize controller
+  SetUpController("test_mecanum_drive_controller_with_rotation");
+
+  // Configure
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  // Activate in chained mode
+  controller_->set_chained_mode(true);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(controller_->is_in_chained_mode(), true);
+
+  // create closure to set side by side motion, linear_y should be a parameter
+  auto side_by_side_motion = [this](double linear_y)
+  {
+    controller_->reference_interfaces_[0] = 0;         // linear x
+    controller_->reference_interfaces_[1] = linear_y;  // linear y
+    controller_->reference_interfaces_[2] = 0;         // angular z
+  };
+
+  // create rotation
+  auto rotation_motion = [this](double rotation_velocity)
+  {
+    controller_->reference_interfaces_[0] = 0;                  // linear x
+    controller_->reference_interfaces_[1] = 0;                  // linear y
+    controller_->reference_interfaces_[2] = rotation_velocity;  // angular z
+  };
+
+  // check the odometry
+
+  const double update_rate = 50.0;  // 50 Hz
+  const double dt = 1.0 / update_rate;
+  const double test_duration = 1.0;  // 1 second test
+  auto current_time = controller_->get_node()->now();
+
+  auto count = 0;
+  for (double t = 0; t < test_duration; t += dt)
+  {
+    switch (count % 4)
+    {
+      case 0:
+        // create side to side motion
+        side_by_side_motion(2.0);
+        break;
+      case 1:
+        // rotation motion
+        rotation_motion(-0.5);
+        break;
+      case 2:
+        // side to side motion
+        side_by_side_motion(-2.0);
+        break;
+      case 3:
+        // rotation motion
+        rotation_motion(0.5);
+    }
+
+    // update method
+    ASSERT_EQ(
+      controller_->update(current_time, rclcpp::Duration::from_seconds(dt)),
+      controller_interface::return_type::OK);
+
+    current_time += rclcpp::Duration::from_seconds(dt);
+    count++;
+
+    // update the state of the wheels
+    size_t fl_index = controller_->get_front_left_wheel_index();
+    size_t fr_index = controller_->get_front_right_wheel_index();
+    size_t rl_index = controller_->get_rear_left_wheel_index();
+    size_t rr_index = controller_->get_rear_right_wheel_index();
+    joint_state_values_[fl_index] =
+      controller_->command_interfaces_[fl_index].get_value<double>().value();
+    joint_state_values_[fr_index] =
+      controller_->command_interfaces_[fr_index].get_value<double>().value();
+    joint_state_values_[rl_index] =
+      controller_->command_interfaces_[rl_index].get_value<double>().value();
+    joint_state_values_[rr_index] =
+      controller_->command_interfaces_[rr_index].get_value<double>().value();
+  }
+
+  RCLCPP_INFO(
+    controller_->get_node()->get_logger(), "odometry: %f, %f, %f", controller_->odometry_.getX(),
+    controller_->odometry_.getY(), controller_->odometry_.getRz());
+
+  // Verify odometry remains bounded
+  EXPECT_LT(std::abs(controller_->odometry_.getX()), 1.0);
+  EXPECT_LT(std::abs(controller_->odometry_.getY()), 1.0);
+  EXPECT_LT(std::abs(controller_->odometry_.getRz()), M_PI);
 }
 
 int main(int argc, char ** argv)
