@@ -90,7 +90,7 @@ List of parameters
 =========================
 .. warning::
    The parameter ``enable_feedforward`` is being deprecated in favor of setting the ``feedforward_gain`` parameter to a non-zero value.
-   This might cause different behavior if currently the ``feedforward_gain`` is set to a non-zero value and not activated.
+   This might cause different behavior in the future if currently the ``feedforward_gain`` is set to a non-zero value and not activated.
 
 .. generate_parameter_library_details:: ../src/pid_controller.yaml
 
