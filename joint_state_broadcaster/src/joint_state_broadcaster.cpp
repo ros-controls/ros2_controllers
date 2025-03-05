@@ -352,11 +352,18 @@ controller_interface::return_type JointStateBroadcaster::update(
     {
       interface_name = map_interface_to_joint_state_[interface_name];
     }
+    const auto state_interface_op = state_interface.get_optional();
+    if (!state_interface_op.has_value())
+    {
+      RCLCPP_DEBUG(
+        get_node()->get_logger(),
+        "Unable to retrieve data from state interface %s: ", state_interface.get_name().c_str());
+    }
     name_if_value_mapping_[state_interface.get_prefix_name()][interface_name] =
-      state_interface.get_value();
+      state_interface_op.value();
     RCLCPP_DEBUG(
       get_node()->get_logger(), "%s: %f\n", state_interface.get_name().c_str(),
-      state_interface.get_value());
+      state_interface_op.value());
   }
 
   if (realtime_joint_state_publisher_ && realtime_joint_state_publisher_->trylock())
