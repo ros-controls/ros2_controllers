@@ -20,8 +20,8 @@
 
 #include <memory>
 
+#include "ackermann_steering_controller/ackermann_steering_controller_parameters.hpp"
 #include "ackermann_steering_controller/visibility_control.h"
-#include "ackermann_steering_controller_parameters.hpp"
 #include "steering_controllers_library/steering_controllers_library.hpp"
 
 namespace ackermann_steering_controller

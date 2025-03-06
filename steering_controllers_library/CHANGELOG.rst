@@ -2,6 +2,28 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.42.1 (2025-02-24)
+-------------------
+
+2.42.0 (2025-02-17)
+-------------------
+* Update paths of GPL includes (backport `#1487 <https://github.com/ros-controls/ros2_controllers/issues/1487>`_) (`#1493 <https://github.com/ros-controls/ros2_controllers/issues/1493>`_)
+* Contributors: Christoph Fröhlich
+
+2.41.0 (2025-01-13)
+-------------------
+* Update generate_parameter_library dependency in steering_controllers_library (backport `#1465 <https://github.com/ros-controls/ros2_controllers/issues/1465>`_) (`#1468 <https://github.com/ros-controls/ros2_controllers/issues/1468>`_)
+* Fix typos in steering_controllers_lib (backport `#1464 <https://github.com/ros-controls/ros2_controllers/issues/1464>`_) (`#1466 <https://github.com/ros-controls/ros2_controllers/issues/1466>`_)
+* Contributors: mergify[bot]
+
+2.40.0 (2025-01-01)
+-------------------
+* fix(timeout): do not reset steer wheels to 0. on timeout (backport `#1289 <https://github.com/ros-controls/ros2_controllers/issues/1289>`_) (`#1452 <https://github.com/ros-controls/ros2_controllers/issues/1452>`_)
+* steering_controllers_library: Add `reduce_wheel_speed_until_steering_reached` parameter (backport `#1314 <https://github.com/ros-controls/ros2_controllers/issues/1314>`_) (`#1429 <https://github.com/ros-controls/ros2_controllers/issues/1429>`_)
+* Use the .hpp headers from `realtime_tools` package (backport `#1406 <https://github.com/ros-controls/ros2_controllers/issues/1406>`_) (`#1427 <https://github.com/ros-controls/ros2_controllers/issues/1427>`_)
+* [CI] Add clang job and setup concurrency (backport `#1407 <https://github.com/ros-controls/ros2_controllers/issues/1407>`_) (`#1418 <https://github.com/ros-controls/ros2_controllers/issues/1418>`_)
+* Contributors: mergify[bot]
+
 2.39.0 (2024-12-03)
 -------------------
 * Update maintainers and add url tags (`#1363 <https://github.com/ros-controls/ros2_controllers/issues/1363>`_) (`#1364 <https://github.com/ros-controls/ros2_controllers/issues/1364>`_)

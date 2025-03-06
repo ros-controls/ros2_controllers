@@ -21,20 +21,17 @@
 #include <utility>
 #include <vector>
 
-// Test on_configure returns ERROR when a required parameter is missing
-TEST_P(AdmittanceControllerTestParameterizedMissingParameters, one_parameter_is_missing)
+// Test on_init returns ERROR when a required parameter is missing
+TEST_P(AdmittanceControllerTestParameterizedMissingParameters, one_init_parameter_is_missing)
 {
   ASSERT_EQ(SetUpController(GetParam()), controller_interface::return_type::ERROR);
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
 }
 
 INSTANTIATE_TEST_SUITE_P(
-  MissingMandatoryParameterDuringConfiguration,
-  AdmittanceControllerTestParameterizedMissingParameters,
+  MissingMandatoryParameterDuringInit, AdmittanceControllerTestParameterizedMissingParameters,
   ::testing::Values(
-    "admittance.mass", "admittance.selected_axes", "admittance.stiffness",
-    "chainable_command_interfaces", "command_interfaces", "control.frame.id",
-    "fixed_world_frame.frame.id", "ft_sensor.frame.id", "ft_sensor.name",
+    "admittance.mass", "admittance.selected_axes", "admittance.stiffness", "command_interfaces",
+    "control.frame.id", "fixed_world_frame.frame.id", "ft_sensor.frame.id", "ft_sensor.name",
     "gravity_compensation.CoG.pos", "gravity_compensation.frame.id", "joints", "kinematics.base",
     "kinematics.plugin_name", "kinematics.plugin_package", "kinematics.tip", "state_interfaces"));
 
@@ -182,6 +179,49 @@ TEST_F(AdmittanceControllerTest, activate_success)
   ASSERT_EQ(
     controller_->command_interfaces_.size(), command_interface_types_.size() * joint_names_.size());
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+}
+
+TEST_F(AdmittanceControllerTest, missing_pos_state_interface)
+{
+  auto overrides = {rclcpp::Parameter("state_interfaces", std::vector<std::string>{"velocity"})};
+  SetUpController("test_admittance_controller", overrides);
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_FAILURE);
+}
+
+TEST_F(AdmittanceControllerTest, only_vel_command_interface)
+{
+  command_interface_types_ = {"velocity"};
+  auto overrides = {rclcpp::Parameter("command_interfaces", std::vector<std::string>{"velocity"})};
+  SetUpController("test_admittance_controller", overrides);
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(
+    controller_->update_and_write_commands(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+}
+
+TEST_F(AdmittanceControllerTest, only_pos_reference_interface)
+{
+  auto overrides = {
+    rclcpp::Parameter("chainable_command_interfaces", std::vector<std::string>{"position"})};
+  SetUpController("test_admittance_controller", overrides);
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+}
+
+TEST_F(AdmittanceControllerTest, only_vel_reference_interface)
+{
+  auto overrides = {
+    rclcpp::Parameter("chainable_command_interfaces", std::vector<std::string>{"velocity"})};
+  SetUpController("test_admittance_controller", overrides);
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+}
+
+TEST_F(AdmittanceControllerTest, invalid_reference_interface)
+{
+  auto overrides = {rclcpp::Parameter(
+    "chainable_command_interfaces", std::vector<std::string>{"invalid_interface"})};
+  SetUpController("test_admittance_controller", overrides);
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
 }
 
 TEST_F(AdmittanceControllerTest, update_success)

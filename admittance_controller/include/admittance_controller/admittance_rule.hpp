@@ -24,6 +24,7 @@
 #include <string>
 #include <vector>
 
+#include "admittance_controller/admittance_controller_parameters.hpp"
 #include "control_msgs/msg/admittance_controller_state.hpp"
 #include "control_toolbox/filters.hpp"
 #include "controller_interface/controller_interface.hpp"

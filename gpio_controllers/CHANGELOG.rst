@@ -1,28 +1,27 @@
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Changelog for package ros2_controllers_test_nodes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Changelog for package gpio_controllers
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 2.42.1 (2025-02-24)
 -------------------
 
 2.42.0 (2025-02-17)
 -------------------
+* Update paths of GPL includes (backport `#1487 <https://github.com/ros-controls/ros2_controllers/issues/1487>`_) (`#1493 <https://github.com/ros-controls/ros2_controllers/issues/1493>`_)
+* Contributors: Christoph Fröhlich
 
 2.41.0 (2025-01-13)
 -------------------
 
 2.40.0 (2025-01-01)
 -------------------
-* Don't call shutdown() after an exception (`#1400 <https://github.com/ros-controls/ros2_controllers/issues/1400>`_) (`#1411 <https://github.com/ros-controls/ros2_controllers/issues/1411>`_)
+* Use the .hpp headers from `realtime_tools` package (backport `#1406 <https://github.com/ros-controls/ros2_controllers/issues/1406>`_) (`#1427 <https://github.com/ros-controls/ros2_controllers/issues/1427>`_)
+* [CI] Add clang job and setup concurrency (backport `#1407 <https://github.com/ros-controls/ros2_controllers/issues/1407>`_) (`#1418 <https://github.com/ros-controls/ros2_controllers/issues/1418>`_)
+* Gpio command controller (backport `#1251 <https://github.com/ros-controls/ros2_controllers/issues/1251>`_) (`#1372 <https://github.com/ros-controls/ros2_controllers/issues/1372>`_)
 * Contributors: mergify[bot]
 
 2.39.0 (2024-12-03)
 -------------------
-* Add another dependency (`#1382 <https://github.com/ros-controls/ros2_controllers/issues/1382>`_) (`#1384 <https://github.com/ros-controls/ros2_controllers/issues/1384>`_)
-* Add missing deps for test_nodes (`#1378 <https://github.com/ros-controls/ros2_controllers/issues/1378>`_) (`#1381 <https://github.com/ros-controls/ros2_controllers/issues/1381>`_)
-* test_nodes: catch keyboard interrupt and add simple launch tests (`#1369 <https://github.com/ros-controls/ros2_controllers/issues/1369>`_) (`#1371 <https://github.com/ros-controls/ros2_controllers/issues/1371>`_)
-* Update maintainers and add url tags (`#1363 <https://github.com/ros-controls/ros2_controllers/issues/1363>`_) (`#1364 <https://github.com/ros-controls/ros2_controllers/issues/1364>`_)
-* Contributors: mergify[bot]
 
 2.38.0 (2024-11-09)
 -------------------
@@ -119,13 +118,9 @@ Changelog for package ros2_controllers_test_nodes
 
 2.14.0 (2022-11-18)
 -------------------
-* Remove deprecation warning when parameter without value is set. (`#445 <https://github.com/ros-controls/ros2_controllers/issues/445>`_)
-* Contributors: Denis Štogl
 
 2.13.0 (2022-10-05)
 -------------------
-* Enable definition of all fields in JointTrajectory message when using test node. (`#389 <https://github.com/ros-controls/ros2_controllers/issues/389>`_)
-* Contributors: Denis Štogl
 
 2.12.0 (2022-09-01)
 -------------------
@@ -141,8 +136,6 @@ Changelog for package ros2_controllers_test_nodes
 
 2.8.0 (2022-07-09)
 ------------------
-* Fix deprecation in setup.cfg on Jammy (Humble and Rolling). (`#375 <https://github.com/ros-controls/ros2_controllers/issues/375>`_)
-* Contributors: Denis Štogl
 
 2.7.0 (2022-07-03)
 ------------------
@@ -164,8 +157,6 @@ Changelog for package ros2_controllers_test_nodes
 
 2.1.0 (2022-02-23)
 ------------------
-* Move test nodes from the ros2_control_demos repository. (`#294 <https://github.com/ros-controls/ros2_controllers/issues/294>`_)
-* Contributors: Denis Štogl, Lovro Ivanov
 
 2.0.1 (2022-02-01)
 ------------------

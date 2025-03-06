@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include "pose_broadcaster/pose_broadcaster.hpp"
+#include <cmath>
+#include <rclcpp/logging.hpp>
 
 namespace
 {
@@ -23,6 +25,19 @@ constexpr auto DEFAULT_TF_TOPIC = "/tf";
 
 namespace pose_broadcaster
 {
+
+bool is_pose_valid(const geometry_msgs::msg::Pose & pose)
+{
+  return std::isfinite(pose.position.x) && std::isfinite(pose.position.y) &&
+         std::isfinite(pose.position.z) && std::isfinite(pose.orientation.x) &&
+         std::isfinite(pose.orientation.y) && std::isfinite(pose.orientation.z) &&
+         std::isfinite(pose.orientation.w) &&
+
+         std::abs(
+           pose.orientation.x * pose.orientation.x + pose.orientation.y * pose.orientation.y +
+           pose.orientation.z * pose.orientation.z + pose.orientation.w * pose.orientation.w -
+           1.0) <= 10e-3;
+}
 
 controller_interface::InterfaceConfiguration PoseBroadcaster::command_interface_configuration()
   const
@@ -147,8 +162,15 @@ controller_interface::return_type PoseBroadcaster::update(
     realtime_publisher_->msg_.pose = pose;
     realtime_publisher_->unlockAndPublish();
   }
-
-  if (realtime_tf_publisher_ && realtime_tf_publisher_->trylock())
+  if (!is_pose_valid(pose))
+  {
+    RCLCPP_ERROR_THROTTLE(
+      get_node()->get_logger(), *get_node()->get_clock(), 1000,
+      "Invalid pose [%f, %f, %f], [%f, %f, %f, %f]", pose.position.x, pose.position.y,
+      pose.position.z, pose.orientation.x, pose.orientation.y, pose.orientation.z,
+      pose.orientation.w);
+  }
+  else if (realtime_tf_publisher_ && realtime_tf_publisher_->trylock())
   {
     bool do_publish = false;
     // rlcpp::Time comparisons throw if clock types are not the same

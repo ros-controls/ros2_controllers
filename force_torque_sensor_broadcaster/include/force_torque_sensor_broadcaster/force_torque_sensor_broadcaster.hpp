@@ -24,8 +24,8 @@
 #include <vector>
 
 #include "controller_interface/controller_interface.hpp"
+#include "force_torque_sensor_broadcaster/force_torque_sensor_broadcaster_parameters.hpp"
 #include "force_torque_sensor_broadcaster/visibility_control.h"
-#include "force_torque_sensor_broadcaster_parameters.hpp"
 #include "geometry_msgs/msg/wrench_stamped.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
