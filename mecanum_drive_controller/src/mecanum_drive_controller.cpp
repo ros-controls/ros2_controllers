@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "mecanum_drive_controller/mecanum_drive_controller.hpp"
+#include <mecanum_drive_controller/mecanum_drive_controller.hpp>
 
 #include <limits>
 #include <memory>
@@ -309,27 +309,39 @@ controller_interface::CallbackReturn MecanumDriveController::on_activate(
 controller_interface::CallbackReturn MecanumDriveController::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  bool value_set_no_error = true;
   for (size_t i = 0; i < NR_CMD_ITFS; ++i)
   {
-    value_set_no_error &=
       command_interfaces_[i].set_value(std::numeric_limits<double>::quiet_NaN());
   }
-  if (!value_set_no_error)
-  {
-    RCLCPP_ERROR(
-      get_node()->get_logger(),
-      "Setting values to command interfaces has failed! "
-      "This means that you are maybe blocking the interface in your hardware for too long.");
-    return controller_interface::CallbackReturn::FAILURE;
-  }
-
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::return_type MecanumDriveController::update_reference_from_subscribers(
-  const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
+controller_interface::return_type MecanumDriveController::update_reference_from_subscribers()
 {
+  // Move functionality to the `update_and_write_commands` because of the missing arguments in
+  // humble - otherwise issues with multiple time-sources might happen when working with simulators
+  return controller_interface::return_type::OK;
+}
+
+controller_interface::return_type MecanumDriveController::update_and_write_commands(
+  const rclcpp::Time & time, const rclcpp::Duration & period)
+{
+  // FORWARD KINEMATICS (odometry).
+  const double wheel_front_left_state_vel = state_interfaces_[FRONT_LEFT].get_value();
+  const double wheel_front_right_state_vel = state_interfaces_[FRONT_RIGHT].get_value();
+  const double wheel_rear_right_state_vel = state_interfaces_[REAR_RIGHT].get_value();
+  const double wheel_rear_left_state_vel = state_interfaces_[REAR_LEFT].get_value();
+
+  if (
+    !std::isnan(wheel_front_left_state_vel) && !std::isnan(wheel_rear_left_state_vel) &&
+    !std::isnan(wheel_rear_right_state_vel) && !std::isnan(wheel_front_right_state_vel))
+  {
+    // Estimate twist (using joint information) and integrate
+    odometry_.update(
+      wheel_front_left_state_vel, wheel_rear_left_state_vel, wheel_rear_right_state_vel,
+      wheel_front_right_state_vel, period.seconds());
+  }
+
   auto current_ref = *(input_ref_.readFromRT());
   const auto age_of_last_command = time - (current_ref)->header.stamp;
 
@@ -366,28 +378,6 @@ controller_interface::return_type MecanumDriveController::update_reference_from_
       current_ref->twist.linear.y = std::numeric_limits<double>::quiet_NaN();
       current_ref->twist.angular.z = std::numeric_limits<double>::quiet_NaN();
     }
-  }
-
-  return controller_interface::return_type::OK;
-}
-
-controller_interface::return_type MecanumDriveController::update_and_write_commands(
-  const rclcpp::Time & time, const rclcpp::Duration & period)
-{
-  // FORWARD KINEMATICS (odometry).
-  const double wheel_front_left_state_vel = state_interfaces_[FRONT_LEFT].get_value();
-  const double wheel_front_right_state_vel = state_interfaces_[FRONT_RIGHT].get_value();
-  const double wheel_rear_right_state_vel = state_interfaces_[REAR_RIGHT].get_value();
-  const double wheel_rear_left_state_vel = state_interfaces_[REAR_LEFT].get_value();
-
-  if (
-    !std::isnan(wheel_front_left_state_vel) && !std::isnan(wheel_rear_left_state_vel) &&
-    !std::isnan(wheel_rear_right_state_vel) && !std::isnan(wheel_front_right_state_vel))
-  {
-    // Estimate twist (using joint information) and integrate
-    odometry_.update(
-      wheel_front_left_state_vel, wheel_rear_left_state_vel, wheel_rear_right_state_vel,
-      wheel_front_right_state_vel, period.seconds());
   }
 
   // INVERSE KINEMATICS (move robot).
@@ -443,26 +433,17 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
 
     // Set wheels velocities - The joint names are sorted according to the order documented in the
     // header file!
-    const bool value_set_error =
-      command_interfaces_[FRONT_LEFT].set_value(wheel_front_left_vel) &&
-      command_interfaces_[FRONT_RIGHT].set_value(wheel_front_right_vel) &&
-      command_interfaces_[REAR_RIGHT].set_value(wheel_rear_right_vel) &&
-      command_interfaces_[REAR_LEFT].set_value(wheel_rear_left_vel);
-    RCLCPP_ERROR_EXPRESSION(
-      get_node()->get_logger(), !value_set_error,
-      "Setting values to command interfaces has failed! "
-      "This means that you are maybe blocking the interface in your hardware for too long.");
+    command_interfaces_[FRONT_LEFT].set_value(wheel_front_left_vel);
+    command_interfaces_[FRONT_RIGHT].set_value(wheel_front_right_vel);
+    command_interfaces_[REAR_RIGHT].set_value(wheel_rear_right_vel);
+    command_interfaces_[REAR_LEFT].set_value(wheel_rear_left_vel);
   }
   else
   {
-    const bool value_set_error = command_interfaces_[FRONT_LEFT].set_value(0.0) &&
-                                 command_interfaces_[FRONT_RIGHT].set_value(0.0) &&
-                                 command_interfaces_[REAR_RIGHT].set_value(0.0) &&
-                                 command_interfaces_[REAR_LEFT].set_value(0.0);
-    RCLCPP_ERROR_EXPRESSION(
-      get_node()->get_logger(), !value_set_error,
-      "Setting values to command interfaces has failed! "
-      "This means that you are maybe blocking the interface in your hardware for too long.");
+    command_interfaces_[FRONT_LEFT].set_value(0.0);
+    command_interfaces_[FRONT_RIGHT].set_value(0.0);
+    command_interfaces_[REAR_RIGHT].set_value(0.0);
+    command_interfaces_[REAR_LEFT].set_value(0.0);
   }
 
   // Publish odometry message
