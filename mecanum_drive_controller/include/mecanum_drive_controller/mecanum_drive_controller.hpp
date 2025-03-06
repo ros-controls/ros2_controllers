@@ -26,7 +26,7 @@
 #include "controller_interface/chainable_controller_interface.hpp"
 #include "mecanum_drive_controller/odometry.hpp"
 #include "mecanum_drive_controller/visibility_control.h"
-#include "mecanum_drive_controller_parameters.hpp"
+#include <mecanum_drive_controller/mecanum_drive_controller_parameters.hpp>
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_buffer.hpp"
@@ -76,8 +76,7 @@ public:
     const rclcpp_lifecycle::State & previous_state) override;
 
   MECANUM_DRIVE_CONTROLLER__VISIBILITY_PUBLIC
-  controller_interface::return_type update_reference_from_subscribers(
-    const rclcpp::Time & time, const rclcpp::Duration & period) override;
+  controller_interface::return_type update_reference_from_subscribers() override;
 
   MECANUM_DRIVE_CONTROLLER__VISIBILITY_PUBLIC
   controller_interface::return_type update_and_write_commands(
