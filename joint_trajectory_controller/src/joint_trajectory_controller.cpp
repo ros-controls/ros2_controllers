@@ -188,7 +188,7 @@ controller_interface::return_type JointTrajectoryController::update(
     if (!current_trajectory_->is_sampled_already())
     {
       first_sample = true;
-      if (params_.open_loop_control)
+      if (params_.interpolate_from_desired_state || params_.open_loop_control)
       {
         if (std::abs(last_commanded_time_.seconds()) < std::numeric_limits<float>::epsilon())
         {
@@ -687,6 +687,16 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   const rclcpp_lifecycle::State &)
 {
   auto logger = get_node()->get_logger();
+
+  // START DEPRECATE
+  if (params_.open_loop_control)
+  {
+    RCLCPP_WARN(
+      logger,
+      "[deprecated] 'open_loop_control' parameter is deprecated. Instead, set the feedback gains "
+      "to zero and use 'interpolate_from_desired_state' parameter");
+  }
+  // END DEPRECATE
 
   // update the dynamic map parameters
   param_listener_->refresh_dynamic_parameters();

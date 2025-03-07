@@ -100,7 +100,7 @@ A yaml file for using it could be:
           action_monitor_rate: 20.0
 
           allow_partial_joints_goal: false
-          open_loop_control: true
+          interpolate_from_desired_state: true
           constraints:
             stopped_velocity_tolerance: 0.01
             goal_time: 0.0
