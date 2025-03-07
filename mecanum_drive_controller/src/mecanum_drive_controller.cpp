@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <mecanum_drive_controller/mecanum_drive_controller.hpp>
+#include "mecanum_drive_controller/mecanum_drive_controller.hpp"
 
 #include <limits>
 #include <memory>
@@ -132,7 +132,8 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
   {
     ref_unstamped_subscriber_ = get_node()->create_subscription<ControllerReferenceMsgUnstamped>(
       "~/reference_unstamped", subscribers_qos,
-      std::bind(&MecanumDriveController::reference_unstamped_callback, this, std::placeholders::_1));
+      std::bind(
+        &MecanumDriveController::reference_unstamped_callback, this, std::placeholders::_1));
   }
 
   std::shared_ptr<ControllerReferenceMsg> msg = std::make_shared<ControllerReferenceMsg>();
@@ -251,7 +252,8 @@ void MecanumDriveController::reference_callback(const std::shared_ptr<Controller
   }
 }
 
-void MecanumDriveController::reference_unstamped_callback(const std::shared_ptr<ControllerReferenceMsgUnstamped> msg)
+void MecanumDriveController::reference_unstamped_callback(
+  const std::shared_ptr<ControllerReferenceMsgUnstamped> msg)
 {
   // Write fake header in the stored stamped command
   auto twist_stamped = *(input_ref_.readFromNonRT());
@@ -332,7 +334,7 @@ controller_interface::CallbackReturn MecanumDriveController::on_deactivate(
 {
   for (size_t i = 0; i < NR_CMD_ITFS; ++i)
   {
-      command_interfaces_[i].set_value(std::numeric_limits<double>::quiet_NaN());
+    command_interfaces_[i].set_value(std::numeric_limits<double>::quiet_NaN());
   }
   return controller_interface::CallbackReturn::SUCCESS;
 }
