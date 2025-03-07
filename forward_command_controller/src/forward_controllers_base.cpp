@@ -118,6 +118,8 @@ controller_interface::CallbackReturn ForwardControllersBase::on_deactivate(
 controller_interface::return_type ForwardControllersBase::update(
   const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
+  auto logger = get_node()->get_logger();
+
   auto joint_commands = rt_command_ptr_.readFromRT();
 
   // no command received yet
@@ -129,15 +131,25 @@ controller_interface::return_type ForwardControllersBase::update(
   if ((*joint_commands)->data.size() != command_interfaces_.size())
   {
     RCLCPP_ERROR_THROTTLE(
-      get_node()->get_logger(), *(get_node()->get_clock()), 1000,
+      logger, *(get_node()->get_clock()), 1000,
       "command size (%zu) does not match number of interfaces (%zu)",
       (*joint_commands)->data.size(), command_interfaces_.size());
     return controller_interface::return_type::ERROR;
   }
 
+  const auto & data = (*joint_commands)->data;
+
   for (auto index = 0ul; index < command_interfaces_.size(); ++index)
   {
-    command_interfaces_[index].set_value((*joint_commands)->data[index]);
+    if (!command_interfaces_[index].set_value(data[index]))
+    {
+      RCLCPP_WARN(
+        logger, "Error while setting command interface value at index %zu: value = %f", index,
+        data[index]);
+      return controller_interface::return_type::OK;
+    }
+
+    return controller_interface::return_type::OK;
   }
 
   return controller_interface::return_type::OK;
