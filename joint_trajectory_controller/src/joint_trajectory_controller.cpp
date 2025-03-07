@@ -718,12 +718,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     return CallbackReturn::FAILURE;
   }
 
-  if (params_.joints.empty())
-  {
-    RCLCPP_WARN(logger, "'joints' parameter is empty.");
-    return CallbackReturn::FAILURE;
-  }
-
   command_joint_names_ = params_.command_joints;
 
   if (command_joint_names_.empty())

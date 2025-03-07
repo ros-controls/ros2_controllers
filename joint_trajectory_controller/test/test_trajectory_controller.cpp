@@ -2577,9 +2577,7 @@ TEST_F(TrajectoryControllerTest, incorrect_initialization_using_interface_parame
 {
   // command interfaces: empty
   command_interface_types_ = {};
-  EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::OK);
-  auto state = traj_controller_->configure();
-  EXPECT_EQ(state.id(), State::PRIMARY_STATE_UNCONFIGURED);
+  EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::ERROR);
 
   // command interfaces: bad_name
   command_interface_types_ = {"bad_name"};
@@ -2627,7 +2625,7 @@ TEST_F(TrajectoryControllerTest, incorrect_initialization_using_interface_parame
   command_interface_types_ = {"velocity"};
   state_interface_types_ = {"position"};
   EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::OK);
-  state = traj_controller_->configure();
+  auto state = traj_controller_->configure();
   EXPECT_EQ(state.id(), State::PRIMARY_STATE_UNCONFIGURED);
   state_interface_types_ = {"velocity"};
   EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::ERROR);

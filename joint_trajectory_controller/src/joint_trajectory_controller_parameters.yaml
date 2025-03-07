@@ -6,6 +6,7 @@ joint_trajectory_controller:
     read_only: true,
     validation: {
       unique<>: null,
+      size_gt<>: [0],
     }
   }
   command_joints: {
@@ -28,6 +29,7 @@ joint_trajectory_controller:
     read_only: true,
     validation: {
       unique<>: null,
+      size_gt<>: [0],
       subset_of<>: [["position", "velocity", "acceleration", "effort",]],
       "joint_trajectory_controller::command_interface_type_combinations": null,
     }
@@ -39,6 +41,7 @@ joint_trajectory_controller:
     read_only: true,
     validation: {
       unique<>: null,
+      size_gt<>: [0],
       subset_of<>: [["position", "velocity", "acceleration",]],
       "joint_trajectory_controller::state_interface_type_combinations": null,
     }
