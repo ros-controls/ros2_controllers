@@ -110,8 +110,19 @@ controller_interface::return_type TricycleController::update(
   TwistStamped command = *last_command_msg_;
   double & linear_command = command.twist.linear.x;
   double & angular_command = command.twist.angular.z;
-  double Ws_read = traction_joint_[0].velocity_state.get().get_value();     // in radians/s
-  double alpha_read = steering_joint_[0].position_state.get().get_value();  // in radians
+  auto Ws_read_op = traction_joint_[0].velocity_state.get().get_optional();
+  auto alpha_read_op = steering_joint_[0].position_state.get().get_optional();
+
+  if (!Ws_read_op.has_value() || !alpha_read_op.has_value())
+  {
+    RCLCPP_DEBUG(
+      get_node()->get_logger(),
+      "Unable to retrieve the data of traction joint velocity or steering joint position");
+    return controller_interface::return_type::OK;
+  }
+
+  double Ws_read = Ws_read_op.value();        // in radians/s
+  double alpha_read = alpha_read_op.value();  // in radians
 
   if (params_.open_loop)
   {
@@ -211,8 +222,18 @@ controller_interface::return_type TricycleController::update(
     realtime_ackermann_command_publisher_->unlockAndPublish();
   }
 
-  traction_joint_[0].velocity_command.get().set_value(Ws_write);
-  steering_joint_[0].position_command.get().set_value(alpha_write);
+  if (!traction_joint_[0].velocity_command.get().set_value(Ws_write))
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "Error while setting velocity command for traction joint to value: '%f'.", Ws_write);
+  }
+  if (!steering_joint_[0].position_command.get().set_value(alpha_write))
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "Error while setting position command for steering joint to value: '%f'.", alpha_write);
+  }
   return controller_interface::return_type::OK;
 }
 
@@ -433,8 +454,18 @@ bool TricycleController::reset()
 
 void TricycleController::halt()
 {
-  traction_joint_[0].velocity_command.get().set_value(0.0);
-  steering_joint_[0].position_command.get().set_value(0.0);
+  if (!traction_joint_[0].velocity_command.get().set_value(0.0))
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "Error while setting velocity command for traction joint to value 0.0");
+  }
+  if (!steering_joint_[0].position_command.get().set_value(0.0))
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "Error while setting position command for steering joint to value 0.0");
+  }
 }
 
 CallbackReturn TricycleController::get_traction(
