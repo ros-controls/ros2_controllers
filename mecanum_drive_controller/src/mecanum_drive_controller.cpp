@@ -30,6 +30,8 @@ namespace
 
 using ControllerReferenceMsg =
   mecanum_drive_controller::MecanumDriveController::ControllerReferenceMsg;
+using ControllerReferenceMsgUnstamped =
+  mecanum_drive_controller::MecanumDriveController::ControllerReferenceMsgUnstamped;
 
 // called from RT control loop
 void reset_controller_reference_msg(
@@ -119,9 +121,19 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
 
   // Reference Subscriber
   ref_timeout_ = rclcpp::Duration::from_seconds(params_.reference_timeout);
-  ref_subscriber_ = get_node()->create_subscription<ControllerReferenceMsg>(
-    "~/reference", subscribers_qos,
-    std::bind(&MecanumDriveController::reference_callback, this, std::placeholders::_1));
+  use_stamped_vel_ = params_.use_stamped_vel;
+  if (use_stamped_vel_)
+  {
+    ref_subscriber_ = get_node()->create_subscription<ControllerReferenceMsg>(
+      "~/reference", subscribers_qos,
+      std::bind(&MecanumDriveController::reference_callback, this, std::placeholders::_1));
+  }
+  else
+  {
+    ref_unstamped_subscriber_ = get_node()->create_subscription<ControllerReferenceMsgUnstamped>(
+      "~/reference_unstamped", subscribers_qos,
+      std::bind(&MecanumDriveController::reference_unstamped_callback, this, std::placeholders::_1));
+  }
 
   std::shared_ptr<ControllerReferenceMsg> msg = std::make_shared<ControllerReferenceMsg>();
   reset_controller_reference_msg(msg, get_node());
@@ -237,6 +249,15 @@ void MecanumDriveController::reference_callback(const std::shared_ptr<Controller
 
     reset_controller_reference_msg(msg, get_node());
   }
+}
+
+void MecanumDriveController::reference_unstamped_callback(const std::shared_ptr<ControllerReferenceMsgUnstamped> msg)
+{
+  // Write fake header in the stored stamped command
+  auto twist_stamped = *(input_ref_.readFromNonRT());
+  twist_stamped->twist = *msg;
+  twist_stamped->header.stamp = get_node()->get_clock()->now();
+  input_ref_.writeFromNonRT(twist_stamped);
 }
 
 controller_interface::InterfaceConfiguration

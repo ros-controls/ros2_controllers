@@ -83,6 +83,7 @@ public:
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
   using ControllerReferenceMsg = geometry_msgs::msg::TwistStamped;
+  using ControllerReferenceMsgUnstamped = geometry_msgs::msg::Twist;
   using OdomStateMsg = nav_msgs::msg::Odometry;
   using TfStateMsg = tf2_msgs::msg::TFMessage;
   using ControllerStateMsg = control_msgs::msg::MecanumDriveControllerState;
@@ -124,6 +125,7 @@ protected:
 
   // Command subscribers and Controller State, odom state, tf state publishers
   rclcpp::Subscription<ControllerReferenceMsg>::SharedPtr ref_subscriber_ = nullptr;
+  rclcpp::Subscription<ControllerReferenceMsgUnstamped>::SharedPtr ref_unstamped_subscriber_ = nullptr;
   realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerReferenceMsg>> input_ref_;
   rclcpp::Duration ref_timeout_ = rclcpp::Duration::from_seconds(0.0);
 
@@ -146,10 +148,14 @@ protected:
 
   Odometry odometry_;
 
+  bool use_stamped_vel_ = true;
+
 private:
   // callback for topic interface
   MECANUM_DRIVE_CONTROLLER__VISIBILITY_LOCAL
   void reference_callback(const std::shared_ptr<ControllerReferenceMsg> msg);
+  MECANUM_DRIVE_CONTROLLER__VISIBILITY_LOCAL
+  void reference_unstamped_callback(const std::shared_ptr<ControllerReferenceMsgUnstamped> msg);
 
   double velocity_in_center_frame_linear_x_;   // [m/s]
   double velocity_in_center_frame_linear_y_;   // [m/s]

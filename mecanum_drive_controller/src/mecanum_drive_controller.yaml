@@ -113,6 +113,11 @@ mecanum_drive_controller:
       read_only: false,
     }
 
+  use_stamped_vel: {
+    type: bool,
+    default_value: true,
+    description: "Use stamp from input velocity message to calculate how old the command actually is.",
+  }
   base_frame_id: {
     type: string,
     default_value: "base_link",
