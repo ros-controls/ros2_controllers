@@ -1026,8 +1026,13 @@ TEST_P(TrajectoryControllerTestParameterized, trajectory_error_command_joints_le
     {{3.3, 4.4, 6.6}}, {{7.7, 8.8, 9.9}}, {{10.10, 11.11, 12.12}}};
   std::vector<std::vector<double>> points_velocities{
     {{0.01, 0.01, 0.01}}, {{0.05, 0.05, 0.05}}, {{0.06, 0.06, 0.06}}};
+  std::vector<std::vector<double>> points_effort{
+    {{0.3, 0.4, 0.6}}, {{1.7, 1.8, 1.9}}, {{2.10, 2.11, 2.12}}};
+  std::vector<std::vector<double>> empty_effort;
   // *INDENT-ON*
-  publish(time_from_start, points, rclcpp::Time(), {}, points_velocities);
+  publish(
+    time_from_start, points, rclcpp::Time(), {}, points_velocities,
+    traj_controller_->has_effort_command_interface() ? points_effort : empty_effort);
   traj_controller_->wait_for_trajectory(executor);
 
   const rclcpp::Duration controller_period =
@@ -1094,10 +1099,19 @@ TEST_P(TrajectoryControllerTestParameterized, trajectory_error_command_joints_le
 
   if (traj_controller_->has_effort_command_interface())
   {
-    // check command interface
-    EXPECT_LT(0.0, joint_eff_[0]);
-    EXPECT_LT(0.0, joint_eff_[1]);
-    EXPECT_TRUE(std::isnan(current_command.effort[2]));
+    if (traj_controller_->has_position_command_interface())
+    {
+      EXPECT_NEAR(state_reference.effort.at(0), joint_eff_[0], COMMON_THRESHOLD);
+      EXPECT_NEAR(state_reference.effort.at(1), joint_eff_[1], COMMON_THRESHOLD);
+      EXPECT_TRUE(std::isnan(current_command.effort[2]));
+    }
+    else
+    {
+      // effort should be nonzero, because we use PID with feedforward term
+      EXPECT_LT(points_effort[0].at(0), joint_eff_[0]);
+      EXPECT_LT(points_effort[0].at(1), joint_eff_[1]);
+      EXPECT_TRUE(std::isnan(current_command.effort[2]));
+    }
   }
 
   executor.cancel();
@@ -1126,8 +1140,13 @@ TEST_P(TrajectoryControllerTestParameterized, trajectory_error_command_joints_le
     {{3.3, 4.4, 6.6}}, {{7.7, 8.8, 9.9}}, {{10.10, 11.11, 12.12}}};
   std::vector<std::vector<double>> points_velocities{
     {{0.01, 0.01, 0.01}}, {{0.05, 0.05, 0.05}}, {{0.06, 0.06, 0.06}}};
+  std::vector<std::vector<double>> points_effort{
+    {{0.3, 0.4, 0.6}}, {{1.7, 1.8, 1.9}}, {{2.10, 2.11, 2.12}}};
+  std::vector<std::vector<double>> empty_effort;
   // *INDENT-ON*
-  publish(time_from_start, points, rclcpp::Time(), {}, points_velocities);
+  publish(
+    time_from_start, points, rclcpp::Time(), {}, points_velocities,
+    traj_controller_->has_effort_command_interface() ? points_effort : empty_effort);
   traj_controller_->wait_for_trajectory(executor);
 
   const rclcpp::Duration controller_period =
@@ -1194,10 +1213,19 @@ TEST_P(TrajectoryControllerTestParameterized, trajectory_error_command_joints_le
 
   if (traj_controller_->has_effort_command_interface())
   {
-    // check command interface
-    EXPECT_LT(0.0, joint_eff_[0]);
-    EXPECT_LT(0.0, joint_eff_[1]);
-    EXPECT_TRUE(std::isnan(current_command.effort[2]));
+    if (traj_controller_->has_position_command_interface())
+    {
+      EXPECT_NEAR(state_reference.effort.at(0), joint_eff_[0], COMMON_THRESHOLD);
+      EXPECT_NEAR(state_reference.effort.at(1), joint_eff_[1], COMMON_THRESHOLD);
+      EXPECT_TRUE(std::isnan(current_command.effort[2]));
+    }
+    else
+    {
+      // effort should be nonzero, because we use PID with feedforward term
+      EXPECT_LT(points_effort[0].at(0), joint_eff_[0]);
+      EXPECT_LT(points_effort[0].at(1), joint_eff_[1]);
+      EXPECT_TRUE(std::isnan(current_command.effort[2]));
+    }
   }
 
   executor.cancel();

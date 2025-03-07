@@ -431,7 +431,7 @@ controller_interface::return_type JointTrajectoryController::update(
 
 void JointTrajectoryController::read_state_from_state_interfaces(JointTrajectoryPoint & state)
 {
-  auto assign_point_from_interface =
+  auto assign_point_from_state_interface =
     [&](std::vector<double> & trajectory_point_interface, const auto & joint_interface)
   {
     for (size_t index = 0; index < dof_; ++index)
@@ -439,18 +439,30 @@ void JointTrajectoryController::read_state_from_state_interfaces(JointTrajectory
       trajectory_point_interface[index] = joint_interface[index].get().get_value();
     }
   };
+  auto assign_point_from_command_interface =
+    [&](std::vector<double> & trajectory_point_interface, const auto & joint_interface)
+  {
+    std::fill(
+      trajectory_point_interface.begin(), trajectory_point_interface.end(),
+      std::numeric_limits<double>::quiet_NaN());
+    for (size_t index = 0; index < num_cmd_joints_; ++index)
+    {
+      trajectory_point_interface[map_cmd_to_joints_[index]] =
+        joint_interface[index].get().get_value();
+    }
+  };
 
   // Assign values from the hardware
   // Position states always exist
-  assign_point_from_interface(state.positions, joint_state_interface_[0]);
+  assign_point_from_state_interface(state.positions, joint_state_interface_[0]);
   // velocity and acceleration states are optional
   if (has_velocity_state_interface_)
   {
-    assign_point_from_interface(state.velocities, joint_state_interface_[1]);
+    assign_point_from_state_interface(state.velocities, joint_state_interface_[1]);
     // Acceleration is used only in combination with velocity
     if (has_acceleration_state_interface_)
     {
-      assign_point_from_interface(state.accelerations, joint_state_interface_[2]);
+      assign_point_from_state_interface(state.accelerations, joint_state_interface_[2]);
     }
     else
     {
@@ -467,7 +479,7 @@ void JointTrajectoryController::read_state_from_state_interfaces(JointTrajectory
   // No state interface for now, use command interface
   if (has_effort_command_interface_)
   {
-    assign_point_from_interface(state.effort, joint_command_interface_[3]);
+    assign_point_from_command_interface(state.effort, joint_command_interface_[3]);
   }
 }
 
