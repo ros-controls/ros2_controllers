@@ -301,17 +301,6 @@ controller_interface::return_type JointTrajectoryController::update(
                                 state_error_.positions[i], state_error_.velocities[i], period);
           }
         }
-        else
-        {
-          if (has_position_command_interface_ && has_effort_command_interface_)
-          {
-            for (auto i = 0ul; i < dof_; ++i)
-            {
-              // If position and effort command interfaces, only pass desired effort
-              tmp_command_[i] = state_desired_.effort[i];
-            }
-          }
-        }
 
         // set values for next hardware write()
         if (has_position_command_interface_)
@@ -335,7 +324,15 @@ controller_interface::return_type JointTrajectoryController::update(
         }
         if (has_effort_command_interface_)
         {
-          assign_interface_from_point(joint_command_interface_[3], tmp_command_);
+          if (use_closed_loop_pid_adapter_)
+          {
+            assign_interface_from_point(joint_command_interface_[3], tmp_command_);
+          }
+          else
+          {
+            // If position and effort command interfaces, only pass desired effort
+            assign_interface_from_point(joint_command_interface_[3], state_desired_.effort);
+          }
         }
 
         // store the previous command and time used in open-loop control mode
