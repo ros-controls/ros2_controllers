@@ -162,10 +162,8 @@ public:
 protected:
   void SetUpController(const std::string controller_name = "test_mecanum_drive_controller")
   {
-    const auto urdf = "";
-    const auto ns = "";
     ASSERT_EQ(
-      controller_->init(controller_name, urdf, 0, ns, controller_->define_custom_node_options()),
+      controller_->init(controller_name),
       controller_interface::return_type::OK);
 
     std::vector<hardware_interface::LoanedCommandInterface> command_ifs;

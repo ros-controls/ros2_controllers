@@ -110,9 +110,9 @@ TEST_F(MecanumDriveControllerTest, when_controller_configured_expect_properly_ex
   {
     const std::string ref_itf_name = std::string(controller_->get_node()->get_name()) +
                                      std::string("/") + reference_interface_names[i];
-    EXPECT_EQ(reference_interfaces[i]->get_name(), ref_itf_name);
-    EXPECT_EQ(reference_interfaces[i]->get_prefix_name(), controller_->get_node()->get_name());
-    EXPECT_EQ(reference_interfaces[i]->get_interface_name(), reference_interface_names[i]);
+    EXPECT_EQ(reference_interfaces[i].get_name(), ref_itf_name);
+    EXPECT_EQ(reference_interfaces[i].get_prefix_name(), controller_->get_node()->get_name());
+    EXPECT_EQ(reference_interfaces[i].get_interface_name(), reference_interface_names[i]);
   }
 }
 

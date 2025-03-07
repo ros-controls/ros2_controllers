@@ -28,7 +28,9 @@ TEST(TestLoadMecanumDriveController, load_controller)
     std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
 
   controller_manager::ControllerManager cm(
-    executor, ros2_control_test_assets::minimal_robot_urdf, true, "test_controller_manager");
+    std::make_unique<hardware_interface::ResourceManager>(
+      ros2_control_test_assets::minimal_robot_urdf),
+      executor, "test_controller_manager");
 
   const std::string test_file_path =
     std::string(TEST_FILES_DIRECTORY) + "/mecanum_drive_controller_params.yaml";
