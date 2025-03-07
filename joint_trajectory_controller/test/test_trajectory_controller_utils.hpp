@@ -167,7 +167,9 @@ public:
 
   bool use_closed_loop_pid_adapter() const { return use_closed_loop_pid_adapter_; }
 
+  // START DEPRECATE
   bool is_open_loop() const { return params_.open_loop_control; }
+  // END DEPRECATE
 
   joint_trajectory_controller::SegmentTolerances get_active_tolerances()
   {
