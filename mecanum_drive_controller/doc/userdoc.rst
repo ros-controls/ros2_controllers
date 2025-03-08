@@ -50,15 +50,11 @@ Subscribers
 ,,,,,,,,,,,,
 Used when the controller is not in chained mode (``in_chained_mode == false``).
 
-<<<<<<< HEAD
-- <controller_name>/reference  [geometry_msgs/msg/TwistStamped]
-  Velocity command for the controller, if ``use_stamped_vel=true``. 
-
-- <controller_name>/reference_unstamped  [geometry_msgs/msg/Twist]
-  Velocity command for the controller, if ``use_stamped_vel=false``.
-=======
 - ``<controller_name>/reference``  [``geometry_msgs/msg/TwistStamped``]
->>>>>>> d67c2f3 (Fix mecanum_drive_controller documentation (#1547))
+  Velocity command for the controller, if ``use_stamped_vel == true``.
+
+- ``<controller_name>/reference_unstamped``  [``geometry_msgs/msg/Twist``]
+  Velocity command for the controller, if ``use_stamped_vel == false``.
 
 Publishers
 ,,,,,,,,,,,
