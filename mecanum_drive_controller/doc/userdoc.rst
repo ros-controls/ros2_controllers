@@ -46,6 +46,10 @@ Subscribers
 Used when the controller is not in chained mode (``in_chained_mode == false``).
 
 - <controller_name>/reference  [geometry_msgs/msg/TwistStamped]
+  Velocity command for the controller, if ``use_stamped_vel=true``. 
+
+- <controller_name>/reference_unstamped  [geometry_msgs/msg/Twist]
+  Velocity command for the controller, if ``use_stamped_vel=false``.
 
 Publishers
 ,,,,,,,,,,,
