@@ -731,7 +731,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   if (num_cmd_joints_ > dof_)
   {
     RCLCPP_ERROR(
-      logger, "'command_joints' parameter must not have greater size as 'joints' parameter.");
+      logger, "The 'command_joints' parameter must not exceed the size of the 'joints' parameter.");
     return CallbackReturn::FAILURE;
   }
   else if (num_cmd_joints_ < dof_)
