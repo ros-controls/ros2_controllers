@@ -38,3 +38,18 @@ An example parameter file
 
 .. generate_parameter_library_default::
   ../src/joint_state_broadcaster_parameters.yaml
+
+
+Order of the joints in the message
+----------------------------------
+
+The order of the joints in the message can determined by 3 different parameter settings:
+
+1. No defined ``joints`` parameter and ``use_urdf_to_filter`` set to ``false``:
+    The order of the joints in the message is the same as the order of the joint's state interfaces registered in the resource manager. This is typically the order in which the hardware components are loaded and configured.
+
+2. No defined ``joints`` parameter and ``use_urdf_to_filter`` set to ``true``:
+    The order of the joints in the message is the same as the order of the joints in the URDF file, which is inherited from the loaded URDF Model.
+
+3. Defined ``joints`` parameter:
+    The order of the joints in the message is the same as the order of the joints in the ``joints`` parameter.
