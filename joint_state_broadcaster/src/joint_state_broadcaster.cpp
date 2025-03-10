@@ -264,7 +264,7 @@ bool JointStateBroadcaster::init_joint_data()
     }
   }
   std::reverse(joint_names_.begin(), joint_names_.end());
-  if (is_model_loaded_ && params_.use_urdf_to_filter)
+  if (is_model_loaded_ && params_.use_urdf_to_filter && params_.joints.empty())
   {
     std::vector<std::string> joint_names_filtered;
     for (const auto & [joint_name, urdf_joint] : model_.joints_)
