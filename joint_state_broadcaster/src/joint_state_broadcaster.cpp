@@ -264,21 +264,6 @@ bool JointStateBroadcaster::init_joint_data()
     }
   }
   std::reverse(joint_names_.begin(), joint_names_.end());
-  if (params_.use_urdf_to_filter)
-  {
-    std::vector<std::string> joint_names_filtered;
-    for (const auto & [joint_name, urdf_joint] : model_.joints_)
-    {
-      if (urdf_joint && urdf_joint->type != urdf::Joint::FIXED)
-      {
-        if (std::find(joint_names_.begin(), joint_names_.end(), joint_name) != joint_names_.end())
-        {
-          joint_names_filtered.push_back(joint_name);
-        }
-      }
-    }
-    joint_names_ = joint_names_filtered;
-  }
 
   // Add extra joints from parameters, each joint will be added to joint_names_ and
   // name_if_value_mapping_ if it is not already there
