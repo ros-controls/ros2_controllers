@@ -68,12 +68,18 @@ joint_trajectory_controller:
   open_loop_control: {
     type: bool,
     default_value: false,
-    description: "Use controller in open-loop control mode
+    description: "deprecated: use ``interpolate_from_desired_state`` and set feedback gains to zero instead",
+    read_only: true,
+  }
+  interpolate_from_desired_state: {
+    type: bool,
+    default_value: false,
+    description: "Interpolate from the current desired state when receiving a new trajectory.
       \n\n
-      * The controller ignores the states provided by hardware interface but using last commands as states for starting the trajectory interpolation.\n
-      * It deactivates the feedback control, see the ``gains`` structure.
+      The controller ignores the states provided by hardware interface but using last commands as states for starting the trajectory interpolation.
       \n\n
       This is useful if hardware states are not following commands, i.e., an offset between those (typical for hydraulic manipulators).
+      Furthermore, it is necessary if you have a reference trajectory that you send over multiple messages (e.g. for MPC-style trajectory planning).
       \n\n
       If this flag is set, the controller tries to read the values from the command interfaces on activation.
       If they have real numeric values, those will be used instead of state interfaces.
@@ -93,7 +99,7 @@ joint_trajectory_controller:
   action_monitor_rate: {
     type: double,
     default_value: 20.0,
-    description: "Rate to monitor status changes when the controller is executing action (control_msgs::action::FollowJointTrajectory)",
+    description: "Rate to monitor status changes when the controller is executing action (``control_msgs::action::FollowJointTrajectory``)",
     read_only: true,
     validation: {
       gt_eq: [0.1]
