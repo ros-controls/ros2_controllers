@@ -570,13 +570,18 @@ TEST_F(MecanumDriveControllerTest, SideToSideAndRotationOdometryTest)
   // Configure
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
+  // Check on the base frame offset is set by the params
+  EXPECT_EQ(controller_->odometry_.getBaseFrameOffset()[0], 1.0);
+  EXPECT_EQ(controller_->odometry_.getBaseFrameOffset()[1], 2.0);
+  EXPECT_EQ(controller_->odometry_.getBaseFrameOffset()[2], 3.0);
+
   // Activate in chained mode
   controller_->set_chained_mode(true);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(controller_->is_in_chained_mode(), true);
 
   // Setup reference interfaces for side to side motion
-  auto side_by_side_motion = [this](double linear_y)
+  auto side_to_side_motion = [this](double linear_y)
   {
     controller_->reference_interfaces_[0] = 0;         // linear x
     controller_->reference_interfaces_[1] = linear_y;  // linear y
@@ -602,13 +607,13 @@ TEST_F(MecanumDriveControllerTest, SideToSideAndRotationOdometryTest)
     switch (count % 4)
     {
       case 0:
-        side_by_side_motion(2.0);
+        side_to_side_motion(2.0);
         break;
       case 1:
         rotation_motion(-0.5);
         break;
       case 2:
-        side_by_side_motion(-2.0);
+        side_to_side_motion(-2.0);
         break;
       case 3:
         rotation_motion(0.5);
