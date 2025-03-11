@@ -60,10 +60,26 @@ pid_controller:
         default_value: 0.0,
         description: "Derivative gain for PID"
       }
+      saturation: {
+        type: bool,
+        default_value: false,
+        description: "Enables output saturation. When true, the controller output is
+        clamped between u_clamp_max and u_clamp_min."
+      }
+      u_clamp_max: {
+        type: double,
+        default_value: 0.0,
+        description: "Upper output clamp."
+      }
+      u_clamp_min: {
+        type: double,
+        default_value: 0.0,
+        description: "Lower output clamp."
+      }
       antiwindup: {
         type: bool,
         default_value: false,
-        description: "Antiwindup functionality. When set to true, limits
+        description: "Anti-windup functionality. When set to true, limits
         the integral error to prevent windup; otherwise, constrains the
         integral contribution to the control output. i_clamp_max and
         i_clamp_min are applied in both scenarios."
@@ -77,6 +93,30 @@ pid_controller:
         type: double,
         default_value: 0.0,
         description: "Lower integral clamp."
+      }
+      antiwindup_strategy: {
+        type: string,
+        default_value: "none",
+        description: "Specifies the anti-windup strategy. Options: 'back_calculation',
+        'conditioning_technique', 'conditional_integration', or 'none'. Note that the
+        'back_calculation' and 'conditioning_technique' strategies use the tracking_time_constant
+        parameter to tune the anti-windup behavior. When a strategy other than 'none' is selected,
+        it will override the controller's default anti-windup behavior.",
+        validation: {
+          subset_of<>: [[
+            "back_calculation",
+            "conditioning_technique",
+            "conditional_integration",
+            "none"
+          ]]
+        }
+      }
+      tracking_time_constant: {
+        type: double,
+        default_value: 0.0,
+        description: "Specifies the tracking time constant for the 'back_calculation'
+        and 'conditioning_technique' strategies. If set to 0.0 when one of these
+        strategies is selected, a recommended default value will be applied."
       }
       feedforward_gain: {
         type: double,
