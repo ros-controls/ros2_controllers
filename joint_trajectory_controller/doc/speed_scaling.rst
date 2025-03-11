@@ -64,7 +64,7 @@ start plus half of the step time.
 On-Controller speed scaling
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Conceptionally, with this scaling the robot hardware isn't aware of any scaling happening. The JTC
+Conceptually, with this scaling the robot hardware isn't aware of any scaling happening. The JTC
 generates commands to be sent to the robot that are already scaled down accordingly, so they can be
 directly executed by the robot.
 
