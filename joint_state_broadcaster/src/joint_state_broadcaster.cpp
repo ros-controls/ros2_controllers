@@ -179,22 +179,13 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_activate(
   if (!init_joint_data())
   {
     RCLCPP_ERROR(
-      get_node()->get_logger(), "None of requested interfaces exist. Controller will not run.");
+      get_node()->get_logger(),
+      "Error initializing joint data. JointStateBroadcaster will not run.");
     return CallbackReturn::ERROR;
   }
 
   init_joint_state_msg();
   init_dynamic_joint_state_msg();
-
-  if (
-    !use_all_available_interfaces() &&
-    state_interfaces_.size() != (params_.joints.size() * params_.interfaces.size()))
-  {
-    RCLCPP_WARN(
-      get_node()->get_logger(),
-      "Not all requested interfaces exists. "
-      "Check ControllerManager output for more detailed information.");
-  }
 
   return CallbackReturn::SUCCESS;
 }
@@ -230,6 +221,7 @@ bool JointStateBroadcaster::init_joint_data()
   joint_names_.clear();
   if (state_interfaces_.empty())
   {
+    RCLCPP_ERROR(get_node()->get_logger(), "No state interfaces found to publish.");
     return false;
   }
 
