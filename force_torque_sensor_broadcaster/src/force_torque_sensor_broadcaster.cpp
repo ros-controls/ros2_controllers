@@ -47,12 +47,39 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_init()
 controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
+  RCLCPP_INFO(get_node()->get_logger(), "on_configure");
+  RCLCPP_INFO(get_node()->get_logger(), "params_.sensor_name: %s", params_.sensor_name.c_str());
+  RCLCPP_INFO(
+    get_node()->get_logger(), "params_.interface_names.force.x: %s",
+    params_.interface_names.force.x.c_str());
+  RCLCPP_INFO(
+    get_node()->get_logger(), "params_.interface_names.force.y: %s",
+    params_.interface_names.force.y.c_str());
+  RCLCPP_INFO(
+    get_node()->get_logger(), "params_.interface_names.force.z: %s",
+    params_.interface_names.force.z.c_str());
+  RCLCPP_INFO(
+    get_node()->get_logger(), "params_.interface_names.torque.x: %s",
+    params_.interface_names.torque.x.c_str());
+  RCLCPP_INFO(
+    get_node()->get_logger(), "params_.interface_names.torque.y: %s",
+    params_.interface_names.torque.y.c_str());
+  RCLCPP_INFO(
+    get_node()->get_logger(), "params_.interface_names.torque.z: %s",
+    params_.interface_names.torque.z.c_str());
+  RCLCPP_INFO(get_node()->get_logger(), "params_.frame_id: %s", params_.frame_id.c_str());
+
   params_ = param_listener_->get_params();
 
   const bool no_interface_names_defined =
     params_.interface_names.force.x.empty() && params_.interface_names.force.y.empty() &&
     params_.interface_names.force.z.empty() && params_.interface_names.torque.x.empty() &&
     params_.interface_names.torque.y.empty() && params_.interface_names.torque.z.empty();
+
+  RCLCPP_INFO(
+    get_node()->get_logger(), "no_interface_names_defined: %d", no_interface_names_defined);
+  RCLCPP_INFO(
+    get_node()->get_logger(), "params_.sensor_name.empty(): %d", params_.sensor_name.empty());
 
   if (params_.sensor_name.empty() && no_interface_names_defined)
   {
@@ -72,6 +99,9 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
     return controller_interface::CallbackReturn::ERROR;
   }
 
+  RCLCPP_INFO(
+    get_node()->get_logger(), "params_.sensor_name.empty(): %d", params_.sensor_name.empty());
+
   if (!params_.sensor_name.empty())
   {
     force_torque_sensor_ = std::make_unique<semantic_components::ForceTorqueSensor>(
@@ -81,11 +111,13 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
   {
     auto const & force_names = params_.interface_names.force;
     auto const & torque_names = params_.interface_names.torque;
+
     force_torque_sensor_ = std::make_unique<semantic_components::ForceTorqueSensor>(
       semantic_components::ForceTorqueSensor(
         force_names.x, force_names.y, force_names.z, torque_names.x, torque_names.y,
         torque_names.z));
   }
+  RCLCPP_INFO(get_node()->get_logger(), "force_torque_sensor_ created");
 
   try
   {
@@ -93,6 +125,7 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
     sensor_state_publisher_ = get_node()->create_publisher<geometry_msgs::msg::WrenchStamped>(
       "~/wrench", rclcpp::SystemDefaultsQoS());
     realtime_publisher_ = std::make_unique<StatePublisher>(sensor_state_publisher_);
+    RCLCPP_INFO(get_node()->get_logger(), "realtime_publisher_ created");
   }
   catch (const std::exception & e)
   {
@@ -102,11 +135,15 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
     return controller_interface::CallbackReturn::ERROR;
   }
 
+  assert(realtime_publisher_ != nullptr);
+  RCLCPP_INFO(get_node()->get_logger(), "params_.frame_id: %s", params_.frame_id.c_str());
+  RCLCPP_INFO(get_node()->get_logger(), "realtime_publisher lock  ");
   realtime_publisher_->lock();
   realtime_publisher_->msg_.header.frame_id = params_.frame_id;
+  RCLCPP_INFO(get_node()->get_logger(), "realtime_publisher unlock");
   realtime_publisher_->unlock();
 
-  RCLCPP_DEBUG(get_node()->get_logger(), "configure successful");
+  RCLCPP_INFO(get_node()->get_logger(), "configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
