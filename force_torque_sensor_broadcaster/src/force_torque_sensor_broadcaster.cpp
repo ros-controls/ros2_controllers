@@ -99,9 +99,6 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  RCLCPP_INFO(
-    get_node()->get_logger(), "params_.sensor_name.empty(): %d", params_.sensor_name.empty());
-
   if (!params_.sensor_name.empty())
   {
     force_torque_sensor_ = std::make_unique<semantic_components::ForceTorqueSensor>(
