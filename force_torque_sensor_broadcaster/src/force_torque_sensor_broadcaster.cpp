@@ -48,26 +48,6 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   RCLCPP_INFO(get_node()->get_logger(), "on_configure");
-  RCLCPP_INFO(get_node()->get_logger(), "params_.sensor_name: %s", params_.sensor_name.c_str());
-  RCLCPP_INFO(
-    get_node()->get_logger(), "params_.interface_names.force.x: %s",
-    params_.interface_names.force.x.c_str());
-  RCLCPP_INFO(
-    get_node()->get_logger(), "params_.interface_names.force.y: %s",
-    params_.interface_names.force.y.c_str());
-  RCLCPP_INFO(
-    get_node()->get_logger(), "params_.interface_names.force.z: %s",
-    params_.interface_names.force.z.c_str());
-  RCLCPP_INFO(
-    get_node()->get_logger(), "params_.interface_names.torque.x: %s",
-    params_.interface_names.torque.x.c_str());
-  RCLCPP_INFO(
-    get_node()->get_logger(), "params_.interface_names.torque.y: %s",
-    params_.interface_names.torque.y.c_str());
-  RCLCPP_INFO(
-    get_node()->get_logger(), "params_.interface_names.torque.z: %s",
-    params_.interface_names.torque.z.c_str());
-  RCLCPP_INFO(get_node()->get_logger(), "params_.frame_id: %s", params_.frame_id.c_str());
 
   params_ = param_listener_->get_params();
 
@@ -108,6 +88,12 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
   {
     auto const & force_names = params_.interface_names.force;
     auto const & torque_names = params_.interface_names.torque;
+    RCLCPP_INFO(
+      get_node()->get_logger(), "force_names: %s, %s, %s", force_names.x.c_str(),
+      force_names.y.c_str(), force_names.z.c_str());
+    RCLCPP_INFO(
+      get_node()->get_logger(), "torque_names: %s, %s, %s", torque_names.x.c_str(),
+      torque_names.y.c_str(), torque_names.z.c_str());
 
     force_torque_sensor_ = std::make_unique<semantic_components::ForceTorqueSensor>(
       semantic_components::ForceTorqueSensor(
