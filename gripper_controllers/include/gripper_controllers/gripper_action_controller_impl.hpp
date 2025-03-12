@@ -65,8 +65,19 @@ controller_interface::return_type GripperActionController<HardwareInterface>::up
 {
   command_struct_rt_ = *(command_.readFromRT());
 
-  const double current_position = joint_position_state_interface_->get().get_value();
-  const double current_velocity = joint_velocity_state_interface_->get().get_value();
+  const auto current_position_op = joint_position_state_interface_->get().get_optional();
+  const auto current_velocity_op = joint_velocity_state_interface_->get().get_optional();
+
+  if (!current_position_op.has_value() || !current_velocity_op.has_value())
+  {
+    RCLCPP_DEBUG(
+      get_node()->get_logger(),
+      "Unable to retrieve the data from current position or current velocity");
+    return controller_interface::return_type::OK;
+  }
+
+  const double current_position = current_position_op.value();
+  const double current_velocity = current_velocity_op.value();
 
   const double error_position = command_struct_rt_.position_ - current_position;
   const double error_velocity = -current_velocity;
@@ -147,7 +158,12 @@ rclcpp_action::CancelResponse GripperActionController<HardwareInterface>::cancel
 template <const char * HardwareInterface>
 void GripperActionController<HardwareInterface>::set_hold_position()
 {
-  command_struct_.position_ = joint_position_state_interface_->get().get_value();
+  const auto command_struct_position_op = joint_position_state_interface_->get().get_optional();
+  if (!command_struct_position_op.has_value())
+  {
+    RCLCPP_DEBUG(get_node()->get_logger(), "Unable to retrieve data of joint position");
+  }
+  command_struct_.position_ = command_struct_position_op.value();
   command_struct_.max_effort_ = params_.max_effort;
   command_.writeFromNonRT(command_struct_);
 }
@@ -287,7 +303,14 @@ controller_interface::CallbackReturn GripperActionController<HardwareInterface>:
   hw_iface_adapter_.init(joint_command_interface_, get_node());
 
   // Command - non RT version
-  command_struct_.position_ = joint_position_state_interface_->get().get_value();
+  auto command_struct_position_op = joint_position_state_interface_->get().get_optional();
+  if (!command_struct_position_op.has_value())
+  {
+    RCLCPP_DEBUG(get_node()->get_logger(), "Unable to retrieve the data about joint position");
+    return controller_interface::CallbackReturn::SUCCESS;
+  }
+
+  command_struct_.position_ = command_struct_position_op.value();
   command_struct_.max_effort_ = params_.max_effort;
   command_.initRT(command_struct_);
 
