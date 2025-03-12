@@ -1,15 +1,9 @@
 cmake_minimum_required(VERSION 3.8)
 project(gpio_controllers)
 
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic -Werror=conversion -Werror=unused-but-set-variable
-  -Werror=return-type -Werror=shadow -Werror=format  -Werror=range-loop-construct
-  -Werror=missing-braces)
-endif()
-
-# using this instead of visibility macros
-# S1 from https://github.com/ros-controls/ros2_controllers/issues/1053
-set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+find_package(ros2_control_cmake REQUIRED)
+set_compiler_options()
+export_windows_symbols()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
