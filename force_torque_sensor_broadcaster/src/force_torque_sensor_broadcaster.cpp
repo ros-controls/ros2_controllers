@@ -47,8 +47,6 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_init()
 controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  RCLCPP_INFO(get_node()->get_logger(), "on_configure");
-
   params_ = param_listener_->get_params();
 
   const bool no_interface_names_defined =
@@ -83,7 +81,6 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
   {
     auto const & force_names = params_.interface_names.force;
     auto const & torque_names = params_.interface_names.torque;
-
     force_torque_sensor_ = std::make_unique<semantic_components::ForceTorqueSensor>(
       semantic_components::ForceTorqueSensor(
         force_names.x, force_names.y, force_names.z, torque_names.x, torque_names.y,
@@ -96,7 +93,6 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
     sensor_state_publisher_ = get_node()->create_publisher<geometry_msgs::msg::WrenchStamped>(
       "~/wrench", rclcpp::SystemDefaultsQoS());
     realtime_publisher_ = std::make_unique<StatePublisher>(sensor_state_publisher_);
-    RCLCPP_INFO(get_node()->get_logger(), "realtime_publisher_ created");
   }
   catch (const std::exception & e)
   {
@@ -106,11 +102,8 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  assert(realtime_publisher_ != nullptr);
-  RCLCPP_INFO(get_node()->get_logger(), "realtime_publisher lock  ");
   realtime_publisher_->lock();
   realtime_publisher_->msg_.header.frame_id = params_.frame_id;
-  RCLCPP_INFO(get_node()->get_logger(), "realtime_publisher unlock");
   realtime_publisher_->unlock();
 
   RCLCPP_DEBUG(get_node()->get_logger(), "configure successful");
