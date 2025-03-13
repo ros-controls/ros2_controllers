@@ -56,11 +56,6 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
     params_.interface_names.force.z.empty() && params_.interface_names.torque.x.empty() &&
     params_.interface_names.torque.y.empty() && params_.interface_names.torque.z.empty();
 
-  RCLCPP_INFO(
-    get_node()->get_logger(), "no_interface_names_defined: %d", no_interface_names_defined);
-  RCLCPP_INFO(
-    get_node()->get_logger(), "params_.sensor_name.empty(): %d", params_.sensor_name.empty());
-
   if (params_.sensor_name.empty() && no_interface_names_defined)
   {
     RCLCPP_ERROR(
@@ -88,19 +83,12 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
   {
     auto const & force_names = params_.interface_names.force;
     auto const & torque_names = params_.interface_names.torque;
-    RCLCPP_INFO(
-      get_node()->get_logger(), "force_names: %s, %s, %s", force_names.x.c_str(),
-      force_names.y.c_str(), force_names.z.c_str());
-    RCLCPP_INFO(
-      get_node()->get_logger(), "torque_names: %s, %s, %s", torque_names.x.c_str(),
-      torque_names.y.c_str(), torque_names.z.c_str());
 
     force_torque_sensor_ = std::make_unique<semantic_components::ForceTorqueSensor>(
       semantic_components::ForceTorqueSensor(
         force_names.x, force_names.y, force_names.z, torque_names.x, torque_names.y,
         torque_names.z));
   }
-  RCLCPP_INFO(get_node()->get_logger(), "force_torque_sensor_ created");
 
   try
   {
@@ -119,14 +107,13 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
   }
 
   assert(realtime_publisher_ != nullptr);
-  RCLCPP_INFO(get_node()->get_logger(), "params_.frame_id: %s", params_.frame_id.c_str());
   RCLCPP_INFO(get_node()->get_logger(), "realtime_publisher lock  ");
   realtime_publisher_->lock();
   realtime_publisher_->msg_.header.frame_id = params_.frame_id;
   RCLCPP_INFO(get_node()->get_logger(), "realtime_publisher unlock");
   realtime_publisher_->unlock();
 
-  RCLCPP_INFO(get_node()->get_logger(), "configure successful");
+  RCLCPP_DEBUG(get_node()->get_logger(), "configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
