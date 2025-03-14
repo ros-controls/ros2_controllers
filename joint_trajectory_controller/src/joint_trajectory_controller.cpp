@@ -122,12 +122,17 @@ JointTrajectoryController::command_interface_configuration() const
       conf.names.push_back(joint_name + "/" + interface_type);
     }
   }
+  if (!params_.speed_scaling_command_interface_name.empty())
+  {
+    conf.names.push_back(params_.speed_scaling_command_interface_name);
+  }
   return conf;
 }
 
 controller_interface::InterfaceConfiguration
 JointTrajectoryController::state_interface_configuration() const
 {
+  const auto logger = get_node()->get_logger();
   controller_interface::InterfaceConfiguration conf;
   conf.type = controller_interface::interface_configuration_type::INDIVIDUAL;
   conf.names.reserve(dof_ * params_.state_interfaces.size());
@@ -138,12 +143,39 @@ JointTrajectoryController::state_interface_configuration() const
       conf.names.push_back(joint_name + "/" + interface_type);
     }
   }
+  if (!params_.speed_scaling_state_interface_name.empty())
+  {
+    conf.names.push_back(params_.speed_scaling_state_interface_name);
+  }
   return conf;
 }
 
 controller_interface::return_type JointTrajectoryController::update(
   const rclcpp::Time & time, const rclcpp::Duration & period)
 {
+  if (scaling_state_interface_.has_value())
+  {
+    scaling_factor_ = scaling_state_interface_->get().get_value();
+  }
+
+  if (get_lifecycle_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
+  {
+    return controller_interface::return_type::OK;
+  }
+
+  if (get_lifecycle_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+  {
+    if (scaling_command_interface_.has_value())
+    {
+      if (!scaling_command_interface_->get().set_value(scaling_factor_cmd_.load()))
+      {
+        RCLCPP_ERROR(
+          get_node()->get_logger(),
+          "Could not set speed scaling factor through command interfaces.");
+      }
+    }
+  }
+
   auto logger = this->get_node()->get_logger();
   // update dynamic parameters
   if (param_listener_->is_old(params_))
@@ -206,17 +238,20 @@ controller_interface::return_type JointTrajectoryController::update(
     }
     else
     {
-      traj_time_ += period;
+      traj_time_ += period * scaling_factor_.load();
     }
 
     // Sample expected state from the trajectory
     current_trajectory_->sample(
       traj_time_, interpolation_method_, state_desired_, start_segment_itr, end_segment_itr);
+    state_desired_.time_from_start = traj_time_ - current_trajectory_->time_from_start();
 
     // Sample setpoint for next control cycle
     const bool valid_point = current_trajectory_->sample(
       traj_time_ + update_period_, interpolation_method_, command_next_, start_segment_itr,
       end_segment_itr, false);
+
+    state_current_.time_from_start = time - current_trajectory_->time_from_start();
 
     if (valid_point)
     {
@@ -263,23 +298,26 @@ controller_interface::return_type JointTrajectoryController::update(
           tolerance_violated_while_moving = true;
         }
         // past the final point, check that we end up inside goal tolerance
-        if (
-          !before_last_point && *(rt_is_holding_.readFromRT()) == false &&
-          !check_state_tolerance_per_joint(
-            state_error_, index, active_tol->goal_state_tolerance[index], false /* show_errors */))
+        if (!before_last_point && *(rt_is_holding_.readFromRT()) == false)
         {
-          outside_goal_tolerance = true;
-
-          if (active_tol->goal_time_tolerance != 0.0)
+          compute_error_for_joint(goal_error_, index, state_current_, command_next_);
+          if (!check_state_tolerance_per_joint(
+                goal_error_, index, active_tol->goal_state_tolerance[index],
+                false /* show_errors */))
           {
-            // if we exceed goal_time_tolerance set it to aborted
-            if (time_difference > active_tol->goal_time_tolerance)
+            outside_goal_tolerance = true;
+
+            if (active_tol->goal_time_tolerance != 0.0)
             {
-              within_goal_time = false;
-              // print once, goal will be aborted afterwards
-              check_state_tolerance_per_joint(
-                state_error_, index, default_tolerances_.goal_state_tolerance[index],
-                true /* show_errors */);
+              // if we exceed goal_time_tolerance set it to aborted
+              if (time_difference > active_tol->goal_time_tolerance)
+              {
+                within_goal_time = false;
+                // print once, goal will be aborted afterwards
+                check_state_tolerance_per_joint(
+                  goal_error_, index, default_tolerances_.goal_state_tolerance[index],
+                  true /* show_errors */);
+              }
             }
           }
         }
@@ -346,7 +384,6 @@ controller_interface::return_type JointTrajectoryController::update(
         auto feedback = std::make_shared<FollowJTrajAction::Feedback>();
         feedback->header.stamp = time;
         feedback->joint_names = params_.joints;
-
         feedback->actual = state_current_;
         feedback->desired = state_desired_;
         feedback->error = state_error_;
@@ -915,11 +952,48 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   resize_joint_trajectory_point_command(command_current_, dof_);
   resize_joint_trajectory_point(state_desired_, dof_);
   resize_joint_trajectory_point(state_error_, dof_);
+  resize_joint_trajectory_point(goal_error_, dof_);
   resize_joint_trajectory_point(last_commanded_state_, dof_);
 
+  // create services
   query_state_srv_ = get_node()->create_service<control_msgs::srv::QueryTrajectoryState>(
     std::string(get_node()->get_name()) + "/query_state",
     std::bind(&JointTrajectoryController::query_state_service, this, _1, _2));
+
+  if (
+    !has_velocity_command_interface_ && !has_acceleration_command_interface_ &&
+    !has_effort_command_interface_)
+  {
+    auto qos = rclcpp::SystemDefaultsQoS();
+    qos.transient_local();
+    scaling_factor_sub_ = get_node()->create_subscription<SpeedScalingMsg>(
+      "~/speed_scaling_input", qos,
+      [&](const SpeedScalingMsg & msg) { set_scaling_factor(msg.factor); });
+    RCLCPP_INFO(
+      logger, "Setting initial scaling factor to %2f", params_.scaling_factor_initial_default);
+    scaling_factor_ = params_.scaling_factor_initial_default;
+  }
+  else
+  {
+    RCLCPP_WARN(
+      logger,
+      "Speed scaling is currently only supported for position interfaces. If you want to make use "
+      "of speed scaling, please only use a position interface when configuring this controller.");
+    scaling_factor_ = 1.0;
+  }
+  if (!params_.speed_scaling_state_interface_name.empty())
+  {
+    RCLCPP_INFO(
+      logger, "Using scaling state from the hardware from interface %s.",
+      params_.speed_scaling_state_interface_name.c_str());
+  }
+  else
+  {
+    RCLCPP_INFO(
+      get_node()->get_logger(),
+      "No scaling interface set. This controller will not read speed scaling from the hardware.");
+  }
+  scaling_factor_cmd_.store(scaling_factor_.load());
 
   if (get_update_rate() == 0)
   {
@@ -944,6 +1018,42 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
 
   // parse remaining parameters
   default_tolerances_ = get_segment_tolerances(logger, params_);
+
+  // Set scaling interfaces
+  if (!params_.speed_scaling_state_interface_name.empty())
+  {
+    auto it = std::find_if(
+      state_interfaces_.begin(), state_interfaces_.end(), [&](auto & interface)
+      { return (interface.get_name() == params_.speed_scaling_state_interface_name); });
+    if (it != state_interfaces_.end())
+    {
+      scaling_state_interface_ = *it;
+    }
+    else
+    {
+      RCLCPP_ERROR(
+        logger, "Did not find speed scaling interface '%s' in state interfaces.",
+        params_.speed_scaling_state_interface_name.c_str());
+      return CallbackReturn::ERROR;
+    }
+  }
+  if (!params_.speed_scaling_command_interface_name.empty())
+  {
+    auto it = std::find_if(
+      command_interfaces_.begin(), command_interfaces_.end(), [&](auto & interface)
+      { return (interface.get_name() == params_.speed_scaling_command_interface_name); });
+    if (it != command_interfaces_.end())
+    {
+      scaling_command_interface_ = *it;
+    }
+    else
+    {
+      RCLCPP_ERROR(
+        logger, "Did not find speed scaling interface '%s' in command interfaces.",
+        params_.speed_scaling_command_interface_name.c_str());
+      return CallbackReturn::ERROR;
+    }
+  }
 
   // order all joints in the storage
   for (const auto & interface : params_.command_interfaces)
@@ -1134,6 +1244,7 @@ void JointTrajectoryController::publish_state(
     {
       state_publisher_->msg_.output = command_current_;
     }
+    state_publisher_->msg_.speed_scaling_factor = scaling_factor_;
 
     state_publisher_->unlockAndPublish();
   }
@@ -1626,6 +1737,41 @@ void JointTrajectoryController::resize_joint_trajectory_point_command(
   {
     point.effort.resize(size, 0.0);
   }
+}
+
+bool JointTrajectoryController::set_scaling_factor(const double scaling_factor)
+{
+  if (scaling_factor < 0)
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "Scaling factor has to be greater or equal to 0.0 - Ignoring input!");
+    return false;
+  }
+
+  if (scaling_factor != scaling_factor_.load())
+  {
+    RCLCPP_INFO(
+      get_node()->get_logger().get_child("speed_scaling"), "New scaling factor will be %f",
+      scaling_factor);
+  }
+  scaling_factor_.store(scaling_factor);
+  if (params_.speed_scaling_command_interface_name.empty())
+  {
+    if (!params_.speed_scaling_state_interface_name.empty())
+    {
+      RCLCPP_WARN(
+        get_node()->get_logger(),
+        "Setting the scaling factor while only one-way communication with the hardware is setup. "
+        "This will likely get overwritten by the hardware again. If available, please also setup "
+        "the speed_scaling_command_interface_name");
+    }
+  }
+  else
+  {
+    scaling_factor_cmd_.store(scaling_factor);
+  }
+  return true;
 }
 
 bool JointTrajectoryController::has_active_trajectory() const
