@@ -2307,9 +2307,9 @@ TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_first_co
   rclcpp::Parameter interp_desired_state_parameter("interpolate_from_desired_state", true);
 
   // set command values to NaN
-  std::vector<double> initial_pos_cmd{3, std::numeric_limits<double>::quiet_NaN()};
-  std::vector<double> initial_vel_cmd{3, std::numeric_limits<double>::quiet_NaN()};
-  std::vector<double> initial_acc_cmd{3, std::numeric_limits<double>::quiet_NaN()};
+  std::vector<double> initial_pos_cmd(3, std::numeric_limits<double>::quiet_NaN());
+  std::vector<double> initial_vel_cmd(3, std::numeric_limits<double>::quiet_NaN());
+  std::vector<double> initial_acc_cmd(3, std::numeric_limits<double>::quiet_NaN());
 
   SetUpAndActivateTrajectoryController(
     executor, {interp_desired_state_parameter}, true, 0., 1., initial_pos_cmd, initial_vel_cmd,
