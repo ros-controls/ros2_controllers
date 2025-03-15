@@ -35,9 +35,11 @@ endforeach()
 add_compile_definitions(RCPPUTILS_VERSION_MAJOR=${rcpputils_VERSION_MAJOR})
 add_compile_definitions(RCPPUTILS_VERSION_MINOR=${rcpputils_VERSION_MINOR})
 
+# get include dirs from control_toolbox for the custom validators
+get_target_property(TB_INCLUDE_DIRS control_toolbox::rate_limiter_parameters INTERFACE_INCLUDE_DIRECTORIES)
 generate_parameter_library(diff_drive_controller_parameters
   src/diff_drive_controller_parameter.yaml
-  include/diff_drive_controller/custom_validators.hpp
+  ${TB_INCLUDE_DIRS}/control_toolbox/custom_validators.hpp
 )
 
 add_library(diff_drive_controller SHARED
@@ -51,7 +53,8 @@ target_include_directories(diff_drive_controller PUBLIC
 )
 target_link_libraries(diff_drive_controller
   PUBLIC
-    diff_drive_controller_parameters)
+    diff_drive_controller_parameters
+    control_toolbox::rate_limiter_parameters)
 ament_target_dependencies(diff_drive_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
 pluginlib_export_plugin_description_file(controller_interface diff_drive_plugin.xml)
 
