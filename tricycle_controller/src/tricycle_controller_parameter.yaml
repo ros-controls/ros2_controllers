@@ -76,6 +76,11 @@ tricycle_controller:
     default_value: false,
     description: "Publish limited commands.",
   }
+  exact_mode_threshold: {
+    type: double,
+    default_value: 0.52, # M_PI / 6
+    description: "In exact mode, at which steering angle difference to allow driving at all",
+  }
   velocity_rolling_window_size: {
     type: int,
     default_value: 10,
