@@ -18,7 +18,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest_prod.h>
 #include <chrono>
-#include <exception>
 #include <limits>
 #include <memory>
 #include <string>

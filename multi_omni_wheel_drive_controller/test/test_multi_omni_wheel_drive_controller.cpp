@@ -326,13 +326,9 @@ TEST_F(MultiOmniWheelDriveControllerTest, chainable_controller_unchained_mode)
     EXPECT_TRUE(std::isnan(interface));
   }
   // But NaNs should not propagate to command interfaces
-  double value;
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
-    if (command_itfs_[i].get_value(value))
-    {
-      ASSERT_FALSE(std::isnan(value));
-    }
+    ASSERT_FALSE(std::isnan(command_itfs_[i].get_optional().value()));
   }
 
   // Check that a late command message causes the command interfaces to be set to 0.0
@@ -348,10 +344,7 @@ TEST_F(MultiOmniWheelDriveControllerTest, chainable_controller_unchained_mode)
     controller_interface::return_type::OK);
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
-    if (command_itfs_[i].get_value(value))
-    {
-      EXPECT_EQ(value, 0.0);
-    }
+    EXPECT_EQ(command_itfs_[i].get_optional().value(), 0.0);
   }
 
   // Now check that a timely published command message sets the command interfaces to the correct
@@ -366,10 +359,7 @@ TEST_F(MultiOmniWheelDriveControllerTest, chainable_controller_unchained_mode)
   std::vector<double> expected_wheels_vel_cmds = {-15.0, 5.0, 5.0, -15.0};
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
-    if (command_itfs_[i].get_value(value))
-    {
-      EXPECT_DOUBLE_EQ(value, expected_wheels_vel_cmds[i]);
-    }
+    EXPECT_DOUBLE_EQ(command_itfs_[i].get_optional().value(), expected_wheels_vel_cmds[i]);
   }
 
   // Now check that the command interfaces are set to 0.0 on deactivation
@@ -378,10 +368,7 @@ TEST_F(MultiOmniWheelDriveControllerTest, chainable_controller_unchained_mode)
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
-    if (command_itfs_[i].get_value(value))
-    {
-      EXPECT_EQ(value, 0.0);
-    }
+    EXPECT_EQ(command_itfs_[i].get_optional().value(), 0.0);
   }
 
   // cleanup
@@ -389,10 +376,7 @@ TEST_F(MultiOmniWheelDriveControllerTest, chainable_controller_unchained_mode)
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
-    if (command_itfs_[i].get_value(value))
-    {
-      EXPECT_EQ(value, 0.0);
-    }
+    EXPECT_EQ(command_itfs_[i].get_optional().value(), 0.0);
   }
 
   state = controller_->get_node()->configure();
@@ -430,13 +414,9 @@ TEST_F(MultiOmniWheelDriveControllerTest, chainable_controller_chained_mode)
     EXPECT_TRUE(std::isnan(interface));
   }
   // But NaNs should not propagate to command interfaces
-  double value;
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
-    if (command_itfs_[i].get_value(value))
-    {
-      ASSERT_FALSE(std::isnan(value));
-    }
+    ASSERT_FALSE(std::isnan(command_itfs_[i].get_optional().value()));
   }
 
   // Imitate preceding controllers by setting reference_interfaces_
@@ -450,10 +430,7 @@ TEST_F(MultiOmniWheelDriveControllerTest, chainable_controller_chained_mode)
   std::vector<double> expected_wheels_vel_cmds = {-15.0, 5.0, 5.0, -15.0};
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
-    if (command_itfs_[i].get_value(value))
-    {
-      EXPECT_DOUBLE_EQ(value, expected_wheels_vel_cmds[i]);
-    }
+    EXPECT_DOUBLE_EQ(command_itfs_[i].get_optional().value(), expected_wheels_vel_cmds[i]);
   }
 
   // Now check that the command interfaces are set to 0.0 on deactivation
@@ -462,10 +439,7 @@ TEST_F(MultiOmniWheelDriveControllerTest, chainable_controller_chained_mode)
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
-    if (command_itfs_[i].get_value(value))
-    {
-      EXPECT_EQ(value, 0.0);
-    }
+    EXPECT_EQ(command_itfs_[i].get_optional().value(), 0.0);
   }
 
   // cleanup
@@ -473,10 +447,7 @@ TEST_F(MultiOmniWheelDriveControllerTest, chainable_controller_chained_mode)
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
-    if (command_itfs_[i].get_value(value))
-    {
-      EXPECT_EQ(value, 0.0);
-    }
+    EXPECT_EQ(command_itfs_[i].get_optional().value(), 0.0);
   }
 
   state = controller_->get_node()->configure();
@@ -511,13 +482,9 @@ TEST_F(MultiOmniWheelDriveControllerTest, deactivate_then_activate)
     EXPECT_TRUE(std::isnan(interface));
   }
   // But NaNs should not propagate to command interfaces
-  double value;
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
-    if (command_itfs_[i].get_value(value))
-    {
-      ASSERT_FALSE(std::isnan(value));
-    }
+    ASSERT_FALSE(std::isnan(command_itfs_[i].get_optional().value()));
   }
 
   // Now check that a timely published command message sets the command interfaces to the correct
@@ -532,10 +499,7 @@ TEST_F(MultiOmniWheelDriveControllerTest, deactivate_then_activate)
   std::vector<double> expected_wheels_vel_cmds = {-15.0, 5.0, 5.0, -15.0};
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
-    if (command_itfs_[i].get_value(value))
-    {
-      EXPECT_DOUBLE_EQ(value, expected_wheels_vel_cmds[i]);
-    }
+    EXPECT_DOUBLE_EQ(command_itfs_[i].get_optional().value(), expected_wheels_vel_cmds[i]);
   }
 
   // Now check that the command interfaces are set to 0.0 on deactivation
@@ -548,10 +512,7 @@ TEST_F(MultiOmniWheelDriveControllerTest, deactivate_then_activate)
     controller_interface::return_type::OK);
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
-    if (command_itfs_[i].get_value(value))
-    {
-      EXPECT_EQ(value, 0.0);
-    }
+    EXPECT_EQ(command_itfs_[i].get_optional().value(), 0.0);
   }
 
   // Activate again
@@ -567,10 +528,7 @@ TEST_F(MultiOmniWheelDriveControllerTest, deactivate_then_activate)
   }
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
-    if (command_itfs_[i].get_value(value))
-    {
-      EXPECT_EQ(value, 0.0);
-    }
+    EXPECT_EQ(command_itfs_[i].get_optional().value(), 0.0);
   }
 
   // A new command should work as expected
@@ -582,10 +540,7 @@ TEST_F(MultiOmniWheelDriveControllerTest, deactivate_then_activate)
     controller_interface::return_type::OK);
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
-    if (command_itfs_[i].get_value(value))
-    {
-      EXPECT_DOUBLE_EQ(value, expected_wheels_vel_cmds[i]);
-    }
+    EXPECT_DOUBLE_EQ(command_itfs_[i].get_optional().value(), expected_wheels_vel_cmds[i]);
   }
 
   // Deactivate again and cleanup
@@ -623,14 +578,10 @@ TEST_F(MultiOmniWheelDriveControllerTest, command_with_zero_timestamp_is_accepte
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
-  double value;
   std::vector<double> expected_wheels_vel_cmds = {-15.0, 5.0, 5.0, -15.0};
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
-    if (command_itfs_[i].get_value(value))
-    {
-      EXPECT_DOUBLE_EQ(value, expected_wheels_vel_cmds[i]);
-    }
+    EXPECT_DOUBLE_EQ(command_itfs_[i].get_optional().value(), expected_wheels_vel_cmds[i]);
   }
 
   // Deactivate and cleanup

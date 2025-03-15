@@ -34,11 +34,11 @@ Odometry::Odometry()
 
 bool Odometry::updateFromPos(const std::vector<double> & wheels_pos, const rclcpp::Time & time)
 {
-  // We cannot estimate the speed with very small time intervals:
   const double dt = time.seconds() - timestamp_.seconds();
-  if (dt < 0.0001)
+  // We cannot estimate angular velocity with very small time intervals
+  if (std::fabs(dt) < 1e-6)
   {
-    return false;  // Interval too small to integrate with
+    return false;
   }
 
   // Estimate angular velocity of wheels using old and current position [rads/s]:

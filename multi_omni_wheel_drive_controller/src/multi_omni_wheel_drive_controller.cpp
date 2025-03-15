@@ -16,6 +16,7 @@
 
 #include <cmath>
 #include <memory>
+#include <rclcpp/logger.hpp>
 #include <string>
 #include <vector>
 
@@ -200,7 +201,6 @@ controller_interface::CallbackReturn MultiOmniWheelDriveController::on_configure
   odometry_transform_message.transforms.front().header.frame_id = odom_frame_id;
   odometry_transform_message.transforms.front().child_frame_id = base_frame_id;
 
-  previous_update_timestamp_ = get_node()->get_clock()->now();
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
@@ -292,15 +292,13 @@ controller_interface::return_type MultiOmniWheelDriveController::update_referenc
       "Command message contains NaNs. Not updating reference interfaces.");
   }
 
-  previous_update_timestamp_ = time;
-
   return controller_interface::return_type::OK;
 }
 
 controller_interface::return_type MultiOmniWheelDriveController::update_and_write_commands(
   const rclcpp::Time & time, const rclcpp::Duration &)
 {
-  auto logger = get_node()->get_logger();
+  rclcpp::Logger logger = get_node()->get_logger();
 
   if (
     !std::isfinite(reference_interfaces_[0]) || !std::isfinite(reference_interfaces_[1]) ||
@@ -322,7 +320,15 @@ controller_interface::return_type MultiOmniWheelDriveController::update_and_writ
     std::vector<double> wheels_feedback(registered_wheel_handles_.size());  // [rads]
     for (size_t i = 0; i < static_cast<size_t>(registered_wheel_handles_.size()); ++i)
     {
-      const double wheel_feedback = registered_wheel_handles_[i].feedback.get().get_value();
+      // Get wheel feedback
+      const std::optional<double> wheel_feedback_op =
+        registered_wheel_handles_[i].feedback.get().get_optional();
+      if (!wheel_feedback_op.has_value())
+      {
+        RCLCPP_DEBUG(logger, "Unable to retrieve data from [%zu] wheel feedback!", i);
+        return controller_interface::return_type::OK;
+      }
+      const double wheel_feedback = wheel_feedback_op.value();
 
       if (std::isnan(wheel_feedback))
       {
@@ -350,7 +356,7 @@ controller_interface::return_type MultiOmniWheelDriveController::update_and_writ
     bool should_publish = true;
     try
     {
-      if (time - previous_publish_timestamp_ < publish_period_)
+      if (time.seconds() - previous_publish_timestamp_.seconds() < publish_period_.seconds())
       {
         should_publish = false;
       }
@@ -421,10 +427,12 @@ controller_interface::CallbackReturn MultiOmniWheelDriveController::on_error(
 
 void MultiOmniWheelDriveController::compute_and_set_wheel_velocities()
 {
+  bool set_command_result = true;
+
   double angle_bw_wheels = (2 * M_PI) / static_cast<double>(registered_wheel_handles_.size());
   for (size_t i = 0; i < static_cast<size_t>(registered_wheel_handles_.size()); ++i)
   {
-    registered_wheel_handles_[i].velocity.get().set_value(
+    set_command_result &= registered_wheel_handles_[i].velocity.get().set_value(
       ((std::sin((angle_bw_wheels * static_cast<double>(i)) + params_.wheel_offset) *
         reference_interfaces_[0]) -
        (std::cos((angle_bw_wheels * static_cast<double>(i)) + params_.wheel_offset) *
@@ -432,6 +440,10 @@ void MultiOmniWheelDriveController::compute_and_set_wheel_velocities()
        (reference_interfaces_[2] * params_.robot_radius)) /
       params_.wheel_radius);
   }
+
+  rclcpp::Logger logger = get_node()->get_logger();
+  RCLCPP_DEBUG_EXPRESSION(
+    logger, !set_command_result, "Unable to set the command to one of the command handles!");
 }
 
 bool MultiOmniWheelDriveController::reset()
@@ -451,7 +463,7 @@ bool MultiOmniWheelDriveController::reset()
 controller_interface::CallbackReturn MultiOmniWheelDriveController::configure_wheel_handles(
   const std::vector<std::string> & wheel_names, std::vector<WheelHandle> & registered_handles)
 {
-  auto logger = get_node()->get_logger();
+  rclcpp::Logger logger = get_node()->get_logger();
 
   // Register handles
   registered_handles.reserve(wheel_names.size());
@@ -495,10 +507,14 @@ controller_interface::CallbackReturn MultiOmniWheelDriveController::configure_wh
 
 void MultiOmniWheelDriveController::halt()
 {
+  bool set_command_result = true;
   for (const WheelHandle & wheel_handle : registered_wheel_handles_)
   {
-    wheel_handle.velocity.get().set_value(0.0);
+    set_command_result &= wheel_handle.velocity.get().set_value(0.0);
   }
+  rclcpp::Logger logger = get_node()->get_logger();
+  RCLCPP_DEBUG_EXPRESSION(
+    logger, !set_command_result, "Unable to set the command to one of the command handles!");
 }
 
 void MultiOmniWheelDriveController::reset_buffers()
