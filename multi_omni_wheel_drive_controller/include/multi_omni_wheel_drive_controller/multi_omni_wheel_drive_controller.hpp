@@ -16,7 +16,6 @@
 #define MULTI_OMNI_WHEEL_DRIVE_CONTROLLER__MULTI_OMNI_WHEEL_DRIVE_CONTROLLER_HPP_
 
 #include <memory>
-#include <queue>
 #include <string>
 #include <vector>
 
