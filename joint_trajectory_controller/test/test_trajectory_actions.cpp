@@ -25,7 +25,8 @@
 #include <vector>
 
 #include "control_msgs/action/detail/follow_joint_trajectory__struct.hpp"
-#include "gtest/gtest.h"
+#include "controller_interface/controller_interface.hpp"
+#include "hardware_interface/resource_manager.hpp"
 #include "rclcpp/clock.hpp"
 #include "rclcpp/duration.hpp"
 #include "rclcpp/executors/multi_threaded_executor.hpp"
@@ -36,9 +37,11 @@
 #include "rclcpp_action/client.hpp"
 #include "rclcpp_action/client_goal_handle.hpp"
 #include "rclcpp_action/create_client.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
+#include "joint_trajectory_controller/joint_trajectory_controller.hpp"
 #include "test_trajectory_controller_utils.hpp"
 
 using std::placeholders::_1;
