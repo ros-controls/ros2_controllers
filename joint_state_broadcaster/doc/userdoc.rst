@@ -51,5 +51,9 @@ The order of the joints in the message can determined by 3 different parameter s
 2. No defined ``joints`` parameter and ``use_urdf_to_filter`` set to ``true``:
     The order of the joints in the message is the same as the order of the joints in the URDF file, which is inherited from the loaded URDF model and independent of the order in the `ros2_control` tag.
 
-3. Defined ``joints`` parameter:
+3. Defined ``joints`` parameter along with ``interfaces`` parameter:
     The order of the joints in the message is the same as the order of the joints in the ``joints`` parameter.
+
+    If the ``joints`` parameter is a subset of the total available joints in the URDF (or) the total available state interfaces, the order of the joints in the message is the same as the order of the joints in the ``joints`` parameter.
+
+    If any of the combinations of the defined ``joints`` parameter and ``interfaces`` parameter are not in the available state interfaces, the controller will fail to activate.
