@@ -23,6 +23,7 @@
 
 #include "gmock/gmock.h"
 
+#include "control_msgs/msg/joint_trajectory_controller_state.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
 #include "joint_trajectory_controller/tolerances.hpp"
@@ -203,6 +204,12 @@ public:
   trajectory_msgs::msg::JointTrajectoryPoint get_state_reference() { return state_desired_; }
   trajectory_msgs::msg::JointTrajectoryPoint get_command_next() { return command_next_; }
   trajectory_msgs::msg::JointTrajectoryPoint get_state_error() { return state_error_; }
+  trajectory_msgs::msg::JointTrajectoryPoint get_current_command() { return command_current_; }
+
+  control_msgs::msg::JointTrajectoryControllerState get_state_msg()
+  {
+    return state_publisher_->msg_;
+  }
 
   /**
    * a copy of the private member function
