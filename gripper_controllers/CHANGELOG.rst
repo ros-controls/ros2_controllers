@@ -2,6 +2,9 @@
 Changelog for package gripper_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 4.21.0 (2025-03-01)
 -------------------
 * Update API of PID class (`#1437 <https://github.com/ros-controls/ros2_controllers/issues/1437>`_)

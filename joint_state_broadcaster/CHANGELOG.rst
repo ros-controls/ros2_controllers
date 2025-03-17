@@ -2,6 +2,11 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* [JSB] cleanup the activation error message (`#1584 <https://github.com/ros-controls/ros2_controllers/issues/1584>`_)
+* Contributors: Sai Kishor Kothakota
+
 4.21.0 (2025-03-01)
 -------------------
 * Cleanup wrong lifecycle transitions in tests and unnecessary checks (`#1534 <https://github.com/ros-controls/ros2_controllers/issues/1534>`_)

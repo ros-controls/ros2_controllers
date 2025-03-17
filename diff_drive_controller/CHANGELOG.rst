@@ -2,6 +2,12 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Use the custom validators directly from control_toolbox (`#1504 <https://github.com/ros-controls/ros2_controllers/issues/1504>`_)
+* Use new handles API in diff_drive_controller (`#1565 <https://github.com/ros-controls/ros2_controllers/issues/1565>`_)
+* Contributors: Christoph Fröhlich, Sai Kishor Kothakota
+
 4.21.0 (2025-03-01)
 -------------------
 * Fix the exported interface naming in the chainable controllers (`#1528 <https://github.com/ros-controls/ros2_controllers/issues/1528>`_)
