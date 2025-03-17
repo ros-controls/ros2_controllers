@@ -68,6 +68,11 @@ public:
     ;
   }
 
+  const std::array<double, PLANAR_POINT_DIM> & getBaseFrameOffset() const
+  {
+    return base_frame_offset_;
+  }
+
   /// \brief Sets the wheels parameters: mecanum geometric param and radius
   /// \param sum_of_robot_center_projection_on_X_Y_axis Wheels geometric param
   /// (used in mecanum wheels' ik) [m]

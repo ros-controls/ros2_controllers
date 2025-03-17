@@ -562,6 +562,92 @@ TEST_F(
   EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z, 0.0);
 }
 
+TEST_F(MecanumDriveControllerTest, SideToSideAndRotationOdometryTest)
+{
+  // Initialize controller
+  SetUpController("test_mecanum_drive_controller_with_rotation");
+
+  // Configure
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  // Check on the base frame offset is set by the params
+  EXPECT_EQ(controller_->odometry_.getBaseFrameOffset()[0], 1.0);
+  EXPECT_EQ(controller_->odometry_.getBaseFrameOffset()[1], 2.0);
+  EXPECT_EQ(controller_->odometry_.getBaseFrameOffset()[2], 3.0);
+
+  // Activate in chained mode
+  controller_->set_chained_mode(true);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(controller_->is_in_chained_mode(), true);
+
+  // Setup reference interfaces for side to side motion
+  auto side_to_side_motion = [this](double linear_y)
+  {
+    controller_->reference_interfaces_[0] = 0;         // linear x
+    controller_->reference_interfaces_[1] = linear_y;  // linear y
+    controller_->reference_interfaces_[2] = 0;         // angular z
+  };
+
+  // Setup reference interfaces for rotation
+  auto rotation_motion = [this](double rotation_velocity)
+  {
+    controller_->reference_interfaces_[0] = 0;                  // linear x
+    controller_->reference_interfaces_[1] = 0;                  // linear y
+    controller_->reference_interfaces_[2] = rotation_velocity;  // angular z
+  };
+
+  const double update_rate = 50.0;  // 50 Hz
+  const double dt = 1.0 / update_rate;
+  const double test_duration = 1.0;  // 1 second test
+  auto current_time = controller_->get_node()->now();
+
+  auto count = 0;
+  for (double t = 0; t < test_duration; t += dt)
+  {
+    switch (count % 4)
+    {
+      case 0:
+        side_to_side_motion(2.0);
+        break;
+      case 1:
+        rotation_motion(-0.5);
+        break;
+      case 2:
+        side_to_side_motion(-2.0);
+        break;
+      case 3:
+        rotation_motion(0.5);
+    }
+
+    // Call update method
+    ASSERT_EQ(
+      controller_->update(current_time, rclcpp::Duration::from_seconds(dt)),
+      controller_interface::return_type::OK);
+
+    current_time += rclcpp::Duration::from_seconds(dt);
+    count++;
+
+    // Update the state of the wheels for subsequent loop
+    size_t fl_index = controller_->get_front_left_wheel_index();
+    size_t fr_index = controller_->get_front_right_wheel_index();
+    size_t rl_index = controller_->get_rear_left_wheel_index();
+    size_t rr_index = controller_->get_rear_right_wheel_index();
+    joint_state_values_[fl_index] = controller_->command_interfaces_[fl_index].get_value();
+    joint_state_values_[fr_index] = controller_->command_interfaces_[fr_index].get_value();
+    joint_state_values_[rl_index] = controller_->command_interfaces_[rl_index].get_value();
+    joint_state_values_[rr_index] = controller_->command_interfaces_[rr_index].get_value();
+  }
+
+  RCLCPP_INFO(
+    controller_->get_node()->get_logger(), "odometry: %f, %f, %f", controller_->odometry_.getX(),
+    controller_->odometry_.getY(), controller_->odometry_.getRz());
+
+  // Verify odometry remains bounded
+  EXPECT_LT(std::abs(controller_->odometry_.getX()), 1.0);
+  EXPECT_LT(std::abs(controller_->odometry_.getY()), 1.0);
+  EXPECT_LT(std::abs(controller_->odometry_.getRz()), M_PI);
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
