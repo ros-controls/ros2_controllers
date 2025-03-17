@@ -2,6 +2,11 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Use constructor parameters instead of initializer list (backport `#1587 <https://github.com/ros-controls/ros2_controllers/issues/1587>`_) (`#1589 <https://github.com/ros-controls/ros2_controllers/issues/1589>`_)
+* Contributors: Felix Exner (fexner)
+
 2.42.1 (2025-02-24)
 -------------------
 

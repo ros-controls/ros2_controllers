@@ -2,6 +2,11 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add Mecanum Drive Controller (backport `#512 <https://github.com/ros-controls/ros2_controllers/issues/512>`_, `#1444 <https://github.com/ros-controls/ros2_controllers/issues/1444>`_, `#1547 <https://github.com/ros-controls/ros2_controllers/issues/1547>`_) (`#1376 <https://github.com/ros-controls/ros2_controllers/issues/1376>`_)
+* Contributors: mergify[bot]
+
 2.42.1 (2025-02-24)
 -------------------
 

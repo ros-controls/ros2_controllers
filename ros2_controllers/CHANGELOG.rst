@@ -2,6 +2,15 @@
 Changelog for package ros2_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add Mecanum Drive Controller (backport `#512 <https://github.com/ros-controls/ros2_controllers/issues/512>`_, `#1444 <https://github.com/ros-controls/ros2_controllers/issues/1444>`_, `#1547 <https://github.com/ros-controls/ros2_controllers/issues/1547>`_) (`#1376 <https://github.com/ros-controls/ros2_controllers/issues/1376>`_)
+  Co-authored-by: Dr. Denis <denis@stoglrobotics.de>
+  Co-authored-by: Christoph Froehlich <christoph.froehlich@ait.ac.at>
+  Co-authored-by: Shankar-Balajee <ssbalajee08@gmail.com>
+  Co-authored-by: Soham Patil <sohampatil45939@gmail.com>
+* Contributors: mergify[bot]
+
 2.42.1 (2025-02-24)
 -------------------
 
