@@ -2,8 +2,8 @@
 Changelog for package rqt_joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.22.0 (2025-03-17)
+-------------------
 * [JTC] Accept larger number of `joints` than `command_joints` (`#809 <https://github.com/ros-controls/ros2_controllers/issues/809>`_)
 * Update documentation of rqt_joint_trajectory_controller (`#1578 <https://github.com/ros-controls/ros2_controllers/issues/1578>`_)
 * Contributors: Aditya Pawar, Christoph Fröhlich

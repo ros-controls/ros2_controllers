@@ -2,8 +2,8 @@
 Changelog for package forward_command_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.22.0 (2025-03-17)
+-------------------
 * [ForwardCommandController] Fix the duplicate command interface types when reconfiguring the controller (`#1568 <https://github.com/ros-controls/ros2_controllers/issues/1568>`_)
 * Contributors: Sai Kishor Kothakota
 

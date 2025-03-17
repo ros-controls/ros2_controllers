@@ -2,8 +2,8 @@
 Changelog for package mecanum_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.22.0 (2025-03-17)
+-------------------
 * [mecanum_drive_controller] Fix Odometry Initialization  (`#1573 <https://github.com/ros-controls/ros2_controllers/issues/1573>`_)
 * Contributors: Julia Jia
 

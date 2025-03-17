@@ -2,8 +2,8 @@
 Changelog for package position_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.22.0 (2025-03-17)
+-------------------
 * Fix the `ActivateWithWrongJointsNamesFails` test (`#1570 <https://github.com/ros-controls/ros2_controllers/issues/1570>`_)
 * Contributors: Christoph Fröhlich
 

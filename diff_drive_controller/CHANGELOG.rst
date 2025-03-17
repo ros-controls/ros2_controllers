@@ -2,8 +2,8 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.22.0 (2025-03-17)
+-------------------
 * Use the custom validators directly from control_toolbox (`#1504 <https://github.com/ros-controls/ros2_controllers/issues/1504>`_)
 * Use new handles API in diff_drive_controller (`#1565 <https://github.com/ros-controls/ros2_controllers/issues/1565>`_)
 * Contributors: Christoph Fröhlich, Sai Kishor Kothakota

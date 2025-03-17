@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.22.0 (2025-03-17)
+-------------------
 * [JTC] Accept larger number of `joints` than `command_joints` (`#809 <https://github.com/ros-controls/ros2_controllers/issues/809>`_)
 * Use constructor parameters instead of initializer list (`#1587 <https://github.com/ros-controls/ros2_controllers/issues/1587>`_)
 * [JTC] Enable feed-forward effort trajectories (`#1200 <https://github.com/ros-controls/ros2_controllers/issues/1200>`_)
