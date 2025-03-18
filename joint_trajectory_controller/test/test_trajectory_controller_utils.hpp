@@ -821,7 +821,7 @@ public:
     state_interface_types_ = std::get<1>(GetParam());
   }
 
-  virtual void TearDown() { TrajectoryControllerTest::DeactivateTrajectoryController(); }
+  virtual void TearDown() { TrajectoryControllerTest::TearDown(); }
 
   static void TearDownTestCase() { TrajectoryControllerTest::TearDownTestCase(); }
 };
