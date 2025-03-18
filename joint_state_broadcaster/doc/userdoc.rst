@@ -54,6 +54,9 @@ The order of the joints in the message can determined by 3 different parameter s
 3. Defined ``joints`` parameter along with ``interfaces`` parameter:
     The order of the joints in the message is the same as the order of the joints in the ``joints`` parameter.
 
-    If the ``joints`` parameter is a subset of the total available joints in the URDF (or) the total available state interfaces, the order of the joints in the message is the same as the order of the joints in the ``joints`` parameter.
+    If the ``joints`` parameter is a subset of the total available joints in the URDF (or) the total available state interfaces, then only the joints in the ``joints`` parameter are published in the message.
 
     If any of the combinations of the defined ``joints`` parameter and ``interfaces`` parameter are not in the available state interfaces, the controller will fail to activate.
+
+..note::
+    If the ``extra_joints`` parameter is set, the joints in the ``extra_joints`` parameter are appended to the end of the joint names in the message.
