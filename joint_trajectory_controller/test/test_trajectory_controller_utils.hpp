@@ -259,6 +259,12 @@ public:
       controller_name_ + "/joint_trajectory", rclcpp::SystemDefaultsQoS());
   }
 
+  void TearDown() override
+  {
+    DeactivateTrajectoryController();
+    traj_controller_.reset();
+  }
+
   void SetUpTrajectoryController(
     rclcpp::Executor & executor, const std::vector<rclcpp::Parameter> & parameters = {},
     const std::string & urdf = ros2_control_test_assets::minimal_robot_urdf)
