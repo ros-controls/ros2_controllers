@@ -122,6 +122,7 @@ protected:
   {
     TearDownControllerHardware();
     TearDownExecutor();
+    TrajectoryControllerTest::TearDown();
   }
 
   void TearDownExecutor()
