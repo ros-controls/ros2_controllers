@@ -216,7 +216,8 @@ SegmentTolerances get_segment_tolerances(
     {
       RCLCPP_ERROR(
         logger,
-        "joint '%s' specified in goal.path_tolerance has a invalid %s tolerance. Using default tolerances.",
+        "joint '%s' specified in goal.path_tolerance has a invalid %s tolerance. Using default "
+        "tolerances.",
         joint.c_str(), interface.c_str());
       return default_tolerances;
     }
@@ -264,7 +265,8 @@ SegmentTolerances get_segment_tolerances(
     {
       RCLCPP_ERROR(
         logger,
-        "joint '%s' specified in goal.goal_tolerance has a invalid %s tolerance. Using default tolerances.",
+        "joint '%s' specified in goal.goal_tolerance has a invalid %s tolerance. Using default "
+        "tolerances.",
         joint.c_str(), interface.c_str());
       return default_tolerances;
     }

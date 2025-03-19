@@ -301,9 +301,9 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
         {
           RCLCPP_ERROR(
             get_node()->get_logger(),
-            "Ignoring wrench reference as it is on the wrong frame: %s. Expected reference frame: %s",
-            msg.header.frame_id.c_str(),
-            admittance_->parameters_.ft_sensor.frame.id.c_str());
+            "Ignoring wrench reference as it is on the wrong frame: %s. Expected reference frame: "
+            "%s",
+            msg.header.frame_id.c_str(), admittance_->parameters_.ft_sensor.frame.id.c_str());
           return;
         }
         input_wrench_command_.writeFromNonRT(msg);

@@ -210,8 +210,8 @@ controller_interface::CallbackReturn GripperActionController<HardwareInterface>:
 
   // Action status checking update rate
   action_monitor_period_ = rclcpp::Duration::from_seconds(1.0 / params_.action_monitor_rate);
-  RCLCPP_INFO_STREAM(
-    logger, "Action status changes will be monitored at " << params_.action_monitor_rate << "Hz.");
+  RCLCPP_INFO(
+    logger, "Action status changes will be monitored at %f Hz.", params_.action_monitor_rate);
 
   // Controlled joint
   if (params_.joint.empty())
@@ -232,15 +232,13 @@ controller_interface::CallbackReturn GripperActionController<HardwareInterface>:
     { return command_interface.get_interface_name() == HardwareInterface; });
   if (command_interface_it == command_interfaces_.end())
   {
-    RCLCPP_ERROR(
-      get_node()->get_logger(), "Expected 1 %s command interface", HardwareInterface);
+    RCLCPP_ERROR(get_node()->get_logger(), "Expected 1 %s command interface", HardwareInterface);
     return controller_interface::CallbackReturn::ERROR;
   }
   if (command_interface_it->get_prefix_name() != params_.joint)
   {
     RCLCPP_ERROR(
-      get_node()->get_logger(),
-      "Command interface is different than joint name `%s` != `%s`",
+      get_node()->get_logger(), "Command interface is different than joint name `%s` != `%s`",
       command_interface_it->get_prefix_name().c_str(), params_.joint.c_str());
     return controller_interface::CallbackReturn::ERROR;
   }
