@@ -179,7 +179,7 @@ controller_interface::return_type JointTrajectoryController::update(
     if (!current_trajectory_->is_sampled_already())
     {
       first_sample = true;
-      if (params_.interpolate_from_desired_state || params_.open_loop_control)
+      if (params_.interpolate_from_desired_state)
       {
         if (std::abs(last_commanded_time_.seconds()) < std::numeric_limits<float>::epsilon())
         {
@@ -693,16 +693,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
 {
   auto logger = get_node()->get_logger();
 
-  // START DEPRECATE
-  if (params_.open_loop_control)
-  {
-    RCLCPP_WARN(
-      logger,
-      "[deprecated] 'open_loop_control' parameter is deprecated. Instead, set the feedback gains "
-      "to zero and use 'interpolate_from_desired_state' parameter");
-  }
-  // END DEPRECATE
-
   // update the dynamic map parameters
   param_listener_->refresh_dynamic_parameters();
 
@@ -783,8 +773,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   // if there is only velocity or if there is effort command interface
   // then use also PID adapter
   use_closed_loop_pid_adapter_ =
-    (has_velocity_command_interface_ && params_.command_interfaces.size() == 1 &&
-     !params_.open_loop_control) ||
+    (has_velocity_command_interface_ && params_.command_interfaces.size() == 1) ||
     (has_effort_command_interface_ && params_.command_interfaces.size() == 1);
 
   tmp_command_.resize(dof_, 0.0);
