@@ -1007,8 +1007,9 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   resize_joint_trajectory_point(state, dof_);
   // read from cmd joints only if all joints have command interface
   // otherwise it leaves the entries of joints without command interface NaN.
-  // if no open_loop control, state_current_ is then used for `set_point_before_trajectory_msg` and
-  // future trajectory sampling will always give NaN for these joints
+  // if no interpolate_from_desired_state, state_current_ is then used for
+  // `set_point_before_trajectory_msg` and future trajectory sampling will always give NaN for these
+  // joints
   if (
     params_.set_last_command_interface_value_as_state_on_activation && dof_ == num_cmd_joints_ &&
     read_state_from_command_interfaces(state))
