@@ -275,6 +275,28 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
   input_joint_command_subscriber_ =
     get_node()->create_subscription<trajectory_msgs::msg::JointTrajectoryPoint>(
       "~/joint_references", rclcpp::SystemDefaultsQoS(), joint_command_callback);
+<<<<<<< HEAD
+=======
+
+  input_wrench_command_subscriber_ =
+    get_node()->create_subscription<geometry_msgs::msg::WrenchStamped>(
+      "~/wrench_reference", rclcpp::SystemDefaultsQoS(),
+      [&](const geometry_msgs::msg::WrenchStamped & msg)
+      {
+        if (
+          msg.header.frame_id != admittance_->parameters_.ft_sensor.frame.id &&
+          !msg.header.frame_id.empty())
+        {
+          RCLCPP_ERROR(
+            get_node()->get_logger(),
+            "Ignoring wrench reference as it is on the wrong frame: %s. Expected reference frame: "
+            "%s",
+            msg.header.frame_id.c_str(), admittance_->parameters_.ft_sensor.frame.id.c_str());
+          return;
+        }
+        input_wrench_command_.writeFromNonRT(msg);
+      });
+>>>>>>> eca84fa (Replace RCLCPP_*_STREAM macros with RCLCPP_* (#1600))
   s_publisher_ = get_node()->create_publisher<control_msgs::msg::AdmittanceControllerState>(
     "~/status", rclcpp::SystemDefaultsQoS());
   state_publisher_ =
