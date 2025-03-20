@@ -394,7 +394,7 @@ const control_msgs::msg::AdmittanceControllerState & AdmittanceRule::get_control
   state_message_.admittance_position = tf2::eigenToTransform(admittance_state_.admittance_position);
 
   state_message_.ref_trans_base_ft.header.frame_id = parameters_.kinematics.base;
-  state_message_.ref_trans_base_ft.header.frame_id = "ft_reference";
+  state_message_.ref_trans_base_ft.child_frame = parameters_.ft_sensor.frame.id;
   state_message_.ref_trans_base_ft = tf2::eigenToTransform(admittance_state_.ref_trans_base_ft);
 
   Eigen::Quaterniond quat(admittance_state_.rot_base_control);
