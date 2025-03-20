@@ -181,11 +181,16 @@ TEST_F(ForceTorqueSensorBroadcasterTest, InterfaceNames_Configure_Success)
   SetUpFTSBroadcaster();
 
   // set the 'interface_names'
-  fts_broadcaster_->get_node()->set_parameter({"interface_names.force.x", "fts_sensor/force.x"});
-  fts_broadcaster_->get_node()->set_parameter({"interface_names.torque.z", "fts_sensor/torque.z"});
+  auto result =
+    fts_broadcaster_->get_node()->set_parameter({"interface_names.force.x", "fts_sensor/force.x"});
+  ASSERT_EQ(result.successful, true);
+  result = fts_broadcaster_->get_node()->set_parameter(
+    {"interface_names.torque.z", "fts_sensor/torque.z"});
+  ASSERT_EQ(result.successful, true);
 
   // set the 'frame_id'
-  fts_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
+  result = fts_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
+  ASSERT_EQ(result.successful, true);
 
   // configure passed
   ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
