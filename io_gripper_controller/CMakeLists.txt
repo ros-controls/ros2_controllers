@@ -64,6 +64,7 @@ install(
 )
 
 if(BUILD_TESTING)
+  add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
 
   ament_add_gmock(test_load_io_gripper_controller test/test_load_io_gripper_controller.cpp)
   target_include_directories(test_load_io_gripper_controller PRIVATE include)
