@@ -15,8 +15,6 @@
 #ifndef TEST_IO_GRIPPER_CONTROLLER_HPP_
 #define TEST_IO_GRIPPER_CONTROLLER_HPP_
 
-// #include "io_gripper_controller/io_gripper_controller.hpp"
-
 #include <gmock/gmock.h>
 
 #include <chrono>
@@ -35,6 +33,7 @@
 #include <rclcpp/time.hpp>
 #include <rclcpp/utilities.hpp>
 #include <rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp>
+#include "io_gripper_controller/io_gripper_controller.hpp"
 
 // TODO(anyone): replace the state and command message types
 using JointStateMsg = io_gripper_controller::IOGripperController::JointStateMsg;
