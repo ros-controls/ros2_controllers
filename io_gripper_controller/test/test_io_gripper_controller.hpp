@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Stogl Robotics Consulting UG (haftungsbeschränkt)
+// Copyright (c) 2025, b»robotized by Stogl Robotics
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//
-// Source of this file are templates in
-// [RosTeamWorkspace](https://github.com/StoglRobotics/ros_team_workspace) repository.
-//
-
 #ifndef TEST_IO_GRIPPER_CONTROLLER_HPP_
 #define TEST_IO_GRIPPER_CONTROLLER_HPP_
+
+// #include "io_gripper_controller/io_gripper_controller.hpp"
+
+#include <gmock/gmock.h>
 
 #include <chrono>
 #include <limits>
@@ -28,16 +27,14 @@
 #include <utility>
 #include <vector>
 
-#include "gmock/gmock.h"
-#include "hardware_interface/loaned_command_interface.hpp"
-#include "hardware_interface/loaned_state_interface.hpp"
-#include "hardware_interface/types/hardware_interface_return_values.hpp"
-#include "io_gripper_controller/io_gripper_controller.hpp"
-#include "rclcpp/executor.hpp"
-#include "rclcpp/parameter_value.hpp"
-#include "rclcpp/time.hpp"
-#include "rclcpp/utilities.hpp"
-#include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
+#include <hardware_interface/loaned_command_interface.hpp>
+#include <hardware_interface/loaned_state_interface.hpp>
+#include <hardware_interface/types/hardware_interface_return_values.hpp>
+#include <rclcpp/executor.hpp>
+#include <rclcpp/parameter_value.hpp>
+#include <rclcpp/time.hpp>
+#include <rclcpp/utilities.hpp>
+#include <rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp>
 
 // TODO(anyone): replace the state and command message types
 using JointStateMsg = io_gripper_controller::IOGripperController::JointStateMsg;
@@ -134,9 +131,11 @@ public:
 protected:
   void SetUpController(const std::string controller_name = "test_io_gripper_controller")
   {
+    RCLCPP_INFO(rclcpp::get_logger("IOGripperControllerTest"), "initializing controller");
     ASSERT_EQ(
       controller_->init(controller_name, "", 0, "", controller_->define_custom_node_options()),
       controller_interface::return_type::OK);
+    RCLCPP_INFO(rclcpp::get_logger("IOGripperControllerTest"), "initialized successfully");
 
     // setting the command state interfaces manually
     std::vector<hardware_interface::LoanedCommandInterface> command_itfs;
@@ -237,7 +236,7 @@ protected:
       {"open.set_after_command.low", open_set_after_command_low});
 
     controller_->get_node()->set_parameter({"possible_closed_states", possible_closed_states});
-    controller_->get_node()->set_parameter({"close.joint_states", close_joint_states});
+    // controller_->get_node()->set_parameter({"close.joint_states", close_joint_states});
     controller_->get_node()->set_parameter(
       {"close.set_before_command.high", close_set_before_command_high});
     controller_->get_node()->set_parameter(
@@ -345,37 +344,37 @@ protected:
   std::vector<std::string> open_close_joints = {"gripper_clamp_jaw"};
 
   std::vector<double> open_joint_states = {0.0};
-  std::vector<std::string> open_set_before_command_high = {"EL2008/Bremse_WQG7"};
-  std::vector<std::string> open_set_before_command_low = {"EL2008/Greiferteil_Schliessen_WQG2"};
-  std::vector<std::string> open_set_after_command_high = {"EL2008/Bremse_WQG7"};
-  std::vector<std::string> open_set_after_command_low = {"EL2008/Greiferteil_Schliessen_WQG2"};
-  std::vector<std::string> open_command_high = {"EL2008/Greiferteil_Oeffnen_WQG1"};
-  std::vector<std::string> open_command_low = {"EL2008/Greiferteil_Schliessen_WQG2"};
-  std::vector<std::string> open_state_high = {"EL1008/Greifer_Geoeffnet_BG01"};
-  std::vector<std::string> open_state_low = {"EL1008/Greifer_Geschloschen_BG02"};
+  std::vector<std::string> open_set_before_command_high = {"Release_Break_valve"};
+  std::vector<std::string> open_set_before_command_low = {"Release_Something"};
+  std::vector<std::string> open_set_after_command_high = {"Release_Break_valve"};
+  std::vector<std::string> open_set_after_command_low = {"Release_Something"};
+  std::vector<std::string> open_command_high = {"Open_valve"};
+  std::vector<std::string> open_command_low = {"Close_valve"};
+  std::vector<std::string> open_state_high = {"Opened_signal"};
+  std::vector<std::string> open_state_low = {"Closed_signal"};
 
   std::vector<std::string> possible_closed_states = {"empty_close", "full_close"};
   std::vector<double> close_joint_states = {0.08};
-  std::vector<std::string> close_set_before_command_high = {"EL2008/Bremse_WQG7"};
-  std::vector<std::string> close_set_before_command_low = {"EL2008/Greiferteil_Oeffnen_WQG1"};
-  std::vector<std::string> close_set_after_command_high = {"EL2008/Bremse_WQG7"};
-  std::vector<std::string> close_set_after_command_low = {"EL2008/Greiferteil_Oeffnen_WQG1"};
-  std::vector<std::string> close_command_high = {"EL2008/Greiferteil_Schliessen_WQG2"};
-  std::vector<std::string> close_command_low = {"EL2008/Greiferteil_Oeffnen_WQG1"};
-  std::vector<std::string> close_state_high = {"EL1008/Greifer_Geschloschen_BG02"};
-  std::vector<std::string> close_state_low = {"EL1008/Bauteilabfrage_BG06"};
+  std::vector<std::string> close_set_before_command_high = {"Release_Break_valve"};
+  std::vector<std::string> close_set_before_command_low = {"Open_valve"};
+  std::vector<std::string> close_set_after_command_high = {"Release_Break_valve"};
+  std::vector<std::string> close_set_after_command_low = {"Open_valve"};
+  std::vector<std::string> close_command_high = {"Release_Something"};
+  std::vector<std::string> close_command_low = {"Open_valve"};
+  std::vector<std::string> close_state_high = {"Closed_signal"};
+  std::vector<std::string> close_state_low = {"Part_Grasped_signal"};
 
-  std::vector<std::string> configurations_list = {"stichmass_125"};
+  std::vector<std::string> configurations_list = {"narrow_objects"};
   std::vector<std::string> configuration_joints = {"gripper_gripper_distance_joint"};
 
   std::vector<double> stichmass_joint_states = {0.125};
-  std::vector<std::string> stichmass_command_high = {"EL2008/Stichmass_125_WQG5"};
-  std::vector<std::string> stichmass_command_low = {"EL2008/Stichmass_250_WQG6"};
-  std::vector<std::string> stichmass_state_high = {"EL1008/Stichmass_125mm_BG03"};
-  std::vector<std::string> stichmass_state_low = {"EL1008/Stichmass_250mm_BG04"};
+  std::vector<std::string> stichmass_command_high = {"Narrow_Configuration_Cmd"};
+  std::vector<std::string> stichmass_command_low = {"Wide_Configuration_Cmd"};
+  std::vector<std::string> stichmass_state_high = {"Narrow_Configuraiton_Signal"};
+  std::vector<std::string> stichmass_state_low = {"Narrow_Configuraiton_Signal"};
 
-  std::vector<std::string> gripper_specific_sensors = {"hohenabfrage"};
-  std::string gripper_interfaces_input = {"EL1008/Hohenabfrage_BG5"};
+  std::vector<std::string> gripper_specific_sensors = {"part_sensor_top"};
+  std::string gripper_interfaces_input = {"Part_Sensor_Top_signal"};
 
   std::vector<std::string> joint_names_ = {"gripper_joint", "finger_joint"};
   std::vector<std::string> state_joint_names_ = {"gripper_joint"};
