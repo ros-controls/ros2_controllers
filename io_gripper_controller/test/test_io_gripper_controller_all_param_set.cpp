@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Stogl Robotics Consulting UG (haftungsbeschränkt)
+// Copyright (c) 2025, b»robotized by Stogl Robotics
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,31 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//
-// Source of this file are templates in
-// [RosTeamWorkspace](https://github.com/StoglRobotics/ros_team_workspace) repository.
-//
-
-#include "rclcpp/rclcpp.hpp"
-#include "test_io_gripper_controller.hpp"
-
 #include <limits>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include <rclcpp/rclcpp.hpp>
+#include "test_io_gripper_controller.hpp"
+
 // Test setting all params and getting success
 TEST_F(IOGripperControllerTest, AllParamsSetSuccess)
 {
+  RCLCPP_INFO(rclcpp::get_logger("IOGripperControllerTest"), "Setting all parameters");
   SetUpController();
+  RCLCPP_INFO(rclcpp::get_logger("IOGripperControllerTest"), "Setting up controllers");
 
   setup_parameters();
+
+  RCLCPP_INFO(rclcpp::get_logger("IOGripperControllerTest"), "Setup parameters successfully");
 
   // configure success.
   ASSERT_EQ(
     controller_->on_configure(rclcpp_lifecycle::State()),
     controller_interface::CallbackReturn::SUCCESS);
+  RCLCPP_INFO(rclcpp::get_logger("IOGripperControllerTest"), "Setup parameters successfully");
 }
 
 // Test not setting the one param and getting failure

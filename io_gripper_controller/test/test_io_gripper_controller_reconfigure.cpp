@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Stogl Robotics Consulting UG (haftungsbeschränkt)
+// Copyright (c) 2025, b»robotized by Stogl Robotics
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,19 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//
-// Source of this file are templates in
-// [RosTeamWorkspace](https://github.com/StoglRobotics/ros_team_workspace) repository.
-//
-
-#include "rclcpp/rclcpp.hpp"
-#include "test_io_gripper_controller.hpp"
-
 #include <limits>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
+
+#include <rclcpp/rclcpp.hpp>
+#include "test_io_gripper_controller.hpp"
 
 // Test open gripper service sets command its as expected and publishes msg
 TEST_F(IOGripperControllerTest, ReconfigureGripperService)
