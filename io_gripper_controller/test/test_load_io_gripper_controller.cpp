@@ -1,4 +1,4 @@
-// Copyright 2020 PAL Robotics SL.
+// Copyright (c) 2025, b»robotized by Stogl Robotics
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <gmock/gmock.h>
+
 #include <memory>
 
 #include "controller_manager/controller_manager.hpp"
@@ -31,10 +32,15 @@ TEST(TestLoadIOGripperController, load_controller)
 
   controller_manager::ControllerManager cm(
     executor, ros2_control_test_assets::minimal_robot_urdf, true, "test_controller_manager");
+  const std::string test_file_path =
+    std::string(TEST_FILES_DIRECTORY) + "/test_io_gripper_controller.yaml";
 
-  ASSERT_NE(
-    cm.load_controller("test_io_gripper_controller", "io_gripper_controller/IOGripperController"),
-    nullptr);
+  cm.set_parameter({"test_io_gripper_controller.params_file", test_file_path});
+
+  cm.set_parameter(
+    {"test_io_gripper_controller.type", "io_gripper_controller/IOGripperController"});
+
+  ASSERT_NE(cm.load_controller("test_io_gripper_controller"), nullptr);
 
   rclcpp::shutdown();
 }
