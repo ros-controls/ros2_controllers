@@ -123,12 +123,26 @@ TEST_F(SteeringControllersLibraryTest, test_both_update_methods_for_ref_timeout)
   // case 1 position_feedback = false
   controller_->params_.position_feedback = false;
 
+  // pre odometry values
+  auto pre_odom_x_1 = controller_->odometry_.get_x();
+  auto pre_odom_y_1 = controller_->odometry_.get_y();
+
   // age_of_last_command > ref_timeout_
   ASSERT_FALSE(age_of_last_command <= controller_->ref_timeout_);
   ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
   ASSERT_EQ(
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
+
+  // post odometry values
+  auto post_odom_x_1 = controller_->odometry_.get_x();
+  auto post_odom_y_1 = controller_->odometry_.get_y();
+
+  const double position_tolerance = 1e-5;
+
+  // Position should remain stable
+  EXPECT_NEAR(pre_odom_x_1, post_odom_x_1, position_tolerance);
+  EXPECT_NEAR(pre_odom_y_1, post_odom_y_1, position_tolerance);
 
   EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[0]));
   EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[1]));
@@ -153,8 +167,16 @@ TEST_F(SteeringControllersLibraryTest, test_both_update_methods_for_ref_timeout)
   EXPECT_NEAR(controller_->command_interfaces_[2].get_value(), 0.575875, 1e-6);
   EXPECT_NEAR(controller_->command_interfaces_[3].get_value(), 0.575875, 1e-6);
 
+  // Linear and angular velocity should be reset to zero
+  EXPECT_DOUBLE_EQ(controller_->odometry_.get_linear(), 0.0);
+  EXPECT_DOUBLE_EQ(controller_->odometry_.get_angular(), 0.0);
+
   // case 2 position_feedback = true
   controller_->params_.position_feedback = true;
+
+  // pre odometry values
+  auto pre_odom_x_2 = controller_->odometry_.get_x();
+  auto pre_odom_y_2 = controller_->odometry_.get_y();
 
   // adjusting to achieve age_of_last_command > ref_timeout
   msg->header.stamp = controller_->get_node()->now() - controller_->ref_timeout_ -
@@ -167,6 +189,14 @@ TEST_F(SteeringControllersLibraryTest, test_both_update_methods_for_ref_timeout)
   msg->twist.angular.z = TEST_ANGULAR_VELOCITY_Z;
   controller_->input_ref_.writeFromNonRT(msg);
 
+  // post odometry values
+  auto post_odom_x_2 = controller_->odometry_.get_x();
+  auto post_odom_y_2 = controller_->odometry_.get_y();
+
+  // Position should remain stable
+  EXPECT_NEAR(pre_odom_x_2, post_odom_x_2, position_tolerance);
+  EXPECT_NEAR(pre_odom_y_2, post_odom_y_2, position_tolerance);
+
   // age_of_last_command > ref_timeout_
   ASSERT_FALSE(age_of_last_command <= controller_->ref_timeout_);
   ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
@@ -196,6 +226,10 @@ TEST_F(SteeringControllersLibraryTest, test_both_update_methods_for_ref_timeout)
   // Steer angles should not reset
   EXPECT_NEAR(controller_->command_interfaces_[2].get_value(), 0.575875, 1e-6);
   EXPECT_NEAR(controller_->command_interfaces_[3].get_value(), 0.575875, 1e-6);
+
+  // Linear and angular velocity should be reset to zero
+  EXPECT_DOUBLE_EQ(controller_->odometry_.get_linear(), 0.0);
+  EXPECT_DOUBLE_EQ(controller_->odometry_.get_angular(), 0.0);
 }
 
 int main(int argc, char ** argv)
