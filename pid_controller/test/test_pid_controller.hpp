@@ -55,11 +55,15 @@ class TestablePidController : public pid_controller::PidController
   FRIEND_TEST(PidControllerTest, reactivate_success);
   FRIEND_TEST(PidControllerTest, test_feedforward_mode_service);
   FRIEND_TEST(PidControllerTest, test_update_logic_feedforward_off);
-  FRIEND_TEST(PidControllerTest, test_update_logic_feedforward_on);
-  FRIEND_TEST(PidControllerTest, test_update_logic_chainable_feedforward_off);
-  FRIEND_TEST(PidControllerTest, test_update_logic_chainable_feedforward_on);
+  FRIEND_TEST(PidControllerTest, test_update_logic_feedforward_on_with_zero_feedforward_gain);
+  FRIEND_TEST(PidControllerTest, test_update_logic_chainable_not_use_subscriber_update);
+  FRIEND_TEST(PidControllerTest, test_update_logic_angle_wraparound_off);
+  FRIEND_TEST(PidControllerTest, test_update_logic_angle_wraparound_on);
   FRIEND_TEST(PidControllerTest, subscribe_and_get_messages_success);
   FRIEND_TEST(PidControllerTest, receive_message_and_publish_updated_status);
+  FRIEND_TEST(PidControllerTest, test_update_chained_feedforward_with_gain);
+  FRIEND_TEST(PidControllerTest, test_update_chained_feedforward_off_with_gain);
+  FRIEND_TEST(PidControllerDualInterfaceTest, test_chained_feedforward_with_gain_dual_interface);
 
 public:
   controller_interface::CallbackReturn on_configure(
@@ -97,6 +101,19 @@ public:
     const std::chrono::milliseconds & timeout = std::chrono::milliseconds{500})
   {
     wait_for_command(executor, timeout);
+  }
+
+  void set_reference(const std::vector<double> & target_value)
+  {
+    std::shared_ptr<ControllerCommandMsg> msg = std::make_shared<ControllerCommandMsg>();
+    msg->dof_names = params_.dof_names;
+    msg->values.resize(msg->dof_names.size(), 0.0);
+    for (size_t i = 0; i < msg->dof_names.size(); ++i)
+    {
+      msg->values[i] = target_value[i];
+    }
+    msg->values_dot.resize(msg->dof_names.size(), std::numeric_limits<double>::quiet_NaN());
+    input_ref_.writeFromNonRT(msg);
   }
 };
 

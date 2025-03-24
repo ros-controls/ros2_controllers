@@ -2,6 +2,25 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.43.0 (2025-03-17)
+-------------------
+* Use constructor parameters instead of initializer list (backport `#1587 <https://github.com/ros-controls/ros2_controllers/issues/1587>`_) (`#1589 <https://github.com/ros-controls/ros2_controllers/issues/1589>`_)
+* Contributors: Felix Exner (fexner)
+
+2.42.1 (2025-02-24)
+-------------------
+
+2.42.0 (2025-02-17)
+-------------------
+* [JTC]: Abort goal on deactivate (backport `#1517 <https://github.com/ros-controls/ros2_controllers/issues/1517>`_) (`#1521 <https://github.com/ros-controls/ros2_controllers/issues/1521>`_)
+* Update paths of GPL includes (backport `#1487 <https://github.com/ros-controls/ros2_controllers/issues/1487>`_) (`#1493 <https://github.com/ros-controls/ros2_controllers/issues/1493>`_)
+* Contributors: Christoph Fröhlich
+
+2.41.0 (2025-01-13)
+-------------------
+* Remove empty on_shutdown() callbacks (backport `#1477 <https://github.com/ros-controls/ros2_controllers/issues/1477>`_) (`#1482 <https://github.com/ros-controls/ros2_controllers/issues/1482>`_)
+* Contributors: mergify[bot]
+
 2.40.0 (2025-01-01)
 -------------------
 * Increase margin for state_publish_rate  (`#1430 <https://github.com/ros-controls/ros2_controllers/issues/1430>`_)

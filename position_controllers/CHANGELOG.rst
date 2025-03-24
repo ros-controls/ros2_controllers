@@ -2,6 +2,20 @@
 Changelog for package position_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.43.0 (2025-03-17)
+-------------------
+* [ForwardCommandController] Fix the duplicate command interface types when reconfiguring the controller (backport `#1568 <https://github.com/ros-controls/ros2_controllers/issues/1568>`_, `#1570 <https://github.com/ros-controls/ros2_controllers/issues/1570>`_) (`#1569 <https://github.com/ros-controls/ros2_controllers/issues/1569>`_)
+* Contributors: mergify[bot]
+
+2.42.1 (2025-02-24)
+-------------------
+
+2.42.0 (2025-02-17)
+-------------------
+
+2.41.0 (2025-01-13)
+-------------------
+
 2.40.0 (2025-01-01)
 -------------------
 * Update position controller package.xml (backport `#1431 <https://github.com/ros-controls/ros2_controllers/issues/1431>`_) (`#1432 <https://github.com/ros-controls/ros2_controllers/issues/1432>`_)

@@ -2,6 +2,25 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.43.0 (2025-03-17)
+-------------------
+* Add Mecanum Drive Controller (backport `#512 <https://github.com/ros-controls/ros2_controllers/issues/512>`_, `#1444 <https://github.com/ros-controls/ros2_controllers/issues/1444>`_, `#1547 <https://github.com/ros-controls/ros2_controllers/issues/1547>`_) (`#1376 <https://github.com/ros-controls/ros2_controllers/issues/1376>`_)
+* Contributors: mergify[bot]
+
+2.42.1 (2025-02-24)
+-------------------
+
+2.42.0 (2025-02-17)
+-------------------
+* Update paths of GPL includes (backport `#1487 <https://github.com/ros-controls/ros2_controllers/issues/1487>`_) (`#1493 <https://github.com/ros-controls/ros2_controllers/issues/1493>`_)
+* Contributors: Christoph Fröhlich
+
+2.41.0 (2025-01-13)
+-------------------
+* Update generate_parameter_library dependency in steering_controllers_library (backport `#1465 <https://github.com/ros-controls/ros2_controllers/issues/1465>`_) (`#1468 <https://github.com/ros-controls/ros2_controllers/issues/1468>`_)
+* Fix typos in steering_controllers_lib (backport `#1464 <https://github.com/ros-controls/ros2_controllers/issues/1464>`_) (`#1466 <https://github.com/ros-controls/ros2_controllers/issues/1466>`_)
+* Contributors: mergify[bot]
+
 2.40.0 (2025-01-01)
 -------------------
 * fix(timeout): do not reset steer wheels to 0. on timeout (backport `#1289 <https://github.com/ros-controls/ros2_controllers/issues/1289>`_) (`#1452 <https://github.com/ros-controls/ros2_controllers/issues/1452>`_)

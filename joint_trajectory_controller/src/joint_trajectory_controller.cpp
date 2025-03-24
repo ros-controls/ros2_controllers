@@ -1049,7 +1049,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_deactivate(
     auto action_res = std::make_shared<FollowJTrajAction::Result>();
     action_res->set__error_code(FollowJTrajAction::Result::INVALID_GOAL);
     action_res->set__error_string("Current goal cancelled during deactivate transition.");
-    active_goal->setCanceled(action_res);
+    active_goal->setAborted(action_res);
     rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
   }
 
@@ -1124,14 +1124,6 @@ bool JointTrajectoryController::reset()
   traj_external_point_ptr_.reset();
 
   return true;
-}
-
-controller_interface::CallbackReturn JointTrajectoryController::on_shutdown(
-  const rclcpp_lifecycle::State &)
-{
-  // TODO(karsten1987): what to do?
-
-  return CallbackReturn::SUCCESS;
 }
 
 void JointTrajectoryController::publish_state(

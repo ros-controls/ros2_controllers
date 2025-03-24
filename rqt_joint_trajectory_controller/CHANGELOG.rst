@@ -2,6 +2,20 @@
 Changelog for package rqt_joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.43.0 (2025-03-17)
+-------------------
+* Update documentation of rqt_joint_trajectory_controller (backport `#1578 <https://github.com/ros-controls/ros2_controllers/issues/1578>`_) (`#1582 <https://github.com/ros-controls/ros2_controllers/issues/1582>`_)
+* Contributors: Aditya Pawar
+
+2.42.1 (2025-02-24)
+-------------------
+
+2.42.0 (2025-02-17)
+-------------------
+
+2.41.0 (2025-01-13)
+-------------------
+
 2.40.0 (2025-01-01)
 -------------------
 

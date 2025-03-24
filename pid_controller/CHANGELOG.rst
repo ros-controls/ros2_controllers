@@ -2,6 +2,23 @@
 Changelog for package pid_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.43.0 (2025-03-17)
+-------------------
+
+2.42.1 (2025-02-24)
+-------------------
+
+2.42.0 (2025-02-17)
+-------------------
+* [pid_controller] Update tests (backport `#1538 <https://github.com/ros-controls/ros2_controllers/issues/1538>`_) (`#1545 <https://github.com/ros-controls/ros2_controllers/issues/1545>`_)
+* [pid_controller] Fix logic for feedforward_mode with single reference interface (backport `#1520 <https://github.com/ros-controls/ros2_controllers/issues/1520>`_) (`#1539 <https://github.com/ros-controls/ros2_controllers/issues/1539>`_)
+* Improve antiwindup description (backport `#1502 <https://github.com/ros-controls/ros2_controllers/issues/1502>`_) (`#1503 <https://github.com/ros-controls/ros2_controllers/issues/1503>`_)
+* Update paths of GPL includes (backport `#1487 <https://github.com/ros-controls/ros2_controllers/issues/1487>`_) (`#1493 <https://github.com/ros-controls/ros2_controllers/issues/1493>`_)
+* Contributors: Christoph Fröhlich, Victor Coutinho Vieira Santos
+
+2.41.0 (2025-01-13)
+-------------------
+
 2.40.0 (2025-01-01)
 -------------------
 * Use the .hpp headers from `realtime_tools` package (backport `#1406 <https://github.com/ros-controls/ros2_controllers/issues/1406>`_) (`#1427 <https://github.com/ros-controls/ros2_controllers/issues/1427>`_)
