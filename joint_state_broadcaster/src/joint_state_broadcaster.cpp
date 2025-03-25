@@ -351,7 +351,9 @@ controller_interface::return_type JointStateBroadcaster::update(
       state_interface.get_value());
   }
 
-  if (realtime_joint_state_publisher_ && realtime_joint_state_publisher_->trylock())
+  if (
+    realtime_joint_state_publisher_ && joint_state_publisher_->get_subscription_count() > 0u &&
+    realtime_joint_state_publisher_->trylock())
   {
     auto & joint_state_msg = realtime_joint_state_publisher_->msg_;
 
@@ -369,7 +371,10 @@ controller_interface::return_type JointStateBroadcaster::update(
     realtime_joint_state_publisher_->unlockAndPublish();
   }
 
-  if (realtime_dynamic_joint_state_publisher_ && realtime_dynamic_joint_state_publisher_->trylock())
+  if (
+    realtime_dynamic_joint_state_publisher_ &&
+    dynamic_joint_state_publisher_->get_subscription_count() > 0u &&
+    realtime_dynamic_joint_state_publisher_->trylock())
   {
     auto & dynamic_joint_state_msg = realtime_dynamic_joint_state_publisher_->msg_;
     dynamic_joint_state_msg.header.stamp = time;
