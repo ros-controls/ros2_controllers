@@ -126,6 +126,7 @@ TEST_F(SteeringControllersLibraryTest, test_both_update_methods_for_ref_timeout)
   // pre odometry values
   auto pre_odom_x_1 = controller_->odometry_.get_x();
   auto pre_odom_y_1 = controller_->odometry_.get_y();
+  auto pre_odom_heading_1 = controller_->odometry_->get_heading();
 
   // age_of_last_command > ref_timeout_
   ASSERT_FALSE(age_of_last_command <= controller_->ref_timeout_);
@@ -137,12 +138,17 @@ TEST_F(SteeringControllersLibraryTest, test_both_update_methods_for_ref_timeout)
   // post odometry values
   auto post_odom_x_1 = controller_->odometry_.get_x();
   auto post_odom_y_1 = controller_->odometry_.get_y();
+  auto post_odom_heading_1 = controller_->odometry_->get_heading();
 
   const double position_tolerance = 1e-5;
 
   // Position should remain stable
   EXPECT_NEAR(pre_odom_x_1, post_odom_x_1, position_tolerance);
   EXPECT_NEAR(pre_odom_y_1, post_odom_y_1, position_tolerance);
+  EXPECT_NEAR(pre_odom_heading_1, post_odom_heading_1, position_tolerance);
+
+  EXPECT_DOUBLE_EQ(controller_->last_linear_velocity_, 0.0);
+  EXPECT_DOUBLE_EQ(controller_->last_angular_velocity_, 0.0);
 
   EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[0]));
   EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[1]));
@@ -177,6 +183,7 @@ TEST_F(SteeringControllersLibraryTest, test_both_update_methods_for_ref_timeout)
   // pre odometry values
   auto pre_odom_x_2 = controller_->odometry_.get_x();
   auto pre_odom_y_2 = controller_->odometry_.get_y();
+  auto pre_odom_heading_2 = controller_->odometry_.get_heading();
 
   // adjusting to achieve age_of_last_command > ref_timeout
   msg->header.stamp = controller_->get_node()->now() - controller_->ref_timeout_ -
@@ -189,20 +196,25 @@ TEST_F(SteeringControllersLibraryTest, test_both_update_methods_for_ref_timeout)
   msg->twist.angular.z = TEST_ANGULAR_VELOCITY_Z;
   controller_->input_ref_.writeFromNonRT(msg);
 
-  // post odometry values
-  auto post_odom_x_2 = controller_->odometry_.get_x();
-  auto post_odom_y_2 = controller_->odometry_.get_y();
-
-  // Position should remain stable
-  EXPECT_NEAR(pre_odom_x_2, post_odom_x_2, position_tolerance);
-  EXPECT_NEAR(pre_odom_y_2, post_odom_y_2, position_tolerance);
-
   // age_of_last_command > ref_timeout_
   ASSERT_FALSE(age_of_last_command <= controller_->ref_timeout_);
   ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
   ASSERT_EQ(
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
+
+  // post odometry values
+  auto post_odom_x_2 = controller_->odometry_.get_x();
+  auto post_odom_y_2 = controller_->odometry_.get_y();
+  auto post_odom_heading_2 = controller_->odometry_.get_heading();
+
+  // Position should remain stable
+  EXPECT_NEAR(pre_odom_x_2, post_odom_x_2, position_tolerance);
+  EXPECT_NEAR(pre_odom_y_2, post_odom_y_2, position_tolerance);
+  EXPECT_NEAR(pre_odom_heading_2, post_odom_heading_2, position_tolerance);
+
+  EXPECT_DOUBLE_EQ(controller_->last_linear_velocity_, 0.0);
+  EXPECT_DOUBLE_EQ(controller_->last_angular_velocity_, 0.0);
 
   EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[0]));
   EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[1]));
