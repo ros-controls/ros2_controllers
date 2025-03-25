@@ -73,6 +73,7 @@ if(BUILD_TESTING)
   ament_target_dependencies(test_trajectory_controller ros2_control_test_assets)
   target_compile_definitions(joint_trajectory_controller PRIVATE _USE_MATH_DEFINES)
 
+  add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
   ament_add_gmock(test_load_joint_trajectory_controller
     test/test_load_joint_trajectory_controller.cpp
   )

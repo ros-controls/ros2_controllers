@@ -2,6 +2,12 @@
 Changelog for package range_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.22.0 (2025-03-17)
+-------------------
+
+4.21.0 (2025-03-01)
+-------------------
+
 4.20.0 (2025-01-29)
 -------------------
 * Update paths of GPL includes (`#1487 <https://github.com/ros-controls/ros2_controllers/issues/1487>`_)
