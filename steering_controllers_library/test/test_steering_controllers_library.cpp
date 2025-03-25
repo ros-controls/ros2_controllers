@@ -126,7 +126,7 @@ TEST_F(SteeringControllersLibraryTest, test_both_update_methods_for_ref_timeout)
   // pre odometry values
   auto pre_odom_x_1 = controller_->odometry_.get_x();
   auto pre_odom_y_1 = controller_->odometry_.get_y();
-  auto pre_odom_heading_1 = controller_->odometry_->get_heading();
+  auto pre_odom_heading_1 = controller_->odometry_.get_heading();
 
   // age_of_last_command > ref_timeout_
   ASSERT_FALSE(age_of_last_command <= controller_->ref_timeout_);
@@ -138,7 +138,7 @@ TEST_F(SteeringControllersLibraryTest, test_both_update_methods_for_ref_timeout)
   // post odometry values
   auto post_odom_x_1 = controller_->odometry_.get_x();
   auto post_odom_y_1 = controller_->odometry_.get_y();
-  auto post_odom_heading_1 = controller_->odometry_->get_heading();
+  auto post_odom_heading_1 = controller_->odometry_.get_heading();
 
   const double position_tolerance = 1e-5;
 
