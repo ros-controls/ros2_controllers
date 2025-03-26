@@ -1,15 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
 project(joint_trajectory_controller)
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
-  add_compile_options(-Wall -Wextra -Wpedantic -Werror=conversion -Werror=unused-but-set-variable
-                      -Werror=return-type -Werror=shadow -Werror=format -Werror=range-loop-construct
-                      -Werror=missing-braces)
-endif()
-
-# using this instead of visibility macros
-# S1 from https://github.com/ros-controls/ros2_controllers/issues/1053
-set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+include(../ros2_controllers.cmake)
+set_compiler_options()
+export_windows_symbols()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   angles
@@ -26,6 +20,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   tl_expected
   trajectory_msgs
   urdf
+  joint_trajectory_controller_plugins
 )
 
 find_package(ament_cmake REQUIRED)
@@ -119,4 +114,5 @@ install(TARGETS
 
 ament_export_targets(export_joint_trajectory_controller HAS_LIBRARY_TARGET)
 ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
+
 ament_package()

@@ -11,12 +11,24 @@ This controller uses the `generate_parameter_library <https://github.com/PickNik
 List of parameters
 =========================
 
+joint_trajectory_controller
+---------------------------
+
 .. generate_parameter_library_details::
   ../src/joint_trajectory_controller_parameters.yaml
   parameters_context.yaml
 
+pid_trajectory_plugin
+-----------------------------------
+
+.. generate_parameter_library_details::
+  ../../joint_trajectory_controller_plugins/src/pid_trajectory_plugin_parameters.yaml
+  ../../joint_trajectory_controller_plugins/doc/parameters_context.yaml
+
 An example parameter file
 =========================
 
-.. generate_parameter_library_default::
-  ../src/joint_trajectory_controller_parameters.yaml
+An example parameter file for this controller can be found in `the test directory <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/joint_trajectory_controller/test/test_joint_trajectory_controller_params.yaml>`_:
+
+.. literalinclude:: ../test/test_joint_trajectory_controller_params.yaml
+   :language: yaml
