@@ -19,7 +19,6 @@
 #include "test_force_torque_sensor_broadcaster.hpp"
 
 #include <memory>
-#include <thread>
 #include <utility>
 #include <vector>
 

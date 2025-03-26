@@ -21,9 +21,7 @@
 
 #include <gmock/gmock.h>
 
-#include <condition_variable>
 #include <memory>
-#include <mutex>
 #include <string>
 
 #include "force_torque_sensor_broadcaster/force_torque_sensor_broadcaster.hpp"
