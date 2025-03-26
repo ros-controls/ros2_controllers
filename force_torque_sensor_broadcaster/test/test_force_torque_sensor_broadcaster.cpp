@@ -25,19 +25,12 @@
 #include "force_torque_sensor_broadcaster/force_torque_sensor_broadcaster.hpp"
 #include "geometry_msgs/msg/wrench_stamped.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
-<<<<<<< HEAD
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/utilities.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 
-=======
-#include "lifecycle_msgs/msg/state.hpp"
-#include "rclcpp/executor.hpp"
-#include "rclcpp/executors.hpp"
-#include "rclcpp/utilities.hpp"
->>>>>>> 996f030 ([CI] Time out from test_force_torque_sensor_broadcaster  (#1586))
 using hardware_interface::LoanedStateInterface;
 using testing::IsEmpty;
 using testing::SizeIs;
