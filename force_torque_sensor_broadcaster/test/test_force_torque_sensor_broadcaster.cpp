@@ -63,12 +63,9 @@ void ForceTorqueSensorBroadcasterTest::TearDown()
   if (fts_broadcaster_)
   {
     if (
-      fts_broadcaster_->get_state().id() !=
-      lifecycle_msgs::msg::State::PRIMARY_STATE_UNCONFIGURED)
+      fts_broadcaster_->get_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_UNCONFIGURED)
     {
-      if (
-        fts_broadcaster_->get_state().id() ==
-        lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+      if (fts_broadcaster_->get_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
       {
         ASSERT_EQ(fts_broadcaster_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
       }
