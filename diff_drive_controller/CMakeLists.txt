@@ -1,11 +1,15 @@
 cmake_minimum_required(VERSION 3.16)
-project(diff_drive_controller LANGUAGES CXX)
+project(diff_drive_controller)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
   add_compile_options(-Wall -Wextra -Werror=conversion -Werror=unused-but-set-variable
                       -Werror=return-type -Werror=shadow -Werror=format -Werror=range-loop-construct
                       -Werror=missing-braces)
 endif()
+
+# using this instead of visibility macros
+# S1 from https://github.com/ros-controls/ros2_controllers/issues/1053
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   control_toolbox
@@ -31,9 +35,11 @@ endforeach()
 add_compile_definitions(RCPPUTILS_VERSION_MAJOR=${rcpputils_VERSION_MAJOR})
 add_compile_definitions(RCPPUTILS_VERSION_MINOR=${rcpputils_VERSION_MINOR})
 
+# get include dirs from control_toolbox for the custom validators
+get_target_property(TB_INCLUDE_DIRS control_toolbox::rate_limiter_parameters INTERFACE_INCLUDE_DIRECTORIES)
 generate_parameter_library(diff_drive_controller_parameters
   src/diff_drive_controller_parameter.yaml
-  include/diff_drive_controller/custom_validators.hpp
+  ${TB_INCLUDE_DIRS}/control_toolbox/custom_validators.hpp
 )
 
 add_library(diff_drive_controller SHARED
@@ -47,11 +53,9 @@ target_include_directories(diff_drive_controller PUBLIC
 )
 target_link_libraries(diff_drive_controller
   PUBLIC
-    diff_drive_controller_parameters)
+    diff_drive_controller_parameters
+    control_toolbox::rate_limiter_parameters)
 ament_target_dependencies(diff_drive_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
-# Causes the visibility macros to use dllexport rather than dllimport,
-# which is appropriate when building the dll but not consuming it.
-target_compile_definitions(diff_drive_controller PRIVATE "DIFF_DRIVE_CONTROLLER_BUILDING_DLL")
 pluginlib_export_plugin_description_file(controller_interface diff_drive_plugin.xml)
 
 if(BUILD_TESTING)

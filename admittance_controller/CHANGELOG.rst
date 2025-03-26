@@ -2,6 +2,28 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.22.0 (2025-03-17)
+-------------------
+
+4.21.0 (2025-03-01)
+-------------------
+* Cleanup dependencies (add `angles`, rm `filters`) (`#1555 <https://github.com/ros-controls/ros2_controllers/issues/1555>`_)
+* [Admittance] multiple state/command interfaces (`#1196 <https://github.com/ros-controls/ros2_controllers/issues/1196>`_)
+* Fix the exported interface naming in the chainable controllers (`#1528 <https://github.com/ros-controls/ros2_controllers/issues/1528>`_)
+* Remove dependency of admittance controller on JTC (`#1532 <https://github.com/ros-controls/ros2_controllers/issues/1532>`_)
+* Contributors: Christoph Fröhlich, Marco Magri, Sai Kishor Kothakota
+
+4.20.0 (2025-01-29)
+-------------------
+* Remove empty callbacks (`#1488 <https://github.com/ros-controls/ros2_controllers/issues/1488>`_)
+* Update paths of GPL includes (`#1487 <https://github.com/ros-controls/ros2_controllers/issues/1487>`_)
+* Contributors: Christoph Fröhlich, Julia Jia
+
+4.19.0 (2025-01-13)
+-------------------
+* Remove visibility macros (`#1451 <https://github.com/ros-controls/ros2_controllers/issues/1451>`_)
+* Contributors: Bence Magyar
+
 4.18.0 (2024-12-19)
 -------------------
 * [CI] Add clang job and setup concurrency (`#1407 <https://github.com/ros-controls/ros2_controllers/issues/1407>`_)

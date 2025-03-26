@@ -2,6 +2,34 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.22.0 (2025-03-17)
+-------------------
+* Use the custom validators directly from control_toolbox (`#1504 <https://github.com/ros-controls/ros2_controllers/issues/1504>`_)
+* Use new handles API in diff_drive_controller (`#1565 <https://github.com/ros-controls/ros2_controllers/issues/1565>`_)
+* Contributors: Christoph Fröhlich, Sai Kishor Kothakota
+
+4.21.0 (2025-03-01)
+-------------------
+* Fix the exported interface naming in the chainable controllers (`#1528 <https://github.com/ros-controls/ros2_controllers/issues/1528>`_)
+* Cleanup wrong lifecycle transitions in tests and unnecessary checks (`#1534 <https://github.com/ros-controls/ros2_controllers/issues/1534>`_)
+* Fix reference in chained diff drive controller (`#1529 <https://github.com/ros-controls/ros2_controllers/issues/1529>`_)
+* docs for chainable diff_drive_controller (`#1518 <https://github.com/ros-controls/ros2_controllers/issues/1518>`_)
+* Contributors: Arthur Lovekin, Christoph Fröhlich, Sai Kishor Kothakota, Thibault Poignonec
+
+4.20.0 (2025-01-29)
+-------------------
+* Make diff_drive_controller a ChainableControllerInterface (`#1485 <https://github.com/ros-controls/ros2_controllers/issues/1485>`_)
+* Update paths of GPL includes (`#1487 <https://github.com/ros-controls/ros2_controllers/issues/1487>`_)
+* Fix SpeedLimiter Constructor regression (`#1478 <https://github.com/ros-controls/ros2_controllers/issues/1478>`_)
+* Contributors: Arthur Lovekin, Christoph Fröhlich, Sai Kishor Kothakota
+
+4.19.0 (2025-01-13)
+-------------------
+* Check dt in updateFromVelocity (`#1481 <https://github.com/ros-controls/ros2_controllers/issues/1481>`_)
+* Remove empty on_shutdown() callbacks (`#1477 <https://github.com/ros-controls/ros2_controllers/issues/1477>`_)
+* Remove visibility macros (`#1451 <https://github.com/ros-controls/ros2_controllers/issues/1451>`_)
+* Contributors: Bence Magyar, Julia Jia, Tony Najjar
+
 4.18.0 (2024-12-19)
 -------------------
 * Update command limiter of diff_drive_controller (`#1315 <https://github.com/ros-controls/ros2_controllers/issues/1315>`_)

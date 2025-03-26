@@ -2,6 +2,26 @@
 Changelog for package tricycle_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.22.0 (2025-03-17)
+-------------------
+
+4.21.0 (2025-03-01)
+-------------------
+* Cleanup wrong lifecycle transitions in tests and unnecessary checks (`#1534 <https://github.com/ros-controls/ros2_controllers/issues/1534>`_)
+* Fix use of M_PI in steering_controllers_library and tricycle_controller (`#1536 <https://github.com/ros-controls/ros2_controllers/issues/1536>`_)
+* Contributors: Christoph Fröhlich, Silvio Traversaro
+
+4.20.0 (2025-01-29)
+-------------------
+* Update paths of GPL includes (`#1487 <https://github.com/ros-controls/ros2_controllers/issues/1487>`_)
+* Contributors: Christoph Fröhlich
+
+4.19.0 (2025-01-13)
+-------------------
+* Remove empty on_shutdown() callbacks (`#1477 <https://github.com/ros-controls/ros2_controllers/issues/1477>`_)
+* Remove visibility macros (`#1451 <https://github.com/ros-controls/ros2_controllers/issues/1451>`_)
+* Contributors: Bence Magyar, Julia Jia
+
 4.18.0 (2024-12-19)
 -------------------
 * [CI] Add clang job and setup concurrency (`#1407 <https://github.com/ros-controls/ros2_controllers/issues/1407>`_)

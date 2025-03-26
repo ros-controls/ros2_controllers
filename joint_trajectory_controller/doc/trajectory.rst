@@ -49,6 +49,8 @@ The spline interpolator uses the following interpolation strategies depending on
 
 Trajectories with velocity fields only, velocity and acceleration only, or acceleration fields only can be processed and are accepted, if ``allow_integration_in_goal_trajectories`` is true. Position (and velocity) is then integrated from velocity (or acceleration, respectively) by Heun's method.
 
+Effort trajectories are allowed for controllers that claim the ``effort`` command interface and they are treated as feed-forward effort that is added to the position feedback. Effort is handled separately from position, velocity and acceleration. We use linear interpolation for effort when the ``spline`` interpolation method is selected.
+
 Visualized Examples
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 To visualize the difference of the different interpolation methods and their inputs, different trajectories defined at a 0.5s grid and are sampled at a rate of 10ms.

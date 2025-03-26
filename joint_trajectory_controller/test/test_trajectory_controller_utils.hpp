@@ -23,6 +23,7 @@
 
 #include "gmock/gmock.h"
 
+#include "control_msgs/msg/joint_trajectory_controller_state.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
 #include "joint_trajectory_controller/tolerances.hpp"
@@ -167,7 +168,9 @@ public:
 
   bool use_closed_loop_pid_adapter() const { return use_closed_loop_pid_adapter_; }
 
+  // START DEPRECATE
   bool is_open_loop() const { return params_.open_loop_control; }
+  // END DEPRECATE
 
   joint_trajectory_controller::SegmentTolerances get_active_tolerances()
   {
@@ -185,12 +188,12 @@ public:
 
   bool has_trivial_traj() const
   {
-    return has_active_trajectory() && traj_external_point_ptr_->has_nontrivial_msg() == false;
+    return has_active_trajectory() && current_trajectory_->has_nontrivial_msg() == false;
   }
 
   bool has_nontrivial_traj()
   {
-    return has_active_trajectory() && traj_external_point_ptr_->has_nontrivial_msg();
+    return has_active_trajectory() && current_trajectory_->has_nontrivial_msg();
   }
 
   double get_cmd_timeout() { return cmd_timeout_; }
@@ -199,7 +202,14 @@ public:
 
   trajectory_msgs::msg::JointTrajectoryPoint get_state_feedback() { return state_current_; }
   trajectory_msgs::msg::JointTrajectoryPoint get_state_reference() { return state_desired_; }
+  trajectory_msgs::msg::JointTrajectoryPoint get_command_next() { return command_next_; }
   trajectory_msgs::msg::JointTrajectoryPoint get_state_error() { return state_error_; }
+  trajectory_msgs::msg::JointTrajectoryPoint get_current_command() { return command_current_; }
+
+  control_msgs::msg::JointTrajectoryControllerState get_state_msg()
+  {
+    return state_publisher_->msg_;
+  }
 
   /**
    * a copy of the private member function
@@ -247,6 +257,12 @@ public:
     node_ = std::make_shared<rclcpp::Node>("trajectory_publisher_");
     trajectory_publisher_ = node_->create_publisher<trajectory_msgs::msg::JointTrajectory>(
       controller_name_ + "/joint_trajectory", rclcpp::SystemDefaultsQoS());
+  }
+
+  void TearDown() override
+  {
+    DeactivateTrajectoryController();
+    traj_controller_.reset();
   }
 
   void SetUpTrajectoryController(
@@ -448,7 +464,8 @@ public:
     const builtin_interfaces::msg::Duration & delay_btwn_points,
     const std::vector<std::vector<double>> & points_positions, rclcpp::Time start_time,
     const std::vector<std::string> & joint_names = {},
-    const std::vector<std::vector<double>> & points_velocities = {})
+    const std::vector<std::vector<double>> & points_velocities = {},
+    const std::vector<std::vector<double>> & points_effort = {})
   {
     int wait_count = 0;
     const auto topic = trajectory_publisher_->get_topic_name();
@@ -502,6 +519,15 @@ public:
       for (size_t j = 0; j < points_velocities[index].size(); ++j)
       {
         traj_msg.points[index].velocities[j] = points_velocities[index][j];
+      }
+    }
+
+    for (size_t index = 0; index < points_effort.size(); ++index)
+    {
+      traj_msg.points[index].effort.resize(points_effort[index].size());
+      for (size_t j = 0; j < points_effort[index].size(); ++j)
+      {
+        traj_msg.points[index].effort[j] = points_effort[index][j];
       }
     }
 
@@ -610,7 +636,8 @@ public:
   }
 
   void expectCommandPoint(
-    std::vector<double> position, std::vector<double> velocity = {0.0, 0.0, 0.0})
+    std::vector<double> position, std::vector<double> velocity = {0.0, 0.0, 0.0},
+    std::vector<double> effort = {0.0, 0.0, 0.0})
   {
     // it should be holding the given point
     // i.e., active but trivial trajectory (one point only)
@@ -641,9 +668,9 @@ public:
 
       if (traj_controller_->has_effort_command_interface())
       {
-        EXPECT_EQ(0.0, joint_eff_[0]);
-        EXPECT_EQ(0.0, joint_eff_[1]);
-        EXPECT_EQ(0.0, joint_eff_[2]);
+        EXPECT_EQ(effort.at(0), joint_eff_[0]);
+        EXPECT_EQ(effort.at(1), joint_eff_[1]);
+        EXPECT_EQ(effort.at(2), joint_eff_[2]);
       }
     }
     else  // traj_controller_->use_closed_loop_pid_adapter() == true
@@ -665,7 +692,7 @@ public:
         for (size_t i = 0; i < 3; i++)
         {
           EXPECT_TRUE(is_same_sign_or_zero(
-            position.at(i) - pos_state_interfaces_[i].get_value(), joint_eff_[i]))
+            position.at(i) - pos_state_interfaces_[i].get_value() + effort.at(i), joint_eff_[i]))
             << "test position point " << position.at(i) << ", position state is "
             << pos_state_interfaces_[i].get_value() << ", effort command is " << joint_eff_[i];
         }
@@ -794,7 +821,7 @@ public:
     state_interface_types_ = std::get<1>(GetParam());
   }
 
-  virtual void TearDown() { TrajectoryControllerTest::DeactivateTrajectoryController(); }
+  virtual void TearDown() { TrajectoryControllerTest::TearDown(); }
 
   static void TearDownTestCase() { TrajectoryControllerTest::TearDownTestCase(); }
 };

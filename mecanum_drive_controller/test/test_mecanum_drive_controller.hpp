@@ -82,6 +82,7 @@ class TestableMecanumDriveController : public mecanum_drive_controller::MecanumD
   FRIEND_TEST(
     MecanumDriveControllerTest,
     when_ref_timeout_zero_for_reference_callback_expect_reference_msg_being_used_only_once);
+  FRIEND_TEST(MecanumDriveControllerTest, SideToSideAndRotationOdometryTest);
 
 public:
   controller_interface::CallbackReturn on_configure(
@@ -269,8 +270,7 @@ protected:
   }
 
 protected:
-  std::vector<std::string> reference_interface_names = {
-    "linear/x/velocity", "linear/y/velocity", "angular/z/velocity"};
+  std::vector<std::string> reference_interface_names = {"linear/x", "linear/y", "angular/z"};
 
   static constexpr char TEST_FRONT_LEFT_CMD_JOINT_NAME[] = "front_left_wheel_joint";
   static constexpr char TEST_FRONT_RIGHT_CMD_JOINT_NAME[] = "front_right_wheel_joint";

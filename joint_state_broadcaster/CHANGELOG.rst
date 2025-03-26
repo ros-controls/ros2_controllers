@@ -2,6 +2,28 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.22.0 (2025-03-17)
+-------------------
+* [JSB] cleanup the activation error message (`#1584 <https://github.com/ros-controls/ros2_controllers/issues/1584>`_)
+* Contributors: Sai Kishor Kothakota
+
+4.21.0 (2025-03-01)
+-------------------
+* Cleanup wrong lifecycle transitions in tests and unnecessary checks (`#1534 <https://github.com/ros-controls/ros2_controllers/issues/1534>`_)
+* Contributors: Christoph Fröhlich
+
+4.20.0 (2025-01-29)
+-------------------
+* Update paths of GPL includes (`#1487 <https://github.com/ros-controls/ros2_controllers/issues/1487>`_)
+* Contributors: Christoph Fröhlich
+
+4.19.0 (2025-01-13)
+-------------------
+* Use urdf/model.hpp for rolling (`#1476 <https://github.com/ros-controls/ros2_controllers/issues/1476>`_)
+* Use urdf/model.hpp for rolling (`#1473 <https://github.com/ros-controls/ros2_controllers/issues/1473>`_)
+* Remove visibility macros (`#1451 <https://github.com/ros-controls/ros2_controllers/issues/1451>`_)
+* Contributors: Bence Magyar, verma nakul
+
 4.18.0 (2024-12-19)
 -------------------
 * [CI] Add clang job and setup concurrency (`#1407 <https://github.com/ros-controls/ros2_controllers/issues/1407>`_)

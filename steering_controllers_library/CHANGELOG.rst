@@ -2,6 +2,28 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.22.0 (2025-03-17)
+-------------------
+
+4.21.0 (2025-03-01)
+-------------------
+* Fix the exported interface naming in the chainable controllers (`#1528 <https://github.com/ros-controls/ros2_controllers/issues/1528>`_)
+* Fix use of M_PI in steering_controllers_library and tricycle_controller (`#1536 <https://github.com/ros-controls/ros2_controllers/issues/1536>`_)
+* Contributors: Sai Kishor Kothakota, Silvio Traversaro
+
+4.20.0 (2025-01-29)
+-------------------
+* Update paths of GPL includes (`#1487 <https://github.com/ros-controls/ros2_controllers/issues/1487>`_)
+* Contributors: Christoph Fröhlich
+
+4.19.0 (2025-01-13)
+-------------------
+* Update generate_parameter_library dependency in steering_controllers_library (`#1465 <https://github.com/ros-controls/ros2_controllers/issues/1465>`_)
+* Fix typos in steering_controllers_lib (`#1464 <https://github.com/ros-controls/ros2_controllers/issues/1464>`_)
+* Fix open-loop odometry in case of ref timeout (`#1454 <https://github.com/ros-controls/ros2_controllers/issues/1454>`_)
+* Remove visibility macros (`#1451 <https://github.com/ros-controls/ros2_controllers/issues/1451>`_)
+* Contributors: Bence Magyar, Christoph Fröhlich, Silvio Traversaro
+
 4.18.0 (2024-12-19)
 -------------------
 * steering_controllers_library: Add `reduce_wheel_speed_until_steering_reached` parameter (`#1314 <https://github.com/ros-controls/ros2_controllers/issues/1314>`_)

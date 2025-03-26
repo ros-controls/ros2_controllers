@@ -36,7 +36,7 @@
 #include <vector>
 
 #include "control_msgs/action/follow_joint_trajectory.hpp"
-#include "joint_trajectory_controller_parameters.hpp"
+#include "joint_trajectory_controller/joint_trajectory_controller_parameters.hpp"
 
 namespace joint_trajectory_controller
 {
@@ -175,10 +175,9 @@ SegmentTolerances get_segment_tolerances(
   }
   catch (const std::runtime_error & e)
   {
-    RCLCPP_ERROR_STREAM(
-      logger, "Specified illegal goal_time_tolerance: "
-                << rclcpp::Duration(goal.goal_time_tolerance).seconds()
-                << ". Using default tolerances");
+    RCLCPP_ERROR(
+      logger, "Specified illegal goal_time_tolerance: %f. Using default tolerances",
+      rclcpp::Duration(goal.goal_time_tolerance).seconds());
     return default_tolerances;
   }
   RCLCPP_DEBUG(logger, "%s %f", "goal_time", active_tolerances.goal_time_tolerance);
@@ -215,9 +214,11 @@ SegmentTolerances get_segment_tolerances(
     }
     catch (const std::runtime_error & e)
     {
-      RCLCPP_ERROR_STREAM(
-        logger, "joint '" << joint << "' specified in goal.path_tolerance has a invalid "
-                          << interface << " tolerance. Using default tolerances.");
+      RCLCPP_ERROR(
+        logger,
+        "joint '%s' specified in goal.path_tolerance has a invalid %s tolerance. Using default "
+        "tolerances.",
+        joint.c_str(), interface.c_str());
       return default_tolerances;
     }
 
@@ -262,9 +263,11 @@ SegmentTolerances get_segment_tolerances(
     }
     catch (const std::runtime_error & e)
     {
-      RCLCPP_ERROR_STREAM(
-        logger, "joint '" << joint << "' specified in goal.goal_tolerance has a invalid "
-                          << interface << " tolerance. Using default tolerances.");
+      RCLCPP_ERROR(
+        logger,
+        "joint '%s' specified in goal.goal_tolerance has a invalid %s tolerance. Using default "
+        "tolerances.",
+        joint.c_str(), interface.c_str());
       return default_tolerances;
     }
 

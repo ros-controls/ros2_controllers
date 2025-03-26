@@ -2,6 +2,28 @@
 Changelog for package mecanum_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.22.0 (2025-03-17)
+-------------------
+* [mecanum_drive_controller] Fix Odometry Initialization  (`#1573 <https://github.com/ros-controls/ros2_controllers/issues/1573>`_)
+* Contributors: Julia Jia
+
+4.21.0 (2025-03-01)
+-------------------
+* Fix mecanum_drive_controller documentation (`#1547 <https://github.com/ros-controls/ros2_controllers/issues/1547>`_)
+* Fix the exported interface naming in the chainable controllers (`#1528 <https://github.com/ros-controls/ros2_controllers/issues/1528>`_)
+* Contributors: Christoph Fröhlich, Sai Kishor Kothakota
+
+4.20.0 (2025-01-29)
+-------------------
+* Update paths of GPL includes (`#1487 <https://github.com/ros-controls/ros2_controllers/issues/1487>`_)
+* Contributors: Christoph Fröhlich
+
+4.19.0 (2025-01-13)
+-------------------
+* Remove visibility macros (`#1451 <https://github.com/ros-controls/ros2_controllers/issues/1451>`_)
+* Clean up unused variable EPS in mecanum_drive_controller (`#1444 <https://github.com/ros-controls/ros2_controllers/issues/1444>`_)
+* Contributors: Bence Magyar, Shankar-Balajee
+
 4.18.0 (2024-12-19)
 -------------------
 

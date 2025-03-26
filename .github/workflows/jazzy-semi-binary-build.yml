@@ -18,6 +18,7 @@ on:
       - '**/package.xml'
       - '**/CMakeLists.txt'
       - 'ros2_controllers.jazzy.repos'
+      - '**.xml'
   push:
     branches:
       - master
@@ -31,6 +32,7 @@ on:
       - '**/package.xml'
       - '**/CMakeLists.txt'
       - 'ros2_controllers.jazzy.repos'
+      - '**.xml'
   schedule:
     # Run every morning to detect flakiness and broken dependencies
     - cron: '33 1 * * *'
@@ -54,7 +56,7 @@ jobs:
       ros_distro: jazzy
       ros_repo: testing
       upstream_workspace: ros2_controllers.jazzy.repos
-      ref_for_scheduled_build: jazzy
+      ref_for_scheduled_build: master
       additional_debs: clang
       c_compiler: clang
       cxx_compiler: clang++
