@@ -1,0 +1,17 @@
+test_steering_controllers_library_open_loop_timeout:
+  ros__parameters:
+
+    reference_timeout: 0.1
+    front_steering: true
+    open_loop: true
+    velocity_rolling_window_size: 10
+    position_feedback: false
+    use_stamped_vel: true
+    rear_wheels_names: [rear_right_wheel_joint, rear_left_wheel_joint]
+    front_wheels_names: [front_right_steering_joint, front_left_steering_joint]
+
+    wheelbase: 3.24644
+    front_wheel_track: 2.12321
+    rear_wheel_track: 1.76868
+    front_wheels_radius: 0.45
+    rear_wheels_radius: 0.45
