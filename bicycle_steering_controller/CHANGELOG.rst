@@ -2,6 +2,14 @@
 Changelog for package bicycle_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.22.0 (2025-03-17)
+-------------------
+
+4.21.0 (2025-03-01)
+-------------------
+* Fix the exported interface naming in the chainable controllers (`#1528 <https://github.com/ros-controls/ros2_controllers/issues/1528>`_)
+* Contributors: Sai Kishor Kothakota
+
 4.20.0 (2025-01-29)
 -------------------
 * Update paths of GPL includes (`#1487 <https://github.com/ros-controls/ros2_controllers/issues/1487>`_)
