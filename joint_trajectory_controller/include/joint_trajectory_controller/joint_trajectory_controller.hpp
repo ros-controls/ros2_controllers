@@ -103,6 +103,8 @@ protected:
 
   // Degrees of freedom
   size_t dof_;
+  size_t num_cmd_joints_;
+  std::vector<size_t> map_cmd_to_joints_;
 
   // Storing command joint names for interfaces
   std::vector<std::string> command_joint_names_;
@@ -278,9 +280,9 @@ private:
 
   void init_hold_position_msg();
   void resize_joint_trajectory_point(
-    trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size);
+    trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size, double value = 0.0);
   void resize_joint_trajectory_point_command(
-    trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size);
+    trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size, double value = 0.0);
 
   bool set_scaling_factor(const double scaling_factor);
   using SpeedScalingMsg = control_msgs::msg::SpeedScalingFactor;
@@ -297,9 +299,9 @@ private:
   void assign_interface_from_point(
     const T & joint_interface, const std::vector<double> & trajectory_point_interface)
   {
-    for (size_t index = 0; index < dof_; ++index)
+    for (size_t index = 0; index < num_cmd_joints_; ++index)
     {
-      joint_interface[index].get().set_value(trajectory_point_interface[index]);
+      joint_interface[index].get().set_value(trajectory_point_interface[map_cmd_to_joints_[index]]);
     }
   }
 };
