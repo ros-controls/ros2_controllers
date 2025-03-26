@@ -209,35 +209,15 @@ TEST_F(ForceTorqueSensorBroadcasterTest, InterfaceNames_Configure_Success)
 {
   SetUpFTSBroadcaster();
 
-  // Use thread-safe execution
-  std::thread test_thread(
-    [this]()
-    {
-      // set the 'interface_names'
-      fts_broadcaster_->get_node()->set_parameter(
-        {"interface_names.force.x", "fts_sensor/force.x"});
-      fts_broadcaster_->get_node()->set_parameter(
-        {"interface_names.torque.z", "fts_sensor/torque.z"});
+  // set the 'interface_names'
+  fts_broadcaster_->get_node()->set_parameter({"interface_names.force.x", "fts_sensor/force.x"});
+  fts_broadcaster_->get_node()->set_parameter({"interface_names.torque.z", "fts_sensor/torque.z"});
 
-      // set the 'frame_id'
-      fts_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
+  // set the 'frame_id'
+  fts_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
 
-      // configure passed
-      ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-
-      NotifyCompletion();
-    });
-
-  // Wait for test completion with timeout
-  if (test_thread.joinable())
-  {
-    if (WaitForCompletion() == std::cv_status::timeout)
-    {
-      test_thread.detach();  // Prevent hang if timeout occurs
-      FAIL() << "Test execution timed out";
-    }
-    test_thread.join();
-  }
+  // configure passed
+  ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 }
 
 TEST_F(ForceTorqueSensorBroadcasterTest, SensorName_ActivateDeactivate_Success)
