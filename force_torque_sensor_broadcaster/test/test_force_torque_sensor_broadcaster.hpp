@@ -21,7 +21,9 @@
 
 #include <gmock/gmock.h>
 
+#include <condition_variable>
 #include <memory>
+#include <mutex>
 #include <string>
 
 #include "force_torque_sensor_broadcaster/force_torque_sensor_broadcaster.hpp"
@@ -65,6 +67,27 @@ protected:
   hardware_interface::StateInterface fts_torque_z_{sensor_name_, "torque.z", &sensor_values_[5]};
 
   std::unique_ptr<FriendForceTorqueSensorBroadcaster> fts_broadcaster_;
+
+  // Provide mechanism to wait for test completion to avoid hang
+  std::mutex test_mutex_;
+  std::condition_variable test_cv_;
+  bool test_complete_ = false;
+
+  // Wait for test completion with timeout 60 seconds
+  std::cv_status WaitForCompletion(
+    std::chrono::milliseconds timeout = std::chrono::milliseconds(60 * 1000))
+  {
+    std::unique_lock<std::mutex> lock(test_mutex_);
+    bool completed = test_cv_.wait_for(lock, timeout, [this] { return test_complete_; });
+    return completed ? std::cv_status::no_timeout : std::cv_status::timeout;
+  }
+
+  void NotifyCompletion()
+  {
+    std::unique_lock<std::mutex> lock(test_mutex_);
+    test_complete_ = true;
+    test_cv_.notify_all();
+  }
 
   void subscribe_and_get_message(geometry_msgs::msg::WrenchStamped & wrench_msg);
 };

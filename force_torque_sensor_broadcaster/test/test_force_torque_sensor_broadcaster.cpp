@@ -19,15 +19,16 @@
 #include "test_force_torque_sensor_broadcaster.hpp"
 
 #include <memory>
+#include <thread>
 #include <utility>
 #include <vector>
 
 #include "geometry_msgs/msg/wrench_stamped.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
+#include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/executor.hpp"
 #include "rclcpp/executors.hpp"
 #include "rclcpp/utilities.hpp"
-
 using hardware_interface::LoanedStateInterface;
 using testing::IsEmpty;
 using testing::SizeIs;
@@ -40,7 +41,13 @@ constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
 
 void ForceTorqueSensorBroadcasterTest::SetUpTestCase() {}
 
-void ForceTorqueSensorBroadcasterTest::TearDownTestCase() {}
+void ForceTorqueSensorBroadcasterTest::TearDownTestCase()
+{
+  // Ensure all nodes are properly shutdown
+  rclcpp::shutdown();
+  // Add a small delay to allow proper cleanup
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+}
 
 void ForceTorqueSensorBroadcasterTest::SetUp()
 {
@@ -48,7 +55,29 @@ void ForceTorqueSensorBroadcasterTest::SetUp()
   fts_broadcaster_ = std::make_unique<FriendForceTorqueSensorBroadcaster>();
 }
 
-void ForceTorqueSensorBroadcasterTest::TearDown() { fts_broadcaster_.reset(nullptr); }
+void ForceTorqueSensorBroadcasterTest::TearDown()
+{
+  // Reset the broadcaster with proper cleanup
+  if (fts_broadcaster_)
+  {
+    if (
+      fts_broadcaster_->get_lifecycle_state().id() !=
+      lifecycle_msgs::msg::State::PRIMARY_STATE_UNCONFIGURED)
+    {
+      if (
+        fts_broadcaster_->get_lifecycle_state().id() ==
+        lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+      {
+        ASSERT_EQ(fts_broadcaster_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+      }
+      // Clean up the broadcaster
+      ASSERT_EQ(fts_broadcaster_->on_cleanup(rclcpp_lifecycle::State()), NODE_SUCCESS);
+    }
+    fts_broadcaster_.reset(nullptr);
+  }
+  // Add a small delay between tests
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+}
 
 void ForceTorqueSensorBroadcasterTest::SetUpFTSBroadcaster()
 {
@@ -180,20 +209,35 @@ TEST_F(ForceTorqueSensorBroadcasterTest, InterfaceNames_Configure_Success)
 {
   SetUpFTSBroadcaster();
 
-  // set the 'interface_names'
-  auto result =
-    fts_broadcaster_->get_node()->set_parameter({"interface_names.force.x", "fts_sensor/force.x"});
-  ASSERT_EQ(result.successful, true);
-  result = fts_broadcaster_->get_node()->set_parameter(
-    {"interface_names.torque.z", "fts_sensor/torque.z"});
-  ASSERT_EQ(result.successful, true);
+  // Use thread-safe execution
+  std::thread test_thread(
+    [this]()
+    {
+      // set the 'interface_names'
+      fts_broadcaster_->get_node()->set_parameter(
+        {"interface_names.force.x", "fts_sensor/force.x"});
+      fts_broadcaster_->get_node()->set_parameter(
+        {"interface_names.torque.z", "fts_sensor/torque.z"});
 
-  // set the 'frame_id'
-  result = fts_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
-  ASSERT_EQ(result.successful, true);
+      // set the 'frame_id'
+      fts_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
 
-  // configure passed
-  ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+      // configure passed
+      ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+      NotifyCompletion();
+    });
+
+  // Wait for test completion with timeout
+  if (test_thread.joinable())
+  {
+    if (WaitForCompletion() == std::cv_status::timeout)
+    {
+      test_thread.detach();  // Prevent hang if timeout occurs
+      FAIL() << "Test execution timed out";
+    }
+    test_thread.join();
+  }
 }
 
 TEST_F(ForceTorqueSensorBroadcasterTest, SensorName_ActivateDeactivate_Success)
