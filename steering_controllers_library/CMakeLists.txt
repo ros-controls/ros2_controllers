@@ -85,9 +85,6 @@ if(BUILD_TESTING)
     hardware_interface
   )
 
-  ament_add_gmock(test_steering_odometry_open_loop_timeout test/test_steering_odometry.cpp)
-  target_link_libraries(test_steering_odometry_open_loop_timeout steering_controllers_library)
-
 endif()
 
 install(

@@ -1,4 +1,4 @@
-test_steering_controllers_library_open_loop_timeout:
+test_steering_controllers_library:
   ros__parameters:
 
     reference_timeout: 0.1
