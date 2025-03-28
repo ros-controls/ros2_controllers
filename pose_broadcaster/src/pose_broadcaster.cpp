@@ -79,7 +79,7 @@ controller_interface::CallbackReturn PoseBroadcaster::on_configure(
 
   pose_sensor_ = std::make_unique<semantic_components::PoseSensor>(params_.pose_name);
 
-  // TODO: Remove this check and its contents
+  // TODO(amronos): Remove this check and its contents
   if (params_.tf.publish_rate == 0.0)
   {
     tf_publish_period_ = std::nullopt;

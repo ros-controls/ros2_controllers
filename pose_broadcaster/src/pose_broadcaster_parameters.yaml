@@ -23,7 +23,7 @@ pose_broadcaster:
       default_value: ""
       description: "Child frame id of published tf transforms. Defaults to ``pose_name`` if left
       empty."
-    # TODO: Remove this parameter as it is deprecated
+    # TODO(amronos): Remove this parameter as it is deprecated
     publish_rate:
       type: double
       default_value: 0.0
