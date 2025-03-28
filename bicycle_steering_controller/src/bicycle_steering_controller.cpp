@@ -56,7 +56,7 @@ bool BicycleSteeringController::update_odometry(const rclcpp::Duration & period)
 {
   if (params_.open_loop)
   {
-    odometry_.update_open_loop(last_linear_velocity_, last_angular_velocity_, period.seconds());
+    odometry_.update_open_loop(last_linear_velocity_, last_angular_velocity_, period.seconds(), params_.twist_input);
   }
   else
   {
