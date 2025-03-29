@@ -91,7 +91,7 @@ controller_interface::CallbackReturn PoseBroadcaster::on_configure(
     RCLCPP_WARN(
       get_node()->get_logger(),
       "[deprecated] tf.publish_rate parameter is deprecated, please set the value to 0.0. "
-      "The publish rate of TF messages is no longer limited by this parameter.");
+      "The publish rate of TF messages should not be limited.");
   }
 
   try
@@ -181,21 +181,42 @@ controller_interface::return_type PoseBroadcaster::update(
       pose.position.z, pose.orientation.x, pose.orientation.y, pose.orientation.z,
       pose.orientation.w);
   }
+  // TODO(amronos): Remove publish rate functionality
   else if (realtime_tf_publisher_ && realtime_tf_publisher_->trylock())
   {
-    auto & tf_transform = realtime_tf_publisher_->msg_.transforms[0];
-    tf_transform.header.stamp = time;
+    bool do_publish = false;
+    // rlcpp::Time comparisons throw if clock types are not the same
+    if (tf_last_publish_time_.get_clock_type() != time.get_clock_type())
+    {
+      do_publish = true;
+    }
+    else if (!tf_publish_period_ || (tf_last_publish_time_ + *tf_publish_period_ <= time))
+    {
+      do_publish = true;
+    }
 
-    tf_transform.transform.translation.x = pose.position.x;
-    tf_transform.transform.translation.y = pose.position.y;
-    tf_transform.transform.translation.z = pose.position.z;
+    if (do_publish)
+    {
+      auto & tf_transform = realtime_tf_publisher_->msg_.transforms[0];
+      tf_transform.header.stamp = time;
 
-    tf_transform.transform.rotation.x = pose.orientation.x;
-    tf_transform.transform.rotation.y = pose.orientation.y;
-    tf_transform.transform.rotation.z = pose.orientation.z;
-    tf_transform.transform.rotation.w = pose.orientation.w;
+      tf_transform.transform.translation.x = pose.position.x;
+      tf_transform.transform.translation.y = pose.position.y;
+      tf_transform.transform.translation.z = pose.position.z;
 
-    realtime_tf_publisher_->unlockAndPublish();
+      tf_transform.transform.rotation.x = pose.orientation.x;
+      tf_transform.transform.rotation.y = pose.orientation.y;
+      tf_transform.transform.rotation.z = pose.orientation.z;
+      tf_transform.transform.rotation.w = pose.orientation.w;
+
+      realtime_tf_publisher_->unlockAndPublish();
+
+      tf_last_publish_time_ = time;
+    }
+    else
+    {
+      realtime_tf_publisher_->unlock();
+    }
   }
 
   return controller_interface::return_type::OK;

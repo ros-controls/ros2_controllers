@@ -28,6 +28,6 @@ pose_broadcaster:
       type: double
       default_value: 0.0
       description: "Rate to limit publishing of tf transforms to (Hz). If set to 0, no limiting is
-      performed. This parameter is deprecated and limiting is no longer performed."
+      performed. This parameter is deprecated and limiting should not be performed."
       validation:
         gt_eq<>: 0.0
