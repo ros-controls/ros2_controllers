@@ -23,10 +23,11 @@ pose_broadcaster:
       default_value: ""
       description: "Child frame id of published tf transforms. Defaults to ``pose_name`` if left
       empty."
+    # TODO(amronos): Remove this parameter as it is deprecated
     publish_rate:
       type: double
       default_value: 0.0
       description: "Rate to limit publishing of tf transforms to (Hz). If set to 0, no limiting is
-      performed."
+      performed. This parameter is deprecated and limiting should not be performed."
       validation:
         gt_eq<>: 0.0
