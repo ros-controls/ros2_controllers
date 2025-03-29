@@ -21,6 +21,8 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <build_depend>ros2_control_cmake</build_depend>
+
   <depend>backward_ros</depend>
   <depend>controller_interface</depend>
   <depend>geometry_msgs</depend>
