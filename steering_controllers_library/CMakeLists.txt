@@ -68,6 +68,17 @@ if(BUILD_TESTING)
   ament_add_gmock(test_steering_odometry test/test_steering_odometry.cpp)
   target_link_libraries(test_steering_odometry steering_controllers_library)
 
+  add_rostest_with_parameters_gmock(
+    test_steering_controllers_open_library test/test_steering_controllers_library.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/steering_controllers_library_open_loop_timeout_params.yaml)
+  target_include_directories(test_steering_controllers_open_library PRIVATE include)
+  target_link_libraries(test_steering_controllers_open_library steering_controllers_library)
+  ament_target_dependencies(
+    test_steering_controllers_open_library
+    controller_interface
+    hardware_interface
+  )
+
 endif()
 
 install(
