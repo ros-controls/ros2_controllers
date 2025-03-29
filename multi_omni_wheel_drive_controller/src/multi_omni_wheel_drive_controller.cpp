@@ -549,17 +549,14 @@ MultiOmniWheelDriveController::on_export_reference_interfaces()
   std::vector<hardware_interface::CommandInterface> reference_interfaces;
   reference_interfaces.reserve(reference_interfaces_.size());
 
-  reference_interfaces.push_back(hardware_interface::CommandInterface(
-    get_node()->get_name(), std::string("linear/x/") + hardware_interface::HW_IF_VELOCITY,
-    &reference_interfaces_[0]));
+  std::vector<std::string> reference_interface_names = {"/linear/x", "/linear/y", "/angular/z"};
 
-  reference_interfaces.push_back(hardware_interface::CommandInterface(
-    get_node()->get_name(), std::string("linear/y/") + hardware_interface::HW_IF_VELOCITY,
-    &reference_interfaces_[1]));
-
-  reference_interfaces.push_back(hardware_interface::CommandInterface(
-    get_node()->get_name(), std::string("angular/z/") + hardware_interface::HW_IF_VELOCITY,
-    &reference_interfaces_[2]));
+  for (size_t i = 0; i < reference_interfaces_.size(); ++i)
+  {
+    reference_interfaces.push_back(hardware_interface::CommandInterface(
+      get_node()->get_name() + reference_interface_names[i], hardware_interface::HW_IF_VELOCITY,
+      &reference_interfaces_[i]));
+  }
 
   return reference_interfaces;
 }

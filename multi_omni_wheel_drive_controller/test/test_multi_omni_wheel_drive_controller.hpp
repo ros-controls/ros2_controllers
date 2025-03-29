@@ -232,9 +232,7 @@ protected:
   std::vector<hardware_interface::StateInterface> state_itfs_;
   std::vector<hardware_interface::CommandInterface> command_itfs_;
 
-  std::vector<std::string> reference_interface_names = {
-    std::string("linear/x/") + HW_IF_VELOCITY, std::string("linear/y/") + HW_IF_VELOCITY,
-    std::string("angular/z/") + HW_IF_VELOCITY};
+  std::vector<std::string> reference_interface_names = {"linear/x", "linear/y", "angular/z"};
 
   std::unique_ptr<CtrlType> controller_;
   rclcpp::Node::SharedPtr cmd_vel_publisher_node_;
