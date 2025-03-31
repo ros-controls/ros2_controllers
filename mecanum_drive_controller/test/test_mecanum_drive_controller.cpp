@@ -632,10 +632,14 @@ TEST_F(MecanumDriveControllerTest, SideToSideAndRotationOdometryTest)
     size_t fr_index = controller_->get_front_right_wheel_index();
     size_t rl_index = controller_->get_rear_left_wheel_index();
     size_t rr_index = controller_->get_rear_right_wheel_index();
-    joint_state_values_[fl_index] = controller_->command_interfaces_[fl_index].get_value();
-    joint_state_values_[fr_index] = controller_->command_interfaces_[fr_index].get_value();
-    joint_state_values_[rl_index] = controller_->command_interfaces_[rl_index].get_value();
-    joint_state_values_[rr_index] = controller_->command_interfaces_[rr_index].get_value();
+    joint_state_values_[fl_index] =
+      controller_->command_interfaces_[fl_index].get_optional().value();
+    joint_state_values_[fr_index] =
+      controller_->command_interfaces_[fr_index].get_optional().value();
+    joint_state_values_[rl_index] =
+      controller_->command_interfaces_[rl_index].get_optional().value();
+    joint_state_values_[rr_index] =
+      controller_->command_interfaces_[rr_index].get_optional().value();
   }
 
   RCLCPP_INFO(
