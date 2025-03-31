@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 project(pose_broadcaster)
 
-include(../ros2_controllers.cmake)
+find_package(ros2_control_cmake REQUIRED)
 set_compiler_options()
 export_windows_symbols()
 

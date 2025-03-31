@@ -2,6 +2,14 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.22.0 (2025-03-17)
+-------------------
+* [JTC] Accept larger number of `joints` than `command_joints` (`#809 <https://github.com/ros-controls/ros2_controllers/issues/809>`_)
+* Use constructor parameters instead of initializer list (`#1587 <https://github.com/ros-controls/ros2_controllers/issues/1587>`_)
+* [JTC] Enable feed-forward effort trajectories (`#1200 <https://github.com/ros-controls/ros2_controllers/issues/1200>`_)
+* [JTC] Rename open_loop_control parameter and slightly change its scope (`#1525 <https://github.com/ros-controls/ros2_controllers/issues/1525>`_)
+* Contributors: Christoph Fröhlich, Felix Exner (fexner), Thies Oelerich, Vladimir Ivan
+
 4.21.0 (2025-03-01)
 -------------------
 * [JTC] Renaming variables, reordering trajectory checks (`#1032 <https://github.com/ros-controls/ros2_controllers/issues/1032>`_)

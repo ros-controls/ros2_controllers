@@ -7,7 +7,7 @@ if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
 endif()
 
-include(../ros2_controllers.cmake)
+find_package(ros2_control_cmake REQUIRED)
 set_compiler_options()
 export_windows_symbols()
 

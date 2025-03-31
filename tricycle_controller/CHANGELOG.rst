@@ -2,6 +2,9 @@
 Changelog for package tricycle_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.22.0 (2025-03-17)
+-------------------
+
 4.21.0 (2025-03-01)
 -------------------
 * Cleanup wrong lifecycle transitions in tests and unnecessary checks (`#1534 <https://github.com/ros-controls/ros2_controllers/issues/1534>`_)
