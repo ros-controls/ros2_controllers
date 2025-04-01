@@ -149,36 +149,42 @@ protected:
     command_itfs_.reserve(joint_command_values_.size());
     command_ifs.reserve(joint_command_values_.size());
 
-    command_itfs_.emplace_back(hardware_interface::CommandInterface(
-      rear_wheels_names_[0], traction_interface_name_,
-      &joint_command_values_[CMD_TRACTION_RIGHT_WHEEL]));
+    command_itfs_.emplace_back(
+      hardware_interface::CommandInterface(
+        rear_wheels_names_[0], traction_interface_name_,
+        &joint_command_values_[CMD_TRACTION_RIGHT_WHEEL]));
     command_ifs.emplace_back(command_itfs_.back());
 
-    command_itfs_.emplace_back(hardware_interface::CommandInterface(
-      rear_wheels_names_[1], steering_interface_name_,
-      &joint_command_values_[CMD_TRACTION_LEFT_WHEEL]));
+    command_itfs_.emplace_back(
+      hardware_interface::CommandInterface(
+        rear_wheels_names_[1], steering_interface_name_,
+        &joint_command_values_[CMD_TRACTION_LEFT_WHEEL]));
     command_ifs.emplace_back(command_itfs_.back());
 
-    command_itfs_.emplace_back(hardware_interface::CommandInterface(
-      front_wheels_names_[0], steering_interface_name_, &joint_command_values_[CMD_STEER_WHEEL]));
+    command_itfs_.emplace_back(
+      hardware_interface::CommandInterface(
+        front_wheels_names_[0], steering_interface_name_, &joint_command_values_[CMD_STEER_WHEEL]));
     command_ifs.emplace_back(command_itfs_.back());
 
     std::vector<hardware_interface::LoanedStateInterface> state_ifs;
     state_itfs_.reserve(joint_state_values_.size());
     state_ifs.reserve(joint_state_values_.size());
 
-    state_itfs_.emplace_back(hardware_interface::StateInterface(
-      rear_wheels_names_[0], traction_interface_name_,
-      &joint_state_values_[STATE_TRACTION_RIGHT_WHEEL]));
+    state_itfs_.emplace_back(
+      hardware_interface::StateInterface(
+        rear_wheels_names_[0], traction_interface_name_,
+        &joint_state_values_[STATE_TRACTION_RIGHT_WHEEL]));
     state_ifs.emplace_back(state_itfs_.back());
 
-    state_itfs_.emplace_back(hardware_interface::StateInterface(
-      rear_wheels_names_[1], traction_interface_name_,
-      &joint_state_values_[STATE_TRACTION_LEFT_WHEEL]));
+    state_itfs_.emplace_back(
+      hardware_interface::StateInterface(
+        rear_wheels_names_[1], traction_interface_name_,
+        &joint_state_values_[STATE_TRACTION_LEFT_WHEEL]));
     state_ifs.emplace_back(state_itfs_.back());
 
-    state_itfs_.emplace_back(hardware_interface::StateInterface(
-      front_wheels_names_[0], steering_interface_name_, &joint_state_values_[STATE_STEER_AXIS]));
+    state_itfs_.emplace_back(
+      hardware_interface::StateInterface(
+        front_wheels_names_[0], steering_interface_name_, &joint_state_values_[STATE_STEER_AXIS]));
     state_ifs.emplace_back(state_itfs_.back());
 
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
