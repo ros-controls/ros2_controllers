@@ -162,8 +162,9 @@ protected:
 
     for (size_t i = 0; i < dof_names_.size(); ++i)
     {
-      command_itfs_.emplace_back(hardware_interface::CommandInterface(
-        dof_names_[i], command_interface_, &dof_command_values_[i]));
+      command_itfs_.emplace_back(
+        hardware_interface::CommandInterface(
+          dof_names_[i], command_interface_, &dof_command_values_[i]));
       command_ifs.emplace_back(command_itfs_.back());
     }
 
