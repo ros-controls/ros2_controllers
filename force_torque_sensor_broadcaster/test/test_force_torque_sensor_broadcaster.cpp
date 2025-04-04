@@ -51,30 +51,7 @@ void ForceTorqueSensorBroadcasterTest::SetUp()
   fts_broadcaster_ = std::make_unique<FriendForceTorqueSensorBroadcaster>();
 }
 
-<<<<<<< HEAD
-void ForceTorqueSensorBroadcasterTest::TearDown()
-{
-  // Reset the broadcaster with proper cleanup
-  if (fts_broadcaster_)
-  {
-    if (
-      fts_broadcaster_->get_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_UNCONFIGURED)
-    {
-      if (fts_broadcaster_->get_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
-      {
-        ASSERT_EQ(fts_broadcaster_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-      }
-      // Clean up the broadcaster
-      ASSERT_EQ(fts_broadcaster_->on_cleanup(rclcpp_lifecycle::State()), NODE_SUCCESS);
-    }
-    fts_broadcaster_.reset(nullptr);
-  }
-  // Add a small delay between tests
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
-}
-=======
 void ForceTorqueSensorBroadcasterTest::TearDown() { fts_broadcaster_.reset(nullptr); }
->>>>>>> 767a33f ([CI] Revert test changes to debug the timeout from test_force_torque_sensor_broadcaster  (#1622))
 
 void ForceTorqueSensorBroadcasterTest::SetUpFTSBroadcaster()
 {
