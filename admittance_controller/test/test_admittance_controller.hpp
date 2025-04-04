@@ -398,7 +398,8 @@ protected:
   rclcpp::Node::SharedPtr test_broadcaster_node_;
 };
 
-// From the tutorial: https://www.sandordargo.com/blog/2019/04/24/parameterized-testing-with-gtest
+// From the tutorial: https://www.sandordargo.com/blog/2022/03/02/mocking-non-virtual-and-free-functions
+
 class AdmittanceControllerTestParameterizedMissingParameters
 : public AdmittanceControllerTest,
   public ::testing::WithParamInterface<std::string>
