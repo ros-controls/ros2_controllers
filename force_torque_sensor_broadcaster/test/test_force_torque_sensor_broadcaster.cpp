@@ -43,13 +43,7 @@ constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
 
 void ForceTorqueSensorBroadcasterTest::SetUpTestCase() {}
 
-void ForceTorqueSensorBroadcasterTest::TearDownTestCase()
-{
-  // Ensure all nodes are properly shutdown
-  rclcpp::shutdown();
-  // Add a small delay to allow proper cleanup
-  std::this_thread::sleep_for(std::chrono::milliseconds(100));
-}
+void ForceTorqueSensorBroadcasterTest::TearDownTestCase() {}
 
 void ForceTorqueSensorBroadcasterTest::SetUp()
 {
@@ -57,6 +51,7 @@ void ForceTorqueSensorBroadcasterTest::SetUp()
   fts_broadcaster_ = std::make_unique<FriendForceTorqueSensorBroadcaster>();
 }
 
+<<<<<<< HEAD
 void ForceTorqueSensorBroadcasterTest::TearDown()
 {
   // Reset the broadcaster with proper cleanup
@@ -77,6 +72,9 @@ void ForceTorqueSensorBroadcasterTest::TearDown()
   // Add a small delay between tests
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
 }
+=======
+void ForceTorqueSensorBroadcasterTest::TearDown() { fts_broadcaster_.reset(nullptr); }
+>>>>>>> 767a33f ([CI] Revert test changes to debug the timeout from test_force_torque_sensor_broadcaster  (#1622))
 
 void ForceTorqueSensorBroadcasterTest::SetUpFTSBroadcaster()
 {
