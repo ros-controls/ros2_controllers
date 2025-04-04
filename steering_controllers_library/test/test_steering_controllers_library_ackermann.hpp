@@ -33,8 +33,6 @@
 
 using ControllerStateMsg =
   steering_controllers_library::SteeringControllersLibrary::AckermannControllerState;
-using ControllerTwistReferenceMsg =
-  steering_controllers_library::SteeringControllersLibrary::ControllerTwistReferenceMsg;
 using ControllerAckermannReferenceMsg =
   steering_controllers_library::SteeringControllersLibrary::ControllerAckermannReferenceMsg;
 
@@ -91,7 +89,7 @@ public:
   }
 
   /**
-   * @brief wait_for_command blocks until a new ControllerTwistReferenceMsg is received.
+   * @brief wait_for_command blocks until a new ControllerAckermannReferenceMsg is received.
    * Requires that the executor is not spinned elsewhere between the
    *  message publication and the call to this function.
    */
@@ -145,7 +143,7 @@ public:
     controller_ = std::make_unique<CtrlType>();
 
     command_publisher_node_ = std::make_shared<rclcpp::Node>("command_publisher");
-    command_publisher_ = command_publisher_node_->create_publisher<ControllerTwistReferenceMsg>(
+    command_publisher_ = command_publisher_node_->create_publisher<ControllerAckermannReferenceMsg>(
       "/test_steering_controllers_library/reference", rclcpp::SystemDefaultsQoS());
   }
 
@@ -173,56 +171,48 @@ protected:
     command_itfs_.reserve(joint_command_values_.size());
     command_ifs.reserve(joint_command_values_.size());
 
-    command_itfs_.emplace_back(
-      hardware_interface::CommandInterface(
-        rear_wheels_names_[0], traction_interface_name_,
-        &joint_command_values_[CMD_TRACTION_RIGHT_WHEEL]));
+    command_itfs_.emplace_back(hardware_interface::CommandInterface(
+      rear_wheels_names_[0], traction_interface_name_,
+      &joint_command_values_[CMD_TRACTION_RIGHT_WHEEL]));
     command_ifs.emplace_back(command_itfs_.back());
 
-    command_itfs_.emplace_back(
-      hardware_interface::CommandInterface(
-        rear_wheels_names_[1], steering_interface_name_,
-        &joint_command_values_[CMD_TRACTION_LEFT_WHEEL]));
+    command_itfs_.emplace_back(hardware_interface::CommandInterface(
+      rear_wheels_names_[1], steering_interface_name_,
+      &joint_command_values_[CMD_TRACTION_LEFT_WHEEL]));
     command_ifs.emplace_back(command_itfs_.back());
 
-    command_itfs_.emplace_back(
-      hardware_interface::CommandInterface(
-        front_wheels_names_[0], steering_interface_name_,
-        &joint_command_values_[CMD_STEER_RIGHT_WHEEL]));
+    command_itfs_.emplace_back(hardware_interface::CommandInterface(
+      front_wheels_names_[0], steering_interface_name_,
+      &joint_command_values_[CMD_STEER_RIGHT_WHEEL]));
     command_ifs.emplace_back(command_itfs_.back());
 
-    command_itfs_.emplace_back(
-      hardware_interface::CommandInterface(
-        front_wheels_names_[1], steering_interface_name_,
-        &joint_command_values_[CMD_STEER_LEFT_WHEEL]));
+    command_itfs_.emplace_back(hardware_interface::CommandInterface(
+      front_wheels_names_[1], steering_interface_name_,
+      &joint_command_values_[CMD_STEER_LEFT_WHEEL]));
     command_ifs.emplace_back(command_itfs_.back());
 
     std::vector<hardware_interface::LoanedStateInterface> state_ifs;
     state_itfs_.reserve(joint_state_values_.size());
     state_ifs.reserve(joint_state_values_.size());
 
-    state_itfs_.emplace_back(
-      hardware_interface::StateInterface(
-        rear_wheels_names_[0], traction_interface_name_,
-        &joint_state_values_[STATE_TRACTION_RIGHT_WHEEL]));
+    state_itfs_.emplace_back(hardware_interface::StateInterface(
+      rear_wheels_names_[0], traction_interface_name_,
+      &joint_state_values_[STATE_TRACTION_RIGHT_WHEEL]));
     state_ifs.emplace_back(state_itfs_.back());
 
-    state_itfs_.emplace_back(
-      hardware_interface::StateInterface(
-        rear_wheels_names_[1], traction_interface_name_,
-        &joint_state_values_[STATE_TRACTION_LEFT_WHEEL]));
+    state_itfs_.emplace_back(hardware_interface::StateInterface(
+      rear_wheels_names_[1], traction_interface_name_,
+      &joint_state_values_[STATE_TRACTION_LEFT_WHEEL]));
     state_ifs.emplace_back(state_itfs_.back());
 
-    state_itfs_.emplace_back(
-      hardware_interface::StateInterface(
-        front_wheels_names_[0], steering_interface_name_,
-        &joint_state_values_[STATE_STEER_RIGHT_WHEEL]));
+    state_itfs_.emplace_back(hardware_interface::StateInterface(
+      front_wheels_names_[0], steering_interface_name_,
+      &joint_state_values_[STATE_STEER_RIGHT_WHEEL]));
     state_ifs.emplace_back(state_itfs_.back());
 
-    state_itfs_.emplace_back(
-      hardware_interface::StateInterface(
-        front_wheels_names_[1], steering_interface_name_,
-        &joint_state_values_[STATE_STEER_LEFT_WHEEL]));
+    state_itfs_.emplace_back(hardware_interface::StateInterface(
+      front_wheels_names_[1], steering_interface_name_,
+      &joint_state_values_[STATE_STEER_LEFT_WHEEL]));
     state_ifs.emplace_back(state_itfs_.back());
 
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
@@ -290,9 +280,9 @@ protected:
 
     wait_for_topic(command_publisher_->get_topic_name());
 
-    ControllerTwistReferenceMsg msg;
-    msg.twist.linear.x = linear;
-    msg.twist.angular.z = angular;
+    ControllerAckermannReferenceMsg msg;
+    msg.drive.speed = linear;
+    msg.drive.steering_angle = angular;
 
     command_publisher_->publish(msg);
   }
@@ -327,7 +317,8 @@ protected:
   std::array<double, 4> joint_state_values_ = {{0.5, 0.5, 0.0, 0.0}};
   std::array<double, 4> joint_command_values_ = {{1.1, 3.3, 2.2, 4.4}};
 
-  std::array<std::string, 2> joint_reference_interfaces_ = {{"linear", "angular"}};
+  std::array<std::string, 2> joint_reference_interfaces_ = {
+    {"linear/velocity", "angular/velocity"}};
   std::string steering_interface_name_ = "position";
   // defined in setup
   std::string traction_interface_name_ = "";
@@ -339,7 +330,7 @@ protected:
   // Test related parameters
   std::unique_ptr<CtrlType> controller_;
   rclcpp::Node::SharedPtr command_publisher_node_;
-  rclcpp::Publisher<ControllerTwistReferenceMsg>::SharedPtr command_publisher_;
+  rclcpp::Publisher<ControllerAckermannReferenceMsg>::SharedPtr command_publisher_;
 };
 
 #endif  // TEST_STEERING_CONTROLLERS_LIBRARY_HPP_
