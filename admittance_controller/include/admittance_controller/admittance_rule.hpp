@@ -18,23 +18,16 @@
 #define ADMITTANCE_CONTROLLER__ADMITTANCE_RULE_HPP_
 
 #include <Eigen/Core>
-#include <Eigen/Geometry>
-#include <map>
+
 #include <memory>
 #include <string>
 #include <vector>
 
+#include "admittance_controller/admittance_controller_parameters.hpp"
 #include "control_msgs/msg/admittance_controller_state.hpp"
-#include "control_toolbox/filters.hpp"
-#include "controller_interface/controller_interface.hpp"
-#include "geometry_msgs/msg/wrench_stamped.hpp"
+#include "controller_interface/controller_interface_base.hpp"
 #include "kinematics_interface/kinematics_interface.hpp"
 #include "pluginlib/class_loader.hpp"
-#include "tf2_eigen/tf2_eigen.hpp"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
-#include "tf2_kdl/tf2_kdl.hpp"
-#include "tf2_ros/buffer.h"
-#include "tf2_ros/transform_listener.h"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
 namespace admittance_controller
@@ -70,10 +63,11 @@ struct AdmittanceState
     mass_inv.setZero();
     stiffness.setZero();
     selected_axes.setZero();
-    current_joint_pos = Eigen::VectorXd::Zero(num_joints);
-    joint_pos = Eigen::VectorXd::Zero(num_joints);
-    joint_vel = Eigen::VectorXd::Zero(num_joints);
-    joint_acc = Eigen::VectorXd::Zero(num_joints);
+    auto idx = static_cast<Eigen::Index>(num_joints);
+    current_joint_pos = Eigen::VectorXd::Zero(idx);
+    joint_pos = Eigen::VectorXd::Zero(idx);
+    joint_vel = Eigen::VectorXd::Zero(idx);
+    joint_acc = Eigen::VectorXd::Zero(idx);
   }
 
   Eigen::VectorXd current_joint_pos;
@@ -109,7 +103,8 @@ public:
 
   /// Configure admittance rule memory using number of joints.
   controller_interface::return_type configure(
-    const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node, const size_t num_joint);
+    const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node, const size_t num_joint,
+    const std::string & robot_description);
 
   /// Reset all values back to default
   controller_interface::return_type reset(const size_t num_joints);

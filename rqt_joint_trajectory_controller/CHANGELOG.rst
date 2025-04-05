@@ -2,6 +2,55 @@
 Changelog for package rqt_joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.22.0 (2025-03-17)
+-------------------
+* [JTC] Accept larger number of `joints` than `command_joints` (`#809 <https://github.com/ros-controls/ros2_controllers/issues/809>`_)
+* Update documentation of rqt_joint_trajectory_controller (`#1578 <https://github.com/ros-controls/ros2_controllers/issues/1578>`_)
+* Contributors: Aditya Pawar, Christoph Fröhlich
+
+4.21.0 (2025-03-01)
+-------------------
+
+4.20.0 (2025-01-29)
+-------------------
+
+4.19.0 (2025-01-13)
+-------------------
+
+4.18.0 (2024-12-19)
+-------------------
+
+4.17.0 (2024-12-07)
+-------------------
+* Update maintainers and add url tags (`#1363 <https://github.com/ros-controls/ros2_controllers/issues/1363>`_)
+* Contributors: Christoph Fröhlich
+
+4.16.0 (2024-11-08)
+-------------------
+
+4.15.0 (2024-10-07)
+-------------------
+
+4.14.0 (2024-09-11)
+-------------------
+* Fix bug for displaying all controllers (`#1259 <https://github.com/ros-controls/ros2_controllers/issues/1259>`_)
+* Contributors: Francisco Martín Rico
+
+4.13.0 (2024-08-22)
+-------------------
+
+4.12.1 (2024-08-14)
+-------------------
+
+4.12.0 (2024-07-23)
+-------------------
+
+4.11.0 (2024-07-09)
+-------------------
+
+4.10.0 (2024-07-01)
+-------------------
+
 4.9.0 (2024-06-05)
 ------------------
 * [RQT-JTC] limits from jtc controlled joints (`#1146 <https://github.com/ros-controls/ros2_controllers/issues/1146>`_)

@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "test_ackermann_steering_controller.hpp"
-
-#include <limits>
 #include <memory>
 #include <string>
-#include <utility>
 #include <vector>
+
+#include "hardware_interface/types/hardware_interface_type_values.hpp"
+#include "test_ackermann_steering_controller.hpp"
 
 class AckermannSteeringControllerTest
 : public AckermannSteeringControllerFixture<TestableAckermannSteeringController>
@@ -91,11 +90,13 @@ TEST_F(AckermannSteeringControllerTest, check_exported_interfaces)
   ASSERT_EQ(reference_interfaces.size(), joint_reference_interfaces_.size());
   for (size_t i = 0; i < joint_reference_interfaces_.size(); ++i)
   {
-    const std::string ref_itf_name =
+    const std::string ref_itf_prefix_name =
       std::string(controller_->get_node()->get_name()) + "/" + joint_reference_interfaces_[i];
-    EXPECT_EQ(reference_interfaces[i].get_name(), ref_itf_name);
-    EXPECT_EQ(reference_interfaces[i].get_prefix_name(), controller_->get_node()->get_name());
-    EXPECT_EQ(reference_interfaces[i].get_interface_name(), joint_reference_interfaces_[i]);
+    EXPECT_EQ(
+      reference_interfaces[i]->get_name(),
+      ref_itf_prefix_name + "/" + hardware_interface::HW_IF_VELOCITY);
+    EXPECT_EQ(reference_interfaces[i]->get_prefix_name(), ref_itf_prefix_name);
+    EXPECT_EQ(reference_interfaces[i]->get_interface_name(), hardware_interface::HW_IF_VELOCITY);
   }
 }
 

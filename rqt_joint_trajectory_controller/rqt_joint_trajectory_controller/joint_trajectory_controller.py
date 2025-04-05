@@ -251,8 +251,11 @@ class JointTrajectoryController(Plugin):
         # for _all_ their joints
         running_jtc = self._running_jtc_info()
         if running_jtc and not self._robot_joint_limits:
+            self._robot_joint_limits = {}
             for jtc_info in running_jtc:
-                self._robot_joint_limits = get_joint_limits(self._node, _jtc_joint_names(jtc_info))
+                self._robot_joint_limits.update(
+                    get_joint_limits(self._node, _jtc_joint_names(jtc_info))
+                )
         valid_jtc = []
         if self._robot_joint_limits:
             for jtc_info in running_jtc:
@@ -490,12 +493,9 @@ class JointTrajectoryController(Plugin):
 
 
 def _jtc_joint_names(jtc_info):
-    # NOTE: We assume that there is at least one hardware interface that
-    # claims resources (there should be), and the resource list is fetched
-    # from the first available interface
 
     joint_names = []
-    for interface in jtc_info.claimed_interfaces:
+    for interface in jtc_info.required_state_interfaces:
         name = interface.split("/")[-2]
         if name not in joint_names:
             joint_names.append(name)

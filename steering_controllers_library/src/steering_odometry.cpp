@@ -17,10 +17,12 @@
  * Author: Dr. Ing. Denis Stogl
  */
 
+#define _USE_MATH_DEFINES
+
 #include "steering_controllers_library/steering_odometry.hpp"
 
 #include <cmath>
-#include <iostream>
+#include <limits>
 
 namespace steering_odometry
 {
@@ -123,20 +125,39 @@ bool SteeringOdometry::update_from_velocity(
 {
   steer_pos_ = steer_pos;
   double linear_velocity = traction_wheel_vel * wheel_radius_;
-  const double angular_velocity = tan(steer_pos) * linear_velocity / wheelbase_;
+  const double angular_velocity = std::tan(steer_pos) * linear_velocity / wheelbase_;
 
   return update_odometry(linear_velocity, angular_velocity, dt);
+}
+
+double SteeringOdometry::get_linear_velocity_double_traction_axle(
+  const double right_traction_wheel_vel, const double left_traction_wheel_vel,
+  const double steer_pos)
+{
+  double turning_radius = wheelbase_ / std::tan(steer_pos);
+  const double vel_wheel_r = right_traction_wheel_vel * wheel_radius_;
+  const double vel_wheel_l = left_traction_wheel_vel * wheel_radius_;
+
+  if (std::isinf(turning_radius))
+  {
+    return (vel_wheel_r + vel_wheel_l) * 0.5;
+  }
+
+  // overdetermined, we take the average
+  const double vel_r = vel_wheel_r * turning_radius / (turning_radius + wheel_track_ * 0.5);
+  const double vel_l = vel_wheel_l * turning_radius / (turning_radius - wheel_track_ * 0.5);
+  return (vel_r + vel_l) * 0.5;
 }
 
 bool SteeringOdometry::update_from_velocity(
   const double right_traction_wheel_vel, const double left_traction_wheel_vel,
   const double steer_pos, const double dt)
 {
-  double linear_velocity =
-    (right_traction_wheel_vel + left_traction_wheel_vel) * wheel_radius_ * 0.5;
   steer_pos_ = steer_pos;
+  double linear_velocity = get_linear_velocity_double_traction_axle(
+    right_traction_wheel_vel, left_traction_wheel_vel, steer_pos_);
 
-  const double angular_velocity = tan(steer_pos_) * linear_velocity / wheelbase_;
+  const double angular_velocity = std::tan(steer_pos_) * linear_velocity / wheelbase_;
 
   return update_odometry(linear_velocity, angular_velocity, dt);
 }
@@ -145,9 +166,17 @@ bool SteeringOdometry::update_from_velocity(
   const double right_traction_wheel_vel, const double left_traction_wheel_vel,
   const double right_steer_pos, const double left_steer_pos, const double dt)
 {
-  steer_pos_ = (right_steer_pos + left_steer_pos) * 0.5;
-  double linear_velocity =
-    (right_traction_wheel_vel + left_traction_wheel_vel) * wheel_radius_ * 0.5;
+  // overdetermined, we take the average
+  const double right_steer_pos_est = std::atan(
+    wheelbase_ * std::tan(right_steer_pos) /
+    (wheelbase_ - wheel_track_ / 2 * std::tan(right_steer_pos)));
+  const double left_steer_pos_est = std::atan(
+    wheelbase_ * std::tan(left_steer_pos) /
+    (wheelbase_ + wheel_track_ / 2 * std::tan(left_steer_pos)));
+  steer_pos_ = (right_steer_pos_est + left_steer_pos_est) * 0.5;
+
+  double linear_velocity = get_linear_velocity_double_traction_axle(
+    right_traction_wheel_vel, left_traction_wheel_vel, steer_pos_);
   const double angular_velocity = steer_pos_ * linear_velocity / wheelbase_;
 
   return update_odometry(linear_velocity, angular_velocity, dt);
@@ -177,33 +206,68 @@ void SteeringOdometry::set_velocity_rolling_window_size(size_t velocity_rolling_
   reset_accumulators();
 }
 
-void SteeringOdometry::set_odometry_type(const unsigned int type) { config_type_ = type; }
+void SteeringOdometry::set_odometry_type(const unsigned int type)
+{
+  config_type_ = static_cast<int>(type);
+}
 
 double SteeringOdometry::convert_twist_to_steering_angle(double v_bx, double omega_bz)
 {
-  if (omega_bz == 0 || v_bx == 0)
-  {
-    return 0;
-  }
-  return std::atan(omega_bz * wheelbase_ / v_bx);
+  // phi can be nan if both v_bx and omega_bz are zero
+  const auto phi = std::atan(omega_bz * wheelbase_ / v_bx);
+  return std::isfinite(phi) ? phi : 0.0;
 }
 
 std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_commands(
-  const double v_bx, const double omega_bz)
+  const double v_bx, const double omega_bz, const bool open_loop,
+  const bool reduce_wheel_speed_until_steering_reached)
 {
   // desired wheel speed and steering angle of the middle of traction and steering axis
-  double Ws, phi;
+  double Ws, phi, phi_IK = steer_pos_;
 
+#if 0
   if (v_bx == 0 && omega_bz != 0)
   {
-    // TODO(anyone) would be only valid if traction is on the steering axis -> tricycle_controller
+    // TODO(anyone) this would be only possible if traction is on the steering axis
     phi = omega_bz > 0 ? M_PI_2 : -M_PI_2;
     Ws = abs(omega_bz) * wheelbase_ / wheel_radius_;
   }
   else
   {
-    phi = SteeringOdometry::convert_twist_to_steering_angle(v_bx, omega_bz);
-    Ws = v_bx / (wheel_radius_ * std::cos(steer_pos_));
+    // TODO(anyone) this would be valid only if traction is on the steering axis
+    Ws = v_bx / (wheel_radius_ * std::cos(phi_IK));  // using the measured steering angle
+  }
+#endif
+  // steering angle
+  phi = SteeringOdometry::convert_twist_to_steering_angle(v_bx, omega_bz);
+  if (open_loop)
+  {
+    phi_IK = phi;
+  }
+  // wheel speed
+  Ws = v_bx / wheel_radius_;
+
+  if (!open_loop && reduce_wheel_speed_until_steering_reached)
+  {
+    // Reduce wheel speed until the target angle has been reached
+    double phi_delta = abs(steer_pos_ - phi);
+    double scale;
+    const double min_phi_delta = M_PI / 6.;
+    if (phi_delta < min_phi_delta)
+    {
+      scale = 1;
+    }
+    else if (phi_delta >= 1.5608)
+    {
+      // cos(1.5608) = 0.01
+      scale = 0.01 / cos(min_phi_delta);
+    }
+    else
+    {
+      // TODO(anyone): find the best function, e.g convex power functions
+      scale = cos(phi_delta) / cos(min_phi_delta);
+    }
+    Ws *= scale;
   }
 
   if (config_type_ == BICYCLE_CONFIG)
@@ -216,17 +280,20 @@ std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_comma
   {
     std::vector<double> traction_commands;
     std::vector<double> steering_commands;
-    if (fabs(steer_pos_) < 1e-6)
+    // double-traction axle
+    if (is_close_to_zero(phi_IK))
     {
+      // avoid division by zero
       traction_commands = {Ws, Ws};
     }
     else
     {
-      const double turning_radius = wheelbase_ / std::tan(steer_pos_);
+      const double turning_radius = wheelbase_ / std::tan(phi_IK);
       const double Wr = Ws * (turning_radius + wheel_track_ * 0.5) / turning_radius;
       const double Wl = Ws * (turning_radius - wheel_track_ * 0.5) / turning_radius;
       traction_commands = {Wr, Wl};
     }
+    // simple steering
     steering_commands = {phi};
     return std::make_tuple(traction_commands, steering_commands);
   }
@@ -234,14 +301,16 @@ std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_comma
   {
     std::vector<double> traction_commands;
     std::vector<double> steering_commands;
-    if (fabs(steer_pos_) < 1e-6)
+    if (is_close_to_zero(phi_IK))
     {
+      // avoid division by zero
       traction_commands = {Ws, Ws};
+      // shortcut, no steering
       steering_commands = {phi, phi};
     }
     else
     {
-      const double turning_radius = wheelbase_ / std::tan(steer_pos_);
+      const double turning_radius = wheelbase_ / std::tan(phi_IK);
       const double Wr = Ws * (turning_radius + wheel_track_ * 0.5) / turning_radius;
       const double Wl = Ws * (turning_radius - wheel_track_ * 0.5) / turning_radius;
       traction_commands = {Wr, Wl};
@@ -279,8 +348,8 @@ void SteeringOdometry::integrate_runge_kutta_2(
   const double theta_mid = heading_ + omega_bz * 0.5 * dt;
 
   // Use the intermediate values to update the state
-  x_ += v_bx * cos(theta_mid) * dt;
-  y_ += v_bx * sin(theta_mid) * dt;
+  x_ += v_bx * std::cos(theta_mid) * dt;
+  y_ += v_bx * std::sin(theta_mid) * dt;
   heading_ += omega_bz * dt;
 }
 
@@ -289,7 +358,7 @@ void SteeringOdometry::integrate_fk(const double v_bx, const double omega_bz, co
   const double delta_x_b = v_bx * dt;
   const double delta_theta = omega_bz * dt;
 
-  if (fabs(delta_theta) < 1e-6)
+  if (is_close_to_zero(delta_theta))
   {
     /// Runge-Kutta 2nd Order (should solve problems when omega_bz is zero):
     integrate_runge_kutta_2(v_bx, omega_bz, dt);
@@ -300,8 +369,8 @@ void SteeringOdometry::integrate_fk(const double v_bx, const double omega_bz, co
     const double heading_old = heading_;
     const double R = delta_x_b / delta_theta;
     heading_ += delta_theta;
-    x_ += R * (sin(heading_) - sin(heading_old));
-    y_ += -R * (cos(heading_) - cos(heading_old));
+    x_ += R * (sin(heading_) - std::sin(heading_old));
+    y_ += -R * (cos(heading_) - std::cos(heading_old));
   }
 }
 
