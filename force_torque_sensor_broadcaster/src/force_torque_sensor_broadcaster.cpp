@@ -176,6 +176,7 @@ ForceTorqueSensorBroadcaster::on_export_state_interfaces()
   std::vector<std::string> torque_names(
     {params_.interface_names.torque.x, params_.interface_names.torque.y,
      params_.interface_names.torque.z});
+  std::string export_prefix = get_node()->get_name();
   if (!params_.sensor_name.empty())
   {
     const auto semantic_comp_itf_names = force_torque_sensor_->get_state_interface_names();
@@ -183,37 +184,53 @@ ForceTorqueSensorBroadcaster::on_export_state_interfaces()
       semantic_comp_itf_names.begin(), semantic_comp_itf_names.begin() + 3, force_names.begin());
     std::copy(
       semantic_comp_itf_names.begin() + 3, semantic_comp_itf_names.end(), torque_names.begin());
+
+    // Update the prefix and get the proper force and torque names
+    export_prefix = export_prefix + "/" + params_.sensor_name;
+    // strip "/" and get the second part of the information
+    // e.g. /ft_sensor/force.x -> force.x
+    std::for_each(
+      force_names.begin(), force_names.end(),
+      [](std::string & name) { name = name.substr(name.find_last_of("/") + 1); });
+    std::for_each(
+      torque_names.begin(), torque_names.end(),
+      [](std::string & name) { name = name.substr(name.find_last_of("/") + 1); });
   }
-  const std::string controller_name = get_node()->get_name();
   if (!force_names[0].empty())
   {
-    exported_state_interfaces.emplace_back(hardware_interface::StateInterface(
-      controller_name, force_names[0], &realtime_publisher_->msg_.wrench.force.x));
+    exported_state_interfaces.emplace_back(
+      hardware_interface::StateInterface(
+        export_prefix, force_names[0], &realtime_publisher_->msg_.wrench.force.x));
   }
   if (!force_names[1].empty())
   {
-    exported_state_interfaces.emplace_back(hardware_interface::StateInterface(
-      controller_name, force_names[1], &realtime_publisher_->msg_.wrench.force.y));
+    exported_state_interfaces.emplace_back(
+      hardware_interface::StateInterface(
+        export_prefix, force_names[1], &realtime_publisher_->msg_.wrench.force.y));
   }
   if (!force_names[2].empty())
   {
-    exported_state_interfaces.emplace_back(hardware_interface::StateInterface(
-      controller_name, force_names[2], &realtime_publisher_->msg_.wrench.force.z));
+    exported_state_interfaces.emplace_back(
+      hardware_interface::StateInterface(
+        export_prefix, force_names[2], &realtime_publisher_->msg_.wrench.force.z));
   }
   if (!torque_names[0].empty())
   {
-    exported_state_interfaces.emplace_back(hardware_interface::StateInterface(
-      controller_name, torque_names[0], &realtime_publisher_->msg_.wrench.torque.x));
+    exported_state_interfaces.emplace_back(
+      hardware_interface::StateInterface(
+        export_prefix, torque_names[0], &realtime_publisher_->msg_.wrench.torque.x));
   }
   if (!torque_names[1].empty())
   {
-    exported_state_interfaces.emplace_back(hardware_interface::StateInterface(
-      controller_name, torque_names[1], &realtime_publisher_->msg_.wrench.torque.y));
+    exported_state_interfaces.emplace_back(
+      hardware_interface::StateInterface(
+        export_prefix, torque_names[1], &realtime_publisher_->msg_.wrench.torque.y));
   }
   if (!torque_names[2].empty())
   {
-    exported_state_interfaces.emplace_back(hardware_interface::StateInterface(
-      controller_name, torque_names[2], &realtime_publisher_->msg_.wrench.torque.z));
+    exported_state_interfaces.emplace_back(
+      hardware_interface::StateInterface(
+        export_prefix, torque_names[2], &realtime_publisher_->msg_.wrench.torque.z));
   }
   return exported_state_interfaces;
 }

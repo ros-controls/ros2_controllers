@@ -24,12 +24,15 @@ Currently, joints with hardware interface types ``position``, ``velocity``, ``ac
 * ``position``, ``velocity``, ``acceleration``
 * ``velocity``
 * ``effort``
+* ``position``, ``effort``
 
 This means that the joints can have one or more command interfaces, where the following control laws are applied at the same time:
 
 * For command interfaces ``position``, the desired positions are simply forwarded to the joints,
 * For command interfaces ``acceleration``, desired accelerations are simply forwarded to the joints.
 * For ``velocity`` (``effort``) command interfaces, the position+velocity trajectory following error is mapped to ``velocity`` (``effort``) commands through a PID loop if it is configured (:ref:`parameters`).
+* For ``effort`` command interface (without ``position`` command interface), if the trajectory contains effort, this will be added to the PID commands as a feed forward effort.
+* For ``position, effort`` command interface, if the trajectory contains effort, this will be passed directly to the ``effort`` interface (PID won't be used) while the positions will be passed to the ``position`` interface.
 
 This leads to the following allowed combinations of command and state interfaces:
 
@@ -38,7 +41,7 @@ This leads to the following allowed combinations of command and state interfaces
 
   * if command interface ``velocity`` is the only one, state interfaces must include  ``position, velocity`` .
 
-* With command interface ``effort``, state interfaces must include  ``position, velocity``.
+* With command interface ``effort`` or ``position, effort``, state interfaces must include  ``position, velocity``.
 
 * With command interface ``acceleration``, state interfaces must include  ``position, velocity``.
 
@@ -97,7 +100,7 @@ A yaml file for using it could be:
           action_monitor_rate: 20.0
 
           allow_partial_joints_goal: false
-          open_loop_control: true
+          interpolate_from_desired_state: true
           constraints:
             stopped_velocity_tolerance: 0.01
             goal_time: 0.0

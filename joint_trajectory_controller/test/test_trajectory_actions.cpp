@@ -25,7 +25,8 @@
 #include <vector>
 
 #include "control_msgs/action/detail/follow_joint_trajectory__struct.hpp"
-#include "gtest/gtest.h"
+#include "controller_interface/controller_interface.hpp"
+#include "hardware_interface/resource_manager.hpp"
 #include "rclcpp/clock.hpp"
 #include "rclcpp/duration.hpp"
 #include "rclcpp/executors/multi_threaded_executor.hpp"
@@ -36,9 +37,11 @@
 #include "rclcpp_action/client.hpp"
 #include "rclcpp_action/client_goal_handle.hpp"
 #include "rclcpp_action/create_client.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
+#include "joint_trajectory_controller/joint_trajectory_controller.hpp"
 #include "test_trajectory_controller_utils.hpp"
 
 using std::placeholders::_1;
@@ -119,6 +122,7 @@ protected:
   {
     TearDownControllerHardware();
     TearDownExecutor();
+    TrajectoryControllerTest::TearDown();
   }
 
   void TearDownExecutor()
@@ -1019,9 +1023,6 @@ TEST_P(TestTrajectoryActionsTestParameterized, deactivate_controller_aborts_acti
 
   auto state_ref = traj_controller_->get_state_reference();
   auto state = traj_controller_->get_state_feedback();
-
-  // run an update
-  updateControllerAsync(rclcpp::Duration::from_seconds(0.01));
 
   // There will be no active trajectory upon deactivation, so we can't use the expectCommandPoint
   // method.

@@ -100,6 +100,8 @@ protected:
 
   // Degrees of freedom
   size_t dof_;
+  size_t num_cmd_joints_;
+  std::vector<size_t> map_cmd_to_joints_;
 
   // Storing command joint names for interfaces
   std::vector<std::string> command_joint_names_;
@@ -111,7 +113,9 @@ protected:
 
   rclcpp::Time traj_time_;
 
+  // variables for storing internal data for open-loop control
   trajectory_msgs::msg::JointTrajectoryPoint last_commanded_state_;
+  rclcpp::Time last_commanded_time_;
   /// Specify interpolation method. Default to splines.
   interpolation_methods::InterpolationMethod interpolation_method_{
     interpolation_methods::DEFAULT_INTERPOLATION};
@@ -156,9 +160,9 @@ protected:
 
   rclcpp::Service<control_msgs::srv::QueryTrajectoryState>::SharedPtr query_state_srv_;
 
-  std::shared_ptr<Trajectory> traj_external_point_ptr_ = nullptr;
+  std::shared_ptr<Trajectory> current_trajectory_ = nullptr;
   realtime_tools::RealtimeBuffer<std::shared_ptr<trajectory_msgs::msg::JointTrajectory>>
-    traj_msg_external_point_ptr_;
+    new_trajectory_msg_;
 
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> hold_position_msg_ptr_ = nullptr;
 
@@ -265,9 +269,9 @@ private:
 
   void init_hold_position_msg();
   void resize_joint_trajectory_point(
-    trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size);
+    trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size, double value = 0.0);
   void resize_joint_trajectory_point_command(
-    trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size);
+    trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size, double value = 0.0);
 
   /**
    * @brief Assigns the values from a trajectory point interface to a joint interface.
@@ -281,9 +285,9 @@ private:
   void assign_interface_from_point(
     const T & joint_interface, const std::vector<double> & trajectory_point_interface)
   {
-    for (size_t index = 0; index < dof_; ++index)
+    for (size_t index = 0; index < num_cmd_joints_; ++index)
     {
-      joint_interface[index].get().set_value(trajectory_point_interface[index]);
+      joint_interface[index].get().set_value(trajectory_point_interface[map_cmd_to_joints_[index]]);
     }
   }
 };

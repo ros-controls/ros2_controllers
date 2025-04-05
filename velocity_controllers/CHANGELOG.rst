@@ -2,6 +2,14 @@
 Changelog for package velocity_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.22.0 (2025-03-17)
+-------------------
+* Fix the `ActivateWithWrongJointsNamesFails` test (`#1570 <https://github.com/ros-controls/ros2_controllers/issues/1570>`_)
+* Contributors: Christoph Fröhlich
+
+4.21.0 (2025-03-01)
+-------------------
+
 4.20.0 (2025-01-29)
 -------------------
 
