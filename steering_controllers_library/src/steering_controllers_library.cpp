@@ -341,6 +341,15 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_activate(
   // Set default value in command
   reset_controller_reference_msg(*(input_ref_.readFromRT()), get_node());
 
+  // Set the initial steering angle values
+  size_t steering_count_idx =
+    params_.front_steering ? params_.front_wheels_names.size() : params_.rear_wheels_names.size();
+
+  for (size_t i = 0; i < steering_count_idx; i++)
+  {
+    command_interfaces_[steering_count_idx + i].set_value(0.575875);
+  }
+
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
@@ -388,32 +397,52 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
     last_linear_velocity_ = timeout ? 0.0 : reference_interfaces_[0];
     last_angular_velocity_ = timeout ? 0.0 : reference_interfaces_[1];
 
-    auto [traction_commands, steering_commands] = odometry_.get_commands(
-      reference_interfaces_[0], reference_interfaces_[1], params_.open_loop,
-      params_.reduce_wheel_speed_until_steering_reached);
+    // calculate new commands if not in timeout
+    if (!timeout)
+    {
+      auto [traction_commands, steering_commands] = odometry_.get_commands(
+        reference_interfaces_[0], reference_interfaces_[1], params_.open_loop,
+        params_.reduce_wheel_speed_until_steering_reached);
 
-    if (params_.front_steering)
-    {
-      for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
+      if (params_.front_steering)
       {
-        command_interfaces_[i].set_value(timeout ? 0.0 : traction_commands[i]);
+        for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
+        {
+          command_interfaces_[i].set_value(traction_commands[i]);
+        }
+        for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
+        {
+          command_interfaces_[i + params_.rear_wheels_names.size()].set_value(steering_commands[i]);
+        }
       }
-      for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
-      {
-        command_interfaces_[i + params_.rear_wheels_names.size()].set_value(steering_commands[i]);
-      }
-    }
-    else
-    {
+      else
       {
         for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
         {
-          command_interfaces_[i].set_value(timeout ? 0.0 : traction_commands[i]);
+          command_interfaces_[i].set_value(traction_commands[i]);
         }
         for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
         {
           command_interfaces_[i + params_.front_wheels_names.size()].set_value(
             steering_commands[i]);
+        }
+      }
+    }
+    else
+    {
+      // In timeout, only reset wheel velocities to zero
+      if (params_.front_steering)
+      {
+        for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
+        {
+          command_interfaces_[i].set_value(0.0);
+        }
+      }
+      else
+      {
+        for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
+        {
+          command_interfaces_[i].set_value(0.0);
         }
       }
     }
