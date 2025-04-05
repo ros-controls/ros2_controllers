@@ -1,0 +1,8 @@
+<library path="gps_sensor_broadcaster">
+  <class name="gps_sensor_broadcaster/GPSSensorBroadcaster"
+         type="gps_sensor_broadcaster::GPSSensorBroadcaster" base_class_type="controller_interface::ControllerInterface">
+  <description>
+	  This controller publishes the readings of an GPS sensor as sensor_msgs/NavSatFix message.
+  </description>
+  </class>
+</library>
