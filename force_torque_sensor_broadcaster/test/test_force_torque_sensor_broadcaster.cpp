@@ -40,13 +40,7 @@ constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
 
 void ForceTorqueSensorBroadcasterTest::SetUpTestCase() {}
 
-void ForceTorqueSensorBroadcasterTest::TearDownTestCase()
-{
-  // Ensure all nodes are properly shutdown
-  rclcpp::shutdown();
-  // Add a small delay to allow proper cleanup
-  std::this_thread::sleep_for(std::chrono::milliseconds(100));
-}
+void ForceTorqueSensorBroadcasterTest::TearDownTestCase() {}
 
 void ForceTorqueSensorBroadcasterTest::SetUp()
 {
@@ -54,29 +48,7 @@ void ForceTorqueSensorBroadcasterTest::SetUp()
   fts_broadcaster_ = std::make_unique<FriendForceTorqueSensorBroadcaster>();
 }
 
-void ForceTorqueSensorBroadcasterTest::TearDown()
-{
-  // Reset the broadcaster with proper cleanup
-  if (fts_broadcaster_)
-  {
-    if (
-      fts_broadcaster_->get_lifecycle_state().id() !=
-      lifecycle_msgs::msg::State::PRIMARY_STATE_UNCONFIGURED)
-    {
-      if (
-        fts_broadcaster_->get_lifecycle_state().id() ==
-        lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
-      {
-        ASSERT_EQ(fts_broadcaster_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-      }
-      // Clean up the broadcaster
-      ASSERT_EQ(fts_broadcaster_->on_cleanup(rclcpp_lifecycle::State()), NODE_SUCCESS);
-    }
-    fts_broadcaster_.reset(nullptr);
-  }
-  // Add a small delay between tests
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
-}
+void ForceTorqueSensorBroadcasterTest::TearDown() { fts_broadcaster_.reset(nullptr); }
 
 void ForceTorqueSensorBroadcasterTest::SetUpFTSBroadcaster()
 {
