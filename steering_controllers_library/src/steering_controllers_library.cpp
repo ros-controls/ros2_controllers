@@ -369,9 +369,10 @@ SteeringControllersLibrary::on_export_reference_interfaces()
   reference_interfaces.push_back(hardware_interface::CommandInterface(
     get_node()->get_name() + std::string("/linear"), hardware_interface::HW_IF_VELOCITY,
     &reference_interfaces_[0]));
+  
 
   reference_interfaces.push_back(hardware_interface::CommandInterface(
-    get_node()->get_name() + std::string("/angular"), hardware_interface::HW_IF_VELOCITY,
+    get_node()->get_name() + std::string("/angular"), params_.twist_input ? hardware_interface::HW_IF_VELOCITY: hardware_interface::HW_IF_POSITION,
     &reference_interfaces_[1]));
 
   return reference_interfaces;
@@ -387,10 +388,12 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   // Set default value in command
-  if(ref_subscriber_twist_ != nullptr){
+  if(params_.twist_input)
+  {
     reset_controller_reference_msg(*(input_ref_twist_.readFromRT()), get_node());
   }
-  if(ref_subscriber_ackermann_ != nullptr){
+  else
+  {
     reset_controller_reference_msg(*(input_ref_ackermann_.readFromRT()), get_node());
   }
 
