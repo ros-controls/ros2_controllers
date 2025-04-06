@@ -2,6 +2,23 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.22.0 (2025-03-17)
+-------------------
+* [JTC] Accept larger number of `joints` than `command_joints` (`#809 <https://github.com/ros-controls/ros2_controllers/issues/809>`_)
+* Use constructor parameters instead of initializer list (`#1587 <https://github.com/ros-controls/ros2_controllers/issues/1587>`_)
+* [JTC] Enable feed-forward effort trajectories (`#1200 <https://github.com/ros-controls/ros2_controllers/issues/1200>`_)
+* [JTC] Rename open_loop_control parameter and slightly change its scope (`#1525 <https://github.com/ros-controls/ros2_controllers/issues/1525>`_)
+* Contributors: Christoph Fröhlich, Felix Exner (fexner), Thies Oelerich, Vladimir Ivan
+
+4.21.0 (2025-03-01)
+-------------------
+* [JTC] Renaming variables, reordering trajectory checks (`#1032 <https://github.com/ros-controls/ros2_controllers/issues/1032>`_)
+* [JTC] Use time of the last command for set_point_before_trajectory_msg in open-loop mode (`#780 <https://github.com/ros-controls/ros2_controllers/issues/780>`_)
+* Update API of PID class (`#1437 <https://github.com/ros-controls/ros2_controllers/issues/1437>`_)
+* Cleanup wrong lifecycle transitions in tests and unnecessary checks (`#1534 <https://github.com/ros-controls/ros2_controllers/issues/1534>`_)
+* [JTC]: Abort goal on deactivate (`#1517 <https://github.com/ros-controls/ros2_controllers/issues/1517>`_)
+* Contributors: Christoph Fröhlich, Dr. Denis, Felix Exner
+
 4.20.0 (2025-01-29)
 -------------------
 * Remove empty callbacks (`#1488 <https://github.com/ros-controls/ros2_controllers/issues/1488>`_)

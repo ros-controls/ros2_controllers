@@ -107,6 +107,12 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
     REAR_LEFT, params_.rear_left_wheel_command_joint_name,
     params_.rear_left_wheel_state_joint_name);
 
+  // Initialize odometry
+  std::array<double, PLANAR_POINT_DIM> base_frame_offset = {
+    {params_.kinematics.base_frame_offset.x, params_.kinematics.base_frame_offset.y,
+     params_.kinematics.base_frame_offset.theta}};
+  odometry_.init(get_node()->now(), base_frame_offset);
+
   // Set wheel params for the odometry computation
   odometry_.setWheelsParams(
     params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis,
@@ -283,9 +289,10 @@ MecanumDriveController::on_export_reference_interfaces()
 
   for (size_t i = 0; i < reference_interfaces_.size(); ++i)
   {
-    reference_interfaces.push_back(hardware_interface::CommandInterface(
-      get_node()->get_name() + reference_interface_names[i], hardware_interface::HW_IF_VELOCITY,
-      &reference_interfaces_[i]));
+    reference_interfaces.push_back(
+      hardware_interface::CommandInterface(
+        get_node()->get_name() + reference_interface_names[i], hardware_interface::HW_IF_VELOCITY,
+        &reference_interfaces_[i]));
   }
 
   return reference_interfaces;
