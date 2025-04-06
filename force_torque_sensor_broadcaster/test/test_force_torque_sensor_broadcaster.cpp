@@ -24,10 +24,10 @@
 
 #include "geometry_msgs/msg/wrench_stamped.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
+#include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/executor.hpp"
 #include "rclcpp/executors.hpp"
 #include "rclcpp/utilities.hpp"
-
 using hardware_interface::LoanedStateInterface;
 using testing::IsEmpty;
 using testing::SizeIs;
