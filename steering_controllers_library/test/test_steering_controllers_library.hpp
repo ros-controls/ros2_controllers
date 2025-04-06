@@ -308,7 +308,7 @@ protected:
     "front_right_steering_joint", "front_left_steering_joint"};
 
   std::array<double, 4> joint_state_values_ = {{0.5, 0.5, 0.0, 0.0}};
-  std::array<double, 4> joint_command_values_ = {{1.1, 3.3, 2.2, 4.4}};
+  std::array<double, 4> joint_command_values_ = {{1.1, 3.3, 0.575875, 0.575875}};
 
   std::array<std::string, 2> joint_reference_interfaces_ = {{"linear", "angular"}};
   std::string steering_interface_name_ = "position";
