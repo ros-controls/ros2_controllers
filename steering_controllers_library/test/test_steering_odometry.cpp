@@ -254,13 +254,11 @@ TEST_P(SteeringOdometryTestParameterized, bicycle_IK_linear)
 
   auto cmd = odom_->get_commands(ik_vx_, ik_wz_, open_loop_, reduce_speed_);
 
-  auto vel_cmd = std::get<0>(cmd);           // vel
-  EXPECT_DOUBLE_EQ(vel_cmd[0], vel_cmd[1]);  // linear
-  EXPECT_GT(vel_cmd[0], 0);
+  auto vel_cmd = std::get<0>(cmd);    // vel
+  EXPECT_DOUBLE_EQ(vel_cmd[0], 1.0);  // linear
 
   auto steer_cmd = std::get<1>(cmd);  // steer
   EXPECT_DOUBLE_EQ(steer_cmd[0], 0);  // linear
-  EXPECT_DOUBLE_EQ(steer_cmd[1], 0);
 }
 
 TEST_P(SteeringOdometryTestParameterized, bicycle_IK_left)
@@ -397,7 +395,7 @@ TEST_P(SteeringOdometryTestParameterized, bicycle_odometry)
   ASSERT_TRUE(odom_->update_from_velocity(v, w, dt));
 
   // Verify results
-  EXPECT_NEAR(odom_->get_linear(), 1.002, 1e-3);
+  EXPECT_NEAR(odom_->get_linear(), 1.0, 1e-3);
   EXPECT_NEAR(odom_->get_angular(), 0.1, 1e-3);
   EXPECT_NEAR(odom_->get_x(), 0.1, 1e-3);
   EXPECT_NEAR(odom_->get_heading(), 0.01, 1e-3);

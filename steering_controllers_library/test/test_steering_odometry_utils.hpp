@@ -18,11 +18,12 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <tuple>
-#include <variant>
 #include <utility>
+#include <variant>
 #include "steering_controllers_library/steering_odometry.hpp"
 
-enum class TestType {
+enum class TestType
+{
   INITIALIZE,
   ODOMETRY,
   OPEN_LOOP_LINEAR,
@@ -34,49 +35,53 @@ enum class TestType {
 };
 
 class SteeringOdometryTestParameterized
-    : public ::testing::TestWithParam<std::tuple<
-          unsigned int,  // odom_type (ACKERMANN_CONFIG, BICYCLE_CONFIG, TRICYCLE_CONFIG)
-          std::tuple<double, double, double>,  // wheel_radius, wheelbase, track_width
-          std::tuple<double, double, double>,  // position (pos, steer, dt)
-          std::optional<std::tuple<double, double, double, double, double>>,  // ackermann velocity (v_r, v_l, w_r, w_l, dt)
-          std::optional<std::tuple<double,double,double>>, // bicycle odometry (v,w,dt)
-          std::optional<std::tuple<double, double, double, double>>,  // tricycle velocity (v_r, v_l, steer, dt)
-          std::tuple<double, double, double>,  // open_loop (vx, ωz, dt)
-          std::tuple<double, double, bool, bool>,  // ik_params (vx, ωz, open_loop, reduce_speed)
-          TestType>> {
+: public ::testing::TestWithParam<std::tuple<
+    unsigned int,  // odom_type (ACKERMANN_CONFIG, BICYCLE_CONFIG, TRICYCLE_CONFIG)
+    std::tuple<double, double, double>,  // wheel_radius, wheelbase, track_width
+    std::tuple<double, double, double>,  // position (pos, steer, dt)
+    std::optional<std::tuple<double, double, double, double, double>>,  // ackermann velocity (v_r,
+                                                                        // v_l, w_r, w_l, dt)
+    std::optional<std::tuple<double, double, double>>,                  // bicycle odometry (v,w,dt)
+    std::optional<std::tuple<double, double, double, double>>,  // tricycle velocity (v_r, v_l,
+                                                                // steer, dt)
+    std::tuple<double, double, double>,                         // open_loop (vx, ωz, dt)
+    std::tuple<double, double, bool, bool>,  // ik_params (vx, ωz, open_loop, reduce_speed)
+    TestType>>
+{
 protected:
-    void SetUp() override {
-        const auto& params = GetParam();
-        odom_type_ = std::get<0>(params);
-        std::tie(wheel_radius_, wheelbase_, track_width_) = std::get<1>(params);
-        std::tie(pos_, steer_pos_, dt_pos_) = std::get<2>(params);
-        ackermann_velocity_ = std::get<3>(params);
-        bicycle_velocity_ = std::get<4>(params);
-        tricycle_velocity_ = std::get<5>(params);
+  void SetUp() override
+  {
+    const auto & params = GetParam();
+    odom_type_ = std::get<0>(params);
+    std::tie(wheel_radius_, wheelbase_, track_width_) = std::get<1>(params);
+    std::tie(pos_, steer_pos_, dt_pos_) = std::get<2>(params);
+    ackermann_velocity_ = std::get<3>(params);
+    bicycle_velocity_ = std::get<4>(params);
+    tricycle_velocity_ = std::get<5>(params);
 
-        std::tie(vx_open_, wz_open_, dt_open_) = std::get<6>(params);
-        std::tie(ik_vx_, ik_wz_, open_loop_, reduce_speed_) = std::get<7>(params);
-        test_type_ = std::get<8>(params);
+    std::tie(vx_open_, wz_open_, dt_open_) = std::get<6>(params);
+    std::tie(ik_vx_, ik_wz_, open_loop_, reduce_speed_) = std::get<7>(params);
+    test_type_ = std::get<8>(params);
 
-        odom_ = std::make_unique<steering_odometry::SteeringOdometry>(1);
-        odom_->set_wheel_params(wheel_radius_, wheelbase_, track_width_);
-        odom_->set_odometry_type(odom_type_);
-    }
+    odom_ = std::make_unique<steering_odometry::SteeringOdometry>(1);
+    odom_->set_wheel_params(wheel_radius_, wheelbase_, track_width_);
+    odom_->set_odometry_type(odom_type_);
+  }
 
 protected:
-    // Parameters
-    unsigned int odom_type_;
-    double wheel_radius_, wheelbase_, track_width_;
-    double pos_, steer_pos_, dt_pos_;
-    std::optional<std::tuple<double,double,double,double,double>> ackermann_velocity_;
-    std::optional<std::tuple<double, double, double>> bicycle_velocity_;
-    std::optional<std::tuple<double, double, double, double>> tricycle_velocity_;
-    double vx_open_, wz_open_, dt_open_;
-    double ik_vx_, ik_wz_;
-    bool open_loop_, reduce_speed_;
-    TestType test_type_;
+  // Parameters
+  unsigned int odom_type_;
+  double wheel_radius_, wheelbase_, track_width_;
+  double pos_, steer_pos_, dt_pos_;
+  std::optional<std::tuple<double, double, double, double, double>> ackermann_velocity_;
+  std::optional<std::tuple<double, double, double>> bicycle_velocity_;
+  std::optional<std::tuple<double, double, double, double>> tricycle_velocity_;
+  double vx_open_, wz_open_, dt_open_;
+  double ik_vx_, ik_wz_;
+  bool open_loop_, reduce_speed_;
+  TestType test_type_;
 
-    std::unique_ptr<steering_odometry::SteeringOdometry> odom_;
+  std::unique_ptr<steering_odometry::SteeringOdometry> odom_;
 };
 
 class IkSteeringLimitedParameterized
@@ -99,8 +104,9 @@ class IkSteeringLimitedParameterized
     >>
 {
 protected:
-  void SetUp() override {
-    const auto& params = GetParam();
+  void SetUp() override
+  {
+    const auto & params = GetParam();
     odom_type_ = std::get<0>(params);
     std::tie(wheel_radius_, wheelbase_, track_width_) = std::get<1>(params);
     position_cases_ = std::get<2>(params);
@@ -118,18 +124,20 @@ protected:
   double track_width_;
   unsigned int odom_type_;
   std::tuple<
-    std::tuple<double, double, double>,  // Case 1
-    std::tuple<double, double, double>,  // Case 2
-    std::tuple<double, double, double>,  // Case 3
+    std::tuple<double, double, double>,                // Case 1
+    std::tuple<double, double, double>,                // Case 2
+    std::tuple<double, double, double>,                // Case 3
     std::optional<std::tuple<double, double, double>>  // Optional Case 4
-  > position_cases_;
+    >
+    position_cases_;
   std::tuple<
-    std::tuple<double, double, bool, bool>,  // Case 1
-    std::tuple<double, double, bool, bool>,  // Case 2
-    std::tuple<double, double, bool, bool>,  // Case 3
+    std::tuple<double, double, bool, bool>,                // Case 1
+    std::tuple<double, double, bool, bool>,                // Case 2
+    std::tuple<double, double, bool, bool>,                // Case 3
     std::optional<std::tuple<double, double, bool, bool>>  // Optional Case 4
-  > command_cases_;
+    >
+    command_cases_;
   std::unique_ptr<steering_odometry::SteeringOdometry> odom_;
 };
 
-#endif // TEST_STEERING_ODOMETRY_UTILS_HPP
+#endif  // TEST_STEERING_ODOMETRY_UTILS_HPP
