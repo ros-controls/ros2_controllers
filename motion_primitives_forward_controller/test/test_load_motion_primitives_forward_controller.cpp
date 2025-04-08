@@ -38,7 +38,7 @@ TEST(TestLoadMotionPrimitivesForwardController, load_controller)
     executor, ros2_control_test_assets::minimal_robot_urdf, true, "test_controller_manager");
 
   ASSERT_NO_THROW(
-    cm.load_controller("test_motion_primitives_controller_pkg", "motion_primitives_controller_pkg/MotionPrimitivesForwardController"));
+    cm.load_controller("test_motion_primitives_forward_controller", "motion_primitives_forward_controller/MotionPrimitivesForwardController"));
 
   rclcpp::shutdown();
 }

@@ -17,7 +17,7 @@
 // [RosTeamWorkspace](https://github.com/StoglRobotics/ros_team_workspace) repository.
 //
 
-#include "motion_primitives_controller_pkg/motion_primitives_forward_controller.hpp"
+#include "motion_primitives_forward_controller/motion_primitives_forward_controller.hpp"
 
 #include <limits>
 #include <memory>
@@ -25,8 +25,8 @@
 #include <vector>
 
 #include "controller_interface/helpers.hpp"
-#include "motion_primitives_controller_pkg/motion_type.hpp"
-#include "motion_primitives_controller_pkg/execution_state.hpp"
+#include "motion_primitives_forward_controller/motion_type.hpp"
+#include "motion_primitives_forward_controller/execution_state.hpp"
 
 
 namespace
@@ -45,7 +45,7 @@ static constexpr rmw_qos_profile_t rmw_qos_profile_services_hist_keep_all = {
   RMW_QOS_LIVELINESS_LEASE_DURATION_DEFAULT,
   false};
 
-using ControllerReferenceMsg = motion_primitives_controller_pkg::MotionPrimitivesForwardController::ControllerReferenceMsg;
+using ControllerReferenceMsg = motion_primitives_forward_controller::MotionPrimitivesForwardController::ControllerReferenceMsg;
 
 // reset the controller reference message to NaN
 void reset_controller_reference_msg(std::shared_ptr<ControllerReferenceMsg> & msg)
@@ -73,7 +73,7 @@ void reset_controller_reference_msg(std::shared_ptr<ControllerReferenceMsg> & ms
 }  // namespace
 
 
-namespace motion_primitives_controller_pkg
+namespace motion_primitives_forward_controller
 {
 MotionPrimitivesForwardController::MotionPrimitivesForwardController() : controller_interface::ControllerInterface() {}
 
@@ -421,9 +421,9 @@ bool MotionPrimitivesForwardController::set_command_interfaces()
 }
 
 
-}  // namespace motion_primitives_controller_pkg
+}  // namespace motion_primitives_forward_controller
 
 #include "pluginlib/class_list_macros.hpp"
 
 PLUGINLIB_EXPORT_CLASS(
-  motion_primitives_controller_pkg::MotionPrimitivesForwardController, controller_interface::ControllerInterface)
+  motion_primitives_forward_controller::MotionPrimitivesForwardController, controller_interface::ControllerInterface)

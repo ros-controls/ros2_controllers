@@ -19,8 +19,8 @@ Source of this file are templates in
 -->
 
 <library path="motion_primitives_forward_controller">
-  <class name="motion_primitives_controller_pkg/MotionPrimitivesForwardController"
-         type="motion_primitives_controller_pkg::MotionPrimitivesForwardController" base_class_type="controller_interface::ControllerInterface">
+  <class name="motion_primitives_forward_controller/MotionPrimitivesForwardController"
+         type="motion_primitives_forward_controller::MotionPrimitivesForwardController" base_class_type="controller_interface::ControllerInterface">
   <description>
     MotionPrimitivesForwardController ros2_control controller.
   </description>

@@ -1,4 +1,4 @@
-motion_primitives_controller_pkg
+motion_primitives_forward_controller
 ==========================================
 
 Package to control robots using motion primitives like PTP, LIN and CIRC

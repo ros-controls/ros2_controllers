@@ -25,9 +25,9 @@
 // #include <utility>
 // #include <vector>
 
-// using motion_primitives_controller_pkg::CMD_MY_ITFS;
-// using motion_primitives_controller_pkg::control_mode_type;
-// using motion_primitives_controller_pkg::STATE_MY_ITFS;
+// using motion_primitives_forward_controller::CMD_MY_ITFS;
+// using motion_primitives_forward_controller::control_mode_type;
+// using motion_primitives_forward_controller::STATE_MY_ITFS;
 
 // class MotionPrimitivesForwardControllerTest : public MotionPrimitivesForwardControllerFixture<TestableMotionPrimitivesForwardController>
 // {

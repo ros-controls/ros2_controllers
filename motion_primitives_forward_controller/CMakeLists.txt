@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(motion_primitives_controller_pkg)
+project(motion_primitives_forward_controller)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
   add_compile_options(-Wall -Wextra -Werror=conversion -Werror=unused-but-set-variable -Werror=return-type -Werror=shadow)
@@ -31,7 +31,7 @@ endforeach()
 # Add motion_primitives_forward_controller library related compile commands
 generate_parameter_library(motion_primitives_forward_controller_parameters
   src/motion_primitives_forward_controller.yaml
-  include/motion_primitives_controller_pkg/validate_motion_primitives_forward_controller_parameters.hpp
+  include/motion_primitives_forward_controller/validate_motion_primitives_forward_controller_parameters.hpp
 )
 add_library(
   motion_primitives_forward_controller
@@ -49,7 +49,7 @@ ament_target_dependencies(motion_primitives_forward_controller
 target_compile_definitions(motion_primitives_forward_controller PRIVATE "MOTION_PRIMITIVES_FORWARD_CONTROLLER_BUILDING_DLL")
 
 pluginlib_export_plugin_description_file(
-  controller_interface motion_primitives_controller_pkg.xml)
+  controller_interface motion_primitives_forward_controller.xml)
 
 install(
   TARGETS

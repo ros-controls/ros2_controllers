@@ -17,8 +17,8 @@
 // [RosTeamWorkspace](https://github.com/StoglRobotics/ros_team_workspace) repository.
 //
 
-#ifndef MOTION_PRIMITIVES_CONTROLLER_PKG__MOTION_PRIMITIVES_FORWARD_CONTROLLER_HPP_
-#define MOTION_PRIMITIVES_CONTROLLER_PKG__MOTION_PRIMITIVES_FORWARD_CONTROLLER_HPP_
+#ifndef MOTION_PRIMITIVES_FORWARD_CONTROLLER__MOTION_PRIMITIVES_FORWARD_CONTROLLER_HPP_
+#define MOTION_PRIMITIVES_FORWARD_CONTROLLER__MOTION_PRIMITIVES_FORWARD_CONTROLLER_HPP_
 
 #include <memory>
 #include <string>
@@ -26,8 +26,8 @@
 #include <queue>
 
 #include "controller_interface/controller_interface.hpp"
-#include <motion_primitives_controller_pkg/motion_primitives_forward_controller_parameters.hpp>
-#include "motion_primitives_controller_pkg/visibility_control.h"
+#include <motion_primitives_forward_controller/motion_primitives_forward_controller_parameters.hpp>
+#include "motion_primitives_forward_controller/visibility_control.h"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_buffer.hpp"
@@ -37,7 +37,7 @@
 #include "std_msgs/msg/int8.hpp"
 
 
-namespace motion_primitives_controller_pkg
+namespace motion_primitives_forward_controller
 {
 // name constants for state interfaces
 static constexpr size_t STATE_MY_ITFS = 0;
@@ -112,6 +112,6 @@ private:
   bool print_error_once_ = true; // Flag to print error message only once if ExecutionState::ERROR
 };
 
-}  // namespace motion_primitives_controller_pkg
+}  // namespace motion_primitives_forward_controller
 
-#endif  // MOTION_PRIMITIVES_CONTROLLER_PKG__MOTION_PRIMITIVES_FORWARD_CONTROLLER_HPP_
+#endif  // MOTION_PRIMITIVES_FORWARD_CONTROLLER__MOTION_PRIMITIVES_FORWARD_CONTROLLER_HPP_

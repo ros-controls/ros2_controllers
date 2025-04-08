@@ -28,7 +28,7 @@
 // #include <utility>
 // #include <vector>
 
-// #include "motion_primitives_controller_pkg/motion_primitives_forward_controller.hpp"
+// #include "motion_primitives_forward_controller/motion_primitives_forward_controller.hpp"
 // #include "gmock/gmock.h"
 // #include "hardware_interface/loaned_command_interface.hpp"
 // #include "hardware_interface/loaned_state_interface.hpp"
@@ -40,9 +40,9 @@
 // #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 
 // // TODO(anyone): replace the state and command message types
-// using ControllerStateMsg = motion_primitives_controller_pkg::MotionPrimitivesForwardController::ControllerStateMsg;
-// using ControllerReferenceMsg = motion_primitives_controller_pkg::MotionPrimitivesForwardController::ControllerReferenceMsg;
-// using ControllerModeSrvType = motion_primitives_controller_pkg::MotionPrimitivesForwardController::ControllerModeSrvType;
+// using ControllerStateMsg = motion_primitives_forward_controller::MotionPrimitivesForwardController::ControllerStateMsg;
+// using ControllerReferenceMsg = motion_primitives_forward_controller::MotionPrimitivesForwardController::ControllerReferenceMsg;
+// using ControllerModeSrvType = motion_primitives_forward_controller::MotionPrimitivesForwardController::ControllerModeSrvType;
 
 // namespace
 // {
@@ -51,7 +51,7 @@
 // }  // namespace
 
 // // subclassing and friending so we can access member variables
-// class TestableMotionPrimitivesForwardController : public motion_primitives_controller_pkg::MotionPrimitivesForwardController
+// class TestableMotionPrimitivesForwardController : public motion_primitives_forward_controller::MotionPrimitivesForwardController
 // {
 //   FRIEND_TEST(MotionPrimitivesForwardControllerTest, all_parameters_set_configure_success);
 //   FRIEND_TEST(MotionPrimitivesForwardControllerTest, activate_success);
@@ -64,7 +64,7 @@
 //   controller_interface::CallbackReturn on_configure(
 //     const rclcpp_lifecycle::State & previous_state) override
 //   {
-//     auto ret = motion_primitives_controller_pkg::MotionPrimitivesForwardController::on_configure(previous_state);
+//     auto ret = motion_primitives_forward_controller::MotionPrimitivesForwardController::on_configure(previous_state);
 //     // Only if on_configure is successful create subscription
 //     if (ret == CallbackReturn::SUCCESS)
 //     {
