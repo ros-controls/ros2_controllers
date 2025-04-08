@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>motion_primitives_controller_pkg</name>
+  <version>0.0.0</version>
+  <description>Package to control robots using motion primitives like PTP, LIN and CIRC</description>
+  <maintainer email="mathias31415@gmx.de">mathias31415</maintainer>
+  <license>BSD-3-Clause</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <build_depend>generate_parameter_library</build_depend>
+
+  <depend>control_msgs</depend>
+
+  <depend>controller_interface</depend>
+
+  <depend>hardware_interface</depend>
+
+  <depend>pluginlib</depend>
+
+  <depend>industrial_robot_motion_interfaces</depend>
+
+  <depend>rclcpp</depend>
+
+  <depend>rclcpp_lifecycle</depend>
+
+  <depend>realtime_tools</depend>
+
+  <depend>std_srvs</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
