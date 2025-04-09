@@ -201,6 +201,14 @@ void MotionPrimitivesForwardController::reference_callback(const std::shared_ptr
       }
       break;
 
+    case MotionType::MOTION_SEQUENCE_START:
+      RCLCPP_INFO(get_node()->get_logger(), "Received motion type: MOTION_SEQUENCE_START");
+      break;
+
+    case MotionType::MOTION_SEQUENCE_END:
+      RCLCPP_INFO(get_node()->get_logger(), "Received motion type: MOTION_SEQUENCE_END");
+      break;
+
     case 33: // TODO(mathias31415): remove case 33 block with hardcoded motion sequence, only for testing
       RCLCPP_INFO(get_node()->get_logger(), "Received motion type: 33 (testing hardcoded motion sequence)");
       break;
