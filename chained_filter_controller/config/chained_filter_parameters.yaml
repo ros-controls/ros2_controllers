@@ -1,0 +1,9 @@
+chained_filter:
+  input_interface:
+    type: string
+    default_value: "joint1/position"
+    description: "Name of the input state interface"
+  output_interface:
+    type: string
+    default_value: "filtered_position"
+    description: "Name of the output state interface"

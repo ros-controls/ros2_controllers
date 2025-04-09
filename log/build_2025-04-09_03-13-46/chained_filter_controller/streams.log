@@ -1,0 +1,34 @@
+[0.015s] Invoking command in '/home/ankur-u24/ros2_controllers/build/chained_filter_controller': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/rolling DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake /home/ankur-u24/ros2_controllers/chained_filter_controller -DCMAKE_INSTALL_PREFIX=/home/ankur-u24/ros2_controllers/install/chained_filter_controller
+[0.161s] -- The C compiler identification is GNU 13.3.0
+[0.270s] -- The CXX compiler identification is GNU 13.3.0
+[0.299s] -- Detecting C compiler ABI info
+[0.408s] -- Detecting C compiler ABI info - done
+[0.415s] -- Check for working C compiler: /usr/bin/cc - skipped
+[0.417s] -- Detecting C compile features
+[0.418s] -- Detecting C compile features - done
+[0.443s] -- Detecting CXX compiler ABI info
+[0.597s] -- Detecting CXX compiler ABI info - done
+[0.606s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[0.606s] -- Detecting CXX compile features
+[0.607s] -- Detecting CXX compile features - done
+[0.625s] -- Found ament_cmake: 2.7.2 (/opt/ros/rolling/share/ament_cmake/cmake)
+[0.765s] -- Found Python3: /usr/bin/python3 (found version "3.12.3") found components: Interpreter 
+[0.892s] [31mCMake Error at CMakeLists.txt:10 (find_package):
+[0.892s]   By not providing "Findcontroller_interface.cmake" in CMAKE_MODULE_PATH this
+[0.892s]   project has asked CMake to find a package configuration file provided by
+[0.892s]   "controller_interface", but CMake did not find one.
+[0.892s] 
+[0.892s]   Could not find a package configuration file provided by
+[0.892s]   "controller_interface" with any of the following names:
+[0.892s] 
+[0.892s]     controller_interfaceConfig.cmake
+[0.892s]     controller_interface-config.cmake
+[0.892s] 
+[0.892s]   Add the installation prefix of "controller_interface" to CMAKE_PREFIX_PATH
+[0.892s]   or set "controller_interface_DIR" to a directory containing one of the
+[0.892s]   above files.  If "controller_interface" provides a separate development
+[0.892s]   package or SDK, be sure it has been installed.
+[0.893s] 
+[0.893s] [0m
+[0.893s] -- Configuring incomplete, errors occurred!
+[0.898s] Invoked command in '/home/ankur-u24/ros2_controllers/build/chained_filter_controller' returned '1': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/rolling DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake /home/ankur-u24/ros2_controllers/chained_filter_controller -DCMAKE_INSTALL_PREFIX=/home/ankur-u24/ros2_controllers/install/chained_filter_controller
