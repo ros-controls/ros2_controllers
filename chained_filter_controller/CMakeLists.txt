@@ -83,12 +83,6 @@ install(
 )
 
 install(
-  DIRECTORY launch
-  DESTINATION share/${PROJECT_NAME}/
-)
-
-
-install(
   FILES plugin_description.xml
   DESTINATION share/${PROJECT_NAME}
 )
