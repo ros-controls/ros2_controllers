@@ -104,11 +104,7 @@ private:
 
   std::queue<std::shared_ptr<ControllerReferenceMsg>> msg_queue_;
   size_t queue_size_ = 0; 
-
-  bool was_executing_{false}; // Flag to check if the robot was executing a motion command
-  bool was_stopped_{false}; // Flag to check if the robot was stopped
-  bool first_cmd_{true}; // Flag to check if the first command is sent
-
+  
   bool print_error_once_ = true; // Flag to print error message only once if ExecutionState::ERROR
 };
 

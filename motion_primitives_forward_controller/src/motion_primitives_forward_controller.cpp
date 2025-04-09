@@ -27,7 +27,7 @@
 #include "controller_interface/helpers.hpp"
 #include "motion_primitives_forward_controller/motion_type.hpp"
 #include "motion_primitives_forward_controller/execution_state.hpp"
-
+#include "motion_primitives_forward_controller/ready_for_new_primitive.hpp"
 
 namespace
 {  // utility
@@ -107,14 +107,14 @@ controller_interface::CallbackReturn MotionPrimitivesForwardController::on_confi
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  // Check if there are exactly 18 command interfaces
-  if (params_.command_interfaces.size() !=25) { // 1 status + 6 joints + 2*7 positions + blend_radius + velocity + acceleration + move_time
+  // Check if there are exactly 25 command interfaces
+  if (params_.command_interfaces.size() !=25) { // motion_type + 6 joints + 2*7 positions + blend_radius + velocity + acceleration + move_time
     RCLCPP_ERROR(get_node()->get_logger(), "Error: Exactly 25 command interfaces must be provided!");
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  // Check if there is exactly one state interface
-  if (params_.state_interfaces.size() != 1) {
+  // Check if there are exactly 2 state interfaces
+  if (params_.state_interfaces.size() != 2) { // execution_status + ready_for_new_primitive
     RCLCPP_ERROR(get_node()->get_logger(), "Error: Exactly one state interface must be provided!");
     return controller_interface::CallbackReturn::ERROR;
   }
@@ -171,7 +171,6 @@ void MotionPrimitivesForwardController::reference_callback(const std::shared_ptr
       while (!msg_queue_.empty()) {   // clear the queue
         msg_queue_.pop();   
       }
-      was_stopped_ = true;
       return;
 
     case MotionType::LINEAR_JOINT:
@@ -287,53 +286,57 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
   // TODO(mathias31415) Is check needed if the value is .0?
   uint8_t execution_status = static_cast<int8_t>(std::round(state_interfaces_[0].get_value()));
 
-  // publish the state
+  switch (execution_status) {
+    case ExecutionState::IDLE:
+      // RCLCPP_INFO(get_node()->get_logger(), "Execution state: IDLE");
+      print_error_once_ = true;
+      break;
+    case ExecutionState::EXECUTING:
+      // RCLCPP_INFO(get_node()->get_logger(), "Execution state: EXECUTING");
+      print_error_once_ = true;
+      break;
+
+    case ExecutionState::SUCCESS:
+      // RCLCPP_INFO(get_node()->get_logger(), "Execution state: SUCCESS");
+      print_error_once_ = true;
+      break;
+
+    case ExecutionState::ERROR:
+      if (print_error_once_) {
+        RCLCPP_ERROR(get_node()->get_logger(), "Execution state: ERROR");
+        print_error_once_ = false;
+      }
+      break;
+  
+    default:
+      RCLCPP_ERROR(get_node()->get_logger(), "Error: Unknown execution status: %d", execution_status);
+      return controller_interface::return_type::ERROR;
+  }
+
+  // publish the execution_status
   state_publisher_->lock();
   state_publisher_->msg_.data = execution_status;
   state_publisher_->unlockAndPublish();
 
-  if(!msg_queue_.empty())
+  // TODO(mathias31415) Is check needed if the value is .0?
+  uint8_t ready_for_new_primitive = static_cast<int8_t>(std::round(state_interfaces_[1].get_value()));
+
+  // sending new command?
+  if(!msg_queue_.empty()) // check if new command is available
   { 
-    switch (execution_status) {
-      case ExecutionState::IDLE: // no motion primitive sent yet
-        print_error_once_ = true;
-        if(first_cmd_ || was_executing_ || was_stopped_){
-          if(!set_command_interfaces()){ // Set the command interfaces with the current reference message
-            RCLCPP_ERROR(get_node()->get_logger(), "Error: set_command_interfaces() failed");
-            return controller_interface::return_type::ERROR;
-          }
-          first_cmd_ = false;
-          was_executing_ = false;
-          was_stopped_ = false;
+    switch (ready_for_new_primitive) {
+      case ReadyForNewPrimitive::NOT_READY:{ // hw-interface is not ready for a new command
+        return controller_interface::return_type::OK;
+      }
+      case ReadyForNewPrimitive::READY:{ // hw-interface is ready for a new command
+        if(!set_command_interfaces()){ // Set the command interfaces with next motion primitive
+          RCLCPP_ERROR(get_node()->get_logger(), "Error: set_command_interfaces() failed");
+          return controller_interface::return_type::ERROR;
         }
         return controller_interface::return_type::OK;
-
-      case ExecutionState::EXECUTING: // executing
-        if(!was_executing_){
-          was_executing_ = true;
-        }
-        return controller_interface::return_type::OK;
-
-      case ExecutionState::SUCCESS: // success
-        print_error_once_ = true;
-        if(was_executing_){
-          was_executing_ = false;
-          if(!set_command_interfaces()){ // Set the command interfaces with the current reference message
-            return controller_interface::return_type::ERROR;
-            RCLCPP_ERROR(get_node()->get_logger(), "Error: set_command_interfaces() failed");
-          }
-        }
-        return controller_interface::return_type::OK;
-
-      case ExecutionState::ERROR: // error
-        if(print_error_once_){
-          print_error_once_ = false;
-          RCLCPP_ERROR(get_node()->get_logger(), "Error: Can't send new command, execution status is ERROR");
-        }
-        return controller_interface::return_type::OK;
-    
+      }
       default:
-        RCLCPP_ERROR(get_node()->get_logger(), "Error: Unknown execution status: %d", execution_status);
+        RCLCPP_ERROR(get_node()->get_logger(), "Error: Unknown state for ready_for_new_primitive: %d", ready_for_new_primitive);
         return controller_interface::return_type::ERROR;
     }
   }
