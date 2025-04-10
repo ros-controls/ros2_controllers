@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.44.0 (2025-04-10)
+-------------------
 * Bump version of pre-commit hooks (backport `#1618 <https://github.com/ros-controls/ros2_controllers/issues/1618>`_) (`#1620 <https://github.com/ros-controls/ros2_controllers/issues/1620>`_)
 * Replace RCLCPP\_*_STREAM macros with RCLCPP\_* (backport `#1600 <https://github.com/ros-controls/ros2_controllers/issues/1600>`_) (`#1602 <https://github.com/ros-controls/ros2_controllers/issues/1602>`_)
 * [jtc tests] avoid dangling ref of command / state interfaces (backport `#1596 <https://github.com/ros-controls/ros2_controllers/issues/1596>`_) (`#1597 <https://github.com/ros-controls/ros2_controllers/issues/1597>`_)
