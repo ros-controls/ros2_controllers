@@ -163,15 +163,16 @@ void MotionPrimitivesForwardController::reference_callback(const std::shared_ptr
   // Check if the type is one of the allowed motion types
   switch (msg->type)
   {
-    case MotionType::STOP_MOTION:
+    case MotionType::STOP_MOTION:{
       RCLCPP_INFO(get_node()->get_logger(), "Received motion type: STOP_MOTION");
       reset_command_interfaces(); // Reset all command interfaces to NaN
-      // TODO(mathias31415): Use mutex?
+      std::lock_guard<std::mutex> guard(command_mutex_);
       (void)command_interfaces_[0].set_value(static_cast<double>(msg->type)); // send stop command to the driver
       while (!msg_queue_.empty()) {   // clear the queue
         msg_queue_.pop();   
       }
       return;
+    }
 
     case MotionType::LINEAR_JOINT:
       RCLCPP_INFO(get_node()->get_logger(), "Received motion type: LINEAR_JOINT (PTP)");
@@ -353,6 +354,7 @@ void MotionPrimitivesForwardController::reset_command_interfaces()
 // Set command interfaces from the message, gets called in the update function
 bool MotionPrimitivesForwardController::set_command_interfaces()
 {
+  std::lock_guard<std::mutex> guard(command_mutex_);
   // Get the oldest message from the queue
   std::shared_ptr<ControllerReferenceMsg> current_ref = msg_queue_.front();
   msg_queue_.pop();

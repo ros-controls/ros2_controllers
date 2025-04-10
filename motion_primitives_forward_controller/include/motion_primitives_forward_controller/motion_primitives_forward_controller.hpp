@@ -104,6 +104,8 @@ private:
 
   std::queue<std::shared_ptr<ControllerReferenceMsg>> msg_queue_;
   size_t queue_size_ = 0; 
+
+  std::mutex command_mutex_;
   
   bool print_error_once_ = true; // Flag to print error message only once if ExecutionState::ERROR
 };
