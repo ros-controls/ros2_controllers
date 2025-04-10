@@ -2,6 +2,14 @@
 Changelog for package force_torque_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* [CI] Revert test changes to debug the timeout from test_force_torque_sensor_broadcaster  (`#1622 <https://github.com/ros-controls/ros2_controllers/issues/1622>`_)
+* Bump version of pre-commit hooks (`#1618 <https://github.com/ros-controls/ros2_controllers/issues/1618>`_)
+* Use global cmake macros and fix gcc-10 build (`#1527 <https://github.com/ros-controls/ros2_controllers/issues/1527>`_)
+* [CI] Time out from test_force_torque_sensor_broadcaster  (`#1586 <https://github.com/ros-controls/ros2_controllers/issues/1586>`_)
+* Contributors: Christoph Fröhlich, Julia Jia, github-actions[bot]
+
 4.22.0 (2025-03-17)
 -------------------
 
