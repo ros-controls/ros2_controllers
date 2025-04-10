@@ -373,7 +373,7 @@ SteeringControllersLibrary::on_export_reference_interfaces()
 
   reference_interfaces.push_back(
     hardware_interface::CommandInterface(
-      get_node()->get_name() + std::string("/angular"), params_.twist_input ? hardware_interface::HW_IF_VELOCITY: hardware_interface::HW_IF_POSITION,,
+      get_node()->get_name() + std::string("/angular"), params_.twist_input ? hardware_interface::HW_IF_VELOCITY: hardware_interface::HW_IF_POSITION,
       &reference_interfaces_[1]));
 
   return reference_interfaces;
