@@ -2,6 +2,11 @@
 Changelog for package rqt_joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Bump version of pre-commit hooks (backport `#1618 <https://github.com/ros-controls/ros2_controllers/issues/1618>`_) (`#1620 <https://github.com/ros-controls/ros2_controllers/issues/1620>`_)
+* Contributors: mergify[bot]
+
 2.43.0 (2025-03-17)
 -------------------
 * Update documentation of rqt_joint_trajectory_controller (backport `#1578 <https://github.com/ros-controls/ros2_controllers/issues/1578>`_) (`#1582 <https://github.com/ros-controls/ros2_controllers/issues/1582>`_)

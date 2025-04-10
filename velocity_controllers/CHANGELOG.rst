@@ -2,6 +2,9 @@
 Changelog for package velocity_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 2.43.0 (2025-03-17)
 -------------------
 * [ForwardCommandController] Fix the duplicate command interface types when reconfiguring the controller (backport `#1568 <https://github.com/ros-controls/ros2_controllers/issues/1568>`_, `#1570 <https://github.com/ros-controls/ros2_controllers/issues/1570>`_) (`#1569 <https://github.com/ros-controls/ros2_controllers/issues/1569>`_)
