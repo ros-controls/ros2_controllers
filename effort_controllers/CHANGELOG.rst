@@ -2,6 +2,11 @@
 Changelog for package effort_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.23.0 (2025-04-10)
+-------------------
+* Use global cmake macros and fix gcc-10 build (`#1527 <https://github.com/ros-controls/ros2_controllers/issues/1527>`_)
+* Contributors: Christoph Fröhlich
+
 4.22.0 (2025-03-17)
 -------------------
 * Fix the `ActivateWithWrongJointsNamesFails` test (`#1570 <https://github.com/ros-controls/ros2_controllers/issues/1570>`_)
