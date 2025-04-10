@@ -56,7 +56,11 @@ bool SteeringOdometry::update_odometry(
   const double linear_velocity, const double angular_velocity, const double dt)
 {
   /// Integrate odometry:
-  integrate_fk(linear_velocity, angular_velocity, dt);
+  integrate_fk(
+    linear_velocity, 
+    angular_velocity,
+    dt
+  );
 
   /// We cannot estimate the speed with very small time intervals:
   if (dt < 0.0001)
@@ -125,7 +129,7 @@ bool SteeringOdometry::update_from_velocity(
 {
   steer_pos_ = steer_pos;
   double linear_velocity = traction_wheel_vel * wheel_radius_;
-  const double angular_velocity = std::tan(steer_pos) * linear_velocity / wheelbase_;
+  const double angular_velocity = convert_steering_angle_to_angular_velocity(linear_velocity, steer_pos);
 
   return update_odometry(linear_velocity, angular_velocity, dt);
 }
@@ -157,7 +161,7 @@ bool SteeringOdometry::update_from_velocity(
   double linear_velocity = get_linear_velocity_double_traction_axle(
     right_traction_wheel_vel, left_traction_wheel_vel, steer_pos_);
 
-  const double angular_velocity = std::tan(steer_pos_) * linear_velocity / wheelbase_;
+  const double angular_velocity = convert_steering_angle_to_angular_velocity(linear_velocity, steer_pos_);
 
   return update_odometry(linear_velocity, angular_velocity, dt);
 }
@@ -177,16 +181,16 @@ bool SteeringOdometry::update_from_velocity(
 
   double linear_velocity = get_linear_velocity_double_traction_axle(
     right_traction_wheel_vel, left_traction_wheel_vel, steer_pos_);
-  const double angular_velocity = steer_pos_ * linear_velocity / wheelbase_;
+  const double angular_velocity = convert_steering_angle_to_angular_velocity(linear_velocity, steer_pos_);
 
   return update_odometry(linear_velocity, angular_velocity, dt);
 }
 
-void SteeringOdometry::update_open_loop(const double v_bx, const double omega_bz, const double dt)
+void SteeringOdometry::update_open_loop(const double v_bx, const double omega_bz, const double dt, const bool twist_input)
 {
   /// Save last linear and angular velocity:
   linear_ = v_bx;
-  angular_ = omega_bz;
+  angular_ = twist_input ? omega_bz : convert_steering_angle_to_angular_velocity(v_bx, omega_bz);
 
   /// Integrate odometry:
   integrate_fk(v_bx, omega_bz, dt);
@@ -218,9 +222,15 @@ double SteeringOdometry::convert_twist_to_steering_angle(double v_bx, double ome
   return std::isfinite(phi) ? phi : 0.0;
 }
 
+double SteeringOdometry::convert_steering_angle_to_angular_velocity(double v_bx, double phi)
+{
+  return std::tan(phi) * v_bx / wheelbase_;
+}
+
 std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_commands(
   const double v_bx, const double omega_bz, const bool open_loop,
-  const bool reduce_wheel_speed_until_steering_reached)
+  const bool reduce_wheel_speed_until_steering_reached,
+  const bool twist_input)
 {
   // desired wheel speed and steering angle of the middle of traction and steering axis
   double Ws, phi, phi_IK = steer_pos_;
@@ -239,7 +249,7 @@ std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_comma
   }
 #endif
   // steering angle
-  phi = SteeringOdometry::convert_twist_to_steering_angle(v_bx, omega_bz);
+  phi = twist_input ? SteeringOdometry::convert_twist_to_steering_angle(v_bx, omega_bz): omega_bz;
   if (open_loop)
   {
     phi_IK = phi;
