@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TEST_STEERING_CONTROLLERS_LIBRARY_HPP_
-#define TEST_STEERING_CONTROLLERS_LIBRARY_HPP_
+#ifndef TEST_STEERING_CONTROLLERS_LIBRARY_ACKERMANN_HPP_
+#define TEST_STEERING_CONTROLLERS_LIBRARY_ACKERMANN_HPP_
 
 #include <gmock/gmock.h>
 
@@ -340,4 +340,4 @@ protected:
   rclcpp::Publisher<ControllerAckermannReferenceMsg>::SharedPtr command_publisher_;
 };
 
-#endif  // TEST_STEERING_CONTROLLERS_LIBRARY_HPP_
+#endif  // TEST_STEERING_CONTROLLERS_LIBRARY_ACKERMANN_HPP_
