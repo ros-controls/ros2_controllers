@@ -73,6 +73,8 @@ TEST_F(SteeringControllersLibraryTest, check_exported_interfaces)
       std::string(controller_->get_node()->get_name()) + "/" + joint_reference_interfaces_[i];
     EXPECT_EQ(reference_interfaces[i]->get_prefix_name(), ref_itf_prefix_name);
   }
+
+  // explicitly check the names of the two reference interfaces
   EXPECT_EQ(reference_interfaces[0]->get_interface_name(), hardware_interface::HW_IF_VELOCITY);
   EXPECT_EQ(reference_interfaces[1]->get_interface_name(), hardware_interface::HW_IF_POSITION);
 
