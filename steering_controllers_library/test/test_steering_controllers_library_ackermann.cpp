@@ -70,17 +70,13 @@ TEST_F(SteeringControllersLibraryTest, check_exported_interfaces)
   for (size_t i = 0; i < joint_reference_interfaces_.size(); ++i)
   {
     const std::string ref_itf_prefix_name =
-      std::string(controller_->get_node()->get_name());
+      std::string(controller_->get_node()->get_name()) + "/" + joint_reference_interfaces_[i];
     EXPECT_EQ(reference_interfaces[i]->get_prefix_name(), ref_itf_prefix_name);
-    if(reference_interfaces[i]->get_interface_name() == hardware_interface::HW_IF_VELOCITY)
-    {
-      EXPECT_EQ(reference_interfaces[i]->get_name(), ref_itf_prefix_name + "/" + hardware_interface::HW_IF_VELOCITY);
-    }
-    else
-    {
-      EXPECT_EQ(reference_interfaces[i]->get_name(), ref_itf_prefix_name + "/" + hardware_interface::HW_IF_POSITION);
-    }
   }
+  EXPECT_EQ(reference_interfaces[0]->get_interface_name(), hardware_interface::HW_IF_VELOCITY);
+  EXPECT_EQ(reference_interfaces[1]->get_interface_name(), hardware_interface::HW_IF_POSITION);
+
+
 }
 
 // Tests controller update_reference_from_subscribers and
