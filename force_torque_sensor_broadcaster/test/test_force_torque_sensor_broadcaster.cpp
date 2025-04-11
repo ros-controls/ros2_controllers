@@ -335,7 +335,7 @@ TEST_F(ForceTorqueSensorBroadcasterTest, SensorName_Publish_Success_with_Offsets
     ASSERT_EQ(
       exported_state_interfaces[i]->get_prefix_name(), controller_name + "/" + sensor_name_);
     ASSERT_EQ(
-      exported_state_interfaces[i]->get_value(),
+      exported_state_interfaces[i]->get_optional().value(),
       sensor_values_[i] + (i < 3 ? force_offsets[i] : torque_offsets[i - 3]));
   }
 }
@@ -373,8 +373,8 @@ TEST_F(ForceTorqueSensorBroadcasterTest, InterfaceNames_Publish_Success)
   ASSERT_EQ(exported_state_interfaces[1]->get_prefix_name(), controller_name);
   ASSERT_EQ(exported_state_interfaces[0]->get_interface_name(), "fts_sensor/force.x");
   ASSERT_EQ(exported_state_interfaces[1]->get_interface_name(), "fts_sensor/torque.z");
-  ASSERT_EQ(exported_state_interfaces[0]->get_value(), sensor_values_[0]);
-  ASSERT_EQ(exported_state_interfaces[1]->get_value(), sensor_values_[5]);
+  ASSERT_EQ(exported_state_interfaces[0]->get_optional().value(), sensor_values_[0]);
+  ASSERT_EQ(exported_state_interfaces[1]->get_optional().value(), sensor_values_[5]);
 }
 
 TEST_F(ForceTorqueSensorBroadcasterTest, All_InterfaceNames_Publish_Success)
@@ -423,7 +423,7 @@ TEST_F(ForceTorqueSensorBroadcasterTest, All_InterfaceNames_Publish_Success)
   for (size_t i = 0; i < 6; ++i)
   {
     ASSERT_EQ(exported_state_interfaces[0]->get_prefix_name(), controller_name);
-    ASSERT_EQ(exported_state_interfaces[i]->get_value(), sensor_values_[i]);
+    ASSERT_EQ(exported_state_interfaces[i]->get_optional().value(), sensor_values_[i]);
   }
 }
 
