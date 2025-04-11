@@ -22,8 +22,8 @@
 
 #include "controller_interface/chainable_controller_interface.hpp"
 #include "hardware_interface/handle.hpp"
-#include "rclcpp_lifecycle/state.hpp"
 #include "rclcpp/duration.hpp"
+#include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_buffer.hpp"
 #include "realtime_tools/realtime_publisher.hpp"
 
@@ -86,9 +86,11 @@ protected:
 
   // Command subscribers and Controller State publisher
   rclcpp::Subscription<ControllerTwistReferenceMsg>::SharedPtr ref_subscriber_twist_ = nullptr;
-  rclcpp::Subscription<ControllerAckermannReferenceMsg>::SharedPtr ref_subscriber_ackermann_ = nullptr;
+  rclcpp::Subscription<ControllerAckermannReferenceMsg>::SharedPtr ref_subscriber_ackermann_ =
+    nullptr;
   realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerTwistReferenceMsg>> input_ref_twist_;
-  realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerAckermannReferenceMsg>> input_ref_ackermann_;
+  realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerAckermannReferenceMsg>>
+    input_ref_ackermann_;
   rclcpp::Duration ref_timeout_ = rclcpp::Duration::from_seconds(0.0);  // 0ms
 
   using ControllerStatePublisherOdom = realtime_tools::RealtimePublisher<ControllerStateMsgOdom>;

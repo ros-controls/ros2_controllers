@@ -104,7 +104,8 @@ TEST_F(SteeringControllersLibraryTest, test_both_update_methods_for_ref_timeout)
   const double TEST_LINEAR_VELOCITY_Y = 0.0;
   const double TEST_ANGULAR_VELOCITY_Z = 0.3;
 
-  std::shared_ptr<ControllerTwistReferenceMsg> msg = std::make_shared<ControllerTwistReferenceMsg>();
+  std::shared_ptr<ControllerTwistReferenceMsg> msg =
+    std::make_shared<ControllerTwistReferenceMsg>();
 
   // adjusting to achieve age_of_last_command > ref_timeout
   msg->header.stamp = controller_->get_node()->now() - controller_->ref_timeout_ -
@@ -117,15 +118,16 @@ TEST_F(SteeringControllersLibraryTest, test_both_update_methods_for_ref_timeout)
   msg->twist.angular.z = TEST_ANGULAR_VELOCITY_Z;
   controller_->input_ref_twist_.writeFromNonRT(msg);
 
-  const auto age_of_last_command =
-    controller_->get_node()->now() - (*(controller_->input_ref_twist_.readFromNonRT()))->header.stamp;
+  const auto age_of_last_command = controller_->get_node()->now() -
+                                   (*(controller_->input_ref_twist_.readFromNonRT()))->header.stamp;
 
   // case 1 position_feedback = false
   controller_->params_.position_feedback = false;
 
   // age_of_last_command > ref_timeout_
   ASSERT_FALSE(age_of_last_command <= controller_->ref_timeout_);
-  ASSERT_EQ((*(controller_->input_ref_twist_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
+  ASSERT_EQ(
+    (*(controller_->input_ref_twist_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
   ASSERT_EQ(
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
@@ -136,8 +138,10 @@ TEST_F(SteeringControllersLibraryTest, test_both_update_methods_for_ref_timeout)
   {
     EXPECT_TRUE(std::isnan(interface));
   }
-  ASSERT_EQ((*(controller_->input_ref_twist_.readFromNonRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
-  ASSERT_EQ((*(controller_->input_ref_twist_.readFromNonRT()))->twist.angular.z, TEST_ANGULAR_VELOCITY_Z);
+  ASSERT_EQ(
+    (*(controller_->input_ref_twist_.readFromNonRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
+  ASSERT_EQ(
+    (*(controller_->input_ref_twist_.readFromNonRT()))->twist.angular.z, TEST_ANGULAR_VELOCITY_Z);
 
   EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[0]));
   for (const auto & interface : controller_->reference_interfaces_)
@@ -169,7 +173,8 @@ TEST_F(SteeringControllersLibraryTest, test_both_update_methods_for_ref_timeout)
 
   // age_of_last_command > ref_timeout_
   ASSERT_FALSE(age_of_last_command <= controller_->ref_timeout_);
-  ASSERT_EQ((*(controller_->input_ref_twist_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
+  ASSERT_EQ(
+    (*(controller_->input_ref_twist_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
   ASSERT_EQ(
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
@@ -180,8 +185,10 @@ TEST_F(SteeringControllersLibraryTest, test_both_update_methods_for_ref_timeout)
   {
     EXPECT_TRUE(std::isnan(interface));
   }
-  ASSERT_EQ((*(controller_->input_ref_twist_.readFromNonRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
-  ASSERT_EQ((*(controller_->input_ref_twist_.readFromNonRT()))->twist.angular.z, TEST_ANGULAR_VELOCITY_Z);
+  ASSERT_EQ(
+    (*(controller_->input_ref_twist_.readFromNonRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
+  ASSERT_EQ(
+    (*(controller_->input_ref_twist_.readFromNonRT()))->twist.angular.z, TEST_ANGULAR_VELOCITY_Z);
 
   EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[0]));
   for (const auto & interface : controller_->reference_interfaces_)

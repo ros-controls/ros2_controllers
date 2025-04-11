@@ -77,8 +77,6 @@ TEST_F(SteeringControllersLibraryTest, check_exported_interfaces)
   // explicitly check the names of the two reference interfaces
   EXPECT_EQ(reference_interfaces[0]->get_interface_name(), hardware_interface::HW_IF_VELOCITY);
   EXPECT_EQ(reference_interfaces[1]->get_interface_name(), hardware_interface::HW_IF_POSITION);
-
-
 }
 
 // Tests controller update_reference_from_subscribers and
@@ -105,7 +103,8 @@ TEST_F(SteeringControllersLibraryTest, test_both_update_methods_for_ref_timeout)
   const double TEST_LINEAR_VELOCITY_X = 1.5;
   const float TEST_STEERING_ANGLE = (float)0.575875;
 
-  std::shared_ptr<ControllerAckermannReferenceMsg> msg = std::make_shared<ControllerAckermannReferenceMsg>();
+  std::shared_ptr<ControllerAckermannReferenceMsg> msg =
+    std::make_shared<ControllerAckermannReferenceMsg>();
 
   // adjusting to achieve age_of_last_command > ref_timeout
   msg->header.stamp = controller_->get_node()->now() - controller_->ref_timeout_ -
@@ -118,14 +117,16 @@ TEST_F(SteeringControllersLibraryTest, test_both_update_methods_for_ref_timeout)
   controller_->input_ref_ackermann_.writeFromNonRT(msg);
 
   const auto age_of_last_command =
-    controller_->get_node()->now() - (*(controller_->input_ref_ackermann_.readFromNonRT()))->header.stamp;
+    controller_->get_node()->now() -
+    (*(controller_->input_ref_ackermann_.readFromNonRT()))->header.stamp;
 
   // case 1 position_feedback = false
   controller_->params_.position_feedback = false;
 
   // age_of_last_command > ref_timeout_
   ASSERT_FALSE(age_of_last_command <= controller_->ref_timeout_);
-  ASSERT_EQ((*(controller_->input_ref_ackermann_.readFromRT()))->drive.speed, TEST_LINEAR_VELOCITY_X);
+  ASSERT_EQ(
+    (*(controller_->input_ref_ackermann_.readFromRT()))->drive.speed, TEST_LINEAR_VELOCITY_X);
   ASSERT_EQ(
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
@@ -136,8 +137,11 @@ TEST_F(SteeringControllersLibraryTest, test_both_update_methods_for_ref_timeout)
   {
     EXPECT_TRUE(std::isnan(interface));
   }
-  ASSERT_EQ((*(controller_->input_ref_ackermann_.readFromNonRT()))->drive.speed, TEST_LINEAR_VELOCITY_X);
-  ASSERT_EQ((*(controller_->input_ref_ackermann_.readFromNonRT()))->drive.steering_angle, TEST_STEERING_ANGLE);
+  ASSERT_EQ(
+    (*(controller_->input_ref_ackermann_.readFromNonRT()))->drive.speed, TEST_LINEAR_VELOCITY_X);
+  ASSERT_EQ(
+    (*(controller_->input_ref_ackermann_.readFromNonRT()))->drive.steering_angle,
+    TEST_STEERING_ANGLE);
 
   EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[0]));
   for (const auto & interface : controller_->reference_interfaces_)
@@ -168,7 +172,8 @@ TEST_F(SteeringControllersLibraryTest, test_both_update_methods_for_ref_timeout)
 
   // age_of_last_command > ref_timeout_
   ASSERT_FALSE(age_of_last_command <= controller_->ref_timeout_);
-  ASSERT_EQ((*(controller_->input_ref_ackermann_.readFromRT()))->drive.speed, TEST_LINEAR_VELOCITY_X);
+  ASSERT_EQ(
+    (*(controller_->input_ref_ackermann_.readFromRT()))->drive.speed, TEST_LINEAR_VELOCITY_X);
   ASSERT_EQ(
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
@@ -179,8 +184,11 @@ TEST_F(SteeringControllersLibraryTest, test_both_update_methods_for_ref_timeout)
   {
     EXPECT_TRUE(std::isnan(interface));
   }
-  ASSERT_EQ((*(controller_->input_ref_ackermann_.readFromNonRT()))->drive.speed, TEST_LINEAR_VELOCITY_X);
-  ASSERT_EQ((*(controller_->input_ref_ackermann_.readFromNonRT()))->drive.steering_angle, TEST_STEERING_ANGLE);
+  ASSERT_EQ(
+    (*(controller_->input_ref_ackermann_.readFromNonRT()))->drive.speed, TEST_LINEAR_VELOCITY_X);
+  ASSERT_EQ(
+    (*(controller_->input_ref_ackermann_.readFromNonRT()))->drive.steering_angle,
+    TEST_STEERING_ANGLE);
 
   EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[0]));
   for (const auto & interface : controller_->reference_interfaces_)
