@@ -164,8 +164,9 @@ protected:
     state_itfs_.reserve(wheels_pos_states_.size());
     for (size_t i = 0; i < wheels_pos_states_.size(); ++i)
     {
-      state_itfs_.emplace_back(hardware_interface::StateInterface(
-        wheel_names_[i], HW_IF_POSITION, &wheels_pos_states_[i]));
+      state_itfs_.emplace_back(
+        hardware_interface::StateInterface(
+          wheel_names_[i], HW_IF_POSITION, &wheels_pos_states_[i]));
       state_ifs.emplace_back(state_itfs_.back());
     }
 
@@ -174,8 +175,9 @@ protected:
     command_itfs_.reserve(wheels_vel_cmds_.size());
     for (size_t i = 0; i < wheels_vel_cmds_.size(); ++i)
     {
-      command_itfs_.emplace_back(hardware_interface::CommandInterface(
-        wheel_names_[i], HW_IF_VELOCITY, &wheels_vel_cmds_[i]));
+      command_itfs_.emplace_back(
+        hardware_interface::CommandInterface(
+          wheel_names_[i], HW_IF_VELOCITY, &wheels_vel_cmds_[i]));
       command_ifs.emplace_back(command_itfs_.back());
     }
 
@@ -189,8 +191,9 @@ protected:
     state_itfs_.reserve(wheels_vel_states_.size());
     for (size_t i = 0; i < wheels_vel_states_.size(); ++i)
     {
-      state_itfs_.emplace_back(hardware_interface::StateInterface(
-        wheel_names_[i], HW_IF_VELOCITY, &wheels_vel_states_[i]));
+      state_itfs_.emplace_back(
+        hardware_interface::StateInterface(
+          wheel_names_[i], HW_IF_VELOCITY, &wheels_vel_states_[i]));
       state_ifs.emplace_back(state_itfs_.back());
     }
 
@@ -199,8 +202,9 @@ protected:
     command_itfs_.reserve(wheels_vel_cmds_.size());
     for (size_t i = 0; i < wheels_vel_cmds_.size(); ++i)
     {
-      command_itfs_.emplace_back(hardware_interface::CommandInterface(
-        wheel_names_[i], HW_IF_VELOCITY, &wheels_vel_cmds_[i]));
+      command_itfs_.emplace_back(
+        hardware_interface::CommandInterface(
+          wheel_names_[i], HW_IF_VELOCITY, &wheels_vel_cmds_[i]));
       command_ifs.emplace_back(command_itfs_.back());
     }
 
