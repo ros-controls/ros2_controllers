@@ -241,9 +241,9 @@ private:
   double convert_twist_to_steering_angle(const double v_bx, const double omega_bz);
 
   /**
-   * \brief Calculates angular velocity from the desired steering angle
-   * \param v_bx Desired linear velocity of the robot in x_b-axis direction
-   * \param phi Desired steering angle
+   * \brief Calculates angular velocity from the steering angle and linear velocity
+   * \param v_bx Linear velocity of the robot in x_b-axis direction
+   * \param phi Steering angle
    */
   double convert_steering_angle_to_angular_velocity(double v_bx, double phi);
 
