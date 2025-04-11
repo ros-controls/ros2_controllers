@@ -22,7 +22,7 @@ This project provides an interface for sending motion primitives to an industria
 The following diagram shows the architecture for a UR robot.
 For this setup, the [`motion_primitive_ur_driver`](https://github.com/StoglRobotics-forks/Universal_Robots_ROS2_Driver_MotionPrimitive) is used.
 
-![UR Robot Architecture](doc/ros2_control_motion_primitives_ur.drawio.png)
+![UR Robot Architecture](doc/ros2_control_motion_primitives_ur_whiteBackground.drawio.png)
 
 
 1. **Command Reception**  
