@@ -32,7 +32,6 @@ TEST_P(SteeringOdometryTestParameterized, initialize)
     EXPECT_DOUBLE_EQ(odom_->get_x(), 0.);
     EXPECT_DOUBLE_EQ(odom_->get_y(), 0.);
   }
-
   else
   {
     GTEST_SKIP();
@@ -375,7 +374,6 @@ TEST_P(IkSteeringLimitedParameterized, bicycle_IK_right_steering_limited)
       auto extreme_steer_cmd = std::get<1>(cmd);
       EXPECT_LT(extreme_steer_cmd[0], 0);
     }
-
     else
     {
       GTEST_SKIP();
@@ -810,54 +808,48 @@ INSTANTIATE_TEST_SUITE_P(
   ::testing::Values(
     // Ackermann configuration (3 cases)
     std::make_tuple(
-      steering_odometry::ACKERMANN_CONFIG,
-      std::make_tuple(1., 2., 1.),
-      std::make_tuple(  // Position cases
+      steering_odometry::ACKERMANN_CONFIG, std::make_tuple(1., 2., 1.),
+      std::make_tuple(                    // Position cases
         std::make_tuple(0., -0.785, 1.),  // Case 1
         std::make_tuple(0., -0.1, 1.),    // Case 2
         std::make_tuple(0., -0.1, 1.),    // Case 3
-        std::nullopt                        // No Case 4
-      ),
+        std::nullopt                      // No Case 4
+        ),
       std::make_tuple(  // Command cases
-        std::make_tuple(1., -0.5, false, true),
-        std::make_tuple(1., -0.5, false, false),
+        std::make_tuple(1., -0.5, false, true), std::make_tuple(1., -0.5, false, false),
         std::make_tuple(1., -0.5, false, true),
         std::nullopt  // No Case 4
-      )),
+        )),
 
     // Bicycle configuration (4 cases)
     std::make_tuple(
-      steering_odometry::BICYCLE_CONFIG,
-      std::make_tuple(1., 2., 1.),
+      steering_odometry::BICYCLE_CONFIG, std::make_tuple(1., 2., 1.),
       std::make_tuple(
-        std::make_tuple(0., -0.785, 1.),  // Case 1
-        std::make_tuple(0., -0.1, 1.),    // Case 2
-        std::make_tuple(0., -0.1, 1.),    // Case 3
+        std::make_tuple(0., -0.785, 1.),                     // Case 1
+        std::make_tuple(0., -0.1, 1.),                       // Case 2
+        std::make_tuple(0., -0.1, 1.),                       // Case 3
         std::make_optional(std::make_tuple(0.0, M_PI, 1.0))  // Case 4
-      ),
+        ),
       std::make_tuple(
-        std::make_tuple(1., -0.5, false, true),
-        std::make_tuple(1., -0.5, false, false),
+        std::make_tuple(1., -0.5, false, true), std::make_tuple(1., -0.5, false, false),
         std::make_tuple(1., -0.5, false, true),
         std::make_optional(std::make_tuple(1., -0.5, false, true))  // Case 4
-      )),
+        )),
 
     // Tricycle configuration
     std::make_tuple(
-      steering_odometry::TRICYCLE_CONFIG,
-      std::make_tuple(1., 2., 1.0),
+      steering_odometry::TRICYCLE_CONFIG, std::make_tuple(1., 2., 1.0),
       std::make_tuple(
         std::make_tuple(0., -0.785, 1.),  // Case 1
         std::make_tuple(0., -0.1, 1.),    // Case 2
         std::make_tuple(0., -0.1, 1.),    // Case 3
-        std::nullopt                        // No Case 4
-      ),
+        std::nullopt                      // No Case 4
+        ),
       std::make_tuple(
-        std::make_tuple(1., -0.5, false, true),
-        std::make_tuple(1., -0.5, false, false),
+        std::make_tuple(1., -0.5, false, true), std::make_tuple(1., -0.5, false, false),
         std::make_tuple(1., -0.5, false, true),
         std::nullopt  // No Case 4
-      ))),
+        ))),
 
   [](const auto & test_info)
   {
@@ -884,5 +876,4 @@ INSTANTIATE_TEST_SUITE_P(
     // Add test identifier
     name += "_IK_right_steering_limited";
     return name;
-  }
-);
+  });

@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TEST_STEERING_ODOMETRY_UTILS_HPP
-#define TEST_STEERING_ODOMETRY_UTILS_HPP
+#ifndef TEST_STEERING_ODOMETRY_UTILS_HPP_
+#define TEST_STEERING_ODOMETRY_UTILS_HPP_
 
 #include <gtest/gtest.h>
 #include <memory>
+#include <optional>
 #include <tuple>
 #include <utility>
-#include <variant>
 #include "steering_controllers_library/steering_odometry.hpp"
 
 enum class TestType
@@ -39,12 +39,12 @@ class SteeringOdometryTestParameterized
     unsigned int,  // odom_type (ACKERMANN_CONFIG, BICYCLE_CONFIG, TRICYCLE_CONFIG)
     std::tuple<double, double, double>,  // wheel_radius, wheelbase, track_width
     std::tuple<double, double, double>,  // position (pos, steer, dt)
-    std::optional<std::tuple<double, double, double, double, double>>,  // ackermann velocity (v_r,
-                                                                        // v_l, w_r, w_l, dt)
+    std::optional<std::tuple<double, double, double, double, double>>,  // ackermann velocity
+                                                                        // (v_r,v_l, w_r, w_l, dt)
     std::optional<std::tuple<double, double, double>>,                  // bicycle odometry (v,w,dt)
-    std::optional<std::tuple<double, double, double, double>>,  // tricycle velocity (v_r, v_l,
-                                                                // steer, dt)
-    std::tuple<double, double, double>,                         // open_loop (vx, ωz, dt)
+    std::optional<std::tuple<double, double, double, double>>,          // tricycle velocity
+                                                                        // (v_r, v_l, steer, dt)
+    std::tuple<double, double, double>,                                 // open_loop (vx, ωz, dt)
     std::tuple<double, double, bool, bool>,  // ik_params (vx, ωz, open_loop, reduce_speed)
     TestType>>
 {
@@ -140,4 +140,4 @@ protected:
   std::unique_ptr<steering_odometry::SteeringOdometry> odom_;
 };
 
-#endif  // TEST_STEERING_ODOMETRY_UTILS_HPP
+#endif  // TEST_STEERING_ODOMETRY_UTILS_HPP_
