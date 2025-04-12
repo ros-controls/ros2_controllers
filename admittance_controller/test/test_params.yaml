@@ -71,9 +71,10 @@ test_admittance_controller:
         params:
           world_frame: "fixed_world_frame"
           sensor_frame: "ft_mount"
-          CoG:
-            pos: [0.0, 0.1, 0.0]  # in sensor_frame
-            force: [0.0, 0.0, -23.0]  # -gravity_acc * mass  in world_frame
+          tool:
+            CoG: [0.0, 0.1, 0.0]  # in sensor_frame
+            gravity_field: [0.0, 0.0, -10.0]  # in world_frame
+            mass: 2.3  # kg
 
     control:
       frame:
@@ -169,9 +170,9 @@ test_admittance_controller_no_mass:
         params:
           world_frame: "fixed_world_frame"
           sensor_frame: "ft_mount"
-          CoG:
-            pos: [0.0, 0.0, 0.0]  # in sensor_frame
-            force: [0.0, 0.0, 0.0]  # -gravity_acc * mass  in world_frame
+          tool:
+            CoG: [0.0, 0.0, 0.0]  # in sensor_frame
+            mass: 0.0  # kg
 
     control:
       frame:

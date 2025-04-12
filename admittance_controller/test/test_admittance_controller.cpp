@@ -37,14 +37,14 @@ TEST_P(
   AdmittanceControllerTestParameterizedMissingConfigParameters, one_config_parameter_is_missing)
 {
   SetUpController(GetParam());
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_FAILURE);
+  ASSERT_THROW(controller_->on_configure(rclcpp_lifecycle::State()), std::runtime_error);
 }
 
 INSTANTIATE_TEST_SUITE_P(
   MissingMandatoryParameterDuringConfiguration,
   AdmittanceControllerTestParameterizedMissingConfigParameters,
   ::testing::Values(
-    "sensor_filter_chain.filter2.params.CoG.pos",
+    "sensor_filter_chain.filter2.params.tool.CoG",
     "sensor_filter_chain.filter2.params.sensor_frame"));
 
 INSTANTIATE_TEST_SUITE_P(

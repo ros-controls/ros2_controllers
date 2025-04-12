@@ -268,7 +268,7 @@ protected:
     ControllerStateMsg::SharedPtr received_msg;
     auto subs_callback = [&](const ControllerStateMsg::SharedPtr cb_msg) { received_msg = cb_msg; };
     auto subscription = test_subscription_node_->create_subscription<ControllerStateMsg>(
-      "/test_admittance_controller/status", 10, subs_callback);
+      controller_->get_name() + "/status", 10, subs_callback);
     rclcpp::executors::SingleThreadedExecutor executor;
     executor.add_node(test_subscription_node_->get_node_base_interface());
 
