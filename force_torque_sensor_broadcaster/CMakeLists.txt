@@ -7,6 +7,8 @@ export_windows_symbols()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   controller_interface
+  control_toolbox
+  filters
   generate_parameter_library
   geometry_msgs
   hardware_interface
@@ -14,6 +16,9 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   rclcpp
   rclcpp_lifecycle
   realtime_tools
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
 )
 
 find_package(ament_cmake REQUIRED)
@@ -52,7 +57,7 @@ if(BUILD_TESTING)
   ament_add_gmock(test_load_force_torque_sensor_broadcaster test/test_load_force_torque_sensor_broadcaster.cpp)
   target_include_directories(test_load_force_torque_sensor_broadcaster PRIVATE include)
   target_link_libraries(test_load_force_torque_sensor_broadcaster
-    force_torque_sensor_broadcaster
+    force_torque_sensor_broadcaster force_torque_sensor_broadcaster_parameters
   )
   ament_target_dependencies(test_load_force_torque_sensor_broadcaster
     controller_manager
@@ -65,11 +70,28 @@ if(BUILD_TESTING)
     ${CMAKE_CURRENT_SOURCE_DIR}/test/force_torque_sensor_broadcaster_params.yaml)
   target_include_directories(test_force_torque_sensor_broadcaster PRIVATE include)
   target_link_libraries(test_force_torque_sensor_broadcaster
-    force_torque_sensor_broadcaster
+    force_torque_sensor_broadcaster force_torque_sensor_broadcaster_parameters
   )
+
   ament_target_dependencies(test_force_torque_sensor_broadcaster
     hardware_interface
   )
+
+  add_rostest_with_parameters_gmock(test_force_torque_sensor_broadcaster_with_filters
+    test/test_force_torque_sensor_broadcaster_with_filters.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_force_torque_sensor_broadcaster_with_filters_parameters.yaml
+  )
+  target_include_directories(test_force_torque_sensor_broadcaster_with_filters PRIVATE include)
+
+  target_link_libraries(test_force_torque_sensor_broadcaster_with_filters
+    force_torque_sensor_broadcaster force_torque_sensor_broadcaster_parameters)
+
+  ament_target_dependencies(test_force_torque_sensor_broadcaster_with_filters
+    controller_manager
+    hardware_interface
+    ros2_control_test_assets
+  )
+
 endif()
 
 install(

@@ -16,32 +16,32 @@
  * Authors: Subhas Das, Denis Stogl
  */
 
-#ifndef TEST_FORCE_TORQUE_SENSOR_BROADCASTER_HPP_
-#define TEST_FORCE_TORQUE_SENSOR_BROADCASTER_HPP_
-
-#include <gmock/gmock.h>
+#ifndef TEST_FORCE_TORQUE_SENSOR_BROADCASTER_WITH_FILTERS_HPP_
+#define TEST_FORCE_TORQUE_SENSOR_BROADCASTER_WITH_FILTERS_HPP_
 
 #include <memory>
 #include <string>
 
+#include "gmock/gmock.h"
+
 #include "force_torque_sensor_broadcaster/force_torque_sensor_broadcaster.hpp"
 
+namespace
+{
+const double COMMON_THRESHOLD = 0.001;
+}
+
 // subclassing and friending so we can access member variables
-class FriendForceTorqueSensorBroadcaster
+class FriendForceTorqueSensorBroadcasterWithFilter
 : public force_torque_sensor_broadcaster::ForceTorqueSensorBroadcaster
 {
-  FRIEND_TEST(ForceTorqueSensorBroadcasterTest, SensorNameParameterNotSet);
-  FRIEND_TEST(ForceTorqueSensorBroadcasterTest, InterfaceNamesParameterNotSet);
-  FRIEND_TEST(ForceTorqueSensorBroadcasterTest, FrameIdParameterNotSet);
-  FRIEND_TEST(ForceTorqueSensorBroadcasterTest, SensorNameParameterIsEmpty);
-  FRIEND_TEST(ForceTorqueSensorBroadcasterTest, InterfaceNameParameterIsEmpty);
-
-  FRIEND_TEST(ForceTorqueSensorBroadcasterTest, SensorName_ActivateDeactivate_Success);
-  FRIEND_TEST(ForceTorqueSensorBroadcasterTest, UpdateTest);
-  FRIEND_TEST(ForceTorqueSensorBroadcasterTest, SensorStatePublishTest);
+  FRIEND_TEST(ForceTorqueSensorBroadcasterWithFilterTest, NoFilter_Configure_Success);
+  FRIEND_TEST(ForceTorqueSensorBroadcasterWithFilterTest, SingleFilterLP_Configure_Update);
+  FRIEND_TEST(ForceTorqueSensorBroadcasterWithFilterTest, SingleFilterGC_Configure_Update);
+  FRIEND_TEST(ForceTorqueSensorBroadcasterWithFilterTest, ChainedFilterLPGC_Configure_Update);
 };
 
-class ForceTorqueSensorBroadcasterTest : public ::testing::Test
+class ForceTorqueSensorBroadcasterWithFilterTest : public ::testing::Test
 {
 public:
   static void SetUpTestCase();
@@ -50,7 +50,7 @@ public:
   void SetUp();
   void TearDown();
 
-  void SetUpFTSBroadcaster();
+  void SetUpFTSBroadcaster(const std::string & name);
 
 protected:
   const std::string sensor_name_ = "fts_sensor";
@@ -64,11 +64,9 @@ protected:
   hardware_interface::StateInterface fts_torque_y_{sensor_name_, "torque.y", &sensor_values_[4]};
   hardware_interface::StateInterface fts_torque_z_{sensor_name_, "torque.z", &sensor_values_[5]};
 
-  std::unique_ptr<FriendForceTorqueSensorBroadcaster> fts_broadcaster_;
+  std::unique_ptr<FriendForceTorqueSensorBroadcasterWithFilter> fts_broadcaster_;
 
   void subscribe_and_get_message(geometry_msgs::msg::WrenchStamped & wrench_msg);
-  void subscribe_additional_frames_and_get_message(
-    const std::string & frame, geometry_msgs::msg::WrenchStamped & wrench_msg);
 };
 
-#endif  // TEST_FORCE_TORQUE_SENSOR_BROADCASTER_HPP_
+#endif  // TEST_FORCE_TORQUE_SENSOR_BROADCASTER_WITH_FILTERS_HPP_
