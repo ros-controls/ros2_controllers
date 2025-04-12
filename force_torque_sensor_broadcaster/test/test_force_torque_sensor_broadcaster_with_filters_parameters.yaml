@@ -29,9 +29,9 @@ FTS_SingleFilterGC:
         params:
           world_frame: "world"
           sensor_frame: "world"
-          CoG:
-            pos: [0.0, 0.1, 0.0]
-            force: [0.0, 0.0, -49.05]  # -gravity_acc * mass
+          tool:
+            CoG: [0.0, 0.1, 0.0]
+            mass: 5.0
 
 FTS_ChainedFilterLPGC:
   ros__parameters:
@@ -52,6 +52,6 @@ FTS_ChainedFilterLPGC:
         params:
           world_frame: "world"
           sensor_frame: "world"
-          CoG:
-            pos: [0.0, 0.1, 0.0]
-            force: [0.0, 0.0, -49.05]  # -gravity_acc * mass
+          tool:
+            CoG: [0.0, 0.1, 0.0]
+            mass: 5.0
