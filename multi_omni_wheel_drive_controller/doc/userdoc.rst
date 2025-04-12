@@ -7,7 +7,7 @@ multi_omni_wheel_drive_controller
 
 Controller for mobile robots with omnidirectional drive.
 
-Supports using 3 or more omni wheels spaced at an equal angle from each other in a circular formation.
+Supports using three or more omni wheels spaced at an equal angle from each other in a circular formation.
 To better understand this, have a look at :ref:`mobile_robot_kinematics`.
 
 The controller uses velocity input, i.e., stamped Twist messages where linear ``x``, ``y``, and angular ``z`` components are used.

@@ -8,22 +8,19 @@ multi_omni_wheel_drive_controller:
   wheel_names:
     {
       type: string_array,
-      default_value: [],
       description: "Names of the wheels' joints, given in an anti-clockwise order starting from the wheel aligned with the positive direction of the x-axis of the robot / offset from it by the value specified in ``wheel_offset``.",
       validation: { not_empty<>: [] },
     }
   robot_radius:
     {
       type: double,
-      default_value: 0.0,
       description: "Radius of the robot, distance between the center of the robot and the wheels. If this parameter is wrong, the robot will not behave correctly in curves.",
       validation: { gt<>: [0.0] },
     }
   wheel_radius:
     {
       type: double,
-      default_value: 0.0,
-      description: "Radius of a wheel, i.e., wheels size, used for transformation of linear velocity into wheel rotations. If this parameter is wrong the robot will move faster or slower then expected.",
+      description: "Radius of a wheel, i.e., wheels size, used for transformation of linear velocity into wheel rotations. If this parameter is wrong the robot will move faster or slower than expected.",
       validation: { gt<>: [0.0] },
     }
   tf_frame_prefix_enable:
@@ -72,7 +69,7 @@ multi_omni_wheel_drive_controller:
     {
       type: bool,
       default_value: true,
-      description: "Only valid if ``open_loop`` is set to false. Set to true if there is position feedback from the hardware, set to false if there is velocity feedback instead.",
+      description: "Only valid if ``open_loop`` is set to false. If there is position feedback from the hardware, set the parameter to ``true``, else set it to ``false``.",
     }
   enable_odom_tf:
     {
@@ -84,7 +81,7 @@ multi_omni_wheel_drive_controller:
     {
       type: double,
       default_value: 0.5, # seconds
-      description: "Timeout in seconds, after which input command on ``~/cmd_vel`` topic is considered staled.",
+      description: "Timeout in seconds, after which input command on ``~/cmd_vel`` topic is considered stale.",
     }
   publish_rate:
     {

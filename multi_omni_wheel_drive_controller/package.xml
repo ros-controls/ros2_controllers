@@ -3,7 +3,7 @@
 <package format="3">
   <name>multi_omni_wheel_drive_controller</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>A chainable controller for mobile robots with omnidirectional drive with three or more omni wheels.</description>
   <maintainer email="amronos275@gmail.com">Aarav Gupta</maintainer>
   <license>Apache License 2.0</license>
 
