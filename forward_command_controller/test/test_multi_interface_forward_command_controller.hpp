@@ -26,6 +26,7 @@
 #include "forward_command_controller/multi_interface_forward_command_controller.hpp"
 #include "hardware_interface/handle.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
+#include "rclcpp/executors/single_threaded_executor.hpp"
 
 using hardware_interface::CommandInterface;
 using hardware_interface::HW_IF_EFFORT;
@@ -77,6 +78,7 @@ protected:
   CommandInterface joint_1_pos_cmd_{joint_name_, HW_IF_POSITION, &pos_cmd_};
   CommandInterface joint_1_vel_cmd_{joint_name_, HW_IF_VELOCITY, &vel_cmd_};
   CommandInterface joint_1_eff_cmd_{joint_name_, HW_IF_EFFORT, &eff_cmd_};
+  rclcpp::executors::SingleThreadedExecutor executor;
 };
 
 #endif  // TEST_MULTI_INTERFACE_FORWARD_COMMAND_CONTROLLER_HPP_

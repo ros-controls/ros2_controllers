@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
-project(force_torque_sensor_broadcaster LANGUAGES CXX)
+project(force_torque_sensor_broadcaster)
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
-  add_compile_options(-Wall -Wextra -Wpedantic -Wconversion)
-endif()
+find_package(ros2_control_cmake REQUIRED)
+set_compiler_options()
+export_windows_symbols()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   controller_interface
@@ -39,10 +39,6 @@ target_link_libraries(force_torque_sensor_broadcaster PUBLIC
 )
 ament_target_dependencies(force_torque_sensor_broadcaster PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
 
-# Causes the visibility macros to use dllexport rather than dllimport,
-# which is appropriate when building the dll but not consuming it.
-target_compile_definitions(force_torque_sensor_broadcaster PRIVATE "FORCE_TORQUE_SENSOR_BROADCASTER_BUILDING_DLL")
-
 pluginlib_export_plugin_description_file(
   controller_interface force_torque_sensor_broadcaster.xml)
 
@@ -52,9 +48,8 @@ if(BUILD_TESTING)
   find_package(hardware_interface REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
 
-  add_rostest_with_parameters_gmock(test_load_force_torque_sensor_broadcaster
-    test/test_load_force_torque_sensor_broadcaster.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/force_torque_sensor_broadcaster_params.yaml)
+  add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
+  ament_add_gmock(test_load_force_torque_sensor_broadcaster test/test_load_force_torque_sensor_broadcaster.cpp)
   target_include_directories(test_load_force_torque_sensor_broadcaster PRIVATE include)
   target_link_libraries(test_load_force_torque_sensor_broadcaster
     force_torque_sensor_broadcaster

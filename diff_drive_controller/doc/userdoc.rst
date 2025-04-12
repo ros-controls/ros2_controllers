@@ -6,83 +6,79 @@ diff_drive_controller
 =====================
 
 Controller for mobile robots with differential drive.
-Input for control are robot body velocity commands which are translated to wheel commands for the differential drive base.
+
+As input it takes velocity commands for the robot body, which are translated to wheel commands for the differential drive base.
+
 Odometry is computed from hardware feedback and published.
 
-Velocity commands
------------------
-
-The controller works with a velocity twist from which it extracts the x component of the linear velocity and the z component of the angular velocity. Velocities on other components are ignored.
-
-Hardware interface type
------------------------
-
-The controller works with wheel joints through a velocity interface.
+For an introduction to mobile robot kinematics and the nomenclature used here, see :ref:`mobile_robot_kinematics`.
 
 Other features
 --------------
 
-    Realtime-safe implementation.
-    Odometry publishing
-    Task-space velocity, acceleration and jerk limits
-    Automatic stop after command time-out
+   + Realtime-safe implementation.
+   + Odometry publishing
+   + Task-space velocity, acceleration and jerk limits
+   + Automatic stop after command time-out
+   + Chainable Controller
 
 
-ros2_control Interfaces
-------------------------
+Description of controller's interfaces
+------------------------------------------------
 
 References
-,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,
 
+When controller is in chained mode, it exposes the following references which can be commanded by the preceding controller:
 
-States
-,,,,,,,
+- ``<controller_name>/linear/velocity``      double, in m/s
+- ``<controller_name>/angular/velocity``     double, in rad/s
 
+Together, these represent the body twist (which in unchained-mode would be obtained from ~/cmd_vel).
+The ``<controller_name>`` is commonly set to ``diff_drive_controller``.
 
-Commands
+Feedback
+,,,,,,,,,,,,,,
+
+As feedback interface type the joints' position (``hardware_interface::HW_IF_POSITION``) or velocity (``hardware_interface::HW_IF_VELOCITY``,if parameter ``position_feedback=false``) are used.
+
+Output
 ,,,,,,,,,
 
+Joints' velocity (``hardware_interface::HW_IF_VELOCITY``) are used.
 
-ROS2 Interfaces
-----------------
+
+ROS 2 Interfaces
+------------------------
 
 Subscribers
 ,,,,,,,,,,,,
+
 ~/cmd_vel [geometry_msgs/msg/TwistStamped]
-  Velocity command for the controller.
-
-~/cmd_vel_unstamped [geometry_msgs::msg::Twist]
-
-~/cmd_vel_out []
-
-
+  Velocity command for the controller. The controller extracts the x component of the linear velocity and the z component of the angular velocity. Velocities on other components are ignored.
 
 
 Publishers
 ,,,,,,,,,,,
-~/odom []
+~/odom [nav_msgs::msg::Odometry]
+  This represents an estimate of the robot's position and velocity in free space.
 
-/tf
+/tf [tf2_msgs::msg::TFMessage]
+  tf tree. Published only if ``enable_odom_tf=true``
 
-
-Services
-,,,,,,,,,
+~/cmd_vel_out [geometry_msgs/msg/TwistStamped]
+  Velocity command for the controller, where limits were applied. Published only if ``publish_limited_velocity=true``
 
 
 Parameters
-------------
+,,,,,,,,,,,,
 
-Check `parameter definition file for details <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/diff_drive_controller/src/diff_drive_controller_parameter.yaml>`_.
+This controller uses the `generate_parameter_library <https://github.com/PickNikRobotics/generate_parameter_library>`_ to handle its parameters. The parameter `definition file located in the src folder <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/diff_drive_controller/src/diff_drive_controller_parameter.yaml>`_ contains descriptions for all the parameters used by the controller.
 
-Note that the documentation on parameters for joint limits can be found in `their header file <https://github.com/ros-controls/ros2_control/blob/{REPOS_FILE_BRANCH}/joint_limits/include/joint_limits/joint_limits_rosparam.hpp#L56-L75>`_.
-Those parameters are:
+.. generate_parameter_library_details:: ../src/diff_drive_controller_parameter.yaml
+  parameters_context.yaml
 
-linear.x [JointLimits structure]
-  Joint limits structure for the linear X-axis.
-  The limiter ignores position limits.
-  For details see ``joint_limits`` package from ros2_control repository.
+An example parameter file for this controller can be found in `the test directory <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/diff_drive_controller/test/config/test_diff_drive_controller.yaml>`_:
 
-angular.z [JointLimits structure]
-  Joint limits structure for the rotation about Z-axis.
-  The limiter ignores position limits.
-  For details see ``joint_limits`` package from ros2_control repository.
+.. literalinclude:: ../test/config/test_diff_drive_controller.yaml
+   :language: yaml

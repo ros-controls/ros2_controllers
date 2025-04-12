@@ -40,6 +40,11 @@ void GripperActionController<HardwareInterface>::preempt_active_goal()
 template <const char * HardwareInterface>
 controller_interface::CallbackReturn GripperActionController<HardwareInterface>::on_init()
 {
+  RCLCPP_WARN(
+    get_node()->get_logger(),
+    "[Deprecated]: the `position_controllers/GripperActionController` and "
+    "`effort_controllers::GripperActionController` controllers are replaced by "
+    "'parallel_gripper_controllers/GripperActionController' controller");
   try
   {
     param_listener_ = std::make_shared<ParamListener>(get_node());
@@ -201,17 +206,12 @@ controller_interface::CallbackReturn GripperActionController<HardwareInterface>:
   const rclcpp_lifecycle::State &)
 {
   const auto logger = get_node()->get_logger();
-  if (!param_listener_)
-  {
-    RCLCPP_ERROR(get_node()->get_logger(), "Error encountered during init");
-    return controller_interface::CallbackReturn::ERROR;
-  }
   params_ = param_listener_->get_params();
 
   // Action status checking update rate
   action_monitor_period_ = rclcpp::Duration::from_seconds(1.0 / params_.action_monitor_rate);
-  RCLCPP_INFO_STREAM(
-    logger, "Action status changes will be monitored at " << params_.action_monitor_rate << "Hz.");
+  RCLCPP_INFO(
+    logger, "Action status changes will be monitored at %f Hz.", params_.action_monitor_rate);
 
   // Controlled joint
   if (params_.joint.empty())
@@ -226,21 +226,20 @@ template <const char * HardwareInterface>
 controller_interface::CallbackReturn GripperActionController<HardwareInterface>::on_activate(
   const rclcpp_lifecycle::State &)
 {
-  auto position_command_interface_it = std::find_if(
+  auto command_interface_it = std::find_if(
     command_interfaces_.begin(), command_interfaces_.end(),
     [](const hardware_interface::LoanedCommandInterface & command_interface)
-    { return command_interface.get_interface_name() == hardware_interface::HW_IF_POSITION; });
-  if (position_command_interface_it == command_interfaces_.end())
+    { return command_interface.get_interface_name() == HardwareInterface; });
+  if (command_interface_it == command_interfaces_.end())
   {
-    RCLCPP_ERROR(get_node()->get_logger(), "Expected 1 position command interface");
+    RCLCPP_ERROR(get_node()->get_logger(), "Expected 1 %s command interface", HardwareInterface);
     return controller_interface::CallbackReturn::ERROR;
   }
-  if (position_command_interface_it->get_prefix_name() != params_.joint)
+  if (command_interface_it->get_prefix_name() != params_.joint)
   {
-    RCLCPP_ERROR_STREAM(
-      get_node()->get_logger(), "Position command interface is different than joint name `"
-                                  << position_command_interface_it->get_prefix_name() << "` != `"
-                                  << params_.joint << "`");
+    RCLCPP_ERROR(
+      get_node()->get_logger(), "Command interface is different than joint name `%s` != `%s`",
+      command_interface_it->get_prefix_name().c_str(), params_.joint.c_str());
     return controller_interface::CallbackReturn::ERROR;
   }
   const auto position_state_interface_it = std::find_if(
@@ -254,10 +253,10 @@ controller_interface::CallbackReturn GripperActionController<HardwareInterface>:
   }
   if (position_state_interface_it->get_prefix_name() != params_.joint)
   {
-    RCLCPP_ERROR_STREAM(
-      get_node()->get_logger(), "Position state interface is different than joint name `"
-                                  << position_state_interface_it->get_prefix_name() << "` != `"
-                                  << params_.joint << "`");
+    RCLCPP_ERROR(
+      get_node()->get_logger(),
+      "Position state interface is different than joint name `%s` != `%s`",
+      position_state_interface_it->get_prefix_name().c_str(), params_.joint.c_str());
     return controller_interface::CallbackReturn::ERROR;
   }
   const auto velocity_state_interface_it = std::find_if(
@@ -271,19 +270,19 @@ controller_interface::CallbackReturn GripperActionController<HardwareInterface>:
   }
   if (velocity_state_interface_it->get_prefix_name() != params_.joint)
   {
-    RCLCPP_ERROR_STREAM(
-      get_node()->get_logger(), "Velocity command interface is different than joint name `"
-                                  << velocity_state_interface_it->get_prefix_name() << "` != `"
-                                  << params_.joint << "`");
+    RCLCPP_ERROR(
+      get_node()->get_logger(),
+      "Velocity command interface is different than joint name `%s` != `%s`",
+      velocity_state_interface_it->get_prefix_name().c_str(), params_.joint.c_str());
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  joint_position_command_interface_ = *position_command_interface_it;
+  joint_command_interface_ = *command_interface_it;
   joint_position_state_interface_ = *position_state_interface_it;
   joint_velocity_state_interface_ = *velocity_state_interface_it;
 
   // Hardware interface adapter
-  hw_iface_adapter_.init(joint_position_command_interface_, get_node());
+  hw_iface_adapter_.init(joint_command_interface_, get_node());
 
   // Command - non RT version
   command_struct_.position_ = joint_position_state_interface_->get().get_value();
@@ -311,7 +310,7 @@ template <const char * HardwareInterface>
 controller_interface::CallbackReturn GripperActionController<HardwareInterface>::on_deactivate(
   const rclcpp_lifecycle::State &)
 {
-  joint_position_command_interface_ = std::nullopt;
+  joint_command_interface_ = std::nullopt;
   joint_position_state_interface_ = std::nullopt;
   joint_velocity_state_interface_ = std::nullopt;
   release_interfaces();
@@ -324,7 +323,7 @@ GripperActionController<HardwareInterface>::command_interface_configuration() co
 {
   return {
     controller_interface::interface_configuration_type::INDIVIDUAL,
-    {params_.joint + "/" + hardware_interface::HW_IF_POSITION}};
+    {params_.joint + "/" + HardwareInterface}};
 }
 
 template <const char * HardwareInterface>

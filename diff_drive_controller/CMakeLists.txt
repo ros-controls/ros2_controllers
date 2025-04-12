@@ -1,11 +1,12 @@
 cmake_minimum_required(VERSION 3.16)
-project(diff_drive_controller LANGUAGES CXX)
+project(diff_drive_controller)
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
-  add_compile_options(-Wall -Wextra -Wconversion)
-endif()
+find_package(ros2_control_cmake REQUIRED)
+set_compiler_options()
+export_windows_symbols()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
+  control_toolbox
   controller_interface
   generate_parameter_library
   geometry_msgs
@@ -25,26 +26,30 @@ find_package(backward_ros REQUIRED)
 foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
+add_compile_definitions(RCPPUTILS_VERSION_MAJOR=${rcpputils_VERSION_MAJOR})
+add_compile_definitions(RCPPUTILS_VERSION_MINOR=${rcpputils_VERSION_MINOR})
 
+# get include dirs from control_toolbox for the custom validators
+get_target_property(TB_INCLUDE_DIRS control_toolbox::rate_limiter_parameters INTERFACE_INCLUDE_DIRECTORIES)
 generate_parameter_library(diff_drive_controller_parameters
   src/diff_drive_controller_parameter.yaml
+  ${TB_INCLUDE_DIRS}/control_toolbox/custom_validators.hpp
 )
 
 add_library(diff_drive_controller SHARED
   src/diff_drive_controller.cpp
   src/odometry.cpp
-  src/speed_limiter.cpp
 )
 target_compile_features(diff_drive_controller PUBLIC cxx_std_17)
 target_include_directories(diff_drive_controller PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/diff_drive_controller>
 )
-target_link_libraries(diff_drive_controller PUBLIC diff_drive_controller_parameters)
+target_link_libraries(diff_drive_controller
+  PUBLIC
+    diff_drive_controller_parameters
+    control_toolbox::rate_limiter_parameters)
 ament_target_dependencies(diff_drive_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
-# Causes the visibility macros to use dllexport rather than dllimport,
-# which is appropriate when building the dll but not consuming it.
-target_compile_definitions(diff_drive_controller PRIVATE "DIFF_DRIVE_CONTROLLER_BUILDING_DLL")
 pluginlib_export_plugin_description_file(controller_interface diff_drive_plugin.xml)
 
 if(BUILD_TESTING)
@@ -54,7 +59,7 @@ if(BUILD_TESTING)
 
   ament_add_gmock(test_diff_drive_controller
     test/test_diff_drive_controller.cpp
-    ENV config_file=${CMAKE_CURRENT_SOURCE_DIR}/test/config/test_diff_drive_controller.yaml)
+  )
   target_link_libraries(test_diff_drive_controller
     diff_drive_controller
   )
@@ -69,9 +74,8 @@ if(BUILD_TESTING)
     tf2_msgs
   )
 
-  ament_add_gmock(test_load_diff_drive_controller
-    test/test_load_diff_drive_controller.cpp
-  )
+  add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
+  ament_add_gmock(test_load_diff_drive_controller test/test_load_diff_drive_controller.cpp)
   ament_target_dependencies(test_load_diff_drive_controller
     controller_manager
     ros2_control_test_assets

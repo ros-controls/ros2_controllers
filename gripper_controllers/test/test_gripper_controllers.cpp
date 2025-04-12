@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <functional>
 #include <memory>
 #include <string>
 #include <utility>
@@ -23,132 +22,161 @@
 #include "test_gripper_controllers.hpp"
 
 #include "hardware_interface/loaned_command_interface.hpp"
-#include "hardware_interface/types/hardware_interface_return_values.hpp"
-#include "lifecycle_msgs/msg/state.hpp"
-#include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 
 using hardware_interface::LoanedCommandInterface;
 using hardware_interface::LoanedStateInterface;
 using GripperCommandAction = control_msgs::action::GripperCommand;
 using GoalHandle = rclcpp_action::ServerGoalHandle<GripperCommandAction>;
+using testing::SizeIs;
+using testing::UnorderedElementsAre;
 
-void GripperControllerTest::SetUpTestCase() { rclcpp::init(0, nullptr); }
-
-void GripperControllerTest::TearDownTestCase() { rclcpp::shutdown(); }
-
-void GripperControllerTest::SetUp()
+template <typename T>
+void GripperControllerTest<T>::SetUpTestCase()
 {
-  // initialize controller
-  controller_ = std::make_unique<FriendGripperController>();
+  rclcpp::init(0, nullptr);
 }
 
-void GripperControllerTest::TearDown() { controller_.reset(nullptr); }
-
-void GripperControllerTest::SetUpController()
+template <typename T>
+void GripperControllerTest<T>::TearDownTestCase()
 {
-  const auto result = controller_->init("gripper_controller");
+  rclcpp::shutdown();
+}
+
+template <typename T>
+void GripperControllerTest<T>::SetUp()
+{
+  // initialize controller
+  controller_ = std::make_unique<FriendGripperController<T::value>>();
+}
+
+template <typename T>
+void GripperControllerTest<T>::TearDown()
+{
+  controller_.reset(nullptr);
+}
+
+template <typename T>
+void GripperControllerTest<T>::SetUpController()
+{
+  const auto result =
+    controller_->init("gripper_controller", "", 0, "", controller_->define_custom_node_options());
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
   std::vector<LoanedCommandInterface> command_ifs;
-  command_ifs.emplace_back(joint_1_pos_cmd_);
+  command_ifs.emplace_back(this->joint_1_cmd_);
   std::vector<LoanedStateInterface> state_ifs;
-  state_ifs.emplace_back(joint_1_pos_state_);
-  state_ifs.emplace_back(joint_1_vel_state_);
+  state_ifs.emplace_back(this->joint_1_pos_state_);
+  state_ifs.emplace_back(this->joint_1_vel_state_);
   controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
 }
 
-TEST_F(GripperControllerTest, ParametersNotSet)
+using TestTypes = ::testing::Types<
+  std::integral_constant<const char *, HW_IF_POSITION>,
+  std::integral_constant<const char *, HW_IF_EFFORT>>;
+TYPED_TEST_SUITE(GripperControllerTest, TestTypes);
+
+TYPED_TEST(GripperControllerTest, ParametersNotSet)
 {
-  SetUpController();
+  this->SetUpController();
 
   // configure failed, 'joints' parameter not set
   ASSERT_EQ(
-    controller_->on_configure(rclcpp_lifecycle::State()),
+    this->controller_->on_configure(rclcpp_lifecycle::State()),
     controller_interface::CallbackReturn::ERROR);
 }
 
-TEST_F(GripperControllerTest, JointParameterIsEmpty)
+TYPED_TEST(GripperControllerTest, JointParameterIsEmpty)
 {
-  SetUpController();
+  this->SetUpController();
 
-  controller_->get_node()->set_parameter({"joint", ""});
+  this->controller_->get_node()->set_parameter({"joint", ""});
 
   // configure failed, 'joints' is empty
   ASSERT_EQ(
-    controller_->on_configure(rclcpp_lifecycle::State()),
+    this->controller_->on_configure(rclcpp_lifecycle::State()),
     controller_interface::CallbackReturn::ERROR);
 }
 
-TEST_F(GripperControllerTest, ConfigureParamsSuccess)
+TYPED_TEST(GripperControllerTest, ConfigureParamsSuccess)
 {
-  SetUpController();
+  this->SetUpController();
 
-  controller_->get_node()->set_parameter({"joint", "joint_1"});
+  this->controller_->get_node()->set_parameter({"joint", "joint_1"});
 
   // configure successful
   ASSERT_EQ(
-    controller_->on_configure(rclcpp_lifecycle::State()),
+    this->controller_->on_configure(rclcpp_lifecycle::State()),
     controller_interface::CallbackReturn::SUCCESS);
+
+  // check interface configuration
+  auto cmd_if_conf = this->controller_->command_interface_configuration();
+  ASSERT_THAT(cmd_if_conf.names, SizeIs(1lu));
+  ASSERT_THAT(cmd_if_conf.names, UnorderedElementsAre(std::string("joint_1/") + TypeParam::value));
+  EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
+  auto state_if_conf = this->controller_->state_interface_configuration();
+  ASSERT_THAT(state_if_conf.names, SizeIs(2lu));
+  ASSERT_THAT(state_if_conf.names, UnorderedElementsAre("joint_1/position", "joint_1/velocity"));
+  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 }
 
-TEST_F(GripperControllerTest, ActivateWithWrongJointsNamesFails)
+TYPED_TEST(GripperControllerTest, ActivateWithWrongJointsNamesFails)
 {
-  SetUpController();
+  this->SetUpController();
 
-  controller_->get_node()->set_parameter({"joint", "unicorn_joint"});
+  this->controller_->get_node()->set_parameter({"joint", "unicorn_joint"});
 
   // activate failed, 'joint4' is not a valid joint name for the hardware
   ASSERT_EQ(
-    controller_->on_configure(rclcpp_lifecycle::State()),
+    this->controller_->on_configure(rclcpp_lifecycle::State()),
     controller_interface::CallbackReturn::SUCCESS);
   ASSERT_EQ(
-    controller_->on_activate(rclcpp_lifecycle::State()),
+    this->controller_->on_activate(rclcpp_lifecycle::State()),
     controller_interface::CallbackReturn::ERROR);
 }
 
-TEST_F(GripperControllerTest, ActivateSuccess)
+TYPED_TEST(GripperControllerTest, ActivateSuccess)
 {
-  SetUpController();
+  this->SetUpController();
 
-  controller_->get_node()->set_parameter({"joint", "joint1"});
+  this->controller_->get_node()->set_parameter({"joint", "joint1"});
 
   // activate successful
   ASSERT_EQ(
-    controller_->on_configure(rclcpp_lifecycle::State()),
+    this->controller_->on_configure(rclcpp_lifecycle::State()),
     controller_interface::CallbackReturn::SUCCESS);
   ASSERT_EQ(
-    controller_->on_activate(rclcpp_lifecycle::State()),
+    this->controller_->on_activate(rclcpp_lifecycle::State()),
     controller_interface::CallbackReturn::SUCCESS);
 }
 
-TEST_F(GripperControllerTest, ActivateDeactivateActivateSuccess)
+TYPED_TEST(GripperControllerTest, ActivateDeactivateActivateSuccess)
 {
-  SetUpController();
+  this->SetUpController();
 
-  controller_->get_node()->set_parameter({"joint", "joint1"});
+  this->controller_->get_node()->set_parameter({"joint", "joint1"});
 
   ASSERT_EQ(
-    controller_->on_configure(rclcpp_lifecycle::State()),
+    this->controller_->on_configure(rclcpp_lifecycle::State()),
     controller_interface::CallbackReturn::SUCCESS);
   ASSERT_EQ(
-    controller_->on_activate(rclcpp_lifecycle::State()),
+    this->controller_->on_activate(rclcpp_lifecycle::State()),
     controller_interface::CallbackReturn::SUCCESS);
   ASSERT_EQ(
-    controller_->on_deactivate(rclcpp_lifecycle::State()),
+    this->controller_->on_deactivate(rclcpp_lifecycle::State()),
     controller_interface::CallbackReturn::SUCCESS);
 
   // re-assign interfaces
   std::vector<LoanedCommandInterface> command_ifs;
-  command_ifs.emplace_back(joint_1_pos_cmd_);
+  command_ifs.emplace_back(this->joint_1_cmd_);
   std::vector<LoanedStateInterface> state_ifs;
-  state_ifs.emplace_back(joint_1_pos_state_);
-  state_ifs.emplace_back(joint_1_vel_state_);
-  controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
+  state_ifs.emplace_back(this->joint_1_pos_state_);
+  state_ifs.emplace_back(this->joint_1_vel_state_);
+  this->controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
 
   ASSERT_EQ(
-    controller_->on_configure(rclcpp_lifecycle::State()),
+    this->controller_->on_configure(rclcpp_lifecycle::State()),
     controller_interface::CallbackReturn::SUCCESS);
   ASSERT_EQ(
-    controller_->on_activate(rclcpp_lifecycle::State()),
+    this->controller_->on_activate(rclcpp_lifecycle::State()),
     controller_interface::CallbackReturn::SUCCESS);
 }

@@ -15,14 +15,15 @@
 #ifndef TEST_JOINT_GROUP_VELOCITY_CONTROLLER_HPP_
 #define TEST_JOINT_GROUP_VELOCITY_CONTROLLER_HPP_
 
+#include <gmock/gmock.h>
+
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "gmock/gmock.h"
-
 #include "hardware_interface/handle.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
+#include "rclcpp/executors/single_threaded_executor.hpp"
 #include "velocity_controllers/joint_group_velocity_controller.hpp"
 
 using hardware_interface::CommandInterface;
@@ -58,6 +59,7 @@ protected:
   CommandInterface joint_1_cmd_{joint_names_[0], HW_IF_VELOCITY, &joint_commands_[0]};
   CommandInterface joint_2_cmd_{joint_names_[1], HW_IF_VELOCITY, &joint_commands_[1]};
   CommandInterface joint_3_cmd_{joint_names_[2], HW_IF_VELOCITY, &joint_commands_[2]};
+  rclcpp::executors::SingleThreadedExecutor executor;
 };
 
 #endif  // TEST_JOINT_GROUP_VELOCITY_CONTROLLER_HPP_

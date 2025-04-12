@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
-project(forward_command_controller LANGUAGES CXX)
+project(forward_command_controller)
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
-  add_compile_options(-Wall -Wextra -Wpedantic -Wconversion)
-endif()
+find_package(ros2_control_cmake REQUIRED)
+set_compiler_options()
+export_windows_symbols()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   controller_interface
@@ -46,11 +46,7 @@ target_link_libraries(forward_command_controller PUBLIC
   multi_interface_forward_command_controller_parameters
 )
 ament_target_dependencies(forward_command_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
-# Causes the visibility macros to use dllexport rather than dllimport,
-# which is appropriate when building the dll but not consuming it.
-target_compile_definitions(forward_command_controller PRIVATE "FORWARD_COMMAND_CONTROLLER_BUILDING_DLL")
 pluginlib_export_plugin_description_file(controller_interface forward_command_plugin.xml)
-
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gmock REQUIRED)

@@ -1,0 +1,150 @@
+tricycle_controller:
+  traction_joint_name: {
+    type: string,
+    default_value: "",
+    description: "Name of the traction joint",
+    validation: {
+      not_empty<>: []
+    }
+  }
+  steering_joint_name: {
+    type: string,
+    default_value: "",
+    description: "Name of the steering joint",
+    validation: {
+      not_empty<>: []
+    }
+  }
+  wheelbase: {
+    type: double,
+    default_value: 0.0,
+    description: "Shortest distance between the front wheel and the rear axle. If this parameter is wrong, the robot will not behave correctly in curves.",
+    validation: {
+      gt<>: [0.0]
+    }
+  }
+  wheel_radius: {
+    type: double,
+    default_value: 0.0,
+    description: "Radius of a wheel, i.e., wheels size, used for transformation of linear velocity into wheel rotations. If this parameter is wrong the robot will move faster or slower then expected.",
+    validation: {
+      gt<>: [0.0]
+    }
+  }
+  odom_frame_id: {
+    type: string,
+    default_value: "odom",
+    description:  "Name of the frame for odometry. This frame is parent of ``base_frame_id`` when controller publishes odometry.",
+  }
+  base_frame_id: {
+    type: string,
+    default_value: "base_link",
+    description: "Name of the robot's base frame that is child of the odometry frame.",
+  }
+  pose_covariance_diagonal: {
+    type: double_array,
+    default_value: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    description: "Odometry covariance for the encoder output of the robot for the pose. These values should be tuned to your robot's sample odometry data, but these values are a good place to start: ``[0.001, 0.001, 0.001, 0.001, 0.001, 0.01]``.",
+  }
+  twist_covariance_diagonal: {
+    type: double_array,
+    default_value: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    description: "Odometry covariance for the encoder output of the robot for the speed. These values should be tuned to your robot's sample odometry data, but these values are a good place to start: ``[0.001, 0.001, 0.001, 0.001, 0.001, 0.01]``.",
+  }
+  open_loop: {
+    type: bool,
+    default_value: false,
+    description: "If set to true the odometry of the robot will be calculated from the commanded values and not from feedback.",
+  }
+  enable_odom_tf: {
+    type: bool,
+    default_value: false,
+    description: "Publish transformation between ``odom_frame_id`` and ``base_frame_id``.",
+  }
+  odom_only_twist: {
+    type: bool,
+    default_value: false,
+    description: "for doing the pose integration in separate node.",
+  }
+  cmd_vel_timeout: {
+    type: int,
+    default_value: 500, # milliseconds
+    description: "Timeout in milliseconds, after which input command on ``cmd_vel`` topic is considered staled.",
+  }
+  publish_ackermann_command: {
+    type: bool,
+    default_value: false,
+    description: "Publish limited commands.",
+  }
+  velocity_rolling_window_size: {
+    type: int,
+    default_value: 10,
+    description: "Size of the rolling window for calculation of mean velocity use in odometry.",
+    validation: {
+      gt<>: [0]
+    }
+  }
+  traction:
+    # "The positive limit will be applied to both directions. Setting different limits for positive "
+    # "and negative directions is not supported. Actuators are "
+    # "assumed to have the same constraints in both directions"
+    max_velocity: {
+      type: double,
+      default_value: .NAN,
+    }
+    min_velocity: {
+      type: double,
+      default_value: .NAN,
+    }
+    max_acceleration: {
+      type: double,
+      default_value: .NAN,
+    }
+    min_acceleration: {
+      type: double,
+      default_value: .NAN,
+    }
+    max_deceleration: {
+      type: double,
+      default_value: .NAN,
+    }
+    min_deceleration: {
+      type: double,
+      default_value: .NAN,
+    }
+    max_jerk: {
+      type: double,
+      default_value: .NAN,
+    }
+    min_jerk: {
+      type: double,
+      default_value: .NAN,
+    }
+  steering:
+    # "The positive limit will be applied to both directions. Setting different limits for positive "
+    # "and negative directions is not supported. Actuators are "
+    # "assumed to have the same constraints in both directions"
+    max_position: {
+      type: double,
+      default_value: .NAN,
+    }
+    min_position: {
+      type: double,
+      default_value: .NAN,
+    }
+    max_velocity: {
+      type: double,
+      default_value: .NAN,
+    }
+    min_velocity: {
+      type: double,
+      default_value: .NAN,
+    }
+    max_acceleration: {
+      type: double,
+      default_value: .NAN,
+    }
+    min_acceleration: {
+      type: double,
+      default_value: .NAN,
+    }

@@ -5,7 +5,7 @@
 forward_command_controller
 ==========================
 
-This is a base class implementing a feedforward controller. Specific implementations can be found in:
+This is a base class implementing a feedforward controller. Specific implementations of this base class can be found in:
 
 * :ref:`position_controllers_userdoc`
 * :ref:`velocity_controllers_userdoc`
@@ -16,17 +16,27 @@ Hardware interface type
 
 This controller can be used for every type of command interface.
 
+
+ROS 2 interface of the controller
+---------------------------------
+
+Topics
+^^^^^^^
+
+~/commands (input topic) [std_msgs::msg::Float64MultiArray]
+  Target joint commands
+
 Parameters
-------------
+^^^^^^^^^^^^^^
 
 This controller uses the `generate_parameter_library <https://github.com/PickNikRobotics/generate_parameter_library>`_ to handle its parameters.
 
-forward_command_controller
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+   .. tabs::
 
-.. generate_parameter_library_details:: ../src/forward_command_controller_parameters.yaml
+      .. group-tab:: forward_command_controller
 
-multi_interface_forward_command_controller
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        .. generate_parameter_library_details:: ../src/forward_command_controller_parameters.yaml
 
-.. generate_parameter_library_details:: ../src/multi_interface_forward_command_controller_parameters.yaml
+      .. group-tab:: multi_interface_forward_command_controller
+
+        .. generate_parameter_library_details:: ../src/multi_interface_forward_command_controller_parameters.yaml

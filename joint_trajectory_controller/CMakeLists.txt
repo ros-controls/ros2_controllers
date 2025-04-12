@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
-project(joint_trajectory_controller LANGUAGES CXX)
+project(joint_trajectory_controller)
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
-  add_compile_options(-Wall -Wextra -Wconversion)
-endif()
+find_package(ros2_control_cmake REQUIRED)
+set_compiler_options()
+export_windows_symbols()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   angles
@@ -19,6 +19,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   rsl
   tl_expected
   trajectory_msgs
+  urdf
 )
 
 find_package(ament_cmake REQUIRED)
@@ -46,9 +47,6 @@ target_link_libraries(joint_trajectory_controller PUBLIC
 )
 ament_target_dependencies(joint_trajectory_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
 
-# Causes the visibility macros to use dllexport rather than dllimport,
-# which is appropriate when building the dll but not consuming it.
-target_compile_definitions(joint_trajectory_controller PRIVATE "JOINT_TRAJECTORY_CONTROLLER_BUILDING_DLL" "_USE_MATH_DEFINES")
 pluginlib_export_plugin_description_file(controller_interface joint_trajectory_plugin.xml)
 
 if(BUILD_TESTING)
@@ -58,15 +56,24 @@ if(BUILD_TESTING)
 
   ament_add_gmock(test_trajectory test/test_trajectory.cpp)
   target_link_libraries(test_trajectory joint_trajectory_controller)
+  ament_target_dependencies(test_trajectory ros2_control_test_assets)
+  target_compile_definitions(test_trajectory PRIVATE _USE_MATH_DEFINES)
+
+  ament_add_gmock(test_tolerances test/test_tolerances.cpp)
+  target_link_libraries(test_tolerances joint_trajectory_controller)
+  ament_target_dependencies(test_tolerances ros2_control_test_assets)
+  target_compile_definitions(test_tolerances PRIVATE _USE_MATH_DEFINES)
 
   ament_add_gmock(test_trajectory_controller
-    test/test_trajectory_controller.cpp
-    ENV config_file=${CMAKE_CURRENT_SOURCE_DIR}/test/config/test_joint_trajectory_controller.yaml)
+    test/test_trajectory_controller.cpp)
   set_tests_properties(test_trajectory_controller PROPERTIES TIMEOUT 220)
   target_link_libraries(test_trajectory_controller
     joint_trajectory_controller
   )
+  ament_target_dependencies(test_trajectory_controller ros2_control_test_assets)
+  target_compile_definitions(joint_trajectory_controller PRIVATE _USE_MATH_DEFINES)
 
+  add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
   ament_add_gmock(test_load_joint_trajectory_controller
     test/test_load_joint_trajectory_controller.cpp
   )
@@ -87,6 +94,7 @@ if(BUILD_TESTING)
   target_link_libraries(test_trajectory_actions
     joint_trajectory_controller
   )
+  ament_target_dependencies(test_trajectory_actions ros2_control_test_assets)
 endif()
 
 

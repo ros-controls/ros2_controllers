@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
-project(admittance_controller LANGUAGES CXX)
+project(admittance_controller)
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
-  add_compile_options(-Wall -Wextra -Wpedantic -Wconversion)
-endif()
+find_package(ros2_control_cmake REQUIRED)
+set_compiler_options()
+export_windows_symbols()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   angles
@@ -15,7 +15,6 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   generate_parameter_library
   geometry_msgs
   hardware_interface
-  joint_trajectory_controller
   kinematics_interface
   pluginlib
   rclcpp
@@ -34,6 +33,7 @@ find_package(backward_ros REQUIRED)
 foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
+find_package(Eigen3 REQUIRED NO_MODULE)
 
 generate_parameter_library(admittance_controller_parameters
   src/admittance_controller_parameters.yaml
@@ -49,12 +49,9 @@ target_include_directories(admittance_controller PUBLIC
 )
 target_link_libraries(admittance_controller PUBLIC
   admittance_controller_parameters
+  Eigen3::Eigen
 )
 ament_target_dependencies(admittance_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
-
-# Causes the visibility macros to use dllexport rather than dllimport,
-# which is appropriate when building the dll but not consuming it.
-target_compile_definitions(admittance_controller PRIVATE "ADMITTANCE_CONTROLLER_BUILDING_DLL")
 
 pluginlib_export_plugin_description_file(controller_interface admittance_controller.xml)
 
@@ -67,10 +64,8 @@ if(BUILD_TESTING)
   find_package(kinematics_interface_kdl REQUIRED)
 
   # test loading admittance controller
-  add_rostest_with_parameters_gmock(test_load_admittance_controller
-    test/test_load_admittance_controller.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_params.yaml
-  )
+  add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
+  ament_add_gmock(test_load_admittance_controller test/test_load_admittance_controller.cpp)
   ament_target_dependencies(test_load_admittance_controller
     controller_manager
     hardware_interface

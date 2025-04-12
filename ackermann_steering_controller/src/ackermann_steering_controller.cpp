@@ -50,7 +50,7 @@ controller_interface::CallbackReturn AckermannSteeringController::configure_odom
 
   set_interface_numbers(NR_STATE_ITFS, NR_CMD_ITFS, NR_REF_ITFS);
 
-  RCLCPP_INFO(get_node()->get_logger(), "ackermann odom configure successful");
+  RCLCPP_INFO(get_node()->get_logger(), "Ackermann odom configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
@@ -62,28 +62,29 @@ bool AckermannSteeringController::update_odometry(const rclcpp::Duration & perio
   }
   else
   {
-    const double rear_right_wheel_value = state_interfaces_[STATE_TRACTION_RIGHT_WHEEL].get_value();
-    const double rear_left_wheel_value = state_interfaces_[STATE_TRACTION_LEFT_WHEEL].get_value();
-    const double front_right_steer_position =
-      state_interfaces_[STATE_STEER_RIGHT_WHEEL].get_value();
-    const double front_left_steer_position = state_interfaces_[STATE_STEER_LEFT_WHEEL].get_value();
+    const double traction_right_wheel_value =
+      state_interfaces_[STATE_TRACTION_RIGHT_WHEEL].get_value();
+    const double traction_left_wheel_value =
+      state_interfaces_[STATE_TRACTION_LEFT_WHEEL].get_value();
+    const double steering_right_position = state_interfaces_[STATE_STEER_RIGHT_WHEEL].get_value();
+    const double steering_left_position = state_interfaces_[STATE_STEER_LEFT_WHEEL].get_value();
     if (
-      !std::isnan(rear_right_wheel_value) && !std::isnan(rear_left_wheel_value) &&
-      !std::isnan(front_right_steer_position) && !std::isnan(front_left_steer_position))
+      std::isfinite(traction_right_wheel_value) && std::isfinite(traction_left_wheel_value) &&
+      std::isfinite(steering_right_position) && std::isfinite(steering_left_position))
     {
       if (params_.position_feedback)
       {
         // Estimate linear and angular velocity using joint information
         odometry_.update_from_position(
-          rear_right_wheel_value, rear_left_wheel_value, front_right_steer_position,
-          front_left_steer_position, period.seconds());
+          traction_right_wheel_value, traction_left_wheel_value, steering_right_position,
+          steering_left_position, period.seconds());
       }
       else
       {
         // Estimate linear and angular velocity using joint information
         odometry_.update_from_velocity(
-          rear_right_wheel_value, rear_left_wheel_value, front_right_steer_position,
-          front_left_steer_position, period.seconds());
+          traction_right_wheel_value, traction_left_wheel_value, steering_right_position,
+          steering_left_position, period.seconds());
       }
     }
   }

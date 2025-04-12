@@ -15,30 +15,28 @@
 #ifndef TEST_STEERING_CONTROLLERS_LIBRARY_HPP_
 #define TEST_STEERING_CONTROLLERS_LIBRARY_HPP_
 
+#include <gmock/gmock.h>
+
 #include <chrono>
-#include <limits>
 #include <memory>
 #include <string>
-#include <tuple>
 #include <utility>
 #include <vector>
 
-#include "gmock/gmock.h"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
-#include "hardware_interface/types/hardware_interface_return_values.hpp"
-#include "rclcpp/parameter_value.hpp"
+#include "rclcpp/executor.hpp"
+#include "rclcpp/executors.hpp"
 #include "rclcpp/time.hpp"
-#include "rclcpp/utilities.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "steering_controllers_library/steering_controllers_library.hpp"
 
 using ControllerStateMsg =
-  steering_controllers_library::SteeringControllersLibrary::AckermanControllerState;
+  steering_controllers_library::SteeringControllersLibrary::AckermannControllerState;
 using ControllerReferenceMsg =
   steering_controllers_library::SteeringControllersLibrary::ControllerTwistReferenceMsg;
 
-// NOTE: Testing steering_controllers_library for ackermann vehicle configuration only
+// NOTE: Testing steering_controllers_library for Ackermann vehicle configuration only
 
 // name constants for state interfaces
 static constexpr size_t STATE_TRACTION_RIGHT_WHEEL = 0;
@@ -73,21 +71,14 @@ constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
 class TestableSteeringControllersLibrary
 : public steering_controllers_library::SteeringControllersLibrary
 {
-  FRIEND_TEST(SteeringControllersLibraryTest, check_exported_intefaces);
+  FRIEND_TEST(SteeringControllersLibraryTest, check_exported_interfaces);
   FRIEND_TEST(SteeringControllersLibraryTest, test_both_update_methods_for_ref_timeout);
 
 public:
   controller_interface::CallbackReturn on_configure(
     const rclcpp_lifecycle::State & previous_state) override
   {
-    auto ret =
-      steering_controllers_library::SteeringControllersLibrary::on_configure(previous_state);
-    // Only if on_configure is successful create subscription
-    if (ret == CallbackReturn::SUCCESS)
-    {
-      ref_subscriber_wait_set_.add_subscription(ref_subscriber_twist_);
-    }
-    return ret;
+    return steering_controllers_library::SteeringControllersLibrary::on_configure(previous_state);
   }
 
   controller_interface::CallbackReturn on_activate(
@@ -101,26 +92,24 @@ public:
    * @brief wait_for_command blocks until a new ControllerReferenceMsg is received.
    * Requires that the executor is not spinned elsewhere between the
    *  message publication and the call to this function.
-   *
-   * @return true if new ControllerReferenceMsg msg was received, false if timeout.
    */
-  bool wait_for_command(
-    rclcpp::Executor & executor, rclcpp::WaitSet & subscriber_wait_set,
-    const std::chrono::milliseconds & timeout = std::chrono::milliseconds{500})
-  {
-    bool success = subscriber_wait_set.wait(timeout).kind() == rclcpp::WaitResultKind::Ready;
-    if (success)
-    {
-      executor.spin_some();
-    }
-    return success;
-  }
-
-  bool wait_for_commands(
+  void wait_for_command(
     rclcpp::Executor & executor,
     const std::chrono::milliseconds & timeout = std::chrono::milliseconds{500})
   {
-    return wait_for_command(executor, ref_subscriber_wait_set_, timeout);
+    auto until = get_node()->get_clock()->now() + timeout;
+    while (get_node()->get_clock()->now() < until)
+    {
+      executor.spin_some();
+      std::this_thread::sleep_for(std::chrono::microseconds(10));
+    }
+  }
+
+  void wait_for_commands(
+    rclcpp::Executor & executor,
+    const std::chrono::milliseconds & timeout = std::chrono::milliseconds{500})
+  {
+    wait_for_command(executor, timeout);
   }
 
   // implementing methods which are declared virtual in the steering_controllers_library.hpp
@@ -139,9 +128,6 @@ public:
   }
 
   bool update_odometry(const rclcpp::Duration & /*period*/) { return true; }
-
-private:
-  rclcpp::WaitSet ref_subscriber_wait_set_;
 };
 
 // We are using template class here for easier reuse of Fixture in specializations of controllers
@@ -168,7 +154,9 @@ public:
 protected:
   void SetUpController(const std::string controller_name = "test_steering_controllers_library")
   {
-    ASSERT_EQ(controller_->init(controller_name), controller_interface::return_type::OK);
+    ASSERT_EQ(
+      controller_->init(controller_name, "", 0, "", controller_->define_custom_node_options()),
+      controller_interface::return_type::OK);
 
     if (position_feedback_ == true)
     {
@@ -183,48 +171,56 @@ protected:
     command_itfs_.reserve(joint_command_values_.size());
     command_ifs.reserve(joint_command_values_.size());
 
-    command_itfs_.emplace_back(hardware_interface::CommandInterface(
-      rear_wheels_names_[0], traction_interface_name_,
-      &joint_command_values_[CMD_TRACTION_RIGHT_WHEEL]));
+    command_itfs_.emplace_back(
+      hardware_interface::CommandInterface(
+        rear_wheels_names_[0], traction_interface_name_,
+        &joint_command_values_[CMD_TRACTION_RIGHT_WHEEL]));
     command_ifs.emplace_back(command_itfs_.back());
 
-    command_itfs_.emplace_back(hardware_interface::CommandInterface(
-      rear_wheels_names_[1], steering_interface_name_,
-      &joint_command_values_[CMD_TRACTION_LEFT_WHEEL]));
+    command_itfs_.emplace_back(
+      hardware_interface::CommandInterface(
+        rear_wheels_names_[1], steering_interface_name_,
+        &joint_command_values_[CMD_TRACTION_LEFT_WHEEL]));
     command_ifs.emplace_back(command_itfs_.back());
 
-    command_itfs_.emplace_back(hardware_interface::CommandInterface(
-      front_wheels_names_[0], steering_interface_name_,
-      &joint_command_values_[CMD_STEER_RIGHT_WHEEL]));
+    command_itfs_.emplace_back(
+      hardware_interface::CommandInterface(
+        front_wheels_names_[0], steering_interface_name_,
+        &joint_command_values_[CMD_STEER_RIGHT_WHEEL]));
     command_ifs.emplace_back(command_itfs_.back());
 
-    command_itfs_.emplace_back(hardware_interface::CommandInterface(
-      front_wheels_names_[1], steering_interface_name_,
-      &joint_command_values_[CMD_STEER_LEFT_WHEEL]));
+    command_itfs_.emplace_back(
+      hardware_interface::CommandInterface(
+        front_wheels_names_[1], steering_interface_name_,
+        &joint_command_values_[CMD_STEER_LEFT_WHEEL]));
     command_ifs.emplace_back(command_itfs_.back());
 
     std::vector<hardware_interface::LoanedStateInterface> state_ifs;
     state_itfs_.reserve(joint_state_values_.size());
     state_ifs.reserve(joint_state_values_.size());
 
-    state_itfs_.emplace_back(hardware_interface::StateInterface(
-      rear_wheels_names_[0], traction_interface_name_,
-      &joint_state_values_[STATE_TRACTION_RIGHT_WHEEL]));
+    state_itfs_.emplace_back(
+      hardware_interface::StateInterface(
+        rear_wheels_names_[0], traction_interface_name_,
+        &joint_state_values_[STATE_TRACTION_RIGHT_WHEEL]));
     state_ifs.emplace_back(state_itfs_.back());
 
-    state_itfs_.emplace_back(hardware_interface::StateInterface(
-      rear_wheels_names_[1], traction_interface_name_,
-      &joint_state_values_[STATE_TRACTION_LEFT_WHEEL]));
+    state_itfs_.emplace_back(
+      hardware_interface::StateInterface(
+        rear_wheels_names_[1], traction_interface_name_,
+        &joint_state_values_[STATE_TRACTION_LEFT_WHEEL]));
     state_ifs.emplace_back(state_itfs_.back());
 
-    state_itfs_.emplace_back(hardware_interface::StateInterface(
-      front_wheels_names_[0], steering_interface_name_,
-      &joint_state_values_[STATE_STEER_RIGHT_WHEEL]));
+    state_itfs_.emplace_back(
+      hardware_interface::StateInterface(
+        front_wheels_names_[0], steering_interface_name_,
+        &joint_state_values_[STATE_STEER_RIGHT_WHEEL]));
     state_ifs.emplace_back(state_itfs_.back());
 
-    state_itfs_.emplace_back(hardware_interface::StateInterface(
-      front_wheels_names_[1], steering_interface_name_,
-      &joint_state_values_[STATE_STEER_LEFT_WHEEL]));
+    state_itfs_.emplace_back(
+      hardware_interface::StateInterface(
+        front_wheels_names_[1], steering_interface_name_,
+        &joint_state_values_[STATE_STEER_LEFT_WHEEL]));
     state_ifs.emplace_back(state_itfs_.back());
 
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
@@ -233,36 +229,43 @@ protected:
   void subscribe_and_get_messages(ControllerStateMsg & msg)
   {
     // create a new subscriber
+    ControllerStateMsg::SharedPtr received_msg;
     rclcpp::Node test_subscription_node("test_subscription_node");
-    auto subs_callback = [&](const ControllerStateMsg::SharedPtr) {};
+    auto subs_callback = [&](const ControllerStateMsg::SharedPtr cb_msg) { received_msg = cb_msg; };
     auto subscription = test_subscription_node.create_subscription<ControllerStateMsg>(
       "/test_steering_controllers_library/controller_state", 10, subs_callback);
+    rclcpp::executors::SingleThreadedExecutor executor;
+    executor.add_node(test_subscription_node.get_node_base_interface());
 
     // call update to publish the test value
     ASSERT_EQ(
       controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
       controller_interface::return_type::OK);
-
     // call update to publish the test value
     // since update doesn't guarantee a published message, republish until received
     int max_sub_check_loop_count = 5;  // max number of tries for pub/sub loop
-    rclcpp::WaitSet wait_set;          // block used to wait on message
-    wait_set.add_subscription(subscription);
     while (max_sub_check_loop_count--)
     {
       controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01));
+      const auto timeout = std::chrono::milliseconds{5};
+      const auto until = test_subscription_node.get_clock()->now() + timeout;
+      while (!received_msg && test_subscription_node.get_clock()->now() < until)
+      {
+        executor.spin_some();
+        std::this_thread::sleep_for(std::chrono::microseconds(10));
+      }
       // check if message has been received
-      if (wait_set.wait(std::chrono::milliseconds(2)).kind() == rclcpp::WaitResultKind::Ready)
+      if (received_msg.get())
       {
         break;
       }
     }
     ASSERT_GE(max_sub_check_loop_count, 0) << "Test was unable to publish a message through "
                                               "controller/broadcaster update loop";
+    ASSERT_TRUE(received_msg);
 
     // take message from subscription
-    rclcpp::MessageInfo msg_info;
-    ASSERT_TRUE(subscription->take(msg, msg_info));
+    msg = *received_msg;
   }
 
   void publish_commands(const double linear = 0.1, const double angular = 0.2)
@@ -299,7 +302,6 @@ protected:
   bool open_loop_ = false;
   unsigned int velocity_rolling_window_size_ = 10;
   bool position_feedback_ = false;
-  bool use_stamped_vel_ = true;
   std::vector<std::string> rear_wheels_names_ = {"rear_right_wheel_joint", "rear_left_wheel_joint"};
   std::vector<std::string> front_wheels_names_ = {
     "front_right_steering_joint", "front_left_steering_joint"};
@@ -320,10 +322,10 @@ protected:
   double front_wheels_radius_ = 0.45;
   double rear_wheels_radius_ = 0.45;
 
-  std::array<double, 4> joint_state_values_ = {0.5, 0.5, 0.0, 0.0};
-  std::array<double, 4> joint_command_values_ = {1.1, 3.3, 2.2, 4.4};
+  std::array<double, 4> joint_state_values_ = {{0.5, 0.5, 0.0, 0.0}};
+  std::array<double, 4> joint_command_values_ = {{1.1, 3.3, 2.2, 4.4}};
 
-  std::array<std::string, 2> joint_reference_interfaces_ = {"linear/velocity", "angular/position"};
+  std::array<std::string, 2> joint_reference_interfaces_ = {{"linear", "angular"}};
   std::string steering_interface_name_ = "position";
   // defined in setup
   std::string traction_interface_name_ = "";

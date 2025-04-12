@@ -22,25 +22,27 @@ The following is a step-by-step guide to create source files, basic tests, and c
    After creating the package, you should have at least ``CMakeLists.txt`` and ``package.xml`` files in it.
    Create also ``include/<PACKAGE_NAME>/`` and ``src`` folders if they do not already exist.
    In ``include/<PACKAGE_NAME>/`` folder add ``<controller_name>.hpp`` and ``<controller_name>.cpp`` in the ``src`` folder.
-   Optionally add ``visibility_control.h`` with the definition of export rules for Windows.
-   You can copy this file from an existing controller package and change the name prefix to the ``<PACKAGE_NAME>``.
 
 3. **Adding declarations into header file (.hpp)**
 
-   1. Take care that you use header guards. ROS2-style is using ``#ifndef`` and ``#define`` preprocessor directives. (For more information on this, a search engine is your friend :) ).
+   1. Take care that you use header guards. ROS 2-style is using ``#ifndef`` and ``#define`` preprocessor directives. (For more information on this, a search engine is your friend :) ).
 
-   2. include ``"controller_interface/controller_interface.hpp"`` and ``visibility_control.h`` if you are using one.
+   2. include ``"controller_interface/controller_interface.hpp"``.
 
    3. Define a unique namespace for your controller. This is usually a package name written in ``snake_case``.
 
    4. Define the class of the controller, extending ``ControllerInterface``, e.g.,
-      .. code:: c++
-      class ControllerName : public controller_interface::ControllerInterface
 
-   5. Add a constructor without parameters and the following public methods overriding the ``ControllerInterface`` definition: ``init``, ``command_interface_configuration``, ``state_interface_configuration``, ``on_configure``, ``on_activate``, ``on_deactivate``, ``update``.
+      .. code:: c++
+
+         class ControllerName : public controller_interface::ControllerInterface
+
+   5. Add a constructor without parameters and the following public methods overriding the ``ControllerInterface`` definition: ``on_init``, ``command_interface_configuration``, ``state_interface_configuration``, ``on_configure``, ``on_activate``, ``on_deactivate``, ``update``.
       For exact definitions check the ``controller_interface/controller_interface.hpp`` header or one of the controllers from `ros2_controllers <https://github.com/ros-controls/ros2_controllers>`_.
 
-   6. (optional) Often, controllers accept lists of joint names and interface names as parameters.
+   6. (Optional) The NodeOptions of the LifecycleNode can be personalized by overriding the default method ``define_custom_node_options``.
+
+   7. (Optional) Often, controllers accept lists of joint names and interface names as parameters.
       If so, you can add two protected string vectors to store those values.
 
 4. **Adding definitions into source file (.cpp)**
@@ -48,9 +50,9 @@ The following is a step-by-step guide to create source files, basic tests, and c
    1. Include the header file of your controller and add a namespace definition to simplify further development.
 
    2. (optional) Implement a constructor if needed. There, you could initialize member variables.
-      This could also be done in the ``init`` method.
+      This could also be done in the ``on_init`` method.
 
-   3. Implement the ``init`` method. The first line usually calls the parent ``init`` method.
+   3. Implement the ``on_init`` method. The first line usually calls the parent ``on_init`` method.
       Here is the best place to initialize the variables, reserve memory, and most importantly, declare node parameters used by the controller. If everything works fine return ``controller_interface::return_type::OK`` or ``controller_interface::return_type::ERROR`` otherwise.
 
    4. Write the ``on_configure`` method. Parameters are usually read here, and everything is prepared so that the controller can be started.
@@ -105,6 +107,7 @@ The following is a step-by-step guide to create source files, basic tests, and c
    4. Add ament dependencies needed by the library. You should add at least those listed under 1.
 
    5. Export for pluginlib description file using the following command:
+
       .. code:: cmake
 
          pluginlib_export_plugin_description_file(controller_interface <controller_name>.xml)
@@ -138,4 +141,7 @@ That's it! Enjoy writing great controllers!
 Useful External References
 ---------------------------
 
-- `Templates and scripts for generating controllers shell <https://rtw.stoglrobotics.de/master/use-cases/ros2_control/setup_controller.html>`_
+- `Templates and scripts for generating controllers shell <https://rtw.b-robotized.com/master/use-cases/ros2_control/setup_controller.html>`_
+
+
+  .. NOTE:: The script is currently only recommended to use with Humble, not compatible with the API from Jazzy and onwards.

@@ -14,22 +14,16 @@
 
 #include "joint_state_broadcaster/joint_state_broadcaster.hpp"
 
-#include <stddef.h>
+#include <cstddef>
 #include <limits>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
-#include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
-#include "rclcpp/clock.hpp"
-#include "rclcpp/event_handler.hpp"
 #include "rclcpp/qos.hpp"
 #include "rclcpp/time.hpp"
-#include "rclcpp_lifecycle/lifecycle_node.hpp"
-#include "rcpputils/split.hpp"
-#include "rcutils/logging_macros.h"
 #include "std_msgs/msg/header.hpp"
 
 namespace rclcpp_lifecycle
@@ -96,11 +90,6 @@ controller_interface::InterfaceConfiguration JointStateBroadcaster::state_interf
 controller_interface::CallbackReturn JointStateBroadcaster::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  if (!param_listener_)
-  {
-    RCLCPP_ERROR(get_node()->get_logger(), "Error encountered during init");
-    return controller_interface::CallbackReturn::ERROR;
-  }
   params_ = param_listener_->get_params();
 
   if (use_all_available_interfaces())
@@ -169,6 +158,29 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_configure(
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
     return CallbackReturn::ERROR;
   }
+
+  const std::string & urdf = get_robot_description();
+
+  is_model_loaded_ = !urdf.empty() && model_.initString(urdf);
+  if (!is_model_loaded_)
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(),
+      "Failed to parse robot description. Will publish all the interfaces with '%s', '%s' and '%s'",
+      HW_IF_POSITION, HW_IF_VELOCITY, HW_IF_EFFORT);
+  }
+
+  // joint_names reserve space for all joints
+  const auto max_joints_size =
+    (params_.joints.empty() ? model_.joints_.size() : params_.joints.size()) +
+    params_.extra_joints.size();
+  joint_names_.reserve(max_joints_size);
+  auto & joint_state_msg = realtime_joint_state_publisher_->msg_;
+  joint_state_msg.name.reserve(max_joints_size);
+  joint_state_msg.position.reserve(max_joints_size);
+  joint_state_msg.velocity.reserve(max_joints_size);
+  joint_state_msg.effort.reserve(max_joints_size);
+
   return CallbackReturn::SUCCESS;
 }
 
@@ -178,22 +190,13 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_activate(
   if (!init_joint_data())
   {
     RCLCPP_ERROR(
-      get_node()->get_logger(), "None of requested interfaces exist. Controller will not run.");
+      get_node()->get_logger(),
+      "Error initializing joint data. JointStateBroadcaster will not run.");
     return CallbackReturn::ERROR;
   }
 
   init_joint_state_msg();
   init_dynamic_joint_state_msg();
-
-  if (
-    !use_all_available_interfaces() &&
-    state_interfaces_.size() != (params_.joints.size() * params_.interfaces.size()))
-  {
-    RCLCPP_WARN(
-      get_node()->get_logger(),
-      "Not all requested interfaces exists. "
-      "Check ControllerManager output for more detailed information.");
-  }
 
   return CallbackReturn::SUCCESS;
 }
@@ -202,25 +205,9 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   joint_names_.clear();
+  name_if_value_mapping_.clear();
 
   return CallbackReturn::SUCCESS;
-}
-
-template <typename T>
-bool has_any_key(
-  const std::unordered_map<std::string, T> & map, const std::vector<std::string> & keys)
-{
-  bool found_key = false;
-  for (const auto & key_item : map)
-  {
-    const auto & key = key_item.first;
-    if (std::find(keys.cbegin(), keys.cend(), key) != keys.cend())
-    {
-      found_key = true;
-      break;
-    }
-  }
-  return found_key;
 }
 
 bool JointStateBroadcaster::init_joint_data()
@@ -228,16 +215,20 @@ bool JointStateBroadcaster::init_joint_data()
   joint_names_.clear();
   if (state_interfaces_.empty())
   {
+    RCLCPP_ERROR(get_node()->get_logger(), "No state interfaces found to publish.");
     return false;
   }
 
   // loop in reverse order, this maintains the order of values at retrieval time
+  const std::vector<std::string> joint_state_interfaces = {
+    HW_IF_POSITION, HW_IF_VELOCITY, HW_IF_EFFORT};
   for (auto si = state_interfaces_.crbegin(); si != state_interfaces_.crend(); si++)
   {
+    const std::string prefix_name = si->get_prefix_name();
     // initialize map if name is new
-    if (name_if_value_mapping_.count(si->get_prefix_name()) == 0)
+    if (name_if_value_mapping_.count(prefix_name) == 0)
     {
-      name_if_value_mapping_[si->get_prefix_name()] = {};
+      name_if_value_mapping_[prefix_name] = {};
     }
     // add interface name
     std::string interface_name = si->get_interface_name();
@@ -245,34 +236,51 @@ bool JointStateBroadcaster::init_joint_data()
     {
       interface_name = map_interface_to_joint_state_[interface_name];
     }
-    name_if_value_mapping_[si->get_prefix_name()][interface_name] = kUninitializedValue;
-  }
+    name_if_value_mapping_[prefix_name][interface_name] = kUninitializedValue;
 
-  // filter state interfaces that have at least one of the joint_states fields,
-  // the rest will be ignored for this message
-  for (const auto & name_ifv : name_if_value_mapping_)
-  {
-    const auto & interfaces_and_values = name_ifv.second;
-    if (has_any_key(interfaces_and_values, {HW_IF_POSITION, HW_IF_VELOCITY, HW_IF_EFFORT}))
+    // filter state interfaces that have at least one of the joint_states fields,
+    // the rest will be ignored for this message
+    if (
+      std::find(joint_state_interfaces.begin(), joint_state_interfaces.end(), interface_name) !=
+      joint_state_interfaces.end())
     {
-      joint_names_.push_back(name_ifv.first);
+      if (
+        !params_.use_urdf_to_filter || !params_.joints.empty() || !is_model_loaded_ ||
+        model_.getJoint(prefix_name))
+      {
+        if (std::find(joint_names_.begin(), joint_names_.end(), prefix_name) == joint_names_.end())
+        {
+          joint_names_.push_back(prefix_name);
+        }
+      }
     }
+  }
+  std::reverse(joint_names_.begin(), joint_names_.end());
+  if (is_model_loaded_ && params_.use_urdf_to_filter && params_.joints.empty())
+  {
+    std::vector<std::string> joint_names_filtered;
+    for (const auto & [joint_name, urdf_joint] : model_.joints_)
+    {
+      if (urdf_joint && urdf_joint->type != urdf::Joint::FIXED)
+      {
+        if (std::find(joint_names_.begin(), joint_names_.end(), joint_name) != joint_names_.end())
+        {
+          joint_names_filtered.push_back(joint_name);
+        }
+      }
+    }
+    joint_names_ = joint_names_filtered;
   }
 
   // Add extra joints from parameters, each joint will be added to joint_names_ and
   // name_if_value_mapping_ if it is not already there
-  rclcpp::Parameter extra_joints;
-  if (get_node()->get_parameter("extra_joints", extra_joints))
+  for (const auto & extra_joint_name : params_.extra_joints)
   {
-    const std::vector<std::string> & extra_joints_names = extra_joints.as_string_array();
-    for (const auto & extra_joint_name : extra_joints_names)
+    if (name_if_value_mapping_.count(extra_joint_name) == 0)
     {
-      if (name_if_value_mapping_.count(extra_joint_name) == 0)
-      {
-        name_if_value_mapping_[extra_joint_name] = {
-          {HW_IF_POSITION, 0.0}, {HW_IF_VELOCITY, 0.0}, {HW_IF_EFFORT, 0.0}};
-        joint_names_.push_back(extra_joint_name);
-      }
+      name_if_value_mapping_[extra_joint_name] = {
+        {HW_IF_POSITION, 0.0}, {HW_IF_VELOCITY, 0.0}, {HW_IF_EFFORT, 0.0}};
+      joint_names_.push_back(extra_joint_name);
     }
   }
 
@@ -297,6 +305,8 @@ void JointStateBroadcaster::init_joint_state_msg()
 void JointStateBroadcaster::init_dynamic_joint_state_msg()
 {
   auto & dynamic_joint_state_msg = realtime_dynamic_joint_state_publisher_->msg_;
+  dynamic_joint_state_msg.joint_names.clear();
+  dynamic_joint_state_msg.interface_values.clear();
   for (const auto & name_ifv : name_if_value_mapping_)
   {
     const auto & name = name_ifv.first;

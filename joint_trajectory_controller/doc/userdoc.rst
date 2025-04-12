@@ -14,29 +14,43 @@ Waypoints consist of positions, and optionally velocities and accelerations.
 
 *Parts of this documentation were originally published in the ROS 1 wiki under the* `CC BY 3.0 license <https://creativecommons.org/licenses/by/3.0/>`_. *Citations are given in the respective section, but were adapted for the ROS 2 implementation.* [#f1]_
 
-Hardware interface type [#f1]_
+Hardware interface types
 -------------------------------
 
-Currently joints with position, velocity, acceleration, and effort interfaces are supported. The joints can have one or more command interfaces, where the following control laws are applied at the same time:
+Currently, joints with hardware interface types ``position``, ``velocity``, ``acceleration``, and ``effort`` (defined `here <https://github.com/ros-controls/ros2_control/blob/{REPOS_FILE_BRANCH}/hardware_interface/include/hardware_interface/types/hardware_interface_type_values.hpp>`_) are supported in the following combinations as command interfaces:
+
+* ``position``
+* ``position``, ``velocity``
+* ``position``, ``velocity``, ``acceleration``
+* ``velocity``
+* ``effort``
+* ``position``, ``effort``
+
+This means that the joints can have one or more command interfaces, where the following control laws are applied at the same time:
 
 * For command interfaces ``position``, the desired positions are simply forwarded to the joints,
 * For command interfaces ``acceleration``, desired accelerations are simply forwarded to the joints.
-* For ``velocity`` (``effort``) command interfaces, the position+velocity trajectory following error is mapped to ``velocity`` (``effort``) commands through a PID loop (:ref:`parameters`).
+* For ``velocity`` (``effort``) command interfaces, the position+velocity trajectory following error is mapped to ``velocity`` (``effort``) commands through a PID loop if it is configured (:ref:`parameters`).
+* For ``effort`` command interface (without ``position`` command interface), if the trajectory contains effort, this will be added to the PID commands as a feed forward effort.
+* For ``position, effort`` command interface, if the trajectory contains effort, this will be passed directly to the ``effort`` interface (PID won't be used) while the positions will be passed to the ``position`` interface.
 
-This leads to the the following allowed combinations of command and state interfaces:
+This leads to the following allowed combinations of command and state interfaces:
 
 * With command interface ``position``, there are no restrictions for state interfaces.
 * With command interface ``velocity``:
 
   * if command interface ``velocity`` is the only one, state interfaces must include  ``position, velocity`` .
-  * no restrictions otherwise.
 
-* With command interface ``effort``, state interfaces must include  ``position, velocity``.
-* With command interface ``acceleration``, there are no restrictions for state interfaces.
+* With command interface ``effort`` or ``position, effort``, state interfaces must include  ``position, velocity``.
+
+* With command interface ``acceleration``, state interfaces must include  ``position, velocity``.
+
+Further restrictions of state interfaces exist:
+
+* ``velocity`` state interface cannot be used if ``position`` interface  is missing.
+* ``acceleration`` state interface cannot be used if ``position`` and ``velocity`` interfaces are not present."
 
 Example controller configurations can be found :ref:`below <ROS 2 interface>`.
-
-Similarly to the trajectory representation case above, it's possible to support new hardware interfaces, or alternative mappings to an already supported interface (eg. a proxy controller for generating effort commands).
 
 Other features
 --------------
@@ -86,7 +100,7 @@ A yaml file for using it could be:
           action_monitor_rate: 20.0
 
           allow_partial_joints_goal: false
-          open_loop_control: true
+          interpolate_from_desired_state: true
           constraints:
             stopped_velocity_tolerance: 0.01
             goal_time: 0.0
@@ -104,7 +118,6 @@ When an active action goal is preempted by another command coming from the actio
 
 Sending an empty trajectory message from the topic interface (not the action interface) will override the current action goal and not abort the action.
 
-
 .. _ROS 2 interface:
 
 Description of controller's interfaces
@@ -119,14 +132,8 @@ States
 ,,,,,,,,,,,,,,,,,,
 
 The state interfaces are defined with ``joints`` and ``state_interfaces`` parameters as follows: ``<joint>/<state_interface>``.
-Supported state interfaces are ``position``, ``velocity``, ``acceleration`` and ``effort`` as defined in the `hardware_interface/hardware_interface_type_values.hpp <https://github.com/ros-controls/ros2_control/blob/{REPOS_FILE_BRANCH}/hardware_interface/include/hardware_interface/types/hardware_interface_type_values.hpp>`_.
 
-Legal combinations of state interfaces are:
-
-* ``position``
-* ``position`` and ``velocity``
-* ``position``, ``velocity`` and ``acceleration``
-* ``effort``
+Legal combinations of state interfaces are given in section `Hardware Interface Types`_.
 
 Commands
 ,,,,,,,,,
@@ -146,11 +153,27 @@ Actions  [#f1]_
 <controller_name>/follow_joint_trajectory [control_msgs::action::FollowJointTrajectory]
   Action server for commanding the controller
 
-
 The primary way to send trajectories is through the action interface, and should be favored when execution monitoring is desired.
-Action goals allow to specify not only the trajectory to execute, but also (optionally) path and goal tolerances.
+
+Action goals allow to specify not only the trajectory to execute, but also (optionally) path and goal tolerances. For details, see the `JointTolerance message <https://github.com/ros-controls/control_msgs/blob/master/control_msgs/msg/JointTolerance.msg>`_:
+
+.. code-block:: markdown
+
+  The tolerances specify the amount the position, velocity, and
+  accelerations can vary from the setpoints.  For example, in the case
+  of trajectory control, when the actual position varies beyond
+  (desired position + position tolerance), the trajectory goal may
+  abort.
+
+  There are two special values for tolerances:
+    * 0 - The tolerance is unspecified and will remain at whatever the default is
+    * -1 - The tolerance is "erased".  If there was a default, the joint will be
+          allowed to move without restriction.
+
 When no tolerances are specified, the defaults given in the parameter interface are used (see :ref:`parameters`).
 If tolerances are violated during trajectory execution, the action goal is aborted, the client is notified, and the current position is held.
+
+The action server returns success to the client and continues with the last commanded point after the target is reached within the specified tolerances.
 
 .. _Subscriber:
 
@@ -161,8 +184,8 @@ Subscriber [#f1]_
   Topic for commanding the controller
 
 The topic interface is a fire-and-forget alternative. Use this interface if you don't care about execution monitoring.
-The controller's path and goal tolerance specification is not used in this case, as there is no mechanism to notify the sender about tolerance violations.
-Note that although some degree of monitoring is available through the ``~/query_state`` service and ``~/state`` topic it is much more cumbersome to realize than with the action interface.
+The goal tolerance specification is not used in this case, as there is no mechanism to notify the sender about tolerance violations. If state tolerances are violated, the trajectory is aborted and the current position is held.
+Note that although some degree of monitoring is available through the ``~/query_state`` service and ``~/controller_state`` topic it is much more cumbersome to realize than with the action interface.
 
 
 Publishers
@@ -179,17 +202,6 @@ Services
   Query controller state at any future time
 
 
-Specialized versions of JointTrajectoryController
---------------------------------------------------------------
-(TBD in ...)
-
-The controller types are placed into namespaces according to their command types for the hardware (see :ref:`controllers`).
-
-The following version of the Joint Trajectory Controller are available mapping the following interfaces:
-
-* position_controllers::JointTrajectoryController
-
-
 Further information
 --------------------------------------------------------------
 
@@ -198,6 +210,7 @@ Further information
 
    Trajectory Representation <trajectory.rst>
    joint_trajectory_controller Parameters <parameters.rst>
+   rqt_joint_trajectory_controller <../../rqt_joint_trajectory_controller/doc/userdoc.rst>
 
 
 .. rubric:: Footnote

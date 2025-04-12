@@ -10,6 +10,7 @@ on:
         type: choice
         options:
         - humble
+        - iron
         - rolling
       branch:
         description: 'Chose branch for distro'
@@ -18,13 +19,14 @@ on:
         type: choice
         options:
         - humble
+        - iron
         - master
 
 jobs:
   pre_release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.branch }}
       - name: industrial_ci

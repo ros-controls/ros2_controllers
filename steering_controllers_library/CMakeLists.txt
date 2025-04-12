@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
-project(steering_controllers_library LANGUAGES CXX)
+project(steering_controllers_library)
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
-  add_compile_options(-Wall -Wextra -Wpedantic -Wconversion)
-endif()
+find_package(ros2_control_cmake REQUIRED)
+set_compiler_options()
+export_windows_symbols()
 
 # find dependencies
 set(THIS_PACKAGE_INCLUDE_DEPENDS
@@ -29,6 +29,8 @@ find_package(backward_ros REQUIRED)
 foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
+add_compile_definitions(RCPPUTILS_VERSION_MAJOR=${rcpputils_VERSION_MAJOR})
+add_compile_definitions(RCPPUTILS_VERSION_MINOR=${rcpputils_VERSION_MINOR})
 
 generate_parameter_library(steering_controllers_library_parameters
   src/steering_controllers_library.yaml
@@ -48,10 +50,6 @@ target_link_libraries(steering_controllers_library PUBLIC
   steering_controllers_library_parameters)
 ament_target_dependencies(steering_controllers_library PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
 
-# Causes the visibility macros to use dllexport rather than dllimport,
-# which is appropriate when building the dll but not consuming it.
-target_compile_definitions(steering_controllers_library PRIVATE "STEERING_CONTROLLERS_BUILDING_DLL")
-
 if(BUILD_TESTING)
   find_package(ament_cmake_gmock REQUIRED)
   find_package(controller_manager REQUIRED)
@@ -67,6 +65,9 @@ if(BUILD_TESTING)
     controller_interface
     hardware_interface
   )
+  ament_add_gmock(test_steering_odometry test/test_steering_odometry.cpp)
+  target_link_libraries(test_steering_odometry steering_controllers_library)
+
 endif()
 
 install(
