@@ -2,7 +2,6 @@ multi_omni_wheel_drive_controller:
   wheel_offset:
     {
       type: double,
-      default_value: 0.0, # radians
       description: "Angular offset (radians) of the first wheel from the positive direction of the x-axis of the robot.",
     }
   wheel_names:
