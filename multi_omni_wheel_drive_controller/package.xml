@@ -3,9 +3,17 @@
 <package format="3">
   <name>multi_omni_wheel_drive_controller</name>
   <version>0.0.0</version>
-  <description>A chainable controller for mobile robots with omnidirectional drive with three or more omni wheels.</description>
-  <maintainer email="amronos275@gmail.com">Aarav Gupta</maintainer>
+  <description>A chainable controller for mobile robots with omnidirectional drive with three or
+    more omni wheels.</description>
   <license>Apache License 2.0</license>
+
+  <maintainer email="amronos275@gmail.com">Aarav Gupta</maintainer>
+  <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
+  <maintainer email="christoph.froehlich@ait.ac.at">Christoph Froehlich</maintainer>
+  <maintainer email="denis@stoglrobotics.de">Denis Štogl</maintainer>
+  <maintainer email="sai.kishor@pal-robotics.com">Sai Kishor Kothakota</maintainer>
+
+  <author email="amronos275@gmail.com">Aarav Gupta</author>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 

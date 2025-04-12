@@ -184,8 +184,8 @@ controller_interface::CallbackReturn MultiOmniWheelDriveController::on_configure
   {
     // 0, 7, 14, 21, 28, 35
     const size_t diagonal_index = NUM_DIMENSIONS * index + index;
-    odometry_message.pose.covariance[diagonal_index] = params_.pose_covariance_diagonal[index];
-    odometry_message.twist.covariance[diagonal_index] = params_.twist_covariance_diagonal[index];
+    odometry_message.pose.covariance[diagonal_index] = params_.diagonal_covariance.pose[index];
+    odometry_message.twist.covariance[diagonal_index] = params_.diagonal_covariance.twist[index];
   }
 
   // Initialize transform publisher and message

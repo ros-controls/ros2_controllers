@@ -220,6 +220,7 @@ protected:
 
     parameter_overrides.push_back(
       rclcpp::Parameter("wheel_names", rclcpp::ParameterValue(wheel_joints_init)));
+    parameter_overrides.push_back(rclcpp::Parameter("wheel_offset", rclcpp::ParameterValue(0.0)));
     parameter_overrides.push_back(rclcpp::Parameter("robot_radius", rclcpp::ParameterValue(0.5)));
     parameter_overrides.push_back(rclcpp::Parameter("wheel_radius", rclcpp::ParameterValue(0.1)));
 

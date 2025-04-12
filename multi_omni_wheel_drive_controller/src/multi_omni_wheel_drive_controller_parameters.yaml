@@ -46,18 +46,19 @@ multi_omni_wheel_drive_controller:
       default_value: "base_link",
       description: "Name of the robot's base frame that is child of the odometry frame.",
     }
-  pose_covariance_diagonal:
-    {
-      type: double_array,
-      default_value: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-      description: "Odometry covariance for the encoder output of the robot for the pose. These values should be tuned to your robot's sample odometry data, but these values are a good place to start: ``[0.001, 0.001, 0.001, 0.001, 0.001, 0.01]``.",
-    }
-  twist_covariance_diagonal:
-    {
-      type: double_array,
-      default_value: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-      description: "Odometry covariance for the encoder output of the robot for the speed. These values should be tuned to your robot's sample odometry data, but these values are a good place to start: ``[0.001, 0.001, 0.001, 0.001, 0.001, 0.01]``.",
-    }
+  diagonal_covariance:
+    pose:
+      {
+        type: double_array,
+        default_value: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        description: "Odometry covariance for the encoder output of the robot for the pose. These values should be tuned to your robot's sample odometry data, but these values are a good place to start: ``[0.001, 0.001, 0.001, 0.001, 0.001, 0.01]``.",
+      }
+    twist:
+      {
+        type: double_array,
+        default_value: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        description: "Odometry covariance for the encoder output of the robot for the speed. These values should be tuned to your robot's sample odometry data, but these values are a good place to start: ``[0.001, 0.001, 0.001, 0.001, 0.001, 0.01]``.",
+      }
   open_loop:
     {
       type: bool,
